@@ -1,0 +1,118 @@
+\documentclass[12pt]{article}
+\renewcommand{\baselinestretch}{1.0}
+\begin{document}
+\begin{titlepage}
+\begin{center}
+{\LARGE DRAFT: Interface Specification for PGRID Module}
+\end{center}
+\end{titlepage}
+%\tableofcontents
+\newpage
+\pagestyle{plain}
+\section{Introduction}
+This module is designed to create a network, partition it across multiple
+processors, and allow applications to add and modify fields to the different
+nodes and links.
+\section{Initialization and Termination}
+This section will desribe basic initialization and termination functions for the
+PGRID module.
+\subsection{PGRID\_Init}
+\begin{verbatim}
+void PGRID_Init(void)
+\end{verbatim}
+This function initializes the PGRID module. It must be called before any other
+functions in the PGRID module can be called and must be called on all
+processors.
+\subsection{PGRID\_Set\_group}
+\begin{verbatim}
+void PGRID_Set_group(int nproc,
+                     int *list)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{nproc}: number of processors in group
+\item (IN) \texttt{list}: list of processors in group
+\end{itemize}
+This function can be used to subdivide the entire set of processors into
+subgroups. Each subgroup will support a separate grid instance. This function
+must be called on all processors. Not sure if this is really a good way to
+handle this.
+\subsection{PGRID\_Add\_link}
+\begin{verbatim}
+void PGRID_Add_link(int inode1, int inode2)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{inode1}: global index of node 1 at end of link
+\item (IN) \texttt{inode2}: global index of node 2 at end of link
+\end{itemize}
+This function adds a link to the network.  The link is defined by the global
+indices \texttt{inode1} and \texttt{inode2} that define the two nodes at the
+end of the link.
+\subsection{PGRID\_Add\_node}
+\begin{verbatim}
+void PGRID_Add_node(int node_id)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{node\_id}: global index of node
+\end{itemize}
+This function adds a node to the network. The global index \texttt{node\_id}
+must represent a unique integer index for the node but does not need to be part
+of a sequence of consecutive numbers. The partioning function will derive a
+unique integer index that represents an internal ordering of the nodes.
+\subsection{PGRID\_Partition}
+\begin{verbatim}
+void PGRID_Partition(void)
+\end{verbatim}
+This function partitions the grid so that it is distributed evenly across all
+processors. After calling this, it is no longer possible to add nodes and links
+to the grid.
+\subsection{PGRID\_Terminate}
+\begin{verbatim}
+void PGRID_Terminate(void)
+\end{verbatim}
+This function closes down the PGRID module and cleans up all utility data
+structures. No PGRID module functions can be called after this routine is
+called. This function must be called on all processors.
+
+\subsection{Accessing local grid information}
+Routines for accessing local number of nodes and links.
+\begin{itemize}
+\item \begin{verbatim}
+int PGRID_Get_prop(char *prop_name)
+\end{verbatim}
+\item \begin{verbatim}
+int PGRID_Get_link_nodes(int local_link_index,
+                         int node1,
+                         int node2)
+\end{verbatim}
+\item \begin{verbatim}
+int PGRID_Get_node_link(int local_node_index,
+                        int num_links,
+                        int *link_list)
+\end{verbatim}
+\end{itemize}
+
+\subsection{Adding (and deleting?) node and link fields. Accessing link field
+elements}
+\begin{itemize}
+\item \begin{verbatim}
+void PGRID_Add_field(char *field_type,
+                     char *data_type,
+                     char *field_name,
+                     int *field_handle)
+\end{verbatim}
+\end{itemize}
+\subsection{Accessing field properties}
+Accessing or modifing properties of individual elements
+\begin{itemize}
+\item \begin{verbatim}
+void PGRID_Get_elem(int elem_index,
+                    int field_handle,
+                    void *value)
+\end{verbatim}
+\item \begin{verbatim}
+void PGRID_Set_elem(int elem_index,
+                    int field_handle,
+                    void *value)
+\end{verbatim}
+\end{itemize}
+\end{document}
