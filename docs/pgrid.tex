@@ -12,107 +12,174 @@
 \section{Introduction}
 This module is designed to create a network, partition it across multiple
 processors, and allow applications to add and modify fields to the different
-nodes and links.
-\section{Initialization and Termination}
-This section will desribe basic initialization and termination functions for the
-PGRID module.
-\subsection{PGRID\_Init}
+buses and branches.
+\section{Initializing and terminating the PGRID module}
+A small class PGRIDFactory is used to initialize and terminate the PGRID module.
+\subsection{Init}
 \begin{verbatim}
-void PGRID_Init(void)
+void PGRIDFactory::Init(void)
 \end{verbatim}
 This function initializes the PGRID module. It must be called before any other
 functions in the PGRID module can be called and must be called on all
 processors.
-\subsection{PGRID\_Set\_group}
+\subsection{Terminate}
 \begin{verbatim}
-void PGRID_Set_group(int nproc,
-                     int *list)
-\end{verbatim}
-\begin{itemize}
-\item (IN) \texttt{nproc}: number of processors in group
-\item (IN) \texttt{list}: list of processors in group
-\end{itemize}
-This function can be used to subdivide the entire set of processors into
-subgroups. Each subgroup will support a separate grid instance. This function
-must be called on all processors. Not sure if this is really a good way to
-handle this.
-\subsection{PGRID\_Add\_link}
-\begin{verbatim}
-void PGRID_Add_link(int inode1, int inode2)
-\end{verbatim}
-\begin{itemize}
-\item (IN) \texttt{inode1}: global index of node 1 at end of link
-\item (IN) \texttt{inode2}: global index of node 2 at end of link
-\end{itemize}
-This function adds a link to the network.  The link is defined by the global
-indices \texttt{inode1} and \texttt{inode2} that define the two nodes at the
-end of the link.
-\subsection{PGRID\_Add\_node}
-\begin{verbatim}
-void PGRID_Add_node(int node_id)
-\end{verbatim}
-\begin{itemize}
-\item (IN) \texttt{node\_id}: global index of node
-\end{itemize}
-This function adds a node to the network. The global index \texttt{node\_id}
-must represent a unique integer index for the node but does not need to be part
-of a sequence of consecutive numbers. The partioning function will derive a
-unique integer index that represents an internal ordering of the nodes.
-\subsection{PGRID\_Partition}
-\begin{verbatim}
-void PGRID_Partition(void)
-\end{verbatim}
-This function partitions the grid so that it is distributed evenly across all
-processors. After calling this, it is no longer possible to add nodes and links
-to the grid.
-\subsection{PGRID\_Terminate}
-\begin{verbatim}
-void PGRID_Terminate(void)
+void PGRIDFactory::Terminate(void)
 \end{verbatim}
 This function closes down the PGRID module and cleans up all utility data
 structures. No PGRID module functions can be called after this routine is
 called. This function must be called on all processors.
 
-\subsection{Accessing local grid information}
-Routines for accessing local number of nodes and links.
+\section{Creating individual power grid networks}
+Power grids are represented as instances of the class PGRID. The following
+functions in this section can be used to create and instance of a power grid,
+add branches and buses to the network and partition the power grid across
+processors.
+\subsection{PGRID}
+\begin{verbatim}
+PGRID::PGRID(void)
+\end{verbatim}
+Constructor for the PGRID class. This can be used to create an individual
+instance of a power grid.
+\subsection{$\sim$PGRID}
+\begin{verbatim}
+PGRID::~PGRID(void)
+\end{verbatim}
+Destructor for the PGRID class. This cleans up all fields associated with a
+power grid instance and removes the power grid itself.
+\subsection{SetGroup}
+\begin{verbatim}
+void PGRID::SetGroup(int nproc,
+                      int *list)
+\end{verbatim}
 \begin{itemize}
-\item \begin{verbatim}
-int PGRID_Get_prop(char *prop_name)
-\end{verbatim}
-\item \begin{verbatim}
-int PGRID_Get_link_nodes(int local_link_index,
-                         int node1,
-                         int node2)
-\end{verbatim}
-\item \begin{verbatim}
-int PGRID_Get_node_link(int local_node_index,
-                        int num_links,
-                        int *link_list)
-\end{verbatim}
+\item (IN) \texttt{nproc}: number of processors in group
+\item (IN) \texttt{list}: list of processors in group
 \end{itemize}
+This function can be used to restrict a power grid instance to a subset of
+processors. This function must be called on all processors in the processor
+group.
 
-\subsection{Adding (and deleting?) node and link fields. Accessing link field
+\subsection{AddBranch}
+\begin{verbatim}
+void PGRID::AddBranch(int ibus1,
+                      int ibus2)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{ibus1}: global index of bus 1 at end of branch
+\item (IN) \texttt{ibus2}: global index of bus 2 at end of branch
+\end{itemize}
+This function adds a branch to the network.  The branch is defined by the global
+indices \texttt{ibus1} and \texttt{ibus2} that define the two buses at the
+end of the branch.
+\subsection{AddBus}
+\begin{verbatim}
+void PGRID::AddBus(int bus_id)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{bus\_id}: global index of bus
+\end{itemize}
+This function adds a bus to the network. The global index \texttt{bus\_id}
+must represent a unique integer index for the bus but does not need to be part
+of a sequence of consecutive numbers. The partioning function will derive a
+unique integer index that represents an internal ordering of the buses.
+\subsection{SetReferenceBus}
+\begin{verbatim}
+void PGRID::SetReferenceBus(int bus_id)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{bus\_id}: global index of bus
+\end{itemize}
+This function sets the reference bus. It is called on whatever processor holds
+the reference bus, before the buses are partitioned across processors.
+\subsection{Partition}
+\begin{verbatim}
+void PGRID::Partition(void)
+\end{verbatim}
+This function partitions the grid so that it is distributed evenly across all
+processors. After calling this, it is no longer possible to add buses and
+branches to the grid or set the reference bus.
+
+\section{Accessing local grid information}
+After the processor grid is partitioned, each processor will contain a
+subsection of the grid. This may be either completely connected or it may be
+composed of several disconnected pieces. The functions in this section describe
+routines for accessing the number of buses and branches representing the portion
+of the network held locally on the processor.
+\subsection{GetProp}
+\begin{verbatim}
+int PGRID::GetProp(char *prop_name)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{prop\_name}: name of the requested property
+\end{itemize}
+This function return the value of a grid property specified by the string. For
+example, the requested property could be \texttt{"num\_buses"}, in which case
+the function returns the number of buses associated with the processor.
+Similarly, a different string would return the number branches associated with the
+processor.
+\subsection{GetBranchBuses}
+\begin{verbatim}
+int PGRID::GetBranchBuses(int local_branch_index,
+                          int *bus1,
+                          int *bus2)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{local\_branch\_index}: local index of the branch
+\item (OUT) \texttt{bus1}: local index of the bus at one end of the branch
+\item (OUT) \texttt{bus2}: local index of the bus at the other end of the
+branch
+\end{itemize}
+This function will return the local bus indices of the two buses at either end
+of a branch. The function returns 0 if the value of \texttt{local\_branch\_index} is
+outside the range of values found on the calling processor.
+\subsection{GetBusBranches}
+\begin{verbatim}
+int PGRID::GetBusBranches(int local_bus_index,
+                          int *num_branches,
+                          int *branch_list)
+\end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{local\_bus\_index}: local index of the bus
+\item (OUT) \texttt{num\_branches}: the number of branches attached to this bus
+\item (OUT) \texttt{branch\_list}: a list of the local branch indices for the
+\texttt{num\_branches} branches attached to this bus.
+\end{itemize}
+This function returns the number of branches attached to a bus and a list of the
+local bus indices for the attached branches. The function returns 0 if the value
+of \texttt{local\_bus\_index} is outside the range of values found on the
+calling processor.
+
+\section{Adding (and deleting?) bus and branch fields. Accessing branch field
 elements}
+Probably need some functions that can add something besides scalar fields to
+buses and branches.
 \begin{itemize}
 \item \begin{verbatim}
-void PGRID_Add_field(char *field_type,
+void PGRID::AddField(char *field_type,
                      char *data_type,
                      char *field_name,
-                     int *field_handle)
+                     PGRIDField *field)
 \end{verbatim}
 \end{itemize}
-\subsection{Accessing field properties}
+\section{Accessing field properties}
 Accessing or modifing properties of individual elements
 \begin{itemize}
 \item \begin{verbatim}
-void PGRID_Get_elem(int elem_index,
-                    int field_handle,
+void PGRID::GetElem(int elem_index,
+                    PGRIDField *field,
                     void *value)
 \end{verbatim}
 \item \begin{verbatim}
-void PGRID_Set_elem(int elem_index,
-                    int field_handle,
+void PGRID::SetElem(int elem_index,
+                    PGRIDField *field,
                     void *value)
+\end{verbatim}
+\item \begin{verbatim}
+void PGRID::UpdateGrid(void)
+\end{verbatim}
+\item \begin{verbatim}
+void PGRID::UpdateGridField(PGRIDField *field)
 \end{verbatim}
 \end{itemize}
 \end{document}
