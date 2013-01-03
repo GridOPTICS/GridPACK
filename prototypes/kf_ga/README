@@ -1,0 +1,3 @@
+ga_enkf_v9, ga_enkf_v12: GA-based ensemble Kalman filter code
+omp_enkf: OpenMP-based ensemble Kalman filter code
+cuda_enkf.cu, enkf.cu: Cuda-based ensemble Kalman filter code
