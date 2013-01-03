@@ -10,18 +10,23 @@
 \newpage
 \pagestyle{plain}
 \section{Introduction}
-These modules are designed at supporting the creation of distributed matrices
-and vectors and to support basic matrix and vector operations. These modules are
-also designed to support easy creation of matrices and vectors from fields
-associated with the PGRID module.
+These modules are designed to support the creation of distributed matrices
+and vectors and to support basic matrix and vector operations.
 \section{Creating and destroying matrices}
-\subsection{Create}
+\subsection{PGMat}
 \begin{verbatim}
-void PGMat::Create(void)
+void PGMat::PGMat(void)
 \end{verbatim}
-This function creates a basic matrix object. Once created, the matrix has no
+This constructor creates a basic matrix object. Once created, the matrix has no
 properties until these are set using subsequent operations. This is a collective
 operation and must be called on all processors.
+\subsection{$\sim$PGMat}
+\begin{verbatim}
+void PGMat::~PGMat(void)
+\end{verbatim}
+The destructor destroys an existing matrix and frees up all allocated resources
+associated with the matrix. This is a collective operation and must be called by
+all processors.
 \subsection{SetType}
 \begin{verbatim}
 void PGMat::SetType(char *type)
@@ -71,26 +76,28 @@ int PGMat::Assemble(void)
 Once this function is called, a matrix is ready for other operations. This
 function is responsible for actually creating the internal data structures
 representing the matrix and for redistributing the data internally so that the
-matrix is ready for use.
-\subsection{Destroy}
-\begin{verbatim}
-void PGMat::Destroy(void)
-\end{verbatim}
-This function destroys an existing matrix and frees up all allocated resources
-associated with the matrix.
+matrix is ready for use. This is a collective operation and must be called by
+all processors.
 
 \section{Creating and destroying vectors}
-The vector class can be used to create distributed vectors. Vectors are assumed
-to be dense and that there is no advantage in assuming significant sparsity in
-the vectors. The vector class also supports operations on vectors and between
+The vector class can be used to create distributed vectors. Assumptions are that
+Vectors are dense and that there is no advantage in assuming significant
+sparsity. The vector class also supports operations on vectors and between
 vectors and matrices.
-\subsection{Create}
+\subsection{PGVec}
 \begin{verbatim}
-void PGVec::Create(void)
+void PGVec::PGVec(void)
 \end{verbatim}
-This function creates a basic vector object. Once created, the vector has no
+This constructor creates a basic vector object. Once created, the vector has no
 properties until these are set using subsequent operations. This is a collective
 operation and must be called on all processors.
+\subsection{$\sim$PGVec}
+\begin{verbatim}
+void PGVec::~PGVec(void)
+\end{verbatim}
+This destructor destroys an existing vector and frees up all allocated resources
+associated with the vector. This is a collective function that must be called on
+all processors.
 \subsection{SetSize}
 \begin{verbatim}
 void PGVec::SetSize(int nelems, char *datatype)
@@ -126,13 +133,8 @@ int PGVec::Assemble(void)
 Once this function is called, a vector is ready for other operations. This
 function is responsible for actually creating the internal data structures
 representing the vector and for redistributing the data internally so that the
-vector is ready for use.
-\subsection{Destroy}
-\begin{verbatim}
-void PGVec::Destroy(void)
-\end{verbatim}
-This function destroys an existing vector and frees up all allocated resources
-associated with the vector.
+vector is ready for use. This is a collective function that must be called on
+all processors.
 \subsection{MatVec}
 \begin{verbatim}
 void PGVec::MatVec(PGMat *a, PGVec *x)
@@ -141,9 +143,9 @@ void PGVec::MatVec(PGMat *a, PGVec *x)
 \item (IN) \texttt{a}: matrix in matrix-vector multiply
 \item (IN) \texttt{x}: vector in matrix-vector multiply
 \end{itemize}
-This function multiplies a matrix times a vector and puts the result in the
-vector that is invoking the function. This function is collective and must be
-called on all processors.
+This function multiplies a matrix \texttt{a} times a vector \texttt{x} and
+puts the result in the vector that is invoking the function. This function is
+collective and must be called on all processors.
 \subsection{Dot}
 \begin{verbatim}
 void PGVec::Dot(PGVec *b, void *result)
@@ -156,8 +158,10 @@ This function evaluates the dot product of two vectors \texttt{a} and
 \texttt{b} where \texttt{a} represents the vector that is invoking the
 \texttt{Dot} method. The result is returned in the variable \texttt{result}. If
 \texttt{b} is complex, then the complex conjugate of \texttt{b} is taken before
-multiply the elements together. The type of \texttt{result} must match the most
-complicate type declaration of the calling vector and \texttt{b}. This function
+multiplying the elements together. The type of \texttt{result} must match the most
+complicated type declaration of the calling vector and \texttt{b} (e.g. if
+\texttt{a} is \texttt{double} and \texttt{b} is \texttt{doubleComplex} then
+\texttt{result} must also be \texttt{doubleComplex}. This function
 is collective and must be called on all processors.
 \subsection{Scale}
 \begin{verbatim}
@@ -167,7 +171,7 @@ void PGVec::Scale(void *scale)
 \item (IN) \texttt{scale}: scale factor for vector
 \end{itemize}
 This function can be used to scale a vector by a fixed amount. Every element in
-the vector multiplied by the number \texttt{scale}. The data type of the
+the vector is multiplied by the number \texttt{scale}. The data type of the
 \texttt{scale} variable must match the type declaration of the invoking vector.
 This function is collective and must be called on all processors.
 \end{document}
