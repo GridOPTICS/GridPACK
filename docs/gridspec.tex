@@ -1,0 +1,112 @@
+\documentclass[12pt]{article}
+\renewcommand{\baselinestretch}{1.0}
+\begin{document}
+\begin{titlepage}
+\begin{center}
+{\LARGE DRAFT: GridPack Specifications}
+\end{center}
+\end{titlepage}
+%\tableofcontents
+\newpage
+\pagestyle{plain}
+\section{Grid Module}
+\begin{itemize}
+\item{\bf Define Grid Topology}
+\begin{itemize}
+\item{\bf Add Buses}
+\item{\bf Add Branches}
+\item{\bf Define Terminal Buses (Reference Buses?)}
+\end{itemize}
+\item{\bf Assemble and Partition Grid:} After all buses and branches have
+been defined, co-locate buses with branches that are connected to them and
+partition grid in relatively connected pieces across processors and minimize the
+number of connections between processors
+\item{\bf Identify Disconnected Graphs Within Grid Network (Islands)}
+\begin{itemize}
+\item{\bf Designate Terminal Buses within each Island}
+\end{itemize}
+\item{\bf Support Node/Breaker and Bus/Branch descriptions}
+\item{\bf Generate Bus/Branch grids from Node/Breaker Configurations}
+\item{\bf Support Multiple Grids Within Same Application}
+\end{itemize}
+
+\section{Linear Algebra Module}
+\begin{itemize}
+\item{\bf Distributed Matrices}
+\begin{itemize}
+\item{\bf Sparse Matrices}
+\item{\bf Dense Matrices}
+\end{itemize}
+\item{\bf Distributed Vectors}
+\begin{itemize}
+\item{\bf Matrix-Vector Multiply}
+\end{itemize}
+\item{\bf Preconditioners}
+\item{\bf Matrix Inverses?}
+\item{\bf Serial Linear Algebra?}
+\end{itemize}
+
+\section{Grid To Matrix Transformations}
+\begin{itemize}
+\item{\bf Bus To Diagonal And Branch To Off-Diagonal Mappings}
+\item{\bf Y Matrix}
+\item{\bf H Matrix}
+\end{itemize}
+
+\section{Model Manager}
+Not sure what this would entail but successfully incorporating something like
+this could dramatically reduce the complexity of altering or extending power
+grid codes
+\begin{itemize}
+\item{\bf Bus Models}
+\item{\bf Branch Models}
+\item{\bf Measurement Models}
+\end{itemize}
+
+\section{Logging Module}
+\begin{itemize}
+\item{\bf Error Message and Error Handling}
+\item{\bf Warnings}
+\item{\bf Debugging}
+\end{itemize}
+
+\section{Import Module}
+Import network topology files along with branch/bus parameters
+
+\section{Export Module}
+\begin{itemize}
+\item{\bf Restart Files}
+\item{\bf System Snapshots}
+\end{itemize}
+
+\section{Input Module}
+\begin{itemize}
+\item{\bf Distribute Input Deck}
+\item{\bf Parsing Functions}
+\item{\bf Automatic Parsing Generator??}
+\end{itemize}
+
+\section{Platforms}
+\begin{itemize}
+\item{\bf Linux}
+\item{\bf C++}
+\item{\bf MPI}
+\item{\bf Windows?}
+\begin{itemize}
+\item{\bf Cygwin Or VMs}
+\item{\bf GridOptics}
+\end{itemize}
+\end{itemize}
+
+\section{Coding Standards}
+\begin{itemize}
+\item{\bf Source Documentation}
+\begin{itemize}
+\item{\bf Doxygen formats?}
+\end{itemize}
+\item{\bf Locality of Communicators}
+\item{\bf No Sharing of Include Files or Fortran Modules between Software
+Modules}
+\item{\bf Etc.}
+\end{itemize}
+\end{document}

@@ -154,14 +154,32 @@ calling processor.
 elements}
 Probably need some functions that can add something besides scalar fields to
 buses and branches.
-\begin{itemize}
-\item \begin{verbatim}
+\subsection{AddField}
+\begin{verbatim}
 void PGRID::AddField(char *field_type,
                      char *data_type,
                      char *field_name,
-                     PGRIDField *field)
+                     PGRIDField **field)
 \end{verbatim}
+\begin{itemize}
+\item (IN) \texttt{field\_type}: a character string specifying whether the field
+is located on buses or branches
+\item (IN) \texttt{data\_type}: a character string specifying data type of the
+field elements
+\item (IN) \texttt{field\_name}: a character string providing a unique
+identifier for the field
+\item (OUT) \texttt{field}: a pointer to the newly created field object
 \end{itemize}
+This function can be used to create a new field on the grid network. The
+\texttt{field\_type} variable can be used to distinguish between bus and branch
+fields and the \texttt{data\_type} variable can be used to specify if the field
+represents, single or double precision real numbers, single or double precision
+complex numbers, or integers. (DO WE NEED TO INCLUDE BOOLEAN FIELDS?) The field
+name is a character string that can be
+assigned to the field and used to retrieve it from the \texttt{PGRID} module in
+later operations. The function returns a \texttt{PGRIDField} field object that
+can be used to set or modify individual values of the field.
+
 \section{Accessing field properties}
 Accessing or modifing properties of individual elements
 \begin{itemize}
