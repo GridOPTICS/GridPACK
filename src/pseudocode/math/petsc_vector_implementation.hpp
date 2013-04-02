@@ -16,8 +16,8 @@
 #ifndef _petsc_vector_implementation_h_
 #define _petsc_vector_implementation_h_
 
+#include <petscvec.h>
 #include "vector_implementation.h"
-
 
 // -------------------------------------------------------------
 //  class PETScVectorImplementation
@@ -27,12 +27,26 @@ class PETScVectorImplementation
 public:
 
   /// Default constructor.
-  PETScVectorImplementation(void);
+  PETScVectorImplementation(const parallel::Distribution& dist);
 
   /// Destructor
   ~PETScVectorImplementation(void);
 
+  /// Get (a pointer to) the PETSc implementation
+  Vec *get_vector(void) const;
+  {
+    return &vector_;
+  }
+
+  /// Allow visits by implemetation visitor
+  void accept(ImplementationVisitor& visitor)
+  {
+    visitor->visit(*this);
+  }
 protected:
+
+  /// The PETSc representation
+  Vec vector_;
 
   /// Set an individual element (specialized)
   void set_element_(const int& i, const double& x);
@@ -48,6 +62,8 @@ protected:
 
   /// Make all the elements zero (specialized)
   void zero_(void);
+
+  // FIXME: more ...
 
 };
 

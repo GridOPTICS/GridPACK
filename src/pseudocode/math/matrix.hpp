@@ -1,7 +1,7 @@
 // Emacs Mode Line: -*- Mode:c++;-*-
 // -------------------------------------------------------------
 /**
- * @file   matrix.h
+ * @file   matrix.hpp
  * @author William A. Perkins
  * @date   Fri Mar 22 11:57:00 2013
  * 
@@ -15,10 +15,11 @@
 // Last Change: Thu Jun  3 06:45:08 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
-#ifndef _matrix_h_
-#define _matrix_h_
+#ifndef _matrix_hpp_
+#define _matrix_hpp_
 
-#include <boost::scoped_ptr.h>
+#include <boost/scoped_ptr.hpp>
+#include "gridpack/parallel/Distributed.hpp"
 #include "gripack/math/matrix_storage_type.hpp"
 #include "gripack/math/matrix_implementation.hpp"
 #include "gripack/math/vector.hpp"
@@ -62,6 +63,18 @@ public:
   /// Destructor
   virtual ~Matrix(void);
 
+  /// Get the number of rows in this matrix
+  int rows(void) const
+  {
+    matrix_impl_->rows();
+  }
+
+  /// Get the number of columns in this matrix
+  int cols(void) const
+  {
+    matrix_impl_->cols();
+  }
+
   /// Set an individual element
   void set_element(const int& i, const int& j, const double& x)
   {
@@ -103,6 +116,13 @@ public:
   {
     matrix_impl_->add_row_(nj, i, j, x);
   }
+
+  /// Allow visits by implemetation visitor
+  void accept(ImplementationVisitor& visitor)
+  {
+    matrix_impl_->accept(visitor);
+  }
+
 
 protected:
 

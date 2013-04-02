@@ -84,6 +84,14 @@ public:
 
   // FIXME more ...
 
+  /// Allow visits by implemetation visitor
+  void accept(ImplementationVisitor& visitor)
+  {
+    vector_impl_->accept(visitor);
+  }
+
+
+
 protected:
   
   boost::scoped_ptr<VectorImplementation> vector_impl_;

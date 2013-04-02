@@ -17,6 +17,7 @@
 #ifndef _petsc_matrix_implementation_h_
 #define _petsc_matrix_implementation_h_
 
+#include <petscmat.h>
 #include "matrix_implementation.hpp"
 
 
@@ -32,12 +33,16 @@ class PETScSparseParallelMatrixImplementation
 public:
 
   /// Default constructor.
-  PETScSparseParallelMatrixImplementation();
+  PETScSparseParallelMatrixImplementation(const parallel::Distribution& dist,
+                                          const int& rows, const int& cols);
 
   /// Destructor
   ~PETScSparseParallelMatrixImplementation(void);
 
 protected:
+
+  /// The PETSc matrix representation
+  Mat matrix_;
 };
 
 // -------------------------------------------------------------
@@ -49,14 +54,16 @@ class PETScSparseSerialMatrixImplementation
 public:
 
   /// Default constructor.
-  PETScSparseSerialMatrixImplementation();
+  PETScSparseSerialMatrixImplementation(const parallel::Distribution& dist,
+                                        const int& rows, const int& cols);
 
   /// Destructor
   ~PETScSparseSerialMatrixImplementation(void);
 
 protected:
   
-  
+  /// The PETSc matrix representation
+  Mat matrix_;
 
 };
 

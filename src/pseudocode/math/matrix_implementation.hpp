@@ -84,6 +84,12 @@ public:
     this->add_row_(nj, i, j, x);
   }
 
+  /// Allow visits by implemetation visitor
+  void accept(ImplementationVisitor& visitor)
+  {
+    this->accept_(visitor);
+  }
+
 protected:
 
   /// Set an individual element
@@ -103,6 +109,11 @@ protected:
 
   /// Add to  all elements in a row
   virtual void add_row_(const int& i, const int *j, const double *x) = 0;
+
+  // FIXME: more ...
+
+  /// Allow visits by implementation visitors
+  virtual void accept(ImplementationVisitor& visitor) = 0;
 
   
 };
