@@ -53,25 +53,25 @@ public:
   ~Vector(void);
 
   /// Set an individual element
-  void set_element(const int& i, const double& x)
+  void set_element(const int& i, const complex_type& x)
   {
     vector_impl_->set_element(i, x);
   }
 
   /// Set an several elements
-  void set_elements(cont int& n, const int *i, const double *x)
+  void set_elements(cont int& n, const int *i, const complex_type *x)
   {
     vector_impl_->set_elements(n, i, x);
   }
 
   /// Add to an individual element
-  void add_element(const int& i, const double& x)
+  void add_element(const int& i, const complex_type& x)
   {
     vector_impl_->add_element(i, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const double *x)
+  void add_elements(const int& n, const int *i, const complex_type *x)
   {
     vector_impl_->add_elements(n, i, x);
   }
@@ -89,6 +89,18 @@ public:
   {
     vector_impl_->accept(visitor);
   }
+
+  // -------------------------------------------------------------
+  // In-place Vector Operation Methods (change this instance)
+  // -------------------------------------------------------------
+  void scale(const complex_type& x);
+  void add(const Vector& A);
+
+  // -------------------------------------------------------------
+  // Vector Operations (all allocate new instances)
+  // -------------------------------------------------------------
+  friend Vector *add(const Vector& A, const Vector& B);
+  friend Vector *reorder(const Vector& A, const Reordering& r);
 
 
 

@@ -25,10 +25,52 @@ namespace gridpack {
 namespace math {
 
 // -------------------------------------------------------------
+//  class PETScMatrixImplementation
+// -------------------------------------------------------------
+class PETScMatrixImplementation
+  : public MatrixImplementation
+{
+public:
+
+  /// Default constructor.
+  PETScMatrixImplementation(const parallel::Distribution& dist,
+                            const int& rows, const int& cols);
+
+  /// Destructor
+  ~PETScMatrixImplementation(void);
+
+protected:
+
+  /// The PETSc matrix representation
+  Mat matrix_;
+
+  /// Set an individual element
+  void set_element_(const int& i, const int& j, const complex_type& x);
+
+  /// Set an several element
+  void set_elements_(const int *i, const int *j, const complex_type *x);
+
+  /// Set all elements in a row
+  void set_row_(const int& i, const int *j, const complex_type *x);
+
+  /// Add to  an individual element
+  void add_element_(const int& i, const int& j, const complex_type& x);
+
+  /// Add to  an several element
+  void add_elements_(const int *i, const int *j, const complex_type *x);
+
+  /// Add to  all elements in a row
+  void add_row_(const int& i, const int *j, const complex_type *x);
+
+};
+
+
+
+// -------------------------------------------------------------
 //  class PETScSparseParallelMatrixImplementation
 // -------------------------------------------------------------
 class PETScSparseParallelMatrixImplementation 
-  : public MatrixImplementation
+  : public PETScMatrixImplementation
 {
 public:
 
@@ -38,18 +80,13 @@ public:
 
   /// Destructor
   ~PETScSparseParallelMatrixImplementation(void);
-
-protected:
-
-  /// The PETSc matrix representation
-  Mat matrix_;
 };
 
 // -------------------------------------------------------------
 //  class PETScSparseSerialMatrixImplementation
 // -------------------------------------------------------------
 class PETScSparseSerialMatrixImplementation 
-  : public MatrixImplementation
+  : public PETScMatrixImplementation
 {
 public:
 
@@ -60,10 +97,38 @@ public:
   /// Destructor
   ~PETScSparseSerialMatrixImplementation(void);
 
-protected:
-  
-  /// The PETSc matrix representation
-  Mat matrix_;
+};
+
+// -------------------------------------------------------------
+//  class PETScDenseParallelMatrixImplementation
+// -------------------------------------------------------------
+class PETScDenseParallelMatrixImplementation 
+  : public PETScMatrixImplementation
+{
+public:
+
+  /// Default constructor.
+  PETScDenseParallelMatrixImplementation(const parallel::Distribution& dist,
+                                          const int& rows, const int& cols);
+
+  /// Destructor
+  ~PETScDenseParallelMatrixImplementation(void);
+};
+
+// -------------------------------------------------------------
+//  class PETScDenseSerialMatrixImplementation
+// -------------------------------------------------------------
+class PETScDenseSerialMatrixImplementation 
+  : public PETScMatrixImplementation
+{
+public:
+
+  /// Default constructor.
+  PETScDenseSerialMatrixImplementation(const parallel::Distribution& dist,
+                                        const int& rows, const int& cols);
+
+  /// Destructor
+  ~PETScDenseSerialMatrixImplementation(void);
 
 };
 

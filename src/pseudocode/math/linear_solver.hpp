@@ -34,6 +34,7 @@ class ImplementationVisitor;
 // -------------------------------------------------------------
 class LinearSolver 
   : public parallel::Distributed,
+    public utility::Configurable,
     private utility::UnCopyable
 {
 public:
@@ -44,11 +45,6 @@ public:
   
   /// Destructor
   ~LinearSolver(void);
-
-  /// Solve w/ the specified RHS (allocated result)
-  Vector solve(const Vector& b) const
-  {
-    return solver_->solve(b);
 
   /// Solve w/ the specified RHS, put result in specified vector
   void solve(const Vector& b, Vector& x) const

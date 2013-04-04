@@ -18,10 +18,19 @@
 #ifndef _petsc_vector_extractor_hpp_
 #define _petsc_vector_extractor_hpp_
 
+#include "gridpack/utility/uncopyable.hpp"
+#include "implementation_visitor.hpp"
+
+namespace gridpack {
+namespace math {
+
 // -------------------------------------------------------------
 //  class PETScVectorExtractor
 // -------------------------------------------------------------
-class PETScVectorExtractor {
+class PETScVectorExtractor 
+  : public ImplementationVisitor,
+    private utility::UnCopyable
+{
 public:
 
   /// Default constructor.
@@ -36,7 +45,7 @@ public:
     vector_ = petsc_impl.get_vector();
   }
 
-  Vec *get_vector(void) const
+  Vec *vector(void) const
   {
     return vector_;
   }
@@ -47,6 +56,8 @@ protected:
 
 };
 
+} // namespace math
+} // namespace gridpack
 
 
 

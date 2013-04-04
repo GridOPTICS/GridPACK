@@ -49,16 +49,16 @@ protected:
   Vec vector_;
 
   /// Set an individual element (specialized)
-  void set_element_(const int& i, const double& x);
+  void set_element_(const int& i, const complex_type& x);
 
   /// Set an several elements (specialized)
-  void set_elements_(cont int& n, const int *i, const double *x);
+  void set_elements_(cont int& n, const int *i, const complex_type *x);
 
   /// Add to an individual element (specialized)
-  void add_element_(const int& i, const double& x);
+  void add_element_(const int& i, const complex_type& x);
 
   /// Add to an several elements (specialized)
-  void add_elements_(const int& n, const int *i, const double *x);
+  void add_elements_(const int& n, const int *i, const complex_type *x);
 
   /// Make all the elements zero (specialized)
   void zero_(void);

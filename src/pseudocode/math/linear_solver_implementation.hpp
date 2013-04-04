@@ -33,8 +33,8 @@ namespace math {
 // -------------------------------------------------------------
 class LinearSolverImplementation 
   : public parallel::Distributed,
-    public parallel::UnCopyable,
-    public utility::Configurable
+    public utility::Configurable,
+    private utility::UnCopyable
 {
 public:
   

@@ -21,6 +21,7 @@
 
 #include "gridpack/parallel/distributable.h"
 #include "gridpack/utlity/uncopyable.h"
+#include "gridpack/math/math_type.hpp"
 
 namespace gridpack {
 namespace math {
@@ -34,31 +35,43 @@ class VectorImplementation {
 public:
 
   /// Default constructor.
-  VectorImplementation(const parallel::Distribution& dist);
+  VectorImplementation(const parallel::Distribution& dist, const int& local_size);
 
   /// Destructor
   ~VectorImplementation(void);
 
+  /// Get the global length
+  int size(void) const
+  {
+    return this->size_();
+  }
+
+  /// Get the local length
+  int local_size(void) const
+  {
+    return this->local_size_();
+  }
+
   /// Set an individual element
-  void set_element(const int& i, const double& x)
+  void set_element(const int& i, const complex_type& x)
   {
     this->set_element_(i, x);
   }
 
   /// Set an several elements
-  void set_elements(cont int& n, const int *i, const double *x)
+  void set_elements(cont int& n, const int *i, const complex_type *x)
   {
     this->set_elements_(n, i, x);
   }
 
   /// Add to an individual element
-  void add_element(const int& i, const double& x)
+  void add_element(const int& i, const complex_type& x)
   {
     this->add_element_(i, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const double *x)
+  void add_elements(const int& n, const int *i, const complex_type *x)
   {
     this->add_elements_(n, i, x);
   }
@@ -80,16 +93,16 @@ public:
 protected:
 
   /// Set an individual element (specialized)
-  virtual void set_element_(const int& i, const double& x) = 0;
+  virtual void set_element_(const int& i, const complex_type& x) = 0;
 
   /// Set an several elements (specialized)
-  virtual void set_elements_(cont int& n, const int *i, const double *x) = 0;
+  virtual void set_elements_(cont int& n, const int *i, const complex_type *x) = 0;
 
   /// Add to an individual element (specialized)
-  virtual void add_element_(const int& i, const double& x) = 0;
+  virtual void add_element_(const int& i, const complex_type& x) = 0;
 
   /// Add to an several elements (specialized)
-  virtual void add_elements_(const int& n, const int *i, const double *x) = 0;
+  virtual void add_elements_(const int& n, const int *i, const complex_type *x) = 0;
 
   /// Make all the elements zero (specialized)
   virtual void zero_(void) = 0;

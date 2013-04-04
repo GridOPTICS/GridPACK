@@ -20,7 +20,6 @@
 
 #include <boost/scoped_ptr.hpp>
 #include "gridpack/parallel/Distributed.hpp"
-#include "gripack/math/matrix_storage_type.hpp"
 #include "gripack/math/matrix_implementation.hpp"
 #include "gripack/math/vector.hpp"
 
@@ -76,53 +75,79 @@ public:
   }
 
   /// Set an individual element
-  void set_element(const int& i, const int& j, const double& x)
+  void set_element(const int& i, const int& j, const complex_type& x)
   {
     matrix_impl_->set_element_(i, j, x);
   }
 
   /// Set an several elements
-  void set_elements(cont int& n, const int *i, const int *j, const double *x)
+  void set_elements(cont int& n, const int *i, const int *j, const complex_type *x)
   {
     matrix_impl_->set_elements_(n, i, j, x);
   }
 
   /// Set all elements in a row
-  void set_row(const int& nj, const int& i, const int *j, const double *x)
+  void set_row(const int& nj, const int& i, const int *j, const complex_type *x)
   {
     matrix_impl_->set_row_(nj, i, j, x);
   }
 
   /// Set all elements in a row
-  void set_region(const int& ni, const int& nj, const int *i, const int *j, const double *x)
+  void set_region(const int& ni, const int& nj, const int *i, const int *j, const complex_type *x)
   {
     matrix_impl_->set_row_(ni, nj, i, j, x);
   }
 
   /// Add to an individual element
-  void add_element(const int& i, const int& j, const double& x)
+  void add_element(const int& i, const int& j, const complex_type& x)
   {
     matrix_impl_->add_element_(i, j, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const int *j, const double *x)
+  void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
   {
     matrix_impl_->add_elements_(n, i, j, x);
   }
 
   /// Add to all elements in a row
-  void add_row(const int& nj, const int& i, const int *j, const double *x)
+  void add_row(const int& nj, const int& i, const int *j, const complex_type *x)
   {
     matrix_impl_->add_row_(nj, i, j, x);
   }
 
   /// Allow visits by implemetation visitor
-  void accept(ImplementationVisitor& visitor)
+  void accept(ImplementationVisitor& visitor) const
   {
     matrix_impl_->accept(visitor);
   }
 
+  // -------------------------------------------------------------
+  // Matrix Operation Methods
+  // -------------------------------------------------------------
+
+  /// Get a part of the matrix (new instance allocated)
+  Matrix *submatrix(const int& istart, const int& jstart,
+                    const int& iend, const int& jend) const;
+
+  // -------------------------------------------------------------
+  // In-Place Matrix Operation Methods (change this instance)
+  // -------------------------------------------------------------
+  void scale(const complex_type& x);
+  void multiply_diagonal(const Vector& x);
+  void add(const Matrix& A);
+
+  // -------------------------------------------------------------
+  // Matrix Operations (all allocate new instances)
+  // -------------------------------------------------------------
+  friend Matrix *add(const Matrix& A, const Matrix& B);
+  friend Matrix *multiply(const Matrix& A, const Matrix& B);
+  friend Vector *multiply(const Matrix& A, const Vector& x);
+  friend Matrix *factorize(const Matrix& A);
+  friend Matrix *transpose(const Matrix& A);
+  friend Matrix *inverse(const Matrix& A);
+  friend Matrix *reorder(const Matrix& A, const Reordering& r);
+  
 
 protected:
 
