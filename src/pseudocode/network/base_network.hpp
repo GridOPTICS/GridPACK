@@ -21,8 +21,7 @@
 //  expected from any field on the network.
 // -------------------------------------------------------------
 template <class elem>
-class BaseField {
-  friend class BaseNetwork;
+class BaseField  {
   public:
     /**
      * Constructor
@@ -52,6 +51,7 @@ class BaseField {
      */
     bool Active(int index);
 
+    friend class BaseNetwork;
   private:
     /**
      * Add another element to the field
@@ -78,7 +78,7 @@ class BaseField {
 //  This class represents fields defined on the network buses
 // -------------------------------------------------------------
 template <class elem>
-class BusField : public BaseField {
+class BusField : public BaseField<elem> {
   public:
     /**
      * Constructor
@@ -113,7 +113,7 @@ class BusField : public BaseField {
 //  This class represents fields defined on the network branches
 // -------------------------------------------------------------
 template <class elem>
-class BranchField : public BaseField {
+class BranchField : public BaseField<elem> {
   public:
     /**
      * Constructor
@@ -206,7 +206,7 @@ public:
    * @param field: a pointer to the BusField being added to the
    *       network
    */
-  void AddBusField(string name, BusField *field)
+  void AddBusField(std::string name, BusField *field)
 
   /**
    * Add a new field to the network branches
@@ -214,7 +214,7 @@ public:
    * @param field: a pointer to the BranchField being added to
    *       the network
    */
-  void AddBranchField(string name, BranchField *field)
+  void AddBranchField(std::string name, BranchField *field)
 
   /**
    * Retrieve a pointer to an existing bus field
@@ -223,7 +223,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-   BusField* GetBusField(string name);
+   BusField* GetBusField(std::string name);
 
   /**
    * Retrieve a pointer to an existing branch field
@@ -232,21 +232,21 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-   BranchField* GetBranchField(string name);
+   BranchField* GetBranchField(std::string name);
 
   /**
    * Delete an existing bus field
    * @param name: a string representing the name of the field
    *       to be deleted
    */
-   void DeleteBusField(string name);
+   void DeleteBusField(std::string name);
 
   /**
    * Delete an existing branch field
    * @param name: a string representing the name of the field
    *       to be deleted
    */
-   void DeleteBranchField(string name);
+   void DeleteBranchField(std::string name);
 
    /**
     * Update the ghost values of this field. This is a
@@ -275,9 +275,9 @@ private:
 
    BusField<int> p_globalIndex;
 
-   BusField<vector<int>> p_busNeighbors;
+   BusField<std::vector<int> > p_busNeighbors;
 
-   BusField<vector<int>> p_branchNeighbors;
+   BusField<std::vector<int> > p_branchNeighbors;
 
    BranchField<int> p_globalBranchIndex1;
 
@@ -287,9 +287,9 @@ private:
 
    BranchField<int> p_localBranchIndex2;
 
-   vector<BusField*> p_busFields;
+   std::vector<BusField*> p_busFields;
 
-   vector<BranchField*> p_branchFields;
+   std::vector<BranchField*> p_branchFields;
 
 };
 
