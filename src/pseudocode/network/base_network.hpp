@@ -14,6 +14,7 @@
 #define _base_network_h_
 
 #include <vector>
+#include <map>
 #include "gridpack/parallel/distribution.hpp"
 // -------------------------------------------------------------
 //  class BaseField:
@@ -287,9 +288,9 @@ private:
 
    BranchField<int> p_localBranchIndex2;
 
-   std::vector<BusField*> p_busFields;
+   std::map<std:string, BusField*> p_busFields;
 
-   std::vector<BranchField*> p_branchFields;
+   std::map<std:string, BranchField*> p_branchFields;
 
 };
 
