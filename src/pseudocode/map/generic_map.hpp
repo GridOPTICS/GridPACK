@@ -19,19 +19,20 @@ namespace map {
 class GenericMap
 {
 public:
-    GenericMap(network::base_network * network, math::MATRIX_CONTAINER_CLASS * MATRIX_CONTAINER_OBJECT) :
-        network_(network),
-        MATRIX_CONTAINER_OBJECT_(MATRIX_CONTAINER_OBJECT){}
+    GenericMap(network::base_network * network) :
+        network_(network){};
 
     virtual ~GenericMap(){};
 
     // the controlling method invokes the map method to start the mapping process
-    void mapToMatrix(void)
+    math::matrix * mapToMatrix(void)
     {
         // this will allocate and populate the matrices associated with the
         // application implementation
-        this->mapToMatrix_();
+        math::matrix * matrix = this->mapToMatrix_();
+	return matrix;
     }
+
     // the controlling method invokes the map method to start the mapping process
     void mapToNetwork(void)
     {
@@ -46,7 +47,7 @@ protected:
      * Populate the matrix with data from the network
      * Pass populated motrix to solver
      */
-    virtual void mapToMatrix_(void)   = 0;
+    virtual math::matrix * mapToMatrix_(void)   = 0;
 
     /*
      * Get component's matrix location and size
@@ -73,7 +74,6 @@ protected:
 
 private:
     network::base_network  * network_
-    math::MATRIX_CONTAINER_CLASS * MATRIX_CONTAINER_OBJECT_;
     // location within the source matrix
     int               source_x;
     int               source_y;
