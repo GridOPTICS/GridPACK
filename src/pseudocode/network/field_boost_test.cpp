@@ -37,12 +37,19 @@ main(int argc, char **argv)
 
   std::cout << i << ", " << j << ", " << k << std::endl;
 
-  std::string s;
+  BaseField sfld(BaseField::STRING_TYPE, 2);
+
+  sfld.insert<std::string>(0, "Hello");
+  sfld.insert<std::string>(1, "World");
+
+  std::cout << sfld.get<std::string>(0) << ", "
+            << sfld.get<std::string>(1) << std::endl;
 
   // this will cause an assertion, if enabled, otherwise a
   // boost::bad_get exception is thrown
 
-  s = fld.get<std::string>(2);
+  std::string s(fld.get<std::string>(2));
+
 
   return 0;
 }
