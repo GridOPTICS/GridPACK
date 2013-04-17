@@ -76,6 +76,18 @@ public:
     vector_impl_->add_elements(n, i, x);
   }
 
+  /// Get an individual element
+  void get_element(const int& i, complex_type& x) const
+  {
+    vector_impl_->get_element(i, x);
+  }
+
+  /// Get an several elements
+  void get_elements(cont int& n, const int *i, complex_type *x) const
+  {
+    vector_impl_->get_elements(n, i, x);
+  }
+
   /// Make all the elements zero
   void zero(void)
   {
