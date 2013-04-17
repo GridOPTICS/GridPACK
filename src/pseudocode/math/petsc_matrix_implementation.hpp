@@ -53,6 +53,10 @@ protected:
   /// Set all elements in a row
   void set_row_(const int& i, const int *j, const complex_type *x);
 
+  /// Set all elements in a region
+  void set_region_(const int& ni, const int& nj, 
+                   const int *i, const int *j, const complex_type *x) = 0;
+
   /// Add to  an individual element
   void add_element_(const int& i, const int& j, const complex_type& x);
 
@@ -61,6 +65,19 @@ protected:
 
   /// Add to  all elements in a row
   void add_row_(const int& i, const int *j, const complex_type *x);
+
+  /// Get an individual element
+  void get_element_(const int& i, const int& j, const complex_type& x);
+
+  /// Get an several element
+  void get_elements_(const int *i, const int *j, const complex_type *x);
+
+  /// Get all elements in a row
+  void get_row_(const int& i, const int *j, const complex_type *x);
+
+  /// Get all elements in a region
+  void get_region_(const int& ni, const int& nj, 
+                   const int *i, const int *j, const complex_type *x);
 
 };
 
