@@ -31,8 +31,8 @@ private:
   // method is defined as BusModel::load(DataCollection data) and similarly for
   // a BranchModel
   for (i=0; i<numBus; i++) {
-    buses[i]->load(busData[i]);
+    (*buses)[i]->load((*busData)[i]);
   }
   for (i=0; i<numBranch; i++) {
-    branches[i]->load(branchData[i]);
+    (*branches)[i]->load((*branchData)[i]);
   }
