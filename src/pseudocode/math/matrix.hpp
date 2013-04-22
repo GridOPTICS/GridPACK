@@ -69,10 +69,16 @@ public:
   /// Destructor
   virtual ~Matrix(void);
 
-  /// Get the number of rows in this matrix
+  /// Get the total number of rows in this matrix
   int rows(void) const
   {
     matrix_impl_->rows();
+  }
+
+  /// Get the number of local rows in this matirx
+  int local_rows(void) const
+  {
+    matrix_impl_->local_rows();
   }
 
   /// Get the number of columns in this matrix
@@ -201,7 +207,11 @@ public:
 
 protected:
 
+  /// The actual implementation
   boost::scoped_ptr<MatrixImplementation> matrix_impl_;
+
+  /// Construct with an existing (allocated) implementation 
+  Matrix(MatrixImplementation *impl);
 
 };
 

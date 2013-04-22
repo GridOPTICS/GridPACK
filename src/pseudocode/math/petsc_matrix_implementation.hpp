@@ -36,8 +36,14 @@ public:
   PETScMatrixImplementation(const parallel::Distribution& dist,
                             const int& rows, const int& cols);
 
+  /// Construct with an existing Mat
+  PETScMatrixImplementation(const parallel::Distribution& dist, Mat *A);
+
   /// Destructor
   ~PETScMatrixImplementation(void);
+
+  /// Allow visits by implemetation visitor
+  void accept(ImplementationVisitor& visitor) const;
 
 protected:
 
