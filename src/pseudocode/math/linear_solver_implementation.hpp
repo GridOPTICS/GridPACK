@@ -41,7 +41,7 @@ public:
   /// Default constructor.
   LinearSolverImplementation(const parallel::Distribution& dist,
                              const Matrix& A);
-  
+
   /// Destructor
   ~LinearSolverImplementation(void);
   

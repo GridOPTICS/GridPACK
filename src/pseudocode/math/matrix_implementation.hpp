@@ -156,7 +156,6 @@ protected:
   /// Allow visits by implementation visitors
   virtual void accept(ImplementationVisitor& visitor) = 0;
 
-  
 };
 
 } // namespace utility
