@@ -42,7 +42,7 @@ public:
   Named(const Named& old);
 
   /// Destructor
-  ~Named(void);
+  virtual ~Named(void);
 
   /// Get this instance's name
   std::string name(void) const
