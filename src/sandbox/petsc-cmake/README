@@ -1,0 +1,60 @@
+-*- mode: text -*-
+-------------------------------------------------------------
+file: README
+-------------------------------------------------------------
+-------------------------------------------------------------
+Created April 23, 2013 by William A. Perkins
+Last Change: 2013-04-23 08:44:51 d3g096
+-------------------------------------------------------------
+
+This is a sample CMake project that uses PETSc and Boost MPI. In it's
+current state, this project assumes that PETSc and Boost were both
+built with the same MPI compiler set and that compiler set is
+available.  This should actually be checked somehow.  
+
+PETSc needs to be built with MPI and complex support and using
+C++. The important PETSc configuration options are
+
+    --with-mpi=1
+    --with-scalar-type=complex
+    --with-clanguage=c++
+
+When these options are used, it appears that blas/lapack need to be
+built from scratch, so these options also need to be used:
+
+    --download-f2cblaslapack=1
+
+Here is an example configuration that works on my Mac:
+
+    setenv PETSC_DIR /net/flophouse/files0/perksoft/petsc-3.3-p3
+    unsetenv PETSC_ARCH 
+    python ./config/configure.py \
+        --with-prefix=/net/flophouse/files0/perksoft/macosx \
+        --with-mpi=1 \
+        --with-cc=openmpicc \
+        --with-fc=openmpif90 \
+        --with-cxx=openmpicxx \
+        --with-c++-support=1 \
+        --with-c-support=0 \
+        --with-fortran=0 \
+        --with-scalar-type=complex \
+        --download-f2cblaslapack=1 \
+        --with-clanguage=c++ \
+        --with-shared-libraries=0 \
+        --with-dynamic-loading=0 \
+        --with-x=0 \
+        --with-mpirun=openmpirun \
+        --with-mpiexec=openmpiexec \
+        --with-debugging=0
+
+
+To build the sample program(s), modify conf.sh to suit your
+PETSc/Boost installation,
+and do this:
+
+    mkdir build
+    cd build
+    sh ../conf.sh
+    make
+
+ 
