@@ -16,132 +16,6 @@
 #include <vector>
 #include <map>
 #include "gridpack/parallel/distribution.hpp"
-// -------------------------------------------------------------
-//  class BaseField:
-//  This class implements some basic functions that can be
-//  expected from any field on the network.
-// -------------------------------------------------------------
-template <class elem>
-class BaseField  {
-  public:
-    /**
-     * Constructor
-     */
-    BaseField(void);
-
-    /**
-     * Destructor
-     */
-    ~BaseField(void);
-
-    /**
-     * Index operator
-     * @param index: index of element in field
-     */
-    elem& operator[] (int index);
-
-    /**
-     * Return size of field
-     */
-    int Size(void);
-
-    /**
-     * Return whether the grid element at the index location is
-     * active (local) or inactive (ghost)
-     * @param index: index of element in field
-     */
-    bool Active(int index);
-
-    friend class BaseNetwork;
-  private:
-    /**
-     * Add another element to the field
-     * @return: index of new element
-     */
-    int Append(elem *new_elem);
-
-    /**
-     * Delete element from field
-     * @param index: index of element to be deleted
-     * @return: success or failure of delete operation
-     */
-    bool Delete(int index);
-
-    /**
-     * Clear all elements from field
-     */
-    void Clear(void);
-
-};
-
-// -------------------------------------------------------------
-//  class BusField:
-//  This class represents fields defined on the network buses
-// -------------------------------------------------------------
-template <class elem>
-class BusField : public BaseField<elem> {
-  public:
-    /**
-     * Constructor
-     */
-    BusField(void);
-
-    /**
-     * Destructor
-     */
-    ~BusField(void);
-
-    /**
-     * Get the local indices of the branches that are attached
-     * to the bus element indicated by index
-     * @param index: index of bus element
-     * @return: list of local indices of branches attached to
-     *         this bus
-     */
-    vector<int> NeighborBranches(int index);
-
-    /**
-     * Get the local indices of the buses that are connected
-     * to this bus via a branch element
-     * @param index: index of bus element
-     * @return: list of local indices of neighboring buses
-     */
-    vector<int> NeighborBuses(int index);
-};
-
-// -------------------------------------------------------------
-//  class BusField:
-//  This class represents fields defined on the network branches
-// -------------------------------------------------------------
-template <class elem>
-class BranchField : public BaseField<elem> {
-  public:
-    /**
-     * Constructor
-     */
-    BaseField(void);
-
-    /**
-     * Destructor
-     */
-    ~BaseField(void);
-
-    /**
-     * Get one of the terminal buses on this branch
-     * @param index: index of branch element
-     * @return: index to the bus at one end of the branch
-     */
-    int GetBus1(int index);
-
-    /**
-     * Get the other terminal bus on this branch
-     * @param index: index of branch element
-     * @return: index to the bus at the other end of the
-     *        branch
-     */
-    int GetBus2(int index);
-
-};
 
 // -------------------------------------------------------------
 //  class BaseNetwork:
@@ -274,9 +148,9 @@ protected:
 
 private:
 
-   BusField<bool> p_activeBus;
+   vector<bool> p_activeBus;
 
-   BranchField<bool> p_activeBranch;
+   vector<bool> p_activeBranch;
 
    BusField<int> p_originalIndex;
 
