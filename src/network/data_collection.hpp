@@ -20,14 +20,14 @@ public:
    *  @param name: name given to data element
    *  @param value: value of data element
    */
-  void AddValue(char *name, int value);
-  void AddValue(char *name, long value);
-  void AddValue(char *name, bool value);
-  void AddValue(char *name, char *value);
-  void AddValue(char *name, float value);
-  void AddValue(char *name, double value);
-  void AddValue(char *name, SingleComplex value);
-  void AddValue(char *name, DoubleComplex value);
+  void addValue(char *name, int value);
+  void addValue(char *name, long value);
+  void addValue(char *name, bool value);
+  void addValue(char *name, char *value);
+  void addValue(char *name, float value);
+  void addValue(char *name, double value);
+  void addValue(char *name, SingleComplex value);
+  void addValue(char *name, DoubleComplex value);
 
   /**
    *  Modify current value of existing data element in
@@ -37,14 +37,14 @@ public:
    *  @return: false if no element of the correct name and type exists in
    *  DataCollection object
    */
-  bool SetValue(char *name, int value);
-  bool SetValue(char *name, long value);
-  bool SetValue(char *name, bool value);
-  bool SetValue(char *name, char *value);
-  bool SetValue(char *name, float value);
-  bool SetValue(char *name, double value);
-  bool SetValue(char *name, SingleComplex value);
-  bool SetValue(char *name, DoubleComplex value);
+  bool setValue(char *name, int value);
+  bool setValue(char *name, long value);
+  bool setValue(char *name, bool value);
+  bool setValue(char *name, char *value);
+  bool setValue(char *name, float value);
+  bool setValue(char *name, double value);
+  bool setValue(char *name, SingleComplex value);
+  bool setValue(char *name, DoubleComplex value);
 
   /**
    *  Retrieve current value of existing data element in
@@ -54,14 +54,14 @@ public:
    *  @return: false if no element of the correct name and type exists in
    *  DataCollection object
    */
-  bool GetValue(char *name, int *value);
-  bool GetValue(char *name, long *value);
-  bool GetValue(char *name, bool *value);
-  bool GetValue(char *name, char *std::string);
-  bool GetValue(char *name, float *value);
-  bool GetValue(char *name, double *value);
-  bool GetValue(char *name, SingleComplex *value);
-  bool GetValue(char *name, DoubleComplex *value);
+  bool getValue(char *name, int *value);
+  bool getValue(char *name, long *value);
+  bool getValue(char *name, bool *value);
+  bool getValue(char *name, char *std::string);
+  bool getValue(char *name, float *value);
+  bool getValue(char *name, double *value);
+  bool getValue(char *name, SingleComplex *value);
+  bool getValue(char *name, DoubleComplex *value);
 private:
   std::map<std::string, int> p_ints; 
   std::map<std::string, long> p_longs; 

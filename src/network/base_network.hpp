@@ -59,7 +59,7 @@ public:
    * Add a bus locally to the network
    * @param idx: global index of  bus
    */
-  void AddBus(int idx);
+  void addBus(int idx);
 
   /**
    * Add a branch locally to the network. A branch is defined by
@@ -67,13 +67,13 @@ public:
    * @param idx1: global bus index of bus 1
    * @param idx2: global bus index of bus 2
    */
-  void AddBranch(int idx1, int idx2);
+  void addBranch(int idx1, int idx2);
 
   /**
    * Designate a bus as a reference bus.
    * @param idx: global index of bus
    */
-  void SetReferenceBus(int idx);
+  void setReferenceBus(int idx);
 
   /**
    * Add a new field to the network buses
@@ -81,7 +81,7 @@ public:
    * @param field: a pointer to the BusField being added to the
    *       network
    */
-  void AddBusField(std::string name, BusField *field)
+  void addBusField(std::string name, BusField *field)
 
   /**
    * Add a new field to the network branches
@@ -89,7 +89,7 @@ public:
    * @param field: a pointer to the BranchField being added to
    *       the network
    */
-  void AddBranchField(std::string name, BranchField *field)
+  void addBranchField(std::string name, BranchField *field)
 
   /**
    * Retrieve a pointer to an existing bus field
@@ -98,7 +98,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-   BusField* GetBusField(std::string name);
+   BusField* getBusField(std::string name);
 
   /**
    * Retrieve a pointer to an existing branch field
@@ -107,35 +107,35 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-   BranchField* GetBranchField(std::string name);
+   BranchField* getBranchField(std::string name);
 
   /**
    * Delete an existing bus field
    * @param name: a string representing the name of the field
    *       to be deleted
    */
-   void DeleteBusField(std::string name);
+   void deleteBusField(std::string name);
 
   /**
    * Delete an existing branch field
    * @param name: a string representing the name of the field
    *       to be deleted
    */
-   void DeleteBranchField(std::string name);
+   void deleteBranchField(std::string name);
 
   /**
    * Clean all ghost buses and branches from the system. This can be used
    * before repartitioning the network
    */
-   void Clean(void);
+   void clean(void);
 
    /**
     * Update the ghost values of this field. This is a
     * collective operation across all processors.
-    * @param field: pointer to the network field that must be
+    * @param field: name of the network field that must be
     *       updated
     */
-   void UpdateField(BaseField *field);
+   void updateField(char *field);
 
    // TODO: Need operations to move buses and branches to other processors in partitioners
 

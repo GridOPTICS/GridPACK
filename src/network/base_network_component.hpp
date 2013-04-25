@@ -38,7 +38,7 @@ class BaseNetworkComponent
      * it in for now.
      * @return: size of network component
      */
-    int Size(void);
+    int size(void);
 
   private:
 
@@ -68,7 +68,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool MatrixIndices(int *idx, int *jdx) const;
+    virtual bool matrixIndices(int *idx, int *jdx) const;
 
     /**
      * Return size of matrix block contributed by component
@@ -77,7 +77,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool MatrixSize(int *isize, int *jsize) const;
+    virtual bool matrixSize(int *isize, int *jsize) const;
 
     /**
      * Return the values of the matrix block. The values are
@@ -86,7 +86,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool MatrixValues(void *values);
+    virtual bool matrixValues(void *values);
 
     /**
      * Provide the vector index for the network component based
@@ -96,7 +96,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool VectorIndex(int *idx) const;
+    virtual bool vectorIndex(int *idx) const;
 
     /**
      * Return size of vector block contributed by component
@@ -104,7 +104,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool VectorSize(int *isize) const;
+    virtual bool vectorSize(int *isize) const;
 
     /**
      * Return the values of the vector block.
@@ -112,7 +112,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool VectorValues(void *values);
+    virtual bool vectorValues(void *values);
 
     //TODO: May need to include routines that support moving values from vectors
     //      back into network components.
