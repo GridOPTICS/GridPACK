@@ -3,7 +3,7 @@
 /**
  * @file   math_type.hpp
  * @author William A. Perkins
- * @date   Wed Apr  3 12:12:49 2013
+ * @date   2013-04-26 12:08:19 d3g096
  * 
  * @brief 
  * 
@@ -28,7 +28,6 @@
 #include <complex>
 
 namespace gridpack {
-namespace math {
 
 /// The type that all Matrix and Vector instances contain
 /**
@@ -41,7 +40,6 @@ typedef std::complex<double> complex_type;
 // If libraries other than PETSc are used, a different complex type
 // may be required, along with associated handling methods.
 
-} // namespace utility
 } // namespace gridpack
 
 #endif
