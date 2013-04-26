@@ -148,25 +148,25 @@ protected:
 
 private:
 
-   vector<bool> p_activeBus;
+   std::vector<bool> p_activeBus;
 
-   vector<bool> p_activeBranch;
+   std::vector<bool> p_activeBranch;
 
-   BusField<int> p_originalIndex;
+   std::vector<int> p_originalIndex;
 
-   BusField<int> p_globalIndex;
+   std::vector<int> p_globalIndex;
 
-   BusField<std::vector<int> > p_busNeighbors;
+   std::vector<std::vector<int> > p_busNeighbors;
 
-   BusField<std::vector<int> > p_branchNeighbors;
+   std::vector<std::vector<int> > p_branchNeighbors;
 
-   BranchField<int> p_globalBranchIndex1;
+   std::vector<int> p_globalBranchIndex1;
 
-   BranchField<int> p_globalBranchIndex2;
+   std::vector<int> p_globalBranchIndex2;
 
-   BranchField<int> p_localBranchIndex1;
+   std::vector<int> p_localBranchIndex1;
 
-   BranchField<int> p_localBranchIndex2;
+   std::vector<int> p_localBranchIndex2;
 
    std::map<std::string, BusField*> p_busFields;
 
