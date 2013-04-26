@@ -4,9 +4,7 @@
  * @author Kevin A. Glass
  * @date   Fri Apr  19 13:36:28 2013
  * 
- * @brief A component visitor will access the size and shape of
- * a components matrix contribution. These values are reported
- * to the calling function.
+ * @brief  
  * 
  * 
  */
@@ -17,8 +15,8 @@
 // Last Change:
 // -------------------------------------------------------------
 
-#ifndef _component_visitor_hpp_
-#define _component_visitor_hpp_
+#ifndef _bus_visitor_hpp_
+#define _bus_visitor_hpp_
 
 namespace gridpack {
 namespace network {
@@ -34,30 +32,28 @@ class MatrixInterface;
  * To be safe, these should be used simultaneously on all processes.  
  */
 
-class ComponentVisitor {
+class BusVisitor {
 public:
 
   /// Default constructor.
-  ComponentVisitor(math::Matrix & matrix, int ni, int nj, int i, int j) :
-      ni_(ni),
-      nj_(nj),
-      i_(i),
-      j_(j)
-  {};
-
+  BusVisitor() : matrixImpl_(NULL), nRows(0), nCols(0) {};
   /// Destructor
-  virtual ~ComponentVisitor(void){};
+  virtual ~BusVisitor(void){};
 
-  virtual void getSize(MatrixInterface);
-  virtual void mapData(MatrixInterface & interface) {};
+  virtual void math::Matrix();
 
-  math::MatrixImplementation &  matrixImpl_;
-  // TODO: are these global or local indices, I'm operating under the assumption that they are global
-  int                  ni_;
-  int                  nj_;
-  int                  i_;
-  int                  j_;
+  virtual void mapData(MatrixInterface & interface) {
+
+  }
+protected:
+  virtual void getMatrixSize(network::ComponentNetwork & network) {
+      BusCountVisitor        visitor;
+      while()
+  }
 private:
+  math::Matrix      *  matrixImpl_;
+  int                                nRows;
+  int                                nCols;
 };
 
 } // namespace math

@@ -84,7 +84,7 @@ main(int argc, char **argv)
   }
 
   // Partition network amongst processors and add ghost buses and branches
-  Partioner partition;
+  Partitioner partition;
   partition.PartitionNetwork(network);
 
   PowerflowFactory *factory = new PowerflowFactory(network);

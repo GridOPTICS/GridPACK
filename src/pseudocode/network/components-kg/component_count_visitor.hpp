@@ -17,14 +17,11 @@
 // Last Change:
 // -------------------------------------------------------------
 
-#ifndef _component_visitor_hpp_
-#define _component_visitor_hpp_
+#ifndef _component_count_visitor_hpp_
+#define _component_count_visitor_hpp_
 
 namespace gridpack {
 namespace network {
-
-class MatrixInterface;
-
 
 // -------------------------------------------------------------
 //  class ComponenVisitor
@@ -34,18 +31,22 @@ class MatrixInterface;
  * To be safe, these should be used simultaneously on all processes.  
  */
 
-class ComponentDataVisitor {
+class ComponentCountVisitor {
 public:
 
   /// Default constructor.
-  ComponentDataVisitor() {};
+  ComponentCountVisitor(math::Matrix * matrix) : count_ (0), matrix_(matrix){};
 
   /// Destructor
-  virtual ~ComponentDataVisitor(void){};
+  virtual ~ComponentCountVisitor(void){
+      matrix_ = new math::Matrix(count_);
+  };
 
-  virtual void setData(MatrixInterface & interface);
-  virtual void mapData(MatrixInterface & interface);
+  void increment(){++count_;};
 
+private:
+  int                  count_;
+  math::Matrix       * matrix_;
 };
 
 } // namespace math

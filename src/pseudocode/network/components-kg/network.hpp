@@ -1,6 +1,6 @@
 // -------------------------------------------------------------
 /**
- * @file   component_visitor.hpp
+ * @file   network.hpp
  * @author Kevin A. Glass
  * @date   Fri Apr  19 13:36:28 2013
  * 
@@ -15,43 +15,48 @@
 // Last Change:
 // -------------------------------------------------------------
 
-#ifndef _bus_visitor_hpp_
-#define _bus_visitor_hpp_
+#ifndef _network_hpp_
+#define _network_hpp_
 
 namespace gridpack {
 namespace network {
 
 class MatrixInterface;
-
+#include <iostream>
+#include <vector>
 
 // -------------------------------------------------------------
-//  class ComponenVisitor
+//  class PFNetwork
 // -------------------------------------------------------------
 /**
  * 
  * To be safe, these should be used simultaneously on all processes.  
  */
 
-class BusVisitor {
+class PFNetwork {
 public:
 
   /// Default constructor.
-  BusVisitor() : matrixImpl_(NULL), nRows(0), nCols(0) {};
+    PFNetwork();
   /// Destructor
-  virtual ~BusVisitor(void){};
+  virtual ~PFNetwork(void){
+      // delete components in buses, branches and measurements
+  };
 
-  virtual void math::MatrixImplementation();
 
-  virtual void mapData(MatrixInterface & interface) {
+  virtual void getYMatrix(math::Matrix * matrix);
+  virtual void getHMatrix(math::Matrix * matrix);
 
   }
 protected:
   virtual void getMatrixSize(network::ComponentNetwork & network) {
       BusCountVisitor        visitor;
-
+      while()
   }
 private:
-  math::MatrixImplementation      *  matrixImpl_;
+  std::vector<PFComponent *>           buses;
+  std::vector<PFComponent *>           branches;
+  std::vector<PFComponent *>           measurements;
   int                                nRows;
   int                                nCols;
 };
