@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   Fri Mar 22 11:57:00 2013
+ * @date   2013-04-26 15:22:18 d3g096
  * 
  * @brief  
  * 
@@ -203,7 +203,16 @@ public:
   friend Matrix *transpose(const Matrix& A);
   friend Matrix *inverse(const Matrix& A);
   friend Matrix *reorder(const Matrix& A, const Reordering& r);
-  
+  friend Matrix *clone(const Matrix& A);
+  friend Matrix *identity(const Matrix& A);
+  friend Vector *diagional(const Matrix& A);
+
+  // -------------------------------------------------------------
+  // Matrix Operations
+  //
+  // put results in existing instance
+  // -------------------------------------------------------------
+  friend void multiply(const Matrix& A, const Vector& x, Vector& result);
 
 protected:
 

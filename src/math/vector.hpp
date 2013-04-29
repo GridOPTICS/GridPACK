@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   Mon Mar 25 12:38:25 2013
+ * @date   2013-04-26 15:50:00 d3g096
  * 
  * @brief  
  * 
@@ -106,14 +106,16 @@ public:
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
   void scale(const complex_type& x);
-  void add(const Vector& A);
+  void add(const Vector& x);
+  void copy(const Vector& x);
+  void reciprocal(void);
 
   // -------------------------------------------------------------
   // Vector Operations (all allocate new instances)
   // -------------------------------------------------------------
   friend Vector *add(const Vector& A, const Vector& B);
   friend Vector *reorder(const Vector& A, const Reordering& r);
-
+  friend Vector *clone(const Vector& from);
 
 
 protected:
