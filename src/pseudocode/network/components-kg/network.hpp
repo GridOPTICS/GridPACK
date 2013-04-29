@@ -37,28 +37,47 @@ class PFNetwork {
 public:
 
   /// Default constructor.
-    PFNetwork();
+    PFNetwork() : nBuses(0), nBranches(0), nMeasurements(0){};
+    {
+    }
+
   /// Destructor
   virtual ~PFNetwork(void){
       // delete components in buses, branches and measurements
   };
 
-
-  virtual void getYMatrix(math::Matrix * matrix);
-  virtual void getHMatrix(math::Matrix * matrix);
-
+  // factory calls this method, it assumes the bus-branch connections ar already made
+  virtual void addBranch(PFBranchComponent  * branch)
+  {
+      ++nBranches;
+      branches_.push_back(branch);
   }
+
+  virtual void addBuses(PFBusComponent  * bus) {
+      ++nBuses;
+      buses_.push_back(bus);
+  }
+
+  virtual void addMeasurement(PFMeasurementComponent  * measurement) {
+      ++nMeasurements;
+      measurements_.push_back(measurement);
+  }
+
+  // loop through components to retrieve matrix value and position information
+  virtual MatrixInterface * getYInterface() const;
+
+  // loop through components to retrieve vector value and position information
+  virtual MatrixInterface * getCIInterface() const;
+
 protected:
-  virtual void getMatrixSize(network::ComponentNetwork & network) {
-      BusCountVisitor        visitor;
-      while()
-  }
+
 private:
-  std::vector<PFComponent *>           buses;
-  std::vector<PFComponent *>           branches;
-  std::vector<PFComponent *>           measurements;
-  int                                nRows;
-  int                                nCols;
+  std::vector<PFComponent *>           buses_;
+  std::vector<PFComponent *>           branches_;
+  std::vector<PFComponent *>           measurements_;
+  int                    nBuses;
+  int                    nBranches;
+  int                    nMeasurements;
 };
 
 } // namespace math

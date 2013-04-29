@@ -35,48 +35,17 @@ class MatrixInterface;
  * To be safe, these should be used simultaneously on all processes.  
  */
 
-template <typename T>
-class ComponentHVisitor {
+class ComponentYVisitor {
 public:
 
   /// Default constructor.
-  ComponentHVisitor()  :
-      ni_(0),
-      nj_(0),
-      mi_(0),
-      mj_(0),
-      source_i_(0),
-      source_j_(0),
-      size_(0),
-      x_(NULL){};
+    ComponentYVisitor(void) : interface_(NULL){};
+    virtual ~ComponentYVisitor(void){};
 
-  /// Destructor
-  virtual ~ComponentHVisitor(void){};
-
-  virtual void getComponentData(int * ni, int * nj, int * mi, int * mj, int * source_i,
-          int * source_j, int * size, T * x) {
-      ni_           = ni;
-      nj_           = nj;
-      mi_           = mi;
-      mj_           = mj;
-      source_i_     = source_i;
-      source_j_     = source_j;
-      size_         = size;
-      x_            = x;
-  }
-  virtual void setMapData(int * ni, int * nj, int * mi, int * mj, int * source_i,
-          int * source_j, int * size, T * x);
+  void setInterfaceData(math::Matrix * interface){interface_ = interface;};
+  MatrixInterface * getInterfaceData() const {return interface_;};
 private:
-  int                ni_;
-  int                nj_;
-  int                mi_;
-  int                mj_
-  int                source_i_;
-  int                source_j_;
-  int                size_;
-  T                * x_;
-
-
+  MatrixInterface   * interface_;
 };
 
 } // namespace math

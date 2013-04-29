@@ -68,16 +68,10 @@ public:
 
   void setIndex(int i, int j, T value);
 
-  void getData(int * ni, int * nj, int * mi, int * mj, int * source_i,
-          int * source_j, int * size, T * x) {
-      *ni         = ni_;
-      *nj         = nj_;
-      *mi         = mi_;
-      *mj         = mj_;
-      *source_i   = source_i_;
-      *source_j   = source_j_;
-      *size       = size_;
-      *x          = x_;
+  void setMatrixData(T * data) {
+      for (int i = 0; i < size_; i++) {
+          data[i]  = x_[i];
+      }
   }
 protected:
 private:
