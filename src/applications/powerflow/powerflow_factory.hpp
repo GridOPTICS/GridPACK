@@ -1,3 +1,6 @@
+#ifndef _powerflow_factory_h_
+#define _powerflow_factory_h_
+
 #define BUSES "buses"
 #define BRANCHES "branches"
 #define RAW_BUS_DATA "raw_bus_data"
@@ -27,4 +30,9 @@ public:
    * built from the network components
    */
   void setState(void);
+
+private:
+
+  BaseNetwork *p_network;
 };
+#endif
