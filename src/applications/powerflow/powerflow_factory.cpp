@@ -6,10 +6,16 @@
 PowerflowFactory::PowerflowFactory(BaseNetwork *network)
 {
   p_network = network;
-  BusField<BusModel> *buses = new BusField<BusModel>;
-  BranchField<BranchModel> *branches = new BusField<BranchModel>;
-  p_network->addBusField(buses);
-  p_network->addBranchField(branches);
+  BusField<BusModel> *buses;
+  if (!p_network->getBusField(BUSES)) {
+    buses = new BusField<BusModel>;
+    p_network->addBusField(BUSES,buses);
+  }
+  BranchField<BranchModel> *branches;
+  if (!p_network->getBrancheField(BRANCHES)) {
+    branches = new BusField<BranchModel>;
+    p_network->addBranchField(BRANCHES,branches);
+  }
 }
 
 PowerflowFactory::~PowerflowFactory(void)
