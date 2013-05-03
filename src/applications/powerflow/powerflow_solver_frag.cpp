@@ -10,7 +10,7 @@ Powerflow::solve()
   // selection of the slack bus.  There is also an initial estimate. 
 
   math::Matrix *Ybus;
-  math::Vector *Pinj;
+  math::Vector *Cinj;
   math::Vector *Vest;
 
   // Or, the smart (but not shared pointer) of your choice
@@ -22,15 +22,15 @@ Powerflow::solve()
   // solver.reset(PowerflowSolverFactory(solver_option));
 
   if (solver_option == "linear") {
-    solver.reset(new LinearPowerflowSolver(*Ybus, *Pinj, *Vest));
+    solver.reset(new LinearPowerflowSolver(*Ybus, *Cinj, *Vest));
   } else if (solver_option == "nonlinear") {
-    solver.reset(new NonlinearPowerflowSolver(*Ybus, *Pinj, *Vest));
+    solver.reset(new NonlinearPowerflowSolver(*Ybus, *Cinj, *Vest));
   } else if (solver_option == "newtonraphson") {
-    solver.reset(new NetwonRaphsonPowerflowSolver(*Ybus, *Pinj, *Vest));
+    solver.reset(new NetwonRaphsonPowerflowSolver(*Ybus, *Cinj, *Vest));
   } else if (solver_option == "...") {
     // whatever
   } else {
-    solver.reset(new ReliablePowerflowSolver(*Ybus, *Pinj, *Vest));
+    solver.reset(new ReliablePowerflowSolver(*Ybus, *Cinj, *Vest));
   }
 
   solver->solve();

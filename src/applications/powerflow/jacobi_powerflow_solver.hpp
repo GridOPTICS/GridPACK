@@ -3,7 +3,7 @@
 /**
  * @file   jacobi_powerflow_solver.hpp
  * @author William A. Perkins
- * @date   2013-04-26 15:45:34 d3g096
+ * @date   2013-04-30 08:04:52 d3g096
  * 
  * @brief  
  * 
@@ -70,7 +70,7 @@ protected:
 
     for (int i = 0; i < maxiter; ++i) {
       math::multiply(*R_, *bus_voltage_, *Enew);
-      Enew_->subtract(power_injection_);
+      Enew_->subtract(current_injection_);
       Enew_->scale(-1.0);
       Enew_->element_multiply(Dinv_);
       Enew_->scale(relax);      // under/over relaxation
@@ -81,8 +81,10 @@ protected:
 public:
 
   /// Default constructor.
-  JacobiPowerflowSolver(math::Matrix *Ybus)
-    : PowerflowSolver(Ybus)
+  JacobiPowerflowSolver(math::Matrix *Ybus, 
+                        math::Vector *current_injection, 
+                        math::Vector *bus_voltage)
+      : PowerflowSolver(Ybus, current_injection, bus_voltage)
 
   /// Destructor
   ~JacobiPowerflowSolver(void);

@@ -3,7 +3,7 @@
 /**
  * @file   powerflow_solver.hpp
  * @author William A. Perkins
- * @date   2013-04-29 07:23:10 d3g096
+ * @date   2013-04-30 09:20:22 d3g096
  * 
  * @brief  
  * 
@@ -26,11 +26,11 @@ namespace gridpack {
 // -------------------------------------------------------------
 /// 
 /**
- * This abstract class encapsulates the solution of the power flow
- * problem.
+ * This abstract class that encapsulates the solution of the power
+ * flow equations.
  *
  * This class is instantiated using a complete, previously prepared
- * admittance matrix.  
+ * admittance matrix, current injection, and estimated bus voltage.  
  *
  * Collective on the communicator used by the admittance matrix
  * 
@@ -38,14 +38,13 @@ namespace gridpack {
 class PowerflowSolver 
   : public parallel::Distributed,
     public utility::Configurable,
-    public utility::SanityInterface,
     private utility::Uncopyable
 { 
 public:
 
   /// Default constructor.
   PowerflowSolver(math::Matrix *admittance, 
-                  math::Vector *power_injection, 
+                  math::Vector *current_injection, 
                   math::Vector *bus_voltage);
 
   /// Destructor
@@ -69,7 +68,7 @@ protected:
   const math::Matrix *admittance_;
 
   /// Bus power injections (not modified)
-  const math::Vector *power_injection_;
+  const math::Vector *currentinjection_;
   
   /// Complex bus voltage (estimated)
   math::Vector *bus_voltage_;

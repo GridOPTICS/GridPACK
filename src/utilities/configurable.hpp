@@ -3,7 +3,7 @@
 /**
  * @file   configurable.h
  * @author William A. Perkins
- * @date   2013-04-23 10:07:08 d3g096
+ * @date   2013-04-30 09:15:18 d3g096
  * 
  * @brief  
  * 
@@ -77,8 +77,20 @@ public:
   /// Set a particular property value
   template<typename T> void set_param(const std::string& key, const T& value);
 
-  /// Get a particular property value
+  /// Get a particular property value (must be there)
   template<typename T> T get_param(const std::string& key) const;
+
+  /// Get a particular property value (w/ default)
+  template<typename T> T get_param(const std::string& key, const T& default_value) const
+  {
+    T result;
+    try {
+      result = this->get_param<T>(key);
+    } catch (const KeyError& e) {
+      result = default_value;
+    } 
+    return result;
+  }
 
 protected:
 
