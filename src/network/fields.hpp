@@ -22,11 +22,15 @@
 //  This class implements some basic functions that can be
 //  expected from any field on the network.
 // -------------------------------------------------------------
+namespace gridpack {
+namespace network {
+
 template <class elem>
 class BaseField  {
   public:
     /**
      * Constructor
+     * @param network: Network associated with field
      */
     BaseField(BaseNetwork *network);
 
@@ -51,9 +55,16 @@ class BaseField  {
   private:
     /**
      * Add another element to the field
+     * @param new_elem: element to be appended to field
      * @return: index of new element
      */
-    int append(elem *new_elem);
+    int append(elem new_elem);
+
+    /**
+     * Add another element to the field. Use default element
+     * @return: index of new element
+     */
+    int append(void);
 
     /**
      * Delete element from field
@@ -69,6 +80,7 @@ class BaseField  {
 
     BaseNetwork *p_network;
     vector<elem> p_vector;
+    elem p_type;
 };
 
 // -------------------------------------------------------------
@@ -155,4 +167,6 @@ class BranchField : public BaseField<elem> {
 
   friend class BaseNetwork;
 };
+}  // namespace network
+}  // namespace gridpack
 #endif

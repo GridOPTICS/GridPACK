@@ -28,6 +28,8 @@
 //  allow the partitioner to move grid elements around and
 //  create ghost elements.
 // -------------------------------------------------------------
+namespace gridpack {
+namespace network {
 class BaseNetwork {
 public:
   /**
@@ -71,9 +73,16 @@ public:
 
   /**
    * Designate a bus as a reference bus.
-   * @param idx: global index of bus
+   * @param idx: local index of bus
    */
   void setReferenceBus(int idx);
+
+  /**
+   * Return index of reference bus.
+   * @return: local index of reference bus. If reference bus is not on this
+   * processor then return -1.
+   */
+  int getReferenceBus(void);
 
   /**
    * Add a new field to the network buses
@@ -81,7 +90,7 @@ public:
    * @param field: a pointer to the BusField being added to the
    *       network
    */
-  void addBusField(std::string name, BusField *field)
+  void addBusField(std::string name, BusField *field);
 
   /**
    * Add a new field to the network branches
@@ -89,7 +98,7 @@ public:
    * @param field: a pointer to the BranchField being added to
    *       the network
    */
-  void addBranchField(std::string name, BranchField *field)
+  void addBranchField(std::string name, BranchField *field);
 
   /**
    * Retrieve a pointer to an existing bus field
@@ -98,7 +107,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-   BusField* getBusField(std::string name);
+  BusField* getBusField(std::string name);
 
   /**
    * Retrieve a pointer to an existing branch field
@@ -107,71 +116,130 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-   BranchField* getBranchField(std::string name);
+  BranchField* getBranchField(std::string name);
 
   /**
    * Delete an existing bus field
    * @param name: a string representing the name of the field
    *       to be deleted
    */
-   void deleteBusField(std::string name);
+  void deleteBusField(std::string name);
 
   /**
    * Delete an existing branch field
    * @param name: a string representing the name of the field
    *       to be deleted
    */
-   void deleteBranchField(std::string name);
+  void deleteBranchField(std::string name);
 
   /**
    * Clean all ghost buses and branches from the system. This can be used
    * before repartitioning the network
    */
-   void clean(void);
+  void clean(void);
 
-   /**
-    * Update the ghost values of this field. This is a
-    * collective operation across all processors.
-    * @param field: name of the network field that must be
-    *       updated
-    */
-   void updateField(char *field);
+  /**
+   * Update the ghost values of this field. This is a
+   * collective operation across all processors.
+   * @param field: name of the network field that must be
+   *       updated
+   */
+  void updateField(char *field);
 
    // TODO: Need operations to move buses and branches to other processors in partitioners
 
 protected:
 
-   /**
-    * Protected copy constructor to avoid unwanted copies.
-    */
-   BaseNetwork(const BaseNetwork& old);
+  /**
+   * Protected copy constructor to avoid unwanted copies.
+   */
+  BaseNetwork(const BaseNetwork& old);
 
 private:
 
-   std::vector<bool> p_activeBus;
+  /**
+   * Vector that distinguishes active (local) buses from inactive (ghost) buses
+   */
+  std::vector<bool> p_activeBus;
 
-   std::vector<bool> p_activeBranch;
+  /**
+   * Vector that distinguishes active (local) branches from inactive (ghost)
+   * branches
+   */
+  std::vector<bool> p_activeBranch;
 
-   std::vector<int> p_originalIndex;
+  /**
+   * Original index of a bus (from the network topology file)
+   */
+  std::vector<int> p_originalBusIndex;
 
-   std::vector<int> p_globalIndex;
+  /**
+   * Unique global index of a bus assigned by the partitioner
+   */
+  std::vector<int> p_globalBusIndex;
 
-   std::vector<std::vector<int> > p_busNeighbors;
+  /**
+   * Local indices of branches that are connected to a local bus
+   */
+  std::vector<std::vector<int> > p_branchNeighbors;
 
-   std::vector<std::vector<int> > p_branchNeighbors;
+  /**
+   * Local indices of buses that are connected to a local bus via a single
+   * branch
+   */
+  std::vector<std::vector<int> > p_busNeighbors;
 
-   std::vector<int> p_globalBranchIndex1;
+  /**
+   * Original index of bus at one end of a branch
+   */
+  std::vector<int> p_originalBranchIndex1;
 
-   std::vector<int> p_globalBranchIndex2;
+  /**
+   * Original index of bus at other end of a branch
+   */
+  std::vector<int> p_originalBranchIndex2;
 
-   std::vector<int> p_localBranchIndex1;
+  /**
+   * Global index of bus at one end of a branch
+   */
+  std::vector<int> p_globalBranchIndex1;
 
-   std::vector<int> p_localBranchIndex2;
+  /**
+   * Global index of bus at other end of a branch
+   */
+  std::vector<int> p_globalBranchIndex2;
 
-   std::map<std::string, BusField*> p_busFields;
+  /**
+   * Local index of bus at one end of a branch
+   */
+  std::vector<int> p_localBranchIndex1;
 
-   std::map<std::string, BranchField*> p_branchFields;
+  /**
+   * Local index of bus at one end of a branch
+   */
+  std::vector<int> p_localBranchIndex2;
 
+  /**
+   * BusFields associated with buses. These can be accessed by name
+   */
+  std::map<std::string, BusField*> p_busFields;
+
+  /**
+   * BranchFields associated with buses. These can be accessed by name
+   */
+  std::map<std::string, BranchField*> p_branchFields;
+
+  /**
+   * Parallel environment for network
+   */
+  ParallelEnv p_configuration;
+
+  /**
+   * Reference bus index
+   */
+  int p_refBus;
 };
+}  //namespace network
+}  //namespace gridpack
 
 #endif
