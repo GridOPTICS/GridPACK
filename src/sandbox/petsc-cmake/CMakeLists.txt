@@ -8,6 +8,9 @@ list (APPEND CMAKE_MODULE_PATH "${PETScTest_SOURCE_DIR}/cmake-modules")
 # This is a C++ project exclusively
 enable_language(CXX)
 
+# Do some tests
+enable_testing()
+
 
 # -------------------------------------------------------------
 # MPI
@@ -69,4 +72,11 @@ add_definitions (${PETSC_DEFINITIONS})
 add_executable(vwrap vwrap.cpp)
 target_link_libraries(vwrap ${PETSC_LIBRARIES} ${Boost_LIBRARIES})
 
+add_executable(greetings greetings.cpp)
+target_link_libraries(greetings ${Boost_LIBRARIES})
+add_test(NAME greetings COMMAND $<TARGET_FILE:greetings>)
+set_tests_properties(greetings
+  PROPERTIES 
+  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
+)
 
