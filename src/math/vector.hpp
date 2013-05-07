@@ -3,26 +3,20 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-04-26 15:50:00 d3g096
+ * @date   2013-05-03 10:05:08 d3g096
  * 
- * @brief  
+ * @brief  Declaration of the Vector class
  * 
  * 
  */
 // -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 25, 2013 by William A. Perkins
-// Last Change: Thu Jun  3 06:45:08 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
-
-// SCCS ID: $Id$ Battelle PNL
 
 #ifndef _vector_h_
 #define _vector_h_
 
 #include <boost/scoped_ptr.hpp>
 #include "gridpack/parallel/distributed.hpp"
-#include "gridpack/utility/uncopyable.hpp"
+#include "gridpack/utilities/uncopyable.hpp"
 #include "gridpack/math/vector_implementation.hpp"
 
 namespace gridpack {
@@ -31,9 +25,9 @@ namespace math {
 // -------------------------------------------------------------
 //  class Vector
 // -------------------------------------------------------------
-/// A parallel or serial vector of real values
+/// A parallel or serial vector of values
 /**
- * This class uses the Pimpl idiom for implementation in order so the
+ * This class uses the Pimpl idiom for implementation  so the
  * interface is completely free of the underlying library.  If
  * constructed with a parallel environment with only one process, a
  * serial vector is created, otherwise it's parallel. 
