@@ -3,7 +3,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   Mon Apr  1 09:26:28 2013
+ * @date   2013-05-08 07:42:41 d3g096
  * 
  * @brief  
  * 
@@ -52,10 +52,10 @@ public:
   virtual ~ImplementationVisitor(void);
 
   /// The default visit (should just assert or do nothing)
-  virtual void visit(MatrixImplementation);
-  virtual void visit(VectorImplementation);
-  virtual void visit(PETScVectorImplentation);
-  virtual void visit(PETScMatrixImplementation);
+  virtual void visit(MatrixImplementation&);
+  virtual void visit(VectorImplementation&);
+  virtual void visit(PETScVectorImplentation&);
+  virtual void visit(PETScMatrixImplementation&);
 };
 
 } // namespace math

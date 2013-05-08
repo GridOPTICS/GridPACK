@@ -9,6 +9,8 @@ if [ $host == "flophouse" ]; then
     prefix="/net/flophouse/files0/perksoft/linux64"
     $prefix/bin/cmake -Wno-dev \
         -D Boost_DIR:STRING="$prefix" \
+        -D PETSC_DIR:STRING='/net/flophouse/files0/perksoft/petsc-3.3-p3' \
+        -D PETSC_ARCH:STRING='arch-linux2-cxx-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
@@ -20,6 +22,8 @@ elif [ $host == "pe10900" ]; then
 
     cmake -Wno-dev \
         -D Boost_DIR:STRING='/opt/local' \
+        -D PETSC_DIR:STRING='/net/flophouse/files0/perksoft/petsc-3.3-p3' \
+        -D PETSC_ARCH:STRING='arch-darwin-cxx-opt' \
         -D MPI_CXX_COMPILER:STRING='openmpicxx' \
         -D MPI_C_COMPILER:STRING='openmpicc' \
         -D MPIEXEC:STRING='openmpiexec' \

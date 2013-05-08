@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-05-07 13:18:45 d3g096
+# Last Change: 2013-05-07 15:05:25 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.3)
@@ -42,6 +42,42 @@ find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
 include_directories(${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
+# PETSc
+#
+# We need a very recent version of PETSc. It needs to parallel and
+# compiled with C++ complex support.
+# -------------------------------------------------------------
+message(STATUS "Checking PETSc ...")
+find_package (PETSc COMPONENTS CXX REQUIRED)
+
+if (NOT EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+  message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
+endif()
+
+include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+
+# checks 
+
+if (NOT PETSC_HAVE_MPI)
+  message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
+endif()
+
+if (NOT PETSC_USE_COMPLEX) 
+  message (FATAL_ERROR "PETSc installation does not use complex (--with-scalar-type=complex)")
+endif()
+
+# This is probably redundant
+if (NOT PETSC_CLANGUAGE_Cxx)
+  message (FATAL_ERROR "PETSc installation does not use C++ (--with-clanguage=c++)")
+endif()
+
+# -------------------------------------------------------------
+# Options for all Programs
+# -------------------------------------------------------------
+include_directories (${Boost_INCLUDE_DIR})
+
+# -------------------------------------------------------------
 # Subdirectories
 # -------------------------------------------------------------
 add_subdirectory(parallel)
+add_subdirectory(math)

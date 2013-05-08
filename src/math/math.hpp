@@ -3,7 +3,7 @@
 /**
  * @file   math.hpp
  * @author William A. Perkins
- * @date   2013-05-03 14:13:47 d3g096
+ * @date   2013-05-08 15:10:43 d3g096
  * 
  * @brief  
  * 
@@ -16,10 +16,11 @@
 namespace gridpack {
 namespace math {
 
-#include "gripack/math/math_type.hpp"
-
 /// Do whatever is necessary to initialize the math library
 extern void Initialize(void);
+
+/// Is the math library initialized?
+extern bool Initialized(void);
 
 /// Do whatever is necessary to shut down the math library
 extern void Finalize(void);

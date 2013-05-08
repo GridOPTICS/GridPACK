@@ -3,7 +3,7 @@
 /**
  * @file   uncopyable.hpp
  * @author William A. Perkins
- * @date   Mon Apr  1 10:09:49 2013
+ * @date   2013-05-07 15:12:17 d3g096
  * 
  * @brief  
  * 
@@ -30,7 +30,7 @@
 namespace gridpack {
 namespace utility {
 
-typedef boost::noncopyable UnCopyable;
+typedef boost::noncopyable Uncopyable;
 
 } // namespace math
 } // namespace gridpack
