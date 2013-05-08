@@ -72,6 +72,10 @@ add_definitions (${PETSC_DEFINITIONS})
 add_executable(vwrap vwrap.cpp)
 target_link_libraries(vwrap ${PETSC_LIBRARIES} ${Boost_LIBRARIES})
 
+add_executable(exception exception.cpp)
+target_link_libraries(exception ${PETSC_LIBRARIES} ${Boost_LIBRARIES})
+
+
 add_executable(greetings greetings.cpp)
 target_link_libraries(greetings ${Boost_LIBRARIES})
 add_test(NAME greetings COMMAND $<TARGET_FILE:greetings>)
