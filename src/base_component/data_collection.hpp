@@ -57,7 +57,7 @@ public:
   bool getValue(char *name, int *value);
   bool getValue(char *name, long *value);
   bool getValue(char *name, bool *value);
-  bool getValue(char *name, char *std::string);
+  bool getValue(char *name, std::string *value);
   bool getValue(char *name, float *value);
   bool getValue(char *name, double *value);
   bool getValue(char *name, SingleComplex *value);

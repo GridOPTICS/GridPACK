@@ -20,6 +20,8 @@
 //  requires that each of the components implements the
 //  MatVecInterface
 // -------------------------------------------------------------
+
+#include "smart_ptr.hpp"
 class BaseMapper {
 public:
 
@@ -37,21 +39,21 @@ public:
    * Construct a matrix from a single field implementing a MatVecInterface
    * @param field: field of components implementing the MatVecInterface
    */
-  createMatrix(BaseField<*MatVecInterface> *field);
+  createMatrix(stlplus::smart_ptr<BaseField<stlplus::smart_ptr<MatVecInterface> > > field);
 
   /**
    * Construct a matrix from a two fields implementing a MatVecInterface
    * @param field1: first field of components implementing the MatVecInterface
    * @param field2: second field of components implementing the MatVecInterface
    */
-  createMatrix(BaseField<*MatVecInterface> *field1,
-               BaseField<*MatVecInterface> *field2);
+  createMatrix(stlplus::smart_ptr<BaseField<stlplus::smart_ptr<MatVecInterface> > > field1,
+               stlplus::smart_ptr<BaseField<stlplus::smart_ptr<MatVecInterface> > > field2);
 
   /**
    * Construct a vector from a single field implementing a MatVecInterface
    * @param field: field of components implementing the MatVecInterface
    */
-  createVector(BaseField<*MatVecInterface> *field);
+  createVector(stlplus::smart_ptr<BaseField<stlplus::smart_ptr<MatVecInterface> > > field);
 };
 
 #endif

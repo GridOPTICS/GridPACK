@@ -51,18 +51,6 @@ BaseNetwork::BaseNetwork(ParallelEnv configuration)
  */
 BaseNetwork::~BaseNetwork(void)
 {
-  std::map<std::string, BusField*>::iterator bus;
-  bus = p_busFields.begin();
-  while (bus != p_busFields.end()) {
-    delete bus->second;
-    bus++;
-  }
-  std::map<std::string, BranchField*>::iterator branch;
-  branch = p_branchFields.begin();
-  while (branch != p_branchFields.end()) {
-    delete branch->second;
-    branch++;
-  }
 }
 
 /**
@@ -73,7 +61,7 @@ void BaseNetwork::addBus(int idx)
 {
   p_originalBusIndex.push_back(idx);
   p_activeBus.push_back(true);
-  std::map<std::string, BusField*>::iterator bus;
+  std::map<std::string, stlplus::smart_ptr<BusField> >::iterator bus;
   bus = p_busFields.begin();
   while (bus != p_busFields.end()) {
     bus->second->append();
@@ -92,7 +80,7 @@ void BaseNetwork::addBranch(int idx1, int idx2)
   p_originalBranchIndex1.push_back(idx1);
   p_originalBranchIndex2.push_back(idx2);
   p_activeBranch.push_back(true);
-  std::map<std::string, BranchField*>::iterator branch;
+  std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
   branch = p_branchFields.begin();
   while (branch != p_branchFields.end()) {
     branch->second->append;
@@ -125,7 +113,7 @@ int BaseNetwork::getReferenceBus(void)
  * @param field: a pointer to the BusField being added to the
  *       network
  */
-void BaseNetwork::addBusField(std::string name, BusField *field)
+void BaseNetwork::addBusField(std::string name, stlplus::smart_ptr<BusField> field)
 {
   // check size of new field to see if it is too large
   if (field->size() > p_activeBus.size()) {
@@ -139,7 +127,7 @@ void BaseNetwork::addBusField(std::string name, BusField *field)
       field->append();
     }
   }
-  p_busFields.insert(std::pair<std::string, *BusField>(name,field));
+  p_busFields.insert(std::pair<std::string, stlplus::smart_ptr<BusField> >(name,field));
 }
 
 /**
@@ -148,7 +136,7 @@ void BaseNetwork::addBusField(std::string name, BusField *field)
  * @param field: a pointer to the BranchField being added to
  *       the network
  */
-void BaseNetwork::addBranchField(std::string name, BranchField *field)
+void BaseNetwork::addBranchField(std::string name, stlplus::smart_ptr<BranchField> field)
 {
   // check size of new field to see if it is too large
   if (field->size() > p_activeBus.size()) {
@@ -162,7 +150,7 @@ void BaseNetwork::addBranchField(std::string name, BranchField *field)
       field->append();
     }
   }
-  p_branchFields.insert(std::pair<std::string, *BranchField>(name,field));
+  p_branchFields.insert(std::pair<std::string, stlplus::smart_ptr<BranchField> >(name,field));
 }
 
 /**
@@ -174,7 +162,7 @@ void BaseNetwork::addBranchField(std::string name, BranchField *field)
  */
 BusField* BaseNetwork::getBusField(std::string name)
 {
-  std::map<std::string, BusField*>::iterator bus;
+  std::map<std::string, stlplus::smart_ptr<BusField> >::iterator bus;
   bus = p_busFields.find(name);
   if (bus != p_busFields.end()) {
     return bus->second;
@@ -192,7 +180,7 @@ BusField* BaseNetwork::getBusField(std::string name)
  */
 BranchField* BaseNetwork::getBranchField(std::string name)
 {
-  std::map<std::string, BranchField*>::iterator branch;
+  std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
   branch = p_branchFields.find(name);
   if (branch != p_branchFields.end()) {
     return branch->second;
@@ -208,7 +196,7 @@ BranchField* BaseNetwork::getBranchField(std::string name)
  */
 void BaseNetwork::deleteBusField(std::string name)
 {
-  std::map<std::string, BusField*>::iterator bus;
+  std::map<std::string, stlplus::smart_ptr<BusField> >::iterator bus;
   bus = p_busFields.find(name);
   if (bus != p_busFields.end()) {
     p_busFields.erase(bus);
@@ -222,7 +210,7 @@ void BaseNetwork::deleteBusField(std::string name)
  */
 void BaseNetwork::deleteBranchField(std::string name)
 {
-  std::map<std::string, BranchField*>::iterator branch;
+  std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
   branch = p_busFields.find(name);
   if (branch != p_branchFields.end()) {
     p_branchFields.erase(branch);

@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include "gridpack/parallel/distribution.hpp"
+#include "smart_ptr.hpp"
 
 // -------------------------------------------------------------
 //  class BaseNetwork:
@@ -90,7 +91,7 @@ public:
    * @param field: a pointer to the BusField being added to the
    *       network
    */
-  void addBusField(std::string name, BusField *field);
+  void addBusField(std::string name, stlplus::smart_ptr<BusField> field);
 
   /**
    * Add a new field to the network branches
@@ -98,7 +99,7 @@ public:
    * @param field: a pointer to the BranchField being added to
    *       the network
    */
-  void addBranchField(std::string name, BranchField *field);
+  void addBranchField(std::string name, stlplus::smart_ptr<BranchField> field);
 
   /**
    * Retrieve a pointer to an existing bus field
@@ -222,12 +223,12 @@ private:
   /**
    * BusFields associated with buses. These can be accessed by name
    */
-  std::map<std::string, BusField*> p_busFields;
+  std::map<std::string, stlplus::smart_ptr<BusField> > p_busFields;
 
   /**
    * BranchFields associated with buses. These can be accessed by name
    */
-  std::map<std::string, BranchField*> p_branchFields;
+  std::map<std::string, stlplus::smart_ptr<BranchField> > p_branchFields;
 
   /**
    * Parallel environment for network
