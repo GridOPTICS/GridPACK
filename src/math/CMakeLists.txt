@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-05-08 15:21:26 d3g096
+# Last Change: 2013-05-10 08:19:54 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -12,6 +12,7 @@ set(target_libraries gridpack_parallel ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 # implementation independent math sources
 list(APPEND gridpack_math_sources
   vector_implementation.cpp
+  implementation_visitor.cpp
 )
 
 # implementation specific sources and flags

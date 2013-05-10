@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-05-08 08:39:51 d3g096
+// Last Change: 2013-05-10 09:01:22 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -39,42 +39,69 @@ public:
   /// Get (a pointer to) the PETSc implementation
   const Vec *get_vector(void) const
   {
-    return &vector_;
+    return &p_vector;
+  }
+
+  /// Get (a pointer to) the PETSc implementation
+  Vec *get_vector(void)
+  {
+    return &p_vector;
   }
 
 protected:
 
+  /// Minimum global index on this processor
+  int p_min_index;
+
+  /// Maximum global index on this processor
+  int p_max_index;
+
   /// The PETSc representation
-  Vec vector_;
+  Vec p_vector;
 
   /// Get the global vector length
-  int size_(void) const;
+  int p_size(void) const;
 
   /// Get the size of the vector local part
-  int local_size_(void) const;
+  int p_local_size(void) const;
 
-  // /// Set an individual element (specialized)
-  // void set_element_(const int& i, const complex_type& x);
+  /// Get the local min/max global indexes (specialized)
+  void p_local_index_range(int& lo, int& hi) const;
 
-  // /// Set an several elements (specialized)
-  // void set_elements_(cont int& n, const int *i, const complex_type *x);
+  /// Set an individual element (specialized)
+  void p_set_element(const int& i, const complex_type& x);
+
+  /// Set an several elements (specialized)
+  void p_set_elements(const int& n, const int *i, const complex_type *x);
 
   // /// Add to an individual element (specialized)
-  // void add_element_(const int& i, const complex_type& x);
+  // void p_add_element(const int& i, const complex_type& x);
 
   // /// Add to an several elements (specialized)
-  // void add_elements_(const int& n, const int *i, const complex_type *x);
+  // void p_add_elements(const int& n, const int *i, const complex_type *x);
 
-  // /// Make all the elements zero (specialized)
-  // void zero_(void);
+  /// Get an individual element (specialized)
+  void p_get_element(const int& i, complex_type& x) const;
+
+  /// Get an several elements (specialized)
+  void p_get_elements(const int& n, const int *i, complex_type *x) const;
+
+  /// Make all the elements zero (specialized)
+  void p_zero(void);
+
+  /// Make all the elements the specified value (specialized)
+  void p_fill(const complex_type& v);
 
   // FIXME: more ...
 
   /// Make this instance ready to use
-  void ready_(void);
+  void p_ready(void);
 
   /// Allow visits by implemetation visitor
-  void accept_(ImplementationVisitor& visitor);
+  void p_accept(ImplementationVisitor& visitor);
+
+  /// Allow visits by implemetation visitor
+  void p_accept(ConstImplementationVisitor& visitor) const;
 };
 
 

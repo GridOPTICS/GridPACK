@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-05-08 08:46:07 d3g096
+ * @date   2013-05-10 12:12:59 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -58,69 +58,86 @@ public:
   /// Get the global length
   int size(void) const
   {
-    return vector_impl_->size();
+    return p_vector_impl->size();
   }
 
   /// Get the local length
   int local_size(void) const
   {
-    return vector_impl_->local_size();
+    return p_vector_impl->local_size();
   }
 
-  // /// Set an individual element
-  // void set_element(const int& i, const complex_type& x)
-  // {
-  //   vector_impl_->set_element(i, x);
-  // }
+  /// Get the local min/max global indexes
+  void local_index_range(int& lo, int& hi) const
+  {
+    return p_vector_impl->local_index_range(lo, hi);
+  }
 
-  // /// Set an several elements
-  // void set_elements(const int& n, const int *i, const complex_type *x)
-  // {
-  //   vector_impl_->set_elements(n, i, x);
-  // }
+  /// Set an individual element
+  void set_element(const int& i, const complex_type& x)
+  {
+    p_vector_impl->set_element(i, x);
+  }
+
+  /// Set an several elements
+  void set_elements(const int& n, const int *i, const complex_type *x)
+  {
+    p_vector_impl->set_elements(n, i, x);
+  }
 
   // /// Add to an individual element
   // void add_element(const int& i, const complex_type& x)
   // {
-  //   vector_impl_->add_element(i, x);
+  //   p_vector_impl->add_element(i, x);
   // }
 
   // /// Add to an several elements
   // void add_elements(const int& n, const int *i, const complex_type *x)
   // {
-  //   vector_impl_->add_elements(n, i, x);
+  //   p_vector_impl->add_elements(n, i, x);
   // }
 
-  // /// Get an individual element
-  // void get_element(const int& i, complex_type& x) const
-  // {
-  //   vector_impl_->get_element(i, x);
-  // }
+  /// Get an individual element
+  void get_element(const int& i, complex_type& x) const
+  {
+    p_vector_impl->get_element(i, x);
+  }
 
-  // /// Get an several elements
-  // void get_elements(const int& n, const int *i, complex_type *x) const
-  // {
-  //   vector_impl_->get_elements(n, i, x);
-  // }
+  /// Get an several elements
+  void get_elements(const int& n, const int *i, complex_type *x) const
+  {
+    p_vector_impl->get_elements(n, i, x);
+  }
 
-  // /// Make all the elements zero
-  // void zero(void)
-  // {
-  //   vector_impl_->zero();
-  // }
+  /// Make all the elements zero
+  void zero(void)
+  {
+    p_vector_impl->zero();
+  }
+
+  /// Make all the elements the specified value
+  void fill(const complex_type& v)
+  {
+    p_vector_impl->fill(v);
+  }
 
   // FIXME more ...
 
   /// Make this instance ready to use
   void ready(void)
   {
-    vector_impl_->ready();
+    p_vector_impl->ready();
   }
 
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor)
   {
-    vector_impl_->accept(visitor);
+    p_vector_impl->accept(visitor);
+  }
+
+  void accept(ConstImplementationVisitor& visitor) const
+  {
+    p_vector_impl->accept(visitor);
   }
 
   // -------------------------------------------------------------
@@ -136,12 +153,16 @@ public:
   // -------------------------------------------------------------
   friend Vector *add(const Vector& A, const Vector& B);
   // friend Vector *reorder(const Vector& A, const Reordering& r);
-  friend Vector *clone(const Vector& from);
+  friend Vector *gridpack::math::clone(const Vector& from);
 
 
 protected:
   
-  boost::scoped_ptr<VectorImplementation> vector_impl_;
+  /// Where stuff really happens
+  boost::scoped_ptr<VectorImplementation> p_vector_impl;
+
+  /// Constuct with an existing implementation
+  explicit Vector(VectorImplementation *vimpl);
 };
 
 

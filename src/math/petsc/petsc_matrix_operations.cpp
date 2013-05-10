@@ -7,13 +7,13 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created April 17, 2013 by William A. Perkins
-// Last Change: Thu Jun  3 06:45:08 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
+// Last Change: 2013-05-09 08:17:15 d3g096
 // -------------------------------------------------------------
 
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
-#include <cassert>
+#include <cassert>Error handling 
 #include "matrix.hpp"
 #include "petsc_matrix_implementation.hpp"
 #include "petsc_matrix_extractor.hpp"

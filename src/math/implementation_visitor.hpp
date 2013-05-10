@@ -3,7 +3,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2013-05-08 07:42:41 d3g096
+ * @date   2013-05-10 08:54:52 d3g096
  * 
  * @brief  
  * 
@@ -19,6 +19,8 @@
 #ifndef _implementation_visitor_hpp_
 #define _implementation_visitor_hpp_
 
+#include "gridpack/utilities/uncopyable.hpp"
+
 namespace gridpack {
 namespace math {
 
@@ -26,7 +28,7 @@ class MatrixImplementation;
 class VectorImplementation;
 class LinearSolverImplementation;
 
-class PETScVectorImplentation;
+class PETScVectorImplementation;
 class PETScMatrixImplementation;
 class PETScLinearSolverImplementation;
 
@@ -42,7 +44,7 @@ class PETScLinearSolverImplementation;
  * To be safe, these should be used simultaneously on all processes.  
  */
 
-class ImplementationVisitor {
+class ImplementationVisitor : private utility::Uncopyable {
 public:
 
   /// Default constructor.
@@ -52,10 +54,41 @@ public:
   virtual ~ImplementationVisitor(void);
 
   /// The default visit (should just assert or do nothing)
-  virtual void visit(MatrixImplementation&);
   virtual void visit(VectorImplementation&);
-  virtual void visit(PETScVectorImplentation&);
-  virtual void visit(PETScMatrixImplementation&);
+  virtual void visit(PETScVectorImplementation&);
+
+  // virtual void visit(MatrixImplementation&);
+  // virtual void visit(PETScMatrixImplementation&);
+
+};
+
+// -------------------------------------------------------------
+//  class ConstImplementationVisitor
+// -------------------------------------------------------------
+/**
+ * This is const version of a cyclic visitor for the various math
+ * implementation classes.  It is intended to be used as a parent class
+ * for things that are used to extract implementation-specific
+ * information from an const implementation agnostic class.
+ * 
+ * To be safe, these should be used simultaneously on all processes.  
+ */
+class ConstImplementationVisitor : private utility::Uncopyable {
+public:
+
+  /// Default constructor.
+  ConstImplementationVisitor(void);
+
+  /// Destructor
+  virtual ~ConstImplementationVisitor(void);
+
+  /// The default visit, const version (should just assert or do nothing)
+  virtual void visit(const VectorImplementation&);
+  virtual void visit(const PETScVectorImplementation&);
+
+  // virtual void visit(const MatrixImplementation&);
+  // virtual void visit(const PETScMatrixImplementation&);
+
 };
 
 } // namespace math

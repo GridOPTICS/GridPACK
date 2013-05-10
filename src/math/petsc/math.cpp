@@ -1,7 +1,7 @@
 /**
  * @file   math.cpp
  * @author William A. Perkins
- * @date   2013-05-08 14:06:21 d3g096
+ * @date   2013-05-09 08:39:18 d3g096
  * 
  * @brief  
  * 
@@ -9,6 +9,7 @@
  */
 
 #include <petscsys.h>
+#include "gridpack/math/math.hpp"
 #include "gridpack/math/petsc/petsc_exception.hpp"
 
 namespace gridpack {
@@ -21,6 +22,7 @@ namespace math {
 void
 Initialize(void)
 {
+  if (Initialized()) return;
   PetscErrorCode ierr(0);
   try {
     ierr = PetscInitializeNoArguments(); CHKERRXX(ierr);
@@ -52,6 +54,7 @@ Initialized(void)
 void
 Finalize(void)
 {
+  if (!Initialized()) return;
   PetscErrorCode ierr(0);
   try {
     ierr = PetscFinalize(); CHKERRXX(ierr);
