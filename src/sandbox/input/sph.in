@@ -1,0 +1,69 @@
+input driver
+  100000                      #maximum atoms per processor
+end
+
+input force
+  cutoff 1.0                  #interaction cutoff
+  skin_depth 0.3              #padding on cutoff
+  gravity  0.00344              #gravity in z direction
+  cspd  1.0                   #speed of sound
+  viscosity1 1.0              #viscosity of fluid 1
+  viscosity2 0.02             #viscosity of fluid 2
+  viscosity_s 1.0             #fictitious viscosity of solid
+  particle_mass1 1.0          #mass of fluid 1 particles
+  particle_mass2 0.00125      #mass of fluid 2 particles
+  s1_coupling 0.016           #coupling between fluid 1 and solid
+  s2_coupling 0.001            #coupling between fluid 2 and solid
+  f11_coupling 0.0141         #self-coupling between fluid 1
+  f12_coupling 0.001          #coupling between fluid 1 and 2
+  f22_coupling 0.0141         #self-coupling between fluid 2
+  inject_species 1            #identity of injected species
+  z_periodic false             #no periodic BC in z-direction
+  inlet_region_width 1.0      #inlet region width at step 0
+end
+
+input stepper
+ nsteps 100000                  #number of steps in simulation
+ timestep 0.01
+#timestep 0.005
+#timestep 0.0025
+#timestep 0.00125
+#timestep 0.000625
+#timestep 0.0003125              #time increment
+#timestep 0.00015625              #time increment
+#timestep 0.000078125              #time increment
+ update_freq 10              #frequency to distribute particles
+ ramp_intrvl 0                #number of steps to ramp up gravity
+end
+
+input remap
+  frequency 1000                   #frequency to write visualization files
+  grid  50 50 120                   #number of grid points in visualization file
+  smooth_rad 0.5                  #smoothing radius for visualization files
+  print scalar type density species       #scalar variables in visualization files
+  print scalar mass_density
+  print vector xvel yvel zvel     #vector variables in visualization files
+  print iso_value species 2
+  print iso_value species 3
+#  write_ascii
+end
+
+input export_xyz
+  frequency 1000               #frequency to write restart files
+  print xvel yvel zvel        #variables to be exported to restart files
+  print density species
+end
+
+input import_xyz
+#  read_ascii
+#  read species
+  read xvel yvel zvel
+  read density species
+end
+
+input analysis
+  profile_bins 100                #number of bins in profiles
+  density_bins 100                #number of bins in density profile
+  profile_frequency 1000          #frequency to evaluate profiles
+  stats_frequency 100              #frequency to print simple statistics
+end

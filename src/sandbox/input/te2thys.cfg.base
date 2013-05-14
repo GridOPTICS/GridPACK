@@ -1,0 +1,99 @@
+# -------------------------------------------------------------
+# file: te2thys.cfg
+#
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Battelle Memorial Institute
+# Pacific Northwest Laboratory
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Created July 11, 2008 by William A. Perkins
+# -------------------------------------------------------------
+
+
+Time {
+    Start       @START@                   # all in seconds
+    Duration      0.1
+    Step          0.001
+    Mode          Steady
+}
+
+# The fluid is water. 
+
+Fluid {
+    density     997.561
+    viscosity   0.0008887
+}
+
+Option {
+    Gradient gauss
+    Gradient Iterate 2
+    TimeStepping euler
+    Hydro { 
+        ON
+        Iterate 5
+        Converge Mass  1e-14
+        Relax Pressure 0.10
+        Relax Velocity 0.50
+	DeltaP2 On
+    }   
+    Scheme Velocity CDS 0.0
+
+    Solver {
+        Relative Tolerance 1.0e-02
+        Absolute Tolerance 1.0e-30
+        Verbose NO
+        Iterate 1000
+    }
+}
+
+Mesh CGNS "mesh/@NAME@.cgns"
+
+# Discharge is evenly divided between the two inlets.  The area of
+# each inlet is 0.489425 mm^2. That's 4.89425e-07 m^2.  
+# The discharge is different for two different cases.
+# 
+# Case Ia: Darcy Velocity = 4.524e-03 cm/s, 50 uL/hr (1.3888889e-11 m^3/s), 
+
+BC "inlet1" Velocity  Constant 1.4189e-5
+BC "inlet2" Velocity  Constant 1.4189e-5
+
+# Case Ib: Darcy Velocity = 4.524e-04 cm/s, 5 uL/hr  (1.3888889e-12 m^3/s), 
+
+#BC "inlet1" Velocity  Constant 1.4189e-6
+#BC "inlet2" Velocity  Constant 1.4189e-6
+
+
+BC "outlet" Scalar "press" Constant 0.0
+
+Option Default Velocity (0.0, 0.0, 0.0)
+Option Default Scalar "press" 0.0
+
+Output { 
+    CGNS "@NAME@-out.cgns"
+    Interval 10 Step
+}
+
+Boundary Output {
+    On
+    Name "@NAME@-out"
+    Interval 1 Step
+    Only "Inlet"
+    Only "Outlet"
+}
+
+
+Option Transport OFF
+Option Transport Iterate 5
+
+# The dye used is Alexa 488. It has a diffusivity of 4.3e-10 m^2/s.
+# The Schmidt number is then 0.0008887/997.561/4.3e-10 = 2071.8
+# Scalar { 
+#     Name "dye"
+#     Description "Dye"
+#     Schmidt 2071.8
+#     Relax 0.9
+# }    
+# BC "inlet1" Scalar "dye"   Constant 1.0
+# BC "inlet2" Scalar "dye"   Constant 0.0
+
