@@ -108,7 +108,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-  BusField* getBusField(std::string name);
+  stlplus::smart_ptr<BusField> getBusField(std::string name);
 
   /**
    * Retrieve a pointer to an existing branch field
@@ -117,7 +117,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-  BranchField* getBranchField(std::string name);
+  stlplus::smart_ptr<BranchField> getBranchField(std::string name);
 
   /**
    * Delete an existing bus field
@@ -132,6 +132,27 @@ public:
    *       to be deleted
    */
   void deleteBranchField(std::string name);
+
+  /**
+   * Return list of branches connected to bus
+   * @param bus: local bus index
+   * @return: vector of local branch indices
+   */
+  vector<int> getConnectedBranches(int idx);
+
+  /**
+   * Return list of buses connected to central bus via one branch
+   * @param bus: local bus index
+   * @return: vector of local bus indices
+   */
+  vector<int> getConnectedBuses(int idx);
+
+  /**
+   * Return indices of buses at either end of branch
+   * @param bus: local branch index
+   * @return: vector of local bus indices
+   */
+  void getBusEndpoints(int idx, int *bus1, int *bus2);
 
   /**
    * Clean all ghost buses and branches from the system. This can be used

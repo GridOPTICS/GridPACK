@@ -160,7 +160,7 @@ void BaseNetwork::addBranchField(std::string name, stlplus::smart_ptr<BranchFiel
  * @return: a pointer to the requested field. If the field is
  *       not found, the pointer is null
  */
-BusField* BaseNetwork::getBusField(std::string name)
+smart_ptr<BusField> BaseNetwork::getBusField(std::string name)
 {
   std::map<std::string, stlplus::smart_ptr<BusField> >::iterator bus;
   bus = p_busFields.find(name);
@@ -178,7 +178,7 @@ BusField* BaseNetwork::getBusField(std::string name)
  * @return: a pointer to the requested field. If the field is
  *       not found, the pointer is null
  */
-BranchField* BaseNetwork::getBranchField(std::string name)
+smart_ptr<BranchField> BaseNetwork::getBranchField(std::string name)
 {
   std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
   branch = p_branchFields.find(name);
@@ -218,11 +218,153 @@ void BaseNetwork::deleteBranchField(std::string name)
 }
 
 /**
+ * Return list of branches connected to bus
+ * @param bus: local bus index
+ * @return: vector of local branch indices
+ */
+vector<int> BaseNetwork::getConnectedBranches(int idx)
+{
+  return p_branchNeighbors[idx];
+}
+
+/**
+ * Return list of buses connected to central bus via one branch
+ * @param bus: local bus index
+ * @return: vector of local bus indices
+ */
+vector<int> BaseNetwork::getConnectedBuses(int idx)
+{
+  vector<int> branches = p_branchNeighbors[idx];
+  int size = branches.size();
+  vector<int> ret;
+  int i, j;
+  for (i=0; i<size; i++) {
+    j = branches[i];
+    if (p_localBranchIndex1[j] != p_idx) {
+      ret.push_back(p_localBranchIndex1[j]);
+    } else {
+      ret.push_back(p_localBranchIndex2[j]);
+    }
+  }
+}
+
+/**
+ * Return indices of buses at either end of branch
+ * @param bus: local branch index
+ * @return: vector of local bus indices
+ */
+void BaseNetwork::getBusEndpoints(int idx, int *bus1, int *bus2)
+{
+  *bus1 = p_localBranchIndex1[idx];
+  *bus2 = p_localBranchIndex2[idx];
+}
+
+/**
  * Clean all ghost buses and branches from the system. This can be used
  * before repartitioning the network
  */
 void BaseNetwork::clean(void)
 {
+  std::map<int new_id, int old_id> buses;
+  std::map<int new_id, int old_id> branches;
+  int i, j;
+
+  // remove inactive branches
+  int size = p_activeBranch.size();
+  int new_id = 0;
+  for (i=0; i<size; i++) {
+    if (p_activeBranch[i]) {
+      p_activeBranch[new_id] = p_activeBranch[i];
+      p_originalBranchIndex1[new_id] = p_originalBranchIndex1[i];
+      p_originalBranchIndex2[new_id] = p_originalBranchIndex2[i];
+      p_globalBranchIndex1[new_id] = p_globalBranchIndex1[i];
+      p_globalBranchIndex2[new_id] = p_globalBranchIndex2[i];
+      p_localBranchIndex1[new_id] = p_localBranchIndex1[i];
+      p_localBranchIndex2[new_id] = p_localBranchIndex2[i];
+      branches.insert(std::pair<int, int>(i,new_id));
+      std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
+      branch = p_branchFields->begin();
+      while(branch !=  p_branchFields->end()) {
+        (*(branch->second))[new_id] = (*(branch->second))[i];
+      }
+      new_id++;
+    }
+  }
+  // clean up the ends of the branch vectors
+  i = size - new_id;
+  for (i=0; i<size; i++) {
+    p_activeBranch.pop_back();
+    p_originalBranchIndex1.pop_back();
+    p_originalBranchIndex2.pop_back();
+    p_globalBranchIndex1.pop_back();
+    p_globalBranchIndex2.pop_back();
+    p_localBranchIndex1.pop_back();
+    p_localBranchIndex2.pop_back();
+    std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
+    branch = p_branchFields->begin();
+    while(branch !=  p_branchFields->end()) {
+      branch->second->pop_back();
+    }
+  }
+
+  // remove inactive buses
+  size = p_activeBus.size();
+  new_id = 0;
+  for (i=0; i<size; i++) {
+    if (p_activeBus[i]) {
+      p_activeBus[new_id] = p_activeBus[i];
+      p_originalBusIndex[new_id] = p_originalBusIndex[i];
+      p_branchNeighbors[new_id] = p_branchNeighbors[i];
+      p_busNeighbors[new_id] = p_busNeighbors[i];
+      buses.insert(std::pair<int, int>(i,new_id));
+      std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator bus;
+      bus = p_busFields->begin();
+      while(bus !=  p_busFields->end()) {
+        (*(bus->second))[new_id] = (*(bus->second))[i];
+      }
+      new_id++;
+    }
+  }
+  // clean up the ends of the bus vectors
+  i = size - new_id;
+  for (i=0; i<size; i++) {
+    p_activeBus.pop_back();
+    p_originalBusIndex.pop_back();
+    p_globalBusIndex.pop_back();
+    p_branchNeighbors.pop_back();
+    p_busNeighbors.pop_back();
+    std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator bus;
+    bus = p_busFields->begin();
+    while(bus !=  p_busFields->end()) {
+      bus->second->pop_back();
+    }
+  }
+  // reset all local indices
+  size = p_activeBranch.size();
+  for (i=0; i<size; i++) {
+    p_localBranchIndex1[i] = buses[p_localBranchIndex1[i]];
+    p_localBranchIndex2[i] = buses[p_localBranchIndex2[i]];
+    std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
+    branch = p_branchFields->begin();
+    while(branch !=  p_branchFields->end()) {
+      branch->second->setIndex(branches[branch->second->getIndex()]);
+    }
+  }
+  int jsize;
+  size = p_activeBus.size();
+  for (i=0; i<size; i++) {
+    jsize = p_branchNeighbors[i].size();
+    for (j=0; j<jsize; j++) {
+      (p_branchNeighbors[i])[j] = branches[(p_branchNeighbors[i])[j]];
+    }
+    jsize = p_busNeighbors[i].size();
+    for (j=0; j<jsize; j++) {
+      (p_busNeighbors[i])[j] = buses[(p_busNeighbors[i])[j]];
+    }
+  }
+  if (p_refBus != -1) {
+    p_refBus = buses[p_refBus];
+  }
 }
 
 /**

@@ -14,6 +14,7 @@
 #define _base_network_component_h_
 
 #include "gridpack/parallel/distribution.hpp"
+#include "gridpack/network/base_network.hpp"
 // -------------------------------------------------------------
 //  class BaseField:
 //  This class implements some basic functions that can be
@@ -24,13 +25,27 @@ class BaseNetworkComponent
   public:
     /**
      * Constructor
+     * @param network: pointer to network the component is associated with
+     * @param idx: local bus or branch index that network is associated with
      */
-    BaseNetworkComponent(void);
+    BaseNetworkComponent(BaseNetwork *network, int idx);
+
+    /**
+     * Constructor without local network index
+     * @param network: pointer to network the component is associated with
+     */
+    BaseNetworkComponent(BaseNetwork *network);
 
     /**
      * Destructor
      */
     ~BaseNetworkComponent(void);
+
+    /**
+     * Set the value of the local network index the component is associated with
+     * @param idx: value of local network index
+     */
+    void setIndex(int idx);
 
     /**
      * Return the size of the component for use in packing and
@@ -41,6 +56,8 @@ class BaseNetworkComponent
     int size(void);
 
   private:
+    BaseNetwork *p_network;
+    int p_idx;
 
 };
 

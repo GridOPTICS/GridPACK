@@ -17,6 +17,7 @@
 #include <map>
 #include "gridpack/parallel/distribution.hpp"
 #include "gridpack/network/base_network.hpp"
+#include "smart_ptr.hpp"
 // -------------------------------------------------------------
 //  class BaseField:
 //  This class implements some basic functions that can be
@@ -123,6 +124,16 @@ class BusField : public BaseField<elem> {
      * @return: bus is local (true) or ghost (false)
      */
     bool active(int index);
+
+  private:
+    /**
+     * Add another element to the field where element is assumed to be a base
+     * network component
+     * @param new_elem: element to be appended to field
+     * @return: index of new element
+     */
+    int appendComponent(smart_ptr<elem> new_elem);
+
   friend class BaseNetwork;
 };
 
