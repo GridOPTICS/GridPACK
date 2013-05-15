@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-05-10 12:12:59 d3g096
+ * @date   2013-05-10 14:27:16 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -21,6 +21,15 @@
 
 namespace gridpack {
 namespace math {
+
+// forward declarations
+class Vector;
+
+/// A way to add to Vector's and make a new one
+extern Vector *add(const Vector& A, const Vector& B);
+
+/// A way to make a copy of a Vector
+extern Vector *clone(const Vector& v);
 
 // -------------------------------------------------------------
 //  class Vector
@@ -45,7 +54,7 @@ namespace math {
 
 class Vector 
   : public parallel::Distributed,
-    public utility::Uncopyable
+    private utility::Uncopyable
 {
 public:
 
@@ -85,17 +94,17 @@ public:
     p_vector_impl->set_elements(n, i, x);
   }
 
-  // /// Add to an individual element
-  // void add_element(const int& i, const complex_type& x)
-  // {
-  //   p_vector_impl->add_element(i, x);
-  // }
+  /// Add to an individual element
+  void add_element(const int& i, const complex_type& x)
+  {
+    p_vector_impl->add_element(i, x);
+  }
 
-  // /// Add to an several elements
-  // void add_elements(const int& n, const int *i, const complex_type *x)
-  // {
-  //   p_vector_impl->add_elements(n, i, x);
-  // }
+  /// Add to an several elements
+  void add_elements(const int& n, const int *i, const complex_type *x)
+  {
+    p_vector_impl->add_elements(n, i, x);
+  }
 
   /// Get an individual element
   void get_element(const int& i, complex_type& x) const
@@ -135,6 +144,7 @@ public:
     p_vector_impl->accept(visitor);
   }
 
+  /// Allow visits by implemetation vistor (no changes to this allowed)
   void accept(ConstImplementationVisitor& visitor) const
   {
     p_vector_impl->accept(visitor);
@@ -143,17 +153,59 @@ public:
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
-  void scale(const complex_type& x);
-  void add(const Vector& x);
-  void copy(const Vector& x);
-  void reciprocal(void);
+
+  /// Multiply all elements by the specified value
+  void scale(const complex_type& x)
+  {
+    p_vector_impl->scale(x);
+  }
+
+  /// Add the specified vector
+  /** 
+   * This should throw an exception if the Communicator or length is
+   * not the same. Local lengths can be different.
+   * 
+   * @param x 
+   */
+  void add(const Vector& x)
+  {
+    p_vector_impl->add(*(x.p_vector_impl));
+  }
+
+  /// Add the specified value to all elements
+  void add(const complex_type& x)
+  {
+    p_vector_impl->add(x);
+  }
+
+  /// Copy the elements from the specified Vector
+  /** 
+   * This should throw an exception if the Communicator or length is
+   * not the same. Local lengths can be different.
+   * 
+   * @param x 
+   */
+  void copy(const Vector& x)
+  {
+    p_vector_impl->add(*(x.p_vector_impl));
+  }
+
+  /// Replace all elements with their reciprocal
+  void reciprocal(void)
+  {
+    p_vector_impl->reciprocal();
+  }
 
   // -------------------------------------------------------------
   // Vector Operations (all allocate new instances)
   // -------------------------------------------------------------
+  /// Add Vector instances
   friend Vector *add(const Vector& A, const Vector& B);
+
   // friend Vector *reorder(const Vector& A, const Reordering& r);
-  friend Vector *gridpack::math::clone(const Vector& from);
+
+  /// Create a copy of the specified Vector
+  friend Vector *clone(const Vector& from);
 
 
 protected:

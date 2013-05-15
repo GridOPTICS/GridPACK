@@ -2,7 +2,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-05-10 08:59:18 d3g096
+ * @date   2013-05-10 15:14:41 d3g096
  * 
  * @brief  
  * 
@@ -14,6 +14,7 @@
 #include "gridpack/math/implementation_visitor.hpp"
 #include "gridpack/math/petsc/petsc_vector_implementation.hpp"
 #include "gridpack/math/petsc/petsc_exception.hpp"
+#include "gridpack/math/petsc/petsc_vector_extractor.hpp"
 
 namespace gridpack {
 namespace math {
@@ -147,6 +148,34 @@ PETScVectorImplementation::p_set_elements(const int& n, const int *i, const comp
 }
 
 // -------------------------------------------------------------
+// PETScVectorImplementation::p_add_element
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_add_element(const int& i, const complex_type& x)
+{
+  PetscErrorCode ierr;
+  try {
+    ierr = VecSetValue(p_vector, i, x, ADD_VALUES); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_add_elements
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_add_elements(const int& n, const int *i, const complex_type *x)
+{
+  PetscErrorCode ierr;
+  try {
+    ierr = VecSetValues(p_vector, n, i, x, ADD_VALUES); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
 // PETScVectorImplementation::p_get_element
 // -------------------------------------------------------------
 void
@@ -231,6 +260,87 @@ PETScVectorImplementation::p_accept(ConstImplementationVisitor& visitor) const
   visitor.visit(*this);
 }
 
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_scale
+// -------------------------------------------------------------
+void 
+PETScVectorImplementation::p_scale(const complex_type& x)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecScale(p_vector, x);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::add
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_add(const VectorImplementation& x)
+{
+  PetscErrorCode ierr(0);
+  const Vec *xvec;
+  {
+    PETScConstVectorExtractor vext;
+    x.accept(vext);
+    xvec = vext.vector();
+  }
+  try {
+    PetscScalar alpha(1.0);
+
+    // This call computes y = x + alpha*y. Where y is p_vector.  
+    ierr = VecAYPX(p_vector, alpha, *xvec);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+void
+PETScVectorImplementation::p_add(const complex_type& x)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecShift(p_vector, x);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_copy
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_copy(const VectorImplementation& x)
+{
+  PetscErrorCode ierr(0);
+  const Vec *xvec;
+  {
+    PETScConstVectorExtractor vext;
+    x.accept(vext);
+    xvec = vext.vector();
+  }
+  try {
+    ierr = VecCopy(*xvec, p_vector);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_reciprocal
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_reciprocal(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecReciprocal(p_vector);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
 
 } // namespace math
 } // namespace gridpack

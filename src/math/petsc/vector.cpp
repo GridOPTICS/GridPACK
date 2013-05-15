@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-05-10 12:12:22 d3g096
+ * @date   2013-05-10 15:16:29 d3g096
  * 
  * @brief  PETSc implementation of gridpack::math::Vector
  * 
@@ -59,7 +59,7 @@ Vector::~Vector(void)
 Vector *
 clone(const Vector& from)
 {
-  std::cerr << "In clone()" << std::endl;
+  // std::cerr << "In clone()" << std::endl;
   parallel::Communicator comm(from.communicator());
   int local_size(from.local_size());
   PETScVectorImplementation *pimpl =
@@ -89,6 +89,48 @@ clone(const Vector& from)
 
   Vector *result(new Vector(pimpl));
   
+  return result;
+}
+
+// -------------------------------------------------------------
+// add
+// -------------------------------------------------------------
+Vector *
+add(const Vector& A, const Vector& B)
+{
+  parallel::Communicator comm(A.communicator());
+  int local_size(A.local_size());
+  PETScVectorImplementation *pimpl =
+    new PETScVectorImplementation(comm, local_size);
+
+  const Vec *a_vec, *b_vec;
+  {
+    PETScConstVectorExtractor vext;
+    A.accept(vext);
+    a_vec = vext.vector();
+  }
+  {
+    PETScConstVectorExtractor vext;
+    B.accept(vext);
+    b_vec = vext.vector();
+  }
+  Vec *p_vec;
+  {
+    PETScVectorExtractor vext;
+    pimpl->accept(vext);
+    p_vec = vext.vector();
+  }
+
+  PetscErrorCode ierr(0);
+  try {
+    PetscScalar alpha(1.0);
+    ierr = VecWAXPY(*p_vec, alpha, *a_vec, *b_vec);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+
+  Vector *result = 
+    new Vector(pimpl);
   return result;
 }
 

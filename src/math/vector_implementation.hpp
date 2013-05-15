@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-05-10 09:00:43 d3g096
+ * @date   2013-05-10 13:35:00 d3g096
  * 
  * @brief  
  * 
@@ -74,17 +74,17 @@ public:
     this->p_set_elements(n, i, x);
   }
 
-  // /// Add to an individual element
-  // void add_element(const int& i, const complex_type& x)
-  // {
-  //   this->p_add_element(i, x);
-  // }
+  /// Add to an individual element
+  void add_element(const int& i, const complex_type& x)
+  {
+    this->p_add_element(i, x);
+  }
 
-  // /// Add to an several elements
-  // void add_elements(const int& n, const int *i, const complex_type *x)
-  // {
-  //   this->p_add_elements(n, i, x);
-  // }
+  /// Add to an several elements
+  void add_elements(const int& n, const int *i, const complex_type *x)
+  {
+    this->p_add_elements(n, i, x);
+  }
 
   /// Get an individual element
   void get_element(const int& i, complex_type& x) const
@@ -130,6 +130,52 @@ public:
     this->p_accept(visitor);
   }
 
+  // -------------------------------------------------------------
+  // In-place Vector Operation Methods (change this instance)
+  // -------------------------------------------------------------
+
+  /// Multiply all elements by the specified value
+  void scale(const complex_type& x)
+  {
+    this->p_scale(x);
+  }
+
+  /// Add the specified vector
+  /** 
+   * This should throw an exception if the Communicator or length is
+   * not the same. Local lengths can be different.
+   * 
+   * @param x 
+   */
+  void add(const VectorImplementation& x)
+  {
+    this->p_add(x);
+  }
+
+  /// Add the specified value to all elements
+  void add(const complex_type& x)
+  {
+    this->p_add(x);
+  }
+
+  /// Copy the elements from the specified Vector
+  /** 
+   * This should throw an exception if the Communicator or length is
+   * not the same. Local lengths can be different.
+   * 
+   * @param x 
+   */
+  void copy(const VectorImplementation& x)
+  {
+    this->p_add(x);
+  }
+
+  /// Replace all elements with their reciprocal
+  void reciprocal(void)
+  {
+    this->p_reciprocal();
+  }
+
 protected:
 
   /// Get the global vector length (specialized)
@@ -147,11 +193,11 @@ protected:
   /// Set an several elements (specialized)
   virtual void p_set_elements(const int& n, const int *i, const complex_type *x) = 0;
 
-  // /// Add to an individual element (specialized)
-  // virtual void p_add_element(const int& i, const complex_type& x) = 0;
+  /// Add to an individual element (specialized)
+  virtual void p_add_element(const int& i, const complex_type& x) = 0;
 
-  // /// Add to an several elements (specialized)
-  // virtual void p_add_elements(const int& n, const int *i, const complex_type *x) = 0;
+  /// Add to an several elements (specialized)
+  virtual void p_add_elements(const int& n, const int *i, const complex_type *x) = 0;
 
   /// Get an individual element (specialized)
   virtual void p_get_element(const int& i, complex_type& x) const = 0;
@@ -174,6 +220,25 @@ protected:
 
   /// Allow visits by implementation visitors
   virtual void p_accept(ConstImplementationVisitor& visitor) const = 0;
+
+  // -------------------------------------------------------------
+  // In-place Vector Operation Methods (change this instance)
+  // -------------------------------------------------------------
+
+  /// Multiply all elements by the specified value
+  virtual void p_scale(const complex_type& x) = 0;
+
+  /// Add the specified vector
+  virtual void p_add(const VectorImplementation& x) = 0;
+
+  /// Add the specified value to all elements
+  virtual void p_add(const complex_type& x) = 0;
+
+  /// Copy the elements from the specified Vector
+  virtual void p_copy(const VectorImplementation& x) = 0;
+
+  /// Replace all elements with their reciprocal
+  virtual void p_reciprocal(void) = 0;
 
 };
 
