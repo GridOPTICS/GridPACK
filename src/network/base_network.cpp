@@ -55,7 +55,7 @@ BaseNetwork::~BaseNetwork(void)
 
 /**
  * Add a bus locally to the network
- * @param idx: global index of  bus
+ * @param idx: original index of  bus
  */
 void BaseNetwork::addBus(int idx)
 {
@@ -72,8 +72,8 @@ void BaseNetwork::addBus(int idx)
 /**
  * Add a branch locally to the network. A branch is defined by
  * buses at either end
- * @param idx1: global bus index of bus 1
- * @param idx2: global bus index of bus 2
+ * @param idx1: original bus index of bus 1
+ * @param idx2: original bus index of bus 2
  */
 void BaseNetwork::addBranch(int idx1, int idx2)
 {
@@ -102,7 +102,7 @@ void BaseNetwork::setReferenceBus(int idx)
  * @return: local index of reference bus. If reference bus is not on this
  * processor then return -1.
  */
-int BaseNetwork::getReferenceBus(void)
+int BaseNetwork::getReferenceBus(void) const
 {
   return p_refBus;
 }
@@ -160,7 +160,7 @@ void BaseNetwork::addBranchField(std::string name, stlplus::smart_ptr<BranchFiel
  * @return: a pointer to the requested field. If the field is
  *       not found, the pointer is null
  */
-smart_ptr<BusField> BaseNetwork::getBusField(std::string name)
+smart_ptr<BusField> BaseNetwork::getBusField(std::string name) const
 {
   std::map<std::string, stlplus::smart_ptr<BusField> >::iterator bus;
   bus = p_busFields.find(name);
@@ -178,7 +178,7 @@ smart_ptr<BusField> BaseNetwork::getBusField(std::string name)
  * @return: a pointer to the requested field. If the field is
  *       not found, the pointer is null
  */
-smart_ptr<BranchField> BaseNetwork::getBranchField(std::string name)
+smart_ptr<BranchField> BaseNetwork::getBranchField(std::string name) const
 {
   std::map<std::string, stlplus::smart_ptr<BranchField> >::iterator branch;
   branch = p_branchFields.find(name);
@@ -222,7 +222,7 @@ void BaseNetwork::deleteBranchField(std::string name)
  * @param bus: local bus index
  * @return: vector of local branch indices
  */
-vector<int> BaseNetwork::getConnectedBranches(int idx)
+vector<int> BaseNetwork::getConnectedBranches(int idx) const
 {
   return p_branchNeighbors[idx];
 }
@@ -232,7 +232,7 @@ vector<int> BaseNetwork::getConnectedBranches(int idx)
  * @param bus: local bus index
  * @return: vector of local bus indices
  */
-vector<int> BaseNetwork::getConnectedBuses(int idx)
+vector<int> BaseNetwork::getConnectedBuses(int idx) const
 {
   vector<int> branches = p_branchNeighbors[idx];
   int size = branches.size();
@@ -251,9 +251,10 @@ vector<int> BaseNetwork::getConnectedBuses(int idx)
 /**
  * Return indices of buses at either end of branch
  * @param bus: local branch index
- * @return: vector of local bus indices
+ * @param bus1: local index of bus at one end of branch
+ * @param bus2: local index of bus at other end of branch
  */
-void BaseNetwork::getBusEndpoints(int idx, int *bus1, int *bus2)
+void BaseNetwork::getBusEndpoints(int idx, int *bus1, int *bus2) const
 {
   *bus1 = p_localBranchIndex1[idx];
   *bus2 = p_localBranchIndex2[idx];

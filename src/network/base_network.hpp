@@ -60,15 +60,15 @@ public:
 
   /**
    * Add a bus locally to the network
-   * @param idx: global index of  bus
+   * @param idx: original index of  bus
    */
   void addBus(int idx);
 
   /**
    * Add a branch locally to the network. A branch is defined by
    * buses at either end
-   * @param idx1: global bus index of bus 1
-   * @param idx2: global bus index of bus 2
+   * @param idx1: original bus index of bus 1
+   * @param idx2: original bus index of bus 2
    */
   void addBranch(int idx1, int idx2);
 
@@ -83,7 +83,7 @@ public:
    * @return: local index of reference bus. If reference bus is not on this
    * processor then return -1.
    */
-  int getReferenceBus(void);
+  int getReferenceBus(void) const;
 
   /**
    * Add a new field to the network buses
@@ -108,7 +108,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-  stlplus::smart_ptr<BusField> getBusField(std::string name);
+  stlplus::smart_ptr<BusField> getBusField(std::string name) const;
 
   /**
    * Retrieve a pointer to an existing branch field
@@ -117,7 +117,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-  stlplus::smart_ptr<BranchField> getBranchField(std::string name);
+  stlplus::smart_ptr<BranchField> getBranchField(std::string name) const;
 
   /**
    * Delete an existing bus field
@@ -138,21 +138,22 @@ public:
    * @param bus: local bus index
    * @return: vector of local branch indices
    */
-  vector<int> getConnectedBranches(int idx);
+  vector<int> getConnectedBranches(int idx) const;
 
   /**
    * Return list of buses connected to central bus via one branch
    * @param bus: local bus index
    * @return: vector of local bus indices
    */
-  vector<int> getConnectedBuses(int idx);
+  vector<int> getConnectedBuses(int idx) const;
 
   /**
    * Return indices of buses at either end of branch
    * @param bus: local branch index
-   * @return: vector of local bus indices
+   * @param bus1: local index of bus at one end of branch
+   * @param bus2: local index of bus at other end of branch
    */
-  void getBusEndpoints(int idx, int *bus1, int *bus2);
+  void getBusEndpoints(int idx, int *bus1, int *bus2) const;
 
   /**
    * Clean all ghost buses and branches from the system. This can be used

@@ -15,6 +15,7 @@
 
 #include "gridpack/parallel/distribution.hpp"
 #include "gridpack/network/base_network.hpp"
+#include "smart_ptr.hpp"
 // -------------------------------------------------------------
 //  class BaseField:
 //  This class implements some basic functions that can be
@@ -24,22 +25,32 @@ class BaseNetworkComponent
   : public MatVecInterface {
   public:
     /**
+     * Simple constructor
+     */
+    BaseNetworkComponent();
+
+    /**
      * Constructor
      * @param network: pointer to network the component is associated with
      * @param idx: local bus or branch index that network is associated with
      */
-    BaseNetworkComponent(BaseNetwork *network, int idx);
+    BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network, int idx);
 
     /**
      * Constructor without local network index
      * @param network: pointer to network the component is associated with
      */
-    BaseNetworkComponent(BaseNetwork *network);
+    BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network);
 
     /**
      * Destructor
      */
     ~BaseNetworkComponent(void);
+
+    /**
+     * Set the network associated with the component
+     */
+    void setNetwork(stlplus::smart_ptr<BaseNetwork> network);
 
     /**
      * Set the value of the local network index the component is associated with
@@ -56,7 +67,7 @@ class BaseNetworkComponent
     int size(void);
 
   private:
-    BaseNetwork *p_network;
+    stlplus::smart_ptr<BaseNetwork> p_network;
     int p_idx;
 
 };
