@@ -27,36 +27,36 @@ class BaseNetworkComponent
     /**
      * Simple constructor
      */
-    BaseNetworkComponent();
+    virtual BaseNetworkComponent();
 
     /**
      * Constructor
      * @param network: pointer to network the component is associated with
      * @param idx: local bus or branch index that network is associated with
      */
-    BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network, int idx);
+    virtual BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network, int idx);
 
     /**
      * Constructor without local network index
      * @param network: pointer to network the component is associated with
      */
-    BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network);
+    virtual BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network);
 
     /**
      * Destructor
      */
-    ~BaseNetworkComponent(void);
+    virtual ~BaseNetworkComponent(void);
 
     /**
      * Set the network associated with the component
      */
-    void setNetwork(stlplus::smart_ptr<BaseNetwork> network);
+    virtual void setNetwork(stlplus::smart_ptr<BaseNetwork> network);
 
     /**
      * Set the value of the local network index the component is associated with
      * @param idx: value of local network index
      */
-    void setIndex(int idx);
+    virtual void setIndex(int idx);
 
     /**
      * Return the size of the component for use in packing and
@@ -64,7 +64,7 @@ class BaseNetworkComponent
      * it in for now.
      * @return: size of network component
      */
-    int size(void);
+    virtual int size(void) const;
 
   private:
     stlplus::smart_ptr<BaseNetwork> p_network;

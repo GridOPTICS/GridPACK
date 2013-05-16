@@ -75,7 +75,7 @@ void BaseNetworkComponent::setIndex(int idx)
  * it in for now.
  * @return: size of network component
  */
-int BaseNetworkComponent::size(void)
+int BaseNetworkComponent::size(void) const
 {
   return sizeof(*this);
 }
