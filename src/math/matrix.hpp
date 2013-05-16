@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-04-26 15:22:18 d3g096
+ * @date   2013-05-16 11:16:07 d3g096
  * 
  * @brief  
  * 
@@ -19,10 +19,10 @@
 #define _matrix_hpp_
 
 #include <boost/scoped_ptr.hpp>
-#include "gridpack/parallel/Distributed.hpp"
-#include "gripack/math/matrix_implementation.hpp"
-#include "gripack/math/vector.hpp"
-#include "gripack/math/reordering.hpp"
+#include "gridpack/parallel/distributed.hpp"
+#include "gridpack/utilities/uncopyable.hpp"
+#include "gridpack/math/matrix_implementation.hpp"
+#include "gridpack/math/vector.hpp"
 
 
 namespace gridpack {
@@ -41,7 +41,7 @@ namespace math {
  */
 class Matrix 
   : public parallel::Distributed,
-    private UnCopyable
+    private utility::Uncopyable
 {
 public:
 
@@ -52,125 +52,113 @@ public:
    * subclasses.
    * 
    */
-  enum StorageType {
-    DenseMatrix,
-    SparseMatrix
-  };
+  enum StorageType { Dense, Sparse };
 
   /// Constructor.
-  Matrix(const parallel::Distribution& dist, 
-         const StorageType& storage_type = SparseMatrix);
-
-  /// Constructor specifying number of local rows
-  Matrix(const parallel::Distribution& dist, 
+  Matrix(const parallel::Communicator& dist,
          const int& local_rows,
-         const StorageType& storage_type = SparseMatrix);
+         const int& cols,
+         const StorageType& storage_type = Sparse);
 
   /// Destructor
-  virtual ~Matrix(void);
+  ~Matrix(void);
 
   /// Get the total number of rows in this matrix
   int rows(void) const
   {
-    matrix_impl_->rows();
+    p_matrix_impl->rows();
   }
 
   /// Get the number of local rows in this matirx
   int local_rows(void) const
   {
-    matrix_impl_->local_rows();
+    p_matrix_impl->local_rows();
   }
 
   /// Get the number of columns in this matrix
   int cols(void) const
   {
-    matrix_impl_->cols();
+    p_matrix_impl->cols();
   }
 
-  /// Make the matrix ready to receive elements
-  void fill_begin(void) 
-  {
-    matrix_impl_->fill_begin();
-  }
+  // /// Set an individual element
+  // void set_element(const int& i, const int& j, const complex_type& x)
+  // {
+  //   p_matrix_impl->set_element(i, j, x);
+  // }
 
-  /// Indicate that matrix elements have been set
-  void fill_done(void) 
-  {
-    matrix_impl_->fill_done();
-  }
+  // /// Set an several elements
+  // void set_elements(cont int& n, const int *i, const int *j, const complex_type *x)
+  // {
+  //   p_matrix_impl->set_elements(n, i, j, x);
+  // }
 
-  /// Set an individual element
-  void set_element(const int& i, const int& j, const complex_type& x)
-  {
-    matrix_impl_->set_element(i, j, x);
-  }
+  // /// Set all elements in a row
+  // void set_row(const int& nj, const int& i, const int *j, const complex_type *x)
+  // {
+  //   p_matrix_impl->set_row(nj, i, j, x);
+  // }
 
-  /// Set an several elements
-  void set_elements(cont int& n, const int *i, const int *j, const complex_type *x)
-  {
-    matrix_impl_->set_elements(n, i, j, x);
-  }
+  // /// Set all elements in a row
+  // void set_region(const int& ni, const int& nj, 
+  //                 const int *i, const int *j, const complex_type *x)
+  // {
+  //   p_matrix_impl->set_row(ni, nj, i, j, x);
+  // }
 
-  /// Set all elements in a row
-  void set_row(const int& nj, const int& i, const int *j, const complex_type *x)
-  {
-    matrix_impl_->set_row(nj, i, j, x);
-  }
+  // /// Add to an individual element
+  // void add_element(const int& i, const int& j, const complex_type& x)
+  // {
+  //   p_matrix_impl->add_element(i, j, x);
+  // }
 
-  /// Set all elements in a row
-  void set_region(const int& ni, const int& nj, 
-                  const int *i, const int *j, const complex_type *x)
-  {
-    matrix_impl_->set_row(ni, nj, i, j, x);
-  }
+  // /// Add to an several elements
+  // void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
+  // {
+  //   p_matrix_impl->add_elements(n, i, j, x);
+  // }
 
-  /// Add to an individual element
-  void add_element(const int& i, const int& j, const complex_type& x)
-  {
-    matrix_impl_->add_element(i, j, x);
-  }
+  // /// Add to all elements in a row
+  // void add_row(const int& nj, const int& i, const int *j, const complex_type *x)
+  // {
+  //   p_matrix_impl->add_row(nj, i, j, x);
+  // }
 
-  /// Add to an several elements
-  void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
-  {
-    matrix_impl_->add_elements(n, i, j, x);
-  }
+  // /// Get an individual element
+  // void get_element(const int& i, const int& j, complex_type& x) const
+  // {
+  //   p_matrix_impl->get_element(i, j, x);
+  // }
 
-  /// Add to all elements in a row
-  void add_row(const int& nj, const int& i, const int *j, const complex_type *x)
-  {
-    matrix_impl_->add_row(nj, i, j, x);
-  }
+  // /// Get an several elements
+  // void get_elements(cont int& n, const int *i, const int *j, complex_type *x) const
+  // {
+  //   p_matrix_impl->get_elements(n, i, j, x);
+  // }
 
-  /// Get an individual element
-  void get_element(const int& i, const int& j, complex_type& x) const
-  {
-    matrix_impl_->get_element(i, j, x);
-  }
+  // /// Get all elements in a row
+  // void get_row(const int& nj, const int& i, const int *j, complex_type *x)  const
+  // {
+  //   p_matrix_impl->get_row(nj, i, j, x);
+  // }
 
-  /// Get an several elements
-  void get_elements(cont int& n, const int *i, const int *j, complex_type *x) const
-  {
-    matrix_impl_->get_elements(n, i, j, x);
-  }
+  // /// Get all elements in a row
+  // void get_region(const int& ni, const int& nj, 
+  //                 const int *i, const int *j, complex_type *x) const
+  // {
+  //   p_matrix_impl->get_row(ni, nj, i, j, x);
+  // }
 
-  /// Get all elements in a row
-  void get_row(const int& nj, const int& i, const int *j, complex_type *x)  const
+  /// Indicate the matrix is ready to use
+  void ready(void)
   {
-    matrix_impl_->get_row(nj, i, j, x);
-  }
-
-  /// Get all elements in a row
-  void get_region(const int& ni, const int& nj, 
-                  const int *i, const int *j, complex_type *x) const
-  {
-    matrix_impl_->get_row(ni, nj, i, j, x);
+    p_matrix_impl->ready();
   }
 
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor) const
   {
-    matrix_impl_->accept(visitor);
+    p_matrix_impl->accept(visitor);
   }
 
   // -------------------------------------------------------------
@@ -178,17 +166,17 @@ public:
   // -------------------------------------------------------------
 
   /// Get a part of the matrix (new instance allocated)
-  Matrix *submatrix(const int& istart, const int& jstart,
-                    const int& iend, const int& jend) const;
+  // Matrix *submatrix(const int& istart, const int& jstart,
+  //                   const int& iend, const int& jend) const;
 
   // -------------------------------------------------------------
   // In-Place Matrix Operation Methods (change this instance)
   // -------------------------------------------------------------
-  void scale(const complex_type& x);
-  void multiply_diagonal(const Vector& x);
-  void add(const Matrix& A);
-  void identity(void);
-  void zero(void);
+  // void scale(const complex_type& x);
+  // void multiply_diagonal(const Vector& x);
+  // void add(const Matrix& A);
+  // void identity(void);
+  // void zero(void);
 
   // -------------------------------------------------------------
   // Matrix Operations 
@@ -202,7 +190,7 @@ public:
   friend Matrix *factorize(const Matrix& A);
   friend Matrix *transpose(const Matrix& A);
   friend Matrix *inverse(const Matrix& A);
-  friend Matrix *reorder(const Matrix& A, const Reordering& r);
+  // friend Matrix *reorder(const Matrix& A, const Reordering& r);
   friend Matrix *clone(const Matrix& A);
   friend Matrix *identity(const Matrix& A);
   friend Vector *diagional(const Matrix& A);
@@ -217,7 +205,7 @@ public:
 protected:
 
   /// The actual implementation
-  boost::scoped_ptr<MatrixImplementation> matrix_impl_;
+  boost::scoped_ptr<MatrixImplementation> p_matrix_impl;
 
   /// Construct with an existing (allocated) implementation 
   Matrix(MatrixImplementation *impl);

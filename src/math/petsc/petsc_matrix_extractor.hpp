@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_extractor.hpp
  * @author William A. Perkins
- * @date   Wed Apr 17 13:57:20 2013
+ * @date   2013-05-16 08:31:57 d3g096
  * 
  * @brief  
  * 
@@ -21,13 +21,13 @@
 #ifndef _petsc_matrix_extractor_hpp_
 #define _petsc_matrix_extractor_hpp_
 
-#include "gridpack/utility/uncopyable.hpp"
-#include "implementation_visitor.hpp"
-#include "petsc_matrix_implementation.hpp"
-#include "petscmat.h"
+#include "gridpack/utilities/uncopyable.hpp"
+#include "gridpack/math/implementation_visitor.hpp"
 
 namespace gridpack {
 namespace math {
+
+class PETScMatrixImplementation;
 
 // -------------------------------------------------------------
 //  class PETScMatrixExtractor
@@ -35,7 +35,7 @@ namespace math {
 
 class PETScMatrixExtractor 
   : public ImplementationVisitor,
-    private utility::UnCopyable
+    private utility::Uncopyable
 {
 public:
 
@@ -49,7 +49,7 @@ public:
   {}
 
   /// 
-  void visit(PETScMatrixImplentation& petsc_impl)
+  void visit(PETScMatrixImplementation& petsc_impl)
   {
     matrix_ = petsc_impl.get_matrix();
   }
@@ -64,5 +64,44 @@ protected:
   Mat *matrix_;
 
 };
+
+
+// -------------------------------------------------------------
+//  class PETScConstMatrixExtractor
+// -------------------------------------------------------------
+class PETScConstMatrixExtractor 
+  : public ImplementationVisitor,
+    private utility::Uncopyable
+{
+public:
+
+  /// Default constructor.
+  PETScConstMatrixExtractor(void)
+    : matrix_(NULL)
+  {}
+
+  /// Destructor
+  ~PETScConstMatrixExtractor(void)
+  {}
+
+  /// 
+  void visit(const PETScMatrixImplementation& petsc_impl)
+  {
+    matrix_ = petsc_impl.get_matrix();
+  }
+
+  const Mat *matrix(void) const
+  {
+    return matrix_;
+  }
+
+protected:
+  /// Where the matrix goes if it's found
+  const Mat *matrix_;
+
+};
+
+} // namespace math
+} // namespace gridpack
 
 #endif

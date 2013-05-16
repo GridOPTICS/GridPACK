@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   Mon Mar 25 12:26:00 2013
+ * @date   2013-05-16 10:51:54 d3g096
  * 
  * @brief  
  * 
@@ -18,7 +18,7 @@
 #define _petsc_matrix_implementation_h_
 
 #include <petscmat.h>
-#include "matrix_implementation.hpp"
+#include "gridpack/math/matrix_implementation.hpp"
 
 
 namespace gridpack {
@@ -32,126 +32,83 @@ class PETScMatrixImplementation
 {
 public:
 
-  /// Default constructor.
-  PETScMatrixImplementation(const parallel::Distribution& dist,
-                            const int& rows, const int& cols);
-
-  /// Construct with an existing Mat
-  PETScMatrixImplementation(const parallel::Distribution& dist, Mat *A);
+  /// Default constructor
+  PETScMatrixImplementation(const parallel::Communicator& comm,
+                            const int& rows, const int& cols,
+                            const bool& dense = false);
 
   /// Destructor
   ~PETScMatrixImplementation(void);
 
-  /// Allow visits by implemetation visitor
-  void accept(ImplementationVisitor& visitor) const;
+  /// Get the PETSc matrix
+  Mat *get_matrix(void)
+  {
+    return &p_matrix;
+  }
+
+  /// Get the PETSc matrix (const version)
+  const Mat *get_matrix(void) const
+  {
+    return &p_matrix;
+  }
 
 protected:
 
   /// The PETSc matrix representation
-  Mat matrix_;
+  Mat p_matrix;
 
-  /// Set an individual element
-  void set_element_(const int& i, const int& j, const complex_type& x);
+  /// Get the total number of rows in this matrix (specialized)
+  int p_rows(void) const;
 
-  /// Set an several element
-  void set_elements_(const int *i, const int *j, const complex_type *x);
+  /// Get the number of local rows in this matirx (specialized)
+  int p_local_rows(void) const;
 
-  /// Set all elements in a row
-  void set_row_(const int& i, const int *j, const complex_type *x);
+  /// Get the number of columns in this matrix (specialized)
+  int p_cols(void) const;
 
-  /// Set all elements in a region
-  void set_region_(const int& ni, const int& nj, 
-                   const int *i, const int *j, const complex_type *x) = 0;
+  // /// Set an individual element
+  // void p_set_element(const int& i, const int& j, const complex_type& x);
 
-  /// Add to  an individual element
-  void add_element_(const int& i, const int& j, const complex_type& x);
+  // /// Set an several element
+  // void p_set_elements(const int *i, const int *j, const complex_type *x);
 
-  /// Add to  an several element
-  void add_elements_(const int *i, const int *j, const complex_type *x);
+  // /// Set all elements in a row
+  // void p_set_row(const int& i, const int *j, const complex_type *x);
 
-  /// Add to  all elements in a row
-  void add_row_(const int& i, const int *j, const complex_type *x);
+  // /// Set all elements in a region
+  // void p_set_region(const int& ni, const int& nj, 
+  //                          const int *i, const int *j, const complex_type *x);
 
-  /// Get an individual element
-  void get_element_(const int& i, const int& j, const complex_type& x);
+  // /// Add to  an individual element
+  // void p_add_element(const int& i, const int& j, const complex_type& x);
 
-  /// Get an several element
-  void get_elements_(const int *i, const int *j, const complex_type *x);
+  // /// Add to  an several element
+  // void p_add_elements(const int *i, const int *j, const complex_type *x);
 
-  /// Get all elements in a row
-  void get_row_(const int& i, const int *j, const complex_type *x);
+  // /// Add to  all elements in a row
+  // void p_add_row(const int& i, const int *j, const complex_type *x);
 
-  /// Get all elements in a region
-  void get_region_(const int& ni, const int& nj, 
-                   const int *i, const int *j, const complex_type *x);
+  // /// Get an individual element
+  // void p_get_element(const int& i, const int& j, complex_type& x) const;
 
-};
+  // /// Get an several element
+  // void p_get_elements(const int *i, const int *j, complex_type *x) const;
 
+  // /// Get all elements in a row
+  // void p_get_row(const int& i, const int *j, complex_type *x) const;
 
+  // /// Get all elements in a region
+  // void p_get_region(const int& ni, const int& nj, 
+  //                          const int *i, const int *j, complex_type *x) const;
 
-// -------------------------------------------------------------
-//  class PETScSparseParallelMatrixImplementation
-// -------------------------------------------------------------
-class PETScSparseParallelMatrixImplementation 
-  : public PETScMatrixImplementation
-{
-public:
+  /// Make this instance ready to use
+  void p_ready(void);
 
-  /// Default constructor.
-  PETScSparseParallelMatrixImplementation(const parallel::Distribution& dist,
-                                          const int& rows, const int& cols);
+  /// Allow visits by implementation visitors
+  void p_accept(ImplementationVisitor& visitor);
 
-  /// Destructor
-  ~PETScSparseParallelMatrixImplementation(void);
-};
-
-// -------------------------------------------------------------
-//  class PETScSparseSerialMatrixImplementation
-// -------------------------------------------------------------
-class PETScSparseSerialMatrixImplementation 
-  : public PETScMatrixImplementation
-{
-public:
-
-  /// Default constructor.
-  PETScSparseSerialMatrixImplementation(const parallel::Distribution& dist,
-                                        const int& rows, const int& cols);
-
-  /// Destructor
-  ~PETScSparseSerialMatrixImplementation(void);
-
-};
-
-// -------------------------------------------------------------
-//  class PETScDenseParallelMatrixImplementation
-// -------------------------------------------------------------
-class PETScDenseParallelMatrixImplementation 
-  : public PETScMatrixImplementation
-{
-public:
-
-  /// Default constructor.
-  PETScDenseParallelMatrixImplementation(const parallel::Distribution& dist,
-                                          const int& rows, const int& cols);
-
-  /// Destructor
-  ~PETScDenseParallelMatrixImplementation(void);
-};
-
-// -------------------------------------------------------------
-//  class PETScDenseSerialMatrixImplementation
-// -------------------------------------------------------------
-class PETScDenseSerialMatrixImplementation 
-  : public PETScMatrixImplementation
-{
-public:
-
-  /// Default constructor.
-  PETScDenseSerialMatrixImplementation(const parallel::Distribution& dist,
-                                        const int& rows, const int& cols);
-
-  /// Destructor
-  ~PETScDenseSerialMatrixImplementation(void);
+  /// Allow visits by implementation visitors
+  void p_accept(ConstImplementationVisitor& visitor) const;
 
 };
 

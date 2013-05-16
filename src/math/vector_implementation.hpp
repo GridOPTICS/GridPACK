@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-05-10 13:35:00 d3g096
+ * @date   2013-05-15 14:00:02 d3g096
  * 
  * @brief  
  * 
@@ -124,7 +124,7 @@ public:
     this->p_accept(visitor);
   }
 
-  /// Allow visits by implemetation visitor
+  /// Allow visits by const implemetation visitor
   void accept(ConstImplementationVisitor& visitor) const
   {
     this->p_accept(visitor);

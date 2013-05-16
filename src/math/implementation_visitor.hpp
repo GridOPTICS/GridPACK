@@ -3,7 +3,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2013-05-10 08:54:52 d3g096
+ * @date   2013-05-16 08:33:02 d3g096
  * 
  * @brief  
  * 
@@ -57,8 +57,8 @@ public:
   virtual void visit(VectorImplementation&);
   virtual void visit(PETScVectorImplementation&);
 
-  // virtual void visit(MatrixImplementation&);
-  // virtual void visit(PETScMatrixImplementation&);
+  virtual void visit(MatrixImplementation&);
+  virtual void visit(PETScMatrixImplementation&);
 
 };
 
@@ -86,8 +86,8 @@ public:
   virtual void visit(const VectorImplementation&);
   virtual void visit(const PETScVectorImplementation&);
 
-  // virtual void visit(const MatrixImplementation&);
-  // virtual void visit(const PETScMatrixImplementation&);
+  virtual void visit(const MatrixImplementation&);
+  virtual void visit(const PETScMatrixImplementation&);
 
 };
 

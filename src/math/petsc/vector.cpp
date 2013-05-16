@@ -2,9 +2,9 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-05-10 15:16:29 d3g096
+ * @date   2013-05-15 13:39:02 d3g096
  * 
- * @brief  PETSc implementation of gridpack::math::Vector
+ * @brief  PETSc-specific part of Vector
  * 
  * 
  */
@@ -40,17 +40,6 @@ Vector::Vector(const parallel::Communicator& comm, const int& local_length)
   PETScVectorImplementation *impl = 
     new PETScVectorImplementation(this->communicator(), local_length);
   p_vector_impl.reset(impl);
-}
-
-Vector::Vector(VectorImplementation *vimpl)
-  : parallel::Distributed(vimpl->communicator()), utility::Uncopyable(),
-    p_vector_impl(vimpl)
-{
-}
-
-Vector::~Vector(void)
-{
-  // empty
 }
 
 // -------------------------------------------------------------
