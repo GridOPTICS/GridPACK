@@ -1,0 +1,266 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<xs:schema targetNamespace="http://gridpack.pnnl.gov/1.0"
+    elementFormDefault="qualified"
+    xmlns="http://gridpack.pnnl.gov/1.0"
+    xmlns:mstns="http://gridpack.pnnl.gov/1.0"
+    xmlns:xs="http://www.w3.org/2001/XMLSchema"
+>
+  <xs:element name="Configuration">
+    <xs:complexType>
+      <xs:all>
+        <xs:element name="Time">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="Start" type="xs:string"></xs:element>
+              <xs:element name="Limit">
+                <xs:complexType>
+                  <xs:choice>
+                    <xs:element name="Duration" type="xs:double"></xs:element>
+                    <xs:element name="End" type="xs:double"></xs:element>
+                  </xs:choice>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Step" type="xs:double"></xs:element>
+              <xs:element name="Mode">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="Steady"/>
+                    <xs:enumeration value="Transient"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="Fluid">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="Density" type="xs:double"></xs:element>
+              <xs:element name="Viscosity" type="xs:double"></xs:element>
+              <xs:element name="ThermalExpansion" type="xs:double" minOccurs="0"> </xs:element>
+              <xs:element name="SalinityExp" type="xs:double" minOccurs="0"></xs:element>
+              <xs:element name="Temperature" type="xs:double" minOccurs="0"></xs:element>
+              <xs:element name="Prandtl" type="xs:double" minOccurs="0"></xs:element>
+              <xs:element name="Conductivity" type="xs:double" minOccurs="0"></xs:element>
+              <xs:element name="HeatCapacity" type="xs:double" minOccurs="0"></xs:element>
+              <xs:element name="MolecularMass" type="xs:double" minOccurs="0"></xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+        
+        <xs:element name="Option">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="Gradient" minOccurs="0">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="Kind">
+                      <xs:simpleType>
+                        <xs:restriction base="xs:string">
+                          <xs:enumeration value="Guass"/>
+                          <xs:enumeration value="OtherKind"/>
+                        </xs:restriction>
+                      </xs:simpleType>                      
+                    </xs:element>
+                    <xs:element name="Iterate" type="xs:integer"></xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="TimeStepping" minOccurs="0">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="Euler"/>
+                    <xs:enumeration value="OtherTimeStepping"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="Hydro" minOccurs="0">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="Iterate" type="xs:integer"></xs:element>
+                    <xs:element name="ConvergeMass" type="xs:double"></xs:element>
+                    <xs:element name="RelaxPressure" type="xs:double"></xs:element>
+                    <xs:element name="RelaxVelocity" type="xs:double"></xs:element>
+                    <xs:element name="DeltaP2" type="OnOff"></xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="SchemeVelocity" minOccurs="0">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="Kind" type="SchemeValue"></xs:element>
+                    <xs:element name="Value" type="xs:double"></xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="SchemeScalar" minOccurs="0">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="Name" type="xs:string"></xs:element>
+                    <xs:element name="Kind" type="SchemeValue"></xs:element>
+                    <xs:element name="Value" type="xs:double"></xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="Solver" minOccurs="0">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="RelativeTolerance" type="xs:double"></xs:element>
+                    <xs:element name="AbsoluteTolerance" type="xs:double"></xs:element>
+                    <xs:element name="Verbose" type="YesNo"></xs:element>
+                    <xs:element name="Iterate" type="xs:integer"></xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+              <xs:element name="DefaultVelocity" minOccurs="0" type="VelocityValue"></xs:element>
+              <xs:element name="DefaultScalar" minOccurs="0">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="Name" type="xs:string"></xs:element>
+                    <xs:element name="Value" type="xs:double"></xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Mesh">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="Kind">
+                <xs:simpleType>
+                  <xs:restriction base="xs:string">
+                    <xs:enumeration value="CGNS"/>
+                    <xs:enumeration value="OtherMeshKind"/>
+                  </xs:restriction>
+                </xs:simpleType>
+              </xs:element>
+              <xs:element name="File" type="xs:anyURI"></xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="BCList">
+          <xs:complexType>
+            <xs:sequence maxOccurs="unbounded">
+              <xs:element name="BC">
+                <xs:complexType>
+                  <xs:all>
+                    <xs:element name="Name" type="xs:string"></xs:element>
+                    <xs:element name="Info">
+                      <xs:complexType>
+                        <xs:choice>
+                          <xs:element name="Scalar">
+                            <xs:complexType>
+                              <xs:all>
+                                <xs:element name="Name" type="xs:string"></xs:element>
+                                <xs:element name="Value">
+                                  <xs:complexType>
+                                    <xs:choice>
+                                      <xs:element name="Constant" type="xs:double"></xs:element>
+                                      <xs:element name="TransientFile" type="xs:anyURI"></xs:element>
+                                    </xs:choice>
+                                  </xs:complexType>
+                                </xs:element>
+                              </xs:all>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="Velocity">
+                            <xs:complexType>
+                                    <xs:choice>
+                                      <xs:element name="Constant" type="xs:double"></xs:element>
+                                      <xs:element name="TransientFile" type="xs:anyURI"></xs:element>
+                                    </xs:choice>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="Flux">
+                            <xs:complexType>
+                              <xs:choice>
+                                <xs:element name="Constant" type="VelocityValue"></xs:element>
+                                <xs:element name="TransientFile" type="xs:anyURI"></xs:element>
+                              </xs:choice>
+                            </xs:complexType>
+                          </xs:element>
+                          <xs:element name="Adsoption" type="xs:string"> </xs:element>
+                          <xs:element name="Motion"> </xs:element>
+                        </xs:choice>
+                      </xs:complexType>
+                    </xs:element>
+                  </xs:all>
+                </xs:complexType>
+              </xs:element>
+            </xs:sequence>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="Output">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="CGNS" type="xs:anyURI"></xs:element>
+              <xs:element name="GeometryCGNS" type="xs:anyURI" minOccurs="0"></xs:element>
+              <xs:element name="Interval" type="xs:integer" minOccurs="0"></xs:element>
+              <xs:element name="StartTime" type="xs:double" minOccurs="0"></xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+
+        <xs:element name="BoundaryOutput">
+          <xs:complexType>
+            <xs:all>
+              <xs:element name="Enable" type="OnOff" default="On"></xs:element>
+              <xs:element name="Name" type="xs:anyURI"></xs:element>
+              <xs:element name="Interval" type="xs:integer" default="1"></xs:element>
+              <xs:element name="Select">
+                <xs:complexType>
+                  <xs:sequence maxOccurs="unbounded">
+                    <xs:choice>
+                      <xs:element name="Ignore" type="xs:string"></xs:element>
+                      <xs:element name="Only" type="xs:string"></xs:element>
+                    </xs:choice>
+                  </xs:sequence>
+                </xs:complexType>
+              </xs:element>
+            </xs:all>
+          </xs:complexType>
+        </xs:element>
+      </xs:all>
+    </xs:complexType>
+  </xs:element>
+
+  <xs:simpleType name="ValueType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Velocity"/>
+      <xs:enumeration value="Scalar"/>
+    </xs:restriction>
+  </xs:simpleType> 
+  <xs:simpleType name="OnOff">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="On"/>
+      <xs:enumeration value="Off"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="YesNo">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Yes"/>
+      <xs:enumeration value="No"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:simpleType name="SchemeValue">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="CDS"/>
+      <xs:enumeration value="SOU"/>
+      <xs:enumeration value="MINMOD"/>
+      <xs:enumeration value="MUSCL"/>
+    </xs:restriction>
+  </xs:simpleType>
+  <xs:complexType name="VelocityValue">
+    <xs:all>
+      <xs:element name="X" type="xs:double" default="0.0" minOccurs="0"></xs:element>
+      <xs:element name="Y" type="xs:double" default="0.0" minOccurs="0"></xs:element>
+      <xs:element name="Z" type="xs:double" default="0.0" minOccurs="0"></xs:element>
+    </xs:all>
+  </xs:complexType>
+  
+</xs:schema>
