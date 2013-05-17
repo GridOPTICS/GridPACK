@@ -78,6 +78,7 @@
               <xs:element name="Hydro" minOccurs="0">
                 <xs:complexType>
                   <xs:all>
+                    <xs:element name="Enable" type="OnOff" default="On"></xs:element>
                     <xs:element name="Iterate" type="xs:integer"></xs:element>
                     <xs:element name="ConvergeMass" type="xs:double"></xs:element>
                     <xs:element name="RelaxPressure" type="xs:double"></xs:element>

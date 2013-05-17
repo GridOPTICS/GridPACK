@@ -19,6 +19,7 @@
     </Gradient>
     <TimeStepping>Euler</TimeStepping>
     <Hydro>
+      <Enable>On</Enable>
       <Iterate>5</Iterate>
       <ConvergeMass>1e-14</ConvergeMass>
       <RelaxPressure>0.10</RelaxPressure>
