@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-05-15 13:39:36 d3g096
+ * @date   2013-05-17 13:00:26 d3g096
  * 
  * @brief  
  * 
@@ -10,6 +10,7 @@
  */
 // -------------------------------------------------------------
 
+#include <boost/assert.hpp>
 #include "gridpack/math/matrix.hpp"
 
 namespace gridpack {
@@ -23,7 +24,7 @@ Matrix::Matrix(MatrixImplementation *impl)
     utility::Uncopyable(),
     p_matrix_impl(impl)
 {
-  
+  BOOST_ASSERT(p_matrix_impl);
 }
 
 Matrix::~Matrix(void)

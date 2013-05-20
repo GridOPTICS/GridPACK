@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-05-16 11:18:43 d3g096
+ * @date   2013-05-20 07:26:39 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -24,7 +24,7 @@ namespace math {
 // Matrix:: constructors / destructor
 // -------------------------------------------------------------
 Matrix::Matrix(const parallel::Communicator& comm,
-               const int& rows,
+               const int& local_rows,
                const int& cols,
                const StorageType& storage_type)
   : parallel::Distributed(comm), utility::Uncopyable(),
@@ -33,11 +33,11 @@ Matrix::Matrix(const parallel::Communicator& comm,
   switch (storage_type) {
   case Sparse:
     p_matrix_impl.reset(new PETScMatrixImplementation(this->communicator(),
-                                                      rows, cols, false));
+                                                      local_rows, cols, false));
     break;
   case Dense:
     p_matrix_impl.reset(new PETScMatrixImplementation(this->communicator(),
-                                                      rows, cols, true));
+                                                      local_rows, cols, true));
     break;
   default:
     BOOST_ASSERT(false);

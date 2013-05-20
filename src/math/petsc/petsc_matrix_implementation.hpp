@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-05-16 10:51:54 d3g096
+ * @date   2013-05-17 13:35:07 d3g096
  * 
  * @brief  
  * 
@@ -34,7 +34,7 @@ public:
 
   /// Default constructor
   PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const int& rows, const int& cols,
+                            const int& local_rows, const int& cols,
                             const bool& dense = false);
 
   /// Destructor
@@ -56,6 +56,9 @@ protected:
 
   /// The PETSc matrix representation
   Mat p_matrix;
+
+  /// Get the global index range of the locally owned rows (specialized)
+  void p_local_row_range(int& lo, int& hi) const;
 
   /// Get the total number of rows in this matrix (specialized)
   int p_rows(void) const;

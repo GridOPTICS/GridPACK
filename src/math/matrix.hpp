@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-05-16 11:16:07 d3g096
+ * @date   2013-05-20 08:11:10 d3g096
  * 
  * @brief  
  * 
@@ -36,7 +36,7 @@ namespace math {
  * This class uses the Pimpl idiom for implementation in order so the
  * interface is completely free of the underlying library.  If
  * constructed with a parallel environment with only one process, a
- * serial vector is created, otherwise it's parallel. 
+ * serial storage scheme is created, otherwise it's parallel. 
  * 
  */
 class Matrix 
@@ -66,19 +66,25 @@ public:
   /// Get the total number of rows in this matrix
   int rows(void) const
   {
-    p_matrix_impl->rows();
+    return p_matrix_impl->rows();
   }
 
   /// Get the number of local rows in this matirx
   int local_rows(void) const
   {
-    p_matrix_impl->local_rows();
+    return p_matrix_impl->local_rows();
+  }
+
+  /// Get the range of global row indexes owned by this process
+  void local_row_range(int& lo, int& hi) const
+  {
+    p_matrix_impl->local_row_range(lo, hi);
   }
 
   /// Get the number of columns in this matrix
   int cols(void) const
   {
-    p_matrix_impl->cols();
+    return p_matrix_impl->cols();
   }
 
   // /// Set an individual element

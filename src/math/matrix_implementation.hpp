@@ -3,7 +3,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-05-15 15:03:17 d3g096
+ * @date   2013-05-20 07:58:35 d3g096
  * 
  * @brief  
  * 
@@ -45,22 +45,28 @@ public:
   /// Destructor
   virtual ~MatrixImplementation(void);
 
+  /// Get the global index range of the locally owned rows
+  void local_row_range(int& lo, int& hi) const 
+  {
+    this->p_local_row_range(lo, hi);
+  }
+
   /// Get the total number of rows in this matrix
   int rows(void) const
   {
-    this->p_rows();
+    return this->p_rows();
   }
 
   /// Get the number of local rows in this matirx
   int local_rows(void) const
   {
-    this->p_local_rows();
+    return this->p_local_rows();
   }
 
   /// Get the number of columns in this matrix
   int cols(void) const
   {
-    this->p_cols();
+    return this->p_cols();
   }
 
   // /// Set an individual element
@@ -149,6 +155,9 @@ public:
   }
 
 protected:
+
+  /// Get the global index range of the locally owned rows (specialized)
+  virtual void p_local_row_range(int& lo, int& hi) const = 0;
 
   /// Get the total number of rows in this matrix (specialized)
   virtual int p_rows(void) const = 0;
