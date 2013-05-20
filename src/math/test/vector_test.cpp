@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-05-15 11:33:40 d3g096
+ * @date   2013-05-20 10:43:09 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -99,9 +99,10 @@ BOOST_AUTO_TEST_CASE( set_and_get_element )
 
   for (int i = lo; i < hi; ++i) {
     gridpack::math::complex_type x( static_cast<double>(i));
-    gridpack::math::complex_type x1(val[i]);
+    gridpack::math::complex_type x1;
     gridpack::math::complex_type x2;
 
+    v1.get_element(i, x1);
     v2.get_element(i, x2);
 
     BOOST_CHECK_CLOSE(real(x), real(x1), delta);
@@ -143,9 +144,10 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
 
   for (int i = lo; i < hi; ++i) {
     gridpack::math::complex_type x( static_cast<double>(i));
-    gridpack::math::complex_type x1(val[i]);
+    gridpack::math::complex_type x1;
     gridpack::math::complex_type x2;
 
+    v1.get_element(i, x1);
     v2.get_element(i, x2);
 
     BOOST_CHECK_CLOSE(2.0*real(x), real(x1), delta);

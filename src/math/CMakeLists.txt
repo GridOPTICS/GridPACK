@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-05-16 09:02:20 d3g096
+# Last Change: 2013-05-20 10:54:29 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -64,14 +64,35 @@ add_test(NAME vector_test_parallel COMMAND
 set_tests_properties(vector_test_serial vector_test_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "No errors detected"
+  FAIL_REGULAR_EXPRESSION "failure"
 )
 
-add_executable(matrix_test test/matrix_test.cpp)
-target_link_libraries(matrix_test gridpack_math ${target_libraries})
-add_test(NAME matrix_test_serial COMMAND $<TARGET_FILE:matrix_test>)
-add_test(NAME matrix_test_parallel COMMAND 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:matrix_test> ${MPIEXEC_POSTFLAGS})
-set_tests_properties(matrix_test_serial matrix_test_parallel
+# -------------------------------------------------------------
+# matrix test suite (one each for dense and sparse)
+# -------------------------------------------------------------
+
+add_executable(sparse_matrix_test test/matrix_test.cpp)
+target_link_libraries(sparse_matrix_test gridpack_math ${target_libraries})
+add_test(NAME sparse_matrix_test_serial COMMAND $<TARGET_FILE:sparse_matrix_test>)
+add_test(NAME sparse_matrix_test_parallel COMMAND 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:sparse_matrix_test> ${MPIEXEC_POSTFLAGS})
+set_tests_properties(sparse_matrix_test_serial sparse_matrix_test_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "No errors detected"
+  FAIL_REGULAR_EXPRESSION "failure"
+)
+
+add_executable(dense_matrix_test test/matrix_test.cpp)
+set_target_properties(dense_matrix_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_DENSE=YES"
+)
+target_link_libraries(dense_matrix_test gridpack_math ${target_libraries})
+add_test(NAME dense_matrix_test_serial COMMAND $<TARGET_FILE:dense_matrix_test>)
+add_test(NAME dense_matrix_test_parallel COMMAND 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:dense_matrix_test> ${MPIEXEC_POSTFLAGS})
+set_tests_properties(dense_matrix_test_serial dense_matrix_test_parallel
+  PROPERTIES 
+  PASS_REGULAR_EXPRESSION "No errors detected"
+  FAIL_REGULAR_EXPRESSION "failure"
 )
