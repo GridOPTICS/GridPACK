@@ -7,7 +7,7 @@
 # Last Change: 2013-05-17 14:50:53 d3g096
 # -------------------------------------------------------------
 
-cmake_minimum_required (VERSION 2.6.3)
+cmake_minimum_required (VERSION 2.6.4)
 project (GridPACK)
 
 # This is a C++ project exclusively
@@ -16,7 +16,7 @@ enable_language(CXX)
 # where to look for special .cmake files
 list (APPEND CMAKE_MODULE_PATH "${GridPACK_SOURCE_DIR}/cmake-modules")
 
-# turn testingo on
+# turn testing on
 enable_testing()
 
 # -------------------------------------------------------------
@@ -28,8 +28,6 @@ set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
 set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR})
-
 # -------------------------------------------------------------
 # Boost
 #
@@ -39,7 +37,6 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 message(STATUS "Checking Boost ...")
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
-include_directories(${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
 # PETSc
@@ -87,7 +84,8 @@ endif(DOXYGEN_FOUND)
 # -------------------------------------------------------------
 # Options for all Programs
 # -------------------------------------------------------------
-include_directories (${Boost_INCLUDE_DIR})
+include_directories(AFTER ${Boost_INCLUDE_DIRS})
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # -------------------------------------------------------------
 # Subdirectories

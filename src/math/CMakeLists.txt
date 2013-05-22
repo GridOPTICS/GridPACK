@@ -58,9 +58,9 @@ add_library(gridpack_math
 # -------------------------------------------------------------
 add_executable(vector_test test/vector_test.cpp)
 target_link_libraries(vector_test gridpack_math ${target_libraries})
-add_test(NAME vector_test_serial COMMAND $<TARGET_FILE:vector_test>)
-add_test(NAME vector_test_parallel COMMAND 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:vector_test> ${MPIEXEC_POSTFLAGS})
+add_test(vector_test_serial vector_test)
+add_test(vector_test_parallel
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} vector_test ${MPIEXEC_POSTFLAGS})
 set_tests_properties(vector_test_serial vector_test_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "No errors detected"
@@ -73,9 +73,9 @@ set_tests_properties(vector_test_serial vector_test_parallel
 
 add_executable(sparse_matrix_test test/matrix_test.cpp)
 target_link_libraries(sparse_matrix_test gridpack_math ${target_libraries})
-add_test(NAME sparse_matrix_test_serial COMMAND $<TARGET_FILE:sparse_matrix_test>)
-add_test(NAME sparse_matrix_test_parallel COMMAND 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:sparse_matrix_test> ${MPIEXEC_POSTFLAGS})
+add_test(sparse_matrix_test_serial sparse_matrix_test)
+add_test(sparse_matrix_test_parallel
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} sparse_matrix_test ${MPIEXEC_POSTFLAGS})
 set_tests_properties(sparse_matrix_test_serial sparse_matrix_test_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "No errors detected"
@@ -88,9 +88,9 @@ set_target_properties(dense_matrix_test
   COMPILE_DEFINITIONS "TEST_DENSE=YES"
 )
 target_link_libraries(dense_matrix_test gridpack_math ${target_libraries})
-add_test(NAME dense_matrix_test_serial COMMAND $<TARGET_FILE:dense_matrix_test>)
-add_test(NAME dense_matrix_test_parallel COMMAND 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:dense_matrix_test> ${MPIEXEC_POSTFLAGS})
+add_test(dense_matrix_test_serial dense_matrix_test)
+add_test(dense_matrix_test_parallel 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} dense_matrix_test ${MPIEXEC_POSTFLAGS})
 set_tests_properties(dense_matrix_test_serial dense_matrix_test_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "No errors detected"

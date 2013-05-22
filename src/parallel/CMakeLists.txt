@@ -18,9 +18,9 @@ add_library(gridpack_parallel
 add_executable(greetings test/greetings.cpp)
 target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-add_test(NAME greetings_serial COMMAND $<TARGET_FILE:greetings>)
-add_test(NAME greetings_parallel COMMAND 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
+add_test(greetings_serial greetings)
+add_test(greetings_parallel 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} greetings ${MPIEXEC_POSTFLAGS})
 set_tests_properties(greetings_serial greetings_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
@@ -33,9 +33,9 @@ set_tests_properties(greetings_serial greetings_parallel
 add_executable(mpi_test test/mpi_test.cpp)
 target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-add_test(NAME mpi_test_parallel COMMAND 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
+add_test(mpi_test_serial mpi_test)
+add_test(mpi_test_parallel 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} mpi_test ${MPIEXEC_POSTFLAGS})
 set_tests_properties(mpi_test_serial mpi_test_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "No errors detected"
