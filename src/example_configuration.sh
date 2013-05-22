@@ -31,6 +31,19 @@ elif [ $host == "pe10900" ]; then
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         ..
 
+elif [ $host == "olympus.local" ]; then
+
+    cmake -Wdev \
+	-D BOOST_ROOT:STRING='/pic/projects/gridpack/software' \
+	-D PETSC_DIR:STRING='/pic/projects/gridpack/software/petsc-3.4.0' \
+	-D PETSC_ARCH:STRING='olympus-openmpi-gnu-cxx-complex-opt' \
+	-D MPI_CXX_COMPILER:STRING='mpicxx' \
+	-D MPI_C_COMPILER:STRING='mpicc' \
+	-D MPIEXEC:STRING='mpiexec' \
+	-D CMAKE_BUILD_TYPE:STRING="Debug" \
+	-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+	..
+
 else
 
     echo "Unknown host: $host"
