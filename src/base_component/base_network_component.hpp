@@ -13,75 +13,20 @@
 #ifndef _base_network_component_h_
 #define _base_network_component_h_
 
-#include "gridpack/parallel/distribution.hpp"
-#include "gridpack/network/base_network.hpp"
-#include "smart_ptr.hpp"
-// -------------------------------------------------------------
-//  class BaseField:
-//  This class implements some basic functions that can be
-//  expected from any field on the network.
-// -------------------------------------------------------------
-class BaseNetworkComponent
-  : public MatVecInterface {
-  public:
-    /**
-     * Simple constructor
-     */
-    virtual BaseNetworkComponent();
-
-    /**
-     * Constructor
-     * @param network: pointer to network the component is associated with
-     * @param idx: local bus or branch index that network is associated with
-     */
-    virtual BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network, int idx);
-
-    /**
-     * Constructor without local network index
-     * @param network: pointer to network the component is associated with
-     */
-    virtual BaseNetworkComponent(stlplus::smart_ptr<BaseNetwork> network);
-
-    /**
-     * Destructor
-     */
-    virtual ~BaseNetworkComponent(void);
-
-    /**
-     * Set the network associated with the component
-     */
-    virtual void setNetwork(stlplus::smart_ptr<BaseNetwork> network);
-
-    /**
-     * Set the value of the local network index the component is associated with
-     * @param idx: value of local network index
-     */
-    virtual void setIndex(int idx);
-
-    /**
-     * Return the size of the component for use in packing and
-     * unpacking routines. This might not be needed, but throw
-     * it in for now.
-     * @return: size of network component
-     */
-    virtual int size(void) const;
-
-  private:
-    stlplus::smart_ptr<BaseNetwork> p_network;
-    int p_idx;
-
-};
-
+#include "gridpack/parallel/distributed.hpp"
+#include "boost/smart_ptr/shared_ptr.hpp"
 // TODO: Might want to put MatrixIndices and VectorIndex operations into a
 //       separate class since these can probably be implemented once for all
 //       network components
+namespace gridpack{
+namespace component{
 
 class MatVecInterface {
   public:
     /**
      * Constructor
      */
-    virtual MatVecInterface(void);
+    MatVecInterface(void);
 
     /**
      * Destructor
@@ -149,4 +94,76 @@ class MatVecInterface {
 
 };
 
+// -------------------------------------------------------------
+//  class BaseField:
+//  This class implements some basic functions that can be
+//  expected from any field on the network.
+// -------------------------------------------------------------
+class BaseNetworkComponent
+  : public MatVecInterface {
+  public:
+    /**
+     * Simple constructor
+     */
+    BaseNetworkComponent();
+
+    /**
+     * Constructor
+     * @param network: pointer to network the component is associated with
+     * @param idx: local bus or branch index that network is associated with
+     */
+#if 0
+    virtual BaseNetworkComponent(boost::smart_ptr<BaseNetwork> network, int idx);
+#endif
+
+    /**
+     * Constructor without local network index
+     * @param network: pointer to network the component is associated with
+     */
+#if 0
+    virtual BaseNetworkComponent(boost::smart_ptr<BaseNetwork> network);
+#endif
+
+    /**
+     * Destructor
+     */
+    virtual ~BaseNetworkComponent(void);
+
+    /**
+     * Set the network associated with the component
+     */
+#if 0
+    virtual void setNetwork(boost::smart_ptr<BaseNetwork> network);
+#endif
+
+    /**
+     * Set the value of the local network index the component is associated with
+     * @param idx: value of local network index
+     */
+    virtual void setIndex(int idx);
+
+    /**
+     * Get the value of the local network index the component is associated with
+     * @return: value of local network index
+     */
+    virtual int getIndex();
+
+    /**
+     * Return the size of the component for use in packing and
+     * unpacking routines. This might not be needed, but throw
+     * it in for now.
+     * @return: size of network component
+     */
+    virtual int size(void) const;
+
+  private:
+#if 0
+    stlplus::smart_ptr<BaseNetwork> p_network;
+#endif
+    int p_idx;
+
+};
+
+}    // component
+}    // gridpack
 #endif

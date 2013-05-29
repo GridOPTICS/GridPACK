@@ -15,9 +15,8 @@
 
 #include <vector>
 #include <map>
-#include "gridpack/parallel/distribution.hpp"
-#include "gridpack/network/base_network.hpp"
-#include "smart_ptr.hpp"
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include "gridpack/parallel/distributed.hpp"
 // -------------------------------------------------------------
 //  class BaseField:
 //  This class implements some basic functions that can be
@@ -33,54 +32,109 @@ class BaseField  {
      * Constructor
      * @param network: Network associated with field
      */
-    BaseField(BaseNetwork *network);
+#if 0
+    BaseField(BaseNetwork *network)
+    {
+      p_network = network;
+      p_type = elem;
+    };
+#else
+    BaseField()
+    {
+      p_type = elem;
+    };
+#endif
 
     /**
      * Destructor
      */
-    ~BaseField(void);
+    ~BaseField(void)
+    {
+      vector.clear();
+    };
 
     /**
      * Index operator
      * @param index: index of element in field
      * @return: element at network index
      */
-    elem& operator[] (int index);
+    elem& operator[] (int index)
+    {
+      return p_vector[index];
+    };
 
     /**
      * Return size of field
      */
     int size(void);
 
+#if 0
     friend class BaseNetwork;
-  private:
+#endif
     /**
      * Add another element to the field
      * @param new_elem: element to be appended to field
      * @return: index of new element
      */
-    int append(elem new_elem);
+    int append(elem new_elem)
+    {
+      p_vector.push_back(new_elem);
+      return p_vector.size()-1;
+    };
 
     /**
      * Add another element to the field. Use default element
      * @return: index of new element
      */
-    int append(void);
+    int append(void)
+    {
+      p_vector.push_back(p_type);
+      return p_vector.size()-1;
+    };
 
+    /**
+     * Remove last element from field
+     */
+    void pop_back(void)
+    {
+      p_vector.pop_back(); 
+    }
+
+  private:
     /**
      * Delete element from field
      * @param index: index of element to be deleted
      * @return: success or failure of delete operation
      */
-    bool delete(int index);
+    bool deleteElement(int index)
+    {
+      int size = p_vector.size();
+      if (index >= size || index < 0) {
+        return false;
+      }
+      if (index == size-1) {
+        p_vector.pop_back();
+        return true;
+      }
+      vector<elem>::iterator p;
+      p = vector.begin();
+      for (i=0; i<index; i++) p++;
+      p_vector.erase(p);
+      return true;
+    };
 
     /**
      * Clear all elements from field
      */
-    void clear(void);
+    void clear(void)
+    {
+      p_vector.clear();
+    };
 
+#if 0
     BaseNetwork *p_network;
-    vector<elem> p_vector;
+#endif
+    std::vector<elem> p_vector;
     elem p_type;
 };
 
@@ -94,12 +148,22 @@ class BusField : public BaseField<elem> {
     /**
      * Constructor
      */
+#if 0
     BusField(BaseNetwork *network);
+#else
+    BusField()
+    {
+      p_type = elem;
+    };
+#endif
 
     /**
      * Destructor
      */
-    ~BusField(void);
+    ~BusField(void)
+    {
+      p_vector.clear();
+    };
 
     /**
      * Get the local indices of the branches that are attached
@@ -108,7 +172,10 @@ class BusField : public BaseField<elem> {
      * @return: list of local indices of branches attached to
      *         this bus
      */
-    vector<int> neighborBranches(int index);
+    std::vector<int> neighborBranches(int index)
+    {
+      //TODO: Need some kind of implementation
+    };
 
     /**
      * Get the local indices of the buses that are connected
@@ -116,25 +183,24 @@ class BusField : public BaseField<elem> {
      * @param index: index of bus element
      * @return: list of local indices of neighboring buses
      */
-    vector<int> neighborBuses(int index);
+    std::vector<int> neighborBuses(int index)
+    {
+      //TODO: Need some kind of implementation
+    };
 
     /**
      * Determine whether or not bus is local or ghost
      * @param: index of bus
      * @return: bus is local (true) or ghost (false)
      */
-    bool active(int index);
+    bool active(int index)
+    {
+      //TODO: Need some kind of implementation
+    };
 
-  private:
-    /**
-     * Add another element to the field where element is assumed to be a base
-     * network component
-     * @param new_elem: element to be appended to field
-     * @return: index of new element
-     */
-    int appendComponent(smart_ptr<elem> new_elem);
-
+#if 0
   friend class BaseNetwork;
+#endif
 };
 
 // -------------------------------------------------------------
@@ -147,19 +213,32 @@ class BranchField : public BaseField<elem> {
     /**
      * Constructor
      */
+#if 0
     BranchField(BaseNetwork *network);
+#else
+    BranchField()
+    {
+      p_type = elem;
+    };
+#endif
 
     /**
      * Destructor
      */
-    ~BranchField(void);
+    ~BranchField(void)
+    {
+      p_vector.clear();
+    };
 
     /**
      * Get one of the terminal buses on this branch
      * @param index: index of branch element
      * @return: index to the bus at one end of the branch
      */
-    int getBus1(int index);
+    int getBus1(int index)
+    {
+      //TODO: Some kind of implementation
+    };
 
     /**
      * Get the other terminal bus on this branch
@@ -167,16 +246,24 @@ class BranchField : public BaseField<elem> {
      * @return: index to the bus at the other end of the
      *        branch
      */
-    int getBus2(int index);
+    int getBus2(int index)
+    {
+      //TODO: Some kind of implementation
+    };
 
     /**
      * Determine whether or not branch is local or ghost
      * @param: index of bus
      * @return: bus is local (true) or ghost (false)
      */
-    bool active(int index);
+    bool active(int index)
+    {
+      //TODO: Some kind of implementation
+    };
 
+#if 0
   friend class BaseNetwork;
+#endif
 };
 }  // namespace network
 }  // namespace gridpack

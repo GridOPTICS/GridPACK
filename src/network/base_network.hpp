@@ -15,8 +15,10 @@
 
 #include <vector>
 #include <map>
-#include "gridpack/parallel/distribution.hpp"
-#include "smart_ptr.hpp"
+#include <boost/smart_ptr/shared_ptr.hpp>
+#include "gridpack/parallel/distributed.hpp"
+#include "gridpack/network/fields.hpp"
+#include "gridpack/base_component/base_network_component.hpp"
 
 // -------------------------------------------------------------
 //  class BaseNetwork:
@@ -37,9 +39,11 @@ public:
    * The field classes will need to be able to extract information
    * about the topology of the network directly from the network
    */
+#if 0
   friend class BaseField;
   friend class BusField;
   friend class BranchField;
+#endif
 
   /**
    * Default constructor.
@@ -51,7 +55,9 @@ public:
    * subgroups or communicators other than the world
    * communicator
    */
+#if 0
   BaseNetwork(ParallelEnv configuration);
+#endif // Hold off on this until we work out details of parallel environment
 
   /**
    * Default destructor.
@@ -91,7 +97,8 @@ public:
    * @param field: a pointer to the BusField being added to the
    *       network
    */
-  void addBusField(std::string name, stlplus::smart_ptr<BusField> field);
+  void addBusField(std::string name,
+       boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > field);
 
   /**
    * Add a new field to the network branches
@@ -99,7 +106,8 @@ public:
    * @param field: a pointer to the BranchField being added to
    *       the network
    */
-  void addBranchField(std::string name, stlplus::smart_ptr<BranchField> field);
+  void addBranchField(std::string name,
+       boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > field);
 
   /**
    * Retrieve a pointer to an existing bus field
@@ -108,7 +116,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-  stlplus::smart_ptr<BusField> getBusField(std::string name) const;
+  boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > getBusField(std::string name);
 
   /**
    * Retrieve a pointer to an existing branch field
@@ -117,7 +125,7 @@ public:
    * @return: a pointer to the requested field. If the field is
    *       not found, the pointer is null
    */
-  stlplus::smart_ptr<BranchField> getBranchField(std::string name) const;
+  boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > getBranchField(std::string name);
 
   /**
    * Delete an existing bus field
@@ -138,14 +146,14 @@ public:
    * @param bus: local bus index
    * @return: vector of local branch indices
    */
-  vector<int> getConnectedBranches(int idx) const;
+  std::vector<int> getConnectedBranches(int idx) const;
 
   /**
    * Return list of buses connected to central bus via one branch
    * @param bus: local bus index
    * @return: vector of local bus indices
    */
-  vector<int> getConnectedBuses(int idx) const;
+  std::vector<int> getConnectedBuses(int idx) const;
 
   /**
    * Return indices of buses at either end of branch
@@ -245,17 +253,21 @@ private:
   /**
    * BusFields associated with buses. These can be accessed by name
    */
-  std::map<std::string, stlplus::smart_ptr<BusField> > p_busFields;
+  std::map<std::string,
+    boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > > p_busFields;
 
   /**
    * BranchFields associated with buses. These can be accessed by name
    */
-  std::map<std::string, stlplus::smart_ptr<BranchField> > p_branchFields;
+  std::map<std::string,
+    boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > > p_branchFields;
 
   /**
    * Parallel environment for network
    */
+#if 0
   ParallelEnv p_configuration;
+#endif
 
   /**
    * Reference bus index
