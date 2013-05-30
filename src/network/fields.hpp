@@ -41,7 +41,6 @@ class BaseField  {
 #else
     BaseField()
     {
-      p_type = elem;
     };
 #endif
 
@@ -50,7 +49,7 @@ class BaseField  {
      */
     ~BaseField(void)
     {
-      vector.clear();
+      p_vector.clear();
     };
 
     /**
@@ -88,7 +87,8 @@ class BaseField  {
      */
     int append(void)
     {
-      p_vector.push_back(p_type);
+      elem p;
+      p_vector.push_back(p);
       return p_vector.size()-1;
     };
 
@@ -100,7 +100,7 @@ class BaseField  {
       p_vector.pop_back(); 
     }
 
-  private:
+  protected:
     /**
      * Delete element from field
      * @param index: index of element to be deleted
@@ -117,7 +117,7 @@ class BaseField  {
         return true;
       }
       vector<elem>::iterator p;
-      p = vector.begin();
+      p = p_vector.begin();
       for (i=0; i<index; i++) p++;
       p_vector.erase(p);
       return true;
@@ -128,14 +128,13 @@ class BaseField  {
      */
     void clear(void)
     {
-      p_vector.clear();
+      clear();
     };
 
 #if 0
     BaseNetwork *p_network;
 #endif
     std::vector<elem> p_vector;
-    elem p_type;
 };
 
 // -------------------------------------------------------------
@@ -153,7 +152,6 @@ class BusField : public BaseField<elem> {
 #else
     BusField()
     {
-      p_type = elem;
     };
 #endif
 
@@ -162,7 +160,7 @@ class BusField : public BaseField<elem> {
      */
     ~BusField(void)
     {
-      p_vector.clear();
+      this->clear();
     };
 
     /**
@@ -218,7 +216,6 @@ class BranchField : public BaseField<elem> {
 #else
     BranchField()
     {
-      p_type = elem;
     };
 #endif
 
@@ -227,7 +224,7 @@ class BranchField : public BaseField<elem> {
      */
     ~BranchField(void)
     {
-      p_vector.clear();
+      this->clear();
     };
 
     /**

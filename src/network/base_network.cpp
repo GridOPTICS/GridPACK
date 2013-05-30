@@ -35,6 +35,9 @@ gridpack::network::BaseNetwork::BaseNetwork(void)
 {
   //TODO: Get default parallel configuration for world group
   p_refBus = -1;
+  gridpack::network::BaseField<double> bogus_field;
+  gridpack::network::BusField<double> bogus_bus_field;
+  gridpack::network::BranchField<double> bogus_branch_field;
 }
 
 /**
