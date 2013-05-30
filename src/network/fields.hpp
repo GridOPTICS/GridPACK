@@ -2,7 +2,7 @@
 /**
  * @file   fields.hpp
  * @author Bruce Palmer
- * @date   April 25, 2013
+ * @date   2013-05-30 09:16:46 d3g096
  * 
  * @brief  
  * 
@@ -116,10 +116,7 @@ class BaseField  {
         p_vector.pop_back();
         return true;
       }
-      vector<elem>::iterator p;
-      p = p_vector.begin();
-      for (i=0; i<index; i++) p++;
-      p_vector.erase(p);
+      p_vector.erase(p_vector.begin() + index);
       return true;
     };
 
