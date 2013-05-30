@@ -1,7 +1,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-05-20 08:47:27 d3g096
+ * @date   2013-05-22 14:10:28 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -159,6 +159,96 @@ PETScMatrixImplementation::p_cols(void) const
   }
   return result;
 }  
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_set_element
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_set_element(const int& i, const int& j, 
+                                         const complex_type& x)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatSetValue(p_matrix, i, j, x, INSERT_VALUES);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_set_elements
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_set_elements(const int& n, 
+                                          const int *i, const int *j, 
+                                          const complex_type *x)
+{
+  // FIXME: There's probably a better way
+  for (int k = 0; k < n; k++) {
+    this->p_set_element(i[k], j[k], x[k]);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_add_element
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_add_element(const int& i, const int& j, 
+                                         const complex_type& x)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatSetValue(p_matrix, i, j, x, ADD_VALUES);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_add_elements
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_add_elements(const int& n, 
+                                          const int *i, const int *j, 
+                                          const complex_type *x)
+{
+  // FIXME: There's probably a better way
+  for (int k = 0; k < n; k++) {
+    this->p_add_element(i[k], j[k], x[k]);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_get_element
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_get_element(const int& i, const int& j, 
+                                         complex_type& x) const
+{
+  PetscErrorCode ierr(0);
+  try {
+    static const int one(1);
+    PetscInt iidx[one] = { i };
+    PetscInt jidx[one] = { j };
+    ierr = MatGetValues(p_matrix, one, &iidx[0], one, &jidx[0], &x); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_get_elements
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_get_elements(const int& n,
+                                          const int *i, const int *j, 
+                                          complex_type *x) const
+{
+  // FIXME: There is a better way
+  for (int k = 0; k < n; k++) {
+    this->p_get_element(i[k], j[k], x[k]);
+  }
+}
 
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_ready

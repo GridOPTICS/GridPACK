@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-05-20 10:52:42 d3g096
+ * @date   2013-05-30 11:42:55 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -9,6 +9,7 @@
  */
 
 #include <iostream>
+#include <boost/assert.hpp>
 #include <boost/mpi/collectives.hpp>
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/math/math.hpp"
@@ -36,17 +37,6 @@ BOOST_AUTO_TEST_CASE( construction )
   int global_size;
   boost::mpi::all_reduce(world, local_size, global_size, std::plus<int>());
 
-  switch (the_storage_type) {
-  case gridpack::math::Matrix::Dense:
-    BOOST_TEST_MESSAGE("Testing Dense Matrices ...");
-    break;
-  case gridpack::math::Matrix::Sparse:
-    BOOST_TEST_MESSAGE("Testing Sparse Matrices ...");
-    break;
-  default:
-    BOOST_FAIL("Undefined Matrix storage type");
-  }
-
   gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
 
   int lo, hi;
@@ -60,6 +50,117 @@ BOOST_AUTO_TEST_CASE( construction )
   
 }
 
+BOOST_AUTO_TEST_CASE( set_and_get )
+{
+  gridpack::parallel::Communicator world;
+  int global_size;
+  boost::mpi::all_reduce(world, local_size, global_size, std::plus<int>());
+
+  gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
+
+  int lo, hi;
+  A.local_row_range(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x(static_cast<double>(i));
+    A.set_element(i, i, x);
+  }
+  A.ready();
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x(static_cast<double>(i));
+    gridpack::math::complex_type y;
+    A.get_element(i, i, y);
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( multiple_set_and_get )
+{
+  const int nentries(3);
+  gridpack::parallel::Communicator world;
+  int global_size;
+  boost::mpi::all_reduce(world, local_size, global_size, std::plus<int>());
+
+  gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
+
+  int lo, hi;
+  A.local_row_range(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    int n(nentries);
+    std::vector<gridpack::math::complex_type> x(n, static_cast<double>(i));
+    std::vector<int> iidx(n, i);
+    std::vector<int> jidx(n);
+    jidx[0] = i-1; jidx[1] = i; jidx[2] = i+1;
+    
+    int startidx(0);
+    if (i <= 0) {
+      startidx = 1;
+      n = 2;
+    } else if (i >= global_size - 1) {
+      n = 2;
+    }
+    A.set_elements(n, &iidx[startidx], &jidx[startidx], &x[startidx]);
+  }
+  A.ready();
+
+  for (int i = lo; i < hi; ++i) {
+    int n(nentries);
+    std::vector<int> iidx(n, i);
+    std::vector<int> jidx(n);
+    jidx[0] = i-1; jidx[1] = i; jidx[2] = i+1;
+
+    gridpack::math::complex_type x(static_cast<double>(i));
+
+    // fill w/ bogus values 
+    std::vector<gridpack::math::complex_type> 
+      y(n, gridpack::math::complex_type(-1.0, 1.0));
+    
+    int startidx(0);
+    if (i <= 0) {
+      startidx = 1;
+      n = 2;
+    } else if (i >= global_size - 1) {
+      n = 2;
+    }
+    A.get_elements(n, &iidx[startidx], &jidx[startidx], &y[startidx]);
+
+    for (int j = startidx; j < n - startidx; ++j) {
+      BOOST_CHECK_CLOSE(real(x), real(y[j]), delta);
+      BOOST_CHECK_CLOSE(abs(x), abs(y[j]), delta);
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE( accumulate )
+{
+  gridpack::parallel::Communicator world;
+  int global_size;
+  boost::mpi::all_reduce(world, local_size, global_size, std::plus<int>());
+
+  gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
+
+  int lo, hi;
+  A.local_row_range(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x(static_cast<double>(i));
+    A.add_element(i, i, x);
+    A.add_element(i, i, x);
+  }
+  A.ready();
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x(static_cast<double>(2*i));
+    gridpack::math::complex_type y;
+    A.get_element(i, i, y);
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+  }
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 
@@ -68,6 +169,17 @@ BOOST_AUTO_TEST_SUITE_END()
 // -------------------------------------------------------------
 bool init_function()
 {
+  switch (the_storage_type) {
+  case gridpack::math::Matrix::Dense:
+    BOOST_TEST_MESSAGE("Testing Dense Matrices ...");
+    break;
+  case gridpack::math::Matrix::Sparse:
+    BOOST_TEST_MESSAGE("Testing Sparse Matrices ...");
+    break;
+  default:
+    BOOST_ASSERT(false);
+  }
+
   return true;
 }
 

@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-05-17 13:35:07 d3g096
+ * @date   2013-05-20 12:06:36 d3g096
  * 
  * @brief  
  * 
@@ -69,11 +69,11 @@ protected:
   /// Get the number of columns in this matrix (specialized)
   int p_cols(void) const;
 
-  // /// Set an individual element
-  // void p_set_element(const int& i, const int& j, const complex_type& x);
+  /// Set an individual element
+  void p_set_element(const int& i, const int& j, const complex_type& x);
 
-  // /// Set an several element
-  // void p_set_elements(const int *i, const int *j, const complex_type *x);
+  /// Set an several element
+  void p_set_elements(const int& n, const int *i, const int *j, const complex_type *x);
 
   // /// Set all elements in a row
   // void p_set_row(const int& i, const int *j, const complex_type *x);
@@ -82,20 +82,20 @@ protected:
   // void p_set_region(const int& ni, const int& nj, 
   //                          const int *i, const int *j, const complex_type *x);
 
-  // /// Add to  an individual element
-  // void p_add_element(const int& i, const int& j, const complex_type& x);
+  /// Add to  an individual element
+  void p_add_element(const int& i, const int& j, const complex_type& x);
 
-  // /// Add to  an several element
-  // void p_add_elements(const int *i, const int *j, const complex_type *x);
+  /// Add to  an several element
+  void p_add_elements(const int& n, const int *i, const int *j, const complex_type *x);
 
   // /// Add to  all elements in a row
   // void p_add_row(const int& i, const int *j, const complex_type *x);
 
-  // /// Get an individual element
-  // void p_get_element(const int& i, const int& j, complex_type& x) const;
+  /// Get an individual element
+  void p_get_element(const int& i, const int& j, complex_type& x) const;
 
-  // /// Get an several element
-  // void p_get_elements(const int *i, const int *j, complex_type *x) const;
+  /// Get an several element
+  void p_get_elements(const int& n, const int *i, const int *j, complex_type *x) const;
 
   // /// Get all elements in a row
   // void p_get_row(const int& i, const int *j, complex_type *x) const;

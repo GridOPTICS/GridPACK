@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-05-20 08:11:10 d3g096
+ * @date   2013-05-20 12:04:21 d3g096
  * 
  * @brief  
  * 
@@ -88,16 +88,16 @@ public:
   }
 
   // /// Set an individual element
-  // void set_element(const int& i, const int& j, const complex_type& x)
-  // {
-  //   p_matrix_impl->set_element(i, j, x);
-  // }
+  void set_element(const int& i, const int& j, const complex_type& x)
+  {
+    p_matrix_impl->set_element(i, j, x);
+  }
 
-  // /// Set an several elements
-  // void set_elements(cont int& n, const int *i, const int *j, const complex_type *x)
-  // {
-  //   p_matrix_impl->set_elements(n, i, j, x);
-  // }
+  /// Set an several elements
+  void set_elements(const int& n, const int *i, const int *j, const complex_type *x)
+  {
+    p_matrix_impl->set_elements(n, i, j, x);
+  }
 
   // /// Set all elements in a row
   // void set_row(const int& nj, const int& i, const int *j, const complex_type *x)
@@ -112,17 +112,17 @@ public:
   //   p_matrix_impl->set_row(ni, nj, i, j, x);
   // }
 
-  // /// Add to an individual element
-  // void add_element(const int& i, const int& j, const complex_type& x)
-  // {
-  //   p_matrix_impl->add_element(i, j, x);
-  // }
+  /// Add to an individual element
+  void add_element(const int& i, const int& j, const complex_type& x)
+  {
+    p_matrix_impl->add_element(i, j, x);
+  }
 
-  // /// Add to an several elements
-  // void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
-  // {
-  //   p_matrix_impl->add_elements(n, i, j, x);
-  // }
+  /// Add to an several elements
+  void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
+  {
+    p_matrix_impl->add_elements(n, i, j, x);
+  }
 
   // /// Add to all elements in a row
   // void add_row(const int& nj, const int& i, const int *j, const complex_type *x)
@@ -130,17 +130,17 @@ public:
   //   p_matrix_impl->add_row(nj, i, j, x);
   // }
 
-  // /// Get an individual element
-  // void get_element(const int& i, const int& j, complex_type& x) const
-  // {
-  //   p_matrix_impl->get_element(i, j, x);
-  // }
+  /// Get an individual element
+  void get_element(const int& i, const int& j, complex_type& x) const
+  {
+    p_matrix_impl->get_element(i, j, x);
+  }
 
-  // /// Get an several elements
-  // void get_elements(cont int& n, const int *i, const int *j, complex_type *x) const
-  // {
-  //   p_matrix_impl->get_elements(n, i, j, x);
-  // }
+  /// Get an several elements
+  void get_elements(const int& n, const int *i, const int *j, complex_type *x) const
+  {
+    p_matrix_impl->get_elements(n, i, j, x);
+  }
 
   // /// Get all elements in a row
   // void get_row(const int& nj, const int& i, const int *j, complex_type *x)  const

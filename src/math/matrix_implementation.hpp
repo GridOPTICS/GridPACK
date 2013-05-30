@@ -3,7 +3,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-05-20 07:58:35 d3g096
+ * @date   2013-05-20 12:03:42 d3g096
  * 
  * @brief  
  * 
@@ -69,17 +69,17 @@ public:
     return this->p_cols();
   }
 
-  // /// Set an individual element
-  // void set_element(const int& i, const int& j, const complex_type& x)
-  // {
-  //   this->p_set_element(i, j, x);
-  // }
+  /// Set an individual element
+  void set_element(const int& i, const int& j, const complex_type& x)
+  {
+    this->p_set_element(i, j, x);
+  }
 
-  // /// Set an several elements
-  // void set_elements(cont int& n, const int *i, const int *j, const complex_type *x)
-  // {
-  //   this->p_set_elements(n, i, j, x);
-  // }
+  /// Set an several elements
+  void set_elements(const int& n, const int *i, const int *j, const complex_type *x)
+  {
+    this->p_set_elements(n, i, j, x);
+  }
 
   // /// Set all elements in a row
   // void set_row(const int& nj, const int& i, const int *j, const complex_type *x)
@@ -93,17 +93,17 @@ public:
   //   this->p_set_region(ni, nj, i, j, x);
   // }
 
-  // /// Add to an individual element
-  // void add_element(const int& i, const int& j, const complex_type& x)
-  // {
-  //   this->p_add_element(i, j, x);
-  // }
+  /// Add to an individual element
+  void add_element(const int& i, const int& j, const complex_type& x)
+  {
+    this->p_add_element(i, j, x);
+  }
 
-  // /// Add to an several elements
-  // void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
-  // {
-  //   this->p_add_elements(n, i, j, x);
-  // }
+  /// Add to an several elements
+  void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
+  {
+    this->p_add_elements(n, i, j, x);
+  }
 
   // /// Add to all elements in a row
   // void add_row(const int& nj, const int& i, const int *j, const complex_type *x)
@@ -111,17 +111,17 @@ public:
   //   this->p_add_row(nj, i, j, x);
   // }
 
-  // /// Get an individual element
-  // void get_element(const int& i, const int& j, const complex_type& x)
-  // {
-  //   this->p_get_element(i, j, x);
-  // }
+  /// Get an individual element
+  void get_element(const int& i, const int& j, complex_type& x) const
+  {
+    this->p_get_element(i, j, x);
+  }
 
-  // /// Get an several elements
-  // void get_elements(cont int& n, const int *i, const int *j, const complex_type *x)
-  // {
-  //   this->p_get_elements(n, i, j, x);
-  // }
+  /// Get an several elements
+  void get_elements(const int& n, const int *i, const int *j, complex_type *x) const
+  {
+    this->p_get_elements(n, i, j, x);
+  }
 
   // /// Get all elements in a row
   // void get_row(const int& nj, const int& i, const int *j, const complex_type *x)
@@ -168,11 +168,12 @@ protected:
   /// Get the number of columns in this matrix (specialized)
   virtual int p_cols(void) const = 0;
 
-  // /// Set an individual element
-  // virtual void p_set_element(const int& i, const int& j, const complex_type& x) = 0;
+  /// Set an individual element
+  virtual void p_set_element(const int& i, const int& j, const complex_type& x) = 0;
 
-  // /// Set an several element
-  // virtual void p_set_elements(const int *i, const int *j, const complex_type *x) = 0;
+  /// Set an several element
+  virtual void p_set_elements(const int& n, const int *i, const int *j, 
+                              const complex_type *x) = 0;
 
   // /// Set all elements in a row
   // virtual void p_set_row(const int& i, const int *j, const complex_type *x) = 0;
@@ -181,20 +182,22 @@ protected:
   // virtual void p_set_region(const int& ni, const int& nj, 
   //                          const int *i, const int *j, const complex_type *x) = 0;
 
-  // /// Add to  an individual element
-  // virtual void p_add_element(const int& i, const int& j, const complex_type& x) = 0;
+  /// Add to  an individual element
+  virtual void p_add_element(const int& i, const int& j, const complex_type& x) = 0;
 
-  // /// Add to  an several element
-  // virtual void p_add_elements(const int *i, const int *j, const complex_type *x) = 0;
+  /// Add to  an several element
+  virtual void p_add_elements(const int& n, const int *i, const int *j, 
+                              const complex_type *x) = 0;
 
   // /// Add to  all elements in a row
   // virtual void p_add_row(const int& i, const int *j, const complex_type *x) = 0;
 
-  // /// Get an individual element
-  // virtual void p_get_element(const int& i, const int& j, complex_type& x) const = 0;
+  /// Get an individual element
+  virtual void p_get_element(const int& i, const int& j, complex_type& x) const = 0;
 
-  // /// Get an several element
-  // virtual void p_get_elements(const int *i, const int *j, complex_type *x) const = 0;
+  /// Get an several element
+  virtual void p_get_elements(const int& n, const int *i, const int *j, 
+                              complex_type *x) const = 0;
 
   // /// Get all elements in a row
   // virtual void p_get_row(const int& i, const int *j, complex_type *x) const = 0;
