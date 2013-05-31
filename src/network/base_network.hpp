@@ -34,6 +34,8 @@
 // -------------------------------------------------------------
 namespace gridpack {
 namespace network {
+
+template <class _bus, class _branch>
 class BaseNetwork {
 public:
 /**
@@ -76,13 +78,8 @@ void addBus(int idx)
 {
   p_originalBusIndex.push_back(idx);
   p_activeBus.push_back(true);
-  std::map<std::string,
-    boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > >::iterator bus;
-  bus = p_busFields.begin();
-  while (bus != p_busFields.end()) {
-    bus->second->append();
-    bus++;
-  }
+  boost::shared_ptr<_bus> (new _bus) bus;
+  p_buses.push_back(bus);
 }
 
 /**
@@ -96,13 +93,8 @@ void addBranch(int idx1, int idx2)
   p_originalBranchIndex1.push_back(idx1);
   p_originalBranchIndex2.push_back(idx2);
   p_activeBranch.push_back(true);
-  std::map<std::string,
-    boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > >::iterator branch;
-  branch = p_branchFields.begin();
-  while (branch != p_branchFields.end()) {
-    branch->second->append();
-    branch++;
-  }
+  boost::shared_ptr<_branch> (new _branch) branch;
+  p_branches.push_back(branch);
 }
 
 /**
@@ -125,98 +117,34 @@ int getReferenceBus(void) const
 }
 
 /**
- * Add a new field to the network buses
- * @param name: a string designating the name of the field
- * @param field: a pointer to the BusField being added to the
- *       network
+ * Retrieve a pointer to an existing bus
+ * @param idx: local index of requested bus
+ * @return: a pointer to the requested bus.
  */
-void addBusField(std::string name,
-   boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > field)
+boost::shared_ptr<_bus> getBus(int idx)
 {
-  // check size of new field to see if it is too large
-  if (field->size() > p_activeBus.size()) {
-    //TODO: Some kind of failure
-  } else if (field->size()<p_activeBus.size()) {
-    // pad out field so it matches size of existing fields
-    int oldsize = p_activeBus.size();
-    int newsize = field->size();
-    int i;
-    for (i=0; i<oldsize-newsize; i++) {
-      field->append();
-    }
-  }
-  p_busFields.insert(std::pair<std::string,
-boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > >(name,field));
-}
-
-/**
- * Add a new field to the network branches
- * @param name: a string designating the name of the field
- * @param field: a pointer to the BranchField being added to
- *       the network
- */
-void addBranchField(std::string name,
-boost::shared_ptr<BranchField<gridpack::component::BaseNetworkComponent> > field)
-{
-  // check size of new field to see if it is too large
-  if (field->size() > p_activeBus.size()) {
-    //TODO: Some kind of failure
-  } else if (field->size()<p_activeBranch.size()) {
-    // pad out field so it matches size of existing fields
-    int oldsize = p_activeBranch.size();
-    int newsize = field->size();
-    int i;
-    for (i=0; i<oldsize-newsize; i++) {
-      field->append();
-    }
-  }
-  p_branchFields.insert(std::pair<std::string,
-boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > >(name,field));
-}
-
-/**
- * Retrieve a pointer to an existing bus field
- * @param name: a string representing the name of the desired
- *       field
- * @return: a pointer to the requested field. If the field is
- *       not found, the pointer is null
- */
-boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> >
-  getBusField(std::string name)
-{
-  std::map<std::string,
-boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > >::iterator bus;
-  bus = p_busFields.find(name);
-  boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > ret;
-  if (bus != p_busFields.end()) {
-    ret = bus->second;
+  if (idx<0 || idx >= p_buses->size()) {
+    // TODO: Some kind of error
   } else {
-    ret.reset();
+    return p_buses[idx];
   }
-  return ret;
 }
 
 /**
- * Retrieve a pointer to an existing branch field
- * @param name: a string representing the name of the desired
- *       field
- * @return: a pointer to the requested field. If the field is
- *       not found, the pointer is null
+ * Retrieve a pointer to an existing branch
+ * @param idx: local index of requested branch
+ * @return: a pointer to the requested branch
  */
-boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > getBranchField(std::string name)
+boost::shared_ptr<_branch> getBranch(int idx)
 {
-  std::map<std::string,
-boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > >::iterator branch;
-  branch = p_branchFields.find(name);
-  boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > ret;
-  if (branch != p_branchFields.end()) {
-    ret = branch->second;
+  if (idx<0 || idx >= p_branches->size()) {
+    // TODO: Some kind of error
   } else {
-    ret.reset();
+    return p_branches[idx];
   }
-  return ret;
 }
 
+#if 0
 /**
  * Delete an existing bus field
  * @param name: a string representing the name of the field
@@ -246,6 +174,7 @@ boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetwor
     p_branchFields.erase(branch);
   }
 }
+#endif
 
 /**
  * Return list of branches connected to bus
@@ -299,6 +228,7 @@ void clean(void)
 {
   std::map<int, int> buses;
   std::map<int, int> branches;
+  std::map<int, int>::iterator p;
   int i, j;
 
   // remove inactive branches
@@ -313,13 +243,8 @@ void clean(void)
       p_globalBranchIndex2[new_id] = p_globalBranchIndex2[i];
       p_localBranchIndex1[new_id] = p_localBranchIndex1[i];
       p_localBranchIndex2[new_id] = p_localBranchIndex2[i];
+      p_branches[new_id] = p_branches[i];
       branches.insert(std::pair<int, int>(i,new_id));
-      std::map<std::string,
-boost::shared_ptr<BranchField<gridpack::component::BaseNetworkComponent> > >::iterator branch;
-      branch = p_branchFields.begin();
-      while(branch !=  p_branchFields.end()) {
-        (*(branch->second))[new_id] = (*(branch->second))[i];
-      }
       new_id++;
     }
   }
@@ -333,13 +258,7 @@ boost::shared_ptr<BranchField<gridpack::component::BaseNetworkComponent> > >::it
     p_globalBranchIndex2.pop_back();
     p_localBranchIndex1.pop_back();
     p_localBranchIndex2.pop_back();
-    std::map<std::string,
-boost::shared_ptr<BranchField<gridpack::component::BaseNetworkComponent> > >::iterator branch;
-    branch = p_branchFields.begin();
-    while(branch !=  p_branchFields.end()) {
-      branch->second->pop_back();
-      branch++;
-    }
+    p_branches.pop_back();
   }
 
   // remove inactive buses
@@ -351,14 +270,8 @@ boost::shared_ptr<BranchField<gridpack::component::BaseNetworkComponent> > >::it
       p_originalBusIndex[new_id] = p_originalBusIndex[i];
       p_branchNeighbors[new_id] = p_branchNeighbors[i];
       p_busNeighbors[new_id] = p_busNeighbors[i];
+      p_buses[new_id] = p_buses[i];
       buses.insert(std::pair<int, int>(i,new_id));
-      std::map<std::string,
-boost::shared_ptr<BusField<gridpack::component::BaseNetworkComponent> > >::iterator bus;
-      bus = p_busFields.begin();
-      while(bus !=  p_busFields.end()) {
-        (*(bus->second))[new_id] = (*(bus->second))[i];
-        bus++;
-      }
       new_id++;
     }
   }
@@ -370,37 +283,46 @@ boost::shared_ptr<BusField<gridpack::component::BaseNetworkComponent> > >::itera
     p_globalBusIndex.pop_back();
     p_branchNeighbors.pop_back();
     p_busNeighbors.pop_back();
-    std::map<std::string,
-boost::shared_ptr<BusField<gridpack::component::BaseNetworkComponent> > >::iterator bus;
-    bus = p_busFields.begin();
-    while(bus !=  p_busFields.end()) {
-      bus->second->pop_back();
-      bus++;
-    }
+    p_buses.pop_back();
   }
+
   // reset all local indices
   size = p_activeBranch.size();
   for (i=0; i<size; i++) {
-    p_localBranchIndex1[i] = buses[p_localBranchIndex1[i]];
-    p_localBranchIndex2[i] = buses[p_localBranchIndex2[i]];
-    std::map<std::string,
-boost::shared_ptr<BranchField<gridpack::component::BaseNetworkComponent> > >::iterator branch;
-    branch = p_branchFields.begin();
-    while(branch !=  p_branchFields.end()) {
-      ((*(branch->second))[i]).setIndex(branches[((*(branch->second))[i]).getIndex()]);
-      branch++;
+    p = buses.find(p_localBranchIndex1[i]);
+    if (p != buses.end()) {
+      p_localBranchIndex1[i] = p->second;
+    } else {
+      p_localBranchIndex1[i] = -1;
+    }
+    p = buses.find(p_localBranchIndex2[i]);
+    if (p != buses.end()) {
+      p_localBranchIndex2[i] = p->second;
+    } else {
+      p_localBranchIndex2[i] = -1;
     }
   }
+
   int jsize;
   size = p_activeBus.size();
   for (i=0; i<size; i++) {
-    jsize = p_branchNeighbors[i].size();
+    std::vector<int> neighbors = p_branchNeighbors[i];
+    jsize = neighbors.size();
+    p_branchNeighbors[i].clear();
     for (j=0; j<jsize; j++) {
-      (p_branchNeighbors[i])[j] = branches[(p_branchNeighbors[i])[j]];
+      p = branches.find(neighbors[j]);
+      if (p != branches.end()) {
+        p_branchNeighbors[i].push_back(p->second);
+      }
     }
-    jsize = p_busNeighbors[i].size();
+    std::vector<int> neighbors = p_busNeighbors[i];
+    jsize = neighbors.size();
+    p_busNeighbors[i].clear();
     for (j=0; j<jsize; j++) {
-      (p_busNeighbors[i])[j] = buses[(p_busNeighbors[i])[j]];
+      p = buses.find(neighbors[j]);
+      if (p != branches.end()) {
+        p_busNeighbors[i].push_back(p->second);
+      }
     }
   }
   if (p_refBus != -1) {
@@ -492,16 +414,14 @@ private:
   std::vector<int> p_localBranchIndex2;
 
   /**
-   * BusFields associated with buses. These can be accessed by name
+   * vector of bus objects
    */
-  std::map<std::string,
-    boost::shared_ptr<gridpack::network::BusField<gridpack::component::BaseNetworkComponent> > > p_busFields;
+  std::vector<boost::shared_ptr<_bus> > p_buses;
 
   /**
-   * BranchFields associated with buses. These can be accessed by name
+   * vector of branch objects
    */
-  std::map<std::string,
-    boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetworkComponent> > > p_branchFields;
+  std::vector<boost::shared_ptr<_branch> > p_branches;
 
   /**
    * Parallel environment for network
