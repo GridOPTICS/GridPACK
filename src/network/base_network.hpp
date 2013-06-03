@@ -74,6 +74,7 @@ BaseNetwork::BaseNetwork(ParallelEnv configuration)
 void addBus(int idx)
 {
   p_originalBusIndex.push_back(idx);
+  p_globalBusIndex.push_back(-1);
   p_activeBus.push_back(true);
   boost::shared_ptr<_bus> (new _bus) bus;
   p_buses.push_back(bus);
@@ -92,6 +93,8 @@ void addBranch(int idx1, int idx2)
 {
   p_originalBranchIndex1.push_back(idx1);
   p_originalBranchIndex2.push_back(idx2);
+  p_globalBranchIndex1.push_back(-1);
+  p_globalBranchIndex2.push_back(-1);
   p_activeBranch.push_back(true);
   boost::shared_ptr<_branch> (new _branch) branch;
   p_branches.push_back(branch);
@@ -117,6 +120,70 @@ void setReferenceBus(int idx)
 int getReferenceBus(void) const
 {
   return p_refBus;
+}
+
+/**
+ * Set the global index of the bus
+ * @param idx: local index of bus
+ * @param g_idx: global index to be assigned to bus
+ * @return: false if no bus exists for idx
+ */
+bool setGlobalBusIndex(int idx, int g_idx)
+{
+  if (idx < 0 || idx >= p_globalBusIndex.size()) {
+    return false;
+  } else {
+    p_globalBusIndex[idx] = g_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the global index of the branch
+ * @param idx: local index of branch
+ * @param g_idx: global index to be assigned to branch
+ * @return: false if no branch exists for idx
+ */
+bool setGlobalBranchIndex(int idx, int g_idx)
+{
+  if (idx < 0 || idx >= p_globalBranchIndex.size()) {
+    return false;
+  } else {
+    p_globalBranchIndex[idx] = g_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the active flag of the bus
+ * @param idx: local index of bus
+ * @param flag: flag for setting bus as active or inactive
+ * @return: false if no bus exists for idx
+ */
+bool setActiveBus(int idx, bool flag)
+{
+  if (idx < 0 || idx >= p_activeBus.size()) {
+    return false;
+  } else {
+    p_activeBus[idx] = flag;
+    return true;
+  }
+}
+
+/**
+ * Set the active flag of the branch
+ * @param idx: local index of branch
+ * @param flag: flag for setting bus as active or inactive
+ * @return: false if no branch exists for idx
+ */
+bool setActiveBranch(int idx, bool flag)
+{
+  if (idx < 0 || idx >= p_activeBranch.size()) {
+    return false;
+  } else {
+    p_activeBranch[idx] = flag;
+    return true;
+  }
 }
 
 /**
