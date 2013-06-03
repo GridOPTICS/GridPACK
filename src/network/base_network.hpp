@@ -18,8 +18,8 @@
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/network/base_network.hpp"
-#include "gridpack/network/fields.hpp"
-#include "gridpack/base_component/base_network_component.hpp"
+#include "gridpack/component/base_component.hpp"
+#include "gridpack/component/data_collection.hpp"
 
 // -------------------------------------------------------------
 //  class BaseNetwork:
@@ -45,9 +45,6 @@ BaseNetwork(void)
 {
   //TODO: Get default parallel configuration for world group
   p_refBus = -1;
-  gridpack::network::BaseField<double> bogus_field;
-  gridpack::network::BusField<double> bogus_bus_field;
-  gridpack::network::BranchField<double> bogus_branch_field;
 }
 
 /**
@@ -80,6 +77,9 @@ void addBus(int idx)
   p_activeBus.push_back(true);
   boost::shared_ptr<_bus> (new _bus) bus;
   p_buses.push_back(bus);
+  boost::shared_ptr<gridpack::component::DataCollection>(new
+      gridpack::component::DataCollection) data;
+  p_busData.push_back(data);
 }
 
 /**
@@ -95,6 +95,9 @@ void addBranch(int idx1, int idx2)
   p_activeBranch.push_back(true);
   boost::shared_ptr<_branch> (new _branch) branch;
   p_branches.push_back(branch);
+  boost::shared_ptr<gridpack::component::DataCollection>(new
+      gridpack::component::DataCollection) data;
+  p_branchData.push_back(data);
 }
 
 /**
@@ -141,6 +144,36 @@ boost::shared_ptr<_branch> getBranch(int idx)
     // TODO: Some kind of error
   } else {
     return p_branches[idx];
+  }
+}
+
+/**
+ * Retrieve a pointer to the DataCollection object associated with bus indexed
+ * by idx
+ * @param idx: local index of requested bus
+ * @return: a pointer to the requested bus data
+ */
+boost::shared_ptr<gridpack::component::DataCollection> getBusData(int idx)
+{
+  if (idx<0 || idx >= p_buses->size()) {
+    // TODO: Some kind of error
+  } else {
+    return p_busData[idx];
+  }
+}
+
+/**
+ * Retrieve a pointer to the DataCollection object associated with branch
+ * indexed by idx
+ * @param idx: local index of requested branch
+ * @return: a pointer to the requested branch data
+ */
+boost::shared_ptr<gridpack::component::DataCollection> getBranchData(int idx)
+{
+  if (idx<0 || idx >= p_branches->size()) {
+    // TODO: Some kind of error
+  } else {
+    return p_branchData[idx];
   }
 }
 
@@ -431,6 +464,8 @@ private:
 #endif
 
   int p_refBus;
+  std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_busData;
+  std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_branchData;
 };
 }  //namespace network
 }  //namespace gridpack
