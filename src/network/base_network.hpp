@@ -81,7 +81,7 @@ void addBus(int idx)
   boost::shared_ptr<gridpack::component::DataCollection>(new
       gridpack::component::DataCollection) data;
   p_busData.push_back(data);
-}8
+}
 
 /**
  * Add a branch locally to the network. A branch is defined by
@@ -110,7 +110,7 @@ void addBranch(int idx1, int idx2)
 int numBuses(void)
 {
   return p_buses.size();
-};
+}
 
 /**
  * Number of local branches (both active and inactive) on processor
@@ -119,7 +119,7 @@ int numBuses(void)
 int numBranches(void)
 {
   return p_branches.size();
-};
+}
 
 /**
  * Designate a bus as a reference bus.
