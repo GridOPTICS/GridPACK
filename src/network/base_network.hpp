@@ -81,7 +81,7 @@ void addBus(int idx)
   boost::shared_ptr<gridpack::component::DataCollection>(new
       gridpack::component::DataCollection) data;
   p_busData.push_back(data);
-}
+}8
 
 /**
  * Add a branch locally to the network. A branch is defined by
@@ -102,6 +102,24 @@ void addBranch(int idx1, int idx2)
       gridpack::component::DataCollection) data;
   p_branchData.push_back(data);
 }
+
+/**
+ * Number of local buses (both active and inactive) on processor
+ * @return: number of buses
+ */
+int numBuses(void)
+{
+  return p_buses.size();
+};
+
+/**
+ * Number of local branches (both active and inactive) on processor
+ * @return: number of branches
+ */
+int numBranches(void)
+{
+  return p_branches.size();
+};
 
 /**
  * Designate a bus as a reference bus.
@@ -314,7 +332,7 @@ std::vector<int> getConnectedBuses(int idx) const
  * @param bus1: local index of bus at one end of branch
  * @param bus2: local index of bus at other end of branch
  */
-void getBusEndpoints(int idx, int *bus1, int *bus2) const
+void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 {
   *bus1 = p_localBranchIndex1[idx];
   *bus2 = p_localBranchIndex2[idx];
