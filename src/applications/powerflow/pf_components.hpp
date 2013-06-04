@@ -76,6 +76,7 @@ class PFBus
   private:
     double p_shunt_gs;
     double p_shunt_bs;
+    bool p_shunt;
 
 };
 
@@ -146,6 +147,7 @@ class PFBranch
     double p_shunt_admt_b1;
     double p_shunt_admt_g2;
     double p_shunt_admt_b2;
+    bool p_xform, p_shunt;
 };
 
 }

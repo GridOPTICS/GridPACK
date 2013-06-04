@@ -53,9 +53,13 @@ bool gridpack::powerflow::PFBus::matrixValues(void *values)
   int i;
   boost::shared_ptr<PFBus> This(this);
   for (i=0; i<size; i++) {
-    ret += branches[i]->getAdmittance();
+    ret -= branches[i]->getAdmittance();
     ret += branches[i]->getTransformer(This);
     ret += branches[i]->getShunt(This);
+  }
+  if (p_shunt) {
+    gripack::ComplexType shunt(p_shunt_gs,p_shunt_bs);
+    ret += shunt;
   }
   *values = ret;
   return true;
@@ -70,9 +74,9 @@ bool gridpack::powerflow::PFBus::matrixValues(void *values)
  */
 void gridpack::powerflow::PFBus::load(shared_ptr<gridpack::component::DataCollection> data)
 {
-  bool ok = true;
-  ok = ok && data->getValue(BUS_SHUNT_GS, &p_shunt_gs);
-  ok = ok && data->getValue(BUS_SHUNT_BS, &p_shunt_bs);
+  p_shunt = true;
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GS, &p_shunt_gs);
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BS, &p_shunt_bs);
 }
 
 /**
@@ -122,7 +126,7 @@ bool gripack::powerflow::PFBranch::matrixValues(void *values)
   ret = -1.0/ret;
   gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
   a = p_tap_ratio*a;
-  ret = ret - ret/a.conjg();
+  ret = ret - ret/conj(a);
   *values = ret;
   return true;
 }
@@ -139,13 +143,15 @@ void gripack::powerflow::PFBranch::load(shared_ptr<gridpack::component::DataColl
   bool ok = true;
   ok = ok && data->getValue(BRANCH_REACTANCE, &p_reactance);
   ok = ok && data->getValue(BRANCH_RESISTANCE, &p_resistance);
-  ok = ok && data->getValue(BRANCH_TAP_RATIO, &p_tap_ratio);
-  ok = ok && data->getValue(BRANCH_PHASE_SHIFT, &p_phase_shift);
-  ok = ok && data->getValue(BRANCH_CHARGING, &p_charging);
-  ok = ok && data->getValue(BRANCH_SHUNT_ADMTTNC_G1, &p_shunt_admt_g1);
-  ok = ok && data->getValue(BRANCH_SHUNT_ADMTTNC_B1, &p_shunt_admt_b1);
-  ok = ok && data->getValue(BRANCH_SHUNT_ADMTTNC_G2, &p_shunt_admt_g2);
-  ok = ok && data->getValue(BRANCH_SHUNT_ADMTTNC_B2, &p_shunt_admt_b2);
+  p_xform = true;
+  p_xform = p_xform && data->getValue(BRANCH_TAP_RATIO, &p_tap_ratio);
+  p_xform = p_xform && data->getValue(BRANCH_PHASE_SHIFT, &p_phase_shift);
+  p_shunt = true;
+  p_shunt = p_shunt && data->getValue(BRANCH_CHARGING, &p_charging);
+  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G1, &p_shunt_admt_g1);
+  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B1, &p_shunt_admt_b1);
+  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G2, &p_shunt_admt_g2);
+  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B2, &p_shunt_admt_b2);
 }
 
 /**
@@ -166,16 +172,21 @@ gridpack::ComplexType getAdmittance(void)
  */
 gridpack::ComplexType getTransformer(boost::shared_ptr<PFBus> bus)
 {
-  gridpack::ComplexType ret(p_resistance,p_reactance);
-  ret = -1.0/ret;
-  if (bus == getBus1()) {
-    ret = ret/(p_tap_ratio*p_tap_ratio);
-  } else if (bus == getBus2()) {
-    // No further action required
+  if (p_xform) {
+    gridpack::ComplexType ret(p_resistance,p_reactance);
+    ret = -1.0/ret;
+    if (bus == getBus1()) {
+      ret = ret/(p_tap_ratio*p_tap_ratio);
+    } else if (bus == getBus2()) {
+      // No further action required
+    } else {
+      // TODO: Some kind of error
+    }
+    return ret;
   } else {
-    // TODO: Some kind of error
+    gridpack::ComplexType ret(0.0,0.0);
+    return ret;
   }
-  return ret;
 }
 
 /**
@@ -185,17 +196,22 @@ gridpack::ComplexType getTransformer(boost::shared_ptr<PFBus> bus)
  */
 gridpack::ComplexType getShunt(boost::shared_ptr<PFBus> bus)
 {
-  double retr, reti
-  retr = 0.5*p_charging;
-  reti = 0.0;
-  if (bus == getBus1()) {
-    retr += p_shunt_admt_g1;
-    reti += p_shunt_admt_b1;
-  } else if (bus == getBus2()) {
-    retr += p_shunt_admt_g2;
-    reti += p_shunt_admt_b2;
+  double retr, reti;
+  if (p_shunt) {
+    retr = 0.5*p_charging;
+    reti = 0.0;
+    if (bus == getBus1()) {
+      retr += p_shunt_admt_g1;
+      reti += p_shunt_admt_b1;
+    } else if (bus == getBus2()) {
+      retr += p_shunt_admt_g2;
+      reti += p_shunt_admt_b2;
+    } else {
+      // TODO: Some kind of error
+    }
   } else {
-    // TODO: Some kind of error
+    retr = 0.0;
+    reti = 0.0;
   }
   return gridpack::ComplexType(retr,reti);
 }
