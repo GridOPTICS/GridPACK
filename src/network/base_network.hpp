@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   April 3, 2013
+ * @date   2013-06-04 12:42:01 d3g096
  * 
  * @brief  
  * 
@@ -76,10 +76,10 @@ void addBus(int idx)
   p_originalBusIndex.push_back(idx);
   p_globalBusIndex.push_back(-1);
   p_activeBus.push_back(true);
-  boost::shared_ptr<_bus> (new _bus) bus;
+  boost::shared_ptr<_bus> bus(new _bus);
   p_buses.push_back(bus);
-  boost::shared_ptr<gridpack::component::DataCollection>(new
-      gridpack::component::DataCollection) data;
+  boost::shared_ptr<gridpack::component::DataCollection> 
+    data(new gridpack::component::DataCollection);
   p_busData.push_back(data);
 }
 
@@ -96,10 +96,10 @@ void addBranch(int idx1, int idx2)
   p_globalBranchIndex1.push_back(-1);
   p_globalBranchIndex2.push_back(-1);
   p_activeBranch.push_back(true);
-  boost::shared_ptr<_branch> (new _branch) branch;
+  boost::shared_ptr<_branch> branch(new _branch);
   p_branches.push_back(branch);
-  boost::shared_ptr<gridpack::component::DataCollection>(new
-      gridpack::component::DataCollection) data;
+  boost::shared_ptr<gridpack::component::DataCollection>
+    data(new gridpack::component::DataCollection);
   p_branchData.push_back(data);
 }
 
@@ -433,7 +433,7 @@ void clean(void)
         p_branchNeighbors[i].push_back(p->second);
       }
     }
-    std::vector<int> neighbors = p_busNeighbors[i];
+    neighbors = p_busNeighbors[i];
     jsize = neighbors.size();
     p_busNeighbors[i].clear();
     for (j=0; j<jsize; j++) {
@@ -494,6 +494,12 @@ private:
    * Local indices of branches that are connected to a local bus
    */
   std::vector<std::vector<int> > p_branchNeighbors;
+
+  /**
+   * Unique global index of a branch
+   * 
+   */
+  std::vector<int> p_globalBranchIndex;
 
   /**
    * Local indices of buses that are connected to a local bus via a single
