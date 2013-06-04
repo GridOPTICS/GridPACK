@@ -15,13 +15,12 @@
 // Last Change:
 // -------------------------------------------------------------
 
-#ifndef _network_hpp_
-#define _network_hpp_
+#ifndef _component_hpp_
+#define _component_hpp_
 
 namespace gridpack {
 namespace network {
 
-class MatrixInterface;
 #include <iostream>
 #include <vector>
 
@@ -32,17 +31,25 @@ class MatrixInterface;
  * 
  * To be safe, these should be used simultaneously on all processes.  
  */
+class MapConstructor;
+class MapSize;
+class MapData;
 
-class Network {
+template <typename COMPONENT>
+class Component
+{
 public:
-  Network(void){};
-  virtual ~Network(void){};
+  Component<COMPONENT>(COMPONENT * component) : component_(component){};
+  virtual ~Component<COMPONENT>(void){};
 
-  // this constructs the objects required by the analysis
-  void networkMap(MapConstructor * map) = 0;
-
+  void setAnalysisData (MapConstructor * map){setAnalysisData_(map);};
 protected:
 private:
+  void setAnalysisData_(MapConstructor * map){/* throw an exception */};
+  void setAnalysisData_(MapSize * map){component_->increment(map);};
+  void setAnalysisData_(MapData * map){component_->mapData(map);};
+
+  COMPONENT             * component_;
 };
 
 } // namespace math

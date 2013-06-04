@@ -14,8 +14,8 @@
 // Last Change:
 // -------------------------------------------------------------
 
-#ifndef _pf_bus_component_hpp_
-#define _pf_bus_component_hpp_
+#ifndef _pf_data_hpp_
+#define _pf_data_hpp_
 
 #include "gridpack/network/matrix_tnterface.hpp"
 #include "gridpack/math/matrix.hpp"
@@ -26,33 +26,31 @@
 
 namespace gridpack {
 namespace math {
-class MapSize;
-class MapData;
 
 // -------------------------------------------------------------
 //  class BranchComponent
 // -------------------------------------------------------------
 
-class PFBranchComponent : public PFComponent
+class PFData : public MapData
 {
 public:
-    PFBranchComponent(const reader::ParameterReader, int size) : PFComponent(size);
-    virtual ~PFBranchComponent(void);
+    PFData(){};
+    virtual ~MapData(void){};
 
-    virtual void connectInputBus(PFBusComponent * bus) {input = bus;};
-    virtual void connectOutputBus(PFBusComponent * bus){output = bus;};
-    void increment(MapSize * map);
-    void mapData(MapData * map){
-       ;
-    }
+    // gets information from component regarding
+    // I, Y and V. These values are created and sent
+    // to the problem
+    virtual void mapData();
+    math::Matrix * getY(){return Y;};
+    math::Vector * getI(){return I;};
+    math::Vector * getV(){return V;};
 protected:
-    PFBusComponent    * input;
-    PFBusComponent    * output;
-
-    /*
-     * BRANCH SPECIFIC DATA
-     */
-} // namespace math
+    math::Vector *I;
+    math::Vector *V;
+    math::Matrix *Y;
+    int n_;
+    int m_;
+`} // namespace math
 } // namespace gridpack
 
 #endif

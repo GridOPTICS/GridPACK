@@ -14,8 +14,8 @@
 // Last Change:
 // -------------------------------------------------------------
 
-#ifndef _bus_component_hpp_
-#define _bus_component_hpp_
+#ifndef _pf_component_hpp_
+#define _pf_component_hpp_
 
 #include "gridpack/network/matrix_tnterface.hpp"
 #include "gridpack/math/matrix.hpp"
@@ -35,29 +35,13 @@ namespace math {
 class PFComponent : public Index
 {
 public:
-    /// Default constructor.
-    PFComponent(const parallel::Distribution& dist, int yn, int ym, int cin, int cim) :
-        y_(1, 1, 1, 1), ci_(1,1,1,1){};
-
-    /// Destructor
-    virtual ~PFComponent(void);
-    virtual void accept(ComponentVisitor & visitor) = 0;
-
-    void setYSourceIndices(int ul, int lr){
-       y_->setSourceIndices(ul,lr);
-    }
-
-    void setCISourceIndices(int i, int j){
-       ci_->setSourceIndices(i,j);
-    }
-
-    void setVisitorYValues(ComponentYVisitor & visitor);
-    void setVisitorCIValues(ComponentCIVisitor & visitor);
+	PFComponent(int n, int m) : n_(n),m_(m){};
 protected:
+    void increment(MapSize * map){map->size(n_, m_);};
 
 private:
-    MatrixInterface           y_;
-    MatrixInterface           ci_;
+    int n_;
+    int m_;
 };
 
 } // namespace math
