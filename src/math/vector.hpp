@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-05-10 14:27:16 d3g096
+ * @date   2013-06-04 13:03:23 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -27,9 +27,6 @@ class Vector;
 
 /// A way to add to Vector's and make a new one
 extern Vector *add(const Vector& A, const Vector& B);
-
-/// A way to make a copy of a Vector
-extern Vector *clone(const Vector& v);
 
 // -------------------------------------------------------------
 //  class Vector
@@ -150,6 +147,14 @@ public:
     p_vector_impl->accept(visitor);
   }
 
+  /// Make an exact replica of this instance
+  Vector *clone(void) const
+  {
+    VectorImplementation *pimpl_clone = p_vector_impl->clone();
+    Vector *result = new Vector(pimpl_clone);
+    return result;
+  }
+
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
@@ -187,7 +192,7 @@ public:
    */
   void copy(const Vector& x)
   {
-    p_vector_impl->add(*(x.p_vector_impl));
+    p_vector_impl->copy(*(x.p_vector_impl));
   }
 
   /// Replace all elements with their reciprocal
@@ -203,10 +208,6 @@ public:
   friend Vector *add(const Vector& A, const Vector& B);
 
   // friend Vector *reorder(const Vector& A, const Reordering& r);
-
-  /// Create a copy of the specified Vector
-  friend Vector *clone(const Vector& from);
-
 
 protected:
   

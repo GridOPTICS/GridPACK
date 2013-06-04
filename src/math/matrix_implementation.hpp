@@ -3,7 +3,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-05-20 12:03:42 d3g096
+ * @date   2013-06-04 13:10:19 d3g096
  * 
  * @brief  
  * 
@@ -154,6 +154,13 @@ public:
     this->p_accept(visitor);
   }
 
+  /// Make an exact replica of this instance
+  MatrixImplementation *clone(void) const
+  {
+    return this->p_clone();
+  }
+
+
 protected:
 
   /// Get the global index range of the locally owned rows (specialized)
@@ -216,7 +223,8 @@ protected:
   /// Allow visits by implementation visitors
   virtual void p_accept(ConstImplementationVisitor& visitor) const = 0;
 
-
+  /// Make an exact replica of this instance (specialized)
+  virtual MatrixImplementation *p_clone(void) const = 0;
 };
 
 } // namespace utility

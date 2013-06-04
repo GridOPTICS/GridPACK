@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-05-10 13:33:40 d3g096
+// Last Change: 2013-06-04 12:47:47 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -102,6 +102,9 @@ protected:
 
   /// Allow visits by implemetation visitor
   void p_accept(ConstImplementationVisitor& visitor) const;
+
+  /// Make an exact replica of this instance (specialized)
+  VectorImplementation *p_clone(void) const;
 
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)

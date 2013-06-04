@@ -7,17 +7,19 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created April 17, 2013 by William A. Perkins
-// Last Change: 2013-05-09 08:17:15 d3g096
+// Last Change: 2013-06-04 14:09:27 d3g096
 // -------------------------------------------------------------
 
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
-#include <cassert>Error handling 
-#include "matrix.hpp"
-#include "petsc_matrix_implementation.hpp"
-#include "petsc_matrix_extractor.hpp"
-#include "petsc_vector_extractor.hpp"
+#include <boost/assert.hpp>
+#include "gridpack/math/matrix.hpp"
+#include "gridpack/math/petsc/petsc_exception.hpp"
+#include "gridpack/math/petsc/petsc_matrix_implementation.hpp"
+#include "gridpack/math/petsc/petsc_matrix_extractor.hpp"
+#include "gridpack/math/petsc/petsc_vector_implementation.hpp"
+#include "gridpack/math/petsc/petsc_vector_extractor.hpp"
 
 namespace gridpack {
 namespace math {
@@ -37,18 +39,20 @@ Matrix *
 add(const Matrix& A, const Matrix& B) 
 {
   PetscErrorCode ierr;
+  if (A.communicator() != B.communicator()) {
+    throw gridpack::Exception("Matrix::add: communicators do not match");
+  }
 
-  // FIXME: check A size == B size or throw
+  if ((A.rows() != B.rows()) || (A.cols() != B.cols())) {
+    throw gridpack::Exception("Matrix::add: sizes do not match");
+  }
 
-  // FIXME: check A parallel env == B parallel env or throw
-
-  // FIXME: get a MPI_Comm from A parallel env
-  MPI_Comm comm;
+  Matrix *result = A.clone();
 
   Mat *pA(NULL), *pB(NULL);
   { 
     PETScMatrixExtractor extract;
-    A.accept(extract);
+    result->accept(extract);
     pA = extract.matrix();
   }
   {
@@ -57,18 +61,17 @@ add(const Matrix& A, const Matrix& B)
     pB = extract.matrix();
   }
 
-  assert(pA != NULL);
-  assert(pB != NULL);
+  BOOST_ASSERT(pA != NULL);
+  BOOST_ASSERT(pB != NULL);
 
-  Mat presult;
-  ierr = MatDuplicate(*pA, MAT_COPY_VALUES, &presult);
-  ierr = MatAXPY(*presult, 1.0, *pB, DIFFERENT_NONZERO_PATTERN);
-  
-  PETScMatrixImplementation *pMatrix(new PETScMatrixImplementation(A.comm(), presult));
+  try {
+    PetscScalar one(1.0);
+    ierr = MatAXPY(*pA, one, *pB, DIFFERENT_NONZERO_PATTERN);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
 
-  Matrix *result(new Matrix(pMatrix));
   return result;
-
 }
 
 

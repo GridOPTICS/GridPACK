@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-05-30 11:42:55 d3g096
+ * @date   2013-06-04 14:30:53 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -28,6 +28,7 @@ static const gridpack::math::Matrix::StorageType the_storage_type =
 #else
   gridpack::math::Matrix::Sparse;
 #endif
+
 
 BOOST_AUTO_TEST_SUITE(Matrix)
 
@@ -159,6 +160,87 @@ BOOST_AUTO_TEST_CASE( accumulate )
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }
+}
+
+BOOST_AUTO_TEST_CASE( clone )
+{
+  gridpack::parallel::Communicator world;
+  int global_size;
+  boost::mpi::all_reduce(world, local_size, global_size, std::plus<int>());
+
+  gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
+
+  int lo, hi;
+  A.local_row_range(lo, hi);
+ 
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x(static_cast<double>(i));
+    int jmin(std::max(i, 0)), jmax(std::min(i-1,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      A.set_element(i, j, x);
+    }
+  }
+  A.ready();
+
+  std::auto_ptr<gridpack::math::Matrix> Aclone(A.clone());
+
+  BOOST_CHECK_EQUAL(A.rows(), Aclone->rows());
+  BOOST_CHECK_EQUAL(A.local_rows(), Aclone->local_rows());
+  BOOST_CHECK_EQUAL(A.cols(), Aclone->cols());
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x;
+    gridpack::math::complex_type y;
+    int jmin(std::max(i, 0)), jmax(std::min(i-1,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      A.get_element(i, j, x);
+      Aclone->get_element(i, j, y);
+      BOOST_CHECK_CLOSE(real(x), real(y), delta);
+      BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE( add )
+{
+  gridpack::parallel::Communicator world;
+  int global_size;
+  boost::mpi::all_reduce(world, local_size, global_size, std::plus<int>());
+
+  gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
+
+  int lo, hi;
+  A.local_row_range(lo, hi);
+ 
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x(static_cast<double>(i));
+    int jmin(std::max(i, 0)), jmax(std::min(i-1,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      A.set_element(i, j, x);
+    }
+  }
+  A.ready();
+
+  std::auto_ptr<gridpack::math::Matrix> B(A.clone());
+  std::auto_ptr<gridpack::math::Matrix> C(gridpack::math::add(A, *B));
+
+  B->add(A);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type x;
+    gridpack::math::complex_type y;
+    int jmin(std::max(i, 0)), jmax(std::min(i-1,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      A.get_element(i, j, x);
+      C->get_element(i, j, y);
+      BOOST_CHECK_CLOSE(2.0*real(x), real(y), delta);
+      BOOST_CHECK_CLOSE(2.0*abs(x), abs(y), delta);
+      B->get_element(i, j, y);
+      BOOST_CHECK_CLOSE(2.0*real(x), real(y), delta);
+      BOOST_CHECK_CLOSE(2.0*abs(x), abs(y), delta);
+    }
+  }
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

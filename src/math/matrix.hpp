@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-05-20 12:04:21 d3g096
+ * @date   2013-06-04 14:25:52 d3g096
  * 
  * @brief  
  * 
@@ -167,6 +167,15 @@ public:
     p_matrix_impl->accept(visitor);
   }
 
+  /// Make an exact replica of this instance
+  Matrix *clone(void) const
+  {
+    MatrixImplementation *pimpl_clone =
+      this->p_matrix_impl->clone();
+    Matrix *result = new Matrix(pimpl_clone);
+    return result;
+  }
+
   // -------------------------------------------------------------
   // Matrix Operation Methods
   // -------------------------------------------------------------
@@ -180,7 +189,7 @@ public:
   // -------------------------------------------------------------
   // void scale(const complex_type& x);
   // void multiply_diagonal(const Vector& x);
-  // void add(const Matrix& A);
+  void add(const Matrix& A);
   // void identity(void);
   // void zero(void);
 
@@ -197,7 +206,6 @@ public:
   friend Matrix *transpose(const Matrix& A);
   friend Matrix *inverse(const Matrix& A);
   // friend Matrix *reorder(const Matrix& A, const Reordering& r);
-  friend Matrix *clone(const Matrix& A);
   friend Matrix *identity(const Matrix& A);
   friend Vector *diagional(const Matrix& A);
 
@@ -206,6 +214,8 @@ public:
   //
   // put results in existing instance
   // -------------------------------------------------------------
+  friend void add(const Matrix& A, const Matrix& B, Matrix& result);
+  friend void multiply(const Matrix& A, const Matrix& B, Matrix& result);
   friend void multiply(const Matrix& A, const Vector& x, Vector& result);
 
 protected:
@@ -217,6 +227,10 @@ protected:
   Matrix(MatrixImplementation *impl);
 
 };
+
+extern Matrix *add(const Matrix& A, const Matrix& B);
+
+
 
 } // namespace math
 } // namespace gridpack

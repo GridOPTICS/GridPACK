@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-05-20 10:54:29 d3g096
+# Last Change: 2013-06-04 14:03:16 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -28,9 +28,10 @@ if (PETSC_FOUND)
       petsc/petsc_exception.cpp
       petsc/math.cpp
       petsc/vector.cpp
-      petsc/matrix.cpp
       petsc/petsc_vector_implementation.cpp
+      petsc/matrix.cpp
       petsc/petsc_matrix_implementation.cpp
+      petsc/petsc_matrix_operations.cpp
     )  
 
     set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})

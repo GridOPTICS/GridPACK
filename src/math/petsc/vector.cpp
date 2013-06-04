@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-05-15 13:39:02 d3g096
+ * @date   2013-06-04 13:00:08 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -40,45 +40,6 @@ Vector::Vector(const parallel::Communicator& comm, const int& local_length)
   PETScVectorImplementation *impl = 
     new PETScVectorImplementation(this->communicator(), local_length);
   p_vector_impl.reset(impl);
-}
-
-// -------------------------------------------------------------
-// vector clone
-// -------------------------------------------------------------
-Vector *
-clone(const Vector& from)
-{
-  // std::cerr << "In clone()" << std::endl;
-  parallel::Communicator comm(from.communicator());
-  int local_size(from.local_size());
-  PETScVectorImplementation *pimpl =
-    new PETScVectorImplementation(comm, local_size);
-
-  const Vec* from_vec;
-  {
-    PETScConstVectorExtractor vext;
-    from.accept(vext);
-    from_vec = vext.vector();
-  }
-
-  Vec *to_vec;
-  {
-    PETScVectorExtractor vext;
-    pimpl->accept(vext);
-    to_vec = vext.vector();
-  }
-
-  PetscErrorCode ierr;
-
-  try {
-    ierr = VecCopy((*from_vec), *to_vec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
-    throw PETScException(ierr, e);
-  }
-
-  Vector *result(new Vector(pimpl));
-  
-  return result;
 }
 
 // -------------------------------------------------------------

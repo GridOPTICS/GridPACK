@@ -2,7 +2,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-05-10 15:14:41 d3g096
+ * @date   2013-06-04 12:58:13 d3g096
  * 
  * @brief  
  * 
@@ -259,6 +259,36 @@ PETScVectorImplementation::p_accept(ConstImplementationVisitor& visitor) const
 {
   visitor.visit(*this);
 }
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_clone
+// -------------------------------------------------------------
+VectorImplementation *
+ PETScVectorImplementation::p_clone(void) const
+{
+  parallel::Communicator comm(this->communicator());
+  int local_size(this->local_size());
+  
+  PETScVectorImplementation *result = 
+    new PETScVectorImplementation(comm, local_size);
+  PetscErrorCode ierr;
+
+  Vec *to_vec;
+  {
+    PETScVectorExtractor vext;
+    result->accept(vext);
+    to_vec = vext.vector();
+  }
+
+
+  try {
+    ierr = VecCopy(this->p_vector, *to_vec); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}
+
 
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_scale

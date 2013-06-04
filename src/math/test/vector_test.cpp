@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-05-20 10:43:09 d3g096
+ * @date   2013-06-04 13:04:23 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -55,8 +55,7 @@ BOOST_AUTO_TEST_CASE( fill_and_clone )
   BOOST_CHECK_CLOSE(abs(xhi), abs(value), delta);
 
   // std::cerr << "About to clone vector" << std::endl;
-  std::auto_ptr<gridpack::math::Vector> 
-    vcopy(gridpack::math::clone(v));
+  std::auto_ptr<gridpack::math::Vector> vcopy(v.clone());
 
   vcopy->get_element(lo, xlo);
   vcopy->get_element(hi-1, xhi);
@@ -169,7 +168,7 @@ BOOST_AUTO_TEST_CASE( add )
   v1.ready();
   v2.ready();
 
-  vsum1 = gridpack::math::clone(v1);
+  vsum1 = v1.clone();
   vsum1->add(v2);
 
   vsum2 = gridpack::math::add(v1, v2);

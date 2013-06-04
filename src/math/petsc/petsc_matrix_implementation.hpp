@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-05-20 12:06:36 d3g096
+ * @date   2013-06-04 13:41:26 d3g096
  * 
  * @brief  
  * 
@@ -113,6 +113,12 @@ protected:
   /// Allow visits by implementation visitors
   void p_accept(ConstImplementationVisitor& visitor) const;
 
+  /// Make an exact replica of this instance (specialized)
+  MatrixImplementation *p_clone(void) const;
+
+  /// Make a new instance from an existing PETSc matrix
+  explicit PETScMatrixImplementation(const parallel::Communicator& comm,
+                                     const Mat& m);
 };
 
 } // namespace utility

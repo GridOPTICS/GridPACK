@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-05-15 14:00:02 d3g096
+ * @date   2013-06-04 12:48:05 d3g096
  * 
  * @brief  
  * 
@@ -167,13 +167,19 @@ public:
    */
   void copy(const VectorImplementation& x)
   {
-    this->p_add(x);
+    this->p_copy(x);
   }
 
   /// Replace all elements with their reciprocal
   void reciprocal(void)
   {
     this->p_reciprocal();
+  }
+
+  /// Make an exact replica of this instance
+  VectorImplementation *clone(void) const
+  {
+    return this->p_clone();
   }
 
 protected:
@@ -220,6 +226,9 @@ protected:
 
   /// Allow visits by implementation visitors
   virtual void p_accept(ConstImplementationVisitor& visitor) const = 0;
+
+  /// Make an exact replica of this instance (specialized)
+  virtual VectorImplementation *p_clone(void) const = 0;
 
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)

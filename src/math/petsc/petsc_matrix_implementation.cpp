@@ -1,7 +1,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-05-22 14:10:28 d3g096
+ * @date   2013-06-04 13:44:27 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -70,6 +70,18 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
       }
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
+                                                     const Mat& m)
+  : MatrixImplementation(comm)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatDuplicate(m, MAT_COPY_VALUES, &p_matrix); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -278,6 +290,18 @@ void
 PETScMatrixImplementation::p_accept(ConstImplementationVisitor& visitor) const
 {
   visitor.visit(*this);
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_clone
+// -------------------------------------------------------------
+MatrixImplementation *
+PETScMatrixImplementation::p_clone(void) const
+{
+  PETScMatrixImplementation *result =
+    new PETScMatrixImplementation(this->communicator(), 
+                                  this->p_matrix);
+  return result;
 }
 
 } // namespace math
