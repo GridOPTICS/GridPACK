@@ -4,6 +4,7 @@
 #include <map>
 #include <string>
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/utilities/complex.hpp"
 
 // Simple outline of data collection object
 
@@ -33,8 +34,7 @@ public:
   void addValue(char *name, char *value);
   void addValue(char *name, float value);
   void addValue(char *name, double value);
-//  void addValue(char *name, SingleComplex value);
-//  void addValue(char *name, DoubleComplex value);
+  void addValue(char *name, gridpack::ComplexType value);
 
   /**
    *  Modify current value of existing data element in
@@ -50,8 +50,7 @@ public:
   bool setValue(char *name, char *value);
   bool setValue(char *name, float value);
   bool setValue(char *name, double value);
-//  bool setValue(char *name, SingleComplex value);
-//  bool setValue(char *name, DoubleComplex value);
+  bool setValue(char *name, gridpack::ComplexType value);
 
   /**
    *  Retrieve current value of existing data element in
@@ -67,8 +66,7 @@ public:
   bool getValue(char *name, std::string *value);
   bool getValue(char *name, float *value);
   bool getValue(char *name, double *value);
-//  bool getValue(char *name, SingleComplex *value);
-//  bool getValue(char *name, DoubleComplex *value);
+  bool getValue(char *name, gridpack::ComplexType *value);
 private:
   std::map<std::string, int> p_ints; 
   std::map<std::string, long> p_longs; 
@@ -76,10 +74,9 @@ private:
   std::map<std::string, std::string> p_strings; 
   std::map<std::string, float> p_floats; 
   std::map<std::string, double> p_doubles; 
-//  std::map<std::string, SingleComplex> p_singleComplex; 
-//  std::map<std::string, DoubleComplex> p_doubleComplex; 
+  std::map<std::string, gridpack::ComplexType> p_complexType; 
 };
 
 }    // component
-}    // gridpac
+}    // gridpack
 #endif // _data_collection_h

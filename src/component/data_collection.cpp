@@ -56,17 +56,11 @@ void gridpack::component::DataCollection::addValue(char *name, double value)
   p_doubles.insert(std::pair<std::string, double>(str,value));
 }
 
-#if 0
-void gridpack::component::DataCollection::addValue(char *name, SingleComplex value)
+#if 1
+void gridpack::component::DataCollection::addValue(char *name, gridpack::ComplexType value)
 {
   std::string str = name;
-  p_singleComplex.insert(std::pair<std::string, singleComplex>(str,value));
-}
-
-void gridpack::component::DataCollection::addValue(char *name, DoubleComplex value)
-{
-  std::string str = name;
-  p_doubleComplex.insert(std::pair<std::string, doubleComplex>(str,value));
+  p_complexType.insert(std::pair<std::string, gridpack::ComplexType>(str,value));
 }
 #endif
 
@@ -157,26 +151,13 @@ bool gridpack::component::DataCollection::setValue(char *name, double value)
   }
 }
 
-#if 0
-bool gridpack::component::DataCollection::setValue(char *name, SingleComplex value)
+#if 1
+bool gridpack::component::DataCollection::setValue(char *name, gridpack::ComplexType value)
 {
   std::string str = name;
-  std::map<std::string, singleComplex>::iterator it;
-  it = p_singleComplex.find(str);
-  if (it != p_singleComplex.end()) {
-    it->second = value;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool gridpack::component::DataCollection::setValue(char *name, DoubleComplex value)
-{
-  std::string str = name;
-  std::map<std::string, doubleComplex>::iterator it;
-  it = p_doubleComplex.find(str);
-  if (it != p_doubleComplex.end()) {
+  std::map<std::string, gridpack::ComplexType>::iterator it;
+  it = p_complexType.find(str);
+  if (it != p_complexType.end()) {
     it->second = value;
     return true;
   } else {
@@ -271,26 +252,13 @@ bool gridpack::component::DataCollection::getValue(char *name, double *value)
   }
 }
 
-#if 0
-bool gridpack::component::DataCollection::getValue(char *name, SingleComplex *value)
+#if 1
+bool gridpack::component::DataCollection::getValue(char *name, gridpack::ComplexType *value)
 {
   std::string str = name;
-  std::map<std::string, singleComplex>::iterator it;
-  it = p_singleComplex.find(str);
-  if (it != p_singleComplex.end()) {
-    *value = it->second;
-    return true;
-  } else {
-    return false;
-  }
-}
-
-bool gridpack::component::DataCollection::getValue(char *name, DoubleComplex *value)
-{
-  std::string str = name;
-  std::map<std::string, doubleComplex>::iterator it;
-  it = p_doubleComplex.find(str);
-  if (it != p_doubleComplex.end()) {
+  std::map<std::string, gridpack::ComplexType>::iterator it;
+  it = p_complexType.find(str);
+  if (it != p_complexType.end()) {
     *value = it->second;
     return true;
   } else {
