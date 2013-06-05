@@ -1,13 +1,14 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-04 13:44:27 d3g096
+ * @date   2013-06-05 12:37:48 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
  * 
  */
 
+#include "gridpack/math/matrix.hpp"
 #include "gridpack/math/implementation_visitor.hpp"
 #include "gridpack/math/petsc/petsc_matrix_implementation.hpp"
 #include "gridpack/math/petsc/petsc_exception.hpp"
@@ -181,7 +182,7 @@ PETScMatrixImplementation::p_set_element(const int& i, const int& j,
 {
   PetscErrorCode ierr(0);
   try {
-    ierr = MatSetValue(p_matrix, i, j, x, INSERT_VALUES);
+    ierr = MatSetValue(p_matrix, i, j, x, INSERT_VALUES); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -210,7 +211,7 @@ PETScMatrixImplementation::p_add_element(const int& i, const int& j,
 {
   PetscErrorCode ierr(0);
   try {
-    ierr = MatSetValue(p_matrix, i, j, x, ADD_VALUES);
+    ierr = MatSetValue(p_matrix, i, j, x, ADD_VALUES); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

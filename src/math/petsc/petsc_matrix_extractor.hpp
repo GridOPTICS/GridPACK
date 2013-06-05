@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_extractor.hpp
  * @author William A. Perkins
- * @date   2013-05-16 08:31:57 d3g096
+ * @date   2013-06-05 14:31:03 d3g096
  * 
  * @brief  
  * 
@@ -21,12 +21,14 @@
 #ifndef _petsc_matrix_extractor_hpp_
 #define _petsc_matrix_extractor_hpp_
 
+#include <boost/assert.hpp>
 #include "gridpack/utilities/uncopyable.hpp"
 #include "gridpack/math/implementation_visitor.hpp"
 
 namespace gridpack {
 namespace math {
 
+class Matrix;
 class PETScMatrixImplementation;
 
 // -------------------------------------------------------------
@@ -34,8 +36,7 @@ class PETScMatrixImplementation;
 // -------------------------------------------------------------
 
 class PETScMatrixExtractor 
-  : public ImplementationVisitor,
-    private utility::Uncopyable
+  : public ImplementationVisitor
 {
 public:
 
@@ -70,8 +71,7 @@ protected:
 //  class PETScConstMatrixExtractor
 // -------------------------------------------------------------
 class PETScConstMatrixExtractor 
-  : public ImplementationVisitor,
-    private utility::Uncopyable
+  : public ConstImplementationVisitor
 {
 public:
 
@@ -100,6 +100,42 @@ protected:
   const Mat *matrix_;
 
 };
+
+// -------------------------------------------------------------
+// PETScMatrix
+// -------------------------------------------------------------
+/// Get a PETSc matrix from a Matrix
+inline Mat *
+PETScMatrix(Matrix& A)
+{
+  Mat *result(NULL);
+  PETScMatrixExtractor extract;
+  A.accept(extract);
+  result = extract.matrix();
+
+  // a null pointer means the Matrix was not implemented in PETSc -- a
+  // programming error
+  BOOST_ASSERT(result);
+
+  return result;
+}
+
+/// Get a (const) PETSc matrix from a Matrix
+inline const Mat *
+PETScMatrix(const Matrix& A)
+{
+  const Mat *result(NULL);
+  PETScConstMatrixExtractor extract;
+  A.accept(extract);
+  result = extract.matrix();
+
+  // a null pointer means the Matrix was not implemented in PETSc -- a
+  // programming error
+  BOOST_ASSERT(result);
+
+  return result;
+}
+  
 
 } // namespace math
 } // namespace gridpack

@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-06-04 14:25:52 d3g096
+ * @date   2013-06-05 14:30:00 d3g096
  * 
  * @brief  
  * 
@@ -162,7 +162,13 @@ public:
   }
 
   /// Allow visits by implemetation visitor
-  void accept(ImplementationVisitor& visitor) const
+  void accept(ImplementationVisitor& visitor)
+  {
+    p_matrix_impl->accept(visitor);
+  }
+
+  /// Allow visits by implemetation visitor
+  void accept(ConstImplementationVisitor& visitor) const
   {
     p_matrix_impl->accept(visitor);
   }
@@ -187,11 +193,24 @@ public:
   // -------------------------------------------------------------
   // In-Place Matrix Operation Methods (change this instance)
   // -------------------------------------------------------------
-  // void scale(const complex_type& x);
-  // void multiply_diagonal(const Vector& x);
+
+  /// Make this Matrix equal to another
+  void equate(const Matrix& A);
+
+  /// Scale the entire Matrix by the given value
+  void scale(const complex_type& x);
+
+  /// Multiply the diagonal by the specified vector
+  void multiply_diagonal(const Vector& x);
+
+  /// Add another matrix to this one, in place
   void add(const Matrix& A);
-  // void identity(void);
-  // void zero(void);
+
+  /// Make this matrix the identity matrix
+  void identity(void);
+
+  /// Zero all entries in the matrix
+  void zero(void);
 
   // -------------------------------------------------------------
   // Matrix Operations 
@@ -199,24 +218,21 @@ public:
   // all allocate new instances and throw when arguments are
   // inconsistent
   // -------------------------------------------------------------
-  friend Matrix *add(const Matrix& A, const Matrix& B);
-  friend Matrix *multiply(const Matrix& A, const Matrix& B);
-  friend Vector *multiply(const Matrix& A, const Vector& x);
   friend Matrix *factorize(const Matrix& A);
-  friend Matrix *transpose(const Matrix& A);
   friend Matrix *inverse(const Matrix& A);
   // friend Matrix *reorder(const Matrix& A, const Reordering& r);
   friend Matrix *identity(const Matrix& A);
   friend Vector *diagional(const Matrix& A);
+  friend Vector *column(const Matrix& A, const int& cidx);
 
   // -------------------------------------------------------------
   // Matrix Operations
   //
   // put results in existing instance
   // -------------------------------------------------------------
-  friend void add(const Matrix& A, const Matrix& B, Matrix& result);
-  friend void multiply(const Matrix& A, const Matrix& B, Matrix& result);
-  friend void multiply(const Matrix& A, const Vector& x, Vector& result);
+  // friend void add(const Matrix& A, const Matrix& B, Matrix& result);
+  friend void diagional(const Matrix& A, Vector& x);
+  friend void column(const Matrix& A, const int& cidx, Vector& x);
 
 protected:
 
@@ -226,10 +242,48 @@ protected:
   /// Construct with an existing (allocated) implementation 
   Matrix(MatrixImplementation *impl);
 
+  /// Is a Matrix compatible with this one (throws if not)
+  void p_check_compatible(const Matrix& A) const;
+
 };
 
+// -------------------------------------------------------------
+// Matrix Operations 
+//
+// these allocate new instances and throw when arguments are
+// inconsistent
+// -------------------------------------------------------------
+
+/// Add two Matrix instances
 extern Matrix *add(const Matrix& A, const Matrix& B);
 
+/// Make the transpose of a Matrix
+extern Matrix *transpose(const Matrix& A);
+
+/// Multiply two Matrix instances and make a new one
+extern Matrix *multiply(const Matrix& A, const Matrix& B);
+
+/// Multiply a Matrix by a Vector and make a new Vector for the result
+extern Vector *multiply(const Matrix& A, const Vector& x);
+
+// -------------------------------------------------------------
+// Matrix Operations
+//
+// put results in existing instance and throw when arguments are
+// inconsistent
+// -------------------------------------------------------------
+
+/// Add two Matrix instances and put the result in a third
+extern void add(const Matrix& A, const Matrix& B, Matrix& result);
+
+/// Make the transpose of a Matrix and put it in another
+extern void transpose(const Matrix& A, Matrix& result);
+
+/// Multiply two Matrix instances and put result in existing Matrix
+extern void multiply(const Matrix& A, const Matrix& B, Matrix& result);
+
+/// Multiply a Matrix by a Vector and put result in existing Vector
+extern void multiply(const Matrix& A, const Vector& x, Vector& result);
 
 
 } // namespace math

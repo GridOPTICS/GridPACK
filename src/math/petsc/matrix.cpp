@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-04 14:32:45 d3g096
+ * @date   2013-06-05 14:35:29 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -48,27 +48,92 @@ Matrix::Matrix(const parallel::Communicator& comm,
 }
 
 // -------------------------------------------------------------
+// Matrix::equate
+// -------------------------------------------------------------
+void
+Matrix::equate(const Matrix& B)
+{
+  this->p_check_compatible(B);
+  Mat *pA(PETScMatrix(*this));
+  const Mat *pB(PETScMatrix(B));
+
+  PetscErrorCode ierr(0);
+  try {
+    PetscScalar one(1.0);
+    ierr = MatCopy(*pB, *pA, DIFFERENT_NONZERO_PATTERN); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Matrix::scale
+// -------------------------------------------------------------
+void
+Matrix::scale(const complex_type& xin)
+{
+  Mat *pA(PETScMatrix(*this));
+
+  PetscErrorCode ierr(0);
+  
+  try {
+    PetscScalar x(xin);
+    ierr = MatScale(*pA, x); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+    
+
+// -------------------------------------------------------------
 // Matrix::add
 // -------------------------------------------------------------
 void
 Matrix::add(const Matrix& B)
 {
-  Mat *pA(NULL), *pB(NULL);
-  { 
-    PETScMatrixExtractor extract;
-    this->accept(extract);
-    pA = extract.matrix();
-  }
-  {
-    PETScMatrixExtractor extract;
-    B.accept(extract);
-    pB = extract.matrix();
-  }
+  this->p_check_compatible(B);
+  Mat *pA(PETScMatrix(*this));
+  const Mat *pB(PETScMatrix(B));
 
   PetscErrorCode ierr(0);
   try {
     PetscScalar one(1.0);
-    ierr = MatAXPY(*pA, one, *pB, DIFFERENT_NONZERO_PATTERN);
+    ierr = MatAXPY(*pA, one, *pB, DIFFERENT_NONZERO_PATTERN); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Matrix::identity
+// -------------------------------------------------------------
+void
+Matrix::identity(void)
+{
+  this->zero();
+  Mat *pA(PETScMatrix(*this));
+
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
+    PetscScalar one(1.0);
+    ierr = MatShift(*pA, one);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Matrix::zero
+// -------------------------------------------------------------
+void
+Matrix::zero(void)
+{
+  Mat *pA(PETScMatrix(*this));
+
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
