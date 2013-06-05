@@ -10,9 +10,12 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/utilities/complex_type.hpp"
+#include <vector>
+
+#include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/applications/powerflow/pf_components.hpp"
 
 /**
  *  Simple constructor
@@ -37,6 +40,9 @@ gridpack::powerflow::PFBus::~PFBus(void)
  */
 bool gridpack::powerflow::PFBus::matrixSize(int *isize, int *jsize) const
 {
+  *isize = 1;
+  *jsize = 1;
+  return true;
 }
 
 /**
@@ -48,20 +54,20 @@ bool gridpack::powerflow::PFBus::matrixSize(int *isize, int *jsize) const
 bool gridpack::powerflow::PFBus::matrixValues(void *values)
 {
   gridpack::ComplexType ret(0.0,0.0);
-  std::vector<boost::shared_ptr<PFBranch> > branches = getBranchNeighbors();
+  std::vector<boost::shared_ptr<BaseComponent> > branches = getNeighborBranches();
   int size = branches.size();
   int i;
-  boost::shared_ptr<PFBus> This(this);
+// HACK: Need to cast pointer, is there a better way?
   for (i=0; i<size; i++) {
-    ret -= branches[i]->getAdmittance();
-    ret += branches[i]->getTransformer(This);
-    ret += branches[i]->getShunt(This);
+    ret -= (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->getAdmittance();
+    ret += (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->getTransformer(this);
+    ret += (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->getShunt(this);
   }
   if (p_shunt) {
-    gripack::ComplexType shunt(p_shunt_gs,p_shunt_bs);
+    gridpack::ComplexType shunt(p_shunt_gs,p_shunt_bs);
     ret += shunt;
   }
-  *values = ret;
+  *((gridpack::ComplexType*)values) = ret;
   return true;
 }
 
@@ -72,7 +78,7 @@ bool gridpack::powerflow::PFBus::matrixValues(void *values)
  * @param data: DataCollection object contain parameters relevant to this
  *       bus that were read in when network was initialized
  */
-void gridpack::powerflow::PFBus::load(shared_ptr<gridpack::component::DataCollection> data)
+void gridpack::powerflow::PFBus::load(boost::shared_ptr<gridpack::component::DataCollection> data)
 {
   p_shunt = true;
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GS, &p_shunt_gs);
@@ -82,7 +88,7 @@ void gridpack::powerflow::PFBus::load(shared_ptr<gridpack::component::DataCollec
 /**
  *  Simple constructor
  */
-gripack::powerflow::PFBranch::PFBranch(void)
+gridpack::powerflow::PFBranch::PFBranch(void)
 {
   p_reactance = 0.0;
   p_resistance = 0.0;
@@ -98,7 +104,7 @@ gripack::powerflow::PFBranch::PFBranch(void)
 /**
  *  Simple destructor
  */
-gripack::powerflow::PFBranch::~PFBranch(void)
+gridpack::powerflow::PFBranch::~PFBranch(void)
 {
 }
 
@@ -107,7 +113,7 @@ gripack::powerflow::PFBranch::~PFBranch(void)
  *  @param isize, jsize: number of rows and columns of matrix block
  *  @return: false if network component does not contribute matrix element
  */
-bool gripack::powerflow::PFBranch::matrixSize(int *isize, int *jsize) const
+bool gridpack::powerflow::PFBranch::matrixSize(int *isize, int *jsize) const
 {
   *isize = 1;
   *jsize = 1;
@@ -120,14 +126,14 @@ bool gripack::powerflow::PFBranch::matrixSize(int *isize, int *jsize) const
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gripack::powerflow::PFBranch::matrixValues(void *values)
+bool gridpack::powerflow::PFBranch::matrixValues(void *values)
 {
-  gripack::ComplexType ret(p_resistance,p_reactance);
+  gridpack::ComplexType ret(p_resistance,p_reactance);
   ret = -1.0/ret;
   gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
   a = p_tap_ratio*a;
   ret = ret - ret/conj(a);
-  *values = ret;
+  *((gridpack::ComplexType*)values) = ret;
   return true;
 }
 
@@ -138,7 +144,7 @@ bool gripack::powerflow::PFBranch::matrixValues(void *values)
  * @param data: DataCollection object contain parameters relevant to this
  *       branch that were read in when network was initialized
  */
-void gripack::powerflow::PFBranch::load(shared_ptr<gridpack::component::DataCollection> data)
+void gridpack::powerflow::PFBranch::load(boost::shared_ptr<gridpack::component::DataCollection> data)
 {
   bool ok = true;
   ok = ok && data->getValue(BRANCH_REACTANCE, &p_reactance);
@@ -158,9 +164,9 @@ void gripack::powerflow::PFBranch::load(shared_ptr<gridpack::component::DataColl
  * Return the complex admittance of the branch
  * @return: complex addmittance of branch
  */
-gridpack::ComplexType getAdmittance(void)
+gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
 {
-  gripack::ComplexType ret(p_resistance, p_reactance);
+  gridpack::ComplexType ret(p_resistance, p_reactance);
   return -1.0/ret;
 }
 
@@ -170,14 +176,15 @@ gridpack::ComplexType getAdmittance(void)
  * @param bus: pointer to the bus making the call
  * @return: contribution to Y matrix from branch
  */
-gridpack::ComplexType getTransformer(boost::shared_ptr<PFBus> bus)
+gridpack::ComplexType gridpack::powerflow::PFBranch::getTransformer(PFBus *bus)
 {
   if (p_xform) {
     gridpack::ComplexType ret(p_resistance,p_reactance);
     ret = -1.0/ret;
-    if (bus == getBus1()) {
+    // HACK: pointer comparison, maybe could handle this better
+    if (bus == getBus1().get()) {
       ret = ret/(p_tap_ratio*p_tap_ratio);
-    } else if (bus == getBus2()) {
+    } else if (bus == getBus2().get()) {
       // No further action required
     } else {
       // TODO: Some kind of error
@@ -194,16 +201,17 @@ gridpack::ComplexType getTransformer(boost::shared_ptr<PFBus> bus)
  * @param bus: pointer to the bus making the call
  * @return: contribution to Y matrix from shunts associated with branches
  */
-gridpack::ComplexType getShunt(boost::shared_ptr<PFBus> bus)
+gridpack::ComplexType gridpack::powerflow::PFBranch::getShunt(PFBus *bus)
 {
   double retr, reti;
   if (p_shunt) {
     retr = 0.5*p_charging;
     reti = 0.0;
-    if (bus == getBus1()) {
+    // HACK: pointer comparison, maybe could handle this better
+    if (bus == getBus1().get()) {
       retr += p_shunt_admt_g1;
       reti += p_shunt_admt_b1;
-    } else if (bus == getBus2()) {
+    } else if (bus == getBus2().get()) {
       retr += p_shunt_admt_g2;
       reti += p_shunt_admt_b2;
     } else {

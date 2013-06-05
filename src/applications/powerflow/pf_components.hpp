@@ -27,7 +27,7 @@
 #define BUS_SHUNT_GS    "branch_shunt_gs"
 #define BUS_SHUNT_BS    "branch_shunt_bs"
 
-#ifdef _pf_components_h_
+#ifndef _pf_components_h_
 #define _pf_components_h_
 
 #include "gridpack/component/base_component.hpp"
@@ -37,7 +37,7 @@ namespace gridpack {
 namespace powerflow {
 
 class PFBus
-  : public BaseBusComponent {
+  : public gridpack::component::BaseBusComponent {
   public:
     /**
      *  Simple constructor
@@ -71,7 +71,7 @@ class PFBus
      * @param data: DataCollection object contain parameters relevant to this
      *       bus that were read in when network was initialized
      */
-    void load(shared_ptr<gridpack::component::DataCollection> data);
+    void load(boost::shared_ptr<gridpack::component::DataCollection> data);
 
   private:
     double p_shunt_gs;
@@ -81,7 +81,8 @@ class PFBus
 };
 
 class PFBranch
-  : public BaseBranchComponent {
+  : public gridpack::component::BaseBranchComponent {
+  public:
     /**
      *  Simple constructor
      */
@@ -114,7 +115,7 @@ class PFBranch
      * @param data: DataCollection object contain parameters relevant to this
      *       branch that were read in when network was initialized
      */
-    void load(shared_ptr<gridpack::component::DataCollection> data);
+    void load(boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Return the complex admittance of the branch
@@ -128,14 +129,14 @@ class PFBranch
      * @param bus: pointer to the bus making the call
      * @return: contribution from transformers to Y matrix
      */
-    gridpack::ComplexType getTransformer(boost::shared_ptr<PFBus> bus);
+    gridpack::ComplexType getTransformer(PFBus *bus);
 
     /**
      * Return the contribution to a bus from shunts
      * @param bus: pointer to the bus making the call
      * @return: contribution to Y matrix from shunts associated with branches
      */
-    gridpack::ComplexType getShunt(boost::shared_ptr<PFBus> bus);
+    gridpack::ComplexType getShunt(PFBus *bus);
 
   private:
     double p_reactance;
@@ -150,6 +151,6 @@ class PFBranch
     bool p_xform, p_shunt;
 };
 
-}
+}     // powerflow
 }     // gridpack
 #endif
