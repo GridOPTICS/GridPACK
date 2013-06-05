@@ -31,13 +31,13 @@ gridpack::component::MatVecInterface::~MatVecInterface(void)
 }
 
 /**
- * Return size of matrix block contributed by component
+ * Return size of matrix block on the diagonal contributed by component
  * @param isize, jsize: number of rows and columns of matrix
  *        block
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixSize(int *isize, int *jsize) const
+bool gridpack::component::MatVecInterface::matrixDiagSize(int *isize, int *jsize) const
 {
   *isize = 0;
   *jsize = 0;
@@ -45,13 +45,67 @@ bool gridpack::component::MatVecInterface::matrixSize(int *isize, int *jsize) co
 }
 
 /**
- * Return the values of the matrix block. The values are
+ * Return the values of for a diagonal matrix block. The values are
  * returned in row-major order.
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixValues(void *values)
+bool gridpack::component::MatVecInterface::matrixDiagValues(void *values)
+{
+  return false;
+}
+
+/**
+ * Return size of off-diagonal matrix block contributed by component. The values
+ * are for the forward direction
+ * @param isize, jsize: number of rows and columns of matrix
+ *        block
+ * @return: false if network component does not contribute
+ *        matrix element
+ */
+bool gridpack::component::MatVecInterface::matrixForwardSize(int *isize, int *jsize) const
+{
+  *isize = 0;
+  *jsize = 0;
+  return false;
+}
+
+/**
+ * Return the values of for an off-diagonl matrix block. The values are for the
+ * forward direction and are returned in row-major order.
+ * @param values: pointer to matrix block values
+ * @return: false if network component does not contribute
+ *        matrix element
+ */
+bool gridpack::component::MatVecInterface::matrixForwardValues(void *values)
+{
+  return false;
+}
+
+/**
+ * Return size of off-diagonal matrix block contributed by component. The values
+ * are for the reverse direction
+ * @param isize, jsize: number of rows and columns of matrix
+ *        block
+ * @return: false if network component does not contribute
+ *        matrix element
+ */
+bool gridpack::component::MatVecInterface::matrixReverseSize(int *isize, int *jsize) const
+{
+  *isize = 0;
+  *jsize = 0;
+  return false;
+}
+
+/**
+ * Return the values of for an off-diagonl matrix block. The values are for the
+ * reverse direction and are returned in row-major order.
+ * @param values: pointer to matrix block values
+ * @return: false if network component does not contribute
+ *        matrix element
+ */
+bool gridpack::component::MatVecInterface::matrixReverseValues(void *values)
 {
   return false;
 }
