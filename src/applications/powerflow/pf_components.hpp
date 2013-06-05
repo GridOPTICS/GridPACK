@@ -50,11 +50,11 @@ class PFBus
     ~PFBus(void);
 
     /**
-     *  Return size of matrix block contributed by the component
+     *  Return size of diagonal matrix block contributed by the component
      *  @param isize, jsize: number of rows and columns of matrix block
      *  @return: false if network component does not contribute matrix element
      */
-    bool matrixSize(int *isize, int *jsize) const;
+    bool matrixDiagSize(int *isize, int *jsize) const;
 
     /**
      * Return the values of the matrix block. The values are
@@ -62,7 +62,7 @@ class PFBus
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute matrix element
      */
-    bool matrixValues(void *values);
+    bool matrixDiagValues(void *values);
 
     /**
      * Load values stored in DataCollection object into PFBus object. The
@@ -94,19 +94,22 @@ class PFBranch
     ~PFBranch(void);
 
     /**
-     *  Return size of matrix block contributed by the component
+     *  Return size of off-diagonal matrix block contributed by the component
+     *  for the forward/reverse directions
      *  @param isize, jsize: number of rows and columns of matrix block
      *  @return: false if network component does not contribute matrix element
      */
-    bool matrixSize(int *isize, int *jsize) const;
+    bool matrixForwardSize(int *isize, int *jsize) const;
+    bool matrixReverseSize(int *isize, int *jsize) const;
 
     /**
-     * Return the values of the matrix block. The values are
+     * Return the values of the forward/reverse matrix block. The values are
      * returned in row-major order.
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute matrix element
      */
-    bool matrixValues(void *values);
+    bool matrixForwardValues(void *values);
+    bool matrixReverseValues(void *values);
 
     /**
      * Load values stored in DataCollection object into PFBranch object. The

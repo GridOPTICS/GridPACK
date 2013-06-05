@@ -38,7 +38,7 @@ gridpack::powerflow::PFBus::~PFBus(void)
  *  @param isize, jsize: number of rows and columns of matrix block
  *  @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBus::matrixSize(int *isize, int *jsize) const
+bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
   *isize = 1;
   *jsize = 1;
@@ -51,7 +51,7 @@ bool gridpack::powerflow::PFBus::matrixSize(int *isize, int *jsize) const
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBus::matrixValues(void *values)
+bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
 {
   gridpack::ComplexType ret(0.0,0.0);
   std::vector<boost::shared_ptr<BaseComponent> > branches = getNeighborBranches();
@@ -109,11 +109,17 @@ gridpack::powerflow::PFBranch::~PFBranch(void)
 }
 
 /**
- *  Return size of matrix block contributed by the component
+ *  Return size of off-diagonal matrix block contributed by the component
  *  @param isize, jsize: number of rows and columns of matrix block
  *  @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBranch::matrixSize(int *isize, int *jsize) const
+bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) const
+{
+  *isize = 1;
+  *jsize = 1;
+  return true;
+}
+bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   *isize = 1;
   *jsize = 1;
@@ -121,18 +127,29 @@ bool gridpack::powerflow::PFBranch::matrixSize(int *isize, int *jsize) const
 }
 
 /**
- * Return the values of the matrix block. The values are
+ * Return the values of the off-diagonal matrix block. The values are
  * returned in row-major order.
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBranch::matrixValues(void *values)
+bool gridpack::powerflow::PFBranch::matrixForwardValues(void *values)
 {
   gridpack::ComplexType ret(p_resistance,p_reactance);
   ret = -1.0/ret;
   gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
   a = p_tap_ratio*a;
   ret = ret - ret/conj(a);
+  *((gridpack::ComplexType*)values) = ret;
+  return true;
+}
+bool gridpack::powerflow::PFBranch::matrixReverseValues(void *values)
+{
+  gridpack::ComplexType ret(p_resistance,p_reactance);
+  ret = -1.0/ret;
+  gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
+  a = p_tap_ratio*a;
+  ret = ret - ret/conj(a);
+  ret = conj(ret);
   *((gridpack::ComplexType*)values) = ret;
   return true;
 }
