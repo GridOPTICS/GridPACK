@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-06-04 13:04:23 d3g096
+ * @date   2013-06-06 15:03:09 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -9,6 +9,7 @@
  */
 
 #include <iostream>
+#include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/vector.hpp"
@@ -154,13 +155,17 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
   }
 }
 
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(VectorOperations)
+
 BOOST_AUTO_TEST_CASE( add )
 {
   gridpack::parallel::Communicator world;
   gridpack::math::Vector 
     v1(world, local_size),
-    v2(world, local_size),
-    *vsum1, *vsum2;
+    v2(world, local_size);
+  std::auto_ptr<gridpack::math::Vector> vsum1, vsum2;
   
   v1.fill(1.0);
   v2.fill(2.0);
@@ -168,10 +173,10 @@ BOOST_AUTO_TEST_CASE( add )
   v1.ready();
   v2.ready();
 
-  vsum1 = v1.clone();
+  vsum1.reset(v1.clone());
   vsum1->add(v2);
 
-  vsum2 = gridpack::math::add(v1, v2);
+  vsum2.reset(gridpack::math::add(v1, v2));
 
   int lo, hi;
   v1.local_index_range(lo, hi);
@@ -189,8 +194,60 @@ BOOST_AUTO_TEST_CASE( add )
     BOOST_CHECK_CLOSE(real(x1), real(x2), delta);
     BOOST_CHECK_CLOSE(real(x1), real(x3), delta);
   }
+
+  // try using a vector that is the wrong size
+  gridpack::math::Vector v3(world, local_size-1);
+  BOOST_CHECK_THROW(v1.add(v3), gridpack::Exception);
 }
 
+BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v1(world, local_size), v2(world, local_size);
+  gridpack::math::complex_type x(2.0), offset(2.0), scale(3.0);
+
+  v1.fill(x);
+  v1.add(offset);
+
+  v2.fill(x);
+  v2.scale(scale);
+
+  int lo, hi;
+  v1.local_index_range(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type y;
+    v1.get_element(i, y);
+    BOOST_CHECK_CLOSE(real(x+offset), real(y), delta);
+    BOOST_CHECK_CLOSE( abs(x+offset), abs(y), delta);
+    v2.get_element(i, y);
+    BOOST_CHECK_CLOSE(real(x*scale), real(y), delta);
+    BOOST_CHECK_CLOSE( abs(x*scale), abs(y), delta);
+  }
+}
+
+
+BOOST_AUTO_TEST_CASE( reciprocal )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v1(world, local_size);
+  gridpack::math::complex_type x(2.0, 5.0);
+  gridpack::math::complex_type rx(1.0/x);
+
+  v1.fill(x);
+  v1.reciprocal();
+
+  int lo, hi;
+  v1.local_index_range(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::math::complex_type y;
+    v1.get_element(i, y);
+    BOOST_CHECK_CLOSE(real(rx), real(y), delta);
+    BOOST_CHECK_CLOSE( abs(rx), abs(y), delta);
+  }
+}
+  
 BOOST_AUTO_TEST_SUITE_END()
 
 

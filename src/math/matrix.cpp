@@ -2,9 +2,9 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-05 08:45:50 d3g096
+ * @date   2013-06-07 11:00:33 d3g096
  * 
- * @brief  
+ * @brief  Generic part of Matrix implementation
  * 
  * 
  */
@@ -81,6 +81,38 @@ add(const Matrix& A, const Matrix& B)
 }
 
 
+// -------------------------------------------------------------
+// transpose
+// -------------------------------------------------------------
+Matrix *
+transpose(const Matrix& A)
+{
+  Matrix *result = A.clone();
+  transpose(A, *result);
+  return result;
+}
+
+// -------------------------------------------------------------
+// column
+// -------------------------------------------------------------
+Vector *
+column(const Matrix& A, const int& cidx)
+{
+  Vector *colv(new Vector(A.communicator(), A.local_rows()));
+  column(A, cidx, *colv);
+  return colv;
+}
+
+// -------------------------------------------------------------
+// diagonal
+// -------------------------------------------------------------
+Vector *
+diagonal(const Matrix& A)
+{
+  Vector *colv(new Vector(A.communicator(), A.local_rows()));
+  diagonal(A, *colv);
+  return colv;
+}
 
 } // namespace math
 } // namespace gridpack

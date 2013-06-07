@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-06-04 13:00:08 d3g096
+ * @date   2013-06-06 14:55:00 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -43,46 +43,90 @@ Vector::Vector(const parallel::Communicator& comm, const int& local_length)
 }
 
 // -------------------------------------------------------------
-// add
+// Vector::scale
 // -------------------------------------------------------------
-Vector *
-add(const Vector& A, const Vector& B)
+void 
+Vector::scale(const complex_type& x)
 {
-  parallel::Communicator comm(A.communicator());
-  int local_size(A.local_size());
-  PETScVectorImplementation *pimpl =
-    new PETScVectorImplementation(comm, local_size);
-
-  const Vec *a_vec, *b_vec;
-  {
-    PETScConstVectorExtractor vext;
-    A.accept(vext);
-    a_vec = vext.vector();
-  }
-  {
-    PETScConstVectorExtractor vext;
-    B.accept(vext);
-    b_vec = vext.vector();
-  }
-  Vec *p_vec;
-  {
-    PETScVectorExtractor vext;
-    pimpl->accept(vext);
-    p_vec = vext.vector();
-  }
-
+  Vec *vec(PETScVector(*this));
   PetscErrorCode ierr(0);
   try {
-    PetscScalar alpha(1.0);
-    ierr = VecWAXPY(*p_vec, alpha, *a_vec, *b_vec);
+    ierr = VecScale(*vec, x); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
-
-  Vector *result = 
-    new Vector(pimpl);
-  return result;
 }
+
+// -------------------------------------------------------------
+// Vector::add
+// -------------------------------------------------------------
+void
+Vector::add(const Vector& x)
+{
+  this->p_check_compatible(x);
+  PetscErrorCode ierr(0);
+  const Vec *xvec(PETScVector(x));
+  Vec *yvec(PETScVector(*this));
+  try {
+    PetscScalar alpha(1.0);
+
+    // This call computes y = x + alpha*y. Where y is p_vector.  
+    ierr = VecAYPX(*yvec, alpha, *xvec);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+void
+Vector::add(const complex_type& x)
+{
+  Vec *vec(PETScVector(*this));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecShift(*vec, x); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+
+
+
+
+// -------------------------------------------------------------
+// Vector::equate
+// -------------------------------------------------------------
+void
+Vector::equate(const Vector& x)
+{
+  this->p_check_compatible(x);
+  PetscErrorCode ierr(0);
+  Vec *yvec(PETScVector(*this));
+  const Vec *xvec(PETScVector(x));
+  try {
+    ierr = VecCopy(*xvec, *yvec); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Vector::reciprocal
+// -------------------------------------------------------------
+void
+Vector::reciprocal(void)
+{
+  Vec *vec(PETScVector(*this));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecReciprocal(*vec); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+
+
 
 } // namespace math
 } // namespace gridpack

@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-06-04 12:47:47 d3g096
+// Last Change: 2013-06-06 14:54:05 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -110,20 +110,6 @@ protected:
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
 
-  /// Multiply all elements by the specified value
-  void p_scale(const complex_type& x);
-
-  /// Add the specified vector
-  void p_add(const VectorImplementation& x);
-
-  /// Add the specified value to all elements
-  void p_add(const complex_type& x);
-
-  /// Copy the elements from the specified Vector
-  void p_copy(const VectorImplementation& x);
-
-  /// Replace all elements with their reciprocal
-  void p_reciprocal(void);
 };
 
 

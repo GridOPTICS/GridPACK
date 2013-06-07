@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-06-04 13:03:23 d3g096
+ * @date   2013-06-06 14:53:30 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -24,9 +24,6 @@ namespace math {
 
 // forward declarations
 class Vector;
-
-/// A way to add to Vector's and make a new one
-extern Vector *add(const Vector& A, const Vector& B);
 
 // -------------------------------------------------------------
 //  class Vector
@@ -56,7 +53,7 @@ class Vector
 public:
 
   /// Default constructor.
-  Vector(const parallel::Communicator& comm, const int& length);
+  Vector(const parallel::Communicator& comm, const int& local_length);
 
   /// Destructor
   ~Vector(void);
@@ -160,52 +157,19 @@ public:
   // -------------------------------------------------------------
 
   /// Multiply all elements by the specified value
-  void scale(const complex_type& x)
-  {
-    p_vector_impl->scale(x);
-  }
+  void scale(const complex_type& x);
 
   /// Add the specified vector
-  /** 
-   * This should throw an exception if the Communicator or length is
-   * not the same. Local lengths can be different.
-   * 
-   * @param x 
-   */
-  void add(const Vector& x)
-  {
-    p_vector_impl->add(*(x.p_vector_impl));
-  }
+  void add(const Vector& x);
 
   /// Add the specified value to all elements
-  void add(const complex_type& x)
-  {
-    p_vector_impl->add(x);
-  }
+  void add(const complex_type& x);
 
   /// Copy the elements from the specified Vector
-  /** 
-   * This should throw an exception if the Communicator or length is
-   * not the same. Local lengths can be different.
-   * 
-   * @param x 
-   */
-  void copy(const Vector& x)
-  {
-    p_vector_impl->copy(*(x.p_vector_impl));
-  }
+  void equate(const Vector& x);
 
   /// Replace all elements with their reciprocal
-  void reciprocal(void)
-  {
-    p_vector_impl->reciprocal();
-  }
-
-  // -------------------------------------------------------------
-  // Vector Operations (all allocate new instances)
-  // -------------------------------------------------------------
-  /// Add Vector instances
-  friend Vector *add(const Vector& A, const Vector& B);
+  void reciprocal(void);
 
   // friend Vector *reorder(const Vector& A, const Reordering& r);
 
@@ -216,8 +180,25 @@ protected:
 
   /// Constuct with an existing implementation
   explicit Vector(VectorImplementation *vimpl);
+
+  /// Is this Vector compatible with this one, throw if not
+  void p_check_compatible(const Vector& x) const;
 };
 
+// -------------------------------------------------------------
+// Vector Operations (all allocate new instances)
+// -------------------------------------------------------------
+
+/// Add to Vector instances and put the result in a new one
+extern Vector *add(const Vector& A, const Vector& B);
+
+
+// -------------------------------------------------------------
+// Vector Operations (results into existing instances)
+// -------------------------------------------------------------
+
+/// Add two Vector instances and put the result in an existing Vector
+extern void add(const Vector& A, const Vector& B, Vector& result);
 
 } // namespace utility
 } // namespace gridpack

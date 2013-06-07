@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-06-04 12:48:05 d3g096
+ * @date   2013-06-06 14:53:54 d3g096
  * 
  * @brief  
  * 
@@ -134,48 +134,6 @@ public:
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
 
-  /// Multiply all elements by the specified value
-  void scale(const complex_type& x)
-  {
-    this->p_scale(x);
-  }
-
-  /// Add the specified vector
-  /** 
-   * This should throw an exception if the Communicator or length is
-   * not the same. Local lengths can be different.
-   * 
-   * @param x 
-   */
-  void add(const VectorImplementation& x)
-  {
-    this->p_add(x);
-  }
-
-  /// Add the specified value to all elements
-  void add(const complex_type& x)
-  {
-    this->p_add(x);
-  }
-
-  /// Copy the elements from the specified Vector
-  /** 
-   * This should throw an exception if the Communicator or length is
-   * not the same. Local lengths can be different.
-   * 
-   * @param x 
-   */
-  void copy(const VectorImplementation& x)
-  {
-    this->p_copy(x);
-  }
-
-  /// Replace all elements with their reciprocal
-  void reciprocal(void)
-  {
-    this->p_reciprocal();
-  }
-
   /// Make an exact replica of this instance
   VectorImplementation *clone(void) const
   {
@@ -233,21 +191,6 @@ protected:
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
-
-  /// Multiply all elements by the specified value
-  virtual void p_scale(const complex_type& x) = 0;
-
-  /// Add the specified vector
-  virtual void p_add(const VectorImplementation& x) = 0;
-
-  /// Add the specified value to all elements
-  virtual void p_add(const complex_type& x) = 0;
-
-  /// Copy the elements from the specified Vector
-  virtual void p_copy(const VectorImplementation& x) = 0;
-
-  /// Replace all elements with their reciprocal
-  virtual void p_reciprocal(void) = 0;
 
 };
 

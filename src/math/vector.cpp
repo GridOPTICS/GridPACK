@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-05-15 13:38:27 d3g096
+ * @date   2013-06-06 14:30:07 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
@@ -18,6 +18,7 @@
 // Last Change: 2013-05-03 12:23:12 d3g096
 // -------------------------------------------------------------
 
+#include "gridpack/utilities/exception.hpp"
 #include "gridpack/math/vector.hpp"
 
 namespace gridpack {
@@ -41,6 +42,38 @@ Vector::~Vector(void)
   // empty
 }
 
+// -------------------------------------------------------------
+// Vector::p_check_compatible
+// -------------------------------------------------------------
+void
+Vector::p_check_compatible(const Vector& x) const
+{
+  if (this->communicator() != x.communicator()) {
+    throw gridpack::Exception("incompatible: communicators do not match");
+  }
+
+  if (this->size() != x.size()) {
+    throw gridpack::Exception("incompatible: sizes do not match");
+  }
+}
+
+// -------------------------------------------------------------
+// add
+// -------------------------------------------------------------
+Vector *
+add(const Vector& A, const Vector& B)
+{
+  Vector *result(A.clone());
+  result->add(B);
+  return result;
+}
+
+void
+add(const Vector& A, const Vector& B, Vector& result)
+{
+  result.equate(A);
+  result.add(B);
+}
 
 } // namespace math
 } // namespace gridpack

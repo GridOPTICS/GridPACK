@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-06-05 14:45:43 d3g096
+ * @date   2013-06-07 10:59:08 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -383,6 +383,38 @@ BOOST_AUTO_TEST_CASE( transpose )
       BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
     }
   }
+}
+
+BOOST_AUTO_TEST_CASE( column_diagonal )
+{
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(3, global_size));
+  int icolumn(global_size/2);
+
+  std::auto_ptr<gridpack::math::Vector>  
+    cvector(gridpack::math::column(*A, icolumn)),
+    dvector(gridpack::math::diagonal(*A));
+
+  int lo, hi;
+  cvector->local_index_range(lo, hi);
+
+  for (int i = -1; i <= 1; ++i) {
+    int idx(icolumn+i);
+    if (lo <= idx && idx < hi) {
+      gridpack::math::complex_type 
+        x(static_cast<gridpack::math::complex_type>(idx));
+      gridpack::math::complex_type y;
+      cvector->get_element(idx, y);
+      BOOST_CHECK_CLOSE(real(x), real(y), delta);
+      if (idx == icolumn) {
+        dvector->get_element(idx, y);
+        BOOST_CHECK_CLOSE(real(x), real(y), delta);
+      }
+    }
+    (cvector->communicator()).barrier();
+  }
+
 }
 
 

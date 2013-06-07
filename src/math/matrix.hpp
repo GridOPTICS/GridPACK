@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-06-05 14:30:00 d3g096
+ * @date   2013-06-07 10:36:41 d3g096
  * 
  * @brief  
  * 
@@ -223,7 +223,6 @@ public:
   // friend Matrix *reorder(const Matrix& A, const Reordering& r);
   friend Matrix *identity(const Matrix& A);
   friend Vector *diagional(const Matrix& A);
-  friend Vector *column(const Matrix& A, const int& cidx);
 
   // -------------------------------------------------------------
   // Matrix Operations
@@ -232,7 +231,6 @@ public:
   // -------------------------------------------------------------
   // friend void add(const Matrix& A, const Matrix& B, Matrix& result);
   friend void diagional(const Matrix& A, Vector& x);
-  friend void column(const Matrix& A, const int& cidx, Vector& x);
 
 protected:
 
@@ -260,6 +258,12 @@ extern Matrix *add(const Matrix& A, const Matrix& B);
 /// Make the transpose of a Matrix
 extern Matrix *transpose(const Matrix& A);
 
+/// Get a column from the Matrix and put in new Vector
+extern Vector *column(const Matrix& A, const int& cidx);
+
+/// Get the diagonal from from a Matrix and put in new Vector
+extern Vector *diagonal(const Matrix& A);
+
 /// Multiply two Matrix instances and make a new one
 extern Matrix *multiply(const Matrix& A, const Matrix& B);
 
@@ -278,6 +282,12 @@ extern void add(const Matrix& A, const Matrix& B, Matrix& result);
 
 /// Make the transpose of a Matrix and put it in another
 extern void transpose(const Matrix& A, Matrix& result);
+
+/// Get a column from the Matrix and put in specified Vector
+extern void column(const Matrix& A, const int& cidx, Vector& x);
+
+/// Get the diagonal from a Matrix and put it in specified Vector
+extern void diagonal(const Matrix& A, Vector& x);
 
 /// Multiply two Matrix instances and put result in existing Matrix
 extern void multiply(const Matrix& A, const Matrix& B, Matrix& result);
