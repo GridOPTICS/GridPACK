@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-05-07 13:57:25 d3g096
+# Last Change: 2013-06-10 10:57:44 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -13,7 +13,7 @@ add_library(gridpack_parallel
 
 # -------------------------------------------------------------
 # TEST: greetings
-# A simple MPI program
+# A simple MPI program (that does not use boost::test)
 # -------------------------------------------------------------
 add_executable(greetings test/greetings.cpp)
 target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
@@ -32,12 +32,6 @@ set_tests_properties(greetings_serial greetings_parallel
 # -------------------------------------------------------------
 add_executable(mpi_test test/mpi_test.cpp)
 target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+gridpack_add_unit_test(mpi_test mpi_test)
 
-add_test(mpi_test_serial mpi_test)
-add_test(mpi_test_parallel 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} mpi_test ${MPIEXEC_POSTFLAGS})
-set_tests_properties(mpi_test_serial mpi_test_parallel
-  PROPERTIES 
-  PASS_REGULAR_EXPRESSION "No errors detected"
-)
 

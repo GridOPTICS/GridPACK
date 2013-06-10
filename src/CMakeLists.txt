@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-05-17 14:50:53 d3g096
+# Last Change: 2013-06-10 10:42:48 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -15,6 +15,7 @@ enable_language(CXX)
 
 # where to look for special .cmake files
 list (APPEND CMAKE_MODULE_PATH "${GridPACK_SOURCE_DIR}/cmake-modules")
+include(GridPACK)
 
 # turn testing on
 enable_testing()

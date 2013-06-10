@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created April 17, 2013 by William A. Perkins
-// Last Change: 2013-06-07 10:56:00 d3g096
+// Last Change: 2013-06-10 12:47:14 d3g096
 // -------------------------------------------------------------
 
 
@@ -96,6 +96,26 @@ diagonal(const Matrix& A, Vector& result)
     throw PETScException(ierr, e);
   }
 }  
+
+// -------------------------------------------------------------
+// multiply
+// -------------------------------------------------------------
+void
+multiply(const Matrix& A, const Vector& x, Vector& result)
+{
+  const Mat *Amat(PETScMatrix(A));
+  const Vec *Xvec(PETScVector(x));
+  Vec *Yvec(PETScVector(result));
+
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatMult(*Amat, *Xvec, *Yvec); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+
   
 
 } // namespace math

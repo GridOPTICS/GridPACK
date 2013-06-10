@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-06-07 10:59:08 d3g096
+ * @date   2013-06-10 12:19:25 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -417,7 +417,34 @@ BOOST_AUTO_TEST_CASE( column_diagonal )
 
 }
 
+BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
+{
+  static const int bandwidth(3);
+  static const gridpack::math::complex_type scale(2.0);
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(bandwidth, global_size));
 
+  std::auto_ptr<gridpack::math::Vector>  
+    xvector(new gridpack::math::Vector(A->communicator(), A->local_rows())),
+    yvector;
+
+  xvector->fill(scale);
+  yvector.reset(multiply(*A, *xvector));
+            
+  int lo, hi;
+  xvector->local_index_range(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    int bw(bandwidth);
+    if (i == 0 || i == global_size - 1) bw--;
+    gridpack::math::complex_type 
+      x(static_cast<gridpack::math::complex_type>(i*bw)*scale), y;
+    yvector->get_element(i, y);
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+  }
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

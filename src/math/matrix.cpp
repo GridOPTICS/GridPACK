@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-07 11:00:33 d3g096
+ * @date   2013-06-10 12:38:54 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -113,6 +113,18 @@ diagonal(const Matrix& A)
   diagonal(A, *colv);
   return colv;
 }
+
+// -------------------------------------------------------------
+// multiply
+// -------------------------------------------------------------
+Vector *
+multiply(const Matrix& A, const Vector& x)
+{
+  Vector *result(new Vector(x.communicator(), x.local_size()));
+  multiply(A, x, *result);
+  return result;
+}
+
 
 } // namespace math
 } // namespace gridpack
