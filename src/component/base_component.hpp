@@ -13,6 +13,7 @@
 #ifndef _base_component_h_
 #define _base_component_h_
 
+#include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
 
 // TODO: Might want to put MatrixIndices and VectorIndex operations into a
