@@ -17,9 +17,139 @@
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include "gridpack/parallel/distributed.hpp"
-#include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
+
+namespace gridpack {
+namespace network {
+
+// -------------------------------------------------------------
+// A simple data class to assemble all bus related elements in
+// the network into a single struct.
+// -------------------------------------------------------------
+template <class _bus>
+class BusData {
+  public:
+
+/**
+ *  Default constructor
+ */
+BusData(void)
+{
+  p_bus = boost::shared_ptr<_bus> (new _bus);
+  p_activeBus = true;
+  p_refFlag = false;
+}
+
+/**
+ *  Default destructor
+ */
+~BusData(void)
+{
+}
+
+/**
+ *  Assigment operator
+ */
+BusData<_bus> & operator=(const BusData<_bus> & rhs)
+{
+  if (this == &rhs) return *this;
+  p_activeBus = rhs.p_activeBus;
+  p_originalBusIndex = rhs.p_originalBusIndex;
+  p_globalBusIndex = rhs.p_globalBusIndex;
+  p_branchNeighbors = rhs.p_branchNeighbors;
+  p_bus = rhs.p_bus;
+  p_data = rhs.p_data;
+  p_refFlag = rhs.p_refFlag;
+}
+
+/**
+ * Data elements on bus
+ * p_activeBus: flag to identify buses that are "owned" by processor
+ * p_originalBusIndex: original index of a bus (from the network topology file)
+ * p_globalBusIndex: unique global index of a bus assigned by the partitioner
+ * p_branchNeighbors: local indices of branches that are connected to a local bus
+ * p_bus: pointer to bus object
+ * p_data: pointer to data collection object
+ * p_refFlag: true if this bus is the reference bus
+ */
+  bool                                                   p_activeBus;
+  int                                                    p_originalBusIndex;
+  int                                                    p_globalBusIndex;
+  std::vector<int>                                       p_branchNeighbors;
+  boost::shared_ptr<_bus>                                p_bus;
+  boost::shared_ptr<gridpack::component::DataCollection> p_data;
+  bool                                                   p_refFlag;
+};
+
+// -------------------------------------------------------------
+// A simple data class to assemble all branch related elements
+// in the network into a single struct.
+// -------------------------------------------------------------
+template <class _branch>
+class BranchData {
+  public:
+
+/**
+ *  Default constructor
+ */
+BranchData(void)
+{
+  p_branch = boost::shared_ptr<_branch> (new _branch);
+  p_activeBranch = true;
+}
+
+/**
+ *  Default destructor
+ */
+~BranchData(void)
+{
+}
+
+/**
+ *  Assigment operator
+ */
+BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
+{
+  if (this == &rhs) return *this;
+  p_activeBranch = rhs.p_activeBranch;
+  p_globalBranchIndex = rhs.p_globalBranchIndex;
+  p_originalBusIndex1 = rhs.p_originalBusIndex1;
+  p_originalBusIndex2 = rhs.p_originalBusIndex2;
+  p_globalBusIndex1 = rhs.p_globalBusIndex1;
+  p_globalBusIndex2 = rhs.p_globalBusIndex2;
+  p_localBusIndex1 = rhs.p_localBusIndex1;
+  p_localBusIndex2 = rhs.p_localBusIndex2;
+  p_branch = rhs.p_branch;
+  p_data = rhs.p_data;
+}
+
+/**
+ * Data elements on branch
+ * p_activeBranch: flag to identify buses that are "owned" by processor
+ * p_globalBranchIndex: unique global identifier for this branch
+ * p_originalBusIndex1: original index of bus at "from" end of branch
+ *      (from the network topology file)
+ * p_originalBusIndex2: original index of bus at "to" end of branch
+ *      (from the network topology file)
+ * p_globalBusIndex1: global index of bus at "from" end of branch
+ * p_globalBusIndex2: global index of bus at "to" end of branch
+ * p_localBusIndex1: local index of bus at "from" end of branch
+ * p_localBusIndex2: local index of bus at "to" end of branch
+ * p_branch: pointer to branch object
+ * p_data: pointer to data collection object
+ */
+  bool                                                   p_activeBranch;
+  int                                                    p_globalBranchIndex;
+  int                                                    p_originalBusIndex1;
+  int                                                    p_originalBusIndex2;
+  int                                                    p_globalBusIndex1;
+  int                                                    p_globalBusIndex2;
+  int                                                    p_localBusIndex1;
+  int                                                    p_localBusIndex2;
+  boost::shared_ptr<_branch>                             p_branch;
+  boost::shared_ptr<gridpack::component::DataCollection> p_data;
+};
 
 // -------------------------------------------------------------
 //  class BaseNetwork:
@@ -32,8 +162,6 @@
 //  allow the partitioner to move grid elements around and
 //  create ghost elements.
 // -------------------------------------------------------------
-namespace gridpack {
-namespace network {
 
 template <class _bus, class _branch>
 class BaseNetwork {
@@ -73,14 +201,11 @@ BaseNetwork::BaseNetwork(ParallelEnv configuration)
  */
 void addBus(int idx)
 {
-  p_originalBusIndex.push_back(idx);
-  p_globalBusIndex.push_back(-1);
-  p_activeBus.push_back(true);
-  boost::shared_ptr<_bus> bus(new _bus);
+  boost::shared_ptr<gridpack::network::BusData<_bus> >
+    bus = (new gridpack::network::BusData<_bus>);
+  bus.p_originalBusIndex = idx;
+  bus.p_globalBusIndex = -1;
   p_buses.push_back(bus);
-  boost::shared_ptr<gridpack::component::DataCollection> 
-    data(new gridpack::component::DataCollection);
-  p_busData.push_back(data);
 }
 
 /**
@@ -91,16 +216,13 @@ void addBus(int idx)
  */
 void addBranch(int idx1, int idx2)
 {
-  p_originalBranchIndex1.push_back(idx1);
-  p_originalBranchIndex2.push_back(idx2);
-  p_globalBranchIndex1.push_back(-1);
-  p_globalBranchIndex2.push_back(-1);
-  p_activeBranch.push_back(true);
-  boost::shared_ptr<_branch> branch(new _branch);
+  boost::shared_ptr<gridpack::network::BusData<_branch> >
+    branch = (new gridpack::network::BusData<_branch>);
+  branch.p_originalBusIndex1 = idx1;
+  branch.p_originalBusIndex2 = idx2;
+  branch.p_globalBusIndex1 = -1;
+  branch.p_globalBusIndex2 = -1;
   p_branches.push_back(branch);
-  boost::shared_ptr<gridpack::component::DataCollection>
-    data(new gridpack::component::DataCollection);
-  p_branchData.push_back(data);
 }
 
 /**
@@ -128,6 +250,11 @@ int numBranches(void)
 void setReferenceBus(int idx)
 {
   p_refBus = idx;
+  if (idx > 0 && idx <= p_buses.size()) {
+    p_buses[idx].p_refFlag = true;
+  } else {
+    p_buses[idx].p_refFlag = false;
+  }
 }
 
 /**
@@ -140,6 +267,24 @@ int getReferenceBus(void) const
   return p_refBus;
 }
 
+// Bus and Branch modifiers
+
+/**
+ * Set the original index of the bus (from configuration file)
+ * @param idx: local index of bus
+ * @param o_idx: original index assigned to bus
+ * @return: false if no bus exists for idx
+ */
+bool setOriginalBusIndex(int idx, int o_idx)
+{
+  if (idx < 0 || idx >= p_buses.size()) {
+    return false;
+  } else {
+    p_buses[idx].p_originalBusIndex = o_idx;
+    return true;
+  }
+}
+
 /**
  * Set the global index of the bus
  * @param idx: local index of bus
@@ -148,10 +293,10 @@ int getReferenceBus(void) const
  */
 bool setGlobalBusIndex(int idx, int g_idx)
 {
-  if (idx < 0 || idx >= p_globalBusIndex.size()) {
+  if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_globalBusIndex[idx] = g_idx;
+    p_buses[idx].p_globalBusIndex = g_idx;
     return true;
   }
 }
@@ -164,10 +309,106 @@ bool setGlobalBusIndex(int idx, int g_idx)
  */
 bool setGlobalBranchIndex(int idx, int g_idx)
 {
-  if (idx < 0 || idx >= p_globalBranchIndex.size()) {
+  if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_globalBranchIndex[idx] = g_idx;
+    p_branches[idx].p_globalBranchIndex = g_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the original index of the bus at the "from" end of branch
+ * @param idx: local index of branch
+ * @param b_idx: original index of "from" bus for this branch
+ * @return: false if no branch exists for idx
+ */
+bool setOriginalBusIndex1(int idx, int b_idx)
+{
+  if (idx < 0 || idx >= p_branches.size()) {
+    return false;
+  } else {
+    p_branches[idx].p_originalBusIndex1 = b_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the original index of the bus at the "to" end of branch
+ * @param idx: local index of branch
+ * @param b_idx: original index of "to" bus for this branch
+ * @return: false if no branch exists for idx
+ */
+bool setOriginalBusIndex2(int idx, int b_idx)
+{
+  if (idx < 0 || idx >= p_branches.size()) {
+    return false;
+  } else {
+    p_branches[idx].p_originalBusIndex2 = b_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the global index of the bus at the "from" end of branch
+ * @param idx: local index of branch
+ * @param b_idx: global index of "from" bus for this branch
+ * @return: false if no branch exists for idx
+ */
+bool setGlobalBusIndex1(int idx, int b_idx)
+{
+  if (idx < 0 || idx >= p_branches.size()) {
+    return false;
+  } else {
+    p_branches[idx].p_globalBusIndex1 = b_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the global index of the bus at the "to" end of branch
+ * @param idx: local index of branch
+ * @param b_idx: global index of "to" bus for this branch
+ * @return: false if no branch exists for idx
+ */
+bool setGlobalBusIndex2(int idx, int b_idx)
+{
+  if (idx < 0 || idx >= p_branches.size()) {
+    return false;
+  } else {
+    p_branches[idx].p_globalBusIndex2 = b_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the local index of the bus at the "from" end of branch
+ * @param idx: local index of branch
+ * @param b_idx: local index of "from" bus for this branch
+ * @return: false if no branch exists for idx
+ */
+bool setLocalBusIndex1(int idx, int b_idx)
+{
+  if (idx < 0 || idx >= p_branches.size()) {
+    return false;
+  } else {
+    p_branches[idx].p_localBusIndex1 = b_idx;
+    return true;
+  }
+}
+
+/**
+ * Set the local index of the bus at the "to" end of branch
+ * @param idx: local index of branch
+ * @param b_idx: local index of "to" bus for this branch
+ * @return: false if no branch exists for idx
+ */
+bool setLocalBusIndex2(int idx, int b_idx)
+{
+  if (idx < 0 || idx >= p_branches.size()) {
+    return false;
+  } else {
+    p_branches[idx].p_localBusIndex2 = b_idx;
     return true;
   }
 }
@@ -180,10 +421,10 @@ bool setGlobalBranchIndex(int idx, int g_idx)
  */
 bool setActiveBus(int idx, bool flag)
 {
-  if (idx < 0 || idx >= p_activeBus.size()) {
+  if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_activeBus[idx] = flag;
+    p_buses[idx].p_activeBus = flag;
     return true;
   }
 }
@@ -196,11 +437,85 @@ bool setActiveBus(int idx, bool flag)
  */
 bool setActiveBranch(int idx, bool flag)
 {
-  if (idx < 0 || idx >= p_activeBranch.size()) {
+  if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_activeBranch[idx] = flag;
+    p_branches[idx].p_activeBranch = flag;
     return true;
+  }
+}
+
+/**
+ * Clear the list of neighbors for the bus at idx
+ * @param idx: local index of bus
+ * @return: false if no bus exists for idx
+ */
+bool clearBranchNeighors(int idx)
+{
+  if (idx < 0 || idx >= p_buses.size()) {
+    return false;
+  } else {
+    p_buses[idx].p_bus.p_branchNeighbors.clear();
+    return true;
+  }
+}
+
+/**
+ * Add local index for a branch attached to bus at idx
+ * @param idx: local index of bus
+ * @return: false if no bus exists for idx
+ */
+bool addBranchNeighor(int idx, int br_idx)
+{
+  if (idx < 0 || idx >= p_buses.size()) {
+    return false;
+  } else {
+    p_buses[idx].p_bus.p_branchNeighbors.push_back(br_idx);
+    return true;
+  }
+}
+
+// Bus and Branch accessors
+
+/**
+ * Get status of the bus (local or ghosted)
+ * @param idx: local index of bus
+ * @return: true if bus is locally held, false if it is ghosted 
+ */
+bool getActiveBus(int idx)
+{
+  if (idx >= 0 || idx < p_buses.size()) {
+    return p_buses[idx].p_activeBus;
+  } else {
+    // TODO: some kind of error
+  }
+}
+
+/**
+ * Get original index of the bus
+ * @param idx: local index of bus
+ * @return: original index of bus 
+ */
+bool getOriginalBusIndex(int idx)
+{
+  if (idx >= 0 || idx < p_buses.size()) {
+    return p_buses[idx].p_originalBusIndex;
+  } else {
+    // TODO: some kind of error
+  }
+}
+
+/**
+ * Get global index of the bus
+ * @param idx: local index of bus
+ * @return: global index of bus 
+ */
+bool getGlobalBusIndex(int idx)
+{
+  if (idx >= 0 || idx < p_buses.size()) {
+    return p_buses[idx].p_globalBusIndex;
+  } else {
+    // TODO: some kind of error
   }
 }
 
@@ -214,7 +529,7 @@ boost::shared_ptr<_bus> getBus(int idx)
   if (idx<0 || idx >= p_buses->size()) {
     // TODO: Some kind of error
   } else {
-    return p_buses[idx];
+    return p_buses[idx].p_bus;
   }
 }
 
@@ -228,7 +543,7 @@ boost::shared_ptr<_branch> getBranch(int idx)
   if (idx<0 || idx >= p_branches->size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx];
+    return p_branches[idx].p_branch;
   }
 }
 
@@ -243,7 +558,7 @@ boost::shared_ptr<gridpack::component::DataCollection> getBusData(int idx)
   if (idx<0 || idx >= p_buses->size()) {
     // TODO: Some kind of error
   } else {
-    return p_busData[idx];
+    return p_buses[idx].p_data;
   }
 }
 
@@ -258,7 +573,7 @@ boost::shared_ptr<gridpack::component::DataCollection> getBranchData(int idx)
   if (idx<0 || idx >= p_branches->size()) {
     // TODO: Some kind of error
   } else {
-    return p_branchData[idx];
+    return p_branches[idx].p_data;
   }
 }
 
@@ -301,7 +616,7 @@ boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetwor
  */
 std::vector<int> getConnectedBranches(int idx) const
 {
-  return p_branchNeighbors[idx];
+  return p_buses[idx].p_branchNeighbors;
 }
 
 /**
@@ -311,16 +626,16 @@ std::vector<int> getConnectedBranches(int idx) const
  */
 std::vector<int> getConnectedBuses(int idx) const
 {
-  std::vector<int> branches = p_branchNeighbors[idx];
+  std::vector<int> branches = p_buses[idx]->p_branchNeighbors;
   int size = branches.size();
   std::vector<int> ret;
   int i, j;
   for (i=0; i<size; i++) {
     j = branches[i];
-    if (p_localBranchIndex1[j] != idx) {
-      ret.push_back(p_localBranchIndex1[j]);
+    if (p_branches[j].p_localBusIndex1 != idx) {
+      ret.push_back(p_branches[j].p_localBusIndex1);
     } else {
-      ret.push_back(p_localBranchIndex2[j]);
+      ret.push_back(p_branches[j].p_localBusIndex2);
     }
   }
   return ret;
@@ -334,8 +649,8 @@ std::vector<int> getConnectedBuses(int idx) const
  */
 void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 {
-  *bus1 = p_localBranchIndex1[idx];
-  *bus2 = p_localBranchIndex2[idx];
+  *bus1 = p_branches[idx].p_localBusIndex1;
+  *bus2 = p_branches[idx].p_localBusIndex2;
 }
 
 /**
@@ -350,96 +665,64 @@ void clean(void)
   int i, j;
 
   // remove inactive branches
-  int size = p_activeBranch.size();
+  int size = p_branches.size();
   int new_id = 0;
   for (i=0; i<size; i++) {
-    if (p_activeBranch[i]) {
-      p_activeBranch[new_id] = p_activeBranch[i];
-      p_originalBranchIndex1[new_id] = p_originalBranchIndex1[i];
-      p_originalBranchIndex2[new_id] = p_originalBranchIndex2[i];
-      p_globalBranchIndex1[new_id] = p_globalBranchIndex1[i];
-      p_globalBranchIndex2[new_id] = p_globalBranchIndex2[i];
-      p_localBranchIndex1[new_id] = p_localBranchIndex1[i];
-      p_localBranchIndex2[new_id] = p_localBranchIndex2[i];
+    if (p_branches[i].p_activeBranch) {
       p_branches[new_id] = p_branches[i];
       branches.insert(std::pair<int, int>(i,new_id));
       new_id++;
     }
   }
   // clean up the ends of the branch vectors
-  i = size - new_id;
+  size = size - new_id;
   for (i=0; i<size; i++) {
-    p_activeBranch.pop_back();
-    p_originalBranchIndex1.pop_back();
-    p_originalBranchIndex2.pop_back();
-    p_globalBranchIndex1.pop_back();
-    p_globalBranchIndex2.pop_back();
-    p_localBranchIndex1.pop_back();
-    p_localBranchIndex2.pop_back();
     p_branches.pop_back();
   }
 
   // remove inactive buses
-  size = p_activeBus.size();
+  size = p_buses.size();
   new_id = 0;
   for (i=0; i<size; i++) {
-    if (p_activeBus[i]) {
-      p_activeBus[new_id] = p_activeBus[i];
-      p_originalBusIndex[new_id] = p_originalBusIndex[i];
-      p_branchNeighbors[new_id] = p_branchNeighbors[i];
-      p_busNeighbors[new_id] = p_busNeighbors[i];
+    if (p_buses[i].p_activeBus) {
       p_buses[new_id] = p_buses[i];
       buses.insert(std::pair<int, int>(i,new_id));
       new_id++;
     }
   }
   // clean up the ends of the bus vectors
-  i = size - new_id;
+  size = size - new_id;
   for (i=0; i<size; i++) {
-    p_activeBus.pop_back();
-    p_originalBusIndex.pop_back();
-    p_globalBusIndex.pop_back();
-    p_branchNeighbors.pop_back();
-    p_busNeighbors.pop_back();
     p_buses.pop_back();
   }
 
   // reset all local indices
-  size = p_activeBranch.size();
+  size = p_branches.size();
   for (i=0; i<size; i++) {
-    p = buses.find(p_localBranchIndex1[i]);
+    p = buses.find(p_branches[i].p_localBusIndex1);
     if (p != buses.end()) {
-      p_localBranchIndex1[i] = p->second;
+      p_branches[i].p_localBusIndex1 = p->second;
     } else {
-      p_localBranchIndex1[i] = -1;
+      p_branches[i].p_localBusIndex1 = -1;
     }
-    p = buses.find(p_localBranchIndex2[i]);
+    p = buses.find(p_branches[i].p_localBusIndex2);
     if (p != buses.end()) {
-      p_localBranchIndex2[i] = p->second;
+      p_branches[i].p_localBusIndex2 = p->second;
     } else {
-      p_localBranchIndex2[i] = -1;
+      p_branches[i].p_localBusIndex2 = -1;
     }
   }
 
   int jsize;
-  size = p_activeBus.size();
+  size = p_buses.size();
   for (i=0; i<size; i++) {
-    std::vector<int> neighbors = p_branchNeighbors[i];
+    std::vector<int> neighbors = p_buses[i].p_branchNeighbors;
     jsize = neighbors.size();
-    p_branchNeighbors[i].clear();
+    p_buses[i].p_branchNeighbors.clear();
     for (j=0; j<jsize; j++) {
       p = branches.find(neighbors[j]);
       if (p != branches.end()) {
-        p_branchNeighbors[i].push_back(p->second);
-      }
-    }
-    neighbors = p_busNeighbors[i];
-    jsize = neighbors.size();
-    p_busNeighbors[i].clear();
-    for (j=0; j<jsize; j++) {
-      p = buses.find(neighbors[j]);
-      if (p != branches.end()) {
-        p_busNeighbors[i].push_back(p->second);
+        p_buses[i].p_branchNeighbors.push_back(p->second);
       }
     }
   }
@@ -470,82 +753,14 @@ BaseNetwork(const BaseNetwork& old)
 private:
 
   /**
-   * Vector that distinguishes active (local) buses from inactive (ghost) buses
+   * Vector of bus data and objects
    */
-  std::vector<bool> p_activeBus;
+  std::vector<gridpack::network::BusData<_bus> > p_buses;
 
   /**
-   * Vector that distinguishes active (local) branches from inactive (ghost)
-   * branches
+   * Vector of branch data and objects
    */
-  std::vector<bool> p_activeBranch;
-
-  /**
-   * Original index of a bus (from the network topology file)
-   */
-  std::vector<int> p_originalBusIndex;
-
-  /**
-   * Unique global index of a bus assigned by the partitioner
-   */
-  std::vector<int> p_globalBusIndex;
-
-  /**
-   * Local indices of branches that are connected to a local bus
-   */
-  std::vector<std::vector<int> > p_branchNeighbors;
-
-  /**
-   * Unique global index of a branch
-   * 
-   */
-  std::vector<int> p_globalBranchIndex;
-
-  /**
-   * Local indices of buses that are connected to a local bus via a single
-   * branch
-   */
-  std::vector<std::vector<int> > p_busNeighbors;
-
-  /**
-   * Original index of bus at one end of a branch
-   */
-  std::vector<int> p_originalBranchIndex1;
-
-  /**
-   * Original index of bus at other end of a branch
-   */
-  std::vector<int> p_originalBranchIndex2;
-
-  /**
-   * Global index of bus at one end of a branch
-   */
-  std::vector<int> p_globalBranchIndex1;
-
-  /**
-   * Global index of bus at other end of a branch
-   */
-  std::vector<int> p_globalBranchIndex2;
-
-  /**
-   * Local index of bus at one end of a branch
-   */
-  std::vector<int> p_localBranchIndex1;
-
-  /**
-   * Local index of bus at one end of a branch
-   */
-  std::vector<int> p_localBranchIndex2;
-
-  /**
-   * vector of bus objects
-   */
-  std::vector<boost::shared_ptr<_bus> > p_buses;
-
-  /**
-   * vector of branch objects
-   */
-  std::vector<boost::shared_ptr<_branch> > p_branches;
+  std::vector<gridpack::network::BranchData<_branch> > p_branches;
 
   /**
    * Parallel environment for network
@@ -555,8 +770,6 @@ private:
 #endif
 
   int p_refBus;
-  std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_busData;
-  std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_branchData;
 };
 }  //namespace network
 }  //namespace gridpack

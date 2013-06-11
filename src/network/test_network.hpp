@@ -13,12 +13,14 @@
 #ifndef _test_network_h_
 #define _test_network_h_
 
+#include "gridpack/component/base_component.hpp"
 // -------------------------------------------------------------
 //  class TestNetwork:
 //  Trivial class that instantiates network so we can check for compile time
 //  errors in BaseNetwork class.
 // -------------------------------------------------------------
 namespace gridpack {
+
 class TestNetwork {
 public:
 

@@ -24,12 +24,18 @@
  */
 gridpack::TestNetwork::TestNetwork(void)
 {
-  gridpack::network::BaseNetwork<int, int> network;
-};
+  gridpack::network::BaseNetwork<int,int> network;
+  gridpack::network::BusData<int> bus1;
+  gridpack::network::BusData<int> bus2;
+  bus1 = bus2;
+  gridpack::network::BranchData<int> branch1;
+  gridpack::network::BranchData<int> branch2;
+  branch1 = branch2;
+}
 
 /**
  * Default destructor.
  */
 gridpack::TestNetwork::~TestNetwork(void)
 {
-};
+}

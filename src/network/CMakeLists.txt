@@ -7,6 +7,8 @@
 # Last Change: 2013-05-07 13:57:25 d3g096
 # -------------------------------------------------------------
 
+set(target_libraries gridpack_component ${Boost_LIBRARIES})
+
 add_library(gridpack_network
   test_network.cpp
 )
@@ -15,10 +17,10 @@ add_library(gridpack_network
 # TEST: greetings
 # A simple MPI program
 # -------------------------------------------------------------
-#!!add_executable(greetings test/greetings.cpp)
-#!!target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+add_executable(test_network test/test_network.cpp)
+target_link_libraries(test_network gridpack_network ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-#!!add_test(NAME greetings_serial COMMAND $<TARGET_FILE:greetings>)
+add_test(NAME test_network_serial COMMAND $<TARGET_FILE:instance>)
 #!!add_test(NAME greetings_parallel COMMAND 
 #!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
 #!!set_tests_properties(greetings_serial greetings_parallel
