@@ -312,7 +312,7 @@ bool setGlobalBranchIndex(int idx, int g_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_globalBranchIndex = g_idx;
+    p_branches[idx]->p_globalBranchIndex = g_idx;
     return true;
   }
 }
@@ -328,7 +328,7 @@ bool setOriginalBusIndex1(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_originalBusIndex1 = b_idx;
+    p_branches[idx]->p_originalBusIndex1 = b_idx;
     return true;
   }
 }
@@ -344,7 +344,7 @@ bool setOriginalBusIndex2(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_originalBusIndex2 = b_idx;
+    p_branches[idx]->p_originalBusIndex2 = b_idx;
     return true;
   }
 }
@@ -360,7 +360,7 @@ bool setGlobalBusIndex1(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_globalBusIndex1 = b_idx;
+    p_branches[idx]->p_globalBusIndex1 = b_idx;
     return true;
   }
 }
@@ -376,7 +376,7 @@ bool setGlobalBusIndex2(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_globalBusIndex2 = b_idx;
+    p_branches[idx]->p_globalBusIndex2 = b_idx;
     return true;
   }
 }
@@ -392,7 +392,7 @@ bool setLocalBusIndex1(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_localBusIndex1 = b_idx;
+    p_branches[idx]->p_localBusIndex1 = b_idx;
     return true;
   }
 }
@@ -408,7 +408,7 @@ bool setLocalBusIndex2(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_localBusIndex2 = b_idx;
+    p_branches[idx]->p_localBusIndex2 = b_idx;
     return true;
   }
 }
@@ -440,7 +440,7 @@ bool setActiveBranch(int idx, bool flag)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx].p_activeBranch = flag;
+    p_branches[idx]->p_activeBranch = flag;
     return true;
   }
 }
@@ -450,12 +450,12 @@ bool setActiveBranch(int idx, bool flag)
  * @param idx: local index of bus
  * @return: false if no bus exists for idx
  */
-bool clearBranchNeighors(int idx)
+bool clearBranchNeighbors(int idx)
 {
   if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_buses[idx]->p_bus.p_branchNeighbors.clear();
+    p_buses[idx]->p_branchNeighbors.clear();
     return true;
   }
 }
@@ -465,12 +465,12 @@ bool clearBranchNeighors(int idx)
  * @param idx: local index of bus
  * @return: false if no bus exists for idx
  */
-bool addBranchNeighor(int idx, int br_idx)
+bool addBranchNeighbor(int idx, int br_idx)
 {
   if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_buses[idx]->p_bus.p_branchNeighbors.push_back(br_idx);
+    p_buses[idx]->p_branchNeighbors.push_back(br_idx);
     return true;
   }
 }
@@ -496,7 +496,7 @@ bool getActiveBus(int idx)
  * @param idx: local index of bus
  * @return: original index of bus 
  */
-bool getOriginalBusIndex(int idx)
+int getOriginalBusIndex(int idx)
 {
   if (idx >= 0 || idx < p_buses.size()) {
     return p_buses[idx]->p_originalBusIndex;
@@ -510,7 +510,7 @@ bool getOriginalBusIndex(int idx)
  * @param idx: local index of bus
  * @return: global index of bus 
  */
-bool getGlobalBusIndex(int idx)
+int getGlobalBusIndex(int idx)
 {
   if (idx >= 0 || idx < p_buses.size()) {
     return p_buses[idx]->p_globalBusIndex;
@@ -530,6 +530,20 @@ boost::shared_ptr<_bus> getBus(int idx)
     // TODO: Some kind of error
   } else {
     return p_buses[idx]->p_bus;
+  }
+}
+
+/**
+ * Get status of the branch (local or ghosted)
+ * @param idx: local index of branch
+ * @return: true if branch is locally held, false if it is ghosted 
+ */
+bool getActiveBranch(int idx)
+{
+  if (idx >= 0 || idx < p_branches.size()) {
+    return p_branches[idx]->p_activeBranch;
+  } else {
+    // TODO: some kind of error
   }
 }
 
@@ -632,10 +646,10 @@ std::vector<int> getConnectedBuses(int idx) const
   int i, j;
   for (i=0; i<size; i++) {
     j = branches[i];
-    if (p_branches[j].p_localBusIndex1 != idx) {
-      ret.push_back(p_branches[j].p_localBusIndex1);
+    if (p_branches[j]->p_localBusIndex1 != idx) {
+      ret.push_back(p_branches[j]->p_localBusIndex1);
     } else {
-      ret.push_back(p_branches[j].p_localBusIndex2);
+      ret.push_back(p_branches[j]->p_localBusIndex2);
     }
   }
   return ret;
@@ -646,11 +660,16 @@ std::vector<int> getConnectedBuses(int idx) const
  * @param bus: local branch index
  * @param bus1: local index of bus at one end of branch
  * @param bus2: local index of bus at other end of branch
+ * @return: false if branch not found
  */
 void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 {
-  *bus1 = p_branches[idx].p_localBusIndex1;
-  *bus2 = p_branches[idx].p_localBusIndex2;
+  if (idx<0 || idx >= p_branches.size()) {
+    // TODO: some kind of error
+  } else {
+    *bus1 = p_branches[idx]->p_localBusIndex1;
+    *bus2 = p_branches[idx]->p_localBusIndex2;
+  }
 }
 
 /**

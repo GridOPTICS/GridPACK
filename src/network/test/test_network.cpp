@@ -69,6 +69,10 @@ main (int argc, char **argv) {
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
   int nprocs;
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  if (me == 0) {
+    printf("Testing Network Module\n");
+    printf("\nTest Network is %d X %d\n",XDIM,YDIM);
+  }
 
   // Create network
   gridpack::network::BaseNetwork<int, int> network;
@@ -116,13 +120,17 @@ main (int argc, char **argv) {
       }
       n = n/2;
       network.setGlobalBusIndex(ncnt, n);
+      if (ix == 0 && iy == 0) {
+        network.setReferenceBus(ncnt);
+      }
+      ncnt++;
     }
   }
 
-
   // Add branches to network. Start with branches connecting buses in the
   // i-direction
-  int n1, n2;
+  int n1, n2, lx, ly;
+  ncnt = 0;
   nx = iaxmax - iaxmin;
   ny = iymax - iymin + 1;
   for (j=0; j<ny; j++) {
@@ -134,10 +142,31 @@ main (int argc, char **argv) {
       n2 = iy*XDIM+ix+1;
       n2 = 2*n2;
       network.addBranch(n1, n2);
+      n1 = n1/2;
+      n2 = n2/2;
+      network.setGlobalBusIndex1(ncnt, n1);
+      network.setGlobalBusIndex2(ncnt, n2);
+      n = iy*(XDIM-1) + ix;
+      network.setGlobalBranchIndex(ncnt,n);
+      // Figure out local indices of buses
+      lx = ix - iaxmin;
+      ly = iy - iaymin;
+      n1 = ly*(iaxmax-iaxmin+1) + lx;
+      n2 = ly*(iaxmax-iaxmin+1) + lx + 1;
+      network.setLocalBusIndex1(ncnt,n1);
+      network.setLocalBusIndex2(ncnt,n2);
+      // Determine which branches are locally held. Use the rule that if bus 1
+      // is local, then branch belongs to this processor
+      if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
+        network.setActiveBranch(ncnt, true);
+      } else {
+        network.setActiveBranch(ncnt, false);
+      }
+      ncnt++;
     }
   }
   // Add branches connecting buses in the j-direction
-  nx = ixmax - ixmin+1;
+  nx = ixmax - ixmin + 1;
   ny = iaymax - iaymin;
   for (j=0; j<ny; j++) {
     iy = iymin+j;
@@ -148,7 +177,171 @@ main (int argc, char **argv) {
       n2 = (iy+1)*XDIM+ix;
       n2 = 2*n2;
       network.addBranch(n1, n2);
+      n1 = n1/2;
+      n2 = n2/2;
+      network.setGlobalBusIndex1(ncnt, n1);
+      network.setGlobalBusIndex2(ncnt, n2);
+      n = iy*XDIM + ix + (XDIM-1)*YDIM;
+      network.setGlobalBranchIndex(ncnt,n);
+      // Figure out local indices of buses
+      lx = ix - iaxmin;
+      ly = iy - iaymin;
+      n1 = ly*(iaxmax-iaxmin+1) + lx;
+      n2 = (ly+1)*(iaxmax-iaxmin+1) + lx;
+      network.setLocalBusIndex1(ncnt,n1);
+      network.setLocalBusIndex2(ncnt,n2);
+      // Determine which branches are locally held. Use the rule that if bus 1
+      // is local, then branch belongs to this processor
+      if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
+        network.setActiveBranch(ncnt, true);
+      } else {
+        network.setActiveBranch(ncnt, false);
+      }
+      ncnt++;
     }
+  }
+
+  // Check that number of buses and branches match expected number of buses and
+  // branches
+  n = (iaxmax-iaxmin+1)*(iaymin-iaymax+1);
+  if (network.numBuses() != n) {
+    printf("p[%d] Number of buses: %d expected: %d\n",me,network.numBuses(),n);
+  } else if (me == 0) {
+    printf("\nNumber of buses ok\n");
+  }
+  n = (iaxmax-iaxmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iaymin);
+  if (network.numBranches() != n) {
+    printf("p[%d] Number of branches: %d expected: %d\n",me,network.numBranches(),n);
+  } else if (me == 0) {
+    printf("\nNumber of branches ok\n");
+  }
+
+  // Test location of reference bus
+  n = network.getReferenceBus();
+  if (!(me == 0 && n != 0) and !(me != 0 && n != -1)) {
+    printf("p[%d] Reference bus error: %d\n",me,n);
+  } else if (me == 0 && n == 0) {
+    printf("\nReference bus ok\n");
+  }
+
+  // Set up number of branches attached to bus
+  int nbus = network.numBuses();
+  for (i=0; i<nbus; i++) {
+    if (!network.clearBranchNeighbors(i)) {
+      printf("p[%d] clearBranchNeighbors failed for bus %d\n",me,i);
+    }
+  }
+  // Loop over all branches
+  int nbranch = network.numBranches();
+  for (i=0; i<nbranch; i++) {
+    network.getBranchEndpoints(i, &n1, &n2);
+    if (network.getActiveBus(n1) || network.getActiveBus(n2)) {
+      if (!network.addBranchNeighbor(n1, i)) {
+	printf("p[%d] addBranchNeighbor failed for bus %d",me,n1);
+      }
+      if (!network.addBranchNeighbor(n2, i)) {
+	printf("p[%d] addBranchNeighbor failed for bus %d",me,n2);
+      }
+    }
+  }
+
+  // Test active buses
+  int ldx = iaxmax-iaxmin+1;
+  bool ok = true;
+  for (i=0; i<nbus; i++) {
+    ix = i%ldx;
+    iy = (i-ix)/ldx;
+    ix = ix + iaxmin;
+    iy = iy + iaymin;
+    if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
+      if (!network.getActiveBus(i)) {
+        printf("p[%d] inactive bus error %d\n",me,i);
+        ok = false;
+      }
+    } else {
+      if (network.getActiveBus(i)) {
+        printf("p[%d] active bus error %d\n",me,i);
+        ok = false;
+      }
+    }
+  }
+  if (me == 0 && ok) {
+    printf("\nActive bus settings ok\n");
+  }
+
+  // Test active branches
+  ok = true;
+  for (i=0; i<nbranch; i++) {
+    network.getBranchEndpoints(i, &n1, &n2);
+    ix = n1%ldx;
+    iy = (n1-ix)/ldx;
+    ix = ix + iaxmin;
+    iy = iy + iaymin;
+    // If bus 1 is local, then branch is local
+    if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
+      if (!network.getActiveBranch(i)) {
+        printf("p[%d] inactive branch error %d\n",me,i);
+        ok = false;
+      }
+    } else {
+      if (network.getActiveBranch(i)) {
+        printf("p[%d] active branch error %d\n",me,i);
+        ok = false;
+      }
+    }
+  }
+  if (me == 0 && ok) {
+    printf("\nActive branch settings ok\n");
+  }
+  
+  // check neighbors of buses
+  ok = true;
+  for (i=0; i<nbus; i++) {
+    if (network.getActiveBus(i)) {
+      ix = i%ldx;
+      iy = (i-ix)/ldx;
+      ix = ix + iaxmin;
+      iy = iy + iaymin;
+      n = 0;
+      if (ix > iaxmin) n++;
+      if (ix < iaxmin) n++;
+      if (iy > iaymin) n++;
+      if (iy < iaymin) n++;
+      std::vector<int> branches = network.getConnectedBranches(i);
+      std::map<int,int> checkBuses;
+      if (n != branches.size()) {
+        printf("p[%d] incorrect neighbor branches on bus %d\n",me,i);
+        ok = false;
+      }
+      n = branches.size();
+      for (j=0; j<n; j++) {
+        network.getBranchEndpoints(branches[j], &n1, &n2);
+        if (n1 != i && n2 != i) {
+          printf("p[%d] incorrectly assigned branches on bus %d\n",me,i);
+          ok = false;
+        }
+        if (n1 != i) {
+          checkBuses.insert(std::pair<int, int>(n1,j));
+        } else {
+          checkBuses.insert(std::pair<int, int>(n2,j));
+        }
+      }
+      std::vector<int> buses = network.getConnectedBuses(i);
+      if (buses.size() != branches.size()) {
+        printf("p[%d] incorrect neighbor buses on bus %d\n",me,i);
+        ok = false;
+      }
+      n = buses.size();
+      for (j=0; j<n; j++) {
+        if (checkBuses.find(buses[j]) == checkBuses.end()) {
+          printf("p[%d] incorrectly assigned buses on bus %d\n",me,i);
+          ok = false;
+        }
+      }
+    }
+  }
+  if (me == 0 && ok) {
+    printf("\nBus neighbors are ok\n");
   }
   
 
