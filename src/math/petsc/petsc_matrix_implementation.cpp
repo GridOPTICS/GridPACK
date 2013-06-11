@@ -1,7 +1,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-05 12:37:48 d3g096
+ * @date   2013-06-11 12:05:50 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -178,7 +178,7 @@ PETScMatrixImplementation::p_cols(void) const
 // -------------------------------------------------------------
 void
 PETScMatrixImplementation::p_set_element(const int& i, const int& j, 
-                                         const complex_type& x)
+                                         const ComplexType& x)
 {
   PetscErrorCode ierr(0);
   try {
@@ -194,7 +194,7 @@ PETScMatrixImplementation::p_set_element(const int& i, const int& j,
 void
 PETScMatrixImplementation::p_set_elements(const int& n, 
                                           const int *i, const int *j, 
-                                          const complex_type *x)
+                                          const ComplexType *x)
 {
   // FIXME: There's probably a better way
   for (int k = 0; k < n; k++) {
@@ -207,7 +207,7 @@ PETScMatrixImplementation::p_set_elements(const int& n,
 // -------------------------------------------------------------
 void
 PETScMatrixImplementation::p_add_element(const int& i, const int& j, 
-                                         const complex_type& x)
+                                         const ComplexType& x)
 {
   PetscErrorCode ierr(0);
   try {
@@ -223,7 +223,7 @@ PETScMatrixImplementation::p_add_element(const int& i, const int& j,
 void
 PETScMatrixImplementation::p_add_elements(const int& n, 
                                           const int *i, const int *j, 
-                                          const complex_type *x)
+                                          const ComplexType *x)
 {
   // FIXME: There's probably a better way
   for (int k = 0; k < n; k++) {
@@ -236,7 +236,7 @@ PETScMatrixImplementation::p_add_elements(const int& n,
 // -------------------------------------------------------------
 void
 PETScMatrixImplementation::p_get_element(const int& i, const int& j, 
-                                         complex_type& x) const
+                                         ComplexType& x) const
 {
   PetscErrorCode ierr(0);
   try {
@@ -255,7 +255,7 @@ PETScMatrixImplementation::p_get_element(const int& i, const int& j,
 void
 PETScMatrixImplementation::p_get_elements(const int& n,
                                           const int *i, const int *j, 
-                                          complex_type *x) const
+                                          ComplexType *x) const
 {
   // FIXME: There is a better way
   for (int k = 0; k < n; k++) {

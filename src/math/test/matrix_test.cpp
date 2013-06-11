@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-06-10 12:19:25 d3g096
+ * @date   2013-06-11 12:10:05 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -58,7 +58,7 @@ make_and_fill_test_matrix(const int& bandwidth, int& global_size)
   A->local_row_range(lo, hi);
  
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(static_cast<double>(i));
+    gridpack::ComplexType x(static_cast<double>(i));
     int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       A->set_element(i, j, x);
@@ -95,14 +95,14 @@ BOOST_AUTO_TEST_CASE( set_and_get )
   A->local_row_range(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(static_cast<double>(i));
+    gridpack::ComplexType x(static_cast<double>(i));
     A->set_element(i, i, x);
   }
   A->ready();
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(static_cast<double>(i));
-    gridpack::math::complex_type y;
+    gridpack::ComplexType x(static_cast<double>(i));
+    gridpack::ComplexType y;
     A->get_element(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
@@ -117,10 +117,10 @@ BOOST_AUTO_TEST_CASE( bad_get )
   int lo, hi;
   A->local_row_range(lo, hi);
 
-  gridpack::math::complex_type x(1.0);
+  gridpack::ComplexType x(1.0);
 
   for (int i = lo; i < hi; ++i) {
-    x = static_cast<gridpack::math::complex_type>(i);
+    x = static_cast<gridpack::ComplexType>(i);
     A->set_element(i, i, x);
   }
   A->ready();
@@ -135,7 +135,7 @@ BOOST_AUTO_TEST_CASE( bad_set )
   int global_size;
   std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
 
-  gridpack::math::complex_type x(1.0);
+  gridpack::ComplexType x(1.0);
 
   // this does not work for PETSc, apparently indexes are not checked for set?
   // BOOST_CHECK_THROW( A->set_element(0, global_size, x), gridpack::Exception );
@@ -160,7 +160,7 @@ BOOST_AUTO_TEST_CASE( multiple_set_and_get )
 
   for (int i = lo; i < hi; ++i) {
     int n(nentries);
-    std::vector<gridpack::math::complex_type> x(n, static_cast<double>(i));
+    std::vector<gridpack::ComplexType> x(n, static_cast<double>(i));
     std::vector<int> iidx(n, i);
     std::vector<int> jidx(n);
     jidx[0] = i-1; jidx[1] = i; jidx[2] = i+1;
@@ -182,11 +182,11 @@ BOOST_AUTO_TEST_CASE( multiple_set_and_get )
     std::vector<int> jidx(n);
     jidx[0] = i-1; jidx[1] = i; jidx[2] = i+1;
 
-    gridpack::math::complex_type x(static_cast<double>(i));
+    gridpack::ComplexType x(static_cast<double>(i));
 
     // fill w/ bogus values 
-    std::vector<gridpack::math::complex_type> 
-      y(n, gridpack::math::complex_type(-1.0, 1.0));
+    std::vector<gridpack::ComplexType> 
+      y(n, gridpack::ComplexType(-1.0, 1.0));
     
     int startidx(0);
     if (i <= 0) {
@@ -216,15 +216,15 @@ BOOST_AUTO_TEST_CASE( accumulate )
   A.local_row_range(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(static_cast<double>(i));
+    gridpack::ComplexType x(static_cast<double>(i));
     A.add_element(i, i, x);
     A.add_element(i, i, x);
   }
   A.ready();
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(static_cast<double>(2*i));
-    gridpack::math::complex_type y;
+    gridpack::ComplexType x(static_cast<double>(2*i));
+    gridpack::ComplexType y;
     A.get_element(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
@@ -246,7 +246,7 @@ BOOST_AUTO_TEST_CASE( clone )
   A->local_row_range(lo, hi);
  
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(static_cast<double>(i));
+    gridpack::ComplexType x(static_cast<double>(i));
     int jmin(std::max(i-bw, 0)), jmax(std::min(i+bw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       A->set_element(i, j, x);
@@ -261,8 +261,8 @@ BOOST_AUTO_TEST_CASE( clone )
   BOOST_CHECK_EQUAL(A->cols(), Aclone->cols());
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x;
-    gridpack::math::complex_type y;
+    gridpack::ComplexType x;
+    gridpack::ComplexType y;
     int jmin(std::max(i-bw, 0)), jmax(std::min(i+bw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       A->get_element(i, j, x);
@@ -283,7 +283,7 @@ BOOST_AUTO_TEST_CASE( add )
   A->local_row_range(lo, hi);
  
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(static_cast<double>(i));
+    gridpack::ComplexType x(static_cast<double>(i));
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       A->set_element(i, j, x);
@@ -297,8 +297,8 @@ BOOST_AUTO_TEST_CASE( add )
   B->add(*A);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x;
-    gridpack::math::complex_type y;
+    gridpack::ComplexType x;
+    gridpack::ComplexType y;
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       A->get_element(i, j, x);
@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE( identity )
   A->local_row_range(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(1.0);
+    gridpack::ComplexType x(1.0);
     A->set_element(i, i, x);
   }
   A->ready();
@@ -330,8 +330,8 @@ BOOST_AUTO_TEST_CASE( identity )
   A->identity();
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x(1.0);
-    gridpack::math::complex_type y;
+    gridpack::ComplexType x(1.0);
+    gridpack::ComplexType y;
     A->get_element(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
@@ -344,7 +344,7 @@ BOOST_AUTO_TEST_CASE( scale )
   std::auto_ptr<gridpack::math::Matrix> 
     A(make_and_fill_test_matrix(3, global_size));
 
-  gridpack::math::complex_type z(2.0);
+  gridpack::ComplexType z(2.0);
   A->scale(z);
   
   int lo, hi;
@@ -353,8 +353,8 @@ BOOST_AUTO_TEST_CASE( scale )
   for (int i = lo; i < hi; ++i) {
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      gridpack::math::complex_type 
-        x(static_cast<gridpack::math::complex_type>(i)*z), y;
+      gridpack::ComplexType 
+        x(static_cast<gridpack::ComplexType>(i)*z), y;
       A->get_element(i, j, y);
       BOOST_CHECK_CLOSE(real(x), real(y), delta);
       BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
@@ -376,8 +376,8 @@ BOOST_AUTO_TEST_CASE( transpose )
   for (int i = lo; i < hi; ++i) {
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      gridpack::math::complex_type 
-        x(static_cast<gridpack::math::complex_type>(j)), y;
+      gridpack::ComplexType 
+        x(static_cast<gridpack::ComplexType>(j)), y;
       B->get_element(i, j, y);
       BOOST_CHECK_CLOSE(real(x), real(y), delta);
       BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
@@ -402,9 +402,9 @@ BOOST_AUTO_TEST_CASE( column_diagonal )
   for (int i = -1; i <= 1; ++i) {
     int idx(icolumn+i);
     if (lo <= idx && idx < hi) {
-      gridpack::math::complex_type 
-        x(static_cast<gridpack::math::complex_type>(idx));
-      gridpack::math::complex_type y;
+      gridpack::ComplexType 
+        x(static_cast<gridpack::ComplexType>(idx));
+      gridpack::ComplexType y;
       cvector->get_element(idx, y);
       BOOST_CHECK_CLOSE(real(x), real(y), delta);
       if (idx == icolumn) {
@@ -420,7 +420,7 @@ BOOST_AUTO_TEST_CASE( column_diagonal )
 BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
 {
   static const int bandwidth(3);
-  static const gridpack::math::complex_type scale(2.0);
+  static const gridpack::ComplexType scale(2.0);
   int global_size;
   std::auto_ptr<gridpack::math::Matrix> 
     A(make_and_fill_test_matrix(bandwidth, global_size));
@@ -438,8 +438,8 @@ BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
   for (int i = lo; i < hi; ++i) {
     int bw(bandwidth);
     if (i == 0 || i == global_size - 1) bw--;
-    gridpack::math::complex_type 
-      x(static_cast<gridpack::math::complex_type>(i*bw)*scale), y;
+    gridpack::ComplexType 
+      x(static_cast<gridpack::ComplexType>(i*bw)*scale), y;
     yvector->get_element(i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);

@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-06-10 08:13:40 d3g096
+ * @date   2013-06-11 12:06:04 d3g096
  * 
  * @brief  
  * 
@@ -88,69 +88,69 @@ public:
   }
 
   // /// Set an individual element
-  void set_element(const int& i, const int& j, const complex_type& x)
+  void set_element(const int& i, const int& j, const ComplexType& x)
   {
     p_matrix_impl->set_element(i, j, x);
   }
 
   /// Set an several elements
-  void set_elements(const int& n, const int *i, const int *j, const complex_type *x)
+  void set_elements(const int& n, const int *i, const int *j, const ComplexType *x)
   {
     p_matrix_impl->set_elements(n, i, j, x);
   }
 
   // /// Set all elements in a row
-  // void set_row(const int& nj, const int& i, const int *j, const complex_type *x)
+  // void set_row(const int& nj, const int& i, const int *j, const ComplexType *x)
   // {
   //   p_matrix_impl->set_row(nj, i, j, x);
   // }
 
   // /// Set all elements in a row
   // void set_region(const int& ni, const int& nj, 
-  //                 const int *i, const int *j, const complex_type *x)
+  //                 const int *i, const int *j, const ComplexType *x)
   // {
   //   p_matrix_impl->set_row(ni, nj, i, j, x);
   // }
 
   /// Add to an individual element
-  void add_element(const int& i, const int& j, const complex_type& x)
+  void add_element(const int& i, const int& j, const ComplexType& x)
   {
     p_matrix_impl->add_element(i, j, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const int *j, const complex_type *x)
+  void add_elements(const int& n, const int *i, const int *j, const ComplexType *x)
   {
     p_matrix_impl->add_elements(n, i, j, x);
   }
 
   // /// Add to all elements in a row
-  // void add_row(const int& nj, const int& i, const int *j, const complex_type *x)
+  // void add_row(const int& nj, const int& i, const int *j, const ComplexType *x)
   // {
   //   p_matrix_impl->add_row(nj, i, j, x);
   // }
 
   /// Get an individual element
-  void get_element(const int& i, const int& j, complex_type& x) const
+  void get_element(const int& i, const int& j, ComplexType& x) const
   {
     p_matrix_impl->get_element(i, j, x);
   }
 
   /// Get an several elements
-  void get_elements(const int& n, const int *i, const int *j, complex_type *x) const
+  void get_elements(const int& n, const int *i, const int *j, ComplexType *x) const
   {
     p_matrix_impl->get_elements(n, i, j, x);
   }
 
   // /// Get all elements in a row
-  // void get_row(const int& nj, const int& i, const int *j, complex_type *x)  const
+  // void get_row(const int& nj, const int& i, const int *j, ComplexType *x)  const
   // {
   //   p_matrix_impl->get_row(nj, i, j, x);
   // }
 
   // /// Get all elements in a row
   // void get_region(const int& ni, const int& nj, 
-  //                 const int *i, const int *j, complex_type *x) const
+  //                 const int *i, const int *j, ComplexType *x) const
   // {
   //   p_matrix_impl->get_row(ni, nj, i, j, x);
   // }
@@ -198,7 +198,7 @@ public:
   void equate(const Matrix& A);
 
   /// Scale the entire Matrix by the given value
-  void scale(const complex_type& x);
+  void scale(const ComplexType& x);
 
   /// Multiply the diagonal by the specified vector
   void multiply_diagonal(const Vector& x);

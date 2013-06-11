@@ -2,7 +2,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-06 14:54:15 d3g096
+ * @date   2013-06-11 12:05:20 d3g096
  * 
  * @brief  
  * 
@@ -123,7 +123,7 @@ PETScVectorImplementation::p_local_index_range(int& lo, int& hi) const
  * @param x value
  */
 void
-PETScVectorImplementation::p_set_element(const int& i, const complex_type& x)
+PETScVectorImplementation::p_set_element(const int& i, const ComplexType& x)
 {
   PetscErrorCode ierr;
   try {
@@ -137,7 +137,7 @@ PETScVectorImplementation::p_set_element(const int& i, const complex_type& x)
 // PETScVectorImplementation::p_set_elements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_set_elements(const int& n, const int *i, const complex_type *x)
+PETScVectorImplementation::p_set_elements(const int& n, const int *i, const ComplexType *x)
 {
   PetscErrorCode ierr;
   try {
@@ -151,7 +151,7 @@ PETScVectorImplementation::p_set_elements(const int& n, const int *i, const comp
 // PETScVectorImplementation::p_add_element
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_add_element(const int& i, const complex_type& x)
+PETScVectorImplementation::p_add_element(const int& i, const ComplexType& x)
 {
   PetscErrorCode ierr;
   try {
@@ -165,7 +165,7 @@ PETScVectorImplementation::p_add_element(const int& i, const complex_type& x)
 // PETScVectorImplementation::p_add_elements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_add_elements(const int& n, const int *i, const complex_type *x)
+PETScVectorImplementation::p_add_elements(const int& n, const int *i, const ComplexType *x)
 {
   PetscErrorCode ierr;
   try {
@@ -179,7 +179,7 @@ PETScVectorImplementation::p_add_elements(const int& n, const int *i, const comp
 // PETScVectorImplementation::p_get_element
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_get_element(const int& i, complex_type& x) const
+PETScVectorImplementation::p_get_element(const int& i, ComplexType& x) const
 {
   this->p_get_elements(1, &i, &x);
 }
@@ -188,7 +188,7 @@ PETScVectorImplementation::p_get_element(const int& i, complex_type& x) const
 // PETScVectorImplementation::p_get_elements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_get_elements(const int& n, const int *i, complex_type *x) const
+PETScVectorImplementation::p_get_elements(const int& n, const int *i, ComplexType *x) const
 {
   PetscErrorCode ierr;
   try {
@@ -209,7 +209,7 @@ PETScVectorImplementation::p_get_elements(const int& n, const int *i, complex_ty
 void
 PETScVectorImplementation::p_zero(void)
 {
-  complex_type v(0.0, 0.0);
+  ComplexType v(0.0, 0.0);
   this->fill(v);
 }
 
@@ -217,7 +217,7 @@ PETScVectorImplementation::p_zero(void)
 // PETScVectorImplementation::p_fill
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_fill(const complex_type& v)
+PETScVectorImplementation::p_fill(const ComplexType& v)
 {
   PetscErrorCode ierr(0);
   try {

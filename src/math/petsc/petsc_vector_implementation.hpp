@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-06-06 14:54:05 d3g096
+// Last Change: 2013-06-11 12:05:09 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -69,28 +69,28 @@ protected:
   void p_local_index_range(int& lo, int& hi) const;
 
   /// Set an individual element (specialized)
-  void p_set_element(const int& i, const complex_type& x);
+  void p_set_element(const int& i, const ComplexType& x);
 
   /// Set an several elements (specialized)
-  void p_set_elements(const int& n, const int *i, const complex_type *x);
+  void p_set_elements(const int& n, const int *i, const ComplexType *x);
 
   /// Add to an individual element (specialized)
-  void p_add_element(const int& i, const complex_type& x);
+  void p_add_element(const int& i, const ComplexType& x);
 
   /// Add to an several elements (specialized)
-  void p_add_elements(const int& n, const int *i, const complex_type *x);
+  void p_add_elements(const int& n, const int *i, const ComplexType *x);
 
   /// Get an individual element (specialized)
-  void p_get_element(const int& i, complex_type& x) const;
+  void p_get_element(const int& i, ComplexType& x) const;
 
   /// Get an several elements (specialized)
-  void p_get_elements(const int& n, const int *i, complex_type *x) const;
+  void p_get_elements(const int& n, const int *i, ComplexType *x) const;
 
   /// Make all the elements zero (specialized)
   void p_zero(void);
 
   /// Make all the elements the specified value (specialized)
-  void p_fill(const complex_type& v);
+  void p_fill(const ComplexType& v);
 
   // FIXME: more ...
 

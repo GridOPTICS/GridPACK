@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-06-06 15:03:09 d3g096
+ * @date   2013-06-11 12:10:18 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -37,13 +37,13 @@ BOOST_AUTO_TEST_CASE( fill_and_clone )
   gridpack::parallel::Communicator world;
   gridpack::math::Vector v(world, local_size);
 
-  static const gridpack::math::complex_type value(1.0, 1.0);
+  static const gridpack::ComplexType value(1.0, 1.0);
 
   v.fill(value);
   v.ready();
   
   int lo, hi;
-  gridpack::math::complex_type xlo, xhi;
+  gridpack::ComplexType xlo, xhi;
 
   v.local_index_range(lo, hi);
 
@@ -79,11 +79,11 @@ BOOST_AUTO_TEST_CASE( set_and_get_element )
   
   std::vector<int> idx; 
   idx.reserve(local_size);
-  std::vector<gridpack::math::complex_type> val; 
+  std::vector<gridpack::ComplexType> val; 
   val.reserve(local_size);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x;
+    gridpack::ComplexType x;
     x = static_cast<double>(i);
     v1.set_element(i, x);
     idx.push_back(i);
@@ -98,9 +98,9 @@ BOOST_AUTO_TEST_CASE( set_and_get_element )
   v1.get_elements(idx.size(), &idx[0], &val[0]);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x( static_cast<double>(i));
-    gridpack::math::complex_type x1;
-    gridpack::math::complex_type x2;
+    gridpack::ComplexType x( static_cast<double>(i));
+    gridpack::ComplexType x1;
+    gridpack::ComplexType x2;
 
     v1.get_element(i, x1);
     v2.get_element(i, x2);
@@ -122,11 +122,11 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
   
   std::vector<int> idx; 
   idx.reserve(local_size);
-  std::vector<gridpack::math::complex_type> val; 
+  std::vector<gridpack::ComplexType> val; 
   val.reserve(local_size);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x;
+    gridpack::ComplexType x;
     x = static_cast<double>(i);
     v1.set_element(i, x);
     v1.add_element(i, x);
@@ -143,9 +143,9 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
   v1.get_elements(idx.size(), &idx[0], &val[0]);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x( static_cast<double>(i));
-    gridpack::math::complex_type x1;
-    gridpack::math::complex_type x2;
+    gridpack::ComplexType x( static_cast<double>(i));
+    gridpack::ComplexType x1;
+    gridpack::ComplexType x2;
 
     v1.get_element(i, x1);
     v2.get_element(i, x2);
@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE( add )
   v1.local_index_range(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type x1, x2, x3;
+    gridpack::ComplexType x1, x2, x3;
 
     v1.get_element(i, x1);
     v2.get_element(i, x2);
@@ -204,7 +204,7 @@ BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
 {
   gridpack::parallel::Communicator world;
   gridpack::math::Vector v1(world, local_size), v2(world, local_size);
-  gridpack::math::complex_type x(2.0), offset(2.0), scale(3.0);
+  gridpack::ComplexType x(2.0), offset(2.0), scale(3.0);
 
   v1.fill(x);
   v1.add(offset);
@@ -216,7 +216,7 @@ BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
   v1.local_index_range(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type y;
+    gridpack::ComplexType y;
     v1.get_element(i, y);
     BOOST_CHECK_CLOSE(real(x+offset), real(y), delta);
     BOOST_CHECK_CLOSE( abs(x+offset), abs(y), delta);
@@ -231,8 +231,8 @@ BOOST_AUTO_TEST_CASE( reciprocal )
 {
   gridpack::parallel::Communicator world;
   gridpack::math::Vector v1(world, local_size);
-  gridpack::math::complex_type x(2.0, 5.0);
-  gridpack::math::complex_type rx(1.0/x);
+  gridpack::ComplexType x(2.0, 5.0);
+  gridpack::ComplexType rx(1.0/x);
 
   v1.fill(x);
   v1.reciprocal();
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE( reciprocal )
   v1.local_index_range(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
-    gridpack::math::complex_type y;
+    gridpack::ComplexType y;
     v1.get_element(i, y);
     BOOST_CHECK_CLOSE(real(rx), real(y), delta);
     BOOST_CHECK_CLOSE( abs(rx), abs(y), delta);

@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-05 14:35:29 d3g096
+ * @date   2013-06-11 12:08:50 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -70,7 +70,7 @@ Matrix::equate(const Matrix& B)
 // Matrix::scale
 // -------------------------------------------------------------
 void
-Matrix::scale(const complex_type& xin)
+Matrix::scale(const ComplexType& xin)
 {
   Mat *pA(PETScMatrix(*this));
 

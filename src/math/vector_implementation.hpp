@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-06-06 14:53:54 d3g096
+ * @date   2013-06-11 12:04:52 d3g096
  * 
  * @brief  
  * 
@@ -21,7 +21,7 @@
 
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/math/math_type.hpp"
+#include "gridpack/utilities/complex.hpp"
 
 namespace gridpack {
 namespace math {
@@ -63,37 +63,37 @@ public:
   }
 
   /// Set an individual element
-  void set_element(const int& i, const complex_type& x)
+  void set_element(const int& i, const ComplexType& x)
   {
     this->p_set_element(i, x);
   }
 
   /// Set an several elements
-  void set_elements(const int& n, const int *i, const complex_type *x)
+  void set_elements(const int& n, const int *i, const ComplexType *x)
   {
     this->p_set_elements(n, i, x);
   }
 
   /// Add to an individual element
-  void add_element(const int& i, const complex_type& x)
+  void add_element(const int& i, const ComplexType& x)
   {
     this->p_add_element(i, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const complex_type *x)
+  void add_elements(const int& n, const int *i, const ComplexType *x)
   {
     this->p_add_elements(n, i, x);
   }
 
   /// Get an individual element
-  void get_element(const int& i, complex_type& x) const
+  void get_element(const int& i, ComplexType& x) const
   {
     this->p_get_element(i, x);
   }
 
   /// Get an several elements
-  void get_elements(const int& n, const int *i, complex_type *x) const
+  void get_elements(const int& n, const int *i, ComplexType *x) const
   {
     this->p_get_elements(n, i, x);
   }
@@ -105,7 +105,7 @@ public:
   }
 
   /// Make all the elements the specified value
-  void fill(const complex_type& v)
+  void fill(const ComplexType& v)
   {
     this->p_fill(v);
   }
@@ -152,28 +152,28 @@ protected:
   virtual void p_local_index_range(int& lo, int& hi) const = 0;
 
   /// Set an individual element (specialized)
-  virtual void p_set_element(const int& i, const complex_type& x) = 0;
+  virtual void p_set_element(const int& i, const ComplexType& x) = 0;
 
   /// Set an several elements (specialized)
-  virtual void p_set_elements(const int& n, const int *i, const complex_type *x) = 0;
+  virtual void p_set_elements(const int& n, const int *i, const ComplexType *x) = 0;
 
   /// Add to an individual element (specialized)
-  virtual void p_add_element(const int& i, const complex_type& x) = 0;
+  virtual void p_add_element(const int& i, const ComplexType& x) = 0;
 
   /// Add to an several elements (specialized)
-  virtual void p_add_elements(const int& n, const int *i, const complex_type *x) = 0;
+  virtual void p_add_elements(const int& n, const int *i, const ComplexType *x) = 0;
 
   /// Get an individual element (specialized)
-  virtual void p_get_element(const int& i, complex_type& x) const = 0;
+  virtual void p_get_element(const int& i, ComplexType& x) const = 0;
 
   /// Get an several elements (specialized)
-  virtual void p_get_elements(const int& n, const int *i, complex_type *x) const = 0;
+  virtual void p_get_elements(const int& n, const int *i, ComplexType *x) const = 0;
 
   /// Make all the elements zero (specialized)
   virtual void p_zero(void) = 0;
 
   /// Fill all the elements with the specified value (specialized)
-  virtual void p_fill(const complex_type& v) = 0;
+  virtual void p_fill(const ComplexType& v) = 0;
 
   // FIXME: more ...
   /// Make this instance ready to use

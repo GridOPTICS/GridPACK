@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-06-06 14:53:30 d3g096
+ * @date   2013-06-11 12:06:43 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -77,37 +77,37 @@ public:
   }
 
   /// Set an individual element
-  void set_element(const int& i, const complex_type& x)
+  void set_element(const int& i, const ComplexType& x)
   {
     p_vector_impl->set_element(i, x);
   }
 
   /// Set an several elements
-  void set_elements(const int& n, const int *i, const complex_type *x)
+  void set_elements(const int& n, const int *i, const ComplexType *x)
   {
     p_vector_impl->set_elements(n, i, x);
   }
 
   /// Add to an individual element
-  void add_element(const int& i, const complex_type& x)
+  void add_element(const int& i, const ComplexType& x)
   {
     p_vector_impl->add_element(i, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const complex_type *x)
+  void add_elements(const int& n, const int *i, const ComplexType *x)
   {
     p_vector_impl->add_elements(n, i, x);
   }
 
   /// Get an individual element
-  void get_element(const int& i, complex_type& x) const
+  void get_element(const int& i, ComplexType& x) const
   {
     p_vector_impl->get_element(i, x);
   }
 
   /// Get an several elements
-  void get_elements(const int& n, const int *i, complex_type *x) const
+  void get_elements(const int& n, const int *i, ComplexType *x) const
   {
     p_vector_impl->get_elements(n, i, x);
   }
@@ -119,7 +119,7 @@ public:
   }
 
   /// Make all the elements the specified value
-  void fill(const complex_type& v)
+  void fill(const ComplexType& v)
   {
     p_vector_impl->fill(v);
   }
@@ -157,13 +157,13 @@ public:
   // -------------------------------------------------------------
 
   /// Multiply all elements by the specified value
-  void scale(const complex_type& x);
+  void scale(const ComplexType& x);
 
   /// Add the specified vector
   void add(const Vector& x);
 
   /// Add the specified value to all elements
-  void add(const complex_type& x);
+  void add(const ComplexType& x);
 
   /// Copy the elements from the specified Vector
   void equate(const Vector& x);
