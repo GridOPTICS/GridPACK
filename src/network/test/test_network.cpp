@@ -207,14 +207,20 @@ main (int argc, char **argv) {
   // Check that number of buses and branches match expected number of buses and
   // branches
   n = (iaxmax-iaxmin+1)*(iaymax-iaymin+1);
-  if (network.numBuses() != n) {
-    printf("p[%d] Number of buses: %d expected: %d\n",me,network.numBuses(),n);
-  } else if (me == 0) {
-    printf("\nNumber of buses ok\n");
-  }
-  n = (iaxmax-iaxmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iaymin);
   int oks, okr;
   bool ok = true;
+  if (network.numBuses() != n) {
+    printf("p[%d] Number of buses: %d expected: %d\n",me,network.numBuses(),n);
+    ok = false;
+  } 
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nNumber of buses ok\n");
+  }
+  ok = true;
+  n = (iaxmax-iaxmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iaymin);
   if (network.numBranches() != n) {
     printf("p[%d] Number of branches: %d expected: %d\n",me,network.numBranches(),n);
     ok = false;
@@ -325,6 +331,100 @@ main (int argc, char **argv) {
       std::map<int,int> checkBuses;
       if (n != branches.size()) {
         printf("p[%d] incorrect neighbor branches on bus %d\n",me,i);
+        ok = false;
+      }
+      n = branches.size();
+      for (j=0; j<n; j++) {
+        network.getBranchEndpoints(branches[j], &n1, &n2);
+        if (n1 != i && n2 != i) {
+          printf("p[%d] incorrectly assigned branches on bus %d\n",me,i);
+          ok = false;
+        }
+        if (n1 != i) {
+          checkBuses.insert(std::pair<int, int>(n1,j));
+        } else {
+          checkBuses.insert(std::pair<int, int>(n2,j));
+        }
+      }
+      std::vector<int> buses = network.getConnectedBuses(i);
+      if (buses.size() != branches.size()) {
+        printf("p[%d] incorrect neighbor buses on bus %d\n",me,i);
+        ok = false;
+      }
+      n = buses.size();
+      for (j=0; j<n; j++) {
+        if (checkBuses.find(buses[j]) == checkBuses.end()) {
+          printf("p[%d] incorrectly assigned buses on bus %d\n",me,i);
+          ok = false;
+        }
+      }
+    }
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nBus neighbors are ok\n");
+  }
+
+  // Test clean function
+  network.clean();
+  // Check that total number of remaining buses and branches are as expected
+  n = (ixmax-ixmin+1)*(iymax-iymin+1);
+  ok = true;
+  if (network.numBuses() != n) {
+    printf("p[%d] Number of buses after clean: %d expected: %d\n",me,network.numBuses(),n);
+    ok = false;
+  } 
+  oks = n;
+  ierr = MPI_Allreduce(&oks, &n, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  if (n != XDIM*YDIM) {
+    ok = false;
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nNumber of buses after clean ok\n");
+  }
+  ok = true;
+  n = (iaxmax-ixmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iymin);
+  if (network.numBranches() != n) {
+    printf("p[%d] Number of branches after clean: %d expected: %d\n",me,network.numBranches(),n);
+    ok = false;
+  }
+  oks = n;
+  ierr = MPI_Allreduce(&oks, &n, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  if (n != (XDIM-1)*YDIM+XDIM*(YDIM-1)) {
+    ok = false;
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nNumber of branches after clean ok\n");
+  }
+
+  // check neighbors of buses after performing clean operation
+  ok = true;
+  nbus = network.numBuses();
+  ldx = ixmax - ixmin + 1;
+  for (i=0; i<nbus; i++) {
+    if (network.getActiveBus(i)) {
+      ix = i%ldx;
+      iy = (i-ix)/ldx;
+      ix = ix + ixmin;
+      iy = iy + iymin;
+      n = 0;
+      if (ix > ixmin) n++;
+      if (ix < iaxmax) n++;
+      if (iy > iymin) n++;
+      if (iy < iaymax) n++;
+      std::vector<int> branches = network.getConnectedBranches(i);
+      std::map<int,int> checkBuses;
+      if (n != branches.size()) {
+        printf("p[%d] incorrect neighbor branches expected: %d actual: %d  on bus %d\n",
+               me,n,branches.size(),i);
         ok = false;
       }
       n = branches.size();

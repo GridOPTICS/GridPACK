@@ -689,7 +689,7 @@ void clean(void)
   int size = p_branches.size();
   int new_id = 0;
   for (i=0; i<size; i++) {
-    if (p_branches[i].p_activeBranch) {
+    if (p_branches[i]->p_activeBranch) {
       p_branches[new_id] = p_branches[i];
       branches.insert(std::pair<int, int>(i,new_id));
       new_id++;
@@ -720,17 +720,17 @@ void clean(void)
   // reset all local indices
   size = p_branches.size();
   for (i=0; i<size; i++) {
-    p = buses.find(p_branches[i].p_localBusIndex1);
+    p = buses.find(p_branches[i]->p_localBusIndex1);
     if (p != buses.end()) {
-      p_branches[i].p_localBusIndex1 = p->second;
+      p_branches[i]->p_localBusIndex1 = p->second;
     } else {
-      p_branches[i].p_localBusIndex1 = -1;
+      p_branches[i]->p_localBusIndex1 = -1;
     }
-    p = buses.find(p_branches[i].p_localBusIndex2);
+    p = buses.find(p_branches[i]->p_localBusIndex2);
     if (p != buses.end()) {
-      p_branches[i].p_localBusIndex2 = p->second;
+      p_branches[i]->p_localBusIndex2 = p->second;
     } else {
-      p_branches[i].p_localBusIndex2 = -1;
+      p_branches[i]->p_localBusIndex2 = -1;
     }
   }
 
