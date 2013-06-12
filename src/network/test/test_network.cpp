@@ -80,15 +80,18 @@ main (int argc, char **argv) {
   // Factor processors into a processor grid
   int ipx, ipy, pdx, pdy;
   factor_grid(nprocs, XDIM, YDIM, &pdx, &pdy);
+  if (me == 0) {
+    printf("\nProcessor configuration is %d X %d\n",pdx,pdy);
+  }
   ipx = me%pdx;
   ipy = (me-ipx)/pdx;
 
   int ixmin, ixmax, iymin, iymax; // bounds of locally owned nodes
   int iaxmin, iaxmax, iaymin, iaymax; // bounds of locally held nodes
   ixmin = static_cast<int>((static_cast<double>(ipx*XDIM))/(static_cast<double>(pdx)));
-  ixmax = static_cast<int>((static_cast<double>((ipx-1)*XDIM))/(static_cast<double>(pdx)));
+  ixmax = static_cast<int>((static_cast<double>((ipx+1)*XDIM))/(static_cast<double>(pdx)))-1;
   iymin = static_cast<int>((static_cast<double>(ipy*YDIM))/(static_cast<double>(pdy)));
-  iymax = static_cast<int>((static_cast<double>((ipy-1)*YDIM))/(static_cast<double>(pdy)));
+  iymax = static_cast<int>((static_cast<double>((ipy+1)*YDIM))/(static_cast<double>(pdy)))-1;
 
   iaxmin = ixmin - 1;
   if (ixmin == 0) iaxmin = 0;
@@ -134,7 +137,7 @@ main (int argc, char **argv) {
   nx = iaxmax - iaxmin;
   ny = iymax - iymin + 1;
   for (j=0; j<ny; j++) {
-    iy = iymin+j;
+    iy = j + iymin;
     for (i=0; i<nx; i++) {
       ix = i + iaxmin;
       n1 = iy*XDIM+ix;
@@ -169,9 +172,9 @@ main (int argc, char **argv) {
   nx = ixmax - ixmin + 1;
   ny = iaymax - iaymin;
   for (j=0; j<ny; j++) {
-    iy = iymin+j;
+    iy = j + iaymin;
     for (i=0; i<nx; i++) {
-      ix = i + iaxmin;
+      ix = i + ixmin;
       n1 = iy*XDIM+ix;
       n1 = 2*n1;
       n2 = (iy+1)*XDIM+ix;
@@ -203,22 +206,29 @@ main (int argc, char **argv) {
 
   // Check that number of buses and branches match expected number of buses and
   // branches
-  n = (iaxmax-iaxmin+1)*(iaymin-iaymax+1);
+  n = (iaxmax-iaxmin+1)*(iaymax-iaymin+1);
   if (network.numBuses() != n) {
     printf("p[%d] Number of buses: %d expected: %d\n",me,network.numBuses(),n);
   } else if (me == 0) {
     printf("\nNumber of buses ok\n");
   }
   n = (iaxmax-iaxmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iaymin);
+  int oks, okr;
+  bool ok = true;
   if (network.numBranches() != n) {
     printf("p[%d] Number of branches: %d expected: %d\n",me,network.numBranches(),n);
-  } else if (me == 0) {
+    ok = false;
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
     printf("\nNumber of branches ok\n");
   }
 
   // Test location of reference bus
   n = network.getReferenceBus();
-  if (!(me == 0 && n != 0) and !(me != 0 && n != -1)) {
+  if (!(me == 0 && n == 0) && !(me != 0 && n == -1)) {
     printf("p[%d] Reference bus error: %d\n",me,n);
   } else if (me == 0 && n == 0) {
     printf("\nReference bus ok\n");
@@ -237,17 +247,17 @@ main (int argc, char **argv) {
     network.getBranchEndpoints(i, &n1, &n2);
     if (network.getActiveBus(n1) || network.getActiveBus(n2)) {
       if (!network.addBranchNeighbor(n1, i)) {
-	printf("p[%d] addBranchNeighbor failed for bus %d",me,n1);
+	printf("p[%d] addBranchNeighbor failed for bus %d\n",me,n1);
       }
       if (!network.addBranchNeighbor(n2, i)) {
-	printf("p[%d] addBranchNeighbor failed for bus %d",me,n2);
+	printf("p[%d] addBranchNeighbor failed for bus %d\n",me,n2);
       }
     }
   }
 
   // Test active buses
   int ldx = iaxmax-iaxmin+1;
-  bool ok = true;
+  ok = true;
   for (i=0; i<nbus; i++) {
     ix = i%ldx;
     iy = (i-ix)/ldx;
@@ -265,6 +275,7 @@ main (int argc, char **argv) {
       }
     }
   }
+  oks = (int)ok;
   if (me == 0 && ok) {
     printf("\nActive bus settings ok\n");
   }
@@ -290,6 +301,9 @@ main (int argc, char **argv) {
       }
     }
   }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nActive branch settings ok\n");
   }
@@ -304,9 +318,9 @@ main (int argc, char **argv) {
       iy = iy + iaymin;
       n = 0;
       if (ix > iaxmin) n++;
-      if (ix < iaxmin) n++;
+      if (ix < iaxmax) n++;
       if (iy > iaymin) n++;
-      if (iy < iaymin) n++;
+      if (iy < iaymax) n++;
       std::vector<int> branches = network.getConnectedBranches(i);
       std::map<int,int> checkBuses;
       if (n != branches.size()) {
@@ -340,11 +354,13 @@ main (int argc, char **argv) {
       }
     }
   }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nBus neighbors are ok\n");
   }
   
-
   // Clean up MPI libraries
   ierr = MPI_Finalize();
 }
