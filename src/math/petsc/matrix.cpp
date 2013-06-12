@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-11 12:08:50 d3g096
+ * @date   2013-06-11 14:12:46 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -9,10 +9,10 @@
  */
 
 #include "boost/assert.hpp"
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/petsc/petsc_exception.hpp"
-#include "gridpack/math/petsc/petsc_matrix_implementation.hpp"
-#include "gridpack/math/petsc/petsc_matrix_extractor.hpp"
+#include "matrix.hpp"
+#include "petsc/petsc_exception.hpp"
+#include "petsc/petsc_matrix_implementation.hpp"
+#include "petsc/petsc_matrix_extractor.hpp"
 
 
 namespace gridpack {

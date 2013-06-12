@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-06-11 12:06:04 d3g096
+ * @date   2013-06-12 10:27:11 d3g096
  * 
  * @brief  
  * 
@@ -19,10 +19,10 @@
 #define _matrix_hpp_
 
 #include <boost/scoped_ptr.hpp>
-#include "gridpack/parallel/distributed.hpp"
-#include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/math/matrix_implementation.hpp"
-#include "gridpack/math/vector.hpp"
+#include <gridpack/parallel/distributed.hpp>
+#include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/math/matrix_implementation.hpp>
+#include <gridpack/math/vector.hpp>
 
 
 namespace gridpack {

@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   Mon Apr  1 07:35:48 2013
+ * @date   2013-06-12 10:30:21 d3g096
  * 
  * @brief  
  * 
@@ -21,8 +21,8 @@
 #define _linear_solver_hpp_
 
 #include <boost/scoped_ptr.hpp>
-#include "gridpack/utility/noncopyable.hpp"
-#include "gridpack/math/linear_solver_implementation.hpp"
+#include <gridpack/utility/noncopyable.hpp>
+#include <gridpack/math/linear_solver_implementation.hpp>
 
 namespace gridpack {
 namespace math {
@@ -34,14 +34,12 @@ class ImplementationVisitor;
 // -------------------------------------------------------------
 class LinearSolver 
   : public parallel::Distributed,
-    public utility::Configurable,
     private utility::UnCopyable
 {
 public:
   
   /// Default constructor.
-  LinearSolver(const parallel::Distribution& dist, 
-               const Matrix& A);
+  LinearSolver(const Matrix& A);
   
   /// Destructor
   ~LinearSolver(void);
@@ -58,8 +56,15 @@ public:
     solver_->accept(visitor);
   }
 
+  /// Allow visits by implemetation visitor
+  void accept(ConstImplementationVisitor& visitor) const
+  {
+    solver_->accept(visitor);
+  }
+
 protected:
 
+  /// Where the work really happens
   boost::scoped_ptr<LinearSolverImplementation> solver_;
 
 };

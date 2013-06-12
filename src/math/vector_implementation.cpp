@@ -2,7 +2,7 @@
 /**
  * @file   vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-05-08 15:19:44 d3g096
+ * @date   2013-06-11 14:19:31 d3g096
  * 
  * @brief  
  * 
@@ -10,7 +10,7 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/math/vector_implementation.hpp"
+#include "vector_implementation.hpp"
 
 namespace gridpack {
 namespace math {

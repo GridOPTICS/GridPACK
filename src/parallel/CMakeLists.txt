@@ -4,12 +4,30 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-06-10 10:57:44 d3g096
+# Last Change: 2013-06-11 15:03:49 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
   distributed.cpp
 )
+
+# -------------------------------------------------------------
+# gridpack header installation
+# -------------------------------------------------------------
+install(FILES 
+  parallel.hpp
+  distributed.hpp
+  DESTINATION include/gridpack/parallel
+)
+
+# -------------------------------------------------------------
+# gridpack parallel library installation
+# -------------------------------------------------------------
+install(TARGETS 
+  gridpack_parallel
+  DESTINATION lib
+)
+
 
 # -------------------------------------------------------------
 # TEST: greetings

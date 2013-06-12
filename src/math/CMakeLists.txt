@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-06-10 11:00:47 d3g096
+# Last Change: 2013-06-11 14:28:35 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -17,6 +17,8 @@ list(APPEND gridpack_math_sources
   matrix_implementation.cpp
   implementation_visitor.cpp
 )
+
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # implementation specific sources and flags
 if (PETSC_FOUND)
@@ -52,7 +54,24 @@ add_library(gridpack_math
 # -------------------------------------------------------------
 # gridpack math header installation
 # -------------------------------------------------------------
+install(FILES 
+  implementation_visitor.hpp
+  math.hpp
+  matrix.hpp
+  matrix_implementation.hpp
+  vector.hpp
+  vector_implementation.hpp
+  DESTINATION include/gridpack/math
+)
 
+# -------------------------------------------------------------
+# gridpack math library installation
+# -------------------------------------------------------------
+install(TARGETS 
+  gridpack_math
+  DESTINATION lib
+)
+  
 
 # -------------------------------------------------------------
 # vector test suite

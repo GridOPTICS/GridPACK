@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_extractor.hpp
  * @author William A. Perkins
- * @date   2013-06-05 14:31:03 d3g096
+ * @date   2013-06-11 14:17:34 d3g096
  * 
  * @brief  
  * 
@@ -23,7 +23,7 @@
 
 #include <boost/assert.hpp>
 #include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/math/implementation_visitor.hpp"
+#include "implementation_visitor.hpp"
 
 namespace gridpack {
 namespace math {

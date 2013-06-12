@@ -16,6 +16,7 @@ if [ $host == "flophouse" ]; then
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
         -D CMAKE_BUILD_TYPE:STRING="Release" \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+        -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
         ..
     
 elif [ $host == "pe10900" ]; then
@@ -29,6 +30,7 @@ elif [ $host == "pe10900" ]; then
         -D MPIEXEC:STRING='openmpiexec' \
         -D CMAKE_BUILD_TYPE:STRING="Debug" \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+        -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
         ..
 
 elif [ $host == "olympus.local" ]; then

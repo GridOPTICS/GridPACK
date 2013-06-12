@@ -3,7 +3,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   Mon Apr  1 09:08:49 2013
+ * @date   2013-06-11 13:58:09 d3g096
  * 
  * @brief  
  * 
@@ -32,28 +32,24 @@ class PETScLinearSolverImplementation
 public:
 
   /// Default constructor.
-  PETScLinearSolverImplementation(const parallel::Distribution& dist,
-                                  const Matrix& A);
+  PETScLinearSolverImplementation(const Matrix& A);
 
   /// Destructor
   ~PETScLinearSolverImplementation(void);
 
 protected:
 
-  /// The coefficient matrix in PETSc form
-  Mat *A;
-
   /// The PETSc linear solver 
-  KSP ksp;
+  KSP p_KSP;
 
   /// Solve w/ the specified RHS and estimate (result in x)
-  void solve_(const Vector& b, Vector& x) const;
+  void p_solve(const Vector& b, Vector& x) const;
 
-  /// Allow visits by implemetation visitor
-  void accept_(ImplementationVisitor& visitor);
-  {
-    visitor->visit(*this);
-  }
+  /// Allow visits by implementation visitors
+  void p_accept(ImplementationVisitor& visitor);
+
+  /// Allow visits by implementation visitors
+  void p_accept(ConstImplementationVisitor& visitor) const;
 
 };
 

@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-06-11 12:10:05 d3g096
+ * @date   2013-06-11 14:19:02 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -12,8 +12,8 @@
 #include <boost/assert.hpp>
 #include <boost/mpi/collectives.hpp>
 #include "gridpack/parallel/parallel.hpp"
-#include "gridpack/math/math.hpp"
-#include "gridpack/math/matrix.hpp"
+#include "math.hpp"
+#include "matrix.hpp"
 #include "gridpack/utilities/exception.hpp"
 
 #define BOOST_TEST_NO_MAIN

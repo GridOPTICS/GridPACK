@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-06-11 12:10:18 d3g096
+ * @date   2013-06-11 14:19:17 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -11,8 +11,8 @@
 #include <iostream>
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
-#include "gridpack/math/math.hpp"
-#include "gridpack/math/vector.hpp"
+#include "math.hpp"
+#include "vector.hpp"
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API

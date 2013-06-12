@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-06-11 12:06:43 d3g096
+ * @date   2013-06-12 10:24:32 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -15,9 +15,9 @@
 #define _vector_h_
 
 #include <boost/scoped_ptr.hpp>
-#include "gridpack/parallel/distributed.hpp"
-#include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/math/vector_implementation.hpp"
+#include <gridpack/parallel/distributed.hpp>
+#include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/math/vector_implementation.hpp>
 
 namespace gridpack {
 namespace math {

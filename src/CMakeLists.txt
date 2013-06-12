@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-06-10 10:42:48 d3g096
+# Last Change: 2013-06-11 15:01:09 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -91,6 +91,7 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 # -------------------------------------------------------------
 # Subdirectories
 # -------------------------------------------------------------
+add_subdirectory(utilities)
 add_subdirectory(parallel)
 add_subdirectory(math)
 add_subdirectory(component)

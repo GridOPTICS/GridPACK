@@ -2,7 +2,7 @@
 /**
  * @file   implementation_visitor.cpp
  * @author William A. Perkins
- * @date   2013-05-16 08:34:59 d3g096
+ * @date   2013-06-11 14:16:24 d3g096
  * 
  * @brief  
  * 
@@ -13,8 +13,7 @@
 
 
 #include <boost/assert.hpp>
-#include "gridpack/math/implementation_visitor.hpp"
-#include "gridpack/math/petsc/petsc_vector_implementation.hpp"
+#include "implementation_visitor.hpp"
 
 namespace gridpack {
 namespace math {

@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-06-11 12:05:38 d3g096
+ * @date   2013-06-11 14:18:02 d3g096
  * 
  * @brief  
  * 
@@ -18,7 +18,7 @@
 #define _petsc_matrix_implementation_h_
 
 #include <petscmat.h>
-#include "gridpack/math/matrix_implementation.hpp"
+#include "matrix_implementation.hpp"
 
 
 namespace gridpack {

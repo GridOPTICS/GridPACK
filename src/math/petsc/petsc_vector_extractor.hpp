@@ -3,7 +3,7 @@
 /**
  * @file   petsc_vector_extractor.hpp
  * @author William A. Perkins
- * @date   2013-06-06 13:57:32 d3g096
+ * @date   2013-06-11 14:13:27 d3g096
  * 
  * @brief  
  * 
@@ -19,9 +19,9 @@
 #define _petsc_vector_extractor_hpp_
 
 #include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/math/vector.hpp"
-#include "gridpack/math/petsc/petsc_vector_implementation.hpp"
-#include "gridpack/math/implementation_visitor.hpp"
+#include "vector.hpp"
+#include "petsc/petsc_vector_implementation.hpp"
+#include "implementation_visitor.hpp"
 
 namespace gridpack {
 namespace math {

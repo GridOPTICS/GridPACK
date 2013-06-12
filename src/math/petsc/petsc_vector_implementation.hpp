@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-06-11 12:05:09 d3g096
+// Last Change: 2013-06-11 14:13:06 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -17,7 +17,7 @@
 #define _petsc_vector_implementation_h_
 
 #include <petscvec.h>
-#include "gridpack/math/vector_implementation.hpp"
+#include "vector_implementation.hpp"
 
 namespace gridpack {
 namespace math {

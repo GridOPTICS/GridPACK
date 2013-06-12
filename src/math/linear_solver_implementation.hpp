@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   Mon Apr  1 08:39:20 2013
+ * @date   2013-06-12 10:26:00 d3g096
  * 
  * @brief  
  * 
@@ -19,11 +19,11 @@
 #ifndef _linear_solver_implementation_hpp_
 #define _linear_solver_implementation_hpp_
 
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/vector.hpp"
-#include "gridpack/utility/noncopyable.hpp"
-#include "gridpack/utility/configurable.hpp"
-#include "gridpack/parallel/distributed.hpp"
+#include <gridpack/math/matrix.hpp>
+#include <gridpack/math/vector.hpp>
+#include <gridpack/utility/noncopyable.hpp>
+// #include <gridpack/utility/configurable.hpp>
+#include <gridpack/parallel/distributed.hpp>
 
 namespace gridpack {
 namespace math {
@@ -33,14 +33,12 @@ namespace math {
 // -------------------------------------------------------------
 class LinearSolverImplementation 
   : public parallel::Distributed,
-    public utility::Configurable,
     private utility::UnCopyable
 {
 public:
   
   /// Default constructor.
-  LinearSolverImplementation(const parallel::Distribution& dist,
-                             const Matrix& A);
+  LinearSolverImplementation(const Matrix& A);
 
   /// Destructor
   ~LinearSolverImplementation(void);
@@ -54,14 +52,19 @@ public:
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor)
   {
-    this->accept_(visitor);
+    this->p_accept(visitor);
   }
 
+  /// Allow visits by const implemetation visitor
+  void accept(ConstImplementationVisitor& visitor) const
+  {
+    this->p_accept(visitor);
+  }
 
 protected:
 
   /// The coefficient matrix (may not need to remember)
-  const Matrix& a_;
+  const Matrix& p_A;
   
   /// Solve w/ the specified RHS, put result in specified vector
   /** 
@@ -71,10 +74,13 @@ protected:
    * @param x Vector containing initial solution estimate; final
    * solution is put into this.
    */
-  virtual void solve_(const Vector& b, Vector& x) const = 0;
+  virtual void p_solve(const Vector& b, Vector& x) const = 0;
 
   /// Allow visits by implementation visitors
-  virtual void accept_(ImplementationVisitor& visitor) = 0;
+  virtual void p_accept(ImplementationVisitor& visitor) = 0;
+
+  /// Allow visits by implementation visitors
+  virtual void p_accept(ConstImplementationVisitor& visitor) const = 0;
 
 };
 

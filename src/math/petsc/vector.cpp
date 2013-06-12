@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-06-11 12:08:37 d3g096
+ * @date   2013-06-11 14:12:28 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -19,10 +19,10 @@
 // -------------------------------------------------------------
 
 #include <iostream>
-#include "gridpack/math/vector.hpp"
-#include "gridpack/math/petsc/petsc_exception.hpp"
-#include "gridpack/math/petsc/petsc_vector_implementation.hpp"
-#include "gridpack/math/petsc/petsc_vector_extractor.hpp"
+#include "vector.hpp"
+#include "petsc/petsc_exception.hpp"
+#include "petsc/petsc_vector_implementation.hpp"
+#include "petsc/petsc_vector_extractor.hpp"
 
 namespace gridpack {
 namespace math {

@@ -3,7 +3,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-06-11 12:08:04 d3g096
+ * @date   2013-06-12 10:27:22 d3g096
  * 
  * @brief  
  * 
@@ -20,9 +20,9 @@
 #ifndef _matrix_implementation_h_
 #define _matrix_implementation_h_
 
-#include "gridpack/parallel/distributed.hpp"
-#include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/utilities/complex.hpp"
+#include <gridpack/parallel/distributed.hpp>
+#include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/utilities/complex.hpp>
 
 namespace gridpack {
 namespace math {

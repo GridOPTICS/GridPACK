@@ -1,18 +1,18 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-11 12:05:50 d3g096
+ * @date   2013-06-11 14:17:49 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
  * 
  */
 
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/implementation_visitor.hpp"
-#include "gridpack/math/petsc/petsc_matrix_implementation.hpp"
-#include "gridpack/math/petsc/petsc_exception.hpp"
-#include "gridpack/math/petsc/petsc_matrix_extractor.hpp"
+#include "matrix.hpp"
+#include "implementation_visitor.hpp"
+#include "petsc/petsc_matrix_implementation.hpp"
+#include "petsc/petsc_exception.hpp"
+#include "petsc/petsc_matrix_extractor.hpp"
 
 
 namespace gridpack {

@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-06-06 14:30:07 d3g096
+ * @date   2013-06-11 14:11:51 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
@@ -19,7 +19,7 @@
 // -------------------------------------------------------------
 
 #include "gridpack/utilities/exception.hpp"
-#include "gridpack/math/vector.hpp"
+#include "vector.hpp"
 
 namespace gridpack {
 namespace math {

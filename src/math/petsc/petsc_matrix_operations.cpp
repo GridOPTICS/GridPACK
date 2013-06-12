@@ -7,19 +7,19 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created April 17, 2013 by William A. Perkins
-// Last Change: 2013-06-10 12:47:14 d3g096
+// Last Change: 2013-06-11 14:18:15 d3g096
 // -------------------------------------------------------------
 
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 #include <boost/assert.hpp>
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/petsc/petsc_exception.hpp"
-#include "gridpack/math/petsc/petsc_matrix_implementation.hpp"
-#include "gridpack/math/petsc/petsc_matrix_extractor.hpp"
-#include "gridpack/math/petsc/petsc_vector_implementation.hpp"
-#include "gridpack/math/petsc/petsc_vector_extractor.hpp"
+#include "matrix.hpp"
+#include "petsc/petsc_exception.hpp"
+#include "petsc/petsc_matrix_implementation.hpp"
+#include "petsc/petsc_matrix_extractor.hpp"
+#include "petsc/petsc_vector_implementation.hpp"
+#include "petsc/petsc_vector_extractor.hpp"
 
 namespace gridpack {
 namespace math {

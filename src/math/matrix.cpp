@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-10 12:38:54 d3g096
+ * @date   2013-06-11 14:12:05 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -11,7 +11,7 @@
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
-#include "gridpack/math/matrix.hpp"
+#include "matrix.hpp"
 #include "gridpack/utilities/exception.hpp"
 
 namespace gridpack {

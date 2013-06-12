@@ -3,7 +3,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2013-05-16 08:33:02 d3g096
+ * @date   2013-06-12 10:25:34 d3g096
  * 
  * @brief  
  * 
@@ -19,7 +19,7 @@
 #ifndef _implementation_visitor_hpp_
 #define _implementation_visitor_hpp_
 
-#include "gridpack/utilities/uncopyable.hpp"
+#include <gridpack/utilities/uncopyable.hpp>
 
 namespace gridpack {
 namespace math {

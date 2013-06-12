@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-06-11 12:04:52 d3g096
+ * @date   2013-06-12 10:25:05 d3g096
  * 
  * @brief  
  * 
@@ -19,9 +19,9 @@
 #define _vector_implementation_h_
 
 
-#include "gridpack/parallel/distributed.hpp"
-#include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/utilities/complex.hpp"
+#include <gridpack/parallel/distributed.hpp>
+#include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/utilities/complex.hpp>
 
 namespace gridpack {
 namespace math {

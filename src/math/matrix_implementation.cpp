@@ -2,7 +2,7 @@
 /**
  * @file   matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-05-15 14:05:41 d3g096
+ * @date   2013-06-11 14:16:58 d3g096
  * 
  * @brief  
  * 
@@ -11,7 +11,7 @@
 
 // -------------------------------------------------------------
 
-#include "gridpack/math/matrix_implementation.hpp"
+#include "matrix_implementation.hpp"
 
 namespace gridpack {
 namespace math {
