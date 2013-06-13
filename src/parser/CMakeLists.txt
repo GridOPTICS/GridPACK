@@ -1,5 +1,5 @@
-add_executable(greetings test/PTI23_test.cpp)
-target_link_libraries(greetings ${Boost_LIBRARIES})
+add_executable(parser1 test/PTI23_test.cpp)
+target_link_libraries(parser1 ${Boost_LIBRARIES})
 
-add_test(greetings_serial PTI23_test)
+add_test(parser1 PTI23_test)
 
