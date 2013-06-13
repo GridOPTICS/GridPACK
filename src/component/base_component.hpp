@@ -15,6 +15,7 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "boost/smart_ptr/weak_ptr.hpp"
 
 // TODO: Might want to put MatrixIndices and VectorIndex operations into a
 //       separate class since these can probably be implemented once for all
@@ -160,14 +161,14 @@ class BaseBusComponent
      * Add a pointer to the list of branches that a bus is connected to
      * @param branch: pointer to a branch that is connected to bus
      */
-    void addBranch(boost::shared_ptr<BaseComponent> branch);
+    void addBranch(const boost::shared_ptr<BaseComponent> & branch);
 
     /**
      * Add a pointer to the list of buses that a bus is connected to via
      * a branch
      * @param bus: pointer to a branch that is connected to bus
      */
-    void addBus(boost::shared_ptr<BaseComponent> bus);
+    void addBus(const boost::shared_ptr<BaseComponent> & bus);
 
     /**
      * Get pointers to branches that are connected to bus
@@ -195,11 +196,11 @@ class BaseBusComponent
     /**
      * Branches that are connect to bus
      */
-    std::vector<boost::shared_ptr<BaseComponent> > p_branches;
+    std::vector<boost::weak_ptr<BaseComponent> > p_branches;
     /**
      * Buses that are connect to bus via a branch
      */
-    std::vector<boost::shared_ptr<BaseComponent> > p_buses;
+    std::vector<boost::weak_ptr<BaseComponent> > p_buses;
 };
 
 class BaseBranchComponent
@@ -219,13 +220,13 @@ class BaseBranchComponent
      * Set pointer to bus at one end of branch
      * @param bus: pointer to bus
      */
-    void setBus1(boost::shared_ptr<BaseComponent> bus);
+    void setBus1(const boost::shared_ptr<BaseComponent> & bus);
 
     /**
      * Set pointer to bus at other end of branch
      * @param bus: pointer to bus
      */
-    void setBus2(boost::shared_ptr<BaseComponent> bus);
+    void setBus2(const boost::shared_ptr<BaseComponent> & bus);
 
     /**
      * Get pointer to bus at one end of branch
@@ -246,8 +247,8 @@ class BaseBranchComponent
     /**
      *  Pointers to buses at either end of branch
      */
-    boost::shared_ptr<BaseComponent> p_bus1;
-    boost::shared_ptr<BaseComponent> p_bus2;
+    boost::weak_ptr<BaseComponent> p_bus1;
+    boost::weak_ptr<BaseComponent> p_bus2;
 
 };
 

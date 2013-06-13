@@ -184,9 +184,11 @@ gridpack::component::BaseBusComponent::~BaseBusComponent(void)
  * @param branch: pointer to a branch that is connected to bus
  */
 void
-gridpack::component::BaseBusComponent::addBranch(boost::shared_ptr<gridpack::component::BaseComponent> branch)
+gridpack::component::BaseBusComponent::addBranch(const
+  boost::shared_ptr<gridpack::component::BaseComponent> & branch)
 {
-  p_branches.push_back(branch);
+  boost::weak_ptr<BaseComponent> tbranch(branch);
+  p_branches.push_back(tbranch);
 }
 
 /**
@@ -195,9 +197,11 @@ gridpack::component::BaseBusComponent::addBranch(boost::shared_ptr<gridpack::com
  * @param bus: pointer to a branch that is connected to bus
  */
 void
-gridpack::component::BaseBusComponent::addBus(boost::shared_ptr<gridpack::component::BaseComponent> bus)
+gridpack::component::BaseBusComponent::addBus(const
+  boost::shared_ptr<gridpack::component::BaseComponent> & bus)
 {
-  p_buses.push_back(bus);
+  boost::weak_ptr<BaseComponent> tbus(bus);
+  p_buses.push_back(tbus);
 }
 
 /**
@@ -207,7 +211,14 @@ gridpack::component::BaseBusComponent::addBus(boost::shared_ptr<gridpack::compon
 std::vector<boost::shared_ptr<gridpack::component::BaseComponent> >
 gridpack::component::BaseBusComponent::getNeighborBranches(void) const
 {
-  return p_branches;
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > ret;
+  int i;
+  int size = p_branches.size();
+  for (i=0; i<size; i++) {
+    boost::shared_ptr<gridpack::component::BaseComponent> branch = p_branches[i].lock();
+    ret.push_back(branch);
+  }
+  return ret;
 }
 
 /**
@@ -217,7 +228,14 @@ gridpack::component::BaseBusComponent::getNeighborBranches(void) const
 std::vector<boost::shared_ptr<gridpack::component::BaseComponent> >
 gridpack::component::BaseBusComponent::getNeighborBuses(void) const
 {
-  return p_buses;
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > ret;
+  int i;
+  int size = p_buses.size();
+  for (i=0; i<size; i++) {
+    boost::shared_ptr<gridpack::component::BaseComponent> bus = p_buses[i].lock();
+    ret.push_back(bus);
+  }
+  return ret;
 }
 
 /**
@@ -257,20 +275,20 @@ gridpack::component::BaseBranchComponent::~BaseBranchComponent(void)
  * Set pointer to bus at one end of branch
  * @param: pointer to bus
  */
-void
-gridpack::component::BaseBranchComponent::setBus1(boost::shared_ptr<gridpack::component::BaseComponent> bus)
+void gridpack::component::BaseBranchComponent::setBus1(const
+  boost::shared_ptr<gridpack::component::BaseComponent> & bus)
 {
-  p_bus2 = bus;
+  p_bus1 = boost::weak_ptr<BaseComponent>(bus);
 }
 
 /**
  * Set pointer to bus at other end of branch
  * @param: pointer to bus
  */
-void
-gridpack::component::BaseBranchComponent::setBus2(boost::shared_ptr<gridpack::component::BaseComponent> bus)
+void gridpack::component::BaseBranchComponent::setBus2(const
+  boost::shared_ptr<gridpack::component::BaseComponent> & bus)
 {
-  p_bus2 = bus;
+  p_bus2 = boost::weak_ptr<BaseComponent>(bus);
 }
 
 /**
@@ -279,7 +297,8 @@ gridpack::component::BaseBranchComponent::setBus2(boost::shared_ptr<gridpack::co
 boost::shared_ptr<gridpack::component::BaseComponent>
   gridpack::component::BaseBranchComponent::getBus1(void) const
 {
-  return p_bus1;
+  boost::shared_ptr<gridpack::component::BaseComponent> ret(p_bus1);
+  return ret;
 }
 
 /**
@@ -288,7 +307,8 @@ boost::shared_ptr<gridpack::component::BaseComponent>
 boost::shared_ptr<gridpack::component::BaseComponent>
   gridpack::component::BaseBranchComponent::getBus2(void) const
 {
-  return p_bus2;
+  boost::shared_ptr<gridpack::component::BaseComponent> ret(p_bus2);
+  return ret;
 }
 
 /**
