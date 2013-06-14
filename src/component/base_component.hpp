@@ -172,15 +172,15 @@ class BaseBusComponent
 
     /**
      * Get pointers to branches that are connected to bus
-     * @return: list of pointers to neighboring branches
+     * @param nghbrs: list of pointers to neighboring branches
      */
-    std::vector<boost::shared_ptr<BaseComponent> > getNeighborBranches(void) const;
+    void getNeighborBranches(std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const;
 
     /**
      * Get pointers to buses that are connected to calling bus via a branch
-     * @return: list of pointers to neighboring buses
+     * @param nghbrs: list of pointers to neighboring buses
      */
-    std::vector<boost::shared_ptr<BaseComponent> > getNeighborBuses(void) const;
+    void getNeighborBuses(std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const;
 
     /**
      * Clear all pointers to neighboring branches
@@ -230,11 +230,13 @@ class BaseBranchComponent
 
     /**
      * Get pointer to bus at one end of branch
+     * @return: pointer to bus 1
      */
     boost::shared_ptr<BaseComponent> getBus1(void) const;
 
     /**
      * Get pointer to bus at other end of branch
+     * @return: pointer to bus 2
      */
     boost::shared_ptr<BaseComponent> getBus2(void) const;
 

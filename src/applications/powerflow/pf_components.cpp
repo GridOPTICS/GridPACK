@@ -55,7 +55,8 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
 {
   gridpack::ComplexType ret(0.0,0.0);
-  std::vector<boost::shared_ptr<BaseComponent> > branches = getNeighborBranches();
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  getNeighborBranches(branches);
   int size = branches.size();
   int i;
 // HACK: Need to cast pointer, is there a better way?

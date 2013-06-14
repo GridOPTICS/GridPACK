@@ -206,36 +206,34 @@ gridpack::component::BaseBusComponent::addBus(const
 
 /**
  * Get pointers to branches that are connected to bus
- * @return: list of pointers to neighboring branches
+ * @param nghbrs: list of pointers to neighboring branches
  */
-std::vector<boost::shared_ptr<gridpack::component::BaseComponent> >
-gridpack::component::BaseBusComponent::getNeighborBranches(void) const
+void gridpack::component::BaseBusComponent::getNeighborBranches(
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > &nghbrs) const
 {
-  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > ret;
+  nghbrs.clear();
   int i;
   int size = p_branches.size();
   for (i=0; i<size; i++) {
     boost::shared_ptr<gridpack::component::BaseComponent> branch = p_branches[i].lock();
-    ret.push_back(branch);
+    nghbrs.push_back(branch);
   }
-  return ret;
 }
 
 /**
  * Get pointers to buses that are connected to calling bus via a branch
- * @return: list of pointers to neighboring buses
+ * @param nghbrs: list of pointers to neighboring buses
  */
-std::vector<boost::shared_ptr<gridpack::component::BaseComponent> >
-gridpack::component::BaseBusComponent::getNeighborBuses(void) const
+void gridpack::component::BaseBusComponent::getNeighborBuses(
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > &nghbrs) const
 {
-  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > ret;
+  nghbrs.clear();
   int i;
   int size = p_buses.size();
   for (i=0; i<size; i++) {
     boost::shared_ptr<gridpack::component::BaseComponent> bus = p_buses[i].lock();
-    ret.push_back(bus);
+    nghbrs.push_back(bus);
   }
-  return ret;
 }
 
 /**
@@ -293,6 +291,7 @@ void gridpack::component::BaseBranchComponent::setBus2(const
 
 /**
  * Get pointer to bus at one end of branch
+ * @return: pointer to bus 1
  */
 boost::shared_ptr<gridpack::component::BaseComponent>
   gridpack::component::BaseBranchComponent::getBus1(void) const
@@ -303,6 +302,7 @@ boost::shared_ptr<gridpack::component::BaseComponent>
 
 /**
  * Get pointer to bus at other end of branch
+ * @return: pointer to bus 2
  */
 boost::shared_ptr<gridpack::component::BaseComponent>
   gridpack::component::BaseBranchComponent::getBus2(void) const
