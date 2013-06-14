@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-06-12 10:26:00 d3g096
+ * @date   2013-06-14 12:04:43 d3g096
  * 
  * @brief  
  * 
@@ -19,11 +19,11 @@
 #ifndef _linear_solver_implementation_hpp_
 #define _linear_solver_implementation_hpp_
 
+#include <boost/scoped_ptr.hpp>
 #include <gridpack/math/matrix.hpp>
-#include <gridpack/math/vector.hpp>
-#include <gridpack/utility/noncopyable.hpp>
-// #include <gridpack/utility/configurable.hpp>
 #include <gridpack/parallel/distributed.hpp>
+#include <gridpack/utilities/uncopyable.hpp>
+// #include <gridpack/utility/configurable.hpp>
 
 namespace gridpack {
 namespace math {
@@ -33,7 +33,7 @@ namespace math {
 // -------------------------------------------------------------
 class LinearSolverImplementation 
   : public parallel::Distributed,
-    private utility::UnCopyable
+    private utility::Uncopyable
 {
 public:
   
@@ -46,7 +46,7 @@ public:
   /// Solve w/ the specified RHS, put result in specified vector
   void solve(const Vector& b, Vector& x) const
   {
-    this->solve_(b, x);
+    this->p_solve(b, x);
   }
 
   /// Allow visits by implemetation visitor
@@ -64,7 +64,7 @@ public:
 protected:
 
   /// The coefficient matrix (may not need to remember)
-  const Matrix& p_A;
+  boost::scoped_ptr<Matrix> p_A;
   
   /// Solve w/ the specified RHS, put result in specified vector
   /** 

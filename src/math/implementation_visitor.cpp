@@ -2,7 +2,7 @@
 /**
  * @file   implementation_visitor.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:16:24 d3g096
+ * @date   2013-06-14 12:13:39 d3g096
  * 
  * @brief  
  * 
@@ -65,6 +65,18 @@ ImplementationVisitor::visit(PETScMatrixImplementation&)
   BOOST_ASSERT(false);
 }
 
+void 
+ImplementationVisitor::visit(LinearSolverImplementation&)
+{
+  BOOST_ASSERT(false);
+}
+
+void 
+ImplementationVisitor::visit(PETScLinearSolverImplementation&)
+{
+  BOOST_ASSERT(false);
+}
+
 // -------------------------------------------------------------
 //  class ConstImplementationVisitor
 // -------------------------------------------------------------
@@ -104,6 +116,18 @@ ConstImplementationVisitor::visit(const MatrixImplementation&)
 
 void 
 ConstImplementationVisitor::visit(const PETScMatrixImplementation&)
+{
+  BOOST_ASSERT(false);
+}
+
+void 
+ConstImplementationVisitor::visit(const LinearSolverImplementation&)
+{
+  BOOST_ASSERT(false);
+}
+
+void 
+ConstImplementationVisitor::visit(const PETScLinearSolverImplementation&)
 {
   BOOST_ASSERT(false);
 }

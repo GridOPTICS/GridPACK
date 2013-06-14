@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-06-11 14:28:35 d3g096
+# Last Change: 2013-06-14 11:50:35 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -15,6 +15,8 @@ list(APPEND gridpack_math_sources
   vector_implementation.cpp
   matrix.cpp
   matrix_implementation.cpp
+  linear_solver.cpp
+  linear_solver_implementation.cpp
   implementation_visitor.cpp
 )
 
@@ -34,6 +36,8 @@ if (PETSC_FOUND)
       petsc/matrix.cpp
       petsc/petsc_matrix_implementation.cpp
       petsc/petsc_matrix_operations.cpp
+      petsc/linear_solver.cpp
+      petsc/petsc_linear_solver_implementation.cpp
     )  
 
     set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
