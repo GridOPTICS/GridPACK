@@ -150,8 +150,9 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(void *values)
   ret = -1.0/ret;
   gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
   a = p_tap_ratio*a;
-  ret = ret - ret/conj(a);
-  ret = conj(ret);
+  ret = ret - ret/a;
+//  ret = ret - ret/conj(a);
+//  ret = conj(ret);
   *((gridpack::ComplexType*)values) = ret;
   return true;
 }
