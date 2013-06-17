@@ -9,7 +9,7 @@
  */
 
 #include <iostream>
-#include "../PTI23_parser.hpp"
+#include "PTI23_parser.hpp"
 
 #define BOOST_TEST_NO_MAIN
 //#define BOOST_TEST_ALTERNATIVE_INIT_API

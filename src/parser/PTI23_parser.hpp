@@ -8,7 +8,7 @@
 #ifndef PTI23_PARSER_HPP_
 #define PTI23_PARSER_HPP_
 
-#include "gridpack/parser/parser.hpp"
+#include "parser.hpp"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #include <vector>
