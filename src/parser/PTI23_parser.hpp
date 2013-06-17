@@ -164,7 +164,7 @@
 namespace gridpack {
 namespace parser {
 
-class PTI23_parser {
+class PTI23_parser : public Parser {
 public:
 
     PTI23_parser(std::string & file_name) : Parser(file_name)
@@ -209,7 +209,7 @@ protected:
 
         // this value may be followed by a comment
         std::vector<std::string>  split_subline;
-        boost::algorithm::split(split_subline, split_line, boost::algorithm::is_any_of("/"), boost::token_compress_on);
+        // FIXME: boost::algorithm::split(split_subline, split_line, boost::algorithm::is_any_of("/"), boost::token_compress_on);
         data.setValue(CASE_SBASE, atof(split_subline[0].c_str()));
  //       case_instance.push_back(data);
 
@@ -219,7 +219,7 @@ protected:
         data.setValue(CASE_RECORD3, split_line[0].c_str());
 //        case_instance.push_back(data);
 
-        case_set.push_back(data);
+        // FIXME: case_set.push_back(data);
         case_data.push_back(case_set);
 
         // there is no delimiting line between the case data and the bus data
@@ -570,7 +570,7 @@ protected:
             data.setValue(AREA_PTOL, atof(split_line[0].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_ARNAM, split_line[0].c_str()));
+            data.setValue(AREA_ARNAM, split_line[0].c_str());
             area_instance.push_back(data);
 
             area_set.push_back(area_instance);
@@ -652,7 +652,7 @@ protected:
             data.setValue(DL_DELTI, atof(split_line[0].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_METER, split_line[0].c_str()));
+            data.setValue(DL_METER, split_line[0].c_str());
             dc_line_instance.push_back(data);
 
             data.setValue(DL_IPR, atoi(split_line[0].c_str()));
@@ -695,7 +695,7 @@ protected:
             std::getline(input, line);
         }
         case_data.push_back(dc_line_set);
-        std::getline(input, line);W
+        std::getline(input, line);
     }
 
     /*

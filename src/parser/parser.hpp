@@ -8,6 +8,7 @@
 #ifndef PARSER_HPP_
 #define PARSER_HPP_
 
+#include <fstream>
 #include <iostream>
 #include <string>
 #include <vector>
@@ -18,6 +19,7 @@
 typedef std::vector<std::string::iterator> string_array;
 typedef std::vector<std::vector<gridpack::component::DataCollection> >   data_set;
 
+
 namespace gridpack {
 namespace parser {
 
@@ -27,8 +29,8 @@ public:
     {
         // open validated file
         try {
-            fh = open_valid_file(file_name);
-        } catch () {
+          // FIXME: input = open_valid_file(file_name);
+        } catch (...) {
             // handle file open error
         }
     }

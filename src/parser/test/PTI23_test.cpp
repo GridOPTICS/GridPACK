@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-06-04 13:04:23 d3g096
+ * @date   2013-06-17 12:09:38 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -9,10 +9,11 @@
  */
 
 #include <iostream>
+#include "gridpack/parallel/parallel.hpp"
 #include "PTI23_parser.hpp"
 
 #define BOOST_TEST_NO_MAIN
-//#define BOOST_TEST_ALTERNATIVE_INIT_API
+#define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 
 
@@ -41,7 +42,7 @@ BOOST_AUTO_TEST_CASE( test2 )
 //____________________________________________________________________________//
 
 // EOF
-/*
+
 // -------------------------------------------------------------
 // init_function
 // -------------------------------------------------------------
@@ -57,8 +58,7 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  gridpack::math::Initialize();
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  gridpack::math::Finalize();
 }
-*/
+
+
