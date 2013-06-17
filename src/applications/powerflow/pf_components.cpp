@@ -80,7 +80,8 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
  * @param data: DataCollection object contain parameters relevant to this
  *       bus that were read in when network was initialized
  */
-void gridpack::powerflow::PFBus::load(boost::shared_ptr<gridpack::component::DataCollection> data)
+void gridpack::powerflow::PFBus::load(
+  const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   p_shunt = true;
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GS, &p_shunt_gs);
@@ -164,7 +165,8 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(void *values)
  * @param data: DataCollection object contain parameters relevant to this
  *       branch that were read in when network was initialized
  */
-void gridpack::powerflow::PFBranch::load(boost::shared_ptr<gridpack::component::DataCollection> data)
+void gridpack::powerflow::PFBranch::load(
+  const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   bool ok = true;
   ok = ok && data->getValue(BRANCH_REACTANCE, &p_reactance);

@@ -72,7 +72,7 @@ class PFBus
      * @param data: DataCollection object contain parameters relevant to this
      *       bus that were read in when network was initialized
      */
-    void load(boost::shared_ptr<gridpack::component::DataCollection> data);
+    void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
   private:
     double p_shunt_gs;
@@ -119,7 +119,7 @@ class PFBranch
      * @param data: DataCollection object contain parameters relevant to this
      *       branch that were read in when network was initialized
      */
-    void load(boost::shared_ptr<gridpack::component::DataCollection> data);
+    void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
      * Return the complex admittance of the branch
