@@ -160,6 +160,18 @@ int gridpack::component::BaseComponent::size(void) const
   return sizeof(*this);
 }
 
+    /**
+     * Load data from DataCollection object into corresponding
+     * component. This needs to be implemented by every component
+     * @param data: data collection associated with component
+     */
+void gridpack::component::BaseComponent::load(
+  const boost::shared_ptr<gridpack::component::DataCollection> &data)
+{
+  // This implementation is a no-op and is included in BaseComponent so that
+  // a generic load method can be defined in the base factory class.
+}
+
 // Base implementation for a bus object. Provides a mechanism for the bus to
 // provide a list of the branches that are directly connected to it as well as a
 // mechanism for returning a list of the buses that are connected to it via a

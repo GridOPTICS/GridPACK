@@ -27,8 +27,10 @@ class BaseFactory {
   public:
     /**
      * Constructor
+     * @param network: network that factory operates on
      */
-    BaseFactory(void);
+    BaseFactory(boost::shared_ptr<gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent,
+                gridpack::component::BaseBranchComponent> > network);
 
     /**
      * Destructor
@@ -39,14 +41,19 @@ class BaseFactory {
      * Set pointers in each bus and branch component so that it points to
      * connected buses and branches. This routine operates on the generic
      * BaseBusComponent and BaseBranchComponent interfaces.
-     * @param network: The network that contains the components that need to be
-     * set
      */
-    virtual void setComponents(gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent>,
-                               gridpack::component::BaseBranchComponent> >
-                               *network);
+    virtual void setComponents(void);
 
+    /**
+     * Generic method that invokes the "load" method on all branches and buses
+     * to move data from the DataCollection objects on the network into the
+     * corresponding buses and branches
+     */
+    virtual void load(void);
   private:
+
+    boost::shared_ptr<gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent,
+                      gridpack::component::BaseBranchComponent> > p_network;
 
 };
 

@@ -16,6 +16,7 @@
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "boost/smart_ptr/weak_ptr.hpp"
+#include "gridpack/component/data_collection.hpp"
 
 // TODO: Might want to put MatrixIndices and VectorIndex operations into a
 //       separate class since these can probably be implemented once for all
@@ -139,6 +140,14 @@ class BaseComponent
      * @return: size of network component
      */
     virtual int size(void) const;
+
+    /**
+     * Load data from DataCollection object into corresponding
+     * component. This needs to be implemented by every component
+     * @param data: data collection associated with component
+     */
+    virtual void load(
+        const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
   private:
 

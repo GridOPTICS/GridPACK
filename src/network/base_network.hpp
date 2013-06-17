@@ -528,7 +528,7 @@ int getGlobalBusIndex(int idx)
  */
 boost::shared_ptr<_bus> getBus(int idx)
 {
-  if (idx<0 || idx >= p_buses->size()) {
+  if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
     return p_buses[idx]->p_bus;
@@ -559,7 +559,7 @@ boost::shared_ptr<_branch> getBranch(int idx)
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx].p_branch;
+    return p_branches[idx]->p_branch;
   }
 }
 
@@ -571,7 +571,7 @@ boost::shared_ptr<_branch> getBranch(int idx)
  */
 boost::shared_ptr<gridpack::component::DataCollection> getBusData(int idx)
 {
-  if (idx<0 || idx >= p_buses->size()) {
+  if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
     return p_buses[idx]->p_data;
@@ -586,10 +586,10 @@ boost::shared_ptr<gridpack::component::DataCollection> getBusData(int idx)
  */
 boost::shared_ptr<gridpack::component::DataCollection> getBranchData(int idx)
 {
-  if (idx<0 || idx >= p_branches->size()) {
+  if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx].p_data;
+    return p_branches[idx]->p_data;
   }
 }
 
