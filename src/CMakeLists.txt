@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-06-11 15:01:09 d3g096
+# Last Change: 2013-06-17 14:23:40 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -37,7 +37,7 @@ set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
+find_package(Boost 1.52 COMPONENTS mpi serialization REQUIRED)
 
 # -------------------------------------------------------------
 # PETSc
@@ -96,6 +96,7 @@ add_subdirectory(parallel)
 add_subdirectory(math)
 add_subdirectory(component)
 add_subdirectory(network)
+add_subdirectory(partition)
 add_subdirectory(factory)
 add_subdirectory(applications/powerflow)
 add_subdirectory(parser)
