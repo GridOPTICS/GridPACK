@@ -2,7 +2,7 @@
 /**
  * @file   partition_test.cpp
  * @author William A. Perkins
- * @date   2013-06-18 09:42:00 d3g096
+ * @date   2013-06-18 10:10:52 d3g096
  * 
  * @brief  Unit test suite for various partition classes.
  * 
@@ -121,6 +121,28 @@ BOOST_AUTO_TEST_CASE( adjacency )
     world.barrier();
   }
 
+  for (size_t i = 0; i < adlist.nodes(); ++i) {
+    AdjacencyList::Index node(adlist.node_index(i));
+    AdjacencyList::IndexVector nbr;
+    adlist.node_neighbors(i, nbr);
+
+    // all nodes should connect to at least one other, but no more than two
+    BOOST_CHECK(nbr.size() >= 1 && nbr.size() <= 2);
+
+    // node n should connect to node n-1, except for 0
+    AdjacencyList::IndexVector::iterator p;
+    if (node > 0) {
+      p = std::find(nbr.begin(), nbr.end(), node - 1);
+      BOOST_CHECK(p != nbr.end());
+    }
+
+    // node n should connect to node n+1 except for the last
+    if (node < global_nodes - 1) {
+      p = std::find(nbr.begin(), nbr.end(), node + 1);
+      BOOST_CHECK(p != nbr.end());
+    }
+  }
+    
 }
 
 BOOST_AUTO_TEST_SUITE_END()
