@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2013-06-18 12:33:44 d3g096
+# Last Change: 2013-06-19 13:04:09 d3g096
 # -------------------------------------------------------------
 
 
@@ -24,7 +24,21 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 # -------------------------------------------------------------
 # implementation specific sources and flags
 # -------------------------------------------------------------
+if (PARMETIS_FOUND)
 
+   include_directories(AFTER ${PARMETIS_INCLUDE_DIR})
+   list(APPEND gridpack_partition_sources
+     parmetis/graph_partitioner.cpp
+     parmetis/parmetis_graph_partitioner_impl.cpp
+   )
+   
+    set(target_libraries ${PARMETIS_LIBRARY} ${METIS_LIBRARY} ${target_libraries})
+
+else()
+
+    message(FATAL_ERROR "A partition implementation (e.g. ParMETIS) must be specified")
+
+endif()
 
 # -------------------------------------------------------------
 # gridpack partition library

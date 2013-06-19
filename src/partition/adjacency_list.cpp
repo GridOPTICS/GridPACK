@@ -2,7 +2,7 @@
 /**
  * @file   adjacency_list.cpp
  * @author William A. Perkins
- * @date   2013-06-18 12:04:11 d3g096
+ * @date   2013-06-19 13:41:16 d3g096
  * 
  * @brief  Implementation of AdjacencyList
  * 
@@ -105,10 +105,10 @@ AdjacencyList::ready(void)
     if (me == p) {
       std::copy(p_nodes.begin(), p_nodes.end(), 
                 std::back_inserter(current_indexes));
-      std::cout << me << ": node indexes: ";
-      std::copy(current_indexes.begin(), current_indexes.end(),
-                std::ostream_iterator<Index>(std::cout, ","));
-      std::cout << std::endl;
+      // std::cout << me << ": node indexes: ";
+      // std::copy(current_indexes.begin(), current_indexes.end(),
+      //           std::ostream_iterator<Index>(std::cout, ","));
+      // std::cout << std::endl;
     }
     broadcast(this->communicator(), current_indexes, p);
 
@@ -117,7 +117,7 @@ AdjacencyList::ready(void)
     int local_index(0);
     for (IndexVector::iterator n = current_indexes.begin(); 
          n != current_indexes.end(); ++n, ++local_index) {
-      std::cout << me << ": current node index: " << *n << std::endl;
+      // std::cout << me << ": current node index: " << *n << std::endl;
       
       // determine the local edges that refer to the current node index
  
@@ -126,15 +126,15 @@ AdjacencyList::ready(void)
            e != p_edges.end(); ++e) {
         if (*n == e->conn.first && e->conn.second != bogus) {
           connected_indexes.push_back(e->conn.second);
-          std::cout << me << ": found connection: edge " << e->index
-                    << " (" << e->conn.first << ", " << e->conn.second << ")"
-                    << std::endl;
+          // std::cout << me << ": found connection: edge " << e->index
+          //           << " (" << e->conn.first << ", " << e->conn.second << ")"
+          //           << std::endl;
         }
         if (*n == e->conn.second && e->conn.first != bogus) {
           connected_indexes.push_back(e->conn.first);
-          std::cout << me << ": found connection: edge " << e->index
-                    << " (" << e->conn.first << ", " << e->conn.second << ")"
-                    << std::endl;
+          // std::cout << me << ": found connection: edge " << e->index
+          //           << " (" << e->conn.first << ", " << e->conn.second << ")"
+          //           << std::endl;
         }
       }
 
@@ -170,6 +170,13 @@ AdjacencyList::ready(void)
 // -------------------------------------------------------------
 // AdjacencyList::node_neighbors
 // -------------------------------------------------------------
+size_t 
+AdjacencyList::node_neighbors(const int& local_index) const
+{
+  BOOST_ASSERT(local_index < p_adjacency.size());
+  return p_adjacency[local_index].size();
+}
+
 void
 AdjacencyList::node_neighbors(const int& local_index,
                               IndexVector& global_neighbor_indexes) const

@@ -2,7 +2,7 @@
 /**
  * @file   partition_test.cpp
  * @author William A. Perkins
- * @date   2013-06-18 10:10:52 d3g096
+ * @date   2013-06-19 15:48:27 d3g096
  * 
  * @brief  Unit test suite for various partition classes.
  * 
@@ -10,13 +10,14 @@
  */
 // -------------------------------------------------------------
 
+#include <ctime>
 #include <iostream>
 #include <iterator>
 #include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
-#include "adjacency_list.hpp"
+#include "graph_partitioner.hpp"
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -25,7 +26,7 @@
 #include <boost/random/mersenne_twister.hpp>
 #include <boost/random/uniform_int_distribution.hpp>
 
-boost::random::mt19937 gen;
+boost::random::mt19937 gen(12 /*time(NULL)*/);
 
 // -------------------------------------------------------------
 // random_vector
@@ -144,6 +145,117 @@ BOOST_AUTO_TEST_CASE( adjacency )
   }
     
 }
+
+BOOST_AUTO_TEST_CASE( random_partition )
+{
+  gridpack::parallel::Communicator world;
+  const int global_nodes(5*world.size());
+  const int global_edges(global_nodes - 1);
+  
+  using gridpack::network::GraphPartitioner;
+  using gridpack::network::AdjacencyList;
+
+  GraphPartitioner::IndexVector my_nodes;
+  GraphPartitioner::IndexVector my_edges;
+  random_scattered_vector(world, global_nodes, my_nodes);
+  random_scattered_vector(world, global_nodes, my_edges);
+
+  GraphPartitioner partitioner(world);
+
+  for (GraphPartitioner::IndexVector::iterator n = my_nodes.begin();
+       n != my_nodes.end(); ++n) {
+    partitioner.add_node(*n);
+  }
+  for (GraphPartitioner::IndexVector::iterator e = my_edges.begin();
+       e != my_edges.end(); ++e) {
+    GraphPartitioner::Index from(*e), to(from+1);
+    if (from < 0) from = AdjacencyList::bogus;
+    if (to > global_nodes - 1) to = AdjacencyList::bogus;
+    partitioner.add_edge(*e, from, to);
+  }
+
+  partitioner.partition();
+
+  GraphPartitioner::IndexVector node_dest;
+  partitioner.node_destinations(node_dest);
+  for (int p = 0; p < world.size(); ++p) {
+    if (world.rank() == p) {
+      std::cout << p << ": nodes: ";
+      std::copy(my_nodes.begin(), my_nodes.end(),
+                std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
+      std::cout << std::endl;
+      std::cout << p << ": parts: ";
+      std::copy(node_dest.begin(), node_dest.end(),
+                std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
+      std::cout << std::endl;
+    }
+    world.barrier();
+  }
+}
+
+
+
+#if 0
+
+// This does not work with ParMETIS
+
+BOOST_AUTO_TEST_CASE( unbalanced_partition )
+{
+  gridpack::parallel::Communicator world;
+  const int global_nodes(5*world.size());
+  const int global_edges(global_nodes - 1);
+  
+  using gridpack::network::GraphPartitioner;
+  using gridpack::network::AdjacencyList;
+
+  GraphPartitioner::IndexVector my_nodes;
+  GraphPartitioner::IndexVector my_edges;
+
+  if (world.rank() == 0) {
+    my_nodes.resize(global_nodes);
+    my_edges.resize(global_edges);
+    for (GraphPartitioner::Index i = 0; i < my_nodes.size(); ++i) {
+      my_nodes[i] = i;
+    }
+    for (GraphPartitioner::Index i = 0; i < my_edges.size(); ++i) {
+      my_edges[i] = i;
+    }
+  }
+
+  GraphPartitioner partitioner(world);
+
+  for (GraphPartitioner::IndexVector::iterator n = my_nodes.begin();
+       n != my_nodes.end(); ++n) {
+    partitioner.add_node(*n);
+  }
+  for (GraphPartitioner::IndexVector::iterator e = my_edges.begin();
+       e != my_edges.end(); ++e) {
+    GraphPartitioner::Index from(*e), to(from+1);
+    if (from < 0) from = AdjacencyList::bogus;
+    if (to > global_nodes - 1) to = AdjacencyList::bogus;
+    partitioner.add_edge(*e, from, to);
+  }
+
+  partitioner.partition();
+
+  GraphPartitioner::IndexVector node_dest;
+  partitioner.node_destinations(node_dest);
+  for (int p = 0; p < world.size(); ++p) {
+    if (world.rank() == p) {
+      std::cout << p << ": nodes: ";
+      std::copy(my_nodes.begin(), my_nodes.end(),
+                std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
+      std::cout << std::endl;
+      std::cout << p << ": parts: ";
+      std::copy(node_dest.begin(), node_dest.end(),
+                std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
+      std::cout << std::endl;
+    }
+    world.barrier();
+  }
+}
+
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

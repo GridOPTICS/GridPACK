@@ -3,7 +3,7 @@
 /**
  * @file   graph_partioner_implementation.hpp
  * @author William A. Perkins
- * @date   2013-06-18 12:39:01 d3g096
+ * @date   2013-06-19 11:29:52 d3g096
  * 
  * @brief  
  * 
@@ -107,7 +107,7 @@ protected:
   /// A list of processors where local edges should go
   IndexVector p_edge_destinations;
 
-  /// Partition the graph
+  /// Partition the graph (specialized)
   virtual void p_partition(void) = 0;
 };
 

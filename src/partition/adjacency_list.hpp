@@ -3,7 +3,7 @@
 /**
  * @file   adjacency_list.hpp
  * @author William A. Perkins
- * @date   2013-06-17 14:17:13 d3g096
+ * @date   2013-06-19 12:33:31 d3g096
  * 
  * @brief  Declaration of the AdjacencyList class
  * 
@@ -113,6 +113,9 @@ public:
   /// Get the neighbors of the specified (local) node
   void node_neighbors(const int& local_index,
                       IndexVector& global_neighbor_indexes) const;
+
+  /// Get the number of neighbors of the specified (local) node
+  size_t node_neighbors(const int& local_index) const;
 
 protected:
 
