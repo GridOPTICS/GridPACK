@@ -2,7 +2,7 @@
 /**
  * @file   adjacency_list.cpp
  * @author William A. Perkins
- * @date   2013-06-18 09:19:14 d3g096
+ * @date   2013-06-18 12:04:11 d3g096
  * 
  * @brief  Implementation of AdjacencyList
  * 
@@ -87,8 +87,8 @@ AdjacencyList::edge_index(const int& local_index) const
 void
 AdjacencyList::ready(void)
 {
-  int me(this->communicator().rank());
-  int nproc(this->communicator().size());
+  int me(this->processor_rank());
+  int nproc(this->processor_size());
 
   p_adjacency.clear();
   p_adjacency.resize(p_nodes.size());

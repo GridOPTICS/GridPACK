@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-06-17 14:23:40 d3g096
+# Last Change: 2013-06-19 09:36:53 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -25,9 +25,13 @@ enable_testing()
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
-set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+include_directories(AFTER ${MPI_INCLUDE_PATH})
+
+# Perkins found out that this was exactly the wrong thing to do:
+# 
+# set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
+# set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
+# set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 
 # -------------------------------------------------------------
 # Boost
@@ -38,6 +42,7 @@ set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
 message(STATUS "Checking Boost ...")
 set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.52 COMPONENTS mpi serialization REQUIRED)
+include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
 # PETSc
@@ -70,6 +75,15 @@ if (NOT PETSC_CLANGUAGE_Cxx)
 endif()
 
 # -------------------------------------------------------------
+# ParMETIS
+# 
+# Only versions > 4.0 have been used
+# -------------------------------------------------------------
+message(STATUS "Checking ParMETIS ...")
+# Eventually this needs to be REQUIRED
+find_package(ParMETIS REQUIRED)
+
+# -------------------------------------------------------------
 # Doxygen
 # -------------------------------------------------------------
 find_package(Doxygen)
@@ -83,9 +97,8 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # -------------------------------------------------------------
-# Options for all Programs
+# Options for all Programs/Libraries
 # -------------------------------------------------------------
-include_directories(AFTER ${Boost_INCLUDE_DIRS})
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # -------------------------------------------------------------

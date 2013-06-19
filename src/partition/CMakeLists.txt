@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2013-06-18 09:41:16 d3g096
+# Last Change: 2013-06-18 12:33:44 d3g096
 # -------------------------------------------------------------
 
 
@@ -15,6 +15,8 @@ set(target_libraries gridpack_parallel ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 # implementation independent partition sources
 list(APPEND gridpack_partition_sources
   adjacency_list.cpp
+  graph_partitioner.cpp
+  graph_partitioner_implementation.cpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -34,10 +36,20 @@ add_library(gridpack_partition
 # -------------------------------------------------------------
 # gridpack partition header installation
 # -------------------------------------------------------------
+install(FILES
+  adjacency_list.hpp
+  graph_partitioner.hpp
+  graph_partitioner_implementation.hpp
+  DESTINATION include/gridpcak/partition
+)
 
 # -------------------------------------------------------------
 # gridpack partition library installation
 # -------------------------------------------------------------
+install(TARGETS
+  gridpack_partition
+  DESTINATION lib
+)
 
 # -------------------------------------------------------------
 # partition test suite
