@@ -1,7 +1,7 @@
 /**
  * @file   graph_partitioner.cpp
  * @author William A. Perkins
- * @date   2013-06-19 11:42:24 d3g096
+ * @date   2013-06-21 11:31:50 d3g096
  * 
  * @brief  
  * 
@@ -33,11 +33,6 @@ GraphPartitioner::GraphPartitioner(const parallel::Communicator& comm,
                                    const int& local_nodes, const int& local_edges)
   : utility::Uncopyable(),
     p_impl(new ParMETISGraphPartitionerImpl(comm, local_nodes, local_edges))
-{
-  // empty
-}
-
-GraphPartitioner::~GraphPartitioner(void)
 {
   // empty
 }
