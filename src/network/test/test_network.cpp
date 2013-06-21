@@ -366,6 +366,30 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nBus neighbors are ok\n");
   }
+  // Test ghost update operations. Start by allocating exchange buffers and
+  // assigning values to them
+  network.allocXCBus(sizeof(int));
+  network.allocXCBranch(sizeof(int));
+  int *iptr;
+
+  for (i=0; i<nbus; i++) {
+    iptr = (int*)network.getXCBusBuffer(i);
+    if (network.getActiveBus(i)) {
+      *iptr = network.getGlobalBusIndex(i);
+    } else {
+      *iptr = -1;
+    }
+  }
+  for (i=0; i<nbranch; i++) {
+    iptr = (int*)network.getXCBranchBuffer(i);
+    if (network.getActiveBranch(i)) {
+      *iptr = network.getGlobalBranchIndex(i);
+    } else {
+      *iptr = -1;
+    }
+  }
+  network.initBusUpdate();
+  network.initBranchUpdate();
 
   // Test clean function
   network.clean();

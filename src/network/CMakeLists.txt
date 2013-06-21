@@ -18,7 +18,7 @@ add_library(gridpack_network
 # A simple MPI program
 # -------------------------------------------------------------
 add_executable(test_network test/test_network.cpp)
-target_link_libraries(test_network gridpack_network ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(test_network gridpack_network ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 add_test(test_network_serial test_network)
 #!!add_test(NAME greetings_parallel COMMAND 

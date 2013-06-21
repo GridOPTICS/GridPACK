@@ -82,6 +82,13 @@ endif()
 message(STATUS "Checking ParMETIS ...")
 # Eventually this needs to be REQUIRED
 find_package(ParMETIS REQUIRED)
+# -------------------------------------------------------------
+# GA
+# 
+# Only versions > 5.2 have been used
+# -------------------------------------------------------------
+message(STATUS "Checking GA ...")
+find_package(GA REQUIRED)
 
 # -------------------------------------------------------------
 # Doxygen

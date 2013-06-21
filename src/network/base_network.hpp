@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include "/home/d3g293/ga-5-2/include/ga.h"
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
@@ -173,6 +174,18 @@ BaseNetwork(void)
 {
   //TODO: Get default parallel configuration for world group
   p_refBus = -1;
+  p_busXCBufSize = 0;
+  p_branchXCBufSize = 0;
+  p_busGASet = false;
+  p_branchGASet = false;
+  p_activeBusIndices = NULL;
+  p_busSndBuf = NULL;
+  p_inactiveBusIndices = NULL;
+  p_busRcvBuf = NULL;
+  p_activeBranchIndices = NULL;
+  p_branchSndBuf = NULL;
+  p_inactiveBranchIndices = NULL;
+  p_branchRcvBuf = NULL;
 }
 
 /**
@@ -193,6 +206,50 @@ BaseNetwork::BaseNetwork(ParallelEnv configuration)
  */
 ~BaseNetwork(void)
 {
+  int i, size;
+  // Clean up exchange buffers if they have been allocated
+  if (p_busXCBufSize != 0) {
+    if (p_busXCBuffers) {
+      delete ((char*)p_busXCBuffers);
+    } else {
+      // TODO: some kind of error
+    }
+  }
+  if (p_branchXCBufSize != 0) {
+    if (p_branchXCBuffers) {
+      delete ((char*)p_branchXCBuffers);
+    } else {
+      // TODO: some kind of error
+    }
+  }
+  if (p_activeBusIndices) {
+    for (i=0; i<0; i<p_numActiveBuses) {
+      delete p_activeBusIndices[i];
+    }
+    delete [] p_activeBusIndices;
+    delete ((char*)p_busSndBuf);
+  }
+  if (p_inactiveBusIndices) {
+    for (i=0; i<0; i<p_numInactiveBuses) {
+      delete p_inactiveBusIndices[i];
+    }
+    delete [] p_inactiveBusIndices;
+    delete ((char*)p_busRcvBuf);
+  }
+  if (p_activeBranchIndices) {
+    for (i=0; i<0; i<p_numActiveBranches) {
+      delete p_activeBranchIndices[i];
+    }
+    delete [] p_activeBranchIndices;
+    delete ((char*)p_branchSndBuf);
+  }
+  if (p_inactiveBranchIndices) {
+    for (i=0; i<0; i<p_numInactiveBranches) {
+      delete p_inactiveBranchIndices[i];
+    }
+    delete [] p_inactiveBranchIndices;
+    delete ((char*)p_branchRcvBuf);
+  }
 }
 
 /**
@@ -550,6 +607,20 @@ bool getActiveBranch(int idx)
 }
 
 /**
+ * Get global index of the branch
+ * @param idx: local index of branch
+ * @return: global index of branch 
+ */
+int getGlobalBranchIndex(int idx)
+{
+  if (idx >= 0 && idx < p_branches.size()) {
+    return p_branches[idx]->p_globalBranchIndex;
+  } else {
+    // TODO: some kind of error
+  }
+}
+
+/**
  * Retrieve a pointer to an existing branch
  * @param idx: local index of requested branch
  * @return: a pointer to the requested branch
@@ -676,7 +747,8 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 
 /**
  * Clean all ghost buses and branches from the system. This can be used
- * before repartitioning the network
+ * before repartitioning the network. This operation also removes all exchange
+ * buffers, so these need to be reallocated after calling this method
  */
 void clean(void)
 {
@@ -684,6 +756,10 @@ void clean(void)
   std::map<int, int> branches;
   std::map<int, int>::iterator p;
   int i, j;
+
+  // remove all exchange buffers
+  freeXCBus();
+  freeXCBranch();
 
   // remove inactive branches
   int size = p_branches.size();
@@ -753,13 +829,397 @@ void clean(void)
 }
 
 /**
- * Update the ghost values of this field. This is a
- * collective operation across all processors.
- * @param field: name of the network field that must be
- *       updated
+ * Allocate buffers for exchanging data for ghost buses
+ * @param size: size (in bytes) of buffer
  */
-void updateField(char *field)
+void allocXCBus(int size)
 {
+  if (size < 0) {
+    // TODO: some kind of error
+  }
+  // Clean out existing buffers if they are allocated
+  if (p_busXCBufSize != 0) {
+    if (p_busXCBuffers) {
+      delete ((char*)p_busXCBuffers);
+    } else {
+      // TODO: some kind of error
+    }
+    p_busXCBufSize = 0;
+  }
+  // Allocate new buffers if size is greater than zero
+  int nsize = p_buses.size();
+  if (size > 0) {
+    p_busXCBufSize = size;
+    p_busXCBuffers = (void*)(new char(size*nsize));
+  }
+}
+
+/**
+ * Free buffers for exchange of bus data
+ */
+void freeXCBus(void)
+{
+  // Clean out existing buffers if they are allocated
+  if (p_busXCBufSize != 0) {
+    if (p_busXCBuffers) {
+      delete ((char*)p_busXCBuffers);
+    } else {
+      // TODO: some kind of error
+    }
+    p_busXCBufSize = 0;
+  }
+}
+
+/**
+ * Return a pointer to exchange buffer for bus
+ * @param idx: local index of bus
+ * @return: pointer to exchange buffer
+ */
+void* getXCBusBuffer(int idx)
+{
+  if (idx < 0 || idx > p_buses.size()) {
+    // TODO: some kind of error
+  } else {
+    return (void*)(((char*)p_busXCBuffers)+idx*p_busXCBufSize);
+  }
+}
+
+/**
+ * Allocate buffers for exchanging data for ghost branches
+ * @param size: size (in bytes) of buffer
+ */
+void allocXCBranch(int size)
+{
+  if (size < 0) {
+    // TODO: some kind of error
+  }
+  // Clean out existing buffers if they are allocated
+  if (p_branchXCBufSize != 0) {
+    if (p_branchXCBuffers) {
+      delete ((char*)p_branchXCBuffers);
+    } else {
+      // TODO: some kind of error
+    }
+    p_busXCBufSize = 0;
+  }
+  // Allocate new buffers if size is greater than zero
+  int nsize = p_branches.size();
+  if (size > 0) {
+    p_branchXCBufSize = size;
+    p_branchXCBuffers = (void*)(new char(size*nsize));
+  }
+}
+
+/**
+ * Free buffers for exchange of bus data
+ */
+void freeXCBranch(void)
+{
+  // Clean out existing buffers if they are allocated
+  if (p_branchXCBufSize != 0) {
+    if (p_branchXCBuffers) {
+      delete ((char*)p_branchXCBuffers);
+    } else {
+      // TODO: some kind of error
+    }
+    p_busXCBufSize = 0;
+  }
+}
+
+/**
+ * Return a pointer to exchange buffer for bus
+ * @param idx: local index of bus
+ * @return: pointer to exchange buffer
+ */
+void* getXCBranchBuffer(int idx)
+{
+  if (idx < 0 || idx > p_branches.size()) {
+    // TODO: some kind of error
+  } else {
+    return (void*)(((char*)p_branchXCBuffers)+idx*p_branchXCBufSize);
+  }
+}
+
+/**
+ * This function must be called before calling the update bus routine.
+ * It initializes data structures for the bus update
+ */
+void initBusUpdate(void)
+{
+  int i, size, numBuses;
+  // Don't do anything if buffers are not allocated
+  if (p_busXCBufSize > 0) {
+    // Clean up old GA, if it exists
+    if (p_busGASet) {
+      GA_Destroy(p_busGA);
+      NGA_Deregister_type(p_busXCBufType);
+    }
+    if (p_activeBusIndices) {
+      for (i=0; i<0; i<p_numActiveBuses) {
+        delete p_activeBusIndices[i];
+      }
+      delete p_activeBusIndices;
+      p_activeBusIndices = NULL;
+      delete ((char*)p_busSndBuf);
+      p_busSndBuf = NULL;
+    }
+    if (p_inactiveBusIndices) {
+      for (i=0; i<0; i<p_numInactiveBuses) {
+        delete p_inactiveBusIndices[i];
+      }
+      delete p_inactiveBusIndices;
+      p_inactiveBusIndices = NULL;
+      delete ((char*)p_busRcvBuf);
+      p_busRcvBuf = NULL;
+    }
+    // Find out how many active buses exist
+    size = p_buses.size();
+    numBuses = 0;
+    for (i=0; i<size; i++) {
+      if (getActiveBus(i)) {
+        numBuses++;
+      }
+    }
+    // Construct GA that can hold exchange data for all active buses
+    int nprocs = GA_Nnodes();
+    int me = GA_Nodeid();
+    int *totalBuses = new int(nprocs);
+    int *distr = new int(nprocs);
+    for (i=0; i<nprocs; i++) {
+      if (me == i) {
+        totalBuses[i] = numBuses;
+      } else {
+        totalBuses[i] = 0;
+      }
+    }
+    GA_Igop(totalBuses,nprocs,"+");
+    distr[0] = 0;
+    p_busTotal = totalBuses[0];
+    for (i=1; i<nprocs; i++) {
+      distr[i] = distr[i-1] + totalBuses[i-1];
+      p_busTotal += totalBuses[i];
+    }
+    p_busGA = GA_Create_handle();
+    int one = 1;
+    p_busXCBufType = NGA_Register_type(p_busXCBufSize);
+    GA_Set_data(p_busGA, one, &p_busTotal, p_busXCBufType);
+    GA_Set_irreg_distr(p_busGA, distr, &nprocs);
+    GA_Allocate(p_busGA);
+
+    // Sort buses into local and ghost lists
+    int idx, icnt = 0, lcnt=0;
+    for (i=0; i<size; i++) {
+      if (getActiveBus(i)) {
+        lcnt++;
+      } else {
+        icnt++;
+      }
+    }
+    p_numActiveBuses = lcnt;
+    p_activeBusIndices = new int*[lcnt];
+    p_numInactiveBuses = icnt;
+    p_inactiveBusIndices = new int*[icnt];
+    lcnt = 0;
+    icnt = 0;
+    for (i=0; i<size; i++) {
+      if (getActiveBus(i)) {
+        p_activeBusIndices[lcnt] = new int(getGlobalBusIndex(i));
+        idx = *(p_activeBusIndices[lcnt]);
+        if (idx<0 || idx >= p_busTotal) {
+          // TODO: some kind of error
+        }
+        lcnt++;
+      } else {
+        p_inactiveBusIndices[icnt] = new int(getGlobalBusIndex(i));
+        idx = *(p_inactiveBusIndices[icnt]);
+        if (idx<0 || idx >= p_busTotal) {
+          // TODO: some kind of error
+        }
+        icnt++;
+      }
+    }
+    delete totalBuses;
+    delete distr;
+  }
+}
+
+/**
+ * Update the bus ghost values. This is a
+ * collective operation across all processors.
+ */
+void updateBuses(void)
+{
+  // Copy data from XC buffer to send buffer
+  GA_Sync();
+  int i, j, xc_off, rs_off;
+  char *rs_ptr, *xc_ptr;
+  for (i=0; i<p_numActiveBuses; i++) {
+    xc_off = (*(p_activeBusIndices[i]))*p_busXCBufSize;
+    rs_off = i*p_busXCBufSize;
+    xc_ptr = ((char*)p_busXCBuffers)+xc_off;
+    rs_ptr = ((char*)p_busSndBuf)+rs_off;
+    for (j=0; j<p_busXCBufSize; j++) {
+      rs_ptr[j] = xc_ptr[j];
+    }
+  }
+
+  // Scatter data to exchange GA and then gather it back to local buffers
+  NGA_Scatter(p_busGA,p_busSndBuf,p_activeBusIndices,p_numActiveBuses);
+  GA_Sync();
+  NGA_Gather(p_busGA,p_busRcvBuf,p_inactiveBusIndices,p_numInactiveBuses);
+  GA_Sync();
+
+  // Copy data from recieve buffer to XC buffer
+  for (i=0; i<p_numInactiveBuses; i++) {
+    xc_off = (*(p_inactiveBusIndices[i]))*p_busXCBufSize;
+    rs_off = i*p_busXCBufSize;
+    xc_ptr = ((char*)p_busXCBuffers)+xc_off;
+    rs_ptr = ((char*)p_busRcvBuf)+rs_off;
+    for (j=0; j<p_busXCBufSize; j++) {
+      xc_ptr[j] = rs_ptr[j];
+    }
+  }
+}
+
+/**
+ * This function must be called before calling the update branch routine.
+ * It initializes data structures for the branch update
+ */
+void initBranchUpdate(void)
+{
+  int i, size, numBranches;
+  // Don't do anything if buffers are not allocated
+  if (p_branchXCBufSize > 0) {
+    // Clean up old GA, if it exists
+    if (p_branchGASet) {
+      GA_Destroy(p_branchGA);
+      NGA_Deregister_type(p_branchXCBufType);
+    }
+    if (p_activeBranchIndices) {
+      for (i=0; i<0; i<p_numActiveBranches) {
+        delete p_activeBranchIndices[i];
+      }
+      delete [] p_activeBranchIndices;
+      p_activeBranchIndices = NULL;
+      delete ((char*)p_branchSndBuf);
+      p_branchSndBuf = NULL;
+    }
+    if (p_inactiveBranchIndices) {
+      for (i=0; i<0; i<p_numInactiveBranches) {
+        delete p_inactiveBranchIndices[i];
+      }
+      delete [] p_inactiveBranchIndices;
+      p_inactiveBranchIndices = NULL;
+      delete ((char*)p_branchRcvBuf);
+      p_branchRcvBuf = NULL;
+    }
+    // Find out how many active branches exist
+    size = p_branches.size();
+    numBranches = 0;
+    for (i=0; i<size; i++) {
+      if (getActiveBranch(i)) {
+        numBranches++;
+      }
+    }
+    // Construct GA that can hold exchange data for all active branches
+    int nprocs = GA_Nnodes();
+    int me = GA_Nodeid();
+    int *totalBranches = new int(nprocs);
+    int *distr = new int(nprocs);
+    for (i=0; i<nprocs; i++) {
+      if (me == i) {
+        totalBranches[i] = numBranches;
+      } else {
+        totalBranches[i] = 0;
+      }
+    }
+    GA_Igop(totalBranches,nprocs,"+");
+    distr[0] = 0;
+    p_branchTotal = totalBranches[0];
+    for (i=1; i<nprocs; i++) {
+      distr[i] = distr[i-1] + totalBranches[i-1];
+      p_branchTotal += totalBranches[i];
+    }
+    p_branchGA = GA_Create_handle();
+    int one = 1;
+    p_branchXCBufType = NGA_Register_type(p_branchXCBufSize);
+    GA_Set_data(p_branchGA, one, &p_branchTotal, p_branchXCBufType);
+    GA_Set_irreg_distr(p_branchGA, distr, &nprocs);
+    GA_Allocate(p_branchGA);
+
+    // Sort buses into local and ghost lists
+    int idx, icnt = 0, lcnt=0;
+    for (i=0; i<size; i++) {
+      if (getActiveBranch(i)) {
+        lcnt++;
+      } else {
+        icnt++;
+      }
+    }
+    p_numActiveBranches = lcnt;
+    p_activeBranchIndices = new int*[lcnt];
+    p_numInactiveBranches = icnt;
+    p_inactiveBranchIndices = new int*[icnt];
+    lcnt = 0;
+    icnt = 0;
+    for (i=0; i<size; i++) {
+      if (getActiveBranch(i)) {
+        p_activeBranchIndices[lcnt] = new int(getGlobalBranchIndex(i));
+        idx = *(p_activeBranchIndices[lcnt]);
+        if (idx<0 || idx >= p_branchTotal) {
+          // TODO: some kind of error
+        }
+        lcnt++;
+      } else {
+        p_inactiveBranchIndices[icnt] = new int(getGlobalBranchIndex(i));
+        idx = *(p_inactiveBranchIndices[icnt]);
+        if (idx<0 || idx >= p_branchTotal) {
+          // TODO: some kind of error
+        }
+        icnt++;
+      }
+    }
+    delete totalBranches;
+    delete distr;
+  }
+}
+
+/**
+ * Update the branch ghost values. This is a
+ * collective operation across all processors.
+ */
+void updateBranches(void)
+{
+  // Copy data from XC buffer to send buffer
+  GA_Sync();
+  int i, j, xc_off, rs_off;
+  char *rs_ptr, *xc_ptr;
+  for (i=0; i<p_numActiveBranches; i++) {
+    xc_off = (*(p_activeBranchIndices[i]))*p_branchXCBufSize;
+    rs_off = i*p_branchXCBufSize;
+    xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
+    rs_ptr = ((char*)p_branchSndBuf)+rs_off;
+    for (j=0; j<p_branchXCBufSize; j++) {
+      rs_ptr[j] = xc_ptr[j];
+    }
+  }
+
+  // Scatter data to exchange GA and then gather it back to local buffers
+  NGA_Scatter(p_branchGA,p_branchSndBuf,p_activeBranchIndices,p_numActiveBranches);
+  GA_Sync();
+  NGA_Gather(p_branchGA,p_branchRcvBuf,p_inactiveBranchIndices,p_numInactiveBranches);
+  GA_Sync();
+
+  // Copy data from recieve buffer to XC buffer
+  for (i=0; i<p_numInactiveBranches; i++) {
+    xc_off = (*(p_inactiveBranchIndices[i]))*p_branchXCBufSize;
+    rs_off = i*p_branchXCBufSize;
+    xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
+    rs_ptr = ((char*)p_branchRcvBuf)+rs_off;
+    for (j=0; j<p_branchXCBufSize; j++) {
+      xc_ptr[j] = rs_ptr[j];
+    }
+  }
 }
 
 protected:
@@ -790,7 +1250,50 @@ private:
   ParallelEnv p_configuration;
 #endif
 
+  /**
+   * Parameter for keeping track of reference bus
+   */
   int p_refBus;
+
+  /**
+   * Vector of buffers for exchange of bus data to ghost buses
+   */
+  int p_busXCBufSize;
+  void *p_busXCBuffers;
+
+  /**
+   * Vector of buffers for exchange of branch data to ghost branches
+   */
+  int p_branchXCBufSize;
+  void *p_branchXCBuffers;
+
+  /**
+   * Global array handle and other parameters used for bus exchanges
+   */
+  int p_busGA;
+  bool p_busGASet;
+  int p_busXCBufType;
+  int p_busTotal;
+  int **p_inactiveBusIndices;
+  int p_numInactiveBuses;
+  int **p_activeBusIndices;
+  int p_numActiveBuses;
+  void *p_busSndBuf;
+  void *p_busRcvBuf;
+
+  /**
+   * Global array handle and other parameters used for branch exchanges
+   */
+  int p_branchGA;
+  bool p_branchGASet;
+  int p_branchXCBufType;
+  int p_branchTotal;
+  int **p_inactiveBranchIndices;
+  int p_numInactiveBranches;
+  int **p_activeBranchIndices;
+  int p_numActiveBranches;
+  void *p_branchSndBuf;
+  void *p_branchRcvBuf;
 };
 }  //namespace network
 }  //namespace gridpack
