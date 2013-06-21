@@ -149,6 +149,35 @@ class BaseComponent
     virtual void load(
         const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
+    /**
+     * Return the size of the buffer needed for data exchanges. Note that this
+     * must be the same size for all bus and all branch objects (branch buffers
+     * do not need to be the same size as bus buffers), even if all objects
+     * do not require the same parameters. Thus, the buffer must be big enough
+     * to exchange all variables that an object might need, even if individual
+     * objects don't need all the variables
+     */
+    virtual int getXCBufSize(void);
+
+    /**
+     * Assign the location of the data exchange buffer. These buffers are
+     * allocated and deallocated by the network
+     * @param buf: void pointer to exchange buffer
+     */
+    virtual void setXCBuf(void *buf);
+
+  protected:
+    /**
+     * A buffer that can be used for exchanging component data. This is
+     * allocated by the network based on an inquiry to the getXCBusSize method
+     */
+     void *p_XCBuf;
+
+    /**
+     * Size (in bytes) of buffer p_XCBuf
+     */
+     int p_XCBufSize;
+
   private:
 
 };

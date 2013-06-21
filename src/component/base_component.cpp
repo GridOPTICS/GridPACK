@@ -140,6 +140,8 @@ bool gridpack::component::MatVecInterface::vectorValues(void *values)
  */
 gridpack::component::BaseComponent::BaseComponent(void)
 {
+  p_XCBufSize = 0;
+  p_XCBuf = NULL;
 }
 
 /**
@@ -170,6 +172,32 @@ void gridpack::component::BaseComponent::load(
 {
   // This implementation is a no-op and is included in BaseComponent so that
   // a generic load method can be defined in the base factory class.
+}
+
+/**
+ * Return the size of the buffer needed for data exchanges. Note that this
+ * must be the same size for all bus and all branch objects (branch buffers
+ * do not need to be the same size as bus buffers), even if all objects
+ * do not require the same parameters. Thus, the buffer must be big enough
+ * to exchange all variables that an object might need, even if individual
+ * objects don't need all the variables
+ */
+int gridpack::component::BaseComponent::getXCBufSize(void)
+{
+  return p_XCBufSize;
+}
+/**
+ * Assign the location of the data exchange buffer. These buffers are
+ * allocated and deallocated by the network
+ * @param buf: void pointer to exchange buffer
+ */
+void gridpack::component::BaseComponent::setXCBuf(void *buf)
+{
+  if (buf == NULL) {
+    gridpack::component::BaseComponent::p_XCBuf = NULL;
+  } else {
+    gridpack::component::BaseComponent::p_XCBuf = buf;
+  }
 }
 
 // Base implementation for a bus object. Provides a mechanism for the bus to
