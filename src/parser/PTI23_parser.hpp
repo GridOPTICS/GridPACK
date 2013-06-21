@@ -8,7 +8,6 @@
 #ifndef PTI23_PARSER_HPP_
 #define PTI23_PARSER_HPP_
 
-#include "parser.hpp"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #include <vector>
@@ -164,28 +163,42 @@
 namespace gridpack {
 namespace parser {
 
-class PTI23_parser : public Parser {
+class PTI23_parser {
 public:
 
-    PTI23_parser(std::string & file_name) : Parser(file_name)
-    {
-        find_case();
-        find_buses();
-        find_generators();
-        find_branches();
-        find_transformer();
-        find_area();
-        find_dc_line();
-        find_shunt();
-        find_imped_corr();
-        find_multi_terminal();
-        find_multi_section();
-        find_zone();
-        find_interarea();
-        find_owner();
-        find_device_data();
-    };
+    PTI23_parser(){};
 	virtual ~PTI23_parser(){};
+
+	/*
+	 * A case is the collection of all data associated with a PTI23 file.
+	 * Each case is a a vector of data_set objects the contain all the data
+	 * associated with a partition of the PTI file. For example, the bus
+	 * data in the file constitutes a data_set. Each data_set is a vector of
+	 * gridpack::component::DataCollection objects. Each of these objects
+	 * contain a single instance of the data associated with a data_set. For
+	 * example, each line of the bus partition corresponds to a single
+	 * DataCollection object.
+	 */
+    std::vector<data_set> * getCase(std::ifstream & input) {
+        std::vector<data_set>  * case_data;
+        find_case(case_data, input);
+        find_buses(case_data, input);
+        find_generators(case_data, input);
+        find_branches(case_data, input);
+        find_transformer(case_data, input);
+        find_area(case_data, input);
+        find_dc_line(case_data, input);
+        find_shunt(case_data, input);
+        find_imped_corr(case_data, input);
+        find_multi_terminal(case_data, input);
+        find_multi_section(case_data, input);
+        find_zone(case_data, input);
+        find_interarea(case_data, input);
+        find_owner(case_data, input);
+        find_device_data(case_data, input);
+
+        return case_data;
+    }
 protected:
 
    /*
@@ -194,33 +207,36 @@ protected:
 #define     CASE_RECORD2        "RECORD2"
 #define     CASE_RECORD3        "RECORD3"
    */
-    void find_case(void)
+    void find_case(std::vector<data_set>  * case_data, std::ifstream & input)
     {
-        data_set                        case_set;
-        std::string          line;
+        data_set                                           case_set;
+        std::string                                        line;
+        std::vector<gridpack::component::DataCollection>   case_instance;
 
-        gridpack::component::DataCollection        data;
+        gridpack::component::DataCollection                data;
+
         std::getline(input, line);
         std::vector<std::string>  split_line;
+
         boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
 
         data.setValue(CASE_IC, atoi(split_line[0].c_str()));
-//        case_instance.push_back(data);
+        case_instance.push_back(data);
 
         // this value may be followed by a comment
         std::vector<std::string>  split_subline;
-        // FIXME: boost::algorithm::split(split_subline, split_line, boost::algorithm::is_any_of("/"), boost::token_compress_on);
+        boost::algorithm::split(split_subline, split_line, boost::algorithm::is_any_of("/"), boost::token_compress_on);
         data.setValue(CASE_SBASE, atof(split_subline[0].c_str()));
- //       case_instance.push_back(data);
+        case_instance.push_back(data);
 
         data.setValue(CASE_RECORD2, split_line[0].c_str());
-//        case_instance.push_back(data);
+        case_instance.push_back(data);
 
         data.setValue(CASE_RECORD3, split_line[0].c_str());
-//        case_instance.push_back(data);
+        case_instance.push_back(data);
 
-        // FIXME: case_set.push_back(data);
-        case_data.push_back(case_set);
+        case_set.push_back(case_instance);
+        case_data->push_back(case_set);
 
         // there is no delimiting line between the case data and the bus data
         std::getline(input, line);
@@ -241,7 +257,7 @@ protected:
 #define     BUS_BASKV           "BASKV"
 #define     BUS_ZONE            "ZONE"
     */
-    void find_buses(void)
+    void find_buses(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        bus_set;
         std::string          line;
@@ -293,7 +309,7 @@ protected:
             std::getline(input, line);
         }
         std::getline(input, line);
-        case_data.push_back(bus_set);
+        case_data->push_back(bus_set);
     }
 
 
@@ -318,7 +334,7 @@ protected:
 #define     GEN_PT              "PT"
 #define     GEN_PB              "PB"
     */
-    void find_generators(void)
+    void find_generators(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        generator_set;
         std::string          line;
@@ -387,7 +403,7 @@ protected:
             std::getline(input, line);
         }
         std::getline(input, line);
-        case_data.push_back(generator_set);
+        case_data->push_back(generator_set);
     }
 
 
@@ -410,7 +426,7 @@ protected:
 #define     BRANCH_BJ           "BJ"
 #define     BRANCH_ST           "ST"
     */
-    void find_branches(void)
+    void find_branches(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        branch_set;
         std::string line;
@@ -473,7 +489,7 @@ protected:
             std::getline(input, line);
         }
         std::getline(input, line);
-        case_data.push_back(branch_set);
+        case_data->push_back(branch_set);
     }
 
 
@@ -489,7 +505,7 @@ protected:
 #define     TRANSF_STEP        "STEP"
 #define     TRANSF_TABLE       "TABLE"
     */
-    void find_transformer(void)
+    void find_transformer(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        transformer_set;
         std::string          line;
@@ -534,7 +550,7 @@ protected:
             transformer_set.push_back(transformer_instance);
             std::getline(input, line);
         }
-        case_data.push_back(transformer_set);
+        case_data->push_back(transformer_set);
         std::getline(input, line);
     }
 
@@ -546,7 +562,7 @@ protected:
 #define     AREA_PTOL          "PTOL"
 #define     AREA_ARNAM         "ARNAM"
     */
-    void find_area(void)
+    void find_area(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        area_set;
         std::string          line;
@@ -576,7 +592,7 @@ protected:
             area_set.push_back(area_instance);
             std::getline(input, line);
         }
-        case_data.push_back(area_set);
+        case_data->push_back(area_set);
         std::getline(input, line);
     }
 
@@ -616,7 +632,7 @@ protected:
      * #define     DL_TPMNI           "TPMNI"
      * #define     DL_TSTPI           "TSTPI"
      */
-    void find_dc_line(void)
+    void find_dc_line(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        dc_line_set;
         std::string          line;
@@ -694,7 +710,7 @@ protected:
             dc_line_set.push_back(dc_line_instance);
             std::getline(input, line);
         }
-        case_data.push_back(dc_line_set);
+        case_data->push_back(dc_line_set);
         std::getline(input, line);
     }
 
@@ -723,7 +739,7 @@ protected:
 #define     SHUNT_N8        "N8"
 #define     SHUNT_B8        "B8"
     */
-    void find_shunt(void)
+    void find_shunt(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        shunt_set;
 
@@ -808,14 +824,14 @@ protected:
             shunt_set.push_back(shunt_instance);
             std::getline(input, line);
         }
-        case_data.push_back(shunt_set);
+        case_data->push_back(shunt_set);
         std::getline(input, line);
     }
 
     /*
 #define     IMPED_I         "I"
     */
-    void find_imped_corr(void)
+    void find_imped_corr(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        imped_corr_set;
 
@@ -834,14 +850,14 @@ protected:
             imped_corr_set.push_back(imped_corr_instance);
             std::getline(input, line);
         }
-        case_data.push_back(imped_corr_set);
+        case_data->push_back(imped_corr_set);
         std::getline(input, line);
     }
 
 /*
 #define     M_TERM_I        "I"
 */
-    void find_multi_terminal(void)
+    void find_multi_terminal(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        multi_terminal;
 
@@ -860,7 +876,7 @@ protected:
             multi_terminal.push_back(multi_terminal_instance);
             std::getline(input, line);
         }
-        case_data.push_back(multi_terminal);
+        case_data->push_back(multi_terminal);
         std::getline(input, line);
     }
 
@@ -868,7 +884,7 @@ protected:
     /*
 #define     M_SEC_I         "I"
     */
-    void find_multi_section(void)
+    void find_multi_section(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        multi_section;
 
@@ -887,7 +903,7 @@ protected:
             multi_section.push_back(multi_section_instance);
             std::getline(input, line);
         }
-        case_data.push_back(multi_section);
+        case_data->push_back(multi_section);
         std::getline(input, line);
     }
 
@@ -895,7 +911,7 @@ protected:
 #define     ZONE_I          "I"
 #define     ZONE_NAME       "NAME"
     */
-    void find_zone()
+    void find_zone(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        zone;
 
@@ -917,14 +933,14 @@ protected:
             zone.push_back(zone_instance);
             std::getline(input, line);
         }
-        case_data.push_back(zone);
+        case_data->push_back(zone);
         std::getline(input, line);
     }
 
     /*
 #define     I_AREA_I        "I"
     */
-    void find_interarea()
+    void find_interarea(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        inter_area;
 
@@ -943,14 +959,14 @@ protected:
             inter_area.push_back(inter_area_instance);
             std::getline(input, line);
         }
-        case_data.push_back(inter_area);
+        case_data->push_back(inter_area);
         std::getline(input, line);
     }
     /*
 #define     OWNER_I         "I"
 #define     OWNER_NAME      "NAME"
     */
-    void find_owner(void)
+    void find_owner(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        owner;
 
@@ -972,13 +988,13 @@ protected:
             owner.push_back(owner_instance);
             std::getline(input, line);
         }
-        case_data.push_back(owner);
+        case_data->push_back(owner);
         std::getline(input, line);
     }
 
     /*
     */
-    void find_device_data(void)
+    void find_device_data(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        device_set;
 
@@ -993,7 +1009,7 @@ protected:
             device_set.push_back(device_instance);
             std::getline(input, line);
         }
-        case_data.push_back(device_set);
+        case_data->push_back(device_set);
         std::getline(input, line);
     }
 
@@ -1029,7 +1045,6 @@ private:
      * These data sets are stored in the case data as a collection of
      * data set and each data set is a
      */
-    std::vector<data_set>                case_data;
 };
 
 } /* namespace parser */

@@ -23,23 +23,35 @@ typedef std::vector<std::vector<gridpack::component::DataCollection> >   data_se
 namespace gridpack {
 namespace parser {
 
+template <typename PARSER_TYPE>
 class Parser {
 public:
-    Parser(std::string & file_name)
-    {
-        // open validated file
+    Parser<PARSER_TYPE>(void){};
+    std::vector<data_set>  * getCaseData(std::string & fileName)
+        {
+        // open valid file
+        std::ifstream            input;
+        std::vector<data_set>  * case_data;
         try {
-          // FIXME: input = open_valid_file(file_name);
-        } catch (...) {
-            // handle file open error
+            input.open(fileName.c_str());
+        } catch ios_base::failure & e {
+            // let the calling function determine the response
+            throw;
         }
+        try {
+            case_data = parser.getCase(input);
+        } catch ios_base::failure & e {
+            // let the calling function determine the response
+            throw;
+        }
+        return case_data;
     }
-	virtual ~Parser();
+    virtual ~Parser(){};
 
 protected:
-	std::ifstream                   input;
-
+    PARSER_TYPE              parser;
 private:
+
 };
 
 } /* namespace parser */

@@ -9,39 +9,45 @@
  */
 
 #include <iostream>
-#include "gridpack/parallel/parallel.hpp"
+#include "parser.hpp"
 #include "PTI23_parser.hpp"
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 
+BOOST_AUTO_TEST_SUITE(Parser)
 
 //____________________________________________________________________________//
 
 // most frequently you implement test cases as a free functions with automatic registration
-BOOST_AUTO_TEST_CASE( test1 )
+BOOST_AUTO_TEST_CASE(openFailure)
 {
-    // reports 'error in "test1": test 2 == 1 failed'
-    BOOST_CHECK( 2 == 1 );
+    bool                    opened         = true;
+    try {
+        Parser<PTI22_parser> parser("");
+    } catch (ios_base::failure & e) {
+        opened     = false;
+    }
+
+    BOOST_CHECK_EQUAL(opened, false);
+
 }
 
-//____________________________________________________________________________//
-
-// each test file may contain any number of test cases; each test case has to have unique name
-BOOST_AUTO_TEST_CASE( test2 )
+BOOST_AUTO_TEST_CASE(openSuccess)
 {
-    int i = 0;
+    bool                    opened        = false;
+    try {
+        Parser<PTI22_parser> parser("PTI23_seqtest.raw");
+    } catch (ios_base::failure & e) {
+        opened     = true;
+    }
 
-    // reports 'error in "test2": check i == 2 failed [0 != 2]'
-    BOOST_CHECK_EQUAL( i, 2 );
+    BOOST_CHECK_EQUAL(opened, true);
 
-    BOOST_CHECK_EQUAL( i, 0 );
 }
 
-//____________________________________________________________________________//
-
-// EOF
+BOOST_AUTO_TEST_SUITE_END()
 
 // -------------------------------------------------------------
 // init_function
