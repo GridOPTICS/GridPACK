@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-06-04 12:42:01 d3g096
+ * @date   2013-06-21 14:11:19 d3g096
  * 
  * @brief  
  * 
@@ -16,7 +16,7 @@
 #include <vector>
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
-#include "/home/d3g293/ga-5-2/include/ga.h"
+#include <ga.h>
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"

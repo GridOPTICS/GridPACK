@@ -4,10 +4,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-06-11 12:23:32 d3g096
+# Last Change: 2013-06-24 07:33:53 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries gridpack_component ${Boost_LIBRARIES})
+
+include_directories(AFTER ${GA_INCLUDE_DIRS})
 
 add_library(gridpack_network
   test_network.cpp
