@@ -15,6 +15,11 @@ add_library(gridpack_network
   test_network.cpp
 )
 
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+  include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
+
 # -------------------------------------------------------------
 # TEST: greetings
 # A simple MPI program

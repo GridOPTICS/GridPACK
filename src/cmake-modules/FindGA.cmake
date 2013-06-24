@@ -139,4 +139,4 @@ if(GA_FOUND)
   set(GA_INCLUDE_DIRS ${GA_INCLUDE_DIR})
 endif()
 
-mark_as_advanced(GA_INCLUDE_DIR GA_LIBRARY)
+mark_as_advanced(GA_INCLUDE_DIR GA_LIBRARY ARMCI_LIBRARY)
