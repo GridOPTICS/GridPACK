@@ -87,14 +87,14 @@ if(NOT GA_VERSION_STRING AND GA_INCLUDE_DIR AND EXISTS "${GA_INCLUDE_DIR}/ga.h")
 endif()
 
 # Try compiling and running test program
-if (GA_INCLUDE_DIR AND GA_LIBRARY)
+if (GA_INCLUDE_DIR AND GA_LIBRARY AND ARMCI_LIBRARY)
 
   # Test requires MPI
   find_package(MPI QUIET REQUIRED)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${GA_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
-  set(CMAKE_REQUIRED_LIBRARIES ${GA_LIBRARY} ${MPI_LIBRARIES})
+  set(CMAKE_REQUIRED_LIBRARIES ${GA_LIBRARY} ${ARMCI_LIBRARY} ${MPI_LIBRARIES})
 
   # Build and run test program
   include(CheckCXXSourceRuns)
@@ -108,6 +108,12 @@ int main()
 
   // Initialise MPI
   MPI::Init();
+
+  // Initialize GA
+  GA_Initialize();
+
+  // Terminate GA
+  GA_Terminate();
 
   // Finalize MPI
   MPI::Finalize();
