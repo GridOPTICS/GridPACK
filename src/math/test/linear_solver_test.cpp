@@ -2,7 +2,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-06-26 09:04:32 d3g096
+ * @date   2013-06-26 12:12:32 d3g096
  * 
  * @brief  
  * 
@@ -175,7 +175,7 @@ BOOST_AUTO_TEST_CASE( Versteeg )
         int i = iP/jmax;
         int j = iP - i*jmax;
         
-        std::cout << boost::str(boost::format("%8d%8d%8d%12.6f%12.6f") %
+        std::cout << boost::str(boost::format("%8d%8d%8d%12.6f%12.3e") %
                                 iP % i % j % real(val) % real(r))
                   << std::endl;
         std::cout.flush();
