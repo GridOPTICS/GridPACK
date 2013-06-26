@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-06-11 14:13:06 d3g096
+// Last Change: 2013-06-26 08:33:01 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -91,6 +91,12 @@ protected:
 
   /// Make all the elements the specified value (specialized)
   void p_fill(const ComplexType& v);
+
+  /// Compute the vector L1 norm (sum of absolute value) (specialized)
+  ComplexType p_norm1(void) const;
+
+  /// Compute the vector L2 norm (root of sum of squares) (specialized)
+  ComplexType p_norm2(void) const;
 
   // FIXME: more ...
 

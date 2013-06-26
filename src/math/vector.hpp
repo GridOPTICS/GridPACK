@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-06-12 10:24:32 d3g096
+ * @date   2013-06-26 08:34:09 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -124,6 +124,18 @@ public:
     p_vector_impl->fill(v);
   }
 
+  /// Compute the vector L1 norm (sum of absolute value)
+  ComplexType norm1(void) const
+  {
+    return p_vector_impl->norm1();
+  }
+
+  /// Compute the vector L2 norm (root of sum of squares)
+  ComplexType norm2(void) const
+  {
+    return p_vector_impl->norm2();
+  }
+
   // FIXME more ...
 
   /// Make this instance ready to use
@@ -160,7 +172,7 @@ public:
   void scale(const ComplexType& x);
 
   /// Add the specified vector
-  void add(const Vector& x);
+  void add(const Vector& x, const ComplexType& scale = 1.0);
 
   /// Add the specified value to all elements
   void add(const ComplexType& x);
@@ -189,8 +201,11 @@ protected:
 // Vector Operations (all allocate new instances)
 // -------------------------------------------------------------
 
-/// Add to Vector instances and put the result in a new one
+/// Add two Vector instances and put the result in a new one
 extern Vector *add(const Vector& A, const Vector& B);
+
+/// Subtract two Vector instances and put the result in a new one
+extern Vector *subtract(const Vector& A, const Vector& B);
 
 
 // -------------------------------------------------------------

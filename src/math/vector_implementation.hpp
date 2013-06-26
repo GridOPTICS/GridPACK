@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-06-12 10:25:05 d3g096
+ * @date   2013-06-26 08:33:55 d3g096
  * 
  * @brief  
  * 
@@ -110,6 +110,18 @@ public:
     this->p_fill(v);
   }
 
+  /// Compute the vector L1 norm (sum of absolute value)
+  ComplexType norm1(void) const
+  {
+    return this->p_norm1();
+  }
+
+  /// Compute the vector L2 norm (root of sum of squares)
+  ComplexType norm2(void) const
+  {
+    return this->p_norm2();
+  }
+
   // FIXME: more ...
 
   /// Make this instance ready to use
@@ -174,6 +186,12 @@ protected:
 
   /// Fill all the elements with the specified value (specialized)
   virtual void p_fill(const ComplexType& v) = 0;
+
+  /// Compute the vector L1 norm (sum of absolute value) (specialized)
+  virtual ComplexType p_norm1(void) const = 0;
+
+  /// Compute the vector L2 norm (root of sum of squares) (specialized)
+  virtual ComplexType p_norm2(void) const = 0;
 
   // FIXME: more ...
   /// Make this instance ready to use

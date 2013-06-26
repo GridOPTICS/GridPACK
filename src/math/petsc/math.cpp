@@ -1,7 +1,7 @@
 /**
  * @file   math.cpp
  * @author William A. Perkins
- * @date   2013-05-09 08:39:18 d3g096
+ * @date   2013-06-25 15:07:50 d3g096
  * 
  * @brief  
  * 
@@ -26,6 +26,9 @@ Initialize(void)
   PetscErrorCode ierr(0);
   try {
     ierr = PetscInitializeNoArguments(); CHKERRXX(ierr);
+    ierr = PetscOptionsInsertFile(PETSC_COMM_WORLD,
+                                  "gridpack.petscrc",
+                                  PETSC_FALSE); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

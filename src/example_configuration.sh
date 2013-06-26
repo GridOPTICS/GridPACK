@@ -7,8 +7,9 @@ rm -f CMakeCache.txt
 if [ $host == "flophouse" ]; then
 
     prefix="/net/flophouse/files0/perksoft/linux64"
-    $prefix/bin/cmake -Wdev --debug-output \
+    $prefix/bin/cmake -Wdev --debug-trycompile \
         -D PARMETIS_DIR:STRING="$prefix" \
+        -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
         -D PETSC_DIR:STRING="$prefix/../petsc-3.3-p3" \
         -D PETSC_ARCH:STRING='arch-linux2-cxx-opt' \
@@ -22,8 +23,10 @@ if [ $host == "flophouse" ]; then
     
 elif [ $host == "pe10900" ]; then
     prefix="/net/flophouse/files0/perksoft/macosx"
-    cmake -Wdev  \
+    cmake -Wdev --debug-trycompile \
         -D PARMETIS_DIR:STRING="$prefix" \
+        -D GA_DIR:STRING="$prefix" \
+        -D GA_EXTRA_LIBS:STRING="-lblas" \
         -D BOOST_ROOT:STRING='/opt/local' \
         -D PETSC_DIR:STRING="$prefix/../petsc-3.3-p3" \
         -D PETSC_ARCH:STRING='arch-darwin-cxx-opt' \
@@ -40,6 +43,7 @@ elif [ $host == "olympus.local" ]; then
     prefix="/pic/projects/gridpack/software"
     cmake -Wdev \
         -D PARMETIS_DIR:STRING="$prefix" \
+        -D GA_DIR:STRING="$prefix" \
 	-D BOOST_ROOT:STRING="$prefix" \
 	-D PETSC_DIR:STRING="$prefix/../petsc-3.4.0" \
 	-D PETSC_ARCH:STRING='olympus-openmpi-gnu-cxx-complex-opt' \

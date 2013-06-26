@@ -2,7 +2,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:18:41 d3g096
+ * @date   2013-06-26 08:36:02 d3g096
  * 
  * @brief  
  * 
@@ -222,11 +222,49 @@ PETScVectorImplementation::p_fill(const ComplexType& v)
   PetscErrorCode ierr(0);
   try {
     PetscScalar pv(v);
-    ierr = VecSet(this->p_vector, pv);
+    ierr = VecSet(this->p_vector, pv); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
 }  
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_norm1
+// -------------------------------------------------------------
+ComplexType
+PETScVectorImplementation::p_norm1(void) const
+{
+  ComplexType result;
+  PetscErrorCode ierr(0);
+  try {
+    PetscReal v;
+    ierr = VecNorm(this->p_vector, NORM_1, &v); CHKERRXX(ierr);
+    result = v;
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}
+
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_norm2
+// -------------------------------------------------------------
+ComplexType
+PETScVectorImplementation::p_norm2(void) const
+{
+  ComplexType result;
+  PetscErrorCode ierr(0);
+  try {
+    PetscReal v;
+    ierr = VecNorm(this->p_vector, NORM_2, &v); CHKERRXX(ierr);
+    result = v;
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}
+
 
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_ready
