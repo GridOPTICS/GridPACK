@@ -1,6 +1,7 @@
 #include <vector>
 
 #include "mpi.h"
+#include <macdecls.h>
 #include "gridpack/network/base_network.hpp"
 
 #define XDIM 100
@@ -69,6 +70,9 @@ main (int argc, char **argv) {
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
   int nprocs;
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  GA_Initialize();
+  int stack = 200000, heap = 200000;
+  MA_init(C_DBL, stack, heap);
   if (me == 0) {
     printf("Testing Network Module\n");
     printf("\nTest Network is %d X %d\n",XDIM,YDIM);
@@ -366,6 +370,7 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nBus neighbors are ok\n");
   }
+
   // Test ghost update operations. Start by allocating exchange buffers and
   // assigning values to them
   network.allocXCBus(sizeof(int));
@@ -374,11 +379,16 @@ main (int argc, char **argv) {
 
   for (i=0; i<nbus; i++) {
     iptr = (int*)network.getXCBusBuffer(i);
+    if (iptr) {
     if (network.getActiveBus(i)) {
       *iptr = network.getGlobalBusIndex(i);
     } else {
       *iptr = -1;
     }
+    } else {
+      printf("p[%d] null iptr at 1: %d\n",me,i);
+    }
+   // printf("p[%d] iptr1: %d\n",me,*iptr);
   }
   for (i=0; i<nbranch; i++) {
     iptr = (int*)network.getXCBranchBuffer(i);
@@ -390,6 +400,49 @@ main (int argc, char **argv) {
   }
   network.initBusUpdate();
   network.initBranchUpdate();
+
+  network.updateBuses();
+  network.updateBranches();
+
+  ok = true;
+  for (i=0; i<nbus; i++) {
+    iptr = (int*)network.getXCBusBuffer(i);
+  //  printf("p[%d] iptr2: %d global: %d\n",me,*iptr,network.getGlobalBusIndex(i));
+    if (!network.getActiveBus(i)) {
+      if (*iptr != network.getGlobalBusIndex(i)) {
+        ok = false;
+      }
+    }
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nBus update ok\n");
+  } else if (!ok) {
+    printf("\nMismatched bus update on %d\n",me);
+  }
+  
+  ok = true;
+  for (i=0; i<nbranch; i++) {
+    iptr = (int*)network.getXCBranchBuffer(i);
+    if (!network.getActiveBranch(i)) {
+      if (*iptr != network.getGlobalBranchIndex(i)) {
+        ok = false;
+      }
+    }
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nBranch update ok\n");
+  } else if (!ok) {
+    printf("\nMismatched branch update on %d\n",me);
+  }
+
+  network.freeXCBus();
+  network.freeXCBranch();
 
   // Test clean function
   network.clean();
@@ -482,9 +535,10 @@ main (int argc, char **argv) {
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = (bool)okr;
   if (me == 0 && ok) {
-    printf("\nBus neighbors are ok\n");
+    printf("\nBuses and branches are ok after clean operation\n");
   }
   
+  GA_Terminate();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
 }

@@ -210,14 +210,14 @@ BaseNetwork::BaseNetwork(ParallelEnv configuration)
   // Clean up exchange buffers if they have been allocated
   if (p_busXCBufSize != 0) {
     if (p_busXCBuffers) {
-      delete ((char*)p_busXCBuffers);
+      delete [] ((char*)p_busXCBuffers);
     } else {
       // TODO: some kind of error
     }
   }
   if (p_branchXCBufSize != 0) {
     if (p_branchXCBuffers) {
-      delete ((char*)p_branchXCBuffers);
+      delete [] ((char*)p_branchXCBuffers);
     } else {
       // TODO: some kind of error
     }
@@ -227,28 +227,36 @@ BaseNetwork::BaseNetwork(ParallelEnv configuration)
       delete p_activeBusIndices[i];
     }
     delete [] p_activeBusIndices;
-    delete ((char*)p_busSndBuf);
+  }
+  if (p_busSndBuf) {
+    delete [] ((char*)p_busSndBuf);
   }
   if (p_inactiveBusIndices) {
     for (i=0; i<0; i<p_numInactiveBuses) {
       delete p_inactiveBusIndices[i];
     }
     delete [] p_inactiveBusIndices;
-    delete ((char*)p_busRcvBuf);
+  }
+  if (p_busRcvBuf) {
+    delete [] ((char*)p_busRcvBuf);
   }
   if (p_activeBranchIndices) {
     for (i=0; i<0; i<p_numActiveBranches) {
       delete p_activeBranchIndices[i];
     }
     delete [] p_activeBranchIndices;
-    delete ((char*)p_branchSndBuf);
+  }
+  if (p_branchSndBuf) {
+    delete [] ((char*)p_branchSndBuf);
   }
   if (p_inactiveBranchIndices) {
     for (i=0; i<0; i<p_numInactiveBranches) {
       delete p_inactiveBranchIndices[i];
     }
     delete [] p_inactiveBranchIndices;
-    delete ((char*)p_branchRcvBuf);
+  }
+  if (p_branchSndBuf) {
+    delete [] ((char*)p_branchRcvBuf);
   }
 }
 
@@ -756,10 +764,53 @@ void clean(void)
   std::map<int, int> branches;
   std::map<int, int>::iterator p;
   int i, j;
-
   // remove all exchange buffers
   freeXCBus();
   freeXCBranch();
+  if (p_activeBusIndices) {
+    for (i=0; i<0; i<p_numActiveBuses) {
+      delete p_activeBusIndices[i];
+    }
+    delete [] p_activeBusIndices;
+    p_activeBusIndices = NULL;
+  }
+  if (p_busSndBuf) {
+    delete [] ((char*)p_busSndBuf);
+    p_busSndBuf = NULL;
+  }
+  if (p_inactiveBusIndices) {
+    for (i=0; i<0; i<p_numInactiveBuses) {
+      delete p_inactiveBusIndices[i];
+    }
+    delete [] p_inactiveBusIndices;
+    p_inactiveBusIndices = NULL;
+  }
+  if (p_busRcvBuf) {
+    delete [] ((char*)p_busRcvBuf);
+    p_busRcvBuf = NULL;
+  }
+  if (p_activeBranchIndices) {
+    for (i=0; i<0; i<p_numActiveBranches) {
+      delete p_activeBranchIndices[i];
+    }
+    delete [] p_activeBranchIndices;
+    p_activeBranchIndices = NULL;
+  }
+  if (p_branchSndBuf) {
+    delete [] ((char*)p_branchSndBuf);
+    p_branchSndBuf = NULL;
+  }
+  if (p_inactiveBranchIndices) {
+    for (i=0; i<0; i<p_numInactiveBranches) {
+      delete p_inactiveBranchIndices[i];
+    }
+    delete [] p_inactiveBranchIndices;
+    p_inactiveBranchIndices = NULL;
+  }
+  if (p_branchRcvBuf) {
+    delete [] ((char*)p_branchRcvBuf);
+    p_branchRcvBuf = NULL;
+  }
 
   // remove inactive branches
   int size = p_branches.size();
@@ -840,7 +891,7 @@ void allocXCBus(int size)
   // Clean out existing buffers if they are allocated
   if (p_busXCBufSize != 0) {
     if (p_busXCBuffers) {
-      delete ((char*)p_busXCBuffers);
+      delete [] ((char*)p_busXCBuffers);
     } else {
       // TODO: some kind of error
     }
@@ -848,9 +899,9 @@ void allocXCBus(int size)
   }
   // Allocate new buffers if size is greater than zero
   int nsize = p_buses.size();
-  if (size > 0) {
+  if (size > 0 && nsize > 0) {
     p_busXCBufSize = size;
-    p_busXCBuffers = (void*)(new char(size*nsize));
+    p_busXCBuffers = (void*)(new char[size*nsize]);
   }
 }
 
@@ -862,7 +913,7 @@ void freeXCBus(void)
   // Clean out existing buffers if they are allocated
   if (p_busXCBufSize != 0) {
     if (p_busXCBuffers) {
-      delete ((char*)p_busXCBuffers);
+      delete [] ((char*)p_busXCBuffers);
     } else {
       // TODO: some kind of error
     }
@@ -879,6 +930,7 @@ void* getXCBusBuffer(int idx)
 {
   if (idx < 0 || idx > p_buses.size()) {
     // TODO: some kind of error
+    return NULL;
   } else {
     return (void*)(((char*)p_busXCBuffers)+idx*p_busXCBufSize);
   }
@@ -896,17 +948,17 @@ void allocXCBranch(int size)
   // Clean out existing buffers if they are allocated
   if (p_branchXCBufSize != 0) {
     if (p_branchXCBuffers) {
-      delete ((char*)p_branchXCBuffers);
+      delete [] ((char*)p_branchXCBuffers);
     } else {
       // TODO: some kind of error
     }
-    p_busXCBufSize = 0;
+    p_branchXCBufSize = 0;
   }
   // Allocate new buffers if size is greater than zero
   int nsize = p_branches.size();
-  if (size > 0) {
+  if (size > 0 && nsize > 0) {
     p_branchXCBufSize = size;
-    p_branchXCBuffers = (void*)(new char(size*nsize));
+    p_branchXCBuffers = (void*)(new char[size*nsize]);
   }
 }
 
@@ -918,11 +970,11 @@ void freeXCBranch(void)
   // Clean out existing buffers if they are allocated
   if (p_branchXCBufSize != 0) {
     if (p_branchXCBuffers) {
-      delete ((char*)p_branchXCBuffers);
+      delete [] ((char*)p_branchXCBuffers);
     } else {
       // TODO: some kind of error
     }
-    p_busXCBufSize = 0;
+    p_branchXCBufSize = 0;
   }
 }
 
@@ -935,6 +987,7 @@ void* getXCBranchBuffer(int idx)
 {
   if (idx < 0 || idx > p_branches.size()) {
     // TODO: some kind of error
+    return NULL;
   } else {
     return (void*)(((char*)p_branchXCBuffers)+idx*p_branchXCBufSize);
   }
@@ -958,33 +1011,41 @@ void initBusUpdate(void)
       for (i=0; i<0; i<p_numActiveBuses) {
         delete p_activeBusIndices[i];
       }
-      delete p_activeBusIndices;
+      delete [] p_activeBusIndices;
       p_activeBusIndices = NULL;
-      delete ((char*)p_busSndBuf);
+    }
+    if (p_busSndBuf) {
+      delete [] ((char*)p_busSndBuf);
       p_busSndBuf = NULL;
     }
     if (p_inactiveBusIndices) {
       for (i=0; i<0; i<p_numInactiveBuses) {
         delete p_inactiveBusIndices[i];
       }
-      delete p_inactiveBusIndices;
+      delete [] p_inactiveBusIndices;
       p_inactiveBusIndices = NULL;
-      delete ((char*)p_busRcvBuf);
+    }
+    if (p_busRcvBuf) {
+      delete [] ((char*)p_busRcvBuf);
       p_busRcvBuf = NULL;
     }
     // Find out how many active buses exist
     size = p_buses.size();
     numBuses = 0;
+    int idx, icnt = 0, lcnt=0;
     for (i=0; i<size; i++) {
       if (getActiveBus(i)) {
         numBuses++;
+        lcnt++;
+      } else {
+        icnt++;
       }
     }
     // Construct GA that can hold exchange data for all active buses
     int nprocs = GA_Nnodes();
     int me = GA_Nodeid();
-    int *totalBuses = new int(nprocs);
-    int *distr = new int(nprocs);
+    int *totalBuses = new int[nprocs];
+    int *distr = new int[nprocs];
     for (i=0; i<nprocs; i++) {
       if (me == i) {
         totalBuses[i] = numBuses;
@@ -1006,31 +1067,39 @@ void initBusUpdate(void)
     GA_Set_irreg_distr(p_busGA, distr, &nprocs);
     GA_Allocate(p_busGA);
 
-    // Sort buses into local and ghost lists
-    int idx, icnt = 0, lcnt=0;
-    for (i=0; i<size; i++) {
-      if (getActiveBus(i)) {
-        lcnt++;
-      } else {
-        icnt++;
-      }
+    if (lcnt > 0) {
+      p_activeBusIndices = new int*[lcnt];
+    }
+    for (i=0; i<lcnt; i++) {
+      p_activeBusIndices[i] = new int;
     }
     p_numActiveBuses = lcnt;
-    p_activeBusIndices = new int*[lcnt];
+    if (lcnt > 0) {
+      p_busSndBuf = new char[lcnt*p_busXCBufSize];
+    }
+
     p_numInactiveBuses = icnt;
-    p_inactiveBusIndices = new int*[icnt];
+    if (icnt > 0) {
+      p_inactiveBusIndices = new int*[icnt];
+    }
+    for (i=0; i<icnt; i++) {
+      p_inactiveBusIndices[i] = new int;
+    }
+    if (icnt > 0) {
+      p_busRcvBuf = new char[icnt*p_busXCBufSize];
+    }
     lcnt = 0;
     icnt = 0;
     for (i=0; i<size; i++) {
       if (getActiveBus(i)) {
-        p_activeBusIndices[lcnt] = new int(getGlobalBusIndex(i));
+        *(p_activeBusIndices[lcnt]) = getGlobalBusIndex(i);
         idx = *(p_activeBusIndices[lcnt]);
         if (idx<0 || idx >= p_busTotal) {
           // TODO: some kind of error
         }
         lcnt++;
       } else {
-        p_inactiveBusIndices[icnt] = new int(getGlobalBusIndex(i));
+        *(p_inactiveBusIndices[icnt]) = getGlobalBusIndex(i);
         idx = *(p_inactiveBusIndices[icnt]);
         if (idx<0 || idx >= p_busTotal) {
           // TODO: some kind of error
@@ -1038,8 +1107,8 @@ void initBusUpdate(void)
         icnt++;
       }
     }
-    delete totalBuses;
-    delete distr;
+    delete [] totalBuses;
+    delete [] distr;
   }
 }
 
@@ -1051,15 +1120,21 @@ void updateBuses(void)
 {
   // Copy data from XC buffer to send buffer
   GA_Sync();
-  int i, j, xc_off, rs_off;
+  int i, j, xc_off, rs_off, icnt, nbus;
   char *rs_ptr, *xc_ptr;
-  for (i=0; i<p_numActiveBuses; i++) {
-    xc_off = (*(p_activeBusIndices[i]))*p_busXCBufSize;
-    rs_off = i*p_busXCBufSize;
-    xc_ptr = ((char*)p_busXCBuffers)+xc_off;
-    rs_ptr = ((char*)p_busSndBuf)+rs_off;
-    for (j=0; j<p_busXCBufSize; j++) {
-      rs_ptr[j] = xc_ptr[j];
+  nbus = numBuses();
+  icnt = 0;
+  for (i=0; i<nbus; i++) {
+    if (getActiveBus(i)) {
+      xc_off = i*p_busXCBufSize;
+      rs_off = icnt*p_busXCBufSize;
+      xc_ptr = ((char*)p_busXCBuffers)+xc_off;
+      rs_ptr = ((char*)p_busSndBuf)+rs_off;
+      memcpy(rs_ptr, xc_ptr, p_busXCBufSize);
+      //    for (j=0; j<p_busXCBufSize; j++) {
+      //      rs_ptr[j] = xc_ptr[j];
+      //    }
+      icnt++;
     }
   }
 
@@ -1070,13 +1145,18 @@ void updateBuses(void)
   GA_Sync();
 
   // Copy data from recieve buffer to XC buffer
-  for (i=0; i<p_numInactiveBuses; i++) {
-    xc_off = (*(p_inactiveBusIndices[i]))*p_busXCBufSize;
-    rs_off = i*p_busXCBufSize;
-    xc_ptr = ((char*)p_busXCBuffers)+xc_off;
-    rs_ptr = ((char*)p_busRcvBuf)+rs_off;
-    for (j=0; j<p_busXCBufSize; j++) {
-      xc_ptr[j] = rs_ptr[j];
+  icnt = 0;
+  for (i=0; i<nbus; i++) {
+    if (!getActiveBus(i)) {
+      xc_off = i*p_busXCBufSize;
+      rs_off = icnt*p_busXCBufSize;
+      xc_ptr = ((char*)p_busXCBuffers)+xc_off;
+      rs_ptr = ((char*)p_busRcvBuf)+rs_off;
+      memcpy(xc_ptr, rs_ptr, p_busXCBufSize);
+      //    for (j=0; j<p_busXCBufSize; j++) {
+      //      xc_ptr[j] = rs_ptr[j];
+      //    }
+      icnt++;
     }
   }
 }
@@ -1101,8 +1181,10 @@ void initBranchUpdate(void)
       }
       delete [] p_activeBranchIndices;
       p_activeBranchIndices = NULL;
-      delete ((char*)p_branchSndBuf);
-      p_branchSndBuf = NULL;
+      if (p_branchSndBuf) {
+        delete [] ((char*)p_branchSndBuf);
+        p_branchSndBuf = NULL;
+      }
     }
     if (p_inactiveBranchIndices) {
       for (i=0; i<0; i<p_numInactiveBranches) {
@@ -1110,8 +1192,10 @@ void initBranchUpdate(void)
       }
       delete [] p_inactiveBranchIndices;
       p_inactiveBranchIndices = NULL;
-      delete ((char*)p_branchRcvBuf);
-      p_branchRcvBuf = NULL;
+      if (p_branchRcvBuf) {
+        delete [] ((char*)p_branchRcvBuf);
+        p_branchRcvBuf = NULL;
+      }
     }
     // Find out how many active branches exist
     size = p_branches.size();
@@ -1158,8 +1242,10 @@ void initBranchUpdate(void)
     }
     p_numActiveBranches = lcnt;
     p_activeBranchIndices = new int*[lcnt];
+    p_branchSndBuf = new char[lcnt*p_branchXCBufSize];
     p_numInactiveBranches = icnt;
     p_inactiveBranchIndices = new int*[icnt];
+    p_branchRcvBuf = new char[icnt*p_branchXCBufSize];
     lcnt = 0;
     icnt = 0;
     for (i=0; i<size; i++) {
@@ -1192,15 +1278,21 @@ void updateBranches(void)
 {
   // Copy data from XC buffer to send buffer
   GA_Sync();
-  int i, j, xc_off, rs_off;
+  int i, j, xc_off, rs_off, icnt, nbranch;
   char *rs_ptr, *xc_ptr;
-  for (i=0; i<p_numActiveBranches; i++) {
-    xc_off = (*(p_activeBranchIndices[i]))*p_branchXCBufSize;
-    rs_off = i*p_branchXCBufSize;
-    xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
-    rs_ptr = ((char*)p_branchSndBuf)+rs_off;
-    for (j=0; j<p_branchXCBufSize; j++) {
-      rs_ptr[j] = xc_ptr[j];
+  nbranch = numBranches();
+  icnt = 0;
+  for (i=0; i<nbranch; i++) {
+    if (getActiveBranch(i)) {
+      xc_off = i*p_branchXCBufSize;
+      rs_off = icnt*p_branchXCBufSize;
+      xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
+      rs_ptr = ((char*)p_branchSndBuf)+rs_off;
+      memcpy(rs_ptr, xc_ptr, p_branchXCBufSize);
+      //    for (j=0; j<p_branchXCBufSize; j++) {
+      //      rs_ptr[j] = xc_ptr[j];
+      //    }
+      icnt++;
     }
   }
 
@@ -1211,13 +1303,18 @@ void updateBranches(void)
   GA_Sync();
 
   // Copy data from recieve buffer to XC buffer
-  for (i=0; i<p_numInactiveBranches; i++) {
-    xc_off = (*(p_inactiveBranchIndices[i]))*p_branchXCBufSize;
-    rs_off = i*p_branchXCBufSize;
-    xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
-    rs_ptr = ((char*)p_branchRcvBuf)+rs_off;
-    for (j=0; j<p_branchXCBufSize; j++) {
-      xc_ptr[j] = rs_ptr[j];
+  icnt = 0;
+  for (i=0; i<nbranch; i++) {
+    if (!getActiveBranch(i)) {
+      xc_off = i*p_branchXCBufSize;
+      rs_off = icnt*p_branchXCBufSize;
+      xc_ptr = ((char*)p_branchXCBuffers)+xc_off;
+      rs_ptr = ((char*)p_branchRcvBuf)+rs_off;
+      memcpy(xc_ptr, rs_ptr, p_branchXCBufSize);
+      //    for (j=0; j<p_branchXCBufSize; j++) {
+      //      xc_ptr[j] = rs_ptr[j];
+      //    }
+      icnt++;
     }
   }
 }
@@ -1269,6 +1366,8 @@ private:
 
   /**
    * Global array handle and other parameters used for bus exchanges
+   * Note that p_(in)activeBusIndices must be a int** pointer to match syntax of GA
+   * gather/scatter calls
    */
   int p_busGA;
   bool p_busGASet;
@@ -1283,6 +1382,8 @@ private:
 
   /**
    * Global array handle and other parameters used for branch exchanges
+   * Note that p_(in)activeBranchIndices must be a int** pointer to match
+   * syntax of GA gather/scatter calls
    */
   int p_branchGA;
   bool p_branchGASet;
