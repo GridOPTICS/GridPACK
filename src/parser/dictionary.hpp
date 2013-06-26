@@ -3,7 +3,7 @@
  * PTI format files. Each parameter has a corresponding macro that can be used
  * as a unique string to identify the parameter. The use of macros instead of
  * using strings directly will provide extra safety by forcing compiler errors
- * in the case of typos or spelling mistackes.
+ * in the case of typos or spelling mistakes.
  */
 
 #ifndef DICTIONARY_HPP_
