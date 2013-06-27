@@ -166,6 +166,17 @@ class BaseComponent
      */
     virtual void setXCBuf(void *buf);
 
+    /**
+     * Set an internal variable that can be used to control the behavior of the
+     * component. This function doesn't need to be implemented, but if needed,
+     * it can be used to change the behavior of the network in different phases
+     * of the calculation. For example, if a different matrix needs to be
+     * generated at different times, the mode of the calculation can changed to
+     * get different values from the MatVecInterface functions
+     * @param mode: integer indicating which mode should be used
+     */
+    virtual void setMode(int mode);
+
   protected:
     /**
      * A buffer that can be used for exchanging component data. This is
@@ -177,6 +188,11 @@ class BaseComponent
      * Size (in bytes) of buffer p_XCBuf
      */
      int p_XCBufSize;
+
+     /**
+      * Current mode
+      */
+     int p_mode;
 
   private:
 

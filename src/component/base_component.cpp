@@ -142,6 +142,7 @@ gridpack::component::BaseComponent::BaseComponent(void)
 {
   p_XCBufSize = 0;
   p_XCBuf = NULL;
+  p_mode = 0;
 }
 
 /**
@@ -198,6 +199,20 @@ void gridpack::component::BaseComponent::setXCBuf(void *buf)
   } else {
     gridpack::component::BaseComponent::p_XCBuf = buf;
   }
+}
+
+/**
+ * Set an internal variable that can be used to control the behavior of the
+ * component. This function doesn't need to be implemented, but if needed,
+ * it can be used to change the behavior of the network in different phases
+ * of the calculation. For example, if a different matrix needs to be
+ * generated at different times, the mode of the calculation can changed to
+ * get different values from the MatVecInterface functions
+ * @param mode: integer indicating which mode should be used
+ */
+void gridpack::component::BaseComponent::setMode(int mode)
+{
+  p_mode = mode;
 }
 
 // Base implementation for a bus object. Provides a mechanism for the bus to

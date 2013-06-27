@@ -91,3 +91,61 @@ void gridpack::factory::BaseFactory::load(void)
     p_network->getBranch(i)->load(p_network->getBranchData(i));
   }
 }
+
+/**
+ * Set up the exchange buffers so that they work correctly. This should only
+ * be called after the network topology has been specified
+ */
+void gridpack::factory::BaseFactory::setExchange(void)
+{
+  int busXCSize, branchXCSize;
+  int nbus, nbranch;
+
+  nbus = p_network->numBuses();
+  nbranch = p_network->numBranches();
+
+  // Get size of bus and branch exchange buffers from first local bus and branch
+  // components. These must be the same for all bus and branch components
+
+  if (nbus > 0) {
+    busXCSize = p_network->getBus(0)->getXCBufSize();
+  } else {
+    busXCSize = 0;
+  }
+  p_network->allocXCBus(busXCSize);
+
+  if (nbranch > 0){
+    branchXCSize = p_network->getBranch(0)->getXCBufSize();
+  }
+  p_network->allocXCBranch(branchXCSize);
+
+  // Buffers have been allocated in network. Now associate buffers from network
+  // back to individual components
+  int i;
+  for (i=0; i<nbus; i++) {
+    p_network->getBus(i)->setXCBuf(p_network->getXCBusBuffer(i));
+  }
+  for (i=0; i<nbranch; i++) {
+    p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
+  }
+}
+
+/**
+ * Set the mode for all BaseComponent objects in the network.
+ * @param mode: integer representing desired mode
+ */
+void gridpack::factory::BaseFactory::setMode(int mode)
+{
+  int nbus, nbranch;
+
+  nbus = p_network->numBuses();
+  nbranch = p_network->numBranches();
+
+  int i;
+  for (i=0; i<nbus; i++) {
+    p_network->getBus(i)->setMode(mode);
+  }
+  for (i=0; i<nbranch; i++) {
+    p_network->getBranch(i)->setMode(mode);
+  }
+}

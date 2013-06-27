@@ -50,6 +50,19 @@ class BaseFactory {
      * corresponding buses and branches
      */
     virtual void load(void);
+
+    /**
+     * Set up the exchange buffers so that they work correctly. This should only
+     * be called after the network topology has been specified
+     */
+    virtual void setExchange(void);
+
+    /**
+     * Set the mode for all BaseComponent objects in the network.
+     * @param mode: integer representing desired mode
+     */
+    virtual void setMode(int mode);
+
   private:
 
     boost::shared_ptr<gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent,
