@@ -24,6 +24,11 @@ public:
   ~DataCollection(void);
 
   /**
+   * Assignment operator
+   */
+  DataCollection & operator= (const DataCollection &rhs);
+
+  /**
    *  Add variables to DataCollection object
    *  @param name: name given to data element
    *  @param value: value of data element

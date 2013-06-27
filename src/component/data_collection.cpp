@@ -15,6 +15,22 @@ gridpack::component::DataCollection::~DataCollection(void)
 }
 
 /**
+ * Assignment operator
+ */
+gridpack::component::DataCollection & gridpack::component::DataCollection::operator=
+  (const gridpack::component::DataCollection &rhs)
+{
+  if (this == &rhs) return *this;
+  p_ints = rhs.p_ints;
+  p_longs = rhs.p_longs;
+  p_bools = rhs.p_bools;
+  p_strings = rhs.p_strings;
+  p_floats = rhs.p_floats;
+  p_doubles = rhs.p_doubles;
+  p_complexType = rhs.p_complexType;
+}
+
+/**
  *  Add variables to DataCollection object
  *  @param name: name given to data element
  *  @param value: value of data element
