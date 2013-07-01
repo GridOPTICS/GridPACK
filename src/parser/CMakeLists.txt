@@ -4,10 +4,10 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-06-11 12:23:32 d3g096
+# Last Change: 2013-07-01 13:43:28 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries gridpack_component ${Boost_LIBRARIES})
+set(target_libraries gridpack_components ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -16,7 +16,7 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 # A simple MPI program
 # -------------------------------------------------------------
 add_executable(test_parser test/PTI23_test.cpp)
-target_link_libraries(test_parser ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(test_parser ${target_libraries})
 
 add_test(test_parser_serial test_parser)
 #!!add_test(NAME greetings_parallel COMMAND 
