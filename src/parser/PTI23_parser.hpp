@@ -167,7 +167,7 @@ class PTI23_parser {
 public:
 
     PTI23_parser(){};
-	virtual ~PTI23_parser(){};
+    virtual ~PTI23_parser(){};
 
 	/*
 	 * A case is the collection of all data associated with a PTI23 file.
@@ -222,13 +222,12 @@ protected:
 
         data.setValue(CASE_IC, atoi(split_line[0].c_str()));
         case_instance.push_back(data);
-
-        // this value may be followed by a comment
+/*
         std::vector<std::string>  split_subline;
         boost::algorithm::split(split_subline, split_line, boost::algorithm::is_any_of("/"), boost::token_compress_on);
         data.setValue(CASE_SBASE, atof(split_subline[0].c_str()));
         case_instance.push_back(data);
-
+*/
         data.setValue(CASE_RECORD2, split_line[0].c_str());
         case_instance.push_back(data);
 

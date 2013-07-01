@@ -9,8 +9,9 @@
  */
 
 #include <iostream>
-#include "parser.hpp"
-#include "PTI23_parser.hpp"
+#include <string>
+#include <gridpack/parser/Parser.hpp>
+#include <gridpack/parser/PTI23_parser.hpp>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -24,9 +25,11 @@ BOOST_AUTO_TEST_SUITE(Parser)
 BOOST_AUTO_TEST_CASE(openFailure)
 {
     bool                    opened         = true;
-    try {
-        Parser<PTI22_parser> parser("");
-    } catch (ios_base::failure & e) {
+    try { 
+	std::string         fileName        = ("");
+        gridpack::parser::Parser<gridpack::parser::PTI23_parser> parser;
+	parser.getCaseData(fileName);
+    } catch (std::ios_base::failure & e) {
         opened     = false;
     }
 
@@ -38,8 +41,7 @@ BOOST_AUTO_TEST_CASE(openSuccess)
 {
     bool                    opened        = false;
     try {
-        Parser<PTI22_parser> parser("PTI23_seqtest.raw");
-    } catch (ios_base::failure & e) {
+    } catch (std::ios_base::failure & e) {
         opened     = true;
     }
 
@@ -63,7 +65,6 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
 }
 
