@@ -31,11 +31,14 @@
 #define _pf_components_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 
 namespace gridpack {
 namespace powerflow {
+
+enum PFMode{YBUS, JACOBIAN};
 
 class PFBus
   : public gridpack::component::BaseBusComponent {
@@ -51,19 +54,50 @@ class PFBus
     ~PFBus(void);
 
     /**
-     *  Return size of diagonal matrix block contributed by the component
-     *  @param isize, jsize: number of rows and columns of matrix block
-     *  @return: false if network component does not contribute matrix element
+     * Return size of matrix block on the diagonal contributed by
+     * component and the global index of this component
+     * @param idx: global index of this component
+     * @param isize, jsize: number of rows and columns of matrix block
+     * @return: false if network component does not contribute matrix
+     *        element
      */
-    bool matrixDiagSize(int *isize, int *jsize) const;
+    bool matrixDiagSize(int *idx, int *isize, int *jsize) const;
 
     /**
-     * Return the values of the matrix block. The values are
-     * returned in row-major order.
+     * Return the values of for a diagonal matrix block. The values are
+     * returned in row-major order. Also return the global index of component
+     * @param idx: global index of this component
      * @param values: pointer to matrix block values
-     * @return: false if network component does not contribute matrix element
+     * @return: false if network component does not contribute
+     *        matrix element
      */
-    bool matrixDiagValues(void *values);
+    bool matrixDiagValues(int *idx, void *values);
+
+    /**
+     * Return size of vector block contributed by component and
+     * location using global indices
+     * @param idx: vector location using global indices
+     * @param isize: number of vector elements
+     * @return: false if network component does not contribute
+     *        vector element
+     */
+    bool vectorSize(int *idx, int *isize) const;
+
+    /**
+     * Return the values of the vector block and location using
+     * global indices
+     * @param idx: vector location using global indices
+     * @param values: pointer to vector values
+     * @return: false if network component does not contribute
+     *        vector element
+     */
+    bool vectorValues(int *idx, void *values);
+
+    /**
+     * Set values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    void setYBus(void);
 
     /**
      * Load values stored in DataCollection object into PFBus object. The
@@ -74,10 +108,32 @@ class PFBus
      */
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
+    /**
+     * Set the mode to control what matrices and vectors are built when using
+     * the mapper
+     * @param mode: enumerated constant for different modes
+     */
+    void setMode(int mode);
+
+    /**
+     * Return the value of the voltage magnitude on this bus
+     * @return: voltage magnitude
+     */
+    double getVoltage();
+
+    /**
+     * Return the value of the phase angle on this bus
+     * @return: phase angle
+     */
+    double getPhase();
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
+    int p_mode;
+    double p_v, p_theta;
+    double p_ybusr, p_ybusi;
 
 };
 
@@ -95,22 +151,31 @@ class PFBranch
     ~PFBranch(void);
 
     /**
-     *  Return size of off-diagonal matrix block contributed by the component
-     *  for the forward/reverse directions
-     *  @param isize, jsize: number of rows and columns of matrix block
-     *  @return: false if network component does not contribute matrix element
+     * Return size of off-diagonal matrix block contributed by the component
+     * for the forward/reverse directions. Also return indices of matrix
+     * elements
+     * @param idx, jdx: global indices of matrix element
+     * @param isize, jsize: number of rows and columns of matrix block
+     * @return: false if network component does not contribute matrix element
      */
-    bool matrixForwardSize(int *isize, int *jsize) const;
-    bool matrixReverseSize(int *isize, int *jsize) const;
+    bool matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const;
+    bool matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const;
 
     /**
      * Return the values of the forward/reverse matrix block. The values are
-     * returned in row-major order.
+     * returned in row-major order. Also return indices of matrix elements
+     * @param idx, jdx: global indices of matrix element
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute matrix element
      */
-    bool matrixForwardValues(void *values);
-    bool matrixReverseValues(void *values);
+    bool matrixForwardValues(int *idx, int *jdx, void *values);
+    bool matrixReverseValues(int *idx, int *jdx, void *values);
+
+    /**
+     * Set values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    void setYBus(void);
 
     /**
      * Load values stored in DataCollection object into PFBranch object. The
@@ -142,6 +207,22 @@ class PFBranch
      */
     gridpack::ComplexType getShunt(PFBus *bus);
 
+    /**
+     * Return the contribution to the Jacobian for the powerflow equations from
+     * a branch
+     * @param bus: pointer to the bus making the call
+     * @param values: an array of 4 doubles that holds return metrix elements
+     * @return: contribution to Jacobian matrix from branch
+     */
+    void getJacobian(PFBus *bus, double *values);
+
+    /**
+     * Set the mode to control what matrices and vectors are built when using
+     * the mapper
+     * @param mode: enumerated constant for different modes
+     */
+    void setMode(int mode);
+
   private:
     double p_reactance;
     double p_resistance;
@@ -153,6 +234,9 @@ class PFBranch
     double p_shunt_admt_g2;
     double p_shunt_admt_b2;
     bool p_xform, p_shunt;
+    int p_mode;
+    double p_ybusr, p_ybusi;
+    double p_theta;
 };
 
 }     // powerflow

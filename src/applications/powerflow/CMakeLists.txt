@@ -7,9 +7,19 @@
 # Last Change: 2013-05-07 13:57:25 d3g096
 # -------------------------------------------------------------
 
+set(target_libraries gridpack_network ${Boost_LIBRARIES})
+
+include_directories(AFTER ${GA_INCLUDE_DIRS})
+
 add_library(powerflow_app
   pf_components.cpp
+  pf_factory.cpp
 )
+
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+  include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
 
 # -------------------------------------------------------------
 # TEST: greetings

@@ -50,9 +50,14 @@ void gridpack::factory::BaseFactory::setComponents(void)
   // Set pointers for buses at either end of each branch
   for (i=0; i<numBranch; i++) {
     int idx1, idx2;
+    int branch_idx, bus1_idx, bus2_idx;
     p_network->getBranchEndpoints(i, &idx1, &idx2);
     p_network->getBranch(i)->setBus1(p_network->getBus(idx1));
     p_network->getBranch(i)->setBus2(p_network->getBus(idx2));
+    branch_idx = p_network->getGlobalBranchIndex(i); 
+    bus1_idx = p_network->getGlobalBusIndex(idx1); 
+    bus2_idx = p_network->getGlobalBusIndex(idx2); 
+    p_network->getBranch(i)->setGlobalIndices(branch_idx, bus1_idx, bus2_idx); 
   }
 
   // Set pointers for branches and buses connected to each bus
@@ -67,6 +72,9 @@ void gridpack::factory::BaseFactory::setComponents(void)
     for (j=0; j<nghbrBranch.size(); j++) {
       p_network->getBus(i)->addBranch(p_network->getBranch(nghbrBranch[j]));
     }
+    int bus_idx;
+    bus_idx = p_network->getGlobalBusIndex(i); 
+    p_network->getBus(i)->setGlobalIndex(bus_idx);
   }
 }
 

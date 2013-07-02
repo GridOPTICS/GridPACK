@@ -37,76 +37,90 @@ class MatVecInterface {
     virtual ~MatVecInterface(void);
 
     /**
-     * Return size of matrix block on the diagonal contributed by component
+     * Return size of matrix block on the diagonal contributed by component and
+     * the global index of this component
+     * @param idx: global index of this component
      * @param isize, jsize: number of rows and columns of matrix
      *        block
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixDiagSize(int *isize, int *jsize) const;
+    virtual bool matrixDiagSize(int *idx, int *isize, int *jsize) const;
 
     /**
      * Return the values of for a diagonal matrix block. The values are
-     * returned in row-major order.
+     * returned in row-major order. Also return the global index of component
+     * @param idx: global index of this component
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixDiagValues(void *values);
+    virtual bool matrixDiagValues(int *idx, void *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
-     * values are for the forward direction
+     * values are for the forward direction. Also return matrix location using
+     * global indices
+     * @param idx, jdx: matrix location using global indices
      * @param isize, jsize: number of rows and columns of matrix
      *        block
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixForwardSize(int *isize, int *jsize) const;
+    virtual bool matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const;
 
     /**
      * Return the values of for an off-diagonl matrix block. The values are
-     * for the forward direction and are returned in row-major order.
+     * for the forward direction and are returned in row-major order. Also
+     * return matrix location using global indices
+     * @param idx, jdx: matrix location using global indices
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixForwardValues(void *values);
+    virtual bool matrixForwardValues(int *idx, int *jdx, void *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
-     * values are for the reverse direction
+     * values are for the reverse direction. Also return matrix location using
+     * global indices
+     * @param idx, jdx: matrix location using global indices
      * @param isize, jsize: number of rows and columns of matrix
      *        block
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixReverseSize(int *isize, int *jsize) const;
+    virtual bool matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const;
 
     /**
      * Return the values of for an off-diagonl matrix block. The values are
-     * for the reverse direction and are returned in row-major order.
+     * for the reverse direction and are returned in row-major order. Also
+     * return matrix location using global indices
+     * @param idx, jdx: matrix location using global indices
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixReverseValues(void *values);
+    virtual bool matrixReverseValues(int *idx, int *jdx, void *values);
 
     /**
-     * Return size of vector block contributed by component
+     * Return size of vector block contributed by component and location using
+     * global indices
+     * @param idx: vector location using global indices
      * @param isize: number of vector elements
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool vectorSize(int *isize) const;
+    virtual bool vectorSize(int *idx, int *isize) const;
 
     /**
-     * Return the values of the vector block.
+     * Return the values of the vector block and location using global indices
+     * @param idx: vector location using global indices
      * @param values: pointer to vector values
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool vectorValues(void *values);
+    virtual bool vectorValues(int *idx, void *values);
 
     //TODO: May need to include routines that support moving values from vectors
     //      back into network components.
@@ -239,12 +253,36 @@ class BaseBusComponent
     /**
      * Clear all pointers to neighboring branches
      */
-    void clearBranches();
+    void clearBranches(void);
 
     /**
      * Clear all pointers to neighboring buses
      */
-    void clearBuses();
+    void clearBuses(void);
+
+    /**
+     * Set reference bus status
+     * @param status: reference bus status
+     */
+    void setReferenceBus(bool status);
+
+    /**
+     * Get reference bus status
+     * @return: reference bus status
+     */
+    bool getReferenceBus(void) const;
+
+    /**
+     * Set global index of bus
+     * @param idx: global index of bus
+     */
+    void setGlobalIndex(int idx);
+
+    /**
+     * Get global index of bus
+     * @param idx: global index of bus
+     */
+    void getGlobalIndex(int *idx) const;
 
   private:
     /**
@@ -255,6 +293,17 @@ class BaseBusComponent
      * Buses that are connect to bus via a branch
      */
     std::vector<boost::weak_ptr<BaseComponent> > p_buses;
+
+    /**
+     * Is this a reference bus?
+     */
+    bool p_refBus;
+
+    /**
+     * Global index of bus
+     */
+    int p_idx;
+
 };
 
 class BaseBranchComponent
@@ -299,6 +348,24 @@ class BaseBranchComponent
      */
     void clearBuses(void);
 
+    /**
+     * Set the global index of the branch and set the index values for the two
+     * buses at either end of the branch.
+     * @param branch_idx: global index of branch
+     * @param bus1_idx: global index of "from" bus
+     * @param bus2_idx: global index of "to" bus
+     */
+    void setGlobalIndices(int branch_idx, int bus1_idx, int bus2_idx);
+
+    /**
+     * Get the global index of the branch and get the index values for the two
+     * buses at either end of the branch.
+     * @param branch_idx: global index of branch
+     * @param bus1_idx: global index of "from" bus
+     * @param bus2_idx: global index of "to" bus
+     */
+    void getGlobalIndices(int *branch_idx, int *bus1_idx, int *bus2_idx) const;
+
   private:
     /**
      *  Pointers to buses at either end of branch
@@ -306,6 +373,11 @@ class BaseBranchComponent
     boost::weak_ptr<BaseComponent> p_bus1;
     boost::weak_ptr<BaseComponent> p_bus2;
 
+    /**
+     *  Global index of branch and global indices of buses at each end of branch
+     */
+    int p_branch_idx;
+    int p_bus1_idx, p_bus2_idx;
 };
 
 }    // component
