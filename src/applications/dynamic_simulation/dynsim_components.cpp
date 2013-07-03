@@ -16,12 +16,12 @@
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/applications/powerflow/pf_components.hpp"
+#include "gridpack/applications/dynamic_simulation/dynsim_components.hpp"
 
 /**
  *  Simple constructor
  */
-gridpack::powerflow::PFBus::PFBus(void)
+gridpack::dynsim::DynSimBus::DynSimBus(void)
 {
   p_shunt_gs = 0.0;
   p_shunt_bs = 0.0;
@@ -32,7 +32,7 @@ gridpack::powerflow::PFBus::PFBus(void)
 /**
  *  Simple destructor
  */
-gridpack::powerflow::PFBus::~PFBus(void)
+gridpack::dynsim::DynSimBus::~DynSimBus(void)
 {
 }
 
@@ -43,16 +43,17 @@ gridpack::powerflow::PFBus::~PFBus(void)
  *  @param isize, jsize: number of rows and columns of matrix block
  *  @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBus::matrixDiagSize(int *idx, int *isize, int *jsize) const
+bool gridpack::dynsim::DynSimBus::matrixDiagSize(int *idx, int *isize, int *jsize) const
 {
   getGlobalIndex(idx);
   if (p_mode == JACOBIAN && getReferenceBus()) {
     *isize = 0;
     *jsize = 0;
     return false;
-  } else {
+  } else if (p_mode == JACOBIAN) {
     *isize = 2;
     *jsize = 2;
+  } else if (p_mode == GENERATOR) {
   }
   return true;
 }
@@ -64,7 +65,7 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *idx, int *isize, int *jsize
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBus::matrixDiagValues(int *idx, void *values)
+bool gridpack::dynsim::DynSimBus::matrixDiagValues(int *idx, void *values)
 {
   getGlobalIndex(idx);
   if (p_mode == YBUS) {
@@ -88,7 +89,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(int *idx, void *values)
       (static_cast<ComplexType*>(values))[3] = -2.0*p_v*p_ybusi;
       // HACK: Need to cast pointer, is there a better way?
       for (i=0; i<size; i++) {
-	(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
+	(dynamic_cast<gridpack::dynsim::DynSimBranch*>(branches[i].get()))->
           getJacobian(this, branch_values);
         (static_cast<ComplexType*>(values))[0] -= p_v*branch_values[0];
         (static_cast<ComplexType*>(values))[1] += p_v*branch_values[1];
@@ -98,6 +99,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(int *idx, void *values)
     } else {
       return false;
     }
+  } else if (p_mode == GENERATOR) {
   }
 }
 
@@ -108,13 +110,15 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(int *idx, void *values)
  * @param size: size of vector block
  * @return: false if component does not contribute to vector
  */
-bool gridpack::powerflow::PFBus::vectorSize(int *idx, int *size) const
+bool gridpack::dynsim::DynSimBus::vectorSize(int *idx, int *size) const
 {
   getGlobalIndex(idx);
   if (p_mode == JACOBIAN && getReferenceBus()) {
     *size = 0;
     return false;
-  } else {
+  if (p_mode == JACOBIAN) {
+    *size = 2;
+  } else if (p_mode == GENERATOR) {
     *size = 2;
   }
   return true;
@@ -127,7 +131,7 @@ bool gridpack::powerflow::PFBus::vectorSize(int *idx, int *size) const
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::powerflow::PFBus::vectorValues(int *idx, void *values)
+bool gridpack::dynsim::DynSimBus::vectorValues(int *idx, void *values)
 {
   getGlobalIndex(idx);
   if (p_mode == JACOBIAN) {
@@ -139,8 +143,8 @@ bool gridpack::powerflow::PFBus::vectorValues(int *idx, void *values)
     P = 0.0;
     Q = 0.0;
     for (i=0; i<size; i++) {
-      boost::shared_ptr<gridpack::powerflow::PFBranch>
-        branch(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()));
+      boost::shared_ptr<gridpack::dynsim::DynSimBranch>
+        branch(dynamic_cast<gridpack::dynsim::DynSimBranch*>(branches[i].get()));
       branch->getPQ(this, &p, &q);
       P += p;
       Q += q;
@@ -150,10 +154,11 @@ bool gridpack::powerflow::PFBus::vectorValues(int *idx, void *values)
     (static_cast<gridpack::ComplexType*>(values))[0] = P;
     (static_cast<gridpack::ComplexType*>(values))[1] = Q;
     return true;
+  } else if (p_mode == GENERATOR) {
   }
 }
 
-void gridpack::powerflow::PFBus::setYBus(void)
+void gridpack::dynsim::DynSimBus::setYBus(void)
 {
   gridpack::ComplexType ret(0.0,0.0);
   std::vector<boost::shared_ptr<BaseComponent> > branches;
@@ -162,8 +167,8 @@ void gridpack::powerflow::PFBus::setYBus(void)
   int i;
   // HACK: Need to cast pointer, is there a better way?
   for (i=0; i<size; i++) {
-    boost::shared_ptr<gridpack::powerflow::PFBranch>
-      branch(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBranch>
+      branch(dynamic_cast<gridpack::dynsim::DynSimBranch*>(branches[i].get()));
     ret -= branch->getAdmittance();
     ret += branch->getTransformer(this);
     ret += branch->getShunt(this);
@@ -177,13 +182,13 @@ void gridpack::powerflow::PFBus::setYBus(void)
 }
 
 /**
- * Load values stored in DataCollection object into PFBus object. The
+ * Load values stored in DataCollection object into DynSimBus object. The
  * DataCollection object will have been filled when the network was created
  * from an external configuration file
  * @param data: DataCollection object contain parameters relevant to this
  *       bus that were read in when network was initialized
  */
-void gridpack::powerflow::PFBus::load(
+void gridpack::dynsim::DynSimBus::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   p_shunt = true;
@@ -196,7 +201,7 @@ void gridpack::powerflow::PFBus::load(
  * Return the value of the voltage magnitude on this bus
  * @return: voltage magnitude
  */
-double gridpack::powerflow::PFBus::getVoltage()
+double gridpack::dynsim::DynSimBus::getVoltage()
 {
 }
 
@@ -204,14 +209,14 @@ double gridpack::powerflow::PFBus::getVoltage()
  * Return the value of the phase angle on this bus
  * @return: phase angle
  */
-double gridpack::powerflow::PFBus::getPhase()
+double gridpack::dynsim::DynSimBus::getPhase()
 {
 }
 
 /**
  *  Simple constructor
  */
-gridpack::powerflow::PFBranch::PFBranch(void)
+gridpack::dynsim::DynSimBranch::DynSimBranch(void)
 {
   p_reactance = 0.0;
   p_resistance = 0.0;
@@ -228,7 +233,7 @@ gridpack::powerflow::PFBranch::PFBranch(void)
 /**
  *  Simple destructor
  */
-gridpack::powerflow::PFBranch::~PFBranch(void)
+gridpack::dynsim::DynSimBranch::~DynSimBranch(void)
 {
 }
 
@@ -240,15 +245,15 @@ gridpack::powerflow::PFBranch::~PFBranch(void)
  * @param isize, jsize: number of rows and columns of matrix block
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBranch::matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const
+bool gridpack::dynsim::DynSimBranch::matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const
 {
   int ibranch;
   getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus2(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus2().get()));
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -260,21 +265,22 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *idx, int *jdx, int *i
       *jsize = 0;
       return false;
     }
-  } else {
+  } else if (p_mode == YBUS) {
     *isize = 2;
     *jsize = 2;
     return true;
+  } else if (p_mode == GENERATOR) {
   }
 }
-bool gridpack::powerflow::PFBranch::matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const
+bool gridpack::dynsim::DynSimBranch::matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const
 {
   int ibranch;
   getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus> 
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus> 
+      bus2(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus2().get()));
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -286,10 +292,11 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *idx, int *jdx, int *i
       *jsize = 0;
       return false;
     }
-  } else {
+  } else if (p_mode == YBUS) {
     *isize = 2;
     *jsize = 2;
     return true;
+  } else if (p_mode == GENERATOR) {
   }
 }
 
@@ -300,15 +307,15 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *idx, int *jdx, int *i
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBranch::matrixForwardValues(int *idx, int *jdx, void *values)
+bool gridpack::dynsim::DynSimBranch::matrixForwardValues(int *idx, int *jdx, void *values)
 {
   int ibranch;
   getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus2(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus2().get()));
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -327,23 +334,24 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(int *idx, int *jdx, void
     } else {
       return false;
     }
-  } else {
+  } else if (p_mode == YBUS) {
     (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
     (static_cast<gridpack::ComplexType*>(values))[1] = p_ybusi;
     (static_cast<gridpack::ComplexType*>(values))[2] = -p_ybusi;
     (static_cast<gridpack::ComplexType*>(values))[3] = p_ybusr;
     return true;
+  } else if (p_mode == GENERATOR) {
   }
 }
-bool gridpack::powerflow::PFBranch::matrixReverseValues(int *idx, int *jdx, void *values)
+bool gridpack::dynsim::DynSimBranch::matrixReverseValues(int *idx, int *jdx, void *values)
 {
   int ibranch;
   getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus2(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus2().get()));
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -362,17 +370,18 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(int *idx, int *jdx, void
     } else {
       return false;
     }
-  } else {
+  } else if (p_mode == YBUS) {
     (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
     (static_cast<gridpack::ComplexType*>(values))[1] = p_ybusi;
     (static_cast<gridpack::ComplexType*>(values))[2] = -p_ybusi;
     (static_cast<gridpack::ComplexType*>(values))[3] = p_ybusr;
     return true;
+  } else if (p_mode == GENERATOR) {
   }
 }
 
 // Calculate contributions to the admittance matrix from the branches
-void gridpack::powerflow::PFBranch::setYBus(void)
+void gridpack::dynsim::DynSimBranch::setYBus(void)
 {
   gridpack::ComplexType ret(p_resistance,p_reactance);
   ret = -1.0/ret;
@@ -383,22 +392,22 @@ void gridpack::powerflow::PFBranch::setYBus(void)
   p_ybusi = imag(ret);
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
-  boost::shared_ptr<gridpack::powerflow::PFBus>
-    bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-  boost::shared_ptr<gridpack::powerflow::PFBus>
-    bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+  boost::shared_ptr<gridpack::dynsim::DynSimBus>
+    bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
+  boost::shared_ptr<gridpack::dynsim::DynSimBus>
+    bus2(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus2().get()));
   p_theta = bus1->getPhase() - bus2->getPhase();
    
 }
 
 /**
- * Load values stored in DataCollection object into PFBranch object. The
+ * Load values stored in DataCollection object into DynSimBranch object. The
  * DataCollection object will have been filled when the network was created
  * from an external configuration file
  * @param data: DataCollection object contain parameters relevant to this
  *       branch that were read in when network was initialized
  */
-void gridpack::powerflow::PFBranch::load(
+void gridpack::dynsim::DynSimBranch::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   bool ok = true;
@@ -419,7 +428,7 @@ void gridpack::powerflow::PFBranch::load(
  * Return the complex admittance of the branch
  * @return: complex addmittance of branch
  */
-gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
+gridpack::ComplexType gridpack::dynsim::DynSimBranch::getAdmittance(void)
 {
   gridpack::ComplexType ret(p_resistance, p_reactance);
   return -1.0/ret;
@@ -432,7 +441,7 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
  * @return: contribution to Y matrix from branch
  */
 gridpack::ComplexType
-gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
+gridpack::dynsim::DynSimBranch::getTransformer(gridpack::dynsim::DynSimBus *bus)
 {
   if (p_xform) {
     gridpack::ComplexType ret(p_resistance,p_reactance);
@@ -458,7 +467,7 @@ gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
  * @return: contribution to Y matrix from shunts associated with branches
  */
 gridpack::ComplexType
-gridpack::powerflow::PFBranch::getShunt(gridpack::powerflow::PFBus *bus)
+gridpack::dynsim::DynSimBranch::getShunt(gridpack::dynsim::DynSimBus *bus)
 {
   double retr, reti;
   if (p_shunt) {
@@ -482,24 +491,24 @@ gridpack::powerflow::PFBranch::getShunt(gridpack::powerflow::PFBus *bus)
 }
 
 /**
- * Return the contribution to the Jacobian for the powerflow equations from
+ * Return the contribution to the Jacobian for the dynsim equations from
  * a branch
  * @param bus: pointer to the bus making the call
  * @param values: an array of 4 doubles that holds return metrix elements
  */
-void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus, double *values)
+void gridpack::dynsim::DynSimBranch::getJacobian(gridpack::dynsim::DynSimBus *bus, double *values)
 {
   double v;
   double cs, sn;
   if (bus == getBus1().get()) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus2(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus2().get()));
     v = bus2->getVoltage();
     cs = cos(p_theta);
     sn = sin(p_theta);
   } else if (bus == getBus2().get()) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
     v = bus1->getVoltage();
     cs = cos(-p_theta);
     sn = sin(-p_theta);
@@ -517,7 +526,7 @@ void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus,
  * @param p: real part of constraint
  * @param q: imaginary part of constraint
  */
-void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, double *p, double *q)
+void gridpack::dynsim::DynSimBranch::getPQ(gridpack::dynsim::DynSimBus *bus, double *p, double *q)
 {
   double cs, sn;
   if (bus == getBus1().get()) {
@@ -529,11 +538,11 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
   } else {
     // TODO: Some kind of error
   }
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
     double v1 = bus1->getVoltage();
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    boost::shared_ptr<gridpack::dynsim::DynSimBus>
+      bus2(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus2().get()));
     double v2 = bus2->getVoltage();
     *p = v1*v2*(p_ybusr*cs+p_ybusi*sn);
     *q = v1*v2*(p_ybusr*sn-p_ybusi*cs);

@@ -10,14 +10,14 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _pf_factory_h_
-#define _pf_factory_h_
+#ifndef _dynsim_factory_h_
+#define _dynsim_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
 
 namespace gridpack {
-namespace powerflow {
+namespace dynsim {
 
 class PFFactory
   : gridpack::factory::BaseFactory {
@@ -45,6 +45,6 @@ class PFFactory
                               gridpack::component::BaseBranchComponent> > p_network;
 };
 
-} // powerflow
+} // dynsim
 } // gridpack
 #endif
