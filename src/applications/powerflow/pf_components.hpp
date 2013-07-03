@@ -134,6 +134,7 @@ class PFBus
     int p_mode;
     double p_v, p_theta;
     double p_ybusr, p_ybusi;
+    double p_P0, p_Q0;
 
 };
 
@@ -215,6 +216,13 @@ class PFBranch
      * @return: contribution to Jacobian matrix from branch
      */
     void getJacobian(PFBus *bus, double *values);
+
+    /**
+     * Return contribution to constraints
+     * @param p: real part of constraint
+     * @param q: imaginary part of constraint
+     */
+    void getPQ(PFBus *bus, double *p, double *q);
 
     /**
      * Set the mode to control what matrices and vectors are built when using
