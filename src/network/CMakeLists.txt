@@ -4,10 +4,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-06-24 07:33:53 d3g096
+# Last Change: 2013-07-04 08:13:01 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries gridpack_component ${Boost_LIBRARIES})
+set(target_libraries gridpack_components
+  ${GA_LIBRARIES} 
+  ${Boost_LIBRARIES} 
+  ${MPI_CXX_LIBRARIES}
+)
 
 include_directories(AFTER ${GA_INCLUDE_DIRS})
 
@@ -25,7 +29,7 @@ endif()
 # A simple MPI program
 # -------------------------------------------------------------
 add_executable(test_network test/test_network.cpp)
-target_link_libraries(test_network gridpack_network ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(test_network gridpack_network ${target_libraries})
 
 add_test(test_network_serial test_network)
 #!!add_test(NAME greetings_parallel COMMAND 

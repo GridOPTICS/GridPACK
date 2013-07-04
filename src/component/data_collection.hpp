@@ -3,8 +3,12 @@
 
 #include <map>
 #include <string>
-#include "boost/smart_ptr/shared_ptr.hpp"
+#include <boost/serialization/map.hpp>
+#include <boost/serialization/string.hpp>
+
 #include "gridpack/utilities/complex.hpp"
+
+#include <boost/serialization/export.hpp>
 
 // Simple outline of data collection object
 
@@ -80,8 +84,28 @@ private:
   std::map<std::string, float> p_floats; 
   std::map<std::string, double> p_doubles; 
   std::map<std::string, gridpack::ComplexType> p_complexType; 
+
+private:
+  friend class boost::serialization::access;
+
+  /// Serialization method
+  template<class Archive> void serialize(Archive &ar, const unsigned int)
+  {
+    ar & p_ints
+      & p_longs
+      & p_bools
+      & p_strings
+      & p_floats
+      & p_doubles
+      & p_complexType;
+  }
+
 };
+
 
 }    // component
 }    // gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::component::DataCollection);
+
 #endif // _data_collection_h

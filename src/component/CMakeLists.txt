@@ -4,8 +4,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-05-07 13:57:25 d3g096
+# Last Change: 2013-07-04 08:31:28 d3g096
 # -------------------------------------------------------------
+
+set(target_libraries gridpack_parallel ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(gridpack_components
   base_component.cpp
@@ -13,32 +17,10 @@ add_library(gridpack_components
 )
 
 # -------------------------------------------------------------
-# TEST: greetings
-# A simple MPI program
+# component serialization tests
 # -------------------------------------------------------------
-#!!add_executable(greetings test/greetings.cpp)
-#!!target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+add_executable(component_serialization_test test/component_serialization.cpp)
+target_link_libraries(component_serialization_test gridpack_components ${target_libraries})
+gridpack_add_unit_test(component_serialization component_serialization_test)
 
-#!!add_test(NAME greetings_serial COMMAND $<TARGET_FILE:greetings>)
-#!!add_test(NAME greetings_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(greetings_serial greetings_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#!!)
-
-# -------------------------------------------------------------
-# TEST: mpi_test
-# A simple MPI test using boost::test
-# -------------------------------------------------------------
-#!!add_executable(mpi_test test/mpi_test.cpp)
-#!!target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-
-#!!add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-#!!add_test(NAME mpi_test_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(mpi_test_serial mpi_test_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "No errors detected"
-#!!)
 
