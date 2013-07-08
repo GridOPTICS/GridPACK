@@ -43,9 +43,10 @@ elif [ $host == "olympus.local" ]; then
     prefix="/pic/projects/gridpack/software"
     cmake -Wdev \
         -D PARMETIS_DIR:STRING="$prefix" \
-        -D GA_DIR:STRING="$prefix" \
+        -D GA_DIR:STRING="/pic/projects/gridpack/ga-5-2" \
+        -D GA_EXTRA_LIBS:STRING="-libverbs" \
 	-D BOOST_ROOT:STRING="$prefix" \
-	-D PETSC_DIR:STRING="$prefix/../petsc-3.4.0" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.4.0" \
 	-D PETSC_ARCH:STRING='olympus-openmpi-gnu-cxx-complex-opt' \
 	-D MPI_CXX_COMPILER:STRING='mpicxx' \
 	-D MPI_C_COMPILER:STRING='mpicc' \
