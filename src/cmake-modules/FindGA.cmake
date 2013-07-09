@@ -118,10 +118,10 @@ int main()
   MPI::Init();
 
   // Initialize GA
-  GA::Initialize();
+  GA_Initialize();
 
   // Terminate GA
-  GA::Terminate();
+  GA_Terminate();
 
   // Finalize MPI
   MPI::Finalize();
