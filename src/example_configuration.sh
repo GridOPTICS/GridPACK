@@ -16,7 +16,7 @@ if [ $host == "flophouse" ]; then
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D CMAKE_BUILD_TYPE:STRING="Release" \
+        -D CMAKE_BUILD_TYPE:STRING="Debug" \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
         ..

@@ -50,7 +50,7 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
-find_path(GA_INCLUDE_DIR ga.h
+find_path(GA_INCLUDE_DIR ga++.h
   HINTS ${GA_INCLUDE_DIR} ENV GA_INCLUDE_DIR ${GA_DIR} ENV GA_DIR
   PATH_SUFFIXES include
   DOC "Directory where the GA header files are located"
@@ -58,6 +58,13 @@ find_path(GA_INCLUDE_DIR ga.h
 
 find_library(GA_LIBRARY
   NAMES ga GA${GA_LIB_SUFFIX}
+  HINTS ${GA_LIB_DIR} ENV GA_LIB_DIR ${GA_DIR} ENV GA_DIR
+  PATH_SUFFIXES lib
+  DOC "Directory where the GA library is located"
+)
+
+find_library(GA_CXX_LIBRARY
+  NAMES ga++ GA${GA_LIB_SUFFIX}
   HINTS ${GA_LIB_DIR} ENV GA_LIB_DIR ${GA_DIR} ENV GA_DIR
   PATH_SUFFIXES lib
   DOC "Directory where the GA library is located"
@@ -94,13 +101,14 @@ if (GA_INCLUDE_DIR AND GA_LIBRARY AND ARMCI_LIBRARY)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${GA_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
-  set(CMAKE_REQUIRED_LIBRARIES ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS} ${MPI_LIBRARIES})
+  set(CMAKE_REQUIRED_LIBRARIES 
+    ${GA_CXX_LIBRARY} ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS} ${MPI_LIBRARIES})
 
   # Build and run test program
   include(CheckCXXSourceRuns)
   check_cxx_source_runs("
 #include <mpi.h>
-#include <ga.h>
+#include <ga++.h>
 
 int main()
 {
@@ -110,10 +118,10 @@ int main()
   MPI::Init();
 
   // Initialize GA
-  GA_Initialize();
+  GA::Initialize();
 
   // Terminate GA
-  GA_Terminate();
+  GA::Terminate();
 
   // Finalize MPI
   MPI::Finalize();
@@ -135,7 +143,7 @@ else()
 endif()
 
 if(GA_FOUND)
-  set(GA_LIBRARIES ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS})
+  set(GA_LIBRARIES ${GA_CXX_LIBRARY} ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS})
   set(GA_INCLUDE_DIRS ${GA_INCLUDE_DIR})
 endif()
 

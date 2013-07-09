@@ -1,7 +1,7 @@
 /**
  * @file   parmetis_graph_partitioner_impl.cpp
  * @author William A. Perkins
- * @date   2013-06-19 15:20:58 d3g096
+ * @date   2013-07-09 11:27:50 d3g096
  * 
  * @brief  
  * 
@@ -15,6 +15,7 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
 #include "parmetis/parmetis_graph_partitioner_impl.hpp"
+#include "parmetis/parmetis_graph_wrapper.hpp"
 
 
 namespace gridpack {
@@ -70,69 +71,18 @@ ParMETISGraphPartitionerImpl::~ParMETISGraphPartitionerImpl(void)
 void 
 ParMETISGraphPartitionerImpl::p_partition(void)
 {
-  // (1) build the vertex/node distribution vector 
-
-  int nnodes(p_adjacency_list.nodes());
-  std::vector<idx_t> vtxdist(this->processor_size()+1);
-  if (this->processor_rank() == 0) {
-    std::vector<int> allnodes(this->processor_size());
-    gather(this->communicator(), nnodes, allnodes, 0);
-    int sum(0);
-    for (size_t i = 0; i < allnodes.size(); ++i) {
-      vtxdist[i] = sum;
-      sum += allnodes[i];
-    }
-    vtxdist.back() = sum;
-  } else {
-    gather(this->communicator(), nnodes, 0);
-  }
-  broadcast(this->communicator(), vtxdist, 0);
-
-  // Generate a lookup table to change the edge node indexes to the
-  // bogus ParMETIS numbering
-  
-  std::vector< std::pair< Index, Index > > idx2parmetis(vtxdist.back());
-  IndexVector idxtmp;
-  for (int p = 0; p < this->processor_size(); ++p) {
-    if (this->processor_rank() == p) {
-      idxtmp.clear();
-      idxtmp.resize(nnodes);
-      for (Index n = 0; n < nnodes; ++n) {
-        idxtmp[n] = p_adjacency_list.node_index(n);
-      }
-    }
-    broadcast(this->communicator(), idxtmp, p);
-    size_t offset(vtxdist[p]);
-    for (IndexVector::iterator i = idxtmp.begin(); 
-         i != idxtmp.end(); ++i, ++offset) {
-      idx2parmetis[offset] = std::make_pair<Index, Index>(*i, offset);
-    }
-  }
-  std::stable_sort(idx2parmetis.begin(), idx2parmetis.end());
-  
-  // (2) & (3) build adjacency vectors
-
-  std::vector<idx_t> xadj(nnodes+1);
+  int me(this->processor_rank());
+  std::vector<idx_t> vtxdist;
+  std::vector<idx_t> xadj;
   std::vector<idx_t> adjncy;
 
-  int adjncy_len(0);
-  for (Index n = 0; n < nnodes; ++n) {
-    adjncy_len += p_adjacency_list.node_neighbors(n);
-  }
-  adjncy.reserve(adjncy_len);
+  ParMETISGraphWrapper wrap(p_adjacency_list);
 
-  IndexVector nbr;
-  for (Index n = 0; n < nnodes; ++n) {
-    xadj[n] = adjncy.size();
-    p_adjacency_list.node_neighbors(n, nbr);
-    for (IndexVector::iterator i = nbr.begin();
-         i != nbr.end(); ++i) {
-      adjncy.push_back(idx2parmetis[*i].second);
-    }
-  }
-  xadj.back() = adjncy.size();
+  wrap.get_csr_local(vtxdist, xadj, adjncy);
 
-#if 1
+  int nnodes(vtxdist[me+1] - vtxdist[me]);
+
+#if 0
   for (int p = 0; p < this->processor_size(); ++p) {
     if (this->processor_rank() == p) {
       std::cout << "Processor " << p << ":     nodes: ";
@@ -194,9 +144,9 @@ ParMETISGraphPartitionerImpl::p_partition(void)
   // "part" contains the destination processors; transfer this to the
   // local array
 
-  p_node_destinations.clear();
-  std::copy(part.begin(), part.end(),
-            std::back_inserter(p_node_destinations));
+  wrap.set_partition(vtxdist, part);
+  wrap.get_partition(p_node_destinations);
+
 }
 
 
