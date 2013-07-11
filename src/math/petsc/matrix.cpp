@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:12:46 d3g096
+ * @date   2013-07-11 09:08:21 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -138,6 +138,59 @@ Matrix::zero(void)
     throw PETScException(ierr, e);
   }
 }
+
+// -------------------------------------------------------------
+// petsc_make_viewer
+// -------------------------------------------------------------
+static void
+petsc_make_viewer(const char* filename, PetscViewer *viewer)
+{
+  PetscErrorCode ierr;
+  if (filename != NULL) {
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, viewer); ; CHKERRXX(ierr);
+  } else {
+    *viewer = PETSC_VIEWER_STDOUT_(PETSC_COMM_WORLD);
+  }
+}
+
+// -------------------------------------------------------------
+// petsc_print_matrix
+// -------------------------------------------------------------
+static void
+petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format)
+{
+  PetscErrorCode ierr;
+  try {
+    PetscViewer viewer;
+    petsc_make_viewer(filename, &viewer);
+    ierr = PetscViewerSetFormat(viewer, format); ; CHKERRXX(ierr);
+    ierr = MatView(mat, viewer); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+
+// -------------------------------------------------------------
+// Matrix::print
+// -------------------------------------------------------------
+void
+Matrix::print(const char* filename) const
+{
+  const Mat *mat(PETScMatrix(*this));
+  petsc_print_matrix(*mat, filename, PETSC_VIEWER_DEFAULT);
+}
+
+// -------------------------------------------------------------
+// Matrix::save
+// -------------------------------------------------------------
+void
+Matrix::save(const char* filename) const
+{
+  const Mat *mat(PETScMatrix(*this));
+  petsc_print_matrix(*mat, filename, PETSC_VIEWER_ASCII_MATLAB);
+}
+
 
 } // namespace math
 } // namespace gridpack

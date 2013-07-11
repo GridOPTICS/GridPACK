@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-06-26 08:34:09 d3g096
+ * @date   2013-07-11 08:40:39 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -163,6 +163,12 @@ public:
     Vector *result = new Vector(pimpl_clone);
     return result;
   }
+
+  /// Print to named file or standard output (collective)
+  void print(const char* filename = NULL) const;
+
+  /// Save, in MatLAB format, to named file (collective)
+  void save(const char *filename) const;
 
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)

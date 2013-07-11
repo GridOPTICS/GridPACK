@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-06-26 08:34:54 d3g096
+ * @date   2013-07-11 09:05:18 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -125,7 +125,57 @@ Vector::reciprocal(void)
   }
 }
 
+// -------------------------------------------------------------
+// petsc_make_viewer
+// -------------------------------------------------------------
+static void
+petsc_make_viewer(const char* filename, PetscViewer *viewer)
+{
+  PetscErrorCode ierr;
+  if (filename != NULL) {
+    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, viewer); ; CHKERRXX(ierr);
+  } else {
+    *viewer = PETSC_VIEWER_STDOUT_(PETSC_COMM_WORLD);
+  }
+}
 
+// -------------------------------------------------------------
+// petsc_print_vector
+// -------------------------------------------------------------
+static void
+petsc_print_vector(const Vec vec, const char* filename, PetscViewerFormat format)
+{
+  PetscErrorCode ierr;
+  try {
+    PetscViewer viewer;
+    petsc_make_viewer(filename, &viewer);
+    ierr = PetscViewerSetFormat(viewer, format); ; CHKERRXX(ierr);
+    ierr = VecView(vec, viewer); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+
+// -------------------------------------------------------------
+// Vector::print
+// -------------------------------------------------------------
+void
+Vector::print(const char* filename) const
+{
+  const Vec *vec(PETScVector(*this));
+  petsc_print_vector(*vec, filename, PETSC_VIEWER_ASCII_INDEX);
+}
+
+// -------------------------------------------------------------
+// Vector::save
+// -------------------------------------------------------------
+void
+Vector::save(const char* filename) const
+{
+  const Vec *vec(PETScVector(*this));
+  petsc_print_vector(*vec, filename, PETSC_VIEWER_ASCII_MATLAB);
+}
 
 
 } // namespace math

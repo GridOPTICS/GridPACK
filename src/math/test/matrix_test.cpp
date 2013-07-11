@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:19:02 d3g096
+ * @date   2013-07-11 09:16:25 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -28,6 +28,13 @@ static const gridpack::math::Matrix::StorageType the_storage_type =
   gridpack::math::Matrix::Dense;
 #else
   gridpack::math::Matrix::Sparse;
+#endif
+
+static const std::string print_prefix = 
+#ifdef TEST_DENSE
+  "dense_";
+#else
+  "sparse_";
 #endif
 
 // -------------------------------------------------------------
@@ -444,6 +451,32 @@ BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }
+}
+
+BOOST_AUTO_TEST_CASE( print)
+{
+  static const int bandwidth(3);
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(bandwidth, global_size));
+
+  A->print();
+
+  std::string out(print_prefix);
+  if (A->processor_size() > 1) {
+    out += "matrix_parallel.out";
+  } else {
+    out += "matrix_serial.out";
+  }
+  A->print(out.c_str());
+
+  out = print_prefix;
+  if (A->processor_size() > 1) {
+    out += "matrix_parallel.mat";
+  } else {
+    out += "matrix_serial.mat";
+  }
+  A->save(out.c_str());
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-06-12 10:27:11 d3g096
+ * @date   2013-07-11 09:04:53 d3g096
  * 
  * @brief  
  * 
@@ -181,6 +181,12 @@ public:
     Matrix *result = new Matrix(pimpl_clone);
     return result;
   }
+
+  /// Print to named file or standard output (collective)
+  void print(const char* filename = NULL) const;
+
+  /// Save, in MatLAB format, to named file (collective)
+  void save(const char *filename) const;
 
   // -------------------------------------------------------------
   // Matrix Operation Methods

@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:19:17 d3g096
+ * @date   2013-07-11 09:02:20 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -246,6 +246,31 @@ BOOST_AUTO_TEST_CASE( reciprocal )
     BOOST_CHECK_CLOSE(real(rx), real(y), delta);
     BOOST_CHECK_CLOSE( abs(rx), abs(y), delta);
   }
+}
+
+BOOST_AUTO_TEST_CASE( print )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v1(world, local_size);
+  gridpack::ComplexType x(2.0, 1.0);
+  v1.fill(x);
+  v1.print();
+
+  std::string out;
+  if (world.size() > 1) {
+    out = "vector_parallel.out";
+  } else {
+    out = "vector_serial.out";
+  }
+  v1.print(out.c_str());
+
+  if (world.size() > 1) {
+    out = "vector_parallel.mat";
+  } else {
+    out = "vector_serial.mat";
+  }
+  v1.save(out.c_str());
+  
 }
   
 BOOST_AUTO_TEST_SUITE_END()
