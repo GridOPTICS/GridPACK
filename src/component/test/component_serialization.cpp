@@ -1,7 +1,7 @@
 /**
  * @file   component_serialization.cpp
  * @author William A. Perkins
- * @date   2013-07-04 09:26:38 d3g096
+ * @date   2013-07-11 14:43:59 d3g096
  * 
  * @brief  Serialization tests for various network component classes
  * 
@@ -13,9 +13,7 @@
 #include <vector>
 #include <boost/lexical_cast.hpp>
 #include <boost/mpi/collectives.hpp>
-#include "gridpack/utilities/exception.hpp"
-#include "gridpack/parallel/parallel.hpp"
-#include "data_collection.hpp"
+#include <boost/lexical_cast.hpp>
 
 #include <boost/serialization/scoped_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
@@ -28,6 +26,11 @@ typedef boost::archive::binary_oarchive outarchive;
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
+
+#include "gridpack/utilities/exception.hpp"
+#include "gridpack/parallel/parallel.hpp"
+#include "data_collection.hpp"
+#include "base_component.hpp"
 
 static const double delta(1.0e-8);
 
@@ -108,6 +111,139 @@ check_data_collection(char *key,
 
 }
 
+// -------------------------------------------------------------
+// gather_scatter
+// -------------------------------------------------------------
+/// Test MPI serialization using using gather and scatter
+
+/** 
+ * Each process creates a thing.  All things are gathered to the zero
+ * process then scattered back to each process.  
+ * 
+ * Thing must serializable and copyable.
+ * 
+ * @param thing_in original thing
+ * @param thing_out thing after gather/scatter
+ */
+template <typename Thing> void
+gather_scatter(const boost::mpi::communicator& comm,
+               const Thing& thing_in, Thing& thing_out)
+{
+  std::vector<Thing> thing_vector(comm.size());
+  if (comm.rank() == 0) {
+    gather(comm, thing_in, thing_vector, 0);
+  } else {
+    gather(comm, thing_in, 0);
+  }
+
+  if (comm.rank() == 0) {
+    scatter(comm, thing_vector, thing_out, 0);
+  } else {
+    scatter(comm, thing_out, 0);
+  }
+}
+
+// -------------------------------------------------------------
+//  class BogusBus
+// -------------------------------------------------------------
+class BogusBus 
+  : public gridpack::component::BaseBusComponent
+{
+public:
+
+  /// Default constructor.
+  explicit BogusBus(const int& id)
+    : gridpack::component::BaseBusComponent(), p_name("BogusBus#")
+  {
+    this->setGlobalIndex(id);
+    p_name += boost::lexical_cast<std::string>(id);
+  }
+
+  /// Destructor
+  ~BogusBus(void) {}
+
+  /// Get the name
+  const std::string& name(void) const
+  {
+    return p_name;
+  }
+
+protected:
+
+  /// A name
+  std::string p_name;
+
+private:
+
+  /// Constructor for serialization only
+  BogusBus(void) 
+    : gridpack::component::BaseBusComponent(), p_name()
+  {
+  }
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+     ar & boost::serialization::base_object<BaseBusComponent>(*this)
+       & p_name;
+  }
+
+};
+
+BOOST_CLASS_EXPORT(BogusBus);
+
+// -------------------------------------------------------------
+//  class BogusBranch
+// -------------------------------------------------------------
+class BogusBranch 
+  : public gridpack::component::BaseBranchComponent
+{
+public:
+
+  /// Default constructor.
+  explicit BogusBranch(const int& id)
+    : gridpack::component::BaseBranchComponent(), p_name("BogusBranch#")
+  {
+    this->setGlobalIndices(id, 0, 0);
+    p_name += boost::lexical_cast<std::string>(id);
+  }
+
+  /// Destructor
+  ~BogusBranch(void) {}
+
+  /// Get the name
+  const std::string& name(void) const
+  {
+    return p_name;
+  }
+
+protected:
+
+  /// A name
+  std::string p_name;
+
+private:
+
+  /// Constructor for serialization only
+  BogusBranch(void) 
+    : gridpack::component::BaseBranchComponent(), p_name()
+  {
+  }
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+     ar & boost::serialization::base_object<BaseBranchComponent>(*this)
+       & p_name;
+  }
+
+};
+
+BOOST_CLASS_EXPORT(BogusBranch);
 
 BOOST_AUTO_TEST_SUITE(ComponentSerialization)
 
@@ -143,28 +279,127 @@ BOOST_AUTO_TEST_CASE( DataCollection_mpi )
 
   std::string s(boost::lexical_cast<std::string>(world.rank()));
   DCPtr dcin(make_a_data_collection(key, world.rank(), s.c_str()));
-
-  // all instances are gathered to the root process
-
-  std::vector<DCPtr> dcvector(world.size());
-  if (world.rank() == 0) {
-    gather(world, dcin, dcvector, 0);
-  } else {
-    gather(world, dcin, 0);
-  }
-
-  // all instances are scattered back to the original process
-
   DCPtr dcout;
-  if (world.rank() == 0) {
-    scatter(world, dcvector, dcout, 0);
-  } else {
-    scatter(world, dcout, 0);
-  }
+
+  gather_scatter(world, dcin, dcout);
 
   // check to make sure it did not change
 
   check_data_collection(key, *dcin, *dcout);
+}
+
+BOOST_AUTO_TEST_CASE ( Component_bin )
+{
+  static int the_id(1);
+  boost::scoped_ptr<gridpack::component::BaseComponent> 
+    busin(new BogusBus(the_id)), 
+    busout,
+    branchin(new BogusBranch(the_id)),
+    branchout;
+
+
+  std::stringstream obuf;
+  { 
+    outarchive oa(obuf);
+    oa << busin << branchin;
+  }
+
+  { 
+    inarchive ia(obuf);
+    ia >> busout >> branchout;
+  }
+  int inid;
+  int outid;
+  int junk;
+
+  BogusBus 
+    *bogusin = dynamic_cast<BogusBus *>(busin.get()),
+    *bogusout = dynamic_cast<BogusBus *>(busout.get());
+  
+  BOOST_REQUIRE(bogusin != NULL);
+  BOOST_REQUIRE(bogusout != NULL);
+  
+  bogusin->getGlobalIndex(&inid);
+  bogusout->getGlobalIndex(&outid);
+  
+  BOOST_CHECK_EQUAL(inid, the_id);
+  BOOST_CHECK_EQUAL(inid, outid);
+  
+  BOOST_REQUIRE(!(bogusin->name()).empty());
+  BOOST_CHECK_EQUAL(bogusin->name(), bogusout->name());
+
+  BogusBranch
+    *brogusin = dynamic_cast<BogusBranch *>(branchin.get()),
+    *brogusout = dynamic_cast<BogusBranch *>(branchout.get());
+
+  BOOST_REQUIRE(brogusin != NULL);
+  BOOST_REQUIRE(brogusout != NULL);
+  
+  brogusin->getGlobalIndices(&inid, &junk, &junk);
+  brogusout->getGlobalIndices(&outid, &junk, &junk);
+  
+  BOOST_CHECK_EQUAL(inid, the_id);
+  BOOST_CHECK_EQUAL(inid, outid);
+  
+  BOOST_REQUIRE(!(brogusin->name()).empty());
+  BOOST_CHECK_EQUAL(brogusin->name(), brogusout->name());
+}
+
+BOOST_AUTO_TEST_CASE ( Component_mpi )
+{
+
+  boost::mpi::communicator world;
+
+  typedef boost::shared_ptr<gridpack::component::BaseComponent> CompPtr;
+  CompPtr compin, compout;
+  int inid, outid, junk;
+
+  // check BogusBus 
+
+  compin.reset(new BogusBus(world.rank()));
+  compout.reset();
+
+  gather_scatter(world, compin, compout);
+
+  BogusBus 
+    *bogusin = dynamic_cast<BogusBus *>(compin.get()),
+    *bogusout = dynamic_cast<BogusBus *>(compout.get());
+  
+  BOOST_REQUIRE(bogusin != NULL);
+  BOOST_REQUIRE(bogusout != NULL);
+  
+  bogusin->getGlobalIndex(&inid);
+  bogusout->getGlobalIndex(&outid);
+  
+  BOOST_CHECK_EQUAL(inid, world.rank());
+  BOOST_CHECK_EQUAL(inid, outid);
+  
+  BOOST_REQUIRE(!(bogusin->name()).empty());
+  BOOST_CHECK_EQUAL(bogusin->name(), bogusout->name());
+
+  // check BogusBranch
+
+  compin.reset(new BogusBranch(world.rank()));
+  compout.reset();
+
+  gather_scatter(world, compin, compout);
+
+  BogusBranch
+    *brogusin = dynamic_cast<BogusBranch *>(compin.get()),
+    *brogusout = dynamic_cast<BogusBranch *>(compout.get());
+
+  BOOST_REQUIRE(brogusin != NULL);
+  BOOST_REQUIRE(brogusout != NULL);
+  
+  brogusin->getGlobalIndices(&inid, &junk, &junk);
+  brogusout->getGlobalIndices(&outid, &junk, &junk);
+  
+  BOOST_CHECK_EQUAL(inid, world.rank());
+  BOOST_CHECK_EQUAL(inid, outid);
+  
+  BOOST_REQUIRE(!(brogusin->name()).empty());
+  BOOST_CHECK_EQUAL(brogusin->name(), brogusout->name());
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

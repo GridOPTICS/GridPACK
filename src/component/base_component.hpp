@@ -2,7 +2,7 @@
 /**
  * @file   base_component.hpp
  * @author Bruce Palmer
- * @date   April 8, 2013
+ * @date   2013-07-11 12:29:46 d3g096
  * 
  * @brief  
  * 
@@ -14,9 +14,14 @@
 #define _base_component_h_
 
 #include <vector>
+#include <boost/serialization/base_object.hpp>
+#include <boost/serialization/split_member.hpp>
+
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "boost/smart_ptr/weak_ptr.hpp"
 #include "gridpack/component/data_collection.hpp"
+
+#include <boost/serialization/export.hpp>
 
 // TODO: Might want to put MatrixIndices and VectorIndex operations into a
 //       separate class since these can probably be implemented once for all
@@ -210,6 +215,32 @@ class BaseComponent
 
   private:
 
+  friend class boost::serialization::access;
+
+  /// Serialization "pack" routine
+  template<class Archive>
+  void save(Archive & ar, const unsigned int version) const
+  {
+    // p_XCBuf and p_XCBufSize are managed somewhere else; they will
+    // have to be initialized
+    ar << p_XCBufSize
+       << p_mode;
+  }
+
+  /// Serialization "unpack" routine
+  template<class Archive>
+  void load(Archive & ar, const unsigned int version)
+  {
+    ar >> p_XCBufSize
+       >> p_mode;
+  }
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    boost::serialization::split_member(ar, *this, version);
+  }
+
 };
 
 class BaseBusComponent
@@ -304,6 +335,17 @@ class BaseBusComponent
      */
     int p_idx;
 
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+     ar & boost::serialization::base_object<BaseComponent>(*this)
+       & p_refBus
+       & p_idx;
+
+     // p_branches and p_buses are ignored, but that may change
+  }
 };
 
 class BaseBranchComponent
@@ -378,8 +420,27 @@ class BaseBranchComponent
      */
     int p_branch_idx;
     int p_bus1_idx, p_bus2_idx;
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+     ar & boost::serialization::base_object<BaseComponent>(*this)
+       & p_branch_idx
+       & p_bus1_idx
+       & p_bus2_idx;
+     // p_bus1 and p_bus2 are ignored, but that may change
+  }
+
 };
 
 }    // component
 }    // gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseComponent);
+BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBusComponent);
+BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBranchComponent);
+
+
 #endif

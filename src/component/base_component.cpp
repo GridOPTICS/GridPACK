@@ -2,7 +2,7 @@
 /**
  * @file   base_component.cpp
  * @author Bruce Palmer
- * @date   May 13, 2013
+ * @date   2013-07-11 12:25:44 d3g096
  * 
  * @brief  
  * 
@@ -170,10 +170,8 @@ bool gridpack::component::MatVecInterface::vectorValues(int *idx, void *values)
  * Simple constructor
  */
 gridpack::component::BaseComponent::BaseComponent(void)
+  : p_XCBuf(NULL), p_XCBufSize(0), p_mode(0)
 {
-  p_XCBufSize = 0;
-  p_XCBuf = NULL;
-  p_mode = 0;
 }
 
 /**
@@ -183,6 +181,7 @@ gridpack::component::BaseComponent::~BaseComponent(void)
 {
 }
 
+// FIXME: unnecessary
 /**
  * Return the size of the component for use in packing and
  * unpacking routines. This might not be needed, but throw
@@ -225,6 +224,7 @@ int gridpack::component::BaseComponent::getXCBufSize(void)
  */
 void gridpack::component::BaseComponent::setXCBuf(void *buf)
 {
+  // FIXME: ?
   if (buf == NULL) {
     gridpack::component::BaseComponent::p_XCBuf = NULL;
   } else {
@@ -255,8 +255,9 @@ void gridpack::component::BaseComponent::setMode(int mode)
  * Simple constructor
  */
 gridpack::component::BaseBusComponent::BaseBusComponent(void)
+  : p_refBus(false)
 {
-  p_refBus = false;
+  
 }
 
 /**
