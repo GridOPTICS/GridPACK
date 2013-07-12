@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 #include <gridpack/component/data_collection.hpp>
+#include <gridpack/utilities/exception.hpp>
 
 
 
@@ -28,28 +29,22 @@ class Parser {
 public:
     Parser<PARSER_TYPE>(void){};
     std::vector<data_set>  * getCaseData(std::string & fileName)
-        {
+    {
+        PARSER_TYPE          parser;
         // open valid file
-        std::ifstream            input;
-        std::vector<data_set>  * case_data;
+        std::vector<data_set>  * case_data  = NULL;
         try {
-            input.open(fileName.c_str());
-        } catch (std::ios_base::failure & e){
-            // let the calling function determine the response
-            throw;
-        }
-        try {
-            case_data = parser.getCase(input);
+            case_data = parser.getCase(fileName);
         } catch (std::ios_base::failure & e) {
             // let the calling function determine the response
             throw;
         }
+
         return case_data;
     }
     virtual ~Parser(){};
 
 protected:
-    PARSER_TYPE              parser;
 private:
 
 };

@@ -168,7 +168,6 @@ public:
 
     PTI23_parser(){};
     virtual ~PTI23_parser(){};
-
 	/*
 	 * A case is the collection of all data associated with a PTI23 file.
 	 * Each case is a a vector of data_set objects the contain all the data
@@ -179,8 +178,15 @@ public:
 	 * example, each line of the bus partition corresponds to a single
 	 * DataCollection object.
 	 */
-    std::vector<data_set> * getCase(std::ifstream & input) {
-        std::vector<data_set>  * case_data;
+    std::vector<data_set> * getCase(const std::string & fileName) {
+        
+        std::ifstream            input;
+        input.open(fileName.c_str());
+  	std::vector<data_set> * case_data    = new std::vector<data_set>;
+        if (!input.is_open()) {
+            throw gridpack::Exception("failed to open case data file");
+        }
+
         find_case(case_data, input);
         find_buses(case_data, input);
         find_generators(case_data, input);

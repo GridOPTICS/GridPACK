@@ -26,10 +26,10 @@ BOOST_AUTO_TEST_CASE(openFailure)
 {
     bool                    opened         = true;
     try { 
-	std::string         fileName        = ("");
+	std::string         fileName        = "";
         gridpack::parser::Parser<gridpack::parser::PTI23_parser> parser;
 	parser.getCaseData(fileName);
-    } catch (std::ios_base::failure & e) {
+    } catch (gridpack::Exception & e) {
         opened     = false;
     }
 
@@ -41,7 +41,10 @@ BOOST_AUTO_TEST_CASE(openSuccess)
 {
     bool                    opened        = false;
     try {
-    } catch (std::ios_base::failure & e) {
+        std::string          fileName      = "../PTI_seqtest.raw";
+        gridpack::parser::Parser<gridpack::parser::PTI23_parser> parser;
+        parser.getCaseData(fileName);
+    } catch (gridpack::Exception & e) {
         opened     = true;
     }
 
