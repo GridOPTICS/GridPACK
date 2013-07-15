@@ -45,7 +45,23 @@ BOOST_AUTO_TEST_CASE(openSuccess)
         gridpack::parser::Parser<gridpack::parser::PTI23_parser> parser;
         parser.getCaseData(fileName);
     } catch (gridpack::Exception & e) {
-        opened     = true;
+        opened     = false;
+    }
+
+    BOOST_CHECK_EQUAL(opened, true);
+
+}
+
+BOOST_AUTO_TEST_CASE(readValidFile)
+{
+    bool                    opened        = false;
+    try {
+        std::string          fileName      = "../PTI_seqtest.raw";
+        gridpack::parser::Parser<gridpack::parser::PTI23_parser> parser;
+        parser.getCaseData(fileName);
+	
+    } catch (gridpack::Exception & e) {
+        opened     = false;
     }
 
     BOOST_CHECK_EQUAL(opened, true);
