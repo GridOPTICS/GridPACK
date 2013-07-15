@@ -21,7 +21,7 @@ BOOST_AUTO_TEST_SUITE(Parser)
 
 //____________________________________________________________________________//
 
-// most frequently you implement test cases as a free functions with automatic registration
+
 BOOST_AUTO_TEST_CASE(openFailure)
 {
     bool                    opened         = true;
@@ -34,7 +34,6 @@ BOOST_AUTO_TEST_CASE(openFailure)
     }
 
     BOOST_CHECK_EQUAL(opened, false);
-
 }
 
 BOOST_AUTO_TEST_CASE(openSuccess)
@@ -49,7 +48,6 @@ BOOST_AUTO_TEST_CASE(openSuccess)
     }
 
     BOOST_CHECK_EQUAL(opened, true);
-
 }
 
 BOOST_AUTO_TEST_CASE(readValidFile)
