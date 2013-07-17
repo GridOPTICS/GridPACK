@@ -2,7 +2,7 @@
 /**
  * @file   base_component.hpp
  * @author Bruce Palmer
- * @date   2013-07-11 12:29:46 d3g096
+ * @date   2013-07-17 10:05:04 d3g096
  * 
  * @brief  
  * 
@@ -149,28 +149,12 @@ class MatVecInterface {
 
   friend class boost::serialization::access;
 
-  /// Serialization "pack" routine
-  template<class Archive>
-  void save(Archive & ar, const unsigned int version) const
-  {
-    ar << p_ival
-       << p_idx
-       << p_jdx;
-  }
-
-  /// Serialization "unpack" routine
-  template<class Archive>
-  void load(Archive & ar, const unsigned int version)
-  {
-    ar >> p_ival
-       >> p_idx
-       >> p_jdx;
-  }
-
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    boost::serialization::split_member(ar, *this, version);
+    ar & p_ival
+       & p_idx
+       & p_jdx;
   }
 
 
@@ -257,7 +241,8 @@ class BaseComponent
   {
     // p_XCBuf and p_XCBufSize are managed somewhere else; they will
     // have to be initialized
-    ar << p_XCBufSize
+    ar << boost::serialization::base_object<MatVecInterface>(*this)
+       << p_XCBufSize
        << p_mode;
   }
 
@@ -265,15 +250,12 @@ class BaseComponent
   template<class Archive>
   void load(Archive & ar, const unsigned int version)
   {
-    ar >> p_XCBufSize
+    ar >> boost::serialization::base_object<MatVecInterface>(*this)
+       >> p_XCBufSize
        >> p_mode;
   }
 
-  template<class Archive>
-  void serialize(Archive & ar, const unsigned int version)
-  {
-    boost::serialization::split_member(ar, *this, version);
-  }
+  BOOST_SERIALIZATION_SPLIT_MEMBER();
 
 };
 
