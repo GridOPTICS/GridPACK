@@ -21,6 +21,9 @@
  */
 gridpack::component::MatVecInterface::MatVecInterface(void)
 {
+  p_ival = 0;
+  p_idx = 0;
+  p_jdx = 0;
 }
 
 /**
@@ -31,18 +34,15 @@ gridpack::component::MatVecInterface::~MatVecInterface(void)
 }
 
 /**
- * Return size of matrix block on the diagonal contributed by component and
- * the global index of this component
- * @param idx: global index of this component
+ * Return size of matrix block on the diagonal contributed by component
  * @param isize, jsize: number of rows and columns of matrix
  *        block
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixDiagSize(int *idx,
-             int *isize, int *jsize) const
+bool gridpack::component::MatVecInterface::matrixDiagSize( int *isize,
+             int *jsize) const
 {
-  *idx = -1;
   *isize = 0;
   *jsize = 0;
   return false;
@@ -50,33 +50,27 @@ bool gridpack::component::MatVecInterface::matrixDiagSize(int *idx,
 
 /**
  * Return the values of for a diagonal matrix block. The values are
- * returned in row-major order. Also return the global index of component
- * @param idx: global index of this component
+ * returned in row-major order.
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixDiagValues(int *idx, void *values)
+bool gridpack::component::MatVecInterface::matrixDiagValues(void *values)
 {
-  *idx = -1;
   return false;
 }
 
 /**
  * Return size of off-diagonal matrix block contributed by component. The
- * values are for the forward direction. Also return matrix location using
- * global indices
- * @param idx, jdx: matrix location using global indices
+ * values are for the forward direction.
  * @param isize, jsize: number of rows and columns of matrix
  *        block
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixForwardSize(int *idx, int *jdx,
-              int *isize, int *jsize) const
+bool gridpack::component::MatVecInterface::matrixForwardSize(int *isize,
+       int *jsize) const
 {
-  *idx = -1;
-  *jdx = -1;
   *isize = 0;
   *jsize = 0;
   return false;
@@ -84,36 +78,27 @@ bool gridpack::component::MatVecInterface::matrixForwardSize(int *idx, int *jdx,
 
 /**
  * Return the values of for an off-diagonl matrix block. The values are
- * for the forward direction and are returned in row-major order. Also
- * return matrix location using global indices
- * @param idx, jdx: matrix location using global indices
+ * for the forward direction and are returned in row-major order.
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixForwardValues(int *idx, int *jdx,
-              void *values)
+bool gridpack::component::MatVecInterface::matrixForwardValues(void *values)
 {
-  *idx = -1;
-  *jdx = -1;
   return false;
 }
 
 /**
  * Return size of off-diagonal matrix block contributed by component. The
- * values are for the reverse direction. Also return matrix location using
- * global indices
- * @param idx, jdx: matrix location using global indices
+ * values are for the reverse direction.
  * @param isize, jsize: number of rows and columns of matrix
  *        block
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixReverseSize(int *idx, int *jdx,
-              int *isize, int *jsize) const
+bool gridpack::component::MatVecInterface::matrixReverseSize(int *isize,
+       int *jsize) const
 {
-  *idx = -1;
-  *jdx = -1;
   *isize = 0;
   *jsize = 0;
   return false;
@@ -121,47 +106,81 @@ bool gridpack::component::MatVecInterface::matrixReverseSize(int *idx, int *jdx,
 
 /**
  * Return the values of for an off-diagonl matrix block. The values are
- * for the reverse direction and are returned in row-major order. Also
- * return matrix location using global indices
- * @param idx, jdx: matrix location using global indices
+ * for the reverse direction and are returned in row-major order.
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixReverseValues(int *idx, int *jdx,
-              void *values)
+bool gridpack::component::MatVecInterface::matrixReverseValues(void *values)
 {
-  *idx = -1;
-  *jdx = -1;
   return false;
 }
 
 /**
- * Return size of vector block contributed by component and location using
- * global indices
- * @param idx: vector location using global indices
+ * Return size of vector block contributed by component
  * @param isize: number of vector elements
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::component::MatVecInterface::vectorSize(int *idx, int *isize) const
+bool gridpack::component::MatVecInterface::vectorSize(int *isize) const
 {
-  *idx = -1;
   *isize = 0;
   return false;
 }
 
 /**
- * Return the values of the vector block and location using global indices
- * @param idx: vector location using global indices
+ * Return the values of the vector block
  * @param values: pointer to vector values
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::component::MatVecInterface::vectorValues(int *idx, void *values)
+bool gridpack::component::MatVecInterface::vectorValues(void *values)
 {
-  *idx = -1;
   return false;
+}
+
+/**
+ * Set the matrix index for diagonal matrix components or vector component,
+ * based on location of component in network
+ * @param idx: value of index
+ */
+void gridpack::component::MatVecInterface::setMatVecIndex(int idx)
+{
+  p_ival = idx;
+}
+
+/**
+ * Get the matrix index for diagonal matrix components or vector component,
+ * based on location of component in network
+ * @return: value of index
+ */
+void gridpack::component::MatVecInterface::getMatVecIndex(int *idx) const
+{
+  *idx = p_ival;
+}
+
+/**
+ * Set the matrix indices for matrix components, based on location of
+ * component
+ * in network
+ * @param idx, jdx: value of indices
+ */
+void gridpack::component::MatVecInterface::setMatVecIndices(int idx, int jdx)
+{
+  p_idx = idx;
+  p_jdx = jdx;
+}
+
+/**
+ * Get the matrix indices for matrix components, * based on location of
+ * component
+ * in network
+ * @param idx, jdx: value of indices
+ */
+void gridpack::component::MatVecInterface::getMatVecIndices(int *idx, int *jdx) const
+{
+  *idx = p_idx;
+  *jdx = p_jdx;
 }
 
 // The base implementation for bus and branch components.
@@ -181,23 +200,11 @@ gridpack::component::BaseComponent::~BaseComponent(void)
 {
 }
 
-// FIXME: unnecessary
 /**
- * Return the size of the component for use in packing and
- * unpacking routines. This might not be needed, but throw
- * it in for now.
- * @return: size of network component
+ * Load data from DataCollection object into corresponding
+ * component. This needs to be implemented by every component
+ * @param data: data collection associated with component
  */
-int gridpack::component::BaseComponent::size(void) const
-{
-  return sizeof(*this);
-}
-
-    /**
-     * Load data from DataCollection object into corresponding
-     * component. This needs to be implemented by every component
-     * @param data: data collection associated with component
-     */
 void gridpack::component::BaseComponent::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
@@ -358,23 +365,6 @@ bool gridpack::component::BaseBusComponent::getReferenceBus(void) const
   return p_refBus;
 }
 
-/**
- * Set global index of bus
- * @param idx: global index of bus
- */
-void gridpack::component::BaseBusComponent::setGlobalIndex(int idx) {
-  p_idx = idx;
-}
-
-/**
- * Get global index of bus
- * @param idx: global index of bus
- */
-void gridpack::component::BaseBusComponent::getGlobalIndex(int *idx) const
-{
-  *idx = p_idx;
-}
-
 // Base implementation for a branch object. Provides a mechanism for the branch to
 // provide the buses at either end of the branch
 
@@ -441,34 +431,4 @@ void gridpack::component::BaseBranchComponent::clearBuses(void)
 {
   p_bus1.reset();
   p_bus2.reset();
-}
-
-/**
- * Set the global index of the branch and set the index values for the two
- * buses at either end of the branch.
- * @param branch_idx: global index of branch
- * @param bus1_idx: global index of "from" bus
- * @param bus2_idx: global index of "to" bus
- */
-void gridpack::component::BaseBranchComponent::setGlobalIndices(int branch_idx,
-        int bus1_idx, int bus2_idx)
-{
-  p_branch_idx = branch_idx;
-  p_bus1_idx = bus1_idx;
-  p_bus2_idx = bus2_idx;
-}
-
-/**
- * Get the global index of the branch and get the index values for the two
- * buses at either end of the branch.
- * @param branch_idx: global index of branch
- * @param bus1_idx: global index of "from" bus
- * @param bus2_idx: global index of "to" bus
- */
-void gridpack::component::BaseBranchComponent::getGlobalIndices(int *branch_idx,
-        int *bus1_idx, int *bus2_idx) const
-{
-  *branch_idx = p_branch_idx;
-  *bus1_idx = p_bus1_idx;
-  *bus2_idx = p_bus2_idx;
 }

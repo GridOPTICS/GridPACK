@@ -37,15 +37,12 @@ gridpack::dynsim::DynSimBus::~DynSimBus(void)
 }
 
 /**
- *  Return size of matrix block contributed by the component and the global
- *  index of this component
- * @param idx: global index of this component
+ *  Return size of matrix block contributed by the component
  *  @param isize, jsize: number of rows and columns of matrix block
  *  @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynsim::DynSimBus::matrixDiagSize(int *idx, int *isize, int *jsize) const
+bool gridpack::dynsim::DynSimBus::matrixDiagSize(int *isize, int *jsize) const
 {
-  getGlobalIndex(idx);
   if (p_mode == JACOBIAN && getReferenceBus()) {
     *isize = 0;
     *jsize = 0;
@@ -60,14 +57,12 @@ bool gridpack::dynsim::DynSimBus::matrixDiagSize(int *idx, int *isize, int *jsiz
 
 /**
  * Return the values of the matrix block. The values are
- * returned in row-major order. Also return global index of component
- * @param idx: global index of this component
+ * returned in row-major order
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynsim::DynSimBus::matrixDiagValues(int *idx, void *values)
+bool gridpack::dynsim::DynSimBus::matrixDiagValues(void *values)
 {
-  getGlobalIndex(idx);
   if (p_mode == YBUS) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
@@ -105,14 +100,12 @@ bool gridpack::dynsim::DynSimBus::matrixDiagValues(int *idx, void *values)
 
 /**
  * Return the size of the block that this component contributes to the
- * vector and the location using global indices
- * @param idx: vector location using global indices
+ * vector
  * @param size: size of vector block
  * @return: false if component does not contribute to vector
  */
-bool gridpack::dynsim::DynSimBus::vectorSize(int *idx, int *size) const
+bool gridpack::dynsim::DynSimBus::vectorSize(int *size) const
 {
-  getGlobalIndex(idx);
   if (p_mode == JACOBIAN && getReferenceBus()) {
     *size = 0;
     return false;
@@ -125,15 +118,13 @@ bool gridpack::dynsim::DynSimBus::vectorSize(int *idx, int *size) const
 }
 
 /**
- * Return the values of the vector block and location using global indices
- * @param idx: vector location using global indices
+ * Return the values of the vector block
  * @param values: pointer to vector values
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::dynsim::DynSimBus::vectorValues(int *idx, void *values)
+bool gridpack::dynsim::DynSimBus::vectorValues(void *values)
 {
-  getGlobalIndex(idx);
   if (p_mode == JACOBIAN) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
@@ -239,16 +230,12 @@ gridpack::dynsim::DynSimBranch::~DynSimBranch(void)
 
 /**
  * Return size of off-diagonal matrix block contributed by the component
- * for the forward/reverse directions. Also return indices of matrix
- * elements
- * @param idx, jdx: global indices of matrix element
+ * for the forward/reverse directions
  * @param isize, jsize: number of rows and columns of matrix block
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynsim::DynSimBranch::matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const
+bool gridpack::dynsim::DynSimBranch::matrixForwardSize(int *isize, int *jsize) const
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::dynsim::DynSimBus>
       bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
@@ -272,10 +259,8 @@ bool gridpack::dynsim::DynSimBranch::matrixForwardSize(int *idx, int *jdx, int *
   } else if (p_mode == GENERATOR) {
   }
 }
-bool gridpack::dynsim::DynSimBranch::matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const
+bool gridpack::dynsim::DynSimBranch::matrixReverseSize(int *isize, int *jsize) const
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::dynsim::DynSimBus>
       bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
@@ -302,15 +287,12 @@ bool gridpack::dynsim::DynSimBranch::matrixReverseSize(int *idx, int *jdx, int *
 
 /**
  * Return the values of the off-diagonal matrix block. The values are
- * returned in row-major order. Also return indices of matrix elements
- * @param idx, jdx: global indices of matrix element
+ * returned in row-major order
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynsim::DynSimBranch::matrixForwardValues(int *idx, int *jdx, void *values)
+bool gridpack::dynsim::DynSimBranch::matrixForwardValues(void *values)
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::dynsim::DynSimBus>
       bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));
@@ -343,10 +325,8 @@ bool gridpack::dynsim::DynSimBranch::matrixForwardValues(int *idx, int *jdx, voi
   } else if (p_mode == GENERATOR) {
   }
 }
-bool gridpack::dynsim::DynSimBranch::matrixReverseValues(int *idx, int *jdx, void *values)
+bool gridpack::dynsim::DynSimBranch::matrixReverseValues(void *values)
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::dynsim::DynSimBus>
       bus1(dynamic_cast<gridpack::dynsim::DynSimBus*>(getBus1().get()));

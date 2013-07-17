@@ -40,7 +40,8 @@ class BaseFactory {
     /**
      * Set pointers in each bus and branch component so that it points to
      * connected buses and branches. This routine operates on the generic
-     * BaseBusComponent and BaseBranchComponent interfaces.
+     * BaseBusComponent and BaseBranchComponent interfaces. It also sets some
+     * indices in MatVecInterface for each component.
      */
     virtual void setComponents(void);
 

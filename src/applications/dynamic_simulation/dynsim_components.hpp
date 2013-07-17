@@ -55,43 +55,37 @@ class DynSimBus
 
     /**
      * Return size of matrix block on the diagonal contributed by
-     * component and the global index of this component
-     * @param idx: global index of this component
+     * component
      * @param isize, jsize: number of rows and columns of matrix block
      * @return: false if network component does not contribute matrix
      *        element
      */
-    bool matrixDiagSize(int *idx, int *isize, int *jsize) const;
+    bool matrixDiagSize(int *isize, int *jsize) const;
 
     /**
      * Return the values of for a diagonal matrix block. The values are
-     * returned in row-major order. Also return the global index of component
-     * @param idx: global index of this component
+     * returned in row-major order
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixDiagValues(int *idx, void *values);
+    bool matrixDiagValues(void *values);
 
     /**
-     * Return size of vector block contributed by component and
-     * location using global indices
-     * @param idx: vector location using global indices
+     * Return size of vector block contributed by component
      * @param isize: number of vector elements
      * @return: false if network component does not contribute
      *        vector element
      */
-    bool vectorSize(int *idx, int *isize) const;
+    bool vectorSize(int *isize) const;
 
     /**
-     * Return the values of the vector block and location using
-     * global indices
-     * @param idx: vector location using global indices
+     * Return the values of the vector block
      * @param values: pointer to vector values
      * @return: false if network component does not contribute
      *        vector element
      */
-    bool vectorValues(int *idx, void *values);
+    bool vectorValues(void *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -153,24 +147,21 @@ class DynSimBranch
 
     /**
      * Return size of off-diagonal matrix block contributed by the component
-     * for the forward/reverse directions. Also return indices of matrix
-     * elements
-     * @param idx, jdx: global indices of matrix element
+     * for the forward/reverse directions
      * @param isize, jsize: number of rows and columns of matrix block
      * @return: false if network component does not contribute matrix element
      */
-    bool matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const;
-    bool matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const;
+    bool matrixForwardSize(int *isize, int *jsize) const;
+    bool matrixReverseSize(int *isize, int *jsize) const;
 
     /**
      * Return the values of the forward/reverse matrix block. The values are
-     * returned in row-major order. Also return indices of matrix elements
-     * @param idx, jdx: global indices of matrix element
+     * returned in row-major order
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute matrix element
      */
-    bool matrixForwardValues(int *idx, int *jdx, void *values);
-    bool matrixReverseValues(int *idx, int *jdx, void *values);
+    bool matrixForwardValues(void *values);
+    bool matrixReverseValues(void *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent

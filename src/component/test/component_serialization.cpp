@@ -155,7 +155,7 @@ public:
   explicit BogusBus(const int& id)
     : gridpack::component::BaseBusComponent(), p_name("BogusBus#")
   {
-    this->setGlobalIndex(id);
+    this->setMatVecIndex(id);
     p_name += boost::lexical_cast<std::string>(id);
   }
 
@@ -206,7 +206,7 @@ public:
   explicit BogusBranch(const int& id)
     : gridpack::component::BaseBranchComponent(), p_name("BogusBranch#")
   {
-    this->setGlobalIndices(id, 0, 0);
+    this->setMatVecIndices(id, 0);
     p_name += boost::lexical_cast<std::string>(id);
   }
 
@@ -319,8 +319,8 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
   BOOST_REQUIRE(bogusin != NULL);
   BOOST_REQUIRE(bogusout != NULL);
   
-  bogusin->getGlobalIndex(&inid);
-  bogusout->getGlobalIndex(&outid);
+  bogusin->getMatVecIndex(&inid);
+  bogusout->getMatVecIndex(&outid);
   
   BOOST_CHECK_EQUAL(inid, the_id);
   BOOST_CHECK_EQUAL(inid, outid);
@@ -335,8 +335,8 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
   BOOST_REQUIRE(brogusin != NULL);
   BOOST_REQUIRE(brogusout != NULL);
   
-  brogusin->getGlobalIndices(&inid, &junk, &junk);
-  brogusout->getGlobalIndices(&outid, &junk, &junk);
+  brogusin->getMatVecIndices(&inid, &junk);
+  brogusout->getMatVecIndices(&outid, &junk);
   
   BOOST_CHECK_EQUAL(inid, the_id);
   BOOST_CHECK_EQUAL(inid, outid);
@@ -368,8 +368,8 @@ BOOST_AUTO_TEST_CASE ( Component_mpi )
   BOOST_REQUIRE(bogusin != NULL);
   BOOST_REQUIRE(bogusout != NULL);
   
-  bogusin->getGlobalIndex(&inid);
-  bogusout->getGlobalIndex(&outid);
+  bogusin->getMatVecIndex(&inid);
+  bogusout->getMatVecIndex(&outid);
   
   BOOST_CHECK_EQUAL(inid, world.rank());
   BOOST_CHECK_EQUAL(inid, outid);
@@ -391,8 +391,8 @@ BOOST_AUTO_TEST_CASE ( Component_mpi )
   BOOST_REQUIRE(brogusin != NULL);
   BOOST_REQUIRE(brogusout != NULL);
   
-  brogusin->getGlobalIndices(&inid, &junk, &junk);
-  brogusout->getGlobalIndices(&outid, &junk, &junk);
+  brogusin->getMatVecIndices(&inid, &junk);
+  brogusout->getMatVecIndices(&outid, &junk);
   
   BOOST_CHECK_EQUAL(inid, world.rank());
   BOOST_CHECK_EQUAL(inid, outid);

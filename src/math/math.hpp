@@ -16,7 +16,7 @@
 namespace gridpack {
 namespace math {
 
-/// Do whatever is necessary to initialize the math library
+// Do whatever is necessary to initialize the math library
 extern void Initialize(void);
 
 /// Is the math library initialized?

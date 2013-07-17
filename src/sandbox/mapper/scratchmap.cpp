@@ -36,13 +36,13 @@ main () {      // Code sketch for compressing indices assuming that matrix will
   GA_Igop(&totalBranches,one,"+");
 
   int g_idx = GA_Create_handle();
-  GA_set_data(g_idx, one, &totalBuses, C_INT);
+  GA_Set_data(g_idx, one, &totalBuses, C_INT);
   if (!GA_Allocate(g_idx)) {
     // TODO: some kind of error
   }
   GA_Zero(g_idx);
   int g_jdx = GA_Create_handle();
-  GA_set_data(g_jdx, one, &totalBuses, C_INT);
+  GA_Set_data(g_jdx, one, &totalBuses, C_INT);
   if (!GA_Allocate(g_jdx)) {
     // TODO: some kind of error
   }
@@ -61,7 +61,8 @@ main () {      // Code sketch for compressing indices assuming that matrix will
   bool status;
   icnt = 0;
   for (i = 0; i<numBuses; i++) {
-    status = network->getBus(i)->getMatrixSize(&idx, &isize, &jsize);
+    network->getBus(i)->getMatVecIndex(&idx)
+    status = network->getBus(i)->getMatrixSize(&isize, &jsize);
     if (status) {
       ibus_size[icnt] = isize;
       jbus_size[icnt] = jsize;
@@ -95,7 +96,8 @@ main () {      // Code sketch for compressing indices assuming that matrix will
   icnt = 0;
   int jdx;
   for (i = 0; i<numBranches; i++) {
-    status = network->getBranch(i)->getMatrixForwardSize(&idx, &jdx, &isize, &jsize);
+    network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+    status = network->getBranch(i)->getMatrixForwardSize(&isize, &jsize);
     if (status) {
       ibus_size[icnt] = isize;
       jbus_size[icnt] = jsize;
@@ -108,12 +110,13 @@ main () {      // Code sketch for compressing indices assuming that matrix will
   if (icnt > 0) NGA_Scatter(g_jdx, jbus_size, jbus_idx, icnt);
   icnt = 0;
   for (i = 0; i<numBranches; i++) {
-    status = network->getBranch(i)->getMatrixReverseSize(&idx, &jdx, &isize, &jsize);
+    network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+    status = network->getBranch(i)->getMatrixReverseSize(&isize, &jsize);
     if (status) {
       ibus_size[icnt] = isize;
       jbus_size[icnt] = jsize;
-      *(ibus_idx[icnt]) = idx;
-      *(jbus_idx[icnt]) = jdx;
+      *(ibus_idx[icnt]) = jdx;
+      *(jbus_idx[icnt]) = idx;
       icnt++;
     }
   }

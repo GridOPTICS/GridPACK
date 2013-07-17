@@ -42,102 +42,144 @@ class MatVecInterface {
     virtual ~MatVecInterface(void);
 
     /**
-     * Return size of matrix block on the diagonal contributed by component and
-     * the global index of this component
-     * @param idx: global index of this component
+     * Return size of matrix block on the diagonal contributed by component
      * @param isize, jsize: number of rows and columns of matrix
      *        block
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixDiagSize(int *idx, int *isize, int *jsize) const;
+    virtual bool matrixDiagSize(int *isize, int *jsize) const;
 
     /**
      * Return the values of for a diagonal matrix block. The values are
-     * returned in row-major order. Also return the global index of component
-     * @param idx: global index of this component
+     * returned in row-major order.
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixDiagValues(int *idx, void *values);
+    virtual bool matrixDiagValues(void *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
-     * values are for the forward direction. Also return matrix location using
-     * global indices
-     * @param idx, jdx: matrix location using global indices
+     * values are for the forward direction.
      * @param isize, jsize: number of rows and columns of matrix
      *        block
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const;
+    virtual bool matrixForwardSize(int *isize, int *jsize) const;
 
     /**
      * Return the values of for an off-diagonl matrix block. The values are
-     * for the forward direction and are returned in row-major order. Also
-     * return matrix location using global indices
-     * @param idx, jdx: matrix location using global indices
+     * for the forward direction and are returned in row-major order.
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixForwardValues(int *idx, int *jdx, void *values);
+    virtual bool matrixForwardValues(void *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
-     * values are for the reverse direction. Also return matrix location using
-     * global indices
-     * @param idx, jdx: matrix location using global indices
+     * values are for the reverse direction.
      * @param isize, jsize: number of rows and columns of matrix
      *        block
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const;
+    virtual bool matrixReverseSize(int *isize, int *jsize) const;
 
     /**
      * Return the values of for an off-diagonl matrix block. The values are
-     * for the reverse direction and are returned in row-major order. Also
-     * return matrix location using global indices
-     * @param idx, jdx: matrix location using global indices
+     * for the reverse direction and are returned in row-major order.
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixReverseValues(int *idx, int *jdx, void *values);
+    virtual bool matrixReverseValues(void *values);
 
     /**
-     * Return size of vector block contributed by component and location using
-     * global indices
-     * @param idx: vector location using global indices
+     * Return size of vector block contributed by component
      * @param isize: number of vector elements
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool vectorSize(int *idx, int *isize) const;
+    virtual bool vectorSize(int *isize) const;
 
     /**
-     * Return the values of the vector block and location using global indices
-     * @param idx: vector location using global indices
+     * Return the values of the vector block
      * @param values: pointer to vector values
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool vectorValues(int *idx, void *values);
+    virtual bool vectorValues(void *values);
+
+    /**
+     * Set the matrix index for diagonal matrix components or vector component,
+     * based on location of component in network
+     * @param idx: value of index
+     */
+    void setMatVecIndex(int idx);
+
+    /**
+     * Get the matrix index for diagonal matrix components or vector component,
+     * based on location of component in network
+     * @return: value of index
+     */
+    void getMatVecIndex(int *idx) const;
+
+    /**
+     * Set the matrix indices for matrix components, based on location of component
+     * in network
+     * @param idx, jdx: value of indices
+     */
+    void setMatVecIndices(int idx, int jdx);
+
+    /**
+     * Get the matrix indices for matrix components, * based on location of component
+     * in network
+     * @param idx, jdx: value of indices
+     */
+    void getMatVecIndices(int *idx, int *jdx) const;
 
     //TODO: May need to include routines that support moving values from vectors
     //      back into network components.
 
   private:
+    int p_ival, p_idx, p_jdx;
+
+  friend class boost::serialization::access;
+
+  /// Serialization "pack" routine
+  template<class Archive>
+  void save(Archive & ar, const unsigned int version) const
+  {
+    ar << p_ival
+       << p_idx
+       << p_jdx;
+  }
+
+  /// Serialization "unpack" routine
+  template<class Archive>
+  void load(Archive & ar, const unsigned int version)
+  {
+    ar >> p_ival
+       >> p_idx
+       >> p_jdx;
+  }
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    boost::serialization::split_member(ar, *this, version);
+  }
+
 
 };
 
 // -------------------------------------------------------------
-//  class BaseField:
+//  class BaseComponent:
 //  This class implements some basic functions that can be
-//  expected from any field on the network.
+//  expected from any component on the network.
 // -------------------------------------------------------------
 class BaseComponent
   : public MatVecInterface {
@@ -151,14 +193,6 @@ class BaseComponent
      * Destructor
      */
     virtual ~BaseComponent(void);
-
-    /**
-     * Return the size of the component for use in packing and
-     * unpacking routines. This might not be needed, but throw
-     * it in for now.
-     * @return: size of network component
-     */
-    virtual int size(void) const;
 
     /**
      * Load data from DataCollection object into corresponding
@@ -303,18 +337,6 @@ class BaseBusComponent
      */
     bool getReferenceBus(void) const;
 
-    /**
-     * Set global index of bus
-     * @param idx: global index of bus
-     */
-    void setGlobalIndex(int idx);
-
-    /**
-     * Get global index of bus
-     * @param idx: global index of bus
-     */
-    void getGlobalIndex(int *idx) const;
-
   private:
     /**
      * Branches that are connect to bus
@@ -330,19 +352,13 @@ class BaseBusComponent
      */
     bool p_refBus;
 
-    /**
-     * Global index of bus
-     */
-    int p_idx;
-
   friend class boost::serialization::access;
 
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
      ar & boost::serialization::base_object<BaseComponent>(*this)
-       & p_refBus
-       & p_idx;
+       & p_refBus;
 
      // p_branches and p_buses are ignored, but that may change
   }
@@ -390,24 +406,6 @@ class BaseBranchComponent
      */
     void clearBuses(void);
 
-    /**
-     * Set the global index of the branch and set the index values for the two
-     * buses at either end of the branch.
-     * @param branch_idx: global index of branch
-     * @param bus1_idx: global index of "from" bus
-     * @param bus2_idx: global index of "to" bus
-     */
-    void setGlobalIndices(int branch_idx, int bus1_idx, int bus2_idx);
-
-    /**
-     * Get the global index of the branch and get the index values for the two
-     * buses at either end of the branch.
-     * @param branch_idx: global index of branch
-     * @param bus1_idx: global index of "from" bus
-     * @param bus2_idx: global index of "to" bus
-     */
-    void getGlobalIndices(int *branch_idx, int *bus1_idx, int *bus2_idx) const;
-
   private:
     /**
      *  Pointers to buses at either end of branch
@@ -415,22 +413,12 @@ class BaseBranchComponent
     boost::weak_ptr<BaseComponent> p_bus1;
     boost::weak_ptr<BaseComponent> p_bus2;
 
-    /**
-     *  Global index of branch and global indices of buses at each end of branch
-     */
-    int p_branch_idx;
-    int p_bus1_idx, p_bus2_idx;
-
   friend class boost::serialization::access;
 
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-     ar & boost::serialization::base_object<BaseComponent>(*this)
-       & p_branch_idx
-       & p_bus1_idx
-       & p_bus2_idx;
-     // p_bus1 and p_bus2 are ignored, but that may change
+     ar & boost::serialization::base_object<BaseComponent>(*this);
   }
 
 };
@@ -438,6 +426,7 @@ class BaseBranchComponent
 }    // component
 }    // gridpack
 
+BOOST_CLASS_EXPORT_KEY(gridpack::component::MatVecInterface);
 BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseComponent);
 BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBusComponent);
 BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBranchComponent);

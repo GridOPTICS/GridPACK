@@ -37,15 +37,12 @@ gridpack::powerflow::PFBus::~PFBus(void)
 }
 
 /**
- *  Return size of matrix block contributed by the component and the global
- *  index of this component
- * @param idx: global index of this component
+ *  Return size of matrix block contributed by the component
  *  @param isize, jsize: number of rows and columns of matrix block
  *  @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBus::matrixDiagSize(int *idx, int *isize, int *jsize) const
+bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
-  getGlobalIndex(idx);
   if (p_mode == JACOBIAN && getReferenceBus()) {
     *isize = 0;
     *jsize = 0;
@@ -59,14 +56,12 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *idx, int *isize, int *jsize
 
 /**
  * Return the values of the matrix block. The values are
- * returned in row-major order. Also return global index of component
- * @param idx: global index of this component
+ * returned in row-major order.
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBus::matrixDiagValues(int *idx, void *values)
+bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
 {
-  getGlobalIndex(idx);
   if (p_mode == YBUS) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
@@ -103,14 +98,12 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(int *idx, void *values)
 
 /**
  * Return the size of the block that this component contributes to the
- * vector and the location using global indices
- * @param idx: vector location using global indices
+ * vector
  * @param size: size of vector block
  * @return: false if component does not contribute to vector
  */
-bool gridpack::powerflow::PFBus::vectorSize(int *idx, int *size) const
+bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
-  getGlobalIndex(idx);
   if (p_mode == JACOBIAN && getReferenceBus()) {
     *size = 0;
     return false;
@@ -121,15 +114,13 @@ bool gridpack::powerflow::PFBus::vectorSize(int *idx, int *size) const
 }
 
 /**
- * Return the values of the vector block and location using global indices
- * @param idx: vector location using global indices
+ * Return the values of the vector block
  * @param values: pointer to vector values
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::powerflow::PFBus::vectorValues(int *idx, void *values)
+bool gridpack::powerflow::PFBus::vectorValues(void *values)
 {
-  getGlobalIndex(idx);
   if (p_mode == JACOBIAN) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
@@ -234,16 +225,12 @@ gridpack::powerflow::PFBranch::~PFBranch(void)
 
 /**
  * Return size of off-diagonal matrix block contributed by the component
- * for the forward/reverse directions. Also return indices of matrix
- * elements
- * @param idx, jdx: global indices of matrix element
+ * for the forward/reverse directions
  * @param isize, jsize: number of rows and columns of matrix block
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBranch::matrixForwardSize(int *idx, int *jdx, int *isize, int *jsize) const
+bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) const
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
@@ -266,10 +253,8 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *idx, int *jdx, int *i
     return true;
   }
 }
-bool gridpack::powerflow::PFBranch::matrixReverseSize(int *idx, int *jdx, int *isize, int *jsize) const
+bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
@@ -295,15 +280,12 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *idx, int *jdx, int *i
 
 /**
  * Return the values of the off-diagonal matrix block. The values are
- * returned in row-major order. Also return indices of matrix elements
- * @param idx, jdx: global indices of matrix element
+ * returned in row-major order
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBranch::matrixForwardValues(int *idx, int *jdx, void *values)
+bool gridpack::powerflow::PFBranch::matrixForwardValues(void *values)
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
@@ -335,10 +317,8 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(int *idx, int *jdx, void
     return true;
   }
 }
-bool gridpack::powerflow::PFBranch::matrixReverseValues(int *idx, int *jdx, void *values)
+bool gridpack::powerflow::PFBranch::matrixReverseValues(void *values)
 {
-  int ibranch;
-  getGlobalIndices(&ibranch, idx, jdx);
   if (p_mode == JACOBIAN) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));

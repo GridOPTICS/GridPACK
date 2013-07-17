@@ -1139,9 +1139,13 @@ void updateBuses(void)
   }
 
   // Scatter data to exchange GA and then gather it back to local buffers
-  NGA_Scatter(p_busGA,p_busSndBuf,p_activeBusIndices,p_numActiveBuses);
+  if (p_numActiveBuses > 0) {
+    NGA_Scatter(p_busGA,p_busSndBuf,p_activeBusIndices,p_numActiveBuses);
+  }
   GA_Sync();
-  NGA_Gather(p_busGA,p_busRcvBuf,p_inactiveBusIndices,p_numInactiveBuses);
+  if (p_numInactiveBuses > 0) {
+    NGA_Gather(p_busGA,p_busRcvBuf,p_inactiveBusIndices,p_numInactiveBuses);
+  }
   GA_Sync();
 
   // Copy data from recieve buffer to XC buffer
@@ -1297,9 +1301,13 @@ void updateBranches(void)
   }
 
   // Scatter data to exchange GA and then gather it back to local buffers
-  NGA_Scatter(p_branchGA,p_branchSndBuf,p_activeBranchIndices,p_numActiveBranches);
+  if (p_numActiveBranches > 0) {
+    NGA_Scatter(p_branchGA,p_branchSndBuf,p_activeBranchIndices,p_numActiveBranches);
+  }
   GA_Sync();
-  NGA_Gather(p_branchGA,p_branchRcvBuf,p_inactiveBranchIndices,p_numInactiveBranches);
+  if (p_numInactiveBranches > 0) {
+    NGA_Gather(p_branchGA,p_branchRcvBuf,p_inactiveBranchIndices,p_numInactiveBranches);
+  }
   GA_Sync();
 
   // Copy data from recieve buffer to XC buffer
