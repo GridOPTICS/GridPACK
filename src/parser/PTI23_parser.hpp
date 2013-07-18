@@ -128,6 +128,7 @@
 #define     SHUNT_SWREM        "SWREM"
 #define     SHUNT_VDES         "VDES"
 #define     SHUNT_BINIT        "BINIT"
+#define     SHUNT_UNK          "UNK"
 #define     SHUNT_N1           "N1"
 #define     SHUNT_B1           "B1"
 #define     SHUNT_N2           "N2"
@@ -224,28 +225,26 @@ protected:
         std::getline(input, line);
         std::vector<std::string>  split_line;
 
-        boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(" "), boost::token_compress_on);
 
         data.setValue(CASE_IC, atoi(split_line[0].c_str()));
         case_instance.push_back(data);
-/*
-        std::vector<std::string>  split_subline;
-        boost::algorithm::split(split_subline, split_line, boost::algorithm::is_any_of("/"), boost::token_compress_on);
-        data.setValue(CASE_SBASE, atof(split_subline[0].c_str()));
-        case_instance.push_back(data);
-*/
-        data.setValue(CASE_RECORD2, split_line[0].c_str());
+
+        data.setValue(CASE_SBASE, atoi(split_line[1].c_str()));
         case_instance.push_back(data);
 
-        data.setValue(CASE_RECORD3, split_line[0].c_str());
+        std::getline(input, line);
+        data.setValue(CASE_RECORD2, line.c_str());
+        case_instance.push_back(data);
+
+        std::getline(input, line);
+        data.setValue(CASE_RECORD3, line.c_str());
         case_instance.push_back(data);
 
         case_set.push_back(case_instance);
         case_data->push_back(case_set);
 
-        // there is no delimiting line between the case data and the bus data
-        std::getline(input, line);
-        // the next line should be the bus data
+std::cout << "last case line " << line << std::endl;
     }
 
     /*
@@ -266,7 +265,10 @@ protected:
     {
         data_set                        bus_set;
         std::string          line;
-        std::getline(input, line);
+
+	std::getline(input, line);
+std::cout << "bus block " << line << std::endl;
+
 
         while(line[0] != TERM_CHAR) {
             std::vector<std::string>  split_line;
@@ -277,43 +279,42 @@ protected:
             data.setValue(BUS_I, atoi(split_line[0].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_IDE, atoi(split_line[0].c_str()));
+            data.setValue(BUS_IDE, atoi(split_line[1].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_PL, atof(split_line[0].c_str()));
+            data.setValue(BUS_PL, atof(split_line[2].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_QL, atof(split_line[0].c_str()));
+            data.setValue(BUS_QL, atof(split_line[3].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_GL, atof(split_line[0].c_str()));
+            data.setValue(BUS_GL, atof(split_line[4].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_BL, atof(split_line[0].c_str()));
+            data.setValue(BUS_BL, atof(split_line[5].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_IA, atof(split_line[0].c_str()));
+            data.setValue(BUS_IA, atof(split_line[6].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_VM, atof(split_line[0].c_str()));
+            data.setValue(BUS_VM, atof(split_line[7].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_VA, atof(split_line[0].c_str()));
+            data.setValue(BUS_VA, atof(split_line[8].c_str()));
             bus_instance.push_back(data);
 
             data.setValue(BUS_NAME, split_line[9].c_str());
             bus_instance.push_back(data);
 
-            data.setValue(BUS_BASKV, atof(split_line[0].c_str()));
+            data.setValue(BUS_BASKV, atof(split_line[10].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_ZONE, atoi(split_line[0].c_str()));
+            data.setValue(BUS_ZONE, atoi(split_line[11].c_str()));
             bus_instance.push_back(data);
 
             bus_set.push_back(bus_instance);
             std::getline(input, line);
         }
-        std::getline(input, line);
         case_data->push_back(bus_set);
     }
 
@@ -343,7 +344,10 @@ protected:
     {
         data_set                        generator_set;
         std::string          line;
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "generator block " << line << std::endl;
         std::getline(input, line);
+
         while(line[0] != TERM_CHAR) {
             std::vector<std::string>  split_line;
             boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
@@ -353,61 +357,60 @@ protected:
             data.setValue(GEN_I, atof(split_line[0].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_ID, atof(split_line[0].c_str()));
+            data.setValue(GEN_ID, atof(split_line[1].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_PG, atof(split_line[0].c_str()));
+            data.setValue(GEN_PG, atof(split_line[2].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_QG, atof(split_line[0].c_str()));
+            data.setValue(GEN_QG, atof(split_line[3].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_QT, atof(split_line[0].c_str()));
+            data.setValue(GEN_QT, atof(split_line[4].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_QB, atof(split_line[0].c_str()));
+            data.setValue(GEN_QB, atof(split_line[5].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_VS, atof(split_line[0].c_str()));
+            data.setValue(GEN_VS, atof(split_line[6].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_IREG, atof(split_line[0].c_str()));
+            data.setValue(GEN_IREG, atof(split_line[7].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_MBASE, atof(split_line[0].c_str()));
+            data.setValue(GEN_MBASE, atof(split_line[8].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_ZR, atof(split_line[0].c_str()));
+            data.setValue(GEN_ZR, atof(split_line[9].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_ZX, atof(split_line[0].c_str()));
+            data.setValue(GEN_ZX, atof(split_line[10].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_RT, atof(split_line[0].c_str()));
+            data.setValue(GEN_RT, atof(split_line[11].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_XT, atof(split_line[0].c_str()));
+            data.setValue(GEN_XT, atof(split_line[12].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_GTAP, atof(split_line[0].c_str()));
+            data.setValue(GEN_GTAP, atof(split_line[13].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_STAT, atof(split_line[0].c_str()));
+            data.setValue(GEN_STAT, atof(split_line[14].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_RMPCT, atof(split_line[0].c_str()));
+            data.setValue(GEN_RMPCT, atof(split_line[15].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_PT, atof(split_line[0].c_str()));
+            data.setValue(GEN_PT, atof(split_line[16].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_PB, atof(split_line[0].c_str()));
+            data.setValue(GEN_PB, atof(split_line[17].c_str()));
             gen_instance.push_back(data);
 
             generator_set.push_back(gen_instance);
             std::getline(input, line);
         }
-        std::getline(input, line);
         case_data->push_back(generator_set);
     }
 
@@ -435,7 +438,11 @@ protected:
     {
         data_set                        branch_set;
         std::string line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "branch block " << line << std::endl;
         std::getline(input, line);
+
         while(line[0] != TERM_CHAR) {
             std::vector<std::string>  split_line;
             boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
@@ -445,55 +452,54 @@ protected:
             data.setValue(BRANCH_I, atoi(split_line[0].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_J, atoi(split_line[0].c_str()));
+            data.setValue(BRANCH_J, atoi(split_line[1].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_CKT, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_CKT, atof(split_line[2].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_R, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_R, atof(split_line[3].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_X, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_X, atof(split_line[4].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_B, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_B, atof(split_line[5].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_RATEA, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_RATEA, atof(split_line[6].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_RATEB, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_RATEB, atof(split_line[7].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_RATEC, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_RATEC, atof(split_line[8].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_RATIO, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_RATIO, atof(split_line[9].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_ANGLE, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_ANGLE, atof(split_line[10].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_GI, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_GI, atof(split_line[11].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_BI, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_BI, atof(split_line[12].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_GJ, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_GJ, atof(split_line[13].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_BJ, atof(split_line[0].c_str()));
+            data.setValue(BRANCH_BJ, atof(split_line[14].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_BJ, atoi(split_line[0].c_str()));
+            data.setValue(BRANCH_BJ, atoi(split_line[15].c_str()));
             branch_instance.push_back(data);
 
             branch_set.push_back(branch_instance);
             std::getline(input, line);
         }
-        std::getline(input, line);
         case_data->push_back(branch_set);
     }
 
@@ -514,6 +520,9 @@ protected:
     {
         data_set                        transformer_set;
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "transformer block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -525,38 +534,37 @@ protected:
             data.setValue(TRANSF_I, atoi(split_line[0].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_J, atoi(split_line[0].c_str()));
+            data.setValue(TRANSF_J, atoi(split_line[1].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_CKT, atoi(split_line[0].c_str()));
+            data.setValue(TRANSF_CKT, atoi(split_line[2].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_ICONT, atoi(split_line[0].c_str()));
+            data.setValue(TRANSF_ICONT, atoi(split_line[3].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_RMA, atoi(split_line[0].c_str()));
+            data.setValue(TRANSF_RMA, atoi(split_line[4].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_RMI, atoi(split_line[0].c_str()));
+            data.setValue(TRANSF_RMI, atoi(split_line[5].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_VMA, atof(split_line[0].c_str()));
+            data.setValue(TRANSF_VMA, atof(split_line[6].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_VMI, atof(split_line[0].c_str()));
+            data.setValue(TRANSF_VMI, atof(split_line[7].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_STEP, atoi(split_line[0].c_str()));
+            data.setValue(TRANSF_STEP, atoi(split_line[8].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_TABLE, atoi(split_line[0].c_str()));
+            data.setValue(TRANSF_TABLE, atoi(split_line[9].c_str()));
             transformer_instance.push_back(data);
 
             transformer_set.push_back(transformer_instance);
             std::getline(input, line);
         }
         case_data->push_back(transformer_set);
-        std::getline(input, line);
     }
 
 
@@ -571,6 +579,9 @@ protected:
     {
         data_set                        area_set;
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "area  block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -582,66 +593,68 @@ protected:
             data.setValue(AREA_I, atoi(split_line[0].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_ISW, atoi(split_line[0].c_str()));
+            data.setValue(AREA_ISW, atoi(split_line[1].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_PDES, atof(split_line[0].c_str()));
+            data.setValue(AREA_PDES, atof(split_line[2].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_PTOL, atof(split_line[0].c_str()));
+            data.setValue(AREA_PTOL, atof(split_line[3].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_ARNAM, split_line[0].c_str());
+            data.setValue(AREA_ARNAM, split_line[4].c_str());
             area_instance.push_back(data);
 
             area_set.push_back(area_instance);
             std::getline(input, line);
         }
         case_data->push_back(area_set);
-        std::getline(input, line);
     }
 
 
     /*
-     * #define     DL_I               "I"
-     * #define     DL_MDC             "MDC"
-     * #define     DL_RDC             "RDC"
-     * #define     DL_SETVL           "SETVL"
-     * #define     DL_VSCHD           "VSCHD"
-     * #define     DL_VCMOD           "VCMOD"
-     * #define     DL_RCOMP           "RCOMP"
-     * #define     DL_DELTI           "DELTI"
-     * #define     DL_METER           "METER"
-     * #define     DL_IPR             "IPR"
-     * #define     DL_NBR             "NBR"
-     * #define     DL_ALFMAX          "ALFMAX"
-     * #define     DL_ALFMN           "ALFMN"
-     * #define     DL_RCR             "RCR"
-     * #define     DL_XCR             "XCR"
-     * #define     DL_EBASR           "EBASR"
-     * #define     DL_TRR             "TRR"
-     * #define     DL_TAPR            "TAPR"
-     * #define     DL_TPMXR           "TPMXR"
-     * #define     DL_TPMNR           "TPMNR"
-     * #define     DL_TSTPR           "TSTPR"
-     * #define     DL_IPI             "IPI"
-     * #define     DL_NBI             "NBI"
-     * #define     DL_GAMMX           "GAMMX"
-     * #define     DL_GAMMN           "GAMMN"
-     * #define     DL_RCI             "RCI"
-     * #define     DL_XCI             "XCI"
-     * #define     DL_EBASI           "EBASI"
-     * #define     DL_TRI             "TRI"
-     * #define     DL_TAPI            "TAPI"
-     * #define     DL_TPMXI           "TPMXI"
-     * #define     DL_TPMNI           "TPMNI"
-     * #define     DL_TSTPI           "TSTPI"
+     *  0 #define     DL_I               "I"
+     *  1 #define     DL_MDC             "MDC"
+     *  2 #define     DL_RDC             "RDC"
+     *  3 #define     DL_SETVL           "SETVL"
+     *  4 #define     DL_VSCHD           "VSCHD"
+     *  5 #define     DL_VCMOD           "VCMOD"
+     *  6 #define     DL_RCOMP           "RCOMP"
+     *  7 #define     DL_DELTI           "DELTI"
+     *  8 #define     DL_METER           "METER"
+     *  9 #define     DL_IPR             "IPR"
+     * 10 #define     DL_NBR             "NBR"
+     * 11 #define     DL_ALFMAX          "ALFMAX"
+     * 12 #define     DL_ALFMN           "ALFMN"
+     * 13 #define     DL_RCR             "RCR"
+     * 14 #define     DL_XCR             "XCR"
+     * 15 #define     DL_EBASR           "EBASR"
+     * 16 #define     DL_TRR             "TRR"
+     * 17 #define     DL_TAPR            "TAPR"
+     * 18 #define     DL_TPMXR           "TPMXR"
+     * 19 #define     DL_TPMNR           "TPMNR"
+     * 20 #define     DL_TSTPR           "TSTPR"
+     * 21 #define     DL_IPI             "IPI"
+     * 22 #define     DL_NBI             "NBI"
+     * 23 #define     DL_GAMMX           "GAMMX"
+     * 24 #define     DL_GAMMN           "GAMMN"
+     * 25 #define     DL_RCI             "RCI"
+     * 26 #define     DL_XCI             "XCI"
+     * 27 #define     DL_EBASI           "EBASI"
+     * 28 #define     DL_TRI             "TRI"
+     * 29 #define     DL_TAPI            "TAPI"
+     * 30 #define     DL_TPMXI           "TPMXI"
+     * 31 #define     DL_TPMNI           "TPMNI"
+     * 32 #define     DL_TSTPI           "TSTPI"
+
      */
     void find_dc_line(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        dc_line_set;
         std::string          line;
-        std::getline(input, line);
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "dc line block " << line << std::endl;
 
         while(line[0] != TERM_CHAR) {
             std::vector<std::string>  split_line;
@@ -652,71 +665,112 @@ protected:
             data.setValue(DL_I, atoi(split_line[0].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_MDC, atoi(split_line[0].c_str()));
+            data.setValue(DL_MDC, atoi(split_line[1].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_RDC, atof(split_line[0].c_str()));
+            data.setValue(DL_RDC, atof(split_line[2].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_SETVL, atof(split_line[0].c_str()));
+            data.setValue(DL_SETVL, atof(split_line[3].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_VSCHD, atof(split_line[0].c_str()));
+            data.setValue(DL_VSCHD, atof(split_line[4].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_VCMOD, atof(split_line[0].c_str()));
+            data.setValue(DL_VCMOD, atof(split_line[5].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_RCOMP, atof(split_line[0].c_str()));
+            data.setValue(DL_RCOMP, atof(split_line[6].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_DELTI, atof(split_line[0].c_str()));
+            data.setValue(DL_DELTI, atof(split_line[7].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_METER, split_line[0].c_str());
+            data.setValue(DL_METER, split_line[8].c_str());
             dc_line_instance.push_back(data);
+
+            getline(input, line);
+            boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
 
             data.setValue(DL_IPR, atoi(split_line[0].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_NBR, atoi(split_line[0].c_str()));
+            data.setValue(DL_NBR, atoi(split_line[1].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_ALFMAX, atof(split_line[0].c_str()));
+            data.setValue(DL_ALFMAX, atof(split_line[2].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_ALFMN, atof(split_line[0].c_str()));
+            data.setValue(DL_ALFMN, atof(split_line[3].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_RCR, atof(split_line[0].c_str()));
+            data.setValue(DL_RCR, atof(split_line[4].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_XCR, atof(split_line[0].c_str()));
+            data.setValue(DL_XCR, atof(split_line[5].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_EBASR, atof(split_line[0].c_str()));
+            data.setValue(DL_EBASR, atof(split_line[6].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_TRR, atof(split_line[0].c_str()));
+            data.setValue(DL_TRR, atof(split_line[7].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_TAPR, atof(split_line[0].c_str()));
+            data.setValue(DL_TAPR, atof(split_line[8].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_TPMXR, atof(split_line[0].c_str()));
+            data.setValue(DL_TPMXR, atof(split_line[9].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_TPMNR, atof(split_line[0].c_str()));
+            data.setValue(DL_TPMNR, atof(split_line[10].c_str()));
             dc_line_instance.push_back(data);
 
-            data.setValue(DL_TSTPR, atoi(split_line[0].c_str()));
+            data.setValue(DL_TSTPR, atoi(split_line[11].c_str()));
             dc_line_instance.push_back(data);
+
+            getline(input, line);
+            boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
 
             dc_line_set.push_back(dc_line_instance);
             std::getline(input, line);
+
+            data.setValue(DL_IPI, atof(split_line[0].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_NBI, atof(split_line[1].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_GAMMX, atoi(split_line[2].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_GAMMN, atof(split_line[3].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_RCI, atof(split_line[4].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_XCI, atoi(split_line[5].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_EBASI, atof(split_line[6].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_TRI, atof(split_line[7].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_TAPI, atoi(split_line[8].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_TPMXI, atof(split_line[9].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_TPMNI, atof(split_line[10].c_str()));
+            dc_line_instance.push_back(data);
+
+            data.setValue(DL_TSTPI, atoi(split_line[11].c_str()));
+            dc_line_instance.push_back(data);
         }
         case_data->push_back(dc_line_set);
-        std::getline(input, line);
     }
 
     /*
@@ -749,6 +803,9 @@ protected:
         data_set                        shunt_set;
 
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "shunt block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -760,77 +817,73 @@ protected:
             data.setValue(SHUNT_I, atoi(split_line[0].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_MODSW, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_VSWHI, atof(split_line[1].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_VSWHI, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_VSWLD, atof(split_line[2].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_VSWLD, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_SWREM, atof(split_line[3].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_SWREM, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_VDES, atof(split_line[4].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_VDES, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_BINIT, atof(split_line[5].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_BINIT, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N1, atoi(split_line[6].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N1, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_B1, atof(split_line[7].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_B1, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N2, atoi(split_line[8].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N2, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_B2, atof(split_line[9].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_B2, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N3, atoi(split_line[10].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N3, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_B3, atof(split_line[11].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_B3, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N4, atoi(split_line[12].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N4, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_B4, atof(split_line[13].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_B4, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N5, atoi(split_line[14].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N5, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_B5, atof(split_line[15].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_B5, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N6, atoi(split_line[16].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N6, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_B6, atof(split_line[17].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_B6, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N7, atoi(split_line[18].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N7, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_B7, atof(split_line[19].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_B7, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_N8, atoi(split_line[20].c_str()));
             shunt_instance.push_back(data);
 
-            data.setValue(SHUNT_N8, atoi(split_line[0].c_str()));
-            shunt_instance.push_back(data);
-
-            data.setValue(SHUNT_B8, atof(split_line[0].c_str()));
+            data.setValue(SHUNT_B8, atof(split_line[21].c_str()));
             shunt_instance.push_back(data);
 
             shunt_set.push_back(shunt_instance);
             std::getline(input, line);
         }
         case_data->push_back(shunt_set);
-        std::getline(input, line);
     }
 
     /*
@@ -841,6 +894,9 @@ protected:
         data_set                        imped_corr_set;
 
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "impedence block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -856,7 +912,6 @@ protected:
             std::getline(input, line);
         }
         case_data->push_back(imped_corr_set);
-        std::getline(input, line);
     }
 
 /*
@@ -867,6 +922,9 @@ protected:
         data_set                        multi_terminal;
 
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "multi terminal block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -882,7 +940,6 @@ protected:
             std::getline(input, line);
         }
         case_data->push_back(multi_terminal);
-        std::getline(input, line);
     }
 
 
@@ -894,6 +951,9 @@ protected:
         data_set                        multi_section;
 
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "multi section block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -909,7 +969,6 @@ protected:
             std::getline(input, line);
         }
         case_data->push_back(multi_section);
-        std::getline(input, line);
     }
 
     /*
@@ -921,6 +980,9 @@ protected:
         data_set                        zone;
 
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "zone block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -932,14 +994,13 @@ protected:
             data.setValue(ZONE_I, atoi(split_line[0].c_str()));
             zone_instance.push_back(data);
 
-            data.setValue(ZONE_NAME, split_line[0].c_str());
+            data.setValue(ZONE_NAME, split_line[1].c_str());
             zone_instance.push_back(data);
 
             zone.push_back(zone_instance);
             std::getline(input, line);
         }
         case_data->push_back(zone);
-        std::getline(input, line);
     }
 
     /*
@@ -950,6 +1011,9 @@ protected:
         data_set                        inter_area;
 
         std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "inter area block " << line << std::endl;
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -965,7 +1029,6 @@ protected:
             std::getline(input, line);
         }
         case_data->push_back(inter_area);
-        std::getline(input, line);
     }
     /*
 #define     OWNER_I         "I"
@@ -976,6 +1039,9 @@ protected:
         data_set                        owner;
 
         std::string          line;
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "owner block " << line << std::endl;
+
         std::getline(input, line);
 
         while(line[0] != TERM_CHAR) {
@@ -987,14 +1053,13 @@ protected:
             data.setValue(OWNER_I, atoi(split_line[0].c_str()));
             owner_instance.push_back(data);
 
-            data.setValue(OWNER_NAME, split_line[0].c_str());
+            data.setValue(OWNER_NAME, split_line[1].c_str());
             owner_instance.push_back(data);
 
             owner.push_back(owner_instance);
             std::getline(input, line);
         }
         case_data->push_back(owner);
-        std::getline(input, line);
     }
 
     /*
@@ -1002,11 +1067,14 @@ protected:
     void find_device_data(std::vector<data_set>  * case_data, std::ifstream & input)
     {
         data_set                        device_set;
+       if (!input.eof()) {
 
         std::string          line;
-        std::getline(input, line);
 
-        while(line[0] != TERM_CHAR) {
+        std::getline(input, line); //this should be the first line of the block
+std::cout << "device  block " << line << std::endl;
+
+        while(line[0] != TERM_CHAR && !input.eof())  {
             std::vector<std::string>  split_line;
             boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
             std::vector<gridpack::component::DataCollection>   device_instance;
@@ -1014,8 +1082,13 @@ protected:
             device_set.push_back(device_instance);
             std::getline(input, line);
         }
+        } else {
+            std::vector<gridpack::component::DataCollection>   device_instance;
+            gridpack::component::DataCollection          data;
+            device_set.push_back(device_instance);
+
+        }
         case_data->push_back(device_set);
-        std::getline(input, line);
     }
 
 private:
