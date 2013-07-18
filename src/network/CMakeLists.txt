@@ -4,10 +4,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-07-04 08:13:01 d3g096
+# Last Change: 2013-07-18 09:00:33 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries gridpack_components
+set(target_libraries 
+  gridpack_components gridpack_parallel
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
@@ -32,25 +33,10 @@ add_executable(test_network test/test_network.cpp)
 target_link_libraries(test_network gridpack_network ${target_libraries})
 
 add_test(test_network_serial test_network)
-#!!add_test(NAME greetings_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(greetings_serial greetings_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#!!)
 
-# -------------------------------------------------------------
-# TEST: mpi_test
-# A simple MPI test using boost::test
-# -------------------------------------------------------------
-#!!add_executable(mpi_test test/mpi_test.cpp)
-#!!target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-#!!add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-#!!add_test(NAME mpi_test_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(mpi_test_serial mpi_test_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "No errors detected"
-#!!)
+add_executable(network_partition test/network_partition.cpp)
+target_link_libraries(network_partition gridpack_network ${target_libraries})
+
+gridpack_add_unit_test(network_partition network_partition)
 

@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-06-21 14:11:19 d3g096
+ * @date   2013-07-18 11:14:44 d3g096
  * 
  * @brief  
  * 
@@ -16,6 +16,7 @@
 #include <vector>
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/serialization/shared_ptr.hpp>
 #include <ga.h>
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/component/base_component.hpp"
@@ -36,11 +37,26 @@ class BusData {
  *  Default constructor
  */
 BusData(void)
+  : p_activeBus(true),
+    p_originalBusIndex(-1),
+    p_globalBusIndex(-1),
+    p_branchNeighbors(),
+    p_bus(new _bus),
+    p_data(),
+    p_refFlag(false)
 {
-  p_bus = boost::shared_ptr<_bus> (new _bus);
-  p_activeBus = true;
-  p_refFlag = false;
 }
+
+/// Copy constructor
+BusData(const BusData& old)
+  : p_activeBus(old.p_activeBus),
+    p_originalBusIndex(old.p_originalBusIndex),
+    p_globalBusIndex(old.p_globalBusIndex),
+    p_branchNeighbors(old.p_branchNeighbors),
+    p_bus(old.p_bus),
+    p_data(old.p_data),
+    p_refFlag(old.p_refFlag)
+{}
 
 /**
  *  Default destructor
@@ -62,6 +78,7 @@ BusData<_bus> & operator=(const BusData<_bus> & rhs)
   p_bus = rhs.p_bus;
   p_data = rhs.p_data;
   p_refFlag = rhs.p_refFlag;
+  return *this;
 }
 
 /**
@@ -81,6 +98,23 @@ BusData<_bus> & operator=(const BusData<_bus> & rhs)
   boost::shared_ptr<_bus>                                p_bus;
   boost::shared_ptr<gridpack::component::DataCollection> p_data;
   bool                                                   p_refFlag;
+
+private: 
+
+  friend class boost::serialization::access;
+
+  /// Serialization method
+  template<class Archive> void serialize(Archive &ar, const unsigned int)
+  {
+    ar & p_activeBus
+      & p_originalBusIndex
+      & p_globalBusIndex
+      & p_branchNeighbors
+      & p_bus
+      & p_data
+      & p_refFlag;
+  }
+
 };
 
 // -------------------------------------------------------------
@@ -95,10 +129,32 @@ class BranchData {
  *  Default constructor
  */
 BranchData(void)
+  : p_activeBranch(true),
+    p_globalBranchIndex(-1),
+    p_originalBusIndex1(-1),
+    p_originalBusIndex2(-1),
+    p_globalBusIndex1(-1),
+    p_globalBusIndex2(-1),
+    p_localBusIndex1(-1),
+    p_localBusIndex2(-1),
+    p_branch(new _branch),
+    p_data()
 {
-  p_branch = boost::shared_ptr<_branch> (new _branch);
-  p_activeBranch = true;
 }
+
+/// Copy constructor
+BranchData(const BranchData& old)
+  : p_activeBranch(old.p_activeBranch),
+    p_globalBranchIndex(old.p_globalBranchIndex),
+    p_originalBusIndex1(old.p_originalBusIndex1),
+    p_originalBusIndex2(old.p_originalBusIndex2),
+    p_globalBusIndex1(old.p_globalBusIndex1),
+    p_globalBusIndex2(old.p_globalBusIndex2),
+    p_localBusIndex1(old.p_localBusIndex1),
+    p_localBusIndex2(old.p_localBusIndex2),
+    p_branch(old.p_branch),
+    p_data(old.p_data)
+{}
 
 /**
  *  Default destructor
@@ -123,6 +179,7 @@ BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
   p_localBusIndex2 = rhs.p_localBusIndex2;
   p_branch = rhs.p_branch;
   p_data = rhs.p_data;
+  return *this;
 }
 
 /**
@@ -150,6 +207,26 @@ BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
   int                                                    p_localBusIndex2;
   boost::shared_ptr<_branch>                             p_branch;
   boost::shared_ptr<gridpack::component::DataCollection> p_data;
+
+private: 
+
+  friend class boost::serialization::access;
+
+  /// Serialization method
+  template<class Archive> void serialize(Archive &ar, const unsigned int)
+  {
+    ar & p_activeBranch
+      & p_globalBranchIndex
+      & p_originalBusIndex1
+      & p_originalBusIndex2
+      & p_globalBusIndex1
+      & p_globalBusIndex2
+      & p_localBusIndex1
+      & p_localBusIndex2
+      & p_branch
+      & p_data;
+  }
+
 };
 
 // -------------------------------------------------------------
@@ -204,7 +281,7 @@ BaseNetwork::BaseNetwork(ParallelEnv configuration)
 /**
  * Default destructor.
  */
-~BaseNetwork(void)
+virtual ~BaseNetwork(void)
 {
   int i, size;
   // Clean up exchange buffers if they have been allocated

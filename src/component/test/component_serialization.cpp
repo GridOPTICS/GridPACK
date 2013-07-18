@@ -1,7 +1,7 @@
 /**
  * @file   component_serialization.cpp
  * @author William A. Perkins
- * @date   2013-07-11 14:43:59 d3g096
+ * @date   2013-07-18 09:36:36 d3g096
  * 
  * @brief  Serialization tests for various network component classes
  * 
@@ -297,6 +297,9 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
     branchin(new BogusBranch(the_id)),
     branchout;
 
+  BogusBus *bogusin = dynamic_cast<BogusBus *>(busin.get());
+  
+  bogusin->setReferenceBus(true);
 
   std::stringstream obuf;
   { 
@@ -312,9 +315,7 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
   int outid;
   int junk;
 
-  BogusBus 
-    *bogusin = dynamic_cast<BogusBus *>(busin.get()),
-    *bogusout = dynamic_cast<BogusBus *>(busout.get());
+  BogusBus *bogusout = dynamic_cast<BogusBus *>(busout.get());
   
   BOOST_REQUIRE(bogusin != NULL);
   BOOST_REQUIRE(bogusout != NULL);
@@ -327,6 +328,9 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
   
   BOOST_REQUIRE(!(bogusin->name()).empty());
   BOOST_CHECK_EQUAL(bogusin->name(), bogusout->name());
+
+  BOOST_CHECK(bogusin->getReferenceBus());
+  BOOST_CHECK(bogusout->getReferenceBus());
 
   BogusBranch
     *brogusin = dynamic_cast<BogusBranch *>(branchin.get()),
@@ -343,6 +347,7 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
   
   BOOST_REQUIRE(!(brogusin->name()).empty());
   BOOST_CHECK_EQUAL(brogusin->name(), brogusout->name());
+
 }
 
 BOOST_AUTO_TEST_CASE ( Component_mpi )
@@ -359,11 +364,12 @@ BOOST_AUTO_TEST_CASE ( Component_mpi )
   compin.reset(new BogusBus(world.rank()));
   compout.reset();
 
+  BogusBus *bogusin = dynamic_cast<BogusBus *>(compin.get());
+  bogusin->setReferenceBus(true);
+
   gather_scatter(world, compin, compout);
 
-  BogusBus 
-    *bogusin = dynamic_cast<BogusBus *>(compin.get()),
-    *bogusout = dynamic_cast<BogusBus *>(compout.get());
+  BogusBus *bogusout = dynamic_cast<BogusBus *>(compout.get());
   
   BOOST_REQUIRE(bogusin != NULL);
   BOOST_REQUIRE(bogusout != NULL);
@@ -376,6 +382,9 @@ BOOST_AUTO_TEST_CASE ( Component_mpi )
   
   BOOST_REQUIRE(!(bogusin->name()).empty());
   BOOST_CHECK_EQUAL(bogusin->name(), bogusout->name());
+
+  BOOST_CHECK(bogusin->getReferenceBus());
+  BOOST_CHECK(bogusout->getReferenceBus());
 
   // check BogusBranch
 
