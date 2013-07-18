@@ -300,12 +300,44 @@ int numBuses(void)
 }
 
 /**
+ * Return the total number of buses in the entire network
+ * @return: total number of buses
+ */
+int totalBuses(void)
+{
+  int nBus = p_buses.size();
+  int i, total;
+  total = 0;
+  for (i=0; i<nBus; i++) {
+    if (p_buses[i]->p_activeBus) total++;
+  }
+  GA_Igop(&total,1,"+");
+  return total;
+}
+
+/**
  * Number of local branches (both active and inactive) on processor
  * @return: number of branches
  */
 int numBranches(void)
 {
   return p_branches.size();
+}
+
+/**
+ * Return the total number of branches in the entire network
+ * @return: total number of branches
+ */
+int totalBranches(void)
+{
+  int nBranch = p_branches.size();
+  int i, total;
+  total = 0;
+  for (i=0; i<nBranch; i++) {
+    if (p_branches[i]->p_activeBranch) total++;
+  }
+  GA_Igop(&total,1,"+");
+  return total;
 }
 
 /**

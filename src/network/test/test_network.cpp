@@ -221,7 +221,20 @@ main (int argc, char **argv) {
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = (bool)okr;
   if (me == 0 && ok) {
-    printf("\nNumber of buses ok\n");
+    printf("\nNumber of buses on each process ok\n");
+  }
+  ok = true;
+  n = network.totalBuses();
+  ncnt = XDIM*YDIM;
+  if (n != ncnt) {
+    printf("p[%d] Total number of buses: %d expected: %d\n",me,n,ncnt);
+    ok = false;
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nTotal number of buses ok\n");
   }
   ok = true;
   n = (iaxmax-iaxmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iaymin);
@@ -233,7 +246,20 @@ main (int argc, char **argv) {
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = (bool)okr;
   if (me == 0 && ok) {
-    printf("\nNumber of branches ok\n");
+    printf("\nNumber of branches on each process ok\n");
+  }
+  ok = true;
+  n = network.totalBranches();
+  ncnt = (XDIM-1)*YDIM+XDIM*(YDIM-1);
+  if (n != ncnt) {
+    printf("p[%d] Total number of branches: %d expected: %d\n",me,n,ncnt);
+    ok = false;
+  }
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nTotal number of branches ok\n");
   }
 
   // Test location of reference bus
