@@ -214,6 +214,16 @@ class BaseComponent
      */
     virtual void setMode(int mode);
 
+    /**
+     * Copy a string for output into buffer. The behavior of this method can be
+     * altered by inputting different values for the signal string
+     * @param string: buffer containing string to be written to output
+     * @param signal: string to control behavior of routine (e.g. what
+     * properties to write
+     * @return: true if component is writing a contribution, false otherwise
+     */
+    virtual bool serialWrite(char *string, char *signal = NULL);
+
   protected:
     /**
      * A buffer that can be used for exchanging component data. This is

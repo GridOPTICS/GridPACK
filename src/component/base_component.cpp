@@ -253,6 +253,20 @@ void gridpack::component::BaseComponent::setMode(int mode)
   p_mode = mode;
 }
 
+/**
+ * Copy a string for output into buffer. The behavior of this method can be
+ * altered by inputting different values for the signal string
+ * @param string: buffer containing string to be written to output
+ * @param signal: string to control behavior of routine (e.g. what
+ * properties to write
+ * @return: true if component is writing a contribution, false otherwise
+ */
+bool gridpack::component::BaseComponent::serialWrite(char *string, char *signal)
+{
+  // This is defined so that generic operations for writing strings from buses
+  // and branches can be built
+}
+
 // Base implementation for a bus object. Provides a mechanism for the bus to
 // provide a list of the branches that are directly connected to it as well as a
 // mechanism for returning a list of the buses that are connected to it via a

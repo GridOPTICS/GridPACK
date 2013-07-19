@@ -253,6 +253,8 @@ BaseNetwork(void)
   p_refBus = -1;
   p_busXCBufSize = 0;
   p_branchXCBufSize = 0;
+  p_busXCBufType = 0;
+  p_branchXCBufType = 0;
   p_busGASet = false;
   p_branchGASet = false;
   p_activeBusIndices = NULL;
@@ -335,6 +337,8 @@ virtual ~BaseNetwork(void)
   if (p_branchSndBuf) {
     delete [] ((char*)p_branchRcvBuf);
   }
+  if (p_busGASet) NGA_Deregister_type(p_busXCBufType);
+  if (p_branchGASet) NGA_Deregister_type(p_branchXCBufType);
 }
 
 /**
