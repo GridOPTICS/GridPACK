@@ -2,7 +2,7 @@
 /**
  * @file   test_network.cpp
  * @author Bruce Palmer, William Perkins
- * @date   April 3, 2013
+ * @date   2013-07-18 12:09:54 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,8 @@
  */
 gridpack::TestNetwork::TestNetwork(void)
 {
-  gridpack::network::BaseNetwork<int,int> network;
+  gridpack::parallel::Communicator world;
+  gridpack::network::BaseNetwork<int,int> network(world);
   gridpack::network::BusData<int> bus1;
   gridpack::network::BusData<int> bus2;
   bus1 = bus2;

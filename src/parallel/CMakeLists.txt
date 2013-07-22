@@ -4,12 +4,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-06-11 15:03:49 d3g096
+# Last Change: 2013-07-18 14:40:14 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
   distributed.cpp
 )
+
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # -------------------------------------------------------------
 # gridpack header installation
@@ -17,6 +19,7 @@ add_library(gridpack_parallel
 install(FILES 
   parallel.hpp
   distributed.hpp
+  shuffler.hpp
   DESTINATION include/gridpack/parallel
 )
 
@@ -53,3 +56,9 @@ target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 gridpack_add_unit_test(mpi_test mpi_test)
 
 
+# -------------------------------------------------------------
+# TEST: shuffle_test
+# -------------------------------------------------------------
+add_executable(shuffle_test test/shuffle_test.cpp)
+target_link_libraries(shuffle_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+gridpack_add_unit_test(shuffle shuffle_test)

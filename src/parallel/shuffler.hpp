@@ -3,7 +3,7 @@
 /**
  * @file   shuffler.hpp
  * @author William A. Perkins
- * @date   2013-07-15 10:28:44 d3g096
+ * @date   2013-07-22 09:34:55 d3g096
  * 
  * @brief  A thing to redistribute a vector of things over several processors 
  * 
@@ -22,9 +22,7 @@
 #include <iostream>
 #include <vector>
 #include <utility>
-#include <boost/mpi/communicator.hpp>
-#include <boost/mpi/collectives.hpp>
-#include <boost/mpi/nonblocking.hpp>
+#include <boost/mpi.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
 
@@ -50,7 +48,8 @@
 template <typename Thing, typename I = int>
 struct Shuffler {
 
-  // Thing must be copyable and serializable -- should test for that
+  // Thing must be copyable and serializable and have a constructor
+  // without arguments -- should test for that
 
   typedef std::vector<Thing> ThingVector;
   typedef I Index;
@@ -68,12 +67,15 @@ struct Shuffler {
     all_reduce(comm, locthings.size(), nthings, std::plus<size_t>());
     if (nthings <= 0) return;
 
-    ThingVector tvect(locthings); 
-    
+    // save the original list of local things 
+
+    ThingVector tvect; 
+    tvect.reserve(locthings.size());
+    std::copy(locthings.begin(), locthings.end(),
+              std::back_inserter(tvect));
     locthings.clear();
 
-    int msgid(0);
-    std::list<boost::mpi::request> reqs;
+    int msgid(0);               // unique MPI message id
     
     // Work on each processors list of things separately
     iPairVector srcdest;
@@ -100,32 +102,36 @@ struct Shuffler {
 
       size_t locidx(0);
       for (typename iPairVector::iterator pd = srcdest.begin(); 
-           pd != srcdest.end(); ++pd, ++msgid, ++locidx) {
+           pd != srcdest.end(); ++pd, ++msgid) {
         int src(pd->first);
         int dest(pd->second);
-        if (src == dest && comm.rank() == src) {
+        if (comm.rank() == src) {
+          if (src == dest) {
             locthings.push_back(tvect[locidx]);
-        } else if (comm.rank() == src) {
-          reqs.push_back(comm.isend(dest, msgid, &tvect[locidx], 1));
+            // std::cout << src << ": kept " << locthings.back() << " @ " 
+            //           << locthings.size() - 1 << std::endl;
+          } else {
+            comm.send(dest, msgid, tvect[locidx]);
+            // std::cout << src << ": msg " << msgid << ": sent " << 
+            //   tvect[locidx] << std::endl;
+          }
+          locidx += 1;
         } else if (comm.rank() == dest) {
-          // push an empty thing on the local list so there is some
-          // place to recieve it
           Thing bogus;
+          comm.recv(src, msgid, bogus);
           locthings.push_back(bogus);
-          reqs.push_back(comm.irecv(src, msgid, &(locthings.back()), 1));
+          // std::cout << dest << ": msg " << msgid 
+          //           << ": got @ " << locthings.size() - 1 << " \"" 
+          //           << locthings.back() << "\"" << std::endl;
         }
         comm.barrier();
       }
-
-      // execute the message requests 
-      
-      boost::mpi::wait_all(reqs.begin(), reqs.end());
-
-      // this needs to be here in case a processor was not involved in
-      // any transfer
-
-      comm.barrier();
     }
+
+    // this needs to be here in case a processor was not involved in
+    // any transfer
+
+    comm.barrier();
   }
 
 };

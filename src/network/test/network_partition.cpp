@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-07-18 11:17:23 d3g096
+ * @date   2013-07-22 09:50:49 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -20,6 +20,8 @@
 
 #include "gridpack/component/base_component.hpp"
 #include "base_network.hpp"
+
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::component::DataCollection);
 
 // -------------------------------------------------------------
 //  class BogusBus
@@ -89,15 +91,13 @@ BOOST_CLASS_EXPORT(BogusBranch);
  * 
  */
 class BogusNetwork 
-  : public gridpack::parallel::Distributed, 
-    public gridpack::network::BaseNetwork<BogusBus, BogusBranch>
+  : public gridpack::network::BaseNetwork<BogusBus, BogusBranch>
 {
 public:
 
   /// Default constructor.
   BogusNetwork(const gridpack::parallel::Communicator& comm, const int& local_size)
-    : gridpack::parallel::Distributed(comm),
-      gridpack::network::BaseNetwork<BogusBus, BogusBranch>()
+    : gridpack::network::BaseNetwork<BogusBus, BogusBranch>(comm)
   {
     int global_buses(local_size*this->processor_size());
     int global_branches(global_buses - 1);
@@ -138,25 +138,26 @@ public:
       (this->communicator()).barrier();
     }
   }
+
+  /// Print the global indexes of the locally owned branches
+  void print_branch_ids()
+  {
+    for (int p = 0; p < this->processor_size(); ++p) {
+      if (p == this->processor_rank()) {
+        std::cout << p << ": ";
+        for (int b = 0; b < this->numBranches(); ++b) {
+          int branchidx(this->getGlobalBranchIndex(b));
+          std::cout << branchidx << ", ";
+        }
+        std::cout << std::endl;
+        std::cout.flush();
+      }
+      (this->communicator()).barrier();
+    }
+  }
 };
 
 BOOST_AUTO_TEST_SUITE ( network ) 
-
-BOOST_AUTO_TEST_CASE ( instantiation )
-{
-  gridpack::parallel::Communicator world;
-  static const int local_size(3);
-  BogusNetwork net(world, local_size);
-
-  int allbuses(net.totalBuses());
-  int locbuses(net.numBuses());
-  BOOST_CHECK_EQUAL(allbuses, local_size*world.size());
-  if (world.rank() == 0) {
-    BOOST_CHECK_EQUAL(locbuses, allbuses);
-  } else {
-    BOOST_CHECK_EQUAL(locbuses, 0);
-  }
-}
 
 BOOST_AUTO_TEST_CASE ( bus_data_serialization )
 {
@@ -166,20 +167,21 @@ BOOST_AUTO_TEST_CASE ( bus_data_serialization )
   int an_int_value(14);
   char key[] = "AValue";
 
-  boost::shared_ptr<gridpack::component::DataCollection> 
-    busdata(new gridpack::component::DataCollection());
-  busdata->addValue(key, an_int_value);
 
   if (world.rank() == 0) {
     bus1.p_originalBusIndex = an_int_value;
     bus1.p_globalBusIndex = an_int_value;
     bus1.p_branchNeighbors.push_back(an_int_value);
     bus1.p_refFlag = true;
-    bus1.p_data = busdata;
     bus1.p_bus->setReferenceBus(true);
+
+    boost::shared_ptr<gridpack::component::DataCollection> 
+      busdata(new gridpack::component::DataCollection());
+    busdata->addValue(key, an_int_value);
+    bus1.p_data = busdata;
   }
 
-  broadcast(world, bus1, 0);
+  broadcast(world, &bus1, 1, 0);
 
   BOOST_CHECK_EQUAL(bus1.p_originalBusIndex, an_int_value);
   BOOST_CHECK_EQUAL(bus1.p_globalBusIndex, an_int_value);
@@ -192,6 +194,78 @@ BOOST_AUTO_TEST_CASE ( bus_data_serialization )
   bus1.p_data->getValue(key, &junk);
   BOOST_CHECK_EQUAL(junk, an_int_value);
 }
+
+BOOST_AUTO_TEST_CASE (bus_data_shuffle)
+{
+  gridpack::parallel::Communicator world;
+  const int local_size(3);
+  typedef gridpack::network::BusData<BogusBus> BogusBusData;
+  typedef boost::shared_ptr<BogusBusData> BogusBusDataPtr;
+  typedef std::vector< BogusBusDataPtr > BogusBusVector;
+  char key[] = "AValue";
+  
+  BogusBusVector buses;
+  std::vector<int> dest;
+  if (world.rank() == 0) {
+    dest.resize(local_size*world.size());
+    for (int i = 0; i < local_size*world.size(); ++i) {
+      BogusBusDataPtr bus1(new BogusBusData());
+
+      bus1->p_originalBusIndex = i;
+      bus1->p_globalBusIndex = i;
+      bus1->p_branchNeighbors.push_back(i);
+      bus1->p_refFlag = true;
+      bus1->p_bus->setReferenceBus(true);
+      
+      boost::shared_ptr<gridpack::component::DataCollection> 
+        busdata(new gridpack::component::DataCollection());
+      busdata->addValue(key, i);
+      bus1->p_data = busdata;
+      buses.push_back(bus1);
+      dest[i] = i % world.size();
+    }
+  }
+
+  Shuffler<BogusBusDataPtr> shuffler;
+  shuffler(world, buses, dest);
+
+}  
+
+BOOST_AUTO_TEST_CASE (branch_data_shuffle)
+{
+  gridpack::parallel::Communicator world;
+  const int local_size(3);
+  typedef gridpack::network::BranchData<BogusBranch> BogusBranchData;
+  typedef boost::shared_ptr<BogusBranchData> BogusBranchDataPtr;
+  typedef std::vector< BogusBranchDataPtr > BogusBranchVector;
+  char key[] = "AValue";
+  
+  BogusBranchVector branches;
+  std::vector<int> dest;
+  if (world.rank() == 0) {
+    dest.resize(local_size*world.size());
+    for (int i = 0; i < local_size*world.size(); ++i) {
+      BogusBranchDataPtr branch1(new BogusBranchData());
+
+      branch1->p_globalBranchIndex = i;
+      branch1->p_originalBusIndex1 = i;
+      branch1->p_originalBusIndex2 = i;
+      branch1->p_globalBusIndex1 = i;
+      branch1->p_globalBusIndex2 = i;
+
+      boost::shared_ptr<gridpack::component::DataCollection> 
+        branchdata(new gridpack::component::DataCollection());
+      branchdata->addValue(key, i);
+      branch1->p_data = branchdata;
+      branches.push_back(branch1);
+      dest[i] = i % world.size();
+    }
+  }
+
+  Shuffler<BogusBranchDataPtr> shuffler;
+  shuffler(world, branches, dest);
+
+}  
 
 BOOST_AUTO_TEST_CASE (branch_data_serialization )
 {
@@ -215,7 +289,7 @@ BOOST_AUTO_TEST_CASE (branch_data_serialization )
     branch1.p_data = branchdata;
   }
 
-  broadcast(world, branch1, 0);
+  broadcast(world, &branch1, 1, 0);
 
   BOOST_CHECK_EQUAL(branch1.p_globalBranchIndex, an_int_value);
   BOOST_CHECK_EQUAL(branch1.p_globalBusIndex1, an_int_value);
@@ -229,6 +303,28 @@ BOOST_AUTO_TEST_CASE (branch_data_serialization )
   branch1.p_data->getValue(key, &junk);
   BOOST_CHECK_EQUAL(junk, an_int_value);
 
+}
+
+BOOST_AUTO_TEST_CASE ( partition )
+{
+  gridpack::parallel::Communicator world;
+  static const int local_size(3);
+  BogusNetwork net(world, local_size);
+
+  int allbuses(net.totalBuses());
+  int locbuses(net.numBuses());
+  BOOST_CHECK_EQUAL(allbuses, local_size*world.size());
+  if (world.rank() == 0) {
+    BOOST_CHECK_EQUAL(locbuses, allbuses);
+  } else {
+    BOOST_CHECK_EQUAL(locbuses, 0);
+  }
+
+  net.print_bus_ids();
+
+  net.partition();
+
+  net.print_bus_ids();
 }
 
 

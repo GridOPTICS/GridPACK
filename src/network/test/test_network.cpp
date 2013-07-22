@@ -79,7 +79,8 @@ main (int argc, char **argv) {
   }
 
   // Create network
-  gridpack::network::BaseNetwork<int, int> network;
+  gridpack::parallel::Communicator world;
+  gridpack::network::BaseNetwork<int, int> network(world);
 
   // Factor processors into a processor grid
   int ipx, ipy, pdx, pdy;

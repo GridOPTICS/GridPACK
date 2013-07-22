@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-07-18 11:14:44 d3g096
+ * @date   2013-07-22 09:36:57 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,8 @@
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/partition/graph_partitioner.hpp"
+#include "gridpack/parallel/shuffler.hpp"
 
 namespace gridpack {
 namespace network {
@@ -96,7 +98,7 @@ BusData<_bus> & operator=(const BusData<_bus> & rhs)
   int                                                    p_globalBusIndex;
   std::vector<int>                                       p_branchNeighbors;
   boost::shared_ptr<_bus>                                p_bus;
-  boost::shared_ptr<gridpack::component::DataCollection> p_data;
+  boost::shared_ptr<component::DataCollection>           p_data;
   bool                                                   p_refFlag;
 
 private: 
@@ -206,7 +208,7 @@ BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
   int                                                    p_localBusIndex1;
   int                                                    p_localBusIndex2;
   boost::shared_ptr<_branch>                             p_branch;
-  boost::shared_ptr<gridpack::component::DataCollection> p_data;
+  boost::shared_ptr<component::DataCollection>           p_data;
 
 private: 
 
@@ -242,12 +244,15 @@ private:
 // -------------------------------------------------------------
 
 template <class _bus, class _branch>
-class BaseNetwork {
+class BaseNetwork 
+  : public parallel::Distributed
+{
 public:
 /**
  * Default constructor.
  */
-BaseNetwork(void)
+explicit BaseNetwork(const parallel::Communicator& comm)
+  : parallel::Distributed(comm)
 {
   //TODO: Get default parallel configuration for world group
   p_refBus = -1;
@@ -347,11 +352,10 @@ virtual ~BaseNetwork(void)
  */
 void addBus(int idx)
 {
-  boost::shared_ptr<gridpack::network::BusData<_bus> >
-    bus(new gridpack::network::BusData<_bus>);
+  BusDataPtr bus(new BusData<_bus>());
   bus->p_originalBusIndex = idx;
   bus->p_globalBusIndex = -1;
-  p_buses.push_back(bus);
+  p_buses.push_back(*bus);
 }
 
 /**
@@ -362,13 +366,12 @@ void addBus(int idx)
  */
 void addBranch(int idx1, int idx2)
 {
-  boost::shared_ptr<gridpack::network::BranchData<_branch> >
-    branch(new gridpack::network::BranchData<_branch>);
+  BranchDataPtr branch(new BranchData<_branch>());
   branch->p_originalBusIndex1 = idx1;
   branch->p_originalBusIndex2 = idx2;
   branch->p_globalBusIndex1 = -1;
   branch->p_globalBusIndex2 = -1;
-  p_branches.push_back(branch);
+  p_branches.push_back(*branch);
 }
 
 /**
@@ -390,7 +393,7 @@ int totalBuses(void)
   int i, total;
   total = 0;
   for (i=0; i<nBus; i++) {
-    if (p_buses[i]->p_activeBus) total++;
+    if (p_buses[i].p_activeBus) total++;
   }
   GA_Igop(&total,1,"+");
   return total;
@@ -415,7 +418,7 @@ int totalBranches(void)
   int i, total;
   total = 0;
   for (i=0; i<nBranch; i++) {
-    if (p_branches[i]->p_activeBranch) total++;
+    if (p_branches[i].p_activeBranch) total++;
   }
   GA_Igop(&total,1,"+");
   return total;
@@ -429,9 +432,9 @@ void setReferenceBus(int idx)
 {
   p_refBus = idx;
   if (idx > 0 && idx <= p_buses.size()) {
-    p_buses[idx]->p_refFlag = true;
+    p_buses[idx].p_refFlag = true;
   } else {
-    p_buses[idx]->p_refFlag = false;
+    p_buses[idx].p_refFlag = false;
   }
 }
 
@@ -458,7 +461,7 @@ bool setOriginalBusIndex(int idx, int o_idx)
   if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_buses[idx]->p_originalBusIndex = o_idx;
+    p_buses[idx].p_originalBusIndex = o_idx;
     return true;
   }
 }
@@ -474,7 +477,7 @@ bool setGlobalBusIndex(int idx, int g_idx)
   if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_buses[idx]->p_globalBusIndex = g_idx;
+    p_buses[idx].p_globalBusIndex = g_idx;
     return true;
   }
 }
@@ -490,7 +493,7 @@ bool setGlobalBranchIndex(int idx, int g_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_globalBranchIndex = g_idx;
+    p_branches[idx].p_globalBranchIndex = g_idx;
     return true;
   }
 }
@@ -506,7 +509,7 @@ bool setOriginalBusIndex1(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_originalBusIndex1 = b_idx;
+    p_branches[idx].p_originalBusIndex1 = b_idx;
     return true;
   }
 }
@@ -522,7 +525,7 @@ bool setOriginalBusIndex2(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_originalBusIndex2 = b_idx;
+    p_branches[idx].p_originalBusIndex2 = b_idx;
     return true;
   }
 }
@@ -538,7 +541,7 @@ bool setGlobalBusIndex1(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_globalBusIndex1 = b_idx;
+    p_branches[idx].p_globalBusIndex1 = b_idx;
     return true;
   }
 }
@@ -554,7 +557,7 @@ bool setGlobalBusIndex2(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_globalBusIndex2 = b_idx;
+    p_branches[idx].p_globalBusIndex2 = b_idx;
     return true;
   }
 }
@@ -570,7 +573,7 @@ bool setLocalBusIndex1(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_localBusIndex1 = b_idx;
+    p_branches[idx].p_localBusIndex1 = b_idx;
     return true;
   }
 }
@@ -586,7 +589,7 @@ bool setLocalBusIndex2(int idx, int b_idx)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_localBusIndex2 = b_idx;
+    p_branches[idx].p_localBusIndex2 = b_idx;
     return true;
   }
 }
@@ -602,7 +605,7 @@ bool setActiveBus(int idx, bool flag)
   if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_buses[idx]->p_activeBus = flag;
+    p_buses[idx].p_activeBus = flag;
     return true;
   }
 }
@@ -618,7 +621,7 @@ bool setActiveBranch(int idx, bool flag)
   if (idx < 0 || idx >= p_branches.size()) {
     return false;
   } else {
-    p_branches[idx]->p_activeBranch = flag;
+    p_branches[idx].p_activeBranch = flag;
     return true;
   }
 }
@@ -633,7 +636,7 @@ bool clearBranchNeighbors(int idx)
   if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_buses[idx]->p_branchNeighbors.clear();
+    p_buses[idx].p_branchNeighbors.clear();
     return true;
   }
 }
@@ -648,7 +651,7 @@ bool addBranchNeighbor(int idx, int br_idx)
   if (idx < 0 || idx >= p_buses.size()) {
     return false;
   } else {
-    p_buses[idx]->p_branchNeighbors.push_back(br_idx);
+    p_buses[idx].p_branchNeighbors.push_back(br_idx);
     return true;
   }
 }
@@ -663,7 +666,7 @@ bool addBranchNeighbor(int idx, int br_idx)
 bool getActiveBus(int idx)
 {
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx]->p_activeBus;
+    return p_buses[idx].p_activeBus;
   } else {
     printf("gridpack::network::getActiveBus: illegal index: %d size: %d\n",
             idx,p_buses.size());
@@ -679,7 +682,7 @@ bool getActiveBus(int idx)
 int getOriginalBusIndex(int idx)
 {
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx]->p_originalBusIndex;
+    return p_buses[idx].p_originalBusIndex;
   } else {
     // TODO: some kind of error
   }
@@ -693,7 +696,7 @@ int getOriginalBusIndex(int idx)
 int getGlobalBusIndex(int idx)
 {
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx]->p_globalBusIndex;
+    return p_buses[idx].p_globalBusIndex;
   } else {
     // TODO: some kind of error
   }
@@ -709,7 +712,7 @@ boost::shared_ptr<_bus> getBus(int idx)
   if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
-    return p_buses[idx]->p_bus;
+    return p_buses[idx].p_bus;
   }
 }
 
@@ -721,7 +724,7 @@ boost::shared_ptr<_bus> getBus(int idx)
 bool getActiveBranch(int idx)
 {
   if (idx >= 0 && idx < p_branches.size()) {
-    return p_branches[idx]->p_activeBranch;
+    return p_branches[idx].p_activeBranch;
   } else {
     // TODO: some kind of error
   }
@@ -735,7 +738,7 @@ bool getActiveBranch(int idx)
 int getGlobalBranchIndex(int idx)
 {
   if (idx >= 0 && idx < p_branches.size()) {
-    return p_branches[idx]->p_globalBranchIndex;
+    return p_branches[idx].p_globalBranchIndex;
   } else {
     // TODO: some kind of error
   }
@@ -751,7 +754,7 @@ boost::shared_ptr<_branch> getBranch(int idx)
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx]->p_branch;
+    return p_branches[idx].p_branch;
   }
 }
 
@@ -761,12 +764,12 @@ boost::shared_ptr<_branch> getBranch(int idx)
  * @param idx: local index of requested bus
  * @return: a pointer to the requested bus data
  */
-boost::shared_ptr<gridpack::component::DataCollection> getBusData(int idx)
+boost::shared_ptr<component::DataCollection> getBusData(int idx)
 {
   if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
-    return p_buses[idx]->p_data;
+    return p_buses[idx].p_data;
   }
 }
 
@@ -776,12 +779,12 @@ boost::shared_ptr<gridpack::component::DataCollection> getBusData(int idx)
  * @param idx: local index of requested branch
  * @return: a pointer to the requested branch data
  */
-boost::shared_ptr<gridpack::component::DataCollection> getBranchData(int idx)
+boost::shared_ptr<component::DataCollection> getBranchData(int idx)
 {
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx]->p_data;
+    return p_branches[idx].p_data;
   }
 }
 
@@ -824,7 +827,7 @@ boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetwor
  */
 std::vector<int> getConnectedBranches(int idx) const
 {
-  return p_buses[idx]->p_branchNeighbors;
+  return p_buses[idx].p_branchNeighbors;
 }
 
 /**
@@ -834,20 +837,22 @@ std::vector<int> getConnectedBranches(int idx) const
  */
 std::vector<int> getConnectedBuses(int idx) const
 {
-  std::vector<int> branches = p_buses[idx]->p_branchNeighbors;
+  std::vector<int> branches = p_buses[idx].p_branchNeighbors;
   int size = branches.size();
   std::vector<int> ret;
   int i, j;
   for (i=0; i<size; i++) {
     j = branches[i];
-    if (p_branches[j]->p_localBusIndex1 != idx) {
-      ret.push_back(p_branches[j]->p_localBusIndex1);
+    if (p_branches[j].p_localBusIndex1 != idx) {
+      ret.push_back(p_branches[j].p_localBusIndex1);
     } else {
-      ret.push_back(p_branches[j]->p_localBusIndex2);
+      ret.push_back(p_branches[j].p_localBusIndex2);
     }
   }
   return ret;
 }
+
+
 
 /**
  * Return indices of buses at either end of branch
@@ -861,10 +866,45 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: some kind of error
   } else {
-    *bus1 = p_branches[idx]->p_localBusIndex1;
-    *bus2 = p_branches[idx]->p_localBusIndex2;
+    *bus1 = p_branches[idx].p_localBusIndex1;
+    *bus2 = p_branches[idx].p_localBusIndex2;
   }
 }
+
+  /// Partition the network over the available processes
+  void partition(void)
+  {
+    GraphPartitioner partitioner(this->communicator(),
+                                 p_buses.size(), p_branches.size());
+
+    for (BusIterator bus = p_buses.begin(); 
+         bus != p_buses.end(); ++bus) {
+      partitioner.add_node(bus->p_globalBusIndex);
+    }
+    for (BranchIterator branch = p_branches.begin(); 
+         branch != p_branches.end(); ++branch) {
+      partitioner.add_edge(branch->p_globalBranchIndex, 
+                           branch->p_globalBusIndex1,
+                           branch->p_globalBusIndex2);
+    }
+    partitioner.partition();
+
+    // FIXME: 
+
+    GraphPartitioner::IndexVector dest;
+    partitioner.node_destinations(dest);
+    {
+      Shuffler<BusData<_bus>, GraphPartitioner::Index> bus_shuffler;
+      bus_shuffler(this->communicator(), p_buses, dest);
+    }
+
+    // {
+    //   GraphPartitioner::IndexVector branchdest;
+    //   partitioner.edge_destinations(branchdest);
+    //   Shuffler<BranchDataPtr, GraphPartitioner::Index> branch_shuffler;
+    //   branch_shuffler(this->communicator(), p_branches, branchdest);
+    // }
+  }
 
 /**
  * Clean all ghost buses and branches from the system. This can be used
@@ -929,7 +969,7 @@ void clean(void)
   int size = p_branches.size();
   int new_id = 0;
   for (i=0; i<size; i++) {
-    if (p_branches[i]->p_activeBranch) {
+    if (p_branches[i].p_activeBranch) {
       p_branches[new_id] = p_branches[i];
       branches.insert(std::pair<int, int>(i,new_id));
       new_id++;
@@ -945,7 +985,7 @@ void clean(void)
   size = p_buses.size();
   new_id = 0;
   for (i=0; i<size; i++) {
-    if (p_buses[i]->p_activeBus) {
+    if (p_buses[i].p_activeBus) {
       p_buses[new_id] = p_buses[i];
       buses.insert(std::pair<int, int>(i,new_id));
       new_id++;
@@ -960,30 +1000,30 @@ void clean(void)
   // reset all local indices
   size = p_branches.size();
   for (i=0; i<size; i++) {
-    p = buses.find(p_branches[i]->p_localBusIndex1);
+    p = buses.find(p_branches[i].p_localBusIndex1);
     if (p != buses.end()) {
-      p_branches[i]->p_localBusIndex1 = p->second;
+      p_branches[i].p_localBusIndex1 = p->second;
     } else {
-      p_branches[i]->p_localBusIndex1 = -1;
+      p_branches[i].p_localBusIndex1 = -1;
     }
-    p = buses.find(p_branches[i]->p_localBusIndex2);
+    p = buses.find(p_branches[i].p_localBusIndex2);
     if (p != buses.end()) {
-      p_branches[i]->p_localBusIndex2 = p->second;
+      p_branches[i].p_localBusIndex2 = p->second;
     } else {
-      p_branches[i]->p_localBusIndex2 = -1;
+      p_branches[i].p_localBusIndex2 = -1;
     }
   }
 
   int jsize;
   size = p_buses.size();
   for (i=0; i<size; i++) {
-    std::vector<int> neighbors = p_buses[i]->p_branchNeighbors;
+    std::vector<int> neighbors = p_buses[i].p_branchNeighbors;
     jsize = neighbors.size();
-    p_buses[i]->p_branchNeighbors.clear();
+    p_buses[i].p_branchNeighbors.clear();
     for (j=0; j<jsize; j++) {
       p = branches.find(neighbors[j]);
       if (p != branches.end()) {
-        p_buses[i]->p_branchNeighbors.push_back(p->second);
+        p_buses[i].p_branchNeighbors.push_back(p->second);
       }
     }
   }
@@ -1451,15 +1491,25 @@ BaseNetwork(const BaseNetwork& old)
 
 private:
 
+  // add some typedefs so things are more readable and we don't have
+  // to type so much
+
+  typedef boost::shared_ptr< BusData<_bus> > BusDataPtr;
+  typedef std::vector<  BusData<_bus> > BusVector;
+  typedef typename BusVector::iterator BusIterator;
+  typedef boost::shared_ptr< BranchData<_branch> > BranchDataPtr;
+  typedef std::vector< BranchData<_branch> > BranchVector;
+  typedef typename BranchVector::iterator BranchIterator;
+
   /**
    * Vector of bus data and objects
    */
-  std::vector<boost::shared_ptr<gridpack::network::BusData<_bus> > > p_buses;
+  BusVector p_buses;
 
   /**
    * Vector of branch data and objects
    */
-  std::vector<boost::shared_ptr<gridpack::network::BranchData<_branch> > > p_branches;
+  BranchVector p_branches;
 
   /**
    * Parallel environment for network
