@@ -17,6 +17,7 @@
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/applications/powerflow/pf_components.hpp"
+#include "gridpack/parser/dictionary.hpp"
 
 /**
  *  Simple constructor
@@ -178,9 +179,20 @@ void gridpack::powerflow::PFBus::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   p_shunt = true;
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GS, &p_shunt_gs);
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BS, &p_shunt_bs);
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
   // TODO: Need to get values of P0 and Q0 from Network Configuration file
+}
+
+
+/**
+ * Set the mode to control what matrices and vectors are built when using
+ * the mapper
+ * @param mode: enumerated constant for different modes
+ */
+void gridpack::powerflow::PFBus::setMode(int mode)
+{
+  p_mode = mode;
 }
 
 /**
@@ -382,8 +394,8 @@ void gridpack::powerflow::PFBranch::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   bool ok = true;
-  ok = ok && data->getValue(BRANCH_REACTANCE, &p_reactance);
-  ok = ok && data->getValue(BRANCH_RESISTANCE, &p_resistance);
+  ok = ok && data->getValue(BRANCH_X, &p_reactance);
+  ok = ok && data->getValue(BRANCH_R, &p_resistance);
   p_xform = true;
   p_xform = p_xform && data->getValue(BRANCH_TAP_RATIO, &p_tap_ratio);
   p_xform = p_xform && data->getValue(BRANCH_PHASE_SHIFT, &p_phase_shift);
@@ -393,6 +405,16 @@ void gridpack::powerflow::PFBranch::load(
   p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B1, &p_shunt_admt_b1);
   p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G2, &p_shunt_admt_g2);
   p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B2, &p_shunt_admt_b2);
+}
+
+/**
+ * Set the mode to control what matrices and vectors are built when using
+ * the mapper
+ * @param mode: enumerated constant for different modes
+ */
+void gridpack::powerflow::PFBranch::setMode(int mode)
+{
+  p_mode = mode;
 }
 
 /**

@@ -7,19 +7,32 @@
 # Last Change: 2013-05-07 13:57:25 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries gridpack_network ${Boost_LIBRARIES})
-
-include_directories(AFTER ${GA_INCLUDE_DIRS})
-
-add_library(powerflow_app
-  pf_components.cpp
-  pf_factory.cpp
-)
+set(target_libraries
+    gridpack_network
+    gridpack_components
+    gridpack_factory
+    ${Boost_LIBRARIES}
+    ${GA_LIBRARIES}
+    ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
+
+#add_library(powerflow_app
+#  pf_components.cpp
+#  pf_factory.cpp
+#)
+add_executable(powerflow.x
+   pf_app.cpp
+   pf_components.cpp
+   pf_factory.cpp
+   pf_main.cpp
+)
+
+target_link_libraries(powerflow.x ${target_libraries})
+
 
 # -------------------------------------------------------------
 # TEST: greetings
