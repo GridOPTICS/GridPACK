@@ -74,7 +74,7 @@
  * Default value is 0.0
  * type: real float
  */
-#define BUS_SHUNT_GL "BUS_SHUNT_GL"
+#define BUS_SHUNT_BL "BUS_SHUNT_BL"
 
 /**
  * Area number
@@ -513,70 +513,70 @@
  * The measured resistance of the transformer between the buses to which its first and second
  * windings are connected. When TRANSFORMER_CZ is 1, they are the resistance and reactance,
  * respectively, in pu on system base quantities; when TRANSFORMER_CZ is 2, they are the resistance
- * and reactance, respectively, in pu on winding one to two base MVA (TRANSFORMER_SBASE1-2)
- * and winding one bus base voltage; when TRANSFORMER_CZ is 3, TRANSFORMER_R1-2 is the load
- * loss in watts, and TRANSFORMER_X1-2 is the impedance magnitude in pu on winding one to two
- * base MVA (SBASE1-2) and winding one bus base voltage.
+ * and reactance, respectively, in pu on winding one to two base MVA * (TRANSFORMER_SBASE1_2)
+ * and winding one bus base voltage; when TRANSFORMER_CZ is 3, TRANSFORMER_R1_2 is the load
+ * loss in watts, and TRANSFORMER_X1_2 is the impedance magnitude in pu on winding one to two
+ * base MVA (SBASE1_2) and winding one bus base voltage.
  * Default value: 0.0
  * type: real float
  */
-#define TRANSFORMER_R1-2 "TRANSFORMER_R1-2"
+#define TRANSFORMER_R1_2 "TRANSFORMER_R1_2"
 
 /**
  * The measured reactance of the transformer between the buses to which its first and second
  * windings are connected.
- * no default is allowed for TRANSFORMER_X1-2.
+ * no default is allowed for TRANSFORMER_X1_2.
  * type: real float
  */
-#define TRANSFORMER_X1-2 "TRANSFORMER_X1-2"
+#define TRANSFORMER_X1_2 "TRANSFORMER_X1_2"
 
 /**
  * The winding one to two base MVA of the transformer
  * type: real float
  */
-#define TRANSFORMER_SBASE1-2 "TRANSFORMER_SBASE1-2"
+#define TRANSFORMER_SBASE1_2 "TRANSFORMER_SBASE1_2"
 
 /**
  * The measured resistance of a three-winding transformer between the buses to which its second
  * and third windings are connected; ignored for a two-winding transformer
  * type: real float
  */
-#define TRANSFORMER_R2-3 "TRANSFORMER_R2-3"
+#define TRANSFORMER_R2_3 "TRANSFORMER_R2_3"
 
 /**
  * The measured reactance of a three-winding transformer between the buses to which its second
  * and third windings are connected; ignored for a two-winding transformer
  * type: real float
  */
-#define TRANSFORMER_X2-3 "TRANSFORMER_X2-3"
+#define TRANSFORMER_X2_3 "TRANSFORMER_X2_3"
 
 /**
  * The winding two to three base MVA of a three-winding transformer; ignored for a two-winding
  * transformer
  * type: real float
  */
-#define TRANSFORMER_SBASE2-3 "TRANSFORMER_SBASE2-3"
+#define TRANSFORMER_SBASE2_3 "TRANSFORMER_SBASE2_3"
 
 /**
  * The measured resistance of a three-winding transformer between the buses to which its third
  * and first windings are connected; ignored for a two-winding transformer
  * type: real float
  */
-#define TRANSFORMER_R3-1 "TRANSFORMER_R3-1"
+#define TRANSFORMER_R3_1 "TRANSFORMER_R3_1"
 
 /**
  * The measured reactance of a three-winding transformer between the buses to which its third
  * and first windings are connected; ignored for a two-winding transformer
  * type: real float
  */
-#define TRANSFORMER_X3-1 "TRANSFORMER_X3-1"
+#define TRANSFORMER_X3_1 "TRANSFORMER_X3_1"
 
 /**
  * The winding three to one base MVA of a three-winding transformer; ignored for a two-winding
  * transformer
  * type: real float
  */
-#define TRANSFORMER_SBASE3-1 "TRANSFORMER_SBASE3-1"
+#define TRANSFORMER_SBASE3_1 "TRANSFORMER_SBASE3_1"
 
 /**
  * The voltage magnitude at the hidden "star point" bus; entered in pu
@@ -1162,14 +1162,28 @@
  * Default value: 0
  * type: integer
  */
-#define SHUNT_Ni "SHUNT_Ni"
+#define SHUNT_N1 "SHUNT_N1"
+#define SHUNT_N2 "SHUNT_N2"
+#define SHUNT_N3 "SHUNT_N3"
+#define SHUNT_N4 "SHUNT_N4"
+#define SHUNT_N5 "SHUNT_N5"
+#define SHUNT_N6 "SHUNT_N6"
+#define SHUNT_N7 "SHUNT_N7"
+#define SHUNT_N8 "SHUNT_N8"
 
 /**
  * Admittance increment for each of Ni steps in block i; entered in Mvar at unity voltage.
  * Default value: 0
  * type: real float
  */
-#define SHUNT_Bi "SHUNT_Bi"
+#define SHUNT_B1 "SHUNT_B1"
+#define SHUNT_B2 "SHUNT_B2"
+#define SHUNT_B3 "SHUNT_B3"
+#define SHUNT_B4 "SHUNT_B4"
+#define SHUNT_B5 "SHUNT_B5"
+#define SHUNT_B6 "SHUNT_B6"
+#define SHUNT_B7 "SHUNT_B7"
+#define SHUNT_B8 "SHUNT_B8"
 
 
 // TRANSFORMER IMPEDANCE CORRECTION
