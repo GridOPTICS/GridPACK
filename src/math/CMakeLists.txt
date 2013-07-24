@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-06-26 09:28:17 d3g096
+# Last Change: 2013-07-24 14:51:34 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -45,10 +45,10 @@ if (PETSC_FOUND)
     # This is temporary.  It's used to set the PETSc options in the
     # linear solver test.  It should not be necessary when a usable
     # configuration system is available.
-    file(COPY 
-      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
-      DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
-    )
+    add_custom_target(petscrc
+      COMMAND ${CMAKE_COMMAND} -E copy 
+         ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+         ${CMAKE_CURRENT_BINARY_DIR})
 
 else()
 
@@ -113,3 +113,6 @@ gridpack_add_unit_test(dense_matrix dense_matrix_test)
 add_executable(linear_solver_test test/linear_solver_test.cpp)
 target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(linear_solver linear_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(linear_solver_test petscrc)
+endif()

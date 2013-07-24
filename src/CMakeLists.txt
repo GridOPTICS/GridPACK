@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-06-19 09:36:53 d3g096
+# Last Change: 2013-07-24 14:56:05 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -115,8 +115,8 @@ add_subdirectory(utilities)
 add_subdirectory(parallel)
 add_subdirectory(math)
 add_subdirectory(component)
-add_subdirectory(network)
 add_subdirectory(partition)
+add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(applications/powerflow)
 add_subdirectory(parser)
