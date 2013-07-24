@@ -33,5 +33,6 @@ gridpack::powerflow::PFApp::~PFApp(void)
  */
 void gridpack::powerflow::PFApp::execute(void)
 {
-  boost::shared_ptr<PFNetwork> network(new PFNetwork);
+  gridpack::parallel::Communicator world;
+  boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
 }

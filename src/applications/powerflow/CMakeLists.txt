@@ -8,9 +8,9 @@
 # -------------------------------------------------------------
 
 set(target_libraries
-    gridpack_network
     gridpack_components
     gridpack_factory
+    gridpack_parallel
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
