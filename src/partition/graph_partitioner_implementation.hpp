@@ -3,7 +3,7 @@
 /**
  * @file   graph_partioner_implementation.hpp
  * @author William A. Perkins
- * @date   2013-06-19 11:29:52 d3g096
+ * @date   2013-07-24 14:17:31 d3g096
  * 
  * @brief  
  * 
@@ -34,6 +34,9 @@ public:
 
   /// A vector of Indexes
   typedef AdjacencyList::IndexVector IndexVector;
+
+  /// A vector of IndexVectors
+  typedef std::vector<IndexVector> MultiIndexVector;
 
   /// Default constructor.
   GraphPartitionerImplementation(const parallel::Communicator& comm);
@@ -84,17 +87,19 @@ public:
   }
 
   /// Partition the graph
-  void partition(void)
-  {
-    p_adjacency_list.ready();
-    this->p_partition();
-  }
+  void partition(void);
 
   /// Get the node destinations
   void node_destinations(IndexVector& dest) const;
 
   /// Get the edge destinations
   void edge_destinations(IndexVector& dest) const;
+
+  /// Get the destinations of ghosted nodes
+  void ghost_node_destinations(MultiIndexVector& dest) const;
+
+  /// Get the destinations of ghosted edges
+  void ghost_edge_destinations(IndexVector& dest) const;
 
 protected:
 
@@ -107,8 +112,15 @@ protected:
   /// A list of processors where local edges should go
   IndexVector p_edge_destinations;
 
+  /// A list of processors where local nodes should go
+  MultiIndexVector p_ghost_node_destinations;
+
+  /// A list of processors where local edges should go
+  IndexVector p_ghost_edge_destinations;
+
   /// Partition the graph (specialized)
   virtual void p_partition(void) = 0;
+
 };
 
 

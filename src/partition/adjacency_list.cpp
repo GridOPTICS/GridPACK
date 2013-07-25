@@ -2,7 +2,7 @@
 /**
  * @file   adjacency_list.cpp
  * @author William A. Perkins
- * @date   2013-06-19 13:41:16 d3g096
+ * @date   2013-07-24 09:33:23 d3g096
  * 
  * @brief  Implementation of AdjacencyList
  * 
@@ -79,7 +79,16 @@ AdjacencyList::edge_index(const int& local_index) const
   return p_edges[local_index].index;
 }
 
-
+// -------------------------------------------------------------
+// AdjacencyList::edge
+// -------------------------------------------------------------
+void
+AdjacencyList::edge(const int& local_index, Index& node1, Index& node2) const
+{
+  BOOST_ASSERT(local_index < this->edges());
+  node1 = p_edges[local_index].conn.first;
+  node2 = p_edges[local_index].conn.second;
+}
 
 // -------------------------------------------------------------
 // AdjacencyList::ready

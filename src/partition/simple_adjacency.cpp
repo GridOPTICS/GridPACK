@@ -1,7 +1,7 @@
 /**
  * @file   simple_adjacency.cpp
  * @author William A. Perkins
- * @date   2013-07-09 12:20:07 d3g096
+ * @date   2013-07-25 09:35:05 d3g096
  * 
  * @brief  
  * 
@@ -122,7 +122,7 @@ simple_graph_partitioner(const gridpack::parallel::Communicator& comm,
   GraphPartitioner::IndexVector my_nodes;
   GraphPartitioner::IndexVector my_edges;
   random_scattered_vector(comm, global_nodes, my_nodes);
-  random_scattered_vector(comm, global_nodes, my_edges);
+  random_scattered_vector(comm, global_nodes-1, my_edges);
 
   GraphPartitioner *partitioner = 
     new GraphPartitioner(comm);

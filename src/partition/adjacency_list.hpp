@@ -3,7 +3,7 @@
 /**
  * @file   adjacency_list.hpp
  * @author William A. Perkins
- * @date   2013-06-19 12:33:31 d3g096
+ * @date   2013-07-24 09:23:15 d3g096
  * 
  * @brief  Declaration of the AdjacencyList class
  * 
@@ -106,6 +106,9 @@ public:
 
   /// Get the global edge index given a local index
   Index edge_index(const int& local_index) const;
+
+  /// Get an edges connected global node indexes 
+  void edge(const int& local_index, Index& node1, Index& node2) const;
 
   /// Indicate that the graph is complete
   void ready(void);

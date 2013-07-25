@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-07-22 09:50:49 d3g096
+ * @date   2013-07-24 09:59:59 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -20,8 +20,6 @@
 
 #include "gridpack/component/base_component.hpp"
 #include "base_network.hpp"
-
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::component::DataCollection);
 
 // -------------------------------------------------------------
 //  class BogusBus
@@ -127,10 +125,13 @@ public:
   {
     for (int p = 0; p < this->processor_size(); ++p) {
       if (p == this->processor_rank()) {
-        std::cout << p << ": ";
+        std::cout << p << ": buses: ";
         for (int b = 0; b < this->numBuses(); ++b) {
           int busidx(this->getGlobalBusIndex(b));
-          std::cout << busidx << ", ";
+          std::cout << busidx;
+          if (!this->getActiveBus(b))
+            std::cout << '*';
+          std::cout << ", ";
         }
         std::cout << std::endl;
         std::cout.flush();
@@ -144,10 +145,13 @@ public:
   {
     for (int p = 0; p < this->processor_size(); ++p) {
       if (p == this->processor_rank()) {
-        std::cout << p << ": ";
+        std::cout << p << ": branches: ";
         for (int b = 0; b < this->numBranches(); ++b) {
           int branchidx(this->getGlobalBranchIndex(b));
-          std::cout << branchidx << ", ";
+          std::cout << branchidx;
+          if (!this->getActiveBranch(b))
+            std::cout << '*';
+          std::cout << ", ";
         }
         std::cout << std::endl;
         std::cout.flush();
@@ -321,10 +325,12 @@ BOOST_AUTO_TEST_CASE ( partition )
   }
 
   net.print_bus_ids();
+  net.print_branch_ids();
 
   net.partition();
 
   net.print_bus_ids();
+  net.print_branch_ids();
 }
 
 

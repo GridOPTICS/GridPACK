@@ -2,7 +2,7 @@
 /**
  * @file   partition_test.cpp
  * @author William A. Perkins
- * @date   2013-07-09 11:57:02 d3g096
+ * @date   2013-07-24 09:46:04 d3g096
  * 
  * @brief  Unit test suite for various partition classes.
  * 
@@ -101,9 +101,9 @@ BOOST_AUTO_TEST_CASE( random_partition )
 
   world.barrier();
 
-  GraphPartitioner::IndexVector node_dest;
+  GraphPartitioner::IndexVector node_dest, edge_dest;
   partitioner->node_destinations(node_dest);
-
+  partitioner->edge_destinations(edge_dest);
   for (int p = 0; p < world.size(); ++p) {
     if (world.rank() == p) {
       int nnodes(partitioner->nodes());
@@ -114,6 +114,16 @@ BOOST_AUTO_TEST_CASE( random_partition )
       std::cout << std::endl;
       std::cout << p << ": parts: ";
       std::copy(node_dest.begin(), node_dest.end(),
+                std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
+      std::cout << std::endl;
+      int nedges(partitioner->edges());
+      std::cout << p << ": edges: ";
+      for (int i = 0; i < nedges; ++i) {
+        std::cout << partitioner->edge_index(i) << ",";
+      }
+      std::cout << std::endl;
+      std::cout << p << ": parts: ";
+      std::copy(edge_dest.begin(), edge_dest.end(),
                 std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
       std::cout << std::endl;
     }
@@ -164,8 +174,9 @@ BOOST_AUTO_TEST_CASE( unbalanced_partition )
 
   world.barrier();
 
-  GraphPartitioner::IndexVector node_dest;
+  GraphPartitioner::IndexVector node_dest, edge_dest;
   partitioner.node_destinations(node_dest);
+  partitioner.edge_destinations(edge_dest);
   for (int p = 0; p < world.size(); ++p) {
     if (world.rank() == p) {
       std::cout << p << ": nodes: ";
@@ -174,6 +185,14 @@ BOOST_AUTO_TEST_CASE( unbalanced_partition )
       std::cout << std::endl;
       std::cout << p << ": parts: ";
       std::copy(node_dest.begin(), node_dest.end(),
+                std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
+      std::cout << std::endl;
+      std::cout << p << ": edges: ";
+      std::copy(my_edges.begin(), my_edges.end(),
+                std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
+      std::cout << std::endl;
+      std::cout << p << ": parts: ";
+      std::copy(edge_dest.begin(), edge_dest.end(),
                 std::ostream_iterator<GraphPartitioner::Index>(std::cout, ","));
       std::cout << std::endl;
     }

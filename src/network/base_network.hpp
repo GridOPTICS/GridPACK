@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-07-22 09:36:57 d3g096
+ * @date   2013-07-24 11:28:39 d3g096
  * 
  * @brief  
  * 
@@ -889,21 +889,52 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     }
     partitioner.partition();
 
-    // FIXME: 
+    int me(this->processor_rank());
+    GraphPartitioner::IndexVector dest, gdest;
 
-    GraphPartitioner::IndexVector dest;
-    partitioner.node_destinations(dest);
-    {
-      Shuffler<BusData<_bus>, GraphPartitioner::Index> bus_shuffler;
-      bus_shuffler(this->communicator(), p_buses, dest);
+    Shuffler<BusData<_bus>, GraphPartitioner::Index> bus_shuffler;
+    Shuffler<BranchData<_branch>, GraphPartitioner::Index> branch_shuffler;
+
+    // Need to make copies of buses and branches that will be ghosted.
+    // After active bus/branch distribution, they may not be on this
+    // processor.
+
+    // Branches can only be ghosted on one other process, so they're
+    // easy.
+
+    partitioner.edge_destinations(dest);
+    partitioner.ghost_edge_destinations(gdest);
+
+    BranchVector ghostbranches;
+    BranchIterator branch(p_branches.begin());
+    GraphPartitioner::IndexVector ghostbranchdest;
+
+    for (size_t i = 0; i < dest.size(); ++i, ++branch) {
+      if (dest[i] != gdest[i]) {
+        ghostbranches.push_back(*branch);
+        ghostbranches.back().p_activeBranch = false;
+        ghostbranchdest.push_back(gdest[i]);
+      }
     }
 
-    // {
-    //   GraphPartitioner::IndexVector branchdest;
-    //   partitioner.edge_destinations(branchdest);
-    //   Shuffler<BranchDataPtr, GraphPartitioner::Index> branch_shuffler;
-    //   branch_shuffler(this->communicator(), p_branches, branchdest);
-    // }
+    // distribute active nodes
+
+    partitioner.node_destinations(dest);
+    bus_shuffler(this->communicator(), p_buses, dest);
+
+    // distribute active edges
+
+    partitioner.edge_destinations(dest);
+    branch_shuffler(this->communicator(), p_branches, dest);
+
+    // At this point, active buses and branches are on the proper
+    // process.  Now, we need to distribute and nodes and edges that
+    // are ghosted.  
+
+    branch_shuffler(this->communicator(), ghostbranches, ghostbranchdest);
+    std::copy(ghostbranches.begin(), ghostbranches.end(),
+              std::back_inserter(p_branches));
+    ghostbranches.clear();
   }
 
 /**

@@ -3,7 +3,7 @@
 /**
  * @file   shuffler.hpp
  * @author William A. Perkins
- * @date   2013-07-22 09:34:55 d3g096
+ * @date   2013-07-23 07:50:57 d3g096
  * 
  * @brief  A thing to redistribute a vector of things over several processors 
  * 
@@ -40,6 +40,8 @@
  * vector of equal size that containing a destination process for each
  * thing.  After execution, each process will contain a vector of the
  * things assigned to it.
+ *
+ * This uses blocking send/receive.  
  *
  * The things redistributed must be copy constructable and serializable.  
  * 
@@ -78,6 +80,7 @@ struct Shuffler {
     int msgid(0);               // unique MPI message id
     
     // Work on each processors list of things separately
+
     iPairVector srcdest;
     for (int p = 0; p < comm.size(); ++p) {
       
@@ -118,8 +121,8 @@ struct Shuffler {
           locidx += 1;
         } else if (comm.rank() == dest) {
           Thing bogus;
-          comm.recv(src, msgid, bogus);
           locthings.push_back(bogus);
+          comm.recv(src, msgid, locthings.back());
           // std::cout << dest << ": msg " << msgid 
           //           << ": got @ " << locthings.size() - 1 << " \"" 
           //           << locthings.back() << "\"" << std::endl;

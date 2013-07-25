@@ -3,7 +3,7 @@
 /**
  * @file   graph_partitioner.hpp
  * @author William A. Perkins
- * @date   2013-06-18 12:43:19 d3g096
+ * @date   2013-07-24 11:44:19 d3g096
  * 
  * @brief  
  * 
@@ -29,6 +29,7 @@ public:
 
   typedef GraphPartitionerImplementation::Index Index;
   typedef GraphPartitionerImplementation::IndexVector IndexVector;
+  typedef GraphPartitionerImplementation::MultiIndexVector MultiIndexVector;
 
   /// Default constructor.
   GraphPartitioner(const parallel::Communicator& comm);
@@ -94,6 +95,18 @@ public:
   void edge_destinations(IndexVector& dest) const
   {
     p_impl->edge_destinations(dest);
+  }
+
+  /// Get the destinations of ghosted nodes
+  void ghost_node_destinations(MultiIndexVector& dest) const
+  {
+    p_impl->ghost_node_destinations(dest);
+  }
+
+  /// Get the destinations of ghosted edge
+  void ghost_edge_destinations(IndexVector& dest) const
+  {
+    p_impl->ghost_edge_destinations(dest);
   }
 
 protected:
