@@ -8,7 +8,8 @@ using boost::property_tree::ptree;
 using std::string;
 using std::ostream;
 
-namespace gridpack { namespace utilities {
+namespace gridpack {
+namespace utilities {
 
 class ConfigInternals {
 public:
@@ -42,7 +43,7 @@ bool Configuration::open(std::string file) {
 #endif
 
 	std::string str;
-	std::ifstream input(file);
+	std::ifstream input(file.c_str());
 	if(!input.bad()) {
 		input.seekg(0, std::ios::end);   
 		str.reserve((unsigned) input.tellg());
