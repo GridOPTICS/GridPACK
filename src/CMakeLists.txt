@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-07-24 14:56:05 d3g096
+# Last Change: 2013-08-01 07:53:37 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -106,6 +106,21 @@ endif(DOXYGEN_FOUND)
 # -------------------------------------------------------------
 # Options for all Programs/Libraries
 # -------------------------------------------------------------
+
+# remove annoying warnings produced by the GNU compiler about
+# deprecated variables/functions; some are caused by GridPACK code
+# (these, particularly string constants should be fixed) and some are
+# caused by Boost::MPI
+
+if (CMAKE_COMPILER_IS_GNUCXX) 
+    add_definitions(
+        -Wno-deprecated 
+        -Wno-deprecated-declarations
+        -Wno-write-strings
+    )
+endif()
+
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # -------------------------------------------------------------

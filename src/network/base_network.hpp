@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-07-24 11:28:39 d3g096
+ * @date   2013-08-01 13:42:57 d3g096
  * 
  * @brief  
  * 
@@ -13,6 +13,8 @@
 #ifndef _base_network_h_
 #define _base_network_h_
 
+#include <fstream>
+#include <iomanip>
 #include <vector>
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
@@ -899,6 +901,21 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     // After active bus/branch distribution, they may not be on this
     // processor.
 
+    BusVector ghostbuses;
+    GraphPartitioner::MultiIndexVector gnodedest;
+    GraphPartitioner::IndexVector ghostbusdest;
+    BusIterator bus(p_buses.begin());
+    partitioner.ghost_node_destinations(gnodedest);
+    
+    for (size_t i = 0; i < gnodedest.size(); ++i, ++bus) {
+      for (GraphPartitioner::IndexVector::iterator d = gnodedest[i].begin();
+           d != gnodedest[i].end(); ++d) {
+        ghostbuses.push_back(*bus);
+        ghostbusdest.push_back(*d);
+      }
+    }
+                    
+
     // Branches can only be ghosted on one other process, so they're
     // easy.
 
@@ -930,6 +947,13 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     // At this point, active buses and branches are on the proper
     // process.  Now, we need to distribute and nodes and edges that
     // are ghosted.  
+
+    bus_shuffler(this->communicator(), ghostbuses, ghostbusdest);
+    for (bus = ghostbuses.begin(); bus != ghostbuses.end(); ++bus) {
+      bus->p_activeBus = false;
+      p_buses.push_back(*bus);
+    }
+    ghostbuses.clear();
 
     branch_shuffler(this->communicator(), ghostbranches, ghostbranchdest);
     std::copy(ghostbranches.begin(), ghostbranches.end(),
@@ -1510,6 +1534,54 @@ void updateBranches(void)
     }
   }
 }
+
+void
+write_graph(const std::string& outname) 
+  {
+    std::ofstream out;
+    if (this->processor_rank() == 0) {
+      out.open(outname.c_str(), std::ofstream::out | std::ofstream::trunc);
+      out << "digraph {" << std::endl;
+      out.close();
+    }
+    for (int p = 0; p < this->processor_size(); ++p) {
+      if (p == this->processor_rank()) {
+        out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
+        out << "subgraph cluster_" << p << " {" << std::endl;
+        out << "color=red" << std::endl;
+        out << "label=" << p << ";" << std::endl;
+        BusIterator bus;
+        for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
+          if (bus->p_activeBus) {
+            out << " n" << bus->p_globalBusIndex 
+                << "[label=" << bus->p_globalBusIndex << "];" << std::endl;
+          }
+        }
+        out << "}" << std::endl;
+        out.close();
+      }
+      this->communicator().barrier();
+    }
+    for (int p = 0; p < this->processor_size(); ++p) {
+      if (p == this->processor_rank()) {
+        out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
+        BranchIterator branch;
+        for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
+          out << "n" << branch->p_globalBusIndex1 << " -> " 
+              << "n" << branch->p_globalBusIndex2 << ";" 
+              << std::endl;
+        }
+        out.close();
+      }
+      this->communicator().barrier();
+    }
+    this->communicator().barrier();
+    if (this->processor_rank() == 0) {
+      out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
+      out << "   } /* end */" << std::endl;
+      out.close();
+    }
+  }
 
 protected:
 

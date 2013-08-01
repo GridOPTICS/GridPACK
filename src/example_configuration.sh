@@ -4,6 +4,12 @@ host=`uname -n`
 
 rm -f CMakeCache.txt 
 
+options="-Wdev --debug-trycompile"
+common_flags="\
+        -D CMAKE_BUILD_TYPE:STRING=Debug \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+"
+
 if [ $host == "flophouse" ]; then
 
     prefix="/net/flophouse/files0/perksoft/linux64"
@@ -16,14 +22,12 @@ if [ $host == "flophouse" ]; then
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D CMAKE_BUILD_TYPE:STRING="Debug" \
-        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
-        ..
+        $common_flags ..
     
 elif [ $host == "pe10900" ]; then
     prefix="/net/flophouse/files0/perksoft/macosx"
-    cmake -Wdev --debug-trycompile \
+    cmake $options \
         -D PARMETIS_DIR:STRING="$prefix" \
         -D GA_DIR:STRING="$prefix" \
         -D GA_EXTRA_LIBS:STRING="-lblas" \
@@ -33,15 +37,13 @@ elif [ $host == "pe10900" ]; then
         -D MPI_CXX_COMPILER:STRING='openmpicxx' \
         -D MPI_C_COMPILER:STRING='openmpicc' \
         -D MPIEXEC:STRING='openmpiexec' \
-        -D CMAKE_BUILD_TYPE:STRING="Debug" \
-        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
-        ..
+        $common_flags ..
 
 elif [ $host == "olympus.local" ]; then
 
     prefix="/pic/projects/gridpack/software"
-    cmake -Wdev \
+    cmake $options \
         -D PARMETIS_DIR:STRING="$prefix" \
         -D GA_DIR:STRING="/pic/projects/gridpack/ga-5-2" \
         -D GA_EXTRA_LIBS:STRING="-libverbs" \
@@ -51,9 +53,7 @@ elif [ $host == "olympus.local" ]; then
 	-D MPI_CXX_COMPILER:STRING='mpicxx' \
 	-D MPI_C_COMPILER:STRING='mpicc' \
 	-D MPIEXEC:STRING='mpiexec' \
-	-D CMAKE_BUILD_TYPE:STRING="Debug" \
-	-D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
-	..
+	$common_flags ..
 
 else
 

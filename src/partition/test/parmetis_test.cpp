@@ -1,7 +1,7 @@
 /**
  * @file   parmetis_test.cpp
  * @author William A. Perkins
- * @date   2013-07-09 11:53:49 d3g096
+ * @date   2013-08-01 09:44:06 d3g096
  * 
  * @brief  Unit tests of ParMETIS-specific code
  * 
@@ -19,25 +19,8 @@
 
 #include "simple_adjacency.hpp"
 #include "parmetis/parmetis_graph_wrapper.hpp"
+#include "gridpack/parallel/printit.hpp"
 
-// -------------------------------------------------------------
-// printit
-// -------------------------------------------------------------
-template <typename T> 
-void
-printit(const boost::mpi::communicator& comm, const std::vector<T> things)
-{
-  for (int p = 0; p < comm.size(); ++p) {
-    if (comm.rank() == p) {
-      std::cout << p << ": ";
-      std::copy(things.begin(), things.end(),
-                std::ostream_iterator<T>(std::cout, ","));
-      std::cout << std::endl;
-      std::cout.flush();
-    }
-    comm.barrier();
-  }
-}                                      
 
 BOOST_AUTO_TEST_SUITE( ParMETIS )
 
@@ -61,9 +44,9 @@ BOOST_AUTO_TEST_CASE( graph_wrapper )
 
   wrapper->get_csr_local(vtxdist, xadj, adjncy);
 
-  printit(world, vtxdist);
-  printit(world, xadj);
-  printit(world, adjncy);
+  printit(world, vtxdist, "vtxdist:");
+  printit(world, xadj, "xadj:");
+  printit(world, adjncy, "adjncy:");
 
   // Not really sure what to check here
 

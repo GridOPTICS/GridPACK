@@ -2,7 +2,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2013-07-24 14:17:55 d3g096
+ * @date   2013-08-01 11:48:20 d3g096
  * 
  * @brief  
  * 
@@ -14,6 +14,10 @@
 #include <ga++.h>
 #include <boost/mpi/collectives.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/lambda/lambda.hpp>
+#include <boost/lambda/bind.hpp>
+#include <boost/serialization/utility.hpp>
+
 #include "graph_partitioner_implementation.hpp"
 
 
@@ -180,6 +184,59 @@ GraphPartitionerImplementation::partition(void)
   std::copy(e2dest.begin(), e2dest.end(), 
             std::back_inserter(p_ghost_edge_destinations));
 
+  // determine destinations for ghost nodes: go thru the edges and
+  // compare destinations of connected nodes; if they're different,
+  // then both ends need to be ghosted
+
+  std::vector< std::pair<Index, int> > gnodedest;
+  for (Index e = 0; e < locedges; ++e) {
+    Index n1, n2;
+    p_adjacency_list.edge(e, n1, n2);
+
+    int n1dest(e1dest[e]);
+    int n2dest(e2dest[e]);
+
+    if (n1dest != n2dest) {
+      gnodedest.push_back(std::make_pair(n1, n2dest));
+      gnodedest.push_back(std::make_pair(n2, n1dest));
+    }
+  }
+
+  if (this->processor_rank() == 0) {
+    std::cout << "Ghost node destinations: " << std::endl;
+  }
+  for (int p = 0; p < this->processor_size(); ++p) {
+    if (this->processor_rank() == p) {
+      std::cout << p << ": ";
+      for (std::vector< std::pair<Index, int> >::const_iterator i = gnodedest.begin();
+           i != gnodedest.end(); ++i) {
+        std::cout << "(" << i->first << ":" << i->second << "),";
+      }
+      std::cout << std::endl;
+    }
+    this->communicator().barrier();
+  }
+
+  // take each local list of ghost node, send it to all processes, 
+  p_ghost_node_destinations.resize(locnodes);
+  std::vector< std::pair<Index, int> > tmp;
+  for (int p = 0; p < this->processor_size(); ++p) {
+    tmp.clear();
+    if (this->processor_rank() == p) {
+      tmp = gnodedest;
+    }
+    broadcast(this->communicator(), tmp, p);
+    for (Index n = 0; n < locnodes; ++n) {
+      Index nodeidx(p_adjacency_list.node_index(n));
+      for (std::vector< std::pair<Index, int> >::const_iterator i = tmp.begin();
+           i != tmp.end(); ++i) {
+        if (nodeidx == i->first) {
+          p_ghost_node_destinations[n].push_back(i->second);
+        }
+      }
+    }
+  }
+  
 }
 } // namespace network
 } // namespace gridpack

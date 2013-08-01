@@ -1,7 +1,7 @@
 /**
  * @file   shuffle_test.cpp
  * @author William A. Perkins
- * @date   2013-07-22 09:29:39 d3g096
+ * @date   2013-08-01 09:36:46 d3g096
  * 
  * @brief  A test of the Shuffler<> class
  * 
@@ -19,41 +19,8 @@
 #include <boost/test/included/unit_test.hpp>
 #include <boost/serialization/string.hpp>
 
+#include "printit.hpp"
 #include "shuffler.hpp"
-
-// -------------------------------------------------------------
-// printit
-// -------------------------------------------------------------
-template <typename T> 
-void
-printit(const boost::mpi::communicator& comm, 
-        const std::vector<T> things,
-        const std::string& caption)
-{
-  if (!caption.empty() && comm.rank() == 0) {
-    std::cout << caption << std::endl;
-    std::cout.flush();
-  }
-  for (int p = 0; p < comm.size(); ++p) {
-    if (comm.rank() == p) {
-      std::cout << p << ": ";
-      std::copy(things.begin(), things.end(),
-                std::ostream_iterator<T>(std::cout, ","));
-      std::cout << std::endl;
-      std::cout.flush();
-    }
-    comm.barrier();
-  }
-
-  size_t global_size;
-  boost::mpi::reduce(comm, things.size(), global_size, std::plus<size_t>(), 0);
-  if (comm.rank() == 0) {
-    if (!caption.empty()) {
-      std::cout << caption;
-    }
-    std::cout << "Number of things: " << global_size << std::endl;
-  }
-}                                      
 
 // -------------------------------------------------------------
 // struct Tester

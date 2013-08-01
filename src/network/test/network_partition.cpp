@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-07-24 09:59:59 d3g096
+ * @date   2013-08-01 12:30:42 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -326,11 +326,13 @@ BOOST_AUTO_TEST_CASE ( partition )
 
   net.print_bus_ids();
   net.print_branch_ids();
+  net.write_graph("network-before.dot");
 
   net.partition();
 
   net.print_bus_ids();
   net.print_branch_ids();
+  net.write_graph("network-after.dot");
 }
 
 
