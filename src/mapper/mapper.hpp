@@ -28,33 +28,28 @@ typedef gridpack::network::BaseNetwork<
 class Mapper
 {
 public:
-//    Mapper(boost::shared_ptr<MapNetwork> network);
-    Mapper(boost::shared_ptr<MapNetwork> network):
-            me (GA_Nodeid()), nNodes(GA_Nnodes()), network(network){};
-    ~Mapper(){};
+    Mapper(boost::shared_ptr<MapNetwork> network);
+    ~Mapper();
     int resetMapper();
     void mapToMatrix();
 protected:
-    int setupMapper();
-    int getActiveBuses(int nBuses);
-    int getActiveBranches(int nBranches);
-    int setupGlobalArrays(int nActiveBuses, int nActiveBranchess);
-    int createGAHandle(int * handle, int size);
-    int setupIndexingArrays();
-    int allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
+    int getActiveBuses();
+    void setupGlobalArrays(int nActiveBuses);
+    void createIndexGA(int * handle, int size);
+    void setupIndexingArrays();
+    void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
             int *** iIndexArray, int *** jIndexArray);
-    int loadBusArrays(int * iSizeArray, int * jSizeArray,
-            int *** iIndexArray, int *count);
-    int loadForwardBranchArrays(int * iSizeArray, int * jSizeArray,
-            int *** iIndexArray, int *** jIndexArray, int * count);
-    int loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
-            int *** iIndexArray, int *** jIndexArray, int * count);
-    int deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
-            int *** iIndexArray, int *** jIndexArray);
-    int scatterIndexingArrays(int * iSizeArray, int * jSizeArray, int ** iIndexArray, int ** jIndexArray, int count);
-    int findArrayDimensions(int * iSize, int * jSize);
-    int setupOffsetArrays(int iSize, int jSize);
-    int computeArraySize(int globalIndex);
+    void loadBusArrays(int * iSizeArray, int * jSizeArray,
+            int ** iIndexArray, int *count);
+    void loadForwardBranchArrays(int * iSizeArray, int * jSizeArray,
+            int ** iIndexArray, int ** jIndexArray, int * count);
+    void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
+            int ** iIndexArray, int ** jIndexArray, int * count);
+    void deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
+            int ** iIndexArray, int ** jIndexArray);
+    void scatterIndexingArrays(int * iSizeArray, int * jSizeArray,
+            int ** iIndexArray, int ** jIndexArray, int count);
+    void setupOffsetArrays();
     void mapToMatrix(gridpack::math::Matrix    & matrix);
     void loadBusData(gridpack::math::Matrix    & matrix);
     void loadBranchData(gridpack::math::Matrix    & matrix);
@@ -62,22 +57,27 @@ protected:
 
 private:
     // GA information
-    int                          me;
-    int                          nNodes;
+    int                           p_me;
+    int                           p_nNodes;
 
     // network information
-    boost::shared_ptr<MapNetwork> network;
-    int                          nBuses;
-    int                          nBranches;
+    boost::shared_ptr<MapNetwork> p_network;
+    int                           p_nBuses;
+    int                           p_nBranches;
 
-    int                          totalBuses;
-    int                          totalBranches;
+    int                           p_totalBuses;
+
+    // matrix information
+    int                           p_iDim;
+    int                           p_jDim;
+    int                           p_minRowIndex;
+    int                           p_maxRowIndex;
 
     // global matrix block size array
-    int                          gaMatBlksI; // g_idx
-    int                          gaMatBlksJ; // g_jdx
-    int                          gaOffsetI;  // g_ioff
-    int                          gaOffsetJ;  // g_joff
+    int                           gaMatBlksI; // g_idx
+    int                           gaMatBlksJ; // g_jdx
+    int                           gaOffsetI;  // g_ioff
+    int                           gaOffsetJ;  // g_joff
 
 };
 
