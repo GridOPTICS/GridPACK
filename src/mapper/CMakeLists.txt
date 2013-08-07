@@ -7,17 +7,18 @@
 # Last Change: 2013-06-21 14:16:06 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries gridpack_mapper
+set(target_libraries
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
 )
 
-include_directories(AFTER ${GA_INCLUDE_DIRS})
-
-add_library(gridpack_mapper
-  mapper.cpp
+set(target_libraries 
+  gridpack_components gridpack_parallel
+  ${target_libraries} 
 )
+
+include_directories(AFTER ${GA_INCLUDE_DIRS})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
@@ -27,7 +28,9 @@ endif()
 # TEST: greetings
 # A simple MPI program
 # -------------------------------------------------------------
-#!!add_executable(greetings test/greetings.cpp)
+add_executable(test_mapper test/test_mapper.cpp)
+target_link_libraries(test_mapper ${target_libraries})
+
 #!!target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 #!!add_test(NAME greetings_serial COMMAND $<TARGET_FILE:greetings>)
