@@ -250,6 +250,15 @@ class BaseNetwork
   : public parallel::Distributed
 {
 public:
+
+/**
+ * Type declarations that can be used external to the BaseNetwork class
+ */
+typedef _bus BusType;
+typedef _branch BranchType;
+typedef boost::shared_ptr<_bus> BusPtr;
+typedef boost::shared_ptr<_branch> BranchPtr;
+
 /**
  * Default constructor.
  */
