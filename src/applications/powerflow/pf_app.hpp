@@ -22,6 +22,10 @@ typedef gridpack::network::BaseNetwork<
         gridpack::powerflow::PFBus,
         gridpack::powerflow::PFBranch> PFNetwork;
 
+typedef gridpack::network::BaseNetwork<
+        gridpack::component::BaseComponent,
+        gridpack::component::BaseComponent> BCNetwork;
+
 namespace gridpack {
 namespace powerflow {
 

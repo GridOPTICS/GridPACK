@@ -11,9 +11,11 @@ set(target_libraries
     gridpack_components
     gridpack_factory
     gridpack_parallel
+    gridpack_math
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES})
+    ${MPI_CXX_LIBRARIES}
+    ${PETSC_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
