@@ -7,6 +7,28 @@
 #define XDIM 100
 #define YDIM 100
 
+class TestBus
+  : public gridpack::component::BaseBusComponent {
+  public:
+
+  TestBus(void) {
+  }
+
+  ~TestBus(void) {
+  }
+};
+
+class TestBranch
+  : public gridpack::component::BaseBranchComponent {
+  public:
+
+  TestBranch(void) {
+  }
+
+  ~TestBranch(void) {
+  }
+};
+
 void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
 {
   int i,j,it,ip,ifac,pmax,prime[1000], chk;
@@ -80,7 +102,7 @@ main (int argc, char **argv) {
 
   // Create network
   gridpack::parallel::Communicator world;
-  gridpack::network::BaseNetwork<int, int> network(world);
+  gridpack::network::BaseNetwork<TestBus, TestBranch> network(world);
 
   // Factor processors into a processor grid
   int ipx, ipy, pdx, pdy;
