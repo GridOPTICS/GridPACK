@@ -2,7 +2,7 @@
 /**
  * @file   pf_app.hpp
  * @author Bruce Palmer
- * @date   July 23, 2013
+ * @date   2013-08-08 10:18:32 d3g096
  * 
  * @brief  
  * 
@@ -14,17 +14,7 @@
 #define _pf_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/network/base_network.hpp"
-#include "gridpack/applications/powerflow/pf_components.hpp"
 #include "gridpack/applications/powerflow/pf_factory.hpp"
-
-typedef gridpack::network::BaseNetwork<
-        gridpack::powerflow::PFBus,
-        gridpack::powerflow::PFBranch> PFNetwork;
-
-typedef gridpack::network::BaseNetwork<
-        gridpack::component::BaseComponent,
-        gridpack::component::BaseComponent> BCNetwork;
 
 namespace gridpack {
 namespace powerflow {

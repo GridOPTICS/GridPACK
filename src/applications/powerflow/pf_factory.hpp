@@ -2,7 +2,7 @@
 /**
  * @file   pf_factory.hpp
  * @author Bruce Palmer
- * @date   July 1, 2013
+ * @date   2013-08-08 10:20:30 d3g096
  * 
  * @brief  
  * 
@@ -15,19 +15,19 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
+#include "gridpack/applications/powerflow/pf_components.hpp"
 
 namespace gridpack {
 namespace powerflow {
 
 class PFFactory
-  : gridpack::factory::BaseFactory {
+  : gridpack::factory::BaseFactory<PFNetwork> {
   public:
     /**
      * Basic constructor
      * @param network: network associated with factory
      */
-    PFFactory(boost::shared_ptr<gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent,
-                        gridpack::component::BaseBranchComponent> > network);
+    PFFactory(NetworkPtr network);
 
     /**
      * Basic destructor
@@ -39,10 +39,6 @@ class PFFactory
      */
     void setYBus(void);
 
-  private:
-
-    boost::shared_ptr<gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent,
-                              gridpack::component::BaseBranchComponent> > p_network;
 };
 
 } // powerflow

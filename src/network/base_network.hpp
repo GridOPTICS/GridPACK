@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-08-01 13:42:57 d3g096
+ * @date   2013-08-08 10:57:19 d3g096
  * 
  * @brief  
  * 
@@ -363,7 +363,7 @@ virtual ~BaseNetwork(void)
  */
 void addBus(int idx)
 {
-  BusDataPtr bus(new BusData<_bus>());
+  BusDataPtr bus(new BusData<BusType>());
   bus->p_originalBusIndex = idx;
   bus->p_globalBusIndex = -1;
   p_buses.push_back(*bus);
@@ -680,7 +680,7 @@ bool getActiveBus(int idx)
     return p_buses[idx].p_activeBus;
   } else {
     printf("gridpack::network::getActiveBus: illegal index: %d size: %d\n",
-            idx,p_buses.size());
+           idx, static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
 }
@@ -718,7 +718,7 @@ int getGlobalBusIndex(int idx)
  * @param idx: local index of requested bus
  * @return: a pointer to the requested bus.
  */
-boost::shared_ptr<_bus> getBus(int idx)
+BusPtr getBus(int idx)
 {
   if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
@@ -760,7 +760,7 @@ int getGlobalBranchIndex(int idx)
  * @param idx: local index of requested branch
  * @return: a pointer to the requested branch
  */
-boost::shared_ptr<_branch> getBranch(int idx)
+BranchPtr getBranch(int idx)
 {
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
@@ -903,14 +903,14 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     int me(this->processor_rank());
     GraphPartitioner::IndexVector dest, gdest;
 
-    Shuffler<BusData<_bus>, GraphPartitioner::Index> bus_shuffler;
-    Shuffler<BranchData<_branch>, GraphPartitioner::Index> branch_shuffler;
+    Shuffler<BusData<BusType>, GraphPartitioner::Index> bus_shuffler;
+    Shuffler<BranchData<BranchType>, GraphPartitioner::Index> branch_shuffler;
 
     // Need to make copies of buses and branches that will be ghosted.
     // After active bus/branch distribution, they may not be on this
     // processor.
 
-    BusVector ghostbuses;
+    BusDataVector ghostbuses;
     GraphPartitioner::MultiIndexVector gnodedest;
     GraphPartitioner::IndexVector ghostbusdest;
     BusIterator bus(p_buses.begin());
@@ -931,7 +931,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     partitioner.edge_destinations(dest);
     partitioner.ghost_edge_destinations(gdest);
 
-    BranchVector ghostbranches;
+    BranchDataVector ghostbranches;
     BranchIterator branch(p_branches.begin());
     GraphPartitioner::IndexVector ghostbranchdest;
 
@@ -1606,22 +1606,22 @@ private:
   // add some typedefs so things are more readable and we don't have
   // to type so much
 
-  typedef boost::shared_ptr< BusData<_bus> > BusDataPtr;
-  typedef std::vector<  BusData<_bus> > BusVector;
-  typedef typename BusVector::iterator BusIterator;
-  typedef boost::shared_ptr< BranchData<_branch> > BranchDataPtr;
-  typedef std::vector< BranchData<_branch> > BranchVector;
-  typedef typename BranchVector::iterator BranchIterator;
+  typedef boost::shared_ptr< BusData<BusType> > BusDataPtr;
+  typedef std::vector<  BusData<BusType> > BusDataVector;
+  typedef typename BusDataVector::iterator BusIterator;
+  typedef boost::shared_ptr< BranchData<BranchType> > BranchDataPtr;
+  typedef std::vector< BranchData<BranchType> > BranchDataVector;
+  typedef typename BranchDataVector::iterator BranchIterator;
 
   /**
    * Vector of bus data and objects
    */
-  BusVector p_buses;
+  BusDataVector p_buses;
 
   /**
    * Vector of branch data and objects
    */
-  BranchVector p_branches;
+  BranchDataVector p_branches;
 
   /**
    * Parallel environment for network

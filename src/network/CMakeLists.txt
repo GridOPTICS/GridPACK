@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-07-18 12:38:32 d3g096
+# Last Change: 2013-08-08 09:29:05 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -42,11 +42,11 @@ endif()
 # TEST: greetings
 # A simple MPI program
 # -------------------------------------------------------------
-add_executable(test_network test/test_network.cpp)
-#target_link_libraries(test_network gridpack_network ${target_libraries})
-target_link_libraries(test_network ${target_libraries})
+# add_executable(test_network test/test_network.cpp)
+# #target_link_libraries(test_network gridpack_network ${target_libraries})
+# target_link_libraries(test_network ${target_libraries})
 
-add_test(test_network_serial test_network)
+# add_test(test_network_serial test_network)
 
 
 add_executable(network_partition test/network_partition.cpp)

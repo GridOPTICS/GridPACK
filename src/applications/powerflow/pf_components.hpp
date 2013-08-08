@@ -2,13 +2,16 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   June 4, 2013
+ * @date   2013-08-08 10:35:39 d3g096
  * 
  * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
+
+#ifndef _pf_components_h_
+#define _pf_components_h_
 
 /**
  * Some preprocessor string declarations. These will need to be put in an
@@ -20,20 +23,21 @@
 #define BRANCH_TAP_RATIO   "branch_tap_ratio"
 #define BRANCH_PHASE_SHIFT "branch_phase_shift"
 #define BRANCH_CHARGING    "branch_charging"
-#define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1"
-#define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1"
-#define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2"
-#define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2"
 #define BUS_SHUNT_GS    "branch_shunt_gs"
 #define BUS_SHUNT_BS    "branch_shunt_bs"
 
-#ifndef _pf_components_h_
-#define _pf_components_h_
+/* These are defined in dictionary.hpp. 
+
+/* #define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1" */
+/* #define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1" */
+/* #define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2" */
+/* #define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2" */
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/network/base_network.hpp"
 
 namespace gridpack {
 namespace powerflow {
@@ -237,6 +241,13 @@ class PFBranch
     double p_ybusr, p_ybusi;
     double p_theta;
 };
+
+
+/// The type of network used in the powerflow application
+typedef gridpack::network::BaseNetwork<
+  gridpack::powerflow::PFBus,
+  gridpack::powerflow::PFBranch > PFNetwork;
+
 
 }     // powerflow
 }     // gridpack

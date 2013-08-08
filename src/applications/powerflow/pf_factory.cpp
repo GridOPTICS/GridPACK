@@ -2,7 +2,7 @@
 /**
  * @file   pf_factory.cpp
  * @author Bruce Palmer
- * @date   July 1, 2013
+ * @date   2013-08-08 10:23:25 d3g096
  * 
  * @brief  
  * 
@@ -17,17 +17,17 @@
 #include "gridpack/applications/powerflow/pf_components.hpp"
 #include "gridpack/applications/powerflow/pf_factory.hpp"
 
+namespace gridpack {
+namespace powerflow {
+
 // Powerflow factory class implementations
 
 /**
  * Basic constructor
  * @param network: network associated with factory
  */
-gridpack::powerflow::PFFactory::PFFactory(
-         boost::shared_ptr<gridpack::network::BaseNetwork
-         <gridpack::component::BaseBusComponent,
-         gridpack::component::BaseBranchComponent> > network)
-         : gridpack::factory::BaseFactory(network)
+PFFactory::PFFactory(PFFactory::NetworkPtr network)
+  : factory::BaseFactory<PFNetwork>(network)
 {
   p_network = network;
 }
@@ -50,11 +50,15 @@ void gridpack::powerflow::PFFactory::setYBus(void)
 
   // Invoke setYBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    (dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get()))->setYBus();
+    p_network->getBus(i).get()->setYBus();
   }
 
   // Invoke setYBus method on all branch objects
   for (i=0; i<numBranch; i++) {
-    (dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get()))->setYBus();
+    p_network->getBranch(i).get()->setYBus();
   }
 }
+
+
+} // namespace powerflow
+} // namespace gridpack
