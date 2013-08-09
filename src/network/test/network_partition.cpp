@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-08-01 12:30:42 d3g096
+ * @date   2013-08-08 14:36:00 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -108,7 +108,7 @@ public:
       }
       for (int branchidx = 0; branchidx < global_branches; ++branchidx) {
         int bus1(branchidx), bus2(bus1+1);
-        this->addBranch(bus1, bus2);
+        this->addBranch(branchidx, bus1, bus2);
         this->setGlobalBranchIndex(branchidx, branchidx);
         this->setGlobalBusIndex1(branchidx, bus1);
         this->setGlobalBusIndex2(branchidx, bus2);

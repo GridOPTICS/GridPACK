@@ -200,7 +200,7 @@ main (int argc, char **argv) {
 
   // Add branches to network. Start with branches connecting buses in the
   // i-direction
-  int n1, n2, lx, ly;
+  int n1, n2, lx, ly, bidx(0);
   ncnt = 0;
   nx = iaxmax - iaxmin;
   ny = iymax - iymin + 1;
@@ -212,7 +212,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = iy*XDIM+ix+1;
       n2 = 2*n2;
-      network->addBranch(n1, n2);
+      network->addBranch(bidx++, n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network->setGlobalBusIndex1(ncnt, n1);
@@ -247,7 +247,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = (iy+1)*XDIM+ix;
       n2 = 2*n2;
-      network->addBranch(n1, n2);
+      network->addBranch(bidx++, n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network->setGlobalBusIndex1(ncnt, n1);

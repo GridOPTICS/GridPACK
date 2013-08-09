@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-08 09:29:05 d3g096
+# Last Change: 2013-08-09 08:52:43 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -39,19 +39,16 @@ if (GA_FOUND)
 endif()
 
 # -------------------------------------------------------------
-# TEST: greetings
-# A simple MPI program
+# TEST: test_network
 # -------------------------------------------------------------
-# add_executable(test_network test/test_network.cpp)
-# #target_link_libraries(test_network gridpack_network ${target_libraries})
-# target_link_libraries(test_network ${target_libraries})
+add_executable(test_network test/test_network.cpp)
+target_link_libraries(test_network ${target_libraries})
+add_test(test_network_serial test_network)
 
-# add_test(test_network_serial test_network)
-
-
+# -------------------------------------------------------------
+# TEST: network_partition
+# -------------------------------------------------------------
 add_executable(network_partition test/network_partition.cpp)
-#target_link_libraries(network_partition gridpack_network ${target_libraries})
 target_link_libraries(network_partition ${target_libraries})
-
 gridpack_add_unit_test(network_partition network_partition)
 

@@ -159,7 +159,7 @@ main (int argc, char **argv) {
 
   // Add branches to network. Start with branches connecting buses in the
   // i-direction
-  int n1, n2, lx, ly;
+  int n1, n2, lx, ly, bridx(0);
   ncnt = 0;
   nx = iaxmax - iaxmin;
   ny = iymax - iymin + 1;
@@ -171,7 +171,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = iy*XDIM+ix+1;
       n2 = 2*n2;
-      network.addBranch(n1, n2);
+      network.addBranch(bridx++, n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network.setGlobalBusIndex1(ncnt, n1);
@@ -206,7 +206,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = (iy+1)*XDIM+ix;
       n2 = 2*n2;
-      network.addBranch(n1, n2);
+      network.addBranch(bridx++, n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network.setGlobalBusIndex1(ncnt, n1);
@@ -550,7 +550,7 @@ main (int argc, char **argv) {
       std::map<int,int> checkBuses;
       if (n != branches.size()) {
         printf("p[%d] incorrect neighbor branches expected: %d actual: %d  on bus %d\n",
-               me,n,branches.size(),i);
+               me,n,static_cast<int>(branches.size()),i);
         ok = false;
       }
       n = branches.size();

@@ -2,7 +2,7 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   2013-08-08 10:35:39 d3g096
+ * @date   2013-08-09 09:04:32 d3g096
  * 
  * @brief  
  * 
@@ -134,6 +134,24 @@ class PFBus
     double p_ybusr, p_ybusi;
     double p_P0, p_Q0;
 
+private:
+
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
+      & p_shunt_gs
+      & p_shunt_bs
+      & p_shunt
+      & p_mode
+      & p_v & p_theta
+      & p_ybusr & p_ybusi
+      & p_P0, p_Q0;
+  }  
+
 };
 
 class PFBranch
@@ -240,15 +258,43 @@ class PFBranch
     int p_mode;
     double p_ybusr, p_ybusi;
     double p_theta;
+
+private:
+
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+      & p_reactance
+      & p_resistance
+      & p_tap_ratio
+      & p_phase_shift
+      & p_charging
+      & p_shunt_admt_g1
+      & p_shunt_admt_b1
+      & p_shunt_admt_g2
+      & p_shunt_admt_b2
+      & p_xform & p_shunt
+      & p_mode
+      & p_ybusr & p_ybusi
+      & p_theta;
+  }  
+
 };
 
 
 /// The type of network used in the powerflow application
-typedef gridpack::network::BaseNetwork<
-  gridpack::powerflow::PFBus,
-  gridpack::powerflow::PFBranch > PFNetwork;
+typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
 
 
 }     // powerflow
 }     // gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBus);
+BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBranch);
+
+
 #endif

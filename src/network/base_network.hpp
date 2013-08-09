@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-08-08 10:57:19 d3g096
+ * @date   2013-08-09 08:29:44 d3g096
  * 
  * @brief  
  * 
@@ -19,6 +19,7 @@
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/serialization/shared_ptr.hpp>
+#include <boost/type_traits.hpp>
 #include <ga.h>
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/component/base_component.hpp"
@@ -35,7 +36,7 @@ namespace network {
 // -------------------------------------------------------------
 template <class _bus>
 class BusData {
-  public:
+public:
 
 /**
  *  Default constructor
@@ -127,13 +128,14 @@ private:
 // -------------------------------------------------------------
 template <class _branch>
 class BranchData {
-  public:
+public:
 
 /**
  *  Default constructor
  */
 BranchData(void)
   : p_activeBranch(true),
+    p_originalBranchIndex(-1),
     p_globalBranchIndex(-1),
     p_originalBusIndex1(-1),
     p_originalBusIndex2(-1),
@@ -149,6 +151,7 @@ BranchData(void)
 /// Copy constructor
 BranchData(const BranchData& old)
   : p_activeBranch(old.p_activeBranch),
+    p_originalBranchIndex(old.p_originalBranchIndex),
     p_globalBranchIndex(old.p_globalBranchIndex),
     p_originalBusIndex1(old.p_originalBusIndex1),
     p_originalBusIndex2(old.p_originalBusIndex2),
@@ -174,6 +177,7 @@ BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
 {
   if (this == &rhs) return *this;
   p_activeBranch = rhs.p_activeBranch;
+  p_originalBranchIndex = rhs.p_originalBranchIndex;
   p_globalBranchIndex = rhs.p_globalBranchIndex;
   p_originalBusIndex1 = rhs.p_originalBusIndex1;
   p_originalBusIndex2 = rhs.p_originalBusIndex2;
@@ -202,6 +206,7 @@ BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
  * p_data: pointer to data collection object
  */
   bool                                                   p_activeBranch;
+  int                                                    p_originalBranchIndex;
   int                                                    p_globalBranchIndex;
   int                                                    p_originalBusIndex1;
   int                                                    p_originalBusIndex2;
@@ -220,6 +225,7 @@ private:
   template<class Archive> void serialize(Archive &ar, const unsigned int)
   {
     ar & p_activeBranch
+      & p_originalBranchIndex
       & p_globalBranchIndex
       & p_originalBusIndex1
       & p_originalBusIndex2
@@ -249,6 +255,13 @@ template <class _bus, class _branch>
 class BaseNetwork 
   : public parallel::Distributed
 {
+
+  // Check to make sure that "_bus" is a descendant of BaseBusComponent
+  BOOST_STATIC_ASSERT((boost::is_base_of< component::BaseBusComponent, _bus >::value ));
+
+  // Check to make sure that "_branch" is a descendant of BaseBranchComponent
+  BOOST_STATIC_ASSERT((boost::is_base_of< component::BaseBranchComponent, _branch >::value ));
+
 public:
 
 /**
@@ -372,12 +385,14 @@ void addBus(int idx)
 /**
  * Add a branch locally to the network. A branch is defined by
  * buses at either end
+ * @param idx original branch index
  * @param idx1: original bus index of bus 1
  * @param idx2: original bus index of bus 2
  */
-void addBranch(int idx1, int idx2)
+void addBranch(int idx, int idx1, int idx2)
 {
   BranchDataPtr branch(new BranchData<_branch>());
+  branch->p_originalBranchIndex = idx;
   branch->p_originalBusIndex1 = idx1;
   branch->p_originalBusIndex2 = idx2;
   branch->p_globalBusIndex1 = -1;
@@ -882,6 +897,11 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
   }
 }
 
+  /// Assemble local part of network
+  void assemble(void) 
+  {
+  }
+
   /// Partition the network over the available processes
   void partition(void)
   {
@@ -890,13 +910,13 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 
     for (BusIterator bus = p_buses.begin(); 
          bus != p_buses.end(); ++bus) {
-      partitioner.add_node(bus->p_globalBusIndex);
+      partitioner.add_node(bus->p_originalBusIndex);
     }
     for (BranchIterator branch = p_branches.begin(); 
          branch != p_branches.end(); ++branch) {
-      partitioner.add_edge(branch->p_globalBranchIndex, 
-                           branch->p_globalBusIndex1,
-                           branch->p_globalBusIndex2);
+      partitioner.add_edge(branch->p_originalBranchIndex, 
+                           branch->p_originalBusIndex1,
+                           branch->p_originalBusIndex2);
     }
     partitioner.partition();
 
@@ -923,7 +943,6 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
         ghostbusdest.push_back(*d);
       }
     }
-                    
 
     // Branches can only be ghosted on one other process, so they're
     // easy.
@@ -968,7 +987,60 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     std::copy(ghostbranches.begin(), ghostbranches.end(),
               std::back_inserter(p_branches));
     ghostbranches.clear();
+
+    // At this point, each process should have a self-contained
+    // network, update local and global indexes, etc.
+
+    // make an index of original bus index to local index and update
+    // the branch local bus indexes
+    int active_buses(0), active_branches(0);
+    {
+      std::map<int, int> busindexes;
+      int lidx(0);
+      for (BusIterator b = p_buses.begin(); b != p_buses.end(); ++b, ++lidx) {
+        clearBranchNeighbors(lidx);
+        busindexes[b->p_originalBusIndex] = lidx;
+        if (b->p_activeBus) active_buses += 1;
+      }
+      
+      // go through the branches and set the local bus indexes and pointers
+      lidx = 0;
+      for (BranchIterator b = p_branches.begin(); b != p_branches.end(); ++b, ++lidx) {
+        int gbus, lbus1, lbus2;
+        BusPtr bus1, bus2;
+
+        // set local indexes
+
+        gbus = b->p_originalBusIndex1;
+        lbus1 = busindexes[gbus];
+        bus1 = p_buses[lbus1].p_bus;
+
+        gbus = b->p_originalBusIndex2;
+        lbus2 = busindexes[gbus];
+        bus2 = p_buses[lbus2].p_bus;
+
+        b->p_localBusIndex1 = lbus1;
+        addBranchNeighbor(lbus1, lidx);
+
+        b->p_localBusIndex2 = lbus2;
+        addBranchNeighbor(lbus2, lidx);
+
+        // set component pointers
+
+        b->p_branch->setBus1(bus1);
+        b->p_branch->setBus2(bus2);
+
+        bus1->addBranch(b->p_branch);
+        bus1->addBus(bus2);
+        bus2->addBranch(b->p_branch);
+        bus2->addBus(bus1);
+
+        if (b->p_activeBranch) active_branches += 1;
+      }
+    }
   }
+
+  
 
 /**
  * Clean all ghost buses and branches from the system. This can be used
@@ -1562,8 +1634,8 @@ write_graph(const std::string& outname)
         BusIterator bus;
         for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
           if (bus->p_activeBus) {
-            out << " n" << bus->p_globalBusIndex 
-                << "[label=" << bus->p_globalBusIndex << "];" << std::endl;
+            out << " n" << bus->p_originalBusIndex 
+                << "[label=" << bus->p_originalBusIndex << "];" << std::endl;
           }
         }
         out << "}" << std::endl;
@@ -1576,8 +1648,8 @@ write_graph(const std::string& outname)
         out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
         BranchIterator branch;
         for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
-          out << "n" << branch->p_globalBusIndex1 << " -> " 
-              << "n" << branch->p_globalBusIndex2 << ";" 
+          out << "n" << branch->p_originalBusIndex1 << " -> " 
+              << "n" << branch->p_originalBusIndex2 << ";" 
               << std::endl;
         }
         out.close();
