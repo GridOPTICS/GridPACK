@@ -114,6 +114,13 @@ class MatVecInterface {
     virtual bool vectorValues(void *values);
 
     /**
+     * Set values in the bus or branch component based on values in a vector or
+     * matrix
+     * @param values: values in vector or matrix
+     */
+    virtual void setValues(void *values);
+
+    /**
      * Set the matrix index for diagonal matrix components or vector component,
      * based on location of component in network
      * @param idx: value of index

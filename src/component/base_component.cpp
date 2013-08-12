@@ -140,6 +140,15 @@ bool gridpack::component::MatVecInterface::vectorValues(void *values)
 }
 
 /**
+ * Set values in the bus or branch component based on values in a vector or
+ * matrix
+ * @param values: values in vector or matrix
+ */
+void gridpack::component::MatVecInterface::setValues(void *values)
+{
+}
+
+/**
  * Set the matrix index for diagonal matrix components or vector component,
  * based on location of component in network
  * @param idx: value of index
