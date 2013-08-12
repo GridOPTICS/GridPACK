@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-07-24 14:51:34 d3g096
+# Last Change: 2013-08-12 12:59:18 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -17,6 +17,8 @@ list(APPEND gridpack_math_sources
   matrix_implementation.cpp
   linear_solver.cpp
   linear_solver_implementation.cpp
+  nonlinear_solver.cpp
+  nonlinear_solver_implementation.cpp
   implementation_visitor.cpp
 )
 
@@ -38,6 +40,8 @@ if (PETSC_FOUND)
       petsc/petsc_matrix_operations.cpp
       petsc/linear_solver.cpp
       petsc/petsc_linear_solver_implementation.cpp
+      petsc/petsc_nonlinear_solver_implementation.cpp
+      petsc/nonlinear_solver.cpp
     )  
 
     set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
@@ -115,4 +119,14 @@ target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(linear_solver linear_solver_test)
 if (PETSC_FOUND)
    add_dependencies(linear_solver_test petscrc)
+endif()
+
+# -------------------------------------------------------------
+# nonlinear solver test suite
+# -------------------------------------------------------------
+add_executable(nonlinear_solver_test test/nonlinear_solver_test.cpp)
+target_link_libraries(nonlinear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(nonlinear_solver nonlinear_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(nonlinear_solver_test petscrc)
 endif()
