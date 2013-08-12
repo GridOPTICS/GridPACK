@@ -87,7 +87,7 @@ class BaseFactory {
         int bus_idx;
         bus_idx = p_network->getGlobalBusIndex(i); 
         p_network->getBus(i)->setMatVecIndex(bus_idx);
-        if (p_network->getActiveBranch(i)) numActiveBus++;
+        if (p_network->getActiveBus(i)) numActiveBus++;
       }
 
       // Come up with a set of global indices for each component so that the buses
@@ -132,7 +132,6 @@ class BaseFactory {
       int icnt = 0;
       for (i=0; i<numBus; i++) {
         if (p_network->getActiveBus(i)) {
-          p_network->getBus(i)->setMatVecIndex(icnt+offset);
           ibus_idx[icnt] = new int;
           *(ibus_idx[icnt]) = p_network->getGlobalBusIndex(i);
           ibus_val[icnt] = offset+icnt;
@@ -152,7 +151,7 @@ class BaseFactory {
       ibus_idx = new int*[numBus];
       for (i=0; i<numBus; i++) {
         ibus_idx[i] = new int;
-        *(ibus_idx[icnt]) = p_network->getGlobalBusIndex(i);
+        *(ibus_idx[i]) = p_network->getGlobalBusIndex(i);
       }
       NGA_Gather(g_bus,ibus_val,ibus_idx,numBus);
       // Assign the MatVecIndex for the bus and clean up arrays
