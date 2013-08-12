@@ -396,11 +396,17 @@ void gridpack::powerflow::PFBranch::load(
   bool ok = true;
   ok = ok && data->getValue(BRANCH_X, &p_reactance);
   ok = ok && data->getValue(BRANCH_R, &p_resistance);
-  p_xform = true;
-  p_xform = p_xform && data->getValue(BRANCH_TAP_RATIO, &p_tap_ratio);
-  p_xform = p_xform && data->getValue(BRANCH_PHASE_SHIFT, &p_phase_shift);
+  if (!ok) {
+    p_xform = true;
+    p_xform = p_xform && data->getValue(TRANSFORM_X1_2, &p_reactance)
+    p_xform = p_xform && data->getValue(TRANSFORM_R1_2, &p_resistance)
+  } else {
+    p_xform = false;
+  }
+  p_xform = p_xform && data->getValue(TRANSFORMER_WINDV1, &p_tap_ratio);
+  p_xform = p_xform && data->getValue(TRANSFORMER_ANG1, &p_phase_shift);
   p_shunt = true;
-  p_shunt = p_shunt && data->getValue(BRANCH_CHARGING, &p_charging);
+  p_shunt = p_shunt && data->getValue(BRANCH_B, &p_charging);
   p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G1, &p_shunt_admt_g1);
   p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B1, &p_shunt_admt_b1);
   p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G2, &p_shunt_admt_g2);
