@@ -11,10 +11,11 @@ set(target_libraries
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
+  ${PETSC_LIBRARIES}
 )
 
 set(target_libraries 
-  gridpack_components gridpack_parallel
+  gridpack_components gridpack_parallel gridpack_math
   ${target_libraries} 
 )
 

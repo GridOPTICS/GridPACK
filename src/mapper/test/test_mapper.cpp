@@ -5,6 +5,8 @@
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
+#include "gridpack/factory/base_factory.hpp"
+#include "gridpack/math/math.hpp"
 #include "gridpack/mapper/full_map.hpp"
 
 #define XDIM 100
@@ -130,6 +132,9 @@ main (int argc, char **argv) {
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
   int me;
+  // Initialize Math libraries
+  gridpack::math::Initialize();
+
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
   int nprocs;
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
@@ -272,17 +277,81 @@ main (int argc, char **argv) {
     }
   }
 
-#if 0
   // Set up some remaining properties of network and network components so that
   // matrix-vector interface is ready to go
-  gridpack::factory::BaseFactory factory(network);
+  gridpack::factory::BaseFactory<TestNetwork> factory(network);
   factory.setComponents();
 
   gridpack::mapper::FullMatrixMap<TestNetwork> mMap(network); 
   boost::shared_ptr<gridpack::math::Matrix> M = mMap.mapToMatrix();
-#endif
+
+  // Check to see if matrix has correct values
+  int one = 1;
+  int chk = 0;
+  int nbus = network->numBuses();
+  int nbranch = network->numBranches();
+  int idx,jdx,isize,jsize;
+  gridpack::ComplexType v;
+  double rv;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      if (network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
+        network->getBus(i)->getMatVecIndex(&idx);
+        M->get_element(idx,idx,v);
+        rv = real(v);
+        if (rv != -4.0) {
+          printf("p[%d] Diagonal matrix error i: %d j:%d v: %f\n",me,idx,idx,rv);
+          chk = 1;
+        }
+      }
+    }
+  }
+  // Get min and max row indices
+  int rlo, rhi; 
+  rhi = 0;
+  rlo = XDIM*YDIM;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      network->getBus(i)->getMatVecIndex(&idx);
+      if (rhi<idx) rhi = idx;
+      if (rlo>idx) rlo = idx;
+    }
+  }
+  for (i=0; i<nbranch; i++) {
+    if (network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
+      network->getBranch(i)->getMatVecIndices(&idx,&jdx);
+      if (idx >= rlo && idx <= rhi) {
+        M->get_element(idx,jdx,v);
+        rv = real(v);
+        if (rv != 1.0) {
+          printf("p[%d] Forward matrix error i: %d j:%d v: %f\n",me,idx,jdx,rv);
+          chk = 1;
+        }
+      }
+      if (jdx >= rlo && jdx <= rhi) {
+        M->get_element(jdx,idx,v);
+        rv = real(v);
+        if (rv != 1.0) {
+          printf("p[%d] Reverse matrix error i: %d j:%d v: %f\n",me,jdx,idx,rv);
+          chk = 1;
+        }
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nMatrix elements are ok\n");
+    } else {
+      printf("\nError found in matrix elements\n");
+    }
+  }
+
 
   GA_Terminate();
+
+  // Initialize Math libraries
+  gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
 }

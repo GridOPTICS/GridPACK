@@ -38,12 +38,12 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   int                     iSize    = 0;
   int                     jSize    = 0;
 
-  int p_nBuses = p_network->numBuses();
-  int p_nBranches = p_network->numBranches();
+  p_nBuses = p_network->numBuses();
+  p_nBranches = p_network->numBranches();
 
-  int nActiveBuses         = getActiveBuses();
+  p_activeBuses         = getActiveBuses();
 
-  setupGlobalArrays(nActiveBuses);  // allocate globalIndex arrays
+  setupGlobalArrays(p_activeBuses);  // allocate globalIndex arrays
 
   setupIndexingArrays();
 
@@ -118,24 +118,26 @@ void setupIndexingArrays()
   int                      count          = 0;
 
   // set up bus indexing
-  allocateIndexArray(p_nBuses, &iSizeArray, &jSizeArray, &iIndexArray, NULL);
+  allocateIndexArray(p_nBuses, &iSizeArray, &jSizeArray, &iIndexArray, NULL, 1);
 
   loadBusArrays(iSizeArray, jSizeArray, iIndexArray, &count);
-  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, NULL, count);
-  deleteIndexArrays(p_nBuses, iSizeArray, jSizeArray, iIndexArray, NULL);
+  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, NULL, count, 1);
+  deleteIndexArrays(p_nBuses, iSizeArray, jSizeArray, iIndexArray, NULL, 1);
   GA_Sync();
 
   // set up branch indexing
   count               = 0;
-  allocateIndexArray(p_nBranches, &iSizeArray, &jSizeArray, &iIndexArray, &jIndexArray);
+  allocateIndexArray(p_nBranches, &iSizeArray, &jSizeArray, &iIndexArray,
+      &jIndexArray, 2);
   loadForwardBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, &count);
-  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, count);
+  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, count, 2);
 
   count               = 0;
   loadReverseBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, &count);
-  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, count);
+  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, count, 2);
 
-  deleteIndexArrays(p_nBranches, iSizeArray, jSizeArray, iIndexArray, jIndexArray);
+  deleteIndexArrays(p_nBranches, iSizeArray, jSizeArray, iIndexArray,
+      jIndexArray, 2);
   GA_Sync();
 }
 
@@ -146,9 +148,10 @@ void setupIndexingArrays()
  * @param jSizeArray: array containing size of matrix block along j axis
  * @param iIndexArray: array containing i index of matrix block
  * @param jIndexArray: array containing j index of matrix block
+ * @param nflag: number of indices being used (1 or 2)
  */
 void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
-        int *** iIndexArray, int *** jIndexArray)
+        int *** iIndexArray, int *** jIndexArray, int nflag)
 {
   *iSizeArray         = new int[n];
   *jSizeArray         = new int[n];
@@ -158,8 +161,7 @@ void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
     (*iIndexArray)[i]  = new int;
   }
 
-  if (jSizeArray != NULL) {
-    *jSizeArray         = new int[n];
+  if (nflag == 2) {
     *jIndexArray        = new int*[n];
     for(int i = 0; i < n; i++) {
       (*jIndexArray)[i]  = new int;
@@ -258,16 +260,17 @@ void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
  *  @param jSizeArray: array containing size of matrix block along j axis
  *  @param iIndexArray: array containing i index of matrix block
  *  @param jIndexArray: array containing j index of matrix block
+ * @param nflag: number of indices being used (1 or 2)
  */
 void deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
-        int ** iIndexArray, int ** jIndexArray)
+        int ** iIndexArray, int ** jIndexArray, int nflag)
 {
   for(int i = 0; i < n; i++) {
     delete iIndexArray[i];
   }
   delete [] iIndexArray;
 
-  if (jIndexArray != NULL) {
+  if (nflag == 2) {
     for(int i = 0; i < n; i++) {
       delete jIndexArray[i];
     }
@@ -285,12 +288,15 @@ void deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
  * @param iIndexArray: array containing i index of matrix block
  * @param jIndexArray: array containing j index of matrix block
  * @param count: number of elements to be scattered
+ * @param nflag: number of indices being used (1 or 2)
  */
 void scatterIndexingArrays(int * iSizeArray, int * jSizeArray,
-                                  int ** iIndexArray, int ** jIndexArray, int count)
+                                  int ** iIndexArray, int ** jIndexArray,
+                                  int count, int nflag)
 {
   if (count > 0) NGA_Scatter(gaMatBlksI, iSizeArray, iIndexArray, count);
-  if (count > 0) NGA_Scatter(gaMatBlksJ, jSizeArray, jIndexArray, count);
+  if (count > 0 && nflag == 2)
+     NGA_Scatter(gaMatBlksJ, jSizeArray, jIndexArray, count);
 }
 
 /**
@@ -313,9 +319,11 @@ void setupOffsetArrays()
   p_minRowIndex = p_totalBuses;
   p_maxRowIndex = 0;
   for (i=0; i<p_nBuses; i++) {
-    p_network->getBus(i)->getMatVecIndex(&idx);
-    if (idx > p_maxRowIndex) p_maxRowIndex = idx;
-    if (idx < p_minRowIndex) p_minRowIndex = idx;
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->getMatVecIndex(&idx);
+      if (idx > p_maxRowIndex) p_maxRowIndex = idx;
+      if (idx < p_minRowIndex) p_minRowIndex = idx;
+    }
   }
   // Create array to hold information about desired rows
   int nRows = p_maxRowIndex-p_minRowIndex+1;
@@ -358,8 +366,8 @@ void setupOffsetArrays()
   }
 
   // Calculate matrix dimension
-  int p_iDim = 0;
-  int p_jDim = 0;
+  p_iDim = 0;
+  p_jDim = 0;
   for (i=0; i<p_nNodes; i++) {
     p_iDim += itmp[i];
     p_jDim += jtmp[i];
@@ -367,12 +375,20 @@ void setupOffsetArrays()
 
   // Create map array so that offset arrays can be created with a specified
   // distribution
+  int *offset = new int[p_nNodes];
+  for (i=0; i<p_nNodes; i++) {
+    offset[i] = 0;
+  }
+  offset[p_me] = p_activeBuses;
+  GA_Igop(offset,p_nNodes,"+");
+
   int *mapc = new int[p_nNodes];
   mapc[0]=0;
   for (i=1; i<p_nNodes; i++) {
-    mapc[i] = mapc[i-1] + itmp[i-1];
+    mapc[i] = mapc[i-1] + offset[i-1];
   }
 
+  delete [] offset;
   delete [] itmp;
   delete [] jtmp;
 
@@ -431,6 +447,8 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
              p_rowBlockSize, p_jDim, gridpack::math::Matrix::Sparse));
   loadBusData(Ret);
   loadBranchData(Ret);
+  GA_Sync();
+  Ret->ready();
   return Ret;
 }
 
@@ -445,9 +463,9 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
   icnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      indices[i] = new int;
-      *(indices[i]) = -1;
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
+        indices[icnt] = new int;
+        *(indices[icnt]) = -1;
         p_network->getBus(i)->getMatVecIndex(&idx);
         *(indices[icnt]) = idx;
         icnt++;
@@ -460,27 +478,31 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
 
   // Gather matrix offsets
   int *offsets = new int[p_busContribution];
-  NGA_Gather(gaOffsetI,offsets,indices,p_busContribution);
+  if (p_busContribution > 0) {
+    NGA_Gather(gaOffsetI,offsets,indices,p_busContribution);
+  }
 
   // Add matrix elements
   ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
   int j,k;
+  int jcnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
         p_network->getBus(i)->matrixDiagValues(values);
-      }
-      icnt = 0;
-      for (k=0; k<isize; k++) {
-        jdx = offsets[i] + k;
-        for (j=0; j<isize; j++) {
-          idx = offsets[i] + j;
-          matrix->set_element(idx, jdx, values[icnt]);
-          icnt++;
+        icnt = 0;
+        for (k=0; k<jsize; k++) {
+          jdx = offsets[jcnt] + k;
+          for (j=0; j<isize; j++) {
+            idx = offsets[jcnt] + j;
+            matrix->set_element(idx, jdx, values[icnt]);
+            icnt++;
+          }
         }
+        delete indices[jcnt];
+        jcnt++;
       }
     }
-    delete indices[i];
   }
 
   // Clean up arrays
@@ -500,26 +522,26 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
   int **j_indices = new int*[p_branchContribution];
   icnt = 0;
   for (i=0; i<p_nBranches; i++) {
-    i_indices[i] = new int;
-    *(i_indices[i]) = -1;
-    j_indices[i] = new int;
-    *(j_indices[i]) = -1;
     if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
-	*(i_indices[icnt]) = idx;
-	*(j_indices[icnt]) = jdx;
-	icnt++;
+        i_indices[icnt] = new int;
+        j_indices[icnt] = new int;
+        *(i_indices[icnt]) = idx;
+        *(j_indices[icnt]) = jdx;
+        icnt++;
       } else {
-	// TODO: some kind of error
+        // TODO: some kind of error
       }
     }
     if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
-	*(i_indices[icnt]) = jdx;
-	*(j_indices[icnt]) = idx;
-	icnt++;
+        i_indices[icnt] = new int;
+        j_indices[icnt] = new int;
+        *(i_indices[icnt]) = jdx;
+        *(j_indices[icnt]) = idx;
+        icnt++;
       }
     }
   }
@@ -530,39 +552,52 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
   // Gather matrix offsets
   int *i_offsets = new int[p_branchContribution];
   int *j_offsets = new int[p_branchContribution];
-  NGA_Gather(gaOffsetI,i_offsets,i_indices,p_branchContribution);
-  NGA_Gather(gaOffsetJ,j_offsets,j_indices,p_branchContribution);
+  if (p_branchContribution > 0) {
+    NGA_Gather(gaOffsetI,i_offsets,i_indices,p_branchContribution);
+    NGA_Gather(gaOffsetJ,j_offsets,j_indices,p_branchContribution);
+  }
 
   // Add matrix elements
   ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
   int j,k;
+  int jcnt = 0;
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
-      p_network->getBranch(i)->matrixForwardValues(values);
-      icnt = 0;
-      for (k=0; k<isize; k++) {
-	jdx = j_offsets[i] + k;
-	for (j=0; j<isize; j++) {
-	  idx = i_offsets[i] + j;
-	  matrix->set_element(idx, jdx, values[icnt]);
-	  icnt++;
-	}
+      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+      if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
+        p_network->getBranch(i)->matrixForwardValues(values);
+        icnt = 0;
+        for (k=0; k<jsize; k++) {
+          jdx = j_offsets[jcnt] + k;
+          for (j=0; j<isize; j++) {
+            idx = i_offsets[jcnt] + j;
+            matrix->set_element(idx, jdx, values[icnt]);
+            icnt++;
+          }
+        }
+        delete i_indices[jcnt];
+        delete j_indices[jcnt];
+        jcnt++;
       }
     }
     if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
-      p_network->getBranch(i)->matrixReverseValues(values);
-      icnt = 0;
-      for (k=0; k<isize; k++) {
-	jdx = i_offsets[i] + k;
-	for (j=0; j<isize; j++) {
-	  idx = j_offsets[i] + j;
-	  matrix->set_element(idx, jdx, values[icnt]);
-	  icnt++;
-	}
+      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+      if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
+        p_network->getBranch(i)->matrixReverseValues(values);
+        icnt = 0;
+        for (k=0; k<jsize; k++) {
+          jdx = j_offsets[jcnt] + k;
+          for (j=0; j<isize; j++) {
+            idx = i_offsets[jcnt] + j;
+            matrix->set_element(idx, jdx, values[icnt]);
+            icnt++;
+          }
+        }
+        delete i_indices[jcnt];
+        delete j_indices[jcnt];
+        jcnt++;
       }
     }
-    delete i_indices[i];
-    delete j_indices[i];
   }
 
   // Clean up arrays
@@ -619,6 +654,7 @@ boost::shared_ptr<_network> p_network;
 int                         p_nBuses;
 int                         p_nBranches;
 int                         p_totalBuses;
+int                         p_activeBuses;
 
     // matrix information
 int                         p_iDim;
