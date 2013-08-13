@@ -23,15 +23,25 @@ class TestBus
   }
 
   bool matrixDiagSize(int *isize, int *jsize) const {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (!getReferenceBus()) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      *isize = 0;
+      *jsize = 0;
+      return false;
+    }
   }
 
   bool matrixDiagValues(void *values) {
-    gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-    *val = -4.0;
-    return true;
+    if (!getReferenceBus()) {
+      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
+      *val = -4.0;
+      return true;
+    } else {
+      return false;
+    }
   }
 };
 
@@ -46,27 +56,63 @@ class TestBranch
   }
 
   bool matrixForwardSize(int *isize, int *jsize) const {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (checkReferenceBus()) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      *isize = 0;
+      *jsize = 0;
+      return false;
+    }
   }
 
   bool matrixReverseSize(int *isize, int *jsize) const {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (checkReferenceBus()) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      *isize = 0;
+      *jsize = 0;
+      return false;
+    }
   }
 
   bool matrixForwardValues(void *values) {
-    gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-    *val = 1.0;
-    return true;
+    if (checkReferenceBus()) {
+      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
+      *val = 1.0;
+      return true;
+    } else {
+      return false;
+    }
   }
 
   bool matrixReverseValues(void *values) {
-    gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-    *val = 1.0;
-    return true;
+    if (checkReferenceBus()) {
+      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
+      *val = 1.0;
+      return true;
+    } else {
+      return false;
+    }
+  }
+
+  bool checkReferenceBus() const {
+    bool ret = true;
+#if 0
+    boost::shared_ptr<TestBus>
+      bus1(dynamic_cast<TestBus*>(getBus1().get()));
+    boost::shared_ptr<TestBus>
+      bus2(dynamic_cast<TestBus*>(getBus2().get()));
+#else
+    TestBus *bus1 = dynamic_cast<TestBus*>(getBus1().get());
+    TestBus *bus2 = dynamic_cast<TestBus*>(getBus2().get());
+#endif
+    ret = ret && !bus1->getReferenceBus();
+    ret = ret && !bus2->getReferenceBus();
+    return ret;
   }
 };
 
@@ -217,7 +263,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = iy*XDIM+ix+1;
       n2 = 2*n2;
-      network->addBranch(bidx++, n1, n2);
+      network->addBranch(n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network->setGlobalBusIndex1(ncnt, n1);
@@ -252,7 +298,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = (iy+1)*XDIM+ix;
       n2 = 2*n2;
-      network->addBranch(bidx++, n1, n2);
+      network->addBranch(n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network->setGlobalBusIndex1(ncnt, n1);
@@ -282,8 +328,11 @@ main (int argc, char **argv) {
   gridpack::factory::BaseFactory<TestNetwork> factory(network);
   factory.setComponents();
 
+  printf("p[%d] (test_mapper) Got to 1\n",me);
   gridpack::mapper::FullMatrixMap<TestNetwork> mMap(network); 
+  printf("p[%d] (test_mapper) Got to 2\n",me);
   boost::shared_ptr<gridpack::math::Matrix> M = mMap.mapToMatrix();
+  printf("p[%d] (test_mapper) Got to 3\n",me);
 
   // Check to see if matrix has correct values
   int one = 1;
@@ -322,6 +371,8 @@ main (int argc, char **argv) {
       network->getBranch(i)->getMatVecIndices(&idx,&jdx);
       if (idx >= rlo && idx <= rhi) {
         M->get_element(idx,jdx,v);
+        idx--;
+        jdx--;
         rv = real(v);
         if (rv != 1.0) {
           printf("p[%d] Forward matrix error i: %d j:%d v: %f\n",me,idx,jdx,rv);
@@ -330,6 +381,8 @@ main (int argc, char **argv) {
       }
       if (jdx >= rlo && jdx <= rhi) {
         M->get_element(jdx,idx,v);
+        idx--;
+        jdx--;
         rv = real(v);
         if (rv != 1.0) {
           printf("p[%d] Reverse matrix error i: %d j:%d v: %f\n",me,jdx,idx,rv);
