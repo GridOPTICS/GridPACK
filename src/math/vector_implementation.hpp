@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-06-26 08:33:55 d3g096
+ * @date   2013-08-13 12:19:04 d3g096
  * 
  * @brief  
  * 
@@ -68,6 +68,12 @@ public:
     this->p_set_element(i, x);
   }
 
+  /// Set a range of elements (lo to hi-1)
+  void set_element_range(const int& lo, const int& hi, ComplexType *x)
+  {
+    this->p_set_element_range(lo, hi, x);
+  }
+
   /// Set an several elements
   void set_elements(const int& n, const int *i, const ComplexType *x)
   {
@@ -97,6 +103,19 @@ public:
   {
     this->p_get_elements(n, i, x);
   }
+
+  /// Get a range of elements (lo to hi-1)
+  void get_element_range(const int& lo, const int& hi, ComplexType *x) const
+  {
+    this->p_get_element_range(lo, hi, x);
+  }
+
+  /// Get all of vector elements (on all processes)
+  void get_all_elements(ComplexType *x) const
+  {
+    this->p_get_all_elements(x);
+  }
+
 
   /// Make all the elements zero
   void zero(void)
@@ -169,6 +188,9 @@ protected:
   /// Set an several elements (specialized)
   virtual void p_set_elements(const int& n, const int *i, const ComplexType *x) = 0;
 
+  /// Get a range of elements (lo to hi-1) (specialized)
+  virtual void p_set_element_range(const int& lo, const int& hi, ComplexType *x);
+
   /// Add to an individual element (specialized)
   virtual void p_add_element(const int& i, const ComplexType& x) = 0;
 
@@ -180,6 +202,12 @@ protected:
 
   /// Get an several elements (specialized)
   virtual void p_get_elements(const int& n, const int *i, ComplexType *x) const = 0;
+
+  /// Get a range of elements (lo to hi-1) (specialized)
+  virtual void p_get_element_range(const int& lo, const int& hi, ComplexType *x) const;
+
+  /// Get all of vector elements (on all processes)
+  virtual void p_get_all_elements(ComplexType *x) const = 0;
 
   /// Make all the elements zero (specialized)
   virtual void p_zero(void) = 0;

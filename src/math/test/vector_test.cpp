@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-07-11 09:02:20 d3g096
+ * @date   2013-08-13 12:22:31 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -9,6 +9,7 @@
  */
 
 #include <iostream>
+#include <iterator>
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
 #include "math.hpp"
@@ -152,6 +153,38 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
 
     BOOST_CHECK_CLOSE(2.0*real(x), real(x1), delta);
     BOOST_CHECK_CLOSE(2.0*real(x), real(x2), delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( get_all )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v(world, local_size);
+
+  int lo, hi;
+  v.local_index_range(lo, hi);
+  
+  std::vector<gridpack::ComplexType> x(hi-lo, static_cast<double>(world.rank()));
+  v.set_element_range(lo, hi, &x[0]);
+
+  std::vector<gridpack::ComplexType> all(world.size()*local_size);
+  v.get_all_elements(&all[0]);
+
+  for (int p = 0; p < world.size(); ++p) {
+    if (p == world.rank()) {
+      std::cout << p << ": ";
+      std::copy(all.begin(), all.end(),
+                std::ostream_iterator<gridpack::ComplexType>(std::cout, ", "));
+      std::cout << std::endl;
+    }
+    world.barrier();
+  }
+
+  for (int p = 0; p < world.size(); ++p) {
+    for (int i = 0; i < local_size; ++i) {
+      int index(p*local_size + i);
+      BOOST_CHECK_EQUAL(p, static_cast<int>(real(all[index])));
+    }
   }
 }
 

@@ -1,7 +1,7 @@
 /**
  * @file   nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-08-12 13:05:14 d3g096
+ * @date   2013-08-13 11:59:06 d3g096
  * 
  * @brief  Abstract class NonlinearSolverImplementation implementation 
  * 
@@ -42,7 +42,7 @@ NonlinearSolverImplementation::NonlinearSolverImplementation(const parallel::Com
   p_F.reset(new Vector(this->communicator(), local_size));
   int cols;
   all_reduce(this->communicator(), local_size, cols, std::plus<int>());
-  p_J.reset(new Matrix(this->communicator(), local_size, cols, Matrix::Dense));
+  p_J.reset(new Matrix(this->communicator(), local_size, cols, Matrix::Sparse));
 }
 
 NonlinearSolverImplementation::~NonlinearSolverImplementation(void)

@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-07-11 08:40:39 d3g096
+ * @date   2013-08-13 12:15:47 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -88,6 +88,12 @@ public:
     p_vector_impl->set_elements(n, i, x);
   }
 
+  /// Set a range of (local) elements (lo to hi-1)
+  void set_element_range(const int& lo, const int& hi, ComplexType *x)
+  {
+    p_vector_impl->set_element_range(lo, hi, x);
+  }
+
   /// Add to an individual element
   void add_element(const int& i, const ComplexType& x)
   {
@@ -110,6 +116,18 @@ public:
   void get_elements(const int& n, const int *i, ComplexType *x) const
   {
     p_vector_impl->get_elements(n, i, x);
+  }
+
+  /// Get a range of elements (lo to hi-1)
+  void get_element_range(const int& lo, const int& hi, ComplexType *x) const
+  {
+    p_vector_impl->get_element_range(lo, hi, x);
+  }
+
+  /// Get all of vector elements (on all processes)
+  void get_all_elements(ComplexType *x) const
+  {
+    p_vector_impl->get_all_elements(x);
   }
 
   /// Make all the elements zero

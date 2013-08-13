@@ -2,7 +2,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-26 08:36:02 d3g096
+ * @date   2013-08-13 12:20:02 d3g096
  * 
  * @brief  
  * 
@@ -190,18 +190,39 @@ PETScVectorImplementation::p_get_element(const int& i, ComplexType& x) const
 void
 PETScVectorImplementation::p_get_elements(const int& n, const int *i, ComplexType *x) const
 {
+  // FIXME: Cannot get off process elements
   PetscErrorCode ierr;
   try {
     ierr = VecGetValues(p_vector, n, i, x); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
-
-
 }
 
-
-
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_get_all_elements
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_get_all_elements(ComplexType *x) const
+{
+  PetscErrorCode ierr(0);
+  try {
+    VecScatter scatter;
+    Vec all;
+    int n(this->size());
+    ierr = VecScatterCreateToAll(p_vector, &scatter, &all); CHKERRXX(ierr);
+    ierr = VecScatterBegin(scatter, p_vector, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
+    ierr = VecScatterEnd(scatter, p_vector, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
+    const PetscScalar *tmp;
+    ierr = VecGetArrayRead(all, &tmp); CHKERRXX(ierr);
+    std::copy(tmp, tmp + n, &x[0]);
+    ierr = VecRestoreArrayRead(all, &tmp); CHKERRXX(ierr);
+    ierr = VecScatterDestroy(&scatter); CHKERRXX(ierr);
+    ierr = VecDestroy(&all); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
 
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_zero

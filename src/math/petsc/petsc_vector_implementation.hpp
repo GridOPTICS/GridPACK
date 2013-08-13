@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-06-26 08:33:01 d3g096
+// Last Change: 2013-08-13 12:19:23 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -80,11 +80,14 @@ protected:
   /// Add to an several elements (specialized)
   void p_add_elements(const int& n, const int *i, const ComplexType *x);
 
-  /// Get an individual element (specialized)
+  /// Get an individual (local) element (specialized)
   void p_get_element(const int& i, ComplexType& x) const;
 
-  /// Get an several elements (specialized)
+  /// Get an several (local) elements (specialized)
   void p_get_elements(const int& n, const int *i, ComplexType *x) const;
+
+  /// Get all of vector elements (on all processes)
+  void p_get_all_elements(ComplexType *x) const;
 
   /// Make all the elements zero (specialized)
   void p_zero(void);
