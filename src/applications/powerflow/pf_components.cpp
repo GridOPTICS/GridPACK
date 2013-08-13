@@ -2,7 +2,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   June 4, 2013
+ * @date   2013-08-12 14:50:57 d3g096
  * 
  * @brief  
  * 
@@ -398,8 +398,8 @@ void gridpack::powerflow::PFBranch::load(
   ok = ok && data->getValue(BRANCH_R, &p_resistance);
   if (!ok) {
     p_xform = true;
-    p_xform = p_xform && data->getValue(TRANSFORM_X1_2, &p_reactance)
-    p_xform = p_xform && data->getValue(TRANSFORM_R1_2, &p_resistance)
+    p_xform = p_xform && data->getValue(TRANSFORMER_X1_2, &p_reactance);
+    p_xform = p_xform && data->getValue(TRANSFORMER_R1_2, &p_resistance);
   } else {
     p_xform = false;
   }
