@@ -1,7 +1,7 @@
 /**
  * @file   pf_network_test.cpp
  * @author William A. Perkins
- * @date   2013-08-09 09:39:40 d3g096
+ * @date   2013-08-14 12:24:49 d3g096
  * 
  * @brief  Unit tests for powerflow network and component types
  * 
@@ -67,10 +67,14 @@ BOOST_AUTO_TEST_CASE ( partition )
   if (net->processor_rank() == 0) {
     for (int busidx = 0; busidx < global_buses; ++busidx) {
       net->addBus(busidx);
+      net->setGlobalBusIndex(busidx, busidx);
     }
     for (int branchidx = 0; branchidx < global_branches; ++branchidx) {
       int bus1(branchidx), bus2(bus1+1);
-      net->addBranch(branchidx, bus1, bus2);
+      net->addBranch(bus1, bus2);
+      net->setGlobalBranchIndex(branchidx, branchidx);
+      net->setGlobalBusIndex1(branchidx, bus1);
+      net->setGlobalBusIndex2(branchidx, bus2);
     }
   }
 

@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-08-09 08:29:44 d3g096
+ * @date   2013-08-14 12:19:34 d3g096
  * 
  * @brief  
  * 
@@ -135,7 +135,6 @@ public:
  */
 BranchData(void)
   : p_activeBranch(true),
-    p_originalBranchIndex(-1),
     p_globalBranchIndex(-1),
     p_originalBusIndex1(-1),
     p_originalBusIndex2(-1),
@@ -151,7 +150,6 @@ BranchData(void)
 /// Copy constructor
 BranchData(const BranchData& old)
   : p_activeBranch(old.p_activeBranch),
-    p_originalBranchIndex(old.p_originalBranchIndex),
     p_globalBranchIndex(old.p_globalBranchIndex),
     p_originalBusIndex1(old.p_originalBusIndex1),
     p_originalBusIndex2(old.p_originalBusIndex2),
@@ -177,7 +175,6 @@ BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
 {
   if (this == &rhs) return *this;
   p_activeBranch = rhs.p_activeBranch;
-  p_originalBranchIndex = rhs.p_originalBranchIndex;
   p_globalBranchIndex = rhs.p_globalBranchIndex;
   p_originalBusIndex1 = rhs.p_originalBusIndex1;
   p_originalBusIndex2 = rhs.p_originalBusIndex2;
@@ -206,7 +203,6 @@ BranchData<_branch> & operator=(const BranchData<_branch> & rhs)
  * p_data: pointer to data collection object
  */
   bool                                                   p_activeBranch;
-  int                                                    p_originalBranchIndex;
   int                                                    p_globalBranchIndex;
   int                                                    p_originalBusIndex1;
   int                                                    p_originalBusIndex2;
@@ -225,7 +221,6 @@ private:
   template<class Archive> void serialize(Archive &ar, const unsigned int)
   {
     ar & p_activeBranch
-      & p_originalBranchIndex
       & p_globalBranchIndex
       & p_originalBusIndex1
       & p_originalBusIndex2
@@ -389,10 +384,9 @@ void addBus(int idx)
  * @param idx1: original bus index of bus 1
  * @param idx2: original bus index of bus 2
  */
-void addBranch(int idx, int idx1, int idx2)
+void addBranch(int idx1, int idx2)
 {
   BranchDataPtr branch(new BranchData<_branch>());
-  branch->p_originalBranchIndex = idx;
   branch->p_originalBusIndex1 = idx1;
   branch->p_originalBusIndex2 = idx2;
   branch->p_globalBusIndex1 = -1;
@@ -910,13 +904,13 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 
     for (BusIterator bus = p_buses.begin(); 
          bus != p_buses.end(); ++bus) {
-      partitioner.add_node(bus->p_originalBusIndex);
+      partitioner.add_node(bus->p_globalBusIndex);
     }
     for (BranchIterator branch = p_branches.begin(); 
          branch != p_branches.end(); ++branch) {
-      partitioner.add_edge(branch->p_originalBranchIndex, 
-                           branch->p_originalBusIndex1,
-                           branch->p_originalBusIndex2);
+      partitioner.add_edge(branch->p_globalBranchIndex, 
+                           branch->p_globalBusIndex1,
+                           branch->p_globalBusIndex2);
     }
     partitioner.partition();
 
@@ -991,7 +985,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     // At this point, each process should have a self-contained
     // network, update local and global indexes, etc.
 
-    // make an index of original bus index to local index and update
+    // make an index of global bus index to local index and update
     // the branch local bus indexes
     int active_buses(0), active_branches(0);
     {
@@ -999,7 +993,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
       int lidx(0);
       for (BusIterator b = p_buses.begin(); b != p_buses.end(); ++b, ++lidx) {
         clearBranchNeighbors(lidx);
-        busindexes[b->p_originalBusIndex] = lidx;
+        busindexes[b->p_globalBusIndex] = lidx;
         if (b->p_activeBus) active_buses += 1;
       }
       
@@ -1011,11 +1005,11 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 
         // set local indexes
 
-        gbus = b->p_originalBusIndex1;
+        gbus = b->p_globalBusIndex1;
         lbus1 = busindexes[gbus];
         bus1 = p_buses[lbus1].p_bus;
 
-        gbus = b->p_originalBusIndex2;
+        gbus = b->p_globalBusIndex2;
         lbus2 = busindexes[gbus];
         bus2 = p_buses[lbus2].p_bus;
 
@@ -1625,6 +1619,8 @@ write_graph(const std::string& outname)
       out << "digraph {" << std::endl;
       out.close();
     }
+
+    // write out the (active) buses as nodes, one cluster per processor
     for (int p = 0; p < this->processor_size(); ++p) {
       if (p == this->processor_rank()) {
         out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
@@ -1643,6 +1639,8 @@ write_graph(const std::string& outname)
       }
       this->communicator().barrier();
     }
+
+    // write out the (both active and inactive) branches as edges
     for (int p = 0; p < this->processor_size(); ++p) {
       if (p == this->processor_rank()) {
         out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
@@ -1656,11 +1654,56 @@ write_graph(const std::string& outname)
       }
       this->communicator().barrier();
     }
+
     this->communicator().barrier();
     if (this->processor_rank() == 0) {
       out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
       out << "   } /* end */" << std::endl;
       out.close();
+    }
+
+    // write a graph of each processors local network
+    for (int p = 0; p < this->processor_size(); ++p) {
+      if (p == this->processor_rank()) {
+        out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
+        out << "digraph \"" << p << "\" {" << std::endl;
+        out << "label=\"Process " << p << "\";" << std::endl;
+        out << "node [color=lightgrey];" << std::endl;
+        BusIterator bus;
+        for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
+          std::string color("black");
+          std::string style("\"\"");
+          if (!bus->p_activeBus) {
+            color = "red";
+            style = "dotted";
+          }
+          out << " n" << bus->p_originalBusIndex 
+              << " ["
+              << "label=" << bus->p_originalBusIndex << ", "
+              << "color=" << color << ", "
+              << "style=" << style 
+              << "];" << std::endl;
+        }
+        BranchIterator branch;
+        for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
+          std::string color("black");
+          std::string style("solid");
+          if (!branch->p_activeBranch) {
+            color = "red";
+            style = "dotted";
+          }
+          out << "n" << branch->p_originalBusIndex1 << " -> " 
+              << "n" << branch->p_originalBusIndex2 << " " 
+              << "[" 
+              << "color=" << color << ", "
+              << "style=" << style 
+              << "]" << ";"
+              << std::endl;
+        }
+        out << "} /* end process " << p << " */" << std::endl;
+        out.close();
+      }
+      this->communicator().barrier();
     }
   }
 

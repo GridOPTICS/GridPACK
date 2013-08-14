@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-08-08 14:36:00 d3g096
+ * @date   2013-08-14 12:20:40 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -103,12 +103,12 @@ public:
     // put all components on process 0
     if (this->processor_rank() == 0) {
       for (int busidx = 0; busidx < global_buses; ++busidx) {
-        this->addBus(busidx);
+        this->addBus(100*busidx);
         this->setGlobalBusIndex(busidx, busidx);
       }
       for (int branchidx = 0; branchidx < global_branches; ++branchidx) {
         int bus1(branchidx), bus2(bus1+1);
-        this->addBranch(branchidx, bus1, bus2);
+        this->addBranch(100*bus1, 100*bus2);
         this->setGlobalBranchIndex(branchidx, branchidx);
         this->setGlobalBusIndex1(branchidx, bus1);
         this->setGlobalBusIndex2(branchidx, bus2);

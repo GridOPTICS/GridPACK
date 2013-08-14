@@ -171,7 +171,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = iy*XDIM+ix+1;
       n2 = 2*n2;
-      network.addBranch(bridx++, n1, n2);
+      network.addBranch(n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network.setGlobalBusIndex1(ncnt, n1);
@@ -206,7 +206,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = (iy+1)*XDIM+ix;
       n2 = 2*n2;
-      network.addBranch(bridx++, n1, n2);
+      network.addBranch(n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network.setGlobalBusIndex1(ncnt, n1);
