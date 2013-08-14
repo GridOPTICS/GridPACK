@@ -68,15 +68,15 @@ class TestBranch
   }
 
   bool matrixReverseSize(int *isize, int *jsize) const {
-    if (checkReferenceBus()) {
-      *isize = 1;
-      *jsize = 1;
-      return true;
-    } else {
+//    if (checkReferenceBus()) {
+//      *isize = 1;
+//      *jsize = 1;
+//      return true;
+//    } else {
       *isize = 0;
       *jsize = 0;
       return false;
-    }
+//    }
   }
 
   bool matrixForwardValues(void *values) {
@@ -90,13 +90,13 @@ class TestBranch
   }
 
   bool matrixReverseValues(void *values) {
-    if (checkReferenceBus()) {
-      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-      *val = 1.0;
-      return true;
-    } else {
+//    if (checkReferenceBus()) {
+//      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
+//      *val = 1.0;
+//      return true;
+//    } else {
       return false;
-    }
+//    }
   }
 
   bool checkReferenceBus() const {
@@ -112,6 +112,22 @@ class TestBranch
 #endif
     ret = ret && !bus1->getReferenceBus();
     ret = ret && !bus2->getReferenceBus();
+    if (bus1->getReferenceBus()) {
+      int idx;
+      bus1->getMatVecIndex(&idx);
+      printf("p[%d] checkReferenceBus 1 true idx: %d\n",GA_Nodeid(),idx);
+    }
+    if (bus2->getReferenceBus()) {
+      int idx;
+      bus2->getMatVecIndex(&idx);
+      printf("p[%d] checkReferenceBus 2 true idx: %d\n",GA_Nodeid(),idx);
+    }
+    if (!ret) {
+      int idx, jdx;
+      bus1->getMatVecIndex(&idx);
+      bus2->getMatVecIndex(&jdx);
+      printf("p[%d] checkReferenceBus idx: %d jdx: %d\n",GA_Nodeid(),idx,jdx);
+    }
     return ret;
   }
 };
@@ -173,25 +189,8 @@ void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
 
 typedef gridpack::network::BaseNetwork<TestBus, TestBranch> TestNetwork;
 
-main (int argc, char **argv) {
-
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-  int me;
-  // Initialize Math libraries
-  gridpack::math::Initialize();
-
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  int nprocs;
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
-  if (me == 0) {
-    printf("Testing Network Module\n");
-    printf("\nTest Network is %d X %d\n",XDIM,YDIM);
-  }
-
+void run (const int &me, const int &nprocs)
+{
   // Create network
   gridpack::parallel::Communicator world;
   boost::shared_ptr<TestNetwork> network(new TestNetwork(world));
@@ -243,6 +242,7 @@ main (int argc, char **argv) {
       n = n/2;
       network->setGlobalBusIndex(ncnt, n);
       if (ix == 0 && iy == 0) {
+        printf("p[%d] setReferenceBus ncnt: %d\n",me,ncnt);
         network->setReferenceBus(ncnt);
       }
       ncnt++;
@@ -263,7 +263,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = iy*XDIM+ix+1;
       n2 = 2*n2;
-      network->addBranch(n1, n2);
+      network->addBranch(bidx++,n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network->setGlobalBusIndex1(ncnt, n1);
@@ -298,7 +298,7 @@ main (int argc, char **argv) {
       n1 = 2*n1;
       n2 = (iy+1)*XDIM+ix;
       n2 = 2*n2;
-      network->addBranch(n1, n2);
+      network->addBranch(bidx++,n1, n2);
       n1 = n1/2;
       n2 = n2/2;
       network->setGlobalBusIndex1(ncnt, n1);
@@ -346,6 +346,7 @@ main (int argc, char **argv) {
     if (network->getActiveBus(i)) {
       if (network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
         network->getBus(i)->getMatVecIndex(&idx);
+        idx--;
         M->get_element(idx,idx,v);
         rv = real(v);
         if (rv != -4.0) {
@@ -369,20 +370,18 @@ main (int argc, char **argv) {
   for (i=0; i<nbranch; i++) {
     if (network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
       network->getBranch(i)->getMatVecIndices(&idx,&jdx);
-      if (idx >= rlo && idx <= rhi) {
+      idx--;
+      jdx--;
+      if (idx >= rlo-1 && idx <= rhi-1) {
         M->get_element(idx,jdx,v);
-        idx--;
-        jdx--;
         rv = real(v);
         if (rv != 1.0) {
           printf("p[%d] Forward matrix error i: %d j:%d v: %f\n",me,idx,jdx,rv);
           chk = 1;
         }
       }
-      if (jdx >= rlo && jdx <= rhi) {
+      if (jdx >= rlo-1 && jdx <= rhi-1) {
         M->get_element(jdx,idx,v);
-        idx--;
-        jdx--;
         rv = real(v);
         if (rv != 1.0) {
           printf("p[%d] Reverse matrix error i: %d j:%d v: %f\n",me,jdx,idx,rv);
@@ -399,11 +398,32 @@ main (int argc, char **argv) {
       printf("\nError found in matrix elements\n");
     }
   }
+}
 
+main (int argc, char **argv) {
+
+  // Initialize MPI libraries
+  int ierr = MPI_Init(&argc, &argv);
+  int me;
+  // Initialize Math libraries
+  gridpack::math::Initialize();
+
+  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  int nprocs;
+  ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  GA_Initialize();
+  int stack = 200000, heap = 200000;
+  MA_init(C_DBL, stack, heap);
+  if (me == 0) {
+    printf("Testing Mapper Module\n");
+    printf("\nTest Network is %d X %d\n",XDIM,YDIM);
+  }
+
+  run(me, nprocs);
 
   GA_Terminate();
 
-  // Initialize Math libraries
+  // Terminate Math libraries
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();

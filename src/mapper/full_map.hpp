@@ -598,7 +598,7 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
-            if (idx == 4949 || jdx == 4949) {
+            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
               printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
               matrix->add_element(idx, jdx, values[icnt]);
               printf("p[%d] (1) finished idx: %d jdx: %d\n",p_me,idx,jdx);
@@ -615,6 +615,7 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
       }
     }
     if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
+      printf("p[%d] Evaluating reverse matrix elements\n",p_me);
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
         p_network->getBranch(i)->matrixReverseValues(values);
@@ -623,7 +624,7 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
-            if (idx == 4949 || jdx == 4949) {
+            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
               printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
               matrix->add_element(idx, jdx, values[icnt]);
               printf("p[%d] (2) finished idx: %d jdx: %d\n",p_me,idx,jdx);
