@@ -89,6 +89,12 @@ class BaseFactory {
         p_network->getBus(i)->setMatVecIndex(bus_idx);
         if (p_network->getActiveBus(i)) numActiveBus++;
       }
+      
+      // Set reference bus
+      int idx = p_network->getReferenceBus();
+      if (idx != -1) {
+        p_network->getBus(idx)->setReferenceBus(true);
+      }
 
       // Come up with a set of global indices for each component so that the buses
       // and branches are consecutively numbered on each component and the indices
