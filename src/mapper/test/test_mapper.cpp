@@ -9,8 +9,8 @@
 #include "gridpack/math/math.hpp"
 #include "gridpack/mapper/full_map.hpp"
 
-#define XDIM 100
-#define YDIM 100
+#define XDIM 2
+#define YDIM 2
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -68,15 +68,15 @@ class TestBranch
   }
 
   bool matrixReverseSize(int *isize, int *jsize) const {
-//    if (checkReferenceBus()) {
-//      *isize = 1;
-//      *jsize = 1;
-//      return true;
-//    } else {
+    if (checkReferenceBus()) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
       *isize = 0;
       *jsize = 0;
       return false;
-//    }
+    }
   }
 
   bool matrixForwardValues(void *values) {
@@ -90,13 +90,13 @@ class TestBranch
   }
 
   bool matrixReverseValues(void *values) {
-//    if (checkReferenceBus()) {
-//      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-//      *val = 1.0;
-//      return true;
-//    } else {
+    if (checkReferenceBus()) {
+      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
+      *val = 1.0;
+      return true;
+    } else {
       return false;
-//    }
+    }
   }
 
   bool checkReferenceBus() const {
@@ -251,7 +251,7 @@ void run (const int &me, const int &nprocs)
 
   // Add branches to network. Start with branches connecting buses in the
   // i-direction
-  int n1, n2, lx, ly, bidx(0);
+  int n1, n2, lx, ly;
   ncnt = 0;
   nx = iaxmax - iaxmin;
   ny = iymax - iymin + 1;
@@ -356,6 +356,7 @@ void run (const int &me, const int &nprocs)
       }
     }
   }
+#if 1
   // Get min and max row indices
   int rlo, rhi; 
   rhi = 0;
@@ -390,6 +391,7 @@ void run (const int &me, const int &nprocs)
       }
     }
   }
+#endif
   GA_Igop(&chk,one,"+");
   if (me == 0) {
     if (chk == 0) {

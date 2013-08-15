@@ -240,6 +240,10 @@ void loadForwardBranchArrays(int * iSizeArray, int * jSizeArray,
       *(iIndexArray[*count])  = iIndex;
       *(jIndexArray[*count])  = jIndex;
       (*count)++;
+    } else {
+      int idx, jdx;
+      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+      printf("p[%d] Forward Bus1: %d Bus2: %d\n",p_me,idx,jdx);
     }
   }
 }
@@ -263,6 +267,10 @@ void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
       *(iIndexArray[*count])  = jIndex;
       *(jIndexArray[*count])  = iIndex;
       (*count)++;
+    } else {
+      int idx, jdx;
+      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+      printf("p[%d] Reverse Bus1: %d Bus2: %d\n",p_me,idx,jdx);
     }
   }
 }
@@ -359,6 +367,9 @@ void setupOffsetArrays()
     if (p_maxJBlock < jSizes[i]) p_maxJBlock = jSizes[i];
     if (iSizes[i] > 0) iSize += iSizes[i];
     if (jSizes[i] > 0) jSize += jSizes[i];
+    if (iSizes[i] == 0 || jSizes[i] == 0) {
+      printf("p[%d] Sizes[%d] I: %d J: %d\n",p_me,i,iSizes[i],jSizes[i]);
+    }
   }
   p_rowBlockSize = iSize;
   GA_Igop(&p_maxIBlock,one,"max");
@@ -489,7 +500,6 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
         indices[icnt] = new int;
-        *(indices[icnt]) = -1;
         p_network->getBus(i)->getMatVecIndex(&idx);
         *(indices[icnt]) = idx;
         icnt++;
@@ -510,6 +520,7 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
   ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
   int j,k;
   int jcnt = 0;
+  int acnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
@@ -526,6 +537,7 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
         delete indices[jcnt];
         jcnt++;
       }
+      acnt++;
     }
   }
 
@@ -571,6 +583,8 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
     }
   }
   if (icnt != p_branchContribution) {
+    printf("p[%d] Mismatch in loadBranchData icnt: %d branchContribution: %d\n",
+        p_me,icnt,p_branchContribution);
     // TODO: some kind of error
   }
   printf("p[%d] (loadBranchData) Got to 2\n",p_me);
@@ -598,6 +612,7 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
+            printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
             if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
               printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
               matrix->add_element(idx, jdx, values[icnt]);
@@ -615,7 +630,6 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
       }
     }
     if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
-      printf("p[%d] Evaluating reverse matrix elements\n",p_me);
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
         p_network->getBranch(i)->matrixReverseValues(values);
@@ -624,6 +638,7 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
+            printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
             if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
               printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
               matrix->add_element(idx, jdx, values[icnt]);
