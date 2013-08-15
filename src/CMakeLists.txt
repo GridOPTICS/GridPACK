@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-08-01 07:53:37 d3g096
+# Last Change: 2013-08-15 15:26:45 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -26,6 +26,14 @@ enable_testing()
 message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
 include_directories(AFTER ${MPI_INCLUDE_PATH})
+
+# This is here for cmake version 2.6 
+if (NOT MPI_CXX_LIBRARIES)
+ set(MPI_CXX_LIBRARIES 
+   ${MPI_LIBRARY} 
+   ${MPI_EXTRA_LIBRARY}
+ )
+endif()
 
 # Perkins found out that this was exactly the wrong thing to do:
 # 
