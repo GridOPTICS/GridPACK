@@ -1,7 +1,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:17:49 d3g096
+ * @date   2013-08-15 13:44:57 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -40,7 +40,7 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
 {
   PetscErrorCode ierr(0);
   static const PetscInt diagonal_non_zero_guess(10);
-  static const PetscInt offdiagonal_non_zero_guess(2);
+  static const PetscInt offdiagonal_non_zero_guess(10);
   try {
     ierr = MatCreate(this->communicator(), &p_matrix); CHKERRXX(ierr);
     MatType the_type;
@@ -69,6 +69,11 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
                                          offdiagonal_non_zero_guess, 
                                          PETSC_NULL); CHKERRXX(ierr);
       }
+      // By default, new elements that are not pre-allocated cause an
+      // error. Let's disable that. With the preallocation above, it
+      // should not happen very often.
+      ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_TRUE); CHKERRXX(ierr);
+      ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE); CHKERRXX(ierr);
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
