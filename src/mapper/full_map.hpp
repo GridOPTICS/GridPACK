@@ -85,7 +85,8 @@ void setupGlobalArrays(int nActiveBuses)
 
   GA_Igop(&p_totalBuses,one,"+");
 
-  // the gaMatBlksI and gaMatBlksJ are the
+  // the gaMatBlksI and gaMatBlksJ arrays contain the matrix blocks sizes for
+  // individual block contributions
   createIndexGA(&gaMatBlksI, p_totalBuses);
   createIndexGA(&gaMatBlksJ, p_totalBuses);
 }
@@ -175,7 +176,7 @@ void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
  * @param iSizeArray: array containing size of matrix block along i axis
  * @param jSizeArray: array containing size of matrix block along j axis
  * @param iIndexArray: array containing i index of matrix block
- * @param count: total number of non-zero blocks
+ * @param count: return total number of non-zero blocks
  */
 void loadBusArrays(int * iSizeArray, int * jSizeArray,
         int ** iIndexArray, int *count)
@@ -493,7 +494,6 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
   ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
   int j,k;
   int jcnt = 0;
-  int acnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
@@ -510,7 +510,6 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
         delete indices[jcnt];
         jcnt++;
       }
-      acnt++;
     }
   }
 

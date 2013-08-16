@@ -8,6 +8,7 @@
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
 
 #define XDIM 100
 #define YDIM 100
@@ -43,6 +44,38 @@ class TestBus
       return false;
     }
   }
+
+  bool vectorSize(int *isize) const {
+    if (!getReferenceBus()) {
+      *isize = 1;
+      return true;
+    } else {
+      *isize = 0;
+      return false;
+    }
+  }
+
+  bool vectorValues(void *values) {
+    if (!getReferenceBus()) {
+      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
+      int idx;
+      getMatVecIndex(&idx);
+      *val = (double)idx;
+      return true;
+    } else {
+      return false;
+    }
+  }
+  
+  void setValues(void *values) {
+    p_val = *(static_cast<gridpack::ComplexType*>(values));
+  }
+
+  double getValue(){
+    return real(p_val);
+  }
+
+  gridpack::ComplexType p_val;
 };
 
 class TestBranch
@@ -329,6 +362,9 @@ void run (const int &me, const int &nprocs)
   gridpack::factory::BaseFactory<TestNetwork> factory(network);
   factory.setComponents();
 
+  if (me == 0) {
+    printf("\nTesting FullMatrixMap\n");
+  }
   gridpack::mapper::FullMatrixMap<TestNetwork> mMap(network); 
   boost::shared_ptr<gridpack::math::Matrix> M = mMap.mapToMatrix();
 
@@ -394,6 +430,75 @@ void run (const int &me, const int &nprocs)
       printf("\nMatrix elements are ok\n");
     } else {
       printf("\nError found in matrix elements\n");
+    }
+  }
+
+  if (me == 0) {
+    printf("\nTesting BusVectorMap\n");
+  }
+  gridpack::mapper::BusVectorMap<TestNetwork> vMap(network); 
+  boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
+
+  // Check to see if vector has correct values
+  chk = 0;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      if (network->getBus(i)->vectorSize(&isize)) {
+        network->getBus(i)->getMatVecIndex(&idx);
+        idx--;
+        V->get_element(idx,v);
+        rv = real(v);
+        if (rv != (double)(idx+1)) {
+          printf("p[%d] vector error i: %d v: %f\n",me,idx,rv);
+          chk = 1;
+        }
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nVector elements are ok\n");
+    } else {
+      printf("\nError found in vector elements\n");
+    }
+  }
+
+  if (me == 0) {
+    printf("\nTesting mapToBus\n");
+  }
+
+  // Multiply values in vector by a factor of 2
+  int lo, hi;
+  V->local_index_range(lo,hi);
+  for (i=lo; i<hi; i++) {
+    V->get_element(i,v);
+    v *= 2.0;
+    V->set_element(i,v);
+  }
+  // Push values back onto buses
+  vMap.mapToBus(V);
+
+  // Check to see if buses have correct values
+  chk = 0;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      if (network->getBus(i)->vectorSize(&isize)) {
+        network->getBus(i)->getMatVecIndex(&idx);
+        rv = network->getBus(i)->getValue();
+        if (rv != (double)(2*idx)) {
+          printf("p[%d] Bus error i: %d v: %f expected: %f\n",me,idx,rv,double(2*idx));
+          chk = 1;
+        }
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nBus values are ok\n");
+    } else {
+      printf("\nError found in bus value\n");
     }
   }
 }
