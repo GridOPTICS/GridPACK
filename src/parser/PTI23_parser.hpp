@@ -17,7 +17,7 @@
 #define TERM_CHAR '0'
 // SOURCE: http://www.ee.washington.edu/research/pstca/formats/pti.txt
 #define     CASE_IC             "IC"
-#define     CASE_SBASE          "SBASE"
+//#define     CASE_SBASE          "SBASE"
 #define     CASE_RECORD2        "RECORD2"
 #define     CASE_RECORD3        "RECORD3"
 
@@ -30,9 +30,9 @@
 #define     BUS_IA              "IA"
 #define     BUS_VM              "VM"
 #define     BUS_VA              "VA"
-#define     BUS_NAME            "NAME"
+//#define     BUS_NAME            "NAME"
 #define     BUS_BASKV           "BASKV"
-#define     BUS_ZONE            "ZONE"
+//#define     BUS_ZONE            "ZONE"
 
 #define     GEN_I               "I"
 #define     GEN_ID              "ID"
@@ -55,10 +55,10 @@
 
 #define     BRANCH_I            "I"
 #define     BRANCH_J            "J"
-#define     BRANCH_CKT          "CKT"
-#define     BRANCH_R            "R"
-#define     BRANCH_X            "X"
-#define     BRANCH_B            "B"
+//#define     BRANCH_CKT          "CKT"
+//#define     BRANCH_R            "R"
+//#define     BRANCH_X            "X"
+//#define     BRANCH_B            "B"
 #define     BRANCH_RATEA        "RATEA"
 #define     BRANCH_RATEB        "RATEB"
 #define     BRANCH_RATEC        "RATEC"
@@ -122,29 +122,29 @@
 #define     DL_TSTPI           "TSTPI"
 
 #define     SHUNT_I            "I"
-#define     SHUNT_MODSW        "MODSW"
-#define     SHUNT_VSWHI        "VSWHI"
+//#define     SHUNT_MODSW        "MODSW"
+//#define     SHUNT_VSWHI        "VSWHI"
 #define     SHUNT_VSWLD        "VSWLO"
-#define     SHUNT_SWREM        "SWREM"
+//#define     SHUNT_SWREM        "SWREM"
 #define     SHUNT_VDES         "VDES"
-#define     SHUNT_BINIT        "BINIT"
+//#define     SHUNT_BINIT        "BINIT"
 #define     SHUNT_UNK          "UNK"
-#define     SHUNT_N1           "N1"
-#define     SHUNT_B1           "B1"
-#define     SHUNT_N2           "N2"
-#define     SHUNT_B2           "B2"
-#define     SHUNT_N3           "N3"
-#define     SHUNT_B3           "B3"
-#define     SHUNT_N4           "N4"
-#define     SHUNT_B4           "B4"
-#define     SHUNT_N5           "N5"
-#define     SHUNT_B5           "B5"
-#define     SHUNT_N6           "N6"
-#define     SHUNT_B6           "B6"
-#define     SHUNT_N7           "N7"
-#define     SHUNT_B7           "B7"
-#define     SHUNT_N8           "N8"
-#define     SHUNT_B8           "B8"
+//#define     SHUNT_N1           "N1"
+//#define     SHUNT_B1           "B1"
+//#define     SHUNT_N2           "N2"
+//#define     SHUNT_B2           "B2"
+//#define     SHUNT_N3           "N3"
+//#define     SHUNT_B3           "B3"
+//#define     SHUNT_N4           "N4"
+//#define     SHUNT_B4           "B4"
+//#define     SHUNT_N5           "N5"
+//#define     SHUNT_B5           "B5"
+//#define     SHUNT_N6           "N6"
+//#define     SHUNT_B6           "B6"
+//#define     SHUNT_N7           "N7"
+//#define     SHUNT_B7           "B7"
+//#define     SHUNT_N8           "N8"
+//#define     SHUNT_B8           "B8"
 
 #define     IMPED_I            "I"
 
@@ -153,12 +153,14 @@
 #define     M_SEC_I            "I"
 
 #define     ZONE_I             "I"
-#define     ZONE_NAME          "NAME"
+//#define     ZONE_NAME          "NAME"
 
 #define     I_AREA_I           "I"
 
 #define     OWNER_I            "I"
-#define     OWNER_NAME         "NAME"
+//#define     OWNER_NAME         "NAME"
+
+#include "gridpack/parser/dictionary.hpp"
 
 
 namespace gridpack {
@@ -209,7 +211,7 @@ public:
 protected:
 
    /*
-#define     CASE_IC             "IC"
+#define     CASE_ID             "CASE_ID"
 #define     CASE_SBASE          "SBASE"
 #define     CASE_RECORD2        "RECORD2"
 #define     CASE_RECORD3        "RECORD3"
@@ -227,7 +229,7 @@ protected:
 
         boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(" "), boost::token_compress_on);
 
-        data.setValue(CASE_IC, atoi(split_line[0].c_str()));
+        data.setValue(CASE_ID, atoi(split_line[0].c_str()));
         case_instance.push_back(data);
 
         data.setValue(CASE_SBASE, atoi(split_line[1].c_str()));
@@ -248,12 +250,12 @@ std::cout << "last case line " << line << std::endl;
     }
 
     /*
-#define     BUS_I               "I"
-#define     BUS_IDE             "IDE"
+#define     BUS_NUMBER          "BUS_NUMBER"
+#define     BUS_TYPE            "BUS_TYPE
 #define     BUS_PL              "PL"
 #define     BUS_QL              "QL"
-#define     BUS_GL              "GL"
-#define     BUS_BL              "BL"
+#define     BUS_SHUNT_GL        "BUS_SHUNT_GL"
+#define     BUS_SHUNT_BL        "BUS_SHUNT_BL"
 #define     BUS_IA              "IA"
 #define     BUS_VM              "VM"
 #define     BUS_VA              "VA"
@@ -276,10 +278,10 @@ std::cout << "bus block " << line << std::endl;
             std::vector<gridpack::component::DataCollection>   bus_instance;
             gridpack::component::DataCollection     data;
 
-            data.setValue(BUS_I, atoi(split_line[0].c_str()));
+            data.setValue(BUS_NUMBER, atoi(split_line[0].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_IDE, atoi(split_line[1].c_str()));
+            data.setValue(BUS_TYPE, atoi(split_line[1].c_str()));
             bus_instance.push_back(data);
 
             data.setValue(BUS_PL, atof(split_line[2].c_str()));
@@ -288,10 +290,10 @@ std::cout << "bus block " << line << std::endl;
             data.setValue(BUS_QL, atof(split_line[3].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_GL, atof(split_line[4].c_str()));
+            data.setValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
             bus_instance.push_back(data);
 
-            data.setValue(BUS_BL, atof(split_line[5].c_str()));
+            data.setValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
             bus_instance.push_back(data);
 
             data.setValue(BUS_IA, atof(split_line[6].c_str()));
@@ -321,22 +323,22 @@ std::cout << "bus block " << line << std::endl;
 
     /*
 
-#define     GEN_I               "I"
-#define     GEN_ID              "ID"
-#define     GEN_PG              "PG"
-#define     GEN_QG              "QG"
-#define     GEN_QT              "QT"
+#define     GENERATOR_BUSNBUMBER      "GENERATOR_BUSNBUMBER"
+#define     GENERATOR_ID              "GENERATOR_ID"
+#define     GENERATOR_PG              "GENERATOR_PG"
+#define     GENERATOR_QG              "GENERATOR_QG"
+#define     GENERATOR_QT              "GENERATOR_QT"
 #define     GEN_QB              "QB"
-#define     GEN_VS              "VS"
-#define     GEN_IREG            "IREG"
-#define     GEN_MBASE           "MBASE"
+#define     GENERATOR_VS              "GENERATOR_VS"
+#define     GENERATOR_IREG            "GENERATOR_IREG"
+#define     GENERATOR_MBASE           "GENERATOR_MBASE"
 #define     GEN_ZR              "ZR"
 #define     GEN_ZX              "ZX"
 #define     GEN_RT              "RT"
 #define     GEN_XT              "XT"
-#define     GEN_GTAP            "GTAP"
-#define     GEN_STAT            "STAT"
-#define     GEN_RMPCT           "RMPCT"
+#define     GENERATOR_GTAP            "GENERATOR_GTAP"
+#define     GENERATOR_STAT            "GENERATOR_STAT"
+#define     GENERATOR_RMPCT           "GENERATOR_RMPCT"
 #define     GEN_PT              "PT"
 #define     GEN_PB              "PB"
     */
@@ -354,16 +356,16 @@ std::cout << "generator block " << line << std::endl;
             std::vector<gridpack::component::DataCollection>   gen_instance;
             gridpack::component::DataCollection          data;
 
-            data.setValue(GEN_I, atof(split_line[0].c_str()));
+            data.setValue(GENERATOR_BUSNUMBER, atof(split_line[0].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_ID, atof(split_line[1].c_str()));
+            data.setValue(GENERATOR_ID, atof(split_line[1].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_PG, atof(split_line[2].c_str()));
+            data.setValue(GENERATOR_PG, atof(split_line[2].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_QG, atof(split_line[3].c_str()));
+            data.setValue(GENERATOR_QG, atof(split_line[3].c_str()));
             gen_instance.push_back(data);
 
             data.setValue(GEN_QT, atof(split_line[4].c_str()));
@@ -372,13 +374,13 @@ std::cout << "generator block " << line << std::endl;
             data.setValue(GEN_QB, atof(split_line[5].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_VS, atof(split_line[6].c_str()));
+            data.setValue(GENERATOR_VS, atof(split_line[6].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_IREG, atof(split_line[7].c_str()));
+            data.setValue(GENERATOR_IREG, atof(split_line[7].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_MBASE, atof(split_line[8].c_str()));
+            data.setValue(GENERATOR_MBASE, atof(split_line[8].c_str()));
             gen_instance.push_back(data);
 
             data.setValue(GEN_ZR, atof(split_line[9].c_str()));
@@ -393,13 +395,13 @@ std::cout << "generator block " << line << std::endl;
             data.setValue(GEN_XT, atof(split_line[12].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_GTAP, atof(split_line[13].c_str()));
+            data.setValue(GENERATOR_GTAP, atof(split_line[13].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_STAT, atof(split_line[14].c_str()));
+            data.setValue(GENERATOR_STAT, atof(split_line[14].c_str()));
             gen_instance.push_back(data);
 
-            data.setValue(GEN_RMPCT, atof(split_line[15].c_str()));
+            data.setValue(GENERATOR_RMPCT, atof(split_line[15].c_str()));
             gen_instance.push_back(data);
 
             data.setValue(GEN_PT, atof(split_line[16].c_str()));
@@ -417,22 +419,22 @@ std::cout << "generator block " << line << std::endl;
 
     /*
 
-#define     BRANCH_I            "I"
-#define     BRANCH_J            "J"
-#define     BRANCH_CKT          "CKT"
-#define     BRANCH_R            "R"
-#define     BRANCH_X            "X"
-#define     BRANCH_B            "B"
-#define     BRANCH_RATEA        "RATEA"
-#define     BRANCH_RATEB        "RATEB"
-#define     BRANCH_RATEC        "RATEC"
+#define     BRANCH_FROMBUS            "BRANCH_FROMBUS"
+#define     BRANCH_TOBUS              "BRANCH_TOBUS"
+#define     BRANCH_CKT                "BRANCH_CKT"
+#define     BRANCH_R                  "BRANCH_R"
+#define     BRANCH_X                  "BRANCH_X"
+#define     BRANCH_B                  "BRANCH_B"
+#define     BRANCH_RATING_A           "BRANCH_RATING_A"
+#define     BRANCH_RATING_B           "BRANCH_RATING_B"
+#define     BRANCH_RATING_C           "BRANCH_RATING_C"
 #define     BRANCH_RATIO        "RATIO"
 #define     BRANCH_ANGLE        "ANGLE"
-#define     BRANCH_GI           "GI"
-#define     BRANCH_BI           "BI"
-#define     BRANCH_GJ           "GJ"
-#define     BRANCH_BJ           "BJ"
-#define     BRANCH_ST           "ST"
+#define     BRANCH_SHUNT_ADMTTNC_G1   "BRANCH_SHUNT_ADMTTNC_G1"
+#define     BRANCH_SHUNT_ADMTTNC_B1   "BRANCH_SHUNT_ADMTTNC_B1"
+#define     BRANCH_SHUNT_ADMTTNC_G2   "BRANCH_SHUNT_ADMTTNC_G2"
+#define     BRANCH_SHUNT_ADMTTNC_B2   "BRANCH_SHUNT_ADMTTNC_B2"
+#define     BRANCH_STATUS             "BRANCH_STATUS"
     */
     void find_branches(std::vector<data_set>  * case_data, std::ifstream & input)
     {
@@ -449,10 +451,10 @@ std::cout << "branch block " << line << std::endl;
             std::vector<gridpack::component::DataCollection>   branch_instance;
             gridpack::component::DataCollection          data;
 
-            data.setValue(BRANCH_I, atoi(split_line[0].c_str()));
+            data.setValue(BRANCH_FROMBUS, atoi(split_line[0].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_J, atoi(split_line[1].c_str()));
+            data.setValue(BRANCH_TOBUS, atoi(split_line[1].c_str()));
             branch_instance.push_back(data);
 
             data.setValue(BRANCH_CKT, atof(split_line[2].c_str()));
@@ -467,13 +469,13 @@ std::cout << "branch block " << line << std::endl;
             data.setValue(BRANCH_B, atof(split_line[5].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_RATEA, atof(split_line[6].c_str()));
+            data.setValue(BRANCH_RATING_A, atof(split_line[6].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_RATEB, atof(split_line[7].c_str()));
+            data.setValue(BRANCH_RATING_B, atof(split_line[7].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_RATEC, atof(split_line[8].c_str()));
+            data.setValue(BRANCH_RATING_C, atof(split_line[8].c_str()));
             branch_instance.push_back(data);
 
             data.setValue(BRANCH_RATIO, atof(split_line[9].c_str()));
@@ -482,19 +484,19 @@ std::cout << "branch block " << line << std::endl;
             data.setValue(BRANCH_ANGLE, atof(split_line[10].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_GI, atof(split_line[11].c_str()));
+            data.setValue(BRANCH_SHUNT_ADMTTNC_G1, atof(split_line[11].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_BI, atof(split_line[12].c_str()));
+            data.setValue(BRANCH_SHUNT_ADMTTNC_B1, atof(split_line[12].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_GJ, atof(split_line[13].c_str()));
+            data.setValue(BRANCH_SHUNT_ADMTTNC_G2, atof(split_line[13].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_BJ, atof(split_line[14].c_str()));
+            data.setValue(BRANCH_SHUNT_ADMTTNC_B2, atof(split_line[14].c_str()));
             branch_instance.push_back(data);
 
-            data.setValue(BRANCH_BJ, atoi(split_line[15].c_str()));
+            data.setValue(BRANCH_STATUS, atoi(split_line[15].c_str()));
             branch_instance.push_back(data);
 
             branch_set.push_back(branch_instance);
@@ -505,9 +507,9 @@ std::cout << "branch block " << line << std::endl;
 
 
     /*
-#define     TRANSF_I           "I"
-#define     TRANSF_J           "J"
-#define     TRANSF_CKT         "CKT"
+#define     TRANSFORMER_BUS1       "TRANSFORMER_BUS1"
+#define     TRANSFORMER_BUS2       "TRANSFORMER_BUS2"
+#define     TRANSFORMER_CKT        "TRANSFORMER_CKT"
 #define     TRANSF_ICONT       "ICONT"
 #define     TRANSF_RMA         "RMA"
 #define     TRANSF_RMI         "RMI"
@@ -531,13 +533,13 @@ std::cout << "transformer block " << line << std::endl;
             std::vector<gridpack::component::DataCollection>   transformer_instance;
             gridpack::component::DataCollection          data;
 
-            data.setValue(TRANSF_I, atoi(split_line[0].c_str()));
+            data.setValue(TRANSFORMER_BUS1, atoi(split_line[0].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_J, atoi(split_line[1].c_str()));
+            data.setValue(TRANSFORMER_BUS2, atoi(split_line[1].c_str()));
             transformer_instance.push_back(data);
 
-            data.setValue(TRANSF_CKT, atoi(split_line[2].c_str()));
+            data.setValue(TRANSFORMER_CKT, atoi(split_line[2].c_str()));
             transformer_instance.push_back(data);
 
             data.setValue(TRANSF_ICONT, atoi(split_line[3].c_str()));
@@ -569,11 +571,11 @@ std::cout << "transformer block " << line << std::endl;
 
 
     /*
-#define     AREA_I             "I"
-#define     AREA_ISW           "ISW"
-#define     AREA_PDES          "PDES"
-#define     AREA_PTOL          "PTOL"
-#define     AREA_ARNAM         "ARNAM"
+#define     AREAINTG_NUMBER       "AREAINTG_NUMBER"
+#define     AREAINTG_ISW          "AREAINTG_ISW"
+#define     AREAINTG_PDES         "AREAINTG_PDES"
+#define     AREAINTG_PTOL         "AREAINTG_PTOL"
+#define     AREAINTG_NAME         "AREAINTG_NAME"
     */
     void find_area(std::vector<data_set>  * case_data, std::ifstream & input)
     {
@@ -590,19 +592,19 @@ std::cout << "area  block " << line << std::endl;
             std::vector<gridpack::component::DataCollection>   area_instance;
             gridpack::component::DataCollection          data;
 
-            data.setValue(AREA_I, atoi(split_line[0].c_str()));
+            data.setValue(AREAINTG_NUMBER, atoi(split_line[0].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_ISW, atoi(split_line[1].c_str()));
+            data.setValue(AREAINTG_ISW, atoi(split_line[1].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_PDES, atof(split_line[2].c_str()));
+            data.setValue(AREAINTG_PDES, atof(split_line[2].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_PTOL, atof(split_line[3].c_str()));
+            data.setValue(AREAINTG_PTOL, atof(split_line[3].c_str()));
             area_instance.push_back(data);
 
-            data.setValue(AREA_ARNAM, split_line[4].c_str());
+            data.setValue(AREAINTG_NAME, split_line[4].c_str());
             area_instance.push_back(data);
 
             area_set.push_back(area_instance);
@@ -774,29 +776,29 @@ std::cout << "dc line block " << line << std::endl;
     }
 
     /*
-#define     SHUNT_I         "I"
-#define     SHUNT_MODSW     "MODSW"
-#define     SHUNT_VSWHI     "VSWHI"
-#define     SHUNT_VSWLD     "VSWLO"
-#define     SHUNT_SWREM     "SWREM"
+#define     SHUNT_BUSNUMBER "SHUNT_BUSNUMBER"
+#define     SHUNT_MODSW     "SHUNT_MODSW"
+#define     SHUNT_VSWHI     "SHUNT_VSWHI"
+#define     SHUNT_VSWLO     "SHUNT_VSWLO"
+#define     SHUNT_SWREM     "SHUNT_SWREM"
 #define     SHUNT_VDES      "VDES"
-#define     SHUNT_BINIT     "BINIT"
-#define     SHUNT_N1        "N1"
-#define     SHUNT_B1        "B1"
-#define     SHUNT_N2        "N2"
-#define     SHUNT_B2        "B2"
-#define     SHUNT_N3        "N3"
-#define     SHUNT_B3        "B3"
-#define     SHUNT_N4        "N4"
-#define     SHUNT_B4        "B4"
-#define     SHUNT_N5        "N5"
-#define     SHUNT_B5        "B5"
-#define     SHUNT_N6        "N6"
-#define     SHUNT_B6        "B6"
-#define     SHUNT_N7        "N7"
-#define     SHUNT_B7        "B7"
-#define     SHUNT_N8        "N8"
-#define     SHUNT_B8        "B8"
+#define     SHUNT_BINIT     "SHUNT_BINIT"
+#define     SHUNT_N1        "SHUNT_N1"
+#define     SHUNT_B1        "SHUNT_B1"
+#define     SHUNT_N2        "SHUNT_N2"
+#define     SHUNT_B2        "SHUNT_B2"
+#define     SHUNT_N3        "SHUNT_N3"
+#define     SHUNT_B3        "SHUNT_B3"
+#define     SHUNT_N4        "SHUNT_N4"
+#define     SHUNT_B4        "SHUNT_B4"
+#define     SHUNT_N5        "SHUNT_N5"
+#define     SHUNT_B5        "SHUNT_B5"
+#define     SHUNT_N6        "SHUNT_N6"
+#define     SHUNT_B6        "SHUNT_B6"
+#define     SHUNT_N7        "SHUNT_N7"
+#define     SHUNT_B7        "SHUNT_B7"
+#define     SHUNT_N8        "SHUNT_N8"
+#define     SHUNT_B8        "SHUNT_B8"
     */
     void find_shunt(std::vector<data_set>  * case_data, std::ifstream & input)
     {
@@ -814,7 +816,7 @@ std::cout << "shunt block " << line << std::endl;
             std::vector<gridpack::component::DataCollection>   shunt_instance;
             gridpack::component::DataCollection          data;
 
-            data.setValue(SHUNT_I, atoi(split_line[0].c_str()));
+            data.setValue(SHUNT_BUSNUMBER, atoi(split_line[0].c_str()));
             shunt_instance.push_back(data);
 
             data.setValue(SHUNT_VSWHI, atof(split_line[1].c_str()));
