@@ -43,18 +43,13 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 
   p_activeBuses         = getActiveBuses();
 
-  printf("p[%d] (constructor) Got to 1\n",p_me);
   setupGlobalArrays(p_activeBuses);  // allocate globalIndex arrays
-  printf("p[%d] (constructor) Got to 2\n",p_me);
 
   setupIndexingArrays();
-  printf("p[%d] (constructor) Got to 3\n",p_me);
 
   setupOffsetArrays();
-  printf("p[%d] (constructor) Got to 4\n",p_me);
 
   contributions();
-  printf("p[%d] (constructor) Got to 5\n",p_me);
 }
 
 ~FullMatrixMap()
@@ -123,27 +118,19 @@ void setupIndexingArrays()
   int                      count          = 0;
 
   // set up bus indexing
-  printf("p[%d] (setupIndexingArrays) Got to 1\n",p_me);
   allocateIndexArray(p_nBuses, &iSizeArray, &jSizeArray, &iIndexArray, NULL, 1);
-  printf("p[%d] (setupIndexingArrays) Got to 2\n",p_me);
 
   loadBusArrays(iSizeArray, jSizeArray, iIndexArray, &count);
-  printf("p[%d] (setupIndexingArrays) Got to 3\n",p_me);
   scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, NULL, count, 1);
-  printf("p[%d] (setupIndexingArrays) Got to 4\n",p_me);
   deleteIndexArrays(p_nBuses, iSizeArray, jSizeArray, iIndexArray, NULL, 1);
-  printf("p[%d] (setupIndexingArrays) Got to 5\n",p_me);
   GA_Sync();
 
   // set up branch indexing
   count               = 0;
   allocateIndexArray(p_nBranches, &iSizeArray, &jSizeArray, &iIndexArray,
       &jIndexArray, 2);
-  printf("p[%d] (setupIndexingArrays) Got to 6\n",p_me);
   loadForwardBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, &count);
-  printf("p[%d] (setupIndexingArrays) Got to 7\n",p_me);
   scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, count, 2);
-  printf("p[%d] (setupIndexingArrays) Got to 8\n",p_me);
 
   count               = 0;
   loadReverseBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, &count);
@@ -151,7 +138,6 @@ void setupIndexingArrays()
 
   deleteIndexArrays(p_nBranches, iSizeArray, jSizeArray, iIndexArray,
       jIndexArray, 2);
-  printf("p[%d] (setupIndexingArrays) Got to 9\n",p_me);
   GA_Sync();
 }
 
@@ -240,10 +226,6 @@ void loadForwardBranchArrays(int * iSizeArray, int * jSizeArray,
       *(iIndexArray[*count])  = iIndex;
       *(jIndexArray[*count])  = jIndex;
       (*count)++;
-    } else {
-      int idx, jdx;
-      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
-      printf("p[%d] Forward Bus1: %d Bus2: %d\n",p_me,idx,jdx);
     }
   }
 }
@@ -267,10 +249,6 @@ void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
       *(iIndexArray[*count])  = jIndex;
       *(jIndexArray[*count])  = iIndex;
       (*count)++;
-    } else {
-      int idx, jdx;
-      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
-      printf("p[%d] Reverse Bus1: %d Bus2: %d\n",p_me,idx,jdx);
     }
   }
 }
@@ -347,7 +325,7 @@ void setupOffsetArrays()
       if (idx < p_minRowIndex) p_minRowIndex = idx;
     }
   }
-  printf("p[%d] (FullMatrixMap) minRow: %d maxRow: %d\n",p_me,p_minRowIndex,p_maxRowIndex);
+//  printf("p[%d] (FullMatrixMap) minRow: %d maxRow: %d\n",p_me,p_minRowIndex,p_maxRowIndex);
   // Create array to hold information about desired rows
   int nRows = p_maxRowIndex-p_minRowIndex+1;
   int *iSizes = new int[nRows]; 
@@ -368,7 +346,7 @@ void setupOffsetArrays()
     if (iSizes[i] > 0) iSize += iSizes[i];
     if (jSizes[i] > 0) jSize += jSizes[i];
     if (iSizes[i] == 0 || jSizes[i] == 0) {
-      printf("p[%d] Sizes[%d] I: %d J: %d\n",p_me,i,iSizes[i],jSizes[i]);
+//      printf("p[%d] Sizes[%d] I: %d J: %d\n",p_me,i,iSizes[i],jSizes[i]);
     }
   }
   p_rowBlockSize = iSize;
@@ -381,7 +359,7 @@ void setupOffsetArrays()
   }
   itmp[p_me] = iSize;
   jtmp[p_me] = jSize;
-  printf("p[%d] (FullMatrixMap) iSize: %d jSize: %d\n",p_me,iSize,jSize);
+//  printf("p[%d] (FullMatrixMap) iSize: %d jSize: %d\n",p_me,iSize,jSize);
 
   GA_Igop(itmp, p_nNodes, "+");
   GA_Igop(jtmp, p_nNodes, "+");
@@ -400,7 +378,7 @@ void setupOffsetArrays()
     p_iDim += itmp[i];
     p_jDim += jtmp[i];
   }
-  printf("p[%d] (FullMatrixMap) iDim: %d jDim: %d\n",p_me,p_iDim,p_jDim);
+//  printf("p[%d] (FullMatrixMap) iDim: %d jDim: %d\n",p_me,p_iDim,p_jDim);
 
   // Create map array so that offset arrays can be created with a specified
   // distribution
@@ -409,7 +387,7 @@ void setupOffsetArrays()
     offset[i] = 0;
   }
   offset[p_me] = p_activeBuses;
-  printf("p[%d] (FullMatrixMap) activeBuses: %d\n",p_me,p_activeBuses);
+//  printf("p[%d] (FullMatrixMap) activeBuses: %d\n",p_me,p_activeBuses);
   GA_Igop(offset,p_nNodes,"+");
 
   int *mapc = new int[p_nNodes];
@@ -475,15 +453,10 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   boost::shared_ptr<gridpack::math::Matrix>
              Ret(new gridpack::math::Matrix(comm,
              p_rowBlockSize, p_jDim, gridpack::math::Matrix::Sparse));
-  printf("p[%d] (mapToMatrix) Got to 1 rowSize: %d jDim: %d\n",p_me,p_rowBlockSize,p_jDim);
   loadBusData(Ret);
-  printf("p[%d] (mapToMatrix) Got to 2\n",p_me);
   loadBranchData(Ret);
-  printf("p[%d] (mapToMatrix) Got to 3\n",p_me);
   GA_Sync();
-  printf("p[%d] (mapToMatrix) Got to 4\n",p_me);
   Ret->ready();
-  printf("p[%d] (mapToMatrix) Got to 5\n",p_me);
   return Ret;
 }
 
@@ -556,7 +529,6 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
   int i,idx,jdx,isize,jsize,icnt;
   int **i_indices = new int*[p_branchContribution];
   int **j_indices = new int*[p_branchContribution];
-  printf("p[%d] (loadBranchData) Got to 1\n",p_me);
   icnt = 0;
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
@@ -587,7 +559,6 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
         p_me,icnt,p_branchContribution);
     // TODO: some kind of error
   }
-  printf("p[%d] (loadBranchData) Got to 2\n",p_me);
 
   // Gather matrix offsets
   int *i_offsets = new int[p_branchContribution];
@@ -596,7 +567,6 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
     NGA_Gather(gaOffsetI,i_offsets,i_indices,p_branchContribution);
     NGA_Gather(gaOffsetJ,j_offsets,j_indices,p_branchContribution);
   }
-  printf("p[%d] (loadBranchData) Got to 3\n",p_me);
 
   // Add matrix elements
   ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
@@ -612,15 +582,14 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
-            printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
-            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
-              printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
+//            printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
+//            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
+//              printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
+//              matrix->add_element(idx, jdx, values[icnt]);
+//              printf("p[%d] (1) finished idx: %d jdx: %d\n",p_me,idx,jdx);
+//            } else {
               matrix->add_element(idx, jdx, values[icnt]);
-              printf("p[%d] (1) finished idx: %d jdx: %d\n",p_me,idx,jdx);
-            } else {
-              matrix->add_element(idx, jdx, values[icnt]);
-            }
- //           if (p_me==3) printf("(1) idx: %d jdx: %d icnt: %d\n",idx,jdx,icnt);
+//            }
             icnt++;
           }
         }
@@ -638,15 +607,14 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
-            printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
-            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
-              printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
+//            printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
+//            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
+//              printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
+//              matrix->add_element(idx, jdx, values[icnt]);
+//              printf("p[%d] (2) finished idx: %d jdx: %d\n",p_me,idx,jdx);
+//            } else {
               matrix->add_element(idx, jdx, values[icnt]);
-              printf("p[%d] (2) finished idx: %d jdx: %d\n",p_me,idx,jdx);
-            } else {
-              matrix->add_element(idx, jdx, values[icnt]);
-            }
-//            if (p_me==3) printf("(2) idx: %d jdx: %d icnt: %d\n",idx,jdx,icnt);
+//            }
             icnt++;
           }
         }
@@ -656,7 +624,6 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
       }
     }
   }
-  printf("p[%d] (loadBranchData) Got to 4\n",p_me);
 
   // Clean up arrays
   delete [] i_indices;

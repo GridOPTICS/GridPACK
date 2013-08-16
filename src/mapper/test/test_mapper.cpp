@@ -9,8 +9,8 @@
 #include "gridpack/math/math.hpp"
 #include "gridpack/mapper/full_map.hpp"
 
-#define XDIM 2
-#define YDIM 2
+#define XDIM 100
+#define YDIM 100
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -112,6 +112,7 @@ class TestBranch
 #endif
     ret = ret && !bus1->getReferenceBus();
     ret = ret && !bus2->getReferenceBus();
+#if 0
     if (bus1->getReferenceBus()) {
       int idx;
       bus1->getMatVecIndex(&idx);
@@ -128,6 +129,7 @@ class TestBranch
       bus2->getMatVecIndex(&jdx);
       printf("p[%d] checkReferenceBus idx: %d jdx: %d\n",GA_Nodeid(),idx,jdx);
     }
+#endif
     return ret;
   }
 };
@@ -242,7 +244,6 @@ void run (const int &me, const int &nprocs)
       n = n/2;
       network->setGlobalBusIndex(ncnt, n);
       if (ix == 0 && iy == 0) {
-        printf("p[%d] setReferenceBus ncnt: %d\n",me,ncnt);
         network->setReferenceBus(ncnt);
       }
       ncnt++;
@@ -328,11 +329,8 @@ void run (const int &me, const int &nprocs)
   gridpack::factory::BaseFactory<TestNetwork> factory(network);
   factory.setComponents();
 
-  printf("p[%d] (test_mapper) Got to 1\n",me);
   gridpack::mapper::FullMatrixMap<TestNetwork> mMap(network); 
-  printf("p[%d] (test_mapper) Got to 2\n",me);
   boost::shared_ptr<gridpack::math::Matrix> M = mMap.mapToMatrix();
-  printf("p[%d] (test_mapper) Got to 3\n",me);
 
   // Check to see if matrix has correct values
   int one = 1;
@@ -356,7 +354,6 @@ void run (const int &me, const int &nprocs)
       }
     }
   }
-#if 1
   // Get min and max row indices
   int rlo, rhi; 
   rhi = 0;
@@ -391,7 +388,6 @@ void run (const int &me, const int &nprocs)
       }
     }
   }
-#endif
   GA_Igop(&chk,one,"+");
   if (me == 0) {
     if (chk == 0) {
