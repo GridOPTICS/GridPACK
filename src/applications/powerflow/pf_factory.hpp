@@ -21,7 +21,7 @@ namespace gridpack {
 namespace powerflow {
 
 class PFFactory
-  : gridpack::factory::BaseFactory<PFNetwork> {
+  : public gridpack::factory::BaseFactory<PFNetwork> {
   public:
     /**
      * Basic constructor
@@ -39,6 +39,25 @@ class PFFactory
      */
     void setYBus(void);
 
+    /**
+     * Create SBus matrix
+     */
+    void setSBus(void);
+
+    /**
+     * Create the Jacobian matrix
+     */
+    void setJacobian(void);
+
+    /**
+     * Create RHS
+     */
+
+    void setRHS(void);
+
+  private:
+
+    NetworkPtr p_network;
 };
 
 } // powerflow

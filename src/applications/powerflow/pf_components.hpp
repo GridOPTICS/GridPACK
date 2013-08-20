@@ -42,7 +42,7 @@
 namespace gridpack {
 namespace powerflow {
 
-enum PFMode{YBUS, JACOBIAN};
+enum PFMode{Ybus, Jacobian};
 
 class PFBus
   : public gridpack::component::BaseBusComponent {

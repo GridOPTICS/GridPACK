@@ -26,7 +26,7 @@ gridpack::powerflow::PFBus::PFBus(void)
 {
   p_shunt_gs = 0.0;
   p_shunt_bs = 0.0;
-  p_mode = YBUS;
+  p_mode = Ybus;
   setReferenceBus(false);
 }
 
@@ -44,7 +44,7 @@ gridpack::powerflow::PFBus::~PFBus(void)
  */
 bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
-  if (p_mode == JACOBIAN && getReferenceBus()) {
+  if (p_mode == Jacobian && getReferenceBus()) {
     *isize = 0;
     *jsize = 0;
     return false;
@@ -63,14 +63,14 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
  */
 bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
 {
-  if (p_mode == YBUS) {
+  if (p_mode == Ybus) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
     (static_cast<gridpack::ComplexType*>(values))[1] = p_ybusi;
     (static_cast<gridpack::ComplexType*>(values))[2] = -p_ybusi;
     (static_cast<gridpack::ComplexType*>(values))[3] = p_ybusr;
     return true;
-  } else if (p_mode == JACOBIAN) {
+  } else if (p_mode == Jacobian) {
     if (!getReferenceBus()) {
       double branch_values[4];
       // TODO: More stuff here
@@ -84,7 +84,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
       (static_cast<ComplexType*>(values))[3] = -2.0*p_v*p_ybusi;
       // HACK: Need to cast pointer, is there a better way?
       for (i=0; i<size; i++) {
-	(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
+        (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
           getJacobian(this, branch_values);
         (static_cast<ComplexType*>(values))[0] -= p_v*branch_values[0];
         (static_cast<ComplexType*>(values))[1] += p_v*branch_values[1];
@@ -105,7 +105,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
  */
 bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
-  if (p_mode == JACOBIAN && getReferenceBus()) {
+  if (p_mode == Jacobian && getReferenceBus()) {
     *size = 0;
     return false;
   } else {
@@ -122,7 +122,7 @@ bool gridpack::powerflow::PFBus::vectorSize(int *size) const
  */
 bool gridpack::powerflow::PFBus::vectorValues(void *values)
 {
-  if (p_mode == JACOBIAN) {
+  if (p_mode == Jacobian) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
     int size = branches.size();
@@ -176,7 +176,7 @@ void gridpack::powerflow::PFBus::setYBus(void)
  *       bus that were read in when network was initialized
  */
 void gridpack::powerflow::PFBus::load(
-  const boost::shared_ptr<gridpack::component::DataCollection> &data)
+    const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   p_shunt = true;
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
@@ -225,7 +225,7 @@ gridpack::powerflow::PFBranch::PFBranch(void)
   p_shunt_admt_b1 = 0.0;
   p_shunt_admt_g2 = 0.0;
   p_shunt_admt_b2 = 0.0;
-  p_mode = YBUS;
+  p_mode = Ybus;
 }
 
 /**
@@ -243,7 +243,7 @@ gridpack::powerflow::PFBranch::~PFBranch(void)
  */
 bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) const
 {
-  if (p_mode == JACOBIAN) {
+  if (p_mode == Jacobian) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
     boost::shared_ptr<gridpack::powerflow::PFBus>
@@ -267,7 +267,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
 }
 bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
 {
-  if (p_mode == JACOBIAN) {
+  if (p_mode == Jacobian) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
     boost::shared_ptr<gridpack::powerflow::PFBus> 
@@ -298,7 +298,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
  */
 bool gridpack::powerflow::PFBranch::matrixForwardValues(void *values)
 {
-  if (p_mode == JACOBIAN) {
+  if (p_mode == Jacobian) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
     boost::shared_ptr<gridpack::powerflow::PFBus>
@@ -331,7 +331,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(void *values)
 }
 bool gridpack::powerflow::PFBranch::matrixReverseValues(void *values)
 {
-  if (p_mode == JACOBIAN) {
+  if (p_mode == Jacobian) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
       bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
     boost::shared_ptr<gridpack::powerflow::PFBus>
@@ -375,12 +375,12 @@ void gridpack::powerflow::PFBranch::setYBus(void)
   p_ybusi = imag(ret);
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
-  boost::shared_ptr<gridpack::powerflow::PFBus>
-    bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-  boost::shared_ptr<gridpack::powerflow::PFBus>
-    bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+  gridpack::powerflow::PFBus *bus1 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+  gridpack::powerflow::PFBus *bus2 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   p_theta = bus1->getPhase() - bus2->getPhase();
-   
+
 }
 
 /**
@@ -391,7 +391,7 @@ void gridpack::powerflow::PFBranch::setYBus(void)
  *       branch that were read in when network was initialized
  */
 void gridpack::powerflow::PFBranch::load(
-  const boost::shared_ptr<gridpack::component::DataCollection> &data)
+    const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   bool ok = true;
   ok = ok && data->getValue(BRANCH_X, &p_reactance);
@@ -500,14 +500,14 @@ void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus,
   double v;
   double cs, sn;
   if (bus == getBus1().get()) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    gridpack::powerflow::PFBus *bus2 =
+      dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     v = bus2->getVoltage();
     cs = cos(p_theta);
     sn = sin(p_theta);
   } else if (bus == getBus2().get()) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
+    gridpack::powerflow::PFBus *bus1 =
+      dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     v = bus1->getVoltage();
     cs = cos(-p_theta);
     sn = sin(-p_theta);
@@ -537,12 +537,12 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
   } else {
     // TODO: Some kind of error
   }
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    double v1 = bus1->getVoltage();
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
-    double v2 = bus2->getVoltage();
-    *p = v1*v2*(p_ybusr*cs+p_ybusi*sn);
-    *q = v1*v2*(p_ybusr*sn-p_ybusi*cs);
+  gridpack::powerflow::PFBus *bus1 = 
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+  double v1 = bus1->getVoltage();
+  gridpack::powerflow::PFBus *bus2 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+  double v2 = bus2->getVoltage();
+  *p = v1*v2*(p_ybusr*cs+p_ybusi*sn);
+  *q = v1*v2*(p_ybusr*sn-p_ybusi*cs);
 }

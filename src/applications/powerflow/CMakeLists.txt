@@ -13,6 +13,7 @@ set(target_libraries
     gridpack_partition
     gridpack_parallel
     gridpack_math
+    gridpack_configuration
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

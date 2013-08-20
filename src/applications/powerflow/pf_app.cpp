@@ -14,6 +14,11 @@
 #include "gridpack/math/vector.hpp"
 #include "gridpack/applications/powerflow/pf_app.hpp"
 #include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/parser/Parser.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/applications/powerflow/pf_factory.hpp"
 
 // Calling program for powerflow application
 
@@ -39,10 +44,43 @@ void gridpack::powerflow::PFApp::execute(void)
   gridpack::parallel::Communicator world;
   boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
 
-  // Assume that matrix A and vector B have been properly set up and start
+  // read configuration file
+  gridpack::utilities::Configuration config;
+  config.open("config.txt", world);
+
+  // load input file
+  gridpack::parser::PTI23_parser parser;
+  parser.getCase("PTI23file");
+
+  // partition network
+  network->partition();
+
+  // create factory
+  gridpack::powerflow::PFFactory factory(network);
+
+  // set network components using factory
+  factory.setComponents();
+
+#if 0
+  // SetYbus
+  gridpack::powerflow::pf_factory factory;
+  factory.setGBus();
+  factory.setYBus();
+  factory.setSBus();
+  factory.setInit();
+
+  // Start AC N-R Solver
+
+  // FIND the first mismatch
+  // MIS = V * conj (YBus * V) - SBUS
+  factory.calMis();
+#endif
+
+  // Assume that matrix A and vector V have been properly set up and start
   // creating solver loop.
-  gridpack::mapper::FullMatrixMap<PFNetwork> map(network);
-  boost::shared_ptr<gridpack::math::Matrix> A = map.mapToMatrix();
-  // boost::shared_ptr<gridpack::math::Vector> B(new gridpack::math::Vector);
-  // boost::shared_ptr<gridpack::math::Vector> X(new gridpack::math::Vector);
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> A = mMap.mapToMatrix();
+
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
 }
