@@ -57,27 +57,34 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
+  factory.load();
 
   // set network components using factory
   factory.setComponents();
 
+  // set YBus components so that you can create Y matrix
+  factory.setYBus();
 #if 0
   // SetYbus
   gridpack::powerflow::pf_factory factory;
   factory.setGBus();
-  factory.setYBus();
   factory.setSBus();
   factory.setInit();
 
   // Start AC N-R Solver
 
   // FIND the first mismatch
+  // MIS: vector
+  // V: vector
+  // YBus: Matrix
+  // SBUS: vector
   // MIS = V * conj (YBus * V) - SBUS
   factory.calMis();
 #endif
 
   // Assume that matrix A and vector V have been properly set up and start
   // creating solver loop.
+  factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
   boost::shared_ptr<gridpack::math::Matrix> A = mMap.mapToMatrix();
 

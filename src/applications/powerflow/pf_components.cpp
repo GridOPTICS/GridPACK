@@ -26,7 +26,7 @@ gridpack::powerflow::PFBus::PFBus(void)
 {
   p_shunt_gs = 0.0;
   p_shunt_bs = 0.0;
-  p_mode = Ybus;
+  p_mode = YBus;
   setReferenceBus(false);
 }
 
@@ -63,7 +63,7 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
  */
 bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
 {
-  if (p_mode == Ybus) {
+  if (p_mode == YBus) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
     (static_cast<gridpack::ComplexType*>(values))[1] = p_ybusi;
@@ -225,7 +225,7 @@ gridpack::powerflow::PFBranch::PFBranch(void)
   p_shunt_admt_b1 = 0.0;
   p_shunt_admt_g2 = 0.0;
   p_shunt_admt_b2 = 0.0;
-  p_mode = Ybus;
+  p_mode = YBus;
 }
 
 /**
