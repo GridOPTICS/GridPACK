@@ -4,8 +4,8 @@
 #include <macdecls.h>
 #include "gridpack/network/base_network.hpp"
 
-#define XDIM 100
-#define YDIM 100
+#define XDIM 20
+#define YDIM 20
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -587,6 +587,15 @@ main (int argc, char **argv) {
     printf("\nBuses and branches are ok after clean operation\n");
   }
   
+#if 1
+  // Partition network using partitioner
+  network.partition();
+  if (me == 0 && ok) {
+    printf("\nCompleted partitioning of network\n");
+  }
+  network.write_graph("test.dot");
+#endif
+
   GA_Terminate();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
