@@ -336,6 +336,30 @@ class BaseBusComponent
      */
     bool getReferenceBus(void) const;
 
+    /**
+     * Set original index (from input file)
+     * @param idx: original index from network
+     */
+    void setOriginalIndex(int idx);
+
+    /**
+     * Get original index
+     * @return: original index from network
+     */
+    int getOriginalIndex(void) const;
+
+    /**
+     * Set global index
+     * @param idx: global index from network
+     */
+    void setGlobalIndex(int idx);
+
+    /**
+     * Get global index
+     * @return: global index from network
+     */
+    int getGlobalIndex(void) const;
+
   private:
     /**
      * Branches that are connect to bus
@@ -350,6 +374,12 @@ class BaseBusComponent
      * Is this a reference bus?
      */
     bool p_refBus;
+
+    /**
+     * Original and global indices, derived from network class
+     */
+    int p_originalIndex;
+    int p_globalIndex;
 
   friend class boost::serialization::access;
 
@@ -405,12 +435,72 @@ class BaseBranchComponent
      */
     void clearBuses(void);
 
+    /**
+     * Set original index for bus 1
+     * @param idx: original index for bus 1 (assigned from input file)
+     */
+    void setBus1OriginalIndex(int idx);
+
+    /**
+     * Set original index for bus 2
+     * @param idx: original index for bus 2 (assigned from input file)
+     */
+    void setBus2OriginalIndex(int idx);
+
+    /**
+     * Set global index (from network) for bus 1
+     * @param idx: global index for bus 1
+     */
+    void setBus1GlobalIndex(int idx);
+
+    /**
+     * Set global index (from network) for bus 2
+     * @param idx: global index for bus 2
+     */
+    void setBus2GlobalIndex(int idx);
+
+    /**
+     * Get original index for bus 1
+     * @return: original index for bus 1
+     */
+    int getBus1OriginalIndex(void) const;
+
+    /**
+     * Get original index for bus 2
+     * @return: original index for bus 2
+     */
+    int getBus2OriginalIndex(void) const;
+
+    /**
+     * Get global index for bus 1
+     * @return: global index for bus 1
+     */
+    int getBus1GlobalIndex(void) const;
+
+    /**
+     * Get global index for bus 2
+     * @return: global index for bus 2
+     */
+    int getBus2GlobalIndex(void) const;
+
   private:
     /**
      *  Pointers to buses at either end of branch
      */
     boost::weak_ptr<BaseComponent> p_bus1;
     boost::weak_ptr<BaseComponent> p_bus2;
+
+    /**
+     *  Original indices for bus 1 and bus 2 (assigned from input file)
+     */
+    int p_originalBus1Index;
+    int p_originalBus2Index;
+
+    /**
+     *  Global indices for bus 1 and bus 2
+     */
+    int p_globalBus1Index;
+    int p_globalBus2Index;
 
   friend class boost::serialization::access;
 

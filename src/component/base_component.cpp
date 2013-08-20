@@ -16,10 +16,12 @@
 // Base implementation of the MatVecInterface. These functions should be
 // overwritten in actual components
 
+namespace gridpack {
+namespace component {
 /**
  * Constructor
  */
-gridpack::component::MatVecInterface::MatVecInterface(void)
+MatVecInterface::MatVecInterface(void)
 {
   p_ival = 0;
   p_idx = 0;
@@ -29,7 +31,7 @@ gridpack::component::MatVecInterface::MatVecInterface(void)
 /**
  * Constructor
  */
-gridpack::component::MatVecInterface::~MatVecInterface(void)
+MatVecInterface::~MatVecInterface(void)
 {
 }
 
@@ -40,7 +42,7 @@ gridpack::component::MatVecInterface::~MatVecInterface(void)
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixDiagSize( int *isize,
+bool MatVecInterface::matrixDiagSize( int *isize,
              int *jsize) const
 {
   *isize = 0;
@@ -55,7 +57,7 @@ bool gridpack::component::MatVecInterface::matrixDiagSize( int *isize,
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixDiagValues(void *values)
+bool MatVecInterface::matrixDiagValues(void *values)
 {
   return false;
 }
@@ -68,7 +70,7 @@ bool gridpack::component::MatVecInterface::matrixDiagValues(void *values)
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixForwardSize(int *isize,
+bool MatVecInterface::matrixForwardSize(int *isize,
        int *jsize) const
 {
   *isize = 0;
@@ -83,7 +85,7 @@ bool gridpack::component::MatVecInterface::matrixForwardSize(int *isize,
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixForwardValues(void *values)
+bool MatVecInterface::matrixForwardValues(void *values)
 {
   return false;
 }
@@ -96,7 +98,7 @@ bool gridpack::component::MatVecInterface::matrixForwardValues(void *values)
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixReverseSize(int *isize,
+bool MatVecInterface::matrixReverseSize(int *isize,
        int *jsize) const
 {
   *isize = 0;
@@ -111,7 +113,7 @@ bool gridpack::component::MatVecInterface::matrixReverseSize(int *isize,
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool gridpack::component::MatVecInterface::matrixReverseValues(void *values)
+bool MatVecInterface::matrixReverseValues(void *values)
 {
   return false;
 }
@@ -122,7 +124,7 @@ bool gridpack::component::MatVecInterface::matrixReverseValues(void *values)
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::component::MatVecInterface::vectorSize(int *isize) const
+bool MatVecInterface::vectorSize(int *isize) const
 {
   *isize = 0;
   return false;
@@ -134,7 +136,7 @@ bool gridpack::component::MatVecInterface::vectorSize(int *isize) const
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::component::MatVecInterface::vectorValues(void *values)
+bool MatVecInterface::vectorValues(void *values)
 {
   return false;
 }
@@ -144,7 +146,7 @@ bool gridpack::component::MatVecInterface::vectorValues(void *values)
  * matrix
  * @param values: values in vector or matrix
  */
-void gridpack::component::MatVecInterface::setValues(void *values)
+void MatVecInterface::setValues(void *values)
 {
 }
 
@@ -153,7 +155,7 @@ void gridpack::component::MatVecInterface::setValues(void *values)
  * based on location of component in network
  * @param idx: value of index
  */
-void gridpack::component::MatVecInterface::setMatVecIndex(int idx)
+void MatVecInterface::setMatVecIndex(int idx)
 {
   p_ival = idx;
 }
@@ -163,7 +165,7 @@ void gridpack::component::MatVecInterface::setMatVecIndex(int idx)
  * based on location of component in network
  * @return: value of index
  */
-void gridpack::component::MatVecInterface::getMatVecIndex(int *idx) const
+void MatVecInterface::getMatVecIndex(int *idx) const
 {
   *idx = p_ival;
 }
@@ -174,7 +176,7 @@ void gridpack::component::MatVecInterface::getMatVecIndex(int *idx) const
  * in network
  * @param idx, jdx: value of indices
  */
-void gridpack::component::MatVecInterface::setMatVecIndices(int idx, int jdx)
+void MatVecInterface::setMatVecIndices(int idx, int jdx)
 {
   p_idx = idx;
   p_jdx = jdx;
@@ -186,7 +188,7 @@ void gridpack::component::MatVecInterface::setMatVecIndices(int idx, int jdx)
  * in network
  * @param idx, jdx: value of indices
  */
-void gridpack::component::MatVecInterface::getMatVecIndices(int *idx, int *jdx) const
+void MatVecInterface::getMatVecIndices(int *idx, int *jdx) const
 {
   *idx = p_idx;
   *jdx = p_jdx;
@@ -197,7 +199,7 @@ void gridpack::component::MatVecInterface::getMatVecIndices(int *idx, int *jdx) 
 /**
  * Simple constructor
  */
-gridpack::component::BaseComponent::BaseComponent(void)
+BaseComponent::BaseComponent(void)
   : p_XCBuf(NULL), p_XCBufSize(0), p_mode(0)
 {
 }
@@ -205,7 +207,7 @@ gridpack::component::BaseComponent::BaseComponent(void)
 /**
  * Destructor
  */
-gridpack::component::BaseComponent::~BaseComponent(void)
+BaseComponent::~BaseComponent(void)
 {
 }
 
@@ -214,8 +216,8 @@ gridpack::component::BaseComponent::~BaseComponent(void)
  * component. This needs to be implemented by every component
  * @param data: data collection associated with component
  */
-void gridpack::component::BaseComponent::load(
-  const boost::shared_ptr<gridpack::component::DataCollection> &data)
+void BaseComponent::load(
+  const boost::shared_ptr<DataCollection> &data)
 {
   // This implementation is a no-op and is included in BaseComponent so that
   // a generic load method can be defined in the base factory class.
@@ -229,7 +231,7 @@ void gridpack::component::BaseComponent::load(
  * to exchange all variables that an object might need, even if individual
  * objects don't need all the variables
  */
-int gridpack::component::BaseComponent::getXCBufSize(void)
+int BaseComponent::getXCBufSize(void)
 {
   return p_XCBufSize;
 }
@@ -238,13 +240,13 @@ int gridpack::component::BaseComponent::getXCBufSize(void)
  * allocated and deallocated by the network
  * @param buf: void pointer to exchange buffer
  */
-void gridpack::component::BaseComponent::setXCBuf(void *buf)
+void BaseComponent::setXCBuf(void *buf)
 {
   // FIXME: ?
   if (buf == NULL) {
-    gridpack::component::BaseComponent::p_XCBuf = NULL;
+    BaseComponent::p_XCBuf = NULL;
   } else {
-    gridpack::component::BaseComponent::p_XCBuf = buf;
+    BaseComponent::p_XCBuf = buf;
   }
 }
 
@@ -257,7 +259,7 @@ void gridpack::component::BaseComponent::setXCBuf(void *buf)
  * get different values from the MatVecInterface functions
  * @param mode: integer indicating which mode should be used
  */
-void gridpack::component::BaseComponent::setMode(int mode)
+void BaseComponent::setMode(int mode)
 {
   p_mode = mode;
 }
@@ -270,7 +272,7 @@ void gridpack::component::BaseComponent::setMode(int mode)
  * properties to write
  * @return: true if component is writing a contribution, false otherwise
  */
-bool gridpack::component::BaseComponent::serialWrite(char *string, char *signal)
+bool BaseComponent::serialWrite(char *string, char *signal)
 {
   // This is defined so that generic operations for writing strings from buses
   // and branches can be built
@@ -284,7 +286,7 @@ bool gridpack::component::BaseComponent::serialWrite(char *string, char *signal)
 /**
  * Simple constructor
  */
-gridpack::component::BaseBusComponent::BaseBusComponent(void)
+BaseBusComponent::BaseBusComponent(void)
   : p_refBus(false)
 {
   
@@ -293,7 +295,7 @@ gridpack::component::BaseBusComponent::BaseBusComponent(void)
 /**
  * Simple destructor
  */
-gridpack::component::BaseBusComponent::~BaseBusComponent(void)
+BaseBusComponent::~BaseBusComponent(void)
 {
 }
 
@@ -302,8 +304,8 @@ gridpack::component::BaseBusComponent::~BaseBusComponent(void)
  * @param branch: pointer to a branch that is connected to bus
  */
 void
-gridpack::component::BaseBusComponent::addBranch(const
-  boost::shared_ptr<gridpack::component::BaseComponent> & branch)
+BaseBusComponent::addBranch(const
+  boost::shared_ptr<BaseComponent> & branch)
 {
   boost::weak_ptr<BaseComponent> tbranch(branch);
   p_branches.push_back(tbranch);
@@ -315,8 +317,8 @@ gridpack::component::BaseBusComponent::addBranch(const
  * @param bus: pointer to a branch that is connected to bus
  */
 void
-gridpack::component::BaseBusComponent::addBus(const
-  boost::shared_ptr<gridpack::component::BaseComponent> & bus)
+BaseBusComponent::addBus(const
+  boost::shared_ptr<BaseComponent> & bus)
 {
   boost::weak_ptr<BaseComponent> tbus(bus);
   p_buses.push_back(tbus);
@@ -326,14 +328,14 @@ gridpack::component::BaseBusComponent::addBus(const
  * Get pointers to branches that are connected to bus
  * @param nghbrs: list of pointers to neighboring branches
  */
-void gridpack::component::BaseBusComponent::getNeighborBranches(
-  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > &nghbrs) const
+void BaseBusComponent::getNeighborBranches(
+  std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const
 {
   nghbrs.clear();
   int i;
   int size = p_branches.size();
   for (i=0; i<size; i++) {
-    boost::shared_ptr<gridpack::component::BaseComponent> branch = p_branches[i].lock();
+    boost::shared_ptr<BaseComponent> branch = p_branches[i].lock();
     nghbrs.push_back(branch);
   }
 }
@@ -342,14 +344,14 @@ void gridpack::component::BaseBusComponent::getNeighborBranches(
  * Get pointers to buses that are connected to calling bus via a branch
  * @param nghbrs: list of pointers to neighboring buses
  */
-void gridpack::component::BaseBusComponent::getNeighborBuses(
-  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > &nghbrs) const
+void BaseBusComponent::getNeighborBuses(
+  std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const
 {
   nghbrs.clear();
   int i;
   int size = p_buses.size();
   for (i=0; i<size; i++) {
-    boost::shared_ptr<gridpack::component::BaseComponent> bus = p_buses[i].lock();
+    boost::shared_ptr<BaseComponent> bus = p_buses[i].lock();
     nghbrs.push_back(bus);
   }
 }
@@ -357,7 +359,7 @@ void gridpack::component::BaseBusComponent::getNeighborBuses(
 /**
  * Clear all pointers to neighboring branches
  */
-void gridpack::component::BaseBusComponent::clearBranches(void)
+void BaseBusComponent::clearBranches(void)
 {
   p_branches.clear();
 }
@@ -365,7 +367,7 @@ void gridpack::component::BaseBusComponent::clearBranches(void)
 /**
  * Clear all pointers to neighboring buses
  */
-void gridpack::component::BaseBusComponent::clearBuses(void)
+void BaseBusComponent::clearBuses(void)
 {
   p_buses.clear();
 }
@@ -374,7 +376,7 @@ void gridpack::component::BaseBusComponent::clearBuses(void)
  * Set reference bus status
  * @param status: reference bus status
  */
-void gridpack::component::BaseBusComponent::setReferenceBus(bool status)
+void BaseBusComponent::setReferenceBus(bool status)
 {
   p_refBus = status;
 }
@@ -383,9 +385,45 @@ void gridpack::component::BaseBusComponent::setReferenceBus(bool status)
  * Get reference bus status
  * @return: reference bus status
  */
-bool gridpack::component::BaseBusComponent::getReferenceBus(void) const
+bool BaseBusComponent::getReferenceBus(void) const
 {
   return p_refBus;
+}
+
+/**
+ * Set original index (from input file)
+ * @param idx: original index from network
+ */
+void BaseBusComponent::setOriginalIndex(int idx)
+{
+  p_originalIndex = idx;
+}
+
+/**
+ * Get original index
+ * @return: original index from network
+ */
+int BaseBusComponent::getOriginalIndex(void) const
+{
+  return p_originalIndex;
+}
+
+/**
+ * Set global index
+ * @param idx: global index from network
+ */
+void BaseBusComponent::setGlobalIndex(int idx)
+{
+  p_globalIndex = idx;
+}
+
+/**
+ * Get global index
+ * @return: global index from network
+ */
+int BaseBusComponent::getGlobalIndex(void) const
+{
+  return p_globalIndex;
 }
 
 // Base implementation for a branch object. Provides a mechanism for the branch to
@@ -394,14 +432,14 @@ bool gridpack::component::BaseBusComponent::getReferenceBus(void) const
 /**
  * Simple constructor
  */
-gridpack::component::BaseBranchComponent::BaseBranchComponent(void)
+BaseBranchComponent::BaseBranchComponent(void)
 {
 }
 
 /**
  * Simple destructor
  */
-gridpack::component::BaseBranchComponent::~BaseBranchComponent(void)
+BaseBranchComponent::~BaseBranchComponent(void)
 {
 }
 
@@ -409,8 +447,8 @@ gridpack::component::BaseBranchComponent::~BaseBranchComponent(void)
  * Set pointer to bus at one end of branch
  * @param: pointer to bus
  */
-void gridpack::component::BaseBranchComponent::setBus1(const
-  boost::shared_ptr<gridpack::component::BaseComponent> & bus)
+void BaseBranchComponent::setBus1(const
+  boost::shared_ptr<BaseComponent> & bus)
 {
   p_bus1 = boost::weak_ptr<BaseComponent>(bus);
 }
@@ -419,8 +457,8 @@ void gridpack::component::BaseBranchComponent::setBus1(const
  * Set pointer to bus at other end of branch
  * @param: pointer to bus
  */
-void gridpack::component::BaseBranchComponent::setBus2(const
-  boost::shared_ptr<gridpack::component::BaseComponent> & bus)
+void BaseBranchComponent::setBus2(const
+  boost::shared_ptr<BaseComponent> & bus)
 {
   p_bus2 = boost::weak_ptr<BaseComponent>(bus);
 }
@@ -429,10 +467,10 @@ void gridpack::component::BaseBranchComponent::setBus2(const
  * Get pointer to bus at one end of branch
  * @return: pointer to bus 1
  */
-boost::shared_ptr<gridpack::component::BaseComponent>
-  gridpack::component::BaseBranchComponent::getBus1(void) const
+boost::shared_ptr<BaseComponent>
+  BaseBranchComponent::getBus1(void) const
 {
-  boost::shared_ptr<gridpack::component::BaseComponent> ret(p_bus1);
+  boost::shared_ptr<BaseComponent> ret(p_bus1);
   return ret;
 }
 
@@ -440,18 +478,93 @@ boost::shared_ptr<gridpack::component::BaseComponent>
  * Get pointer to bus at other end of branch
  * @return: pointer to bus 2
  */
-boost::shared_ptr<gridpack::component::BaseComponent>
-  gridpack::component::BaseBranchComponent::getBus2(void) const
+boost::shared_ptr<BaseComponent>
+  BaseBranchComponent::getBus2(void) const
 {
-  boost::shared_ptr<gridpack::component::BaseComponent> ret(p_bus2);
+  boost::shared_ptr<BaseComponent> ret(p_bus2);
   return ret;
 }
 
 /**
  * Clear bus pointers
  */
-void gridpack::component::BaseBranchComponent::clearBuses(void)
+void BaseBranchComponent::clearBuses(void)
 {
   p_bus1.reset();
   p_bus2.reset();
 }
+
+/**
+ * Set original index for bus 1
+ * @param idx: original index for bus 1 (assigned from input * file)
+ */
+void BaseBranchComponent::setBus1OriginalIndex(int idx)
+{
+  p_originalBus1Index = idx;
+}
+
+/**
+ * Set original index for bus 2
+ * @param idx: original index for bus 2 (assigned from input * file)
+ */
+void BaseBranchComponent::setBus2OriginalIndex(int idx)
+{
+  p_originalBus2Index = idx;
+}
+
+/**
+ * Set global index (from network) for bus 1
+ * @param idx: global index for bus 1
+ */
+void BaseBranchComponent::setBus1GlobalIndex(int idx)
+{
+  p_globalBus1Index = idx;
+}
+
+/**
+ * Set global index (from network) for bus 2
+ * @param idx: global index for bus 2
+ */
+void BaseBranchComponent::setBus2GlobalIndex(int idx)
+{
+  p_globalBus2Index = idx;
+}
+
+/**
+ * Get original index for bus 1
+ * @return: original index for bus 1
+ */
+int BaseBranchComponent::getBus1OriginalIndex(void) const
+{
+  return p_originalBus1Index;
+}
+
+/**
+ * Get original index for bus 2
+ * @return: original index for bus 2
+ */
+int BaseBranchComponent::getBus2OriginalIndex(void) const
+{
+  return p_originalBus2Index;
+}
+
+/**
+ * Get global index for bus 1
+ * @return: global index for bus 1
+ */
+int BaseBranchComponent::getBus1GlobalIndex(void) const
+{
+  return p_globalBus1Index;
+}
+
+/**
+ * Get global index for bus 2
+ * @return: global index for bus 2
+ */
+int BaseBranchComponent::getBus2GlobalIndex(void) const
+{
+  return p_globalBus2Index;
+}
+
+}  // component
+}  // gridpack
