@@ -96,6 +96,28 @@ class BaseFactory {
         p_network->getBus(idx)->setReferenceBus(true);
       }
 
+      // Set bus and branch indices
+      for (i=0; i<numBus; i++) {
+        p_network->getBus(i)->setOriginalIndex(p_network->getOriginalBusIndex(i));
+        p_network->getBus(i)->setGlobalIndex(p_network->getGlobalBusIndex(i));
+      }
+      for (i=0; i<numBranch; i++) {
+        gridpack::component::BaseBusComponent *bus1 =
+          dynamic_cast<gridpack::component::BaseBusComponent*>
+          (p_network->getBranch(i)->getBus1().get());
+        gridpack::component::BaseBusComponent *bus2 =
+          dynamic_cast<gridpack::component::BaseBusComponent*>
+          (p_network->getBranch(i)->getBus2().get());
+        p_network->getBranch(i)->setBus1OriginalIndex(
+            bus1->getOriginalIndex());
+        p_network->getBranch(i)->setBus2OriginalIndex(
+            bus2->getOriginalIndex());
+        p_network->getBranch(i)->setBus1GlobalIndex(
+            bus1->getGlobalIndex());
+        p_network->getBranch(i)->setBus2GlobalIndex(
+            bus2->getGlobalIndex());
+      }
+
       // Come up with a set of global indices for each component so that the buses
       // and branches are consecutively numbered on each component and the indices
       // for all active components are unique. These are used in the mapper routine.
