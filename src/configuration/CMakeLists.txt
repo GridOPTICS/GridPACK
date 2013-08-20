@@ -7,7 +7,7 @@
 # Last Change: 2013-06-21 14:16:06 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_configure
+add_library(gridpack_configuration
   configuration.cpp
 )
 

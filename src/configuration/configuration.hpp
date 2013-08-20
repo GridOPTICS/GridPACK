@@ -54,10 +54,12 @@
 // }
 
 #pragma once
+#define USE_MPI
 #ifndef _configuration_h
 // TODO -- any convention on version numbers? 
 // TODO -- any coding conventions? 
 #define _configuration_h 201307
+//#include <boost/mpi/communicator.hpp>
 #include <string>
 #include <vector>
 #ifdef USE_MPI
