@@ -7,17 +7,18 @@
 # Last Change: 2013-07-04 08:13:01 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries gridpack_serial_io
+set(target_libraries
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
 )
 
-include_directories(AFTER ${GA_INCLUDE_DIRS})
-
-add_library(gridpack_serial_io
-  serial_io.cpp
+set(target_libraries 
+  gridpack_components gridpack_parallel gridpack_math
+  ${target_libraries} 
 )
+
+include_directories(AFTER ${GA_INCLUDE_DIRS})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
@@ -26,10 +27,10 @@ endif()
 
 # -------------------------------------------------------------
 # TEST: greetings
-# A simple MPI program
+# A simple Serial IO test program
 # -------------------------------------------------------------
-#!!add_executable(test_serial_io test/test_serial_io.cpp)
-#!!target_link_libraries(test_serial_io gridpack_serial_io ${target_libraries})
+add_executable(test_serial_io test/test_serial_io.cpp)
+target_link_libraries(test_serial_io ${target_libraries})
 #
 #!!add_test(test_network_serial_iotest_serial_io)
 #!!add_test(NAME greetings_parallel COMMAND 
