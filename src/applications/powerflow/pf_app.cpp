@@ -92,6 +92,6 @@ void gridpack::powerflow::PFApp::execute(void)
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
 
-  boost::shared_ptr<gridpack::math::Vector> SBus(V.clone());
-  boost::shared_ptr<gridpack::math::Vector> MIS(V.clone());
+  boost::shared_ptr<gridpack::math::Vector> SBus(V->clone());
+  boost::shared_ptr<gridpack::math::Vector> MIS(V->clone());
 }
