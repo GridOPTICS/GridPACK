@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-08-14 12:20:40 d3g096
+ * @date   2013-08-21 14:16:13 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -160,6 +160,70 @@ public:
     }
   }
 };
+
+// -------------------------------------------------------------
+//  class BogusLatticeNetwork
+// -------------------------------------------------------------
+class BogusLatticeNetwork 
+  : public gridpack::network::BaseNetwork<BogusBus, BogusBranch>
+{
+public:
+
+  /// Default constructor.
+  BogusLatticeNetwork(const gridpack::parallel::Communicator& comm, 
+                      const int& rows,
+                      const int& cols)
+    : gridpack::network::BaseNetwork<BogusBus, BogusBranch>(comm)
+  {
+
+    // put all components on process 0
+    if (this->processor_rank() == 0) {
+      for (int i = 0; i < rows; ++i) {
+        for (int j = 0; j < cols; ++j) {
+          int busidx(i*cols + j);
+          this->addBus(busidx);
+          this->setGlobalBusIndex(busidx, busidx);
+        }
+      }
+      
+      // Add branches to network. Start with branches connecting buses
+      // in the i-direction
+      int branchidx(0);
+      for (int i = 0; i < rows; i++) {
+        for (int j = 0; j < cols; j++) {
+          int busidx1(i*cols + j), busidx2;
+          
+          // always connect to the bus in the next row, if there
+          if (i < rows-1) {
+            busidx2 = (i+1)*cols + j;
+            this->addBranch(busidx1, busidx2);
+            this->setGlobalBranchIndex(branchidx, branchidx);
+            this->setGlobalBusIndex1(branchidx, busidx1);
+            this->setGlobalBusIndex2(branchidx, busidx2);
+            branchidx += 1;
+          }
+
+          // connect to the bus in the next column, if there
+          if (j < cols - 1) {
+            busidx2 = i*cols + (j+1);
+            this->addBranch(busidx1, busidx2);
+            this->setGlobalBranchIndex(branchidx, branchidx);
+            this->setGlobalBusIndex1(branchidx, busidx1);
+            this->setGlobalBusIndex2(branchidx, busidx2);
+            branchidx += 1;
+          }
+        }
+      }        
+    }
+  }
+
+  /// Destructor
+  ~BogusLatticeNetwork(void)
+  {
+  }
+};
+
+
 
 BOOST_AUTO_TEST_SUITE ( network ) 
 
@@ -333,6 +397,28 @@ BOOST_AUTO_TEST_CASE ( partition )
   net.print_bus_ids();
   net.print_branch_ids();
   net.write_graph("network-after.dot");
+}
+
+BOOST_AUTO_TEST_CASE ( lattice_partition )
+{
+  gridpack::parallel::Communicator world;
+  static const int rows(5), cols(5);
+  BogusLatticeNetwork net(world, rows, cols);
+
+  int allbuses(net.totalBuses());
+  int locbuses(net.numBuses());
+  BOOST_CHECK_EQUAL(allbuses, rows*cols);
+  if (world.rank() == 0) {
+    BOOST_CHECK_EQUAL(locbuses, allbuses);
+  } else {
+    BOOST_CHECK_EQUAL(locbuses, 0);
+  }
+
+  net.write_graph("lattice-before.dot");
+
+  net.partition();
+
+  net.write_graph("lattice-after.dot");
 }
 
 
