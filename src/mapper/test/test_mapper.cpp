@@ -35,10 +35,9 @@ class TestBus
     }
   }
 
-  bool matrixDiagValues(void *values) {
+  bool matrixDiagValues(gridpack::ComplexType *values) {
     if (!getReferenceBus()) {
-      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-      *val = -4.0;
+      *values = -4.0;
       return true;
     } else {
       return false;
@@ -55,20 +54,19 @@ class TestBus
     }
   }
 
-  bool vectorValues(void *values) {
+  bool vectorValues(gridpack::ComplexType *values) {
     if (!getReferenceBus()) {
-      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
       int idx;
       getMatVecIndex(&idx);
-      *val = (double)idx;
+      *values = (double)idx;
       return true;
     } else {
       return false;
     }
   }
   
-  void setValues(void *values) {
-    p_val = *(static_cast<gridpack::ComplexType*>(values));
+  void setValues(gridpack::ComplexType *values) {
+    p_val = *values;
   }
 
   double getValue(){
@@ -112,20 +110,18 @@ class TestBranch
     }
   }
 
-  bool matrixForwardValues(void *values) {
+  bool matrixForwardValues(gridpack::ComplexType *values) {
     if (checkReferenceBus()) {
-      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-      *val = 1.0;
+      *values = 1.0;
       return true;
     } else {
       return false;
     }
   }
 
-  bool matrixReverseValues(void *values) {
+  bool matrixReverseValues(gridpack::ComplexType *values) {
     if (checkReferenceBus()) {
-      gridpack::ComplexType *val = static_cast<gridpack::ComplexType*>(values);
-      *val = 1.0;
+      *values = 1.0;
       return true;
     } else {
       return false;
@@ -134,35 +130,10 @@ class TestBranch
 
   bool checkReferenceBus() const {
     bool ret = true;
-#if 0
-    boost::shared_ptr<TestBus>
-      bus1(dynamic_cast<TestBus*>(getBus1().get()));
-    boost::shared_ptr<TestBus>
-      bus2(dynamic_cast<TestBus*>(getBus2().get()));
-#else
     TestBus *bus1 = dynamic_cast<TestBus*>(getBus1().get());
     TestBus *bus2 = dynamic_cast<TestBus*>(getBus2().get());
-#endif
     ret = ret && !bus1->getReferenceBus();
     ret = ret && !bus2->getReferenceBus();
-#if 0
-    if (bus1->getReferenceBus()) {
-      int idx;
-      bus1->getMatVecIndex(&idx);
-      printf("p[%d] checkReferenceBus 1 true idx: %d\n",GA_Nodeid(),idx);
-    }
-    if (bus2->getReferenceBus()) {
-      int idx;
-      bus2->getMatVecIndex(&idx);
-      printf("p[%d] checkReferenceBus 2 true idx: %d\n",GA_Nodeid(),idx);
-    }
-    if (!ret) {
-      int idx, jdx;
-      bus1->getMatVecIndex(&idx);
-      bus2->getMatVecIndex(&jdx);
-      printf("p[%d] checkReferenceBus idx: %d jdx: %d\n",GA_Nodeid(),idx,jdx);
-    }
-#endif
     return ret;
   }
 };

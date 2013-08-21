@@ -19,6 +19,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "boost/smart_ptr/weak_ptr.hpp"
+#include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/data_collection.hpp"
 
 #include <boost/serialization/export.hpp>
@@ -57,7 +58,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixDiagValues(void *values);
+    virtual bool matrixDiagValues(ComplexType *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
@@ -76,7 +77,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixForwardValues(void *values);
+    virtual bool matrixForwardValues(ComplexType *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
@@ -95,7 +96,7 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        matrix element
      */
-    virtual bool matrixReverseValues(void *values);
+    virtual bool matrixReverseValues(ComplexType *values);
 
     /**
      * Return size of vector block contributed by component
@@ -111,14 +112,14 @@ class MatVecInterface {
      * @return: false if network component does not contribute
      *        vector element
      */
-    virtual bool vectorValues(void *values);
+    virtual bool vectorValues(ComplexType *values);
 
     /**
      * Set values in the bus or branch component based on values in a vector or
      * matrix
      * @param values: values in vector or matrix
      */
-    virtual void setValues(void *values);
+    virtual void setValues(ComplexType *values);
 
     /**
      * Set the matrix index for diagonal matrix components or vector component,

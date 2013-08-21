@@ -57,7 +57,7 @@ bool MatVecInterface::matrixDiagSize( int *isize,
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool MatVecInterface::matrixDiagValues(void *values)
+bool MatVecInterface::matrixDiagValues(ComplexType *values)
 {
   return false;
 }
@@ -85,7 +85,7 @@ bool MatVecInterface::matrixForwardSize(int *isize,
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool MatVecInterface::matrixForwardValues(void *values)
+bool MatVecInterface::matrixForwardValues(ComplexType *values)
 {
   return false;
 }
@@ -113,7 +113,7 @@ bool MatVecInterface::matrixReverseSize(int *isize,
  * @return: false if network component does not contribute
  *        matrix element
  */
-bool MatVecInterface::matrixReverseValues(void *values)
+bool MatVecInterface::matrixReverseValues(ComplexType *values)
 {
   return false;
 }
@@ -136,7 +136,7 @@ bool MatVecInterface::vectorSize(int *isize) const
  * @return: false if network component does not contribute
  *        vector element
  */
-bool MatVecInterface::vectorValues(void *values)
+bool MatVecInterface::vectorValues(ComplexType *values)
 {
   return false;
 }
@@ -146,7 +146,7 @@ bool MatVecInterface::vectorValues(void *values)
  * matrix
  * @param values: values in vector or matrix
  */
-void MatVecInterface::setValues(void *values)
+void MatVecInterface::setValues(ComplexType *values)
 {
 }
 
