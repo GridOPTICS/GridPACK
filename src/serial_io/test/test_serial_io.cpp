@@ -7,7 +7,7 @@
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/math/math.hpp"
-#include "gridpack/serialIO/serial_io.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
 
 #define XDIM 10
 #define YDIM 10

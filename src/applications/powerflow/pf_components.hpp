@@ -73,7 +73,7 @@ class PFBus
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixDiagValues(void *values);
+    bool matrixDiagValues(ComplexType *values);
 
     /**
      * Return size of vector block contributed by component
@@ -89,7 +89,7 @@ class PFBus
      * @return: false if network component does not contribute
      *        vector element
      */
-    bool vectorValues(void *values);
+    bool vectorValues(ComplexType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -182,8 +182,8 @@ class PFBranch
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute matrix element
      */
-    bool matrixForwardValues(void *values);
-    bool matrixReverseValues(void *values);
+    bool matrixForwardValues(ComplexType *values);
+    bool matrixReverseValues(ComplexType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent

@@ -86,7 +86,8 @@ void gridpack::powerflow::PFApp::execute(void)
   // creating solver loop.
   factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> A = mMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+  Y->print();
 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();

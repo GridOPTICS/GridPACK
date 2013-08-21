@@ -61,14 +61,14 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
+bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBus) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
-    (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
-    (static_cast<gridpack::ComplexType*>(values))[1] = p_ybusi;
-    (static_cast<gridpack::ComplexType*>(values))[2] = -p_ybusi;
-    (static_cast<gridpack::ComplexType*>(values))[3] = p_ybusr;
+    values[0] = p_ybusr;
+    values[1] = p_ybusi;
+    values[2] = -p_ybusi;
+    values[3] = p_ybusr;
     return true;
   } else if (p_mode == Jacobian) {
     if (!getReferenceBus()) {
@@ -78,18 +78,18 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(void *values)
       getNeighborBranches(branches);
       int size = branches.size();
       int i;
-      (static_cast<ComplexType*>(values))[0] = 0.0;
-      (static_cast<ComplexType*>(values))[1] = 0.0;
-      (static_cast<ComplexType*>(values))[2] = 2.0*p_v*p_ybusr;
-      (static_cast<ComplexType*>(values))[3] = -2.0*p_v*p_ybusi;
+      values[0] = 0.0;
+      values[1] = 0.0;
+      values[2] = 2.0*p_v*p_ybusr;
+      values[3] = -2.0*p_v*p_ybusi;
       // HACK: Need to cast pointer, is there a better way?
       for (i=0; i<size; i++) {
         (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
           getJacobian(this, branch_values);
-        (static_cast<ComplexType*>(values))[0] -= p_v*branch_values[0];
-        (static_cast<ComplexType*>(values))[1] += p_v*branch_values[1];
-        (static_cast<ComplexType*>(values))[2] += p_v*branch_values[2];
-        (static_cast<ComplexType*>(values))[3] += p_v*branch_values[3];
+        values[0] -= p_v*branch_values[0];
+        values[1] += p_v*branch_values[1];
+        values[2] += p_v*branch_values[2];
+        values[3] += p_v*branch_values[3];
       }
     } else {
       return false;
@@ -120,7 +120,7 @@ bool gridpack::powerflow::PFBus::vectorSize(int *size) const
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::powerflow::PFBus::vectorValues(void *values)
+bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
 {
   if (p_mode == Jacobian) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
@@ -139,8 +139,8 @@ bool gridpack::powerflow::PFBus::vectorValues(void *values)
     }
     P -= p_P0;
     Q -= p_Q0;
-    (static_cast<gridpack::ComplexType*>(values))[0] = P;
-    (static_cast<gridpack::ComplexType*>(values))[1] = Q;
+    values[0] = P;
+    values[1] = Q;
     return true;
   }
 }
@@ -296,7 +296,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::powerflow::PFBranch::matrixForwardValues(void *values)
+bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == Jacobian) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
@@ -309,27 +309,27 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(void *values)
       double t11, t12, t21, t22;
       double cs = cos(p_theta);
       double sn = sin(p_theta);
-      (static_cast<gridpack::ComplexType*>(values))[0] = (p_ybusr*sn - p_ybusi*cs);
-      (static_cast<gridpack::ComplexType*>(values))[1] = (p_ybusr*cs + p_ybusi*sn);
-      (static_cast<gridpack::ComplexType*>(values))[2] = (p_ybusr*cs + p_ybusi*sn);
-      (static_cast<gridpack::ComplexType*>(values))[3] = (p_ybusr*sn - p_ybusi*cs);
-      (static_cast<gridpack::ComplexType*>(values))[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
-      (static_cast<gridpack::ComplexType*>(values))[1] *= bus1->getVoltage();
-      (static_cast<gridpack::ComplexType*>(values))[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
-      (static_cast<gridpack::ComplexType*>(values))[3] *= bus1->getVoltage();
+      values[0] = (p_ybusr*sn - p_ybusi*cs);
+      values[1] = (p_ybusr*cs + p_ybusi*sn);
+      values[2] = (p_ybusr*cs + p_ybusi*sn);
+      values[3] = (p_ybusr*sn - p_ybusi*cs);
+      values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+      values[1] *= bus1->getVoltage();
+      values[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      values[3] *= bus1->getVoltage();
       return true;
     } else {
       return false;
     }
   } else {
-    (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
-    (static_cast<gridpack::ComplexType*>(values))[1] = p_ybusi;
-    (static_cast<gridpack::ComplexType*>(values))[2] = -p_ybusi;
-    (static_cast<gridpack::ComplexType*>(values))[3] = p_ybusr;
+    values[0] = p_ybusr;
+    values[1] = p_ybusi;
+    values[2] = -p_ybusi;
+    values[3] = p_ybusr;
     return true;
   }
 }
-bool gridpack::powerflow::PFBranch::matrixReverseValues(void *values)
+bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == Jacobian) {
     boost::shared_ptr<gridpack::powerflow::PFBus>
@@ -342,23 +342,23 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(void *values)
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);
       double sn = sin(-p_theta);
-      (static_cast<gridpack::ComplexType*>(values))[0] = (p_ybusr*sn - p_ybusi*cs);
-      (static_cast<gridpack::ComplexType*>(values))[1] = (p_ybusr*cs + p_ybusi*sn);
-      (static_cast<gridpack::ComplexType*>(values))[2] = (p_ybusr*cs + p_ybusi*sn);
-      (static_cast<gridpack::ComplexType*>(values))[3] = (p_ybusr*sn - p_ybusi*cs);
-      (static_cast<gridpack::ComplexType*>(values))[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
-      (static_cast<gridpack::ComplexType*>(values))[1] *= bus2->getVoltage();
-      (static_cast<gridpack::ComplexType*>(values))[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
-      (static_cast<gridpack::ComplexType*>(values))[3] *= bus2->getVoltage();
+      values[0] = (p_ybusr*sn - p_ybusi*cs);
+      values[1] = (p_ybusr*cs + p_ybusi*sn);
+      values[2] = (p_ybusr*cs + p_ybusi*sn);
+      values[3] = (p_ybusr*sn - p_ybusi*cs);
+      values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+      values[1] *= bus2->getVoltage();
+      values[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      values[3] *= bus2->getVoltage();
       return true;
     } else {
       return false;
     }
   } else {
-    (static_cast<gridpack::ComplexType*>(values))[0] = p_ybusr;
-    (static_cast<gridpack::ComplexType*>(values))[1] = p_ybusi;
-    (static_cast<gridpack::ComplexType*>(values))[2] = -p_ybusi;
-    (static_cast<gridpack::ComplexType*>(values))[3] = p_ybusr;
+    values[0] = p_ybusr;
+    values[1] = p_ybusi;
+    values[2] = -p_ybusi;
+    values[3] = p_ybusr;
     return true;
   }
 }
