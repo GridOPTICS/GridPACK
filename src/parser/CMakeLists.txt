@@ -7,10 +7,17 @@
 # Last Change: 2013-07-01 13:43:28 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries gridpack_components ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+set(target_libraries
+    gridpack_components
+    ${GA_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
+if (GA_FOUND)
+  include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
 # -------------------------------------------------------------
 # TEST: greetings
 # A simple MPI program
