@@ -303,17 +303,31 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   gridpack::parallel::Communicator comm = p_network->communicator();
   boost::shared_ptr<gridpack::math::Vector>
              Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
-  loadBusData(Ret);
+  loadBusData(Ret,true);
   GA_Sync();
   Ret->ready();
   return Ret;
 }
 
 /**
+ * Reset a vector from the current bus state (vector should be created with same
+ * mapper)
+ * @param vector: existing vector that should be reset
+ */
+void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
+{
+  vector->zero();
+  loadBusData(vector,false);
+  GA_Sync();
+  vector->ready();
+}
+
+/**
  * Add block contributions from buses to vector
  * @param vector: vector to which contributions are added
+ * @param flag: flag to distinguish new vector (true) from existing vector * (false)
  */
-void loadBusData(boost::shared_ptr<gridpack::math::Vector> vector)
+void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
 {
   int i,idx,isize,icnt;
   int **indices = new int*[p_busContribution];
@@ -349,7 +363,11 @@ void loadBusData(boost::shared_ptr<gridpack::math::Vector> vector)
         icnt = 0;
         for (j=0; j<isize; j++) {
           idx = offsets[jcnt] + j;
-          vector->set_element(idx, values[icnt]);
+          if (flag) {
+            vector->add_element(idx, values[icnt]);
+          } else {
+            vector->set_element(idx, values[icnt]);
+          } 
           icnt++;
         }
         delete indices[jcnt];

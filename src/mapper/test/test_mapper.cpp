@@ -338,6 +338,7 @@ void run (const int &me, const int &nprocs)
   }
   gridpack::mapper::FullMatrixMap<TestNetwork> mMap(network); 
   boost::shared_ptr<gridpack::math::Matrix> M = mMap.mapToMatrix();
+  mMap.mapToMatrix(M);
 
   // Check to see if matrix has correct values
   int one = 1;
@@ -409,6 +410,7 @@ void run (const int &me, const int &nprocs)
   }
   gridpack::mapper::BusVectorMap<TestNetwork> vMap(network); 
   boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
+  vMap.mapToVector(V);
 
   // Check to see if vector has correct values
   chk = 0;

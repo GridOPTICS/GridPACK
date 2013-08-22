@@ -446,26 +446,42 @@ void setupOffsetArrays()
   delete [] jOffsets;
 }
 
-// map to matrix
-//void mapToMatrix(gridpack::math::matrix    & matrix)
+/**
+ * Generate matrix from current component state on network
+ * @return: return a pointer to new matrix
+ */
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   boost::shared_ptr<gridpack::math::Matrix>
              Ret(new gridpack::math::Matrix(comm,
              p_rowBlockSize, p_jDim, gridpack::math::Matrix::Sparse));
-  loadBusData(Ret);
-  loadBranchData(Ret);
+  loadBusData(Ret,true);
+  loadBranchData(Ret,true);
   GA_Sync();
   Ret->ready();
   return Ret;
 }
 
 /**
+ * Reset existing matrix from current component state on network
+ * @param matrix: existing matrix (should be generated from same mapper)
+ */
+void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  matrix->zero();
+  loadBusData(matrix,false);
+  loadBranchData(matrix,false);
+  GA_Sync();
+  matrix->ready();
+}
+
+/**
  * Add diagonal block contributions from buses to matrix
  * @param matrix: matrix to which contributions are added
+ * @param flag: flag to distinguish new matrix (true) from old (false)
  */
-void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
+void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   int **indices = new int*[p_busContribution];
@@ -503,7 +519,11 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = offsets[jcnt] + j;
-            matrix->add_element(idx, jdx, values[icnt]);
+            if (flag) {
+              matrix->add_element(idx, jdx, values[icnt]);
+            } else {
+              matrix->set_element(idx, jdx, values[icnt]);
+            }
             icnt++;
           }
         }
@@ -522,8 +542,9 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> matrix)
 /**
  * Add off-diagonal block contributions from branches to matrix
  * @param matrix: matrix to which contributions are added
+ * @param flag: flag to distinguish new matrix (true) from old (false)
  */
-void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
+void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   int **i_indices = new int*[p_branchContribution];
@@ -581,14 +602,11 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
-//            printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
-//            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
-//              printf("p[%d] (1) idx: %d jdx: %d\n",p_me,idx,jdx);
-//              matrix->add_element(idx, jdx, values[icnt]);
-//              printf("p[%d] (1) finished idx: %d jdx: %d\n",p_me,idx,jdx);
-//            } else {
+            if (flag) {
               matrix->add_element(idx, jdx, values[icnt]);
-//            }
+            } else {
+              matrix->set_element(idx, jdx, values[icnt]);
+            }
             icnt++;
           }
         }
@@ -606,14 +624,11 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> matrix)
           jdx = j_offsets[jcnt] + k;
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
-//            printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
-//            if (idx >= p_iDim || idx < 0 || jdx >= p_jDim || jdx < 0 ) {
-//              printf("p[%d] (2) idx: %d jdx: %d\n",p_me,idx,jdx);
-//              matrix->add_element(idx, jdx, values[icnt]);
-//              printf("p[%d] (2) finished idx: %d jdx: %d\n",p_me,idx,jdx);
-//            } else {
+            if (flag) {
               matrix->add_element(idx, jdx, values[icnt]);
-//            }
+            } else {
+              matrix->set_element(idx, jdx, values[icnt]);
+            }
             icnt++;
           }
         }
