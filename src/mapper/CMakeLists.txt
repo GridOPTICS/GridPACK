@@ -19,8 +19,6 @@ set(target_libraries
   ${target_libraries} 
 )
 
-include_directories(AFTER ${GA_INCLUDE_DIRS})
-
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})

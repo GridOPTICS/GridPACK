@@ -46,14 +46,16 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // read configuration file
   gridpack::utilities::Configuration config;
-  config.open("config.txt", world);
+//  config.open("config.txt", world);
 
   // load input file
-  gridpack::parser::PTI23_parser parser;
-  parser.getCase("PTI23file");
+  gridpack::parser::PTI23_parser<PFNetwork> parser(network);
+  parser.getCase("118_pti_v29.raw");
+  parser.createNetwork();
 
   // partition network
   network->partition();
+  return;
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);

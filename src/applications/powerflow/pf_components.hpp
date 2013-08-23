@@ -18,6 +18,7 @@
  * include file someplace else. Just declare them here for the time being.
  */
 
+/*
 #define BRANCH_REACTANCE   "branch_reactance"
 #define BRANCH_RESISTANCE  "branch_resistance"
 #define BRANCH_TAP_RATIO   "branch_tap_ratio"
@@ -25,8 +26,9 @@
 #define BRANCH_CHARGING    "branch_charging"
 #define BUS_SHUNT_GS    "branch_shunt_gs"
 #define BUS_SHUNT_BS    "branch_shunt_bs"
+*/
 
-/* These are defined in dictionary.hpp. 
+/* These are defined in dictionary.hpp. */
 
 /* #define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1" */
 /* #define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1" */
