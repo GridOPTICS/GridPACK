@@ -76,6 +76,11 @@ public:
   bool getValue(char *name, float *value);
   bool getValue(char *name, double *value);
   bool getValue(char *name, gridpack::ComplexType *value);
+
+  /**
+   * Dump contents of data collection to standard out
+   */
+  void dump(void);
 private:
   std::map<std::string, int> p_ints; 
   std::map<std::string, long> p_longs; 

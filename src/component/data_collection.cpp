@@ -1,4 +1,5 @@
 #include "gridpack/component/data_collection.hpp"
+#include <iostream.h>
 
 /**
  * Simple constructor
@@ -282,3 +283,74 @@ bool gridpack::component::DataCollection::getValue(char *name, gridpack::Complex
   }
 }
 #endif
+
+/**
+ * Dump contents of data collection to standard out
+ */
+void gridpack::component::DataCollection::dump(void)
+{
+  // print out integers
+  std::map<std::string, int>::iterator int_it;
+  int_it = p_ints.begin();
+  int i = 0;
+  while (int_it != p_ints.end()) {
+    std::string key = int_it->first;
+    int ival = int_it->second;
+    cout << "  (INTEGER) key: "<<key<<" value: "<<ival<<endl;
+    int_it++;
+  }
+  // print out longs
+  std::map<std::string, long>::iterator long_it;
+  long_it = p_longs.begin();
+  while (long_it != p_longs.end()) {
+    std::string key = long_it->first;
+    long lval = long_it->second;
+    cout << "  (LONG) key: "<<key<<" value: "<<lval<<endl;
+    long_it++;
+  }
+  // print out bools
+  std::map<std::string, bool>::iterator bool_it;
+  bool_it = p_bools.begin();
+  while (bool_it != p_bools.end()) {
+    std::string key = bool_it->first;
+    bool bval = bool_it->second;
+    cout << "  (BOOL) key: "<<key<<" value: "<<bval<<endl;
+    bool_it++;
+  }
+  // print out strings
+  std::map<std::string, std::string>::iterator str_it;
+  str_it = p_strings.begin();
+  while (str_it != p_strings.end()) {
+    std::string key = str_it->first;
+    std::string sval = str_it->second;
+    cout << "  (INTEGER) key: "<<key<<" value: "<<sval<<endl;
+    str_it++;
+  }
+  // print out floats
+  std::map<std::string, float>::iterator flt_it;
+  flt_it = p_floats.begin();
+  while (flt_it != p_floats.end()) {
+    std::string key = flt_it->first;
+    float fval = flt_it->second;
+    cout << "  (FLOAT) key: "<<key<<" value: "<<fval<<endl;
+    flt_it++;
+  }
+  // print out doubles
+  std::map<std::string, double>::iterator dbl_it;
+  dbl_it = p_doubles.begin();
+  while (dbl_it != p_doubles.end()) {
+    std::string key = dbl_it->first;
+    double dval = dbl_it->second;
+    cout << "  (DOUBLE) key: "<<key<<" value: "<<dval<<endl;
+    dbl_it++;
+  }
+  // print out complex
+  std::map<std::string, ComplexType>::iterator cmplx_it;
+  cmplx_it = p_complexType.begin();
+  while (cmplx_it != p_complexType.end()) {
+    std::string key = cmplx_it->first;
+    ComplexType cval = cmplx_it->second;
+    cout << "  (COMPLEX) key: "<<key<<" value: "<<cval<<endl;
+    cmplx_it++;
+  }
+}
