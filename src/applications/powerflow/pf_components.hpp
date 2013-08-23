@@ -100,6 +100,12 @@ class PFBus
     void setYBus(void);
 
     /**
+     * Get values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    gridpack::ComplexType getYBus(void);
+
+    /**
      * Load values stored in DataCollection object into PFBus object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
@@ -126,6 +132,23 @@ class PFBus
      * @return: phase angle
      */
     double getPhase();
+
+    /**
+     * Set voltage value
+     */
+    void setVoltage(void);
+
+    /**
+     * Set phase angle value
+     */
+    void setPhase(void);
+
+    /**
+     * setSBus
+    BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
+    */
+    void setSBus(void);
+
 
   private:
     double p_shunt_gs;
@@ -192,6 +215,12 @@ class PFBranch
      * calculations
      */
     void setYBus(void);
+
+    /**
+     * Get values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    gridpack::ComplexType getYBus(void);
 
     /**
      * Load values stored in DataCollection object into PFBranch object. The

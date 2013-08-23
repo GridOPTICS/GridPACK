@@ -168,6 +168,13 @@ void gridpack::powerflow::PFBus::setYBus(void)
   p_ybusi = imag(ret);
 }
 
+gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
+{
+  gridpack::ComplexType ret(p_ybusr,p_ybusi);
+}
+
+
+  
 /**
  * Load values stored in DataCollection object into PFBus object. The
  * DataCollection object will have been filled when the network was created
@@ -381,6 +388,11 @@ void gridpack::powerflow::PFBranch::setYBus(void)
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   p_theta = bus1->getPhase() - bus2->getPhase();
 
+}
+
+gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
+{
+  gridpack::ComplexType ret(p_ybusr,p_ybusi);
 }
 
 /**
