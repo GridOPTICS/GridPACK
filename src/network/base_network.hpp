@@ -1283,6 +1283,7 @@ void* getXCBranchBuffer(int idx)
 void initBusUpdate(void)
 {
   int i, size, numBuses;
+  GA_Sync();
   // Don't do anything if buffers are not allocated
   if (p_busXCBufSize > 0) {
     // Clean up old GA, if it exists
@@ -1393,6 +1394,7 @@ void initBusUpdate(void)
     delete [] totalBuses;
     delete [] distr;
   }
+  GA_Sync();
 }
 
 /**
@@ -1446,6 +1448,7 @@ void updateBuses(void)
       icnt++;
     }
   }
+  GA_Sync();
 }
 
 /**
@@ -1455,6 +1458,7 @@ void updateBuses(void)
 void initBranchUpdate(void)
 {
   int i, size, numBranches;
+  GA_Sync();
   // Don't do anything if buffers are not allocated
   if (p_branchXCBufSize > 0) {
     // Clean up old GA, if it exists
@@ -1555,6 +1559,7 @@ void initBranchUpdate(void)
     delete totalBranches;
     delete distr;
   }
+  GA_Sync();
 }
 
 /**
@@ -1608,6 +1613,7 @@ void updateBranches(void)
       icnt++;
     }
   }
+  GA_Sync();
 }
 
 void
