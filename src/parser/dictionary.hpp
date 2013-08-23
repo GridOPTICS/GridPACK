@@ -306,6 +306,11 @@
 
 // BRANCH DATA
 /**
+ * Global index used to sort branches into a fixed order
+ * type: integer
+ */
+#define BRANCH_INDEX "BRANCH_INDEX"
+/**
  * Branch “from bus”	
  * type: integer
  */
