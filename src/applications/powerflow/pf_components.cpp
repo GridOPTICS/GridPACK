@@ -171,6 +171,7 @@ void gridpack::powerflow::PFBus::setYBus(void)
 gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
 {
   gridpack::ComplexType ret(p_ybusr,p_ybusi);
+  return ret;
 }
 
 
@@ -388,11 +389,6 @@ void gridpack::powerflow::PFBranch::setYBus(void)
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   p_theta = bus1->getPhase() - bus2->getPhase();
 
-}
-
-gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
-{
-  gridpack::ComplexType ret(p_ybusr,p_ybusi);
 }
 
 /**

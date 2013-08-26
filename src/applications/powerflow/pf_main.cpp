@@ -28,9 +28,7 @@ main(int argc, char **argv)
   MA_init(C_DBL, stack, heap);
 
   gridpack::powerflow::PFApp app;
-  printf("Got to 1\n");
   app.execute();
-  printf("Got to 2\n");
 
   GA_Terminate();
 
