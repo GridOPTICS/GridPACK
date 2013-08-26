@@ -1,3 +1,5 @@
+#ifndef _exception_h_
+#define _exception_h_
 /**
  * @file   exception.hpp
  * @author William A. Perkins
@@ -59,3 +61,4 @@ protected:
 
 
 } // namespace gridpack
+#endif  // _exception_h_
