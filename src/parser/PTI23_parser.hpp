@@ -15,6 +15,7 @@
 #include <map>
 #include <cstdio>
 #include <cstdlib>
+#include "gridpack/utilities/exception.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/network/base_network.hpp"
 
@@ -71,14 +72,15 @@ template <class _network>
           find_branches(input);
           find_transformer(input);
           find_area(input);
-          find_shunt(input);
           find_2term(input);
-          find_line(input);
+          find_shunt(input);
           find_imped_corr(input);
+          find_multi_term(input);
           find_multi_section(input);
           find_zone(input);
           find_interarea(input);
           find_owner(input);
+          //find_line(input);
 #if 1
           // debug
           int i;
@@ -384,6 +386,7 @@ template <class _network>
           if (it != p_busMap.end()) {
             o_idx = it->second;
           } else {
+            std::getline(input, line);
             continue;
           }
           p_busData[o_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
@@ -527,6 +530,7 @@ template <class _network>
           if (it != p_busMap.end()) {
             o_idx = it->second;
           } else {
+            std::getline(input, line);
             continue;
           }
           p_busData[o_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()));
@@ -1800,12 +1804,13 @@ template <class _network>
 
           // AREAINTG_ISW           "ISW"                  integer
           int l_idx, o_idx;
-          l_idx = atoi(split_line[1].c_str());
+          l_idx = atoi(split_line[0].c_str());
           std::map<int, int>::iterator it;
           it = p_busMap.find(l_idx);
           if (it != p_busMap.end()) {
             o_idx = it->second;
           } else {
+            std::getline(input, line);
             continue;
           }
           p_busData[o_idx]->addValue(AREAINTG_ISW, atoi(split_line[1].c_str()));
@@ -2074,6 +2079,7 @@ type: real float
           if (it != p_busMap.end()) {
             o_idx = it->second;
           } else {
+            std::getline(input, line);
             continue;
           }
         printf("(shunt) Got to 2 o_idx: %d\n",o_idx);
@@ -2397,6 +2403,19 @@ type: real float
         }
 #endif
       }
+
+      void find_multi_term(std::ifstream & input)
+      {
+        std::string          line;
+
+        std::getline(input, line); //this should be the first line of the block
+        std::cout << "multi section block " << line << std::endl;
+
+        while(test_end(line)) {
+          // TODO: parse something here
+          std::getline(input, line);
+        }
+      }
       /*
        * ZONE_I          "I"                       integer
        * ZONE_NAME       "NAME"                    string
@@ -2443,15 +2462,12 @@ type: real float
            *
            */
           data.addValue(ZONE_NUMBER, atoi(split_line[0].c_str()));
-          zone_instance.push_back(data);
 
           // ZONE_NAME       "NAME"                    string
           data.addValue(ZONE_NAME, split_line[1].c_str());
-          zone_instance.push_back(data);
 
-          zone.push_back(zone_instance);
-          std::getline(input, line);
 #endif
+          std::getline(input, line);
         }
 #endif
       }
