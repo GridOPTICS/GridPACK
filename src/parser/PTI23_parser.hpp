@@ -112,6 +112,7 @@ template <class _network>
             p_busData[i]->getValue(BUS_NUMBER,&idx);
             p_network->addBus(idx);
             p_network->setGlobalBusIndex(i,i);
+            *(p_network->getBusData(i)) = *(p_busData[i]);
           }
           int numBranch = p_branchData.size();
           for (i=0; i<numBranch; i++) {
@@ -130,6 +131,7 @@ template <class _network>
             g_idx2 = it->second;
             p_network->setGlobalBusIndex2(i,g_idx2);
             p_network->setLocalBusIndex2(i,g_idx2);
+            *(p_network->getBranchData(i)) = *(p_branchData[i]);
           }
         }
         p_busData.clear();
