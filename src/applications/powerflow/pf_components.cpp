@@ -11,6 +11,7 @@
 // -------------------------------------------------------------
 
 #include <vector>
+#include <iostream.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
@@ -131,8 +132,8 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     P = 0.0;
     Q = 0.0;
     for (i=0; i<size; i++) {
-      boost::shared_ptr<gridpack::powerflow::PFBranch>
-        branch(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()));
+      gridpack::powerflow::PFBranch *branch
+        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
       branch->getPQ(this, &p, &q);
       P += p;
       Q += q;
@@ -154,8 +155,8 @@ void gridpack::powerflow::PFBus::setYBus(void)
   int i;
   // HACK: Need to cast pointer, is there a better way?
   for (i=0; i<size; i++) {
-    boost::shared_ptr<gridpack::powerflow::PFBranch>
-      branch(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()));
+    gridpack::powerflow::PFBranch *branch
+      = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
     ret -= branch->getAdmittance();
     ret += branch->getTransformer(this);
     ret += branch->getShunt(this);
@@ -252,10 +253,10 @@ gridpack::powerflow::PFBranch::~PFBranch(void)
 bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) const
 {
   if (p_mode == Jacobian) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+    gridpack::powerflow::PFBus *bus2
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -276,10 +277,10 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
 bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   if (p_mode == Jacobian) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus> 
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+    gridpack::powerflow::PFBus *bus2
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -307,10 +308,10 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
 bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == Jacobian) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+    gridpack::powerflow::PFBus *bus2
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -340,10 +341,10 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
 bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == Jacobian) {
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus1(dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get()));
-    boost::shared_ptr<gridpack::powerflow::PFBus>
-      bus2(dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get()));
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+    gridpack::powerflow::PFBus *bus2
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = bus1->getReferenceBus();
     ok = ok & bus2->getReferenceBus();
     if (ok) {
@@ -378,7 +379,9 @@ void gridpack::powerflow::PFBranch::setYBus(void)
   ret = -1.0/ret;
   gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
   a = p_tap_ratio*a;
-  ret = ret - ret/conj(a);
+  if (a == static_cast<ComplexType>(0.0)) {
+    ret = ret - ret/conj(a);
+  }
   p_ybusr = real(ret);
   p_ybusi = imag(ret);
   // Not really a contribution to the admittance matrix but might as well

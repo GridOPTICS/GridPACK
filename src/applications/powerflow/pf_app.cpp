@@ -59,7 +59,6 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // partition network
   network->partition();
-  return;
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
@@ -94,6 +93,7 @@ void gridpack::powerflow::PFApp::execute(void)
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
   Y->print();
+  return;
 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
