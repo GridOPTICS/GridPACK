@@ -47,7 +47,7 @@ BusData(void)
     p_globalBusIndex(-1),
     p_branchNeighbors(),
     p_bus(new _bus),
-    p_data(),
+    p_data(new gridpack::component::DataCollection),
     p_refFlag(false)
 {
 }
@@ -143,7 +143,7 @@ BranchData(void)
     p_localBusIndex1(-1),
     p_localBusIndex2(-1),
     p_branch(new _branch),
-    p_data()
+    p_data(new gridpack::component::DataCollection)
 {
 }
 
