@@ -67,13 +67,14 @@ template <class _network>
 
           find_case(input);
           find_buses(input);
-          find_loads(input);
+//          find_loads(input);
           find_generators(input);
           find_branches(input);
           find_transformer(input);
           find_area(input);
           find_2term(input);
           find_shunt(input);
+#if 0
           find_imped_corr(input);
           find_multi_term(input);
           find_multi_section(input);
@@ -81,6 +82,7 @@ template <class _network>
           find_interarea(input);
           find_owner(input);
           //find_line(input);
+#endif
 #if 1
           // debug
           int i;
@@ -261,14 +263,14 @@ template <class _network>
           p_busData.push_back(data);
           p_busMap.insert(std::pair<int,int>(o_idx,index));
 
-          // BUS_NAME             "IDE"                 ranged integer
-          data->addValue(BUS_NAME, line.c_str());
+          // BUS_NAME             "NAME"                 string
+          data->addValue(BUS_NAME, split_line[9].c_str());
 
           // BUS_BASEKV           "BASKV"               float
           data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
 
-          // BUS_TYPE               "I"                   integer
-          data->addValue(BUS_TYPE, atoi(split_line[0].c_str()));
+          // BUS_TYPE               "IDE"                   integer
+          data->addValue(BUS_TYPE, atoi(split_line[1].c_str()));
 
           // BUS_SHUNT_GL              "GL"                  float
           data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
@@ -276,20 +278,26 @@ template <class _network>
           // BUS_SHUNT_BL              "BL"                  float
           data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
 
-          // BUS_AREA            "ZONE"                integer
-//          data->addValue(BUS_AREA, atoi(split_line[11].c_str()));
-
           // BUS_ZONE            "ZONE"                integer
-//          data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
+          data->addValue(BUS_AREA, atoi(split_line[11].c_str()));
 
-          // BUS_VOLTAGE_MAG              "PL"                  float
-          data->addValue(BUS_VOLTAGE_MAG, atof(split_line[2].c_str()));
+          // BUS_AREA            "IA"                integer
+          data->addValue(BUS_ZONE, atoi(split_line[6].c_str()));
 
-          // BUS_VOLTAGE_ANG              "QL"                  float
-          data->addValue(BUS_VOLTAGE_ANG, atof(split_line[3].c_str()));
+          // BUS_VOLTAGE_MAG              "VM"                  float
+          data->addValue(BUS_VOLTAGE_MAG, atof(split_line[7].c_str()));
+
+          // BUS_VOLTAGE_ANG              "VA"                  float
+          data->addValue(BUS_VOLTAGE_ANG, atof(split_line[8].c_str()));
 
           // BUS_OWNER              "IA"                  integer
           data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
+
+          // LOAD_PL                "PL"                  float
+          data->addValue(LOAD_PL, atof(split_line[2].c_str()));
+
+          // LOAD_QL                "QL"                  float
+          data->addValue(LOAD_QL, atof(split_line[3].c_str()));
 
 #if 0
           network->addBus(o_idx);
@@ -565,11 +573,17 @@ template <class _network>
           // GENERATOR_XTRAN              "ZX"                  float
           p_busData[o_idx]->addValue(GENERATOR_XTRAN, atof(split_line[10].c_str()));
 
-          // GENERATOR_GTAP              "RT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_GTAP, atof(split_line[11].c_str()));
-
           // GENERATOR_XT              "XT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_STAT, atof(split_line[12].c_str()));
+ //         p_busData[o_idx]->addValue(GENERATOR_XT, atof(split_line[11].c_str()));
+
+          // GENERATOR_RT              "RT"                  float
+ //         p_busData[o_idx]->addValue(GENERATOR_XT, atof(split_line[12].c_str()));
+
+          // GENERATOR_GTAP              "GTAP"                  float
+          p_busData[o_idx]->addValue(GENERATOR_GTAP, atof(split_line[13].c_str()));
+
+          // GENERATOR_STAT              "STAT"                  float
+          p_busData[o_idx]->addValue(GENERATOR_STAT, atof(split_line[14].c_str()));
 
           // GENERATOR_RMPCT           "RMPCT"               float
           p_busData[o_idx]->addValue(GENERATOR_RMPCT, atof(split_line[15].c_str()));
@@ -579,9 +593,6 @@ template <class _network>
 
           // GENERATOR_PMIN              "PB"                  float
           p_busData[o_idx]->addValue(GENERATOR_PMIN, atof(split_line[17].c_str()));
-
-          // GENERATOR_OWNER              "IA"                  integer
-          p_busData[o_idx]->addValue(GENERATOR_OWNER, atoi(split_line[6].c_str()));
 
           std::getline(input, line);
         }
@@ -704,7 +715,7 @@ template <class _network>
           data->addValue(BRANCH_TOBUS, o_idx2);
 
           // BRANCH_CKT          "CKT"                 character
-          data->addValue(BRANCH_CKT, (split_line[2].c_str()));
+          data->addValue(BRANCH_CKT, split_line[2].c_str());
 
           // BRANCH_R            "R"                   float
           data->addValue(BRANCH_R, atof(split_line[3].c_str()));
@@ -725,19 +736,25 @@ template <class _network>
           data->addValue(BRANCH_RATING_C, atof(split_line[8].c_str()));
 
           // BRANCH_SHUNT_ADMTTNC_G1        "RATIO"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_G1, atof(split_line[9].c_str()));
+//          data->addValue(BRANCH_SHUNT_ADMTTNC_G1, atof(split_line[9].c_str()));
 
-          // BRANCH_SHUNT_ADMTTNC_B1        "RATIO"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_B1, atof(split_line[9].c_str()));
+          // BRANCH_SHUNT_ADMTTNC_B1        "ANGLE"               float
+//          data->addValue(BRANCH_SHUNT_ADMTTNC_B1, atof(split_line[10].c_str()));
 
-          // BRANCH_SHUNT_ADMTTNC_G2        "RATIO"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_G2, atof(split_line[9].c_str()));
+          // BRANCH_SHUNT_ADMTTNC_G1        "GI"               float
+          data->addValue(BRANCH_SHUNT_ADMTTNC_G1, atof(split_line[11].c_str()));
 
-          // BRANCH_SHUNT_ADMTTNC_B2        "RATIO"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_B2, atof(split_line[9].c_str()));
+          // BRANCH_SHUNT_ADMTTNC_B1        "BI"               float
+          data->addValue(BRANCH_SHUNT_ADMTTNC_B1, atof(split_line[12].c_str()));
 
-          // BRANCH_STATUS        "ANGLE"               float
-          data->addValue(BRANCH_STATUS, atoi(split_line[10].c_str()));
+          // BRANCH_SHUNT_ADMTTNC_G2        "GJ"               float
+          data->addValue(BRANCH_SHUNT_ADMTTNC_G1, atof(split_line[13].c_str()));
+
+          // BRANCH_SHUNT_ADMTTNC_B2        "BJ"               float
+          data->addValue(BRANCH_SHUNT_ADMTTNC_B1, atof(split_line[14].c_str()));
+
+          // BRANCH_STATUS        "ANGLE"               integer
+          data->addValue(BRANCH_STATUS, atoi(split_line[15].c_str()));
 
           // BRANCH_LENGTH           "GI"                  float
           data->addValue(BRANCH_LENGTH, atof(split_line[11].c_str()));
@@ -762,16 +779,11 @@ template <class _network>
       void find_transformer(std::ifstream & input)
       {
 //        data_set                        transformer_set;
-        std::string          line1, line2, line3, line4;
+        std::string          line;
 
-        std::getline(input, line1); //this should be the first line of the block
-        if (test_end(line1)) {
-          std::getline(input, line2);
-          std::getline(input, line3);
-          std::getline(input, line4);
-        }
+        std::getline(input, line); //this should be the first line of the block
 
-        std::cout << "transformer block " << line1 << std::endl;
+        std::cout << "transformer block " << line << std::endl;
 //        std::getline(input, line);
 #if 0
         while(line[0] != TERM_CHAR) {
@@ -1294,15 +1306,9 @@ template <class _network>
         // when all branches are read in on head node
         int index = p_branchData.size();
         printf("(transformer) Got to 1 index: %d\n",index);
-        while(test_end(line1)) {
-          std::vector<std::string>  split_line1;
-          std::vector<std::string>  split_line2;
-          std::vector<std::string>  split_line3;
-          std::vector<std::string>  split_line4;
-          boost::split(split_line1, line1, boost::algorithm::is_any_of(","), boost::token_compress_on);
-          boost::split(split_line2, line2, boost::algorithm::is_any_of(","), boost::token_compress_on);
-          boost::split(split_line3, line3, boost::algorithm::is_any_of(","), boost::token_compress_on);
-          boost::split(split_line4, line4, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        while(test_end(line)) {
+          std::vector<std::string>  split_line;
+          boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
           boost::shared_ptr<gridpack::component::DataCollection>
             data(new gridpack::component::DataCollection);
 
@@ -1312,447 +1318,442 @@ template <class _network>
            * type: integer
            * #define TRANSFORMER_BUS1 "TRANSFORMER_BUS1"
            */
-          data->addValue(TRANSFORMER_BUS1, atoi(split_line1[0].c_str()));
-          data->addValue(BRANCH_FROMBUS, atoi(split_line1[0].c_str()));
+          data->addValue(TRANSFORMER_BUS1, atoi(split_line[0].c_str()));
+          data->addValue(BRANCH_FROMBUS, atoi(split_line[0].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_BUS2 "TRANSFORMER_BUS2"
            */
-          data->addValue(TRANSFORMER_BUS2, atoi(split_line1[1].c_str()));
-          data->addValue(BRANCH_TOBUS, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_BUS2, atoi(split_line[1].c_str()));
+          data->addValue(BRANCH_TOBUS, atoi(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_BUS3 "TRANSFORMER_BUS3"
            */
-          data->addValue(TRANSFORMER_BUS3, atoi(split_line1[1].c_str()));
+//          data->addValue(TRANSFORMER_BUS3, atoi(split_line[1].c_str()));
 
           /*
            * type: string
            * #define TRANSFORMER_CKT "TRANSFORMER_CKT"
            */
-          data->addValue(TRANSFORMER_CKT, split_line1[2].c_str());
+          data->addValue(TRANSFORMER_CKT, split_line[2].c_str());
 
           /*
            * type: integer
            * #define TRANSFORMER_CW "TRANSFORMER_CW"
            X            */
-          data->addValue(TRANSFORMER_CW, atoi(split_line1[3].c_str()));
+          data->addValue(TRANSFORMER_CW, atoi(split_line[3].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_CZ "TRANSFORMER_CZ"
            */
-          data->addValue(TRANSFORMER_CZ, atoi(split_line1[5].c_str()));
+          data->addValue(TRANSFORMER_CZ, atoi(split_line[5].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_CM "TRANSFORMER_CM"
            */
-          data->addValue(TRANSFORMER_CM, atoi(split_line1[5].c_str()));
+          data->addValue(TRANSFORMER_CM, atoi(split_line[5].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_MAG1 "TRANSFORMER_MAG1"
            */
-          data->addValue(TRANSFORMER_MAG1, atof(split_line1[5].c_str()));
+          data->addValue(TRANSFORMER_MAG1, atof(split_line[5].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_MAG2 "TRANSFORMER_MAG2"
            */
-          data->addValue(TRANSFORMER_MAG2, atof(split_line1[5].c_str()));
+          data->addValue(TRANSFORMER_MAG2, atof(split_line[5].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_NMETR "TRANSFORMER_NMETR"
            */
-          data->addValue(TRANSFORMER_NMETR, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_NMETR, atoi(split_line[1].c_str()));
 
           /*
            * type: string
            * #define TRANSFORMER_NAME "TRANSFORMER_NAME"
            */
-          data->addValue(TRANSFORMER_NAME, split_line1[2].c_str());
+          data->addValue(TRANSFORMER_NAME, split_line[2].c_str());
 
           /*
            * type: integer
            * #define TRANSFORMER_STATUS "TRANSFORMER_STATUS"
            *
            */
-          data->addValue(TRANSFORMER_STATUS, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_STATUS, atoi(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_OWNER "TRANSFORMER_OWNER"
            */
-          data->addValue(TRANSFORMER_OWNER, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_OWNER, atoi(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_R1_2 "TRANSFORMER_R1_2"
            */
-          data->addValue(TRANSFORMER_R1_2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_R1_2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_X1_2 "TRANSFORMER_X1_2"
            */
-          data->addValue(TRANSFORMER_X1_2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_X1_2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_SBASE1_2 "TRANSFORMER_SBASE1_2"
            */
-          data->addValue(TRANSFORMER_SBASE1_2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_SBASE1_2, atof(split_line[1].c_str()));
 
 #if 0
           /*
            * type: real float
            * #define TRANSFORMER_R2_3 "TRANSFORMER_R2_3"
            */
-          data->addValue(TRANSFORMER_R2_3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_R2_3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_X2_3 "TRANSFORMER_X2_3"
            */
-          data->addValue(TRANSFORMER_X2_3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_X2_3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_SBASE2_3 "TRANSFORMER_SBASE2_3"
            */
-          data->addValue(TRANSFORMER_SBASE2_3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_SBASE2_3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_R3_1 "TRANSFORMER_R3_1"
            */
-          data->addValue(TRANSFORMER_R3_1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_R3_1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_X3_1 "TRANSFORMER_X3_1"
            */
-          data->addValue(TRANSFORMER_X3_1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_X3_1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_SBASE3_1 "TRANSFORMER_SBASE3_1"
            */
-          data->addValue(TRANSFORMER_SBASE3_1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_SBASE3_1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_VMSTAR "TRANSFORMER_VMSTAR"
            */
-          data->addValue(TRANSFORMER_VMSTAR, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_VMSTAR, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_ANSTAR "TRANSFORMER_ANSTAR"
            */
-          data->addValue(TRANSFORMER_ANSTAR, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_ANSTAR, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_WINDV1 "TRANSFORMER_WINDV1"
            */
-          data->addValue(TRANSFORMER_WINDV1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_WINDV1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_NOMV1 "TRANSFORMER_NOMV1"
            */
-          data->addValue(TRANSFORMER_NOMV1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_NOMV1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_ANG1 "TRANSFORMER_ANG1"
            */
-          data->addValue(TRANSFORMER_ANG1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_ANG1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATA1 "TRANSFORMER_RATA1"
            */
-          data->addValue(TRANSFORMER_RATA1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATA1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATB1 "TRANSFORMER_RATB1"
            */
-          data->addValue(TRANSFORMER_RATB1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATB1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATC1 "TRANSFORMER_RATC1"
            */
-          data->addValue(TRANSFORMER_RATC1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATC1, atof(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_COD1 "TRANSFORMER_COD1"
            */
-          data->addValue(TRANSFORMER_COD1, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_COD1, atoi(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_CONT1 "TRANSFORMER_CONT1"
            */
-          data->addValue(TRANSFORMER_CONT1, atoi(split_line1[0].c_str()));
+          data->addValue(TRANSFORMER_CONT1, atoi(split_line[0].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RMA1 "TRANSFORMER_RMA1"
            */
-          data->addValue(TRANSFORMER_RMA1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RMA1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RMI1 "TRANSFORMER_RMI1"
            */
-          data->addValue(TRANSFORMER_RMI1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RMI1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_VMA1 "TRANSFORMER_VMA1"
            */
-          data->addValue(TRANSFORMER_VMA1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_VMA1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_VMI1 "TRANSFORMER_VMI1"
            */
-          data->addValue(TRANSFORMER_VMI1, atof(split_line1[3].c_str()));
+          data->addValue(TRANSFORMER_VMI1, atof(split_line[3].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_NTP1 "TRANSFORMER_NTP1"
            */
-          data->addValue(TRANSFORMER_NTP1, atoi(split_line1[5].c_str()));
+          data->addValue(TRANSFORMER_NTP1, atoi(split_line[5].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_TAB1 "TRANSFORMER_TAB1"
            */
-          data->addValue(TRANSFORMER_TAB1, atoi(split_line1[5].c_str()));
+          data->addValue(TRANSFORMER_TAB1, atoi(split_line[5].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_CR1 "TRANSFORMER_CR1"
            */
-          data->addValue(TRANSFORMER_CR1, atof(split_line1[5].c_str()));
+          data->addValue(TRANSFORMER_CR1, atof(split_line[5].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_CX1 "TRANSFORMER_CX1"
            */
-          data->addValue(TRANSFORMER_CX1, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_CX1, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_WINDV2 "TRANSFORMER_WINDV2"
            */
-          data->addValue(TRANSFORMER_WINDV2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_WINDV2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_NOMV2 "TRANSFORMER_NOMV2"
            */
-          data->addValue(TRANSFORMER_NOMV2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_NOMV2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_ANG2 "TRANSFORMER_ANG2"
            */
-          data->addValue(TRANSFORMER_ANG2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_ANG2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATA2 "TRANSFORMER_RATA2"
            */
-          data->addValue(TRANSFORMER_RATA2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATA2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATA2 "TRANSFORMER_RATB2"
            */
-          data->addValue(TRANSFORMER_RATB2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATB2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATC2 "TRANSFORMER_RATC2"
            */
-          data->addValue(TRANSFORMER_RATC2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATC2, atof(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_COD2 "TRANSFORMER_COD2"
            */
-          data->addValue(TRANSFORMER_COD2, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_COD2, atoi(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_CONT2 "TRANSFORMER_CONT2"
            */
-          data->addValue(TRANSFORMER_CONT2, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_CONT2, atoi(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RMA2 "TRANSFORMER_RMA2"
            */
-          data->addValue(TRANSFORMER_RMA2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RMA2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RMI2 "TRANSFORMER_RMI2"
            */
-          data->addValue(TRANSFORMER_RMI2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RMI2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_VMA2 "TRANSFORMER_VMA2"
            */
-          data->addValue(TRANSFORMER_VMA2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_VMA2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_VMI2 "TRANSFORMER_VMI2"
            */
-          data->addValue(TRANSFORMER_VMI2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_VMI2, atof(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_NTP2 "TRANSFORMER_NTP2"
            */
-          data->addValue(TRANSFORMER_NTP2, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_NTP2, atoi(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_TAB2 "TRANSFORMER_TAB2"
            */
-          data->addValue(TRANSFORMER_TAB2, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_TAB2, atoi(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_CR2 "TRANSFORMER_CR2"
            */
-          data->addValue(TRANSFORMER_CR2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_CR2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_CX2 "TRANSFORMER_CX2"
            */
-          data->addValue(TRANSFORMER_CX2, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_CX2, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_WINDV3 "TRANSFORMER_WINDV3"
            */
-          data->addValue(TRANSFORMER_WINDV3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_WINDV3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_NOMV3 "TRANSFORMER_NOMV3"
            */
-          data->addValue(TRANSFORMER_NOMV3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_NOMV3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_ANG3 "TRANSFORMER_ANG3"
            */
-          data->addValue(TRANSFORMER_ANG3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_ANG3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATA3 "TRANSFORMER_RATA3"
            */
-          data->addValue(TRANSFORMER_RATA3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATA3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATB3 "TRANSFORMER_RATB3"
            */
-          data->addValue(TRANSFORMER_RATB3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATB3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RATC3 "TRANSFORMER_RATC3"
            */
-          data->addValue(TRANSFORMER_RATC3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RATC3, atof(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_COD3 "TRANSFORMER_COD3"
            */
-          data->addValue(TRANSFORMER_COD3, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_COD3, atoi(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_CONT3 "TRANSFORMER_CONT3"
            */
-          data->addValue(TRANSFORMER_CONT3, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_CONT3, atoi(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RMA3 "TRANSFORMER_RMA3"
            */
-          data->addValue(TRANSFORMER_RMA3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RMA3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_RMI3 "TRANSFORMER_RMI3"
            */
-          data->addValue(TRANSFORMER_RMI3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_RMI3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_VMA3 "TRANSFORMER_VMA3"
            */
-          data->addValue(TRANSFORMER_VMA3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_VMA3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_VMI3 "TRANSFORMER_VMI3"
            */
-          data->addValue(TRANSFORMER_VMI3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_VMI3, atof(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_NTP3 "TRANSFORMER_NTP3"
            */
-          data->addValue(TRANSFORMER_NTP3, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_NTP3, atoi(split_line[1].c_str()));
 
           /*
            * type: integer
            * #define TRANSFORMER_TAB3 "TRANSFORMER_TAB3"
            */
-          data->addValue(TRANSFORMER_TAB3, atoi(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_TAB3, atoi(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_CR3 "TRANSFORMER_CR3"
            */
-          data->addValue(TRANSFORMER_CR3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_CR3, atof(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define TRANSFORMER_CX3 "TRANSFORMER_CX3"
            */
-          data->addValue(TRANSFORMER_CX3, atof(split_line1[1].c_str()));
+          data->addValue(TRANSFORMER_CX3, atof(split_line[1].c_str()));
 #endif
 
-          std::getline(input, line1);
-          if (test_end(line1)) {
-            std::getline(input, line2);
-            std::getline(input, line3);
-            std::getline(input, line4);
-          }
+          std::getline(input, line);
         }
-        printf("(transformer) Got to 3 line: %s\n",line1.c_str());
+        printf("(transformer) Got to 3 line: %s\n",line.c_str());
 #endif
       }
 
@@ -1804,7 +1805,7 @@ template <class _network>
 
           // AREAINTG_ISW           "ISW"                  integer
           int l_idx, o_idx;
-          l_idx = atoi(split_line[0].c_str());
+          l_idx = atoi(split_line[1].c_str());
           std::map<int, int>::iterator it;
           it = p_busMap.find(l_idx);
           if (it != p_busMap.end()) {
@@ -2082,44 +2083,43 @@ type: real float
             std::getline(input, line);
             continue;
           }
-        printf("(shunt) Got to 2 o_idx: %d\n",o_idx);
           p_busData[o_idx]->addValue(SHUNT_BUSNUMBER, atoi(split_line[0].c_str()));
 
           /*
            * type: integer
            * #define SHUNT_MODSW "SHUNT_MODSW"
            */
-          p_busData[o_idx]->addValue(SHUNT_MODSW, atoi(split_line[0].c_str()));
+          p_busData[o_idx]->addValue(SHUNT_MODSW, atoi(split_line[1].c_str()));
 
           /*
            * type: real float
            * #define SHUNT_VSWHI "SHUNT_VSWHI"
            */
-          p_busData[o_idx]->addValue(SHUNT_VSWHI, atof(split_line[1].c_str()));
+          p_busData[o_idx]->addValue(SHUNT_VSWHI, atof(split_line[2].c_str()));
 
           /*
            * type: real float
            * #define SHUNT_VSWLO "SHUNT_VSWLO"
            */
-          p_busData[o_idx]->addValue(SHUNT_VSWLO, atof(split_line[2].c_str()));
+          p_busData[o_idx]->addValue(SHUNT_VSWLO, atof(split_line[3].c_str()));
 
           /*
            * type: integer
            * #define SHUNT_SWREM "SHUNT_SWREM"
            */
-          p_busData[o_idx]->addValue(SHUNT_SWREM, atoi(split_line[3].c_str()));
+          p_busData[o_idx]->addValue(SHUNT_SWREM, atoi(split_line[4].c_str()));
 
           /*
            * type: real float
            * #define SHUNT_RMPCT "SHUNT_RMPCT"
            */
-          p_busData[o_idx]->addValue(SHUNT_RMPCT, atof(split_line[4].c_str()));
+//          p_busData[o_idx]->addValue(SHUNT_RMPCT, atof(split_line[4].c_str()));
 
           /*
            * type: string
            * #define SHUNT_RMIDNT "SHUNT_RMIDNT"
            */
-          p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[5].c_str());
+//          p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[5].c_str());
 
           /*
            * type: real float
@@ -2624,6 +2624,7 @@ type: real float
        */
       bool test_end(std::string &str) const
       {
+#if 0
         int len = str.length();
         int i=0;
         while (i<len && str[i] == ' ') {
@@ -2640,6 +2641,13 @@ type: real float
           return false;
         }
         return true;
+#else
+        if (str[0] == '0') {
+          return false;
+        } else {
+          return true;
+        }
+#endif
       }
       /*
        * The case_data is the collection of all data points in the case file.
