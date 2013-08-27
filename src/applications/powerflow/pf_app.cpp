@@ -62,21 +62,46 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
-  factory.load();
+  const boost::shared_ptr<gridpack::component::DataCollection> data;
+  factory.load(data);
 
   // set network components using factory
   factory.setComponents();
 
   // set YBus components so that you can create Y matrix
   factory.setYBus();
-#if 0
-  // SetYbus
-  gridpack::powerflow::pf_factory factory;
-  factory.setGBus();
-  factory.setSBus();
-  factory.setInit();
 
-  // Start AC N-R Solver
+  factory.setMode(YBus); 
+ 
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+  Y->print();
+
+  // set GBus components to create G vector 
+  factory.setGBus();
+
+  // make Sbus components to create S vector
+  factory.setSBus();
+
+  /*gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> S = vMap.mapToVector();
+  S->print();*/
+
+  // Set PQ
+  factory.setPQ();
+
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  PQ->print();
+
+  factory.setMode(Jacobian);
+
+  // Set Jacobian matrix
+  // Why "getJacobian method is in PFBranch?
+  // Chen 8_27_2013
+  factory.setJacobian(); 
+
+/*  // Start AC N-R Solver
 
   // FIND the first mismatch
   // MIS: vector
@@ -85,7 +110,6 @@ void gridpack::powerflow::PFApp::execute(void)
   // SBUS: vector
   // MIS = V * conj (YBus * V) - SBUS
   factory.calMis();
-#endif
 
   // Assume that matrix A and vector V have been properly set up and start
   // creating solver loop.
@@ -100,4 +124,5 @@ void gridpack::powerflow::PFApp::execute(void)
 
   boost::shared_ptr<gridpack::math::Vector> SBus(V->clone());
   boost::shared_ptr<gridpack::math::Vector> MIS(V->clone());
+*/
 }

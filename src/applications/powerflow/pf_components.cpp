@@ -123,6 +123,27 @@ bool gridpack::powerflow::PFBus::vectorSize(int *size) const
  */
 bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
 {
+  if (p_mode == YBus) {
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    int i;
+    double P, Q, p, q;
+    P = 0.0;
+    Q = 0.0;
+    for (i=0; i<size; i++) {
+      boost::shared_ptr<gridpack::powerflow::PFBranch>
+        branch(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()));
+      branch->getPQ(this, &p, &q);
+      P += p;
+      Q += q;
+    }
+    P -= p_P0;
+    Q -= p_Q0;
+    values[0] = P;
+    values[1] = Q;
+    return true;
+  }
   if (p_mode == Jacobian) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
@@ -191,6 +212,16 @@ void gridpack::powerflow::PFBus::load(
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
   // TODO: Need to get values of P0 and Q0 from Network Configuration file
+
+  // added p_pg,p_qg,p_pl,p_ql,p_sbase;
+  p_shunt = p_shunt && data->getValue(GENERATOR_PG, &p_pg);
+  p_shunt = p_shunt && data->getValue(GENERATOR_QG, &p_qg);
+  p_shunt = p_shunt && data->getValue(LOAD_PL, &p_pl);
+  p_shunt = p_shunt && data->getValue(LOAD_QL, &p_ql);
+  p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);
+  // need GENERATOR_STATUS from parser!
+  // Chen 8_27_2013
+  //p_shunt = p_shunt && data->getValue(GENERATOR_STATUS, &p_gstatus);
 }
 
 
@@ -218,6 +249,31 @@ double gridpack::powerflow::PFBus::getVoltage()
  */
 double gridpack::powerflow::PFBus::getPhase()
 {
+}
+
+/**
+ * setGBus
+ */
+void gridpack::powerflow::PFBus::setGBus(void)
+{
+  //if (p_gstatus == 1) 
+}
+
+/**
+ * setSBus
+ BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
+ */
+void gridpack::powerflow::PFBus::setSBus(void)
+{
+  // need to update later to consider multiple generators located at the same bus 
+  // Chen 8_27_2013
+  if (p_gstatus == 1) {
+    gridpack::ComplexType sBus((p_pg - p_pl) / p_sbase, (p_qg - p_ql) / p_sbase);
+    //p_sbusr = real(sBus);
+    //p_sbusr = real(sBus);
+    p_P0 = imag(sBus);
+    p_Q0 = imag(sBus);
+  }
 }
 
 /**

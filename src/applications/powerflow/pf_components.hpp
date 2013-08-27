@@ -144,11 +144,15 @@ class PFBus
     void setPhase(void);
 
     /**
+     * setGBus
+    */
+    void setGBus(void);
+
+    /**
      * setSBus
     BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
     */
     void setSBus(void);
-
 
   private:
     double p_shunt_gs;
@@ -157,7 +161,12 @@ class PFBus
     int p_mode;
     double p_v, p_theta;
     double p_ybusr, p_ybusi;
-    double p_P0, p_Q0;
+    double p_P0, p_Q0; //double p_sbusr, p_sbusi;
+    // newly added priavate variables:
+    double p_pg, p_qg;
+    int p_gstatus;
+    double p_pl, p_ql;
+    double p_sbase;
 
 private:
 
@@ -174,7 +183,12 @@ private:
       & p_mode
       & p_v & p_theta
       & p_ybusr & p_ybusi
-      & p_P0, p_Q0;
+      & p_P0 & p_Q0
+      & p_pg & p_qg
+      & p_gstatus
+      //& p_sbusr & p_sbusi
+      & p_pl & p_ql
+      & p_sbase;
   }  
 
 };

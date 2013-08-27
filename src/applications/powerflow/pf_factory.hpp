@@ -20,6 +20,8 @@
 namespace gridpack {
 namespace powerflow {
 
+//enum PFMode{YBus, Jacobian};
+
 class PFFactory
   : public gridpack::factory::BaseFactory<PFNetwork> {
   public:
@@ -35,25 +37,39 @@ class PFFactory
     ~PFFactory();
 
     /**
+     * Load data
+     */ 
+    void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
+
+    /**
+     * Set the mode to control what matrices and vectors are built when using the mapper 
+     */
+    void setMode(int mode);
+
+    /**
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);
 
     /**
-     * Create SBus matrix
+     * Find GBus vector 
+     */
+    void setGBus(void);
+
+    /**
+     * Make SBus vector 
      */
     void setSBus(void);
+
+    /**
+     * Create the PQ 
+     */
+    void setPQ(void);
 
     /**
      * Create the Jacobian matrix
      */
     void setJacobian(void);
-
-    /**
-     * Create RHS
-     */
-
-    void setRHS(void);
 
   private:
 
