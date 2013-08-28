@@ -40,46 +40,6 @@ gridpack::powerflow::PFFactory::~PFFactory()
 }
 
 /**
- * Load data
- */
-void gridpack::powerflow::PFFactory::load(const boost::shared_ptr<gridpack::component::DataCollection> &data)
-{
-  int numBus = p_network->numBuses();
-  int numBranch = p_network->numBranches();
-  int i;
-
-  // Invoke setYBus method on all bus objects
-  for (i=0; i<numBus; i++) {
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->load(data);
-  }
-
-  // Invoke setYBus method on all branch objects
-  for (i=0; i<numBranch; i++) {
-    dynamic_cast<PFBranch*>(p_network->getBranch(i).get())->load(data);
-  } 
-}
-
-/**
- * Set the mode to control what matrices and vectors are built when using the mapper
- */
-void gridpack::powerflow::PFFactory::setMode(int mode)
-{
-  int numBus = p_network->numBuses();
-  int numBranch = p_network->numBranches();
-  int i;
-
-  // Invoke setYBus method on all bus objects
-  for (i=0; i<numBus; i++) {
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setMode(mode);
-  }
-
-  // Invoke setYBus method on all branch objects
-  for (i=0; i<numBranch; i++) {
-    dynamic_cast<PFBranch*>(p_network->getBranch(i).get())->setMode(mode);
-  }
-}
-
-/**
  * Create the admittance (Y-Bus) matrix
  */
 void gridpack::powerflow::PFFactory::setYBus(void)
@@ -134,7 +94,7 @@ void gridpack::powerflow::PFFactory::setPQ(void)
 {
   int numBus = p_network->numBuses();
   int i;
-  ComplexType *values;
+  ComplexType values[2];
 
   for (i=0; i<numBus; i++) {
     dynamic_cast<PFBus*>(p_network->getBus(i).get())->vectorValues(values);

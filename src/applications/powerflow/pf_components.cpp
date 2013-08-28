@@ -132,8 +132,8 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     P = 0.0;
     Q = 0.0;
     for (i=0; i<size; i++) {
-      boost::shared_ptr<gridpack::powerflow::PFBranch>
-        branch(dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()));
+      gridpack::powerflow::PFBranch *branch
+        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
       branch->getPQ(this, &p, &q);
       P += p;
       Q += q;
@@ -221,7 +221,7 @@ void gridpack::powerflow::PFBus::load(
   p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);
   // need GENERATOR_STATUS from parser!
   // Chen 8_27_2013
-  //p_shunt = p_shunt && data->getValue(GENERATOR_STATUS, &p_gstatus);
+  p_shunt = p_shunt && data->getValue(GENERATOR_STAT, &p_gstatus);
 }
 
 

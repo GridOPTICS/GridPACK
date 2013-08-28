@@ -37,16 +37,6 @@ class PFFactory
     ~PFFactory();
 
     /**
-     * Load data
-     */ 
-    void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
-
-    /**
-     * Set the mode to control what matrices and vectors are built when using the mapper 
-     */
-    void setMode(int mode);
-
-    /**
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);

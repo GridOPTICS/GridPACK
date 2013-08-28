@@ -62,8 +62,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
-  const boost::shared_ptr<gridpack::component::DataCollection> data;
-  factory.load(data);
+  factory.load();
 
   // set network components using factory
   factory.setComponents();
@@ -88,7 +87,7 @@ void gridpack::powerflow::PFApp::execute(void)
   S->print();*/
 
   // Set PQ
-  factory.setPQ();
+  //factory.setPQ();
 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
@@ -99,7 +98,7 @@ void gridpack::powerflow::PFApp::execute(void)
   // Set Jacobian matrix
   // Why "getJacobian method is in PFBranch?
   // Chen 8_27_2013
-  factory.setJacobian(); 
+//  factory.setJacobian(); 
 
 /*  // Start AC N-R Solver
 
