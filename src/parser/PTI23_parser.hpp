@@ -113,6 +113,8 @@ template <class _network>
             p_network->addBus(idx);
             p_network->setGlobalBusIndex(i,i);
             *(p_network->getBusData(i)) = *(p_busData[i]);
+            p_network->getBusData(i)->addValue(CASE_ID,p_case_id);
+            p_network->getBusData(i)->addValue(CASE_SBASE,p_case_sbase);
           }
           int numBranch = p_branchData.size();
           for (i=0; i<numBranch; i++) {
@@ -132,6 +134,8 @@ template <class _network>
             p_network->setGlobalBusIndex2(i,g_idx2);
             p_network->setLocalBusIndex2(i,g_idx2);
             *(p_network->getBranchData(i)) = *(p_branchData[i]);
+            p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
+            p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
           }
         }
         p_busData.clear();
@@ -152,13 +156,11 @@ template <class _network>
 
         boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(" "), boost::token_compress_on);
 
-        // CASE_IC             "IC"                   ranged integer
-  //      data.addValue(CASE_ID, atoi(split_line[0].c_str()));
-  //      case_instance.push_back(data);
+        // CASE_ID             "IC"                   ranged integer
+        p_case_id = atoi(split_line[0].c_str());
 
         // CASE_SBASE          "SBASE"                float
-  //      data.addValue(CASE_SBASE, atof(split_line[1].c_str()));
-  //      case_instance.push_back(data);
+        p_case_sbase = atof(split_line[1].c_str());
 
         /*  These do not appear in the dictionary
         // CASE_RECORD2        "RECORD2"              string
@@ -2692,6 +2694,10 @@ type: real float
       std::map<int,int> p_busMap;
       // Map of PTI indices to global branch indices
       std::map<int,int> p_branchMap;
+
+      // Global variables that apply to whole network
+      int p_case_id;
+      float p_case_sbase;
   };
 
 } /* namespace parser */
