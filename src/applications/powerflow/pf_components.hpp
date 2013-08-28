@@ -162,6 +162,8 @@ class PFBus
     double p_v, p_theta;
     double p_ybusr, p_ybusi;
     double p_P0, p_Q0; //double p_sbusr, p_sbusi;
+    double p_angle;
+    double p_voltage;
     // newly added priavate variables:
     double p_pg, p_qg;
     int p_gstatus;

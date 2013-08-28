@@ -208,6 +208,8 @@ gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
 void gridpack::powerflow::PFBus::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  data->getValue(BUS_VOLTAGE_ANG, &p_angle);
+  data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
   p_shunt = true;
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
@@ -241,6 +243,7 @@ void gridpack::powerflow::PFBus::setMode(int mode)
  */
 double gridpack::powerflow::PFBus::getVoltage()
 {
+  return p_voltage;
 }
 
 /**
@@ -249,6 +252,7 @@ double gridpack::powerflow::PFBus::getVoltage()
  */
 double gridpack::powerflow::PFBus::getPhase()
 {
+  return p_angle;
 }
 
 /**
