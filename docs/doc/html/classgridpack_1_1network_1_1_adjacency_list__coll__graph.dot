@@ -1,0 +1,20 @@
+digraph "gridpack::network::AdjacencyList"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="gridpack::network::\lAdjacencyList",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node1 [dir="back",color="midnightblue",fontsize="10",style="solid",fontname="Helvetica"];
+  Node2 [label="gridpack::parallel\l::Distributed",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classgridpack_1_1parallel_1_1_distributed.html",tooltip="Serves as a base class for parallel things. "];
+  Node3 -> Node1 [dir="back",color="firebrick4",fontsize="10",style="solid",fontname="Helvetica"];
+  Node3 [label="utility::Uncopyable",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node4 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" p_edges" ,fontname="Helvetica"];
+  Node4 [label="std::vector\< p_Edge \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node5 -> Node4 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" elements" ,fontname="Helvetica"];
+  Node5 [label="gridpack::network::\lAdjacencyList::p_Edge",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$structgridpack_1_1network_1_1_adjacency_list_1_1p___edge.html"];
+  Node6 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" p_adjacency" ,fontname="Helvetica"];
+  Node6 [label="std::vector\< IndexVector \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node7 -> Node6 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" elements" ,fontname="Helvetica"];
+  Node7 [label="std::vector\< Index \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node7 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" p_nodes" ,fontname="Helvetica"];
+}

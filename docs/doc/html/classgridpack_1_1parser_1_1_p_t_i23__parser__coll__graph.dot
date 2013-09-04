@@ -1,0 +1,11 @@
+digraph "gridpack::parser::PTI23_parser&lt; _network &gt;"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="gridpack::parser::PTI23\l_parser\< _network \>",height=0.2,width=0.4,color="black", fillcolor="grey75", style="filled" fontcolor="black"];
+  Node2 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" p_busMap" ,fontname="Helvetica"];
+  Node2 [label="std::map\< int, int \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+  Node3 -> Node1 [dir="back",color="darkorchid3",fontsize="10",style="dashed",label=" p_busData\np_branchData" ,fontname="Helvetica"];
+  Node3 [label="std::vector\< boost\l::shared_ptr\< gridpack\l::component::DataCollection \> \>",height=0.2,width=0.4,color="grey75", fillcolor="white", style="filled"];
+}

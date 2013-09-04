@@ -1,0 +1,7 @@
+digraph "Graphical Class Hierarchy"
+{
+  edge [fontname="Helvetica",fontsize="10",labelfontname="Helvetica",labelfontsize="10"];
+  node [fontname="Helvetica",fontsize="10",shape=record];
+  rankdir="LR";
+  Node1 [label="gridpack::parser::PTI23\l_parser\< _network \>",height=0.2,width=0.4,color="black", fillcolor="white", style="filled",URL="$classgridpack_1_1parser_1_1_p_t_i23__parser.html"];
+}

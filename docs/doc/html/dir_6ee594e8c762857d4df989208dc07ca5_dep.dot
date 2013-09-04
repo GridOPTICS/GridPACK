@@ -1,0 +1,13 @@
+digraph "math" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_bfdfd8a3ecca797f1c48a0f523622085 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="src" fontname="Helvetica", fontsize="10", URL="dir_bfdfd8a3ecca797f1c48a0f523622085.html"]
+  subgraph clusterdir_6ee594e8c762857d4df989208dc07ca5 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_6ee594e8c762857d4df989208dc07ca5.html"];
+    dir_6ee594e8c762857d4df989208dc07ca5 [shape=plaintext label="math"];
+    dir_598b5a059462fb5f1b56f492dadcfa0d [shape=box label="petsc" color="black" fillcolor="white" style="filled" URL="dir_598b5a059462fb5f1b56f492dadcfa0d.html"];
+  }
+  }
+}

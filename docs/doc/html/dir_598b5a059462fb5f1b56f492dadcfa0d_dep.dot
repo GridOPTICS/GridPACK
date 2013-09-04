@@ -1,0 +1,9 @@
+digraph "petsc" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_6ee594e8c762857d4df989208dc07ca5 {
+    graph [ bgcolor="#ddddee", pencolor="black", label="math" fontname="Helvetica", fontsize="10", URL="dir_6ee594e8c762857d4df989208dc07ca5.html"]
+  dir_598b5a059462fb5f1b56f492dadcfa0d [shape=box, label="petsc", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_598b5a059462fb5f1b56f492dadcfa0d.html"];
+  }
+}

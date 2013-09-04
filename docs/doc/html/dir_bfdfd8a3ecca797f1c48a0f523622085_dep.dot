@@ -1,0 +1,23 @@
+digraph "src" {
+  compound=true
+  node [ fontsize="10", fontname="Helvetica"];
+  edge [ labelfontsize="10", labelfontname="Helvetica"];
+  subgraph clusterdir_f750d42ea3b6576883812722612c9b2a {
+    graph [ bgcolor="#ddddee", pencolor="black", label="trunk" fontname="Helvetica", fontsize="10", URL="dir_f750d42ea3b6576883812722612c9b2a.html"]
+  subgraph clusterdir_bfdfd8a3ecca797f1c48a0f523622085 {
+    graph [ bgcolor="#eeeeff", pencolor="black", label="" URL="dir_bfdfd8a3ecca797f1c48a0f523622085.html"];
+    dir_bfdfd8a3ecca797f1c48a0f523622085 [shape=plaintext label="src"];
+    dir_af30b4c929b09f72d6499a0bdb82c802 [shape=box label="component" color="black" fillcolor="white" style="filled" URL="dir_af30b4c929b09f72d6499a0bdb82c802.html"];
+    dir_3502bd679a92cf46c857d6171da01433 [shape=box label="configuration" color="black" fillcolor="white" style="filled" URL="dir_3502bd679a92cf46c857d6171da01433.html"];
+    dir_0750ef8981427b72fe38e992a51f30ca [shape=box label="factory" color="black" fillcolor="white" style="filled" URL="dir_0750ef8981427b72fe38e992a51f30ca.html"];
+    dir_c76753c49a7952356df669c5ff01a8ac [shape=box label="mapper" color="black" fillcolor="white" style="filled" URL="dir_c76753c49a7952356df669c5ff01a8ac.html"];
+    dir_6ee594e8c762857d4df989208dc07ca5 [shape=box label="math" color="red" fillcolor="white" style="filled" URL="dir_6ee594e8c762857d4df989208dc07ca5.html"];
+    dir_0e934af6e7a5abda42b6791f5c550000 [shape=box label="network" color="black" fillcolor="white" style="filled" URL="dir_0e934af6e7a5abda42b6791f5c550000.html"];
+    dir_9d989a36272c94af0c0cd3aff28b4156 [shape=box label="parallel" color="black" fillcolor="white" style="filled" URL="dir_9d989a36272c94af0c0cd3aff28b4156.html"];
+    dir_d1d22e5e232c9aee762bd5d72b4746cf [shape=box label="parser" color="black" fillcolor="white" style="filled" URL="dir_d1d22e5e232c9aee762bd5d72b4746cf.html"];
+    dir_308289f66a73660baaf67cb4f6176ac3 [shape=box label="partition" color="red" fillcolor="white" style="filled" URL="dir_308289f66a73660baaf67cb4f6176ac3.html"];
+    dir_084bedf94e214037121c6cf2a726d7e4 [shape=box label="serial_io" color="black" fillcolor="white" style="filled" URL="dir_084bedf94e214037121c6cf2a726d7e4.html"];
+    dir_68f122b6867af171d2ff01a724a2acc5 [shape=box label="utilities" color="black" fillcolor="white" style="filled" URL="dir_68f122b6867af171d2ff01a724a2acc5.html"];
+  }
+  }
+}
