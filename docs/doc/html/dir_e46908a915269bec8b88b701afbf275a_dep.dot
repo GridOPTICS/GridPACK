@@ -1,9 +1,0 @@
-digraph "parmetis" {
-  compound=true
-  node [ fontsize="10", fontname="Helvetica"];
-  edge [ labelfontsize="10", labelfontname="Helvetica"];
-  subgraph clusterdir_308289f66a73660baaf67cb4f6176ac3 {
-    graph [ bgcolor="#ddddee", pencolor="black", label="partition" fontname="Helvetica", fontsize="10", URL="dir_308289f66a73660baaf67cb4f6176ac3.html"]
-  dir_e46908a915269bec8b88b701afbf275a [shape=box, label="parmetis", style="filled", fillcolor="#eeeeff", pencolor="black", URL="dir_e46908a915269bec8b88b701afbf275a.html"];
-  }
-}
