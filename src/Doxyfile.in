@@ -52,7 +52,8 @@ PROJECT_LOGO           =
 # If a relative path is entered, it will be relative to the location
 # where doxygen was started. If left blank the current directory will be used.
 
-OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/doc
+#OUTPUT_DIRECTORY       = @CMAKE_CURRENT_BINARY_DIR@/doc
+OUTPUT_DIRECTORY       = @CMAKE_CURRENT_SOURCE_DIR@/../docs/doc
 
 # If the CREATE_SUBDIRS tag is set to YES, then doxygen will create
 # 4096 sub-directories (in 2 levels) under the output directory of each output
@@ -668,7 +669,17 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/component \
+                         @CMAKE_CURRENT_SOURCE_DIR@/configuration \
+                         @CMAKE_CURRENT_SOURCE_DIR@/factory \
+                         @CMAKE_CURRENT_SOURCE_DIR@/mapper \
+                         @CMAKE_CURRENT_SOURCE_DIR@/math \
+                         @CMAKE_CURRENT_SOURCE_DIR@/network \
+                         @CMAKE_CURRENT_SOURCE_DIR@/parallel \
+                         @CMAKE_CURRENT_SOURCE_DIR@/parser \
+                         @CMAKE_CURRENT_SOURCE_DIR@/partition \
+                         @CMAKE_CURRENT_SOURCE_DIR@/serial_io \
+                         @CMAKE_CURRENT_SOURCE_DIR@/utilities
 
 # This tag can be used to specify the character encoding of the source files
 # that doxygen parses. Internally doxygen uses the UTF-8 encoding, which is
@@ -686,7 +697,7 @@ INPUT_ENCODING         = UTF-8
 # *.hxx *.hpp *.h++ *.idl *.odl *.cs *.php *.php3 *.inc *.m *.mm *.dox *.py
 # *.f90 *.f *.for *.vhd *.vhdl
 
-FILE_PATTERNS          = *.hpp *.cpp
+FILE_PATTERNS          = *.hpp
 
 # The RECURSIVE tag can be used to turn specify whether or not subdirectories
 # should be searched for input files as well. Possible values are YES and NO.
