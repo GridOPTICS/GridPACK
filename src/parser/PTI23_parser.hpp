@@ -365,7 +365,7 @@ template <class _network>
           p_busData[o_idx]->addValue(GENERATOR_GTAP, atof(split_line[13].c_str()));
 
           // GENERATOR_STAT              "STAT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_STAT, atof(split_line[14].c_str()));
+          p_busData[o_idx]->addValue(GENERATOR_STAT, atoi(split_line[14].c_str()));
 
           // GENERATOR_RMPCT           "RMPCT"               float
           p_busData[o_idx]->addValue(GENERATOR_RMPCT, atof(split_line[15].c_str()));
