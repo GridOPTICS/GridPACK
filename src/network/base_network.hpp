@@ -292,19 +292,6 @@ explicit BaseNetwork(const parallel::Communicator& comm)
 }
 
 /**
- * Constructor with parallel configuration for running on
- * subgroups or communicators other than the world
- * communicator
- */
-#if 0
-BaseNetwork::BaseNetwork(ParallelEnv configuration)
-{
-  p_configuration = configuration;
-  p_refBus = -1;
-}
-#endif
-
-/**
  * Default destructor.
  */
 virtual ~BaseNetwork(void)
@@ -367,7 +354,7 @@ virtual ~BaseNetwork(void)
 
 /**
  * Add a bus locally to the network
- * @param idx: original index of  bus
+ * @param idx original index of  bus
  */
 void addBus(int idx)
 {
@@ -380,9 +367,8 @@ void addBus(int idx)
 /**
  * Add a branch locally to the network. A branch is defined by
  * buses at either end
- * @param idx original branch index
- * @param idx1: original bus index of bus 1
- * @param idx2: original bus index of bus 2
+ * @param idx1 original bus index of bus 1
+ * @param idx2 original bus index of bus 2
  */
 void addBranch(int idx1, int idx2)
 {
@@ -396,7 +382,7 @@ void addBranch(int idx1, int idx2)
 
 /**
  * Number of local buses (both active and inactive) on processor
- * @return: number of buses
+ * @return number of buses
  */
 int numBuses(void)
 {
@@ -405,7 +391,7 @@ int numBuses(void)
 
 /**
  * Return the total number of buses in the entire network
- * @return: total number of buses
+ * @return total number of buses
  */
 int totalBuses(void)
 {
@@ -421,7 +407,7 @@ int totalBuses(void)
 
 /**
  * Number of local branches (both active and inactive) on processor
- * @return: number of branches
+ * @return number of branches
  */
 int numBranches(void)
 {
@@ -430,7 +416,7 @@ int numBranches(void)
 
 /**
  * Return the total number of branches in the entire network
- * @return: total number of branches
+ * @return total number of branches
  */
 int totalBranches(void)
 {
@@ -446,7 +432,7 @@ int totalBranches(void)
 
 /**
  * Designate a bus as a reference bus.
- * @param idx: local index of bus
+ * @param idx local index of bus
  */
 void setReferenceBus(int idx)
 {
@@ -460,7 +446,7 @@ void setReferenceBus(int idx)
 
 /**
  * Return index of reference bus.
- * @return: local index of reference bus. If reference bus is not on this
+ * @return local index of reference bus. If reference bus is not on this
  * processor then return -1.
  */
 int getReferenceBus(void) const
@@ -472,9 +458,9 @@ int getReferenceBus(void) const
 
 /**
  * Set the original index of the bus (from configuration file)
- * @param idx: local index of bus
- * @param o_idx: original index assigned to bus
- * @return: false if no bus exists for idx
+ * @param idx local index of bus
+ * @param o_idx original index assigned to bus
+ * @return false if no bus exists for idx
  */
 bool setOriginalBusIndex(int idx, int o_idx)
 {
@@ -488,9 +474,9 @@ bool setOriginalBusIndex(int idx, int o_idx)
 
 /**
  * Set the global index of the bus
- * @param idx: local index of bus
- * @param g_idx: global index to be assigned to bus
- * @return: false if no bus exists for idx
+ * @param idx local index of bus
+ * @param g_idx global index to be assigned to bus
+ * @return false if no bus exists for idx
  */
 bool setGlobalBusIndex(int idx, int g_idx)
 {
@@ -504,9 +490,9 @@ bool setGlobalBusIndex(int idx, int g_idx)
 
 /**
  * Set the global index of the branch
- * @param idx: local index of branch
- * @param g_idx: global index to be assigned to branch
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param g_idx global index to be assigned to branch
+ * @return false if no branch exists for idx
  */
 bool setGlobalBranchIndex(int idx, int g_idx)
 {
@@ -520,9 +506,9 @@ bool setGlobalBranchIndex(int idx, int g_idx)
 
 /**
  * Set the original index of the bus at the "from" end of branch
- * @param idx: local index of branch
- * @param b_idx: original index of "from" bus for this branch
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param b_idx original index of "from" bus for this branch
+ * @return false if no branch exists for idx
  */
 bool setOriginalBusIndex1(int idx, int b_idx)
 {
@@ -536,9 +522,9 @@ bool setOriginalBusIndex1(int idx, int b_idx)
 
 /**
  * Set the original index of the bus at the "to" end of branch
- * @param idx: local index of branch
- * @param b_idx: original index of "to" bus for this branch
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param b_idx original index of "to" bus for this branch
+ * @return false if no branch exists for idx
  */
 bool setOriginalBusIndex2(int idx, int b_idx)
 {
@@ -552,9 +538,9 @@ bool setOriginalBusIndex2(int idx, int b_idx)
 
 /**
  * Set the global index of the bus at the "from" end of branch
- * @param idx: local index of branch
- * @param b_idx: global index of "from" bus for this branch
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param b_idx global index of "from" bus for this branch
+ * @return false if no branch exists for idx
  */
 bool setGlobalBusIndex1(int idx, int b_idx)
 {
@@ -568,9 +554,9 @@ bool setGlobalBusIndex1(int idx, int b_idx)
 
 /**
  * Set the global index of the bus at the "to" end of branch
- * @param idx: local index of branch
- * @param b_idx: global index of "to" bus for this branch
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param b_idx global index of "to" bus for this branch
+ * @return false if no branch exists for idx
  */
 bool setGlobalBusIndex2(int idx, int b_idx)
 {
@@ -584,9 +570,9 @@ bool setGlobalBusIndex2(int idx, int b_idx)
 
 /**
  * Set the local index of the bus at the "from" end of branch
- * @param idx: local index of branch
- * @param b_idx: local index of "from" bus for this branch
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param b_idx local index of "from" bus for this branch
+ * @return false if no branch exists for idx
  */
 bool setLocalBusIndex1(int idx, int b_idx)
 {
@@ -600,9 +586,9 @@ bool setLocalBusIndex1(int idx, int b_idx)
 
 /**
  * Set the local index of the bus at the "to" end of branch
- * @param idx: local index of branch
- * @param b_idx: local index of "to" bus for this branch
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param b_idx local index of "to" bus for this branch
+ * @return false if no branch exists for idx
  */
 bool setLocalBusIndex2(int idx, int b_idx)
 {
@@ -616,9 +602,9 @@ bool setLocalBusIndex2(int idx, int b_idx)
 
 /**
  * Set the active flag of the bus
- * @param idx: local index of bus
- * @param flag: flag for setting bus as active or inactive
- * @return: false if no bus exists for idx
+ * @param idx local index of bus
+ * @param flag flag for setting bus as active or inactive
+ * @return false if no bus exists for idx
  */
 bool setActiveBus(int idx, bool flag)
 {
@@ -632,9 +618,9 @@ bool setActiveBus(int idx, bool flag)
 
 /**
  * Set the active flag of the branch
- * @param idx: local index of branch
- * @param flag: flag for setting bus as active or inactive
- * @return: false if no branch exists for idx
+ * @param idx local index of branch
+ * @param flag flag for setting bus as active or inactive
+ * @return false if no branch exists for idx
  */
 bool setActiveBranch(int idx, bool flag)
 {
@@ -648,8 +634,8 @@ bool setActiveBranch(int idx, bool flag)
 
 /**
  * Clear the list of neighbors for the bus at idx
- * @param idx: local index of bus
- * @return: false if no bus exists for idx
+ * @param idx local index of bus
+ * @return false if no bus exists for idx
  */
 bool clearBranchNeighbors(int idx)
 {
@@ -663,8 +649,9 @@ bool clearBranchNeighbors(int idx)
 
 /**
  * Add local index for a branch attached to bus at idx
- * @param idx: local index of bus
- * @return: false if no bus exists for idx
+ * @param idx local index of bus
+ * @param br_idx local index of branch attached to bus
+ * @return false if no bus exists for idx
  */
 bool addBranchNeighbor(int idx, int br_idx)
 {
@@ -680,8 +667,8 @@ bool addBranchNeighbor(int idx, int br_idx)
 
 /**
  * Get status of the bus (local or ghosted)
- * @param idx: local index of bus
- * @return: true if bus is locally held, false if it is ghosted 
+ * @param idx local index of bus
+ * @return true if bus is locally held, false if it is ghosted 
  */
 bool getActiveBus(int idx)
 {
@@ -696,8 +683,8 @@ bool getActiveBus(int idx)
 
 /**
  * Get original index of the bus
- * @param idx: local index of bus
- * @return: original index of bus 
+ * @param idx local index of bus
+ * @return original index of bus 
  */
 int getOriginalBusIndex(int idx)
 {
@@ -710,8 +697,8 @@ int getOriginalBusIndex(int idx)
 
 /**
  * Get global index of the bus
- * @param idx: local index of bus
- * @return: global index of bus 
+ * @param idx local index of bus
+ * @return global index of bus 
  */
 int getGlobalBusIndex(int idx)
 {
@@ -724,8 +711,8 @@ int getGlobalBusIndex(int idx)
 
 /**
  * Retrieve a pointer to an existing bus
- * @param idx: local index of requested bus
- * @return: a pointer to the requested bus.
+ * @param idx local index of requested bus
+ * @return a pointer to the requested bus.
  */
 BusPtr getBus(int idx)
 {
@@ -738,8 +725,8 @@ BusPtr getBus(int idx)
 
 /**
  * Get status of the branch (local or ghosted)
- * @param idx: local index of branch
- * @return: true if branch is locally held, false if it is ghosted 
+ * @param idx local index of branch
+ * @return true if branch is locally held, false if it is ghosted 
  */
 bool getActiveBranch(int idx)
 {
@@ -752,8 +739,8 @@ bool getActiveBranch(int idx)
 
 /**
  * Get global index of the branch
- * @param idx: local index of branch
- * @return: global index of branch 
+ * @param idx local index of branch
+ * @return global index of branch 
  */
 int getGlobalBranchIndex(int idx)
 {
@@ -766,8 +753,8 @@ int getGlobalBranchIndex(int idx)
 
 /**
  * Retrieve a pointer to an existing branch
- * @param idx: local index of requested branch
- * @return: a pointer to the requested branch
+ * @param idx local index of requested branch
+ * @return a pointer to the requested branch
  */
 BranchPtr getBranch(int idx)
 {
@@ -781,8 +768,8 @@ BranchPtr getBranch(int idx)
 /**
  * Retrieve a pointer to the DataCollection object associated with bus indexed
  * by idx
- * @param idx: local index of requested bus
- * @return: a pointer to the requested bus data
+ * @param idx local index of requested bus
+ * @return a pointer to the requested bus data
  */
 boost::shared_ptr<component::DataCollection> getBusData(int idx)
 {
@@ -796,8 +783,8 @@ boost::shared_ptr<component::DataCollection> getBusData(int idx)
 /**
  * Retrieve a pointer to the DataCollection object associated with branch
  * indexed by idx
- * @param idx: local index of requested branch
- * @return: a pointer to the requested branch data
+ * @param idx local index of requested branch
+ * @return a pointer to the requested branch data
  */
 boost::shared_ptr<component::DataCollection> getBranchData(int idx)
 {
@@ -842,8 +829,8 @@ boost::shared_ptr<gridpack::network::BranchField<gridpack::component::BaseNetwor
 
 /**
  * Return list of branches connected to bus
- * @param bus: local bus index
- * @return: vector of local branch indices
+ * @param bus local bus index
+ * @return vector of local branch indices
  */
 std::vector<int> getConnectedBranches(int idx) const
 {
@@ -852,8 +839,8 @@ std::vector<int> getConnectedBranches(int idx) const
 
 /**
  * Return list of buses connected to central bus via one branch
- * @param bus: local bus index
- * @return: vector of local bus indices
+ * @param bus local bus index
+ * @return vector of local bus indices
  */
 std::vector<int> getConnectedBuses(int idx) const
 {
@@ -876,10 +863,9 @@ std::vector<int> getConnectedBuses(int idx) const
 
 /**
  * Return indices of buses at either end of branch
- * @param bus: local branch index
- * @param bus1: local index of bus at one end of branch
- * @param bus2: local index of bus at other end of branch
- * @return: false if branch not found
+ * @param idx local branch index
+ * @param bus1 local index of bus at one end of branch
+ * @param bus2 local index of bus at other end of branch
  */
 void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 {
@@ -1164,7 +1150,7 @@ void clean(void)
 
 /**
  * Allocate buffers for exchanging data for ghost buses
- * @param size: size (in bytes) of buffer
+ * @param size size (in bytes) of buffer
  */
 void allocXCBus(int size)
 {
@@ -1206,8 +1192,8 @@ void freeXCBus(void)
 
 /**
  * Return a pointer to exchange buffer for bus
- * @param idx: local index of bus
- * @return: pointer to exchange buffer
+ * @param idx local index of bus
+ * @return pointer to exchange buffer
  */
 void* getXCBusBuffer(int idx)
 {
@@ -1221,7 +1207,7 @@ void* getXCBusBuffer(int idx)
 
 /**
  * Allocate buffers for exchanging data for ghost branches
- * @param size: size (in bytes) of buffer
+ * @param size size (in bytes) of buffer
  */
 void allocXCBranch(int size)
 {
@@ -1263,8 +1249,8 @@ void freeXCBranch(void)
 
 /**
  * Return a pointer to exchange buffer for bus
- * @param idx: local index of bus
- * @return: pointer to exchange buffer
+ * @param idx local index of bus
+ * @return pointer to exchange buffer
  */
 void* getXCBranchBuffer(int idx)
 {
@@ -1328,21 +1314,21 @@ void initBusUpdate(void)
     // Construct GA that can hold exchange data for all active buses
     int nprocs = GA_Nnodes();
     int me = GA_Nodeid();
-    int *totalBuses = new int[nprocs];
+    int *totBuses = new int[nprocs];
     int *distr = new int[nprocs];
     for (i=0; i<nprocs; i++) {
       if (me == i) {
-        totalBuses[i] = numBuses;
+        totBuses[i] = numBuses;
       } else {
-        totalBuses[i] = 0;
+        totBuses[i] = 0;
       }
     }
-    GA_Igop(totalBuses,nprocs,"+");
+    GA_Igop(totBuses,nprocs,"+");
     distr[0] = 0;
-    p_busTotal = totalBuses[0];
+    p_busTotal = totBuses[0];
     for (i=1; i<nprocs; i++) {
-      distr[i] = distr[i-1] + totalBuses[i-1];
-      p_busTotal += totalBuses[i];
+      distr[i] = distr[i-1] + totBuses[i-1];
+      p_busTotal += totBuses[i];
     }
     p_busGA = GA_Create_handle();
     int one = 1;
@@ -1391,7 +1377,7 @@ void initBusUpdate(void)
         icnt++;
       }
     }
-    delete [] totalBuses;
+    delete [] totBuses;
     delete [] distr;
   }
   GA_Sync();
@@ -1499,21 +1485,21 @@ void initBranchUpdate(void)
     // Construct GA that can hold exchange data for all active branches
     int nprocs = GA_Nnodes();
     int me = GA_Nodeid();
-    int *totalBranches = new int(nprocs);
+    int *totBranches = new int(nprocs);
     int *distr = new int(nprocs);
     for (i=0; i<nprocs; i++) {
       if (me == i) {
-        totalBranches[i] = numBranches;
+        totBranches[i] = numBranches;
       } else {
-        totalBranches[i] = 0;
+        totBranches[i] = 0;
       }
     }
-    GA_Igop(totalBranches,nprocs,"+");
+    GA_Igop(totBranches,nprocs,"+");
     distr[0] = 0;
-    p_branchTotal = totalBranches[0];
+    p_branchTotal = totBranches[0];
     for (i=1; i<nprocs; i++) {
-      distr[i] = distr[i-1] + totalBranches[i-1];
-      p_branchTotal += totalBranches[i];
+      distr[i] = distr[i-1] + totBranches[i-1];
+      p_branchTotal += totBranches[i];
     }
     p_branchGA = GA_Create_handle();
     int one = 1;
@@ -1556,7 +1542,7 @@ void initBranchUpdate(void)
         icnt++;
       }
     }
-    delete totalBranches;
+    delete totBranches;
     delete distr;
   }
   GA_Sync();
@@ -1743,13 +1729,6 @@ private:
    * Vector of branch data and objects
    */
   BranchDataVector p_branches;
-
-  /**
-   * Parallel environment for network
-   */
-#if 0
-  ParallelEnv p_configuration;
-#endif
 
   /**
    * Parameter for keeping track of reference bus
