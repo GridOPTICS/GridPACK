@@ -201,7 +201,7 @@ template <class _network>
           p_busMap.insert(std::pair<int,int>(o_idx,index));
 
           // BUS_NAME             "NAME"                 string
-          data->addValue(BUS_NAME, split_line[9].c_str());
+          data->addValue(BUS_NAME, (char*)split_line[9].c_str());
 
           // BUS_BASEKV           "BASKV"               float
           data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
@@ -408,7 +408,7 @@ template <class _network>
           data->addValue(BRANCH_TOBUS, o_idx2);
 
           // BRANCH_CKT          "CKT"                 character
-          data->addValue(BRANCH_CKT, split_line[2].c_str());
+          data->addValue(BRANCH_CKT, (char*)split_line[2].c_str());
 
           // BRANCH_R            "R"                   float
           data->addValue(BRANCH_R, atof(split_line[3].c_str()));
@@ -504,7 +504,7 @@ template <class _network>
            * type: string
            * #define TRANSFORMER_CKT "TRANSFORMER_CKT"
            */
-          data->addValue(TRANSFORMER_CKT, split_line[2].c_str());
+          data->addValue(TRANSFORMER_CKT, (char*)split_line[2].c_str());
 
           /*
            * type: integer
@@ -546,7 +546,7 @@ template <class _network>
            * type: string
            * #define TRANSFORMER_NAME "TRANSFORMER_NAME"
            */
-          data->addValue(TRANSFORMER_NAME, split_line[2].c_str());
+          data->addValue(TRANSFORMER_NAME, (char*)split_line[2].c_str());
 
           /*
            * type: integer
@@ -717,7 +717,7 @@ template <class _network>
            * type: string
            * #define SHUNT_RMIDNT "SHUNT_RMIDNT"
            */
-//          p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[5].c_str());
+//          p_busData[o_idx]->addValue(SHUNT_RMIDNT, (char*)split_line[5].c_str());
 
           /*
            * type: real float
@@ -901,7 +901,7 @@ template <class _network>
            * #define MULTI_SEC_LINE_ID "MULTI_SEC_LINE_ID"
 
            */
-          data.addValue(MULTI_SEC_LINE_ID, split_line[0].c_str());
+          data.addValue(MULTI_SEC_LINE_ID, (char*)split_line[0].c_str());
           multi_section_instance.push_back(data);
 
           /*
@@ -1013,7 +1013,7 @@ template <class _network>
           data.addValue(OWNER_NUMBER, atoi(split_line[0].c_str()));
           owner_instance.push_back(data);
 
-          data.addValue(OWNER_NAME, split_line[1].c_str());
+          data.addValue(OWNER_NAME, (char*)split_line[1].c_str());
           owner_instance.push_back(data);
 
           owner.push_back(owner_instance);
