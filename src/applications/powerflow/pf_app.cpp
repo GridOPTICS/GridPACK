@@ -48,7 +48,7 @@ void gridpack::powerflow::PFApp::execute(void)
   boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
 
   // read configuration file
-  gridpack::utilities::Configuration config;
+  gridpack::utility::Configuration config;
 //  config.open("config.txt", world);
 
   // load input file

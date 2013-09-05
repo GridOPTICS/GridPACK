@@ -9,7 +9,7 @@ using std::string;
 using std::ostream;
 
 namespace gridpack {
-namespace utilities {
+namespace utility {
 
 class ConfigInternals {
 public:
@@ -155,5 +155,5 @@ Configuration::Cursor * Configuration::get_cursor(Configuration::KeyType key) {
 	return c;
 }
 
-} // namespace utilities
+} // namespace utility
 } // namespace gridpack

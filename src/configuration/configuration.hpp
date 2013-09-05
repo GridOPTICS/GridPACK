@@ -66,7 +66,7 @@
 #include <mpi.h>
 #endif
 namespace gridpack {
-namespace utilities {
+namespace utility {
 
 class Configuration {
 	class ConfigInternals * pimpl;
