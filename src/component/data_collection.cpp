@@ -323,7 +323,7 @@ void gridpack::component::DataCollection::dump(void)
   while (str_it != p_strings.end()) {
     std::string key = str_it->first;
     std::string sval = str_it->second;
-    cout << "  (INTEGER) key: "<<key<<" value: "<<sval<<endl;
+    cout << "  (STRING) key: "<<key<<" value: "<<sval<<endl;
     str_it++;
   }
   // print out floats
