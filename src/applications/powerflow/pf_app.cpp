@@ -12,6 +12,7 @@
 
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
+#include "gridpack/math/linear_solver.hpp"
 #include "gridpack/applications/powerflow/pf_app.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
@@ -89,11 +90,69 @@ void gridpack::powerflow::PFApp::execute(void)
   // Set PQ
   //factory.setPQ();
 
+  factory.setMode(Jacobian);
+
+#if 0
+  // Initial PQ matrix
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   PQ->print();
+  boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
 
-  factory.setMode(Jacobian);
+  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+
+  // Set up bus data exchange buffers. Need to decide what data needs to be
+  // exchanged
+  factory.setExchange();
+
+  // Create bus data exchange
+  network->initBusUpdate();
+  network->updateBuses();
+
+  // Convergence and iteration parameters
+  double tolerance;
+  int max_iteration;
+  ComplexType tol;
+
+  // These need to eventually be set using configuration file
+  tolerance = 1.0e-6;
+  max_iteration = 100;
+
+  // Create linear solver
+  gridpack::math::LinearSolver isolver(*J);
+
+  tol = 2.0*tolerance;
+  int iter = 0;
+
+  // First iteration
+  X->zero(); //might not need to do this
+  isolver.solve(*PQ, *X);
+  tol = X->norm2();
+
+  while (real(tol) <= tolerance && iter <=max_iteration) {
+    // Push current values in X vector back into network components
+    // Need to implement setValues method in PFBus class in order for this to
+    // work
+    vMap.mapToBus(X);
+
+    // Exchange data between ghost buses (I don't think we need to exchange data
+    // between branches)
+    network->updateBuses();
+
+    // Create new versions of Jacobian and PQ vector
+    vMap.mapToVector(PQ);
+    jMap.mapToMatrix(J);
+
+    // Create linear solver
+    gridpack::math::LinearSolver solver(*J);
+    X->zero(); //might not need to do this
+    solver.solve(*PQ, *X);
+
+    tol = X->norm2();
+    iter++;
+  }
+#endif
 
   // Set Jacobian matrix
   // Why "getJacobian method is in PFBranch?
