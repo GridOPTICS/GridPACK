@@ -59,6 +59,37 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 }
 
 /**
+ * Generate matrix from current component state on network
+ * @return: return a pointer to new matrix
+ */
+boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  boost::shared_ptr<gridpack::math::Matrix>
+             Ret(new gridpack::math::Matrix(comm,
+             p_rowBlockSize, p_jDim, gridpack::math::Matrix::Sparse));
+  loadBusData(Ret,true);
+  loadBranchData(Ret,true);
+  GA_Sync();
+  Ret->ready();
+  return Ret;
+}
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix: existing matrix (should be generated from same mapper)
+ */
+void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  matrix->zero();
+  loadBusData(matrix,false);
+  loadBranchData(matrix,false);
+  GA_Sync();
+  matrix->ready();
+}
+
+private:
+/**
  * Return the number of active buses on this process
  * @return: number of active buses
  */
@@ -447,36 +478,6 @@ void setupOffsetArrays()
 }
 
 /**
- * Generate matrix from current component state on network
- * @return: return a pointer to new matrix
- */
-boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
-{
-  gridpack::parallel::Communicator comm = p_network->communicator();
-  boost::shared_ptr<gridpack::math::Matrix>
-             Ret(new gridpack::math::Matrix(comm,
-             p_rowBlockSize, p_jDim, gridpack::math::Matrix::Sparse));
-  loadBusData(Ret,true);
-  loadBranchData(Ret,true);
-  GA_Sync();
-  Ret->ready();
-  return Ret;
-}
-
-/**
- * Reset existing matrix from current component state on network
- * @param matrix: existing matrix (should be generated from same mapper)
- */
-void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
-{
-  matrix->zero();
-  loadBusData(matrix,false);
-  loadBranchData(matrix,false);
-  GA_Sync();
-  matrix->ready();
-}
-
-/**
  * Add diagonal block contributions from buses to matrix
  * @param matrix: matrix to which contributions are added
  * @param flag: flag to distinguish new matrix (true) from old (false)
@@ -683,7 +684,6 @@ void contributions(void)
   }
 }
 
-private:
     // GA information
 int                         p_me;
 int                         p_nNodes;

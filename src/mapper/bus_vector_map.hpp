@@ -57,6 +57,72 @@ BusVectorMap(boost::shared_ptr<_network> network)
 }
 
 /**
+ * Create a vector from the current bus state
+ * @return: return pointer to new vector
+ */
+boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  boost::shared_ptr<gridpack::math::Vector>
+             Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
+  loadBusData(Ret,true);
+  GA_Sync();
+  Ret->ready();
+  return Ret;
+}
+
+/**
+ * Reset a vector from the current bus state (vector should be created with same
+ * mapper)
+ * @param vector: existing vector that should be reset
+ */
+void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
+{
+  vector->zero();
+  loadBusData(vector,false);
+  GA_Sync();
+  vector->ready();
+}
+
+/**
+ * Push data from vector onto buses. Vector must be created with the
+ * mapToVector method using the same BusVectorMap
+ * @param vector: vector containing data to be pushed to buses
+ */
+void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
+{
+  int minVecIndex, maxVecIndex;
+  vector->local_index_range(minVecIndex, maxVecIndex);
+
+  // Assume that row partitioning is working correctly
+  int nRows = p_maxRowIndex - p_minRowIndex + 1;
+  int *sizes = new int[nRows];
+  int *offsets = new int[nRows];
+  int one = 1;
+  NGA_Get(gaVecBlksI,&p_minRowIndex,&p_maxRowIndex,sizes,&one);
+  NGA_Get(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,offsets,&one);
+  ComplexType *values = new ComplexType[p_maxIBlock];
+  int i, j, idx, size, offset;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      if (p_network->getBus(i)->vectorSize(&size)) {
+        p_network->getBus(i)->getMatVecIndex(&idx);
+        idx = idx - p_minRowIndex;
+        size = sizes[idx];
+        offset = offsets[idx];
+        for (j=0; j<size; j++) {
+          vector->get_element(offset+j,values[j]); 
+        }
+        p_network->getBus(i)->setValues(values);
+      }
+    }
+  }
+  delete [] sizes;
+  delete [] offsets;
+}
+
+private:
+/**
  * Return the number of active buses on this process
  * @return: number of active buses
  */
@@ -295,34 +361,6 @@ void setupOffsetArrays()
 }
 
 /**
- * Create a vector from the current bus state
- * @return: return pointer to new vector
- */
-boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
-{
-  gridpack::parallel::Communicator comm = p_network->communicator();
-  boost::shared_ptr<gridpack::math::Vector>
-             Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
-  loadBusData(Ret,true);
-  GA_Sync();
-  Ret->ready();
-  return Ret;
-}
-
-/**
- * Reset a vector from the current bus state (vector should be created with same
- * mapper)
- * @param vector: existing vector that should be reset
- */
-void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
-{
-  vector->zero();
-  loadBusData(vector,false);
-  GA_Sync();
-  vector->ready();
-}
-
-/**
  * Add block contributions from buses to vector
  * @param vector: vector to which contributions are added
  * @param flag: flag to distinguish new vector (true) from existing vector * (false)
@@ -383,43 +421,6 @@ void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
 }
 
 /**
- * Push data from vector onto buses. Vector must be created with the
- * mapToVector method using the same BusVectorMap
- * @param vector: vector containing data to be pushed to buses
- */
-void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
-{
-  int minVecIndex, maxVecIndex;
-  vector->local_index_range(minVecIndex, maxVecIndex);
-
-  // Assume that row partitioning is working correctly
-  int nRows = p_maxRowIndex - p_minRowIndex + 1;
-  int *sizes = new int[nRows];
-  int *offsets = new int[nRows];
-  int one = 1;
-  NGA_Get(gaVecBlksI,&p_minRowIndex,&p_maxRowIndex,sizes,&one);
-  NGA_Get(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,offsets,&one);
-  ComplexType *values = new ComplexType[p_maxIBlock];
-  int i, j, idx, size, offset;
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->vectorSize(&size)) {
-        p_network->getBus(i)->getMatVecIndex(&idx);
-        idx = idx - p_minRowIndex;
-        size = sizes[idx];
-        offset = offsets[idx];
-        for (j=0; j<size; j++) {
-          vector->get_element(offset+j,values[j]); 
-        }
-        p_network->getBus(i)->setValues(values);
-      }
-    }
-  }
-  delete [] sizes;
-  delete [] offsets;
-}
-
-/**
  * Calculate how many buses contribute to vector
  */
 void contributions(void)
@@ -435,7 +436,6 @@ void contributions(void)
   }
 }
 
-private:
     // GA information
 int                         p_me;
 int                         p_nNodes;
