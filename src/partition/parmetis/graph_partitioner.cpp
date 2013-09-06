@@ -1,7 +1,7 @@
 /**
  * @file   graph_partitioner.cpp
  * @author William A. Perkins
- * @date   2013-06-21 11:31:50 d3g096
+ * @date   2013-09-06 13:36:16 d3g096
  * 
  * @brief  
  * 
@@ -23,18 +23,20 @@ namespace network {
 // GraphPartitioner:: constructors / destructor
 // -------------------------------------------------------------
 GraphPartitioner::GraphPartitioner(const parallel::Communicator& comm)
-  : utility::Uncopyable(),
+  : parallel::WrappedDistributed(),
+    utility::Uncopyable(),
     p_impl(new ParMETISGraphPartitionerImpl(comm))
 {
-  // empty
+  p_set_distributed(p_impl.get());
 }
 
 GraphPartitioner::GraphPartitioner(const parallel::Communicator& comm,
                                    const int& local_nodes, const int& local_edges)
-  : utility::Uncopyable(),
+  : parallel::WrappedDistributed(),
+    utility::Uncopyable(),
     p_impl(new ParMETISGraphPartitionerImpl(comm, local_nodes, local_edges))
 {
-  // empty
+  p_set_distributed(p_impl.get());
 }
 
 } // namespace network

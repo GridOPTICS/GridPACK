@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-07-11 09:04:53 d3g096
+ * @date   2013-09-06 14:43:59 d3g096
  * 
  * @brief  
  * 
@@ -40,7 +40,7 @@ namespace math {
  * 
  */
 class Matrix 
-  : public parallel::Distributed,
+  : public parallel::WrappedDistributed,
     private utility::Uncopyable
 {
 public:
@@ -50,9 +50,15 @@ public:
    * The gridpack::math library provides two storage schemes for
    * matrices. This is used by Matrix and MatrixImplementation
    * subclasses.
+   *
+   * The actual storage scheme and memory used is dependent upon the
+   * underlying math library implementation.
    * 
    */
-  enum StorageType { Dense, Sparse };
+  enum StorageType { 
+    Dense,                      /**< dense matrix storage scheme */
+    Sparse                      /**< sparse matrix storage scheme */
+  };
 
   /// Constructor.
   Matrix(const parallel::Communicator& dist,
@@ -161,6 +167,8 @@ public:
     p_matrix_impl->ready();
   }
 
+  //! @cond DEVDOC
+
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor)
   {
@@ -172,6 +180,8 @@ public:
   {
     p_matrix_impl->accept(visitor);
   }
+
+  //! @endcond
 
   /// Make an exact replica of this instance
   Matrix *clone(void) const

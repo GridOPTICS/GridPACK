@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-07-11 09:08:21 d3g096
+ * @date   2013-09-06 11:09:19 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -29,22 +29,23 @@ Matrix::Matrix(const parallel::Communicator& comm,
                const int& local_rows,
                const int& cols,
                const StorageType& storage_type)
-  : parallel::Distributed(comm), utility::Uncopyable(),
+  : parallel::WrappedDistributed(), utility::Uncopyable(),
     p_matrix_impl()
 {
   switch (storage_type) {
   case Sparse:
-    p_matrix_impl.reset(new PETScMatrixImplementation(this->communicator(),
+    p_matrix_impl.reset(new PETScMatrixImplementation(comm,
                                                       local_rows, cols, false));
     break;
   case Dense:
-    p_matrix_impl.reset(new PETScMatrixImplementation(this->communicator(),
+    p_matrix_impl.reset(new PETScMatrixImplementation(comm,
                                                       local_rows, cols, true));
     break;
   default:
     BOOST_ASSERT(false);
   }
   BOOST_ASSERT(p_matrix_impl);
+  p_set_distributed(p_matrix_impl.get());
 }
 
 // -------------------------------------------------------------

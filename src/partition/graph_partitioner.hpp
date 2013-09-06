@@ -3,7 +3,7 @@
 /**
  * @file   graph_partitioner.hpp
  * @author William A. Perkins
- * @date   2013-07-24 11:44:19 d3g096
+ * @date   2013-09-06 13:35:16 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,10 @@ namespace network {
 //  class GraphPartitioner
 // -------------------------------------------------------------
 /// A class that serves as an interface to a graph partitioning library
-class GraphPartitioner : private utility::Uncopyable {
+class GraphPartitioner 
+  : public parallel::WrappedDistributed,
+    private utility::Uncopyable 
+{
 public:
 
   typedef GraphPartitionerImplementation::Index Index;

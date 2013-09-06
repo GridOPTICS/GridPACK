@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-08-13 12:19:23 d3g096
+// Last Change: 2013-09-06 08:59:26 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -25,18 +25,36 @@ namespace math {
 // -------------------------------------------------------------
 //  class PETScVectorImplementation
 // -------------------------------------------------------------
+/// Vector implementation based on the PETSc library
+/**
+ * 
+ * 
+ */
 class PETScVectorImplementation 
   : public VectorImplementation {
 public:
 
   /// Default constructor.
+  /** 
+   * @e Collective on @c comm.
+   * 
+   * @param comm parallel environment
+   * @param local_length number of entries to be locally owned
+   * 
+   * @return 
+   */
   PETScVectorImplementation(const parallel::Communicator& comm,
                             const int& local_length);
 
   /// Destructor
+  /** 
+   * @e Collective
+   * 
+   */
   ~PETScVectorImplementation(void);
 
   /// Get (a pointer to) the PETSc implementation
+
   const Vec *get_vector(void) const
   {
     return &p_vector;

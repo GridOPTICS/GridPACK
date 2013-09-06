@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-06-14 12:04:59 d3g096
+ * @date   2013-09-06 13:48:22 d3g096
  * 
  * @brief  
  * 
@@ -27,13 +27,11 @@
 namespace gridpack {
 namespace math {
 
-class ImplementationVisitor;
-
 // -------------------------------------------------------------
 //  class LinearSolver
 // -------------------------------------------------------------
 class LinearSolver 
-  : public parallel::Distributed,
+  : public parallel::WrappedDistributed,
     private utility::Uncopyable
 {
 public:
@@ -50,6 +48,8 @@ public:
     p_solver->solve(b, x);
   }
 
+  //! @cond DEVDOC
+
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor)
   {
@@ -61,6 +61,8 @@ public:
   {
     p_solver->accept(visitor);
   }
+
+  //! @endcond
 
 protected:
 

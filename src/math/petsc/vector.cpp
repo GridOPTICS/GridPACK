@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-07-11 09:05:18 d3g096
+ * @date   2013-09-06 11:06:43 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -35,11 +35,12 @@ namespace math {
 // Vector:: constructors / destructor
 // -------------------------------------------------------------
 Vector::Vector(const parallel::Communicator& comm, const int& local_length)
-  : parallel::Distributed(comm), utility::Uncopyable()
+  : parallel::WrappedDistributed(), utility::Uncopyable()
 {
   PETScVectorImplementation *impl = 
-    new PETScVectorImplementation(this->communicator(), local_length);
+    new PETScVectorImplementation(comm, local_length);
   p_vector_impl.reset(impl);
+  p_set_distributed(impl);
 }
 
 // -------------------------------------------------------------

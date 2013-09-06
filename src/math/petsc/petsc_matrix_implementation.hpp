@@ -3,7 +3,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-06-11 14:18:02 d3g096
+ * @date   2013-09-06 09:00:49 d3g096
  * 
  * @brief  
  * 
@@ -27,6 +27,11 @@ namespace math {
 // -------------------------------------------------------------
 //  class PETScMatrixImplementation
 // -------------------------------------------------------------
+/// Matrix implementation based on the PETSc library
+/**
+ * 
+ * 
+ */
 class PETScMatrixImplementation
   : public MatrixImplementation
 {

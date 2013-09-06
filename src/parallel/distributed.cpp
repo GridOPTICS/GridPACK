@@ -2,7 +2,7 @@
 /**
  * @file   distributed.cpp
  * @author William A. Perkins
- * @date   2013-05-07 07:48:09 d3g096
+ * @date   2013-09-06 14:57:42 d3g096
  * 
  * @brief  Implementation of gridpack::parallel::Distributed
  * 
@@ -16,6 +16,27 @@ namespace gridpack {
 namespace parallel {
 
 // -------------------------------------------------------------
+//  class DistributedInterface
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// DistributedInterface:: constructors / destructor
+// -------------------------------------------------------------
+DistributedInterface::DistributedInterface(void)
+{
+  // empty
+}
+
+DistributedInterface::DistributedInterface(const DistributedInterface& old)
+{
+  // empty
+}
+
+DistributedInterface::~DistributedInterface(void)
+{
+}
+
+// -------------------------------------------------------------
 //  class Distributed
 // -------------------------------------------------------------
 
@@ -23,13 +44,13 @@ namespace parallel {
 // Distributed:: constructors / destructor
 // -------------------------------------------------------------
 Distributed::Distributed(const Communicator& comm)
-  : communicator_(comm)
+  : DistributedInterface(), communicator_(comm)
 {
   // empty
 }
 
 Distributed::Distributed(const Distributed& old)
-  : communicator_(old.communicator_)
+  : DistributedInterface(old), communicator_(old.communicator_)
 {
   // empty
 }
@@ -40,8 +61,48 @@ Distributed::~Distributed(void)
 }
 
 // -------------------------------------------------------------
-// Distributed
+// Distributed::communicator
 // -------------------------------------------------------------
+const Communicator& 
+Distributed::communicator(void) const
+{
+  return communicator_;
+}
+
+// -------------------------------------------------------------
+//  class WrappedDistributed
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// WrappedDistributed:: constructors / destructor
+// -------------------------------------------------------------
+WrappedDistributed::WrappedDistributed(Distributed *d)
+  : DistributedInterface(), p_distributed(d)
+{
+  
+}
+
+WrappedDistributed::WrappedDistributed(const WrappedDistributed& old)
+  : p_distributed(old.p_distributed)
+{
+  
+}
+
+WrappedDistributed::~WrappedDistributed(void)
+{
+}
+
+// -------------------------------------------------------------
+// WrappedDistributed::communicator
+// -------------------------------------------------------------
+const Communicator& 
+WrappedDistributed::communicator(void) const
+{
+  return p_distributed->communicator();
+}
+
+
+
 
 
 } // namespace parallel

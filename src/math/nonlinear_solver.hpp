@@ -3,7 +3,7 @@
 /**
  * @file   nonlinear_solver.hpp
  * @author William A. Perkins
- * @date   2013-08-12 11:34:13 d3g096
+ * @date   2013-09-06 11:16:55 d3g096
  * 
  * @brief  
  * 
@@ -23,7 +23,8 @@ namespace math {
 //  class NonlinearSolver
 // -------------------------------------------------------------
 class NonlinearSolver 
-  : private utility::Uncopyable 
+  : public parallel::WrappedDistributed,
+    private utility::Uncopyable 
 {
 public:
 

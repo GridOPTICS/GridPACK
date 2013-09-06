@@ -2,7 +2,7 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2013-06-14 12:08:17 d3g096
+ * @date   2013-09-06 11:14:18 d3g096
  * 
  * @brief  
  * 
@@ -29,10 +29,11 @@ namespace math {
 // LinearSolver:: constructors / destructor
 // -------------------------------------------------------------
 LinearSolver::LinearSolver(const Matrix& A)
-  : parallel::Distributed(A.communicator()),
+  : parallel::WrappedDistributed(),
     utility::Uncopyable(),
     p_solver(new PETScLinearSolverImplementation(A))
 {
+  p_set_distributed(p_solver.get());
   // empty
 }
 

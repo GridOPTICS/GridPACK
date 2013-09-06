@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:11:51 d3g096
+ * @date   2013-09-06 10:32:06 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
@@ -32,7 +32,7 @@ namespace math {
 // Vector:: constructors / destructor
 // -------------------------------------------------------------
 Vector::Vector(VectorImplementation *vimpl)
-  : parallel::Distributed(vimpl->communicator()), utility::Uncopyable(),
+  : parallel::WrappedDistributed(vimpl), utility::Uncopyable(),
     p_vector_impl(vimpl)
 {
 }

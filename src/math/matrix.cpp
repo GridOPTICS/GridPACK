@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-06-11 14:12:05 d3g096
+ * @date   2013-09-06 11:08:48 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -21,7 +21,7 @@ namespace math {
 // Matrix constructor
 // -------------------------------------------------------------
 Matrix::Matrix(MatrixImplementation *impl)
-  : parallel::Distributed(impl->communicator()), 
+  : parallel::WrappedDistributed(impl), 
     utility::Uncopyable(),
     p_matrix_impl(impl)
 {

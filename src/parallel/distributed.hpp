@@ -3,7 +3,7 @@
 /**
  * @file   distributed.hpp
  * @author William A. Perkins
- * @date   2013-05-07 10:55:28 d3g096
+ * @date   2013-09-06 14:57:27 d3g096
  * 
  * @brief  
  * 
@@ -21,17 +21,61 @@ namespace gridpack {
 namespace parallel {
 
 // -------------------------------------------------------------
+//  class DistributedInterface
+// -------------------------------------------------------------
+/// Abstract class describing a parallel thing
+/**
+ * A parallel thing either contains or has access to a Communicator.
+ * A parallel thing needs access to this communicator, especially to
+ * determine the number processors and the local processor rank.
+ * 
+ */
+class DistributedInterface {
+protected:
+
+public:
+
+  /// Default constructor.
+  DistributedInterface(void);
+
+  /// Copy constructor
+  DistributedInterface(const DistributedInterface& old);
+
+  /// Destructor
+  virtual ~DistributedInterface(void);
+
+  /// Get the communicator
+  virtual const Communicator& communicator(void) const = 0;
+
+  /// Get this processor's rank
+  int processor_rank(void) const
+  {
+    return this->communicator().rank();
+  }
+
+  /// Get the size of the parallel environment
+  int processor_size(void) const
+  {
+    return this->communicator().size();
+  }
+};
+
+
+
+// -------------------------------------------------------------
 //  class Distributed
 // -------------------------------------------------------------
 /// Serves as a base class for parallel things
 /**
  * Subclasses of this class are things that exist simultaneously on
  * multiple processes.  Instantiation and destruction occurs
- * simultaneously on all processes.
+ * simultaneously on all processes.  The communicator is available
+ * directly to subclasses.
  * 
  */
-
-class Distributed {
+class Distributed 
+  : public DistributedInterface
+{
 protected:
 
   /// The parallel environmnet 
@@ -49,23 +93,49 @@ public:
   virtual ~Distributed(void);
 
   /// Get the communicator
-  const Communicator& communicator(void) const
-  {
-    return communicator_;
-  }
-
-  /// Get this processor's rank
-  int processor_rank(void) const
-  {
-    return communicator_.rank();
-  }
-
-  /// Get the size of the parallel environment
-  int processor_size(void) const
-  {
-    return communicator_.size();
-  }
+  const Communicator& communicator(void) const;
 };
+
+// -------------------------------------------------------------
+//  class WrappedDistributed
+// -------------------------------------------------------------
+/// A distributed object that's just a wrapper around another distributed object
+/**
+ * This serves as a subclass to a class that wraps a Distributed class
+ * instance.  In that case, it's desireable to have the wrapper class
+ * act like a Distributed instance, but not duplicate the information
+ * in the wrapped class.
+ * 
+ */
+class WrappedDistributed 
+  : public DistributedInterface 
+{
+protected:
+
+  /// The actual distributed object
+  Distributed *p_distributed;
+
+  /// Set the wrapped object
+  void p_set_distributed(Distributed *d) {
+    p_distributed = d;
+  }
+
+  /// Default constructor.
+  WrappedDistributed(Distributed *d = NULL);
+
+public:
+
+  /// Protected copy constructor to avoid unwanted copies.
+  WrappedDistributed(const WrappedDistributed& old);
+
+  /// Destructor
+  ~WrappedDistributed(void);
+
+  /// Get the communicator
+  const Communicator& communicator(void) const;
+};
+
+
 
 } // namespace parallel
 } // namespace gridpack
