@@ -2,7 +2,7 @@
 /**
  * @file   pf_factory.hpp
  * @author Bruce Palmer
- * @date   2013-08-08 10:20:30 d3g096
+ * @date   2013-09-09 14:25:24 d3g096
  * 
  * @brief  
  * 
@@ -16,6 +16,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/applications/powerflow/pf_components.hpp"
+#include "gridpack/math/matrix.hpp"
 
 namespace gridpack {
 namespace powerflow {
@@ -60,6 +61,12 @@ class PFFactory
      * Create the Jacobian matrix
      */
     void setJacobian(void);
+
+    /// Operator to make this compatible with math::JacobianBuilder
+  void operator() (const math::Vector& x, math::Matrix& J);
+
+    /// Operator to make this compatible with math::FunctionBuilder
+  void operator() (const math::Vector& x, math::Vector& F);
 
   private:
 

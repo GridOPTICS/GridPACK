@@ -76,12 +76,22 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
  * mapper)
  * @param vector: existing vector that should be reset
  */
-void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
+void mapToVector(gridpack::math::Vector &vector)
 {
-  vector->zero();
+  vector.zero();
   loadBusData(vector,false);
   GA_Sync();
-  vector->ready();
+  vector.ready();
+}
+
+/**
+ * Reset a vector from the current bus state (vector should be created with same
+ * mapper). 
+ * @param vector: existing vector that should be reset
+ */
+void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
+{
+  mapToVector(*vector);
 }
 
 /**
@@ -89,10 +99,10 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
  * mapToVector method using the same BusVectorMap
  * @param vector: vector containing data to be pushed to buses
  */
-void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
+void mapToBus(const gridpack::math::Vector &vector)
 {
   int minVecIndex, maxVecIndex;
-  vector->local_index_range(minVecIndex, maxVecIndex);
+  vector.local_index_range(minVecIndex, maxVecIndex);
 
   // Assume that row partitioning is working correctly
   int nRows = p_maxRowIndex - p_minRowIndex + 1;
@@ -111,7 +121,7 @@ void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
         size = sizes[idx];
         offset = offsets[idx];
         for (j=0; j<size; j++) {
-          vector->get_element(offset+j,values[j]); 
+          vector.get_element(offset+j,values[j]); 
         }
         p_network->getBus(i)->setValues(values);
       }
@@ -119,6 +129,16 @@ void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
   }
   delete [] sizes;
   delete [] offsets;
+}
+
+/**
+ * Push data from vector onto buses. Vector must be created with the
+ * mapToVector method using the same BusVectorMap
+ * @param vector: vector containing data to be pushed to buses
+ */
+void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
+{
+  mapToBus(*vector);
 }
 
 private:
@@ -365,7 +385,7 @@ void setupOffsetArrays()
  * @param vector: vector to which contributions are added
  * @param flag: flag to distinguish new vector (true) from existing vector * (false)
  */
-void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
+void loadBusData(gridpack::math::Vector &vector, bool flag)
 {
   int i,idx,isize,icnt;
   int **indices = new int*[p_busContribution];
@@ -402,9 +422,9 @@ void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
         for (j=0; j<isize; j++) {
           idx = offsets[jcnt] + j;
           if (flag) {
-            vector->add_element(idx, values[icnt]);
+            vector.add_element(idx, values[icnt]);
           } else {
-            vector->set_element(idx, values[icnt]);
+            vector.set_element(idx, values[icnt]);
           } 
           icnt++;
         }
@@ -418,6 +438,16 @@ void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
   delete [] indices;
   delete [] offsets;
   delete [] values;
+}
+
+/**
+ * Add block contributions from buses to vector
+ * @param vector: vector to which contributions are added
+ * @param flag: flag to distinguish new vector (true) from existing vector * (false)
+ */
+void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
+{
+  loadBusData(*vector, flag);
 }
 
 /**

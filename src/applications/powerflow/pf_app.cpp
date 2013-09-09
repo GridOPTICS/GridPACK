@@ -2,7 +2,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   July 23, 2013
+ * @date   2013-09-09 15:17:45 d3g096
  * 
  * @brief  
  * 
@@ -13,6 +13,7 @@
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/linear_solver.hpp"
+#include "gridpack/math/nonlinear_solver.hpp"
 #include "gridpack/applications/powerflow/pf_app.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
@@ -92,11 +93,38 @@ void gridpack::powerflow::PFApp::execute(void)
 
   factory.setMode(Jacobian);
 
+#if 1
+
+  // Set up bus data exchange buffers. Need to decide what data needs to be
+  // exchanged
+  factory.setExchange();
+
+  // Create bus data exchange
+  network->initBusUpdate();
+  network->updateBuses();
+
+  // FIXME: how does one obtain the current network state (voltage/phase in this case)?
+  // get the current network state vector
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  // factory.setState(); // or something
+  boost::shared_ptr<gridpack::math::Vector> X = vMap.mapToVector();
+
+  gridpack::math::FunctionBuilder fbuilder = factory;
+  gridpack::math::JacobianBuilder jbuilder = factory;
+  gridpack::math::NonlinearSolver solver(network->communicator(),
+                                         X->local_size(), jbuilder, fbuilder);
+  
+  solver.solve(*X);
+
+#endif
+
 #if 0
   // Initial PQ matrix
+  factory.setPQ();
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   PQ->print();
+
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
 
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);

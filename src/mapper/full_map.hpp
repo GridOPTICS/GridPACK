@@ -75,17 +75,27 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   return Ret;
 }
 
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix: existing matrix (should be generated from same mapper)
+ */
+void mapToMatrix(gridpack::math::Matrix &matrix)
+{
+  matrix.zero();
+  loadBusData(matrix,false);
+  loadBranchData(matrix,false);
+  GA_Sync();
+  matrix.ready();
+}
+
 /**
  * Reset existing matrix from current component state on network
  * @param matrix: existing matrix (should be generated from same mapper)
  */
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  matrix->zero();
-  loadBusData(matrix,false);
-  loadBranchData(matrix,false);
-  GA_Sync();
-  matrix->ready();
+  mapToMatrix(*matrix);
 }
 
 private:
@@ -482,7 +492,7 @@ void setupOffsetArrays()
  * @param matrix: matrix to which contributions are added
  * @param flag: flag to distinguish new matrix (true) from old (false)
  */
-void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
+void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   int **indices = new int*[p_busContribution];
@@ -521,9 +531,9 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
           for (j=0; j<isize; j++) {
             idx = offsets[jcnt] + j;
             if (flag) {
-              matrix->add_element(idx, jdx, values[icnt]);
+              matrix.add_element(idx, jdx, values[icnt]);
             } else {
-              matrix->set_element(idx, jdx, values[icnt]);
+              matrix.set_element(idx, jdx, values[icnt]);
             }
             icnt++;
           }
@@ -541,11 +551,21 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 }
 
 /**
+ * Add diagonal block contributions from buses to matrix
+ * @param matrix: matrix to which contributions are added
+ * @param flag: flag to distinguish new matrix (true) from old (false)
+ */
+void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
+{
+  loadBusData(*matrix, flag);
+}
+
+/**
  * Add off-diagonal block contributions from branches to matrix
  * @param matrix: matrix to which contributions are added
  * @param flag: flag to distinguish new matrix (true) from old (false)
  */
-void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
+void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   int **i_indices = new int*[p_branchContribution];
@@ -604,9 +624,9 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
             if (flag) {
-              matrix->add_element(idx, jdx, values[icnt]);
+              matrix.add_element(idx, jdx, values[icnt]);
             } else {
-              matrix->set_element(idx, jdx, values[icnt]);
+              matrix.set_element(idx, jdx, values[icnt]);
             }
             icnt++;
           }
@@ -626,9 +646,9 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
             if (flag) {
-              matrix->add_element(idx, jdx, values[icnt]);
+              matrix.add_element(idx, jdx, values[icnt]);
             } else {
-              matrix->set_element(idx, jdx, values[icnt]);
+              matrix.set_element(idx, jdx, values[icnt]);
             }
             icnt++;
           }
@@ -646,6 +666,16 @@ void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag
   delete [] i_offsets;
   delete [] j_offsets;
   delete [] values;
+}
+
+/**
+ * Add off-diagonal block contributions from branches to matrix
+ * @param matrix: matrix to which contributions are added
+ * @param flag: flag to distinguish new matrix (true) from old (false)
+ */
+void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
+{
+  loadBranchData(*matrix, flag);
 }
 
 /**
