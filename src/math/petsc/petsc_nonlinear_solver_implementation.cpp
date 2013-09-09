@@ -1,7 +1,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-08-12 14:00:38 d3g096
+ * @date   2013-09-06 15:42:12 d3g096
  * 
  * @brief  
  * 
@@ -92,7 +92,7 @@ PetscNonlinearSolverImplementation::FormJacobian(SNES snes, Vec x, Mat *jac, Mat
   BOOST_ASSERT(x == *(solver->p_petsc_X));
 
   // May need to do this, which seems slow.
-  ierr = VecCopy(x, *(solver->p_petsc_X)); CHKERRQ(ierr);
+  // ierr = VecCopy(x, *(solver->p_petsc_X)); CHKERRQ(ierr);
 
   // Call the user-specified function (object) to form the Jacobian
   (solver->p_jacobian)(*(solver->p_X), *(solver->p_J));

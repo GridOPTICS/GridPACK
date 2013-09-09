@@ -1,7 +1,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-08-13 11:37:08 d3g096
+ * @date   2013-09-09 13:14:41 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -20,6 +20,7 @@
 #include "gridpack/utilities/exception.hpp"
 #include "math.hpp"
 #include "nonlinear_solver.hpp"
+#include "newton_raphson_solver.hpp"
 
 
 
@@ -84,6 +85,33 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
 
   BOOST_CHECK_CLOSE(real(x), 1.900677, 1.0e-04);
   BOOST_CHECK_CLOSE(real(y), 0.3112186, 1.0e-04);
+
+}
+
+BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
+{
+  boost::mpi::communicator world;
+  boost::mpi::communicator self = world.split(world.rank());
+
+  gridpack::math::JacobianBuilder j = build_tiny_jacobian_1();
+  gridpack::math::FunctionBuilder f = build_tiny_function_1();
+
+  gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
+  gridpack::math::Vector X(self, 2);
+  X.set_element(0, 2.00);
+  X.set_element(1, 0.25);
+  X.ready();
+  solver.solve(X);
+  BOOST_TEST_MESSAGE("tiny_serial_1 results (newton-raphson):");
+  X.print();
+
+  gridpack::ComplexType x, y;
+  X.get_element(0, x);
+  X.get_element(1, y);
+
+  BOOST_CHECK_CLOSE(real(x), 1.900677, 1.0e-04);
+  BOOST_CHECK_CLOSE(real(y), 0.3112186, 1.0e-04);
+
 }
 
 // -------------------------------------------------------------
@@ -143,7 +171,33 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
   BOOST_CHECK_CLOSE(real(y), 2.0, 1.0e-04);
 }
 
-struct build_jacobian_2
+BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
+{
+  boost::mpi::communicator world;
+  boost::mpi::communicator self = world.split(world.rank());
+
+  gridpack::math::JacobianBuilder j = &build_tiny_jacobian_2;
+  gridpack::math::FunctionBuilder f = &build_tiny_function_2;
+
+  gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
+  gridpack::math::Vector X(self, 2);
+  X.set_element(0, 2.00);
+  X.set_element(1, 3.00);
+  X.ready();
+  solver.solve(X);
+
+  BOOST_TEST_MESSAGE("tiny_serial_2 results:");
+  X.print();
+
+  gridpack::ComplexType x, y;
+  X.get_element(0, x);
+  X.get_element(1, y);
+
+  BOOST_CHECK_CLOSE(real(x), 1.0, 1.0e-04);
+  BOOST_CHECK_CLOSE(real(y), 2.0, 1.0e-04);
+}
+
+struct build_thing
 {
   void operator() (const gridpack::math::Vector& X, gridpack::math::Matrix& J) const
   {
@@ -169,12 +223,10 @@ struct build_jacobian_2
       }
     }
     J.ready();
+    std::cout << "build_jacobian_2 called" << std::endl;
     // J.print();
   }
-};
 
-struct build_function_2
-{
   void operator() (const gridpack::math::Vector& X, gridpack::math::Vector& F) const
   {
     int n(X.size());
@@ -208,6 +260,7 @@ struct build_function_2
     }
     F.ready();
     // F.print();
+    std::cout << "build_function_2 called" << std::endl;
   }
 };
 
@@ -216,10 +269,30 @@ BOOST_AUTO_TEST_CASE( example2 )
   boost::mpi::communicator world;
   static const int local_size(4);
 
-  gridpack::math::JacobianBuilder j = build_jacobian_2();
-  gridpack::math::FunctionBuilder f = build_function_2();
+  build_thing thing;
+
+  gridpack::math::JacobianBuilder j = thing;
+  gridpack::math::FunctionBuilder f = thing;
 
   gridpack::math::NonlinearSolver solver(world, local_size, j, f);
+  gridpack::math::Vector X(world, local_size);
+  X.fill(0.5);
+  X.ready();
+  solver.solve(X);
+  X.print();
+}
+
+BOOST_AUTO_TEST_CASE( example2_nr )
+{
+  boost::mpi::communicator world;
+  static const int local_size(4);
+
+  build_thing thing;
+
+  gridpack::math::JacobianBuilder j = thing;
+  gridpack::math::FunctionBuilder f = thing;
+
+  gridpack::math::NewtonRaphsonSolver solver(world, local_size, j, f);
   gridpack::math::Vector X(world, local_size);
   X.fill(0.5);
   X.ready();

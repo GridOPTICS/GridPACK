@@ -1,7 +1,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-14 12:10:57 d3g096
+ * @date   2013-09-09 12:24:46 d3g096
  * 
  * @brief  
  * 
@@ -31,11 +31,10 @@ PETScLinearSolverImplementation::PETScLinearSolverImplementation(const Matrix& A
 {
   PetscErrorCode ierr;
   try  {
-    Mat *Amat(PETScMatrix(*p_A));
     ierr = KSPCreate(this->communicator(), &p_KSP); CHKERRXX(ierr);
     ierr = KSPSetInitialGuessNonzero(p_KSP,PETSC_TRUE); CHKERRXX(ierr); 
     ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
-    ierr = KSPSetOperators(p_KSP, *Amat, *Amat, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
+    p_set_matrix(*p_A);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -91,6 +90,21 @@ PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
     throw PETScException(ierr, e);
   }
 }
+
+// -------------------------------------------------------------
+// PETScLinearSolverImplementation::p_set_matrix
+// -------------------------------------------------------------
+void
+PETScLinearSolverImplementation::p_set_matrix(const Matrix& A)
+{
+  PetscErrorCode ierr(0);
+  try  {
+    Mat *Amat(PETScMatrix(*p_A));
+    ierr = KSPSetOperators(p_KSP, *Amat, *Amat, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}  
 
 
 } // namespace math

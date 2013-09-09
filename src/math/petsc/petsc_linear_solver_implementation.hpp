@@ -3,7 +3,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-06-11 13:58:09 d3g096
+ * @date   2013-09-09 12:22:17 d3g096
  * 
  * @brief  
  * 
@@ -44,6 +44,9 @@ protected:
 
   /// Solve w/ the specified RHS and estimate (result in x)
   void p_solve(const Vector& b, Vector& x) const;
+
+  /// Use different coefficient matrix (or A w/ new values) (specialized)
+  void p_set_matrix(const Matrix& A);
 
   /// Allow visits by implementation visitors
   void p_accept(ImplementationVisitor& visitor);

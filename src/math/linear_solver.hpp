@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-09-06 13:48:22 d3g096
+ * @date   2013-09-09 12:16:23 d3g096
  * 
  * @brief  
  * 
@@ -47,6 +47,13 @@ public:
   {
     p_solver->solve(b, x);
   }
+
+  /// Use different coefficient matrix (or A w/ new values)
+  void set_matrix(const Matrix& A)
+  {
+    p_solver->set_matrix(A);
+  }
+  
 
   //! @cond DEVDOC
 

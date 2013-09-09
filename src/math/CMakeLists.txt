@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-08-12 12:59:18 d3g096
+# Last Change: 2013-09-09 11:36:46 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
@@ -17,8 +17,14 @@ list(APPEND gridpack_math_sources
   matrix_implementation.cpp
   linear_solver.cpp
   linear_solver_implementation.cpp
+  nonlinear_solver_interface.hpp
+  nonlinear_solver_interface.cpp
   nonlinear_solver.cpp
   nonlinear_solver_implementation.cpp
+  newton_raphson_solver.hpp
+  newton_raphson_solver.cpp
+  newton_raphson_solver_implementation.hpp
+  newton_raphson_solver_implementation.cpp 
   implementation_visitor.cpp
 )
 

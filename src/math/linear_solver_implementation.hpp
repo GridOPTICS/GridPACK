@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-06-14 12:04:43 d3g096
+ * @date   2013-09-09 12:22:09 d3g096
  * 
  * @brief  
  * 
@@ -49,6 +49,12 @@ public:
     this->p_solve(b, x);
   }
 
+  /// Use different coefficient matrix (or A w/ new values)
+  void set_matrix(const Matrix& A)
+  {
+    p_A.reset(A.clone());
+    this->p_set_matrix(A);
+  }
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor)
   {
@@ -75,6 +81,15 @@ protected:
    * solution is put into this.
    */
   virtual void p_solve(const Vector& b, Vector& x) const = 0;
+
+  /// Use different coefficient matrix (or A w/ new values) (specialized)
+  /** 
+   * The matrix must have the same parallel environment and same
+   * nonzero layout as that used to construct the solver instance
+   * 
+   * @param A new coefficient matrix 
+   */
+  virtual void p_set_matrix(const Matrix& A) = 0;
 
   /// Allow visits by implementation visitors
   virtual void p_accept(ImplementationVisitor& visitor) = 0;
