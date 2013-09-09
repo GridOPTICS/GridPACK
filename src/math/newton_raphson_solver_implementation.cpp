@@ -1,7 +1,7 @@
 /**
  * @file   newton_raphson_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-09 13:10:59 d3g096
+ * @date   2013-09-09 15:21:26 d3g096
  * 
  * @brief  
  * 
@@ -46,12 +46,12 @@ NewtonRaphsonSolverImplementation::p_solve(void)
   ComplexType tol(1.0e+30);
   int iter(0);
   
-  std::cout << "Entered NewtonRaphsonSolverImplementation::p_solve()"
-            << std::endl;
+  // std::cout << "Entered NewtonRaphsonSolverImplementation::p_solve()"
+  //           << std::endl;
   boost::scoped_ptr<Vector> deltaX(p_X->clone());
   deltaX->zero();
   while (real(tol) > p_tolerance && iter <= p_max_iterations) {
-    p_X->print();
+    // p_X->print();
     p_function(*p_X, *p_F);
     p_F->scale(-1.0);
     p_jacobian(*p_X, *p_J);
@@ -64,14 +64,14 @@ NewtonRaphsonSolverImplementation::p_solve(void)
     p_linear_solver->solve(*p_F, *deltaX);
     tol = deltaX->norm2();
     p_X->add(*deltaX);
-    p_X->print();
+    // p_X->print();
     iter += 1;
-    std::cout << "NewtonRaphsonSolverImplementation::p_solve: "
-              << "iteration " << iter << ": "
-              << tol << std::endl;
+    // std::cout << "NewtonRaphsonSolverImplementation::p_solve: "
+    //           << "iteration " << iter << ": "
+    //           << tol << std::endl;
   }
-  std::cout << "Leaving NewtonRaphsonSolverImplementation::p_solve()"
-            << std::endl;
+  // std::cout << "Leaving NewtonRaphsonSolverImplementation::p_solve()"
+  //           << std::endl;
 }
 
 
