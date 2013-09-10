@@ -36,6 +36,15 @@ void Configuration::enable_logging(std::ostream * out) {
 	pimpl->logging = out;
 }
 
+static Configuration * config = NULL; 
+Configuration * Configuration::configuration() {
+	if(config == NULL) {
+		config = new Configuration();
+	}
+	return config;
+}
+
+
 #ifdef USE_MPI
 bool Configuration::open(std::string file,MPI_Comm comm) {
 #else
@@ -154,6 +163,8 @@ Configuration::Cursor * Configuration::get_cursor(Configuration::KeyType key) {
 	c->pimpl->pt = *cpt;
 	return c;
 }
+
+
 
 } // namespace utility
 } // namespace gridpack

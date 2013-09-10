@@ -77,6 +77,11 @@ public:
 	Configuration(void);
 	~Configuration(void);
 
+	/*
+	 * access a common, shared by all modules configuration database,
+	 */
+	static Configuration * configuration();
+
 	// enable logging for diagnostics and provenence (default is std::cout)
 	void enable_logging(std::ostream * = NULL);
 
