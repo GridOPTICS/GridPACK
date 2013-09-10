@@ -94,6 +94,25 @@ class PFBus
     bool vectorValues(ComplexType *values);
 
     /**
+     * Set the internal values of the voltage magnitude and phase angle. Need this
+     * function to push values from vectors back onto buses 
+     * @param values array containing voltage magnitude and angle
+     */
+    void setValues(gridpack::ComplexType *values);
+
+    /**
+     * Return the size of the buffer used in data exchanges on the network.
+     * For this problem, the voltage magnitude and phase angle need to be exchanged
+     * @return size of buffer
+     */
+    int getXCBufSize(void);
+
+    /**
+     * Assign pointers for voltage magnitude and phase angle
+     */
+    void setXCBuf(void *buf);
+
+    /**
      * Set values of YBus matrix. These can then be used in subsequent
      * calculations
      */
@@ -158,6 +177,8 @@ class PFBus
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
+    bool p_load;
+    bool p_gen;
     int p_mode;
     double p_v, p_theta; // p_v is initialized to p_voltage, but may be subject to change during the NR iterations
     double p_ybusr, p_ybusi;
@@ -169,6 +190,12 @@ class PFBus
     int p_gstatus;
     double p_pl, p_ql;
     double p_sbase;
+
+    /**
+     * Variables that are exchanged between buses
+     */
+    double* p_vMag_ptr;
+    double* p_vAng_ptr;
 
 private:
 
@@ -182,6 +209,8 @@ private:
       & p_shunt_gs
       & p_shunt_bs
       & p_shunt
+      & p_load
+      & p_gen
       & p_mode
       & p_v & p_theta
       & p_ybusr & p_ybusi
@@ -305,12 +334,6 @@ class PFBranch
     int p_mode;
     double p_ybusr, p_ybusi;
     double p_theta;
-
-    /**
-     * Variables that are exchanged between buses
-     */
-    double* p_vMag_ptr;
-    double* p_vAng_ptr;
 
 private:
 

@@ -176,23 +176,36 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
 }
 
 /**
+ * Set the internal values of the voltage magnitude and phase angle. Need this
+ * function to push values from vectors back onto buses 
+ * @param values array containing voltage magnitude and angle
+ */
+void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
+{
+  *p_vAng_ptr = real(values[0]);
+  *p_vMag_ptr = real(values[1]);
+  p_theta = *p_vAng_ptr;
+  p_v = *p_vMag_ptr;
+}
+
+/**
  * Return the size of the buffer used in data exchanges on the network.
  * For this problem, the voltage magnitude and phase angle need to be exchanged
  * @return size of buffer
  */
-/*int gridpack::powerflow::getXCBufSize(void)
+int gridpack::powerflow::PFBus::getXCBufSize(void)
 {
-  return 2*sizeof(double)
-}*/
+  return 2*sizeof(double);
+}
 
 /**
  * Assign pointers for voltage magnitude and phase angle
  */
-/*void gridpack::powerflow::setXCBuf(void *buf)
+void gridpack::powerflow::PFBus::setXCBuf(void *buf)
 {
-  p_vMag_ptr = (double*)buf;
-  p_vAng_ptr = p_vAng_ptr+1;
-}*/
+  p_vAng_ptr = (double*)buf;
+  p_vMag_ptr = p_vAng_ptr+1;
+}
 
 void gridpack::powerflow::PFBus::setYBus(void)
 {
@@ -223,8 +236,6 @@ gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
   gridpack::ComplexType ret(p_ybusr,p_ybusi);
   return ret;
 }
-
-
   
 /**
  * Load values stored in DataCollection object into PFBus object. The
@@ -244,16 +255,24 @@ void gridpack::powerflow::PFBus::load(
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
   // TODO: Need to get values of P0 and Q0 from Network Configuration file
   //printf("p_shunt_gs=%f,p_shunt_bs=%f\n",p_shunt_gs,p_shunt_bs);
+  // Check to see if bus is reference bus
+  int itype;
+  data->getValue(BUS_TYPE, &itype);
+  if (itype == 3) {
+    setReferenceBus(true);
+  }
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
-  p_shunt = p_shunt && data->getValue(LOAD_PL, &p_pl);
-  p_shunt = p_shunt && data->getValue(LOAD_QL, &p_ql);
+  p_load = true;
+  p_load = p_load && data->getValue(LOAD_PL, &p_pl);
+  p_load = p_load && data->getValue(LOAD_QL, &p_ql);
   //printf("p_pl=%f,p_ql=%f\n",p_pl,p_ql);
-  p_shunt = p_shunt && data->getValue(GENERATOR_PG, &p_pg);
-  p_shunt = p_shunt && data->getValue(GENERATOR_QG, &p_qg);
+  p_gen = true;
+  p_gen = p_shunt && data->getValue(GENERATOR_PG, &p_pg);
+  p_gen = p_shunt && data->getValue(GENERATOR_QG, &p_qg);
   //printf("p_pg=%f,p_qg=%f\n",p_pg,p_qg);
  
-  p_shunt = p_shunt && data->getValue(GENERATOR_STAT, &p_gstatus);
+  p_gen = p_shunt && data->getValue(GENERATOR_STAT, &p_gstatus);
   //printf("p_gstatus = %d\n", p_gstatus);
   //p_gstatus = 1;
   //p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);

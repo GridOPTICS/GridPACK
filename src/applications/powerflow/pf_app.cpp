@@ -103,7 +103,7 @@ void gridpack::powerflow::PFApp::execute(void)
   //boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
   //X->print(); 
 
-/*  // Set up bus data exchange buffers. Need to decide what data needs to be
+  // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
   factory.setExchange();
 
@@ -113,11 +113,13 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // FIXME: how does one obtain the current network state (voltage/phase in this case)?
   // get the current network state vector
-  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  // gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   // factory.setState(); // or something
+
+  // factory.setMode(RHS) ????
+#if 0
   boost::shared_ptr<gridpack::math::Vector> X = vMap.mapToVector();
 
-#if 1
 
   gridpack::math::FunctionBuilder fbuilder = factory;
   gridpack::math::JacobianBuilder jbuilder = factory;
@@ -191,7 +193,6 @@ void gridpack::powerflow::PFApp::execute(void)
     iter++;
   }
 #endif
-*/
 
   // Set Jacobian matrix
   // Why "getJacobian method is in PFBranch?
