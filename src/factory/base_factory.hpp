@@ -32,7 +32,7 @@ class BaseFactory {
 
     /**
      * Constructor
-     * @param network: network that factory operates on
+     * @param network network that factory operates on
      */
     BaseFactory(NetworkPtr network)
       : p_network(network)
@@ -216,6 +216,8 @@ class BaseFactory {
       // Invoke load method on all bus objects
       for (i=0; i<numBus; i++) {
         p_network->getBus(i)->load(p_network->getBusData(i));
+        if (p_network->getBus(i)->getReferenceBus())
+          p_network->setReferenceBus(i);
       }
 
       // Invoke load method on all branch objects
