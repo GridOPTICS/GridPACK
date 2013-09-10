@@ -33,8 +33,8 @@ gridpack::component::DataCollection & gridpack::component::DataCollection::opera
 
 /**
  *  Add variables to DataCollection object
- *  @param name: name given to data element
- *  @param value: value of data element
+ *  @param name name given to data element
+ *  @param value value of data element
  */
 void gridpack::component::DataCollection::addValue(char *name, int value)
 {
@@ -73,20 +73,104 @@ void gridpack::component::DataCollection::addValue(char *name, double value)
   p_doubles.insert(std::pair<std::string, double>(str,value));
 }
 
-#if 1
 void gridpack::component::DataCollection::addValue(char *name, gridpack::ComplexType value)
 {
   std::string str = name;
   p_complexType.insert(std::pair<std::string, gridpack::ComplexType>(str,value));
 }
-#endif
+
+/**
+ *  Add variables to DataCollection object with an additional index to keep
+ *  track of items that can appear more than once. Item appears in
+ *  DataCollection with the tag "name:idx"
+ *  @param name name given to data element
+ *  @param value value of data element
+ *  @param idx index of value
+ */
+void gridpack::component::DataCollection::addValue(char *name, int value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  p_ints.insert(std::pair<std::string, int>(str,value));
+}
+
+void gridpack::component::DataCollection::addValue(char *name, long value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  p_longs.insert(std::pair<std::string, long>(str,value));
+}
+
+void gridpack::component::DataCollection::addValue(char *name, bool value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  p_bools.insert(std::pair<std::string, bool>(str,value));
+}
+
+void gridpack::component::DataCollection::addValue(char *name, char *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::string val = value;
+  p_strings.insert(std::pair<std::string, std::string>(str,value));
+}
+
+void gridpack::component::DataCollection::addValue(char *name, float value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  p_floats.insert(std::pair<std::string, float>(str,value));
+}
+
+void gridpack::component::DataCollection::addValue(char *name, double value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  p_doubles.insert(std::pair<std::string, double>(str,value));
+}
+
+void gridpack::component::DataCollection::addValue(char *name,
+    gridpack::ComplexType value, int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  p_complexType.insert(std::pair<std::string, gridpack::ComplexType>(str,value));
+}
 
 /**
  *  Modify current value of existing data element in
  *  DataCollection object
- *  @param name: name of data element
- *  @param value: new value of data element
- *  @return: false if no element of the correct name and type exists in
+ *  @param name name of data element
+ *  @param value new value of data element
+ *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
 bool gridpack::component::DataCollection::setValue(char *name, int value)
@@ -168,7 +252,6 @@ bool gridpack::component::DataCollection::setValue(char *name, double value)
   }
 }
 
-#if 1
 bool gridpack::component::DataCollection::setValue(char *name, gridpack::ComplexType value)
 {
   std::string str = name;
@@ -181,14 +264,150 @@ bool gridpack::component::DataCollection::setValue(char *name, gridpack::Complex
     return false;
   }
 }
-#endif
+
+/**
+ *  Modify current value of existing data element in
+ *  DataCollection object. Assume that name appears in DataCollection with an
+ *  additional index in the form "name:idx"
+ *  @param name name of data element
+ *  @param value new value of data element
+ *  @param idx index of value
+ *  @return false if no element of the correct name and type exists in
+ *  DataCollection object
+ */
+bool gridpack::component::DataCollection::setValue(char *name, int value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, int>::iterator it;
+  it = p_ints.find(str);
+  if (it != p_ints.end()) {
+    it->second = value;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::setValue(char *name, long value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, long>::iterator it;
+  it = p_longs.find(str);
+  if (it != p_longs.end()) {
+    it->second = value;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::setValue(char *name, bool value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, bool>::iterator it;
+  it = p_bools.find(str);
+  if (it != p_bools.end()) {
+    it->second = value;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::setValue(char *name, char *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::string val = value;
+  std::map<std::string, std::string>::iterator it;
+  it = p_strings.find(str);
+  if (it != p_strings.end()) {
+    it->second = val;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::setValue(char *name, float value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, float>::iterator it;
+  it = p_floats.find(str);
+  if (it != p_floats.end()) {
+    it->second = value;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::setValue(char *name, double value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, double>::iterator it;
+  it = p_doubles.find(str);
+  if (it != p_doubles.end()) {
+    it->second = value;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::setValue(char *name,
+    gridpack::ComplexType value, int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, gridpack::ComplexType>::iterator it;
+  it = p_complexType.find(str);
+  if (it != p_complexType.end()) {
+    it->second = value;
+    return true;
+  } else {
+    return false;
+  }
+}
 
 /**
  *  Retrieve current value of existing data element in
  *  DataCollection object
- *  @param name: name of data element
- *  @param value: current value of data element
- *  @return: false if no element of the correct name and type exists in
+ *  @param name name of data element
+ *  @param value current value of data element
+ *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
 bool gridpack::component::DataCollection::getValue(char *name, int *value)
@@ -269,7 +488,6 @@ bool gridpack::component::DataCollection::getValue(char *name, double *value)
   }
 }
 
-#if 1
 bool gridpack::component::DataCollection::getValue(char *name, gridpack::ComplexType *value)
 {
   std::string str = name;
@@ -282,7 +500,142 @@ bool gridpack::component::DataCollection::getValue(char *name, gridpack::Complex
     return false;
   }
 }
-#endif
+
+/**
+ *  Retrieve current value of existing data element in
+ *  DataCollection object. Assume that item appears in DataCollection with the
+ *  tag "name:idx"
+ *  @param name name of data element
+ *  @param value current value of data element
+ *  @param idx index of value
+ *  @return false if no element of the correct name and type exists in
+ *  DataCollection object
+ */
+bool gridpack::component::DataCollection::getValue(char *name, int *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, int>::iterator it;
+  it = p_ints.find(str);
+  if (it != p_ints.end()) {
+    *value = it->second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::getValue(char *name, long *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, long>::iterator it;
+  it = p_longs.find(str);
+  if (it != p_longs.end()) {
+    *value = it->second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::getValue(char *name, bool *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, bool>::iterator it;
+  it = p_bools.find(str);
+  if (it != p_bools.end()) {
+    *value = it->second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::getValue(char *name, std::string *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, std::string>::iterator it;
+  it = p_strings.find(str);
+  if (it != p_strings.end()) {
+    *value = it->second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::getValue(char *name, float *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, float>::iterator it;
+  it = p_floats.find(str);
+  if (it != p_floats.end()) {
+    *value = it->second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::getValue(char *name, double *value,
+    int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, double>::iterator it;
+  it = p_doubles.find(str);
+  if (it != p_doubles.end()) {
+    *value = it->second;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::component::DataCollection::getValue(char *name,
+    gridpack::ComplexType *value, int idx)
+{
+  std::string str = name;
+  str.append(":");
+  char buf[8];
+  sprintf(buf,"%d",idx);
+  str.append(buf);
+  std::map<std::string, gridpack::ComplexType>::iterator it;
+  it = p_complexType.find(str);
+  if (it != p_complexType.end()) {
+    *value = it->second;
+    return true;
+  } else {
+    return false;
+  }
+}
 
 /**
  * Dump contents of data collection to standard out

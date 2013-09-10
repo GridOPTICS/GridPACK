@@ -34,8 +34,8 @@ public:
 
   /**
    *  Add variables to DataCollection object
-   *  @param name: name given to data element
-   *  @param value: value of data element
+   *  @param name name given to data element
+   *  @param value value of data element
    */
   void addValue(char *name, int value);
   void addValue(char *name, long value);
@@ -46,11 +46,27 @@ public:
   void addValue(char *name, gridpack::ComplexType value);
 
   /**
+   *  Add variables to DataCollection object with an additional index to keep
+   *  track of items that can appear more than once. Item appears in
+   *  DataCollection with the tag "name:idx"
+   *  @param name name given to data element
+   *  @param value value of data element
+   *  @param idx index of value
+   */
+  void addValue(char *name, int value, int idx);
+  void addValue(char *name, long value, int idx);
+  void addValue(char *name, bool value, int idx);
+  void addValue(char *name, char *value, int idx);
+  void addValue(char *name, float value, int idx);
+  void addValue(char *name, double value, int idx);
+  void addValue(char *name, gridpack::ComplexType value, int idx);
+
+  /**
    *  Modify current value of existing data element in
    *  DataCollection object
-   *  @param name: name of data element
-   *  @param value: new value of data element
-   *  @return: false if no element of the correct name and type exists in
+   *  @param name name of data element
+   *  @param value new value of data element
+   *  @return false if no element of the correct name and type exists in
    *  DataCollection object
    */
   bool setValue(char *name, int value);
@@ -62,11 +78,29 @@ public:
   bool setValue(char *name, gridpack::ComplexType value);
 
   /**
+   *  Modify current value of existing data element in
+   *  DataCollection object. Assume that name appears in DataCollection with an
+   *  additional index in the form "name:idx"
+   *  @param name name of data element
+   *  @param value new value of data element
+   *  @param idx index of value
+   *  @return false if no element of the correct name and type exists in
+   *  DataCollection object
+   */
+  bool setValue(char *name, int value, int idx);
+  bool setValue(char *name, long value, int idx);
+  bool setValue(char *name, bool value, int idx);
+  bool setValue(char *name, char *value, int idx);
+  bool setValue(char *name, float value, int idx);
+  bool setValue(char *name, double value, int idx);
+  bool setValue(char *name, gridpack::ComplexType value, int idx);
+
+  /**
    *  Retrieve current value of existing data element in
    *  DataCollection object
-   *  @param name: name of data element
-   *  @param value: current value of data element
-   *  @return: false if no element of the correct name and type exists in
+   *  @param name name of data element
+   *  @param value current value of data element
+   *  @return false if no element of the correct name and type exists in
    *  DataCollection object
    */
   bool getValue(char *name, int *value);
@@ -76,6 +110,24 @@ public:
   bool getValue(char *name, float *value);
   bool getValue(char *name, double *value);
   bool getValue(char *name, gridpack::ComplexType *value);
+
+  /**
+   *  Retrieve current value of existing data element in
+   *  DataCollection object. Assume that item appears in DataCollection with the
+   *  tag "name:idx"
+   *  @param name name of data element
+   *  @param value current value of data element
+   *  @param idx index of value
+   *  @return false if no element of the correct name and type exists in
+   *  DataCollection object
+   */
+  bool getValue(char *name, int *value, int idx);
+  bool getValue(char *name, long *value, int idx);
+  bool getValue(char *name, bool *value, int idx);
+  bool getValue(char *name, std::string *value, int idx);
+  bool getValue(char *name, float *value, int idx);
+  bool getValue(char *name, double *value, int idx);
+  bool getValue(char *name, gridpack::ComplexType *value, int idx);
 
   /**
    * Dump contents of data collection to standard out
