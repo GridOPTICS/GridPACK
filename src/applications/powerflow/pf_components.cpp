@@ -83,6 +83,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
       values[1] = 0.0;
       values[2] = 2.0*p_v*p_ybusr;
       values[3] = -2.0*p_v*p_ybusi;
+      //printf("p_v = %f\n", p_v);
       // HACK: Need to cast pointer, is there a better way?
       for (i=0; i<size; i++) {
         (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
@@ -123,7 +124,8 @@ bool gridpack::powerflow::PFBus::vectorSize(int *size) const
  */
 bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
 {
-  if (p_mode == YBus) {
+  //if (p_mode == YBus) {
+  if (p_mode == RHS) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
     int size = branches.size();
@@ -137,7 +139,13 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
       branch->getPQ(this, &p, &q);
       P += p;
       Q += q;
+      //printf("i=%d:p=%f, q=%f, P=%f, Q=%f\n", i,p,q,P,Q);
     }
+    //printf("p_P0=%f,p_Q0=%f\n\n", p_P0,p_Q0);
+    // Also add bus i's own Pi, Qi
+    P += p_voltage*p_voltage*p_ybusr;
+    Q += p_voltage*p_voltage*(-p_ybusi);
+    //printf("p = %f, q = %f\n", p_voltage*p_voltage*p_ybusr, p_voltage*p_voltage*(-p_ybusi));
     P -= p_P0;
     Q -= p_Q0;
     values[0] = P;
@@ -172,19 +180,19 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
  * For this problem, the voltage magnitude and phase angle need to be exchanged
  * @return size of buffer
  */
-int gridpack::powerflow::getXCBufSize(void)
+/*int gridpack::powerflow::getXCBufSize(void)
 {
   return 2*sizeof(double)
-}
+}*/
 
 /**
  * Assign pointers for voltage magnitude and phase angle
  */
-void gridpack::powerflow::setXCBuf(void *buf)
+/*void gridpack::powerflow::setXCBuf(void *buf)
 {
   p_vMag_ptr = (double*)buf;
   p_vAng_ptr = p_vAng_ptr+1;
-}
+}*/
 
 void gridpack::powerflow::PFBus::setYBus(void)
 {
@@ -198,7 +206,8 @@ void gridpack::powerflow::PFBus::setYBus(void)
     gridpack::powerflow::PFBranch *branch
       = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
     ret -= branch->getAdmittance();
-    ret += branch->getTransformer(this);
+    //ret += branch->getTransformer(this);
+    //ret -= branch->getTransformer(this); //YChen 9-5-2013: Doesn't work for tap ratio not equal to 1.0 cases yet. 
     ret += branch->getShunt(this);
   }
   if (p_shunt) {
@@ -228,21 +237,29 @@ void gridpack::powerflow::PFBus::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
-  data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
+  data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
+  p_v = p_voltage;
   p_shunt = true;
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
   // TODO: Need to get values of P0 and Q0 from Network Configuration file
+  //printf("p_shunt_gs=%f,p_shunt_bs=%f\n",p_shunt_gs,p_shunt_bs);
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
-  p_shunt = p_shunt && data->getValue(GENERATOR_PG, &p_pg);
-  p_shunt = p_shunt && data->getValue(GENERATOR_QG, &p_qg);
   p_shunt = p_shunt && data->getValue(LOAD_PL, &p_pl);
   p_shunt = p_shunt && data->getValue(LOAD_QL, &p_ql);
-  p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);
-  // need GENERATOR_STATUS from parser!
-  // Chen 8_27_2013
+  //printf("p_pl=%f,p_ql=%f\n",p_pl,p_ql);
+  p_shunt = p_shunt && data->getValue(GENERATOR_PG, &p_pg);
+  p_shunt = p_shunt && data->getValue(GENERATOR_QG, &p_qg);
+  //printf("p_pg=%f,p_qg=%f\n",p_pg,p_qg);
+ 
   p_shunt = p_shunt && data->getValue(GENERATOR_STAT, &p_gstatus);
+  //printf("p_gstatus = %d\n", p_gstatus);
+  //p_gstatus = 1;
+  //p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);
+  //p_shunt = p_shunt && data->getValue(BUS_BASEKV, &p_sbase);
+  p_sbase = 100.0;
+  //printf("CASE_SBASE=%f\n",p_sbase);
 }
 
 
@@ -294,9 +311,15 @@ void gridpack::powerflow::PFBus::setSBus(void)
     gridpack::ComplexType sBus((p_pg - p_pl) / p_sbase, (p_qg - p_ql) / p_sbase);
     //p_sbusr = real(sBus);
     //p_sbusr = real(sBus);
-    p_P0 = imag(sBus);
+    p_P0 = real(sBus);
     p_Q0 = imag(sBus);
-  }
+    //printf("p_P0=%f, p_Q0=%f\n",p_P0,p_Q0);
+  } else {
+    gridpack::ComplexType sBus((- p_pl) / p_sbase, (- p_ql) / p_sbase);
+    p_P0 = real(sBus);
+    p_Q0 = imag(sBus);
+  } 
+  //printf("p_P0=%f, p_Q0=%f\n",p_P0,p_Q0);
 }
 
 /**
@@ -306,7 +329,7 @@ gridpack::powerflow::PFBranch::PFBranch(void)
 {
   p_reactance = 0.0;
   p_resistance = 0.0;
-  p_tap_ratio = 1.0;
+  //p_tap_ratio = 1.0;
   p_phase_shift = 0.0;
   p_charging = 0.0;
   p_shunt_admt_g1 = 0.0;
@@ -336,8 +359,8 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-    bool ok = bus1->getReferenceBus();
-    ok = ok & bus2->getReferenceBus();
+    bool ok = !bus1->getReferenceBus();
+    ok = ok & !bus2->getReferenceBus();
     if (ok) {
       *isize = 2;
       *jsize = 2;
@@ -360,8 +383,8 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-    bool ok = bus1->getReferenceBus();
-    ok = ok & bus2->getReferenceBus();
+    bool ok = !bus1->getReferenceBus();
+    ok = ok & !bus2->getReferenceBus();
     if (ok) {
       *isize = 2;
       *jsize = 2;
@@ -391,8 +414,8 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-    bool ok = bus1->getReferenceBus();
-    ok = ok & bus2->getReferenceBus();
+    bool ok = !bus1->getReferenceBus();
+    ok = ok & !bus2->getReferenceBus();
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(p_theta);
@@ -424,8 +447,8 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-    bool ok = bus1->getReferenceBus();
-    ok = ok & bus2->getReferenceBus();
+    bool ok = !bus1->getReferenceBus();
+    ok = ok & !bus2->getReferenceBus();
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);
@@ -458,9 +481,14 @@ void gridpack::powerflow::PFBranch::setYBus(void)
   ret = -1.0/ret;
   gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
   a = p_tap_ratio*a;
-  if (a == static_cast<ComplexType>(0.0)) {
-    ret = ret - ret/conj(a);
-  }
+  //if (a == static_cast<ComplexType>(0.0)) {
+  //printf("p_tap_ratio = %f\n", p_tap_ratio);
+  //if (p_tap_ratio != 0.0) {
+  /*if (p_xform) {
+    //ret = ret - ret/conj(a);
+    ret = - ret/conj(a); // YChen 9-5-2013: This is for the from end, need to have another one for to end. Equation is ret = - ret/a;
+  }*/ 
+  //printf("imag(ret)=%lf\n", imag(ret));
   p_ybusr = real(ret);
   p_ybusi = imag(ret);
   // Not really a contribution to the admittance matrix but might as well
@@ -469,7 +497,8 @@ void gridpack::powerflow::PFBranch::setYBus(void)
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-  p_theta = bus1->getPhase() - bus2->getPhase();
+  //p_theta = bus1->getPhase() - bus2->getPhase();
+  p_theta = (bus1->getPhase() - bus2->getPhase()) * 3.1415926 / 180.0;
 
 }
 
@@ -486,15 +515,24 @@ void gridpack::powerflow::PFBranch::load(
   bool ok = true;
   ok = ok && data->getValue(BRANCH_X, &p_reactance);
   ok = ok && data->getValue(BRANCH_R, &p_resistance);
-  if (!ok) {
+  ok = ok && data->getValue(BRANCH_SHIFT, &p_phase_shift);
+  double temp;
+  ok = ok && data->getValue(BRANCH_TAP, &temp);
+  //printf("temp=%f\n", temp);
+  if (temp != 0.0) {
+    p_tap_ratio = temp; 
+  //if (!ok) {
     p_xform = true;
-    p_xform = p_xform && data->getValue(TRANSFORMER_X1_2, &p_reactance);
-    p_xform = p_xform && data->getValue(TRANSFORMER_R1_2, &p_resistance);
+    //p_xform = p_xform && data->getValue(TRANSFORMER_X1_2, &p_reactance);
+    //p_xform = p_xform && data->getValue(TRANSFORMER_R1_2, &p_resistance);
+    p_xform = p_xform && data->getValue(BRANCH_X, &p_reactance);
+    p_xform = p_xform && data->getValue(BRANCH_R, &p_resistance);
+    //printf("p_reactance = %f, p_resistance = %f\n", p_reactance, p_resistance);
   } else {
     p_xform = false;
   }
-  p_xform = p_xform && data->getValue(TRANSFORMER_WINDV1, &p_tap_ratio);
-  p_xform = p_xform && data->getValue(TRANSFORMER_ANG1, &p_phase_shift);
+//  p_xform = p_xform && data->getValue(TRANSFORMER_WINDV1, &p_tap_ratio);
+//  p_xform = p_xform && data->getValue(TRANSFORMER_ANG1, &p_phase_shift);
   p_shunt = true;
   p_shunt = p_shunt && data->getValue(BRANCH_B, &p_charging);
   p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G1, &p_shunt_admt_g1);
@@ -532,11 +570,12 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
 gridpack::ComplexType
 gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
 {
-  if (p_xform) {
+  /*if (p_xform) {
     gridpack::ComplexType ret(p_resistance,p_reactance);
     ret = -1.0/ret;
     // HACK: pointer comparison, maybe could handle this better
     if (bus == getBus1().get()) {
+      printf("p_xform is on, p_tap_ratio= %f, bus = %d\n", p_tap_ratio, bus);
       ret = ret/(p_tap_ratio*p_tap_ratio);
     } else if (bus == getBus2().get()) {
       // No further action required
@@ -544,10 +583,11 @@ gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
       // TODO: Some kind of error
     }
     return ret;
-  } else {
+  } else {*/
+    printf("p_xform is off\n");
     gridpack::ComplexType ret(0.0,0.0);
     return ret;
-  }
+  //}
 }
 
 /**
@@ -560,8 +600,10 @@ gridpack::powerflow::PFBranch::getShunt(gridpack::powerflow::PFBus *bus)
 {
   double retr, reti;
   if (p_shunt) {
-    retr = 0.5*p_charging;
-    reti = 0.0;
+    //retr = 0.5*p_charging;
+    //reti = 0.0;
+    reti = 0.5*p_charging;
+    retr = 0.0;
     // HACK: pointer comparison, maybe could handle this better
     if (bus == getBus1().get()) {
       retr += p_shunt_admt_g1;
@@ -605,7 +647,7 @@ void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus,
     // TODO: Some kind of error
   }
   values[0] = v*(p_ybusr*sn - p_ybusi*cs);
-  values[1] = v*(p_ybusr*cs + p_ybusi*sn);
+  values[1] = -v*(p_ybusr*cs + p_ybusi*sn);
   values[2] = (p_ybusr*cs + p_ybusi*sn);
   values[3] = (p_ybusr*sn - p_ybusi*cs);
 }
@@ -633,6 +675,10 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   double v2 = bus2->getVoltage();
+  //*p = -v1*v2*(p_ybusr*cs-p_ybusi*sn);
+  //*q = v1*v2*(p_ybusr*sn+p_ybusi*cs);
   *p = v1*v2*(p_ybusr*cs+p_ybusi*sn);
   *q = v1*v2*(p_ybusr*sn-p_ybusi*cs);
+  //printf("v1=%f, v2=%f, cs=%f, sn=%f, p_ybusr=%f, p_ybusi=%f\n", v1,v2,cs,sn,p_ybusr,p_ybusi);
+  //printf("*p=%f,*q=%f\n",*p,*q);
 }

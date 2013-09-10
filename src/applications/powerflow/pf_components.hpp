@@ -44,7 +44,7 @@
 namespace gridpack {
 namespace powerflow {
 
-enum PFMode{YBus, Jacobian};
+enum PFMode{YBus, Jacobian, RHS};
 
 class PFBus
   : public gridpack::component::BaseBusComponent {
@@ -159,11 +159,11 @@ class PFBus
     double p_shunt_bs;
     bool p_shunt;
     int p_mode;
-    double p_v, p_theta;
+    double p_v, p_theta; // p_v is initialized to p_voltage, but may be subject to change during the NR iterations
     double p_ybusr, p_ybusi;
     double p_P0, p_Q0; //double p_sbusr, p_sbusi;
     double p_angle;
-    double p_voltage;
+    double p_voltage; // initial bus voltage read from parser
     // newly added priavate variables:
     double p_pg, p_qg;
     int p_gstatus;

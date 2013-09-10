@@ -73,13 +73,12 @@ void gridpack::powerflow::PFApp::execute(void)
   factory.setYBus();
 
   factory.setMode(YBus); 
- 
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
   Y->print();
 
   // set GBus components to create G vector 
-  factory.setGBus();
+  //factory.setGBus();
 
   // make Sbus components to create S vector
   factory.setSBus();
@@ -90,11 +89,21 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // Set PQ
   //factory.setPQ();
+  factory.setMode(RHS); 
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  PQ->print();
 
   factory.setMode(Jacobian);
+  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+  J->print(); 
 
+  //factory.setMode(SetX);
+  //boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+  //X->print(); 
 
-  // Set up bus data exchange buffers. Need to decide what data needs to be
+/*  // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
   factory.setExchange();
 
@@ -182,11 +191,16 @@ void gridpack::powerflow::PFApp::execute(void)
     iter++;
   }
 #endif
+*/
 
   // Set Jacobian matrix
   // Why "getJacobian method is in PFBranch?
   // Chen 8_27_2013
-//  factory.setJacobian(); 
+  /*factory.setJacobian(); 
+
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> J = mMap.mapToMatrix();
+  J->print();*/
 
 /*  // Start AC N-R Solver
 
