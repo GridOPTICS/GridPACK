@@ -1,11 +1,11 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-09 13:14:41 d3g096
+ * @date   2013-09-10 13:42:19 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
- * 
+ * @test
  */
 
 #include <mpi.h>
@@ -24,7 +24,7 @@
 
 
 
-BOOST_AUTO_TEST_SUITE(NonlinearSolver)
+BOOST_AUTO_TEST_SUITE(NonlinearSolverTest)
 
 
 // -------------------------------------------------------------
@@ -197,6 +197,9 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
   BOOST_CHECK_CLOSE(real(y), 2.0, 1.0e-04);
 }
 
+// -------------------------------------------------------------
+// A larger test.  This is example 2 from the PETSc SNES examples
+// -------------------------------------------------------------
 struct build_thing
 {
   void operator() (const gridpack::math::Vector& X, gridpack::math::Matrix& J) const
@@ -294,6 +297,8 @@ BOOST_AUTO_TEST_CASE( example2_nr )
 
   gridpack::math::NewtonRaphsonSolver solver(world, local_size, j, f);
   gridpack::math::Vector X(world, local_size);
+  solver.tolerance(1.0e-10);
+  solver.maximum_iterations(50);
   X.fill(0.5);
   X.ready();
   solver.solve(X);
@@ -302,12 +307,6 @@ BOOST_AUTO_TEST_CASE( example2_nr )
 
 
 BOOST_AUTO_TEST_SUITE_END()
-
-
-// -------------------------------------------------------------
-// A larger test.  This is example 2 from the PETSc SNES examples
-// -------------------------------------------------------------
-
 
 
 

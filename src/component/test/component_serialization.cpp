@@ -1,7 +1,7 @@
 /**
  * @file   component_serialization.cpp
  * @author William A. Perkins
- * @date   2013-07-18 09:36:36 d3g096
+ * @date   2013-09-10 14:27:41 d3g096
  * 
  * @brief  Serialization tests for various network component classes
  * 
@@ -245,7 +245,7 @@ private:
 
 BOOST_CLASS_EXPORT(BogusBranch);
 
-BOOST_AUTO_TEST_SUITE(ComponentSerialization)
+BOOST_AUTO_TEST_SUITE(ComponentSerializationTest)
 
 BOOST_AUTO_TEST_CASE( DataCollection_bin )
 {

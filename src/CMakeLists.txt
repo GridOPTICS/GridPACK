@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-08-15 15:26:45 d3g096
+# Last Change: 2013-09-10 12:28:30 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -103,11 +103,24 @@ find_package(GA REQUIRED)
 # -------------------------------------------------------------
 find_package(Doxygen)
 if(DOXYGEN_FOUND)
+
+    # The custom target "doc" generates "user" documentation. This is
+    # essentially the public interface of library classes.
     configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
     add_custom_target(doc
       ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
       WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
       COMMENT "Generating API documentation with Doxygen" VERBATIM
+      )
+
+    # The custom target "devdoc" generates "developer"
+    # documentation. This has all the nitty gritty details and code
+    # that only people who work on GridPACK care about.
+    configure_file(${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile.dev.in ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.dev @ONLY)
+    add_custom_target(devdoc
+      ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile.dev
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      COMMENT "Generating devoloper documentation with Doxygen" VERBATIM
       )
 endif(DOXYGEN_FOUND)
 

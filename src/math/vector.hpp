@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-09-06 13:22:41 d3g096
+ * @date   2013-09-10 11:30:50 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -304,7 +304,7 @@ public:
    *
    * The vector L<sup>1</sup> norm is computed as
    * \f[
-   *   \left| \left| \mathbf{x} \right| \right|_{1} ~ = ~ \sum_{i} \left| x_{i} \right|
+   *   \left\| \mathbf{x} \right\|_{1} ~ = ~ \sum_{i} \left| x_{i} \right|
    * \f]
    * 
    * 
@@ -321,7 +321,7 @@ public:
    *
    * The vector L<sup>2</sup>, or Euclidian, norm is computed as
    * \f[
-   *   \left| \left| \mathbf{x} \right| \right| ~ = ~ \sqrt{\sum_{i} x_{i}^{2}}
+   *   \left\| \mathbf{x} \right\| ~ = ~ \sqrt{\sum_{i} x_{i}^{2}}
    * \f]
    * 
    * @return 

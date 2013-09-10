@@ -2,11 +2,11 @@
 /**
  * @file   partition_test.cpp
  * @author William A. Perkins
- * @date   2013-07-24 09:46:04 d3g096
+ * @date   2013-09-10 14:23:17 d3g096
  * 
  * @brief  Unit test suite for various partition classes.
  * 
- * 
+ * @test
  */
 // -------------------------------------------------------------
 
@@ -30,12 +30,18 @@
 
 #include "simple_adjacency.hpp"
 
-BOOST_AUTO_TEST_SUITE( Partition )
+BOOST_AUTO_TEST_SUITE( PartitionTest )
 
 
 // -------------------------------------------------------------
 // adjacency unit test
 // -------------------------------------------------------------
+/// 
+/** 
+ * @test
+ * 
+ * 
+ */
 BOOST_AUTO_TEST_CASE( adjacency )
 {
   gridpack::parallel::Communicator world;
@@ -86,6 +92,11 @@ BOOST_AUTO_TEST_CASE( adjacency )
     
 }
 
+/// 
+/**
+ * @test
+ * 
+ */
 BOOST_AUTO_TEST_CASE( random_partition )
 {
   gridpack::parallel::Communicator world;
@@ -131,8 +142,14 @@ BOOST_AUTO_TEST_CASE( random_partition )
   }
 }
 
-
-
+/// Partition an extremely unbalanced graph
+/**
+ * @test
+ * 
+ * In this test, a simple, linear graph is created entirely on process
+ * zero.  The graph is then partitioned evenly amongst all
+ * participating processes.
+ */
 BOOST_AUTO_TEST_CASE( unbalanced_partition )
 {
   gridpack::parallel::Communicator world;
@@ -199,7 +216,7 @@ BOOST_AUTO_TEST_CASE( unbalanced_partition )
     world.barrier();
   }
 
-  // FIXME: need to test some stuff here
+  /// @todo FIXME: need to test some stuff here
 
 }
 
@@ -209,6 +226,10 @@ BOOST_AUTO_TEST_SUITE_END()
 // -------------------------------------------------------------
 // init_function
 // -------------------------------------------------------------
+/**
+ * @test
+ * 
+ */
 bool init_function()
 {
   return true;
@@ -217,6 +238,10 @@ bool init_function()
 // -------------------------------------------------------------
 //  Main Program
 // -------------------------------------------------------------
+/**
+ * @test
+ * 
+ */
 int
 main(int argc, char **argv)
 {

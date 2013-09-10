@@ -1,11 +1,11 @@
 /**
  * @file   parmetis_test.cpp
  * @author William A. Perkins
- * @date   2013-08-01 09:44:06 d3g096
+ * @date   2013-09-10 14:28:45 d3g096
  * 
  * @brief  Unit tests of ParMETIS-specific code
  * 
- * 
+ * @test
  */
 
 #include <ga++.h>
@@ -22,7 +22,7 @@
 #include "gridpack/parallel/printit.hpp"
 
 
-BOOST_AUTO_TEST_SUITE( ParMETIS )
+BOOST_AUTO_TEST_SUITE( ParMETISTest )
 
 BOOST_AUTO_TEST_CASE( graph_wrapper )
 {

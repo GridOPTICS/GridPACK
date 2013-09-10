@@ -7,7 +7,7 @@ rm -f CMakeCache.txt
 options="-Wdev --debug-trycompile"
 common_flags="\
         -D CMAKE_BUILD_TYPE:STRING=Debug \
-        -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
 if [ $host == "flophouse" ]; then

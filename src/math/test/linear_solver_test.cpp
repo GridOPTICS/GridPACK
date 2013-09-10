@@ -2,11 +2,11 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-06-26 12:12:32 d3g096
+ * @date   2013-09-10 13:42:13 d3g096
  * 
  * @brief  
  * 
- * 
+ * @test
  */
 // -------------------------------------------------------------
 
@@ -21,6 +21,8 @@
 #include "gridpack/utilities/exception.hpp"
 #include "math.hpp"
 #include "linear_solver.hpp"
+
+BOOST_AUTO_TEST_SUITE(LinearSolverTest)
 
 // -------------------------------------------------------------
 // assemble
@@ -105,8 +107,6 @@ assemble(const int imax, const int jmax,
   }
 }
 
-
-BOOST_AUTO_TEST_SUITE(LinearSolver)
 
 // -------------------------------------------------------------
 /**

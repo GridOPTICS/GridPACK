@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-09-06 11:08:48 d3g096
+ * @date   2013-09-10 11:42:28 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -64,14 +64,6 @@ add(const Matrix& A, const Matrix& B, Matrix& result)
 }
 
 
-/** 
- * collective
- * 
- * @param A 
- * @param B 
- * 
- * @return pointer to new Matrix containing A+B
- */
 Matrix *
 add(const Matrix& A, const Matrix& B) 
 {

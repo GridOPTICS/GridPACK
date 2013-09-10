@@ -3,7 +3,7 @@
 /**
  * @file   nonlinear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2013-09-09 10:13:13 d3g096
+ * @date   2013-09-10 09:38:52 d3g096
  * 
  * @brief  
  * 
@@ -22,6 +22,21 @@ namespace math {
 // -------------------------------------------------------------
 //  class NonlinearSolverInterface
 // -------------------------------------------------------------
+/// Interface to a solve system of nonlinear equations in parallel
+/**
+ * This serves as a base for classes that solve a system of nonlinear
+ * equations. While not strictly abstract, it has no function if
+ * instantiated on its own.
+ * 
+ * It encapuslates the nonlinear system solver of some
+ * underlying implementation. The Pimpl idiom is used for \ref
+ * NonlinearSolverImplementation "implementation", so user code is
+ * completely independent of the underlying library. This class simply
+ * provides an interface to a specific \ref
+ * NonlinearSolverImplementation "implementation".  Subclasses are
+ * required to call p_set_impl() at construction to set the \ref
+ * NonlinearSolverImplementation "implementation".
+ */
 class NonlinearSolverInterface 
   : public parallel::WrappedDistributed,
     private utility::Uncopyable 
@@ -35,6 +50,13 @@ public:
   ~NonlinearSolverInterface(void);
 
   /// Solve w/ the specified initial estimated, put result in same vector
+  /** 
+   * This solves the system of nonlinear equations using the contents
+   * of @c x as an initial solution estimate.  The final result is
+   * placed back in @c x upon completion.
+   * 
+   * @param x solution Vector
+   */
   void solve(Vector& x)
   {
     p_impl->solve(x);
@@ -43,9 +65,23 @@ public:
 protected:
 
   /// Where things really happen
+  /**
+   * The Pimpl idiom is used for \ref NonlinearSolverImplementation
+   * "implementation", so user code is completely independent of the
+   * underlying library. This class simply provides an interface to a
+   * specific \ref NonlinearSolverImplementation "implementation".
+   * 
+   */
   boost::scoped_ptr<NonlinearSolverImplementation> p_impl;
   
   /// Set the implementation
+  /** 
+   * Does what is necessary to set the \ref
+   * NonlinearSolverImplementation "implementation".  Subclasses are
+   * required to call this at construction.
+   * 
+   * @param impl specific nonlinear solver implementation to use
+   */
   void p_set_impl(NonlinearSolverImplementation *impl);
 };
 

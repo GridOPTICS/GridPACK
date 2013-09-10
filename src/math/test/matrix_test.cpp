@@ -1,11 +1,11 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-07-11 09:16:25 d3g096
+ * @date   2013-09-10 14:25:47 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
- * 
+ * @test
  */
 
 #include <iostream>
@@ -74,8 +74,8 @@ make_and_fill_test_matrix(const int& bandwidth, int& global_size)
   A->ready();
   return A;
 }
+BOOST_AUTO_TEST_SUITE(MatrixTest)
 
-BOOST_AUTO_TEST_SUITE(Matrix)
 
 BOOST_AUTO_TEST_CASE( construction )
 {
@@ -241,7 +241,7 @@ BOOST_AUTO_TEST_CASE( accumulate )
 BOOST_AUTO_TEST_SUITE_END()
 
 
-BOOST_AUTO_TEST_SUITE(MatrixOperations)
+BOOST_AUTO_TEST_SUITE(MatrixOperationsTest)
 
 BOOST_AUTO_TEST_CASE( clone )
 {

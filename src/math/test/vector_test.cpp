@@ -1,11 +1,11 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-08-13 12:22:31 d3g096
+ * @date   2013-09-10 13:40:42 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
- * 
+ * @test
  */
 
 #include <iostream>
@@ -22,7 +22,7 @@
 static const int local_size(5);
 static const double delta(0.0001);
 
-BOOST_AUTO_TEST_SUITE(Vector)
+BOOST_AUTO_TEST_SUITE(VectorTest)
 
 BOOST_AUTO_TEST_CASE( construction )
 {

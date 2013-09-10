@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-09-06 14:43:59 d3g096
+ * @date   2013-09-10 07:21:59 d3g096
  * 
  * @brief  
  * 
@@ -260,21 +260,72 @@ protected:
 // -------------------------------------------------------------
 
 /// Add two Matrix instances
+/** 
+ * @e Collective.
+ *
+ * @c A and @c B must have the same communicator and the same
+ * size. Different parallel distributions and nonzero patterns are OK,
+ * though.
+ * 
+ * @param A 
+ * @param B 
+ * 
+ * @return pointer to new Matrix containing A+B
+ */
 extern Matrix *add(const Matrix& A, const Matrix& B);
 
 /// Make the transpose of a Matrix
+/** 
+ * @e Collective.
+ *
+ * 
+ * 
+ * @param A 
+ * 
+ * @return pointer to a new Matrix containing A<sup>T</sup>
+ */
 extern Matrix *transpose(const Matrix& A);
 
 /// Get a column from the Matrix and put in new Vector
+/** 
+ * 
+ * 
+ * @param A 
+ * @param cidx 
+ * 
+ * @return 
+ */
 extern Vector *column(const Matrix& A, const int& cidx);
 
 /// Get the diagonal from from a Matrix and put in new Vector
+/** 
+ * @e Collective.
+ * 
+ * @param A 
+ * 
+ * @return 
+ */
 extern Vector *diagonal(const Matrix& A);
 
 /// Multiply two Matrix instances and make a new one
+/** 
+ * 
+ * 
+ * @param A 
+ * @param B 
+ * 
+ * @return 
+ */
 extern Matrix *multiply(const Matrix& A, const Matrix& B);
 
 /// Multiply a Matrix by a Vector and make a new Vector for the result
+/** 
+ * 
+ * @param A 
+ * @param x 
+ * 
+ * @return 
+ */
 extern Vector *multiply(const Matrix& A, const Vector& x);
 
 // -------------------------------------------------------------
@@ -288,18 +339,53 @@ extern Vector *multiply(const Matrix& A, const Vector& x);
 extern void add(const Matrix& A, const Matrix& B, Matrix& result);
 
 /// Make the transpose of a Matrix and put it in another
+/** 
+ * 
+ * 
+ * @param A 
+ * @param result 
+ */
 extern void transpose(const Matrix& A, Matrix& result);
 
 /// Get a column from the Matrix and put in specified Vector
+/** 
+ * 
+ * 
+ * @param A 
+ * @param cidx 
+ * @param x 
+ */
 extern void column(const Matrix& A, const int& cidx, Vector& x);
 
 /// Get the diagonal from a Matrix and put it in specified Vector
+/** 
+ * 
+ * @param A 
+ * @param x 
+ */
 extern void diagonal(const Matrix& A, Vector& x);
 
 /// Multiply two Matrix instances and put result in existing Matrix
+/** 
+ * 
+ * 
+ * @param A 
+ * @param B 
+ * @param result 
+ */
 extern void multiply(const Matrix& A, const Matrix& B, Matrix& result);
 
 /// Multiply a Matrix by a Vector and put result in existing Vector
+/** 
+ * @c A, @c x, and @c result must all have the same \ref
+ * parallel::Communicator "communicator". @c x and @c result must be
+ * the same size. The length of @c x must be the number of columns in
+ * @c A. If these conditions are not met, an exception is thrown.
+ * 
+ * @param A 
+ * @param x 
+ * @param result 
+ */
 extern void multiply(const Matrix& A, const Vector& x, Vector& result);
 
 

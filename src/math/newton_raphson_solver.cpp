@@ -1,13 +1,14 @@
 /**
  * @file   newton_raphson_solver.cpp
  * @author William A. Perkins
- * @date   2013-09-09 11:37:38 d3g096
+ * @date   2013-09-10 11:46:41 d3g096
  * 
  * @brief  
  * 
  * 
  */
 
+#include <boost/assert.hpp>
 #include "newton_raphson_solver.hpp"
 #include "newton_raphson_solver_implementation.hpp"
 
@@ -38,8 +39,48 @@ NewtonRaphsonSolver::~NewtonRaphsonSolver(void)
 }
 
 // -------------------------------------------------------------
-// NewtonRaphsonSolver
+// NewtonRaphsonSolver::tolerance
 // -------------------------------------------------------------
+double
+NewtonRaphsonSolver::tolerance(void) const
+{
+  NewtonRaphsonSolverImplementation *s = 
+    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
+  BOOST_ASSERT(s != NULL);
+  return s->tolerance();
+}
+
+void
+NewtonRaphsonSolver::tolerance(const double& tol)
+{
+  NewtonRaphsonSolverImplementation *s = 
+    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
+  BOOST_ASSERT(s != NULL);
+  s->tolerance(tol);
+}
+
+// -------------------------------------------------------------
+// NewtonRaphsonSolver::maximum_iterations
+// -------------------------------------------------------------
+int
+NewtonRaphsonSolver::maximum_iterations(void) const
+{
+  NewtonRaphsonSolverImplementation *s = 
+    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
+  BOOST_ASSERT(s != NULL);
+  return s->maximum_iterations();
+}
+
+void
+NewtonRaphsonSolver::maximum_iterations(const int& n)
+{
+  NewtonRaphsonSolverImplementation *s = 
+    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
+  BOOST_ASSERT(s != NULL);
+  s->maximum_iterations(n);
+}
+
+  
 
 
 } // namespace math
