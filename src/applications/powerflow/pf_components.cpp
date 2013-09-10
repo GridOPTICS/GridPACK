@@ -167,6 +167,25 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
   }
 }
 
+/**
+ * Return the size of the buffer used in data exchanges on the network.
+ * For this problem, the voltage magnitude and phase angle need to be exchanged
+ * @return size of buffer
+ */
+int gridpack::powerflow::getXCBufSize(void)
+{
+  return 2*sizeof(double)
+}
+
+/**
+ * Assign pointers for voltage magnitude and phase angle
+ */
+void gridpack::powerflow::setXCBuf(void *buf)
+{
+  p_vMag_ptr = (double*)buf;
+  p_vAng_ptr = p_vAng_ptr+1;
+}
+
 void gridpack::powerflow::PFBus::setYBus(void)
 {
   gridpack::ComplexType ret(0.0,0.0);

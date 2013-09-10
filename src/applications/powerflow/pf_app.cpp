@@ -93,7 +93,6 @@ void gridpack::powerflow::PFApp::execute(void)
 
   factory.setMode(Jacobian);
 
-#if 1
 
   // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
@@ -108,6 +107,8 @@ void gridpack::powerflow::PFApp::execute(void)
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   // factory.setState(); // or something
   boost::shared_ptr<gridpack::math::Vector> X = vMap.mapToVector();
+
+#if 1
 
   gridpack::math::FunctionBuilder fbuilder = factory;
   gridpack::math::JacobianBuilder jbuilder = factory;

@@ -306,6 +306,12 @@ class PFBranch
     double p_ybusr, p_ybusi;
     double p_theta;
 
+    /**
+     * Variables that are exchanged between buses
+     */
+    double* p_vMag_ptr;
+    double* p_vAng_ptr;
+
 private:
 
 
