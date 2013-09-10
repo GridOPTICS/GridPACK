@@ -6,6 +6,15 @@
  * in the case of typos or spelling mistakes.
  */
 
+/**
+ *  Variables that can be associated more than once for a bus or a branch can be
+ *  indexed by an integer to distinguish different instances. For example,
+ *  multiple generators can be associated with a bus and the variables
+ *  associated with each generator can be indexed by an integer using the
+ *  following convention. For generator N, the variables associated with it have
+ *  the form VARIABLE_NAME:N.
+ */
+
 #ifndef DICTIONARY_HPP_
 #define DICTIONARY_HPP_
 
@@ -265,6 +274,12 @@
 #define GENERATOR_XTRAN "GENERATOR_XTRAN"
 
 /**
+ * TODO: Supply definitions of these two variable
+ */
+#define GENERATOR_RT "GENERATOR_RT"
+#define GENERATOR_XT "GENERATOR_XT"
+
+/**
  * Step-up transformer off-nominal turns ratio; entered in pu
  * type: real float
  */
@@ -363,6 +378,18 @@
  * type: real float
  */
 #define BRANCH_RATING_C "BRANCH_RATING_C"
+
+/**
+ * Transformer tap ratio in PTI 23 version
+ * type: real float
+ */
+#define BRANCH_TAP "BRANCH_TAP"
+
+/**
+ * Transformer shift in PTI 23 version
+ * type: real float
+ */
+#define BRANCH_SHIFT "BRANCH_SHIFT"
 
 /**
  * Real part of admittance of the line shunt at the “from bus” end of the branch
