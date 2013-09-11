@@ -144,13 +144,20 @@ class PFBus
      * Return the value of the voltage magnitude on this bus
      * @return: voltage magnitude
      */
-    double getVoltage();
+    double getVoltage(void);
 
     /**
      * Return the value of the phase angle on this bus
      * @return: phase angle
      */
-    double getPhase();
+    double getPhase(void);
+
+    /**
+     * Return whether or not the bus is a PV bus (V held fixed in powerflow
+     * equations)
+     * @return true if bus is PV bus
+     */
+    bool isPV(void);
 
     /**
      * Set voltage value
@@ -189,6 +196,7 @@ class PFBus
     std::vector<int> p_gstatus;
     double p_pl, p_ql;
     double p_sbase;
+    bool p_isPV;
 
     /**
      * Variables that are exchanged between buses
@@ -218,6 +226,7 @@ private:
       //& p_sbusr & p_sbusi
       & p_pl & p_ql
       & p_sbase;
+      & p_isPV;
   }  
 
 };

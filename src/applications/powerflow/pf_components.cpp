@@ -84,7 +84,6 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
       values[2] = 2.0*p_v*p_ybusr;
       values[3] = -2.0*p_v*p_ybusi;
       //printf("p_v = %f\n", p_v);
-      // HACK: Need to cast pointer, is there a better way?
       for (i=0; i<size; i++) {
         (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
           getJacobian(this, branch_values);
@@ -92,6 +91,12 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
         values[1] += p_v*branch_values[1];
         values[2] += p_v*branch_values[2];
         values[3] += p_v*branch_values[3];
+      }
+      // Fix up matrix elements if bus is PV bus
+      if (p_isPV) {
+        values[1] = 0.0;
+        values[2] = 0.0;
+        values[3] = 1.0;
       }
     } else {
       return false;
@@ -262,6 +267,10 @@ void gridpack::powerflow::PFBus::load(
     setReferenceBus(true);
   }
 
+  // if BUS_TYPE = 2 then bus is a PV bus
+  p_isPV = false;
+  if (itype == 2) p_isPV = true;
+
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
   p_load = true;
   p_load = p_load && data->getValue(LOAD_PL, &p_pl);
@@ -313,6 +322,16 @@ double gridpack::powerflow::PFBus::getVoltage()
 }
 
 /**
+ * Return whether or not the bus is a PV bus (V held fixed in powerflow
+ * equations)
+ * @return true if bus is PV bus
+ */
+bool gridpack::powerflow::PFBus::isPV(void)
+{
+  return p_isPV;
+}
+
+/**
  * Return the value of the phase angle on this bus
  * @return: phase angle
  */
@@ -337,9 +356,10 @@ void gridpack::powerflow::PFBus::setSBus(void)
 {
   // need to update later to consider multiple generators located at the same bus 
   // Chen 8_27_2013
-#if 0
-  if (p_gstatus == 1) {
-    gridpack::ComplexType sBus((p_pg - p_pl) / p_sbase, (p_qg - p_ql) / p_sbase);
+#if 1
+  // TODO: Need to fix this so that is works for more than 1 generator per bus
+  if (p_gstatus.size() > 0 && p_gstatus[0] == 1) {
+    gridpack::ComplexType sBus((p_pg[0] - p_pl) / p_sbase, (p_qg[0] - p_ql) / p_sbase);
     //p_sbusr = real(sBus);
     //p_sbusr = real(sBus);
     p_P0 = real(sBus);
@@ -460,6 +480,20 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       values[1] *= bus1->getVoltage();
       values[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
       values[3] *= bus1->getVoltage();
+      // fix up matrix if one or both buses at the end of the branch is a PV bus
+      bool bus1PV = bus1->isPV();
+      bool bus2PV = bus2->isPV();
+      if (bus1PV & bus2PV) {
+        values[1] = 0.0;
+        values[2] = 0.0;
+        values[3] = 0.0;
+      } else if (bus1PV) {
+        values[1] = 0.0;
+        values[3] = 0.0;
+      } else if (bus2PV) {
+        values[2] = 0.0;
+        values[3] = 0.0;
+      }
       return true;
     } else {
       return false;
@@ -472,6 +506,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
     return true;
   }
 }
+
 bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == Jacobian) {
@@ -493,6 +528,20 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       values[1] *= bus2->getVoltage();
       values[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
       values[3] *= bus2->getVoltage();
+      // fix up matrix if one or both buses at the end of the branch is a PV bus
+      bool bus1PV = bus1->isPV();
+      bool bus2PV = bus2->isPV();
+      if (bus1PV & bus2PV) {
+        values[1] = 0.0;
+        values[2] = 0.0;
+        values[3] = 0.0;
+      } else if (bus1PV) {
+        values[2] = 0.0;
+        values[3] = 0.0;
+      } else if (bus2PV) {
+        values[1] = 0.0;
+        values[3] = 0.0;
+      }
       return true;
     } else {
       return false;
@@ -530,7 +579,8 @@ void gridpack::powerflow::PFBranch::setYBus(void)
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   //p_theta = bus1->getPhase() - bus2->getPhase();
-  p_theta = (bus1->getPhase() - bus2->getPhase()) * 3.1415926 / 180.0;
+  double pi = 4.0*atan(1.0);
+  p_theta = (bus1->getPhase() - bus2->getPhase()) * pi / 180.0;
 
 }
 
