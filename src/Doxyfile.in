@@ -677,7 +677,6 @@ INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/component \
                          @CMAKE_CURRENT_SOURCE_DIR@/network \
                          @CMAKE_CURRENT_SOURCE_DIR@/parallel \
                          @CMAKE_CURRENT_SOURCE_DIR@/parser \
-                         @CMAKE_CURRENT_SOURCE_DIR@/partition \
                          @CMAKE_CURRENT_SOURCE_DIR@/serial_io \
                          @CMAKE_CURRENT_SOURCE_DIR@/utilities
 
@@ -746,7 +745,7 @@ EXCLUDE_PATTERNS       =
 # wildcard * is used, a substring. Examples: ANamespace, AClass,
 # AClass::ANamespace, ANamespace::*Test
 
-EXCLUDE_SYMBOLS        =
+EXCLUDE_SYMBOLS        = GA
 
 # The EXAMPLE_PATH tag can be used to specify one or more files or
 # directories that contain example code fragments that are included (see
