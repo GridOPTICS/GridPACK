@@ -198,6 +198,12 @@
 
 // GENERATOR DATA
 /**
+ * Number of generators on a bus
+ * type: integer
+ */
+#define GENERATOR_NUMBER "GENERATOR_NUMBER"
+
+/**
  * Bus number to which the generator is connected
  * type: integer
  */
