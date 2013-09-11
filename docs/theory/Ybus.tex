@@ -1,0 +1,101 @@
+\documentclass[12pt]{article}
+\begin{document}
+\title{YBUS Admittance Matrix Formulation}
+\author{Yousu Chen \\PNNL}
+\maketitle
+This document is a description for how to formulate the YBUS admittance matrix. In General, the diagonal terms $Y_{ii}$ are the self admittance terms, equal to the sum of the admittances of all devices incident to bus $i$.  The off-diagonal terms $Y_{ij}$ are equal to the negative of the sum of the admittances joining the two buses. Shunt terms only affect the diagonal entries in the $Y$ matrix. For large systems, $Y$ is a sparse matrix and it is structually symmetric. 
+
+\subsection*{For transmission lines}
+\begin{equation}
+Y_{ij} = \frac{-1}{r_{k}+j\*x_{k}}
+\end{equation} 
+\begin{equation}
+Y_{ji} = Y_{ij}
+\end{equation} 
+\begin{equation}
+Y_{ii} = - \sum\nolimits_{i\ne j} Y_{ij} 
+\end{equation} 
+\begin{equation}
+Y_{jj} = - \sum\nolimits_{j\ne i} Y_{ji}
+\end{equation} 
+where:\\*
+$Y_{ij}$: the ${ij}_{th}$ element in the YBus matrix.\\* 
+$i$: the "from" bus.\\*
+$j$: the "to" bus. \\*
+$k$: the $k_{th}$ transmission line from $i$ to $j$. \\*
+$r_{k}$: the resistance of the $k_{th}$ transmission line.\\*
+$x_{k}$: the reactance of the $k_{th}$ transmission line.
+\subsection*{For transformers}
+For tap changing and phase shifting transformer, in general the off-nominal tap value can be considered as a complex numberi $a$, where the tap ratio is $t$ and the phase shifter is $\theta$.  Therefore, $a$ = $t*(\cos{\theta}+j*\sin{\theta})$. \\*
+Let define
+\begin{equation}
+yt = \frac{-1}{r_{k}+j\*x_{k}}
+\end{equation} 
+\begin{equation}
+Y_{ij} = -\frac{yt}{a^{*}}
+\end{equation} 
+\begin{equation}
+Y_{ij} = -\frac{yt}{a}
+\end{equation} 
+\begin{equation}
+Y_{ii} = \frac{yt}{{|a|}^2}
+\end{equation} 
+\begin{equation}
+Y_{jj} = yt 
+\end{equation} 
+where:\\*
+$Y_{ij}$: the ${ij}_{th}$ element in the $Y$ matrix.\\* 
+$i$: the "from" bus.\\*
+$j$: the "to" bus. \\*
+$k$: the $k_{th}$ transformer from $i$ to $j$. \\*
+$r_{k}$: the resistance of the $k_{th}$ transformer.\\*
+$x_{k}$: the reactance of the $k_{th}$ transformer.\\*
+$a^*$: the conjugate of $a$.\\*
+\\*
+Given the bus admittance matrix $Y$ for the entire system, the transformer model can be introduced by modifying the following 4 elements:
+\begin{equation}
+Y_{ij}^{new} = Y_{ij} - \frac{yt}{a^{*}}
+\end{equation} 
+\begin{equation}
+Y_{ji}^{new} = Y_{ji} - \frac{yt}{a}
+\end{equation} 
+\begin{equation}
+Y_{ii}^{new} = Y_{ii} + \frac{yt}{{|a|}^2}
+\end{equation} 
+\begin{equation}
+Y_{jj}^{new} = Y_{jj} + yt
+\end{equation} 
+\subsection*{For shunts}
+Shunts only contribute to diagonal elements. The sources of shunts include:
+\begin{itemize}
+\item shunt devices located at buses $(gs+j\*bs)$;
+\item transmission line/transformer charging $b_{k}$ (distributed half to each end)
+     from end: $b_{ki}$= $0.5\*b_{k}$;
+     to end: $b_{kj}$= $0.5\*b_{k}$;
+\item transmission line/transformer shunt admittance, which normally a small value: $(gi+j\*bi)$; 
+\end{itemize}
+Therefore, the general equation for diagonal elements is:
+\begin{equation}
+Y_{ii} = - (\sum\nolimits_{i\ne j} Y_{ij}) + j\*b_{ki} + gs_{i}+j\*bs_{i} + gi_{ki}+j\*bi_{ki}
+\end{equation} 
+\begin{equation}
+Y_{jj} = - (\sum\nolimits_{j\ne i} Y_{ji}) + j\*b_{kj} + gs_{j}+j\*bs_{j} + gj_{kj}+j\*bj_{kj}
+\end{equation} 
+where:\\*
+$Y_{ij}$: the ${ij}_{th}$ element in the YBus matrix.\\* 
+$i$: the "from" bus. \\*
+$j$: the "to" bus. \\*
+$k$: the $k_{th}$ transmission line/transformer from $i$ to $j$. \\*
+$gs_{i}+j*bs_{i}$: the shunt at bus $i$. \\*
+$b_{k}$: the line charging of the $k_{th}$ line. \\*
+$b_{ki}$ = 0.5 *$b_{k}$ : the line charging of the $k_{th}$ line assigned to "from" end $i$. \\*
+$b_{kj}$ = 0.5 *$b_{k}$ : the line charging of the $k_{th}$ line assigned to "to" end $j$. \\*
+$gi_{ki}+bi_{ki}$: the $k_{th}$ line shunt admitance at "from" end $i$. \\*
+$gj_{kj}+bi_{kj}$: the $k_{th}$ line shunt admitance at "to" end $j$. \\*
+
+
+\begin{center}
+\textit{Thanks!}
+\end{center}
+\end{document}
+

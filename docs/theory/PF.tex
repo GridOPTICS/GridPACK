@@ -1,0 +1,178 @@
+\documentclass[12pt]{article}
+\usepackage{amssymb,amsmath}
+\begin{document}
+\title{Power Flow Equation Formulation}
+\author{Yousu Chen \\PNNL}
+\maketitle
+This document is a description for how to formulate the power flow equation. The current version is for Newton-Raphson AC power flow.
+
+\subsection*{Basic Equations}
+\begin{equation}\label{eq:IYV}
+\mathbf{I}=\mathbf{Y}\cdot\mathbf{V}
+\end{equation} 
+\begin{equation}\label{eq:Ik}
+I_{i}=\sum_{k=1}^{N}Y_{ik}V_{k}
+\end{equation} 
+\begin{eqnarray}\label{eq:Sk}
+S{_i}&=& V{_i}I_{i}^{*} \nonumber \\
+     &=& V{_i}\left ( \sum_{k=1}^{N}Y{_{ik}}V{_k} \right )^{*}  \nonumber \\          
+     &=& V{_i}\sum_{k=1}^{N}Y{_{ik}}^{*}V{_k}^{*}
+\end{eqnarray} 
+where $N$ is the number of buses in the network.
+
+Suppose we let 
+\begin{equation}
+V{_i}= |V{_i}|e^{j\theta_{i}}  \\
+\end{equation} 
+\begin{equation}
+\theta_{ik}=\theta_{i}-\theta_{k} \\
+\end{equation} 
+\begin{equation}
+Y_{ik}=G_{ik}+jB_{ik}
+\end{equation} 
+
+The $G_{ik}$ are called conductances and the $B_{ik}$ are called susceptances. 
+\begin{equation}\label{eq:S}
+S{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|e^{j\theta_{ik}}\left ( G_{ik}-jB_{ik} \right )
+\end{equation} 
+\begin{equation}
+S{_i}=P{_i}+jQ{_i}
+\end{equation} 
+\begin{equation}\label{eq:PQ}
+P{_i}+jQ{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|\left ( \cos\theta_{ik}+j\sin\theta_{ik} \right )\left ( G_{ik}-jB_{ik} \right )
+\end{equation} 
+Resolving equation (\ref{eq:PQ}) into real and imaginary parts
+\begin{equation}\label{eq:PiQi}
+\begin{cases}
+P{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|\left (G_{ik}\cos\theta_{ik}+B_{ik}\sin\theta_{ik} \right ) \\
+Q{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|\left (G_{ik}\sin\theta_{ik}-B_{ik}\cos\theta_{ik} \right )
+\end{cases}
+\end{equation} 
+
+\subsection*{Newton-Raphson AC Power Flow}
+
+Now set up power flow equation in the form of $\mathbf{f}\left (\mathbf{x} \right )=\mathbf{0}$.
+The voltage magnitude and phase angle of the slack/reference bus ($\theta_{1}$
+and $|V_{1}|$) are known.
+\space
+\space
+Define
+\begin{equation}
+\theta =\left [ \begin{array}{c} \theta{_2}\\.\\.\\.\\ \theta_{N} \end{array} \right]
+\end{equation}
+
+\begin{equation}
+|\mathbf{V}| =\left [ \begin{array}{c} |V_{2}| \\.\\.\\.\\|V_{N}| \end{array} \right]
+\end{equation}
+
+\begin{equation}
+\mathbf{x}  =\left [ \begin{array}{c} \boldsymbol{\theta}\\|\mathbf{V}| \end{array} \right]
+\end{equation}
+
+
+\begin{equation}
+\mathbf{f}\left (\mathbf{x} \right ) = \left [ \begin{array}{c} P_{2}\left (
+\mathbf{x} \right ) - P_{2} \\.\\.\\.\\ P_{N}\left ( \mathbf{x} \right ) - P_{N}
+\\-------\\Q_{2}\left ( \mathbf{x} \right ) - Q_{2} \\.\\.\\.\\ Q_{N}\left (
+\mathbf{x} \right ) - Q_{N} \end{array} \right ] =- \left [ \begin{array}{c} \Delta \mathbf{P}\left ( \mathbf{x} \right ) \\ \Delta \mathbf{Q}\left ( \mathbf{x} \right ) \end{array} \right ] = \mathbf{0}
+\end{equation}
+
+where 
+\begin{equation}\label{eq:DeltaPQ}
+\begin{cases}
+\Delta\mathbf{P} = P_{i} - P_{i}\left ( \mathbf{x} \right )  \\
+\Delta\mathbf{Q} = Q_{i} - Q_{i}\left ( \mathbf{x} \right ) 
+\end{cases}
+\end{equation}
+
+$P_{i}$ and $Q_i$ can be obtained from the equation (\ref{eq:PiQi}).
+
+Now consider the Jacobian of $\mathbf{f}$, $\mathbf{J}$. The dimension of
+$\mathbf{J}$ is $(2(N-1))(2(N-1))$.
+
+\begin{eqnarray}
+\mathbf{J}  = \left [ \begin{array}{cc} \mathbf{J1} & \mathbf{J2} \\ \mathbf{J3} & \mathbf{J4} \end{array} \right ] \nonumber \\
+            = \left [ \begin{array}{cc} \frac{\partial \mathbf{P}}{\partial \boldsymbol{\theta}} & \frac{\partial \mathbf{P}}{\partial \mathbf{|V|}} \\ \frac{\partial \mathbf{Q}}{\partial \boldsymbol{\theta}} & \frac{\partial \mathbf{Q}}{\partial \mathbf{|V|}}  \end{array} \right ]
+\end{eqnarray}
+
+The form of the N-R iteration 
+\begin{equation}\label{eq:PFE}
+\mathbf{J}\mathbf{\Delta x} = - \mathbf{f} \left ( \mathbf{x} \right )
+\end{equation}
+can be written as below:
+\begin{equation}\label{eq:PFE2}
+\left [ \begin{array}{cc} \mathbf{J1} & \mathbf{J2} \\ \mathbf{J3} & \mathbf{J4} \end{array} \right ] \left [ \begin{array}{c} \mathbf{\Delta \theta} \\ \mathbf{\Delta |V|} \end{array} \right ] =  \left [ \begin{array}{c} \mathbf{\Delta P} \left (\mathbf{x} \right ) \\  \mathbf{\Delta Q} \left (\mathbf{x} \right ) \end{array} \right ]
+\end{equation}
+
+For the $n^{th}$ iteration, we have
+\begin{equation}\label{eq:update}
+\left [ \begin{array}{c} \theta^{n+1} \\ |V|^{n+1} \end{array} \right ] = \left [ \begin{array}{c} \theta^{n} \\ |V|^{n} \end{array} \right ] -  \left [ \mathbf{J} \left ( x^{n} \right ) \right] ^{-1}  \left [ \begin{array}{c} \Delta P\left ( x^{n} \right ) \\  \Delta Q\left ( x^{n} \right )  \end{array} \right ] 
+\end{equation}
+
+The expressions for the elements of $\mathbf{J}$ can be found below:
+\begin{equation}\label{eq:J1} 
+J1 =\left\{\begin{matrix}
+
+\frac{\partial P_i}{\partial \theta_i} = -\sum_{k\ne i}{|V_i||V_k|\left (G_{ik}\sin\theta_{ik} - B_{ik}\cos\theta_{ik}\right )} &\\
+\frac{\partial P_i}{\partial \theta_k} = |V_i||V_k|\left (G_{ik}\sin\theta_{ik} - B_{ik}\cos\theta_{ik}\right )    & i\ne k
+
+\end{matrix}\right .
+\end{equation} 
+
+
+\begin{equation}\label{eq:J2}
+J2 =\left\{\begin{matrix}
+
+\frac{\partial P_i}{\partial |V_i|} = 2|V_i|G_{ii} + \sum_{k\ne i}{|V_k|  \left (G_{ik}\cos\theta_{ik} + B_{ik}\sin\theta_{ik}\right )} &\\
+\frac{\partial P_i}{\partial |V_k|} = |V_i|\left ( G_{ik}\cos\theta_{ik} +  B_{ik}\sin\theta_{ik}\right )    & i\ne k
+
+\end{matrix}\right  .
+\end{equation} 
+
+
+\begin{equation}\label{eq:J3}
+J3 =\left\{\begin{matrix}
+
+\frac{\partial Q_i}{\partial \theta_i} = \sum_{k\ne i}{|V_i||V_k|\left (G_{ik}\cos\theta_{ik} + B_{ik}\sin\theta_{ik}\right )} &\\
+\frac{\partial Q_i}{\partial \theta_k} = -|V_i||V_k|\left (G_{ik}\cos\theta_{ik} + B_{ik}\sin\theta_{ik}\right )    & i\ne k
+
+\end{matrix}\right .
+\end{equation} 
+
+\begin{equation}\label{eq:J4}
+J4 =\left\{\begin{matrix}
+
+\frac{\partial Q_i}{\partial |V_i|} = -2|V_i|B_{ii} + \sum_{k\ne i}{|V_k|  \left (G_{ik}\sin\theta_{ik} - B_{ik}\cos\theta_{ik}\right )} &\\
+\frac{\partial Q_i}{\partial |V_k|} = |V_i|\left ( G_{ik}\sin\theta_{ik} -  B_{ik}\cos\theta_{ik}\right )    & i\ne k
+
+\end{matrix}\right .
+\end{equation} 
+
+The diagonal elements of $J1$ - $J4$ can also be written in the following form:
+\begin{equation}\label{eq:J1D}
+J1_{diag} = \frac{\partial P_i}{\partial \theta_i} = -Q_i - B_{ii}|V_i|^2
+\end{equation} 
+\begin{equation}\label{eq:J2D}
+J2_{diag} = \frac{\partial P_i}{\partial |V_i|} = P_i - G_{ii}|V_i|^2
+\end{equation} 
+\begin{equation}\label{eq:J3D}
+J3_{diag} = \frac{\partial Q_i}{\partial \theta_i} = \frac{P_i}{|V_i|} + G_{ii}|V_i|
+\end{equation} 
+\begin{equation}\label{eq:J4D}
+J4_{diag} = \frac{\partial Q_i}{\partial |V_i|} = \frac{Q_i}{|V_i|} - B_{ii}|V_i|
+\end{equation} 
+
+where $P_i$ and $Q_i$ are given by equation (\ref{eq:PiQi}).
+
+The solution strategy is:
+\begin{enumerate}
+\item Assign initial voltage magnitudes and zero phase angles $\left ( \theta \right )$ to all buses. For PQ buses(load buses), the voltage magnitudes are set equal to 1.0; for PV buses (voltage-controlled/genertor buses), the voltage magnitudes are specified.
+\item Calculate $P_{i}$, $Q_i$ using equation (\ref{eq:PiQi}).
+\item Calculate $\Delta P_{i}$, $\Delta Q_{i}$ using equation (\ref{eq:DeltaPQ}).
+\item Calculate the element of Jacobian $\mathbf{J}$ using equation (\ref{eq:J1}) to (\ref{eq:J4}).
+\item Solve the linear equation of (\ref{eq:PFE2}) to find $\Delta \theta$ and $\Delta |V|$.
+\item Update new voltage magnitudes and phase angles using equation (\ref{eq:update}).
+\item Continue until the residuals of $\Delta P$ and $\Delta Q$ are less than the specified tolerance. 
+\end{enumerate}
+\end{document}
+
