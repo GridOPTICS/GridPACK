@@ -178,7 +178,6 @@ class PFBus
     double p_shunt_bs;
     bool p_shunt;
     bool p_load;
-    bool p_gen;
     int p_mode;
     double p_v, p_theta; // p_v is initialized to p_voltage, but may be subject to change during the NR iterations
     double p_ybusr, p_ybusi;
@@ -186,8 +185,8 @@ class PFBus
     double p_angle;
     double p_voltage; // initial bus voltage read from parser
     // newly added priavate variables:
-    double p_pg, p_qg;
-    int p_gstatus;
+    std::vector<double> p_pg, p_qg;
+    std::vector<int> p_gstatus;
     double p_pl, p_ql;
     double p_sbase;
 
@@ -210,7 +209,6 @@ private:
       & p_shunt_bs
       & p_shunt
       & p_load
-      & p_gen
       & p_mode
       & p_v & p_theta
       & p_ybusr & p_ybusi

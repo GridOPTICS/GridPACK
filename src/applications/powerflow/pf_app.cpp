@@ -116,9 +116,11 @@ void gridpack::powerflow::PFApp::execute(void)
   // gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   // factory.setState(); // or something
 
-  // factory.setMode(RHS) ????
 #if 0
-  boost::shared_ptr<gridpack::math::Vector> X = vMap.mapToVector();
+  // Need to make sure that there is a mode for creating the X vector
+  factory.setMode(RHS); 
+  gridpack::mapper::BusVectorMap<PFNetwork> xMap(network);
+  boost::shared_ptr<gridpack::math::Vector> X = xMap.mapToVector();
 
 
   gridpack::math::FunctionBuilder fbuilder = factory;

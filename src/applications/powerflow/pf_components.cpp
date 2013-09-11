@@ -267,12 +267,23 @@ void gridpack::powerflow::PFBus::load(
   p_load = p_load && data->getValue(LOAD_PL, &p_pl);
   p_load = p_load && data->getValue(LOAD_QL, &p_ql);
   //printf("p_pl=%f,p_ql=%f\n",p_pl,p_ql);
-  p_gen = true;
-  p_gen = p_shunt && data->getValue(GENERATOR_PG, &p_pg);
-  p_gen = p_shunt && data->getValue(GENERATOR_QG, &p_qg);
-  //printf("p_pg=%f,p_qg=%f\n",p_pg,p_qg);
- 
-  p_gen = p_shunt && data->getValue(GENERATOR_STAT, &p_gstatus);
+  bool lgen;
+  int i, ngen, gstatus;
+  double pg, qg;
+  if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+    for (i=0; i<ngen; i++) {
+      lgen = true;
+      lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
+      lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
+      //printf("ng=%d,pg=%f,qg=%f\n",i,pg,qg);
+      lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
+      if (lgen) {
+        p_pg.push_back(pg);
+        p_qg.push_back(qg);
+        p_gstatus.push_back(gstatus);
+      }
+    }
+  }
   //printf("p_gstatus = %d\n", p_gstatus);
   //p_gstatus = 1;
   //p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);
@@ -326,6 +337,7 @@ void gridpack::powerflow::PFBus::setSBus(void)
 {
   // need to update later to consider multiple generators located at the same bus 
   // Chen 8_27_2013
+#if 0
   if (p_gstatus == 1) {
     gridpack::ComplexType sBus((p_pg - p_pl) / p_sbase, (p_qg - p_ql) / p_sbase);
     //p_sbusr = real(sBus);
@@ -339,6 +351,7 @@ void gridpack::powerflow::PFBus::setSBus(void)
     p_Q0 = imag(sBus);
   } 
   //printf("p_P0=%f, p_Q0=%f\n",p_P0,p_Q0);
+#endif
 }
 
 /**
