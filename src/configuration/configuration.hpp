@@ -1,57 +1,59 @@
-// We expect execution of a GridPACK application to be determined in part
-// by a single input configuration file (perhaps extracted from a database
-// or web service). We assume that a configuration file is a binding of a
-// hierarchically structured set of keys to a set of values.  The
-// Configuration module is used to access values and abstract the structure
-// of the configuration file which might be concretely represented in a ways
-// including XML or with a custom parser. Different components within
-// GridPACK will share a common configuration file and we expect then the
-// top-level of the key name space to identify the module that is primarily
-// associated with a configuration parameter. This provides extensibility over
-// time and insulates modules from each other’s internals. 
-
-// Keys are represented by std::string with the character
-// Configuration::KeySeparator,‘.’ (properly escaped in literals) used as
-// a name specifier. So “foo.bar” is a key associated by convention with
-// module “bar”.
-
-// Values are typed and may be of the following primitive types: bool, int, double
-// or std::string. We also allow a value to be a std::vector<double>. 
-
-// We use the term cursor to a common prefix on a set of names. Access to a value
-// may be specified by a complete key or by a cursor and the corresponding suffix 
-// relative to that cursor. Thus a cursor may represent the prefix “foo” and
-// relative to that cursor the string “bar” selects the same values as
-// “foo.bar”.  Aside from  factoring out common information for the client,
-// it allows a common configuration substructure do be used by different modules.
-
-
-// Sample Usage:
-
-// string src = "input.xml";
-// Configuration config;
-// config.enable_logging(&std::cout);
-// if(config.open(src)) {
-//    // select a value by path name, with default
-//    string start = config.get("Configuration.Time.Start", "DefaultStart");
-//    cout << "Start " << start << endl;
-
-//    // select a subtree by path 
-//    Configuration::Cursor * time = config.get_cursor("Configuration.Time");
-
-//    // select a value without specified default
-//    double step = -1.0;
-//    if(time->get("Step", & step)) 
-//      cout << "Step " << step << endl;
-
-//    std::vector<double> dv ;
-//    if(config.get("Configuration.Option.DefaultVelocity", &dv)) {
-//       cout << "DefaultVelocity: ";
-//       for(double e : dv) 
-//         cout << e << " ";
-//       cout << endl;
-//    }
-// }
+/**
+ * We expect execution of a GridPACK application to be determined in part
+ * by a single input configuration file (perhaps extracted from a database
+ * or web service). We assume that a configuration file is a binding of a
+ * hierarchically structured set of keys to a set of values.  The
+ * Configuration module is used to access values and abstract the structure
+ * of the configuration file which might be concretely represented in a ways
+ * including XML or with a custom parser. Different components within
+ * GridPACK will share a common configuration file and we expect then the
+ * top-level of the key name space to identify the module that is primarily
+ * associated with a configuration parameter. This provides extensibility over
+ * time and insulates modules from each other’s internals. 
+ *
+ * Keys are represented by std::string with the character
+ * Configuration::KeySeparator,‘.’ (properly escaped in literals) used as
+ * a name specifier. So “foo.bar” is a key associated by convention with
+ * module “bar”.
+ *
+ * Values are typed and may be of the following primitive types: bool, int, double
+ * or std::string. We also allow a value to be a std::vector<double>. 
+ *
+ * We use the term cursor to a common prefix on a set of names. Access to a value
+ * may be specified by a complete key or by a cursor and the corresponding suffix 
+ * relative to that cursor. Thus a cursor may represent the prefix “foo” and
+ * relative to that cursor the string “bar” selects the same values as
+ * “foo.bar”.  Aside from  factoring out common information for the client,
+ * it allows a common configuration substructure do be used by different modules.
+ *
+ *
+ * Sample Usage:
+ *
+ * string src = "input.xml";
+ * Configuration config;
+ * config.enable_logging(&std::cout);
+ * if(config.open(src)) {
+ *    // select a value by path name, with default
+ *    string start = config.get("Configuration.Time.Start", "DefaultStart");
+ *    cout << "Start " << start << endl;
+ *
+ *    // select a subtree by path 
+ *    Configuration::Cursor * time = config.get_cursor("Configuration.Time");
+ *
+ *    // select a value without specified default
+ *    double step = -1.0;
+ *    if(time->get("Step", & step)) 
+ *      cout << "Step " << step << endl;
+ *
+ *    std::vector<double> dv ;
+ *    if(config.get("Configuration.Option.DefaultVelocity", &dv)) {
+ *       cout << "DefaultVelocity: ";
+ *       for(double e : dv) 
+ *         cout << e << " ";
+ *       cout << endl;
+ *    }
+ * }
+ */
 
 #pragma once
 #define USE_MPI
@@ -77,18 +79,22 @@ public:
 	Configuration(void);
 	~Configuration(void);
 
-	/*
-	 * access a common, shared by all modules configuration database,
+	/**
+	 * access a common instance, shared by all modules configuration database,
 	 */
 	static Configuration * configuration();
 
-	// enable logging for diagnostics and provenence (default is std::cout)
+	/**
+    * enable logging for diagnostics and provenence (default is std::cout)
+    */
 	void enable_logging(std::ostream * = NULL);
 
-	// read a configuration file. true == success, false == some kind of failure
+	/**
+    * read a configuration file. true == success, false == some kind of failure
+    */
 #ifdef USE_MPI
 	bool open(std::string file,MPI_Comm);  // rank 0 only
-	bool initialize(MPI_Comm);			   // all other ranks
+	bool initialize(MPI_Comm);			      // all other ranks
 #else
 	bool open(std::string file);  // rank 0 only
 #endif
