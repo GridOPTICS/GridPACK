@@ -678,6 +678,7 @@ INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/component \
                          @CMAKE_CURRENT_SOURCE_DIR@/parallel \
                          @CMAKE_CURRENT_SOURCE_DIR@/parser \
                          @CMAKE_CURRENT_SOURCE_DIR@/serial_io \
+                         @CMAKE_CURRENT_SOURCE_DIR@/configuration \
                          @CMAKE_CURRENT_SOURCE_DIR@/utilities
 
 # This tag can be used to specify the character encoding of the source files
