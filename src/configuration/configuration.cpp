@@ -51,6 +51,13 @@ bool Configuration::open(std::string file,MPI_Comm comm) {
 bool Configuration::open(std::string file) {
 #endif
 
+#ifdef USE_MPI
+	int rank;
+	MPI_Comm_rank(comm,&rank);
+	if(rank != 0) {
+		return initialize_internal(comm);
+	}
+#endif 
 	std::string str;
 	std::ifstream input(file.c_str());
 	if(!input.bad()) {
@@ -62,9 +69,6 @@ bool Configuration::open(std::string file) {
 					std::istreambuf_iterator<char>());
 	}
 #ifdef USE_MPI
-	int rank;
-	MPI_Comm_rank(comm,&rank);
-	assert(rank == 0); 
 	int n = str.size();
 	MPI_Bcast(&n, 1, MPI_INT, rank, comm);
 	MPI_Bcast((void*) str.c_str(), n, MPI_CHAR, rank, comm);
@@ -92,6 +96,10 @@ bool ConfigInternals::initialize(const std::string & input) {
 
 #ifdef USE_MPI
 bool Configuration::initialize(MPI_Comm comm) {
+	std::cout << "warning: Configuration::initialize is deprecated" << std::endl;
+	return initialize_internal(comm);
+}
+bool Configuration::initialize_internal(MPI_Comm comm) {
 	int rank;
 	MPI_Comm_rank(comm,&rank);
 	int n ;

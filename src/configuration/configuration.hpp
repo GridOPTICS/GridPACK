@@ -72,6 +72,7 @@ namespace utility {
 
 class Configuration {
 	class ConfigInternals * pimpl;
+	bool Configuration::initialize_internal(MPI_Comm comm); 
 public:
 	typedef std::string KeyType;
 	static const char KeySep = '.';  // inhereted from boost, could change at some cost
@@ -93,8 +94,8 @@ public:
     * read a configuration file. true == success, false == some kind of failure
     */
 #ifdef USE_MPI
-	bool open(std::string file,MPI_Comm);  // rank 0 only
-	bool initialize(MPI_Comm);			      // all other ranks
+	bool open(std::string file,MPI_Comm);  // on all ranks...
+	bool Configuration::initialize(MPI_Comm comm);  // deprecated....
 #else
 	bool open(std::string file);  // rank 0 only
 #endif
