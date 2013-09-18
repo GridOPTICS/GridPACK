@@ -358,8 +358,20 @@ void gridpack::powerflow::PFBus::setSBus(void)
   // Chen 8_27_2013
 #if 1
   // TODO: Need to fix this so that is works for more than 1 generator per bus
-  if (p_gstatus.size() > 0 && p_gstatus[0] == 1) {
-    gridpack::ComplexType sBus((p_pg[0] - p_pl) / p_sbase, (p_qg[0] - p_ql) / p_sbase);
+  int i;
+  double pg, qg;
+  pg = 0.0;
+  qg = 0.0;
+  bool usegen = false;
+  for (i=0; i<p_gstatus.size(); i++) {
+    if (p_gstatus[i] == 1) {
+      pg += p_pg[i];
+      qg += p_qg[i];
+      usegen = true
+    }
+  }
+  if (p_gstatus.size() > 0 && usegen) {
+    gridpack::ComplexType sBus((pg - p_pl) / p_sbase, (qg - p_ql) / p_sbase);
     //p_sbusr = real(sBus);
     //p_sbusr = real(sBus);
     p_P0 = real(sBus);

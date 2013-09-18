@@ -89,10 +89,10 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // Set PQ
   //factory.setPQ();
-  factory.setMode(RHS); 
-  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-  PQ->print();
+//  factory.setMode(RHS); 
+//  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+//  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+//  PQ->print();
 
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
