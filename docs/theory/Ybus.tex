@@ -3,95 +3,105 @@
 \title{YBUS Admittance Matrix Formulation}
 \author{Yousu Chen \\PNNL}
 \maketitle
-This document is a description for how to formulate the YBUS admittance matrix. In General, the diagonal terms $Y_{ii}$ are the self admittance terms, equal to the sum of the admittances of all devices incident to bus $i$.  The off-diagonal terms $Y_{ij}$ are equal to the negative of the sum of the admittances joining the two buses. Shunt terms only affect the diagonal entries in the $Y$ matrix. For large systems, $Y$ is a sparse matrix and it is structually symmetric. 
+This document is a description of how to formulate the YBUS admittance matrix.
+In general, the diagonal terms $Y_{ii}$ are the self admittance terms and are equal to
+the sum of the admittances of all devices incident to bus $i$.  The off-diagonal
+terms $Y_{ij}$ are equal to the negative of the sum of the admittances joining
+the two buses. Shunt terms only affect the diagonal entries of the $Y$ matrix.
+For large systems, $Y$ is a sparse matrix and it is structually symmetric. 
 
-\subsection*{For transmission lines}
-\begin{equation}
-Y_{ij} = \frac{-1}{r_{k}+j\*x_{k}}
-\end{equation} 
-\begin{equation}
-Y_{ji} = Y_{ij}
-\end{equation} 
-\begin{equation}
-Y_{ii} = - \sum\nolimits_{i\ne j} Y_{ij} 
-\end{equation} 
-\begin{equation}
-Y_{jj} = - \sum\nolimits_{j\ne i} Y_{ji}
-\end{equation} 
+\subsection*{Transmission Lines}
+Transmission lines run from bus $i$ to bus $j$ and are indexed by $k$. More than
+one transmission line can go between two buses.
+\begin{eqnarray}
+Y_{ij} &=& \sum_{k}\frac{-1}{r_{ijk}+j\*x_{ijk}} \\
+Y_{ji} &=& Y_{ij} \\
+Y_{ii} &=& - \sum_{j\ne i} Y_{ij} \\
+Y_{jj} &=& - \sum_{i\ne j} Y_{ji}
+\end{eqnarray} 
 where:\\*
-$Y_{ij}$: the ${ij}_{th}$ element in the YBus matrix.\\* 
-$i$: the "from" bus.\\*
-$j$: the "to" bus. \\*
+$Y_{ij}$: the ${ij}_{th}$ element in the Y matrix.\\* 
+$i$: the ``from'' bus.\\*
+$j$: the ``to'' bus. \\*
 $k$: the $k_{th}$ transmission line from $i$ to $j$. \\*
-$r_{k}$: the resistance of the $k_{th}$ transmission line.\\*
-$x_{k}$: the reactance of the $k_{th}$ transmission line.
-\subsection*{For transformers}
-For tap changing and phase shifting transformer, in general the off-nominal tap value can be considered as a complex numberi $a$, where the tap ratio is $t$ and the phase shifter is $\theta$.  Therefore, $a$ = $t*(\cos{\theta}+j*\sin{\theta})$. \\*
-Let define
-\begin{equation}
-yt = \frac{-1}{r_{k}+j\*x_{k}}
-\end{equation} 
-\begin{equation}
-Y_{ij} = -\frac{yt}{a^{*}}
-\end{equation} 
-\begin{equation}
-Y_{ij} = -\frac{yt}{a}
-\end{equation} 
-\begin{equation}
-Y_{ii} = \frac{yt}{{|a|}^2}
-\end{equation} 
-\begin{equation}
-Y_{jj} = yt 
-\end{equation} 
+$r_{ijk}$: the resistance of the $k_{th}$ transmission line from $i$ to $j$.\\*
+$x_{ijk}$: the reactance of the $k_{th}$ transmission line from $i$ to $j$.
+
+\subsection*{Transformers}
+For a tap changing and phase shifting transformer, the off-nominal tap value can
+in general be considered as a complex number $a$, where the tap ratio is $t$
+and the phase shift is $\theta$. Transformers are defined similarly to
+transmission lines and exist on a branch between bus $i$ and bus $j$.
+Therefore, all transformer elements are subscripted by $i$ and $j$. For
+simplicity, we assume that only one transformer line exists between two buses
+and if a transformer is present between two buses then no transmission lines
+exist between the two buses. The off-nominal tap ratio between buses $i$ and $j$
+is defined as $a_{ij} = t_{ij}*(\cos{\theta_{ij}}+j*\sin{\theta_{ij}})$.
+We can define
+\begin{eqnarray}
+y_{ij}^{t} &=& \frac{-1}{r_{ij}+j\*x_{ij}} \\
+Y_{ij} &=& -\frac{y_{ij}^{t}}{a_{ij}^{*}} \\
+Y_{ji} &=& -\frac{y_{ij}^{t}}{a_{ij}} \\
+Y_{ii} &=& \frac{y_{ij}^{t}}{{|a_{ij}|}^2} \\
+Y_{jj} &=& y_{ij}^{t}
+\end{eqnarray} 
 where:\\*
 $Y_{ij}$: the ${ij}_{th}$ element in the $Y$ matrix.\\* 
-$i$: the "from" bus.\\*
-$j$: the "to" bus. \\*
-$k$: the $k_{th}$ transformer from $i$ to $j$. \\*
-$r_{k}$: the resistance of the $k_{th}$ transformer.\\*
-$x_{k}$: the reactance of the $k_{th}$ transformer.\\*
-$a^*$: the conjugate of $a$.\\*
+$i$: the ``from'' bus.\\*
+$j$: the ``to'' bus. \\*
+$r_{ij}$: the resistance of the transformer between $i$ and $j$.\\*
+$x_{ij}$: the reactance of the transformer between $i$ and $j$.\\*
+$t_{ij}$: the tap ratio between bus $i$ and bus $j$.\\*
+$\theta_{i}$: the phase on bus $i$.\\*
+$\theta_{j}$: the phase on bus $j$.\\*
+$\theta_{ij}=\theta_{i}-\theta_{j}$: the phase shift from bus $i$ to bus $j$.\\*
+$a_{ij}^*$: the conjugate of $a_{ij}$.\\*
 \\*
-Given the bus admittance matrix $Y$ for the entire system, the transformer model can be introduced by modifying the following 4 elements:
-\begin{equation}
-Y_{ij}^{new} = Y_{ij} - \frac{yt}{a^{*}}
-\end{equation} 
-\begin{equation}
-Y_{ji}^{new} = Y_{ji} - \frac{yt}{a}
-\end{equation} 
-\begin{equation}
-Y_{ii}^{new} = Y_{ii} + \frac{yt}{{|a|}^2}
-\end{equation} 
-\begin{equation}
-Y_{jj}^{new} = Y_{jj} + yt
-\end{equation} 
+Given the bus admittance matrix $Y$ for the entire system, the transformer model
+can be introduced by modifying the elements of the Y-matrix derived from the
+transmission lines as follows:
+\begin{eqnarray}
+Y_{ij}^{new} &=&  - \frac{y_{ij}^{t}}{a_{ij}^{*}} \\
+Y_{ji}^{new} &=&  - \frac{y_{ij}^{t}}{a_{ij}} \\
+Y_{ii}^{new} &=& Y_{ii} + \frac{y_{ij}^{t}}{{|a_{ij}|}^2} \\
+Y_{jj}^{new} &=& Y_{jj} + y_{ij}^{t}
+\end{eqnarray} 
+Note that since we are assuming that a branch with a transformer on it does not
+carry any additional transmission lines, the $Y_{ij}^{new}$ do not have any
+contributions from $Y_{ij}$.
 \subsection*{For shunts}
 Shunts only contribute to diagonal elements. The sources of shunts include:
 \begin{itemize}
-\item shunt devices located at buses $(gs+j\*bs)$;
-\item transmission line/transformer charging $b_{k}$ (distributed half to each end)
-     from end: $b_{ki}$= $0.5\*b_{k}$;
-     to end: $b_{kj}$= $0.5\*b_{k}$;
-\item transmission line/transformer shunt admittance, which normally a small value: $(gi+j\*bi)$; 
+\item shunt devices located at buses $(g_{i}^{s}+j\*b_{i}^{s})$;
+\item transmission line/transformer charging $b_{ijk}$ (distributed half to each end)
+     from end: $b_{ik}$= $0.5\*b_{ijk}$;
+     to end: $b_{jk}$= $0.5\*b_{ijk}$;
+\item transmission line/transformer shunt admittance, which is normally a small
+value: $(g_{ijk}^{a}+j\*b_{ijk}^{a})$; the shunt admittance contributes the same
+amount to both ends of the line
 \end{itemize}
 Therefore, the general equation for diagonal elements is:
 \begin{equation}
-Y_{ii} = - (\sum\nolimits_{i\ne j} Y_{ij}) + j\*b_{ki} + gs_{i}+j\*bs_{i} + gi_{ki}+j\*bi_{ki}
+Y_{ii}^{tot} = - (\sum_{j\ne i} Y_{ij}^{new})
++ g_{i}^{s}+j\*b_{i}^{s}
+ + \sum_k (j\*b_{ki} + g_{ki}^{a}+j\*b_{ki}^{a})
 \end{equation} 
 \begin{equation}
-Y_{jj} = - (\sum\nolimits_{j\ne i} Y_{ji}) + j\*b_{kj} + gs_{j}+j\*bs_{j} + gj_{kj}+j\*bj_{kj}
+Y_{jj}^{tot} = - (\sum_{i\ne j} Y_{ji}^{new})
+ + g_{j}^{s}+j\*b_{j}^{s}
+ + \sum_k (j\*b_{kj} + g_{kj}^{a}+j\*b_{kj}^{a})
 \end{equation} 
 where:\\*
-$Y_{ij}$: the ${ij}_{th}$ element in the YBus matrix.\\* 
-$i$: the "from" bus. \\*
-$j$: the "to" bus. \\*
+$Y_{ij}^{tot}$: the ${ij}_{th}$ element in the Y matrix.\\* 
+$i$: the ``from'' bus. \\*
+$j$: the ``to'' bus. \\*
 $k$: the $k_{th}$ transmission line/transformer from $i$ to $j$. \\*
-$gs_{i}+j*bs_{i}$: the shunt at bus $i$. \\*
-$b_{k}$: the line charging of the $k_{th}$ line. \\*
-$b_{ki}$ = 0.5 *$b_{k}$ : the line charging of the $k_{th}$ line assigned to "from" end $i$. \\*
-$b_{kj}$ = 0.5 *$b_{k}$ : the line charging of the $k_{th}$ line assigned to "to" end $j$. \\*
-$gi_{ki}+bi_{ki}$: the $k_{th}$ line shunt admitance at "from" end $i$. \\*
-$gj_{kj}+bi_{kj}$: the $k_{th}$ line shunt admitance at "to" end $j$. \\*
+$g_{i}^{s}+j*b_{i}^{s}$: the shunt at bus $i$. \\*
+$b_{ijk}$: the line charging of the $k_{th}$ line. \\*
+$b_{ik}$ = 0.5 *$b_{ijk}$ : the line charging of the $k_{th}$ line assigned to "from" end $i$. \\*
+$b_{jk}$ = 0.5 *$b_{ijk}$ : the line charging of the $k_{th}$ line assigned to "to" end $j$. \\*
+$g_{ki}^{a}+b_{ki}^{a} = g_{ijk}^{a}+j\*b_{ijk}^{a}$: the $k_{th}$ line shunt admittance at "from" end $i$. \\*
+$g_{kj}^{a}+b_{kj}^{a} = g_{ijk}^{a}+j\*b_{ijk}^{a}$: the $k_{th}$ line shunt admittance at "to" end $j$. \\*
 
 
 \begin{center}
