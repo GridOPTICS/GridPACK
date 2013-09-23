@@ -2,7 +2,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2013-08-12 14:50:57 d3g096
+ * @date   2013-09-23 07:01:53 d3g096
  * 
  * @brief  
  * 
@@ -367,7 +367,7 @@ void gridpack::powerflow::PFBus::setSBus(void)
     if (p_gstatus[i] == 1) {
       pg += p_pg[i];
       qg += p_qg[i];
-      usegen = true
+      usegen = true;
     }
   }
   if (p_gstatus.size() > 0 && usegen) {
