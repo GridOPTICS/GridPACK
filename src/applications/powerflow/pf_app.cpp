@@ -50,13 +50,17 @@ void gridpack::powerflow::PFApp::execute(void)
   boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
 
   // read configuration file
-  gridpack::utility::Configuration config;
-//  config.open("config.txt", world);
+  gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
+  config->open("input.xml",world);
+  gridpack::utility::Configuration::Cursor *cursor;
+  cursor = config->get_cursor("Configuration.Powerflow");
+  std::string filename = cursor->get("networkConfiguration",
+      "No network configuration specified");
 
   // load input file
   gridpack::parser::PTI23_parser<PFNetwork> parser(network);
  // parser.getCase("118_pti_v29.raw");
-  parser.getCase("IEEE14.raw");
+  parser.getCase(filename.c_str());
   parser.createNetwork();
 
   // partition network
