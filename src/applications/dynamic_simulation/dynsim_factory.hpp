@@ -1,8 +1,8 @@
 // -------------------------------------------------------------
 /**
- * @file   pf_factory.hpp
- * @author Bruce Palmer
- * @date   July 1, 2013
+ * @file   dynsim_factory.hpp
+ * @author Shuangshuang Jin 
+ * @date   September 19, 2013
  * 
  * @brief  
  * 
@@ -15,24 +15,25 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
+#include "gridpack/applications/dynamic_simulation/dynsim_components.hpp"
+#include "gridpack/math/matrix.hpp"
 
 namespace gridpack {
 namespace dynsim {
 
-class PFFactory
-  : gridpack::factory::BaseFactory {
+class DynSimFactory
+  : public gridpack::factory::BaseFactory<DynSimNetwork> {
   public:
     /**
      * Basic constructor
      * @param network: network associated with factory
      */
-    PFFactory(boost::shared_ptr<gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent,
-                        gridpack::component::BaseBranchComponent> > network);
+    DynSimFactory(NetworkPtr network);
 
     /**
      * Basic destructor
      */
-    ~PFFactory();
+    ~DynSimFactory();
 
     /**
      * Create the admittance (Y-Bus) matrix
@@ -41,8 +42,7 @@ class PFFactory
 
   private:
 
-    boost::shared_ptr<gridpack::network::BaseNetwork<gridpack::component::BaseBusComponent,
-                              gridpack::component::BaseBranchComponent> > p_network;
+    NetworkPtr p_network;
 };
 
 } // dynsim

@@ -1,8 +1,8 @@
 // -------------------------------------------------------------
 /**
- * @file   pf_components.hpp
- * @author Bruce Palmer
- * @date   June 4, 2013
+ * @file   dynsim_components.hpp
+ * @author Shuangshuang Jin 
+ * @date   September 19, 2013
  * 
  * @brief  
  * 
@@ -10,35 +10,42 @@
  */
 // -------------------------------------------------------------
 
+#ifndef _dynsim_components_h_
+#define _dynsim_components_h_
+
 /**
  * Some preprocessor string declarations. These will need to be put in an
  * include file someplace else. Just declare them here for the time being.
  */
 
+/*
 #define BRANCH_REACTANCE   "branch_reactance"
 #define BRANCH_RESISTANCE  "branch_resistance"
 #define BRANCH_TAP_RATIO   "branch_tap_ratio"
 #define BRANCH_PHASE_SHIFT "branch_phase_shift"
 #define BRANCH_CHARGING    "branch_charging"
-#define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1"
-#define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1"
-#define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2"
-#define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2"
 #define BUS_SHUNT_GS    "branch_shunt_gs"
 #define BUS_SHUNT_BS    "branch_shunt_bs"
+*/
 
-#ifndef _dynsim_components_h_
-#define _dynsim_components_h_
+/* These are defined in dictionary.hpp. */
+
+/* #define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1" */
+/* #define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1" */
+/* #define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2" */
+/* #define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2" */
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/network/base_network.hpp"
 
 namespace gridpack {
 namespace dynsim {
 
-enum DynSimMode{YBUS, JACOBIAN, GENERATOR};
+//enum DynSimMode{YBUS, JACOBIAN, GENERATOR};
+enum DynSimMode{YL, PERM, YA, YB};
 
 class DynSimBus
   : public gridpack::component::BaseBusComponent {
@@ -113,23 +120,38 @@ class DynSimBus
      * Return the value of the voltage magnitude on this bus
      * @return: voltage magnitude
      */
-    double getVoltage();
+    double getVoltage(void);
 
     /**
      * Return the value of the phase angle on this bus
      * @return: phase angle
      */
-    double getPhase();
+    double getPhase(void);
+
+    /**
+     * Return whether or not the bus is a generator
+     * @return: true if bus is geneartor
+     */
+    bool isGen();
 
   private:
-    double p_shunt_gs;
-    double p_shunt_bs;
-    bool p_shunt;
+    //double p_shunt_gs;
+    //double p_shunt_bs;
+    //bool p_shunt;
     int p_mode;
-    double p_v, p_theta;
+    //double p_v, p_theta;
     double p_ybusr, p_ybusi;
-    double p_P0, p_Q0;
-
+    //double p_P0, p_Q0;
+    double p_voltage;
+    bool p_load;
+    double p_pl, p_ql;
+    double p_sbase;
+    bool p_isGen;
+    std::vector<double> p_pg, p_qg;
+    std::vector<int> p_gstatus;
+    std::vector<double> p_mva, p_r, p_dstr, p_dtr;
+    int p_ngen;
+    int ngen;
 };
 
 class DynSimBranch
@@ -182,7 +204,7 @@ class DynSimBranch
      * Return the complex admittance of the branch
      * @return: complex addmittance of branch
      */
-    gridpack::ComplexType getAdmittance(void);
+    //gridpack::ComplexType getAdmittance(void);
 
     /**
      * Return transformer contribution from the branch to the calling
@@ -190,14 +212,14 @@ class DynSimBranch
      * @param bus: pointer to the bus making the call
      * @return: contribution from transformers to Y matrix
      */
-    gridpack::ComplexType getTransformer(DynSimBus *bus);
+    //gridpack::ComplexType getTransformer(DynSimBus *bus);
 
     /**
      * Return the contribution to a bus from shunts
      * @param bus: pointer to the bus making the call
      * @return: contribution to Y matrix from shunts associated with branches
      */
-    gridpack::ComplexType getShunt(DynSimBus *bus);
+    //gridpack::ComplexType getShunt(DynSimBus *bus);
 
     /**
      * Return the contribution to the Jacobian for the powerflow equations from
@@ -206,21 +228,21 @@ class DynSimBranch
      * @param values: an array of 4 doubles that holds return metrix elements
      * @return: contribution to Jacobian matrix from branch
      */
-    void getJacobian(DynSimBus *bus, double *values);
+    //void getJacobian(DynSimBus *bus, double *values);
 
     /**
      * Return contribution to constraints
      * @param p: real part of constraint
      * @param q: imaginary part of constraint
      */
-    void getPQ(DynSimBus *bus, double *p, double *q);
+    //void getPQ(DynSimBus *bus, double *p, double *q);
 
     /**
      * Set the mode to control what matrices and vectors are built when using
      * the mapper
      * @param mode: enumerated constant for different modes
      */
-    void setMode(int mode);
+    //void setMode(int mode);
 
   private:
     double p_reactance;

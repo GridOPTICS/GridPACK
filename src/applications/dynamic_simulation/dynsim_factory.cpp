@@ -1,8 +1,8 @@
 // -------------------------------------------------------------
 /**
- * @file   pf_factory.cpp
- * @author Bruce Palmer
- * @date   July 1, 2013
+ * @file   dynsim_factory.cpp
+ * @author Shuangshuang Jin 
+ * @date   September 19, 2013
  * 
  * @brief  
  * 
@@ -14,8 +14,13 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/dynsim/pf_components.hpp"
-#include "gridpack/applications/dynsim/pf_factory.hpp"
+#include "gridpack/applications/dynamic_simulation/dynsim_components.hpp"
+#include "gridpack/applications/dynamic_simulation/dynsim_factory.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/mapper/full_map.hpp"
+
+namespace gridpack {
+namespace dynsim {
 
 // Powerflow factory class implementations
 
@@ -23,11 +28,8 @@
  * Basic constructor
  * @param network: network associated with factory
  */
-gridpack::dynsim::DynSimFactory::DynSimFactory(
-         boost::shared_ptr<gridpack::network::BaseNetwork
-         <gridpack::component::BaseBusComponent,
-         gridpack::component::BaseBranchComponent> > network)
-         : gridpack::factory::BaseFactory(network)
+DynSimFactory::DynSimFactory(DynSimFactory::NetworkPtr network)
+  : gridpack::factory::BaseFactory<DynSimNetwork>(network)
 {
   p_network = network;
 }
@@ -58,3 +60,6 @@ void gridpack::dynsim::DynSimFactory::setYBus(void)
     (dynamic_cast<gridpack::dynsim::DynSimBranch*>(p_network->getBranch(i).get()))->setYBus();
   }
 }
+
+} // namespace dynsim
+} // namespace gridpack
