@@ -103,6 +103,11 @@ bool gridpack::dynsim::DynSimBus::matrixDiagValues(void *values)
     for (i = 0; i < p_ngen*p_ngen; i++) {
       int ip = i % p_ngen;
       int jp = (i - ip) / p_ngen;
+      int ngen2 = 2*p_ngen
+      int ii1 = 2*jp*ngen2+2*ip;
+      int ii2 = 2*jp*ngen2+2*ip+1;
+      int ii3 = (2*jp+1)*ngen2+2*ip;
+      int ii4 = (2*jp+1)*ngen2+2*ip+1;
       if (ip == jp) {
         double ra = p_r[ip] * p_sbase / p_mva[ip];
         double xd;
@@ -110,15 +115,15 @@ bool gridpack::dynsim::DynSimBus::matrixDiagValues(void *values)
           xd = p_dtr[ip] * p_sbase / p_mva[ip];
         gridpack::ComplexType Y_a(ra, xd);
         Y_a = 1.0 / Y_a;
-        values[4*i] = real(Y_a);
-        values[4*i+1] = imag(Y_a);
-        values[4*i+2] = -imag(Y_a);
-        values[4*i+3] = real(Y_a);
+        values[ii1] = real(Y_a);
+        values[ii2] = imag(Y_a);
+        values[ii3] = -imag(Y_a);
+        values[ii4] = real(Y_a);
       } else {
-        values[4*i] = 0;
-        values[4*i+1] = 0;
-        values[4*i+2] = 0;
-        values[4*i+3] = 0;
+        values[ii1] = 0;
+        values[ii2] = 0;
+        values[ii3] = 0;
+        values[ii4] = 0;
       }
       return true;
     } else {
