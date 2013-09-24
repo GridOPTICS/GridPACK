@@ -140,7 +140,14 @@ int Configuration::get(Configuration::KeyType key, int default_value) { return g
 bool Configuration::get(Configuration::KeyType key, int * output) { return get0_bool(pimpl->pt,key, output); }
 double Configuration::get(Configuration::KeyType key, double default_value) { return get0(pimpl->pt, key, default_value) ; }
 bool Configuration::get(Configuration::KeyType key, double * output) { return get0_bool(pimpl->pt,key, output); }
-std::string Configuration::get(Configuration::KeyType key, const std::string & default_value) { return get0(pimpl->pt, key, default_value) ; }
+std::string Configuration::get(Configuration::KeyType key, const std::string & default_value) {
+  std::string ret = get0(pimpl->pt, key, default_value) ;
+
+  // remove leading and trailing white space from string
+  ret.replace(0,ret.find_first_not_of(" "), "");
+  ret.replace(ret.find_last_not_of(" ")+1, std::string::npos,"");
+  return ret;
+}
 bool Configuration::get(Configuration::KeyType key, std::string * output) { return get0_bool(pimpl->pt,key, output); }
 
 std::vector<double> Configuration::get(Configuration::KeyType key, const std::vector<double> & default_value) { 
