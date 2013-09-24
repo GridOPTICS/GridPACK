@@ -30,15 +30,34 @@ template <class _network>
   class PTI23_parser {
     public:
 
+      /**
+       * Constructor
+       * @param network network object that will be filled with contents of network configuration file
+       */
       PTI23_parser(boost::shared_ptr<_network> network)
       {
         p_network = network;
       }
+
+      /**
+       * Destructor
+       */
       virtual ~PTI23_parser()
       {
         p_busData.clear();
         p_branchData.clear();
       }
+
+      /**
+       * Parse network configuration file and create network
+       * @param fileName name of network file
+       */
+      void parse(const std::string &fileName)
+      {
+        getCase(fileName);
+        createNetwork();
+      }
+
       /*
        * A case is the collection of all data associated with a PTI23 file.
        * Each case is a a vector of data_set objects the contain all the data

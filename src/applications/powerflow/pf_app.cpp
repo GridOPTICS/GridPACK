@@ -20,7 +20,6 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/configuration/configuration.hpp"
-#include "gridpack/parser/Parser.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/applications/powerflow/pf_factory.hpp"
 
@@ -59,9 +58,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // load input file
   gridpack::parser::PTI23_parser<PFNetwork> parser(network);
- // parser.getCase("118_pti_v29.raw");
-  parser.getCase(filename.c_str());
-  parser.createNetwork();
+  parser.parse(filename.c_str());
 
   // partition network
   network->partition();

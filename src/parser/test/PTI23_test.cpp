@@ -10,7 +10,7 @@
 
 #include <iostream>
 #include <string>
-#include <gridpack/parser/Parser.hpp>
+//#include <gridpack/parser/Parser.hpp>
 #include <gridpack/parser/PTI23_parser.hpp>
 
 #define BOOST_TEST_NO_MAIN
@@ -20,11 +20,11 @@
 #define EPSILON     0.0000001
 #define TOLERANCE(x, y, eps) (x - EPSILON > y && x + EPSILON < y)
 
-BOOST_AUTO_TEST_SUITE(Parser)
+//BOOST_AUTO_TEST_SUITE(Parser)
 
 //____________________________________________________________________________//
 
-BOOST_AUTO_TEST_SUITE_END()
+//BOOST_AUTO_TEST_SUITE_END()
 
 // -------------------------------------------------------------
 // init_function
