@@ -30,7 +30,7 @@ class FullMatrixMap {
  * Initialize mapper for the given network and the current mode. Create global
  * arrays that contain offsets that will be used to create matrix from the
  * network component objects
- * @param network: network that will generate matrix
+ * @param network network that will generate matrix
  */
 FullMatrixMap(boost::shared_ptr<_network> network)
   : p_me (GA_Nodeid()), p_nNodes(GA_Nnodes()), p_network(network)
@@ -60,7 +60,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 
 /**
  * Generate matrix from current component state on network
- * @return: return a pointer to new matrix
+ * @return return a pointer to new matrix
  */
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
@@ -78,7 +78,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 
 /**
  * Reset existing matrix from current component state on network
- * @param matrix: existing matrix (should be generated from same mapper)
+ * @param matrix existing matrix (should be generated from same mapper)
  */
 void mapToMatrix(gridpack::math::Matrix &matrix)
 {
@@ -91,7 +91,7 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
 
 /**
  * Reset existing matrix from current component state on network
- * @param matrix: existing matrix (should be generated from same mapper)
+ * @param matrix existing matrix (should be generated from same mapper)
  */
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
@@ -101,7 +101,7 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 private:
 /**
  * Return the number of active buses on this process
- * @return: number of active buses
+ * @return number of active buses
  */
 int getActiveBuses(void)
 {
@@ -116,7 +116,7 @@ int getActiveBuses(void)
 
 /**
  * Allocate the gaMatBlksI and gaMatBlksJ global arrays
- * @param nActiveBuses: the number of active buses on this process
+ * @param nActiveBuses the number of active buses on this process
  */
 void setupGlobalArrays(int nActiveBuses)
 {
@@ -134,7 +134,7 @@ void setupGlobalArrays(int nActiveBuses)
 
 /**
  * Create a global array of integers
- * @param size: size of global array
+ * @param size size of global array
  */
 void createIndexGA(int * handle, int size)
 {
@@ -185,12 +185,12 @@ void setupIndexingArrays()
 
 /**
  * Allocate arrays that hold sizes and approximate indices of matrix elements
- * @param n: number of elements in array
- * @param iSizeArray: array containing size of matrix block along i axis
- * @param jSizeArray: array containing size of matrix block along j axis
- * @param iIndexArray: array containing i index of matrix block
- * @param jIndexArray: array containing j index of matrix block
- * @param nflag: number of indices being used (1 or 2)
+ * @param n number of elements in array
+ * @param iSizeArray array containing size of matrix block along i axis
+ * @param jSizeArray array containing size of matrix block along j axis
+ * @param iIndexArray array containing i index of matrix block
+ * @param jIndexArray array containing j index of matrix block
+ * @param nflag number of indices being used (1 or 2)
  */
 void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
         int *** iIndexArray, int *** jIndexArray, int nflag)
@@ -214,10 +214,10 @@ void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
 /**
  * Load arrays containing matrix block sizes and indices along diagonal of matrix.
  * These come from buses
- * @param iSizeArray: array containing size of matrix block along i axis
- * @param jSizeArray: array containing size of matrix block along j axis
- * @param iIndexArray: array containing i index of matrix block
- * @param count: return total number of non-zero blocks
+ * @param iSizeArray array containing size of matrix block along i axis
+ * @param jSizeArray array containing size of matrix block along j axis
+ * @param iIndexArray array containing i index of matrix block
+ * @param count return total number of non-zero blocks
  */
 void loadBusArrays(int * iSizeArray, int * jSizeArray,
         int ** iIndexArray, int *count)
@@ -243,11 +243,11 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
 /**
  * Load arrays containing matrix block sizes and indices for off-diagonal
  * matrix blocks. These come from branches.
- * @param iSizeArray: array containing size of matrix block along i axis
- * @param jSizeArray: array containing size of matrix block along j axis
- * @param iIndexArray: array containing i index of matrix block
- * @param jIndexArray: array containing j index of matrix block
- * @param count: total number of non-zero blocks
+ * @param iSizeArray array containing size of matrix block along i axis
+ * @param jSizeArray array containing size of matrix block along j axis
+ * @param iIndexArray array containing i index of matrix block
+ * @param jIndexArray array containing j index of matrix block
+ * @param count total number of non-zero blocks
  */
 void loadForwardBranchArrays(int * iSizeArray, int * jSizeArray,
         int ** iIndexArray, int ** jIndexArray, int * count)
@@ -297,12 +297,12 @@ void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
 
 /**
  *  Clean up index arrays
- *  @param n: array size
- *  @param iSizeArray: array containing size of matrix block along i axis
- *  @param jSizeArray: array containing size of matrix block along j axis
- *  @param iIndexArray: array containing i index of matrix block
- *  @param jIndexArray: array containing j index of matrix block
- * @param nflag: number of indices being used (1 or 2)
+ *  @param n array size
+ *  @param iSizeArray array containing size of matrix block along i axis
+ *  @param jSizeArray array containing size of matrix block along j axis
+ *  @param iIndexArray array containing i index of matrix block
+ *  @param jIndexArray array containing j index of matrix block
+ * @param nflag number of indices being used (1 or 2)
  */
 void deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
         int ** iIndexArray, int ** jIndexArray, int nflag)
@@ -325,12 +325,12 @@ void deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
 
 /**
  * Scatter elements into global arrays
- * @param iSizeArray: array containing size of matrix block along i axis
- * @param jSizeArray: array containing size of matrix block along j axis
- * @param iIndexArray: array containing i index of matrix block
- * @param jIndexArray: array containing j index of matrix block
- * @param count: number of elements to be scattered
- * @param nflag: number of indices being used (1 or 2)
+ * @param iSizeArray array containing size of matrix block along i axis
+ * @param jSizeArray array containing size of matrix block along j axis
+ * @param iIndexArray array containing i index of matrix block
+ * @param jIndexArray array containing j index of matrix block
+ * @param count number of elements to be scattered
+ * @param nflag number of indices being used (1 or 2)
  */
 void scatterIndexingArrays(int * iSizeArray, int * jSizeArray,
                                   int ** iIndexArray, int ** jIndexArray,
@@ -489,8 +489,8 @@ void setupOffsetArrays()
 
 /**
  * Add diagonal block contributions from buses to matrix
- * @param matrix: matrix to which contributions are added
- * @param flag: flag to distinguish new matrix (true) from old (false)
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
  */
 void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 {
@@ -524,18 +524,19 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
-        p_network->getBus(i)->matrixDiagValues(values);
-        icnt = 0;
-        for (k=0; k<jsize; k++) {
-          jdx = offsets[jcnt] + k;
-          for (j=0; j<isize; j++) {
-            idx = offsets[jcnt] + j;
-            if (flag) {
-              matrix.addElement(idx, jdx, values[icnt]);
-            } else {
-              matrix.setElement(idx, jdx, values[icnt]);
+        if (p_network->getBus(i)->matrixDiagValues(values)) {
+          icnt = 0;
+          for (k=0; k<jsize; k++) {
+            jdx = offsets[jcnt] + k;
+            for (j=0; j<isize; j++) {
+              idx = offsets[jcnt] + j;
+              if (flag) {
+                matrix.addElement(idx, jdx, values[icnt]);
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
+              icnt++;
             }
-            icnt++;
           }
         }
         delete indices[jcnt];
@@ -552,8 +553,8 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 
 /**
  * Add diagonal block contributions from buses to matrix
- * @param matrix: matrix to which contributions are added
- * @param flag: flag to distinguish new matrix (true) from old (false)
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
  */
 void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 {
@@ -562,8 +563,8 @@ void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 
 /**
  * Add off-diagonal block contributions from branches to matrix
- * @param matrix: matrix to which contributions are added
- * @param flag: flag to distinguish new matrix (true) from old (false)
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
  */
 void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 {
@@ -617,18 +618,19 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
     if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
-        p_network->getBranch(i)->matrixForwardValues(values);
-        icnt = 0;
-        for (k=0; k<jsize; k++) {
-          jdx = j_offsets[jcnt] + k;
-          for (j=0; j<isize; j++) {
-            idx = i_offsets[jcnt] + j;
-            if (flag) {
-              matrix.addElement(idx, jdx, values[icnt]);
-            } else {
-              matrix.setElement(idx, jdx, values[icnt]);
+        if (p_network->getBranch(i)->matrixForwardValues(values)) {
+          icnt = 0;
+          for (k=0; k<jsize; k++) {
+            jdx = j_offsets[jcnt] + k;
+            for (j=0; j<isize; j++) {
+              idx = i_offsets[jcnt] + j;
+              if (flag) {
+                matrix.addElement(idx, jdx, values[icnt]);
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
+              icnt++;
             }
-            icnt++;
           }
         }
         delete i_indices[jcnt];
@@ -639,18 +641,19 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
     if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
-        p_network->getBranch(i)->matrixReverseValues(values);
-        icnt = 0;
-        for (k=0; k<jsize; k++) {
-          jdx = j_offsets[jcnt] + k;
-          for (j=0; j<isize; j++) {
-            idx = i_offsets[jcnt] + j;
-            if (flag) {
-              matrix.addElement(idx, jdx, values[icnt]);
-            } else {
-              matrix.setElement(idx, jdx, values[icnt]);
+        if (p_network->getBranch(i)->matrixReverseValues(values)) {
+          icnt = 0;
+          for (k=0; k<jsize; k++) {
+            jdx = j_offsets[jcnt] + k;
+            for (j=0; j<isize; j++) {
+              idx = i_offsets[jcnt] + j;
+              if (flag) {
+                matrix.addElement(idx, jdx, values[icnt]);
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
+              icnt++;
             }
-            icnt++;
           }
         }
         delete i_indices[jcnt];
@@ -670,8 +673,8 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 
 /**
  * Add off-diagonal block contributions from branches to matrix
- * @param matrix: matrix to which contributions are added
- * @param flag: flag to distinguish new matrix (true) from old (false)
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
  */
 void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 {

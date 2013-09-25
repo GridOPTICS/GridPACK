@@ -30,7 +30,7 @@ class BusVectorMap {
  * Initialize mapper for the given network and the current mode. Create global
  * arrays that contain offsets that will be used to create vector from the
  * network component objects
- * @param network: network that will generate vector
+ * @param network network that will generate vector
  */
 BusVectorMap(boost::shared_ptr<_network> network)
   : p_me (GA_Nodeid()), p_nNodes(GA_Nnodes()), p_network(network)
@@ -58,7 +58,7 @@ BusVectorMap(boost::shared_ptr<_network> network)
 
 /**
  * Create a vector from the current bus state
- * @return: return pointer to new vector
+ * @return return pointer to new vector
  */
 boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
 {
@@ -74,7 +74,7 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
 /**
  * Reset a vector from the current bus state (vector should be created with same
  * mapper)
- * @param vector: existing vector that should be reset
+ * @param vector existing vector that should be reset
  */
 void mapToVector(gridpack::math::Vector &vector)
 {
@@ -87,7 +87,7 @@ void mapToVector(gridpack::math::Vector &vector)
 /**
  * Reset a vector from the current bus state (vector should be created with same
  * mapper). 
- * @param vector: existing vector that should be reset
+ * @param vector existing vector that should be reset
  */
 void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
@@ -97,7 +97,7 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 /**
  * Push data from vector onto buses. Vector must be created with the
  * mapToVector method using the same BusVectorMap
- * @param vector: vector containing data to be pushed to buses
+ * @param vector vector containing data to be pushed to buses
  */
 void mapToBus(const gridpack::math::Vector &vector)
 {
@@ -134,7 +134,7 @@ void mapToBus(const gridpack::math::Vector &vector)
 /**
  * Push data from vector onto buses. Vector must be created with the
  * mapToVector method using the same BusVectorMap
- * @param vector: vector containing data to be pushed to buses
+ * @param vector vector containing data to be pushed to buses
  */
 void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
@@ -144,7 +144,7 @@ void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
 private:
 /**
  * Return the number of active buses on this process
- * @return: number of active buses
+ * @return number of active buses
  */
 int getActiveBuses(void)
 {
@@ -159,7 +159,7 @@ int getActiveBuses(void)
 
 /**
  * Allocate the gaVecBlksI global array
- * @param nActiveBuses: the number of active buses on this process
+ * @param nActiveBuses the number of active buses on this process
  */
 void setupGlobalArrays(int nActiveBuses)
 {
@@ -176,7 +176,7 @@ void setupGlobalArrays(int nActiveBuses)
 
 /**
  * Create a global array of integers
- * @param size: size of global array
+ * @param size size of global array
  */
 void createIndexGA(int * handle, int size)
 {
@@ -210,9 +210,9 @@ void setupIndexingArrays()
 
 /**
  * Allocate arrays that hold sizes and approximate indices of vector elements
- * @param n: number of elements in array
- * @param iSizeArray: array containing size of vector block
- * @param iIndexArray: array containing index of vector block
+ * @param n number of elements in array
+ * @param iSizeArray array containing size of vector block
+ * @param iIndexArray array containing index of vector block
  */
 void allocateIndexArray(int n, int ** iSizeArray, int *** iIndexArray)
 {
@@ -227,9 +227,9 @@ void allocateIndexArray(int n, int ** iSizeArray, int *** iIndexArray)
 /**
  * Load arrays containing vector block sizes and indices
  * These come from buses
- * @param iSizeArray: array containing size of vector block along i axis
- * @param iIndexArray: array containing i index of vector block
- * @param count: return total number of non-zero blocks
+ * @param iSizeArray array containing size of vector block along i axis
+ * @param iIndexArray array containing i index of vector block
+ * @param count return total number of non-zero blocks
  */
 void loadBusArrays(int * iSizeArray, int ** iIndexArray, int *count)
 {
@@ -251,9 +251,9 @@ void loadBusArrays(int * iSizeArray, int ** iIndexArray, int *count)
 
 /**
  *  Clean up index arrays
- *  @param n: array size
- *  @param iSizeArray: array containing size of vector block along i axis
- *  @param iIndexArray: array containing i index of vector block
+ *  @param n array size
+ *  @param iSizeArray array containing size of vector block along i axis
+ *  @param iIndexArray array containing i index of vector block
  */
 void deleteIndexArrays(int n, int * iSizeArray, int ** iIndexArray)
 {
@@ -266,9 +266,9 @@ void deleteIndexArrays(int n, int * iSizeArray, int ** iIndexArray)
 
 /**
  * Scatter elements into global arrays
- * @param iSizeArray: array containing size of vector block along i axis
- * @param iIndexArray: array containing i index of vector block
- * @param count: number of elements to be scattered
+ * @param iSizeArray array containing size of vector block along i axis
+ * @param iIndexArray array containing i index of vector block
+ * @param count number of elements to be scattered
  */
 void scatterIndexingArrays(int * iSizeArray, int ** iIndexArray, int count)
 {
@@ -382,8 +382,8 @@ void setupOffsetArrays()
 
 /**
  * Add block contributions from buses to vector
- * @param vector: vector to which contributions are added
- * @param flag: flag to distinguish new vector (true) from existing vector * (false)
+ * @param vector vector to which contributions are added
+ * @param flag flag to distinguish new vector (true) from existing vector * (false)
  */
 void loadBusData(gridpack::math::Vector &vector, bool flag)
 {
@@ -402,6 +402,8 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   }
   if (icnt != p_busContribution) {
     // TODO: some kind of error
+    printf("p[%d] Mismatch icnt: %d busContribution: %d\n",
+        GA_Nodeid(),icnt,p_busContribution);
   }
 
   // Gather vector offsets
@@ -442,8 +444,8 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
 
 /**
  * Add block contributions from buses to vector
- * @param vector: vector to which contributions are added
- * @param flag: flag to distinguish new vector (true) from existing vector * (false)
+ * @param vector vector to which contributions are added
+ * @param flag flag to distinguish new vector (true) from existing vector * (false)
  */
 void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
 {
