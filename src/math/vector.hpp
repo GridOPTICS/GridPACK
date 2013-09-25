@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-09-25 09:36:27 d3g096
+ * @date   2013-09-25 12:08:29 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -131,15 +131,15 @@ public:
    * the local process. The maximum is one more than the last global
    * index owned. An example of usage:
    * 
-   * \code{.cpp}
-   * int lo, hi;
-   * my_vector.local_index_range(lo, hi);
-   * for (int i = lo; i < hi; ++i) {
-   *   ComplexType x;
-   *   x = ...;
-   *   v.setElement(i, x);
-   * }
-   * \endcode
+     \code{.cpp}
+     int lo, hi;
+     my_vector.local_index_range(lo, hi);
+     for (int i = lo; i < hi; ++i) {
+       ComplexType x;
+       x = ...;
+       v.setElement(i, x);
+     }
+     \endcode
    * 
    * @param lo first (0-based) index of locally owned elements
    * @param hi one more than the last (0-based) index of locally owned elements
