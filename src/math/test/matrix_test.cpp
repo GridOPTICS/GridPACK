@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-09-25 07:10:35 d3g096
+ * @date   2013-09-25 09:20:50 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -62,13 +62,13 @@ make_and_fill_test_matrix(const int& bandwidth, int& global_size)
   int halfbw(std::max((bandwidth - 1)/2, 0));
 
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
  
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(static_cast<double>(i));
     int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      A->set_element(i, j, x);
+      A->setElement(i, j, x);
     }
   }
   A->ready();
@@ -83,11 +83,11 @@ BOOST_AUTO_TEST_CASE( construction )
   std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
 
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
 
   BOOST_CHECK_GT(hi, lo);
 
-  BOOST_CHECK_EQUAL(A->local_rows(), local_size);
+  BOOST_CHECK_EQUAL(A->localRows(), local_size);
   BOOST_CHECK_EQUAL(A->rows(), global_size);
   BOOST_CHECK_EQUAL(A->cols(), global_size);
   
@@ -99,18 +99,18 @@ BOOST_AUTO_TEST_CASE( set_and_get )
   std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
 
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(static_cast<double>(i));
-    A->set_element(i, i, x);
+    A->setElement(i, i, x);
   }
   A->ready();
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(static_cast<double>(i));
     gridpack::ComplexType y;
-    A->get_element(i, i, y);
+    A->getElement(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }
@@ -122,18 +122,18 @@ BOOST_AUTO_TEST_CASE( bad_get )
   std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
 
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
 
   gridpack::ComplexType x(1.0);
 
   for (int i = lo; i < hi; ++i) {
     x = static_cast<gridpack::ComplexType>(i);
-    A->set_element(i, i, x);
+    A->setElement(i, i, x);
   }
   A->ready();
 
-  BOOST_CHECK_THROW( A->get_element(0, global_size, x), gridpack::Exception );
-  BOOST_CHECK_THROW( A->get_element(global_size, 0, x), gridpack::Exception );
+  BOOST_CHECK_THROW( A->getElement(0, global_size, x), gridpack::Exception );
+  BOOST_CHECK_THROW( A->getElement(global_size, 0, x), gridpack::Exception );
   
 }
 
@@ -148,8 +148,8 @@ BOOST_AUTO_TEST_CASE( bad_set )
   // BOOST_CHECK_THROW( A->set_element(0, global_size, x), gridpack::Exception );
   // BOOST_CHECK_THROW( A->set_element(global_size, 0, x), gridpack::Exception );
 
-  // A->set_element(0, global_size, x);
-  // A->set_element(global_size, 0, x);
+  // A->setElement(0, global_size, x);
+  // A->setElement(global_size, 0, x);
   
 }
 
@@ -163,7 +163,7 @@ BOOST_AUTO_TEST_CASE( multiple_set_and_get )
   gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
 
   int lo, hi;
-  A.local_row_range(lo, hi);
+  A.localRowRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     int n(nentries);
@@ -179,7 +179,7 @@ BOOST_AUTO_TEST_CASE( multiple_set_and_get )
     } else if (i >= global_size - 1) {
       n = 2;
     }
-    A.set_elements(n, &iidx[startidx], &jidx[startidx], &x[startidx]);
+    A.setElements(n, &iidx[startidx], &jidx[startidx], &x[startidx]);
   }
   A.ready();
 
@@ -202,7 +202,7 @@ BOOST_AUTO_TEST_CASE( multiple_set_and_get )
     } else if (i >= global_size - 1) {
       n = 2;
     }
-    A.get_elements(n, &iidx[startidx], &jidx[startidx], &y[startidx]);
+    A.getElements(n, &iidx[startidx], &jidx[startidx], &y[startidx]);
 
     for (int j = startidx; j < n - startidx; ++j) {
       BOOST_CHECK_CLOSE(real(x), real(y[j]), delta);
@@ -220,19 +220,19 @@ BOOST_AUTO_TEST_CASE( accumulate )
   gridpack::math::Matrix A(world, local_size, global_size, the_storage_type);
 
   int lo, hi;
-  A.local_row_range(lo, hi);
+  A.localRowRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(static_cast<double>(i));
-    A.add_element(i, i, x);
-    A.add_element(i, i, x);
+    A.addElement(i, i, x);
+    A.addElement(i, i, x);
   }
   A.ready();
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(static_cast<double>(2*i));
     gridpack::ComplexType y;
-    A.get_element(i, i, y);
+    A.getElement(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }
@@ -250,13 +250,13 @@ BOOST_AUTO_TEST_CASE( clone )
 
   const int bw(1);
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
  
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(static_cast<double>(i));
     int jmin(std::max(i-bw, 0)), jmax(std::min(i+bw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      A->set_element(i, j, x);
+      A->setElement(i, j, x);
     }
   }
   A->ready();
@@ -264,7 +264,7 @@ BOOST_AUTO_TEST_CASE( clone )
   std::auto_ptr<gridpack::math::Matrix> Aclone(A->clone());
 
   BOOST_CHECK_EQUAL(A->rows(), Aclone->rows());
-  BOOST_CHECK_EQUAL(A->local_rows(), Aclone->local_rows());
+  BOOST_CHECK_EQUAL(A->localRows(), Aclone->localRows());
   BOOST_CHECK_EQUAL(A->cols(), Aclone->cols());
 
   for (int i = lo; i < hi; ++i) {
@@ -272,8 +272,8 @@ BOOST_AUTO_TEST_CASE( clone )
     gridpack::ComplexType y;
     int jmin(std::max(i-bw, 0)), jmax(std::min(i+bw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      A->get_element(i, j, x);
-      Aclone->get_element(i, j, y);
+      A->getElement(i, j, x);
+      Aclone->getElement(i, j, y);
       BOOST_CHECK_CLOSE(real(x), real(y), delta);
       BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
     }
@@ -287,13 +287,13 @@ BOOST_AUTO_TEST_CASE( add )
   std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
 
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
  
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(static_cast<double>(i));
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      A->set_element(i, j, x);
+      A->setElement(i, j, x);
     }
   }
   A->ready();
@@ -308,11 +308,11 @@ BOOST_AUTO_TEST_CASE( add )
     gridpack::ComplexType y;
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      A->get_element(i, j, x);
-      C->get_element(i, j, y);
+      A->getElement(i, j, x);
+      C->getElement(i, j, y);
       BOOST_CHECK_CLOSE(2.0*real(x), real(y), delta);
       BOOST_CHECK_CLOSE(2.0*abs(x), abs(y), delta);
-      B->get_element(i, j, y);
+      B->getElement(i, j, y);
       BOOST_CHECK_CLOSE(2.0*real(x), real(y), delta);
       BOOST_CHECK_CLOSE(2.0*abs(x), abs(y), delta);
     }
@@ -326,11 +326,11 @@ BOOST_AUTO_TEST_CASE( identity )
   std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
 
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(1.0);
-    A->set_element(i, i, x);
+    A->setElement(i, i, x);
   }
   A->ready();
 
@@ -339,7 +339,7 @@ BOOST_AUTO_TEST_CASE( identity )
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(1.0);
     gridpack::ComplexType y;
-    A->get_element(i, i, y);
+    A->getElement(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }
@@ -355,14 +355,14 @@ BOOST_AUTO_TEST_CASE( scale )
   A->scale(z);
   
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       gridpack::ComplexType 
         x(static_cast<gridpack::ComplexType>(i)*z), y;
-      A->get_element(i, j, y);
+      A->getElement(i, j, y);
       BOOST_CHECK_CLOSE(real(x), real(y), delta);
       BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
     }
@@ -378,14 +378,14 @@ BOOST_AUTO_TEST_CASE( transpose )
   std::auto_ptr<gridpack::math::Matrix> B(gridpack::math::transpose(*A));
 
   int lo, hi;
-  A->local_row_range(lo, hi);
+  A->localRowRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       gridpack::ComplexType 
         x(static_cast<gridpack::ComplexType>(j)), y;
-      B->get_element(i, j, y);
+      B->getElement(i, j, y);
       BOOST_CHECK_CLOSE(real(x), real(y), delta);
       BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
     }
@@ -433,7 +433,7 @@ BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
     A(make_and_fill_test_matrix(bandwidth, global_size));
 
   std::auto_ptr<gridpack::math::Vector>  
-    xvector(new gridpack::math::Vector(A->communicator(), A->local_rows())),
+    xvector(new gridpack::math::Vector(A->communicator(), A->localRows())),
     yvector;
 
   xvector->fill(scale);

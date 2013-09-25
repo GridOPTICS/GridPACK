@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-09-25 08:29:18 d3g096
+ * @date   2013-09-25 09:36:27 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -59,6 +59,8 @@ public:
 
   /// Default constructor.
   /** 
+   * @e Collective.
+   *
    * A vector must be instantiated simulutaneously on all processes
    * involved in the specified \ref parallel::Communicator
    * "communicator". Each process in the communicator will own the
@@ -73,6 +75,8 @@ public:
 
   /// Destructor
   /** 
+   * @e Collective.
+   *
    * A vector must be destroyed simulutaneously on all processes
    * involved in the \ref parallel::Communicator "communicator" used
    * to instantiate it.
@@ -119,7 +123,7 @@ public:
   }
   
 
-  /// Get the local min/max global indexes
+  /// Get the min/max global indexes of locally owned elements
   /** 
    * @e Local.
    * 

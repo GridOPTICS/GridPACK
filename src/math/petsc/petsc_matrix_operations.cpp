@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created April 17, 2013 by William A. Perkins
-// Last Change: 2013-09-25 07:22:50 d3g096
+// Last Change: 2013-09-25 09:17:07 d3g096
 // -------------------------------------------------------------
 
 
@@ -54,7 +54,7 @@ column(const Matrix& A, const int& cidx, Vector& result)
   }
 
   // this is a requirement of PETSc
-  if (result.localSize() != A.local_rows()) {
+  if (result.localSize() != A.localRows()) {
     throw gridpack::Exception("incompatible: sizes do not match");
   }
 

@@ -2,7 +2,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-25 07:11:25 d3g096
+ * @date   2013-09-25 09:21:41 d3g096
  * 
  * @brief  
  * 
@@ -95,12 +95,12 @@ assemble(const int imax, const int jmax,
         
         ap += as + an + aw + ae;
 
-        A.set_element(iP, iP, ap);
+        A.setElement(iP, iP, ap);
 
-        if (an != 0.0) A.set_element(iP, iN, -an);
-        if (as != 0.0) A.set_element(iP, iS, -as);
-        if (ae != 0.0) A.set_element(iP, iE, -ae);
-        if (aw != 0.0) A.set_element(iP, iW, -aw);
+        if (an != 0.0) A.setElement(iP, iN, -an);
+        if (as != 0.0) A.setElement(iP, iS, -as);
+        if (ae != 0.0) A.setElement(iP, iE, -ae);
+        if (aw != 0.0) A.setElement(iP, iW, -aw);
         b.setElement(iP, bp);
       }      
     }

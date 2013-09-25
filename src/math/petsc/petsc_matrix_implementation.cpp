@@ -1,7 +1,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-08-15 13:44:57 d3g096
+ * @date   2013-09-25 09:12:12 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -111,7 +111,7 @@ PETScMatrixImplementation::~PETScMatrixImplementation(void)
 // PETScMatrixImplementation::p_local_row_range
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_local_row_range(int& lo, int& hi) const
+PETScMatrixImplementation::p_localRowRange(int& lo, int& hi) const
 {
   PetscErrorCode ierr(0);
   try {
@@ -146,7 +146,7 @@ PETScMatrixImplementation::p_rows(void) const
 // PETScMatrixImplementation::p_local_rows
 // -------------------------------------------------------------
 int
-PETScMatrixImplementation::p_local_rows(void) const
+PETScMatrixImplementation::p_localRows(void) const
 {
   PetscErrorCode ierr(0);
   int result(0);
@@ -182,7 +182,7 @@ PETScMatrixImplementation::p_cols(void) const
 // PETScMatrixImplementation::p_set_element
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_set_element(const int& i, const int& j, 
+PETScMatrixImplementation::p_setElement(const int& i, const int& j, 
                                          const ComplexType& x)
 {
   PetscErrorCode ierr(0);
@@ -197,13 +197,13 @@ PETScMatrixImplementation::p_set_element(const int& i, const int& j,
 // PETScMatrixImplementation::p_set_elements
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_set_elements(const int& n, 
+PETScMatrixImplementation::p_setElements(const int& n, 
                                           const int *i, const int *j, 
                                           const ComplexType *x)
 {
   // FIXME: There's probably a better way
   for (int k = 0; k < n; k++) {
-    this->p_set_element(i[k], j[k], x[k]);
+    this->p_setElement(i[k], j[k], x[k]);
   }
 }
 
@@ -211,7 +211,7 @@ PETScMatrixImplementation::p_set_elements(const int& n,
 // PETScMatrixImplementation::p_add_element
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_add_element(const int& i, const int& j, 
+PETScMatrixImplementation::p_addElement(const int& i, const int& j, 
                                          const ComplexType& x)
 {
   PetscErrorCode ierr(0);
@@ -226,13 +226,13 @@ PETScMatrixImplementation::p_add_element(const int& i, const int& j,
 // PETScMatrixImplementation::p_add_elements
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_add_elements(const int& n, 
+PETScMatrixImplementation::p_addElements(const int& n, 
                                           const int *i, const int *j, 
                                           const ComplexType *x)
 {
   // FIXME: There's probably a better way
   for (int k = 0; k < n; k++) {
-    this->p_add_element(i[k], j[k], x[k]);
+    this->p_addElement(i[k], j[k], x[k]);
   }
 }
 
@@ -240,7 +240,7 @@ PETScMatrixImplementation::p_add_elements(const int& n,
 // PETScMatrixImplementation::p_get_element
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_get_element(const int& i, const int& j, 
+PETScMatrixImplementation::p_getElement(const int& i, const int& j, 
                                          ComplexType& x) const
 {
   PetscErrorCode ierr(0);
@@ -258,13 +258,13 @@ PETScMatrixImplementation::p_get_element(const int& i, const int& j,
 // PETScMatrixImplementation::p_get_elements
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_get_elements(const int& n,
+PETScMatrixImplementation::p_getElements(const int& n,
                                           const int *i, const int *j, 
                                           ComplexType *x) const
 {
   // FIXME: There is a better way
   for (int k = 0; k < n; k++) {
-    this->p_get_element(i[k], j[k], x[k]);
+    this->p_getElement(i[k], j[k], x[k]);
   }
 }
 

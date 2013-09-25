@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-09-25 07:22:10 d3g096
+ * @date   2013-09-25 09:17:08 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -90,7 +90,7 @@ transpose(const Matrix& A)
 Vector *
 column(const Matrix& A, const int& cidx)
 {
-  Vector *colv(new Vector(A.communicator(), A.local_rows()));
+  Vector *colv(new Vector(A.communicator(), A.localRows()));
   column(A, cidx, *colv);
   return colv;
 }
@@ -101,7 +101,7 @@ column(const Matrix& A, const int& cidx)
 Vector *
 diagonal(const Matrix& A)
 {
-  Vector *colv(new Vector(A.communicator(), A.local_rows()));
+  Vector *colv(new Vector(A.communicator(), A.localRows()));
   diagonal(A, *colv);
   return colv;
 }

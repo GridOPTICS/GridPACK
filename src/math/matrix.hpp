@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-09-10 07:21:59 d3g096
+ * @date   2013-09-25 11:32:59 d3g096
  * 
  * @brief  
  * 
@@ -61,107 +61,271 @@ public:
   };
 
   /// Constructor.
+  /** 
+   * A Matrix must be instantiated simulutaneously on all processes
+   * involved in the specified \ref parallel::Communicator
+   * "communicator". Each process in the communicator will own the
+   * number of rows requested.
+   * 
+   * @param dist parallel environment
+   * @param local_rows matrix rows to be owned by the local process
+   * @param cols total number of columns (same on all processes)
+   * @param storage_type specify dense or sparse storage 
+   * 
+   * @return 
+   */
   Matrix(const parallel::Communicator& dist,
          const int& local_rows,
          const int& cols,
          const StorageType& storage_type = Sparse);
 
   /// Destructor
+  /** 
+   * A matrix must be destroyed simulutaneously on all processes
+   * involved in the \ref parallel::Communicator "communicator" used
+   * to instantiate it.
+   */
   ~Matrix(void);
 
-  /// Get the total number of rows in this matrix
+  /// Get the global number of rows in this matrix
+  /** 
+   * @e Local.
+   * 
+   * 
+   * @return total number of rows
+   */
   int rows(void) const
   {
     return p_matrix_impl->rows();
   }
 
   /// Get the number of local rows in this matirx
+  /** 
+   * @e Local.
+   * 
+   * 
+   * @return number of rows owned by this process
+   */
+  int localRows(void) const
+  {
+    return p_matrix_impl->localRows();
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use localRows()
+   * 
+   * 
+   * @return 
+   */
   int local_rows(void) const
   {
-    return p_matrix_impl->local_rows();
+    return this->localRows();
   }
 
   /// Get the range of global row indexes owned by this process
-  void local_row_range(int& lo, int& hi) const
+  /** 
+   * @e Local.
+   * 
+   * 
+   * 
+   * @param lo first (0-based) index of locally owned rows
+   * @param hi one more than the last (0-based) index of locally owned rows
+   */
+  void localRowRange(int& lo, int& hi) const
   {
-    p_matrix_impl->local_row_range(lo, hi);
+    p_matrix_impl->localRowRange(lo, hi);
   }
 
-  /// Get the number of columns in this matrix
+  /** 
+   * @deprecated does not meet coding standards, use localRowRange()
+   * 
+   * 
+   * @param lo 
+   * @param hi 
+   */
+  void local_row_range(int& lo, int& hi) const
+  {
+    this->localRowRange(lo, hi);
+  }
+
+  /// Get the global number of columns in this matrix
+  /** 
+   * @e Local.
+   * 
+   * 
+   * @return number of columns in matrix
+   */
   int cols(void) const
   {
     return p_matrix_impl->cols();
   }
 
-  // /// Set an individual element
+  /// Set an individual element
+  /** 
+   * @e Local.
+   *
+   * This overwrites the value at the specified @c i row and @c j
+   * column.  ready() must be called after all setElement() calls and
+   * before using the matrix.
+   * 
+   * @param i global (0-based) row index
+   * @param j global (0-based) column index
+   * @param x value to place in matrix
+   */
+  void setElement(const int& i, const int& j, const ComplexType& x)
+  {
+    p_matrix_impl->setElement(i, j, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use setElement()
+   * 
+   * 
+   * @param i 
+   * @param j 
+   * @param x 
+   */
   void set_element(const int& i, const int& j, const ComplexType& x)
   {
-    p_matrix_impl->set_element(i, j, x);
+    p_matrix_impl->setElement(i, j, x);
   }
 
   /// Set an several elements
-  void set_elements(const int& n, const int *i, const int *j, const ComplexType *x)
+  /** 
+   * @e Local.
+   *
+   * This overwrites values at several locations in the
+   * matrix. ready() must be called after all setElements() calls and
+   * before using the matrix.
+   * 
+   * @param n number of values to place in 
+   * @param i array of @c n global, 0-based row indexes
+   * @param j array of @c n global, 0-based column indexes
+   * @param x array of @c n values to replace existing matrix elements
+   */
+  void setElements(const int& n, const int *i, const int *j, const ComplexType *x)
   {
-    p_matrix_impl->set_elements(n, i, j, x);
+    p_matrix_impl->setElements(n, i, j, x);
   }
 
-  // /// Set all elements in a row
-  // void set_row(const int& nj, const int& i, const int *j, const ComplexType *x)
-  // {
-  //   p_matrix_impl->set_row(nj, i, j, x);
-  // }
-
-  // /// Set all elements in a row
-  // void set_region(const int& ni, const int& nj, 
-  //                 const int *i, const int *j, const ComplexType *x)
-  // {
-  //   p_matrix_impl->set_row(ni, nj, i, j, x);
-  // }
-
   /// Add to an individual element
+  /** 
+   * @e Local.
+   * 
+   * 
+   * @param i global, 0-based row index
+   * @param j global, 0-based column index
+   * @param x value to add to matrix element
+   */
+  void addElement(const int& i, const int& j, const ComplexType& x)
+  {
+    p_matrix_impl->addElement(i, j, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use addElement()
+   * 
+   * @param i 
+   * @param j 
+   * @param x 
+   */
   void add_element(const int& i, const int& j, const ComplexType& x)
   {
-    p_matrix_impl->add_element(i, j, x);
+    this->addElement(i, j, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const int *j, const ComplexType *x)
+  /** 
+   * @e Local.
+   * 
+   * @param n number of elements to update
+   * @param i array of @c n global, 0-based row indexes
+   * @param j array of @c n global, 0-based column indexes
+   * @param x array of @c n values to add to existing matrix elements
+   */
+  void addElements(const int& n, const int *i, const int *j, const ComplexType *x)
   {
-    p_matrix_impl->add_elements(n, i, j, x);
+    p_matrix_impl->addElements(n, i, j, x);
   }
 
-  // /// Add to all elements in a row
-  // void add_row(const int& nj, const int& i, const int *j, const ComplexType *x)
-  // {
-  //   p_matrix_impl->add_row(nj, i, j, x);
-  // }
+  /** 
+   * @deprecated does not meet coding standards, use addElements()
+   * 
+   * @param n 
+   * @param i 
+   * @param j 
+   * @param x 
+   */
+  void add_elements(const int& n, const int *i, const int *j, const ComplexType *x)
+  {
+    this->addElements(n, i, j, x);
+  }
 
   /// Get an individual element
+  /** 
+   * @c Local.
+   * 
+   * Only local elements may be retrieved using this method.
+   * 
+   * @param i global, 0-based row index
+   * @param j global, 0-based column index
+   * @param x variable in which to place retrieved value
+   */
+  void getElement(const int& i, const int& j, ComplexType& x) const
+  {
+    p_matrix_impl->getElement(i, j, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use getElement
+   * 
+   * 
+   * @param i 
+   * @param j 
+   * @param x 
+   */
   void get_element(const int& i, const int& j, ComplexType& x) const
   {
-    p_matrix_impl->get_element(i, j, x);
+    this->getElement(i, j, x);
   }
 
   /// Get an several elements
-  void get_elements(const int& n, const int *i, const int *j, ComplexType *x) const
+  /** 
+   * @c Local.
+   *
+   * Only local elements may be retrieved using this method.
+   * 
+   * @param n number of elements to retrieve
+   * @param i array of @c n global, 0-based row indexes
+   * @param j array of @c n global, 0-based column indexes
+   * @param x array of @c n values in which retrieved values are to be placed
+   */
+  void getElements(const int& n, const int *i, const int *j, ComplexType *x) const
   {
-    p_matrix_impl->get_elements(n, i, j, x);
+    p_matrix_impl->getElements(n, i, j, x);
   }
 
-  // /// Get all elements in a row
-  // void get_row(const int& nj, const int& i, const int *j, ComplexType *x)  const
-  // {
-  //   p_matrix_impl->get_row(nj, i, j, x);
-  // }
-
-  // /// Get all elements in a row
-  // void get_region(const int& ni, const int& nj, 
-  //                 const int *i, const int *j, ComplexType *x) const
-  // {
-  //   p_matrix_impl->get_row(ni, nj, i, j, x);
-  // }
+  /** 
+   * @deprecated does not meet coding standards, use getElements
+   * 
+   * @param n 
+   * @param i 
+   * @param j 
+   * @param x 
+   */
+  void get_elements(const int& n, const int *i, const int *j, ComplexType *x) const
+  {
+    this->getElements(n, i, j, x);
+  }
 
   /// Indicate the matrix is ready to use
+  /** 
+   * @e Collective.
+   *
+   * This is used to indicate that the matrix is ready to use.  This
+   * must be called after @e all setElement() or addElement() calls
+   * and before the vector is used for any operation.
+   */
   void ready(void)
   {
     p_matrix_impl->ready();
@@ -184,6 +348,14 @@ public:
   //! @endcond
 
   /// Make an exact replica of this instance
+  /** 
+   * @e Collective.
+   *
+   * 
+   * 
+   * 
+   * @return pointer to new (allocated) matrix instance
+   */
   Matrix *clone(void) const
   {
     MatrixImplementation *pimpl_clone =
@@ -192,10 +364,20 @@ public:
     return result;
   }
 
-  /// Print to named file or standard output (collective)
+  /// Print to named file or standard output
+  /** 
+   * @e Collective
+   * 
+   * @param filename name of file to write, or NULL for standard output
+   */
   void print(const char* filename = NULL) const;
 
-  /// Save, in MatLAB format, to named file (collective)
+  /// Save, in MatLAB format, to named file
+  /** 
+   * @e Collective
+   * 
+   * @param filename name of file to write
+   */
   void save(const char *filename) const;
 
   // -------------------------------------------------------------
@@ -211,21 +393,55 @@ public:
   // -------------------------------------------------------------
 
   /// Make this Matrix equal to another
+  /** 
+   * @e Collective.
+   * 
+   * @param A 
+   */
   void equate(const Matrix& A);
 
   /// Scale the entire Matrix by the given value
+  /** 
+   * @e Collective.
+   * 
+   * @param x factor by which all elements in the matrix are multiplied
+   */
   void scale(const ComplexType& x);
 
   /// Multiply the diagonal by the specified vector
+  /** 
+   * @e Collective.
+   * 
+   * @param x factor by which all diagonal elements in the matrix are multiplied
+   */
   void multiply_diagonal(const Vector& x);
 
   /// Add another matrix to this one, in place
+  /** 
+   * @e Collective.
+   *
+   * The specified matrix @c A must be the same global size (rows and
+   * columns) as this instance, but local ownership is not important,
+   * nor are any differences in nonzero entry patterns.
+   * 
+   * @param A matrix to add to this instance
+   */
   void add(const Matrix& A);
 
   /// Make this matrix the identity matrix
+  /** 
+   * @e Collective
+   *
+   * 
+   * 
+   */
   void identity(void);
 
   /// Zero all entries in the matrix
+  /** 
+   * @e Collective.
+   * 
+   */
   void zero(void);
 
   // -------------------------------------------------------------
@@ -234,8 +450,8 @@ public:
   // all allocate new instances and throw when arguments are
   // inconsistent
   // -------------------------------------------------------------
-  friend Matrix *factorize(const Matrix& A);
-  friend Matrix *inverse(const Matrix& A);
+  // friend Matrix *factorize(const Matrix& A);
+  // friend Matrix *inverse(const Matrix& A);
   // friend Matrix *reorder(const Matrix& A, const Reordering& r);
   friend Matrix *identity(const Matrix& A);
 

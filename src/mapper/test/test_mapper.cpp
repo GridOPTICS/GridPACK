@@ -353,7 +353,7 @@ void run (const int &me, const int &nprocs)
       if (network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
         network->getBus(i)->getMatVecIndex(&idx);
         idx--;
-        M->get_element(idx,idx,v);
+        M->getElement(idx,idx,v);
         rv = real(v);
         if (rv != -4.0) {
           printf("p[%d] Diagonal matrix error i: %d j:%d v: %f\n",me,idx,idx,rv);
@@ -379,7 +379,7 @@ void run (const int &me, const int &nprocs)
       idx--;
       jdx--;
       if (idx >= rlo-1 && idx <= rhi-1) {
-        M->get_element(idx,jdx,v);
+        M->getElement(idx,jdx,v);
         rv = real(v);
         if (rv != 1.0) {
           printf("p[%d] Forward matrix error i: %d j:%d v: %f\n",me,idx,jdx,rv);
@@ -387,7 +387,7 @@ void run (const int &me, const int &nprocs)
         }
       }
       if (jdx >= rlo-1 && jdx <= rhi-1) {
-        M->get_element(jdx,idx,v);
+        M->getElement(jdx,idx,v);
         rv = real(v);
         if (rv != 1.0) {
           printf("p[%d] Reverse matrix error i: %d j:%d v: %f\n",me,jdx,idx,rv);

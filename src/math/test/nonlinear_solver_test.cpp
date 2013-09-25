@@ -1,7 +1,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-25 07:15:15 d3g096
+ * @date   2013-09-25 09:22:29 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -39,10 +39,10 @@ struct build_tiny_jacobian_1
     gridpack::ComplexType x, y;
     X.getElement(0, x);
     X.getElement(1, y);
-    J.set_element(0, 0, 2.0*x-2.0);
-    J.set_element(0, 1, -1);
-    J.set_element(1, 0, 2.0*x);
-    J.set_element(1, 1, 8.0*y);
+    J.setElement(0, 0, 2.0*x-2.0);
+    J.setElement(0, 1, -1);
+    J.setElement(1, 0, 2.0*x);
+    J.setElement(1, 1, 8.0*y);
     J.ready();
     // J.print();
   }
@@ -125,10 +125,10 @@ build_tiny_jacobian_2(const gridpack::math::Vector& X, gridpack::math::Matrix& J
   gridpack::ComplexType x, y;
   X.getElement(0, x);
   X.getElement(1, y);
-  J.set_element(0, 0, 2.0*x + y);
-  J.set_element(0, 1, x);
-  J.set_element(1, 0, y);
-  J.set_element(1, 1, x + 2.0*y);
+  J.setElement(0, 0, 2.0*x + y);
+  J.setElement(0, 1, x);
+  J.setElement(1, 0, y);
+  J.setElement(1, 1, x + 2.0*y);
   J.ready();
   // J.print();
 }
@@ -214,7 +214,7 @@ struct build_thing
 
     for (int row = lo; row < hi; ++row) {
       if (row == 0 || row == n - 1) {
-        J.set_element(row, row, 1.0);
+        J.setElement(row, row, 1.0);
       } else {
         int i[3] = { row,     row, row };
         int j[3] = { row - 1, row, row + 1 };
@@ -222,7 +222,7 @@ struct build_thing
         X.getElement(row, x);
         gridpack::ComplexType A[3] = 
           { d, -2.0*d + 2.0*x, d};
-        J.set_elements(3, i, j, A);
+        J.setElements(3, i, j, A);
       }
     }
     J.ready();

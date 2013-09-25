@@ -3,7 +3,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-06-12 10:27:22 d3g096
+ * @date   2013-09-25 09:11:23 d3g096
  * 
  * @brief  
  * 
@@ -46,9 +46,9 @@ public:
   virtual ~MatrixImplementation(void);
 
   /// Get the global index range of the locally owned rows
-  void local_row_range(int& lo, int& hi) const 
+  void localRowRange(int& lo, int& hi) const 
   {
-    this->p_local_row_range(lo, hi);
+    this->p_localRowRange(lo, hi);
   }
 
   /// Get the total number of rows in this matrix
@@ -58,9 +58,9 @@ public:
   }
 
   /// Get the number of local rows in this matirx
-  int local_rows(void) const
+  int localRows(void) const
   {
-    return this->p_local_rows();
+    return this->p_localRows();
   }
 
   /// Get the number of columns in this matrix
@@ -70,15 +70,15 @@ public:
   }
 
   /// Set an individual element
-  void set_element(const int& i, const int& j, const ComplexType& x)
+  void setElement(const int& i, const int& j, const ComplexType& x)
   {
-    this->p_set_element(i, j, x);
+    this->p_setElement(i, j, x);
   }
 
   /// Set an several elements
-  void set_elements(const int& n, const int *i, const int *j, const ComplexType *x)
+  void setElements(const int& n, const int *i, const int *j, const ComplexType *x)
   {
-    this->p_set_elements(n, i, j, x);
+    this->p_setElements(n, i, j, x);
   }
 
   // /// Set all elements in a row
@@ -94,15 +94,15 @@ public:
   // }
 
   /// Add to an individual element
-  void add_element(const int& i, const int& j, const ComplexType& x)
+  void addElement(const int& i, const int& j, const ComplexType& x)
   {
-    this->p_add_element(i, j, x);
+    this->p_addElement(i, j, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const int *j, const ComplexType *x)
+  void addElements(const int& n, const int *i, const int *j, const ComplexType *x)
   {
-    this->p_add_elements(n, i, j, x);
+    this->p_addElements(n, i, j, x);
   }
 
   // /// Add to all elements in a row
@@ -112,15 +112,15 @@ public:
   // }
 
   /// Get an individual element
-  void get_element(const int& i, const int& j, ComplexType& x) const
+  void getElement(const int& i, const int& j, ComplexType& x) const
   {
-    this->p_get_element(i, j, x);
+    this->p_getElement(i, j, x);
   }
 
   /// Get an several elements
-  void get_elements(const int& n, const int *i, const int *j, ComplexType *x) const
+  void getElements(const int& n, const int *i, const int *j, ComplexType *x) const
   {
-    this->p_get_elements(n, i, j, x);
+    this->p_getElements(n, i, j, x);
   }
 
   // /// Get all elements in a row
@@ -164,22 +164,22 @@ public:
 protected:
 
   /// Get the global index range of the locally owned rows (specialized)
-  virtual void p_local_row_range(int& lo, int& hi) const = 0;
+  virtual void p_localRowRange(int& lo, int& hi) const = 0;
 
   /// Get the total number of rows in this matrix (specialized)
   virtual int p_rows(void) const = 0;
 
   /// Get the number of local rows in this matirx (specialized)
-  virtual int p_local_rows(void) const = 0;
+  virtual int p_localRows(void) const = 0;
 
   /// Get the number of columns in this matrix (specialized)
   virtual int p_cols(void) const = 0;
 
   /// Set an individual element
-  virtual void p_set_element(const int& i, const int& j, const ComplexType& x) = 0;
+  virtual void p_setElement(const int& i, const int& j, const ComplexType& x) = 0;
 
   /// Set an several element
-  virtual void p_set_elements(const int& n, const int *i, const int *j, 
+  virtual void p_setElements(const int& n, const int *i, const int *j, 
                               const ComplexType *x) = 0;
 
   // /// Set all elements in a row
@@ -190,20 +190,20 @@ protected:
   //                          const int *i, const int *j, const ComplexType *x) = 0;
 
   /// Add to  an individual element
-  virtual void p_add_element(const int& i, const int& j, const ComplexType& x) = 0;
+  virtual void p_addElement(const int& i, const int& j, const ComplexType& x) = 0;
 
   /// Add to  an several element
-  virtual void p_add_elements(const int& n, const int *i, const int *j, 
+  virtual void p_addElements(const int& n, const int *i, const int *j, 
                               const ComplexType *x) = 0;
 
   // /// Add to  all elements in a row
   // virtual void p_add_row(const int& i, const int *j, const ComplexType *x) = 0;
 
   /// Get an individual element
-  virtual void p_get_element(const int& i, const int& j, ComplexType& x) const = 0;
+  virtual void p_getElement(const int& i, const int& j, ComplexType& x) const = 0;
 
   /// Get an several element
-  virtual void p_get_elements(const int& n, const int *i, const int *j, 
+  virtual void p_getElements(const int& n, const int *i, const int *j, 
                               ComplexType *x) const = 0;
 
   // /// Get all elements in a row
