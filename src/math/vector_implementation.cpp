@@ -2,7 +2,7 @@
 /**
  * @file   vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-08-13 12:20:06 d3g096
+ * @date   2013-09-25 07:00:13 d3g096
  * 
  * @brief  
  * 
@@ -37,31 +37,31 @@ VectorImplementation::~VectorImplementation(void)
 }
 
 // -------------------------------------------------------------
-// VectorImplementation::p_set_element_range
+// VectorImplementation::p_setElementRange
 // -------------------------------------------------------------
 void
-VectorImplementation::p_set_element_range(const int& lo, const int& hi, ComplexType *x)
+VectorImplementation::p_setElementRange(const int& lo, const int& hi, ComplexType *x)
 {
   std::vector<int> i;
   i.reserve(hi-lo);
   std::copy(boost::counting_iterator<int>(lo),
             boost::counting_iterator<int>(hi),
             std::back_inserter(i));
-  this->p_set_elements(i.size(), &i[0], x);
+  this->p_setElements(i.size(), &i[0], x);
 }
 
 // -------------------------------------------------------------
-// VectorImplementation::p_get_element_range
+// VectorImplementation::p_getElementRange
 // -------------------------------------------------------------
 void
-VectorImplementation::p_get_element_range(const int& lo, const int& hi, ComplexType *x) const
+VectorImplementation::p_getElementRange(const int& lo, const int& hi, ComplexType *x) const
 {
   std::vector<int> i;
   i.reserve(hi-lo);
   std::copy(boost::counting_iterator<int>(lo),
             boost::counting_iterator<int>(hi),
             std::back_inserter(i));
-  this->p_get_elements(i.size(), &i[0], x);
+  this->p_getElements(i.size(), &i[0], x);
 }
 
 

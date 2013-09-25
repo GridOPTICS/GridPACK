@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created March 26, 2013 by William A. Perkins
-// Last Change: 2013-09-06 08:59:26 d3g096
+// Last Change: 2013-09-25 07:04:15 d3g096
 // -------------------------------------------------------------
 
 // SCCS ID: $Id$ Battelle PNL
@@ -55,13 +55,13 @@ public:
 
   /// Get (a pointer to) the PETSc implementation
 
-  const Vec *get_vector(void) const
+  const Vec *getVector(void) const
   {
     return &p_vector;
   }
 
   /// Get (a pointer to) the PETSc implementation
-  Vec *get_vector(void)
+  Vec *getVector(void)
   {
     return &p_vector;
   }
@@ -81,31 +81,31 @@ protected:
   int p_size(void) const;
 
   /// Get the size of the vector local part
-  int p_local_size(void) const;
+  int p_localSize(void) const;
 
   /// Get the local min/max global indexes (specialized)
-  void p_local_index_range(int& lo, int& hi) const;
+  void p_localIndexRange(int& lo, int& hi) const;
 
   /// Set an individual element (specialized)
-  void p_set_element(const int& i, const ComplexType& x);
+  void p_setElement(const int& i, const ComplexType& x);
 
   /// Set an several elements (specialized)
-  void p_set_elements(const int& n, const int *i, const ComplexType *x);
+  void p_setElements(const int& n, const int *i, const ComplexType *x);
 
   /// Add to an individual element (specialized)
-  void p_add_element(const int& i, const ComplexType& x);
+  void p_addElement(const int& i, const ComplexType& x);
 
   /// Add to an several elements (specialized)
-  void p_add_elements(const int& n, const int *i, const ComplexType *x);
+  void p_addElements(const int& n, const int *i, const ComplexType *x);
 
   /// Get an individual (local) element (specialized)
-  void p_get_element(const int& i, ComplexType& x) const;
+  void p_getElement(const int& i, ComplexType& x) const;
 
   /// Get an several (local) elements (specialized)
-  void p_get_elements(const int& n, const int *i, ComplexType *x) const;
+  void p_getElements(const int& n, const int *i, ComplexType *x) const;
 
   /// Get all of vector elements (on all processes)
-  void p_get_all_elements(ComplexType *x) const;
+  void p_getAllElements(ComplexType *x) const;
 
   /// Make all the elements zero (specialized)
   void p_zero(void);

@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-09-10 11:42:28 d3g096
+ * @date   2013-09-25 07:22:10 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -112,7 +112,7 @@ diagonal(const Matrix& A)
 Vector *
 multiply(const Matrix& A, const Vector& x)
 {
-  Vector *result(new Vector(x.communicator(), x.local_size()));
+  Vector *result(new Vector(x.communicator(), x.localSize()));
   multiply(A, x, *result);
   return result;
 }

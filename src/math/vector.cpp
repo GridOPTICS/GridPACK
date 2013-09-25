@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-09-06 10:32:06 d3g096
+ * @date   2013-09-25 07:21:53 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
@@ -43,10 +43,10 @@ Vector::~Vector(void)
 }
 
 // -------------------------------------------------------------
-// Vector::p_check_compatible
+// Vector::p_checkCompatible
 // -------------------------------------------------------------
 void
-Vector::p_check_compatible(const Vector& x) const
+Vector::p_checkCompatible(const Vector& x) const
 {
   if (this->communicator() != x.communicator()) {
     throw gridpack::Exception("incompatible: communicators do not match");

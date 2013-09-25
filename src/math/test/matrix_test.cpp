@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-09-10 14:25:47 d3g096
+ * @date   2013-09-25 07:10:35 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -404,7 +404,7 @@ BOOST_AUTO_TEST_CASE( column_diagonal )
     dvector(gridpack::math::diagonal(*A));
 
   int lo, hi;
-  cvector->local_index_range(lo, hi);
+  cvector->localIndexRange(lo, hi);
 
   for (int i = -1; i <= 1; ++i) {
     int idx(icolumn+i);
@@ -412,10 +412,10 @@ BOOST_AUTO_TEST_CASE( column_diagonal )
       gridpack::ComplexType 
         x(static_cast<gridpack::ComplexType>(idx));
       gridpack::ComplexType y;
-      cvector->get_element(idx, y);
+      cvector->getElement(idx, y);
       BOOST_CHECK_CLOSE(real(x), real(y), delta);
       if (idx == icolumn) {
-        dvector->get_element(idx, y);
+        dvector->getElement(idx, y);
         BOOST_CHECK_CLOSE(real(x), real(y), delta);
       }
     }
@@ -440,14 +440,14 @@ BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
   yvector.reset(multiply(*A, *xvector));
             
   int lo, hi;
-  xvector->local_index_range(lo, hi);
+  xvector->localIndexRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     int bw(bandwidth);
     if (i == 0 || i == global_size - 1) bw--;
     gridpack::ComplexType 
       x(static_cast<gridpack::ComplexType>(i*bw)*scale), y;
-    yvector->get_element(i, y);
+    yvector->getElement(i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }

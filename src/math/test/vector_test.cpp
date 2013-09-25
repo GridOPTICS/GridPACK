@@ -1,7 +1,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-09-10 13:40:42 d3g096
+ * @date   2013-09-25 07:43:20 d3g096
  * 
  * @brief  Construction/clone unit testing for gridpack::math::Vector
  * 
@@ -29,7 +29,7 @@ BOOST_AUTO_TEST_CASE( construction )
   gridpack::parallel::Communicator world;
   gridpack::math::Vector v(world, local_size);
 
-  BOOST_CHECK_EQUAL( v.local_size(), local_size);
+  BOOST_CHECK_EQUAL( v.localSize(), local_size);
   BOOST_CHECK_EQUAL( v.size(), world.size()*local_size);
 }
 
@@ -46,10 +46,10 @@ BOOST_AUTO_TEST_CASE( fill_and_clone )
   int lo, hi;
   gridpack::ComplexType xlo, xhi;
 
-  v.local_index_range(lo, hi);
+  v.localIndexRange(lo, hi);
 
-  v.get_element(lo, xlo);
-  v.get_element(hi-1, xhi);
+  v.getElement(lo, xlo);
+  v.getElement(hi-1, xhi);
 
   BOOST_CHECK_CLOSE(real(xlo), real(value), delta);
   BOOST_CHECK_CLOSE(abs(xlo), abs(value), delta);
@@ -59,8 +59,8 @@ BOOST_AUTO_TEST_CASE( fill_and_clone )
   // std::cerr << "About to clone vector" << std::endl;
   std::auto_ptr<gridpack::math::Vector> vcopy(v.clone());
 
-  vcopy->get_element(lo, xlo);
-  vcopy->get_element(hi-1, xhi);
+  vcopy->getElement(lo, xlo);
+  vcopy->getElement(hi-1, xhi);
 
   BOOST_CHECK_CLOSE(real(xlo), real(value), delta);
   BOOST_CHECK_CLOSE(abs(xlo), abs(value), delta);
@@ -76,7 +76,7 @@ BOOST_AUTO_TEST_CASE( set_and_get_element )
     v2(world, local_size);
 
   int lo, hi;
-  v1.local_index_range(lo, hi);
+  v1.localIndexRange(lo, hi);
   
   std::vector<int> idx; 
   idx.reserve(local_size);
@@ -86,25 +86,25 @@ BOOST_AUTO_TEST_CASE( set_and_get_element )
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x;
     x = static_cast<double>(i);
-    v1.set_element(i, x);
+    v1.setElement(i, x);
     idx.push_back(i);
     val.push_back(x);
   }
-  v2.set_elements(idx.size(), &idx[0], &val[0]);
+  v2.setElements(idx.size(), &idx[0], &val[0]);
 
   v1.ready();
   v2.ready();
 
   val.clear();
-  v1.get_elements(idx.size(), &idx[0], &val[0]);
+  v1.getElements(idx.size(), &idx[0], &val[0]);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x( static_cast<double>(i));
     gridpack::ComplexType x1;
     gridpack::ComplexType x2;
 
-    v1.get_element(i, x1);
-    v2.get_element(i, x2);
+    v1.getElement(i, x1);
+    v2.getElement(i, x2);
 
     BOOST_CHECK_CLOSE(real(x), real(x1), delta);
     BOOST_CHECK_CLOSE(real(x), real(x2), delta);
@@ -119,7 +119,7 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
     v2(world, local_size);
 
   int lo, hi;
-  v1.local_index_range(lo, hi);
+  v1.localIndexRange(lo, hi);
   
   std::vector<int> idx; 
   idx.reserve(local_size);
@@ -129,27 +129,27 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x;
     x = static_cast<double>(i);
-    v1.set_element(i, x);
-    v1.add_element(i, x);
+    v1.setElement(i, x);
+    v1.addElement(i, x);
     idx.push_back(i);
     val.push_back(x);
   }
-  v2.set_elements(idx.size(), &idx[0], &val[0]);
-  v2.add_elements(idx.size(), &idx[0], &val[0]);
+  v2.setElements(idx.size(), &idx[0], &val[0]);
+  v2.addElements(idx.size(), &idx[0], &val[0]);
 
   v1.ready();
   v2.ready();
 
   val.clear();
-  v1.get_elements(idx.size(), &idx[0], &val[0]);
+  v1.getElements(idx.size(), &idx[0], &val[0]);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x( static_cast<double>(i));
     gridpack::ComplexType x1;
     gridpack::ComplexType x2;
 
-    v1.get_element(i, x1);
-    v2.get_element(i, x2);
+    v1.getElement(i, x1);
+    v2.getElement(i, x2);
 
     BOOST_CHECK_CLOSE(2.0*real(x), real(x1), delta);
     BOOST_CHECK_CLOSE(2.0*real(x), real(x2), delta);
@@ -162,13 +162,13 @@ BOOST_AUTO_TEST_CASE( get_all )
   gridpack::math::Vector v(world, local_size);
 
   int lo, hi;
-  v.local_index_range(lo, hi);
+  v.localIndexRange(lo, hi);
   
   std::vector<gridpack::ComplexType> x(hi-lo, static_cast<double>(world.rank()));
-  v.set_element_range(lo, hi, &x[0]);
+  v.setElementRange(lo, hi, &x[0]);
 
   std::vector<gridpack::ComplexType> all(world.size()*local_size);
-  v.get_all_elements(&all[0]);
+  v.getAllElements(&all[0]);
 
   for (int p = 0; p < world.size(); ++p) {
     if (p == world.rank()) {
@@ -190,7 +190,7 @@ BOOST_AUTO_TEST_CASE( get_all )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-BOOST_AUTO_TEST_SUITE(VectorOperations)
+BOOST_AUTO_TEST_SUITE(VectorOperationsTest)
 
 BOOST_AUTO_TEST_CASE( add )
 {
@@ -212,17 +212,17 @@ BOOST_AUTO_TEST_CASE( add )
   vsum2.reset(gridpack::math::add(v1, v2));
 
   int lo, hi;
-  v1.local_index_range(lo, hi);
+  v1.localIndexRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x1, x2, x3;
 
-    v1.get_element(i, x1);
-    v2.get_element(i, x2);
+    v1.getElement(i, x1);
+    v2.getElement(i, x2);
     x3 = x1 + x2;
 
-    vsum1->get_element(i, x1);
-    vsum2->get_element(i, x2);
+    vsum1->getElement(i, x1);
+    vsum2->getElement(i, x2);
 
     BOOST_CHECK_CLOSE(real(x1), real(x2), delta);
     BOOST_CHECK_CLOSE(real(x1), real(x3), delta);
@@ -246,14 +246,14 @@ BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
   v2.scale(scale);
 
   int lo, hi;
-  v1.local_index_range(lo, hi);
+  v1.localIndexRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType y;
-    v1.get_element(i, y);
+    v1.getElement(i, y);
     BOOST_CHECK_CLOSE(real(x+offset), real(y), delta);
     BOOST_CHECK_CLOSE( abs(x+offset), abs(y), delta);
-    v2.get_element(i, y);
+    v2.getElement(i, y);
     BOOST_CHECK_CLOSE(real(x*scale), real(y), delta);
     BOOST_CHECK_CLOSE( abs(x*scale), abs(y), delta);
   }
@@ -271,11 +271,11 @@ BOOST_AUTO_TEST_CASE( reciprocal )
   v1.reciprocal();
 
   int lo, hi;
-  v1.local_index_range(lo, hi);
+  v1.localIndexRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType y;
-    v1.get_element(i, y);
+    v1.getElement(i, y);
     BOOST_CHECK_CLOSE(real(rx), real(y), delta);
     BOOST_CHECK_CLOSE( abs(rx), abs(y), delta);
   }

@@ -1,7 +1,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-10 13:42:19 d3g096
+ * @date   2013-09-25 07:15:15 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -37,8 +37,8 @@ struct build_tiny_jacobian_1
   void operator() (const gridpack::math::Vector& X, gridpack::math::Matrix& J) const
   {
     gridpack::ComplexType x, y;
-    X.get_element(0, x);
-    X.get_element(1, y);
+    X.getElement(0, x);
+    X.getElement(1, y);
     J.set_element(0, 0, 2.0*x-2.0);
     J.set_element(0, 1, -1);
     J.set_element(1, 0, 2.0*x);
@@ -53,10 +53,10 @@ struct build_tiny_function_1
   void operator() (const gridpack::math::Vector& X, gridpack::math::Vector& F) const
   {
     gridpack::ComplexType x, y;
-    X.get_element(0, x);
-    X.get_element(1, y);
-    F.set_element(0, x*x - 2.0*x - y + 0.5);
-    F.set_element(1, x*x + 4.0*y*y - 4.0);
+    X.getElement(0, x);
+    X.getElement(1, y);
+    F.setElement(0, x*x - 2.0*x - y + 0.5);
+    F.setElement(1, x*x + 4.0*y*y - 4.0);
     F.ready();
     // F.print();
   }
@@ -72,16 +72,16 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
 
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
   gridpack::math::Vector X(self, 2);
-  X.set_element(0, 2.00);
-  X.set_element(1, 0.25);
+  X.setElement(0, 2.00);
+  X.setElement(1, 0.25);
   X.ready();
   solver.solve(X);
   BOOST_TEST_MESSAGE("tiny_serial_1 results:");
   X.print();
 
   gridpack::ComplexType x, y;
-  X.get_element(0, x);
-  X.get_element(1, y);
+  X.getElement(0, x);
+  X.getElement(1, y);
 
   BOOST_CHECK_CLOSE(real(x), 1.900677, 1.0e-04);
   BOOST_CHECK_CLOSE(real(y), 0.3112186, 1.0e-04);
@@ -98,16 +98,16 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
 
   gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
   gridpack::math::Vector X(self, 2);
-  X.set_element(0, 2.00);
-  X.set_element(1, 0.25);
+  X.setElement(0, 2.00);
+  X.setElement(1, 0.25);
   X.ready();
   solver.solve(X);
   BOOST_TEST_MESSAGE("tiny_serial_1 results (newton-raphson):");
   X.print();
 
   gridpack::ComplexType x, y;
-  X.get_element(0, x);
-  X.get_element(1, y);
+  X.getElement(0, x);
+  X.getElement(1, y);
 
   BOOST_CHECK_CLOSE(real(x), 1.900677, 1.0e-04);
   BOOST_CHECK_CLOSE(real(y), 0.3112186, 1.0e-04);
@@ -123,8 +123,8 @@ void
 build_tiny_jacobian_2(const gridpack::math::Vector& X, gridpack::math::Matrix& J)
 {
   gridpack::ComplexType x, y;
-  X.get_element(0, x);
-  X.get_element(1, y);
+  X.getElement(0, x);
+  X.getElement(1, y);
   J.set_element(0, 0, 2.0*x + y);
   J.set_element(0, 1, x);
   J.set_element(1, 0, y);
@@ -137,10 +137,10 @@ void
 build_tiny_function_2(const gridpack::math::Vector& X, gridpack::math::Vector& F)
 {
   gridpack::ComplexType x, y;
-  X.get_element(0, x);
-  X.get_element(1, y);
-  F.set_element(0, x*x + x*y - 3.0);
-  F.set_element(1, x*y + y*y - 6.0);
+  X.getElement(0, x);
+  X.getElement(1, y);
+  F.setElement(0, x*x + x*y - 3.0);
+  F.setElement(1, x*y + y*y - 6.0);
   F.ready();
   // F.print();
 }
@@ -155,8 +155,8 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
 
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
   gridpack::math::Vector X(self, 2);
-  X.set_element(0, 2.00);
-  X.set_element(1, 3.00);
+  X.setElement(0, 2.00);
+  X.setElement(1, 3.00);
   X.ready();
   solver.solve(X);
 
@@ -164,8 +164,8 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
   X.print();
 
   gridpack::ComplexType x, y;
-  X.get_element(0, x);
-  X.get_element(1, y);
+  X.getElement(0, x);
+  X.getElement(1, y);
 
   BOOST_CHECK_CLOSE(real(x), 1.0, 1.0e-04);
   BOOST_CHECK_CLOSE(real(y), 2.0, 1.0e-04);
@@ -181,8 +181,8 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
 
   gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
   gridpack::math::Vector X(self, 2);
-  X.set_element(0, 2.00);
-  X.set_element(1, 3.00);
+  X.setElement(0, 2.00);
+  X.setElement(1, 3.00);
   X.ready();
   solver.solve(X);
 
@@ -190,8 +190,8 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
   X.print();
 
   gridpack::ComplexType x, y;
-  X.get_element(0, x);
-  X.get_element(1, y);
+  X.getElement(0, x);
+  X.getElement(1, y);
 
   BOOST_CHECK_CLOSE(real(x), 1.0, 1.0e-04);
   BOOST_CHECK_CLOSE(real(y), 2.0, 1.0e-04);
@@ -210,7 +210,7 @@ struct build_thing
     d *= d;
 
     int lo, hi;
-    X.local_index_range(lo, hi);
+    X.localIndexRange(lo, hi);
 
     for (int row = lo; row < hi; ++row) {
       if (row == 0 || row == n - 1) {
@@ -219,7 +219,7 @@ struct build_thing
         int i[3] = { row,     row, row };
         int j[3] = { row - 1, row, row + 1 };
         gridpack::ComplexType x;
-        X.get_element(row, x);
+        X.getElement(row, x);
         gridpack::ComplexType A[3] = 
           { d, -2.0*d + 2.0*x, d};
         J.set_elements(3, i, j, A);
@@ -239,12 +239,12 @@ struct build_thing
     d *= d;
 
     int lo, hi;
-    X.local_index_range(lo, hi);
+    X.localIndexRange(lo, hi);
     
     int imin(std::max(lo-1, 0));
     int imax(std::min(hi+1, n));
     std::vector<gridpack::ComplexType> x(n);
-    X.get_all_elements(&x[0]);
+    X.getAllElements(&x[0]);
 
     for (int row = lo; row < hi; ++row) {
       gridpack::ComplexType f;
@@ -259,7 +259,7 @@ struct build_thing
         g = 6.0*xp + pow(xp+1.0e-12, 6);
         f = d*(x[i-1] - 2.0*x[i] + x[i+1]) + x[i]*x[i] - g;
       }
-      F.set_element(row, f);
+      F.setElement(row, f);
     }
     F.ready();
     // F.print();

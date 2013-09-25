@@ -3,7 +3,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-09-10 11:30:50 d3g096
+ * @date   2013-09-25 08:29:18 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -33,13 +33,13 @@ class Vector;
  * This class encapsulates a vector of values.  
  * 
  * When a Vector is instantiated it is ready to be filled using calls
- * to methods like set_element().  When the Vector is filled, all
+ * to methods like setElement().  When the Vector is filled, all
  * processors must be notified that it is ready to use with a call to
  * ready().  
  *
- * For efficiency, set_element(), and related calls, should only set
+ * For efficiency, setElement(), and related calls, should only set
  * locally owned elements, even though off processor elements can be
- * set with those methods.  get_element(), and related calls, can only
+ * set with those methods.  getElement(), and related calls, can only
  * access locally owned elements.  Off processor values can be obtained
  * by calling get_all_elements() (currently the only way).
  *
@@ -102,10 +102,22 @@ public:
    * 
    * @return local vector length
    */
+  int localSize(void) const
+  {
+    return p_vector_impl->localSize();
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use localSize()
+   * 
+   * 
+   * @return 
+   */
   int local_size(void) const
   {
-    return p_vector_impl->local_size();
+    return this->localSize();
   }
+  
 
   /// Get the local min/max global indexes
   /** 
@@ -121,32 +133,55 @@ public:
    * for (int i = lo; i < hi; ++i) {
    *   ComplexType x;
    *   x = ...;
-   *   v.set_element(i, x);
+   *   v.setElement(i, x);
    * }
    * \endcode
    * 
    * @param lo first (0-based) index of locally owned elements
    * @param hi one more than the last (0-based) index of locally owned elements
    */
+  void localIndexRange(int& lo, int& hi) const
+  {
+    return p_vector_impl->localIndexRange(lo, hi);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use localIndexRange()
+   * 
+   * @param lo 
+   * @param hi 
+   */
   void local_index_range(int& lo, int& hi) const
   {
-    return p_vector_impl->local_index_range(lo, hi);
+    return this->localIndexRange(lo, hi);
   }
+
 
   /// Set an individual element
   /** 
    * @e Local.
    * 
    * This overwrites the value at the specified index.  ready() must
-   * be called after all set_element() calls and before using the
+   * be called after all setElement() calls and before using the
    * vector.
    * 
    * @param i element global (0-based) index 
    * @param x value to place in vector
    */
+  void setElement(const int& i, const ComplexType& x)
+  {
+    p_vector_impl->setElement(i, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use setElement
+   * 
+   * @param i 
+   * @param x 
+   */
   void set_element(const int& i, const ComplexType& x)
   {
-    p_vector_impl->set_element(i, x);
+    this->setElement(i, x);
   }
 
   /// Set several elements
@@ -155,15 +190,27 @@ public:
    * 
    * This places (overwrites) several elements, with arbitrary
    * indexes, in the vector.  ready() must be called after all
-   * set_element() calls and before using the vector.
+   * setElement() calls and before using the vector.
    * 
    * @param n number of elements to place in vector
    * @param i pointer to an array of @c n global (0-based) indexes
    * @param x pointer to an arry 
    */
+  void setElements(const int& n, const int *i, const ComplexType *x)
+  {
+    p_vector_impl->setElements(n, i, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use setElements()
+   * 
+   * @param n 
+   * @param i 
+   * @param x 
+   */
   void set_elements(const int& n, const int *i, const ComplexType *x)
   {
-    p_vector_impl->set_elements(n, i, x);
+    this->setElements(n, i, x);
   }
 
   /// Set a range of elements (lo to hi-1)
@@ -177,16 +224,28 @@ public:
    * v.local_index_range(lo, hi);
    * std::vector<ComplexType> x(v.local_size())
    * // fill x with appropriate values
-   * v.set_element_range(lo, hi, &x[0]);
+   * v.setElement_range(lo, hi, &x[0]);
    * \endcode
    * 
    * @param lo lowest global (0-based) index to fill
    * @param hi one more than the highest global (0-based) index to fill
    * @param x array of hi - lo values
    */
+  void setElementRange(const int& lo, const int& hi, ComplexType *x)
+  {
+    p_vector_impl->setElementRange(lo, hi, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use setElementRange()
+   * 
+   * @param lo 
+   * @param hi 
+   * @param x 
+   */
   void set_element_range(const int& lo, const int& hi, ComplexType *x)
   {
-    p_vector_impl->set_element_range(lo, hi, x);
+    this->setElementRange(lo, hi, x);
   }
 
   /// Add to an individual element
@@ -198,9 +257,20 @@ public:
    * @param i 
    * @param x 
    */
+  void addElement(const int& i, const ComplexType& x)
+  {
+    p_vector_impl->addElement(i, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use addElement()
+   * 
+   * @param i 
+   * @param x 
+   */
   void add_element(const int& i, const ComplexType& x)
   {
-    p_vector_impl->add_element(i, x);
+    this->addElement(i, x);
   }
 
   /// Add to an several elements
@@ -213,30 +283,66 @@ public:
    * @param i 
    * @param x 
    */
+  void addElements(const int& n, const int *i, const ComplexType *x)
+  {
+    p_vector_impl->addElements(n, i, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use addElements()
+   * 
+   * @param n 
+   * @param i 
+   * @param x 
+   */
   void add_elements(const int& n, const int *i, const ComplexType *x)
   {
-    p_vector_impl->add_elements(n, i, x);
+    this->addElements(n, i, x);
   }
 
   /// Get an individual element
   /** 
    * @e Local.
    * 
+   * Only local values may be retreived with this method.  
    * 
+   * @param i element's global, 0-based index
+   * @param x element's value
+   */
+  void getElement(const int& i, ComplexType& x) const
+  {
+    p_vector_impl->getElement(i, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use getElement()
    * 
    * @param i 
    * @param x 
    */
   void get_element(const int& i, ComplexType& x) const
   {
-    p_vector_impl->get_element(i, x);
+    this->getElement(i, x);
   }
 
   /// Get an several elements
   /** 
    * @e Local.
    * 
+   * Only local values may be retreived with this method.  
    * 
+   * 
+   * @param n number of elements to get
+   * @param i array of @c n global, 0-based indexes
+   * @param x array of @c n values
+   */
+  void getElements(const int& n, const int *i, ComplexType *x) const
+  {
+    p_vector_impl->getElements(n, i, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use getElements()
    * 
    * @param n 
    * @param i 
@@ -244,12 +350,29 @@ public:
    */
   void get_elements(const int& n, const int *i, ComplexType *x) const
   {
-    p_vector_impl->get_elements(n, i, x);
+    this->getElements(n, i, x);
   }
 
-  /// Get a range of elements (lo to hi-1)
+
+  /// Get a range of elements
   /** 
    * @e Local.
+   *
+   * The elements whose indexes range from @c lo to @c hi-1 are
+   * retreived.  Only local values may be retreived with this method.
+   * The length of the @c x array must be at least @c "hi - lo"
+   * 
+   * @param lo lowest element index
+   * @param hi one more than the highest element index
+   * @param x existing array of values to be filled with element values
+   */
+  void getElementRange(const int& lo, const int& hi, ComplexType *x) const
+  {
+    p_vector_impl->getElementRange(lo, hi, x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use getElementRange()
    * 
    * @param lo 
    * @param hi 
@@ -257,20 +380,33 @@ public:
    */
   void get_element_range(const int& lo, const int& hi, ComplexType *x) const
   {
-    p_vector_impl->get_element_range(lo, hi, x);
+    this->getElementRange(lo, hi, x);
   }
 
-  /// Get all of vector elements (on all processes)
+  /// Get all of the vector elements
   /** 
    * @e Collective.
    *
+   * This is an all gather operation and consequently will be slow.
+   * All of this vector's elements are gathered on all processes and
+   * placed in the in the specified array.
    * 
+   * 
+   * @param x array of size() length to be filled with values
+   */
+  void getAllElements(ComplexType *x) const
+  {
+    p_vector_impl->getAllElements(x);
+  }
+
+  /** 
+   * @deprecated does not meet coding standards, use getAllElements()
    * 
    * @param x 
    */
   void get_all_elements(ComplexType *x) const
   {
-    p_vector_impl->get_all_elements(x);
+    this->getAllElements(x);
   }
 
   /// Make all the elements zero
@@ -338,7 +474,7 @@ public:
    * @e Collective.
    *
    * This is used to indicate that the vector is ready to use.  This
-   * must be called after @e all set_element() or add element() calls
+   * must be called after @e all setElement() or add element() calls
    * and before the vector is used for any operation.
    * 
    */
@@ -493,7 +629,7 @@ protected:
    * 
    * @param x vector to check
    */
-  void p_check_compatible(const Vector& x) const;
+  void p_checkCompatible(const Vector& x) const;
 };
 
 // -------------------------------------------------------------

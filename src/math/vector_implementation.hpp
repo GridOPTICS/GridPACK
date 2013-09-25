@@ -3,7 +3,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-08-13 12:19:04 d3g096
+ * @date   2013-09-25 07:08:16 d3g096
  * 
  * @brief  
  * 
@@ -51,69 +51,69 @@ public:
   }
 
   /// Get the local length
-  int local_size(void) const
+  int localSize(void) const
   {
-    return this->p_local_size();
+    return this->p_localSize();
   }
 
   /// Get the local min/max global indexes
-  void local_index_range(int& lo, int& hi) const
+  void localIndexRange(int& lo, int& hi) const
   {
-    return this->p_local_index_range(lo, hi);
+    return this->p_localIndexRange(lo, hi);
   }
 
   /// Set an individual element
-  void set_element(const int& i, const ComplexType& x)
+  void setElement(const int& i, const ComplexType& x)
   {
-    this->p_set_element(i, x);
+    this->p_setElement(i, x);
   }
 
   /// Set a range of elements (lo to hi-1)
-  void set_element_range(const int& lo, const int& hi, ComplexType *x)
+  void setElementRange(const int& lo, const int& hi, ComplexType *x)
   {
-    this->p_set_element_range(lo, hi, x);
+    this->p_setElementRange(lo, hi, x);
   }
 
   /// Set an several elements
-  void set_elements(const int& n, const int *i, const ComplexType *x)
+  void setElements(const int& n, const int *i, const ComplexType *x)
   {
-    this->p_set_elements(n, i, x);
+    this->p_setElements(n, i, x);
   }
 
   /// Add to an individual element
-  void add_element(const int& i, const ComplexType& x)
+  void addElement(const int& i, const ComplexType& x)
   {
-    this->p_add_element(i, x);
+    this->p_addElement(i, x);
   }
 
   /// Add to an several elements
-  void add_elements(const int& n, const int *i, const ComplexType *x)
+  void addElements(const int& n, const int *i, const ComplexType *x)
   {
-    this->p_add_elements(n, i, x);
+    this->p_addElements(n, i, x);
   }
 
   /// Get an individual element
-  void get_element(const int& i, ComplexType& x) const
+  void getElement(const int& i, ComplexType& x) const
   {
-    this->p_get_element(i, x);
+    this->p_getElement(i, x);
   }
 
   /// Get an several elements
-  void get_elements(const int& n, const int *i, ComplexType *x) const
+  void getElements(const int& n, const int *i, ComplexType *x) const
   {
-    this->p_get_elements(n, i, x);
+    this->p_getElements(n, i, x);
   }
 
   /// Get a range of elements (lo to hi-1)
-  void get_element_range(const int& lo, const int& hi, ComplexType *x) const
+  void getElementRange(const int& lo, const int& hi, ComplexType *x) const
   {
-    this->p_get_element_range(lo, hi, x);
+    this->p_getElementRange(lo, hi, x);
   }
 
   /// Get all of vector elements (on all processes)
-  void get_all_elements(ComplexType *x) const
+  void getAllElements(ComplexType *x) const
   {
-    this->p_get_all_elements(x);
+    this->p_getAllElements(x);
   }
 
 
@@ -177,37 +177,37 @@ protected:
   virtual int p_size(void) const = 0;
 
   /// Get the size of the vector local part (specialized)
-  virtual int p_local_size(void) const = 0;
+  virtual int p_localSize(void) const = 0;
 
   /// Get the local min/max global indexes (specialized)
-  virtual void p_local_index_range(int& lo, int& hi) const = 0;
+  virtual void p_localIndexRange(int& lo, int& hi) const = 0;
 
   /// Set an individual element (specialized)
-  virtual void p_set_element(const int& i, const ComplexType& x) = 0;
+  virtual void p_setElement(const int& i, const ComplexType& x) = 0;
 
   /// Set an several elements (specialized)
-  virtual void p_set_elements(const int& n, const int *i, const ComplexType *x) = 0;
+  virtual void p_setElements(const int& n, const int *i, const ComplexType *x) = 0;
 
   /// Get a range of elements (lo to hi-1) (specialized)
-  virtual void p_set_element_range(const int& lo, const int& hi, ComplexType *x);
+  virtual void p_setElementRange(const int& lo, const int& hi, ComplexType *x);
 
   /// Add to an individual element (specialized)
-  virtual void p_add_element(const int& i, const ComplexType& x) = 0;
+  virtual void p_addElement(const int& i, const ComplexType& x) = 0;
 
   /// Add to an several elements (specialized)
-  virtual void p_add_elements(const int& n, const int *i, const ComplexType *x) = 0;
+  virtual void p_addElements(const int& n, const int *i, const ComplexType *x) = 0;
 
   /// Get an individual element (specialized)
-  virtual void p_get_element(const int& i, ComplexType& x) const = 0;
+  virtual void p_getElement(const int& i, ComplexType& x) const = 0;
 
   /// Get an several elements (specialized)
-  virtual void p_get_elements(const int& n, const int *i, ComplexType *x) const = 0;
+  virtual void p_getElements(const int& n, const int *i, ComplexType *x) const = 0;
 
   /// Get a range of elements (lo to hi-1) (specialized)
-  virtual void p_get_element_range(const int& lo, const int& hi, ComplexType *x) const;
+  virtual void p_getElementRange(const int& lo, const int& hi, ComplexType *x) const;
 
   /// Get all of vector elements (on all processes)
-  virtual void p_get_all_elements(ComplexType *x) const = 0;
+  virtual void p_getAllElements(ComplexType *x) const = 0;
 
   /// Make all the elements zero (specialized)
   virtual void p_zero(void) = 0;

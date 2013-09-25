@@ -2,7 +2,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-09-06 11:06:43 d3g096
+ * @date   2013-09-25 07:23:09 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -64,7 +64,7 @@ Vector::scale(const ComplexType& x)
 void
 Vector::add(const Vector& x, const ComplexType& scale)
 {
-  this->p_check_compatible(x);
+  this->p_checkCompatible(x);
   PetscErrorCode ierr(0);
   const Vec *xvec(PETScVector(x));
   Vec *yvec(PETScVector(*this));
@@ -100,7 +100,7 @@ Vector::add(const ComplexType& x)
 void
 Vector::equate(const Vector& x)
 {
-  this->p_check_compatible(x);
+  this->p_checkCompatible(x);
   PetscErrorCode ierr(0);
   Vec *yvec(PETScVector(*this));
   const Vec *xvec(PETScVector(x));

@@ -419,7 +419,7 @@ void run (const int &me, const int &nprocs)
       if (network->getBus(i)->vectorSize(&isize)) {
         network->getBus(i)->getMatVecIndex(&idx);
         idx--;
-        V->get_element(idx,v);
+        V->getElement(idx,v);
         rv = real(v);
         if (rv != (double)(idx+1)) {
           printf("p[%d] vector error i: %d v: %f\n",me,idx,rv);
@@ -443,11 +443,11 @@ void run (const int &me, const int &nprocs)
 
   // Multiply values in vector by a factor of 2
   int lo, hi;
-  V->local_index_range(lo,hi);
+  V->localIndexRange(lo,hi);
   for (i=lo; i<hi; i++) {
-    V->get_element(i,v);
+    V->getElement(i,v);
     v *= 2.0;
-    V->set_element(i,v);
+    V->setElement(i,v);
   }
   // Push values back onto buses
   vMap.mapToBus(V);

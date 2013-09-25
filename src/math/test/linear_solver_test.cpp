@@ -2,7 +2,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-10 13:42:13 d3g096
+ * @date   2013-09-25 07:11:25 d3g096
  * 
  * @brief  
  * 
@@ -41,7 +41,7 @@ assemble(const int imax, const int jmax,
   const float dy = H/static_cast<float>(jmax);
 
   int ilo, ihi;
-  b.local_index_range(ilo, ihi);
+  b.localIndexRange(ilo, ihi);
 
   int i, j, ierr;
   float ap, aw, ae, as, an, bp;
@@ -101,7 +101,7 @@ assemble(const int imax, const int jmax,
         if (as != 0.0) A.set_element(iP, iS, -as);
         if (ae != 0.0) A.set_element(iP, iE, -ae);
         if (aw != 0.0) A.set_element(iP, iW, -aw);
-        b.set_element(iP, bp);
+        b.setElement(iP, bp);
       }      
     }
   }
@@ -167,11 +167,11 @@ BOOST_AUTO_TEST_CASE( Versteeg )
   for (int p = 0; p < world.size(); ++p) {
     if (p == world.rank()) {
       int ilo, ihi;
-      x->local_index_range(ilo, ihi);
+      x->localIndexRange(ilo, ihi);
       for (int iP = ilo; iP < ihi; ++iP) {
         gridpack::ComplexType val, r;
-        x->get_element(iP, val);
-        res->get_element(iP, r);
+        x->getElement(iP, val);
+        res->getElement(iP, r);
         int i = iP/jmax;
         int j = iP - i*jmax;
         

@@ -2,7 +2,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-08-13 12:20:02 d3g096
+ * @date   2013-09-25 07:09:34 d3g096
  * 
  * @brief  
  * 
@@ -88,10 +88,10 @@ PETScVectorImplementation::p_size(void) const
 }
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_local_size
+// PETScVectorImplementation::p_localSize
 // -------------------------------------------------------------
 int 
-PETScVectorImplementation::p_local_size(void) const
+PETScVectorImplementation::p_localSize(void) const
 {
   PetscErrorCode ierr;
   try {
@@ -104,17 +104,17 @@ PETScVectorImplementation::p_local_size(void) const
 }
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_local_index_range
+// PETScVectorImplementation::p_localIndexRange
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_local_index_range(int& lo, int& hi) const
+PETScVectorImplementation::p_localIndexRange(int& lo, int& hi) const
 {
   lo = p_min_index;
   hi = p_max_index;
 }
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_set_element
+// PETScVectorImplementation::p_setElement
 // -------------------------------------------------------------
 /** 
  * If you try to set an off processor value, it will be ignored
@@ -123,7 +123,7 @@ PETScVectorImplementation::p_local_index_range(int& lo, int& hi) const
  * @param x value
  */
 void
-PETScVectorImplementation::p_set_element(const int& i, const ComplexType& x)
+PETScVectorImplementation::p_setElement(const int& i, const ComplexType& x)
 {
   PetscErrorCode ierr;
   try {
@@ -134,10 +134,10 @@ PETScVectorImplementation::p_set_element(const int& i, const ComplexType& x)
 }
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_set_elements
+// PETScVectorImplementation::p_setElements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_set_elements(const int& n, const int *i, const ComplexType *x)
+PETScVectorImplementation::p_setElements(const int& n, const int *i, const ComplexType *x)
 {
   PetscErrorCode ierr;
   try {
@@ -148,10 +148,10 @@ PETScVectorImplementation::p_set_elements(const int& n, const int *i, const Comp
 }
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_add_element
+// PETScVectorImplementation::p_addElement
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_add_element(const int& i, const ComplexType& x)
+PETScVectorImplementation::p_addElement(const int& i, const ComplexType& x)
 {
   PetscErrorCode ierr;
   try {
@@ -162,10 +162,10 @@ PETScVectorImplementation::p_add_element(const int& i, const ComplexType& x)
 }
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_add_elements
+// PETScVectorImplementation::p_addElements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_add_elements(const int& n, const int *i, const ComplexType *x)
+PETScVectorImplementation::p_addElements(const int& n, const int *i, const ComplexType *x)
 {
   PetscErrorCode ierr;
   try {
@@ -176,19 +176,19 @@ PETScVectorImplementation::p_add_elements(const int& n, const int *i, const Comp
 }
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_get_element
+// PETScVectorImplementation::p_getElement
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_get_element(const int& i, ComplexType& x) const
+PETScVectorImplementation::p_getElement(const int& i, ComplexType& x) const
 {
-  this->p_get_elements(1, &i, &x);
+  this->p_getElements(1, &i, &x);
 }
 
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_get_elements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_get_elements(const int& n, const int *i, ComplexType *x) const
+PETScVectorImplementation::p_getElements(const int& n, const int *i, ComplexType *x) const
 {
   // FIXME: Cannot get off process elements
   PetscErrorCode ierr;
@@ -203,7 +203,7 @@ PETScVectorImplementation::p_get_elements(const int& n, const int *i, ComplexTyp
 // PETScVectorImplementation::p_get_all_elements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_get_all_elements(ComplexType *x) const
+PETScVectorImplementation::p_getAllElements(ComplexType *x) const
 {
   PetscErrorCode ierr(0);
   try {
@@ -326,7 +326,7 @@ VectorImplementation *
  PETScVectorImplementation::p_clone(void) const
 {
   parallel::Communicator comm(this->communicator());
-  int local_size(this->local_size());
+  int local_size(this->localSize());
   
   PETScVectorImplementation *result = 
     new PETScVectorImplementation(comm, local_size);

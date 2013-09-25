@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-08-21 14:16:13 d3g096
+ * @date   2013-09-10 15:41:21 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -225,7 +225,7 @@ public:
 
 
 
-BOOST_AUTO_TEST_SUITE ( network ) 
+BOOST_AUTO_TEST_SUITE ( NetworkTest ) 
 
 BOOST_AUTO_TEST_CASE ( bus_data_serialization )
 {

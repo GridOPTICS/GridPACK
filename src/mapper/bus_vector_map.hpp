@@ -102,7 +102,7 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 void mapToBus(const gridpack::math::Vector &vector)
 {
   int minVecIndex, maxVecIndex;
-  vector.local_index_range(minVecIndex, maxVecIndex);
+  vector.localIndexRange(minVecIndex, maxVecIndex);
 
   // Assume that row partitioning is working correctly
   int nRows = p_maxRowIndex - p_minRowIndex + 1;
@@ -121,7 +121,7 @@ void mapToBus(const gridpack::math::Vector &vector)
         size = sizes[idx];
         offset = offsets[idx];
         for (j=0; j<size; j++) {
-          vector.get_element(offset+j,values[j]); 
+          vector.getElement(offset+j,values[j]); 
         }
         p_network->getBus(i)->setValues(values);
       }
@@ -422,9 +422,9 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
         for (j=0; j<isize; j++) {
           idx = offsets[jcnt] + j;
           if (flag) {
-            vector.add_element(idx, values[icnt]);
+            vector.addElement(idx, values[icnt]);
           } else {
-            vector.set_element(idx, values[icnt]);
+            vector.setElement(idx, values[icnt]);
           } 
           icnt++;
         }

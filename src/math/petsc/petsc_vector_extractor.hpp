@@ -3,7 +3,7 @@
 /**
  * @file   petsc_vector_extractor.hpp
  * @author William A. Perkins
- * @date   2013-06-11 14:13:27 d3g096
+ * @date   2013-09-25 07:09:41 d3g096
  * 
  * @brief  
  * 
@@ -45,7 +45,7 @@ public:
   /// Get the vector
   void visit(PETScVectorImplementation& petsc_impl)
   {
-    p_vector = petsc_impl.get_vector();
+    p_vector = petsc_impl.getVector();
   }
 
   Vec *vector(void)
@@ -80,7 +80,7 @@ public:
   /// Get the vector
   void visit(const PETScVectorImplementation& petsc_impl) 
   {
-    p_vector = petsc_impl.get_vector();
+    p_vector = petsc_impl.getVector();
   }
 
   const Vec *vector(void)
