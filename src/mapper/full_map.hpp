@@ -531,9 +531,9 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
           for (j=0; j<isize; j++) {
             idx = offsets[jcnt] + j;
             if (flag) {
-              matrix.add_element(idx, jdx, values[icnt]);
+              matrix.addElement(idx, jdx, values[icnt]);
             } else {
-              matrix.set_element(idx, jdx, values[icnt]);
+              matrix.setElement(idx, jdx, values[icnt]);
             }
             icnt++;
           }
@@ -624,9 +624,9 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
             if (flag) {
-              matrix.add_element(idx, jdx, values[icnt]);
+              matrix.addElement(idx, jdx, values[icnt]);
             } else {
-              matrix.set_element(idx, jdx, values[icnt]);
+              matrix.setElement(idx, jdx, values[icnt]);
             }
             icnt++;
           }
@@ -646,9 +646,9 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
           for (j=0; j<isize; j++) {
             idx = i_offsets[jcnt] + j;
             if (flag) {
-              matrix.add_element(idx, jdx, values[icnt]);
+              matrix.addElement(idx, jdx, values[icnt]);
             } else {
-              matrix.set_element(idx, jdx, values[icnt]);
+              matrix.setElement(idx, jdx, values[icnt]);
             }
             icnt++;
           }
