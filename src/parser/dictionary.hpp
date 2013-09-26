@@ -324,6 +324,29 @@
  */
 #define GENERATOR_OWNER "GENERATOR_OWNER"
 
+/**
+ * Generator reactance
+ * type: real float
+ */
+#define GENERATOR_REACTANCE "GENERATOR_REACTANCE"
+
+/**
+ * Generator resistance
+ * type: real float
+ */
+#define GENERATOR_RESISTANCE "GENERATOR_RESISTANCE"
+
+/**
+ * Generator transient reactance
+ * type: real float
+ */
+#define GENERATOR_TRANSIENT_REACTANCE "GENERATOR_TRANSIENT_REACTANCE"
+
+/**
+ * Generator subtransient reactance
+ * type: real float
+ */
+#define GENERATOR_SUBTRANSIENT_REACTANCE "GENERATOR_SUBTRANSIENT_REACTANCE"
 
 // BRANCH DATA
 /**

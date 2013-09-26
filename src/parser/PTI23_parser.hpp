@@ -273,49 +273,49 @@ template <class _network>
 
           // LOAD_BUSNUMBER               "I"                   integer
           int l_idx, o_idx;
-          l_idx = atoi(split_line[0].c_str());
+          o_idx = atoi(split_line[0].c_str());
           std::map<int, int>::iterator it;
-          it = p_busMap.find(l_idx);
+          it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
-            o_idx = it->second;
+            l_idx = it->second;
           } else {
             std::getline(input, line);
             continue;
           }
-          p_busData[o_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
+          p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
 
           // LOAD_ID              "ID"                  integer
-          p_busData[o_idx]->addValue(LOAD_ID, atoi(split_line[1].c_str()));
+          p_busData[l_idx]->addValue(LOAD_ID, atoi(split_line[1].c_str()));
 
           // LOAD_STATUS              "ID"                  integer
-          p_busData[o_idx]->addValue(LOAD_STATUS, atoi(split_line[1].c_str()));
+          p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[1].c_str()));
 
           // LOAD_AREA            "ZONE"                integer
-          p_busData[o_idx]->addValue(LOAD_AREA, atoi(split_line[11].c_str()));
+          p_busData[l_idx]->addValue(LOAD_AREA, atoi(split_line[11].c_str()));
 
           // LOAD_ZONE            "ZONE"                integer
-          p_busData[o_idx]->addValue(LOAD_ZONE, atoi(split_line[11].c_str()));
+          p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[11].c_str()));
 
           // LOAD_PL              "PG"                  float
-          p_busData[o_idx]->addValue(LOAD_PL, atof(split_line[2].c_str()));
+          p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[2].c_str()));
 
           // LOAD_QL              "QG"                  float
-          p_busData[o_idx]->addValue(LOAD_QL, atof(split_line[3].c_str()));
+          p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[3].c_str()));
 
           // LOAD_IP              "QT"                  float
-          p_busData[o_idx]->addValue(LOAD_IP, atof(split_line[4].c_str()));
+          p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[4].c_str()));
 
           // LOAD_IQ              "QB"                  float
-          p_busData[o_idx]->addValue(LOAD_IQ, atof(split_line[5].c_str()));
+          p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[5].c_str()));
 
           // LOAD_YP              "VS"                  float
-          p_busData[o_idx]->addValue(LOAD_YP, atof(split_line[6].c_str()));
+          p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[6].c_str()));
 
           // LOAD_YQ            "IREG"                integer
-          p_busData[o_idx]->addValue(LOAD_YQ, atoi(split_line[7].c_str()));
+          p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[7].c_str()));
 
           // LOAD_OWNER              "IA"                  integer
-          p_busData[o_idx]->addValue(LOAD_OWNER, atoi(split_line[6].c_str()));
+          p_busData[l_idx]->addValue(LOAD_OWNER, atoi(split_line[6].c_str()));
 
           std::getline(input, line);
         }
@@ -333,11 +333,11 @@ template <class _network>
 
           // GENERATOR_BUSNUMBER               "I"                   integer
           int l_idx, o_idx;
-          l_idx = atoi(split_line[0].c_str());
+          o_idx = atoi(split_line[0].c_str());
           std::map<int, int>::iterator it;
-          it = p_busMap.find(l_idx);
+          it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
-            o_idx = it->second;
+            l_idx = it->second;
           } else {
             std::getline(input, line);
             continue;
@@ -345,85 +345,104 @@ template <class _network>
 
           // Find out how many generators are already on bus
           int ngen;
-          if (!p_busData[o_idx]->getValue(GENERATOR_NUMBER, &ngen)) ngen = 0;
+          if (!p_busData[l_idx]->getValue(GENERATOR_NUMBER, &ngen)) ngen = 0;
 
 
-          p_busData[o_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()), ngen);
 
           // GENERATOR_ID              "ID"                  integer
-          p_busData[o_idx]->addValue(GENERATOR_ID, atoi(split_line[1].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_ID, atoi(split_line[1].c_str()), ngen);
 
           // GENERATOR_PG              "PG"                  float
-          p_busData[o_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
+          p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
               ngen);
 
           // GENERATOR_QG              "QG"                  float
-          p_busData[o_idx]->addValue(GENERATOR_QG, atof(split_line[3].c_str()),
+          p_busData[l_idx]->addValue(GENERATOR_QG, atof(split_line[3].c_str()),
               ngen);
 
           // GENERATOR_QMAX              "QT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_QMAX,
+          p_busData[l_idx]->addValue(GENERATOR_QMAX,
               atof(split_line[4].c_str()), ngen);
 
           // GENERATOR_QMIN              "QB"                  float
-          p_busData[o_idx]->addValue(GENERATOR_QMIN,
+          p_busData[l_idx]->addValue(GENERATOR_QMIN,
               atof(split_line[5].c_str()), ngen);
 
           // GENERATOR_VS              "VS"                  float
-          p_busData[o_idx]->addValue(GENERATOR_VS, atof(split_line[6].c_str()),
+          p_busData[l_idx]->addValue(GENERATOR_VS, atof(split_line[6].c_str()),
               ngen);
 
           // GENERATOR_IREG            "IREG"                integer
-          p_busData[o_idx]->addValue(GENERATOR_IREG,
+          p_busData[l_idx]->addValue(GENERATOR_IREG,
               atoi(split_line[7].c_str()), ngen);
 
           // GENERATOR_MBASE           "MBASE"               float
-          p_busData[o_idx]->addValue(GENERATOR_MBASE,
+          p_busData[l_idx]->addValue(GENERATOR_MBASE,
               atof(split_line[8].c_str()), ngen);
 
           // GENERATOR_ZSORCE              "ZR"                  float
-          p_busData[o_idx]->addValue(GENERATOR_ZSORCE,
+          p_busData[l_idx]->addValue(GENERATOR_ZSORCE,
               atof(split_line[9].c_str()), ngen);
 
           // GENERATOR_XTRAN              "ZX"                  float
-          p_busData[o_idx]->addValue(GENERATOR_XTRAN,
+          p_busData[l_idx]->addValue(GENERATOR_XTRAN,
               atof(split_line[10].c_str()), ngen);
 
           // GENERATOR_XT              "XT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_XT, atof(split_line[11].c_str()),
+          p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[11].c_str()),
               ngen);
 
           // GENERATOR_RT              "RT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_RT, atof(split_line[12].c_str()),
+          p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[12].c_str()),
               ngen);
 
           // GENERATOR_GTAP              "GTAP"                  float
-          p_busData[o_idx]->addValue(GENERATOR_GTAP,
+          p_busData[l_idx]->addValue(GENERATOR_GTAP,
               atof(split_line[13].c_str()), ngen);
 
           // GENERATOR_STAT              "STAT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_STAT,
+          p_busData[l_idx]->addValue(GENERATOR_STAT,
               atoi(split_line[14].c_str()), ngen);
 
           // GENERATOR_RMPCT           "RMPCT"               float
-          p_busData[o_idx]->addValue(GENERATOR_RMPCT,
+          p_busData[l_idx]->addValue(GENERATOR_RMPCT,
               atof(split_line[15].c_str()), ngen);
 
           // GENERATOR_PMAX              "PT"                  float
-          p_busData[o_idx]->addValue(GENERATOR_PMAX,
+          p_busData[l_idx]->addValue(GENERATOR_PMAX,
               atof(split_line[16].c_str()), ngen);
 
           // GENERATOR_PMIN              "PB"                  float
-          p_busData[o_idx]->addValue(GENERATOR_PMIN,
+          p_busData[l_idx]->addValue(GENERATOR_PMIN,
               atof(split_line[17].c_str()), ngen);
+
+          // Pick up some non-standard values for Dynamic Simulation
+          if (split_line.size() >= 22) {
+            // GENERATOR_REACTANCE                             float
+            p_busData[l_idx]->addValue(GENERATOR_REACTANCE,
+                atof(split_line[18].c_str()), ngen);
+
+            // GENERATOR_RESISTANCE                             float
+            p_busData[l_idx]->addValue(GENERATOR_RESISTANCE,
+                atof(split_line[19].c_str()), ngen);
+
+            // GENERATOR_TRANSIENT_REACTANCE                             float
+            p_busData[l_idx]->addValue(GENERATOR_TRANSIENT_REACTANCE,
+                atof(split_line[20].c_str()), ngen);
+
+            // GENERATOR_SUBTRANSIENT_REACTANCE                             float
+            p_busData[l_idx]->addValue(GENERATOR_SUBTRANSIENT_REACTANCE,
+                atof(split_line[21].c_str()), ngen);
+          }
 
           // Increment number of generators in data object
           if (ngen == 0) {
             ngen = 1;
-            p_busData[o_idx]->addValue(GENERATOR_NUMBER,ngen);
+            p_busData[l_idx]->addValue(GENERATOR_NUMBER,ngen);
           } else {
             ngen++;
-            p_busData[o_idx]->setValue(GENERATOR_NUMBER,ngen);
+            p_busData[l_idx]->setValue(GENERATOR_NUMBER,ngen);
           }
 
           std::getline(input, line);
