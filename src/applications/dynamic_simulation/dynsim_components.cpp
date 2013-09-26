@@ -68,6 +68,14 @@ bool gridpack::dynsim::DynSimBus::matrixDiagSize(int *isize, int *jsize) const
     } else {
       return false;
     }
+  } else if (p_mode == PMatrix) {
+    if (p_ngen > 0) {
+      *isize = 2;
+      *jsize = 2;
+    } else {
+      *isize = 2;
+      *jsize = 0;
+     } 
   }
   return true;
 }
@@ -129,9 +137,14 @@ bool gridpack::dynsim::DynSimBus::matrixDiagValues(void *values)
     } else {
       return false;
     }
-  } else if (p_mode == YB) {
-    if (p_isGen) {
-
+  } else if (p_mode == PMatrix) {
+    if (p_ngen > 0) {
+      values[0] = -1.0;
+      values[0] = 0.0;
+      values[0] = 0.0;
+      values[0] = -1.0;
+    } else {
+      return false;
     } 
   }
  
@@ -281,10 +294,10 @@ void gridpack::dynsim::DynSimBus::load(
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
       lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
-      //p_gen = p_gen && data->getValue(GENERATOR_MBASE, &p_mva, 0); // mva?
-      //p_gen = p_gen && data->getValue(GENERATOR_R, &p_r, 0); // r?
-      //p_gen = p_gen && data->getValue(GENERATOR_DSTR, &p_dstr, 0); // dstr?
-      //p_gen = p_gen && data->getValue(GENERATOR_DTR, &p_dtr, 0); // dtr
+      p_gen = p_gen && data->getValue(GENERATOR_MBASE, &p_mva, 0); 
+      p_gen = p_gen && data->getValue(GENERATOR_RESISTANCE, &p_r, 0); // r
+      p_gen = p_gen && data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &p_dstr, 0); // dstr
+      p_gen = p_gen && data->getValue(GENERATOR_TRANSIENT_REACTANCE, &p_dtr, 0); // dtr
       //printf("ng=%d,pg=%f,qg=%f\n",i,pg,qg);
       if (lgen) {
         p_pg.push_back(pg);

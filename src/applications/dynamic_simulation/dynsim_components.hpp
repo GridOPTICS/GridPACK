@@ -45,7 +45,7 @@ namespace gridpack {
 namespace dynsim {
 
 //enum DynSimMode{YBUS, JACOBIAN, GENERATOR};
-enum DynSimMode{YL, PERM, YA, YB};
+enum DynSimMode{YL, PERM, YA, YB, PMatrix};
 
 class DynSimBus
   : public gridpack::component::BaseBusComponent {
