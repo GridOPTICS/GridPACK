@@ -89,8 +89,8 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
           getJacobian(this, branch_values);
         values[0] -= p_v*branch_values[0];
         values[1] += p_v*branch_values[1];
-        values[2] += p_v*branch_values[2];
-        values[3] += p_v*branch_values[3];
+        values[2] += branch_values[2];
+        values[3] += branch_values[3];
       }
       // Fix up matrix elements if bus is PV bus
       if (p_isPV) {
@@ -489,8 +489,8 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       values[2] = (p_ybusr*cs + p_ybusi*sn);
       values[3] = (p_ybusr*sn - p_ybusi*cs);
       values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
-      values[1] *= bus1->getVoltage();
-      values[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      values[2] *= bus1->getVoltage();
       values[3] *= bus1->getVoltage();
       // fix up matrix if one or both buses at the end of the branch is a PV bus
       bool bus1PV = bus1->isPV();
@@ -537,8 +537,8 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       values[2] = (p_ybusr*cs + p_ybusi*sn);
       values[3] = (p_ybusr*sn - p_ybusi*cs);
       values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
-      values[1] *= bus2->getVoltage();
-      values[2] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      values[2] *= bus2->getVoltage();
       values[3] *= bus2->getVoltage();
       // fix up matrix if one or both buses at the end of the branch is a PV bus
       bool bus1PV = bus1->isPV();
