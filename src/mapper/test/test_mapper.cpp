@@ -350,7 +350,8 @@ void run (const int &me, const int &nprocs)
   double rv;
   for (i=0; i<nbus; i++) {
     if (network->getActiveBus(i)) {
-      if (network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
+      if (network->getBus(i)->matrixDiagSize(&isize,&jsize)
+          && isize > 0 && jsize > 0) {
         network->getBus(i)->getMatVecIndex(&idx);
         idx--;
         M->getElement(idx,idx,v);
@@ -374,7 +375,8 @@ void run (const int &me, const int &nprocs)
     }
   }
   for (i=0; i<nbranch; i++) {
-    if (network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
+    if (network->getBranch(i)->matrixForwardSize(&isize,&jsize)
+        && isize > 0 && jsize > 0) {
       network->getBranch(i)->getMatVecIndices(&idx,&jdx);
       idx--;
       jdx--;

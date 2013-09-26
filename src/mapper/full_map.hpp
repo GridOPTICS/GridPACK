@@ -157,29 +157,40 @@ void setupIndexingArrays()
   int                    * jSizeArray     = NULL;
   int                   ** iIndexArray    = NULL;
   int                   ** jIndexArray    = NULL;
-  int                      count          = 0;
+  int                      icount          = 0;
+  int                      jcount          = 0;
 
   // set up bus indexing
-  allocateIndexArray(p_nBuses, &iSizeArray, &jSizeArray, &iIndexArray, NULL, 1);
+  allocateIndexArray(p_nBuses, &iSizeArray, &jSizeArray, &iIndexArray,
+      &jIndexArray);
 
-  loadBusArrays(iSizeArray, jSizeArray, iIndexArray, &count);
-  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, NULL, count, 1);
-  deleteIndexArrays(p_nBuses, iSizeArray, jSizeArray, iIndexArray, NULL, 1);
+  loadBusArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray,
+      &icount, &jcount);
+  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray,
+      icount, jcount);
+  deleteIndexArrays(p_nBuses, iSizeArray, jSizeArray, iIndexArray,
+      jIndexArray);
   GA_Sync();
 
   // set up branch indexing
-  count               = 0;
+  icount               = 0;
+  jcount               = 0;
   allocateIndexArray(p_nBranches, &iSizeArray, &jSizeArray, &iIndexArray,
-      &jIndexArray, 2);
-  loadForwardBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, &count);
-  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, count, 2);
+      &jIndexArray);
+  loadForwardBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray,
+      &icount, &jcount);
+  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray,
+      icount, jcount);
 
-  count               = 0;
-  loadReverseBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, &count);
-  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray, count, 2);
+  icount               = 0;
+  jcount               = 0;
+  loadReverseBranchArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray,
+      &icount, &jcount);
+  scatterIndexingArrays(iSizeArray, jSizeArray, iIndexArray, jIndexArray,
+      icount, jcount);
 
   deleteIndexArrays(p_nBranches, iSizeArray, jSizeArray, iIndexArray,
-      jIndexArray, 2);
+      jIndexArray);
   GA_Sync();
 }
 
@@ -190,24 +201,18 @@ void setupIndexingArrays()
  * @param jSizeArray array containing size of matrix block along j axis
  * @param iIndexArray array containing i index of matrix block
  * @param jIndexArray array containing j index of matrix block
- * @param nflag number of indices being used (1 or 2)
  */
 void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
-        int *** iIndexArray, int *** jIndexArray, int nflag)
+        int *** iIndexArray, int *** jIndexArray)
 {
   *iSizeArray         = new int[n];
   *jSizeArray         = new int[n];
   *iIndexArray        = new int*[n];
+  *jIndexArray        = new int*[n];
 
   for(int i = 0; i < n; i++) {
     (*iIndexArray)[i]  = new int;
-  }
-
-  if (nflag == 2) {
-    *jIndexArray        = new int*[n];
-    for(int i = 0; i < n; i++) {
-      (*jIndexArray)[i]  = new int;
-    }
+    (*jIndexArray)[i]  = new int;
   }
 }
 
@@ -217,25 +222,34 @@ void allocateIndexArray(int n, int ** iSizeArray, int ** jSizeArray,
  * @param iSizeArray array containing size of matrix block along i axis
  * @param jSizeArray array containing size of matrix block along j axis
  * @param iIndexArray array containing i index of matrix block
- * @param count return total number of non-zero blocks
+ * @param jIndexArray array containing j index of matrix block
+ * @param icount return total number of non-zero blocks along i axis
+ * @param jcount return total number of non-zero blocks along j axis
  */
 void loadBusArrays(int * iSizeArray, int * jSizeArray,
-        int ** iIndexArray, int *count)
+        int ** iIndexArray, int ** jIndexArray, int *icount, int *jcount)
 {
   int                      index          = 0;
   int                      iSize          = 0;
   int                      jSize          = 0;
   bool                     status         = true;
 
-  *count = 0;
+  *icount = 0;
+  *jcount = 0;
   for (int i = 0; i < p_nBuses; i++) {
     status = p_network->getBus(i)->matrixDiagSize(&iSize, &jSize);
     if (status) {
       p_network->getBus(i)->getMatVecIndex(&index);
-      iSizeArray[*count]     = iSize;
-      jSizeArray[*count]     = jSize;
-      *(iIndexArray[*count])  = index;
-      (*count)++;
+      if (iSize > 0) {
+        iSizeArray[*icount]     = iSize;
+        *(iIndexArray[*icount])  = index;
+        (*icount)++;
+      }
+      if (jSize > 0) {
+        jSizeArray[*jcount]     = jSize;
+        *(jIndexArray[*jcount])  = index;
+        (*jcount)++;
+      }
     }
   }
 }
@@ -247,10 +261,12 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
  * @param jSizeArray array containing size of matrix block along j axis
  * @param iIndexArray array containing i index of matrix block
  * @param jIndexArray array containing j index of matrix block
- * @param count total number of non-zero blocks
+ * @param icount total number of non-zero blocks along i axis
+ * @param jcount total number of non-zero blocks along j axis
  */
 void loadForwardBranchArrays(int * iSizeArray, int * jSizeArray,
-        int ** iIndexArray, int ** jIndexArray, int * count)
+        int ** iIndexArray, int ** jIndexArray, int * icount,
+        int * jcount)
 {
   int                      iIndex         = 0;
   int                      jIndex         = 0;
@@ -258,22 +274,29 @@ void loadForwardBranchArrays(int * iSizeArray, int * jSizeArray,
   int                      jSize          = 0;
   bool                     status         = true;
 
-  *count = 0;
+  *icount = 0;
+  *jcount = 0;
   for (int i = 0; i < p_nBranches; i++) {
     status = p_network->getBranch(i)->matrixForwardSize(&iSize, &jSize);
     if (status) {
       p_network->getBranch(i)->getMatVecIndices(&iIndex, &jIndex);
-      iSizeArray[*count]      = iSize;
-      jSizeArray[*count]      = jSize;
-      *(iIndexArray[*count])  = iIndex;
-      *(jIndexArray[*count])  = jIndex;
-      (*count)++;
+      if (iSize > 0) {
+        iSizeArray[*icount]      = iSize;
+        *(iIndexArray[*icount])  = iIndex;
+        (*icount)++;
+      }
+      if (jSize > 0) {
+        jSizeArray[*jcount]      = jSize;
+        *(jIndexArray[*jcount])  = jIndex;
+        (*jcount)++;
+      }
     }
   }
 }
 
 void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
-        int ** iIndexArray, int ** jIndexArray, int * count)
+        int ** iIndexArray, int ** jIndexArray, int * icount,
+        int * jcount)
 {
   int                      iIndex         = 0;
   int                      jIndex         = 0;
@@ -281,16 +304,22 @@ void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
   int                      jSize          = 0;
   bool                     status         = true;
 
-  *count = 0;
+  *icount = 0;
+  *jcount = 0;
   for (int i = 0; i < p_nBranches; i++) {
     status = p_network->getBranch(i)->matrixReverseSize(&iSize, &jSize);
     if (status) {
       p_network->getBranch(i)->getMatVecIndices(&iIndex, &jIndex);
-      iSizeArray[*count]      = iSize;
-      jSizeArray[*count]      = jSize;
-      *(iIndexArray[*count])  = jIndex;
-      *(jIndexArray[*count])  = iIndex;
-      (*count)++;
+      if (iSize > 0) {
+        iSizeArray[*icount]      = iSize;
+        *(iIndexArray[*icount])  = jIndex;
+        (*icount)++;
+      }
+      if (jSize > 0) {
+        jSizeArray[*jcount]      = jSize;
+        *(jIndexArray[*jcount])  = iIndex;
+        (*jcount)++;
+      }
     }
   }
 }
@@ -305,19 +334,14 @@ void loadReverseBranchArrays(int * iSizeArray, int * jSizeArray,
  * @param nflag number of indices being used (1 or 2)
  */
 void deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
-        int ** iIndexArray, int ** jIndexArray, int nflag)
+        int ** iIndexArray, int ** jIndexArray)
 {
   for(int i = 0; i < n; i++) {
     delete iIndexArray[i];
+    delete jIndexArray[i];
   }
   delete [] iIndexArray;
-
-  if (nflag == 2) {
-    for(int i = 0; i < n; i++) {
-      delete jIndexArray[i];
-    }
-    delete [] jIndexArray;
-  }
+  delete [] jIndexArray;
 
   delete [] iSizeArray;
   delete [] jSizeArray;
@@ -329,16 +353,15 @@ void deleteIndexArrays(int n, int * iSizeArray, int * jSizeArray,
  * @param jSizeArray array containing size of matrix block along j axis
  * @param iIndexArray array containing i index of matrix block
  * @param jIndexArray array containing j index of matrix block
- * @param count number of elements to be scattered
- * @param nflag number of indices being used (1 or 2)
+ * @param icount number of i index elements to be scattered
+ * @param jcount number of j index elements to be scattered
  */
 void scatterIndexingArrays(int * iSizeArray, int * jSizeArray,
                                   int ** iIndexArray, int ** jIndexArray,
-                                  int count, int nflag)
+                                  int icount, int jcount)
 {
-  if (count > 0) NGA_Scatter(gaMatBlksI, iSizeArray, iIndexArray, count);
-  if (count > 0 && nflag == 2)
-     NGA_Scatter(gaMatBlksJ, jSizeArray, jIndexArray, count);
+  if (icount > 0) NGA_Scatter(gaMatBlksI, iSizeArray, iIndexArray, icount);
+  if (jcount > 0) NGA_Scatter(gaMatBlksJ, jSizeArray, jIndexArray, jcount);
 }
 
 /**
@@ -387,9 +410,9 @@ void setupOffsetArrays()
     if (p_maxJBlock < jSizes[i]) p_maxJBlock = jSizes[i];
     if (iSizes[i] > 0) iSize += iSizes[i];
     if (jSizes[i] > 0) jSize += jSizes[i];
-    if (iSizes[i] == 0 || jSizes[i] == 0) {
+//    if (iSizes[i] == 0 || jSizes[i] == 0) {
 //      printf("p[%d] Sizes[%d] I: %d J: %d\n",p_me,i,iSizes[i],jSizes[i]);
-    }
+//    }
   }
   p_rowBlockSize = iSize;
   GA_Igop(&p_maxIBlock,one,"max");
