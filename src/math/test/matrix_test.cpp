@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-09-25 09:20:50 d3g096
+ * @date   2013-09-27 15:08:04 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -448,6 +448,34 @@ BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
     gridpack::ComplexType 
       x(static_cast<gridpack::ComplexType>(i*bw)*scale), y;
     yvector->getElement(i, y);
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
+{
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(3, global_size));
+  std::auto_ptr<gridpack::math::Vector>
+    dscale(new gridpack::math::Vector(A->communicator(), A->localRows()));
+  gridpack::ComplexType z(2.0);
+  dscale->fill(z);
+
+  A->multiplyDiagonal(*dscale);
+
+  std::cout << "From MultiplyDiagonalTest" << std::endl;
+  dscale->print();
+  A->print();
+
+  int lo, hi;
+  A->localRowRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType 
+      x(static_cast<gridpack::ComplexType>(i)*z), y;
+    A->getElement(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }

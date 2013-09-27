@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-09-06 11:09:19 d3g096
+ * @date   2013-09-27 15:06:48 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -13,6 +13,7 @@
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
+#include "petsc/petsc_vector_extractor.hpp"
 
 
 namespace gridpack {
@@ -135,6 +136,29 @@ Matrix::zero(void)
   PetscErrorCode ierr(0);
   try {
     ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Matrix::multiplyDiagonal
+// -------------------------------------------------------------
+void
+Matrix::multiplyDiagonal(const Vector& x)
+{
+  const Vec *pscale(PETScVector(x));
+  Mat *pA(PETScMatrix(*this));
+  PetscErrorCode ierr(0);
+  try {
+    Vec diagorig, diagnew;
+    ierr = VecDuplicate(*pscale, &diagorig);  CHKERRXX(ierr);
+    ierr = VecDuplicate(*pscale, &diagnew);  CHKERRXX(ierr);
+    ierr = MatGetDiagonal(*pA, diagorig); CHKERRXX(ierr);
+    ierr = VecPointwiseMult(diagnew, diagorig, *pscale); CHKERRXX(ierr);
+    ierr = MatDiagonalSet(*pA, diagnew, INSERT_VALUES); CHKERRXX(ierr);
+    ierr = VecDestroy(&diagorig); CHKERRXX(ierr); 
+    ierr = VecDestroy(&diagnew); CHKERRXX(ierr); 
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
