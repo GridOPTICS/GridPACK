@@ -666,14 +666,16 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
         if (p_network->getBranch(i)->matrixReverseValues(values)) {
           icnt = 0;
+          // Note that because the indices have been reversed, we need to switch
+          // the ordering of the offsets as well
           for (k=0; k<jsize; k++) {
-            jdx = j_offsets[jcnt] + k;
+            idx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
-              idx = i_offsets[jcnt] + j;
+              jdx = i_offsets[jcnt] + j;
               if (flag) {
-                matrix.addElement(idx, jdx, values[icnt]);
+                matrix.addElement(jdx, idx, values[icnt]);
               } else {
-                matrix.setElement(idx, jdx, values[icnt]);
+                matrix.setElement(jdx, idx, values[icnt]);
               }
               icnt++;
             }
