@@ -36,8 +36,8 @@ class SerialBusIO {
 
   /**
    * Simple constructor
-   * @param max_str_len: the maximum string length written out by any bus
-   * @param network: the network for which output is desired
+   * @param max_str_len the maximum string length written out by any bus
+   * @param network the network for which output is desired
    */
   SerialBusIO(int max_str_len,
               boost::shared_ptr<_network> network)
@@ -70,7 +70,7 @@ class SerialBusIO {
 
   /**
    * Write output from buses to standard out
-   * @param signal: an optional character string used to control contents of
+   * @param signal an optional character string used to control contents of
    *                output
    */
   void write(char *signal = NULL)
@@ -164,6 +164,20 @@ class SerialBusIO {
     }
     GA_Sync();
   }
+
+  /**
+   * Write single string to standard output. This is used to write headers for a
+   * data listing. It is mostly a convenience function so that users do not have
+   * to identify the head node
+   * @param str character string containing the header
+   */
+  void header(char *str) const
+  {
+    if (GA_Nodeid() == 0) {
+      printf("%s",str);
+    }
+  }
+
   private:
     int p_GA_type;
     boost::shared_ptr<_network> p_network;
@@ -177,8 +191,8 @@ class SerialBranchIO {
   public:
   /**
    * Simple constructor
-   * @param max_str_len: the maximum string length written out by any branch
-   * @param network: the network for which output is desired
+   * @param max_str_len the maximum string length written out by any branch
+   * @param network the network for which output is desired
    */
   SerialBranchIO(int max_str_len,
                  boost::shared_ptr<_network> network)
@@ -211,7 +225,7 @@ class SerialBranchIO {
 
   /**
    * Write output from branches to standard out
-   * @param signal: an optional character string used to control contents of
+   * @param signal an optional character string used to control contents of
    *                output
    */
   void write(char *signal = NULL)
@@ -304,6 +318,19 @@ class SerialBranchIO {
       }
     }
     GA_Sync();
+  }
+
+  /**
+   * Write single string to standard output. This is used to write headers for a
+   * data listing. It is mostly a convenience function so that users do not have
+   * to identify the head node
+   * @param str character string containing the header
+   */
+  void header(char *str) const
+  {
+    if (GA_Nodeid() == 0) {
+      printf("%s",str);
+    }
   }
 
   private:

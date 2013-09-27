@@ -245,18 +245,14 @@ void run (const int &me, const int &nprocs)
 
   // Create serial bus IO object
   gridpack::serial_io::SerialBusIO<TestNetwork> busIO(128,network);
-  if (me == 0) {
-    printf("\n  Bus Properties\n");
-    printf("\n       Original   Global\n");
-  }
+  busIO.header("\n  Bus Properties\n");
+  busIO.header("\n       Original   Global\n");
   busIO.write();
 
   // Create serial branch IO object
   gridpack::serial_io::SerialBranchIO<TestNetwork> branchIO(128,network);
-  if (me == 0) {
-    printf("\n  Branch Properties\n");
-    printf("\n         Original1  Original2  Global1 Global2\n");
-  }
+  branchIO.header("\n  Branch Properties\n");
+  branchIO.header("\n         Original1  Original2  Global1 Global2\n");
   branchIO.write();
 }
 
