@@ -187,8 +187,8 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
  */
 void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 {
-  *p_vAng_ptr = real(values[0]);
-  *p_vMag_ptr = real(values[1]);
+  *p_vAng_ptr = *p_vAng_ptr + real(values[0]);
+  *p_vMag_ptr = *p_vMag_ptr + real(values[1]);
   p_theta = *p_vAng_ptr;
   p_v = *p_vMag_ptr;
 }
@@ -384,6 +384,19 @@ void gridpack::powerflow::PFBus::setSBus(void)
   } 
   //printf("p_P0=%f, p_Q0=%f\n",p_P0,p_Q0);
 #endif
+}
+
+/**
+ * Write output from buses to standard out
+ * @param string (output) string with information to be printed out
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if bus is contributing string to output, false otherwise
+ */
+bool gridpack::powerflow::PFBus::serialWrite(char *string, char *signal)
+{
+  sprintf(string, "     %6d      %12.6f         %12.6f\n",getOriginalIndex(),p_angle,p_v);
+  return true;
 }
 
 /**

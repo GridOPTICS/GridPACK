@@ -22,6 +22,7 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/applications/powerflow/pf_factory.hpp"
 
 
@@ -245,4 +246,8 @@ void gridpack::powerflow::PFApp::execute(void)
   boost::shared_ptr<gridpack::math::Vector> SBus(V->clone());
   boost::shared_ptr<gridpack::math::Vector> MIS(V->clone());
 */
+  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
+  busIO.header("\n   Bus Voltages and Phase Angles\n");
+  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+  busIO.write();
 }

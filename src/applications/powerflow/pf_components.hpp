@@ -180,6 +180,16 @@ class PFBus
     */
     void setSBus(void);
 
+    void serialWrite(char *signal = NULL);
+    /**
+     * Write output from buses to standard out
+     * @param string (output) string with information to be printed out
+     * @param signal an optional character string to signal to this
+     * routine what about kind of information to write
+     * @return true if bus is contributing string to output, false otherwise
+     */
+    bool serialWrite(char *string, char *signal = NULL);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
