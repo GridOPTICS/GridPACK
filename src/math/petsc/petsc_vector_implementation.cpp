@@ -2,7 +2,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-25 07:09:34 d3g096
+ * @date   2013-09-26 15:35:32 d3g096
  * 
  * @brief  
  * 
@@ -32,8 +32,16 @@ PETScVectorImplementation::PETScVectorImplementation(const parallel::Communicato
 {
   PetscErrorCode ierr;
   try {
+
+    // If any ownership arguments are specifed, *all* ownership arguments
+    // need to be specified.
+
+    PetscInt llen(local_length), glen(PETSC_DETERMINE);
+    ierr = PetscSplitOwnership(comm, &llen, &glen); CHKERRXX(ierr);
+
+
     ierr = VecCreate(comm,&p_vector); CHKERRXX(ierr);
-    ierr = VecSetSizes(p_vector, local_length, PETSC_DECIDE); CHKERRXX(ierr);
+    ierr = VecSetSizes(p_vector, llen, glen); CHKERRXX(ierr);
     if (comm.size() > 1) {
       ierr = VecSetType(p_vector, VECMPI);  CHKERRXX(ierr);
     } else {

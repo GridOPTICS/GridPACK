@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-09-25 11:32:59 d3g096
+ * @date   2013-09-27 10:21:58 d3g096
  * 
  * @brief  
  * 
@@ -414,7 +414,7 @@ public:
    * 
    * @param x factor by which all diagonal elements in the matrix are multiplied
    */
-  void multiply_diagonal(const Vector& x);
+  void multiplyDiagonal(const Vector& x);
 
   /// Add another matrix to this one, in place
   /** 

@@ -1,12 +1,14 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-06 15:42:12 d3g096
+ * @date   2013-09-26 16:04:43 d3g096
  * 
  * @brief  
  * 
  * 
  */
+
+#include <boost/format.hpp>
 
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_nonlinear_solver_implementation.hpp"
@@ -135,8 +137,32 @@ PetscNonlinearSolverImplementation::FormFunction(SNES snes, Vec x, Vec f, void *
 void
 PetscNonlinearSolverImplementation::p_solve(void)
 {
+  PetscErrorCode ierr(0);
   p_petsc_X = PETScVector(*p_X);
-  SNESSolve(p_snes, NULL, *p_petsc_X);
+
+  try {
+    ierr = SNESSolve(p_snes, NULL, *p_petsc_X); CHKERRXX(ierr);
+    SNESConvergedReason reason;
+    PetscInt iter;
+    ierr = SNESGetConvergedReason(p_snes, &reason); CHKERRXX(ierr);
+    ierr = SNESGetIterationNumber(p_snes, &iter); CHKERRXX(ierr);
+    std::string msg;
+    if (reason < 0) {
+      msg = 
+        boost::str(boost::format("PETSc SNES diverged after %d iterations, reason: %d") % 
+                   iter % reason);
+      throw Exception(msg);
+    } else {
+      msg = 
+        boost::str(boost::format("PETSc SNES converged after %d iterations, reason: %d") % 
+                   iter % reason);
+      std::cerr << msg << std::endl;
+    }
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  } catch (const Exception& e) {
+    throw e;
+  }
 }
 
 

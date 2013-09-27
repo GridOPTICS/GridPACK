@@ -2,7 +2,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-25 09:21:41 d3g096
+ * @date   2013-09-26 15:41:43 d3g096
  * 
  * @brief  
  * 
@@ -123,15 +123,20 @@ BOOST_AUTO_TEST_CASE( Versteeg )
 {
   gridpack::parallel::Communicator world;
 
-  static const float k = 1000;  /* conductivity, W/m/K */
-  static const float t = 0.01;  /* plate thickness, m */
-  static const float W = 0.3;   /* plate width, m */
-  static const float H = 0.4;   /* plate height, m */
-
   static const int imax = 3*world.size();
   static const int jmax = 4*world.size();
   static const int global_size = imax*jmax;
-  static const int local_size(global_size/world.size());
+  int local_size(global_size/world.size());
+
+  // Make sure local ownership specifications work
+  if (world.size() > 1) {
+    if (world.rank() == 0) {
+      local_size -= 1;
+    } else if (world.rank() == world.size() - 1) {
+      local_size += 1;
+    }
+  }
+    
 
   std::auto_ptr<gridpack::math::Matrix> 
     A(new gridpack::math::Matrix(world, local_size, global_size, 
@@ -146,6 +151,9 @@ BOOST_AUTO_TEST_CASE( Versteeg )
 
   x->fill(0.0);
   x->ready();
+
+  A->print();
+  b->print();
 
   std::auto_ptr<gridpack::math::LinearSolver> 
     solver(new gridpack::math::LinearSolver(*A));

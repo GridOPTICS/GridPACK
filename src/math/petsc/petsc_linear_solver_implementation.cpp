@@ -1,13 +1,14 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-09 12:24:46 d3g096
+ * @date   2013-09-26 16:05:11 d3g096
  * 
  * @brief  
  * 
  * 
  */
 
+#include <boost/format.hpp>
 
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
@@ -86,8 +87,23 @@ PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
     ierr = KSPGetIterationNumber(p_KSP, &its); CHKERRXX(ierr);
     ierr = KSPGetConvergedReason(p_KSP, &reason); CHKERRXX(ierr);
     ierr = KSPGetResidualNorm(p_KSP, &rnorm); CHKERRXX(ierr);
+    std::string msg;
+    if (reason < 0) {
+      msg = 
+        boost::str(boost::format("PETSc KSP diverged after %d iterations, reason: %d") % 
+                   its % reason);
+      throw Exception(msg);
+    } else {
+      msg = 
+        boost::str(boost::format("PETSc KSP converged after %d iterations, reason: %d") % 
+                   its % reason);
+      std::cerr << msg << std::endl;
+    }
+    
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
+  } catch (const Exception& e) {
+    throw e;
   }
 }
 

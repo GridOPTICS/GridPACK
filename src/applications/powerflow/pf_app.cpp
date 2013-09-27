@@ -2,7 +2,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2013-09-09 15:17:45 d3g096
+ * @date   2013-09-26 16:06:28 d3g096
  * 
  * @brief  
  * 
@@ -13,6 +13,7 @@
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/linear_solver.hpp"
+#include "gridpack/math/newton_raphson_solver.hpp"
 #include "gridpack/math/nonlinear_solver.hpp"
 #include "gridpack/applications/powerflow/pf_app.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
@@ -117,19 +118,33 @@ void gridpack::powerflow::PFApp::execute(void)
   // gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   // factory.setState(); // or something
 
-#if 0
+#if 1
   // Need to make sure that there is a mode for creating the X vector
-  factory.setMode(RHS); 
+  factory.setPQ();
   gridpack::mapper::BusVectorMap<PFNetwork> xMap(network);
   boost::shared_ptr<gridpack::math::Vector> X = xMap.mapToVector();
 
 
   gridpack::math::FunctionBuilder fbuilder = factory;
   gridpack::math::JacobianBuilder jbuilder = factory;
+
+#if 0
+  gridpack::math::NewtonRaphsonSolver solver(network->communicator(),
+                                             X->local_size(), jbuilder, fbuilder);
+  solver.tolerance(1.0e-06);
+  solver.maximum_iterations(100);
+  solver.solve(*X);
+#else
   gridpack::math::NonlinearSolver solver(network->communicator(),
                                          X->local_size(), jbuilder, fbuilder);
-  
-  solver.solve(*X);
+  try {
+    solver.solve(*X);
+  } catch (const Exception& e) {
+    std::cerr << e.what() << std::endl;
+  }
+#endif
+
+  X->print();
 
 #endif
 

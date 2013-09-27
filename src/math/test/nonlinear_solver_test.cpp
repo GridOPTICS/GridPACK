@@ -1,7 +1,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-25 09:22:29 d3g096
+ * @date   2013-09-26 16:09:51 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -270,7 +270,16 @@ struct build_thing
 BOOST_AUTO_TEST_CASE( example2 )
 {
   boost::mpi::communicator world;
-  static const int local_size(4);
+  int local_size(4);
+
+  // Make sure local ownership specifications work
+  if (world.size() > 1) {
+    if (world.rank() == 0) {
+      local_size -= 1;
+    } else if (world.rank() == world.size() - 1) {
+      local_size += 1;
+    }
+  }
 
   build_thing thing;
 
@@ -288,7 +297,16 @@ BOOST_AUTO_TEST_CASE( example2 )
 BOOST_AUTO_TEST_CASE( example2_nr )
 {
   boost::mpi::communicator world;
-  static const int local_size(4);
+  int local_size(4);
+
+  // Make sure local ownership specifications work
+  if (world.size() > 1) {
+    if (world.rank() == 0) {
+      local_size -= 1;
+    } else if (world.rank() == world.size() - 1) {
+      local_size += 1;
+    }
+  }
 
   build_thing thing;
 

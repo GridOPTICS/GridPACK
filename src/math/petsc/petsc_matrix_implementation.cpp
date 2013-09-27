@@ -1,7 +1,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-25 09:12:12 d3g096
+ * @date   2013-09-26 15:57:25 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -34,7 +34,7 @@ namespace math {
  * @param dense 
  */
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, const int& cols,
+                                                     const int& local_rows, const int& global_cols,
                                                      const bool& dense)
   : MatrixImplementation(comm)
 {
@@ -42,40 +42,55 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
   static const PetscInt diagonal_non_zero_guess(10);
   static const PetscInt offdiagonal_non_zero_guess(10);
   try {
+
+    // If any ownership arguments are specifed, *all* ownership
+    // arguments need to be specified.  AND, if the matrix is square,
+    // the local rows and cols need to be the same.
+
+    PetscInt lrows(local_rows), grows(PETSC_DECIDE);
+    ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRXX(ierr);
+
+    PetscInt lcols(PETSC_DECIDE), gcols(global_cols);
+    if (grows == global_cols) {
+      lcols = lrows;
+    } else {
+      ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
+    }
+    
     ierr = MatCreate(this->communicator(), &p_matrix); CHKERRXX(ierr);
     MatType the_type;
-    ierr = MatSetSizes(p_matrix,
-                       local_rows, PETSC_DECIDE,
-                       PETSC_DETERMINE, cols); CHKERRXX(ierr);
+    ierr = MatSetSizes(p_matrix, lrows, lcols, grows, gcols); CHKERRXX(ierr);
     if (dense) {
       if (this->communicator().size() == 1) {
         ierr = MatSetType(p_matrix, MATSEQDENSE); CHKERRXX(ierr);
-        ierr = MatSeqDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
+        // ierr = MatSeqDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
       } else {
         ierr = MatSetType(p_matrix, MATDENSE); CHKERRXX(ierr);
-        ierr = MatMPIDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
+        // ierr = MatMPIDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
       }
     } else {
       if (this->communicator().size() == 1) {
         ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
-        ierr = MatSeqAIJSetPreallocation(p_matrix, 
-                                         diagonal_non_zero_guess + offdiagonal_non_zero_guess,
-                                         PETSC_NULL); CHKERRXX(ierr);
+        // ierr = MatSeqAIJSetPreallocation(p_matrix, 
+        //                                  diagonal_non_zero_guess + offdiagonal_non_zero_guess,
+        //                                  PETSC_NULL); CHKERRXX(ierr);
       } else {
         ierr = MatSetType(p_matrix, MATMPIAIJ); CHKERRXX(ierr);
-        ierr = MatMPIAIJSetPreallocation(p_matrix, 
-                                         diagonal_non_zero_guess,
-                                         PETSC_NULL,
-                                         offdiagonal_non_zero_guess, 
-                                         PETSC_NULL); CHKERRXX(ierr);
+        // ierr = MatMPIAIJSetPreallocation(p_matrix, 
+        //                                  diagonal_non_zero_guess,
+        //                                  PETSC_NULL,
+        //                                  offdiagonal_non_zero_guess, 
+        //                                  PETSC_NULL); CHKERRXX(ierr);
       }
       // By default, new elements that are not pre-allocated cause an
       // error. Let's disable that. With the preallocation above, it
       // should not happen very often.
-      ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_TRUE); CHKERRXX(ierr);
-      ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE); CHKERRXX(ierr);
+      // ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_TRUE); CHKERRXX(ierr);
+      // ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE); CHKERRXX(ierr)
+                                                                                  ;
     }
     ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
+    ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
