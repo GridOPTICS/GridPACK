@@ -171,7 +171,11 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
       P -= p_P0;
       Q -= p_Q0;
       values[0] = P;
-      values[1] = Q;
+      if (!p_isPV) {
+        values[1] = Q;
+      } else {
+        values[1] = 0.0;
+      }
       return true;
     } else {
       values[0] = 0.0;
