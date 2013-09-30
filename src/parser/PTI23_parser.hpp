@@ -102,7 +102,7 @@ template <class _network>
           find_owner(input);
           //find_line(input);
 #endif
-#if 1
+#if 0
           // debug
           int i;
           printf("BUS data size: %d\n",p_busData.size());

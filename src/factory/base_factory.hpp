@@ -266,7 +266,7 @@ class BaseFactory {
 
     /**
      * Set the mode for all BaseComponent objects in the network.
-     * @param mode: integer representing desired mode
+     * @param mode integer representing desired mode
      */
     virtual void setMode(int mode)
     {
