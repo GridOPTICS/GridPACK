@@ -86,16 +86,21 @@ void gridpack::powerflow::PFApp::execute(void)
   // make Sbus components to create S vector
   factory.setSBus();
 
-  /*gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+/*  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> S = vMap.mapToVector();
-  S->print();*/
-
+  S->print();
+*/
   // Set PQ
   //factory.setPQ();
-//  factory.setMode(RHS); 
+  factory.setMode(RHS); 
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  PQ->print();
+
+//  factory.setMode(S_Cal);
 //  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-//  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-//  PQ->print();
+//  boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
+//  V->print();
 
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
@@ -247,7 +252,7 @@ void gridpack::powerflow::PFApp::execute(void)
   boost::shared_ptr<gridpack::math::Vector> MIS(V->clone());
 */
   gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
-  busIO.header("\n   Bus Voltages and Phase Angles\n");
-  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
-  busIO.write();
+//  busIO.header("\n   Bus Voltages and Phase Angles\n");
+//  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+//  busIO.write();
 }
