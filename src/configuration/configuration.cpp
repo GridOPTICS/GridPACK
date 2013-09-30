@@ -32,7 +32,7 @@ Configuration::~Configuration(void)
 	delete pimpl;
 }
 
-void Configuration::enable_logging(std::ostream * out) {
+void Configuration::enableLogging(std::ostream * out) {
 	pimpl->logging = out;
 }
 
@@ -83,7 +83,7 @@ bool Configuration::open(std::string file) {
 		 (*pimpl->logging) << "Error reading XML file " << file << std::endl;
 		return false;
 	}
-	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration/enable_logging",false))
+	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration/enableLogging",false))
 		pimpl->logging = & std::cout;
 	return true;
 }
@@ -151,7 +151,7 @@ std::string Configuration::get(Configuration::KeyType key, const std::string & d
 bool Configuration::get(Configuration::KeyType key, std::string * output) { return get0_bool(pimpl->pt,key, output); }
 
 std::vector<double> Configuration::get(Configuration::KeyType key, const std::vector<double> & default_value) { 
-	Cursor * c = get_cursor(key);
+	Cursor * c = getCursor(key);
 	if(!c) return default_value;
 	std::vector<double> v;
 	v.push_back(c->get("x",0.0));
@@ -161,7 +161,7 @@ std::vector<double> Configuration::get(Configuration::KeyType key, const std::ve
 	return v;
 }
 bool Configuration::get(Configuration::KeyType key, std::vector<double> * output) { 
-	Cursor * c = get_cursor(key);
+	Cursor * c = getCursor(key);
 	if(!c) return false;
 	output->push_back(c->get("x",0.0));
 	output->push_back(c->get("y",0.0));
@@ -170,7 +170,7 @@ bool Configuration::get(Configuration::KeyType key, std::vector<double> * output
 }
 
 
-Configuration::Cursor * Configuration::get_cursor(Configuration::KeyType key) {
+Configuration::Cursor * Configuration::getCursor(Configuration::KeyType key) {
 	boost::optional<ptree&> cpt = pimpl->pt.get_child_optional(key);
 	if(!cpt) return NULL;
 	Configuration * c = new Configuration;

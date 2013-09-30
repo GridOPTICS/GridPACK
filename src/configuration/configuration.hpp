@@ -1,3 +1,19 @@
+#pragma once
+#define USE_MPI
+#ifndef _configuration_h
+// TODO -- any convention on version numbers? 
+// TODO -- any coding conventions? 
+#define _configuration_h 201307
+//#include <boost/mpi/communicator.hpp>
+#include <string>
+#include <vector>
+#ifdef USE_MPI
+#include <mpi.h>
+#endif
+namespace gridpack {
+namespace utility {
+
+class Configuration {
 /**
  * We expect execution of a GridPACK application to be determined in part
  * by a single input configuration file (perhaps extracted from a database
@@ -38,7 +54,7 @@
  *    cout << "Start " << start << endl;
  *
  *    // select a subtree by path 
- *    Configuration::Cursor * time = config.get_cursor("Configuration.Time");
+ *    Configuration::Cursor * time = config.getCursor("Configuration.Time");
  *
  *    // select a value without specified default
  *    double step = -1.0;
@@ -55,55 +71,64 @@
  * }
  */
 
-#pragma once
-#define USE_MPI
-#ifndef _configuration_h
-// TODO -- any convention on version numbers? 
-// TODO -- any coding conventions? 
-#define _configuration_h 201307
-//#include <boost/mpi/communicator.hpp>
-#include <string>
-#include <vector>
-#ifdef USE_MPI
-#include <mpi.h>
-#endif
-namespace gridpack {
-namespace utility {
-
-class Configuration {
 	class ConfigInternals * pimpl;
 	bool initialize_internal(MPI_Comm comm); 
 public:
 	typedef std::string KeyType;
 	static const char KeySep = '.';  // inhereted from boost, could change at some cost
 	
+   /**
+    * Simple Constructor
+    */
 	Configuration(void);
+
+   /**
+    * Simple Destructor
+    */
 	~Configuration(void);
 
 	/**
-	 * access a common instance, shared by all modules configuration database,
+	 * Access a common instance, shared by all modules in configuration database,
 	 */
 	static Configuration * configuration();
 
 	/**
     * enable logging for diagnostics and provenence (default is std::cout)
     */
-	void enable_logging(std::ostream * = NULL);
+	void enableLogging(std::ostream * = NULL);
 
 	/**
     * read a configuration file. true == success, false == some kind of failure
     */
 #ifdef USE_MPI
+   /**
+    * Open external configuration file on all ranks on communicator MPI_Comm
+    * @param file name of external configuration file
+    * @param MPI_Comm MPI communicator being used in calculation
+    * @return false if there is an error reading XML file
+    */
 	bool open(std::string file,MPI_Comm);  // on all ranks...
+   /**
+    * Deprecated method that initializes configuration on all processes except
+    * process 0. Can be used in conjunction with "open" call on process 0.
+    * @param MPI_Comm MPI communicator being used in calculation
+    * @return false if there is an error reading XML file
+    */
 	bool initialize(MPI_Comm comm);  // deprecated....
 #else
+   /**
+    * Open external configuration file
+    * @param file name of external configuration file
+    */
 	bool open(std::string file);  // rank 0 only
 #endif
-	/* 
-	 *  for each supported type, there are two variants. One takes a default value 
-	 *     that is returned if the key is not present in the configuration file 
-	 *     the other takes a pointer to an output location and returns a boolean. When the boolean is true
-	 *        the output location is updated with the value
+	/**
+	 * For each supported type, there are two variants. One takes a default value 
+	 * that is returned if the key is not present in the configuration file,
+	 * the other takes a pointer to an output location and returns a boolean. When the boolean is true
+	 * the output location is updated with the value
+    * @param KeyType data key in key-value pair
+    * @param default_value data value in key-value pair
 	 */
 	bool get(KeyType, bool default_value);
 	bool get(KeyType, bool *);
@@ -120,18 +145,26 @@ public:
 	std::vector<double> get(KeyType, const std::vector<double> & default_value);
 	bool get(KeyType, std::vector<double>*);
 
-	/*
-	 * this class represents a prefix of a set of key names
-	 * conveniently this implementation allows it to be the same class
+	/**
+	 * This class represents a prefix of a set of key names.
+	 * Conveniently this implementation allows it to be the same class
 	 */
 	typedef Configuration Cursor ;
 
-	/* select a prefix, returns NULL of the prefix has no defined keys */
-	/* 
-	 * the XML based implementation on top of boost property maps might have multiple elements with the same name
-	 * this will simply return a pointer to the first which might not be sufficient.
+   /**
+	 * select a prefix, returns NULL of the prefix has no defined keys.
+	 * The XML-based implementation on top of boost property maps might
+    * have multiple elements with the same name.
+	 * This will simply return a pointer to the first, which might not be sufficient.
+    * This function will set the cursor so that it matches the XML block pointed
+    * to by the KeyType variable. For example, if the key type is set to
+    * "Configuration.Powerflow", then subsequent calls to get will look for
+    * variables within the block deliminated by
+    * <Configuration><Powerflow>...</Powerflow></Configuration>
+    * @param KeyType string representing data block to set cursor
+    * return cursor pointing to correct data block in configuration file
 	 */
-	Cursor * get_cursor(KeyType);
+	Cursor * getCursor(KeyType);
 
 	/*
   	 * For the root note, return an empty string
