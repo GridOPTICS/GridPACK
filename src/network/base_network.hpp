@@ -29,7 +29,7 @@
 
 namespace gridpack {
 namespace network {
-
+/** @cond */
 // -------------------------------------------------------------
 // A simple data class to assemble all bus related elements in
 // the network into a single struct.
@@ -233,18 +233,20 @@ private:
   }
 
 };
+/** @endcond */
 
-// -------------------------------------------------------------
-//  class BaseNetwork:
-//  This is the base class for creating distributed networks. It
-//  is basically something that supports the network topology,
-//  allows fields to be added and subtracted to the buses (nodes)
-//  and branches (edges) of the network, and implements ghost
-//  updates on the network. The BaseNetwork class does not
-//  contain the partitioner but it does contain methods that
-//  allow the partitioner to move grid elements around and
-//  create ghost elements.
-// -------------------------------------------------------------
+/**
+ *  class BaseNetwork:
+ *  This is the base class for creating distributed networks. It
+ *  is basically a container that supports the network topology,
+ *  allows user-defined buses and branches to be added to the
+ *  network and has containers that can be used to store parameters
+ *  for input or output. BaseNetwork also implements ghost bus and
+ *  ghost branch update for the network. The BaseNetwork class also
+ *  contains the partitioner, although this is implemented using
+ *  several additional classes to encapsulate the partitioner from the
+ *  remainder of the network class.
+ */
 
 template <class _bus, class _branch>
 class BaseNetwork 
