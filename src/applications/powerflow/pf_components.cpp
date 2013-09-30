@@ -145,35 +145,40 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     return true;
   }
   if (p_mode == RHS) {
-    std::vector<boost::shared_ptr<BaseComponent> > branches;
-    getNeighborBranches(branches);
-    int size = branches.size();
-    int i;
-    double P, Q, p, q;
-    P = 0.0;
-    Q = 0.0;
-    for (i=0; i<size; i++) {
-      gridpack::powerflow::PFBranch *branch
-        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
-      branch->getPQ(this, &p, &q);
-      P += p;
-      Q += q;
-      //printf("i=%d:p=%f, q=%f, P=%f, Q=%f\n", i,p,q,P,Q);
+    if (!getReferenceBus()) {
+      std::vector<boost::shared_ptr<BaseComponent> > branches;
+      getNeighborBranches(branches);
+      int size = branches.size();
+      int i;
+      double P, Q, p, q;
+      P = 0.0;
+      Q = 0.0;
+      for (i=0; i<size; i++) {
+        gridpack::powerflow::PFBranch *branch
+          = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+        branch->getPQ(this, &p, &q);
+        P += p;
+        Q += q;
+        //printf("i=%d:p=%f, q=%f, P=%f, Q=%f\n", i,p,q,P,Q);
+      }
+      //printf("p_P0=%f,p_Q0=%f\n\n", p_P0,p_Q0);
+      // Also add bus i's own Pi, Qi
+      P += p_v*p_v*p_ybusr;
+      Q += p_v*p_v*(-p_ybusi);
+      p_Pinj = P;
+      p_Qinj = Q;
+      //printf("p = %f, q = %f\n", p_voltage*p_voltage*p_ybusr, p_voltage*p_voltage*(-p_ybusi));
+      P -= p_P0;
+      Q -= p_Q0;
+      values[0] = P;
+      values[1] = Q;
+      return true;
+    } else {
+      values[0] = 0.0;
+      values[1] = 0.0;
     }
-    //printf("p_P0=%f,p_Q0=%f\n\n", p_P0,p_Q0);
-    // Also add bus i's own Pi, Qi
-    P += p_v*p_v*p_ybusr;
-    Q += p_v*p_v*(-p_ybusi);
-    p_Pinj = P;
-    p_Qinj = Q;
-    //printf("p = %f, q = %f\n", p_voltage*p_voltage*p_ybusr, p_voltage*p_voltage*(-p_ybusi));
-    P -= p_P0;
-    Q -= p_Q0;
-    values[0] = P;
-    values[1] = Q;
-    return true;
   }
-/*  if (p_mode == Jacobian) {
+  /*  if (p_mode == Jacobian) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
     int size = branches.size();

@@ -82,6 +82,9 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // make Sbus components to create S vector
   factory.setSBus();
+  if (GA_Nodeid() == 0) {
+    printf("\nIteration 0\n");
+  }
 
   // Set PQ
   factory.setMode(RHS); 
@@ -159,15 +162,15 @@ void gridpack::powerflow::PFApp::execute(void)
   X->zero(); //might not need to do this
   isolver.solve(*PQ, *X);
   tol = X->norm2();
-  if (GA_Nodeid() == 0) {
-    printf("\nIteration 0\n");
-  }
   X->print();
 
   while (real(tol) > tolerance && iter <=max_iteration) {
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
+    if (GA_Nodeid() == 0) {
+      printf("\nIteration %d\n",iter+1);
+    }
     vMap.mapToBus(X);
 
     // Exchange data between ghost buses (I don't think we need to exchange data
@@ -175,16 +178,16 @@ void gridpack::powerflow::PFApp::execute(void)
     network->updateBuses();
 
     // Create new versions of Jacobian and PQ vector
+    factory.setMode(RHS);
     vMap.mapToVector(PQ);
+    PQ->print();
+    factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
 
     // Create linear solver
     gridpack::math::LinearSolver solver(*J);
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
-    if (GA_Nodeid() == 0) {
-      printf("\nIteration %d\n",iter+1);
-    }
     X->print();
 
     tol = X->norm2();
