@@ -196,7 +196,10 @@ class PFBus
     bool p_shunt;
     bool p_load;
     int p_mode;
-    double p_v, p_a; // p_v and p_a are initialized to p_voltage and p_angle respectively, but may be subject to change during the NR iterations
+
+    // p_v and p_a are initialized to p_voltage and p_angle respectively,
+    // but may be subject to change during the NR iterations
+    double p_v, p_a;
     double p_theta; //phase angle difference
     double p_ybusr, p_ybusi;
     double p_P0, p_Q0; //double p_sbusr, p_sbusi;

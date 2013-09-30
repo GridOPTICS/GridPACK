@@ -54,7 +54,7 @@ void gridpack::powerflow::PFApp::execute(void)
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
   config->open("input.xml",world);
   gridpack::utility::Configuration::Cursor *cursor;
-  cursor = config->get_cursor("Configuration.Powerflow");
+  cursor = config->getCursor("Configuration.Powerflow");
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
 
@@ -80,36 +80,19 @@ void gridpack::powerflow::PFApp::execute(void)
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
   Y->print();
 
-  // set GBus components to create G vector 
-  //factory.setGBus();
-
   // make Sbus components to create S vector
   factory.setSBus();
 
-/*  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-  boost::shared_ptr<gridpack::math::Vector> S = vMap.mapToVector();
-  S->print();
-*/
   // Set PQ
-  //factory.setPQ();
   factory.setMode(RHS); 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   PQ->print();
 
-//  factory.setMode(S_Cal);
-//  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-//  boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
-//  V->print();
-
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   J->print(); 
-
-  //factory.setMode(SetX);
-  //boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
-  //X->print(); 
 
   // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
@@ -124,7 +107,7 @@ void gridpack::powerflow::PFApp::execute(void)
   // gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   // factory.setState(); // or something
 
-#if 1
+#if 0
   // Need to make sure that there is a mode for creating the X vector
   factory.setPQ();
   gridpack::mapper::BusVectorMap<PFNetwork> xMap(network);
@@ -154,25 +137,8 @@ void gridpack::powerflow::PFApp::execute(void)
 
 #endif
 
-#if 0
-  // Initial PQ matrix
-  factory.setPQ();
-  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-  PQ->print();
-
+#if 1
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
-
-  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-
-  // Set up bus data exchange buffers. Need to decide what data needs to be
-  // exchanged
-  factory.setExchange();
-
-  // Create bus data exchange
-  network->initBusUpdate();
-  network->updateBuses();
 
   // Convergence and iteration parameters
   double tolerance;
@@ -193,8 +159,12 @@ void gridpack::powerflow::PFApp::execute(void)
   X->zero(); //might not need to do this
   isolver.solve(*PQ, *X);
   tol = X->norm2();
+  if (GA_Nodeid() == 0) {
+    printf("\nIteration 0\n");
+  }
+  X->print();
 
-  while (real(tol) <= tolerance && iter <=max_iteration) {
+  while (real(tol) > tolerance && iter <=max_iteration) {
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
@@ -212,47 +182,18 @@ void gridpack::powerflow::PFApp::execute(void)
     gridpack::math::LinearSolver solver(*J);
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
+    if (GA_Nodeid() == 0) {
+      printf("\nIteration %d\n",iter+1);
+    }
+    X->print();
 
     tol = X->norm2();
     iter++;
   }
 #endif
 
-  // Set Jacobian matrix
-  // Why "getJacobian method is in PFBranch?
-  // Chen 8_27_2013
-  /*factory.setJacobian(); 
-
-  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> J = mMap.mapToMatrix();
-  J->print();*/
-
-/*  // Start AC N-R Solver
-
-  // FIND the first mismatch
-  // MIS: vector
-  // V: vector
-  // YBus: Matrix
-  // SBUS: vector
-  // MIS = V * conj (YBus * V) - SBUS
-  factory.calMis();
-
-  // Assume that matrix A and vector V have been properly set up and start
-  // creating solver loop.
-  factory.setMode(YBus);
-  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  Y->print();
-  return;
-
-  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-  boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
-
-  boost::shared_ptr<gridpack::math::Vector> SBus(V->clone());
-  boost::shared_ptr<gridpack::math::Vector> MIS(V->clone());
-*/
   gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
-//  busIO.header("\n   Bus Voltages and Phase Angles\n");
-//  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
-//  busIO.write();
+  busIO.header("\n   Bus Voltages and Phase Angles\n");
+  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+  busIO.write();
 }

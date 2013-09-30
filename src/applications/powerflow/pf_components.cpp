@@ -46,9 +46,9 @@ gridpack::powerflow::PFBus::~PFBus(void)
 bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
   if (p_mode == Jacobian && getReferenceBus()) {
-    *isize = 0;
-    *jsize = 0;
-    return false;
+    *isize = 2;
+    *jsize = 2;
+    return true;
   } else {
     *isize = 2;
     *jsize = 2;
@@ -73,7 +73,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
     return true;
   } else if (p_mode == Jacobian) {
     if (!getReferenceBus()) {
-/*      double branch_values[4];
+      /*      double branch_values[4];
       // TODO: More stuff here
       std::vector<boost::shared_ptr<BaseComponent> > branches;
       getNeighborBranches(branches);
@@ -85,25 +85,29 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
       values[3] = -2.0*p_v*p_ybusi;
       //printf("p_v = %f\n", p_v);
       for (i=0; i<size; i++) {
-        (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
-          getJacobian(this, branch_values);
-        values[0] -= p_v*branch_values[0];
-        values[1] += p_v*(-branch_values[1]); //correct diagonal value 
-        values[2] += branch_values[2];
-        values[3] += branch_values[3];
+      (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
+      getJacobian(this, branch_values);
+      values[0] -= p_v*branch_values[0];
+      values[1] += p_v*(-branch_values[1]); //correct diagonal value 
+      values[2] += branch_values[2];
+      values[3] += branch_values[3];
       } */ // use simple equations below to get diagonal values. YChen 9/29/2013
       values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
       values[1] = p_Pinj - p_ybusr * p_v *p_v; 
       values[2] = p_Pinj / p_v + p_ybusr * p_v; 
       values[3] = p_Qinj / p_v - p_ybusi * p_v; 
       // Fix up matrix elements if bus is PV bus
-/*      if (p_isPV) {
-        values[1] = 0.0;
-        values[2] = 0.0;
-        values[3] = 1.0;
-      }
-*/    } else {
-      return false;
+      /*      if (p_isPV) {
+              values[1] = 0.0;
+              values[2] = 0.0;
+              values[3] = 1.0;
+              } */
+    } else {
+      values[0] = 1.0;
+      values[1] = 0.0;
+      values[2] = 0.0;
+      values[3] = 1.0;
+      return true;
     }
   }
 }
@@ -117,8 +121,8 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
 bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
   if (p_mode == Jacobian && getReferenceBus()) {
-    *size = 0;
-    return false;
+    *size = 2;
+    return true;
   } else {
     *size = 2;
   }
@@ -189,8 +193,7 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     values[0] = P;
     values[1] = Q;
     return true;
-  }
-*/
+  } */
 }
 
 /**
@@ -202,7 +205,7 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 {
   *p_vAng_ptr = *p_vAng_ptr + real(values[0]);
   *p_vMag_ptr = *p_vMag_ptr + real(values[1]);
-  p_theta = *p_vAng_ptr;
+  p_a = *p_vAng_ptr;
   p_v = *p_vMag_ptr;
 }
 
@@ -414,7 +417,10 @@ void gridpack::powerflow::PFBus::setSBus(void)
  */
 bool gridpack::powerflow::PFBus::serialWrite(char *string, char *signal)
 {
-  sprintf(string, "     %6d      %12.6f         %12.6f\n",getOriginalIndex(),p_angle,p_v);
+  double pi = 4.0*atan(1.0);
+  double angle = p_a*180.0/pi;
+  sprintf(string, "     %6d      %12.6f         %12.6f\n",
+      getOriginalIndex(),angle,p_v);
   return true;
 }
 
@@ -631,6 +637,9 @@ void gridpack::powerflow::PFBranch::setYBus(void)
   //p_theta = bus1->getPhase() - bus2->getPhase();
   double pi = 4.0*atan(1.0);
   p_theta = (bus1->getPhase() - bus2->getPhase()) * pi / 180.0;
+  //printf("p_phase_shift: %12.6f\n",p_phase_shift);
+  //printf("p_theta: %12.6f\n",p_theta);
+  //printf("p_tap_ratio: %12.6f\n",p_tap_ratio);
 
 }
 
