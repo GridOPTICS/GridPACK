@@ -212,14 +212,20 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
  */
 void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 {
+  double vt = p_v;
+  double at = p_a;
   p_a -= real(values[0]);
   p_v -= real(values[1]);
-//  *p_vAng_ptr = *p_vAng_ptr - real(values[0]);
-//  *p_vMag_ptr = *p_vMag_ptr - real(values[1]);
   *p_vAng_ptr = p_a;
   *p_vMag_ptr = p_v;
-  printf("da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
-      real(values[0]),real(values[1]),p_a,p_v);
+//  printf("da: %12.6f dv: %12.6f  p_a_ptr: %12.6f p_v_ptr: %12.6f\n",
+//      real(values[0]),real(values[1]),*p_vAng_ptr,*p_vMag_ptr);
+//  *p_vAng_ptr = *p_vAng_ptr - real(values[0]);
+//  *p_vMag_ptr = *p_vMag_ptr - real(values[1]);
+//  p_a = *p_vAng_ptr;
+//  p_v = *p_vMag_ptr;
+  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
+      at,vt,real(values[0]),real(values[1]),p_a,p_v);
 }
 
 /**
@@ -237,7 +243,7 @@ int gridpack::powerflow::PFBus::getXCBufSize(void)
  */
 void gridpack::powerflow::PFBus::setXCBuf(void *buf)
 {
-  p_vAng_ptr = (double*)buf;
+  p_vAng_ptr = static_cast<double*>(buf);
   p_vMag_ptr = p_vAng_ptr+1;
   // Note: we are assuming that the load function has been called BEFORE
   // the factory setExchange method, so p_a and p_v are set with their initial
@@ -821,22 +827,23 @@ void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus,
  */
 void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, double *p, double *q)
 {
-  double cs, sn;
-  if (bus == getBus1().get()) {
-    cs = cos(p_theta);
-    sn = sin(p_theta);
-  } else if (bus == getBus2().get()) {
-    cs = cos(-p_theta);
-    sn = sin(-p_theta);
-  } else {
-    // TODO: Some kind of error
-  }
   gridpack::powerflow::PFBus *bus1 = 
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   double v1 = bus1->getVoltage();
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   double v2 = bus2->getVoltage();
+  double cs, sn;
+  p_theta = bus1->getPhase() - bus2->getPhase();
+  if (bus == bus1) {
+    cs = cos(p_theta);
+    sn = sin(p_theta);
+  } else if (bus == bus2) {
+    cs = cos(-p_theta);
+    sn = sin(-p_theta);
+  } else {
+    // TODO: Some kind of error
+  }
   //*p = -v1*v2*(p_ybusr*cs-p_ybusi*sn);
   //*q = v1*v2*(p_ybusr*sn+p_ybusi*cs);
   *p = v1*v2*(p_ybusr*cs+p_ybusi*sn);

@@ -155,7 +155,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // These need to eventually be set using configuration file
   tolerance = 1.0e-6;
-  max_iteration = 1;
+  max_iteration = 100;
 
   // Create linear solver
   gridpack::math::LinearSolver isolver(*J);
