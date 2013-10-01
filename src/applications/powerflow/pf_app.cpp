@@ -103,7 +103,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // Create bus data exchange
   network->initBusUpdate();
-  network->updateBuses();
+  // network->updateBuses();
 
   // FIXME: how does one obtain the current network state (voltage/phase in this case)?
   // get the current network state vector
@@ -164,13 +164,10 @@ void gridpack::powerflow::PFApp::execute(void)
   tol = X->norm2();
   X->print();
 
-  while (real(tol) > tolerance && iter <=max_iteration) {
+  while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
-    if (GA_Nodeid() == 0) {
-      printf("\nIteration %d\n",iter+1);
-    }
     vMap.mapToBus(X);
 
     // Exchange data between ghost buses (I don't think we need to exchange data
@@ -180,17 +177,26 @@ void gridpack::powerflow::PFApp::execute(void)
     // Create new versions of Jacobian and PQ vector
     factory.setMode(RHS);
     vMap.mapToVector(PQ);
+    if (GA_Nodeid() == 0) {
+      printf("\nIteration %d Print PQ\n",iter+1);
+    }
     PQ->print();
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
 
     // Create linear solver
     gridpack::math::LinearSolver solver(*J);
+    if (GA_Nodeid() == 0) {
+      printf("\nIteration %d Print X\n",iter+1);
+    }
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
     X->print();
 
     tol = X->norm2();
+    if (GA_Nodeid() == 0) {
+      printf("\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+    }
     iter++;
   }
 #endif

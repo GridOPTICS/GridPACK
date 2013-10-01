@@ -97,11 +97,11 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
       values[2] = p_Pinj / p_v + p_ybusr * p_v; 
       values[3] = p_Qinj / p_v - p_ybusi * p_v; 
       // Fix up matrix elements if bus is PV bus
-      /*      if (p_isPV) {
-              values[1] = 0.0;
-              values[2] = 0.0;
-              values[3] = 1.0;
-              } */
+      if (p_isPV) {
+        values[1] = 0.0;
+        values[2] = 0.0;
+        values[3] = 1.0;
+      }
     } else {
       values[0] = 1.0;
       values[1] = 0.0;
@@ -139,8 +139,8 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
 {
   if (p_mode == S_Cal)  {
     double pi = 4.0*atan(1.0);
-    values[0] = p_v * cos(p_a*pi/180.0);
-    values[1] = p_v * sin(p_a*pi/180.0);
+    values[0] = p_v * cos(p_a);
+    values[1] = p_v * sin(p_a);
     printf ("p_v = %f, p_a = %f\n", p_v, p_a*pi/180.0);
     return true;
   }
@@ -212,10 +212,14 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
  */
 void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 {
-  *p_vAng_ptr = *p_vAng_ptr + real(values[0]);
-  *p_vMag_ptr = *p_vMag_ptr + real(values[1]);
-  p_a = *p_vAng_ptr;
-  p_v = *p_vMag_ptr;
+  p_a -= real(values[0]);
+  p_v -= real(values[1]);
+//  *p_vAng_ptr = *p_vAng_ptr - real(values[0]);
+//  *p_vMag_ptr = *p_vMag_ptr - real(values[1]);
+  *p_vAng_ptr = p_a;
+  *p_vMag_ptr = p_v;
+  printf("rx: %12.6f ix: %12.6f  p_a: %12.6f p_v: %12.6f\n",
+      real(values[0]),real(values[1]),p_a,p_v);
 }
 
 /**
@@ -286,6 +290,9 @@ void gridpack::powerflow::PFBus::load(
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
   p_v = p_voltage;
+  printf("P_V: %f\n",p_v);
+  double pi = 4.0*atan(1.0);
+  p_angle = p_angle*pi/180.0;
   p_a = p_angle;
   p_shunt = true;
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
@@ -368,7 +375,7 @@ bool gridpack::powerflow::PFBus::isPV(void)
  */
 double gridpack::powerflow::PFBus::getPhase()
 {
-  return p_angle;
+  return p_a;
 }
 
 /**
@@ -548,7 +555,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       // fix up matrix if one or both buses at the end of the branch is a PV bus
       bool bus1PV = bus1->isPV();
       bool bus2PV = bus2->isPV();
-/*      if (bus1PV & bus2PV) {
+      if (bus1PV & bus2PV) {
         values[1] = 0.0;
         values[2] = 0.0;
         values[3] = 0.0;
@@ -559,7 +566,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
         values[2] = 0.0;
         values[3] = 0.0;
       }
-*/      return true;
+      return true;
     } else {
       return false;
     }
@@ -596,7 +603,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       // fix up matrix if one or both buses at the end of the branch is a PV bus
       bool bus1PV = bus1->isPV();
       bool bus2PV = bus2->isPV();
-/*      if (bus1PV & bus2PV) {
+      if (bus1PV & bus2PV) {
         values[1] = 0.0;
         values[2] = 0.0;
         values[3] = 0.0;
@@ -607,7 +614,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
         values[1] = 0.0;
         values[3] = 0.0;
       }
-*/      return true;
+      return true;
     } else {
       return false;
     }
@@ -645,7 +652,7 @@ void gridpack::powerflow::PFBranch::setYBus(void)
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   //p_theta = bus1->getPhase() - bus2->getPhase();
   double pi = 4.0*atan(1.0);
-  p_theta = (bus1->getPhase() - bus2->getPhase()) * pi / 180.0;
+  p_theta = (bus1->getPhase() - bus2->getPhase());
   //printf("p_phase_shift: %12.6f\n",p_phase_shift);
   //printf("p_theta: %12.6f\n",p_theta);
   //printf("p_tap_ratio: %12.6f\n",p_tap_ratio);
