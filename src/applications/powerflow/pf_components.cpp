@@ -218,7 +218,7 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 //  *p_vMag_ptr = *p_vMag_ptr - real(values[1]);
   *p_vAng_ptr = p_a;
   *p_vMag_ptr = p_v;
-  printf("rx: %12.6f ix: %12.6f  p_a: %12.6f p_v: %12.6f\n",
+  printf("da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
       real(values[0]),real(values[1]),p_a,p_v);
 }
 
@@ -239,6 +239,11 @@ void gridpack::powerflow::PFBus::setXCBuf(void *buf)
 {
   p_vAng_ptr = (double*)buf;
   p_vMag_ptr = p_vAng_ptr+1;
+  // Note: we are assuming that the load function has been called BEFORE
+  // the factory setExchange method, so p_a and p_v are set with their initial
+  // values.
+  *p_vAng_ptr = p_a;
+  *p_vMag_ptr = p_v;
 }
 
 void gridpack::powerflow::PFBus::setYBus(void)
@@ -356,7 +361,7 @@ void gridpack::powerflow::PFBus::setMode(int mode)
  */
 double gridpack::powerflow::PFBus::getVoltage()
 {
-  return p_voltage;
+  return *p_vMag_ptr;
 }
 
 /**
@@ -375,7 +380,7 @@ bool gridpack::powerflow::PFBus::isPV(void)
  */
 double gridpack::powerflow::PFBus::getPhase()
 {
-  return p_a;
+  return *p_vAng_ptr;
 }
 
 /**

@@ -72,38 +72,43 @@ void gridpack::powerflow::PFApp::execute(void)
   // set network components using factory
   factory.setComponents();
 
-  // set YBus components so that you can create Y matrix
-  factory.setYBus();
-
-  factory.setMode(YBus); 
-  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  Y->print();
-
-  // make Sbus components to create S vector
-  factory.setSBus();
-  if (GA_Nodeid() == 0) {
-    printf("\nIteration 0\n");
-  }
-
-  // Set PQ
-  factory.setMode(RHS); 
-  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-  PQ->print();
-
-  factory.setMode(Jacobian);
-  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-  J->print(); 
-
   // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
   factory.setExchange();
 
   // Create bus data exchange
   network->initBusUpdate();
-  // network->updateBuses();
+
+
+  // set YBus components so that you can create Y matrix
+  factory.setYBus();
+
+  // Create serial IO object to export data from buses
+  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
+  char ioBuf[128];
+
+  factory.setMode(YBus); 
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+  busIO.header("\nY-matrix values\n");
+  Y->print();
+
+  // make Sbus components to create S vector
+  factory.setSBus();
+  busIO.header("\nIteration 0\n");
+
+  // Set PQ
+  factory.setMode(RHS); 
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  busIO.header("\nPQ values\n");
+  PQ->print();
+
+  factory.setMode(Jacobian);
+  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+  busIO.header("\nJacobian values\n");
+  J->print(); 
 
   // FIXME: how does one obtain the current network state (voltage/phase in this case)?
   // get the current network state vector
@@ -150,7 +155,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // These need to eventually be set using configuration file
   tolerance = 1.0e-6;
-  max_iteration = 100;
+  max_iteration = 1;
 
   // Create linear solver
   gridpack::math::LinearSolver isolver(*J);
@@ -160,9 +165,14 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // First iteration
   X->zero(); //might not need to do this
+  busIO.header("\nCalling solver\n");
   isolver.solve(*PQ, *X);
   tol = X->norm2();
+  busIO.header("\nX values\n");
   X->print();
+
+  // Exchange new values
+  network->updateBuses();
 
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
@@ -177,31 +187,27 @@ void gridpack::powerflow::PFApp::execute(void)
     // Create new versions of Jacobian and PQ vector
     factory.setMode(RHS);
     vMap.mapToVector(PQ);
-    if (GA_Nodeid() == 0) {
-      printf("\nIteration %d Print PQ\n",iter+1);
-    }
+    sprintf(ioBuf,"\nIteration %d Print PQ\n",iter+1);
+    busIO.header(ioBuf);
     PQ->print();
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
 
     // Create linear solver
     gridpack::math::LinearSolver solver(*J);
-    if (GA_Nodeid() == 0) {
-      printf("\nIteration %d Print X\n",iter+1);
-    }
+    sprintf(ioBuf,"\nIteration %d Print X\n",iter+1);
+    busIO.header(ioBuf);
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
     X->print();
 
     tol = X->norm2();
-    if (GA_Nodeid() == 0) {
-      printf("\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
-    }
+    sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+    busIO.header(ioBuf);
     iter++;
   }
 #endif
 
-  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   busIO.write();
