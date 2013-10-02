@@ -1,7 +1,7 @@
 /**
  * @file   newton_raphson_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-10 11:48:46 d3g096
+ * @date   2013-10-02 07:49:59 d3g096
  * 
  * @brief  
  * 
@@ -26,11 +26,11 @@ NewtonRaphsonSolverImplementation::NewtonRaphsonSolverImplementation(const paral
                                                                      JacobianBuilder form_jacobian,
                                                                      FunctionBuilder form_function)
   : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
-  p_tolerance(1.0e-06),
-  p_max_iterations(100),
-  p_linear_solver()
+    p_tolerance(1.0e-03),
+    p_max_iterations(1),
+    p_linear_solver()
 {
-  
+  this->configurationKey("NewtonRaphsonSolver");
 }
 
 NewtonRaphsonSolverImplementation::~NewtonRaphsonSolverImplementation(void)
@@ -66,6 +66,19 @@ NewtonRaphsonSolverImplementation::p_solve(void)
                 << "iteration " << iter << ": "
                 << tol << std::endl;
     }
+  }
+}
+
+// -------------------------------------------------------------
+// NewtonRaphsonSolverImplementation::p_configure
+// -------------------------------------------------------------
+void
+NewtonRaphsonSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+{
+  if (props != NULL) {
+    p_tolerance = props->get("Tolerance", p_tolerance);
+    p_max_iterations = props->get("MaxIterations", p_max_iterations);
+    
   }
 }
 

@@ -1,7 +1,7 @@
 /**
  * @file   nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-26 15:56:28 d3g096
+ * @date   2013-10-02 07:49:10 d3g096
  * 
  * @brief  Abstract class NonlinearSolverImplementation implementation 
  * 
@@ -33,7 +33,9 @@ NonlinearSolverImplementation::NonlinearSolverImplementation(const parallel::Com
                                                              const int& local_size,
                                                              JacobianBuilder form_jacobian,
                                                              FunctionBuilder form_function)
-  : parallel::Distributed(comm), utility::Uncopyable(),
+  : parallel::Distributed(comm), 
+    utility::Configurable("NonlinearSolver"), 
+    utility::Uncopyable(),
     p_J(), p_F(), 
     p_X((Vector *)NULL, null_deleter()),  // pointer set by solve()
     p_jacobian(form_jacobian), 

@@ -1,7 +1,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-26 16:04:43 d3g096
+ * @date   2013-10-01 14:41:07 d3g096
  * 
  * @brief  
  * 
@@ -165,7 +165,14 @@ PetscNonlinearSolverImplementation::p_solve(void)
   }
 }
 
+// -------------------------------------------------------------
+// PetscNonlinearSolverImplementation::p_configure
+// -------------------------------------------------------------
+void
+PetscNonlinearSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+{
 
+}
 
 } // namespace math
 } // namespace gridpack

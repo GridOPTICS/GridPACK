@@ -3,11 +3,15 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-09-09 11:36:46 d3g096
+# Last Change: 2013-10-02 08:36:32 d3g096
 # -------------------------------------------------------------
 
 set(gridpack_math_sources)
-set(target_libraries gridpack_parallel ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+set(target_libraries 
+  gridpack_configuration 
+  gridpack_parallel 
+  ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES}
+)
 
 # implementation independent math sources
 list(APPEND gridpack_math_sources
@@ -52,14 +56,26 @@ if (PETSC_FOUND)
 
     set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
 
-    # This is temporary.  It's used to set the PETSc options in the
+    # PETSc-specific GridPACK configuration file(s) for test suites
+    # gridpack.petsrc is temporary.  It's used to set the PETSc options in the
     # linear solver test.  It should not be necessary when a usable
     # configuration system is available.
-    add_custom_target(petscrc
-      COMMAND ${CMAKE_COMMAND} -E copy 
-         ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
-         ${CMAKE_CURRENT_BINARY_DIR})
+    add_custom_target(math_test_input
 
+      COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+      ${CMAKE_CURRENT_BINARY_DIR}
+
+      COMMAND ${CMAKE_COMMAND} -E copy 
+      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.xml
+      ${CMAKE_CURRENT_BINARY_DIR}
+
+      DEPENDS
+      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.xml
+
+      )
+       
 else()
 
     message(FATAL_ERROR "A math implementation (e.g. PETSc) must be specified")
@@ -93,7 +109,6 @@ install(TARGETS
   gridpack_math
   DESTINATION lib
 )
-  
 
 # -------------------------------------------------------------
 # vector test suite
@@ -124,7 +139,7 @@ add_executable(linear_solver_test test/linear_solver_test.cpp)
 target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(linear_solver linear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(linear_solver_test petscrc)
+   add_dependencies(linear_solver_test petscrc math_test_input)
 endif()
 
 # -------------------------------------------------------------
@@ -134,5 +149,9 @@ add_executable(nonlinear_solver_test test/nonlinear_solver_test.cpp)
 target_link_libraries(nonlinear_solver_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(nonlinear_solver nonlinear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(nonlinear_solver_test petscrc)
+   add_dependencies(nonlinear_solver_test petscrc math_test_input)
 endif()
+
+
+  
+

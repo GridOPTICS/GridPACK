@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-09 11:41:42 d3g096
+# Last Change: 2013-10-02 07:26:59 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -39,6 +39,32 @@ add_executable(powerflow.x
 
 target_link_libraries(powerflow.x ${target_libraries})
 
+# Put files necessary to run powerflow.x in binary directory.
+# gridpack.petscrc is temporary -- it will be incorporated into
+# input.xml
+
+add_custom_target(powerflow.x.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+  
+
+)
+add_dependencies(powerflow.x powerflow.x.input)
 
 # -------------------------------------------------------------
 # TEST: pf_network_test

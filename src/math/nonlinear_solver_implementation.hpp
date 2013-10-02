@@ -3,7 +3,7 @@
 /**
  * @file   nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-08-12 11:14:43 d3g096
+ * @date   2013-10-01 14:38:28 d3g096
  * 
  * @brief  
  * 
@@ -19,6 +19,7 @@
 #include <gridpack/math/nonlinear_solver_functions.hpp>
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/configuration/configurable.hpp>
 
 namespace gridpack {
 namespace math {
@@ -28,6 +29,7 @@ namespace math {
 // -------------------------------------------------------------
 class NonlinearSolverImplementation 
   : public parallel::Distributed,
+    public utility::Configurable,
     private utility::Uncopyable
 {
 public:

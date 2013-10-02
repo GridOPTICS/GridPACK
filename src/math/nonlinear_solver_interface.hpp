@@ -3,7 +3,7 @@
 /**
  * @file   nonlinear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2013-09-10 09:38:52 d3g096
+ * @date   2013-10-01 13:53:04 d3g096
  * 
  * @brief  
  * 
@@ -48,6 +48,12 @@ public:
 
   /// Destructor
   ~NonlinearSolverInterface(void);
+
+  /// Configure and do whatever is necessary to make this instance ready
+  void configure(utility::Configuration::Cursor *props)
+  {
+    p_impl->configure(props);
+  }
 
   /// Solve w/ the specified initial estimated, put result in same vector
   /** 

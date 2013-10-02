@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created September  9, 2013 by William A. Perkins
-// Last Change: 2013-09-10 11:36:14 d3g096
+// Last Change: 2013-10-01 14:31:44 d3g096
 // -------------------------------------------------------------
 
 
@@ -151,6 +151,8 @@ protected:
   /// Solve w/ using the specified initial guess (specialized)
   void p_solve(void);
 
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::Cursor *props);
 };
 
 

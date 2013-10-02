@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-09-10 12:28:30 d3g096
+# Last Change: 2013-10-01 12:23:57 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -141,7 +141,6 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     )
 endif()
 
-
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # -------------------------------------------------------------
@@ -149,6 +148,7 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 # -------------------------------------------------------------
 add_subdirectory(utilities)
 add_subdirectory(parallel)
+add_subdirectory(configuration)
 add_subdirectory(math)
 add_subdirectory(component)
 add_subdirectory(partition)
@@ -156,7 +156,6 @@ add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(mapper)
 add_subdirectory(applications/powerflow)
-add_subdirectory(applications/dynamic_simulation)
+#add_subdirectory(applications/dynamic_simulation)
 add_subdirectory(parser)
 add_subdirectory(serial_io)
-add_subdirectory(configuration)

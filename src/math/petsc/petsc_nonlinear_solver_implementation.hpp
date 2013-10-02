@@ -1,7 +1,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-08-12 11:55:03 d3g096
+ * @date   2013-10-01 14:40:16 d3g096
  * 
  * @brief  
  * 
@@ -47,6 +47,9 @@ protected:
 
   /// Solve w/ using the specified initial guess (specialized)
   void p_solve(void);
+
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::Cursor *props);
 
   /// Routine to assemble Jacobian that is sent to PETSc
   static PetscErrorCode FormJacobian(SNES snes, Vec x, Mat *jac, Mat *B, 
