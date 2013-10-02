@@ -1,6 +1,6 @@
 // -------------------------------------------------------------
 /**
- * @file   dynsim_factory.cpp
+ * @file   ds_factory.cpp
  * @author Shuangshuang Jin 
  * @date   September 19, 2013
  * 
@@ -14,13 +14,13 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/dynamic_simulation/dynsim_components.hpp"
-#include "gridpack/applications/dynamic_simulation/dynsim_factory.hpp"
+#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
+#include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 
 namespace gridpack {
-namespace dynsim {
+namespace dynamic_simulation {
 
 // Powerflow factory class implementations
 
@@ -28,8 +28,8 @@ namespace dynsim {
  * Basic constructor
  * @param network: network associated with factory
  */
-DynSimFactory::DynSimFactory(DynSimFactory::NetworkPtr network)
-  : gridpack::factory::BaseFactory<DynSimNetwork>(network)
+DSFactory::DSFactory(DSFactory::NetworkPtr network)
+  : gridpack::factory::BaseFactory<DSNetwork>(network)
 {
   p_network = network;
 }
@@ -37,14 +37,14 @@ DynSimFactory::DynSimFactory(DynSimFactory::NetworkPtr network)
 /**
  * Basic destructor
  */
-gridpack::dynsim::DynSimFactory::~DynSimFactory()
+gridpack::dynamic_simulation::DSFactory::~DSFactory()
 {
 }
 
 /**
  * Create the admittance (Y-Bus) matrix
  */
-void gridpack::dynsim::DynSimFactory::setYBus(void)
+void gridpack::dynamic_simulation::DSFactory::setYBus(void)
 {
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
@@ -52,14 +52,14 @@ void gridpack::dynsim::DynSimFactory::setYBus(void)
 
   // Invoke setYBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    (dynamic_cast<gridpack::dynsim::DynSimBus*>(p_network->getBus(i).get()))->setYBus();
+    (dynamic_cast<DSBus*>(p_network->getBus(i).get()))->setYBus();
   }
 
   // Invoke setYBus method on all branch objects
   for (i=0; i<numBranch; i++) {
-    (dynamic_cast<gridpack::dynsim::DynSimBranch*>(p_network->getBranch(i).get()))->setYBus();
+    (dynamic_cast<DSBranch*>(p_network->getBranch(i).get()))->setYBus();
   }
 }
 
-} // namespace dynsim
+} // namespace dynamic_simulation
 } // namespace gridpack

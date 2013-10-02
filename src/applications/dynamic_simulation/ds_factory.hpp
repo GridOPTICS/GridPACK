@@ -1,6 +1,6 @@
 // -------------------------------------------------------------
 /**
- * @file   dynsim_factory.hpp
+ * @file   ds_factory.hpp
  * @author Shuangshuang Jin 
  * @date   September 19, 2013
  * 
@@ -10,30 +10,30 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _dynsim_factory_h_
-#define _dynsim_factory_h_
+#ifndef _ds_factory_h_
+#define _ds_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/dynamic_simulation/dynsim_components.hpp"
+#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
 #include "gridpack/math/matrix.hpp"
 
 namespace gridpack {
-namespace dynsim {
+namespace dynamic_simulation {
 
-class DynSimFactory
-  : public gridpack::factory::BaseFactory<DynSimNetwork> {
+class DSFactory
+  : public gridpack::factory::BaseFactory<DSNetwork> {
   public:
     /**
      * Basic constructor
      * @param network: network associated with factory
      */
-    DynSimFactory(NetworkPtr network);
+    DSFactory(NetworkPtr network);
 
     /**
      * Basic destructor
      */
-    ~DynSimFactory();
+    ~DSFactory();
 
     /**
      * Create the admittance (Y-Bus) matrix
@@ -45,6 +45,6 @@ class DynSimFactory
     NetworkPtr p_network;
 };
 
-} // dynsim
+} // dynamic_simulation
 } // gridpack
 #endif

@@ -1,6 +1,6 @@
 // -------------------------------------------------------------
 /**
- * @file   dynsim_components.hpp
+ * @file   ds_components.hpp
  * @author Shuangshuang Jin 
  * @date   September 19, 2013
  * 
@@ -10,8 +10,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _dynsim_components_h_
-#define _dynsim_components_h_
+#ifndef _ds_components_h_
+#define _ds_components_h_
 
 /**
  * Some preprocessor string declarations. These will need to be put in an
@@ -42,23 +42,22 @@
 #include "gridpack/network/base_network.hpp"
 
 namespace gridpack {
-namespace dynsim {
+namespace dynamic_simulation {
 
-//enum DynSimMode{YBUS, JACOBIAN, GENERATOR};
-enum DynSimMode{YL, PERM, YA, YB, PMatrix};
+enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix};
 
-class DynSimBus
+class DSBus
   : public gridpack::component::BaseBusComponent {
   public:
     /**
      *  Simple constructor
      */
-    DynSimBus(void);
+    DSBus(void);
 
     /**
      *  Simple destructor
      */
-    ~DynSimBus(void);
+    ~DSBus(void);
 
     /**
      * Return size of matrix block on the diagonal contributed by
@@ -76,7 +75,7 @@ class DynSimBus
      * @return: false if network component does not contribute
      *        matrix element
      */
-    bool matrixDiagValues(void *values);
+    bool matrixDiagValues(ComplexType *values);
 
     /**
      * Return size of vector block contributed by component
@@ -92,7 +91,7 @@ class DynSimBus
      * @return: false if network component does not contribute
      *        vector element
      */
-    bool vectorValues(void *values);
+    bool vectorValues(ComplexType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -101,7 +100,7 @@ class DynSimBus
     void setYBus(void);
 
     /**
-     * Load values stored in DataCollection object into DynSimBus object. The
+     * Load values stored in DataCollection object into DSBus object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
      * @param data: DataCollection object contain parameters relevant to this
@@ -128,21 +127,14 @@ class DynSimBus
      */
     double getPhase(void);
 
-    /**
-     * Return whether or not the bus is a generator
-     * @return: true if bus is geneartor
-     */
-    bool isGen();
-
   private:
-    //double p_shunt_gs;
-    //double p_shunt_bs;
-    //bool p_shunt;
+    double p_shunt_gs;
+    double p_shunt_bs;
+    bool p_shunt;
     int p_mode;
-    //double p_v, p_theta;
+    double p_theta; // phase angle difference
     double p_ybusr, p_ybusi;
-    //double p_P0, p_Q0;
-    double p_voltage;
+    double p_angle, p_voltage;
     bool p_load;
     double p_pl, p_ql;
     double p_sbase;
@@ -151,21 +143,21 @@ class DynSimBus
     std::vector<int> p_gstatus;
     std::vector<double> p_mva, p_r, p_dstr, p_dtr;
     int p_ngen;
-    int ngen;
+    int p_type;
 };
 
-class DynSimBranch
+class DSBranch
   : public gridpack::component::BaseBranchComponent {
   public:
     /**
      *  Simple constructor
      */
-    DynSimBranch(void);
+    DSBranch(void);
 
     /**
      *  Simple destructor
      */
-    ~DynSimBranch(void);
+    ~DSBranch(void);
 
     /**
      * Return size of off-diagonal matrix block contributed by the component
@@ -182,8 +174,8 @@ class DynSimBranch
      * @param values: pointer to matrix block values
      * @return: false if network component does not contribute matrix element
      */
-    bool matrixForwardValues(void *values);
-    bool matrixReverseValues(void *values);
+    bool matrixForwardValues(ComplexType *values);
+    bool matrixReverseValues(ComplexType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -192,7 +184,7 @@ class DynSimBranch
     void setYBus(void);
 
     /**
-     * Load values stored in DataCollection object into DynSimBranch object. The
+     * Load values stored in DataCollection object into DSBranch object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
      * @param data: DataCollection object contain parameters relevant to this
@@ -204,7 +196,7 @@ class DynSimBranch
      * Return the complex admittance of the branch
      * @return: complex addmittance of branch
      */
-    //gridpack::ComplexType getAdmittance(void);
+    gridpack::ComplexType getAdmittance(void);
 
     /**
      * Return transformer contribution from the branch to the calling
@@ -212,37 +204,21 @@ class DynSimBranch
      * @param bus: pointer to the bus making the call
      * @return: contribution from transformers to Y matrix
      */
-    //gridpack::ComplexType getTransformer(DynSimBus *bus);
+    gridpack::ComplexType getTransformer(DSBus *bus);
 
     /**
      * Return the contribution to a bus from shunts
      * @param bus: pointer to the bus making the call
      * @return: contribution to Y matrix from shunts associated with branches
      */
-    //gridpack::ComplexType getShunt(DynSimBus *bus);
-
-    /**
-     * Return the contribution to the Jacobian for the powerflow equations from
-     * a branch
-     * @param bus: pointer to the bus making the call
-     * @param values: an array of 4 doubles that holds return metrix elements
-     * @return: contribution to Jacobian matrix from branch
-     */
-    //void getJacobian(DynSimBus *bus, double *values);
-
-    /**
-     * Return contribution to constraints
-     * @param p: real part of constraint
-     * @param q: imaginary part of constraint
-     */
-    //void getPQ(DynSimBus *bus, double *p, double *q);
+    gridpack::ComplexType getShunt(DSBus *bus);
 
     /**
      * Set the mode to control what matrices and vectors are built when using
      * the mapper
      * @param mode: enumerated constant for different modes
      */
-    //void setMode(int mode);
+    void setMode(int mode);
 
   private:
     double p_reactance;
@@ -256,10 +232,18 @@ class DynSimBranch
     double p_shunt_admt_b2;
     bool p_xform, p_shunt;
     int p_mode;
-    double p_ybusr, p_ybusi;
+    double p_ybusr_frwd, p_ybusi_frwd;
+    double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
 };
 
-}     // dynsim
+/// The type of network used in the dynamic_simulation application
+typedef network::BaseNetwork<DSBus, DSBranch > DSNetwork;
+
+}     // dynamic_simulation
 }     // gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBus);
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBranch);
+
 #endif

@@ -25,14 +25,14 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-add_executable(dynsim.x
-   dynsim_app.cpp
-   dynsim_components.cpp
-   dynsim_factory.cpp
-   dynsim_main.cpp
+add_executable(ds.x
+   ds_app.cpp
+   ds_components.cpp
+   ds_factory.cpp
+   ds_main.cpp
 )
 
-target_link_libraries(dynsim.x ${target_libraries})
+target_link_libraries(ds.x ${target_libraries})
 
 
 # -------------------------------------------------------------
