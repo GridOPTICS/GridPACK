@@ -108,7 +108,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   printf("\n=== Y_a: ============\n");
   Y_a->print(); 
 
-/*  boost::shared_ptr<gridpack::math::Matrix> diagY_a;
+  /*boost::shared_ptr<gridpack::math::Matrix> diagY_a;
   diagY_a->gridpack::math::Matrix::identity();
   diagY_a->print();
 
@@ -118,8 +118,12 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   //diagY_a->gridpack::math::Matrix::muitiplyDiagonal(*vY_a); //???
   //diagY_a->muitiplyDiagonal(*vY_a); //???
   printf("\n=== diagY_a: ============\n");
+  diagY_a->print(); */
+
+  boost::shared_ptr<gridpack::math::Matrix> diagY_a = Y_a;
+  printf("\n=== diagY_a: ============\n");
   diagY_a->print(); 
-*/
+
 /*  // Construct matrix Ymod: Ymod = diagY_a * permTrans
   //boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans)); //???
  
