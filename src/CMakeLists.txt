@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-10-01 12:23:57 d3g096
+# Last Change: 2013-10-02 08:47:00 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -156,6 +156,6 @@ add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(mapper)
 add_subdirectory(applications/powerflow)
-#add_subdirectory(applications/dynamic_simulation)
+add_subdirectory(applications/dynamic_simulation)
 add_subdirectory(parser)
 add_subdirectory(serial_io)
