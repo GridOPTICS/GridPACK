@@ -354,7 +354,8 @@ class PFBranch
     double p_shunt_admt_b2;
     bool p_xform, p_shunt;
     int p_mode;
-    double p_ybusr, p_ybusi;
+    double p_ybusr_frwd, p_ybusi_frwd;
+    double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
 
 private:
@@ -377,7 +378,8 @@ private:
       & p_shunt_admt_b2
       & p_xform & p_shunt
       & p_mode
-      & p_ybusr & p_ybusi
+      & p_ybusr_frwd & p_ybusi_frwd
+      & p_ybusr_rvrs & p_ybusi_rvrs
       & p_theta;
   }  
 

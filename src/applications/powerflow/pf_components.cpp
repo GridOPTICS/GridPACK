@@ -264,7 +264,7 @@ void gridpack::powerflow::PFBus::setYBus(void)
     gridpack::powerflow::PFBranch *branch
       = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
     ret -= branch->getAdmittance();
-    //ret += branch->getTransformer(this);
+    ret -= branch->getTransformer(this);
     //ret -= branch->getTransformer(this); //YChen 9-5-2013: Doesn't work for tap ratio not equal to 1.0 cases yet. 
     ret += branch->getShunt(this);
   }
@@ -555,10 +555,10 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       double t11, t12, t21, t22;
       double cs = cos(p_theta);
       double sn = sin(p_theta);
-      values[0] = (p_ybusr*sn - p_ybusi*cs);
-      values[1] = (p_ybusr*cs + p_ybusi*sn);
-      values[2] = (p_ybusr*cs + p_ybusi*sn);
-      values[3] = (p_ybusr*sn - p_ybusi*cs);
+      values[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+      values[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+      values[2] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+      values[3] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
       values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
       values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
       values[2] *= bus1->getVoltage();
@@ -582,10 +582,10 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       return false;
     }
   } else {
-    values[0] = p_ybusr;
-    values[1] = p_ybusi;
-    values[2] = -p_ybusi;
-    values[3] = p_ybusr;
+    values[0] = p_ybusr_frwd;
+    values[1] = p_ybusi_frwd;
+    values[2] = -p_ybusi_frwd;
+    values[3] = p_ybusr_frwd;
     return true;
   }
 }
@@ -603,10 +603,10 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);
       double sn = sin(-p_theta);
-      values[0] = (p_ybusr*sn - p_ybusi*cs);
-      values[1] = (p_ybusr*cs + p_ybusi*sn);
-      values[2] = (p_ybusr*cs + p_ybusi*sn);
-      values[3] = (p_ybusr*sn - p_ybusi*cs);
+      values[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
+      values[1] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
+      values[2] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
+      values[3] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
       values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
       values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
       values[2] *= bus2->getVoltage();
@@ -630,10 +630,10 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       return false;
     }
   } else {
-    values[0] = p_ybusr;
-    values[1] = p_ybusi;
-    values[2] = -p_ybusi;
-    values[3] = p_ybusr;
+    values[0] = p_ybusr_rvrs;
+    values[1] = p_ybusi_rvrs;
+    values[2] = -p_ybusi_rvrs;
+    values[3] = p_ybusr_rvrs;
     return true;
   }
 }
@@ -653,8 +653,17 @@ void gridpack::powerflow::PFBranch::setYBus(void)
     ret = - ret/conj(a); // YChen 9-5-2013: This is for the from end, need to have another one for to end. Equation is ret = - ret/a;
   }*/ 
   //printf("imag(ret)=%lf\n", imag(ret));
-  p_ybusr = real(ret);
-  p_ybusi = imag(ret);
+  if (p_xform) {
+    p_ybusr_frwd = real(ret/conj(a));
+    p_ybusi_frwd = imag(ret/conj(a));
+    p_ybusr_rvrs = real(ret/a);
+    p_ybusi_rvrs = imag(ret/a);
+  } else {
+    p_ybusr_frwd = real(ret);
+    p_ybusi_frwd = imag(ret);
+    p_ybusr_rvrs = real(ret);
+    p_ybusi_rvrs = imag(ret);
+  }
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
   gridpack::powerflow::PFBus *bus1 =
@@ -726,7 +735,12 @@ void gridpack::powerflow::PFBranch::setMode(int mode)
 gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
 {
   gridpack::ComplexType ret(p_resistance, p_reactance);
-  return -1.0/ret;
+  if (!p_xform) {
+    ret = -1.0/ret;
+  } else {
+    ret = gridpack::ComplexType(0.0,0.0);
+  }
+  return ret;
 }
 
 /**
@@ -738,9 +752,22 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
 gridpack::ComplexType
 gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
 {
-  /*if (p_xform) {
-    gridpack::ComplexType ret(p_resistance,p_reactance);
+  gridpack::ComplexType ret(p_resistance,p_reactance);
+  if (p_xform) {
     ret = -1.0/ret;
+    gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
+    a = p_tap_ratio*a;
+    if (bus == getBus1().get()) {
+      ret = ret/(conj(a)*a);
+    } else if (bus == getBus2().get()) {
+      // ret is unchanged
+    }
+  } else {
+    ret = gridpack::ComplexType(0.0,0.0);
+  }
+  return ret;
+
+  /*if (p_xform) {
     // HACK: pointer comparison, maybe could handle this better
     if (bus == getBus1().get()) {
       printf("p_xform is on, p_tap_ratio= %f, bus = %d\n", p_tap_ratio, bus);
@@ -752,9 +779,9 @@ gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
     }
     return ret;
   } else {*/
-    printf("p_xform is off\n");
-    gridpack::ComplexType ret(0.0,0.0);
-    return ret;
+//    printf("p_xform is off\n");
+//    gridpack::ComplexType ret(0.0,0.0);
+//    return ret;
   //}
 }
 
@@ -799,25 +826,30 @@ void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus,
 {
   double v;
   double cs, sn;
+  double ybusr, ybusi;
   if (bus == getBus1().get()) {
     gridpack::powerflow::PFBus *bus2 =
       dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     v = bus2->getVoltage();
     cs = cos(p_theta);
     sn = sin(p_theta);
+    ybusr = p_ybusr_frwd;
+    ybusi = p_ybusi_frwd;
   } else if (bus == getBus2().get()) {
     gridpack::powerflow::PFBus *bus1 =
       dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     v = bus1->getVoltage();
     cs = cos(-p_theta);
     sn = sin(-p_theta);
+    ybusr = p_ybusr_rvrs;
+    ybusi = p_ybusi_rvrs;
   } else {
     // TODO: Some kind of error
   }
-  values[0] = v*(p_ybusr*sn - p_ybusi*cs);
-  values[1] = -v*(p_ybusr*cs + p_ybusi*sn);
-  values[2] = (p_ybusr*cs + p_ybusi*sn);
-  values[3] = (p_ybusr*sn - p_ybusi*cs);
+  values[0] = v*(ybusr*sn - ybusi*cs);
+  values[1] = -v*(ybusr*cs + ybusi*sn);
+  values[2] = (ybusr*cs + ybusi*sn);
+  values[3] = (ybusr*sn - ybusi*cs);
 }
 
 /**
@@ -834,20 +866,25 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   double v2 = bus2->getVoltage();
   double cs, sn;
+  double ybusr, ybusi;
   p_theta = bus1->getPhase() - bus2->getPhase();
   if (bus == bus1) {
     cs = cos(p_theta);
     sn = sin(p_theta);
+    ybusr = p_ybusr_frwd;
+    ybusi = p_ybusi_frwd;
   } else if (bus == bus2) {
     cs = cos(-p_theta);
     sn = sin(-p_theta);
+    ybusr = p_ybusr_rvrs;
+    ybusi = p_ybusi_rvrs;
   } else {
     // TODO: Some kind of error
   }
   //*p = -v1*v2*(p_ybusr*cs-p_ybusi*sn);
   //*q = v1*v2*(p_ybusr*sn+p_ybusi*cs);
-  *p = v1*v2*(p_ybusr*cs+p_ybusi*sn);
-  *q = v1*v2*(p_ybusr*sn-p_ybusi*cs);
+  *p = v1*v2*(ybusr*cs+ybusi*sn);
+  *q = v1*v2*(ybusr*sn-ybusi*cs);
 //  printf("v1=%f, v2=%f, cs=%f, sn=%f, p_ybusr=%f, p_ybusi=%f\n", v1,v2,cs,sn,p_ybusr,p_ybusi);
 //  printf("*p=%f,*q=%f\n",*p,*q);
 }
