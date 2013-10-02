@@ -100,20 +100,24 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   printf("\n=== permTrans: ============\n");
   permTrans->print();
 
-/*  // Construct matrix Y_a using extracted xd and ra from gen data, 
+  // Construct matrix Y_a using extracted xd and ra from gen data, 
   // and construct its diagonal matrix diagY_a
   factory.setMode(YA);
   gridpack::mapper::FullMatrixMap<DSNetwork> yaMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y_a = yaMap.mapToMatrix();
+  printf("\n=== Y_a: ============\n");
   Y_a->print(); 
 
-  boost::shared_ptr<gridpack::math::Matrix> diagY_a;
+/*  boost::shared_ptr<gridpack::math::Matrix> diagY_a;
   diagY_a->gridpack::math::Matrix::identity();
+  diagY_a->print();
 
   boost::shared_ptr<gridpack::math::Vector> vY_a(diagonal(*Y_a)); 
+  vY_a->print();
 
   //diagY_a->gridpack::math::Matrix::muitiplyDiagonal(*vY_a); //???
   //diagY_a->muitiplyDiagonal(*vY_a); //???
+  printf("\n=== diagY_a: ============\n");
   diagY_a->print(); 
 */
 /*  // Construct matrix Ymod: Ymod = diagY_a * permTrans
