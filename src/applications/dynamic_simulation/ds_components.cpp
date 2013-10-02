@@ -392,7 +392,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
     return true;
   } else if (p_mode == GENERATOR) {
   }*/
-  if (p_mode == YBUS) {
+  if (p_mode == YBUS || p_mode == YL) {
     *isize = 2;
     *jsize = 2;
     return true;
@@ -421,10 +421,6 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
     *isize = 2;
     *jsize = 2;
     return true;
-  } else {
-    *isize = 2;
-    *jsize = 2;
-    return true;
   } 
 }
 
@@ -449,7 +445,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *va
     values[3] = 0;
     return true;*/
   } else {
-    return true;
+    return false;
   }
   /*if (p_mode == JACOBIAN) {
     gridpack::dynamic_simulation::DSBus *bus1 
@@ -498,7 +494,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *va
     values[3] = 0;
     return true;*/
   } else {
-    return true;
+    return false;
   }
   /*if (p_mode == JACOBIAN) {
     gridpack::dynamic_simulation::DSBus *bus1 

@@ -95,12 +95,12 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   printf("\n=== perm: ============\n");
   perm->print(); 
 
-/* 
   // Form a transposed matrix of perm
   boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
   printf("\n=== permTrans: ============\n");
   permTrans->print();
-  // Construct matrix Y_a using extracted xd and ra from gen data, 
+
+/*  // Construct matrix Y_a using extracted xd and ra from gen data, 
   // and construct its diagonal matrix diagY_a
   factory.setMode(YA);
   gridpack::mapper::FullMatrixMap<DSNetwork> yaMap(network);
