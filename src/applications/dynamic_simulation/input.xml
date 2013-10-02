@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Dynamic_simulation>
+    <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
+  </Dynamic_simulation>
+</Configuration>
