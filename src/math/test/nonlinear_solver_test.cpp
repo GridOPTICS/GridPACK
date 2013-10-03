@@ -1,7 +1,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-10-02 07:53:30 d3g096
+ * @date   2013-10-03 07:12:15 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -22,7 +22,7 @@
 #include "nonlinear_solver.hpp"
 #include "newton_raphson_solver.hpp"
 
-/// 
+/// The configuration used for these tests
 gridpack::utility::Configuration::Cursor *test_config;
 
 
@@ -73,6 +73,10 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
   gridpack::math::FunctionBuilder f = build_tiny_function_1();
 
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
+
+  BOOST_REQUIRE(test_config != NULL);
+  solver.configure(test_config);
+
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
   X.setElement(1, 0.25);
@@ -164,6 +168,10 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
   gridpack::math::FunctionBuilder f = &build_tiny_function_2;
 
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
+
+  BOOST_REQUIRE(test_config != NULL);
+  solver.configure(test_config);
+
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
   X.setElement(1, 3.00);
@@ -305,6 +313,10 @@ BOOST_AUTO_TEST_CASE( example2 )
   gridpack::math::FunctionBuilder f = thing;
 
   gridpack::math::NonlinearSolver solver(world, local_size, j, f);
+
+  BOOST_REQUIRE(test_config != NULL);
+  solver.configure(test_config);
+
   gridpack::math::Vector X(world, local_size);
   X.fill(0.5);
   X.ready();

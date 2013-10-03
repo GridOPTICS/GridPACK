@@ -11,7 +11,6 @@
       </PETScOptions>
     </LinearSolver>
     <NonlinearSolver>
-      <PETScPrefix>nls</PETScPrefix>
       <PETScOptions>
         -ksp_atol 1.0e-18
         -ksp_rtol 1.0e-10
@@ -22,6 +21,7 @@
         -snes_atol 1.0e-20
         -snes_rtol 1.0e-20
         -snes_max_it 100
+        -snes_view
       </PETScOptions>
     </NonlinearSolver>
     <NewtonRaphsonSolver>

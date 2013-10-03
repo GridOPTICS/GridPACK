@@ -1,7 +1,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-09-26 16:05:11 d3g096
+ * @date   2013-10-03 12:44:46 d3g096
  * 
  * @brief  
  * 
@@ -77,6 +77,7 @@ void
 PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
 {
   PetscErrorCode ierr(0);
+  int me(this->processor_rank());
   try {
     const Vec *bvec(PETScVector(b));
     Vec *xvec(PETScVector(x));
@@ -90,13 +91,13 @@ PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
     std::string msg;
     if (reason < 0) {
       msg = 
-        boost::str(boost::format("PETSc KSP diverged after %d iterations, reason: %d") % 
-                   its % reason);
+        boost::str(boost::format("%d: PETSc KSP diverged after %d iterations, reason: %d") % 
+                   me % its % reason);
       throw Exception(msg);
     } else {
       msg = 
-        boost::str(boost::format("PETSc KSP converged after %d iterations, reason: %d") % 
-                   its % reason);
+        boost::str(boost::format("%d: PETSc KSP converged after %d iterations, reason: %d") % 
+                   me % its % reason);
       std::cerr << msg << std::endl;
     }
     

@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-10-02 08:47:00 d3g096
+# Last Change: 2013-10-02 12:49:21 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -49,7 +49,7 @@ endif()
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.52 COMPONENTS mpi serialization REQUIRED)
+find_package(Boost 1.52 COMPONENTS mpi serialization random REQUIRED)
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------

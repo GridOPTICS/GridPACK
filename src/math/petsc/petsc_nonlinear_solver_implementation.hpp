@@ -1,7 +1,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-01 14:40:16 d3g096
+ * @date   2013-10-02 11:44:09 d3g096
  * 
  * @brief  
  * 
@@ -44,6 +44,9 @@ protected:
 
   /// A pointer to the PETSc vector part of ::p_X
   Vec *p_petsc_X;
+
+  /// Do what is necessary to build this instance
+  void p_build(const std::string& option_prefix);
 
   /// Solve w/ using the specified initial guess (specialized)
   void p_solve(void);
