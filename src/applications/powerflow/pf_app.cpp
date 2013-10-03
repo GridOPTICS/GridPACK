@@ -101,8 +101,8 @@ void gridpack::powerflow::PFApp::execute(void)
   factory.setMode(YBus); 
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  busIO.header("\nY-matrix values\n");
-  Y->print();
+//  busIO.header("\nY-matrix values\n");
+//  Y->print();
 
   // make Sbus components to create S vector
   factory.setSBus();
@@ -112,14 +112,17 @@ void gridpack::powerflow::PFApp::execute(void)
   factory.setMode(RHS); 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-  busIO.header("\nPQ values\n");
-  PQ->print();
+//  busIO.header("\nPQ values\n");
+//  PQ->print();
+  busIO.header("\n   Elements of PQ vector\n");
+  busIO.header("\n   Bus Number           P                Q\n");
+  busIO.write("pq");
 
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-  busIO.header("\nJacobian values\n");
-  J->print(); 
+//  busIO.header("\nJacobian values\n");
+//  J->print(); 
 
   // FIXME: how does one obtain the current network state (voltage/phase in this case)?
   // get the current network state vector
@@ -179,8 +182,8 @@ void gridpack::powerflow::PFApp::execute(void)
   busIO.header("\nCalling solver\n");
   isolver.solve(*PQ, *X);
   tol = X->norm2();
-  busIO.header("\nX values\n");
-  X->print();
+//  busIO.header("\nX values\n");
+//  X->print();
 
   // Exchange new values
   network->updateBuses();
@@ -198,19 +201,19 @@ void gridpack::powerflow::PFApp::execute(void)
     // Create new versions of Jacobian and PQ vector
     factory.setMode(RHS);
     vMap.mapToVector(PQ);
-    sprintf(ioBuf,"\nIteration %d Print PQ\n",iter+1);
-    busIO.header(ioBuf);
-    PQ->print();
+//    sprintf(ioBuf,"\nIteration %d Print PQ\n",iter+1);
+//    busIO.header(ioBuf);
+//    PQ->print();
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
 
     // Create linear solver
     gridpack::math::LinearSolver solver(*J);
-    sprintf(ioBuf,"\nIteration %d Print X\n",iter+1);
-    busIO.header(ioBuf);
+//    sprintf(ioBuf,"\nIteration %d Print X\n",iter+1);
+//    busIO.header(ioBuf);
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
-    X->print();
+//    X->print();
 
     tol = X->norm2();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));

@@ -154,7 +154,6 @@ template <class _network>
             p_network->setLocalBusIndex2(i,g_idx2);
             *(p_network->getBranchData(i)) = *(p_branchData[i]);
             p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
-            printf("add case_sbase to branch: %12.6f\n",p_case_sbase);
             p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
           }
 #if 0
@@ -191,11 +190,9 @@ template <class _network>
 
         // CASE_ID             "IC"                   ranged integer
         p_case_id = atoi(split_line[0].c_str());
-        printf("p_case_id: %d\n",p_case_id);
 
         // CASE_SBASE          "SBASE"                float
         p_case_sbase = atof(split_line[1].c_str());
-        printf("p_case_id: %12.6f\n",p_case_sbase);
 
         /*  These do not appear in the dictionary
         // CASE_RECORD2        "RECORD2"              string

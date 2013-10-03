@@ -193,7 +193,7 @@ class PFBus
      * routine what about kind of information to write
      * @return true if bus is contributing string to output, false otherwise
      */
-    bool serialWrite(char *string, char *signal = NULL);
+    bool serialWrite(char *string, const char *signal = NULL);
 
   private:
     double p_shunt_gs;
@@ -354,7 +354,7 @@ class PFBranch
      * routine what about kind of information to write
      * @return true if branch is contributing string to output, false otherwise
      */
-    bool serialWrite(char *string, char *signal = NULL);
+    bool serialWrite(char *string, const char *signal = NULL);
 
   private:
     double p_reactance;

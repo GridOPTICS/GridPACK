@@ -218,14 +218,8 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
   p_v -= real(values[1]);
   *p_vAng_ptr = p_a;
   *p_vMag_ptr = p_v;
-//  printf("da: %12.6f dv: %12.6f  p_a_ptr: %12.6f p_v_ptr: %12.6f\n",
-//      real(values[0]),real(values[1]),*p_vAng_ptr,*p_vMag_ptr);
-//  *p_vAng_ptr = *p_vAng_ptr - real(values[0]);
-//  *p_vMag_ptr = *p_vMag_ptr - real(values[1]);
-//  p_a = *p_vAng_ptr;
-//  p_v = *p_vMag_ptr;
-  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
-      at,vt,real(values[0]),real(values[1]),p_a,p_v);
+//  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
+//      at,vt,real(values[0]),real(values[1]),p_a,p_v);
 }
 
 /**
@@ -265,7 +259,6 @@ void gridpack::powerflow::PFBus::setYBus(void)
       = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
     ret -= branch->getAdmittance();
     ret -= branch->getTransformer(this);
-    //ret -= branch->getTransformer(this); //YChen 9-5-2013: Doesn't work for tap ratio not equal to 1.0 cases yet. 
     ret += branch->getShunt(this);
   }
   if (p_shunt) {
@@ -298,7 +291,6 @@ void gridpack::powerflow::PFBus::load(
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
   p_v = p_voltage;
-  printf("P_V: %f\n",p_v);
   double pi = 4.0*atan(1.0);
   p_angle = p_angle*pi/180.0;
   p_a = p_angle;
@@ -342,8 +334,6 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
-  //printf("p_gstatus = %d\n", p_gstatus);
-  //p_gstatus = 1;
 
 }
 
@@ -439,12 +429,19 @@ void gridpack::powerflow::PFBus::setSBus(void)
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::powerflow::PFBus::serialWrite(char *string, char *signal)
+bool gridpack::powerflow::PFBus::serialWrite(char *string, const char *signal)
 {
-  double pi = 4.0*atan(1.0);
-  double angle = p_a*180.0/pi;
-  sprintf(string, "     %6d      %12.6f         %12.6f\n",
-      getOriginalIndex(),angle,p_v);
+  if (signal == NULL) {
+    double pi = 4.0*atan(1.0);
+    double angle = p_a*180.0/pi;
+    sprintf(string, "     %6d      %12.6f         %12.6f\n",
+        getOriginalIndex(),angle,p_v);
+  } else if (!strcmp(signal,"pq")) {
+    gridpack::ComplexType v[2];
+    vectorValues(v);
+    sprintf(string, "     %6d      %12.6f         %12.6f\n",
+        getOriginalIndex(),real(v[0]),real(v[1]));
+  }
   return true;
 }
 
@@ -466,7 +463,7 @@ gridpack::powerflow::PFBranch::PFBranch(void)
 {
   p_reactance = 0.0;
   p_resistance = 0.0;
-  //p_tap_ratio = 1.0;
+  p_tap_ratio = 0.0;
   p_phase_shift = 0.0;
   p_charging = 0.0;
   p_shunt_admt_g1 = 0.0;
@@ -905,7 +902,7 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
  * routine what about kind of information to write
  * @return true if branch is contributing string to output, false otherwise
  */
-bool gridpack::powerflow::PFBranch::serialWrite(char *string, char *signal)
+bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal)
 {
   gridpack::ComplexType v1, v2, y, s;
   gridpack::powerflow::PFBus *bus1 = 
