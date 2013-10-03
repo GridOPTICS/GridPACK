@@ -154,8 +154,22 @@ template <class _network>
             p_network->setLocalBusIndex2(i,g_idx2);
             *(p_network->getBranchData(i)) = *(p_branchData[i]);
             p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
+            printf("add case_sbase to branch: %12.6f\n",p_case_sbase);
             p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
           }
+#if 0
+          // debug
+          printf("Number of buses: %d\n",numBus);
+          for (i=0; i<numBus; i++) {
+          printf("Dumping bus: %d\n",i);
+            p_network->getBusData(i)->dump();
+          }
+          printf("Number of branches: %d\n",numBranch);
+          for (i=0; i<numBranch; i++) {
+          printf("Dumping branch: %d\n",i);
+            p_network->getBranchData(i)->dump();
+          }
+#endif
         }
         p_busData.clear();
         p_branchData.clear();
@@ -168,7 +182,7 @@ template <class _network>
         std::string                                        line;
   //      std::vector<gridpack::component::DataCollection>   case_instance;
 
-        gridpack::component::DataCollection                data;
+  //      gridpack::component::DataCollection                data;
 
         std::getline(input, line);
         std::vector<std::string>  split_line;
@@ -177,9 +191,11 @@ template <class _network>
 
         // CASE_ID             "IC"                   ranged integer
         p_case_id = atoi(split_line[0].c_str());
+        printf("p_case_id: %d\n",p_case_id);
 
         // CASE_SBASE          "SBASE"                float
         p_case_sbase = atof(split_line[1].c_str());
+        printf("p_case_id: %12.6f\n",p_case_sbase);
 
         /*  These do not appear in the dictionary
         // CASE_RECORD2        "RECORD2"              string
@@ -205,7 +221,6 @@ template <class _network>
         std::getline(input, line);
         std::getline(input, line);
         std::getline(input, line);
-        printf("(find_buses) Got to 1\n");
 
         while(test_end(line)) {
           std::vector<std::string>  split_line;
@@ -258,14 +273,12 @@ template <class _network>
           index++;
           std::getline(input, line);
         }
-        printf("(find_buses) Got to 2 line: %s\n",line.c_str());
       }
 
       void find_loads(std::ifstream & input)
       {
         std::string          line;
         std::getline(input, line); //this should be the first line of the block
-        printf("(loads) Got to 1 line: %s\n",line.c_str());
 
         while(test_end(line)) {
           std::vector<std::string>  split_line;
@@ -319,14 +332,12 @@ template <class _network>
 
           std::getline(input, line);
         }
-        printf("(loads) Got to 3 line: %s\n",line.c_str());
       }
 
       void find_generators(std::ifstream & input)
       {
         std::string          line;
         std::getline(input, line); //this should be the first line of the block
-        printf("(generators) Got to 1 line: %s\n",line.c_str());
         while(test_end(line)) {
           std::vector<std::string>  split_line;
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
@@ -447,7 +458,6 @@ template <class _network>
 
           std::getline(input, line);
         }
-      printf("(generators) Got to 4 line: %s\n",line.c_str());
       }
 
       void find_branches(std::ifstream & input)
@@ -532,7 +542,6 @@ template <class _network>
           ++index;
           std::getline(input, line);
         }
-        printf("(branches) Got to 1 line: %s\n",line.c_str());
       }
 
       void find_transformer(std::ifstream & input)
@@ -542,11 +551,9 @@ template <class _network>
         std::getline(input, line); //this should be the first line of the block
 
         std::pair<int, int>   branch_pair;
-        std::cout << "transformer block " << line << std::endl;
         // Find out how many branches already exist (note that this only works
         // when all branches are read in on head node
         int index = p_branchData.size();
-        printf("(transformer) Got to 1 index: %d\n",index);
 
         // get the branch that has the same to and from buses that the transformer hadto
 
@@ -678,7 +685,6 @@ template <class _network>
 
           std::getline(input, line);
         }
-        printf("(transformer) Got to 3 line: %s\n",line.c_str());
       }
 
       void find_area(std::ifstream & input)
@@ -686,7 +692,6 @@ template <class _network>
         std::string          line;
 
         std::getline(input, line); //this should be the first line of the block
-        printf("(find_area) Got to 1 line: %s\n",line.c_str());
 
         while(test_end(line)) {
           std::vector<std::string>  split_line;
@@ -719,7 +724,6 @@ template <class _network>
 
           std::getline(input, line);
         }
-        printf("(find_area) Got to 3 line: %s\n",line.c_str());
       }
 
       void find_2term(std::ifstream & input)
@@ -733,7 +737,6 @@ template <class _network>
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
           std::getline(input, line);
         }
-        printf("(find_2term) Got to 3 line: %s\n",line.c_str());
       }
 
       void find_line(std::ifstream & input)
@@ -747,7 +750,6 @@ template <class _network>
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
           std::getline(input, line);
         }
-        printf("(find_line) Got to 3 line: %s\n",line.c_str());
       }
 
 
@@ -759,7 +761,6 @@ template <class _network>
         std::string          line;
 
         std::getline(input, line); //this should be the first line of the block
-        printf("(shunt) Got to 1 line: %s\n",line.c_str());
         while(test_end(line)) {
           std::vector<std::string>  split_line;
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
@@ -919,7 +920,6 @@ template <class _network>
           p_busData[o_idx]->addValue(SHUNT_B8, atof(split_line[21].c_str()));
 
           std::getline(input, line);
-        printf("(shunt) Got to 3 line: %s\n",line.c_str());
         }
       }
 
@@ -968,7 +968,6 @@ template <class _network>
         std::string          line;
 
         std::getline(input, line); //this should be the first line of the block
-        std::cout << "multi section block " << line << std::endl;
 
         while(test_end(line)) {
 #if 0
@@ -1019,7 +1018,6 @@ template <class _network>
         std::string          line;
 
         std::getline(input, line); //this should be the first line of the block
-        std::cout << "multi section block " << line << std::endl;
 
         while(test_end(line)) {
           // TODO: parse something here
@@ -1195,7 +1193,7 @@ template <class _network>
 
       // Global variables that apply to whole network
       int p_case_id;
-      float p_case_sbase;
+      double p_case_sbase;
   };
 
 } /* namespace parser */
