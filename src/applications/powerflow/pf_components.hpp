@@ -142,9 +142,15 @@ class PFBus
 
     /**
      * Return the value of the voltage magnitude on this bus
-     * @return: voltage magnitude
+     * @return voltage magnitude
      */
     double getVoltage(void);
+
+    /**
+     * Return the complex voltage on this bus
+     * @return the complex voltage
+     */
+    ComplexType getComplexVoltage(void);
 
     /**
      * Return the value of the phase angle on this bus
@@ -180,7 +186,6 @@ class PFBus
     */
     void setSBus(void);
 
-    void serialWrite(char *signal = NULL);
     /**
      * Write output from buses to standard out
      * @param string (output) string with information to be printed out
@@ -341,6 +346,15 @@ class PFBranch
      * @param mode: enumerated constant for different modes
      */
     void setMode(int mode);
+
+    /**
+     * Write output from branches to standard out
+     * @param string (output) string with information to be printed out
+     * @param signal an optional character string to signal to this
+     * routine what about kind of information to write
+     * @return true if branch is contributing string to output, false otherwise
+     */
+    bool serialWrite(char *string, char *signal = NULL);
 
   private:
     double p_reactance;

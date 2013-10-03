@@ -452,6 +452,17 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, char *signal)
 }
 
 /**
+ * Return the complex voltage on this bus
+ * @return the complex voltage
+ */
+gridpack::ComplexType gridpack::powerflow::PFBus::getComplexVoltage(void)
+{
+  gridpack::ComplexType ret(cos(p_a),sin(p_a));
+  ret = ret*p_v;
+  return ret;
+}
+
+/**
  *  Simple constructor
  */
 gridpack::powerflow::PFBranch::PFBranch(void)
@@ -887,4 +898,29 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
   *q = v1*v2*(ybusr*sn-ybusi*cs);
 //  printf("v1=%f, v2=%f, cs=%f, sn=%f, p_ybusr=%f, p_ybusi=%f\n", v1,v2,cs,sn,p_ybusr,p_ybusi);
 //  printf("*p=%f,*q=%f\n",*p,*q);
+}
+
+/**
+ * Write output from branches to standard out
+ * @param string (output) string with information to be printed out
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if branch is contributing string to output, false otherwise
+ */
+bool gridpack::powerflow::PFBranch::serialWrite(char *string, char *signal)
+{
+  gridpack::ComplexType v1, v2, y, s;
+  gridpack::powerflow::PFBus *bus1 = 
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+  v1 = bus1->getComplexVoltage();
+  gridpack::powerflow::PFBus *bus2 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+  v2 = bus2->getComplexVoltage();
+  y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+  s = v1*(y*(v1-v2));
+  double p = real(s);
+  double q = imag(s);
+  sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
+      bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
+  return true;
 }
