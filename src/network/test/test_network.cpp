@@ -593,7 +593,7 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nCompleted partitioning of network\n");
   }
-  network.write_graph("test.dot");
+  network.writeGraph("test.dot");
 #endif
 
   GA_Terminate();

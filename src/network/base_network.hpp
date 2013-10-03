@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-08-14 12:19:34 d3g096
+ * @date   2013-10-03 12:00:58 d3g096
  * 
  * @brief  
  * 
@@ -1605,7 +1605,7 @@ void updateBranches(void)
 }
 
 void
-write_graph(const std::string& outname) 
+writeGraph(const std::string& outname) 
   {
     std::ofstream out;
     if (this->processor_rank() == 0) {
@@ -1640,9 +1640,11 @@ write_graph(const std::string& outname)
         out.open(outname.c_str(), std::ofstream::out | std::ofstream::app);
         BranchIterator branch;
         for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
-          out << "n" << branch->p_originalBusIndex1 << " -> " 
-              << "n" << branch->p_originalBusIndex2 << ";" 
-              << std::endl;
+          if (branch->p_activeBranch) {
+            out << "n" << branch->p_originalBusIndex1 << " -> " 
+                << "n" << branch->p_originalBusIndex2 << ";" 
+                << std::endl;
+          }
         }
         out.close();
       }

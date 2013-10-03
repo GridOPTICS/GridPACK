@@ -2,5 +2,7 @@
 <Configuration>
   <Powerflow>
     <networkConfiguration> IEEE14.raw </networkConfiguration>
+    <networkUnpartitionedGraph>IEEE14_network.dot</networkUnpartitionedGraph>
+    <networkPartitionedGraph>IEEE14_partitioned_network.dot</networkPartitionedGraph>
   </Powerflow>
 </Configuration>

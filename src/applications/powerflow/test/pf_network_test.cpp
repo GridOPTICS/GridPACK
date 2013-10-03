@@ -1,7 +1,7 @@
 /**
  * @file   pf_network_test.cpp
  * @author William A. Perkins
- * @date   2013-09-10 14:28:21 d3g096
+ * @date   2013-10-03 11:51:13 d3g096
  * 
  * @brief  Unit tests for powerflow network and component types
  * 
@@ -87,7 +87,7 @@ BOOST_AUTO_TEST_CASE ( partition )
     BOOST_CHECK_EQUAL(locbuses, 0);
   }
 
-  net->write_graph("network-before.dot");
+  net->writeGraph("network-before.dot");
 
   net->partition();
 
@@ -96,7 +96,7 @@ BOOST_AUTO_TEST_CASE ( partition )
   BOOST_CHECK_EQUAL(allbuses, global_buses);
   BOOST_CHECK(locbuses > 0);
 
-  net->write_graph("network-after.dot");
+  net->writeGraph("network-after.dot");
 }
 
 BOOST_AUTO_TEST_SUITE_END( )

@@ -1,7 +1,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-09-10 15:41:21 d3g096
+ * @date   2013-10-03 11:50:55 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -390,13 +390,13 @@ BOOST_AUTO_TEST_CASE ( partition )
 
   net.print_bus_ids();
   net.print_branch_ids();
-  net.write_graph("network-before.dot");
+  net.writeGraph("network-before.dot");
 
   net.partition();
 
   net.print_bus_ids();
   net.print_branch_ids();
-  net.write_graph("network-after.dot");
+  net.writeGraph("network-after.dot");
 }
 
 BOOST_AUTO_TEST_CASE ( lattice_partition )
@@ -414,11 +414,11 @@ BOOST_AUTO_TEST_CASE ( lattice_partition )
     BOOST_CHECK_EQUAL(locbuses, 0);
   }
 
-  net.write_graph("lattice-before.dot");
+  net.writeGraph("lattice-before.dot");
 
   net.partition();
 
-  net.write_graph("lattice-after.dot");
+  net.writeGraph("lattice-after.dot");
 }
 
 

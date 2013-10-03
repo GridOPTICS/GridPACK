@@ -2,7 +2,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2013-09-26 16:06:28 d3g096
+ * @date   2013-10-03 11:54:50 d3g096
  * 
  * @brief  
  * 
@@ -62,8 +62,19 @@ void gridpack::powerflow::PFApp::execute(void)
   gridpack::parser::PTI23_parser<PFNetwork> parser(network);
   parser.parse(filename.c_str());
 
+  std::string unpartout(cursor->get("networkUnpartitionedGraph", ""));
+  std::string partout(cursor->get("networkPartitionedGraph", ""));
+
+  if (!unpartout.empty()) {
+    network->writeGraph(unpartout);
+  }
+
   // partition network
   network->partition();
+
+  if (!partout.empty()) {
+    network->writeGraph(partout);
+  }
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
