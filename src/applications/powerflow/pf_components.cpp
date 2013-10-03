@@ -293,11 +293,7 @@ void gridpack::powerflow::PFBus::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);
-  //p_shunt = p_shunt && data->getValue(BUS_BASEKV, &p_sbase);
-  p_sbase = 100.0;
-  printf("p_sbase: %12.6f\n",p_sbase);
-  //YChen p_sbase is set to 100.0. It needs to be read from parser (the 2nd number in the first line)
-  //printf("CASE_SBASE=%f\n",p_sbase);
+  p_shunt = data->getValue(BUS_BASEKV, &p_sbase);
 
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
@@ -707,6 +703,7 @@ void gridpack::powerflow::PFBranch::load(
   ok = ok && data->getValue(BRANCH_SHIFT, &p_phase_shift);
   double temp;
   ok = ok && data->getValue(BRANCH_TAP, &temp);
+  ok = data->getValue(CASE_SBASE, &p_sbase);
   //printf("temp=%f\n", temp);
   if (temp != 0.0) {
     p_tap_ratio = temp; 
@@ -919,7 +916,6 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, char *signal)
   v2 = bus2->getComplexVoltage();
   y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
   s = v1*conj(y*(v1-v2));
-  double p_sbase = 100.0;
   double p = real(s)*p_sbase;
   double q = imag(s)*p_sbase;
   sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",

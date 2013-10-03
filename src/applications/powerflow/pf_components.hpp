@@ -371,6 +371,7 @@ class PFBranch
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
+    double p_sbase;
 
 private:
 
@@ -394,7 +395,8 @@ private:
       & p_mode
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs
-      & p_theta;
+      & p_theta
+      & p_sbase;
   }  
 
 };
