@@ -219,7 +219,7 @@ class BaseComponent
      * of the calculation. For example, if a different matrix needs to be
      * generated at different times, the mode of the calculation can changed to
      * get different values from the MatVecInterface functions
-     * @param mode: integer indicating which mode should be used
+     * @param mode integer indicating which mode should be used
      */
     virtual void setMode(int mode);
 
@@ -231,7 +231,7 @@ class BaseComponent
      * properties to write
      * @return true if component is writing a contribution, false otherwise
      */
-    virtual bool serialWrite(char *string, char *signal = NULL);
+    virtual bool serialWrite(char *string, const char *signal = NULL);
 
   protected:
     /**
@@ -463,7 +463,7 @@ class BaseBranchComponent
 
     /**
      * Get original index for bus 1
-     * @return: original index for bus 1
+     * @return original index for bus 1
      */
     int getBus1OriginalIndex(void) const;
 

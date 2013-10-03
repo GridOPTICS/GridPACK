@@ -37,9 +37,9 @@ MatVecInterface::~MatVecInterface(void)
 
 /**
  * Return size of matrix block on the diagonal contributed by component
- * @param isize, jsize: number of rows and columns of matrix
+ * @param isize,jsize number of rows and columns of matrix
  *        block
- * @return: false if network component does not contribute
+ * @return false if network component does not contribute
  *        matrix element
  */
 bool MatVecInterface::matrixDiagSize( int *isize,
@@ -53,8 +53,8 @@ bool MatVecInterface::matrixDiagSize( int *isize,
 /**
  * Return the values of for a diagonal matrix block. The values are
  * returned in row-major order.
- * @param values: pointer to matrix block values
- * @return: false if network component does not contribute
+ * @param values pointer to matrix block values
+ * @return false if network component does not contribute
  *        matrix element
  */
 bool MatVecInterface::matrixDiagValues(ComplexType *values)
@@ -65,9 +65,9 @@ bool MatVecInterface::matrixDiagValues(ComplexType *values)
 /**
  * Return size of off-diagonal matrix block contributed by component. The
  * values are for the forward direction.
- * @param isize, jsize: number of rows and columns of matrix
+ * @param isize,jsize number of rows and columns of matrix
  *        block
- * @return: false if network component does not contribute
+ * @return false if network component does not contribute
  *        matrix element
  */
 bool MatVecInterface::matrixForwardSize(int *isize,
@@ -81,8 +81,8 @@ bool MatVecInterface::matrixForwardSize(int *isize,
 /**
  * Return the values of for an off-diagonl matrix block. The values are
  * for the forward direction and are returned in row-major order.
- * @param values: pointer to matrix block values
- * @return: false if network component does not contribute
+ * @param values pointer to matrix block values
+ * @return false if network component does not contribute
  *        matrix element
  */
 bool MatVecInterface::matrixForwardValues(ComplexType *values)
@@ -93,9 +93,9 @@ bool MatVecInterface::matrixForwardValues(ComplexType *values)
 /**
  * Return size of off-diagonal matrix block contributed by component. The
  * values are for the reverse direction.
- * @param isize, jsize: number of rows and columns of matrix
+ * @param isize,jsize number of rows and columns of matrix
  *        block
- * @return: false if network component does not contribute
+ * @return false if network component does not contribute
  *        matrix element
  */
 bool MatVecInterface::matrixReverseSize(int *isize,
@@ -109,8 +109,8 @@ bool MatVecInterface::matrixReverseSize(int *isize,
 /**
  * Return the values of for an off-diagonl matrix block. The values are
  * for the reverse direction and are returned in row-major order.
- * @param values: pointer to matrix block values
- * @return: false if network component does not contribute
+ * @param values pointer to matrix block values
+ * @return false if network component does not contribute
  *        matrix element
  */
 bool MatVecInterface::matrixReverseValues(ComplexType *values)
@@ -120,8 +120,8 @@ bool MatVecInterface::matrixReverseValues(ComplexType *values)
 
 /**
  * Return size of vector block contributed by component
- * @param isize: number of vector elements
- * @return: false if network component does not contribute
+ * @param isize number of vector elements
+ * @return false if network component does not contribute
  *        vector element
  */
 bool MatVecInterface::vectorSize(int *isize) const
@@ -132,8 +132,8 @@ bool MatVecInterface::vectorSize(int *isize) const
 
 /**
  * Return the values of the vector block
- * @param values: pointer to vector values
- * @return: false if network component does not contribute
+ * @param values pointer to vector values
+ * @return false if network component does not contribute
  *        vector element
  */
 bool MatVecInterface::vectorValues(ComplexType *values)
@@ -144,7 +144,7 @@ bool MatVecInterface::vectorValues(ComplexType *values)
 /**
  * Set values in the bus or branch component based on values in a vector or
  * matrix
- * @param values: values in vector or matrix
+ * @param values values in vector or matrix
  */
 void MatVecInterface::setValues(ComplexType *values)
 {
@@ -153,7 +153,7 @@ void MatVecInterface::setValues(ComplexType *values)
 /**
  * Set the matrix index for diagonal matrix components or vector component,
  * based on location of component in network
- * @param idx: value of index
+ * @param idx value of index
  */
 void MatVecInterface::setMatVecIndex(int idx)
 {
@@ -163,7 +163,7 @@ void MatVecInterface::setMatVecIndex(int idx)
 /**
  * Get the matrix index for diagonal matrix components or vector component,
  * based on location of component in network
- * @return: value of index
+ * @return value of index
  */
 void MatVecInterface::getMatVecIndex(int *idx) const
 {
@@ -174,7 +174,7 @@ void MatVecInterface::getMatVecIndex(int *idx) const
  * Set the matrix indices for matrix components, based on location of
  * component
  * in network
- * @param idx, jdx: value of indices
+ * @param idx,jdx value of indices
  */
 void MatVecInterface::setMatVecIndices(int idx, int jdx)
 {
@@ -186,7 +186,7 @@ void MatVecInterface::setMatVecIndices(int idx, int jdx)
  * Get the matrix indices for matrix components, * based on location of
  * component
  * in network
- * @param idx, jdx: value of indices
+ * @param idx,jdx value of indices
  */
 void MatVecInterface::getMatVecIndices(int *idx, int *jdx) const
 {
@@ -214,7 +214,7 @@ BaseComponent::~BaseComponent(void)
 /**
  * Load data from DataCollection object into corresponding
  * component. This needs to be implemented by every component
- * @param data: data collection associated with component
+ * @param data data collection associated with component
  */
 void BaseComponent::load(
   const boost::shared_ptr<DataCollection> &data)
@@ -238,7 +238,7 @@ int BaseComponent::getXCBufSize(void)
 /**
  * Assign the location of the data exchange buffer. These buffers are
  * allocated and deallocated by the network
- * @param buf: void pointer to exchange buffer
+ * @param buf void pointer to exchange buffer
  */
 void BaseComponent::setXCBuf(void *buf)
 {
@@ -257,7 +257,7 @@ void BaseComponent::setXCBuf(void *buf)
  * of the calculation. For example, if a different matrix needs to be
  * generated at different times, the mode of the calculation can changed to
  * get different values from the MatVecInterface functions
- * @param mode: integer indicating which mode should be used
+ * @param mode integer indicating which mode should be used
  */
 void BaseComponent::setMode(int mode)
 {
@@ -267,12 +267,12 @@ void BaseComponent::setMode(int mode)
 /**
  * Copy a string for output into buffer. The behavior of this method can be
  * altered by inputting different values for the signal string
- * @param string: buffer containing string to be written to output
- * @param signal: string to control behavior of routine (e.g. what
+ * @param string buffer containing string to be written to output
+ * @param signal string to control behavior of routine (e.g. what
  * properties to write
- * @return: true if component is writing a contribution, false otherwise
+ * @return true if component is writing a contribution, false otherwise
  */
-bool BaseComponent::serialWrite(char *string, char *signal)
+bool BaseComponent::serialWrite(char *string, const char *signal)
 {
   // This is defined so that generic operations for writing strings from buses
   // and branches can be built
@@ -301,7 +301,7 @@ BaseBusComponent::~BaseBusComponent(void)
 
 /**
  * Add a pointer to the list of branches that a bus is connected to
- * @param branch: pointer to a branch that is connected to bus
+ * @param branch pointer to a branch that is connected to bus
  */
 void
 BaseBusComponent::addBranch(const
@@ -314,7 +314,7 @@ BaseBusComponent::addBranch(const
 /**
  * Add a pointer to the list of buses that a bus is connected to via
  * a branch
- * @param bus: pointer to a branch that is connected to bus
+ * @param bus pointer to a branch that is connected to bus
  */
 void
 BaseBusComponent::addBus(const
@@ -326,7 +326,7 @@ BaseBusComponent::addBus(const
 
 /**
  * Get pointers to branches that are connected to bus
- * @param nghbrs: list of pointers to neighboring branches
+ * @param nghbrs list of pointers to neighboring branches
  */
 void BaseBusComponent::getNeighborBranches(
   std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const
@@ -342,7 +342,7 @@ void BaseBusComponent::getNeighborBranches(
 
 /**
  * Get pointers to buses that are connected to calling bus via a branch
- * @param nghbrs: list of pointers to neighboring buses
+ * @param nghbrs list of pointers to neighboring buses
  */
 void BaseBusComponent::getNeighborBuses(
   std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const
@@ -374,7 +374,7 @@ void BaseBusComponent::clearBuses(void)
 
 /**
  * Set reference bus status
- * @param status: reference bus status
+ * @param status reference bus status
  */
 void BaseBusComponent::setReferenceBus(bool status)
 {
@@ -383,7 +383,7 @@ void BaseBusComponent::setReferenceBus(bool status)
 
 /**
  * Get reference bus status
- * @return: reference bus status
+ * @return reference bus status
  */
 bool BaseBusComponent::getReferenceBus(void) const
 {
@@ -392,7 +392,7 @@ bool BaseBusComponent::getReferenceBus(void) const
 
 /**
  * Set original index (from input file)
- * @param idx: original index from network
+ * @param idx original index from network
  */
 void BaseBusComponent::setOriginalIndex(int idx)
 {
@@ -401,7 +401,7 @@ void BaseBusComponent::setOriginalIndex(int idx)
 
 /**
  * Get original index
- * @return: original index from network
+ * @return original index from network
  */
 int BaseBusComponent::getOriginalIndex(void) const
 {
@@ -410,7 +410,7 @@ int BaseBusComponent::getOriginalIndex(void) const
 
 /**
  * Set global index
- * @param idx: global index from network
+ * @param idx global index from network
  */
 void BaseBusComponent::setGlobalIndex(int idx)
 {
@@ -419,7 +419,7 @@ void BaseBusComponent::setGlobalIndex(int idx)
 
 /**
  * Get global index
- * @return: global index from network
+ * @return global index from network
  */
 int BaseBusComponent::getGlobalIndex(void) const
 {
@@ -445,7 +445,7 @@ BaseBranchComponent::~BaseBranchComponent(void)
 
 /**
  * Set pointer to bus at one end of branch
- * @param: pointer to bus
+ * @param bus pointer to bus
  */
 void BaseBranchComponent::setBus1(const
   boost::shared_ptr<BaseComponent> & bus)
@@ -455,7 +455,7 @@ void BaseBranchComponent::setBus1(const
 
 /**
  * Set pointer to bus at other end of branch
- * @param: pointer to bus
+ * @param bus pointer to bus
  */
 void BaseBranchComponent::setBus2(const
   boost::shared_ptr<BaseComponent> & bus)
@@ -465,7 +465,7 @@ void BaseBranchComponent::setBus2(const
 
 /**
  * Get pointer to bus at one end of branch
- * @return: pointer to bus 1
+ * @return pointer to bus 1
  */
 boost::shared_ptr<BaseComponent>
   BaseBranchComponent::getBus1(void) const
@@ -476,7 +476,7 @@ boost::shared_ptr<BaseComponent>
 
 /**
  * Get pointer to bus at other end of branch
- * @return: pointer to bus 2
+ * @return pointer to bus 2
  */
 boost::shared_ptr<BaseComponent>
   BaseBranchComponent::getBus2(void) const
@@ -496,7 +496,7 @@ void BaseBranchComponent::clearBuses(void)
 
 /**
  * Set original index for bus 1
- * @param idx: original index for bus 1 (assigned from input * file)
+ * @param idx original index for bus 1 (assigned from input * file)
  */
 void BaseBranchComponent::setBus1OriginalIndex(int idx)
 {
@@ -505,7 +505,7 @@ void BaseBranchComponent::setBus1OriginalIndex(int idx)
 
 /**
  * Set original index for bus 2
- * @param idx: original index for bus 2 (assigned from input * file)
+ * @param idx original index for bus 2 (assigned from input * file)
  */
 void BaseBranchComponent::setBus2OriginalIndex(int idx)
 {
@@ -514,7 +514,7 @@ void BaseBranchComponent::setBus2OriginalIndex(int idx)
 
 /**
  * Set global index (from network) for bus 1
- * @param idx: global index for bus 1
+ * @param idx global index for bus 1
  */
 void BaseBranchComponent::setBus1GlobalIndex(int idx)
 {
@@ -523,7 +523,7 @@ void BaseBranchComponent::setBus1GlobalIndex(int idx)
 
 /**
  * Set global index (from network) for bus 2
- * @param idx: global index for bus 2
+ * @param idx global index for bus 2
  */
 void BaseBranchComponent::setBus2GlobalIndex(int idx)
 {
@@ -532,7 +532,7 @@ void BaseBranchComponent::setBus2GlobalIndex(int idx)
 
 /**
  * Get original index for bus 1
- * @return: original index for bus 1
+ * @return original index for bus 1
  */
 int BaseBranchComponent::getBus1OriginalIndex(void) const
 {
@@ -541,7 +541,7 @@ int BaseBranchComponent::getBus1OriginalIndex(void) const
 
 /**
  * Get original index for bus 2
- * @return: original index for bus 2
+ * @return original index for bus 2
  */
 int BaseBranchComponent::getBus2OriginalIndex(void) const
 {
@@ -550,7 +550,7 @@ int BaseBranchComponent::getBus2OriginalIndex(void) const
 
 /**
  * Get global index for bus 1
- * @return: global index for bus 1
+ * @return global index for bus 1
  */
 int BaseBranchComponent::getBus1GlobalIndex(void) const
 {
@@ -559,7 +559,7 @@ int BaseBranchComponent::getBus1GlobalIndex(void) const
 
 /**
  * Get global index for bus 2
- * @return: global index for bus 2
+ * @return global index for bus 2
  */
 int BaseBranchComponent::getBus2GlobalIndex(void) const
 {

@@ -73,7 +73,7 @@ class SerialBusIO {
    * @param signal an optional character string used to control contents of
    *                output
    */
-  void write(char *signal = NULL)
+  void write(const char *signal = NULL)
   {
     int nBus = p_network->numBuses();
     char string[p_size];
@@ -171,7 +171,7 @@ class SerialBusIO {
    * to identify the head node
    * @param str character string containing the header
    */
-  void header(char *str) const
+  void header(const char *str) const
   {
     if (GA_Nodeid() == 0) {
       printf("%s",str);
@@ -228,7 +228,7 @@ class SerialBranchIO {
    * @param signal an optional character string used to control contents of
    *                output
    */
-  void write(char *signal = NULL)
+  void write(const char *signal = NULL)
   {
     int nBranch = p_network->numBranches();
     char string[p_size];
@@ -326,7 +326,7 @@ class SerialBranchIO {
    * to identify the head node
    * @param str character string containing the header
    */
-  void header(char *str) const
+  void header(const char *str) const
   {
     if (GA_Nodeid() == 0) {
       printf("%s",str);
