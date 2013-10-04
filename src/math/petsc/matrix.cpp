@@ -1,7 +1,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-09-27 15:06:48 d3g096
+ * @date   2013-10-04 14:55:53 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -112,14 +112,19 @@ Matrix::add(const Matrix& B)
 void
 Matrix::identity(void)
 {
-  this->zero();
   Mat *pA(PETScMatrix(*this));
 
   PetscErrorCode ierr(0);
   try {
+    PetscBool flag;
+    ierr = MatAssembled(*pA, &flag); CHKERRXX(ierr);
+    if (!flag) {
+      ierr = MatAssemblyBegin(*pA, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
+      ierr = MatAssemblyEnd(*pA, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
+    }
     ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
     PetscScalar one(1.0);
-    ierr = MatShift(*pA, one);
+    ierr = MatShift(*pA, one); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

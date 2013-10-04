@@ -2,7 +2,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-09-25 09:17:08 d3g096
+ * @date   2013-10-04 12:38:33 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -114,6 +114,17 @@ multiply(const Matrix& A, const Vector& x)
 {
   Vector *result(new Vector(x.communicator(), x.localSize()));
   multiply(A, x, *result);
+  return result;
+}
+
+// -------------------------------------------------------------
+// identity
+// -------------------------------------------------------------
+Matrix *
+identity(const Matrix& A)
+{
+  Matrix *result(A.clone());
+  result->identity();
   return result;
 }
 

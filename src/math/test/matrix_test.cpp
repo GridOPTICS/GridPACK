@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-09-27 15:08:04 d3g096
+ * @date   2013-10-04 14:52:27 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -322,6 +322,7 @@ BOOST_AUTO_TEST_CASE( add )
 
 BOOST_AUTO_TEST_CASE( identity )
 {
+  gridpack::parallel::Communicator world;
   int global_size;
   std::auto_ptr<gridpack::math::Matrix> A(make_test_matrix(global_size));
 
@@ -336,13 +337,26 @@ BOOST_AUTO_TEST_CASE( identity )
 
   A->identity();
 
+  std::auto_ptr<gridpack::math::Matrix> B(gridpack::math::identity(*A));
+  
+  std::auto_ptr<gridpack::math::Matrix> 
+    C(make_and_fill_test_matrix(3, global_size));
+  C->identity();
+
   for (int i = lo; i < hi; ++i) {
     gridpack::ComplexType x(1.0);
     gridpack::ComplexType y;
     A->getElement(i, i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+    B->getElement(i, i, y);
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+    C->getElement(i, i, y);
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
   }
+
 }
 
 BOOST_AUTO_TEST_CASE( scale )
@@ -506,6 +520,34 @@ BOOST_AUTO_TEST_CASE( print)
   }
   A->save(out.c_str());
 }
+
+BOOST_AUTO_TEST_CASE( multiply_identity )
+{
+  static const int bandwidth(3);
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(bandwidth, global_size)),
+    B(new gridpack::math::Matrix(A->communicator(), A->localRows(), A->cols(), 
+                                 gridpack::math::Matrix::Sparse));
+  B->identity();
+  std::auto_ptr<gridpack::math::Matrix> 
+    C(gridpack::math::multiply(*A, *B));
+
+  int lo, hi;
+  A->localRowRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      gridpack::ComplexType x, y;
+      A->getElement(i, j, x);
+      C->getElement(i, j, y);
+      BOOST_CHECK_CLOSE(real(x), real(y), delta);
+      BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+    }
+  }
+}
+
 
 BOOST_AUTO_TEST_SUITE_END()
 

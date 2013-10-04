@@ -3,7 +3,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-09-27 10:21:58 d3g096
+ * @date   2013-10-04 12:44:12 d3g096
  * 
  * @brief  
  * 
@@ -318,6 +318,15 @@ public:
     this->getElements(n, i, j, x);
   }
 
+  /// Make this matrix the identity matrix
+  /** 
+   * @e Collective
+   *
+   * 
+   * 
+   */
+  void identity(void);
+
   /// Indicate the matrix is ready to use
   /** 
    * @e Collective.
@@ -428,15 +437,6 @@ public:
    */
   void add(const Matrix& A);
 
-  /// Make this matrix the identity matrix
-  /** 
-   * @e Collective
-   *
-   * 
-   * 
-   */
-  void identity(void);
-
   /// Zero all entries in the matrix
   /** 
    * @e Collective.
@@ -453,7 +453,8 @@ public:
   // friend Matrix *factorize(const Matrix& A);
   // friend Matrix *inverse(const Matrix& A);
   // friend Matrix *reorder(const Matrix& A, const Reordering& r);
-  friend Matrix *identity(const Matrix& A);
+  // friend Matrix *identity(const Matrix& A);
+  friend Matrix *multiply(const Matrix& A, const Matrix& B);
 
 protected:
 
@@ -544,6 +545,9 @@ extern Matrix *multiply(const Matrix& A, const Matrix& B);
  */
 extern Vector *multiply(const Matrix& A, const Vector& x);
 
+/// Make an identity matrix with the same ownership as the specified matrix
+extern Matrix *identity(const Matrix& A);
+
 // -------------------------------------------------------------
 // Matrix Operations
 //
@@ -603,7 +607,6 @@ extern void multiply(const Matrix& A, const Matrix& B, Matrix& result);
  * @param result 
  */
 extern void multiply(const Matrix& A, const Vector& x, Vector& result);
-
 
 } // namespace math
 } // namespace gridpack

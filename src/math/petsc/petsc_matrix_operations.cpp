@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created April 17, 2013 by William A. Perkins
-// Last Change: 2013-09-25 09:17:07 d3g096
+// Last Change: 2013-10-04 12:50:07 d3g096
 // -------------------------------------------------------------
 
 
@@ -115,6 +115,41 @@ multiply(const Matrix& A, const Vector& x, Vector& result)
   }
 }
 
+void
+multiply(const Matrix& A, const Matrix& B, Matrix& result)
+{
+  const Mat *Amat(PETScMatrix(A));
+  const Mat *Bmat(PETScMatrix(B));
+  Mat *Cmat(PETScMatrix(result));
+
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatDestroy(Cmat); CHKERRXX(ierr);
+    ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+Matrix *
+multiply(const Matrix& A, const Matrix& B)
+{
+  const Mat *Amat(PETScMatrix(A));
+  const Mat *Bmat(PETScMatrix(B));
+  Mat Cmat;
+
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+
+  PETScMatrixImplementation *result_impl = 
+    new PETScMatrixImplementation(A.communicator(), Cmat);
+  Matrix *result = new Matrix(result_impl);
+  return result;
+}
 
   
 
