@@ -1,4 +1,5 @@
 #include "configuration.hpp"
+#include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <fstream>
@@ -181,13 +182,10 @@ Configuration::Cursor * Configuration::getCursor(Configuration::KeyType key) {
 
 void Configuration::children(ChildCursors & cs) {
 	cs.clear();
-	auto b = pimpl->pt.begin();
-	auto e = pimpl->pt.end();
-	for(auto i = b ; i != e; i++ ){
-		auto & cpt = *i;
+	BOOST_FOREACH(ptree::value_type & v, pimpl->pt) {
 		std::shared_ptr<Cursor> c(new Configuration);
 		c->pimpl->logging = pimpl->logging;
-		c->pimpl->pt = cpt.second;
+		c->pimpl->pt = v.second;
 		cs.push_back(c);
 	}
 }
