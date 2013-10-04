@@ -7,6 +7,7 @@
 //#include <boost/mpi/communicator.hpp>
 #include <string>
 #include <vector>
+#include <memory>
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
@@ -69,6 +70,20 @@ class Configuration {
  *       cout << endl;
  *    }
  * }
+ *
+ * Sample use of iterating over all children (which might have same XML element name) 
+ *
+ *
+ * 	p = c->getCursor("Configuration.DynamicSimulation.Faults");
+ *	Configuration::ChildCursors children;
+ *	p->children(children);
+ *	int i = 0;
+ *	for(auto & c : children) {
+ *		string s = c->get("Branch", "No Branch");
+ *		cout << i << " " << s << endl;
+ *		i += 1;
+ *	}
+ *
  */
 
 	class ConfigInternals * pimpl;
@@ -171,6 +186,10 @@ public:
 	 *   for a cursor, return the key-path as a string that selects this point in the heirarchy
 	 */
 	const std::string & path();
+
+	/* iterate over children */
+	typedef std::vector<std::shared_ptr<Cursor>> ChildCursors;
+	void children(ChildCursors &);
 };
 
 

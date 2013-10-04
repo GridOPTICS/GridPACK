@@ -179,7 +179,15 @@ Configuration::Cursor * Configuration::getCursor(Configuration::KeyType key) {
 	return c;
 }
 
-
+void Configuration::children(ChildCursors & cs) {
+	cs.clear();
+	for(auto cpt : pimpl->pt) {
+		std::shared_ptr<Cursor> c(new Configuration);
+		c->pimpl->logging = pimpl->logging;
+		c->pimpl->pt = cpt.second;
+		cs.push_back(c);
+	}
+}
 
 } // namespace utility
 } // namespace gridpack
