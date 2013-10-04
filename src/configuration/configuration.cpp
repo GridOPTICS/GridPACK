@@ -183,7 +183,7 @@ Configuration::Cursor * Configuration::getCursor(Configuration::KeyType key) {
 void Configuration::children(ChildCursors & cs) {
 	cs.clear();
 	BOOST_FOREACH(ptree::value_type & v, pimpl->pt) {
-		std::shared_ptr<Cursor> c(new Configuration);
+		boost::shared_ptr<Cursor> c(new Configuration);
 		c->pimpl->logging = pimpl->logging;
 		c->pimpl->pt = v.second;
 		cs.push_back(c);

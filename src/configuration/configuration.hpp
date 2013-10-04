@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 #include <memory>
+#include <boost/smart_ptr/shared_ptr.hpp>
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
@@ -188,7 +189,7 @@ public:
 	const std::string & path();
 
 	/* iterate over children */
-	typedef std::vector<std::shared_ptr<Cursor>> ChildCursors;
+	typedef std::vector<boost::shared_ptr<Cursor> > ChildCursors;
 	void children(ChildCursors &);
 };
 
