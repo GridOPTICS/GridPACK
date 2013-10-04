@@ -285,8 +285,8 @@ gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
 void gridpack::powerflow::PFBus::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
-  p_shunt = p_shunt && data->getValue(CASE_SBASE, &p_sbase);
-  p_shunt = data->getValue(BUS_BASEKV, &p_sbase);
+  bool ok = data->getValue(CASE_SBASE, &p_sbase);
+  //p_shunt = data->getValue(BUS_BASEKV, &p_sbase);
 
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
