@@ -439,8 +439,10 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const char *signal)
   } else if (!strcmp(signal,"pq")) {
     gridpack::ComplexType v[2];
     vectorValues(v);
-    sprintf(string, "     %6d      %12.6f         %12.6f\n",
-        getOriginalIndex(),real(v[0]),real(v[1]));
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    sprintf(string, "     %6d      %12.6f         %12.6f      %2d\n",
+        getOriginalIndex(),real(v[0]),real(v[1]),branches.size());
   }
   return true;
 }
