@@ -181,7 +181,10 @@ Configuration::Cursor * Configuration::getCursor(Configuration::KeyType key) {
 
 void Configuration::children(ChildCursors & cs) {
 	cs.clear();
-	for(auto cpt : pimpl->pt) {
+	auto b = pimpl->pt.begin();
+	auto e = pimpl->pt.end();
+	for(auto i = b ; i != e; i++ ){
+		auto & cpt = *i;
 		std::shared_ptr<Cursor> c(new Configuration);
 		c->pimpl->logging = pimpl->logging;
 		c->pimpl->pt = cpt.second;
