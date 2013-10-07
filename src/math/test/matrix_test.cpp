@@ -1,7 +1,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-10-04 14:52:27 d3g096
+ * @date   2013-10-07 15:37:59 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -406,7 +406,7 @@ BOOST_AUTO_TEST_CASE( transpose )
   }
 }
 
-BOOST_AUTO_TEST_CASE( column_diagonal )
+BOOST_AUTO_TEST_CASE( ColumnDiagonal )
 {
   int global_size;
   std::auto_ptr<gridpack::math::Matrix> 
@@ -438,7 +438,7 @@ BOOST_AUTO_TEST_CASE( column_diagonal )
 
 }
 
-BOOST_AUTO_TEST_CASE( matrix_vector_multiply )
+BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
 {
   static const int bandwidth(3);
   static const gridpack::ComplexType scale(2.0);
@@ -521,7 +521,7 @@ BOOST_AUTO_TEST_CASE( print)
   A->save(out.c_str());
 }
 
-BOOST_AUTO_TEST_CASE( multiply_identity )
+BOOST_AUTO_TEST_CASE( MultiplyIdentity )
 {
   static const int bandwidth(3);
   int global_size;
@@ -547,6 +547,73 @@ BOOST_AUTO_TEST_CASE( multiply_identity )
     }
   }
 }
+
+BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
+{
+  gridpack::parallel::Communicator world;
+
+  static const gridpack::ComplexType avalues[] =
+    { 1.0,  2.0,  6.0,
+      3.0,  4.0,  5.0 };
+  static const gridpack::ComplexType bvalues[] =
+    {  7.0, -1.0,
+       0.0,  1.0,
+      -3.0,  4.0 };
+  static const gridpack::ComplexType cvalues[] =
+    { -11.0, 25.0,
+        6.0, 21.0 }; 
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(new gridpack::math::Matrix(world, 2, world.size()*3)),
+    B(new gridpack::math::Matrix(world, 3, world.size()*2,
+                                 gridpack::math::Matrix::Sparse));
+
+  std::vector<int> iidx(2*3) , jidx(2*3);
+  int k(0);
+  for (int i = 0; i < 2; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      iidx[k] = i + world.rank()*2;
+      jidx[k] = j + world.rank()*3;
+      k++;
+    }
+  }
+  A->setElements(2*3, &iidx[0], &jidx[0], &avalues[0]);
+  A->ready();
+  A->print();
+
+  k = 0;
+  for (int i = 0; i < 3; ++i) {
+    for (int j = 0; j < 2; ++j) {
+      iidx[k] = i + world.rank()*3;
+      jidx[k] = j + world.rank()*2;
+      k++;
+    }
+  }
+
+  B->setElements(3*2, &iidx[0], &jidx[0], &bvalues[0]);
+  B->ready();
+  B->print();
+
+  std::auto_ptr<gridpack::math::Matrix>
+    C(gridpack::math::multiply(*A, *B));
+
+  C->print();
+
+  BOOST_CHECK_EQUAL(C->rows(), 2*world.size());
+  BOOST_CHECK_EQUAL(C->cols(), 2*world.size());
+
+  gridpack::ComplexType x, y;
+  C->getElement(2*world.rank(), 2*world.rank(), x);
+  y = -11.0;
+  BOOST_CHECK_CLOSE(real(x), real(y), delta);
+  BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+
+  C->getElement(2*world.rank()+1, 2*world.rank()+1, x);
+  y = 21.0;
+  BOOST_CHECK_CLOSE(real(x), real(y), delta);
+  BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+
+}
+
 
 
 BOOST_AUTO_TEST_SUITE_END()
