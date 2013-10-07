@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Powerflow>
+    <networkConfiguration> 118.raw </networkConfiguration>
+    <networkUnpartitionedGraph>118_network.dot</networkUnpartitionedGraph>
+    <networkPartitionedGraph>118_partitioned_network.dot</networkPartitionedGraph>
+  </Powerflow>
+</Configuration>
