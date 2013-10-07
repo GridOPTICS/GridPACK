@@ -2,7 +2,7 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   2013-08-09 09:04:32 d3g096
+ * @date   2013-10-07 10:04:43 d3g096
  * 
  * @brief  
  * 
@@ -238,14 +238,15 @@ private:
       & p_shunt
       & p_load
       & p_mode
-      & p_v & p_theta
+      & p_v & p_a & p_theta
       & p_ybusr & p_ybusi
       & p_P0 & p_Q0
+      & p_angle & p_voltage
       & p_pg & p_qg
       & p_gstatus
-      //& p_sbusr & p_sbusi
       & p_pl & p_ql
-      & p_sbase;
+      & p_sbase
+      & p_Pinj & p_Qinj
       & p_isPV;
   }  
 

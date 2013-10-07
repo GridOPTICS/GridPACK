@@ -2,7 +2,7 @@
 /**
  * @file   base_component.hpp
  * @author Bruce Palmer
- * @date   2013-07-17 10:05:04 d3g096
+ * @date   2013-10-07 11:05:08 d3g096
  * 
  * @brief  
  * 
@@ -389,7 +389,9 @@ class BaseBusComponent
   void serialize(Archive & ar, const unsigned int version)
   {
      ar & boost::serialization::base_object<BaseComponent>(*this)
-       & p_refBus;
+       & p_refBus
+       & p_originalIndex
+       & p_globalIndex;
 
      // p_branches and p_buses are ignored, but that may change
   }
@@ -509,7 +511,11 @@ class BaseBranchComponent
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-     ar & boost::serialization::base_object<BaseComponent>(*this);
+     ar & boost::serialization::base_object<BaseComponent>(*this)
+       & p_originalBus1Index
+       & p_originalBus2Index
+       & p_globalBus1Index
+       & p_globalBus2Index;
   }
 
 };

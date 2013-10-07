@@ -2,7 +2,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2013-08-01 11:48:20 d3g096
+ * @date   2013-10-07 14:57:07 d3g096
  * 
  * @brief  
  * 
@@ -11,12 +11,14 @@
 // -------------------------------------------------------------
 
 #include <algorithm>
+#include <set>
 #include <ga++.h>
 #include <boost/mpi/collectives.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/lambda/lambda.hpp>
 #include <boost/lambda/bind.hpp>
 #include <boost/serialization/utility.hpp>
+#include <boost/serialization/set.hpp>
 
 #include "graph_partitioner_implementation.hpp"
 
@@ -107,6 +109,7 @@ GraphPartitionerImplementation::ghost_edge_destinations(GraphPartitionerImplemen
 void
 GraphPartitionerImplementation::partition(void)
 {
+  static const bool verbose(false);
   p_adjacency_list.ready();
   this->p_partition();          // fills p_node_destinations
 
@@ -137,14 +140,17 @@ GraphPartitionerImplementation::partition(void)
     node_dest(new GA::GlobalArray(MT_C_INT, 1, dims, "Node Destinations Process", NULL)),
     node_src(new GA::GlobalArray(MT_C_INT, 1, dims, "Node Source Process", NULL));
   node_dest->scatter(&p_node_destinations[0], &stupid[0], locnodes);
-
+  
   { 
     std::vector<int> nsrc(locnodes, this->processor_rank());
     node_src->scatter(&nsrc[0], &stupid[0], locnodes);
   }
   
-  node_src->print();
-  node_dest->print();
+  GA::sync();
+  if (verbose) {
+    node_src->print();
+    node_dest->print();
+  }
 
   // edges are assigned to the same partition as the lowest numbered
   // node to which it connects, which are extracted from the node
@@ -163,6 +169,16 @@ GraphPartitionerImplementation::partition(void)
 
   node_dest->gather(&e1dest[0], &stupid[0], locedges);
 
+  if (verbose) {
+    for (Index e = 0; e < locedges; ++e) {
+      Index n1, n2;
+      p_adjacency_list.edge(e, n1, n2);
+      std::cout << processor_rank() << ": active edge " << e
+                << " (" << n1 << "->" << n2 << "): "
+                << "destination: " << e1dest[e] << std::endl;
+    }
+  }
+
   p_edge_destinations.clear();
   p_edge_destinations.reserve(locedges);
   std::copy(e1dest.begin(), e1dest.end(), 
@@ -179,6 +195,16 @@ GraphPartitionerImplementation::partition(void)
   }
 
   node_dest->gather(&e2dest[0], &stupid[0], locedges);
+  
+  if (verbose) {
+    for (Index e = 0; e < locedges; ++e) {
+      Index n1, n2;
+      p_adjacency_list.edge(e, n1, n2);
+      std::cout << processor_rank() << ": ghost edge " << e
+                << " (" << n1 << "->" << n2 << "): "
+                << "destination: " << e2dest[e] << std::endl;
+    }
+  }
 
   p_ghost_edge_destinations.reserve(locedges);
   std::copy(e2dest.begin(), e2dest.end(), 
@@ -186,9 +212,14 @@ GraphPartitionerImplementation::partition(void)
 
   // determine destinations for ghost nodes: go thru the edges and
   // compare destinations of connected nodes; if they're different,
-  // then both ends need to be ghosted
+  // then both ends need to be ghosted (to different processors)
 
-  std::vector< std::pair<Index, int> > gnodedest;
+  // a particular node and destination needs to be unique, hence the
+  // use of set<>; this may be too slow with large networks and
+  // processors
+
+  typedef std::set< std::pair<Index, int> > DestList;
+  DestList gnodedest;
   for (Index e = 0; e < locedges; ++e) {
     Index n1, n2;
     p_adjacency_list.edge(e, n1, n2);
@@ -196,30 +227,38 @@ GraphPartitionerImplementation::partition(void)
     int n1dest(e1dest[e]);
     int n2dest(e2dest[e]);
 
+    if (verbose) {
+      std::cout << processor_rank() << ": edge " << e
+                << " (" << n1 << "->" << n2 << "): "
+                << "destinations: " << n1dest << ", " << n2dest << std::endl;
+    }
+      
     if (n1dest != n2dest) {
-      gnodedest.push_back(std::make_pair(n1, n2dest));
-      gnodedest.push_back(std::make_pair(n2, n1dest));
+      gnodedest.insert(std::make_pair(std::min(n1,n2), n2dest));
+      gnodedest.insert(std::make_pair(std::max(n1,n2), n1dest));
     }
   }
 
-  if (this->processor_rank() == 0) {
-    std::cout << "Ghost node destinations: " << std::endl;
-  }
-  for (int p = 0; p < this->processor_size(); ++p) {
-    if (this->processor_rank() == p) {
-      std::cout << p << ": ";
-      for (std::vector< std::pair<Index, int> >::const_iterator i = gnodedest.begin();
-           i != gnodedest.end(); ++i) {
-        std::cout << "(" << i->first << ":" << i->second << "),";
-      }
-      std::cout << std::endl;
+  if (verbose) {
+    if (this->processor_rank() == 0) {
+      std::cout << "Ghost node destinations: " << std::endl;
     }
-    this->communicator().barrier();
+    for (int p = 0; p < this->processor_size(); ++p) {
+      if (this->processor_rank() == p) {
+        std::cout << p << ": ";
+        for (DestList::const_iterator i = gnodedest.begin();
+             i != gnodedest.end(); ++i) {
+          std::cout << "(" << i->first << ":" << i->second << "),";
+        }
+        std::cout << std::endl;
+      }
+      this->communicator().barrier();
+    }
   }
 
   // take each local list of ghost node, send it to all processes, 
   p_ghost_node_destinations.resize(locnodes);
-  std::vector< std::pair<Index, int> > tmp;
+  DestList tmp;
   for (int p = 0; p < this->processor_size(); ++p) {
     tmp.clear();
     if (this->processor_rank() == p) {
@@ -228,7 +267,7 @@ GraphPartitionerImplementation::partition(void)
     broadcast(this->communicator(), tmp, p);
     for (Index n = 0; n < locnodes; ++n) {
       Index nodeidx(p_adjacency_list.node_index(n));
-      for (std::vector< std::pair<Index, int> >::const_iterator i = tmp.begin();
+      for (DestList::const_iterator i = tmp.begin();
            i != tmp.end(); ++i) {
         if (nodeidx == i->first) {
           p_ghost_node_destinations[n].push_back(i->second);

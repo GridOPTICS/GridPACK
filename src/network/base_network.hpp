@@ -2,7 +2,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-10-03 12:00:58 d3g096
+ * @date   2013-10-07 15:00:09 d3g096
  * 
  * @brief  
  * 
@@ -1607,6 +1607,7 @@ void updateBranches(void)
 void
 writeGraph(const std::string& outname) 
   {
+    static const bool internal_indexes(false);
     std::ofstream out;
     if (this->processor_rank() == 0) {
       out.open(outname.c_str(), std::ofstream::out | std::ofstream::trunc);
@@ -1624,8 +1625,8 @@ writeGraph(const std::string& outname)
         BusIterator bus;
         for (bus = p_buses.begin(); bus != p_buses.end(); ++bus) {
           if (bus->p_activeBus) {
-            out << " n" << bus->p_originalBusIndex 
-                << "[label=" << bus->p_originalBusIndex << "];" << std::endl;
+            int bidx(internal_indexes ? bus->p_globalBusIndex : bus->p_originalBusIndex);
+            out << " n" << bidx << "[label=" << bidx << "];" << std::endl;
           }
         }
         out << "}" << std::endl;
@@ -1641,8 +1642,10 @@ writeGraph(const std::string& outname)
         BranchIterator branch;
         for (branch = p_branches.begin(); branch != p_branches.end(); ++branch) {
           if (branch->p_activeBranch) {
-            out << "n" << branch->p_originalBusIndex1 << " -> " 
-                << "n" << branch->p_originalBusIndex2 << ";" 
+            int bidx1(internal_indexes ? branch->p_globalBusIndex1 : branch->p_originalBusIndex1);
+            int bidx2(internal_indexes ? branch->p_globalBusIndex2 : branch->p_originalBusIndex2);
+            out << "n" << bidx1 << " -> " 
+                << "n" << bidx2 << ";" 
                 << std::endl;
           }
         }
@@ -1673,9 +1676,10 @@ writeGraph(const std::string& outname)
             color = "red";
             style = "dotted";
           }
-          out << " n" << bus->p_originalBusIndex 
+          int bidx(internal_indexes ? bus->p_globalBusIndex : bus->p_originalBusIndex);
+          out << " n" << bidx
               << " ["
-              << "label=" << bus->p_originalBusIndex << ", "
+              << "label=" << bidx << ", "
               << "color=" << color << ", "
               << "style=" << style 
               << "];" << std::endl;
@@ -1688,8 +1692,10 @@ writeGraph(const std::string& outname)
             color = "red";
             style = "dotted";
           }
-          out << "n" << branch->p_originalBusIndex1 << " -> " 
-              << "n" << branch->p_originalBusIndex2 << " " 
+          int bidx1(internal_indexes ? branch->p_globalBusIndex1 : branch->p_originalBusIndex1);
+          int bidx2(internal_indexes ? branch->p_globalBusIndex2 : branch->p_originalBusIndex2);
+          out << "n" << bidx1 << " -> " 
+              << "n" << bidx2 << " " 
               << "[" 
               << "color=" << color << ", "
               << "style=" << style 
