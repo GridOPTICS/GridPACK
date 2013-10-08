@@ -115,9 +115,9 @@ void gridpack::powerflow::PFApp::execute(void)
 //  busIO.header("\nPQ values\n");
 //  PQ->print();
   busIO.header("\n   Elements of PQ vector\n");
-  busIO.header("\n   Bus Number           P                Q\n");
+  busIO.header("\n   Bus Number           P                   Q      Neighbors\n");
   busIO.write("pq");
-
+#if 1
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
@@ -232,5 +232,6 @@ void gridpack::powerflow::PFApp::execute(void)
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   busIO.write();
+#endif
 
 }
