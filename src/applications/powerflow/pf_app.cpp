@@ -2,7 +2,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2013-10-03 11:54:50 d3g096
+ * @date   2013-10-08 08:15:14 d3g096
  * 
  * @brief  
  * 
@@ -173,6 +173,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // Create linear solver
   gridpack::math::LinearSolver isolver(*J);
+  isolver.configure(cursor);
 
   tol = 2.0*tolerance;
   int iter = 0;
@@ -209,6 +210,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
     // Create linear solver
     gridpack::math::LinearSolver solver(*J);
+    solver.configure(cursor);
 //    sprintf(ioBuf,"\nIteration %d Print X\n",iter+1);
 //    busIO.header(ioBuf);
     X->zero(); //might not need to do this

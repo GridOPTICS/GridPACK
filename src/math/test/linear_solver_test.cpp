@@ -2,7 +2,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-09-26 15:41:43 d3g096
+ * @date   2013-10-03 13:57:32 d3g096
  * 
  * @brief  
  * 
@@ -11,6 +11,7 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
 
 #define BOOST_TEST_NO_MAIN
@@ -21,6 +22,10 @@
 #include "gridpack/utilities/exception.hpp"
 #include "math.hpp"
 #include "linear_solver.hpp"
+
+/// The configuration used for these tests
+static boost::scoped_ptr<gridpack::utility::Configuration::Cursor> test_config;
+
 
 BOOST_AUTO_TEST_SUITE(LinearSolverTest)
 
@@ -158,6 +163,8 @@ BOOST_AUTO_TEST_CASE( Versteeg )
   std::auto_ptr<gridpack::math::LinearSolver> 
     solver(new gridpack::math::LinearSolver(*A));
 
+  BOOST_REQUIRE(test_config);
+  solver->configure(test_config.get());
   solver->solve(*b, *x);
 
   std::auto_ptr<gridpack::math::Vector>
@@ -210,6 +217,16 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
+
+  boost::mpi::communicator world;
+  boost::scoped_ptr<gridpack::utility::Configuration> 
+    config(gridpack::utility::Configuration::configuration());
+  
+  config->enableLogging();
+  config->open("gridpack.xml", world);
+
+  test_config.reset(config->getCursor("GridPACK.MathTests"));
+
   gridpack::math::Initialize();
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   gridpack::math::Finalize();

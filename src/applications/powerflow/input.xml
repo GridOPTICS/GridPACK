@@ -4,5 +4,15 @@
     <networkConfiguration> IEEE14.raw </networkConfiguration>
     <networkUnpartitionedGraph>IEEE14_network.dot</networkUnpartitionedGraph>
     <networkPartitionedGraph>IEEE14_partitioned_network.dot</networkPartitionedGraph>
+    <LinearSolver>
+        <PETScPrefix>nrs</PETScPrefix>
+        <PETScOptions>
+          -ksp_atol 1.0e-08
+          -ksp_rtol 1.0e-12
+          -ksp_monitor
+          -ksp_max_it 50
+          -ksp_view
+        </PETScOptions>
+    </LinearSolver>
   </Powerflow>
 </Configuration>

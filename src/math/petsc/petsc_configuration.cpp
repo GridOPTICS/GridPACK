@@ -2,7 +2,7 @@
 /**
  * @file   petsc_configuration.cpp
  * @author William A. Perkins
- * @date   2013-10-03 07:06:31 d3g096
+ * @date   2013-10-08 08:11:18 d3g096
  * 
  * @brief Implementation of routines for handling PETSc options
  * through Configuration
@@ -125,9 +125,11 @@ petscProcessOptions(const parallel::Communicator& comm,
     optsmod.append(" ");
   }
 
-  std::cout << "petscProcessOptions:  in: " << optsorig << std::endl;
-  std::cout << "petscProcessOptions: fmt: " << optsfmt << std::endl;
-  std::cout << "petscProcessOptions: out: " << optsmod << std::endl;
+  if (false) {
+    std::cout << "petscProcessOptions:  in: " << optsorig << std::endl;
+    std::cout << "petscProcessOptions: fmt: " << optsfmt << std::endl;
+    std::cout << "petscProcessOptions: out: " << optsmod << std::endl;
+  }
 
   PetscErrorCode ierr(0);
   try {

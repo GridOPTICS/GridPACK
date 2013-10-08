@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-09-10 09:20:12 d3g096
+ * @date   2013-10-03 13:53:24 d3g096
  * 
  * @brief  
  * 
@@ -95,6 +95,12 @@ public:
    * 
    */
   ~LinearSolver(void);
+
+  /// Configure and do whatever is necessary to make this instance ready
+  void configure(utility::Configuration::Cursor *props)
+  {
+    p_solver->configure(props);
+  }
 
   /// Solve w/ the specified RHS, put result in specified vector
   /** 

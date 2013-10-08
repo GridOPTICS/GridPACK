@@ -34,6 +34,7 @@
           -ksp_rtol 1.0e-08
           -ksp_monitor
           -ksp_max_it 50
+          -ksp_view
         </PETScOptions>
       </LinearSolver>
     </NewtonRaphsonSolver>

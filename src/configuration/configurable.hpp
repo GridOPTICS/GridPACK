@@ -3,7 +3,7 @@
 /**
  * @file   configurable.h
  * @author William A. Perkins
- * @date   2013-10-01 11:45:34 d3g096
+ * @date   2013-10-08 08:31:12 d3g096
  * 
  * @brief  
  * 
@@ -17,6 +17,7 @@
 #define _configurable_h_
 
 #include <string>
+#include <boost/shared_ptr.hpp>
 #include "gridpack/configuration/configuration.hpp"
 
 namespace gridpack {
@@ -36,7 +37,11 @@ class Configurable {
 public:
 
   /// Copy constructor
-  Configurable(const Configurable& old) : p_key(old.p_key) {}
+  Configurable(const Configurable& old) 
+    : p_key(old.p_key),
+      p_configCursor(old.p_configCursor),
+      p_isConfigured(false)
+  {}
 
   /// Destructor
   virtual ~Configurable(void) {}
@@ -53,31 +58,56 @@ public:
     p_key = s;
   }
 
+  /// Is this instance configured?
+  bool isConfigured(void) const
+  {
+    return p_isConfigured;
+  }
+
   /// Initialize this instance using the specified configuration property tree
   void configure(utility::Configuration::Cursor *theprops)
   {
-    utility::Configuration::Cursor *props(NULL);
     if (theprops != NULL) {
-      props = theprops->getCursor(this->p_key);
+      p_configCursor.reset(theprops->getCursor(this->p_key));
     }
-    this->p_configure(props);
+    this->p_configure(p_configCursor.get());
+    p_isConfigured = true;
   }
 
 protected:
 
   /// Default constructor (only for children)
-  Configurable(void) : p_key("bogus") {}
+  Configurable(void) 
+    : p_key("bogus"), 
+      p_configCursor(),
+      p_isConfigured(false)
+  {}
 
   /// Construct with a specified path (only for children)
-  Configurable(const std::string& key) : p_key(key) {}
+  Configurable(const std::string& key) 
+    : p_key(key),
+      p_configCursor(),
+      p_isConfigured(false)
+  {}
 
   /// Specialized way to configure from property tree
   virtual void p_configure(utility::Configuration::Cursor *props) = 0;
+
+  /// The configuration cursor used by this instance
+  /**
+   * The cursor given to configure() is saved in case it needs to be
+   * referred to later.  
+   * 
+   */
+  boost::shared_ptr<utility::Configuration::Cursor> p_configCursor;
 
 private:
 
   /// The configuration key
   std::string p_key;
+
+  /// Has this instance been configured
+  bool p_isConfigured;
 
 };
 

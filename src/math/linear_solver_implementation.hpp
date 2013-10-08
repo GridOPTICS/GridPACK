@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-09-09 12:22:09 d3g096
+ * @date   2013-10-03 13:41:55 d3g096
  * 
  * @brief  
  * 
@@ -23,7 +23,7 @@
 #include <gridpack/math/matrix.hpp>
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
-// #include <gridpack/utility/configurable.hpp>
+#include <gridpack/configuration/configurable.hpp>
 
 namespace gridpack {
 namespace math {
@@ -33,6 +33,7 @@ namespace math {
 // -------------------------------------------------------------
 class LinearSolverImplementation 
   : public parallel::Distributed,
+    public utility::Configurable,
     private utility::Uncopyable
 {
 public:

@@ -2,7 +2,7 @@
 /**
  * @file   linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-06-14 12:05:23 d3g096
+ * @date   2013-10-03 14:01:39 d3g096
  * 
  * @brief  
  * 
@@ -29,6 +29,7 @@ namespace math {
 // -------------------------------------------------------------
 LinearSolverImplementation::LinearSolverImplementation(const Matrix& A)
   : parallel::Distributed(A.communicator()),
+    utility::Configurable("LinearSolver"),
     utility::Uncopyable(),
     p_A(A.clone())
 {

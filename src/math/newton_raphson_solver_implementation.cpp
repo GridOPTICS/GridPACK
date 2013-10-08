@@ -1,7 +1,7 @@
 /**
  * @file   newton_raphson_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-02 07:49:59 d3g096
+ * @date   2013-10-08 07:52:39 d3g096
  * 
  * @brief  
  * 
@@ -53,6 +53,7 @@ NewtonRaphsonSolverImplementation::p_solve(void)
     p_jacobian(*p_X, *p_J);
     if (!p_linear_solver) {
       p_linear_solver.reset(new LinearSolver(*p_J));
+      p_linear_solver->configure(this->p_configCursor.get());
     } else {
       p_linear_solver->set_matrix(*p_J);
     }
@@ -78,7 +79,6 @@ NewtonRaphsonSolverImplementation::p_configure(utility::Configuration::Cursor *p
   if (props != NULL) {
     p_tolerance = props->get("Tolerance", p_tolerance);
     p_max_iterations = props->get("MaxIterations", p_max_iterations);
-    
   }
 }
 

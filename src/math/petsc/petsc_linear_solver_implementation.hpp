@@ -3,7 +3,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-09-09 12:22:17 d3g096
+ * @date   2013-10-03 13:42:50 d3g096
  * 
  * @brief  
  * 
@@ -42,8 +42,14 @@ protected:
   /// The PETSc linear solver 
   KSP p_KSP;
 
+  /// Do what is necessary to build this instance
+  void p_build(const std::string& option_prefix);
+
   /// Solve w/ the specified RHS and estimate (result in x)
   void p_solve(const Vector& b, Vector& x) const;
+
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::Cursor *props);
 
   /// Use different coefficient matrix (or A w/ new values) (specialized)
   void p_set_matrix(const Matrix& A);

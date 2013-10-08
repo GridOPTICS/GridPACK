@@ -1,7 +1,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-03 12:44:46 d3g096
+ * @date   2013-10-03 13:51:29 d3g096
  * 
  * @brief  
  * 
@@ -15,6 +15,7 @@
 #include "petsc/petsc_linear_solver_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
+#include "petsc/petsc_configuration.hpp"
 
 namespace gridpack {
 namespace math {
@@ -30,15 +31,6 @@ namespace math {
 PETScLinearSolverImplementation::PETScLinearSolverImplementation(const Matrix& A)
   : LinearSolverImplementation(A)
 {
-  PetscErrorCode ierr;
-  try  {
-    ierr = KSPCreate(this->communicator(), &p_KSP); CHKERRXX(ierr);
-    ierr = KSPSetInitialGuessNonzero(p_KSP,PETSC_TRUE); CHKERRXX(ierr); 
-    ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
-    p_set_matrix(*p_A);
-  } catch (const PETSc::Exception& e) {
-    throw PETScException(ierr, e);
-  }
 }
 
 PETScLinearSolverImplementation::~PETScLinearSolverImplementation(void)
@@ -53,6 +45,37 @@ PETScLinearSolverImplementation::~PETScLinearSolverImplementation(void)
   } catch (...) {
     // just eat it
   }
+}
+
+// -------------------------------------------------------------
+// PETScLinearSolverImplementation::p_build
+// -------------------------------------------------------------
+void
+PETScLinearSolverImplementation::p_build(const std::string& option_prefix)
+{
+  PetscErrorCode ierr;
+  try  {
+    ierr = KSPCreate(this->communicator(), &p_KSP); CHKERRXX(ierr);
+    ierr = KSPSetInitialGuessNonzero(p_KSP,PETSC_TRUE); CHKERRXX(ierr); 
+    ierr = KSPSetOptionsPrefix(p_KSP, option_prefix.c_str()); CHKERRXX(ierr);
+    PC pc;
+    ierr = KSPGetPC(p_KSP, &pc); CHKERRXX(ierr);
+    ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
+    ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
+    p_set_matrix(*p_A);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}  
+
+// -------------------------------------------------------------
+// PETScLinearSolverImplementation::p_configure
+// -------------------------------------------------------------
+void
+PETScLinearSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+{
+  std::string prefix(petscProcessOptions(this->communicator(), props));
+  p_build(prefix);
 }
 
 // -------------------------------------------------------------
