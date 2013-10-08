@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Powerflow>
+    <networkConfiguration> pti08.raw </networkConfiguration>
+    <networkUnpartitionedGraph>pti08_network.dot</networkUnpartitionedGraph>
+    <networkPartitionedGraph>pti08x_partitioned_network.dot</networkPartitionedGraph>
+    <!--
+    <LinearSolver>
+      <PETScPrefix>nrs</PETScPrefix>
+      <PETScOptions>
+        -ksp_type preonly
+        -pc_type lu
+        -ksp_monitor
+        -ksp_max_it 1
+        -ksp_view
+      </PETScOptions>
+    </LinearSolver> 
+    -->
+    <LinearSolver>
+        <PETScPrefix>nrs</PETScPrefix>
+        <PETScOptions>
+          -ksp_type bicg
+          -pc_type bjacobi
+          -sub_pc_type ilu -sub_pc_factor_levels 11 sub_ksp_type preonly 
+          -ksp_atol 1.0e-15
+          -ksp_rtol 1.0e-10
+          -ksp_monitor
+          -ksp_max_it 10000
+          -ksp_view
+        </PETScOptions>
+    </LinearSolver>
+  </Powerflow>
+</Configuration>

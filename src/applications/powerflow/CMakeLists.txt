@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-07 15:12:17 d3g096
+# Last Change: 2013-10-08 09:06:02 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -65,12 +65,17 @@ add_custom_target(powerflow.x.input
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/pti08.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/pti08.xml
 
 )
 add_dependencies(powerflow.x powerflow.x.input)
