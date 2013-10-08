@@ -476,12 +476,21 @@ template <class _network>
           data->addValue(BRANCH_INDEX, index);
           p_branchData.push_back(data);
 
-          // BRANCH_FROMBUS            "I"                   integer
           o_idx1 = atoi(split_line[0].c_str());
-          data->addValue(BRANCH_FROMBUS, o_idx1);
-
-          // BRANCH_TOBUS            "J"                   integer
           o_idx2 = atoi(split_line[1].c_str());
+
+          // Switch order if one of the indices is negative
+          if (o_idx1<0 || o_idx2<0) {
+            int t_idx = o_idx2;
+            o_idx2 = o_idx1;
+            o_idx1 = t_idx;
+            if (o_idx1 < 0) o_idx1 = -o_idx1;
+            if (o_idx2 < 0) o_idx2 = -o_idx2;
+          }
+
+          // BRANCH_FROMBUS            "I"                   integer
+          data->addValue(BRANCH_FROMBUS, o_idx1);
+          // BRANCH_TOBUS            "J"                   integer
           data->addValue(BRANCH_TOBUS, o_idx2);
 
           // record the bus pairs that form the branch for subsequent searching
