@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-03 13:53:24 d3g096
+ * @date   2013-10-08 09:40:34 d3g096
  * 
  * @brief  
  * 
@@ -51,7 +51,7 @@ namespace math {
  * solved using the same coefficient matrix by repeatedly calling
  * solve() with different \f$\mathbf{b}\f$ and \f$\mathbf{x}\f$
  * vectors.  If the coefficient matrix changes in any way (even just
- * the coefficients) between system solutions, the set_matrix() method
+ * the coefficients) between system solutions, the setMatrix() method
  * must be called before solve();
  * 
  * This class encapuslates the linear system solver of the underlying
@@ -114,7 +114,7 @@ public:
    * be the same and match that of the coefficient Matrix used for
    * construction. The length of both @c x and @c b must the number of
    * columns in the coeffienct Matrix used for constructor or passed
-   * the last call to set_matrix().  If these conditions are not met,
+   * the last call to setMatrix().  If these conditions are not met,
    * an \ref Exception "exception" is thrown.
    *  
    * @param b Vector containing right hand side of linear system
@@ -141,9 +141,9 @@ public:
    * 
    * @param A existing, filled coefficient matrix
    */
-  void set_matrix(const Matrix& A)
+  void setMatrix(const Matrix& A)
   {
-    p_solver->set_matrix(A);
+    p_solver->setMatrix(A);
   }
   
 

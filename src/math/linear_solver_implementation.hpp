@@ -3,7 +3,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-03 13:41:55 d3g096
+ * @date   2013-10-08 10:14:04 d3g096
  * 
  * @brief  
  * 
@@ -51,10 +51,10 @@ public:
   }
 
   /// Use different coefficient matrix (or A w/ new values)
-  void set_matrix(const Matrix& A)
+  void setMatrix(const Matrix& A)
   {
-    p_A.reset(A.clone());
-    this->p_set_matrix(A);
+    p_A->equate(A);
+    this->p_setMatrix();
   }
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor)
@@ -90,7 +90,7 @@ protected:
    * 
    * @param A new coefficient matrix 
    */
-  virtual void p_set_matrix(const Matrix& A) = 0;
+  virtual void p_setMatrix(void) = 0;
 
   /// Allow visits by implementation visitors
   virtual void p_accept(ImplementationVisitor& visitor) = 0;

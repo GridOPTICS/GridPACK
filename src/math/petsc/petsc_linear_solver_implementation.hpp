@@ -3,7 +3,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-03 13:42:50 d3g096
+ * @date   2013-10-08 10:08:46 d3g096
  * 
  * @brief  
  * 
@@ -52,7 +52,7 @@ protected:
   void p_configure(utility::Configuration::Cursor *props);
 
   /// Use different coefficient matrix (or A w/ new values) (specialized)
-  void p_set_matrix(const Matrix& A);
+  void p_setMatrix(void);
 
   /// Allow visits by implementation visitors
   void p_accept(ImplementationVisitor& visitor);

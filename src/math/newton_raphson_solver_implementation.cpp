@@ -1,7 +1,7 @@
 /**
  * @file   newton_raphson_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-08 07:52:39 d3g096
+ * @date   2013-10-08 09:41:43 d3g096
  * 
  * @brief  
  * 
@@ -55,7 +55,7 @@ NewtonRaphsonSolverImplementation::p_solve(void)
       p_linear_solver.reset(new LinearSolver(*p_J));
       p_linear_solver->configure(this->p_configCursor.get());
     } else {
-      p_linear_solver->set_matrix(*p_J);
+      p_linear_solver->setMatrix(*p_J);
     }
     deltaX->zero();
     p_linear_solver->solve(*p_F, *deltaX);
