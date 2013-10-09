@@ -49,9 +49,9 @@ bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
     *isize = 2;
     *jsize = 2;
     return true;
-  } else {
-    *isize = 2;
-    *jsize = 2;
+  } else if (p_mode == YBus) {
+    *isize = 1;
+    *jsize = 1;
   }
   return true;
 }
@@ -66,10 +66,11 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBus) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
-    values[0] = p_ybusr;
-    values[1] = p_ybusi;
-    values[2] = -p_ybusi;
-    values[3] = p_ybusr;
+//    values[0] = p_ybusr;
+//    values[1] = p_ybusi;
+//    values[2] = -p_ybusi;
+//    values[3] = p_ybusr;
+    values[0] = ret;
     return true;
   } else if (p_mode == Jacobian) {
     if (!getReferenceBus()) {
@@ -509,9 +510,9 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       *jsize = 2;
       return true; 
     }
-  } else {
-    *isize = 2;
-    *jsize = 2;
+  } else if (p_mode == YBus) {
+    *isize = 1;
+    *jsize = 1;
     return true;
   }
 }
@@ -536,9 +537,9 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       *jsize = 2;
       return true; 
     }
-  } else {
-    *isize = 2;
-    *jsize = 2;
+  } else if (p_mode == YBus) {
+    *isize = 1;
+    *jsize = 1;
     return true;
   }
 }
@@ -588,11 +589,12 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
     } else {
       return false;
     }
-  } else {
-    values[0] = p_ybusr_frwd;
-    values[1] = p_ybusi_frwd;
-    values[2] = -p_ybusi_frwd;
-    values[3] = p_ybusr_frwd;
+  } else if (p_mode == YBus) {
+//    values[0] = p_ybusr_frwd;
+//    values[1] = p_ybusi_frwd;
+//    values[2] = -p_ybusi_frwd;
+//    values[3] = p_ybusr_frwd;
+    values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
     return true;
   }
 }
@@ -637,10 +639,11 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       return false;
     }
   } else {
-    values[0] = p_ybusr_rvrs;
-    values[1] = p_ybusi_rvrs;
-    values[2] = -p_ybusi_rvrs;
-    values[3] = p_ybusr_rvrs;
+  //  values[0] = p_ybusr_rvrs;
+  //  values[1] = p_ybusi_rvrs;
+  //  values[2] = -p_ybusi_rvrs;
+  //  values[3] = p_ybusr_rvrs;
+  //  values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
     return true;
   }
 }
