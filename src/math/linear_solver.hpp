@@ -1,9 +1,15 @@
 // Emacs Mode Line: -*- Mode:c++;-*-
 // -------------------------------------------------------------
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-08 09:40:34 d3g096
+ * @date   2013-10-09 12:23:20 d3g096
  * 
  * @brief  
  * 

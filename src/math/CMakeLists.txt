@@ -1,11 +1,14 @@
 # -------------------------------------------------------------
 # file: CMakeLists.txt
 # -------------------------------------------------------------
+# Copyright (c) 2013 Battelle Memorial Institute
+# Licensed under modified BSD License. A copy of this license can be
+# found in the LICENSE file in the top level directory of this
+# distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-10-02 11:31:00 d3g096
+# Last Change: 2013-10-09 12:22:23 d3g096
 # -------------------------------------------------------------
-
 set(gridpack_math_sources)
 set(target_libraries 
   gridpack_configuration 

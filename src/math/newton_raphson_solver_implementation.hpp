@@ -1,16 +1,21 @@
 // Emacs Mode Line: -*- Mode:c++;-*-
 // -------------------------------------------------------------
-// file: newton_raphson_solver_implementation.hpp
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
 // -------------------------------------------------------------
+/**
+ * @file   newton_raphson_solver_implementation.hpp
+ * @author William A. Perkins
+ * @date   2013-10-09 12:25:45 d3g096
+ * 
+ * @brief  
+ * 
+ * 
+ */
 // -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created September  9, 2013 by William A. Perkins
-// Last Change: 2013-10-01 14:31:44 d3g096
-// -------------------------------------------------------------
-
 
 #ifndef _newton_raphson_solver_implementation_hpp_
 #define _newton_raphson_solver_implementation_hpp_

@@ -1,8 +1,14 @@
 // -------------------------------------------------------------
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
 /**
  * @file   implementation_visitor.cpp
  * @author William A. Perkins
- * @date   2013-06-14 12:13:39 d3g096
+ * @date   2013-10-09 12:23:00 d3g096
  * 
  * @brief  
  * 

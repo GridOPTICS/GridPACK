@@ -1,21 +1,19 @@
 // -------------------------------------------------------------
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-09-25 07:21:53 d3g096
+ * @date   2013-10-09 13:27:08 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
  * 
  */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created May  7, 2013 by William A. Perkins
-// Last Change: 2013-05-03 12:23:12 d3g096
 // -------------------------------------------------------------
 
 #include "gridpack/utilities/exception.hpp"

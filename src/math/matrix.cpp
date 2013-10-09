@@ -1,8 +1,14 @@
 // -------------------------------------------------------------
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-10-04 12:38:33 d3g096
+ * @date   2013-10-09 12:23:47 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 

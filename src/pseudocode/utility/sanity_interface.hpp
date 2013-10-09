@@ -1,18 +1,20 @@
 // Emacs Mode Line: -*- Mode:c++;-*-
 // -------------------------------------------------------------
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
 /**
  * @file   sanity_interface.h
  * @author William A. Perkins
- * @date   Mon Mar 25 10:56:55 2013
+ * @date   2013-10-09 13:45:15 d3g096
  * 
  * @brief  
  * 
  * 
  */
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created March 25, 2013 by William A. Perkins
-// Last Change: Thu Jun  3 06:45:08 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
 #ifndef _sanity_interface_h_

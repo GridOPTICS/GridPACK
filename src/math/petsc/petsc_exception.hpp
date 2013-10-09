@@ -1,12 +1,20 @@
+// -------------------------------------------------------------
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
 /**
  * @file   petsc_exception.hpp
  * @author William A. Perkins
- * @date   2013-05-08 13:44:13 d3g096
+ * @date   2013-10-09 13:23:43 d3g096
  * 
  * @brief 
  * 
  * 
  */
+// -------------------------------------------------------------
 
 #include <string>
 #include <petscsys.h>
