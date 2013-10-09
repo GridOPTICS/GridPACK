@@ -44,6 +44,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
+//enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, FY, POSFY};
 enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix};
 
 class DSBus
@@ -144,6 +145,7 @@ class DSBus
     std::vector<double> p_mva, p_r, p_dstr, p_dtr;
     int p_ngen;
     int p_type;
+
 };
 
 class DSBranch
@@ -219,6 +221,13 @@ class DSBranch
      * @param mode: enumerated constant for different modes
      */
     void setMode(int mode);
+
+    /**
+     * Return the updating factor that will be applied to the ybus matrix at
+     * the clear fault phase
+     * @return: value of update factor
+     */
+    gridpack::ComplexType getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2);
 
   private:
     double p_reactance;

@@ -40,6 +40,11 @@ class DSFactory
      */
     void setYBus(void);
 
+    /**
+     * Get the updating factor for posfy11 stage ybus
+     */
+    gridpack::ComplexType setFactor(int sw2_2, int sw3_2);
+
   private:
 
     NetworkPtr p_network;

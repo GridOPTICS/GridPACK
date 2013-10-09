@@ -61,5 +61,25 @@ void gridpack::dynamic_simulation::DSFactory::setYBus(void)
   }
 }
 
+/**
+ * Get the updating factor for posfy11 stage ybus
+ */
+gridpack::ComplexType
+gridpack::dynamic_simulation::DSFactory::setFactor(int sw2_2, int sw3_2)
+{
+  gridpack::ComplexType dummy(-999.0, -999.0);
+
+  int numBranch = p_network->numBranches();
+  int i;
+
+  // Invoke getPosfy11YbusUpdateFactor method on all branch objects
+  for (i=0; i<numBranch; i++) {
+    gridpack::ComplexType ret = (dynamic_cast<DSBranch*>(p_network->getBranch(i).get()))->getPosfy11YbusUpdateFactor(sw2_2, sw3_2);
+    if (ret != dummy) {
+      return ret;
+    }
+  }
+}
+
 } // namespace dynamic_simulation
 } // namespace gridpack

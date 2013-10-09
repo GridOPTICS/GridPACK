@@ -55,6 +55,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
     *jsize = 2;
   } else if (p_mode == GENERATOR) {
   } else if (p_mode == PERM) {*/
+  //if (p_mode == YBUS || p_mode == YL || p_mode = FY || p_mode = POSFY) {
   if (p_mode == YBUS || p_mode == YL) {
     *isize = 2;
     *jsize = 2;
@@ -163,7 +164,21 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     } else {
       return false;
     } 
-  }
+  } /*else if (p_mode == FY) {
+    values[0] = p_ybusr + p_pl / (p_voltage * p_voltage); 
+    values[1] = p_ybusi + (-p_ql) / (p_voltage * p_voltage);
+    values[2] = -values[1];
+    values[3] = values[0];
+    if (getOriginalIndex() == sw2_2) {
+      values[0] = 0.0;
+      values[1] = -1e7; 
+      values[2] = -values[1];
+      values[3] = values[0]; 
+    }
+    return true;
+  } else if (p_mode == POSFY) {
+
+  }*/
 }
 
 /**
@@ -308,7 +323,9 @@ void gridpack::dynamic_simulation::DSBus::load(
     }
   }
 
-
+  /*// assume switch info is set up here instead of reading from the input file
+  sw2_2 = 5; // 6-1
+  sw3_2 = 6; // 7-1*/
 }
 
 /**
@@ -396,6 +413,8 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
     *isize = 2;
     *jsize = 2;
     return true;
+  } else {
+    return false;
   }
 }
 bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *jsize) const
@@ -421,7 +440,9 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
     *isize = 2;
     *jsize = 2;
     return true;
-  } 
+  } else {
+    return false;
+  }
 }
 
 /**
@@ -671,5 +692,31 @@ gridpack::dynamic_simulation::DSBranch::getShunt(gridpack::dynamic_simulation::D
     reti = 0.0;
   }
   return gridpack::ComplexType(retr,reti);
+}
+
+/**
+ * Return the updating factor that will be applied to the ybus matrix at
+ * the clear fault phase
+ * @return: value of update factor
+ */
+gridpack::ComplexType 
+gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2)
+{ 
+  double retr, reti;
+  gridpack::dynamic_simulation::DSBus *bus1 =
+    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
+  gridpack::dynamic_simulation::DSBus *bus2 =
+    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus2().get());
+  if (bus1->getOriginalIndex() == sw2_2+1 && bus2->getOriginalIndex() == sw3_2+1) {
+    gridpack::ComplexType myValue(p_resistance, p_reactance);
+    myValue = 1.0 / myValue;
+    //printf("myValue = %f+%fi\n", real(myValue), imag(myValue));
+    //printf("%f %f\n", p_resistance, p_reactance);
+    retr = real(myValue);
+    reti = imag(myValue);
+    return gridpack::ComplexType(retr, reti);
+  } else {
+    return gridpack::ComplexType(-999.0, -999.0); // return a dummy value
+  }
 }
 
