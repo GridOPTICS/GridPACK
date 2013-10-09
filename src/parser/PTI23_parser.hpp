@@ -569,9 +569,11 @@ template <class _network>
 
           // KG: I'm assuming the BRANCH_FROMBUS is the bus index we need to match
           int fromBus = atoi(split_line[0].c_str());
+          if (fromBus < 0) fromBus = -fromBus;
 
           // KG: I'm assuming the BRANCH_TOBUS is the bus index we need to match
           int toBus = atoi(split_line[1].c_str());
+          if (toBus < 0) toBus = -toBus;
 
           // find branch corresponding to this
           int l_idx = 0;
