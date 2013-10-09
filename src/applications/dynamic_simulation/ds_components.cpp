@@ -57,8 +57,8 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
   } else if (p_mode == PERM) {*/
   //if (p_mode == YBUS || p_mode == YL || p_mode = FY || p_mode = POSFY) {
   if (p_mode == YBUS || p_mode == YL) {
-    *isize = 2;
-    *jsize = 2;
+    *isize = 1;
+    *jsize = 1;
   } else if (p_mode == PERM) {
     if (p_ngen > 0) {
       *isize = 1;
@@ -68,22 +68,22 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
     }
   } else if (p_mode == YA) {
     if (p_ngen > 0) {
-      *isize = 2*p_ngen;
-      *jsize = 2*p_ngen;
+      *isize = p_ngen;
+      *jsize = p_ngen;
     } else {
       return false;
     }
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
-      *isize = 2;
-      *jsize = 2;
+      *isize = 1;
+      *jsize = 1;
     } else {
-      *isize = 2;
+      *isize = 1;
       *jsize = 0;
     } 
   } else {
-    *isize = 2;
-    *jsize = 2;
+    *isize = 1;
+    *jsize = 1;
   }
   return true;
 }
@@ -98,25 +98,20 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBUS) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
-    values[0] = p_ybusr;
-    values[1] = p_ybusi;
-    values[2] = -p_ybusi;
-    values[3] = p_ybusr;
+    values[0] = ret;
     return true;
   } else if (p_mode == YL) {
     //if (p_type == 1) { 
       //p_pl = p_pl;// - p_pg[0];
       //p_ql = p_ql;// - p_qg[0];
     //}
-    values[0] = p_ybusr + p_pl / (p_voltage * p_voltage); 
-    values[1] = p_ybusi + (-p_ql) / (p_voltage * p_voltage);
-    values[2] = -values[1];
-    values[3] = values[0];
+    gridpack::ComplexType ret(p_ybusr+p_pl/(p_voltage*p_voltage), p_ybusi+(-p_ql)/(p_voltage*p_voltage));
+    values[0] = ret;
     return true;
   } else if (p_mode == PERM) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[i] = 1;
+        values[i] = 1.0;
       }
       return true;
     } else {
@@ -132,6 +127,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
         int ii2 = 2*jp*ngen2+2*ip+1;
         int ii3 = (2*jp+1)*ngen2+2*ip;
         int ii4 = (2*jp+1)*ngen2+2*ip+1;
+        int ii = jp*p_ngen + ip;
         if (ip == jp) {
           double ra = p_r[ip] * p_sbase / p_mva[ip];
           double xd;
@@ -140,15 +136,9 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
           }
           gridpack::ComplexType Y_a(ra, xd);
           Y_a = 1.0 / Y_a;
-          values[ii1] = real(Y_a);
-          values[ii2] = imag(Y_a);
-          values[ii3] = -imag(Y_a);
-          values[ii4] = real(Y_a);
+          values[ii] = Y_a;
         } else {
-          values[ii1] = 0;
-          values[ii2] = 0;
-          values[ii3] = 0;
-          values[ii4] = 0;
+          values[ii] = 0.0;
         }
         return true;
       } 
@@ -157,9 +147,6 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     }
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
-      values[0] = -1.0;
-      values[0] = 0.0;
-      values[0] = 0.0;
       values[0] = -1.0;
     } else {
       return false;
@@ -410,8 +397,8 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
   } else if (p_mode == GENERATOR) {
   }*/
   if (p_mode == YBUS || p_mode == YL) {
-    *isize = 2;
-    *jsize = 2;
+    *isize = 1;
+    *jsize = 1;
     return true;
   } else {
     return false;
@@ -437,8 +424,8 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
     }
   } else if (p_mode == YBUS) {*/
   if (p_mode == YBUS || p_mode == YL) {
-    *isize = 2;
-    *jsize = 2;
+    *isize = 1;
+    *jsize = 1;
     return true;
   } else {
     return false;
@@ -454,10 +441,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
 bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == YL) {
-    values[0] = p_ybusr_frwd;
-    values[1] = p_ybusi_frwd;
-    values[2] = -p_ybusi_frwd;
-    values[3] = p_ybusr_frwd;
+    values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd); 
     return true;
   /*} else if (p_mode == PERM) {
     values[0] = 0;
@@ -503,10 +487,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *va
 bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == YL) {
-    values[0] = p_ybusr_rvrs;
-    values[1] = p_ybusi_rvrs;
-    values[2] = -p_ybusi_rvrs;
-    values[3] = p_ybusr_rvrs;
+    values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
     return true;
   /*} else if (p_mode == PERM) {
     values[0] = 0;

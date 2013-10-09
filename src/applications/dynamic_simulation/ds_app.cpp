@@ -124,31 +124,33 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   !!! Compilation succeeded till this point                                 
   !!! Linear solver are not available in math yet 
   ************************************************************************/
-/*
+
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
   boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans));
   printf("\n=== Ymod: ============\n");
   Ymod->print(); 
  
   // Form matrix Y_b: Y_b(1:ngen, jg) = -Ymod, where jg represents the 
-  // corresponding index sets of buses that the generators are connected to 
+  // corresponding index sets of buses that the generators are connected to. 
+  // Then construct Y_b's transposed matrix Y_c: Y_c = Y_b'
+  // This two steps can be done by using a P matrix to get Y_c directly.
   factory.setMode(PMatrix);
   gridpack::mapper::FullMatrixMap<DSNetwork> pMap(network);
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
-  boost::shared_ptr<gridpack::math::Matrix> Y_b(multiply(*P, *Ymod)); 
-  //Y_b->print();
-  
-  // Construct Y_b's transposed matrix Y_c: Y_c = Y_b'
-  boost::shared_ptr<gridpack::math::Matrix> Y_c(transpose(*Y_b));
-  //Y_c->print();
+  boost::shared_ptr<gridpack::math::Matrix> Y_c(multiply(*P, *Ymod)); 
+  printf("\n=== Y_c: ============\n");
+  Y_c->print();
    
   // Form matrix permYmod
   boost::shared_ptr<gridpack::math::Matrix> permYmod(multiply(*perm, *Ymod)); 
+  printf("\n=== permYmod: ============\n");
+  permYmod->print();
 
-  // Update ybus: ybus = ybus+permYmod
+  // Update ybus: ybus = ybus+permYmod (different dimension)
   //ybus = ybus + permYmod;
-  ybus->add(*permYmod);
-
+  printf("\n=== ybus after added permYmod: ============\n");
+  ybus->print();
+/*
   // Solve linear equations of ybus * X = Y_c
   boost::shared_ptr<gridpack::math::Matrix> X; 
 
@@ -176,10 +178,8 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   fy11ybus->print();*/
 
   boost::shared_ptr<gridpack::math::Matrix> fy11ybus(ybus->clone());
-  double xr = 0.0;
-  double xi = -1e7;
-  fy11ybus->setElement(sw2_2*2, sw2_2*2+1, -xi);
-  fy11ybus->setElement(sw2_2*2+1, sw2_2*2, xi);
+  gridpack::ComplexType x(0.0, -1e7);
+  fy11ybus->setElement(sw2_2, sw2_2, -x);
   fy11ybus->ready();
   printf("\n=== fy11ybus: ============\n");
   fy11ybus->print();
@@ -208,37 +208,16 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
 
   gridpack::ComplexType big(0.0, 1e7);
   gridpack::ComplexType x11 = big - myValue;
-  printf("x11 = %f+%fi\n", real(x11), imag(x11));
-  double x11r = real(x11);
-  double x11i = imag(x11); 
-  posfy11ybus->addElement(sw2_2*2, sw2_2*2, x11r);
-  posfy11ybus->addElement(sw2_2*2+1, sw2_2*2+1, x11r);
-  posfy11ybus->addElement(sw2_2*2, sw2_2*2+1, 1e7-x11i);
-  posfy11ybus->addElement(sw2_2*2+1, sw2_2*2, -1e7+x11i);
+  posfy11ybus->addElement(sw2_2, sw2_2, x+x11);
 
   gridpack::ComplexType x12 = myValue;
-  double x12r = real(x12);
-  double x12i = imag(x12); 
-  posfy11ybus->addElement(sw2_2*2, sw3_2*2, x12r);
-  posfy11ybus->addElement(sw2_2*2+1, sw3_2*2+1, x12r);
-  posfy11ybus->addElement(sw2_2*2, sw3_2*2+1, -x12i);
-  posfy11ybus->addElement(sw2_2*2+1, sw3_2*2, x12i);
+  posfy11ybus->addElement(sw2_2, sw3_2, x12);
 
   gridpack::ComplexType x21 = myValue;
-  double x21r = real(x21);
-  double x21i = imag(x21); 
-  posfy11ybus->addElement(sw3_2*2, sw2_2*2, x21r);
-  posfy11ybus->addElement(sw3_2*2+1, sw2_2*2+1, x21r);
-  posfy11ybus->addElement(sw3_2*2, sw2_2*2+1, -x21i);
-  posfy11ybus->addElement(sw3_2*2+1, sw2_2*2, x21i);
+  posfy11ybus->addElement(sw3_2, sw2_2, x21);
 
   gridpack::ComplexType x22 = -myValue; 
-  double x22r = real(x22);
-  double x22i = imag(x22); 
-  posfy11ybus->addElement(sw3_2*2, sw3_2*2, x22r);
-  posfy11ybus->addElement(sw3_2*2+1, sw3_2*2+1, x22r);
-  posfy11ybus->addElement(sw3_2*2, sw3_2*2+1, -x22i);
-  posfy11ybus->addElement(sw3_2*2+1, sw3_2*2, x22i);
+  posfy11ybus->addElement(sw3_2, sw3_2, x22);
   
   posfy11ybus->ready(); 
   printf("\n=== posfy11ybus: ============\n");
