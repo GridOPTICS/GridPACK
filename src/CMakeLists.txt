@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2013-10-02 12:49:21 d3g096
+# Last Change: 2013-10-09 14:01:23 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -88,10 +88,17 @@ endif()
 # Only versions > 4.0 have been used
 # -------------------------------------------------------------
 message(STATUS "Checking ParMETIS ...")
-# Eventually this needs to be REQUIRED
+
+# If ParMETIS is included in PETSc, use that installation. This will
+# override any specification on the command line.  
+if (PETSC_HAVE_PARMETIS) 
+  set(PARMETIS_DIR "${PETSC_DIR}/${PETSC_ARCH}")
+endif()
 find_package(ParMETIS REQUIRED)
+
+
 # -------------------------------------------------------------
-# GA
+# GlobalArrays
 # 
 # Only versions > 5.2 have been used
 # -------------------------------------------------------------

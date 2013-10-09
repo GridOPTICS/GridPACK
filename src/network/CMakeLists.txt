@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-09 08:52:43 d3g096
+# Last Change: 2013-10-09 15:05:01 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -14,18 +14,17 @@ set(target_libraries
 )
 
 if (PARMETIS_FOUND)
-   set(target_libraries 
-     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
-     ${target_libraries}
-   )
+  include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
+  set(target_libraries 
+    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
+    ${target_libraries}
+    )
 endif()
 
 set(target_libraries 
   gridpack_partition gridpack_components gridpack_parallel
   ${target_libraries} 
 )
-
-
 
 include_directories(AFTER ${GA_INCLUDE_DIRS})
 

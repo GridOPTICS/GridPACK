@@ -4,7 +4,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-08 09:06:02 d3g096
+# Last Change: 2013-10-09 15:00:22 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -23,6 +23,9 @@ set(target_libraries
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
+if (PARMETIS_FOUND)
+  include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
 endif()
 
 add_library(powerflow_app

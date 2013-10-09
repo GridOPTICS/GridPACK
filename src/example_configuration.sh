@@ -14,11 +14,10 @@ if [ $host == "flophouse" ]; then
 
     prefix="/net/flophouse/files0/perksoft/linux64"
     $prefix/bin/cmake -Wdev --debug-trycompile \
-        -D PARMETIS_DIR:STRING="$prefix" \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.3-p3" \
-        -D PETSC_ARCH:STRING='arch-linux2-cxx-opt' \
+        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.2" \
+        -D PETSC_ARCH:STRING='arch-linux2-complex-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \

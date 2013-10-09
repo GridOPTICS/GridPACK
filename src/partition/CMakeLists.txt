@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2013-07-08 12:28:54 d3g096
+# Last Change: 2013-10-09 14:59:20 d3g096
 # -------------------------------------------------------------
 
 
@@ -33,7 +33,7 @@ include_directories(AFTER ${GA_INCLUDE_DIRS})
 # -------------------------------------------------------------
 if (PARMETIS_FOUND)
 
-   include_directories(AFTER ${PARMETIS_INCLUDE_DIR})
+   include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
    list(APPEND gridpack_partition_sources
      parmetis/graph_partitioner.cpp
      parmetis/parmetis_graph_wrapper.cpp
