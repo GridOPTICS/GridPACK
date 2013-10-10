@@ -1,3 +1,8 @@
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
 // -------------------------------------------------------------
 /**
  * @file   pf_app.cpp
@@ -59,8 +64,11 @@ void gridpack::powerflow::PFApp::execute(void)
       "No network configuration specified");
 
   // load input file
+  printf("Got to 1\n");
   gridpack::parser::PTI23_parser<PFNetwork> parser(network);
+  printf("Got to 2\n");
   parser.parse(filename.c_str());
+  printf("Got to 3\n");
 
   std::string unpartout(cursor->get("networkUnpartitionedGraph", ""));
   std::string partout(cursor->get("networkPartitionedGraph", ""));
@@ -70,39 +78,51 @@ void gridpack::powerflow::PFApp::execute(void)
   }
 
   // partition network
+  printf("Got to 4\n");
   network->partition();
+  printf("Got to 5\n");
 
   if (!partout.empty()) {
     network->writeGraph(partout);
   }
 
+  printf("Got to 6\n");
   // create factory
   gridpack::powerflow::PFFactory factory(network);
   factory.load();
+  printf("Got to 7\n");
 
   // set network components using factory
   factory.setComponents();
+  printf("Got to 8\n");
 
   // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
   factory.setExchange();
+  printf("Got to 9\n");
 
   // Create bus data exchange
   network->initBusUpdate();
+  printf("Got to 10\n");
 
 
   // set YBus components so that you can create Y matrix
   factory.setYBus();
+  printf("Got to 11\n");
 
   // Create serial IO object to export data from buses
   gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
   char ioBuf[128];
+  printf("Got to 12\n");
 
   factory.setMode(YBus); 
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
+  printf("Got to 13\n");
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+  printf("Got to 14\n");
 //  busIO.header("\nY-matrix values\n");
 //  Y->print();
+  Y->save("Ybus.m");
 
   // make Sbus components to create S vector
   factory.setSBus();

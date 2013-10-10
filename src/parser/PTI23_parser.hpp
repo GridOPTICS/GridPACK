@@ -1,8 +1,13 @@
 /*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+/*
  * PTI23parser.hpp
  *
  *  Created on: May 23, 2013
- *      Author: kglass
+ *      Author: Kevin Glass, Bruce Palmer
  */
 
 #ifndef PTI23_PARSER_HPP_

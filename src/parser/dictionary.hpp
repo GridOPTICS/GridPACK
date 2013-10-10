@@ -1,4 +1,9 @@
 /*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+/*
  * This file contains definitions for all parameters that can be read in from
  * PTI format files. Each parameter has a corresponding macro that can be used
  * as a unique string to identify the parameter. The use of macros instead of

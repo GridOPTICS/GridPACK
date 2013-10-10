@@ -1,11 +1,16 @@
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
 /**
- * @author William A. Perkins
- * @file   vector_construction_test.cpp
+ * @author Kevin Glass
+ * @file   PTI23_test.cpp
  * 
- * @brief  Construction/clone unit testing for gridpack::math::Vector
+ * @brief  Currently not implemented
  * 
  * 
- * @date   2013-06-17 12:09:38 d3g096
+ * @date   2013-06-17 12:09:38 d3k427
  */
 
 #include <iostream>
