@@ -1,8 +1,5 @@
-#
-#     Copyright (c) 2013 Battelle Memorial Institute
-#     Licensed under modified BSD License. A copy of this license can be found
-#     in the LICENSE file in the top level directory of this distribution.
-#
+# GridPACK Note:  This file was found 10Oct2013 here:
+# https://github.com/jedbrown/cmake-modules/blob/master/FindPackageMultipass.cmake
 # PackageMultipass - this module defines two macros
 #
 # FIND_PACKAGE_MULTIPASS (Name CURRENT
