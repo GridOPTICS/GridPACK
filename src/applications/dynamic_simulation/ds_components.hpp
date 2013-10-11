@@ -50,7 +50,7 @@ namespace gridpack {
 namespace dynamic_simulation {
 
 //enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, FY, POSFY};
-enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix};
+enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus};
 
 class DSBus
   : public gridpack::component::BaseBusComponent {
@@ -98,6 +98,8 @@ class DSBus
      *        vector element
      */
     bool vectorValues(ComplexType *values);
+
+    void setValues(ComplexType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -150,6 +152,7 @@ class DSBus
     std::vector<double> p_mva, p_r, p_dstr, p_dtr;
     int p_ngen;
     int p_type;
+    gridpack::ComplexType p_permYmod;
 
 };
 
