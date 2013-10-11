@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:35 d3g096
+ * @date   2013-10-11 10:08:23 d3g096
  * 
  * @brief  
  * 
@@ -55,6 +55,9 @@ public:
   {
     this->p_solve(b, x);
   }
+
+  /// Solve multiple systems w/ each column of the Matrix a single RHS
+  Matrix *solve(const Matrix& B) const;
 
   /// Use different coefficient matrix (or A w/ new values)
   void setMatrix(const Matrix& A)

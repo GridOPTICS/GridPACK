@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-09 15:22:37 d3g096
+ * @date   2013-10-11 10:35:20 d3g096
  * 
  * @brief  
  * 
@@ -96,6 +96,12 @@ public:
    */
   ~LinearSolver(void);
 
+  /// Set the configuration key for this instance
+  void configurationKey(const std::string& s)
+  {
+    p_solver->configurationKey(s);
+  }
+
   /// Configure and do whatever is necessary to make this instance ready
   void configure(utility::Configuration::Cursor *props)
   {
@@ -123,6 +129,19 @@ public:
   void solve(const Vector& b, Vector& x) const
   {
     p_solver->solve(b, x);
+  }
+
+  /// Solve multiple systems w/ each column of the Matrix a single RHS
+  /** 
+   * 
+   * 
+   * @param B RHS matrix -- each column is used as a RHS Vector
+   * 
+   * @return @e dense solution Matrix -- each column is the solution for the corresponding column in @c B
+   */
+  Matrix *solve(const Matrix& B) const
+  {
+    return p_solver->solve(B);
   }
 
   /// Use different coefficient matrix (i.e. new values)

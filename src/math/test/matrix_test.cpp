@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-10-10 16:03:33 d3g096
+ * @date   2013-10-11 08:27:57 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -630,7 +630,7 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
     { 1.0,  2.0,  3.0,
       4.0,  5.0,  6.0 };
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, 2, world.size()*3));
+    A(new gridpack::math::Matrix(world, 2, world.size()*3, the_storage_type));
 
   std::vector<int> iidx(2*3) , jidx(2*3);
   int k(0);
@@ -649,10 +649,14 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
     B(gridpack::math::transpose(*A));
   B->print();
 
+  // FIXME: check B contents
+
   std::auto_ptr<gridpack::math::Matrix> 
-    C(new gridpack::math::Matrix(world, 3, world.size()*2));
+    C(new gridpack::math::Matrix(world, 3, world.size()*2, the_storage_type));
   transpose(*A, *C);
   C->print();
+
+  // FIXME: check C contents
 
   C = std::auto_ptr<gridpack::math::Matrix>(A->clone());
   BOOST_CHECK_THROW(transpose(*A, *C), gridpack::Exception);

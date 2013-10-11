@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:13 d3g096
+ * @date   2013-10-11 10:07:58 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,9 @@
 // Last Change: 2013-05-03 12:23:12 d3g096
 // -------------------------------------------------------------
 
+#include <boost/format.hpp>
 #include "linear_solver.hpp"
+#include "gridpack/utilities/exception.hpp"
 
 namespace gridpack {
 namespace math {
@@ -38,9 +40,8 @@ LinearSolver::~LinearSolver(void)
 }
 
 // -------------------------------------------------------------
-// LinearSolver
+// LinearSolver::solve
 // -------------------------------------------------------------
-
 
 
 
