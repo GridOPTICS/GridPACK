@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:55 d3g096
+ * @date   2013-10-10 15:45:44 d3g096
  * 
  * @brief  
  * 
@@ -461,6 +461,7 @@ public:
   // friend Matrix *reorder(const Matrix& A, const Reordering& r);
   // friend Matrix *identity(const Matrix& A);
   friend Matrix *multiply(const Matrix& A, const Matrix& B);
+  friend Matrix *transpose(const Matrix& A);
 
 protected:
 

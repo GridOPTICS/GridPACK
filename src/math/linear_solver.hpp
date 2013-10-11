@@ -9,19 +9,13 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:20 d3g096
+ * @date   2013-10-09 15:22:37 d3g096
  * 
  * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created April  1, 2013 by William A. Perkins
-// Last Change: Thu Jun  3 06:45:08 2010 by William A. Perkins <d3g096@PE10900.pnl.gov>
-// -------------------------------------------------------------
-
-// SCCS ID: $Id$ Battelle PNL
 
 #ifndef _linear_solver_hpp_
 #define _linear_solver_hpp_

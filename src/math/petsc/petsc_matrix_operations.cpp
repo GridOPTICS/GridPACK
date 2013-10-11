@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:24:58 d3g096
+ * @date   2013-10-10 15:57:38 d3g096
  * 
  * @brief  
  * 
@@ -20,6 +20,7 @@
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 #include <boost/assert.hpp>
+#include <boost/format.hpp>
 #include "matrix.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
@@ -38,16 +39,50 @@ namespace math {
 void 
 transpose(const Matrix& A, Matrix& result)
 {
-  result.equate(A);
-  Mat *pA(PETScMatrix(result));
+  // This only works if the matrixes are the correct size
+  if ((A.cols() == result.rows() &&
+       A.rows() == result.cols())) {
+    const Mat *pA(PETScMatrix(A));
+    Mat *pAtrans(PETScMatrix(result));
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatTranspose(*pA, MAT_REUSE_MATRIX, pAtrans); CHKERRXX(ierr);
+    } catch (const PETSc::Exception& e) {
+      throw PETScException(ierr, e);
+    }
+  } else {
+    std::string msg = 
+      boost::str(boost::format("transpose(Matrix, Matrix): Matrix size mismatch: (%dx%d) and (%dx%d)") %
+                 A.rows() % A.cols() % result.rows() % result.cols());
+    throw Exception(msg);
+  }
+  
+
+}
+
+// -------------------------------------------------------------
+// transpose
+// -------------------------------------------------------------
+Matrix *
+transpose(const Matrix& A)
+{
+  const Mat *pA(PETScMatrix(A));
+  Mat pAtrans;
+  
   PetscErrorCode ierr(0);
   try {
-    PetscScalar one(1.0);
-    ierr = MatTranspose(*pA, MAT_REUSE_MATRIX, pA); CHKERRXX(ierr);
+    ierr = MatTranspose(*pA, MAT_INITIAL_MATRIX, &pAtrans); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
+  PETScMatrixImplementation *result_impl = 
+    new PETScMatrixImplementation(A.communicator(), pAtrans);
+  Matrix *result = new Matrix(result_impl);
+
+  return result;
 }
+
+
 
 // -------------------------------------------------------------
 // column

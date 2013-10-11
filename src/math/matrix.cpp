@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:47 d3g096
+ * @date   2013-10-10 07:33:09 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -78,17 +78,6 @@ add(const Matrix& A, const Matrix& B)
   return result;
 }
 
-
-// -------------------------------------------------------------
-// transpose
-// -------------------------------------------------------------
-Matrix *
-transpose(const Matrix& A)
-{
-  Matrix *result = A.clone();
-  transpose(A, *result);
-  return result;
-}
 
 // -------------------------------------------------------------
 // column

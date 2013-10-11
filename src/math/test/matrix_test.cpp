@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:26:31 d3g096
+ * @date   2013-10-10 16:03:33 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -391,7 +391,7 @@ BOOST_AUTO_TEST_CASE( scale )
   }
 }
 
-BOOST_AUTO_TEST_CASE( transpose )
+BOOST_AUTO_TEST_CASE( Transpose )
 {
   int global_size;
   std::auto_ptr<gridpack::math::Matrix> 
@@ -620,6 +620,42 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
   BOOST_CHECK_CLOSE(real(x), real(y), delta);
   BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
 
+}
+
+BOOST_AUTO_TEST_CASE( NonSquareTranspose )
+{
+  gridpack::parallel::Communicator world;
+
+  static const gridpack::ComplexType avalues[] =
+    { 1.0,  2.0,  3.0,
+      4.0,  5.0,  6.0 };
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(new gridpack::math::Matrix(world, 2, world.size()*3));
+
+  std::vector<int> iidx(2*3) , jidx(2*3);
+  int k(0);
+  for (int i = 0; i < 2; ++i) {
+    for (int j = 0; j < 3; ++j) {
+      iidx[k] = i + world.rank()*2;
+      jidx[k] = j + world.rank()*3;
+      k++;
+    }
+  }
+  A->setElements(2*3, &iidx[0], &jidx[0], &avalues[0]);
+  A->ready();
+  A->print();
+
+  std::auto_ptr<gridpack::math::Matrix> 
+    B(gridpack::math::transpose(*A));
+  B->print();
+
+  std::auto_ptr<gridpack::math::Matrix> 
+    C(new gridpack::math::Matrix(world, 3, world.size()*2));
+  transpose(*A, *C);
+  C->print();
+
+  C = std::auto_ptr<gridpack::math::Matrix>(A->clone());
+  BOOST_CHECK_THROW(transpose(*A, *C), gridpack::Exception);
 }
 
 
