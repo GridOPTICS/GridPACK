@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-10-11 11:35:16 d3g096
+ * @date   2013-10-11 11:45:06 d3g096
  * 
  * @brief  
  * 
@@ -268,8 +268,8 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
     std::cout << "Residual L2 Norm = " << l2norm << std::endl;
   }
 
-  BOOST_CHECK(real(l1norm) < 1.0e-09);
-  BOOST_CHECK(real(l2norm) < 1.0e-09);
+  BOOST_CHECK(real(l1norm) < 1.0e-05);
+  BOOST_CHECK(real(l2norm) < 1.0e-05);
   
 }
 
