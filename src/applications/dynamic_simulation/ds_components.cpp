@@ -79,9 +79,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
       return false;
     }
   } else if (p_mode == PMatrix) {
-    //printf("----- p_ngen = %d idx: %di\n", p_ngen, getOriginalIndex());
     if (p_ngen > 0) {
-      //printf("hello\n");
       *isize = 1;
       *jsize = 1;
     } else {
@@ -147,15 +145,15 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
         } else {
           values[ii] = 0.0;
         }
-        return true;
       } 
+      return true;
     } else {
       return false;
     }
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
-      //printf("hi\n");
       values[0] = -1.0;
+      return true;
     } else {
       return false;
     } 
