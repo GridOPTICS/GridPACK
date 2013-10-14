@@ -50,7 +50,7 @@ gridpack::powerflow::PFBus::~PFBus(void)
  */
 bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
-  if (p_mode == Jacobian && getReferenceBus()) {
+  if (p_mode == Jacobian) {
     *isize = 2;
     *jsize = 2;
     return true;
@@ -126,7 +126,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
  */
 bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
-  if (p_mode == Jacobian && getReferenceBus()) {
+  if (p_mode == Jacobian) {
     *size = 2;
     return true;
   } else {
@@ -502,7 +502,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
-    ok = ok & !bus2->getReferenceBus();
+    ok = ok && !bus2->getReferenceBus();
     if (ok) {
       *isize = 2;
       *jsize = 2;
@@ -529,7 +529,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
-    ok = ok & !bus2->getReferenceBus();
+    ok = ok && !bus2->getReferenceBus();
     if (ok) {
       *isize = 2;
       *jsize = 2;
@@ -563,7 +563,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
-    ok = ok & !bus2->getReferenceBus();
+    ok = ok && !bus2->getReferenceBus();
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(p_theta);
@@ -612,7 +612,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
     gridpack::powerflow::PFBus *bus2
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
-    ok = ok & !bus2->getReferenceBus();
+    ok = ok && !bus2->getReferenceBus();
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);
