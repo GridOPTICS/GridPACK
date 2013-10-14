@@ -29,6 +29,7 @@
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/applications/powerflow/pf_factory.hpp"
+#include "gridpack/timer/coarse_timer.hpp"
 
 
 // Calling program for powerflow application
@@ -64,62 +65,74 @@ void gridpack::powerflow::PFApp::execute(void)
       "No network configuration specified");
 
   // load input file
-  printf("Got to 1\n");
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_pti = timer->createCategory("PTI Parser");
+  timer->start(t_pti);
   gridpack::parser::PTI23_parser<PFNetwork> parser(network);
-  printf("Got to 2\n");
   parser.parse(filename.c_str());
-  printf("Got to 3\n");
+  timer->stop(t_pti);
 
-  std::string unpartout(cursor->get("networkUnpartitionedGraph", ""));
-  std::string partout(cursor->get("networkPartitionedGraph", ""));
+//  std::string unpartout(cursor->get("networkUnpartitionedGraph", ""));
+//  std::string partout(cursor->get("networkPartitionedGraph", ""));
 
-  if (!unpartout.empty()) {
-    network->writeGraph(unpartout);
-  }
+//  if (!unpartout.empty()) {
+//    network->writeGraph(unpartout);
+//  }
 
   // partition network
-  printf("Got to 4\n");
+  int t_part = timer->createCategory("Partition");
+  timer->start(t_part);
   network->partition();
-  printf("Got to 5\n");
+  timer->stop(t_part);
 
-  if (!partout.empty()) {
-    network->writeGraph(partout);
-  }
+//  if (!partout.empty()) {
+//    network->writeGraph(partout);
+//  }
 
-  printf("Got to 6\n");
   // create factory
   gridpack::powerflow::PFFactory factory(network);
+  int t_fload = timer->createCategory("Factory Load");
+  timer->start(t_fload);
   factory.load();
-  printf("Got to 7\n");
+  timer->stop(t_fload);
 
   // set network components using factory
+  int t_fset = timer->createCategory("Factory Set Components");
+  timer->start(t_fset);
   factory.setComponents();
-  printf("Got to 8\n");
+  timer->stop(t_fset);
 
   // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
+  int t_fex = timer->createCategory("Factory Set Exchange");
+  timer->start(t_fex);
   factory.setExchange();
-  printf("Got to 9\n");
+  timer->stop(t_fex);
 
   // Create bus data exchange
+  int t_setupdt = timer->createCategory("Set Bus Update");
+  timer->start(t_setupdt);
   network->initBusUpdate();
-  printf("Got to 10\n");
+  timer->stop(t_setupdt);
 
 
   // set YBus components so that you can create Y matrix
   factory.setYBus();
-  printf("Got to 11\n");
 
   // Create serial IO object to export data from buses
   gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
   char ioBuf[128];
-  printf("Got to 12\n");
 
+  int t_ymap = timer->createCategory("Create Y-matrix Mapper");
+  timer->start(t_ymap);
   factory.setMode(YBus); 
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
-  printf("Got to 13\n");
+  timer->stop(t_ymap);
+  int t_ybus = timer->createCategory("Create Y-matrix");
+  timer->start(t_ybus);
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  printf("Got to 14\n");
+  timer->stop(t_ybus);
 //  busIO.header("\nY-matrix values\n");
 //  Y->print();
   Y->save("Ybus.m");
@@ -129,9 +142,15 @@ void gridpack::powerflow::PFApp::execute(void)
   busIO.header("\nIteration 0\n");
 
   // Set PQ
+  int t_pqmap = timer->createCategory("Create PQ Mapper");
+  timer->start(t_pqmap);
   factory.setMode(RHS); 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  timer->stop(t_pqmap);
+  int t_pqvec = timer->createCategory("Create PQ Vector");
+  timer->start(t_pqvec);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  timer->stop(t_pqvec);
 //  busIO.header("\nPQ values\n");
 //  PQ->print();
   busIO.header("\n   Elements of PQ vector\n");
@@ -192,8 +211,11 @@ void gridpack::powerflow::PFApp::execute(void)
   max_iteration = 100;
 
   // Create linear solver
+  int t_lsolv = timer->createCategory("Linear Solver");
+  timer->start(t_lsolv);
   gridpack::math::LinearSolver isolver(*J);
   isolver.configure(cursor);
+  timer->stop(t_lsolv);
 
   tol = 2.0*tolerance;
   int iter = 0;
@@ -201,13 +223,18 @@ void gridpack::powerflow::PFApp::execute(void)
   // First iteration
   X->zero(); //might not need to do this
   busIO.header("\nCalling solver\n");
+  timer->start(t_lsolv);
   isolver.solve(*PQ, *X);
+  timer->stop(t_lsolv);
   tol = X->norm2();
 //  busIO.header("\nX values\n");
 //  X->print();
 
   // Exchange new values
+  int t_updt = timer->createCategory("Bus Update");
+  timer->start(t_updt);
   network->updateBuses();
+  timer->stop(t_updt);
 
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
@@ -217,7 +244,9 @@ void gridpack::powerflow::PFApp::execute(void)
 
     // Exchange data between ghost buses (I don't think we need to exchange data
     // between branches)
+    timer->start(t_updt);
     network->updateBuses();
+    timer->stop(t_updt);
 
     // Create new versions of Jacobian and PQ vector
     factory.setMode(RHS);
@@ -229,12 +258,14 @@ void gridpack::powerflow::PFApp::execute(void)
     jMap.mapToMatrix(J);
 
     // Create linear solver
+    timer->start(t_lsolv);
     gridpack::math::LinearSolver solver(*J);
     solver.configure(cursor);
 //    sprintf(ioBuf,"\nIteration %d Print X\n",iter+1);
 //    busIO.header(ioBuf);
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
+    timer->stop(t_lsolv);
 //    X->print();
 
     tol = X->norm2();
@@ -255,5 +286,6 @@ void gridpack::powerflow::PFApp::execute(void)
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   busIO.write();
 #endif
+  timer->dump();
 
 }

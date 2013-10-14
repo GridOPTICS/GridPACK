@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include <boost/serialization/export.hpp>
+
 // Simple outline of data collection object
 
 namespace gridpack{
@@ -30,26 +32,26 @@ public:
    *        statistics in the output
    * @return an integer handle that can be used to refer to this category
    */
-  int createCategory(string title);
+  int createCategory(const std::string title);
 
   /**
    * Start timing the category
    * @param idx category handle
    */
-  void start(int idx);
+  void start(const int idx);
 
   /**
    * Stop timing the category
    * @param idx category handle
    */
-  void stop(int idx);
+  void stop(const int idx);
 
   /**
    * Write all timing statistics to standard out
    */
-  void dump(void);
+  void dump(void) const;
 
-protected
+protected:
   /**
    * Constructor
    */
@@ -58,7 +60,7 @@ protected
   /**
    * Destructor
    */
-  CoarseTimer();
+  ~CoarseTimer();
 
 private:
 
