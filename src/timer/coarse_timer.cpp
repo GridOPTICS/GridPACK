@@ -107,15 +107,16 @@ void gridpack::utility::CoarseTimer::dump(void) const
       avg += rtime[j];
       avg2 += (rtime[j]*rtime[j]);
     }
-    double rms = (avg*avg - avg2)/static_cast<double>(nproc-1);
+    avg /= static_cast<double>(nproc);
+    double rms = avg2-static_cast<double>(nproc)*avg*avg;
     if (nproc > 1) {
+      rms = rms/static_cast<double>(nproc-1);
       if (rms > 0.0) {
         rms = sqrt(rms);
       }
     } else {
-      double rms = -1.0;
+      rms = -1.0;
     }
-    avg /= static_cast<double>(nproc);
     if (ok && me == 0) {
       printf("Timing statistics for: %s\n",p_title[i].c_str());
       printf("    Average time:      %16.4f\n",avg);
