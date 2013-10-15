@@ -108,6 +108,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
         values[2] = 0.0;
         values[3] = 1.0;
       }
+      return true;
     } else {
       values[0] = 1.0;
       values[1] = 0.0;
@@ -186,6 +187,7 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     } else {
       values[0] = 0.0;
       values[1] = 0.0;
+      return true;
     }
   }
   /*  if (p_mode == Jacobian) {
@@ -508,12 +510,10 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       *jsize = 2;
       return true;
     } else {
-/*      *isize = 0;
-      *jsize = 0;
       return false;
-*/    *isize = 2;
+/*    *isize = 2;
       *jsize = 2;
-      return true; 
+      return true; */
     }
   } else if (p_mode == YBus) {
     *isize = 1;
@@ -535,12 +535,10 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       *jsize = 2;
       return true;
     } else {
-/*      *isize = 0;
-      *jsize = 0;
       return false;
-*/    *isize = 2;
+/*    *isize = 2;
       *jsize = 2;
-      return true; 
+      return true; */
     }
   } else if (p_mode == YBus) {
     *isize = 1;
