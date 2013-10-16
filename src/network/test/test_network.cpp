@@ -5,12 +5,20 @@
  */
 #include <vector>
 
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/collectives.hpp>
+#define BOOST_TEST_NO_MAIN
+#define BOOST_TEST_ALTERNATIVE_INIT_API
+#include <boost/test/included/unit_test.hpp>
+
 #include "mpi.h"
 #include <macdecls.h>
 #include "gridpack/network/base_network.hpp"
 
 #define XDIM 20
 #define YDIM 20
+
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -23,6 +31,8 @@ class TestBus
   }
 };
 
+BOOST_CLASS_EXPORT(TestBus);
+
 class TestBranch
   : public gridpack::component::BaseBranchComponent {
   public:
@@ -33,6 +43,8 @@ class TestBranch
   ~TestBranch(void) {
   }
 };
+
+BOOST_CLASS_EXPORT(TestBranch);
 
 void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
 {
@@ -89,21 +101,16 @@ void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
   *pdy = idy;
 }
 
-main (int argc, char **argv) {
+BOOST_AUTO_TEST_SUITE ( TestNetwork )
 
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
+BOOST_AUTO_TEST_CASE( TestNetworkTopology )
+{
+
+  int ierr;
   int me;
   ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
   int nprocs;
   ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
-  if (me == 0) {
-    printf("Testing Network Module\n");
-    printf("\nTest Network is %d X %d\n",XDIM,YDIM);
-  }
 
   // Create network
   gridpack::parallel::Communicator world;
@@ -245,12 +252,14 @@ main (int argc, char **argv) {
     printf("p[%d] Number of buses: %d expected: %d\n",me,network.numBuses(),n);
     ok = false;
   } 
+  BOOST_CHECK_EQUAL(network.numBuses(), n);
   oks = (int)ok;
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nNumber of buses on each process ok\n");
   }
+  BOOST_CHECK(ok);
   ok = true;
   n = network.totalBuses();
   ncnt = XDIM*YDIM;
@@ -258,24 +267,28 @@ main (int argc, char **argv) {
     printf("p[%d] Total number of buses: %d expected: %d\n",me,n,ncnt);
     ok = false;
   }
+  BOOST_CHECK_EQUAL(network.totalBuses(), n);
   oks = (int)ok;
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nTotal number of buses ok\n");
   }
+  BOOST_CHECK(ok);
   ok = true;
   n = (iaxmax-iaxmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iaymin);
   if (network.numBranches() != n) {
     printf("p[%d] Number of branches: %d expected: %d\n",me,network.numBranches(),n);
     ok = false;
   }
+  BOOST_CHECK_EQUAL(network.numBranches(), n);
   oks = (int)ok;
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nNumber of branches on each process ok\n");
   }
+  BOOST_CHECK(ok);
   ok = true;
   n = network.totalBranches();
   ncnt = (XDIM-1)*YDIM+XDIM*(YDIM-1);
@@ -283,12 +296,14 @@ main (int argc, char **argv) {
     printf("p[%d] Total number of branches: %d expected: %d\n",me,n,ncnt);
     ok = false;
   }
+  BOOST_CHECK_EQUAL(n, ncnt);
   oks = (int)ok;
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nTotal number of branches ok\n");
   }
+  BOOST_CHECK(ok);
 
   // Test location of reference bus
   n = network.getReferenceBus();
@@ -297,25 +312,32 @@ main (int argc, char **argv) {
   } else if (me == 0 && n == 0) {
     printf("\nReference bus ok\n");
   }
+  BOOST_CHECK((me == 0 && n == 0) || (me != 0 && n == -1));
 
   // Set up number of branches attached to bus
   int nbus = network.numBuses();
   for (i=0; i<nbus; i++) {
-    if (!network.clearBranchNeighbors(i)) {
+    ok = network.clearBranchNeighbors(i);
+    if (!ok) {
       printf("p[%d] clearBranchNeighbors failed for bus %d\n",me,i);
     }
+    BOOST_CHECK(ok);
   }
   // Loop over all branches
   int nbranch = network.numBranches();
   for (i=0; i<nbranch; i++) {
     network.getBranchEndpoints(i, &n1, &n2);
     if (network.getActiveBus(n1) || network.getActiveBus(n2)) {
-      if (!network.addBranchNeighbor(n1, i)) {
+      ok = network.addBranchNeighbor(n1, i);
+      if (!ok) {
 	printf("p[%d] addBranchNeighbor failed for bus %d\n",me,n1);
       }
-      if (!network.addBranchNeighbor(n2, i)) {
+      BOOST_CHECK(ok);
+      ok = network.addBranchNeighbor(n2, i);
+      if (!ok) {
 	printf("p[%d] addBranchNeighbor failed for bus %d\n",me,n2);
       }
+      BOOST_CHECK(ok);
     }
   }
 
@@ -340,9 +362,12 @@ main (int argc, char **argv) {
     }
   }
   oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nActive bus settings ok\n");
   }
+  BOOST_CHECK(ok);
 
   // Test active branches
   ok = true;
@@ -371,6 +396,7 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nActive branch settings ok\n");
   }
+  BOOST_CHECK(ok);
   
   // check neighbors of buses
   ok = true;
@@ -424,6 +450,7 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nBus neighbors are ok\n");
   }
+  BOOST_CHECK(ok);
 
   // Test ghost update operations. Start by allocating exchange buffers and
   // assigning values to them
@@ -476,6 +503,7 @@ main (int argc, char **argv) {
   } else if (!ok) {
     printf("\nMismatched bus update on %d\n",me);
   }
+  BOOST_CHECK(ok);
   
   ok = true;
   for (i=0; i<nbranch; i++) {
@@ -494,6 +522,7 @@ main (int argc, char **argv) {
   } else if (!ok) {
     printf("\nMismatched branch update on %d\n",me);
   }
+  BOOST_CHECK(ok);
 
   network.freeXCBus();
   network.freeXCBranch();
@@ -518,6 +547,7 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nNumber of buses after clean ok\n");
   }
+  BOOST_CHECK(ok);
   ok = true;
   n = (iaxmax-ixmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iymin);
   if (network.numBranches() != n) {
@@ -535,6 +565,7 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nNumber of branches after clean ok\n");
   }
+  BOOST_CHECK(ok);
 
   // check neighbors of buses after performing clean operation
   ok = true;
@@ -591,8 +622,9 @@ main (int argc, char **argv) {
   if (me == 0 && ok) {
     printf("\nBuses and branches are ok after clean operation\n");
   }
+  BOOST_CHECK(ok);
   
-#if 1
+#if 0
   // Partition network using partitioner
   network.partition();
   if (me == 0 && ok) {
@@ -600,8 +632,29 @@ main (int argc, char **argv) {
   }
   network.writeGraph("test.dot");
 #endif
+}
 
-  GA_Terminate();
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
+BOOST_AUTO_TEST_SUITE_END( )
+
+bool init_function(void)
+{
+  return true;
+}
+
+int main (int argc, char **argv) {
+
+  gridpack::parallel::Environment env(argc, argv);
+  boost::mpi::communicator world;
+  int me = world.rank();
+  GA_Initialize();
+  int stack = 200000, heap = 200000;
+  MA_init(C_DBL, stack, heap);
+  if (me == 0) {
+    printf("Testing Network Module\n");
+    printf("\nTest Network is %d X %d\n",XDIM,YDIM);
+  }
+
+  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+
+ GA_Terminate();
 }
