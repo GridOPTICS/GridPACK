@@ -6,16 +6,26 @@
 
 #include <math.h>
 
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/collectives.hpp>
+#define BOOST_TEST_NO_MAIN
+#define BOOST_TEST_ALTERNATIVE_INIT_API
+#include <boost/test/included/unit_test.hpp>
+
 #include "mpi.h"
+#include "gridpack/parallel/distributed.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 
 #define LOOPSIZE 10000
 
+BOOST_AUTO_TEST_SUITE ( CoarseTimerTest )
 /**
  * This program is designed to perform some simple tests of the CoarseTimer
  * class. It times a loop and tests some failure modes
  */
-void run()
+
+BOOST_AUTO_TEST_CASE( Timings )
 {
   int i;
   double t;
@@ -23,11 +33,15 @@ void run()
   // Grab an instance of timer
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
+  BOOST_REQUIRE(timer != NULL);
 
   // Create three timer categories
   int t_success = timer->createCategory("Succeed");
+  BOOST_CHECK_EQUAL(t_success, 0);
   int t_fail1 = timer->createCategory("Failure 1");
+  BOOST_CHECK_EQUAL(t_fail1, 1);
   int t_fail2 = timer->createCategory("Failuer 2");
+  BOOST_CHECK_EQUAL(t_fail2, 2);
   timer->start(t_success);
   timer->start(t_fail1);
   for (i=0; i<LOOPSIZE; i++) {
@@ -42,18 +56,23 @@ void run()
   timer->dump();
 }
 
-main (int argc, char **argv) {
+BOOST_AUTO_TEST_SUITE_END( )
 
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-  int me;
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+bool init_function(void)
+{
+  return true;
+}
+
+// Main program
+int main (int argc, char **argv) {
+
+  // Initialize parallel environment
+  gridpack::parallel::Environment env(argc, argv);
+  boost::mpi::communicator world;
+  int me = world.rank();
   if (me == 0) {
     printf("Testing Mapper Module\n");
   }
 
-  run();
-
-  ierr = MPI_Finalize();
+  return ::boost::unit_test::unit_test_main( &init_function, argc, argv );
 }
-

@@ -19,6 +19,7 @@ add_library(gridpack_timer
 
 set(target_libraries
     gridpack_timer
+    ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
 )
 
