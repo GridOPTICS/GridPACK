@@ -17,26 +17,18 @@ add_library(gridpack_timer
   coarse_timer.cpp
 )
 
+set(target_libraries
+    gridpack_timer
+    ${MPI_CXX_LIBRARIES}
+)
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(AFTER ${GA_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
-# TEST: configuration_test
+# TEST: test_timer
 # -------------------------------------------------------------
-# put unit test configuration file in build directory so it can be
-# read there
-#add_custom_target(configuration_test_input
-#  COMMAND ${CMAKE_COMMAND} -E copy 
-#  ${CMAKE_CURRENT_SOURCE_DIR}/test/configuration_test.xml
-#  ${CMAKE_CURRENT_BINARY_DIR}
-#  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/test/configuration_test.xml
-#)
 
-#add_executable(configuration_test test/configuration_test.cpp)
-#target_link_libraries(configuration_test 
-#  gridpack_configuration
-#  ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-#gridpack_add_unit_test(configuration_test configuration_test)
-
-#add_dependencies(configuration_test configuration_test_input)
-
+add_executable(test_timer test/test_timer.cpp)
+target_link_libraries(test_timer ${target_libraries})
+add_test(test_timer test_timer)
