@@ -16,6 +16,9 @@
 cmake_minimum_required (VERSION 2.6.4)
 project (GridPACK)
 
+#set (GridPACK_VERSION_MAJOR 1)
+#set (GridPACK_VERSION_MINOR 0)
+
 # This is a C++ project exclusively
 enable_language(CXX)
 
@@ -154,6 +157,8 @@ if (CMAKE_COMPILER_IS_GNUCXX)
     )
 endif()
 
+set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 # -------------------------------------------------------------
@@ -173,3 +178,5 @@ add_subdirectory(applications/dynamic_simulation)
 add_subdirectory(parser)
 add_subdirectory(serial_io)
 add_subdirectory(timer)
+
+add_subdirectory(lib)
