@@ -3,4 +3,10 @@
   <Dynamic_simulation>
     <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
   </Dynamic_simulation>
+  <LinearMatrixSolver>
+    <PETScOptions>
+      -ksp_type richardson
+      -ksp_max_it 1
+    </PETScOptions>
+  </LinearMatrixSolver>
 </Configuration>

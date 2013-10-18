@@ -154,26 +154,16 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   gridpack::mapper::BusVectorMap<DSNetwork> permYmodMap(network);
   permYmodMap.mapToBus(vPermYmod);
 
-  gridpack::mapper::FullMatrixMap<DSNetwork> updatedYbusMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> updatedYbus = updatedYbusMap.mapToMatrix();
-  printf("\n=== updatedYbus: ============\n");
-  updatedYbus->print();
+  gridpack::mapper::FullMatrixMap<DSNetwork> prefy11ybusMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = prefy11ybusMap.mapToMatrix();
+  printf("\n=== prefy11ybus: ============\n");
+  prefy11ybus->print();
 
-
-
-
-
-
-
-
-
-
-
-
-
-/*
   //// Solve linear equations of ybus * X = Y_c
-  //boost::shared_ptr<gridpack::math::Matrix> X; 
+  //gridpack::math::LinearSolver solver(*prefy11ybus);
+  ////solver.configureKey("LinearMatrixSolver");
+  //solver.configure(cursor);
+  //boost::shared_ptr<gridpack::math::Matrix> X(solver.solve(*Y_c)); 
   //
   ////-----------------------------------------------------------------------
   //// Compute prefy11
@@ -206,8 +196,12 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   fy11ybus->print();
 
   //// Solve linear equations of fy11ybus * X = Y_c
+  //gridpack::math::LinearSolver solver(*fy11ybus);
+  ////solver.configureKey("LinearMatrixSolver");
+  //solver.configure(cursor);
+  //boost::shared_ptr<gridpack::math::Matrix> X(solver.solve(*Y_c)); 
   //
-  //// Form reduced admittance matrix fy11: fy11 = Y_b * X
+  // Form reduced admittance matrix fy11: fy11 = Y_b * X
   //boost::shared_ptr<gridpack::math::Matrix> fy11(multiply(*Y_b, *X)); 
   ////fy11->print();
   //
@@ -245,6 +239,10 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   posfy11ybus->print();
     
   //// Solve linear equations of posfy11ybus * X = Y_c
+  //gridpack::math::LinearSolver solver(*posfy11ybus);
+  ////solver.configureKey("LinearMatrixSolver");
+  //solver.configure(cursor);
+  //boost::shared_ptr<gridpack::math::Matrix> X(solver.solve(*Y_c)); 
   //
   //// Form reduced admittance matrix posfy11: posfy11 = Y_b * X
   //boost::shared_ptr<gridpack::math::Matrix> posfy11(multiply(*Y_b, *X)); 
@@ -252,6 +250,8 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   //
   //// Update posfy11: posfy11 = Y_a + posfy11
   //posfy11->add(*Y_a);
-*/
+
+  
+
 }
 

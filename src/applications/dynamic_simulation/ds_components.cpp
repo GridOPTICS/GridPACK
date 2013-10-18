@@ -81,7 +81,8 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
       *isize = 1;
-      *jsize = 1;
+      //*jsize = 1;
+      *jsize = p_ngen;
     } else {
       *isize = 1;
       *jsize = 0;
@@ -150,16 +151,25 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     } else {
       return false;
     }
-  } else if (p_mode == PMatrix) {
+  /*} else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
       values[0] = -1.0;
+      return true;
+    } else {
+      return false;
+    } */
+  } else if (p_mode == PMatrix) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[i] = -1.0;
+      }
       return true;
     } else {
       return false;
     } 
   } else if (p_mode == updateYbus) {
     if (p_ngen > 0) {
-      //printf("p_permYmod = %f+%fi\n", real(p_permYmod), imag(p_permYmod));
+      printf("p_permYmod = %f+%fi\n", real(p_permYmod), imag(p_permYmod));
       double ur = p_ybusr + real(p_permYmod); 
       double ui = p_ybusi + imag(p_permYmod); 
       gridpack::ComplexType u(ur, ui);
