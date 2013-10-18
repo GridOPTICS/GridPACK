@@ -141,12 +141,13 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
 
   // Update ybus: ybus = ybus+permYmod (different dimension)
   //ybus = ybus + permYmod;
-  printf("\n=== ybus after added permYmod: ============\n");
+  //printf("\n=== ybus after added permYmod: ============\n");
   //gridpack::ComplexType a;
   //permYmod->getElement(1,1,a);
   //printf("a=%f+%fi\n",real(a),imag(a));
   factory.setMode(updateYbus);
 
+  printf("\n=== vPermYmod: ============\n");
   boost::shared_ptr<gridpack::math::Vector> vPermYmod(diagonal(*permYmod));
   vPermYmod->print();
 
@@ -154,8 +155,10 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   gridpack::mapper::BusVectorMap<DSNetwork> permYmodMap(network);
   permYmodMap.mapToBus(vPermYmod);
 
-  gridpack::mapper::FullMatrixMap<DSNetwork> prefy11ybusMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = prefy11ybusMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
+
+//  gridpack::mapper::FullMatrixMap<DSNetwork> prefy11ybusMap(network);
+//  boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = prefy11ybusMap.mapToMatrix();
   printf("\n=== prefy11ybus: ============\n");
   prefy11ybus->print();
 

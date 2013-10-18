@@ -218,7 +218,6 @@ bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
   if (p_mode == updateYbus) {
     if (p_ngen > 0) {
       *size = 1;
-      return true;
     } else {
       *size = 0;
       return false;
@@ -259,14 +258,17 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
     return true;
   } else if (p_mode == GENERATOR) {
   }*/
+  if (p_mode == updateYbus) {
+    printf("returning Value on %d\n",getOriginalIndex());
+  }
 }
 
 void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
 {
   if (p_mode == updateYbus) {
     if (p_ngen > 0) {
-      p_permYmod = real(values[0]);
-      printf("p_permYmod = %f+%fi\n", real(p_permYmod), imag(p_permYmod));
+      p_permYmod = values[0];
+      printf("p_permYmod = %f+%fi\n", getOriginalIndex(), real(p_permYmod), imag(p_permYmod));
     }
   }
 }
