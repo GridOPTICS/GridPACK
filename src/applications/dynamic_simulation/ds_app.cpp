@@ -139,27 +139,17 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   printf("\n=== permYmod: ============\n");
   permYmod->print();
 
-  // Update ybus: ybus = ybus+permYmod (different dimension)
-  //ybus = ybus + permYmod;
-  //printf("\n=== ybus after added permYmod: ============\n");
-  //gridpack::ComplexType a;
-  //permYmod->getElement(1,1,a);
-  //printf("a=%f+%fi\n",real(a),imag(a));
+  // Update ybus: ybus = ybus+permYmod (different dimension) => prefy11ybus
   factory.setMode(updateYbus);
 
   printf("\n=== vPermYmod: ============\n");
   boost::shared_ptr<gridpack::math::Vector> vPermYmod(diagonal(*permYmod));
   vPermYmod->print();
-
-  //BusVectorMap permYmodMap(network);
   gridpack::mapper::BusVectorMap<DSNetwork> permYmodMap(network);
   permYmodMap.mapToBus(vPermYmod);
 
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
-
-//  gridpack::mapper::FullMatrixMap<DSNetwork> prefy11ybusMap(network);
-//  boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = prefy11ybusMap.mapToMatrix();
-  printf("\n=== prefy11ybus: ============\n");
+  printf("\n=== Prefy11ybus: ============\n");
   prefy11ybus->print();
 
   //// Solve linear equations of ybus * X = Y_c
@@ -191,7 +181,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   //boost::shared_ptr<gridpack::math::Matrix> fy11ybus = fy11ybusMap.mapToMatrix();
   //fy11ybus->print();
 
-  boost::shared_ptr<gridpack::math::Matrix> fy11ybus(ybus->clone());
+  boost::shared_ptr<gridpack::math::Matrix> fy11ybus(prefy11ybus->clone());
   gridpack::ComplexType x(0.0, -1e7);
   fy11ybus->setElement(sw2_2, sw2_2, -x);
   fy11ybus->ready();
@@ -222,7 +212,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
 
   // Get the updating factor for posfy11 stage ybus
   gridpack::ComplexType myValue = factory.setFactor(sw2_2, sw3_2);
-  boost::shared_ptr<gridpack::math::Matrix> posfy11ybus(ybus->clone());
+  boost::shared_ptr<gridpack::math::Matrix> posfy11ybus(prefy11ybus->clone());
 
   gridpack::ComplexType big(0.0, 1e7);
   gridpack::ComplexType x11 = big - myValue;

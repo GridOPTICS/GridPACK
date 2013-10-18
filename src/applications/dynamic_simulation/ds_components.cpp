@@ -111,7 +111,9 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       //p_pl = p_pl;// - p_pg[0];
       //p_ql = p_ql;// - p_qg[0];
     //}
-    gridpack::ComplexType ret(p_ybusr+p_pl/(p_voltage*p_voltage), p_ybusi+(-p_ql)/(p_voltage*p_voltage));
+    p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
+    p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
+    gridpack::ComplexType ret(p_ybusr, p_ybusi);
     values[0] = ret;
     return true;
   } else if (p_mode == PERM) {
@@ -169,7 +171,6 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     } 
   } else if (p_mode == updateYbus) {
     if (p_ngen > 0) {
-      printf("p_permYmod = %f+%fi\n", real(p_permYmod), imag(p_permYmod));
       double ur = p_ybusr + real(p_permYmod); 
       double ui = p_ybusi + imag(p_permYmod); 
       gridpack::ComplexType u(ur, ui);
@@ -268,7 +269,7 @@ void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
   if (p_mode == updateYbus) {
     if (p_ngen > 0) {
       p_permYmod = values[0];
-      printf("p_permYmod = %f+%fi\n", getOriginalIndex(), real(p_permYmod), imag(p_permYmod));
+      //printf("p_permYmod = %f+%fi\n", getOriginalIndex(), real(p_permYmod), imag(p_permYmod));
     }
   }
 }
