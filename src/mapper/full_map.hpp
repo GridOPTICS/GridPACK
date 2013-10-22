@@ -105,6 +105,68 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
   mapToMatrix(*matrix);
 }
 
+/**
+ * Check to see if matrix looks well formed. This method runs through all
+ * branches and verifies that the dimensions of the branch contributions match
+ * the dimensions of the bus contributions at each end. If there is a
+ * discrepancy, then an error message is generated.
+ */
+
+bool check(void)
+{
+  int i,idx,jdx,isize,jsize,icnt;
+  int msize, nsize;
+  gridpack::component::BaseBusComponent *bus1;
+  gridpack::component::BaseBusComponent *bus2;
+  bool ok;
+  for (i=0; i<p_nBranches; i++) {
+    bus1 = dynamic_cast<gridpack::component::BaseBusComponent*>
+      (p_network->getBranch(i)->getBus1().get());
+    bus2 = dynamic_cast<gridpack::component::BaseBusComponent*>
+      (p_network->getBranch(i)->getBus2().get());
+    isize = 0;
+    jsize = 0;
+    if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
+      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+      if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
+        ok = true;
+        msize = 0;
+        nsize = 0;
+        bus1->matrixDiagSize(&msize, &nsize);
+        if (nsize != isize) ok = false;
+        msize = 0;
+        nsize = 0;
+        bus2->matrixDiagSize(&msize, &nsize);
+        if (msize != jsize) ok = false;
+        if (!ok) {
+          printf("Forward mismatch for branch between %d and %d\n",
+              bus1->getOriginalIndex(), bus2->getOriginalIndex());
+        }
+      }
+    }
+    isize = 0;
+    jsize = 0;
+    if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
+      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+      if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
+        ok = true;
+        msize = 0;
+        nsize = 0;
+        bus1->matrixDiagSize(&msize, &nsize);
+        if (msize != jsize) ok = false;
+        msize = 0;
+        nsize = 0;
+        bus2->matrixDiagSize(&msize, &nsize);
+        if (nsize != isize) ok = false;
+        if (!ok) {
+          printf("Reverse mismatch for branch between %d and %d\n",
+              bus1->getOriginalIndex(), bus2->getOriginalIndex());
+        }
+      }
+    }
+  }
+}
+
 private:
 /**
  * Return the number of active buses on this process
