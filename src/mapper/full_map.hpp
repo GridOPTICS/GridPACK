@@ -25,6 +25,8 @@
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/math/matrix.hpp>
 
+#define DBG_CHECK
+
 namespace gridpack {
 namespace mapper {
 
@@ -552,6 +554,10 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
+#ifdef DBG_CHECK
+        int ijsize = isize*jsize;
+        for (k=0; k<ijsize; k++) values[k] = 0.0;
+#endif
         if (p_network->getBus(i)->matrixDiagValues(values)) {
           icnt = 0;
           for (k=0; k<jsize; k++) {
@@ -646,6 +652,10 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
     if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
+#ifdef DBG_CHECK
+        int ijsize = isize*jsize;
+        for (k=0; k<ijsize; k++) values[k] = 0.0;
+#endif
         if (p_network->getBranch(i)->matrixForwardValues(values)) {
           icnt = 0;
           for (k=0; k<jsize; k++) {
@@ -669,6 +679,10 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
     if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
+#ifdef DBG_CHECK
+        int ijsize = isize*jsize;
+        for (k=0; k<ijsize; k++) values[k] = 0.0;
+#endif
         if (p_network->getBranch(i)->matrixReverseValues(values)) {
           icnt = 0;
           // Note that because the indices have been reversed, we need to switch

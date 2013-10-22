@@ -25,6 +25,8 @@
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/math/vector.hpp>
 
+#define DBG_CHECK
+
 namespace gridpack {
 namespace mapper {
 
@@ -424,6 +426,9 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->vectorSize(&isize)) {
+#ifdef DGB_CHECK
+        for (j=0; j<isize; j++) values[j] = 0.0;
+#endif
         p_network->getBus(i)->vectorValues(values);
         icnt = 0;
         for (j=0; j<isize; j++) {
