@@ -51,9 +51,17 @@ gridpack::powerflow::PFBus::~PFBus(void)
 bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
   if (p_mode == Jacobian) {
-    *isize = 2;
-    *jsize = 2;
-    return true;
+    if (getReferenceBus()) {
+      return false;
+    } else if (p_isPV) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      *isize = 2;
+      *jsize = 2;
+      return true;
+    }
   } else if (p_mode == YBus) {
     *isize = 1;
     *jsize = 1;
@@ -78,7 +86,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
     values[0] = ret;
     return true;
   } else if (p_mode == Jacobian) {
-    if (!getReferenceBus()) {
+    if (!getReferenceBus() && !p_isPV) {
       /*      double branch_values[4];
       // TODO: More stuff here
       std::vector<boost::shared_ptr<BaseComponent> > branches;
@@ -103,18 +111,12 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
       values[2] = p_Pinj / p_v + p_ybusr * p_v; 
       values[3] = p_Qinj / p_v - p_ybusi * p_v; 
       // Fix up matrix elements if bus is PV bus
-      if (p_isPV) {
-        values[1] = 0.0;
-        values[2] = 0.0;
-        values[3] = 1.0;
-      }
+      return true;
+    } else if (!getReferenceBus() && p_isPV) {
+      values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
       return true;
     } else {
-      values[0] = 1.0;
-      values[1] = 0.0;
-      values[2] = 0.0;
-      values[3] = 1.0; 
-      return true;
+      return false;
     }
   }
 }
@@ -127,8 +129,14 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
  */
 bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
-  if (p_mode == Jacobian) {
-    *size = 2;
+  if (p_mode == RHS) {
+    if (getReferenceBus()) {
+      return false;
+    } else if (p_isPV) {
+      *size = 1;
+    } else {
+      *size = 2;
+    }
     return true;
   } else if (p_mode == S_Cal ){
     *size = 1;
@@ -186,14 +194,10 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
       values[0] = P;
       if (!p_isPV) {
         values[1] = Q;
-      } else {
-        values[1] = 0.0;
       }
       return true;
     } else {
-      values[0] = 0.0;
-      values[1] = 0.0;
-      return true;
+      return false;
     }
   }
   /*  if (p_mode == Jacobian) {
@@ -229,7 +233,9 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
   double vt = p_v;
   double at = p_a;
   p_a -= real(values[0]);
-  p_v -= real(values[1]);
+  if (!p_isPV) {
+    p_v -= real(values[1]);
+  }
   *p_vAng_ptr = p_a;
   *p_vMag_ptr = p_v;
 //  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
@@ -516,9 +522,25 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
     if (ok) {
-      *isize = 2;
-      *jsize = 2;
-      return true;
+      bool bus1PV = bus1->isPV();
+      bool bus2PV = bus2->isPV();
+      if (bus1PV && bus2PV) {
+        *isize = 1;
+        *jsize = 1;
+        return true;
+      } else if (bus1PV) {
+        *isize = 1;
+        *jsize = 2;
+        return true;
+      } else if (bus2PV) {
+        *isize = 2;
+        *jsize = 1;
+        return true;
+      } else {
+        *isize = 2;
+        *jsize = 2;
+        return true;
+      }
     } else {
       return false;
 /*    *isize = 2;
@@ -541,14 +563,27 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
     if (ok) {
-      *isize = 2;
-      *jsize = 2;
-      return true;
+      bool bus1PV = bus1->isPV();
+      bool bus2PV = bus2->isPV();
+      if (bus1PV && bus2PV) {
+        *isize = 1;
+        *jsize = 1;
+        return true;
+      } else if (bus1PV) {
+        *isize = 2;
+        *jsize = 1;
+        return true;
+      } else if (bus2PV) {
+        *isize = 1;
+        *jsize = 2;
+        return true;
+      } else {
+        *isize = 2;
+        *jsize = 2;
+        return true;
+      }
     } else {
       return false;
-/*    *isize = 2;
-      *jsize = 2;
-      return true; */
     }
   } else if (p_mode == YBus) {
     *isize = 1;
@@ -576,27 +611,31 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       double t11, t12, t21, t22;
       double cs = cos(p_theta);
       double sn = sin(p_theta);
-      values[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
-      values[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
-      values[2] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
-      values[3] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
-      values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
-      values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
-      values[2] *= bus1->getVoltage();
-      values[3] *= bus1->getVoltage();
       // fix up matrix if one or both buses at the end of the branch is a PV bus
       bool bus1PV = bus1->isPV();
       bool bus2PV = bus2->isPV();
-      if (bus1PV & bus2PV) {
-        values[1] = 0.0;
-        values[2] = 0.0;
-        values[3] = 0.0;
+      if (bus1PV && bus2PV) {
+        values[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
       } else if (bus1PV) {
-        values[1] = 0.0;
-        values[3] = 0.0;
+        values[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+        values[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+        values[1] *= bus1->getVoltage();
       } else if (bus2PV) {
-        values[2] = 0.0;
-        values[3] = 0.0;
+        values[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+        values[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+        values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      } else {
+        values[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+        values[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+        values[2] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+        values[3] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+        values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+        values[2] *= bus1->getVoltage();
+        values[3] *= bus1->getVoltage();
       }  
       return true;
     } else {
@@ -625,27 +664,31 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);
       double sn = sin(-p_theta);
-      values[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
-      values[1] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
-      values[2] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
-      values[3] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
-      values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
-      values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
-      values[2] *= bus2->getVoltage();
-      values[3] *= bus2->getVoltage();
       // fix up matrix if one or both buses at the end of the branch is a PV bus
       bool bus1PV = bus1->isPV();
       bool bus2PV = bus2->isPV();
-      if (bus1PV & bus2PV) {
-        values[1] = 0.0;
-        values[2] = 0.0;
-        values[3] = 0.0;
+      if (bus1PV && bus2PV) {
+        values[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
       } else if (bus1PV) {
-        values[2] = 0.0;
-        values[3] = 0.0;
+        values[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
+        values[1] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+        values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
       } else if (bus2PV) {
-        values[1] = 0.0;
-        values[3] = 0.0;
+        values[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
+        values[1] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+        values[1] *= bus2->getVoltage();
+      } else {
+        values[0] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
+        values[1] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
+        values[2] = (p_ybusr_rvrs*cs + p_ybusi_rvrs*sn);
+        values[3] = (p_ybusr_rvrs*sn - p_ybusi_rvrs*cs);
+        values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+        values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+        values[2] *= bus2->getVoltage();
+        values[3] *= bus2->getVoltage();
       } 
       return true;
     } else {
