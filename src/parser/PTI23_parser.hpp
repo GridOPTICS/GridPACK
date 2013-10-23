@@ -449,6 +449,17 @@ template <class _network>
                 atof(split_line[21].c_str()), ngen);
           }
 
+          // Pick up some more non-standard values for Dynamic Simulation
+          if (split_line.size() >= 24) {
+            // GENERATOR_INERTIA_CONSTANT_H                           float
+            p_busData[l_idx]->addValue(GENERATOR_INERTIA_CONSTANT_H,
+                atof(split_line[22].c_str()), ngen);
+
+            // GENERATOR_DAMPING_COEFFICIENT_0                           float
+            p_busData[l_idx]->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
+                atof(split_line[23].c_str()), ngen);
+          }
+
           // Increment number of generators in data object
           if (ngen == 0) {
             ngen = 1;

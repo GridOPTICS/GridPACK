@@ -353,6 +353,18 @@
  */
 #define GENERATOR_SUBTRANSIENT_REACTANCE "GENERATOR_SUBTRANSIENT_REACTANCE"
 
+/**
+ * Generator inertia constant
+ * type: real float
+ */
+#define GENERATOR_INERTIA_CONSTANT_H "GENERATOR_INERTIA_CONSTANT_H"
+
+/**
+ * Generator damping coefficient
+ * type: real float
+ */
+#define GENERATOR_DAMPING_COEFFICIENT_0 "GENERATOR_DAMPING_COEFFICENT_0"
+
 // BRANCH DATA
 /**
  * Global index used to sort branches into a fixed order
