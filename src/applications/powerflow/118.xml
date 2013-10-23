@@ -1,18 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    Copyright (c) 2013 Battelle Memorial Institute
+    Licensed under modified BSD License. A copy of this license can be found
+    in the LICENSE file in the top level directory of this distribution.
+  -->
 <Configuration>
   <Powerflow>
     <networkConfiguration> 118.raw </networkConfiguration>
     <networkUnpartitionedGraph>118_network.dot</networkUnpartitionedGraph>
     <networkPartitionedGraph>118_partitioned_network.dot</networkPartitionedGraph>
     <LinearSolver>
-        <PETScPrefix>nrs</PETScPrefix>
-        <PETScOptions>
-          -ksp_atol 1.0e-08
-          -ksp_rtol 1.0e-12
-          -ksp_monitor
-          -ksp_max_it 50
-          -ksp_view
-        </PETScOptions>
+      <PETScPrefix>nrs</PETScPrefix>
+      <PETScOptions>
+        -ksp_atol 1.0e-08
+        -ksp_rtol 1.0e-12
+        -ksp_monitor
+        -ksp_max_it 50
+        -ksp_view
+      </PETScOptions>
     </LinearSolver>
+    <!-- This is how to specific direct solution via LU
+         decomposition. It only works if SuperLU_Dist is built into
+         PETSc. -->
+    <!-- 
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+    -->
   </Powerflow>
 </Configuration>
