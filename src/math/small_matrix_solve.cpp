@@ -9,7 +9,7 @@
 /**
  * @file   small_matrix_solve.cpp
  * @author William A. Perkins
- * @date   2013-10-23 10:15:49 d3g096
+ * @date   2013-10-23 10:23:50 d3g096
  * 
  * @brief  
  * 
@@ -90,33 +90,34 @@ main(int argc, char **argv)
   B->ready();
   B->print();
 
-  Xorig->setElement(0, 0, gridpack::ComplexType(0.802694, -0.0362709)); 
-  Xorig->setElement(0, 1, gridpack::ComplexType(0.0826026, -0.0215508));
-  Xorig->setElement(0, 2, gridpack::ComplexType(0.066821, -0.0163025));
-  Xorig->setElement(1, 0, gridpack::ComplexType(0.16276 , - 0.0424636 ));
-  Xorig->setElement(1, 1, gridpack::ComplexType(0.656183, -0.032619));
-  Xorig->setElement(1, 2, gridpack::ComplexType(0.117946, -0.0235926));
-  Xorig->setElement(2, 0, gridpack::ComplexType(0.199254 , - 0.0486126));
-  Xorig->setElement(2, 1, gridpack::ComplexType(0.178494, -0.035704));
-  Xorig->setElement(2, 2, gridpack::ComplexType(0.55177, -0.0277253));
-  Xorig->setElement(3, 0, gridpack::ComplexType(0.615773 , -0.0706327));
-  Xorig->setElement(3, 1, gridpack::ComplexType(0.160858, -0.0419673));
-  Xorig->setElement(3, 2, gridpack::ComplexType(0.130125, -0.031747));
-  Xorig->setElement(4, 0, gridpack::ComplexType(0.478041 , - 0.0933363));
-  Xorig->setElement(4, 1, gridpack::ComplexType(0.180994, -0.052928));
-  Xorig->setElement(4, 2, gridpack::ComplexType(0.220702, -0.0449514));
-  Xorig->setElement(5, 0, gridpack::ComplexType(0.263657 , -0.0643252)); 
-  Xorig->setElement(5, 1, gridpack::ComplexType(0.236187, -0.0472443));
-  Xorig->setElement(5, 2, gridpack::ComplexType(0.406892, -0.0366867));
-  Xorig->setElement(6, 0, gridpack::ComplexType(0.247322 , -0.0741512));
-  Xorig->setElement(6, 1, gridpack::ComplexType(0.368152, -0.0637251));
-  Xorig->setElement(6, 2, gridpack::ComplexType(0.268082, -0.0472012));
-  Xorig->setElement(7, 0, gridpack::ComplexType(0.247672 , -0.0646169));
-  Xorig->setElement(7, 1, gridpack::ComplexType(0.476813, -0.0496364));
-  Xorig->setElement(7, 2, gridpack::ComplexType(0.179478, -0.0359009));
-  Xorig->setElement(8, 0, gridpack::ComplexType(0.467188 , - 0.100364));
-  Xorig->setElement(8, 1, gridpack::ComplexType(0.257734, -0.0619692));
-  Xorig->setElement(8, 2, gridpack::ComplexType(0.139857, -0.0423387));
+  // This is the expected answer
+  Xorig->setElement(0, 0, gridpack::ComplexType(-0.802694,  0.0362709)); 
+  Xorig->setElement(0, 1, gridpack::ComplexType(-0.0826026, 0.0215508));
+  Xorig->setElement(0, 2, gridpack::ComplexType(-0.066821,  0.0163025));
+  Xorig->setElement(1, 0, gridpack::ComplexType(-0.16276 ,  0.0424636 ));
+  Xorig->setElement(1, 1, gridpack::ComplexType(-0.656183,  0.032619));
+  Xorig->setElement(1, 2, gridpack::ComplexType(-0.117946,  0.0235926));
+  Xorig->setElement(2, 0, gridpack::ComplexType(-0.199254 , 0.0486126));
+  Xorig->setElement(2, 1, gridpack::ComplexType(-0.178494,  0.035704));
+  Xorig->setElement(2, 2, gridpack::ComplexType(-0.55177,   0.0277253));
+  Xorig->setElement(3, 0, gridpack::ComplexType(-0.615773 , 0.0706327));
+  Xorig->setElement(3, 1, gridpack::ComplexType(-0.160858,  0.0419673));
+  Xorig->setElement(3, 2, gridpack::ComplexType(-0.130125,  0.031747));
+  Xorig->setElement(4, 0, gridpack::ComplexType(-0.478041 , 0.0933363));
+  Xorig->setElement(4, 1, gridpack::ComplexType(-0.180994,  0.052928));
+  Xorig->setElement(4, 2, gridpack::ComplexType(-0.220702,  0.0449514));
+  Xorig->setElement(5, 0, gridpack::ComplexType(-0.263657 , 0.0643252)); 
+  Xorig->setElement(5, 1, gridpack::ComplexType(-0.236187,  0.0472443));
+  Xorig->setElement(5, 2, gridpack::ComplexType(-0.406892,  0.0366867));
+  Xorig->setElement(6, 0, gridpack::ComplexType(-0.247322 , 0.0741512));
+  Xorig->setElement(6, 1, gridpack::ComplexType(-0.368152,  0.0637251));
+  Xorig->setElement(6, 2, gridpack::ComplexType(-0.268082,  0.0472012));
+  Xorig->setElement(7, 0, gridpack::ComplexType(-0.247672 , 0.0646169));
+  Xorig->setElement(7, 1, gridpack::ComplexType(-0.476813,  0.0496364));
+  Xorig->setElement(7, 2, gridpack::ComplexType(-0.179478,  0.0359009));
+  Xorig->setElement(8, 0, gridpack::ComplexType(-0.467188 , 0.100364));
+  Xorig->setElement(8, 1, gridpack::ComplexType(-0.257734,  0.0619692));
+  Xorig->setElement(8, 2, gridpack::ComplexType(-0.139857,  0.0423387));
   Xorig->ready();
   Xorig->print();
 
@@ -129,8 +130,7 @@ main(int argc, char **argv)
   boost::scoped_ptr<gridpack::math::Matrix> 
     X(solver->solve(*B));
 
-  // FIXME: Xorig appears to already be the negative of X?
-  // X->scale(-1.0);
+  X->scale(-1.0);
   X->add(*Xorig);
   X->print();
 
