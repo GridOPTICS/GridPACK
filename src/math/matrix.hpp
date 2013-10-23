@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-10-10 15:45:44 d3g096
+ * @date   2013-10-23 09:40:17 d3g096
  * 
  * @brief  
  * 
@@ -332,6 +332,22 @@ public:
    * 
    */
   void identity(void);
+
+  /// Compute the matrix L<sup>2</sup> norm
+  /** 
+   * @e Collective.
+   *
+   * The vector L<sup>2</sup>, or Euclidian, norm is computed as
+   * \f[
+   *   \left\| \mathbf{A} \right\| ~ = ~ \sqrt{\sum_{ij} A_{ij}^{2}}
+   * \f]
+   * 
+   * @return  L<sup>2</sup> norm of this matrix
+   */
+  ComplexType norm2(void) const
+  {
+    return p_matrix_impl->norm2();
+  }
 
   /// Indicate the matrix is ready to use
   /** 

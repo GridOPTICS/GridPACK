@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:24:34 d3g096
+ * @date   2013-10-23 09:47:41 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -289,6 +289,24 @@ PETScMatrixImplementation::p_getElements(const int& n,
   for (int k = 0; k < n; k++) {
     this->p_getElement(i[k], j[k], x[k]);
   }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_norm2
+// -------------------------------------------------------------
+ComplexType
+PETScMatrixImplementation::p_norm2(void) const
+{
+  PetscErrorCode ierr(0);
+  ComplexType result(0.0);
+  try {
+    PetscReal norm;
+    ierr = MatNorm(p_matrix, NORM_FROBENIUS, &norm); CHKERRXX(ierr);
+    result = norm;
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
 }
 
 // -------------------------------------------------------------

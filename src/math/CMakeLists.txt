@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-10-09 12:22:23 d3g096
+# Last Change: 2013-10-23 08:03:41 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -113,6 +113,22 @@ install(TARGETS
   gridpack_math
   DESTINATION lib
 )
+
+# -------------------------------------------------------------
+# a small test (not a unit test)
+# -------------------------------------------------------------
+add_executable(small_matrix_solve small_matrix_solve.cpp)
+target_link_libraries(small_matrix_solve  gridpack_math ${target_libraries})
+add_custom_target(small_matrix_solve_input
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/small_matrix_solve.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/small_matrix_solve.xml
+)
+add_dependencies(small_matrix_solve small_matrix_solve_input)
 
 # -------------------------------------------------------------
 # vector test suite

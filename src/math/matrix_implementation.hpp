@@ -9,7 +9,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-10-09 12:24:09 d3g096
+ * @date   2013-10-23 09:48:00 d3g096
  * 
  * @brief  
  * 
@@ -142,6 +142,12 @@ public:
   //   this->p_get_region(ni, nj, i, j, x);
   // }
 
+  /// Compute the matrix L<sup>2</sup> norm
+  ComplexType norm2(void) const
+  {
+    return this->p_norm2();
+  }
+
   /// Indicate the matrix is ready to use
   void ready(void)
   {
@@ -219,6 +225,9 @@ protected:
   // virtual void p_get_region(const int& ni, const int& nj, 
   //                          const int *i, const int *j, ComplexType *x) const = 0;
 
+
+  /// Compute the matrix L<sup>2</sup> norm (specialized)
+  virtual ComplexType p_norm2(void) const = 0;
 
   /// Make this instance ready to use
   virtual void p_ready(void) = 0;
