@@ -218,6 +218,7 @@ class PFBus
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
+    std::vector<double> p_vs;
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;

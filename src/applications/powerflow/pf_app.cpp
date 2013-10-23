@@ -137,6 +137,15 @@ void gridpack::powerflow::PFApp::execute(void)
 //  Y->print();
   Y->save("Ybus.m");
 
+  factory.setMode(S_Cal);
+  gridpack::mapper::BusVectorMap<PFNetwork> vvMap(network);
+  boost::shared_ptr<gridpack::math::Vector> vv = vvMap.mapToVector();
+//  vv->save("vv.m");
+
+  boost::shared_ptr<gridpack::math::Vector> Yvv(multiply(*Y, *vv)); 
+//  Yvv->save("Yvv.m");
+
+
   // make Sbus components to create S vector
   factory.setSBus();
   busIO.header("\nIteration 0\n");
@@ -153,15 +162,17 @@ void gridpack::powerflow::PFApp::execute(void)
   timer->stop(t_pqvec);
 //  busIO.header("\nPQ values\n");
 //  PQ->print();
-  busIO.header("\n   Elements of PQ vector\n");
-  busIO.header("\n   Bus Number           P                   Q      Neighbors\n");
-  busIO.write("pq");
+//  busIO.header("\n   Elements of PQ vector\n");
+//  busIO.header("\n   Bus Number           P                   Q      Neighbors\n");
+//  busIO.write("pq");
+  PQ->save("PQ.m");
 #if 1
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-//  busIO.header("\nJacobian values\n");
+  busIO.header("\nJacobian values\n");
 //  J->print(); 
+  J->save("J.m");
 
   // FIXME: how does one obtain the current network state (voltage/phase in this case)?
   // get the current network state vector
@@ -207,8 +218,8 @@ void gridpack::powerflow::PFApp::execute(void)
   ComplexType tol;
 
   // These need to eventually be set using configuration file
-  tolerance = 1.0e-6;
-  max_iteration = 100;
+  tolerance = 1.0e-5;
+  max_iteration = 50;
 
   // Create linear solver
   int t_lsolv = timer->createCategory("Linear Solver");
