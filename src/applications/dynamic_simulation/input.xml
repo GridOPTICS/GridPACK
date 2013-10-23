@@ -5,8 +5,10 @@
   </Dynamic_simulation>
   <LinearMatrixSolver>
     <PETScOptions>
-      -ksp_type richardson
-      -ksp_max_it 1
+      -ksp_atol 1.0e-18
+      -ksp_rtol 1.0e-10
+      -ksp_monitor
+      -ksp_max_it 200
     </PETScOptions>
   </LinearMatrixSolver>
 </Configuration>

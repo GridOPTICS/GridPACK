@@ -32,7 +32,7 @@ class DSApp
     /**
      * Basic constructor
      */
-     DSApp(void);
+    DSApp(void);
 
     /**
      * Basic destructor

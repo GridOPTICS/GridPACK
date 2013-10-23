@@ -153,13 +153,6 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     } else {
       return false;
     }
-  /*} else if (p_mode == PMatrix) {
-    if (p_ngen > 0) {
-      values[0] = -1.0;
-      return true;
-    } else {
-      return false;
-    } */
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
@@ -182,22 +175,6 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       return true;
     }
   }
-
-  /*else if (p_mode == FY) {
-    values[0] = p_ybusr + p_pl / (p_voltage * p_voltage); 
-    values[1] = p_ybusi + (-p_ql) / (p_voltage * p_voltage);
-    values[2] = -values[1];
-    values[3] = values[0];
-    if (getOriginalIndex() == sw2_2) {
-      values[0] = 0.0;
-      values[1] = -1e7; 
-      values[2] = -values[1];
-      values[3] = values[0]; 
-    }
-    return true;
-  } else if (p_mode == POSFY) {
-
-  }*/
 }
 
 /**
@@ -221,6 +198,12 @@ bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
       *size = 1;
     } else {
       *size = 0;
+      return false;
+    }
+  } else if (p_mode == DAE_init) {
+    if (p_ngen > 0) {
+      *size = 4;
+    } else {
       return false;
     }
   } else {
@@ -261,6 +244,51 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   }*/
   if (p_mode == updateYbus) {
     printf("returning Value on %d\n",getOriginalIndex());
+  } else if (p_mode == DAE_init) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        p_mva[i] = p_sbase / p_mva[i]; 
+        user_gen_d0 = p_d0[i] / p_mva[i];
+        user_gen_h = p_h[i] / p_mva[i];
+        double eterm = p_voltage;
+        double pelect = p_pg[i];
+        double qelect = p_qg[i];
+        double currr = sqrt(pelect * pelect + qelect * qelect) / eterm * p_mva[i];
+        double phi = atan2(qelect, pelect);  
+        double pi = 4.0*atan(1.0);
+        double vi = p_angle;
+        gridpack::ComplexType v(0.0, vi);
+        v = eterm * exp(v);
+        double curri = p_angle - phi;
+        gridpack::ComplexType curr(0.0, curri);
+        curr = currr * exp(curr);
+        gridpack::ComplexType jay(0.0, 1.0);
+        gridpack::ComplexType eprime(0.0, 0.0);
+        eprime = v + jay * p_dtr[i] * curr;
+        double mac_ang = atan2(imag(eprime), real(eprime));
+        double mac_spd = 0.0;
+        user_eqprime = abs(eprime);
+        user_pmech = pelect;
+        //printf("\neterm: %f\n", eterm);
+        //printf("curr: %f+%fi\n", real(curr), imag(curr));
+        //printf("phi: %f\n", phi);
+        //printf("v: %f+%fi\n", real(v), imag(v));
+        //printf("eprime: %f+%fi\n", real(eprime), imag(eprime));
+        //printf("mac_ang: %f\n", mac_ang);
+        //printf("mac_spd: %f\n", mac_spd);
+        values[4*i] = mac_ang; 
+        values[4*i+1] = mac_spd;
+        values[4*i+2] = sin(mac_ang) * real(curr) - cos(mac_ang) * imag(curr);
+        values[4*i+3] = cos(mac_ang) * real(curr) + sin(mac_ang) * imag(curr);
+        //printf("%d: %f\n", 4*i, mac_ang);
+        //printf("%d: %f\n", 4*i+1, mac_spd);
+        //printf("%d: %f\n", 4*i+2, sin(mac_ang) * real(curr) - cos(mac_ang) * imag(curr));
+        //printf("%d: %f\n", 4*i+3, cos(mac_ang) * real(curr) + sin(mac_ang) * imag(curr));
+      }
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
@@ -312,7 +340,7 @@ void gridpack::dynamic_simulation::DSBus::load(
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
 
-  double pi = 4.9*atan(1.0);
+  double pi = 4.0*atan(1.0);
   p_angle = p_angle*pi/180.0; 
  
   p_shunt = true;
@@ -337,6 +365,7 @@ void gridpack::dynamic_simulation::DSBus::load(
   bool lgen;
   int i, gstatus;
   double pg, qg, mva, r, dstr, dtr;
+  double h, d0;
   if (data->getValue(GENERATOR_NUMBER, &p_ngen)) {
     for (i=0; i<p_ngen; i++) {
       lgen = true;
@@ -350,7 +379,9 @@ void gridpack::dynamic_simulation::DSBus::load(
       lgen = lgen && data->getValue(GENERATOR_RESISTANCE, &r, i); // r
       lgen = lgen && data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &dstr,i); // dstr
       lgen = lgen && data->getValue(GENERATOR_TRANSIENT_REACTANCE, &dtr,i); // dtr
-      //printf("ng=%d,pg=%f,qg=%f\n",i,pg,qg);
+      // SJin: need to be added to parser
+      lgen = lgen && data->getValue(GENERATOR_INERTIA_CONSTANT_H, &h, i); // h
+      lgen = lgen && data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &d0, i); // d0
       if (lgen) {
         p_pg.push_back(pg);
         p_qg.push_back(qg);
@@ -360,6 +391,9 @@ void gridpack::dynamic_simulation::DSBus::load(
         p_r.push_back(r);
         p_dstr.push_back(dstr);
         p_dtr.push_back(dtr);
+
+        p_h.push_back(h);
+        p_d0.push_back(d0);
       }
     }
   }
@@ -392,6 +426,16 @@ double gridpack::dynamic_simulation::DSBus::getVoltage(void)
  * @return: phase angle
  */
 double gridpack::dynamic_simulation::DSBus::getPhase(void)
+{
+}
+
+void gridpack::dynamic_simulation::DSBus::setIFunc(void)
+{
+  if (p_ngen > 0) {
+  } 
+}
+
+void gridpack::dynamic_simulation::DSBus::setIJaco(void)
 {
 }
 

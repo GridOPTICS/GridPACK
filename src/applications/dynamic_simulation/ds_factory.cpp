@@ -27,7 +27,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-// Powerflow factory class implementations
+// Dynamic simulation factory class implementations
 
 /**
  * Basic constructor

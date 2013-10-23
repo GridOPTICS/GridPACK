@@ -50,7 +50,7 @@ namespace gridpack {
 namespace dynamic_simulation {
 
 //enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, FY, POSFY};
-enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus};
+enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus, DAE_init};
 
 class DSBus
   : public gridpack::component::BaseBusComponent {
@@ -135,6 +135,16 @@ class DSBus
      */
     double getPhase(void);
 
+    /**
+     * Set values of the IFunction on this bus (gen)
+     */
+    void setIFunc(void);
+
+    /**
+     * Set values of the IJaco on this bus (gen)
+     */
+    void setIJaco(void);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -154,6 +164,12 @@ class DSBus
     int p_type;
     gridpack::ComplexType p_permYmod;
 
+    // DAE related variables
+    double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
+    int user_ngen; // User app context variables
+    std::vector<double> p_h, p_d0;
+    //std::vector<double> x, xdot; // DAE variables
+    
 };
 
 class DSBranch
