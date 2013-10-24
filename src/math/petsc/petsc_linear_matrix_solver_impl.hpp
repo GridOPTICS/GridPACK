@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2013-10-23 14:36:44 d3g096
+ * @date   2013-10-24 07:55:58 d3g096
  * 
  * @brief  
  * 
@@ -48,6 +48,15 @@ protected:
 
   /// Is p_Fmat ready?
   mutable bool p_factored;
+
+  /// List of supported matrix ordering
+  static MatOrderingType p_supportedOrderingType[];
+
+  /// PETSc matrix ordering type
+  MatOrderingType p_orderingType;
+
+  /// List of supported solver packages
+  static MatSolverPackage p_supportedSolverPackage[];
 
   /// PETSC solver package for factorization
   MatSolverPackage p_solverPackage;

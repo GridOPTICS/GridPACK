@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2013-10-23 15:09:48 d3g096
+ * @date   2013-10-24 08:11:42 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,7 @@
 #include "petsc_matrix_implementation.hpp"
 #include "petsc_matrix_extractor.hpp"
 #include "petsc_exception.hpp"
-#include "gridpack/utilities/exception.hpp"
+#include "petsc/petsc_configuration.hpp"
 
 namespace gridpack {
 namespace math {
@@ -34,11 +34,34 @@ namespace math {
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
+// static members
+// -------------------------------------------------------------
+MatOrderingType 
+PetscLinearMatrixSolverImplementation::p_supportedOrderingType[] =  {
+  MATORDERINGNATURAL,
+  MATORDERINGND,
+  MATORDERING1WD,
+  MATORDERINGRCM,
+  MATORDERINGQMD,
+  MATORDERINGROWLENGTH,
+  MATORDERINGAMD
+};
+
+MatSolverPackage 
+PetscLinearMatrixSolverImplementation::p_supportedSolverPackage[] = {
+  MATSOLVERSUPERLU_DIST,
+  MATSOLVERSUPERLU,
+  MATSOLVERMUMPS,
+  MATSOLVERPETSC
+};
+
+// -------------------------------------------------------------
 // PetscLinearMatrixSolverImplementation:: constructors / destructor
 // -------------------------------------------------------------
 PetscLinearMatrixSolverImplementation::PetscLinearMatrixSolverImplementation(const Matrix& A)
   : LinearMatrixSolverImplementation(A),
     p_factored(false),
+    p_orderingType(MATORDERINGND),
     p_solverPackage(MATSOLVERSUPERLU_DIST),
     p_factorType(MAT_FACTOR_LU),
     p_fill(5),
@@ -67,20 +90,35 @@ PetscLinearMatrixSolverImplementation::~PetscLinearMatrixSolverImplementation(vo
 void
 PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Cursor *props)
 {
+  std::string prefix(petscProcessOptions(this->communicator(), props));
+
   PetscErrorCode ierr(0);
 
   std::string mstr;
+  size_t n;
+
+  mstr = props->get("Ordering", MATORDERINGND);
+  boost::to_lower(mstr);
+
+  n = sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
+  for (int i = 0; i < n; ++i) {
+    if (mstr == p_supportedOrderingType[i]) {
+      p_orderingType = p_supportedOrderingType[i];
+      break;
+    }
+  }
+
+
   mstr = props->get("Package", MATSOLVERSUPERLU_DIST);
   boost::to_lower(mstr);
-  if (mstr == MATSOLVERSUPERLU_DIST) {
-    p_solverPackage = MATSOLVERSUPERLU_DIST;
-  } else if (mstr == MATSOLVERSUPERLU) {
-    p_solverPackage = MATSOLVERSUPERLU;
-  } else if (mstr == MATSOLVERMUMPS) {
-    p_solverPackage = MATSOLVERMUMPS;
-  } else if (mstr == MATSOLVERPETSC) {
-    p_solverPackage = MATSOLVERPETSC;
-  } 
+
+  n = sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
+  for (int i = 0; i < n; ++i) {
+    if (mstr == p_supportedSolverPackage[i]) {
+      p_solverPackage = p_supportedSolverPackage[i];
+      break;
+    }
+  }
 
   PetscBool supported;
   try {
@@ -105,10 +143,10 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
     throw Exception(msg);
   }    
 
-  p_fill = props->get("FillLevels", p_fill);
+  p_fill = props->get("Fill", p_fill);
   if (p_fill <= 0) {
     std::string msg = 
-      boost::str(boost::format("%s configuration: bad \"FillLevels\": %d") %
+      boost::str(boost::format("%s configuration: bad \"Fill\": %d") %
                                this->configurationKey() % p_fill);
     throw Exception(msg);
   }    
@@ -172,6 +210,13 @@ PetscLinearMatrixSolverImplementation::p_solve(const Matrix& B) const
   PETScMatrixImplementation *ximpl = 
     new PETScMatrixImplementation(this->communicator(), X);
   Matrix *result = new Matrix(ximpl);
+
+  try {
+    ierr = MatDestroy(&X); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+
   return result;
 }
 

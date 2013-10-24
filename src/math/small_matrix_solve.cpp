@@ -9,7 +9,7 @@
 /**
  * @file   small_matrix_solve.cpp
  * @author William A. Perkins
- * @date   2013-10-23 10:23:50 d3g096
+ * @date   2013-10-24 07:59:07 d3g096
  * 
  * @brief  
  * 
@@ -25,7 +25,7 @@
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/utilities/exception.hpp"
 #include "math.hpp"
-#include "linear_solver.hpp"
+#include "linear_matrix_solver.hpp"
 
 // -------------------------------------------------------------
 //  Main Program
@@ -50,7 +50,7 @@ main(int argc, char **argv)
 
   boost::scoped_ptr<gridpack::math::Matrix> 
     A(new gridpack::math::Matrix(self, 9, 9)),
-    B(new gridpack::math::Matrix(self, 9, 3)),
+    B(new gridpack::math::Matrix(self, 9, 3, gridpack::math::Matrix::Dense)),
     Xorig(new gridpack::math::Matrix(self, 9, 3, gridpack::math::Matrix::Dense));
 
   A->setElement(0, 0, gridpack::ComplexType(0, -33.8085));
@@ -121,10 +121,9 @@ main(int argc, char **argv)
   Xorig->ready();
   Xorig->print();
 
-  boost::scoped_ptr<gridpack::math::LinearSolver> 
-    solver(new gridpack::math::LinearSolver(*A));
+  boost::scoped_ptr<gridpack::math::LinearMatrixSolver> 
+    solver(new gridpack::math::LinearMatrixSolver(*A));
 
-  solver->configurationKey("LinearMatrixSolver");
   solver->configure(config.get());
 
   boost::scoped_ptr<gridpack::math::Matrix> 
