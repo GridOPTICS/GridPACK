@@ -29,7 +29,6 @@
     <LinearMatrixSolver>
       <Ordering>nd</Ordering>
       <Package>superlu_dist</Package>
-      <Iterations>1</Iterations>
       <Fill>5</Fill>
       <PETScOptions>
         -ksp_atol 1.0e-18
