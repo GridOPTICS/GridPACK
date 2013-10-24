@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2013-10-24 08:11:42 d3g096
+ * @date   2013-10-24 09:07:08 d3g096
  * 
  * @brief  
  * 
@@ -96,49 +96,71 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
 
   std::string mstr;
   size_t n;
+  bool found;
 
   mstr = props->get("Ordering", MATORDERINGND);
   boost::to_lower(mstr);
 
   n = sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
+  found = false;
   for (int i = 0; i < n; ++i) {
     if (mstr == p_supportedOrderingType[i]) {
       p_orderingType = p_supportedOrderingType[i];
+      found = true;
       break;
     }
   }
 
+  if (!found) {
+    std::string msg = 
+      boost::str(boost::format("%s PETSc configuration: unrecognized \"Ordering\": \"%s\"") %
+                 this->configurationKey() % p_orderingType);
+    throw Exception(msg);
+  }
 
   mstr = props->get("Package", MATSOLVERSUPERLU_DIST);
   boost::to_lower(mstr);
 
   n = sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
+  found = false;
   for (int i = 0; i < n; ++i) {
     if (mstr == p_supportedSolverPackage[i]) {
       p_solverPackage = p_supportedSolverPackage[i];
+      found = true;
       break;
     }
   }
 
-  PetscBool supported;
-  try {
-    Mat *A(PETScMatrix(*p_A));
-    ierr  = MatGetFactorAvailable(*A, p_solverPackage, p_factorType, &supported);
-  } catch (const PETSc::Exception& e) {
-    throw PETScException(ierr, e);
-  }
-
-  if (false) {
+  if (!found) {
     std::string msg = 
-      boost::str(boost::format("%s configuration: unsupported \"Package\": \"%s\" (not built in PETSc?)") %
-                               this->configurationKey() % p_solverPackage);
+      boost::str(boost::format("%s PETSc PETSc configuration: unrecognized \"Package\": \"%s\"") %
+                 this->configurationKey() % p_solverPackage);
     throw Exception(msg);
   }
+
+  // FIXME: I cannot make this test work. Not sure why. It would be
+  // nice to be able to find out if the package works before we
+  // actually try it.
+
+  // PetscBool supported(PETSC_TRUE);
+  // try {
+  //   Mat *A(PETScMatrix(*p_A));
+  //   ierr  = MatGetFactorAvailable(*A, p_solverPackage, p_factorType, &supported); CHKERRXX(ierr);
+  // } catch (const PETSc::Exception& e) {
+  //   throw PETScException(ierr, e);
+  // }
+
+  // if (!supported) {
+  //   std::string msg = 
+  //     boost::str(boost::format("%s PETSc configuration: unsupported \"Package\": \"%s\" (not built in PETSc?)") %
+  //                              this->configurationKey() % p_solverPackage);
+  //   throw Exception(msg);
+  // }
 
   p_iterations = props->get("Iterations", p_iterations);
   if (p_iterations <= 0) {
     std::string msg = 
-      boost::str(boost::format("%s configuration: bad \"Iterations\": %d") %
+      boost::str(boost::format("%s PETSc configuration: bad \"Iterations\": %d") %
                                this->configurationKey() % p_iterations);
     throw Exception(msg);
   }    
@@ -146,7 +168,7 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
   p_fill = props->get("Fill", p_fill);
   if (p_fill <= 0) {
     std::string msg = 
-      boost::str(boost::format("%s configuration: bad \"Fill\": %d") %
+      boost::str(boost::format("%s PETSc configuration: bad \"Fill\": %d") %
                                this->configurationKey() % p_fill);
     throw Exception(msg);
   }    
