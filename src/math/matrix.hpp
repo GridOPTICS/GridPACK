@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-10-23 09:40:17 d3g096
+ * @date   2013-10-24 07:05:41 d3g096
  * 
  * @brief  
  * 
@@ -43,7 +43,7 @@ namespace math {
  * interface is completely free of the underlying library.  If
  * constructed with a parallel environment with only one process, a
  * serial storage scheme is created, otherwise it's parallel. 
- * 
+ *
  */
 class Matrix 
   : public parallel::WrappedDistributed,
@@ -84,6 +84,16 @@ public:
          const int& local_rows,
          const int& cols,
          const StorageType& storage_type = Sparse);
+
+  /// Construct with an existing (allocated) implementation 
+  /** 
+   * For internal use only.
+   * 
+   * @param impl 
+   * 
+   * @return 
+   */
+  Matrix(MatrixImplementation *impl);
 
   /// Destructor
   /** 
@@ -483,9 +493,6 @@ protected:
 
   /// The actual implementation
   boost::scoped_ptr<MatrixImplementation> p_matrix_impl;
-
-  /// Construct with an existing (allocated) implementation 
-  Matrix(MatrixImplementation *impl);
 
   /// Is a Matrix compatible with this one (throws if not)
   void p_check_compatible(const Matrix& A) const;

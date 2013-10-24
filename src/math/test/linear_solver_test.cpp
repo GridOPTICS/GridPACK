@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-10-23 11:10:58 d3g096
+ * @date   2013-10-24 06:49:32 d3g096
  * 
  * @brief  
  * 
@@ -278,12 +278,11 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
 // -------------------------------------------------------------
 /// Test matrix inversion with LinearMatrixSolver
 /**
- * Just like VersteegInverse, This solves the Versteeg heat transfer
+ * Just like VersteegInverse, this solves the Versteeg heat transfer
  * problem by inverting the Matrix with LinearMatrixSolver.  This
  * would be a stupid way to solve the problem in real life.
  * 
  */
-
 // -------------------------------------------------------------
 BOOST_AUTO_TEST_CASE ( VersteegMatrixInverse )
 {
@@ -308,7 +307,7 @@ BOOST_AUTO_TEST_CASE ( VersteegMatrixInverse )
     A(new gridpack::math::Matrix(world, local_size, global_size, 
                                  gridpack::math::Matrix::Sparse)),
     I(new gridpack::math::Matrix(world, local_size, global_size, 
-                                 gridpack::math::Matrix::Sparse));
+                                 gridpack::math::Matrix::Dense));
   I->identity();
 
   std::auto_ptr<gridpack::math::Vector>

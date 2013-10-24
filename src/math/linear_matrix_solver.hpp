@@ -10,9 +10,9 @@
 /**
  * @file   linear_matrix_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-23 11:13:57 d3g096
+ * @date   2013-10-24 07:05:53 d3g096
  * 
- * @brief  
+ * @brief  Declaration of the LinearMatrixSolver class
  * 
  * 
  */
@@ -33,6 +33,12 @@ namespace math {
 // -------------------------------------------------------------
 /// A solver for multiple systems of linear equations
 /**
+ * This class implements a linear solver that solves systems with one
+ * coefficient matrix and many right hand sides.  
+ *
+ * If the underlying math libray has a special facility for solving
+ * multiple RHS, this class uses that. Otherwise, solve() is just an
+ * interface to LinearSolver::solve(const Matrix& B).
  * 
  * 
  */
@@ -60,6 +66,18 @@ public:
     p_impl->configure(props);
   }
 
+  /// Solve multiple systems
+  /** 
+   * Each column in @c B represent a single right hand side. Each
+   * column in the returned Matrix contains the solution corresponding
+   * to the same column in @c B.  @c B must be \ref Matrix::Dense
+   * "dense" and the returned Matrix will be \ref Matrix::Dense
+   * "dense".
+   * 
+   * @param B RHS matrix
+   * 
+   * @return (dense) solution Matrix
+   */
   Matrix *solve(const Matrix& B) const
   {
     return p_impl->solve(B);

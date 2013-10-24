@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-10-23 10:30:54 d3g096
+# Last Change: 2013-10-23 15:09:04 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -44,6 +44,10 @@ if (PETSC_FOUND)
     include_directories (AFTER ${PETSC_INCLUDES})
     add_definitions (${PETSC_DEFINITIONS})
 
+    if (PETSC_HAVE_SUPERLU_DIST) 
+      add_definitions(-DPETSC_HAVE_SUPERLU)
+    endif()
+
     list(APPEND gridpack_math_sources 
       petsc/petsc_exception.cpp
       petsc/petsc_configuration.cpp
@@ -56,6 +60,7 @@ if (PETSC_FOUND)
       petsc/linear_solver.cpp
       petsc/petsc_linear_solver_implementation.cpp
       petsc/linear_matrix_solver.cpp
+      petsc/petsc_linear_matrix_solver_impl.cpp
       petsc/petsc_nonlinear_solver_implementation.cpp
       petsc/nonlinear_solver.cpp
     )  
