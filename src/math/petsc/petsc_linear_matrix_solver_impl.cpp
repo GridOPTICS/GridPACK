@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2013-10-24 09:07:08 d3g096
+ * @date   2013-10-24 12:25:35 d3g096
  * 
  * @brief  
  * 
@@ -64,8 +64,7 @@ PetscLinearMatrixSolverImplementation::PetscLinearMatrixSolverImplementation(con
     p_orderingType(MATORDERINGND),
     p_solverPackage(MATSOLVERSUPERLU_DIST),
     p_factorType(MAT_FACTOR_LU),
-    p_fill(5),
-    p_iterations(2)
+    p_fill(5)
 {
   // FIXME: maybe enforce the following: A is square, A uses sparse storage
 }
@@ -157,14 +156,6 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
   //   throw Exception(msg);
   // }
 
-  p_iterations = props->get("Iterations", p_iterations);
-  if (p_iterations <= 0) {
-    std::string msg = 
-      boost::str(boost::format("%s PETSc configuration: bad \"Iterations\": %d") %
-                               this->configurationKey() % p_iterations);
-    throw Exception(msg);
-  }    
-
   p_fill = props->get("Fill", p_fill);
   if (p_fill <= 0) {
     std::string msg = 
@@ -193,10 +184,7 @@ PetscLinearMatrixSolverImplementation::p_factor(void) const
     info.fill = p_fill;
 
     ierr = MatLUFactorSymbolic(p_Fmat, *A, perm, iperm, &info); CHKERRXX(ierr);
-
-    for (int i = 0; i < p_iterations; ++i) {
-      ierr = MatLUFactorNumeric(p_Fmat, *A, &info); CHKERRXX(ierr);
-    }
+    ierr = MatLUFactorNumeric(p_Fmat, *A, &info); CHKERRXX(ierr);
 
     ierr = ISDestroy(&perm); CHKERRXX(ierr);
     ierr = ISDestroy(&iperm); CHKERRXX(ierr);
