@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:25:11 d3g096
+ * @date   2013-10-25 08:22:35 d3g096
  * 
  * @brief  
  * 
@@ -185,13 +185,14 @@ PetscNonlinearSolverImplementation::p_solve(void)
     PetscInt iter;
     ierr = SNESGetConvergedReason(p_snes, &reason); CHKERRXX(ierr);
     ierr = SNESGetIterationNumber(p_snes, &iter); CHKERRXX(ierr);
+
     std::string msg;
     if (reason < 0) {
       msg = 
         boost::str(boost::format("%d: PETSc SNES diverged after %d iterations, reason: %d") % 
                    me % iter % reason);
       throw Exception(msg);
-    } else {
+    } else if (me == 0) {
       msg = 
         boost::str(boost::format("%d: PETSc SNES converged after %d iterations, reason: %d") % 
                    me % iter % reason);
