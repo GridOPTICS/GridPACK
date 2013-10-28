@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:25:41 d3g096
+ * @date   2013-10-28 13:26:45 d3g096
  * 
  * @brief  
  * 
@@ -299,6 +299,36 @@ PETScVectorImplementation::p_norm2(void) const
   }
   return result;
 }
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_abs
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_abs(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecAbs(this->p_vector); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+  
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_conjugate
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_conjugate(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecConjugate(this->p_vector); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
 
 
 // -------------------------------------------------------------

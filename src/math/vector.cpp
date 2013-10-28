@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:27:08 d3g096
+ * @date   2013-10-28 13:43:36 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
@@ -71,6 +71,38 @@ add(const Vector& A, const Vector& B, Vector& result)
 {
   result.equate(A);
   result.add(B);
+}
+
+Vector *
+abs(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->abs();
+  return result;
+}
+
+Vector *
+real(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->real();
+  return result;
+}
+
+Vector *
+imaginary(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->imaginary();
+  return result;
+}
+
+Vector *
+conjugate(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->conjugate();
+  return result;
 }
 
 } // namespace math

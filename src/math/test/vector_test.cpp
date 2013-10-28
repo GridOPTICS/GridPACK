@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-10-23 11:09:32 d3g096
+ * @date   2013-10-28 13:49:27 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -194,6 +194,44 @@ BOOST_AUTO_TEST_CASE( get_all )
       BOOST_CHECK_EQUAL(p, static_cast<int>(real(all[index])));
     }
   }
+}
+
+BOOST_AUTO_TEST_CASE( complex_operations )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::ComplexType x0(static_cast<double>(world.rank()+1),
+                           static_cast<double>(world.rank()+1));
+
+  gridpack::math::Vector v(world, local_size);
+
+  int lo, hi;
+  v.localIndexRange(lo, hi);
+  
+  std::vector<gridpack::ComplexType> x(hi-lo, x0);
+  v.setElementRange(lo, hi, &x[0]);
+  v.ready();
+  
+  std::auto_ptr<gridpack::math::Vector> 
+    vreal(gridpack::math::real(v)),
+    vimag(gridpack::math::imaginary(v)),
+    vconj(gridpack::math::conjugate(v)),
+    vabs(gridpack::math::abs(v));
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType z, zreal, zimag, zconj, zabs;
+    v.getElement(i, z);
+    vreal->getElement(i, zreal);
+    vimag->getElement(i, zimag);
+    vconj->getElement(i, zconj);
+    vabs->getElement(i, zabs);
+
+    BOOST_CHECK_CLOSE(real(z), abs(zreal), delta);
+    BOOST_CHECK_CLOSE(imag(z), abs(zimag), delta);
+    BOOST_CHECK_CLOSE(abs(z), abs(zconj), delta);
+    BOOST_CHECK_CLOSE(imag(z), -imag(zconj), delta);
+    BOOST_CHECK_CLOSE(abs(z), real(zabs), delta);
+  }
+    
 }
 
 BOOST_AUTO_TEST_SUITE_END()

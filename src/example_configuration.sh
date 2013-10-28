@@ -31,8 +31,8 @@ elif [ $host == "pe10900" ]; then
         -D GA_DIR:STRING="$prefix" \
         -D GA_EXTRA_LIBS:STRING="-lblas" \
         -D BOOST_ROOT:STRING='/opt/local' \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.3-p3" \
-        -D PETSC_ARCH:STRING='arch-darwin-cxx-opt' \
+        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.2" \
+        -D PETSC_ARCH:STRING='arch-macosx-complex-opt' \
         -D MPI_CXX_COMPILER:STRING='openmpicxx' \
         -D MPI_C_COMPILER:STRING='openmpicc' \
         -D MPIEXEC:STRING='openmpiexec' \

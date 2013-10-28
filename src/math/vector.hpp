@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-10-09 13:27:26 d3g096
+ * @date   2013-10-28 13:44:47 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -608,6 +608,30 @@ public:
    */
   void reciprocal(void);
 
+  /// Replace all elements with its absolute value (complex magnitude) 
+  void abs(void)
+  {
+    p_vector_impl->abs();
+  }
+
+  /// Replace all elements with their real part
+  void real(void)
+  {
+    p_vector_impl->real();
+  }
+
+  /// Replace all elements with their imaginary part
+  void imaginary(void)
+  {
+    p_vector_impl->imaginary();
+  }
+
+  /// Replace all elements with their complex conjugate
+  void conjugate(void)
+  {
+    p_vector_impl->conjugate();
+  }
+
   // friend Vector *reorder(const Vector& A, const Reordering& r);
 
 protected:
@@ -682,6 +706,40 @@ extern Vector *add(const Vector& A, const Vector& B);
  */
 extern Vector *subtract(const Vector& A, const Vector& B);
 
+/// Create a vector containing the absolute value/magnitude of the specified vector
+extern Vector *abs(const Vector& x);
+
+/// Create a vector containing the real part of the specified vector
+/** 
+ * 
+ * 
+ * @param x existing vector with complex values
+ *  
+ * @return pointer to new vector instance containing real part of @c x
+ */
+extern Vector *real(const Vector& x);
+
+/// Create a vector containing the imaginar part of the specified vector
+/** 
+ * 
+ * 
+ * @param x existing vector with complex values
+ * 
+ * @return pointer to new vector instance containing imaginary part of @c x
+ */
+extern Vector *imaginary(const Vector& x);
+
+/// Create a vector containing the complex conjugate of @c x
+/** 
+ * 
+ * 
+ * @param x existing vector with complex values
+ * 
+ * @return pointer to new vector instance containing the complex conjugate of @c x
+ */
+extern Vector* conjugate(const Vector& x);
+
+
 
 // -------------------------------------------------------------
 // Vector Operations (results into existing instances)
@@ -700,6 +758,8 @@ extern Vector *subtract(const Vector& A, const Vector& B);
  * @param result vector in which to place the sum of @c A and @c B
  */
 extern void add(const Vector& A, const Vector& B, Vector& result);
+
+
 
 } // namespace utility
 } // namespace gridpack

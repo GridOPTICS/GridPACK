@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-10-09 13:27:31 d3g096
+ * @date   2013-10-28 13:25:55 d3g096
  * 
  * @brief  
  * 
@@ -147,6 +147,30 @@ public:
     return this->p_norm2();
   }
 
+  /// Replace all elements with its absolute value (complex magnitude) 
+  void abs(void)
+  {
+    this->p_abs();
+  }
+
+  /// Replace all elements with their real part
+  void real(void)
+  {
+    this->p_real();
+  }
+
+  /// Replace all elements with their imaginary part
+  void imaginary(void)
+  {
+    this->p_imaginary();
+  }
+
+  /// Replace all elements with their complex conjugate
+  void conjugate(void)
+  {
+    this->p_conjugate();
+  }
+
   // FIXME: more ...
 
   /// Make this instance ready to use
@@ -227,7 +251,18 @@ protected:
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
   virtual ComplexType p_norm2(void) const = 0;
 
-  // FIXME: more ...
+  /// Replace all elements with its absolute value (specialized) 
+  virtual void p_abs(void) = 0;
+
+  /// Replace all elements with their real part (specialized)
+  virtual void p_real(void);
+
+  /// Replace all elements with their imaginary part (specialized)
+  virtual void p_imaginary(void);
+
+  /// Replace all elements with their complex conjugate
+  virtual void p_conjugate(void);
+
   /// Make this instance ready to use
   virtual void p_ready(void) = 0;
 

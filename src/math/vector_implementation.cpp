@@ -8,7 +8,7 @@
 /**
  * @file   vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:27:20 d3g096
+ * @date   2013-10-28 13:17:25 d3g096
  * 
  * @brief  
  * 
@@ -68,6 +68,60 @@ VectorImplementation::p_getElementRange(const int& lo, const int& hi, ComplexTyp
             boost::counting_iterator<int>(hi),
             std::back_inserter(i));
   this->p_getElements(i.size(), &i[0], x);
+}
+
+// -------------------------------------------------------------
+// VectorImplementation::p_real
+// -------------------------------------------------------------
+void
+VectorImplementation::p_real(void)
+{
+  int lo, hi;
+  this->localIndexRange(lo, hi);
+  std::vector<ComplexType> x(hi-lo);
+  this->getElementRange(lo, hi, &x[0]);
+  for (std::vector<ComplexType>::iterator i = x.begin();
+       i != x.end(); ++i) {
+    *i = std::real(*i);
+  }
+  this->setElementRange(lo, hi, &x[0]);
+  this->ready();
+}
+  
+// -------------------------------------------------------------
+// VectorImplementation::p_imaginary
+// -------------------------------------------------------------
+void
+VectorImplementation::p_imaginary(void)
+{
+  int lo, hi;
+  this->localIndexRange(lo, hi);
+  std::vector<ComplexType> x(hi-lo);
+  this->getElementRange(lo, hi, &x[0]);
+  for (std::vector<ComplexType>::iterator i = x.begin();
+       i != x.end(); ++i) {
+    *i = imag(*i);
+  }
+  this->setElementRange(lo, hi, &x[0]);
+  this->ready();
+}
+
+// -------------------------------------------------------------
+// VectorImplementation::p_conjugate
+// -------------------------------------------------------------
+void
+VectorImplementation::p_conjugate(void)
+{
+  int lo, hi;
+  this->localIndexRange(lo, hi);
+  std::vector<ComplexType> x(hi-lo);
+  this->getElementRange(lo, hi, &x[0]);
+  for (std::vector<ComplexType>::iterator i = x.begin();
+       i != x.end(); ++i) {
+    *i = conj(*i);
+  }
+  this->setElementRange(lo, hi, &x[0]);
+  this->ready();
 }
 
 

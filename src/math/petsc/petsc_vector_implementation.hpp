@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:25:58 d3g096
+ * @date   2013-10-28 13:25:58 d3g096
  * 
  * @brief  
  * 
@@ -122,6 +122,12 @@ protected:
 
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
   ComplexType p_norm2(void) const;
+
+  /// Replace all elements with its absolute value (specialized) 
+  void p_abs(void);
+
+  /// Replace all elements with their complex conjugate
+  void p_conjugate(void);
 
   // FIXME: more ...
 
