@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-10-23 09:48:12 d3g096
+ * @date   2013-10-28 14:30:32 d3g096
  * 
  * @brief  
  * 
@@ -109,12 +109,14 @@ protected:
   /// Get an several element
   void p_getElements(const int& n, const int *i, const int *j, ComplexType *x) const;
 
-  // /// Get all elements in a row
-  // void p_get_row(const int& i, const int *j, ComplexType *x) const;
+  /// Replace all elements with their real parts
+  void p_real(void);
 
-  // /// Get all elements in a region
-  // void p_get_region(const int& ni, const int& nj, 
-  //                          const int *i, const int *j, ComplexType *x) const;
+  /// Replace all elements with their imaginary parts
+  void p_imaginary(void);
+
+  /// Replace all elements with their complex gradient
+  void p_conjugate(void);
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
   ComplexType p_norm2(void) const;

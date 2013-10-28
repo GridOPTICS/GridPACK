@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-10-24 07:05:41 d3g096
+ * @date   2013-10-28 14:35:57 d3g096
  * 
  * @brief  
  * 
@@ -343,6 +343,25 @@ public:
    */
   void identity(void);
 
+  /// Replace all elements with their real parts
+  void real(void)
+  {
+    p_matrix_impl->real();
+  }
+
+  /// Replace all elements with their imaginary parts
+  void imaginary(void)
+  {
+    p_matrix_impl->imaginary();
+  }
+
+  /// Replace all elements with their complex gradient
+  void conjugate(void)
+  {
+    p_matrix_impl->conjugate();
+  }
+
+
   /// Compute the matrix L<sup>2</sup> norm
   /** 
    * @e Collective.
@@ -577,6 +596,15 @@ extern Vector *multiply(const Matrix& A, const Vector& x);
 
 /// Make an identity matrix with the same ownership as the specified matrix
 extern Matrix *identity(const Matrix& A);
+
+/// Create a new matrix containing the real part of the specified matrix
+extern Matrix *real(const Matrix& A);
+
+/// Create a new matrix containing the imaginary part of the specified matrix
+extern Matrix *imaginary(const Matrix& A);
+
+/// Create a new matrix containing the complex conjugate of the specified matrix
+extern Matrix *conjugate(const Matrix& A);
 
 // -------------------------------------------------------------
 // Matrix Operations

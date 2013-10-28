@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-10-11 08:27:57 d3g096
+ * @date   2013-10-28 15:39:04 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -662,7 +662,46 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
   BOOST_CHECK_THROW(transpose(*A, *C), gridpack::Exception);
 }
 
+BOOST_AUTO_TEST_CASE( ComplexOperations )
+{
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_test_matrix(global_size));
 
+  int lo, hi;
+  A->localRowRange(lo, hi);
+ 
+  int halfbw(1);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType 
+      x(static_cast<double>(i), static_cast<double>(i));
+    int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      A->setElement(i, j, x);
+    }
+  }
+  A->ready();
+
+  std::auto_ptr<gridpack::math::Matrix> 
+    Areal(real(*A)),
+    Aimag(imaginary(*A)),
+    Aconj(conjugate(*A));
+
+  for (int i = lo; i < hi; ++i) {
+    int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      gridpack::ComplexType a, areal, aimag, aconj;      
+      A->getElement(i, j, a);
+      Areal->getElement(i, j, areal);
+      Aimag->getElement(i, j, aimag);
+      Aconj->getElement(i, j, aconj);
+      BOOST_CHECK_CLOSE(real(a), abs(areal), delta);
+      BOOST_CHECK_CLOSE(imag(a), abs(aimag), delta);
+      BOOST_CHECK_CLOSE(imag(a), -imag(aconj), delta);
+    }
+  }
+}
 
 BOOST_AUTO_TEST_SUITE_END()
 

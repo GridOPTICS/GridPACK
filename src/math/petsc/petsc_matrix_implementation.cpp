@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-23 09:47:41 d3g096
+ * @date   2013-10-28 14:29:57 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -288,6 +288,48 @@ PETScMatrixImplementation::p_getElements(const int& n,
   // FIXME: There is a better way
   for (int k = 0; k < n; k++) {
     this->p_getElement(i[k], j[k], x[k]);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_real
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_real(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatRealPart(p_matrix); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_imaginary
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_imaginary(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatImaginaryPart(p_matrix); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_conjugate
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_conjugate(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatConjugate(p_matrix); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
   }
 }
 

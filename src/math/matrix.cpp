@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-10-10 07:33:09 d3g096
+ * @date   2013-10-28 14:40:27 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -120,6 +120,39 @@ identity(const Matrix& A)
 {
   Matrix *result(A.clone());
   result->identity();
+  return result;
+}
+
+// -------------------------------------------------------------
+// real
+// -------------------------------------------------------------
+Matrix *
+real(const Matrix& A)
+{
+  Matrix *result = A.clone();
+  result->real();
+  return result;
+}
+
+// -------------------------------------------------------------
+// imaginary
+// -------------------------------------------------------------
+Matrix *
+imaginary(const Matrix& A)
+{
+  Matrix *result = A.clone();
+  result->imaginary();
+  return result;
+}
+
+// -------------------------------------------------------------
+// conjugate
+// -------------------------------------------------------------
+Matrix *
+conjugate(const Matrix& A)
+{
+  Matrix *result = A.clone();
+  result->conjugate();
   return result;
 }
 
