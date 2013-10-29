@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2013-09-23 07:01:53 d3g096
+ * @date   2013-10-29 09:47:49 d3g096
  * 
  * @brief  
  * 
@@ -159,7 +159,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
  */
 bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
-  if (p_mode == RHS) {
+  if (p_mode == RHS || p_mode == State) {
 #ifdef LARGE_MATRIX
     *size = 2;
     return true;
@@ -199,6 +199,10 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     }
     //printf ("retr = %f, reti = %f, p_v = %f, p_a = %f\n", retr, reti, p_v, p_a);
     return true;
+  }
+  if (p_mode == State) {
+    values[0] = p_v;
+    values[1] = p_a;
   }
   if (p_mode == RHS) {
     if (!getReferenceBus()) {

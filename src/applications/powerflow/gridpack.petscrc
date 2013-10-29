@@ -6,3 +6,4 @@
 -snes_atol 1.0e-20
 -snes_rtol 1.0e-20
 -snes_max_it 100
+-mat_ascii_output_large

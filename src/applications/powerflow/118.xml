@@ -33,5 +33,39 @@
       </PETScOptions>
     </LinearSolver>
     -->
+    <!-- 
+         If UseNewton is true a NewtonRaphsonSolver is
+         used. Otherwise, a PETSc-based NonlinearSolver is
+         used. Configuration parameters for both are included here. 
+    -->
+    <UseNewton>false</UseNewton>
+    <NewtonRaphsonSolver>
+      <Tolerance>1.0E-05</Tolerance>
+      <MaxIterations>50</MaxIterations>
+      <LinearSolver>
+        <PETScOptions>
+          -ksp_atol 1.0e-08
+          -ksp_rtol 1.0e-12
+          -ksp_monitor
+          -ksp_max_it 50
+          -ksp_view
+        </PETScOptions>
+      </LinearSolver>
+    </NewtonRaphsonSolver>
+    <NonlinearSolver> 
+      <PETScOptions>
+        -snes_view
+        -snes_monitor
+        -snes_linesearch_monitor 
+        -snes_atol 1.0e-10
+        -snes_rtol 1.0e-10
+        -snes_stol 1.0e-05
+        -snes_max_it 50
+        -ksp_atol 1.0e-08
+        -ksp_rtol 1.0e-12
+        -ksp_monitor
+        -ksp_view
+      </PETScOptions>
+    </NonlinearSolver>
   </Powerflow>
 </Configuration>

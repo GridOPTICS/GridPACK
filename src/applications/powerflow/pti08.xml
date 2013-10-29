@@ -21,7 +21,7 @@
         <PETScOptions>
           -ksp_type bicg
           -pc_type bjacobi
-          -sub_pc_type ilu -sub_pc_factor_levels 11 -sub_ksp_type preonly 
+          -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly 
           -ksp_atol 1.0e-15
           -ksp_rtol 1.0e-10
           -ksp_monitor
@@ -29,5 +29,43 @@
           -ksp_view
         </PETScOptions>
     </LinearSolver>
+    <!-- 
+         If UseNewton is true a NewtonRaphsonSolver is
+         used. Otherwise, a PETSc-based NonlinearSolver is
+         used. Configuration parameters for both are included here. 
+    -->
+    <UseNewton>false</UseNewton>
+    <NewtonRaphsonSolver>
+      <Tolerance>1.0E-05</Tolerance>
+      <MaxIterations>50</MaxIterations>
+      <LinearSolver>
+        <PETScOptions>
+          -ksp_type bicg
+          -pc_type bjacobi
+          -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly 
+          -ksp_atol 1.0e-15
+          -ksp_rtol 1.0e-10
+          -ksp_monitor
+          -ksp_max_it 10000
+          -ksp_view
+        </PETScOptions>
+      </LinearSolver>
+    </NewtonRaphsonSolver>
+    <NonlinearSolver> 
+      <PETScOptions>
+        -snes_view
+        -snes_monitor
+        -snes_stol 1.0e-05
+        -snes_max_it 50
+        -ksp_type bicg
+        -pc_type bjacobi
+        -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly 
+        -ksp_atol 1.0e-15
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 10000
+        -ksp_view
+      </PETScOptions>
+    </NonlinearSolver>
   </Powerflow>
 </Configuration>

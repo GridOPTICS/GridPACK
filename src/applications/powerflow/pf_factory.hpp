@@ -7,7 +7,7 @@
 /**
  * @file   pf_factory.hpp
  * @author Bruce Palmer
- * @date   2013-09-09 14:25:24 d3g096
+ * @date   2013-10-25 08:02:22 d3g096
  * 
  * @brief  
  * 
@@ -66,12 +66,6 @@ class PFFactory
      * Create the Jacobian matrix
      */
     void setJacobian(void);
-
-    /// Operator to make this compatible with math::JacobianBuilder
-  void operator() (const math::Vector& x, math::Matrix& J);
-
-    /// Operator to make this compatible with math::FunctionBuilder
-  void operator() (const math::Vector& x, math::Vector& F);
 
   private:
 

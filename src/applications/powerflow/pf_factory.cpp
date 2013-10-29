@@ -7,7 +7,7 @@
 /**
  * @file   pf_factory.cpp
  * @author Bruce Palmer
- * @date   2013-09-09 15:36:40 d3g096
+ * @date   2013-10-24 13:54:26 d3g096
  * 
  * @brief  
  * 
@@ -157,63 +157,6 @@ gridpack::ComplexType gridpack::powerflow::PFFactory::calMis(
   }*/
 }
 #endif
-
-// -------------------------------------------------------------
-// PFFactory::operator()
-// -------------------------------------------------------------
-void
-PFFactory::operator() (const math::Vector& X, math::Matrix& J)
-{
-  // In both the Netwon-Raphson and PETSc nonlinear solver (some
-  // methods) implementations, the RHS function builder before this,
-  // so we may be able to count on the current solution being pushed
-  // back on the netork in the RHS function builder method
-
-  // Push current values in X vector back into network components
-  // Need to implement setValues method in PFBus class in order for this to
-  // work
-  // gridpack::mapper::BusVectorMap<PFNetwork> vMap(*p_network);
-  // vMap.mapToBus(X);
-
-  // Exchange data between ghost buses (I don't think we need to exchange data
-  // between branches)
-  // FIXME: called twice per iteration -- may be able to skip it here
-  // network->updateBuses();
-  
-  // Set to build Jacobian
-  setJacobian();
-
-  // build the Jacobian
-  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
-  jMap.mapToMatrix(J);
-}
-
-void
-PFFactory::operator() (const math::Vector& X, math::Vector& PQ)
-{
-  // In both the Netwon-Raphson and PETSc nonlinear solver
-  // implementations, this is called before the Jacobian builder, so
-  // we may only need to map the solution back on to the network here.
-
-  // Push current values in X vector back into network components
-  // Need to implement setValues method in PFBus class in order for this to
-  // work
-
-  // FIXME: set proper mode for state (voltage, phase)
-  
-  gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
-  vMap.mapToBus(X);
-
-  // Exchange data between ghost buses (I don't think we need to exchange data
-  // between branches)
-  p_network->updateBuses();
-  
-  // set to build RHS vector
-  setPQ();
-
-  // build the RHS vector
-  vMap.mapToVector(PQ);
-}
 
 
 } // namespace powerflow

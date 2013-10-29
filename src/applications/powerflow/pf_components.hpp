@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-07 10:04:43 d3g096
+ * @date   2013-10-24 14:30:43 d3g096
  * 
  * @brief  
  * 
@@ -49,7 +49,7 @@
 namespace gridpack {
 namespace powerflow {
 
-enum PFMode{YBus, Jacobian, RHS, S_Cal};
+enum PFMode{YBus, Jacobian, RHS, S_Cal, State};
 
 class PFBus
   : public gridpack::component::BaseBusComponent {

@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2013-10-08 08:15:14 d3g096
+ * @date   2013-10-29 08:28:38 d3g096
  * 
  * @brief  
  * 
@@ -174,40 +174,6 @@ void gridpack::powerflow::PFApp::execute(void)
 //  J->print(); 
   J->save("J.m");
 
-  // FIXME: how does one obtain the current network state (voltage/phase in this case)?
-  // get the current network state vector
-  // gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-  // factory.setState(); // or something
-
-#if 0
-  // Need to make sure that there is a mode for creating the X vector
-  factory.setPQ();
-  gridpack::mapper::BusVectorMap<PFNetwork> xMap(network);
-  boost::shared_ptr<gridpack::math::Vector> X = xMap.mapToVector();
-
-
-  gridpack::math::FunctionBuilder fbuilder = factory;
-  gridpack::math::JacobianBuilder jbuilder = factory;
-
-#if 0
-  gridpack::math::NewtonRaphsonSolver solver(network->communicator(),
-                                             X->local_size(), jbuilder, fbuilder);
-  solver.tolerance(1.0e-06);
-  solver.maximum_iterations(100);
-  solver.solve(*X);
-#else
-  gridpack::math::NonlinearSolver solver(network->communicator(),
-                                         X->local_size(), jbuilder, fbuilder);
-  try {
-    solver.solve(*X);
-  } catch (const Exception& e) {
-    std::cerr << e.what() << std::endl;
-  }
-#endif
-
-  X->print();
-
-#endif
 
 #if 1
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());

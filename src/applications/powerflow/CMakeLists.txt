@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-09 15:00:22 d3g096
+# Last Change: 2013-10-25 09:07:46 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -48,6 +48,13 @@ add_executable(powerflow.x
 )
 
 target_link_libraries(powerflow.x ${target_libraries})
+
+add_executable(powerflow2
+  pf_app2.cpp
+  pf_components.cpp
+  pf_factory.cpp
+)
+target_link_libraries(powerflow2 ${target_libraries})
 
 # Put files necessary to run powerflow.x in binary directory.
 # gridpack.petscrc is temporary -- it will be incorporated into
@@ -89,6 +96,7 @@ add_custom_target(powerflow.x.input
 
 )
 add_dependencies(powerflow.x powerflow.x.input)
+add_dependencies(powerflow2 powerflow.x.input)
 
 # -------------------------------------------------------------
 # TEST: pf_network_test
