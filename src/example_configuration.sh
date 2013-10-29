@@ -43,7 +43,6 @@ elif [ $host == "olympus.local" ]; then
 
     prefix="/pic/projects/gridpack/software"
     cmake $options \
-        -D PARMETIS_DIR:STRING="$prefix" \
         -D GA_DIR:STRING="/pic/projects/gridpack/ga-5-2" \
         -D GA_EXTRA_LIBS:STRING="-libverbs" \
 	-D BOOST_ROOT:STRING="$prefix" \
