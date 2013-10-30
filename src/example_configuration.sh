@@ -27,7 +27,6 @@ if [ $host == "flophouse" ]; then
 elif [ $host == "pe10900" ]; then
     prefix="/net/flophouse/files0/perksoft/macosx"
     cmake $options \
-        -D PARMETIS_DIR:STRING="$prefix" \
         -D GA_DIR:STRING="$prefix" \
         -D GA_EXTRA_LIBS:STRING="-lblas" \
         -D BOOST_ROOT:STRING='/opt/local' \

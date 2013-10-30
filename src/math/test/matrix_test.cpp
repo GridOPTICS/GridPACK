@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-10-28 15:39:04 d3g096
+ * @date   2013-10-30 10:21:45 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -414,7 +414,7 @@ BOOST_AUTO_TEST_CASE( Transpose )
   }
 }
 
-BOOST_AUTO_TEST_CASE( ColumnDiagonal )
+BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
 {
   int global_size;
   std::auto_ptr<gridpack::math::Matrix> 
@@ -444,7 +444,59 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonal )
     (cvector->communicator()).barrier();
   }
 
+  std::auto_ptr<gridpack::math::Matrix> 
+    B(gridpack::math::diagonal(*dvector, the_storage_type));
+
+  // norms of the diagonal matrix and original vector should be very
+  // close
+  double Bnorm(abs(B->norm2()));
+  double vnorm(abs(dvector->norm2()));
+  BOOST_CHECK_CLOSE(Bnorm, vnorm, delta);
+
+  // make the diagonal matrix back into a vector and see that it has
+  // not changed
+
+  std::auto_ptr<gridpack::math::Vector>  
+    bvector(gridpack::math::diagonal(*B));
+
+  bvector->scale(-1.0);
+  bvector->add(*dvector);
+  vnorm = abs(bvector->norm2());
+  
+  // norm should be really really small
+  BOOST_CHECK(vnorm < delta*delta);
 }
+
+BOOST_AUTO_TEST_CASE( AddDiagonal )
+{
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_test_matrix(global_size));
+  A->identity();
+
+  A->print();
+
+  std::auto_ptr<gridpack::math::Vector>  
+    v(new gridpack::math::Vector(A->communicator(), A->localRows()));
+  v->fill(1.0);
+
+  A->addDiagonal(*v);
+  A->print();
+
+  std::auto_ptr<gridpack::math::Vector>  
+    d(diagonal(*A));
+  d->print();
+
+  double norm(abs(d->norm1())/d->size());
+
+  BOOST_CHECK_CLOSE(norm, 2.0, delta);
+
+  norm = abs(d->norm2())/sqrt(d->size());
+
+  BOOST_CHECK_CLOSE(norm, 2.0, delta);
+}
+  
+  
 
 BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
 {

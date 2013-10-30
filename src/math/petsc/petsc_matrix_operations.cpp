@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2013-10-10 15:57:38 d3g096
+ * @date   2013-10-30 07:44:55 d3g096
  * 
  * @brief  
  * 
@@ -137,6 +137,22 @@ diagonal(const Matrix& A, Vector& result)
     throw PETScException(ierr, e);
   }
 }  
+
+Matrix *
+diagonal(const Vector& x, const Matrix::StorageType& stype)
+{
+  Matrix *result(new Matrix(x.communicator(), x.localSize(), x.size(), stype));
+  const Vec *pX(PETScVector(x));
+  Mat *pA(PETScMatrix(*result));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatDiagonalSet(*pA, *pX, INSERT_VALUES); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}
+
 
 // -------------------------------------------------------------
 // multiply

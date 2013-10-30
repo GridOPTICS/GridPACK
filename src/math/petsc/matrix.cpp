@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:22:51 d3g096
+ * @date   2013-10-30 07:44:18 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -109,6 +109,22 @@ Matrix::add(const Matrix& B)
   try {
     PetscScalar one(1.0);
     ierr = MatAXPY(*pA, one, *pB, DIFFERENT_NONZERO_PATTERN); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Matrix::addDiagonal
+// -------------------------------------------------------------
+void
+Matrix::addDiagonal(const Vector& x)
+{
+  const Vec *pX(PETScVector(x));
+  Mat *pA(PETScMatrix(*this));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatDiagonalSet(*pA, *pX, ADD_VALUES); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

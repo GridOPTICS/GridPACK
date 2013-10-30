@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-10-28 14:35:57 d3g096
+ * @date   2013-10-30 07:49:23 d3g096
  * 
  * @brief  
  * 
@@ -460,7 +460,7 @@ public:
    */
   void equate(const Matrix& A);
 
-  /// Scale the entire Matrix by the given value
+  /// Scale this entire Matrix by the given value
   /** 
    * @e Collective.
    * 
@@ -468,13 +468,23 @@ public:
    */
   void scale(const ComplexType& x);
 
-  /// Multiply the diagonal by the specified vector
+  /// Multiply this matrix diagonal by the specified vector
   /** 
    * @e Collective.
+   *
+   * This is element by element multiplication
    * 
    * @param x factor by which all diagonal elements in the matrix are multiplied
    */
   void multiplyDiagonal(const Vector& x);
+
+  /// Add the specified vector to the diagonal of this matrix
+  /** 
+   * @c Collective.
+   * 
+   * @param x 
+   */
+  void addDiagonal(const Vector& x);
 
   /// Add another matrix to this one, in place
   /** 
@@ -563,15 +573,28 @@ extern Matrix *transpose(const Matrix& A);
  */
 extern Vector *column(const Matrix& A, const int& cidx);
 
-/// Get the diagonal from from a Matrix and put in new Vector
+/// Get the diagonal from a Matrix and put in new Vector
 /** 
  * @e Collective.
  * 
  * @param A 
  * 
- * @return 
+ * @return pointer to new, allocated Vector containing the diagonal elements of @c A
  */
 extern Vector *diagonal(const Matrix& A);
+
+/// Make a diagonal Matrix from a Vector
+/** 
+ * @e Collective.
+ *
+ * This 
+ * 
+ * @param x 
+ * 
+ * @return 
+ */
+extern Matrix *diagonal(const Vector& x, 
+                        const Matrix::StorageType& stype = Matrix::Sparse);
 
 /// Multiply two Matrix instances and make a new one
 /** 
