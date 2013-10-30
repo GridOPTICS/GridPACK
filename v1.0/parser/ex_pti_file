@@ -1,0 +1,176 @@
+Description of the PTI Load Flow Data Format
+============================================
+
+Note that PTI reserves the right to change the format at any time.
+
+For use with the IEEE 300 bus test case in PTI format.
+
+Case Identification Data
+========================
+
+First record: IC,SBASE
+ IC - 0 for base case, 1 for change data to be added
+ SBASE - System MVA base
+
+Records 2 and 3 - two lines of heading, up to 60 characters per line
+
+Bus Data
+========
+
+Bus data records, terminated by a record with a bus number of zero.
+
+I,IDE,PL,QL,GL,BL,IA,VM,VA,'NAME',BASKL,ZONE
+
+ I - Bus number (1 to 29997)
+ IDE - Bus type
+        1 - Load bus (no generation)
+        2 - Generator or plant bus
+        3 - Swing bus
+        4 - Islolated bus
+ PL - Load MW
+ QL - Load MVAR
+ GL - Shunt conductance, MW at 1.0 per unit voltage
+ BL - Shunt susceptance, MVAR at 1.0 per unit voltage. (- = reactor)
+ IA - Area number, 1-100
+ VM - Voltage magnitude, per unit
+ VA - Voltage angle, degrees
+ NAME - Bus name, 8 characters, must be enclosed in quotes
+ BASKV - Base voltage, KV
+ ZONE - Loss zone, 1-999
+
+Generator Data
+==============
+
+Generator data records, terminated by a generator with an index of zero.
+
+I,ID,PG,QG,QT,QB,VS,IREG,MBASE,ZR,ZX,RT,XT,GTAP,STAT,RMPCT,PT,PB
+
+I - Bus number
+ID - Machine identifier (0-9, A-Z)
+PG - MW output
+QG - MVAR output
+QT - Max MVAR
+QB - Min MVAR
+VS - Voltage setpoint
+IREG - Remote controlled bus index (must be type 1), zero to control own
+ voltage, and must be zero for gen at swing bus
+MBASE - Total MVA base of this machine (or machines), defaults to system
+ MVA base.
+ZR,ZX - Machine impedance, pu on MBASE
+RT,XT - Step up transformer impedance, p.u. on MBASE
+GTAP - Step up transformer off nominal turns ratio
+STAT - Machine status, 1 in service, 0 out of service
+RMPCT - Percent of total VARS required to hold voltage at bus IREG
+ to come from bus I - for remote buses controlled by several generators
+PT - Max MW
+PB - Min MW
+
+Branch Data
+===========
+
+Branch records, ending with a record with from bus of zero
+
+I,J,CKT,R,X,B,RATEA,RATEB,RATEC,RATIO,ANGLE,GI,BI,GJ,BJ,ST
+
+I - From bus number
+J - To bus number
+CKT - Circuit identifier (two character) not clear if integer or alpha
+R - Resistance, per unit
+X - Reactance, per unit
+B - Total line charging, per unit
+RATEA - MVA rating A
+RATEB, RATEC - Higher MVA ratings
+RATIO - Transformer off nominal turns ratio
+ANGLE - Transformer phase shift angle
+GI,BI - Line shunt complex admittance for shunt at from end (I) bus, pu.
+GJ,BJ - Line shunt complex admittance for shunt at to end (J) bus, pu.
+ST - Initial branch status, 1 - in service, 0 - out of service
+
+Transformer Adjustment Data
+===========================
+
+Ends with record with from bus of zero
+
+I,J,CKT,ICONT,RMA,RMI,VMA,VMI,STEP,TABLE
+
+I - From bus number
+J - To bus number
+CKT - Circuit number
+ICONT - Number of bus to control. If different from I or J, sign of ICONT
+ determines control. Positive sign, close to impedance (untapped) bus
+ of transformer. Negative sign, opposite.
+RMA - Upper limit of turns ratio or phase shift
+RMI - Lower limit of turns ratio or phase shift
+VMA - Upper limit of controlled volts, MW or MVAR
+VMI - Lower limit of controlled volts, MW or MVAR
+STEP - Turns ratio step increment
+TABLE - Zero, or number of a transformer impedance correction table 1-5
+
+Area Interchange Data
+=====================
+
+Ends with I of zero
+
+I,ISW,PDES,PTOL,'ARNAM'
+
+I - Area number (1-100)
+ISW - Area interchange slack bus number
+PDES - Desired net interchange, MW + = out.
+PTOL - Area interchange tolerance, MW
+ARNAM - Area name, 8 characters, enclosed in single quotes.
+
+DC Line Data
+============
+
+Ends with I of zero
+
+Each DC line has three consecutive records
+
+I,MDC,RDC,SETVL,VSCHD,VCMOD,RCOMP,DELTI,METER
+IPR,NBR,ALFMAX,ALFMN,RCR,XCR,EBASR,TRR,TAPR,TPMXR,TPMNR,TSTPR
+IPI,NBI,GAMMX,GAMMN,RCI,XCI,EBASI,TRI,TAPI,TPMXI,TPMNI,TSTPI
+
+I - DC Line number
+MDC - Control mode 0 - blocked 1 - power 2 - current
+RDC - Resistance, ohms
+SETVL - Current or power demand
+VSCHD - Scheduled compunded DC voltage, KV
+VCMOD - Mode switch DC voltage, KV, switch to current control mode below this
+RCOMP - Compounding resistance, ohms
+DELTI - Current margin, per unit of desired current
+METER - Metered end code, R - rectifier I - Inverter
+IPR - Rectifier converter bus number
+NBR - Number of birdges is series rectifier
+ALFMAX - Maximum rectifier firing angle, degrees
+ALFMN - Minimum rectifier firing angle, degrees
+RCR - Rectifier commutating transformer resistance, per bridge, ohms
+XCR - Rectifier commutating transformer reactance, per bridge, ohms
+EBASR - Rectifier primary base AC volts, KV
+TRR - Rectifier transformer ratio
+TAPR - Rectifier tap setting
+TPMXR - Maximum rectifier tap setting
+TPMNR - Minimum rectifier tap setting
+TSTPR - Rectifier tap step
+
+Third record contains inverter quantities corresponding to rectifier
+quantities above.
+
+Switch Shunt Data
+=================
+
+Ends with I = 0.
+
+I,MODSW,VSWHI,VSWLO,SWREM,BINIT,N1,B1,N2,B2...N8,B8
+
+I - Bus number
+MODSW - Mode 0 - fixed 1 - discrete 2 - continuous
+VSWHI - Desired voltage upper limit, per unit
+VSWLO - Desired voltage lower limit, per unit
+SWREM - Number of remote bus to control. 0 to control own bus.
+VDES - Desired voltage setpoint, per unit
+BINIT - Initial switched shunt admittance, MVAR at 1.0 per unit volts
+N1 - Number of steps for block 1, first 0 is end of blocks
+B1 - Admittance increment of block 1 in MVAR at 1.0 per unit volts.
+N2, B2, etc, as N1, B1
+
+
