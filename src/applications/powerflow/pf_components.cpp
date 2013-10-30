@@ -34,6 +34,14 @@ gridpack::powerflow::PFBus::PFBus(void)
 {
   p_shunt_gs = 0.0;
   p_shunt_bs = 0.0;
+  p_v = 0.0;
+  p_a = 0.0;
+  p_theta = 0.0;
+  p_angle = 0.0;
+  p_voltage = 0.0;
+  p_pl = 0.0;
+  p_ql = 0.0;
+  p_sbase = 0.0;
   p_mode = YBus;
   setReferenceBus(false);
 }
@@ -397,6 +405,7 @@ void gridpack::powerflow::PFBus::load(
   bool lgen;
   int i, ngen, gstatus;
   double pg, qg, vs;
+  ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
     for (i=0; i<ngen; i++) {
       lgen = true;
@@ -553,6 +562,8 @@ gridpack::powerflow::PFBranch::PFBranch(void)
   p_shunt_admt_b1 = 0.0;
   p_shunt_admt_g2 = 0.0;
   p_shunt_admt_b2 = 0.0;
+  p_theta = 0.0;
+  p_sbase = 0.0;
   p_mode = YBus;
 }
 
