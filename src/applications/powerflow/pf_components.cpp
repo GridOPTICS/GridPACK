@@ -25,7 +25,7 @@
 #include "gridpack/applications/powerflow/pf_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
-//#define LARGE_MATRIX
+#define LARGE_MATRIX
 
 /**
  *  Simple constructor
@@ -395,7 +395,7 @@ void gridpack::powerflow::PFBus::load(
 
   // if BUS_TYPE = 2 then bus is a PV bus
   p_isPV = false;
-  if (itype == 2) p_isPV = true;
+ // if (itype == 2) p_isPV = true;
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
   p_load = true;
@@ -420,6 +420,7 @@ void gridpack::powerflow::PFBus::load(
         p_gstatus.push_back(gstatus);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
+          if (itype == 2) p_isPV = true;
         }
       }
     }
