@@ -252,10 +252,10 @@ template <class _network>
           data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
 
           // BUS_ZONE            "ZONE"                integer
-          data->addValue(BUS_AREA, atoi(split_line[11].c_str()));
+          data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
 
           // BUS_AREA            "IA"                integer
-          data->addValue(BUS_ZONE, atoi(split_line[6].c_str()));
+          data->addValue(BUS_AREA, atoi(split_line[6].c_str()));
 
           // BUS_VOLTAGE_MAG              "VM"                  float
           data->addValue(BUS_VOLTAGE_MAG, atof(split_line[7].c_str()));
@@ -402,12 +402,12 @@ template <class _network>
           p_busData[l_idx]->addValue(GENERATOR_XTRAN,
               atof(split_line[10].c_str()), ngen);
 
-          // GENERATOR_XT              "XT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[11].c_str()),
+          // GENERATOR_RT              "RT"                  float
+          p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
               ngen);
 
-          // GENERATOR_RT              "RT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[12].c_str()),
+          // GENERATOR_XT              "XT"                  float
+          p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[12].c_str()),
               ngen);
 
           // GENERATOR_GTAP              "GTAP"                  float
