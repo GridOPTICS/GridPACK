@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<GridPACK>
+  <Thing>
+    <String1>A simple string.</String1>
+    <String2>
+      A long string
+      that 
+      has multiple lines,
+      maybe.
+    </String2>
+    <Float>1.23e04</Float>
+    <Integer>123</Integer>
+    <Flag>false</Flag>
+  </Thing>
+</GridPACK>

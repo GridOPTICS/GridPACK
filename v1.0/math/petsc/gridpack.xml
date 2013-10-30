@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    Copyright (c) 2013 Battelle Memorial Institute
+    Licensed under modified BSD License. A copy of this license can be found
+    in the LICENSE file in the top level directory of this distribution.
+  -->
+<GridPACK>
+  <MathTests>
+    <LinearSolver>
+      <PETScPrefix>ls</PETScPrefix>
+      <PETScOptions>
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+      </PETScOptions>
+    </LinearSolver>
+    <!--
+    <LinearMatrixSolver>
+      <PETScOptions>
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearMatrixSolver>
+    -->
+    <LinearMatrixSolver>
+      <Ordering>nd</Ordering>
+      <Package>superlu_dist</Package>
+      <Fill>5</Fill>
+      <PETScOptions>
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+      </PETScOptions>
+    </LinearMatrixSolver>
+    <NonlinearSolver>
+      <PETScOptions>
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+        -snes_monitor 
+        -snes_atol 1.0e-20
+        -snes_rtol 1.0e-20
+        -snes_max_it 100
+        -snes_view
+      </PETScOptions>
+    </NonlinearSolver>
+    <NewtonRaphsonSolver>
+      <Tolerance>1.0e-10</Tolerance>
+      <MaxIterations>100</MaxIterations>
+      <LinearSolver>
+        <PETScPrefix>nrs</PETScPrefix>
+        <PETScOptions>
+          -ksp_atol 1.0e-05
+          -ksp_rtol 1.0e-08
+          -ksp_monitor
+          -ksp_max_it 50
+          -ksp_view
+        </PETScOptions>
+      </LinearSolver>
+    </NewtonRaphsonSolver>
+    <PETScThing>
+    </PETScThing>
+  </MathTests>
+</GridPACK>
