@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-10-30 07:49:23 d3g096
+ * @date   2013-10-31 08:51:41 d3g096
  * 
  * @brief  
  * 
@@ -175,6 +175,9 @@ public:
   {
     return p_matrix_impl->cols();
   }
+
+  /// Get the storage type of this matrix
+  StorageType storageType(void) const;
 
   /// Set an individual element
   /** 
@@ -628,6 +631,9 @@ extern Matrix *imaginary(const Matrix& A);
 
 /// Create a new matrix containing the complex conjugate of the specified matrix
 extern Matrix *conjugate(const Matrix& A);
+
+/// Create a copy of a Matrix, possibly with a different storage type
+extern Matrix *storageType(const Matrix& A, const Matrix::StorageType& new_type);
 
 // -------------------------------------------------------------
 // Matrix Operations

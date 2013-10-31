@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-10-30 10:21:45 d3g096
+ * @date   2013-10-31 09:09:18 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -98,7 +98,32 @@ BOOST_AUTO_TEST_CASE( construction )
   BOOST_CHECK_EQUAL(A->localRows(), local_size);
   BOOST_CHECK_EQUAL(A->rows(), global_size);
   BOOST_CHECK_EQUAL(A->cols(), global_size);
-  
+  gridpack::math::Matrix::StorageType tmptype(A->storageType());
+  BOOST_CHECK_EQUAL(tmptype, the_storage_type);
+}
+
+BOOST_AUTO_TEST_CASE( storage )
+{
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(3, global_size));
+
+  gridpack::math::Matrix::StorageType tmptype(A->storageType());
+  BOOST_CHECK_EQUAL(tmptype, the_storage_type);
+
+  switch (A->storageType()) {
+  case (gridpack::math::Matrix::Dense):
+    tmptype = gridpack::math::Matrix::Sparse;
+    break;
+  case (gridpack::math::Matrix::Sparse):
+    tmptype = gridpack::math::Matrix::Dense;
+    break;
+  }
+  std::auto_ptr<gridpack::math::Matrix> 
+    B(gridpack::math::storageType(*A, tmptype));
+  BOOST_CHECK_EQUAL(B->storageType(), tmptype);
+  // norms should be identical
+  BOOST_CHECK_CLOSE(abs(A->norm2()), abs(B->norm2()), delta*delta);
 }
 
 BOOST_AUTO_TEST_CASE( set_and_get )
