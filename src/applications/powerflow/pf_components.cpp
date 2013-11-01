@@ -861,16 +861,23 @@ void gridpack::powerflow::PFBranch::setYBus(void)
     ret = - ret/conj(a); // YChen 9-5-2013: This is for the from end, need to have another one for to end. Equation is ret = - ret/a;
   }*/ 
   //printf("imag(ret)=%lf\n", imag(ret));
-  if (p_xform) {
-    p_ybusr_frwd = real(ret/conj(a));
-    p_ybusi_frwd = imag(ret/conj(a));
-    p_ybusr_rvrs = real(ret/a);
-    p_ybusi_rvrs = imag(ret/a);
+  if (p_branch_status == 1) {
+    if (p_xform) {
+      p_ybusr_frwd = real(ret/conj(a));
+      p_ybusi_frwd = imag(ret/conj(a));
+      p_ybusr_rvrs = real(ret/a);
+      p_ybusi_rvrs = imag(ret/a);
+    } else {
+      p_ybusr_frwd = real(ret);
+      p_ybusi_frwd = imag(ret);
+      p_ybusr_rvrs = real(ret);
+      p_ybusi_rvrs = imag(ret);
+    }
   } else {
-    p_ybusr_frwd = real(ret);
-    p_ybusi_frwd = imag(ret);
-    p_ybusr_rvrs = real(ret);
-    p_ybusi_rvrs = imag(ret);
+    p_ybusr_frwd = 0.0;
+    p_ybusi_frwd = 0.0;
+    p_ybusr_rvrs = 0.0;
+    p_ybusi_rvrs = 0.0;
   }
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
