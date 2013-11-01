@@ -958,7 +958,7 @@ void gridpack::powerflow::PFBranch::setMode(int mode)
 gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
 {
   gridpack::ComplexType ret(p_resistance, p_reactance);
-  if (!p_xform) {
+  if (!p_xform && p_branch_status == 1) {
     ret = -1.0/ret;
   } else {
     ret = gridpack::ComplexType(0.0,0.0);
@@ -977,7 +977,7 @@ gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
 {
   gridpack::ComplexType ret(p_resistance,p_reactance);
   gridpack::ComplexType retB(0,0.5*p_charging);
-  if (p_xform) {
+  if (p_xform && p_branch_status == 1) {
     ret = -1.0/ret;
     ret = ret - retB;
     gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
@@ -1019,7 +1019,7 @@ gridpack::ComplexType
 gridpack::powerflow::PFBranch::getShunt(gridpack::powerflow::PFBus *bus)
 {
   double retr, reti;
-  if (p_shunt) {
+  if (p_shunt && p_branch_status == 1) {
     retr = 0.0;
     reti = 0.0;
     if (!p_xform) {
