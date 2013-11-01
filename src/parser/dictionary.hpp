@@ -452,7 +452,7 @@
  * 0: out-of-service
  * type: integer
  */
-//#define BRANCH_STATUS "BRANCH_STATUS"
+#define BRANCH_STATUS "BRANCH_STATUS"
 
 
 // TRANSFORMER DATA 

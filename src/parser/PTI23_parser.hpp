@@ -555,7 +555,7 @@ template <class _network>
           data->addValue(BRANCH_SHUNT_ADMTTNC_B2, atof(split_line[14].c_str()));
 
           // BRANCH_STATUS        "STATUS"               integer
-//          data->addValue(BRANCH_STATUS, atoi(split_line[15].c_str()));
+          data->addValue(BRANCH_STATUS, atoi(split_line[15].c_str()));
 
           // BRANCH_LENGTH           "GI"                  float
           //data->addValue(BRANCH_LENGTH, atof(split_line[11].c_str()));
