@@ -202,9 +202,6 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     double reti = p_v * sin(p_a);
     gridpack::ComplexType ret(retr, reti);
     values[0] = ret;
-    if (getOriginalIndex() == 7779) {
-      printf ("p_v = %f\n", p_v);
-    }
     //printf ("retr = %f, reti = %f, p_v = %f, p_a = %f\n", retr, reti, p_v, p_a);
     return true;
   }
@@ -590,6 +587,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
 #ifdef LARGE_MATRIX
       *isize = 2;
@@ -637,6 +635,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
 #ifdef LARGE_MATRIX
       *isize = 2;
@@ -688,6 +687,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(p_theta);
@@ -763,6 +763,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);
@@ -905,6 +906,8 @@ void gridpack::powerflow::PFBranch::load(
   } else {
     p_xform = false;
   }
+  p_branch_status = 1;
+  data->getValue(BRANCH_STATUS, &p_branch_status);
 //  p_xform = p_xform && data->getValue(TRANSFORMER_WINDV1, &p_tap_ratio);
 //  p_xform = p_xform && data->getValue(TRANSFORMER_ANG1, &p_phase_shift);
   p_shunt = true;
