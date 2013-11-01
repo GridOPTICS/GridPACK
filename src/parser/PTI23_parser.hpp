@@ -394,13 +394,15 @@ template <class _network>
           p_busData[l_idx]->addValue(GENERATOR_MBASE,
               atof(split_line[8].c_str()), ngen);
 
-          // GENERATOR_ZSORCE              "ZR"                  float
-          p_busData[l_idx]->addValue(GENERATOR_ZSORCE,
-              atof(split_line[9].c_str()), ngen);
+          // GENERATOR_ZSOURCE                                complex
+          p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
+              gridpack::ComplexType(atof(split_line[9].c_str()),
+                atof(split_line[10].c_str())), ngen);
 
-          // GENERATOR_XTRAN              "ZX"                  float
+          // GENERATOR_XTRAN                              complex
           p_busData[l_idx]->addValue(GENERATOR_XTRAN,
-              atof(split_line[10].c_str()), ngen);
+              gridpack::ComplexType(atof(split_line[11].c_str()),
+                atof(split_line[12].c_str())), ngen);
 
           // GENERATOR_RT              "RT"                  float
           p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
