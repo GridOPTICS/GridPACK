@@ -57,6 +57,7 @@
         -snes_view
         -snes_monitor
         -snes_linesearch_monitor 
+        -snes_linesearch_type basic
         -snes_atol 1.0e-10
         -snes_rtol 1.0e-10
         -snes_stol 1.0e-05

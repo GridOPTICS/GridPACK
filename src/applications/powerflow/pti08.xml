@@ -55,6 +55,8 @@
       <PETScOptions>
         -snes_view
         -snes_monitor
+        -snes_linesearch_monitor 
+        -snes_linesearch_type basic
         -snes_stol 1.0e-05
         -snes_max_it 50
         -ksp_type bicg
