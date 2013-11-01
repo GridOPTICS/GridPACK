@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-25 08:22:35 d3g096
+ * @date   2013-10-31 07:10:42 d3g096
  * 
  * @brief  
  * 
@@ -18,12 +18,31 @@
 
 #include <boost/format.hpp>
 
+#include "petscsys.h"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_nonlinear_solver_implementation.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
 #include "petsc/petsc_configuration.hpp"
+
+static PetscErrorCode  
+MonitorNorms(SNES snes, PetscInt its, PetscReal fgnorm, void *dummy)
+{
+  PetscViewer    viewer = PETSC_VIEWER_STDOUT_WORLD;
+
+  Vec dx;
+  SNESGetSolutionUpdate(snes, &dx);
+  PetscReal dxnorm;
+  VecNorm(dx, NORM_2, &dxnorm);
+  PetscInt tablevel;
+  PetscObjectGetTabLevel(((PetscObject)snes), &tablevel);
+  PetscViewerASCIIAddTab(viewer, tablevel);
+  PetscViewerASCIIPrintf(viewer,"%3D SNES Function norm %14.12e, Solution residual norm %14.12e\n",
+                         its, (double)fgnorm, (double)dxnorm);
+  PetscViewerASCIISubtractTab(viewer, tablevel);
+  return(0);
+}
 
 namespace gridpack {
 namespace math {
@@ -92,6 +111,7 @@ PetscNonlinearSolverImplementation::p_build(const std::string& option_prefix)
     ierr = KSPGetPC(ksp, &pc); CHKERRXX(ierr);
     ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
 
+    ierr = SNESMonitorSet(p_snes, MonitorNorms, PETSC_NULL, PETSC_NULL); CHKERRXX(ierr);
     ierr = SNESSetFromOptions(p_snes); CHKERRXX(ierr);
     
   } catch (const PETSc::Exception& e) {

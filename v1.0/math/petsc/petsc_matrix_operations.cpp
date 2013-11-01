@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2013-10-30 07:44:55 d3g096
+ * @date   2013-10-31 09:15:36 d3g096
  * 
  * @brief  
  * 
@@ -208,7 +208,46 @@ multiply(const Matrix& A, const Matrix& B)
   return result;
 }
 
+// -------------------------------------------------------------
+// storageType
+// -------------------------------------------------------------
+Matrix *
+storageType(const Matrix& A, const Matrix::StorageType& new_type)
+{
+  Matrix *result(A.clone());
+  int nproc(result->processor_size());
+
+  MatType new_mat_type;
+
+  if (result->storageType() != new_type) {
+    switch (new_type) {
+    case (Matrix::Dense):
+      if (nproc > 1) {
+        new_mat_type = MATDENSE;
+      } else {
+        new_mat_type = MATSEQDENSE;
+      } 
+      break;
+    case (Matrix::Sparse):
+      if (nproc > 1) {
+        new_mat_type = MATMPIAIJ;
+      } else {
+        new_mat_type = MATSEQAIJ;
+      } 
+      break;
+    }
   
+    Mat *mat(PETScMatrix(*result));
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatConvert(*mat, new_mat_type, MAT_REUSE_MATRIX, mat); CHKERRXX(ierr);
+    } catch (const PETSc::Exception& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
+  return result;
+}
 
 } // namespace math
 } // namespace gridpack

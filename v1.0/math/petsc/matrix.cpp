@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-10-30 07:44:18 d3g096
+ * @date   2013-10-31 09:13:12 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -17,6 +17,7 @@
 // -------------------------------------------------------------
 
 #include "boost/assert.hpp"
+#include "boost/format.hpp"
 #include "matrix.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
@@ -243,6 +244,45 @@ Matrix::save(const char* filename) const
 {
   const Mat *mat(PETScMatrix(*this));
   petsc_print_matrix(*mat, filename, PETSC_VIEWER_ASCII_MATLAB);
+}
+
+// -------------------------------------------------------------
+// Matrix::storageType
+// -------------------------------------------------------------
+Matrix::StorageType
+Matrix::storageType(void) const
+{
+  StorageType result;
+  PetscErrorCode ierr;
+  const Mat *mat(PETScMatrix(*this));
+  try {
+    MatType thetype;
+    ierr = MatGetType(*mat, &thetype); CHKERRXX(ierr);
+
+    // this relies on the fact that MatType is actual a pointer to a
+    // char string -- need to test string contents, not pointers
+    std::string stype(thetype);
+
+    if (stype == MATSEQDENSE ||
+        stype == MATDENSE ||
+        stype == MATMPIDENSE) {
+      result = Dense;
+    } else if (stype == MATSEQAIJ || 
+               stype == MATMPIAIJ) {
+      result = Sparse;
+    } else {
+      std::string msg("Matrix: unexpected PETSc storage type: ");
+      msg += "\"";
+      msg += stype;
+      msg += "\"";
+      throw Exception(msg);
+    }
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  } catch (const Exception& e) {
+    throw;
+  }
+  return result;
 }
 
 
