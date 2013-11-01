@@ -433,11 +433,11 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
         icnt = 0;
         for (j=0; j<isize; j++) {
           idx = offsets[jcnt] + j;
-          if (flag) {
+//          if (flag) {
             vector.addElement(idx, values[icnt]);
-          } else {
-            vector.setElement(idx, values[icnt]);
-          } 
+//          } else {
+//            vector.setElement(idx, values[icnt]);
+//          } 
           icnt++;
         }
         delete indices[jcnt];

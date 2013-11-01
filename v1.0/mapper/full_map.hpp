@@ -626,11 +626,11 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
             jdx = offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               idx = offsets[jcnt] + j;
-              if (flag) {
+//              if (flag) {
                 matrix.addElement(idx, jdx, values[icnt]);
-              } else {
-                matrix.setElement(idx, jdx, values[icnt]);
-              }
+//              } else {
+//                matrix.setElement(idx, jdx, values[icnt]);
+//              }
               icnt++;
             }
           }

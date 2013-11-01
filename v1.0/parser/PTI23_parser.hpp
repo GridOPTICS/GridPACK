@@ -394,15 +394,13 @@ template <class _network>
           p_busData[l_idx]->addValue(GENERATOR_MBASE,
               atof(split_line[8].c_str()), ngen);
 
-          // GENERATOR_ZSOURCE                                complex
-          p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
-              gridpack::ComplexType(atof(split_line[9].c_str()),
-                atof(split_line[10].c_str())), ngen);
+          // GENERATOR_ZSORCE              "ZR"                  float
+          p_busData[l_idx]->addValue(GENERATOR_ZSORCE,
+              atof(split_line[9].c_str()), ngen);
 
-          // GENERATOR_XTRAN                              complex
+          // GENERATOR_XTRAN              "ZX"                  float
           p_busData[l_idx]->addValue(GENERATOR_XTRAN,
-              gridpack::ComplexType(atof(split_line[11].c_str()),
-                atof(split_line[12].c_str())), ngen);
+              atof(split_line[10].c_str()), ngen);
 
           // GENERATOR_RT              "RT"                  float
           p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
@@ -555,7 +553,7 @@ template <class _network>
           data->addValue(BRANCH_SHUNT_ADMTTNC_B2, atof(split_line[14].c_str()));
 
           // BRANCH_STATUS        "STATUS"               integer
-//          data->addValue(BRANCH_STATUS, atoi(split_line[15].c_str()));
+          data->addValue(BRANCH_STATUS, atoi(split_line[15].c_str()));
 
           // BRANCH_LENGTH           "GI"                  float
           //data->addValue(BRANCH_LENGTH, atof(split_line[11].c_str()));

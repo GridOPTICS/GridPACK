@@ -202,9 +202,6 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     double reti = p_v * sin(p_a);
     gridpack::ComplexType ret(retr, reti);
     values[0] = ret;
-    if (getOriginalIndex() == 7779) {
-      printf ("p_v = %f\n", p_v);
-    }
     //printf ("retr = %f, reti = %f, p_v = %f, p_a = %f\n", retr, reti, p_v, p_a);
     return true;
   }
@@ -395,7 +392,7 @@ void gridpack::powerflow::PFBus::load(
 
   // if BUS_TYPE = 2 then bus is a PV bus
   p_isPV = false;
-  if (itype == 2) p_isPV = true;
+ // if (itype == 2) p_isPV = true;
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
   p_load = true;
@@ -420,6 +417,7 @@ void gridpack::powerflow::PFBus::load(
         p_gstatus.push_back(gstatus);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
+          if (itype == 2) p_isPV = true;
         }
       }
     }
@@ -589,6 +587,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
 #ifdef LARGE_MATRIX
       *isize = 2;
@@ -622,9 +621,13 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       return true; */
     }
   } else if (p_mode == YBus) {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (p_branch_status == 1) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
@@ -636,6 +639,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
 #ifdef LARGE_MATRIX
       *isize = 2;
@@ -666,9 +670,13 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       return false;
     }
   } else if (p_mode == YBus) {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (p_branch_status == 1) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
@@ -687,6 +695,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(p_theta);
@@ -748,8 +757,12 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
 //    values[1] = p_ybusi_frwd;
 //    values[2] = -p_ybusi_frwd;
 //    values[3] = p_ybusr_frwd;
-    values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-    return true;
+    if (p_branch_status == 1) {
+      values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
@@ -762,6 +775,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
     bool ok = !bus1->getReferenceBus();
     ok = ok && !bus2->getReferenceBus();
+    ok = ok && (p_branch_status == 1);
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);
@@ -823,8 +837,12 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
   //  values[1] = p_ybusi_rvrs;
   //  values[2] = -p_ybusi_rvrs;
   //  values[3] = p_ybusr_rvrs;
-    values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
-    return true;
+    if (p_branch_status == 1) {
+      values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
@@ -904,6 +922,8 @@ void gridpack::powerflow::PFBranch::load(
   } else {
     p_xform = false;
   }
+  p_branch_status = 1;
+  data->getValue(BRANCH_STATUS, &p_branch_status);
 //  p_xform = p_xform && data->getValue(TRANSFORMER_WINDV1, &p_tap_ratio);
 //  p_xform = p_xform && data->getValue(TRANSFORMER_ANG1, &p_phase_shift);
   p_shunt = true;
