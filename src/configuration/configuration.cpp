@@ -52,9 +52,9 @@ Configuration * Configuration::configuration() {
 
 
 #ifdef USE_MPI
-bool Configuration::open(std::string file,MPI_Comm comm) {
+bool Configuration::open(const std::string & file,MPI_Comm comm) {
 #else
-bool Configuration::open(std::string file) {
+bool Configuration::open(const std::string & file) {
 #endif
 
 #ifdef USE_MPI
@@ -157,17 +157,16 @@ std::string Configuration::get(Configuration::KeyType key, const std::string & d
 bool Configuration::get(Configuration::KeyType key, std::string * output) { return get0_bool(pimpl->pt,key, output); }
 
 std::vector<double> Configuration::get(Configuration::KeyType key, const std::vector<double> & default_value) { 
-	Cursor * c = getCursor(key);
+	CursorPtr c = getCursor(key);
 	if(!c) return default_value;
 	std::vector<double> v;
 	v.push_back(c->get("x",0.0));
 	v.push_back(c->get("y",0.0));
 	v.push_back(c->get("z",0.0));
-	delete c;
 	return v;
 }
 bool Configuration::get(Configuration::KeyType key, std::vector<double> * output) { 
-	Cursor * c = getCursor(key);
+	CursorPtr c = getCursor(key);
 	if(!c) return false;
 	output->push_back(c->get("x",0.0));
 	output->push_back(c->get("y",0.0));
@@ -176,13 +175,13 @@ bool Configuration::get(Configuration::KeyType key, std::vector<double> * output
 }
 
 
-Configuration::Cursor * Configuration::getCursor(Configuration::KeyType key) {
+Configuration::CursorPtr Configuration::getCursor(Configuration::KeyType key) {
 	boost::optional<ptree&> cpt = pimpl->pt.get_child_optional(key);
-	if(!cpt) return NULL;
+	if(!cpt) return CursorPtr((Configuration*)NULL);
 	Configuration * c = new Configuration;
 	c->pimpl->logging = pimpl->logging;
 	c->pimpl->pt = *cpt;
-	return c;
+	return CursorPtr (c);
 }
 
 void Configuration::children(ChildCursors & cs) {

@@ -103,7 +103,7 @@ public:
   }
 
   /// Configure and do whatever is necessary to make this instance ready
-  void configure(utility::Configuration::Cursor *props)
+  void configure(utility::Configuration::CursorPtr props)
   {
     p_solver->configure(props);
   }

@@ -47,7 +47,7 @@ BasicLinearMatrixSolverImplementation::p_solve(const Matrix& B) const
 // BasicLinearMatrixSolverImplementation::p_configure
 // -------------------------------------------------------------
 void
-BasicLinearMatrixSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+BasicLinearMatrixSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
   p_solver.configure(props);
 }

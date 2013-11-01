@@ -74,18 +74,19 @@ protected:
 
 BOOST_AUTO_TEST_CASE( Configurable )
 {
-  gridpack::utility::Configuration::Cursor *config =
+  gridpack::utility::Configuration::Configuration * config =
     gridpack::utility::Configuration::configuration();
 
   BOOST_REQUIRE(config != NULL);
 
-  config = config->getCursor("GridPACK");
+  gridpack::utility::Configuration::CursorPtr cursor =
+       config->getCursor("GridPACK");
 
-  BOOST_REQUIRE(config != NULL);
+  BOOST_REQUIRE(cursor != NULL);
 
   std::auto_ptr<ConfigurableThing> thing(new ConfigurableThing);
 
-  thing->configure(config);
+  thing->configure(cursor);
 
   std::cout << "string1: \"" << thing->string1 << "\"" << std::endl;
   std::cout << "string2: \"" << thing->string2 << "\"" << std::endl;

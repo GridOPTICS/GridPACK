@@ -62,7 +62,7 @@ NewtonRaphsonSolverImplementation::p_solve(void)
     p_jacobian(*p_X, *p_J);
     if (!p_linear_solver) {
       p_linear_solver.reset(new LinearSolver(*p_J));
-      p_linear_solver->configure(this->p_configCursor.get());
+      p_linear_solver->configure(this->p_configCursor);
     } else {
       p_linear_solver->setMatrix(*p_J);
     }

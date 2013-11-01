@@ -70,10 +70,11 @@ public:
   }
 
   /// Initialize this instance using the specified configuration property tree
-  void configure(utility::Configuration::Cursor *theprops)
+  void configure(utility::Configuration::CursorPtr theprops)
   {
     if (theprops != NULL) {
-      p_configCursor.reset(theprops->getCursor(this->p_key));
+      p_configCursor = theprops->getCursor(this->p_key);
+      //      p_configCursor.reset(theprops->getCursor(this->p_key));
     }
     this->p_configure(p_configCursor.get());
     p_isConfigured = true;
@@ -104,7 +105,8 @@ protected:
    * referred to later.  
    * 
    */
-  boost::shared_ptr<utility::Configuration::Cursor> p_configCursor;
+  //  boost::shared_ptr<utility::Configuration::Cursor> p_configCursor;
+  utility::Configuration::CursorPtr p_configCursor;
 
 private:
 

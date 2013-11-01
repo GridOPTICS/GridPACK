@@ -220,7 +220,7 @@ PFApp2::execute(void)
   utility::Configuration *config = 
     utility::Configuration::configuration();
   config->open("input.xml", world);
-  utility::Configuration::Cursor *cursor;
+  utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");

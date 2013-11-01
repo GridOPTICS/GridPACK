@@ -128,7 +128,7 @@ public:
     * @param MPI_Comm MPI communicator being used in calculation
     * @return false if there is an error reading XML file
     */
-	bool open(std::string file,MPI_Comm);  // on all ranks...
+	bool open(const std::string & file,MPI_Comm);  // on all ranks...
    /**
     * Deprecated method that initializes configuration on all processes except
     * process 0. Can be used in conjunction with "open" call on process 0.
@@ -141,8 +141,9 @@ public:
     * Open external configuration file
     * @param file name of external configuration file
     */
-	bool open(std::string file);  // rank 0 only
+	bool open(const std::string & file);  // rank 0 only
 #endif
+      
 	/**
 	 * For each supported type, there are two variants. One takes a default value 
 	 * that is returned if the key is not present in the configuration file,
@@ -170,7 +171,8 @@ public:
 	 * This class represents a prefix of a set of key names.
 	 * Conveniently this implementation allows it to be the same class
 	 */
-	typedef Configuration Cursor ;
+        typedef Configuration Cursor ;
+        typedef boost::shared_ptr<Cursor> CursorPtr;
 
    /**
 	 * select a prefix, returns NULL of the prefix has no defined keys.
@@ -185,7 +187,7 @@ public:
     * @param KeyType string representing data block to set cursor
     * return cursor pointing to correct data block in configuration file
 	 */
-	Cursor * getCursor(KeyType);
+        CursorPtr getCursor(KeyType);
 
 	/*
   	 * For the root note, return an empty string
@@ -194,7 +196,7 @@ public:
 	const std::string & path();
 
 	/* iterate over children */
-	typedef std::vector<boost::shared_ptr<Cursor> > ChildCursors;
+	typedef std::vector< CursorPtr > ChildCursors;
 	void children(ChildCursors &);
 };
 

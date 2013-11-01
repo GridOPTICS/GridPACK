@@ -57,7 +57,7 @@ public:
   ~NonlinearSolverInterface(void);
 
   /// Configure and do whatever is necessary to make this instance ready
-  void configure(utility::Configuration::Cursor *props)
+  void configure(utility::Configuration::CursorPtr props)
   {
     p_impl->configure(props);
   }

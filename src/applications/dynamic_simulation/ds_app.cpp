@@ -53,7 +53,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
   config->open("input.xml",world);
-  gridpack::utility::Configuration::Cursor *cursor;
+  gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Dynamic_simulation");
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
