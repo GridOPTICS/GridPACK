@@ -621,9 +621,13 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
       return true; */
     }
   } else if (p_mode == YBus) {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (p_branch_status == 1) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
@@ -666,9 +670,13 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
       return false;
     }
   } else if (p_mode == YBus) {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (p_branch_status == 1) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
@@ -749,8 +757,12 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
 //    values[1] = p_ybusi_frwd;
 //    values[2] = -p_ybusi_frwd;
 //    values[3] = p_ybusr_frwd;
-    values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-    return true;
+    if (p_branch_status == 1) {
+      values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
@@ -825,8 +837,12 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
   //  values[1] = p_ybusi_rvrs;
   //  values[2] = -p_ybusi_rvrs;
   //  values[3] = p_ybusr_rvrs;
-    values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
-    return true;
+    if (p_branch_status == 1) {
+      values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
+      return true;
+    } else {
+      return false;
+    }
   }
 }
 
