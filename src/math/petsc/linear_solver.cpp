@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:22:20 d3g096
+ * @date   2013-11-07 12:28:53 d3g096
  * 
  * @brief  
  * 
@@ -32,10 +32,12 @@ namespace math {
 // -------------------------------------------------------------
 LinearSolver::LinearSolver(const Matrix& A)
   : parallel::WrappedDistributed(),
+    utility::WrappedConfigurable(),
     utility::Uncopyable(),
     p_solver(new PETScLinearSolverImplementation(A))
 {
   p_set_distributed(p_solver.get());
+  p_setConfigurable(p_solver.get());
   // empty
 }
 

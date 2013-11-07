@@ -1,8 +1,14 @@
 // -------------------------------------------------------------
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
 /**
  * @file   linear_matrix_solver.cpp
  * @author William A. Perkins
- * @date   2013-10-23 15:09:54 d3g096
+ * @date   2013-11-07 12:41:47 d3g096
  * 
  * @brief  
  * 
@@ -26,6 +32,7 @@ namespace math {
 // -------------------------------------------------------------
 LinearMatrixSolver::LinearMatrixSolver(const Matrix& A)
   : parallel::WrappedDistributed(),
+    utility::WrappedConfigurable(),
     utility::Uncopyable()
 {
 #ifdef PETSC_HAVE_SUPERLU
@@ -34,6 +41,7 @@ LinearMatrixSolver::LinearMatrixSolver(const Matrix& A)
   p_impl.reset(new BasicLinearMatrixSolverImplementation(A));
 #endif
   p_set_distributed(p_impl.get());
+  p_setConfigurable(p_impl.get());
 }
 
 

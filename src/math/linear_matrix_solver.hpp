@@ -10,7 +10,7 @@
 /**
  * @file   linear_matrix_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-24 07:05:53 d3g096
+ * @date   2013-11-07 12:47:30 d3g096
  * 
  * @brief  Declaration of the LinearMatrixSolver class
  * 
@@ -44,6 +44,7 @@ namespace math {
  */
 class LinearMatrixSolver
   : public parallel::WrappedDistributed,
+    public utility::WrappedConfigurable,
     private utility::Uncopyable
 {
 public:
@@ -53,18 +54,6 @@ public:
 
   /// Destructor
   ~LinearMatrixSolver(void);
-
-  /// Set the configuration key for this instance
-  void configurationKey(const std::string& s)
-  {
-    p_impl->configurationKey(s);
-  }
-
-  /// Configure and do whatever is necessary to make this instance ready
-  void configure(utility::Configuration::CursorPtr props)
-  {
-    p_impl->configure(props);
-  }
 
   /// Solve multiple systems
   /** 

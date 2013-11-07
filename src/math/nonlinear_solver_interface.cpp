@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_interface.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:16:25 d3g096
+ * @date   2013-11-07 12:33:04 d3g096
  * 
  * @brief  Implementation of NonlinearSolverInterface
  * 
@@ -30,6 +30,7 @@ namespace math {
 // -------------------------------------------------------------
 NonlinearSolverInterface::NonlinearSolverInterface()
   : parallel::WrappedDistributed(), 
+    utility::WrappedConfigurable(),
     utility::Uncopyable(),
     p_impl()
 {
@@ -48,6 +49,7 @@ NonlinearSolverInterface::p_set_impl(NonlinearSolverImplementation *impl)
 {
   p_impl.reset(impl);
   p_set_distributed(p_impl.get());
+  p_setConfigurable(p_impl.get());
 }
 
 

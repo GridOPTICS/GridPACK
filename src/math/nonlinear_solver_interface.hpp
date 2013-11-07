@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:16:38 d3g096
+ * @date   2013-11-07 12:33:31 d3g096
  * 
  * @brief  
  * 
@@ -46,6 +46,7 @@ namespace math {
  */
 class NonlinearSolverInterface 
   : public parallel::WrappedDistributed,
+    public utility::WrappedConfigurable,
     private utility::Uncopyable 
 {
 public:
@@ -55,12 +56,6 @@ public:
 
   /// Destructor
   ~NonlinearSolverInterface(void);
-
-  /// Configure and do whatever is necessary to make this instance ready
-  void configure(utility::Configuration::CursorPtr props)
-  {
-    p_impl->configure(props);
-  }
 
   /// Solve w/ the specified initial estimated, put result in same vector
   /** 

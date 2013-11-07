@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-11 10:35:20 d3g096
+ * @date   2013-11-07 12:08:46 d3g096
  * 
  * @brief  
  * 
@@ -64,6 +64,7 @@ namespace math {
  */
 class LinearSolver 
   : public parallel::WrappedDistributed,
+    public utility::WrappedConfigurable,
     private utility::Uncopyable
 {
 public:
@@ -95,18 +96,6 @@ public:
    * 
    */
   ~LinearSolver(void);
-
-  /// Set the configuration key for this instance
-  void configurationKey(const std::string& s)
-  {
-    p_solver->configurationKey(s);
-  }
-
-  /// Configure and do whatever is necessary to make this instance ready
-  void configure(utility::Configuration::CursorPtr props)
-  {
-    p_solver->configure(props);
-  }
 
   /// Solve w/ the specified RHS, put result in specified vector
   /** 
