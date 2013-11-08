@@ -7,12 +7,12 @@
 <GridPACK>
   <MathTests>
     <LinearSolver>
+      <SolutionTolerance>1.0E-18</SolutionTolerance>
+      <RelativeTolerance>1.0E-10</RelativeTolerance>
+      <MaxIterations>200</MaxIterations>
       <PETScPrefix>ls</PETScPrefix>
       <PETScOptions>
-        -ksp_atol 1.0e-18
-        -ksp_rtol 1.0e-10
         -ksp_monitor
-        -ksp_max_it 200
         -ksp_view
       </PETScOptions>
     </LinearSolver>
@@ -40,28 +40,27 @@
     <NonlinearSolver>
       <SolutionTolerance>1.0e-10</SolutionTolerance>
       <FunctionTolerance>1.0e-20</FunctionTolerance>
+      <MaxIterations>100</MaxIterations>
       <PETScOptions>
         -ksp_atol 1.0e-18
         -ksp_rtol 1.0e-10
-        -ksp_monitor
         -ksp_max_it 200
+        -ksp_monitor
         -ksp_view
         -snes_monitor 
-        -snes_max_it 100
         -snes_view
       </PETScOptions>
     </NonlinearSolver>
     <NewtonRaphsonSolver>
       <SolutionTolerance>1.0e-10</SolutionTolerance>
-      <FunctionTolerance>1.0e-20</FunctionTolerance>
       <MaxIterations>100</MaxIterations>
       <LinearSolver>
+        <SolutionTolerance>1.0E-05</SolutionTolerance>
+        <RelativeTolerance>1.0E-08</RelativeTolerance>
+        <MaxIterations>50</MaxIterations>
         <PETScPrefix>nrs</PETScPrefix>
         <PETScOptions>
-          -ksp_atol 1.0e-05
-          -ksp_rtol 1.0e-08
           -ksp_monitor
-          -ksp_max_it 50
           -ksp_view
         </PETScOptions>
       </LinearSolver>

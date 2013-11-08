@@ -8,7 +8,7 @@
 /**
  * @file   configurable.h
  * @author William A. Perkins
- * @date   2013-11-07 12:05:20 d3g096
+ * @date   2013-11-08 09:00:49 d3g096
  * 
  * @brief  
  * 
@@ -106,11 +106,10 @@ public:
   /// Initialize this instance using the specified configuration property tree
   void configure(utility::Configuration::CursorPtr theprops)
   {
-    if (theprops != NULL) {
+    if (theprops) {
       p_configCursor = theprops->getCursor(this->p_key);
-      //      p_configCursor.reset(theprops->getCursor(this->p_key));
     }
-    this->p_configure(p_configCursor.get());
+    this->p_configure(p_configCursor);
     p_isConfigured = true;
   }
   
@@ -131,7 +130,7 @@ protected:
   {}
 
   /// Specialized way to configure from property tree
-  virtual void p_configure(utility::Configuration::Cursor *props) = 0;
+  virtual void p_configure(utility::Configuration::CursorPtr props) = 0;
 
   /// The configuration cursor used by this instance
   /**

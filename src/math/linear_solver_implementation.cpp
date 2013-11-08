@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-11 11:17:14 d3g096
+ * @date   2013-11-08 09:01:13 d3g096
  * 
  * @brief  
  * 
@@ -39,7 +39,10 @@ LinearSolverImplementation::LinearSolverImplementation(const Matrix& A)
   : parallel::Distributed(A.communicator()),
     utility::Configurable("LinearSolver"),
     utility::Uncopyable(),
-    p_A(A.clone())
+    p_A(A.clone()),
+    p_solutionTolerance(1.0e-06),
+    p_relativeTolerance(p_solutionTolerance),
+    p_maxIterations(100)
 {
   
 }
@@ -87,6 +90,19 @@ LinearSolverImplementation::solve(const Matrix& B) const
   
   result->ready();
   return result;
+}
+
+// -------------------------------------------------------------
+// LinearSolverImplementation::p_configure
+// -------------------------------------------------------------
+void
+LinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
+{
+  if (props) {
+    p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
+    p_relativeTolerance = props->get("RelativeTolerance", p_solutionTolerance);
+    p_maxIterations = props->get("MaxIterations", p_maxIterations);
+  }
 }
 
 

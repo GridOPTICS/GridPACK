@@ -17,17 +17,16 @@
     </LinearSolver> 
     -->
     <LinearSolver>
-        <PETScPrefix>nrs</PETScPrefix>
-        <PETScOptions>
-          -ksp_type bicg
-          -pc_type bjacobi
-          -sub_pc_type ilu -sub_pc_factor_levels 11 sub_ksp_type preonly 
-          -ksp_atol 1.0e-15
-          -ksp_rtol 1.0e-10
-          -ksp_monitor
-          -ksp_max_it 10000
-          -ksp_view
-        </PETScOptions>
+      <SolutionTolerance>1.0E-15</SolutionTolerance>
+      <MaxIterations>10000</MaxIterations>
+      <PETScPrefix>nrs</PETScPrefix>
+      <PETScOptions>
+        -ksp_type bicg
+        -pc_type bjacobi
+        -sub_pc_type ilu -sub_pc_factor_levels 5 sub_ksp_type preonly 
+        -ksp_monitor
+        -ksp_view
+      </PETScOptions>
     </LinearSolver>
 
     <!-- 
@@ -37,24 +36,24 @@
     -->
     <UseNewton>false</UseNewton>
     <NewtonRaphsonSolver>
-      <Tolerance>1.0E-05</Tolerance>
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
       <MaxIterations>50</MaxIterations>
       <LinearSolver>
+        <SolutionTolerance>1.0E-08</SolutionTolerance>
+        <MaxIterations>50</MaxIterations>
         <PETScOptions>
-          -ksp_atol 1.0e-08
-          -ksp_rtol 1.0e-12
           -ksp_monitor
-          -ksp_max_it 50
           -ksp_view
         </PETScOptions>
       </LinearSolver>
     </NewtonRaphsonSolver>
     <NonlinearSolver> 
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
+      <MaxIterations>50</MaxIterations>
       <PETScOptions>
         -snes_view
         -snes_monitor
-        -snes_atol 1.0e-05
-        -snes_max_it 50
         -ksp_monitor
         -ksp_view
       </PETScOptions>

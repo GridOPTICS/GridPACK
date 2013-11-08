@@ -8,7 +8,7 @@
 /**
  * @file   petsc_configuration.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:23:14 d3g096
+ * @date   2013-11-08 09:05:28 d3g096
  * 
  * @brief Implementation of routines for handling PETSc options
  * through Configuration
@@ -106,11 +106,11 @@ prefixOptionMaybe(const std::string& prefix, const std::string& opt)
  */
 std::string
 petscProcessOptions(const parallel::Communicator& comm,
-                    utility::Configuration::Cursor *props)
+                    utility::Configuration::CursorPtr props)
 {
   std::string prefix("");
 
-  if (props == NULL) return prefix;
+  if (!props) return prefix;
 
   prefix = props->get(petscPrefixKey, generatePrefix(comm));
   if (*prefix.rbegin() != '_') {

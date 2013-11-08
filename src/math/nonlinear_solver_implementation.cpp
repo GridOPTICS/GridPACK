@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-07 14:18:59 d3g096
+ * @date   2013-11-08 09:04:45 d3g096
  * 
  * @brief  Abstract class NonlinearSolverImplementation implementation 
  * 
@@ -81,11 +81,13 @@ NonlinearSolverImplementation::solve(Vector &x)
 // NonlinearSolverImplementation::p_configure
 // -------------------------------------------------------------
 void
-NonlinearSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+NonlinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
-  p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
-  p_functionTolerance = props->get("FunctionTolerance", p_functionTolerance);
-  p_maxIterations = props->get("MaxIterations", p_maxIterations);
+  if (props) {
+    p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
+    p_functionTolerance = props->get("FunctionTolerance", p_functionTolerance);
+    p_maxIterations = props->get("MaxIterations", p_maxIterations);
+  }
 }
 
 

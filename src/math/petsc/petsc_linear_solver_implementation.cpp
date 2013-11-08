@@ -8,7 +8,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-25 08:22:44 d3g096
+ * @date   2013-11-08 08:51:44 d3g096
  * 
  * @brief  
  * 
@@ -68,8 +68,15 @@ PETScLinearSolverImplementation::p_build(const std::string& option_prefix)
     ierr = KSPSetOptionsPrefix(p_KSP, option_prefix.c_str()); CHKERRXX(ierr);
     PC pc;
     ierr = KSPGetPC(p_KSP, &pc); CHKERRXX(ierr);
-    ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
     ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
+
+    ierr = KSPSetTolerances(p_KSP, 
+                            p_relativeTolerance, 
+                            p_solutionTolerance, 
+                            PETSC_DEFAULT,
+                            p_maxIterations); CHKERRXX(ierr);
+
+    ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
     p_setMatrix();
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
@@ -80,8 +87,9 @@ PETScLinearSolverImplementation::p_build(const std::string& option_prefix)
 // PETScLinearSolverImplementation::p_configure
 // -------------------------------------------------------------
 void
-PETScLinearSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+PETScLinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
+  LinearSolverImplementation::p_configure(props);
   std::string prefix(petscProcessOptions(this->communicator(), props));
   p_build(prefix);
 }

@@ -8,7 +8,7 @@
 /**
  * @file   linear_matrix_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-07 12:41:47 d3g096
+ * @date   2013-11-08 09:20:39 d3g096
  * 
  * @brief  
  * 

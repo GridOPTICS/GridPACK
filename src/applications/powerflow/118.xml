@@ -10,12 +10,12 @@
     <networkUnpartitionedGraph>118_network.dot</networkUnpartitionedGraph>
     <networkPartitionedGraph>118_partitioned_network.dot</networkPartitionedGraph>
     <LinearSolver>
+      <SolutionTolerance>1.0e-08</SolutionTolerance>
+      <RelativeTolerance>1.0e-12</RelativeTolerance>
+      <MaxIterations>50</MaxIterations>
       <PETScPrefix>nrs</PETScPrefix>
       <PETScOptions>
-        -ksp_atol 1.0e-08
-        -ksp_rtol 1.0e-12
         -ksp_monitor
-        -ksp_max_it 50
         -ksp_view
       </PETScOptions>
     </LinearSolver>
@@ -40,32 +40,30 @@
     -->
     <UseNewton>false</UseNewton>
     <NewtonRaphsonSolver>
-      <Tolerance>1.0E-05</Tolerance>
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
       <MaxIterations>50</MaxIterations>
       <LinearSolver>
+        <SolutionTolerance>1.0E-08</SolutionTolerance>
+        <RelativeTolerance>1.0e-12</RelativeTolerance>
+        <MaxIterations>50</MaxIterations>
         <PETScOptions>
-          -ksp_atol 1.0e-08
-          -ksp_rtol 1.0e-12
           -ksp_monitor
-          -ksp_max_it 50
           -ksp_view
         </PETScOptions>
       </LinearSolver>
     </NewtonRaphsonSolver>
     <NonlinearSolver> 
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-10</FunctionTolerance>
+      <MaxIterations>50</MaxIterations>
       <PETScOptions>
         -snes_view
         -snes_monitor
         -snes_linesearch_monitor 
         -snes_linesearch_type basic
-        -snes_atol 1.0e-10
-        -snes_rtol 1.0e-10
-        -snes_stol 1.0e-05
-        -snes_max_it 50
         -ksp_atol 1.0e-08
         -ksp_rtol 1.0e-12
         -ksp_monitor
-        -ksp_view
       </PETScOptions>
     </NonlinearSolver>
   </Powerflow>

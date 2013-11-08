@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2013-10-24 12:25:35 d3g096
+ * @date   2013-11-08 09:03:37 d3g096
  * 
  * @brief  
  * 
@@ -87,7 +87,7 @@ PetscLinearMatrixSolverImplementation::~PetscLinearMatrixSolverImplementation(vo
 // PetscLinearMatrixSolverImplementation::p_configure
 // -------------------------------------------------------------
 void
-PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
   std::string prefix(petscProcessOptions(this->communicator(), props));
 
@@ -97,7 +97,11 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
   size_t n;
   bool found;
 
-  mstr = props->get("Ordering", MATORDERINGND);
+  if (props) {
+    mstr = props->get("Ordering", MATORDERINGND);
+  } else {
+    mstr = MATORDERINGND;
+  }
   boost::to_lower(mstr);
 
   n = sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
@@ -117,7 +121,11 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
     throw Exception(msg);
   }
 
-  mstr = props->get("Package", MATSOLVERSUPERLU_DIST);
+  if (props) {
+    mstr = props->get("Package", MATSOLVERSUPERLU_DIST);
+  } else {
+    mstr = MATSOLVERSUPERLU_DIST;
+  }
   boost::to_lower(mstr);
 
   n = sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
@@ -155,8 +163,10 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
   //                              this->configurationKey() % p_solverPackage);
   //   throw Exception(msg);
   // }
-
-  p_fill = props->get("Fill", p_fill);
+  
+  if (props) {
+    p_fill = props->get("Fill", p_fill);
+  }
   if (p_fill <= 0) {
     std::string msg = 
       boost::str(boost::format("%s PETSc configuration: bad \"Fill\": %d") %

@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2013-10-24 12:25:00 d3g096
+ * @date   2013-11-08 08:51:45 d3g096
  * 
  * @brief  
  * 
@@ -68,7 +68,7 @@ protected:
   int p_fill;
 
   /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::Cursor *props);
+  void p_configure(utility::Configuration::CursorPtr props);
 
   /// Factor the coefficient matrix
   void p_factor(void) const;

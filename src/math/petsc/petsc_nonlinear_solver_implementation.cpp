@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-07 14:42:39 d3g096
+ * @date   2013-11-08 08:51:44 d3g096
  * 
  * @brief  
  * 
@@ -131,8 +131,9 @@ PetscNonlinearSolverImplementation::p_build(const std::string& option_prefix)
 // PetscNonlinearSolverImplementation::p_configure
 // -------------------------------------------------------------
 void
-PetscNonlinearSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+PetscNonlinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
+  NonlinearSolverImplementation::p_configure(props);
   std::string prefix(petscProcessOptions(this->communicator(), props));
   p_build(prefix);
 }

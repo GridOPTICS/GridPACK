@@ -6,7 +6,7 @@
 /**
  * @file   configuration_test.cpp
  * @author William A. Perkins
- * @date   2013-10-01 14:37:52 d3g096
+ * @date   2013-11-08 08:47:54 d3g096
  * 
  * @brief  A test of Configurable and Configuration
  * 
@@ -59,7 +59,7 @@ public:
 protected:
   
   void 
-  p_configure(gridpack::utility::Configuration::Cursor *props)
+  p_configure(gridpack::utility::Configuration::CursorPtr props)
   {
     if (props != NULL) {
       string1 = props->get("String1", string1);

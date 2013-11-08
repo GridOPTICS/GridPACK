@@ -9,7 +9,7 @@
 /**
  * @file   petsc_configuration.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:23:20 d3g096
+ * @date   2013-11-08 08:51:44 d3g096
  * 
  * @brief Declaration of routines for handling PETSc options through
  * Configuration
@@ -31,7 +31,7 @@ namespace math {
 
 /// Process any PETSc options in the configuration and get the option prefix to use with PETSc
 extern std::string petscProcessOptions(const parallel::Communicator& comm,
-                                       utility::Configuration::Cursor *props);
+                                       utility::Configuration::CursorPtr props);
 
 } // namespace math
 } // namespace gridpack
