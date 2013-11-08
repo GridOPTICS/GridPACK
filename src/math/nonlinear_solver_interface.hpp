@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2013-11-07 14:29:58 d3g096
+ * @date   2013-11-08 11:50:59 d3g096
  * 
  * @brief  
  * 
@@ -137,7 +137,7 @@ protected:
    * 
    * @param impl specific nonlinear solver implementation to use
    */
-  void p_set_impl(NonlinearSolverImplementation *impl);
+  void p_setImpl(NonlinearSolverImplementation *impl);
 };
 
 

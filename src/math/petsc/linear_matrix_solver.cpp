@@ -8,7 +8,7 @@
 /**
  * @file   linear_matrix_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-08 09:20:39 d3g096
+ * @date   2013-11-08 11:49:59 d3g096
  * 
  * @brief  
  * 
@@ -40,7 +40,7 @@ LinearMatrixSolver::LinearMatrixSolver(const Matrix& A)
 #else
   p_impl.reset(new BasicLinearMatrixSolverImplementation(A));
 #endif
-  p_set_distributed(p_impl.get());
+  p_setDistributed(p_impl.get());
   p_setConfigurable(p_impl.get());
 }
 

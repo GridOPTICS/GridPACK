@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-28 14:29:57 d3g096
+ * @date   2013-11-08 11:49:51 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -202,7 +202,7 @@ PETScMatrixImplementation::p_cols(void) const
 }  
 
 // -------------------------------------------------------------
-// PETScMatrixImplementation::p_set_element
+// PETScMatrixImplementation::p_setElement
 // -------------------------------------------------------------
 void
 PETScMatrixImplementation::p_setElement(const int& i, const int& j, 

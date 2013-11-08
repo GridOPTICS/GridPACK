@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-10-31 09:13:12 d3g096
+ * @date   2013-11-08 11:48:32 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -55,7 +55,7 @@ Matrix::Matrix(const parallel::Communicator& comm,
     BOOST_ASSERT(false);
   }
   BOOST_ASSERT(p_matrix_impl);
-  p_set_distributed(p_matrix_impl.get());
+  p_setDistributed(p_matrix_impl.get());
 }
 
 // -------------------------------------------------------------

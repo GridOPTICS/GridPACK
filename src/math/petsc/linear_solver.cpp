@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-07 12:28:53 d3g096
+ * @date   2013-11-08 11:48:40 d3g096
  * 
  * @brief  
  * 
@@ -36,7 +36,7 @@ LinearSolver::LinearSolver(const Matrix& A)
     utility::Uncopyable(),
     p_solver(new PETScLinearSolverImplementation(A))
 {
-  p_set_distributed(p_solver.get());
+  p_setDistributed(p_solver.get());
   p_setConfigurable(p_solver.get());
   // empty
 }

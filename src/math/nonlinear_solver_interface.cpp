@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_interface.cpp
  * @author William A. Perkins
- * @date   2013-11-07 12:33:04 d3g096
+ * @date   2013-11-08 11:51:17 d3g096
  * 
  * @brief  Implementation of NonlinearSolverInterface
  * 
@@ -42,13 +42,13 @@ NonlinearSolverInterface::~NonlinearSolverInterface(void)
 }
 
 // -------------------------------------------------------------
-// NonlinearSolverInterface::p_set_impl
+// NonlinearSolverInterface::p_setImpl
 // -------------------------------------------------------------
 void
-NonlinearSolverInterface::p_set_impl(NonlinearSolverImplementation *impl)
+NonlinearSolverInterface::p_setImpl(NonlinearSolverImplementation *impl)
 {
   p_impl.reset(impl);
-  p_set_distributed(p_impl.get());
+  p_setDistributed(p_impl.get());
   p_setConfigurable(p_impl.get());
 }
 
