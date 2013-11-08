@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:25:45 d3g096
+ * @date   2013-11-07 14:46:06 d3g096
  * 
  * @brief  
  * 
@@ -92,51 +92,6 @@ public:
    */
   ~NewtonRaphsonSolverImplementation(void);
 
-  /// Get the solution tolerance
-  /** 
-   * 
-   * 
-   * 
-   * @return current solution tolerance
-   */
-  double tolerance(void) const
-  {
-    return p_tolerance;
-  }
-
-  /// Set the solver tolerance
-  /** 
-   * 
-   * 
-   * @param tol 
-   */
-  void tolerance(const double& tol) 
-  {
-    p_tolerance = tol;
-  }
-
-  /// Get the maximum iterations
-  /** 
-   * 
-   * 
-   * 
-   * @return 
-   */
-  int maximum_iterations(void) const
-  {
-    return p_max_iterations;
-  }
-
-  /// Set the maximum iterations
-  /** 
-   * 
-   * 
-   * @param n current maximum number of iterations
-   */
-  void maximum_iterations(const int& n) 
-  {
-    p_max_iterations = n;
-  }
 
 protected:
 
@@ -156,8 +111,6 @@ protected:
   /// Solve w/ using the specified initial guess (specialized)
   void p_solve(void);
 
-  /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::Cursor *props);
 };
 
 

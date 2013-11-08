@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2013-11-07 12:33:31 d3g096
+ * @date   2013-11-07 14:29:58 d3g096
  * 
  * @brief  
  * 
@@ -56,6 +56,53 @@ public:
 
   /// Destructor
   ~NonlinearSolverInterface(void);
+
+  /// Get the solution tolerance
+  /** 
+   * 
+   * 
+   * 
+   * @return current solution tolerance
+   */
+  double tolerance(void) const
+  {
+    return p_impl->tolerance();
+  }
+
+  /// Set the solver tolerance
+  /** 
+   * 
+   * 
+   * @param tol new solution tolerance
+   */
+  void tolerance(const double& tol)
+  {
+    p_impl->tolerance(tol);
+  }
+
+  /// Get the maximum iterations
+  /** 
+   * 
+   * 
+   * 
+   * @return current maximum number of solution iterations
+   */
+  int maximumIterations(void) const
+  {
+    return p_impl->maximumIterations();
+  }
+
+
+  /// Set the maximum solution iterations
+  /** 
+   * 
+   * 
+   * @param n new maximum number of iterations
+   */
+  void maximumIterations(const int& n)
+  {
+    p_impl->maximumIterations(n);
+  }
 
   /// Solve w/ the specified initial estimated, put result in same vector
   /** 

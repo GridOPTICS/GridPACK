@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-31 07:10:42 d3g096
+ * @date   2013-11-07 14:42:39 d3g096
  * 
  * @brief  
  * 
@@ -112,6 +112,14 @@ PetscNonlinearSolverImplementation::p_build(const std::string& option_prefix)
     ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
 
     ierr = SNESMonitorSet(p_snes, MonitorNorms, PETSC_NULL, PETSC_NULL); CHKERRXX(ierr);
+
+    ierr = SNESSetTolerances(p_snes, 
+                             p_functionTolerance, 
+                             PETSC_DEFAULT,
+                             p_solutionTolerance,
+                             p_maxIterations, 
+                             PETSC_DEFAULT);
+                             
     ierr = SNESSetFromOptions(p_snes); CHKERRXX(ierr);
     
   } catch (const PETSc::Exception& e) {

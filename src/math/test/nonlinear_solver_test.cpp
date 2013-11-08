@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:26:45 d3g096
+ * @date   2013-11-07 14:45:01 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -118,7 +118,7 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
 
   // check to see if correct values came from the configuration
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
-  BOOST_CHECK_EQUAL(solver.maximum_iterations(), 100);
+  BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
@@ -213,7 +213,7 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
 
   // check to see if correct values came from the configuration
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
-  BOOST_CHECK_EQUAL(solver.maximum_iterations(), 100);
+  BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
@@ -359,7 +359,7 @@ BOOST_AUTO_TEST_CASE( example2_nr )
 
   // check to see if correct values came from the configuration
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
-  BOOST_CHECK_EQUAL(solver.maximum_iterations(), 100);
+  BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
   gridpack::math::Vector X(world, local_size);
   X.fill(0.5);

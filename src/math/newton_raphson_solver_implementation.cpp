@@ -8,7 +8,7 @@
 /**
  * @file   newton_raphson_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-29 07:47:51 d3g096
+ * @date   2013-11-07 14:31:52 d3g096
  * 
  * @brief  
  * 
@@ -34,8 +34,6 @@ NewtonRaphsonSolverImplementation::NewtonRaphsonSolverImplementation(const paral
                                                                      JacobianBuilder form_jacobian,
                                                                      FunctionBuilder form_function)
   : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
-    p_tolerance(1.0e-03),
-    p_max_iterations(1),
     p_linear_solver()
 {
   this->configurationKey("NewtonRaphsonSolver");
@@ -56,7 +54,7 @@ NewtonRaphsonSolverImplementation::p_solve(void)
   int iter(0);
 
   boost::scoped_ptr<Vector> deltaX(p_X->clone());
-  while (real(stol) > p_tolerance && iter < p_max_iterations) {
+  while (real(stol) > p_solutionTolerance && iter < p_maxIterations) {
     p_function(*p_X, *p_F);
     p_F->scale(-1.0);
     p_jacobian(*p_X, *p_J);
@@ -79,18 +77,6 @@ NewtonRaphsonSolverImplementation::p_solve(void)
                 << "function norm = " << real(ftol)
                 << std::endl;
     }
-  }
-}
-
-// -------------------------------------------------------------
-// NewtonRaphsonSolverImplementation::p_configure
-// -------------------------------------------------------------
-void
-NewtonRaphsonSolverImplementation::p_configure(utility::Configuration::Cursor *props)
-{
-  if (props != NULL) {
-    p_tolerance = props->get("Tolerance", p_tolerance);
-    p_max_iterations = props->get("MaxIterations", p_max_iterations);
   }
 }
 

@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:16:08 d3g096
+ * @date   2013-11-07 14:06:16 d3g096
  * 
  * @brief  
  * 
@@ -49,6 +49,52 @@ public:
   /// Destructor
   virtual ~NonlinearSolverImplementation(void);
 
+  /// Get the solution tolerance
+  /** 
+   * 
+   * 
+   * 
+   * @return current solution tolerance
+   */
+  double tolerance(void) const
+  {
+    return p_solutionTolerance;
+  }
+
+  /// Set the solver tolerance
+  /** 
+   * 
+   * 
+   * @param tol 
+   */
+  void tolerance(const double& tol) 
+  {
+    p_solutionTolerance = tol;
+  }
+
+  /// Get the maximum iterations
+  /** 
+   * 
+   * 
+   * 
+   * @return 
+   */
+  int maximumIterations(void) const
+  {
+    return p_maxIterations;
+  }
+
+  /// Set the maximum iterations
+  /** 
+   * 
+   * 
+   * @param n current maximum number of iterations
+   */
+  void maximumIterations(const int& n) 
+  {
+    p_maxIterations = n;
+  }
+
   /// Solve w/ using the specified initial guess, put solution in same vector
   void solve(Vector& x);
 
@@ -69,8 +115,20 @@ protected:
   /// A thing to build the RHS
   FunctionBuilder p_function;
 
+  /// The solution residual norm tolerance
+  double p_solutionTolerance;
+
+  /// The RHS function norm tolerance
+  double p_functionTolerance;
+
+  /// The maximum number of iterations to perform
+  double p_maxIterations;
+
   /// Solve w/ using the specified initial guess (specialized)
   virtual void p_solve(void) = 0;
+
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::Cursor *props);
 };
 
 
