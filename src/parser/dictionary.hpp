@@ -368,6 +368,12 @@
 #define BRANCH_TOBUS "BRANCH_TOBUS"
 
 /**
+ * Number of transmission elements on branch
+ * type: integer
+ */
+#define BRANCH_NUM_ELEMENTS "BRANCH_NUM_ELEMENTS"
+
+/**
  * Non-blank alphanumeric branch circuit identifier
  * type: string
  */

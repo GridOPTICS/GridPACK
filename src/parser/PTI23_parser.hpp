@@ -478,8 +478,8 @@ template <class _network>
       void find_branches(std::ifstream & input)
       {
         std::string line;
-        int  index   = 0;
         int  o_idx1, o_idx2;
+        int index = 0;
 
         std::getline(input, line); //this should be the first line of the block
 
@@ -487,87 +487,113 @@ template <class _network>
           std::pair<int, int> branch_pair;
           std::vector<std::string>  split_line;
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
-          boost::shared_ptr<gridpack::component::DataCollection>
-            data(new gridpack::component::DataCollection);
           
-          // BRANCH_INDEX                                   integer
-          data->addValue(BRANCH_INDEX, index);
-          p_branchData.push_back(data);
-
           o_idx1 = atoi(split_line[0].c_str());
           o_idx2 = atoi(split_line[1].c_str());
+          int nelems = 0;
 
-          // Switch order if one of the indices is negative
-          //if (o_idx1<0 || o_idx2<0) {
-          //  int t_idx = o_idx2;
-          //  o_idx2 = o_idx1;
-          //  o_idx1 = t_idx;
-            if (o_idx1 < 0) o_idx1 = -o_idx1;
-            if (o_idx2 < 0) o_idx2 = -o_idx2;
-          //}
+          // Switch sign if indices are negative
+          if (o_idx1 < 0) o_idx1 = -o_idx1;
+          if (o_idx2 < 0) o_idx2 = -o_idx2;
 
-          // BRANCH_FROMBUS            "I"                   integer
-          data->addValue(BRANCH_FROMBUS, o_idx1);
-          // BRANCH_TOBUS            "J"                   integer
-          data->addValue(BRANCH_TOBUS, o_idx2);
+          // Check to see if pair has already been created
+          int l_idx = 0;
+          branch_pair = std::pair<int,int>(o_idx1, o_idx2);
+          std::map<std::pair<int, int>, int>::iterator it;
+          it = p_branchMap.find(branch_pair);
 
-          // record the bus pairs that form the branch for subsequent searching
-          branch_pair = std::pair<int, int>(o_idx1, o_idx2);
-          p_branchMap.insert(std::pair<std::pair<int, int>, int >(branch_pair, index));
+          if (it != p_branchMap.end()) {
+            l_idx = it->second;
+            nelems = p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+          } else {
+            boost::shared_ptr<gridpack::component::DataCollection>
+              data(new gridpack::component::DataCollection);
+            l_idx = p_branchData.size();
+            p_branchData.push_back(data);
+            p_branchData[l_idx]->addValue(BRANCH_NUM_ELEMENTS,nelems);
+          }
+
+          if (nelems == 0) {
+            // BRANCH_INDEX                                   integer
+            p_branchData[l_idx]->addValue(BRANCH_INDEX, index);
+
+            // BRANCH_FROMBUS            "I"                   integer
+            p_branchData[l_idx]->addValue(BRANCH_FROMBUS, o_idx1);
+
+            // BRANCH_TOBUS            "J"                   integer
+            p_branchData[l_idx]->addValue(BRANCH_TOBUS, o_idx2);
+
+            // add pair to branch map
+            p_branchMap.insert(std::pair<std::pair<int, int>, int >(branch_pair,
+                  index));
+            index++;
+          }
 
           // BRANCH_CKT          "CKT"                 character
-          data->addValue(BRANCH_CKT, (char*)split_line[2].c_str());
+          p_branchData[l_idx]->addValue(BRANCH_CKT, (char*)split_line[2].c_str(),
+              nelems);
 
           // BRANCH_R            "R"                   float
-          data->addValue(BRANCH_R, atof(split_line[3].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_R, atof(split_line[3].c_str()),
+              nelems);
 
           // BRANCH_X            "X"                   float
-          data->addValue(BRANCH_X, atof(split_line[4].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_X, atof(split_line[4].c_str()),
+              nelems);
 
           // BRANCH_B            "B"                   float
-          data->addValue(BRANCH_B, atof(split_line[5].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_B, atof(split_line[5].c_str()),
+              nelems);
 
           // BRANCH_RATING_A        "RATEA"               float
-          data->addValue(BRANCH_RATING_A, atof(split_line[6].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_RATING_A,
+              atof(split_line[6].c_str()), nelems);
 
           // BBRANCH_RATING_        "RATEB"               float
-          data->addValue(BRANCH_RATING_B, atof(split_line[7].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_RATING_B,
+              atof(split_line[7].c_str()), nelems);
 
           // BRANCH_RATING_C        "RATEC"               float
-          data->addValue(BRANCH_RATING_C, atof(split_line[8].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_RATING_C,
+              atof(split_line[8].c_str()), nelems);
 
           // BRANCH_TAP        "RATIO"               float
-          data->addValue(BRANCH_TAP, atof(split_line[9].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_TAP, atof(split_line[9].c_str()),
+              nelems);
 
           // BRANCH_SHIFT        "SHIFT"               float
-          data->addValue(BRANCH_SHIFT, atof(split_line[10].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_SHIFT,
+              atof(split_line[10].c_str()), nelems);
 
           // BRANCH_SHUNT_ADMTTNC_G1        "GI"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_G1, atof(split_line[11].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_G1,
+              atof(split_line[11].c_str()), nelems);
 
           // BRANCH_SHUNT_ADMTTNC_B1        "BI"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_B1, atof(split_line[12].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_B1,
+              atof(split_line[12].c_str()), nelems);
 
           // BRANCH_SHUNT_ADMTTNC_G2        "GJ"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_G2, atof(split_line[13].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_G2,
+              atof(split_line[13].c_str()), nelems);
 
           // BRANCH_SHUNT_ADMTTNC_B2        "BJ"               float
-          data->addValue(BRANCH_SHUNT_ADMTTNC_B2, atof(split_line[14].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_B2,
+              atof(split_line[14].c_str()), nelems);
 
           // BRANCH_STATUS        "STATUS"               integer
-          data->addValue(BRANCH_STATUS, atoi(split_line[15].c_str()));
+          p_branchData[l_idx]->addValue(BRANCH_STATUS,
+              atoi(split_line[15].c_str()), nelems);
 
-          // BRANCH_LENGTH           "GI"                  float
-          //data->addValue(BRANCH_LENGTH, atof(split_line[11].c_str()));
-
-          // BRANCH_OWNER           "ST"                  integer
-          //data->addValue(BRANCH_OWNER, atoi(split_line[15].c_str()));
-
-          ++index;
+          nelems++;
+          p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
           std::getline(input, line);
         }
       }
 
+      // TODO: This code is NOT handling these elements correctly. Need to bring
+      // it in line with find_branch routine and the definitions in the
+      // ex_pti_file
       void find_transformer(std::ifstream & input)
       {
         std::string          line;
@@ -575,9 +601,6 @@ template <class _network>
         std::getline(input, line); //this should be the first line of the block
 
         std::pair<int, int>   branch_pair;
-        // Find out how many branches already exist (note that this only works
-        // when all branches are read in on head node
-        int index = p_branchData.size();
 
         // get the branch that has the same to and from buses that the transformer hadto
 
@@ -593,7 +616,7 @@ template <class _network>
           int toBus = atoi(split_line[1].c_str());
           if (toBus < 0) toBus = -toBus;
 
-          // find branch corresponding to this
+          // find branch corresponding to this transformer line
           int l_idx = 0;
           branch_pair = std::pair<int,int>(fromBus, toBus);
           std::map<std::pair<int, int>, int>::iterator it;
@@ -605,12 +628,6 @@ template <class _network>
             std::getline(input, line);
             continue;
           }
-
-          /*
-           * type: integer
-           * #define BRANCH_INDEX "BRANCH_INDEX"
-           */
-          p_branchData[l_idx]->addValue(BRANCH_INDEX,index);
 
           /*
            * type: integer
