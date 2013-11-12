@@ -25,7 +25,7 @@
 #include "gridpack/applications/powerflow/pf_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
-#define LARGE_MATRIX
+//#define LARGE_MATRIX
 
 /**
  *  Simple constructor
