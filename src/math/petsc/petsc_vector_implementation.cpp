@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-28 13:26:45 d3g096
+ * @date   2013-11-11 11:57:40 d3g096
  * 
  * @brief  
  * 
@@ -16,7 +16,7 @@
  */
 // -------------------------------------------------------------
 
-
+#include <petscsys.h>
 #include "implementation_visitor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
 #include "petsc/petsc_exception.hpp"
@@ -34,7 +34,8 @@ namespace math {
 // -------------------------------------------------------------
 PETScVectorImplementation::PETScVectorImplementation(const parallel::Communicator& comm,
                                                      const int& local_length)
-  : VectorImplementation(comm), p_min_index(-1), p_max_index(-1)
+  : VectorImplementation(comm), p_minIndex(-1), p_maxIndex(-1), 
+    p_vectorWrapped(false)
 {
   PetscErrorCode ierr;
   try {
@@ -60,13 +61,48 @@ PETScVectorImplementation::PETScVectorImplementation(const parallel::Communicato
     // get and save the ownership index range
     PetscInt lo, hi;
     ierr = VecGetOwnershipRange(p_vector, &lo, &hi); CHKERRXX(ierr);
-    p_min_index = lo;
-    p_max_index = hi;
+    p_minIndex = lo;
+    p_maxIndex = hi;
 
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
 }
+
+parallel::Communicator
+PETScVectorImplementation::p_getCommunicator(const Vec& v)
+{
+  MPI_Comm comm(PetscObjectComm((PetscObject)v));
+  parallel::Communicator result(comm, boost::mpi::comm_duplicate);
+  return result;
+}
+
+PETScVectorImplementation::PETScVectorImplementation(Vec& pVec, const bool& copyVec)
+  : VectorImplementation(p_getCommunicator(pVec)), 
+    p_minIndex(-1), p_maxIndex(-1), 
+    p_vectorWrapped(false)
+{
+  PetscErrorCode ierr;
+  try {
+
+    if (copyVec) {
+      ierr = VecCopy(pVec, p_vector); CHKERRXX(ierr);
+    } else {
+      p_vector = pVec;
+      p_vectorWrapped = true;
+    }
+
+    // get and save the ownership index range
+    PetscInt lo, hi;
+    ierr = VecGetOwnershipRange(p_vector, &lo, &hi); CHKERRXX(ierr);
+    p_minIndex = lo;
+    p_maxIndex = hi;
+
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
 
 PETScVectorImplementation::~PETScVectorImplementation(void)
 {
@@ -74,14 +110,16 @@ PETScVectorImplementation::~PETScVectorImplementation(void)
   // to destroy a PETSc thing after PETSc is finalized.
   PetscErrorCode ierr;
   
-  try  {
-    PetscBool ok;
-    ierr = PetscInitialized(&ok);
-    if (ok) {
-      ierr = VecDestroy(&p_vector);
+  if (!p_vectorWrapped) {
+    try  {
+      PetscBool ok;
+      ierr = PetscInitialized(&ok);
+      if (ok) {
+        ierr = VecDestroy(&p_vector);
+      }
+    } catch (...) {
+      // just eat it
     }
-  } catch (...) {
-    // just eat it
   }
 }
 
@@ -123,8 +161,8 @@ PETScVectorImplementation::p_localSize(void) const
 void
 PETScVectorImplementation::p_localIndexRange(int& lo, int& hi) const
 {
-  lo = p_min_index;
-  hi = p_max_index;
+  lo = p_minIndex;
+  hi = p_maxIndex;
 }
 
 // -------------------------------------------------------------

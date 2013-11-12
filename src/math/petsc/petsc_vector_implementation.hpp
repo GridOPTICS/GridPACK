@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-28 13:25:58 d3g096
+ * @date   2013-11-11 11:55:17 d3g096
  * 
  * @brief  
  * 
@@ -50,6 +50,9 @@ public:
   PETScVectorImplementation(const parallel::Communicator& comm,
                             const int& local_length);
 
+  /// Construct from an existing PETSc vector
+  PETScVectorImplementation(Vec& pvec, const bool& copyvec = true);
+
   /// Destructor
   /** 
    * @e Collective
@@ -72,14 +75,20 @@ public:
 
 protected:
 
+  /// Extract a Communicator from a PETSc vector
+  static parallel::Communicator p_getCommunicator(const Vec& v);
+
   /// Minimum global index on this processor
-  int p_min_index;
+  int p_minIndex;
 
   /// Maximum global index on this processor
-  int p_max_index;
+  int p_maxIndex;
 
   /// The PETSc representation
   Vec p_vector;
+
+  /// Was @c p_vector created or just wrapped
+  bool p_vectorWrapped;
 
   /// Get the global vector length
   int p_size(void) const;
