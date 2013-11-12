@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-08 08:49:10 d3g096
+ * @date   2013-11-12 09:27:43 d3g096
  * 
  * @brief  
  * 
@@ -122,7 +122,7 @@ protected:
   double p_functionTolerance;
 
   /// The maximum number of iterations to perform
-  double p_maxIterations;
+  int p_maxIterations;
 
   /// Solve w/ using the specified initial guess (specialized)
   virtual void p_solve(void) = 0;

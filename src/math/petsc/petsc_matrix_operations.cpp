@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2013-10-31 09:15:36 d3g096
+ * @date   2013-11-12 09:54:33 d3g096
  * 
  * @brief  
  * 
@@ -76,7 +76,7 @@ transpose(const Matrix& A)
     throw PETScException(ierr, e);
   }
   PETScMatrixImplementation *result_impl = 
-    new PETScMatrixImplementation(A.communicator(), pAtrans);
+    new PETScMatrixImplementation(pAtrans, true);
   Matrix *result = new Matrix(result_impl);
 
   return result;
@@ -203,7 +203,7 @@ multiply(const Matrix& A, const Matrix& B)
   }
 
   PETScMatrixImplementation *result_impl = 
-    new PETScMatrixImplementation(A.communicator(), Cmat);
+    new PETScMatrixImplementation(Cmat, true);
   Matrix *result = new Matrix(result_impl);
   return result;
 }

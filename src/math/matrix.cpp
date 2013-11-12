@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-10-28 14:40:27 d3g096
+ * @date   2013-11-12 10:33:30 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -45,9 +45,9 @@ Matrix::~Matrix(void)
 void
 Matrix::p_check_compatible(const Matrix& A) const
 {
-  if (this->communicator() != A.communicator()) {
-    throw gridpack::Exception("incompatible: communicators do not match");
-  }
+  // if (this->communicator() != A.communicator()) {
+  //   throw gridpack::Exception("incompatible: communicators do not match");
+  // }
 
   if ((this->rows() != A.rows()) || (this->cols() != A.cols())) {
     throw gridpack::Exception("incompatible: sizes do not match");

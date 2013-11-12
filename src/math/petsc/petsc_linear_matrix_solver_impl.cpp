@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2013-11-08 09:03:37 d3g096
+ * @date   2013-11-12 09:56:35 d3g096
  * 
  * @brief  
  * 
@@ -228,7 +228,7 @@ PetscLinearMatrixSolverImplementation::p_solve(const Matrix& B) const
   }
 
   PETScMatrixImplementation *ximpl = 
-    new PETScMatrixImplementation(this->communicator(), X);
+    new PETScMatrixImplementation(X, true);
   Matrix *result = new Matrix(ximpl);
 
   try {

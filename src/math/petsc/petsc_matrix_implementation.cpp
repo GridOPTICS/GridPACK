@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:49:51 d3g096
+ * @date   2013-11-12 10:27:53 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -31,6 +31,18 @@ namespace math {
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
+// PETScMatrixImplementation::p_getCommunicator
+// -------------------------------------------------------------
+parallel::Communicator
+PETScMatrixImplementation::p_getCommunicator(const Mat& m)
+{
+  MPI_Comm comm(PetscObjectComm((PetscObject)m));
+  parallel::Communicator result(comm, boost::mpi::comm_attach);
+  return result;
+}
+
+
+// -------------------------------------------------------------
 // PETScMatrixImplementation:: constructors / destructor
 // -------------------------------------------------------------
 /** 
@@ -44,7 +56,8 @@ namespace math {
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
                                                      const int& local_rows, const int& global_cols,
                                                      const bool& dense)
-  : MatrixImplementation(comm)
+  : MatrixImplementation(comm),
+    p_matrixWrapped(false)
 {
   PetscErrorCode ierr(0);
   static const PetscInt diagonal_non_zero_guess(10);
@@ -104,13 +117,20 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
   }
 }
 
-PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const Mat& m)
-  : MatrixImplementation(comm)
+PETScMatrixImplementation::PETScMatrixImplementation(Mat& m, const bool& copyMat)
+  : MatrixImplementation(p_getCommunicator(m)),
+    p_matrixWrapped(false)
 {
-  PetscErrorCode ierr(0);
+  PetscErrorCode ierr;
   try {
-    ierr = MatDuplicate(m, MAT_COPY_VALUES, &p_matrix); CHKERRXX(ierr);
+
+    if (copyMat) {
+      ierr = MatDuplicate(m, MAT_COPY_VALUES, &p_matrix); CHKERRXX(ierr);
+    } else {
+      p_matrix = m;
+      p_matrixWrapped = true;
+    }
+
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -119,14 +139,16 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
 PETScMatrixImplementation::~PETScMatrixImplementation(void)
 {
   PetscErrorCode ierr;
-  try  {
-    PetscBool ok;
-    ierr = PetscInitialized(&ok);
-    if (ok) {
-      ierr = MatDestroy(&p_matrix);
+  if (!p_matrixWrapped) {
+    try  {
+      PetscBool ok;
+      ierr = PetscInitialized(&ok);
+      if (ok) {
+        ierr = MatDestroy(&p_matrix);
+      }
+    } catch (...) {
+      // just eat it
     }
-  } catch (...) {
-    // just eat it
   }
 }
 
@@ -388,8 +410,7 @@ MatrixImplementation *
 PETScMatrixImplementation::p_clone(void) const
 {
   PETScMatrixImplementation *result =
-    new PETScMatrixImplementation(this->communicator(), 
-                                  this->p_matrix);
+    new PETScMatrixImplementation(const_cast<Mat&>(this->p_matrix), true);
   return result;
 }
 

@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-10-28 13:43:36 d3g096
+ * @date   2013-11-12 10:55:53 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
@@ -46,9 +46,9 @@ Vector::~Vector(void)
 void
 Vector::p_checkCompatible(const Vector& x) const
 {
-  if (this->communicator() != x.communicator()) {
-    throw gridpack::Exception("incompatible: communicators do not match");
-  }
+  // if (this->communicator() != x.communicator()) {
+  //   throw gridpack::Exception("incompatible: communicators do not match");
+  // }
 
   if (this->size() != x.size()) {
     throw gridpack::Exception("incompatible: sizes do not match");

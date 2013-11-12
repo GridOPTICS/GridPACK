@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-10-28 14:30:32 d3g096
+ * @date   2013-11-12 09:50:29 d3g096
  * 
  * @brief  
  * 
@@ -46,8 +46,7 @@ public:
                             const bool& dense = false);
 
   /// Make a new instance from an existing PETSc matrix
-  PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const Mat& m);
+  PETScMatrixImplementation(Mat& m, const bool& copymat = true);
 
   /// Destructor
   ~PETScMatrixImplementation(void);
@@ -66,8 +65,14 @@ public:
 
 protected:
 
+  /// Extract a Communicator from a PETSc vector
+  static parallel::Communicator p_getCommunicator(const Mat& m);
+
   /// The PETSc matrix representation
   Mat p_matrix;
+
+  /// Was @c p_matrix created or just wrapped
+  bool p_matrixWrapped;
 
   /// Get the global index range of the locally owned rows (specialized)
   void p_localRowRange(int& lo, int& hi) const;

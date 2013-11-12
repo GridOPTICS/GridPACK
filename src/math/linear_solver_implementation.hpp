@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-08 08:51:44 d3g096
+ * @date   2013-11-12 09:27:16 d3g096
  * 
  * @brief  
  * 
@@ -147,7 +147,7 @@ protected:
   double p_relativeTolerance;
 
   /// The maximum number of iterations to perform
-  double p_maxIterations;
+  int p_maxIterations;
 
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
