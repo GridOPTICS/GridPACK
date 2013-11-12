@@ -180,6 +180,7 @@ void gridpack::powerflow::PFApp::execute(void)
 
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
+    factory.setMode(RHS);
     vMap.mapToBus(X);
 
     // Exchange data between ghost buses
@@ -188,7 +189,6 @@ void gridpack::powerflow::PFApp::execute(void)
     timer->stop(t_updt);
 
     // Create new versions of Jacobian and PQ vector
-    factory.setMode(RHS);
     vMap.mapToVector(PQ);
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
