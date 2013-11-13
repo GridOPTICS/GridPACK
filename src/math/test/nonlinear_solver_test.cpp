@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-11-07 14:45:01 d3g096
+ * @date   2013-11-13 08:35:39 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -16,7 +16,6 @@
  */
 // -------------------------------------------------------------
 
-#include <mpi.h>
 #include <iostream>
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>

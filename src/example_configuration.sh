@@ -16,7 +16,7 @@ if [ $host == "flophouse" ]; then
     $prefix/bin/cmake -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.2" \
+        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
         -D PETSC_ARCH:STRING='arch-linux2-complex-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \

@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2013-10-23 15:09:04 d3g096
+# Last Change: 2013-11-13 09:45:57 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -33,6 +33,8 @@ list(APPEND gridpack_math_sources
   nonlinear_solver_implementation.cpp
   newton_raphson_solver.cpp
   newton_raphson_solver_implementation.cpp 
+  dae_solver.cpp
+  dae_solver_implementation.cpp
   implementation_visitor.cpp
 )
 
@@ -63,6 +65,8 @@ if (PETSC_FOUND)
       petsc/petsc_linear_matrix_solver_impl.cpp
       petsc/petsc_nonlinear_solver_implementation.cpp
       petsc/nonlinear_solver.cpp
+      petsc/petsc_dae_solver_implementation.cpp
+      petsc/dae_solver.cpp
     )  
 
     set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
@@ -179,6 +183,15 @@ if (PETSC_FOUND)
    add_dependencies(nonlinear_solver_test petscrc math_test_input)
 endif()
 
+# -------------------------------------------------------------
+# DAE solver test suite
+# -------------------------------------------------------------
+add_executable(dae_solver_test test/dae_solver_test.cpp)
+target_link_libraries(dae_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(dae_solver dae_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(dae_solver_test petscrc math_test_input)
+endif()
 
   
 

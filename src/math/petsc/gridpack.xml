@@ -65,7 +65,14 @@
         </PETScOptions>
       </LinearSolver>
     </NewtonRaphsonSolver>
-    <PETScThing>
-    </PETScThing>
+    <DAESolver>
+      <PETScOptions>
+        -ts_view
+        -ts_monitor
+        -ts_type rosw
+        -ts_max_reject 10
+        -ts_max_snes_failures -1
+      </PETScOptions>
+    </DAESolver>
   </MathTests>
 </GridPACK>
