@@ -203,7 +203,7 @@ void gridpack::powerflow::PFApp::execute(void)
   timer->start(t_lsolv);
   isolver.solve(*PQ, *X);
   timer->stop(t_lsolv);
-  tol = X->norm2();
+  tol = PQ->norm2();
 //  busIO.header("\nX values\n");
 //  X->save("X.m");
 
@@ -245,7 +245,7 @@ void gridpack::powerflow::PFApp::execute(void)
     timer->stop(t_lsolv);
 //    X->print();
 
-    tol = X->norm2();
+    tol = PQ->norm2();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
     iter++;
