@@ -854,31 +854,28 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
 void gridpack::powerflow::PFBranch::setYBus(void)
 {
   int i;
-  gridpack::ComplexType ret(0.0,0.0);
+  p_ybusr_frwd = 0.0;
+  p_ybusi_frwd = 0.0;
+  p_ybusr_rvrs = 0.0;
+  p_ybusi_rvrs = 0.0;
   for (i=0; i<p_elems; i++) {
-    gridpack::ComplexType tmp(p_resistance[i],p_reactance[i]);
-    tmp = -1.0/tmp;
+    gridpack::ComplexType ret(p_resistance[i],p_reactance[i]);
+    ret = -1.0/ret;
     gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
     a = p_tap_ratio[i]*a;
     if (p_branch_status[i] == 1) {
       if (p_xform[i]) {
-        p_ybusr_frwd = real(tmp/conj(a));
-        p_ybusi_frwd = imag(tmp/conj(a));
-        p_ybusr_rvrs = real(tmp/a);
-        p_ybusi_rvrs = imag(tmp/a);
+        p_ybusr_frwd += real(ret/conj(a));
+        p_ybusi_frwd += imag(ret/conj(a));
+        p_ybusr_rvrs += real(ret/a);
+        p_ybusi_rvrs += imag(ret/a);
       } else {
-        p_ybusr_frwd = real(tmp);
-        p_ybusi_frwd = imag(tmp);
-        p_ybusr_rvrs = real(tmp);
-        p_ybusi_rvrs = imag(tmp);
+        p_ybusr_frwd += real(ret);
+        p_ybusi_frwd += imag(ret);
+        p_ybusr_rvrs += real(ret);
+        p_ybusi_rvrs += imag(ret);
       }
-    } else {
-      p_ybusr_frwd = 0.0;
-      p_ybusi_frwd = 0.0;
-      p_ybusr_rvrs = 0.0;
-      p_ybusi_rvrs = 0.0;
     }
-    ret += tmp;
   }
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
