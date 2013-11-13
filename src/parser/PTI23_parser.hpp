@@ -483,6 +483,7 @@ template <class _network>
 
         std::getline(input, line); //this should be the first line of the block
 
+        int nelems;
         while(test_end(line)) {
           std::pair<int, int> branch_pair;
           std::vector<std::string>  split_line;
@@ -490,7 +491,6 @@ template <class _network>
           
           o_idx1 = atoi(split_line[0].c_str());
           o_idx2 = atoi(split_line[1].c_str());
-          int nelems = 0;
 
           // Switch sign if indices are negative
           if (o_idx1 < 0) o_idx1 = -o_idx1;
@@ -504,13 +504,14 @@ template <class _network>
 
           if (it != p_branchMap.end()) {
             l_idx = it->second;
-            nelems = p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+            p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
           } else {
             boost::shared_ptr<gridpack::component::DataCollection>
               data(new gridpack::component::DataCollection);
             l_idx = p_branchData.size();
             p_branchData.push_back(data);
             p_branchData[l_idx]->addValue(BRANCH_NUM_ELEMENTS,nelems);
+            nelems = 0;
           }
 
           if (nelems == 0) {
