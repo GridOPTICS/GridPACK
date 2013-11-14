@@ -481,6 +481,42 @@
 #define TRANSFORMER_CKT "TRANSFORMER_CKT"
 
 /**
+ * Number of bus to control. If different from BUS1 or BUS2 then sign determines
+ * control. Positive sign, close to impedance (untapped) bus of transformer,
+ * negative sign is opposite
+ * type: integer
+ */
+#define TRANSFORMER_CONTROL "TRANSFORMER_CONTROL"
+
+/**
+ * Upper and lower limits of turns ratio or phase shift
+ * type: float
+ */
+#define TRANSFORMER_RMA "TRANSFORMER_RMA"
+#define TRANSFORMER_RMI "TRANSFORMER_RMI"
+
+/**
+ * Upper and lower limits of controlled volts, MW or MVAR
+ * type: float
+ */
+#define TRANSFORMER_VMA "TRANSFORMER_VMA"
+#define TRANSFORMER_VMI "TRANSFORMER_VMI"
+
+/**
+ * Turns ratio increment
+ * type: float
+ */
+#define TRANSFORMER_STEP "TRANSFORMER_STEP"
+
+/**
+ * Zero or number of a transformer impedence correction tabel (1-5)
+ * type: integer
+ */
+#define TRANSFORMER_TABLE "TRANSFORMER_TABLE"
+
+//  These transformer variables are not getting parsed for the V23 file format
+
+/**
  * The winding data I/O code which defines the units in which TRANSFORMER_WINDV1, and TRANSFORMER _WINDV2
  *  are specified 
  * 1: off-nominal turns ratio in pu of winding bus base voltage

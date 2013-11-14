@@ -629,6 +629,76 @@ template <class _network>
             std::getline(input, line);
             continue;
           }
+          
+          // Find number of transmission elements on this branch and then
+          // compare the circuit number for this transformer adjustment with
+          // BRANCH_CKT values
+          int nelems = 0;
+          p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+          std::string b_ckt(split_line[2].c_str());
+          int i;
+          int idx = -1;
+          for (i=0; i<nelems; i++) {
+            std::string t_ckt;
+            p_branchData[l_idx]->getValue(BRANCH_CKT,&t_ckt,i);
+            if (b_ckt == t_ckt) {
+              idx = i;
+              break;
+            }
+          }
+          if (idx == -1) continue;
+
+          /*
+           * type: integer
+           * TRANSFORMER_CONTROL
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CONTROL,
+              atoi(split_line[3].c_str()),idx);
+
+          /*
+           * type: float
+           * TRANSFORMER_RMA
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_RMA,
+              atof(split_line[4].c_str()),idx);
+
+          /*
+           * type: float
+           * TRANSFORMER_RMI
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_RMI,
+              atof(split_line[5].c_str()),idx);
+
+          /*
+           * type: float
+           * TRANSFORMER_VMA
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_VMA,
+              atof(split_line[6].c_str()),idx);
+
+          /*
+           * type: float
+           * TRANSFORMER_VMI
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_VMI,
+              atof(split_line[7].c_str()),idx);
+
+          /*
+           * type: float
+           * TRANSFORMER_STEP
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_STEP,
+              atof(split_line[8].c_str()),idx);
+
+          /*
+           * type: float
+           * TRANSFORMER_TABLE
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_TABLE,
+              atof(split_line[9].c_str()),idx);
+
+          // This stuff is probably all wrong
+#if 0
 
           /*
            * type: integer
@@ -726,6 +796,7 @@ template <class _network>
            * #define TRANSFORMER_SBASE1_2 "TRANSFORMER_SBASE1_2"
            */
           p_branchData[l_idx]->addValue(TRANSFORMER_SBASE1_2, atof(split_line[1].c_str()));
+#endif
 
           std::getline(input, line);
         }
