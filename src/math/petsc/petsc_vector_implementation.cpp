@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-11 11:57:40 d3g096
+ * @date   2013-11-14 11:32:17 d3g096
  * 
  * @brief  
  * 
@@ -302,16 +302,16 @@ PETScVectorImplementation::p_fill(const ComplexType& v)
 }  
 
 // -------------------------------------------------------------
-// PETScVectorImplementation::p_norm1
+// PETScVectorImplementation::p_norm
 // -------------------------------------------------------------
 ComplexType
-PETScVectorImplementation::p_norm1(void) const
+PETScVectorImplementation::p_norm(const NormType& t) const
 {
   ComplexType result;
   PetscErrorCode ierr(0);
   try {
     PetscReal v;
-    ierr = VecNorm(this->p_vector, NORM_1, &v); CHKERRXX(ierr);
+    ierr = VecNorm(this->p_vector, t, &v); CHKERRXX(ierr);
     result = v;
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
@@ -321,21 +321,31 @@ PETScVectorImplementation::p_norm1(void) const
 
 
 // -------------------------------------------------------------
+// PETScVectorImplementation::p_norm1
+// -------------------------------------------------------------
+ComplexType
+PETScVectorImplementation::p_norm1(void) const
+{
+  return p_norm(NORM_1);
+}
+
+
+// -------------------------------------------------------------
 // PETScVectorImplementation::p_norm2
 // -------------------------------------------------------------
 ComplexType
 PETScVectorImplementation::p_norm2(void) const
 {
-  ComplexType result;
-  PetscErrorCode ierr(0);
-  try {
-    PetscReal v;
-    ierr = VecNorm(this->p_vector, NORM_2, &v); CHKERRXX(ierr);
-    result = v;
-  } catch (const PETSc::Exception& e) {
-    throw PETScException(ierr, e);
-  }
-  return result;
+  return p_norm(NORM_2);
+}
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_normInfinity
+// -------------------------------------------------------------
+ComplexType
+PETScVectorImplementation::p_normInfinity(void) const
+{
+  return p_norm(NORM_INFINITY);
 }
 
 // -------------------------------------------------------------

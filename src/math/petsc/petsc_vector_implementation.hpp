@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-11 11:55:17 d3g096
+ * @date   2013-11-14 11:32:42 d3g096
  * 
  * @brief  
  * 
@@ -126,11 +126,17 @@ protected:
   /// Make all the elements the specified value (specialized)
   void p_fill(const ComplexType& v);
 
+  /// Common method to compute norms 
+  ComplexType p_norm(const NormType& t) const;
+
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   ComplexType p_norm1(void) const;
 
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
   ComplexType p_norm2(void) const;
+
+  /// Compute the vector infinity (or maximum) norm (specialized)
+  ComplexType p_normInfinity(void) const;
 
   /// Replace all elements with its absolute value (specialized) 
   void p_abs(void);

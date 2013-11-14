@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-11-12 09:26:25 d3g096
+ * @date   2013-11-14 11:34:01 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -487,6 +487,12 @@ public:
   ComplexType norm2(void) const
   {
     return p_vector_impl->norm2();
+  }
+
+  /// Compute the infinity (or maximum) norm
+  ComplexType normInfinity(void) const
+  {
+    return p_vector_impl->normInfinity();
   }
 
   // FIXME more ...
