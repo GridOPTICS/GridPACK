@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-11-13 14:33:21 d3g096
+ * @date   2013-11-14 14:17:09 d3g096
  * 
  * @brief  
  * 
@@ -42,9 +42,10 @@ class Problem
 public:
 
   /// Default constructor.
-  Problem(const int& local_size, const double& maxtime)
+  Problem(const int& local_size, const double& maxtime, const double outstep)
     : p_size(local_size),
       p_maxtime(maxtime),
+      p_outstep(outstep),
       p_maxsteps(1000)
   {}
 
@@ -84,8 +85,16 @@ public:
     solver.configure(conf);
 
     std::auto_ptr<gridpack::math::Vector> x(initial(comm));
+    
+    double t0(0.0), t(t0);
+    solver.initialize(t0, 0.001, *x);
 
-    solver.solve(0.0, 0.001, p_maxtime, p_maxsteps, *x);
+    for (int i = 1; t < p_maxtime; ++i) {
+      t = t0 + p_outstep*i;
+      solver.solve(t, p_maxsteps);
+      std::cout << "Time = " << t << std::endl;
+      x->print();
+    }
   }
 
 protected:
@@ -96,7 +105,10 @@ protected:
   /// The maximum/end time
   double p_maxtime;
 
-  /// The number of steps allowed/taken
+  /// The output time step
+  double p_outstep;
+
+  /// The number of steps allowed/taken (per ::outstep)
   int p_maxsteps;
 
 };
@@ -111,7 +123,7 @@ public:
 
   /// Default constructor.
   RoberProblem(void) 
-    : Problem(3, 1.0E+11)
+    : Problem(3, 1.0E+11, 1.0e+09)
   {}
 
   /// Build a Jacobian
@@ -179,7 +191,7 @@ public:
 
   /// Default constructor.
   OregoProblem()
-    : Problem(3, 360.0)
+    : Problem(3, 360.0, 30.0)
   {}
 
   /// Destructor
@@ -253,7 +265,7 @@ public:
 
   /// Default constructor.
   CEProblem()
-    : Problem(1, 10.0),
+    : Problem(1, 10.0, 0.5),
       p_lambda(10)
   {}
 

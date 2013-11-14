@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-13 09:56:03 d3g096
+ * @date   2013-11-14 11:41:16 d3g096
  * 
  * @brief  
  * 
@@ -58,12 +58,14 @@ protected:
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
 
+  /// Initialize the system (specialized)
+  void p_initialize(const double& t0,
+                    const double& deltat0,
+                    Vector& x0);
+
   /// Solve the system
-  void p_solve(const double& time,
-               const double& deltat0,
-               double& maxtime,
-               int& maxsteps,
-               Vector& solution);
+  void p_solve(double& maxtime,
+               int& maxsteps);
 
   /// Routine to assemble Jacobian that is sent to PETSc
   static PetscErrorCode FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 

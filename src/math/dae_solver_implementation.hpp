@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-13 09:55:43 d3g096
+ * @date   2013-11-14 11:39:40 d3g096
  * 
  * @brief  
  * 
@@ -48,14 +48,25 @@ public:
   /// Destructor
   ~DAESolverImplementation(void);
 
-  /// Solve the system
-  void solve(const double& time,
-             const double& deltat0,
-             double& maxtime,
-             int& maxsteps,
-             Vector& solution)
+  /// Initialize the solver
+  /** 
+   * 
+   * 
+   * @param t0 start time, corresponding to @c x0
+   * @param deltat0 initial time step
+   * @param x0 initial solution corresponding to @c t0
+   */
+  void initialize(const double& t0,
+                  const double& deltat0,
+                  Vector& x0)
   {
-    this->p_solve(time, deltat0, maxtime, maxsteps, solution);
+    this->p_initialize(t0, deltat0, x0);
+  }
+
+  /// Solve the system
+  void solve(double& maxtime, int& maxsteps)
+  {
+    this->p_solve(maxtime, maxsteps);
   }
 
 protected:
@@ -72,12 +83,14 @@ protected:
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
 
+  /// Initialize the system (specialized)
+  virtual void p_initialize(const double& t0,
+                            const double& deltat0,
+                            Vector& x0) = 0;
+                       
+
   /// Solve the system (specialized)
-  virtual void p_solve(const double& time,
-                       const double& deltat0,
-                       double& maxtime,
-                       int& maxsteps,
-                       Vector& solution) = 0;
+  virtual void p_solve(double& maxtime, int& maxsteps) = 0;
 
 };
 

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-13 13:58:44 d3g096
+ * @date   2013-11-14 11:48:54 d3g096
  * 
  * @brief  
  * 
@@ -16,6 +16,7 @@
  */
 // -------------------------------------------------------------
 
+#include <boost/format.hpp>
 #include "petsc/petsc_dae_solver_implementation.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
@@ -144,6 +145,8 @@ PETScDAESolverImplementation::p_build(const std::string& option_prefix)
     ierr = TSSetIJacobian(p_ts, *p_petsc_J, *p_petsc_J, FormIJacobian, this); CHKERRXX(ierr);
 
     ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
+    // ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr);
+
     ierr = TSSetFromOptions(p_ts); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
@@ -163,22 +166,35 @@ PETScDAESolverImplementation::p_configure(utility::Configuration::CursorPtr prop
 }
 
 // -------------------------------------------------------------
-// PETScDAESolverImplementation::p_solve
+// PETScDAESolverImplementation::p_initialize
 // -------------------------------------------------------------
-void PETScDAESolverImplementation::p_solve(const double& time,
+void
+PETScDAESolverImplementation::p_initialize(const double& t0,
                                            const double& deltat0,
-                                           double& maxtime,
-                                           int& maxsteps,
-                                           Vector& solution)
+                                           Vector& x0)
 {
   PetscErrorCode ierr(0);
   try {
-    ierr = TSSetInitialTimeStep(p_ts, time, deltat0); CHKERRXX(ierr); 
+    ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr); 
+    Vec *xvec(PETScVector(x0));
+    ierr = TSSetSolution(p_ts, *xvec);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+  
+}                                      
+
+// -------------------------------------------------------------
+// PETScDAESolverImplementation::p_solve
+// -------------------------------------------------------------
+void 
+PETScDAESolverImplementation::p_solve(double& maxtime,
+                                      int& maxsteps)
+{
+  PetscErrorCode ierr(0);
+  try {
     ierr = TSSetDuration(p_ts, maxsteps, maxtime); CHKERRXX(ierr);
-
-    Vec *x(PETScVector(solution));
-
-    ierr = TSSolve(p_ts,*x);
+    ierr = TSSolve(p_ts, PETSC_NULL);
     // std::cout << this->processor_rank() << ": "
     //           << "DAESolver::solve() returned " << ierr 
     //           << std::endl;
@@ -203,15 +219,17 @@ void PETScDAESolverImplementation::p_solve(const double& time,
                 << std::endl;
 
     } else {
-
-      std::cout << this->processor_rank() << ": " 
-                << "PETSc DAE Solver diverged after " << maxsteps << " steps, " 
-                << "reason: " << reason 
-                << std::endl;
+      boost::format f("%d: PETSc DAE Solver diverged after %d steps, reason : %d");
+      std::string msg = 
+        boost::str(f % this->processor_rank() % maxsteps % reason );
+      std::cerr << msg << std::cerr;
+      throw gridpack::Exception(msg);
     }
-
+    
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
+  } catch (const gridpack::Exception& e) {
+    throw;
   }
   
 }

@@ -67,7 +67,6 @@
     </NewtonRaphsonSolver>
     <DAESolver>
       <PETScOptions>
-        -ts_view
         -ts_monitor
         -ts_type rosw
         -ts_max_reject 10
