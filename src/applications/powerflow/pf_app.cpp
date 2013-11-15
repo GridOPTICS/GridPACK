@@ -251,6 +251,9 @@ void gridpack::powerflow::PFApp::execute(void)
     iter++;
   }
 #endif
+  // Push final result back onto buses
+  factory.setMode(RHS);
+  vMap.mapToBus(X);
 
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(128,network);
   branchIO.header("\n   Branch Power Flow\n");

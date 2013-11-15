@@ -991,7 +991,7 @@ gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
   gridpack::ComplexType ret(0.0,0.0);
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType tmp(p_resistance[i],p_reactance[i]);
-    gridpack::ComplexType tmpB(0,0.5*p_charging[i]);
+    gridpack::ComplexType tmpB(0.0,0.5*p_charging[i]);
     if (p_xform[i] && p_branch_status[i] == 1) {
       tmp = -1.0/tmp;
       tmp = tmp - tmpB;

@@ -56,15 +56,16 @@ void gridpack::powerflow::PFFactory::setYBus(void)
   int numBranch = p_network->numBranches();
   int i;
 
+  // Invoke setYBus method on all branch objects
+  for (i=0; i<numBranch; i++) {
+    dynamic_cast<PFBranch*>(p_network->getBranch(i).get())->setYBus();
+  }
+
   // Invoke setYBus method on all bus objects
   for (i=0; i<numBus; i++) {
     dynamic_cast<PFBus*>(p_network->getBus(i).get())->setYBus();
   }
 
-  // Invoke setYBus method on all branch objects
-  for (i=0; i<numBranch; i++) {
-    dynamic_cast<PFBranch*>(p_network->getBranch(i).get())->setYBus();
-  }
 }
 
 /**
