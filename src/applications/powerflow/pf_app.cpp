@@ -203,15 +203,12 @@ void gridpack::powerflow::PFApp::execute(void)
   timer->start(t_lsolv);
   isolver.solve(*PQ, *X);
   timer->stop(t_lsolv);
-  tol = PQ->norm2();
+  tol = PQ->normInfinity();
 //  busIO.header("\nX values\n");
 //  X->save("X.m");
 
-  // Exchange new values
+  // Create timer for bus exchange
   int t_updt = timer->createCategory("Bus Update");
-  timer->start(t_updt);
-  network->updateBuses();
-  timer->stop(t_updt);
 
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
@@ -245,7 +242,7 @@ void gridpack::powerflow::PFApp::execute(void)
     timer->stop(t_lsolv);
 //    X->print();
 
-    tol = PQ->norm2();
+    tol = PQ->normInfinity();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
     iter++;
