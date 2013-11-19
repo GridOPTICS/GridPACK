@@ -4,7 +4,8 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 #include "gridpack/component/data_collection.hpp"
-#include <iostream.h>
+#include <iostream>
+#include <cstdio>
 
 /**
  * Simple constructor
@@ -654,7 +655,7 @@ void gridpack::component::DataCollection::dump(void)
   while (int_it != p_ints.end()) {
     std::string key = int_it->first;
     int ival = int_it->second;
-    cout << "  (INTEGER) key: "<<key<<" value: "<<ival<<endl;
+    std::cout << "  (INTEGER) key: "<<key<<" value: "<<ival<<std::endl;
     int_it++;
   }
   // print out longs
@@ -663,7 +664,7 @@ void gridpack::component::DataCollection::dump(void)
   while (long_it != p_longs.end()) {
     std::string key = long_it->first;
     long lval = long_it->second;
-    cout << "  (LONG) key: "<<key<<" value: "<<lval<<endl;
+    std::cout << "  (LONG) key: "<<key<<" value: "<<lval<<std::endl;
     long_it++;
   }
   // print out bools
@@ -672,7 +673,7 @@ void gridpack::component::DataCollection::dump(void)
   while (bool_it != p_bools.end()) {
     std::string key = bool_it->first;
     bool bval = bool_it->second;
-    cout << "  (BOOL) key: "<<key<<" value: "<<bval<<endl;
+    std::cout << "  (BOOL) key: "<<key<<" value: "<<bval<<std::endl;
     bool_it++;
   }
   // print out strings
@@ -681,7 +682,7 @@ void gridpack::component::DataCollection::dump(void)
   while (str_it != p_strings.end()) {
     std::string key = str_it->first;
     std::string sval = str_it->second;
-    cout << "  (STRING) key: "<<key<<" value: "<<sval<<endl;
+    std::cout << "  (STRING) key: "<<key<<" value: "<<sval<<std::endl;
     str_it++;
   }
   // print out floats
@@ -690,7 +691,7 @@ void gridpack::component::DataCollection::dump(void)
   while (flt_it != p_floats.end()) {
     std::string key = flt_it->first;
     float fval = flt_it->second;
-    cout << "  (FLOAT) key: "<<key<<" value: "<<fval<<endl;
+    std::cout << "  (FLOAT) key: "<<key<<" value: "<<fval<<std::endl;
     flt_it++;
   }
   // print out doubles
@@ -699,7 +700,7 @@ void gridpack::component::DataCollection::dump(void)
   while (dbl_it != p_doubles.end()) {
     std::string key = dbl_it->first;
     double dval = dbl_it->second;
-    cout << "  (DOUBLE) key: "<<key<<" value: "<<dval<<endl;
+    std::cout << "  (DOUBLE) key: "<<key<<" value: "<<dval<<std::endl;
     dbl_it++;
   }
   // print out complex
@@ -708,7 +709,7 @@ void gridpack::component::DataCollection::dump(void)
   while (cmplx_it != p_complexType.end()) {
     std::string key = cmplx_it->first;
     ComplexType cval = cmplx_it->second;
-    cout << "  (COMPLEX) key: "<<key<<" value: "<<cval<<endl;
+    std::cout << "  (COMPLEX) key: "<<key<<" value: "<<cval<<std::endl;
     cmplx_it++;
   }
 }

@@ -6,7 +6,7 @@
 /**
  * @file   configuration_test.cpp
  * @author William A. Perkins
- * @date   2013-11-08 08:47:54 d3g096
+ * @date   2013-11-19 13:10:10 d3g096
  * 
  * @brief  A test of Configurable and Configuration
  * 
@@ -74,10 +74,10 @@ protected:
 
 BOOST_AUTO_TEST_CASE( Configurable )
 {
-  gridpack::utility::Configuration::Configuration * config =
-    gridpack::utility::Configuration::configuration();
+  std::auto_ptr<gridpack::utility::Configuration> 
+    config(gridpack::utility::Configuration::configuration());
 
-  BOOST_REQUIRE(config != NULL);
+  BOOST_REQUIRE(config.get() != NULL);
 
   gridpack::utility::Configuration::CursorPtr cursor =
        config->getCursor("GridPACK");
