@@ -8,6 +8,7 @@
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
 #include <fstream>
+#include <iostream>
 #include <streambuf>
 
 using boost::property_tree::ptree;
