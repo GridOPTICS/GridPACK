@@ -506,12 +506,23 @@ template <class _network>
             l_idx = it->second;
             p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
           } else {
-            boost::shared_ptr<gridpack::component::DataCollection>
-              data(new gridpack::component::DataCollection);
-            l_idx = p_branchData.size();
-            p_branchData.push_back(data);
-            p_branchData[l_idx]->addValue(BRANCH_NUM_ELEMENTS,nelems);
-            nelems = 0;
+            // Check to see if from and to buses have been switched
+            std::pair<int, int> new_branch_pair;
+            new_branch_pair = std::pair<int,int>(o_idx2, o_idx1);
+            it = p_branchMap.find(new_branch_pair);
+            if (it != p_branchMap.end()) {
+              printf("Found multiple line with switched buses 1: %d 2: %d\n",
+                  o_idx2,o_idx1);
+              l_idx = it->second;
+              p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+            } else {
+              boost::shared_ptr<gridpack::component::DataCollection>
+                data(new gridpack::component::DataCollection);
+              l_idx = p_branchData.size();
+              p_branchData.push_back(data);
+              nelems = 0;
+              p_branchData[l_idx]->addValue(BRANCH_NUM_ELEMENTS,nelems);
+            }
           }
 
           if (nelems == 0) {
@@ -559,8 +570,7 @@ template <class _network>
               atof(split_line[8].c_str()), nelems);
 
           // BRANCH_TAP        "RATIO"               float
-          p_branchData[l_idx]->addValue(BRANCH_TAP, atof(split_line[9].c_str()),
-              nelems);
+          p_branchData[l_idx]->addValue(BRANCH_TAP, atof(split_line[9].c_str()), nelems);
 
           // BRANCH_SHIFT        "SHIFT"               float
           p_branchData[l_idx]->addValue(BRANCH_SHIFT,
