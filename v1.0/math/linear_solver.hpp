@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-11 10:35:20 d3g096
+ * @date   2013-11-08 07:14:43 d3g096
  * 
  * @brief  
  * 
@@ -64,6 +64,7 @@ namespace math {
  */
 class LinearSolver 
   : public parallel::WrappedDistributed,
+    public utility::WrappedConfigurable,
     private utility::Uncopyable
 {
 public:
@@ -95,18 +96,6 @@ public:
    * 
    */
   ~LinearSolver(void);
-
-  /// Set the configuration key for this instance
-  void configurationKey(const std::string& s)
-  {
-    p_solver->configurationKey(s);
-  }
-
-  /// Configure and do whatever is necessary to make this instance ready
-  void configure(utility::Configuration::Cursor *props)
-  {
-    p_solver->configure(props);
-  }
 
   /// Solve w/ the specified RHS, put result in specified vector
   /** 
@@ -165,6 +154,53 @@ public:
     p_solver->setMatrix(A);
   }
   
+  /// Get the solution tolerance
+  /** 
+   * 
+   * 
+   * 
+   * @return current solution tolerance
+   */
+  double tolerance(void) const
+  {
+    return p_solver->tolerance();
+  }
+
+  /// Set the solver tolerance
+  /** 
+   * 
+   * 
+   * @param tol new solution tolerance
+   */
+  void tolerance(const double& tol)
+  {
+    p_solver->tolerance(tol);
+  }
+
+  /// Get the maximum iterations
+  /** 
+   * 
+   * 
+   * 
+   * @return current maximum number of solution iterations
+   */
+  int maximumIterations(void) const
+  {
+    return p_solver->maximumIterations();
+  }
+
+
+  /// Set the maximum solution iterations
+  /** 
+   * 
+   * 
+   * @param n new maximum number of iterations
+   */
+  void maximumIterations(const int& n)
+  {
+    p_solver->maximumIterations(n);
+  }
+
 
   //! @cond DEVDOC
 

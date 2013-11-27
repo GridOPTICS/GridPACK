@@ -6,7 +6,7 @@
 /**
  * @file   configuration_test.cpp
  * @author William A. Perkins
- * @date   2013-10-01 14:37:52 d3g096
+ * @date   2013-11-19 13:10:10 d3g096
  * 
  * @brief  A test of Configurable and Configuration
  * 
@@ -59,7 +59,7 @@ public:
 protected:
   
   void 
-  p_configure(gridpack::utility::Configuration::Cursor *props)
+  p_configure(gridpack::utility::Configuration::CursorPtr props)
   {
     if (props != NULL) {
       string1 = props->get("String1", string1);
@@ -74,18 +74,19 @@ protected:
 
 BOOST_AUTO_TEST_CASE( Configurable )
 {
-  gridpack::utility::Configuration::Cursor *config =
-    gridpack::utility::Configuration::configuration();
+  std::auto_ptr<gridpack::utility::Configuration> 
+    config(gridpack::utility::Configuration::configuration());
 
-  BOOST_REQUIRE(config != NULL);
+  BOOST_REQUIRE(config.get() != NULL);
 
-  config = config->getCursor("GridPACK");
+  gridpack::utility::Configuration::CursorPtr cursor =
+       config->getCursor("GridPACK");
 
-  BOOST_REQUIRE(config != NULL);
+  BOOST_REQUIRE(cursor != NULL);
 
   std::auto_ptr<ConfigurableThing> thing(new ConfigurableThing);
 
-  thing->configure(config);
+  thing->configure(cursor);
 
   std::cout << "string1: \"" << thing->string1 << "\"" << std::endl;
   std::cout << "string2: \"" << thing->string2 << "\"" << std::endl;

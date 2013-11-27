@@ -22,11 +22,6 @@ add_library(gridpack_components
   data_collection.cpp
 )
 
-list(APPEND GRIDPACK_SOURCES
-  base_component.cpp
-  data_collection.cpp
-)
-
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------

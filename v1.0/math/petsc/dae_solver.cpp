@@ -5,55 +5,43 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 // -------------------------------------------------------------
+// -------------------------------------------------------------
 /**
- * @file   nonlinear_solver_interface.cpp
+ * @file   dae_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:51:17 d3g096
+ * @date   2013-11-13 09:45:29 d3g096
  * 
- * @brief  Implementation of NonlinearSolverInterface
+ * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
 
-#include "nonlinear_solver_interface.hpp"
+#include "dae_solver.hpp"
+#include "petsc/petsc_dae_solver_implementation.hpp"
 
 namespace gridpack {
 namespace math {
 
 // -------------------------------------------------------------
-//  class NonlinearSolverInterface
+//  class DAESolver
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
-// NonlinearSolverInterface:: constructors / destructor
+// DAESolver:: constructors / destructor
 // -------------------------------------------------------------
-NonlinearSolverInterface::NonlinearSolverInterface()
-  : parallel::WrappedDistributed(), 
+DAESolver::DAESolver(const parallel::Communicator& comm, 
+                     const int local_size,
+                     DAEJacobianBuilder& jbuilder,
+                     DAEFunctionBuilder& fbuilder)
+  : parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
     utility::Uncopyable(),
     p_impl()
 {
-  
+  p_setImpl(new PETScDAESolverImplementation(comm, local_size,
+                                             jbuilder, fbuilder));
 }
-
-NonlinearSolverInterface::~NonlinearSolverInterface(void)
-{
-}
-
-// -------------------------------------------------------------
-// NonlinearSolverInterface::p_setImpl
-// -------------------------------------------------------------
-void
-NonlinearSolverInterface::p_setImpl(NonlinearSolverImplementation *impl)
-{
-  p_impl.reset(impl);
-  p_setDistributed(p_impl.get());
-  p_setConfigurable(p_impl.get());
-}
-
-
 
 } // namespace math
 } // namespace gridpack
-

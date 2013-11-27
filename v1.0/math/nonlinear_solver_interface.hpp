@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:16:38 d3g096
+ * @date   2013-11-08 11:50:59 d3g096
  * 
  * @brief  
  * 
@@ -46,6 +46,7 @@ namespace math {
  */
 class NonlinearSolverInterface 
   : public parallel::WrappedDistributed,
+    public utility::WrappedConfigurable,
     private utility::Uncopyable 
 {
 public:
@@ -56,10 +57,51 @@ public:
   /// Destructor
   ~NonlinearSolverInterface(void);
 
-  /// Configure and do whatever is necessary to make this instance ready
-  void configure(utility::Configuration::Cursor *props)
+  /// Get the solution tolerance
+  /** 
+   * 
+   * 
+   * 
+   * @return current solution tolerance
+   */
+  double tolerance(void) const
   {
-    p_impl->configure(props);
+    return p_impl->tolerance();
+  }
+
+  /// Set the solver tolerance
+  /** 
+   * 
+   * 
+   * @param tol new solution tolerance
+   */
+  void tolerance(const double& tol)
+  {
+    p_impl->tolerance(tol);
+  }
+
+  /// Get the maximum iterations
+  /** 
+   * 
+   * 
+   * 
+   * @return current maximum number of solution iterations
+   */
+  int maximumIterations(void) const
+  {
+    return p_impl->maximumIterations();
+  }
+
+
+  /// Set the maximum solution iterations
+  /** 
+   * 
+   * 
+   * @param n new maximum number of iterations
+   */
+  void maximumIterations(const int& n)
+  {
+    p_impl->maximumIterations(n);
   }
 
   /// Solve w/ the specified initial estimated, put result in same vector
@@ -95,7 +137,7 @@ protected:
    * 
    * @param impl specific nonlinear solver implementation to use
    */
-  void p_set_impl(NonlinearSolverImplementation *impl);
+  void p_setImpl(NonlinearSolverImplementation *impl);
 };
 
 

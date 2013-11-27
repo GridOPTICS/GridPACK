@@ -8,7 +8,7 @@
 /**
  * @file   newton_raphson_solver.cpp
  * @author William A. Perkins
- * @date   2013-10-09 12:24:32 d3g096
+ * @date   2013-11-08 11:51:29 d3g096
  * 
  * @brief  
  * 
@@ -36,60 +36,15 @@ NewtonRaphsonSolver::NewtonRaphsonSolver(const parallel::Communicator& comm,
                                          FunctionBuilder form_function)
   : NonlinearSolverInterface()
 {
-  p_set_impl(new NewtonRaphsonSolverImplementation(comm, local_size,
+  p_setImpl(new NewtonRaphsonSolverImplementation(comm, local_size,
                                                    form_jacobian,
                                                    form_function));
-  p_set_distributed(p_impl.get());
+  p_setDistributed(p_impl.get());
 }
 
 NewtonRaphsonSolver::~NewtonRaphsonSolver(void)
 {
 }
-
-// -------------------------------------------------------------
-// NewtonRaphsonSolver::tolerance
-// -------------------------------------------------------------
-double
-NewtonRaphsonSolver::tolerance(void) const
-{
-  NewtonRaphsonSolverImplementation *s = 
-    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
-  BOOST_ASSERT(s != NULL);
-  return s->tolerance();
-}
-
-void
-NewtonRaphsonSolver::tolerance(const double& tol)
-{
-  NewtonRaphsonSolverImplementation *s = 
-    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
-  BOOST_ASSERT(s != NULL);
-  s->tolerance(tol);
-}
-
-// -------------------------------------------------------------
-// NewtonRaphsonSolver::maximum_iterations
-// -------------------------------------------------------------
-int
-NewtonRaphsonSolver::maximum_iterations(void) const
-{
-  NewtonRaphsonSolverImplementation *s = 
-    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
-  BOOST_ASSERT(s != NULL);
-  return s->maximum_iterations();
-}
-
-void
-NewtonRaphsonSolver::maximum_iterations(const int& n)
-{
-  NewtonRaphsonSolverImplementation *s = 
-    dynamic_cast<NewtonRaphsonSolverImplementation *>(p_impl.get());
-  BOOST_ASSERT(s != NULL);
-  s->maximum_iterations(n);
-}
-
-  
-
 
 } // namespace math
 } // namespace gridpack

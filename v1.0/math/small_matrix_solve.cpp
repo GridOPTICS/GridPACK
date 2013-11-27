@@ -44,9 +44,9 @@ main(int argc, char **argv)
   
   config->open("small_matrix_solve.xml", world);
   
-  config.reset(config->getCursor("SmallMatrixSolve"));
+  gridpack::utility::Configuration::CursorPtr configCursor = config->getCursor("SmallMatrixSolve");
 
-  BOOST_ASSERT(config);
+  BOOST_ASSERT(configCursor);
 
   boost::scoped_ptr<gridpack::math::Matrix> 
     A(new gridpack::math::Matrix(self, 9, 9)),
@@ -124,7 +124,7 @@ main(int argc, char **argv)
   boost::scoped_ptr<gridpack::math::LinearMatrixSolver> 
     solver(new gridpack::math::LinearMatrixSolver(*A));
 
-  solver->configure(config.get());
+  solver->configure(configCursor);
 
   boost::scoped_ptr<gridpack::math::Matrix> 
     X(solver->solve(*B));

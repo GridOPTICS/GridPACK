@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:26:10 d3g096
+ * @date   2013-11-08 11:48:21 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -38,7 +38,7 @@ Vector::Vector(const parallel::Communicator& comm, const int& local_length)
   PETScVectorImplementation *impl = 
     new PETScVectorImplementation(comm, local_length);
   p_vector_impl.reset(impl);
-  p_set_distributed(impl);
+  p_setDistributed(impl);
 }
 
 // -------------------------------------------------------------

@@ -8,7 +8,7 @@
 /**
  * @file   distributed.hpp
  * @author William A. Perkins
- * @date   2013-09-06 14:57:27 d3g096
+ * @date   2013-11-08 11:45:15 d3g096
  * 
  * @brief  
  * 
@@ -121,7 +121,7 @@ protected:
   Distributed *p_distributed;
 
   /// Set the wrapped object
-  void p_set_distributed(Distributed *d) {
+  void p_setDistributed(Distributed *d) {
     p_distributed = d;
   }
 

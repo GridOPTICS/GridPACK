@@ -6,46 +6,36 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   nonlinear_solver_interface.cpp
+ * @file   dae_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:51:17 d3g096
+ * @date   2013-11-13 09:49:20 d3g096
  * 
- * @brief  Implementation of NonlinearSolverInterface
+ * @brief  
  * 
  * 
  */
-// -------------------------------------------------------------
 
-#include "nonlinear_solver_interface.hpp"
+#include "dae_solver.hpp"
 
 namespace gridpack {
 namespace math {
 
 // -------------------------------------------------------------
-//  class NonlinearSolverInterface
+//  class DAESolver
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
-// NonlinearSolverInterface:: constructors / destructor
+// DAESolver:: constructors / destructor
 // -------------------------------------------------------------
-NonlinearSolverInterface::NonlinearSolverInterface()
-  : parallel::WrappedDistributed(), 
-    utility::WrappedConfigurable(),
-    utility::Uncopyable(),
-    p_impl()
-{
-  
-}
-
-NonlinearSolverInterface::~NonlinearSolverInterface(void)
+DAESolver::~DAESolver(void)
 {
 }
 
 // -------------------------------------------------------------
-// NonlinearSolverInterface::p_setImpl
+// DAESolver::p_setImpl
 // -------------------------------------------------------------
 void
-NonlinearSolverInterface::p_setImpl(NonlinearSolverImplementation *impl)
+DAESolver::p_setImpl(DAESolverImplementation *impl)
 {
   p_impl.reset(impl);
   p_setDistributed(p_impl.get());
@@ -53,7 +43,5 @@ NonlinearSolverInterface::p_setImpl(NonlinearSolverImplementation *impl)
 }
 
 
-
 } // namespace math
 } // namespace gridpack
-

@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-28 13:25:58 d3g096
+ * @date   2013-11-14 11:32:42 d3g096
  * 
  * @brief  
  * 
@@ -50,6 +50,9 @@ public:
   PETScVectorImplementation(const parallel::Communicator& comm,
                             const int& local_length);
 
+  /// Construct from an existing PETSc vector
+  PETScVectorImplementation(Vec& pvec, const bool& copyvec = true);
+
   /// Destructor
   /** 
    * @e Collective
@@ -72,14 +75,20 @@ public:
 
 protected:
 
+  /// Extract a Communicator from a PETSc vector
+  static parallel::Communicator p_getCommunicator(const Vec& v);
+
   /// Minimum global index on this processor
-  int p_min_index;
+  int p_minIndex;
 
   /// Maximum global index on this processor
-  int p_max_index;
+  int p_maxIndex;
 
   /// The PETSc representation
   Vec p_vector;
+
+  /// Was @c p_vector created or just wrapped
+  bool p_vectorWrapped;
 
   /// Get the global vector length
   int p_size(void) const;
@@ -117,11 +126,17 @@ protected:
   /// Make all the elements the specified value (specialized)
   void p_fill(const ComplexType& v);
 
+  /// Common method to compute norms 
+  ComplexType p_norm(const NormType& t) const;
+
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   ComplexType p_norm1(void) const;
 
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
   ComplexType p_norm2(void) const;
+
+  /// Compute the vector infinity (or maximum) norm (specialized)
+  ComplexType p_normInfinity(void) const;
 
   /// Replace all elements with its absolute value (specialized) 
   void p_abs(void);

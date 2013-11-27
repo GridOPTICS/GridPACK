@@ -50,7 +50,7 @@ protected:
   Matrix *p_solve(const Matrix& B) const;
 
   /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::Cursor *props);
+  void p_configure(utility::Configuration::CursorPtr props);
 
 };
 

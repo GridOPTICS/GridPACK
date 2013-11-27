@@ -6,7 +6,7 @@
 /**
  * @file   graph_partitioner.cpp
  * @author William A. Perkins
- * @date   2013-09-06 13:36:16 d3g096
+ * @date   2013-11-08 11:51:42 d3g096
  * 
  * @brief  
  * 
@@ -32,7 +32,7 @@ GraphPartitioner::GraphPartitioner(const parallel::Communicator& comm)
     utility::Uncopyable(),
     p_impl(new ParMETISGraphPartitionerImpl(comm))
 {
-  p_set_distributed(p_impl.get());
+  p_setDistributed(p_impl.get());
 }
 
 GraphPartitioner::GraphPartitioner(const parallel::Communicator& comm,
@@ -41,7 +41,7 @@ GraphPartitioner::GraphPartitioner(const parallel::Communicator& comm,
     utility::Uncopyable(),
     p_impl(new ParMETISGraphPartitionerImpl(comm, local_nodes, local_edges))
 {
-  p_set_distributed(p_impl.get());
+  p_setDistributed(p_impl.get());
 }
 
 } // namespace network

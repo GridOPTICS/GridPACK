@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:16:00 d3g096
+ * @date   2013-11-08 09:04:45 d3g096
  * 
  * @brief  Abstract class NonlinearSolverImplementation implementation 
  * 
@@ -47,7 +47,10 @@ NonlinearSolverImplementation::NonlinearSolverImplementation(const parallel::Com
     p_J(), p_F(), 
     p_X((Vector *)NULL, null_deleter()),  // pointer set by solve()
     p_jacobian(form_jacobian), 
-    p_function(form_function)
+    p_function(form_function),
+    p_solutionTolerance(1.0e-05),
+    p_functionTolerance(1.0e-10),
+    p_maxIterations(50)
 {
   p_F.reset(new Vector(this->communicator(), local_size));
   int cols;
@@ -73,6 +76,20 @@ NonlinearSolverImplementation::solve(Vector &x)
   p_X.reset(&x, null_deleter());
   this->p_solve();
 }
+
+// -------------------------------------------------------------
+// NonlinearSolverImplementation::p_configure
+// -------------------------------------------------------------
+void
+NonlinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
+{
+  if (props) {
+    p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
+    p_functionTolerance = props->get("FunctionTolerance", p_functionTolerance);
+    p_maxIterations = props->get("MaxIterations", p_maxIterations);
+  }
+}
+
 
 } // namespace math
 } // namespace gridpack

@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-10-28 13:44:47 d3g096
+ * @date   2013-11-14 11:34:01 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -78,6 +78,18 @@ public:
    * @return empty vector instance
    */
   Vector(const parallel::Communicator& comm, const int& local_length);
+
+  /// Constuct with an existing implementation
+  /** 
+   * This constructor is used to create a new vector instance using an
+   * existing VectorImplementation instance.  This is needed by
+   * certain vector operations.
+   * 
+   * @param vimpl pointer to a new, allocated VectorImplementation instance
+   * 
+   * @return new vector instance using the specified implementation
+   */
+  explicit Vector(VectorImplementation *vimpl);
 
   /// Destructor
   /** 
@@ -477,6 +489,12 @@ public:
     return p_vector_impl->norm2();
   }
 
+  /// Compute the infinity (or maximum) norm
+  ComplexType normInfinity(void) const
+  {
+    return p_vector_impl->normInfinity();
+  }
+
   // FIXME more ...
 
   /// Make this instance ready to use
@@ -638,18 +656,6 @@ protected:
   
   /// Where stuff really happens
   boost::scoped_ptr<VectorImplementation> p_vector_impl;
-
-  /// Constuct with an existing implementation
-  /** 
-   * This constructor is used to create a new vector instance using an
-   * existing VectorImplementation instance.  This is needed by
-   * certain vector operations.
-   * 
-   * @param vimpl pointer to a new, allocated VectorImplementation instance
-   * 
-   * @return new vector instance using the specified implementation
-   */
-  explicit Vector(VectorImplementation *vimpl);
 
   /// Is this Vector compatible with this one, throw if not
   /** 

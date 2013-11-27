@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:26:45 d3g096
+ * @date   2013-11-13 08:35:39 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -16,7 +16,6 @@
  */
 // -------------------------------------------------------------
 
-#include <mpi.h>
 #include <iostream>
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
@@ -32,7 +31,7 @@
 #include "newton_raphson_solver.hpp"
 
 /// The configuration used for these tests
-static boost::scoped_ptr<gridpack::utility::Configuration::Cursor> test_config;
+static gridpack::utility::Configuration::CursorPtr test_config;
 
 
 BOOST_AUTO_TEST_SUITE(NonlinearSolverTest)
@@ -84,7 +83,7 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
-  solver.configure(test_config.get());
+  solver.configure(test_config);
 
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
@@ -114,11 +113,11 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
   gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
-  solver.configure(test_config.get());
+  solver.configure(test_config);
 
   // check to see if correct values came from the configuration
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
-  BOOST_CHECK_EQUAL(solver.maximum_iterations(), 100);
+  BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
@@ -179,7 +178,7 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
-  solver.configure(test_config.get());
+  solver.configure(test_config);
 
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
@@ -209,11 +208,11 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
   gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
-  solver.configure(test_config.get());
+  solver.configure(test_config);
 
   // check to see if correct values came from the configuration
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
-  BOOST_CHECK_EQUAL(solver.maximum_iterations(), 100);
+  BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
   gridpack::math::Vector X(self, 2);
   X.setElement(0, 2.00);
@@ -324,7 +323,7 @@ BOOST_AUTO_TEST_CASE( example2 )
   gridpack::math::NonlinearSolver solver(world, local_size, j, f);
 
   BOOST_REQUIRE(test_config);
-  solver.configure(test_config.get());
+  solver.configure(test_config);
 
   gridpack::math::Vector X(world, local_size);
   X.fill(0.5);
@@ -355,11 +354,11 @@ BOOST_AUTO_TEST_CASE( example2_nr )
   gridpack::math::NewtonRaphsonSolver solver(world, local_size, j, f);
 
   BOOST_REQUIRE(test_config);
-  solver.configure(test_config.get());
+  solver.configure(test_config);
 
   // check to see if correct values came from the configuration
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
-  BOOST_CHECK_EQUAL(solver.maximum_iterations(), 100);
+  BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
   gridpack::math::Vector X(world, local_size);
   X.fill(0.5);
@@ -396,7 +395,7 @@ main(int argc, char **argv)
   config->enableLogging();
   config->open("gridpack.xml", world);
 
-  test_config.reset(config->getCursor("GridPACK.MathTests"));
+  test_config = config->getCursor("GridPACK.MathTests");
 
   gridpack::math::Initialize();
 

@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:23:06 d3g096
+ * @date   2013-11-08 11:49:58 d3g096
  * 
  * @brief  PETSc-specific implementation of NonlinearSolver
  * 
@@ -35,9 +35,9 @@ NonlinearSolver::NonlinearSolver(const parallel::Communicator& comm,
                                  FunctionBuilder form_function)
   : NonlinearSolverInterface()
 {
-  p_set_impl(new PetscNonlinearSolverImplementation(comm, local_size, 
+  p_setImpl(new PetscNonlinearSolverImplementation(comm, local_size, 
                                                     form_jacobian, form_function));
-  p_set_distributed(p_impl.get());
+  p_setDistributed(p_impl.get());
 }
 
 } // namespace math

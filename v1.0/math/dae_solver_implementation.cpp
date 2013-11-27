@@ -6,54 +6,53 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   nonlinear_solver_interface.cpp
+ * @file   dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:51:17 d3g096
+ * @date   2013-11-12 13:58:40 d3g096
  * 
- * @brief  Implementation of NonlinearSolverInterface
+ * @brief  
  * 
  * 
  */
-// -------------------------------------------------------------
 
-#include "nonlinear_solver_interface.hpp"
+#include "dae_solver_implementation.hpp"
 
 namespace gridpack {
 namespace math {
 
 // -------------------------------------------------------------
-//  class NonlinearSolverInterface
+//  class DAESolverImplementation
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
-// NonlinearSolverInterface:: constructors / destructor
+// DAESolverImplementation:: constructors / destructor
 // -------------------------------------------------------------
-NonlinearSolverInterface::NonlinearSolverInterface()
-  : parallel::WrappedDistributed(), 
-    utility::WrappedConfigurable(),
+DAESolverImplementation::DAESolverImplementation(const parallel::Communicator& comm, 
+                                                 const int local_size,
+                                                 DAEJacobianBuilder& jbuilder,
+                                                 DAEFunctionBuilder& fbuilder)
+  : parallel::Distributed(comm),
+    utility::Configurable("DAESolver"),
     utility::Uncopyable(),
-    p_impl()
+    p_J(comm, local_size, comm.size()*local_size),
+    p_Fbuilder(fbuilder), p_Jbuilder(jbuilder)
 {
   
 }
 
-NonlinearSolverInterface::~NonlinearSolverInterface(void)
+DAESolverImplementation::~DAESolverImplementation(void)
 {
 }
 
 // -------------------------------------------------------------
-// NonlinearSolverInterface::p_setImpl
+// DAESolverImplementation::p_configure
 // -------------------------------------------------------------
 void
-NonlinearSolverInterface::p_setImpl(NonlinearSolverImplementation *impl)
+DAESolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
-  p_impl.reset(impl);
-  p_setDistributed(p_impl.get());
-  p_setConfigurable(p_impl.get());
+  // empty
 }
-
 
 
 } // namespace math
 } // namespace gridpack
-

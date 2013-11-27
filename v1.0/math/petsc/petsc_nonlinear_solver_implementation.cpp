@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-31 07:10:42 d3g096
+ * @date   2013-11-12 10:53:23 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,7 @@
 #include "petsc/petsc_matrix_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
+#include "petsc/petsc_vector_implementation.hpp"
 #include "petsc/petsc_configuration.hpp"
 
 static PetscErrorCode  
@@ -112,6 +113,14 @@ PetscNonlinearSolverImplementation::p_build(const std::string& option_prefix)
     ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
 
     ierr = SNESMonitorSet(p_snes, MonitorNorms, PETSC_NULL, PETSC_NULL); CHKERRXX(ierr);
+
+    ierr = SNESSetTolerances(p_snes, 
+                             p_functionTolerance, 
+                             PETSC_DEFAULT,
+                             p_solutionTolerance,
+                             p_maxIterations, 
+                             PETSC_DEFAULT);
+                             
     ierr = SNESSetFromOptions(p_snes); CHKERRXX(ierr);
     
   } catch (const PETSc::Exception& e) {
@@ -123,8 +132,9 @@ PetscNonlinearSolverImplementation::p_build(const std::string& option_prefix)
 // PetscNonlinearSolverImplementation::p_configure
 // -------------------------------------------------------------
 void
-PetscNonlinearSolverImplementation::p_configure(utility::Configuration::Cursor *props)
+PetscNonlinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
+  NonlinearSolverImplementation::p_configure(props);
   std::string prefix(petscProcessOptions(this->communicator(), props));
   p_build(prefix);
 }
@@ -176,14 +186,21 @@ PetscNonlinearSolverImplementation::FormFunction(SNES snes, Vec x, Vec f, void *
     (PetscNonlinearSolverImplementation *)dummy;
 
   // Apparently, you cannot count on x and f (like in FormJacobian())
-  // being the same as those used to set up SNES, so copying is
-  // necessary
-  ierr = VecCopy(x, *(solver->p_petsc_X)); CHKERRQ(ierr);
+  // being the same as those used to set up SNES, so the PETSc
+  // solution and function vectors are wrapped temporarily for the
+  // user function
+
+  boost::scoped_ptr<Vector> 
+    xtmp(new Vector(new PETScVectorImplementation(x, false)));
+
+  boost::scoped_ptr<Vector> 
+    ftmp(new Vector(new PETScVectorImplementation(f, false)));
 
   // Call the user-specified function (object) to form the RHS
-  (solver->p_function)(*(solver->p_X), *(solver->p_F));
+  (solver->p_function)(*xtmp, *ftmp);
 
-  ierr = VecCopy(*(solver->p_petsc_F), f); CHKERRQ(ierr);
+  xtmp.reset();
+  ftmp.reset();
 
   return ierr;
 }

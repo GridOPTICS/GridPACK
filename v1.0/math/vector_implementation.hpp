@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-10-28 13:25:55 d3g096
+ * @date   2013-11-14 11:35:49 d3g096
  * 
  * @brief  
  * 
@@ -147,6 +147,12 @@ public:
     return this->p_norm2();
   }
 
+  /// Compute the infinity (or maximum) norm
+  ComplexType normInfinity(void) const
+  {
+    return this->p_normInfinity();
+  }
+
   /// Replace all elements with its absolute value (complex magnitude) 
   void abs(void)
   {
@@ -250,6 +256,9 @@ protected:
 
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
   virtual ComplexType p_norm2(void) const = 0;
+
+  /// Compute the vector infinity (or maximum) norm (specialized)
+  virtual ComplexType p_normInfinity(void) const = 0;
 
   /// Replace all elements with its absolute value (specialized) 
   virtual void p_abs(void) = 0;

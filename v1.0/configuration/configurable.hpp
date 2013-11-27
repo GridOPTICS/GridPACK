@@ -8,7 +8,7 @@
 /**
  * @file   configurable.h
  * @author William A. Perkins
- * @date   2013-10-08 08:31:12 d3g096
+ * @date   2013-11-08 09:00:49 d3g096
  * 
  * @brief  
  * 
@@ -29,6 +29,38 @@ namespace gridpack {
 namespace utility {
 
 // -------------------------------------------------------------
+//  class ConfigurableInterface
+// -------------------------------------------------------------
+class ConfigurableInterface {
+public:
+
+  /// Copy constructor
+  ConfigurableInterface(const ConfigurableInterface& old) {};
+
+  /// Destructor
+  virtual ~ConfigurableInterface(void) {};
+
+  /// Get this instance's configuration key
+  virtual std::string configurationKey(void) const = 0;
+
+  /// Set this instance's configuration key
+  virtual void configurationKey(const std::string& s) = 0;
+
+  /// Is this instance configured?
+  virtual bool isConfigured(void) const = 0;
+
+  /// Initialize this instance using the specified configuration property tree
+  virtual void configure(utility::Configuration::CursorPtr theprops) = 0;
+
+protected:
+
+  /// Default constructor (only for children)
+  ConfigurableInterface(void) {};
+
+};
+
+
+// -------------------------------------------------------------
 //  class Configurable
 // -------------------------------------------------------------
 /**
@@ -38,7 +70,9 @@ namespace utility {
  * key which identifies its part of the Configuration option tree.
  *
  */
-class Configurable {
+class Configurable 
+  : public ConfigurableInterface
+{
 public:
 
   /// Copy constructor
@@ -49,7 +83,7 @@ public:
   {}
 
   /// Destructor
-  virtual ~Configurable(void) {}
+  ~Configurable(void) {}
 
   /// Get this instance's configuration key
   std::string configurationKey(void) const
@@ -70,15 +104,15 @@ public:
   }
 
   /// Initialize this instance using the specified configuration property tree
-  void configure(utility::Configuration::Cursor *theprops)
+  void configure(utility::Configuration::CursorPtr theprops)
   {
-    if (theprops != NULL) {
-      p_configCursor.reset(theprops->getCursor(this->p_key));
+    if (theprops) {
+      p_configCursor = theprops->getCursor(this->p_key);
     }
-    this->p_configure(p_configCursor.get());
+    this->p_configure(p_configCursor);
     p_isConfigured = true;
   }
-
+  
 protected:
 
   /// Default constructor (only for children)
@@ -96,7 +130,7 @@ protected:
   {}
 
   /// Specialized way to configure from property tree
-  virtual void p_configure(utility::Configuration::Cursor *props) = 0;
+  virtual void p_configure(utility::Configuration::CursorPtr props) = 0;
 
   /// The configuration cursor used by this instance
   /**
@@ -104,7 +138,7 @@ protected:
    * referred to later.  
    * 
    */
-  boost::shared_ptr<utility::Configuration::Cursor> p_configCursor;
+  utility::Configuration::CursorPtr p_configCursor;
 
 private:
 
@@ -115,6 +149,73 @@ private:
   bool p_isConfigured;
 
 };
+
+// -------------------------------------------------------------
+//  class WrappedConfigurable
+// -------------------------------------------------------------
+class WrappedConfigurable 
+  : public ConfigurableInterface
+{
+public:
+
+  /// Copy constructor
+  WrappedConfigurable(const WrappedConfigurable& old) 
+    : ConfigurableInterface(old), 
+      p_configurable(old.p_configurable)
+  {}
+
+  /// Destructor
+  ~WrappedConfigurable(void) 
+  {}
+
+  /// Get this instance's configuration key
+  std::string configurationKey(void) const
+  {
+    return p_configurable->configurationKey();
+  }
+
+  /// Set this instance's configuration key
+  void configurationKey(const std::string& s) 
+  {
+    p_configurable->configurationKey(s);
+  }
+
+  /// Is this instance configured?
+  bool isConfigured(void) const
+  {
+    return p_configurable->isConfigured();
+  }
+
+  /// Initialize this instance using the specified configuration property tree
+  void configure(utility::Configuration::CursorPtr theprops)
+  {
+    p_configurable->configure(theprops);
+  }
+
+protected:
+
+  /// Default constructor (only for childred)
+  WrappedConfigurable(void)
+    : ConfigurableInterface(), p_configurable()
+  {}
+
+  /// Constructor with existing Configurable instance (only for childred)
+  WrappedConfigurable(Configurable *c) 
+    : ConfigurableInterface(), p_configurable(c)
+  {}
+
+  /// The wrapped Configurable instance
+  Configurable *p_configurable;
+
+  /// Set the wrapped Configurable instance
+  void p_setConfigurable(Configurable *c)
+  {
+    p_configurable = c;
+  }
+
+};
+
+
 
 } // namespace utility
 } // namespace gridpack

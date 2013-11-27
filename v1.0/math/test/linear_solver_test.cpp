@@ -31,7 +31,7 @@
 #include "linear_matrix_solver.hpp"
 
 /// The configuration used for these tests
-static boost::scoped_ptr<gridpack::utility::Configuration::Cursor> test_config;
+static gridpack::utility::Configuration::CursorPtr test_config;
 
 
 BOOST_AUTO_TEST_SUITE(LinearSolverTest)
@@ -171,7 +171,7 @@ BOOST_AUTO_TEST_CASE( Versteeg )
     solver(new gridpack::math::LinearSolver(*A));
 
   BOOST_REQUIRE(test_config);
-  solver->configure(test_config.get());
+  solver->configure(test_config);
   solver->solve(*b, *x);
 
   std::auto_ptr<gridpack::math::Vector>
@@ -248,7 +248,7 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
 
   BOOST_REQUIRE(test_config);
   solver->configurationKey("LinearMatrixSolver");
-  solver->configure(test_config.get());
+  solver->configure(test_config);
 
   std::auto_ptr<gridpack::math::Matrix> 
     Ainv(solver->solve(*I));
@@ -322,7 +322,7 @@ BOOST_AUTO_TEST_CASE ( VersteegMatrixInverse )
 
   BOOST_REQUIRE(test_config);
   solver->configurationKey("LinearMatrixSolver");
-  solver->configure(test_config.get());
+  solver->configure(test_config);
 
   std::auto_ptr<gridpack::math::Matrix> 
     Ainv(solver->solve(*I));
@@ -373,7 +373,7 @@ main(int argc, char **argv)
   config->enableLogging();
   config->open("gridpack.xml", world);
 
-  test_config.reset(config->getCursor("GridPACK.MathTests"));
+  test_config = config->getCursor("GridPACK.MathTests");
 
   gridpack::math::Initialize();
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );

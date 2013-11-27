@@ -1,3 +1,4 @@
+# -*- mode: cmake -*-
 #
 #     Copyright (c) 2013 Battelle Memorial Institute
 #     Licensed under modified BSD License. A copy of this license can be found
@@ -9,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2013-06-10 10:44:41 d3g096
+# Last Change: 2013-11-13 14:20:22 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -24,7 +25,7 @@ function(gridpack_add_serial_unit_test test_name test_program)
   set_tests_properties("${the_test_name}"
     PROPERTIES 
     PASS_REGULAR_EXPRESSION "No errors detected"
-    FAIL_REGULAR_EXPRESSION "failure"
+    FAIL_REGULAR_EXPRESSION "failure detected"
   )
 endfunction(gridpack_add_serial_unit_test)
 
@@ -38,7 +39,7 @@ function(gridpack_add_parallel_unit_test test_name test_program)
   set_tests_properties("${the_test_name}"
     PROPERTIES 
     PASS_REGULAR_EXPRESSION "No errors detected"
-    FAIL_REGULAR_EXPRESSION "failure"
+    FAIL_REGULAR_EXPRESSION "failure detected"
   )
 endfunction(gridpack_add_parallel_unit_test)
 

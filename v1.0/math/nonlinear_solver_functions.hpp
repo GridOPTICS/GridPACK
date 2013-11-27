@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_functions.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:15:29 d3g096
+ * @date   2013-11-07 11:23:36 d3g096
  * 
  * @brief Declaration of function (objects) used by nonlinear solvers
  * to build a Jacobian and RHS.
@@ -89,9 +89,9 @@ typedef boost::function<void (const Vector& x, Matrix& J)> JacobianBuilder;
        // ...
        F.ready();
      }
-   } 
+   }; 
    my_function_builder_type my_function_builder;
-   JacobianBuilder j = my_function_builder;
+   JacobianBuilder j = boost::ref(my_function_builder);
    \endcode
  * 
  * are equivalent. The latter is usually more convenient because

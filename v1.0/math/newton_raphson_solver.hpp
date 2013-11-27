@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:24:41 d3g096
+ * @date   2013-11-07 14:30:58 d3g096
  * 
  * @brief  
  * 
@@ -75,40 +75,6 @@ public:
    */
   ~NewtonRaphsonSolver(void);
 
-  /// Get the solution tolerance
-  /** 
-   * 
-   * 
-   * 
-   * @return current solution tolerance
-   */
-  double tolerance(void) const;
-
-  /// Set the solver tolerance
-  /** 
-   * 
-   * 
-   * @param tol new solution tolerance
-   */
-  void tolerance(const double& tol);
-
-  /// Get the maximum iterations
-  /** 
-   * 
-   * 
-   * 
-   * @return current maximum number of solution iterations
-   */
-  int maximum_iterations(void) const;
-
-
-  /// Set the maximum solution iterations
-  /** 
-   * 
-   * 
-   * @param n new maximum number of iterations
-   */
-  void maximum_iterations(const int& n);
 };
 
 

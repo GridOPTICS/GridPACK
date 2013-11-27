@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-11 10:08:23 d3g096
+ * @date   2013-11-12 09:27:16 d3g096
  * 
  * @brief  
  * 
@@ -65,6 +65,53 @@ public:
     p_A->equate(A);
     this->p_setMatrix();
   }
+
+  /// Get the solution tolerance
+  /** 
+   * 
+   * 
+   * 
+   * @return current solution tolerance
+   */
+  double tolerance(void) const
+  {
+    return p_solutionTolerance;
+  }
+
+  /// Set the solver tolerance
+  /** 
+   * 
+   * 
+   * @param tol 
+   */
+  void tolerance(const double& tol) 
+  {
+    p_solutionTolerance = tol;
+  }
+
+  /// Get the maximum iterations
+  /** 
+   * 
+   * 
+   * 
+   * @return 
+   */
+  int maximumIterations(void) const
+  {
+    return p_maxIterations;
+  }
+
+  /// Set the maximum iterations
+  /** 
+   * 
+   * 
+   * @param n current maximum number of iterations
+   */
+  void maximumIterations(const int& n) 
+  {
+    p_maxIterations = n;
+  }
+
   /// Allow visits by implemetation visitor
   void accept(ImplementationVisitor& visitor)
   {
@@ -82,6 +129,29 @@ protected:
   /// The coefficient matrix (may not need to remember)
   boost::scoped_ptr<Matrix> p_A;
   
+  /// The solution residual norm tolerance
+  /**
+   * This is the absolute solution tolerance. The linear system is
+   * considered solved when the solution residual norm is below this value.
+   * This is just handed to the underlying math library, so 
+   * 
+   */
+  double p_solutionTolerance;
+
+  /// The relative solution tolerance.
+  /**
+   * The linear system is considered solved when the solution residual
+   * norm is @em reduced by the specified amount.
+   * 
+   */
+  double p_relativeTolerance;
+
+  /// The maximum number of iterations to perform
+  int p_maxIterations;
+
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::CursorPtr props);
+
   /// Solve w/ the specified RHS, put result in specified vector
   /** 
    * Can be called repeatedly with different @c b and @c x vectors
