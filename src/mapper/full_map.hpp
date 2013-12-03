@@ -305,9 +305,18 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
 
   *icount = 0;
   *jcount = 0;
+
+  int maxrow,idx,jdx;
+
+  p_maxrow = 0;
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+  
+  bool chk;
+
   for (int i = 0; i < p_nBuses; i++) {
     status = p_network->getBus(i)->matrixDiagSize(&iSize, &jSize);
     if (status) {
+      maxrow = 0;
       p_network->getBus(i)->getMatVecIndex(&index);
       if (iSize > 0) {
         iSizeArray[*icount]     = iSize;
@@ -319,6 +328,19 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
         *(jIndexArray[*jcount])  = index;
         (*jcount)++;
       }
+      maxrow += jSize;
+      branches.clear();
+      p_network->getBus(i)->getNeighborBranches(branches);
+      for(int j = 0; j<branches.size(); j++) {
+        branches[j]->getMatVecIndices(&idx, &jdx);
+        if (index == idx) {
+          chk = branches[j]->matrixForwardSize(&iSize, &jSize);
+        } else {
+          chk = branches[j]->matrixReverseSize(&iSize, &jSize);
+        }
+        if (chk) maxrow += jSize;
+      }
+      if (p_maxrow < maxrow) p_maxrow = maxrow;
     }
   }
 }
@@ -846,6 +868,7 @@ int                         p_busContribution;
 int                         p_branchContribution;
 int                         p_maxIBlock;
 int                         p_maxJBlock;
+int                         p_maxrow;
 
     // global matrix block size array
 int                         gaMatBlksI; // g_idx
