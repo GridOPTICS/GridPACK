@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-12 10:27:53 d3g096
+ * @date   2013-12-04 07:04:24 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -60,8 +60,11 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
     p_matrixWrapped(false)
 {
   PetscErrorCode ierr(0);
-  static const PetscInt diagonal_non_zero_guess(10);
-  static const PetscInt offdiagonal_non_zero_guess(10);
+  static const int non_zero_min(5);
+  PetscInt diagonal_non_zero_guess(static_cast<PetscInt>(0.10*global_cols));
+  diagonal_non_zero_guess = std::max(diagonal_non_zero_guess, non_zero_min);
+  PetscInt offdiagonal_non_zero_guess(static_cast<PetscInt>(0.05*global_cols));
+  offdiagonal_non_zero_guess = std::max(offdiagonal_non_zero_guess, non_zero_min);
   try {
 
     // If any ownership arguments are specifed, *all* ownership
@@ -92,16 +95,16 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
     } else {
       if (this->communicator().size() == 1) {
         ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
-        // ierr = MatSeqAIJSetPreallocation(p_matrix, 
-        //                                  diagonal_non_zero_guess + offdiagonal_non_zero_guess,
-        //                                  PETSC_NULL); CHKERRXX(ierr);
+        ierr = MatSeqAIJSetPreallocation(p_matrix, 
+                                         diagonal_non_zero_guess + offdiagonal_non_zero_guess,
+                                         PETSC_NULL); CHKERRXX(ierr);
       } else {
         ierr = MatSetType(p_matrix, MATMPIAIJ); CHKERRXX(ierr);
-        // ierr = MatMPIAIJSetPreallocation(p_matrix, 
-        //                                  diagonal_non_zero_guess,
-        //                                  PETSC_NULL,
-        //                                  offdiagonal_non_zero_guess, 
-        //                                  PETSC_NULL); CHKERRXX(ierr);
+        ierr = MatMPIAIJSetPreallocation(p_matrix, 
+                                         diagonal_non_zero_guess,
+                                         PETSC_NULL,
+                                         offdiagonal_non_zero_guess, 
+                                         PETSC_NULL); CHKERRXX(ierr);
       }
       // By default, new elements that are not pre-allocated cause an
       // error. Let's disable that. With the preallocation above, it
@@ -383,6 +386,15 @@ PETScMatrixImplementation::p_ready(void)
   try {
     ierr = MatAssemblyBegin(p_matrix, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
     ierr = MatAssemblyEnd(p_matrix, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
+    MatInfo info;
+    ierr = MatGetInfo(p_matrix,MAT_LOCAL,&info);
+    std::cerr << this->processor_rank() << ": Matrix::ready(): "
+              << "size = (" << this->p_rows() << "x" << this->p_cols() << "), "
+              << "#assembled = " << info.assemblies << ", "
+              << "#mallocs = " << info.mallocs << ", "
+              << "#nz allocated = " << info.nz_allocated << ", "
+              << "#nz used = " << info.nz_used << ", "
+              << std::endl;
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
