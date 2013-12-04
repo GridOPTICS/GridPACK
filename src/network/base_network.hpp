@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-10-07 15:00:09 d3g096
+ * @date   2013-12-02 13:36:14 d3g096
  * 
  * @brief  
  * 
@@ -892,6 +892,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
   /// Partition the network over the available processes
   void partition(void)
   {
+    if (this->processor_size() <= 1) return;
     GraphPartitioner partitioner(this->communicator(),
                                  p_buses.size(), p_branches.size());
 
