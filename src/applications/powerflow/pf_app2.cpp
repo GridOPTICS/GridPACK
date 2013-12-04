@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2013-11-07 14:34:05 d3g096
+ * @date   2013-12-04 14:13:46 d3g096
  * 
  * @brief  
  * 
@@ -51,6 +51,9 @@ struct PFSolverHelper
   /// The powerflow network controlled by ::p_factory
   boost::shared_ptr<PFNetwork> p_network;
 
+  /// A place to build/store the Jacobian
+  boost::shared_ptr<math::Matrix> J;
+
   /// The network state estimate from previous solver iteration
   /**
    * See ::update() for why this is necessary.
@@ -87,13 +90,16 @@ struct PFSolverHelper
   PFSolverHelper(PFFactory& factory, boost::shared_ptr<PFNetwork> network)
     : p_factory(factory), p_network(network), Xold(), Xdelta()
   {
-    factory.setMode(State);
+    p_factory.setMode(State);
     mapper::BusVectorMap<PFNetwork> vMap(p_network);
     Xold = vMap.mapToVector();
     // Xold->print();
     X.reset(Xold->clone());
     Xdelta.reset(Xold->clone());
     Xdelta->zero();
+    p_factory.setMode(Jacobian);
+    mapper::FullMatrixMap<PFNetwork> jMap(p_network);
+    J = jMap.mapToMatrix();
   }
   
   /// Push the current estimated state back onto the network 
@@ -141,7 +147,7 @@ struct PFSolverHelper
    * @param J Jacobian 
    */
   void
-  operator() (const math::Vector& Xcur, math::Matrix& J)
+  operator() (const math::Vector& Xcur, math::Matrix& theJ)
   {
     // In both the Netwon-Raphson and PETSc nonlinear solver (some
     // methods) implementations, the RHS function builder is called
@@ -156,7 +162,7 @@ struct PFSolverHelper
     mapper::FullMatrixMap<PFNetwork> jMap(p_network);
     
     // build the Jacobian
-    jMap.mapToMatrix(J);
+    jMap.mapToMatrix(theJ);
   }
   
   /// Build the RHS function vector
@@ -288,16 +294,12 @@ PFApp2::execute(void)
   boost::scoped_ptr<math::NonlinearSolverInterface> solver;
   if (useNewton) {
     math::NewtonRaphsonSolver *tmpsolver = 
-      new math::NewtonRaphsonSolver(network->communicator(),
-                                    helper.X->local_size(), 
-                                    jbuildf, fbuildf);
+      new math::NewtonRaphsonSolver(*(helper.J), jbuildf, fbuildf);
     tmpsolver->tolerance(1.0e-08);
     tmpsolver->maximumIterations(50);
     solver.reset(tmpsolver);
   } else {
-    solver.reset(new math::NonlinearSolver(network->communicator(),
-                                           helper.X->local_size(), 
-                                           jbuildf, fbuildf));
+    solver.reset(new math::NonlinearSolver(*(helper.J), jbuildf, fbuildf));
   }
 
   try {

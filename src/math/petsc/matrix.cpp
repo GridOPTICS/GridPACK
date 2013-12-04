@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-12-03 13:40:30 d3g096
+ * @date   2013-12-04 12:13:07 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -57,6 +57,37 @@ Matrix::Matrix(const parallel::Communicator& comm,
   BOOST_ASSERT(p_matrix_impl);
   p_setDistributed(p_matrix_impl.get());
 }
+
+
+Matrix::Matrix(const parallel::Communicator& comm,
+               const int& local_rows,
+               const int& cols,
+               const int& max_nz_per_row)
+  : parallel::WrappedDistributed(), utility::Uncopyable(),
+    p_matrix_impl()
+{
+  p_matrix_impl.reset(new PETScMatrixImplementation(comm,
+                                                    local_rows, cols, 
+                                                    max_nz_per_row));
+  BOOST_ASSERT(p_matrix_impl);
+  p_setDistributed(p_matrix_impl.get());
+}
+
+Matrix::Matrix(const parallel::Communicator& comm,
+               const int& local_rows,
+               const int& cols,
+               const int *nz_by_row)
+  : parallel::WrappedDistributed(), utility::Uncopyable(),
+    p_matrix_impl()
+{
+  p_matrix_impl.reset(new PETScMatrixImplementation(comm,
+                                                    local_rows, cols, 
+                                                    nz_by_row));
+  BOOST_ASSERT(p_matrix_impl);
+  p_setDistributed(p_matrix_impl.get());
+}
+
+
 
 // -------------------------------------------------------------
 // Matrix::equate

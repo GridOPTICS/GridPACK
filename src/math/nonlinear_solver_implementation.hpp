@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-12 09:27:43 d3g096
+ * @date   2013-12-04 13:50:19 d3g096
  * 
  * @brief  
  * 
@@ -43,6 +43,11 @@ public:
   /// Default constructor.
   NonlinearSolverImplementation(const parallel::Communicator& comm,
                                 const int& local_size,
+                                JacobianBuilder form_jacobian,
+                                FunctionBuilder form_function);
+
+  /// Constructor that uses an existing Jacobian Matrix.
+  NonlinearSolverImplementation(Matrix& J,
                                 JacobianBuilder form_jacobian,
                                 FunctionBuilder form_function);
 

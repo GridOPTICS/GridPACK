@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:49:58 d3g096
+ * @date   2013-12-04 14:10:14 d3g096
  * 
  * @brief  PETSc-specific implementation of NonlinearSolver
  * 
@@ -37,6 +37,15 @@ NonlinearSolver::NonlinearSolver(const parallel::Communicator& comm,
 {
   p_setImpl(new PetscNonlinearSolverImplementation(comm, local_size, 
                                                     form_jacobian, form_function));
+  p_setDistributed(p_impl.get());
+}
+
+NonlinearSolver::NonlinearSolver(Matrix& J,
+                                 JacobianBuilder form_jacobian,
+                                 FunctionBuilder form_function)
+  : NonlinearSolverInterface()
+{
+  p_setImpl(new PetscNonlinearSolverImplementation(J, form_jacobian, form_function));
   p_setDistributed(p_impl.get());
 }
 

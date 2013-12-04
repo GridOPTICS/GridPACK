@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:28:22 d3g096
+ * @date   2013-12-04 14:09:39 d3g096
  * 
  * @brief  
  * 
@@ -72,6 +72,11 @@ public:
    */
   NonlinearSolver(const parallel::Communicator& comm,
                   const int& local_size,
+                  JacobianBuilder form_jacobian,
+                  FunctionBuilder form_function);
+
+
+  NonlinearSolver(Matrix& J,
                   JacobianBuilder form_jacobian,
                   FunctionBuilder form_function);
 

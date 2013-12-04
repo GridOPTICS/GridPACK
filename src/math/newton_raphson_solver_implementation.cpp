@@ -8,7 +8,7 @@
 /**
  * @file   newton_raphson_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-07 14:31:52 d3g096
+ * @date   2013-12-04 13:56:37 d3g096
  * 
  * @brief  
  * 
@@ -34,6 +34,15 @@ NewtonRaphsonSolverImplementation::NewtonRaphsonSolverImplementation(const paral
                                                                      JacobianBuilder form_jacobian,
                                                                      FunctionBuilder form_function)
   : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
+    p_linear_solver()
+{
+  this->configurationKey("NewtonRaphsonSolver");
+}
+
+NewtonRaphsonSolverImplementation::NewtonRaphsonSolverImplementation(Matrix& J,
+                                                                     JacobianBuilder form_jacobian,
+                                                                     FunctionBuilder form_function)
+  : NonlinearSolverImplementation(J, form_jacobian, form_function),
     p_linear_solver()
 {
   this->configurationKey("NewtonRaphsonSolver");

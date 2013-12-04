@@ -73,8 +73,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   boost::shared_ptr<gridpack::math::Matrix>
-             Ret(new gridpack::math::Matrix(comm,
-             p_rowBlockSize, p_jDim, gridpack::math::Matrix::Sparse));
+    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
   loadBusData(Ret,true);
   loadBranchData(Ret,true);
   GA_Sync();
