@@ -37,6 +37,7 @@
     <UseNewton>false</UseNewton>
     <NewtonRaphsonSolver>
       <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
       <MaxIterations>50</MaxIterations>
       <LinearSolver>
         <SolutionTolerance>1.0E-08</SolutionTolerance>

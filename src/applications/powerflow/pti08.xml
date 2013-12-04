@@ -39,8 +39,8 @@
       <SolutionTolerance>1.0E-05</SolutionTolerance>
       <MaxIterations>50</MaxIterations>
       <LinearSolver>
-        <SolutionTolerance>1.0E-15</SolutionTolerance>
-        <RelativeTolerance>1.0e-10</RelativeTolerance>
+        <SolutionTolerance>1.0E-10</SolutionTolerance>
+        <RelativeTolerance>1.0e-05</RelativeTolerance>
         <MaxIterations>10000</MaxIterations>
         <PETScOptions>
           -ksp_type bicg

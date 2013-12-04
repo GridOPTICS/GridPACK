@@ -41,10 +41,11 @@
     <UseNewton>false</UseNewton>
     <NewtonRaphsonSolver>
       <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
       <MaxIterations>50</MaxIterations>
       <LinearSolver>
-        <SolutionTolerance>1.0E-08</SolutionTolerance>
-        <RelativeTolerance>1.0e-12</RelativeTolerance>
+        <SolutionTolerance>1.0E-10</SolutionTolerance>
+        <RelativeTolerance>1.0e-06</RelativeTolerance>
         <MaxIterations>50</MaxIterations>
         <PETScOptions>
           -ksp_monitor
@@ -54,15 +55,15 @@
     </NewtonRaphsonSolver>
     <NonlinearSolver> 
       <SolutionTolerance>1.0E-05</SolutionTolerance>
-      <FunctionTolerance>1.0E-10</FunctionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
       <MaxIterations>50</MaxIterations>
       <PETScOptions>
         -snes_view
         -snes_monitor
         -snes_linesearch_monitor 
         -snes_linesearch_type basic
-        -ksp_atol 1.0e-08
-        -ksp_rtol 1.0e-12
+        -ksp_atol 1.0e-10
+        -ksp_rtol 1.0e-06
         -ksp_monitor
       </PETScOptions>
     </NonlinearSolver>
