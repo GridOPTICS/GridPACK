@@ -121,6 +121,7 @@ template <class _network>
             p_branchData[i]->dump();
           }
 #endif
+          input.close();
         }
       }
 

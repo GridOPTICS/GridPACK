@@ -15,8 +15,15 @@
 
 #include <iostream>
 #include <string>
-//#include <gridpack/parser/Parser.hpp>
+#include <boost/mpi/environment.hpp>
+#include <boost/mpi/communicator.hpp>
+#include <boost/mpi/collectives.hpp>
 #include <gridpack/parser/PTI23_parser.hpp>
+#include <gridpack/configuration/configuration.hpp>
+#include <gridpack/timer/coarse_timer.hpp>
+
+#include "mpi.h"
+#include <macdecls.h>
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -25,11 +32,43 @@
 #define EPSILON     0.0000001
 #define TOLERANCE(x, y, eps) (x - EPSILON > y && x + EPSILON < y)
 
-//BOOST_AUTO_TEST_SUITE(Parser)
+BOOST_AUTO_TEST_SUITE(Parser)
 
-//____________________________________________________________________________//
+BOOST_AUTO_TEST_CASE( SerialInputTest )
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  std::string                line;
 
-//BOOST_AUTO_TEST_SUITE_END()
+  // read configuration file
+  gridpack::utility::Configuration *config =
+    gridpack::utility::Configuration::configuration();
+  gridpack::parallel::Communicator world;
+  config->open("test.xml",world);
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.TestParser");
+  std::string filename = cursor->get("networkConfiguration",
+      "No network configuration specified");
+
+  int me;
+  int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  int t_read = timer->createCategory("Serial Read");
+  timer->start(t_read);
+  if (me == 0) {
+    std::ifstream            input;
+    input.open("pti08.raw");
+    if (!input.is_open()) {
+      throw gridpack::Exception("failed to open case data file");
+    }
+    while(std::getline(input,line)) {
+    }
+    input.close();
+  }
+  timer->stop(t_read);
+  timer->dump();
+}
+
+BOOST_AUTO_TEST_SUITE_END()
 
 // -------------------------------------------------------------
 // init_function
@@ -45,7 +84,18 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
+  gridpack::parallel::Environment env(argc, argv);
+  boost::mpi::communicator world;
+  int me = world.rank();
+  GA_Initialize();
+  int stack = 200000, heap = 200000;
+  MA_init(C_DBL, stack, heap);
+  if (me == 0) {
+    printf("Testing Serial Input\n");
+  }
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+
+  GA_Terminate();
 }
 
 

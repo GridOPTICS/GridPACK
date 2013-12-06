@@ -14,7 +14,9 @@
 # -------------------------------------------------------------
 
 set(target_libraries
-    gridpack_components
+    gridpack_parallel
+    gridpack_timer
+    gridpack_configuration
     ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
