@@ -25,7 +25,6 @@
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
-#include "gridpack/configuration/configuration.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/applications/powerflow/pf_factory.hpp"
@@ -53,6 +52,11 @@ gridpack::powerflow::PFApp::~PFApp(void)
  */
 void gridpack::powerflow::PFApp::execute(void)
 {
+  // load input file
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Total Application");
+  timer->start(t_total);
   gridpack::parallel::Communicator world;
   boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
 
@@ -64,9 +68,6 @@ void gridpack::powerflow::PFApp::execute(void)
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
 
-  // load input file
-  gridpack::utility::CoarseTimer *timer =
-    gridpack::utility::CoarseTimer::instance();
   int t_pti = timer->createCategory("PTI Parser");
   timer->start(t_pti);
   gridpack::parser::PTI23_parser<PFNetwork> parser(network);
@@ -92,54 +93,56 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
-  int t_fload = timer->createCategory("Factory Load");
-  timer->start(t_fload);
+  int t_fact = timer->createCategory("Factory");
+  timer->start(t_fact);
   factory.load();
-  timer->stop(t_fload);
 
   // set network components using factory
-  int t_fset = timer->createCategory("Factory Set Components");
-  timer->start(t_fset);
   factory.setComponents();
-  timer->stop(t_fset);
 
   // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
-  int t_fex = timer->createCategory("Factory Set Exchange");
-  timer->start(t_fex);
   factory.setExchange();
-  timer->stop(t_fex);
+  timer->stop(t_fact);
 
   // Create bus data exchange
-  int t_setupdt = timer->createCategory("Set Bus Update");
-  timer->start(t_setupdt);
+  int t_updt = timer->createCategory("Bus Update");
+  timer->start(t_updt);
   network->initBusUpdate();
-  timer->stop(t_setupdt);
-
+  timer->stop(t_updt);
 
   // set YBus components so that you can create Y matrix
+  timer->start(t_fact);
   factory.setYBus();
+  timer->stop(t_fact);
 
   // Create serial IO object to export data from buses
   gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
   char ioBuf[128];
 
-  int t_ymap = timer->createCategory("Create Y-matrix Mapper");
-  timer->start(t_ymap);
+  int t_cmap = timer->createCategory("Create Mappers");
+  timer->start(t_cmap);
   factory.setMode(YBus); 
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
-  timer->stop(t_ymap);
-  int t_ybus = timer->createCategory("Create Y-matrix");
-  timer->start(t_ybus);
+  timer->stop(t_cmap);
+  int t_mmap = timer->createCategory("Map to Matrix");
+  timer->start(t_mmap);
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  timer->stop(t_ybus);
+  timer->stop(t_mmap);
 //  busIO.header("\nY-matrix values\n");
 //  Y->print();
-  Y->save("Ybus.m");
+//  Y->save("Ybus.m");
 
+  timer->start(t_fact);
   factory.setMode(S_Cal);
+  timer->stop(t_fact);
+  timer->start(t_cmap);
   gridpack::mapper::BusVectorMap<PFNetwork> vvMap(network);
+  timer->stop(t_cmap);
+  int t_vmap = timer->createCategory("Map to Vector");
+  timer->start(t_vmap);
   boost::shared_ptr<gridpack::math::Vector> vv = vvMap.mapToVector();
+  timer->stop(t_vmap);
 //  vv->save("vv.m");
 
   boost::shared_ptr<gridpack::math::Vector> Yvv(multiply(*Y, *vv)); 
@@ -147,32 +150,36 @@ void gridpack::powerflow::PFApp::execute(void)
 
 
   // make Sbus components to create S vector
+  timer->start(t_fact);
   factory.setSBus();
+  timer->stop(t_fact);
   busIO.header("\nIteration 0\n");
 
   // Set PQ
-  int t_pqmap = timer->createCategory("Create PQ Mapper");
-  timer->start(t_pqmap);
+  timer->start(t_cmap);
   factory.setMode(RHS); 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
-  timer->stop(t_pqmap);
-  int t_pqvec = timer->createCategory("Create PQ Vector");
-  timer->start(t_pqvec);
+  timer->stop(t_cmap);
+  timer->start(t_vmap);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-  timer->stop(t_pqvec);
+  timer->stop(t_vmap);
 //  busIO.header("\nPQ values\n");
 //  PQ->print();
 //  busIO.header("\n   Elements of PQ vector\n");
 //  busIO.header("\n   Bus Number           P                   Q      Neighbors\n");
 //  busIO.write("pq");
-  PQ->save("PQ.m");
+//  PQ->save("PQ.m");
 #if 1
+  timer->start(t_cmap);
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
+  timer->stop(t_cmap);
+  timer->start(t_mmap);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+  timer->stop(t_mmap);
   busIO.header("\nJacobian values\n");
 //  J->print(); 
-  J->save("J.m");
+//  J->save("J.m");
 
 
 #if 1
@@ -188,11 +195,11 @@ void gridpack::powerflow::PFApp::execute(void)
   max_iteration = 50;
 
   // Create linear solver
-  int t_lsolv = timer->createCategory("Linear Solver");
-  timer->start(t_lsolv);
+  int t_csolv = timer->createCategory("Create Linear Solver");
+  timer->start(t_csolv);
   gridpack::math::LinearSolver isolver(*J);
   isolver.configure(cursor);
-  timer->stop(t_lsolv);
+  timer->stop(t_csolv);
 
   tol = 2.0*tolerance;
   int iter = 0;
@@ -200,6 +207,7 @@ void gridpack::powerflow::PFApp::execute(void)
   // First iteration
   X->zero(); //might not need to do this
   busIO.header("\nCalling solver\n");
+  int t_lsolv = timer->createCategory("Solve Linear Equation");
   timer->start(t_lsolv);
   isolver.solve(*PQ, *X);
   timer->stop(t_lsolv);
@@ -207,15 +215,17 @@ void gridpack::powerflow::PFApp::execute(void)
 //  busIO.header("\nX values\n");
 //  X->save("X.m");
 
-  // Create timer for bus exchange
-  int t_updt = timer->createCategory("Bus Update");
+  // Create timer for map to bus
+  int t_bmap = timer->createCategory("Map to Bus");
 
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
+    timer->start(t_bmap);
     factory.setMode(RHS);
     vMap.mapToBus(X);
+    timer->stop(t_bmap);
 
     // Exchange data between ghost buses (I don't think we need to exchange data
     // between branches)
@@ -224,12 +234,16 @@ void gridpack::powerflow::PFApp::execute(void)
     timer->stop(t_updt);
 
     // Create new versions of Jacobian and PQ vector
+    timer->start(t_vmap);
     vMap.mapToVector(PQ);
+    timer->stop(t_vmap);
 //    sprintf(ioBuf,"\nIteration %d Print PQ\n",iter+1);
 //    busIO.header(ioBuf);
 //    PQ->print();
+    timer->start(t_mmap);
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
+    timer->stop(t_mmap);
 
     // Create linear solver
     timer->start(t_lsolv);
@@ -249,8 +263,10 @@ void gridpack::powerflow::PFApp::execute(void)
   }
 #endif
   // Push final result back onto buses
+  timer->start(t_bmap);
   factory.setMode(RHS);
   vMap.mapToBus(X);
+  timer->stop(t_bmap);
 
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(128,network);
   branchIO.header("\n   Branch Power Flow\n");
@@ -263,6 +279,7 @@ void gridpack::powerflow::PFApp::execute(void)
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   busIO.write();
 #endif
+  timer->stop(t_total);
   timer->dump();
 
 }
