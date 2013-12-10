@@ -445,15 +445,21 @@ void gridpack::dynamic_simulation::DSBus::setIJaco(void)
  */
 gridpack::dynamic_simulation::DSBranch::DSBranch(void)
 {
-  p_reactance = 0.0;
-  p_resistance = 0.0;
-  //p_tap_ratio = 1.0;
-  p_phase_shift = 0.0;
-  p_charging = 0.0;
-  p_shunt_admt_g1 = 0.0;
-  p_shunt_admt_b1 = 0.0;
-  p_shunt_admt_g2 = 0.0;
-  p_shunt_admt_b2 = 0.0;
+  p_reactance.clear();
+  p_resistance.clear();
+  p_tap_ratio.clear();
+  p_phase_shift.clear();
+  p_charging.clear();
+  p_shunt_admt_g1.clear();
+  p_shunt_admt_b1.clear();
+  p_shunt_admt_g2.clear();
+  p_shunt_admt_b2.clear();
+  p_xform.clear();
+  p_shunt.clear();
+  p_branch_status.clear();
+  p_elems = 0;
+  p_theta = 0.0;
+  p_sbase = 0.0;
   p_mode = YBUS;
 }
 
@@ -495,9 +501,13 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
   } else if (p_mode == GENERATOR) {
   }*/
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (p_active) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      return false;
+    }
   } else {
     return false;
   }
@@ -522,9 +532,13 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
     }
   } else if (p_mode == YBUS) {*/
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
-    *isize = 1;
-    *jsize = 1;
-    return true;
+    if (p_active) {
+      *isize = 1;
+      *jsize = 1;
+      return true;
+    } else {
+      return false;
+    }
   } else {
     return false;
   }
@@ -539,8 +553,12 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
 bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
-    values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd); 
-    return true;
+    if (p_active) {
+      values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd); 
+      return true;
+    } else {
+      return false;
+    }
   /*} else if (p_mode == PERM) {
     values[0] = 0;
     values[1] = 0;
@@ -585,8 +603,13 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *va
 bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
-    values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
-    return true;
+    if (p_active) {
+      values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
+      return true;
+      return true;
+    } else {
+      return false;
+    }
   /*} else if (p_mode == PERM) {
     values[0] = 0;
     values[1] = 0;
@@ -632,34 +655,46 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *va
 // Calculate contributions to the admittance matrix from the branches
 void gridpack::dynamic_simulation::DSBranch::setYBus(void)
 {
-  gridpack::ComplexType ret(p_resistance,p_reactance);
-  ret = -1.0/ret;
-  gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
-  a = p_tap_ratio*a;
-  if (p_xform) {
-    p_ybusr_frwd = real(ret/conj(a));
-    p_ybusi_frwd = imag(ret/conj(a));
-    p_ybusr_rvrs = real(ret/a);
-    p_ybusi_rvrs = imag(ret/a);
-  } else {
-    p_ybusr_frwd = real(ret);
-    p_ybusi_frwd = imag(ret);
-    p_ybusr_rvrs = real(ret);
-    p_ybusi_rvrs = imag(ret);
+  int i;
+  p_ybusr_frwd = 0.0;
+  p_ybusi_frwd = 0.0;
+  p_ybusr_rvrs = 0.0;
+  p_ybusi_rvrs = 0.0;
+  for (i=0; i<p_elems; i++) {
+    gridpack::ComplexType ret(p_resistance[i],p_reactance[i]);
+    ret = -1.0/ret; 
+    gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+    a = p_tap_ratio[i]*a;
+    if (p_branch_status[i] == 1) {
+      if (p_xform[i]) {
+        p_ybusr_frwd += real(ret/conj(a));
+        p_ybusi_frwd += imag(ret/conj(a));
+        p_ybusr_rvrs += real(ret/a);
+        p_ybusi_rvrs += imag(ret/a);
+      } else {
+        p_ybusr_frwd += real(ret);
+        p_ybusi_frwd += imag(ret);
+        p_ybusr_rvrs += real(ret);
+        p_ybusi_rvrs += imag(ret);
+      }
+    }
   }
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
-  gridpack::dynamic_simulation::DSBus *bus1 = 
+  gridpack::dynamic_simulation::DSBus *bus1 =
     dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
-  gridpack::dynamic_simulation::DSBus *bus2 =  
+  gridpack::dynamic_simulation::DSBus *bus2 =
     dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus2().get());
+//  if (p_xform) {
+//    printf ("from %d-> to %d: p_phase_shift = %f, a = %f+%fi\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), p_phase_shift, real(a), imag(a) );
+//  }
   //p_theta = bus1->getPhase() - bus2->getPhase();
   double pi = 4.0*atan(1.0);
   p_theta = (bus1->getPhase() - bus2->getPhase());
   //printf("p_phase_shift: %12.6f\n",p_phase_shift);
   //printf("p_theta: %12.6f\n",p_theta);
   //printf("p_tap_ratio: %12.6f\n",p_tap_ratio);
-   
+ 
 }
 
 /**
@@ -673,25 +708,46 @@ void gridpack::dynamic_simulation::DSBranch::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   bool ok = true;
-  ok = ok && data->getValue(BRANCH_X, &p_reactance);
-  ok = ok && data->getValue(BRANCH_R, &p_resistance);
-  ok = ok && data->getValue(BRANCH_SHIFT, &p_phase_shift);
-  double temp;
-  ok = ok && data->getValue(BRANCH_TAP, &temp);
-  if (temp != 0.0) {
-    p_tap_ratio = temp;
-    p_xform = true;
-    p_xform = p_xform && data->getValue(BRANCH_X, &p_reactance);
-    p_xform = p_xform && data->getValue(BRANCH_R, &p_resistance);
-  } else {
-    p_xform = false;
+  data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
+  double rvar;
+  int ivar;
+  double pi = 4.0*atan(1.0);
+  p_active = false;
+  ok = data->getValue(CASE_SBASE, &p_sbase);
+  int idx;
+  for (idx = 0; idx<p_elems; idx++) {
+    bool xform = true;
+    xform = xform && data->getValue(BRANCH_X, &rvar, idx);
+    p_reactance.push_back(rvar);
+    xform = xform && data->getValue(BRANCH_R, &rvar, idx);
+    p_resistance.push_back(rvar);
+    ok = ok && data->getValue(BRANCH_SHIFT, &rvar, idx);
+    rvar = -rvar*pi/180.0;
+    p_phase_shift.push_back(rvar);
+    ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
+    p_tap_ratio.push_back(rvar);
+    if (rvar != 0.0) {
+      p_xform.push_back(xform);
+    } else {
+      p_xform.push_back(false);
+    }
+    ivar = 1;
+    data->getValue(BRANCH_STATUS, &ivar, idx);
+    p_branch_status.push_back(ivar);
+    if (ivar == 1) p_active = true;
+    bool shunt = true;
+    shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
+    p_charging.push_back(rvar);
+    shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G1, &rvar, idx);
+    p_shunt_admt_g1.push_back(rvar);
+    shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B1, &rvar, idx);
+    p_shunt_admt_b1.push_back(rvar);
+    shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G2, &rvar, idx);
+    p_shunt_admt_g2.push_back(rvar);
+    shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B2, &rvar, idx);
+    p_shunt_admt_b2.push_back(rvar);
+    p_shunt.push_back(shunt);
   }
-  p_shunt = true;
-  p_shunt = p_shunt && data->getValue(BRANCH_B, &p_charging);
-  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G1, &p_shunt_admt_g1);
-  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B1, &p_shunt_admt_b1);
-  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G2, &p_shunt_admt_g2);
-  p_shunt = p_shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B2, &p_shunt_admt_b2);
 }
 
 /**
@@ -710,11 +766,16 @@ void gridpack::dynamic_simulation::DSBranch::setMode(int mode)
  */
 gridpack::ComplexType gridpack::dynamic_simulation::DSBranch::getAdmittance(void)
 {
-  gridpack::ComplexType ret(p_resistance, p_reactance);
-  if (!p_xform) {
-    ret = -1.0/ret;
-  } else {
-    ret = gridpack::ComplexType(0.0,0.0);
+  int i;
+  gridpack::ComplexType ret(0.0,0.0);
+  for (i=0; i<p_elems; i++) {
+    gridpack::ComplexType tmp(p_resistance[i], p_reactance[i]);
+    if (!p_xform[i] && p_branch_status[i] == 1) {
+      tmp = -1.0/tmp;
+    } else {
+      tmp = gridpack::ComplexType(0.0,0.0);
+    }
+    ret += tmp;
   }
   return ret;
 }
@@ -728,18 +789,25 @@ gridpack::ComplexType gridpack::dynamic_simulation::DSBranch::getAdmittance(void
 gridpack::ComplexType
 gridpack::dynamic_simulation::DSBranch::getTransformer(gridpack::dynamic_simulation::DSBus *bus)
 {
-  gridpack::ComplexType ret(p_resistance,p_reactance);
-  if (p_xform) {
-    ret = -1.0/ret;
-    gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
-    a = p_tap_ratio*a;
-    if (bus == getBus1().get()) {
-      ret = ret/(conj(a)*a);
-    } else if (bus == getBus2().get()) {
-      // ret is unchanged
-    } 
-  } else {
-    ret = gridpack::ComplexType(0.0,0.0);
+  int i;
+  gridpack::ComplexType ret(0.0,0.0);
+  for (i=0; i<p_elems; i++) {
+    gridpack::ComplexType tmp(p_resistance[i],p_reactance[i]);
+    gridpack::ComplexType tmpB(0.0,0.5*p_charging[i]);
+    if (p_xform[i] && p_branch_status[i] == 1) {
+      tmp = -1.0/tmp;
+      tmp = tmp - tmpB;
+      gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+      a = p_tap_ratio[i]*a;
+      if (bus == getBus1().get()) {
+        tmp = tmp/(conj(a)*a);
+      } else if (bus == getBus2().get()) {
+        // tmp is unchanged
+      }
+    } else {
+      tmp = gridpack::ComplexType(0.0,0.0);
+    }
+    ret += tmp;
   }
   return ret;
 }
@@ -753,22 +821,32 @@ gridpack::ComplexType
 gridpack::dynamic_simulation::DSBranch::getShunt(gridpack::dynamic_simulation::DSBus *bus)
 {
   double retr, reti;
-  if (p_shunt) {
-    retr = 0.5*p_charging;
-    reti = 0.0;
-    // HACK: pointer comparison, maybe could handle this better
-    if (bus == getBus1().get()) {
-      retr += p_shunt_admt_g1;
-      reti += p_shunt_admt_b1;
-    } else if (bus == getBus2().get()) {
-      retr += p_shunt_admt_g2;
-      reti += p_shunt_admt_b2;
-    } else {
-      // TODO: Some kind of error
+  retr = 0.0;
+  reti = 0.0;
+  int i;
+  for (i=0; i<p_elems; i++) {
+    double tmpr, tmpi;
+    if (p_shunt[i] && p_branch_status[i] == 1) {
+      tmpr = 0.0;
+      tmpi = 0.0;
+      if (!p_xform[i]) {
+        tmpi = 0.5*p_charging[i];
+        tmpr = 0.0;
+      }
+      // HACK: pointer comparison, maybe could handle this better
+      if (bus == getBus1().get()) {
+        tmpr += p_shunt_admt_g1[i];
+        tmpi += p_shunt_admt_b1[i];
+      } else if (bus == getBus2().get()) {        tmpr += p_shunt_admt_g2[i];        tmpi += p_shunt_admt_b2[i];
+      } else {
+        // TODO: Some kind of error
+      }
+    } else { 
+      tmpr = 0.0;
+      tmpi = 0.0;
     }
-  } else {
-    retr = 0.0;
-    reti = 0.0;
+    retr += tmpr;
+    reti += tmpi;
   }
   return gridpack::ComplexType(retr,reti);
 }
@@ -782,6 +860,25 @@ gridpack::ComplexType
 gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2)
 { 
   double retr, reti;
+  int i;
+  gridpack::dynamic_simulation::DSBus *bus1 =
+    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
+  gridpack::dynamic_simulation::DSBus *bus2 =
+    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus2().get());
+  if (bus1->getOriginalIndex() == sw2_2+1 && bus2->getOriginalIndex() == sw3_2+1) {
+    for (i=0; i<p_elems; i++) {
+      gridpack::ComplexType myValue(p_resistance[i], p_reactance[i]);
+      myValue = 1.0 / myValue;
+      //printf("myValue = %f+%fi\n", real(myValue), imag(myValue));
+      //printf("%f %f\n", p_resistance, p_reactance);
+      retr = real(myValue);
+      reti = imag(myValue);
+      return gridpack::ComplexType(retr, reti);
+    }
+  } else {
+    return gridpack::ComplexType(-999.0, -999.0); // return a dummy value
+  }
+/*  double retr, reti;
   gridpack::dynamic_simulation::DSBus *bus1 =
     dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
   gridpack::dynamic_simulation::DSBus *bus2 =
@@ -797,5 +894,6 @@ gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, in
   } else {
     return gridpack::ComplexType(-999.0, -999.0); // return a dummy value
   }
+*/
 }
 

@@ -254,20 +254,24 @@ class DSBranch
     gridpack::ComplexType getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2);
 
   private:
-    double p_reactance;
-    double p_resistance;
-    double p_tap_ratio;
-    double p_phase_shift;
-    double p_charging;
-    double p_shunt_admt_g1;
-    double p_shunt_admt_b1;
-    double p_shunt_admt_g2;
-    double p_shunt_admt_b2;
-    bool p_xform, p_shunt;
+    std::vector<double> p_reactance;
+    std::vector<double> p_resistance;
+    std::vector<double> p_tap_ratio;
+    std::vector<double> p_phase_shift;
+    std::vector<double> p_charging;
+    std::vector<double> p_shunt_admt_g1;
+    std::vector<double> p_shunt_admt_b1;
+    std::vector<double> p_shunt_admt_g2;
+    std::vector<double> p_shunt_admt_b2;
+    std::vector<bool> p_xform, p_shunt;
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
+    double p_sbase;
+    std::vector<int> p_branch_status;
+    int p_elems;
+    bool p_active;
 };
 
 /// The type of network used in the dynamic_simulation application
