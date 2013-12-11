@@ -202,10 +202,16 @@ bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
     }
   } else if (p_mode == DAE_init) {
     if (p_ngen > 0) {
-      *size = 4;
+      //*size = 4;
     } else {
       return false;
     }
+  } else if (p_mode == init_pelect || p_mode == init_eprime || p_mode == init_mac_ang || p_mode == init_mac_spd || p_mode == init_eqprime || p_mode == init_pmech || p_mode == init_mva || p_mode == init_d0 || p_mode == init_h) {
+    if (p_ngen > 0) {
+      *size = 1;
+     } else {
+      return false;
+     }
   } else {
     *size = 2;
   }
@@ -248,8 +254,6 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
         p_mva[i] = p_sbase / p_mva[i]; 
-        user_gen_d0 = p_d0[i] / p_mva[i];
-        user_gen_h = p_h[i] / p_mva[i];
         double eterm = p_voltage;
         double pelect = p_pg[i];
         double qelect = p_qg[i];
@@ -266,24 +270,106 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
         gridpack::ComplexType eprime(0.0, 0.0);
         eprime = v + jay * p_dtr[i] * curr;
         double mac_ang = atan2(imag(eprime), real(eprime));
-        double mac_spd = 0.0;
-        user_eqprime = abs(eprime);
-        user_pmech = pelect;
-        //printf("\neterm: %f\n", eterm);
-        //printf("curr: %f+%fi\n", real(curr), imag(curr));
-        //printf("phi: %f\n", phi);
-        //printf("v: %f+%fi\n", real(v), imag(v));
-        //printf("eprime: %f+%fi\n", real(eprime), imag(eprime));
-        //printf("mac_ang: %f\n", mac_ang);
-        //printf("mac_spd: %f\n", mac_spd);
-        values[4*i] = mac_ang; 
-        values[4*i+1] = mac_spd;
-        values[4*i+2] = sin(mac_ang) * real(curr) - cos(mac_ang) * imag(curr);
-        values[4*i+3] = cos(mac_ang) * real(curr) + sin(mac_ang) * imag(curr);
-        //printf("%d: %f\n", 4*i, mac_ang);
-        //printf("%d: %f\n", 4*i+1, mac_spd);
-        //printf("%d: %f\n", 4*i+2, sin(mac_ang) * real(curr) - cos(mac_ang) * imag(curr));
-        //printf("%d: %f\n", 4*i+3, cos(mac_ang) * real(curr) + sin(mac_ang) * imag(curr));
+        double mac_spd = 1.0; 
+        double eqprime = abs(eprime);
+        double pmech = pelect;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_pelect) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[i] = p_pg[i];
+        p_pelect.push_back(values[i]);
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_eprime) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        p_mva[i] = p_sbase / p_mva[i]; 
+        double eterm = p_voltage;
+        double pelect = p_pg[i];
+        double qelect = p_qg[i];
+        double currr = sqrt(pelect * pelect + qelect * qelect) / eterm * p_mva[i];
+        double phi = atan2(qelect, pelect);  
+        double pi = 4.0*atan(1.0);
+        double vi = p_angle;
+        gridpack::ComplexType v(0.0, vi);
+        v = eterm * exp(v);
+        double curri = p_angle - phi;
+        gridpack::ComplexType curr(0.0, curri);
+        curr = currr * exp(curr);
+        gridpack::ComplexType jay(0.0, 1.0);
+        values[i] = v + jay * p_dtr[i] * curr;
+        p_eprime.push_back(values[i]);
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_mac_ang) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[0] = atan2(imag(p_eprime[i]), real(p_eprime[i]));
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_mac_spd) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[0] = 1.0; 
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_eqprime) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[0] = abs(p_eprime[i]); 
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_pmech) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[0] = abs(p_pelect[i]); 
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_mva) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[0] = p_mva[i]; 
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_d0) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[0] = p_d0[i]; 
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == init_h) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[0] = p_h[i]; 
       }
       return true;
     } else {

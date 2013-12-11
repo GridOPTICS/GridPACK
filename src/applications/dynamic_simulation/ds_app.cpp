@@ -256,17 +256,320 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   posfy11->print();
 
   //-----------------------------------------------------------------------
-  // DAE implementation 
+  // DAE implementation (Modified Euler Method)
   //-----------------------------------------------------------------------
   // Set initial conditions
-  factory.setMode(DAE_init);  
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap(network);
-  boost::shared_ptr<gridpack::math::Vector> X = XMap.mapToVector();
-  printf("\n=== DAE initial X: ============\n");
-  X->print();
+  //factory.setMode(DAE_init);
+ 
+  // Map to create vector pelect  
+  factory.setMode(init_pelect);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap1(network);
+  boost::shared_ptr<gridpack::math::Vector> pelect = XMap1.mapToVector();
+  printf("\n=== pelect: ===\n");
+  pelect->print();
 
-  //gridpack::dynamic_simulation::DSSimu simu(network);
-  //simu.setIFunction();
-  
+  // Map to create vector eprime_s0 
+  factory.setMode(init_eprime);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap2(network);
+  boost::shared_ptr<gridpack::math::Vector> eprime_s0 = XMap2.mapToVector();
+  printf("\n=== eprime: ===\n");
+  eprime_s0->print();
+
+  // Map to create vector mac_ang_s0
+  factory.setMode(init_mac_ang);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap3(network);
+  boost::shared_ptr<gridpack::math::Vector> mac_ang_s0 = XMap3.mapToVector();
+  printf("\n=== mac_ang_s0: ===\n");
+  mac_ang_s0->print();
+
+  // Map to create vector mac_spd_s0
+  factory.setMode(init_mac_spd);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap4(network);
+  boost::shared_ptr<gridpack::math::Vector> mac_spd_s0 = XMap4.mapToVector();
+  printf("\n=== mac_spd_s0: ===\n");
+  mac_spd_s0->print();
+
+  // Map to create vector eqprime
+  factory.setMode(init_eqprime);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap5(network);
+  boost::shared_ptr<gridpack::math::Vector> eqprime = XMap5.mapToVector();
+  printf("\n=== eqprime: ===\n");
+  eqprime->print();
+
+  // Map to create vector pmech  
+  factory.setMode(init_pmech);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap6(network);
+  boost::shared_ptr<gridpack::math::Vector> pmech = XMap6.mapToVector();
+  printf("\n=== pmech: ===\n");
+  pmech->print();
+
+  // Map to create vector mva
+  factory.setMode(init_mva);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap7(network);
+  boost::shared_ptr<gridpack::math::Vector> mva = XMap7.mapToVector();
+  printf("\n=== mva: ===\n");
+  mva->print();
+
+  // Map to create vector d0
+  factory.setMode(init_d0);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap8(network);
+  boost::shared_ptr<gridpack::math::Vector> d0 = XMap8.mapToVector();
+  printf("\n=== d0: ===\n");
+  d0->print();
+
+  // Map to create vector h
+  factory.setMode(init_h);
+  gridpack::mapper::BusVectorMap<DSNetwork> XMap9(network);
+  boost::shared_ptr<gridpack::math::Vector> h = XMap9.mapToVector();
+  printf("\n=== h: ===\n");
+  h->print();
+
+  // Declare vector mac_ang_s1, mac_spd_s1
+  boost::shared_ptr<gridpack::math::Vector> mac_ang_s1; 
+  boost::shared_ptr<gridpack::math::Vector> mac_spd_s1;
+ 
+  // Declare vector eprime_s1
+  boost::shared_ptr<gridpack::math::Vector> eprime_s1;
+ 
+  // Declare vector dmac_ang_s0, dmac_spd_s0, dmac_ang_s1, dmac_spd_s1
+  boost::shared_ptr<gridpack::math::Vector> dmac_ang_s0; 
+  boost::shared_ptr<gridpack::math::Vector> dmac_ang_s1; 
+  boost::shared_ptr<gridpack::math::Vector> dmac_spd_s0; 
+  boost::shared_ptr<gridpack::math::Vector> dmac_spd_s1; 
+
+  // Declare vector curr
+  boost::shared_ptr<gridpack::math::Vector> curr;
+
+  boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
+  boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
+  boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
+
+  // Simulation related variables
+  int simu_k;
+  int t_step[20];
+  double t_width[20];
+  int flagF;
+  int S_Steps;
+  int last_S_Steps;
+  int steps3, steps2, steps1;
+  double h_sol1, h_sol2;
+  int flagF1, flagF2;
+  int I_Steps;
+
+  const double sysFreq = 60.0;
+  double pi = 4.0*atan(1.0);
+  const double basrad = 2.0 * pi * sysFreq;
+
+  // assume switch info is set up here instead of reading from the input file
+  int nswtch = 4;
+  static double sw1[4] = {0.0, 0.03, 0.06, 0.1};
+  static double sw7[4] = {0.01, 0.01, 0.01, 0.01}; 
+  simu_k = 0; 
+  for (int i = 0; i < nswtch-1; i++) {
+    t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);   
+    t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i];
+    simu_k += t_step[i];
+  }
+  simu_k++;
+
+  steps3 = t_step[0] + t_step[1] + t_step[2] - 1;
+  steps2 = t_step[0] + t_step[1] - 1;
+  steps1 = t_step[0] - 1;
+  h_sol1 = t_width[0];
+  h_sol2 = h_sol1;
+  flagF1 = 0; 
+  flagF2 = 0; 
+  S_Steps = 1; 
+  last_S_Steps = -1;
+
+  for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
+    if (I_Steps < steps1) {
+      S_Steps = I_Steps;
+      flagF1 = 0;
+      flagF2 = 0;
+    } else if (I_Steps == steps1) { 
+      S_Steps = I_Steps;
+      flagF1 = 0;
+      flagF2 = 1;
+    } else if (I_Steps == steps1+1) {
+      S_Steps = I_Steps;
+      flagF1 = 1;
+      flagF2 = 1;
+    } else if ((I_Steps>steps1+1) && (I_Steps<steps2+1)) {
+      S_Steps = I_Steps - 1;
+      flagF1 = 1;
+      flagF2 = 1;
+    } else if (I_Steps==steps2+1) {
+      S_Steps = I_Steps - 1;
+      flagF1 = 1;
+      flagF2 = 2;
+    } else if (I_Steps==steps2+2) {
+      S_Steps = I_Steps - 1;
+      flagF1 = 2;
+      flagF2 = 2;
+    } else if (I_Steps>steps2+2) {
+      S_Steps = I_Steps - 2;
+      flagF1 = 2;
+      flagF2 = 2;
+    }
+
+    if (I_Steps !=0 && last_S_Steps != S_Steps) {
+      //VecCopy(mac_ang_s1, mac_ang_s0);
+      mac_ang_s1.reset(mac_ang_s0->clone());      
+      //VecCopy(mac_spd_s1, mac_spd_s0);
+      mac_spd_s1.reset(mac_spd_s0->clone());      
+      //VecCopy(eprime_s1, eprime_s0);
+      eprime_s1.reset(eprime_s0->clone());      
+    }
+
+    //VecCopy(mac_ang_s0, vecTemp);
+    boost::shared_ptr<gridpack::math::Vector> vecTemp(mac_ang_s0->clone());
+    //VecScale(vecTemp, PETSC_i);
+    gridpack::ComplexType jay(0.0, 1.0);
+    vecTemp->scale(jay);
+    //! Several Vector/Matrix operation methods are missing in gridpack::math library
+    //! starting from this line (marked by "//!")
+    //! VecExp(vecTemp);    
+    //! VecPointwiseMult(eprime_s0, eqprime, vecTemp);
+     
+    // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
+    if (flagF1 == 0) {
+      //MatMultTranspose(prefy11, eprime_s0, curr);
+      //boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
+      curr.reset(multiply(*trans_prefy11, *eprime_s0)); 
+    } else if (flagF1 == 1) {
+      //MatMultTranspose(fy11, eprime_s0, curr);
+      //boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
+      curr.reset(multiply(*trans_fy11, *eprime_s0)); 
+    } else if (flagF1 == 2) {
+      //MatMultTranspose(posfy11, eprime_s0, curr);
+      //boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
+      curr.reset(multiply(*trans_posfy11, *eprime_s0)); 
+    } 
+    
+    // ---------- CALL mac_em2(k,S_Steps): ----------
+    // ---------- pelect: ----------
+    //VecConjugate(curr);
+    curr->conjugate();
+    //! VecPointwiseMult(pelect, eprime_s0, curr);
+    //VecCopy(pelect, vecTemp);
+    vecTemp.reset(pelect->clone());
+    //VecConjugate(vecTemp);
+    vecTemp->conjugate(); 
+    //! VecAXPY(pelect, 1.0, vecTemp);
+    //VecScale(pelect, 0.5); // (pelect+conj(pelect))/2 is to get the real part of pelect
+    pelect->scale(0.5);
+    // ---------- dmac_ang: ----------
+    //VecCopy(mac_spd_s0, vecTemp);
+    vecTemp.reset(mac_spd_s0->clone());
+    //VecShift(vecTemp, -1.0);
+    vecTemp->add(-1.0);
+    //VecScale(vecTemp, basrad);
+    vecTemp->scale(basrad);
+    //VecCopy(vecTemp, dmac_ang_s0);
+    dmac_ang_s0.reset(vecTemp->clone());
+    // ---------- dmac_spd: ----------
+    //! VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
+    //VecCopy(pmech, dmac_spd_s0);
+    dmac_spd_s0.reset(pmech->clone());
+    //! VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva
+    //VecCopy(mac_spd_s0, vecTemp);
+    vecTemp.reset(mac_spd_s0->clone());
+    //VecShift(vecTemp, -1.0);
+    vecTemp->add(-1.0);
+    //! VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s0 - 1.0)
+    //! VecAXPY(dmac_spd_s0, -1.0, vecTemp1); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s0 - 1.0)
+    //VecCopy(h, vecTemp);
+    vecTemp.reset(h->clone());
+    //VecScale(vecTemp, 2); // 2 * gen_h
+    vecTemp->scale(2.0);
+    //VecPointwiseDivide(dmac_spd_s0, dmac_spd_s0, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s0-1.0) )/(2*gen_h) 
+
+    //VecCopy(mac_ang_s0, mac_ang_s1);
+    mac_ang_s1.reset(mac_ang_s0->clone());
+    //! VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
+    //VecCopy(mac_spd_s0, mac_spd_s1);
+    mac_spd_s1.reset(mac_spd_s0->clone());
+    //! VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
+    //! VecAXPY(mac_spd_s1, h_sol1, dmac_spd_s0);
+
+    //VecCopy(mac_ang_s1, vecTemp);
+    vecTemp.reset(mac_ang_s1->clone());
+    //VecScale(vecTemp, PETSC_i);
+    vecTemp->scale(jay);
+    //! VecExp(vecTemp);
+    //! VecPointwiseMult(eprime_s1, eqprime, vecTemp);
+
+    // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
+    if (flagF2 == 0) {
+      //MatMultTranspose(prefy11, eprime_s1, curr)
+      //curr.reset(multiply(*trans_prefy11, *eprime_s1)); //comment this line out because eprime_s1 is not available yet! 
+    } else if (flagF2 == 1) {
+      //MatMultTranspose(fy11, eprime_s1, curr);
+      //curr.reset(multiply(*trans_fy11, *eprime_s1)); 
+    } else if (flagF2 == 2) {
+      //MatMultTranspose(posfy11, eprime_s1, curr);
+      //curr.reset(multiply(*trans_posfy11, *eprime_s1)); 
+    }
+
+    // ---------- CALL mac_em2(k,S_Steps+1): ---------- 
+    // ---------- pelect: ----------
+    //VecConjugate(curr);
+    curr->conjugate();
+    //! VecPointwiseMult(pelect, eprime_s1, curr);
+    //VecCopy(pelect, vecTemp);
+    vecTemp.reset(pelect->clone());
+    //VecConjugate(vecTemp);
+    vecTemp->conjugate();
+    //! VecAXPY(pelect, 1.0, vecTemp);
+    //VecScale(pelect, 0.5); // (pelect+conj(pelect))/2 is to get the real part of pelect
+    pelect->scale(0.5);
+    // ---------- dmac_ang: ----------
+    //VecCopy(mac_spd_s1, vecTemp);
+    vecTemp.reset(mac_spd_s1->clone());
+    //VecShift(vecTemp, -1.0);
+    vecTemp->add(-1.0);
+    //VecScale(vecTemp, basrad);
+    vecTemp->scale(basrad);
+    //VecCopy(vecTemp, dmac_ang_s1);
+    dmac_ang_s1.reset(vecTemp->clone());
+    // ---------- dmac_spd: ----------
+    //! VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
+    //VecCopy(pmech, dmac_spd_s1);
+    dmac_spd_s1.reset(pmech->clone());
+    //! VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva
+    //VecCopy(mac_spd_s1, vecTemp);
+    vecTemp.reset(mac_spd_s1->clone());
+    //VecShift(vecTemp, -1.0);
+    vecTemp->add(-1.0);
+    //! VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s1 - 1.0)
+    //! VecAXPY(dmac_spd_s1, -1.0, vecTemp1); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s1 - 1.0)
+    //VecCopy(h, vecTemp);
+    vecTemp.reset(h->clone());
+    //VecScale(vecTemp, 2); // 2 * gen_h
+    vecTemp->scale(2.0);
+    //!VecPointwiseDivide(dmac_spd_s1, dmac_spd_s1, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s1-1.0) )/(2*gen_h) 
+
+    //VecCopy(dmac_ang_s0, vecTemp);
+    vecTemp.reset(mac_ang_s0->clone());
+    //! VecAXPY(vecTemp, 1.0, dmac_ang_s1);
+    //VecScale(vecTemp, 0.5);
+    vecTemp->scale(0.5);
+    //VecCopy(mac_ang_s0, mac_ang_s1);
+    mac_ang_s1.reset(mac_ang_s0->clone());
+    //! VecAXPY(mac_ang_s1, h_sol2, vecTemp);
+    //VecView(mac_ang_s0, PETSC_VIEWER_STDOUT_WORLD);
+    //VecView(mac_ang_s1, PETSC_VIEWER_STDOUT_WORLD);
+    //VecCopy(dmac_spd_s0, vecTemp);
+    vecTemp.reset(mac_spd_s0->clone());
+    //! VecAXPY(vecTemp, 1.0, dmac_spd_s1);
+    //VecScale(vecTemp, 0.5);
+    vecTemp->scale(0.5);
+    //VecCopy(mac_spd_s0, mac_spd_s1);
+    mac_spd_s1.reset(mac_spd_s0->clone());
+    //! VecAXPY(mac_spd_s1, h_sol2, vecTemp);
+
+    last_S_Steps = S_Steps;
+  } 
 }
 

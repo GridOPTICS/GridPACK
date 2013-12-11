@@ -49,8 +49,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-//enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, FY, POSFY};
-enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus, DAE_init};
+enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus, DAE_init, init_pelect, init_eprime, init_mac_ang, init_mac_spd, init_eqprime, init_pmech, init_mva, init_d0, init_h};
 
 class DSBus
   : public gridpack::component::BaseBusComponent {
@@ -165,10 +164,11 @@ class DSBus
     gridpack::ComplexType p_permYmod;
 
     // DAE related variables
-    double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
-    int user_ngen; // User app context variables
+    //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
+    //int user_ngen; // User app context variables
     std::vector<double> p_h, p_d0;
     //std::vector<double> x, xdot; // DAE variables
+    std::vector<gridpack::ComplexType> p_pelect, p_eprime;
     
 };
 
