@@ -8,7 +8,7 @@
 /**
  * @file   adjacency_list.hpp
  * @author William A. Perkins
- * @date   2013-07-24 09:23:15 d3g096
+ * @date   2013-12-11 09:25:04 d3g096
  * 
  * @brief  Declaration of the AdjacencyList class
  * 
@@ -128,10 +128,13 @@ public:
 protected:
 
   typedef std::pair<Index, Index> p_NodeConnect;
+  typedef std::pair<bool, bool> p_Connected;
 
   struct p_Edge {
     Index index;
     p_NodeConnect conn;
+    p_Connected found;
+    p_Edge() : index(0), conn(), found(false, false) {}
   };
   typedef std::vector<p_Edge> p_EdgeVector;
 

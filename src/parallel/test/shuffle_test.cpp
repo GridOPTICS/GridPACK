@@ -6,7 +6,7 @@
 /**
  * @file   shuffle_test.cpp
  * @author William A. Perkins
- * @date   2013-08-01 09:36:46 d3g096
+ * @date   2013-12-12 08:24:01 d3g096
  * 
  * @brief  A test of the Shuffler<> class
  * 
@@ -38,8 +38,8 @@ struct Tester {
     : index(i), label("unset") 
   {
     char c('A');
-    c += i;
-    label = c;
+    c += i%26;
+    label = std::string((i % 10) + 1, c);
   }
   Tester(void) 
     : index(-1), label("unset")
@@ -136,6 +136,40 @@ BOOST_AUTO_TEST_CASE( tester_shuffle )
   shuffle(world, things, dest);
 
   printit(world, things, "After:");
+}
+
+BOOST_AUTO_TEST_CASE( multi_tester_shuffle )
+{
+  boost::mpi::communicator world;
+  const int local_size(5);
+  const int global_size(local_size*world.size());
+  std::vector<Tester> things;
+  std::vector<int> dest;
+
+  things.reserve(local_size);
+  dest.reserve(local_size);
+  for (int i = 0; i < local_size; ++i) {
+    things.push_back(Tester(i));
+    dest.push_back(i % world.size());
+  }
+
+  printit(world, things, "Before:");
+  printit(world, dest, "Destination:");
+
+  Shuffler<Tester> shuffle;
+  shuffle(world, things, dest);
+
+  printit(world, things, "After:");
+
+  // move all to root process
+  dest.clear();
+  dest.resize(things.size(), 0);
+  printit(world, dest, "Destination:");
+
+  shuffle(world, things, dest);
+
+  printit(world, things, "After:");
+    
 }
 
 

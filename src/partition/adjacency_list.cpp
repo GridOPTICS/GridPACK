@@ -7,7 +7,7 @@
 /**
  * @file   adjacency_list.cpp
  * @author William A. Perkins
- * @date   2013-07-24 09:33:23 d3g096
+ * @date   2013-12-11 10:04:35 d3g096
  * 
  * @brief  Implementation of AdjacencyList
  * 
@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <iterator>
+#include <list>
 #include <boost/assert.hpp>
 #include <boost/mpi/collectives.hpp>
 #include "adjacency_list.hpp"
@@ -126,29 +127,49 @@ AdjacencyList::ready(void)
     }
     broadcast(this->communicator(), current_indexes, p);
 
+    // make a copy of the local edges in a list (so it's easier to
+    // remove those completely accounted for)
+    std::list<p_Edge> tmpedges;
+    std::copy(p_edges.begin(), p_edges.end(), 
+              std::back_inserter(tmpedges));
+
     // loop over the process p's node index set
     
     int local_index(0);
     for (IndexVector::iterator n = current_indexes.begin(); 
          n != current_indexes.end(); ++n, ++local_index) {
-      // std::cout << me << ": current node index: " << *n << std::endl;
       
       // determine the local edges that refer to the current node index
  
       connected_indexes.clear();
-      for (p_EdgeVector::iterator e = p_edges.begin();
-           e != p_edges.end(); ++e) {
+      std::list<p_Edge>::iterator e(tmpedges.begin());
+      std::cout << me << ": current node index: " << *n 
+                << ", edges: " << tmpedges.size() 
+                << std::endl;
+      
+      while (e != tmpedges.end()) {
         if (*n == e->conn.first && e->conn.second != bogus) {
           connected_indexes.push_back(e->conn.second);
+          e->found.first = true;
           // std::cout << me << ": found connection: edge " << e->index
           //           << " (" << e->conn.first << ", " << e->conn.second << ")"
           //           << std::endl;
         }
         if (*n == e->conn.second && e->conn.first != bogus) {
           connected_indexes.push_back(e->conn.first);
+          e->found.second = true;
           // std::cout << me << ": found connection: edge " << e->index
           //           << " (" << e->conn.first << ", " << e->conn.second << ")"
           //           << std::endl;
+        }
+        
+        if (e->found.first && e->found.second) {
+          e = tmpedges.erase(e);
+        } else if (e->conn.first == bogus || 
+                   e->conn.second == bogus) {
+          e = tmpedges.erase(e);
+        } else {
+          ++e;
         }
       }
 
