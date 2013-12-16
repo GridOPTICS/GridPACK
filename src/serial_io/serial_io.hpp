@@ -61,6 +61,7 @@ class SerialBusIO {
     p_maskGA = GA_Create_handle();
     GA_Set_data(p_maskGA,one,&nbus,C_INT);
     GA_Allocate(p_maskGA);
+    p_useFile = false;
   }
 
   /**
@@ -71,14 +72,42 @@ class SerialBusIO {
     NGA_Deregister_type(p_GA_type);
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
+    if (GA_Nodeid() == 0) {
+      if (p_fout.is_open()) p_fout.close();
+    }
+  }
+
+  /**
+   * Redirect output to a file instead of standard out
+   * @param filename name of file that output goes to
+   */
+  void open(const char *filename)
+  {
+    if (GA_Nodeid() == 0) {
+      if (p_fout.is_open()) p_fout.close();
+      p_fout.open(filename);
+      p_useFile = true;
+    }
+  }
+
+  /**
+   * Close file and redirect output to standard out 
+   */
+  void close()
+  {
+    if (GA_Nodeid() == 0) {
+      if (p_fout.is_open()) p_fout.close();
+      p_useFile = false;
+    }
   }
 
   /**
    * Write output from buses to standard out
+   * @param out stream object for output
    * @param signal an optional character string used to control contents of
    *                output
    */
-  void write(const char *signal = NULL)
+  void write(std::ostream & out, const char *signal = NULL)
   {
     int nBus = p_network->numBuses();
     char string[p_size];
@@ -157,7 +186,7 @@ class SerialBusIO {
           nwrites = 0;
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
-              std::cout << ptr;
+              out << ptr;
               ptr += p_size;
               delete index[nwrites];
               nwrites++;
@@ -171,15 +200,45 @@ class SerialBusIO {
   }
 
   /**
+   * Write output from buses to standard out
+   * @param signal an optional character string used to control contents of
+   *                output
+   */
+  void write(const char *signal = NULL)
+  {
+    if (p_useFile) {
+      write(p_fout, signal);
+    } else {
+      write(std::cout, signal);
+    }
+  }
+
+  /**
+   * Write single string to standard output. This is used to write headers for a
+   * data listing. It is mostly a convenience function so that users do not have
+   * to identify the head node
+   * @param out stream object for output
+   * @param str character string containing the header
+   */
+  void header(std::ostream & out, const char *str) const
+  {
+    if (GA_Nodeid() == 0) {
+      out << str;
+    }
+  }
+
+  /**
    * Write single string to standard output. This is used to write headers for a
    * data listing. It is mostly a convenience function so that users do not have
    * to identify the head node
    * @param str character string containing the header
    */
-  void header(const char *str) const
+  void header(const char *str)
   {
-    if (GA_Nodeid() == 0) {
-      printf("%s",str);
+    if (p_useFile) {
+      header(p_fout, str);
+    } else {
+      header(std::cout, str);
     }
   }
 
@@ -189,6 +248,8 @@ class SerialBusIO {
     int p_stringGA;
     int p_maskGA;
     int p_size;
+    bool p_useFile;
+    std::ofstream p_fout;
 };
 
 template <class _network>
@@ -216,6 +277,7 @@ class SerialBranchIO {
     p_maskGA = GA_Create_handle();
     GA_Set_data(p_maskGA,one,&nbranch,C_INT);
     GA_Allocate(p_maskGA);
+    p_useFile = false;
   }
 
   /**
@@ -226,14 +288,42 @@ class SerialBranchIO {
     NGA_Deregister_type(p_GA_type);
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
+    if (GA_Nodeid() == 0) {
+      if (p_fout.is_open()) p_fout.close();
+    }
+  }
+
+  /**
+   * Redirect output to a file instead of standard out
+   * @param filename name of file that output goes to
+   */
+  void open(const char *filename)
+  {
+    if (GA_Nodeid() == 0) {
+      if (p_fout.is_open()) p_fout.close();
+      p_fout.open(filename);
+      p_useFile = true;
+    }
+  }
+
+  /**
+   * Close file and redirect output to standard out 
+   */
+  void close()
+  {
+    if (GA_Nodeid() == 0) {
+      if (p_fout.is_open()) p_fout.close();
+      p_useFile = false;
+    }
   }
 
   /**
    * Write output from branches to standard out
+   * @param out stream object for output
    * @param signal an optional character string used to control contents of
    *                output
    */
-  void write(const char *signal = NULL)
+  void write(std::ostream & out, const char *signal = NULL)
   {
     int nBranch = p_network->numBranches();
     char string[p_size];
@@ -312,7 +402,7 @@ class SerialBranchIO {
           nwrites = 0;
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
-              std::cout << ptr;
+              out << ptr;
               ptr += p_size;
               delete index[nwrites];
               nwrites++;
@@ -326,15 +416,45 @@ class SerialBranchIO {
   }
 
   /**
+   * Write output from branches to standard out
+   * @param signal an optional character string used to control contents of
+   *                output
+   */
+  void write(const char *signal = NULL)
+  {
+    if (p_useFile) {
+      write(p_fout, signal);
+    } else {
+      write(std::cout, signal);
+    }
+  }
+
+  /**
+   * Write single string to standard output. This is used to write headers for a
+   * data listing. It is mostly a convenience function so that users do not have
+   * to identify the head node
+   * @param out stream object for output
+   * @param str character string containing the header
+   */
+  void header(std::ostream & out, const char *str) const
+  {
+    if (GA_Nodeid() == 0) {
+      out << str;
+    }
+  }
+
+  /**
    * Write single string to standard output. This is used to write headers for a
    * data listing. It is mostly a convenience function so that users do not have
    * to identify the head node
    * @param str character string containing the header
    */
-  void header(const char *str) const
+  void header(const char *str)
   {
-    if (GA_Nodeid() == 0) {
-      printf("%s",str);
+    if (p_useFile) {
+      header(p_fout, str);
+    } else {
+      header(std::cout, str);
     }
   }
 
@@ -344,6 +464,8 @@ class SerialBranchIO {
     int p_stringGA;
     int p_maskGA;
     int p_size;
+    bool p_useFile;
+    std::ofstream p_fout;
 };
 
 }   // serial_io
