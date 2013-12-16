@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-12-04 14:47:24 d3g096
+ * @date   2013-12-11 12:24:48 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -199,7 +199,7 @@ PETScMatrixImplementation::p_set_sparse_matrix(const int& max_nz_per_row)
   PetscErrorCode ierr(0);
   const PetscInt diagonal_non_zero_guess(max_nz_per_row);
   PetscInt offdiagonal_non_zero_guess(static_cast<PetscInt>(0.5*diagonal_non_zero_guess));
-  offdiagonal_non_zero_guess = std::max(offdiagonal_non_zero_guess, 2);
+  offdiagonal_non_zero_guess = std::max(offdiagonal_non_zero_guess, 10);
 
   try {
     if (this->communicator().size() == 1) {
