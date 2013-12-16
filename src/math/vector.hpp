@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-11-14 11:34:01 d3g096
+ * @date   2013-12-12 14:13:00 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -648,6 +648,12 @@ public:
   void conjugate(void)
   {
     p_vector_impl->conjugate();
+  }
+
+  /// Replace all elements with its exponential
+  void exp(void)
+  {
+    p_vector_impl->exp();
   }
 
   // friend Vector *reorder(const Vector& A, const Reordering& r);
