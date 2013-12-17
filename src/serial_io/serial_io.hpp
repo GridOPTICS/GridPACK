@@ -103,6 +103,37 @@ class SerialBusIO {
 
   /**
    * Write output from buses to standard out
+   * @param signal an optional character string used to control contents of
+   *                output
+   */
+  void write(const char *signal = NULL)
+  {
+    if (p_useFile) {
+      write(p_fout, signal);
+    } else {
+      write(std::cout, signal);
+    }
+  }
+
+  /**
+   * Write single string to standard output. This is used to write headers for a
+   * data listing. It is mostly a convenience function so that users do not have
+   * to identify the head node
+   * @param str character string containing the header
+   */
+  void header(const char *str)
+  {
+    if (p_useFile) {
+      header(p_fout, str);
+    } else {
+      header(std::cout, str);
+    }
+  }
+
+  protected:
+
+  /**
+   * Write output from buses to standard out
    * @param out stream object for output
    * @param signal an optional character string used to control contents of
    *                output
@@ -200,20 +231,6 @@ class SerialBusIO {
   }
 
   /**
-   * Write output from buses to standard out
-   * @param signal an optional character string used to control contents of
-   *                output
-   */
-  void write(const char *signal = NULL)
-  {
-    if (p_useFile) {
-      write(p_fout, signal);
-    } else {
-      write(std::cout, signal);
-    }
-  }
-
-  /**
    * Write single string to standard output. This is used to write headers for a
    * data listing. It is mostly a convenience function so that users do not have
    * to identify the head node
@@ -224,21 +241,6 @@ class SerialBusIO {
   {
     if (GA_Nodeid() == 0) {
       out << str;
-    }
-  }
-
-  /**
-   * Write single string to standard output. This is used to write headers for a
-   * data listing. It is mostly a convenience function so that users do not have
-   * to identify the head node
-   * @param str character string containing the header
-   */
-  void header(const char *str)
-  {
-    if (p_useFile) {
-      header(p_fout, str);
-    } else {
-      header(std::cout, str);
     }
   }
 
@@ -316,6 +318,37 @@ class SerialBranchIO {
       p_useFile = false;
     }
   }
+
+  /**
+   * Write output from branches to standard out
+   * @param signal an optional character string used to control contents of
+   *                output
+   */
+  void write(const char *signal = NULL)
+  {
+    if (p_useFile) {
+      write(p_fout, signal);
+    } else {
+      write(std::cout, signal);
+    }
+  }
+
+  /**
+   * Write single string to standard output. This is used to write headers for a
+   * data listing. It is mostly a convenience function so that users do not have
+   * to identify the head node
+   * @param str character string containing the header
+   */
+  void header(const char *str)
+  {
+    if (p_useFile) {
+      header(p_fout, str);
+    } else {
+      header(std::cout, str);
+    }
+  }
+
+  protected:
 
   /**
    * Write output from branches to standard out
@@ -416,20 +449,6 @@ class SerialBranchIO {
   }
 
   /**
-   * Write output from branches to standard out
-   * @param signal an optional character string used to control contents of
-   *                output
-   */
-  void write(const char *signal = NULL)
-  {
-    if (p_useFile) {
-      write(p_fout, signal);
-    } else {
-      write(std::cout, signal);
-    }
-  }
-
-  /**
    * Write single string to standard output. This is used to write headers for a
    * data listing. It is mostly a convenience function so that users do not have
    * to identify the head node
@@ -440,21 +459,6 @@ class SerialBranchIO {
   {
     if (GA_Nodeid() == 0) {
       out << str;
-    }
-  }
-
-  /**
-   * Write single string to standard output. This is used to write headers for a
-   * data listing. It is mostly a convenience function so that users do not have
-   * to identify the head node
-   * @param str character string containing the header
-   */
-  void header(const char *str)
-  {
-    if (p_useFile) {
-      header(p_fout, str);
-    } else {
-      header(std::cout, str);
     }
   }
 
