@@ -20,6 +20,7 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
 
@@ -41,7 +42,9 @@ class BaseFactory {
      */
     BaseFactory(NetworkPtr network)
       : p_network(network)
-    {}
+    { 
+      p_profile = false;
+    }
 
     /**
      * Destructor
@@ -57,6 +60,11 @@ class BaseFactory {
      */
     virtual void setComponents(void)
     {
+      gridpack::utility::CoarseTimer *timer =
+        gridpack::utility::CoarseTimer::instance();
+      timer->configTimer(p_profile);
+      int t_setc = timer->createCategory("Factory:setComponents");
+      timer->start(t_setc);
       int numBus = p_network->numBuses();
       int numBranch = p_network->numBranches();
       int i, j;
@@ -204,6 +212,8 @@ class BaseFactory {
         p_network->getBranch(i)->getBus2()->getMatVecIndex(&idx2);
         p_network->getBranch(i)->setMatVecIndices(idx1,idx2);
       }
+      timer->stop(t_setc);
+      timer->configTimer(true);
     }
 
 
@@ -214,21 +224,38 @@ class BaseFactory {
      */
     virtual void load(void)
     {
+      gridpack::utility::CoarseTimer *timer =
+        gridpack::utility::CoarseTimer::instance();
+      timer->configTimer(p_profile);
+      int t_load = timer->createCategory("Factory:load");
+      timer->start(t_load);
+      int t_nbus = timer->createCategory("Factory:load:nbus");
+      timer->start(t_nbus);
       int numBus = p_network->numBuses();
       int numBranch = p_network->numBranches();
+      timer->stop(t_nbus);
+   //   printf("p[%d] numBus: %d numBranch: %d\n",GA_Nodeid(),numBus,numBranch);
       int i;
 
       // Invoke load method on all bus objects
+      int t_load1 = timer->createCategory("Factory:load:bus");
+      timer->start(t_load1);
       for (i=0; i<numBus; i++) {
         p_network->getBus(i)->load(p_network->getBusData(i));
         if (p_network->getBus(i)->getReferenceBus())
           p_network->setReferenceBus(i);
       }
+      timer->stop(t_load1);
 
       // Invoke load method on all branch objects
+      int t_load2 = timer->createCategory("Factory:load:branch");
+      timer->start(t_load2);
       for (i=0; i<numBranch; i++) {
         p_network->getBranch(i)->load(p_network->getBranchData(i));
       }
+      timer->stop(t_load2);
+      timer->stop(t_load);
+      timer->configTimer(true);
     }
 
     /**
@@ -237,6 +264,11 @@ class BaseFactory {
      */
     virtual void setExchange(void)
     {
+      gridpack::utility::CoarseTimer *timer =
+        gridpack::utility::CoarseTimer::instance();
+      timer->configTimer(p_profile);
+      int t_setx = timer->createCategory("Factory:setExchange");
+      timer->start(t_setx);
       int busXCSize, branchXCSize;
       int nbus, nbranch;
 
@@ -267,6 +299,8 @@ class BaseFactory {
       for (i=0; i<nbranch; i++) {
         p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
       }
+      timer->stop(t_setx);
+      timer->configTimer(true);
     }
 
     /**
@@ -292,6 +326,8 @@ class BaseFactory {
   protected:
 
     NetworkPtr p_network;
+
+    bool p_profile;
 
 };
 
