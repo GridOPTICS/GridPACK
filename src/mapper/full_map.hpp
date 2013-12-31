@@ -57,6 +57,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   setupOffsetArrays();
 
   contributions();
+
 }
 
 ~FullMatrixMap()
@@ -745,11 +746,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             jdx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               idx = i_offsets[jcnt] + j;
-              if (flag) {
+//              if (flag) {
                 matrix.addElement(idx, jdx, values[icnt]);
-              } else {
-                matrix.setElement(idx, jdx, values[icnt]);
-              }
+//              } else {
+//                matrix.setElement(idx, jdx, values[icnt]);
+//              }
               icnt++;
             }
           }
@@ -774,11 +775,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             idx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               jdx = i_offsets[jcnt] + j;
-              if (flag) {
+//              if (flag) {
                 matrix.addElement(jdx, idx, values[icnt]);
-              } else {
-                matrix.setElement(jdx, idx, values[icnt]);
-              }
+//              } else {
+//                matrix.setElement(jdx, idx, values[icnt]);
+//              }
               icnt++;
             }
           }
@@ -874,6 +875,7 @@ int                         gaMatBlksI; // g_idx
 int                         gaMatBlksJ; // g_jdx
 int                         gaOffsetI; // g_ioff
 int                         gaOffsetJ; // g_joff
+
 };
 
 } /* namespace mapper */
