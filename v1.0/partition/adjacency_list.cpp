@@ -22,6 +22,7 @@
 #include <iostream>
 #include <iterator>
 #include <list>
+#include <map>
 #include <boost/assert.hpp>
 #include <boost/mpi/collectives.hpp>
 #include <ga.h>
