@@ -21,6 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include "gridpack/utilities/exception.hpp"
+#include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/network/base_network.hpp"
 
@@ -59,8 +60,14 @@ template <class _network>
        */
       void parse(const std::string &fileName)
       {
+        p_timer = gridpack::utility::CoarseTimer::instance();
+        p_timer->configTimer(false);
+        int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
+        p_timer->start(t_total);
         getCase(fileName);
         createNetwork();
+        p_timer->stop(t_total);
+        p_timer->configTimer(true);
       }
 
       /*
@@ -76,6 +83,8 @@ template <class _network>
       void getCase(const std::string & fileName)
       {
 
+        int t_case = p_timer->createCategory("Parser:getCase");
+        p_timer->start(t_case);
         p_busData.clear();
         p_branchData.clear();
         p_busMap.clear();
@@ -123,10 +132,13 @@ template <class _network>
 #endif
           input.close();
         }
+        p_timer->stop(t_case);
       }
 
       void createNetwork(void)
       {
+        int t_create = p_timer->createCategory("Parser:createNetwork");
+        p_timer->start(t_create);
         int me;
         int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
         if (me == 0) {
@@ -178,6 +190,7 @@ template <class _network>
         }
         p_busData.clear();
         p_branchData.clear();
+        p_timer->stop(t_create);
       }
     protected:
 
@@ -1320,6 +1333,7 @@ template <class _network>
       // Global variables that apply to whole network
       int p_case_id;
       double p_case_sbase;
+      gridpack::utility::CoarseTimer *p_timer;
   };
 
 } /* namespace parser */
