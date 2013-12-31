@@ -211,6 +211,8 @@ GraphPartitionerImplementation::partition(void)
     }
   }
 
+  GA::sync();
+
   p_ghost_edge_destinations.reserve(locedges);
   std::copy(e2dest.begin(), e2dest.end(), 
             std::back_inserter(p_ghost_edge_destinations));

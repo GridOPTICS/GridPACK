@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2013-11-14 11:34:01 d3g096
+ * @date   2013-12-20 09:25:39 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -649,6 +649,18 @@ public:
   {
     p_vector_impl->conjugate();
   }
+
+  /// Replace all elements with its exponential
+  void exp(void)
+  {
+    p_vector_impl->exp();
+  }
+
+  /// Element-by-element multiply by another Vector
+  void elementMultiply(const Vector& x);
+
+  /// ELement-by-element divide by another Vector
+  void elementDivide(const Vector& x);
 
   // friend Vector *reorder(const Vector& A, const Reordering& r);
 

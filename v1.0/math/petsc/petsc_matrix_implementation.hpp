@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-11-12 09:50:29 d3g096
+ * @date   2013-12-04 11:39:17 d3g096
  * 
  * @brief  
  * 
@@ -45,6 +45,17 @@ public:
                             const int& local_rows, const int& cols,
                             const bool& dense = false);
 
+  /// Construct a sparse matrix with an estimate of (maximum) usage
+  PETScMatrixImplementation(const parallel::Communicator& comm,
+                            const int& local_rows, const int& cols,
+                            const int& max_nonzero_per_row);
+
+  /// Construct a sparse matrix with number of nonzeros in each row
+  PETScMatrixImplementation(const parallel::Communicator& comm,
+                            const int& local_rows, const int& cols,
+                            const int *nonzeros_by_row);
+  
+
   /// Make a new instance from an existing PETSc matrix
   PETScMatrixImplementation(Mat& m, const bool& copymat = true);
 
@@ -73,6 +84,22 @@ protected:
 
   /// Was @c p_matrix created or just wrapped
   bool p_matrixWrapped;
+
+  /// Build the generic PETSc matrix instance
+  void p_build_matrix(const parallel::Communicator& comm,
+                      const int& local_rows, const int& cols);
+
+  /// Set up a dense matrix
+  void p_set_dense_matrix(void);
+
+  /// Set up a sparse matrix that is not preallocated
+  void p_set_sparse_matrix(void);
+
+  /// Set up a sparse matrix and preallocate it using the maximum nonzeros per row
+  void p_set_sparse_matrix(const int& max_nz_per_row);
+
+  /// Set up a sparse matrix and preallocate it using known nonzeros for each row
+  void p_set_sparse_matrix(const int *nz_by_row);
 
   /// Get the global index range of the locally owned rows (specialized)
   void p_localRowRange(int& lo, int& hi) const;

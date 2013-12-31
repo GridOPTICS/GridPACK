@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:48:32 d3g096
+ * @date   2013-12-04 12:13:07 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -57,6 +57,37 @@ Matrix::Matrix(const parallel::Communicator& comm,
   BOOST_ASSERT(p_matrix_impl);
   p_setDistributed(p_matrix_impl.get());
 }
+
+
+Matrix::Matrix(const parallel::Communicator& comm,
+               const int& local_rows,
+               const int& cols,
+               const int& max_nz_per_row)
+  : parallel::WrappedDistributed(), utility::Uncopyable(),
+    p_matrix_impl()
+{
+  p_matrix_impl.reset(new PETScMatrixImplementation(comm,
+                                                    local_rows, cols, 
+                                                    max_nz_per_row));
+  BOOST_ASSERT(p_matrix_impl);
+  p_setDistributed(p_matrix_impl.get());
+}
+
+Matrix::Matrix(const parallel::Communicator& comm,
+               const int& local_rows,
+               const int& cols,
+               const int *nz_by_row)
+  : parallel::WrappedDistributed(), utility::Uncopyable(),
+    p_matrix_impl()
+{
+  p_matrix_impl.reset(new PETScMatrixImplementation(comm,
+                                                    local_rows, cols, 
+                                                    nz_by_row));
+  BOOST_ASSERT(p_matrix_impl);
+  p_setDistributed(p_matrix_impl.get());
+}
+
+
 
 // -------------------------------------------------------------
 // Matrix::equate
@@ -142,14 +173,19 @@ Matrix::identity(void)
   PetscErrorCode ierr(0);
   try {
     PetscBool flag;
+    PetscScalar one(1.0);
     ierr = MatAssembled(*pA, &flag); CHKERRXX(ierr);
     if (!flag) {
-      ierr = MatAssemblyBegin(*pA, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
-      ierr = MatAssemblyEnd(*pA, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
+      int lo, hi;
+      this->localRowRange(lo, hi);
+      for (int i = lo; i < hi; ++i) {
+        this->setElement(i, i, 1.0);
+      }
+      this->ready();
+    } else {
+      ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
+      ierr = MatShift(*pA, one); CHKERRXX(ierr);
     }
-    ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
-    PetscScalar one(1.0);
-    ierr = MatShift(*pA, one); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

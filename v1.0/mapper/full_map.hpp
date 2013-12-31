@@ -57,6 +57,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   setupOffsetArrays();
 
   contributions();
+
 }
 
 ~FullMatrixMap()
@@ -73,8 +74,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   boost::shared_ptr<gridpack::math::Matrix>
-             Ret(new gridpack::math::Matrix(comm,
-             p_rowBlockSize, p_jDim, gridpack::math::Matrix::Sparse));
+    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
   loadBusData(Ret,true);
   loadBranchData(Ret,true);
   GA_Sync();
@@ -305,9 +305,18 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
 
   *icount = 0;
   *jcount = 0;
+
+  int maxrow,idx,jdx;
+
+  p_maxrow = 0;
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+  
+  bool chk;
+
   for (int i = 0; i < p_nBuses; i++) {
     status = p_network->getBus(i)->matrixDiagSize(&iSize, &jSize);
     if (status) {
+      maxrow = 0;
       p_network->getBus(i)->getMatVecIndex(&index);
       if (iSize > 0) {
         iSizeArray[*icount]     = iSize;
@@ -319,6 +328,19 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
         *(jIndexArray[*jcount])  = index;
         (*jcount)++;
       }
+      maxrow += jSize;
+      branches.clear();
+      p_network->getBus(i)->getNeighborBranches(branches);
+      for(int j = 0; j<branches.size(); j++) {
+        branches[j]->getMatVecIndices(&idx, &jdx);
+        if (index == idx) {
+          chk = branches[j]->matrixForwardSize(&iSize, &jSize);
+        } else {
+          chk = branches[j]->matrixReverseSize(&iSize, &jSize);
+        }
+        if (chk) maxrow += jSize;
+      }
+      if (p_maxrow < maxrow) p_maxrow = maxrow;
     }
   }
 }
@@ -724,11 +746,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             jdx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               idx = i_offsets[jcnt] + j;
-              if (flag) {
+//              if (flag) {
                 matrix.addElement(idx, jdx, values[icnt]);
-              } else {
-                matrix.setElement(idx, jdx, values[icnt]);
-              }
+//              } else {
+//                matrix.setElement(idx, jdx, values[icnt]);
+//              }
               icnt++;
             }
           }
@@ -753,11 +775,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             idx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               jdx = i_offsets[jcnt] + j;
-              if (flag) {
+//              if (flag) {
                 matrix.addElement(jdx, idx, values[icnt]);
-              } else {
-                matrix.setElement(jdx, idx, values[icnt]);
-              }
+//              } else {
+//                matrix.setElement(jdx, idx, values[icnt]);
+//              }
               icnt++;
             }
           }
@@ -846,12 +868,14 @@ int                         p_busContribution;
 int                         p_branchContribution;
 int                         p_maxIBlock;
 int                         p_maxJBlock;
+int                         p_maxrow;
 
     // global matrix block size array
 int                         gaMatBlksI; // g_idx
 int                         gaMatBlksJ; // g_jdx
 int                         gaOffsetI; // g_ioff
 int                         gaOffsetJ; // g_joff
+
 };
 
 } /* namespace mapper */

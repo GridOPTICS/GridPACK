@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-08 08:51:44 d3g096
+ * @date   2013-12-04 14:10:47 d3g096
  * 
  * @brief  
  * 
@@ -33,6 +33,11 @@ public:
   /// Default constructor.
   PetscNonlinearSolverImplementation(const parallel::Communicator& comm,
                                      const int& local_size,
+                                     JacobianBuilder form_jacobian,
+                                     FunctionBuilder form_function);
+
+  /// Construct with an existing Jacobian Matrix
+  PetscNonlinearSolverImplementation(Matrix& J,
                                      JacobianBuilder form_jacobian,
                                      FunctionBuilder form_function);
 

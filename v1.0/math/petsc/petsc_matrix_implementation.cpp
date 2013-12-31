@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-12 10:27:53 d3g096
+ * @date   2013-12-11 12:24:48 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -41,7 +41,6 @@ PETScMatrixImplementation::p_getCommunicator(const Mat& m)
   return result;
 }
 
-
 // -------------------------------------------------------------
 // PETScMatrixImplementation:: constructors / destructor
 // -------------------------------------------------------------
@@ -59,62 +58,32 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
-  PetscErrorCode ierr(0);
-  static const PetscInt diagonal_non_zero_guess(10);
-  static const PetscInt offdiagonal_non_zero_guess(10);
-  try {
-
-    // If any ownership arguments are specifed, *all* ownership
-    // arguments need to be specified.  AND, if the matrix is square,
-    // the local rows and cols need to be the same.
-
-    PetscInt lrows(local_rows), grows(PETSC_DECIDE);
-    ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRXX(ierr);
-
-    PetscInt lcols(PETSC_DECIDE), gcols(global_cols);
-    if (grows == global_cols) {
-      lcols = lrows;
-    } else {
-      ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
-    }
-    
-    ierr = MatCreate(this->communicator(), &p_matrix); CHKERRXX(ierr);
-    MatType the_type;
-    ierr = MatSetSizes(p_matrix, lrows, lcols, grows, gcols); CHKERRXX(ierr);
-    if (dense) {
-      if (this->communicator().size() == 1) {
-        ierr = MatSetType(p_matrix, MATSEQDENSE); CHKERRXX(ierr);
-        // ierr = MatSeqDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
-      } else {
-        ierr = MatSetType(p_matrix, MATDENSE); CHKERRXX(ierr);
-        // ierr = MatMPIDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
-      }
-    } else {
-      if (this->communicator().size() == 1) {
-        ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
-        // ierr = MatSeqAIJSetPreallocation(p_matrix, 
-        //                                  diagonal_non_zero_guess + offdiagonal_non_zero_guess,
-        //                                  PETSC_NULL); CHKERRXX(ierr);
-      } else {
-        ierr = MatSetType(p_matrix, MATMPIAIJ); CHKERRXX(ierr);
-        // ierr = MatMPIAIJSetPreallocation(p_matrix, 
-        //                                  diagonal_non_zero_guess,
-        //                                  PETSC_NULL,
-        //                                  offdiagonal_non_zero_guess, 
-        //                                  PETSC_NULL); CHKERRXX(ierr);
-      }
-      // By default, new elements that are not pre-allocated cause an
-      // error. Let's disable that. With the preallocation above, it
-      // should not happen very often.
-      // ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATIONS, PETSC_TRUE); CHKERRXX(ierr);
-      // ierr = MatSetOption(p_matrix, MAT_NEW_NONZERO_LOCATION_ERR, PETSC_FALSE); CHKERRXX(ierr)
-                                                                                  ;
-    }
-    ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
-    ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
-    throw PETScException(ierr, e);
+  p_build_matrix(comm, local_rows, global_cols);
+  if (dense) {
+    p_set_dense_matrix();
+  } else {
+    p_set_sparse_matrix();
   }
+}
+
+PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
+                                                     const int& local_rows, const int& cols,
+                                                     const int& max_nonzero_per_row)
+  : MatrixImplementation(comm),
+    p_matrixWrapped(false)
+{
+  p_build_matrix(comm, local_rows, cols);
+  p_set_sparse_matrix(max_nonzero_per_row);
+}
+
+PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
+                                                     const int& local_rows, const int& cols,
+                                                     const int *nonzero_by_row)
+  : MatrixImplementation(comm),
+    p_matrixWrapped(false)
+{
+  p_build_matrix(comm, local_rows, cols);
+  p_set_sparse_matrix(nonzero_by_row);
 }
 
 PETScMatrixImplementation::PETScMatrixImplementation(Mat& m, const bool& copyMat)
@@ -149,6 +118,142 @@ PETScMatrixImplementation::~PETScMatrixImplementation(void)
     } catch (...) {
       // just eat it
     }
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_build_matrix
+// -------------------------------------------------------------
+void
+PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
+                                          const int& local_rows, 
+                                          const int& global_cols)
+{
+  PetscErrorCode ierr(0);
+  try {
+
+    // If any ownership arguments are specifed, *all* ownership
+    // arguments need to be specified.  AND, if the matrix is square,
+    // the local rows and cols need to be the same.
+
+    PetscInt lrows(local_rows), grows(PETSC_DECIDE);
+    ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRXX(ierr);
+
+    PetscInt lcols(PETSC_DECIDE), gcols(global_cols);
+    if (grows == global_cols) {
+      lcols = lrows;
+    } else {
+      ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
+    }
+    
+    ierr = MatCreate(this->communicator(), &p_matrix); CHKERRXX(ierr);
+    ierr = MatSetSizes(p_matrix, lrows, lcols, grows, gcols); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_set_dense_matrix
+// -------------------------------------------------------------
+void 
+PETScMatrixImplementation::p_set_dense_matrix(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    if (this->communicator().size() == 1) {
+      ierr = MatSetType(p_matrix, MATSEQDENSE); CHKERRXX(ierr);
+      ierr = MatSeqDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
+    } else {
+      ierr = MatSetType(p_matrix, MATDENSE); CHKERRXX(ierr);
+      ierr = MatMPIDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
+    }
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_set_sparse_matrix
+// -------------------------------------------------------------
+void 
+PETScMatrixImplementation::p_set_sparse_matrix(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    if (this->communicator().size() == 1) {
+      ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
+    } else {
+      ierr = MatSetType(p_matrix, MATMPIAIJ); CHKERRXX(ierr);
+    }
+    ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
+    ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+void 
+PETScMatrixImplementation::p_set_sparse_matrix(const int& max_nz_per_row)
+{
+  PetscErrorCode ierr(0);
+  const PetscInt diagonal_non_zero_guess(max_nz_per_row);
+  PetscInt offdiagonal_non_zero_guess(static_cast<PetscInt>(0.5*diagonal_non_zero_guess));
+  offdiagonal_non_zero_guess = std::max(offdiagonal_non_zero_guess, 10);
+
+  try {
+    if (this->communicator().size() == 1) {
+      ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
+      ierr = MatSeqAIJSetPreallocation(p_matrix, 
+                                       diagonal_non_zero_guess + offdiagonal_non_zero_guess,
+                                       PETSC_NULL); CHKERRXX(ierr);
+    } else {
+      ierr = MatSetType(p_matrix, MATMPIAIJ); CHKERRXX(ierr);
+      ierr = MatMPIAIJSetPreallocation(p_matrix, 
+                                       diagonal_non_zero_guess,
+                                       PETSC_NULL,
+                                       offdiagonal_non_zero_guess, 
+                                       PETSC_NULL); CHKERRXX(ierr);
+    }
+    ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
+    ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+void 
+PETScMatrixImplementation::p_set_sparse_matrix(const int *nz_by_row)
+{
+  std::vector<PetscInt> diagnz;
+  int lrows(this->localRows());
+  diagnz.reserve(lrows);
+  std::copy(nz_by_row, nz_by_row+lrows, 
+            std::back_inserter(diagnz));
+
+  PetscErrorCode ierr(0);
+  try {
+    if (this->communicator().size() == 1) {
+      ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
+      ierr = MatSeqAIJSetPreallocation(p_matrix, 
+                                       PETSC_DECIDE,
+                                       &diagnz[0]); CHKERRXX(ierr);
+    } else {
+      std::vector<PetscInt> offdiagnz;
+      offdiagnz.reserve(lrows);
+      std::copy(nz_by_row, nz_by_row+lrows, 
+                std::back_inserter(offdiagnz));
+      ierr = MatSetType(p_matrix, MATMPIAIJ); CHKERRXX(ierr);
+      ierr = MatMPIAIJSetPreallocation(p_matrix, 
+                                       PETSC_DECIDE,
+                                       &diagnz[0],
+                                       PETSC_DECIDE, 
+                                       &offdiagnz[0]); CHKERRXX(ierr);
+    }
+    ierr = MatSetFromOptions(p_matrix); CHKERRXX(ierr);
+    ierr = MatSetUp(p_matrix); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
   }
 }
 
@@ -383,6 +488,15 @@ PETScMatrixImplementation::p_ready(void)
   try {
     ierr = MatAssemblyBegin(p_matrix, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
     ierr = MatAssemblyEnd(p_matrix, MAT_FINAL_ASSEMBLY); CHKERRXX(ierr);
+    // MatInfo info;
+    // ierr = MatGetInfo(p_matrix,MAT_LOCAL,&info);
+    // std::cerr << this->processor_rank() << ": Matrix::ready(): "
+    //           << "size = (" << this->p_rows() << "x" << this->p_cols() << "), "
+    //           << "#assembled = " << info.assemblies << ", "
+    //           << "#mallocs = " << info.mallocs << ", "
+    //           << "#nz allocated = " << info.nz_allocated << ", "
+    //           << "#nz used = " << info.nz_used << ", "
+    //           << std::endl;
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

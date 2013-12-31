@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-12 10:53:23 d3g096
+ * @date   2013-12-04 14:11:27 d3g096
  * 
  * @brief  
  * 
@@ -60,6 +60,17 @@ PetscNonlinearSolverImplementation::PetscNonlinearSolverImplementation(const par
                                                                        JacobianBuilder form_jacobian,
                                                                        FunctionBuilder form_function)
   : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
+    p_snes(), 
+    p_petsc_J(), p_petsc_F(),
+    p_petsc_X()                 // set by p_solve()
+{
+  
+}
+
+PetscNonlinearSolverImplementation::PetscNonlinearSolverImplementation(Matrix& J,
+                                                                       JacobianBuilder form_jacobian,
+                                                                       FunctionBuilder form_function)
+  : NonlinearSolverImplementation(J, form_jacobian, form_function),
     p_snes(), 
     p_petsc_J(), p_petsc_F(),
     p_petsc_X()                 // set by p_solve()

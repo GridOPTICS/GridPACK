@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-10-28 13:49:27 d3g096
+ * @date   2013-12-20 09:56:41 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -304,6 +304,55 @@ BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
     BOOST_CHECK_CLOSE( abs(x*scale), abs(y), delta);
   }
 }
+
+BOOST_AUTO_TEST_CASE( elementwise )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v1(world, local_size);
+  gridpack::math::Vector v2(world, local_size);
+  gridpack::math::Vector v3(world, local_size);
+  gridpack::ComplexType x(2.0), y(0.5);
+
+  v1.fill(x);
+  v2.fill(x);
+  v3.fill(y);
+
+  v1.elementMultiply(v3);
+  v2.elementDivide(v3);
+
+  int lo, hi;
+  v1.localIndexRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType z1, z2;
+    v1.getElement(i, z1);
+    v2.getElement(i, z2);
+    BOOST_CHECK_CLOSE(real(z1), real(x*y), delta);
+    BOOST_CHECK_CLOSE( abs(z1), abs(x*y), delta);
+    BOOST_CHECK_CLOSE(real(z2), real(x/y), delta);
+    BOOST_CHECK_CLOSE( abs(z2), abs(x/y), delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( exp )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v1(world, local_size);
+  gridpack::ComplexType x(7.3);
+
+  v1.fill(x);
+  v1.exp();
+
+  int lo, hi;
+  v1.localIndexRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType y;
+    v1.getElement(i, y);
+    BOOST_CHECK_CLOSE(real(log(y)), real(x), delta);
+    BOOST_CHECK_CLOSE( abs(log(y)), abs(x), delta);
+  }
+}  
 
 
 BOOST_AUTO_TEST_CASE( reciprocal )

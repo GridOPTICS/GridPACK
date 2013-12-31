@@ -8,7 +8,7 @@
 /**
  * @file   shuffler.hpp
  * @author William A. Perkins
- * @date   2013-07-23 07:50:57 d3g096
+ * @date   2013-12-16 14:23:26 d3g096
  * 
  * @brief  A thing to redistribute a vector of things over several processors 
  * 
@@ -55,14 +55,12 @@
 template <typename Thing, typename I = int>
 struct Shuffler {
 
-  // Thing must be copyable and serializable and have a constructor
-  // without arguments -- should test for that
+  // Thing must be copyable, at a relatively low cost, and
+  // serializable -- should test for that
 
   typedef std::vector<Thing> ThingVector;
   typedef I Index;
   typedef std::vector<Index> IndexVector;
-  typedef std::pair<Index, Index> iPair;
-  typedef std::vector<iPair> iPairVector;
   
   /// Redistribute and get the Things assigned to the local process
   void operator()(const boost::mpi::communicator& comm, 
@@ -82,64 +80,34 @@ struct Shuffler {
               std::back_inserter(tvect));
     locthings.clear();
 
-    int msgid(0);               // unique MPI message id
-    
     // Work on each processors list of things separately
 
-    iPairVector srcdest;
-    for (int p = 0; p < comm.size(); ++p) {
-      
-      // build a set of source-destination pairs for each thing in p's
-      // local list
+    std::vector<ThingVector> tosend(comm.size());
 
-      srcdest.clear();
-      if (comm.rank() == p) {
-        for (typename IndexVector::const_iterator i = destproc.begin(); 
-             i != destproc.end(); ++i) {
-          iPair apair(p, *i);
-          srcdest.push_back(apair);
-        }
+    // all processes go through the destinations and makes a vector to
+    // send to each of the other processes
+
+    size_t locidx(0);
+
+    for (typename IndexVector::const_iterator dest = destproc.begin(); 
+         dest != destproc.end(); ++dest) {
+      if (*dest == comm.rank()) {
+        locthings.push_back(tvect[locidx]);
+      } else {
+        tosend[*dest].push_back(tvect[locidx]);
       }
-
-      // all processes get the source-destination pairs
-
-      broadcast(comm, srcdest, p);
-
-      // all processes go through the source-destination pairs and
-      // build a message request list 
-
-      size_t locidx(0);
-      for (typename iPairVector::iterator pd = srcdest.begin(); 
-           pd != srcdest.end(); ++pd, ++msgid) {
-        int src(pd->first);
-        int dest(pd->second);
-        if (comm.rank() == src) {
-          if (src == dest) {
-            locthings.push_back(tvect[locidx]);
-            // std::cout << src << ": kept " << locthings.back() << " @ " 
-            //           << locthings.size() - 1 << std::endl;
-          } else {
-            comm.send(dest, msgid, tvect[locidx]);
-            // std::cout << src << ": msg " << msgid << ": sent " << 
-            //   tvect[locidx] << std::endl;
-          }
-          locidx += 1;
-        } else if (comm.rank() == dest) {
-          Thing bogus;
-          locthings.push_back(bogus);
-          comm.recv(src, msgid, locthings.back());
-          // std::cout << dest << ": msg " << msgid 
-          //           << ": got @ " << locthings.size() - 1 << " \"" 
-          //           << locthings.back() << "\"" << std::endl;
-        }
-        comm.barrier();
-      }
+      locidx += 1;
     }
 
-    // this needs to be here in case a processor was not involved in
-    // any transfer
-
-    comm.barrier();
+    for (int src = 0; src < comm.size(); ++src) {
+      ThingVector tmp;
+      if (comm.rank() == src) {
+        scatter(comm, tosend, tmp, src);
+      } else {
+        scatter(comm, tmp, src);
+      }
+      std::copy(tmp.begin(), tmp.end(), std::back_inserter(locthings));
+    }
   }
 
 };

@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:48:21 d3g096
+ * @date   2013-12-20 09:28:47 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -123,6 +123,38 @@ Vector::reciprocal(void)
     throw PETScException(ierr, e);
   }
 }
+
+// -------------------------------------------------------------
+// Vector::elementMultiply
+// -------------------------------------------------------------
+void
+Vector::elementMultiply(const Vector& x)
+{
+  Vec *vec(PETScVector(*this));
+  const Vec *xvec(PETScVector(x));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecPointwiseMult(*vec, *vec, *xvec); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}  
+
+// -------------------------------------------------------------
+// Vector::elementMultiply
+// -------------------------------------------------------------
+void
+Vector::elementDivide(const Vector& x)
+{
+  Vec *vec(PETScVector(*this));
+  const Vec *xvec(PETScVector(x));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecPointwiseDivide(*vec, *vec, *xvec); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}  
 
 // -------------------------------------------------------------
 // petsc_make_viewer

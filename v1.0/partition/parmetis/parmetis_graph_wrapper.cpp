@@ -307,6 +307,7 @@ ParMETISGraphWrapper::get_csr_local(std::vector<idx_t>& vtxdist,
   adjncy.clear();
   adjncy.reserve(tmp.size());
   std::copy(tmp.begin(), tmp.end(), std::back_inserter(adjncy));
+  GA::sync();
   
 }
 
@@ -362,6 +363,7 @@ ParMETISGraphWrapper::get_partition(AdjacencyList::IndexVector& part) const
     part.reserve(tmp.size());
     std::copy(tmp.begin(), tmp.end(), std::back_inserter(part));
   }
+  GA::sync();
 }
 
 } // namespace network

@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-10-31 08:51:41 d3g096
+ * @date   2013-12-04 12:07:23 d3g096
  * 
  * @brief  
  * 
@@ -84,6 +84,42 @@ public:
          const int& local_rows,
          const int& cols,
          const StorageType& storage_type = Sparse);
+
+  /// Sparse matrix constructor with maximum number of nonzeros in a row
+  /** 
+   * If the underlying math implementation supports it, this
+   * constructs a sparse matrix and pre-allocates it to allow @c
+   * max_nz_per_row nonzeros in each row. If the underlying math
+   * library supports it, @c max_nz_per_row does not need to be the
+   * same on all processors.
+   * 
+   * @param dist parallel environment
+   * @param local_rows matrix rows to be owned by the local process
+   * @param cols total number of columns (same on all processes)
+   * @param max_nz_per_row maximum number of nonzeros in a row
+   * 
+   * @return new Matrix
+   */
+  Matrix(const parallel::Communicator& dist,
+         const int& local_rows,
+         const int& cols,
+         const int& max_nz_per_row);
+  
+  /// Sparse matrix constructor with number of nonzeros for each row
+  /** 
+   * 
+   * 
+   * @param dist parallel environment
+   * @param local_rows matrix rows to be owned by the local process
+   * @param cols total number of columns (same on all processes)
+   * @param nz_by_row 
+   * 
+   * @return 
+   */
+  Matrix(const parallel::Communicator& dist,
+         const int& local_rows,
+         const int& cols,
+         const int *nz_by_row);
 
   /// Construct with an existing (allocated) implementation 
   /** 

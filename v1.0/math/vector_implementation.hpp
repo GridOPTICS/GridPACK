@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2013-11-14 11:35:49 d3g096
+ * @date   2013-12-12 14:15:25 d3g096
  * 
  * @brief  
  * 
@@ -177,6 +177,12 @@ public:
     this->p_conjugate();
   }
 
+  /// Replace all elements with its exponential
+  void exp(void)
+  {
+    this->p_exp();
+  }
+
   // FIXME: more ...
 
   /// Make this instance ready to use
@@ -271,6 +277,9 @@ protected:
 
   /// Replace all elements with their complex conjugate
   virtual void p_conjugate(void);
+
+  /// Replace all elements with its exponential (specialized)
+  void p_exp(void);
 
   /// Make this instance ready to use
   virtual void p_ready(void) = 0;

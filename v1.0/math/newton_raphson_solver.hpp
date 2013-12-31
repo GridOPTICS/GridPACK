@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver.hpp
  * @author William A. Perkins
- * @date   2013-11-07 14:30:58 d3g096
+ * @date   2013-12-04 13:54:21 d3g096
  * 
  * @brief  
  * 
@@ -64,6 +64,11 @@ public:
    */
   NewtonRaphsonSolver(const parallel::Communicator& comm,
                       const int& local_size,
+                      JacobianBuilder form_jacobian,
+                      FunctionBuilder form_function);
+
+  /// Construct with an existing Jacobian Matrix
+  NewtonRaphsonSolver(Matrix& J,
                       JacobianBuilder form_jacobian,
                       FunctionBuilder form_function);
   

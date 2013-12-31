@@ -8,7 +8,7 @@
 /**
  * @file   newton_raphson_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:51:29 d3g096
+ * @date   2013-12-04 13:55:23 d3g096
  * 
  * @brief  
  * 
@@ -41,6 +41,16 @@ NewtonRaphsonSolver::NewtonRaphsonSolver(const parallel::Communicator& comm,
                                                    form_function));
   p_setDistributed(p_impl.get());
 }
+
+NewtonRaphsonSolver::NewtonRaphsonSolver(Matrix& J,
+                                         JacobianBuilder form_jacobian,
+                                         FunctionBuilder form_function)
+  : NonlinearSolverInterface()
+{
+  p_setImpl(new NewtonRaphsonSolverImplementation(J, form_jacobian, form_function));
+  p_setDistributed(p_impl.get());
+}
+
 
 NewtonRaphsonSolver::~NewtonRaphsonSolver(void)
 {

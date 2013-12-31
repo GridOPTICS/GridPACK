@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-08 09:04:45 d3g096
+ * @date   2013-12-04 13:57:16 d3g096
  * 
  * @brief  Abstract class NonlinearSolverImplementation implementation 
  * 
@@ -60,6 +60,23 @@ NonlinearSolverImplementation::NonlinearSolverImplementation(const parallel::Com
   //           << local_size << " x " << cols
   //           << std::endl;
   p_J.reset(new Matrix(this->communicator(), local_size, cols, Matrix::Sparse));
+}
+
+NonlinearSolverImplementation::NonlinearSolverImplementation(Matrix& J,
+                                                             JacobianBuilder form_jacobian,
+                                                             FunctionBuilder form_function)
+  : parallel::Distributed(J.communicator()), 
+    utility::Configurable("NonlinearSolver"), 
+    utility::Uncopyable(),
+    p_J(&J, null_deleter()), p_F(), 
+    p_X((Vector *)NULL, null_deleter()),  // pointer set by solve()
+    p_jacobian(form_jacobian), 
+    p_function(form_function),
+    p_solutionTolerance(1.0e-05),
+    p_functionTolerance(1.0e-10),
+    p_maxIterations(50)
+{
+  p_F.reset(new Vector(this->communicator(), J.localRows()));
 }
 
 NonlinearSolverImplementation::~NonlinearSolverImplementation(void)
