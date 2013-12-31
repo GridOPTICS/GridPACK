@@ -51,6 +51,24 @@ public:
    */
   void dump(void) const;
 
+  /**
+   * Write out profile for all processors for requested handle
+   * @param idx category handle
+   */
+  void dumpProfile(const int idx) const;
+
+  /**
+   * Write out profile for all processors for requested title
+   * @param idx category title
+   */
+  void dumpProfile(const std::string title);
+
+  /**
+   * Turn timing on and off. If timing is off, no data is collected.
+   * @param flag turn timer on (true) or off (false)
+   */
+  void configTimer(bool flag);
+
 protected:
   /**
    * Constructor
@@ -72,6 +90,8 @@ private:
   std::vector<int>    p_istop;
 
   static CoarseTimer *p_instance;
+
+  bool                p_profile;
 };
 
 
