@@ -95,10 +95,6 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBus) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
-//    values[0] = p_ybusr;
-//    values[1] = p_ybusi;
-//    values[2] = -p_ybusi;
-//    values[3] = p_ybusr;
     values[0] = ret;
     return true;
   } else if (p_mode == Jacobian) {
@@ -124,30 +120,10 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
     }
 #else
     if (!getReferenceBus() && !p_isPV) {
-      /*      double branch_values[4];
-      // TODO: More stuff here
-      std::vector<boost::shared_ptr<BaseComponent> > branches;
-      getNeighborBranches(branches);
-      int size = branches.size();
-      int i;
-      values[0] = 0.0;
-      values[1] = 0.0;
-      values[2] = 2.0*p_v*p_ybusr;
-      values[3] = -2.0*p_v*p_ybusi;
-      //printf("p_v = %f\n", p_v);
-      for (i=0; i<size; i++) {
-      (dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get()))->
-      getJacobian(this, branch_values);
-      values[0] -= p_v*branch_values[0];
-      values[1] += p_v*(-branch_values[1]); //correct diagonal value 
-      values[2] += branch_values[2];
-      values[3] += branch_values[3];
-      } */ // use simple equations below to get diagonal values. YChen 9/29/2013
       values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
       values[1] = p_Pinj - p_ybusr * p_v *p_v; 
       values[2] = p_Pinj / p_v + p_ybusr * p_v; 
       values[3] = p_Qinj / p_v - p_ybusi * p_v; 
-      // Fix up matrix elements if bus is PV bus
       return true;
     } else if (!getReferenceBus() && p_isPV) {
       values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
@@ -202,7 +178,6 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     double reti = p_v * sin(p_a);
     gridpack::ComplexType ret(retr, reti);
     values[0] = ret;
-    //printf ("retr = %f, reti = %f, p_v = %f, p_a = %f\n", retr, reti, p_v, p_a);
     return true;
   }
   if (p_mode == State) {
@@ -224,15 +199,11 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
         branch->getPQ(this, &p, &q);
         P += p;
         Q += q;
-        //printf("i=%d:p=%f, q=%f, P=%f, Q=%f\n", i,p,q,P,Q);
       }
-      //printf("p_P0=%f,p_Q0=%f\n\n", p_P0,p_Q0);
-      // Also add bus i's own Pi, Qi
       P += p_v*p_v*p_ybusr;
       Q += p_v*p_v*(-p_ybusi);
       p_Pinj = P;
       p_Qinj = Q;
-      //printf("p = %f, q = %f\n", p_voltage*p_voltage*p_ybusr, p_voltage*p_voltage*(-p_ybusi));
       P -= p_P0;
       Q -= p_Q0;
       values[0] = P;
@@ -258,27 +229,6 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
 #endif
     }
   }
-  /*  if (p_mode == Jacobian) {
-    std::vector<boost::shared_ptr<BaseComponent> > branches;
-    getNeighborBranches(branches);
-    int size = branches.size();
-    int i;
-    double P, Q, p, q;
-    P = 0.0;
-    Q = 0.0;
-    for (i=0; i<size; i++) {
-      gridpack::powerflow::PFBranch *branch
-        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
-      branch->getPQ(this, &p, &q);
-      P += p;
-      Q += q;
-    }
-    P -= p_P0;
-    Q -= p_Q0;
-    values[0] = P;
-    values[1] = Q;
-    return true;
-  } */
 }
 
 /**
@@ -300,8 +250,6 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
 #endif
   *p_vAng_ptr = p_a;
   *p_vMag_ptr = p_v;
-//  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
-//      at,vt,real(values[0]),real(values[1]),p_a,p_v);
 }
 
 /**
@@ -368,7 +316,6 @@ void gridpack::powerflow::PFBus::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
-  //p_shunt = data->getValue(BUS_BASEKV, &p_sbase);
 
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
@@ -390,15 +337,12 @@ void gridpack::powerflow::PFBus::load(
     setReferenceBus(true);
   }
 
-  // if BUS_TYPE = 2 then bus is a PV bus
   p_isPV = false;
- // if (itype == 2) p_isPV = true;
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
   p_load = true;
   p_load = p_load && data->getValue(LOAD_PL, &p_pl);
   p_load = p_load && data->getValue(LOAD_QL, &p_ql);
-  //printf("p_pl=%f,p_ql=%f\n",p_pl,p_ql);
   bool lgen;
   int i, ngen, gstatus;
   double pg, qg, vs;
@@ -408,7 +352,6 @@ void gridpack::powerflow::PFBus::load(
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
-      //printf("ng=%d,pg=%f,qg=%f\n",i,pg,qg);
       lgen = lgen && data->getValue(GENERATOR_VS, &vs,i);
       lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
       if (lgen) {
@@ -474,14 +417,13 @@ void gridpack::powerflow::PFBus::setGBus(void)
 
 /**
  * setSBus
- BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
+ * BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
  */
 void gridpack::powerflow::PFBus::setSBus(void)
 {
   // need to update later to consider multiple generators located at the same bus 
   // Chen 8_27_2013 (DONE, 9/29/2013)
-#if 1
-  // TODO: Need to fix this so that is works for more than 1 generator per bus
+
   int i;
   double pg, qg;
   pg = 0.0;
@@ -496,18 +438,13 @@ void gridpack::powerflow::PFBus::setSBus(void)
   }
   if (p_gstatus.size() > 0 && usegen) {
     gridpack::ComplexType sBus((pg - p_pl) / p_sbase, (qg - p_ql) / p_sbase);
-    //p_sbusr = real(sBus);
-    //p_sbusr = real(sBus);
     p_P0 = real(sBus);
     p_Q0 = imag(sBus);
-    //printf("p_P0=%f, p_Q0=%f\n",p_P0,p_Q0);
   } else {
     gridpack::ComplexType sBus((- p_pl) / p_sbase, (- p_ql) / p_sbase);
     p_P0 = real(sBus);
     p_Q0 = imag(sBus);
   } 
-  //printf("p_P0=%f, p_Q0=%f\n",p_P0,p_Q0);
-#endif
 }
 
 /**
@@ -620,9 +557,6 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
 #endif
     } else {
       return false;
-/*    *isize = 2;
-      *jsize = 2;
-      return true; */
     }
   } else if (p_mode == YBus) {
     if (p_active) {
@@ -757,10 +691,6 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
       return false;
     }
   } else if (p_mode == YBus) {
-//    values[0] = p_ybusr_frwd;
-//    values[1] = p_ybusi_frwd;
-//    values[2] = -p_ybusi_frwd;
-//    values[3] = p_ybusr_frwd;
     if (p_active == 1) {
       values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
       return true;
@@ -837,10 +767,6 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
       return false;
     }
   } else if (p_mode == YBus) {
-  //  values[0] = p_ybusr_rvrs;
-  //  values[1] = p_ybusi_rvrs;
-  //  values[2] = -p_ybusi_rvrs;
-  //  values[3] = p_ybusr_rvrs;
     if (p_active) {
       values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
       return true;
@@ -883,16 +809,8 @@ void gridpack::powerflow::PFBranch::setYBus(void)
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-//  if (p_xform) {
-//    printf ("from %d-> to %d: p_phase_shift = %f, a = %f+%fi\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), p_phase_shift, real(a), imag(a) );
-//  }
-  //p_theta = bus1->getPhase() - bus2->getPhase();
   double pi = 4.0*atan(1.0);
   p_theta = (bus1->getPhase() - bus2->getPhase());
-  //printf("p_phase_shift: %12.6f\n",p_phase_shift);
-  //printf("p_theta: %12.6f\n",p_theta);
-  //printf("p_tap_ratio: %12.6f\n",p_tap_ratio);
-
 }
 
 /**
@@ -1116,12 +1034,8 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
   } else {
     // TODO: Some kind of error
   }
-  //*p = -v1*v2*(p_ybusr*cs-p_ybusi*sn);
-  //*q = v1*v2*(p_ybusr*sn+p_ybusi*cs);
   *p = v1*v2*(ybusr*cs+ybusi*sn);
   *q = v1*v2*(ybusr*sn-ybusi*cs);
-//  printf("v1=%f, v2=%f, cs=%f, sn=%f, p_ybusr=%f, p_ybusi=%f\n", v1,v2,cs,sn,p_ybusr,p_ybusi);
-//  printf("*p=%f,*q=%f\n",*p,*q);
 }
 
 /**
