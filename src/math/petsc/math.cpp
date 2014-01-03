@@ -40,6 +40,13 @@ Initialize(void)
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
+  // Print out some information on processor configuration
+  int mpi_err, me, nproc;
+  mpi_err = MPI_Comm_rank(PETSC_COMM_WORLD, &me);
+  mpi_err = MPI_Comm_size(PETSC_COMM_WORLD, &nproc);
+  if (me == 0) {
+    printf("\nGridPACK math module configured on %d processors\n",nproc);
+  }
 }
 
 // -------------------------------------------------------------
