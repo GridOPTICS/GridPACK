@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-12-20 09:28:47 d3g096
+ * @date   2014-01-07 07:00:53 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -70,7 +70,7 @@ Vector::add(const Vector& x, const ComplexType& scale)
     PetscScalar alpha(scale);
 
     // This call computes y = x + alpha*y. Where y is p_vector.  
-    ierr = VecAYPX(*yvec, alpha, *xvec);
+    ierr = VecAXPY(*yvec, alpha, *xvec);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

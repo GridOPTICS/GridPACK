@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2013-12-20 09:56:41 d3g096
+ * @date   2014-01-07 07:11:44 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -243,19 +243,25 @@ BOOST_AUTO_TEST_CASE( add )
   gridpack::parallel::Communicator world;
   gridpack::math::Vector 
     v1(world, local_size),
-    v2(world, local_size);
-  std::auto_ptr<gridpack::math::Vector> vsum1, vsum2;
+    v2(world, local_size),
+    v3(world, local_size);
+  std::auto_ptr<gridpack::math::Vector> vsum1, vsum2, vsum3;
   
   v1.fill(1.0);
   v2.fill(2.0);
+  v3.fill(2.0);
   
   v1.ready();
   v2.ready();
+  v3.ready();
 
   vsum1.reset(v1.clone());
   vsum1->add(v2);
 
   vsum2.reset(gridpack::math::add(v1, v2));
+
+  vsum3.reset(v1.clone());
+  vsum3->add(v3, 2.0);
 
   int lo, hi;
   v1.localIndexRange(lo, hi);
@@ -272,11 +278,18 @@ BOOST_AUTO_TEST_CASE( add )
 
     BOOST_CHECK_CLOSE(real(x1), real(x2), delta);
     BOOST_CHECK_CLOSE(real(x1), real(x3), delta);
+
+    v1.getElement(i, x1);
+    v3.getElement(i, x2);
+    x2 = x1 + 2.0*x2;
+
+    vsum3->getElement(i, x3);
+    BOOST_CHECK_CLOSE(real(x2), real(x3), delta);
   }
 
   // try using a vector that is the wrong size
-  gridpack::math::Vector v3(world, local_size-1);
-  BOOST_CHECK_THROW(v1.add(v3), gridpack::Exception);
+  gridpack::math::Vector v4(world, local_size-1);
+  BOOST_CHECK_THROW(v1.add(v4), gridpack::Exception);
 }
 
 BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
