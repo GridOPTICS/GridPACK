@@ -13,6 +13,7 @@ set(gridpack_math_sources)
 set(target_libraries 
   gridpack_configuration 
   gridpack_parallel 
+  gridpack_timer
   ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES}
 )
 
