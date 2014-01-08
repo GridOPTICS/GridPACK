@@ -323,6 +323,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   boost::shared_ptr<gridpack::math::Vector> h = XMap9.mapToVector();
   printf("\n=== h: ===\n");
   h->print();
+  printf("\n============start=====================\n");
 
   // Declare vector mac_ang_s1, mac_spd_s1
   boost::shared_ptr<gridpack::math::Vector> mac_ang_s1; 
@@ -359,6 +360,8 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   const double sysFreq = 60.0;
   double pi = 4.0*atan(1.0);
   const double basrad = 2.0 * pi * sysFreq;
+  gridpack::ComplexType jay(0.0, 1.0);
+  gridpack::ComplexType neg1(-1.0, 0.0);
 
   // assume switch info is set up here instead of reading from the input file
   int nswtch = 4;
@@ -382,7 +385,10 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   S_Steps = 1; 
   last_S_Steps = -1;
 
-  for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
+  for (I_Steps = 0; I_Steps < 3; I_Steps++) {
+    printf("\nStarting I_Steps %d:\n", I_Steps);
+  //for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
+  //for (I_Steps = 0; I_Steps < 1; I_Steps++) {
     if (I_Steps < steps1) {
       S_Steps = I_Steps;
       flagF1 = 0;
@@ -414,161 +420,181 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
     }
 
     if (I_Steps !=0 && last_S_Steps != S_Steps) {
-      //VecCopy(mac_ang_s1, mac_ang_s0);
-      mac_ang_s1.reset(mac_ang_s0->clone());      
-      //VecCopy(mac_spd_s1, mac_spd_s0);
-      mac_spd_s1.reset(mac_spd_s0->clone());      
-      //VecCopy(eprime_s1, eprime_s0);
-      eprime_s1.reset(eprime_s0->clone());      
+      mac_ang_s0.reset(mac_ang_s1->clone()); //VecCopy(mac_ang_s1, mac_ang_s0);
+      mac_spd_s0.reset(mac_spd_s1->clone()); //VecCopy(mac_spd_s1, mac_spd_s0);
+      eprime_s0.reset(eprime_s1->clone()); //VecCopy(eprime_s1, eprime_s0);
     }
 
-    //VecCopy(mac_ang_s0, vecTemp);
-    boost::shared_ptr<gridpack::math::Vector> vecTemp(mac_ang_s0->clone());
-    //VecScale(vecTemp, PETSC_i);
-    gridpack::ComplexType jay(0.0, 1.0);
-    vecTemp->scale(jay);
-    //! Several Vector/Matrix operation methods are missing in gridpack::math library
-    //! starting from this line (marked by "//!")
-    //! VecExp(vecTemp);    
-    //! VecPointwiseMult(eprime_s0, eqprime, vecTemp);
+    boost::shared_ptr<gridpack::math::Vector> vecTemp(mac_ang_s0->clone()); //VecCopy(mac_ang_s0, vecTemp);
+    vecTemp->scale(jay); //VecScale(vecTemp, PETSC_i);
+    vecTemp->exp(); //VecExp(vecTemp);   
+    vecTemp->elementMultiply(*eqprime); 
+    eprime_s0.reset(vecTemp->clone()); //VecPointwiseMult(eprime_s0, eqprime, vecTemp);
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
     if (flagF1 == 0) {
-      //MatMultTranspose(prefy11, eprime_s0, curr);
-      //boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
-      curr.reset(multiply(*trans_prefy11, *eprime_s0)); 
+      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
     } else if (flagF1 == 1) {
-      //MatMultTranspose(fy11, eprime_s0, curr);
-      //boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
-      curr.reset(multiply(*trans_fy11, *eprime_s0)); 
+      curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
     } else if (flagF1 == 2) {
-      //MatMultTranspose(posfy11, eprime_s0, curr);
-      //boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
-      curr.reset(multiply(*trans_posfy11, *eprime_s0)); 
+      curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
     } 
     
     // ---------- CALL mac_em2(k,S_Steps): ----------
     // ---------- pelect: ----------
-    //VecConjugate(curr);
-    curr->conjugate();
-    //! VecPointwiseMult(pelect, eprime_s0, curr);
-    //VecCopy(pelect, vecTemp);
-    vecTemp.reset(pelect->clone());
-    //VecConjugate(vecTemp);
-    vecTemp->conjugate(); 
-    //! VecAXPY(pelect, 1.0, vecTemp);
-    //VecScale(pelect, 0.5); // (pelect+conj(pelect))/2 is to get the real part of pelect
-    pelect->scale(0.5);
+    curr->conjugate(); //VecConjugate(curr);
+    vecTemp.reset(eprime_s0->clone());
+    vecTemp->elementMultiply(*curr);
+    pelect.reset(vecTemp->clone()); //VecPointwiseMult(pelect, eprime_s0, curr);
+    vecTemp.reset(pelect->clone()); //VecCopy(pelect, vecTemp);
+    vecTemp->conjugate(); //VecConjugate(vecTemp);
+    pelect->add(*vecTemp); //VecAXPY(pelect, 1.0, vecTemp);
+    pelect->scale(0.5); //VecScale(pelect, 0.5); // (pelect+conj(pelect))/2 is to get the real part of pelect
     // ---------- dmac_ang: ----------
-    //VecCopy(mac_spd_s0, vecTemp);
-    vecTemp.reset(mac_spd_s0->clone());
-    //VecShift(vecTemp, -1.0);
-    vecTemp->add(-1.0);
-    //VecScale(vecTemp, basrad);
-    vecTemp->scale(basrad);
-    //VecCopy(vecTemp, dmac_ang_s0);
-    dmac_ang_s0.reset(vecTemp->clone());
-    // ---------- dmac_spd: ----------
-    //! VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
-    //VecCopy(pmech, dmac_spd_s0);
-    dmac_spd_s0.reset(pmech->clone());
-    //! VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva
-    //VecCopy(mac_spd_s0, vecTemp);
-    vecTemp.reset(mac_spd_s0->clone());
-    //VecShift(vecTemp, -1.0);
-    vecTemp->add(-1.0);
-    //! VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s0 - 1.0)
-    //! VecAXPY(dmac_spd_s0, -1.0, vecTemp1); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s0 - 1.0)
-    //VecCopy(h, vecTemp);
-    vecTemp.reset(h->clone());
-    //VecScale(vecTemp, 2); // 2 * gen_h
-    vecTemp->scale(2.0);
-    //VecPointwiseDivide(dmac_spd_s0, dmac_spd_s0, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s0-1.0) )/(2*gen_h) 
+    vecTemp.reset(mac_spd_s0->clone()); //VecCopy(mac_spd_s0, vecTemp);
+    ///printf("-----------mac_spd_s0:----------------\n");
+    ///mac_spd_s0->print();
+    ///printf("-----------vecTemp 111:----------------\n");
+    ///vecTemp->print();
+    vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
+    ///printf("-----------vecTemp 222:----------------\n");
+    ///vecTemp->print();
+    vecTemp->scale(basrad); //VecScale(vecTemp, basrad);
+    ///printf("-----------vecTemp 333:----------------\n");
+    ///vecTemp->print();
+    dmac_ang_s0.reset(vecTemp->clone()); //VecCopy(vecTemp, dmac_ang_s0);
+    ///printf("-----------dmac_ang_s0:----------------\n");
+    ///dmac_ang_s0->print();
+    /// ---------- dmac_spd: ----------
+    vecTemp.reset(pelect->clone());
+    vecTemp->elementMultiply(*mva); //VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
+    dmac_spd_s0.reset(pmech->clone()); //VecCopy(pmech, dmac_spd_s0);
+    vecTemp->scale(-1.0);
+    dmac_spd_s0->add(*vecTemp); //VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva
+    vecTemp.reset(mac_spd_s0->clone()); //VecCopy(mac_spd_s0, vecTemp);
+    vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
+    vecTemp->elementMultiply(*d0); //VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s0 - 1.0)
+    vecTemp->scale(-1.0);
+    dmac_spd_s0->add(*vecTemp); //VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s0 - 1.0)
+    vecTemp.reset(h->clone()); //VecCopy(h, vecTemp);
+    vecTemp->scale(2.0); //VecScale(vecTemp, 2); // 2 * gen_h
+    dmac_spd_s0->elementDivide(*vecTemp); //VecPointwiseDivide(dmac_spd_s0, dmac_spd_s0, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s0-1.0) )/(2*gen_h)  
+    /*printf("-----------mac_ang_s0:----------------\n");
+    mac_ang_s0->print();
+    printf("-----------mac_spd_s0:----------------\n");
+    mac_spd_s0->print();
+    printf("-----------dmac_ang_s0:----------------\n");
+    dmac_ang_s0->print();
+    printf("-----------dmac_spd_s0:----------------\n");
+    dmac_spd_s0->print();*/
 
-    //VecCopy(mac_ang_s0, mac_ang_s1);
-    mac_ang_s1.reset(mac_ang_s0->clone());
-    //! VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
-    //VecCopy(mac_spd_s0, mac_spd_s1);
-    mac_spd_s1.reset(mac_spd_s0->clone());
-    //! VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
-    //! VecAXPY(mac_spd_s1, h_sol1, dmac_spd_s0);
+    mac_ang_s1.reset(mac_ang_s0->clone()); //VecCopy(mac_ang_s0, mac_ang_s1);
+    gridpack::ComplexType h1(h_sol1, 0.0);
+    vecTemp.reset(dmac_ang_s0->clone());
+    vecTemp->scale(h_sol1);
+    mac_ang_s1->add(*vecTemp); //VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
+    mac_spd_s1.reset(mac_spd_s0->clone()); //VecCopy(mac_spd_s0, mac_spd_s1);
+    vecTemp.reset(dmac_spd_s0->clone());
+    vecTemp->scale(h_sol1);
+    mac_spd_s1->add(*vecTemp); //VecAXPY(mac_spd_s1, h_sol1, dmac_spd_s0);
 
-    //VecCopy(mac_ang_s1, vecTemp);
-    vecTemp.reset(mac_ang_s1->clone());
-    //VecScale(vecTemp, PETSC_i);
-    vecTemp->scale(jay);
-    //! VecExp(vecTemp);
-    //! VecPointwiseMult(eprime_s1, eqprime, vecTemp);
+    vecTemp.reset(mac_ang_s1->clone()); //VecCopy(mac_ang_s1, vecTemp);
+    vecTemp->scale(jay); //VecScale(vecTemp, PETSC_i);
+    vecTemp->exp(); //VecExp(vecTemp);
+    vecTemp->elementMultiply(*eqprime);
+    eprime_s1.reset(vecTemp->clone()); //VecPointwiseMult(eprime_s1, eqprime, vecTemp);
 
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     if (flagF2 == 0) {
-      //MatMultTranspose(prefy11, eprime_s1, curr)
-      //curr.reset(multiply(*trans_prefy11, *eprime_s1)); //comment this line out because eprime_s1 is not available yet! 
+      curr.reset(multiply(*trans_prefy11, *eprime_s1)); //MatMultTranspose(prefy11, eprime_s1, curr)
     } else if (flagF2 == 1) {
-      //MatMultTranspose(fy11, eprime_s1, curr);
-      //curr.reset(multiply(*trans_fy11, *eprime_s1)); 
+      curr.reset(multiply(*trans_fy11, *eprime_s1)); //MatMultTranspose(fy11, eprime_s1, curr);
     } else if (flagF2 == 2) {
-      //MatMultTranspose(posfy11, eprime_s1, curr);
-      //curr.reset(multiply(*trans_posfy11, *eprime_s1)); 
+      curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
     }
 
     // ---------- CALL mac_em2(k,S_Steps+1): ---------- 
     // ---------- pelect: ----------
-    //VecConjugate(curr);
-    curr->conjugate();
-    //! VecPointwiseMult(pelect, eprime_s1, curr);
-    //VecCopy(pelect, vecTemp);
-    vecTemp.reset(pelect->clone());
-    //VecConjugate(vecTemp);
-    vecTemp->conjugate();
-    //! VecAXPY(pelect, 1.0, vecTemp);
-    //VecScale(pelect, 0.5); // (pelect+conj(pelect))/2 is to get the real part of pelect
-    pelect->scale(0.5);
+    curr->conjugate(); //VecConjugate(curr);
+    vecTemp.reset(eprime_s1->clone());
+    vecTemp->elementMultiply(*curr); 
+    printf("curr:.....................\n");
+    curr->print();
+    printf("eprime_s1:.....................\n");
+    eprime_s1->print();
+    printf("eprime_s1.*curr::.....................\n");
+    vecTemp->print();
+    pelect.reset(vecTemp->clone()); //VecPointwiseMult(pelect, eprime_s1, curr);
+    printf("pelect:.....................\n");
+    pelect->print(); 
+    vecTemp.reset(pelect->clone()); //VecCopy(pelect, vecTemp);
+    vecTemp->conjugate(); //VecConjugate(vecTemp);
+    pelect->add(*vecTemp); //VecAXPY(pelect, 1.0, vecTemp);
+    pelect->scale(0.5); //VecScale(pelect, 0.5); // (pelect+conj(pelect))/2 is to get the real part of pelect
+    //printf("-----------pelect:----------------\n");
+    //pelect->print();
     // ---------- dmac_ang: ----------
-    //VecCopy(mac_spd_s1, vecTemp);
-    vecTemp.reset(mac_spd_s1->clone());
-    //VecShift(vecTemp, -1.0);
-    vecTemp->add(-1.0);
-    //VecScale(vecTemp, basrad);
-    vecTemp->scale(basrad);
-    //VecCopy(vecTemp, dmac_ang_s1);
-    dmac_ang_s1.reset(vecTemp->clone());
+    vecTemp.reset(mac_spd_s1->clone()); //VecCopy(mac_spd_s1, vecTemp);
+    ///printf("-----------mac_spd_s1:----------------\n");
+    ///mac_spd_s1->print();
+    ///printf("-----------vecTemp 1:----------------\n");
+    ///vecTemp->print();
+    vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
+    ///printf("-----------vecTemp 2:----------------\n");
+    ///vecTemp->print();
+    vecTemp->scale(basrad); //VecScale(vecTemp, basrad);
+    ///printf("-----------vecTemp 3:----------------\n");
+    ///vecTemp->print();
+    dmac_ang_s1.reset(vecTemp->clone()); //VecCopy(vecTemp, dmac_ang_s1);
     // ---------- dmac_spd: ----------
-    //! VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
-    //VecCopy(pmech, dmac_spd_s1);
-    dmac_spd_s1.reset(pmech->clone());
-    //! VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva
-    //VecCopy(mac_spd_s1, vecTemp);
-    vecTemp.reset(mac_spd_s1->clone());
-    //VecShift(vecTemp, -1.0);
-    vecTemp->add(-1.0);
-    //! VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s1 - 1.0)
-    //! VecAXPY(dmac_spd_s1, -1.0, vecTemp1); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s1 - 1.0)
-    //VecCopy(h, vecTemp);
-    vecTemp.reset(h->clone());
-    //VecScale(vecTemp, 2); // 2 * gen_h
-    vecTemp->scale(2.0);
-    //!VecPointwiseDivide(dmac_spd_s1, dmac_spd_s1, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s1-1.0) )/(2*gen_h) 
+    vecTemp.reset(pelect->clone());
+    vecTemp->elementMultiply(*mva); //VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
+    dmac_spd_s1.reset(pmech->clone()); //VecCopy(pmech, dmac_spd_s1);
+    vecTemp->scale(-1.0);
+    dmac_spd_s1->add(*vecTemp); ///VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva
+    vecTemp.reset(mac_spd_s1->clone()); //VecCopy(mac_spd_s1, vecTemp);
+    vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
+    vecTemp->elementMultiply(*d0); //VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s1 - 1.0)
+    vecTemp->scale(-1.0);
+    dmac_spd_s1->add(*vecTemp, neg1); //VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s1 - 1.0)
+    vecTemp.reset(h->clone()); //VecCopy(h, vecTemp);
+    vecTemp->scale(2.0); //VecScale(vecTemp, 2); // 2 * gen_h
+    dmac_spd_s1->elementDivide(*vecTemp); //VecPointwiseDivide(dmac_spd_s1, dmac_spd_s1, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s1-1.0) )/(2*gen_h) 
 
-    //VecCopy(dmac_ang_s0, vecTemp);
-    vecTemp.reset(mac_ang_s0->clone());
-    //! VecAXPY(vecTemp, 1.0, dmac_ang_s1);
-    //VecScale(vecTemp, 0.5);
-    vecTemp->scale(0.5);
-    //VecCopy(mac_ang_s0, mac_ang_s1);
-    mac_ang_s1.reset(mac_ang_s0->clone());
-    //! VecAXPY(mac_ang_s1, h_sol2, vecTemp);
-    //VecView(mac_ang_s0, PETSC_VIEWER_STDOUT_WORLD);
-    //VecView(mac_ang_s1, PETSC_VIEWER_STDOUT_WORLD);
-    //VecCopy(dmac_spd_s0, vecTemp);
-    vecTemp.reset(mac_spd_s0->clone());
-    //! VecAXPY(vecTemp, 1.0, dmac_spd_s1);
-    //VecScale(vecTemp, 0.5);
-    vecTemp->scale(0.5);
-    //VecCopy(mac_spd_s0, mac_spd_s1);
-    mac_spd_s1.reset(mac_spd_s0->clone());
-    //! VecAXPY(mac_spd_s1, h_sol2, vecTemp);
+    vecTemp.reset(dmac_ang_s0->clone()); //VecCopy(dmac_ang_s0, vecTemp);
+    ///printf("-----------vecTemp:----------------\n");
+    ///vecTemp->print();
+    ///printf("-----------dmac_ang_s1:----------------\n");
+    ///dmac_ang_s1->print();
+    vecTemp->add(*dmac_ang_s1); //VecAXPY(vecTemp, 1.0, dmac_ang_s1);
+    vecTemp->scale(0.5); //VecScale(vecTemp, 0.5);
+    mac_ang_s1.reset(mac_ang_s0->clone()); //VecCopy(mac_ang_s0, mac_ang_s1);
+    vecTemp->scale(h_sol2);
+    mac_ang_s1->add(*vecTemp); //VecAXPY(mac_ang_s1, h_sol2, vecTemp);
+    vecTemp.reset(dmac_spd_s0->clone()); //VecCopy(dmac_spd_s0, vecTemp);
+    vecTemp->add(*dmac_spd_s1); //VecAXPY(vecTemp, 1.0, dmac_spd_s1);
+    vecTemp->scale(0.5); //VecScale(vecTemp, 0.5);
+    mac_spd_s1.reset(mac_spd_s0->clone()); //VecCopy(mac_spd_s0, mac_spd_s1);
+    vecTemp->scale(h_sol2);
+    mac_spd_s1->add(*vecTemp); //VecAXPY(mac_spd_s1, h_sol2, vecTemp);
 
+    // Print to screen
+    /*if (last_S_Steps != S_Steps) {
+      printf("\n========================S_Steps = %d=========================\n", S_Steps);
+      mac_ang_s0->print();  
+      mac_spd_s0->print();  
+      //pmech->print();
+      pelect->print();
+      printf("========================End of S_Steps = %d=========================\n\n", S_Steps);
+    }
+    if (I_Steps == simu_k) {
+      printf("\n========================S_Steps = %d=========================\n", S_Steps+1);
+      mac_ang_s1->print();  
+      mac_spd_s1->print();  
+      pmech->print();
+      pelect->print();
+    } // End of Print to screen
+    */
     last_S_Steps = S_Steps;
   } 
 }
