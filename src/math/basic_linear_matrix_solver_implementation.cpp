@@ -8,7 +8,7 @@
 /**
  * @file   basic_linear_matrix_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-07 12:42:23 d3g096
+ * @date   2014-01-09 12:12:52 d3g096
  * 
  * @brief  
  * 
@@ -28,7 +28,7 @@ namespace math {
 // -------------------------------------------------------------
 // BasicLinearMatrixSolverImplementation:: constructors / destructor
 // -------------------------------------------------------------
-BasicLinearMatrixSolverImplementation::BasicLinearMatrixSolverImplementation(const Matrix& A)
+BasicLinearMatrixSolverImplementation::BasicLinearMatrixSolverImplementation(Matrix& A)
   : LinearMatrixSolverImplementation(A),
     p_solver(A)
 {

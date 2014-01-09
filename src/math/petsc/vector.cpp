@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-01-07 07:00:53 d3g096
+ * @date   2014-01-09 12:44:32 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -141,7 +141,7 @@ Vector::elementMultiply(const Vector& x)
 }  
 
 // -------------------------------------------------------------
-// Vector::elementMultiply
+// Vector::elementDivide
 // -------------------------------------------------------------
 void
 Vector::elementDivide(const Vector& x)

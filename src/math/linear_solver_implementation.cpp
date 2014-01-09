@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-08 09:01:13 d3g096
+ * @date   2014-01-09 12:11:31 d3g096
  * 
  * @brief  
  * 
@@ -35,11 +35,10 @@ namespace math {
 // -------------------------------------------------------------
 // LinearSolverImplementation:: constructors / destructor
 // -------------------------------------------------------------
-LinearSolverImplementation::LinearSolverImplementation(const Matrix& A)
-  : parallel::Distributed(A.communicator()),
+LinearSolverImplementation::LinearSolverImplementation(const parallel::Communicator& comm)
+  : parallel::Distributed(comm),
     utility::Configurable("LinearSolver"),
     utility::Uncopyable(),
-    p_A(A.clone()),
     p_solutionTolerance(1.0e-06),
     p_relativeTolerance(p_solutionTolerance),
     p_maxIterations(100)
@@ -58,13 +57,6 @@ LinearSolverImplementation::~LinearSolverImplementation(void)
 Matrix *
 LinearSolverImplementation::solve(const Matrix& B) const
 {
-  if (p_A->rows() != B.rows()) {
-    std::string msg =
-      boost::str(boost::format("LinearSolver::solve(Matrix): matrix size mismatch (%dx%d) and (%dx%d)") %
-                 p_A->rows() % p_A->cols() % B.rows() % B.cols());
-    throw Exception(msg);
-  }
-
   Vector b(B.communicator(), B.localRows());
   Vector X(B.communicator(), B.localRows());
   Matrix *result(new Matrix(B.communicator(), B.localRows(), B.cols(), Matrix::Dense));

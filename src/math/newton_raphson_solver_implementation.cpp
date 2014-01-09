@@ -8,7 +8,7 @@
 /**
  * @file   newton_raphson_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-12-04 13:56:37 d3g096
+ * @date   2014-01-09 12:13:17 d3g096
  * 
  * @brief  
  * 
@@ -70,9 +70,7 @@ NewtonRaphsonSolverImplementation::p_solve(void)
     if (!p_linear_solver) {
       p_linear_solver.reset(new LinearSolver(*p_J));
       p_linear_solver->configure(this->p_configCursor);
-    } else {
-      p_linear_solver->setMatrix(*p_J);
-    }
+    } 
     deltaX->zero();
     p_linear_solver->solve(*p_F, *deltaX);
     stol = deltaX->norm2();

@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2013-11-08 07:14:43 d3g096
+ * @date   2014-01-09 12:03:20 d3g096
  * 
  * @brief  
  * 
@@ -77,15 +77,14 @@ public:
    * parallel::Communicator "communicator" used by the coefficient
    * Matrix @c A.  All processes in the \ref parallel::Communicator
    * "communicator" must call this simultaneously.
-   * 
-   * A copy is made of @c A so it's contents are in no way affected by
-   * this call.
+   *
+   * The Matrix @c A must exist for the life of this instance. 
    * 
    * @param A existing, filled coefficient matrix
    * 
    * @return new LinearSolver instance
    */
-  LinearSolver(const Matrix& A);
+  LinearSolver(Matrix& A);
   
   /// Destructor
   /** 
@@ -133,27 +132,6 @@ public:
     return p_solver->solve(B);
   }
 
-  /// Use different coefficient matrix (i.e. new values)
-  /** 
-   * @e Collective
-   * 
-   * This should be called if the coefficient matrix changes in any
-   * way between calls to solve(). Typically, this would just involve
-   * changes to the Matrix used in \ref LinearSolver() "construction",
-   * but a completely different Matrix instance can be used here. The
-   * \ref parallel::Communicator "communicator" used by @c A should be
-   * the same at \ref LinearSolver() "construction".
-   *
-   * A copy is made of @c A so it's contents are in no way affected by
-   * this call.
-   * 
-   * @param A existing, filled coefficient matrix
-   */
-  void setMatrix(const Matrix& A)
-  {
-    p_solver->setMatrix(A);
-  }
-  
   /// Get the solution tolerance
   /** 
    * 

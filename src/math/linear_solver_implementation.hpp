@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-12 09:27:16 d3g096
+ * @date   2014-01-09 12:09:55 d3g096
  * 
  * @brief  
  * 
@@ -45,7 +45,7 @@ class LinearSolverImplementation
 public:
   
   /// Default constructor.
-  LinearSolverImplementation(const Matrix& A);
+  LinearSolverImplementation(const parallel::Communicator& comm);
 
   /// Destructor
   ~LinearSolverImplementation(void);
@@ -58,13 +58,6 @@ public:
 
   /// Solve multiple systems w/ each column of the Matrix a single RHS
   Matrix *solve(const Matrix& B) const;
-
-  /// Use different coefficient matrix (or A w/ new values)
-  void setMatrix(const Matrix& A)
-  {
-    p_A->equate(A);
-    this->p_setMatrix();
-  }
 
   /// Get the solution tolerance
   /** 
@@ -126,9 +119,6 @@ public:
 
 protected:
 
-  /// The coefficient matrix (may not need to remember)
-  boost::scoped_ptr<Matrix> p_A;
-  
   /// The solution residual norm tolerance
   /**
    * This is the absolute solution tolerance. The linear system is
@@ -161,15 +151,6 @@ protected:
    * solution is put into this.
    */
   virtual void p_solve(const Vector& b, Vector& x) const = 0;
-
-  /// Use different coefficient matrix (or A w/ new values) (specialized)
-  /** 
-   * The matrix must have the same parallel environment and same
-   * nonzero layout as that used to construct the solver instance
-   * 
-   * @param A new coefficient matrix 
-   */
-  virtual void p_setMatrix(void) = 0;
 
   /// Allow visits by implementation visitors
   virtual void p_accept(ImplementationVisitor& visitor) = 0;

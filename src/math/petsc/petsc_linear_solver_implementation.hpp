@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-08 08:51:44 d3g096
+ * @date   2014-01-09 12:04:30 d3g096
  * 
  * @brief  
  * 
@@ -34,12 +34,15 @@ class PETScLinearSolverImplementation
 public:
 
   /// Default constructor.
-  PETScLinearSolverImplementation(const Matrix& A);
+  PETScLinearSolverImplementation(Matrix& A);
 
   /// Destructor
   ~PETScLinearSolverImplementation(void);
 
 protected:
+
+  /// The coefficient Matrix
+  Mat *p_A;
 
   /// The PETSc linear solver 
   KSP p_KSP;
@@ -52,9 +55,6 @@ protected:
 
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
-
-  /// Use different coefficient matrix (or A w/ new values) (specialized)
-  void p_setMatrix(void);
 
   /// Allow visits by implementation visitors
   void p_accept(ImplementationVisitor& visitor);

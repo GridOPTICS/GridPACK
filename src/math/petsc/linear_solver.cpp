@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:48:40 d3g096
+ * @date   2014-01-09 12:14:05 d3g096
  * 
  * @brief  
  * 
@@ -30,7 +30,7 @@ namespace math {
 // -------------------------------------------------------------
 // LinearSolver:: constructors / destructor
 // -------------------------------------------------------------
-LinearSolver::LinearSolver(const Matrix& A)
+LinearSolver::LinearSolver(Matrix& A)
   : parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
     utility::Uncopyable(),

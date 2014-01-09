@@ -9,7 +9,7 @@
 /**
  * @file   basic_linear_matrix_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-10-21 09:41:36 d3g096
+ * @date   2014-01-09 12:14:35 d3g096
  * 
  * @brief  
  * 
@@ -36,7 +36,7 @@ class BasicLinearMatrixSolverImplementation
 public:
 
   /// Default constructor.
-  BasicLinearMatrixSolverImplementation(const Matrix& A);
+  BasicLinearMatrixSolverImplementation(Matrix& A);
 
   /// Destructor
   ~BasicLinearMatrixSolverImplementation(void);

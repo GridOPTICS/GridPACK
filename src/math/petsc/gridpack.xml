@@ -55,8 +55,8 @@
       <SolutionTolerance>1.0e-10</SolutionTolerance>
       <MaxIterations>100</MaxIterations>
       <LinearSolver>
-        <SolutionTolerance>1.0E-05</SolutionTolerance>
-        <RelativeTolerance>1.0E-08</RelativeTolerance>
+        <SolutionTolerance>1.0E-07</SolutionTolerance>
+        <RelativeTolerance>1.0E-10</RelativeTolerance>
         <MaxIterations>50</MaxIterations>
         <PETScPrefix>nrs</PETScPrefix>
         <PETScOptions>

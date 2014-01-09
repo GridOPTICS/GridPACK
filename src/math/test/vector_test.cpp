@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2014-01-07 07:11:44 d3g096
+ * @date   2014-01-08 13:06:01 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -300,9 +300,11 @@ BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
 
   v1.fill(x);
   v1.add(offset);
+  v1.print();
 
   v2.fill(x);
   v2.scale(scale);
+  v2.print();
 
   int lo, hi;
   v1.localIndexRange(lo, hi);
@@ -315,6 +317,27 @@ BOOST_AUTO_TEST_CASE( add_or_scale_scalar )
     v2.getElement(i, y);
     BOOST_CHECK_CLOSE(real(x*scale), real(y), delta);
     BOOST_CHECK_CLOSE( abs(x*scale), abs(y), delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( subtract_scalar )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v1(world, local_size);
+  gridpack::ComplexType x(1.0);
+
+  v1.fill(x);
+  v1.add(-x);
+  v1.print();
+
+  int lo, hi;
+  v1.localIndexRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType y;
+    v1.getElement(i, y);
+    BOOST_CHECK_CLOSE(real(y), 0.0, delta);
+    BOOST_CHECK_CLOSE( abs(y), 0.0, delta);
   }
 }
 
@@ -344,6 +367,67 @@ BOOST_AUTO_TEST_CASE( elementwise )
     BOOST_CHECK_CLOSE( abs(z1), abs(x*y), delta);
     BOOST_CHECK_CLOSE(real(z2), real(x/y), delta);
     BOOST_CHECK_CLOSE( abs(z2), abs(x/y), delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( elementwise2 )
+{
+  gridpack::parallel::Communicator world;
+  static int three(3);
+  gridpack::math::Vector v1(world, three);
+  gridpack::math::Vector v2(world, three);
+  gridpack::math::Vector v3(world, three);
+  gridpack::math::Vector v4(world, three);
+
+  gridpack::ComplexType x1[three];
+  x1[0] = gridpack::ComplexType(0.348262, 3.4343 );
+  x1[1] = gridpack::ComplexType(1.50794,  2.76069);
+  x1[2] = gridpack::ComplexType(1.04059,  4.50791);
+
+  gridpack::ComplexType x2[three];
+  x2[0] = gridpack::ComplexType(1.08099,  0.0391692);
+  x2[1] = gridpack::ComplexType(1.04585,  0.378384);
+  x2[2] = gridpack::ComplexType(1.08145,  0.249638);
+
+  int lo, hi;
+  v1.localIndexRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    v1.setElement(i, x1[i]);
+    v2.setElement(i, x2[i]);
+    v3.setElement(i, x1[i]*x2[i]);
+  }
+  v1.ready();
+  v2.ready();
+  v3.ready();
+
+  v3.print();
+  
+  v4.equate(v1);
+  v4.elementMultiply(v2);
+
+  v4.print();
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType x, y;
+    v3.getElement(i, x);
+    v4.getElement(i, y);
+    BOOST_CHECK_CLOSE(real(y), real(x), delta);
+    BOOST_CHECK_CLOSE( abs(y), abs(x), delta);
+  }
+
+  // it should be commutative
+
+  v4.equate(v2);
+  v4.elementMultiply(v1);
+  v4.print();
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType x, y;
+    v3.getElement(i, x);
+    v4.getElement(i, y);
+    BOOST_CHECK_CLOSE(real(y), real(x), delta);
+    BOOST_CHECK_CLOSE( abs(y), abs(x), delta);
   }
 }
 

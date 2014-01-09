@@ -8,7 +8,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-08 08:51:44 d3g096
+ * @date   2014-01-09 12:14:50 d3g096
  * 
  * @brief  
  * 
@@ -36,8 +36,9 @@ namespace math {
 // -------------------------------------------------------------
 // PETScLinearSolverImplementation:: constructors / destructor
 // -------------------------------------------------------------
-PETScLinearSolverImplementation::PETScLinearSolverImplementation(const Matrix& A)
-  : LinearSolverImplementation(A)
+PETScLinearSolverImplementation::PETScLinearSolverImplementation(Matrix& A)
+  : LinearSolverImplementation(A.communicator()),
+    p_A(PETScMatrix(A))
 {
 }
 
@@ -77,7 +78,7 @@ PETScLinearSolverImplementation::p_build(const std::string& option_prefix)
                             p_maxIterations); CHKERRXX(ierr);
 
     ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
-    p_setMatrix();
+    ierr = KSPSetOperators(p_KSP, *p_A, *p_A, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -145,22 +146,6 @@ PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
     throw e;
   }
 }
-
-// -------------------------------------------------------------
-// PETScLinearSolverImplementation::p_setMatrix
-// -------------------------------------------------------------
-void
-PETScLinearSolverImplementation::p_setMatrix(void)
-{
-  PetscErrorCode ierr(0);
-  try  {
-    Mat *Amat(PETScMatrix(*p_A));
-    ierr = KSPSetOperators(p_KSP, *Amat, *Amat, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
-    throw PETScException(ierr, e);
-  }
-}  
-
 
 } // namespace math
 } // namespace gridpack
