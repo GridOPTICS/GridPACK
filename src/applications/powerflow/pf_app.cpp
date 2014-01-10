@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2013-10-29 08:28:38 d3g096
+ * @date   2014-01-10 10:11:11 d3g096
  * 
  * @brief  
  * 
@@ -247,12 +247,8 @@ void gridpack::powerflow::PFApp::execute(void)
 
     // Create linear solver
     timer->start(t_lsolv);
-    gridpack::math::LinearSolver solver(*J);
-    solver.configure(cursor);
-//    sprintf(ioBuf,"\nIteration %d Print X\n",iter+1);
-//    busIO.header(ioBuf);
     X->zero(); //might not need to do this
-    solver.solve(*PQ, *X);
+    isolver.solve(*PQ, *X);
     timer->stop(t_lsolv);
 //    X->print();
 

@@ -23,7 +23,7 @@
       <PETScOptions>
         -ksp_type bicg
         -pc_type bjacobi
-        -sub_pc_type ilu -sub_pc_factor_levels 5 sub_ksp_type preonly 
+        -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly 
         -ksp_monitor
         -ksp_view
       </PETScOptions>
@@ -43,6 +43,9 @@
         <SolutionTolerance>1.0E-08</SolutionTolerance>
         <MaxIterations>50</MaxIterations>
         <PETScOptions>
+          -ksp_type bicg
+          -pc_type bjacobi
+          -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly 
           -ksp_monitor
           -ksp_view
         </PETScOptions>
@@ -53,6 +56,9 @@
       <FunctionTolerance>1.0E-05</FunctionTolerance>
       <MaxIterations>50</MaxIterations>
       <PETScOptions>
+        -ksp_type bicg
+        -pc_type bjacobi
+        -sub_pc_type ilu -sub_pc_factor_levels 5 -sub_ksp_type preonly 
         -snes_view
         -snes_monitor
         -ksp_monitor
