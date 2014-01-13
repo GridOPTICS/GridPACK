@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2013-10-31 09:09:18 d3g096
+ * @date   2014-01-13 12:36:25 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -580,32 +580,6 @@ BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
   }
 }
 
-BOOST_AUTO_TEST_CASE( print)
-{
-  static const int bandwidth(3);
-  int global_size;
-  std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(bandwidth, global_size));
-
-  A->print();
-
-  std::string out(print_prefix);
-  if (A->processor_size() > 1) {
-    out += "matrix_parallel.out";
-  } else {
-    out += "matrix_serial.out";
-  }
-  A->print(out.c_str());
-
-  out = print_prefix;
-  if (A->processor_size() > 1) {
-    out += "matrix_parallel.mat";
-  } else {
-    out += "matrix_serial.mat";
-  }
-  A->save(out.c_str());
-}
-
 BOOST_AUTO_TEST_CASE( MultiplyIdentity )
 {
   static const int bandwidth(3);
@@ -781,6 +755,65 @@ BOOST_AUTO_TEST_CASE( ComplexOperations )
 }
 
 BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(MatrixIOTest)
+
+BOOST_AUTO_TEST_CASE( print)
+{
+  static const int bandwidth(3);
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(bandwidth, global_size));
+
+  A->print();
+
+  std::string out(print_prefix);
+  if (A->processor_size() > 1) {
+    out += "matrix_parallel.out";
+  } else {
+    out += "matrix_serial.out";
+  }
+  A->print(out.c_str());
+
+  out = print_prefix;
+  if (A->processor_size() > 1) {
+    out += "matrix_parallel.mat";
+  } else {
+    out += "matrix_serial.mat";
+  }
+  A->save(out.c_str());
+}
+
+
+BOOST_AUTO_TEST_CASE( load_save )
+{
+  static const int bandwidth(3);
+  int global_size;
+  std::auto_ptr<gridpack::math::Matrix> 
+    A(make_and_fill_test_matrix(bandwidth, global_size));
+
+  A->print();
+
+  std::string out(print_prefix);
+  if (A->processor_size() > 1) {
+    out += "binary_matrix_parallel.out";
+  } else {
+    out += "binary_matrix_serial.out";
+  }
+  A->saveBinary(out.c_str());
+
+  std::auto_ptr<gridpack::math::Matrix> 
+    B(new gridpack::math::Matrix(A->communicator(), 
+                                 A->localRows(), A->cols(),
+                                 the_storage_type));
+  B->loadBinary(out.c_str());
+
+}
+
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
 
 
 // -------------------------------------------------------------

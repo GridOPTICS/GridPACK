@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2014-01-08 13:06:01 d3g096
+ * @date   2014-01-13 12:01:01 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -472,6 +472,9 @@ BOOST_AUTO_TEST_CASE( reciprocal )
     BOOST_CHECK_CLOSE( abs(rx), abs(y), delta);
   }
 }
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE( VectorIOTest )
 
 BOOST_AUTO_TEST_CASE( print )
 {
@@ -497,7 +500,39 @@ BOOST_AUTO_TEST_CASE( print )
   v1.save(out.c_str());
   
 }
-  
+
+BOOST_AUTO_TEST_CASE( load_save )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::Vector v1(world, local_size);
+  gridpack::ComplexType x(2.0, 1.0);
+  v1.fill(x);
+  v1.print();
+
+  std::string out;
+  if (world.size() > 1) {
+    out = "vector_binary_parallel.out";
+  } else {
+    out = "vector_binary_serial.out";
+  }
+
+  v1.saveBinary(out.c_str());
+
+  gridpack::math::Vector v2(world, local_size);
+  v2.loadBinary(out.c_str());
+
+  int lo, hi;
+  v2.localIndexRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    gridpack::ComplexType x, y;
+    v1.getElement(i, x);
+    v2.getElement(i, y);
+    BOOST_CHECK_CLOSE(real(y), real(x), delta);
+    BOOST_CHECK_CLOSE( abs(y), abs(x), delta);
+  }
+}
+ 
 BOOST_AUTO_TEST_SUITE_END()
 
 

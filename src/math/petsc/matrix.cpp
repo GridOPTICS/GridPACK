@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-12-04 12:13:07 d3g096
+ * @date   2014-01-13 12:17:39 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -254,7 +254,7 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
   try {
     PetscViewer viewer;
     petsc_make_viewer(filename, &viewer);
-    ierr = PetscViewerSetFormat(viewer, format); ; CHKERRXX(ierr);
+    ierr = PetscViewerSetFormat(viewer, format); CHKERRXX(ierr);
     ierr = MatView(mat, viewer); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
@@ -281,6 +281,51 @@ Matrix::save(const char* filename) const
   const Mat *mat(PETScMatrix(*this));
   petsc_print_matrix(*mat, filename, PETSC_VIEWER_ASCII_MATLAB);
 }
+
+// -------------------------------------------------------------
+// Vector::loadBinary
+// -------------------------------------------------------------
+void
+Matrix::loadBinary(const char* filename)
+{
+  PetscErrorCode ierr;
+  Mat *mat(PETScMatrix(*this));
+  try {
+    PetscViewer viewer;
+    ierr = PetscViewerBinaryOpen(this->communicator(),
+                                 filename,
+                                 FILE_MODE_READ,
+                                 &viewer); CHKERRXX(ierr);
+    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+    ierr = MatLoad(*mat, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Matrix::saveBinary
+// -------------------------------------------------------------
+void
+Matrix::saveBinary(const char* filename) const
+{
+  PetscErrorCode ierr;
+  const Mat *mat(PETScMatrix(*this));
+  try {
+    PetscViewer viewer;
+    ierr = PetscViewerBinaryOpen(this->communicator(),
+                                 filename,
+                                 FILE_MODE_WRITE,
+                                 &viewer); CHKERRXX(ierr);
+    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+    ierr = MatView(*mat, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
 
 // -------------------------------------------------------------
 // Matrix::storageType

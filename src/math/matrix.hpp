@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2013-12-04 12:07:23 d3g096
+ * @date   2014-01-13 12:06:53 d3g096
  * 
  * @brief  
  * 
@@ -478,6 +478,30 @@ public:
    * @param filename name of file to write
    */
   void save(const char *filename) const;
+
+  /// Load from a named file of whatever binary format the math library uses
+  /** 
+   * @e Collective.
+   *
+   * The underlying math library generally supports some way to save a
+   * Matrix to a file. This will load elements from a file of that
+   * format.
+   * 
+   * @param filename 
+   */
+  void loadBinary(const char *filename);
+
+  /// Save to named file in whatever binary format the math library uses
+  /** 
+   * @e Collective.
+   *
+   * The underlying math library generally supports some way to save a
+   * Matrix to a file.  This routine uses whatever format that can be
+   * read by ::loadBinary(). 
+   * 
+   * @param filename 
+   */
+  void saveBinary(const char *filename) const;
 
   // -------------------------------------------------------------
   // Matrix Operation Methods

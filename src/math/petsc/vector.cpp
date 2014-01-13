@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-01-09 12:44:32 d3g096
+ * @date   2014-01-13 12:07:44 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -187,7 +187,6 @@ petsc_print_vector(const Vec vec, const char* filename, PetscViewerFormat format
   }
 }
 
-
 // -------------------------------------------------------------
 // Vector::print
 // -------------------------------------------------------------
@@ -206,6 +205,48 @@ Vector::save(const char* filename) const
 {
   const Vec *vec(PETScVector(*this));
   petsc_print_vector(*vec, filename, PETSC_VIEWER_ASCII_MATLAB);
+}
+
+// -------------------------------------------------------------
+// Vector::loadBinary
+// -------------------------------------------------------------
+void
+Vector::loadBinary(const char* filename)
+{
+  PetscErrorCode ierr;
+  Vec *vec(PETScVector(*this));
+  try {
+    PetscViewer viewer;
+    ierr = PetscViewerBinaryOpen(this->communicator(),
+                                 filename,
+                                 FILE_MODE_READ,
+                                 &viewer); CHKERRXX(ierr);
+    ierr = VecLoad(*vec, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Vector::saveBinary
+// -------------------------------------------------------------
+void
+Vector::saveBinary(const char* filename) const
+{
+  PetscErrorCode ierr;
+  const Vec *vec(PETScVector(*this));
+  try {
+    PetscViewer viewer;
+    ierr = PetscViewerBinaryOpen(this->communicator(),
+                                 filename,
+                                 FILE_MODE_WRITE,
+                                 &viewer); CHKERRXX(ierr);
+    ierr = VecView(*vec, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
 }
 
 
