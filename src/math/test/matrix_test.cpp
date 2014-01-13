@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-01-13 12:36:25 d3g096
+ * @date   2014-01-13 13:18:05 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -807,6 +807,11 @@ BOOST_AUTO_TEST_CASE( load_save )
                                  A->localRows(), A->cols(),
                                  the_storage_type));
   B->loadBinary(out.c_str());
+
+  B->scale(-1.0);
+  B->add(*A);
+
+  BOOST_CHECK_CLOSE(real(B->norm2()), 0.0, delta);
 
 }
 
