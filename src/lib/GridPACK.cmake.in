@@ -1,0 +1,135 @@
+# -*- mode: cmake -*-
+#
+#     Copyright (c) 2013 Battelle Memorial Institute
+#     Licensed under modified BSD License. A copy of this license can be
+#     found
+#     in the LICENSE file in the top level directory of this distribution.
+#
+# -------------------------------------------------------------
+# file: FindGridPACK.cmake.in
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Created January  8, 2014 by William A. Perkins
+# Last Change: 2014-01-09 10:34:54 d3g096
+# -------------------------------------------------------------
+
+function(gridpack_setup)
+
+  set(gp_include "${GRIDPACK_DIR}/include")
+  
+  set(GRIDPACK_LIB_DIR "${GRIDPACK_DIR}/lib")
+
+  set(GRIDPACK_HAVE_PETSC @PETSC_FOUND@)
+  set(GRIDPACK_HAVE_PARMETIS @PARMETIS_FOUND@)
+  set(GRIDPACK_HAVE_GA @GA_FOUND@)
+
+  find_library(GRIDPACK_COMPONENTS_LIBRARY
+    NAMES gridpack_components
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_CONFIGURATION_LIBRARY
+    NAMES gridpack_configuration
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_FACTORY_LIBARARY
+    NAMES gridpack_factory
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_MATH_LIBARARY
+    NAMES gridpack_math
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_PARALLEL_LIBARARY
+    NAMES gridpack_parallel
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_PARTITION_LIBARARY
+    NAMES gridpack_partition
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_TIMER_LIBARARY
+    NAMES gridpack_timer
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  set(gp_libs
+    ${GRIDPACK_FACTORY_LIBARARY}
+    ${GRIDPACK_PARTITION_LIBARARY}
+    ${GRIDPACK_COMPONENTS_LIBRARY}
+    ${GRIDPACK_TIMER_LIBARARY}
+    ${GRIDPACK_MATH_LIBARARY}
+    ${GRIDPACK_PARALLEL_LIBARARY}
+    ${GRIDPACK_CONFIGURATION_LIBRARY}
+  )
+
+  if (GRIDPACK_HAVE_PARMETIS)   
+    list(APPEND gp_include
+      @PARMETIS_INCLUDE_DIR@
+    )
+    list(APPEND gp_libs
+      @PARMETIS_LIBRARY@ 
+      @METIS_LIBRARY@
+    )
+  endif()
+
+  if (GRIDPACK_HAVE_PETSC)
+    list(APPEND gp_include
+      @PETSC_INCLUDE_DIRS@
+    )
+    list(APPEND gp_libs
+      @PETSC_LIBRARIES@
+    )
+  endif()
+
+  if (GRIDPACK_HAVE_GA)
+    list(APPEND gp_include
+      @GA_INCLUDE_DIRS@
+    )
+    list(APPEND gp_libs
+      @GA_LIBRARIES@
+    )
+  endif()
+
+  list(APPEND gp_include 
+    @Boost_INCLUDE_DIRS@
+    @MPI_INCLUDE_PATH@
+  )
+
+  list(APPEND gp_libs
+    @Boost_LIBRARIES@
+    @MPI_CXX_LIBRARIES@
+  )
+
+  set(GRIDPACK_INCLUDE_DIRS
+    ${gp_include}
+    CACHE STRING "Include directories for GridPACK"
+  )
+
+  set(GRIDPACK_LIBS
+    ${gp_libs}
+    CACHE STRING "Libraries for GridPACK"
+  )
+
+  # set(GRIDPACK_DEFINITIONS
+  #   "@GRIDPACK_DEFINITIONS@"
+  #   CACHE STRING "Any compiler definitions/flags set in the GridPACK configuration"
+  # )
+endfunction(gridpack_setup)
+
+set(GRIDPACK_CXX_COMPILER @CMAKE_CXX_COMPILER@)
+set(GRIDPACK_CXX_FLAGS @CMAKE_CXX_FLAGS@)
+set(GRIDPACK_CXX_FLAGS_DEBUG @CMAKE_CXX_FLAGS_DEBUG@)
+set(GRIDPACK_CXX_FLAGS_RELEASE @CMAKE_CXX_FLAGS_RELEASE@)
+set(GRIDPACK_CXX_FLAGS_RELWITHDEBINFO @CMAKE_CXX_FLAGS_RELWITHDEBINFO@)
+
+set(CMAKE_CXX_COMPILER_INIT ${GRIDPACK_CXX_COMPILER})
+set(CMAKE_CXX_FLAGS ${GRIDPACK_CXX_FLAGS})
+set(CMAKE_CXX_FLAGS_DEBUG ${GRIDPACK_CXX_FLAGS_DEBUG})
+set(CMAKE_CXX_FLAGS_RELEASE ${GRIDPACK_CXX_FLAGS_RELEASE})
+set(CMAKE_CXX_FLAGS_RELWITHDEBINFO ${GRIDPACK_CXX_FLAGS_RELWITHDEBINFO})

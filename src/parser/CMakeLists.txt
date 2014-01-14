@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-07-01 13:43:28 d3g096
+# Last Change: 2014-01-08 09:17:22 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -57,3 +57,11 @@ add_test(test_parser_serial test_parser)
 #!!  PASS_REGULAR_EXPRESSION "No errors detected"
 #!!)
 
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  dictionary.hpp
+  PTI23_parser.hpp
+  DESTINATION include/gridpack/parser
+)

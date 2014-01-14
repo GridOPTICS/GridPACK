@@ -5,6 +5,8 @@ host=`uname -n`
 rm -f CMakeCache.txt 
 
 options="-Wdev --debug-trycompile"
+
+# useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
         -D CMAKE_BUILD_TYPE:STRING=Debug \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
@@ -13,7 +15,7 @@ common_flags="\
 if [ $host == "flophouse" ]; then
 
     prefix="/net/flophouse/files0/perksoft/linux64"
-    $prefix/bin/cmake -Wdev --debug-trycompile \
+    /usr/bin/cmake -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
         -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \

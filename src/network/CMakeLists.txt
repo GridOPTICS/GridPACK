@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-09 15:05:01 d3g096
+# Last Change: 2014-01-08 09:06:28 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -56,4 +56,12 @@ add_test(test_network_serial test_network)
 add_executable(network_partition test/network_partition.cpp)
 target_link_libraries(network_partition ${target_libraries})
 gridpack_add_unit_test(network_partition network_partition)
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  base_network.hpp
+  DESTINATION include/gridpack/network
+)
 

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-02 08:28:56 d3g096
+# Last Change: 2014-01-09 09:16:03 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
@@ -40,3 +40,16 @@ gridpack_add_unit_test(configuration_test configuration_test)
 
 add_dependencies(configuration_test configuration_test_input)
 
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  configuration.hpp
+  configurable.hpp
+  DESTINATION include/gridpack/configuration
+)
+
+install(TARGETS 
+  gridpack_configuration
+  DESTINATION lib
+)

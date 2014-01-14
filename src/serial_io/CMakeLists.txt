@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-07-04 08:13:01 d3g096
+# Last Change: 2014-01-08 09:29:11 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -62,3 +62,10 @@ target_link_libraries(test_serial_io ${target_libraries})
 #!!  PASS_REGULAR_EXPRESSION "No errors detected"
 #!!)
 
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  serial_io.hpp
+  DESTINATION include/gridpack/serial_io
+)

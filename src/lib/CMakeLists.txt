@@ -10,10 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2013-10-09 14:01:23 d3g096
+# Last Change: 2014-01-09 11:08:53 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+
+
 
 # -------------------------------------------------------------
 #  Add a single library for all GridPACK functions
@@ -89,3 +91,11 @@ if (PETSC_FOUND)
 endif()
 
 add_library(gridpack ${SOURCES})
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GridPACK.cmake.in 
+  ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake @ONLY)
+
+install(FILES 
+  ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake
+  DESTINATION lib
+)

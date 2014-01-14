@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-06-21 14:16:06 d3g096
+# Last Change: 2014-01-09 09:19:09 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -61,4 +61,13 @@ target_link_libraries(test_mapper ${target_libraries})
 #!!  PROPERTIES 
 #!!  PASS_REGULAR_EXPRESSION "No errors detected"
 #!!)
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  bus_vector_map.hpp
+  full_map.hpp
+  DESTINATION include/gridpack/mapper
+)
 

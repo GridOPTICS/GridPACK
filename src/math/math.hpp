@@ -9,7 +9,7 @@
 /**
  * @file   math.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:41 d3g096
+ * @date   2014-01-08 09:47:01 d3g096
  * 
  * @brief  
  * 
@@ -18,6 +18,10 @@
 // -------------------------------------------------------------
 #ifndef _math_hpp_
 #define _math_hpp_
+
+#include <gridpack/math/nonlinear_solver.hpp>
+#include <gridpack/math/newton_raphson_solver.hpp>
+#include <gridpack/math/linear_matrix_solver.hpp>
 
 namespace gridpack {
 namespace math {

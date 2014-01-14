@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-02 08:28:56 d3g293
+# Last Change: 2014-01-08 09:30:09 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_timer
@@ -33,3 +33,16 @@ include_directories(AFTER ${GA_INCLUDE_DIRS})
 add_executable(test_timer test/test_timer.cpp)
 target_link_libraries(test_timer ${target_libraries})
 add_test(test_timer test_timer)
+
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  coarse_timer.hpp
+  DESTINATION include/gridpack/timer
+)
+
+install(TARGETS 
+  gridpack_timer
+  DESTINATION lib
+)

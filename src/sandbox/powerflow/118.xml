@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    Copyright (c) 2013 Battelle Memorial Institute
+    Licensed under modified BSD License. A copy of this license can be found
+    in the LICENSE file in the top level directory of this distribution.
+  -->
+<Configuration>
+  <Powerflow>
+    <networkConfiguration> 118.raw </networkConfiguration>
+    <networkUnpartitionedGraph>118_network.dot</networkUnpartitionedGraph>
+    <networkPartitionedGraph>118_partitioned_network.dot</networkPartitionedGraph>
+    <LinearSolver>
+      <SolutionTolerance>1.0e-08</SolutionTolerance>
+      <RelativeTolerance>1.0e-12</RelativeTolerance>
+      <MaxIterations>50</MaxIterations>
+      <PETScPrefix>nrs</PETScPrefix>
+      <PETScOptions>
+        -ksp_monitor
+        -ksp_view
+      </PETScOptions>
+    </LinearSolver>
+    <!-- This is how to specific direct solution via LU
+         decomposition. It only works if SuperLU_Dist is built into
+         PETSc. -->
+    <!-- 
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+    -->
+    <!-- 
+         If UseNewton is true a NewtonRaphsonSolver is
+         used. Otherwise, a PETSc-based NonlinearSolver is
+         used. Configuration parameters for both are included here. 
+    -->
+    <UseNewton>false</UseNewton>
+    <NewtonRaphsonSolver>
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
+      <MaxIterations>50</MaxIterations>
+      <LinearSolver>
+        <SolutionTolerance>1.0E-10</SolutionTolerance>
+        <RelativeTolerance>1.0e-06</RelativeTolerance>
+        <MaxIterations>50</MaxIterations>
+        <PETScOptions>
+          -ksp_monitor
+          -ksp_view
+        </PETScOptions>
+      </LinearSolver>
+    </NewtonRaphsonSolver>
+    <NonlinearSolver> 
+      <SolutionTolerance>1.0E-05</SolutionTolerance>
+      <FunctionTolerance>1.0E-05</FunctionTolerance>
+      <MaxIterations>50</MaxIterations>
+      <PETScOptions>
+        -snes_view
+        -snes_monitor
+        -snes_linesearch_monitor 
+        -snes_linesearch_type basic
+        -ksp_atol 1.0e-10
+        -ksp_rtol 1.0e-06
+        -ksp_monitor
+      </PETScOptions>
+    </NonlinearSolver>
+  </Powerflow>
+</Configuration>

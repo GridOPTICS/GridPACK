@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-06-21 14:16:06 d3g096
+# Last Change: 2014-01-08 09:01:55 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_factory
@@ -49,3 +49,15 @@ include_directories(AFTER ${GA_INCLUDE_DIRS})
 #!!  PASS_REGULAR_EXPRESSION "No errors detected"
 #!!)
 
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  base_factory.hpp
+  DESTINATION include/gridpack/factory
+)
+
+install(TARGETS 
+  gridpack_factory
+  DESTINATION lib
+)
