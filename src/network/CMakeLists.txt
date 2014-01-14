@@ -48,7 +48,7 @@ endif()
 # -------------------------------------------------------------
 add_executable(test_network test/test_network.cpp)
 target_link_libraries(test_network ${target_libraries})
-add_test(test_network_serial test_network)
+gridpack_add_unit_test(test_network test_network)
 
 # -------------------------------------------------------------
 # TEST: network_partition
