@@ -256,7 +256,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   posfy11->print();
 
   //-----------------------------------------------------------------------
-  // DAE implementation (Modified Euler Method)
+  // Integration implementation (Modified Euler Method)
   //-----------------------------------------------------------------------
   // Set initial conditions
   //factory.setMode(DAE_init);
@@ -323,7 +323,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   boost::shared_ptr<gridpack::math::Vector> h = XMap9.mapToVector();
   printf("\n=== h: ===\n");
   h->print();
-  printf("\n============start=====================\n");
+  printf("\n============Start of Simulation:=====================\n");
 
   // Declare vector mac_ang_s1, mac_spd_s1
   //boost::shared_ptr<gridpack::math::Vector> mac_ang_s1; 
@@ -365,7 +365,6 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   double pi = 4.0*atan(1.0);
   const double basrad = 2.0 * pi * sysFreq;
   gridpack::ComplexType jay(0.0, 1.0);
-  gridpack::ComplexType neg1(-1.0, 0.0);
 
   // assume switch info is set up here instead of reading from the input file
   int nswtch = 4;
@@ -389,10 +388,7 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
   S_Steps = 1; 
   last_S_Steps = -1;
 
-  for (I_Steps = 0; I_Steps < 3; I_Steps++) {
-    printf("\nStarting I_Steps %d:\n", I_Steps);
-  //for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
-  //for (I_Steps = 0; I_Steps < 1; I_Steps++) {
+  for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
     if (I_Steps < steps1) {
       S_Steps = I_Steps;
       flagF1 = 0;
@@ -453,51 +449,28 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
     pelect->real(); //Get the real part of pelect
     // ---------- dmac_ang: ----------
     vecTemp->equate(*mac_spd_s0); //VecCopy(mac_spd_s0, vecTemp);
-    ///printf("-----------mac_spd_s0:----------------\n");
-    ///mac_spd_s0->print();
-    ///printf("-----------vecTemp 111:----------------\n");
-    ///vecTemp->print();
     vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
-    ///printf("-----------vecTemp 222:----------------\n");
-    ///vecTemp->print();
     vecTemp->scale(basrad); //VecScale(vecTemp, basrad);
-    ///printf("-----------vecTemp 333:----------------\n");
-    ///vecTemp->print();
     dmac_ang_s0->equate(*vecTemp); //VecCopy(vecTemp, dmac_ang_s0);
-    ///printf("-----------dmac_ang_s0:----------------\n");
-    ///dmac_ang_s0->print();
-    /// ---------- dmac_spd: ----------
+    // ---------- dmac_spd: ----------
     vecTemp->equate(*pelect);
     vecTemp->elementMultiply(*mva); //VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
     dmac_spd_s0->equate(*pmech); //VecCopy(pmech, dmac_spd_s0);
-    vecTemp->scale(-1.0);
-    dmac_spd_s0->add(*vecTemp); //VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva
+    dmac_spd_s0->add(*vecTemp, -1.0); //VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva
     vecTemp->equate(*mac_spd_s0); //VecCopy(mac_spd_s0, vecTemp);
     vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
     vecTemp->elementMultiply(*d0); //VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s0 - 1.0)
-    vecTemp->scale(-1.0);
-    dmac_spd_s0->add(*vecTemp); //VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s0 - 1.0)
+    dmac_spd_s0->add(*vecTemp, -1.0); //VecAXPY(dmac_spd_s0, -1.0, vecTemp); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s0 - 1.0)
     vecTemp->equate(*h); //VecCopy(h, vecTemp);
     vecTemp->scale(2.0); //VecScale(vecTemp, 2); // 2 * gen_h
     dmac_spd_s0->elementDivide(*vecTemp); //VecPointwiseDivide(dmac_spd_s0, dmac_spd_s0, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s0-1.0) )/(2*gen_h)  
-    /*printf("-----------mac_ang_s0:----------------\n");
-    mac_ang_s0->print();
-    printf("-----------mac_spd_s0:----------------\n");
-    mac_spd_s0->print();
-    printf("-----------dmac_ang_s0:----------------\n");
-    dmac_ang_s0->print();
-    printf("-----------dmac_spd_s0:----------------\n");
-    dmac_spd_s0->print();*/
 
     mac_ang_s1->equate(*mac_ang_s0); //VecCopy(mac_ang_s0, mac_ang_s1);
-    gridpack::ComplexType h1(h_sol1, 0.0);
     vecTemp->equate(*dmac_ang_s0);
-    vecTemp->scale(h_sol1);
-    mac_ang_s1->add(*vecTemp); //VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
+    mac_ang_s1->add(*dmac_ang_s0, h_sol1); //VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
     mac_spd_s1->equate(*mac_spd_s0); //VecCopy(mac_spd_s0, mac_spd_s1);
     vecTemp->equate(*dmac_spd_s0);
-    vecTemp->scale(h_sol1);
-    mac_spd_s1->add(*vecTemp); //VecAXPY(mac_spd_s1, h_sol1, dmac_spd_s0);
+    mac_spd_s1->add(*vecTemp, h_sol1); //VecAXPY(mac_spd_s1, h_sol1, dmac_spd_s0);
 
     vecTemp->equate(*mac_ang_s1); //VecCopy(mac_ang_s1, vecTemp);
     vecTemp->scale(jay); //VecScale(vecTemp, PETSC_i);
@@ -519,69 +492,46 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
     curr->conjugate(); //VecConjugate(curr);
     vecTemp->equate(*eprime_s1);
     vecTemp->elementMultiply(*curr); 
-    printf("curr:.....................\n");
-    curr->print();
-    printf("eprime_s1:.....................\n");
-    eprime_s1->print();
-    printf("eprime_s1.*curr::.....................\n");
-    vecTemp->print();
     pelect->equate(*vecTemp); //VecPointwiseMult(pelect, eprime_s1, curr);
-    printf("pelect:.....................\n");
-    pelect->print(); 
+    curr->print();
+    eprime_s1->print();
+    pelect->print();
     pelect->real(); //Get the real part of pelect
-    //printf("-----------pelect:----------------\n");
-    //pelect->print();
     // ---------- dmac_ang: ----------
     vecTemp->equate(*mac_spd_s1); //VecCopy(mac_spd_s1, vecTemp);
-    ///printf("-----------mac_spd_s1:----------------\n");
-    ///mac_spd_s1->print();
-    ///printf("-----------vecTemp 1:----------------\n");
-    ///vecTemp->print();
     vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
-    ///printf("-----------vecTemp 2:----------------\n");
-    ///vecTemp->print();
     vecTemp->scale(basrad); //VecScale(vecTemp, basrad);
-    ///printf("-----------vecTemp 3:----------------\n");
-    ///vecTemp->print();
     dmac_ang_s1->equate(*vecTemp); //VecCopy(vecTemp, dmac_ang_s1);
     // ---------- dmac_spd: ----------
     vecTemp->equate(*pelect);
     vecTemp->elementMultiply(*mva); //VecPointwiseMult(vecTemp, pelect, mva); // pelect * gen_mva
     dmac_spd_s1->equate(*pmech); //VecCopy(pmech, dmac_spd_s1);
-    vecTemp->scale(-1.0);
-    dmac_spd_s1->add(*vecTemp); ///VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva
+    dmac_spd_s1->add(*vecTemp, -1.0); //VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva
     vecTemp->equate(*mac_spd_s1); //VecCopy(mac_spd_s1, vecTemp);
     vecTemp->add(-1.0); //VecShift(vecTemp, -1.0);
     vecTemp->elementMultiply(*d0); //VecPointwiseMult(vecTemp1, d0, vecTemp); // gen_d0 * (mac_spd_s1 - 1.0)
-    vecTemp->scale(-1.0);
-    dmac_spd_s1->add(*vecTemp, neg1); //VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s1 - 1.0)
+    dmac_spd_s1->add(*vecTemp, -1.0); //VecAXPY(dmac_spd_s1, -1.0, vecTemp); // pmech - pelect * gen_mva - gen_d0 * (mac_spd_s1 - 1.0)
     vecTemp->equate(*h); //VecCopy(h, vecTemp);
     vecTemp->scale(2.0); //VecScale(vecTemp, 2); // 2 * gen_h
     dmac_spd_s1->elementDivide(*vecTemp); //VecPointwiseDivide(dmac_spd_s1, dmac_spd_s1, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s1-1.0) )/(2*gen_h) 
 
     vecTemp->equate(*dmac_ang_s0); //VecCopy(dmac_ang_s0, vecTemp);
-    ///printf("-----------vecTemp:----------------\n");
-    ///vecTemp->print();
-    ///printf("-----------dmac_ang_s1:----------------\n");
-    ///dmac_ang_s1->print();
     vecTemp->add(*dmac_ang_s1); //VecAXPY(vecTemp, 1.0, dmac_ang_s1);
     vecTemp->scale(0.5); //VecScale(vecTemp, 0.5);
     mac_ang_s1->equate(*mac_ang_s0); //VecCopy(mac_ang_s0, mac_ang_s1);
-    vecTemp->scale(h_sol2);
-    mac_ang_s1->add(*vecTemp); //VecAXPY(mac_ang_s1, h_sol2, vecTemp);
+    mac_ang_s1->add(*vecTemp, h_sol2); //VecAXPY(mac_ang_s1, h_sol2, vecTemp);
     vecTemp->equate(*dmac_spd_s0); //VecCopy(dmac_spd_s0, vecTemp);
     vecTemp->add(*dmac_spd_s1); //VecAXPY(vecTemp, 1.0, dmac_spd_s1);
     vecTemp->scale(0.5); //VecScale(vecTemp, 0.5);
     mac_spd_s1->equate(*mac_spd_s0); //VecCopy(mac_spd_s0, mac_spd_s1);
-    vecTemp->scale(h_sol2);
-    mac_spd_s1->add(*vecTemp); //VecAXPY(mac_spd_s1, h_sol2, vecTemp);
+    mac_spd_s1->add(*vecTemp, h_sol2); //VecAXPY(mac_spd_s1, h_sol2, vecTemp);
 
     // Print to screen
-    /*if (last_S_Steps != S_Steps) {
+    if (last_S_Steps != S_Steps) {
       printf("\n========================S_Steps = %d=========================\n", S_Steps);
       mac_ang_s0->print();  
       mac_spd_s0->print();  
-      //pmech->print();
+      pmech->print();
       pelect->print();
       printf("========================End of S_Steps = %d=========================\n\n", S_Steps);
     }
@@ -591,8 +541,9 @@ void gridpack::dynamic_simulation::DSApp::execute(void)
       mac_spd_s1->print();  
       pmech->print();
       pelect->print();
+      printf("========================End of S_Steps = %d=========================\n\n", S_Steps+1);
     } // End of Print to screen
-    */
+    
     last_S_Steps = S_Steps;
   } 
 }
