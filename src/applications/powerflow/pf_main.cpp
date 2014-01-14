@@ -33,7 +33,7 @@ main(int argc, char **argv)
   MA_init(C_DBL, stack, heap);
 
   gridpack::powerflow::PFApp app;
-  app.execute();
+  app.execute(argc, argv);
 
   GA_Terminate();
 

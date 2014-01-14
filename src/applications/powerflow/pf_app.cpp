@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2014-01-10 10:11:11 d3g096
+ * @date   2013-10-29 08:28:38 d3g096
  * 
  * @brief  
  * 
@@ -49,8 +49,10 @@ gridpack::powerflow::PFApp::~PFApp(void)
 
 /**
  * Execute application
+ * @param argc number of arguments
+ * @param argv list of character strings
  */
-void gridpack::powerflow::PFApp::execute(void)
+void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 {
   // load input file
   gridpack::utility::CoarseTimer *timer =
@@ -62,7 +64,13 @@ void gridpack::powerflow::PFApp::execute(void)
 
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
-  config->open("input.xml",world);
+  if (argc >= 2 && argv[1] != NULL) {
+    char inputfile[256];
+    sprintf(inputfile,"%s",argv[1]);
+    config->open(inputfile,world);
+  } else {
+    config->open("input.xml",world);
+  }
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename = cursor->get("networkConfiguration",
@@ -123,11 +131,15 @@ void gridpack::powerflow::PFApp::execute(void)
   int t_cmap = timer->createCategory("Create Mappers");
   timer->start(t_cmap);
   factory.setMode(YBus); 
+#if 0
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
+#endif
   timer->stop(t_cmap);
   int t_mmap = timer->createCategory("Map to Matrix");
   timer->start(t_mmap);
+#if 0
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+#endif
   timer->stop(t_mmap);
 //  busIO.header("\nY-matrix values\n");
 //  Y->print();
@@ -140,14 +152,6 @@ void gridpack::powerflow::PFApp::execute(void)
   gridpack::mapper::BusVectorMap<PFNetwork> vvMap(network);
   timer->stop(t_cmap);
   int t_vmap = timer->createCategory("Map to Vector");
-  timer->start(t_vmap);
-  boost::shared_ptr<gridpack::math::Vector> vv = vvMap.mapToVector();
-  timer->stop(t_vmap);
-//  vv->save("vv.m");
-
-  boost::shared_ptr<gridpack::math::Vector> Yvv(multiply(*Y, *vv)); 
-//  Yvv->save("Yvv.m");
-
 
   // make Sbus components to create S vector
   timer->start(t_fact);
@@ -163,13 +167,6 @@ void gridpack::powerflow::PFApp::execute(void)
   timer->start(t_vmap);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   timer->stop(t_vmap);
-//  busIO.header("\nPQ values\n");
-//  PQ->print();
-//  busIO.header("\n   Elements of PQ vector\n");
-//  busIO.header("\n   Bus Number           P                   Q      Neighbors\n");
-//  busIO.write("pq");
-//  PQ->save("PQ.m");
-#if 1
   timer->start(t_cmap);
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
@@ -178,11 +175,8 @@ void gridpack::powerflow::PFApp::execute(void)
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   timer->stop(t_mmap);
   busIO.header("\nJacobian values\n");
-//  J->print(); 
-//  J->save("J.m");
 
-
-#if 1
+  // Create X vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
 
   // Convergence and iteration parameters
@@ -197,8 +191,8 @@ void gridpack::powerflow::PFApp::execute(void)
   // Create linear solver
   int t_csolv = timer->createCategory("Create Linear Solver");
   timer->start(t_csolv);
-  gridpack::math::LinearSolver isolver(*J);
-  isolver.configure(cursor);
+  gridpack::math::LinearSolver solver(*J);
+  solver.configure(cursor);
   timer->stop(t_csolv);
 
   tol = 2.0*tolerance;
@@ -209,11 +203,14 @@ void gridpack::powerflow::PFApp::execute(void)
   busIO.header("\nCalling solver\n");
   int t_lsolv = timer->createCategory("Solve Linear Equation");
   timer->start(t_lsolv);
-  isolver.solve(*PQ, *X);
+//    char dbgfile[32];
+//    sprintf(dbgfile,"j0.bin");
+//    J->saveBinary(dbgfile);
+//    sprintf(dbgfile,"pq0.bin");
+//    PQ->saveBinary(dbgfile);
+  solver.solve(*PQ, *X);
   timer->stop(t_lsolv);
   tol = PQ->normInfinity();
-//  busIO.header("\nX values\n");
-//  X->save("X.m");
 
   // Create timer for map to bus
   int t_bmap = timer->createCategory("Map to Bus");
@@ -237,9 +234,6 @@ void gridpack::powerflow::PFApp::execute(void)
     timer->start(t_vmap);
     vMap.mapToVector(PQ);
     timer->stop(t_vmap);
-//    sprintf(ioBuf,"\nIteration %d Print PQ\n",iter+1);
-//    busIO.header(ioBuf);
-//    PQ->print();
     timer->start(t_mmap);
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
@@ -248,16 +242,28 @@ void gridpack::powerflow::PFApp::execute(void)
     // Create linear solver
     timer->start(t_lsolv);
     X->zero(); //might not need to do this
+#if 0
+//    sprintf(dbgfile,"j%d.bin",iter+1);
+//    J->saveBinary(dbgfile);
+//    sprintf(dbgfile,"pq%d.bin",iter+1);
+//    PQ->saveBinary(dbgfile);
+    solver.solve(*PQ, *X);
+#else
+//    sprintf(dbgfile,"j%d.bin",iter+1);
+//    J->saveBinary(dbgfile);
+//    sprintf(dbgfile,"pq%d.bin",iter+1);
+//    PQ->saveBinary(dbgfile);
+    gridpack::math::LinearSolver isolver(*J);
+    isolver.configure(cursor);
     isolver.solve(*PQ, *X);
+#endif
     timer->stop(t_lsolv);
-//    X->print();
 
     tol = PQ->normInfinity();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
     iter++;
   }
-#endif
   // Push final result back onto buses
   timer->start(t_bmap);
   factory.setMode(RHS);
@@ -274,8 +280,6 @@ void gridpack::powerflow::PFApp::execute(void)
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   busIO.write();
-#endif
   timer->stop(t_total);
   timer->dump();
-
 }
