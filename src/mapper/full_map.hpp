@@ -57,6 +57,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   setupOffsetArrays();
 
   contributions();
+  GA_Sync();
 
 }
 
@@ -64,6 +65,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 {
   GA_Destroy(gaOffsetI);
   GA_Destroy(gaOffsetJ);
+  GA_Sync();
 }
 
 /**
@@ -588,12 +590,12 @@ void setupOffsetArrays()
     NGA_Put(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,iOffsets,&one);
     NGA_Put(gaOffsetJ,&p_minRowIndex,&p_maxRowIndex,jOffsets,&one);
   }
-  GA_Sync();
 
   // Clean up arrays that are no longer needed
   GA_Destroy(gaMatBlksI);
   GA_Destroy(gaMatBlksJ);
 
+  GA_Sync();
   delete [] mapc;
   delete [] iSizes;
   delete [] jSizes;

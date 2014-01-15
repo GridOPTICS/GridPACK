@@ -136,6 +136,7 @@ void mapToBus(const gridpack::math::Vector &vector)
   }
   delete [] sizes;
   delete [] offsets;
+  GA_Sync();
 }
 
 /**
