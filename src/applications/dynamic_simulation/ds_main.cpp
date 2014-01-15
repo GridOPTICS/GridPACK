@@ -33,7 +33,7 @@ main(int argc, char **argv)
   MA_init(C_DBL, stack, heap);
 
   gridpack::dynamic_simulation::DSApp app;
-  app.execute();
+  app.execute(argc, argv);
 
   GA_Terminate();
 

@@ -46,14 +46,20 @@ gridpack::dynamic_simulation::DSApp::~DSApp(void)
 /**
  * Execute application
  */
-void gridpack::dynamic_simulation::DSApp::execute(void)
+void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 {
   gridpack::parallel::Communicator world;
   boost::shared_ptr<DSNetwork> network(new DSNetwork(world));
 
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
-  config->open("input.xml",world);
+  if (argc >= 2 && argv[1] != NULL) {
+    char inputfile[256];
+    sprintf(inputfile,"%s",argv[1]);
+    config->open(inputfile,world);
+  } else {
+    config->open("input.xml",world);
+  }
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Dynamic_simulation");
   std::string filename = cursor->get("networkConfiguration",

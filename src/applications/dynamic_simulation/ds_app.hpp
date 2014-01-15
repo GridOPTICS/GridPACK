@@ -41,8 +41,10 @@ class DSApp
 
     /**
      * Execute application
+     * @param argc number of arguments
+     * @param argv list of character strings
      */
-    void execute(void);
+    void execute(int argc, char** argv);
  
     private:
 };
