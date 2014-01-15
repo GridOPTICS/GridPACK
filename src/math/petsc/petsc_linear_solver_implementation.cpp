@@ -8,7 +8,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-01-09 12:14:50 d3g096
+ * @date   2014-01-14 13:49:26 d3g096
  * 
  * @brief  
  * 
@@ -78,7 +78,6 @@ PETScLinearSolverImplementation::p_build(const std::string& option_prefix)
                             p_maxIterations); CHKERRXX(ierr);
 
     ierr = KSPSetFromOptions(p_KSP);CHKERRXX(ierr);
-    ierr = KSPSetOperators(p_KSP, *p_A, *p_A, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -121,6 +120,7 @@ PETScLinearSolverImplementation::p_solve(const Vector& b, Vector& x) const
   try {
     const Vec *bvec(PETScVector(b));
     Vec *xvec(PETScVector(x));
+    ierr = KSPSetOperators(p_KSP, *p_A, *p_A, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
     ierr = KSPSolve(p_KSP, *bvec, *xvec); CHKERRXX(ierr);
     int its;
     KSPConvergedReason reason;

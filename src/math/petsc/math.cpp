@@ -8,7 +8,7 @@
 /**
  * @file   math.cpp
  * @author William A. Perkins
- * @date   2014-01-10 10:15:20 d3g096
+ * @date   2014-01-15 10:06:10 d3g096
  * 
  * @brief  
  * 
@@ -35,7 +35,7 @@ Initialize(void)
   PetscBool flg;
   try {
 // Turn this on to enable PETSc logging.
-#if 1
+#if 0
     int argc = 2;
     char **args;
     args = new char*[2];

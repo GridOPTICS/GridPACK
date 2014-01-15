@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2013-10-29 08:28:38 d3g096
+ * @date   2014-01-15 08:09:06 d3g096
  * 
  * @brief  
  * 
@@ -242,7 +242,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     // Create linear solver
     timer->start(t_lsolv);
     X->zero(); //might not need to do this
-#if 0
+#if 1
 //    sprintf(dbgfile,"j%d.bin",iter+1);
 //    J->saveBinary(dbgfile);
 //    sprintf(dbgfile,"pq%d.bin",iter+1);
