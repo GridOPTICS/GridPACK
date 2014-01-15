@@ -626,9 +626,13 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   }
 
   // Gather matrix offsets
-  int *offsets = new int[p_busContribution];
+  int *i_offsets;
+  int *j_offsets;
   if (p_busContribution > 0) {
-    NGA_Gather(gaOffsetI,offsets,indices,p_busContribution);
+    i_offsets = new int[p_busContribution];
+    j_offsets = new int[p_busContribution];
+    NGA_Gather(gaOffsetI,i_offsets,indices,p_busContribution);
+    NGA_Gather(gaOffsetJ,j_offsets,indices,p_busContribution);
   }
 
   // Add matrix elements
@@ -645,10 +649,11 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
         if (p_network->getBus(i)->matrixDiagValues(values)) {
           icnt = 0;
           for (k=0; k<jsize; k++) {
-            jdx = offsets[jcnt] + k;
+            jdx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
-              idx = offsets[jcnt] + j;
+              idx = i_offsets[jcnt] + j;
 //              if (flag) {
+//                printf("p[%d] Adding value [%d,%d]: %f+i%f\n",GA_Nodeid(),idx,jdx,real(values[icnt]),imag(values[icnt]));
                 matrix.addElement(idx, jdx, values[icnt]);
 //              } else {
 //                matrix.setElement(idx, jdx, values[icnt]);
@@ -665,7 +670,10 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 
   // Clean up arrays
   delete [] indices;
-  delete [] offsets;
+  if (p_busContribution > 0) {
+    delete [] i_offsets;
+    delete [] j_offsets;
+  }
   delete [] values;
 }
 
@@ -747,6 +755,7 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             for (j=0; j<isize; j++) {
               idx = i_offsets[jcnt] + j;
 //              if (flag) {
+//                printf("p[%d] Adding value [%d,%d]: %f+i%f\n",GA_Nodeid(),idx,jdx,real(values[icnt]),imag(values[icnt]));
                 matrix.addElement(idx, jdx, values[icnt]);
 //              } else {
 //                matrix.setElement(idx, jdx, values[icnt]);
@@ -776,6 +785,7 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             for (j=0; j<isize; j++) {
               jdx = i_offsets[jcnt] + j;
 //              if (flag) {
+//                printf("p[%d] Adding value [%d,%d]: %f+i%f\n",GA_Nodeid(),idx,jdx,real(values[icnt]),imag(values[icnt]));
                 matrix.addElement(jdx, idx, values[icnt]);
 //              } else {
 //                matrix.setElement(jdx, idx, values[icnt]);
