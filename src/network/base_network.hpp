@@ -773,6 +773,22 @@ BranchPtr getBranch(int idx)
 }
 
 /**
+ * Get original indices of the two buses at each end of a branch
+ * @param idx local index of branch
+ * @param idx1 original index of "from" bus 
+ * @param idx1 original index of "to" bus 
+ */
+void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
+{
+  if (idx >= 0 && idx < p_branches.size()) {
+    *idx1 = p_branches[idx].p_originalBusIndex1;
+    *idx2 = p_branches[idx].p_originalBusIndex2;
+  } else {
+    // TODO: some kind of error
+  }
+}
+
+/**
  * Retrieve a pointer to the DataCollection object associated with bus indexed
  * by idx
  * @param idx local index of requested bus
