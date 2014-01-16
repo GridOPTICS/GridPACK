@@ -68,7 +68,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Read in information about fault events and store them in internal data
   // structure
   cursor = config->getCursor("Configuration.Dynamic_simulation.faultEvents");
-  if (!cursor) printf("No cursor found\n");
   gridpack::utility::Configuration::ChildCursors events;
   if (cursor) cursor->children(events);
   std::vector<Event> faults = setFaultEvents(events); 
