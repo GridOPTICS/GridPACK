@@ -4,10 +4,10 @@
     <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
     <faultEvents>
       <faultEvent>
-        <beginFault> 0.3</beginFault>
-        <endFault>   0.6</endFault>
+        <beginFault> 0.03</beginFault>
+        <endFault>   0.06</endFault>
         <faultBranch>6 7</faultBranch>
-        <timeStep>   0.1</timeStep>
+        <timeStep>   0.01</timeStep>
       </faultEvent>
     </faultEvents>
     <LinearMatrixSolver>

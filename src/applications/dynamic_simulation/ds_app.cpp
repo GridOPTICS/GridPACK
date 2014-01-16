@@ -79,6 +79,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // partition network
   network->partition();
 
+  // Create serial IO object to export data from buses or branches
+  gridpack::serial_io::SerialBusIO<DSNetwork> busIO(128, network);
+  gridpack::serial_io::SerialBranchIO<DSNetwork> branchIO(128, network);
+  char ioBuf[128];
+
   // create factory
   gridpack::dynamic_simulation::DSFactory factory(network);
   factory.load();
@@ -91,28 +96,27 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   factory.setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
-  printf("\n=== ybus: ============\n");
-  ybus->print();
+  boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
+  branchIO.header("\n=== orginal ybus: ============\n");
+  orgYbus->print();
 
   // Form constant impedance load admittance yl for all buses and add it to 
   // system Y matrix: ybus = ybus + yl
   factory.setMode(YL); 
-  gridpack::mapper::FullMatrixMap<DSNetwork> newybusMap(network);
-  ybus = newybusMap.mapToMatrix();
-  printf("\n=== ybus after added yl: ============\n");
+  boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
+  branchIO.header("\n=== ybus after added yl: ============\n");
   ybus->print();
  
   // Construct permutation matrix perm by checking for multiple generators at a bus
   factory.setMode(PERM);
   gridpack::mapper::FullMatrixMap<DSNetwork> permMap(network);
   boost::shared_ptr<gridpack::math::Matrix> perm = permMap.mapToMatrix();
-  printf("\n=== perm: ============\n");
+  busIO.header("\n=== perm: ============\n");
   perm->print(); 
 
   // Form a transposed matrix of perm
   boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
-  printf("\n=== permTrans: ============\n");
+  busIO.header("\n=== permTrans: ============\n");
   permTrans->print();
 
   // Construct matrix Y_a using extracted xd and ra from gen data, 
@@ -123,7 +127,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //printf("\n=== Y_a: ============\n");
   //Y_a->print(); 
   boost::shared_ptr<gridpack::math::Matrix> diagY_a = yaMap.mapToMatrix();
-  printf("\n=== diagY_a: ============\n");
+  busIO.header("\n=== diagY_a: ============\n");
   diagY_a->print(); 
   // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
   gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
@@ -131,7 +135,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
   boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans));
-  printf("\n=== Ymod: ============\n");
+  busIO.header("\n=== Ymod: ============\n");
   Ymod->print(); 
  
   // Form matrix Y_b: Y_b(1:ngen, jg) = -Ymod, where jg represents the 
@@ -141,13 +145,13 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(PMatrix);
   gridpack::mapper::FullMatrixMap<DSNetwork> pMap(network);
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
-  printf("\n=== P: ============\n");
+  busIO.header("\n=== P: ============\n");
   P->print();
   boost::shared_ptr<gridpack::math::Matrix> Y_c(multiply(*P, *Ymod)); 
-  printf("\n=== Y_c: ============\n");
+  busIO.header("\n=== Y_c: ============\n");
   Y_c->print();
   boost::shared_ptr<gridpack::math::Matrix> Y_b(transpose(*Y_c));
-  printf("\n=== Y_b: ============\n");
+  busIO.header("\n=== Y_b: ============\n");
   Y_b->print();
   Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
   // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
@@ -156,20 +160,20 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
    
   // Form matrix permYmod
   boost::shared_ptr<gridpack::math::Matrix> permYmod(multiply(*perm, *Ymod)); 
-  printf("\n=== permYmod: ============\n");
+  busIO.header("\n=== permYmod: ============\n");
   permYmod->print();
 
   // Update ybus: ybus = ybus+permYmod (different dimension) => prefy11ybus
   factory.setMode(updateYbus);
 
-  printf("\n=== vPermYmod: ============\n");
   boost::shared_ptr<gridpack::math::Vector> vPermYmod(diagonal(*permYmod));
+  busIO.header("\n=== vPermYmod: ============\n");
   vPermYmod->print();
   gridpack::mapper::BusVectorMap<DSNetwork> permYmodMap(network);
   permYmodMap.mapToBus(vPermYmod);
 
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
-  printf("\n=== prefy11ybus: ============\n");
+  branchIO.header("\n=== prefy11ybus: ============\n");
   prefy11ybus->print();
 
   // Solve linear equations of ybus * X = Y_c
@@ -177,7 +181,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //solver1.configure(cursor);
   gridpack::math::LinearMatrixSolver solver1(*prefy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> prefy11X(solver1.solve(*Y_cDense));
-  printf("\n=== prefy11X: ============\n");
+  branchIO.header("\n=== prefy11X: ============\n");
   prefy11X->print(); 
   
   //-----------------------------------------------------------------------
@@ -187,7 +191,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> prefy11(multiply(*Y_b, *prefy11X)); 
   // Update prefy11: prefy11 = Y_a + prefy11
   prefy11->add(*Y_a);
-  printf("\n=== Reduced Ybus: prefy11: ============\n");
+  branchIO.header("\n=== Reduced Ybus: prefy11: ============\n");
   prefy11->print();
 
   //-----------------------------------------------------------------------
@@ -195,8 +199,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Update ybus values at fault stage
   //-----------------------------------------------------------------------
   // assume switch info is set up here instead of reading from the input file
-  int sw2_2 = 5; // 6-1
-  int sw3_2 = 6; // 7-1
+  //int sw2_2 = 5; // 6-1
+  //int sw3_2 = 6; // 7-1
+  // Read the switch info from faults Event from input.xml
+  int sw2_2 = faults[0].from_idx - 1;
+  int sw3_2 = faults[0].to_idx - 1;
 
   //factory.setMode(FY); 
   //gridpack::mapper::FullMatrixMap<DSNetwork> fy11ybusMap(network);
@@ -207,21 +214,21 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   gridpack::ComplexType x(0.0, -1e7);
   fy11ybus->setElement(sw2_2, sw2_2, -x);
   fy11ybus->ready();
-  printf("\n=== fy11ybus: ============\n");
+  branchIO.header("\n=== fy11ybus: ============\n");
   fy11ybus->print();
 
   // Solve linear equations of fy11ybus * X = Y_c
   //gridpack::math::LinearSolver solver2(*fy11ybus);
   gridpack::math::LinearMatrixSolver solver2(*fy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> fy11X(solver2.solve(*Y_cDense)); 
-  printf("\n=== fy11X: ============\n");
+  branchIO.header("\n=== fy11X: ============\n");
   fy11X->print();
   
   // Form reduced admittance matrix fy11: fy11 = Y_b * X
   boost::shared_ptr<gridpack::math::Matrix> fy11(multiply(*Y_b, *fy11X)); 
   // Update fy11: fy11 = Y_a + fy11
   fy11->add(*Y_a);
-  printf("\n=== Reduced Ybus: fy11: ============\n");
+  branchIO.header("\n=== Reduced Ybus: fy11: ============\n");
   fy11->print();
 
   //-----------------------------------------------------------------------
@@ -251,21 +258,21 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   posfy11ybus->addElement(sw3_2, sw3_2, x22);
   
   posfy11ybus->ready(); 
-  printf("\n=== posfy11ybus: ============\n");
+  branchIO.header("\n=== posfy11ybus: ============\n");
   posfy11ybus->print();
     
   // Solve linear equations of posfy11ybus * X = Y_c
   //gridpack::math::LinearSolver solver3(*posfy11ybus);
   gridpack::math::LinearMatrixSolver solver3(*posfy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> posfy11X(solver3.solve(*Y_cDense)); 
-  printf("\n=== posfy11X: ============\n");
+  branchIO.header("\n=== posfy11X: ============\n");
   posfy11X->print();
   
   // Form reduced admittance matrix posfy11: posfy11 = Y_b * X
   boost::shared_ptr<gridpack::math::Matrix> posfy11(multiply(*Y_b, *posfy11X)); 
   //// Update posfy11: posfy11 = Y_a + posfy11
   posfy11->add(*Y_a);
-  printf("\n=== Reduced Ybus: posfy11: ============\n");
+  branchIO.header("\n=== Reduced Ybus: posfy11: ============\n");
   posfy11->print();
 
   //-----------------------------------------------------------------------
@@ -278,65 +285,66 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(init_pelect);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap1(network);
   boost::shared_ptr<gridpack::math::Vector> pelect = XMap1.mapToVector();
-  printf("\n=== pelect: ===\n");
+  busIO.header("\n=== pelect: ===\n");
   pelect->print();
 
   // Map to create vector eprime_s0 
   factory.setMode(init_eprime);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap2(network);
   boost::shared_ptr<gridpack::math::Vector> eprime_s0 = XMap2.mapToVector();
-  printf("\n=== eprime: ===\n");
+  busIO.header("\n=== eprime: ===\n");
   eprime_s0->print();
 
   // Map to create vector mac_ang_s0
   factory.setMode(init_mac_ang);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap3(network);
   boost::shared_ptr<gridpack::math::Vector> mac_ang_s0 = XMap3.mapToVector();
-  printf("\n=== mac_ang_s0: ===\n");
+  busIO.header("\n=== mac_ang_s0: ===\n");
   mac_ang_s0->print();
 
   // Map to create vector mac_spd_s0
   factory.setMode(init_mac_spd);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap4(network);
   boost::shared_ptr<gridpack::math::Vector> mac_spd_s0 = XMap4.mapToVector();
-  printf("\n=== mac_spd_s0: ===\n");
+  busIO.header("\n=== mac_spd_s0: ===\n");
   mac_spd_s0->print();
 
   // Map to create vector eqprime
   factory.setMode(init_eqprime);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap5(network);
   boost::shared_ptr<gridpack::math::Vector> eqprime = XMap5.mapToVector();
-  printf("\n=== eqprime: ===\n");
+  busIO.header("\n=== eqprime: ===\n");
   eqprime->print();
 
   // Map to create vector pmech  
   factory.setMode(init_pmech);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap6(network);
   boost::shared_ptr<gridpack::math::Vector> pmech = XMap6.mapToVector();
-  printf("\n=== pmech: ===\n");
+  busIO.header("\n=== pmech: ===\n");
   pmech->print();
 
   // Map to create vector mva
   factory.setMode(init_mva);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap7(network);
   boost::shared_ptr<gridpack::math::Vector> mva = XMap7.mapToVector();
-  printf("\n=== mva: ===\n");
+  busIO.header("\n=== mva: ===\n");
   mva->print();
 
   // Map to create vector d0
   factory.setMode(init_d0);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap8(network);
   boost::shared_ptr<gridpack::math::Vector> d0 = XMap8.mapToVector();
-  printf("\n=== d0: ===\n");
+  busIO.header("\n=== d0: ===\n");
   d0->print();
 
   // Map to create vector h
   factory.setMode(init_h);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap9(network);
   boost::shared_ptr<gridpack::math::Vector> h = XMap9.mapToVector();
-  printf("\n=== h: ===\n");
+  busIO.header("\n=== h: ===\n");
   h->print();
-  printf("\n============Start of Simulation:=====================\n");
+
+  busIO.header("\n============Start of Simulation:=====================\n");
 
   // Declare vector mac_ang_s1, mac_spd_s1
   //boost::shared_ptr<gridpack::math::Vector> mac_ang_s1; 
@@ -381,8 +389,18 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // assume switch info is set up here instead of reading from the input file
   int nswtch = 4;
-  static double sw1[4] = {0.0, 0.03, 0.06, 0.1};
-  static double sw7[4] = {0.01, 0.01, 0.01, 0.01}; 
+  //static double sw1[4] = {0.0, 0.03, 0.06, 0.1};
+  //static double sw7[4] = {0.01, 0.01, 0.01, 0.01}; 
+  static double sw1[4];
+  static double sw7[4];
+  sw1[0] = 0.0;
+  sw1[1] = faults[0].start;
+  sw1[2] = faults[0].end;
+  sw1[3] = 0.1;
+  sw7[0] = faults[0].step;
+  sw7[1] = faults[0].step;
+  sw7[2] = faults[0].step;
+  sw7[3] = faults[0].step;
   simu_k = 0; 
   for (int i = 0; i < nswtch-1; i++) {
     t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);   
@@ -506,9 +524,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->equate(*eprime_s1);
     vecTemp->elementMultiply(*curr); 
     pelect->equate(*vecTemp); //VecPointwiseMult(pelect, eprime_s1, curr);
-    curr->print();
-    eprime_s1->print();
-    pelect->print();
     pelect->real(); //Get the real part of pelect
     // ---------- dmac_ang: ----------
     vecTemp->equate(*mac_spd_s1); //VecCopy(mac_spd_s1, vecTemp);
@@ -541,21 +556,25 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
     // Print to screen
     if (last_S_Steps != S_Steps) {
-      printf("\n========================S_Steps = %d=========================\n", S_Steps);
+      /*sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps);
+      busIO.header(ioBuf);
       mac_ang_s0->print();  
       mac_spd_s0->print();  
       pmech->print();
       pelect->print();
-      printf("========================End of S_Steps = %d=========================\n\n", S_Steps);
+      sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps);
+      busIO.header(ioBuf);*/
     }
     if (I_Steps == simu_k) {
-      printf("\n========================S_Steps = %d=========================\n", S_Steps+1);
+      sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps+1);
+      busIO.header(ioBuf);
       mac_ang_s1->print();  
       mac_spd_s1->print();  
       pmech->print();
       pelect->print();
-      printf("========================End of S_Steps = %d=========================\n\n", S_Steps+1);
-    } // End of Print to screen
+      sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps+1);
+      busIO.header(ioBuf);
+    } // End of Print to screen 
     
     last_S_Steps = S_Steps;
   } 
