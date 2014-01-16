@@ -2,23 +2,31 @@
 <Configuration>
   <Dynamic_simulation>
     <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 0.3</beginFault>
+        <endFault>   0.6</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.1</timeStep>
+      </faultEvent>
+    </faultEvents>
+    <LinearMatrixSolver>
+      <!--
+        These options are used if SuperLU was built into PETSc 
+      -->
+      <Ordering>nd</Ordering>
+      <Package>superlu_dist</Package>
+      <Iterations>1</Iterations>
+      <Fill>5</Fill>
+      <!--<PETScOptions>
+        These options are used for the LinearSolver if SuperLU is not available
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+      </PETScOptions>
+      -->
+    </LinearMatrixSolver>
   </Dynamic_simulation>
-  <LinearMatrixSolver>
-    <!--
-      These options are used if SuperLU was built into PETSc 
-    -->
-    <Ordering>nd</Ordering>
-    <Package>superlu_dist</Package>
-    <Iterations>1</Iterations>
-    <Fill>5</Fill>
-    <!--<PETScOptions>
-      These options are used for the LinearSolver if SuperLU is not available
-      -ksp_atol 1.0e-18
-      -ksp_rtol 1.0e-10
-      -ksp_monitor
-      -ksp_max_it 200
-      -ksp_view
-    </PETScOptions>
-    -->
-  </LinearMatrixSolver>
 </Configuration>

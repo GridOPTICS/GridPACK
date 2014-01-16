@@ -65,6 +65,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
 
+  // Read in information about fault events and store them in internal data
+  // structure
+  cursor = config->getCursor("Configuration.Dynamic_simulation.faultEvents");
+  if (!cursor) printf("No cursor found\n");
+  gridpack::utility::Configuration::ChildCursors events;
+  if (cursor) cursor->children(events);
+  std::vector<Event> faults = setFaultEvents(events); 
+
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
   parser.parse(filename.c_str());
@@ -554,3 +562,51 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   } 
 }
 
+/**
+ * Utility function to convert faults that are in event list into
+ * internal data structure that can be used by code
+ * @param cursors list of cursors pointing to individual events in input
+ * deck
+ * @return list of event data structures
+ */
+std::vector<gridpack::dynamic_simulation::Event>
+   gridpack::dynamic_simulation::DSApp::setFaultEvents(
+   std::vector<gridpack::utility::Configuration::CursorPtr > events)
+{
+  int size = events.size();
+  int idx;
+  std::vector<gridpack::dynamic_simulation::Event> faults;
+  for (idx=0; idx<size; idx++) {
+    Event event;
+    event.start = events[idx]->get("beginFault",0.0);
+    event.end = events[idx]->get("endFault",0.0);
+    std::string indices = events[idx]->get("faultBranch","0 0");
+    //Parse indices to get from and to indices of branch
+    int ntok1 = indices.find_first_not_of(' ',0);
+    int ntok2 = indices.find(' ',ntok1);
+    if (ntok2 - ntok1 > 0 && ntok1 != std::string::npos && ntok2 !=
+        std::string::npos) {
+      event.from_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
+      ntok1 = indices.find_first_not_of(' ',ntok2);
+      ntok2 = indices.find(' ',ntok1);
+      if (ntok1 != std::string::npos && ntok1 < indices.length()) {
+        if (ntok2 == std::string::npos) {
+          ntok2 = indices.length();
+        }
+        event.to_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
+      } else {
+        event.from_idx = 0;
+        event.to_idx = 0;
+      }
+    } else {
+      event.from_idx = 0;
+      event.to_idx = 0;
+    }
+    event.step = events[idx]->get("timeStep",0.0);
+    if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx)
+    {
+      faults.push_back(event);
+    }
+  }
+  return faults;
+}

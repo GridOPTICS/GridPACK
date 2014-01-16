@@ -19,12 +19,21 @@
 #define _ds_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/configuration/configuration.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
 
-// Calling program for dynamic simulation application
+// Small utility structure to encapsulate information about fault events
+struct Event{
+  double start,end;
+  int from_idx, to_idx;
+  double step;
+};
+
+
+    // Calling program for dynamic simulation application
 
 class DSApp
 {
@@ -45,6 +54,16 @@ class DSApp
      * @param argv list of character strings
      */
     void execute(int argc, char** argv);
+
+    /**
+     * Utility function to convert faults that are in event list into
+     * internal data structure that can be used by code
+     * @param cursors list of cursors pointing to individual events in input
+     * deck
+     * @return list of event data structures
+     */
+    std::vector<Event>
+      setFaultEvents(std::vector<gridpack::utility::Configuration::CursorPtr > cursors);
  
     private:
 };
