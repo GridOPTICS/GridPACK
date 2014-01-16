@@ -70,7 +70,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   cursor = config->getCursor("Configuration.Dynamic_simulation.faultEvents");
   gridpack::utility::Configuration::ChildCursors events;
   if (cursor) cursor->children(events);
-  std::vector<Event> faults = setFaultEvents(events); 
+  std::vector<Event> faults = setFaultEvents(events,network); 
 
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
@@ -570,11 +570,13 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
  */
 std::vector<gridpack::dynamic_simulation::Event>
    gridpack::dynamic_simulation::DSApp::setFaultEvents(
-   std::vector<gridpack::utility::Configuration::CursorPtr > events)
+   std::vector<gridpack::utility::Configuration::CursorPtr > events,
+   boost::shared_ptr<DSNetwork> network)
 {
   int size = events.size();
   int idx;
   std::vector<gridpack::dynamic_simulation::Event> faults;
+  // Parse fault events
   for (idx=0; idx<size; idx++) {
     Event event;
     event.start = events[idx]->get("beginFault",0.0);
@@ -602,9 +604,34 @@ std::vector<gridpack::dynamic_simulation::Event>
       event.to_idx = 0;
     }
     event.step = events[idx]->get("timeStep",0.0);
-    if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx)
-    {
+    event.branch_idx = -1;
+    // Check to see if fault looks reasonable before adding it to the list
+    if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
       faults.push_back(event);
+    }
+  }
+  // Find local indices of branches on which faults occur. Start by constructing
+  // a map object that maps to local branch indices using branch index pairs as the key
+  std::map<std::pair<int, int>, int> pairMap;
+  int numBranch = network->numBranches();
+  for (idx = 0; idx<numBranch; idx++) {
+    // Only set branch index for locally held branches
+    if (network->getActiveBranch(idx)) {
+      int idx1, idx2;
+      network->getOriginalBranchEndpoints(idx, &idx1, &idx2);
+      std::pair<int, int> branch_pair(idx1, idx2);
+      pairMap.insert(std::pair<std::pair<int, int>, int>(branch_pair,idx));
+    }
+  }
+  // run through all events and see if the branch exists on this processor. If
+  // it does, then set the branch_idx member to the local branch index.
+  size = faults.size();
+  for (idx=0; idx<size; idx++) {
+    std::map<std::pair<int, int>, int>::iterator it;
+    std::pair<int, int> branch_pair(faults[idx].from_idx, faults[idx].to_idx);
+    it = pairMap.find(branch_pair);
+    if (it != pairMap.end()) {
+      faults[idx].branch_idx = it->second;
     }
   }
   return faults;

@@ -30,6 +30,7 @@ struct Event{
   double start,end;
   int from_idx, to_idx;
   double step;
+  double branch_idx;
 };
 
 
@@ -63,7 +64,8 @@ class DSApp
      * @return list of event data structures
      */
     std::vector<Event>
-      setFaultEvents(std::vector<gridpack::utility::Configuration::CursorPtr > cursors);
+      setFaultEvents(std::vector<gridpack::utility::Configuration::CursorPtr >
+          cursors, boost::shared_ptr<DSNetwork> network);
  
     private:
 };
