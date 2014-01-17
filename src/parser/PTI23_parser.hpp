@@ -95,7 +95,10 @@ template <class _network>
           std::ifstream            input;
           input.open(fileName.c_str());
           if (!input.is_open()) {
-            throw gridpack::Exception("failed to open case data file");
+            char buf[512];
+            sprintf(buf,"Failed to open network configuration file: %s\n\n",
+                fileName.c_str());
+            throw gridpack::Exception(buf);
           }
 
           find_case(input);
