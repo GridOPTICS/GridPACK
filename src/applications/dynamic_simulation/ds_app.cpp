@@ -64,6 +64,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   cursor = config->getCursor("Configuration.Dynamic_simulation");
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
+  double sim_time = cursor->get("simulationTime",0.0);
+  if (sim_time == 0.0) {
+    // TODO: some kind of error
+  }
+  double time_step = cursor->get("timeStep",0.0);
+  if (time_step == 0.0) {
+    // TODO: some kind of error
+  }
 
   // Read in information about fault events and store them in internal data
   // structure

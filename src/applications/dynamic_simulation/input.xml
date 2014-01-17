@@ -2,6 +2,8 @@
 <Configuration>
   <Dynamic_simulation>
     <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
+    <simulationTime>0.1</simulationTime>
+    <timeStep>0.01</timeStep>
     <faultEvents>
       <faultEvent>
         <beginFault> 0.03</beginFault>
