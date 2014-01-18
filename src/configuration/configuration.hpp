@@ -203,12 +203,12 @@ public:
 	struct ChildElement {
 		CursorPtr cursor;
 		std::string name;
-		ChildElement(CursorPtr & c, const std::string & n) : cursor(c), name(n) { }
-		ChildElement(ChildElement & c) : cursor(c.cursor), name(c.name) { }
+	  //		ChildElement(CursorPtr & c, const std::string & n) : cursor(c), name(n) { }
+	  //		ChildElement(ChildElement & c) : cursor(c.cursor), name(c.name) { }
 	} ;
 	typedef std::vector< ChildElement > ChildElements;
 	/* return a vector of cursors to pairs of cursors and names of children immediately below this cursor */
-	void children(ChildElements &);
+	void children_with_names(ChildElements &);
 };
 
 
