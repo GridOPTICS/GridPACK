@@ -195,7 +195,7 @@ void Configuration::children(ChildCursors & cs) {
 	}
 }
 
-void Configuration::children_with_names(ChildElements & cs) {
+void Configuration::children(ChildElements & cs) {
 	cs.clear();
 	BOOST_FOREACH(ptree::value_type & v, pimpl->pt) {
 //		boost::shared_ptr<Cursor> c(new Configuration);
