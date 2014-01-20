@@ -7,6 +7,7 @@
 #include <boost/foreach.hpp>
 #include <boost/property_tree/ptree.hpp>
 #include <boost/property_tree/xml_parser.hpp>
+// #include <boost/property_tree/json_parser.hpp>
 #include <fstream>
 #include <iostream>
 #include <streambuf>
@@ -90,8 +91,16 @@ bool Configuration::open(const std::string & file) {
 		 (*pimpl->logging) << "Error reading XML file " << file << std::endl;
 		return false;
 	}
-	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration/enableLogging",false))
+	if(!pimpl->logging && pimpl->pt.get<bool>("Configuration.enableLogging",false))
 		pimpl->logging = & std::cout;
+	if(pimpl->logging != NULL && rank== 0) {
+		try {
+			write_xml(*pimpl->logging, pimpl->pt);
+		}
+		catch(...) {
+			 (*pimpl->logging) << "Error writing XML file " << file << std::endl;
+		}
+    }
 	return true;
 }
 
