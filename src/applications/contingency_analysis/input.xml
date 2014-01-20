@@ -2,5 +2,5 @@
 <Configuration>
   <Contingency_analysis>
     <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
-  <Contingency_analysis>
+  </Contingency_analysis>
 </Configuration>
