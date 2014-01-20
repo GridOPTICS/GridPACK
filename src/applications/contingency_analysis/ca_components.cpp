@@ -502,5 +502,4 @@ gridpack::contingency_analysis::CABranch::getShunt(gridpack::contingency_analysi
   return gridpack::ComplexType(retr,reti);
 }
 
-}
 
