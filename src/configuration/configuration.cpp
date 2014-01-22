@@ -52,6 +52,32 @@ Configuration * Configuration::configuration() {
 	return config;
 }
 
+const int TAB_SIZE = 3;
+static void indent(std::ostream & out, int indent) {
+	while(indent-- > 0)
+		out << " " ;
+}
+static bool dump_xml(boost::property_tree::ptree pt, std::ostream & out, int indent_amount = 0) {
+	bool first = true;
+ 	BOOST_FOREACH(ptree::value_type & v, pt) {
+		if(first) {
+			first = false;
+			if(indent_amount > 0)  out << std::endl;
+		}
+		indent(out, indent_amount);
+		out << "<" << v.first << ">" ;
+		bool no_child = dump_xml(v.second, out, indent_amount+TAB_SIZE);
+		if(! no_child) {
+			indent(out, indent_amount);
+		}
+		else {
+			out << v.second.data();
+		}
+		out << "</" << v.first << ">" << std::endl;
+	}
+	return first;
+}
+
 
 #ifdef USE_MPI
 bool Configuration::open(const std::string & file,MPI_Comm comm) {
@@ -95,7 +121,7 @@ bool Configuration::open(const std::string & file) {
 		pimpl->logging = & std::cout;
 	if(pimpl->logging != NULL && rank== 0) {
 		try {
-			write_xml(*pimpl->logging, pimpl->pt);
+			dump_xml(pimpl->pt, *pimpl->logging);
 		}
 		catch(...) {
 			 (*pimpl->logging) << "Error writing XML file " << file << std::endl;
