@@ -49,7 +49,10 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus, DAE_init, init_pelect, init_eprime, init_mac_ang, init_mac_spd, init_eqprime, init_pmech, init_mva, init_d0, init_h};
+enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus, DAE_init,
+            init_pelect, init_eprime, init_mac_ang, init_mac_spd,
+            init_eqprime, init_pmech, init_mva, init_d0, init_h, preFY,
+            posFY};
 
 class DSBus
   : public gridpack::component::BaseBusComponent {
@@ -144,6 +147,21 @@ class DSBus
      */
     void setIJaco(void);
 
+    /**
+     * Check to see if a fault event applies to this bus and set an internal
+     * flag marking the bus as the "from" or "to" bus for the event
+     * @param from_idx index of "from" bus for fault event
+     * @param to_idx index of "to" bus for fault event
+     * @param branch_ptr pointer to branch on which fault occurs
+     */
+    void setEvent(int from_idx, int to_idx,
+        gridpack::component::BaseBranchComponent* branch_ptr);
+
+    /**
+     * Clear fault event from bus
+     */
+    void clearEvent();
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -162,6 +180,7 @@ class DSBus
     int p_ngen;
     int p_type;
     gridpack::ComplexType p_permYmod;
+    bool p_from_flag, p_to_flag;
 
     // DAE related variables
     //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
@@ -169,12 +188,48 @@ class DSBus
     std::vector<double> p_h, p_d0;
     //std::vector<double> x, xdot; // DAE variables
     std::vector<gridpack::ComplexType> p_pelect, p_eprime;
-    
+
+    gridpack::component::BaseBranchComponent* p_branch;
+
+    friend class boost::serialization::access;
+
+    template<class Archive>
+      void serialize(Archive & ar, const unsigned int version)
+      {
+        ar &
+          boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
+          & p_shunt_gs
+          & p_shunt_bs
+          & p_shunt
+          & p_mode
+          & p_theta
+          & p_ybusr & p_ybusi
+          & p_angle & p_voltage
+          & p_load
+          & p_pl & p_ql
+          & p_sbase
+          & p_isGen
+          & p_pg & p_qg
+          & p_gstatus
+          & p_mva & p_r & p_dstr & p_dtr
+          & p_ngen & p_type & p_permYmod
+          & p_from_flag & p_to_flag
+          & p_h & p_d0
+          & p_pelect & p_eprime;
+      }
+
 };
 
 class DSBranch
   : public gridpack::component::BaseBranchComponent {
   public:
+    // Small utility structure to encapsulate information about fault events
+    struct Event{
+      double start,end;
+      int from_idx, to_idx;
+      double step;
+    };
+
     /**
      *  Simple constructor
      */
@@ -252,6 +307,15 @@ class DSBranch
      * @return: value of update factor
      */
     gridpack::ComplexType getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2);
+    gridpack::ComplexType getUpdateFactor();
+
+    /**
+     * Check to see if an event applies to this branch and set appropriate
+     * internal parameters
+     * @param event a struct containing parameters that describe a fault
+     * event in a dyanamic simulation
+     */
+    void setEvent(const Event &event);
 
   private:
     std::vector<double> p_reactance;
@@ -272,6 +336,32 @@ class DSBranch
     std::vector<int> p_branch_status;
     int p_elems;
     bool p_active;
+    bool p_event;
+
+    friend class boost::serialization::access;
+
+    template<class Archive>
+      void serialize(Archive & ar, const unsigned int version)
+      {
+        ar &
+          boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+          & p_reactance
+          & p_resistance
+          & p_tap_ratio
+          & p_phase_shift
+          & p_charging
+          & p_shunt_admt_g1
+          & p_shunt_admt_b1
+          & p_shunt_admt_g2
+          & p_shunt_admt_b2
+          & p_xform & p_shunt
+          & p_mode
+          & p_ybusr_frwd & p_ybusi_frwd
+          & p_ybusr_rvrs & p_ybusi_rvrs
+          & p_theta & p_sbase
+          & p_branch_status
+          & p_elems & p_active & p_event;
+      }
 };
 
 /// The type of network used in the dynamic_simulation application

@@ -22,6 +22,7 @@
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_components.hpp"
 #include "gridpack/math/matrix.hpp"
+#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -49,6 +50,12 @@ class DSFactory
      * Get the updating factor for posfy11 stage ybus
      */
     gridpack::ComplexType setFactor(int sw2_2, int sw3_2);
+
+    /**
+     * Apply an event to all branches in the system
+     * @param event a struct describing a fault
+     */
+    void setEvent(const DSBranch::Event &event);
 
   private:
 

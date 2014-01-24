@@ -78,7 +78,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   cursor = config->getCursor("Configuration.Dynamic_simulation.faultEvents");
   gridpack::utility::Configuration::ChildCursors events;
   if (cursor) cursor->children(events);
-  std::vector<Event> faults = setFaultEvents(events,network); 
+  std::vector<gridpack::dynamic_simulation::DSBranch::Event>
+     faults = setFaultEvents(events,network); 
 
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
@@ -219,9 +220,17 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //fy11ybus->print();
 
   boost::shared_ptr<gridpack::math::Matrix> fy11ybus(prefy11ybus->clone());
+  branchIO.header("\n=== fy11ybus(original): ============\n");
+  fy11ybus->print();
   gridpack::ComplexType x(0.0, -1e7);
+#if 0
   fy11ybus->setElement(sw2_2, sw2_2, -x);
   fy11ybus->ready();
+#else
+  factory.setEvent(faults[0]);
+  factory.setMode(preFY);
+  ybusMap.overwriteMatrix(fy11ybus);
+#endif
   branchIO.header("\n=== fy11ybus: ============\n");
   fy11ybus->print();
 
@@ -249,8 +258,13 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //posfy11ybus->print();
 
   // Get the updating factor for posfy11 stage ybus
+#if 0
   gridpack::ComplexType myValue = factory.setFactor(sw2_2, sw3_2);
+#endif
   boost::shared_ptr<gridpack::math::Matrix> posfy11ybus(prefy11ybus->clone());
+  branchIO.header("\n=== posfy11ybus (original): ============\n");
+  posfy11ybus->print();
+#if 0
 
   gridpack::ComplexType big(0.0, 1e7);
   gridpack::ComplexType x11 = big - myValue;
@@ -266,6 +280,10 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   posfy11ybus->addElement(sw3_2, sw3_2, x22);
   
   posfy11ybus->ready(); 
+#else
+  factory.setMode(posFY);
+  ybusMap.incrementMatrix(posfy11ybus);
+#endif
   branchIO.header("\n=== posfy11ybus: ============\n");
   posfy11ybus->print();
     
@@ -595,17 +613,17 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
  * deck
  * @return list of event data structures
  */
-std::vector<gridpack::dynamic_simulation::Event>
+std::vector<gridpack::dynamic_simulation::DSBranch::Event>
    gridpack::dynamic_simulation::DSApp::setFaultEvents(
    std::vector<gridpack::utility::Configuration::CursorPtr > events,
    boost::shared_ptr<DSNetwork> network)
 {
   int size = events.size();
   int idx;
-  std::vector<gridpack::dynamic_simulation::Event> faults;
+  std::vector<gridpack::dynamic_simulation::DSBranch::Event> faults;
   // Parse fault events
   for (idx=0; idx<size; idx++) {
-    Event event;
+    gridpack::dynamic_simulation::DSBranch::Event event;
     event.start = events[idx]->get("beginFault",0.0);
     event.end = events[idx]->get("endFault",0.0);
     std::string indices = events[idx]->get("faultBranch","0 0");
@@ -631,12 +649,11 @@ std::vector<gridpack::dynamic_simulation::Event>
       event.to_idx = 0;
     }
     event.step = events[idx]->get("timeStep",0.0);
-    event.branch_idx = -1;
-    // Check to see if fault looks reasonable before adding it to the list
     if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
       faults.push_back(event);
     }
   }
+#if 0
   // Find local indices of branches on which faults occur. Start by constructing
   // a map object that maps to local branch indices using branch index pairs as the key
   std::map<std::pair<int, int>, int> pairMap;
@@ -661,5 +678,6 @@ std::vector<gridpack::dynamic_simulation::Event>
       faults[idx].branch_idx = it->second;
     }
   }
+#endif
   return faults;
 }

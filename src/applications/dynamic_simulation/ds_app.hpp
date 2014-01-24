@@ -25,15 +25,6 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-// Small utility structure to encapsulate information about fault events
-struct Event{
-  double start,end;
-  int from_idx, to_idx;
-  double step;
-  double branch_idx;
-};
-
-
     // Calling program for dynamic simulation application
 
 class DSApp
@@ -63,7 +54,7 @@ class DSApp
      * deck
      * @return list of event data structures
      */
-    std::vector<Event>
+    std::vector<gridpack::dynamic_simulation::DSBranch::Event>
       setFaultEvents(std::vector<gridpack::utility::Configuration::CursorPtr >
           cursors, boost::shared_ptr<DSNetwork> network);
  

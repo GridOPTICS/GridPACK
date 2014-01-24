@@ -35,6 +35,9 @@ gridpack::dynamic_simulation::DSBus::DSBus(void)
   p_mode = YBUS;
   setReferenceBus(false);
   p_ngen = 0;
+  p_from_flag = false;
+  p_to_flag = false;
+  p_branch = NULL;
 }
 
 /**
@@ -61,7 +64,8 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
   } else if (p_mode == GENERATOR) {
   } else if (p_mode == PERM) {*/
   //if (p_mode == YBUS || p_mode == YL || p_mode = FY || p_mode = POSFY) {
-  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
+  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus || p_mode == preFY ||
+      p_mode == posFY) {
     *isize = 1;
     *jsize = 1;
   } else if (p_mode == PERM) {
@@ -106,6 +110,22 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     values[0] = ret;
     return true;
+  } else if (p_mode == preFY) {
+    if (p_from_flag) {
+      gridpack::ComplexType ret(0.0, 1.0e7);
+      values[0] = ret;
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == posFY) {
+    if (p_from_flag || p_to_flag) {
+      values[0] = dynamic_cast<gridpack::dynamic_simulation::DSBranch*>(p_branch)
+          ->getUpdateFactor();
+      return true;
+    } else {
+      return false;
+    }
   } else if (p_mode == YL) {
     //if (p_type == 1) { 
       //p_pl = p_pl;// - p_pg[0];
@@ -525,6 +545,41 @@ void gridpack::dynamic_simulation::DSBus::setIJaco(void)
 {
 }
 
+/**
+ * Check to see if a fault event applies to this bus and set an internal
+ * flag marking the bus as the "from" or "to" bus for the event
+ * @param from_idx index of "from" bus for fault event
+ * @param to_idx index of "to" bus for fault event
+ */
+void gridpack::dynamic_simulation::DSBus::setEvent(int from_idx, int to_idx,
+  gridpack::component::BaseBranchComponent* branch_ptr)
+{
+  if (from_idx == getOriginalIndex()) {
+    p_from_flag = true;
+  } else {
+    p_from_flag = false;
+  }
+  if (to_idx == getOriginalIndex()) {
+    p_to_flag = true;
+  } else {
+    p_to_flag = false;
+  }
+  if (p_to_flag || p_from_flag) {
+    p_branch = branch_ptr;
+  } else {
+    p_branch = NULL;
+  }
+}
+
+/**
+ * Clear fault event from bus
+ */
+void gridpack::dynamic_simulation::DSBus::clearEvent()
+{
+  p_from_flag = false;
+  p_to_flag = false;
+  p_branch = NULL;
+}
 
 /**
  *  Simple constructor
@@ -547,6 +602,7 @@ gridpack::dynamic_simulation::DSBranch::DSBranch(void)
   p_theta = 0.0;
   p_sbase = 0.0;
   p_mode = YBUS;
+  p_event = false;
 }
 
 /**
@@ -586,7 +642,8 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
     return true;
   } else if (p_mode == GENERATOR) {
   }*/
-  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
+  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus ||
+      p_mode == preFY || p_mode == posFY) {
     if (p_active) {
       *isize = 1;
       *jsize = 1;
@@ -617,7 +674,8 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
       return false;
     }
   } else if (p_mode == YBUS) {*/
-  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus) {
+  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus ||
+      p_mode == preFY || p_mode == posFY) {
     if (p_active) {
       *isize = 1;
       *jsize = 1;
@@ -651,6 +709,13 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *va
     values[2] = 0;
     values[3] = 0;
     return true;*/
+  } else if (p_mode == posFY) {
+    if (p_event) {
+      values[0] = -getUpdateFactor();
+      return true;
+    } else {
+      return false;
+    }
   } else {
     return false;
   }
@@ -692,6 +757,13 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *va
     if (p_active) {
       values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
       return true;
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == posFY) {
+    if (p_event) {
+      values[0] = -getUpdateFactor();
       return true;
     } else {
       return false;
@@ -982,4 +1054,39 @@ gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, in
   }
 */
 }
+gridpack::ComplexType 
+gridpack::dynamic_simulation::DSBranch::getUpdateFactor()
+{ 
+  int i;
+  gridpack::ComplexType ret(0.0,0.0);
+  for (i=0; i<p_elems; i++) {
+    gridpack::ComplexType tmp(p_resistance[i], p_reactance[i]);
+    tmp = -1.0 / tmp;
+    ret += tmp;
+  }
+  return ret;
+}
 
+/**
+ * Check to see if an event applies to this branch and set appropriate internal
+ * parameters
+ * @param event a struct containing parameters that describe a fault event in
+ * a dyanamic simulation
+ */
+void gridpack::dynamic_simulation::DSBranch::setEvent(const Event &event)
+{
+  int idx1 = getBus1OriginalIndex();
+  int idx2 = getBus2OriginalIndex();
+  // Check to see if event refers to this bus
+  if (idx1 == event.from_idx && idx2 == event.to_idx) {
+    p_event = true;
+  } else {
+    p_event = false;
+  }
+  if (p_event) {
+    dynamic_cast<gridpack::dynamic_simulation::DSBus*>
+      (getBus1().get())->setEvent(idx1,idx2,this);
+    dynamic_cast<gridpack::dynamic_simulation::DSBus*>
+      (getBus2().get())->setEvent(idx1,idx2,this);
+  }
+}

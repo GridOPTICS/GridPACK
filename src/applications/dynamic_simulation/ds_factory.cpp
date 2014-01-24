@@ -86,5 +86,23 @@ gridpack::dynamic_simulation::DSFactory::setFactor(int sw2_2, int sw3_2)
   }
 }
 
+/**
+ * Apply an event to all branches in the system
+ * @param event a struct describing a fault
+ */
+void gridpack::dynamic_simulation::DSFactory::setEvent(const
+    gridpack::dynamic_simulation::DSBranch::Event &event)
+{
+  int numBus = p_network->numBuses();
+  int numBranch = p_network->numBranches();
+  int i;
+  for (i=0; i<numBus; i++) {
+    dynamic_cast<DSBus*>(p_network->getBus(i).get())->clearEvent();
+  }
+  for (i=0; i<numBranch; i++) {
+    dynamic_cast<DSBranch*>(p_network->getBranch(i).get())->setEvent(event);
+  }
+}
+
 } // namespace dynamic_simulation
 } // namespace gridpack
