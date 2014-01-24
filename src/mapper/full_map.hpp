@@ -77,8 +77,8 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   gridpack::parallel::Communicator comm = p_network->communicator();
   boost::shared_ptr<gridpack::math::Matrix>
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
-  loadBusData(Ret,true);
-  loadBranchData(Ret,true);
+  loadBusData(Ret,false);
+  loadBranchData(Ret,false);
   GA_Sync();
   Ret->ready();
   return Ret;
@@ -105,6 +105,52 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   mapToMatrix(*matrix);
+}
+
+/**
+ * Overwrite elements of existing matrix. This can be used to overwrite selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void overwriteMatrix(gridpack::math::Matrix &matrix)
+{
+  loadBusData(matrix,false);
+  loadBranchData(matrix,false);
+  GA_Sync();
+  matrix.ready();
+}
+
+/**
+ * Overwrite elements of existing matrix. This can be used to overwrite selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  overwriteMatrix(*matrix);
+}
+
+/**
+ * Increment elements of existing matrix. This can be used to increment selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void incrementMatrix(gridpack::math::Matrix &matrix)
+{
+  loadBusData(matrix,true);
+  loadBranchData(matrix,true);
+  GA_Sync();
+  matrix.ready();
+}
+
+/**
+ * Increment elements of existing matrix. This can be used to increment selected
+ * elements of a matrix
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  incrementMatrix(*matrix);
 }
 
 /**
@@ -654,12 +700,11 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
             jdx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               idx = i_offsets[jcnt] + j;
-//              if (flag) {
-//                printf("p[%d] Adding value [%d,%d]: %f+i%f\n",GA_Nodeid(),idx,jdx,real(values[icnt]),imag(values[icnt]));
+              if (flag) {
                 matrix.addElement(idx, jdx, values[icnt]);
-//              } else {
-//                matrix.setElement(idx, jdx, values[icnt]);
-//              }
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
               icnt++;
             }
           }
@@ -756,12 +801,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             jdx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               idx = i_offsets[jcnt] + j;
-//              if (flag) {
-//                printf("p[%d] Adding value [%d,%d]: %f+i%f\n",GA_Nodeid(),idx,jdx,real(values[icnt]),imag(values[icnt]));
+              if (flag) {
                 matrix.addElement(idx, jdx, values[icnt]);
-//              } else {
-//                matrix.setElement(idx, jdx, values[icnt]);
-//              }
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
               icnt++;
             }
           }
@@ -786,12 +830,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             idx = j_offsets[jcnt] + k;
             for (j=0; j<isize; j++) {
               jdx = i_offsets[jcnt] + j;
-//              if (flag) {
-//                printf("p[%d] Adding value [%d,%d]: %f+i%f\n",GA_Nodeid(),idx,jdx,real(values[icnt]),imag(values[icnt]));
+              if (flag) {
                 matrix.addElement(jdx, idx, values[icnt]);
-//              } else {
-//                matrix.setElement(jdx, idx, values[icnt]);
-//              }
+              } else {
+                matrix.setElement(jdx, idx, values[icnt]);
+              }
               icnt++;
             }
           }
