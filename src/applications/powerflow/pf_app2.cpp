@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2013-12-04 14:13:46 d3g096
+ * @date   2014-01-28 11:30:04 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,7 @@
 #include <iostream>
 #include <ga++.h>
 
-#include "gridpack/applications/powerflow/pf_app2.hpp"
+#include "pf_app2.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/math/math.hpp"

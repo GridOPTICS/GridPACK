@@ -7,7 +7,7 @@
 /**
  * @file   pf_factory.cpp
  * @author Bruce Palmer
- * @date   2013-10-24 13:54:26 d3g096
+ * @date   2014-01-28 11:31:23 d3g096
  * 
  * @brief  
  * 
@@ -19,8 +19,8 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/powerflow/pf_components.hpp"
-#include "gridpack/applications/powerflow/pf_factory.hpp"
+#include "pf_components.hpp"
+#include "pf_factory.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 

@@ -7,7 +7,7 @@
 /**
  * @file   pf_main.cpp
  * @author Bruce Palmer
- * @date   July 23, 2013
+ * @date   2014-01-28 11:31:40 d3g096
  * 
  * @brief  
  */
@@ -17,7 +17,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "gridpack/applications/powerflow/pf_app.hpp"
+#include "pf_app.hpp"
 
 // Calling program for the powerflow applications
 

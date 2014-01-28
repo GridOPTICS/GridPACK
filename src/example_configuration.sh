@@ -28,15 +28,23 @@ if [ $host == "flophouse" ]; then
     
 elif [ $host == "pe10900" ]; then
     prefix="/net/flophouse/files0/perksoft/macosx"
+
+    # avoid using the system compilers and MPI wrappers -- use MacPorts
+
+    CC=/opt/local/bin/gcc
+    export CC
+    CXX=/opt/local/bin/g++
+    export CXX
+
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
         -D GA_EXTRA_LIBS:STRING="-lblas" \
         -D BOOST_ROOT:STRING='/opt/local' \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.2" \
+        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
         -D PETSC_ARCH:STRING='arch-macosx-complex-opt' \
-        -D MPI_CXX_COMPILER:STRING='openmpicxx' \
-        -D MPI_C_COMPILER:STRING='openmpicc' \
-        -D MPIEXEC:STRING='openmpiexec' \
+        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
+        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
+        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
         $common_flags ..
 

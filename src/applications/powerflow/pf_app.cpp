@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2014-01-15 08:09:06 d3g096
+ * @date   2014-01-28 11:39:16 d3g096
  * 
  * @brief  
  * 
@@ -20,14 +20,14 @@
 #include "gridpack/math/linear_solver.hpp"
 #include "gridpack/math/newton_raphson_solver.hpp"
 #include "gridpack/math/nonlinear_solver.hpp"
-#include "gridpack/applications/powerflow/pf_app.hpp"
+#include "pf_app.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
-#include "gridpack/applications/powerflow/pf_factory.hpp"
+#include "pf_factory.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 
 

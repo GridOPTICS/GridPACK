@@ -7,7 +7,7 @@
 /**
  * @file   pf_app2.hpp
  * @author William A. Perkins
- * @date   2013-10-25 09:24:09 d3g096
+ * @date   2014-01-28 11:30:13 d3g096
  * 
  * @brief  
  * 
@@ -19,7 +19,7 @@
 #define _pf_app_h_
 
 #include "boost/smart_ptr/scoped_ptr.hpp"
-#include "gridpack/applications/powerflow/pf_factory.hpp"
+#include "pf_factory.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 
 namespace gridpack {

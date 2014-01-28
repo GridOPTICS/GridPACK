@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2013-11-19 13:32:05 d3g096
+ * @date   2014-01-28 11:30:59 d3g096
  * 
  * @brief  
  * 
@@ -22,7 +22,7 @@
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/applications/powerflow/pf_components.hpp"
+#include "pf_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
 //#define LARGE_MATRIX

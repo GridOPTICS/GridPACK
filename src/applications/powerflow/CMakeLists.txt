@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-10-25 09:07:46 d3g096
+# Last Change: 2014-01-28 13:13:59 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -105,3 +105,29 @@ add_executable(pf_network_test test/pf_network_test.cpp)
 target_link_libraries(pf_network_test powerflow_app ${target_libraries})
 gridpack_add_unit_test(pf_network_test pf_network_test)
 
+# -------------------------------------------------------------
+# install as a sample application
+# -------------------------------------------------------------
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
+
+install(FILES 
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_components.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.hpp  
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_components.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/pti08.xml
+  DESTINATION doc/gridpack/example/powerflow
+)

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-09 11:41:42 d3g096
+# Last Change: 2014-01-28 13:13:49 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -50,3 +50,24 @@ add_custom_target(hello_world.x.input
 
 )
 add_dependencies(hello_world.x hello_world.x.input)
+
+
+# -------------------------------------------------------------
+# install as a sample application
+# -------------------------------------------------------------
+
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
+
+install(FILES 
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+  ${CMAKE_CURRENT_SOURCE_DIR}/hw_app.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hw_app.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hw_components.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hw_components.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hw_factory.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/hw_main.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/10x10.raw
+  DESTINATION doc/gridpack/example/hello
+)
+

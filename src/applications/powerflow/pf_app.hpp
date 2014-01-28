@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.hpp
  * @author Bruce Palmer
- * @date   2013-08-08 10:18:32 d3g096
+ * @date   2014-01-28 11:30:49 d3g096
  * 
  * @brief  
  * 
@@ -19,7 +19,7 @@
 #define _pf_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/applications/powerflow/pf_factory.hpp"
+#include "pf_factory.hpp"
 
 namespace gridpack {
 namespace powerflow {

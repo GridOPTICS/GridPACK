@@ -7,7 +7,7 @@
 /**
  * @file   hw_app.cpp
  * @author Bruce Palmer
- * @date   2014-01-15 08:09:06 d3g096
+ * @date   2014-01-28 10:31:00 d3g096
  * 
  * @brief  
  * 
@@ -16,8 +16,8 @@
 // -------------------------------------------------------------
 
 #include <iostream>
-#include "gridpack/applications/examples/hello_world/hw_app.hpp"
-#include "gridpack/applications/examples/hello_world/hw_factory.hpp"
+#include "hw_app.hpp"
+#include "hw_factory.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 
