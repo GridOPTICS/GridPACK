@@ -190,7 +190,14 @@ std::string Configuration::get(Configuration::KeyType key, const std::string & d
   ret.replace(ret.find_last_not_of(" ")+1, std::string::npos,"");
   return ret;
 }
-bool Configuration::get(Configuration::KeyType key, std::string * output) { return get0_bool(pimpl->pt,key, output); }
+bool Configuration::get(Configuration::KeyType key, std::string * output) {
+  bool ret = get0_bool(pimpl->pt,key, output);
+
+  // remove leading and trailing white space from string
+  output->replace(0,output->find_first_not_of(" "), "");
+  output->replace(output->find_last_not_of(" ")+1, std::string::npos,"");
+  return ret;
+}
 
 std::vector<double> Configuration::get(Configuration::KeyType key, const std::vector<double> & default_value) { 
 	CursorPtr c = getCursor(key);
