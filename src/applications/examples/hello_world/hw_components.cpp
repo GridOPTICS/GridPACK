@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_components.cpp
+ * @file   hw_components.cpp
  * @author Bruce Palmer
  * @date   2014-01-28 10:31:46 d3g096
  * 

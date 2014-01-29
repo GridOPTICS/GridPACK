@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   hw_main.cpp
+ * @file   rg_main.cpp
  * @author Bruce Palmer
- * @date   January 27, 2014
+ * @date   July 23, 2013
  * 
  * @brief  
  */
@@ -17,9 +17,9 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "hw_app.hpp"
+#include "gridpack/applications/examples/resistor_grid/rg_app.hpp"
 
-// Calling program for the hello_world applications
+// Calling program for the resistor_grid applications
 
 main(int argc, char **argv)
 {
@@ -32,7 +32,7 @@ main(int argc, char **argv)
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-  gridpack::hello_world::HWApp app;
+  gridpack::resistor_grid::RGApp app;
   app.execute(argc, argv);
 
   GA_Terminate();
