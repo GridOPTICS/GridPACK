@@ -6,7 +6,7 @@
 // -------------------------------------------------------------
 /**
  * @file   ds_app.cpp
- * @author Shuangshuang.Jin
+ * @author Shuangshuang Jin
  * @date   September 19, 2013
  *
  * @brief
@@ -228,7 +228,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   fy11ybus->ready();
 #else
   factory.setEvent(faults[0]);
-  factory.setMode(preFY);
+  factory.setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
 #endif
   branchIO.header("\n=== fy11ybus: ============\n");
@@ -422,11 +422,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   sw1[0] = 0.0;
   sw1[1] = faults[0].start;
   sw1[2] = faults[0].end;
-  sw1[3] = 0.1;
-  sw7[0] = faults[0].step;
+  sw1[3] = sim_time;
+  sw7[0] = time_step;
   sw7[1] = faults[0].step;
-  sw7[2] = faults[0].step;
-  sw7[3] = faults[0].step;
+  sw7[2] = time_step;
+  sw7[3] = time_step;
   simu_k = 0; 
   for (int i = 0; i < nswtch-1; i++) {
     t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);   

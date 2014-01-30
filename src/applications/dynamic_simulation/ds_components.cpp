@@ -64,7 +64,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
   } else if (p_mode == GENERATOR) {
   } else if (p_mode == PERM) {*/
   //if (p_mode == YBUS || p_mode == YL || p_mode = FY || p_mode = POSFY) {
-  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus || p_mode == preFY ||
+  if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus || p_mode == onFY ||
       p_mode == posFY) {
     *isize = 1;
     *jsize = 1;
@@ -110,7 +110,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     values[0] = ret;
     return true;
-  } else if (p_mode == preFY) {
+  } else if (p_mode == onFY) {
     if (p_from_flag) {
       gridpack::ComplexType ret(0.0, 1.0e7);
       values[0] = ret;
@@ -643,7 +643,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
   } else if (p_mode == GENERATOR) {
   }*/
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus ||
-      p_mode == preFY || p_mode == posFY) {
+      p_mode == onFY || p_mode == posFY) {
     if (p_active) {
       *isize = 1;
       *jsize = 1;
@@ -675,7 +675,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
     }
   } else if (p_mode == YBUS) {*/
   if (p_mode == YBUS || p_mode == YL || p_mode == updateYbus ||
-      p_mode == preFY || p_mode == posFY) {
+      p_mode == onFY || p_mode == posFY) {
     if (p_active) {
       *isize = 1;
       *jsize = 1;
