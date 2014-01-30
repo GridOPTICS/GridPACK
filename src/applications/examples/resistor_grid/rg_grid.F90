@@ -33,7 +33,7 @@ program main
   do j = 1, maxdim
     do i = 1, maxdim
       n = (j-1)*maxdim + i
-      write(6,'(i4)',advance='no') n
+      write(6,'(i9)',advance='no') n
       if ((i.eq.1.and.j.eq.1).or.(i.eq.maxdim.and.j.eq.maxdim)) then
         write(6,'(a,i4)',advance='no') ',',two
         write(6,'(a,f8.3)',advance='no') ',',zero
@@ -67,8 +67,8 @@ program main
 !
   do j = 1, maxdim
     do i = 2, maxdim
-      write(6,'(i4)',advance='no') (j-1)*maxdim + i-1
-      write(6,'(a,i4)',advance='no') ',',(j-1)*maxdim + i
+      write(6,'(i9)',advance='no') (j-1)*maxdim + i-1
+      write(6,'(a,i9)',advance='no') ',',(j-1)*maxdim + i
       write(6,'(a)',advance='no') ',''BL'''
       write(6,'(a,f10.5)',advance='no') ',',r
       write(6,'(a,f10.5)',advance='no') ',',x
@@ -90,8 +90,8 @@ program main
 !
   do j = 2, maxdim
     do i = 1, maxdim
-      write(6,'(i4)',advance='no') (j-2)*maxdim + i
-      write(6,'(a,i4)',advance='no') ',',(j-1)*maxdim + i
+      write(6,'(i9)',advance='no') (j-2)*maxdim + i
+      write(6,'(a,i9)',advance='no') ',',(j-1)*maxdim + i
       write(6,'(a)',advance='no') ',''BL'''
       write(6,'(a,f10.5)',advance='no') ',',r
       write(6,'(a,f10.5)',advance='no') ',',x
