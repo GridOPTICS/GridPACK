@@ -124,7 +124,7 @@ AdjacencyList::ready(void)
   dist[0] = 0;
   for (p=1; p<nprocs; p++) {
     double max = static_cast<double>(total_edges);
-    max = max*(static_cast<double>(p))/(static_cast<double>(nprocs));
+    max = (static_cast<double>(p))*(max/(static_cast<double>(nprocs)));
     dist[p] = 2*(static_cast<int>(max));
   }
   int g_edges = GA_Create_handle();
