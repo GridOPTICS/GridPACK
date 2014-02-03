@@ -25,7 +25,6 @@
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "pf_factory.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
@@ -73,8 +72,11 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   }
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
-  std::string filename = cursor->get("networkConfiguration",
-      "No network configuration specified");
+  std::string filename;
+  if (!cursor->get("networkConfiguration",&filename)) {
+     printf("No network configuration file specified\n");
+     return;
+  }
 
   int t_pti = timer->createCategory("PTI Parser");
   timer->start(t_pti);
@@ -175,6 +177,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   timer->stop(t_mmap);
   busIO.header("\nJacobian values\n");
+//  J->print();
 
   // Create X vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());

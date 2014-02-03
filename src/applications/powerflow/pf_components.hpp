@@ -18,33 +18,12 @@
 #ifndef _pf_components_h_
 #define _pf_components_h_
 
-/**
- * Some preprocessor string declarations. These will need to be put in an
- * include file someplace else. Just declare them here for the time being.
- */
-
-/*
-#define BRANCH_REACTANCE   "branch_reactance"
-#define BRANCH_RESISTANCE  "branch_resistance"
-#define BRANCH_TAP_RATIO   "branch_tap_ratio"
-#define BRANCH_PHASE_SHIFT "branch_phase_shift"
-#define BRANCH_CHARGING    "branch_charging"
-#define BUS_SHUNT_GS    "branch_shunt_gs"
-#define BUS_SHUNT_BS    "branch_shunt_bs"
-*/
-
-/* These are defined in dictionary.hpp. */
-
-/* #define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1" */
-/* #define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1" */
-/* #define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2" */
-/* #define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2" */
-
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/network/base_network.hpp"
+#include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
 namespace powerflow {
@@ -52,7 +31,8 @@ namespace powerflow {
 enum PFMode{YBus, Jacobian, RHS, S_Cal, State};
 
 class PFBus
-  : public gridpack::component::BaseBusComponent {
+  : public gridpack::ymatrix::YMBus
+{
   public:
     /**
      *  Simple constructor
@@ -238,7 +218,8 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
+//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
+    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
       & p_shunt_gs
       & p_shunt_bs
       & p_shunt
@@ -259,7 +240,7 @@ private:
 };
 
 class PFBranch
-  : public gridpack::component::BaseBranchComponent {
+  : public gridpack::ymatrix::YMBranch {
   public:
     /**
      *  Simple constructor
@@ -391,7 +372,8 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
       & p_reactance
       & p_resistance
       & p_tap_ratio
