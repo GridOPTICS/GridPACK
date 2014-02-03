@@ -266,6 +266,26 @@ void gridpack::ymatrix::YMBranch::setYBus(void)
 }
 
 /**
+ * Get values of YBus matrix. These can then be used in subsequent
+ * calculations
+ * @return forward y-matrix element for branch
+ */
+gridpack::ComplexType gridpack::ymatrix::YMBranch::getForwardYBus(void)
+{
+  return gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+}
+
+/**
+ * Get values of YBus matrix. These can then be used in subsequent
+ * calculations
+ * @return reverse y-matrix element for branch
+ */
+gridpack::ComplexType gridpack::ymatrix::YMBranch::getReverseYBus(void)
+{
+  return gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
+}
+
+/**
  * Load values stored in DataCollection object into YMBranch object. The
  * DataCollection object will have been filled when the network was created
  * from an external configuration file

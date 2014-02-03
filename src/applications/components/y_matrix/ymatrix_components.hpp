@@ -156,7 +156,8 @@ class YMBranch
      * Get values of YBus matrix. These can then be used in subsequent
      * calculations
      */
-    gridpack::ComplexType getYBus(void);
+    gridpack::ComplexType getForwardYBus(void);
+    gridpack::ComplexType getReverseYBus(void);
 
     /**
      * Load values stored in DataCollection object into YMBranch object. The
