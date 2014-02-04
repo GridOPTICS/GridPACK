@@ -85,8 +85,8 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
       *isize = 1;
-      //*jsize = 1;
-      *jsize = p_ngen;
+      *jsize = 1;
+      //*jsize = p_ngen;
     } else {
       *isize = 1;
       *jsize = 0;
@@ -175,9 +175,10 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     }
   } else if (p_mode == PMatrix) {
     if (p_ngen > 0) {
-      for (int i = 0; i < p_ngen; i++) {
+      /*for (int i = 0; i < p_ngen; i++) {
         values[i] = -1.0;
-      }
+      }*/
+      values[0] = 1.0; 
       return true;
     } else {
       return false;
@@ -228,7 +229,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
     }
   } else if (p_mode == init_pelect || p_mode == init_eprime || p_mode == init_mac_ang || p_mode == init_mac_spd || p_mode == init_eqprime || p_mode == init_pmech || p_mode == init_mva || p_mode == init_d0 || p_mode == init_h) {
     if (p_ngen > 0) {
-      *size = 1;
+      //*size = 1;
+      *size = p_ngen;
      } else {
       return false;
      }
@@ -335,7 +337,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_mac_ang) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = atan2(imag(p_eprime[i]), real(p_eprime[i]));
+        //values[0] = atan2(imag(p_eprime[i]), real(p_eprime[i]));
+        values[i] = atan2(imag(p_eprime[i]), real(p_eprime[i]));
       }
       return true;
     } else {
@@ -344,7 +347,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_mac_spd) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = 1.0; 
+        //values[0] = 1.0; 
+        values[i] = 1.0; 
       }
       return true;
     } else {
@@ -353,7 +357,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_eqprime) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = abs(p_eprime[i]); 
+        //values[0] = abs(p_eprime[i]); 
+        values[i] = abs(p_eprime[i]); 
       }
       return true;
     } else {
@@ -362,7 +367,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_pmech) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = abs(p_pelect[i]); 
+        //values[0] = abs(p_pelect[i]); 
+        values[i] = abs(p_pelect[i]); 
       }
       return true;
     } else {
@@ -371,7 +377,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_mva) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = p_mva[i]; 
+        //values[0] = p_mva[i]; 
+        values[i] = p_mva[i]; 
       }
       return true;
     } else {
@@ -380,7 +387,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_d0) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = p_d0[i]; 
+        //values[0] = p_d0[i]; 
+        values[i] = p_d0[i]; 
       }
       return true;
     } else {
@@ -389,7 +397,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   } else if (p_mode == init_h) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-        values[0] = p_h[i]; 
+        //values[0] = p_h[i]; 
+        values[i] = p_h[i]; 
       }
       return true;
     } else {

@@ -156,12 +156,21 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
   busIO.header("\n=== P: ============\n");
   P->print();
-  boost::shared_ptr<gridpack::math::Matrix> Y_c(multiply(*P, *Ymod)); 
+  /*boost::shared_ptr<gridpack::math::Matrix> Y_c(multiply(*P, *Ymod)); 
+  busIO.header("\n=== Y_c: ============\n");
+  Y_c->print();
+  boost::shared_ptr<gridpack::math::Matrix> Y_b(transpose(*Y_c));
+  busIO.header("\n=== Y_b: ============\n");
+  Y_b->print();*/
+  boost::shared_ptr<gridpack::math::Matrix> Y_c(transpose(*Ymod));
+  Y_c->scale(-1.0);
+  Y_c.reset(multiply(*P, *Y_c)); 
   busIO.header("\n=== Y_c: ============\n");
   Y_c->print();
   boost::shared_ptr<gridpack::math::Matrix> Y_b(transpose(*Y_c));
   busIO.header("\n=== Y_b: ============\n");
   Y_b->print();
+  
   Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
   // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
   //gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
