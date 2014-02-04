@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-14 11:32:17 d3g096
+ * @date   2014-01-31 11:31:33 d3g096
  * 
  * @brief  
  * 
@@ -73,7 +73,7 @@ parallel::Communicator
 PETScVectorImplementation::p_getCommunicator(const Vec& v)
 {
   MPI_Comm comm(PetscObjectComm((PetscObject)v));
-  parallel::Communicator result(comm, boost::mpi::comm_duplicate);
+  parallel::Communicator result(comm);
   return result;
 }
 

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_configuration.cpp
  * @author William A. Perkins
- * @date   2013-11-08 09:05:28 d3g096
+ * @date   2014-02-04 13:06:56 d3g096
  * 
  * @brief Implementation of routines for handling PETSc options
  * through Configuration
@@ -62,7 +62,7 @@ generatePrefix(const parallel::Communicator& comm)
   if (comm.rank() == 0) {
     result = generatePrefix();
   }
-  broadcast(comm, result, 0);
+  broadcast(comm.getCommunicator(), result, 0);
   return result;
 }
 

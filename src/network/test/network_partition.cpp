@@ -6,7 +6,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2013-10-03 11:50:55 d3g096
+ * @date   2014-02-04 13:32:27 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -254,7 +254,7 @@ BOOST_AUTO_TEST_CASE ( bus_data_serialization )
     bus1.p_data = busdata;
   }
 
-  broadcast(world, &bus1, 1, 0);
+  broadcast(world.getCommunicator(), &bus1, 1, 0);
 
   BOOST_CHECK_EQUAL(bus1.p_originalBusIndex, an_int_value);
   BOOST_CHECK_EQUAL(bus1.p_globalBusIndex, an_int_value);
@@ -362,7 +362,7 @@ BOOST_AUTO_TEST_CASE (branch_data_serialization )
     branch1.p_data = branchdata;
   }
 
-  broadcast(world, &branch1, 1, 0);
+  broadcast(world.getCommunicator(), &branch1, 1, 0);
 
   BOOST_CHECK_EQUAL(branch1.p_globalBranchIndex, an_int_value);
   BOOST_CHECK_EQUAL(branch1.p_globalBusIndex1, an_int_value);

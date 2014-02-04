@@ -9,7 +9,7 @@
 /**
  * @file   small_matrix_solve.cpp
  * @author William A. Perkins
- * @date   2013-10-24 07:59:07 d3g096
+ * @date   2014-01-31 11:39:25 d3g096
  * 
  * @brief  
  * 
@@ -35,7 +35,7 @@ main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
-  boost::mpi::communicator self = world.split(world.rank());
+  gridpack::parallel::Communicator self = world.split(world.rank());
 
   gridpack::math::Initialize();
 

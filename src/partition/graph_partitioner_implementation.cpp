@@ -7,7 +7,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-07 14:57:07 d3g096
+ * @date   2014-02-04 14:05:40 d3g096
  * 
  * @brief  
  * 
@@ -127,8 +127,10 @@ GraphPartitionerImplementation::partition(void)
   int allnodes;
   int alledges;
 
-  all_reduce(this->communicator(), locnodes, allnodes, std::plus<int>());
-  all_reduce(this->communicator(), locedges, alledges, std::plus<int>());
+  all_reduce(communicator().getCommunicator(), 
+             locnodes, allnodes, std::plus<int>());
+  all_reduce(communicator().getCommunicator(), 
+             locedges, alledges, std::plus<int>());
 
   // make two GAs, one that holds the node source and another that
   // node destination; each is indexed by global node index
@@ -271,7 +273,7 @@ GraphPartitionerImplementation::partition(void)
     if (this->processor_rank() == p) {
       tmp = gnodedest;
     }
-    broadcast(this->communicator(), tmp, p);
+    broadcast(communicator().getCommunicator(), tmp, p);
     for (Index n = 0; n < locnodes; ++n) {
       Index nodeidx(p_adjacency_list.node_index(n));
       for (DestList::const_iterator i = tmp.begin();

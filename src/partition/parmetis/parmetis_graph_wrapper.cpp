@@ -7,7 +7,7 @@
 /**
  * @file   parmetis_graph_wrapper.cpp
  * @author William A. Perkins
- * @date   2013-07-09 12:24:24 d3g096
+ * @date   2014-02-04 13:03:06 d3g096
  * 
  * @brief  Implementation of the ParMETISGraphWrapper class
  * 
@@ -209,7 +209,8 @@ ParMETISGraphWrapper::p_initialize(void)
   p_global_nodes = 0;
   { 
     std::vector<int> nodes_by_proc;
-    all_gather(this->communicator(), localnodes, nodes_by_proc);
+    all_gather(this->communicator().getCommunicator(), 
+               localnodes, nodes_by_proc);
     
     std::vector<int> oldnodedist(nodes_by_proc.size() + 1);
     for (size_t i = 0; i < nodes_by_proc.size(); ++i) {
@@ -225,7 +226,8 @@ ParMETISGraphWrapper::p_initialize(void)
   int localedges(p_adjacency.edges());
   p_global_edges = 0;
 
-  all_reduce(this->communicator(), localedges, p_global_edges, std::plus<int>());
+  all_reduce(this->communicator().getCommunicator(), 
+             localedges, p_global_edges, std::plus<int>());
 
   p_initialize_gbl(p_global_nodes, localnodes, p_global_edges, localedges);
 

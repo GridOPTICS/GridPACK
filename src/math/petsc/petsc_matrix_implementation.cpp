@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-12-11 12:24:48 d3g096
+ * @date   2014-01-31 11:31:42 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -37,7 +37,7 @@ parallel::Communicator
 PETScMatrixImplementation::p_getCommunicator(const Mat& m)
 {
   MPI_Comm comm(PetscObjectComm((PetscObject)m));
-  parallel::Communicator result(comm, boost::mpi::comm_attach);
+  parallel::Communicator result(comm);
   return result;
 }
 
