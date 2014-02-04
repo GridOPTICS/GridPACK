@@ -16,6 +16,7 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include "boost/smart_ptr/shared_ptr.hpp"
 #include "hw_app.hpp"
 #include "hw_factory.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
@@ -65,8 +66,6 @@ void gridpack::hello_world::HWApp::execute(int argc, char** argv)
 
   // Create serial IO object to export data from buses
   gridpack::serial_io::SerialBusIO<HWNetwork> busIO(128,network);
-  char ioBuf[128];
-
   busIO.header("\nMessage from buses\n");
   busIO.write();
 

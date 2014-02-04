@@ -18,8 +18,6 @@
 #ifndef _hw_app_h_
 #define _hw_app_h_
 
-#include "boost/smart_ptr/shared_ptr.hpp"
-
 namespace gridpack {
 namespace hello_world {
 
