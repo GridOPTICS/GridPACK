@@ -49,7 +49,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, PERM, YA, YB, PMatrix, updateYbus, DAE_init,
+enum DSMode{YBUS, YL, PERM, PERMTrans, YA, YB, PMatrix, updateYbus, DAE_init,
             init_pelect, init_eprime, init_mac_ang, init_mac_spd,
             init_eqprime, init_pmech, init_mva, init_d0, init_h, onFY,
             posFY};

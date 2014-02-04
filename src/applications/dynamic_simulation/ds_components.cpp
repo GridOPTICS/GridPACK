@@ -75,6 +75,13 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
     } else {
       return false;
     }
+  } else if (p_mode == PERMTrans) {
+    if (p_ngen > 0) {
+      *isize = p_ngen;
+      *jsize = 1;
+    } else {
+      return false;
+    }
   } else if (p_mode == YA) {
     if (p_ngen > 0) {
       *isize = p_ngen;
@@ -137,6 +144,15 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     values[0] = ret;
     return true;
   } else if (p_mode == PERM) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[i] = 1.0;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == PERMTrans) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
         values[i] = 1.0;

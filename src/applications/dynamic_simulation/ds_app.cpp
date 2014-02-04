@@ -124,7 +124,10 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   perm->print(); 
 
   // Form a transposed matrix of perm
-  boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
+//  boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
+  factory.setMode(PERMTrans);
+  gridpack::mapper::FullMatrixMap<DSNetwork> permTransMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> permTrans = permTransMap.mapToMatrix();
   busIO.header("\n=== permTrans: ============\n");
   permTrans->print();
 
