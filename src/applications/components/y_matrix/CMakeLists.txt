@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:17:34 d3g096
+# Last Change: 2014-02-05 08:19:31 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -34,8 +34,8 @@ target_link_libraries(gridpack_ymatrix_components ${target_libraries})
 # installation
 # -------------------------------------------------------------
 install(FILES 
-  ymatrix_component.hpp  
-  DESTINATION include/gridpack/application/components/ymatrix
+  ymatrix_components.hpp  
+  DESTINATION include/gridpack/applications/components/y_matrix
 )
 
 install(TARGETS 

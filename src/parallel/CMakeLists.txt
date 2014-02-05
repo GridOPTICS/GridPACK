@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:03:29 d3g096
+# Last Change: 2014-02-05 07:55:23 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -23,6 +23,7 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 # gridpack header installation
 # -------------------------------------------------------------
 install(FILES 
+  communicator.hpp
   parallel.hpp
   distributed.hpp
   shuffler.hpp

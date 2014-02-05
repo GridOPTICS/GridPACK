@@ -7,7 +7,7 @@
 /**
  * @file   rg_app.cpp
  * @author Bruce Palmer
- * @date   2014-01-28 d3g293
+ * @date   2014-02-05 08:25:44 d3g096
  * 
  * @brief  
  * 
@@ -24,8 +24,8 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
-#include "gridpack/applications/examples/resistor_grid/rg_app.hpp"
-#include "gridpack/applications/examples/resistor_grid/rg_factory.hpp"
+#include "rg_app.hpp"
+#include "rg_factory.hpp"
 
 
 // Calling program for resistor grid application

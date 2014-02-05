@@ -7,7 +7,7 @@
 /**
  * @file   rg_main.cpp
  * @author Bruce Palmer
- * @date   July 23, 2013
+ * @date   2014-02-05 08:26:07 d3g096
  * 
  * @brief  
  */
@@ -17,7 +17,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "gridpack/applications/examples/resistor_grid/rg_app.hpp"
+#include "rg_app.hpp"
 
 // Calling program for the resistor_grid applications
 

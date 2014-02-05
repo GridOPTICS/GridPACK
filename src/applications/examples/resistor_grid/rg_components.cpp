@@ -7,7 +7,7 @@
 /**
  * @file   rg_components.cpp
  * @author Bruce Palmer
- * @date   2014-01-28 d3g293
+ * @date   2014-02-05 08:25:59 d3g096
  * 
  * @brief  
  * 
@@ -22,7 +22,7 @@
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/applications/examples/resistor_grid/rg_components.hpp"
+#include "rg_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
 //#define LARGE_MATRIX

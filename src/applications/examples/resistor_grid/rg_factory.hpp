@@ -7,7 +7,7 @@
 /**
  * @file   rg_factory.hpp
  * @author Bruce Palmer
- * @date   2013-10-25 08:02:22 d3g096
+ * @date   2014-02-05 08:25:26 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/examples/resistor_grid/rg_components.hpp"
+#include "rg_components.hpp"
 
 namespace gridpack {
 namespace resistor_grid {
