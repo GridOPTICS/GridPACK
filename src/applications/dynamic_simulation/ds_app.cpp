@@ -180,7 +180,10 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense(gridpack::math::storageType(*Y_c, denseType));
    
   // Form matrix permYmod
-  boost::shared_ptr<gridpack::math::Matrix> permYmod(multiply(*perm, *Ymod)); 
+//  boost::shared_ptr<gridpack::math::Matrix> permYmod(multiply(*perm, *Ymod)); 
+  factory.setMode(permYMOD);
+  gridpack::mapper::FullMatrixMap<DSNetwork> pymMap(network);
+  boost::shared_ptr<gridpack::math::Matrix>  permYmod= pymMap.mapToMatrix();
   busIO.header("\n=== permYmod: ============\n");
   permYmod->print();
 
