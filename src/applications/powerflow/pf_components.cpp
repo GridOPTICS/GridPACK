@@ -42,7 +42,6 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_pl = 0.0;
   p_ql = 0.0;
   p_sbase = 0.0;
-  p_isolated = false;
   p_mode = YBus;
   setReferenceBus(false);
 }
@@ -62,7 +61,7 @@ gridpack::powerflow::PFBus::~PFBus(void)
 bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize, int *jsize) const
 {
   if (p_mode == Jacobian) {
-    if (!p_isolated) {
+    if (!YMBus::isIsolated()) {
 #ifdef LARGE_MATRIX
       *isize = 2;
       *jsize = 2;
@@ -100,7 +99,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
   if (p_mode == YBus) {
     return YMBus::matrixDiagValues(values);
   } else if (p_mode == Jacobian) {
-    if (!p_isolated) {
+    if (!YMBus::isIsolated()) {
 #ifdef LARGE_MATRIX
       if (!getReferenceBus()) {
         values[0] = -p_Qinj - p_ybusi * p_v *p_v; 
@@ -151,7 +150,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
 bool gridpack::powerflow::PFBus::vectorSize(int *size) const
 {
   if (p_mode == RHS || p_mode == State) {
-    if (!p_isolated) {
+    if (!YMBus::isIsolated()) {
 #ifdef LARGE_MATRIX
       *size = 2;
       return true;
@@ -198,7 +197,7 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
     return true;
   }
   if (p_mode == RHS) {
-    if (!p_isolated) {
+    if (!YMBus::isIsolated()) {
       if (!getReferenceBus()) {
         std::vector<boost::shared_ptr<BaseComponent> > branches;
         getNeighborBranches(branches);
@@ -322,8 +321,6 @@ void gridpack::powerflow::PFBus::load(
   data->getValue(BUS_TYPE, &itype);
   if (itype == 3) {
     setReferenceBus(true);
-  }  else if (itype == 4) {
-    p_isolated = true;
   }
 
   // if BUS_TYPE = 2 then bus is a PV bus
@@ -416,9 +413,9 @@ bool gridpack::powerflow::PFBus::isPV(void)
  * Return whether or not a bus is isolated
  * @return true if bus is isolated
  */
-bool gridpack::powerflow::PFBus::isIsolated(void)
+bool gridpack::powerflow::PFBus::isIsolated(void) const
 {
-  return p_isolated;
+  return YMBus::isIsolated();
 }
 
 /**
