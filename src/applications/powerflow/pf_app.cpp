@@ -15,6 +15,7 @@
  */
 // -------------------------------------------------------------
 
+#include <iostream>
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/linear_solver.hpp"
@@ -63,6 +64,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
+  config->enableLogging(&std::cout);
   if (argc >= 2 && argv[1] != NULL) {
     char inputfile[256];
     sprintf(inputfile,"%s",argv[1]);
@@ -175,6 +177,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->stop(t_cmap);
   timer->start(t_mmap);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+//  J->print();
   timer->stop(t_mmap);
   busIO.header("\nJacobian values\n");
 //  J->print();
