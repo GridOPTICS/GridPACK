@@ -35,6 +35,7 @@ gridpack::ymatrix::YMBus::YMBus(void)
   p_shunt_gs = 0.0;
   p_shunt_bs = 0.0;
   p_mode = YBus;
+  p_isolated = false;
   setReferenceBus(false);
 }
 
@@ -52,7 +53,7 @@ gridpack::ymatrix::YMBus::~YMBus(void)
  */
 bool gridpack::ymatrix::YMBus::matrixDiagSize(int *isize, int *jsize) const
 {
-  if (p_mode == YBus) {
+  if (p_mode == YBus && !p_isolated) {
     *isize = 1;
     *jsize = 1;
     return true;
@@ -69,7 +70,7 @@ bool gridpack::ymatrix::YMBus::matrixDiagSize(int *isize, int *jsize) const
  */
 bool gridpack::ymatrix::YMBus::matrixDiagValues(ComplexType *values)
 {
-  if (p_mode == YBus) {
+  if (p_mode == YBus && !p_isolated) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     values[0] = ret;
     return true;
@@ -133,6 +134,8 @@ void gridpack::ymatrix::YMBus::load(
   data->getValue(BUS_TYPE, &itype);
   if (itype == 3) {
     setReferenceBus(true);
+  } else if (itype == 4) {
+    p_isolated = true;
   }
 }
 
@@ -145,6 +148,15 @@ void gridpack::ymatrix::YMBus::load(
 void gridpack::ymatrix::YMBus::setMode(int mode)
 {
   p_mode = mode;
+}
+
+/**
+ * Return whether or not a bus is isolated
+ * @return true if bus is isolated
+ */
+bool gridpack::ymatrix::YMBus::isIsolated(void) const
+{
+  return p_isolated;
 }
 
 /**
@@ -184,7 +196,13 @@ gridpack::ymatrix::YMBranch::~YMBranch(void)
 bool gridpack::ymatrix::YMBranch::matrixForwardSize(int *isize, int *jsize) const
 {
   if (p_mode == YBus) {
-    if (p_active) {
+    gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
       *isize = 1;
       *jsize = 1;
       return true;
@@ -196,7 +214,13 @@ bool gridpack::ymatrix::YMBranch::matrixForwardSize(int *isize, int *jsize) cons
 bool gridpack::ymatrix::YMBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   if (p_mode == YBus) {
-    if (p_active == 1) {
+    gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
       *isize = 1;
       *jsize = 1;
       return true;
@@ -215,7 +239,13 @@ bool gridpack::ymatrix::YMBranch::matrixReverseSize(int *isize, int *jsize) cons
 bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == YBus) {
-    if (p_active == 1) {
+    gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
       return true;
     } else {
@@ -227,7 +257,13 @@ bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
 bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == YBus) {
-    if (p_active) {
+    gridpack::ymatrix::YMBus *bus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *bus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    bool ok = !bus1->isIsolated();
+    ok = ok && !bus2->isIsolated();
+    if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
       return true;
     } else {

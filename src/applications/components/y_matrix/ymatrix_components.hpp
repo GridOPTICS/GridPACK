@@ -26,7 +26,7 @@
 namespace gridpack {
 namespace ymatrix {
 
-enum YmattrixMode{YBus};
+enum YMatrixMode{YBus};
 
 class YMBus
   : public gridpack::component::BaseBusComponent {
@@ -87,11 +87,18 @@ class YMBus
      */
     void setMode(int mode);
 
+    /**
+     * Return whether or not a bus is isolated
+     * @return true if bus is isolated
+     */
+    bool isIsolated(void) const;
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
     int p_mode;
+    bool p_isolated;
 
     // p_v and p_a are initialized to p_voltage and p_angle respectively,
     // but may be subject to change during the NR iterations
@@ -110,6 +117,7 @@ private:
       & p_shunt_bs
       & p_shunt
       & p_mode
+      & p_isolated
       & p_ybusr & p_ybusi;
   }  
 
@@ -212,6 +220,7 @@ class YMBranch
     double p_ybusr_rvrs, p_ybusi_rvrs;
     std::vector<int> p_branch_status;
     int p_elems;
+    bool p_isolated;
     bool p_active;
 
 private:
@@ -238,6 +247,7 @@ private:
       & p_ybusr_rvrs & p_ybusi_rvrs
       & p_branch_status
       & p_elems
+      & p_isolated
       & p_active;
   }  
 
