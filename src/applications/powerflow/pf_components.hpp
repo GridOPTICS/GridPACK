@@ -151,6 +151,12 @@ class PFBus
     bool isPV(void);
 
     /**
+     * Return whether or not a bus is isolated
+     * @return true if bus is isolated
+     */
+    bool isIsolated(void);
+
+    /**
      * Set voltage value
      */
     void setVoltage(void);
@@ -203,6 +209,7 @@ class PFBus
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV;
+    bool p_isolated;
 
     /**
      * Variables that are exchanged between buses
@@ -234,7 +241,8 @@ private:
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
-      & p_isPV;
+      & p_isPV
+      & p_isolated;
   }  
 
 };
