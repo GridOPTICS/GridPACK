@@ -80,12 +80,14 @@ static bool dump_xml(boost::property_tree::ptree pt, std::ostream & out, int ind
 
 
 #ifdef USE_MPI
-bool Configuration::open(const std::string & file,MPI_Comm comm) {
+bool Configuration::open(const std::string & file,
+                         gridpack::parallel::Communicator tcomm) {
 #else
 bool Configuration::open(const std::string & file) {
 #endif
 
 #ifdef USE_MPI
+   MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
 	int rank;
 	MPI_Comm_rank(comm,&rank);
 	if(rank != 0) {
@@ -137,8 +139,9 @@ bool ConfigInternals::initialize(const std::string & input) {
 }
 
 #ifdef USE_MPI
-bool Configuration::initialize(MPI_Comm comm) {
+bool Configuration::initialize(gridpack::parallel::Communicator tcomm) {
 	std::cout << "warning: Configuration::initialize is deprecated" << std::endl;
+   MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
 	return initialize_internal(comm);
 }
 bool Configuration::initialize_internal(MPI_Comm comm) {

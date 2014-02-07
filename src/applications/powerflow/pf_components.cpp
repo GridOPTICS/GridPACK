@@ -386,7 +386,9 @@ gridpack::ComplexType gridpack::powerflow::PFBus::getYBus(void)
  */
 void gridpack::powerflow::PFBus::setMode(int mode)
 {
-  YMBus::setMode(mode);
+  if (mode == YBus) {
+    YMBus::setMode(gridpack::ymatrix::YBus);
+  }
   p_mode = mode;
 }
 
@@ -890,6 +892,9 @@ void gridpack::powerflow::PFBranch::load(
  */
 void gridpack::powerflow::PFBranch::setMode(int mode)
 {
+  if (mode == YBus) {
+    YMBranch::setMode(gridpack::ymatrix::YBus);
+  }
   p_mode = mode;
 }
 

@@ -17,6 +17,7 @@
 #ifdef USE_MPI
 #include <mpi.h>
 #endif
+#include "gridpack/parallel/communicator.hpp"
 namespace gridpack {
 namespace utility {
 
@@ -123,19 +124,19 @@ public:
     */
 #ifdef USE_MPI
    /**
-    * Open external configuration file on all ranks on communicator MPI_Comm
+    * Open external configuration file on all ranks on communicator comm
     * @param file name of external configuration file
-    * @param MPI_Comm MPI communicator being used in calculation
+    * @param Communicator being used in calculation
     * @return false if there is an error reading XML file
     */
-	bool open(const std::string & file,MPI_Comm);  // on all ranks...
+	bool open(const std::string & file, gridpack::parallel::Communicator comm);  // on all ranks...
    /**
     * Deprecated method that initializes configuration on all processes except
     * process 0. Can be used in conjunction with "open" call on process 0.
-    * @param MPI_Comm MPI communicator being used in calculation
+    * @param Communicator being used in calculation
     * @return false if there is an error reading XML file
     */
-	bool initialize(MPI_Comm comm);  // deprecated....
+	bool initialize(gridpack::parallel::Communicator comm);  // deprecated....
 #else
    /**
     * Open external configuration file

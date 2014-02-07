@@ -15,7 +15,6 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/parallel/distributed.hpp"
 #include "gridpack/component/base_component.hpp"
 
 // Base implementation of the MatVecInterface. These functions should be

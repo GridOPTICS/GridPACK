@@ -18,6 +18,9 @@ add_library(gridpack_parallel
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+  include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
 
 # -------------------------------------------------------------
 # gridpack header installation
@@ -45,7 +48,7 @@ install(TARGETS
 # A simple MPI program (that does not use boost::test)
 # -------------------------------------------------------------
 add_executable(greetings test/greetings.cpp)
-target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(greetings ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 add_test(greetings_serial greetings)
 add_test(greetings_parallel 
@@ -60,7 +63,7 @@ set_tests_properties(greetings_serial greetings_parallel
 # A simple MPI test using boost::test
 # -------------------------------------------------------------
 add_executable(mpi_test test/mpi_test.cpp)
-target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(mpi_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 gridpack_add_unit_test(mpi_test mpi_test)
 
 
@@ -68,5 +71,5 @@ gridpack_add_unit_test(mpi_test mpi_test)
 # TEST: shuffle_test
 # -------------------------------------------------------------
 add_executable(shuffle_test test/shuffle_test.cpp)
-target_link_libraries(shuffle_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(shuffle_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 gridpack_add_unit_test(shuffle shuffle_test)
