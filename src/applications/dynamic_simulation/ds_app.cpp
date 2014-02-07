@@ -111,7 +111,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // Form constant impedance load admittance yl for all buses and add it to 
   // system Y matrix: ybus = ybus + yl
-  factory.setMode(YL); 
+  printf("1111\n");
+  factory.setMode(YL);
+  printf("2222\n");
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
   branchIO.header("\n=== ybus after added yl: ============\n");
   ybus->print();
@@ -124,7 +126,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   perm->print(); 
 
   // Form a transposed matrix of perm
-//  boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
+  // boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
   factory.setMode(PERMTrans);
   gridpack::mapper::FullMatrixMap<DSNetwork> permTransMap(network);
   boost::shared_ptr<gridpack::math::Matrix> permTrans = permTransMap.mapToMatrix();
@@ -159,12 +161,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
   busIO.header("\n=== P: ============\n");
   P->print();
-  /*boost::shared_ptr<gridpack::math::Matrix> Y_c(multiply(*P, *Ymod)); 
-  busIO.header("\n=== Y_c: ============\n");
-  Y_c->print();
-  boost::shared_ptr<gridpack::math::Matrix> Y_b(transpose(*Y_c));
-  busIO.header("\n=== Y_b: ============\n");
-  Y_b->print();*/
   boost::shared_ptr<gridpack::math::Matrix> Y_c(transpose(*Ymod));
   Y_c->scale(-1.0);
   Y_c.reset(multiply(*P, *Y_c)); 
@@ -204,7 +200,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //gridpack::math::LinearSolver solver1(*prefy11ybus);
   //solver1.configure(cursor);
   gridpack::math::LinearMatrixSolver solver1(*prefy11ybus);
-  boost::shared_ptr<gridpack::math::Matrix> prefy11X(solver1.solve(*Y_cDense));
+  boost::shared_pt
+  }r<gridpack::math::Matrix> prefy11X(solver1.solve(*Y_cDense));
   branchIO.header("\n=== prefy11X: ============\n");
   prefy11X->print(); 
   
@@ -597,14 +594,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
     // Print to screen
     if (last_S_Steps != S_Steps) {
-      /*sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps);
-      busIO.header(ioBuf);
-      mac_ang_s0->print();  
-      mac_spd_s0->print();  
-      pmech->print();
-      pelect->print();
-      sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps);
-      busIO.header(ioBuf);*/
+      //sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps);
+      //busIO.header(ioBuf);
+      //mac_ang_s0->print();  
+      //mac_spd_s0->print();  
+      //pmech->print();
+      //pelect->print();
+      //sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps);
+      //busIO.header(ioBuf);
     }
     if (I_Steps == simu_k) {
       sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps+1);
@@ -618,7 +615,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     } // End of Print to screen 
     
     last_S_Steps = S_Steps;
-  } 
+  }
 }
 
 /**

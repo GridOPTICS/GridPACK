@@ -45,6 +45,7 @@
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/network/base_network.hpp"
+#include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -55,7 +56,8 @@ enum DSMode{YBUS, YL, PERM, PERMTrans, YA, permYMOD, YB, PMatrix, updateYbus,
             posFY};
 
 class DSBus
-  : public gridpack::component::BaseBusComponent {
+  : public gridpack::ymatrix::YMBus
+{
   public:
     /**
      *  Simple constructor
@@ -110,6 +112,12 @@ class DSBus
     void setYBus(void);
 
     /**
+     * Get values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    gridpack::ComplexType getYBus(void);
+
+    /**
      * Load values stored in DataCollection object into DSBus object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
@@ -136,6 +144,12 @@ class DSBus
      * @return: phase angle
      */
     double getPhase(void);
+
+    /**
+     * Return whether or not a bus is isolated
+     * @return true if bus is isolated
+     */
+    bool isIsolated(void) const;
 
     /**
      * Set values of the IFunction on this bus (gen)
@@ -197,7 +211,7 @@ class DSBus
       void serialize(Archive & ar, const unsigned int version)
       {
         ar &
-          boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
+          boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
           & p_shunt_gs
           & p_shunt_bs
           & p_shunt
@@ -221,7 +235,7 @@ class DSBus
 };
 
 class DSBranch
-  : public gridpack::component::BaseBranchComponent {
+  : public gridpack::ymatrix::YMBranch {
   public:
     // Small utility structure to encapsulate information about fault events
     struct Event{
@@ -344,7 +358,7 @@ class DSBranch
       void serialize(Archive & ar, const unsigned int version)
       {
         ar &
-          boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+          boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
           & p_reactance
           & p_resistance
           & p_tap_ratio
