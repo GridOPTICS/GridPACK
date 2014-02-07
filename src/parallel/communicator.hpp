@@ -68,6 +68,7 @@ public:
     gaSrc[me] = GA_Nodeid();
     ierr = MPI_Allreduce(gaSrc,gaDest,nprocs,MPI_INT,MPI_SUM,comm);
     p_GAgroup = GA_Pgroup_create(gaDest,nprocs);
+    GA_Pgroup_sync(p_GAgroup);
     GA_Pgroup_set_default(defGrp);
   }
 
@@ -90,6 +91,7 @@ public:
     gaSrc[me] = GA_Nodeid();
     ierr = MPI_Allreduce(gaSrc,gaDest,nprocs,MPI_INT,MPI_SUM,comm);
     p_GAgroup = GA_Pgroup_create(gaDest,nprocs);
+    GA_Pgroup_sync(p_GAgroup);
     GA_Pgroup_set_default(defGrp);
   }
 

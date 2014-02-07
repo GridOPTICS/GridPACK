@@ -408,7 +408,8 @@ int totalBuses(void)
   for (i=0; i<nBus; i++) {
     if (p_buses[i].p_activeBus) total++;
   }
-  GA_Igop(&total,1,"+");
+  int grp = this->communicator().getGroup();
+  GA_Pgroup_igop(grp,&total,1,"+");
   return total;
 }
 
@@ -433,7 +434,8 @@ int totalBranches(void)
   for (i=0; i<nBranch; i++) {
     if (p_branches[i].p_activeBranch) total++;
   }
-  GA_Igop(&total,1,"+");
+  int grp = this->communicator().getGroup();
+  GA_Pgroup_igop(grp,&total,1,"+");
   return total;
 }
 
@@ -1293,7 +1295,8 @@ void* getXCBranchBuffer(int idx)
 void initBusUpdate(void)
 {
   int i, size, numBuses;
-  GA_Sync();
+  int grp = this->communicator().getGroup();
+  GA_Pgroup_sync(grp);
   // Don't do anything if buffers are not allocated
   if (p_busXCBufSize > 0) {
     // Clean up old GA, if it exists
@@ -1336,8 +1339,8 @@ void initBusUpdate(void)
       }
     }
     // Construct GA that can hold exchange data for all active buses
-    int nprocs = GA_Nnodes();
-    int me = GA_Nodeid();
+    int nprocs = GA_Pgroup_nnodes(grp);
+    int me = GA_Pgroup_nodeid(grp);
     int *totBuses = new int[nprocs];
     int *distr = new int[nprocs];
     for (i=0; i<nprocs; i++) {
@@ -1347,7 +1350,7 @@ void initBusUpdate(void)
         totBuses[i] = 0;
       }
     }
-    GA_Igop(totBuses,nprocs,"+");
+    GA_Pgroup_igop(grp,totBuses,nprocs,"+");
     distr[0] = 0;
     p_busTotal = totBuses[0];
     for (i=1; i<nprocs; i++) {
@@ -1359,6 +1362,7 @@ void initBusUpdate(void)
     p_busXCBufType = NGA_Register_type(p_busXCBufSize);
     GA_Set_data(p_busGA, one, &p_busTotal, p_busXCBufType);
     GA_Set_irreg_distr(p_busGA, distr, &nprocs);
+    GA_Set_pgroup(p_busGA, grp);
     GA_Allocate(p_busGA);
 
     if (lcnt > 0) {
@@ -1404,7 +1408,7 @@ void initBusUpdate(void)
     delete [] totBuses;
     delete [] distr;
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 }
 
 /**
@@ -1413,8 +1417,9 @@ void initBusUpdate(void)
  */
 void updateBuses(void)
 {
+  int grp = this->communicator().getGroup();
   // Copy data from XC buffer to send buffer
-  GA_Sync();
+  GA_Pgroup_sync(grp);
   int i, j, xc_off, rs_off, icnt, nbus;
   char *rs_ptr, *xc_ptr;
   nbus = numBuses();
@@ -1437,11 +1442,11 @@ void updateBuses(void)
   if (p_numActiveBuses > 0) {
     NGA_Scatter(p_busGA,p_busSndBuf,p_activeBusIndices,p_numActiveBuses);
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
   if (p_numInactiveBuses > 0) {
     NGA_Gather(p_busGA,p_busRcvBuf,p_inactiveBusIndices,p_numInactiveBuses);
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 
   // Copy data from recieve buffer to XC buffer
   icnt = 0;
@@ -1458,7 +1463,7 @@ void updateBuses(void)
       icnt++;
     }
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 }
 
 /**
@@ -1468,7 +1473,8 @@ void updateBuses(void)
 void initBranchUpdate(void)
 {
   int i, size, numBranches;
-  GA_Sync();
+  int grp = this->communicator().getGroup();
+  GA_Pgroup_sync(grp);
   // Don't do anything if buffers are not allocated
   if (p_branchXCBufSize > 0) {
     // Clean up old GA, if it exists
@@ -1507,8 +1513,8 @@ void initBranchUpdate(void)
       }
     }
     // Construct GA that can hold exchange data for all active branches
-    int nprocs = GA_Nnodes();
-    int me = GA_Nodeid();
+    int nprocs = GA_Pgroup_nnodes(grp);
+    int me = GA_Pgroup_nodeid(grp);
     int *totBranches = new int(nprocs);
     int *distr = new int(nprocs);
     for (i=0; i<nprocs; i++) {
@@ -1518,7 +1524,7 @@ void initBranchUpdate(void)
         totBranches[i] = 0;
       }
     }
-    GA_Igop(totBranches,nprocs,"+");
+    GA_Pgroup_igop(grp,totBranches,nprocs,"+");
     distr[0] = 0;
     p_branchTotal = totBranches[0];
     for (i=1; i<nprocs; i++) {
@@ -1530,6 +1536,7 @@ void initBranchUpdate(void)
     p_branchXCBufType = NGA_Register_type(p_branchXCBufSize);
     GA_Set_data(p_branchGA, one, &p_branchTotal, p_branchXCBufType);
     GA_Set_irreg_distr(p_branchGA, distr, &nprocs);
+    GA_Set_pgroup(p_branchGA, grp);
     GA_Allocate(p_branchGA);
 
     // Sort buses into local and ghost lists
@@ -1569,7 +1576,7 @@ void initBranchUpdate(void)
     delete totBranches;
     delete distr;
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 }
 
 /**
@@ -1579,7 +1586,8 @@ void initBranchUpdate(void)
 void updateBranches(void)
 {
   // Copy data from XC buffer to send buffer
-  GA_Sync();
+  int grp = this->communicator().getGroup();
+  GA_Pgroup_sync(grp);
   int i, j, xc_off, rs_off, icnt, nbranch;
   char *rs_ptr, *xc_ptr;
   nbranch = numBranches();
@@ -1602,11 +1610,11 @@ void updateBranches(void)
   if (p_numActiveBranches > 0) {
     NGA_Scatter(p_branchGA,p_branchSndBuf,p_activeBranchIndices,p_numActiveBranches);
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
   if (p_numInactiveBranches > 0) {
     NGA_Gather(p_branchGA,p_branchRcvBuf,p_inactiveBranchIndices,p_numInactiveBranches);
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 
   // Copy data from recieve buffer to XC buffer
   icnt = 0;
@@ -1623,7 +1631,7 @@ void updateBranches(void)
       icnt++;
     }
   }
-  GA_Sync();
+  GA_Pgroup_sync(grp);
 }
 
 void
