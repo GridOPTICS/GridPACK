@@ -146,7 +146,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
   } else if (p_mode == YL) {
     p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
     p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
-    printf("p_ybusr=%f, p_ybusi=%f\n", p_ybusr, p_ybusi);
+    //printf("p_ybusr=%f, p_ybusi=%f\n", p_ybusr, p_ybusi);
     gridpack::ComplexType ret(p_ybusr, p_ybusi);
     values[0] = ret;
     return true;
