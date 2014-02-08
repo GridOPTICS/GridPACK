@@ -35,6 +35,7 @@ add_custom_target(configuration_test_input
 add_executable(configuration_test test/configuration_test.cpp)
 target_link_libraries(configuration_test 
   gridpack_configuration
+  ${GA_LIBRARIES}
   ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 gridpack_add_unit_test(configuration_test configuration_test)
 

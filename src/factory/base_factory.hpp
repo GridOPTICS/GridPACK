@@ -136,8 +136,9 @@ class BaseFactory {
       // for all active components are unique. These are used in the mapper routine.
       // First get the number of active buses and branches on each process and
       // broadcast this to all other processes.
-      int nprocs = GA_Nnodes();
-      int me = GA_Nodeid();
+      int grp = p_network->communicator().getGroup();
+      int nprocs = GA_Pgroup_nnodes(grp);
+      int me = GA_Pgroup_nodeid(grp);
       int *activeBus = new int[nprocs];
       int *activeBranch = new int[nprocs];
 
@@ -148,8 +149,8 @@ class BaseFactory {
 
       activeBus[me] = numActiveBus;
       activeBranch[me] = numActiveBranch;
-      GA_Igop(activeBus,nprocs,"+");
-      GA_Igop(activeBranch,nprocs,"+");
+      GA_Pgroup_igop(grp,activeBus,nprocs,"+");
+      GA_Pgroup_igop(grp,activeBranch,nprocs,"+");
 
       // Create indices for buses. Start by creating a global array with an entry
       // for each bus
@@ -162,6 +163,7 @@ class BaseFactory {
       }
       int g_bus = GA_Create_handle();
       GA_Set_data(g_bus, one, &ntot, C_INT);
+      GA_Set_pgroup(g_bus, grp);
       if (!GA_Allocate(g_bus)) {
         // TODO: some kind of error
       }
@@ -180,7 +182,7 @@ class BaseFactory {
         }
       }
       NGA_Scatter(g_bus,ibus_val,ibus_idx,numActiveBus);
-      GA_Sync();
+      GA_Pgroup_sync(grp);
       for (i=0; i<numActiveBus; i++) {
         delete ibus_idx[i];
       }

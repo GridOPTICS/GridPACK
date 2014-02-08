@@ -44,6 +44,8 @@ BusVectorMap(boost::shared_ptr<_network> network)
 {
   int                     iSize    = 0;
 
+  p_GAgrp = network->communicator().getGroup();
+
   p_nBuses = p_network->numBuses();
 
   p_activeBuses         = getActiveBuses();
@@ -73,7 +75,7 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   boost::shared_ptr<gridpack::math::Vector>
              Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
   loadBusData(Ret,true);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   return Ret;
 }
@@ -87,7 +89,7 @@ void mapToVector(gridpack::math::Vector &vector)
 {
   vector.zero();
   loadBusData(vector,false);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   vector.ready();
 }
 
@@ -136,7 +138,7 @@ void mapToBus(const gridpack::math::Vector &vector)
   }
   delete [] sizes;
   delete [] offsets;
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
 }
 
 /**
@@ -175,7 +177,7 @@ void setupGlobalArrays(int nActiveBuses)
 
   p_totalBuses = nActiveBuses;
 
-  GA_Igop(&p_totalBuses,one,"+");
+  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,"+");
 
   // the gaVecBlksI array contains the vector blocks sizes for
   // individual block contributions
@@ -191,6 +193,7 @@ void createIndexGA(int * handle, int size)
   int one = 1;
   *handle = GA_Create_handle();
   GA_Set_data(*handle, one, &size, C_INT);
+  GA_Set_pgroup(*handle,p_GAgrp);
   if (!GA_Allocate(*handle)) {
     // TODO: some kind of error
   }
@@ -213,7 +216,7 @@ void setupIndexingArrays()
   loadBusArrays(iSizeArray, iIndexArray, &count);
   scatterIndexingArrays(iSizeArray, iIndexArray, count);
   deleteIndexArrays(p_nBuses, iSizeArray, iIndexArray);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
 }
 
 /**
@@ -311,7 +314,7 @@ void setupOffsetArrays()
   // Create array to hold information about desired elements
   int nRows = p_maxRowIndex-p_minRowIndex+1;
   int *iSizes = new int[nRows]; 
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   NGA_Get(gaVecBlksI,&p_minRowIndex,&p_maxRowIndex,iSizes,&one);
 
   // Calculate total number of elements associated with row block and column
@@ -323,14 +326,14 @@ void setupOffsetArrays()
     if (iSizes[i] > 0) iSize += iSizes[i];
   }
   p_rowBlockSize = iSize;
-  GA_Igop(&p_maxIBlock,one,"max");
+  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,"max");
 
   for (i = 0; i<p_nNodes; i++) {
     itmp[i] = 0;
   }
   itmp[p_me] = iSize;
 
-  GA_Igop(itmp, p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, "+");
 
   int offsetArrayISize = 0;
   for (i = 0; i < p_me; i++) {
@@ -350,7 +353,7 @@ void setupOffsetArrays()
     offset[i] = 0;
   }
   offset[p_me] = p_activeBuses;
-  GA_Igop(offset,p_nNodes,"+");
+  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,"+");
 
   int *mapc = new int[p_nNodes];
   mapc[0]=0;
@@ -365,6 +368,7 @@ void setupOffsetArrays()
   gaOffsetI = GA_Create_handle();
   GA_Set_data(gaOffsetI, one, &p_totalBuses, C_INT);
   GA_Set_irreg_distr(gaOffsetI, mapc, &p_nNodes);
+  GA_Set_pgroup(gaOffsetI,p_GAgrp);
   if (!GA_Allocate(gaOffsetI)) {
     // TODO: some kind of error
   }
@@ -381,7 +385,7 @@ void setupOffsetArrays()
   if (nRows > 0) {
     NGA_Put(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,iOffsets,&one);
   }
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
 
   delete [] mapc;
   delete [] iSizes;
@@ -500,6 +504,7 @@ int                         p_maxIBlock;
     // global vector block size array
 int                         gaVecBlksI; // g_idx
 int                         gaOffsetI; // g_ioff
+int                         p_GAgrp; // GA group
 };
 
 } /* namespace mapper */

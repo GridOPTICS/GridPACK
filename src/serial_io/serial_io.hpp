@@ -47,6 +47,7 @@ class SerialBusIO {
   SerialBusIO(int max_str_len,
               boost::shared_ptr<_network> network)
   {
+    p_GAgrp = network->communicator().getGroup();
     p_GA_type = NGA_Register_type(max_str_len);
     p_network = network;
     p_size = max_str_len;
@@ -57,9 +58,11 @@ class SerialBusIO {
     int one = 1;
     p_stringGA = GA_Create_handle();
     GA_Set_data(p_stringGA,one,&nbus,p_GA_type);
+    GA_Set_pgroup(p_stringGA, p_GAgrp);
     GA_Allocate(p_stringGA);
     p_maskGA = GA_Create_handle();
     GA_Set_data(p_maskGA,one,&nbus,C_INT);
+    GA_Set_pgroup(p_maskGA, p_GAgrp);
     GA_Allocate(p_maskGA);
     p_useFile = false;
   }
@@ -72,7 +75,7 @@ class SerialBusIO {
     NGA_Deregister_type(p_GA_type);
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       if (p_fout.is_open()) p_fout.close();
     }
   }
@@ -83,7 +86,7 @@ class SerialBusIO {
    */
   void open(const char *filename)
   {
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       if (p_fout.is_open()) p_fout.close();
       p_fout.open(filename);
       p_useFile = true;
@@ -95,7 +98,7 @@ class SerialBusIO {
    */
   void close()
   {
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       if (p_fout.is_open()) p_fout.close();
       p_useFile = false;
     }
@@ -176,7 +179,7 @@ class SerialBusIO {
       NGA_Scatter(p_stringGA,strbuf,index,nwrites);
       NGA_Scatter(p_maskGA,ones,index,nwrites);
     }
-    GA_Sync();
+    GA_Pgroup_sync(p_GAgrp);
     for (i=0; i<nwrites; i++) {
       delete index[i];
     }
@@ -184,8 +187,8 @@ class SerialBusIO {
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
-    if (GA_Nodeid() == 0) {
-      int nprocs = GA_Nnodes();
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      int nprocs = GA_Pgroup_nnodes(p_GAgrp);
       int lo, hi;
       for (i=0; i<nprocs; i++) {
         NGA_Distribution(p_maskGA, i, &lo, &hi);
@@ -227,7 +230,7 @@ class SerialBusIO {
         }
       }
     }
-    GA_Sync();
+    GA_Pgroup_sync(p_GAgrp);
   }
 
   /**
@@ -239,7 +242,7 @@ class SerialBusIO {
    */
   void header(std::ostream & out, const char *str) const
   {
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       out << str;
     }
   }
@@ -252,6 +255,7 @@ class SerialBusIO {
     int p_size;
     bool p_useFile;
     std::ofstream p_fout;
+    int p_GAgrp;
 };
 
 template <class _network>
@@ -265,6 +269,7 @@ class SerialBranchIO {
   SerialBranchIO(int max_str_len,
                  boost::shared_ptr<_network> network)
   {
+    p_GAgrp = network->communicator().getGroup();
     p_GA_type = NGA_Register_type(max_str_len);
     p_network = network;
     p_size = max_str_len;
@@ -275,9 +280,11 @@ class SerialBranchIO {
     int one = 1;
     p_stringGA = GA_Create_handle();
     GA_Set_data(p_stringGA,one,&nbranch,p_GA_type);
+    GA_Set_pgroup(p_stringGA, p_GAgrp);
     GA_Allocate(p_stringGA);
     p_maskGA = GA_Create_handle();
     GA_Set_data(p_maskGA,one,&nbranch,C_INT);
+    GA_Set_pgroup(p_maskGA, p_GAgrp);
     GA_Allocate(p_maskGA);
     p_useFile = false;
   }
@@ -290,7 +297,7 @@ class SerialBranchIO {
     NGA_Deregister_type(p_GA_type);
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       if (p_fout.is_open()) p_fout.close();
     }
   }
@@ -301,7 +308,7 @@ class SerialBranchIO {
    */
   void open(const char *filename)
   {
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       if (p_fout.is_open()) p_fout.close();
       p_fout.open(filename);
       p_useFile = true;
@@ -313,7 +320,7 @@ class SerialBranchIO {
    */
   void close()
   {
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       if (p_fout.is_open()) p_fout.close();
       p_useFile = false;
     }
@@ -394,7 +401,7 @@ class SerialBranchIO {
       NGA_Scatter(p_stringGA,strbuf,index,nwrites);
       NGA_Scatter(p_maskGA,ones,index,nwrites);
     }
-    GA_Sync();
+    GA_Pgroup_sync(p_GAgrp);
     for (i=0; i<nwrites; i++) {
       delete index[i];
     }
@@ -402,8 +409,8 @@ class SerialBranchIO {
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
-    if (GA_Nodeid() == 0) {
-      int nprocs = GA_Nnodes();
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      int nprocs = GA_Pgroup_nnodes(p_GAgrp);
       int lo, hi;
       for (i=0; i<nprocs; i++) {
         NGA_Distribution(p_maskGA, i, &lo, &hi);
@@ -445,7 +452,7 @@ class SerialBranchIO {
         }
       }
     }
-    GA_Sync();
+    GA_Pgroup_sync(p_GAgrp);
   }
 
   /**
@@ -457,7 +464,7 @@ class SerialBranchIO {
    */
   void header(std::ostream & out, const char *str) const
   {
-    if (GA_Nodeid() == 0) {
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       out << str;
     }
   }
@@ -470,6 +477,7 @@ class SerialBranchIO {
     int p_size;
     bool p_useFile;
     std::ofstream p_fout;
+    int p_GAgrp;
 };
 
 }   // serial_io

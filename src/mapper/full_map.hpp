@@ -45,6 +45,8 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   int                     iSize    = 0;
   int                     jSize    = 0;
 
+  p_GAgrp = network->communicator().getGroup();
+
   p_nBuses = p_network->numBuses();
   p_nBranches = p_network->numBranches();
 
@@ -57,7 +59,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   setupOffsetArrays();
 
   contributions();
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
 
 }
 
@@ -65,7 +67,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 {
   GA_Destroy(gaOffsetI);
   GA_Destroy(gaOffsetJ);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
 }
 
 /**
@@ -79,7 +81,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
   loadBusData(Ret,false);
   loadBranchData(Ret,false);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   return Ret;
 }
@@ -94,7 +96,7 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
   matrix.zero();
   loadBusData(matrix,false);
   loadBranchData(matrix,false);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
 }
 
@@ -116,7 +118,7 @@ void overwriteMatrix(gridpack::math::Matrix &matrix)
 {
   loadBusData(matrix,false);
   loadBranchData(matrix,false);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
 }
 
@@ -139,7 +141,7 @@ void incrementMatrix(gridpack::math::Matrix &matrix)
 {
   loadBusData(matrix,true);
   loadBranchData(matrix,true);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
 }
 
@@ -241,7 +243,7 @@ void setupGlobalArrays(int nActiveBuses)
 
   p_totalBuses = nActiveBuses;
 
-  GA_Igop(&p_totalBuses,one,"+");
+  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,"+");
 
   // the gaMatBlksI and gaMatBlksJ arrays contain the matrix blocks sizes for
   // individual block contributions
@@ -258,6 +260,7 @@ void createIndexGA(int * handle, int size)
   int one = 1;
   *handle = GA_Create_handle();
   GA_Set_data(*handle, one, &size, C_INT);
+  GA_Set_pgroup(*handle,p_GAgrp);
   if (!GA_Allocate(*handle)) {
     // TODO: some kind of error
   }
@@ -287,7 +290,7 @@ void setupIndexingArrays()
       icount, jcount);
   deleteIndexArrays(p_nBuses, iSizeArray, jSizeArray, iIndexArray,
       jIndexArray);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
 
   // set up branch indexing
   icount               = 0;
@@ -308,7 +311,7 @@ void setupIndexingArrays()
 
   deleteIndexArrays(p_nBranches, iSizeArray, jSizeArray, iIndexArray,
       jIndexArray);
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
 }
 
 /**
@@ -534,7 +537,7 @@ void setupOffsetArrays()
   int nRows = p_maxRowIndex-p_minRowIndex+1;
   int *iSizes = new int[nRows]; 
   int *jSizes = new int[nRows]; 
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   NGA_Get(gaMatBlksI,&p_minRowIndex,&p_maxRowIndex,iSizes,&one);
   NGA_Get(gaMatBlksJ,&p_minRowIndex,&p_maxRowIndex,jSizes,&one);
 
@@ -554,8 +557,8 @@ void setupOffsetArrays()
 //    }
   }
   p_rowBlockSize = iSize;
-  GA_Igop(&p_maxIBlock,one,"max");
-  GA_Igop(&p_maxJBlock,one,"max");
+  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,"max");
+  GA_Pgroup_igop(p_GAgrp,&p_maxJBlock,one,"max");
 
   for (i = 0; i<p_nNodes; i++) {
     itmp[i] = 0;
@@ -565,8 +568,8 @@ void setupOffsetArrays()
   jtmp[p_me] = jSize;
 //  printf("p[%d] (FullMatrixMap) iSize: %d jSize: %d\n",p_me,iSize,jSize);
 
-  GA_Igop(itmp, p_nNodes, "+");
-  GA_Igop(jtmp, p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp,jtmp, p_nNodes, "+");
 
   int offsetArrayISize = 0;
   int offsetArrayJSize = 0;
@@ -592,7 +595,7 @@ void setupOffsetArrays()
   }
   offset[p_me] = p_activeBuses;
 //  printf("p[%d] (FullMatrixMap) activeBuses: %d\n",p_me,p_activeBuses);
-  GA_Igop(offset,p_nNodes,"+");
+  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,"+");
 
   int *mapc = new int[p_nNodes];
   mapc[0]=0;
@@ -608,6 +611,7 @@ void setupOffsetArrays()
   gaOffsetI = GA_Create_handle();
   GA_Set_data(gaOffsetI, one, &p_totalBuses, C_INT);
   GA_Set_irreg_distr(gaOffsetI, mapc, &p_nNodes);
+  GA_Set_pgroup(gaOffsetI,p_GAgrp);
   if (!GA_Allocate(gaOffsetI)) {
     // TODO: some kind of error
   }
@@ -616,6 +620,7 @@ void setupOffsetArrays()
   gaOffsetJ = GA_Create_handle();
   GA_Set_data(gaOffsetJ, one, &p_totalBuses, C_INT);
   GA_Set_irreg_distr(gaOffsetJ, mapc, &p_nNodes);
+  GA_Set_pgroup(gaOffsetJ,p_GAgrp);
   if (!GA_Allocate(gaOffsetJ)) {
     // TODO: some kind of error
   }
@@ -641,7 +646,7 @@ void setupOffsetArrays()
   GA_Destroy(gaMatBlksI);
   GA_Destroy(gaMatBlksJ);
 
-  GA_Sync();
+  GA_Pgroup_sync(p_GAgrp);
   delete [] mapc;
   delete [] iSizes;
   delete [] jSizes;
@@ -930,6 +935,7 @@ int                         gaMatBlksI; // g_idx
 int                         gaMatBlksJ; // g_jdx
 int                         gaOffsetI; // g_ioff
 int                         gaOffsetJ; // g_joff
+int                         p_GAgrp;
 
 };
 
