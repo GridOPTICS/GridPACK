@@ -10,10 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-05 07:55:23 d3g096
+# Last Change: 2014-02-10 15:05:07 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
+  environment.cpp
   distributed.cpp
 )
 
@@ -25,7 +26,8 @@ endif()
 # -------------------------------------------------------------
 # gridpack header installation
 # -------------------------------------------------------------
-install(FILES 
+install(FILES
+  environment.hpp
   communicator.hpp
   parallel.hpp
   distributed.hpp
@@ -49,7 +51,8 @@ install(TARGETS
 # A simple MPI program (that does not use boost::test)
 # -------------------------------------------------------------
 add_executable(greetings test/greetings.cpp)
-target_link_libraries(greetings ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(greetings gridpack_parallel 
+  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 add_test(greetings_serial greetings)
 add_test(greetings_parallel 
@@ -64,7 +67,8 @@ set_tests_properties(greetings_serial greetings_parallel
 # A simple program to test the task manager
 # -------------------------------------------------------------
 add_executable(task_test test/task_test.cpp)
-target_link_libraries(task_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(task_test gridpack_parallel 
+  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 add_test(task_test_serial task_test)
 add_test(task_test_parallel 

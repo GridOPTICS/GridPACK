@@ -8,7 +8,7 @@
 /**
  * @file   communicator.hpp
  * @author William A. Perkins
- * @date   2014-02-04 14:19:02 d3g096
+ * @date   2014-02-10 13:04:56 d3g096
  * 
  * @brief  
  * 
@@ -98,9 +98,9 @@ public:
   /// Destructor
   ~Communicator(void)
   {
-    if (p_GAgroup != GA_Pgroup_get_world()){
-      GA_Pgroup_destroy(p_GAgroup);
-    }
+    // if (p_GAgroup != GA_Pgroup_get_world()){
+    //   GA_Pgroup_destroy(p_GAgroup);
+    // }
   }
 
   /// Get the size of this communicator

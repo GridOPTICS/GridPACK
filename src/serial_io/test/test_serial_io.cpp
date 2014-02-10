@@ -261,18 +261,14 @@ void run (const int &me, const int &nprocs)
   branchIO.write();
 }
 
-main (int argc, char **argv) {
+int
+main (int argc, char **argv) 
+{
+  gridpack::parallel::Environment env(argc, argv);
+  gridpack::parallel::Communicator world;
+  int me(world.rank());
+  int nprocs(world.size());
 
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-  int me;
-
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  int nprocs;
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
   if (me == 0) {
     printf("Testing Serial IO Module\n");
     printf("\nTest Network is %d X %d\n",XDIM,YDIM);
@@ -280,8 +276,4 @@ main (int argc, char **argv) {
 
   run(me, nprocs);
 
-  GA_Terminate();
-
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
 }

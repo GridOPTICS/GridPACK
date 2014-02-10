@@ -644,17 +644,13 @@ bool init_function(void)
 int main (int argc, char **argv) {
 
   gridpack::parallel::Environment env(argc, argv);
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator world;
+
   int me = world.rank();
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
   if (me == 0) {
     printf("Testing Network Module\n");
     printf("\nTest Network is %d X %d\n",XDIM,YDIM);
   }
 
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-
- GA_Terminate();
 }

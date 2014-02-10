@@ -8,7 +8,7 @@
 /**
  * @file   parallel.hpp
  * @author William A. Perkins
- * @date   2014-01-31 11:25:50 d3g096
+ * @date   2014-02-10 08:12:15 d3g096
  * 
  * @brief  Types and routiens used to represent the parallel environment.
  * 
@@ -20,16 +20,7 @@
 #define _parallel_hpp_
 
 #include <boost/mpi.hpp>
+#include <gridpack/parallel/environment.hpp>
 #include <gridpack/parallel/communicator.hpp>
-
-namespace gridpack {
-namespace parallel {
-
-/// A parallel environment (may need a wrapper)
-typedef boost::mpi::environment Environment;
-
-} // namespace parallel
-} // namespace gridpack
-
 
 #endif

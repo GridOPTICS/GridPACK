@@ -6,7 +6,7 @@
 /**
  * @file   PTI23_test.cpp
  * @author Kevin Glass
- * @date   2013-06-17 12:09:38 d3k427
+ * @date   2014-02-10 08:31:45 d3g096
  * 
  * @brief  Test PTI23_parser capability. Currently not implemented.
  * 
@@ -85,17 +85,13 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator world;
   int me = world.rank();
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
   if (me == 0) {
     printf("Testing Serial Input\n");
   }
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-
-  GA_Terminate();
+  return result;
 }
 
 

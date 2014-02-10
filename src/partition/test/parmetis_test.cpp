@@ -6,7 +6,7 @@
 /**
  * @file   parmetis_test.cpp
  * @author William A. Perkins
- * @date   2013-09-10 14:28:45 d3g096
+ * @date   2014-02-10 08:31:20 d3g096
  * 
  * @brief  Unit tests of ParMETIS-specific code
  * 
@@ -76,9 +76,7 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  GA_Initialize();
-  MA_init(MT_C_CHAR, 1024*1024, 1024*1024);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  GA::Terminate();
+  return result;
 }
 

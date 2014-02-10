@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-09 09:16:03 d3g096
+# Last Change: 2014-02-10 08:23:04 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
@@ -35,6 +35,7 @@ add_custom_target(configuration_test_input
 add_executable(configuration_test test/configuration_test.cpp)
 target_link_libraries(configuration_test 
   gridpack_configuration
+  gridpack_parallel
   ${GA_LIBRARIES}
   ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 gridpack_add_unit_test(configuration_test configuration_test)

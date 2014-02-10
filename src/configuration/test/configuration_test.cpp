@@ -6,7 +6,7 @@
 /**
  * @file   configuration_test.cpp
  * @author William A. Perkins
- * @date   2013-11-19 13:10:10 d3g096
+ * @date   2014-02-10 08:21:44 d3g096
  * 
  * @brief  A test of Configurable and Configuration
  * 
@@ -16,16 +16,15 @@
 #include <iostream>
 #include <iterator>
 #include <boost/lexical_cast.hpp>
-#include <boost/mpi/environment.hpp>
-#include <boost/mpi/communicator.hpp>
-#include <boost/mpi/collectives.hpp>
+
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 #include <boost/serialization/string.hpp>
 
-#include "configurable.hpp"
+#include "gridpack/parallel/parallel.hpp"
 #include "gridpack/utilities/uncopyable.hpp"
+#include "configurable.hpp"
 
 
 BOOST_AUTO_TEST_SUITE ( ConfigurationTest ) 
@@ -112,8 +111,9 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  boost::mpi::environment env(argc, argv);
-  boost::mpi::communicator world;
+  gridpack::parallel::Environment env(argc, argv);
+  gridpack::parallel::Communicator world;
+
   gridpack::utility::Configuration *config =
     gridpack::utility::Configuration::configuration();
   

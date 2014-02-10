@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:30:09 d3g096
+# Last Change: 2014-02-10 09:02:30 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_timer
@@ -19,6 +19,8 @@ add_library(gridpack_timer
 
 set(target_libraries
     gridpack_timer
+    gridpack_parallel
+    ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
 )

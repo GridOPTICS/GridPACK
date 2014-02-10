@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-01-13 13:18:05 d3g096
+ * @date   2014-02-10 09:10:59 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -847,7 +847,9 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
+  gridpack::parallel::Communicator world;
   gridpack::math::Initialize();
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   gridpack::math::Finalize();
+  return result;
 }

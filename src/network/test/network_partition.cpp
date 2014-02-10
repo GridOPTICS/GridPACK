@@ -6,7 +6,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2014-02-04 13:32:27 d3g096
+ * @date   2014-02-10 09:02:00 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -444,10 +444,8 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  GA_Initialize();
-  MA_init(MT_C_CHAR, 1024*1024, 1024*1024);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  GA::Terminate();
+  return result;
 }
 
 

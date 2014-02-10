@@ -68,7 +68,7 @@ int main (int argc, char **argv) {
 
   // Initialize parallel environment
   gridpack::parallel::Environment env(argc, argv);
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator world;
   int me = world.rank();
   if (me == 0) {
     printf("Testing Mapper Module\n");

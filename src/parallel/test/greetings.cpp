@@ -7,7 +7,7 @@
 /**
  * @file   greetings.cpp
  * @author William A. Perkins
- * @date   2013-05-07 09:58:11 d3g096
+ * @date   2014-02-10 14:39:36 d3g096
  * 
  * @brief  A simple test of the GridPACK parallel environment
  * 
@@ -35,7 +35,6 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  GA_Initialize();
   gridpack::parallel::Communicator world;
 
   int nprocs = world.size();
@@ -78,7 +77,6 @@ main(int argc, char **argv)
     }
   }
 
-  GA_Terminate();
   return 0;
 }
 
