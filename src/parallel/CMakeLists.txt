@@ -31,6 +31,7 @@ install(FILES
   distributed.hpp
   shuffler.hpp
   printit.hpp
+  task_manager.hpp
   DESTINATION include/gridpack/parallel
 )
 
