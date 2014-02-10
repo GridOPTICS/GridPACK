@@ -33,6 +33,7 @@ if (GA_FOUND)
 endif()
 
 add_executable(ca.x
+   ca_driver.cpp
    ca_app.cpp
    ca_components.cpp
    ca_factory.cpp
