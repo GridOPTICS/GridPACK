@@ -20,7 +20,7 @@
 #ifndef _task_manager_hpp_
 #define _task_manager_hpp_
 
-#include "gridpack/parallel/communicator"
+#include "gridpack/parallel/communicator.hpp"
 #include <ga.h>
 
 namespace gridpack {
@@ -35,16 +35,16 @@ public:
   // Constructor on world communicator
   TaskManager(void)
   {
-    int grp = GA_Pgroup_get_world();
+    p_grp = GA_Pgroup_get_world();
 
     p_GAcounter = GA_Create_handle();
     int one = 1;
     GA_Set_data(p_GAcounter,one,&one,C_INT);
-    GA_Set_pgroup(p_GAcounter,grp);
+    GA_Set_pgroup(p_GAcounter,p_grp);
     if (!GA_Allocate(p_GAcounter)) {
       // TODO: some kind of error
     }
-    GA_zero(p_GAcounter);
+    GA_Zero(p_GAcounter);
     p_ntasks = 0;
   }
 
@@ -52,16 +52,16 @@ public:
   // @param comm user-specified communicator
   TaskManager(Communicator &comm)
   {
-    int grp = comm.getGroup();
+    p_grp = comm.getGroup();
 
     p_GAcounter = GA_Create_handle();
     int one = 1;
     GA_Set_data(p_GAcounter,one,&one,C_INT);
-    GA_Set_pgroup(p_GAcounter,grp);
+    GA_Set_pgroup(p_GAcounter,p_grp);
     if (!GA_Allocate(p_GAcounter)) {
       // TODO: some kind of error
     }
-    GA_zero(p_GAcounter);
+    GA_Zero(p_GAcounter);
     p_ntasks = 0;
   }
 
@@ -87,11 +87,12 @@ public:
   bool nextTask(int *next) {
     int zero = 0;
     long one = 1;
-    *next = static_cast<int>(GA_Read_inc(p_GAcounter,&zero,one));
+    *next = static_cast<int>(NGA_Read_inc(p_GAcounter,&zero,one));
     if (*next < p_ntasks) {
       return true;
     } else {
       *next = -1;
+      GA_Pgroup_sync(p_grp);
       return false;
     }
   }
@@ -106,7 +107,7 @@ public:
     long one = 1;
     int me = comm.rank();
     if (me == 0) {
-      *next = static_cast<int>(GA_Read_inc(p_GAcounter,&zero,one));
+      *next = static_cast<int>(NGA_Read_inc(p_GAcounter,&zero,one));
     } else {
       *next = 0;
     }
@@ -115,6 +116,7 @@ public:
       return true;
     } else {
       *next = -1;
+      GA_Pgroup_sync(p_grp);
       return false;
     }
   }
@@ -123,6 +125,7 @@ protected:
   
   int p_GAcounter;
   int p_ntasks;
+  int p_grp;
 };
 
 

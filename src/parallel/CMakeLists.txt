@@ -60,6 +60,21 @@ set_tests_properties(greetings_serial greetings_parallel
 )
 
 # -------------------------------------------------------------
+# TEST: task_test
+# A simple program to test the task manager
+# -------------------------------------------------------------
+add_executable(task_test test/task_test.cpp)
+target_link_libraries(task_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+add_test(task_test_serial task_test)
+add_test(task_test_parallel 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} task_test ${MPIEXEC_POSTFLAGS})
+#set_tests_properties(task_test_serial task_test_parallel
+#  PROPERTIES 
+#  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
+#)
+
+# -------------------------------------------------------------
 # TEST: mpi_test
 # A simple MPI test using boost::test
 # -------------------------------------------------------------
