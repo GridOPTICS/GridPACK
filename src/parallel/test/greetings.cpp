@@ -51,7 +51,7 @@ main(int argc, char **argv)
   world.barrier();
   
   // Create two communicators, each containing half the processors
-  if (me == 0) printf("\nCreating communicators:\n\n");
+  if (me == 0) printf("\nCreating communicators using split:\n\n");
   if (nprocs > 1) {
     int color;
     if (static_cast<double>(me)/static_cast<double>(nprocs) < 0.5) {
@@ -64,6 +64,17 @@ main(int argc, char **argv)
       if (i == me) 
         printf("I am process %d (original process is %d) of %d on communicator %d.\n",
             lcomm.rank(),me,lcomm.size(),color);
+    }
+  }
+
+  if (me == 0) printf("\nCreating communicators using divide:\n\n");
+  if (nprocs > 1) {
+    int nsize = nprocs/2;
+    gridpack::parallel::Communicator lcomm = world.divide(nsize);
+    for (i=0; i<nprocs; i++) {
+      if (i == me) 
+        printf("I am process %d (original process is %d) of %d.\n",
+            lcomm.rank(),me,lcomm.size());
     }
   }
 

@@ -132,7 +132,7 @@ public:
     pComm.barrier();
   }
 
-  /// Split this instance into several
+  /// Split this instance into several communicators
   Communicator split(int color) const
   {
     // start by creating process groups
@@ -167,6 +167,37 @@ public:
     ret.pComm = pComm.split(color);
     ret.p_GAgroup = GAgroup;
     return ret;
+  }
+
+  // split this instance in several communicators, each of which contains at
+  // most nsize processors.
+  Communicator divide(int nsize) const
+  {
+    int nprocs = pComm.size();
+    int me = pComm.rank();
+    // find out how many communicators need to be created
+    int ngrp = nprocs/nsize;
+    if (ngrp*nsize < nprocs) ngrp++;
+    // evaluate how many communicators are of size nsize
+    int nlarge = nprocs;
+    if (ngrp*nsize > nprocs) {
+      int nsmall = ngrp*nsize - nprocs;
+      nlarge = nprocs - nsmall;
+    }
+    nlarge = nlarge/nsize;
+    if (nprocs - nlarge*nsize  > nsize) nlarge++;
+    // figure out what color this process is and use split functionality to
+    // create new communicators
+    int i;
+    int color = 0;
+    for (i=0; i<=me; i++) {
+      if (i<nlarge*nsize) {
+        if (i%nsize == 0) color++;
+      } else {
+        if ((i-nlarge*nsize)%(nsize-1) == 0) color++;
+      }
+    }
+    return this->split(color);
   }
 
   const boost::mpi::communicator& getCommunicator(void) const
