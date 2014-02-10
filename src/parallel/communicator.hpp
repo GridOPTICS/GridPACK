@@ -147,7 +147,7 @@ public:
       gaColor[i] = 0;
     }
     gaColor[me] = color;
-    GA_Igop(gaColor,nprocs,"+");
+    GA_Pgroup_igop(p_GAgroup,gaColor,nprocs,"+");
     int ncolor = 0;
     for (i=0; i<nprocs; i++) {
       if (gaColor[i] == color) ncolor++;
