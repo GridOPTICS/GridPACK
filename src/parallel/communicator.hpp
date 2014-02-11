@@ -43,7 +43,24 @@ public:
   Communicator(const Communicator& old)
     : pComm(old.pComm)
   {
-    p_GAgroup = old.p_GAgroup;
+    // Make a copy of GA process group
+    int grp = old.p_GAgroup;
+    if (grp != GA_Pgroup_get_world()) {
+      int me = GA_Pgroup_nodeid(grp); 
+      int nprocs = GA_Pgroup_nnodes(grp); 
+      int list[nprocs];
+      int i;
+      // We are just copying the group, so all processes show up
+      for (i=0; i<nprocs; i++) {
+        list[i] = i;
+      }
+      int defGrp = GA_Pgroup_get_default();
+      GA_Pgroup_set_default(grp);
+      p_GAgroup = GA_Pgroup_create(list,nprocs);
+      GA_Pgroup_set_default(defGrp);
+    } else {
+      p_GAgroup = grp;
+    }
   }
 
   /// Construct with a Boost communicator
@@ -95,12 +112,35 @@ public:
     GA_Pgroup_set_default(defGrp);
   }
 
+  Communicator & operator=(const Communicator & rhs) {
+    if (this == &rhs) return *this;
+    pComm = rhs.pComm;
+    // Make a copy of processor group
+    int grp = rhs.p_GAgroup;
+    if (grp != GA_Pgroup_get_world()) {
+      int me = GA_Pgroup_nodeid(grp); 
+      int nprocs = GA_Pgroup_nnodes(grp); 
+      int list[nprocs];
+      int i;
+      // We are just copying the group, so all processes show up
+      for (i=0; i<nprocs; i++) {
+        list[i] = i;
+      }
+      int defGrp = GA_Pgroup_get_default();
+      GA_Pgroup_set_default(grp);
+      p_GAgroup = GA_Pgroup_create(list,nprocs);
+      GA_Pgroup_set_default(defGrp);
+    } else {
+      p_GAgroup = grp;
+    }
+  }
+
   /// Destructor
   ~Communicator(void)
   {
-    // if (p_GAgroup != GA_Pgroup_get_world()){
-    //   GA_Pgroup_destroy(p_GAgroup);
-    // }
+    if (p_GAgroup != GA_Pgroup_get_world()){
+      GA_Pgroup_destroy(p_GAgroup);
+    }
   }
 
   /// Get the size of this communicator
