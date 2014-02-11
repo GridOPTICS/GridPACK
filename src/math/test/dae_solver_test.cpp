@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 08:26:05 d3g096
+ * @date   2014-02-11 07:40:46 d3g096
  * 
  * @brief  
  * 
@@ -393,4 +393,5 @@ main(int argc, char **argv)
 
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   gridpack::math::Finalize();
+  return result;
 }

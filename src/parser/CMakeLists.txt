@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:17:22 d3g096
+# Last Change: 2014-02-11 10:32:21 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -34,7 +34,25 @@ endif()
 add_executable(test_parser test/PTI23_test.cpp)
 target_link_libraries(test_parser ${target_libraries})
 
+add_custom_target(test_parser_input
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/test.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/test.xml
+  ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
+)
+add_dependencies(test_parser test_parser_input)
+
 add_test(test_parser_serial test_parser)
+
+
 #!!add_test(NAME greetings_parallel COMMAND 
 #!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
 #!!set_tests_properties(greetings_serial greetings_parallel
