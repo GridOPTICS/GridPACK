@@ -17,7 +17,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "gridpack/applications/contingency_analysis/ca_app.hpp"
+#include "gridpack/applications/contingency_analysis/ca_driver.hpp"
 
 // Calling program for the contingency_analysis applications
 
@@ -32,8 +32,8 @@ main(int argc, char **argv)
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-  gridpack::contingency_analysis::CAApp app;
-  app.execute(argc, argv);
+  gridpack::contingency_analysis::CADriver driver;
+  driver.execute(argc, argv);
 
   GA_Terminate();
 

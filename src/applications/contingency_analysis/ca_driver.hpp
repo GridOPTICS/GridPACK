@@ -52,8 +52,7 @@ class CADriver
      * @return vector of contingencies
      */
     std::vector<gridpack::contingency_analysis::Contingency> getContingencies(
-        gridpack::utility::Configuration::CursorPtr &cursor);
-
+        gridpack::utility::Configuration::ChildCursors contingencies);
 
     /**
      * Execute application

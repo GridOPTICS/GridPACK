@@ -2,5 +2,78 @@
 <Configuration>
   <Contingency_analysis>
     <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
+    <groupSize>1</groupSize>
+    <Contingencies>
+      <Contingency>
+        <contingencyName>CTG1</contingencyName>
+        <contingencyLineBuses> 2 3 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG2</contingencyName>
+        <contingencyLineBuses> 2 4 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG3</contingencyName>
+        <contingencyLineBuses> 2 5 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG4</contingencyName>
+        <contingencyLineBuses> 3 4 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG5</contingencyName>
+        <contingencyLineBuses> 4 5 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG6</contingencyName>
+        <contingencyLineBuses> 4 7 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG7</contingencyName>
+        <contingencyLineBuses> 4 9 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG8</contingencyName>
+        <contingencyLineBuses> 5 6 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG2L</contingencyName>
+        <contingencyLineBuses> 6 11 6 12 </contingencyLineBuses>
+        <contingencyLineNames> BL BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG10</contingencyName>
+        <contingencyLineBuses> 7 8 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG3L</contingencyName>
+        <contingencyLineBuses> 6 13 7 8 7 9 </contingencyLineBuses>
+        <contingencyLineNames> BL BL BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTG12</contingencyName>
+        <contingencyLineBuses> 7 9 </contingencyLineBuses>
+        <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTGDL</contingencyName>
+        <contingencyLineBuses> 13 14 13 14 </contingencyLineBuses>
+        <contingencyLineNames> B1 B2 </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyName>CTGDL</contingencyName>
+        <contingencyLineBuses> 13 14 </contingencyLineBuses>
+        <contingencyLineNames> B2 </contingencyLineNames>
+      </Contingency>
+    </Contingencies>
   </Contingency_analysis>
 </Configuration>

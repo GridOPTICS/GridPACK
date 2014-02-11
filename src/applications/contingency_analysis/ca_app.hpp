@@ -20,7 +20,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/configuration/configuration.hpp"
-#include "gridpack/applications/contingency_analysis/ca_factory.hpp"
+#include "gridpack/applications/contingency_analysis/ca_driver.hpp"
 
 namespace gridpack {
 namespace contingency_analysis {
@@ -44,7 +44,9 @@ class CAApp
      * @param argc number of arguments
      * @param argv list of character strings
      */
-    void execute(int argc, char** argv);
+    void execute(gridpack::parallel::Communicator comm,
+                 gridpack::contingency_analysis::Contingency contingency,
+                 int argc, char** argv);
 
     private:
 };
