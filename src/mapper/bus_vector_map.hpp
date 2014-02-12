@@ -40,11 +40,14 @@ class BusVectorMap {
  * @param network network that will generate vector
  */
 BusVectorMap(boost::shared_ptr<_network> network)
-  : p_me (GA_Nodeid()), p_nNodes(GA_Nnodes()), p_network(network)
+  : p_network(network)
 {
   int                     iSize    = 0;
 
   p_GAgrp = network->communicator().getGroup();
+  p_me = GA_Pgroup_nodeid(p_GAgrp);
+  p_nNodes = GA_Pgroup_nnodes(p_GAgrp);
+
 
   p_nBuses = p_network->numBuses();
 
