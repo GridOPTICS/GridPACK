@@ -13,13 +13,13 @@
 #ifndef PTI23_PARSER_HPP_
 #define PTI23_PARSER_HPP_
 
-#include "mpi.h"
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #include <vector>
 #include <map>
 #include <cstdio>
 #include <cstdlib>
+
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -33,24 +33,25 @@ namespace parser {
 
 
 template <class _network>
-  class PTI23_parser {
+class PTI23_parser
+{
     public:
-
-      /**
-       * Constructor
-       * @param network network object that will be filled with contents of network configuration file
-       */
-      PTI23_parser(boost::shared_ptr<_network> network)
-      {
-        p_network = network;
-      }
+  /// Constructor 
+  /**
+   * 
+   * @param network network object that will be filled with contents
+   * of network configuration file (must be child of network::BaseNetwork<>)
+   */
+  PTI23_parser(boost::shared_ptr<_network> network)
+    : p_network(network)
+  { }
 
       /**
        * Destructor
        */
       virtual ~PTI23_parser()
       {
-        p_busData.clear();
+        p_busData.clear();      // unnecessary
         p_branchData.clear();
       }
 
@@ -89,8 +90,8 @@ template <class _network>
         p_branchData.clear();
         p_busMap.clear();
 
-        int me;
-        int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+        int me(p_network->communicator().rank());
+
         if (me == 0) {
           std::ifstream            input;
           input.open(fileName.c_str());
@@ -142,8 +143,7 @@ template <class _network>
       {
         int t_create = p_timer->createCategory("Parser:createNetwork");
         p_timer->start(t_create);
-        int me;
-        int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+        int me(p_network->communicator().rank());
         if (me == 0) {
           int i;
           int numBus = p_busData.size();

@@ -7,7 +7,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-04 14:05:40 d3g096
+ * @date   2014-02-12 10:32:22 d3g096
  * 
  * @brief  
  * 
@@ -24,8 +24,11 @@
 #include <boost/lambda/bind.hpp>
 #include <boost/serialization/utility.hpp>
 #include <boost/serialization/set.hpp>
+#include <boost/format.hpp>
 
+#include "gridpack/utilities/exception.hpp"
 #include "graph_partitioner_implementation.hpp"
+
 
 
 namespace gridpack {
@@ -116,7 +119,6 @@ GraphPartitionerImplementation::partition(void)
 {
   static const bool verbose(false);
   p_adjacency_list.ready();
-  this->p_partition();          // fills p_node_destinations
 
   int maxdim(1);
   int dims[maxdim], lo[maxdim], hi[maxdim], ld[maxdim];
@@ -127,13 +129,27 @@ GraphPartitionerImplementation::partition(void)
   int allnodes;
   int alledges;
 
-  all_reduce(communicator().getCommunicator(), 
-             locnodes, allnodes, std::plus<int>());
-  all_reduce(communicator().getCommunicator(), 
-             locedges, alledges, std::plus<int>());
+  communicator().barrier();
+  boost::mpi::all_reduce(communicator(), 
+                         locnodes, allnodes, std::plus<int>());
+  boost::mpi::all_reduce(communicator(), 
+                         locedges, alledges, std::plus<int>());
+
+  if (allnodes <= 0 || alledges <= 0) {
+    boost::format fmt("%d: GraphPartitioner::partition(): called without nodes (%d) or edges (%)");
+    
+    std::string msg = boost::str(fmt % communicator().worldRank() % allnodes % alledges);
+    throw Exception(msg);
+  }
+
+  this->p_partition();          // fills p_node_destinations
 
   // make two GAs, one that holds the node source and another that
   // node destination; each is indexed by global node index
+
+  int theGAgroup(communicator().getGroup());
+  int oldGAgroup = GA_Pgroup_get_default();
+  GA_Pgroup_set_default(theGAgroup);
 
   std::vector<int> nodeidx(locnodes);
   std::vector<int *> stupid(locnodes);
@@ -141,6 +157,8 @@ GraphPartitionerImplementation::partition(void)
     nodeidx[n] = p_adjacency_list.node_index(n);
     stupid[n] = &nodeidx[n];
   }
+
+  
 
   dims[0] = allnodes;
   boost::scoped_ptr<GA::GlobalArray> 
@@ -153,7 +171,8 @@ GraphPartitionerImplementation::partition(void)
     node_src->scatter(&nsrc[0], &stupid[0], locnodes);
   }
   
-  GA::sync();
+  communicator().sync();
+
   if (verbose) {
     node_src->print();
     node_dest->print();
@@ -213,7 +232,7 @@ GraphPartitionerImplementation::partition(void)
     }
   }
 
-  GA::sync();
+  communicator().sync();
 
   p_ghost_edge_destinations.reserve(locedges);
   std::copy(e2dest.begin(), e2dest.end(), 
@@ -284,7 +303,9 @@ GraphPartitionerImplementation::partition(void)
       }
     }
   }
-  
+
+  GA_Pgroup_set_default(oldGAgroup);
+
 }
 } // namespace network
 } // namespace gridpack

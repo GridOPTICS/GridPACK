@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-09 11:41:42 d3g096
+# Last Change: 2014-02-12 08:34:18 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -42,6 +42,23 @@ add_executable(ca.x
 
 target_link_libraries(ca.x ${target_libraries})
 
+# Put some sample input in the binary directory so ca.x can run
+
+add_custom_target(ca.x.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+)
+add_dependencies(ca.x ca.x.input)
 
 # -------------------------------------------------------------
 # TEST: pf_network_test

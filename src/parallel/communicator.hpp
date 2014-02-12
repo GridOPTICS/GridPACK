@@ -8,7 +8,7 @@
 /**
  * @file   communicator.hpp
  * @author William A. Perkins
- * @date   2014-02-10 13:04:56 d3g096
+ * @date   2014-02-12 10:31:21 d3g096
  * 
  * @brief  
  * 
@@ -155,6 +155,12 @@ public:
     return pComm.rank();
   }
 
+  /// Get this process's rank in the world communicator
+  int worldRank(void) const
+  {
+    return GA_Nodeid();
+  }
+
   /// cast to MPI communicator
   operator MPI_Comm() const
   {
@@ -255,13 +261,17 @@ public:
     return p_GAgroup;
   }
 
+  /// Sync GA process group
+  void sync(void) const
+  {
+    GA_Pgroup_sync(p_GAgroup);
+  }    
+
 protected:
   
   /// The Boost communicator 
   boost::mpi::communicator pComm;
   int p_GAgroup;
-
-
 };
 
 

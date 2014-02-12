@@ -7,7 +7,7 @@
 /**
  * @file   parmetis_graph_wrapper.cpp
  * @author William A. Perkins
- * @date   2014-02-04 13:03:06 d3g096
+ * @date   2014-02-12 10:37:16 d3g096
  * 
  * @brief  Implementation of the ParMETISGraphWrapper class
  * 
@@ -79,6 +79,10 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
   ld[0] = 1;
   ld[1] = 1;
 
+  int theGAgroup(communicator().getGroup());
+  int oldGAgroup = GA_Pgroup_get_default();
+  GA_Pgroup_set_default(theGAgroup);
+
   std::vector<int> ndata(locnodes);
 
                                 // make the node data array (2D)
@@ -86,6 +90,7 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
   dims[0] = gblnodes;  dims[1] = num_node_data;
   p_node_data.reset(new GA::GlobalArray(MT_C_INT, two, dims, 
                                         "ParMETIS Wrapper Node Data", NULL));
+  p_node_data->printDistribution();
   p_node_data->zero();
 
   // put the global node indexes or ids
@@ -109,8 +114,7 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
 
   }
 
-  GA::sync();
-
+  communicator().sync();
 
                                 // make the node id table
 
@@ -118,6 +122,8 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
   dims[1] = two;
   p_local_node_id.reset(new GA::GlobalArray(MT_C_INT, one, dims,
                                             "Node index translator", NULL));
+
+  p_local_node_id->printDistribution();
 
   if (locnodes > 0) {
     lo[0] = p_node_lo; lo[1] = 0;
@@ -144,11 +150,11 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
     p_local_node_id->scatter(&nidx[0], &junkidx[0], nidx.size());
   }
 
-  GA::sync();
+  communicator().sync();
 
-  // p_node_data->print();
+  p_node_data->print();
 
-  // p_local_node_id->print();
+  p_local_node_id->print();
 
                                 // make the adjacency list and its index
 
@@ -189,12 +195,13 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
         }
       }
     }
-    GA::sync();
+    communicator().sync();
   }
 
-  // p_xadj_gbl->print();
-  // p_adjncy_gbl->print();
+  p_xadj_gbl->print();
+  p_adjncy_gbl->print();
 
+  GA_Pgroup_set_default(oldGAgroup);
 }
   
 
@@ -309,8 +316,7 @@ ParMETISGraphWrapper::get_csr_local(std::vector<idx_t>& vtxdist,
   adjncy.clear();
   adjncy.reserve(tmp.size());
   std::copy(tmp.begin(), tmp.end(), std::back_inserter(adjncy));
-  GA::sync();
-  
+  communicator().sync();
 }
 
 // -------------------------------------------------------------
@@ -342,7 +348,7 @@ ParMETISGraphWrapper::set_partition(const std::vector<idx_t>& vtxdist,
   std::copy(part.begin(), part.end(), tmp.begin());
 
   p_node_data->put(lo, hi, &tmp[0], ld);
-  GA::sync();
+  communicator().sync();
   // p_node_data->print();
 }
 // -------------------------------------------------------------
@@ -365,7 +371,7 @@ ParMETISGraphWrapper::get_partition(AdjacencyList::IndexVector& part) const
     part.reserve(tmp.size());
     std::copy(tmp.begin(), tmp.end(), std::back_inserter(part));
   }
-  GA::sync();
+  communicator().sync();
 }
 
 } // namespace network

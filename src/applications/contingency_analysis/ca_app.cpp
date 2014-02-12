@@ -7,7 +7,7 @@
 /**
  * @file   ca_app.cpp
  * @author Yousu Chen 
- * @date   January 20, 2014
+ * @date   2014-02-12 10:26:17 d3g096
  *
  * @brief
  *
@@ -62,48 +62,48 @@ void gridpack::contingency_analysis::CAApp::execute(
   } else {
     config->open("input.xml",comm);
   }
-  printf("Got to 1\n");
+  printf("%d: Got to 1\n", comm.worldRank());
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Contingency_analysis");
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
 
   // load input file
-  printf("Got to 2\n");
+  printf("%d: Got to 2\n", comm.worldRank());
   gridpack::parser::PTI23_parser<CANetwork> parser(network);
   parser.parse(filename.c_str());
-  printf("Got to 3\n");
+  printf("%d: Got to 3\n", comm.worldRank());
 
   // partition network
   network->partition();
-  printf("Got to 4\n");
+  printf("%d: Got to 4\n", comm.worldRank());
 
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<CANetwork> busIO(128, network);
   gridpack::serial_io::SerialBranchIO<CANetwork> branchIO(128, network);
   char ioBuf[128];
-  printf("Got to 5\n");
+  printf("%d: Got to 5\n", comm.worldRank());
 
   // create factory
   gridpack::contingency_analysis::CAFactory factory(network);
   factory.load();
-  printf("Got to 6\n");
+  printf("%d: Got to 6\n", comm.worldRank());
 
   // set network components using factory
   factory.setComponents();
-  printf("Got to 7\n");
+  printf("%d: Got to 7\n", comm.worldRank());
 
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
-  printf("Got to 8\n");
+  printf("%d: Got to 8\n", comm.worldRank());
 
   factory.setMode(YBUS);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(network);
-  printf("Got to 9\n");
+  printf("%d: Got to 9\n", comm.worldRank());
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
-  printf("Got to 10\n");
+  printf("%d: Got to 10\n", comm.worldRank());
   branchIO.header("\n=== orginal ybus: ============\n");
   orgYbus->print();
-  printf("Got to 11\n");
+  printf("%d: Got to 11\n", comm.worldRank());
 }
 
