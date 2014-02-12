@@ -15,17 +15,20 @@
  */
 // -------------------------------------------------------------
 
+#include <iostream>
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/linear_solver.hpp"
-#include "gridpack/math/linear_matrix_solver.hpp"
-#include "gridpack/applications/contingency_analysis/ca_app.hpp"
+#include "gridpack/math/newton_raphson_solver.hpp"
+#include "gridpack/math/nonlinear_solver.hpp"
+#include "ca_app.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
-#include "gridpack/applications/contingency_analysis/ca_factory.hpp"
+#include "ca_factory.hpp"
+#include "gridpack/timer/coarse_timer.hpp"
 
 // Calling program for contingency analysis application
 
@@ -92,12 +95,14 @@ void gridpack::contingency_analysis::CAApp::execute(
   // set network components using factory
   factory.setComponents();
   printf("%d: Got to 7\n", comm.worldRank());
+ 
+  factory.setExchange();
 
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
   printf("%d: Got to 8\n", comm.worldRank());
 
-  factory.setMode(YBUS);
+  factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(network);
   printf("%d: Got to 9\n", comm.worldRank());
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
@@ -105,5 +110,46 @@ void gridpack::contingency_analysis::CAApp::execute(
   branchIO.header("\n=== orginal ybus: ============\n");
   orgYbus->print();
   printf("%d: Got to 11\n", comm.worldRank());
+
+  //////////////////////////////////////////////////////////////
+  factory.setMode(S_Cal);
+
+  // make Sbus components to create S vector
+  factory.setSBus();
+
+  // Set PQ
+  factory.setMode(RHS);
+  gridpack::mapper::BusVectorMap<CANetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  PQ->print();
+  factory.setMode(Jacobian);
+  gridpack::mapper::FullMatrixMap<CANetwork> jMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+  J->print(); 
+
+  // Create X vector by cloning PQ
+  boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+
+  // Convergence and iteration parameters
+  double tolerance;
+  int max_iteration;
+  ComplexType tol;
+
+  // These need to eventually be set using configuration file
+  tolerance = 1.0e-5;
+  max_iteration = 50;
+
+  // Create linear solver
+  gridpack::math::LinearSolver solver(*J);
+  solver.configure(cursor);
+
+  tol = 2.0*tolerance;
+  int iter = 0;
+
+  // First iteration
+  X->zero(); //might not need to do this
+  solver.solve(*PQ, *X);
+  tol = PQ->normInfinity();
+
 }
 

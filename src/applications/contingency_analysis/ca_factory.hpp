@@ -7,7 +7,7 @@
 /**
  * @file   ca_factory.hpp
  * @author Yousu Chen 
- * @date   January 20, 2014
+ * @date   Feb 11, 2014 
  * 
  * @brief  
  * 
@@ -20,11 +20,13 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/contingency_analysis/ca_components.hpp"
+#include "ca_components.hpp"
 #include "gridpack/math/matrix.hpp"
 
 namespace gridpack {
 namespace contingency_analysis {
+
+//enum CAMode{YBus, Jacobian};
 
 class CAFactory
   : public gridpack::factory::BaseFactory<CANetwork> {
@@ -45,11 +47,31 @@ class CAFactory
      */
     void setYBus(void);
 
+    /**
+     * Find GBus vector 
+     */
+    void setGBus(void);
+
+    /**
+     * Make SBus vector 
+     */
+    void setSBus(void);
+
+    /**
+     * Create the PQ 
+     */
+    void setPQ(void);
+
+    /**
+     * Create the Jacobian matrix
+     */
+    void setJacobian(void);
+
   private:
 
     NetworkPtr p_network;
 };
 
-} // contingency_analysis 
+} // contingency_analysis
 } // gridpack
 #endif

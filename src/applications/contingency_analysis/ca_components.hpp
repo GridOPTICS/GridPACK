@@ -7,7 +7,7 @@
 /**
  * @file   ca_components.hpp
  * @author Yousu Chen 
- * @date   January 20, 2014
+ * @date   January 20, 2014 
  * 
  * @brief  
  * 
@@ -18,41 +18,21 @@
 #ifndef _ca_components_h_
 #define _ca_components_h_
 
-/**
- * Some preprocessor string declarations. These will need to be put in an
- * include file someplace else. Just declare them here for the time being.
- */
-
-/*
-#define BRANCH_REACTANCE   "branch_reactance"
-#define BRANCH_RESISTANCE  "branch_resistance"
-#define BRANCH_TAP_RATIO   "branch_tap_ratio"
-#define BRANCH_PHASE_SHIFT "branch_phase_shift"
-#define BRANCH_CHARGING    "branch_charging"
-#define BUS_SHUNT_GS    "branch_shunt_gs"
-#define BUS_SHUNT_BS    "branch_shunt_bs"
-*/
-
-/* These are defined in dictionary.hpp. */
-
-/* #define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1" */
-/* #define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1" */
-/* #define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2" */
-/* #define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2" */
-
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/network/base_network.hpp"
+#include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
 namespace contingency_analysis{
 
-enum CAMode{YBUS};
+enum CAMode{YBus, Jacobian, RHS, S_Cal, State};
 
 class CABus
-  : public gridpack::component::BaseBusComponent {
+  : public gridpack::ymatrix::YMBus
+{
   public:
     /**
      *  Simple constructor
@@ -98,13 +78,36 @@ class CABus
      */
     bool vectorValues(ComplexType *values);
 
-    void setValues(ComplexType *values);
+    /**
+     * Set the internal values of the voltage magnitude and phase angle. Need this
+     * function to push values from vectors back onto buses 
+     * @param values array containing voltage magnitude and angle
+     */
+    void setValues(gridpack::ComplexType *values);
+
+    /**
+     * Return the size of the buffer used in data exchanges on the network.
+     * For this problem, the voltage magnitude and phase angle need to be exchanged
+     * @return size of buffer
+     */
+    int getXCBufSize(void);
+
+    /**
+     * Assign pointers for voltage magnitude and phase angle
+     */
+    void setXCBuf(void *buf);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
      * calculations
      */
     void setYBus(void);
+
+    /**
+     * Get values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    gridpack::ComplexType getYBus(void);
 
     /**
      * Load values stored in DataCollection object into CABus object. The
@@ -124,9 +127,15 @@ class CABus
 
     /**
      * Return the value of the voltage magnitude on this bus
-     * @return: voltage magnitude
+     * @return voltage magnitude
      */
     double getVoltage(void);
+
+    /**
+     * Return the complex voltage on this bus
+     * @return the complex voltage
+     */
+    ComplexType getComplexVoltage(void);
 
     /**
      * Return the value of the phase angle on this bus
@@ -134,29 +143,110 @@ class CABus
      */
     double getPhase(void);
 
+    /**
+     * Return whether or not the bus is a PV bus (V held fixed in powerflow
+     * equations)
+     * @return true if bus is PV bus
+     */
+    bool isPV(void);
+
+    /**
+     * Return whether or not a bus is isolated
+     * @return true if bus is isolated
+     */
+    bool isIsolated(void) const;
+
+    /**
+     * Set voltage value
+     */
+    void setVoltage(void);
+
+    /**
+     * Set phase angle value
+     */
+    void setPhase(void);
+
+    /**
+     * setGBus
+    */
+    void setGBus(void);
+
+    /**
+     * setSBus
+    BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
+    */
+    void setSBus(void);
+
+    /**
+     * Write output from buses to standard out
+     * @param string (output) string with information to be printed out
+     * @param signal an optional character string to signal to this
+     * routine what about kind of information to write
+     * @return true if bus is contributing string to output, false otherwise
+     */
+    bool serialWrite(char *string, const char *signal = NULL);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
-    int p_mode;
-    double p_theta; // phase angle difference
-    double p_ybusr, p_ybusi;
-    double p_angle, p_voltage;
     bool p_load;
-    double p_pl, p_ql;
-    double p_sbase;
-    bool p_isGen;
+    int p_mode;
+
+    // p_v and p_a are initialized to p_voltage and p_angle respectively,
+    // but may be subject to change during the NR iterations
+    double p_v, p_a;
+    double p_theta; //phase angle difference
+    double p_ybusr, p_ybusi;
+    double p_P0, p_Q0; //double p_sbusr, p_sbusi;
+    double p_angle;   // initial bus angle read from parser
+    double p_voltage; // initial bus voltage read from parser
+    // newly added priavate variables:
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
-    std::vector<double> p_mva, p_r, p_dstr, p_dtr;
-    int p_ngen;
-    int p_type;
-    gridpack::ComplexType p_permYmod;
+    std::vector<double> p_vs;
+    double p_pl, p_ql;
+    double p_sbase;
+    double p_Pinj, p_Qinj;
+    bool p_isPV;
+
+    /**
+     * Variables that are exchanged between buses
+     */
+    double* p_vMag_ptr;
+    double* p_vAng_ptr;
+
+private:
+
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
+    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
+      & p_shunt_gs
+      & p_shunt_bs
+      & p_shunt
+      & p_load
+      & p_mode
+      & p_v & p_a & p_theta
+      & p_ybusr & p_ybusi
+      & p_P0 & p_Q0
+      & p_angle & p_voltage
+      & p_pg & p_qg
+      & p_gstatus
+      & p_pl & p_ql
+      & p_sbase
+      & p_Pinj & p_Qinj
+      & p_isPV;
+  }  
 
 };
 
 class CABranch
-  : public gridpack::component::BaseBranchComponent {
+  : public gridpack::ymatrix::YMBranch {
   public:
     /**
      *  Simple constructor
@@ -193,6 +283,12 @@ class CABranch
     void setYBus(void);
 
     /**
+     * Get values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    gridpack::ComplexType getYBus(void);
+
+    /**
      * Load values stored in DataCollection object into CABranch object. The
      * DataCollection object will have been filled when the network was created
      * from an external configuration file
@@ -223,11 +319,36 @@ class CABranch
     gridpack::ComplexType getShunt(CABus *bus);
 
     /**
+     * Return the contribution to the Jacobian for the powerflow equations from
+     * a branch
+     * @param bus: pointer to the bus making the call
+     * @param values: an array of 4 doubles that holds return metrix elements
+     * @return: contribution to Jacobian matrix from branch
+     */
+    void getJacobian(CABus *bus, double *values);
+
+    /**
+     * Return contribution to constraints
+     * @param p: real part of constraint
+     * @param q: imaginary part of constraint
+     */
+    void getPQ(CABus *bus, double *p, double *q);
+
+    /**
      * Set the mode to control what matrices and vectors are built when using
      * the mapper
      * @param mode: enumerated constant for different modes
      */
     void setMode(int mode);
+
+    /**
+     * Write output from branches to standard out
+     * @param string (output) string with information to be printed out
+     * @param signal an optional character string to signal to this
+     * routine what about kind of information to write
+     * @return true if branch is contributing string to output, false otherwise
+     */
+    bool serialWrite(char *string, const char *signal = NULL);
 
   private:
     std::vector<double> p_reactance;
@@ -248,15 +369,48 @@ class CABranch
     std::vector<int> p_branch_status;
     int p_elems;
     bool p_active;
+
+private:
+
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
+      & p_reactance
+      & p_resistance
+      & p_tap_ratio
+      & p_phase_shift
+      & p_charging
+      & p_shunt_admt_g1
+      & p_shunt_admt_b1
+      & p_shunt_admt_g2
+      & p_shunt_admt_b2
+      & p_xform & p_shunt
+      & p_mode
+      & p_ybusr_frwd & p_ybusi_frwd
+      & p_ybusr_rvrs & p_ybusi_rvrs
+      & p_theta
+      & p_sbase
+      & p_branch_status
+      & p_active;
+  }  
+
 };
+
 
 /// The type of network used in the contingency analysis application
 typedef network::BaseNetwork<CABus, CABranch > CANetwork;
+
 
 }     // contingency_analysis
 }     // gridpack
 
 BOOST_CLASS_EXPORT_KEY(gridpack::contingency_analysis::CABus);
 BOOST_CLASS_EXPORT_KEY(gridpack::contingency_analysis::CABranch);
+
 
 #endif
