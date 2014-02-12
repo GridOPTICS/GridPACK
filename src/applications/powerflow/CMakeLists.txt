@@ -22,6 +22,7 @@ set(target_libraries
     gridpack_configuration
     gridpack_timer
     gridpack_ymatrix_components
+    gridpack_pfmatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -37,13 +38,11 @@ if (PARMETIS_FOUND)
 endif()
 
 add_library(powerflow_app
-  pf_components.cpp
   pf_factory.cpp
 )
 
 add_executable(powerflow.x
    pf_app.cpp
-   pf_components.cpp
    pf_factory.cpp
    pf_main.cpp
 )
@@ -52,7 +51,6 @@ target_link_libraries(powerflow.x ${target_libraries})
 
 add_executable(powerflow2
   pf_app2.cpp
-  pf_components.cpp
   pf_factory.cpp
 )
 target_link_libraries(powerflow2 ${target_libraries})
@@ -116,13 +114,11 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_components.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.hpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_components.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw

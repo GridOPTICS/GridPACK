@@ -20,11 +20,14 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "pf_components.hpp"
+#include "gridpack/applications/components/pf_matrix/pf_components.hpp"
 #include "gridpack/math/matrix.hpp"
 
 namespace gridpack {
 namespace powerflow {
+
+/// The type of network used in the powerflow application
+typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
 
 //enum PFMode{YBus, Jacobian};
 

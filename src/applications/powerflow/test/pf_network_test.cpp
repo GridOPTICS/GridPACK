@@ -24,8 +24,10 @@
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 
+#include "gridpack/parallel/communicator.hpp"
 #include "gridpack/component/base_component.hpp"
-#include "pf_components.hpp"
+#include "gridpack/applications/components/pf_matrix/pf_components.hpp"
+#include "gridpack/applications/powerflow/pf_factory.hpp"
 
 BOOST_AUTO_TEST_SUITE ( pf_network_test ) 
 
