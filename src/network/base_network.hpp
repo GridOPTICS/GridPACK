@@ -355,8 +355,14 @@ virtual ~BaseNetwork(void)
   if (p_branchSndBuf) {
     delete [] ((char*)p_branchRcvBuf);
   }
-  if (p_busGASet) NGA_Deregister_type(p_busXCBufType);
-  if (p_branchGASet) NGA_Deregister_type(p_branchXCBufType);
+  if (p_branchGASet) {
+    GA_Destroy(p_branchGA);
+    NGA_Deregister_type(p_branchXCBufType);
+  }
+  if (p_busGASet) {
+    GA_Destroy(p_busGA);
+    NGA_Deregister_type(p_busXCBufType);
+  }
 }
 
 /**
@@ -1364,6 +1370,7 @@ void initBusUpdate(void)
     GA_Set_irreg_distr(p_busGA, distr, &nprocs);
     GA_Set_pgroup(p_busGA, grp);
     GA_Allocate(p_busGA);
+    p_busGASet = true;
 
     if (lcnt > 0) {
       p_activeBusIndices = new int*[lcnt];
@@ -1538,6 +1545,7 @@ void initBranchUpdate(void)
     GA_Set_irreg_distr(p_branchGA, distr, &nprocs);
     GA_Set_pgroup(p_branchGA, grp);
     GA_Allocate(p_branchGA);
+    p_branchGASet = true;
 
     // Sort buses into local and ghost lists
     int idx, icnt = 0, lcnt=0;
