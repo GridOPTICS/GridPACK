@@ -99,19 +99,24 @@ void gridpack::contingency_analysis::CAApp::execute(
   printf("Got to 7\n");
  
   factory.setExchange();
+  printf("Got to 8\n");
+
+  // initialize bus data exchange
+  network->initBusUpdate();
+  printf("Got to 9\n");
 
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
-  printf("Got to 8\n");
+  printf("Got to 10\n");
 
   factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(network);
-  printf("Got to 9\n");
+  printf("Got to 11\n");
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
-  printf("Got to 10\n");
+  printf("Got to 12\n");
   branchIO.header("\n=== orginal ybus: ============\n");
   orgYbus->print();
-  printf("Got to 11\n");
+  printf("Got to 13\n");
 
   //////////////////////////////////////////////////////////////
   factory.setMode(S_Cal);
@@ -156,7 +161,7 @@ void gridpack::contingency_analysis::CAApp::execute(
   //PQ->print();
   //X->print();
 
-/*  while (real(tol) > tolerance && iter < max_iteration) {
+  while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
@@ -207,6 +212,6 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
-  busIO.write();*/
+  busIO.write();
 }
 
