@@ -10,11 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-10 15:05:07 d3g096
+# Last Change: 2014-02-13 07:30:59 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
   environment.cpp
+  communicator.cpp
   distributed.cpp
 )
 
