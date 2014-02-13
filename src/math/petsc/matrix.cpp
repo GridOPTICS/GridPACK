@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-01-13 12:17:39 d3g096
+ * @date   2014-02-13 11:56:13 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -234,13 +234,13 @@ Matrix::multiplyDiagonal(const Vector& x)
 // petsc_make_viewer
 // -------------------------------------------------------------
 static void
-petsc_make_viewer(const char* filename, PetscViewer *viewer)
+petsc_make_viewer(const MPI_Comm& comm, const char* filename, PetscViewer *viewer)
 {
   PetscErrorCode ierr;
   if (filename != NULL) {
-    ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD, filename, viewer); ; CHKERRXX(ierr);
+    ierr = PetscViewerASCIIOpen(comm, filename, viewer); ; CHKERRXX(ierr);
   } else {
-    *viewer = PETSC_VIEWER_STDOUT_(PETSC_COMM_WORLD);
+    *viewer = PETSC_VIEWER_STDOUT_(comm);
   }
 }
 
@@ -253,7 +253,8 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
   PetscErrorCode ierr;
   try {
     PetscViewer viewer;
-    petsc_make_viewer(filename, &viewer);
+    MPI_Comm comm = PetscObjectComm((PetscObject)mat);
+    petsc_make_viewer(comm, filename, &viewer);
     ierr = PetscViewerSetFormat(viewer, format); CHKERRXX(ierr);
     ierr = MatView(mat, viewer); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
