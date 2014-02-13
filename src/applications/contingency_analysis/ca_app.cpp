@@ -105,6 +105,9 @@ void gridpack::contingency_analysis::CAApp::execute(
   network->initBusUpdate();
   printf("Got to 9\n");
 
+  // set contingency
+  factory.setContingency(contingency);
+
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
   printf("Got to 10\n");
@@ -213,5 +216,8 @@ void gridpack::contingency_analysis::CAApp::execute(
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   busIO.write();
+
+  // clear contingency
+  factory.clearContingency(contingency);
 }
 

@@ -159,6 +159,78 @@ gridpack::ComplexType gridpack::contingency_analysis::CAFactory::calMis(
 }
 #endif
 
+/**
+ * Set contingency
+ * @param contingency the contigency that is to be set
+ */
+void gridpack::contingency_analysis::CAFactory::setContingency(
+    gridpack::contingency_analysis::Contingency contingency)
+{
+  int numBranch = p_network->numBranches();
+  int i,j,idx1,idx2;
+  int size = contingency.p_from.size();
+  p_saveStatus.clear();
+  int count = 0;
+  gridpack::contingency_analysis::CABranch *branch;
+  for (i=0; i<numBranch; i++) {
+    branch = dynamic_cast<CABranch*>(p_network->getBranch(i).get());
+    idx1 = branch->getBus1OriginalIndex();
+    idx2 = branch->getBus2OriginalIndex();
+    // check branch indices against contingencies
+    for (j = 0; j<size; j++) {
+      if (contingency.p_from[j] == idx1 && contingency.p_to[j] == idx2) {
+        // contingency matches branch indices. Find tag that matches contingency
+        std::vector<bool> status = branch->getLineStatus();
+        std::vector<std::string> tags = branch->getLineTags();
+        int l;
+        int lsize = status.size();
+        for (l=0; l<lsize; l++) {
+          if (tags[l] == contingency.p_ckt[j]) {
+            p_saveStatus[count] = status[j];
+            branch->setLineStatus(tags[l], false);
+            count++;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Clear contingency and set branch to its pre-contingency state
+ */
+void gridpack::contingency_analysis::CAFactory::clearContingency(
+    gridpack::contingency_analysis::Contingency contingency)
+{
+  int numBranch = p_network->numBranches();
+  int i,j,idx1,idx2;
+  int size = contingency.p_from.size();
+  p_saveStatus.clear();
+  int count = 0;
+  gridpack::contingency_analysis::CABranch *branch;
+  for (i=0; i<numBranch; i++) {
+    branch = dynamic_cast<CABranch*>(p_network->getBranch(i).get());
+    idx1 = branch->getBus1OriginalIndex();
+    idx2 = branch->getBus2OriginalIndex();
+    // check branch indices against contingencies
+    for (j = 0; j<size; j++) {
+      if (contingency.p_from[j] == idx1 && contingency.p_to[j] == idx2) {
+        // contingency matches branch indices. Find tag that matches contingency
+        std::vector<bool> status = branch->getLineStatus();
+        std::vector<std::string> tags = branch->getLineTags();
+        int l;
+        int lsize = status.size();
+        for (l=0; l<lsize; l++) {
+          if (tags[l] == contingency.p_ckt[j]) {
+            branch->setLineStatus(tags[l], p_saveStatus[count]);
+            count++;
+          }
+        }
+      }
+    }
+  }
+}
+
 
 } // namespace contingency_analysis 
 } // namespace gridpack

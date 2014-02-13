@@ -846,6 +846,7 @@ void gridpack::contingency_analysis::CABranch::load(
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
   int ivar;
+  std::string svar;
   double pi = 4.0*atan(1.0);
   p_active = false;
   ok = data->getValue(CASE_SBASE, &p_sbase);
@@ -861,6 +862,8 @@ void gridpack::contingency_analysis::CABranch::load(
     p_phase_shift.push_back(rvar);
     ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
     p_tap_ratio.push_back(rvar); 
+    ok = ok && data->getValue(BRANCH_CKT, &svar, idx);
+    p_tag.push_back(svar);
     if (rvar != 0.0) {
       p_xform.push_back(xform);
     } else {
@@ -868,7 +871,7 @@ void gridpack::contingency_analysis::CABranch::load(
     }
     ivar = 1;
     data->getValue(BRANCH_STATUS, &ivar, idx);
-    p_branch_status.push_back(ivar);
+    p_branch_status.push_back(static_cast<bool>(ivar));
     if (ivar == 1) p_active = true;
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
@@ -908,7 +911,7 @@ gridpack::ComplexType gridpack::contingency_analysis::CABranch::getAdmittance(vo
   gridpack::ComplexType ret(0.0,0.0);
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType tmp(p_resistance[i], p_reactance[i]);
-    if (!p_xform[i] && p_branch_status[i] == 1) {
+    if (!p_xform[i] && p_branch_status[i]) {
       tmp = -1.0/tmp;
     } else {
       tmp = gridpack::ComplexType(0.0,0.0);
@@ -932,7 +935,7 @@ gridpack::contingency_analysis::CABranch::getTransformer(gridpack::contingency_a
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType tmp(p_resistance[i],p_reactance[i]);
     gridpack::ComplexType tmpB(0.0,0.5*p_charging[i]);
-    if (p_xform[i] && p_branch_status[i] == 1) {
+    if (p_xform[i] && p_branch_status[i]) {
       tmp = -1.0/tmp;
       tmp = tmp - tmpB;
       gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
@@ -964,7 +967,7 @@ gridpack::contingency_analysis::CABranch::getShunt(gridpack::contingency_analysi
   int i;
   for (i=0; i<p_elems; i++) {
     double tmpr, tmpi;
-    if (p_shunt[i] && p_branch_status[i] == 1) {
+    if (p_shunt[i] && p_branch_status[i]) {
       tmpr = 0.0;
       tmpi = 0.0;
       if (!p_xform[i]) {
@@ -1025,6 +1028,41 @@ void gridpack::contingency_analysis::CABranch::getJacobian(gridpack::contingency
   values[1] = -v*(ybusr*cs + ybusi*sn);
   values[2] = (ybusr*cs + ybusi*sn);
   values[3] = (ybusr*sn - ybusi*cs);
+}
+
+/**
+ * Return status of all transmission elements
+ * @return vector containing status of transmission elements
+ */
+std::vector<bool> gridpack::contingency_analysis::CABranch::getLineStatus()
+{
+  return p_branch_status;
+}
+
+/**
+ * Return tags of all transmission elements
+ * @return vector containging tag of transmission elements
+ */
+std::vector<std::string> gridpack::contingency_analysis::CABranch::getLineTags()
+{
+  return p_tag;
+}
+
+/**
+ * Set the status of a transmission element based on its tag name
+ * @param tag name of transmission element
+ * @param status that transmission element should be set to
+ * @return false if no transmission element with that name exists
+ */
+bool gridpack::contingency_analysis::CABranch::setLineStatus(std::string tag, bool status)
+{
+  int i;
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      p_branch_status[i] = status;
+      break;
+    }
+  }
 }
 
 /**

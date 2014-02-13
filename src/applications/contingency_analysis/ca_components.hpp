@@ -328,6 +328,26 @@ class CABranch
     void getJacobian(CABus *bus, double *values);
 
     /**
+     * Return status of all transmission elements
+     * @return vector containing status of transmission elements
+     */
+    std::vector<bool> getLineStatus();
+
+    /**
+     * Return tags of all transmission elements
+     * @return vector containging tag of transmission elements
+     */
+    std::vector<std::string> getLineTags();
+
+    /**
+     * Set the status of a transmission element based on its tag name
+     * @param tag name of transmission element
+     * @param status that transmission element should be set to
+     * @return false if no transmission element with that name exists
+     */
+    bool setLineStatus(std::string tag, bool status);
+
+    /**
      * Return contribution to constraints
      * @param p: real part of constraint
      * @param q: imaginary part of constraint
@@ -366,7 +386,8 @@ class CABranch
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
     double p_sbase;
-    std::vector<int> p_branch_status;
+    std::vector<bool> p_branch_status;
+    std::vector<std::string> p_tag;
     int p_elems;
     bool p_active;
 
@@ -396,6 +417,8 @@ private:
       & p_theta
       & p_sbase
       & p_branch_status
+      & p_tag
+      & p_elems
       & p_active;
   }  
 

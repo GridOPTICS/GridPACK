@@ -21,6 +21,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "ca_components.hpp"
+#include "ca_driver.hpp"
 #include "gridpack/math/matrix.hpp"
 
 namespace gridpack {
@@ -66,10 +67,23 @@ class CAFactory
      * Create the Jacobian matrix
      */
     void setJacobian(void);
+#if 1
+    /**
+     * Set contingency
+     * @param contingency the contigency that is to be set
+     */
+    void setContingency(gridpack::contingency_analysis::Contingency contingency);
 
+    /**
+     * Clear contingency and set branch to its pre-contingency state
+     */
+    void clearContingency(gridpack::contingency_analysis::Contingency
+        contingency);
+#endif
   private:
 
     NetworkPtr p_network;
+    std::vector<bool> p_saveStatus;
 };
 
 } // contingency_analysis
