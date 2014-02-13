@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:30:59 d3g096
+ * @date   2014-02-13 07:35:47 d3g096
  * 
  * @brief  
  * 
@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <iostream>
+#include <cstring>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"

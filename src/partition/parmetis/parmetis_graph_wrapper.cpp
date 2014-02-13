@@ -7,7 +7,7 @@
 /**
  * @file   parmetis_graph_wrapper.cpp
  * @author William A. Perkins
- * @date   2014-02-12 10:37:16 d3g096
+ * @date   2014-02-13 09:28:27 d3g096
  * 
  * @brief  Implementation of the ParMETISGraphWrapper class
  * 
@@ -90,7 +90,7 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
   dims[0] = gblnodes;  dims[1] = num_node_data;
   p_node_data.reset(new GA::GlobalArray(MT_C_INT, two, dims, 
                                         "ParMETIS Wrapper Node Data", NULL));
-  p_node_data->printDistribution();
+  // p_node_data->printDistribution();
   p_node_data->zero();
 
   // put the global node indexes or ids
@@ -123,7 +123,7 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
   p_local_node_id.reset(new GA::GlobalArray(MT_C_INT, one, dims,
                                             "Node index translator", NULL));
 
-  p_local_node_id->printDistribution();
+  // p_local_node_id->printDistribution();
 
   if (locnodes > 0) {
     lo[0] = p_node_lo; lo[1] = 0;
@@ -152,9 +152,9 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
 
   communicator().sync();
 
-  p_node_data->print();
+  // p_node_data->print();
 
-  p_local_node_id->print();
+  // p_local_node_id->print();
 
                                 // make the adjacency list and its index
 
@@ -198,8 +198,8 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
     communicator().sync();
   }
 
-  p_xadj_gbl->print();
-  p_adjncy_gbl->print();
+  // p_xadj_gbl->print();
+  // p_adjncy_gbl->print();
 
   GA_Pgroup_set_default(oldGAgroup);
 }
