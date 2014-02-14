@@ -91,6 +91,23 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
     } else {
       return false;
     }
+  } else if (p_mode == YB) {
+    // YB is the negative of the transpose of YC
+    if (p_ngen > 0) {
+      *isize = p_ngen;
+      *jsize = 1;
+    } else {
+      *isize = 0;
+      *jsize = 1;
+    }
+  } else if (p_mode == YC) {
+    if (p_ngen > 0) {
+      *isize = 1;
+      *jsize = p_ngen;
+    } else {
+      *isize = 1;
+      *jsize = 0;
+    }
   } else if (p_mode == permYMOD) {
     if (p_ngen > 0) {
       *isize = 1;
@@ -191,6 +208,39 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
         } else {
           values[ii] = 0.0;
         }
+      } 
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == YC) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        double ra = p_r[i] * p_sbase / p_mva[i];
+        double xd;
+        if (p_dstr[i] == 0) { 
+          xd = p_dtr[i] * p_sbase / p_mva[i];
+        }
+        gridpack::ComplexType Y_a(ra, xd);
+        Y_a = 1.0 / Y_a;
+        values[i] = Y_a;
+      } 
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == YB) {
+    // YB is the negative of the transpose of YC
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        double ra = p_r[i] * p_sbase / p_mva[i];
+        double xd;
+        if (p_dstr[i] == 0) { 
+          xd = p_dtr[i] * p_sbase / p_mva[i];
+        }
+        gridpack::ComplexType Y_a(ra, xd);
+        Y_a = 1.0 / Y_a;
+        values[i] = -Y_a;
       } 
       return true;
     } else {
