@@ -509,7 +509,6 @@ bool gridpack::ymatrix::YMBranch::setLineStatus(std::string tag,
   int i;
   for (i=0; i<p_elems; i++) {
     if (tag == p_tag[i]) {
-      printf("branch %s has status %d\n",p_tag[i].c_str(),(int)status);
       p_branch_status[i] = status;
       break;
     }
