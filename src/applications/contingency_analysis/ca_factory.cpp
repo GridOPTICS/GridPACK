@@ -170,7 +170,6 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
   int i,j,idx1,idx2;
   int size = contingency.p_from.size();
   p_saveStatus.clear();
-  int count = 0;
   gridpack::contingency_analysis::CABranch *branch;
   for (i=0; i<numBranch; i++) {
     branch = dynamic_cast<CABranch*>(p_network->getBranch(i).get());
@@ -185,10 +184,14 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
         int l;
         int lsize = status.size();
         for (l=0; l<lsize; l++) {
-          if (tags[l] == contingency.p_ckt[j]) {
-            p_saveStatus[count] = status[j];
+	  // clean up line name
+	  int ntok1 = tags[l].find_first_not_of('\'',0);
+	  int ntok2 = tags[l].find('\'',ntok1);
+	  if (ntok2 == std::string::npos) ntok2 = tags[l].length();
+	  std::string tag = tags[l].substr(ntok1,ntok2-ntok1);
+          if (tag == contingency.p_ckt[j]) {
+            p_saveStatus.push_back(status[j]);
             branch->setLineStatus(tags[l], false);
-            count++;
           }
         }
       }
@@ -221,7 +224,12 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
         int l;
         int lsize = status.size();
         for (l=0; l<lsize; l++) {
-          if (tags[l] == contingency.p_ckt[j]) {
+	  // clean up line name
+	  int ntok1 = tags[l].find_first_not_of('\'',0);
+	  int ntok2 = tags[l].find('\'',ntok1);
+	  if (ntok2 == std::string::npos) ntok2 = tags[l].length();
+	  std::string tag = tags[l].substr(ntok1,ntok2-ntok1);
+          if (tag == contingency.p_ckt[j]) {
             branch->setLineStatus(tags[l], p_saveStatus[count]);
             count++;
           }

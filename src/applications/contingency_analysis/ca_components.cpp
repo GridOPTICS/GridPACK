@@ -1059,10 +1059,12 @@ bool gridpack::contingency_analysis::CABranch::setLineStatus(std::string tag, bo
   int i;
   for (i=0; i<p_elems; i++) {
     if (tag == p_tag[i]) {
+      printf("Setting status on line %s\n",p_tag[i].c_str());
       p_branch_status[i] = status;
       break;
     }
   }
+  YMBranch::setLineStatus(tag, status);
 }
 
 /**

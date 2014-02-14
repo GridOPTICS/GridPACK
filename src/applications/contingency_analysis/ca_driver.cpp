@@ -90,7 +90,7 @@ std::vector<gridpack::contingency_analysis::Contingency>
       ntok1 = names.find_first_not_of(' ',ntok2);
       ntok2 = names.find(' ',ntok1);
     }
-    // Check to make sure we found all everything
+    // Check to make sure we found everything
     if (bus_ids.size() == 2*line_names.size()) {
       gridpack::contingency_analysis::Contingency contingency;
       contingency.p_name = ca_name;
