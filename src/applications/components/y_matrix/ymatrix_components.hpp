@@ -198,6 +198,26 @@ class YMBranch
     gridpack::ComplexType getShunt(YMBus *bus);
 
     /**
+     * Return status of all transmission elements
+     * @return vector containing status of transmission elements
+     */
+    std::vector<bool> getLineStatus();
+
+    /**
+     * Return tags of all transmission elements
+     * @return vector containging tag of transmission elements
+     */
+    std::vector<std::string> getLineTags();
+
+    /**
+     * Set the status of a transmission element based on its tag name
+     * @param tag name of transmission element
+     * @param status that transmission element should be set to
+     * @return false if no transmission element with that name exists
+     */
+    bool setLineStatus(std::string tag, bool status);
+
+    /**
      * Set the mode to control what matrices and vectors are built when using
      * the mapper
      * @param mode: enumerated constant for different modes
@@ -218,7 +238,8 @@ class YMBranch
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
-    std::vector<int> p_branch_status;
+    std::vector<bool> p_branch_status;
+    std::vector<std::string> p_tag;
     int p_elems;
     bool p_isolated;
     bool p_active;
@@ -246,6 +267,7 @@ private:
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs
       & p_branch_status
+      & p_tag
       & p_elems
       & p_isolated
       & p_active;
