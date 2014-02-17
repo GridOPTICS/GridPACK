@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-02-13 12:14:38 d3g096
+ * @date   2014-02-17 13:08:39 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -550,14 +550,16 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
   int global_size;
   gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
-    A(make_and_fill_test_matrix(world, bandwidth, global_size));
+    A(make_and_fill_test_matrix(world, bandwidth, global_size)),
+    T(transpose(*A));
 
   std::auto_ptr<gridpack::math::Vector>  
     xvector(new gridpack::math::Vector(A->communicator(), A->localRows())),
-    yvector;
+    yvector, zvector;
 
   xvector->fill(scale);
   yvector.reset(multiply(*A, *xvector));
+  zvector.reset(transposeMultiply(*T, *xvector));
             
   int lo, hi;
   xvector->localIndexRange(lo, hi);
@@ -566,12 +568,18 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
     int bw(bandwidth);
     if (i == 0 || i == global_size - 1) bw--;
     gridpack::ComplexType 
-      x(static_cast<gridpack::ComplexType>(i*bw)*scale), y;
+      x(static_cast<gridpack::ComplexType>(i*bw)*scale), y, z;
     yvector->getElement(i, y);
     BOOST_CHECK_CLOSE(real(x), real(y), delta);
     BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+
+    zvector->getElement(i, z);
+    BOOST_CHECK_CLOSE(real(x), real(z), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(z), delta);
   }
 }
+
+
 
 BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
 {

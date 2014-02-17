@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2014-01-13 12:06:53 d3g096
+ * @date   2014-02-17 12:55:30 d3g096
  * 
  * @brief  
  * 
@@ -680,6 +680,17 @@ extern Matrix *multiply(const Matrix& A, const Matrix& B);
  */
 extern Vector *multiply(const Matrix& A, const Vector& x);
 
+/// Multiply the transpose of a Matrix by a Vector and make a new Vector for the result
+/** 
+ * 
+ * 
+ * @param A 
+ * @param x 
+ * 
+ * @return 
+ */
+extern Vector *transposeMultiply(const Matrix& A, const Vector& x);
+
 /// Make an identity matrix with the same ownership as the specified matrix
 extern Matrix *identity(const Matrix& A);
 
@@ -754,6 +765,17 @@ extern void multiply(const Matrix& A, const Matrix& B, Matrix& result);
  * @param result 
  */
 extern void multiply(const Matrix& A, const Vector& x, Vector& result);
+
+/// Multiply the transpose of a Matrix by a Vector and put the result in existing Vector
+/** 
+ * 
+ * 
+ * @param A 
+ * @param x 
+ * @param result same size and distribution as @c x
+ */
+extern void transposeMultiply(const Matrix& A, const Vector& x, Vector& result);
+
 
 } // namespace math
 } // namespace gridpack

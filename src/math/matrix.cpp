@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2013-11-12 10:33:30 d3g096
+ * @date   2014-02-17 13:01:13 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -109,6 +109,17 @@ multiply(const Matrix& A, const Vector& x)
 {
   Vector *result(new Vector(x.communicator(), x.localSize()));
   multiply(A, x, *result);
+  return result;
+}
+
+// -------------------------------------------------------------
+// multiplyTranspose
+// -------------------------------------------------------------
+Vector *
+transposeMultiply(const Matrix& A, const Vector& x)
+{
+  Vector *result(new Vector(x.communicator(), x.localSize()));
+  transposeMultiply(A, x, *result);
   return result;
 }
 

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2013-11-12 09:54:33 d3g096
+ * @date   2014-02-17 12:52:44 d3g096
  * 
  * @brief  
  * 
@@ -82,7 +82,23 @@ transpose(const Matrix& A)
   return result;
 }
 
-
+// -------------------------------------------------------------
+// transposeMultiply
+// -------------------------------------------------------------
+void
+transposeMultiply(const Matrix& A, const Vector& x, Vector& result)
+{
+  const Mat *Amat(PETScMatrix(A));
+  const Vec *Xvec(PETScVector(x));
+  Vec *Yvec(PETScVector(result));
+  
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatMultTranspose(*Amat, *Xvec, *Yvec); CHKERRXX(ierr);
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+}
 
 // -------------------------------------------------------------
 // column
