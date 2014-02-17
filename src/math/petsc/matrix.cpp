@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-02-13 11:56:13 d3g096
+ * @date   2014-02-17 10:19:46 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -238,9 +238,9 @@ petsc_make_viewer(const MPI_Comm& comm, const char* filename, PetscViewer *viewe
 {
   PetscErrorCode ierr;
   if (filename != NULL) {
-    ierr = PetscViewerASCIIOpen(comm, filename, viewer); ; CHKERRXX(ierr);
+    ierr = PetscViewerASCIIOpen(comm, filename, viewer); CHKERRXX(ierr);
   } else {
-    *viewer = PETSC_VIEWER_STDOUT_(comm);
+    ierr = PetscViewerASCIIGetStdout(comm, viewer); CHKERRXX(ierr);
   }
 }
 
@@ -254,9 +254,39 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
   try {
     PetscViewer viewer;
     MPI_Comm comm = PetscObjectComm((PetscObject)mat);
+    int me, nproc;
+    ierr = MPI_Comm_rank(comm, &me);
+    ierr = MPI_Comm_size(comm, &nproc);
     petsc_make_viewer(comm, filename, &viewer);
-    ierr = PetscViewerSetFormat(viewer, format); CHKERRXX(ierr);
+    ierr = PetscViewerSetFormat(viewer, format);
+    PetscInt grow, gcol, lrow, lcol;
+    switch (format) {
+    case PETSC_VIEWER_DEFAULT:
+      ierr = MatGetSize(mat, &grow, &gcol); CHKERRXX(ierr);
+      ierr = MatGetLocalSize(mat, &lrow, &lcol); CHKERRXX(ierr);
+      ierr = PetscViewerASCIISynchronizedAllow(viewer, PETSC_TRUE); CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# Matrix distribution\n"); CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# proc   rows     cols\n");  CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# ---- -------- --------\n"); CHKERRXX(ierr);
+      ierr = PetscViewerASCIISynchronizedPrintf(viewer, "# %4d %8d %8d\n",
+                                                me, lrow, lcol);  CHKERRXX(ierr);
+      ierr = PetscViewerFlush(viewer); CHKERRXX(ierr);
+      ierr = MPI_Barrier(comm);
+      ierr = PetscViewerASCIIPrintf(viewer,             
+                                    "# ---- -------- --------\n");  CHKERRXX(ierr);
+      ierr = PetscViewerASCIIPrintf(viewer, "# %4d %8d %8d\n", 
+                                    nproc, grow, gcol);  CHKERRXX(ierr);
+    }
     ierr = MatView(mat, viewer); CHKERRXX(ierr);
+    if (filename != NULL) {
+      ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+    } else {
+      // FIXME: causes a SEGV?
+      // ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+    }
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -270,6 +300,7 @@ void
 Matrix::print(const char* filename) const
 {
   const Mat *mat(PETScMatrix(*this));
+  
   petsc_print_matrix(*mat, filename, PETSC_VIEWER_DEFAULT);
 }
 
