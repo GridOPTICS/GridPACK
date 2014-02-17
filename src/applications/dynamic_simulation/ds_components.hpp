@@ -146,6 +146,12 @@ class DSBus
     double getPhase(void);
 
     /**
+     * Return the number of generators on this bus
+     * @return number of generators on bus
+     */
+    int getNumGen(void);
+
+    /**
      * Return whether or not a bus is isolated
      * @return true if bus is isolated
      */

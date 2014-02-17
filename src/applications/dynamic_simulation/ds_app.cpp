@@ -178,8 +178,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(YB);
   gridpack::mapper::FullMatrixMap<DSNetwork> bMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y_b = bMap.mapToMatrix();
-  ///busIO.header("\n=== Y_b: ============\n");
-  ///Y_b->print();
+  busIO.header("\n=== Y_b: ============\n");
+  Y_b->print();
   
   Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
   // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
@@ -422,6 +422,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Declare vector curr
   boost::shared_ptr<gridpack::math::Vector> curr;
 
+      int trows = prefy11->localRows();
+  printf("p[%d] Pre-transpose rows: %d\n",world.rank(),trows);
   boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
@@ -523,8 +525,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
   printf("p[%d] Got to 17\n",world.rank());
     if (flagF1 == 0) {
-  printf("p[%d] Got to 17a\n",world.rank());
-      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
+      int nrows = prefy11->localRows();
+      int nvec = eprime_s0->localSize();
+      int cvec = eprime_s0->localSize();
+      int nbus = network->numBuses();
+  printf("p[%d] Got to 17a nrows: %d nvec: %d cvec: %d\n",world.rank(),nrows,nvec,cvec);
+//      gridpack::math::transposeMultiply(*prefy11,*eprime_s0,*curr);
+//      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
+      curr.reset(transposeMultiply(*prefy11,*eprime_s0));
     } else if (flagF1 == 1) {
   printf("p[%d] Got to 17b\n",world.rank());
       curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);

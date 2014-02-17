@@ -660,6 +660,15 @@ bool gridpack::dynamic_simulation::DSBus::isIsolated(void) const
   return YMBus::isIsolated();
 }
 
+/**
+ * Return the number of generators on this bus
+ * @return number of generators on bus
+ */
+int gridpack::dynamic_simulation::DSBus::getNumGen(void)
+{
+  return p_ngen;
+}
+
 void gridpack::dynamic_simulation::DSBus::setIFunc(void)
 {
   if (p_ngen > 0) {
