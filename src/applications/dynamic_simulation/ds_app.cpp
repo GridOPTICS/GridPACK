@@ -87,7 +87,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // partition network
   network->partition();
-  printf("p[%d] Got to 1\n",world.rank());
 
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<DSNetwork> busIO(128, network);
@@ -100,7 +99,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // set network components using factory
   factory.setComponents();
-  printf("p[%d] Got to 2\n",world.rank());
 
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
@@ -110,7 +108,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
   ///branchIO.header("\n=== orginal ybus: ============\n");
   ///orgYbus->print();
-  printf("p[%d] Got to 3\n",world.rank());
 
   // Form constant impedance load admittance yl for all buses and add it to 
   // system Y matrix: ybus = ybus + yl
@@ -147,7 +144,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
   gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
   boost::shared_ptr<gridpack::math::Matrix> Y_a(gridpack::math::storageType(*diagY_a, denseType));
-  printf("p[%d] Got to 4\n",world.rank());
 
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
   boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans));
@@ -163,7 +159,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
   ///busIO.header("\n=== P: ============\n");
   ///P->print();
-  printf("p[%d] Got to 5\n",world.rank());
   //boost::shared_ptr<gridpack::math::Matrix> Y_c(transpose(*Ymod));
   //Y_c->scale(-1.0);
   //Y_c.reset(multiply(*P, *Y_c)); 
@@ -173,7 +168,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   Y_c->scale(-1.0);
   ///busIO.header("\n=== Y_c: ============\n");
   ///Y_c->print();
-  printf("p[%d] Got to 6\n",world.rank());
 //  boost::shared_ptr<gridpack::math::Matrix> Y_b(transpose(*Y_c));
   factory.setMode(YB);
   gridpack::mapper::FullMatrixMap<DSNetwork> bMap(network);
@@ -191,7 +185,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(permYMOD);
   gridpack::mapper::FullMatrixMap<DSNetwork> pymMap(network);
   boost::shared_ptr<gridpack::math::Matrix>  permYmod= pymMap.mapToMatrix();
-  printf("p[%d] Got to 7\n",world.rank());
   ///busIO.header("\n=== permYmod: ============\n");
   ///permYmod->print();
 
@@ -205,7 +198,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   permYmodMap.mapToBus(vPermYmod);
 
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
-  printf("p[%d] Got to 8\n",world.rank());
   ///branchIO.header("\n=== prefy11ybus: ============\n");
   ///prefy11ybus->print();
 
@@ -214,7 +206,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //solver1.configure(cursor);
   gridpack::math::LinearMatrixSolver solver1(*prefy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> prefy11X(solver1.solve(*Y_cDense));
-  printf("p[%d] Got to 9\n",world.rank());
   ///branchIO.header("\n=== prefy11X: ============\n");
   ///prefy11X->print(); 
   
@@ -223,7 +214,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //-----------------------------------------------------------------------
   // Form reduced admittance matrix prefy11: prefy11 = Y_b * X
   boost::shared_ptr<gridpack::math::Matrix> prefy11(multiply(*Y_b, *prefy11X)); 
-  printf("p[%d] Got to 10\n",world.rank());
   // Update prefy11: prefy11 = Y_a + prefy11
   prefy11->add(*Y_a);
   ///branchIO.header("\n=== Reduced Ybus: prefy11: ============\n");
@@ -257,7 +247,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
 #endif
-  printf("p[%d] Got to 11\n",world.rank());
   ///branchIO.header("\n=== fy11ybus: ============\n");
   ///fy11ybus->print();
 
@@ -265,13 +254,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //gridpack::math::LinearSolver solver2(*fy11ybus);
   gridpack::math::LinearMatrixSolver solver2(*fy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> fy11X(solver2.solve(*Y_cDense)); 
-  printf("p[%d] Got to 12\n",world.rank());
   ///branchIO.header("\n=== fy11X: ============\n");
   ///fy11X->print();
   
   // Form reduced admittance matrix fy11: fy11 = Y_b * X
   boost::shared_ptr<gridpack::math::Matrix> fy11(multiply(*Y_b, *fy11X)); 
-  printf("p[%d] Got to 13\n",world.rank());
   // Update fy11: fy11 = Y_a + fy11
   fy11->add(*Y_a);
   ///branchIO.header("\n=== Reduced Ybus: fy11: ============\n");
@@ -325,7 +312,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   
   // Form reduced admittance matrix posfy11: posfy11 = Y_b * X
   boost::shared_ptr<gridpack::math::Matrix> posfy11(multiply(*Y_b, *posfy11X)); 
-  printf("p[%d] Got to 14\n",world.rank());
   //// Update posfy11: posfy11 = Y_a + posfy11
   posfy11->add(*Y_a);
   ///branchIO.header("\n=== Reduced Ybus: posfy11: ============\n");
@@ -376,7 +362,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(init_pmech);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap6(network);
   boost::shared_ptr<gridpack::math::Vector> pmech = XMap6.mapToVector();
-  printf("p[%d] Got to 15\n",world.rank());
   ///busIO.header("\n=== pmech: ===\n");
   ///pmech->print();
 
@@ -398,7 +383,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(init_h);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap9(network);
   boost::shared_ptr<gridpack::math::Vector> h = XMap9.mapToVector();
-  printf("p[%d] Got to 16\n",world.rank());
   ///busIO.header("\n=== h: ===\n");
   ///h->print();
 
@@ -420,7 +404,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Vector> dmac_spd_s1(mac_spd_s0->clone()); 
 
   // Declare vector curr
-  boost::shared_ptr<gridpack::math::Vector> curr;
+  boost::shared_ptr<gridpack::math::Vector> curr; //(mac_ang_s0->clone());
 
       int trows = prefy11->localRows();
   printf("p[%d] Pre-transpose rows: %d\n",world.rank(),trows);
@@ -523,24 +507,17 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     eprime_s0->equate(*vecTemp); //VecPointwiseMult(eprime_s0, eqprime, vecTemp);
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
-  printf("p[%d] Got to 17\n",world.rank());
     if (flagF1 == 0) {
-      int nrows = prefy11->localRows();
+      int nrows = trans_prefy11->localRows();
       int nvec = eprime_s0->localSize();
-      int cvec = eprime_s0->localSize();
+      int cvec; // = curr->localSize();
       int nbus = network->numBuses();
-  printf("p[%d] Got to 17a nrows: %d nvec: %d cvec: %d\n",world.rank(),nrows,nvec,cvec);
-//      gridpack::math::transposeMultiply(*prefy11,*eprime_s0,*curr);
-//      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
-      curr.reset(transposeMultiply(*prefy11,*eprime_s0));
+      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
     } else if (flagF1 == 1) {
-  printf("p[%d] Got to 17b\n",world.rank());
       curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
     } else if (flagF1 == 2) {
-  printf("p[%d] Got to 17c\n",world.rank());
       curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
     } 
-  printf("p[%d] Got to 18\n",world.rank());
     
     // ---------- CALL mac_em2(k,S_Steps): ----------
     // ---------- pelect: ----------
@@ -567,7 +544,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->scale(2.0); //VecScale(vecTemp, 2); // 2 * gen_h
     dmac_spd_s0->elementDivide(*vecTemp); //VecPointwiseDivide(dmac_spd_s0, dmac_spd_s0, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s0-1.0) )/(2*gen_h)  
 
-  printf("p[%d] Got to 19\n",world.rank());
     mac_ang_s1->equate(*mac_ang_s0); //VecCopy(mac_ang_s0, mac_ang_s1);
     vecTemp->equate(*dmac_ang_s0);
     mac_ang_s1->add(*dmac_ang_s0, h_sol1); //VecAXPY(mac_ang_s1, h_sol1, dmac_ang_s0);
@@ -580,7 +556,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->exp(); //VecExp(vecTemp);
     vecTemp->elementMultiply(*eqprime);
     eprime_s1->equate(*vecTemp); //VecPointwiseMult(eprime_s1, eqprime, vecTemp);
-  printf("p[%d] Got to 20\n",world.rank());
 
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     if (flagF2 == 0) {
@@ -590,7 +565,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     } else if (flagF2 == 2) {
       curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
     }
-  printf("p[%d] Got to 21\n",world.rank());
 
     // ---------- CALL mac_em2(k,S_Steps+1): ---------- 
     // ---------- pelect: ----------
@@ -617,7 +591,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->scale(2.0); //VecScale(vecTemp, 2); // 2 * gen_h
     dmac_spd_s1->elementDivide(*vecTemp); //VecPointwiseDivide(dmac_spd_s1, dmac_spd_s1, vecTemp); // (pmech-pelect*gen_mva-gen_d0*(mac_spd_s1-1.0) )/(2*gen_h) 
 
-  printf("p[%d] Got to 22\n",world.rank());
     vecTemp->equate(*dmac_ang_s0); //VecCopy(dmac_ang_s0, vecTemp);
     vecTemp->add(*dmac_ang_s1); //VecAXPY(vecTemp, 1.0, dmac_ang_s1);
     vecTemp->scale(0.5); //VecScale(vecTemp, 0.5);
@@ -628,7 +601,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->scale(0.5); //VecScale(vecTemp, 0.5);
     mac_spd_s1->equate(*mac_spd_s0); //VecCopy(mac_spd_s0, mac_spd_s1);
     mac_spd_s1->add(*vecTemp, h_sol2); //VecAXPY(mac_spd_s1, h_sol2, vecTemp);
-  printf("p[%d] Got to 23\n",world.rank());
 
     // Print to screen
     if (last_S_Steps != S_Steps) {
