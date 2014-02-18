@@ -1,6 +1,6 @@
 # -*- mode: cmake -*-
 
-cmake_minimum_required (VERSION 2.6.3)
+cmake_minimum_required (VERSION 2.6.4)
 project (PETScTest)
 
 list (APPEND CMAKE_MODULE_PATH "${PETScTest_SOURCE_DIR}/cmake-modules")
@@ -17,9 +17,23 @@ enable_testing()
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
-set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
-set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
-set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+
+# This is here for cmake version 2.6 
+if (NOT MPI_CXX_LIBRARIES)
+ set(MPI_CXX_LIBRARIES 
+   ${MPI_LIBRARY} 
+   ${MPI_EXTRA_LIBRARY}
+ )
+endif()
+
+# -------------------------------------------------------------
+# Boost
+#
+# Find the Boost library. It needs to use the same compiler as
+# PETSc. How can I check that?
+# -------------------------------------------------------------
+message(STATUS "Checking Boost ...")
+find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
 
 # -------------------------------------------------------------
 # PETSc
@@ -52,15 +66,6 @@ if (NOT PETSC_CLANGUAGE_Cxx)
 endif()
 
 # -------------------------------------------------------------
-# Boost
-#
-# Find the Boost library. It needs to use the same compiler as
-# PETSc. How can I check that?
-# -------------------------------------------------------------
-message(STATUS "Checking Boost ...")
-find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
-
-# -------------------------------------------------------------
 # Options for all Programs
 # -------------------------------------------------------------
 include_directories (${PETSC_INCLUDES} ${Boost_INCLUDE_DIR})
@@ -70,14 +75,17 @@ add_definitions (${PETSC_DEFINITIONS})
 # Programs
 # -------------------------------------------------------------
 add_executable(vwrap vwrap.cpp)
-target_link_libraries(vwrap ${PETSC_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(vwrap ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+add_executable(vecdist vecdist.cpp)
+target_link_libraries(vecdist ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 add_executable(exception exception.cpp)
-target_link_libraries(exception ${PETSC_LIBRARIES} ${Boost_LIBRARIES})
+target_link_libraries(exception ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 
 add_executable(greetings greetings.cpp)
-target_link_libraries(greetings ${Boost_LIBRARIES})
+target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 add_test(NAME greetings COMMAND $<TARGET_FILE:greetings>)
 set_tests_properties(greetings
   PROPERTIES 

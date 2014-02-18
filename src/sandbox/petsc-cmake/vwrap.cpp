@@ -2,7 +2,7 @@
 /**
  * @file   bad_destroy.cpp
  * @author William A. Perkins
- * @date   2013-04-23 09:21:01 d3g096
+ * @date   2014-02-17 07:59:16 d3g096
  * 
  * @brief This is a test to investigate what happens if one tries to
  * destroy a PETSc object after PETSc has been finalized. 
@@ -70,7 +70,9 @@ public:
   void view(void) const
   {
     PetscErrorCode ierr;
-    ierr = VecView(x, PETSC_VIEWER_STDOUT_WORLD); // CHKERRQ(ierr);
+    MPI_Comm comm = PetscObjectComm((PetscObject)x);
+
+    ierr = VecView(x,  PETSC_VIEWER_STDOUT_(comm)); // CHKERRQ(ierr);
   }
 
 };
