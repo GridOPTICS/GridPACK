@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-17 15:56:14 d3g096
+ * @date   2014-01-31 11:31:33 d3g096
  * 
  * @brief  
  * 
@@ -48,8 +48,7 @@ PETScVectorImplementation::PETScVectorImplementation(const parallel::Communicato
 
 
     ierr = VecCreate(comm,&p_vector); CHKERRXX(ierr);
-    // FIXME: ierr = VecSetSizes(p_vector, llen, glen); CHKERRXX(ierr);
-    ierr = VecSetSizes(p_vector, PETSC_DECIDE, glen); CHKERRXX(ierr);
+    ierr = VecSetSizes(p_vector, llen, glen); CHKERRXX(ierr);
     if (comm.size() > 1) {
       ierr = VecSetType(p_vector, VECMPI);  CHKERRXX(ierr);
     } else {

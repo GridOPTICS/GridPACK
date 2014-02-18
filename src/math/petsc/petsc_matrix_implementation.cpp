@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-17 15:53:32 d3g096
+ * @date   2014-01-31 11:31:42 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -147,8 +147,7 @@ PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
     }
     
     ierr = MatCreate(this->communicator(), &p_matrix); CHKERRXX(ierr);
-    // FIXME: ierr = MatSetSizes(p_matrix, lrows, lcols, grows, gcols); CHKERRXX(ierr);
-    ierr = MatSetSizes(p_matrix, PETSC_DECIDE, PETSC_DECIDE, grows, gcols); CHKERRXX(ierr);
+    ierr = MatSetSizes(p_matrix, lrows, lcols, grows, gcols); CHKERRXX(ierr);
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

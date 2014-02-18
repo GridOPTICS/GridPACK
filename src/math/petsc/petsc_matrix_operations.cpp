@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-02-17 15:55:48 d3g096
+ * @date   2014-02-17 12:52:44 d3g096
  * 
  * @brief  
  * 
@@ -85,32 +85,6 @@ transpose(const Matrix& A)
 // -------------------------------------------------------------
 // transposeMultiply
 // -------------------------------------------------------------
-Vector *
-transposeMultiply(const Matrix& A, const Vector& x)
-{
-  Vector *result(new Vector(x.communicator(), x.localSize()));
-  transposeMultiply(A, x, *result);
-  return result;
-}
-
-// Vector *
-// transposeMultiply(const Matrix& A, const Vector& x)
-// {
-//   const Mat *Amat(PETScMatrix(A));
-//   int lrow, lcol;
-
-//   PetscErrorCode ierr(0);
-//   try {
-//     ierr = MatGetLocalSize(*Amat, &lrow, &lcol); CHKERRXX(ierr);
-//   } catch (const PETSc::Exception& e) {
-//     throw PETScException(ierr, e);
-//   }
-  
-//   Vector *result(new Vector(x.communicator(), lcol));
-//   transposeMultiply(A, x, *result);
-//   return result;
-// }
-
 void
 transposeMultiply(const Matrix& A, const Vector& x, Vector& result)
 {
