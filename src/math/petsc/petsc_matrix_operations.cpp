@@ -123,18 +123,23 @@ transpose(const Matrix& A)
       int llo,lhi, ncount;
       A.localRowRange(llo,lhi);
       ncount = 0;
-      for (j=0; j<gcols; j++) {
-        for (i=llo; i<lhi; i++) {
+      for (i=llo; i<lhi; i++) {
+        for (j=0; j<gcols; j++) {
           A.getElement(i,j,vals[ncount]);
           ncount++;
         }
       }
       int lo[2],hi[2];
+      lo[0] = llo;
+      lo[1] = 0;
+      hi[0] = lhi-1;
+      hi[1] = gcols-1;
+      int ld = gcols;
       //printf("p[%d] (transpose) Got to 4\n",me);
       // Transpose g_tmp
-      NGA_Put(g_tmp,lo,hi,vals,&gcols);
+      NGA_Put(g_tmp,lo,hi,vals,&ld);
       GA_Transpose(g_tmp, g_trns);
-      NGA_Get(g_trns,lo,hi,vals,&gcols);
+      NGA_Get(g_trns,lo,hi,vals,&ld);
       // Copy g_trns to new PETSc matrix
       GA_Pgroup_sync(A.communicator().getGroup());
       //printf("p[%d] (transpose) Got to 5\n",me);
@@ -146,8 +151,8 @@ transpose(const Matrix& A)
       ierr = MatMPIDenseSetPreallocation(pAtrans, PETSC_NULL); CHKERRXX(ierr);
       //printf("p[%d] (transpose) Got to 5c\n",me);
       ncount = 0;
-      for (j=0; j<gcols; j++) {
-        for (i=llo; i<lhi; i++) {
+      for (i=llo; i<lhi; i++) {
+        for (j=0; j<gcols; j++) {
           ierr = MatSetValue(pAtrans,i,j,vals[ncount],INSERT_VALUES); CHKERRXX(ierr);
           ncount++;
         }
