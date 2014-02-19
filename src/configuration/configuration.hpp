@@ -4,7 +4,7 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 #pragma once
-#define USE_MPI
+#define CONFIGURATION_USE_MPI 
 #ifndef _configuration_h
 // TODO -- any convention on version numbers? 
 // TODO -- any coding conventions? 
@@ -14,10 +14,10 @@
 #include <vector>
 #include <memory>
 #include <boost/smart_ptr/shared_ptr.hpp>
-#ifdef USE_MPI
+#ifdef CONFIGURATION_USE_MPI
 #include <mpi.h>
-#endif
 #include "gridpack/parallel/communicator.hpp"
+#endif
 namespace gridpack {
 namespace utility {
 
@@ -94,7 +94,9 @@ class Configuration {
  */
 
 	class ConfigInternals * pimpl;
+#ifdef CONFIGURATION_USE_MPI
 	bool initialize_internal(MPI_Comm comm); 
+#endif
 public:
 	typedef std::string KeyType;
 	static const char KeySep = '.';  // inhereted from boost, could change at some cost
@@ -122,7 +124,7 @@ public:
 	/**
     * read a configuration file. true == success, false == some kind of failure
     */
-#ifdef USE_MPI
+#ifdef CONFIGURATION_USE_MPI
    /**
     * Open external configuration file on all ranks on communicator comm
     * @param file name of external configuration file

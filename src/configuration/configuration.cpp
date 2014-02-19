@@ -28,6 +28,18 @@ public:
 	bool initialize(const std::string &);
 } ;
 
+static void merge_trees(boost::property_tree::ptree &parent, 
+						const boost::property_tree::ptree::path_type &childPath, 
+						const boost::property_tree::ptree &child) 
+{
+	for(ptree::const_iterator it=child.begin();it!=child.end();++it) {
+	    ptree::path_type curPath = childPath / ptree::path_type(it->first);
+		parent.add_child(curPath,it->second);
+//	    merge_trees(parent, curPath, it->second);
+  }
+}
+
+
 
 Configuration::Configuration(void)
 {
@@ -79,16 +91,16 @@ static bool dump_xml(boost::property_tree::ptree pt, std::ostream & out, int ind
 }
 
 
-#ifdef USE_MPI
+#ifdef CONFIGURATION_USE_MPI
 bool Configuration::open(const std::string & file,
                          gridpack::parallel::Communicator tcomm) {
 #else
 bool Configuration::open(const std::string & file) {
 #endif
 
-#ifdef USE_MPI
-   MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
-	int rank;
+	int rank = 0;
+#ifdef CONFIGURATION_USE_MPI
+    MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
 	MPI_Comm_rank(comm,&rank);
 	if(rank != 0) {
 		return initialize_internal(comm);
@@ -104,7 +116,7 @@ bool Configuration::open(const std::string & file) {
 		str.assign((std::istreambuf_iterator<char>(input)),
 					std::istreambuf_iterator<char>());
 	}
-#ifdef USE_MPI
+#ifdef CONFIGURATION_USE_MPI
 	int n = str.size();
 	MPI_Bcast(&n, 1, MPI_INT, rank, comm);
 	MPI_Bcast((void*) str.c_str(), n, MPI_CHAR, rank, comm);
@@ -134,11 +146,13 @@ bool Configuration::open(const std::string & file) {
 
 bool ConfigInternals::initialize(const std::string & input) {
 	std::istringstream ss(input);
-    read_xml(ss, pt);
+	boost::property_tree::ptree pt0;	
+    read_xml(ss, pt0);
+	merge_trees(pt,"",pt0);
 	return true;
 }
 
-#ifdef USE_MPI
+#ifdef CONFIGURATION_USE_MPI
 bool Configuration::initialize(gridpack::parallel::Communicator tcomm) {
 	std::cout << "warning: Configuration::initialize is deprecated" << std::endl;
    MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
