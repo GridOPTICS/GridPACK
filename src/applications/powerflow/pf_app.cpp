@@ -270,11 +270,18 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     busIO.header(ioBuf);
     iter++;
   }
+
   // Push final result back onto buses
   timer->start(t_bmap);
   factory.setMode(RHS);
   vMap.mapToBus(X);
   timer->stop(t_bmap);
+
+  // Make sure that ghost buses have up-to-date values before printing out
+  // results
+  timer->start(t_updt);
+  network->updateBuses();
+  timer->stop(t_updt);
 
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(128,network);
   branchIO.header("\n   Branch Power Flow\n");
