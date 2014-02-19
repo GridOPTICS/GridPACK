@@ -507,6 +507,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const char *signal)
  */
 gridpack::ComplexType gridpack::powerflow::PFBus::getComplexVoltage(void)
 {
+  p_a = *p_vAng_ptr;
+  p_v =  *p_vMag_ptr;
   gridpack::ComplexType ret(cos(p_a),sin(p_a));
   ret = ret*p_v;
   return ret;
