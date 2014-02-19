@@ -139,7 +139,11 @@ PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
     PetscInt lrows(local_rows), grows(PETSC_DECIDE);
     ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRXX(ierr);
 
+#if 0
     PetscInt lcols(PETSC_DECIDE), gcols(global_cols);
+#else
+    PetscInt gcols(PETSC_DECIDE), lcols(global_cols);
+#endif
     if (grows == global_cols) {
       lcols = lrows;
     } else {
