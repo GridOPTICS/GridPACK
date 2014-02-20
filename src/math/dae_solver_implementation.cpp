@@ -8,7 +8,7 @@
 /**
  * @file   dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-12 13:58:40 d3g096
+ * @date   2014-02-19 12:04:43 d3g096
  * 
  * @brief  
  * 
@@ -34,7 +34,7 @@ DAESolverImplementation::DAESolverImplementation(const parallel::Communicator& c
   : parallel::Distributed(comm),
     utility::Configurable("DAESolver"),
     utility::Uncopyable(),
-    p_J(comm, local_size, comm.size()*local_size),
+    p_J(comm, local_size, local_size),
     p_Fbuilder(fbuilder), p_Jbuilder(jbuilder)
 {
   

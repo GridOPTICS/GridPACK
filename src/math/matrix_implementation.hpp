@@ -9,7 +9,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-10-28 14:33:05 d3g096
+ * @date   2014-02-19 11:46:28 d3g096
  * 
  * @brief  
  * 
@@ -73,6 +73,12 @@ public:
   int cols(void) const
   {
     return this->p_cols();
+  }
+
+  /// Get the number of local columns in this matirx
+  int localCols(void) const
+  {
+    return this->p_localCols();
   }
 
   /// Set an individual element
@@ -204,6 +210,9 @@ protected:
 
   /// Get the number of columns in this matrix (specialized)
   virtual int p_cols(void) const = 0;
+
+  /// Get the number of local rows in this matirx (specialized)
+  virtual int p_localCols(void) const = 0;
 
   /// Set an individual element
   virtual void p_setElement(const int& i, const int& j, const ComplexType& x) = 0;

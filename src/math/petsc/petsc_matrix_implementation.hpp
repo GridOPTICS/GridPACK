@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2013-12-04 11:39:17 d3g096
+ * @date   2014-02-19 11:47:43 d3g096
  * 
  * @brief  
  * 
@@ -42,17 +42,17 @@ public:
 
   /// Default constructor
   PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const int& local_rows, const int& cols,
+                            const int& local_rows, const int& local_cols,
                             const bool& dense = false);
 
   /// Construct a sparse matrix with an estimate of (maximum) usage
   PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const int& local_rows, const int& cols,
+                            const int& local_rows, const int& local_cols,
                             const int& max_nonzero_per_row);
 
   /// Construct a sparse matrix with number of nonzeros in each row
   PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const int& local_rows, const int& cols,
+                            const int& local_rows, const int& local_cols,
                             const int *nonzeros_by_row);
   
 
@@ -112,6 +112,9 @@ protected:
 
   /// Get the number of columns in this matrix (specialized)
   int p_cols(void) const;
+
+  /// Get the number of local rows in this matirx (specialized)
+  int p_localCols(void) const;
 
   /// Set an individual element
   void p_setElement(const int& i, const int& j, const ComplexType& x);

@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 09:06:56 d3g096
+ * @date   2014-02-19 12:02:15 d3g096
  * 
  * @brief  
  * 
@@ -151,7 +151,7 @@ BOOST_AUTO_TEST_CASE( Versteeg )
     
 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, global_size, 
+    A(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse));
   std::auto_ptr<gridpack::math::Vector>
     b(new gridpack::math::Vector(world, local_size)),
@@ -230,9 +230,9 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
     
 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, global_size, 
+    A(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse)),
-    I(new gridpack::math::Matrix(world, local_size, global_size, 
+    I(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse));
   I->identity();
 
@@ -304,9 +304,9 @@ BOOST_AUTO_TEST_CASE ( VersteegMatrixInverse )
     
 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, global_size, 
+    A(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Sparse)),
-    I(new gridpack::math::Matrix(world, local_size, global_size, 
+    I(new gridpack::math::Matrix(world, local_size, local_size, 
                                  gridpack::math::Matrix::Dense));
   I->identity();
 

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-02-17 12:52:44 d3g096
+ * @date   2014-02-20 08:32:07 d3g096
  * 
  * @brief  
  * 
@@ -19,7 +19,12 @@
 
 static const char* SCCS_ID = "$Id$ Battelle PNL";
 
+#define GA_DENSE_TRANSPOSE 0
+
+#if GA_DENSE_TRANSPOSE
 #include <ga.h>
+#endif
+
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include "matrix.hpp"
@@ -57,8 +62,6 @@ transpose(const Matrix& A, Matrix& result)
                  A.rows() % A.cols() % result.rows() % result.cols());
     throw Exception(msg);
   }
-  
-
 }
 
 // -------------------------------------------------------------
@@ -72,9 +75,10 @@ transpose(const Matrix& A)
   
   PetscErrorCode ierr(0);
   try {
+#if GA_DENSE_TRANSPOSE
     MatType type;
     MatGetType(*pA,&type);
-    if (strcmp(type,MATMPIDENSE) == 0 && A.communicator().size() > 1) {
+    if (strcmp(type,MATMPIDENSE) == 0 && A.processor_size() > 1) {
       // This is a hack to get around problems with changing distributions in
       // PETSc. Copy the matrix to a global array, do the transpose in GA, and
       // then copy to a new PETSc matrix while preserving the distribution of the
@@ -84,8 +88,8 @@ transpose(const Matrix& A)
       int grows(A.rows());
       int gcols(A.cols());
       ComplexType vals[lrows*gcols];
-      int nprocs = A.communicator().size();
-      int me = A.communicator().rank();
+      int nprocs = A.processor_size();
+      int me = A.processor_rank();
       int tmapc[nprocs+1];
       int mapc[nprocs+1];
       //printf("p[%d] (transpose) Got to 1\n",me);
@@ -168,6 +172,9 @@ transpose(const Matrix& A)
     } else {
       ierr = MatTranspose(*pA, MAT_INITIAL_MATRIX, &pAtrans); CHKERRXX(ierr);
     }
+#else
+    ierr = MatTranspose(*pA, MAT_INITIAL_MATRIX, &pAtrans); CHKERRXX(ierr);
+#endif
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }
@@ -253,7 +260,7 @@ diagonal(const Matrix& A, Vector& result)
 Matrix *
 diagonal(const Vector& x, const Matrix::StorageType& stype)
 {
-  Matrix *result(new Matrix(x.communicator(), x.localSize(), x.size(), stype));
+  Matrix *result(new Matrix(x.communicator(), x.localSize(), x.localSize(), stype));
   const Vec *pX(PETScVector(x));
   Mat *pA(PETScMatrix(*result));
   PetscErrorCode ierr(0);

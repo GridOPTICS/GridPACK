@@ -9,7 +9,7 @@
 /**
  * @file   environment.cpp
  * @author William A. Perkins
- * @date   2014-02-10 14:07:08 d3g096
+ * @date   2014-02-19 13:18:58 d3g096
  * 
  * @brief  
  * 
@@ -36,7 +36,7 @@ Environment::Environment(int& argc, char **argv,
   : p_boostEnv(argc, argv)
 {
   GA_Initialize();
-  MA_init(MT_C_CHAR, ma_stack, ma_heap);
+  MA_init(C_DBL, ma_stack, ma_heap);
 }
 
 Environment::~Environment(void)

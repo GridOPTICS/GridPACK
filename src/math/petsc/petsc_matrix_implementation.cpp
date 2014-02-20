@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2014-01-31 11:31:42 d3g096
+ * @date   2014-02-19 11:51:41 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -53,12 +53,13 @@ PETScMatrixImplementation::p_getCommunicator(const Mat& m)
  * @param dense 
  */
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, const int& global_cols,
+                                                     const int& local_rows, 
+                                                     const int& local_cols,
                                                      const bool& dense)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
-  p_build_matrix(comm, local_rows, global_cols);
+  p_build_matrix(comm, local_rows, local_cols);
   if (dense) {
     p_set_dense_matrix();
   } else {
@@ -67,22 +68,24 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
 }
 
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, const int& cols,
+                                                     const int& local_rows, 
+                                                     const int& local_cols,
                                                      const int& max_nonzero_per_row)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
-  p_build_matrix(comm, local_rows, cols);
+  p_build_matrix(comm, local_rows, local_cols);
   p_set_sparse_matrix(max_nonzero_per_row);
 }
 
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, const int& cols,
+                                                     const int& local_rows, 
+                                                     const int& local_cols,
                                                      const int *nonzero_by_row)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
-  p_build_matrix(comm, local_rows, cols);
+  p_build_matrix(comm, local_rows, local_cols);
   p_set_sparse_matrix(nonzero_by_row);
 }
 
@@ -127,7 +130,7 @@ PETScMatrixImplementation::~PETScMatrixImplementation(void)
 void
 PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
                                           const int& local_rows, 
-                                          const int& global_cols)
+                                          const int& local_cols)
 {
   PetscErrorCode ierr(0);
   try {
@@ -139,16 +142,8 @@ PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
     PetscInt lrows(local_rows), grows(PETSC_DECIDE);
     ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRXX(ierr);
 
-#if 0
-    PetscInt lcols(PETSC_DECIDE), gcols(global_cols);
-#else
-    PetscInt gcols(PETSC_DECIDE), lcols(global_cols);
-#endif
-    if (grows == global_cols) {
-      lcols = lrows;
-    } else {
-      ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
-    }
+    PetscInt lcols(local_cols), gcols(PETSC_DECIDE);
+    ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
     
     ierr = MatCreate(this->communicator(), &p_matrix); CHKERRXX(ierr);
     ierr = MatSetSizes(p_matrix, lrows, lcols, grows, gcols); CHKERRXX(ierr);
@@ -332,6 +327,23 @@ PETScMatrixImplementation::p_cols(void) const
   return result;
 }  
 
+// -------------------------------------------------------------
+// PETScMatrixImplementation::p_local_rows
+// -------------------------------------------------------------
+int
+PETScMatrixImplementation::p_localCols(void) const
+{
+  PetscErrorCode ierr(0);
+  int result(0);
+  try {
+    PetscInt cols;
+    ierr = MatGetLocalSize(p_matrix, PETSC_NULL, &cols); CHKERRXX(ierr);
+    result = cols;
+  } catch (const PETSc::Exception& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}  
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_setElement
 // -------------------------------------------------------------

@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-01-09 12:11:31 d3g096
+ * @date   2014-02-19 12:40:51 d3g096
  * 
  * @brief  
  * 
@@ -59,7 +59,7 @@ LinearSolverImplementation::solve(const Matrix& B) const
 {
   Vector b(B.communicator(), B.localRows());
   Vector X(B.communicator(), B.localRows());
-  Matrix *result(new Matrix(B.communicator(), B.localRows(), B.cols(), Matrix::Dense));
+  Matrix *result(new Matrix(B.communicator(), B.localRows(), B.localCols(), Matrix::Dense));
 
   int ilo, ihi;
   X.localIndexRange(ilo, ihi);

@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-02-17 13:08:39 d3g096
+ * @date   2014-02-19 12:26:16 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -55,7 +55,7 @@ make_test_matrix(const gridpack::parallel::Communicator& comm,
   boost::mpi::all_reduce(comm, local_size, global_size, std::plus<int>());
 
   gridpack::math::Matrix *A =
-    new gridpack::math::Matrix(comm, local_size, global_size, the_storage_type);
+    new gridpack::math::Matrix(comm, local_size, local_size, the_storage_type);
   return A;
 }
 
@@ -553,6 +553,9 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
     A(make_and_fill_test_matrix(world, bandwidth, global_size)),
     T(transpose(*A));
 
+  A->print();
+  T->print();
+
   std::auto_ptr<gridpack::math::Vector>  
     xvector(new gridpack::math::Vector(A->communicator(), A->localRows())),
     yvector, zvector;
@@ -617,7 +620,7 @@ BOOST_AUTO_TEST_CASE( MultiplyIdentity )
   gridpack::parallel::Communicator world;
   std::auto_ptr<gridpack::math::Matrix> 
     A(make_and_fill_test_matrix(world, bandwidth, global_size)),
-    B(new gridpack::math::Matrix(A->communicator(), A->localRows(), A->cols(), 
+    B(new gridpack::math::Matrix(A->communicator(), A->localRows(), A->localCols(), 
                                  gridpack::math::Matrix::Sparse));
   B->identity();
   std::auto_ptr<gridpack::math::Matrix> 
@@ -653,8 +656,8 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
     { -11.0, 25.0,
         6.0, 21.0 }; 
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, 2, world.size()*3)),
-    B(new gridpack::math::Matrix(world, 3, world.size()*2,
+    A(new gridpack::math::Matrix(world, 2, 3)),
+    B(new gridpack::math::Matrix(world, 3, 2,
                                  gridpack::math::Matrix::Sparse));
 
   std::vector<int> iidx(2*3) , jidx(2*3);
@@ -712,7 +715,7 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
     { 1.0,  2.0,  3.0,
       4.0,  5.0,  6.0 };
   std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, 2, world.size()*3, the_storage_type));
+    A(new gridpack::math::Matrix(world, 2, 3, the_storage_type));
 
   std::vector<int> iidx(2*3) , jidx(2*3);
   int k(0);
@@ -734,7 +737,7 @@ BOOST_AUTO_TEST_CASE( NonSquareTranspose )
   // FIXME: check B contents
 
   std::auto_ptr<gridpack::math::Matrix> 
-    C(new gridpack::math::Matrix(world, 3, world.size()*2, the_storage_type));
+    C(new gridpack::math::Matrix(world, 3, 2, the_storage_type));
   transpose(*A, *C);
   C->print();
 
@@ -838,7 +841,7 @@ BOOST_AUTO_TEST_CASE( load_save )
 
   std::auto_ptr<gridpack::math::Matrix> 
     B(new gridpack::math::Matrix(A->communicator(), 
-                                 A->localRows(), A->cols(),
+                                 A->localRows(), A->localCols(),
                                  the_storage_type));
   B->loadBinary(out.c_str());
 
