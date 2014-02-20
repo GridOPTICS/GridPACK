@@ -6,7 +6,7 @@
     <Contingencies>
       <Contingency>
         <contingencyName>CTG1</contingencyName>
-        <contingencyLineBuses> 2 8 </contingencyLineBuses>
+        <contingencyLineBuses> 7 8 </contingencyLineBuses>
         <contingencyLineNames> BL </contingencyLineNames>
       </Contingency>
     </Contingencies>
