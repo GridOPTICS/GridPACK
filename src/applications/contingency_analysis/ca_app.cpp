@@ -34,9 +34,12 @@
 
 /**
  * Basic constructor
+ * @param comm communicator that hosts contingency application
  */
-gridpack::contingency_analysis::CAApp::CAApp(void)
+gridpack::contingency_analysis::CAApp::CAApp(gridpack::parallel::Communicator comm)
 {
+  p_network.reset(new CANetwork(comm));
+  p_factory.reset(new CAFactory(p_network));
 }
 
 /**
@@ -47,16 +50,15 @@ gridpack::contingency_analysis::CAApp::~CAApp(void)
 }
 
 /**
- * Execute application
- */
-void gridpack::contingency_analysis::CAApp::execute(
-    gridpack::parallel::Communicator comm,
-    gridpack::contingency_analysis::Contingency contingency,
-    int argc, char** argv)
+ * Initialize application by reading in grid network, partioning it and
+ * setting up buffers and indices
+ * @param argc number of arguments
+ * @param argv list of character strings
+ */ 
+void gridpack::contingency_analysis::CAApp::init(int argc, char** argv)
 {
-  gridpack::utility::CoarseTimer *timer = 
-    gridpack::utility::CoarseTimer::instance();
-  boost::shared_ptr<CANetwork> network(new CANetwork(comm));
+  //boost::shared_ptr<CANetwork> p_network(new CANetwork(comm));
+  gridpack::parallel::Communicator comm = p_network->communicator();
 
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
@@ -67,73 +69,78 @@ void gridpack::contingency_analysis::CAApp::execute(
   } else {
     config->open("input.xml",comm);
   }
-  printf("Got to 1\n");
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Contingency_analysis");
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
 
   // load input file
-  printf("Got to 2\n");
-  gridpack::parser::PTI23_parser<CANetwork> parser(network);
+  gridpack::parser::PTI23_parser<CANetwork> parser(p_network);
   parser.parse(filename.c_str());
-  printf("Got to 3\n");
 
   // partition network
-  network->partition();
-  printf("Got to 4\n");
-
-  // Create serial IO object to export data from buses or branches
-  gridpack::serial_io::SerialBusIO<CANetwork> busIO(128, network);
-  gridpack::serial_io::SerialBranchIO<CANetwork> branchIO(128, network);
-  char ioBuf[128];
-  printf("Got to 5\n");
+  p_network->partition();
 
   // create factory
-  gridpack::contingency_analysis::CAFactory factory(network);
-  factory.load();
-  printf("Got to 6\n");
+  //boost::shared_ptr<CAFactory> p_factory(new CAFactory(p_network));
+  p_factory->load();
 
   // set network components using factory
-  factory.setComponents();
-  printf("Got to 7\n");
+  p_factory->setComponents();
  
-  factory.setExchange();
-  printf("Got to 8\n");
+  p_factory->setExchange();
 
   // initialize bus data exchange
-  network->initBusUpdate();
-  printf("Got to 9\n");
+  p_network->initBusUpdate();
+
+}
+/**
+ * Execute application
+ */
+void gridpack::contingency_analysis::CAApp::execute(
+    gridpack::contingency_analysis::Contingency contingency)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  gridpack::utility::CoarseTimer *timer = 
+    gridpack::utility::CoarseTimer::instance();
+
+  // get configuration file
+  gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.Contingency_analysis");
+  std::string filename = cursor->get("networkConfiguration",
+      "No network configuration specified");
+
+  // Create serial IO object to export data from buses or branches
+  gridpack::serial_io::SerialBusIO<CANetwork> busIO(128, p_network);
+  gridpack::serial_io::SerialBranchIO<CANetwork> branchIO(128, p_network);
+  char ioBuf[128];
 
   // set contingency
-  factory.setContingency(contingency);
+  p_factory->setContingency(contingency);
 
   // set YBus components so that you can create Y matrix  
-  factory.setYBus();
-  printf("Got to 10\n");
+  p_factory->setYBus();
 
-  factory.setMode(YBus);
-  gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(network);
-  printf("Got to 11\n");
+  p_factory->setMode(YBus);
+  gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
-  printf("Got to 12\n");
   branchIO.header("\n=== orginal ybus: ============\n");
   orgYbus->print();
-  printf("Got to 13\n");
 
   //////////////////////////////////////////////////////////////
-  factory.setMode(S_Cal);
+  p_factory->setMode(S_Cal);
 
   // make Sbus components to create S vector
-  factory.setSBus();
+  p_factory->setSBus();
 
   // Set PQ
-  factory.setMode(RHS);
-  gridpack::mapper::BusVectorMap<CANetwork> vMap(network);
+  p_factory->setMode(RHS);
+  gridpack::mapper::BusVectorMap<CANetwork> vMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   //PQ->print();
-  factory.setMode(Jacobian);
-  gridpack::mapper::FullMatrixMap<CANetwork> jMap(network);
+  p_factory->setMode(Jacobian);
+  gridpack::mapper::FullMatrixMap<CANetwork> jMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   //J->print(); 
 
@@ -168,16 +175,16 @@ void gridpack::contingency_analysis::CAApp::execute(
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
-    factory.setMode(RHS);
+    p_factory->setMode(RHS);
     vMap.mapToBus(X);
 
     // Exchange data between ghost buses (I don't think we need to exchange data
     // between branches)
-    network->updateBuses();
+    p_network->updateBuses();
 
     // Create new versions of Jacobian and PQ vector
     vMap.mapToVector(PQ);
-    factory.setMode(Jacobian);
+    p_factory->setMode(Jacobian);
     jMap.mapToMatrix(J);
 
     // Create linear solver
@@ -204,7 +211,7 @@ void gridpack::contingency_analysis::CAApp::execute(
     iter++;
   }
   // Push final result back onto buses
-  factory.setMode(RHS);
+  p_factory->setMode(RHS);
   vMap.mapToBus(X);
 
   branchIO.header("\n   Branch Power Flow\n");
@@ -218,6 +225,6 @@ void gridpack::contingency_analysis::CAApp::execute(
   busIO.write();
 
   // clear contingency
-  factory.clearContingency(contingency);
+  p_factory->clearContingency(contingency);
 }
 

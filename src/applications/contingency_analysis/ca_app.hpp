@@ -19,7 +19,10 @@
 #define _ca_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/parallel/communicator.hpp"
 #include "gridpack/configuration/configuration.hpp"
+#include "gridpack/applications/contingency_analysis/ca_components.hpp"
+#include "gridpack/applications/contingency_analysis/ca_factory.hpp"
 #include "gridpack/applications/contingency_analysis/ca_driver.hpp"
 
 namespace gridpack {
@@ -31,8 +34,9 @@ class CAApp
   public:
     /**
      * Basic constructor
+     * @param comm communicator that hosts contingency application
      */
-    CAApp(void);
+    CAApp(gridpack::parallel::Communicator comm);
 
     /**
      * Basic destructor
@@ -40,15 +44,22 @@ class CAApp
     ~CAApp(void);
 
     /**
-     * Execute application
+     * Initialize application by reading in grid network, partioning it and
+     * setting up buffers and indices
      * @param argc number of arguments
      * @param argv list of character strings
-     */
-    void execute(gridpack::parallel::Communicator comm,
-                 gridpack::contingency_analysis::Contingency contingency,
-                 int argc, char** argv);
+     */ 
+    void init(int argc, char** argv);
 
-    private:
+    /**
+     * Execute application for a particular contingency
+     * @param contingency data structure describing the contingency
+     */
+    void execute(gridpack::contingency_analysis::Contingency contingency);
+
+  private:
+    boost::shared_ptr<CANetwork> p_network;
+    boost::shared_ptr<CAFactory> p_factory;
 };
 
 } // contingency analysis 

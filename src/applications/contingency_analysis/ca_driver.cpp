@@ -135,6 +135,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
+
   // get a list of contingencies
   cursor =
     config->getCursor("Configuration.Contingency_analysis.Contingencies");
@@ -155,6 +156,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
 
+  // Create contingency applications on each task communicator
+  gridpack::contingency_analysis::CAApp ca_app(task_comm);
+  ca_app.init(argc,argv);
+
   // set up task manager
   gridpack::parallel::TaskManager taskmgr(world);
   int ntasks = contingencies.size();
@@ -162,9 +167,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   // evaluate contingencies
   int task_id;
-  gridpack::contingency_analysis::CAApp ca_app;
   while (taskmgr.nextTask(task_comm, &task_id)) {
-    ca_app.execute(task_comm,events[task_id],argc,argv);
+    ca_app.execute(events[task_id]);
   }
 }
 
