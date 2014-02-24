@@ -40,7 +40,7 @@ add_executable(se.x
    se_main.cpp
 )
 
-target_link_libraries(ds.x ${target_libraries})
+target_link_libraries(se.x ${target_libraries})
 
 
 # -------------------------------------------------------------
