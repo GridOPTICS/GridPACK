@@ -352,6 +352,9 @@ void gridpack::powerflow::PFBus::load(
           p_v = vs; //reset initial PV voltage to set voltage
           if (itype == 2) p_isPV = true;
         }
+        int id=-1;
+        data->getValue(GENERATOR_ID,&id,i);
+        p_gid.push_back(id);
       }
     }
   }
@@ -428,6 +431,40 @@ bool gridpack::powerflow::PFBus::isIsolated(void) const
 double gridpack::powerflow::PFBus::getPhase()
 {
   return *p_vAng_ptr;
+}
+
+/**
+ * Get generator status
+ * @return vector of generator statuses
+ */
+std::vector<int> gridpack::powerflow::PFBus::getGenStatus()
+{
+  return p_gstatus;
+}
+
+/**
+ * Get list of generator IDs
+ * @return vector of generator IDs
+ */
+std::vector<int> gridpack::powerflow::PFBus::getGenerators()
+{
+  return p_gid;
+}
+
+/**
+ * Set generator status
+ * @param gen_id generator ID
+ * @param status generator status
+ */
+void gridpack::powerflow::PFBus::setGenStatus(int gen_id, int status)
+{
+  int i;
+  for (i=0; i<p_gstatus.size(); i++) {
+    if (gen_id == p_gid[i]) {
+      p_gstatus[i] = status;
+      break;
+    }
+  }
 }
 
 /**
