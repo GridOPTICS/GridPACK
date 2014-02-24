@@ -351,6 +351,9 @@ void gridpack::contingency_analysis::CABus::load(
           p_v = vs; //reset initial PV voltage to set voltage
           if (itype == 2) p_isPV = true;
         }
+        int id=-1;
+        data->getValue(GENERATOR_ID,&id,i);
+        p_gid.push_back(id);
       }
     }
   }
@@ -421,12 +424,46 @@ bool gridpack::contingency_analysis::CABus::isIsolated(void) const
 }
 
 /**
+ * Get generator status
+ * @return vector of generator statuses
+ */
+std::vector<int> gridpack::contingency_analysis::CABus::getGenStatus()
+{
+  return p_gstatus;
+}
+
+/**
+ * Get list of generator IDs
+ * @return vector of generator IDs
+ */
+std::vector<int> gridpack::contingency_analysis::CABus::getGenerators()
+{
+  return p_gid;
+}
+
+/**
  * Return the value of the phase angle on this bus
  * @return: phase angle
  */
 double gridpack::contingency_analysis::CABus::getPhase()
 {
   return *p_vAng_ptr;
+}
+
+/**
+ * Set generator status
+ * @param gen_id generator ID
+ * @param status generator status
+ */
+void gridpack::contingency_analysis::CABus::setGenStatus(int gen_id, int status)
+{
+  int i;
+  for (i=0; i<p_gstatus.size(); i++) {
+    if (gen_id == p_gid[i]) {
+      p_gstatus[i] = status;
+      break;
+    }
+  }
 }
 
 /**

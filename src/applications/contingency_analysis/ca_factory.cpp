@@ -177,21 +177,50 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
     idx2 = branch->getBus2OriginalIndex();
     // check branch indices against contingencies
     for (j = 0; j<size; j++) {
-      if (contingency.p_from[j] == idx1 && contingency.p_to[j] == idx2) {
-        // contingency matches branch indices. Find tag that matches contingency
-        std::vector<bool> status = branch->getLineStatus();
-        std::vector<std::string> tags = branch->getLineTags();
-        int l;
-        int lsize = status.size();
-        for (l=0; l<lsize; l++) {
-	  // clean up line name
-	  int ntok1 = tags[l].find_first_not_of('\'',0);
-	  int ntok2 = tags[l].find('\'',ntok1);
-	  if (ntok2 == std::string::npos) ntok2 = tags[l].length();
-	  std::string tag = tags[l].substr(ntok1,ntok2-ntok1);
-          if (tag == contingency.p_ckt[j]) {
-            p_saveStatus.push_back(status[j]);
-            branch->setLineStatus(tags[l], false);
+      if (contingency.p_type == gridpack::contingency_analysis::Branch) {
+        if (contingency.p_from[j] == idx1 && contingency.p_to[j] == idx2) {
+          // contingency matches branch indices. Find tag that matches contingency
+          std::vector<bool> status = branch->getLineStatus();
+          std::vector<std::string> tags = branch->getLineTags();
+          int l;
+          int lsize = status.size();
+          for (l=0; l<lsize; l++) {
+            // clean up line name
+            int ntok1 = tags[l].find_first_not_of('\'',0);
+            int ntok2 = tags[l].find('\'',ntok1);
+            if (ntok2 == std::string::npos) ntok2 = tags[l].length();
+            std::string tag = tags[l].substr(ntok1,ntok2-ntok1);
+            if (tag == contingency.p_ckt[j]) {
+              p_saveStatus.push_back(status[j]);
+              branch->setLineStatus(tags[l], false);
+            }
+          }
+        }
+      }
+    }
+  }
+  int numBus = p_network->numBuses();
+  gridpack::contingency_analysis::CABus *bus;
+  int idx;
+  for (i=0; i<numBus; i++) {
+    bus = dynamic_cast<CABus*>(p_network->getBus(i).get());
+    idx = bus->getOriginalIndex();
+    // check bus indices against contingencies
+    for (j = 0; j<size; j++) {
+      if (contingency.p_type == gridpack::contingency_analysis::Generator) {
+        if (contingency.p_busid[j] == idx) {
+          // continency matches bus ID. Find generator ID that matches
+          // contingency
+          int genid = contingency.p_genid[j];
+          std::vector<int> status = bus->getGenStatus();
+          std::vector<int>  genids = bus->getGenerators();
+          int l;
+          int lsize = status.size();
+          for (l=0; l<lsize; l++) {
+            if (genids[l] == genid ) {
+              p_saveStatus.push_back(static_cast<bool>(status[l]));
+              bus->setGenStatus(genids[l], false);
+            }
           }
         }
       }
@@ -224,14 +253,41 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
         int l;
         int lsize = status.size();
         for (l=0; l<lsize; l++) {
-	  // clean up line name
-	  int ntok1 = tags[l].find_first_not_of('\'',0);
-	  int ntok2 = tags[l].find('\'',ntok1);
-	  if (ntok2 == std::string::npos) ntok2 = tags[l].length();
-	  std::string tag = tags[l].substr(ntok1,ntok2-ntok1);
+          // clean up line name
+          int ntok1 = tags[l].find_first_not_of('\'',0);
+          int ntok2 = tags[l].find('\'',ntok1);
+          if (ntok2 == std::string::npos) ntok2 = tags[l].length();
+          std::string tag = tags[l].substr(ntok1,ntok2-ntok1);
           if (tag == contingency.p_ckt[j]) {
             branch->setLineStatus(tags[l], p_saveStatus[count]);
             count++;
+          }
+        }
+      }
+    }
+  }
+  int numBus = p_network->numBuses();
+  gridpack::contingency_analysis::CABus *bus;
+  int idx;
+  for (i=0; i<numBus; i++) {
+    bus = dynamic_cast<CABus*>(p_network->getBus(i).get());
+    idx = bus->getOriginalIndex();
+    // check bus indices against contingencies
+    for (j = 0; j<size; j++) {
+      if (contingency.p_type == gridpack::contingency_analysis::Generator) {
+        if (contingency.p_busid[j] == idx) {
+          // continency matches bus ID. Find generator ID that matches
+          // contingency
+          int genid = contingency.p_genid[j];
+          std::vector<int> status = bus->getGenStatus();
+          std::vector<int>  genids = bus->getGenerators();
+          int l;
+          int lsize = status.size();
+          for (l=0; l<lsize; l++) {
+            if (genids[l] == genid) {
+              bus->setGenStatus(genids[l],static_cast<int>(p_saveStatus[count]));
+              count++;
+            }
           }
         }
       }

@@ -144,6 +144,18 @@ class CABus
     double getPhase(void);
 
     /**
+     * Get generator status
+     * @return vector of generator statuses
+     */
+    std::vector<int> getGenStatus();
+
+    /**
+     * Get list of generator IDs
+     * @return vector of generator IDs
+     */
+    std::vector<int> getGenerators();
+
+    /**
      * Return whether or not the bus is a PV bus (V held fixed in powerflow
      * equations)
      * @return true if bus is PV bus
@@ -165,6 +177,13 @@ class CABus
      * Set phase angle value
      */
     void setPhase(void);
+
+    /**
+     * Set generator status
+     * @param gen_id generator ID
+     * @param status generator status
+     */
+    void setGenStatus(int gen_id, int status);
 
     /**
      * setGBus
@@ -205,6 +224,7 @@ class CABus
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
     std::vector<double> p_vs;
+    std::vector<int> p_gid;
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;
@@ -237,6 +257,7 @@ private:
       & p_angle & p_voltage
       & p_pg & p_qg
       & p_gstatus
+      & p_vs & p_gid
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj

@@ -5,9 +5,16 @@
     <groupSize>1</groupSize>
     <Contingencies>
       <Contingency>
+        <contingencyType>Line</contingencyType>
         <contingencyName>CTG1</contingencyName>
         <contingencyLineBuses> 7 8 </contingencyLineBuses>
         <contingencyLineNames> BL </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>CTG2</contingencyName>
+        <contingencyBuses> 3 6 </contingencyBuses>
+        <contingencyGenerators> 1 1 </contingencyGenerators>
       </Contingency>
     </Contingencies>
     <LinearSolver>
