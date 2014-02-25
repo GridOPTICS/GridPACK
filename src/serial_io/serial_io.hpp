@@ -76,7 +76,7 @@ class SerialBusIO {
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_fout.is_open()) p_fout.close();
+      if (p_useFile && p_fout->is_open()) p_fout->close();
     }
   }
 
@@ -87,10 +87,30 @@ class SerialBusIO {
   void open(const char *filename)
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_fout.is_open()) p_fout.close();
-      p_fout.open(filename);
+      if (p_useFile && p_fout->is_open()) p_fout->close();
+      if (!p_useFile) p_fout.reset(new std::ofstream);
+      p_fout->open(filename);
       p_useFile = true;
     }
+  }
+
+  /**
+   * return IO stream
+   * @return IO stream to file
+   */
+  boost::shared_ptr<std::ofstream> getStream()
+  {
+    return p_fout;
+  }
+
+  /**
+   * Set IO stream to point to existing file
+   * @param IO stream to file
+   */
+  void setStream(boost::shared_ptr<std::ofstream> stream)
+  {
+    p_fout = stream;
+    p_useFile = true;
   }
 
   /**
@@ -99,8 +119,7 @@ class SerialBusIO {
   void close()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_fout.is_open()) p_fout.close();
-      p_useFile = false;
+      if (p_fout->is_open()) p_fout->close();
     }
   }
 
@@ -112,7 +131,7 @@ class SerialBusIO {
   void write(const char *signal = NULL)
   {
     if (p_useFile) {
-      write(p_fout, signal);
+      write(*p_fout, signal);
     } else {
       write(std::cout, signal);
     }
@@ -127,7 +146,7 @@ class SerialBusIO {
   void header(const char *str)
   {
     if (p_useFile) {
-      header(p_fout, str);
+      header(*p_fout, str);
     } else {
       header(std::cout, str);
     }
@@ -254,7 +273,7 @@ class SerialBusIO {
     int p_maskGA;
     int p_size;
     bool p_useFile;
-    std::ofstream p_fout;
+    boost::shared_ptr<std::ofstream> p_fout;
     int p_GAgrp;
 };
 
@@ -298,7 +317,7 @@ class SerialBranchIO {
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_fout.is_open()) p_fout.close();
+      if (p_useFile && p_fout->is_open()) p_fout->close();
     }
   }
 
@@ -309,10 +328,30 @@ class SerialBranchIO {
   void open(const char *filename)
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_fout.is_open()) p_fout.close();
-      p_fout.open(filename);
+      if (p_useFile && p_fout->is_open()) p_fout->close();
+      if (!p_useFile) p_fout.reset(new std::ofstream);
+      p_fout->open(filename);
       p_useFile = true;
     }
+  }
+
+  /**
+   * return IO stream
+   * @return IO stream to file
+   */
+  boost::shared_ptr<std::ofstream> getStream()
+  {
+    return p_fout;
+  }
+
+  /**
+   * Set IO stream to point to existing file
+   * @param IO stream to file
+   */
+  void setStream(boost::shared_ptr<std::ofstream> stream)
+  {
+    p_fout = stream;
+    p_useFile = true;
   }
 
   /**
@@ -321,8 +360,7 @@ class SerialBranchIO {
   void close()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_fout.is_open()) p_fout.close();
-      p_useFile = false;
+      if (p_useFile && p_fout->is_open()) p_fout->close();
     }
   }
 
@@ -334,7 +372,7 @@ class SerialBranchIO {
   void write(const char *signal = NULL)
   {
     if (p_useFile) {
-      write(p_fout, signal);
+      write(*p_fout, signal);
     } else {
       write(std::cout, signal);
     }
@@ -349,7 +387,7 @@ class SerialBranchIO {
   void header(const char *str)
   {
     if (p_useFile) {
-      header(p_fout, str);
+      header(*p_fout, str);
     } else {
       header(std::cout, str);
     }
@@ -476,7 +514,7 @@ class SerialBranchIO {
     int p_maskGA;
     int p_size;
     bool p_useFile;
-    std::ofstream p_fout;
+    boost::shared_ptr<std::ofstream> p_fout;
     int p_GAgrp;
 };
 
