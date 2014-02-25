@@ -96,11 +96,40 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
 
-  factory.setMode(YBUS);
+  factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<SENetwork> ybusMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
-  ///branchIO.header("\n=== orginal ybus: ============\n");
-  ///orgYbus->print();
+  boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
+  branchIO.header("\nybus:\n");
+  ybus->print();
+
+  // Read measurements from input file
+
+
+  // Start N-R loop
+
+
+    // Form estimation vector
+
+
+    // Build measurement equation
+
+  
+    // Build gain matrix 
+
+
+    // Form right hand side vector
+
+
+    // Solve linear equation
+
+  
+    // update values
+
+
+  // End N-R loop
+
+
+  // Output 
 
 }
 

@@ -585,43 +585,6 @@ gridpack::state_estimation::SEBranch::getShunt(gridpack::state_estimation::SEBus
 }
 
 /**
- * Return contribution to constraints
- * @param p: real part of constraint
- * @param q: imaginary part of constraint
- */
-void gridpack::state_estimation::SEBranch::getPQ(gridpack::state_estimation::SEBus *bus, double *p, double *q)
-{
-  gridpack::state_estimation::SEBus *bus1 = 
-    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
-  double v1 = bus1->getVoltage();
-  gridpack::state_estimation::SEBus *bus2 =
-    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
-  double v2 = bus2->getVoltage();
-  double cs, sn;
-  double ybusr, ybusi;
-  p_theta = bus1->getPhase() - bus2->getPhase();
-  if (bus == bus1) {
-    cs = cos(p_theta);
-    sn = sin(p_theta);
-    ybusr = p_ybusr_frwd;
-    ybusi = p_ybusi_frwd;
-  } else if (bus == bus2) {
-    cs = cos(-p_theta);
-    sn = sin(-p_theta);
-    ybusr = p_ybusr_rvrs;
-    ybusi = p_ybusi_rvrs;
-  } else {
-    // TODO: Some kind of error
-  }
-  //*p = -v1*v2*(p_ybusr*cs-p_ybusi*sn);
-  //*q = v1*v2*(p_ybusr*sn+p_ybusi*cs);
-  *p = v1*v2*(ybusr*cs+ybusi*sn);
-  *q = v1*v2*(ybusr*sn-ybusi*cs);
-//  printf("v1=%f, v2=%f, cs=%f, sn=%f, p_ybusr=%f, p_ybusi=%f\n", v1,v2,cs,sn,p_ybusr,p_ybusi);
-//  printf("*p=%f,*q=%f\n",*p,*q);
-}
-
-/**
  * Write output from branches to standard out
  * @param string (output) string with information to be printed out
  * @param signal an optional character string to signal to this

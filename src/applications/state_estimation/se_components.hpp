@@ -26,9 +26,9 @@
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
-namespace state_estimation {
+namespace state_estimation{
 
-enum SEMode{YBUS};
+enum SEMode{YBus};
 
 class SEBus
   : public gridpack::ymatrix::YMBus
@@ -78,7 +78,24 @@ class SEBus
      */
     bool vectorValues(ComplexType *values);
 
-    void setValues(ComplexType *values);
+    /**
+     * Set the internal values of the voltage magnitude and phase angle. Need this
+     * function to push values from vectors back onto buses 
+     * @param values array containing voltage magnitude and angle
+     */
+    void setValues(gridpack::ComplexType *values);
+
+    /**
+     * Return the size of the buffer used in data exchanges on the network.
+     * For this problem, the voltage magnitude and phase angle need to be exchanged
+     * @return size of buffer
+     */
+    int getXCBufSize(void);
+
+    /**
+     * Assign pointers for voltage magnitude and phase angle
+     */
+    void setXCBuf(void *buf);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -115,10 +132,23 @@ class SEBus
     double getVoltage(void);
 
     /**
+     * Return the complex voltage on this bus
+     * @return the complex voltage
+     */
+    ComplexType getComplexVoltage(void);
+
+    /**
      * Return the value of the phase angle on this bus
      * @return: phase angle
      */
     double getPhase(void);
+
+    /**
+     * Return whether or not the bus is a PV bus (V held fixed in powerflow
+     * equations)
+     * @return true if bus is PV bus
+     */
+    bool isPV(void);
 
     /**
      * Return whether or not a bus is isolated
@@ -126,74 +156,79 @@ class SEBus
      */
     bool isIsolated(void) const;
 
+    /**
+     * Write output from buses to standard out
+     * @param string (output) string with information to be printed out
+     * @param signal an optional character string to signal to this
+     * routine what about kind of information to write
+     * @return true if bus is contributing string to output, false otherwise
+     */
+    bool serialWrite(char *string, const char *signal = NULL);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
-    int p_mode;
-    double p_theta; // phase angle difference
-    double p_ybusr, p_ybusi;
-    double p_angle, p_voltage;
     bool p_load;
-    double p_pl, p_ql;
-    double p_sbase;
-    bool p_isGen;
+    int p_mode;
+
+    // p_v and p_a are initialized to p_voltage and p_angle respectively,
+    // but may be subject to change during the NR iterations
+    double p_v, p_a;
+    double p_theta; //phase angle difference
+    double p_ybusr, p_ybusi;
+    double p_P0, p_Q0; //double p_sbusr, p_sbusi;
+    double p_angle;   // initial bus angle read from parser
+    double p_voltage; // initial bus voltage read from parser
+    // newly added priavate variables:
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
-    std::vector<double> p_mva, p_r, p_dstr, p_dtr;
-    int p_ngen;
-    int p_type;
-    gridpack::ComplexType p_permYmod;
-    bool p_from_flag, p_to_flag;
+    std::vector<double> p_vs;
+    std::vector<int> p_gid;
+    double p_pl, p_ql;
+    double p_sbase;
+    double p_Pinj, p_Qinj;
+    bool p_isPV;
 
-    // DAE related variables
-    //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
-    //int user_ngen; // User app context variables
-    std::vector<double> p_h, p_d0;
-    //std::vector<double> x, xdot; // DAE variables
-    std::vector<gridpack::ComplexType> p_pelect, p_eprime;
+    /**
+     * Variables that are exchanged between buses
+     */
+    double* p_vMag_ptr;
+    double* p_vAng_ptr;
 
-    gridpack::component::BaseBranchComponent* p_branch;
+private:
 
-    friend class boost::serialization::access;
 
-    template<class Archive>
-      void serialize(Archive & ar, const unsigned int version)
-      {
-        ar &
-          boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
-          & p_shunt_gs
-          & p_shunt_bs
-          & p_shunt
-          & p_mode
-          & p_theta
-          & p_ybusr & p_ybusi
-          & p_angle & p_voltage
-          & p_load
-          & p_pl & p_ql
-          & p_sbase
-          & p_isGen
-          & p_pg & p_qg
-          & p_gstatus
-          & p_mva & p_r & p_dstr & p_dtr
-          & p_ngen & p_type & p_permYmod
-          & p_from_flag & p_to_flag
-          & p_h & p_d0
-          & p_pelect & p_eprime;
-      }
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
+    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
+      & p_shunt_gs
+      & p_shunt_bs
+      & p_shunt
+      & p_load
+      & p_mode
+      & p_v & p_a & p_theta
+      & p_ybusr & p_ybusi
+      & p_P0 & p_Q0
+      & p_angle & p_voltage
+      & p_pg & p_qg
+      & p_gstatus
+      & p_vs & p_gid
+      & p_pl & p_ql
+      & p_sbase
+      & p_Pinj & p_Qinj
+      & p_isPV;
+  }  
 
 };
 
 class SEBranch
   : public gridpack::ymatrix::YMBranch {
   public:
-    // Small utility structure to encapsulate information about fault events
-    struct Event{
-      double start,end;
-      int from_idx, to_idx;
-      double step;
-    };
-
     /**
      *  Simple constructor
      */
@@ -227,6 +262,12 @@ class SEBranch
      * calculations
      */
     void setYBus(void);
+
+    /**
+     * Get values of YBus matrix. These can then be used in subsequent
+     * calculations
+     */
+    gridpack::ComplexType getYBus(void);
 
     /**
      * Load values stored in DataCollection object into SEBranch object. The
@@ -265,6 +306,15 @@ class SEBranch
      */
     void setMode(int mode);
 
+    /**
+     * Write output from branches to standard out
+     * @param string (output) string with information to be printed out
+     * @param signal an optional character string to signal to this
+     * routine what about kind of information to write
+     * @return true if branch is contributing string to output, false otherwise
+     */
+    bool serialWrite(char *string, const char *signal = NULL);
+
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
@@ -281,44 +331,54 @@ class SEBranch
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
     double p_sbase;
-    std::vector<int> p_branch_status;
+    std::vector<bool> p_branch_status;
+    std::vector<std::string> p_tag;
     int p_elems;
     bool p_active;
-    bool p_event;
 
-    friend class boost::serialization::access;
+private:
 
-    template<class Archive>
-      void serialize(Archive & ar, const unsigned int version)
-      {
-        ar &
-          boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
-          & p_reactance
-          & p_resistance
-          & p_tap_ratio
-          & p_phase_shift
-          & p_charging
-          & p_shunt_admt_g1
-          & p_shunt_admt_b1
-          & p_shunt_admt_g2
-          & p_shunt_admt_b2
-          & p_xform & p_shunt
-          & p_mode
-          & p_ybusr_frwd & p_ybusi_frwd
-          & p_ybusr_rvrs & p_ybusi_rvrs
-          & p_theta & p_sbase
-          & p_branch_status
-          & p_elems & p_active & p_event;
-      }
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+    ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
+      & p_reactance
+      & p_resistance
+      & p_tap_ratio
+      & p_phase_shift
+      & p_charging
+      & p_shunt_admt_g1
+      & p_shunt_admt_b1
+      & p_shunt_admt_g2
+      & p_shunt_admt_b2
+      & p_xform & p_shunt
+      & p_mode
+      & p_ybusr_frwd & p_ybusi_frwd
+      & p_ybusr_rvrs & p_ybusi_rvrs
+      & p_theta
+      & p_sbase
+      & p_branch_status
+      & p_tag
+      & p_elems
+      & p_active;
+  }  
+
 };
 
-/// The type of network used in the state_estimation application
+
+/// The type of network used in the contingency analysis application
 typedef network::BaseNetwork<SEBus, SEBranch > SENetwork;
+
 
 }     // state_estimation
 }     // gridpack
 
 BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBus);
 BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBranch);
+
 
 #endif

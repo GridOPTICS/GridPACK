@@ -47,17 +47,6 @@ class SEApp
      */
     void execute(int argc, char** argv);
 
-    /**
-     * Utility function to convert faults that are in event list into
-     * internal data structure that can be used by code
-     * @param cursors list of cursors pointing to individual events in input
-     * deck
-     * @return list of event data structures
-     */
-    std::vector<gridpack::state_estimation::SEBranch::Event>
-      setFaultEvents(std::vector<gridpack::utility::Configuration::CursorPtr >
-          cursors, boost::shared_ptr<SENetwork> network);
- 
     private:
 };
 
