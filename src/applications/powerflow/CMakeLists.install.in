@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2014-01-28 11:50:55 d3g096
+# Last Change: 2014-02-24 11:29:36 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.6.4)
@@ -35,14 +35,12 @@ include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 add_executable(powerflow.x
   pf_main.cpp
   pf_app.cpp
-  pf_components.cpp
   pf_factory.cpp
 )
 target_link_libraries(powerflow.x ${GRIDPACK_LIBS})
 
 add_executable(powerflow2
   pf_app2.cpp
-  pf_components.cpp
   pf_factory.cpp
 )
 target_link_libraries(powerflow2 ${GRIDPACK_LIBS})
