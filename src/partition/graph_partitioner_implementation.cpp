@@ -7,7 +7,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-12 10:32:22 d3g096
+ * @date   2014-02-25 15:50:30 d3g096
  * 
  * @brief  
  * 
@@ -120,9 +120,10 @@ GraphPartitionerImplementation::partition(void)
   static const bool verbose(false);
   p_adjacency_list.ready();
 
-  int maxdim(1);
+  int maxdim(2);
   int dims[maxdim], lo[maxdim], hi[maxdim], ld[maxdim];
   ld[0] = 1;
+  ld[1] = 1;
 
   int locnodes(p_adjacency_list.nodes());
   int locedges(p_adjacency_list.edges());
@@ -232,7 +233,14 @@ GraphPartitionerImplementation::partition(void)
     }
   }
 
+  
   communicator().sync();
+
+  // These are no longer needed
+
+  node_dest.reset();
+  node_src.reset();
+
 
   p_ghost_edge_destinations.reserve(locedges);
   std::copy(e2dest.begin(), e2dest.end(), 
@@ -284,25 +292,111 @@ GraphPartitionerImplementation::partition(void)
     }
   }
 
-  // take each local list of ghost node, send it to all processes, 
-  p_ghost_node_destinations.resize(locnodes);
-  DestList tmp;
+  // It's possible that edges are distributed over multiple processes,
+  // which could result in a different set of ghost destinations for a
+  // given node on each process. These need to be put together.
+
+  // In this approach, which is really slow, take each local list of
+  // ghost node, send it to all processes. Each process extracts the
+  // ghost node destination for its locally owned nodes.
+
+  // p_ghost_node_destinations.resize(locnodes);
+  // DestList tmp;
+  // for (int p = 0; p < this->processor_size(); ++p) {
+  //   tmp.clear();
+  //   if (this->processor_rank() == p) {
+  //     tmp = gnodedest;
+  //   }
+  //   broadcast(communicator().getCommunicator(), tmp, p);
+  //   for (Index n = 0; n < locnodes; ++n) {
+  //     Index nodeidx(p_adjacency_list.node_index(n));
+  //     for (DestList::const_iterator i = tmp.begin();
+  //          i != tmp.end(); ++i) {
+  //       if (nodeidx == i->first) {
+  //         p_ghost_node_destinations[n].push_back(i->second);
+  //       }
+  //     }
+  //   }
+  // }
+
+
+
+  // Here, a 2D GA is used to store the ghost node destinations.  Each
+  // process takes it's set of ghost node destinations and appends
+  // those lists already in the GA.
+
+  dims[0] = allnodes;
+  dims[1] = processor_size();
+
+  node_dest.reset(new GA::GlobalArray(MT_C_INT, 2, &dims[0], 
+                                      "Ghost node dest processes", NULL));
+  boost::scoped_ptr<GA::GlobalArray> 
+    node_dest_count(new GA::GlobalArray(MT_C_INT, 1, &dims[0],
+                                        "Ghost node dest count", NULL));
+
+  {
+    int bogus;
+    bogus = -1; node_dest->fill(&bogus);
+    bogus = 0; node_dest_count->fill(&bogus);
+  }
+
+  std::vector<int> lcount(allnodes, 0);
   for (int p = 0; p < this->processor_size(); ++p) {
-    tmp.clear();
     if (this->processor_rank() == p) {
-      tmp = gnodedest;
-    }
-    broadcast(communicator().getCommunicator(), tmp, p);
-    for (Index n = 0; n < locnodes; ++n) {
-      Index nodeidx(p_adjacency_list.node_index(n));
-      for (DestList::const_iterator i = tmp.begin();
-           i != tmp.end(); ++i) {
-        if (nodeidx == i->first) {
-          p_ghost_node_destinations[n].push_back(i->second);
-        }
+      lo[0] = 0; hi[0] = allnodes - 1;
+      node_dest_count->get(&lo[0], &hi[0], &lcount[0], &ld[0]);
+      for (DestList::const_iterator i = gnodedest.begin();
+           i != gnodedest.end(); ++i) {
+        int nid(i->first), dest(i->second);
+        lo[0] = nid;
+        lo[1] = lcount[nid];
+        hi[0] = nid;
+        hi[1] = lcount[nid];
+        node_dest->put(&lo[0], &hi[0], &dest, &ld[0]);
+        lcount[nid] += 1;
       }
+      lo[0] = 0; hi[0] = allnodes - 1;
+      node_dest_count->put(&lo[0], &hi[0], &lcount[0], &ld[0]);
+    }
+    this->communicator().sync();
+  }    
+
+
+  // After all processes have made their contribution to the ghost
+  // node destination GA, each process grabs that part that refers to
+  // its local nodes and fills p_ghost_edge_destinations.
+
+  lo[0] = 0; hi[0] = allnodes - 1;
+  node_dest_count->get(&lo[0], &hi[0], &lcount[0], &ld[0]);
+
+  p_ghost_node_destinations.clear();
+  p_ghost_node_destinations.resize(locnodes);
+  std::vector<int> tmpdest(this->processor_size(), 0);
+  for (Index n = 0; n < locnodes; ++n) {
+    Index nid(p_adjacency_list.node_index(n));
+    p_ghost_node_destinations[n].clear();
+    
+    if (lcount[nid] > 0) {
+      lo[0] = nid;
+      hi[0] = nid;
+      lo[1] = 0;
+      hi[1] = lcount[nid] - 1;
+      tmpdest.resize(lcount[nid]);
+      node_dest->get(&lo[0], &hi[0], &tmpdest[0], &ld[0]);
+
+      // there may be duplicates, so get rid of them
+      if (tmpdest.size() > 1) {
+        std::stable_sort(tmpdest.begin(), tmpdest.end());
+        std::unique(tmpdest.begin(), tmpdest.end());
+      }
+
+      p_ghost_node_destinations[n].reserve(tmpdest.size());
+      std::copy(tmpdest.begin(), tmpdest.end(),
+                std::back_inserter(p_ghost_node_destinations[n]));
     }
   }
+  
+
 
   GA_Pgroup_set_default(oldGAgroup);
 
