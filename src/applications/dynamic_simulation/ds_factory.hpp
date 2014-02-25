@@ -57,6 +57,12 @@ class DSFactory
      */
     void setEvent(const DSBranch::Event &event);
 
+    /**
+     * Check network to see if there is a process with no generators
+     * @return true if all processors have at least on generator
+     */
+    bool checkGen(void);
+
   private:
 
     NetworkPtr p_network;

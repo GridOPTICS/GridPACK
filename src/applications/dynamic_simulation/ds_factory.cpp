@@ -104,5 +104,27 @@ void gridpack::dynamic_simulation::DSFactory::setEvent(const
   }
 }
 
+/**
+ * Check network to see if there is a process with no generators
+ * @return true if all processors have at least on generator
+ */
+bool gridpack::dynamic_simulation::DSFactory::checkGen(void)
+{
+  int numBus = p_network->numBuses();
+  int i, count;
+  count = 0;
+  for (i=0; i<numBus; i++) {
+    count += dynamic_cast<DSBus*>(p_network->getBus(i).get())->getNumGen();
+  }
+  printf("p[%d] number of generators: %d\n",p_network->communicator().rank(),count);
+  int iok = 0;
+  if (count > 0) iok = 1;
+  int ok;
+  boost::mpi::all_reduce(p_network->communicator(),iok,ok,std::plus<int>());
+  bool ret = false;
+  if (ok == p_network->communicator().size()) ret = true;
+  return ret;
+}
+
 } // namespace dynamic_simulation
 } // namespace gridpack

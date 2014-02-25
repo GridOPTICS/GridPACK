@@ -89,7 +89,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   network->partition();
 
   // Create serial IO object to export data from buses or branches
-  gridpack::serial_io::SerialBusIO<DSNetwork> busIO(128, network);
+  gridpack::serial_io::SerialBusIO<DSNetwork> busIO(256, network);
   gridpack::serial_io::SerialBranchIO<DSNetwork> branchIO(128, network);
   char ioBuf[128];
 
@@ -102,6 +102,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
+
+  if (!factory.checkGen()) {
+    busIO.header("Missing generators on at least one processor\n");
+    return;
+  }
 
   factory.setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(network);
@@ -124,10 +129,10 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///perm->print(); 
 
   // Form a transposed matrix of perm
-  // boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
-  factory.setMode(PERMTrans);
-  gridpack::mapper::FullMatrixMap<DSNetwork> permTransMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> permTrans = permTransMap.mapToMatrix();
+   boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
+  //factory.setMode(PERMTrans);
+  //gridpack::mapper::FullMatrixMap<DSNetwork> permTransMap(network);
+  //boost::shared_ptr<gridpack::math::Matrix> permTrans = permTransMap.mapToMatrix();
   ///busIO.header("\n=== permTrans: ============\n");
   ///permTrans->print();
 
@@ -404,10 +409,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Vector> dmac_spd_s1(mac_spd_s0->clone()); 
 
   // Declare vector curr
-  boost::shared_ptr<gridpack::math::Vector> curr; //(mac_ang_s0->clone());
+  boost::shared_ptr<gridpack::math::Vector> curr(mac_ang_s0->clone());
 
-      int trows = prefy11->localRows();
-  printf("p[%d] Pre-transpose rows: %d\n",world.rank(),trows);
   boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
@@ -508,11 +511,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
     if (flagF1 == 0) {
-      int nrows = trans_prefy11->localRows();
-      int nvec = eprime_s0->localSize();
-      int cvec; // = curr->localSize();
-      int nbus = network->numBuses();
-      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
+      //curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
+      transposeMultiply(*prefy11,*eprime_s0,*curr);
     } else if (flagF1 == 1) {
       curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
     } else if (flagF1 == 2) {
@@ -614,13 +614,24 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       //busIO.header(ioBuf);
     }
     if (I_Steps == simu_k) {
+      factory.setMode(init_mac_ang);
+      XMap3.mapToBus(mac_ang_s1);
+      factory.setMode(init_mac_spd);
+      XMap3.mapToBus(mac_spd_s1);
+      factory.setMode(init_pmech);
+      XMap6.mapToBus(pmech);
+      factory.setMode(init_pelect);
+      XMap1.mapToBus(pelect);
       sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps+1);
       busIO.header(ioBuf);
-      mac_ang_s1->print();  
-      mac_spd_s1->print();  
-      pmech->print();
-      pelect->print();
-      sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps+1);
+      sprintf(ioBuf, "\n        mac_ang         mac_spd         mech            elect\n\n");
+      busIO.header(ioBuf);
+      //mac_ang_s1->print();  
+      //mac_spd_s1->print();  
+      //pmech->print();
+      //pelect->print();
+      busIO.write();
+      sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n", S_Steps+1);
       busIO.header(ioBuf);
     } // End of Print to screen 
     
