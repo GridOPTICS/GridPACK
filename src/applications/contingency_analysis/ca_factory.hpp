@@ -20,14 +20,15 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "ca_components.hpp"
+#include "gridpack/applications/components/pf_matrix/pf_components.hpp"
 #include "ca_driver.hpp"
 #include "gridpack/math/matrix.hpp"
 
+typedef gridpack::network::BaseNetwork< gridpack::powerflow::PFBus,
+        gridpack::powerflow::PFBranch > CANetwork;
+
 namespace gridpack {
 namespace contingency_analysis {
-
-//enum CAMode{YBus, Jacobian};
 
 class CAFactory
   : public gridpack::factory::BaseFactory<CANetwork> {

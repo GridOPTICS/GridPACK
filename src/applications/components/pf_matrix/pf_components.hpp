@@ -318,27 +318,6 @@ class PFBranch
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
-     * Return the complex admittance of the branch
-     * @return: complex addmittance of branch
-     */
-    gridpack::ComplexType getAdmittance(void);
-
-    /**
-     * Return transformer contribution from the branch to the calling
-     * bus
-     * @param bus: pointer to the bus making the call
-     * @return: contribution from transformers to Y matrix
-     */
-    gridpack::ComplexType getTransformer(PFBus *bus);
-
-    /**
-     * Return the contribution to a bus from shunts
-     * @param bus: pointer to the bus making the call
-     * @return: contribution to Y matrix from shunts associated with branches
-     */
-    gridpack::ComplexType getShunt(PFBus *bus);
-
-    /**
      * Return the contribution to the Jacobian for the powerflow equations from
      * a branch
      * @param bus: pointer to the bus making the call
@@ -386,7 +365,6 @@ class PFBranch
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
     double p_sbase;
-    std::vector<int> p_branch_status;
     int p_elems;
     bool p_active;
 
@@ -415,7 +393,7 @@ private:
       & p_ybusr_rvrs & p_ybusi_rvrs
       & p_theta
       & p_sbase
-      & p_branch_status
+      & p_elems
       & p_active;
   }  
 

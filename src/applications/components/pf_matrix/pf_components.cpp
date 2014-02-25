@@ -567,7 +567,6 @@ gridpack::powerflow::PFBranch::PFBranch(void)
   p_shunt_admt_b2.clear();
   p_xform.clear();
   p_shunt.clear();
-  p_branch_status.clear();
   p_elems = 0;
   p_theta = 0.0;
   p_sbase = 0.0;
@@ -908,7 +907,6 @@ void gridpack::powerflow::PFBranch::load(
     }
     ivar = 1;
     data->getValue(BRANCH_STATUS, &ivar, idx);
-    p_branch_status.push_back(ivar);
     if (ivar == 1) p_active = true;
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
@@ -936,99 +934,6 @@ void gridpack::powerflow::PFBranch::setMode(int mode)
     YMBranch::setMode(gridpack::ymatrix::YBus);
   }
   p_mode = mode;
-}
-
-/**
- * Return the complex admittance of the branch
- * @return: complex addmittance of branch
- */
-gridpack::ComplexType gridpack::powerflow::PFBranch::getAdmittance(void)
-{
-  int i;
-  gridpack::ComplexType ret(0.0,0.0);
-  for (i=0; i<p_elems; i++) {
-    gridpack::ComplexType tmp(p_resistance[i], p_reactance[i]);
-    if (!p_xform[i] && p_branch_status[i] == 1) {
-      tmp = -1.0/tmp;
-    } else {
-      tmp = gridpack::ComplexType(0.0,0.0);
-    }
-    ret += tmp;
-  }
-  return ret;
-}
-
-/**
- * Return transformer contribution from the branch to the calling
- * bus
- * @param bus: pointer to the bus making the call
- * @return: contribution to Y matrix from branch
- */
-gridpack::ComplexType
-gridpack::powerflow::PFBranch::getTransformer(gridpack::powerflow::PFBus *bus)
-{
-  int i;
-  gridpack::ComplexType ret(0.0,0.0);
-  for (i=0; i<p_elems; i++) {
-    gridpack::ComplexType tmp(p_resistance[i],p_reactance[i]);
-    gridpack::ComplexType tmpB(0.0,0.5*p_charging[i]);
-    if (p_xform[i] && p_branch_status[i] == 1) {
-      tmp = -1.0/tmp;
-      tmp = tmp - tmpB;
-      gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
-      a = p_tap_ratio[i]*a;
-      if (bus == getBus1().get()) {
-        tmp = tmp/(conj(a)*a);
-      } else if (bus == getBus2().get()) {
-        // tmp is unchanged
-      }
-    } else {
-      tmp = gridpack::ComplexType(0.0,0.0);
-    }
-    ret += tmp;
-  }
-  return ret;
-}
-
-/**
- * Return the contribution to a bus from shunts
- * @param bus: pointer to the bus making the call
- * @return: contribution to Y matrix from shunts associated with branches
- */
-gridpack::ComplexType
-gridpack::powerflow::PFBranch::getShunt(gridpack::powerflow::PFBus *bus)
-{
-  double retr, reti;
-  retr = 0.0;
-  reti = 0.0;
-  int i;
-  for (i=0; i<p_elems; i++) {
-    double tmpr, tmpi;
-    if (p_shunt[i] && p_branch_status[i] == 1) {
-      tmpr = 0.0;
-      tmpi = 0.0;
-      if (!p_xform[i]) {
-        tmpi = 0.5*p_charging[i];
-        tmpr = 0.0;
-      }
-      // HACK: pointer comparison, maybe could handle this better
-      if (bus == getBus1().get()) {
-        tmpr += p_shunt_admt_g1[i];
-        tmpi += p_shunt_admt_b1[i];
-      } else if (bus == getBus2().get()) {
-        tmpr += p_shunt_admt_g2[i];
-        tmpi += p_shunt_admt_b2[i];
-      } else {
-        // TODO: Some kind of error
-      }
-    } else {
-      tmpr = 0.0;
-      tmpi = 0.0;
-    }
-    retr += tmpr;
-    reti += tmpi;
-  }
-  return gridpack::ComplexType(retr,reti);
 }
 
 /**

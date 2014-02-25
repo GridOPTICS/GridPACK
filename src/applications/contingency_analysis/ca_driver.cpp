@@ -153,7 +153,6 @@ std::vector<gridpack::contingency_analysis::Contingency>
       }
     }
   }
-  // TODO: add code here
   return ret;
 }
 

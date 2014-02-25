@@ -21,7 +21,6 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parallel/communicator.hpp"
 #include "gridpack/configuration/configuration.hpp"
-#include "gridpack/applications/contingency_analysis/ca_components.hpp"
 #include "gridpack/applications/contingency_analysis/ca_factory.hpp"
 #include "gridpack/applications/contingency_analysis/ca_driver.hpp"
 

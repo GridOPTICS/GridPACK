@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Contingency_analysis>
-    <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
+    <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
     <groupSize>1</groupSize>
     <Contingencies>
       <Contingency>
         <contingencyType>Line</contingencyType>
         <contingencyName>CTG1</contingencyName>
-        <contingencyLineBuses> 7 8 </contingencyLineBuses>
-        <contingencyLineNames> BL </contingencyLineNames>
+        <contingencyLineBuses> 13 14</contingencyLineBuses>
+        <contingencyLineNames> B1 </contingencyLineNames>
       </Contingency>
       <Contingency>
         <contingencyType>Generator</contingencyType>
         <contingencyName>CTG2</contingencyName>
-        <contingencyBuses> 3 6 </contingencyBuses>
-        <contingencyGenerators> 1 1 </contingencyGenerators>
+        <contingencyBuses> 3  </contingencyBuses>
+        <contingencyGenerators>  1 </contingencyGenerators>
       </Contingency>
     </Contingencies>
     <LinearSolver>

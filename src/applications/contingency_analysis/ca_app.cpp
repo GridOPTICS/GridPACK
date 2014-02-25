@@ -122,24 +122,24 @@ void gridpack::contingency_analysis::CAApp::execute(
   // set YBus components so that you can create Y matrix  
   p_factory->setYBus();
 
-  p_factory->setMode(YBus);
+  p_factory->setMode(gridpack::powerflow::YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
   branchIO.header("\n=== orginal ybus: ============\n");
   orgYbus->print();
 
   //////////////////////////////////////////////////////////////
-  p_factory->setMode(S_Cal);
+  p_factory->setMode(gridpack::powerflow::S_Cal);
 
   // make Sbus components to create S vector
   p_factory->setSBus();
 
   // Set PQ
-  p_factory->setMode(RHS);
+  p_factory->setMode(gridpack::powerflow::RHS);
   gridpack::mapper::BusVectorMap<CANetwork> vMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   //PQ->print();
-  p_factory->setMode(Jacobian);
+  p_factory->setMode(gridpack::powerflow::Jacobian);
   gridpack::mapper::FullMatrixMap<CANetwork> jMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   //J->print(); 
@@ -175,7 +175,7 @@ void gridpack::contingency_analysis::CAApp::execute(
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
-    p_factory->setMode(RHS);
+    p_factory->setMode(gridpack::powerflow::RHS);
     vMap.mapToBus(X);
 
     // Exchange data between ghost buses (I don't think we need to exchange data
@@ -184,7 +184,7 @@ void gridpack::contingency_analysis::CAApp::execute(
 
     // Create new versions of Jacobian and PQ vector
     vMap.mapToVector(PQ);
-    p_factory->setMode(Jacobian);
+    p_factory->setMode(gridpack::powerflow::Jacobian);
     jMap.mapToMatrix(J);
 
     // Create linear solver
@@ -211,7 +211,7 @@ void gridpack::contingency_analysis::CAApp::execute(
     iter++;
   }
   // Push final result back onto buses
-  p_factory->setMode(RHS);
+  p_factory->setMode(gridpack::powerflow::RHS);
   vMap.mapToBus(X);
 
   branchIO.header("\n   Branch Power Flow\n");

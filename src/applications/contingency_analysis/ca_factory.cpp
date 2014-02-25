@@ -19,7 +19,6 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "ca_components.hpp"
 #include "ca_factory.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -58,12 +57,12 @@ void gridpack::contingency_analysis::CAFactory::setYBus(void)
 
   // Invoke setYBus method on all branch objects
   for (i=0; i<numBranch; i++) {
-    dynamic_cast<CABranch*>(p_network->getBranch(i).get())->setYBus();
+    dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get())->setYBus();
   }
 
   // Invoke setYBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    dynamic_cast<CABus*>(p_network->getBus(i).get())->setYBus();
+    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setYBus();
   }
 
 }
@@ -78,7 +77,7 @@ void gridpack::contingency_analysis::CAFactory::setGBus(void)
 
   // Invoke setGBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    dynamic_cast<CABus*>(p_network->getBus(i).get())->setGBus();
+    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setGBus();
   }
 }
 
@@ -92,7 +91,7 @@ void gridpack::contingency_analysis::CAFactory::setSBus(void)
 
   // Invoke setSBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    dynamic_cast<CABus*>(p_network->getBus(i).get())->setSBus();
+    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setSBus();
   }
 }
 
@@ -106,7 +105,7 @@ void gridpack::contingency_analysis::CAFactory::setPQ(void)
   ComplexType values[2];
 
   for (i=0; i<numBus; i++) {
-    dynamic_cast<CABus*>(p_network->getBus(i).get())->vectorValues(values);
+    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->vectorValues(values);
   }
 }
 
@@ -120,11 +119,11 @@ void gridpack::contingency_analysis::CAFactory::setJacobian(void)
   int i;
 
   /*for (i=0; i<numBus; i++) {
-    dynamic_cast<CABus*>(p_network->getBus(i).get())->setYBus();
+    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setYBus();
   }
 
   for (i=0; i<numBranch; i++) {
-    dynamic_cast<CABranch*>(p_network->getBranch(i).get())->getJacobian();
+    dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get())->getJacobian();
   }*/
 }
 
@@ -147,14 +146,14 @@ gridpack::ComplexType gridpack::contingency_analysis::CAFactory::calMis(
   // Invoke getYBus method on all bus objects
   /* for (i=0; i<numBus; i++) {
      ibus =
-     (dynamic_cast<gridpack::contingency_analysis::CABus*>(p_network->getBus(i).get()))->getYBus()
+     (dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get()))->getYBus()
    * V(i) ;
    mis(i) = V * conj(ibus
    }
 
   // Invoke getYBus method on all branch objects
   for (i=0; i<numBranch; i++) {
-  (dynamic_cast<gridpack::contingency_analysis::CABranch*>(p_network->getBranch(i).get()))->getYBus();
+  (dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get()))->getYBus();
   }*/
 }
 #endif
@@ -170,9 +169,9 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
   int i,j,idx1,idx2;
   int size = contingency.p_from.size();
   p_saveStatus.clear();
-  gridpack::contingency_analysis::CABranch *branch;
+  gridpack::powerflow::PFBranch *branch;
   for (i=0; i<numBranch; i++) {
-    branch = dynamic_cast<CABranch*>(p_network->getBranch(i).get());
+    branch = dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
     idx1 = branch->getBus1OriginalIndex();
     idx2 = branch->getBus2OriginalIndex();
     // check branch indices against contingencies
@@ -200,10 +199,10 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
     }
   }
   int numBus = p_network->numBuses();
-  gridpack::contingency_analysis::CABus *bus;
+  gridpack::powerflow::PFBus *bus;
   int idx;
   for (i=0; i<numBus; i++) {
-    bus = dynamic_cast<CABus*>(p_network->getBus(i).get());
+    bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
     idx = bus->getOriginalIndex();
     // check bus indices against contingencies
     for (j = 0; j<size; j++) {
@@ -239,9 +238,9 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
   int size = contingency.p_from.size();
   p_saveStatus.clear();
   int count = 0;
-  gridpack::contingency_analysis::CABranch *branch;
+  gridpack::powerflow::PFBranch *branch;
   for (i=0; i<numBranch; i++) {
-    branch = dynamic_cast<CABranch*>(p_network->getBranch(i).get());
+    branch = dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
     idx1 = branch->getBus1OriginalIndex();
     idx2 = branch->getBus2OriginalIndex();
     // check branch indices against contingencies
@@ -267,10 +266,10 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
     }
   }
   int numBus = p_network->numBuses();
-  gridpack::contingency_analysis::CABus *bus;
+  gridpack::powerflow::PFBus *bus;
   int idx;
   for (i=0; i<numBus; i++) {
-    bus = dynamic_cast<CABus*>(p_network->getBus(i).get());
+    bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
     idx = bus->getOriginalIndex();
     // check bus indices against contingencies
     for (j = 0; j<size; j++) {
