@@ -624,7 +624,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       XMap1.mapToBus(pelect);
       sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps+1);
       busIO.header(ioBuf);
-      sprintf(ioBuf, "\n        mac_ang         mac_spd         mech            elect\n\n");
+      sprintf(ioBuf, "\n         Bus ID     Generator ID"
+          "    mac_ang         mac_spd         mech            elect\n\n");
       busIO.header(ioBuf);
       //mac_ang_s1->print();  
       //mac_spd_s1->print();  
