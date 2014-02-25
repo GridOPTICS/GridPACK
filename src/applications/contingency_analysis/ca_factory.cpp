@@ -170,13 +170,14 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
   int size = contingency.p_from.size();
   p_saveStatus.clear();
   gridpack::powerflow::PFBranch *branch;
+  bool found = false;
   for (i=0; i<numBranch; i++) {
     branch = dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
     idx1 = branch->getBus1OriginalIndex();
     idx2 = branch->getBus2OriginalIndex();
     // check branch indices against contingencies
-    for (j = 0; j<size; j++) {
-      if (contingency.p_type == gridpack::contingency_analysis::Branch) {
+    if (contingency.p_type == gridpack::contingency_analysis::Branch) {
+      for (j = 0; j<size; j++) {
         if (contingency.p_from[j] == idx1 && contingency.p_to[j] == idx2) {
           // contingency matches branch indices. Find tag that matches contingency
           std::vector<bool> status = branch->getLineStatus();
@@ -192,6 +193,7 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
             if (tag == contingency.p_ckt[j]) {
               p_saveStatus.push_back(status[j]);
               branch->setLineStatus(tags[l], false);
+              found = true;
             }
           }
         }
@@ -201,16 +203,18 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
   int numBus = p_network->numBuses();
   gridpack::powerflow::PFBus *bus;
   int idx;
+  size = contingency.p_busid.size();
   for (i=0; i<numBus; i++) {
     bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
     idx = bus->getOriginalIndex();
     // check bus indices against contingencies
-    for (j = 0; j<size; j++) {
-      if (contingency.p_type == gridpack::contingency_analysis::Generator) {
+    if (contingency.p_type == gridpack::contingency_analysis::Generator) {
+      for (j = 0; j<size; j++) {
         if (contingency.p_busid[j] == idx) {
           // continency matches bus ID. Find generator ID that matches
           // contingency
           int genid = contingency.p_genid[j];
+
           std::vector<int> status = bus->getGenStatus();
           std::vector<int>  genids = bus->getGenerators();
           int l;
@@ -219,12 +223,18 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
             if (genids[l] == genid ) {
               p_saveStatus.push_back(static_cast<bool>(status[l]));
               bus->setGenStatus(genids[l], false);
+              found = true;
             }
           }
         }
       }
     }
   }
+  if (!found && p_network->communicator().rank() == 0) {
+    printf("No changes for contingency: %s. Check input file\n",
+        contingency.p_name.c_str());
+  }
+
 }
 
 /**
@@ -268,6 +278,7 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
   int numBus = p_network->numBuses();
   gridpack::powerflow::PFBus *bus;
   int idx;
+  size = contingency.p_busid.size();
   for (i=0; i<numBus; i++) {
     bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
     idx = bus->getOriginalIndex();
