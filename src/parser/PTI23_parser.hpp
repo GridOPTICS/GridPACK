@@ -387,8 +387,19 @@ class PTI23_parser
           int ntok2 = tag.find('\'',ntok1);
           if (ntok2 == std::string::npos) ntok2 = tag.length();
           std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
+          //get rid of white space
+          ntok1 = clean_tag.find_first_not_of(' ',0);
+          ntok2 = clean_tag.find(' ',ntok1);
+          if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
+          tag = clean_tag.substr(ntok1,ntok2-ntok1);
+          if (tag.length() == 1) {
+            clean_tag = " ";
+            clean_tag.append(tag);
+          } else {
+            clean_tag = tag;
+          }
           // GENERATOR_ID              "ID"                  integer
-          p_busData[l_idx]->addValue(GENERATOR_ID, atoi(clean_tag.c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_ID, (char*)clean_tag.c_str(), ngen);
 
           // GENERATOR_PG              "PG"                  float
           p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
