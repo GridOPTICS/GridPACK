@@ -7,7 +7,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-26 09:27:46 d3g096
+ * @date   2014-02-26 15:26:04 d3g096
  * 
  * @brief  
  * 
@@ -366,8 +366,21 @@ GraphPartitionerImplementation::partition(void)
   // process takes it's set of ghost node destinations and appends
   // those lists already in the GA.
 
+  // Determine the maximum node connectivity. There needs to be enough
+  // room in the GA to store all connections to a node.
+
+  size_t lconn(0), maxconn(0);
+
+  for (int l = 0; l < locnodes; ++l) {
+    lconn = std::max(lconn, 
+                     p_adjacency_list.node_neighbors(l));
+  }
+  boost::mpi::all_reduce(communicator(), lconn, maxconn, 
+                         boost::mpi::maximum<int>());
+  BOOST_ASSERT(maxconn >= lconn);
+
   dims[0] = allnodes;
-  dims[1] = processor_size();
+  dims[1] = maxconn;
 
   node_dest.reset(new GA::GlobalArray(MT_C_INT, 2, &dims[0], 
                                       "Ghost node dest processes", NULL));
