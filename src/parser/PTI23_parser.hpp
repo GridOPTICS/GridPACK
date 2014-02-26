@@ -690,7 +690,7 @@ class PTI23_parser
           // BRANCH_CKT values
           int nelems = 0;
           p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
-          std::string b_ckt(split_line[2].c_str());
+          std::string b_ckt(clean2Char(split_line[2]));
           int i;
           int idx = -1;
           for (i=0; i<nelems; i++) {
