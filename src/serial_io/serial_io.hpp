@@ -171,8 +171,11 @@ class SerialBusIO {
     // Count up total strings being written from this processor
     for (i=0; i<nBus; i++) {
       if (p_network->getActiveBus(i) &&
-          p_network->getBus(i)->serialWrite(string,signal)) nwrites++;
+          p_network->getBus(i)->serialWrite(string,signal)) {
+        nwrites++;
+      }
     }
+
 
     // Set up buffers to scatter strings to global buffer
     int **index;
@@ -194,7 +197,7 @@ class SerialBusIO {
 
     // Scatter data to global buffer and set mask array
     GA_Zero(p_maskGA);
-    if (nwrites > 1) {
+    if (nwrites > 0) {
       NGA_Scatter(p_stringGA,strbuf,index,nwrites);
       NGA_Scatter(p_maskGA,ones,index,nwrites);
     }
@@ -435,7 +438,7 @@ class SerialBranchIO {
 
     // Scatter data to global buffer and set mask array
     GA_Zero(p_maskGA);
-    if (nwrites > 1) {
+    if (nwrites > 0) {
       NGA_Scatter(p_stringGA,strbuf,index,nwrites);
       NGA_Scatter(p_maskGA,ones,index,nwrites);
     }
