@@ -111,6 +111,9 @@ void gridpack::contingency_analysis::CAApp::execute(
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
 
+  //Set voltage and phase angle to initial values
+  p_factory->resetVoltage();
+
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<CANetwork> busIO(128, p_network);
   gridpack::serial_io::SerialBranchIO<CANetwork> branchIO(128, p_network);

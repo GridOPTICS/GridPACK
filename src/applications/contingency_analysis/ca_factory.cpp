@@ -47,6 +47,19 @@ gridpack::contingency_analysis::CAFactory::~CAFactory()
 }
 
 /**
+ * Reset voltages to initial values on all buses
+ */
+void gridpack::contingency_analysis::CAFactory::resetVoltage(void)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  // Invoke resetVoltage method on all buses
+  for (i=0; i<numBus; i++) {
+    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->resetVoltage();
+  }
+}
+
+/**
  * Create the admittance (Y-Bus) matrix
  */
 void gridpack::contingency_analysis::CAFactory::setYBus(void)

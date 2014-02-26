@@ -125,6 +125,11 @@ class PFBus
     void setMode(int mode);
 
     /**
+     * Reset voltage and phase angle to initial values
+     */
+    void resetVoltage(void);
+
+    /**
      * Return the value of the voltage magnitude on this bus
      * @return voltage magnitude
      */

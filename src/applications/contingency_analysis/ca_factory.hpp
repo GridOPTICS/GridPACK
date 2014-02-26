@@ -45,6 +45,11 @@ class CAFactory
     ~CAFactory();
 
     /**
+     * Reset voltages to initial values on all buses
+     */
+    void resetVoltage(void);
+
+    /**
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);

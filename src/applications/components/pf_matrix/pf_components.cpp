@@ -389,6 +389,17 @@ void gridpack::powerflow::PFBus::setMode(int mode)
 }
 
 /**
+ * Reset voltage and phase angle to initial values
+ */
+void gridpack::powerflow::PFBus::resetVoltage(void)
+{
+  p_v = p_voltage;
+  p_a = p_angle;
+  *p_vMag_ptr = p_v;
+  *p_vAng_ptr = p_a;
+}
+
+/**
  * Return the value of the voltage magnitude on this bus
  * @return: voltage magnitude
  */
