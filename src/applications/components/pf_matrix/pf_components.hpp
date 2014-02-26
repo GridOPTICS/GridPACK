@@ -152,7 +152,7 @@ class PFBus
      * Get list of generator IDs
      * @return vector of generator IDs
      */
-    std::vector<int> getGenerators();
+    std::vector<std::string> getGenerators();
 
     /**
      * Return whether or not the bus is a PV bus (V held fixed in powerflow
@@ -182,7 +182,7 @@ class PFBus
      * @param gen_id generator ID
      * @param status generator status
      */
-    void setGenStatus(int gen_id, int status);
+    void setGenStatus(std::string gen_id, int status);
 
     /**
      * setGBus
@@ -223,7 +223,7 @@ class PFBus
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
     std::vector<double> p_vs;
-    std::vector<int> p_gid;
+    std::vector<std::string> p_gid;
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;
