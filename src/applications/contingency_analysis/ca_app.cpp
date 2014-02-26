@@ -116,7 +116,6 @@ void gridpack::contingency_analysis::CAApp::execute(
   gridpack::serial_io::SerialBranchIO<CANetwork> branchIO(128, p_network);
   char ioBuf[128];
   sprintf(ioBuf,"%s.out",contingency.p_name.c_str());
-  printf("Filename: %s\n",ioBuf);
   busIO.open(ioBuf);
   branchIO.setStream(busIO.getStream());
 

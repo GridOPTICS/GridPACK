@@ -8,13 +8,13 @@
         <contingencyType>Line</contingencyType>
         <contingencyName>CTG1</contingencyName>
         <contingencyLineBuses> 13 14</contingencyLineBuses>
-        <contingencyLineNames> BL </contingencyLineNames>
+        <contingencyLineNames> B1 </contingencyLineNames>
       </Contingency>
       <Contingency>
         <contingencyType>Generator</contingencyType>
         <contingencyName>CTG2</contingencyName>
-        <contingencyBuses> 3  </contingencyBuses>
-        <contingencyGenerators>  1 </contingencyGenerators>
+        <contingencyBuses> 2  </contingencyBuses>
+        <contingencyGenerators>1 </contingencyGenerators>
       </Contingency>
     </Contingencies>
     <LinearSolver>

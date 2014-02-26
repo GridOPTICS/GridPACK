@@ -213,15 +213,16 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
         if (contingency.p_busid[j] == idx) {
           // continency matches bus ID. Find generator ID that matches
           // contingency
-          int genid = contingency.p_genid[j];
+          std::string genid = contingency.p_genid[j];
 
           std::vector<int> status = bus->getGenStatus();
-          std::vector<int>  genids = bus->getGenerators();
+          std::vector<std::string>  genids = bus->getGenerators();
           int l;
           int lsize = status.size();
           for (l=0; l<lsize; l++) {
             if (genids[l] == genid ) {
               p_saveStatus.push_back(static_cast<bool>(status[l]));
+              printf("Setting generator \'%s\' on bus %d\n",genids[l].c_str(),idx);
               bus->setGenStatus(genids[l], false);
               found = true;
             }
@@ -288,9 +289,9 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
         if (contingency.p_busid[j] == idx) {
           // continency matches bus ID. Find generator ID that matches
           // contingency
-          int genid = contingency.p_genid[j];
+          std::string genid = contingency.p_genid[j];
           std::vector<int> status = bus->getGenStatus();
-          std::vector<int>  genids = bus->getGenerators();
+          std::vector<std::string>  genids = bus->getGenerators();
           int l;
           int lsize = status.size();
           for (l=0; l<lsize; l++) {

@@ -36,7 +36,7 @@ struct Contingency
   std::vector<std::string> p_ckt;
   // Generator contingencies
   std::vector<int> p_busid;
-  std::vector<int> p_genid;
+  std::vector<std::string> p_genid;
 };
 
 // Calling program for contingency analysis application

@@ -129,11 +129,12 @@ std::vector<gridpack::contingency_analysis::Contingency>
       // Parse gens to get generator IDs in contingency
       ntok1 = gens.find_first_not_of(' ',0);
       ntok2 = gens.find(' ',ntok1);
-      std::vector<int> gen_ids;
+      std::vector<std::string> gen_ids;
       while (ntok1 != std::string::npos) {
         if (ntok2 == std::string::npos) ntok2 = gens.length();
         if (ntok2<=ntok1) break;
-        int gen = atoi(gens.substr(ntok1,ntok2-ntok1).c_str());
+        std::string gen = gens.substr(ntok1,ntok2-ntok1);
+        if (gen.length() == 1) gen.insert(gen.begin(),' ');
         gen_ids.push_back(gen);
         ntok1 = gens.find_first_not_of(' ',ntok2);
         ntok2 = gens.find(' ',ntok1);
@@ -207,8 +208,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         int nbus = events[idx].p_busid.size();
         int j;
         for (j=0; j<nbus; j++) {
-          printf(" Generator: (bus) %d (generator ID) %d\n",
-              events[idx].p_busid[j],events[idx].p_genid[j]);
+          printf(" Generator: (bus) %d (generator ID) %s\n",
+              events[idx].p_busid[j],events[idx].p_genid[j].c_str());
         }
       }
     }
