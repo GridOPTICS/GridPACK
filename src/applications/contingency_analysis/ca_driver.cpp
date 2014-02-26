@@ -89,6 +89,12 @@ std::vector<gridpack::contingency_analysis::Contingency>
         if (ntok2 == std::string::npos) ntok2 = names.length();
         if (ntok2<=ntok1) break;
         std::string name = names.substr(ntok1,ntok2-ntok1).c_str();
+        // Pad single character names with a blank
+        if (name.length() == 1) {
+          std::string tmp = " ";
+          tmp.append(name);
+          name = tmp;
+        }
         line_names.push_back(name);
         ntok1 = names.find_first_not_of(' ',ntok2);
         ntok2 = names.find(' ',ntok1);

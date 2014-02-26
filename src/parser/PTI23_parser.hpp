@@ -197,6 +197,30 @@ class PTI23_parser
       }
     protected:
 
+      // Clean up 2 character tags so that single quotes are removed and single
+      // character tags are right-justified
+      std::string clean2Char(std::string string)
+      {
+        std::string tag = string;
+        // Find and remove single quotes
+        int ntok1 = tag.find_first_not_of('\'',0);
+        int ntok2 = tag.find('\'',ntok1);
+        if (ntok2 == std::string::npos) ntok2 = tag.length();
+        std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
+        //get rid of white space
+        ntok1 = clean_tag.find_first_not_of(' ',0);
+        ntok2 = clean_tag.find(' ',ntok1);
+        if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
+        tag = clean_tag.substr(ntok1,ntok2-ntok1);
+        if (tag.length() == 1) {
+          clean_tag = " ";
+          clean_tag.append(tag);
+        } else {
+          clean_tag = tag;
+        }
+        return clean_tag;
+      }
+
       void find_case(std::ifstream & input)
       {
   //      data_set                                           case_set;
@@ -380,26 +404,10 @@ class PTI23_parser
 
           p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()), ngen);
 
-          // Clean up string to get rid of single quotes before converting to
-          // integer
-          std::string tag = split_line[1];
-          int ntok1 = tag.find_first_not_of('\'',0);
-          int ntok2 = tag.find('\'',ntok1);
-          if (ntok2 == std::string::npos) ntok2 = tag.length();
-          std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
-          //get rid of white space
-          ntok1 = clean_tag.find_first_not_of(' ',0);
-          ntok2 = clean_tag.find(' ',ntok1);
-          if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
-          tag = clean_tag.substr(ntok1,ntok2-ntok1);
-          if (tag.length() == 1) {
-            clean_tag = " ";
-            clean_tag.append(tag);
-          } else {
-            clean_tag = tag;
-          }
+          // Clean up 2 character tag
+          std::string tag = clean2Char(split_line[1]);
           // GENERATOR_ID              "ID"                  integer
-          p_busData[l_idx]->addValue(GENERATOR_ID, (char*)clean_tag.c_str(), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_ID, (char*)tag.c_str(), ngen);
 
           // GENERATOR_PG              "PG"                  float
           p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
@@ -576,8 +584,10 @@ class PTI23_parser
             index++;
           }
 
+          // Clean up 2 character tag
+          std::string tag = clean2Char(split_line[2]);
           // BRANCH_CKT          "CKT"                 character
-          p_branchData[l_idx]->addValue(BRANCH_CKT, (char*)split_line[2].c_str(),
+          p_branchData[l_idx]->addValue(BRANCH_CKT, (char*)tag.c_str(),
               nelems);
 
           // BRANCH_R            "R"                   float
