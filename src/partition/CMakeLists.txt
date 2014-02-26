@@ -9,7 +9,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:05:40 d3g096
+# Last Change: 2014-02-26 07:54:54 d3g096
 # -------------------------------------------------------------
 
 
@@ -17,6 +17,7 @@ set(gridpack_partition_sources)
 
 set(target_libraries 
   gridpack_parallel 
+  gridpack_timer
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}

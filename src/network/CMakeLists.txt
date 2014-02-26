@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:06:28 d3g096
+# Last Change: 2014-02-26 07:55:50 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -28,7 +28,7 @@ if (PARMETIS_FOUND)
 endif()
 
 set(target_libraries 
-  gridpack_partition gridpack_components gridpack_parallel
+  gridpack_partition gridpack_components gridpack_parallel gridpack_timer
   ${target_libraries} 
 )
 
