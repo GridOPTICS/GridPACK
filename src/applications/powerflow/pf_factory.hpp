@@ -51,11 +51,6 @@ class PFFactory
     void setYBus(void);
 
     /**
-     * Find GBus vector 
-     */
-    void setGBus(void);
-
-    /**
      * Make SBus vector 
      */
     void setSBus(void);

@@ -68,20 +68,6 @@ void gridpack::contingency_analysis::CAFactory::setYBus(void)
 }
 
 /**
- * Find GBus vector 
- */
-void gridpack::contingency_analysis::CAFactory::setGBus(void)
-{
-  int numBus = p_network->numBuses();
-  int i;
-
-  // Invoke setGBus method on all bus objects
-  for (i=0; i<numBus; i++) {
-    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setGBus();
-  }
-}
-
-/**
   * Make SBus vector 
   */
 void gridpack::contingency_analysis::CAFactory::setSBus(void)

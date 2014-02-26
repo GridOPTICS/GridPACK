@@ -162,12 +162,6 @@ class PFBus
     bool isPV(void);
 
     /**
-     * Return whether or not a bus is isolated
-     * @return true if bus is isolated
-     */
-    bool isIsolated(void) const;
-
-    /**
      * Set voltage value
      */
     void setVoltage(void);
@@ -183,11 +177,6 @@ class PFBus
      * @param status generator status
      */
     void setGenStatus(std::string gen_id, int status);
-
-    /**
-     * setGBus
-    */
-    void setGBus(void);
 
     /**
      * setSBus
@@ -243,7 +232,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
       & p_shunt_gs
       & p_shunt_bs
@@ -376,7 +364,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
       & p_reactance
       & p_resistance

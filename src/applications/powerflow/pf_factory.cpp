@@ -68,20 +68,6 @@ void gridpack::powerflow::PFFactory::setYBus(void)
 }
 
 /**
- * Find GBus vector 
- */
-void gridpack::powerflow::PFFactory::setGBus(void)
-{
-  int numBus = p_network->numBuses();
-  int i;
-
-  // Invoke setGBus method on all bus objects
-  for (i=0; i<numBus; i++) {
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setGBus();
-  }
-}
-
-/**
   * Make SBus vector 
   */
 void gridpack::powerflow::PFFactory::setSBus(void)
