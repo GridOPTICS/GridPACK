@@ -603,7 +603,7 @@ void gridpack::dynamic_simulation::DSBus::load(
   p_ql /= p_sbase;
 
   bool lgen;
-  int i, gstatus, id;
+  int i, gstatus;
   double pg, qg, mva, r, dstr, dtr;
   double h, d0;
   if (data->getValue(GENERATOR_NUMBER, &p_ngen)) {
@@ -634,8 +634,8 @@ void gridpack::dynamic_simulation::DSBus::load(
 
         p_h.push_back(h);
         p_d0.push_back(d0);
-        id = -1;
-        data->getValue(GENERATOR_ID,&id,i);
+        std::string id("-1");
+        bool ok = data->getValue(GENERATOR_ID,&id,i);
         p_genid.push_back(id);
       }
     }
@@ -754,8 +754,8 @@ bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string, const char *
   char *ptr = string;
   int idx = getOriginalIndex();
   for (i=0; i<p_ngen; i++) {
-    sprintf(buf,"      %8d            %2d    %12.6f    %12.6f    %12.6f    %12.6f\n",
-      idx,p_genid[i],real(p_mac_ang_final[i]),real(p_mac_spd_final[i]),
+    sprintf(buf,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
+      idx,p_genid[i].c_str(),real(p_mac_ang_final[i]),real(p_mac_spd_final[i]),
       real(p_mech_final[i]),real(p_elect_final[i]));
     int len =strlen(buf);
     sprintf(ptr,"%s",buf);

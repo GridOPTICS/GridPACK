@@ -211,7 +211,7 @@ class DSBus
     int p_type;
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
-    std::vector<int> p_genid;
+    std::vector<std::string> p_genid;
 
     // DAE related variables
     //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
