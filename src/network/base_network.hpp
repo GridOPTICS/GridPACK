@@ -31,6 +31,7 @@
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/partition/graph_partitioner.hpp"
 #include "gridpack/parallel/shuffler.hpp"
+#include "gridpack/timer/coarse_timer.hpp"
 
 namespace gridpack {
 namespace network {
@@ -916,6 +917,24 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
   /// Partition the network over the available processes
   void partition(void)
   {
+    gridpack::utility::CoarseTimer *timer;
+    timer = NULL;
+    timer = gridpack::utility::CoarseTimer::instance();
+    
+    int t_total, t_part, t_bus_dist, t_gbus_dist, t_branch_dist;
+
+    if (timer != NULL) {
+      t_total = timer->createCategory("BaseNetwork<>::partition(): Total");
+      t_part = timer->createCategory("BaseNetwork<>::partition(): Partitioner");
+      t_bus_dist = timer->createCategory("BaseNetwork<>::partition(): Bus Distribution");
+      t_gbus_dist = timer->createCategory("BaseNetwork<>::partition(): Ghost Bus Distribution");
+      t_branch_dist = timer->createCategory("BaseNetwork<>::partition(): Branch Distribution");
+    }
+
+    if (timer != NULL) timer->start(t_total);
+
+    if (timer != NULL) timer->start(t_part);
+
     // if (this->processor_size() <= 1) return;
     GraphPartitioner partitioner(this->communicator(),
                                  p_buses.size(), p_branches.size());
@@ -931,6 +950,8 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
                            branch->p_globalBusIndex2);
     }
     partitioner.partition();
+
+    if (timer != NULL) timer->stop(t_part);
 
     int me(this->processor_rank());
     GraphPartitioner::IndexVector dest, gdest;
@@ -974,31 +995,40 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
       }
     }
 
+
     // distribute active nodes
 
+    if (timer != NULL) timer->start(t_bus_dist);
     partitioner.node_destinations(dest);
     bus_shuffler(this->communicator(), p_buses, dest);
+    if (timer != NULL) timer->stop(t_bus_dist);
 
     // distribute active edges
 
+    if (timer != NULL) timer->start(t_branch_dist);
     partitioner.edge_destinations(dest);
     branch_shuffler(this->communicator(), p_branches, dest);
+    if (timer != NULL) timer->stop(t_branch_dist);
 
     // At this point, active buses and branches are on the proper
     // process.  Now, we need to distribute and nodes and edges that
     // are ghosted.  
 
+    if (timer != NULL) timer->start(t_gbus_dist);
     bus_shuffler(this->communicator(), ghostbuses, ghostbusdest);
     for (bus = ghostbuses.begin(); bus != ghostbuses.end(); ++bus) {
       bus->p_activeBus = false;
       p_buses.push_back(*bus);
     }
     ghostbuses.clear();
+    if (timer != NULL) timer->stop(t_gbus_dist);
 
+    if (timer != NULL) timer->start(t_branch_dist);
     branch_shuffler(this->communicator(), ghostbranches, ghostbranchdest);
     std::copy(ghostbranches.begin(), ghostbranches.end(),
               std::back_inserter(p_branches));
     ghostbranches.clear();
+    if (timer != NULL) timer->stop(t_branch_dist);
 
     // At this point, each process should have a self-contained
     // network, update local and global indexes, etc.
@@ -1050,6 +1080,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
         if (b->p_activeBranch) active_branches += 1;
       }
     }
+    if (timer != NULL) timer->stop(t_total);
   }
 
   

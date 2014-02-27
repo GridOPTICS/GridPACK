@@ -122,18 +122,18 @@ GraphPartitionerImplementation::partition(void)
 
   gridpack::utility::CoarseTimer *timer;
   timer = NULL;
-  timer = gridpack::utility::CoarseTimer::instance();
+  // timer = gridpack::utility::CoarseTimer::instance();
 
   int t_total, t_adj, t_part, t_node_dest, t_edge_dest, t_gnode_dest, t_gedge_dest;
 
   if (timer != NULL) {
-    t_total = timer->createCategory("Graph Partitioner: Total");
-    t_adj = timer->createCategory("Graph Partitioner: Adjacency");
-    t_part = timer->createCategory("Graph Partitioner: Partitioner");
-    t_node_dest = timer->createCategory("Graph Partitioner: Node Destination");
-    t_edge_dest = timer->createCategory("Graph Partitioner: Edge Destinations");
-    t_gnode_dest = timer->createCategory("Graph Partitioner: Ghost Node Destination");
-    t_gedge_dest = timer->createCategory("Graph Partitioner: Ghost Edge Destination");
+    t_total = timer->createCategory("GraphPartitioner::partition(): Total");
+    t_adj = timer->createCategory("GraphPartitioner::partition: Adjacency");
+    t_part = timer->createCategory("GraphPartitioner::partition: Partitioner");
+    t_node_dest = timer->createCategory("GraphPartitioner::partition: Node Destination");
+    t_edge_dest = timer->createCategory("GraphPartitioner::partition: Edge Destinations");
+    t_gnode_dest = timer->createCategory("GraphPartitioner::partition: Ghost Node Destination");
+    t_gedge_dest = timer->createCategory("GraphPartitioner::partition: Ghost Edge Destination");
   }
 
   if (timer != NULL) timer->start(t_total);
