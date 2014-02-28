@@ -2,21 +2,8 @@
 <Configuration>
   <Contingency_analysis>
     <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
+    <contingencyList>contingencies.xml</contingencyList>
     <groupSize>1</groupSize>
-    <Contingencies>
-      <Contingency>
-        <contingencyType>Line</contingencyType>
-        <contingencyName>CTG1</contingencyName>
-        <contingencyLineBuses> 13 14</contingencyLineBuses>
-        <contingencyLineNames> B1 </contingencyLineNames>
-      </Contingency>
-      <Contingency>
-        <contingencyType>Generator</contingencyType>
-        <contingencyName>CTG2</contingencyName>
-        <contingencyBuses> 2  </contingencyBuses>
-        <contingencyGenerators>1 </contingencyGenerators>
-      </Contingency>
-    </Contingencies>
     <LinearSolver>
       <PETScOptions>
         -ksp_view

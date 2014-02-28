@@ -190,10 +190,16 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
+  // Read in contingency file
+  std::string contingencyfile;
+  if (!cursor->get("contingencyList",&contingencyfile)) {
+    contingencyfile = "contingencies.xml";
+  }
+  bool ok = config->open(contingencyfile,world);
 
   // get a list of contingencies
   cursor =
-    config->getCursor("Configuration.Contingency_analysis.Contingencies");
+    config->getCursor("ContingencyList.Contingency_analysis.Contingencies");
   gridpack::utility::Configuration::ChildCursors contingencies;
   if (cursor) cursor->children(contingencies);
   std::vector<gridpack::contingency_analysis::Contingency>
