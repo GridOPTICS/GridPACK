@@ -5,6 +5,7 @@ program main
   integer i, j, n, nbus, icnt,one,two,three
   double precision zero,load_pl,load_ql,v_mag,v_ang,base_kv
   double precision r,x,b
+  character(len=32) bstring
 !
   load_pl = 0.0d00
   load_ql = 0.0d00
@@ -20,6 +21,20 @@ program main
   one = 1
   two = 2
   three = 3
+!
+!  Figure out number of digits in bus name string
+!
+   nbus = maxdim*maxdim
+   icnt = 0
+   do while (nbus.gt.0)
+     icnt = icnt + 1
+     nbus = nbus/10
+   end do
+   if (icnt.lt.10) then
+     write(bstring,'(a,i1,a,i1,a)') '(i',icnt,'.',icnt,',a)'
+   else
+     write(bstring,'(a,i2,a,i2,a)') '(i',icnt,'.',icnt,',a)'
+   endif
 !
 !  Print out case data
 !
@@ -49,7 +64,7 @@ program main
       write(6,'(a,f8.3)',advance='no') ',',v_mag
       write(6,'(a,f8.3)',advance='no') ',',zero
       write(6,'(a)',advance='no') ',''BUS-'  ! Double apostrophe to print "'"
-      write(6,'(i4.4,a)',advance='no') n,'   '''
+      write(6,bstring,advance='no') n,'   '''
       if (i.eq.1.and.j.eq.1) then
         write(6,'(a,f10.4)',advance='no') ',',base_kv
       else if (i.eq.maxdim.and.j.eq.maxdim) then
