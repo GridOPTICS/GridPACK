@@ -171,6 +171,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_vmap);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   timer->stop(t_vmap);
+  PQ->print();
   timer->start(t_cmap);
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
@@ -191,7 +192,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   ComplexType tol;
 
   // These need to eventually be set using configuration file
-  tolerance = 1.0e-5;
+  tolerance = 1.0e-6;
   max_iteration = 50;
 
   // Create linear solver

@@ -184,6 +184,17 @@ class PFBus
     void setGenStatus(std::string gen_id, int status);
 
     /**
+     * Set isPV status
+     * @param status isPV status
+     */
+    void setIsPV(int status);
+
+    /**
+     * Reset isPV status
+     */
+    void resetIsPV();
+
+    /**
      * setSBus
     BUS = (CG*(GEN(ON,PG) + J*GEN(ON,QG)-(PD+J*QD))/BASEMVA
     */
@@ -221,7 +232,7 @@ class PFBus
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;
-    bool p_isPV;
+    bool p_isPV, p_saveisPV;
 
     /**
      * Variables that are exchanged between buses
@@ -253,7 +264,7 @@ private:
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
-      & p_isPV;
+      & p_isPV & p_saveisPV;
   }  
 
 };

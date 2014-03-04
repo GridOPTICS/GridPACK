@@ -213,13 +213,19 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
           std::vector<std::string>  genids = bus->getGenerators();
           int l;
           int lsize = status.size();
+          int sumIsPV = 0;
           for (l=0; l<lsize; l++) {
             if (genids[l] == genid ) {
               p_saveStatus.push_back(static_cast<bool>(status[l]));
               printf("Setting generator \'%s\' on bus %d\n",genids[l].c_str(),idx);
               bus->setGenStatus(genids[l], false);
               found = true;
-            }
+            } else {
+              if (status[l] == 1 ) sumIsPV = sumIsPV + 1; //at least one gen on the same bus is still on, still PV bus
+            }   
+          }
+          if (sumIsPV == 0) {
+              bus->setIsPV(false);
           }
         }
       }
@@ -272,6 +278,7 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
   for (i=0; i<numBus; i++) {
     bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
     idx = bus->getOriginalIndex();
+
     // check bus indices against contingencies
     for (j = 0; j<size; j++) {
       if (contingency.p_type == gridpack::contingency_analysis::Generator) {
@@ -280,6 +287,7 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
           // contingency
           std::string genid = contingency.p_genid[j];
           std::vector<int> status = bus->getGenStatus();
+          bus->resetIsPV();
           std::vector<std::string>  genids = bus->getGenerators();
           int l;
           int lsize = status.size();

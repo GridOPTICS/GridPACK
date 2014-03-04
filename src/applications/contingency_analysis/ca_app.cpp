@@ -131,8 +131,8 @@ void gridpack::contingency_analysis::CAApp::execute(
   p_factory->setMode(gridpack::powerflow::YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
-  branchIO.header("\n=== orginal ybus: ============\n");
-  orgYbus->print();
+  //branchIO.header("\n=== orginal ybus: ============\n");
+  //orgYbus->print();
 
   //////////////////////////////////////////////////////////////
   p_factory->setMode(gridpack::powerflow::S_Cal);
@@ -144,7 +144,8 @@ void gridpack::contingency_analysis::CAApp::execute(
   p_factory->setMode(gridpack::powerflow::RHS);
   gridpack::mapper::BusVectorMap<CANetwork> vMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-  //PQ->print();
+  branchIO.header("\n=== PQ: ============\n");
+  PQ->print();
   p_factory->setMode(gridpack::powerflow::Jacobian);
   gridpack::mapper::FullMatrixMap<CANetwork> jMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
@@ -159,7 +160,7 @@ void gridpack::contingency_analysis::CAApp::execute(
   ComplexType tol;
 
   // These need to eventually be set using configuration file
-  tolerance = 1.0e-5;
+  tolerance = 1.0e-6;
   max_iteration = 50;
 
   // Create linear solver

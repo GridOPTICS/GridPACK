@@ -319,7 +319,7 @@ void gridpack::powerflow::PFBus::load(
     setReferenceBus(true);
   }
 
-  // if BUS_TYPE = 2 then bus is a PV bus
+  // if BUS_TYPE = 2, and gstatus is 1, then bus is a PV bus
   p_isPV = false;
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
@@ -351,7 +351,7 @@ void gridpack::powerflow::PFBus::load(
       }
     }
   }
-
+  p_saveisPV = p_isPV;
 }
 
 /**
@@ -460,6 +460,25 @@ void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, int status)
       break;
     }
   }
+}
+
+/**
+ * Set isPV status
+ * @param status isPV status
+ */
+void gridpack::powerflow::PFBus::setIsPV(int status)
+{
+  p_saveisPV = p_isPV;
+  p_isPV = status;
+  p_v = p_voltage;
+}
+
+/**
+ * Reset isPV status
+ */
+void gridpack::powerflow::PFBus::resetIsPV()
+{
+  p_isPV = p_saveisPV;
 }
 
 /**
