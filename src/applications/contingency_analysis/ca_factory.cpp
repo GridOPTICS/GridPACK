@@ -303,6 +303,49 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
   }
 }
 
+/**
+ * Check for lone buses in the system. Do this by looking for buses that
+ * have no branches attached to them or for whom all the branches attached
+ * to the bus have all transmission elements with status false (the element
+ * is off)
+ * @return false if there is an isolated bus in the network
+ */
+bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
+{
+  int numBus = p_network->numBuses();
+  int i, j, k;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>
+      (p_network->getBus(i).get());
+    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+    bus->getNeighborBranches(branches);
+    int size = branches.size();
+    if (size == 0) {
+      bus_ok = false;
+      break;
+    }
+    bool ok = false;
+    for (j=0; j<size; j++) {
+      bool branch_ok = false;
+      std::vector<bool> status = dynamic_cast<gridpack::powerflow::PFBranch*>
+        (branches[j].get())->getLineStatus(); 
+      int nlines = status.size();
+      for (k=0; k<nlines; k++) {
+        if (status[k]) branch_ok = true;
+      }
+      if (branch_ok) ok = true;
+    }
+    if (!ok) {
+      bus_ok = false;
+      break;
+    }
+  }
+  // Check whether bus_ok is true on all processors
+  return checkTrue(bus_ok);
+}
+
 
 } // namespace contingency_analysis 
 } // namespace gridpack

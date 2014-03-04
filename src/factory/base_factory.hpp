@@ -325,6 +325,30 @@ class BaseFactory {
       }
     }
 
+    /**
+     * A convenience function that checks to see if something is true on all
+     * processors
+     * @param flag boolean flag on each processor
+     * @return true if flag is true on all processors, false otherwise
+     */
+    bool checkTrue(bool flag) {
+      int iok;
+      if (flag) {
+        iok = 1;
+      } else {
+        iok = 0;
+      }
+      int grp = p_network->communicator().getGroup();
+      int nprocs = GA_Pgroup_nnodes(grp);
+      GA_Pgroup_igop(grp,&iok,nprocs,"+");
+      if (iok == nprocs) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+
   protected:
 
     NetworkPtr p_network;

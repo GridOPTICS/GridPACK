@@ -101,8 +101,8 @@ void gridpack::contingency_analysis::CAApp::execute(
     gridpack::contingency_analysis::Contingency contingency)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
-  gridpack::utility::CoarseTimer *timer = 
-    gridpack::utility::CoarseTimer::instance();
+  // gridpack::utility::CoarseTimer *timer = 
+  //   gridpack::utility::CoarseTimer::instance();
 
   // get configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
@@ -124,6 +124,15 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   // set contingency
   p_factory->setContingency(contingency);
+
+  // check contingency for isolated buses
+  if (!p_factory->checkLoneBus()) {
+    sprintf(ioBuf,"\nIsolated bus found for contingency %s\n",
+        contingency.p_name.c_str());
+    busIO.header(ioBuf);
+    busIO.close();
+    return;
+  }
 
   // set YBus components so that you can create Y matrix  
   p_factory->setYBus();

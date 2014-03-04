@@ -68,7 +68,7 @@ class CAFactory
      * Create the Jacobian matrix
      */
     void setJacobian(void);
-#if 1
+
     /**
      * Set contingency
      * @param contingency the contigency that is to be set
@@ -80,7 +80,16 @@ class CAFactory
      */
     void clearContingency(gridpack::contingency_analysis::Contingency
         contingency);
-#endif
+    
+    /**
+     * Check for lone buses in the system. Do this by looking for buses that
+     * have no branches attached to them or for whom all the branches attached
+     * to the bus have all transmission elements with status false (the element
+     * is off)
+     * @return false if there is an isolated bus in the network
+     */
+    bool checkLoneBus(void);
+
   private:
 
     NetworkPtr p_network;
