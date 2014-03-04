@@ -30,7 +30,6 @@ program f_test
 !
 !  Initialize data array
 !
-  write(6,'(a)') 'Got to 1'
   do i = 1, 10
     data(i)%i1 = i
     data(i)%i2 = i + 1
@@ -44,10 +43,8 @@ program f_test
 !   Copy data from array element 2 to array element 6 using a function written
 !   C.
 !
-  write(6,'(a)') 'Got to 4'
   bsize = loc(data(2)) - loc(data(1))
   call c_overwrite(bsize,data(2),data(6));
-  write(6,'(a)') 'Got to 5'
 !
 !   Print out values of data elements 2 and 6
 !
