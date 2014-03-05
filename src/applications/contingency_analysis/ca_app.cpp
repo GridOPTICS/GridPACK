@@ -110,6 +110,8 @@ void gridpack::contingency_analysis::CAApp::execute(
   cursor = config->getCursor("Configuration.Contingency_analysis");
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
+  double maxV = cursor->get("maxVoltage",1.1); 
+  double minV = cursor->get("minVoltage",0.9); 
 
   //Set voltage and phase angle to initial values
   p_factory->resetVoltage();
@@ -121,6 +123,11 @@ void gridpack::contingency_analysis::CAApp::execute(
   sprintf(ioBuf,"%s.out",contingency.p_name.c_str());
   busIO.open(ioBuf);
   branchIO.setStream(busIO.getStream());
+
+  sprintf(ioBuf,"\nMaximum voltage limit: %f\n",maxV);
+  busIO.header(ioBuf);
+  sprintf(ioBuf,"\nMinimum voltage limit: %f\n",minV);
+  busIO.header(ioBuf);
 
   // set contingency
   p_factory->setContingency(contingency);
@@ -229,6 +236,13 @@ void gridpack::contingency_analysis::CAApp::execute(
   // Push final result back onto buses
   p_factory->setMode(gridpack::powerflow::RHS);
   vMap.mapToBus(X);
+
+  // Check for any violations
+  bool network_ok = p_factory->checkContingencies(minV,maxV);
+  if (!network_ok) {
+    sprintf(ioBuf,"\n   Violation found for contingency %s\n",contingency.p_name.c_str());
+    busIO.header(ioBuf);
+  }
 
   branchIO.header("\n   Branch Power Flow\n");
   branchIO.header("\n        Bus 1       Bus 2            P"

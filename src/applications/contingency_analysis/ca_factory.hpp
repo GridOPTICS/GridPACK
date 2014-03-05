@@ -90,6 +90,15 @@ class CAFactory
      */
     bool checkLoneBus(void);
 
+    /**
+     * Check to see if there any violations on the network
+     * @param minV maximum voltage limit
+     * @param maxV maximum voltage limit
+     * @return true if no violations found
+     */
+    bool  checkContingencies(double minV, double maxV);
+
+
   private:
 
     NetworkPtr p_network;

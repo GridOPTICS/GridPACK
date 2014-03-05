@@ -4,6 +4,8 @@
     <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
     <contingencyList>contingencies.xml</contingencyList>
     <groupSize>1</groupSize>
+    <maxVoltage>1.1</maxVoltage>
+    <minVoltage>0.9</minVoltage>
     <LinearSolver>
       <PETScOptions>
         -ksp_view

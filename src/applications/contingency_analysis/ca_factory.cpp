@@ -17,6 +17,7 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/parser/dictionary.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "ca_factory.hpp"
@@ -344,6 +345,56 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
   }
   // Check whether bus_ok is true on all processors
   return checkTrue(bus_ok);
+}
+
+/**
+ * Check to see if there any violations on the network
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ * @return true if no violations found
+ */
+bool  gridpack::contingency_analysis::CAFactory::checkContingencies(
+    double minV, double maxV)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      double V = bus->getVoltage();
+      if (V < minV || V > maxV) bus_ok = false;
+    }
+  }
+  int numBranch = p_network->numBranches();
+  bool branch_ok = true;
+  for (i=0; i<numBranch; i++) {
+    if (p_network->getActiveBranch(i)) {
+      gridpack::powerflow::PFBranch *branch =
+        dynamic_cast<gridpack::powerflow::PFBranch*>
+        (p_network->getBranch(i).get());
+      gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>
+        (branch->getBus1().get());
+      // Loop over all lines in the branch and choose the smallest rating value
+      int nlines;
+      p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      double rateA, tmp;
+      bool found = p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,0);
+      for (int k = 1; k<nlines; k++) {
+        if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&tmp,k)) found = true;
+        if (tmp < rateA) rateA = tmp;
+      }
+      double pq;
+      if (found && rateA > 0.0) {
+        double p,q;
+        branch->getPQ(bus,&p,&q);
+        pq = sqrt(p*p+q*q);
+      }
+      if (pq > rateA && rateA > 0.0) branch_ok = false;
+    }
+  }
+  return bus_ok && branch_ok;
 }
 
 
