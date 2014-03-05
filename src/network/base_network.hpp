@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2013-12-04 09:52:19 d3g096
+ * @date   2014-03-05 12:39:25 d3g096
  * 
  * @brief  
  * 
@@ -31,6 +31,7 @@
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/partition/graph_partitioner.hpp"
 #include "gridpack/parallel/shuffler.hpp"
+#include "gridpack/parallel/ga_shuffler.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 
 namespace gridpack {
@@ -956,8 +957,16 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     int me(this->processor_rank());
     GraphPartitioner::IndexVector dest, gdest;
 
-    Shuffler<BusData<BusType>, GraphPartitioner::Index> bus_shuffler;
-    Shuffler<BranchData<BranchType>, GraphPartitioner::Index> branch_shuffler;
+#if 1
+    typedef parallel::Shuffler<BusData<BusType>, GraphPartitioner::Index> BusShufflerType;
+    typedef parallel::Shuffler<BranchData<BranchType>, GraphPartitioner::Index> BranchShufflerType;
+#else 
+    typedef parallel::gaShuffler<BusData<BusType>, GraphPartitioner::Index> BusShufflerType;
+    typedef parallel::gaShuffler<BranchData<BranchType>, GraphPartitioner::Index> BranchShufflerType;
+#endif
+
+    BusShufflerType bus_shuffler(this->communicator());
+    BranchShufflerType branch_shuffler(this->communicator());
 
     // Need to make copies of buses and branches that will be ghosted.
     // After active bus/branch distribution, they may not be on this
@@ -1000,14 +1009,14 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 
     if (timer != NULL) timer->start(t_bus_dist);
     partitioner.node_destinations(dest);
-    bus_shuffler(this->communicator(), p_buses, dest);
+    bus_shuffler(p_buses, dest);
     if (timer != NULL) timer->stop(t_bus_dist);
 
     // distribute active edges
 
     if (timer != NULL) timer->start(t_branch_dist);
     partitioner.edge_destinations(dest);
-    branch_shuffler(this->communicator(), p_branches, dest);
+    branch_shuffler(p_branches, dest);
     if (timer != NULL) timer->stop(t_branch_dist);
 
     // At this point, active buses and branches are on the proper
@@ -1015,7 +1024,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     // are ghosted.  
 
     if (timer != NULL) timer->start(t_gbus_dist);
-    bus_shuffler(this->communicator(), ghostbuses, ghostbusdest);
+    bus_shuffler(ghostbuses, ghostbusdest);
     for (bus = ghostbuses.begin(); bus != ghostbuses.end(); ++bus) {
       bus->p_activeBus = false;
       p_buses.push_back(*bus);
@@ -1024,7 +1033,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     if (timer != NULL) timer->stop(t_gbus_dist);
 
     if (timer != NULL) timer->start(t_branch_dist);
-    branch_shuffler(this->communicator(), ghostbranches, ghostbranchdest);
+    branch_shuffler(ghostbranches, ghostbranchdest);
     std::copy(ghostbranches.begin(), ghostbranches.end(),
               std::back_inserter(p_branches));
     ghostbranches.clear();

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-13 07:30:59 d3g096
+# Last Change: 2014-03-04 10:44:20 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -92,5 +92,11 @@ gridpack_add_unit_test(mpi_test mpi_test)
 # TEST: shuffle_test
 # -------------------------------------------------------------
 add_executable(shuffle_test test/shuffle_test.cpp)
-target_link_libraries(shuffle_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(shuffle_test 
+  gridpack_parallel 
+  ${GA_LIBRARIES} 
+  ${Boost_LIBRARIES} 
+  ${MPI_CXX_LIBRARIES}
+)
 gridpack_add_unit_test(shuffle shuffle_test)
+

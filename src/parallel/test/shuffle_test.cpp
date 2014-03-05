@@ -6,7 +6,7 @@
 /**
  * @file   shuffle_test.cpp
  * @author William A. Perkins
- * @date   2013-12-12 08:24:01 d3g096
+ * @date   2014-03-05 10:42:20 d3g096
  * 
  * @brief  A test of the Shuffler<> class
  * 
@@ -26,6 +26,7 @@
 
 #include "printit.hpp"
 #include "shuffler.hpp"
+#include "ga_shuffler.hpp"
 
 // -------------------------------------------------------------
 // struct Tester
@@ -80,8 +81,8 @@ BOOST_AUTO_TEST_CASE( int_shuffle )
 
   printit(world, things, "Before:");
 
-  Shuffler<int> shuffle;
-  shuffle(world, things, dest);
+  gridpack::parallel::Shuffler<int> shuffle(world);
+  shuffle(things, dest);
 
   printit(world, things, "After:");
 }
@@ -107,8 +108,8 @@ BOOST_AUTO_TEST_CASE( string_shuffle )
 
   printit(world, things, "Before:");
 
-  Shuffler<std::string> shuffle;
-  shuffle(world, things, dest);
+  gridpack::parallel::Shuffler<std::string> shuffle(world);
+  shuffle(things, dest);
 
   printit(world, things, "After:");
 }
@@ -132,8 +133,8 @@ BOOST_AUTO_TEST_CASE( tester_shuffle )
 
   printit(world, things, "Before:");
 
-  Shuffler<Tester> shuffle;
-  shuffle(world, things, dest);
+  gridpack::parallel::Shuffler<Tester> shuffle(world);
+  shuffle(things, dest);
 
   printit(world, things, "After:");
 }
@@ -156,8 +157,8 @@ BOOST_AUTO_TEST_CASE( multi_tester_shuffle )
   printit(world, things, "Before:");
   printit(world, dest, "Destination:");
 
-  Shuffler<Tester> shuffle;
-  shuffle(world, things, dest);
+  gridpack::parallel::Shuffler<Tester> shuffle(world);
+  shuffle(things, dest);
 
   printit(world, things, "After:");
 
@@ -166,12 +167,69 @@ BOOST_AUTO_TEST_CASE( multi_tester_shuffle )
   dest.resize(things.size(), 0);
   printit(world, dest, "Destination:");
 
-  shuffle(world, things, dest);
+  shuffle(things, dest);
 
   printit(world, things, "After:");
     
 }
 
+BOOST_AUTO_TEST_SUITE_END( )
+
+BOOST_AUTO_TEST_SUITE( gaShufflerTest )
+
+BOOST_AUTO_TEST_CASE( stringShuffle )
+{
+  gridpack::parallel::Communicator world;
+  const int local_size(5);
+  const int global_size(local_size*world.size());
+  std::vector<std::string> things;
+  std::vector<int> dest;
+  
+  if (world.rank() == 0) {
+    things.resize(global_size);
+    dest.resize(global_size);
+    for (int i = 0; i < local_size*world.size(); ++i) {
+      char c('A');
+      c += i;
+      things[i] = c;
+      dest[i] = i % world.size();
+    }
+  }
+
+  printit(world, things, "Before:");
+
+  gridpack::parallel::gaShuffler<std::string, int> shuffler(world);
+
+  shuffler(things, dest);
+
+  printit(world, things, "After:");
+}
+
+BOOST_AUTO_TEST_CASE( testerShuffle )
+{
+  boost::mpi::communicator world;
+  const int local_size(5);
+  const int global_size(local_size*world.size());
+  std::vector<Tester> things;
+  std::vector<int> dest;
+  
+  if (world.rank() == 0) {
+    things.reserve(global_size);
+    dest.reserve(global_size);
+    for (int i = 0; i < local_size*world.size(); ++i) {
+      things.push_back(Tester(i));
+      dest.push_back(i % world.size());
+    }
+  }
+
+  printit(world, things, "Before:");
+
+  gridpack::parallel::gaShuffler<Tester> shuffler(world);
+
+  shuffler(things, dest);
+
+  printit(world, things, "After:");
+}
 
 
 BOOST_AUTO_TEST_SUITE_END( )
@@ -187,7 +245,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  boost::mpi::environment env(argc, argv);
+  gridpack::parallel::Environment env(argc, argv);
   return ::boost::unit_test::unit_test_main( &init_function, argc, argv );
 }
 

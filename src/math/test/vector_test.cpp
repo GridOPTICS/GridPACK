@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2014-01-13 12:01:01 d3g096
+ * @date   2014-03-05 12:11:53 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -554,4 +554,5 @@ main(int argc, char **argv)
   gridpack::math::Initialize();
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   gridpack::math::Finalize();
+  return result;
 }

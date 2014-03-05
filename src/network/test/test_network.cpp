@@ -653,4 +653,5 @@ int main (int argc, char **argv) {
   }
 
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  return result;
 }

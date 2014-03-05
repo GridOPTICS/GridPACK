@@ -8,7 +8,7 @@
 /**
  * @file   shuffler.hpp
  * @author William A. Perkins
- * @date   2013-12-16 14:23:26 d3g096
+ * @date   2014-03-05 12:05:37 d3g096
  * 
  * @brief  A thing to redistribute a vector of things over several processors 
  * 
@@ -31,9 +31,13 @@
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
 
+#include "gridpack/parallel/distributed.hpp"
 
 #ifndef _shuffler_hpp_
 #define _shuffler_hpp_
+
+namespace gridpack {
+namespace parallel {
 
 // -------------------------------------------------------------
 //  class Shuffler
@@ -52,21 +56,33 @@
  * 
  */
 
-template <typename Thing, typename I = int>
-struct Shuffler {
+template <typename Thing, typename Index = int>
+class Shuffler 
+  : public Distributed,
+    private utility::Uncopyable
+{
+public:
 
   // Thing must be copyable, at a relatively low cost, and
   // serializable -- should test for that
 
   typedef std::vector<Thing> ThingVector;
-  typedef I Index;
   typedef std::vector<Index> IndexVector;
+
+  Shuffler(const Communicator& comm)
+    : Distributed(comm), utility::Uncopyable()
+  {}
+
+  ~Shuffler(void) {}
   
   /// Redistribute and get the Things assigned to the local process
-  void operator()(const boost::mpi::communicator& comm, 
-                  ThingVector& locthings, const IndexVector& destproc)
+  void operator()(ThingVector& locthings, const IndexVector& destproc)
   {
     BOOST_ASSERT(locthings.size() == destproc.size());
+
+    const boost::mpi::communicator& comm(this->communicator());
+
+    if (comm.size() <= 1) return;
 
     size_t nthings(0);
     all_reduce(comm, locthings.size(), nthings, std::plus<size_t>());
@@ -74,10 +90,7 @@ struct Shuffler {
 
     // save the original list of local things 
 
-    ThingVector tvect; 
-    tvect.reserve(locthings.size());
-    std::copy(locthings.begin(), locthings.end(),
-              std::back_inserter(tvect));
+    ThingVector tvect(locthings); 
     locthings.clear();
 
     // Work on each processors list of things separately
@@ -112,6 +125,9 @@ struct Shuffler {
 
 };
 
+
+} // namespace parallel
+} // namespace gridpack
 
 
 #endif
