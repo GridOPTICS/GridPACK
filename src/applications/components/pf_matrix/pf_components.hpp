@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @date   2014-03-05 14:50:50 d3g096
  * 
  * @brief  
  * 
@@ -264,7 +264,8 @@ private:
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
-      & p_isPV & p_saveisPV;
+      & p_isPV;
+    ar & p_saveisPV;
   }  
 
 };
