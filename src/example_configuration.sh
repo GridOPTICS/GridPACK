@@ -8,18 +8,27 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
-        -D CMAKE_BUILD_TYPE:STRING=Debug \
+        -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
 if [ $host == "flophouse" ]; then
 
-    prefix="/net/flophouse/files0/perksoft/linux64"
-    /usr/bin/cmake -Wdev --debug-trycompile \
+    CC=/usr/bin/gcc44
+    export CC
+    CXX=/usr/bin/g++44
+    export CXX
+    CFLAGS="-pthread"
+    export CFLAGS
+    CXXFLAGS="-pthread"
+    export CXXFLAGS
+
+    prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
+    cmake -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-linux2-complex-opt' \
+        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
+        -D PETSC_ARCH:STRING='arch-linux2-g++44-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \

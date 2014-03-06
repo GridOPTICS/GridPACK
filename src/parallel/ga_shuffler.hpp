@@ -10,7 +10,7 @@
 /**
  * @file   ga_shuffler.hpp
  * @author William A. Perkins
- * @date   2014-03-05 10:41:05 d3g096
+ * @date   2014-03-06 11:47:29 d3g096
  * 
  * @brief  
  * 
@@ -27,6 +27,7 @@
 #include <vector>
 
 #include <boost/assert.hpp>
+#include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
@@ -53,6 +54,10 @@ public:
 
   typedef std::vector<Thing> ThingVector;
   typedef std::vector<Index> IndexVector;
+
+  /// The type of (output) serialization archive to use
+  typedef boost::archive::binary_oarchive oArchive;
+  typedef boost::archive::binary_iarchive iArchive;
   
   /// Default constructor.
   gaShuffler(const Communicator& comm)
@@ -109,7 +114,7 @@ public:
     for (int p = 0; p < nproc; ++p) {
       if (p != me) {
         std::ostringstream ostr(std::ios::binary);
-        boost::archive::binary_oarchive oarch(ostr);
+        oArchive oarch(ostr);
         oarch & tosend[p];
         int buflen = MA_sizeof(MT_CHAR, ostr.str().length(), p_gaType);
         p_gaBuffers[p].resize(buflen);
@@ -158,7 +163,7 @@ public:
                       buflen*sizeof(gaBufferType::value_type));
         p_gaBuffers[me].clear();
         std::istringstream is(s, std::ios::binary);
-        boost::archive::binary_iarchive iarch(is);
+        iArchive iarch(is);
         ThingVector tmp;
         iarch & tmp;
         std::copy(tmp.begin(), tmp.end(), std::back_inserter(locthings));
