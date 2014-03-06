@@ -33,14 +33,14 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-add_executable(ds.x
-   ds_app.cpp
-   ds_components.cpp
-   ds_factory.cpp
-   ds_main.cpp
+add_executable(ds2.x
+   ds2_app.cpp
+   ds2_components.cpp
+   ds2_factory.cpp
+   ds2_main.cpp
 )
 
-target_link_libraries(ds.x ${target_libraries})
+target_link_libraries(ds2.x ${target_libraries})
 
 
 # -------------------------------------------------------------

@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_app.hpp
+ * @file   ds2_app.hpp
  * @author Shuangshuang Jin
  * @date   September 19, 2013
  *
@@ -15,12 +15,12 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _ds_app_h_
-#define _ds_app_h_
+#ifndef _ds2_app_h_
+#define _ds2_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/configuration/configuration.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
+#include "gridpack/applications/dynamic_simulation_2/ds2_factory.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {

@@ -17,7 +17,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_app.hpp"
+#include "gridpack/applications/dynamic_simulation_2/ds2_app.hpp"
 
 // Calling program for the dynamis simulation applications
 

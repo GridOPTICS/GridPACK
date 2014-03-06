@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_factory.cpp
+ * @file   ds2_factory.cpp
  * @author Shuangshuang Jin 
  * @date   September 19, 2013
  * 
@@ -19,8 +19,8 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
+#include "gridpack/applications/dynamic_simulation_2/ds2_components.hpp"
+#include "gridpack/applications/dynamic_simulation_2/ds2_factory.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 

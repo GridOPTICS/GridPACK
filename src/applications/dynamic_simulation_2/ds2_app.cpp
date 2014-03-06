@@ -19,13 +19,13 @@
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/linear_solver.hpp"
 #include "gridpack/math/linear_matrix_solver.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_app.hpp"
+#include "gridpack/applications/dynamic_simulation_2/ds2_app.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
+#include "gridpack/applications/dynamic_simulation_2/ds2_factory.hpp"
 
 // Calling program for dynamic simulation application
 

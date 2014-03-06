@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_components.cpp
+ * @file   ds2_components.cpp
  * @author Shuangshuang Jin 
  * @date   2013-11-19 13:46:09 d3g096
  * 
@@ -22,7 +22,7 @@
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "ds_components.hpp"
+#include "ds2_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
 /**

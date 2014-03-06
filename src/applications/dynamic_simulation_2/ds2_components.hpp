@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_components.hpp
+ * @file   ds2_components.hpp
  * @author Shuangshuang Jin 
  * @date   September 19, 2013
  * 
@@ -15,8 +15,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _ds_components_h_
-#define _ds_components_h_
+#ifndef _ds2_components_h_
+#define _ds2_components_h_
 
 /**
  * Some preprocessor string declarations. These will need to be put in an
