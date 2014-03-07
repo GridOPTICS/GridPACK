@@ -7,7 +7,7 @@
 /**
  * @file   ds2_components.hpp
  * @author Shuangshuang Jin 
- * @date   September 19, 2013
+ * @date   March 06, 2014
  * 
  * @brief  
  * 
@@ -50,10 +50,7 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, PERM, PERMTrans, YA, permYMOD, YB, PMatrix, updateYbus,
-            DAE_init, init_pelect, init_eprime, init_mac_ang, init_mac_spd,
-            init_eqprime, init_pmech, init_mva, init_d0, init_h, onFY,
-            posFY, YC};
+enum DSMode{YBUS, YL};
 
 class DSBus
   : public gridpack::ymatrix::YMBus
