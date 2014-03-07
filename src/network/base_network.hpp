@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2014-03-05 12:39:25 d3g096
+ * @date   2014-03-06 09:40:19 d3g096
  * 
  * @brief  
  * 
@@ -928,7 +928,6 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
       t_total = timer->createCategory("BaseNetwork<>::partition(): Total");
       t_part = timer->createCategory("BaseNetwork<>::partition(): Partitioner");
       t_bus_dist = timer->createCategory("BaseNetwork<>::partition(): Bus Distribution");
-      t_gbus_dist = timer->createCategory("BaseNetwork<>::partition(): Ghost Bus Distribution");
       t_branch_dist = timer->createCategory("BaseNetwork<>::partition(): Branch Distribution");
     }
 
@@ -1007,6 +1006,8 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 
     // distribute active nodes
 
+    // std::cout << me << ": distributing " << p_buses.size() << " active buses" << std::endl;
+
     if (timer != NULL) timer->start(t_bus_dist);
     partitioner.node_destinations(dest);
     bus_shuffler(p_buses, dest);
@@ -1023,14 +1024,16 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
     // process.  Now, we need to distribute and nodes and edges that
     // are ghosted.  
 
-    if (timer != NULL) timer->start(t_gbus_dist);
+    // std::cout << me << ": distributing " << ghostbuses.size() << " ghost buses" << std::endl;
+
+    if (timer != NULL) timer->start(t_bus_dist);
     bus_shuffler(ghostbuses, ghostbusdest);
     for (bus = ghostbuses.begin(); bus != ghostbuses.end(); ++bus) {
       bus->p_activeBus = false;
       p_buses.push_back(*bus);
     }
     ghostbuses.clear();
-    if (timer != NULL) timer->stop(t_gbus_dist);
+    if (timer != NULL) timer->stop(t_bus_dist);
 
     if (timer != NULL) timer->start(t_branch_dist);
     branch_shuffler(ghostbranches, ghostbranchdest);
@@ -1089,6 +1092,13 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
         if (b->p_activeBranch) active_branches += 1;
       }
     }
+
+    std::cout << me << ": "
+              << "I have " 
+              << p_buses.size() << " buses and "
+              << p_branches.size() << " branches"
+              << std::endl;
+
     if (timer != NULL) timer->stop(t_total);
   }
 
