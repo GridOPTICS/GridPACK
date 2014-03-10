@@ -984,6 +984,27 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
 }
 
 /**
+ * Return complex power for line element
+ * @param tag describing line element on branch
+ * @return complex power
+ */
+gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
+        std::string tag)
+{
+  gridpack::ComplexType vi, vj, yii, yij, s;
+  s = ComplexType(0.0,0.0);
+  gridpack::powerflow::PFBus *bus1 = 
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+  vi = bus1->getComplexVoltage();
+  gridpack::powerflow::PFBus *bus2 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+  vj = bus2->getComplexVoltage();
+  getLineElements(tag,&yii,&yij);
+  s = vi*conj(yii*vi+yij*vj)*p_sbase;
+  return s;
+}
+
+/**
  * Write output from branches to standard out
  * @param string (output) string with information to be printed out
  * @param signal an optional character string to signal to this
@@ -992,20 +1013,17 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
  */
 bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal)
 {
-  gridpack::ComplexType vi, vj, y, yii, yij, s;
   gridpack::powerflow::PFBus *bus1 = 
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
-  vi = bus1->getComplexVoltage();
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-  vj = bus2->getComplexVoltage();
   if (!strcmp(signal,"flow")) {
+    gridpack::ComplexType s;
     char buf[128];
     std::vector<std::string> tags = getLineTags();
     int i;
     for (i=0; i<p_elems; i++) {
-      getLineElements(tags[i],&yii,&yij);
-      s = vi*conj(yii*vi+yij*vj)*p_sbase;
+      s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
       sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f\n",
@@ -1014,6 +1032,9 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
       string += strlen(buf);
     }
   } else {
+    gridpack::ComplexType vi, vj, y, s;
+    vi = bus1->getComplexVoltage();
+    vj = bus2->getComplexVoltage();
     y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
     s = vi*conj(y*(vi-vj));
     double p = real(s)*p_sbase;

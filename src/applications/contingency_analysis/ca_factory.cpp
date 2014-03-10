@@ -372,26 +372,26 @@ bool  gridpack::contingency_analysis::CAFactory::checkContingencies(
   for (i=0; i<numBranch; i++) {
     if (p_network->getActiveBranch(i)) {
       gridpack::powerflow::PFBranch *branch =
-        dynamic_cast<gridpack::powerflow::PFBranch*>
-        (p_network->getBranch(i).get());
+	dynamic_cast<gridpack::powerflow::PFBranch*>
+	(p_network->getBranch(i).get());
       gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>
-        (branch->getBus1().get());
+	(branch->getBus1().get());
       // Loop over all lines in the branch and choose the smallest rating value
       int nlines;
       p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
-      double rateA, tmp;
-      bool found = p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,0);
-      for (int k = 1; k<nlines; k++) {
-        if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&tmp,k)) found = true;
-        if (tmp < rateA) rateA = tmp;
+      std::vector<std::string> tags = branch->getLineTags();
+      double rateA;
+      for (int k = 0; k<nlines; k++) {
+	if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
+	  if (rateA > 0.0) {
+	    gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+	    double p = real(s);
+	    double q = imag(s);
+	    double pq = sqrt(p*p+q*q);
+            if (pq > rateA) branch_ok = false;
+	  }
+	}
       }
-      double pq;
-      if (found && rateA > 0.0) {
-        double p,q;
-        branch->getPQ(bus,&p,&q);
-        pq = sqrt(p*p+q*q);
-      }
-      if (pq > rateA && rateA > 0.0) branch_ok = false;
     }
   }
   return bus_ok && branch_ok;

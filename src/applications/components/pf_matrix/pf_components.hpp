@@ -346,6 +346,13 @@ class PFBranch
     void setMode(int mode);
 
     /**
+     * Return complex power for line element
+     * @param tag describing line element on branch
+     * @return complex power
+     */
+    gridpack::ComplexType getComplexPower(std::string tag);
+
+    /**
      * Write output from branches to standard out
      * @param string (output) string with information to be printed out
      * @param signal an optional character string to signal to this
