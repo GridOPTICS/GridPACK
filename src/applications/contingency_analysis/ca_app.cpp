@@ -102,7 +102,6 @@ void gridpack::contingency_analysis::CAApp::init(int argc, char** argv)
   // initialize bus data exchange
   p_network->initBusUpdate();
   timer->stop(t_init);
-
 }
 /**
  * Execute application
@@ -113,6 +112,7 @@ void gridpack::contingency_analysis::CAApp::execute(
   gridpack::parallel::Communicator comm = p_network->communicator();
   gridpack::utility::CoarseTimer *timer = 
     gridpack::utility::CoarseTimer::instance();
+  double time = timer->currentTime();
   int t_task = timer->createCategory("Evaluate Contingency");
   timer->start(t_task);
 
@@ -264,6 +264,10 @@ void gridpack::contingency_analysis::CAApp::execute(
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   busIO.write();
+
+  time = timer->currentTime()-time;
+  sprintf(ioBuf,"\nElapsed time for task: %12.6f\n",time);
+  busIO.header(ioBuf);
 
   busIO.close();
   // clear contingency
