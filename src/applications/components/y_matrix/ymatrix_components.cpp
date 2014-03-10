@@ -480,6 +480,50 @@ gridpack::ymatrix::YMBranch::getShunt(gridpack::ymatrix::YMBus *bus)
 }
 
 /**
+ * Return contributions to Y-matrix from a specific transmission element
+ * @param tag character string for transmission element
+ * @param Yii contribution from "from" bus
+ * @param Yij contribution from line element
+ */
+void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
+   gridpack::ComplexType *Yii, gridpack::ComplexType *Yij)
+{
+  gridpack::ComplexType zero = gridpack::ComplexType(0.0,0.0);
+  gridpack::ComplexType flow = zero;
+  *Yii = zero;
+  *Yij = zero;
+  int i, idx;
+  idx = -1;
+  // find line element corresponding to tag
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx >= 0) {
+    gridpack::ComplexType yij,aij,bij;
+    yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
+    bij = gridpack::ComplexType(0.0,p_charging[idx]);
+    if (yij != zero) yij = -1.0/yij;
+    if (p_xform[idx]) {
+      // evaluate flow for transformer
+      aij = gridpack::ComplexType(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+      aij = p_tap_ratio[i]*aij;
+      if (aij != zero) {
+	*Yij = yij/conj(aij);
+	*Yii = -(yij+0.5*bij);
+	*Yii = (*Yii)/(aij*conj(aij));
+      }
+    } else {
+      // evaluate flow for regular line
+      *Yij = yij;
+      *Yii = -((*Yij)+0.5*bij);
+    }
+  }
+}
+
+/**
  * Return status of all transmission elements
  * @return vector containing status of transmission elements
  */

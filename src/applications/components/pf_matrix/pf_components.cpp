@@ -992,18 +992,34 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
  */
 bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal)
 {
-  gridpack::ComplexType v1, v2, y, s;
+  gridpack::ComplexType vi, vj, y, yii, yij, s;
   gridpack::powerflow::PFBus *bus1 = 
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
-  v1 = bus1->getComplexVoltage();
+  vi = bus1->getComplexVoltage();
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-  v2 = bus2->getComplexVoltage();
-  y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-  s = v1*conj(y*(v1-v2));
-  double p = real(s)*p_sbase;
-  double q = imag(s)*p_sbase;
-  sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
-      bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
+  vj = bus2->getComplexVoltage();
+  if (!strcmp(signal,"flow")) {
+    char buf[128];
+    std::vector<std::string> tags = getLineTags();
+    int i;
+    for (i=0; i<p_elems; i++) {
+      getLineElements(tags[i],&yii,&yij);
+      s = vi*conj(yii*vi+yij*vj)*p_sbase;
+      double p = real(s);
+      double q = imag(s);
+      sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f\n",
+	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q);
+      sprintf(string,"%s",buf);
+      string += strlen(buf);
+    }
+  } else {
+    y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+    s = vi*conj(y*(vi-vj));
+    double p = real(s)*p_sbase;
+    double q = imag(s)*p_sbase;
+    sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
+	bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
+  }
   return true;
 }

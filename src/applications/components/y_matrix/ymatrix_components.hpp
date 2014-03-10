@@ -198,6 +198,15 @@ class YMBranch
     gridpack::ComplexType getShunt(YMBus *bus);
 
     /**
+     * Return contributions to Y-matrix from a specific transmission element
+     * @param tag character string for transmission element
+     * @param Yii contribution from "from" bus
+     * @param Yij contribution from line element
+     */
+    void getLineElements(const std::string tag,
+        gridpack::ComplexType *Yii, gridpack::ComplexType *Yij);
+
+    /**
      * Return status of all transmission elements
      * @return vector containing status of transmission elements
      */
