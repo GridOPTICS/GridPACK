@@ -27,6 +27,7 @@
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/applications/contingency_analysis/ca_driver.hpp"
 #include "gridpack/applications/contingency_analysis/ca_app.hpp"
+#include "gridpack/timer/coarse_timer.hpp"
 
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
@@ -170,6 +171,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 {
   gridpack::parallel::Communicator world;
 
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Total Application");
+  timer->start(t_total);
+
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
   if (argc >= 2 && argv[1] != NULL) {
@@ -241,6 +247,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   while (taskmgr.nextTask(task_comm, &task_id)) {
     printf("Executing task %d\n",task_id);
     ca_app.execute(events[task_id]);
+  }
+  timer->stop(t_total);
+  if (contingencies.size()*grp_size >= world.size()) {
+    timer->dump();
   }
 }
 

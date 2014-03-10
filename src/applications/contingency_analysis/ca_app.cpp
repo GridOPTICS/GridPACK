@@ -57,6 +57,10 @@ gridpack::contingency_analysis::CAApp::~CAApp(void)
  */ 
 void gridpack::contingency_analysis::CAApp::init(int argc, char** argv)
 {
+  gridpack::utility::CoarseTimer *timer = 
+    gridpack::utility::CoarseTimer::instance();
+  int t_parse = timer->createCategory("Parse Input");
+  timer->start(t_parse);
   //boost::shared_ptr<CANetwork> p_network(new CANetwork(comm));
   gridpack::parallel::Communicator comm = p_network->communicator();
 
@@ -77,12 +81,17 @@ void gridpack::contingency_analysis::CAApp::init(int argc, char** argv)
   // load input file
   gridpack::parser::PTI23_parser<CANetwork> parser(p_network);
   parser.parse(filename.c_str());
+  timer->stop(t_parse);
 
   // partition network
+  int t_part = timer->createCategory("Partition Network");
+  timer->start(t_part);
   p_network->partition();
+  timer->stop(t_part);
 
   // create factory
-  //boost::shared_ptr<CAFactory> p_factory(new CAFactory(p_network));
+  int t_init = timer->createCategory("Initialize Network");
+  timer->start(t_init);
   p_factory->load();
 
   // set network components using factory
@@ -92,6 +101,7 @@ void gridpack::contingency_analysis::CAApp::init(int argc, char** argv)
 
   // initialize bus data exchange
   p_network->initBusUpdate();
+  timer->stop(t_init);
 
 }
 /**
@@ -101,8 +111,10 @@ void gridpack::contingency_analysis::CAApp::execute(
     gridpack::contingency_analysis::Contingency contingency)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
-  // gridpack::utility::CoarseTimer *timer = 
-  //   gridpack::utility::CoarseTimer::instance();
+  gridpack::utility::CoarseTimer *timer = 
+    gridpack::utility::CoarseTimer::instance();
+  int t_task = timer->createCategory("Evaluate Contingency");
+  timer->start(t_task);
 
   // get configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
@@ -133,6 +145,8 @@ void gridpack::contingency_analysis::CAApp::execute(
   p_factory->setContingency(contingency);
 
   // check contingency for isolated buses
+  int t_lone = timer->createCategory("Check for Lone Bus");
+  timer->start(t_lone);
   if (!p_factory->checkLoneBus()) {
     sprintf(ioBuf,"\nIsolated bus found for contingency %s\n",
         contingency.p_name.c_str());
@@ -140,8 +154,11 @@ void gridpack::contingency_analysis::CAApp::execute(
     busIO.close();
     return;
   }
+  timer->stop(t_lone);
 
   // set YBus components so that you can create Y matrix  
+  int t_matv = timer->createCategory("Create Matrices and Vectors");
+  timer->start(t_matv);
   p_factory->setYBus();
 
   p_factory->setMode(gridpack::powerflow::YBus);
@@ -169,6 +186,7 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   // Create X vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+  timer->stop(t_matv);
 
   // Convergence and iteration parameters
   double tolerance;
@@ -181,6 +199,8 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   // Create linear solver
   gridpack::math::LinearSolver solver(*J);
+  int t_solv = timer->createCategory("Solve Powerflow Equations");
+  timer->start(t_solv);
   solver.configure(cursor);
 
   tol = 2.0*tolerance;
@@ -190,6 +210,7 @@ void gridpack::contingency_analysis::CAApp::execute(
   X->zero(); //might not need to do this
   solver.solve(*PQ, *X);
   tol = PQ->normInfinity();
+  timer->stop(t_solv);
   //J->print();
   //PQ->print();
   //X->print();
@@ -198,6 +219,7 @@ void gridpack::contingency_analysis::CAApp::execute(
     // Push current values in X vector back into network components
     // Need to implement setValues method in PFBus class in order for this to
     // work
+    timer->start(t_matv);
     p_factory->setMode(gridpack::powerflow::RHS);
     vMap.mapToBus(X);
 
@@ -209,24 +231,13 @@ void gridpack::contingency_analysis::CAApp::execute(
     vMap.mapToVector(PQ);
     p_factory->setMode(gridpack::powerflow::Jacobian);
     jMap.mapToMatrix(J);
+    timer->stop(t_matv);
 
     // Create linear solver
+    timer->start(t_solv);
     X->zero(); //might not need to do this
-#if 1
-//    sprintf(dbgfile,"j%d.bin",iter+1);
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq%d.bin",iter+1);
-//    PQ->saveBinary(dbgfile);
     solver.solve(*PQ, *X);
-#else
-//    sprintf(dbgfile,"j%d.bin",iter+1);
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq%d.bin",iter+1);
-//    PQ->saveBinary(dbgfile);
-    gridpack::math::LinearSolver isolver(*J);
-    isolver.configure(cursor);
-    isolver.solve(*PQ, *X);
-#endif
+    timer->stop(t_solv);
 
     tol = PQ->normInfinity();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
@@ -257,5 +268,6 @@ void gridpack::contingency_analysis::CAApp::execute(
   busIO.close();
   // clear contingency
   p_factory->clearContingency(contingency);
+  timer->stop(t_task);
 }
 
