@@ -64,6 +64,13 @@ public:
   void dumpProfile(const std::string title);
 
   /**
+   * Return current time. Can be used to solve timing problems that can't be
+   * handled using the regular timing capabilities
+   * @return current time in seconds according to internal clock
+   */
+  double currentTime();
+
+  /**
    * Turn timing on and off. If timing is off, no data is collected.
    * @param flag turn timer on (true) or off (false)
    */

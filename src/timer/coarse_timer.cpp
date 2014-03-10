@@ -219,6 +219,16 @@ void gridpack::utility::CoarseTimer::configTimer(bool flag)
 }
 
 /**
+ * Return current time. Can be used to solve timing problems that can't be
+ * handled using the regular timing capabilities
+ * @return current time in seconds according to internal clock
+ */
+double gridpack::utility::CoarseTimer::currentTime()
+{
+  return MPI_Wtime();
+}
+
+/**
  * Constructor
  */
 gridpack::utility::CoarseTimer::CoarseTimer()
