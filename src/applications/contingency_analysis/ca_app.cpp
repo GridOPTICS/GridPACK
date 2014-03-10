@@ -118,8 +118,8 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<CANetwork> busIO(128, p_network);
-  gridpack::serial_io::SerialBranchIO<CANetwork> branchIO(128, p_network);
-  char ioBuf[128];
+  gridpack::serial_io::SerialBranchIO<CANetwork> branchIO(512, p_network);
+  char ioBuf[512];
   sprintf(ioBuf,"%s.out",contingency.p_name.c_str());
   busIO.open(ioBuf);
   branchIO.setStream(busIO.getStream());
@@ -245,9 +245,9 @@ void gridpack::contingency_analysis::CAApp::execute(
   }
 
   branchIO.header("\n   Branch Power Flow\n");
-  branchIO.header("\n        Bus 1       Bus 2            P"
+  branchIO.header("\n        Bus 1       Bus 2     Tag          P"
                   "                    Q\n");
-  branchIO.write();
+  branchIO.write("flow");
 
 
   busIO.header("\n   Bus Voltages and Phase Angles\n");
