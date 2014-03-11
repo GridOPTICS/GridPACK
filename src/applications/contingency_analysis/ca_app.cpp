@@ -255,14 +255,14 @@ void gridpack::contingency_analysis::CAApp::execute(
     busIO.header(ioBuf);
   }
 
-  branchIO.header("\n   Branch Power Flow\n");
+  branchIO.header("\n   Branch Violationx\n");
   branchIO.header("\n        Bus 1       Bus 2     Tag          P"
-                  "                    Q\n");
+                  "                    Q          Rating   Overloading\n");
   branchIO.write("flow");
 
 
-  busIO.header("\n   Bus Voltages and Phase Angles\n");
-  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+  busIO.header("\n   Bus Voltages Violations\n");
+  busIO.header("\n   Bus Number      Voltage Magnitude\n");
   busIO.write();
 
   time = timer->currentTime()-time;

@@ -372,6 +372,7 @@ class PFBranch
     std::vector<double> p_shunt_admt_g2;
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
+    std::vector<double> p_rateA;
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
@@ -398,7 +399,8 @@ private:
       & p_shunt_admt_b1
       & p_shunt_admt_g2
       & p_shunt_admt_b2
-      & p_xform & p_shunt
+      & p_xform & p_shunt 
+      & p_rateA
       & p_mode
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs

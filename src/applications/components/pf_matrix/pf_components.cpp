@@ -529,7 +529,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const char *signal)
     vectorValues(v);
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
-    sprintf(string, "     %6d      %12.6f         %12.6f      %2d\n",
+    sprintf(string, "     %6d      %12.6f      %12.6f      %2d\n",
         getOriginalIndex(),real(v[0]),real(v[1]),branches.size());
   }
   return true;
@@ -898,6 +898,9 @@ void gridpack::powerflow::PFBranch::load(
     shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B2, &rvar, idx);
     p_shunt_admt_b2.push_back(rvar);
     p_shunt.push_back(shunt);
+    bool rate = true;
+    rate = rate && data->getValue(BRANCH_RATING_A,&rvar,idx);
+    p_rateA.push_back(rvar);
   }
 }
 
@@ -1026,8 +1029,13 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
-      sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f\n",
-	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q);
+      double S = sqrt(p*p+q*q);
+      if (S > p_rateA[i] && p_rateA[i] != 0.0 ){
+        sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
+    	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q,p_rateA[i],S/p_rateA[i]*100,"%");
+      } else {
+      	sprintf(buf,"%s",""); 
+      }
       sprintf(string,"%s",buf);
       string += strlen(buf);
     }
