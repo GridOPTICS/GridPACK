@@ -248,6 +248,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     printf("Executing task %d\n",task_id);
     ca_app.execute(events[task_id]);
   }
+  taskmgr.printStats();
+
   timer->stop(t_total);
   if (contingencies.size()*grp_size >= world.size()) {
     timer->dump();

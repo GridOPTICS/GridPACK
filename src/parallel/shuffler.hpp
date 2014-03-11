@@ -112,6 +112,7 @@ public:
       locidx += 1;
     }
 
+#if 0
     for (int src = 0; src < comm.size(); ++src) {
       ThingVector tmp;
       if (comm.rank() == src) {
@@ -122,6 +123,46 @@ public:
       std::copy(tmp.begin(), tmp.end(), std::back_inserter(locthings));
     }
   }
+#else
+    int me = comm.rank();
+    int nprocs = comm.size();
+    for (int src = 0; src < nprocs; ++src) {
+      // Don't send messages of zero size. Exchange sizes with all processors
+      // first
+      //printf("p[%d] Got to 1\n",me);
+      int srcsizes[nprocs], tsizes[nprocs];
+      for (int i = 0; i<nprocs; i++) {
+        if (src == me) {
+          srcsizes[i] = tosend[i].size();
+        } else {
+          srcsizes[i] = 0;
+        }
+      }
+      int ierr = MPI_Allreduce(srcsizes,tsizes,nprocs,MPI_INT,MPI_SUM,
+          static_cast<MPI_Comm>(comm));
+      //create receive buffer
+     // printf("p[%d] Got to 2\n",me);
+      ThingVector tmp;
+      if (me == src) {
+        for (int i=0; i<nprocs; i++) {
+          if (i == me) {
+            //printf("p[%d] Got to 2\n",me);
+            tmp = tosend[i];
+          } else {
+            //printf("p[%d] Got to 3 size: %d send to: %d\n",me,tsizes[i],i);
+            if (tsizes[i] > 0) 
+              static_cast<boost::mpi::communicator>(comm).send(i,src,tosend[i]);
+          }
+        }
+      } else {
+            //printf("p[%d] Got to 4 size: %d recieve from: %d\n",me,tsizes[me],src);
+        if (tsizes[me] > 0) 
+          static_cast<boost::mpi::communicator>(comm).recv(src,src,tmp);
+      }
+      std::copy(tmp.begin(), tmp.end(), std::back_inserter(locthings));
+    }
+  }
+#endif
 
 };
 
