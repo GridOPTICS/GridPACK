@@ -264,8 +264,8 @@ private:
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
-      & p_isPV;
-    ar & p_saveisPV;
+      & p_isPV
+      & p_saveisPV;
   }  
 
 };

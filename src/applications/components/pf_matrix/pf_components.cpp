@@ -1025,6 +1025,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
     char buf[128];
     std::vector<std::string> tags = getLineTags();
     int i;
+    bool found = false;
     for (i=0; i<p_elems; i++) {
       s = getComplexPower(tags[i]);
       double p = real(s);
@@ -1032,13 +1033,14 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
       double S = sqrt(p*p+q*q);
       if (S > p_rateA[i] && p_rateA[i] != 0.0 ){
         sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
-    	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q,p_rateA[i],S/p_rateA[i]*100,"%");
-      } else {
-      	sprintf(buf,"%s",""); 
+    	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),
+          p,q,p_rateA[i],S/p_rateA[i]*100,"%");
+        sprintf(string,"%s",buf);
+        string += strlen(buf);
+        found = true;
       }
-      sprintf(string,"%s",buf);
-      string += strlen(buf);
     }
+    return found;
   } else {
     gridpack::ComplexType vi, vj, y, s;
     vi = bus1->getComplexVoltage();
@@ -1049,6 +1051,6 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
     double q = imag(s)*p_sbase;
     sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
 	bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
+    return true;
   }
-  return true;
 }
