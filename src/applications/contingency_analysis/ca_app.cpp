@@ -177,8 +177,8 @@ void gridpack::contingency_analysis::CAApp::execute(
   p_factory->setMode(gridpack::powerflow::RHS);
   gridpack::mapper::BusVectorMap<CANetwork> vMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-  branchIO.header("\n=== PQ: ============\n");
-  PQ->print();
+//  branchIO.header("\n=== PQ: ============\n");
+//  PQ->print();
   p_factory->setMode(gridpack::powerflow::Jacobian);
   gridpack::mapper::FullMatrixMap<CANetwork> jMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
@@ -247,21 +247,28 @@ void gridpack::contingency_analysis::CAApp::execute(
   vMap.mapToBus(X);
 
   // Check for any violations
-  bool network_ok = p_factory->checkContingencies(minV,maxV);
-  if (!network_ok) {
+  bool bus_ok, branch_ok;
+  p_factory->checkContingencies(minV,maxV,&bus_ok,&branch_ok);
+  if (!bus_ok || !branch_ok) {
     sprintf(ioBuf,"\n   Violation found for contingency %s\n",contingency.p_name.c_str());
-    busIO.header(ioBuf);
+  } else {
+    sprintf(ioBuf,"\n   No violations found for contingency %s\n",contingency.p_name.c_str());
+  }
+  busIO.header(ioBuf);
+
+  if (!branch_ok) {
+    branchIO.header("\n   Branch Violations\n");
+    branchIO.header("\n        Bus 1       Bus 2     Tag          P"
+	"                    Q          Rating   Overloading\n");
+    branchIO.write("flow");
   }
 
-  branchIO.header("\n   Branch Violationx\n");
-  branchIO.header("\n        Bus 1       Bus 2     Tag          P"
-                  "                    Q          Rating   Overloading\n");
-  branchIO.write("flow");
 
-
-  busIO.header("\n   Bus Voltages Violations\n");
-  busIO.header("\n   Bus Number      Voltage Magnitude\n");
-  busIO.write("violations_only");
+  if (!bus_ok) {
+    busIO.header("\n   Bus Voltages Violations\n");
+    busIO.header("\n   Bus Number      Voltage Magnitude\n");
+    busIO.write("violations_only");
+  }
 
   time = timer->currentTime()-time;
   sprintf(ioBuf,"\nElapsed time for task: %12.6f\n",time);

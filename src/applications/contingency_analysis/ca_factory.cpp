@@ -311,8 +311,8 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
  * @param maxV maximum voltage limit
  * @return true if no violations found
  */
-bool  gridpack::contingency_analysis::CAFactory::checkContingencies(
-    double minV, double maxV)
+void  gridpack::contingency_analysis::CAFactory::checkContingencies(
+    double minV, double maxV, bool *bus_ok_r, bool *branch_ok_r)
 {
   int numBus = p_network->numBuses();
   int i;
@@ -355,7 +355,8 @@ bool  gridpack::contingency_analysis::CAFactory::checkContingencies(
       }
     }
   }
-  return bus_ok && branch_ok;
+  *bus_ok_r = checkTrue(bus_ok);
+  *branch_ok_r = checkTrue(branch_ok);
 }
 
 

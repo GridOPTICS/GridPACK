@@ -89,9 +89,11 @@ class CAFactory
      * Check to see if there any violations on the network
      * @param minV maximum voltage limit
      * @param maxV maximum voltage limit
-     * @return true if no violations found
+     * @param bus_ok return true if no violations on buses
+     * @param branch_ok return true if no violations on branches
      */
-    bool  checkContingencies(double minV, double maxV);
+    void  checkContingencies(double minV, double maxV,
+        bool *bus_ok, bool *branch_ok);
 
 
   private:
