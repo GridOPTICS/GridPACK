@@ -56,7 +56,8 @@ void gridpack::contingency_analysis::CAFactory::resetVoltage(void)
   int i;
   // Invoke resetVoltage method on all buses
   for (i=0; i<numBus; i++) {
-    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->resetVoltage();
+    dynamic_cast<gridpack::contingency_analysis::CABus*>(p_network->getBus(i).get())
+       ->resetVoltage();
   }
 }
 
@@ -71,12 +72,14 @@ void gridpack::contingency_analysis::CAFactory::setYBus(void)
 
   // Invoke setYBus method on all branch objects
   for (i=0; i<numBranch; i++) {
-    dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get())->setYBus();
+    dynamic_cast<gridpack::contingency_analysis::CABranch*>(p_network->getBranch(i).get())
+       ->setYBus();
   }
 
   // Invoke setYBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setYBus();
+    dynamic_cast<gridpack::contingency_analysis::CABus*>(p_network->getBus(i).get())
+       ->setYBus();
   }
 
 }
@@ -91,7 +94,8 @@ void gridpack::contingency_analysis::CAFactory::setSBus(void)
 
   // Invoke setSBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setSBus();
+    dynamic_cast<gridpack::contingency_analysis::CABus*>(p_network->getBus(i).get())
+       ->setSBus();
   }
 }
 
@@ -105,58 +109,10 @@ void gridpack::contingency_analysis::CAFactory::setPQ(void)
   ComplexType values[2];
 
   for (i=0; i<numBus; i++) {
-    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->vectorValues(values);
+    dynamic_cast<gridpack::contingency_analysis::CABus*>(p_network->getBus(i).get())
+       ->vectorValues(values);
   }
 }
-
-/**
- * Create the Jacobian matrix
- */
-void gridpack::contingency_analysis::CAFactory::setJacobian(void)
-{
-  int numBus = p_network->numBuses();
-  int numBranch = p_network->numBranches();
-  int i;
-
-  /*for (i=0; i<numBus; i++) {
-    dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get())->setYBus();
-  }
-
-  for (i=0; i<numBranch; i++) {
-    dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get())->getJacobian();
-  }*/
-}
-
-/**
- * Get values from the admittance (Y-Bus) matrix
- */
-#if 0
-gridpack::ComplexType gridpack::contingency_analysis::CAFactory::calMis(
-    gridpack::math::Vector V,
-    gridpack::math::Vector SBUS)
-{
-  int numBus = p_network->numBuses();
-  int numBranch = p_network->numBranches();
-  int i;
-  gridpack::ComplexType ibus;
-  gridpack::ComplexType mis;
-
-  // MIS = V * conj (YBus * V) - SBUS
-
-  // Invoke getYBus method on all bus objects
-  /* for (i=0; i<numBus; i++) {
-     ibus =
-     (dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get()))->getYBus()
-   * V(i) ;
-   mis(i) = V * conj(ibus
-   }
-
-  // Invoke getYBus method on all branch objects
-  for (i=0; i<numBranch; i++) {
-  (dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get()))->getYBus();
-  }*/
-}
-#endif
 
 /**
  * Set contingency
@@ -169,10 +125,10 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
   int i,j,idx1,idx2;
   int size = contingency.p_from.size();
   p_saveStatus.clear();
-  gridpack::powerflow::PFBranch *branch;
+  gridpack::contingency_analysis::CABranch *branch;
   bool found = false;
   for (i=0; i<numBranch; i++) {
-    branch = dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
+    branch = dynamic_cast<gridpack::contingency_analysis::CABranch*>(p_network->getBranch(i).get());
     idx1 = branch->getBus1OriginalIndex();
     idx2 = branch->getBus2OriginalIndex();
     // check branch indices against contingencies
@@ -196,11 +152,11 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
     }
   }
   int numBus = p_network->numBuses();
-  gridpack::powerflow::PFBus *bus;
+  gridpack::contingency_analysis::CABus *bus;
   int idx;
   size = contingency.p_busid.size();
   for (i=0; i<numBus; i++) {
-    bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+    bus = dynamic_cast<gridpack::contingency_analysis::CABus*>(p_network->getBus(i).get());
     idx = bus->getOriginalIndex();
     // check bus indices against contingencies
     if (contingency.p_type == gridpack::contingency_analysis::Generator) {
@@ -222,7 +178,8 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
               bus->setGenStatus(genids[l], false);
               found = true;
             } else {
-              if (status[l] == 1 ) sumIsPV = sumIsPV + 1; //at least one gen on the same bus is still on, still PV bus
+              //at least one gen on the same bus is still on, still PV bus
+              if (status[l] == 1 ) sumIsPV = sumIsPV + 1;
             }   
           }
           if (sumIsPV == 0) {
@@ -250,9 +207,9 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
   int size = contingency.p_from.size();
   p_saveStatus.clear();
   int count = 0;
-  gridpack::powerflow::PFBranch *branch;
+  gridpack::contingency_analysis::CABranch *branch;
   for (i=0; i<numBranch; i++) {
-    branch = dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get());
+    branch = dynamic_cast<gridpack::contingency_analysis::CABranch*>(p_network->getBranch(i).get());
     idx1 = branch->getBus1OriginalIndex();
     idx2 = branch->getBus2OriginalIndex();
     // check branch indices against contingencies
@@ -273,11 +230,11 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
     }
   }
   int numBus = p_network->numBuses();
-  gridpack::powerflow::PFBus *bus;
+  gridpack::contingency_analysis::CABus *bus;
   int idx;
   size = contingency.p_busid.size();
   for (i=0; i<numBus; i++) {
-    bus = dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+    bus = dynamic_cast<gridpack::contingency_analysis::CABus*>(p_network->getBus(i).get());
     idx = bus->getOriginalIndex();
 
     // check bus indices against contingencies
@@ -318,7 +275,8 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
   bool bus_ok = true;
   for (i=0; i<numBus; i++) {
     if (!p_network->getActiveBus(i)) continue;
-    gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>
+    gridpack::contingency_analysis::CABus *bus =
+      dynamic_cast<gridpack::contingency_analysis::CABus*>
       (p_network->getBus(i).get());
     std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
     bus->getNeighborBranches(branches);
@@ -330,7 +288,7 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
     bool ok = false;
     for (j=0; j<size; j++) {
       bool branch_ok = false;
-      std::vector<bool> status = dynamic_cast<gridpack::powerflow::PFBranch*>
+      std::vector<bool> status = dynamic_cast<gridpack::contingency_analysis::CABranch*>
         (branches[j].get())->getLineStatus(); 
       int nlines = status.size();
       for (k=0; k<nlines; k++) {
@@ -361,8 +319,10 @@ bool  gridpack::contingency_analysis::CAFactory::checkContingencies(
   bool bus_ok = true;
   for (i=0; i<numBus; i++) {
     if (p_network->getActiveBus(i)) {
-      gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>
+      gridpack::contingency_analysis::CABus *bus =
+        dynamic_cast<gridpack::contingency_analysis::CABus*>
         (p_network->getBus(i).get());
+      bus->setVoltageLimits(minV, maxV);
       double V = bus->getVoltage();
       if (V < minV || V > maxV) bus_ok = false;
     }
@@ -371,10 +331,11 @@ bool  gridpack::contingency_analysis::CAFactory::checkContingencies(
   bool branch_ok = true;
   for (i=0; i<numBranch; i++) {
     if (p_network->getActiveBranch(i)) {
-      gridpack::powerflow::PFBranch *branch =
-	dynamic_cast<gridpack::powerflow::PFBranch*>
+      gridpack::contingency_analysis::CABranch *branch =
+	dynamic_cast<gridpack::contingency_analysis::CABranch*>
 	(p_network->getBranch(i).get());
-      gridpack::powerflow::PFBus *bus = dynamic_cast<gridpack::powerflow::PFBus*>
+      gridpack::contingency_analysis::CABus *bus =
+        dynamic_cast<gridpack::contingency_analysis::CABus*>
 	(branch->getBus1().get());
       // Loop over all lines in the branch and choose the smallest rating value
       int nlines;

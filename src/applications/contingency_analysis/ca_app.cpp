@@ -217,8 +217,6 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
-    // Need to implement setValues method in PFBus class in order for this to
-    // work
     timer->start(t_matv);
     p_factory->setMode(gridpack::powerflow::RHS);
     vMap.mapToBus(X);
@@ -263,7 +261,7 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   busIO.header("\n   Bus Voltages Violations\n");
   busIO.header("\n   Bus Number      Voltage Magnitude\n");
-  busIO.write();
+  busIO.write("violations_only");
 
   time = timer->currentTime()-time;
   sprintf(ioBuf,"\nElapsed time for task: %12.6f\n",time);

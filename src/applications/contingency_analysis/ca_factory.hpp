@@ -20,12 +20,12 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/components/pf_matrix/pf_components.hpp"
+#include "ca_components.hpp"
 #include "ca_driver.hpp"
 #include "gridpack/math/matrix.hpp"
 
-typedef gridpack::network::BaseNetwork< gridpack::powerflow::PFBus,
-        gridpack::powerflow::PFBranch > CANetwork;
+typedef gridpack::network::BaseNetwork< gridpack::contingency_analysis::CABus,
+        gridpack::contingency_analysis::CABranch > CANetwork;
 
 namespace gridpack {
 namespace contingency_analysis {
@@ -63,11 +63,6 @@ class CAFactory
      * Create the PQ 
      */
     void setPQ(void);
-
-    /**
-     * Create the Jacobian matrix
-     */
-    void setJacobian(void);
 
     /**
      * Set contingency

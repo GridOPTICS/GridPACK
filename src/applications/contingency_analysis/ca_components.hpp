@@ -48,7 +48,7 @@ class CABus
      * @param vMin minimum voltage
      * @param vMax maximum voltage
      */
-    setVoltageLimits(double vMin, double vMax);
+    void setVoltageLimits(double vMin, double vMax);
 
     /**
      * Write output from buses to standard out
@@ -101,7 +101,7 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar  & boost::serialization::base_object<gridpack::powerflow::Branch>(*this);
+    ar  & boost::serialization::base_object<gridpack::powerflow::PFBranch>(*this);
   }  
 
 };

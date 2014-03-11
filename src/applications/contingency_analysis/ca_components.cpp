@@ -49,7 +49,7 @@ gridpack::contingency_analysis::CABus::~CABus(void)
  * @param vMin minimum voltage
  * @param vMax maximum voltage
  */
-void gridpack::contingency_analysis::setVoltageLimits(double vMin, double vMax)
+void gridpack::contingency_analysis::CABus::setVoltageLimits(double vMin, double vMax)
 {
   p_vMin = vMin;
   p_vMax = vMax;
@@ -64,15 +64,18 @@ void gridpack::contingency_analysis::setVoltageLimits(double vMin, double vMax)
  */
 bool gridpack::contingency_analysis::CABus::serialWrite(char *string, const char *signal)
 {
-  if (!strcmp(signal,"violations_only")) {
+  if (signal != NULL && !strcmp(signal,"violations_only")) {
     double V = getVoltage();
-    if (V < vMin || V > vMax) {
+    if (V < p_vMin || V > p_vMax) {
       // TODO: add printout for violations
+      sprintf(string,"%s","Need some printout\n");
+      return true;
+    } else {
+      return false;
     }
   } else {
     return PFBus::serialWrite(string, signal);
   }
-  return true;
 }
 
 /**
