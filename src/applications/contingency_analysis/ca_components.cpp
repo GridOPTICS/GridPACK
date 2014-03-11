@@ -67,8 +67,8 @@ bool gridpack::contingency_analysis::CABus::serialWrite(char *string, const char
   if (signal != NULL && !strcmp(signal,"violations_only")) {
     double V = getVoltage();
     if (V < p_vMin || V > p_vMax) {
-      // TODO: add printout for violations
-      sprintf(string,"%s","Need some printout\n");
+      sprintf(string, "     %6d      %12.6f\n",
+        getOriginalIndex(),V);
       return true;
     } else {
       return false;
