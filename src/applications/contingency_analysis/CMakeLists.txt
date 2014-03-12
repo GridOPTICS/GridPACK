@@ -53,12 +53,17 @@ add_custom_target(ca.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
 )
 add_dependencies(ca.x ca.x.input)
 

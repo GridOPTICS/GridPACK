@@ -81,9 +81,11 @@ class CAFactory
      * have no branches attached to them or for whom all the branches attached
      * to the bus have all transmission elements with status false (the element
      * is off)
+     * @param stream optional stream pointer that can be used to print out IDs
+     * of isolated buses
      * @return false if there is an isolated bus in the network
      */
-    bool checkLoneBus(void);
+    bool checkLoneBus(std::ofstream *stream = NULL);
 
     /**
      * Check to see if there any violations on the network

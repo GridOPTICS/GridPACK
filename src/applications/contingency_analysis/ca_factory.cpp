@@ -174,7 +174,6 @@ void gridpack::contingency_analysis::CAFactory::setContingency(
           for (l=0; l<lsize; l++) {
             if (genids[l] == genid ) {
               p_saveStatus.push_back(static_cast<bool>(status[l]));
-              printf("Setting generator \'%s\' on bus %d\n",genids[l].c_str(),idx);
               bus->setGenStatus(genids[l], false);
               found = true;
             } else {
@@ -205,7 +204,6 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
   int numBranch = p_network->numBranches();
   int i,j,idx1,idx2;
   int size = contingency.p_from.size();
-  p_saveStatus.clear();
   int count = 0;
   gridpack::contingency_analysis::CABranch *branch;
   for (i=0; i<numBranch; i++) {
@@ -268,11 +266,13 @@ void gridpack::contingency_analysis::CAFactory::clearContingency(
  * is off)
  * @return false if there is an isolated bus in the network
  */
-bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
+bool
+gridpack::contingency_analysis::CAFactory::checkLoneBus(std::ofstream *stream)
 {
   int numBus = p_network->numBuses();
   int i, j, k;
   bool bus_ok = true;
+  char buf[128];
   for (i=0; i<numBus; i++) {
     if (!p_network->getActiveBus(i)) continue;
     gridpack::contingency_analysis::CABus *bus =
@@ -283,7 +283,8 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
     int size = branches.size();
     if (size == 0) {
       bus_ok = false;
-      break;
+      sprintf(buf,"Lone bus %d found\n",bus->getOriginalIndex());
+      if (stream != NULL) *stream << buf;
     }
     bool ok = false;
     for (j=0; j<size; j++) {
@@ -298,7 +299,8 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(void)
     }
     if (!ok) {
       bus_ok = false;
-      break;
+      sprintf(buf,"Lone bus %d found\n",bus->getOriginalIndex());
+      if (stream != NULL) *stream << buf;
     }
   }
   // Check whether bus_ok is true on all processors

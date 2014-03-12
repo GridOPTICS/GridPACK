@@ -147,11 +147,12 @@ void gridpack::contingency_analysis::CAApp::execute(
   // check contingency for isolated buses
   int t_lone = timer->createCategory("Check for Lone Bus");
   timer->start(t_lone);
-  if (!p_factory->checkLoneBus()) {
+  if (!p_factory->checkLoneBus(busIO.getStream().get())) {
     sprintf(ioBuf,"\nIsolated bus found for contingency %s\n",
         contingency.p_name.c_str());
     busIO.header(ioBuf);
     busIO.close();
+    p_factory->clearContingency(contingency);
     return;
   }
   timer->stop(t_lone);
