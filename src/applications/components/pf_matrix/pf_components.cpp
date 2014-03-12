@@ -1020,7 +1020,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
-  if (!strcmp(signal,"flow")) {
+  if (signal != NULL && !strcmp(signal,"flow")) {
     gridpack::ComplexType s;
     char buf[128];
     std::vector<std::string> tags = getLineTags();
