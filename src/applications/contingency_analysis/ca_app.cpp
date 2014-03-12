@@ -153,6 +153,8 @@ void gridpack::contingency_analysis::CAApp::execute(
     busIO.header(ioBuf);
     busIO.close();
     p_factory->clearContingency(contingency);
+    timer->stop(t_lone);
+    timer->start(t_task);
     return;
   }
   timer->stop(t_lone);
@@ -209,7 +211,15 @@ void gridpack::contingency_analysis::CAApp::execute(
 
   // First iteration
   X->zero(); //might not need to do this
-  solver.solve(*PQ, *X);
+  try {
+    solver.solve(*PQ, *X);
+  } catch (const gridpack::Exception e) {
+    busIO.header("Solver failure");
+    p_factory->clearContingency(contingency);
+    timer->stop(t_solv);
+    timer->stop(t_task);
+    return;
+  }
   tol = PQ->normInfinity();
   timer->stop(t_solv);
   //J->print();
@@ -235,7 +245,15 @@ void gridpack::contingency_analysis::CAApp::execute(
     // Create linear solver
     timer->start(t_solv);
     X->zero(); //might not need to do this
-    solver.solve(*PQ, *X);
+    try {
+      solver.solve(*PQ, *X);
+    } catch (const gridpack::Exception e) {
+      busIO.header("Solver failure");
+      p_factory->clearContingency(contingency);
+      timer->stop(t_solv);
+      timer->stop(t_task);
+      return;
+    }
     timer->stop(t_solv);
 
     tol = PQ->normInfinity();
