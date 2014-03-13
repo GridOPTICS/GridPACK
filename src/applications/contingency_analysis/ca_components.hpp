@@ -60,10 +60,24 @@ class CABus
     bool serialWrite(char *string, const char *signal = NULL);
 
     /**
+     * Return the size of the buffer used in data exchanges on the network.
+     * For this problem, the power flow data need to be exchanged plus data
+     * for bool that keeps track of the isolated status of the bus
+     * @return size of buffer
+     */
+    int getXCBufSize(void);
+
+    /**
+     * Assign pointers for powerflow data and isolated status variable
+     */
+    void setXCBuf(void *buf);
+
+    /**
      * Voltage min and max limits
      */
     double p_vMin;
     double p_vMax;
+    bool *p_isolated;
 
 private:
 

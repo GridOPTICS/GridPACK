@@ -93,8 +93,14 @@ class YMBus
      */
     bool isIsolated(void) const;
 
+    /**
+     * Change isolated status of bus
+     * @param flag true if bus is isolated
+     */
+    void setIsolated(const bool flag);
+
   private:
-    double p_shunt_gs;
+      double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
     int p_mode;

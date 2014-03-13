@@ -160,6 +160,15 @@ bool gridpack::ymatrix::YMBus::isIsolated(void) const
 }
 
 /**
+ * Change isolated status of bus
+ * @param flag true if bus is isolated
+ */
+void gridpack::ymatrix::YMBus::setIsolated(const bool flag)
+{
+  p_isolated = flag;
+}
+
+/**
  *  Simple constructor
  */
 gridpack::ymatrix::YMBranch::YMBranch(void)

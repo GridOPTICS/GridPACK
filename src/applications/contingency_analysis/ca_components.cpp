@@ -79,6 +79,27 @@ bool gridpack::contingency_analysis::CABus::serialWrite(char *string, const char
 }
 
 /**
+ * Return the size of the buffer used in data exchanges on the network.
+ * For this problem, the power flow data need to be exchanged plus data
+ * for bool that keeps track of the isolated status of the bus
+ * @return size of buffer
+ */
+int gridpack::contingency_analysis::CABus::getXCBufSize(void)
+{
+  return sizeof(bool) + PFBus::getXCBufSize();
+}
+
+/**
+ * Assign pointers for powerflow data and isolated status variable
+ */
+void gridpack::contingency_analysis::CABus::setXCBuf(void *buf)
+{
+  p_isolated = static_cast<bool*>(buf);
+  bool *ptr = p_isolated + 1;
+  PFBus::setXCBuf(ptr);
+}
+
+/**
  *  Simple constructor
  */
 gridpack::contingency_analysis::CABranch::CABranch(void)
