@@ -169,7 +169,7 @@ void gridpack::contingency_analysis::CAApp::execute(
   timer->start(t_matv);
   p_factory->setYBus();
 
-#if 0
+#if 1
   p_factory->setMode(gridpack::powerflow::YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
