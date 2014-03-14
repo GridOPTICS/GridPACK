@@ -124,6 +124,10 @@ void gridpack::contingency_analysis::CAApp::execute(
       "No network configuration specified");
   double maxV = cursor->get("maxVoltage",1.1); 
   double minV = cursor->get("minVoltage",0.9); 
+  // Convergence and iteration parameters
+  double tolerance = cursor->get("tolerance",1.0e-6);
+  int max_iteration = cursor->get("maxIteration",50);
+  ComplexType tol;
 
   //Set voltage and phase angle to initial values
   p_factory->resetVoltage();
@@ -139,6 +143,10 @@ void gridpack::contingency_analysis::CAApp::execute(
   sprintf(ioBuf,"\nMaximum voltage limit: %f\n",maxV);
   busIO.header(ioBuf);
   sprintf(ioBuf,"\nMinimum voltage limit: %f\n",minV);
+  busIO.header(ioBuf);
+  sprintf(ioBuf,"\nMaximum number of iterations: %d\n",max_iteration);
+  busIO.header(ioBuf);
+  sprintf(ioBuf,"\nConvergence tolerance: %f\n",tolerance);
   busIO.header(ioBuf);
 
   // set contingency
@@ -188,15 +196,6 @@ void gridpack::contingency_analysis::CAApp::execute(
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
   timer->stop(t_matv);
 
-  // Convergence and iteration parameters
-  double tolerance;
-  int max_iteration;
-  ComplexType tol;
-
-  // These need to eventually be set using configuration file
-  tolerance = 1.0e-6;
-  max_iteration = 50;
-
   // Create linear solver
   gridpack::math::LinearSolver solver(*J);
   int t_solv = timer->createCategory("Solve Powerflow Equations");
@@ -223,6 +222,8 @@ void gridpack::contingency_analysis::CAApp::execute(
   //PQ->print();
   //X->print();
 
+  bool converged = false;
+  if (real(tol) <= tolerance) converged = true;
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
     timer->start(t_matv);
@@ -254,6 +255,7 @@ void gridpack::contingency_analysis::CAApp::execute(
     timer->stop(t_solv);
 
     tol = PQ->normInfinity();
+    if (real(tol) <= tolerance) converged = true;
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
     iter++;
@@ -286,6 +288,12 @@ void gridpack::contingency_analysis::CAApp::execute(
     busIO.write("violations_only");
   }
 
+  if (converged) {
+    sprintf(ioBuf,"\nContingency evaluation converged\n");
+  } else {
+    sprintf(ioBuf,"\nContingency evaluation did NOT converge\n");
+  }
+  busIO.header(ioBuf);
   time = timer->currentTime()-time;
   sprintf(ioBuf,"\nElapsed time for task: %12.6f\n",time);
   busIO.header(ioBuf);
