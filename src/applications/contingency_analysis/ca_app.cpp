@@ -169,9 +169,11 @@ void gridpack::contingency_analysis::CAApp::execute(
   timer->start(t_matv);
   p_factory->setYBus();
 
+#if 0
   p_factory->setMode(gridpack::powerflow::YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
+#endif
   //branchIO.header("\n=== orginal ybus: ============\n");
   //orgYbus->print();
 
@@ -261,8 +263,10 @@ void gridpack::contingency_analysis::CAApp::execute(
     iter++;
   }
   // Push final result back onto buses
+  timer->start(t_matv);
   p_factory->setMode(gridpack::powerflow::RHS);
   vMap.mapToBus(X);
+  timer->stop(t_matv);
 
   // Check for any violations
   bool bus_ok, branch_ok;
