@@ -26,6 +26,7 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
+#include "gridpack/timer/coarse_timer.hpp"
 
 // Calling program for dynamic simulation application
 
@@ -48,9 +49,15 @@ gridpack::dynamic_simulation::DSApp::~DSApp(void)
  */
 void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 {
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Total Application");
+  timer->start(t_total);
   gridpack::parallel::Communicator world;
   boost::shared_ptr<DSNetwork> network(new DSNetwork(world));
 
+  int t_setup = timer->createCategory("Read in Data");
+  timer->start(t_setup);
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
   if (argc >= 2 && argv[1] != NULL) {
@@ -84,21 +91,28 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
   parser.parse(filename.c_str());
+  timer->stop(t_setup);
 
+  int t_part = timer->createCategory("Partition Network");
+  timer->start(t_part);
   // partition network
   network->partition();
+  timer->stop(t_part);
 
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<DSNetwork> busIO(256, network);
   gridpack::serial_io::SerialBranchIO<DSNetwork> branchIO(128, network);
   char ioBuf[128];
 
+  int t_config = timer->createCategory("Configure Network");
+  timer->start(t_config);
   // create factory
   gridpack::dynamic_simulation::DSFactory factory(network);
   factory.load();
 
   // set network components using factory
   factory.setComponents();
+  timer->stop(t_config);
 
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
@@ -108,6 +122,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     return;
   }
 
+  int t_matset = timer->createCategory("Matrix Setup");
+  timer->start(t_matset);
   factory.setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
@@ -125,11 +141,15 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(PERM);
   gridpack::mapper::FullMatrixMap<DSNetwork> permMap(network);
   boost::shared_ptr<gridpack::math::Matrix> perm = permMap.mapToMatrix();
+  timer->stop(t_matset);
   ///busIO.header("\n=== perm: ============\n");
   ///perm->print(); 
 
   // Form a transposed matrix of perm
+  int t_trans = timer->createCategory("Matrix Transpose");
+  timer->start(t_trans);
    boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
+  timer->stop(t_trans);
   //factory.setMode(PERMTrans);
   //gridpack::mapper::FullMatrixMap<DSNetwork> permTransMap(network);
   //boost::shared_ptr<gridpack::math::Matrix> permTrans = permTransMap.mapToMatrix();
@@ -138,6 +158,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // Construct matrix Y_a using extracted xd and ra from gen data, 
   // and construct its diagonal matrix diagY_a
+  timer->start(t_matset);
   factory.setMode(YA);
   gridpack::mapper::FullMatrixMap<DSNetwork> yaMap(network);
   //boost::shared_ptr<gridpack::math::Matrix> Y_a = yaMap.mapToMatrix();
@@ -149,9 +170,13 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
   gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
   boost::shared_ptr<gridpack::math::Matrix> Y_a(gridpack::math::storageType(*diagY_a, denseType));
+  timer->stop(t_matset);
 
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
+  int t_matmul = timer->createCategory("Matrix Multiply");
+  timer->start(t_matmul);
   boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans));
+  timer->stop(t_matmul);
   ///busIO.header("\n=== Ymod: ============\n");
   ///Ymod->print(); 
  
@@ -159,6 +184,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // corresponding index sets of buses that the generators are connected to. 
   // Then construct Y_b's transposed matrix Y_c: Y_c = Y_b'
   // This two steps can be done by using a P matrix to get Y_c directly.
+  timer->start(t_matset);
   factory.setMode(PMatrix);
   gridpack::mapper::FullMatrixMap<DSNetwork> pMap(network);
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
@@ -177,12 +203,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(YB);
   gridpack::mapper::FullMatrixMap<DSNetwork> bMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y_b = bMap.mapToMatrix();
+  timer->stop(t_matset);
   busIO.header("\n=== Y_b: ============\n");
   Y_b->print();
   
   Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
   // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
   //gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
+  timer->start(t_matset);
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense(gridpack::math::storageType(*Y_c, denseType));
    
   // Form matrix permYmod
@@ -203,14 +231,18 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   permYmodMap.mapToBus(vPermYmod);
 
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
+  timer->stop(t_matset);
   ///branchIO.header("\n=== prefy11ybus: ============\n");
   ///prefy11ybus->print();
 
   // Solve linear equations of ybus * X = Y_c
   //gridpack::math::LinearSolver solver1(*prefy11ybus);
   //solver1.configure(cursor);
+  int t_solve = timer->createCategory("Solve Linear Equation");
+  timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver1(*prefy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> prefy11X(solver1.solve(*Y_cDense));
+  timer->stop(t_solve);
   ///branchIO.header("\n=== prefy11X: ============\n");
   ///prefy11X->print(); 
   
@@ -218,7 +250,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Compute prefy11
   //-----------------------------------------------------------------------
   // Form reduced admittance matrix prefy11: prefy11 = Y_b * X
+  timer->start(t_matmul);
   boost::shared_ptr<gridpack::math::Matrix> prefy11(multiply(*Y_b, *prefy11X)); 
+  timer->stop(t_matmul);
   // Update prefy11: prefy11 = Y_a + prefy11
   prefy11->add(*Y_a);
   ///branchIO.header("\n=== Reduced Ybus: prefy11: ============\n");
@@ -248,22 +282,28 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   fy11ybus->setElement(sw2_2, sw2_2, -x);
   fy11ybus->ready();
 #else
+  timer->start(t_matset);
   factory.setEvent(faults[0]);
   factory.setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
+  timer->stop(t_matset);
 #endif
   ///branchIO.header("\n=== fy11ybus: ============\n");
   ///fy11ybus->print();
 
   // Solve linear equations of fy11ybus * X = Y_c
   //gridpack::math::LinearSolver solver2(*fy11ybus);
+  timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver2(*fy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> fy11X(solver2.solve(*Y_cDense)); 
+  timer->stop(t_solve);
   ///branchIO.header("\n=== fy11X: ============\n");
   ///fy11X->print();
   
   // Form reduced admittance matrix fy11: fy11 = Y_b * X
+  timer->start(t_matmul);
   boost::shared_ptr<gridpack::math::Matrix> fy11(multiply(*Y_b, *fy11X)); 
+  timer->stop(t_matmul);
   // Update fy11: fy11 = Y_a + fy11
   fy11->add(*Y_a);
   ///branchIO.header("\n=== Reduced Ybus: fy11: ============\n");
@@ -282,7 +322,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 #if 0
   gridpack::ComplexType myValue = factory.setFactor(sw2_2, sw3_2);
 #endif
+  timer->start(t_matset);
   boost::shared_ptr<gridpack::math::Matrix> posfy11ybus(prefy11ybus->clone());
+  timer->stop(t_matset);
   ///branchIO.header("\n=== posfy11ybus (original): ============\n");
   ///posfy11ybus->print();
 #if 0
@@ -302,21 +344,27 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   
   posfy11ybus->ready(); 
 #else
+  timer->start(t_matset);
   factory.setMode(posFY);
   ybusMap.incrementMatrix(posfy11ybus);
+  timer->stop(t_matset);
 #endif
   ///branchIO.header("\n=== posfy11ybus: ============\n");
   ///posfy11ybus->print();
     
   // Solve linear equations of posfy11ybus * X = Y_c
   //gridpack::math::LinearSolver solver3(*posfy11ybus);
+  timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver3(*posfy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> posfy11X(solver3.solve(*Y_cDense)); 
+  timer->stop(t_solve);
   ///branchIO.header("\n=== posfy11X: ============\n");
   ///posfy11X->print();
   
   // Form reduced admittance matrix posfy11: posfy11 = Y_b * X
+  timer->start(t_matmul);
   boost::shared_ptr<gridpack::math::Matrix> posfy11(multiply(*Y_b, *posfy11X)); 
+  timer->stop(t_matmul);
   //// Update posfy11: posfy11 = Y_a + posfy11
   posfy11->add(*Y_a);
   ///branchIO.header("\n=== Reduced Ybus: posfy11: ============\n");
@@ -329,6 +377,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   //factory.setMode(DAE_init);
  
   // Map to create vector pelect  
+  int t_vecset = timer->createCategory("Setup Vector");
+  timer->start(t_vecset);
   factory.setMode(init_pelect);
   gridpack::mapper::BusVectorMap<DSNetwork> XMap1(network);
   boost::shared_ptr<gridpack::math::Vector> pelect = XMap1.mapToVector();
@@ -410,12 +460,17 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // Declare vector curr
   boost::shared_ptr<gridpack::math::Vector> curr(mac_ang_s0->clone());
+  timer->stop(t_vecset);
 
+  timer->start(t_trans);
   boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
+  timer->stop(t_trans);
 
+  timer->start(t_vecset);
   boost::shared_ptr<gridpack::math::Vector> vecTemp(mac_ang_s0->clone());
+  timer->stop(t_vecset);
 
   // Simulation related variables
   int simu_k;
@@ -510,6 +565,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     eprime_s0->equate(*vecTemp); //VecPointwiseMult(eprime_s0, eqprime, vecTemp);
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
+    int t_trnsmul = timer->createCategory("Transpose Multiply");
+    timer->start(t_trnsmul);
     if (flagF1 == 0) {
       //curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
       transposeMultiply(*prefy11,*eprime_s0,*curr);
@@ -518,6 +575,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     } else if (flagF1 == 2) {
       curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
     } 
+    timer->stop(t_trnsmul);
     
     // ---------- CALL mac_em2(k,S_Steps): ----------
     // ---------- pelect: ----------
@@ -558,6 +616,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     eprime_s1->equate(*vecTemp); //VecPointwiseMult(eprime_s1, eqprime, vecTemp);
 
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
+    timer->start(t_trnsmul);
     if (flagF2 == 0) {
       curr.reset(multiply(*trans_prefy11, *eprime_s1)); //MatMultTranspose(prefy11, eprime_s1, curr)
     } else if (flagF2 == 1) {
@@ -565,6 +624,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     } else if (flagF2 == 2) {
       curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
     }
+    timer->stop(t_trnsmul);
 
     // ---------- CALL mac_em2(k,S_Steps+1): ---------- 
     // ---------- pelect: ----------
@@ -638,6 +698,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     
     last_S_Steps = S_Steps;
   }
+  timer->stop(t_total);
+  timer->dump();
 }
 
 /**
