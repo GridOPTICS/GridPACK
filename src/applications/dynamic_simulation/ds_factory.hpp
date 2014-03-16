@@ -20,9 +20,8 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
+#include "gridpack/applications/components/ds_matrix/ds_components.hpp"
 #include "gridpack/math/matrix.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_components.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {

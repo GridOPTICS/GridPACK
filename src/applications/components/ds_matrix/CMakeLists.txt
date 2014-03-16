@@ -10,43 +10,37 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-09 11:41:42 d3g096
+# Last Change: 2014-02-05 08:19:31 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
-    gridpack_components
-    gridpack_factory
-    gridpack_partition
     gridpack_parallel
-    gridpack_math
-    gridpack_configuration
-    gridpack_timer
-    gridpack_ymatrix_components
-    gridpack_dsmatrix_components
-    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (GA_FOUND)
-  include_directories(AFTER ${GA_INCLUDE_DIRS})
-endif()
 
-add_executable(ds.x
-   ds_app.cpp
-   ds_factory.cpp
-   ds_main.cpp
+add_library(gridpack_dsmatrix_components
+  ds_components.cpp
 )
 
-target_link_libraries(ds.x ${target_libraries})
-
+# -------------------------------------------------------------
+# component serialization tests
+# -------------------------------------------------------------
+target_link_libraries(gridpack_dsmatrix_components ${target_libraries})
 
 # -------------------------------------------------------------
-# TEST: pf_network_test
+# installation
 # -------------------------------------------------------------
-#add_executable(pf_network_test test/pf_network_test.cpp)
-#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-#gridpack_add_unit_test(pf_network_test pf_network_test)
+install(FILES 
+  ds_components.hpp  
+  DESTINATION include/gridpack/applications/components/ds_matrix
+)
+
+install(TARGETS 
+  gridpack_dsmatrix_components
+  DESTINATION lib
+)
+
 
