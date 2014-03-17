@@ -173,26 +173,26 @@ ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
   for (int p = 0; p < this->processor_size(); ++p) {
     if (p == this->processor_rank()) {
       if (locnodes > 0) {
-        lo[0] = p_node_lo;
-        hi[0] = p_node_lo;
-        p_xadj_gbl->get(lo, hi, &tmp[0], ld);
-        for (int i = 0; i < locnodes; ++i) {
-          nbrs.clear();
-          p_adjacency.node_neighbors(i, nbrs);
-          inbrs.clear();
-          std::copy(nbrs.begin(), nbrs.end(), std::back_inserter(inbrs));
-          
-          lo[0] = tmp[0];
-          hi[0] = tmp[0] + inbrs.size() - 1;
-          p_adjncy_gbl->put(lo, hi, &inbrs[0], ld);
-          
-          int idx(p_node_lo + i + 1);
-          tmp[0] += inbrs.size();
-        lo[0] = idx;
-        hi[0] = idx;
-        p_xadj_gbl->put(lo, hi, &tmp[0], ld);
-        
-        }
+	lo[0] = p_node_lo;
+	hi[0] = p_node_lo;
+	p_xadj_gbl->get(lo, hi, &tmp[0], ld);
+	for (int i = 0; i < locnodes; ++i) {
+	  nbrs.clear();
+	  p_adjacency.node_neighbors(i, nbrs);
+	  inbrs.clear();
+	  std::copy(nbrs.begin(), nbrs.end(), std::back_inserter(inbrs));
+
+	  lo[0] = tmp[0];
+	  hi[0] = tmp[0] + inbrs.size() - 1;
+	  if (hi[0] >= lo[0]) p_adjncy_gbl->put(lo, hi, &inbrs[0], ld);
+
+	  int idx(p_node_lo + i + 1);
+	  tmp[0] += inbrs.size();
+	  lo[0] = idx;
+	  hi[0] = idx;
+	  p_xadj_gbl->put(lo, hi, &tmp[0], ld);
+
+	}
       }
     }
     communicator().sync();

@@ -116,8 +116,6 @@ AdjacencyList::ready(void)
   int total_edges = nedges;
   GA_Pgroup_igop(grp,&total_edges, 1, "+");
   int nnodes = p_nodes.size();
-  int total_nodes = nnodes;
-  GA_Pgroup_igop(grp,&total_nodes, 1, "+");
 
   // Create a global array containing all edges
   int i, p;
