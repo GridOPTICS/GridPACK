@@ -3,4 +3,3 @@
 -snes_atol 1.23e-20
 -snes_rtol 1.23e-20
 -snes_max_it 27
--options_table
