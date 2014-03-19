@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:02:00 d3g096
+# Last Change: 2014-03-19 09:44:41 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -82,7 +82,7 @@ if (PETSC_FOUND)
 
     list(APPEND gridpack_math_sources 
       petsc/petsc_exception.cpp
-      petsc/petsc_configuration.cpp
+      petsc/petsc_configurable.cpp
       petsc/math.cpp
       petsc/vector.cpp
       petsc/petsc_vector_implementation.cpp

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-11-14 11:48:54 d3g096
+ * @date   2014-03-19 09:36:56 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,6 @@
 #include "petsc/petsc_vector_extractor.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
-#include "petsc/petsc_configuration.hpp"
 
 namespace gridpack {
 namespace math {
@@ -96,6 +95,7 @@ PETScDAESolverImplementation::PETScDAESolverImplementation(const parallel::Commu
                                                            DAEJacobianBuilder& jbuilder,
                                                            DAEFunctionBuilder& fbuilder)
   : DAESolverImplementation(comm, local_size, jbuilder, fbuilder),
+    PETScConfigurable(this->communicator()),
     p_ts(),
     p_petsc_J(NULL)
 {
@@ -161,8 +161,7 @@ void
 PETScDAESolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
   DAESolverImplementation::p_configure(props);
-  std::string prefix(petscProcessOptions(this->communicator(), props));
-  p_build(prefix);
+  this->build(props);
 }
 
 // -------------------------------------------------------------

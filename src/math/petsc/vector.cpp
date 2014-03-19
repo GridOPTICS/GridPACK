@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-02-13 11:55:51 d3g096
+ * @date   2014-03-19 08:38:24 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -157,20 +157,6 @@ Vector::elementDivide(const Vector& x)
 }  
 
 // -------------------------------------------------------------
-// petsc_make_viewer
-// -------------------------------------------------------------
-static void
-petsc_make_viewer(const MPI_Comm& comm, const char* filename, PetscViewer *viewer)
-{
-  PetscErrorCode ierr;
-  if (filename != NULL) {
-    ierr = PetscViewerASCIIOpen(comm, filename, viewer); ; CHKERRXX(ierr);
-  } else {
-    *viewer = PETSC_VIEWER_STDOUT_(comm);
-  }
-}
-
-// -------------------------------------------------------------
 // petsc_print_vector
 // -------------------------------------------------------------
 static void
@@ -180,9 +166,16 @@ petsc_print_vector(const Vec vec, const char* filename, PetscViewerFormat format
   try {
     PetscViewer viewer;
     MPI_Comm comm = PetscObjectComm((PetscObject)vec);
-    petsc_make_viewer(comm, filename, &viewer);
+    if (filename != NULL) {
+      ierr = PetscViewerASCIIOpen(comm, filename, &viewer); ; CHKERRXX(ierr);
+    } else {
+      ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
+    }
     ierr = PetscViewerSetFormat(viewer, format); ; CHKERRXX(ierr);
     ierr = VecView(vec, viewer); CHKERRXX(ierr);
+    if (filename != NULL) {
+      ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+    }
   } catch (const PETSc::Exception& e) {
     throw PETScException(ierr, e);
   }

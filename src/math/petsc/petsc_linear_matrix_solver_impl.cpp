@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2013-11-12 09:56:35 d3g096
+ * @date   2014-03-19 08:32:38 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,6 @@
 #include "petsc_matrix_implementation.hpp"
 #include "petsc_matrix_extractor.hpp"
 #include "petsc_exception.hpp"
-#include "petsc/petsc_configuration.hpp"
 
 namespace gridpack {
 namespace math {
@@ -60,6 +59,7 @@ PetscLinearMatrixSolverImplementation::p_supportedSolverPackage[] = {
 // -------------------------------------------------------------
 PetscLinearMatrixSolverImplementation::PetscLinearMatrixSolverImplementation(const Matrix& A)
   : LinearMatrixSolverImplementation(A),
+    PETScConfigurable(this->communicator()),
     p_factored(false),
     p_orderingType(MATORDERINGND),
     p_solverPackage(MATSOLVERSUPERLU_DIST),
@@ -84,13 +84,20 @@ PetscLinearMatrixSolverImplementation::~PetscLinearMatrixSolverImplementation(vo
 }
 
 // -------------------------------------------------------------
+// PetscLinearMatrixSolverImplementation::p_build
+// -------------------------------------------------------------
+void
+PetscLinearMatrixSolverImplementation::p_build(const std::string& option_prefix)
+{
+  // Yep. Empty.
+}
+
+// -------------------------------------------------------------
 // PetscLinearMatrixSolverImplementation::p_configure
 // -------------------------------------------------------------
 void
 PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
-  std::string prefix(petscProcessOptions(this->communicator(), props));
-
   PetscErrorCode ierr(0);
 
   std::string mstr;
@@ -173,6 +180,8 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
                                this->configurationKey() % p_fill);
     throw Exception(msg);
   }    
+
+  this->build(props);
 }
 
 

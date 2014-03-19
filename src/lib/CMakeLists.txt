@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2014-01-15 13:29:41 d3g096
+# Last Change: 2014-03-19 08:25:06 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -45,7 +45,7 @@ set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/linear_solver.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/math.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/matrix.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/nonlinear_solver.cpp)
-set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/petsc_configuration.cpp)
+set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/petsc_configurable.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/petsc_exception.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/petsc_linear_solver_implementation.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/petsc_matrix_implementation.cpp)

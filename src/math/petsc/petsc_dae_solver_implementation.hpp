@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-14 11:41:16 d3g096
+ * @date   2014-03-19 09:35:43 d3g096
  * 
  * @brief  
  * 
@@ -23,6 +23,7 @@
 
 #include <petscts.h>
 #include "dae_solver_implementation.hpp"
+#include "petsc_configurable.hpp"
 
 namespace gridpack {
 namespace math {
@@ -31,7 +32,8 @@ namespace math {
 //  class PETScDAESolverImplementation
 // -------------------------------------------------------------
 class PETScDAESolverImplementation 
-  : public DAESolverImplementation
+  : public DAESolverImplementation,
+    private PETScConfigurable
 {
 public:
 

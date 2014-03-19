@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-12-04 14:10:47 d3g096
+ * @date   2014-03-19 08:41:51 d3g096
  * 
  * @brief  
  * 
@@ -18,6 +18,7 @@
 
 #include <petscsnes.h>
 #include "nonlinear_solver_implementation.hpp"
+#include "petsc_configurable.hpp"
 
 namespace gridpack {
 namespace math {
@@ -26,7 +27,8 @@ namespace math {
 //  class PetscNonlinearSolverImplementation
 // -------------------------------------------------------------
 class PetscNonlinearSolverImplementation 
-  : public NonlinearSolverImplementation
+  : public NonlinearSolverImplementation,
+    private PETScConfigurable
 {
 public:
 

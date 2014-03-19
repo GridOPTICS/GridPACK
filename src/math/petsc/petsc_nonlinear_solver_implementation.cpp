@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2013-12-04 14:11:27 d3g096
+ * @date   2014-03-19 08:42:47 d3g096
  * 
  * @brief  
  * 
@@ -25,7 +25,6 @@
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
-#include "petsc/petsc_configuration.hpp"
 
 static PetscErrorCode  
 MonitorNorms(SNES snes, PetscInt its, PetscReal fgnorm, void *dummy)
@@ -60,6 +59,7 @@ PetscNonlinearSolverImplementation::PetscNonlinearSolverImplementation(const par
                                                                        JacobianBuilder form_jacobian,
                                                                        FunctionBuilder form_function)
   : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
+    PETScConfigurable(this->communicator()),
     p_snes(), 
     p_petsc_J(), p_petsc_F(),
     p_petsc_X()                 // set by p_solve()
@@ -71,6 +71,7 @@ PetscNonlinearSolverImplementation::PetscNonlinearSolverImplementation(Matrix& J
                                                                        JacobianBuilder form_jacobian,
                                                                        FunctionBuilder form_function)
   : NonlinearSolverImplementation(J, form_jacobian, form_function),
+    PETScConfigurable(this->communicator()),
     p_snes(), 
     p_petsc_J(), p_petsc_F(),
     p_petsc_X()                 // set by p_solve()
@@ -146,8 +147,7 @@ void
 PetscNonlinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
   NonlinearSolverImplementation::p_configure(props);
-  std::string prefix(petscProcessOptions(this->communicator(), props));
-  p_build(prefix);
+  this->build(props);
 }
 
 // -------------------------------------------------------------

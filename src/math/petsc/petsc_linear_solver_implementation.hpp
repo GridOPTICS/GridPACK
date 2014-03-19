@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-01-09 12:04:30 d3g096
+ * @date   2014-03-19 08:20:33 d3g096
  * 
  * @brief  
  * 
@@ -22,6 +22,7 @@
 
 #include <petscksp.h>
 #include "linear_solver_implementation.hpp"
+#include "petsc_configurable.hpp"
 
 namespace gridpack {
 namespace math {
@@ -30,7 +31,10 @@ namespace math {
 //  class PETScLinearSolverImplementation
 // -------------------------------------------------------------
 class PETScLinearSolverImplementation 
-  : public LinearSolverImplementation {
+  : public LinearSolverImplementation,
+    private PETScConfigurable
+
+{
 public:
 
   /// Default constructor.

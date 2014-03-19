@@ -8,7 +8,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-01-14 13:49:26 d3g096
+ * @date   2014-03-19 08:21:23 d3g096
  * 
  * @brief  
  * 
@@ -23,7 +23,6 @@
 #include "petsc/petsc_linear_solver_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
-#include "petsc/petsc_configuration.hpp"
 
 namespace gridpack {
 namespace math {
@@ -38,6 +37,7 @@ namespace math {
 // -------------------------------------------------------------
 PETScLinearSolverImplementation::PETScLinearSolverImplementation(Matrix& A)
   : LinearSolverImplementation(A.communicator()),
+    PETScConfigurable(this->communicator()),
     p_A(PETScMatrix(A))
 {
 }
@@ -90,8 +90,7 @@ void
 PETScLinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
   LinearSolverImplementation::p_configure(props);
-  std::string prefix(petscProcessOptions(this->communicator(), props));
-  p_build(prefix);
+  this->build(props);
 }
 
 // -------------------------------------------------------------
