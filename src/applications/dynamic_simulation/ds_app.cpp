@@ -86,7 +86,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   gridpack::utility::Configuration::ChildCursors events;
   if (cursor) cursor->children(events);
   std::vector<gridpack::dynamic_simulation::DSBranch::Event>
-     faults = setFaultEvents(events,network); 
+     faults = setFaultEvents(events); 
 
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
@@ -204,8 +204,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   gridpack::mapper::FullMatrixMap<DSNetwork> bMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y_b = bMap.mapToMatrix();
   timer->stop(t_matset);
-  busIO.header("\n=== Y_b: ============\n");
-  Y_b->print();
+  //busIO.header("\n=== Y_b: ============\n");
+  //Y_b->print();
   
   Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
   // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
@@ -571,9 +571,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       //curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
       transposeMultiply(*prefy11,*eprime_s0,*curr);
     } else if (flagF1 == 1) {
-      curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
+      //curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
+      transposeMultiply(*fy11,*eprime_s0,*curr);
     } else if (flagF1 == 2) {
-      curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
+      //curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
+      transposeMultiply(*posfy11,*eprime_s0,*curr);
     } 
     timer->stop(t_trnsmul);
     
@@ -618,11 +620,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     timer->start(t_trnsmul);
     if (flagF2 == 0) {
-      curr.reset(multiply(*trans_prefy11, *eprime_s1)); //MatMultTranspose(prefy11, eprime_s1, curr)
+      //curr.reset(multiply(*trans_prefy11, *eprime_s1)); //MatMultTranspose(prefy11, eprime_s1, curr)
+      transposeMultiply(*prefy11,*eprime_s1,*curr);
     } else if (flagF2 == 1) {
-      curr.reset(multiply(*trans_fy11, *eprime_s1)); //MatMultTranspose(fy11, eprime_s1, curr);
+      //curr.reset(multiply(*trans_fy11, *eprime_s1)); //MatMultTranspose(fy11, eprime_s1, curr);
+      transposeMultiply(*fy11,*eprime_s1,*curr);
     } else if (flagF2 == 2) {
-      curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
+      //curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
+      transposeMultiply(*posfy11,*eprime_s1,*curr);
     }
     timer->stop(t_trnsmul);
 
@@ -711,8 +716,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
  */
 std::vector<gridpack::dynamic_simulation::DSBranch::Event>
    gridpack::dynamic_simulation::DSApp::setFaultEvents(
-   std::vector<gridpack::utility::Configuration::CursorPtr > events,
-   boost::shared_ptr<DSNetwork> network)
+   std::vector<gridpack::utility::Configuration::CursorPtr > events)
 {
   int size = events.size();
   int idx;

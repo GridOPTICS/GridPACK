@@ -56,7 +56,7 @@ class DSApp
      */
     std::vector<gridpack::dynamic_simulation::DSBranch::Event>
       setFaultEvents(std::vector<gridpack::utility::Configuration::CursorPtr >
-          cursors, boost::shared_ptr<DSNetwork> network);
+          cursors);
  
     private:
 };
