@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-03-04 10:44:20 d3g096
+# Last Change: 2014-03-20 14:59:38 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -33,6 +33,7 @@ install(FILES
   parallel.hpp
   distributed.hpp
   shuffler.hpp
+  ga_shuffler.hpp
   printit.hpp
   task_manager.hpp
   DESTINATION include/gridpack/parallel

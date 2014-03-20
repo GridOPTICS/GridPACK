@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2014-02-25 09:20:02 d3g096
+# Last Change: 2014-03-20 14:56:24 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -73,6 +73,11 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_DSMATRIX_COMPONENTS_LIBARARY
+    NAMES gridpack_dsmatrix_components
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   set(gp_libs
     ${GRIDPACK_FACTORY_LIBARARY}
     ${GRIDPACK_PARTITION_LIBARARY}
@@ -83,6 +88,7 @@ function(gridpack_setup)
     ${GRIDPACK_CONFIGURATION_LIBRARY}
     ${GRIDPACK_YMATRIX_COMPONENTS_LIBARARY}
     ${GRIDPACK_PFMATRIX_COMPONENTS_LIBARARY}
+    ${GRIDPACK_DSMATRIX_COMPONENTS_LIBARARY}
   )
 
   if (GRIDPACK_HAVE_PARMETIS)   
