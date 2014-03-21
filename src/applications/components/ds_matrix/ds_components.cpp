@@ -499,10 +499,31 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
 
 void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
 {
+  int i;
   if (p_mode == updateYbus) {
     if (p_ngen > 0) {
       p_permYmod = values[0];
       //printf("p_permYmod = %f+%fi\n", getOriginalIndex(), real(p_permYmod), imag(p_permYmod));
+    }
+  } else if (p_mode == init_mac_ang) {
+    p_mac_ang_final.clear();
+    for (i=0; i<p_ngen; i++) {
+      p_mac_ang_final.push_back(values[i]);
+    }
+  } else if (p_mode == init_mac_spd) {
+    p_mac_spd_final.clear();
+    for (i=0; i<p_ngen; i++) {
+      p_mac_spd_final.push_back(values[i]);
+    }
+  } else if (p_mode == init_pmech) {
+    p_mech_final.clear();
+    for (i=0; i<p_ngen; i++) {
+      p_mech_final.push_back(values[i]);
+    }
+  } else if (p_mode == init_pelect) {
+    p_elect_final.clear();
+    for (i=0; i<p_ngen; i++) {
+      p_elect_final.push_back(values[i]);
     }
   }
 }
@@ -613,6 +634,9 @@ void gridpack::dynamic_simulation::DSBus::load(
 
         p_h.push_back(h);
         p_d0.push_back(d0);
+        std::string id("-1");
+        bool ok = data->getValue(GENERATOR_ID,&id,i);
+        p_genid.push_back(id);
       }
     }
   }
@@ -713,6 +737,31 @@ void gridpack::dynamic_simulation::DSBus::clearEvent()
   p_from_flag = false;
   p_to_flag = false;
   p_branch = NULL;
+}
+
+/**
+ * Write output from buses to standard out
+ * @param string (output) string with information to be printed out
+ * @param signal an optional character string to signal to this
+ * routine what about kind of information to write
+ * @return true if bus is contributing string to output, false otherwise
+ */
+bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string, const char *signal)
+{
+  if (p_ngen == 0) return false;
+  int i;
+  char buf[128];
+  char *ptr = string;
+  int idx = getOriginalIndex();
+  for (i=0; i<p_ngen; i++) {
+    sprintf(buf,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
+      idx,p_genid[i].c_str(),real(p_mac_ang_final[i]),real(p_mac_spd_final[i]),
+      real(p_mech_final[i]),real(p_elect_final[i]));
+    int len =strlen(buf);
+    sprintf(ptr,"%s",buf);
+    ptr += len;
+  }
+  return true;
 }
 
 /**

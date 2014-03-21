@@ -182,6 +182,16 @@ class DSBus
      */
     void clearEvent();
 
+    /**
+     * Write output from buses to standard out
+     * @param string (output) string with information to be printed out
+     * @param signal an optional character string to signal to this
+     * routine what about kind of information to write
+     * @return true if bus is contributing string to output, false otherwise
+     */
+    bool serialWrite(char *string, const char *signal);
+
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -201,6 +211,7 @@ class DSBus
     int p_type;
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
+    std::vector<std::string> p_genid;
 
     // DAE related variables
     //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
@@ -208,6 +219,9 @@ class DSBus
     std::vector<double> p_h, p_d0;
     //std::vector<double> x, xdot; // DAE variables
     std::vector<gridpack::ComplexType> p_pelect, p_eprime;
+
+    std::vector<gridpack::ComplexType> p_elect_final, p_mech_final;
+    std::vector<gridpack::ComplexType> p_mac_ang_final, p_mac_spd_final;
 
     gridpack::component::BaseBranchComponent* p_branch;
 
@@ -235,7 +249,10 @@ class DSBus
           & p_ngen & p_type & p_permYmod
           & p_from_flag & p_to_flag
           & p_h & p_d0
-          & p_pelect & p_eprime;
+          & p_pelect & p_eprime
+          & p_elect_final & p_mech_final
+          & p_mac_ang_final & p_mac_spd_final
+          & p_genid;
       }
 
 };
@@ -245,6 +262,7 @@ class DSBranch
   public:
     // Small utility structure to encapsulate information about fault events
     struct Event{
+      std::string name;
       double start,end;
       int from_idx, to_idx;
       double step;

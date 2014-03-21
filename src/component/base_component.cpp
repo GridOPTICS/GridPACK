@@ -278,6 +278,7 @@ void BaseComponent::setMode(int mode)
  */
 bool BaseComponent::serialWrite(char *string, const char *signal)
 {
+  return false;
   // This is defined so that generic operations for writing strings from buses
   // and branches can be built
 }
