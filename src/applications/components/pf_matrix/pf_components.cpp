@@ -1026,16 +1026,18 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
     std::vector<std::string> tags = getLineTags();
     int i;
     bool found = false;
+    int ilen = 0;
     for (i=0; i<p_elems; i++) {
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
       double S = sqrt(p*p+q*q);
-      if (S > p_rateA[i] && p_rateA[i] != 0.0 ){
+      if (S > p_rateA[i] && p_rateA[i] != 0.0){
         sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
     	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),
           p,q,p_rateA[i],S/p_rateA[i]*100,"%");
-        sprintf(string,"%s",buf);
+        ilen += strlen(buf);
+        if (ilen<512) sprintf(string,"%s",buf);
         string += strlen(buf);
         found = true;
       }
