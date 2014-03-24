@@ -169,7 +169,7 @@ void gridpack::contingency_analysis::CAApp::execute(
   timer->start(t_matv);
   p_factory->setYBus();
 
-#if 1
+#if 0
   p_factory->setMode(gridpack::powerflow::YBus);
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
@@ -268,28 +268,31 @@ void gridpack::contingency_analysis::CAApp::execute(
   vMap.mapToBus(X);
   timer->stop(t_matv);
 
-  // Check for any violations
-  bool bus_ok, branch_ok;
-  p_factory->checkContingencies(minV,maxV,&bus_ok,&branch_ok);
-  if (!bus_ok || !branch_ok) {
-    sprintf(ioBuf,"\n   Violation found for contingency %s\n",contingency.p_name.c_str());
-  } else {
-    sprintf(ioBuf,"\n   No violations found for contingency %s\n",contingency.p_name.c_str());
-  }
-  busIO.header(ioBuf);
+  if (converged) {
+    // Check for any violations
+    bool bus_ok, branch_ok;
+    p_factory->checkContingencies(minV,maxV,&bus_ok,&branch_ok);
+    if (!bus_ok || !branch_ok) {
+      sprintf(ioBuf,"\n   Violation found for contingency %s\n",
+         contingency.p_name.c_str());
+    } else {
+      sprintf(ioBuf,"\n   No violations found for contingency %s\n",
+         contingency.p_name.c_str());
+    }
+    busIO.header(ioBuf);
 
-  if (!branch_ok) {
-    branchIO.header("\n   Branch Violations\n");
-    branchIO.header("\n        Bus 1       Bus 2     Tag          P"
-	"                    Q          Rating   Overloading\n");
-    branchIO.write("flow");
-  }
+    if (!branch_ok) {
+      branchIO.header("\n   Branch Violations\n");
+      branchIO.header("\n        Bus 1       Bus 2     Tag          P"
+	  "                    Q          Rating   Overloading\n");
+      branchIO.write("flow");
+    }
 
-
-  if (!bus_ok) {
-    busIO.header("\n   Bus Voltages Violations\n");
-    busIO.header("\n   Bus Number      Voltage Magnitude\n");
-    busIO.write("violations_only");
+    if (!bus_ok) {
+      busIO.header("\n   Bus Voltages Violations\n");
+      busIO.header("\n   Bus Number      Voltage Magnitude\n");
+      busIO.write("violations_only");
+    }
   }
 
   if (converged) {
