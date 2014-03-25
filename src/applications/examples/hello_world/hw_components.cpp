@@ -57,11 +57,13 @@ void gridpack::hello_world::HWBus::load(const
 /**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::hello_world::HWBus::serialWrite(char *string, const char *signal)
+bool gridpack::hello_world::HWBus::serialWrite(char *string,
+        const int bufsize, const char *signal)
 {
   sprintf(string,"Hello world from bus %d\n",p_original_idx);
   return true;
@@ -100,11 +102,13 @@ void gridpack::hello_world::HWBranch::load(
 /**
  * Write output from branches to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if branch is contributing string to output, false otherwise
  */
-bool gridpack::hello_world::HWBranch::serialWrite(char *string, const char *signal)
+bool gridpack::hello_world::HWBranch::serialWrite(char *string,
+    const int bufsize, const char *signal)
 {
   sprintf(string,"Hello world from the branch connecting bus %d to bus %d\n",
       p_original_idx1, p_original_idx2);

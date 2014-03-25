@@ -272,11 +272,12 @@ void BaseComponent::setMode(int mode)
  * Copy a string for output into buffer. The behavior of this method can be
  * altered by inputting different values for the signal string
  * @param string buffer containing string to be written to output
+ * @param bufsize size of string buffer in bytes
  * @param signal string to control behavior of routine (e.g. what
  * properties to write
  * @return true if component is writing a contribution, false otherwise
  */
-bool BaseComponent::serialWrite(char *string, const char *signal)
+bool BaseComponent::serialWrite(char *string, const int bufsize, const char *signal)
 {
   return false;
   // This is defined so that generic operations for writing strings from buses

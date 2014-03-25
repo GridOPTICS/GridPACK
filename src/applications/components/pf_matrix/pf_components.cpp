@@ -513,11 +513,13 @@ void gridpack::powerflow::PFBus::setSBus(void)
 /**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::powerflow::PFBus::serialWrite(char *string, const char *signal)
+bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
+                                             const char *signal)
 {
   if (signal == NULL) {
     double pi = 4.0*atan(1.0);
@@ -1010,11 +1012,13 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
 /**
  * Write output from branches to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if branch is contributing string to output, false otherwise
  */
-bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal)
+bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
+                                                const char *signal)
 {
   gridpack::powerflow::PFBus *bus1 = 
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
@@ -1037,7 +1041,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const char *signal
     	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),
           p,q,p_rateA[i],S/p_rateA[i]*100,"%");
         ilen += strlen(buf);
-        if (ilen<512) sprintf(string,"%s",buf);
+        if (ilen<bufsize) sprintf(string,"%s",buf);
         string += strlen(buf);
         found = true;
       }

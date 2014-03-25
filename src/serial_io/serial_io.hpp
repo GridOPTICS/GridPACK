@@ -171,7 +171,7 @@ class SerialBusIO {
     // Count up total strings being written from this processor
     for (i=0; i<nBus; i++) {
       if (p_network->getActiveBus(i) &&
-          p_network->getBus(i)->serialWrite(string,signal)) {
+          p_network->getBus(i)->serialWrite(string,p_size,signal)) {
         nwrites++;
       }
     }
@@ -186,7 +186,7 @@ class SerialBusIO {
     nwrites = 0;
     for (i=0; i<nBus; i++) {
       if (p_network->getActiveBus(i) &&
-          p_network->getBus(i)->serialWrite(ptr,signal)) {
+          p_network->getBus(i)->serialWrite(ptr,p_size,signal)) {
         index[nwrites] = new int;
         *(index[nwrites]) = p_network->getGlobalBusIndex(i);
         ones[nwrites] = 1;
@@ -415,7 +415,7 @@ class SerialBranchIO {
     // Count up total strings being written from this processor
     for (i=0; i<nBranch; i++) {
       if (p_network->getActiveBranch(i) &&
-          p_network->getBranch(i)->serialWrite(string,signal)) nwrites++;
+          p_network->getBranch(i)->serialWrite(string,p_size,signal)) nwrites++;
     }
 
     // Set up buffers to scatter strings to global buffer
@@ -427,7 +427,7 @@ class SerialBranchIO {
     nwrites = 0;
     for (i=0; i<nBranch; i++) {
       if (p_network->getActiveBranch(i) &&
-          p_network->getBranch(i)->serialWrite(ptr,signal)) {
+          p_network->getBranch(i)->serialWrite(ptr,p_size,signal)) {
         index[nwrites] = new int;
         *(index[nwrites]) = p_network->getGlobalBranchIndex(i);
         ones[nwrites] = 1;

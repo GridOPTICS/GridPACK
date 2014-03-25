@@ -27,7 +27,7 @@ class TestBus
   ~TestBus(void) {
   }
 
-  bool serialWrite(char *string, const char *signal) {
+  bool serialWrite(char *string, const int bufsize, const char *signal) {
     sprintf(string,"  Bus: %4d      %4d\n",getOriginalIndex(),
         getGlobalIndex());
     return true;
@@ -43,7 +43,7 @@ class TestBranch
 
   ~TestBranch(void) {
   }
-  bool serialWrite(char *string, const char *signal) {
+  bool serialWrite(char *string, const int bufsize, const char *signal) {
     sprintf(string,"  Branch: %4d      %4d      %4d      %4d\n",
         getBus1OriginalIndex(),
         getBus2OriginalIndex(),

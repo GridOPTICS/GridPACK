@@ -189,11 +189,13 @@ void gridpack::resistor_grid::RGBus::setValues(gridpack::ComplexType *values)
 /**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::resistor_grid::RGBus::serialWrite(char *string, const char *signal)
+bool gridpack::resistor_grid::RGBus::serialWrite(char *string,
+    const int bufsize, const char *signal)
 {
   sprintf(string,"Voltage on bus %d: %12.6f\n",getOriginalIndex(),p_voltage);
 }
@@ -309,11 +311,13 @@ bool gridpack::resistor_grid::RGBranch::matrixReverseValues(ComplexType *values)
 /**
  * Write output from branches to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if branch is contributing string to output, false otherwise
  */
-bool gridpack::resistor_grid::RGBranch::serialWrite(char *string, const char *signal)
+bool gridpack::resistor_grid::RGBranch::serialWrite(char *string, const int
+    bufsize,  const char *signal)
 {
 
   gridpack::resistor_grid::RGBus *bus1

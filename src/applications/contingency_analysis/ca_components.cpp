@@ -58,11 +58,13 @@ void gridpack::contingency_analysis::CABus::setVoltageLimits(double vMin, double
 /**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
+ * @param bufsize size of string buffer in bytes
  * @param signal an optional character string to signal to this
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::contingency_analysis::CABus::serialWrite(char *string, const char *signal)
+bool gridpack::contingency_analysis::CABus::serialWrite(char *string,
+    const int bufsize, const char *signal)
 {
   if (signal != NULL && !strcmp(signal,"violations_only")) {
     double V = getVoltage();
@@ -74,7 +76,7 @@ bool gridpack::contingency_analysis::CABus::serialWrite(char *string, const char
       return false;
     }
   } else {
-    return PFBus::serialWrite(string, signal);
+    return PFBus::serialWrite(string, bufsize, signal);
   }
 }
 
