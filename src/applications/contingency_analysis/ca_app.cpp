@@ -174,8 +174,6 @@ void gridpack::contingency_analysis::CAApp::execute(
   gridpack::mapper::FullMatrixMap<CANetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
 #endif
-  //branchIO.header("\n=== orginal ybus: ============\n");
-  //orgYbus->print();
 
   //////////////////////////////////////////////////////////////
   p_factory->setMode(gridpack::powerflow::S_Cal);
@@ -187,12 +185,9 @@ void gridpack::contingency_analysis::CAApp::execute(
   p_factory->setMode(gridpack::powerflow::RHS);
   gridpack::mapper::BusVectorMap<CANetwork> vMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
-//  branchIO.header("\n=== PQ: ============\n");
-//  PQ->print();
   p_factory->setMode(gridpack::powerflow::Jacobian);
   gridpack::mapper::FullMatrixMap<CANetwork> jMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-  //J->print(); 
 
   // Create X vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
@@ -220,9 +215,6 @@ void gridpack::contingency_analysis::CAApp::execute(
   }
   tol = PQ->normInfinity();
   timer->stop(t_solv);
-  //J->print();
-  //PQ->print();
-  //X->print();
 
   bool converged = false;
   if (real(tol) <= tolerance) converged = true;
