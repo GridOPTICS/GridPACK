@@ -340,7 +340,7 @@ class BaseFactory {
       }
       int grp = p_network->communicator().getGroup();
       int nprocs = GA_Pgroup_nnodes(grp);
-      GA_Pgroup_igop(grp,&iok,nprocs,"+");
+      GA_Pgroup_igop(grp,&iok,1,"+");
       if (iok == nprocs) {
         return true;
       } else {
