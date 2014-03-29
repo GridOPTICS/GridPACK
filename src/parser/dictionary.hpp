@@ -15,9 +15,8 @@
  *  Variables that can be associated more than once for a bus or a branch can be
  *  indexed by an integer to distinguish different instances. For example,
  *  multiple generators can be associated with a bus and the variables
- *  associated with each generator can be indexed by an integer using the
- *  following convention. For generator N, the variables associated with it have
- *  the form VARIABLE_NAME:N.
+ *  associated with each generator. The variables that have an associated index
+ *  are denoted with the keyword "indexed".
  */
 
 #ifndef DICTIONARY_HPP_
@@ -203,42 +202,49 @@
 /**
  * Bus number to which the generator is connected
  * type: integer
+ * indexed
  */
 #define GENERATOR_BUSNUMBER "GENERATOR_BUSNUMBER"
 
 /**
  * Non-blank alphanumeric machine identifier, used to distinguish among multiple machines connected to the same bus	
  * type: string
+ * indexed
  */
 #define GENERATOR_ID "GENERATOR_ID"
 
 /**
  * Generator active power output, entered in MW	
  * type: real float
+ * indexed
  */
 #define GENERATOR_PG "GENERATOR_PG"
 
 /**
  * Generator reactive power output, entered in MVar
  * type: real float
+ * indexed
  */
 #define GENERATOR_QG "GENERATOR_QG"
 
 /**
  * Maximum generator reactive power output; entered in Mvar
  * type: real float
+ * indexed
  */
 #define GENERATOR_QMAX "GENERATOR_QMAX"
 
 /**
  * Minimum generator reactive power output; entered in Mvar
  * type: real float
+ * indexed
  */
 #define GENERATOR_QMIN "GENERATOR_QMIN"
 
 /**
  * Voltage setpoint; entered in pu
  * type: real float
+ * indexed
  */
 #define GENERATOR_VS "GENERATOR_VS"
 
@@ -246,30 +252,35 @@
  * Bus number of a remote type 1 or 2 bus whose voltage is to be regulated by this plant to the
  * value specified by GENERATOR_VS
  * type: integer
+ * indexed
  */
 #define GENERATOR_IREG "GENERATOR_IREG"
 
 /**
  * Total MVA base of the units represented by this machine; entered in MVA. 
  * type: real float
+ * indexed
  */
 #define GENERATOR_MBASE "GENERATOR_MBASE"
 
 /**
  * Complex impedance, in pu on GENERATOR_MBASE base. 
  * type: complex
+ * indexed
  */
 #define GENERATOR_ZSOURCE "GENERATOR_ZSOURCE"
 
 /**
  * Step-up transformer impedance; entered in pu on GENERATOR_MBASE base. 
  * type: complex
+ * indexed
  */
 #define GENERATOR_XTRAN "GENERATOR_XTRAN"
 
 /**
  * Active and reactive components of Step-up transformer impedance, in pu on GENERATOR_MBASE base
  * type: real float
+ * indexed
  */
 #define GENERATOR_RT "GENERATOR_RT"
 #define GENERATOR_XT "GENERATOR_XT"
@@ -277,6 +288,7 @@
 /**
  * Step-up transformer off-nominal turns ratio; entered in pu
  * type: real float
+ * indexed
  */
 #define GENERATOR_GTAP "GENERATOR_GTAP"
 
@@ -285,6 +297,7 @@
  * 1: in-service
  * 0: out-of-service
  * type: integer
+ * indexed
  */
 #define GENERATOR_STAT "GENERATOR_STAT"
 
@@ -292,60 +305,70 @@
  * Percent of the total Mvar required to hold the voltage at the bus controlled by bus 
  * that are to be contributed by the generation. It must be positive
  * type: real float
+ * indexed
  */
 #define GENERATOR_RMPCT "GENERATOR_RMPCT"
 
 /**
  * Maximum generator active power output; entered in MW
  * type: real float
+ * indexed
  */
 #define GENERATOR_PMAX "GENERATOR_PMAX"
 
 /**
  * Minimum generator active power output; entered in MW
  * type: real float
+ * indexed
  */
 #define GENERATOR_PMIN "GENERATOR_PMIN"
 
 /**
  * Generator owner number	
  * type: integer
+ * indexed
  */
 #define GENERATOR_OWNER "GENERATOR_OWNER"
 
 /**
  * Generator reactance
  * type: real float
+ * indexed
  */
 #define GENERATOR_REACTANCE "GENERATOR_REACTANCE"
 
 /**
  * Generator resistance
  * type: real float
+ * indexed
  */
 #define GENERATOR_RESISTANCE "GENERATOR_RESISTANCE"
 
 /**
  * Generator transient reactance
  * type: real float
+ * indexed
  */
 #define GENERATOR_TRANSIENT_REACTANCE "GENERATOR_TRANSIENT_REACTANCE"
 
 /**
  * Generator subtransient reactance
  * type: real float
+ * indexed
  */
 #define GENERATOR_SUBTRANSIENT_REACTANCE "GENERATOR_SUBTRANSIENT_REACTANCE"
 
 /**
  * Generator inertia constant
  * type: real float
+ * indexed
  */
 #define GENERATOR_INERTIA_CONSTANT_H "GENERATOR_INERTIA_CONSTANT_H"
 
 /**
  * Generator damping coefficient
  * type: real float
+ * indexed
  */
 #define GENERATOR_DAMPING_COEFFICIENT_0 "GENERATOR_DAMPING_COEFFICENT_0"
 
@@ -376,78 +399,91 @@
 /**
  * Non-blank alphanumeric branch circuit identifier
  * type: string
+ * indexed
  */
 #define BRANCH_CKT "BRANCH_CKT"
 
 /**
  * Branch resistance; entered in pu
  * type: real float
+ * indexed
  */
 #define BRANCH_R "BRANCH_R"
 
 /**
  * Branch reactance; entered in pu. 
  * type: real float
+ * indexed
  */
 #define BRANCH_X "BRANCH_X"
 
 /**
  * Total branch charging susceptance; entered in pu
  * type: real float
+ * indexed
  */
 #define BRANCH_B "BRANCH_B"
 
 /**
  * First current rating; entered in MVA
  * type: real float
+ * indexed
  */
 #define BRANCH_RATING_A "BRANCH_RATING_A"
 
 /**
  * Second current rating; entered in MVA
  * type: real float
+ * indexed
  */
 #define BRANCH_RATING_B "BRANCH_RATING_B"
 
 /**
  * Third current rating; entered in MVA
  * type: real float
+ * indexed
  */
 #define BRANCH_RATING_C "BRANCH_RATING_C"
 
 /**
  * Transformer tap ratio in PTI 23 version
  * type: real float
+ * indexed
  */
 #define BRANCH_TAP "BRANCH_TAP"
 
 /**
  * Transformer shift in PTI 23 version
  * type: real float
+ * indexed
  */
 #define BRANCH_SHIFT "BRANCH_SHIFT"
 
 /**
  * Real part of admittance of the line shunt at the “from bus” end of the branch
  * type: real float
+ * indexed
  */
 #define BRANCH_SHUNT_ADMTTNC_G1 "BRANCH_SHUNT_ADMTTNC_G1"
 
 /**
  * Imaginary part of admittance of the line shunt at the “from bus” end of the branch
  * type: real float
+ * indexed
  */
 #define BRANCH_SHUNT_ADMTTNC_B1 "BRANCH_SHUNT_ADMTTNC_B1"
 
 /**
  * Real part of admittance of the line shunt at the “to bus” end of the branch
  * type: real float
+ * indexed
  */
 #define BRANCH_SHUNT_ADMTTNC_G2 "BRANCH_SHUNT_ADMTTNC_G2"
 
 /**
  * Imaginary part of admittance of the line shunt at the “to bus” end of the branch
  * type: real float
+ * indexed
  */
 #define BRANCH_SHUNT_ADMTTNC_B2 "BRANCH_SHUNT_ADMTTNC_B2"
 
@@ -457,24 +493,28 @@
  * 1: in-service
  * 0: out-of-service
  * type: integer
+ * indexed
  */
 #define BRANCH_STATUS "BRANCH_STATUS"
 
 
 // TRANSFORMER DATA 
 /**
- * Bus number to which the first winding is connected
+ * Not parsed in PTI v23
+ * Bus number to which the first winding is connected.
  * type: integer
  */
 #define TRANSFORMER_BUS1 "TRANSFORMER_BUS1"
 
 /**
+ * Not parsed in PTI v23
  * Bus number to which the second winding is connected
  * type: integer
  */
 #define TRANSFORMER_BUS2 "TRANSFORMER_BUS2"
 
 /**
+ * Not parsed in PTI v23
  * Non-blank alphanumeric transformer circuit identifier
  * type: string
  */
@@ -485,12 +525,14 @@
  * control. Positive sign, close to impedance (untapped) bus of transformer,
  * negative sign is opposite
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_CONTROL "TRANSFORMER_CONTROL"
 
 /**
  * Upper and lower limits of turns ratio or phase shift
  * type: float
+ * indexed
  */
 #define TRANSFORMER_RMA "TRANSFORMER_RMA"
 #define TRANSFORMER_RMI "TRANSFORMER_RMI"
@@ -498,6 +540,7 @@
 /**
  * Upper and lower limits of controlled volts, MW or MVAR
  * type: float
+ * indexed
  */
 #define TRANSFORMER_VMA "TRANSFORMER_VMA"
 #define TRANSFORMER_VMI "TRANSFORMER_VMI"
@@ -505,12 +548,14 @@
 /**
  * Turns ratio increment
  * type: float
+ * indexed
  */
 #define TRANSFORMER_STEP "TRANSFORMER_STEP"
 
 /**
  * Zero or number of a transformer impedence correction tabel (1-5)
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_TABLE "TRANSFORMER_TABLE"
 
