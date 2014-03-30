@@ -1,0 +1,13 @@
+The dynamic simulation applications needs additional parameters that are not
+supported by the standard PTI version 23 format. To run the dynamic simulation,
+the following 6 parameters must be added to each GENERATOR line (the standard
+GENERATOR lines contain 18 parameters).
+
+GENERATOR REACTANCE
+GENERATOR RESISTANCE
+GENERATOR TRANSIENT REACTANCE
+GENERATOR SUBTRANSIENT REACTANCE
+GENERATOR INERTIA CONSTANT H
+GENERATOR DAMPING COEFFICIENT 0
+
+All of the parameters are real numbers

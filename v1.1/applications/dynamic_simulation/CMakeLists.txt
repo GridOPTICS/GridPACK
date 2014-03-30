@@ -42,11 +42,19 @@ add_executable(ds.x
 
 target_link_libraries(ds.x ${target_libraries})
 
+add_custom_target(ds.x.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
 
-# -------------------------------------------------------------
-# TEST: pf_network_test
-# -------------------------------------------------------------
-#add_executable(pf_network_test test/pf_network_test.cpp)
-#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-#gridpack_add_unit_test(pf_network_test pf_network_test)
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
 
+  DEPENDS 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/SJin_3g9b.raw
+)
+
+add_dependencies(ds.x ds.x.input)
