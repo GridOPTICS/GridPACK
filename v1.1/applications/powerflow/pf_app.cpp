@@ -79,12 +79,25 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
      printf("No network configuration file specified\n");
      return;
   }
+  // Convergence and iteration parameters
+  double tolerance = cursor->get("tolerance",1.0e-6);
+  int max_iteration = cursor->get("maxIteration",50);
+  ComplexType tol;
 
   int t_pti = timer->createCategory("PTI Parser");
   timer->start(t_pti);
   gridpack::parser::PTI23_parser<PFNetwork> parser(network);
   parser.parse(filename.c_str());
   timer->stop(t_pti);
+
+  // Create serial IO object to export data from buses
+  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
+  char ioBuf[128];
+
+  sprintf(ioBuf,"\nMaximum number of iterations: %d\n",max_iteration);
+  busIO.header(ioBuf);
+  sprintf(ioBuf,"\nConvergence tolerance: %f\n",tolerance);
+  busIO.header(ioBuf);
 
   // partition network
   int t_part = timer->createCategory("Partition");
@@ -116,10 +129,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_fact);
   factory.setYBus();
   timer->stop(t_fact);
-
-  // Create serial IO object to export data from buses
-  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
-  char ioBuf[128];
 
   int t_cmap = timer->createCategory("Create Mappers");
   timer->start(t_cmap);
@@ -163,15 +172,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 
   // Create X vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
-
-  // Convergence and iteration parameters
-  double tolerance;
-  int max_iteration;
-  ComplexType tol;
-
-  // These need to eventually be set using configuration file
-  tolerance = 1.0e-6;
-  max_iteration = 50;
 
   // Create linear solver
   int t_csolv = timer->createCategory("Create Linear Solver");

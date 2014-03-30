@@ -920,7 +920,7 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
   {
     gridpack::utility::CoarseTimer *timer;
     timer = NULL;
-    timer = gridpack::utility::CoarseTimer::instance();
+    // timer = gridpack::utility::CoarseTimer::instance();
     
     int t_total, t_part, t_bus_dist, t_gbus_dist, t_branch_dist;
 
