@@ -2,6 +2,8 @@
 <Configuration>
   <Powerflow>
     <networkConfiguration> IEEE14.raw </networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-6</tolerance>
     <!--
     <LinearSolver>
       <PETScPrefix>nrs</PETScPrefix>
