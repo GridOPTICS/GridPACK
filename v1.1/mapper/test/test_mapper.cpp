@@ -15,8 +15,8 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 
-#define XDIM 100
-#define YDIM 100
+#define XDIM 4
+#define YDIM 4
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -287,6 +287,8 @@ void run (const int &me, const int &nprocs)
       n2 = ly*(iaxmax-iaxmin+1) + lx + 1;
       network->setLocalBusIndex1(ncnt,n1);
       network->setLocalBusIndex2(ncnt,n2);
+      network->addBranchNeighbor(n1,ncnt);
+      network->addBranchNeighbor(n2,ncnt);
       // Determine which branches are locally held. Use the rule that if bus 1
       // is local, then branch belongs to this processor
       if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
@@ -322,6 +324,8 @@ void run (const int &me, const int &nprocs)
       n2 = (ly+1)*(iaxmax-iaxmin+1) + lx;
       network->setLocalBusIndex1(ncnt,n1);
       network->setLocalBusIndex2(ncnt,n2);
+      network->addBranchNeighbor(n1,ncnt);
+      network->addBranchNeighbor(n2,ncnt);
       // Determine which branches are locally held. Use the rule that if bus 1
       // is local, then branch belongs to this processor
       if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
