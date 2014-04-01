@@ -230,6 +230,9 @@ class PTI23_parser
   //      gridpack::component::DataCollection                data;
 
         std::getline(input, line);
+        while (check_comment(line)) {
+          std::getline(input, line);
+        }
         std::vector<std::string>  split_line;
 
         boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(" "), boost::token_compress_on);
@@ -1305,7 +1308,7 @@ class PTI23_parser
       }
 
     private:
-      /*
+      /**
        * Test to see if string terminates a section
        * @return: false if first non-blank character is TERM_CHAR
        */
@@ -1335,6 +1338,21 @@ class PTI23_parser
           return true;
         }
 #endif
+      }
+
+      /**
+       * Test to see if string is a comment line. Check to see if first
+       * non-blank characters are "//"
+       */
+      bool check_comment(std::string &str) const
+      {
+        int ntok = str.find_first_not_of(' ',0);
+        if (ntok != std::string::npos && ntok+1 != std::string::npos &&
+            str[ntok] == '/' && str[ntok+1] == '/') {
+          return true;
+        } else {
+          return false;
+        }
       }
       /*
        * The case_data is the collection of all data points in the case file.
