@@ -44,6 +44,7 @@ program f_test
 !   C.
 !
   bsize = loc(data(2)) - loc(data(1))
+  bsize = sizeof(data(1))
   call c_overwrite(bsize,data(2),data(6));
 !
 !   Print out values of data elements 2 and 6

@@ -18,3 +18,12 @@ f2_test.o : f2_test.F90
 
 overwrite2.o : overwrite2.c
 	$(CC) -g overwrite2.c -c
+
+f_from_c.x : c_main.o for_print.o
+	$(FC) -g c_main.o for_print.o -o f_from_c.x
+
+c_main.o : c_main.c
+	$(CC) -g c_main.c -c
+
+for_print.o : for_print.F90
+	$(FC) -g for_print.F90 -c
