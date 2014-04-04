@@ -16,6 +16,7 @@
 #include "mpi.h"
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
+#include "gridpack/timer/local_timer.hpp"
 
 #define LOOPSIZE 10000
 
@@ -36,11 +37,11 @@ BOOST_AUTO_TEST_CASE( Timings )
   BOOST_REQUIRE(timer != NULL);
 
   // Create three timer categories
-  int t_success = timer->createCategory("Succeed");
+  int t_success = timer->createCategory("CoarseTimer: Succeed");
   BOOST_CHECK_EQUAL(t_success, 0);
-  int t_fail1 = timer->createCategory("Failure 1");
+  int t_fail1 = timer->createCategory("CoarseTimer: Failure 1");
   BOOST_CHECK_EQUAL(t_fail1, 1);
-  int t_fail2 = timer->createCategory("Failuer 2");
+  int t_fail2 = timer->createCategory("CoarseTimer: Failure 2");
   BOOST_CHECK_EQUAL(t_fail2, 2);
   timer->start(t_success);
   timer->start(t_fail1);
@@ -54,6 +55,30 @@ BOOST_AUTO_TEST_CASE( Timings )
   timer->stop(t_success);
   timer->stop(t_fail2);
   timer->dump();
+
+  gridpack::parallel::Communicator world;
+  gridpack::utility::LocalTimer ltime(world);
+
+  // Create three local timer categories
+  t_success = ltime.createCategory("LocalTimer: Succeed");
+  BOOST_CHECK_EQUAL(t_success, 0);
+  t_fail1 = ltime.createCategory("LocalTimer: Failure 1");
+  BOOST_CHECK_EQUAL(t_fail1, 1);
+  t_fail2 = ltime.createCategory("LocalTimer: Failure 2");
+  BOOST_CHECK_EQUAL(t_fail2, 2);
+  ltime.start(t_success);
+  ltime.start(t_fail1);
+  for (i=0; i<LOOPSIZE; i++) {
+    if (i>0) {
+      t = exp(1.0/static_cast<double>(i));
+    } else {
+      t = exp(1.0);
+    }
+  }
+  ltime.stop(t_success);
+  ltime.stop(t_fail2);
+  ltime.dump();
+
 }
 
 BOOST_AUTO_TEST_SUITE_END( )
