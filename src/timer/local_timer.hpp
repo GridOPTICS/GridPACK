@@ -9,7 +9,9 @@
 #include <map>
 #include <string>
 #include <vector>
+#include <fstream>
 
+#include <boost/smart_ptr/shared_ptr.hpp>
 #include <boost/serialization/export.hpp>
 #include "gridpack/parallel/distributed.hpp"
 
@@ -57,6 +59,11 @@ public:
    * Write all timing statistics to standard out
    */
   void dump(void) const;
+
+  /**
+   * Write all timing statistics to specified ostream object
+   */
+  void dump(boost::shared_ptr<std::ofstream> stream) const;
 
   /**
    * Write out profile for all processors for requested handle

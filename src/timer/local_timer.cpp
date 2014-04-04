@@ -157,6 +157,88 @@ void gridpack::utility::LocalTimer::dump(void) const
 }
 
 /**
+ * Write all timing statistics to specified ostream object
+ */
+void gridpack::utility::LocalTimer::dump(
+     boost::shared_ptr<std::ofstream> stream) const
+{
+  // Loop over all categories
+  int me, nproc, i, j;
+  MPI_Comm comm = static_cast<MPI_Comm>(this->communicator());
+  MPI_Comm_rank(comm, &me);
+  MPI_Comm_size(comm, &nproc);
+
+  // Create temporary arrays to hold timing statistics
+  int *scheck = new int[nproc];
+  int *rcheck = new int[nproc];
+  double *stime = new double[nproc];
+  double *rtime = new double[nproc];
+
+  int size = p_title.size();
+  for (i = 0; i<size; i++) {
+    // statistics over all processors
+    for (j=0; j<nproc; j++) {
+      scheck[j] = 0;
+      stime[j] = 0.0;
+    }
+    scheck[me] = p_istop[i] - p_istart[i];
+    int sncheck = 0;
+    int rncheck = 0;
+    if (p_istop[i] > 0 || p_start[i] > 0) sncheck = 1;
+    stime[me] = p_time[i];
+    MPI_Allreduce(scheck, rcheck, nproc, MPI_INT, MPI_SUM, comm);
+    MPI_Allreduce(&sncheck, &rncheck, 1, MPI_INT, MPI_SUM, comm);
+    MPI_Allreduce(stime, rtime, nproc, MPI_DOUBLE, MPI_SUM, comm);
+    bool ok = true;
+    double max = rtime[0];
+    double min = rtime[0];
+    double avg = 0.0;
+    double avg2 = 0.0;
+    for (j=0; j<nproc; j++) {
+      ok = ok && (rcheck[j] == 0);
+      if (max < rtime[j]) max = rtime[j];
+      if (min > rtime[j]) min = rtime[j];
+      avg += rtime[j];
+      avg2 += (rtime[j]*rtime[j]);
+    }
+    avg /= static_cast<double>(nproc);
+    double rms = avg2-static_cast<double>(nproc)*avg*avg;
+    if (nproc > 1) {
+      rms = rms/static_cast<double>(nproc-1);
+      if (rms > 0.0) {
+        rms = sqrt(rms);
+      }
+    } else {
+      rms = -1.0;
+    }
+    char buf[128];
+    if (ok && me == 0 && rncheck > 0) {
+      sprintf(buf,"Timing statistics for: %s\n",p_title[i].c_str());
+      *stream << buf;
+      sprintf(buf,"    Average time:      %16.4f\n",avg);
+      *stream << buf;
+      sprintf(buf,"    Maximum time:      %16.4f\n",max);
+      *stream << buf;
+      sprintf(buf,"    Minimum time:      %16.4f\n",min);
+      *stream << buf;
+      if (rms > 0.0) {
+        sprintf(buf,"    RMS deviation:     %16.4f\n",rms);
+        *stream << buf;
+      }
+    } else if (me == 0 && rncheck > 0) {
+      sprintf(buf,"Invalid time statistics. Start and stop not paired for ");
+      *stream << buf;
+      sprintf(buf,"%s\n",p_title[i].c_str());
+      *stream << buf;
+    }
+  }
+  delete [] scheck;
+  delete [] rcheck;
+  delete [] stime;
+  delete [] rtime;
+}
+
+/**
  * Write out profile for all processors for requested handle
  * @param idx category handle
  */
