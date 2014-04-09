@@ -701,11 +701,13 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   int *data = new int[p_busContribution];
   int *ptr = data;
   icnt = 0;
+  boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
+      bus = p_network->getBus(i);
+      if (bus->matrixDiagSize(&isize,&jsize)) {
         indices[icnt] = ptr;
-        p_network->getBus(i)->getMatVecIndex(&idx);
+        bus->getMatVecIndex(&idx);
         *(indices[icnt]) = idx;
         ptr++;
         icnt++;
@@ -732,12 +734,13 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   int jcnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
+      bus = p_network->getBus(i);
+      if (bus->matrixDiagSize(&isize,&jsize)) {
 #ifdef DBG_CHECK
         int ijsize = isize*jsize;
         for (k=0; k<ijsize; k++) values[k] = 0.0;
 #endif
-        if (p_network->getBus(i)->matrixDiagValues(values)) {
+        if (bus->matrixDiagValues(values)) {
           icnt = 0;
           for (k=0; k<jsize; k++) {
             jdx = j_offsets[jcnt] + k;
@@ -795,9 +798,11 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   int t_idx;
   if (p_timer) t_idx = p_timer->createCategory("loadBranchData: Set Index Arrays");
   if (p_timer) p_timer->start(t_idx);
+  boost::shared_ptr<gridpack::component::BaseBranchComponent> branch;
   for (i=0; i<p_nBranches; i++) {
-    if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
-      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+    branch = p_network->getBranch(i);
+    if (branch->matrixForwardSize(&isize,&jsize)) {
+      branch->getMatVecIndices(&idx, &jdx);
       if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
         i_indices[icnt] = i_ptr;
         j_indices[icnt] = j_ptr;
@@ -810,8 +815,8 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
         // TODO: some kind of error
       }
     }
-    if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
-      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+    if (branch->matrixReverseSize(&isize,&jsize)) {
+      branch->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
         i_indices[icnt] = i_ptr;
         j_indices[icnt] = j_ptr;
@@ -850,14 +855,15 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   int j,k;
   int jcnt = 0;
   for (i=0; i<p_nBranches; i++) {
-    if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
-      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+    branch = p_network->getBranch(i);
+    if (branch->matrixForwardSize(&isize,&jsize)) {
+      branch->getMatVecIndices(&idx, &jdx);
       if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
 #ifdef DBG_CHECK
         int ijsize = isize*jsize;
         for (k=0; k<ijsize; k++) values[k] = 0.0;
 #endif
-        if (p_network->getBranch(i)->matrixForwardValues(values)) {
+        if (branch->matrixForwardValues(values)) {
           icnt = 0;
           for (k=0; k<jsize; k++) {
             jdx = j_offsets[jcnt] + k;
@@ -875,14 +881,14 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
         jcnt++;
       }
     }
-    if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
-      p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
+    if (branch->matrixReverseSize(&isize,&jsize)) {
+      branch->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
 #ifdef DBG_CHECK
         int ijsize = isize*jsize;
         for (k=0; k<ijsize; k++) values[k] = 0.0;
 #endif
-        if (p_network->getBranch(i)->matrixReverseValues(values)) {
+        if (branch->matrixReverseValues(values)) {
           icnt = 0;
           // Note that because the indices have been reversed, we need to switch
           // the ordering of the offsets as well

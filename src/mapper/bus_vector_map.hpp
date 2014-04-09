@@ -407,11 +407,13 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   int *data = new int[p_busContribution];
   int *ptr = data;
   icnt = 0;
+  boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->vectorSize(&isize)) {
+      bus = p_network->getBus(i);
+      if (bus->vectorSize(&isize)) {
         indices[icnt] = ptr;
-        p_network->getBus(i)->getMatVecIndex(&idx);
+        bus->getMatVecIndex(&idx);
         *(indices[icnt]) = idx;
         ptr++;
         icnt++;
@@ -436,11 +438,12 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   int jcnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->vectorSize(&isize)) {
+      bus = p_network->getBus(i);
+      if (bus->vectorSize(&isize)) {
 #ifdef DGB_CHECK
         for (j=0; j<isize; j++) values[j] = 0.0;
 #endif
-        p_network->getBus(i)->vectorValues(values);
+        bus->vectorValues(values);
         icnt = 0;
         for (j=0; j<isize; j++) {
           idx = offsets[jcnt] + j;
