@@ -45,6 +45,9 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   int                     iSize    = 0;
   int                     jSize    = 0;
 
+  p_timer = NULL;
+  // p_timer = gridpack::utility::CoarseTimer::instance();
+
   p_GAgrp = network->communicator().getGroup();
   p_me = GA_Pgroup_nodeid(p_GAgrp);
   p_nNodes = GA_Pgroup_nnodes(p_GAgrp);
@@ -79,16 +82,29 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
+  int t_new, t_bus, t_branch, t_set;
+  if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
+  if (p_timer) p_timer->start(t_new);
   boost::shared_ptr<gridpack::math::Matrix>
 #if 0
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
 #else
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
 #endif
+  if (p_timer) p_timer->stop(t_new);
+  if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
   loadBusData(Ret,false);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
+  if (p_timer) p_timer->start(t_branch);
   loadBranchData(Ret,false);
+  if (p_timer) p_timer->stop(t_branch);
+  if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
+  if (p_timer) p_timer->start(t_set);
   GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
+  if (p_timer) p_timer->stop(t_set);
   return Ret;
 }
 
@@ -99,11 +115,23 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
  */
 void mapToMatrix(gridpack::math::Matrix &matrix)
 {
+  int t_set, t_bus, t_branch;
+  if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
+  if (p_timer) p_timer->start(t_set);
   matrix.zero();
+  if (p_timer) p_timer->stop(t_set);
+  if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
   loadBusData(matrix,false);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
+  if (p_timer) p_timer->start(t_branch);
   loadBranchData(matrix,false);
+  if (p_timer) p_timer->stop(t_branch);
+  if (p_timer) p_timer->start(t_set);
   GA_Pgroup_sync(p_GAgrp);
   matrix.ready();
+  if (p_timer) p_timer->stop(t_set);
 }
 
 /**
@@ -670,13 +698,16 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   int **indices = new int*[p_busContribution];
+  int *data = new int[p_busContribution];
+  int *ptr = data;
   icnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->matrixDiagSize(&isize,&jsize)) {
-        indices[icnt] = new int;
+        indices[icnt] = ptr;
         p_network->getBus(i)->getMatVecIndex(&idx);
         *(indices[icnt]) = idx;
+        ptr++;
         icnt++;
       }
     }
@@ -721,7 +752,6 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
             }
           }
         }
-        delete indices[jcnt];
         jcnt++;
       }
     }
@@ -730,6 +760,7 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
   // Clean up arrays
   delete [] indices;
   if (p_busContribution > 0) {
+    delete [] data;
     delete [] i_offsets;
     delete [] j_offsets;
   }
@@ -756,15 +787,24 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   int i,idx,jdx,isize,jsize,icnt;
   int **i_indices = new int*[p_branchContribution];
   int **j_indices = new int*[p_branchContribution];
+  int *i_data = new int[p_branchContribution];
+  int *j_data = new int[p_branchContribution];
+  int *i_ptr = i_data;
+  int *j_ptr = j_data;
   icnt = 0;
+  int t_idx;
+  if (p_timer) t_idx = p_timer->createCategory("loadBranchData: Set Index Arrays");
+  if (p_timer) p_timer->start(t_idx);
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getBranch(i)->matrixForwardSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
-        i_indices[icnt] = new int;
-        j_indices[icnt] = new int;
+        i_indices[icnt] = i_ptr;
+        j_indices[icnt] = j_ptr;
         *(i_indices[icnt]) = idx;
         *(j_indices[icnt]) = jdx;
+        i_ptr++;
+        j_ptr++;
         icnt++;
       } else {
         // TODO: some kind of error
@@ -773,10 +813,12 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
     if (p_network->getBranch(i)->matrixReverseSize(&isize,&jsize)) {
       p_network->getBranch(i)->getMatVecIndices(&idx, &jdx);
       if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
-        i_indices[icnt] = new int;
-        j_indices[icnt] = new int;
+        i_indices[icnt] = i_ptr;
+        j_indices[icnt] = j_ptr;
         *(i_indices[icnt]) = jdx;
         *(j_indices[icnt]) = idx;
+        i_ptr++;
+        j_ptr++;
         icnt++;
       }
     }
@@ -786,16 +828,24 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
         p_me,icnt,p_branchContribution);
     // TODO: some kind of error
   }
+  if (p_timer) p_timer->stop(t_idx);
 
   // Gather matrix offsets
+  int t_gat;
+  if (p_timer) t_gat = p_timer->createCategory("loadBranchData: Gather Offsets");
+  if (p_timer) p_timer->start(t_gat);
   int *i_offsets = new int[p_branchContribution];
   int *j_offsets = new int[p_branchContribution];
   if (p_branchContribution > 0) {
     NGA_Gather(gaOffsetI,i_offsets,i_indices,p_branchContribution);
     NGA_Gather(gaOffsetJ,j_offsets,j_indices,p_branchContribution);
   }
+  if (p_timer) p_timer->stop(t_gat);
 
   // Add matrix elements
+  int t_add;
+  if (p_timer) t_add = p_timer->createCategory("loadBranchData: Add Matrix Elements");
+  if (p_timer) p_timer->start(t_add);
   ComplexType *values = new ComplexType[p_maxIBlock*p_maxJBlock];
   int j,k;
   int jcnt = 0;
@@ -822,8 +872,6 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             }
           }
         }
-        delete i_indices[jcnt];
-        delete j_indices[jcnt];
         jcnt++;
       }
     }
@@ -851,8 +899,6 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
             }
           }
         }
-        delete i_indices[jcnt];
-        delete j_indices[jcnt];
         jcnt++;
       }
     }
@@ -861,9 +907,12 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   // Clean up arrays
   delete [] i_indices;
   delete [] j_indices;
+  delete [] i_data;
+  delete [] j_data;
   delete [] i_offsets;
   delete [] j_offsets;
   delete [] values;
+  if (p_timer) p_timer->stop(t_add);
 }
 
 /**
@@ -944,6 +993,9 @@ int                         gaMatBlksJ; // g_jdx
 int                         gaOffsetI; // g_ioff
 int                         gaOffsetJ; // g_joff
 int                         p_GAgrp;
+
+    // pointer to timer
+gridpack::utility::CoarseTimer *p_timer;
 
 };
 

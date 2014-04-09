@@ -404,13 +404,16 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
 {
   int i,idx,isize,icnt;
   int **indices = new int*[p_busContribution];
+  int *data = new int[p_busContribution];
+  int *ptr = data;
   icnt = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       if (p_network->getBus(i)->vectorSize(&isize)) {
-        indices[icnt] = new int;
+        indices[icnt] = ptr;
         p_network->getBus(i)->getMatVecIndex(&idx);
         *(indices[icnt]) = idx;
+        ptr++;
         icnt++;
       }
     }
@@ -448,7 +451,6 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
 //          } 
           icnt++;
         }
-        delete indices[jcnt];
         jcnt++;
       }
     }
@@ -456,6 +458,7 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
 
   // Clean up arrays
   delete [] indices;
+  delete [] data;
   delete [] offsets;
   delete [] values;
 }
