@@ -240,7 +240,7 @@ void gridpack::contingency_analysis::CAApp::execute(
   try {
     solver.solve(*PQ, *X);
   } catch (const gridpack::Exception e) {
-    busIO.header("Solver failure");
+    busIO.header("Solver failure\n\n");
     p_factory->clearContingency(contingency);
     timer->stop(t_solv);
     ltimer.stop(lt_solv);
@@ -295,7 +295,7 @@ void gridpack::contingency_analysis::CAApp::execute(
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
-      busIO.header("Solver failure");
+      busIO.header("Solver failure\n\n");
       p_factory->clearContingency(contingency);
       timer->stop(t_solv);
       ltimer.stop(lt_solv);
