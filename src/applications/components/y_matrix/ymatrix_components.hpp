@@ -254,6 +254,7 @@ class YMBranch
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
     std::vector<bool> p_branch_status;
+    std::vector<bool> p_switched;
     std::vector<std::string> p_tag;
     int p_elems;
     bool p_isolated;
@@ -282,6 +283,7 @@ private:
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs
       & p_branch_status
+      & p_switched
       & p_tag
       & p_elems
       & p_isolated

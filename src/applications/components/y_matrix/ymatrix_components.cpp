@@ -185,6 +185,7 @@ gridpack::ymatrix::YMBranch::YMBranch(void)
   p_xform.clear();
   p_shunt.clear();
   p_branch_status.clear();
+  p_switched.clear();
   p_elems = 0;
   p_mode = YBus;
 }
@@ -294,6 +295,7 @@ void gridpack::ymatrix::YMBranch::setYBus(void)
     ret = -1.0/ret;
     gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
     a = p_tap_ratio[i]*a;
+    if (p_switched[i]) a = conj(a);
     if (p_branch_status[i]) {
       if (p_xform[i]) {
         p_ybusr_frwd += real(ret/conj(a));
@@ -345,6 +347,7 @@ void gridpack::ymatrix::YMBranch::load(
   double rvar;
   int ivar;
   std::string svar;
+  bool lvar;
   double pi = 4.0*atan(1.0);
   p_active = false;
   int idx;
@@ -370,6 +373,9 @@ void gridpack::ymatrix::YMBranch::load(
     data->getValue(BRANCH_STATUS, &ivar, idx);
     p_branch_status.push_back(static_cast<bool>(ivar));
     if (ivar == 1) p_active = true;
+    ok = data->getValue(BRANCH_SWITCHED, &lvar, idx);
+    if (!ok) lvar = false;
+    p_switched.push_back(lvar);
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
     p_charging.push_back(rvar);
@@ -434,9 +440,10 @@ gridpack::ymatrix::YMBranch::getTransformer(gridpack::ymatrix::YMBus *bus)
       tmp = tmp - tmpB;
       gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
       a = p_tap_ratio[i]*a;
-      if (bus == getBus1().get()) {
+      if ((!p_switched[i] && bus == getBus1().get()) ||
+          (p_switched[i] && bus == getBus2().get())) {
         tmp = tmp/(conj(a)*a);
-      } else if (bus == getBus2().get()) {
+      } else {
         // tmp is unchanged
       }
     } else {
@@ -517,12 +524,17 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
     if (yij != zero) yij = -1.0/yij;
     if (p_xform[idx]) {
       // evaluate flow for transformer
-      aij = gridpack::ComplexType(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
-      aij = p_tap_ratio[i]*aij;
+      aij = gridpack::ComplexType(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+      aij = p_tap_ratio[idx]*aij;
       if (aij != zero) {
-	*Yij = yij/conj(aij);
-	*Yii = -(yij+0.5*bij);
-	*Yii = (*Yii)/(aij*conj(aij));
+        if (!p_switched[idx]) {
+          *Yij = yij/conj(aij);
+          *Yii = -(yij+0.5*bij);
+          *Yii = (*Yii)/(aij*conj(aij));
+        } else {
+          *Yij = yij/aij;
+          *Yii = -(yij+0.5*bij);
+        }
       }
     } else {
       // evaluate flow for regular line
