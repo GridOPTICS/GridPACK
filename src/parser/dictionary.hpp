@@ -397,6 +397,14 @@
 #define BRANCH_NUM_ELEMENTS "BRANCH_NUM_ELEMENTS"
 
 /**
+ * Logical flag that defines whether or not to and from bus are switched for
+ * transmission element
+ * type: boolean
+ * indexed
+ */
+#define BRANCH_SWITCHED "BRANCH_SWITCHED"
+
+/**
  * Non-blank alphanumeric branch circuit identifier
  * type: string
  * indexed

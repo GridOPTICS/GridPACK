@@ -548,6 +548,7 @@ class PTI23_parser
           std::map<std::pair<int, int>, int>::iterator it;
           it = p_branchMap.find(branch_pair);
 
+          bool switched = false;
           if (it != p_branchMap.end()) {
             l_idx = it->second;
             p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
@@ -561,6 +562,7 @@ class PTI23_parser
                   o_idx1,o_idx2);
               l_idx = it->second;
               p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+              switched = true;
             } else {
               boost::shared_ptr<gridpack::component::DataCollection>
                 data(new gridpack::component::DataCollection);
@@ -586,6 +588,9 @@ class PTI23_parser
                   index));
             index++;
           }
+          
+          // BRANCH_SWITCHED
+          p_branchData[l_idx]->addValue(BRANCH_SWITCHED, switched, nelems);
 
           // Clean up 2 character tag
           std::string tag = clean2Char(split_line[2]);
@@ -704,7 +709,11 @@ class PTI23_parser
               break;
             }
           }
-          if (idx == -1) continue;
+          if (idx == -1) {
+            printf("No match for transformer from %d to %d\n",
+                fromBus,toBus);
+            continue;
+          }
 
           /*
            * type: integer
