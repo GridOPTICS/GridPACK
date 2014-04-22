@@ -941,15 +941,24 @@ void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 
     for (BusIterator bus = p_buses.begin(); 
          bus != p_buses.end(); ++bus) {
-      partitioner.add_node(bus->p_globalBusIndex);
+      partitioner.add_node(bus->p_globalBusIndex,bus->p_originalBusIndex);
     }
     for (BranchIterator branch = p_branches.begin(); 
          branch != p_branches.end(); ++branch) {
       partitioner.add_edge(branch->p_globalBranchIndex, 
-                           branch->p_globalBusIndex1,
-                           branch->p_globalBusIndex2);
+                           branch->p_originalBusIndex1,
+                           branch->p_originalBusIndex2);
     }
     partitioner.partition();
+    // Recover global indices for branch ends from partitioner
+    int nbranch = p_branches.size();
+    int idx;
+    unsigned int index1, index2;
+    for (idx=0; idx<nbranch; idx++) {
+      partitioner.get_global_edge_ids(idx, &index1, &index2);
+      p_branches[idx].p_globalBusIndex1 = static_cast<int>(index1);
+      p_branches[idx].p_globalBusIndex2 = static_cast<int>(index2);
+    }
 
     if (timer != NULL) timer->stop(t_part);
 

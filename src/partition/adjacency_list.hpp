@@ -77,27 +77,36 @@ public:
   /// Destructor
   ~AdjacencyList(void);
 
-  /// Add the global index of a local node
-  void add_node(const Index& node_index)
+  /// Add the global index and original index of a local node
+  void add_node(const Index& global_index, const Index& original_index)
   {
-    p_nodes.push_back(node_index);
+    p_global_nodes.push_back(global_index);
+    p_original_nodes.push_back(original_index);
   }
   
-  /// Add the global index of a local edge and what it connects
+  /// Add the global index of a local edge and what it connects using the
+  /// original indices for the buses at either end of the node
   void add_edge(const Index& edge_index, 
                 const Index& node_index_1,
                 const Index& node_index_2)
   {
     p_Edge tmp;
     tmp.index = edge_index;
-    tmp.conn = std::make_pair<Index, Index>(node_index_1, node_index_2);
+    tmp.original_conn = std::make_pair<Index, Index>(node_index_1, node_index_2);
     p_edges.push_back(tmp);
+  }
+
+  /// Get the global indices of the buses at either end of a branch
+  void get_global_edge_ids(int idx, Index *node_index_1, Index *node_index_2) const
+  {
+    *node_index_1 = p_edges[idx].global_conn.first;
+    *node_index_2 = p_edges[idx].global_conn.second;
   }
 
   /// Get the number of local nodes
   size_t nodes(void) const
   {
-    return p_nodes.size();
+    return p_global_nodes.size();
   }
 
   /// Get the global node index given a local index
@@ -132,16 +141,20 @@ protected:
 
   struct p_Edge {
     Index index;
-    p_NodeConnect conn;
+    p_NodeConnect original_conn;
+    p_NodeConnect global_conn;
     p_Connected found;
-    p_Edge() : index(0), conn(), found(false, false) {}
+    p_Edge() : index(0), original_conn(), global_conn(), found(false, false) {}
   };
   typedef std::vector<p_Edge> p_EdgeVector;
 
   typedef std::vector<IndexVector> p_Adjacency;
 
-  /// The list of local node indexes
-  IndexVector p_nodes;
+  /// The list of global indices for local nodes
+  IndexVector p_global_nodes;
+
+  /// The list of original indices for local nodes
+  IndexVector p_original_nodes;
   
   /// The list of local edges
   p_EdgeVector p_edges;

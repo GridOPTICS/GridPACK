@@ -101,7 +101,7 @@ simple_adjacency_list(const gridpack::parallel::Communicator& comm,
   AdjacencyList *adlist(new AdjacencyList(comm));
   for (AdjacencyList::IndexVector::iterator n = my_nodes.begin();
        n != my_nodes.end(); ++n) {
-    adlist->add_node(*n);
+    adlist->add_node(*n, *n);
   }
   for (AdjacencyList::IndexVector::iterator e = my_edges.begin();
        e != my_edges.end(); ++e) {
@@ -134,7 +134,7 @@ simple_graph_partitioner(const gridpack::parallel::Communicator& comm,
 
   for (GraphPartitioner::IndexVector::iterator n = my_nodes.begin();
        n != my_nodes.end(); ++n) {
-    partitioner->add_node(*n);
+    partitioner->add_node(*n, *n);
   }
   for (GraphPartitioner::IndexVector::iterator e = my_edges.begin();
        e != my_edges.end(); ++e) {

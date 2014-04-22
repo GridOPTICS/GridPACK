@@ -167,11 +167,9 @@ class PTI23_parser
             std::map<int, int>::iterator it;
             it = p_busMap.find(idx1);
             g_idx1 = it->second;
-            p_network->setGlobalBusIndex1(i,g_idx1);
             p_network->setLocalBusIndex1(i,g_idx1);
             it = p_busMap.find(idx2);
             g_idx2 = it->second;
-            p_network->setGlobalBusIndex2(i,g_idx2);
             p_network->setLocalBusIndex2(i,g_idx2);
             *(p_network->getBranchData(i)) = *(p_branchData[i]);
             p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);

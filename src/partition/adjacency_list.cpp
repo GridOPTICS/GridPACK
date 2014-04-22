@@ -46,7 +46,7 @@ const AdjacencyList::Index AdjacencyList::bogus(-1);
 AdjacencyList::AdjacencyList(const parallel::Communicator& comm)
   : parallel::Distributed(comm),
     utility::Uncopyable(),
-    p_nodes(), p_edges(), p_adjacency()
+    p_global_nodes(), p_original_nodes(), p_edges(), p_adjacency()
 {
   // empty
 }
@@ -55,9 +55,10 @@ AdjacencyList::AdjacencyList(const parallel::Communicator& comm,
                              const int& local_nodes, const int& local_edges)
   : parallel::Distributed(comm),
     utility::Uncopyable(),
-    p_nodes(), p_edges(), p_adjacency()
+    p_global_nodes(), p_original_nodes(), p_edges(), p_adjacency()
 {
-  p_nodes.reserve(local_nodes);
+  p_global_nodes.reserve(local_nodes);
+  p_original_nodes.reserve(local_nodes);
   p_edges.reserve(local_edges);
   p_adjacency.reserve(local_nodes);
 }
@@ -74,7 +75,7 @@ AdjacencyList::Index
 AdjacencyList::node_index(const int& local_index) const
 {
   BOOST_ASSERT(local_index < this->nodes());
-  return p_nodes[local_index];
+  return p_global_nodes[local_index];
 }
 
 // -------------------------------------------------------------
@@ -94,8 +95,8 @@ void
 AdjacencyList::edge(const int& local_index, Index& node1, Index& node2) const
 {
   BOOST_ASSERT(local_index < this->edges());
-  node1 = p_edges[local_index].conn.first;
-  node2 = p_edges[local_index].conn.second;
+  node1 = p_edges[local_index].global_conn.first;
+  node2 = p_edges[local_index].global_conn.second;
 }
 
 // -------------------------------------------------------------
@@ -109,17 +110,95 @@ AdjacencyList::ready(void)
   int me = GA_Pgroup_nodeid(grp);
   int nprocs = GA_Pgroup_nnodes(grp);
   p_adjacency.clear();
-  p_adjacency.resize(p_nodes.size());
+  p_adjacency.resize(p_global_nodes.size());
 
   // Find total number of nodes and edges. Assume no duplicates
   int nedges = p_edges.size();
   int total_edges = nedges;
   GA_Pgroup_igop(grp,&total_edges, 1, "+");
-  int nnodes = p_nodes.size();
+  int nnodes = p_original_nodes.size();
+  int total_nodes = nnodes;
+  GA_Pgroup_igop(grp,&total_nodes, 1, "+");
 
-  // Create a global array containing all edges
+  // Create a global array containing original indices of all nodes and indexed
+  // by the global index of the node
   int i, p;
-  int *dist = new int[nprocs];
+  int dist[nprocs];
+  for (p=0; p<nprocs; p++) {
+    dist[p] = 0;
+  }
+  dist[me] = nnodes;
+  GA_Pgroup_igop(grp,dist,nprocs,"+");
+  int *mapc = new int[nprocs+1];
+  mapc[0] = 0;
+  for (p=1; p<nprocs; p++) {
+    mapc[p] = mapc[p-1] + dist[p-1];
+  }
+  mapc[nprocs] = total_nodes;
+  int g_nodes = GA_Create_handle();
+  int dims = total_nodes;
+  NGA_Set_data(g_nodes,1,&dims,C_INT);
+  NGA_Set_pgroup(g_nodes, grp);
+  if (!GA_Allocate(g_nodes)) {
+    //TODO: some kind of error
+  }
+  int lo, hi;
+  lo = mapc[me];
+  hi = mapc[me+1]-1;
+  int size = hi - lo + 1;
+  int o_idx[size], g_idx[size];
+  for (i=0; i<size; i++) o_idx[i] = p_original_nodes[i]; 
+  for (i=0; i<size; i++) g_idx[i] = p_global_nodes[i]; 
+  int **indices= new int*[size];
+  int *iptr = g_idx;
+  for (i=0; i<size; i++) {
+    indices[i] = iptr;
+    iptr++;
+  }
+  if (size > 0) NGA_Scatter(g_nodes,o_idx,indices,size);
+  GA_Pgroup_sync(grp);
+  delete [] indices;
+  delete [] mapc;
+
+  // Cycle through all nodes and match them up with nodes at end of edges.
+  for (p=0; p<nprocs; p++) {
+    int iproc = (me+p)%nprocs;
+    // Get node data from process iproc
+    NGA_Distribution(g_nodes,iproc,&lo,&hi);
+    size = hi - lo + 1;
+    if (size <= 0) continue;
+    int *buf = new int[size];
+    int ld = 1;
+    NGA_Get(g_nodes,&lo,&hi,buf,&ld);
+    // Create a map of the nodes from process p
+    std::map<int,int> nmap;
+    std::map<int,int>::iterator it;
+    std::pair<int,int> pr;
+    for (i=lo; i<=hi; i++){
+      pr = std::pair<int,int>(buf[i-lo],i);
+      nmap.insert(pr);
+    }
+    delete [] buf;
+    // scan through the edges looking for matches. If there is a match, set the
+    // global index
+    int idx;
+    for (i=0; i<nedges; i++) {
+      idx = static_cast<int>(p_edges[i].original_conn.first);
+      it = nmap.find(idx);
+      if (it != nmap.end()) {
+        p_edges[i].global_conn.first = static_cast<Index>(it->second);
+      }
+      idx = static_cast<int>(p_edges[i].original_conn.second);
+      it = nmap.find(idx);
+      if (it != nmap.end()) {
+        p_edges[i].global_conn.second = static_cast<Index>(it->second);
+      }
+    }
+  }
+  GA_Destroy(g_nodes);
+
+  // All edges now have global indices assigned to them. Begin constructing
+  // adjacency list. Start by creating a global array containing all edges
   dist[0] = 0;
   for (p=1; p<nprocs; p++) {
     double max = static_cast<double>(total_edges);
@@ -127,7 +206,7 @@ AdjacencyList::ready(void)
     dist[p] = 2*(static_cast<int>(max));
   }
   int g_edges = GA_Create_handle();
-  int dims = 2*total_edges;
+  dims = 2*total_edges;
   NGA_Set_data(g_edges,1,&dims,C_INT);
   NGA_Set_irreg_distr(g_edges,dist,&nprocs);
   NGA_Set_pgroup(g_edges, grp);
@@ -142,38 +221,34 @@ AdjacencyList::ready(void)
   }
   dist[me] = nedges;
   GA_Pgroup_igop(grp,dist, nprocs, "+");
-  int *offset = new int[nprocs];
+  int offset[nprocs];
   offset[0] = 0;
   for (p=1; p<nprocs; p++) {
     offset[p] = offset[p-1] + 2*dist[p-1];
   }
   // Figure out where local data goes in GA and then copy it to GA
-  int lo, hi;
   lo = offset[me];
   hi = lo + 2*nedges - 1;
-  int *edge_ids = new int[2*nedges];
+  int edge_ids[2*nedges];
   for (i=0; i<nedges; i++) {
-    edge_ids[2*i] = p_edges[i].conn.first;
-    edge_ids[2*i+1] = p_edges[i].conn.second;
+    edge_ids[2*i] = static_cast<int>(p_edges[i].global_conn.first);
+    edge_ids[2*i+1] = static_cast<int>(p_edges[i].global_conn.second);
   }
-  int ld = 1;
   if (lo <= hi) {
+    int ld = 1;
     NGA_Put(g_edges,&lo,&hi,edge_ids,&ld);
   }
-  delete [] edge_ids;
-  delete [] offset;
-  delete [] dist;
   GA_Pgroup_sync(grp);
 
   // Cycle through all edges and find out how many are attached to the nodes on
   // your process. Start by creating a map between the global node indices and
   // the local node indices
-  std::map<int,int> nmap;
+  std::map<int,int> gmap;
   std::map<int,int>::iterator it;
   std::pair<int,int> pr;
   for (i=0; i<nnodes; i++){
-    pr = std::pair<int,int>(static_cast<int>(p_nodes[i]),i);
-    nmap.insert(pr);
+    pr = std::pair<int,int>(static_cast<int>(p_global_nodes[i]),i);
+    gmap.insert(pr);
   }
   // Cycle through edge information on each processor
   for (p=0; p<nprocs; p++) {
@@ -181,7 +256,7 @@ AdjacencyList::ready(void)
     NGA_Distribution(g_edges,iproc,&lo,&hi);
     int size = hi - lo + 1;
     int *buf = new int[size];
-    ld = 1;
+    int ld = 1;
     NGA_Get(g_edges,&lo,&hi,buf,&ld);
     BOOST_ASSERT(size%2 == 0);
     size = size/2;
@@ -190,13 +265,13 @@ AdjacencyList::ready(void)
     for (i=0; i<size; i++) {
       idx1 = buf[2*i];
       idx2 = buf[2*i+1];
-      it = nmap.find(idx1);
-      if (it != nmap.end()) {
+      it = gmap.find(idx1);
+      if (it != gmap.end()) {
         idx = static_cast<Index>(idx2);
         p_adjacency[it->second].push_back(idx);
       }
-      it = nmap.find(idx2);
-      if (it != nmap.end()) {
+      it = gmap.find(idx2);
+      if (it != gmap.end()) {
         idx = static_cast<Index>(idx1);
         p_adjacency[it->second].push_back(idx);
       }
