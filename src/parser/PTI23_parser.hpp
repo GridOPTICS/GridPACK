@@ -66,7 +66,7 @@ class PTI23_parser
         int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
         p_timer->start(t_total);
         getCase(fileName);
-        brdcst_data();
+        //brdcst_data();
         createNetwork();
         p_timer->stop(t_total);
         p_timer->configTimer(true);
@@ -1355,10 +1355,13 @@ class PTI23_parser
       // Distribute data uniformly on processors
       void brdcst_data(void)
       {
+        int t_brdcst = p_timer->createCategory("Parser:brdcst_data");
+        int t_serial = p_timer->createCategory("Parser:data packing and unpacking");
         MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
         int me(p_network->communicator().rank());
         int nprocs(p_network->communicator().size());
         if (nprocs == 1) return;
+        p_timer->start(t_brdcst);
 
         // find number of buses and branches and broadcast this information to
         // all processors
@@ -1384,15 +1387,19 @@ class PTI23_parser
             int istart = static_cast<int>(static_cast<double>(nbus)*rn/rprocs);
             int iend = static_cast<int>(static_cast<double>(nbus)*(rn+1.0)/rprocs);
             if (n != 0) {
+              p_timer->start(t_serial);
               std::vector<gridpack::component::DataCollection> sendV;
               for (i=istart; i<iend; i++) {
                 sendV.push_back(*(p_busData[i]));
               }
+              p_timer->stop(t_serial);
               static_cast<boost::mpi::communicator>(p_network->communicator()).send(n,n,sendV);
             } else {
+              p_timer->start(t_serial);
               for (i=istart; i<iend; i++) {
                 recvV.push_back(*(p_busData[i]));
               }
+              p_timer->stop(t_serial);
             }
           }
         } else {
@@ -1402,12 +1409,14 @@ class PTI23_parser
         }
         int nsize = recvV.size();
         p_busData.clear();
+        p_timer->start(t_serial);
         for (i=0; i<nsize; i++) {
           boost::shared_ptr<gridpack::component::DataCollection> data(new
               gridpack::component::DataCollection);
           *data = recvV[i];
           p_busData.push_back(data);
         }
+        p_timer->stop(t_serial);
         recvV.clear();
         // distribute branches
         if (me == 0) {
@@ -1416,15 +1425,19 @@ class PTI23_parser
             int istart = static_cast<int>(static_cast<double>(nbranch)*rn/rprocs);
             int iend = static_cast<int>(static_cast<double>(nbranch)*(rn+1.0)/rprocs);
             if (n != 0) {
+              p_timer->start(t_serial);
               std::vector<gridpack::component::DataCollection> sendV;
               for (i=istart; i<iend; i++) {
                 sendV.push_back(*(p_branchData[i]));
               }
+              p_timer->stop(t_serial);
               static_cast<boost::mpi::communicator>(p_network->communicator()).send(n,n,sendV);
             } else {
+              p_timer->start(t_serial);
               for (i=istart; i<iend; i++) {
                 recvV.push_back(*(p_branchData[i]));
               }
+              p_timer->stop(t_serial);
             }
           }
         } else {
@@ -1434,12 +1447,14 @@ class PTI23_parser
         }
         nsize = recvV.size();
         p_branchData.clear();
+        p_timer->start(t_serial);
         for (i=0; i<nsize; i++) {
           boost::shared_ptr<gridpack::component::DataCollection> data(new
               gridpack::component::DataCollection);
           *data = recvV[i];
           p_branchData.push_back(data);
         }
+        p_timer->stop(t_serial);
 #if 0
         // debug
         printf("p[%d] BUS data size: %d\n",me,p_busData.size());
@@ -1453,6 +1468,7 @@ class PTI23_parser
           p_branchData[i]->dump();
         }
 #endif
+        p_timer->stop(t_brdcst);
       }
 
     private:
