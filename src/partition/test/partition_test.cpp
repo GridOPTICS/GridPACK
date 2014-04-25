@@ -182,7 +182,7 @@ BOOST_AUTO_TEST_CASE( unbalanced_partition )
 
   for (GraphPartitioner::IndexVector::iterator n = my_nodes.begin();
        n != my_nodes.end(); ++n) {
-    partitioner.add_node(*n);
+    partitioner.add_node(*n,*n);
   }
   for (GraphPartitioner::IndexVector::iterator e = my_edges.begin();
        e != my_edges.end(); ++e) {
