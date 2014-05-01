@@ -288,24 +288,22 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(std::ofstream *stre
     bool ok = true;
     if (size == 0) {
       ok = false;
-      sprintf(buf,"Lone bus %d found\n",bus->getOriginalIndex());
-      if (stream != NULL) *stream << buf;
     }
     if (ok) {
       ok = false;
       for (j=0; j<size; j++) {
-	bool branch_ok = false;
-	std::vector<bool> status = dynamic_cast<gridpack::contingency_analysis::CABranch*>
-	  (branches[j].get())->getLineStatus(); 
-	int nlines = status.size();
-	for (k=0; k<nlines; k++) {
-	  if (status[k]) branch_ok = true;
-	}
-	if (branch_ok) ok = true;
+        bool branch_ok = false;
+        std::vector<bool> status = dynamic_cast<gridpack::contingency_analysis::CABranch*>
+          (branches[j].get())->getLineStatus(); 
+        int nlines = status.size();
+        for (k=0; k<nlines; k++) {
+          if (status[k]) branch_ok = true;
+        }
+        if (branch_ok) ok = true;
       }
     }
     if (!ok) {
-      sprintf(buf,"Lone bus %d found\n",bus->getOriginalIndex());
+      sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
       p_saveIsolatedStatus.push_back(bus->isIsolated());
       bus->setIsolated(true);
       if (stream != NULL) *stream << buf;
@@ -313,7 +311,7 @@ bool gridpack::contingency_analysis::CAFactory::checkLoneBus(std::ofstream *stre
     if (!ok) bus_ok = false;
   }
   // Check whether bus_ok is true on all processors
-  return checkTrue(bus_ok);
+  return checkTrue(!bus_ok);
 }
 
 /**
@@ -340,14 +338,14 @@ void gridpack::contingency_analysis::CAFactory::clearLoneBus()
     if (ok) {
       ok = false;
       for (j=0; j<size; j++) {
-	bool branch_ok = false;
-	std::vector<bool> status = dynamic_cast<gridpack::contingency_analysis::CABranch*>
-	  (branches[j].get())->getLineStatus(); 
-	int nlines = status.size();
-	for (k=0; k<nlines; k++) {
-	  if (status[k]) branch_ok = true;
-	}
-	if (branch_ok) ok = true;
+        bool branch_ok = false;
+        std::vector<bool> status = dynamic_cast<gridpack::contingency_analysis::CABranch*>
+          (branches[j].get())->getLineStatus(); 
+        int nlines = status.size();
+        for (k=0; k<nlines; k++) {
+          if (status[k]) branch_ok = true;
+        }
+        if (branch_ok) ok = true;
       }
     }
     if (!ok) {
@@ -384,26 +382,26 @@ void  gridpack::contingency_analysis::CAFactory::checkContingencies(
   for (i=0; i<numBranch; i++) {
     if (p_network->getActiveBranch(i)) {
       gridpack::contingency_analysis::CABranch *branch =
-	dynamic_cast<gridpack::contingency_analysis::CABranch*>
-	(p_network->getBranch(i).get());
+        dynamic_cast<gridpack::contingency_analysis::CABranch*>
+        (p_network->getBranch(i).get());
       gridpack::contingency_analysis::CABus *bus =
         dynamic_cast<gridpack::contingency_analysis::CABus*>
-	(branch->getBus1().get());
+        (branch->getBus1().get());
       // Loop over all lines in the branch and choose the smallest rating value
       int nlines;
       p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
       std::vector<std::string> tags = branch->getLineTags();
       double rateA;
       for (int k = 0; k<nlines; k++) {
-	if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
-	  if (rateA > 0.0) {
-	    gridpack::ComplexType s = branch->getComplexPower(tags[k]);
-	    double p = real(s);
-	    double q = imag(s);
-	    double pq = sqrt(p*p+q*q);
+        if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
+          if (rateA > 0.0) {
+            gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+            double p = real(s);
+            double q = imag(s);
+            double pq = sqrt(p*p+q*q);
             if (pq > rateA) branch_ok = false;
-	  }
-	}
+          }
+        }
       }
     }
   }
