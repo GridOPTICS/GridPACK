@@ -46,7 +46,6 @@ public:
     if (!GA_Allocate(p_GAcounter)) {
       // TODO: some kind of error
     }
-    p_task_list = NULL;
     GA_Zero(p_GAcounter);
     p_ntasks = 0;
   }
@@ -66,7 +65,6 @@ public:
     if (!GA_Allocate(p_GAcounter)) {
       // TODO: some kind of error
     }
-    p_task_list = NULL;
     GA_Zero(p_GAcounter);
     p_ntasks = 0;
   }
@@ -76,7 +74,6 @@ public:
    */
   ~TaskManager(void)
   {
-    delete [] p_task_list;
     GA_Destroy(p_GAcounter);
   }
 
@@ -88,8 +85,7 @@ public:
   {
     GA_Zero(p_GAcounter);
     p_ntasks = ntasks;
-    p_task_list = new int[ntasks];
-    for (int i=0; i<ntasks; i++) p_task_list[i] = 0;
+    p_task_count = 0;
   }
   
   /**
@@ -104,7 +100,7 @@ public:
     long one = 1;
     *next = static_cast<int>(NGA_Read_inc(p_GAcounter,&zero,one));
     if (*next < p_ntasks) {
-      p_task_list[*next] = GA_Pgroup_nodeid(GA_Pgroup_get_world());
+      p_task_count++;
       return true;
     } else {
       *next = -1;
@@ -134,7 +130,7 @@ public:
     }
     GA_Pgroup_igop(comm.getGroup(),next,one,"+");
     if (*next < p_ntasks) {
-      if (me == 0) p_task_list[*next] = GA_Pgroup_nodeid(p_grp);
+      p_task_count++;
       return true;
     } else {
       *next = -1;
@@ -144,16 +140,27 @@ public:
   }
 
   /**
-   * Print out statistics on how task are distributed on processors
+   * Set the task counter to the maximum value so that all subsequent calls to
+   * nextTask return false.
+   * NOTE: nextTask must be called at least once by any process that calls this
+   * function or the counter will hang
+   */
+  void cancel(void) {
+    int zero = 0;
+    int n = static_cast<int>(NGA_Read_inc(p_GAcounter,&zero, p_ntasks));
+  }
+
+  /**
+   * Print out statistics on how tasks are distributed on processors
    */
   void printStats() {
-    GA_Igop(p_task_list,p_ntasks,"+");
     int nprocs = GA_Pgroup_nnodes(p_grp);
     int me = GA_Pgroup_nodeid(p_grp);
     int procs[nprocs];
     int i;
     for (i=0; i<nprocs; i++) procs[i] = 0;
-    for (i=0; i<p_ntasks; i++) procs[p_task_list[i]]++;
+    procs[GA_Pgroup_nodeid(p_grp)] = p_task_count;
+    GA_Pgroup_igop(p_grp,procs,nprocs,"+");
     // print out number of tasks evaluated on each processor
     if (me == 0) {
       printf("\nNumber of tasks per processors\n");
@@ -168,7 +175,7 @@ protected:
   int p_GAcounter;
   int p_ntasks;
   int p_grp;
-  int *p_task_list;
+  int p_task_count;
 };
 
 
