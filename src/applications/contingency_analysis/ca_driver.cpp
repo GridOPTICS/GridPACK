@@ -218,7 +218,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         int nlines = events[idx].p_from.size();
         int j;
         for (j=0; j<nlines; j++) {
-          printf(" Line: (to) %d (from) %d (line) \'%s\'\n",
+          printf(" Line: (from) %d (to) %d (line) \'%s\'\n",
               events[idx].p_from[j],events[idx].p_to[j],
               events[idx].p_ckt[j].c_str());
         }
