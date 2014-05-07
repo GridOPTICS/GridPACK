@@ -295,11 +295,15 @@ class BaseFactory {
       // Buffers have been allocated in network. Now associate buffers from network
       // back to individual components
       int i;
-      for (i=0; i<nbus; i++) {
-        p_network->getBus(i)->setXCBuf(p_network->getXCBusBuffer(i));
+      if (busXCSize > 0) {
+        for (i=0; i<nbus; i++) {
+          p_network->getBus(i)->setXCBuf(p_network->getXCBusBuffer(i));
+        }
       }
-      for (i=0; i<nbranch; i++) {
-        p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
+      if (branchXCSize > 0) {
+        for (i=0; i<nbranch; i++) {
+          p_network->getBranch(i)->setXCBuf(p_network->getXCBranchBuffer(i));
+        }
       }
       timer->stop(t_setx);
       timer->configTimer(true);
