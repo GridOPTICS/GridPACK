@@ -8,7 +8,7 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
-        -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+        -D CMAKE_BUILD_TYPE:STRING=Debug \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
@@ -22,16 +22,13 @@ if [ $host == "flophouse" ]; then
     export CFLAGS
     CXXFLAGS="-pthread"
     export CXXFLAGS
+    FC=/usr/bin/gfortran44
+    export FC
 
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
     cmake -Wdev --debug-trycompile \
-        -D GA_DIR:STRING="$prefix" \
-        -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-linux2-g++44-opt' \
-        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
-        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
+        -D CLASS_WORD:STRING="TYPE" \
+        -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
     
@@ -44,17 +41,12 @@ elif [ $host == "pe10900" ]; then
     export CC
     CXX=/opt/local/bin/g++
     export CXX
+    FC=/opt/local/bin/gfortran
+    export FC
 
     cmake $options \
-        -D GA_DIR:STRING="$prefix" \
-        -D GA_EXTRA_LIBS:STRING="-lblas" \
-        -D BOOST_ROOT:STRING='/opt/local' \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-macosx-complex-opt' \
-        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
-        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
-        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
-        -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
+        -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
 elif [ $host == "olympus.local" ]; then
