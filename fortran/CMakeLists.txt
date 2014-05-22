@@ -69,4 +69,5 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
 add_subdirectory(parallel)
 add_subdirectory(math)
+add_subdirectory(component)
 add_subdirectory(lib)
