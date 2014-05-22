@@ -11,14 +11,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2014-05-19 09:50:30 d3g096
+# Last Change: 2014-05-22 06:55:16 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.8)
 
 if (NOT GRIDPACK_DIR)
-  set(GRIDPACK_DIR /net/flophouse/files0/perksoft/linux64/openmpi44/gridpack
-      CACHE PATH "GridPACK installation directory")
+  message(FATAL_ERROR
+    "GRIDPACK_DIR variable must be set to the GridPACK installation directory")
 endif()
 
 include("${GRIDPACK_DIR}/lib/GridPACK.cmake")
