@@ -21,20 +21,20 @@
 extern bool p_bus_matrix_diag_size(int network, int idx,
     int *isize, int *jsize);
 extern bool p_bus_matrix_diag_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern bool p_bus_matrix_forward_size(int network, int idx,
     int *isize, int *jsize);
 extern bool p_bus_matrix_forward_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern bool p_bus_matrix_reverse_size(int network, int idx,
     int *isize, int *jsize);
 extern bool p_bus_matrix_reverse_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern bool p_bus_vector_size(int network, int idx,  int *size);
 extern bool p_bus_vector_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern void  p_bus_set_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern void p_bus_load(int network, int idx);
 extern int p_bus_get_xc_buf_size(int network, int idx);
 extern void p_bus_set_mode(int network, int idx, int mode);
@@ -43,20 +43,20 @@ extern bool  p_bus_serial_write(int network, int, char *string,
 extern bool p_branch_matrix_diag_size(int network, int idx,
     int *isize, int *jsize);
 extern bool p_branch_matrix_diag_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern bool p_branch_matrix_forward_size(int network, int idx,
     int *isize, int *jsize);
 extern bool p_branch_matrix_forward_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern bool p_branch_matrix_reverse_size(int network, int idx,
     int *isize, int *jsize);
 extern bool p_branch_matrix_reverse_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern bool p_branch_vector_size(int network, int idx,  int *size);
 extern bool p_branch_vector_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern void  p_branch_set_values(int network, int idx,
-    double *tvalues, int size);
+    gridpack::ComplexType *values);
 extern void p_branch_load(int network, int idx);
 extern int p_branch_get_xc_buf_size(int network, int idx);
 extern void p_branch_set_mode(int network, int idx, int mode);
@@ -106,18 +106,7 @@ bool FortranBusComponent::matrixDiagSize(int *isize, int *jsize) const
  */
 bool FortranBusComponent::matrixDiagValues(gridpack::ComplexType *values)
 {
-  int size, isize, jsize, i;
-  if (!p_bus_matrix_diag_size(p_network, p_local_index, &isize, &jsize))
-    return false;
-  size = isize*jsize;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  int ret = p_bus_matrix_diag_values(p_network, p_local_index, tvalues, isize);
-  for (i=0; i<isize; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_bus_matrix_diag_values(p_network, p_local_index, values);
 }
 
 /**
@@ -155,18 +144,7 @@ bool FortranBusComponent::matrixReverseSize(int *isize, int *jsize) const
  */
 bool FortranBusComponent::matrixForwardValues(gridpack::ComplexType *values)
 {
-  int size, isize, jsize, i;
-  if (!p_bus_matrix_forward_size(p_network, p_local_index, &isize, &jsize))
-    return false;
-  size = isize*jsize;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  int ret = p_bus_matrix_forward_values(p_network, p_local_index, tvalues, isize);
-  for (i=0; i<isize; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_bus_matrix_forward_values(p_network, p_local_index, values);
 }
 
 /**
@@ -178,18 +156,7 @@ bool FortranBusComponent::matrixForwardValues(gridpack::ComplexType *values)
  */
 bool FortranBusComponent::matrixReverseValues(gridpack::ComplexType *values)
 {
-  int size, isize, jsize, i;
-  if (!p_bus_matrix_reverse_size(p_network, p_local_index, &isize, &jsize))
-    return false;
-  size = isize*jsize;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  int ret = p_bus_matrix_reverse_values(p_network, p_local_index, tvalues, isize);
-  for (i=0; i<isize; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_bus_matrix_reverse_values(p_network, p_local_index, values);
 }
 
 /** 
@@ -210,17 +177,7 @@ bool FortranBusComponent::vectorSize(int *isize) const
  */
 void FortranBusComponent::setValues(gridpack::ComplexType *values)
 {
-  int size;
-  if (!p_bus_vector_size(p_network, p_local_index, &size)) return;
-  if (size == 0) return;
-  double *tvalues = new double[2*size];
-  int i;
-  for (i=0; i<size; i++) {
-    tvalues[2*i] = real(values[i]);
-    tvalues[2*i+1] = imag(values[i]);
-  }
-  p_bus_set_values(p_network, p_local_index, tvalues, size);
-  delete [] tvalues;
+  p_bus_set_values(p_network, p_local_index, values);
 }
 
 /**
@@ -231,19 +188,7 @@ void FortranBusComponent::setValues(gridpack::ComplexType *values)
  */
 bool FortranBusComponent::vectorValues(gridpack::ComplexType *values)
 {
-  bool ret;
-  int size;
-  if (!p_bus_vector_size(p_network, p_local_index, &size))
-    return false;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  ret = p_bus_vector_values(p_network, p_local_index, tvalues, size);
-  int i;
-  for (i=0; i<size; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_bus_vector_values(p_network, p_local_index, values);
 }
 
 /**
@@ -355,18 +300,7 @@ bool FortranBranchComponent::matrixDiagSize(int *isize, int *jsize) const
  */
 bool FortranBranchComponent::matrixDiagValues(gridpack::ComplexType *values)
 {
-  int size, isize, jsize, i;
-  if (!p_branch_matrix_diag_size(p_network, p_local_index, &isize, &jsize))
-    return false;
-  size = isize*jsize;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  int ret = p_branch_matrix_diag_values(p_network, p_local_index, tvalues, isize);
-  for (i=0; i<isize; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_branch_matrix_diag_values(p_network, p_local_index, values);
 }
 
 /**
@@ -404,18 +338,7 @@ bool FortranBranchComponent::matrixReverseSize(int *isize, int *jsize) const
  */
 bool FortranBranchComponent::matrixForwardValues(gridpack::ComplexType *values)
 {
-  int size, isize, jsize, i;
-  if (!p_branch_matrix_forward_size(p_network, p_local_index, &isize, &jsize))
-    return false;
-  size = isize*jsize;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  int ret = p_branch_matrix_forward_values(p_network, p_local_index, tvalues, isize);
-  for (i=0; i<isize; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_branch_matrix_forward_values(p_network, p_local_index, values);
 }
 
 /**
@@ -427,18 +350,7 @@ bool FortranBranchComponent::matrixForwardValues(gridpack::ComplexType *values)
  */
 bool FortranBranchComponent::matrixReverseValues(gridpack::ComplexType *values)
 {
-  int size, isize, jsize, i;
-  if (!p_branch_matrix_reverse_size(p_network, p_local_index, &isize, &jsize))
-    return false;
-  size = isize*jsize;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  int ret = p_branch_matrix_reverse_values(p_network, p_local_index, tvalues, isize);
-  for (i=0; i<isize; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_branch_matrix_reverse_values(p_network, p_local_index, values);
 }
 
 /** 
@@ -459,17 +371,7 @@ bool FortranBranchComponent::vectorSize(int *isize) const
  */
 void FortranBranchComponent::setValues(gridpack::ComplexType *values)
 {
-  int size;
-  if (!p_branch_vector_size(p_network, p_local_index, &size)) return;
-  if (size == 0) return;
-  double *tvalues = new double[2*size];
-  int i;
-  for (i=0; i<size; i++) {
-    tvalues[2*i] = real(values[i]);
-    tvalues[2*i+1] = imag(values[i]);
-  }
-  p_branch_set_values(p_network, p_local_index, tvalues, size);
-  delete [] tvalues;
+  p_branch_set_values(p_network, p_local_index, values);
 }
 
 /**
@@ -480,19 +382,7 @@ void FortranBranchComponent::setValues(gridpack::ComplexType *values)
  */
 bool FortranBranchComponent::vectorValues(gridpack::ComplexType *values)
 {
-  bool ret;
-  int size;
-  if (!p_bus_vector_size(p_network, p_local_index, &size))
-    return false;
-  if (size == 0) return false;
-  double *tvalues = new double[2*size];
-  ret = p_branch_vector_values(p_network, p_local_index, tvalues, size);
-  int i;
-  for (i=0; i<size; i++) {
-    values[i] = gridpack::ComplexType(tvalues[2*i],tvalues[2*i+1]);
-  }
-  delete [] tvalues;
-  return ret;
+  return p_branch_vector_values(p_network, p_local_index, values);
 }
 
 /**

@@ -22,24 +22,16 @@ end function p_bus_matrix_diag_size
 ! Values are returned in row-major order
 !
 logical(C_BOOL) function p_bus_matrix_diag_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
+  integer network, idx
   logical bus_matrix_diag_values
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_bus_matrix_diag_values = bus_matrix_diag_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_bus_matrix_diag_values = bus_matrix_diag_values(network, idx, c_values)
   return
 end function p_bus_matrix_diag_values
 !
@@ -86,24 +78,16 @@ end function p_bus_matrix_reverse_size
 ! row-major order.
 !
 logical(C_BOOL) function p_bus_matrix_forward_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
+  integer network, idx
   logical bus_matrix_forward_values
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_bus_matrix_forward_values = bus_matrix_forward_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_bus_matrix_forward_values = bus_matrix_forward_values(network, idx, c_values)
   return
 end function p_bus_matrix_forward_values
 !
@@ -112,25 +96,16 @@ end function p_bus_matrix_forward_values
 ! row-major order.
 !
 logical(C_BOOL) function p_bus_matrix_reverse_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
+  integer network, idx
   logical bus_matrix_reverse_values
   network = c_network
-  network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_bus_matrix_reverse_values = bus_matrix_reverse_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_bus_matrix_reverse_values = bus_matrix_reverse_values(network, idx, c_values)
   return
 end function p_bus_matrix_reverse_values
 !
@@ -152,46 +127,31 @@ end function p_bus_vector_size
 !
 ! Set the values in the bus component based on values in a vector or matrix
 !
-subroutine p_bus_set_values(c_network, c_idx, c_values, c_size) bind(c)
+subroutine p_bus_set_values(c_network, c_idx, c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(in) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(in) :: c_values(*)
+  integer network, idx
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  do i = 1, nsize
-    values(i) = cmplx(c_values(2*(i-1)+1),c_values(2*(i-1)+2))
-  end do
-  call bus_set_values(network,idx,values)
-  deallocate(values)
+  call bus_set_values(network,idx,c_values)
   return
 end subroutine p_bus_set_values
 !
 ! Return the values of a vector block
 !
 logical(C_BOOL) function p_bus_vector_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
+  integer network, idx
   logical bus_vector_values
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_bus_vector_values = bus_vector_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_bus_vector_values = bus_vector_values(network, idx, c_values)
   return
 end function p_bus_vector_values
 !
@@ -286,24 +246,17 @@ end function p_branch_matrix_diag_size
 ! Values are returned in row-major order
 !
 logical(C_BOOL) function p_branch_matrix_diag_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
   integer network, idx, nsize, i
   double complex, allocatable :: values(:)
   logical branch_matrix_diag_values
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_branch_matrix_diag_values = branch_matrix_diag_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_branch_matrix_diag_values = branch_matrix_diag_values(network, idx, c_values)
   return
 end function p_branch_matrix_diag_values
 !
@@ -350,24 +303,16 @@ end function p_branch_matrix_reverse_size
 ! row-major order.
 !
 logical(C_BOOL) function p_branch_matrix_forward_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
+  integer network, idx
   logical branch_matrix_forward_values
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_branch_matrix_forward_values = branch_matrix_forward_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_branch_matrix_forward_values = branch_matrix_forward_values(network, idx, c_values)
   return
 end function p_branch_matrix_forward_values
 !
@@ -376,24 +321,16 @@ end function p_branch_matrix_forward_values
 ! row-major order.
 !
 logical(C_BOOL) function p_branch_matrix_reverse_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
+  integer network, idx
   logical branch_matrix_reverse_values
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_branch_matrix_reverse_values = branch_matrix_reverse_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_branch_matrix_reverse_values = branch_matrix_reverse_values(network, idx, c_values)
   return
 end function p_branch_matrix_reverse_values
 !
@@ -415,46 +352,31 @@ end function p_branch_vector_size
 !
 ! Set the values in the branch component based on values in a vector or matrix
 !
-subroutine p_branch_set_values(c_network, c_idx, c_values, c_size) bind(c)
+subroutine p_branch_set_values(c_network, c_idx, c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(in) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(in) :: c_values(*)
+  integer network, idx
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  do i = 1, nsize
-    values(i) = cmplx(c_values(2*(i-1)+1),c_values(2*(i-1)+2))
-  end do
-  call branch_set_values(network,idx,values)
-  deallocate(values)
+  call branch_set_values(network,idx,c_values)
   return
 end subroutine p_branch_set_values
 !
 ! Return the values of a vector block
 !
 logical(C_BOOL) function p_branch_vector_values(c_network, c_idx, &
-       c_values, c_size) bind(c)
+       c_values) bind(c)
   use, intrinsic :: iso_c_binding
   implicit none
-  integer(C_INT), intent(in) :: c_network, c_idx, c_size
-  real(C_DOUBLE), intent(out) :: c_values(*)
-  integer network, idx, nsize, i
-  double complex, allocatable :: values(:)
+  integer(C_INT), intent(in) :: c_network, c_idx
+  complex(C_DOUBLE_COMPLEX), intent(out) :: c_values(*)
+  integer network, idx
   logical branch_vector_values
   network = c_network
   idx = c_idx
-  nsize = c_size
-  allocate(values(nsize))
-  p_branch_vector_values = branch_vector_values(network, idx, values)
-  do i = 1, nsize
-    c_values(2*(i-1)+1) = real(values(i))
-    c_values(2*(i-1)+2) = dimag(values(i))
-  end do
-  deallocate(values)
+  p_branch_vector_values = branch_vector_values(network, idx, c_values)
   return
 end function p_branch_vector_values
 !
