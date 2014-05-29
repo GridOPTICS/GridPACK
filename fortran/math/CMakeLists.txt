@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May 12, 2014 by William A. Perkins
-# Last Change: 2014-05-29 09:22:12 d3g096
+# Last Change: 2014-05-29 13:50:13 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpackf_math OBJECT
@@ -15,6 +15,8 @@ add_library(gridpackf_math OBJECT
   vectorf.F90
   matrixc.cpp
   matrixf.F90
+  linear_solverc.cpp
+  linear_solverf.F90
 )
 
 add_executable(hello_math
@@ -43,3 +45,13 @@ add_executable(matrix_test
 target_link_libraries(matrix_test
   ${GRIDPACK_LIBS}
 )
+
+add_executable(linear_solver_test
+  linear_solver_test.F90
+  $<TARGET_OBJECTS:gridpackf_math>
+  $<TARGET_OBJECTS:gridpackf_parallel>
+)
+target_link_libraries(linear_solver_test
+  ${GRIDPACK_LIBS}
+)
+
