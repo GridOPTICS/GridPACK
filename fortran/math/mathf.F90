@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 15, 2014 by William A. Perkins
-! Last Change: 2014-05-29 09:22:58 d3g096
+! Last Change: 2014-05-29 13:29:02 d3g096
 ! ----------------------------------------------------------------
 
 ! ----------------------------------------------------------------
@@ -19,6 +19,7 @@ MODULE gridpack_math
   USE iso_c_binding
   USE gridpack_vector
   USE gridpack_matrix
+  USE gridpack_linear_solver
 
   IMPLICIT NONE
 
