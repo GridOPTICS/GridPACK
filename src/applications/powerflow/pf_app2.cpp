@@ -217,7 +217,7 @@ PFApp2::~PFApp2(void)
 // PFApp2::execute
 // -------------------------------------------------------------
 void
-PFApp2::execute(void)
+PFApp2::execute(int argc, char** argv)
 {
   parallel::Communicator world;
   boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
@@ -225,7 +225,13 @@ PFApp2::execute(void)
   // read configuration file
   utility::Configuration *config = 
     utility::Configuration::configuration();
-  config->open("input.xml", world);
+  if (argc >= 2 && argv[1] != NULL) {
+    char inputfile[256];
+    sprintf(inputfile,"%s",argv[1]);
+    config->open(inputfile,world);
+  } else {
+    config->open("input.xml",world);
+  }
   utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename = cursor->get("networkConfiguration",
@@ -345,7 +351,7 @@ main(int argc, char **argv)
   gridpack::math::Initialize();
 
   gridpack::powerflow::PFApp2 app;
-  app.execute();
+  app.execute(argc, argv);
 
   gridpack::math::Finalize();
 }

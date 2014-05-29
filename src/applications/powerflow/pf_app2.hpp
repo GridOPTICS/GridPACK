@@ -43,7 +43,7 @@ public:
   /**
    * Execute application
    */
-  void execute(void);
+  void execute(int argc, char** argv);
   
 private:
 };
