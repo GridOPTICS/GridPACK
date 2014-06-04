@@ -4,44 +4,56 @@
 \title{Power Flow Equation Formulation}
 \author{Yousu Chen \\PNNL}
 \maketitle
-This document is a description for how to formulate the power flow equation. The current version is for Newton-Raphson AC power flow.
+This document is a description for how to formulate the power flow equation.
+The current version is for Newton-Raphson AC power flow.
 
 \subsection*{Basic Equations}
-\begin{equation}\label{eq:IYV}
-\mathbf{I}=\mathbf{Y}\cdot\mathbf{V}
-\end{equation} 
-\begin{equation}\label{eq:Ik}
-I_{i}=\sum_{k=1}^{N}Y_{ik}V_{k}
-\end{equation} 
-\begin{eqnarray}\label{eq:Sk}
+We start with the basic equations
+\begin{eqnarray}
+\label{eq:IYV}
+\mathbf{I}&=&\mathbf{Y}\cdot\mathbf{V}\\
+\label{eq:Ik}
+I_{i}&=&\sum_{k=1}^{N}Y_{ik}V_{k}\\
+\label{eq:Sk}
 S{_i}&=& V{_i}I_{i}^{*} \nonumber \\
      &=& V{_i}\left ( \sum_{k=1}^{N}Y{_{ik}}V{_k} \right )^{*}  \nonumber \\          
      &=& V{_i}\sum_{k=1}^{N}Y{_{ik}}^{*}V{_k}^{*}
 \end{eqnarray} 
-where $N$ is the number of buses in the network.
+where $N$ is the number of buses in the network, $\mathbf{V}$ is a vector of
+voltages, $\mathbf{I}$ is a vector of currents and $\mathbf{Y}$ is the Y matrix.
 
-Suppose we let 
+Suppose we define the complex voltages as 
 \begin{equation}
-V{_i}= |V{_i}|e^{j\theta_{i}}  \\
+\label{eq:CXV}
+V{_i}= |V{_i}|e^{j\theta_{i}}
 \end{equation} 
+and then define the phase angle between bus $i$ and bus $k$ as
 \begin{equation}
 \theta_{ik}=\theta_{i}-\theta_{k} \\
 \end{equation} 
+Further, we can decompose the elements of the Y matrix into real and imaginary
+parts using
 \begin{equation}
 Y_{ik}=G_{ik}+jB_{ik}
 \end{equation} 
-
 The $G_{ik}$ are called conductances and the $B_{ik}$ are called susceptances. 
-\begin{equation}\label{eq:S}
-S{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|e^{j\theta_{ik}}\left ( G_{ik}-jB_{ik} \right )
-\end{equation} 
+
+Using these definitions we can write the expressions for the quantity
+$\mathbf{S}$ as
 \begin{equation}
-S{_i}=P{_i}+jQ{_i}
+\label{eq:S}
+S_{i}=\sum_{k=1}^{N}|V{_i}||V{_k}|e^{j\theta_{ik}}\left ( G_{ik}-jB_{ik} \right )
 \end{equation} 
+We can further decompose the $S_i$ into real and imaginary parts using
+\begin{equation}
+S_{i}=P_{i}+jQ_{i}
+\end{equation} 
+This can be rewritten as
 \begin{equation}\label{eq:PQ}
 P{_i}+jQ{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|\left ( \cos\theta_{ik}+j\sin\theta_{ik} \right )\left ( G_{ik}-jB_{ik} \right )
 \end{equation} 
-Resolving equation (\ref{eq:PQ}) into real and imaginary parts
+Resolving equation (\ref{eq:PQ}) into real and imaginary parts gives the
+expressions
 \begin{equation}\label{eq:PiQi}
 \begin{cases}
 P{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|\left (G_{ik}\cos\theta_{ik}+B_{ik}\sin\theta_{ik} \right ) \\
@@ -51,32 +63,26 @@ Q{_i}=\sum_{k=1}^{N}|V{_i}||V{_k}|\left (G_{ik}\sin\theta_{ik}-B_{ik}\cos\theta_
 
 \subsection*{Newton-Raphson AC Power Flow}
 
-Now set up power flow equation in the form of $\mathbf{f}\left (\mathbf{x} \right )=\mathbf{0}$.
+Now set up power flow equations in the form of $\mathbf{f}\left (\mathbf{x} \right )=\mathbf{0}$.
 The voltage magnitude and phase angle of the slack/reference bus ($\theta_{1}$
 and $|V_{1}|$) are known.
-\space
-\space
+\newline
+\newline
+\noindent
 Define
+\begin{eqnarray}
+\theta &=&\left [ \begin{array}{c} \theta{_2}\\.\\.\\.\\ \theta_{N} \end{array} \right] \\
+|\mathbf{V}| &=&\left [ \begin{array}{c} |V_{2}| \\.\\.\\.\\|V_{N}| \end{array} \right]\\
+\mathbf{x}  &=&\left [ \begin{array}{c} \boldsymbol{\theta}\\|\mathbf{V}| \end{array} \right]
+\end{eqnarray}
+The form of the vector function $\mathbf{f}(\mathbf{x})$ is
 \begin{equation}
-\theta =\left [ \begin{array}{c} \theta{_2}\\.\\.\\.\\ \theta_{N} \end{array} \right]
-\end{equation}
-
-\begin{equation}
-|\mathbf{V}| =\left [ \begin{array}{c} |V_{2}| \\.\\.\\.\\|V_{N}| \end{array} \right]
-\end{equation}
-
-\begin{equation}
-\mathbf{x}  =\left [ \begin{array}{c} \boldsymbol{\theta}\\|\mathbf{V}| \end{array} \right]
-\end{equation}
-
-
-\begin{equation}
+\label{eq:RHS}
 \mathbf{f}\left (\mathbf{x} \right ) = \left [ \begin{array}{c} P_{2}\left (
 \mathbf{x} \right ) - P_{2} \\.\\.\\.\\ P_{N}\left ( \mathbf{x} \right ) - P_{N}
 \\-------\\Q_{2}\left ( \mathbf{x} \right ) - Q_{2} \\.\\.\\.\\ Q_{N}\left (
 \mathbf{x} \right ) - Q_{N} \end{array} \right ] =- \left [ \begin{array}{c} \Delta \mathbf{P}\left ( \mathbf{x} \right ) \\ \Delta \mathbf{Q}\left ( \mathbf{x} \right ) \end{array} \right ] = \mathbf{0}
 \end{equation}
-
 where 
 \begin{equation}\label{eq:DeltaPQ}
 \begin{cases}
@@ -84,27 +90,27 @@ where
 \Delta\mathbf{Q} = Q_{i} - Q_{i}\left ( \mathbf{x} \right ) 
 \end{cases}
 \end{equation}
-
 $P_{i}$ and $Q_i$ can be obtained from the equation (\ref{eq:PiQi}).
 
 Now consider the Jacobian of $\mathbf{f}$, $\mathbf{J}$. The dimension of
-$\mathbf{J}$ is $(2(N-1))(2(N-1))$.
-
+$\mathbf{J}$ using the expression for the complex voltage (\ref{eq:CXV}) is
+$(2(N-1))(2(N-1))$. The Jacobian itself has the form
 \begin{eqnarray}
 \mathbf{J}  = \left [ \begin{array}{cc} \mathbf{J1} & \mathbf{J2} \\ \mathbf{J3} & \mathbf{J4} \end{array} \right ] \nonumber \\
+\label{eq:JBN}
             = \left [ \begin{array}{cc} \frac{\partial \mathbf{P}}{\partial \boldsymbol{\theta}} & \frac{\partial \mathbf{P}}{\partial \mathbf{|V|}} \\ \frac{\partial \mathbf{Q}}{\partial \boldsymbol{\theta}} & \frac{\partial \mathbf{Q}}{\partial \mathbf{|V|}}  \end{array} \right ]
 \end{eqnarray}
-
-The form of the N-R iteration 
+The N-R iteration itself has the form
 \begin{equation}\label{eq:PFE}
 \mathbf{J}\mathbf{\Delta x} = - \mathbf{f} \left ( \mathbf{x} \right )
 \end{equation}
-can be written as below:
+Combining equations (\ref{eq:RHS}), (\ref{eq:JBN}) and (\ref{eq:PFE}) gives the
+expression
 \begin{equation}\label{eq:PFE2}
 \left [ \begin{array}{cc} \mathbf{J1} & \mathbf{J2} \\ \mathbf{J3} & \mathbf{J4} \end{array} \right ] \left [ \begin{array}{c} \mathbf{\Delta \theta} \\ \mathbf{\Delta |V|} \end{array} \right ] =  \left [ \begin{array}{c} \mathbf{\Delta P} \left (\mathbf{x} \right ) \\  \mathbf{\Delta Q} \left (\mathbf{x} \right ) \end{array} \right ]
 \end{equation}
 
-For the $n^{th}$ iteration, we have
+For the $n^{th}$ iteration, we can rearrange equation (\ref{eq:PFE2}) to get
 \begin{equation}\label{eq:update}
 \left [ \begin{array}{c} \theta^{n+1} \\ |V|^{n+1} \end{array} \right ] = \left [ \begin{array}{c} \theta^{n} \\ |V|^{n} \end{array} \right ] -  \left [ \mathbf{J} \left ( x^{n} \right ) \right] ^{-1}  \left [ \begin{array}{c} \Delta P\left ( x^{n} \right ) \\  \Delta Q\left ( x^{n} \right )  \end{array} \right ] 
 \end{equation}
@@ -166,7 +172,9 @@ where $P_i$ and $Q_i$ are given by equation (\ref{eq:PiQi}).
 
 The solution strategy is:
 \begin{enumerate}
-\item Assign initial voltage magnitudes and zero phase angles $\left ( \theta \right )$ to all buses. For PQ buses(load buses), the voltage magnitudes are set equal to 1.0; for PV buses (voltage-controlled/genertor buses), the voltage magnitudes are specified.
+\item Assign initial voltage magnitudes and zero phase angles $\left ( \theta \right )$
+to all buses. For PQ buses(load buses), the voltage magnitudes are set equal to 1.0;
+for PV buses (voltage-controlled/generator buses), the voltage magnitudes are specified.
 \item Calculate $P_{i}$, $Q_i$ using equation (\ref{eq:PiQi}).
 \item Calculate $\Delta P_{i}$, $\Delta Q_{i}$ using equation (\ref{eq:DeltaPQ}).
 \item Calculate the element of Jacobian $\mathbf{J}$ using equation (\ref{eq:J1}) to (\ref{eq:J4}).
