@@ -18,49 +18,49 @@
 #include "gridpack/component/base_component.hpp"
 #include "fortran_component.hpp"
 
-extern bool p_bus_matrix_diag_size(int network, int idx,
+extern "C" bool p_bus_matrix_diag_size(int network, int idx,
     int *isize, int *jsize);
-extern bool p_bus_matrix_diag_values(int network, int idx,
+extern "C" bool p_bus_matrix_diag_values(int network, int idx,
     gridpack::ComplexType *values);
-extern bool p_bus_matrix_forward_size(int network, int idx,
+extern "C" bool p_bus_matrix_forward_size(int network, int idx,
     int *isize, int *jsize);
-extern bool p_bus_matrix_forward_values(int network, int idx,
+extern "C" bool p_bus_matrix_forward_values(int network, int idx,
     gridpack::ComplexType *values);
-extern bool p_bus_matrix_reverse_size(int network, int idx,
+extern "C" bool p_bus_matrix_reverse_size(int network, int idx,
     int *isize, int *jsize);
-extern bool p_bus_matrix_reverse_values(int network, int idx,
+extern "C" bool p_bus_matrix_reverse_values(int network, int idx,
     gridpack::ComplexType *values);
-extern bool p_bus_vector_size(int network, int idx,  int *size);
-extern bool p_bus_vector_values(int network, int idx,
+extern "C" bool p_bus_vector_size(int network, int idx,  int *size);
+extern "C" bool p_bus_vector_values(int network, int idx,
     gridpack::ComplexType *values);
-extern void  p_bus_set_values(int network, int idx,
+extern "C" void  p_bus_set_values(int network, int idx,
     gridpack::ComplexType *values);
-extern void p_bus_load(int network, int idx);
-extern int p_bus_get_xc_buf_size(int network, int idx);
-extern void p_bus_set_mode(int network, int idx, int mode);
-extern bool  p_bus_serial_write(int network, int, char *string,
+extern "C" void p_bus_load(int network, int idx);
+extern "C" int p_bus_get_xc_buf_size(int network, int idx);
+extern "C" void p_bus_set_mode(int network, int idx, int mode);
+extern "C" bool  p_bus_serial_write(int network, int, char *string,
     int bufsize, const char* signal);
-extern bool p_branch_matrix_diag_size(int network, int idx,
+extern "C" bool p_branch_matrix_diag_size(int network, int idx,
     int *isize, int *jsize);
-extern bool p_branch_matrix_diag_values(int network, int idx,
+extern "C" bool p_branch_matrix_diag_values(int network, int idx,
     gridpack::ComplexType *values);
-extern bool p_branch_matrix_forward_size(int network, int idx,
+extern "C" bool p_branch_matrix_forward_size(int network, int idx,
     int *isize, int *jsize);
-extern bool p_branch_matrix_forward_values(int network, int idx,
+extern "C" bool p_branch_matrix_forward_values(int network, int idx,
     gridpack::ComplexType *values);
-extern bool p_branch_matrix_reverse_size(int network, int idx,
+extern "C" bool p_branch_matrix_reverse_size(int network, int idx,
     int *isize, int *jsize);
-extern bool p_branch_matrix_reverse_values(int network, int idx,
+extern "C" bool p_branch_matrix_reverse_values(int network, int idx,
     gridpack::ComplexType *values);
-extern bool p_branch_vector_size(int network, int idx,  int *size);
-extern bool p_branch_vector_values(int network, int idx,
+extern "C" bool p_branch_vector_size(int network, int idx,  int *size);
+extern "C" bool p_branch_vector_values(int network, int idx,
     gridpack::ComplexType *values);
-extern void  p_branch_set_values(int network, int idx,
+extern "C" void  p_branch_set_values(int network, int idx,
     gridpack::ComplexType *values);
-extern void p_branch_load(int network, int idx);
-extern int p_branch_get_xc_buf_size(int network, int idx);
-extern void p_branch_set_mode(int network, int idx, int mode);
-extern bool  p_branch_serial_write(int network, int, char *string,
+extern "C" void p_branch_load(int network, int idx);
+extern "C" int p_branch_get_xc_buf_size(int network, int idx);
+extern "C" void p_branch_set_mode(int network, int idx, int mode);
+extern "C" bool  p_branch_serial_write(int network, int, char *string,
     int bufsize, const char* signal);
 
 // Base implementation of the MatVecInterface. These functions should be

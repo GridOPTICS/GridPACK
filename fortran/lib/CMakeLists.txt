@@ -17,6 +17,7 @@
 add_library(gridpackf
   $<TARGET_OBJECTS:gridpackf_parallel>
   $<TARGET_OBJECTS:gridpackf_math>
+  $<TARGET_OBJECTS:gridpackf_network>
 )
 
 # -------------------------------------------------------------
