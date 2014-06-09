@@ -291,20 +291,20 @@ end subroutine p_get_branch_endpoints
 !
 ! Partition the network over the available processes
 !
-subroutine p_partition(n_handle) bind(c, name="p_partition")
+subroutine p_partition_network(n_handle) bind(c, name="p_partition_network")
   use, intrinsic :: iso_c_binding
   implicit none
   integer(C_INT), value, intent(in) :: n_handle
-end subroutine p_partition
+end subroutine p_partition_network
 !
 ! Clean all ghost buses and branches from the system. This can be used before
 ! repartitioning the network
 !
-subroutine p_clean(n_handle) bind(c, name="p_clean")
+subroutine p_clean_network(n_handle) bind(c, name="p_clean_network")
   use, intrinsic :: iso_c_binding
   implicit none
   integer(C_INT), value, intent(in) :: n_handle
-end subroutine p_clean
+end subroutine p_clean_network
 !
 ! Store the location of externally allocated buffer within a network
 !

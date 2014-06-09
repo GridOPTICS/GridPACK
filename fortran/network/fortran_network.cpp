@@ -454,7 +454,7 @@ extern "C" void p_get_branch_endpoints(int n_handle, int idx, int *idx1, int *id
  * Partition the network over the available processes
  * @param n_handle network handle
  */
-extern "C" void p_partition(int n_handle)
+extern "C" void p_partition_network(int n_handle)
 {
   p_checkHandle(n_handle);
   p_networks[n_handle].network->partition();
@@ -466,7 +466,7 @@ extern "C" void p_partition(int n_handle)
  * buffers, so these need to be reallocated after calling this method
  * @param n_handle network handle
  */
-extern "C" void p_clean(int n_handle)
+extern "C" void p_clean_network(int n_handle)
 {
   p_checkHandle(n_handle);
   p_networks[n_handle].network->clean();
