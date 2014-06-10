@@ -13,8 +13,13 @@
 #ifndef PTI23_PARSER_HPP_
 #define PTI23_PARSER_HPP_
 
+#define OLD_MAP
+
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
+#ifndef OLD_MAP
+#include <boost/unordered_map.hpp>
+#endif
 #include <vector>
 #include <map>
 #include <cstdio>
@@ -205,7 +210,11 @@ class PTI23_parser
           p_network->addBranch(idx1, idx2);
           p_network->setGlobalBranchIndex(i,i+offset_branch[me]);
           int g_idx1, g_idx2;
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(idx1);
           g_idx1 = it->second;
           it = p_busMap.find(idx2);
@@ -369,7 +378,11 @@ class PTI23_parser
           // LOAD_BUSNUMBER               "I"                   integer
           int l_idx, o_idx;
           o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
             l_idx = it->second;
@@ -427,7 +440,11 @@ class PTI23_parser
           // GENERATOR_BUSNUMBER               "I"                   integer
           int l_idx, o_idx;
           o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
             l_idx = it->second;
@@ -581,7 +598,11 @@ class PTI23_parser
           // Check to see if pair has already been created
           int l_idx = 0;
           branch_pair = std::pair<int,int>(o_idx1, o_idx2);
+#ifdef OLD_MAP
           std::map<std::pair<int, int>, int>::iterator it;
+#else
+          boost::unordered_map<std::pair<int, int>, int>::iterator it;
+#endif
           it = p_branchMap.find(branch_pair);
 
           bool switched = false;
@@ -719,7 +740,11 @@ class PTI23_parser
           // find branch corresponding to this transformer line
           int l_idx = 0;
           branch_pair = std::pair<int,int>(fromBus, toBus);
+#ifdef OLD_MAP
           std::map<std::pair<int, int>, int>::iterator it;
+#else
+          boost::unordered_map<std::pair<int, int>, int>::iterator it;
+#endif
           it = p_branchMap.find(branch_pair);
 
           if (it != p_branchMap.end()) {
@@ -918,7 +943,11 @@ class PTI23_parser
           // AREAINTG_ISW           "ISW"                  integer
           int l_idx, o_idx;
           o_idx = atoi(split_line[1].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
             l_idx = it->second;
@@ -989,7 +1018,11 @@ class PTI23_parser
            */
           int l_idx, o_idx;
           l_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
           std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
           it = p_busMap.find(l_idx);
           if (it != p_busMap.end()) {
             o_idx = it->second;
@@ -1556,9 +1589,17 @@ class PTI23_parser
       // Vector of branch data objects
       std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_branchData;
       // Map of PTI indices to index in p_busData
+#ifdef OLD_MAP
       std::map<int,int> p_busMap;
+#else
+      boost::unordered_map<int, int> p_busMap;
+#endif
       // Map of PTI index pair to index in p_branchData
+#ifdef OLD_MAP
       std::map<std::pair<int, int>, int> p_branchMap;
+#else
+      boost::unordered_map<std::pair<int, int>, int> p_branchMap;
+#endif
 
       // Global variables that apply to whole network
       int p_case_id;
