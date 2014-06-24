@@ -755,13 +755,15 @@ bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
   char buf[128];
   char *ptr = string;
   int idx = getOriginalIndex();
+  int len = 0;
   for (i=0; i<p_ngen; i++) {
     sprintf(buf,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
       idx,p_genid[i].c_str(),real(p_mac_ang_final[i]),real(p_mac_spd_final[i]),
       real(p_mech_final[i]),real(p_elect_final[i]));
-    int len =strlen(buf);
+    int slen = strlen(buf);
+    len += slen;
     if (len < bufsize) sprintf(ptr,"%s",buf);
-    ptr += len;
+    ptr += slen;
   }
   return true;
 }

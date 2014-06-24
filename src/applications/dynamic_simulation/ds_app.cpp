@@ -100,7 +100,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->stop(t_part);
 
   // Create serial IO object to export data from buses or branches
-  gridpack::serial_io::SerialBusIO<DSNetwork> busIO(256, network);
+  gridpack::serial_io::SerialBusIO<DSNetwork> busIO(2048, network);
   gridpack::serial_io::SerialBranchIO<DSNetwork> branchIO(128, network);
   char ioBuf[128];
 
@@ -535,11 +535,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     int t_trnsmul = timer->createCategory("Transpose Multiply");
     timer->start(t_trnsmul);
     if (flagF1 == 0) {
-      transposeMultiply(*prefy11,*eprime_s0,*curr);
+      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
+      //transposeMultiply(*prefy11,*eprime_s0,*curr);
     } else if (flagF1 == 1) {
-      transposeMultiply(*fy11,*eprime_s0,*curr);
+      curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
+      //transposeMultiply(*fy11,*eprime_s0,*curr);
     } else if (flagF1 == 2) {
-      transposeMultiply(*posfy11,*eprime_s0,*curr);
+      curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
+      //transposeMultiply(*posfy11,*eprime_s0,*curr);
     } 
     timer->stop(t_trnsmul);
     
@@ -584,11 +587,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     timer->start(t_trnsmul);
     if (flagF2 == 0) {
-      transposeMultiply(*prefy11,*eprime_s1,*curr);
+      curr.reset(multiply(*trans_prefy11, *eprime_s1)); //MatMultTranspose(prefy11, eprime_s1, curr);
+      //transposeMultiply(*prefy11,*eprime_s1,*curr);
     } else if (flagF2 == 1) {
-      transposeMultiply(*fy11,*eprime_s1,*curr);
+      curr.reset(multiply(*trans_fy11, *eprime_s1)); //MatMultTranspose(fy11, eprime_s1, curr);
+      //transposeMultiply(*fy11,*eprime_s1,*curr);
     } else if (flagF2 == 2) {
-      transposeMultiply(*posfy11,*eprime_s1,*curr);
+      curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
+      //transposeMultiply(*posfy11,*eprime_s1,*curr);
     }
     timer->stop(t_trnsmul);
 
