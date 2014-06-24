@@ -17,6 +17,8 @@
 #ifndef FULLMATRIXMAP_HPP_
 #define FULLMATRIXMAP_HPP_
 
+#define NZ_PER_ROW
+
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <ga.h>
 #include "gridpack/parallel/parallel.hpp"
@@ -46,11 +48,14 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   p_j_busOffsets = NULL;
   p_i_branchOffsets = NULL;
   p_j_branchOffsets = NULL;
+#ifdef NZ_PER_ROW
+  p_nz_per_row = NULL;
+#endif
   int                     iSize    = 0;
   int                     jSize    = 0;
 
-  // p_timer = NULL;
-  p_timer = gridpack::utility::CoarseTimer::instance();
+  p_timer = NULL;
+  //p_timer = gridpack::utility::CoarseTimer::instance();
 
   p_GAgrp = network->communicator().getGroup();
   p_me = GA_Pgroup_nodeid(p_GAgrp);
@@ -80,6 +85,9 @@ FullMatrixMap(boost::shared_ptr<_network> network)
   if (p_j_busOffsets != NULL) delete [] p_j_busOffsets;
   if (p_i_branchOffsets != NULL) delete [] p_i_branchOffsets;
   if (p_j_branchOffsets != NULL) delete [] p_j_branchOffsets;
+#ifdef NZ_PER_ROW
+  if (p_nz_per_row != NULL) delete [] p_nz_per_row;
+#endif
   GA_Destroy(gaOffsetI);
   GA_Destroy(gaOffsetJ);
   GA_Pgroup_sync(p_GAgrp);
@@ -99,7 +107,11 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 #if 0
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
 #else
+#ifndef NZ_PER_ROW
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
+#else
+    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
+#endif
 #endif
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
@@ -401,14 +413,18 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
   *icount = 0;
   *jcount = 0;
 
-  int maxrow,idx,jdx;
+  int i,j,maxrow,idx,jdx;
 
   p_maxrow = 0;
   std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
   
   bool chk;
 
-  for (int i = 0; i < p_nBuses; i++) {
+#ifdef NZ_PER_ROW
+  std::vector<int> nz_per_row;
+#endif
+  for (i = 0; i < p_nBuses; i++) {
+    jSize = 0;
     status = p_network->getBus(i)->matrixDiagSize(&iSize, &jSize);
     if (status) {
       maxrow = 0;
@@ -426,7 +442,12 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
       maxrow += jSize;
       branches.clear();
       p_network->getBus(i)->getNeighborBranches(branches);
-      for(int j = 0; j<branches.size(); j++) {
+#ifdef NZ_PER_ROW
+//      bool addrow = false;
+#endif
+      // Since status is true, something is being added to matrix. Check to find
+      // extra contributions from branches
+      for(j = 0; j<branches.size(); j++) {
         branches[j]->getMatVecIndices(&idx, &jdx);
         if (index == idx) {
           chk = branches[j]->matrixForwardSize(&iSize, &jSize);
@@ -434,10 +455,29 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
           chk = branches[j]->matrixReverseSize(&iSize, &jSize);
         }
         if (chk) maxrow += jSize;
+#ifdef NZ_PER_ROW
+//        addrow = addrow || chk;
+#endif
       }
       if (p_maxrow < maxrow) p_maxrow = maxrow;
+#ifdef NZ_PER_ROW
+      // Add maxrow entry for each row in block
+//      if (addrow) {
+        for (j=0; j<iSize; j++) {
+          nz_per_row.push_back(maxrow);
+        }
+//      }
+#endif
     }
   }
+
+#ifdef NZ_PER_ROW
+  int size = nz_per_row.size();
+  p_nz_per_row = new int[size];
+  for (int i = 0; i<size; i++) {
+    p_nz_per_row[i] = nz_per_row[i];
+  }
+#endif
 }
 
 /**
@@ -1012,6 +1052,9 @@ int                         p_branchContribution;
 int                         p_maxIBlock;
 int                         p_maxJBlock;
 int                         p_maxrow;
+#ifdef NZ_PER_ROW
+int*                        p_nz_per_row;
+#endif
 
 int*                        p_i_busOffsets;
 int*                        p_j_busOffsets;

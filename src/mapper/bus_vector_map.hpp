@@ -45,6 +45,9 @@ BusVectorMap(boost::shared_ptr<_network> network)
   p_Offsets                        = NULL;
   int                     iSize    = 0;
 
+  p_timer = NULL;
+  // p_timer = gridpack::utility::CoarseTimer::instance();
+
   p_GAgrp = network->communicator().getGroup();
   p_me = GA_Pgroup_nodeid(p_GAgrp);
   p_nNodes = GA_Pgroup_nnodes(p_GAgrp);
@@ -78,11 +81,21 @@ BusVectorMap(boost::shared_ptr<_network> network)
 boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
+  int t_new, t_bus, t_set;
+  if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
+  if (p_timer) p_timer->start(t_new);
   boost::shared_ptr<gridpack::math::Vector>
              Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
+  if (p_timer) p_timer->stop(t_new);
+  if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
   loadBusData(Ret,true);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
+  if (p_timer) p_timer->start(t_set);
   GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
+  if (p_timer) p_timer->stop(t_set);
   return Ret;
 }
 
@@ -93,10 +106,19 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
  */
 void mapToVector(gridpack::math::Vector &vector)
 {
+  int t_bus, t_set;
+  if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
+  if (p_timer) p_timer->start(t_set);
   vector.zero();
+  if (p_timer) p_timer->stop(t_set);
+  if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
   loadBusData(vector,false);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) p_timer->start(t_set);
   GA_Pgroup_sync(p_GAgrp);
   vector.ready();
+  if (p_timer) p_timer->stop(t_set);
 }
 
 /**
@@ -409,6 +431,9 @@ void setBusOffsets(void)
   int *data = new int[p_busContribution];
   int *ptr = data;
   icnt = 0;
+  int t_idx, t_gat;
+  if (p_timer) t_idx = p_timer->createCategory("setBusOffsets: Set Index Arrays");
+  if (p_timer) p_timer->start(t_idx);
   boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
@@ -427,12 +452,16 @@ void setBusOffsets(void)
     printf("p[%d] Mismatch icnt: %d busContribution: %d\n",
         GA_Nodeid(),icnt,p_busContribution);
   }
+  if (p_timer) p_timer->stop(t_idx);
 
   // Gather vector offsets
+  if (p_timer) t_gat = p_timer->createCategory("setBusOffsets: Gather Offsets");
+  if (p_timer) p_timer->start(t_gat);
   p_Offsets = new int[p_busContribution];
   if (p_busContribution > 0) {
     NGA_Gather(gaOffsetI,p_Offsets,indices,p_busContribution);
   }
+  if (p_timer) p_timer->stop(t_gat);
   // Clean up arrays
   if (p_busContribution > 0) {
     delete [] indices;
@@ -451,6 +480,9 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   // Add vector elements
   boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
   ComplexType *values = new ComplexType[p_maxIBlock];
+  int t_bus;
+  if (p_timer) t_bus = p_timer->createCategory("loadBusData: Add Vector Elements");
+  if (p_timer) p_timer->start(t_bus);
   int j;
   int jcnt = 0;
   for (i=0; i<p_nBuses; i++) {
@@ -475,6 +507,7 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
       }
     }
   }
+  if (p_timer) p_timer->stop(t_bus);
 
   // Clean up arrays
   delete [] values;
@@ -530,6 +563,10 @@ int*                        p_Offsets;
 int                         gaVecBlksI; // g_idx
 int                         gaOffsetI; // g_ioff
 int                         p_GAgrp; // GA group
+
+    // pointer to timer
+gridpack::utility::CoarseTimer *p_timer;
+
 };
 
 } /* namespace mapper */
