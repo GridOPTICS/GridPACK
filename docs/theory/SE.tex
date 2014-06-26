@@ -17,89 +17,113 @@ equations relating the measurements and power system states (i.e.  bus voltage,
 and phase angle), a state estimator fine-tunes power system state variables by
 minimizing the sum of the residual squares.  This is the well-known WLS method.
 
-Mathematically, the WLS state estimation algorithm of an $n$-bus power system
-with $m$ measurements can be described below:
+The mathematical formulation of the WLS state estimation algorithm for an
+$n$-bus power system with $m$ measurements is given below.
 
 \subsection*{Basic Equations}
-
+The starting equation for the WLS state estimation algorithm is
 \begin{equation}\label{eq:main}
 z=\begin{bmatrix} z_1\\ z_2\\ .\\ .\\ .\\ z_m\\ \end{bmatrix} =
 \begin{bmatrix} h_1(x_1,x_2,...,x_n)\\ h_2(x_1,x_2,...,x_n)\\ .\\ .\\ .\\ h_m(x_1,x_2,...,x_n)\\ \end{bmatrix}+\begin{bmatrix} e_1\\ e_2\\ .\\ .\\ .\\ e_m\\ \end{bmatrix}
 =h(x)+e
 \end{equation} 
-where: \\
-$h^{T} = \begin{bmatrix} h_1(x) & h_2(x) && ... & h_{m}(x) \end{bmatrix}$\\
-$h_{i}($x$)$: the nonlinear function relating measurement $i$ to the state vector $x$ \\
-$x^{T} = \begin{bmatrix} x_{1} & x_{2} & ... & x_{n} \end{bmatrix}$: the system state vector \\
-$e^{T} = \begin{bmatrix} e_{1} & e_{2} & ... & e_{m} \end{bmatrix}$: the vector of measurement errors\\
+The vector $z$ of $m$ measured values is
+\[
+z^{T} = \begin{bmatrix} z_1 & z_2 && ... & z_{m}\end{bmatrix}
+\]
+The vector $h$
+\[
+h^{T} = \begin{bmatrix} h_1(x) & h_2(x) && ... & h_{m}(x) \end{bmatrix}
+\]
+containing the non-linear functions $h_{i}($x$)$ relates the predicted value of
+measurement $i$ to the state vector $x$ containing $n$ variables
+\[
+x^{T} = \begin{bmatrix} x_{1} & x_{2} & ... & x_{n} \end{bmatrix}
+\]
+and $e$ is the vector of measurement errors
+\[
+e^{T} = \begin{bmatrix} e_{1} & e_{2} & ... & e_{m} \end{bmatrix}
+\]
 
-Assumptions regarding the statistical properties of the measurement error $e$:
+The measurement errors $e_i$ are assumed to satisfy the following statistical
+properties of zero mean
 \begin{equation}
 E(e_i) = 0, i = 1,...,m
 \end{equation} 
-Measurement errors are independent, i.e. $E[e_ie_j]=0$
+The errors are also assumed to be independent,
+($E[e_i e_j]=0$ for $i\ne j$), such that the covariance matrix is diagonal
 \begin{equation}
 Cov(e)=E(e\cdot e^T) = R =diag \{{\sigma_1 ^2,\sigma_2^2,...,\sigma_m ^2}\}
 \end{equation} 
 
-The objection function:
+The objective function is then given by the relations
 \begin{equation}\label{eq:JX}
 J(x)=\sum_{i=1}^{m}(z_i-h_i(x))^2/R_{ii} = [z-h(x)]^TR^{-1}[z-h(x)] 
 \end{equation} 
+The minimization condition is
 \begin{equation}\label{eq:gx}
 g(x)=\frac{\partial J(x)}{\partial x} = -H^T(x)R^{-1}[z-h(x)] = 0 
 \end{equation} 
-where: $H(x)=\frac{\partial J(x)}{\partial x}$ and $z$ is system measurement\\
-Expanding $g(x)$ into its Taylor series:
+where $H(x)=\partial h(x)/\partial x$. Expanding $g(x)$ into its Taylor series
+leads to the expression
 \begin{equation}\label{eq:Taylor}
 g(x)= g(x^k) + G(x^k)(x-x^k) + ... = 0
 \end{equation} 
-where: \\
-$x^{k+1} = x^k - G(x^k)^{-1}g(x^k)$ \\
-$k$: iteration index \\
-$x^k$ :solution vector at $k$\\
-$G(x^k) = \frac{\partial g(x^k)}{\partial x} = H^T(x^k)R^{-1}H(x^k)$: Gain matrix \\
-$g(x^k) = -H^T(x^k)R^{-1}(z-h(x^k))$ \\
+where the $k+1$ iterate is related to the $k$th iterate via
+\[
+x^{k+1} = x^k - G(x^k)^{-1}g(x^k)
+\]
+and $G(x^k)$ is the gain matrix
+\[
+G(x^k) = \frac{\partial g(x^k)}{\partial x} = H^T(x^k)R^{-1}H(x^k)
+\]
+Note the each iterate $g(x^k)$ still satisfies
+\[
+g(x^k) = -H^T(x^k)R^{-1}(z-h(x^k))
+\]
 
 \subsection*{The Normal Equation and solution procedure:}
-Normal Equation: \\ 
+The normal equation for the state estimation calculation follows from
+equation (\ref{eq:Taylor})
 \begin{equation}\label{eq:normal}
 G(x^k)\Delta x^{k+1} = H^T(x^k)R^{-1}(z-h(x^k)) \\*
 \end{equation} 
-where $\Delta x^{k+1} = x^{k+1}-x^k$
-
-The WLS SE Algorithm procedure
+where $\Delta x^{k+1} = x^{k+1}-x^k$. The WLS SE algorithm is based on this
+equation and consists of the following steps
 \begin{enumerate}
-\item Set k=0
-\item Initialize the state vector of $x^{k}$, typical a flat start
-\item Calculatting the measurement function of $h(x^k)$
-\item Buliding the measurement Jacobian $H(x^k)$
-\item Calculate the gain marix of $G(x^k)== H^T(x^k)R^{-1}H(x^k)$
-\item Calculate the right hand side $RHS = H^T(x^k)R^{-1}(z-h(x^k))$
+\item Set $k=0$
+\item Initialize the state vector $x^{k}$, typical a flat start
+\item Calculate the measurement function $h(x^k)$
+\item Build the measurement Jacobian $H(x^k)$
+\item Calculate the gain matrix of $G(x^k)= H^T(x^k)R^{-1}H(x^k)$
+\item Calculate the RHS of the normal equation $H^T(x^k)R^{-1}(z-h(x^k))$
 \item Solve the normal equation \ref{eq:normal} for $\Delta x^k$
-\item Check for convergence: max $\left |  \Delta x^k \right |\le \epsilon $
-\item If no, update $x^{k+1} = x^k+\Delta x^k$ and go to 3. Otherwise Stop
+\item Check for convergence using $\max \left |  \Delta x^k \right |\le \epsilon $
+\item If not converged, update $x^{k+1} = x^k+\Delta x^k$ and go to 3. Otherwise
+stop
 \end{enumerate}
 
 
-\subsection*{The measurement Function $h(x^k)$}
+\subsection*{The measurement function $h(x^k)$}
 
+The measured quantities and their relation to the state variables are listed
+below
 \begin{enumerate}
-\item Real and reactive power injection at bus $i$:
+\item Real and reactive power injection at bus $i$
 \begin{equation}\label{eq:Pi}
 P_i = V_i \sum_{i\ne j}V_j(G_{ij}\cos \theta _{ij}+B_{ij}\sin \theta _{ij})
 \end{equation} 
 \begin{equation}\label{eq:Qi}
 Q_i = V_i \sum_{i\ne j}V_j(G_{ij}\sin \theta _{ij}+B_{ij}\cos \theta _{ij})
 \end{equation} 
-\item Real and reactive power flow bus $i$ to bus $j$:
+\item Real and reactive power flow from bus $i$ to bus $j$:
 \begin{equation}\label{eq:Pij}
 P_{ij} = V_i^2(g_{si}+g_{ij}) -V_iV_j(g_{ij}\cos \theta _{ij}+b_{ij}\sin \theta _{ij})
 \end{equation}
 \begin{equation}\label{eq:Qij}
 Q_{ij} = -V_i^2(b_{si}+b_{ij}) -V_iV_j(g_{ij}\sin \theta _{ij}-b_{ij}\cos \theta _{ij})
 \end{equation}
-\item Line current flow magitude from bus $i$ to bus $j$:
+\item Line current flow magnitude from bus $i$ to bus $j$:
 \begin{equation}\label{eq:Iij}
 I_{ij} = \sqrt {P_{ij}^2+Q_{ij}^2}/V_i
 \end{equation}
@@ -112,7 +136,7 @@ I_{ij} = \sqrt {P_{ij}^2+Q_{ij}^2}/V_i
 
 \begin{equation}
 \mathbf{H}  =\begin{bmatrix}
-\frac{\partial Pg{inj}}{\partial \theta} & \frac{\partial P_{inj}}{\partial V}\\ 
+\frac{\partial P_{inj}}{\partial \theta} & \frac{\partial P_{inj}}{\partial V}\\ 
 \frac{\partial P_{flow}}{\partial \theta} & \frac{\partial P_{flow}}{\partial V}\\ 
 \frac{\partial Q_{inj}}{\partial \theta} & \frac{\partial Q_{inj}}{\partial V}\\ 
 \frac{\partial Q_{flow}}{\partial \theta} & \frac{\partial Q_{flow}}{\partial V}\\ 
