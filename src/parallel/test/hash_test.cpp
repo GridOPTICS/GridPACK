@@ -42,12 +42,47 @@ main(int argc, char **argv)
 
     int nprocs = world.size();
     int me = world.rank();
-    int ntotal = NVALUES*(nprocs-1);
+    int ntotal = NVALUES*nprocs;
     int i;
 
+    // Test list in which all processors contribute
     gridpack::hash_map::GlobalIndexHashMap hashmap(world);
     // Create pairs of values and add them to hashmap
     std::vector<std::pair<int, int> > pairs;
+    for (i = 0; i<NVALUES; i++) {
+      int ival = me*NVALUES + i;
+      pairs.push_back(std::pair<int, int>(ival,ntotal-1-ival));
+    }
+    hashmap.addPairs(pairs);
+
+    // Create list of keys corresponding to values on next processor
+    int nghbr = (me+1)%nprocs;
+    std::vector<int> keys;
+    std::vector<int> values;
+    for (i=0; i<NVALUES; i++) {
+      keys.push_back(nghbr*NVALUES+i);
+    }
+    hashmap.getValues(keys, values);
+
+    // Check values to see if they are correct
+    int schk = 1;
+    for (i=0; i<NVALUES; i++) {
+      int key = keys[i];
+      int ival = values[i];
+      if (ival != ntotal-1-key) schk = 0;
+    }
+    int rchk;
+    int ierr = MPI_Allreduce(&schk, &rchk, 1, MPI_INT, MPI_SUM, world);
+    if (me == 0 && rchk == nprocs) {
+      printf("\nSymmetric list passed\n");
+    } else if (me == 0) {
+      printf("\nSymmetric list failed\n");
+    }
+
+    // Test list in which one processor does not contribute
+    ntotal = NVALUES*(nprocs-1);
+    // Create pairs of values and add them to hashmap
+    pairs.clear();
     if (me != 0) {
       for (i = 0; i<NVALUES; i++) {
         int ival = (me-1)*NVALUES + i;
@@ -57,9 +92,9 @@ main(int argc, char **argv)
     hashmap.addPairs(pairs);
 
     // Create list of keys corresponding to values on next processor
-    int nghbr = (me+1)%nprocs;
-    std::vector<int> keys;
-    std::vector<int> values;
+    nghbr = (me+1)%nprocs;
+    keys.clear();
+    values.clear();
     if (nghbr != 0) {
       for (i=0; i<NVALUES; i++) {
         keys.push_back((nghbr-1)*NVALUES+i);
@@ -68,14 +103,19 @@ main(int argc, char **argv)
     hashmap.getValues(keys, values);
 
     // Check values to see if they are correct
-    bool chk = 1;
+    schk = 1;
     if (nghbr != 0) {
       for (i=0; i<NVALUES; i++) {
         int key = keys[i];
         int ival = values[i];
-        if (ival != ntotal-1-key) chk = 0;
+        if (ival != ntotal-1-key) schk = 0;
       }
-      printf("p[%d] value of chk: %d\n",me,chk);
+    }
+    ierr = MPI_Allreduce(&schk, &rchk, 1, MPI_INT, MPI_SUM, world);
+    if (me == 0 && rchk == nprocs) {
+      printf("\nAsymmetric list passed\n");
+    } else if (me == 0) {
+      printf("\nAsymmetric list failed\n");
     }
   }
 
