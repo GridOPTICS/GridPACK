@@ -6,8 +6,8 @@
 \maketitle
 This document is a description of how to formulate the weighted-least squares
 (WLS) state estimation problem. Most of the formulation is based on the
-book by Abur and Exposito\footnote{Ali Abur, Antonio Gomez Exposito, "Power
-System State Estimation Theroy and Implementation", CRC Press }.
+book by Abur and Exposito\footnote{Ali Abur, Antonio Gomez Exposito, ``Power
+System State Estimation Theroy and Implementation'', CRC Press }.
 
 Power system state estimation is a central component in power system Energy
 Management Systems. A state estimator receives field measurement data from
@@ -46,11 +46,11 @@ e^{T} = \begin{bmatrix} e_{1} & e_{2} & ... & e_{m} \end{bmatrix}
 \]
 
 The measurement errors $e_i$ are assumed to satisfy the following statistical
-properties of zero mean
+properties. First, the errors have zero mean
 \begin{equation}
 E(e_i) = 0, i = 1,...,m
 \end{equation} 
-The errors are also assumed to be independent,
+Second, the errors are assumed to be independent,
 ($E[e_i e_j]=0$ for $i\ne j$), such that the covariance matrix is diagonal
 \begin{equation}
 Cov(e)=E(e\cdot e^T) = R =diag \{{\sigma_1 ^2,\sigma_2^2,...,\sigma_m ^2}\}
@@ -84,7 +84,7 @@ g(x^k) = -H^T(x^k)R^{-1}(z-h(x^k))
 
 \subsection*{The Normal Equation and solution procedure:}
 The normal equation for the state estimation calculation follows from
-equation (\ref{eq:Taylor})
+equation (\ref{eq:Taylor}) and is given by the expression
 \begin{equation}\label{eq:normal}
 G(x^k)\Delta x^{k+1} = H^T(x^k)R^{-1}(z-h(x^k)) \\*
 \end{equation} 
@@ -128,14 +128,24 @@ Q_{ij} = -V_i^2(b_{si}+b_{ij}) -V_iV_j(g_{ij}\sin \theta _{ij}-b_{ij}\cos \theta
 I_{ij} = \sqrt {P_{ij}^2+Q_{ij}^2}/V_i
 \end{equation}
 \end{enumerate}
+These functions represent the set of functions $h_i(x)$ that relate the state
+variables $V_i$ and $\theta_i$ to the measurements. The variables in the above
+expressions are defined as
 
-
-
+\begin{itemize}
+\item $V_i$ is the voltage magnitude at bus $i$
+\item $\theta_i$ is the phase angle at bus $i$
+\item $\theta_{ij} = \theta_i-\theta_j$
+\item $G_{ij}+jB_{ij}$ is the $ij$th element of the Y-bus matrix
+\item $g_{ij}+jb_{ij}$ is the admittance of the series branch between bus $i$ and bus $j$
+\item $g_{si}+jb_{sj}$ is the admittance of the shunt branch at bus $i$ 
+\end{itemize}
 
 \subsection*{The measurement Jacobian $H$:}
 
+The Jacobian matrix $H$ can be written as
 \begin{equation}
-\mathbf{H}  =\begin{bmatrix}
+H  =\begin{bmatrix}
 \frac{\partial P_{inj}}{\partial \theta} & \frac{\partial P_{inj}}{\partial V}\\ 
 \frac{\partial P_{flow}}{\partial \theta} & \frac{\partial P_{flow}}{\partial V}\\ 
 \frac{\partial Q_{inj}}{\partial \theta} & \frac{\partial Q_{inj}}{\partial V}\\ 
@@ -145,7 +155,7 @@ I_{ij} = \sqrt {P_{ij}^2+Q_{ij}^2}/V_i
 \end{bmatrix}
 \end{equation}
 
-The expressions for each block are listed below:
+where the expressions for each block are
 \begin{equation}
 \frac{\partial P_{i}}{\partial \theta_i}  =\sum _{j=1}^N V_iV_j(-G_{ij}\sin\theta_{ij}+B_{ij}\cos{\theta_{ij}})-V_i^2B_{ii}
 \end{equation}
@@ -218,13 +228,6 @@ The expressions for each block are listed below:
 \begin{equation}
 \frac{\partial I_{ij}}{\partial V_i}  = \frac{g_{ij}^2+b_{ij}^2}{I_{ij}}(V_j-V_i\cos{\theta_{ij}})
 \end{equation}
-where: \\
-$V_i$: the voltage magnitude at bus $i$ \\
-$\theta_i$: the phase angle at bus $i$ \\
-$\theta_{ij} = \theta_i-\theta_j$ \\
-$G_{ij}+jB_{ij}$: the $ij$th element of YBus matrix \\
-$g_{ij}+jb_{ij}$: the admittance of the series branch between bus $i$ and bus $j$ \\
-$g_{si}+jb_{sj}$: the admittance of the shunt branch at bus $i$ 
 
 
 \end{document}
