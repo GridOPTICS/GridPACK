@@ -187,5 +187,6 @@ add_subdirectory(applications/components/ds_matrix)
 add_subdirectory(parser)
 add_subdirectory(serial_io)
 add_subdirectory(timer)
+add_subdirectory(include)
 
 add_subdirectory(lib)
