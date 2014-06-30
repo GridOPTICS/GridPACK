@@ -20,6 +20,10 @@ install(FILES
   complex.hpp
   exception.hpp
   uncopyable.hpp
+  named.hpp
+  doxygen_dummy.hpp
+  indexed.hpp
+  sanity_interface.hpp
   DESTINATION include/gridpack/utilities
 )
 
