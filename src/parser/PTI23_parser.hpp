@@ -109,20 +109,18 @@ class PTI23_parser
           }
 
           find_case(input);
-          printf("p[%d] (getCase) Got to 1\n",me);
           find_buses(input);
-//          find_loads(input);
-          printf("p[%d] (getCase) Got to 2\n",me);
-          find_generators(input);
-          printf("p[%d] (getCase) Got to 3\n",me);
+          // Add a hideous hack so that it is possible to determine if a load
+          // block is present in the file. Sometimes it is and sometimes it
+          // isn't
+          bool parsed = true;
+          std::string oldline;
+          find_loads(input,oldline,parsed);
+          find_generators(input,oldline,parsed);
           find_branches(input);
-          printf("p[%d] (getCase) Got to 4\n",me);
           find_transformer(input);
-          printf("p[%d] (getCase) Got to 4\n",me);
           find_area(input);
-          printf("p[%d] (getCase) Got to 4\n",me);
           find_2term(input);
-          printf("p[%d] (getCase) Got to 4\n",me);
           find_shunt(input);
 #if 0
           find_imped_corr(input);
@@ -374,14 +372,22 @@ class PTI23_parser
         }
       }
 
-      void find_loads(std::ifstream & input)
+      void find_loads(std::ifstream & input, std::string &oldline, bool &parsed)
       {
         std::string          line;
         std::getline(input, line); //this should be the first line of the block
 
+        parsed = true;
+        int nline = 0;
         while(test_end(line)) {
           std::vector<std::string>  split_line;
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+          if (nline == 0 && split_line.size() > 15) {
+            oldline = line;
+            parsed = false;
+            return;
+          }
+          nline++;
 
           // LOAD_BUSNUMBER               "I"                   integer
           int l_idx, o_idx;
@@ -398,49 +404,56 @@ class PTI23_parser
             std::getline(input, line);
             continue;
           }
+          int nstr = split_line.size();
+
           p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
 
           // LOAD_ID              "ID"                  integer
-          p_busData[l_idx]->addValue(LOAD_ID, atoi(split_line[1].c_str()));
+          std::string tag = clean2Char(split_line[1]);
+          if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, (char*)tag.c_str());
 
           // LOAD_STATUS              "ID"                  integer
-          p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[1].c_str()));
+          if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[2].c_str()));
 
-          // LOAD_AREA            "ZONE"                integer
-          p_busData[l_idx]->addValue(LOAD_AREA, atoi(split_line[11].c_str()));
+          // LOAD_AREA            "AREA"                integer
+          if (nstr > 3) p_busData[l_idx]->addValue(LOAD_AREA, atoi(split_line[3].c_str()));
 
           // LOAD_ZONE            "ZONE"                integer
-          p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[11].c_str()));
+          if (nstr > 4) p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[4].c_str()));
 
           // LOAD_PL              "PG"                  float
-          p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[2].c_str()));
+          if (nstr > 5) p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[5].c_str()));
 
           // LOAD_QL              "QG"                  float
-          p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[3].c_str()));
+          if (nstr > 6) p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[6].c_str()));
 
           // LOAD_IP              "QT"                  float
-          p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[4].c_str()));
+          if (nstr > 7) p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[7].c_str()));
 
           // LOAD_IQ              "QB"                  float
-          p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[5].c_str()));
+          if (nstr > 8) p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[8].c_str()));
 
           // LOAD_YP              "VS"                  float
-          p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[6].c_str()));
+          if (nstr > 9) p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[9].c_str()));
 
           // LOAD_YQ            "IREG"                integer
-          p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[7].c_str()));
+          if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[10].c_str()));
 
           // LOAD_OWNER              "IA"                  integer
-          p_busData[l_idx]->addValue(LOAD_OWNER, atoi(split_line[6].c_str()));
+          if (nstr > 11) p_busData[l_idx]->addValue(LOAD_OWNER, atoi(split_line[11].c_str()));
 
           std::getline(input, line);
         }
       }
 
-      void find_generators(std::ifstream & input)
+      void find_generators(std::ifstream & input, std::string &oldline, bool &parsed)
       {
         std::string          line;
-        std::getline(input, line); //this should be the first line of the block
+        if (parsed) {
+          std::getline(input, line); //this should be the first line of the block
+        } else {
+          line = oldline;
+        }
         while(test_end(line)) {
           std::vector<std::string>  split_line;
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
@@ -1517,7 +1530,7 @@ class PTI23_parser
       bool test_end(std::string &str) const
       {
 #if 1
-        if (str[0] == '0') {
+        if (str[0] == TERM_CHAR) {
           return false;
         }
         int len = str.length();
@@ -1527,10 +1540,15 @@ class PTI23_parser
         }
         if (i<len && str[i] != TERM_CHAR) {
           return true;
-        }
-        i++;
-        if (i>=len || str[i] == ' ' || str[i] == '\\') {
-          return false;
+        } else if (i == len) {
+          return true;
+        } else if (str[i] == TERM_CHAR) {
+          i++;
+          if (i>=len || str[i] == ' ' || str[i] == '\\') {
+            return false;
+          } else {
+            return true;
+          }
         } else {
           return true;
         }
