@@ -502,7 +502,7 @@ gridpack::ymatrix::YMBranch::getShunt(gridpack::ymatrix::YMBus *bus)
  * @param Yij contribution from line element
  */
 void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
-   gridpack::ComplexType *Yii, gridpack::ComplexType *Yij)
+   gridpack::ComplexType *Yii, gridpack::ComplexType *Yij)// , gridpack::ComplexType *yii)
 {
   gridpack::ComplexType zero = gridpack::ComplexType(0.0,0.0);
   gridpack::ComplexType flow = zero;
@@ -529,17 +529,17 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
       if (aij != zero) {
         if (!p_switched[idx]) {
           *Yij = yij/conj(aij);
-          *Yii = -(yij+0.5*bij);
+          *Yii = -(yij-0.5*bij);
           *Yii = (*Yii)/(aij*conj(aij));
         } else {
           *Yij = yij/aij;
-          *Yii = -(yij+0.5*bij);
+          *Yii = -(yij-0.5*bij);
         }
       }
     } else {
       // evaluate flow for regular line
       *Yij = yij;
-      *Yii = -((*Yij)+0.5*bij);
+      *Yii = -((*Yij)-0.5*bij);
     }
   }
 }
