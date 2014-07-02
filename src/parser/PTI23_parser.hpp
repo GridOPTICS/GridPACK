@@ -109,13 +109,20 @@ class PTI23_parser
           }
 
           find_case(input);
+          printf("p[%d] (getCase) Got to 1\n",me);
           find_buses(input);
 //          find_loads(input);
+          printf("p[%d] (getCase) Got to 2\n",me);
           find_generators(input);
+          printf("p[%d] (getCase) Got to 3\n",me);
           find_branches(input);
+          printf("p[%d] (getCase) Got to 4\n",me);
           find_transformer(input);
+          printf("p[%d] (getCase) Got to 4\n",me);
           find_area(input);
+          printf("p[%d] (getCase) Got to 4\n",me);
           find_2term(input);
+          printf("p[%d] (getCase) Got to 4\n",me);
           find_shunt(input);
 #if 0
           find_imped_corr(input);
@@ -318,6 +325,7 @@ class PTI23_parser
           boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
           boost::shared_ptr<gridpack::component::DataCollection>
             data(new gridpack::component::DataCollection);
+          int nstr = split_line.size();
 
           // BUS_I               "I"                   integer
           o_idx = atoi(split_line[0].c_str());
@@ -326,40 +334,40 @@ class PTI23_parser
           p_busMap.insert(std::pair<int,int>(o_idx,index));
 
           // BUS_NAME             "NAME"                 string
-          data->addValue(BUS_NAME, (char*)split_line[9].c_str());
+          if (nstr > 9) data->addValue(BUS_NAME, (char*)split_line[9].c_str());
 
           // BUS_BASEKV           "BASKV"               float
-          data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
+          if (nstr > 10) data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
 
           // BUS_TYPE               "IDE"                   integer
-          data->addValue(BUS_TYPE, atoi(split_line[1].c_str()));
+          if (nstr > 1) data->addValue(BUS_TYPE, atoi(split_line[1].c_str()));
 
           // BUS_SHUNT_GL              "GL"                  float
-          data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
+          if (nstr > 4) data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
 
           // BUS_SHUNT_BL              "BL"                  float
-          data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
+          if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
 
           // BUS_ZONE            "ZONE"                integer
-          data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
+          if (nstr > 11) data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
 
           // BUS_AREA            "IA"                integer
-          data->addValue(BUS_AREA, atoi(split_line[6].c_str()));
+          if (nstr > 6) data->addValue(BUS_AREA, atoi(split_line[6].c_str()));
 
           // BUS_VOLTAGE_MAG              "VM"                  float
-          data->addValue(BUS_VOLTAGE_MAG, atof(split_line[7].c_str()));
+          if (nstr > 7) data->addValue(BUS_VOLTAGE_MAG, atof(split_line[7].c_str()));
 
           // BUS_VOLTAGE_ANG              "VA"                  float
-          data->addValue(BUS_VOLTAGE_ANG, atof(split_line[8].c_str()));
+          if (nstr > 8) data->addValue(BUS_VOLTAGE_ANG, atof(split_line[8].c_str()));
 
           // BUS_OWNER              "IA"                  integer
-          data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
+          if (nstr > 6) data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
 
           // LOAD_PL                "PL"                  float
-          data->addValue(LOAD_PL, atof(split_line[2].c_str()));
+          if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()));
 
           // LOAD_QL                "QL"                  float
-          data->addValue(LOAD_QL, atof(split_line[3].c_str()));
+          if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()));
 
           index++;
           std::getline(input, line);
@@ -445,6 +453,7 @@ class PTI23_parser
 #else
           boost::unordered_map<int, int>::iterator it;
 #endif
+          int nstr = split_line.size();
           it = p_busMap.find(o_idx);
           if (it != p_busMap.end()) {
             l_idx = it->second;
@@ -466,100 +475,96 @@ class PTI23_parser
           p_busData[l_idx]->addValue(GENERATOR_ID, (char*)tag.c_str(), ngen);
 
           // GENERATOR_PG              "PG"                  float
-          p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
+          if (nstr > 2) p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
               ngen);
 
           // GENERATOR_QG              "QG"                  float
-          p_busData[l_idx]->addValue(GENERATOR_QG, atof(split_line[3].c_str()),
+          if (nstr > 3) p_busData[l_idx]->addValue(GENERATOR_QG, atof(split_line[3].c_str()),
               ngen);
 
           // GENERATOR_QMAX              "QT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_QMAX,
+          if (nstr > 4) p_busData[l_idx]->addValue(GENERATOR_QMAX,
               atof(split_line[4].c_str()), ngen);
 
           // GENERATOR_QMIN              "QB"                  float
-          p_busData[l_idx]->addValue(GENERATOR_QMIN,
+          if (nstr > 5) p_busData[l_idx]->addValue(GENERATOR_QMIN,
               atof(split_line[5].c_str()), ngen);
 
           // GENERATOR_VS              "VS"                  float
-          p_busData[l_idx]->addValue(GENERATOR_VS, atof(split_line[6].c_str()),
+          if (nstr > 6) p_busData[l_idx]->addValue(GENERATOR_VS, atof(split_line[6].c_str()),
               ngen);
 
           // GENERATOR_IREG            "IREG"                integer
-          p_busData[l_idx]->addValue(GENERATOR_IREG,
+          if (nstr > 7) p_busData[l_idx]->addValue(GENERATOR_IREG,
               atoi(split_line[7].c_str()), ngen);
 
           // GENERATOR_MBASE           "MBASE"               float
-          p_busData[l_idx]->addValue(GENERATOR_MBASE,
+          if (nstr > 8) p_busData[l_idx]->addValue(GENERATOR_MBASE,
               atof(split_line[8].c_str()), ngen);
 
           // GENERATOR_ZSOURCE                                complex
-          p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
+          if (nstr > 9) p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
               gridpack::ComplexType(atof(split_line[9].c_str()),
                 atof(split_line[10].c_str())), ngen);
 
           // GENERATOR_XTRAN                              complex
-          p_busData[l_idx]->addValue(GENERATOR_XTRAN,
+          if (nstr > 11) p_busData[l_idx]->addValue(GENERATOR_XTRAN,
               gridpack::ComplexType(atof(split_line[11].c_str()),
                 atof(split_line[12].c_str())), ngen);
 
           // GENERATOR_RT              "RT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
+          if (nstr > 11) p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
               ngen);
 
           // GENERATOR_XT              "XT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[12].c_str()),
+          if (nstr > 12) p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[12].c_str()),
               ngen);
 
           // GENERATOR_GTAP              "GTAP"                  float
-          p_busData[l_idx]->addValue(GENERATOR_GTAP,
+          if (nstr > 13) p_busData[l_idx]->addValue(GENERATOR_GTAP,
               atof(split_line[13].c_str()), ngen);
 
           // GENERATOR_STAT              "STAT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_STAT,
+         if (nstr > 14)  p_busData[l_idx]->addValue(GENERATOR_STAT,
               atoi(split_line[14].c_str()), ngen);
 
           // GENERATOR_RMPCT           "RMPCT"               float
-          p_busData[l_idx]->addValue(GENERATOR_RMPCT,
+          if (nstr > 15) p_busData[l_idx]->addValue(GENERATOR_RMPCT,
               atof(split_line[15].c_str()), ngen);
 
           // GENERATOR_PMAX              "PT"                  float
-          p_busData[l_idx]->addValue(GENERATOR_PMAX,
+          if (nstr > 16) p_busData[l_idx]->addValue(GENERATOR_PMAX,
               atof(split_line[16].c_str()), ngen);
 
           // GENERATOR_PMIN              "PB"                  float
-          p_busData[l_idx]->addValue(GENERATOR_PMIN,
+          if (nstr > 17) p_busData[l_idx]->addValue(GENERATOR_PMIN,
               atof(split_line[17].c_str()), ngen);
 
           // Pick up some non-standard values for Dynamic Simulation
-          if (split_line.size() >= 22) {
-            // GENERATOR_REACTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_REACTANCE,
-                atof(split_line[18].c_str()), ngen);
+          // GENERATOR_REACTANCE                             float
+          if (nstr > 18) p_busData[l_idx]->addValue(GENERATOR_REACTANCE,
+              atof(split_line[18].c_str()), ngen);
 
-            // GENERATOR_RESISTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_RESISTANCE,
-                atof(split_line[19].c_str()), ngen);
+          // GENERATOR_RESISTANCE                             float
+          if (nstr > 19) p_busData[l_idx]->addValue(GENERATOR_RESISTANCE,
+              atof(split_line[19].c_str()), ngen);
 
-            // GENERATOR_TRANSIENT_REACTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_TRANSIENT_REACTANCE,
-                atof(split_line[20].c_str()), ngen);
+          // GENERATOR_TRANSIENT_REACTANCE                             float
+          if (nstr > 20) p_busData[l_idx]->addValue(GENERATOR_TRANSIENT_REACTANCE,
+              atof(split_line[20].c_str()), ngen);
 
-            // GENERATOR_SUBTRANSIENT_REACTANCE                             float
-            p_busData[l_idx]->addValue(GENERATOR_SUBTRANSIENT_REACTANCE,
-                atof(split_line[21].c_str()), ngen);
-          }
+          // GENERATOR_SUBTRANSIENT_REACTANCE                             float
+          if (nstr > 21) p_busData[l_idx]->addValue(GENERATOR_SUBTRANSIENT_REACTANCE,
+              atof(split_line[21].c_str()), ngen);
 
           // Pick up some more non-standard values for Dynamic Simulation
-          if (split_line.size() >= 24) {
-            // GENERATOR_INERTIA_CONSTANT_H                           float
-            p_busData[l_idx]->addValue(GENERATOR_INERTIA_CONSTANT_H,
-                atof(split_line[22].c_str()), ngen);
+          // GENERATOR_INERTIA_CONSTANT_H                           float
+          if (nstr > 22) p_busData[l_idx]->addValue(GENERATOR_INERTIA_CONSTANT_H,
+              atof(split_line[22].c_str()), ngen);
 
-            // GENERATOR_DAMPING_COEFFICIENT_0                           float
-            p_busData[l_idx]->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
-                atof(split_line[23].c_str()), ngen);
-          }
+          // GENERATOR_DAMPING_COEFFICIENT_0                           float
+          if (nstr > 23) p_busData[l_idx]->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
+              atof(split_line[23].c_str()), ngen);
 
           // Increment number of generators in data object
           if (ngen == 0) {
@@ -1511,7 +1516,10 @@ class PTI23_parser
        */
       bool test_end(std::string &str) const
       {
-#if 0
+#if 1
+        if (str[0] == '0') {
+          return false;
+        }
         int len = str.length();
         int i=0;
         while (i<len && str[i] == ' ') {
@@ -1521,13 +1529,11 @@ class PTI23_parser
           return true;
         }
         i++;
-        while (i<len && str[i] == ' '){
-          i++;
-        }
-        if (i<len && str[i] == '/') {
+        if (i>=len || str[i] == ' ' || str[i] == '\\') {
           return false;
+        } else {
+          return true;
         }
-        return true;
 #else
         if (str[0] == '0') {
           return false;
