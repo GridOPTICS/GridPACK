@@ -169,7 +169,7 @@ bool gridpack::powerflow::PFBus::vectorSize(int *size) const
     } else {
       return false;
     }
-  } else if (p_mode == S_Cal ){
+  } else if (p_mode == S_Cal){
     *size = 1;
   } else {
     *size = 2;
@@ -247,6 +247,70 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
       return false;
     }
   }
+ }
+
+
+/**
+ * Check QLIM
+ * @return false: violations exist
+ * @return true:  no violations
+ * 
+ */
+bool gridpack::powerflow::PFBus::chkQlim(void)
+{
+//    printf("p_isPV = %d Gen %d exceeds the QMAX limit %f \n", p_isPV, getOriginalIndex(),(p_Qinj-p_Q0)*p_sbase);
+    if (p_isPV) {
+      double qmax, qmin;
+      qmax = 0.0;
+      qmin = 0.0;
+      for (int i=0; i<p_gstatus.size(); i++) {
+        if (p_gstatus[i] == 1) {
+          qmax += p_qmax[i];
+          qmin += p_qmin[i];
+        }
+      }
+      printf(" PV Check: Gen %d =, p_ql = %f, QMAX = %f\n", getOriginalIndex(),p_ql, qmax);
+      std::vector<boost::shared_ptr<BaseComponent> > branches;
+      getNeighborBranches(branches);
+      int size = branches.size();
+      int i;
+      double P, Q, p, q;
+      P = 0.0;
+      Q = 0.0;
+      for (i=0; i<size; i++) {
+        gridpack::powerflow::PFBranch *branch
+          = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+        branch->getPQ(this, &p, &q);
+        P += p;
+        Q += q;
+      }
+
+      printf("Gen %d: Q = %f, p_QL = %f, Q+p_Q0 = %f, QMAX = %f \n", getOriginalIndex(),-Q,p_ql,-Q+p_ql, qmax);  
+//      if (-Q > qmax ) { 
+      if (-Q+p_ql > qmax ) { 
+        printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmax);  
+        p_ql = p_ql+qmax;
+        p_isPV = 0;
+        for (int i=0; i<p_gstatus.size(); i++) {
+          p_gstatus[i] = 0;
+        }
+        return true;
+      //} else if (-Q < qmin) {
+      } else if (-Q+p_ql < qmin) {
+        printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmin);  
+        p_ql = p_ql+qmin;
+        p_isPV = 0;
+        for (int i=0; i<p_gstatus.size(); i++) {
+          p_gstatus[i] = 0;
+        }
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      printf(" PQ Check: bus: %d, p_ql = %f\n", getOriginalIndex(),p_ql);
+      return false;
+    }
 }
 
 /**
@@ -328,7 +392,7 @@ void gridpack::powerflow::PFBus::load(
   p_load = p_load && data->getValue(LOAD_QL, &p_ql);
   bool lgen;
   int i, ngen, gstatus;
-  double pg, qg, vs;
+  double pg, qg, vs,qmax,qmin;
   ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
     for (i=0; i<ngen; i++) {
@@ -337,10 +401,14 @@ void gridpack::powerflow::PFBus::load(
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
       lgen = lgen && data->getValue(GENERATOR_VS, &vs,i);
       lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
+      lgen = lgen && data->getValue(GENERATOR_QMAX, &qmax,i);
+      lgen = lgen && data->getValue(GENERATOR_QMIN, &qmin,i);
       if (lgen) {
         p_pg.push_back(pg);
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
+        p_qmax.push_back(qmax);
+        p_qmin.push_back(qmin);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
           if (itype == 2) p_isPV = true;
@@ -996,7 +1064,7 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
 gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
         std::string tag)
 {
-  gridpack::ComplexType vi, vj, yii, yij, s;
+  gridpack::ComplexType vi, vj, Yii, Yij, s;
   s = ComplexType(0.0,0.0);
   gridpack::powerflow::PFBus *bus1 = 
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
@@ -1004,8 +1072,8 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   vj = bus2->getComplexVoltage();
-  getLineElements(tag,&yii,&yij);
-  s = vi*conj(yii*vi+yij*vj)*p_sbase;
+  getLineElements(tag,&Yii,&Yij);
+  s = vi*conj(Yii*vi+Yij*vj)*p_sbase;
   return s;
 }
 
@@ -1048,15 +1116,16 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     }
     return found;
   } else {
-    gridpack::ComplexType vi, vj, y, s;
-    vi = bus1->getComplexVoltage();
-    vj = bus2->getComplexVoltage();
-    y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-    s = vi*conj(y*(vi-vj));
-    double p = real(s)*p_sbase;
-    double q = imag(s)*p_sbase;
-    sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
-	bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
+    gridpack::ComplexType s;
+    std::vector<std::string> tags = getLineTags();
+    int i;
+    for (i=0; i<p_elems; i++) {
+      s = getComplexPower(tags[i]);
+      double p = real(s);
+      double q = imag(s);
+      sprintf(string, "     %6d      %6d     %s   %12.6f         %12.6f\n",
+	bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q);
+    } 
     return true;
   }
 }

@@ -210,6 +210,12 @@ class PFBus
      */
     bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
+    /**
+     * chkQlim
+     check QLIM violations
+    */
+    bool chkQlim(void);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -228,6 +234,7 @@ class PFBus
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
+    std::vector<double> p_qmax,p_qmin;
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
     double p_pl, p_ql;

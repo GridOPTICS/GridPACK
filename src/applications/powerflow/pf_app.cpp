@@ -286,7 +286,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(128,network);
   branchIO.header("\n   Branch Power Flow\n");
-  branchIO.header("\n        Bus 1       Bus 2            P"
+  branchIO.header("\n        Bus 1       Bus 2   CKT         P"
                   "                    Q\n");
   branchIO.write();
 
