@@ -198,6 +198,104 @@ void MatVecInterface::getMatVecIndices(int *idx, int *jdx) const
   *jdx = p_jdx;
 }
 
+// base implementation for the generalized matrix-vector interface
+
+/**
+ * Constructor
+ */
+GenMatVecInterface::GenMatVecInterface(void)
+{
+}
+
+/**
+ * Destructor
+ */
+GenMatVecInterface::~GenMatVecInterface(void)
+{
+}
+
+/**
+ * Return number of rows in matrix from component
+ * @return number of rows from component
+ */
+int GenMatVecInterface::matrixNumRows() const
+{
+  return 0;
+}
+
+/**
+ * Return number of columns in matrix from component
+ * @return number of columnsows from component
+ */
+int GenMatVecInterface::matrixNumCols() const
+{
+  return 0;
+}
+
+/**
+ * Set row indices corresponding to the rows contributed by this
+ * component
+ * @param irow index of row contributed by this component (e.g. if component
+ * contributes 3 rows then irow is between 0 and 2)
+ * @param idx matrix index of row irow
+ */
+void GenMatVecInterface::matrixSetRowIndex(int irow, int idx)
+{
+}
+
+/**
+ * Set column indices corresponding to the columns contributed by this
+ * component
+ * @param icol index of column contributed by this component (e.g. if component
+ * contributes 3 columns then icol is between 0 and 2)
+ * @param idx matrix index of column icol
+ */
+void GenMatVecInterface::matrixSetColIndex(int icol, int idx)
+{
+}
+
+/**
+ * Get the row index corresponding to the rows contributed by this component
+ * @param irow index of row contributed by this component (e.g. if component
+ * contributes 3 rows then irow is between 0 and 2)
+ * @return matrix index of row irow
+ */
+int GenMatVecInterface::matrixGetRowIndex(int idx)
+{
+  return -1;
+}
+
+/**
+ * Get the column index corresponding to the columns contributed by this component
+ * @param icol index of column contributed by this component (e.g. if component
+ * contributes 3 columns then icol is between 0 and 2)
+ * @return matrix index of column icol
+ */
+int GenMatVecInterface::matrixGetColIndex(int idx)
+{
+  return -1;
+}
+
+/**
+ * Return the number of matrix values contributed by this component
+ * @return number of matrix values
+ */
+int GenMatVecInterface::matrixNumValues() const
+{
+  return 0;
+}
+
+/**
+ * Get a list of matrix values contributed by this component and their
+ * matrix indices
+ * @param values list of matrix element values
+ * @param rows row indices for the matrix elements
+ * @param cols column indices for the matrix elements
+ */
+void GenMatVecInterface::matrixGetValues(ComplexType *values, int *rows, int*cols)
+{
+}
+
 // The base implementation for bus and branch components.
 
 /**

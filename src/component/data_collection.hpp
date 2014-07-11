@@ -6,6 +6,11 @@
 #ifndef _data_collection_h
 #define _data_collection_h
 
+#define OLD_MAP
+
+#ifndef OLD_MAP
+#include <boost/unordered_map.hpp>
+#endif
 #include <map>
 #include <string>
 #include <boost/serialization/map.hpp>
@@ -139,6 +144,7 @@ public:
    */
   void dump(void);
 private:
+#ifdef OLD_MAP
   std::map<std::string, int> p_ints; 
   std::map<std::string, long> p_longs; 
   std::map<std::string, bool> p_bools; 
@@ -146,6 +152,15 @@ private:
   std::map<std::string, float> p_floats; 
   std::map<std::string, double> p_doubles; 
   std::map<std::string, gridpack::ComplexType> p_complexType; 
+#else
+  boost::unordered_map<std::string, int> p_ints; 
+  boost::unordered_map<std::string, long> p_longs; 
+  boost::unordered_map<std::string, bool> p_bools; 
+  boost::unordered_map<std::string, std::string> p_strings; 
+  boost::unordered_map<std::string, float> p_floats; 
+  boost::unordered_map<std::string, double> p_doubles; 
+  boost::unordered_map<std::string, gridpack::ComplexType> p_complexType; 
+#endif
 
 private:
   friend class boost::serialization::access;

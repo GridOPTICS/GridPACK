@@ -174,12 +174,108 @@ class MatVecInterface {
 };
 
 // -------------------------------------------------------------
+//  class GenMatVecInterface:
+//    A general interface for defining matrices generated from
+//    the network that do not follow the mapping of buses to
+//    diagonal blocks and branches to off-diagonal blocks
+// -------------------------------------------------------------
+
+class GenMatVecInterface {
+  public:
+    /**
+     * Constructor
+     */
+    GenMatVecInterface(void);
+
+    /**
+     * Destructor
+     */
+    virtual ~GenMatVecInterface(void);
+
+    /**
+     * Return number of rows in matrix from component
+     * @return number of rows from component
+     */
+    virtual int matrixNumRows() const;
+
+    /**
+     * Return number of columns in matrix from component
+     * @return number of columnsows from component
+     */
+    virtual int matrixNumCols() const;
+
+    /**
+     * Set row indices corresponding to the rows contributed by this
+     * component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @param idx matrix index of row irow
+     */
+    virtual void matrixSetRowIndex(int irow, int idx);
+
+    /**
+     * Set column indices corresponding to the columns contributed by this
+     * component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @param idx matrix index of column icol
+     */
+    virtual void matrixSetColIndex(int icol, int idx);
+
+    /**
+     * Get the row index corresponding to the rows contributed by this component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @return matrix index of row irow
+     */
+    virtual int matrixGetRowIndex(int idx);
+
+    /**
+     * Get the column index corresponding to the columns contributed by this component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @return matrix index of column icol
+     */
+    virtual int matrixGetColIndex(int idx);
+
+    /**
+     * Return the number of matrix values contributed by this component
+     * @return number of matrix values
+     */
+    virtual int matrixNumValues() const;
+
+    /**
+     * Get a list of matrix values contributed by this component and their
+     * matrix indices
+     * @param values list of matrix element values
+     * @param rows row indices for the matrix elements
+     * @param cols column indices for the matrix elements
+     */
+    virtual void matrixGetValues(ComplexType *values, int *rows, int*cols);
+
+  private:
+    std::vector<int> p_row_idx;
+    std::vector<int> p_col_idx;
+
+  friend class boost::serialization::access;
+
+  template<class Archive>
+  void serialize(Archive & ar, const unsigned int version)
+  {
+    ar & p_row_idx
+       & p_col_idx;
+  }
+
+
+};
+
+// -------------------------------------------------------------
 //  class BaseComponent:
 //  This class implements some basic functions that can be
 //  expected from any component on the network.
 // -------------------------------------------------------------
 class BaseComponent
-  : public MatVecInterface {
+  : public MatVecInterface, public GenMatVecInterface {
   public:
     /**
      * Simple constructor
@@ -267,6 +363,7 @@ class BaseComponent
     // p_XCBuf and p_XCBufSize are managed somewhere else; they will
     // have to be initialized
     ar << boost::serialization::base_object<MatVecInterface>(*this)
+       << boost::serialization::base_object<GenMatVecInterface>(*this)
        << p_XCBufSize
        << p_mode;
   }
@@ -276,6 +373,7 @@ class BaseComponent
   void load(Archive & ar, const unsigned int version)
   {
     ar >> boost::serialization::base_object<MatVecInterface>(*this)
+       >> boost::serialization::base_object<GenMatVecInterface>(*this)
        >> p_XCBufSize
        >> p_mode;
   }
@@ -306,7 +404,7 @@ class BaseBusComponent
     /**
      * Add a pointer to the list of buses that a bus is connected to via
      * a branch
-     * @param bus pointer to a branch that is connected to bus
+     * @param bus pointer to a bus that is connected to bus via a branch
      */
     void addBus(const boost::shared_ptr<BaseComponent> & bus);
 
