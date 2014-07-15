@@ -1092,9 +1092,9 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
   gridpack::powerflow::PFBus *bus2 =
     dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+  char buf[128];
   if (signal != NULL && !strcmp(signal,"flow")) {
     gridpack::ComplexType s;
-    char buf[128];
     std::vector<std::string> tags = getLineTags();
     int i;
     bool found = false;
@@ -1119,12 +1119,16 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     gridpack::ComplexType s;
     std::vector<std::string> tags = getLineTags();
     int i;
+    int ilen = 0;
     for (i=0; i<p_elems; i++) {
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
-      sprintf(string, "     %6d      %6d     %s   %12.6f         %12.6f\n",
-	bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q);
+      sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
+          bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q);
+      ilen += strlen(buf);
+      if (ilen<bufsize) sprintf(string,"%s",buf);
+      string += strlen(buf);
     } 
     return true;
   }

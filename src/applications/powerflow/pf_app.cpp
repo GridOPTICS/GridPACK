@@ -15,6 +15,7 @@
  */
 // -------------------------------------------------------------
 
+#if 0
 #include <iostream>
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
@@ -29,6 +30,11 @@
 #include "gridpack/serial_io/serial_io.hpp"
 #include "pf_factory.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
+#else
+#include "gridpack/include/gridpack.hpp"
+#include "pf_app.hpp"
+#include "pf_factory.hpp"
+#endif
 
 
 // Calling program for powerflow application
@@ -91,7 +97,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->stop(t_pti);
 
   // Create serial IO object to export data from buses
-  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
+  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(512,network);
   char ioBuf[128];
 
   sprintf(ioBuf,"\nMaximum number of iterations: %d\n",max_iteration);
@@ -118,17 +124,23 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
-  int t_fact = timer->createCategory("Factory");
-  timer->start(t_fact);
+  int t_load = timer->createCategory("Factory: Load");
+  timer->start(t_load);
   factory.load();
+  timer->stop(t_load);
 
   // set network components using factory
+  int t_setc = timer->createCategory("Factory: Set Components");
+  timer->start(t_setc);
   factory.setComponents();
+  timer->stop(t_setc);
 
   // Set up bus data exchange buffers. Need to decide what data needs to be
   // exchanged
+  int t_setx = timer->createCategory("Factory: Set Exchange");
+  timer->start(t_setx);
   factory.setExchange();
-  timer->stop(t_fact);
+  timer->stop(t_setx);
 
   // Create bus data exchange
   int t_updt = timer->createCategory("Bus Update");
@@ -137,6 +149,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->stop(t_updt);
 
   // set YBus components so that you can create Y matrix
+  int t_fact = timer->createCategory("Factory");
   timer->start(t_fact);
   factory.setYBus();
   timer->stop(t_fact);
@@ -284,7 +297,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   network->updateBuses();
   timer->stop(t_updt);
 
-  gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(128,network);
+  gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(512,network);
   branchIO.header("\n   Branch Power Flow\n");
   branchIO.header("\n        Bus 1       Bus 2   CKT         P"
                   "                    Q\n");
