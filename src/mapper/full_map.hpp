@@ -426,6 +426,7 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
   for (i = 0; i < p_nBuses; i++) {
     jSize = 0;
     status = p_network->getBus(i)->matrixDiagSize(&iSize, &jSize);
+    int isave = iSize;
     if (status) {
       maxrow = 0;
       p_network->getBus(i)->getMatVecIndex(&index);
@@ -463,7 +464,7 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
 #ifdef NZ_PER_ROW
       // Add maxrow entry for each row in block
 //      if (addrow) {
-        for (j=0; j<iSize; j++) {
+        for (j=0; j<isave; j++) {
           nz_per_row.push_back(maxrow);
         }
 //      }
@@ -670,7 +671,7 @@ void setupOffsetArrays()
     p_iDim += itmp[i];
     p_jDim += jtmp[i];
   }
-//  printf("p[%d] (FullMatrixMap) iDim: %d jDim: %d\n",p_me,p_iDim,p_jDim);
+  // printf("p[%d] (FullMatrixMap) iDim: %d jDim: %d\n",p_me,p_iDim,p_jDim);
 
   // Create map array so that offset arrays can be created with a specified
   // distribution
