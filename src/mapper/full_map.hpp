@@ -17,7 +17,7 @@
 #ifndef FULLMATRIXMAP_HPP_
 #define FULLMATRIXMAP_HPP_
 
-#define NZ_PER_ROW
+//#define NZ_PER_ROW
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <ga.h>
@@ -27,7 +27,7 @@
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/math/matrix.hpp>
 
-//#define DBG_CHECK
+#define DBG_CHECK
 
 namespace gridpack {
 namespace mapper {
@@ -103,15 +103,12 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   int t_new, t_bus, t_branch, t_set;
   if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
   if (p_timer) p_timer->start(t_new);
+  GA_Pgroup_sync(p_GAgrp);
   boost::shared_ptr<gridpack::math::Matrix>
-#if 0
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_jDim, p_maxrow));
-#else
 #ifndef NZ_PER_ROW
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
 #else
     Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
-#endif
 #endif
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
@@ -138,6 +135,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 void mapToMatrix(gridpack::math::Matrix &matrix)
 {
   int t_set, t_bus, t_branch;
+  GA_Pgroup_sync(p_GAgrp);
   if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
   if (p_timer) p_timer->start(t_set);
   matrix.zero();
@@ -172,6 +170,7 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void overwriteMatrix(gridpack::math::Matrix &matrix)
 {
+  GA_Pgroup_sync(p_GAgrp);
   loadBusData(matrix,false);
   loadBranchData(matrix,false);
   GA_Pgroup_sync(p_GAgrp);
@@ -195,6 +194,7 @@ void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void incrementMatrix(gridpack::math::Matrix &matrix)
 {
+  GA_Pgroup_sync(p_GAgrp);
   loadBusData(matrix,true);
   loadBranchData(matrix,true);
   GA_Pgroup_sync(p_GAgrp);
@@ -424,7 +424,7 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
   std::vector<int> nz_per_row;
 #endif
   for (i = 0; i < p_nBuses; i++) {
-    jSize = 0;
+//    jSize = 0;
     status = p_network->getBus(i)->matrixDiagSize(&iSize, &jSize);
     int isave = iSize;
     if (status) {

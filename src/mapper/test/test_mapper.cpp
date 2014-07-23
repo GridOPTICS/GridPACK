@@ -13,10 +13,11 @@
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/gen_matrix_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 
-#define XDIM 4
-#define YDIM 4
+#define XDIM 10
+#define YDIM 10
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -74,11 +75,72 @@ class TestBus
     p_val = *values;
   }
 
-  double getValue(){
+  double getValue() {
     return real(p_val);
   }
 
+  int matrixNumRows() {
+    return 1;
+  }
+
+  int matrixNumCols() {
+    return 1;
+  }
+
+  void matrixSetRowIndex(int irow, int idx) {
+    int midx;
+    getMatVecIndex(&midx);
+    p_row_idx = idx;
+  }
+
+  void matrixSetColIndex(int icol, int idx) {
+    p_col_idx = idx;
+  }
+
+  int matrixGetRowIndex(int idx) {
+    return p_row_idx;
+  }
+
+  int matrixGetColIndex(int idx) {
+    return p_col_idx;
+  }
+
+  int matrixNumValues() {
+    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > nghbrs;
+    getNeighborBranches(nghbrs);
+    return nghbrs.size()+1;
+  }
+
+  void matrixGetValues(gridpack::ComplexType *values, int *rows, int *cols) {
+    int i, im, jm, nsize, idx, jdx1, jdx2;
+    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > nghbrs;
+    getNeighborBranches(nghbrs);
+    nsize = nghbrs.size();
+    idx = getGlobalIndex();
+    im = matrixGetRowIndex(0);
+    for (i=0; i<nsize; i++) {
+      jm = nghbrs[i]->matrixGetColIndex(0);
+      rows[i] = im;
+      cols[i] = jm;
+      jdx1 = dynamic_cast<gridpack::component::BaseBranchComponent*>(nghbrs[i].get())
+        ->getBus1GlobalIndex();
+      jdx2 = dynamic_cast<gridpack::component::BaseBranchComponent*>(nghbrs[i].get())
+        ->getBus2GlobalIndex();
+      if (idx == jdx1) {
+        values[i] = static_cast<gridpack::ComplexType>(idx + jdx2);
+      } else {
+        values[i] = static_cast<gridpack::ComplexType>(idx + jdx1);
+      }
+    }
+    values[nsize] = idx;
+    rows[nsize] = im;
+    jm = matrixGetColIndex(0);
+    cols[nsize] = jm;
+  }
+
   gridpack::ComplexType p_val;
+  int p_row_idx;
+  int p_col_idx;
 };
 
 class TestBranch
@@ -141,6 +203,55 @@ class TestBranch
     ret = ret && !bus2->getReferenceBus();
     return ret;
   }
+
+  int matrixNumRows() {
+    return 1;
+  }
+
+  int matrixNumCols() {
+    return 1;
+  }
+
+  void matrixSetRowIndex(int irow, int idx) {
+    p_row_idx = idx;
+  }
+
+  void matrixSetColIndex(int icol, int idx) {
+    p_col_idx = idx;
+  }
+
+  int matrixGetRowIndex(int idx) {
+    return p_row_idx;
+  }
+
+  int matrixGetColIndex(int idx) {
+    return p_col_idx;
+  }
+
+  int matrixNumValues() {
+    return 2;
+  }
+
+  void matrixGetValues(gridpack::ComplexType *values, int *rows, int *cols) {
+    boost::shared_ptr<gridpack::component::BaseComponent> bus;
+    int im, jm, idx, jdx1, jdx2;
+    im = matrixGetRowIndex(0);
+    bus = getBus1();
+    jm = bus->matrixGetColIndex(0);
+    values[0] = static_cast<gridpack::ComplexType>
+      (dynamic_cast<gridpack::component::BaseBusComponent*>(bus.get()) ->getGlobalIndex());
+    rows[0] = im;
+    cols[0] = jm;
+    bus = getBus2();
+    jm = bus->matrixGetColIndex(0);
+    values[1] = static_cast<gridpack::ComplexType>
+      (dynamic_cast<gridpack::component::BaseBusComponent*>(bus.get())->getGlobalIndex());
+    rows[1] = im;
+    cols[1] = jm;
+  }
+
+  int p_row_idx;
+  int p_col_idx;
 };
 
 void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
@@ -237,25 +348,56 @@ void run (const int &me, const int &nprocs)
   ncnt = 0;
   nx = iaxmax - iaxmin + 1;
   ny = iaymax - iaymin + 1;
+  // Use bus_index array to keep track of local index of buses
+  int *bus_index = new int[nx*ny];
   for (j=0; j<ny; j++) {
     iy = j + iaymin;
     for (i=0; i<nx; i++) {
       ix = i + iaxmin;
       n = iy*XDIM + ix;
       n = 2*n;  // Provide original index that is not equal to global index 
-      network->addBus(n);
-      // Set active flag for network buses
-      if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
-        network->setActiveBus(ncnt, true);
+      // Add bus if new bus is attached to at least on local bus (bus is not
+      // located at an interior corner of the grid)
+      bool bus_added = false;
+      if (ix == iaxmax && iy == iaymax) {
+        if (iaxmax == ixmax || iaymax == iymax) {
+          network->addBus(n);
+          bus_added = true;
+        }
+      } else if (ix == iaxmin && iy == iaymax) {
+        if (iaxmin == ixmin || iaymax == iymax) {
+          network->addBus(n);
+          bus_added = true;
+        }
+      } else if (ix == iaxmax && iy == iaymin) {
+        if (iaxmax == ixmax || iaymin == iymin) {
+          network->addBus(n);
+          bus_added = true;
+        }
+      } else if (ix == iaxmin && iy == iaymin) {
+        if (iaxmin == ixmin || iaymin == iymin) {
+          network->addBus(n);
+          bus_added = true;
+        }
       } else {
-        network->setActiveBus(ncnt, false);
+        network->addBus(n);
+        bus_added = true;
       }
-      n = n/2;
-      network->setGlobalBusIndex(ncnt, n);
-      if (ix == 0 && iy == 0) {
-        network->setReferenceBus(ncnt);
+      // Set active flag for network buses
+      if (bus_added) {
+        if (ix >= ixmin && ix <= ixmax && iy >= iymin && iy <= iymax) {
+          network->setActiveBus(ncnt, true);
+        } else {
+          network->setActiveBus(ncnt, false);
+        }
+        n = n/2;
+        network->setGlobalBusIndex(ncnt, n);
+        if (ix == 0 && iy == 0) {
+          network->setReferenceBus(ncnt);
+        }
+        bus_index[j*nx+i] = ncnt;
+        ncnt++;
       }
-      ncnt++;
     }
   }
 
@@ -284,7 +426,9 @@ void run (const int &me, const int &nprocs)
       lx = ix - iaxmin;
       ly = iy - iaymin;
       n1 = ly*(iaxmax-iaxmin+1) + lx;
+      n1 = bus_index[n1];
       n2 = ly*(iaxmax-iaxmin+1) + lx + 1;
+      n2 = bus_index[n2];
       network->setLocalBusIndex1(ncnt,n1);
       network->setLocalBusIndex2(ncnt,n2);
       network->addBranchNeighbor(n1,ncnt);
@@ -321,7 +465,9 @@ void run (const int &me, const int &nprocs)
       lx = ix - iaxmin;
       ly = iy - iaymin;
       n1 = ly*(iaxmax-iaxmin+1) + lx;
+      n1 = bus_index[n1];
       n2 = (ly+1)*(iaxmax-iaxmin+1) + lx;
+      n2 = bus_index[n2];
       network->setLocalBusIndex1(ncnt,n1);
       network->setLocalBusIndex2(ncnt,n2);
       network->addBranchNeighbor(n1,ncnt);
@@ -336,6 +482,7 @@ void run (const int &me, const int &nprocs)
       ncnt++;
     }
   }
+  delete [] bus_index;
 
   // Set up some remaining properties of network and network components so that
   // matrix-vector interface is ready to go
@@ -348,7 +495,6 @@ void run (const int &me, const int &nprocs)
   gridpack::mapper::FullMatrixMap<TestNetwork> mMap(network); 
   boost::shared_ptr<gridpack::math::Matrix> M = mMap.mapToMatrix();
   mMap.mapToMatrix(M);
-
   // Check to see if matrix has correct values
   int one = 1;
   int chk = 0;
@@ -485,6 +631,58 @@ void run (const int &me, const int &nprocs)
       printf("\nError found in bus value\n");
     }
   }
+
+  if (me == 0) {
+    printf("\nTesting general matrix interface\n");
+  }
+  chk = 0;
+  gridpack::mapper::GenMatrixMap<TestNetwork> gMap(network); 
+  boost::shared_ptr<gridpack::math::Matrix> G = gMap.mapToMatrix();
+  int im, jm, nvals, icnt, jdx1, jdx2;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      im = network->getBus(i)->matrixGetRowIndex(0);
+      nvals = network->getBus(i)->matrixNumValues();
+      idx = network->getGlobalBusIndex(i);
+      int rows[nvals];
+      int cols[nvals];
+      gridpack::ComplexType values[nvals];
+      icnt = 0;
+      std::vector<int> nghbrs = network->getConnectedBranches(i);
+      for (j=0; j<nghbrs.size(); j++) {
+        if (network->getActiveBranch(nghbrs[j])) {
+          network->getBranchEndpoints(nghbrs[j],&jdx1,&jdx2);
+          if (i==jdx1) {
+           // jm = network->getBus(jdx2)->matrixGetColIndex(0);
+            jdx = network->getGlobalBusIndex(jdx2);
+          } else {
+           // jm = network->getBus(jdx1)->matrixGetColIndex(0);
+            jdx = network->getGlobalBusIndex(jdx1);
+          }
+          jm = network->getBranch(nghbrs[j])->matrixGetColIndex(0);
+          G->getElement(im,jm,v);
+          if (v != static_cast<gridpack::ComplexType>(idx+jdx)) {
+            chk = 1;
+          }
+        }
+      }
+      G->getElement(im,im,v);
+      if (v != static_cast<gridpack::ComplexType>(idx)) {
+         chk = 1;
+      }
+    }
+  }
+
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nGeneralized matrix values are ok\n");
+    } else {
+      printf("\nError found in generalized matrix value\n");
+    }
+  }
+//  gMap.mapToMatrix(M);
+
 }
 
 main (int argc, char **argv) {
