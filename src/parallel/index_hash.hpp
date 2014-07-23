@@ -44,13 +44,21 @@ public:
   // add key-value pairs to hash map
   void addPairs(std::vector<std::pair<int,int> > &pairs);
 
+  // add key-value pairs to hash map where key is another index pair
+  void addPairs(std::vector<std::pair<std::pair<int,int>,int> > &pairs);
+
   // get values corresponding to a list of keys from the hash map
   void getValues(std::vector<int> &keys, std::vector<int> &values);
+
+  void getValues(std::vector<std::pair<int,int> > &keys, std::vector<int> &values);
 
 private:
 
   // hash function for indices
   int hashValue(int key);
+
+  // hash function for index pairs
+  int pairHashValue(std::pair<int,int> key);
 
   int p_nprocs;
   int p_me;
@@ -58,6 +66,8 @@ private:
   MPI_Comm p_comm;
 
   boost::unordered_map<int, int> p_umap;
+  
+  boost::unordered_map<std::pair<int,int>, int> p_pmap;
 };
 
 
