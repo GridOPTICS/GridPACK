@@ -15,9 +15,10 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/gen_matrix_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/mapper/gen_vector_map.hpp"
 
-#define XDIM 10
-#define YDIM 10
+#define XDIM 4
+#define YDIM 4
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -138,9 +139,52 @@ class TestBus
     cols[nsize] = jm;
   }
 
+  int vectorNumElements() const
+  {
+     return 2;
+  }
+
+  void vectorSetElementIndex(int ielem, int idx)
+  {
+    if (ielem == 0) {
+      p_vec_idx1 = idx;
+    } else {
+      p_vec_idx2 = idx;
+    }
+  }
+
+  void vectorGetElementIndices(int *idx)
+  {
+    idx[0] = p_vec_idx1;
+    idx[1] = p_vec_idx2;
+  }
+
+  void vectorGetElementValues(gridpack::ComplexType *values, int *idx)
+  {
+    vectorGetElementIndices(idx);
+    int index = getGlobalIndex();
+    values[0] = gridpack::ComplexType(static_cast<double>(index),0.0);
+    values[1] = gridpack::ComplexType(static_cast<double>(index+1),0.0);
+  }
+
+  void vectorSetElementValues(gridpack::ComplexType *values)
+  {
+    p_vec1 = values[0];
+    p_vec2 = values[1];
+  }
+
+  void getValues(gridpack::ComplexType *values)
+  {
+    values[0] = p_vec1;
+    values[1] = p_vec2;
+  }
+
   gridpack::ComplexType p_val;
   int p_row_idx;
   int p_col_idx;
+  int p_vec_idx1;
+  int p_vec_idx2;
+  gridpack::ComplexType p_vec1, p_vec2;
 };
 
 class TestBranch
@@ -250,8 +294,43 @@ class TestBranch
     cols[1] = jm;
   }
 
+  int vectorNumElements() const
+  {
+    return 1;
+  }
+
+  void vectorSetElementIndex(int ielem, int idx)
+  {
+    p_vec_idx = idx;
+  }
+
+  void vectorGetElementIndices(int *idx)
+  {
+    idx[0] = p_vec_idx;
+  }
+
+  void vectorGetElementValues(gridpack::ComplexType *values, int *idx)
+  {
+    vectorGetElementIndices(idx);
+    int idx1 = getBus1GlobalIndex();
+    int idx2 = getBus2GlobalIndex();
+    values[0] = gridpack::ComplexType(static_cast<double>(idx1+idx2),0.0);
+  }
+
+  void vectorSetElementValues(gridpack::ComplexType *values)
+  {
+    p_vec_val = values[0];
+  }
+
+  void getValues(gridpack::ComplexType *values)
+  {
+    values[0] = p_vec_val;
+  }
+
   int p_row_idx;
   int p_col_idx;
+  int p_vec_idx;
+  gridpack::ComplexType p_vec_val;
 };
 
 void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
@@ -653,10 +732,8 @@ void run (const int &me, const int &nprocs)
         if (network->getActiveBranch(nghbrs[j])) {
           network->getBranchEndpoints(nghbrs[j],&jdx1,&jdx2);
           if (i==jdx1) {
-           // jm = network->getBus(jdx2)->matrixGetColIndex(0);
             jdx = network->getGlobalBusIndex(jdx2);
           } else {
-           // jm = network->getBus(jdx1)->matrixGetColIndex(0);
             jdx = network->getGlobalBusIndex(jdx1);
           }
           jm = network->getBranch(nghbrs[j])->matrixGetColIndex(0);
@@ -681,7 +758,105 @@ void run (const int &me, const int &nprocs)
       printf("\nError found in generalized matrix value\n");
     }
   }
-//  gMap.mapToMatrix(M);
+
+  if (me == 0) {
+    printf("\nTesting generalized vector interface\n");
+  }
+  gridpack::mapper::GenVectorMap<TestNetwork> gvMap(network); 
+  boost::shared_ptr<gridpack::math::Vector> GV = gvMap.mapToVector();
+
+  // Check to see if vector has correct values
+  chk = 0;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      idx = network->getBus(i)->getGlobalIndex();
+      int indices[2];
+      network->getBus(i)->vectorGetElementIndices(indices);
+      GV->getElement(indices[0],v);
+      if (idx != static_cast<int>(real(v))) {
+        printf("Mismatch found (bus) expected: %d actual: %d\n",
+            idx,static_cast<int>(real(v)));
+        chk = 1;
+      }
+      GV->getElement(indices[1],v);
+      if (idx+1 != static_cast<int>(real(v))) {
+        printf("Mismatch found (bus) expected: %d actual: %d\n",
+            idx+1,static_cast<int>(real(v)));
+        chk = 1;
+      }
+    }
+  }
+  for (i=0; i<nbranch; i++) {
+    if (network->getActiveBranch(i)) {
+      int idx1 = network->getBranch(i)->getBus1GlobalIndex();
+      int idx2 = network->getBranch(i)->getBus2GlobalIndex();
+      int index;
+      network->getBranch(i)->vectorGetElementIndices(&index);
+      GV->getElement(index,v);
+      if (idx1+idx2 != static_cast<int>(real(v))) {
+        printf("Mismatch found (branch) expected: %d actual: %d\n",
+            idx1+idx2,static_cast<int>(real(v)));
+        chk = 1;
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nGeneralized vector elements are ok\n");
+    } else {
+      printf("\nError found in generalized vector elements\n");
+    }
+  }
+
+  if (me == 0) {
+    printf("\nTesting mapToNetwork for general vector\n");
+  }
+
+  // Push values back onto network
+  gvMap.mapToNetwork(GV);
+
+  // Check to see if network components have correct values
+  chk = 0;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      idx = network->getBus(i)->getGlobalIndex();
+      gridpack::ComplexType values[2];
+      network->getBus(i)->getValues(values);
+      if (idx != static_cast<int>(real(values[0]))) {
+        printf("Mismatch found (bus) expected: %d actual: %d\n",
+            idx,static_cast<int>(real(values[0])));
+        chk = 1;
+      }
+      if (idx+1 != static_cast<int>(real(values[1]))) {
+        printf("Mismatch found (bus) expected: %d actual: %d\n",
+            idx+1,static_cast<int>(real(values[1])));
+        chk = 1;
+      }
+    }
+  }
+  for (i=0; i<nbranch; i++) {
+    if (network->getActiveBranch(i)) {
+      int idx1 = network->getBranch(i)->getBus1GlobalIndex();
+      int idx2 = network->getBranch(i)->getBus2GlobalIndex();
+      gridpack::ComplexType value;
+      int index;
+      network->getBranch(i)->getValues(&value);
+      if (idx1+idx2 != static_cast<int>(real(value))) {
+        printf("Mismatch found (branch) expected: %d actual: %d\n",
+            idx1+idx2,static_cast<int>(real(value)));
+        chk = 1;
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nNetwork values are ok\n");
+    } else {
+      printf("\nError found in network value\n");
+    }
+  }
 
 }
 

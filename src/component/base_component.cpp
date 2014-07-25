@@ -296,6 +296,53 @@ void GenMatVecInterface::matrixGetValues(ComplexType *values, int *rows, int*col
 {
 }
 
+/**
+ * Return number of elements in vector from component
+ * @return number of elements contributed from component
+ */
+int GenMatVecInterface::vectorNumElements() const
+{
+  return 0;
+}
+
+/**
+ * Set indices corresponding to the elements contributed by this
+ * component
+ * @param ielem index of element contributed by this component
+ * (e.g. if component contributes 3 elements then ielem is between
+ * 0 and 2)
+ * @param idx vector index of element ielem
+ */
+void GenMatVecInterface::vectorSetElementIndex(int ielem, int idx)
+{
+}
+
+/**
+ * Get list of element indices from component
+ * @param idx list of indices that component maps onto
+ */
+void GenMatVecInterface::vectorGetElementIndices(int *idx)
+{
+}
+
+/**
+ * Get a list of vector values contributed by this component and their
+ * indices
+ * @param values list of vector element values
+ * @param idx indices for the vector elements
+ */
+void GenMatVecInterface::vectorGetElementValues(ComplexType *values, int *idx)
+{
+}
+
+/**
+ * Transfer vector values to component
+ * @param values list of vector element values
+ */
+void GenMatVecInterface::vectorSetElementValues(ComplexType *values)
+{
+}
+ 
 // The base implementation for bus and branch components.
 
 /**

@@ -16,6 +16,7 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/gen_matrix_map.hpp"
+#include "gridpack/mapper/gen_vector_map.hpp"
 #include "gridpack/math/matrix.hpp"
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/math.hpp"

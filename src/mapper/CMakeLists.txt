@@ -69,6 +69,7 @@ install(FILES
   bus_vector_map.hpp
   full_map.hpp
   gen_matrix_map.hpp
+  gen_vector_map.hpp
   DESTINATION include/gridpack/mapper
 )
 

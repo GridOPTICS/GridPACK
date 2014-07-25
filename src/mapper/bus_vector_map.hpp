@@ -138,9 +138,6 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
  */
 void mapToBus(const gridpack::math::Vector &vector)
 {
-  int minVecIndex, maxVecIndex;
-  vector.localIndexRange(minVecIndex, maxVecIndex);
-
   // Assume that row partitioning is working correctly
   int nRows = p_maxRowIndex - p_minRowIndex + 1;
   int *sizes = new int[nRows];

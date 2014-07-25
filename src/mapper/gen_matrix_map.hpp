@@ -63,16 +63,10 @@ GenMatrixMap(boost::shared_ptr<_network> network)
   p_nBuses = p_network->numBuses();
   p_nBranches = p_network->numBranches();
 
-  printf("Got to 1\n");
   getDimensions();
-  printf("Got to 2 p_iDim: %d p_jDim: %d\n",p_iDim,p_jDim);
   setOffsets();
-  printf("Got to 3\n");
   setIndices();
-  printf("Got to 4\n");
   numberNonZeros();
-  printf("Got to 5\n");
-
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -184,8 +178,8 @@ bool isLocalBranch(int idx)
   int jdx1, jdx2;
   p_network->getBranchEndpoints(idx, &jdx1, &jdx2);
   bool check = true;
-  check = check && p_network->getActiveBranch(jdx1);
-  check = check && p_network->getActiveBranch(jdx2);
+  check = check && p_network->getActiveBus(jdx1);
+  check = check && p_network->getActiveBus(jdx2);
   return check;
 }
 
@@ -211,9 +205,9 @@ void getDimensions(void)
   // Get number of rows and columns contributed by each branch
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
-      nval = p_network->getBus(i)->matrixNumRows();
+      nval = p_network->getBranch(i)->matrixNumRows();
       nRows += nval;
-      nval = p_network->getBus(i)->matrixNumCols();
+      nval = p_network->getBranch(i)->matrixNumCols();
       nCols += nval;
     }
   }
@@ -224,7 +218,7 @@ void getDimensions(void)
   }
   sizebuf[2*p_me] = nRows;
   sizebuf[2*p_me+1] = nCols;
-  GA_Igop(sizebuf, 2*p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp, sizebuf, 2*p_nNodes, "+");
   // Get total matrix dimensions and evaluate offsets for processor
   p_iDim = sizebuf[0];
   p_jDim = sizebuf[1];
@@ -247,10 +241,10 @@ void setOffsets(void)
   // Interleave contributions from buses and branches to increase concentration
   // of matrix elements along the diagonal.
   int i,j,jdx,jdx1,jdx2;
-  int i_bus_offsets[p_nBuses];
-  int i_branch_offsets[p_nBranches];
-  int j_bus_offsets[p_nBuses];
-  int j_branch_offsets[p_nBranches];
+  int *i_bus_offsets = new int[p_nBuses];
+  int *i_branch_offsets = new int[p_nBranches];
+  int *j_bus_offsets = new int[p_nBuses];
+  int *j_branch_offsets = new int[p_nBranches];
   for (i=0; i<p_nBuses; i++) {
     i_bus_offsets[i] = 0;
     j_bus_offsets[i] = 0;
@@ -262,6 +256,7 @@ void setOffsets(void)
   int icnt = 0;
   int jcnt = 0;
   int nsize;
+  // Evaluate offsets for individual network components
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       i_bus_offsets[i] = icnt;
@@ -287,28 +282,28 @@ void setOffsets(void)
         } else {
           if (p_network->getActiveBranch(jdx)) {
             i_branch_offsets[jdx] = icnt;
-            icnt += p_network->getBus(i)->matrixNumRows();
+            icnt += p_network->getBranch(i)->matrixNumRows();
             j_branch_offsets[jdx] = jcnt;
-            jcnt += p_network->getBus(i)->matrixNumCols();
+            jcnt += p_network->getBranch(i)->matrixNumCols();
           }
         }
       }
     }
   }
-  // Offsets have been evaluated, now create buffers that can scatter them to
-  // global arrays
+  // Total number of rows and columns from this processor have been evaluated,
+  // now create buffers that can scatter individual offsets to global arrays
   int **i_bus_index = new int*[p_nBuses];
   int **j_bus_index = new int*[p_nBuses];
   int **i_branch_index = new int*[p_nBranches];
   int **j_branch_index = new int*[p_nBranches];
-  int i_bus_index_buf[p_nBuses];
-  int j_bus_index_buf[p_nBuses];
-  int i_branch_index_buf[p_nBranches];
-  int j_branch_index_buf[p_nBranches];
-  int i_bus_value_buf[p_nBuses];
-  int j_bus_value_buf[p_nBuses];
-  int i_branch_value_buf[p_nBranches];
-  int j_branch_value_buf[p_nBranches];
+  int *i_bus_index_buf = new int[p_nBuses];
+  int *j_bus_index_buf = new int[p_nBuses];
+  int *i_branch_index_buf = new int[p_nBranches];
+  int *j_branch_index_buf = new int[p_nBranches];
+  int *i_bus_value_buf = new int[p_nBuses];
+  int *j_bus_value_buf = new int[p_nBuses];
+  int *i_branch_value_buf = new int[p_nBranches];
+  int *j_branch_value_buf = new int[p_nBranches];
   int i_bus_cnt = 0;
   int j_bus_cnt = 0;
   int i_branch_cnt = 0;
@@ -318,14 +313,13 @@ void setOffsets(void)
   int nbus = 0;
   int nbranch = 0;
   for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) nbus++;
-    if (i_bus_offsets[i] > 0) {
+    if (p_network->getActiveBus(i)) {
+      nbus++;
       i_bus_value_buf[i_bus_cnt] = i_bus_offsets[i]+row_offset;
       i_bus_index_buf[i_bus_cnt] = p_network->getGlobalBusIndex(i);
       i_bus_index[i_bus_cnt] = &i_bus_index_buf[i_bus_cnt];
       i_bus_cnt++;
-    }
-    if (j_bus_offsets[i] > 0) {
+
       j_bus_value_buf[j_bus_cnt] = j_bus_offsets[i]+col_offset;
       j_bus_index_buf[j_bus_cnt] = p_network->getGlobalBusIndex(i);
       j_bus_index[j_bus_cnt] = &j_bus_index_buf[j_bus_cnt];
@@ -333,34 +327,37 @@ void setOffsets(void)
     }
   }
   for (i=0; i<p_nBranches; i++) {
-    if (p_network->getActiveBranch(i)) nbranch++;
-    if (i_branch_offsets[i] > 0) {
+    if (p_network->getActiveBranch(i)) {
+      nbranch++;
       i_branch_value_buf[i_branch_cnt] = i_branch_offsets[i]+row_offset;
       i_branch_index_buf[i_branch_cnt] = p_network->getGlobalBranchIndex(i);
       i_branch_index[i_branch_cnt] = &i_branch_index_buf[i_branch_cnt];
       i_branch_cnt++;
-    }
-    if (j_branch_offsets[i] > 0) {
+
       j_branch_value_buf[j_branch_cnt] = j_branch_offsets[i]+col_offset;
       j_branch_index_buf[j_branch_cnt] = p_network->getGlobalBranchIndex(i);
       j_branch_index[j_branch_cnt] = &j_branch_index_buf[j_branch_cnt];
       j_branch_cnt++;
     }
   }
+  delete [] i_bus_offsets;
+  delete [] j_bus_offsets;
+  delete [] i_branch_offsets;
+  delete [] j_branch_offsets;
   // Create global arrays that hold column and row offsets for all buses and
   // branches in the network. First create map array for global arrays
-  int t_busMap[p_nNodes];
-  int t_branchMap[p_nNodes];
+  int *t_busMap = new int[p_nNodes];
+  int *t_branchMap = new int[p_nNodes];
   for (i=0; i<p_nNodes; i++) {
     t_busMap[i] = 0;
     t_branchMap[i] = 0;
   }
   t_busMap[p_me] = nbus;
   t_branchMap[p_me] = nbranch;
-  GA_Igop(t_busMap, p_nNodes, "+");
-  GA_Igop(t_branchMap, p_nNodes, "+");
-  int busMap[p_nNodes];
-  int branchMap[p_nNodes];
+  GA_Pgroup_igop(p_GAgrp, t_busMap, p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp, t_branchMap, p_nNodes, "+");
+  int *busMap = new int[p_nNodes];
+  int *branchMap = new int[p_nNodes];
   busMap[0] = 0;
   branchMap[0] = 0;
   int total_buses = t_busMap[0];
@@ -371,6 +368,8 @@ void setOffsets(void)
     branchMap[i] = branchMap[i-1] + t_branchMap[i-1];
     total_branches += t_branchMap[i];
   }
+  delete [] t_busMap;
+  delete [] t_branchMap;
 
   int one = 1;
   g_bus_row_offsets = GA_Create_handle();
@@ -409,6 +408,9 @@ void setOffsets(void)
   }
   GA_Zero(g_branch_column_offsets);
 
+  delete [] busMap;
+  delete [] branchMap;
+
   // Scatter offsets to global arrays
   NGA_Scatter(g_bus_row_offsets, i_bus_value_buf, i_bus_index, i_bus_cnt);
   NGA_Scatter(g_bus_column_offsets, j_bus_value_buf, j_bus_index, j_bus_cnt);
@@ -419,6 +421,15 @@ void setOffsets(void)
   delete [] j_bus_index;
   delete [] i_branch_index;
   delete [] j_branch_index;
+
+  delete [] i_bus_index_buf;
+  delete [] j_bus_index_buf;
+  delete [] i_branch_index_buf;
+  delete [] j_branch_index_buf;
+  delete [] i_bus_value_buf;
+  delete [] j_bus_value_buf;
+  delete [] i_branch_value_buf;
+  delete [] j_branch_value_buf;
 }
 
 /**
@@ -431,12 +442,12 @@ void setIndices(void)
   // Construct lists of indices that need to be collected
   int **bus_index = new int*[p_nBuses];
   int **branch_index = new int*[p_nBranches];
-  int bus_index_buf[p_nBuses];
-  int branch_index_buf[p_nBranches];
-  int i_bus_value_buf[p_nBuses];
-  int j_bus_value_buf[p_nBuses];
-  int i_branch_value_buf[p_nBranches];
-  int j_branch_value_buf[p_nBranches];
+  int *bus_index_buf = new int[p_nBuses];
+  int *branch_index_buf = new int[p_nBranches];
+  int *i_bus_value_buf = new int[p_nBuses];
+  int *j_bus_value_buf = new int[p_nBuses];
+  int *i_branch_value_buf = new int[p_nBranches];
+  int *j_branch_value_buf = new int[p_nBranches];
   int i, j;
   // Get offsets for all buses and branches;
   for (i=0; i<p_nBuses; i++) {
@@ -447,34 +458,24 @@ void setIndices(void)
     branch_index_buf[i] = p_network->getGlobalBranchIndex(i);
     branch_index[i] = &branch_index_buf[i];
   }
-  printf("(setIndices) Got to 1 p_nBuses: %d p_nBranches: %d\n",p_nBuses,p_nBranches);
   NGA_Gather(g_bus_row_offsets, i_bus_value_buf, bus_index, p_nBuses);
   NGA_Gather(g_bus_column_offsets, j_bus_value_buf, bus_index, p_nBuses);
   NGA_Gather(g_branch_row_offsets, i_branch_value_buf, branch_index, p_nBranches);
   NGA_Gather(g_branch_column_offsets, j_branch_value_buf, branch_index, p_nBranches);
 
   // Offsets are now available. Set indices in all network components
-  printf("(setIndices) Got to 2\n");
   int offset, nrows, ncols, idx;
   for (i=0; i<p_nBuses; i++) {
     nrows = p_network->getBus(i)->matrixNumRows();
-  printf("(setIndices) Got to 2a\n");
     if (nrows > 0) {
-  printf("(setIndices) Got to 2b i: %d\n",i);
       offset = i_bus_value_buf[i];
-  printf("(setIndices) Got to 2g offset: %d\n",offset);
       for (j=0; j<nrows; j++) {
         idx = offset+j;
-  printf("(setIndices) Got to 2h i: %d j: %d, idx: %d\n",i,j,idx);
         p_network->getBus(i)->matrixSetRowIndex(j,idx);
-  printf("(setIndices) Got to 2k\n");
       }
     }
-  printf("(setIndices) Got to 2l\n");
     ncols = p_network->getBus(i)->matrixNumCols();
-  printf("(setIndices) Got to 2c\n");
     if (ncols > 0) {
-  printf("(setIndices) Got to 2d\n");
       offset = j_bus_value_buf[i];
       for (j=0; j<ncols; j++) {
         idx = offset+j;
@@ -482,7 +483,6 @@ void setIndices(void)
       }
     }
   }
-  printf("(setIndices) Got to 3\n");
   for (i=0; i<p_nBranches; i++) {
     nrows = p_network->getBranch(i)->matrixNumRows();
     if (nrows > 0) {
@@ -504,12 +504,19 @@ void setIndices(void)
 
   delete [] bus_index;
   delete [] branch_index;
+
+  delete [] bus_index_buf;
+  delete [] branch_index_buf;
+  delete [] i_bus_value_buf;
+  delete [] j_bus_value_buf;
+  delete [] i_branch_value_buf;
+  delete [] j_branch_value_buf;
+
   // Global arrays are no longer needed so we can get rid of them
   GA_Destroy(g_bus_row_offsets);
   GA_Destroy(g_bus_column_offsets);
   GA_Destroy(g_branch_row_offsets);
   GA_Destroy(g_branch_column_offsets);
-  printf("(setIndices) Got to 4\n");
 }
 
 /**
@@ -518,7 +525,6 @@ void setIndices(void)
 void numberNonZeros(void)
 {
   // Evaluate max and min row indices for this processor
-  printf("(numberNonZeros) Got to 1\n");
   p_minRowIndex = p_row_Offsets[p_me];
   if (p_me < p_nNodes-1) {
     p_maxRowIndex = p_row_Offsets[p_me+1] - 1;
@@ -526,52 +532,56 @@ void numberNonZeros(void)
     p_maxRowIndex = p_iDim-1;
   }
   int dim = p_maxRowIndex - p_minRowIndex + 1;
-  int row_idx_buf[dim];
+  int *row_idx_buf = new int[dim];
   p_nz_per_row = new int[dim];
   int i, j;
   for (i=0; i<dim; i++) {
     row_idx_buf[i] = i+p_minRowIndex;
     p_nz_per_row[i] = 0;
   }
-  printf("(numberNonZeros) Got to 2\n");
+  delete [] row_idx_buf;
   int nvals;
   p_maxValues = 0;
   for (i=0; i<p_nBuses; i++) {
-    nvals = p_network->getBus(i)->matrixNumValues();
-    if (nvals > p_maxValues) p_maxValues = nvals;
-    if (nvals > 0) {
-      gridpack::ComplexType values[nvals];
-      int rows[nvals];
-      int cols[nvals];
-      p_network->getBus(i)->matrixGetValues(values, rows, cols);
-      for (j=0; j<nvals; j++) {
-        if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
-          p_nz_per_row[rows[j]-p_minRowIndex]++;
+    if (p_network->getActiveBus(i)) {
+      nvals = p_network->getBus(i)->matrixNumValues();
+      if (nvals > p_maxValues) p_maxValues = nvals;
+      if (nvals > 0) {
+        gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
+        int *rows = new int[nvals];
+        int *cols = new int[nvals];
+        p_network->getBus(i)->matrixGetValues(values, rows, cols);
+        for (j=0; j<nvals; j++) {
+          if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+            p_nz_per_row[rows[j]-p_minRowIndex]++;
+          }
         }
+        delete [] rows;
+        delete [] cols;
+        delete [] values;
       }
     }
   }
-  printf("(numberNonZeros) Got to 3\n");
   for (i=0; i<p_nBranches; i++) {
-    nvals = p_network->getBranch(i)->matrixNumValues();
-    if (nvals > p_maxValues) p_maxValues = nvals;
-  printf("(numberNonZeros) Got to 3a\n");
-    if (nvals > 0) {
-      gridpack::ComplexType values[nvals];
-      int rows[nvals];
-      int cols[nvals];
-  printf("(numberNonZeros) Got to 3b i: %d nvals: %d\n",i,nvals);
-      p_network->getBranch(i)->matrixGetValues(values, rows, cols);
-  printf("(numberNonZeros) Got to 3c\n");
-      for (j=0; j<nvals; j++) {
-        if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
-          p_nz_per_row[rows[j]-p_minRowIndex]++;
+    if (p_network->getActiveBranch(i)) {
+      nvals = p_network->getBranch(i)->matrixNumValues();
+      if (nvals > p_maxValues) p_maxValues = nvals;
+      if (nvals > 0) {
+        gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
+        int *rows = new int[nvals];
+        int *cols = new int[nvals];
+        p_network->getBranch(i)->matrixGetValues(values, rows, cols);
+        for (j=0; j<nvals; j++) {
+          if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+            p_nz_per_row[rows[j]-p_minRowIndex]++;
+          }
         }
+        delete [] rows;
+        delete [] cols;
+        delete [] values;
       }
-  printf("(numberNonZeros) Got to 3d\n");
     }
   }
-  printf("(numberNonZeros) Got to 4\n");
 }
 
 /**
@@ -582,9 +592,9 @@ void numberNonZeros(void)
 void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 {
   int i, j, nvals;
-  ComplexType values[p_maxValues];
-  int rows[p_maxValues];
-  int cols[p_maxValues];
+  ComplexType *values = new ComplexType[p_maxValues];
+  int *rows = new int[p_maxValues];
+  int *cols = new int[p_maxValues];
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       nvals = p_network->getBus(i)->matrixNumValues();
@@ -598,6 +608,9 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
       }
     }
   }
+  delete [] values;
+  delete [] rows;
+  delete [] cols;
 }
 
 /**
@@ -608,9 +621,9 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 {
   int i, j, nvals;
-  ComplexType values[p_maxValues];
-  int rows[p_maxValues];
-  int cols[p_maxValues];
+  ComplexType *values = new ComplexType[p_maxValues];
+  int *rows = new int[p_maxValues];
+  int *cols = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
       nvals = p_network->getBranch(i)->matrixNumValues();
@@ -626,6 +639,9 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
       }
     }
   }
+  delete [] values;
+  delete [] rows;
+  delete [] cols;
 }
 
     // Configuration information
