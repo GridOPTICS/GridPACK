@@ -17,8 +17,8 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/gen_vector_map.hpp"
 
-#define XDIM 4
-#define YDIM 4
+#define XDIM 100
+#define YDIM 100
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
