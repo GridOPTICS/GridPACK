@@ -271,6 +271,35 @@ class PTI23_parser
         return clean_tag;
       }
 
+      // Tokenize a string on blanks, but ignore blanks within a text string
+      // delimited by single quotes
+      std::vector<std::string> blankTokenizer(std::string input)
+      {
+        std::vector<std::string> ret;
+        std::string line = input;
+        int ntok1 = line.find_first_not_of(' ',0);
+        int ntok2 = ntok1;
+        while (ntok1 != std::string::npos) {
+          bool quote = false;
+          if (line[ntok1] != '\'') {
+            ntok2 = line.find(' ',ntok1);
+          } else {
+            bool quote = true;
+            ntok2 = line.find('\'',ntok1);
+          }
+          if (ntok2 == std::string::npos) ntok2 = line.length();
+          if (quote) {
+            if (line[ntok2-1] == '\'') {
+              ret.push_back(line.substr(ntok1,ntok2-ntok1));
+            }
+          } else {
+            ret.push_back(line.substr(ntok1,ntok2-ntok1));
+          }
+          ntok1 = line.find_first_not_of(' ',0);
+          ntok2 = ntok1;
+        }
+      }
+
       void find_case(std::ifstream & input)
       {
   //      data_set                                           case_set;

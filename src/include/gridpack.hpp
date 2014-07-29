@@ -32,6 +32,7 @@
 #include "gridpack/parallel/shuffler.hpp"
 #include "gridpack/parallel/task_manager.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/hash_distr.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/timer/coarse_timer.hpp"

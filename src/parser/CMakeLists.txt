@@ -81,5 +81,6 @@ add_test(test_parser_serial test_parser)
 install(FILES 
   dictionary.hpp
   PTI23_parser.hpp
+  hash_distr.hpp
   DESTINATION include/gridpack/parser
 )
