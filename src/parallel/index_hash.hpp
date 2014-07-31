@@ -41,23 +41,40 @@ public:
   // Default destructor
   ~GlobalIndexHashMap(void);
 
-  // add key-value pairs to hash map
+  // add key-value pairs to hash map where key is singe integer
+  // @param pairs list of key-value pairs where both keys and values are
+  //              integers
   void addPairs(std::vector<std::pair<int,int> > &pairs);
 
-  // add key-value pairs to hash map where key is another index pair
+  // add key-value pairs to hash map where key is another index pair of integers
+  // @param pairs list of key-value pairs where key is a pair of integers and
+  //              value is a single integer
   void addPairs(std::vector<std::pair<std::pair<int,int>,int> > &pairs);
 
-  // get values corresponding to a list of keys from the hash map
+  // get values corresponding to a list of keys from the hash map where key is a
+  // single integer
+  // @param keys list of integer keys
+  // @param values returned list of values corresponding to the list of keys
   void getValues(std::vector<int> &keys, std::vector<int> &values);
 
+  // get values corresponding to a list of keys from the hash map where key is a
+  // pair of integers
+  // @param keys list of integer-pair keys
+  // @param values returned list of values corresponding to the list of keys
   void getValues(std::vector<std::pair<int,int> > &keys, std::vector<int> &values);
 
 private:
 
-  // hash function for indices
+  // hash function for indices. Maps the value of key into the interval
+  // [0,p_nprocs-1] where p_nprocs is the total number of processors
+  // @param key input value of key
+  // @return number between 0 and p_nprocs-1
   int hashValue(int key);
 
-  // hash function for index pairs
+  // hash function for index pairs. Maps the value of key into the interval
+  // [0,p_nprocs-1] where p_nprocs is the total number of processors
+  // @param key input value of key
+  // @return number between 0 and nprocs-1
   int pairHashValue(std::pair<int,int> key);
 
   int p_nprocs;
