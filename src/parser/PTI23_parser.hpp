@@ -115,7 +115,7 @@ class PTI23_parser
           // isn't
           bool parsed = true;
           std::string oldline;
-          find_loads(input,oldline,parsed);
+//          find_loads(input,oldline,parsed);
           find_generators(input,oldline,parsed);
           find_branches(input);
           find_transformer(input);

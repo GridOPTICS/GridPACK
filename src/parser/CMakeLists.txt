@@ -14,13 +14,24 @@
 # -------------------------------------------------------------
 
 set(target_libraries
-    gridpack_parallel
-    gridpack_timer
-    gridpack_configuration
-    gridpack_components
     ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
+
+if (PARMETIS_FOUND)
+  include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
+  set(target_libraries 
+    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
+    ${target_libraries}
+    )
+endif()
+
+set(target_libraries
+    gridpack_partition
+    gridpack_components
+    gridpack_parallel
+    gridpack_timer
+    ${target_libraries})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -28,11 +39,14 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 # -------------------------------------------------------------
-# TEST: greetings
-# A simple MPI program
+# TEST: parser_test
+# A simple program to check input functionality
 # -------------------------------------------------------------
-add_executable(test_parser test/PTI23_test.cpp)
-target_link_libraries(test_parser ${target_libraries})
+#add_executable(PTI23_test test/PTI23_test.cpp)
+#target_link_libraries(PTI23_test ${target_libraries})
+
+add_executable(parser_test test/parser_test.cpp)
+target_link_libraries(parser_test ${target_libraries})
 
 add_custom_target(test_parser_input
 
@@ -41,14 +55,20 @@ add_custom_target(test_parser_input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/parser_data.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/test/test.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/parser_data.raw
   ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
 )
-add_dependencies(test_parser test_parser_input)
+add_dependencies(parser_test test_parser_input)
+#add_dependencies(PTI23_test test_parser_input)
 
 add_test(test_parser_serial test_parser)
 

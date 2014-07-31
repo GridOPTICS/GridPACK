@@ -21,7 +21,6 @@
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/linear_solver.hpp"
-#include "gridpack/network/base_network.hpp"
 #include "gridpack/parallel/communicator.hpp"
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/parallel/environment.hpp"

@@ -111,21 +111,22 @@ public:
     int g_type = NGA_Register_type(p_size_bus_data);
     int one = 1;
     int totalBuses = p_network->totalBuses();
-    GA_Set_data(g_bus,one,totalBuses,g_type);
+    GA_Set_data(g_bus,one,&totalBuses,g_type);
     GA_Set_pgroup(g_bus,p_GAgrp);
     GA_Allocate(g_bus);
+    NGA_Deregister_type(g_type);
 
     // initialize all data pairs in global array to false
     int i, nsize, lo, hi, ld;
     int me = GA_Nodeid();
     bus_data_pair *list;
     NGA_Distribution(g_bus,me,&lo,&hi);
-    NGA_Access(g_bus,&lo,&hi,&list,&ld);
     nsize = hi - lo + 1;
+    NGA_Access(g_bus,&lo,&hi,&list,&ld);
     for (i=0; i<nsize; i++) {
-      list[i]->flag = false;
+      list[i].flag = false;
     }
-    NGA_Release(g_bus,lo,hi);
+    NGA_Release(g_bus,&lo,&hi);
 
     // Copy indices and values to local arrays
     nsize = values.size();
@@ -162,15 +163,15 @@ public:
     }
 
     // Gather data to local buffers
-    NGA_Gather(g_bus,values_buf,idx,nsize);
+    NGA_Gather(g_bus,values_buf,idx,icnt);
 
     // Copy data back to vectors
     icnt = 0;
     for (i=0; i<nsize; i++) {
       if (p_network->getActiveBus(i)) {
-        if (values[icnt].flag) {
+        if (values_buf[icnt].flag) {
           keys.push_back(i);
-          values.push_back(values_buf[i].data);
+          values.push_back(values_buf[icnt].data);
         }
         icnt++;
       }
@@ -201,9 +202,10 @@ public:
     int g_type = NGA_Register_type(p_size_branch_data);
     int one = 1;
     int totalBranches = p_network->totalBranches();
-    GA_Set_data(g_branch,one,totalBranches,g_type);
+    GA_Set_data(g_branch,one,&totalBranches,g_type);
     GA_Set_pgroup(g_branch,p_GAgrp);
     GA_Allocate(g_branch);
+    NGA_Deregister_type(g_type);
 
     // initialize all data pairs in global array to false
     int i, nsize, lo, hi, ld;
@@ -213,9 +215,9 @@ public:
     NGA_Access(g_branch,&lo,&hi,&list,&ld);
     nsize = hi - lo + 1;
     for (i=0; i<nsize; i++) {
-      list[i]->flag = false;
+      list[i].flag = false;
     }
-    NGA_Release(g_branch,lo,hi);
+    NGA_Release(g_branch,&lo,&hi);
 
     // Copy keys and values to local arrays
     nsize = values.size();
@@ -252,16 +254,15 @@ public:
     }
 
     // Gather data to local buffers
-    NGA_Gather(g_branch,values_buf,idx,nsize);
-    GA_Pgroup_sync(p_GAgrp);
+    NGA_Gather(g_branch,values_buf,idx,icnt);
 
     // Copy data back to vectors
     icnt = 0;
     for (i=0; i<nsize; i++) {
       if (p_network->getActiveBranch(i)) {
-        if (values[icnt].flag) {
+        if (values_buf[icnt].flag) {
           branch_ids.push_back(i);
-          values.push_back(values_buf[i].data);
+          values.push_back(values_buf[icnt].data);
         }
         icnt++;
       }
