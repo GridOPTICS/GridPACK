@@ -42,6 +42,25 @@ add_executable(se.x
 
 target_link_libraries(se.x ${target_libraries})
 
+add_custom_target(se.x.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.txt
+)
 
 # -------------------------------------------------------------
 # TEST: pf_network_test
