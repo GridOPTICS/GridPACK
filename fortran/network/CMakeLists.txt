@@ -12,9 +12,8 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 
 add_library(gridpackf_network OBJECT
-  fortran_network.cpp
-  fortran_network_wrap.F90
-  network.F90
+  network_c.cpp
+  network_f.F90
 )
 
 #add_executable(hello_parallel
