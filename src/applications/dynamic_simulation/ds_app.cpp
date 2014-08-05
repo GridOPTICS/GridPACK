@@ -91,6 +91,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
   parser.parse(filename.c_str());
+  cursor = config->getCursor("Configuration.Dynamic_simulation");
+  filename = cursor->get("generatorParameters","");
+  if (filename.size() > 0) parser.parse(filename.c_str());
   timer->stop(t_setup);
 
   int t_part = timer->createCategory("Partition Network");

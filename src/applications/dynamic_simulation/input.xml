@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Dynamic_simulation>
-    <networkConfiguration> SJin_3g9b.raw </networkConfiguration>
+    <networkConfiguration> IEEE_145bus_v23_PSLF.raw </networkConfiguration>
+    <generatorParameters>IEEE_145b_classical_model.dyr</generatorParameters>
     <simulationTime>0.1</simulationTime>
     <timeStep>0.01</timeStep>
     <faultEvents>
