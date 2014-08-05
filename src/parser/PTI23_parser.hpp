@@ -48,7 +48,7 @@ class PTI23_parser
    * of network configuration file (must be child of network::BaseNetwork<>)
    */
   PTI23_parser(boost::shared_ptr<_network> network)
-    : p_network(network)
+    : p_network(network), p_configExists(false)
   { }
 
       /**
@@ -70,13 +70,19 @@ class PTI23_parser
         p_timer->configTimer(false);
         int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
         p_timer->start(t_total);
-        getCase(fileName);
-        //brdcst_data();
-        createNetwork();
+        std::string ext = getExtension(fileName);
+        if (ext == "raw") {
+          getCase(fileName);
+          //brdcst_data();
+          createNetwork();
+        } else if (ext == "dyr") {
+          getDS(fileName);
+        }
         p_timer->stop(t_total);
         p_timer->configTimer(true);
       }
 
+    protected:
       /*
        * A case is the collection of all data associated with a PTI23 file.
        * Each case is a a vector of data_set objects the contain all the data
@@ -228,6 +234,8 @@ class PTI23_parser
           p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
           p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
         }
+        p_configExists = true;
+        printf("Number of buses: %d\n",p_network->numBuses());
 #if 0
         // debug
         printf("Number of buses: %d\n",numBus);
@@ -245,7 +253,39 @@ class PTI23_parser
         p_branchData.clear();
         p_timer->stop(t_create);
       }
-    protected:
+
+      /**
+       * This routine opens up a .dyr file with parameters for dynamic
+       * simulation. It assumes that a .raw file has already been parsed
+       */
+      void getDS(const std::string & fileName)
+      {
+
+        if (!p_configExists) return;
+        int t_ds = p_timer->createCategory("Parser:getDS");
+        p_timer->start(t_ds);
+        int me(p_network->communicator().rank());
+
+        if (me == 0) {
+          std::ifstream            input;
+          input.open(fileName.c_str());
+          if (!input.is_open()) {
+            p_timer->stop(t_ds);
+            return;
+          }
+          find_ds_par(input);
+          input.close();
+        }
+        p_timer->stop(t_ds);
+#if 0
+        int i;
+        printf("BUS data size: %d\n",p_busData.size());
+        for (i=0; i<p_network->numBuses(); i++) {
+          printf("Dumping bus: %d\n",i);
+          p_network->getBusData(i)->dump();
+        }
+#endif
+      }
 
       // Clean up 2 character tags so that single quotes are removed and single
       // character tags are right-justified
@@ -253,7 +293,8 @@ class PTI23_parser
       {
         std::string tag = string;
         // Find and remove single quotes
-        int ntok1 = tag.find_first_not_of('\'',0);
+        int ntok1 = tag.find('\'',0);
+        ntok1 = tag.find_first_not_of('\'',ntok1);
         int ntok2 = tag.find('\'',ntok1);
         if (ntok2 == std::string::npos) ntok2 = tag.length();
         std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
@@ -298,6 +339,29 @@ class PTI23_parser
           ntok1 = line.find_first_not_of(' ',0);
           ntok2 = ntok1;
         }
+      }
+
+      // Extract extension from file name and convert it to lower case
+      std::string getExtension(const std::string file)
+      {
+        std::string ret;
+        std::string line = file;
+        int ntok1 = line.find('.',0);
+        if (ntok1 == std::string::npos) return ret;
+        ntok1++;
+        int ntok2 = line.find(' ',ntok1);
+        if (ntok2 == std::string::npos) ntok2 = line.size();
+        // get extension
+        ret = line.substr(ntok1,ntok2-ntok1);
+        // convert all characters to lower case 
+        int size = ret.size();
+        int i;
+        for (i=0; i<size; i++) {
+          if (isalpha(ret[i])) {
+            ret[i] = tolower(ret[i]);
+          }
+        }
+        return ret;
       }
 
       void find_case(std::ifstream & input)
@@ -618,6 +682,95 @@ class PTI23_parser
           }
 
           std::getline(input, line);
+        }
+      }
+
+      void find_ds_par(std::ifstream & input)
+      {
+        std::string          line;
+        gridpack::component::DataCollection *data;
+        while(std::getline(input,line)) {
+          std::vector<std::string>  split_line;
+          boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+
+          // GENERATOR_BUSNUMBER               "I"                   integer
+          int l_idx, o_idx;
+          o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
+          std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
+          int nstr = split_line.size();
+          if (split_line[nstr-1] == "\\") nstr--;
+          it = p_busMap.find(o_idx);
+          if (it != p_busMap.end()) {
+            l_idx = it->second;
+          } else {
+            continue;
+          }
+          data = dynamic_cast<gridpack::component::DataCollection*>
+            (p_network->getBusData(l_idx).get());
+
+          // Find out how many generators are already on bus
+          int ngen;
+          if (!data->getValue(GENERATOR_NUMBER, &ngen)) continue;
+          // Identify index of generator to which this data applies
+          int g_id = -1;
+          // Clean up 2 character tag for generator ID
+          std::string tag = clean2Char(split_line[2]);
+          int i;
+          for (i=0; i<ngen; i++) {
+            std::string t_id;
+            data->getValue(GENERATOR_ID,&t_id,i);
+            if (tag == t_id) {
+              g_id = i;
+              break;
+            }
+          }
+          if (g_id == -1) continue;
+
+          std::string sval;
+          double rval;
+          // GENERATOR_MODEL              "MODEL"                  integer
+          if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+            data->addValue(GENERATOR_MODEL, (char*)split_line[1].c_str(), g_id);
+          } else {
+            data->setValue(GENERATOR_MODEL, (char*)split_line[1].c_str(), g_id);
+          }
+
+          // GENERATOR_INERTIA_CONSTANT_H                           float
+          if (nstr > 3) {
+            if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H,&rval,g_id)) {
+              data->addValue(GENERATOR_INERTIA_CONSTANT_H,
+                  atof(split_line[3].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_INERTIA_CONSTANT_H,
+                  atof(split_line[3].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_DAMPING_COEFFICIENT_0                           float
+          if (nstr > 4) {
+            if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&rval,g_id)) {
+              data->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
+                  atof(split_line[4].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_DAMPING_COEFFICIENT_0,
+                  atof(split_line[4].c_str()), g_id);
+            }
+          }
+
+          // GENERATOR_TRANSIENT_REACTANCE                             float
+          if (nstr > 5) {
+            if (!data->getValue(GENERATOR_TRANSIENT_REACTANCE,&rval,g_id)) {
+              data->addValue(GENERATOR_TRANSIENT_REACTANCE,
+                  atof(split_line[5].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_TRANSIENT_REACTANCE,
+                  atof(split_line[5].c_str()), g_id);
+            }
+          }
         }
       }
 
@@ -1636,6 +1789,8 @@ class PTI23_parser
        * data set and each data set is a
        */
       boost::shared_ptr<_network> p_network;
+
+      bool p_configExists;
 
       // Vector of bus data objects
       std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_busData;

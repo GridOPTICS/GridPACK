@@ -372,6 +372,13 @@
  */
 #define GENERATOR_DAMPING_COEFFICIENT_0 "GENERATOR_DAMPING_COEFFICENT_0"
 
+/**
+ * Non-blank alphanumeric string to identify model being used for generator	
+ * type: string
+ * indexed
+ */
+#define GENERATOR_MODEL "GENERATOR_MODEL"
+
 // BRANCH DATA
 /**
  * Global index used to sort branches into a fixed order
