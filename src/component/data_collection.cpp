@@ -64,7 +64,7 @@ void gridpack::component::DataCollection::addValue(char *name, char *value)
 {
   std::string str = name;
   std::string val = value;
-  p_strings.insert(std::pair<std::string, std::string>(str,value));
+  p_strings.insert(std::pair<std::string, std::string>(str,val));
 }
 
 void gridpack::component::DataCollection::addValue(char *name, float value)
@@ -135,7 +135,7 @@ void gridpack::component::DataCollection::addValue(char *name, char *value,
   sprintf(buf,"%d",idx);
   str.append(buf);
   std::string val = value;
-  p_strings.insert(std::pair<std::string, std::string>(str,value));
+  p_strings.insert(std::pair<std::string, std::string>(str,val));
 }
 
 void gridpack::component::DataCollection::addValue(char *name, float value,
