@@ -24,10 +24,13 @@ if [ $host == "flophouse" ]; then
     export CXXFLAGS
     FC=/usr/bin/gfortran44
     export FC
+    FCFLAGS="-pthread"
+    export FCFLAGS
 
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
     cmake -Wdev --debug-trycompile \
         -D CLASS_WORD:STRING="TYPE" \
+        -D CMAKE_Fortran_FLAGS:STRING="-pthread" \
         -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..

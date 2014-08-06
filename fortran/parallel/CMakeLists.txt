@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May 12, 2014 by William A. Perkins
-# Last Change: 2014-05-15 09:14:52 d3g096
+# Last Change: 2014-08-06 13:54:54 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpackf_parallel OBJECT
@@ -23,3 +23,5 @@ target_link_libraries(hello_parallel
   ${GRIDPACK_LIBS}
 )
 
+add_executable(mpitest mpitest.F90)
+target_link_libraries(mpitest ${MPI_Fortran_LIBRARIES})

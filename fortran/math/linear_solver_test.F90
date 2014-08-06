@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 29, 2014 by William A. Perkins
-! Last Change: 2014-05-29 14:32:57 d3g096
+! Last Change: 2014-08-06 13:45:34 d3g096
 ! ----------------------------------------------------------------
 
 ! ----------------------------------------------------------------
@@ -124,6 +124,19 @@ PROGRAM linear_solver_test
 
   INTEGER :: me, nproc
   INTEGER :: imax, jmax, global_size, local_size
+
+  ! This is needed w/ GNU Fortran 4.8 for some reason?
+  INTERFACE
+     SUBROUTINE assemble(imax, jmax, a, b)
+       USE iso_c_binding
+       USE gridpack_parallel
+       USE gridpack_math
+       IMPLICIT NONE
+       INTEGER, INTENT(IN) :: imax, jmax
+       CLASS (matrix), INTENT(INOUT) :: a
+       CLASS (vector), INTENT(INOUT) :: b
+     END SUBROUTINE assemble
+  END INTERFACE
 
   CALL gridpack_initialize_parallel(ma_stack, ma_heap)
   CALL gridpack_initialize_math()

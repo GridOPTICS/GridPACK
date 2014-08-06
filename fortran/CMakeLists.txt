@@ -11,10 +11,10 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2014-05-22 06:55:16 d3g096
+# Last Change: 2014-08-06 13:29:38 d3g096
 # -------------------------------------------------------------
 
-cmake_minimum_required(VERSION 2.8.8)
+cmake_minimum_required(VERSION 2.8.10)
 
 if (NOT GRIDPACK_DIR)
   message(FATAL_ERROR
@@ -34,6 +34,7 @@ gridpack_setup()
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
+add_definitions(${MPI_Fortran_COMPILE_FLAGS})
 include_directories(AFTER ${MPI_Fortran_INCLUDE_PATH})
 
 # -------------------------------------------------------------

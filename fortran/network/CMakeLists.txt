@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created August 5, 2014 by Bruce Palmer
-# Last Change: 2014-08-05 09:14:52 d3g293
+# Last Change: 2014-08-06 13:53:21 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -24,6 +24,7 @@ add_executable(fortran_network_test
 )
 
 target_link_libraries(fortran_network_test
+  ${MPI_Fortran_LIBRARIES}
   ${GRIDPACK_LIBS}
 )
 
