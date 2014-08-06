@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-02-19 12:02:15 d3g096
+ * @date   2014-07-01 13:38:11 d3g096
  * 
  * @brief  
  * 
@@ -78,7 +78,7 @@ assemble(const int imax, const int jmax,
           bp += 0.0;
           ap -= 0.0;
         } else {
-          as = (k/dx)*(dx*t);
+          as = (k/dy)*(dx*t);
         }
 
         if (j == jmax - 1) {      /* constant temperature (100C) north boundary */
@@ -86,7 +86,7 @@ assemble(const int imax, const int jmax,
           bp += 2*k/dy*(dy*t)*100.0;
           ap -= -2*k/dy*(dy*t);
         } else {
-          an = (k/dx)*(dx*t);
+          an = (k/dy)*(dx*t);
         }
 
         if (i == 0) {             /* constant flux (500kw/m2) west boundary */
@@ -94,7 +94,7 @@ assemble(const int imax, const int jmax,
           bp += 500000.0*dy*t;
           ap -= 0.0;
         } else {
-          aw = (k/dx)*(dx*t);
+          aw = (k/dx)*(dy*t);
         }
 
         if (i == imax - 1) {      /* insulated east boundary */
@@ -102,7 +102,7 @@ assemble(const int imax, const int jmax,
           bp += 0.0; 
           ap -= 0.0;
         } else {
-          ae = (k/dx)*(dx*t);
+          ae = (k/dx)*(dy*t);
         }
         
         ap += as + an + aw + ae;

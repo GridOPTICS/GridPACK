@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2014-03-19 09:44:41 d3g096
+# Last Change: 2014-07-01 13:40:52 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -179,7 +179,7 @@ add_executable(linear_solver_test test/linear_solver_test.cpp)
 target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(linear_solver linear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(linear_solver_test petscrc math_test_input)
+   add_dependencies(linear_solver_test math_test_input)
 endif()
 
 # -------------------------------------------------------------
@@ -189,7 +189,7 @@ add_executable(nonlinear_solver_test test/nonlinear_solver_test.cpp)
 target_link_libraries(nonlinear_solver_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(nonlinear_solver nonlinear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(nonlinear_solver_test petscrc math_test_input)
+   add_dependencies(nonlinear_solver_test math_test_input)
 endif()
 
 # -------------------------------------------------------------
@@ -199,7 +199,7 @@ add_executable(dae_solver_test test/dae_solver_test.cpp)
 target_link_libraries(dae_solver_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(dae_solver dae_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(dae_solver_test petscrc math_test_input)
+   add_dependencies(dae_solver_test math_test_input)
 endif()
 
   

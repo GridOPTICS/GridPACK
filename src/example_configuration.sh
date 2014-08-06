@@ -54,7 +54,7 @@ elif [ $host == "pe10900" ]; then
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
-        -D CMAKE_INSTALL_PREFIX:PATH="/home/d3g096/tmp/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
 elif [ $host == "olympus.local" ]; then
