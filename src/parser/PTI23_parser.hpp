@@ -288,14 +288,36 @@ class PTI23_parser
       }
 
       // Clean up 2 character tags so that single quotes are removed and single
-      // character tags are right-justified
+      // character tags are right-justified. These tags can be delimited by a
+      // pair of single quotes, a pair of double quotes, or no quotes
       std::string clean2Char(std::string string)
       {
         std::string tag = string;
-        // Find and remove single quotes
+        // Find and remove single or double quotes
         int ntok1 = tag.find('\'',0);
-        ntok1 = tag.find_first_not_of('\'',ntok1);
-        int ntok2 = tag.find('\'',ntok1);
+        bool sngl_qt = true;
+        bool no_qt = false;
+        // if no single quote found, then assume double quote or no quote
+        if (ntok1 == std::string::npos) {
+          ntok1 = tag.find('\"',0);
+          // if no double quote found then assume no quote
+          if (ntok1 == std::string::npos) {
+            ntok1 = tag.find_first_not_of(' ',0);
+            no_qt = true;
+          } else {
+            sngl_qt = false;
+          }
+        }
+        int ntok2;
+        if (sngl_qt) {
+          ntok1 = tag.find_first_not_of('\'',ntok1);
+          ntok2 = tag.find('\'',ntok1);
+        } else if (no_qt) {
+          ntok2 = tag.find(' ',ntok1);
+        } else {
+          ntok1 = tag.find_first_not_of('\"',ntok1);
+          ntok2 = tag.find('\"',ntok1);
+        }
         if (ntok2 == std::string::npos) ntok2 = tag.length();
         std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
         //get rid of white space
@@ -425,7 +447,7 @@ class PTI23_parser
           p_busMap.insert(std::pair<int,int>(o_idx,index));
 
           // BUS_NAME             "NAME"                 string
-          if (nstr > 9) data->addValue(BUS_NAME, (char*)split_line[9].c_str());
+          if (nstr > 9) data->addValue(BUS_NAME, split_line[9].c_str());
 
           // BUS_BASEKV           "BASKV"               float
           if (nstr > 10) data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
@@ -503,7 +525,7 @@ class PTI23_parser
 
           // LOAD_ID              "ID"                  integer
           std::string tag = clean2Char(split_line[1]);
-          if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, (char*)tag.c_str());
+          if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str());
 
           // LOAD_STATUS              "ID"                  integer
           if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[2].c_str()));
@@ -578,7 +600,7 @@ class PTI23_parser
           // Clean up 2 character tag
           std::string tag = clean2Char(split_line[1]);
           // GENERATOR_ID              "ID"                  integer
-          p_busData[l_idx]->addValue(GENERATOR_ID, (char*)tag.c_str(), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_ID, tag.c_str(), ngen);
 
           // GENERATOR_PG              "PG"                  float
           if (nstr > 2) p_busData[l_idx]->addValue(GENERATOR_PG, atof(split_line[2].c_str()),
@@ -734,9 +756,9 @@ class PTI23_parser
           double rval;
           // GENERATOR_MODEL              "MODEL"                  integer
           if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
-            data->addValue(GENERATOR_MODEL, (char*)split_line[1].c_str(), g_id);
+            data->addValue(GENERATOR_MODEL, split_line[1].c_str(), g_id);
           } else {
-            data->setValue(GENERATOR_MODEL, (char*)split_line[1].c_str(), g_id);
+            data->setValue(GENERATOR_MODEL, split_line[1].c_str(), g_id);
           }
 
           // GENERATOR_INERTIA_CONSTANT_H                           float
@@ -852,7 +874,7 @@ class PTI23_parser
           // Clean up 2 character tag
           std::string tag = clean2Char(split_line[2]);
           // BRANCH_CKT          "CKT"                 character
-          p_branchData[l_idx]->addValue(BRANCH_CKT, (char*)tag.c_str(),
+          p_branchData[l_idx]->addValue(BRANCH_CKT, tag.c_str(),
               nelems);
 
           // BRANCH_R            "R"                   float
@@ -1268,7 +1290,7 @@ class PTI23_parser
            * type: string
            * #define SHUNT_RMIDNT "SHUNT_RMIDNT"
            */
-          //          p_busData[o_idx]->addValue(SHUNT_RMIDNT, (char*)split_line[5].c_str());
+          //          p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[5].c_str());
 
           /*
            * type: real float
@@ -1465,7 +1487,7 @@ class PTI23_parser
            * #define MULTI_SEC_LINE_ID "MULTI_SEC_LINE_ID"
 
            */
-          data.addValue(MULTI_SEC_LINE_ID, (char*)split_line[0].c_str());
+          data.addValue(MULTI_SEC_LINE_ID, split_line[0].c_str());
           multi_section_instance.push_back(data);
 
           /*
@@ -1576,7 +1598,7 @@ class PTI23_parser
           data.addValue(OWNER_NUMBER, atoi(split_line[0].c_str()));
           owner_instance.push_back(data);
 
-          data.addValue(OWNER_NAME, (char*)split_line[1].c_str());
+          data.addValue(OWNER_NAME, split_line[1].c_str());
           owner_instance.push_back(data);
 
           owner.push_back(owner_instance);
