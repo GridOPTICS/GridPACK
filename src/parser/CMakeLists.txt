@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-11 10:32:21 d3g096
+# Last Change: 2014-08-06 13:24:48 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -70,7 +70,7 @@ add_custom_target(test_parser_input
 add_dependencies(parser_test test_parser_input)
 #add_dependencies(PTI23_test test_parser_input)
 
-add_test(test_parser_serial test_parser)
+add_test(test_parser_serial parser_test)
 
 
 #!!add_test(NAME greetings_parallel COMMAND 
