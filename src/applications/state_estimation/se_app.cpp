@@ -7,7 +7,8 @@
 /**
  * @file   se_app.cpp
  * @author Yousu Chen 
- * @date   2/24/2014 
+ * @date   2/24/2014
+ * Last updated: 8/5/2014 
  *
  * @brief
  *
@@ -44,6 +45,56 @@ gridpack::state_estimation::SEApp::~SEApp(void)
 }
 
 /**
+ * Get list of measurements from external file
+ * @param cursor pointer to contingencies in input deck
+ * @return vector of measurements
+ */
+std::vector<gridpack::state_estimation::Measurement>
+  gridpack::state_estimation::SEApp::getMeasurements(
+      gridpack::utility::Configuration::ChildCursors measurements)
+{
+  std::vector<gridpack::state_estimation::Measurement> ret;
+  int size = measurements.size();
+  int idx;
+  for (idx = 0; idx < size; idx++) {
+    std::string meas_type;
+    measurements[idx]->get("Type", &meas_type);
+    double meas_value;
+    measurements[idx]->get("Value", &meas_value);
+    double meas_deviation;
+    measurements[idx]->get("Deviation", &meas_deviation);
+    if (meas_type == "VM" || meas_type == "PI" || meas_type == "PJ" || meas_type == "QI" || meas_type == "QJ" || meas_type == "VA") {
+      int busid;
+      measurements[idx]->get("Bus", &busid);
+      gridpack::state_estimation::Measurement measurement;
+      measurement.p_type = meas_type;
+      measurement.p_busid = busid;
+      measurement.p_value = meas_value;
+      measurement.p_deviation = meas_deviation;
+      //printf("%s %d %f %f\n", measurement.p_type.c_str(), measurement.p_busid, measurement.p_value, measurement.p_deviation);
+      ret.push_back(measurement); 
+    } else if (meas_type == "PIJ" || meas_type == "PJI" || meas_type == "QIJ" || meas_type == "QJI" || meas_type == "IIJ" || meas_type == "IJI") {
+      int fbusid;
+      measurements[idx]->get("FromBus", &fbusid);
+      int tbusid;
+      measurements[idx]->get("ToBus", &tbusid);
+      std::string ckt;
+      measurements[idx]->get("CKT", &ckt);
+      gridpack::state_estimation::Measurement measurement;
+      measurement.p_type = meas_type;
+      measurement.p_fbusid = fbusid;
+      measurement.p_tbusid = tbusid;
+      measurement.p_ckt = ckt;
+      measurement.p_value = meas_value;
+      measurement.p_deviation = meas_deviation;
+      //printf("%s %d %d %s %f %f\n", measurement.p_type.c_str(), measurement.p_fbusid, measurement.p_tbusid, measurement.p_ckt.c_str(), measurement.p_value, measurement.p_deviation);
+      ret.push_back(measurement);
+    } 
+  }
+  return ret;
+}
+
+/**
  * Execute application
  */
 void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
@@ -67,6 +118,43 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
      printf("No network configuration specified\n");
      return;
   }
+
+  ///////////////////////////////////////////////////////////////////
+  // Read in measurement file
+  std::string measurementfile;
+  if (!cursor->get("measurementList", &measurementfile)) {
+    measurementfile = "IEEE14_meas.xml";
+  }
+  bool ok = config->open(measurementfile, world);
+
+  // get a list of measurements
+  cursor = config->getCursor("Measurements");
+  gridpack::utility::Configuration::ChildCursors measurements;
+  if (cursor) cursor->children(measurements);
+  std::vector<gridpack::state_estimation::Measurement>
+    meas = getMeasurements(measurements);
+
+  if (world.rank() == 0) {
+    int idx;
+    for (idx = 0; idx < meas.size(); idx++) {
+      std::string meas_type = meas[idx].p_type;
+      if (meas_type == "VM" || meas_type == "PI" || meas_type == "PJ") {
+        printf("Type: %s\n", meas[idx].p_type.c_str());
+        printf("Bus: %d\n", meas[idx].p_busid);
+        printf("Value: %f\n", meas[idx].p_value);
+        printf("Deviation: %f\n", meas[idx].p_deviation);
+      } else if (meas_type == "PIJ") {
+        printf("Type: %s\n", meas[idx].p_type.c_str());
+        printf("FromBus: %d\n", meas[idx].p_fbusid);
+        printf("ToBus: %d\n", meas[idx].p_tbusid);
+        printf("CKT: %s\n", meas[idx].p_ckt.c_str());
+        printf("Value: %f\n", meas[idx].p_value);
+        printf("Deviation: %f\n", meas[idx].p_deviation);
+      }
+      printf("\n");
+    }
+  }   
+  ///////////////////////////////////////////////////////////////////
 
   // load input file
   gridpack::parser::PTI23_parser<SENetwork> parser(network);
@@ -101,9 +189,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
   branchIO.header("\nybus:\n");
   ybus->print();
-
-  // Read measurements from input file
-
 
   // Start N-R loop
 
