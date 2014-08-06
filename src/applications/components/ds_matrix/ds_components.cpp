@@ -616,8 +616,8 @@ void gridpack::dynamic_simulation::DSBus::load(
       qg /= p_sbase;
 
       lgen = lgen && data->getValue(GENERATOR_MBASE, &mva, i); 
-      lgen = lgen && data->getValue(GENERATOR_RESISTANCE, &r, i); // r
-      lgen = lgen && data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &dstr,i); // dstr
+      if (!data->getValue(GENERATOR_RESISTANCE, &r, i)) r=0.0; // r
+      if (!data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &dstr,i)) dstr = 0.0; // dstr
       lgen = lgen && data->getValue(GENERATOR_TRANSIENT_REACTANCE, &dtr,i); // dtr
       // SJin: need to be added to parser
       lgen = lgen && data->getValue(GENERATOR_INERTIA_CONSTANT_H, &h, i); // h
