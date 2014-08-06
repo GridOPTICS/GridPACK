@@ -42,44 +42,44 @@ gridpack::component::DataCollection & gridpack::component::DataCollection::opera
  *  @param name name given to data element
  *  @param value value of data element
  */
-void gridpack::component::DataCollection::addValue(char *name, int value)
+void gridpack::component::DataCollection::addValue(const char *name, const int value)
 {
   std::string str = name;
   p_ints.insert(std::pair<std::string, int>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, long value)
+void gridpack::component::DataCollection::addValue(const char *name, const long value)
 {
   std::string str = name;
   p_longs.insert(std::pair<std::string, long>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, bool value)
+void gridpack::component::DataCollection::addValue(const char *name, const bool value)
 {
   std::string str = name;
   p_bools.insert(std::pair<std::string, bool>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, char *value)
+void gridpack::component::DataCollection::addValue(const char *name, const char *value)
 {
   std::string str = name;
   std::string val = value;
   p_strings.insert(std::pair<std::string, std::string>(str,val));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, float value)
+void gridpack::component::DataCollection::addValue(const char *name, const float value)
 {
   std::string str = name;
   p_floats.insert(std::pair<std::string, float>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, double value)
+void gridpack::component::DataCollection::addValue(const char *name, const double value)
 {
   std::string str = name;
   p_doubles.insert(std::pair<std::string, double>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, gridpack::ComplexType value)
+void gridpack::component::DataCollection::addValue(const char *name, const gridpack::ComplexType value)
 {
   std::string str = name;
   p_complexType.insert(std::pair<std::string, gridpack::ComplexType>(str,value));
@@ -93,8 +93,8 @@ void gridpack::component::DataCollection::addValue(char *name, gridpack::Complex
  *  @param value value of data element
  *  @param idx index of value
  */
-void gridpack::component::DataCollection::addValue(char *name, int value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const int value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -104,8 +104,8 @@ void gridpack::component::DataCollection::addValue(char *name, int value,
   p_ints.insert(std::pair<std::string, int>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, long value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const long value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -115,8 +115,8 @@ void gridpack::component::DataCollection::addValue(char *name, long value,
   p_longs.insert(std::pair<std::string, long>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, bool value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const bool value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -126,8 +126,8 @@ void gridpack::component::DataCollection::addValue(char *name, bool value,
   p_bools.insert(std::pair<std::string, bool>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, char *value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const char *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -138,8 +138,8 @@ void gridpack::component::DataCollection::addValue(char *name, char *value,
   p_strings.insert(std::pair<std::string, std::string>(str,val));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, float value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const float value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -149,8 +149,8 @@ void gridpack::component::DataCollection::addValue(char *name, float value,
   p_floats.insert(std::pair<std::string, float>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name, double value,
-    int idx)
+void gridpack::component::DataCollection::addValue(const char *name, const double value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -160,8 +160,8 @@ void gridpack::component::DataCollection::addValue(char *name, double value,
   p_doubles.insert(std::pair<std::string, double>(str,value));
 }
 
-void gridpack::component::DataCollection::addValue(char *name,
-    gridpack::ComplexType value, int idx)
+void gridpack::component::DataCollection::addValue(const char *name,
+    const gridpack::ComplexType value, const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -179,7 +179,7 @@ void gridpack::component::DataCollection::addValue(char *name,
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::setValue(char *name, int value)
+bool gridpack::component::DataCollection::setValue(const char *name, const int value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -196,7 +196,7 @@ bool gridpack::component::DataCollection::setValue(char *name, int value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, long value)
+bool gridpack::component::DataCollection::setValue(const char *name, const long value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -213,7 +213,7 @@ bool gridpack::component::DataCollection::setValue(char *name, long value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, bool value)
+bool gridpack::component::DataCollection::setValue(const char *name, const bool value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -230,7 +230,7 @@ bool gridpack::component::DataCollection::setValue(char *name, bool value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, char *value)
+bool gridpack::component::DataCollection::setValue(const char *name, const char *value)
 {
   std::string str = name;
   std::string val = value;
@@ -248,7 +248,7 @@ bool gridpack::component::DataCollection::setValue(char *name, char *value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, float value)
+bool gridpack::component::DataCollection::setValue(const char *name, const float value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -265,7 +265,7 @@ bool gridpack::component::DataCollection::setValue(char *name, float value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, double value)
+bool gridpack::component::DataCollection::setValue(const char *name, const double value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -282,7 +282,7 @@ bool gridpack::component::DataCollection::setValue(char *name, double value)
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, gridpack::ComplexType value)
+bool gridpack::component::DataCollection::setValue(const char *name, const gridpack::ComplexType value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -309,8 +309,8 @@ bool gridpack::component::DataCollection::setValue(char *name, gridpack::Complex
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::setValue(char *name, int value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const int value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -331,8 +331,8 @@ bool gridpack::component::DataCollection::setValue(char *name, int value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, long value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const long value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -353,8 +353,8 @@ bool gridpack::component::DataCollection::setValue(char *name, long value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, bool value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const bool value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -375,8 +375,8 @@ bool gridpack::component::DataCollection::setValue(char *name, bool value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, char *value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const char *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -398,8 +398,8 @@ bool gridpack::component::DataCollection::setValue(char *name, char *value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, float value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const float value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -420,8 +420,8 @@ bool gridpack::component::DataCollection::setValue(char *name, float value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name, double value,
-    int idx)
+bool gridpack::component::DataCollection::setValue(const char *name, const double value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -442,8 +442,8 @@ bool gridpack::component::DataCollection::setValue(char *name, double value,
   }
 }
 
-bool gridpack::component::DataCollection::setValue(char *name,
-    gridpack::ComplexType value, int idx)
+bool gridpack::component::DataCollection::setValue(const char *name,
+    const gridpack::ComplexType value, const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -472,7 +472,7 @@ bool gridpack::component::DataCollection::setValue(char *name,
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::getValue(char *name, int *value)
+bool gridpack::component::DataCollection::getValue(const char *name, int *value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -489,7 +489,7 @@ bool gridpack::component::DataCollection::getValue(char *name, int *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, long *value)
+bool gridpack::component::DataCollection::getValue(const char *name, long *value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -506,7 +506,7 @@ bool gridpack::component::DataCollection::getValue(char *name, long *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, bool *value)
+bool gridpack::component::DataCollection::getValue(const char *name, bool *value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -523,7 +523,7 @@ bool gridpack::component::DataCollection::getValue(char *name, bool *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, std::string *value)
+bool gridpack::component::DataCollection::getValue(const char *name, std::string *value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -540,7 +540,7 @@ bool gridpack::component::DataCollection::getValue(char *name, std::string *valu
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, float *value)
+bool gridpack::component::DataCollection::getValue(const char *name, float *value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -557,7 +557,7 @@ bool gridpack::component::DataCollection::getValue(char *name, float *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, double *value)
+bool gridpack::component::DataCollection::getValue(const char *name, double *value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -574,7 +574,7 @@ bool gridpack::component::DataCollection::getValue(char *name, double *value)
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, gridpack::ComplexType *value)
+bool gridpack::component::DataCollection::getValue(const char *name, gridpack::ComplexType *value)
 {
   std::string str = name;
 #ifdef OLD_MAP
@@ -601,8 +601,8 @@ bool gridpack::component::DataCollection::getValue(char *name, gridpack::Complex
  *  @return false if no element of the correct name and type exists in
  *  DataCollection object
  */
-bool gridpack::component::DataCollection::getValue(char *name, int *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, int *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -623,8 +623,8 @@ bool gridpack::component::DataCollection::getValue(char *name, int *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, long *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, long *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -645,8 +645,8 @@ bool gridpack::component::DataCollection::getValue(char *name, long *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, bool *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, bool *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -667,8 +667,8 @@ bool gridpack::component::DataCollection::getValue(char *name, bool *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, std::string *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, std::string *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -689,8 +689,8 @@ bool gridpack::component::DataCollection::getValue(char *name, std::string *valu
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, float *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, float *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -711,8 +711,8 @@ bool gridpack::component::DataCollection::getValue(char *name, float *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name, double *value,
-    int idx)
+bool gridpack::component::DataCollection::getValue(const char *name, double *value,
+    const int idx)
 {
   std::string str = name;
   str.append(":");
@@ -733,8 +733,8 @@ bool gridpack::component::DataCollection::getValue(char *name, double *value,
   }
 }
 
-bool gridpack::component::DataCollection::getValue(char *name,
-    gridpack::ComplexType *value, int idx)
+bool gridpack::component::DataCollection::getValue(const char *name,
+    gridpack::ComplexType *value, const int idx)
 {
   std::string str = name;
   str.append(":");

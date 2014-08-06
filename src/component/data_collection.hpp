@@ -47,13 +47,13 @@ public:
    *  @param name name given to data element
    *  @param value value of data element
    */
-  void addValue(char *name, int value);
-  void addValue(char *name, long value);
-  void addValue(char *name, bool value);
-  void addValue(char *name, char *value);
-  void addValue(char *name, float value);
-  void addValue(char *name, double value);
-  void addValue(char *name, gridpack::ComplexType value);
+  void addValue(const char *name, const int value);
+  void addValue(const char *name, const long value);
+  void addValue(const char *name, const bool value);
+  void addValue(const char *name, const char *value);
+  void addValue(const char *name, const float value);
+  void addValue(const char *name, const double value);
+  void addValue(const char *name, const gridpack::ComplexType value);
 
   /**
    *  Add variables to DataCollection object with an additional index to keep
@@ -63,13 +63,13 @@ public:
    *  @param value value of data element
    *  @param idx index of value
    */
-  void addValue(char *name, int value, int idx);
-  void addValue(char *name, long value, int idx);
-  void addValue(char *name, bool value, int idx);
-  void addValue(char *name, char *value, int idx);
-  void addValue(char *name, float value, int idx);
-  void addValue(char *name, double value, int idx);
-  void addValue(char *name, gridpack::ComplexType value, int idx);
+  void addValue(const char *name, const int value, const int idx);
+  void addValue(const char *name, const long value, const int idx);
+  void addValue(const char *name, const bool value, const int idx);
+  void addValue(const char *name, const char *value, const int idx);
+  void addValue(const char *name, const float value, const int idx);
+  void addValue(const char *name, const double value, const int idx);
+  void addValue(const char *name, const gridpack::ComplexType value, const int idx);
 
   /**
    *  Modify current value of existing data element in
@@ -79,13 +79,13 @@ public:
    *  @return false if no element of the correct name and type exists in
    *  DataCollection object
    */
-  bool setValue(char *name, int value);
-  bool setValue(char *name, long value);
-  bool setValue(char *name, bool value);
-  bool setValue(char *name, char *value);
-  bool setValue(char *name, float value);
-  bool setValue(char *name, double value);
-  bool setValue(char *name, gridpack::ComplexType value);
+  bool setValue(const char *name, const int value);
+  bool setValue(const char *name, const long value);
+  bool setValue(const char *name, const bool value);
+  bool setValue(const char *name, const char *value);
+  bool setValue(const char *name, const float value);
+  bool setValue(const char *name, const double value);
+  bool setValue(const char *name, const gridpack::ComplexType value);
 
   /**
    *  Modify current value of existing data element in
@@ -97,13 +97,13 @@ public:
    *  @return false if no element of the correct name and type exists in
    *  DataCollection object
    */
-  bool setValue(char *name, int value, int idx);
-  bool setValue(char *name, long value, int idx);
-  bool setValue(char *name, bool value, int idx);
-  bool setValue(char *name, char *value, int idx);
-  bool setValue(char *name, float value, int idx);
-  bool setValue(char *name, double value, int idx);
-  bool setValue(char *name, gridpack::ComplexType value, int idx);
+  bool setValue(const char *name, const int value, const int idx);
+  bool setValue(const char *name, const long value, const int idx);
+  bool setValue(const char *name, const bool value, const int idx);
+  bool setValue(const char *name, const char *value, const int idx);
+  bool setValue(const char *name, const float value, const int idx);
+  bool setValue(const char *name, const double value, const int idx);
+  bool setValue(const char *name, const gridpack::ComplexType value, const int idx);
 
   /**
    *  Retrieve current value of existing data element in
@@ -113,13 +113,13 @@ public:
    *  @return false if no element of the correct name and type exists in
    *  DataCollection object
    */
-  bool getValue(char *name, int *value);
-  bool getValue(char *name, long *value);
-  bool getValue(char *name, bool *value);
-  bool getValue(char *name, std::string *value);
-  bool getValue(char *name, float *value);
-  bool getValue(char *name, double *value);
-  bool getValue(char *name, gridpack::ComplexType *value);
+  bool getValue(const char *name, int *value);
+  bool getValue(const char *name, long *value);
+  bool getValue(const char *name, bool *value);
+  bool getValue(const char *name, std::string *value);
+  bool getValue(const char *name, float *value);
+  bool getValue(const char *name, double *value);
+  bool getValue(const char *name, gridpack::ComplexType *value);
 
   /**
    *  Retrieve current value of existing data element in
@@ -131,13 +131,13 @@ public:
    *  @return false if no element of the correct name and type exists in
    *  DataCollection object
    */
-  bool getValue(char *name, int *value, int idx);
-  bool getValue(char *name, long *value, int idx);
-  bool getValue(char *name, bool *value, int idx);
-  bool getValue(char *name, std::string *value, int idx);
-  bool getValue(char *name, float *value, int idx);
-  bool getValue(char *name, double *value, int idx);
-  bool getValue(char *name, gridpack::ComplexType *value, int idx);
+  bool getValue(const char *name, int *value, const int idx);
+  bool getValue(const char *name, long *value, const int idx);
+  bool getValue(const char *name, bool *value, const int idx);
+  bool getValue(const char *name, std::string *value, const int idx);
+  bool getValue(const char *name, float *value, const int idx);
+  bool getValue(const char *name, double *value, const int idx);
+  bool getValue(const char *name, gridpack::ComplexType *value, const int idx);
 
   /**
    * Dump contents of data collection to standard out
