@@ -13,7 +13,6 @@ include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 
 add_library(gridpackf_component OBJECT
   fortran_component.cpp
-  fortran_component_wrap.F90
 )
 
 #add_executable(hello_parallel
