@@ -4,8 +4,8 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # -------------------------------------------------------------
-# Created May 12, 2014 by William A. Perkins
-# Last Change: 2014-05-15 09:14:52 d3g096
+# Created August 5, 2014 by Bruce Palmer
+# Last Change: 2014-08-05 09:14:52 d3g293
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -16,12 +16,14 @@ add_library(gridpackf_network OBJECT
   network_f.F90
 )
 
-#add_executable(hello_parallel
-#  hello.F90
-#  $<TARGET_OBJECTS:gridpackf_component>
-#)
+add_executable(fortran_network_test
+  network_test.F90
+  $<TARGET_OBJECTS:gridpackf_network>
+  $<TARGET_OBJECTS:gridpackf_parallel>
+  $<TARGET_OBJECTS:gridpackf_component>
+)
 
-#target_link_libraries(hello_parallel
-#  ${GRIDPACK_LIBS}
-#)
+target_link_libraries(fortran_network_test
+  ${GRIDPACK_LIBS}
+)
 

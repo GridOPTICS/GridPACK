@@ -257,7 +257,7 @@ extern "C" bool network_set_active_bus(FortranNetwork *network, int idx, bool fl
  * @param flag flag for setting bus as active or inactive
  * @return false if no branch exists for idx
  */
-extern "C" bool p_set_active_branch(FortranNetwork *network, int idx, bool flag)
+extern "C" bool network_set_active_branch(FortranNetwork *network, int idx, bool flag)
 {
   return network->setActiveBranch(idx,flag);
 }
@@ -360,7 +360,7 @@ extern "C" void network_get_original_branch_endpoints(FortranNetwork *network,
  * @param idx local bus index
  * @return the number of branches attached to this bus
  */
-extern "C" int network_num_connected_branches(FortranNetwork *network, int idx)
+extern "C" int network_get_num_connected_branches(FortranNetwork *network, int idx)
 {
   return network->getConnectedBranches(idx).size();
 }
@@ -371,7 +371,7 @@ extern "C" int network_num_connected_branches(FortranNetwork *network, int idx)
  * @param idx local bus index
  * @param branches array to hold list of branch indices
  */
-extern "C" void p_get_connected_branches(FortranNetwork *network, int idx, int *branches)
+extern "C" void network_get_connected_branches(FortranNetwork *network, int idx, int *branches)
 {
   int i;
   std::vector<int> t_branches = network->getConnectedBranches(idx);
@@ -387,7 +387,7 @@ extern "C" void p_get_connected_branches(FortranNetwork *network, int idx, int *
  * @param idx local bus index
  * @param buses array to hold list of bus indices
  */
-extern "C" void p_get_connected_buses(FortranNetwork *network, int idx, int *buses)
+extern "C" void network_get_connected_buses(FortranNetwork *network, int idx, int *buses)
 {
   int i;
   std::vector<int> t_buses = network->getConnectedBuses(idx);

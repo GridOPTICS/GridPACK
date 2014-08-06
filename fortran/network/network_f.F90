@@ -14,8 +14,44 @@ module gridpack_network
     type (C_PTR) :: p_network
     contains
     procedure::create
-!    procedure::add_bus
-!    procedure::add_branch
+    procedure::destroy
+    procedure::add_bus
+    procedure::add_branch
+    procedure::num_buses
+    procedure::total_buses
+    procedure::num_branches
+    procedure::total_branches
+    procedure::set_reference_bus
+    procedure::get_reference_bus
+    procedure::set_original_bus_index
+    procedure::set_global_bus_index
+    procedure::set_global_branch_index
+    procedure::set_original_bus_index1
+    procedure::set_original_bus_index2
+    procedure::set_global_bus_index1
+    procedure::set_global_bus_index2
+    procedure::set_local_bus_index1
+    procedure::set_local_bus_index2
+    procedure::set_active_bus
+    procedure::set_active_branch
+    procedure::clear_branch_neighbors
+    procedure::add_branch_neighbor
+    procedure::get_active_bus
+    procedure::get_original_bus_index
+    procedure::get_global_bus_index
+    procedure::get_active_branch
+    procedure::get_global_branch_index
+    procedure::get_original_branch_endpoints
+    procedure::get_num_connected_branches
+    procedure::get_connected_branches
+    procedure::get_connected_buses
+    procedure::get_branch_endpoints
+    procedure::partition
+    procedure::clean
+    procedure::init_bus_update
+    procedure::update_buses
+    procedure::init_branch_update
+    procedure::update_branches
   end type
   interface
 !
@@ -176,7 +212,6 @@ module gridpack_network
     logical(C_BOOL) function network_set_original_bus_index1(network, &
         idx, b_idx) bind(c)
       use, intrinsic :: iso_c_binding
-      use p_gridpack_network
       implicit none
       type(C_PTR), intent(in) :: network
       integer(C_INT), value, intent(in) :: idx, b_idx
@@ -191,7 +226,6 @@ module gridpack_network
     logical(C_BOOL) function network_set_original_bus_index2(network, &
         idx, b_idx) bind(c)
       use, intrinsic :: iso_c_binding
-      use p_gridpack_network
       implicit none
       type(C_PTR), intent(in) :: network
       integer(C_INT), value, intent(in) :: idx, b_idx
@@ -667,7 +701,6 @@ module gridpack_network
 !
   logical function set_global_bus_index(p_network, idx, g_idx)
     use, intrinsic :: iso_c_binding
-    use p_gridpack_network
     implicit none
     class(network), intent(in) :: p_network
     integer, value, intent(in) :: idx, g_idx
@@ -979,7 +1012,6 @@ module gridpack_network
 !
   integer function get_global_branch_index(p_network, idx)
     use, intrinsic :: iso_c_binding
-    use p_gridpack_network
     implicit none
     class(network), intent(in) :: p_network
     integer, value, intent(in) :: idx
@@ -1133,7 +1165,6 @@ module gridpack_network
 !
   subroutine set_xc_bus_buffer(n_handle, idx, buf)
     use, intrinsic :: iso_c_binding
-    use p_gridpack_network
     implicit none
     integer, value, intent(in) :: n_handle, idx
     integer(C_INT) c_handle, c_idx
@@ -1151,7 +1182,6 @@ module gridpack_network
 !
   subroutine set_xc_branch_buffer(n_handle, idx, buf)
     use, intrinsic :: iso_c_binding
-    use p_gridpack_network
     implicit none
     integer, value, intent(in) :: n_handle, idx
     integer(C_INT) c_handle, c_idx
@@ -1203,7 +1233,6 @@ module gridpack_network
 !
   subroutine update_branches(p_network)
     use, intrinsic :: iso_c_binding
-    use p_gridpack_network
     implicit none
     class(network), intent(in) :: p_network
     call network_update_branches(p_network%p_network) 
