@@ -146,12 +146,15 @@ public:
     }
 
     // Copy values to a straight array
-    bus_data_pair *list = new bus_data_pair[ksize];
-    int g_type = NGA_Register_type(p_size_bus_data);
-    for (i=0; i<ksize; i++) {
-      list[i].idx = keys[i];
-      list[i].data = values[i];
+    bus_data_pair *list;
+    if (ksize > 0) {
+      list = new bus_data_pair[ksize];
+      for (i=0; i<ksize; i++) {
+        list[i].idx = keys[i];
+        list[i].data = values[i];
+      }
     }
+    int g_type = NGA_Register_type(p_size_bus_data);
 
     // Create global array and store all values in it
     int lo, hi;
@@ -171,7 +174,7 @@ public:
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
     GA_Pgroup_sync(p_GAgrp);
     NGA_Deregister_type(g_type);
-    delete [] list;
+    if (ksize > 0) delete [] list;
     delete [] mapc;
     delete [] sizes;
 
@@ -198,19 +201,21 @@ public:
         hi = total_values-1;
       }
       int nsize = hi - lo + 1;
-      list = new bus_data_pair[nsize];
-      if (lo <= hi) NGA_Get(g_vals, &lo, &hi, list, &one);
-      int j;
-      for (j=0; j<nsize; j++) {
-        it = hmap.find(list[j].idx);
-        if (it != hmap.end()) {
-          keys.push_back(it->second);
-          values.push_back(list[j].data);
+      if (lo <= hi) {
+        list = new bus_data_pair[nsize];
+        NGA_Get(g_vals, &lo, &hi, list, &one);
+        int j;
+        for (j=0; j<nsize; j++) {
+          it = hmap.find(list[j].idx);
+          if (it != hmap.end()) {
+            keys.push_back(it->second);
+            values.push_back(list[j].data);
+          }
         }
+        delete [] list;
       }
-      delete [] list;
     }
-    GA_Pgroup_sync(p_GAgrp);
+    GA_Destroy(g_vals);
 #else
     // Get global indices corresponding to keys
     std::vector<int> g_idx;
@@ -431,13 +436,16 @@ public:
     }
 
     // Copy values to a straight array
-    branch_data_pair *list = new branch_data_pair[ksize];
-    int g_type = NGA_Register_type(p_size_branch_data);
-    for (i=0; i<ksize; i++) {
-      list[i].idx1 = keys[i].first;
-      list[i].idx2 = keys[i].second;
-      list[i].data = values[i];
+    branch_data_pair *list;
+    if (ksize > 0) {
+      list = new branch_data_pair[ksize];
+      for (i=0; i<ksize; i++) {
+        list[i].idx1 = keys[i].first;
+        list[i].idx2 = keys[i].second;
+        list[i].data = values[i];
+      }
     }
+    int g_type = NGA_Register_type(p_size_branch_data);
 
     // Create global array and store all values in it
     int lo, hi;
@@ -457,7 +465,7 @@ public:
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
     GA_Pgroup_sync(p_GAgrp);
     NGA_Deregister_type(g_type);
-    delete [] list;
+    if (ksize > 0) delete [] list;
     delete [] mapc;
     delete [] sizes;
 
@@ -484,21 +492,23 @@ public:
         hi = total_values-1;
       }
       int nsize = hi - lo + 1;
-      list = new branch_data_pair[nsize];
-      if (lo <= hi) NGA_Get(g_vals, &lo, &hi, list, &one);
-      int j;
-      std::pair<int,int> key;
-      for (j=0; j<nsize; j++) {
-        key = std::pair<int,int>(list[j].idx1,list[j].idx2);
-        it = hmap.find(key);
-        if (it != hmap.end()) {
-          branch_ids.push_back(it->second);
-          values.push_back(list[j].data);
+      if (lo <= hi) {
+        list = new branch_data_pair[nsize];
+        NGA_Get(g_vals, &lo, &hi, list, &one);
+        int j;
+        std::pair<int,int> key;
+        for (j=0; j<nsize; j++) {
+          key = std::pair<int,int>(list[j].idx1,list[j].idx2);
+          it = hmap.find(key);
+          if (it != hmap.end()) {
+            branch_ids.push_back(it->second);
+            values.push_back(list[j].data);
+          }
         }
+        delete [] list;
       }
-      delete [] list;
     }
-    GA_Pgroup_sync(p_GAgrp);
+    GA_Destroy(g_vals);
 #else
     // Get global indices corresponding to keys
     std::vector<int> g_idx;
