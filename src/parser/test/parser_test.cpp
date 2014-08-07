@@ -125,22 +125,36 @@ main(int argc, char **argv)
       if (network->getGlobalBusIndex(idx)+1 != busData[i].idx) schk = 1;
     }
 
+#if 1
     // create data on process 0 to go to all branches in the network
     int branch_total = network->totalBranches();
+    int dim = static_cast<int>(sqrt(static_cast<double>(bus_total))+0.0000001);
+    //int dim = sqrt(bus_total);
     std::vector<branch_data> branchData;
     keys.clear();
     std::vector<std::pair<int,int> > pairs;
-    int idx1,idx2;
+    int ix, iy, idx1, idx2;
     if (world.rank() == 0) {
       for (i=0; i<branch_total; i++) {
-        idx = network->getGlobalBranchIndex(i);
+        idx = i;
         branch_data branch;
         branch.idx1 = idx+1;
         branch.idx2 = idx+2;
         branchData.push_back(branch);
-        network->getBranchEndpoints(i,&idx1,&idx2);
-        idx1 = network->getOriginalBusIndex(idx1);
-        idx2 = network->getOriginalBusIndex(idx2);
+        if (idx < (dim-1)*dim) {
+          ix = idx%(dim-1);
+          iy = (idx-ix)/(dim-1);
+          ix++;
+          idx1 = iy*dim+ix;
+          idx2 = iy*dim+ix+1;
+        } else {
+          idx -= (dim-1)*dim;
+          ix = idx%dim;
+          iy = (idx-ix)/dim;
+          iy++;
+          idx1 = (iy-1)*dim+ix+1;
+          idx2 = iy*dim+ix+1;
+        }
         pairs.push_back(std::pair<int,int>(idx1,idx2));
       }
     }
@@ -150,6 +164,7 @@ main(int argc, char **argv)
       idx = network->getGlobalBranchIndex(idx);
       if (idx+1 != branchData[i].idx1 || idx+2 != branchData[i].idx2) schk = 1;
     }
+#endif
     MPI_Allreduce(&schk,&rchk,1,MPI_INT,MPI_SUM,comm);
     if (rchk == 0 && world.rank() == 0) {
       printf("\nHash distribution is ok\n");
