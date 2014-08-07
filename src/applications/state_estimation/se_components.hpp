@@ -19,16 +19,26 @@
 #define _se_components_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/utilities/complex.hpp"
-#include "gridpack/component/base_component.hpp"
-#include "gridpack/component/data_collection.hpp"
-#include "gridpack/network/base_network.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
 namespace state_estimation{
 
 enum SEMode{YBus};
+
+struct Measurement
+{
+  char p_type[4];
+  //std::string p_type;
+  int p_busid;
+  int p_fbusid;
+  int p_tbusid;
+  //std::string p_ckt;
+  char p_ckt[3];
+  double p_value;
+  double p_deviation;
+};
 
 class SEBus
   : public gridpack::ymatrix::YMBus
@@ -166,6 +176,12 @@ class SEBus
      */
     bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
+    /**
+     * Add a measurement to the bus
+     * @param measurement a measurement struct that will be used to assign
+     * internal paramters
+     */
+    void addMeasurement(Measurement measurement);
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -317,6 +333,12 @@ class SEBranch
      */
     bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
+    /**
+     * Add a measurement to the branch
+     * @param measurement a measurement struct that will be used to assign
+     * internal paramters
+     */
+    void addMeasurement(Measurement measurement);
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;

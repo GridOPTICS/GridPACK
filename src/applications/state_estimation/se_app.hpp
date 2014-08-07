@@ -20,23 +20,13 @@
 #define _se_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/applications/state_estimation/se_factory.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "se_factory.hpp"
 
 namespace gridpack {
 namespace state_estimation {
 
-struct Measurement
-{
-  std::string p_type;
-  int p_busid;
-  int p_fbusid;
-  int p_tbusid;
-  std::string p_ckt;
-  double p_value;
-  double p_deviation;
-};
-
+// Calling program for state estimation application
 // Calling program for state estimation application
 class SEApp
 {
@@ -71,6 +61,7 @@ class SEApp
     private:
       //boost::shared_ptr<SENetwork> p_network;
       //boost::shared_ptr<SEFactory> p_factory;
+    gridpack::parallel::Communicator p_comm;
 };
 
 } // state estimation

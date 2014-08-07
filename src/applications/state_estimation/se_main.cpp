@@ -16,8 +16,8 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
-#include "gridpack/math/math.hpp"
-#include "gridpack/applications/state_estimation/se_app.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "se_app.hpp"
 
 // Calling program for the state estimation applications
 

@@ -19,11 +19,7 @@
 #include <iostream>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/utilities/complex.hpp"
-#include "gridpack/component/base_component.hpp"
-#include "gridpack/component/data_collection.hpp"
 #include "se_components.hpp"
-#include "gridpack/parser/dictionary.hpp"
 
 //#define LARGE_MATRIX
 
@@ -303,6 +299,18 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
         getOriginalIndex(),real(v[0]),real(v[1]),branches.size());
   }
   return true;
+}
+
+/**
+ * Add a measurement to the bus
+ * @param measurement a measurement struct that will be used to
+ * assign
+ * internal paramters
+ */
+void gridpack::state_estimation::SEBus::addMeasurement(
+    gridpack::state_estimation::Measurement measurement)
+{
+  //TODO: Implement this method
 }
 
 /**
@@ -612,3 +620,15 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
       bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
   return true;
 }
+/**
+ * Add a measurement to the branch
+ * @param measurement a measurement struct that will be used to
+ * assign
+ * internal paramters
+ */
+void gridpack::state_estimation::SEBranch::addMeasurement(
+    gridpack::state_estimation::Measurement measurement)
+{
+  //TODO: Implement this method
+}
+

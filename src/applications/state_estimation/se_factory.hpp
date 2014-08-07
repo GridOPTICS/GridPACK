@@ -19,10 +19,8 @@
 #define _se_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/state_estimation/se_components.hpp"
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/applications/state_estimation/se_components.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "se_components.hpp"
 
 namespace gridpack {
 namespace state_estimation {
@@ -45,6 +43,12 @@ class SEFactory
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);
+
+    /**
+     * Disribute measurements
+     * @param measurements a vector containing all measurements
+     */
+    void setMeasurements(std::vector<Measurement> measurements);
 
   private:
 
