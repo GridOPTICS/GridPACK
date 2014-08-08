@@ -220,6 +220,7 @@ logical(C_BOOL) function p_bus_serial_write(c_network, c_idx, c_string, &
   idx = c_idx
   bufsize = c_bufsize
   p_bus_serial_write = bus_serial_write(network,idx,c_string,bufsize,c_signal)
+  return
 end function p_bus_serial_write
 !
 ! Wrappers for Fortran branch component functions
@@ -445,4 +446,5 @@ logical(C_BOOL) function p_branch_serial_write(c_network, c_idx, c_string, &
   idx = c_idx
   bufsize = c_bufsize
   p_branch_serial_write = branch_serial_write(network,idx,c_string,bufsize,c_signal)
+  return
 end function p_branch_serial_write

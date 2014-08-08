@@ -14,8 +14,8 @@
 ! ----------------------------------------------------------------
 ! PROGRAM network_test
 ! ----------------------------------------------------------------
-#define XDIM 100
-#define YDIM 100
+#define XDIM 10
+#define YDIM 10
 PROGRAM network_test
   USE gridpack_network
   USE gridpack_parallel
@@ -79,7 +79,9 @@ PROGRAM network_test
       ix = i + iaxmin
       n = iy*XDIM + ix
       n = 2*n   ! Provide original index that is not equal to global index
+      write(6,'(a,i1,a,i3)') 'p[',me,'] Add bus ',n
       call grid%add_bus(n)
+      write(6,'(a,i1,a,i3)') 'p[',me,'] Completed adding bus ',n
 !
 !  Set active flag for network buses
 !
@@ -88,11 +90,14 @@ PROGRAM network_test
       else
         ok = grid%set_active_bus(ncnt,.false.)
       endif
+      write(6,'(a,i1,a,i3)') 'p[',me,'] Got to 1 ',n
       n = n/2
       ok = grid%set_global_bus_index(ncnt,n)
+      write(6,'(a,i1,a,i3)') 'p[',me,'] Got to 2 ',n
       if (ix.eq.0.and.iy.eq.0) then
         call grid%set_reference_bus(ncnt)
       endif
+      write(6,'(a,i1,a,i3)') 'p[',me,'] Got to 3 ',n
       ncnt = ncnt + 1
     end do
   end do
@@ -286,7 +291,7 @@ end subroutine factor_grid
 !
 subroutine check_ok(flag)
   implicit none
-#include "mpif.h"
+include 'mpif.h'
   logical, intent(inout) :: flag
   integer oks, okr, ierr
   if (flag) then

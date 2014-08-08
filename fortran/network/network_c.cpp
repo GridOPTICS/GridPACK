@@ -52,9 +52,9 @@ void p_checkHandle(int n_handle)
  * @param network pointer to Fortran network object
  * @param idx original index of bus
  */
-extern "C" void network_add_bus(FortranNetwork *network, int idx)
+extern "C" void network_add_bus(FortranNetwork *network, int *idx)
 {
-  network->addBus(idx);
+  network->addBus(*idx);
 }
 
 /**
@@ -247,7 +247,9 @@ extern "C" bool network_set_local_bus_index2(FortranNetwork *network, int idx, i
  */
 extern "C" bool network_set_active_bus(FortranNetwork *network, int idx, bool flag)
 {
+  printf("in network_set_active_bus idx: %d flag: %d\n",idx,static_cast<int>(flag));
   return network->setActiveBus(idx,flag);
+  printf("completed setActiveBus\n");
 }
 
 /**
