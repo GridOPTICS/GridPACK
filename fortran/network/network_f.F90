@@ -73,7 +73,7 @@ module gridpack_network
     subroutine network_destroy(network) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), value, intent(in) :: network
+      type(C_PTR), intent(inout) :: network
     end subroutine network_destroy
 !
 ! Add a bus locally to the network
@@ -146,7 +146,7 @@ module gridpack_network
     subroutine network_set_reference_bus(network, idx) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
       integer(C_INT), value, intent(in) :: idx
     end subroutine network_set_reference_bus
 !
@@ -539,7 +539,7 @@ module gridpack_network
     use gridpack_communicator
     implicit none
     class(network), intent(inout) :: p_network
-    class(communicator), value, intent(in) :: p_comm
+    class(communicator), intent(in) :: p_comm
     call network_create(p_network%p_network,p_comm%comm)
     return
   end subroutine create
