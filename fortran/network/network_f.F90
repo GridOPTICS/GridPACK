@@ -63,7 +63,7 @@ module gridpack_network
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(inout) :: network
-      type(C_PTR), intent(in) :: comm
+      type(C_PTR), value, intent(in) :: comm
     end subroutine network_create
 !
 ! Clean up old network 
@@ -869,9 +869,7 @@ module gridpack_network
     logical(C_BOOL) c_flag, c_ret
     c_idx = idx
     c_flag = flag
-    write(6,'(a)') 'set_active_bus'
     c_ret = network_set_active_bus(p_network%p_network, c_idx, c_flag)
-    write(6,'(a)') 'completed network_set_active_bus'
     set_active_bus = c_ret
     return
   end function set_active_bus

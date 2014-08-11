@@ -40,7 +40,7 @@ PROGRAM network_test
   CALL gridpack_initialize_parallel(ma_stack, ma_heap)
   CALL comm%initialize()
   me = comm%rank()
-  nprocs = comm%rank()
+  nprocs = comm%size()
 !
 !  Initialize network
 !
@@ -79,9 +79,7 @@ PROGRAM network_test
       ix = i + iaxmin
       n = iy*XDIM + ix
       n = 2*n   ! Provide original index that is not equal to global index
-      write(6,'(a,i1,a,i3)') 'p[',me,'] Add bus ',n
       call grid%add_bus(n)
-      write(6,'(a,i1,a,i3)') 'p[',me,'] Completed adding bus ',n
 !
 !  Set active flag for network buses
 !
@@ -90,14 +88,11 @@ PROGRAM network_test
       else
         ok = grid%set_active_bus(ncnt,.false.)
       endif
-      write(6,'(a,i1,a,i3)') 'p[',me,'] Got to 1 ',n
       n = n/2
       ok = grid%set_global_bus_index(ncnt,n)
-      write(6,'(a,i1,a,i3)') 'p[',me,'] Got to 2 ',n
       if (ix.eq.0.and.iy.eq.0) then
         call grid%set_reference_bus(ncnt)
       endif
-      write(6,'(a,i1,a,i3)') 'p[',me,'] Got to 3 ',n
       ncnt = ncnt + 1
     end do
   end do
@@ -237,14 +232,14 @@ subroutine factor_grid(nproc, xsize, ysize, pdx, pdy)
 !  Factor nproc completely, First, find all prime numbers less than or equal to
 !  nproc
 !
-  pmax = 1
-  prime(0) = 2
+  pmax = 0
   do i = 2, nproc
     chk = 0
     j = 0
-    do while (chk.eq.0.and.j.lt.pmax) 
+    do j = 0, pmax-1
       if (mod(i,prime(j)).eq.0) then
         chk = 1
+        exit
       endif
     end do
     if (chk.eq.0) then
@@ -258,9 +253,9 @@ subroutine factor_grid(nproc, xsize, ysize, pdx, pdy)
   ifac = 0
   do i = 0, pmax-1
     do while (mod(ip,prime(i)).eq.0.and.ip.gt.1)
+      ifac = ifac + 1
       fac(ifac) = prime(i) 
       ip = ip / prime(i)
-      ifac = ifac + 1
     end do
   end do
 !
@@ -272,7 +267,7 @@ subroutine factor_grid(nproc, xsize, ysize, pdx, pdy)
   ytmp = ysize
   idx = 1
   idy = 1
-  do i = ifac-1, 0, -1
+  do i = ifac, 1, -1
     if (xtmp.ge.ytmp) then
       idx = fac(i)*idx
       xtmp = xtmp/fac(i)

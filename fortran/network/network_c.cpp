@@ -247,9 +247,7 @@ extern "C" bool network_set_local_bus_index2(FortranNetwork *network, int idx, i
  */
 extern "C" bool network_set_active_bus(FortranNetwork *network, int idx, bool flag)
 {
-  printf("in network_set_active_bus idx: %d flag: %d\n",idx,static_cast<int>(flag));
   return network->setActiveBus(idx,flag);
-  printf("completed setActiveBus\n");
 }
 
 /**
