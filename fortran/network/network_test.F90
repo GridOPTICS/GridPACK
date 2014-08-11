@@ -19,21 +19,23 @@
 PROGRAM network_test
   USE gridpack_network
   USE gridpack_parallel
-  
-  IMPLICIT NONE
 
+  IMPLICIT NONE
+  include 'mpif.h'
   TYPE (communicator) :: comm
-  INTEGER :: ierror, rank, size, p
+  INTEGER :: rank, size, p
   INTEGER(c_int) :: ma_stack = 200000, ma_heap = 200000
   TYPE(network) :: grid
   integer ierr, me, nprocs
   integer ipx, ipy, pdx, pdy
   integer ixmin, ixmax, iymin, iymax
   integer iaxmin, iaxmax, iaymin, iaymax
-  integer ncnt, n, ix, iy, nx, ny, i, j
-  integer n1, n2, lx, ly
+  integer ncnt, n, ix, iy, nx, ny, i, j, k
+  integer n1, n2, lx, ly, ldx
   integer oks, okr
-  logical ok
+  logical ok, t_ok
+  integer nbus, nbranch, nnghbr
+  integer, allocatable :: nghbr(:), nghbr_bus(:)
 !
 ! Initialize gridpack and create world communicator
 !
@@ -100,6 +102,7 @@ PROGRAM network_test
 !  Add branches to network. Start with branches connecting buses in the
 !  i-direction
 !
+  ncnt = 0
   nx = iaxmax-iaxmin
   ny = iymax -iymin + 1
   do j = 0, ny-1
@@ -197,6 +200,7 @@ PROGRAM network_test
     write(6,'(a)') 'Number of buses on each process ok'
   endif
 !
+  ok = .true.
   n = grid%total_buses()
   ncnt = XDIM*YDIM
   if (n.ne.ncnt) then
@@ -210,6 +214,314 @@ PROGRAM network_test
   if (me.eq.0.and.ok) then
     write(6,*)
     write(6,'(a)') 'Total number of buses ok'
+  endif
+!
+  ok = .true.
+  n = (iaxmax-iaxmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iaymin)
+  if (grid%num_branches().ne.n) then
+    write(6,'(a,i4,a,i6,a,i6)') 'p[',me,'] Number of branches: ', &
+      grid%num_branches(),' expected: ',n
+    ok = .false.
+  endif
+!
+  call check_ok(ok)
+!
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Number of branches on each process ok'
+  endif
+!
+  ok = .true.
+  n = grid%total_branches()
+  ncnt = (XDIM-1)*YDIM+XDIM*(YDIM-1)
+  if (ncnt.ne.n) then
+    ok = .false.
+  endif
+!
+  call check_ok(ok)
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Total number of branches process ok'
+  end if
+!
+!  Test location of reference bus
+!
+  n = grid%get_reference_bus()
+  if ((.not.(me.eq.0.and.n.eq.0)).and.(.not.(me.ne.0.and.n.eq.-1))) then
+    write(6,'(a,i4,a,i6)') 'p[', me, '] Reference bus error: ', n
+  else if (me.eq.0.and.n.eq.0) then
+    write(6,*)
+    write(6,'(a)') 'Reference bus ok'
+  endif
+!
+!  Set up number of branches attached to bus
+!
+  nbus = grid%num_buses()
+  do i = 0, nbus-1
+    ok = grid%clear_branch_neighbors(i);
+    if (.not.ok) then
+      write(6,'(a,i4,a,i6)') 'p[', me, &
+        '] clear_branch_neighbors failed on bus: ', i
+    endif
+  end do
+!
+!  loop over all branches
+!
+  nbranch = grid%num_branches()
+  do i = 0, nbranch-1
+    call grid%get_branch_endpoints(i, n1, n2)
+    if (grid%get_active_bus(n1).or.grid%get_active_bus(n2)) then
+      ok = grid%add_branch_neighbor(n1,i)
+      if (.not.ok) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] add_branch_neighbor failed for bus: ', n1
+      endif
+      ok = grid%add_branch_neighbor(n2,i)
+      if (.not.ok) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] add_branch_neighbor failed for bus: ', n2
+      endif
+    endif
+  end do
+!
+!  Test active buses
+!
+  ldx = iaxmax-iaxmin+1
+  ok = .true.
+  do i = 0, nbus-1
+    ix = mod(i,ldx);
+    iy = (i-ix)/ldx;
+    ix = (ix + iaxmin);
+    iy = (iy + iaymin);
+    if (ix.ge.ixmin.and.ix.le.ixmax.and.iy.ge.iymin.and.iy.le.iymax) then
+      if (.not.grid%get_active_bus(i)) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] inactive bus error for bus: ', i
+        ok = .false.
+      endif
+    else
+      if (grid%get_active_bus(i)) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] active bus error for bus: ', i
+        ok = .false.
+      endif
+    endif 
+  end do
+!
+  call check_ok(ok)
+!
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Active bus settings ok'
+  endif
+!
+!  Test active branches
+!
+  ok = .true.
+  do i = 0, nbranch-1
+    call grid%get_branch_endpoints(i,n1,n2)
+    ix = mod(n1,ldx)
+    iy = (n1-ix)/ldx
+    ix = ix + iaxmin
+    iy = iy + iaymin
+    if (ix.ge.ixmin.and.ix.le.ixmax.and.iy.ge.iymin.and.iy.le.iymax) then
+      if (.not.grid%get_active_branch(i)) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] inactive branch error for branch: ', i
+        ok = .false.
+      endif
+    else
+      if (grid%get_active_branch(i)) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] active branch error for branch: ', i
+        ok = .false.
+      endif
+    endif
+  end do
+!
+  call check_ok(ok)
+!
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Active branch settings ok'
+  endif
+!
+!  Check neighbors of buses
+!
+  ok = .true.
+  do i = 0, nbus-1
+    if (grid%get_active_bus(i)) then
+      ix = mod(i,ldx)
+      iy = (i-ix)/ldx
+      ix = ix + iaxmin
+      iy = iy + iaymin
+      n = 0
+      if (ix.gt.iaxmin) n = n+1
+      if (ix.lt.iaxmax) n = n+1
+      if (iy.gt.iaymin) n = n+1
+      if (iy.lt.iaymax) n = n+1
+      nnghbr = grid%get_num_connected_branches(i)
+      allocate(nghbr(nnghbr))
+      allocate(nghbr_bus(nnghbr))
+      call grid%get_connected_branches(i,nghbr)
+      if (n.ne.nnghbr) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] incorrect neighbor branches on bus ', i
+        ok = .false.
+      endif
+      do j = 1, nnghbr
+        call grid%get_branch_endpoints(nghbr(j),n1,n2)
+        if (n1.ne.i.and.n2.ne.i) then
+          write(6,'(a,i4,a,i6)') 'p[', me, &
+            '] incorrectly assigned neighbors on bus ', i
+          ok = .false.
+        endif
+        if (n1.ne.i) then
+          nghbr_bus(j) = n1
+        else if (n2.ne.i) then
+          nghbr_bus(j) = n2
+        endif
+      end do
+      call grid%get_connected_buses(i,nghbr)
+!
+!  Double loop, not very efficient but lists are small
+!
+      t_ok = .false.
+      do j = 1, nnghbr
+        do k = 1, nnghbr
+          if (nghbr(j).eq.nghbr_bus(k)) then
+            t_ok = .true.
+            exit
+          endif
+        end do
+        if (t_ok) exit
+      end do
+      if (.not.t_ok) ok = .false.
+      deallocate(nghbr)
+      deallocate(nghbr_bus)
+    endif
+  end do
+!
+  call check_ok(ok)
+!
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Bus neighbors are ok'
+  endif
+!
+! TODO: Need to add test for ghost updates
+!
+!
+!  Test clean function
+!
+  call grid%clean()
+  n = (ixmax-ixmin+1)*(iymax-iymin+1)
+  ok = .true.
+  if (grid%num_buses().ne.n) then
+    write(6,'(a,i4,a,i6,a,i6)') 'p[', me, &
+      '] Number of buses after clean: ', grid%num_buses(), &
+      ' expected: ',n
+    ok = .false.
+  endif
+!
+  oks = n
+  call MPI_Allreduce(oks, okr, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD, ierr)
+!
+  if (okr.ne.XDIM*YDIM) then
+    ok = .false.
+  endif
+!
+  call check_ok(ok)
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Number of buses after clean ok'
+  endif
+!
+  n = (iaxmax-ixmin)*(iymax-iymin+1)+(ixmax-ixmin+1)*(iaymax-iymin)
+  ok = .true.
+  if (grid%num_branches().ne.n) then
+    write(6,'(a,i4,a,i6,a,i6)') 'p[', me, &
+      '] Number of branches after clean: ', grid%num_branches(), &
+      ' expected: ',n
+    ok = .false.
+  endif
+!
+  oks = n
+  call MPI_Allreduce(oks, okr, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD, ierr)
+!
+  if (okr.ne.(XDIM-1)*YDIM+XDIM*(YDIM-1)) then
+    ok = .false.
+  endif
+!
+  call check_ok(ok)
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Number of branches after clean ok'
+  endif
+!
+!  Check neighbors of buses after performing clean operation
+!
+  ok = .true.
+  nbus = grid%num_buses()
+  ldx = ixmax-ixmin+1
+  do i = 0, nbus-1
+    if (grid%get_active_bus(i)) then
+      ix = mod(i,ldx)
+      iy = (i-ix)/ldx
+      ix = ix + ixmin
+      iy = iy + iymin
+      n = 0
+      if (ix.gt.ixmin) n = n+1
+      if (ix.lt.iaxmax) n = n+1
+      if (iy.gt.iymin) n = n+1
+      if (iy.lt.iaymax) n = n+1
+      nnghbr = grid%get_num_connected_branches(i)
+      allocate(nghbr(nnghbr))
+      allocate(nghbr_bus(nnghbr))
+      call grid%get_connected_branches(i,nghbr)
+      if (n.ne.nnghbr) then
+        write(6,'(a,i4,a,i6)') 'p[', me, &
+          '] incorrect neighbor branches on bus ', i
+        ok = .false.
+      endif
+      do j = 1, nnghbr
+        call grid%get_branch_endpoints(nghbr(j),n1,n2)
+        if (n1.ne.i.and.n2.ne.i) then
+          write(6,'(a,i4,a,i6)') 'p[', me, &
+            '] incorrectly assigned neighbors on bus ', i
+          ok = .false.
+        endif
+        if (n1.ne.i) then
+          nghbr_bus(j) = n1
+        else if (n2.ne.i) then
+          nghbr_bus(j) = n2
+        endif
+      end do
+      call grid%get_connected_buses(i,nghbr)
+!
+!  Double loop, not very efficient but lists are small
+!
+      t_ok = .false.
+      do j = 1, nnghbr
+        do k = 1, nnghbr
+          if (nghbr(j).eq.nghbr_bus(k)) then
+            t_ok = .true.
+            exit
+          endif
+        end do
+        if (t_ok) exit
+      end do
+      if (.not.t_ok) ok = .false.
+      deallocate(nghbr)
+      deallocate(nghbr_bus)
+    endif
+  end do
+!
+  call check_ok(ok)
+!
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Bus and branches are ok after clean operation'
   endif
   call grid%destroy()
   CALL comm%finalize()

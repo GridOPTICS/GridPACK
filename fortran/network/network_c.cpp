@@ -404,7 +404,8 @@ extern "C" void network_get_connected_buses(FortranNetwork *network, int idx, in
  * @param bus1 local index of bus at one end of branch
  * @param bus2 local index of bus at other end of branch
  */
-extern "C" void network_get_branch_endpoints(FortranNetwork *network, int idx, int *idx1, int *idx2)
+extern "C" void network_get_branch_endpoints(FortranNetwork *network, int idx,
+    int *idx1, int *idx2)
 {
   network->getBranchEndpoints(idx,idx1,idx2);
 }

@@ -96,7 +96,7 @@ module gridpack_network
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), value, intent(in) :: network
-      integer(C_INT), intent(in) :: idx1, idx2
+      integer(C_INT), value, intent(in) :: idx1, idx2
     end subroutine network_add_branch
 !
 ! Number of local buses (both active and inactive) on processor
