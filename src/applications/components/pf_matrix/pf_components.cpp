@@ -955,6 +955,7 @@ void gridpack::powerflow::PFBranch::load(
     }
     ivar = 1;
     data->getValue(BRANCH_STATUS, &ivar, idx);
+    p_branch_status.push_back(static_cast<bool>(ivar));
     if (ivar == 1) p_active = true;
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
@@ -1103,6 +1104,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
+      if (!p_branch_status[i]) p = 0.0;
+      if (!p_branch_status[i]) q = 0.0;
       double S = sqrt(p*p+q*q);
       if (S > p_rateA[i] && p_rateA[i] != 0.0){
         sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
@@ -1124,6 +1127,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       s = getComplexPower(tags[i]);
       double p = real(s);
       double q = imag(s);
+      if (!p_branch_status[i]) p = 0.0;
+      if (!p_branch_status[i]) q = 0.0;
       sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
           bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q);
       ilen += strlen(buf);

@@ -382,6 +382,7 @@ class PFBranch
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
     std::vector<double> p_rateA;
+    std::vector<bool> p_branch_status;
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
