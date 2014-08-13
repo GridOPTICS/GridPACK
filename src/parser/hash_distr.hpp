@@ -117,7 +117,7 @@ public:
   // on output, the values of the received data
   void distributeBusValues(std::vector<int> &keys, std::vector<_bus_data_type> &values)
   {
-#ifdef SYSTOLIC
+#ifdef XSYSTOLIC
     int ksize = keys.size();
     int vsize = values.size();
     int me = GA_Pgroup_nodeid(p_GAgrp);
@@ -229,7 +229,7 @@ public:
     for (i=0; i<nsize; i++) {
       ip = index_map.find(g_idx[i]);
       if (ip == index_map.end()) {
-        index_map.insert(std::pair<g_idx[i],1>);
+        index_map.insert(std::pair<int,int>(g_idx[i],1));
       } else {
         ip->second++;
       }
@@ -247,17 +247,16 @@ public:
     int blocks[2];
     blocks[0] = -1;
     blocks[1] = nprocs;
-    int g_type = NGA_Register_type(p_size_bus_data);
     int g_cnt = GA_Create_handle();
-    GA_Set_data(g_cnt,two,dims,g_type);
+    GA_Set_data(g_cnt,two,dims,C_INT);
     GA_Set_chunk(g_cnt,blocks);
-    GA_Set_pgroup(g_bus,p_GAgrp);
-    GA_Allocate(g_bus);
-    GA_Zero(g_bus);
+    GA_Set_pgroup(g_cnt,p_GAgrp);
+    GA_Allocate(g_cnt);
+    GA_Zero(g_cnt);
 
     // Set up data structures to scatter counts to g_cnt array
     nsize = index_map.size();
-    int **indices = new int*[nsize];
+    int **index = new int*[nsize];
     int *idx = new int[2*nsize];
     int *ival = new int[nsize];
     int ncnt = 0;
@@ -267,9 +266,14 @@ public:
       idx[2*ncnt+1] = me;
       index[ncnt] = &idx[2*ncnt];
       ival[ncnt] = ip->second;
+      ip++;
       ncnt++;
     }
-    NGA_Scatter_acc(g_cnt, ival, index, ncnt, one);
+    NGA_Scatter_acc(g_cnt, ival, index, ncnt, &one);
+    GA_Pgroup_sync(p_GAgrp);
+    delete [] index;
+    delete [] idx;
+    delete [] ival;
     // A complete set of counts is now in g_cnt. Figure out total offsets on
     // each processor and figure out individual offsets
     int lo[2], hi[2], ld;
@@ -279,12 +283,26 @@ public:
     int idim = hi[0]-lo[0]+1;
     int jdim = hi[1]-lo[1]+1;
     int offset = 0;
-    ncnt = 0
+    int tmp_cnt;
+    ival = new int[idim];
+    // Evaluate total number of elements associated with each bus
+    ncnt = 0;
+    for (i = 0; i<idim; i++) {
+      // second index is fast index
+      ival[i] = 0;
+      for (j = 0; j<jdim; j++) {
+        ival[i] += cnt_ptr[ncnt];
+        ncnt++;
+      }
+    }
+    // Evaluate offset for each bus on each processor
+    ncnt = 0;
     for (i = 0; i<idim; i++) {
       // second index is fast index
       for (j = 0; j<jdim; j++) {
-        offset += cnt_ptr[ncnt];
+        tmp_cnt = cnt_ptr[ncnt];
         cnt_ptr[ncnt] = offset;
+        offset += tmp_cnt;
         ncnt++;
       }
     }
@@ -294,8 +312,11 @@ public:
     }
     offsets[me] = offset;
     GA_Pgroup_igop(p_GAgrp,offsets,nprocs,"+");
-    offset = offsets[me];
-    ncnt = 0
+    offset = 0;
+    for (i = 0; i<me; i++) {
+      offset += offsets[i];
+    }
+    ncnt = 0;
     for (i = 0; i<idim; i++) {
       for (j = 0; j<jdim; j++) {
         cnt_ptr[ncnt] += offset;
@@ -304,94 +325,148 @@ public:
     }
     NGA_Release(g_cnt,lo,hi);
     GA_Pgroup_sync(p_GAgrp);
+    // At this point, offsets for each bus and each process should be available
+    // in g_cnt. Need to construct a second array with the offsets and total
+    // number of elements for each bus. This is used to gather the data back to
+    // individual buses, once it has been distributed.
+    int g_bus = GA_Create_handle();
+    dims[0] = totalBuses;
+    dims[1] = 2;
+    blocks[0] = -1;
+    blocks[1] = 2;
+    GA_Set_data(g_bus,two,dims,C_INT);
+    GA_Set_chunk(g_bus,blocks);
+    GA_Set_pgroup(g_bus,p_GAgrp);
+    GA_Allocate(g_bus);
+    lo[1] = 1;
+    hi[1] = 1;
+    NGA_Put(g_bus,lo,hi,ival,&one);
+    lo[1] = 0;
+    hi[1] = 0;
+    NGA_Copy_patch('N',g_cnt,lo,hi,g_bus,lo,hi);
+    GA_Pgroup_sync(p_GAgrp);
+    delete [] ival;
+    //Evaluate total number of values that need to be distributed
     int total_values = 0;
     for (i=0; i<nprocs; i++) {
       total_values += offsets[i];
     }
-    // get offset for each bus that has values
-    NGA_Gather(g_cnt, ival, index, ncnt);
-    for (i=0; i<ncnt; i++) {
-      j = idx[2*i];
-      ip = index_map.find(j);
-      ip->second = ival[i];
-    }
-    delete [] indices;
-    delete [] idx;
-    delete [] ival;
-    // set up arrays to push data to GA
-    int **indices = new int*[nsize];
-    int *idx = new int[nsize];
-    nsize = keys.size();
-    bus_data_pair *values_buf = new bus_data_pair[nsize];
+    // Create array to contain all data elements
+    int g_type = NGA_Register_type(p_size_bus_data);
+    int g_data = GA_Create_handle();
+    GA_Set_data(g_data,one,&total_values,g_type);
+    GA_Set_pgroup(g_data,p_GAgrp);
+    GA_Allocate(g_data);
+    NGA_Deregister_type(g_type);
+    // Get offset for each value. Start by getting offset for each bus that has
+    // values
+    nsize = index_map.size();
+    index = new int*[nsize];
+    idx = new int[2*nsize];
+    ival = new int[nsize];
+    index_map.clear();
+    nsize = g_idx.size();
+    ncnt = 0;
     for (i=0; i<nsize; i++) {
       ip = index_map.find(g_idx[i]);
-      idx[i] = ip->second;
-      index[i] = &idx[i]
-      ip->second++;
-      values_buf[i].flag = true;
-      values_buf[i].data = values[i];
+      if (ip == index_map.end()) {
+        index_map.insert(std::pair<int,int>(g_idx[i],0));
+        idx[2*ncnt] = g_idx[i];
+        idx[2*ncnt+1] = me;
+        index[ncnt] = &idx[2*ncnt];
+        ncnt++;
+      }
     }
-    
-
-    // Create global array to distribute data
-    int g_bus = GA_Create_handle();
-    int one = 1;
-    GA_Set_data(g_bus,one,&total_values,g_type);
-    GA_Set_pgroup(g_bus,p_GAgrp);
-    GA_Allocate(g_bus);
-    NGA_Deregister_type(g_type);
-
-    // initialize all data pairs in global array to false
-    bus_data_pair *list;
-    NGA_Distribution(g_bus,me,lo,hi);
-    nsize = hi[0] - lo[0] + 1;
-    NGA_Access(g_bus,lo,hi,&list,&ld);
+    NGA_Gather(g_cnt,ival,index,ncnt);
+    // initialize index map with offset for each bus
     for (i=0; i<nsize; i++) {
-      list[i].flag = false;
+      ip = index_map.find(idx[2*i]);
+      if (ip != index_map.end()) {
+        ip->second = ival[i];
+      } else {
+        //TODO: some kind of error
+      }
     }
-    NGA_Release(g_bus,lo,hi);
-
-    // Scatter data to global array
-    NGA_Scatter(g_bus,values_buf,idx,nsize);
-    GA_Pgroup_sync(p_GAgrp);
     delete [] index;
     delete [] idx;
-    delete [] values_buf;
+    delete [] ival;
+    nsize = g_idx.size();
+    index = new int*[nsize];
+    idx = new int[nsize];
+    bus_data_pair *data = new bus_data_pair[nsize];
+    for (i=0; i<nsize; i++) {
+      ip = index_map.find(g_idx[i]);
+      if (ip != index_map.end()) {
+        idx[i] = ip->second;
+        index[i] = &idx[i];
+        ip->second++;
+        data[i].idx = keys[i];
+        data[i].data = values[i];
+      } else {
+        //TODO: some kind of error
+      }
+    }
+    NGA_Scatter(g_data,data,index,nsize);
+    delete [] index;
+    delete [] idx;
+    delete [] data;
+    GA_Pgroup_sync(p_GAgrp);
+    // Data is now in global array g_data. Gather it back to processes that own
+    // the data. Start by getting the total number of values associated with
+    // each bus on the local process
+    int nbus = p_network->numBuses();
+    int *isize = new int[nbus];
+    ival = new int[nbus];
+    index = new int*[nbus];
+    idx = new int[2*nbus];
+    for (i=0; i<nbus; i++) {
+      idx[2*i] = p_network->getGlobalBusIndex(i);
+      idx[2*i+1] = 1;
+      index[i] = &idx[2*i];
+    }
+    NGA_Gather(g_bus, isize, index, nbus);
+    for (i=0; i<nbus; i++) {
+      idx[2*i+1] = 0;
+    }
+    NGA_Gather(g_bus, ival, index, nbus);
+    // Sizes and offsets are available. Set up index arrays and gather
+    // data associated with local buses
+    ncnt = 0;
+    for (i=0; i<nbus; i++) {
+      ncnt += isize[i];
+    }
+    int *idx2 = new int[ncnt];
+    int **index2 = new int*[ncnt];
+    data = new bus_data_pair[ncnt];
+    ncnt = 0;
+    for (i=0; i<nbus; i++) {
+      for (j=0; j<isize[i]; j++) {
+        idx2[ncnt] = ival[i]+j;
+        index2[ncnt] = &idx2[ncnt];
+        ncnt++;
+      }
+    }
+    NGA_Gather(g_data, data, index2, ncnt);
+    // Copy data to output vectors and clean up
     keys.clear();
     values.clear();
-
-    // Set up local arrays to receive data
-    nsize = p_network->numBuses();
-    index = new int[nsize];
-    idx = new int*[nsize];
-    values_buf = new bus_data_pair[nsize];
-    int icnt = 0;
-    for (i=0; i<nsize; i++) {
-      if (p_network->getActiveBus(i)) {
-        index[icnt] = p_network->getGlobalBusIndex(i);
-        idx[icnt] = &index[icnt];
-        icnt++;
+    for (i=0; i<nbus; i++) {
+      for (j=0; j<isize[i]; j++) {
+        keys.push_back(i);
+        values.push_back(data[i].data);
       }
     }
 
-    // Gather data to local buffers
-    NGA_Gather(g_bus,values_buf,idx,icnt);
-
-    // Copy data back to vectors
-    icnt = 0;
-    for (i=0; i<nsize; i++) {
-      if (p_network->getActiveBus(i)) {
-        if (values_buf[icnt].flag) {
-          keys.push_back(i);
-          values.push_back(values_buf[icnt].data);
-        }
-        icnt++;
-      }
-    }
     delete [] index;
     delete [] idx;
-    delete [] values_buf;
+    delete [] index2;
+    delete [] idx2;
+    delete [] ival;
+    delete [] isize;
+    delete [] data;
+    GA_Destroy(g_cnt);
     GA_Destroy(g_bus);
+    GA_Destroy(g_data);
 #endif
   }
 

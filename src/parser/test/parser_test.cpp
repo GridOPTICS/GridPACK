@@ -124,7 +124,6 @@ main(int argc, char **argv)
       idx = keys[i];
       if (network->getGlobalBusIndex(idx)+1 != busData[i].idx) schk = 1;
     }
-
 #if 1
     // create data on process 0 to go to all branches in the network
     int branch_total = network->totalBranches();
