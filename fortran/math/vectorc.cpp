@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created May 15, 2014 by William A. Perkins
-// Last Change: 2014-05-16 09:17:53 d3g096
+// Last Change: 2014-07-15 12:46:48 d3g096
 // -------------------------------------------------------------
 
 #include <gridpack/parallel/communicator.hpp>
@@ -148,5 +148,11 @@ extern "C" void
 vector_exp(gridpack::math::Vector *v)
 {
   v->exp();
+}
+
+extern "C" gridpack::math::Vector *
+vector_clone(gridpack::math::Vector *v)
+{
+  return v->clone();
 }
 

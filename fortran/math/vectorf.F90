@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 15, 2014 by William A. Perkins
-! Last Change: 2014-05-16 11:21:52 d3g096
+! Last Change: 2014-08-14 12:49:04 d3g096
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_vector
@@ -26,7 +26,7 @@ MODULE gridpack_vector
      TYPE (c_ptr) :: vec
    CONTAINS
      PROCEDURE :: initialize 
-     PROCEDURE :: finalize 
+     PROCEDURE :: finalize ! should be FINAL
      PROCEDURE :: size
      PROCEDURE :: local_size
      PROCEDURE :: local_index_range
@@ -38,6 +38,7 @@ MODULE gridpack_vector
      PROCEDURE :: norm2
      PROCEDURE :: norm_infinity
      PROCEDURE :: ready
+     PROCEDURE :: clone
      PROCEDURE :: print
   END type vector
 
@@ -133,6 +134,12 @@ MODULE gridpack_vector
        IMPLICIT NONE
        TYPE (c_ptr), VALUE, INTENT(IN) :: vec
      END SUBROUTINE vector_print
+
+     TYPE (c_ptr) FUNCTION vector_clone(vec) BIND(c)
+       USE iso_c_binding, ONLY: c_ptr
+       IMPLICIT NONE
+       TYPE (c_ptr), VALUE, INTENT(IN) :: vec
+     END FUNCTION vector_clone
 
   END INTERFACE
 
@@ -274,6 +281,14 @@ CONTAINS
     CALL vector_ready(this%vec)
   END SUBROUTINE ready
 
+  ! ----------------------------------------------------------------
+  ! TYPE (vector) FUNCTION clone
+  ! ----------------------------------------------------------------
+  TYPE (vector) FUNCTION clone(this)
+    IMPLICIT NONE
+    CLASS (vector), INTENT(INOUT) :: this
+    clone%vec = vector_clone(this%vec)
+  END FUNCTION clone
 
   ! ----------------------------------------------------------------
   ! SUBROUTINE print

@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 27, 2014 by William A. Perkins
-! Last Change: 2014-05-29 10:37:09 d3g096
+! Last Change: 2014-08-14 12:48:28 d3g096
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_matrix
@@ -27,7 +27,7 @@ MODULE gridpack_matrix
      TYPE (c_ptr) :: mat
    CONTAINS
      PROCEDURE :: initialize
-     PROCEDURE :: finalize
+     PROCEDURE :: finalize      ! should be FINAL
      PROCEDURE :: rows
      PROCEDURE :: local_rows
      PROCEDURE :: local_row_range

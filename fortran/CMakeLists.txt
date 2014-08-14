@@ -11,7 +11,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2014-08-06 13:29:38 d3g096
+# Last Change: 2014-08-13 08:16:51 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.10)
@@ -69,6 +69,7 @@ endif()
 set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
 add_subdirectory(parallel)
+add_subdirectory(configuration)
 add_subdirectory(math)
 add_subdirectory(component)
 add_subdirectory(network)

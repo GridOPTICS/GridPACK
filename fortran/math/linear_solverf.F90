@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 29, 2014 by William A. Perkins
-! Last Change: 2014-05-29 14:03:59 d3g096
+! Last Change: 2014-08-14 12:49:31 d3g096
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_linear_solver
@@ -27,7 +27,7 @@ MODULE gridpack_linear_solver
      TYPE (c_ptr) :: solvr
    CONTAINS
      PROCEDURE :: initialize
-     PROCEDURE :: finalize
+     PROCEDURE :: finalize      ! should be FINAL
      PROCEDURE :: solve
   END type linear_solver
 
