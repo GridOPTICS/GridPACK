@@ -62,6 +62,46 @@ void gridpack::state_estimation::SEFactory::setYBus(void)
 }
 
 /**
+ * Create the Jacobian_H matrix
+ */
+void gridpack::state_estimation::SEFactory::createJacobian_H(void)
+{
+  int numBus = p_network->numBuses();
+  int numBranch = p_network->numBranches();
+  int i;
+
+  // Invoke setYBus method on all bus objects
+  for (i=0; i<numBus; i++) {
+    (dynamic_cast<SEBus*>(p_network->getBus(i).get()))->matrixGetValues();
+  }
+
+  // Invoke setYBus method on all branch objects
+  for (i=0; i<numBranch; i++) {
+    (dynamic_cast<SEBranch*>(p_network->getBranch(i).get()))->matrixGetValues();
+  }
+}
+
+/**
+ * Create the z-h(x) vector
+ */
+void gridpack::state_estimation::SEFactory::createZh(void)
+{
+  int numBus = p_network->numBuses();
+  int numBranch = p_network->numBranches();
+  int i;
+
+  // Invoke setYBus method on all bus objects
+  for (i=0; i<numBus; i++) {
+    (dynamic_cast<SEBus*>(p_network->getBus(i).get()))->vectorGetElementValues();
+  }
+
+  // Invoke setYBus method on all branch objects
+  for (i=0; i<numBranch; i++) {
+    (dynamic_cast<SEBranch*>(p_network->getBranch(i).get()))->vectorGetElementValues();
+  }
+}
+
+/**
  * Disribute measurements
  * @param measurements a vector containing all measurements
  */

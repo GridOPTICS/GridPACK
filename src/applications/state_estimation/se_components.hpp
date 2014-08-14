@@ -25,7 +25,7 @@
 namespace gridpack {
 namespace state_estimation{
 
-enum SEMode{YBus};
+enum SEMode{YBus,Jacobian_H};
 
 struct Measurement
 {
@@ -182,6 +182,28 @@ class SEBus
      * internal paramters
      */
     void addMeasurement(Measurement measurement);
+
+    /**
+     * Return values from a matrix block
+     * @param values: pointer to matrix block values
+     * @param rows: pointer to matrix block rows
+     * @param cols: pointer to matrix block cols
+    */
+    void matrixGetValues(ComplexType *values, int *rows, int *cols);
+
+    /**
+     * Return values from a vector
+     * @param values: pointer to vector values (z-h(x))
+     * @param idx: pointer to vector index 
+    */
+    void VectorGetElementValues(ComplexType *values, int *idx);
+
+    /**
+     * Return the size of bus measurement element values
+     * @param nbusElementSize pointer to the size of bus measurement element values
+   */
+    void GetBusMeasElementSize(int *nbusElementSize);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -206,6 +228,7 @@ class SEBus
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV;
+    std::vector<Measurement> p_meas;
 
     /**
      * Variables that are exchanged between buses
@@ -339,6 +362,42 @@ class SEBranch
      * internal paramters
      */
     void addMeasurement(Measurement measurement);
+
+    /**
+      * Return contribution to constraints
+      * @param v: voltage at the other bus
+      * @param theta: angle difference between two buses
+     */
+    void getVTheta(gridpack::state_estimation::SEBus *bus, double *v, double *theta);
+
+    /**
+      * Return contribution to constraints
+      * @param v1, v2: voltages at buses
+      * @param theta: angle difference between two buses
+      */
+    void getV1V2Theta(gridpack::state_estimation::SEBranch *branch, double *v1, double *v2, double *theta);
+    
+    /**
+     * Return values from a matrix block
+     * @param values: pointer to matrix block values
+     * @param rows: pointer to matrix block rows
+     * @param cols: pointer to matrix block cols
+    */
+    void matrixGetValues(ComplexType *values, int *rows, int *cols);
+
+    /**
+     * Return values from a vector
+     * @param values: pointer to vector values (z-h(x))
+     * @param idx: pointer to vector index 
+    */
+    void VectorGetElementValues(ComplexType *values, int *idx);
+
+    /**
+     * Return the size of branch measurement element values
+     * @param nbusElementSize pointer to the size of branch measurement element values
+   */
+    void GetBranchMeasElementSize(int *nbrchElementSize);
+
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
@@ -359,6 +418,7 @@ class SEBranch
     std::vector<std::string> p_tag;
     int p_elems;
     bool p_active;
+    std::vector<Measurement> p_meas;
 
 private:
 

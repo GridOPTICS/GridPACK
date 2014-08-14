@@ -195,12 +195,14 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   ybus->print();
 
   // Start N-R loop
-
+//  while (real(tol) > tolerance && iter < max_iteration) {
 
     // Form estimation vector
+   factory.createZh();
 
 
     // Build measurement equation
+   factory.createJacobian_H();
 
   
     // Build gain matrix 

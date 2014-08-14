@@ -50,6 +50,17 @@ class SEFactory
      */
     void setMeasurements(std::vector<Measurement> measurements);
 
+    /**
+     * Create the z-h(x) vector
+     */
+    void createZh(void);
+
+    /**
+     * Create the Jacobian_H matrix
+     */
+    void createJacobian_H(void);
+
+
   private:
 
     NetworkPtr p_network;
