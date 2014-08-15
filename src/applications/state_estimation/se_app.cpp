@@ -194,15 +194,23 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   branchIO.header("\nybus:\n");
   ybus->print();
 
+  // Create initial version of  H Jacobian and estimation vector
+  factory.setMode(Jacobian_H);
+  gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
+
+  gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
+  boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
   // Start N-R loop
 //  while (real(tol) > tolerance && iter < max_iteration) {
 
+    
     // Form estimation vector
-   factory.createZh();
+    HJacMap.mapToMatrix(HJac);
 
 
     // Build measurement equation
-   factory.createJacobian_H();
+    EzMap.mapToVector(Ez);
 
   
     // Build gain matrix 
