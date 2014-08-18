@@ -184,6 +184,58 @@ class SEBus
     void addMeasurement(Measurement measurement);
 
     /**
+     * Return number of rows in matrix from component
+     * @return number of rows from component
+     */
+    int matrixNumRows() const;
+
+    /**
+     * Return number of columns in matrix from component
+     * @return number of columnsows from component
+     */
+    int matrixNumCols() const;
+
+    /**
+     * Set row indices corresponding to the rows contributed by this
+     * component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @param idx matrix index of row irow
+     */
+    void matrixSetRowIndex(int irow, int idx);
+
+    /**
+     * Set column indices corresponding to the columns contributed by this
+     * component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @param idx matrix index of column icol
+     */
+    void matrixSetColIndex(int icol, int idx);
+
+    /**
+     * Get the row index corresponding to the rows contributed by this component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @return matrix index of row irow
+     */
+    int matrixGetRowIndex(int idx);
+
+    /**
+     * Get the column index corresponding to the columns contributed by this component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @return matrix index of column icol
+     */
+    int matrixGetColIndex(int idx);
+
+    /**
+     * Return the number of matrix values contributed by this component
+     * @return number of matrix values
+     */
+    int matrixNumValues() const;
+
+    /**
      * Return values from a matrix block
      * @param values: pointer to matrix block values
      * @param rows: pointer to matrix block rows
@@ -195,14 +247,14 @@ class SEBus
      * Return values from a vector
      * @param values: pointer to vector values (z-h(x))
      * @param idx: pointer to vector index 
-    */
+     */
     void VectorGetElementValues(ComplexType *values, int *idx);
 
     /**
-     * Return the size of bus measurement element values
-     * @param nbusElementSize pointer to the size of bus measurement element values
-   */
-    void GetBusMeasElementSize(int *nbusElementSize);
+     * Configure buses with state estimation parameters. These can be used in
+     * other methods
+     */
+    void configureSE(void);
 
   private:
     double p_shunt_gs;
@@ -228,6 +280,9 @@ class SEBus
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV;
+    int p_numElements;
+    std::vector<int> p_colIdx;
+    std::vector<int> p_rowIdx;
     std::vector<Measurement> p_meas;
 
     /**
@@ -261,7 +316,10 @@ private:
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
-      & p_isPV;
+      & p_isPV
+      & p_numElements
+      & p_colIdx
+      & p_rowIdx;
   }  
 
 };
@@ -364,39 +422,91 @@ class SEBranch
     void addMeasurement(Measurement measurement);
 
     /**
-      * Return contribution to constraints
-      * @param v: voltage at the other bus
-      * @param theta: angle difference between two buses
+     * Return contribution to constraints
+     * @param v: voltage at the other bus
+     * @param theta: angle difference between two buses
      */
     void getVTheta(gridpack::state_estimation::SEBus *bus, double *v, double *theta);
 
     /**
-      * Return contribution to constraints
-      * @param v1, v2: voltages at buses
-      * @param theta: angle difference between two buses
-      */
+     * Return contribution to constraints
+     * @param v1, v2: voltages at buses
+     * @param theta: angle difference between two buses
+     */
     void getV1V2Theta(gridpack::state_estimation::SEBranch *branch, double *v1, double *v2, double *theta);
-    
+
+    /**
+     * Return number of rows in matrix from component
+     * @return number of rows from component
+     */
+    int matrixNumRows() const;
+
+    /**
+     * Return number of columns in matrix from component
+     * @return number of columnsows from component
+     */
+    int matrixNumCols() const;
+
+    /**
+     * Set row indices corresponding to the rows contributed by this
+     * component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @param idx matrix index of row irow
+     */
+    void matrixSetRowIndex(int irow, int idx);
+
+    /**
+     * Set column indices corresponding to the columns contributed by this
+     * component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @param idx matrix index of column icol
+     */
+    void matrixSetColIndex(int icol, int idx);
+
+    /**
+     * Get the row index corresponding to the rows contributed by this component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @return matrix index of row irow
+     */
+    int matrixGetRowIndex(int idx);
+
+    /**
+     * Get the column index corresponding to the columns contributed by this component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @return matrix index of column icol
+     */
+    int matrixGetColIndex(int idx);
+
+    /**
+     * Return the number of matrix values contributed by this component
+     * @return number of matrix values
+     */
+    virtual int matrixNumValues() const;
+
     /**
      * Return values from a matrix block
      * @param values: pointer to matrix block values
      * @param rows: pointer to matrix block rows
      * @param cols: pointer to matrix block cols
-    */
+     */
     void matrixGetValues(ComplexType *values, int *rows, int *cols);
 
     /**
      * Return values from a vector
      * @param values: pointer to vector values (z-h(x))
      * @param idx: pointer to vector index 
-    */
+     */
     void VectorGetElementValues(ComplexType *values, int *idx);
 
     /**
-     * Return the size of branch measurement element values
-     * @param nbusElementSize pointer to the size of branch measurement element values
-   */
-    void GetBranchMeasElementSize(int *nbrchElementSize);
+     * Configure branches with state estimation parameters. These can be used in
+     * other methods
+     */
+    void configureSE(void);
 
   private:
     std::vector<double> p_reactance;
@@ -418,6 +528,9 @@ class SEBranch
     std::vector<std::string> p_tag;
     int p_elems;
     bool p_active;
+    int p_numElements;
+    std::vector<int> p_colIdx;
+    std::vector<int> p_rowIdx;
     std::vector<Measurement> p_meas;
 
 private:
@@ -448,7 +561,10 @@ private:
       & p_branch_status
       & p_tag
       & p_elems
-      & p_active;
+      & p_active
+      & p_numElements
+      & p_colIdx
+      & p_rowIdx;
   }  
 
 };
