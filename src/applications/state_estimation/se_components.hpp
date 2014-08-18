@@ -25,7 +25,7 @@
 namespace gridpack {
 namespace state_estimation{
 
-enum SEMode{YBus,Jacobian_H};
+enum SEMode{YBus,Jacobian_H, R_inv};
 
 struct Measurement
 {
@@ -281,8 +281,10 @@ class SEBus
     double p_Pinj, p_Qinj;
     bool p_isPV;
     int p_numElements;
-    std::vector<int> p_colIdx;
-    std::vector<int> p_rowIdx;
+    std::vector<int> p_colJidx;
+    std::vector<int> p_rowJidx;
+    std::vector<int> p_colRidx;
+    std::vector<int> p_rowRidx;
     std::vector<Measurement> p_meas;
 
     /**
@@ -318,8 +320,10 @@ private:
       & p_Pinj & p_Qinj
       & p_isPV
       & p_numElements
-      & p_colIdx
-      & p_rowIdx;
+      & p_colJidx
+      & p_rowJidx
+      & p_colRidx
+      & p_rowRidx;
   }  
 
 };
@@ -529,8 +533,10 @@ class SEBranch
     int p_elems;
     bool p_active;
     int p_numElements;
-    std::vector<int> p_colIdx;
-    std::vector<int> p_rowIdx;
+    std::vector<int> p_colJidx;
+    std::vector<int> p_rowJidx;
+    std::vector<int> p_colRidx;
+    std::vector<int> p_rowRidx;
     std::vector<Measurement> p_meas;
 
 private:
@@ -563,8 +569,10 @@ private:
       & p_elems
       & p_active
       & p_numElements
-      & p_colIdx
-      & p_rowIdx;
+      & p_colJidx
+      & p_rowJidx
+      & p_colRidx
+      & p_rowRidx;
   }  
 
 };
