@@ -8,25 +8,36 @@ typedef gridpack::network::BaseNetwork<
     gridpack::fortran_component::FortranBranchComponent>
     FortranNetwork;
 
+struct networkWrapper {
+  boost::shared_ptr<FortranNetwork> network;
+};
+
+typedef gridpack::fortran_component::FortranBusComponent FortranBus;
+
+struct busWrapper {
+    boost::shared_ptr<FortranBus> bus;
+};
+
 /**
  * Create a new network
  * @param network pointer to new Fortran network object
  * @param comm communicator
  */
-extern "C" void network_create(FortranNetwork **network,
+extern "C" void network_create(networkWrapper **wnetwork,
     gridpack::parallel::Communicator *comm)
 {
-  *network = new FortranNetwork(*comm);
+  *wnetwork = new networkWrapper;
+  (*wnetwork)->network.reset(new FortranNetwork(*comm));
 }
 
 /**
  * Destroy old network
  * @param network pointer to Fortran network object
  */
-extern "C" void network_destroy(FortranNetwork **network)
+extern "C" void network_destroy(networkWrapper **wnetwork)
 {
-  delete (*network);
-  *network = NULL;
+  delete (*wnetwork);
+  *wnetwork = NULL;
 }
 #if 0
 /**
@@ -52,9 +63,9 @@ void p_checkHandle(int n_handle)
  * @param network pointer to Fortran network object
  * @param idx original index of bus
  */
-extern "C" void network_add_bus(FortranNetwork *network, int *idx)
+extern "C" void network_add_bus(networkWrapper *wnetwork, int *idx)
 {
-  network->addBus(*idx);
+  wnetwork->network->addBus(*idx);
 }
 
 /**
@@ -64,9 +75,9 @@ extern "C" void network_add_bus(FortranNetwork *network, int *idx)
  * @param idx1 original bus index of "from" bus
  * @param idx2 original bus index of "to" bus
  */
-extern "C" void network_add_branch(FortranNetwork *network, int idx1, int idx2)
+extern "C" void network_add_branch(networkWrapper *wnetwork, int idx1, int idx2)
 {
-  network->addBranch(idx1,idx2);
+  wnetwork->network->addBranch(idx1,idx2);
 }
 
 /**
@@ -74,9 +85,9 @@ extern "C" void network_add_branch(FortranNetwork *network, int idx1, int idx2)
  * @param network pointer to Fortran network object
  * @return number of buses
  */
-extern "C" int network_num_buses(FortranNetwork *network)
+extern "C" int network_num_buses(networkWrapper *wnetwork)
 {
-  return network->numBuses();
+  return wnetwork->network->numBuses();
 }
 
 /**
@@ -84,9 +95,9 @@ extern "C" int network_num_buses(FortranNetwork *network)
  * @param network pointer to Fortran network object
  * @return total number of buses
  */
-extern "C" int network_total_buses(FortranNetwork *network)
+extern "C" int network_total_buses(networkWrapper *wnetwork)
 {
-  return network->totalBuses();
+  return wnetwork->network->totalBuses();
 }
 
 /**
@@ -94,9 +105,9 @@ extern "C" int network_total_buses(FortranNetwork *network)
  * @param network pointer to Fortran network object
  * @return number of branches
  */
-extern "C" int network_num_branches(FortranNetwork *network)
+extern "C" int network_num_branches(networkWrapper *wnetwork)
 {
-  return network->numBranches();
+  return wnetwork->network->numBranches();
 }
 
 /**
@@ -104,9 +115,9 @@ extern "C" int network_num_branches(FortranNetwork *network)
  * @param network pointer to Fortran network object
  * @return total number of branches
  */
-extern "C" int network_total_branches(FortranNetwork *network)
+extern "C" int network_total_branches(networkWrapper *wnetwork)
 {
-  return network->totalBranches();
+  return wnetwork->network->totalBranches();
 }
 
 /**
@@ -114,9 +125,9 @@ extern "C" int network_total_branches(FortranNetwork *network)
  * @param network pointer to Fortran network object
  * @param idx local index of bus
  */
-extern "C" void network_set_reference_bus(FortranNetwork *network, int idx)
+extern "C" void network_set_reference_bus(networkWrapper *wnetwork, int idx)
 {
-  network->setReferenceBus(idx);
+  wnetwork->network->setReferenceBus(idx);
 }
 
 /**
@@ -125,9 +136,9 @@ extern "C" void network_set_reference_bus(FortranNetwork *network, int idx)
  * @return local index of reference bus. If reference bus is not on this
  * processor then return -1.
  */
-extern "C" int network_get_reference_bus(FortranNetwork *network)
+extern "C" int network_get_reference_bus(networkWrapper *wnetwork)
 {
-  return network->getReferenceBus();
+  return wnetwork->network->getReferenceBus();
 }
 
 /**
@@ -137,9 +148,9 @@ extern "C" int network_get_reference_bus(FortranNetwork *network)
  * @param o_idx original index assigned to bus
  * @return false if no bus exists for idx
  */
-extern "C" bool network_set_original_bus_index(FortranNetwork *network, int idx, int o_idx)
+extern "C" bool network_set_original_bus_index(networkWrapper *wnetwork, int idx, int o_idx)
 {
-  return network->setOriginalBusIndex(idx,o_idx);
+  return wnetwork->network->setOriginalBusIndex(idx,o_idx);
 }
 
 /**
@@ -149,9 +160,9 @@ extern "C" bool network_set_original_bus_index(FortranNetwork *network, int idx,
  * @param g_idx global index to be assigned to bus
  * @return false if no bus exists for idx
  */
-extern "C" bool network_set_global_bus_index(FortranNetwork *network, int idx, int g_idx)
+extern "C" bool network_set_global_bus_index(networkWrapper *wnetwork, int idx, int g_idx)
 {
-  return network->setGlobalBusIndex(idx,g_idx);
+  return wnetwork->network->setGlobalBusIndex(idx,g_idx);
 }
 
 /**
@@ -161,9 +172,9 @@ extern "C" bool network_set_global_bus_index(FortranNetwork *network, int idx, i
  * @param g_idx global index to be assigned to branch
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_global_branch_index(FortranNetwork *network, int idx, int g_idx)
+extern "C" bool network_set_global_branch_index(networkWrapper *wnetwork, int idx, int g_idx)
 {
-  return network->setGlobalBranchIndex(idx,g_idx);
+  return wnetwork->network->setGlobalBranchIndex(idx,g_idx);
 }
 
 /**
@@ -173,9 +184,9 @@ extern "C" bool network_set_global_branch_index(FortranNetwork *network, int idx
  * @param b_idx original index of "from" bus for this branch
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_original_bus_index1(FortranNetwork *network, int idx, int b_idx)
+extern "C" bool network_set_original_bus_index1(networkWrapper *wnetwork, int idx, int b_idx)
 {
-  return network->setOriginalBusIndex1(idx,b_idx);
+  return wnetwork->network->setOriginalBusIndex1(idx,b_idx);
 }
 
 /**
@@ -185,9 +196,9 @@ extern "C" bool network_set_original_bus_index1(FortranNetwork *network, int idx
  * @param b_idx original index of "to" bus for this branch
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_original_bus_index2(FortranNetwork *network, int idx, int b_idx)
+extern "C" bool network_set_original_bus_index2(networkWrapper *wnetwork, int idx, int b_idx)
 {
-  return network->setOriginalBusIndex2(idx,b_idx);
+  return wnetwork->network->setOriginalBusIndex2(idx,b_idx);
 }
 
 /**
@@ -197,9 +208,9 @@ extern "C" bool network_set_original_bus_index2(FortranNetwork *network, int idx
  * @param b_idx global index of "from" bus for this branch
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_global_bus_index1(FortranNetwork *network, int idx, int b_idx)
+extern "C" bool network_set_global_bus_index1(networkWrapper *wnetwork, int idx, int b_idx)
 {
-  return network->setGlobalBusIndex1(idx,b_idx);
+  return wnetwork->network->setGlobalBusIndex1(idx,b_idx);
 }
 
 /**
@@ -209,9 +220,9 @@ extern "C" bool network_set_global_bus_index1(FortranNetwork *network, int idx, 
  * @param b_idx global index of "to" bus for this branch
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_global_bus_index2(FortranNetwork *network, int idx, int b_idx)
+extern "C" bool network_set_global_bus_index2(networkWrapper *wnetwork, int idx, int b_idx)
 {
-  return network->setGlobalBusIndex2(idx,b_idx);
+  return wnetwork->network->setGlobalBusIndex2(idx,b_idx);
 }
 
 /**
@@ -221,9 +232,9 @@ extern "C" bool network_set_global_bus_index2(FortranNetwork *network, int idx, 
  * @param b_idx local index of "from" bus for this branch
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_local_bus_index1(FortranNetwork *network, int idx, int b_idx)
+extern "C" bool network_set_local_bus_index1(networkWrapper *wnetwork, int idx, int b_idx)
 {
-  return network->setLocalBusIndex1(idx,b_idx);
+  return wnetwork->network->setLocalBusIndex1(idx,b_idx);
 }
 
 /**
@@ -233,9 +244,9 @@ extern "C" bool network_set_local_bus_index1(FortranNetwork *network, int idx, i
  * @param b_idx local index of "to" bus for this branch
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_local_bus_index2(FortranNetwork *network, int idx, int b_idx)
+extern "C" bool network_set_local_bus_index2(networkWrapper *wnetwork, int idx, int b_idx)
 {
-  return network->setLocalBusIndex2(idx,b_idx);
+  return wnetwork->network->setLocalBusIndex2(idx,b_idx);
 }
 
 /**
@@ -245,9 +256,9 @@ extern "C" bool network_set_local_bus_index2(FortranNetwork *network, int idx, i
  * @param flag flag for setting bus as active or inactive
  * @return false if no bus exists for idx
  */
-extern "C" bool network_set_active_bus(FortranNetwork *network, int idx, bool flag)
+extern "C" bool network_set_active_bus(networkWrapper *wnetwork, int idx, bool flag)
 {
-  return network->setActiveBus(idx,flag);
+  return wnetwork->network->setActiveBus(idx,flag);
 }
 
 /**
@@ -257,9 +268,9 @@ extern "C" bool network_set_active_bus(FortranNetwork *network, int idx, bool fl
  * @param flag flag for setting bus as active or inactive
  * @return false if no branch exists for idx
  */
-extern "C" bool network_set_active_branch(FortranNetwork *network, int idx, bool flag)
+extern "C" bool network_set_active_branch(networkWrapper *wnetwork, int idx, bool flag)
 {
-  return network->setActiveBranch(idx,flag);
+  return wnetwork->network->setActiveBranch(idx,flag);
 }
 
 /**
@@ -268,9 +279,9 @@ extern "C" bool network_set_active_branch(FortranNetwork *network, int idx, bool
  * @param idx local index of bus
  * @return false if no bus exists for idx
  */
-extern "C" bool network_clear_branch_neighbors(FortranNetwork *network, int idx)
+extern "C" bool network_clear_branch_neighbors(networkWrapper *wnetwork, int idx)
 {
-  return network->clearBranchNeighbors(idx);
+  return wnetwork->network->clearBranchNeighbors(idx);
 }
 
 /**
@@ -280,9 +291,9 @@ extern "C" bool network_clear_branch_neighbors(FortranNetwork *network, int idx)
  * @param br_idx local index of branch attached to bus
  * @return false if no bus exists for idx
  */
-extern "C" bool network_add_branch_neighbor(FortranNetwork *network, int idx, int br_idx)
+extern "C" bool network_add_branch_neighbor(networkWrapper *wnetwork, int idx, int br_idx)
 {
-  return network->addBranchNeighbor(idx,br_idx);
+  return wnetwork->network->addBranchNeighbor(idx,br_idx);
 }
 
 /**
@@ -291,9 +302,9 @@ extern "C" bool network_add_branch_neighbor(FortranNetwork *network, int idx, in
  * @param idx local index of bus
  * @return true if bus is locally held, false if it is ghosted 
  */
-extern "C" bool network_get_active_bus(FortranNetwork *network, int idx)
+extern "C" bool network_get_active_bus(networkWrapper *wnetwork, int idx)
 {
-  return network->getActiveBus(idx);
+  return wnetwork->network->getActiveBus(idx);
 }
 
 /**
@@ -302,9 +313,9 @@ extern "C" bool network_get_active_bus(FortranNetwork *network, int idx)
  * @param idx local index of bus
  * @return original index of bus 
  */
-extern "C" int network_get_original_bus_index(FortranNetwork *network, int idx)
+extern "C" int network_get_original_bus_index(networkWrapper *wnetwork, int idx)
 {
-  return network->getOriginalBusIndex(idx);
+  return wnetwork->network->getOriginalBusIndex(idx);
 }
 
 /**
@@ -313,9 +324,9 @@ extern "C" int network_get_original_bus_index(FortranNetwork *network, int idx)
  * @param idx local index of bus
  * @return global index of bus 
  */
-extern "C" int network_get_global_bus_index(FortranNetwork *network, int idx)
+extern "C" int network_get_global_bus_index(networkWrapper *wnetwork, int idx)
 {
-  return network->getGlobalBusIndex(idx);
+  return wnetwork->network->getGlobalBusIndex(idx);
 }
 
 /**
@@ -324,9 +335,9 @@ extern "C" int network_get_global_bus_index(FortranNetwork *network, int idx)
  * @param idx local index of branch
  * @return true if branch is locally held, false if it is ghosted 
  */
-extern "C" bool network_get_active_branch(FortranNetwork *network, int idx)
+extern "C" bool network_get_active_branch(networkWrapper *wnetwork, int idx)
 {
-  return network->getActiveBranch(idx);
+  return wnetwork->network->getActiveBranch(idx);
 }
 
 /**
@@ -335,9 +346,9 @@ extern "C" bool network_get_active_branch(FortranNetwork *network, int idx)
  * @param idx local index of branch
  * @return global index of branch 
  */
-extern "C" int network_get_global_branch_index(FortranNetwork *network, int idx)
+extern "C" int network_get_global_branch_index(networkWrapper *wnetwork, int idx)
 {
-  return network->getGlobalBranchIndex(idx);
+  return wnetwork->network->getGlobalBranchIndex(idx);
 }
 
 /**
@@ -347,10 +358,10 @@ extern "C" int network_get_global_branch_index(FortranNetwork *network, int idx)
  * @param idx1 original index of "from" bus 
  * @param idx1 original index of "to" bus 
  */
-extern "C" void network_get_original_branch_endpoints(FortranNetwork *network,
+extern "C" void network_get_original_branch_endpoints(networkWrapper *wnetwork,
     int idx, int *idx1, int *idx2)
 {
-  network->getOriginalBranchEndpoints(idx, idx1,idx2);
+  wnetwork->network->getOriginalBranchEndpoints(idx, idx1,idx2);
 }
 
 /**
@@ -360,9 +371,9 @@ extern "C" void network_get_original_branch_endpoints(FortranNetwork *network,
  * @param idx local bus index
  * @return the number of branches attached to this bus
  */
-extern "C" int network_get_num_connected_branches(FortranNetwork *network, int idx)
+extern "C" int network_get_num_connected_branches(networkWrapper *wnetwork, int idx)
 {
-  return network->getConnectedBranches(idx).size();
+  return wnetwork->network->getConnectedBranches(idx).size();
 }
 
 /**
@@ -371,10 +382,10 @@ extern "C" int network_get_num_connected_branches(FortranNetwork *network, int i
  * @param idx local bus index
  * @param branches array to hold list of branch indices
  */
-extern "C" void network_get_connected_branches(FortranNetwork *network, int idx, int *branches)
+extern "C" void network_get_connected_branches(networkWrapper *wnetwork, int idx, int *branches)
 {
   int i;
-  std::vector<int> t_branches = network->getConnectedBranches(idx);
+  std::vector<int> t_branches = wnetwork->network->getConnectedBranches(idx);
   int size = t_branches.size();
   for (i=0; i<size; i++) {
     branches[i] = t_branches[i];
@@ -387,10 +398,10 @@ extern "C" void network_get_connected_branches(FortranNetwork *network, int idx,
  * @param idx local bus index
  * @param buses array to hold list of bus indices
  */
-extern "C" void network_get_connected_buses(FortranNetwork *network, int idx, int *buses)
+extern "C" void network_get_connected_buses(networkWrapper *wnetwork, int idx, int *buses)
 {
   int i;
-  std::vector<int> t_buses = network->getConnectedBuses(idx);
+  std::vector<int> t_buses = wnetwork->network->getConnectedBuses(idx);
   int size = t_buses.size();
   for (i=0; i<size; i++) {
     buses[i] = t_buses[i];
@@ -404,19 +415,19 @@ extern "C" void network_get_connected_buses(FortranNetwork *network, int idx, in
  * @param bus1 local index of bus at one end of branch
  * @param bus2 local index of bus at other end of branch
  */
-extern "C" void network_get_branch_endpoints(FortranNetwork *network, int idx,
+extern "C" void network_get_branch_endpoints(networkWrapper *wnetwork, int idx,
     int *idx1, int *idx2)
 {
-  network->getBranchEndpoints(idx,idx1,idx2);
+  wnetwork->network->getBranchEndpoints(idx,idx1,idx2);
 }
 
 /**
  * Partition the network over the available processes
  * @param network pointer to Fortran network object
  */
-extern "C" void network_partition(FortranNetwork *network)
+extern "C" void network_partition(networkWrapper *wnetwork)
 {
-  network->partition();
+  wnetwork->network->partition();
 }
 
 /**
@@ -425,9 +436,9 @@ extern "C" void network_partition(FortranNetwork *network)
  * buffers, so these need to be reallocated after calling this method
  * @param network pointer to Fortran network object
  */
-extern "C" void network_clean(FortranNetwork *network)
+extern "C" void network_clean(networkWrapper *wnetwork)
 {
-  network->clean();
+  wnetwork->network->clean();
 }
 
 #if 0
@@ -483,9 +494,9 @@ extern "C" void p_set_xc_branch_buffer(int n_handle, int idx, void *ptr)
  * It initializes data structures for the bus update
  * @param n_handle network handle
  */
-extern "C" void network_init_bus_update(FortranNetwork *network)
+extern "C" void network_init_bus_update(networkWrapper *wnetwork)
 {
-  network->initBusUpdate();
+  wnetwork->network->initBusUpdate();
 }
 
 /**
@@ -493,9 +504,9 @@ extern "C" void network_init_bus_update(FortranNetwork *network)
  * collective operation across all processors.
  * @param n_handle network handle
  */
-extern "C" void network_update_buses(FortranNetwork *network)
+extern "C" void network_update_buses(networkWrapper *wnetwork)
 {
-  network->updateBuses();
+  wnetwork->network->updateBuses();
 }
 
 /**
@@ -503,9 +514,9 @@ extern "C" void network_update_buses(FortranNetwork *network)
  * It initializes data structures for the branch update
  * @param n_handle network handle
  */
-extern "C" void network_init_branch_update(FortranNetwork *network)
+extern "C" void network_init_branch_update(networkWrapper *wnetwork)
 {
-  network->initBranchUpdate();
+  wnetwork->network->initBranchUpdate();
 }
 
 /**
@@ -513,7 +524,20 @@ extern "C" void network_init_branch_update(FortranNetwork *network)
  * collective operation across all processors.
  * @param n_handle network handle
  */
-extern "C" void network_update_branches(FortranNetwork *network)
+extern "C" void network_update_branches(networkWrapper *wnetwork)
 {
-  network->updateBranches();
+  wnetwork->network->updateBranches();
+}
+
+/**
+ * Return a void pointer to the internal fortran bus object
+ * @param n_handle network handle
+ * @param idx index of bus object
+ * @return void pointer to fortran bus object
+ */
+extern "C" busWrapper* network_get_bus(networkWrapper *wnetwork, int idx)
+{
+  busWrapper *wbus = new busWrapper;
+  wbus->bus = wnetwork->network->getBus(idx);
+  return wbus;
 }

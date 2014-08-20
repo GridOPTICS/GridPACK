@@ -205,7 +205,9 @@ bool FortranBusComponent::vectorValues(gridpack::ComplexType *values)
  * Load data from DataCollection object into corresponding
  * component. This needs to be implemented by every component
  */
-void FortranBusComponent::load()
+void
+FortranBusComponent::load(boost::shared_ptr
+    <gridpack::component::DataCollection> data)
 {
   //p_bus_load(p_network, p_local_index);
 }
@@ -409,7 +411,9 @@ bool FortranBranchComponent::vectorValues(gridpack::ComplexType *values)
  * Load data from DataCollection object into corresponding
  * component. This needs to be implemented by every component
  */
-void FortranBranchComponent::load()
+void
+FortranBranchComponent::load(boost::shared_ptr
+    <gridpack::component::DataCollection> data)
 {
   //p_branch_load(p_network, p_local_index);
 }

@@ -3,11 +3,10 @@
 !
 module gridpack_network
   use, intrinsic :: iso_c_binding
+  implicit none
 !
 ! Define network type
 !
-  implicit none
-  
   private
 
   type, public :: network
@@ -53,9 +52,12 @@ module gridpack_network
     procedure::init_branch_update
     procedure::update_branches
   end type
+!
+!  Interface declaration to C calls
+!
   interface
 !
-! Create new network and return handle 
+! Create a new network
 ! @param network new GridPACK network object
 ! @param comm GridPACK communicator
 !
@@ -68,7 +70,6 @@ module gridpack_network
 !
 ! Clean up old network 
 ! @param network old GridPACK network object
-! @return handle for new network
 !
     subroutine network_destroy(network) bind(c)
       use, intrinsic :: iso_c_binding
@@ -528,10 +529,22 @@ module gridpack_network
       implicit none
       type(C_PTR), value, intent(in) :: network
     end subroutine network_update_branches
+!
+! Get C pointer to bus
+! @param network GridPACK network object
+! @param idx bus index
+! @return C pointer to fortran bus object
+!
+    type(C_PTR) function network_get_bus(network,idx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: idx
+    end function network_get_bus
   end interface
   contains
 !
-! Create new network and return handle 
+! Create new network
 ! @param p_network new GridPACK network object
 ! @param comm GridPACK communicator
 !
@@ -545,7 +558,7 @@ module gridpack_network
   end subroutine create
 !
 ! Clean up old network
-! @param p_network new GridPACK network object
+! @param p_network old GridPACK network object
 ! @param comm GridPACK communicator
 !
   subroutine destroy(p_network)
@@ -1238,4 +1251,19 @@ module gridpack_network
     call network_update_branches(p_network%p_network) 
     return
   end subroutine update_branches
+!
+! Get C pointer to bus
+! @param p_network GridPACK network object
+! @param idx bus index
+! @return C pointer to fortran bus object
+!
+    type(C_PTR) function get_bus(p_network,idx)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      class(network), intent(in) :: p_network
+      integer, value, intent(in) :: idx
+      integer(C_INT) c_idx
+      get_bus = network_get_bus(p_network%p_network,c_idx)
+      return
+    end function get_bus
 end module gridpack_network

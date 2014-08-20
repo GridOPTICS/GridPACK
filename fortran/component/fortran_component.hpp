@@ -125,7 +125,7 @@ class FortranBusComponent
      * @param n_handle index of network object
      * @param idx index of data collection object
      */
-    void load(void);
+    void load(boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Return the size of the buffer needed for data exchanges. Note that this
@@ -192,6 +192,10 @@ class FortranBusComponent
      */
     int getLocalIndex(void);
 
+    /**
+     * Return fortran pointer to calling program
+     * @return fortran pointer to bus object
+     */
   private:
 
     int p_local_index;
@@ -305,7 +309,7 @@ class FortranBranchComponent
      * component. This needs to be implemented by every component
      * @param data data collection associated with component
      */
-    void load();
+    void load(boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Return the size of the buffer needed for data exchanges. Note that this
