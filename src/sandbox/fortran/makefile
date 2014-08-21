@@ -1,5 +1,7 @@
 FC = gfortran
 CC = gcc
+CXX = g++
+FLIB = -lgfortran
 
 fc_test.x : fc_test.o overwrite.o
 	$(FC) -g fc_test.o overwrite.o -o fc_test.x
@@ -27,3 +29,16 @@ c_main.o : c_main.c
 
 for_print.o : for_print.F90
 	$(FC) -g for_print.F90 -c
+
+thing.o: thing.F90
+	$(FC) -g $< -c
+
+thingtest.o: thingtest.F90
+	$(FC) -g $< -c
+
+thingtest: thing.o thingtest.o
+	$(FC) -g thing.o thingtest.o -o $@
+
+thingc: thingc.o thing.o
+	$(CXX) -g thingc.o thing.o -o $@ $(FLIB)
+
