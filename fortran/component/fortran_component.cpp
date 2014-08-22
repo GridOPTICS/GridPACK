@@ -18,9 +18,9 @@
 #include "gridpack/component/base_component.hpp"
 #include "fortran_component.hpp"
 
+extern "C" void* bus_allocate();
+extern "C" bool bus_matrix_diag_size(int idx, int *isize, int *jsize);
 #if 0
-extern "C" bool p_bus_matrix_diag_size(int network, int idx,
-    int *isize, int *jsize);
 extern "C" bool p_bus_matrix_diag_values(int network, int idx,
     gridpack::ComplexType *values);
 extern "C" bool p_bus_matrix_forward_size(int network, int idx,
@@ -78,6 +78,7 @@ namespace fortran_component {
  */
 FortranBusComponent::FortranBusComponent(void)
 {
+  p_fortran_bus_ptr = bus_allocate();
 }
 
 /**
@@ -85,6 +86,7 @@ FortranBusComponent::FortranBusComponent(void)
  */
 FortranBusComponent::~FortranBusComponent(void)
 {
+  bus_deallocate();
 }
 
 /**
@@ -96,8 +98,7 @@ FortranBusComponent::~FortranBusComponent(void)
  */
 bool FortranBusComponent::matrixDiagSize(int *isize, int *jsize) const
 {
-  //return p_bus_matrix_diag_size(p_network, p_local_index, isize, jsize);
-  return false;
+  return bus_matrix_diag_size(p_fortran_bus_ptr, isize, jsize);
 }
 
 /**
@@ -259,12 +260,10 @@ bool FortranBusComponent::serialWrite(char *string, const int bufsize,
 
 /**
  * Set local index
- * @param network handle for network
  * @param idx local index of bus
  */
-void FortranBusComponent::setLocalIndex(int network, int idx)
+void FortranBusComponent::setLocalIndex(int idx)
 {
-  p_network = network;
   p_local_index = idx;
 }
 
@@ -272,7 +271,7 @@ void FortranBusComponent::setLocalIndex(int network, int idx)
  * Get local index
  * @return local index of bus
  */
-int FortranBusComponent::getLocalIndex(void)
+int FortranBusComponent::getLocalIndex(void) const
 {
   return p_local_index;
 }
@@ -468,9 +467,8 @@ bool FortranBranchComponent::serialWrite(char *string, const int bufsize,
  * @param network handle for network
  * @param idx local index of branch
  */
-void FortranBranchComponent::setLocalIndex(int network, int idx)
+void FortranBranchComponent::setLocalIndex(int idx)
 {
-  p_network = network;
   p_local_index = idx;
 }
 
@@ -478,7 +476,7 @@ void FortranBranchComponent::setLocalIndex(int network, int idx)
  * Get local index
  * @return local index of branch
  */
-int FortranBranchComponent::getLocalIndex(void)
+int FortranBranchComponent::getLocalIndex(void) const
 {
   return p_local_index;
 }

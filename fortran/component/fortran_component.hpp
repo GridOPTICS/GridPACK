@@ -181,16 +181,15 @@ class FortranBusComponent
 
     /**
      * Set local index
-     * @param network handle for network
      * @param idx local index of bus
      */
-    void setLocalIndex(int network, int idx);
+    void setLocalIndex(int idx);
 
     /**
      * Get local index
      * @return local index of bus
      */
-    int getLocalIndex(void);
+    int getLocalIndex(void) const;
 
     /**
      * Return fortran pointer to calling program
@@ -199,7 +198,7 @@ class FortranBusComponent
   private:
 
     int p_local_index;
-    int p_network;
+    void* p_fortran_bus_ptr;
 
   friend class boost::serialization::access;
 
@@ -207,8 +206,7 @@ class FortranBusComponent
   void serialize(Archive & ar, const unsigned int version)
   {
      ar & boost::serialization::base_object<BaseBusComponent>(*this)
-        & p_local_index
-        & p_network;
+        & p_local_index;
   }
 };
 
@@ -362,18 +360,17 @@ class FortranBranchComponent
      * @param network handle for network
      * @param idx local index of branch
      */
-    void setLocalIndex(int network, int idx);
+    void setLocalIndex(int idx);
 
     /**
      * Get local index
      * @return local index of branch
      */
-    int getLocalIndex(void);
+    int getLocalIndex(void) const;
 
   private:
 
     int p_local_index;
-    int p_network;
 
   friend class boost::serialization::access;
 
@@ -381,8 +378,7 @@ class FortranBranchComponent
   void serialize(Archive & ar, const unsigned int version)
   {
      ar & boost::serialization::base_object<BaseComponent>(*this)
-        & p_local_index
-        & p_network;
+        & p_local_index;
   }
 
 };

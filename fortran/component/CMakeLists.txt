@@ -15,6 +15,8 @@ add_library(gridpackf_component OBJECT
   fortran_component.cpp
   bus_component_c.cpp
   bus_component_f.F90
+  data_collection_c.cpp
+  data_collection_f.F90
 )
 
 #add_executable(hello_parallel
