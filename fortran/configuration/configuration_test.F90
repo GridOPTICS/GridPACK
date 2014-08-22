@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created August 13, 2014 by William A. Perkins
-! Last Change: 2014-08-14 12:31:05 d3g096
+! Last Change: 2014-08-22 08:22:18 d3g096
 ! ----------------------------------------------------------------
 
 PROGRAM configuration_test
@@ -73,7 +73,60 @@ PROGRAM configuration_test
 
   cur2 = conf%get_cursor("GridPACK.Subpath")
   IF (.NOT. cur2%ok()) THEN
-     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath'
+     WRITE(*,*) 'ERROR: cur2: did not find GridPACK.Subpath'
+  END IF
+
+  IF (cur2%get_bool("Boolean", flag)) THEN
+     IF (flag) THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.Subpath.Boolean'
+     END IF
+  ELSE
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Boolean'
+  END IF
+
+  IF (cur2%get_int("Integer", ivalue)) THEN
+     IF (ivalue .NE. 3) THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.Subpath.Integer: ', ivalue
+     END IF
+  ELSE 
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Integer'
+  END IF
+
+  IF (cur2%get_double("Real", rvalue)) THEN
+     IF (ABS(rvalue - 1.23D00) .GT. 1.0E-06) THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.Subpath.Real: ', rvalue
+     END IF
+  ELSE 
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Real'
+  END IF
+
+  CALL conf%set_path("GridPACK.Subpath")
+  IF (.NOT. conf%ok()) THEN
+     WRITE(*,*) 'ERROR: conf: did not find GridPACK.Subpath'
+  END IF
+
+  IF (conf%get_bool("Boolean", flag)) THEN
+     IF (flag) THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.Subpath.Boolean'
+     END IF
+  ELSE
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Boolean'
+  END IF
+
+  IF (conf%get_int("Integer", ivalue)) THEN
+     IF (ivalue .NE. 3) THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.Subpath.Integer: ', ivalue
+     END IF
+  ELSE 
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Integer'
+  END IF
+
+  IF (conf%get_double("Real", rvalue)) THEN
+     IF (ABS(rvalue - 1.23D00) .GT. 1.0E-06) THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.Subpath.Real: ', rvalue
+     END IF
+  ELSE 
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Real'
   END IF
 
   CALL cur1%finalize()

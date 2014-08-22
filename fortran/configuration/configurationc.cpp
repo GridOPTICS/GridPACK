@@ -7,21 +7,17 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created June 30, 2014 by William A. Perkins
-// Last Change: 2014-08-14 12:32:31 d3g096
+// Last Change: 2014-08-22 08:36:22 d3g096
 // -------------------------------------------------------------
 
-#include <gridpack/configuration/configuration.hpp>
+#include "cursor_wrapper.hpp"
 
-struct cursorWrapper {
-  gridpack::utility::Configuration::CursorPtr cursor;
-};
-
-extern "C" cursorWrapper *
+extern "C" CursorWrapper *
 configuration_open(gridpack::parallel::Communicator *comm, 
                    const char *conf_name)
 {
   // std::cout << conf_name << std::endl;
-  cursorWrapper *result(new cursorWrapper);
+  CursorWrapper *result(new CursorWrapper);
   result->cursor.reset();
 
   gridpack::utility::Configuration 
@@ -34,17 +30,17 @@ configuration_open(gridpack::parallel::Communicator *comm,
   return result;
 }
 
-extern "C" cursorWrapper *
-configuration_cursor(cursorWrapper *cwrap, 
+extern "C" CursorWrapper *
+configuration_cursor(CursorWrapper *cwrap, 
                      const char *path)
 {
-  cursorWrapper *result(new cursorWrapper);
+  CursorWrapper *result(new CursorWrapper);
   result->cursor = cwrap->cursor->getCursor(path);
   return result;
 }
 
 extern "C" bool
-configuration_get_bool(cursorWrapper *cwrap, 
+configuration_get_bool(CursorWrapper *cwrap, 
                        char *key,
                        bool *flag)
 {
@@ -55,7 +51,7 @@ configuration_get_bool(cursorWrapper *cwrap,
 }
 
 extern "C" bool
-configuration_get_int(cursorWrapper *cwrap, 
+configuration_get_int(CursorWrapper *cwrap, 
                        char *key,
                        int *i)
 {
@@ -66,7 +62,7 @@ configuration_get_int(cursorWrapper *cwrap,
 }
 
 extern "C" bool
-configuration_get_double(cursorWrapper *cwrap, 
+configuration_get_double(CursorWrapper *cwrap, 
                        char *key,
                        double *d)
 {
@@ -77,7 +73,7 @@ configuration_get_double(cursorWrapper *cwrap,
 }
 
 extern "C" bool
-configuration_ok(cursorWrapper *cwrap)
+configuration_ok(CursorWrapper *cwrap)
 {
   bool result(false);
   if (cwrap != NULL) {
@@ -88,7 +84,7 @@ configuration_ok(cursorWrapper *cwrap)
 
 
 extern "C" void
-configuration_destroy(cursorWrapper **cwrap)
+configuration_destroy(CursorWrapper **cwrap)
 {
   delete *cwrap;
   *cwrap = NULL;

@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 29, 2014 by William A. Perkins
-! Last Change: 2014-08-06 13:45:34 d3g096
+! Last Change: 2014-08-22 08:31:33 d3g096
 ! ----------------------------------------------------------------
 
 ! ----------------------------------------------------------------
@@ -111,12 +111,15 @@ PROGRAM linear_solver_test
 
   USE iso_c_binding
   USE gridpack_parallel
+  USE gridpack_configuration
   USE gridpack_math
 
   IMPLICIT NONE
 
   TYPE (communicator) :: comm
   INTEGER(c_int) :: ma_stack = 200000, ma_heap = 200000
+
+  TYPE (cursor) :: conf
 
   TYPE (matrix) :: a
   TYPE (vector) :: b, x
@@ -142,6 +145,13 @@ PROGRAM linear_solver_test
   CALL gridpack_initialize_math()
   CALL comm%initialize()
 
+  IF (conf%open(comm, "gridpack.xml")) THEN
+     CALL conf%set_path("GridPACK.MathTests")
+  ELSE
+     WRITE(*,*) "ERROR: cannot open configuration"
+     STOP
+  ENDIF
+
   me = comm%rank()
   nproc = comm%size()
 
@@ -159,7 +169,7 @@ PROGRAM linear_solver_test
   CALL b%ready()
   CALL x%zero()
 
-  CALL solver%initialize(a)
+  CALL solver%initialize(a, conf)
   CALL solver%solve(b, x)
 
   CALL x%print()

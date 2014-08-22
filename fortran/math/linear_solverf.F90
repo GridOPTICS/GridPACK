@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 29, 2014 by William A. Perkins
-! Last Change: 2014-08-14 12:49:31 d3g096
+! Last Change: 2014-08-22 07:46:14 d3g096
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_linear_solver
@@ -16,6 +16,7 @@
 MODULE gridpack_linear_solver
 
   USE iso_c_binding
+  USE gridpack_configuration
   USE gridpack_vector
   USE gridpack_matrix
 
@@ -32,16 +33,29 @@ MODULE gridpack_linear_solver
   END type linear_solver
 
   INTERFACE
-     SUBROUTINE linear_solver_initialize(solvr, a) BIND(c)
+     SUBROUTINE linear_solver_initialize(solvr, a, conf) BIND(c)
        USE iso_c_binding, ONLY: c_ptr
        TYPE (c_ptr), INTENT(INOUT) :: solvr
        TYPE (c_ptr), VALUE, INTENT(IN) :: a
+       TYPE (c_ptr), VALUE, INTENT(IN) :: conf
      END SUBROUTINE linear_solver_initialize
 
      SUBROUTINE linear_solver_finalize(solvr) BIND(c)
        USE iso_c_binding, ONLY: c_ptr
        TYPE (c_ptr), INTENT(INOUT) :: solvr
      END SUBROUTINE linear_solver_finalize
+
+     SUBROUTINE linear_solver_set_tolerance(solvr, tol) BIND(c)
+       USE iso_c_binding, ONLY: c_ptr, c_double
+       TYPE (c_ptr), VALUE, INTENT(IN) :: solvr
+       REAL(c_double), VALUE, INTENT(IN) :: tol
+     END SUBROUTINE linear_solver_set_tolerance
+
+     SUBROUTINE linear_solver_set_iterations(solvr, iter) BIND(c)
+       USE iso_c_binding, ONLY: c_ptr, c_int
+       TYPE (c_ptr), VALUE, INTENT(IN) :: solvr
+       INTEGER(c_int), VALUE, INTENT(IN) :: iter
+     END SUBROUTINE linear_solver_set_iterations
 
      SUBROUTINE linear_solver_solve(solvr, b, x) BIND(c)
        USE iso_c_binding, ONLY: c_ptr
@@ -54,11 +68,17 @@ CONTAINS
   ! ----------------------------------------------------------------
   ! SUBROUTINE initialize
   ! ----------------------------------------------------------------
-  SUBROUTINE initialize(this, mat)
+  SUBROUTINE initialize(this, mat, conf)
     IMPLICIT NONE
     CLASS (linear_solver), INTENT(INOUT) :: this
     CLASS (matrix), INTENT(IN) :: mat
-    CALL linear_solver_initialize(this%solvr, mat%mat)
+    CLASS (cursor), INTENT(IN), OPTIONAL :: conf
+    TYPE(c_ptr) :: confptr
+    confptr = C_NULL_PTR
+    IF (PRESENT(conf)) THEN
+       confptr = conf%impl
+    END IF
+    CALL linear_solver_initialize(this%solvr, mat%mat, confptr)
   END SUBROUTINE initialize
 
   ! ----------------------------------------------------------------
@@ -71,7 +91,33 @@ CONTAINS
   END SUBROUTINE finalize
 
   ! ----------------------------------------------------------------
-  ! SUBROUTINE linear_solver_solve
+  ! SUBROUTINE tolerance
+  ! ----------------------------------------------------------------
+  SUBROUTINE tolerance(this, tol)
+    IMPLICIT NONE
+    CLASS (linear_solver), INTENT(INOUT) :: this
+    DOUBLE PRECISION, INTENT(IN) :: tol
+    REAL(c_double) :: ctol
+    ctol = tol
+    CALL linear_solver_set_tolerance(this%solvr, ctol)
+  END SUBROUTINE tolerance
+
+
+  ! ----------------------------------------------------------------
+  ! SUBROUTINE iterations
+  ! ----------------------------------------------------------------
+  SUBROUTINE iterations(this, maxiter)
+    IMPLICIT NONE
+    CLASS (linear_solver), INTENT(INOUT) :: this
+    INTEGER, INTENT(IN) :: maxiter
+    INTEGER(c_int) :: cmaxiter
+    cmaxiter = maxiter
+    CALL linear_solver_set_iterations(this%solvr, cmaxiter)
+  END SUBROUTINE iterations
+
+
+  ! ----------------------------------------------------------------
+  ! SUBROUTINE solve
   ! ----------------------------------------------------------------
   SUBROUTINE solve(this, b, x)
     IMPLICIT NONE

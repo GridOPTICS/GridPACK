@@ -5,12 +5,16 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May 12, 2014 by William A. Perkins
-# Last Change: 2014-08-14 13:09:22 d3g096
+# Last Change: 2014-08-22 08:08:26 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpackf_configuration OBJECT
   configurationc.cpp
   configurationf.F90
+)
+
+add_dependencies(gridpackf_configuration
+  gridpackf_parallel
 )
 
 add_executable(configuration_test

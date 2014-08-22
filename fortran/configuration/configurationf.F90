@@ -18,6 +18,7 @@ MODULE gridpack_configuration
      PROCEDURE :: open
      PROCEDURE :: ok
      PROCEDURE :: finalize
+     PROCEDURE :: set_path
      PROCEDURE :: get_cursor
      PROCEDURE :: get_bool
      PROCEDURE :: get_int
@@ -151,6 +152,25 @@ CONTAINS
     get_cursor%impl = configuration_cursor(this%impl, cpath)
     DEALLOCATE(cpath)
   END FUNCTION get_cursor
+
+  ! ----------------------------------------------------------------
+  ! SUBROUTINE set_path
+  ! ----------------------------------------------------------------
+  SUBROUTINE set_path(this, path)
+    IMPLICIT NONE
+    CLASS (cursor), INTENT(INOUT) :: this
+    CHARACTER (LEN=*), INTENT(IN) :: path
+    CHARACTER(c_char), ALLOCATABLE :: cpath(:)
+    INTEGER :: flen
+    TYPE(c_ptr) :: cnew
+    flen = LEN_TRIM(path)
+    ALLOCATE(cpath(flen+1))
+    CALL f2cstring(path, cpath)
+    cnew = configuration_cursor(this%impl, cpath)
+    CALL configuration_destroy(this%impl);
+    this%impl = cnew
+  END SUBROUTINE set_path
+
 
   ! ----------------------------------------------------------------
   ! LOGICAL FUNCTION get_bool
