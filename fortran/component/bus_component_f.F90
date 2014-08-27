@@ -1,7 +1,7 @@
 !
 !  Fortran bus network component
 !
-module gridpack_bus_component
+module gridpack_component
   use, intrinsic :: iso_c_binding
   use gridpack_data_collection
   implicit none
@@ -11,7 +11,7 @@ module gridpack_bus_component
   private
   type, public :: bus_component
     type (C_PTR) :: p_bus
-    class(data_collection), pointer :: p_data
+    type (C_PTR) :: p_data
     integer :: p_idx
     integer :: p_mode
     contains
@@ -61,11 +61,78 @@ module gridpack_bus_component
 !
 !  Base bus calls
 !
+    procedure::get_num_neighbors
+    procedure::get_neighbor_branch
+    procedure::get_neighbor_bus
 #if 0
-    procedure::add_branch
-    procedure::add_bus
-    procedure::get_neighbor_branches
-    procedure::get_neighbor_buses
+    procedure::clear_branches
+    procedure::clear_buses
+    procedure::set_reference_bus
+    procedure::get_reference_bus
+    procedure::set_original_index
+    procedure::get_original_index
+    procedure::set_global_index
+    procedure::get_global_index
+#endif
+  end type
+!
+!  Define branch component type
+!
+  type, public :: branch_component
+    type (C_PTR) :: p_branch
+    type (C_PTR) :: p_data
+    integer :: p_idx
+    integer :: p_mode
+    contains
+#if 0
+!
+!  Matrix-vector interface calls
+!
+    procedure::matrix_diag_size
+    procedure::matrix_diag_values
+    procedure::matrix_forward_size
+    procedure::matrix_reverse_size
+    procedure::matrix_forward_values
+    procedure::matrix_reverse_values
+    procedure::vector_size
+    procedure::vector_values
+    procedure::set_values
+!
+!  Might not need wrappers for these on the Fortran side
+!
+!    procedure::set_mat_vec_index
+!    procedure::get_mat_vec_index
+!    procedure::set_mat_vec_indices
+!    procedure::get_mat_vec_indices
+!
+!  Generalized matrix-vector interface calls
+!
+    procedure::matrix_num_rows
+    procedure::matrix_num_cols
+    procedure::matrix_set_row_index
+    procedure::matrix_set_col_index
+    procedure::matrix_get_row_index
+    procedure::matrix_get_col_index
+    procedure::matrix_num_values
+    procedure::matrix_get_values
+    procedure::vector_num_elements
+    procedure::vector_set_element_index
+    procedure::vector_get_element_indices
+    procedure::vector_get_element_values
+    procedure::vector_set_element_values
+!
+!  Base component calls
+!
+    procedure::load
+!    procedure::get_xc_buf_size
+!    procedure::set_xc_buf
+    procedure::set_mode
+    procedure::serial_write
+#endif
+!
+!  Base branch calls
+!
+#if 0
     procedure::clear_branches
     procedure::clear_buses
     procedure::set_reference_bus
@@ -78,7 +145,11 @@ module gridpack_bus_component
   end type
 !
   type, public :: bus_wrapper
-    class(bus_component), pointer :: bus
+    type(bus_component), pointer :: bus
+  end type
+!
+  type, public :: branch_wrapper
+    type(branch_component), pointer :: branch
   end type
 !  type(bus_component), target, allocatable :: p_buses(:)
 !  type(data_collection), target, allocatable :: p_data(:)
@@ -86,29 +157,6 @@ module gridpack_bus_component
 !  Interface declaration to C calls
 !
   interface
-#if 0
-!
-! Add a branch to the list of branches that a bus is connected to
-! @param bus GridPACK bus object
-! @param idx index of branch that branch is connected to
-!
-    subroutine bus_add_branch(bus, idx) bind(c)
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(C_PTR), value, intent(in) :: bus
-      integer(C_INT), value, intent(in) :: idx
-    end subroutine bus_add_branch
-!
-! Add a bus to the list of branches that a bus is connected to via a branch
-! @param bus GridPACK bus object
-! @param idx index of bus that branch is connected to via a branch
-!
-    subroutine bus_add_bus(bus, idx) bind(c)
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(C_PTR), value, intent(in) :: bus
-      integer(C_INT), value, intent(in) :: idx
-    end subroutine bus_add_bus
 !
 ! Get the number of neighboring branches/buses
 ! @param bus GridPACK bus object
@@ -120,27 +168,32 @@ module gridpack_bus_component
       type(C_PTR), value, intent(in) :: bus
     end function bus_get_num_neighbors
 !
-! Get indices of branches that are attached to bus
+! Get get pointer to branch that is attached to calling bus
 ! @param bus GridPACK bus object
-! @param nghbrs indices of branches that are attached to bus
+! @param idx index of neighboring branch (value is between 0 and number of
+! neighbors -1)
+! @return pointer to branch wrapper
 !
-    subroutine bus_get_neighbor_branches(bus, nghbrs) bind(c)
+    type(C_PTR) function bus_get_neighbor_branch(bus, idx) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), value, intent(in) :: bus
-      integer(C_INT), intent(out) :: nghbrs(*)
-    end subroutine bus_get_neighbor_branches
+      integer(C_INT), value, intent(in) :: idx
+    end function bus_get_neighbor_branch
 !
-! Get indices of buses that are attached to bus via a branch
+! Get get pointer to bus that is attached to calling bus via a branch
 ! @param bus GridPACK bus object
-! @param nghbrs indices of buses that are attached to bus via a branch
+! @param idx index of neighboring bus (value is between 0 and number of
+! neighbors -1)
+! @return pointer to bus wrapper
 !
-    subroutine bus_get_neighbor_buses(bus, nghbrs) bind(c)
+    type(C_PTR) function bus_get_neighbor_bus(bus, idx) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), value, intent(in) :: bus
-      integer(C_INT), intent(out) :: nghbrs(*)
-    end subroutine bus_get_neighbor_buses
+      integer(C_INT), value, intent(in) :: idx
+    end function bus_get_neighbor_bus
+#if 0
 !
 ! Clear all branches attached to bus
 ! @param bus GridPACK bus object
@@ -502,7 +555,7 @@ module gridpack_bus_component
   subroutine load(bus, data)
     implicit none
     class(bus_component), intent(in) :: bus
-    integer data
+    class(data_collection), intent(in) :: data
   end subroutine load
 !
 ! Return the size of the buffer needed for the data exchanges. Note that this
@@ -560,6 +613,63 @@ module gridpack_bus_component
     character, intent(in) :: signal(*)
   end function serial_write
 !
+! Get the number of neighboring branches/buses
+! @param p_bus GridPACK bus object
+! @return number of attached branches/buses
+!
+  integer function get_num_neighbors(p_bus)
+    implicit none
+    class(bus_component), intent(in) :: p_bus
+    integer(C_INT) c_ret
+    c_ret = bus_get_num_neighbors(p_bus%p_bus)
+    get_num_neighbors = c_ret
+    return
+  end function get_num_neighbors
+!
+! Get get pointer to branch that is attached to calling bus
+! @param p_bus GridPACK bus object
+! @param idx index of neighboring branch (value is between 0 and number of
+! neighbors -1)
+! @return pointer to branch
+!
+  function get_neighbor_branch(p_bus, idx) result(branch_ptr)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    integer, value, intent(in) :: idx
+    type(branch_component), pointer :: branch_ptr
+    type(branch_wrapper), pointer :: wbranch
+    type(C_PTR) ptr
+    integer(C_INT) c_idx
+    c_idx = idx
+    ptr = bus_get_neighbor_branch(p_bus%p_bus,c_idx)
+    call C_F_POINTER(ptr,wbranch)
+    branch_ptr => wbranch%branch
+    return
+  end function get_neighbor_branch
+!
+! Get get pointer to bus that is attached to calling bus via a branch
+! @param p_bus GridPACK bus object
+! @param idx index of neighboring bus (value is between 0 and number of
+! neighbors -1)
+! @return pointer to bus
+!
+  function get_neighbor_bus(p_bus, idx) result(bus_ptr)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    integer, value, intent(in) :: idx
+    type(bus_component), pointer :: bus_ptr
+    type(bus_wrapper), pointer :: wbus
+    type(C_PTR) ptr
+    integer(C_INT) c_idx
+    c_idx = idx
+    ptr = bus_get_neighbor_bus(p_bus%p_bus,c_idx)
+    call C_F_POINTER(ptr,wbus)
+    bus_ptr => wbus%bus
+    return
+  end function get_neighbor_bus
+!
 ! Allocate Fortran bus objects in internal array and assign internal index to
 ! that object
 ! @param bus_num number of buses on this processor
@@ -582,7 +692,7 @@ module gridpack_bus_component
   type(C_PTR) function bus_allocate() bind(c)
     implicit none
     type(bus_wrapper), pointer :: wbus
-    class(bus_component), pointer :: bus
+    type(bus_component), pointer :: bus
     allocate(bus)
     allocate(wbus)
     wbus%bus => bus
@@ -602,7 +712,7 @@ module gridpack_bus_component
   subroutine bus_deallocate(ptr) bind(c)
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: wbus
+    type(bus_wrapper), pointer :: wbus
     call C_F_POINTER(ptr,wbus)
     if (associated(wbus)) then
       deallocate(wbus%bus)
@@ -620,7 +730,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), intent(out) :: isize, jsize
     logical f_ret
     integer f_isize, f_jsize
@@ -642,7 +752,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(out) :: values(*)
     logical f_ret
     call C_F_POINTER(ptr,bus)
@@ -661,7 +771,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), intent(out) :: isize, jsize
     logical f_ret
     integer f_isize, f_jsize
@@ -683,7 +793,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), intent(out) :: isize, jsize 
     logical f_ret
     integer f_isize, f_jsize
@@ -705,7 +815,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(out) :: values(*)
     logical f_ret
     call C_F_POINTER(ptr,bus)
@@ -724,7 +834,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(out) :: values(*)
     logical f_ret
     call C_F_POINTER(ptr,bus)
@@ -742,7 +852,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), intent(out) :: isize
     integer f_isize
     logical f_ret
@@ -760,7 +870,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(out) :: values(*)
     logical f_ret
     call C_F_POINTER(ptr,bus)
@@ -776,7 +886,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(in) :: values(*)
     call C_F_POINTER(ptr,bus)
     call bus%bus%set_values(values)
@@ -790,7 +900,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer f_ret
     call C_F_POINTER(ptr,bus)
     f_ret = bus%bus%matrix_num_rows()
@@ -805,7 +915,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer f_ret
     call C_F_POINTER(ptr,bus)
     f_ret = bus%bus%matrix_num_cols()
@@ -822,7 +932,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), value, intent(in) :: irow, r_idx
     integer f_row, f_idx
     call C_F_POINTER(ptr,bus)
@@ -842,7 +952,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), value, intent(in) :: icol, c_idx
     integer f_col, f_idx
     call C_F_POINTER(ptr,bus)
@@ -862,7 +972,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), value, intent(in) :: irow
     integer f_row, f_ret
     call C_F_POINTER(ptr,bus)
@@ -882,7 +992,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), value, intent(in) :: icol
     integer f_col, f_ret
     call C_F_POINTER(ptr,bus)
@@ -899,7 +1009,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer f_ret
     call C_F_POINTER(ptr,bus)
     f_ret = bus%bus%matrix_num_values()
@@ -917,7 +1027,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(out) :: values(*)
     integer(C_INT), intent(out) :: rows(*), cols(*)
     integer nval, i
@@ -944,7 +1054,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer f_ret
     call C_F_POINTER(ptr,bus)
     f_ret = bus%bus%vector_num_elements()
@@ -962,7 +1072,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), value, intent(in) :: ielem, e_idx
     integer f_elem, f_idx
     call C_F_POINTER(ptr,bus)
@@ -980,7 +1090,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), intent(out) :: e_idx(*)
     integer, allocatable :: f_idx(:)
     integer nval, i
@@ -1004,7 +1114,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(out) :: values(*)
     integer(C_INT), intent(out) :: e_idx(*)
     integer, allocatable :: f_idx(:)
@@ -1027,7 +1137,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     complex(C_DOUBLE_COMPLEX), intent(out) :: values(*)
     call C_F_POINTER(ptr,bus)
     call bus%bus%vector_set_element_values(values)
@@ -1038,16 +1148,16 @@ module gridpack_bus_component
 ! @param ptr C pointer to GridPACK bus object
 ! @param data DataCollection object associated with component
 !
-  subroutine bus_load(ptr, data) bind(c)
+  subroutine bus_load(ptr, data_ptr) bind(c)
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
-    integer(C_INT) data
-    integer f_data
+    type(C_PTR), value, intent(in) :: data_ptr
+    type(bus_wrapper), pointer :: bus
+    type(data_collection), pointer :: data
     call C_F_POINTER(ptr,bus)
-    f_data = data
-    call bus%bus%load(f_data)
+    call C_F_POINTER(data_ptr,data)
+    call bus%bus%load(data)
     return
   end subroutine bus_load
 !
@@ -1062,7 +1172,7 @@ module gridpack_bus_component
 !    use, intrinsic :: iso_c_binding
 !    implicit none
 !    type(C_PTR), value, intent(in) :: ptr
-!    class(bus_wrapper), pointer :: bus
+!    type(bus_wrapper), pointer :: bus
 !    integer f_ret
 !    call C_F_POINTER(ptr,bus)
 !    f_ret = bus%bus%get_xc_buf_size()
@@ -1079,7 +1189,7 @@ module gridpack_bus_component
 !    use, intrinsic :: iso_c_binding
 !    implicit none
 !    type(C_PTR), value, intent(in) :: ptr
-!    class(bus_wrapper), pointer :: bus
+!    type(bus_wrapper), pointer :: bus
 !    call C_F_POINTER(ptr,bus)
 !    call bus%bus%set_xc_buf(buf)
 !    return
@@ -1098,7 +1208,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     integer(C_INT), value, intent(in) :: mode
     integer f_mode
     call C_F_POINTER(ptr,bus)
@@ -1121,7 +1231,7 @@ module gridpack_bus_component
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
-    class(bus_wrapper), pointer :: bus
+    type(bus_wrapper), pointer :: bus
     character(C_CHAR), intent(out) :: string(*)
     integer(C_INT), value, intent(in) :: bufsize
     character(C_CHAR), intent(in) :: signal(*)
@@ -1133,4 +1243,4 @@ module gridpack_bus_component
     bus_serial_write = f_ret
     return
   end function bus_serial_write
-end module gridpack_bus_component
+end module gridpack_component

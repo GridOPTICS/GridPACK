@@ -15,6 +15,10 @@ module gridpack_data_collection
     procedure::get_int_value
   end type
 !
+  type, public :: data_wrapper
+    type(data_collection), pointer :: data
+  end type
+!
 !  Interface declaration to C calls
 !
   interface

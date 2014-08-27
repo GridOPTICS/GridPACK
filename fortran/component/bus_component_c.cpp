@@ -19,17 +19,38 @@
 typedef gridpack::fortran_component::FortranBusComponent FortranBus;
 
 struct busWrapper {
-  boost::shared_ptr<FortranBus> bus;
+  FortranBus *bus;
 };
 
+/**
+ * @param wbus bus object wrapper
+ * @return number of neighboring branches/buses
+ */
+extern "C" int bus_get_num_neighbors(busWrapper *wbus)
+{
+  return wbus->bus->getNumNeighbors();
+}
 
 /**
- * Return size of matrix block on the diagonal contributed by component
- * @param bus GridPACK bus object
- * @param isize,jsize number of rows and columns of matrix block
- * @return false if network component does not contribute matrix element
+ * Get pointer to bus that is attached to calling bus via a branch
+ * @param wbus bus object wrapper
+ * @param idx index of neighboring bus (value is between 0 and number of
+ * neighbors -1)
+ * @return pointer to bus wrapper
  */
-//extern "C" bool bus_matrix_diag_size(busWrapper *wbus, int *isize, int *jsize)
-//{
-//  return wbus->bus->matrixDiagSize(isize, jsize);
-//}
+extern "C" void* bus_get_neighbor_bus(busWrapper *wbus, int idx)
+{
+  return static_cast<void*>(wbus->bus->getNeighborBus(idx));
+}
+
+/**
+ * Get pointer to branch that is attached to calling bus
+ * @param wbus bus object wrapper
+ * @param idx index of neighboring branch (value is between 0 and number of
+ * neighbors -1)
+ * @return pointer to branch wrapper
+ */
+extern "C" void* bus_get_neighbor_branch(busWrapper *wbus, int idx)
+{
+  return static_cast<void*>(wbus->bus->getNeighborBranch(idx));
+}

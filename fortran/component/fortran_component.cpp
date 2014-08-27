@@ -19,7 +19,9 @@
 #include "fortran_component.hpp"
 
 extern "C" void* bus_allocate();
-extern "C" bool bus_matrix_diag_size(int idx, int *isize, int *jsize);
+extern "C" void* bus_deallocate(void *ptr);
+extern "C" bool bus_matrix_diag_size(void *ptr, int *isize, int *jsize);
+extern "C" void* bus_load(gridpack::component::DataCollection *data);
 #if 0
 extern "C" bool p_bus_matrix_diag_values(int network, int idx,
     gridpack::ComplexType *values);
@@ -86,7 +88,7 @@ FortranBusComponent::FortranBusComponent(void)
  */
 FortranBusComponent::~FortranBusComponent(void)
 {
-  bus_deallocate();
+  bus_deallocate(p_fortran_bus_ptr);
 }
 
 /**
@@ -206,10 +208,11 @@ bool FortranBusComponent::vectorValues(gridpack::ComplexType *values)
  * Load data from DataCollection object into corresponding
  * component. This needs to be implemented by every component
  */
-void
-FortranBusComponent::load(boost::shared_ptr
+void FortranBusComponent::load(boost::shared_ptr
     <gridpack::component::DataCollection> data)
 {
+  gridpack::component::DataCollection *data_ptr = data.get();
+  bus_load(data_ptr);
   //p_bus_load(p_network, p_local_index);
 }
 
@@ -274,6 +277,42 @@ void FortranBusComponent::setLocalIndex(int idx)
 int FortranBusComponent::getLocalIndex(void) const
 {
   return p_local_index;
+}
+
+
+/**
+ * Return the number of neighbors that are attached to bus
+ * @return number of branches/buses that are attached to calling bus
+ */
+int FortranBusComponent::getNumNeighbors()
+{
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+  getNeighborBuses(branches);
+  return branches.size();
+}
+
+/**
+ * Return pointer to bus to calling program
+ * @param idx neighbor index (runs between 0 and number of neighbors - 1)
+ * @return pointer to bus object
+ */
+void* FortranBusComponent::getNeighborBus(int idx) const
+{
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > buses;
+  getNeighborBuses(buses);
+  return buses[idx].get();
+}
+
+/**
+ * Return pointer to branch to calling program
+ * @param idx neighbor index (runs between 0 and number of neighbors - 1)
+ * @return pointer to branch object
+ */
+void* FortranBusComponent::getNeighborBranch(int idx) const
+{
+  std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+  getNeighborBuses(branches);
+  return branches[idx].get();
 }
 
 // Base implementation for a Fortran branch object.

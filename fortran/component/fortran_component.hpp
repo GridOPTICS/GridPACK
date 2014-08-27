@@ -168,18 +168,6 @@ class FortranBusComponent
     int getNumNeighbors();
 
     /**
-     * Get local indices of branches that are connected to bus
-     * @param nghbrs list of local indices to neighboring branches
-     */
-    void getNeighborBranches(int *nghbrs) const;
-
-    /**
-     * Get local indices of buses that are connected to bus via a branc
-     * @param nghbrs list of local indices to neighboring buses
-     */
-    void getNeighborBuses(int *nghbrs) const;
-
-    /**
      * Set local index
      * @param idx local index of bus
      */
@@ -192,9 +180,18 @@ class FortranBusComponent
     int getLocalIndex(void) const;
 
     /**
-     * Return fortran pointer to calling program
-     * @return fortran pointer to bus object
+     * Return pointer to bus to calling program
+     * @param idx neighbor index (runs between 0 and number of neighbors - 1)
+     * @return pointer to bus object
      */
+    void* getNeighborBus(int idx) const;
+
+    /**
+     * Return pointer to branch to calling program
+     * @param idx neighbor index (runs between 0 and number of neighbors - 1)
+     * @return pointer to branch object
+     */
+    void* getNeighborBranch(int idx) const;
   private:
 
     int p_local_index;

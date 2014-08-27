@@ -20,7 +20,7 @@
 typedef gridpack::component::DataCollection FortranData;
 
 struct dataWrapper {
-  boost::shared_ptr<FortranData> data;
+  FortranData *data;
 };
 
 /**
