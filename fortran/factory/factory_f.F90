@@ -3,6 +3,7 @@
 !
 module gridpack_factory
   use, intrinsic :: iso_c_binding
+  use gridpack_network
   implicit none
 !
 !  Define factory type
@@ -11,6 +12,7 @@ module gridpack_factory
 
   type, public :: factory
     type(C_PTR) :: p_factory
+    class(network), pointer :: p_network_int
     contains
     procedure::create
     procedure::destroy
@@ -19,6 +21,7 @@ module gridpack_factory
     procedure::set_exchange
     procedure::set_mode
     procedure::check_true
+    procedure::set_links
   end type
   interface
 !
@@ -95,6 +98,16 @@ module gridpack_factory
       type(C_PTR), value, intent(in) :: factory
       logical(C_BOOL), value, intent(in) :: flag
     end function factory_check_true
+!
+! Set connections between Fortran and C objects so that other parts of the
+! interface will work
+! @param factory GridPACK factory object
+!
+    subroutine factory_set_links(factory) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: factory
+    end subroutine factory_set_links
   end interface
   contains
 !
@@ -106,7 +119,8 @@ module gridpack_factory
     use gridpack_network
     implicit none
     class(factory), intent(inout) :: p_factory
-    class(network), intent(in) :: p_network
+    class(network), target, intent(in) :: p_network
+    p_factory%p_network_int => p_network
     call factory_create(p_factory%p_factory,p_network%p_network)
     return
   end subroutine create
@@ -190,4 +204,15 @@ module gridpack_factory
     check_true = factory_check_true(p_factory%p_factory, c_flag)
     return
   end function check_true
+!
+! Set connections between Fortran and C objects so that other parts of the
+! interface will work
+! @param p_factory GridPACK factory object
+!
+  subroutine set_links(p_factory)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(factory), value, intent(in) :: p_factory
+    call factory_set_links(p_factory%p_factory)
+  end subroutine set_links
 end module gridpack_factory

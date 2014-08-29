@@ -3,6 +3,7 @@
 !
 module gridpack_network
   use, intrinsic :: iso_c_binding
+  use gridpack_component
   implicit none
 !
 ! Define network type
@@ -51,6 +52,7 @@ module gridpack_network
     procedure::update_buses
     procedure::init_branch_update
     procedure::update_branches
+    procedure::get_bus
   end type
 !
 !  Interface declaration to C calls
@@ -541,6 +543,19 @@ module gridpack_network
       type(C_PTR), value, intent(in) :: network
       integer(C_INT), value, intent(in) :: idx
     end function network_get_bus
+!
+! Get C pointer to bus
+! @param network GridPACK network object
+! @param idx bus index
+! @return pointer to Fortran bus object
+!
+!    function get_bus(p_network,idx) result(bus)
+!      use, intrinsic :: iso_c_binding
+!      implicit none
+!      class(network), intent(in) :: p_network
+!      integer, value, intent(in) :: idx
+!      class(bus_component), pointer :: bus
+!    end function get_bus
   end interface
   contains
 !
@@ -1255,15 +1270,24 @@ module gridpack_network
 ! Get C pointer to bus
 ! @param p_network GridPACK network object
 ! @param idx bus index
-! @return C pointer to fortran bus object
+! @return pointer to Fortran bus object
 !
-    type(C_PTR) function get_bus(p_network,idx)
+    function get_bus(p_network,idx) result(bus)
       use, intrinsic :: iso_c_binding
       implicit none
       class(network), intent(in) :: p_network
       integer, value, intent(in) :: idx
+      class(bus_component), pointer :: bus
+      type(bus_wrapper), pointer :: wbus
       integer(C_INT) c_idx
-      get_bus = network_get_bus(p_network%p_network,c_idx)
+      type(C_PTR) ptr
+      write(6,'(a)') '(get_bus) Got to 1'
+      ptr = network_get_bus(p_network%p_network,c_idx)
+      write(6,*) '(get_bus) Got to 2 ptr: ',ptr
+      call C_F_POINTER(ptr,wbus)
+      write(6,*) '(get_bus) Got to 3 c_loc(wbus): ',c_loc(wbus)
+      bus => wbus%bus
+      write(6,'(a)') '(get_bus) Got to 4'
       return
     end function get_bus
 end module gridpack_network

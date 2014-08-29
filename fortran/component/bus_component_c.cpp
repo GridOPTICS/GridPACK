@@ -23,6 +23,7 @@ struct busWrapper {
 };
 
 /**
+ * Return total number of neighboring branches/buses attached to bus
  * @param wbus bus object wrapper
  * @return number of neighboring branches/buses
  */
@@ -53,4 +54,62 @@ extern "C" void* bus_get_neighbor_bus(busWrapper *wbus, int idx)
 extern "C" void* bus_get_neighbor_branch(busWrapper *wbus, int idx)
 {
   return static_cast<void*>(wbus->bus->getNeighborBranch(idx));
+}
+
+/**
+ * Clear all pointers to neighboring branches
+ * @param wbus bus object wrapper
+ */
+extern "C" void bus_clear_branches(busWrapper *wbus)
+{
+  wbus->bus->clearBranches();
+}
+
+/**
+ * Clear all pointers to neighboring buses
+ * @param wbus bus object wrapper
+ */
+extern "C" void bus_clear_buses(busWrapper *wbus)
+{
+  wbus->bus->clearBuses();
+}
+
+/**
+ * Set reference bus status
+ * @param wbus bus object wrapper
+ * @param status true if bus is reference bus
+ */
+extern "C" void bus_set_reference_bus(busWrapper *wbus, bool status)
+{
+  wbus->bus->setReferenceBus(status);
+}
+
+/**
+ * Get reference bus status
+ * @param wbus bus object wrapper
+ * @return true if bus is reference bus
+ */
+extern "C" bool bus_get_reference_bus(busWrapper *wbus)
+{
+  return wbus->bus->getReferenceBus();
+}
+
+/**
+ * Return the original index (from input file) of bus
+ * @param wbus bus object wrapper
+ * @return original index
+ */
+extern "C" int bus_get_original_index(busWrapper *wbus)
+{
+  return wbus->bus->getOriginalIndex();
+}
+
+/**
+ * Return the global index of bus
+ * @param wbus bus object wrapper
+ * @return global index
+ */
+extern "C" int bus_get_global_index(busWrapper *wbus)
+{
+  return wbus->bus->getGlobalIndex();
 }

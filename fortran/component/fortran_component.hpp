@@ -192,6 +192,12 @@ class FortranBusComponent
      * @return pointer to branch object
      */
     void* getNeighborBranch(int idx) const;
+
+    /**
+     * Return pointer to imbedded Fortran object
+     * @return pointer to Fortran wrapper
+     */
+    void* getFortranPointer() const;
   private:
 
     int p_local_index;

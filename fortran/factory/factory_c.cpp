@@ -89,3 +89,12 @@ extern "C" bool factory_check_true(FortranFactory *factory, bool flag)
 {
   return factory->checkTrue(flag);
 }
+
+/**
+ * Set connections between Fortran and C objects so that other parts of the
+ * interface will work
+ * @param factory pointer to Fortran factory object
+ */
+extern "C" void factory_set_links(FortranFactory *factory)
+{
+}

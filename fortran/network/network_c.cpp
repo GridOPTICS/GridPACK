@@ -535,9 +535,8 @@ extern "C" void network_update_branches(networkWrapper *wnetwork)
  * @param idx index of bus object
  * @return void pointer to fortran bus object
  */
-extern "C" busWrapper* network_get_bus(networkWrapper *wnetwork, int idx)
+extern "C" void* network_get_bus(networkWrapper *wnetwork, int idx)
 {
-  busWrapper *wbus = new busWrapper;
-  wbus->bus = wnetwork->network->getBus(idx);
-  return wbus;
+  printf("getFortranPointer: %p\n",wnetwork->network->getBus(idx)->getFortranPointer());
+  return wnetwork->network->getBus(idx)->getFortranPointer();
 }

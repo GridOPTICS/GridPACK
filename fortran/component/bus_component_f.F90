@@ -9,11 +9,21 @@ module gridpack_component
 !  Define bus component type
 !
   private
+  type, bind(c), public :: bus_xc_data
+    integer(C_INT) idx
+  end type
+
+  type, bind(c), public :: branch_xc_data
+    integer(C_INT) idx1
+    integer(C_INT) idx2
+  end type
+
   type, public :: bus_component
     type (C_PTR) :: p_bus
     type (C_PTR) :: p_data
     integer :: p_idx
     integer :: p_mode
+    type (bus_xc_data) :: xc_buf
     contains
 !
 !  Matrix-vector interface calls
@@ -54,8 +64,8 @@ module gridpack_component
 !  Base component calls
 !
     procedure::load
-!    procedure::get_xc_buf_size
-!    procedure::set_xc_buf
+    procedure::get_xc_buf_size
+    procedure::get_xc_buf
     procedure::set_mode
     procedure::serial_write
 !
@@ -64,15 +74,15 @@ module gridpack_component
     procedure::get_num_neighbors
     procedure::get_neighbor_branch
     procedure::get_neighbor_bus
-#if 0
     procedure::clear_branches
     procedure::clear_buses
     procedure::set_reference_bus
     procedure::get_reference_bus
-    procedure::set_original_index
     procedure::get_original_index
-    procedure::set_global_index
     procedure::get_global_index
+#if 0
+!    procedure::set_original_index
+!    procedure::set_global_index
 #endif
   end type
 !
@@ -125,7 +135,7 @@ module gridpack_component
 !
     procedure::load
 !    procedure::get_xc_buf_size
-!    procedure::set_xc_buf
+!    procedure::get_xc_buf
     procedure::set_mode
     procedure::serial_write
 #endif
@@ -133,10 +143,6 @@ module gridpack_component
 !  Base branch calls
 !
 #if 0
-    procedure::clear_branches
-    procedure::clear_buses
-    procedure::set_reference_bus
-    procedure::get_reference_bus
     procedure::set_original_index
     procedure::get_original_index
     procedure::set_global_index
@@ -145,7 +151,7 @@ module gridpack_component
   end type
 !
   type, public :: bus_wrapper
-    type(bus_component), pointer :: bus
+    class(bus_component), pointer :: bus
   end type
 !
   type, public :: branch_wrapper
@@ -193,9 +199,8 @@ module gridpack_component
       type(C_PTR), value, intent(in) :: bus
       integer(C_INT), value, intent(in) :: idx
     end function bus_get_neighbor_bus
-#if 0
 !
-! Clear all branches attached to bus
+! Clear all pointers to neighboring branches
 ! @param bus GridPACK bus object
 !
     subroutine bus_clear_branches(bus) bind(c)
@@ -204,7 +209,7 @@ module gridpack_component
       type(C_PTR), value, intent(in) :: bus
     end subroutine bus_clear_branches
 !
-! Clear all buses attached to bus
+! Clear all pointers to neighboring buses
 ! @param bus GridPACK bus object
 !
     subroutine bus_clear_buses(bus) bind(c)
@@ -221,7 +226,7 @@ module gridpack_component
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), value, intent(in) :: bus
-      type(C_BOOL), value, intent(in) :: status
+      logical(C_BOOL), value, intent(in) :: status
     end subroutine bus_set_reference_bus
 !
 ! Get reference bus status
@@ -234,16 +239,6 @@ module gridpack_component
       type(C_PTR), value, intent(in) :: bus
     end function bus_get_reference_bus
 !
-! Set original index (from input file)
-! @param bus GridPACK bus object
-! @param idx original index from network
-!
-    subroutine bus_set_original_index(bus, idx) bind(c)
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(C_PTR), value, intent(in) :: bus
-    end subroutine bus_set_original_index
-!
 ! Get original index (from input file)
 ! @param bus GridPACK bus object
 ! @return original index from network
@@ -254,16 +249,6 @@ module gridpack_component
       type(C_PTR), value, intent(in) :: bus
     end function bus_get_original_index
 !
-! Set global index
-! @param bus GridPACK bus object
-! @param idx global index from network
-!
-    subroutine bus_set_global_index(bus, idx) bind(c)
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(C_PTR), value, intent(in) :: bus
-    end subroutine bus_set_global_index
-!
 ! Get global index
 ! @param bus GridPACK bus object
 ! @return global index from network
@@ -273,6 +258,27 @@ module gridpack_component
       implicit none
       type(C_PTR), value, intent(in) :: bus
     end function bus_get_global_index
+#if 0
+!
+! Set original index (from input file)
+! @param bus GridPACK bus object
+! @param idx original index from network
+!
+    subroutine bus_set_original_index(bus, idx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: bus
+    end subroutine bus_set_original_index
+!
+! Set global index
+! @param bus GridPACK bus object
+! @param idx global index from network
+!
+    subroutine bus_set_global_index(bus, idx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: bus
+    end subroutine bus_set_global_index
 #endif
   end interface
   contains
@@ -565,21 +571,22 @@ module gridpack_component
 ! @param bus GridPACK bus object
 ! @return size of buffer in bytes
 !
-!  integer function get_xc_buf_size(bus)
-!    implicit none
-!    class(bus_component), intent(in) :: bus
-!  end function get_xc_buf_size
+  integer function get_xc_buf_size(bus)
+    implicit none
+    class(bus_component), intent(in) :: bus
+    get_xc_buf_size = c_sizeof(bus%xc_buf)
+  end function get_xc_buf_size
 !
-! Assign the location of the data exchange buffer. These buffers are allocated
-! and deallocated by the network
+! Return the location of the data exchange buffer.
 ! @param bus GridPACK bus object
-! @return size of buffer in bytes
+! @param pointer to 
 !
-!  subroutine set_xc_buf(bus, buf)
-!    implicit none
-!    class(bus_component), intent(in) :: bus
-!    type(C_PTR), value, intent(in) :: buf
-!  end subroutine set_xc_buf
+  subroutine get_xc_buf(bus, buf)
+    implicit none
+    class(bus_component), target, intent(in) :: bus
+    type(C_PTR), intent(out) :: buf
+    buf = c_loc(bus%xc_buf)
+  end subroutine get_xc_buf
 !
 ! Set an internal variable that can be used to control the behavior of the
 ! component. This function doesn't need to be implemented, but if needed it can
@@ -659,7 +666,7 @@ module gridpack_component
     implicit none
     class(bus_component), value, intent(in) :: p_bus
     integer, value, intent(in) :: idx
-    type(bus_component), pointer :: bus_ptr
+    class(bus_component), pointer :: bus_ptr
     type(bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
     integer(C_INT) c_idx
@@ -670,25 +677,89 @@ module gridpack_component
     return
   end function get_neighbor_bus
 !
+! Clear all pointers to neighboring branches
+! @param p_bus GridPACK bus object
+!
+  subroutine clear_branches(p_bus)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    call bus_clear_buses(p_bus%p_bus)
+    return
+  end subroutine clear_branches
+!
+! Clear all pointers to neighboring buses
+! @param p_bus GridPACK bus object
+!
+  subroutine clear_buses(p_bus)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    call bus_clear_branches(p_bus%p_bus)
+    return
+  end subroutine clear_buses
+!
+! Set reference bus status
+! @param p_bus GridPACK bus object
+! @param status true if bus is reference bus
+!
+  subroutine set_reference_bus(p_bus, status)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    logical, value, intent(in) :: status
+    logical(C_BOOL) c_status
+    c_status = status
+    call bus_set_reference_bus(p_bus%p_bus,c_status)
+    return
+  end subroutine set_reference_bus
+!
+! Get reference bus status
+! @param p_bus GridPACK bus object
+! @return true if bus is reference bus
+!
+  logical function get_reference_bus(p_bus)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    logical(C_BOOL) c_ret
+    c_ret = bus_get_reference_bus(p_bus%p_bus)
+    get_reference_bus = c_ret
+    return
+  end function get_reference_bus
+!
+! Get original index (from input file)
+! @param p_bus GridPACK bus object
+! @return original index from network
+!
+  integer function get_original_index(p_bus)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    integer(C_INT) c_ret
+    c_ret = bus_get_original_index(p_bus%p_bus)
+    get_original_index = c_ret
+    return
+  end function get_original_index
+!
+! Get global index
+! @param p_bus GridPACK bus object
+! @return global index from network
+!
+  integer function get_global_index(p_bus)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: p_bus
+    integer(C_INT) c_ret
+    c_ret = bus_get_global_index(p_bus%p_bus)
+    get_global_index = c_ret
+    return
+  end function get_global_index
+!
 ! Allocate Fortran bus objects in internal array and assign internal index to
 ! that object
-! @param bus_num number of buses on this processor
+! @return pointer to bus wrapper object
 !
-#if 0
-  subroutine bus_allocate(bus_num)
-    implicit none
-    integer bus_num
-    integer i
-    allocate(p_buses(bus_num))
-    allocate(p_data(bus_num))
-    do i = 1, bus_num
-      p_buses(i)%p_idx = i
-      p_data(i)%p_idx = i
-      p_buses(i)%p_data => p_data(i)
-    end do
-    return
-  end subroutine bus_allocate 
-#endif
   type(C_PTR) function bus_allocate() bind(c)
     implicit none
     type(bus_wrapper), pointer :: wbus
@@ -696,19 +767,13 @@ module gridpack_component
     allocate(bus)
     allocate(wbus)
     wbus%bus => bus
+    write(6,*) '(bus_allocate) c_loc(wbus): ',c_loc(wbus)
     bus_allocate = C_LOC(wbus)
     return
   end function bus_allocate
 !
 ! Deallocate Fortran bus objects
 !
-#if 0
-  subroutine bus_deallocate()
-    implicit none
-    if (allocated(p_buses)) deallocate(p_buses)
-    return
-  end subroutine bus_deallocate 
-#endif
   subroutine bus_deallocate(ptr) bind(c)
     implicit none
     type(C_PTR), value, intent(in) :: ptr
@@ -1168,32 +1233,33 @@ module gridpack_component
 ! @param ptr C pointer to GridPACK bus object
 ! @return size of buffer in bytes
 !
-!  integer(C_INT) function bus_get_xc_buf_size(ptr) bind(c)
-!    use, intrinsic :: iso_c_binding
-!    implicit none
-!    type(C_PTR), value, intent(in) :: ptr
-!    type(bus_wrapper), pointer :: bus
-!    integer f_ret
-!    call C_F_POINTER(ptr,bus)
-!    f_ret = bus%bus%get_xc_buf_size()
-!    bus_get_xc_buf_size = f_ret
-!    return
-!  end function bus_get_xc_buf_size
+  integer(C_INT) function bus_get_xc_buf_size(ptr) bind(c)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(in) :: ptr
+    type(bus_wrapper), pointer :: bus
+    integer f_ret
+    call C_F_POINTER(ptr,bus)
+    f_ret = bus%bus%get_xc_buf_size()
+    bus_get_xc_buf_size = f_ret
+    return
+  end function bus_get_xc_buf_size
 !
 ! Assign the location of the data exchange buffer. These buffers are allocated
 ! and deallocated by the network
 ! @param ptr C pointer to GridPACK bus object
 ! @return size of buffer in bytes
 !
-!  subroutine bus_set_xc_buf(ptr, buf) bind(c)
-!    use, intrinsic :: iso_c_binding
-!    implicit none
-!    type(C_PTR), value, intent(in) :: ptr
-!    type(bus_wrapper), pointer :: bus
-!    call C_F_POINTER(ptr,bus)
-!    call bus%bus%set_xc_buf(buf)
-!    return
-!  end subroutine bus_set_xc_buf
+  subroutine bus_get_xc_buf(ptr, buf) bind(c)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(in) :: ptr
+    type(bus_wrapper), pointer :: bus
+    type(C_PTR), intent(out) :: buf
+    call C_F_POINTER(ptr,bus)
+    call bus%bus%get_xc_buf(buf)
+    return
+  end subroutine bus_get_xc_buf
 !
 ! Set an internal variable that can be used to control the behavior of the
 ! component. This function doesn't need to be implemented, but if needed it can

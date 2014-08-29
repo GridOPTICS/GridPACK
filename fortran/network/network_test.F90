@@ -19,6 +19,7 @@
 PROGRAM network_test
   USE gridpack_network
   USE gridpack_parallel
+  USE gridpack_component
 
   IMPLICIT NONE
   include 'mpif.h'
@@ -36,6 +37,7 @@ PROGRAM network_test
   logical ok, t_ok
   integer nbus, nbranch, nnghbr
   integer, allocatable :: nghbr(:), nghbr_bus(:)
+  class(bus_component), pointer :: bus_ptr
 !
 ! Initialize gridpack and create world communicator
 !
@@ -409,8 +411,37 @@ PROGRAM network_test
     write(6,'(a)') 'Bus neighbors are ok'
   endif
 !
-! TODO: Need to add test for ghost updates
+! Test ghost updates. Start by setting exchange data equal to original bus index
+! active buses
+! 
+  do i = 0, nbus-1
+    write(6,'(a,i1,a)') 'p[',me,'] Got to 1'
+    bus_ptr => grid%get_bus(i)
+    write(6,'(a,i1,a)') 'p[',me,'] Got to 2'
+    if (grid%get_active_bus(i)) then
+      bus_ptr%xc_buf%idx = grid%get_original_bus_index(i) 
+    else
+      bus_ptr%xc_buf%idx = -1
+    endif
+    write(6,'(a,i1,a)') 'p[',me,'] Got to 3'
+  end do
 !
+! Call update operation
+!
+  call grid%update_buses
+!
+! Check updates
+!
+  ok = .true.
+  do i = 0, nbus-1
+    bus_ptr => grid%get_bus(i)
+    if (bus_ptr%xc_buf%idx.ne.grid%get_original_bus_index(i)) ok = .false.
+  end do
+  call check_ok(ok) 
+  if (me.eq.0.and.ok) then
+    write(6,*)
+    write(6,'(a)') 'Update operation is ok'
+  endif
 !
 !  Test clean function
 !
