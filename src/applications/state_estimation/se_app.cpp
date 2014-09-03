@@ -164,6 +164,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   }   
   ///////////////////////////////////////////////////////////////////
 
+
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<SENetwork> busIO(128, network);
   gridpack::serial_io::SerialBranchIO<SENetwork> branchIO(128, network);
@@ -173,8 +174,10 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   gridpack::state_estimation::SEFactory factory(network);
   factory.load();
 
+  printf("reading done \n");
   // Add measurements to buses and branches
   factory.setMeasurements(meas);
+  printf("reading done \n");
 
   // set network components using factory
   factory.setComponents();
@@ -198,34 +201,59 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(Jacobian_H);
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
+  HJac->print();
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
+
+  // Convergence and iteration parameters
+  double tolerance = cursor->get("tolerance",1.0e-6);
+  int max_iteration = cursor->get("maxIteration",50);
+  ComplexType tol;
+
+  tol = 2.0*tolerance;
+  int iter = 0;
+
   // Start N-R loop
-//  while (real(tol) > tolerance && iter < max_iteration) {
+  while (real(tol) > tolerance && iter < max_iteration) {
 
     
     // Form estimation vector
     HJacMap.mapToMatrix(HJac);
 
+    // Form H'
+    boost::shared_ptr<gridpack::math::Matrix> trans_HJac(transpose(*HJac));
+  
+    // Form Gain matrix
+    boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*HJac, *trans_HJac));
 
     // Build measurement equation
     EzMap.mapToVector(Ez);
 
-  
-    // Build gain matrix 
-
+    factory.setMode(R_inv);
+    gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(network);
+    boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
 
     // Form right hand side vector
+    boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
+    boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
 
+    // create a linear solver
+    gridpack::math::LinearSolver solver(*Gain);
+    solver.configure(cursor);
 
     // Solve linear equation
+    boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
+    solver.solve(*RHS, *X);
+//    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
 
   
     // update values
+    network->updateBuses();
 
 
   // End N-R loop
+  }
 
 
   // Output 
