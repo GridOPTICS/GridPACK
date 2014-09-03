@@ -39,33 +39,15 @@ extern "C" void network_destroy(networkWrapper **wnetwork)
   delete (*wnetwork);
   *wnetwork = NULL;
 }
-#if 0
-/**
- * Utility function to check that network handle is okay
- * @param n_handle network handle
- */
-void p_checkHandle(int n_handle)
-{
-  if (n_handle < 0 || n_handle > MAX_NETWORKS) {
-    printf("Handle out of bounds. handle: %d maximum networks: %d\n",
-        n_handle, MAX_NETWORKS);
-    // TODO: Some kind of error
-  } else if (!p_networks[n_handle].active) {
-    printf("Handle not active\n");
-    // TODO: Some kind of error
-  }
-}
-#endif
-
 
 /**
  * Add a bus locally to the network
  * @param network pointer to Fortran network object
  * @param idx original index of bus
  */
-extern "C" void network_add_bus(networkWrapper *wnetwork, int *idx)
+extern "C" void network_add_bus(networkWrapper *wnetwork, int idx)
 {
-  wnetwork->network->addBus(*idx);
+  wnetwork->network->addBus(idx);
 }
 
 /**
@@ -441,58 +423,56 @@ extern "C" void network_clean(networkWrapper *wnetwork)
   wnetwork->network->clean();
 }
 
-#if 0
 /**
- * Allocate buffers for exchanging data for ghost buses
- * @param size size of buffers that will be assigned to pointers
- * @param n_handle network handle
+ * Allocate array of pointers to buffers for exchanging data for ghost buses
+ * @param network GridPACK network object
+ * @param isize size of exchange buffer (in bytes)
  */
-extern "C" void p_alloc_xc_bus_pointers(int n_handle, int size)
+extern "C" void network_alloc_xc_bus_pointers(networkWrapper *wnetwork, int
+    isize)
 {
-  p_checkHandle(n_handle);
-  p_networks[n_handle].network->allocXCBus(size);
+  wnetwork->network->allocXCBusPointers(isize);
 }
 
 /**
- * Store location of externally allocated buffer within a network
- * @param n_handle network handle
+ * Allocate array of pointers to buffers for exchanging data for ghost branches
+ * @param network GridPACK network object
+ * @param isize size of exchange buffer (in bytes)
+ */
+extern "C" void network_alloc_xc_branch_pointers(networkWrapper *wnetwork,
+    int isize)
+{
+  wnetwork->network->allocXCBranchPointers(isize);
+}
+
+/**
+ * Store location of externally allocated bus buffer within a network
+ * @param p_network GridPACK network object
  * @param idx local index of bus associated with buffer
  * @param ptr location of buffer
  */
-extern "C" void p_set_xc_bus_buffer(int n_handle, int idx, void *ptr)
+extern "C" void network_set_xc_bus_buffer(networkWrapper *wnetwork, int idx,
+    void *data)
 {
-  p_checkHandle(n_handle);
-  p_networks[n_handle].network->setXCBusBuffer(idx, ptr);
+  wnetwork->network->setXCBusBuffer(idx, data);
 }
 
 /**
- * Allocate buffers for exchanging data for ghost branches
- * @param size size of buffers that will be assigned to pointers
- * @param n_handle network handle
- */
-extern "C" void p_alloc_xc_branch_pointers(int n_handle, int size)
-{
-  p_checkHandle(n_handle);
-  p_networks[n_handle].network->allocXCBranch(size);
-}
-
-/**
- * Store location of externally allocated buffer within a network
- * @param n_handle network handle
- * @param idx local index of branch associated with buffer
+ * Store location of externally allocated branch buffer within a network
+ * @param p_network GridPACK network object
+ * @param idx local index of bus associated with buffer
  * @param ptr location of buffer
  */
-extern "C" void p_set_xc_branch_buffer(int n_handle, int idx, void *ptr)
+extern "C" void network_set_xc_branch_buffer(networkWrapper *wnetwork,
+    int idx, void *data)
 {
-  p_checkHandle(n_handle);
-  p_networks[n_handle].network->setXCBranchBuffer(idx, ptr);
+  wnetwork->network->setXCBranchBuffer(idx, data);
 }
-#endif
 
 /**
  * This function must be called before calling the update bus routine.
  * It initializes data structures for the bus update
- * @param n_handle network handle
+ * @param network pointer to Fortran network object
  */
 extern "C" void network_init_bus_update(networkWrapper *wnetwork)
 {
@@ -502,7 +482,7 @@ extern "C" void network_init_bus_update(networkWrapper *wnetwork)
 /**
  * Update the bus ghost values. This is a
  * collective operation across all processors.
- * @param n_handle network handle
+ * @param network pointer to Fortran network object
  */
 extern "C" void network_update_buses(networkWrapper *wnetwork)
 {
@@ -512,7 +492,7 @@ extern "C" void network_update_buses(networkWrapper *wnetwork)
 /**
  * This function must be called before calling the update branch routine.
  * It initializes data structures for the branch update
- * @param n_handle network handle
+ * @param network pointer to Fortran network object
  */
 extern "C" void network_init_branch_update(networkWrapper *wnetwork)
 {
@@ -522,7 +502,7 @@ extern "C" void network_init_branch_update(networkWrapper *wnetwork)
 /**
  * Update the branch ghost values. This is a
  * collective operation across all processors.
- * @param n_handle network handle
+ * @param network pointer to Fortran network object
  */
 extern "C" void network_update_branches(networkWrapper *wnetwork)
 {
@@ -531,12 +511,22 @@ extern "C" void network_update_branches(networkWrapper *wnetwork)
 
 /**
  * Return a void pointer to the internal fortran bus object
- * @param n_handle network handle
+ * @param network pointer to Fortran network object
  * @param idx index of bus object
  * @return void pointer to fortran bus object
  */
 extern "C" void* network_get_bus(networkWrapper *wnetwork, int idx)
 {
-  printf("getFortranPointer: %p\n",wnetwork->network->getBus(idx)->getFortranPointer());
   return wnetwork->network->getBus(idx)->getFortranPointer();
+}
+
+/**
+ * Return a void pointer to the internal fortran branch object
+ * @param network pointer to Fortran network object
+ * @param idx index of branch object
+ * @return void pointer to fortran branch object
+ */
+extern "C" void* network_get_branch(networkWrapper *wnetwork, int idx)
+{
+  return wnetwork->network->getBranch(idx)->getFortranPointer();
 }

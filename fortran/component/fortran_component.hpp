@@ -371,9 +371,15 @@ class FortranBranchComponent
      */
     int getLocalIndex(void) const;
 
+    /**
+     * Return pointer to imbedded Fortran object
+     * @return pointer to Fortran wrapper
+     */
+    void* getFortranPointer() const;
   private:
 
     int p_local_index;
+    void* p_fortran_branch_ptr;
 
   friend class boost::serialization::access;
 

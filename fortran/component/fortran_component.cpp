@@ -20,10 +20,12 @@
 #include <stdio.h>
 
 extern "C" void* bus_allocate();
-extern "C" void* bus_deallocate(void *ptr);
-extern "C" bool bus_matrix_diag_size(void *ptr, int *isize, int *jsize);
-extern "C" void* bus_load(gridpack::component::DataCollection *data);
-extern "C" int bus_get_xc_buf_size(void *ptr);
+extern "C" void bus_deallocate(void *ptr);
+extern "C" bool p_bus_matrix_diag_size(void *ptr, int *isize, int *jsize);
+extern "C" void* p_bus_load(gridpack::component::DataCollection *data);
+extern "C" int p_bus_get_xc_buf_size(void *ptr);
+extern "C" void* branch_allocate();
+extern "C" void branch_deallocate(void *ptr);
 #if 0
 extern "C" bool p_bus_matrix_diag_values(int network, int idx,
     gridpack::ComplexType *values);
@@ -83,7 +85,6 @@ namespace fortran_component {
 FortranBusComponent::FortranBusComponent(void)
 {
   p_fortran_bus_ptr = bus_allocate();
-  printf("p_fortran_bus_ptr: %p\n",p_fortran_bus_ptr);
 }
 
 /**
@@ -91,7 +92,6 @@ FortranBusComponent::FortranBusComponent(void)
  */
 FortranBusComponent::~FortranBusComponent(void)
 {
-  printf("fortan bus deallocated\n");
   bus_deallocate(p_fortran_bus_ptr);
 }
 
@@ -104,7 +104,7 @@ FortranBusComponent::~FortranBusComponent(void)
  */
 bool FortranBusComponent::matrixDiagSize(int *isize, int *jsize) const
 {
-  return bus_matrix_diag_size(p_fortran_bus_ptr, isize, jsize);
+  return p_bus_matrix_diag_size(p_fortran_bus_ptr, isize, jsize);
 }
 
 /**
@@ -216,7 +216,7 @@ void FortranBusComponent::load(boost::shared_ptr
     <gridpack::component::DataCollection> data)
 {
   gridpack::component::DataCollection *data_ptr = data.get();
-  bus_load(data_ptr);
+  p_bus_load(data_ptr);
   //p_bus_load(p_network, p_local_index);
 }
 
@@ -231,7 +231,7 @@ void FortranBusComponent::load(boost::shared_ptr
  */
 int FortranBusComponent::getXCBufSize(void)
 {
-  return bus_get_xc_buf_size(p_fortran_bus_ptr);
+  return p_bus_get_xc_buf_size(p_fortran_bus_ptr);
 }
 
 /**
@@ -324,7 +324,6 @@ void* FortranBusComponent::getNeighborBranch(int idx) const
  */
 void* FortranBusComponent::getFortranPointer() const
 {
-  printf("return p_fortran_bus_ptr: %p\n",p_fortran_bus_ptr);
   return p_fortran_bus_ptr;
 }
 
@@ -335,6 +334,7 @@ void* FortranBusComponent::getFortranPointer() const
  */
 FortranBranchComponent::FortranBranchComponent(void)
 {
+  p_fortran_branch_ptr = branch_allocate();
 }
 
 /**
@@ -342,6 +342,7 @@ FortranBranchComponent::FortranBranchComponent(void)
  */
 FortranBranchComponent::~FortranBranchComponent(void)
 {
+  branch_deallocate(p_fortran_branch_ptr);
 }
 
 /**
@@ -532,6 +533,16 @@ int FortranBranchComponent::getLocalIndex(void) const
 {
   return p_local_index;
 }
+
+/**
+ * Return pointer to imbedded Fortran object
+ * @return pointer to Fortran wrapper
+ */
+void* FortranBranchComponent::getFortranPointer() const
+{
+  return p_fortran_branch_ptr;
+}
+
 
 }  // fortran_component
 }  // gridpack

@@ -20,6 +20,7 @@ PROGRAM network_test
   USE gridpack_network
   USE gridpack_parallel
   USE gridpack_component
+  USE, intrinsic :: iso_c_binding
 
   IMPLICIT NONE
   include 'mpif.h'
@@ -32,12 +33,14 @@ PROGRAM network_test
   integer ixmin, ixmax, iymin, iymax
   integer iaxmin, iaxmax, iaymin, iaymax
   integer ncnt, n, ix, iy, nx, ny, i, j, k
-  integer n1, n2, lx, ly, ldx
+  integer n1, n2, lx, ly, ldx, bsize
   integer oks, okr
   logical ok, t_ok
   integer nbus, nbranch, nnghbr
   integer, allocatable :: nghbr(:), nghbr_bus(:)
   class(bus_component), pointer :: bus_ptr
+  class(branch_component), pointer :: branch_ptr
+  type(C_PTR) xc_ptr
 !
 ! Initialize gridpack and create world communicator
 !
@@ -414,21 +417,42 @@ PROGRAM network_test
 ! Test ghost updates. Start by setting exchange data equal to original bus index
 ! active buses
 ! 
+  bus_ptr => grid%get_bus(0)
+  bsize = bus_ptr%bus_get_xc_buf_size()
+  call grid%alloc_xc_bus_pointers(bsize)
   do i = 0, nbus-1
-    write(6,'(a,i1,a)') 'p[',me,'] Got to 1'
     bus_ptr => grid%get_bus(i)
-    write(6,'(a,i1,a)') 'p[',me,'] Got to 2'
+    xc_ptr = bus_ptr%xc_ptr
+    call grid%set_xc_bus_buffer(i,xc_ptr)
     if (grid%get_active_bus(i)) then
       bus_ptr%xc_buf%idx = grid%get_original_bus_index(i) 
     else
       bus_ptr%xc_buf%idx = -1
     endif
-    write(6,'(a,i1,a)') 'p[',me,'] Got to 3'
+  end do
+  branch_ptr => grid%get_branch(0)
+  bsize = branch_ptr%branch_get_xc_buf_size()
+  call grid%alloc_xc_branch_pointers(bsize)
+  do i = 0, nbranch-1
+    branch_ptr => grid%get_branch(i)
+    xc_ptr = branch_ptr%xc_ptr
+    call grid%set_xc_branch_buffer(i,xc_ptr)
+    if (grid%get_active_branch(i)) then
+      call grid%get_branch_endpoints(i,n1,n2)
+      branch_ptr%xc_buf%idx1 = grid%get_original_bus_index(n1)
+      branch_ptr%xc_buf%idx2 = grid%get_original_bus_index(n2)
+    else
+      branch_ptr%xc_buf%idx1 = -1
+      branch_ptr%xc_buf%idx2 = -1
+    endif
   end do
 !
 ! Call update operation
 !
+  call grid%init_bus_update
   call grid%update_buses
+  call grid%init_branch_update
+  call grid%update_branches
 !
 ! Check updates
 !
@@ -437,10 +461,20 @@ PROGRAM network_test
     bus_ptr => grid%get_bus(i)
     if (bus_ptr%xc_buf%idx.ne.grid%get_original_bus_index(i)) ok = .false.
   end do
+  do i = 0, nbranch-1
+    branch_ptr => grid%get_branch(i)
+    call grid%get_branch_endpoints(i,n1,n2)
+    n1 = grid%get_original_bus_index(n1)
+    n2 = grid%get_original_bus_index(n2)
+    if (branch_ptr%xc_buf%idx1.ne.n1.or.branch_ptr%xc_buf%idx2.ne.n2) ok = .false.
+  end do
   call check_ok(ok) 
   if (me.eq.0.and.ok) then
     write(6,*)
     write(6,'(a)') 'Update operation is ok'
+  else if (me.eq.0) then
+    write(6,*)
+    write(6,'(a)') 'Update operation failed'
   endif
 !
 !  Test clean function

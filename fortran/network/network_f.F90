@@ -48,11 +48,16 @@ module gridpack_network
     procedure::get_branch_endpoints
     procedure::partition
     procedure::clean
+    procedure::alloc_xc_bus_pointers
+    procedure::alloc_xc_branch_pointers
+    procedure::set_xc_bus_buffer
+    procedure::set_xc_branch_buffer
     procedure::init_bus_update
     procedure::update_buses
     procedure::init_branch_update
     procedure::update_branches
     procedure::get_bus
+    procedure::get_branch
   end type
 !
 !  Interface declaration to C calls
@@ -87,7 +92,7 @@ module gridpack_network
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), value, intent(in) :: network
-      integer(C_INT), intent(in) :: idx
+      integer(C_INT), value, intent(in) :: idx
     end subroutine network_add_bus
 !
 ! Add a branch locally to the network
@@ -494,6 +499,54 @@ module gridpack_network
       type(C_PTR), value, intent(in) :: network
     end subroutine network_clean
 !
+! Allocate array of pointers to buffers for exchanging data for ghost buses
+! @param network GridPACK network object
+! @param isize size of exchange buffer (in bytes)
+!
+    subroutine network_alloc_xc_bus_pointers(network, isize) bind(c)
+      use, intrinsic:: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: isize
+    end subroutine network_alloc_xc_bus_pointers
+!
+! Allocate array of pointers to buffers for exchanging data for ghost branches
+! @param network GridPACK network object
+! @param isize size of exchange buffer (in bytes)
+!
+    subroutine network_alloc_xc_branch_pointers(network, isize) bind(c)
+      use, intrinsic:: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: isize
+    end subroutine network_alloc_xc_branch_pointers
+!
+! Store location of externally allocated bus buffer within a network
+! @param network GridPACK network object
+! @param idx local index of bus associated with buffer
+! @param ptr location of buffer
+!
+    subroutine network_set_xc_bus_buffer(network, idx, ptr) bind(c)
+      use, intrinsic:: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: idx
+      type(C_PTR), value, intent(in) :: ptr
+    end subroutine network_set_xc_bus_buffer
+!
+! Store location of externally allocated branch buffer within a network
+! @param network GridPACK network object
+! @param idx local index of bus associated with buffer
+! @param ptr location of buffer
+!
+    subroutine network_set_xc_branch_buffer(network, idx, ptr) bind(c)
+      use, intrinsic:: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: idx
+      type(C_PTR), value, intent(in) :: ptr
+    end subroutine network_set_xc_branch_buffer
+!
 ! This subroutine must be called before calling the update bus routine. It
 ! initializes data structures for the bus update
 ! @param network GridPACK network object
@@ -544,18 +597,17 @@ module gridpack_network
       integer(C_INT), value, intent(in) :: idx
     end function network_get_bus
 !
-! Get C pointer to bus
+! Get C pointer to branch
 ! @param network GridPACK network object
-! @param idx bus index
-! @return pointer to Fortran bus object
+! @param idx branch index
+! @return C pointer to fortran branch object
 !
-!    function get_bus(p_network,idx) result(bus)
-!      use, intrinsic :: iso_c_binding
-!      implicit none
-!      class(network), intent(in) :: p_network
-!      integer, value, intent(in) :: idx
-!      class(bus_component), pointer :: bus
-!    end function get_bus
+    type(C_PTR) function network_get_branch(network,idx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: idx
+    end function network_get_branch
   end interface
   contains
 !
@@ -1184,42 +1236,68 @@ module gridpack_network
     call network_clean(p_network%p_network)
     return
   end subroutine clean
-#if 0
 !
-! Store the location of externally allocated buffer within a network
-! @param n_handle network handle
-! @param idx local bus index
-! @param pointer to buffer
+! Allocate array of pointers to buffers for exchanging data for ghost buses
+! @param p_network GridPACK network object
+! @param isize size of exchange buffer (in bytes)
 !
-  subroutine set_xc_bus_buffer(n_handle, idx, buf)
-    use, intrinsic :: iso_c_binding
+  subroutine alloc_xc_bus_pointers(p_network, isize)
+    use, intrinsic:: iso_c_binding
     implicit none
-    integer, value, intent(in) :: n_handle, idx
-    integer(C_INT) c_handle, c_idx
-    type(C_PTR) buf
-    c_handle = n_handle
-    c_idx = idx
-    call p_set_xc_bus_buffer(c_handle, c_idx, buf)
+    class(network), intent(in) :: p_network
+    integer, value, intent(in) :: isize
+    integer(C_INT) c_size
+    c_size = isize
+    call network_alloc_xc_bus_pointers(p_network%p_network, c_size)
     return
+  end subroutine alloc_xc_bus_pointers
+!
+! Allocate array of pointers to branch buffers for exchanging data for ghost branches
+! @param p_network GridPACK network object
+! @param isize size of exchange buffer (in bytes)
+!
+  subroutine alloc_xc_branch_pointers(p_network, isize)
+    use, intrinsic:: iso_c_binding
+    implicit none
+    class(network), intent(in) :: p_network
+    integer, value, intent(in) :: isize
+    integer(C_INT) c_size
+    c_size = isize
+    call network_alloc_xc_branch_pointers(p_network%p_network, c_size)
+    return
+  end subroutine alloc_xc_branch_pointers
+!
+! Store location of externally allocated bus buffer within a network
+! @param p_network GridPACK network object
+! @param idx local index of bus associated with buffer
+! @param ptr location of buffer
+!
+  subroutine set_xc_bus_buffer(p_network, idx, xc_buf)
+    use, intrinsic:: iso_c_binding
+    implicit none
+    class(network), intent(in) :: p_network
+    integer, value, intent(in) :: idx
+    type(C_PTR), value, intent(in) :: xc_buf
+    integer(C_INT) c_idx
+    c_idx = idx
+    call network_set_xc_bus_buffer(p_network%p_network, c_idx, xc_buf)
   end subroutine set_xc_bus_buffer
 !
-! Store the location of externally allocated buffer within a network
-! @param n_handle network handle
-! @param idx local branch index
-! @param pointer to buffer
+! Store location of externally allocated branch buffer within a network
+! @param p_network GridPACK network object
+! @param idx local index of bus associated with buffer
+! @param ptr location of buffer
 !
-  subroutine set_xc_branch_buffer(n_handle, idx, buf)
-    use, intrinsic :: iso_c_binding
+  subroutine set_xc_branch_buffer(p_network, idx, xc_buf)
+    use, intrinsic:: iso_c_binding
     implicit none
-    integer, value, intent(in) :: n_handle, idx
-    integer(C_INT) c_handle, c_idx
-    type(C_PTR) buf
-    c_handle = n_handle
+    class(network), intent(in) :: p_network
+    integer, value, intent(in) :: idx
+    type(C_PTR), value, intent(in) :: xc_buf
+    integer(C_INT) c_idx
     c_idx = idx
-    call p_set_xc_branch_buffer(c_handle, c_idx, buf)
-    return
+    call network_set_xc_branch_buffer(p_network%p_network, c_idx, xc_buf)
   end subroutine set_xc_branch_buffer
-#endif
 !
 ! This subroutine must be called before calling the update bus routine. It
 ! initializes data structures for the bus update
@@ -1281,13 +1359,31 @@ module gridpack_network
       type(bus_wrapper), pointer :: wbus
       integer(C_INT) c_idx
       type(C_PTR) ptr
-      write(6,'(a)') '(get_bus) Got to 1'
+      c_idx = idx
       ptr = network_get_bus(p_network%p_network,c_idx)
-      write(6,*) '(get_bus) Got to 2 ptr: ',ptr
       call C_F_POINTER(ptr,wbus)
-      write(6,*) '(get_bus) Got to 3 c_loc(wbus): ',c_loc(wbus)
       bus => wbus%bus
-      write(6,'(a)') '(get_bus) Got to 4'
       return
     end function get_bus
+!
+! Get C pointer to branch
+! @param p_network GridPACK network object
+! @param idx branch index
+! @return pointer to Fortran branch object
+!
+    function get_branch(p_network,idx) result(branch)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      class(network), intent(in) :: p_network
+      integer, value, intent(in) :: idx
+      class(branch_component), pointer :: branch
+      type(branch_wrapper), pointer :: wbranch
+      integer(C_INT) c_idx
+      type(C_PTR) ptr
+      c_idx = idx
+      ptr = network_get_branch(p_network%p_network,c_idx)
+      call C_F_POINTER(ptr,wbranch)
+      branch => wbranch%branch
+      return
+    end function get_branch
 end module gridpack_network

@@ -27,7 +27,7 @@ struct busWrapper {
  * @param wbus bus object wrapper
  * @return number of neighboring branches/buses
  */
-extern "C" int bus_get_num_neighbors(busWrapper *wbus)
+extern "C" int p_bus_get_num_neighbors(busWrapper *wbus)
 {
   return wbus->bus->getNumNeighbors();
 }
@@ -39,7 +39,7 @@ extern "C" int bus_get_num_neighbors(busWrapper *wbus)
  * neighbors -1)
  * @return pointer to bus wrapper
  */
-extern "C" void* bus_get_neighbor_bus(busWrapper *wbus, int idx)
+extern "C" void* p_bus_get_neighbor_bus(busWrapper *wbus, int idx)
 {
   return static_cast<void*>(wbus->bus->getNeighborBus(idx));
 }
@@ -51,7 +51,7 @@ extern "C" void* bus_get_neighbor_bus(busWrapper *wbus, int idx)
  * neighbors -1)
  * @return pointer to branch wrapper
  */
-extern "C" void* bus_get_neighbor_branch(busWrapper *wbus, int idx)
+extern "C" void* p_bus_get_neighbor_branch(busWrapper *wbus, int idx)
 {
   return static_cast<void*>(wbus->bus->getNeighborBranch(idx));
 }
@@ -60,7 +60,7 @@ extern "C" void* bus_get_neighbor_branch(busWrapper *wbus, int idx)
  * Clear all pointers to neighboring branches
  * @param wbus bus object wrapper
  */
-extern "C" void bus_clear_branches(busWrapper *wbus)
+extern "C" void p_bus_clear_branches(busWrapper *wbus)
 {
   wbus->bus->clearBranches();
 }
@@ -69,7 +69,7 @@ extern "C" void bus_clear_branches(busWrapper *wbus)
  * Clear all pointers to neighboring buses
  * @param wbus bus object wrapper
  */
-extern "C" void bus_clear_buses(busWrapper *wbus)
+extern "C" void p_bus_clear_buses(busWrapper *wbus)
 {
   wbus->bus->clearBuses();
 }
@@ -79,7 +79,7 @@ extern "C" void bus_clear_buses(busWrapper *wbus)
  * @param wbus bus object wrapper
  * @param status true if bus is reference bus
  */
-extern "C" void bus_set_reference_bus(busWrapper *wbus, bool status)
+extern "C" void p_bus_set_reference_bus(busWrapper *wbus, bool status)
 {
   wbus->bus->setReferenceBus(status);
 }
@@ -89,7 +89,7 @@ extern "C" void bus_set_reference_bus(busWrapper *wbus, bool status)
  * @param wbus bus object wrapper
  * @return true if bus is reference bus
  */
-extern "C" bool bus_get_reference_bus(busWrapper *wbus)
+extern "C" bool p_bus_get_reference_bus(busWrapper *wbus)
 {
   return wbus->bus->getReferenceBus();
 }
@@ -99,7 +99,7 @@ extern "C" bool bus_get_reference_bus(busWrapper *wbus)
  * @param wbus bus object wrapper
  * @return original index
  */
-extern "C" int bus_get_original_index(busWrapper *wbus)
+extern "C" int p_bus_get_original_index(busWrapper *wbus)
 {
   return wbus->bus->getOriginalIndex();
 }
@@ -109,7 +109,7 @@ extern "C" int bus_get_original_index(busWrapper *wbus)
  * @param wbus bus object wrapper
  * @return global index
  */
-extern "C" int bus_get_global_index(busWrapper *wbus)
+extern "C" int p_bus_get_global_index(busWrapper *wbus)
 {
   return wbus->bus->getGlobalIndex();
 }
