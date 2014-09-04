@@ -40,7 +40,6 @@ template <typename _network,
  class HashDistribution {
 private:
 
-#ifdef SYSTOLIC
   typedef struct{int idx;
            _bus_data_type data;
   } bus_data_pair;
@@ -49,15 +48,6 @@ private:
            int idx2;
            _branch_data_type data;
   } branch_data_pair;
-#else
-  typedef struct{bool flag;
-           _bus_data_type data;
-  } bus_data_pair;
-
-  typedef struct{bool flag;
-           _branch_data_type data;
-  } branch_data_pair;
-#endif
 
 public:
   typedef _network NetworkType;
@@ -117,7 +107,7 @@ public:
   // on output, the values of the received data
   void distributeBusValues(std::vector<int> &keys, std::vector<_bus_data_type> &values)
   {
-#ifdef XSYSTOLIC
+#ifdef SYSTOLIC
     int ksize = keys.size();
     int vsize = values.size();
     int me = GA_Pgroup_nodeid(p_GAgrp);
@@ -588,80 +578,254 @@ public:
     // Get global indices corresponding to keys
     std::vector<int> g_idx;
     p_hashMap->getValues(keys,g_idx);
-    // Create global array to distribute data
-    int g_branch = GA_Create_handle();
-    int g_type = NGA_Register_type(p_size_branch_data);
-    int one = 1;
+
+    // construct map containing number of entries for each global index value
+    int nsize = g_idx.size();
+    int i, j;
+    boost::unordered_map<int,int> index_map;
+    boost::unordered_map<int,int>::iterator ip;
+    for (i=0; i<nsize; i++) {
+      ip = index_map.find(g_idx[i]);
+      if (ip == index_map.end()) {
+        index_map.insert(std::pair<int,int>(g_idx[i],1));
+      } else {
+        ip->second++;
+      }
+    }
+
+    int nprocs = GA_Pgroup_nnodes(p_GAgrp);
+    int me = GA_Pgroup_nodeid(p_GAgrp);
     int totalBranches = p_network->totalBranches();
-    GA_Set_data(g_branch,one,&totalBranches,g_type);
-    GA_Set_pgroup(g_branch,p_GAgrp);
-    GA_Allocate(g_branch);
-    NGA_Deregister_type(g_type);
+    int one = 1;
+    int two = 2;
+    // Create global array to store measurement counts
+    int dims[2];
+    dims[0] = totalBranches;
+    dims[1] = nprocs;
+    int blocks[2];
+    blocks[0] = -1;
+    blocks[1] = nprocs;
+    int g_cnt = GA_Create_handle();
+    GA_Set_data(g_cnt,two,dims,C_INT);
+    GA_Set_chunk(g_cnt,blocks);
+    GA_Set_pgroup(g_cnt,p_GAgrp);
+    GA_Allocate(g_cnt);
+    GA_Zero(g_cnt);
 
-    // initialize all data pairs in global array to false
-    int i, nsize, lo, hi, ld;
-    int me = GA_Nodeid();
-    branch_data_pair *list;
-    NGA_Distribution(g_branch,me,&lo,&hi);
-    NGA_Access(g_branch,&lo,&hi,&list,&ld);
-    nsize = hi - lo + 1;
-    for (i=0; i<nsize; i++) {
-      list[i].flag = false;
+    // Set up data structures to scatter counts to g_cnt array
+    nsize = index_map.size();
+    int **index = new int*[nsize];
+    int *idx = new int[2*nsize];
+    int *ival = new int[nsize];
+    int ncnt = 0;
+    ip = index_map.begin();
+    while (ip != index_map.end()) {
+      idx[2*ncnt] = ip->first;
+      idx[2*ncnt+1] = me;
+      index[ncnt] = &idx[2*ncnt];
+      ival[ncnt] = ip->second;
+      ip++;
+      ncnt++;
     }
-    NGA_Release(g_branch,&lo,&hi);
-
-    // Copy keys and values to local arrays
-    nsize = values.size();
-    int *index = new int[nsize];
-    int **idx = new int*[nsize];
-    branch_data_pair *values_buf = new branch_data_pair[nsize];
-    for (i=0; i<nsize; i++) {
-      index[i] = g_idx[i];
-      idx[i] = &index[i];
-      values_buf[i].flag = true;
-      values_buf[i].data = values[i];
-    }
-    // Scatter data to global array
-    NGA_Scatter(g_branch,values_buf,idx,nsize);
+    NGA_Scatter_acc(g_cnt, ival, index, ncnt, &one);
     GA_Pgroup_sync(p_GAgrp);
     delete [] index;
     delete [] idx;
-    delete [] values_buf;
-    g_idx.clear();
-    values.clear();
-
-    // Set up local arrays to receive data
-    nsize = p_network->numBranches();
-    index = new int[nsize];
-    idx = new int*[nsize];
-    values_buf = new branch_data_pair[nsize];
-    int icnt = 0;
-    for (i=0; i<nsize; i++) {
-      if (p_network->getActiveBranch(i)) {
-        index[icnt] = p_network->getGlobalBranchIndex(i);
-        idx[icnt] = &index[icnt];
-        icnt++;
+    delete [] ival;
+    // A complete set of counts is now in g_cnt. Figure out total offsets on
+    // each processor and figure out individual offsets
+    int lo[2], hi[2], ld;
+    int *cnt_ptr;
+    NGA_Distribution(g_cnt,me,lo,hi);
+    NGA_Access(g_cnt,lo,hi,&cnt_ptr,&ld);
+    int idim = hi[0]-lo[0]+1;
+    int jdim = hi[1]-lo[1]+1;
+    int offset = 0;
+    int tmp_cnt;
+    ival = new int[idim];
+    // Evaluate total number of elements associated with each bus
+    ncnt = 0;
+    for (i = 0; i<idim; i++) {
+      // second index is fast index
+      ival[i] = 0;
+      for (j = 0; j<jdim; j++) {
+        ival[i] += cnt_ptr[ncnt];
+        ncnt++;
       }
     }
-
-    // Gather data to local buffers
-    NGA_Gather(g_branch,values_buf,idx,icnt);
-
-    // Copy data back to vectors
-    icnt = 0;
+    // Evaluate offset for each bus on each processor
+    ncnt = 0;
+    for (i = 0; i<idim; i++) {
+      // second index is fast index
+      for (j = 0; j<jdim; j++) {
+        tmp_cnt = cnt_ptr[ncnt];
+        cnt_ptr[ncnt] = offset;
+        offset += tmp_cnt;
+        ncnt++;
+      }
+    }
+    int *offsets = new int[nprocs];
+    for (i=0; i<nprocs; i++) {
+      offsets[i] = 0;
+    }
+    offsets[me] = offset;
+    GA_Pgroup_igop(p_GAgrp,offsets,nprocs,"+");
+    offset = 0;
+    for (i = 0; i<me; i++) {
+      offset += offsets[i];
+    }
+    ncnt = 0;
+    for (i = 0; i<idim; i++) {
+      for (j = 0; j<jdim; j++) {
+        cnt_ptr[ncnt] += offset;
+        ncnt++;
+      }
+    }
+    NGA_Release(g_cnt,lo,hi);
+    GA_Pgroup_sync(p_GAgrp);
+    // At this point, offsets for each branch and each process should be available
+    // in g_cnt. Need to construct a second array with the offsets and total
+    // number of elements for each branch. This is used to gather the data back to
+    // individual branches, once it has been distributed.
+    int g_branch = GA_Create_handle();
+    dims[0] = totalBranches;
+    dims[1] = 2;
+    blocks[0] = -1;
+    blocks[1] = 2;
+    GA_Set_data(g_branch,two,dims,C_INT);
+    GA_Set_chunk(g_branch,blocks);
+    GA_Set_pgroup(g_branch,p_GAgrp);
+    GA_Allocate(g_branch);
+    lo[1] = 1;
+    hi[1] = 1;
+    NGA_Put(g_branch,lo,hi,ival,&one);
+    lo[1] = 0;
+    hi[1] = 0;
+    NGA_Copy_patch('N',g_cnt,lo,hi,g_branch,lo,hi);
+    GA_Pgroup_sync(p_GAgrp);
+    delete [] ival;
+    //Evaluate total number of values that need to be distributed
+    int total_values = 0;
+    for (i=0; i<nprocs; i++) {
+      total_values += offsets[i];
+    }
+    // Create array to contain all data elements
+    int g_type = NGA_Register_type(p_size_branch_data);
+    int g_data = GA_Create_handle();
+    GA_Set_data(g_data,one,&total_values,g_type);
+    GA_Set_pgroup(g_data,p_GAgrp);
+    GA_Allocate(g_data);
+    NGA_Deregister_type(g_type);
+    // Get offset for each value. Start by getting offset for each branch that has
+    // values
+    nsize = index_map.size();
+    index = new int*[nsize];
+    idx = new int[2*nsize];
+    ival = new int[nsize];
+    index_map.clear();
+    nsize = g_idx.size();
+    ncnt = 0;
     for (i=0; i<nsize; i++) {
-      if (p_network->getActiveBranch(i)) {
-        if (values_buf[icnt].flag) {
-          branch_ids.push_back(i);
-          values.push_back(values_buf[icnt].data);
-        }
-        icnt++;
+      ip = index_map.find(g_idx[i]);
+      if (ip == index_map.end()) {
+        index_map.insert(std::pair<int,int>(g_idx[i],0));
+        idx[2*ncnt] = g_idx[i];
+        idx[2*ncnt+1] = me;
+        index[ncnt] = &idx[2*ncnt];
+        ncnt++;
+      }
+    }
+    NGA_Gather(g_cnt,ival,index,ncnt);
+    // initialize index map with offset for each branch
+    for (i=0; i<nsize; i++) {
+      ip = index_map.find(idx[2*i]);
+      if (ip != index_map.end()) {
+        ip->second = ival[i];
+      } else {
+        //TODO: some kind of error
       }
     }
     delete [] index;
     delete [] idx;
-    delete [] values_buf;
+    delete [] ival;
+    nsize = g_idx.size();
+    index = new int*[nsize];
+    idx = new int[nsize];
+    branch_data_pair *data = new branch_data_pair[nsize];
+    for (i=0; i<nsize; i++) {
+      ip = index_map.find(g_idx[i]);
+      if (ip != index_map.end()) {
+        idx[i] = ip->second;
+        index[i] = &idx[i];
+        ip->second++;
+        data[i].idx1 = keys[i].first;
+        data[i].idx2 = keys[i].second;
+        data[i].data = values[i];
+      } else {
+        //TODO: some kind of error
+      }
+    }
+    NGA_Scatter(g_data,data,index,nsize);
+    delete [] index;
+    delete [] idx;
+    delete [] data;
+    GA_Pgroup_sync(p_GAgrp);
+    // Data is now in global array g_data. Gather it back to processes that own
+    // the data. Start by getting the total number of values associated with
+    // each branch on the local process
+    int nbranch = p_network->numBranches();
+    int *isize = new int[nbranch];
+    ival = new int[nbranch];
+    index = new int*[nbranch];
+    idx = new int[2*nbranch];
+    for (i=0; i<nbranch; i++) {
+      idx[2*i] = p_network->getGlobalBranchIndex(i);
+      idx[2*i+1] = 1;
+      index[i] = &idx[2*i];
+    }
+    NGA_Gather(g_branch, isize, index, nbranch);
+    for (i=0; i<nbranch; i++) {
+      idx[2*i+1] = 0;
+    }
+    NGA_Gather(g_branch, ival, index, nbranch);
+    // Sizes and offsets are available. Set up index arrays and gather
+    // data associated with local branches
+    ncnt = 0;
+    for (i=0; i<nbranch; i++) {
+      ncnt += isize[i];
+    }
+    int *idx2 = new int[ncnt];
+    int **index2 = new int*[ncnt];
+    data = new branch_data_pair[ncnt];
+    ncnt = 0;
+    for (i=0; i<nbranch; i++) {
+      for (j=0; j<isize[i]; j++) {
+        idx2[ncnt] = ival[i]+j;
+        index2[ncnt] = &idx2[ncnt];
+        ncnt++;
+      }
+    }
+    NGA_Gather(g_data, data, index2, ncnt);
+    // Copy data to output vectors and clean up
+    branch_ids.clear();
+    values.clear();
+    for (i=0; i<nbranch; i++) {
+      for (j=0; j<isize[i]; j++) {
+        branch_ids.push_back(i);
+        values.push_back(data[i].data);
+      }
+    }
+
+    delete [] index;
+    delete [] idx;
+    delete [] index2;
+    delete [] idx2;
+    delete [] ival;
+    delete [] isize;
+    delete [] data;
+    GA_Destroy(g_cnt);
     GA_Destroy(g_branch);
+    GA_Destroy(g_data);
 #endif
   }
 
