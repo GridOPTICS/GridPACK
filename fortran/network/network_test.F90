@@ -60,33 +60,33 @@ PROGRAM network_test
   ipx = mod(me,pdx)
   ipy = (me-ipx)/pdx
 
-  ixmin = int(dble(ipx*XDIM)/dble(pdx))
-  ixmax = int(dble((ipx+1)*XDIM)/dble(pdx)) - 1
-  iymin = int(dble(ipy*YDIM)/dble(pdy))
-  iymax = int(dble((ipy+1)*YDIM)/dble(pdy)) - 1
+  ixmin = int(dble(ipx*XDIM)/dble(pdx)) + 1
+  ixmax = int(dble((ipx+1)*XDIM)/dble(pdx))
+  iymin = int(dble(ipy*YDIM)/dble(pdy)) + 1
+  iymax = int(dble((ipy+1)*YDIM)/dble(pdy))
 
   iaxmin = ixmin - 1
-  if (ixmin.eq.0) iaxmin = 0
+  if (ixmin.eq.1) iaxmin = 1
   iaxmax = ixmax + 1
-  if (ixmax.eq.XDIM-1) iaxmax = XDIM-1
+  if (ixmax.eq.XDIM) iaxmax = XDIM
 
   iaymin = iymin - 1
-  if (iymin.eq.0) iaymin = 0
+  if (iymin.eq.1) iaymin = 1
   iaymax = iymax + 1
-  if (iymax.eq.YDIM-1) iaymax = YDIM-1
+  if (iymax.eq.YDIM) iaymax = YDIM
 !
 ! Add buses to network
 !
-  ncnt = 0
+  ncnt = 1
   nx = iaxmax - iaxmin + 1
   ny = iaymax - iaymin + 1
   do j = 0, ny-1 
     iy = j + iaymin
     do i = 0, nx-1
       ix = i + iaxmin
-      n = iy*XDIM + ix
+      n = (iy-1)*XDIM + ix-1
       n = 2*n   ! Provide original index that is not equal to global index
-      call grid%add_bus(n)
+      call grid%add_bus(n+1)
 !
 !  Set active flag for network buses
 !
@@ -95,9 +95,9 @@ PROGRAM network_test
       else
         ok = grid%set_active_bus(ncnt,.false.)
       endif
-      n = n/2
+      n = n/2 + 1
       ok = grid%set_global_bus_index(ncnt,n)
-      if (ix.eq.0.and.iy.eq.0) then
+      if (ix.eq.1.and.iy.eq.1) then
         call grid%set_reference_bus(ncnt)
       endif
       ncnt = ncnt + 1
@@ -107,31 +107,31 @@ PROGRAM network_test
 !  Add branches to network. Start with branches connecting buses in the
 !  i-direction
 !
-  ncnt = 0
+  ncnt = 1
   nx = iaxmax-iaxmin
   ny = iymax -iymin + 1
   do j = 0, ny-1
     iy = j + iymin
     do i = 0, nx-1
       ix = i + iaxmin
-      n1 = iy*XDIM+ix
+      n1 = (iy-1)*XDIM+ix-1
       n1 = 2*n1
-      n2 = iy*XDIM+ix+1
+      n2 = (iy-1)*XDIM+ix
       n2 = 2*n2
-      call grid%add_branch(n1, n2)
-      n1 = n1/2
-      n2 = n2/2
+      call grid%add_branch(n1+1, n2+1)
+      n1 = n1/2 + 1
+      n2 = n2/2 + 1
       ok = grid%set_global_bus_index1(ncnt, n1)
       ok = grid%set_global_bus_index1(ncnt, n2)
-      n = iy*(XDIM-1) + ix
+      n = (iy-1)*(XDIM-1) + ix
       ok = grid%set_global_branch_index(ncnt,n)
 !
 !  Figure out local indices of buses
 !
       lx = ix-iaxmin
       ly = iy-iaymin
-      n1 = ly*(iaxmax-iaxmin+1) + lx
-      n2 = ly*(iaxmax-iaxmin+1) + lx + 1
+      n1 = ly*(iaxmax-iaxmin+1) + lx + 1
+      n2 = ly*(iaxmax-iaxmin+1) + lx + 2
       ok = grid%set_local_bus_index1(ncnt, n1)
       ok = grid%set_local_bus_index2(ncnt, n2)
 !
@@ -159,20 +159,20 @@ PROGRAM network_test
       n1 = 2*n1
       n2 = (iy+1)*XDIM + ix
       n2 = 2*n2
-      call grid%add_branch(n1, n2)
-      n1 = n1/2
-      n2 = n2/2
+      call grid%add_branch(n1+1, n2+1)
+      n1 = n1/2 + 1
+      n2 = n2/2 + 1
       ok = grid%set_global_bus_index1(ncnt, n1)
       ok = grid%set_global_bus_index2(ncnt, n2)
-      n = iy*XDIM + ix + (XDIM-1)*YDIM
+      n = (iy-1)*XDIM + ix + (XDIM-1)*YDIM
       ok = grid%set_global_branch_index(ncnt, n)
 !
 !  Figure out local indices of buses
 !
       lx = ix -iaxmin
       ly = iy -iaymin
-      n1 = ly*(iaxmax-iaxmin+1) + lx
-      n2 = (ly+1)*(iaxmax-iaxmin+1) + lx
+      n1 = ly*(iaxmax-iaxmin+1) + lx + 1
+      n2 = (ly+1)*(iaxmax-iaxmin+1) + lx + 1
       ok = grid%set_local_bus_index1(ncnt, n1)
       ok = grid%set_local_bus_index2(ncnt, n2)
 !
@@ -252,9 +252,9 @@ PROGRAM network_test
 !  Test location of reference bus
 !
   n = grid%get_reference_bus()
-  if ((.not.(me.eq.0.and.n.eq.0)).and.(.not.(me.ne.0.and.n.eq.-1))) then
+  if ((.not.(me.eq.0.and.n.eq.1)).and.(.not.(me.ne.0.and.n.eq.-1))) then
     write(6,'(a,i4,a,i6)') 'p[', me, '] Reference bus error: ', n
-  else if (me.eq.0.and.n.eq.0) then
+  else if (me.eq.0.and.n.eq.1) then
     write(6,*)
     write(6,'(a)') 'Reference bus ok'
   endif
@@ -262,7 +262,7 @@ PROGRAM network_test
 !  Set up number of branches attached to bus
 !
   nbus = grid%num_buses()
-  do i = 0, nbus-1
+  do i = 1, nbus
     ok = grid%clear_branch_neighbors(i);
     if (.not.ok) then
       write(6,'(a,i4,a,i6)') 'p[', me, &
@@ -273,7 +273,7 @@ PROGRAM network_test
 !  loop over all branches
 !
   nbranch = grid%num_branches()
-  do i = 0, nbranch-1
+  do i = 1, nbranch
     call grid%get_branch_endpoints(i, n1, n2)
     if (grid%get_active_bus(n1).or.grid%get_active_bus(n2)) then
       ok = grid%add_branch_neighbor(n1,i)
@@ -293,9 +293,9 @@ PROGRAM network_test
 !
   ldx = iaxmax-iaxmin+1
   ok = .true.
-  do i = 0, nbus-1
-    ix = mod(i,ldx);
-    iy = (i-ix)/ldx;
+  do i = 1, nbus
+    ix = mod(i-1,ldx);
+    iy = (i-1-ix)/ldx;
     ix = (ix + iaxmin);
     iy = (iy + iaymin);
     if (ix.ge.ixmin.and.ix.le.ixmax.and.iy.ge.iymin.and.iy.le.iymax) then
@@ -323,10 +323,10 @@ PROGRAM network_test
 !  Test active branches
 !
   ok = .true.
-  do i = 0, nbranch-1
+  do i = 1, nbranch
     call grid%get_branch_endpoints(i,n1,n2)
-    ix = mod(n1,ldx)
-    iy = (n1-ix)/ldx
+    ix = mod(n1-1,ldx)
+    iy = (n1-1-ix)/ldx
     ix = ix + iaxmin
     iy = iy + iaymin
     if (ix.ge.ixmin.and.ix.le.ixmax.and.iy.ge.iymin.and.iy.le.iymax) then
@@ -354,10 +354,10 @@ PROGRAM network_test
 !  Check neighbors of buses
 !
   ok = .true.
-  do i = 0, nbus-1
+  do i = 1, nbus
     if (grid%get_active_bus(i)) then
-      ix = mod(i,ldx)
-      iy = (i-ix)/ldx
+      ix = mod(i-1,ldx)
+      iy = (i-1-ix)/ldx
       ix = ix + iaxmin
       iy = iy + iaymin
       n = 0
@@ -417,10 +417,10 @@ PROGRAM network_test
 ! Test ghost updates. Start by setting exchange data equal to original bus index
 ! active buses
 ! 
-  bus_ptr => grid%get_bus(0)
+  bus_ptr => grid%get_bus(1)
   bsize = bus_ptr%bus_get_xc_buf_size()
   call grid%alloc_xc_bus_pointers(bsize)
-  do i = 0, nbus-1
+  do i = 1, nbus
     bus_ptr => grid%get_bus(i)
     xc_ptr = bus_ptr%xc_ptr
     call grid%set_xc_bus_buffer(i,xc_ptr)
@@ -430,10 +430,10 @@ PROGRAM network_test
       bus_ptr%xc_buf%idx = -1
     endif
   end do
-  branch_ptr => grid%get_branch(0)
+  branch_ptr => grid%get_branch(1)
   bsize = branch_ptr%branch_get_xc_buf_size()
   call grid%alloc_xc_branch_pointers(bsize)
-  do i = 0, nbranch-1
+  do i = 1, nbranch
     branch_ptr => grid%get_branch(i)
     xc_ptr = branch_ptr%xc_ptr
     call grid%set_xc_branch_buffer(i,xc_ptr)
@@ -451,17 +451,18 @@ PROGRAM network_test
 !
   call grid%init_bus_update
   call grid%update_buses
+#if 1
   call grid%init_branch_update
   call grid%update_branches
 !
 ! Check updates
 !
   ok = .true.
-  do i = 0, nbus-1
+  do i = 1, nbus
     bus_ptr => grid%get_bus(i)
     if (bus_ptr%xc_buf%idx.ne.grid%get_original_bus_index(i)) ok = .false.
   end do
-  do i = 0, nbranch-1
+  do i = 1, nbranch
     branch_ptr => grid%get_branch(i)
     call grid%get_branch_endpoints(i,n1,n2)
     n1 = grid%get_original_bus_index(n1)
@@ -476,6 +477,7 @@ PROGRAM network_test
     write(6,*)
     write(6,'(a)') 'Update operation failed'
   endif
+#endif
 !
 !  Test clean function
 !
@@ -529,10 +531,10 @@ PROGRAM network_test
   ok = .true.
   nbus = grid%num_buses()
   ldx = ixmax-ixmin+1
-  do i = 0, nbus-1
+  do i = 1, nbus
     if (grid%get_active_bus(i)) then
-      ix = mod(i,ldx)
-      iy = (i-ix)/ldx
+      ix = mod(i-1,ldx)
+      iy = (i-1-ix)/ldx
       ix = ix + ixmin
       iy = iy + iymin
       n = 0

@@ -109,6 +109,7 @@ extern "C" int network_total_branches(networkWrapper *wnetwork)
  */
 extern "C" void network_set_reference_bus(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   wnetwork->network->setReferenceBus(idx);
 }
 
@@ -120,7 +121,9 @@ extern "C" void network_set_reference_bus(networkWrapper *wnetwork, int idx)
  */
 extern "C" int network_get_reference_bus(networkWrapper *wnetwork)
 {
-  return wnetwork->network->getReferenceBus();
+  int idx = wnetwork->network->getReferenceBus();
+  if (idx >= 0) idx++;
+  return idx;
 }
 
 /**
@@ -132,6 +135,7 @@ extern "C" int network_get_reference_bus(networkWrapper *wnetwork)
  */
 extern "C" bool network_set_original_bus_index(networkWrapper *wnetwork, int idx, int o_idx)
 {
+  idx--;
   return wnetwork->network->setOriginalBusIndex(idx,o_idx);
 }
 
@@ -144,6 +148,8 @@ extern "C" bool network_set_original_bus_index(networkWrapper *wnetwork, int idx
  */
 extern "C" bool network_set_global_bus_index(networkWrapper *wnetwork, int idx, int g_idx)
 {
+  idx--;
+  g_idx--;
   return wnetwork->network->setGlobalBusIndex(idx,g_idx);
 }
 
@@ -156,6 +162,8 @@ extern "C" bool network_set_global_bus_index(networkWrapper *wnetwork, int idx, 
  */
 extern "C" bool network_set_global_branch_index(networkWrapper *wnetwork, int idx, int g_idx)
 {
+  idx--;
+  g_idx--;
   return wnetwork->network->setGlobalBranchIndex(idx,g_idx);
 }
 
@@ -168,6 +176,7 @@ extern "C" bool network_set_global_branch_index(networkWrapper *wnetwork, int id
  */
 extern "C" bool network_set_original_bus_index1(networkWrapper *wnetwork, int idx, int b_idx)
 {
+  idx--;
   return wnetwork->network->setOriginalBusIndex1(idx,b_idx);
 }
 
@@ -180,6 +189,7 @@ extern "C" bool network_set_original_bus_index1(networkWrapper *wnetwork, int id
  */
 extern "C" bool network_set_original_bus_index2(networkWrapper *wnetwork, int idx, int b_idx)
 {
+  idx--;
   return wnetwork->network->setOriginalBusIndex2(idx,b_idx);
 }
 
@@ -192,6 +202,8 @@ extern "C" bool network_set_original_bus_index2(networkWrapper *wnetwork, int id
  */
 extern "C" bool network_set_global_bus_index1(networkWrapper *wnetwork, int idx, int b_idx)
 {
+  idx--;
+  b_idx--;
   return wnetwork->network->setGlobalBusIndex1(idx,b_idx);
 }
 
@@ -204,6 +216,8 @@ extern "C" bool network_set_global_bus_index1(networkWrapper *wnetwork, int idx,
  */
 extern "C" bool network_set_global_bus_index2(networkWrapper *wnetwork, int idx, int b_idx)
 {
+  idx--;
+  b_idx--;
   return wnetwork->network->setGlobalBusIndex2(idx,b_idx);
 }
 
@@ -216,6 +230,8 @@ extern "C" bool network_set_global_bus_index2(networkWrapper *wnetwork, int idx,
  */
 extern "C" bool network_set_local_bus_index1(networkWrapper *wnetwork, int idx, int b_idx)
 {
+  idx--;
+  b_idx--;
   return wnetwork->network->setLocalBusIndex1(idx,b_idx);
 }
 
@@ -228,6 +244,8 @@ extern "C" bool network_set_local_bus_index1(networkWrapper *wnetwork, int idx, 
  */
 extern "C" bool network_set_local_bus_index2(networkWrapper *wnetwork, int idx, int b_idx)
 {
+  idx--;
+  b_idx--;
   return wnetwork->network->setLocalBusIndex2(idx,b_idx);
 }
 
@@ -240,6 +258,7 @@ extern "C" bool network_set_local_bus_index2(networkWrapper *wnetwork, int idx, 
  */
 extern "C" bool network_set_active_bus(networkWrapper *wnetwork, int idx, bool flag)
 {
+  idx--;
   return wnetwork->network->setActiveBus(idx,flag);
 }
 
@@ -252,6 +271,7 @@ extern "C" bool network_set_active_bus(networkWrapper *wnetwork, int idx, bool f
  */
 extern "C" bool network_set_active_branch(networkWrapper *wnetwork, int idx, bool flag)
 {
+  idx--;
   return wnetwork->network->setActiveBranch(idx,flag);
 }
 
@@ -263,6 +283,7 @@ extern "C" bool network_set_active_branch(networkWrapper *wnetwork, int idx, boo
  */
 extern "C" bool network_clear_branch_neighbors(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   return wnetwork->network->clearBranchNeighbors(idx);
 }
 
@@ -275,6 +296,8 @@ extern "C" bool network_clear_branch_neighbors(networkWrapper *wnetwork, int idx
  */
 extern "C" bool network_add_branch_neighbor(networkWrapper *wnetwork, int idx, int br_idx)
 {
+  idx--;
+  br_idx--;
   return wnetwork->network->addBranchNeighbor(idx,br_idx);
 }
 
@@ -286,6 +309,7 @@ extern "C" bool network_add_branch_neighbor(networkWrapper *wnetwork, int idx, i
  */
 extern "C" bool network_get_active_bus(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   return wnetwork->network->getActiveBus(idx);
 }
 
@@ -297,6 +321,7 @@ extern "C" bool network_get_active_bus(networkWrapper *wnetwork, int idx)
  */
 extern "C" int network_get_original_bus_index(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   return wnetwork->network->getOriginalBusIndex(idx);
 }
 
@@ -308,7 +333,10 @@ extern "C" int network_get_original_bus_index(networkWrapper *wnetwork, int idx)
  */
 extern "C" int network_get_global_bus_index(networkWrapper *wnetwork, int idx)
 {
-  return wnetwork->network->getGlobalBusIndex(idx);
+  idx--;
+  int ret = wnetwork->network->getGlobalBusIndex(idx);
+  ret++;
+  return ret;
 }
 
 /**
@@ -319,6 +347,7 @@ extern "C" int network_get_global_bus_index(networkWrapper *wnetwork, int idx)
  */
 extern "C" bool network_get_active_branch(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   return wnetwork->network->getActiveBranch(idx);
 }
 
@@ -330,7 +359,10 @@ extern "C" bool network_get_active_branch(networkWrapper *wnetwork, int idx)
  */
 extern "C" int network_get_global_branch_index(networkWrapper *wnetwork, int idx)
 {
-  return wnetwork->network->getGlobalBranchIndex(idx);
+  idx--;
+  int ret = wnetwork->network->getGlobalBranchIndex(idx);
+  ret++;
+  return ret;
 }
 
 /**
@@ -343,6 +375,7 @@ extern "C" int network_get_global_branch_index(networkWrapper *wnetwork, int idx
 extern "C" void network_get_original_branch_endpoints(networkWrapper *wnetwork,
     int idx, int *idx1, int *idx2)
 {
+  idx--;
   wnetwork->network->getOriginalBranchEndpoints(idx, idx1,idx2);
 }
 
@@ -355,6 +388,7 @@ extern "C" void network_get_original_branch_endpoints(networkWrapper *wnetwork,
  */
 extern "C" int network_get_num_connected_branches(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   return wnetwork->network->getConnectedBranches(idx).size();
 }
 
@@ -367,10 +401,11 @@ extern "C" int network_get_num_connected_branches(networkWrapper *wnetwork, int 
 extern "C" void network_get_connected_branches(networkWrapper *wnetwork, int idx, int *branches)
 {
   int i;
+  idx--;
   std::vector<int> t_branches = wnetwork->network->getConnectedBranches(idx);
   int size = t_branches.size();
   for (i=0; i<size; i++) {
-    branches[i] = t_branches[i];
+    branches[i] = t_branches[i]+1;
   }
 }
 
@@ -383,10 +418,11 @@ extern "C" void network_get_connected_branches(networkWrapper *wnetwork, int idx
 extern "C" void network_get_connected_buses(networkWrapper *wnetwork, int idx, int *buses)
 {
   int i;
+  idx--;
   std::vector<int> t_buses = wnetwork->network->getConnectedBuses(idx);
   int size = t_buses.size();
   for (i=0; i<size; i++) {
-    buses[i] = t_buses[i];
+    buses[i] = t_buses[i]+1;
   }
 }
 
@@ -400,7 +436,10 @@ extern "C" void network_get_connected_buses(networkWrapper *wnetwork, int idx, i
 extern "C" void network_get_branch_endpoints(networkWrapper *wnetwork, int idx,
     int *idx1, int *idx2)
 {
+  idx--;
   wnetwork->network->getBranchEndpoints(idx,idx1,idx2);
+  *idx1 = *idx1+1;
+  *idx2 = *idx2+1;
 }
 
 /**
@@ -454,6 +493,7 @@ extern "C" void network_alloc_xc_branch_pointers(networkWrapper *wnetwork,
 extern "C" void network_set_xc_bus_buffer(networkWrapper *wnetwork, int idx,
     void *data)
 {
+  idx--;
   wnetwork->network->setXCBusBuffer(idx, data);
 }
 
@@ -466,6 +506,7 @@ extern "C" void network_set_xc_bus_buffer(networkWrapper *wnetwork, int idx,
 extern "C" void network_set_xc_branch_buffer(networkWrapper *wnetwork,
     int idx, void *data)
 {
+  idx--;
   wnetwork->network->setXCBranchBuffer(idx, data);
 }
 
@@ -517,6 +558,7 @@ extern "C" void network_update_branches(networkWrapper *wnetwork)
  */
 extern "C" void* network_get_bus(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   return wnetwork->network->getBus(idx)->getFortranPointer();
 }
 
@@ -528,5 +570,6 @@ extern "C" void* network_get_bus(networkWrapper *wnetwork, int idx)
  */
 extern "C" void* network_get_branch(networkWrapper *wnetwork, int idx)
 {
+  idx--;
   return wnetwork->network->getBranch(idx)->getFortranPointer();
 }
