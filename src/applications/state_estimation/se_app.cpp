@@ -174,10 +174,9 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   gridpack::state_estimation::SEFactory factory(network);
   factory.load();
 
-  printf("reading done \n");
   // Add measurements to buses and branches
   factory.setMeasurements(meas);
-  printf("reading done \n");
+
 
   // set network components using factory
   factory.setComponents();
@@ -199,9 +198,11 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
   // Create initial version of  H Jacobian and estimation vector
   factory.setMode(Jacobian_H);
+  printf("reading done 1\n");
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
-  HJac->print();
+//HJac->print();
+  printf("reading done 2\n");
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
