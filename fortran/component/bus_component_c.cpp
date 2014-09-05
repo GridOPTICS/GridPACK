@@ -22,6 +22,12 @@ struct busWrapper {
   FortranBus *bus;
 };
 
+typedef gridpack::fortran_component::FortranBranchComponent FortranBranch;
+
+struct branchWrapper {
+  FortranBranch *branch;
+};
+
 /**
  * Return total number of neighboring branches/buses attached to bus
  * @param wbus bus object wrapper
@@ -112,4 +118,75 @@ extern "C" int p_bus_get_original_index(busWrapper *wbus)
 extern "C" int p_bus_get_global_index(busWrapper *wbus)
 {
   return wbus->bus->getGlobalIndex();
+}
+
+/**
+ * Clear all pointers to buses at each end of branch
+ * @param wbus bus object wrapper
+ */
+extern "C" void p_branch_clear_buses(branchWrapper *wbranch)
+{
+  wbranch->branch->clearBuses();
+}
+
+/**
+ * Get pointer to bus that is attached to "from" end of branch
+ * @param wbus bus object wrapper
+ * @return pointer to bus wrapper
+ */
+extern "C" void* p_branch_get_bus1(branchWrapper *wbranch)
+{
+  FortranBus *bus = dynamic_cast<FortranBus*>(wbranch->branch->getBus1().get());
+  return bus->getFortranPointer();
+}
+
+/**
+ * Get pointer to bus that is attached to "to" end of branch
+ * @param wbus bus object wrapper
+ * @return pointer to bus wrapper
+ */
+extern "C" void* p_branch_get_bus2(branchWrapper *wbranch)
+{
+  FortranBus *bus = dynamic_cast<FortranBus*>(wbranch->branch->getBus2().get());
+  return bus->getFortranPointer();
+}
+
+/**
+ * Get original index of "from" bus
+ * @param wbus bus object wrapper
+ * @return original index from network
+ */
+extern "C" int p_branch_get_bus1_original_index(branchWrapper *wbranch)
+{
+  return wbranch->branch->getBus1OriginalIndex();
+}
+
+/**
+ * Get original index of "to" bus
+ * @param wbus bus object wrapper
+ * @return original index from network
+ */
+extern "C" int p_branch_get_bus2_original_index(branchWrapper *wbranch)
+{
+  return wbranch->branch->getBus2OriginalIndex();
+}
+
+/**
+ * Get original index of "from" bus
+ * @param wbus bus object wrapper
+ * @return original index from network
+ */
+extern "C" int p_branch_get_bus1_global_index(branchWrapper *wbranch)
+{
+  return wbranch->branch->getBus1GlobalIndex();
+}
+
+/**
+ * Get original index of "to" bus
+ * @param wbus bus object wrapper
+ * @return original index from network
+ */
+extern "C" int p_branch_get_bus2_global_index(branchWrapper *wbranch)
+{
+  return wbranch->branch->getBus2GlobalIndex();
 }

@@ -432,6 +432,7 @@ PROGRAM network_test
   end do
   branch_ptr => grid%get_branch(1)
   bsize = branch_ptr%branch_get_xc_buf_size()
+#if 1
   call grid%alloc_xc_branch_pointers(bsize)
   do i = 1, nbranch
     branch_ptr => grid%get_branch(i)
@@ -451,7 +452,6 @@ PROGRAM network_test
 !
   call grid%init_bus_update
   call grid%update_buses
-#if 1
   call grid%init_branch_update
   call grid%update_branches
 !

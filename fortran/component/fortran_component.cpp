@@ -26,6 +26,7 @@ extern "C" void* p_bus_load(gridpack::component::DataCollection *data);
 extern "C" int p_bus_get_xc_buf_size(void *ptr);
 extern "C" void* branch_allocate();
 extern "C" void branch_deallocate(void *ptr);
+extern "C" int p_branch_get_xc_buf_size(void *ptr);
 #if 0
 extern "C" bool p_bus_matrix_diag_values(int network, int idx,
     gridpack::ComplexType *values);
@@ -481,8 +482,7 @@ FortranBranchComponent::load(boost::shared_ptr
  */
 int FortranBranchComponent::getXCBufSize(void)
 {
-  //return p_branch_get_xc_buf_size(p_network, p_local_index);
-  return 0;
+  return p_branch_get_xc_buf_size(p_fortran_branch_ptr);
 }
 
 /**

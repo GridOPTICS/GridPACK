@@ -1345,7 +1345,7 @@ module gridpack_network
     return
   end subroutine update_branches
 !
-! Get C pointer to bus
+! Get Fortran pointer to bus
 ! @param p_network GridPACK network object
 ! @param idx bus index
 ! @return pointer to Fortran bus object
@@ -1366,7 +1366,7 @@ module gridpack_network
       return
     end function get_bus
 !
-! Get C pointer to branch
+! Get Fortran pointer to branch
 ! @param p_network GridPACK network object
 ! @param idx branch index
 ! @return pointer to Fortran branch object
