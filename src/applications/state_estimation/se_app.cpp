@@ -174,21 +174,23 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   gridpack::state_estimation::SEFactory factory(network);
   factory.load();
 
-  // Add measurements to buses and branches
-  factory.setMeasurements(meas);
-
-
   // set network components using factory
   factory.setComponents();
 
   // Set up bus data exchange buffers. Need to decide what data needs to be exchanged
   factory.setExchange();
 
+  // Add measurements to buses and branches
+  factory.setMeasurements(meas);
+
   // Create bus data exchange
   network->initBusUpdate();
 
   // set YBus components so that you can create Y matrix  
   factory.setYBus();
+
+  // set some state estimation parameters
+  factory.configureSE();
 
   factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<SENetwork> ybusMap(network);
@@ -200,9 +202,11 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(Jacobian_H);
   printf("reading done 1\n");
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
+  printf("Created HJacMap\n");
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
 //HJac->print();
   printf("reading done 2\n");
+  return;
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();

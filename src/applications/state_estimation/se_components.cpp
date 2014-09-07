@@ -39,6 +39,10 @@ gridpack::state_estimation::SEBus::SEBus(void)
   p_ql = 0.0;
   p_sbase = 0.0;
   p_mode = YBus;
+  p_rowJidx.clear();
+  p_rowRidx.clear();
+  p_colJidx.clear();
+  p_colRidx.clear();
   setReferenceBus(false);
 }
 
@@ -441,15 +445,15 @@ void gridpack::state_estimation::SEBus::matrixSetRowIndex(int irow, int idx)
   if (p_mode == Jacobian_H) {
     p_rowJidx.push_back(idx);
     if (p_rowJidx.size() != irow+1) {
-      printf("Incorrect index in SEBus::matrixSetRowIndex irow: %d size: %d\n",
-          irow,p_rowJidx.size());
+      printf("p[%d] Incorrect index in SEBus::matrixSetRowIndex irow: %d size: %d bus: %d\n",
+          GA_Nodeid(),irow,p_rowJidx.size(),getOriginalIndex());
       //TODO: some kind of error
     }
   } else if (p_mode == R_inv) {
     p_rowRidx.push_back(idx);
     if (p_rowRidx.size() != irow+1) {
-      printf("Incorrect index in SEBus::matrixSetRowIndex irow: %d size: %d\n",
-          irow,p_rowRidx.size());
+      printf("p[%d] Incorrect index in SEBus::matrixSetRowIndex irow: %d size: %d bus: %d\n",
+          GA_Nodeid(),irow,p_rowRidx.size(),getOriginalIndex());
       //TODO: some kind of error
     }
   }
@@ -466,15 +470,17 @@ void gridpack::state_estimation::SEBus::matrixSetColIndex(int icol, int idx)
   if (p_mode == Jacobian_H) {
     p_colJidx.push_back(idx);
     if (p_colJidx.size() != icol+1) {
-      printf("Incorrect index in SEBus::matrixSetRowIndex icol: %d size: %d\n",
-          icol,p_colJidx.size());
+      printf("p[%d] Incorrect index in (J)SEBus::matrixSetColIndex icol: %d"
+          " size: %d bus: %d idx: %d\n",
+          GA_Nodeid(),icol,p_colJidx.size(),getOriginalIndex(),idx);
       //TODO: some kind of error
     }
   } else if (p_mode == R_inv) {
     p_colRidx.push_back(idx);
     if (p_colRidx.size() != icol+1) {
-      printf("Incorrect index in SEBus::matrixSetRowIndex icol: %d size: %d\n",
-          icol,p_colRidx.size());
+      printf("p[%d] Incorrect index in (R)SEBus::matrixSetColIndex icol: %d"
+          " size: %d bus: %d idx: %d\n",
+          GA_Nodeid(),icol,p_colRidx.size(),getOriginalIndex(),idx);
       //TODO: some kind of error
     }
   }
@@ -504,6 +510,9 @@ int gridpack::state_estimation::SEBus::matrixGetRowIndex(int idx)
 int gridpack::state_estimation::SEBus::matrixGetColIndex(int idx)
 {
   if (p_mode == Jacobian_H) {
+    if (idx >= p_colJidx.size())
+      printf("violation in bus:matrixGetColIndex bus: %d size: %d idx: %d\n",
+          getOriginalIndex(),idx,p_colJidx.size());
     return p_colJidx[idx];
   } else if (p_mode == R_inv) {
     return p_colRidx[idx];
@@ -536,9 +545,12 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
     int ncnt = 0;
     int i, j, im, jm, nsize;
     double v, theta, yfbusr,yfbusi;
+    std::string ctk, type;
     for (i=0; i<nmeas; i++) {
       im = matrixGetRowIndex(i);
-      if (p_meas[i].p_type == "VM") {
+      ctk = p_meas[i].p_ckt;
+      type = p_meas[i].p_type;
+      if (type == "VM") {
         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
         getNeighborBranches(branch_nghbrs);
         nsize = branch_nghbrs.size();
@@ -572,7 +584,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           cols[ncnt] = jm;
           ncnt++;
         }
-      } else if (p_meas[i].p_type == "PI") {
+      } else if (type == "PI") {
         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
         getNeighborBranches(branch_nghbrs);
         nsize = branch_nghbrs.size();
@@ -585,7 +597,8 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           ComplexType yfbus=branch->getForwardYBus();
           yfbusr = real (yfbus);
           yfbusi = imag (yfbus);
-          ret1 += p_v * v * (-yfbusr*sin(theta) + yfbusi*cos(theta)); // to discuss, how to use YBus branch data in bus 
+          // to discuss, how to use YBus branch data in bus 
+          ret1 += p_v * v * (-yfbusr*sin(theta) + yfbusi*cos(theta));
           values[ncnt] = gridpack::ComplexType(p_v*v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
           rows[ncnt] = im;
           cols[ncnt] = jm;
@@ -609,7 +622,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
         rows[ncnt] = im;
         cols[ncnt] = jm;
         ncnt++;
-      } else if (p_meas[i].p_type == "QI") {
+      } else if (type == "QI") {
         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
         getNeighborBranches(branch_nghbrs);
         nsize = branch_nghbrs.size();
@@ -646,7 +659,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
         rows[ncnt] = im;
         cols[ncnt] = jm;
         ncnt++;
-      } else if (p_meas[i].p_type == "VA") {
+      } else if (type == "VA") {
         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
         getNeighborBranches(branch_nghbrs);
         nsize = branch_nghbrs.size();
@@ -785,6 +798,10 @@ gridpack::state_estimation::SEBranch::SEBranch(void)
   p_elems = 0;
   p_theta = 0.0;
   p_sbase = 0.0;
+  p_rowJidx.clear();
+  p_rowRidx.clear();
+  p_colJidx.clear();
+  p_colRidx.clear();
   p_mode = YBus;
 }
 
@@ -1204,14 +1221,14 @@ void gridpack::state_estimation::SEBranch::matrixSetColIndex(int icol, int idx)
   if (p_mode == Jacobian_H) {
     p_colJidx.push_back(idx);
     if (p_colJidx.size() != icol+1) {
-      printf("Incorrect index in SEBranch::matrixSetRowIndex icol: %d size: %d\n",
+      printf("Incorrect index in SEBranch::matrixSetColIndex icol: %d size: %d\n",
           icol,p_colJidx.size());
       //TODO: some kind of error
     }
   } else if (p_mode == R_inv) {
     p_colRidx.push_back(idx);
     if (p_colRidx.size() != icol+1) {
-      printf("Incorrect index in SEBranch::matrixSetRowIndex icol: %d size: %d\n",
+      printf("Incorrect index in SEBranch::matrixSetColIndex icol: %d size: %d\n",
           icol,p_colRidx.size());
       //TODO: some kind of error
     }
@@ -1242,6 +1259,9 @@ int gridpack::state_estimation::SEBranch::matrixGetRowIndex(int idx)
 int gridpack::state_estimation::SEBranch::matrixGetColIndex(int idx)
 {
   if (p_mode == Jacobian_H) {
+    if (idx >= p_colJidx.size())
+      printf("violation in branch:matrixGetColIndex branch: %d %d size: %d idx: %d\n",
+          getBus1OriginalIndex(),getBus2OriginalIndex(),idx,p_colJidx.size());
     return p_colJidx[idx];
   } else if (p_mode == R_inv) {
     return p_colRidx[idx];
@@ -1278,16 +1298,19 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
     int ncnt = 0;
     int i, j, im, jm, nsize;
     double v1, v2, theta;
+    std::string ckt, type;
     v1 = bus1->getVoltage();
     v2 = bus2->getVoltage();
     theta = bus1->getPhase() - bus2->getPhase();  
     //    int ref = getRef(this);
     for (i=0; i<nmeas; i++) {
       im = matrixGetRowIndex(i);
-      if (p_meas[i].p_type == "PIJ") {
+      ckt = p_meas[i].p_ckt;
+      type = p_meas[i].p_type;
+      if (type == "PIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (p_tag[j] == ckt) {
             if (!bus1->getReferenceBus()) {
               jm = matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(v1*v2*(p_resistance[j]*sin(theta)
@@ -1334,10 +1357,10 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
           } 
         }
-      } else if (p_meas[i].p_type == "QIJ") {
+      } else if (type == "QIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (p_tag[j] == ckt) {
             if (!bus1->getReferenceBus()) {
               jm = matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v1*v2*(p_resistance[j]*cos(theta)
@@ -1383,10 +1406,10 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
           } 
         }
-      } else if (p_meas[i].p_type == "IIJ") {
+      } else if (type == "IIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
-          if (p_tag[j] == p_meas[i].p_ckt) {
+          if (p_tag[j] == ckt) {
             double Iij = sqrt((p_resistance[j]*p_resistance[j]+p_reactance[j]*p_reactance[j])
                 *(v1*v1+v2*v2-2*v1*v2*cos(theta))); 
             if (!bus1->getReferenceBus()) {

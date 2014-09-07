@@ -50,6 +50,11 @@ class SEFactory
      */
     void setMeasurements(std::vector<Measurement> measurements);
 
+    /**
+     * Initialize some parameters in state estimation components
+     */
+    void configureSE(void);
+
   private:
 
     NetworkPtr p_network;

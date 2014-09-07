@@ -113,5 +113,25 @@ void gridpack::state_estimation::SEFactory::setMeasurements(
   branch_meas.clear();
 }
 
+/**
+ * Initialize some parameters in state estimation components
+ */
+void gridpack::state_estimation::SEFactory::configureSE(void)
+{
+  int numBus = p_network->numBuses();
+  int numBranch = p_network->numBranches();
+  int i;
+
+  // Invoke setYBus method on all bus objects
+  for (i=0; i<numBus; i++) {
+    (dynamic_cast<SEBus*>(p_network->getBus(i).get()))->configureSE();
+  }
+
+  // Invoke setYBus method on all branch objects
+  for (i=0; i<numBranch; i++) {
+    (dynamic_cast<SEBranch*>(p_network->getBranch(i).get()))->configureSE();
+  }
+}
+
 } // namespace state_estimation
 } // namespace gridpack
