@@ -152,13 +152,13 @@
     <Deviation>0.0150</Deviation>
   </Measurement>
   <Measurement>
-    <Type>PJ</Type>
+    <Type>QI</Type>
     <Bus>1</Bus>
     <Value>-0.1690</Value>
     <Deviation>0.0150</Deviation>
   </Measurement>
   <Measurement>
-    <Type>PJ</Type>
+    <Type>QI</Type>
     <Bus>2</Bus>
     <Value>0.2970</Value>
     <Deviation>0.0150</Deviation>

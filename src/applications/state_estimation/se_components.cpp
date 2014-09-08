@@ -370,15 +370,31 @@ void gridpack::state_estimation::SEBus::configureSE(void)
   // Calculate the number of matrix values associated with this bus
   int nmeas = p_meas.size(); // Suppose p_meas is the vector of all the measurements on this bus
   int ncnt = 0;
-  int i, j, im, jm, nsize;
+  int i, j, nsize;
+  int busid = getOriginalIndex();
   for (i=0; i<nmeas; i++) {
     std::string type = p_meas[i].p_type;
-    if (type == "VM" || type == "PI" || type == "QI" || type == "VA") {
+    if (type == "VM" || type == "VA") {
+      if (!getReferenceBus()) { 
+        ncnt += 2;
+      } else {
+        ncnt++;
+      }
+    } else if (type == "PI" || type == "QI") {
       std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
       getNeighborBranches(branch_nghbrs);
       nsize = branch_nghbrs.size();
+      double ret1, ret2;
       for (j=0; j<nsize; j++) {
-        ncnt += 2;
+        SEBranch *branch
+          = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
+        SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
+        if (bus == this) bus = dynamic_cast<SEBus*>(branch->getBus2().get());
+        if (!bus->getReferenceBus()) {
+          ncnt += 2;
+        } else {
+          ncnt++;
+        }
       }
       if (!getReferenceBus()) { 
         ncnt += 2;
@@ -419,8 +435,8 @@ int gridpack::state_estimation::SEBus::matrixNumCols() const
     gridpack::state_estimation::SEBus *bus;
     gridpack::state_estimation::SEBranch *branch;
     for (i=0; i<nsize && !meas; i++) {
-      bus = dynamic_cast<gridpack::state_estimation::SEBus*>(bus_nghbrs[i].get());
-      branch = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[i].get());
+      bus = dynamic_cast<SEBus*>(bus_nghbrs[i].get());
+      branch = dynamic_cast<SEBranch*>(branch_nghbrs[i].get());
       if (bus->matrixNumRows() > 0) meas = true;
       if (branch->matrixNumRows() > 0) meas = true;
     }
@@ -551,6 +567,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
       ctk = p_meas[i].p_ckt;
       type = p_meas[i].p_type;
       if (type == "VM") {
+#if 0
         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
         getNeighborBranches(branch_nghbrs);
         nsize = branch_nghbrs.size();
@@ -566,6 +583,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           cols[ncnt] = jm;
           ncnt++;
         }
+#endif
         if (!getReferenceBus()) { 
           jm = matrixGetColIndex(0);
           values[ncnt] = gridpack::ComplexType(0.0,0.0); 
@@ -590,34 +608,44 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
         nsize = branch_nghbrs.size();
         double ret1, ret2;
         for (j=0; j<nsize; j++) {
-          jm = matrixGetColIndex(0);
-          gridpack::state_estimation::SEBranch *branch
-            = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[i].get());
+          SEBranch *branch
+            = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
+          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
+          if (bus == this) bus = dynamic_cast<SEBus*>(branch->getBus2().get());
           branch->getVTheta(this, &v, &theta);
           ComplexType yfbus=branch->getForwardYBus();
           yfbusr = real (yfbus);
           yfbusi = imag (yfbus);
           // to discuss, how to use YBus branch data in bus 
           ret1 += p_v * v * (-yfbusr*sin(theta) + yfbusi*cos(theta));
-          values[ncnt] = gridpack::ComplexType(p_v*v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
-          rows[ncnt] = im;
-          cols[ncnt] = jm;
-          ncnt++;
-          jm = matrixGetColIndex(1);
+          if (!bus->getReferenceBus()) {
+            values[ncnt] = gridpack::ComplexType(p_v*v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
+            jm = bus->matrixGetColIndex(0);
+            rows[ncnt] = im;
+            cols[ncnt] = jm;
+            ncnt++;
+            jm = bus->matrixGetColIndex(1);
+          } else {
+            jm = bus->matrixGetColIndex(0);
+          }
           ret2 +=  v * (yfbusr*cos(theta) + yfbusi*sin(theta));
           values[ncnt] = gridpack::ComplexType(p_v*(yfbusr*cos(theta)+yfbusi*sin(theta)),0.0);
           rows[ncnt] = im;
           cols[ncnt] = jm;
           ncnt++;
         }
-        ret1 -= p_v * p_v * p_ybusi;
-        jm = matrixGetColIndex(0);
-        values[ncnt] = gridpack::ComplexType(ret1,0.0); 
-        rows[ncnt] = im;
-        cols[ncnt] = jm;
-        ncnt++;
+        if (!getReferenceBus()) {
+          ret1 -= p_v * p_v * p_ybusi;
+          jm = matrixGetColIndex(0);
+          values[ncnt] = gridpack::ComplexType(ret1,0.0); 
+          rows[ncnt] = im;
+          cols[ncnt] = jm;
+          ncnt++;
+          jm = matrixGetColIndex(1);
+        } else {
+          jm = matrixGetColIndex(0);
+        }
         ret2 += p_v * p_ybusr;
-        jm = matrixGetColIndex(1);
         values[ncnt] = gridpack::ComplexType(ret2,0.0); 
         rows[ncnt] = im;
         cols[ncnt] = jm;
@@ -628,19 +656,25 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
         nsize = branch_nghbrs.size();
         double ret1, ret2;
         for (j=0; j<nsize; j++) {
-          jm = matrixGetColIndex(0);
-          gridpack::state_estimation::SEBranch *branch
-            = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[i].get());
+          SEBranch *branch
+            = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
+          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
+          if (bus == this) bus = dynamic_cast<SEBus*>(branch->getBus2().get());
           branch->getVTheta(this, &v, &theta);
           ComplexType yfbus=branch->getForwardYBus();
           yfbusr = real (yfbus);
           yfbusi = imag (yfbus);
           ret1 += p_v * v * (yfbusr*cos(theta) + yfbusi*sin(theta));
-          values[ncnt] = gridpack::ComplexType(p_v*v*(-yfbusr*cos(theta)-yfbusi*sin(theta)),0.0);
-          rows[ncnt] = im;
-          cols[ncnt] = jm;
-          ncnt++;
-          jm = matrixGetColIndex(1);
+          if (!bus->getReferenceBus()) {
+            values[ncnt] = gridpack::ComplexType(p_v*v*(-yfbusr*cos(theta)-yfbusi*sin(theta)),0.0);
+            jm = bus->matrixGetColIndex(0);
+            rows[ncnt] = im;
+            cols[ncnt] = jm;
+            ncnt++;
+            jm = bus->matrixGetColIndex(1);
+          } else {
+            jm = bus->matrixGetColIndex(0);
+          }
           ret2 +=  v * (yfbusr*cos(theta) + yfbusi*sin(theta));
           values[ncnt] = gridpack::ComplexType(p_v*(yfbusr*sin(theta)-yfbusi*cos(theta)),0.0);
           rows[ncnt] = im;
@@ -648,18 +682,23 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           ncnt++;
         }
         ret1 -= p_v * p_v * p_ybusr;
-        jm = matrixGetColIndex(0);
-        values[ncnt] = gridpack::ComplexType(ret1,0.0); 
-        rows[ncnt] = im;
-        cols[ncnt] = jm;
-        ncnt++;
+        if (!getReferenceBus()) {
+          jm = matrixGetColIndex(0);
+          values[ncnt] = gridpack::ComplexType(ret1,0.0); 
+          rows[ncnt] = im;
+          cols[ncnt] = jm;
+          ncnt++;
+          jm = matrixGetColIndex(1);
+        } else {
+          jm = matrixGetColIndex(0);
+        }
         ret2 -= p_v * p_ybusi;
-        jm = matrixGetColIndex(1);
         values[ncnt] = gridpack::ComplexType(ret2,0.0); 
         rows[ncnt] = im;
         cols[ncnt] = jm;
         ncnt++;
       } else if (type == "VA") {
+#if 0
         std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
         getNeighborBranches(branch_nghbrs);
         nsize = branch_nghbrs.size();
@@ -675,12 +714,17 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           cols[ncnt] = jm;
           ncnt++;
         }
-        jm = matrixGetColIndex(0);
-        values[ncnt] = gridpack::ComplexType(1.0,0.0); 
-        rows[ncnt] = im;
-        cols[ncnt] = jm;
-        ncnt++;
-        jm = matrixGetColIndex(1);
+#endif
+        if (!getReferenceBus()) {
+          jm = matrixGetColIndex(0);
+          values[ncnt] = gridpack::ComplexType(1.0,0.0); 
+          rows[ncnt] = im;
+          cols[ncnt] = jm;
+          ncnt++;
+          jm = matrixGetColIndex(1);
+        } else {
+          jm = matrixGetColIndex(0);
+        }
         values[ncnt] = gridpack::ComplexType(0.0,0.0); 
         rows[ncnt] = im;
         cols[ncnt] = jm;
@@ -1146,10 +1190,11 @@ void gridpack::state_estimation::SEBranch::configureSE(void)
   int i, j, im, jm, nsize;
   for (i=0; i<nmeas; i++) {
     std::string type = p_meas[i].p_type;
+    std::string ckt = p_meas[i].p_ckt;
     if (type == "PIJ" || type == "QIJ" || type == "IIJ") {
       int nsize = p_tag.size();
       for (j=0; j<nsize; j++) {
-        if (p_tag[j] == p_meas[i].p_ckt) {
+        if (p_tag[j] == ckt) {
           if (!bus1->getReferenceBus()) {
             ncnt += 2;
           } else {  // reference bus, only for dPIJ/DVI
@@ -1290,10 +1335,8 @@ int gridpack::state_estimation::SEBranch::matrixNumValues() const
 void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values, int *rows, int *cols)
 {
   if (p_mode == Jacobian_H) {
-    gridpack::state_estimation::SEBus *bus1 =
-      dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
-    gridpack::state_estimation::SEBus *bus2 =
-      dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
+    SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
+    SEBus *bus2 = dynamic_cast<SEBus*>(getBus2().get());
     int nmeas = p_meas.size(); // Suppose p_meas is the vector of all the measurements on this branch
     int ncnt = 0;
     int i, j, im, jm, nsize;
@@ -1312,13 +1355,13 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
             if (!bus1->getReferenceBus()) {
-              jm = matrixGetColIndex(0);
+              jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(v1*v2*(p_resistance[j]*sin(theta)
                     -p_reactance[j]*cos(theta)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
-              jm = matrixGetColIndex(1);
+              jm = bus1->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType(-v2*(p_resistance[j]*cos(theta)
                     +p_reactance[j]*sin(theta))
                   +2*(p_resistance[j]+p_shunt_admt_g1[j])*v1,0.0);
@@ -1326,7 +1369,7 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dPIJ/DVI
-              jm = matrixGetColIndex(0);
+              jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v2*(p_resistance[j]*cos(theta)
                     +p_reactance[j]*sin(theta))+2*(p_resistance[j]
                     +p_shunt_admt_g1[j])*v1,0.0);
@@ -1335,20 +1378,20 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               ncnt++;
             }
             if (!bus2->getReferenceBus()) {
-              jm = matrixGetColIndex(0);
+              jm = bus2->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v1*v2*(p_resistance[j]*sin(theta)
                     -p_reactance[j]*cos(theta)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
-              jm = matrixGetColIndex(1);
+              jm = bus2->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType(-v1*(p_resistance[j]*cos(theta)
                     +p_reactance[j]*sin(theta)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dPIJ/DVJ
-              jm = matrixGetColIndex(0);
+              jm = bus2->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v1*(p_resistance[j]*cos(theta)
                     +p_reactance[j]*sin(theta)),0.0);
               rows[ncnt] = im;
@@ -1368,14 +1411,14 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
-              jm = matrixGetColIndex(1);
+              jm = bus1->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType(-v2 * (p_resistance[j] * sin(theta)
                     - p_reactance[j] * cos(theta))-2*(p_reactance[j]+p_shunt_admt_b1[j])*v1,0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dQIJ/DVI
-              jm = matrixGetColIndex(0);
+              jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v2*(p_resistance[j]*sin(theta)
                     -p_reactance[j]*cos(theta))-2*(p_reactance[j]
                     +p_shunt_admt_b1[j])*v1,0.0);
@@ -1384,20 +1427,20 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               ncnt++;
             }
             if (!bus2->getReferenceBus()) {
-              jm = matrixGetColIndex(0);
+              jm = bus2->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(v1 * v2 * (p_resistance[j] * cos(theta)
                     + p_reactance[j] * sin(theta)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
-              jm = matrixGetColIndex(1);
+              jm = bus2->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType(-v2 * (p_resistance[j] * sin(theta)
                     - p_reactance[j] * cos(theta)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dQIJ/DVJ
-              jm = matrixGetColIndex(0);
+              jm = bus2->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v2 * (p_resistance[j] * sin(theta)
                     - p_reactance[j] * cos(theta)),0.0);
               rows[ncnt] = im;
@@ -1413,20 +1456,20 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             double Iij = sqrt((p_resistance[j]*p_resistance[j]+p_reactance[j]*p_reactance[j])
                 *(v1*v1+v2*v2-2*v1*v2*cos(theta))); 
             if (!bus1->getReferenceBus()) {
-              jm = matrixGetColIndex(0);
+              jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType((p_resistance[j]*p_resistance[j]
                     +p_reactance[j]*p_reactance[j])*v1*v2*sin(theta)/Iij,0.0);  
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
-              jm = matrixGetColIndex(1);
+              jm = bus1->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType((p_resistance[j]*p_resistance[j]
                     +p_reactance[j]*p_reactance[j])*(v1-v2*cos(theta))/Iij,0.0);  
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dIIJ/DVI
-              jm = matrixGetColIndex(0);
+              jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType((p_resistance[j]*p_resistance[j]
                     +p_reactance[j]*p_reactance[j])*(v1-v2*cos(theta))/Iij,0.0);  
               rows[ncnt] = im;
@@ -1434,20 +1477,20 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               ncnt++;
             }
             if (!bus2->getReferenceBus()) {
-              jm = matrixGetColIndex(0);
+              jm = bus2->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-(p_resistance[j]*p_resistance[j]
                     +p_reactance[j]*p_reactance[j])*v1*v2*sin(theta)/Iij,0.0);  
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
-              jm = matrixGetColIndex(1);
+              jm = bus2->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType((p_resistance[j]*p_resistance[j]
                     +p_reactance[j]*p_reactance[j])*(v2-v1*cos(theta))/Iij,0.0);  
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dIIJ/DVJ
-              jm = matrixGetColIndex(0);
+              jm = bus2->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType((p_resistance[j]*p_resistance[j]
                     +p_reactance[j]*p_reactance[j])*(v2-v1*cos(theta))/Iij,0.0);  
               rows[ncnt] = im;

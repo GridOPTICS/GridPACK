@@ -204,12 +204,13 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   printf("Created HJacMap\n");
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
-//HJac->print();
+  HJac->print();
   printf("reading done 2\n");
-  return;
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
+  printf("reading done 3\n");
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
+  printf("reading done 4\n");
 
   // Convergence and iteration parameters
   double tolerance = cursor->get("tolerance",1.0e-6);
@@ -224,37 +225,47 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     
     // Form estimation vector
+  printf("reading 5\n");
     HJacMap.mapToMatrix(HJac);
+    printf("Got to 1\n");
 
     // Form H'
     boost::shared_ptr<gridpack::math::Matrix> trans_HJac(transpose(*HJac));
+    printf("Got to 2\n");
   
     // Form Gain matrix
     boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*HJac, *trans_HJac));
+    printf("Got to 3\n");
 
     // Build measurement equation
     EzMap.mapToVector(Ez);
+    printf("Got to 4\n");
 
     factory.setMode(R_inv);
     gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(network);
     boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
+    printf("Got to 5\n");
 
     // Form right hand side vector
     boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
     boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
+    printf("Got to 6\n");
 
     // create a linear solver
     gridpack::math::LinearSolver solver(*Gain);
     solver.configure(cursor);
+    printf("Got to 7\n");
 
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
     solver.solve(*RHS, *X);
+    printf("Got to 8\n");
 //    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
 
   
     // update values
     network->updateBuses();
+    printf("Got to 9\n");
 
 
   // End N-R loop
