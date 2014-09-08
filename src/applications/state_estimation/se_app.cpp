@@ -146,12 +146,12 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     int idx;
     for (idx = 0; idx < meas.size(); idx++) {
       std::string meas_type = meas[idx].p_type;
-      if (meas_type == "VM" || meas_type == "PI" || meas_type == "PJ") {
+      if (meas_type == "VM" || meas_type == "PI" || meas_type == "QI") {
         printf("Type: %s\n", meas[idx].p_type);
         printf("Bus: %d\n", meas[idx].p_busid);
         printf("Value: %f\n", meas[idx].p_value);
         printf("Deviation: %f\n", meas[idx].p_deviation);
-      } else if (meas_type == "PIJ") {
+      } else if (meas_type == "PIJ" || meas_type == "QIJ") {
         printf("Type: %s\n", meas[idx].p_type);
         printf("FromBus: %d\n", meas[idx].p_fbusid);
         printf("ToBus: %d\n", meas[idx].p_tbusid);

@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <State_estimation>
-    <networkConfiguration> IEEE14.raw </networkConfiguration>
+    <networkConfiguration> 3bus.raw </networkConfiguration>
+    <measurementList>3bus_meas.xml</measurementList>
   </State_estimation>
 </Configuration>
