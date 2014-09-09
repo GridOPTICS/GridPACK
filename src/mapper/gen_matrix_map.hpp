@@ -89,7 +89,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxRowIndex-p_minRowIndex+1;
   boost::shared_ptr<gridpack::math::Matrix>
-    Ret(new gridpack::math::Matrix(comm, blockSize, blockSize, p_nz_per_row));
+    Ret(new gridpack::math::Matrix(comm, blockSize, p_colBlockSize, p_nz_per_row));
   loadBusData(*Ret,false);
   loadBranchData(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
@@ -211,6 +211,7 @@ void getDimensions(void)
       nCols += nval;
     }
   }
+  p_colBlockSize = nCols;
   // Evaluate offsets for each processor
   int *sizebuf = new int[2*p_nNodes];
   for (i=0; i<2*p_nNodes; i++) {
@@ -282,9 +283,9 @@ void setOffsets(void)
         } else {
           if (p_network->getActiveBranch(jdx)) {
             i_branch_offsets[jdx] = icnt;
-            icnt += p_network->getBranch(i)->matrixNumRows();
+            icnt += p_network->getBranch(jdx)->matrixNumRows();
             j_branch_offsets[jdx] = jcnt;
-            jcnt += p_network->getBranch(i)->matrixNumCols();
+            jcnt += p_network->getBranch(jdx)->matrixNumCols();
           }
         }
       }
@@ -416,6 +417,7 @@ void setOffsets(void)
   NGA_Scatter(g_bus_column_offsets, j_bus_value_buf, j_bus_index, j_bus_cnt);
   NGA_Scatter(g_branch_row_offsets, i_branch_value_buf, i_branch_index, i_branch_cnt);
   NGA_Scatter(g_branch_column_offsets, j_branch_value_buf, j_branch_index, j_branch_cnt);
+  GA_Pgroup_sync(p_GAgrp);
 
   delete [] i_bus_index;
   delete [] j_bus_index;
@@ -552,9 +554,9 @@ void numberNonZeros(void)
         int *cols = new int[nvals];
         p_network->getBus(i)->matrixGetValues(values, rows, cols);
         for (j=0; j<nvals; j++) {
-          if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+//          if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
             p_nz_per_row[rows[j]-p_minRowIndex]++;
-          }
+//          }
         }
         delete [] rows;
         delete [] cols;
@@ -563,23 +565,36 @@ void numberNonZeros(void)
     }
   }
   for (i=0; i<p_nBranches; i++) {
-    if (p_network->getActiveBranch(i)) {
-      nvals = p_network->getBranch(i)->matrixNumValues();
-      if (nvals > p_maxValues) p_maxValues = nvals;
-      if (nvals > 0) {
-        gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
-        int *rows = new int[nvals];
-        int *cols = new int[nvals];
-        p_network->getBranch(i)->matrixGetValues(values, rows, cols);
-        for (j=0; j<nvals; j++) {
-          if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+    nvals = p_network->getBranch(i)->matrixNumValues();
+    if (nvals > p_maxValues) p_maxValues = nvals;
+    if (nvals > 0) {
+      int ncols = p_network->getBranch(i)->matrixNumCols();
+      int rmin, rmax;
+      bool isActive = p_network->getActiveBranch(i);
+      if (ncols > 0) {
+        rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
+        rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
+      }
+      gridpack::ComplexType *values = new gridpack::ComplexType[nvals];
+      int *rows = new int[nvals];
+      int *cols = new int[nvals];
+      p_network->getBranch(i)->matrixGetValues(values, rows, cols);
+      for (j=0; j<nvals; j++) {
+        if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
+          if (ncols > 0) {
+            if (cols[j] >= rmin && cols[j] <= rmax) {
+              if (isActive) p_nz_per_row[rows[j]-p_minRowIndex]++;
+            } else {
+              p_nz_per_row[rows[j]-p_minRowIndex]++;
+            }
+          } else {
             p_nz_per_row[rows[j]-p_minRowIndex]++;
           }
         }
-        delete [] rows;
-        delete [] cols;
-        delete [] values;
       }
+      delete [] rows;
+      delete [] cols;
+      delete [] values;
     }
   }
 }
@@ -625,15 +640,35 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
   int *rows = new int[p_maxValues];
   int *cols = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {
-    if (p_network->getActiveBranch(i)) {
-      nvals = p_network->getBranch(i)->matrixNumValues();
+    nvals = p_network->getBranch(i)->matrixNumValues();
+    if (nvals > 0) {
+      int ncols = p_network->getBranch(i)->matrixNumCols();
+      int rmin, rmax;
+      bool isActive = p_network->getActiveBranch(i);
+      if (ncols > 0) {
+        rmin = p_network->getBranch(i)->matrixGetRowIndex(0);
+        rmax = p_network->getBranch(i)->matrixGetRowIndex(ncols-1);
+      }
       p_network->getBranch(i)->matrixGetValues(values,rows,cols);
+      bool addElem;
       for (j=0; j<nvals; j++) {
         if (rows[j] >= p_minRowIndex && rows[j] <= p_maxRowIndex) {
-          if (flag) {
-            matrix.addElement(rows[j],cols[j],values[j]);
+          addElem = false;
+          if (ncols > 0) {
+            if (cols[j] >= rmin && cols[j] <= rmax) {
+              if (isActive) addElem = true;
+            } else {
+              addElem = true;
+            }
           } else {
-            matrix.setElement(rows[j],cols[j],values[j]);
+            addElem = true;
+          }
+          if (addElem) {
+            if (flag) {
+              matrix.addElement(rows[j],cols[j],values[j]);
+            } else {
+              matrix.setElement(rows[j],cols[j],values[j]);
+            }
           }
         }
       }
@@ -659,6 +694,7 @@ int                         p_jDim;
 int                         p_minRowIndex;
 int                         p_maxRowIndex;
 int                         p_maxValues;
+int                         p_colBlockSize;
 #ifdef NZ_PER_ROW
 int*                        p_nz_per_row;
 #endif
