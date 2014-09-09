@@ -1405,7 +1405,7 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
             if (!bus1->getReferenceBus()) {
-              jm = matrixGetColIndex(0);
+              jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v1*v2*(p_resistance[j]*cos(theta)
                     +p_reactance[j]*sin(theta)),0.0);
               rows[ncnt] = im;
