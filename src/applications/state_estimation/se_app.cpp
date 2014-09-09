@@ -248,24 +248,25 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     // Form right hand side vector
     boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
-    boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
     printf("Got to 6\n");
+    boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
+    printf("Got to 7\n");
 
     // create a linear solver
     gridpack::math::LinearSolver solver(*Gain);
     solver.configure(cursor);
-    printf("Got to 7\n");
+    printf("Got to 8\n");
 
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
     solver.solve(*RHS, *X);
-    printf("Got to 8\n");
+    printf("Got to 9\n");
 //    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
 
   
     // update values
     network->updateBuses();
-    printf("Got to 9\n");
+    printf("Got to 10\n");
 
 
   // End N-R loop

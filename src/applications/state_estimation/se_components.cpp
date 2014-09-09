@@ -421,32 +421,36 @@ int gridpack::state_estimation::SEBus::matrixNumRows() const
  */
 int gridpack::state_estimation::SEBus::matrixNumCols() const
 {
-  // Check to see if this bus has measurements or is attached to anything that
-  // has measurements
-  bool meas = false;
-  if (p_meas.size() > 0) meas = true;
-  if (!meas) {
-    std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
-    getNeighborBranches(branch_nghbrs);
-    std::vector<boost::shared_ptr<BaseComponent> > bus_nghbrs;
-    getNeighborBuses(bus_nghbrs);
-    int nsize = branch_nghbrs.size();
-    int i;
-    gridpack::state_estimation::SEBus *bus;
-    gridpack::state_estimation::SEBranch *branch;
-    for (i=0; i<nsize && !meas; i++) {
-      bus = dynamic_cast<SEBus*>(bus_nghbrs[i].get());
-      branch = dynamic_cast<SEBranch*>(branch_nghbrs[i].get());
-      if (bus->matrixNumRows() > 0) meas = true;
-      if (branch->matrixNumRows() > 0) meas = true;
+  if (p_mode == Jacobian_H) {
+    // Check to see if this bus has measurements or is attached to anything that
+    // has measurements
+    bool meas = false;
+    if (p_meas.size() > 0) meas = true;
+    if (!meas) {
+      std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
+      getNeighborBranches(branch_nghbrs);
+      std::vector<boost::shared_ptr<BaseComponent> > bus_nghbrs;
+      getNeighborBuses(bus_nghbrs);
+      int nsize = branch_nghbrs.size();
+      int i;
+      gridpack::state_estimation::SEBus *bus;
+      gridpack::state_estimation::SEBranch *branch;
+      for (i=0; i<nsize && !meas; i++) {
+        bus = dynamic_cast<SEBus*>(bus_nghbrs[i].get());
+        branch = dynamic_cast<SEBranch*>(branch_nghbrs[i].get());
+        if (bus->matrixNumRows() > 0) meas = true;
+        if (branch->matrixNumRows() > 0) meas = true;
+      }
     }
-  }
-  if (!meas) return 0;
-  // Bus has measurements associated with it.
-  if (!getReferenceBus()) {
-    return 2;
-  } else {
-    return 1;
+    if (!meas) return 0;
+    // Bus has measurements associated with it.
+    if (!getReferenceBus()) {
+      return 2;
+    } else {
+      return 1;
+    }
+  } else if (p_mode == R_inv) {
+    return p_meas.size();
   }
 }
 
@@ -459,18 +463,16 @@ int gridpack::state_estimation::SEBus::matrixNumCols() const
 void gridpack::state_estimation::SEBus::matrixSetRowIndex(int irow, int idx)
 {
   if (p_mode == Jacobian_H) {
-    p_rowJidx.push_back(idx);
-    if (p_rowJidx.size() != irow+1) {
-      printf("p[%d] Incorrect index in SEBus::matrixSetRowIndex irow: %d size: %d bus: %d\n",
-          GA_Nodeid(),irow,p_rowJidx.size(),getOriginalIndex());
-      //TODO: some kind of error
+    if (irow < p_rowJidx.size()) {
+      p_rowJidx[irow] = idx;
+    } else {
+      p_rowJidx.push_back(idx);
     }
   } else if (p_mode == R_inv) {
-    p_rowRidx.push_back(idx);
-    if (p_rowRidx.size() != irow+1) {
-      printf("p[%d] Incorrect index in SEBus::matrixSetRowIndex irow: %d size: %d bus: %d\n",
-          GA_Nodeid(),irow,p_rowRidx.size(),getOriginalIndex());
-      //TODO: some kind of error
+    if (irow < p_rowRidx.size()) {
+      p_rowRidx[irow] = idx;
+    } else {
+      p_rowRidx.push_back(idx);
     }
   }
 }
@@ -484,20 +486,16 @@ void gridpack::state_estimation::SEBus::matrixSetRowIndex(int irow, int idx)
 void gridpack::state_estimation::SEBus::matrixSetColIndex(int icol, int idx)
 {
   if (p_mode == Jacobian_H) {
-    p_colJidx.push_back(idx);
-    if (p_colJidx.size() != icol+1) {
-      printf("p[%d] Incorrect index in (J)SEBus::matrixSetColIndex icol: %d"
-          " size: %d bus: %d idx: %d\n",
-          GA_Nodeid(),icol,p_colJidx.size(),getOriginalIndex(),idx);
-      //TODO: some kind of error
+    if (icol < p_colJidx.size()) {
+      p_colJidx[icol] = idx;
+    } else {
+      p_colJidx.push_back(idx);
     }
   } else if (p_mode == R_inv) {
-    p_colRidx.push_back(idx);
-    if (p_colRidx.size() != icol+1) {
-      printf("p[%d] Incorrect index in (R)SEBus::matrixSetColIndex icol: %d"
-          " size: %d bus: %d idx: %d\n",
-          GA_Nodeid(),icol,p_colRidx.size(),getOriginalIndex(),idx);
-      //TODO: some kind of error
+    if (icol < p_colRidx.size()) {
+      p_colRidx[icol] = idx;
+    } else {
+      p_colRidx.push_back(idx);
     }
   }
 }
@@ -1227,7 +1225,11 @@ int gridpack::state_estimation::SEBranch::matrixNumRows() const
  */
 int gridpack::state_estimation::SEBranch::matrixNumCols() const
 {
-  return 0;
+  if (p_mode == Jacobian_H) {
+    return 0;
+  } else if (p_mode == R_inv) {
+    return p_meas.size();
+  }
 }
 
 /**
@@ -1239,18 +1241,16 @@ int gridpack::state_estimation::SEBranch::matrixNumCols() const
 void gridpack::state_estimation::SEBranch::matrixSetRowIndex(int irow, int idx)
 {
   if (p_mode == Jacobian_H) {
-    p_rowJidx.push_back(idx);
-    if (p_rowJidx.size() != irow+1) {
-      printf("Incorrect index in SEBranch::matrixSetRowIndex irow: %d size: %d\n",
-          irow,p_rowJidx.size());
-      //TODO: some kind of error
+    if (irow < p_rowJidx.size()) {
+      p_rowJidx[irow] = idx;
+    } else {
+      p_rowJidx.push_back(idx);
     }
   } else if (p_mode == R_inv) {
-    p_rowRidx.push_back(idx);
-    if (p_rowRidx.size() != irow+1) {
-      printf("Incorrect index in SEBranch::matrixSetRowIndex irow: %d size: %d\n",
-          irow,p_rowRidx.size());
-      //TODO: some kind of error
+    if (irow < p_rowRidx.size()) {
+      p_rowRidx[irow] = idx;
+    } else {
+      p_rowRidx.push_back(idx);
     }
   }
 }
@@ -1264,18 +1264,16 @@ void gridpack::state_estimation::SEBranch::matrixSetRowIndex(int irow, int idx)
 void gridpack::state_estimation::SEBranch::matrixSetColIndex(int icol, int idx)
 {
   if (p_mode == Jacobian_H) {
-    p_colJidx.push_back(idx);
-    if (p_colJidx.size() != icol+1) {
-      printf("Incorrect index in SEBranch::matrixSetColIndex icol: %d size: %d\n",
-          icol,p_colJidx.size());
-      //TODO: some kind of error
+    if (icol < p_colJidx.size()) {
+      p_colJidx[icol] = idx;
+    } else {
+      p_colJidx.push_back(idx);
     }
   } else if (p_mode == R_inv) {
-    p_colRidx.push_back(idx);
-    if (p_colRidx.size() != icol+1) {
-      printf("Incorrect index in SEBranch::matrixSetColIndex icol: %d size: %d\n",
-          icol,p_colRidx.size());
-      //TODO: some kind of error
+    if (icol < p_colRidx.size()) {
+      p_colRidx[icol] = idx;
+    } else {
+      p_colRidx.push_back(idx);
     }
   }
 }
