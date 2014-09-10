@@ -179,9 +179,9 @@ bool isLocalBranch(int idx)
 void getDimensions(void)
 {
   int i, nval;
-  // Find out how many rows and columns are contributed by this processor
+  // Find out how many rows are contributed by this processor
   int nRows = 0;
-  // Get number of rows and columns contributed by each bus
+  // Get number of rows contributed by each bus
   p_maxValues = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
@@ -260,7 +260,7 @@ void setOffsets(void)
         } else {
           if (p_network->getActiveBranch(jdx)) {
             i_branch_offsets[jdx] = icnt;
-            icnt += p_network->getBranch(i)->vectorNumElements();
+            icnt += p_network->getBranch(jdx)->vectorNumElements();
           }
         }
       }
@@ -351,6 +351,7 @@ void setOffsets(void)
   // Scatter offsets to global arrays
   NGA_Scatter(g_bus_offsets, i_bus_value_buf, i_bus_index, i_bus_cnt);
   NGA_Scatter(g_branch_offsets, i_branch_value_buf, i_branch_index, i_branch_cnt);
+  NGA_Pgroup_sync(p_GAgrp);
 
   delete [] i_bus_index;
   delete [] i_branch_index;
@@ -439,11 +440,11 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
       nvals = p_network->getBus(i)->vectorNumElements();
       p_network->getBus(i)->vectorGetElementValues(values, idx);
       for (j=0; j<nvals; j++) {
-//        if (flag) {
+        if (flag) {
           vector.addElement(idx[j],values[j]);
-//        } else {
-//          vector.setElement(idx[j],values[j]);
-//        }
+        } else {
+          vector.setElement(idx[j],values[j]);
+        }
       }
     }
   }
@@ -467,11 +468,11 @@ void loadBranchData(gridpack::math::Vector &vector, bool flag)
       p_network->getBranch(i)->vectorGetElementValues(values,idx);
       for (j=0; j<nvals; j++) {
         if (idx[j] >= p_minIndex && idx[j] <= p_maxIndex) {
-//          if (flag) {
+          if (flag) {
             vector.addElement(idx[j],values[j]);
-//          } else {
-//            vector.setElement(idx[j],values[j]);
-//          }
+          } else {
+            vector.setElement(idx[j],values[j]);
+          }
         }
       }
     }
