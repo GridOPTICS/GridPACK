@@ -156,6 +156,59 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
 }
 
 /**
+ * Return number of elements in vector coming from component
+ * @return number of elements contributed from component
+ */
+int gridpack::state_estimation::SEBus::vectorNumElements() const
+{
+  if (p_mode == Jacobian_H) {
+    return p_meas.size();
+  }
+  return 0;
+}
+
+/**
+ * Set indices corresponding to the elements contributed by this component
+ * @param ielem index of element contributed by this component (e.g.
+ * if component contributes 3 elements then ielem is between 0 and 2)
+ * @param idx vector index of element ielem
+ */
+void gridpack::state_estimation::SEBus::vectorSetElementIndex(int ielem, int idx)
+{
+  if (p_mode == Jacobian_H) {
+    if (ielem < p_vecZidx.size()) {
+      p_vecZidx[ielem] = idx;
+    } else {
+      p_vecZidx.push_back(idx);
+    }
+  }
+}
+
+/**
+ * Get list of element indices from component
+ * @param idx list of indices that component maps onto
+ */
+void gridpack::state_estimation::SEBus::vectorGetElementIndices(int *idx)
+{
+  if (p_mode == Jacobian_H) {
+    int nsize = p_vecZidx.size();
+    int i;
+    for (i=0; i<nsize; i++) {
+      idx[i] = p_vecZidx[i];
+    }
+  }
+}
+
+/**
+ * Transfer vector values to component
+ * @param values list of vector element values
+ */
+void gridpack::state_estimation::SEBus::vectorSetElementValues(ComplexType *values)
+{
+  //TODO: Is this function needed?
+}
+
+/**
  * Return the size of the buffer used in data exchanges on the network.
  * For this problem, the voltage magnitude and phase angle need to be exchanged
  * @return size of buffer
@@ -509,9 +562,12 @@ void gridpack::state_estimation::SEBus::matrixSetColIndex(int icol, int idx)
 int gridpack::state_estimation::SEBus::matrixGetRowIndex(int idx)
 {
   if (p_mode == Jacobian_H) {
-  return p_rowJidx[idx];
+    if (idx >= p_rowJidx.size())
+      printf("violation in bus:matrixGetColIndex bus: %d size: %d idx: %d\n",
+          getOriginalIndex(),idx,p_rowJidx.size());
+    return p_rowJidx[idx];
   } else if (p_mode == R_inv) {
-  return p_rowRidx[idx];
+    return p_rowRidx[idx];
   }
 }
 
@@ -749,15 +805,15 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
  * @param values: pointer to vector values (z-h(x))
  * @param idx: pointer to vector index 
 */
-void gridpack::state_estimation::SEBus:: VectorGetElementValues(ComplexType *values, int *idx)
+void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *values, int *idx)
 {
   if (p_mode == Jacobian_H) {
     int nmeas = p_meas.size(); // Suppose p_meas is the vector of all the measurements on this bus
     int ncnt = 0;
     int i, j, im, jm, nsize;
     double v, theta,yfbusr,yfbusi;
+    vectorGetElementIndices(idx);
     for (i=0; i<nmeas; i++) {
-       vectorGetElementIndices(idx);
        if (p_meas[i].p_type == "VM") {
          int index = getGlobalIndex();
 //         values[ncnt] = static_cast<double>(index),meas[i].p_value-p_v; 
@@ -781,7 +837,6 @@ void gridpack::state_estimation::SEBus:: VectorGetElementValues(ComplexType *val
          }
          ret *= p_v; 
          int index = getGlobalIndex();
-         vectorGetElementIndices(idx);
 //         values[ncnt] = static_cast<double>(index), meas[i].p_value-ret;
 //         values[ncnt] = p_meas[i].p_value-ret;
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
@@ -803,7 +858,6 @@ void gridpack::state_estimation::SEBus:: VectorGetElementValues(ComplexType *val
          }
          ret *= p_v; 
          int index = getGlobalIndex();
-         vectorGetElementIndices(idx);
 //         values[ncnt] = static_cast<double>(index), p_meas[i].p_value-ret;
 //         values[ncnt] = p_meas[i].p_value-ret;
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
@@ -1515,11 +1569,65 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
 }
 
 /**
+ * Return number of elements in vector coming from component
+ * @return number of elements contributed from component
+ */
+int gridpack::state_estimation::SEBranch::vectorNumElements() const
+{
+  if (p_mode == Jacobian_H) {
+    return p_meas.size();
+  }
+  return 0;
+}
+
+/**
+ * Set indices corresponding to the elements contributed by this component
+ * @param ielem index of element contributed by this component (e.g.
+ * if component contributes 3 elements then ielem is between 0 and 2)
+ * @param idx vector index of element ielem
+ */
+void gridpack::state_estimation::SEBranch::vectorSetElementIndex(int ielem, int idx)
+{
+  if (p_mode == Jacobian_H) {
+    if (ielem < p_vecZidx.size()) {
+      p_vecZidx[ielem] = idx;
+    } else {
+      p_vecZidx.push_back(idx);
+    }
+  }
+}
+
+/**
+ * Get list of element indices from component
+ * @param idx list of indices that component maps onto
+ */
+void gridpack::state_estimation::SEBranch::vectorGetElementIndices(int *idx)
+{
+  if (p_mode == Jacobian_H) {
+    int nsize = p_vecZidx.size();
+    int i;
+    for (i=0; i<nsize; i++) {
+      idx[i] = p_vecZidx[i];
+    }
+  }
+}
+
+/**
+ * Transfer vector values to component
+ * @param values list of vector element values
+ */
+void gridpack::state_estimation::SEBranch::vectorSetElementValues(ComplexType *values)
+{
+  //TODO: Is this function needed?
+}
+
+
+/**
  * Return values from a vector
  * @param values: pointer to vector values (z-h(x))
  * @param idx: pointer to vector index 
 */
-void gridpack::state_estimation::SEBranch:: VectorGetElementValues(ComplexType *values, int *idx)
+void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *values, int *idx)
 {
   if (p_mode == Jacobian_H) {
     gridpack::state_estimation::SEBus *bus1 =
@@ -1531,11 +1639,11 @@ void gridpack::state_estimation::SEBranch:: VectorGetElementValues(ComplexType *
     int i, j, im, jm, nsize;
     double ret, ret1, ret2;
     double v1,v2,theta;
+    vectorGetElementIndices(idx);
     v1 = bus1->getVoltage();
     v2 = bus2->getVoltage();
     theta = bus1->getPhase() - bus2->getPhase();  
     for (i=0; i<nmeas; i++) {
-      vectorGetElementIndices(idx);
       if (p_meas[i].p_type == "PIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
@@ -1544,7 +1652,6 @@ void gridpack::state_estimation::SEBranch:: VectorGetElementValues(ComplexType *
               - v1*v2*(p_resistance[j]*cos(theta) + p_reactance[j]*sin(theta));
           }
         }
-        vectorGetElementIndices(idx);
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret1),0.0);
         //         values] = gridpack::ComplexType(static_cast<double>(idx1+idx2),0.0);
         //         values[ncnt] = p_meas[i].p_value-ret1;
@@ -1557,7 +1664,6 @@ void gridpack::state_estimation::SEBranch:: VectorGetElementValues(ComplexType *
               - v1*v2*(p_resistance[j]*sin(theta) - p_reactance[j]*cos(theta));
           }
         }
-        vectorGetElementIndices(idx);
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret2),0.0);
         //         values[ncnt] = p_meas[i].p_value-ret2;
         ncnt++;
@@ -1572,7 +1678,6 @@ void gridpack::state_estimation::SEBranch:: VectorGetElementValues(ComplexType *
           }
         }
         ret = sqrt(ret1*ret1+ret2*ret2)/v1;
-        vectorGetElementIndices(idx);
         //         values[ncnt] = p_meas[i].p_value-ret;
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
         ncnt++;

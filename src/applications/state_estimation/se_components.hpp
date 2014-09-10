@@ -96,6 +96,41 @@ class SEBus
     void setValues(gridpack::ComplexType *values);
 
     /**
+     * Return number of elements in vector coming from component
+     * @return number of elements contributed from component
+     */
+    int vectorNumElements() const;
+
+    /**
+     * Set indices corresponding to the elements contributed by this
+     * component
+     * @param ielem index of element contributed by this component (e.g.
+     * if component contributes 3 elements then ielem is between 0 and 2)
+     * @param idx vector index of element ielem
+     */
+    void vectorSetElementIndex(int ielem, int idx);
+
+    /**
+     * Get list of element indices from component
+     * @param idx list of indices that component maps onto
+     */
+    void vectorGetElementIndices(int *idx);
+
+    /**
+     * Get a list of vector values contributed by this component and their
+     * indices
+     * @param values list of vector element values
+     * @param idx indices for the vector elements
+     */
+    void vectorGetElementValues(ComplexType *values, int *idx);
+
+    /**
+     * Transfer vector values to component
+     * @param values list of vector element values
+     */
+    void vectorSetElementValues(ComplexType *values);
+
+    /**
      * Return the size of the buffer used in data exchanges on the network.
      * For this problem, the voltage magnitude and phase angle need to be exchanged
      * @return size of buffer
@@ -244,13 +279,6 @@ class SEBus
     void matrixGetValues(ComplexType *values, int *rows, int *cols);
 
     /**
-     * Return values from a vector
-     * @param values: pointer to vector values (z-h(x))
-     * @param idx: pointer to vector index 
-     */
-    void VectorGetElementValues(ComplexType *values, int *idx);
-
-    /**
      * Configure buses with state estimation parameters. These can be used in
      * other methods
      */
@@ -285,6 +313,7 @@ class SEBus
     std::vector<int> p_rowJidx;
     std::vector<int> p_colRidx;
     std::vector<int> p_rowRidx;
+    std::vector<int> p_vecZidx;
     std::vector<Measurement> p_meas;
 
     /**
@@ -323,7 +352,8 @@ private:
       & p_colJidx
       & p_rowJidx
       & p_colRidx
-      & p_rowRidx;
+      & p_rowRidx
+      & p_vecZidx;
   }  
 
 };
@@ -489,7 +519,7 @@ class SEBranch
      * Return the number of matrix values contributed by this component
      * @return number of matrix values
      */
-    virtual int matrixNumValues() const;
+    int matrixNumValues() const;
 
     /**
      * Return values from a matrix block
@@ -500,11 +530,40 @@ class SEBranch
     void matrixGetValues(ComplexType *values, int *rows, int *cols);
 
     /**
-     * Return values from a vector
-     * @param values: pointer to vector values (z-h(x))
-     * @param idx: pointer to vector index 
+     * Return number of elements in vector coming from component
+     * @return number of elements contributed from component
      */
-    void VectorGetElementValues(ComplexType *values, int *idx);
+    int vectorNumElements() const;
+
+    /**
+     * Set indices corresponding to the elements contributed by this
+     * component
+     * @param ielem index of element contributed by this component (e.g.
+     * if component contributes 3 elements then ielem is between 0 and 2)
+     * @param idx vector index of element
+     * ielem
+     */
+    void vectorSetElementIndex(int ielem, int idx);
+
+    /**
+     * Get list of element indices from component
+     * @param idx list of indices that component maps onto
+     */
+    void vectorGetElementIndices(int *idx);
+
+    /**
+     * Get a list of vector values contributed by this component and their
+     * indices
+     * @param values list of vector element values
+     * @param idx indices for the vector elements
+     */
+    void vectorGetElementValues(ComplexType *values, int *idx);
+
+    /**
+     * Transfer vector values to component
+     * @param values list of vector element values
+     */
+    void vectorSetElementValues(ComplexType *values);
 
     /**
      * Configure branches with state estimation parameters. These can be used in
@@ -537,6 +596,7 @@ class SEBranch
     std::vector<int> p_rowJidx;
     std::vector<int> p_colRidx;
     std::vector<int> p_rowRidx;
+    std::vector<int> p_vecZidx;
     std::vector<Measurement> p_meas;
 
 private:
@@ -572,7 +632,8 @@ private:
       & p_colJidx
       & p_rowJidx
       & p_colRidx
-      & p_rowRidx;
+      & p_rowRidx
+      & p_vecZidx;
   }  
 
 };
