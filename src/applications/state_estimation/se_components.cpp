@@ -1665,8 +1665,11 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
-            ret1 =  v1*v1* (p_resistance[j] + p_shunt_admt_g1[j])
-              - v1*v2*(p_resistance[j]*cos(theta) + p_reactance[j]*sin(theta));
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            ret = 1.0/ret;
+            double gij=real(ret);
+            double bij=imag(ret);
+            ret1 =  v1*v1* (gij + p_shunt_admt_g1[j]) - v1*v2*(gij*cos(theta) + bij*sin(theta));
           }
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret1),0.0);
@@ -1677,8 +1680,11 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
-            ret2 = - v1*v1* (p_reactance[j] + p_shunt_admt_b1[j])
-              - v1*v2*(p_resistance[j]*sin(theta) - p_reactance[j]*cos(theta));
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            ret = 1.0/ret;
+            double gij=real(ret);
+            double bij=imag(ret);
+            ret2 = - v1*v1* (bij + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
           }
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret2),0.0);
@@ -1688,10 +1694,12 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
-            ret1 =  v1*v1* (p_resistance[j] + p_shunt_admt_g1[j])
-              - v1*v2*(p_resistance[j]*cos(theta) + p_reactance[j]*sin(theta));
-            ret2 = -v1*v1* (p_reactance[j] + p_shunt_admt_b1[j])
-              - v1*v2*(p_resistance[j]*sin(theta) - p_reactance[j]*cos(theta));
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            ret = 1.0/ret;
+            double gij=real(ret);
+            double bij=imag(ret);
+            ret1 =  v1*v1* (gij + p_shunt_admt_g1[j]) - v1*v2*(gij*cos(theta) + bij*sin(theta));
+            ret2 = - v1*v1* (bij + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
           }
         }
         ret = sqrt(ret1*ret1+ret2*ret2)/v1;
