@@ -53,4 +53,22 @@
     <Value>-0.110</Value>
     <Deviation>0.0150</Deviation>
   </Measurement>
+  <Measurement>
+    <Type>QI</Type>
+    <Bus>1</Bus>
+    <Value>0.08</Value>
+    <Deviation>0.0150</Deviation>
+  </Measurement>
+  <Measurement>
+    <Type>QI</Type>
+    <Bus>2</Bus>
+    <Value>0.15</Value>
+    <Deviation>0.0150</Deviation>
+  </Measurement>
+  <Measurement>
+    <Type>QI</Type>
+    <Bus>3</Bus>
+    <Value>-0.1</Value>
+    <Deviation>0.0150</Deviation>
+  </Measurement>
 </Measurements>
