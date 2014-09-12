@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2014-01-31 11:31:33 d3g096
+ * @date   2014-09-12 13:44:08 d3g096
  * 
  * @brief  
  * 
@@ -64,7 +64,7 @@ PETScVectorImplementation::PETScVectorImplementation(const parallel::Communicato
     p_minIndex = lo;
     p_maxIndex = hi;
 
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -98,7 +98,7 @@ PETScVectorImplementation::PETScVectorImplementation(Vec& pVec, const bool& copy
     p_minIndex = lo;
     p_maxIndex = hi;
 
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -134,7 +134,7 @@ PETScVectorImplementation::p_size(void) const
     PetscInt gsize;
     ierr = VecGetSize(this->p_vector, &gsize); CHKERRXX(ierr);
     return static_cast<int>(gsize);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -150,7 +150,7 @@ PETScVectorImplementation::p_localSize(void) const
     PetscInt gsize;
     ierr = VecGetLocalSize(this->p_vector, &gsize); CHKERRXX(ierr);
     return static_cast<int>(gsize);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -180,7 +180,7 @@ PETScVectorImplementation::p_setElement(const int& i, const ComplexType& x)
   PetscErrorCode ierr;
   try {
     ierr = VecSetValue(p_vector, i, x, INSERT_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -194,7 +194,7 @@ PETScVectorImplementation::p_setElements(const int& n, const int *i, const Compl
   PetscErrorCode ierr;
   try {
     ierr = VecSetValues(p_vector, n, i, x, INSERT_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -208,7 +208,7 @@ PETScVectorImplementation::p_addElement(const int& i, const ComplexType& x)
   PetscErrorCode ierr;
   try {
     ierr = VecSetValue(p_vector, i, x, ADD_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -222,7 +222,7 @@ PETScVectorImplementation::p_addElements(const int& n, const int *i, const Compl
   PetscErrorCode ierr;
   try {
     ierr = VecSetValues(p_vector, n, i, x, ADD_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -246,7 +246,7 @@ PETScVectorImplementation::p_getElements(const int& n, const int *i, ComplexType
   PetscErrorCode ierr;
   try {
     ierr = VecGetValues(p_vector, n, i, x); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -271,7 +271,7 @@ PETScVectorImplementation::p_getAllElements(ComplexType *x) const
     ierr = VecRestoreArrayRead(all, &tmp); CHKERRXX(ierr);
     ierr = VecScatterDestroy(&scatter); CHKERRXX(ierr);
     ierr = VecDestroy(&all); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -296,7 +296,7 @@ PETScVectorImplementation::p_fill(const ComplexType& v)
   try {
     PetscScalar pv(v);
     ierr = VecSet(this->p_vector, pv); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }  
@@ -313,7 +313,7 @@ PETScVectorImplementation::p_norm(const NormType& t) const
     PetscReal v;
     ierr = VecNorm(this->p_vector, t, &v); CHKERRXX(ierr);
     result = v;
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
@@ -357,7 +357,7 @@ PETScVectorImplementation::p_abs(void)
   PetscErrorCode ierr(0);
   try {
     ierr = VecAbs(this->p_vector); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -372,7 +372,7 @@ PETScVectorImplementation::p_conjugate(void)
   PetscErrorCode ierr(0);
   try {
     ierr = VecConjugate(this->p_vector); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -389,7 +389,7 @@ PETScVectorImplementation::p_ready(void)
   try {
     ierr = VecAssemblyBegin(p_vector); CHKERRXX(ierr);
     ierr = VecAssemblyEnd(p_vector); 
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 
@@ -434,7 +434,7 @@ VectorImplementation *
 
   try {
     ierr = VecCopy(this->p_vector, *to_vec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;

@@ -8,7 +8,7 @@
 /**
  * @file   math.cpp
  * @author William A. Perkins
- * @date   2014-01-15 10:06:10 d3g096
+ * @date   2014-09-12 13:42:29 d3g096
  * 
  * @brief  
  * 
@@ -54,7 +54,7 @@ Initialize(void)
     ierr = PetscOptionsInsertFile(PETSC_COMM_WORLD,
                                   "gridpack.petscrc",
                                   PETSC_FALSE); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   // Print out some information on processor configuration
@@ -76,7 +76,7 @@ Initialized(void)
   PetscBool result;
   try {
     ierr = PetscInitialized(&result); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
@@ -93,7 +93,7 @@ Finalize(void)
   PetscErrorCode ierr(0);
   try {
     ierr = PetscFinalize(); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }

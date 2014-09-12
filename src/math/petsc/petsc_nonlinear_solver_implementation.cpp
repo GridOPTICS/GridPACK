@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-03-19 08:42:47 d3g096
+ * @date   2014-09-12 14:05:59 d3g096
  * 
  * @brief  
  * 
@@ -105,13 +105,15 @@ PetscNonlinearSolverImplementation::p_build(const std::string& option_prefix)
     p_petsc_F = PETScVector(*p_F);
 
     if (!p_function.empty()) {
-      ierr = SNESSetFunction(p_snes, *p_petsc_F, FormFunction, this); CHKERRXX(ierr);
+      ierr = SNESSetFunction(p_snes, *p_petsc_F, FormFunction, 
+                             static_cast<void *>(this)); CHKERRXX(ierr);
     }
 
     p_petsc_J = PETScMatrix(*p_J);
     
     if (!p_jacobian.empty()) {
-      ierr = SNESSetJacobian(p_snes, *p_petsc_J, *p_petsc_J, FormJacobian, this); CHKERRXX(ierr);
+      ierr = SNESSetJacobian(p_snes, *p_petsc_J, *p_petsc_J, FormJacobian, 
+                             static_cast<void *>(this)); CHKERRXX(ierr);
     }
 
     // set the 
@@ -135,7 +137,7 @@ PetscNonlinearSolverImplementation::p_build(const std::string& option_prefix)
                              
     ierr = SNESSetFromOptions(p_snes); CHKERRXX(ierr);
     
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -153,9 +155,14 @@ PetscNonlinearSolverImplementation::p_configure(utility::Configuration::CursorPt
 // -------------------------------------------------------------
 // PetscNonlinearSolverImplementation::FormJacobian
 // -------------------------------------------------------------
+
+#if PETSC_VERSION_LT(3,5,0)
+
 PetscErrorCode 
-PetscNonlinearSolverImplementation::FormJacobian(SNES snes, Vec x, Mat *jac, Mat *B, 
-                                                 MatStructure *flag, void *dummy)
+PetscNonlinearSolverImplementation::FormJacobian(SNES snes, Vec x, 
+                                                 Mat *jac, Mat *B, 
+                                                 MatStructure *flag, 
+                                                 void *dummy)
 {
   PetscErrorCode ierr(0);
 
@@ -183,6 +190,38 @@ PetscNonlinearSolverImplementation::FormJacobian(SNES snes, Vec x, Mat *jac, Mat
   return ierr;
 }
 
+#else
+
+PetscErrorCode 
+PetscNonlinearSolverImplementation::FormJacobian(SNES snes, Vec x, 
+                                                 Mat jac, Mat B, 
+                                                 void *dummy)
+{
+  PetscErrorCode ierr(0);
+
+  // Necessary C cast
+  PetscNonlinearSolverImplementation *solver =
+    (PetscNonlinearSolverImplementation *)dummy;
+
+  // Copy PETSc's current estimate into 
+
+  // Should be the case, but just make sure
+  BOOST_ASSERT(jac == solver->p_petsc_J);
+  BOOST_ASSERT(B == solver->p_petsc_J);
+
+  // Not sure about this
+  BOOST_ASSERT(x == *(solver->p_petsc_X));
+
+  // May need to do this, which seems slow.
+  // ierr = VecCopy(x, *(solver->p_petsc_X)); CHKERRQ(ierr);
+
+  // Call the user-specified function (object) to form the Jacobian
+  (solver->p_jacobian)(*(solver->p_X), *(solver->p_J));
+
+  return ierr;
+}
+
+#endif
 
 // -------------------------------------------------------------
 // PetscNonlinearSolverImplementation::FormFunction
@@ -246,7 +285,7 @@ PetscNonlinearSolverImplementation::p_solve(void)
                    me % iter % reason);
       std::cerr << msg << std::endl;
     }
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   } catch (const Exception& e) {
     throw e;

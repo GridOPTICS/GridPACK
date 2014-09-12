@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-03-19 09:35:43 d3g096
+ * @date   2014-09-12 14:43:12 d3g096
  * 
  * @brief  
  * 
@@ -69,10 +69,21 @@ protected:
   void p_solve(double& maxtime,
                int& maxsteps);
 
+#if PETSC_VERSION_LT(3,5,0)
+
   /// Routine to assemble Jacobian that is sent to PETSc
   static PetscErrorCode FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
                                       PetscReal a, Mat *jac, Mat *B, 
                                       MatStructure *flag, void *dummy);
+
+#else
+
+  /// Routine to assemble Jacobian that is sent to PETSc
+  static PetscErrorCode FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot, 
+                                      PetscReal a, Mat jac, Mat B, 
+                                      void *dummy);
+
+#endif
 
   /// Routine to assemble RHS that is sent to PETSc
   static PetscErrorCode FormIFunction(TS ts, PetscReal t, Vec x, Vec xdot, 

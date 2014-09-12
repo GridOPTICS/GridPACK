@@ -8,7 +8,7 @@
 /**
  * @file   petsc_exception.cpp
  * @author William A. Perkins
- * @date   2013-10-09 13:23:30 d3g096
+ * @date   2014-09-12 13:40:09 d3g096
  * 
  * @brief  Implementation of PETScException
  * 
@@ -17,7 +17,7 @@
 // -------------------------------------------------------------
 
 #include <sstream>
-#include "gridpack/math/petsc/petsc_exception.hpp"
+#include "petsc_exception.hpp"
 
 namespace gridpack {
 namespace math {
@@ -40,19 +40,32 @@ PETScException::PETScException(const PetscErrorCode ierr)
   message_ = msg.str();
 }          
 
-PETScException::PETScException(const PETSc::Exception& e)
+PETScException::PETScException(const PETSC_EXCEPTION_TYPE& e)
   : gridpack::Exception(), petsc_err_(0)
 {
   std::ostringstream msg;
-  msg << "PETSc error: " << e.msg();
+
+  msg << "PETSc error: " 
+#if PETSC_VERSION_LT(3,5,0)
+      << e.msg()
+#else
+      << e.what()
+#endif
+    ;
   message_ = msg.str();
 }          
 
-PETScException::PETScException(const PetscErrorCode& ierr, const PETSc::Exception& e)
+PETScException::PETScException(const PetscErrorCode& ierr, const PETSC_EXCEPTION_TYPE& e)
   : gridpack::Exception(), petsc_err_(0)
 {
   std::ostringstream msg;
-  msg << "PETSc error (" << petsc_err_ << "): " << e.msg();
+  msg << "PETSc error (" << petsc_err_ << "): " 
+#if PETSC_VERSION_LT(3,5,0)
+      << e.msg()
+#else
+      << e.what()
+#endif
+    ;
   message_ = msg.str();
 }          
 

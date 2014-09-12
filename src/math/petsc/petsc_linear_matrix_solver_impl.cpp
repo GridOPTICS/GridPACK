@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2014-03-19 08:32:38 d3g096
+ * @date   2014-09-12 13:43:14 d3g096
  * 
  * @brief  
  * 
@@ -208,7 +208,7 @@ PetscLinearMatrixSolverImplementation::p_factor(void) const
     ierr = ISDestroy(&perm); CHKERRXX(ierr);
     ierr = ISDestroy(&iperm); CHKERRXX(ierr);
 
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   p_factored = true;
@@ -232,7 +232,7 @@ PetscLinearMatrixSolverImplementation::p_solve(const Matrix& B) const
     }
     ierr = MatDuplicate(*Bmat, MAT_DO_NOT_COPY_VALUES, &X); CHKERRXX(ierr);
     ierr = MatMatSolve(p_Fmat, *Bmat, X); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 
@@ -242,7 +242,7 @@ PetscLinearMatrixSolverImplementation::p_solve(const Matrix& B) const
 
   try {
     ierr = MatDestroy(&X); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 

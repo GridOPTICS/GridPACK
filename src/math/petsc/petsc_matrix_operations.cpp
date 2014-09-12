@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-02-20 08:32:07 d3g096
+ * @date   2014-09-12 13:49:28 d3g096
  * 
  * @brief  
  * 
@@ -53,7 +53,7 @@ transpose(const Matrix& A, Matrix& result)
     PetscErrorCode ierr(0);
     try {
       ierr = MatTranspose(*pA, MAT_REUSE_MATRIX, pAtrans); CHKERRXX(ierr);
-    } catch (const PETSc::Exception& e) {
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
   } else {
@@ -175,7 +175,7 @@ transpose(const Matrix& A)
 #else
     ierr = MatTranspose(*pA, MAT_INITIAL_MATRIX, &pAtrans); CHKERRXX(ierr);
 #endif
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   PETScMatrixImplementation *result_impl = 
@@ -198,7 +198,7 @@ transposeMultiply(const Matrix& A, const Vector& x, Vector& result)
   PetscErrorCode ierr(0);
   try {
     ierr = MatMultTranspose(*Amat, *Xvec, *Yvec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -223,7 +223,7 @@ column(const Matrix& A, const int& cidx, Vector& result)
   PetscErrorCode ierr(0);
   try {
     ierr = MatGetColumnVector(*pA, *pX, cidx); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }  
@@ -252,7 +252,7 @@ diagonal(const Matrix& A, Vector& result)
   PetscErrorCode ierr(0);
   try {
     ierr = MatGetDiagonal(*pA, *pX); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }  
@@ -266,7 +266,7 @@ diagonal(const Vector& x, const Matrix::StorageType& stype)
   PetscErrorCode ierr(0);
   try {
     ierr = MatDiagonalSet(*pA, *pX, INSERT_VALUES); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
@@ -295,7 +295,7 @@ multiply(const Matrix& A, const Vector& x, Vector& result)
     ierr = VecGetOwnershipRange(*Yvec,&plo,&phi);
     ierr = VecGetSize(*Yvec,&plo);
     ierr = MatMult(*Amat, *Xvec, *Yvec); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -311,7 +311,7 @@ multiply(const Matrix& A, const Matrix& B, Matrix& result)
   try {
     ierr = MatDestroy(Cmat); CHKERRXX(ierr);
     ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
@@ -326,7 +326,7 @@ multiply(const Matrix& A, const Matrix& B)
   PetscErrorCode ierr(0);
   try {
     ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
-  } catch (const PETSc::Exception& e) {
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 
@@ -369,7 +369,7 @@ storageType(const Matrix& A, const Matrix::StorageType& new_type)
     PetscErrorCode ierr(0);
     try {
       ierr = MatConvert(*mat, new_mat_type, MAT_REUSE_MATRIX, mat); CHKERRXX(ierr);
-    } catch (const PETSc::Exception& e) {
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
   }
