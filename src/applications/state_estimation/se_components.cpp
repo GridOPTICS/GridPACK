@@ -820,15 +820,19 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
     int ncnt = 0;
     int i, j, im, jm, nsize;
     double v, theta,yfbusr,yfbusi;
+
     vectorGetElementIndices(idx);
     for (i=0; i<nmeas; i++) {
-       if (p_meas[i].p_type == "VM") {
+       std::string type = p_meas[i].p_type;
+       printf("bus = %d, type =%s\n",getOriginalIndex(), type.c_str());
+       //printf("bus = %d, type =%s\n",getOriginalIndex(), p_meas[i].p_type);
+       if (type == "VM") {
          int index = getGlobalIndex();
 //         values[ncnt] = static_cast<double>(index),meas[i].p_value-p_v; 
 //         values[ncnt] = p_meas[i].p_value-p_v; 
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-p_v),0.0);
          ncnt++;
-       } else if (p_meas[i].p_type == "PI") {
+       } else if (type == "PI") {
          std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
          getNeighborBranches(branch_nghbrs);
          nsize = branch_nghbrs.size();
@@ -849,7 +853,7 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
 //         values[ncnt] = p_meas[i].p_value-ret;
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
          ncnt++;
-       } else if (p_meas[i].p_type == "QI") {
+       } else if (type == "QI") {
          std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
          getNeighborBranches(branch_nghbrs);
          nsize = branch_nghbrs.size();
@@ -870,7 +874,7 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
 //         values[ncnt] = p_meas[i].p_value-ret;
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
          ncnt++;
-      } else if (p_meas[i].p_type == "VA") {
+      } else if (type == "VA") {
          int index = getGlobalIndex();
 //         values[ncnt] = static_cast<double>(index),p_meas[i].p_value-p_a; 
 //         values[ncnt] = p_meas[i].p_value-p_a; 
@@ -1654,14 +1658,19 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
     int nmeas = p_meas.size(); // Suppose p_meas is the vector of all the measurements on this branch
     int ncnt = 0;
     int i, j, im, jm, nsize;
-    double ret, ret1, ret2;
-    double v1,v2,theta;
+    double ret1=0.0;
+    double ret2=0.0;
+    double ret3=0.0;
+    double v1=0.0;
+    double v2=0.0;
+    double theta=0.0;
     vectorGetElementIndices(idx);
     v1 = bus1->getVoltage();
     v2 = bus2->getVoltage();
     theta = bus1->getPhase() - bus2->getPhase();  
     for (i=0; i<nmeas; i++) {
-      if (p_meas[i].p_type == "PIJ") {
+      std::string type = p_meas[i].p_type;
+      if (type == "PIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
@@ -1673,10 +1682,8 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
           }
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret1),0.0);
-        //         values] = gridpack::ComplexType(static_cast<double>(idx1+idx2),0.0);
-        //         values[ncnt] = p_meas[i].p_value-ret1;
         ncnt++;
-      } else if (p_meas[i].p_type == "QIJ") {
+      } else if (type == "QIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
@@ -1688,9 +1695,8 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
           }
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret2),0.0);
-        //         values[ncnt] = p_meas[i].p_value-ret2;
         ncnt++;
-      } else if (p_meas[i].p_type == "IIJ") {
+      } else if (type == "IIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
@@ -1702,9 +1708,9 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
             ret2 = - v1*v1* (bij + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
           }
         }
-        ret = sqrt(ret1*ret1+ret2*ret2)/v1;
+        ret3 = sqrt(ret1*ret1+ret2*ret2)/v1;
         //         values[ncnt] = p_meas[i].p_value-ret;
-        values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
+        values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret3),0.0);
         ncnt++;
       }
     } 

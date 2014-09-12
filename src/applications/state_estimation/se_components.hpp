@@ -25,7 +25,7 @@
 namespace gridpack {
 namespace state_estimation{
 
-enum SEMode{YBus,Jacobian_H, R_inv};
+enum SEMode{YBus,Jacobian_H, R_inv, Ez};
 
 struct Measurement
 {

@@ -204,7 +204,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   printf("Created HJacMap\n");
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
-  HJac->print();
+
   printf("reading done 2\n");
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
@@ -225,55 +225,56 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     
     // Form estimation vector
-  printf("reading 5\n");
+    printf("Got to HJac\n");
     HJacMap.mapToMatrix(HJac);
-    printf("Got to 1\n");
+    HJac->print();
+    printf("Got to H'\n");
 
     // Form H'
     boost::shared_ptr<gridpack::math::Matrix> trans_HJac(transpose(*HJac));
-    printf("Got to 2\n");
+    trans_HJac->print();
+    printf("Got to Ez\n");
 
     // Build measurement equation
     EzMap.mapToVector(Ez);
-    printf("Got to 3\n");
+    Ez->print();
+    printf("Got to R_inv\n");
 
     factory.setMode(R_inv);
     gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(network);
     boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
-    printf("Got to 4\n");
+    Rinv->print();
+    printf("Got to Gain\n");
 
     // Form Gain matrix
     boost::shared_ptr<gridpack::math::Matrix> Gain1(multiply(*trans_HJac, *Rinv));
     boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*Gain1, *HJac));
     Gain->print();
-    printf("Got to 5\n");
+    printf("Got to H'*Rinv\n");
 
     // Form right hand side vector
     boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac,*Rinv));
-    printf("Got to 6\n");
-
-    printf("HTR\n");
     HTR->print();
-    printf("EZ\n");
-    Ez->print();
+    printf("Got to RHS\n");
+
     boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
-    printf("Got to 7\n");
+    printf("Got to Solver\n");
 
     // create a linear solver
     gridpack::math::LinearSolver solver(*Gain);
     solver.configure(cursor);
-    printf("Got to 8\n");
+    printf("Got to DeltaX\n");
 
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
     solver.solve(*RHS, *X);
-    printf("Got to 9\n");
+    printf("Got to updateBus\n");
 //    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
 
   
     // update values
     network->updateBuses();
-    printf("Got to 10\n");
+    printf("Last sentence\n");
 
 
   // End N-R loop
