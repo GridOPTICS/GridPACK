@@ -16,7 +16,7 @@ struct networkWrapper {
 /**
  * Create a new factory
  * @param factory pointer to Fortran factory object
- * @param newtork pointer to Fortran network object
+ * @param network pointer to Fortran network object
  */
 extern "C" void factory_create(FortranFactory **factory,
     networkWrapper *wnetwork)
