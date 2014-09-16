@@ -824,7 +824,7 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
     vectorGetElementIndices(idx);
     for (i=0; i<nmeas; i++) {
        std::string type = p_meas[i].p_type;
-       printf("bus = %d, type =%s\n",getOriginalIndex(), type.c_str());
+       printf("bus = %d, type =(%s)\n",getOriginalIndex(), type.c_str());
        //printf("bus = %d, type =%s\n",getOriginalIndex(), p_meas[i].p_type);
        if (type == "VM") {
          int index = getGlobalIndex();
@@ -836,13 +836,13 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
          std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
          getNeighborBranches(branch_nghbrs);
          nsize = branch_nghbrs.size();
-         gridpack::state_estimation::SEBranch *branch
-           = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[i].get());
-         ComplexType yfbus=branch->getForwardYBus();
-         yfbusr = real (yfbus);
-         yfbusi = imag (yfbus);
          double ret=0.0;
          for (j=0; j<nsize; j++) {
+           gridpack::state_estimation::SEBranch *branch
+             = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[j].get());
+           ComplexType yfbus=branch->getForwardYBus();
+           yfbusr = real (yfbus);
+           yfbusi = imag (yfbus);
            branch->getVTheta(this, &v, &theta);
            ret +=  v * (yfbusr*cos(theta) + yfbusi*sin(theta));
            ncnt++;
@@ -857,13 +857,13 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
          std::vector<boost::shared_ptr<BaseComponent> > branch_nghbrs;
          getNeighborBranches(branch_nghbrs);
          nsize = branch_nghbrs.size();
-         gridpack::state_estimation::SEBranch *branch
-           = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[i].get());
-         ComplexType yfbus=branch->getForwardYBus();
-         yfbusr = real (yfbus);
-         yfbusi = imag (yfbus);
          double ret=0.0;
          for (j=0; j<nsize; j++) {
+           gridpack::state_estimation::SEBranch *branch
+             = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[j].get());
+           ComplexType yfbus=branch->getForwardYBus();
+           yfbusr = real (yfbus);
+           yfbusi = imag (yfbus);
            branch->getVTheta(this,&v,&theta);
            ret +=  v * (yfbusr*sin(theta) - yfbusi*cos(theta));
            ncnt++;
