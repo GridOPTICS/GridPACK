@@ -360,7 +360,7 @@ module gridpack_component
   logical function bus_matrix_diag_size(bus, isize, jsize)
     implicit none
     class(bus_component), intent(in) :: bus
-    integer isize, jsize
+    integer, intent(out) :: isize, jsize
     isize = 1
     jsize = 1
     bus_matrix_diag_size = .true.
