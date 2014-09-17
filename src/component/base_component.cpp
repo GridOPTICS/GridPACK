@@ -55,7 +55,7 @@ bool MatVecInterface::matrixDiagSize( int *isize,
 }
 
 /**
- * Return the values of for a diagonal matrix block. The values are
+ * Return the values for a diagonal matrix block. The values are
  * returned in row-major order.
  * @param values pointer to matrix block values
  * @return false if network component does not contribute
@@ -83,7 +83,7 @@ bool MatVecInterface::matrixForwardSize(int *isize,
 }
 
 /**
- * Return the values of for an off-diagonl matrix block. The values are
+ * Return the values for an off-diagonl matrix block. The values are
  * for the forward direction and are returned in row-major order.
  * @param values pointer to matrix block values
  * @return false if network component does not contribute
@@ -111,7 +111,7 @@ bool MatVecInterface::matrixReverseSize(int *isize,
 }
 
 /**
- * Return the values of for an off-diagonl matrix block. The values are
+ * Return the values for an off-diagonl matrix block. The values are
  * for the reverse direction and are returned in row-major order.
  * @param values pointer to matrix block values
  * @return false if network component does not contribute
@@ -255,23 +255,23 @@ void GenMatVecInterface::matrixSetColIndex(int icol, int idx)
 }
 
 /**
- * Get the row index corresponding to the rows contributed by this component
+ * Get the row indices corresponding to the rows contributed by this component
  * @param irow index of row contributed by this component (e.g. if component
  * contributes 3 rows then irow is between 0 and 2)
  * @return matrix index of row irow
  */
-int GenMatVecInterface::matrixGetRowIndex(int idx)
+int GenMatVecInterface::matrixGetRowIndex(int irow)
 {
   return -1;
 }
 
 /**
- * Get the column index corresponding to the columns contributed by this component
+ * Get the column indices corresponding to the columns contributed by this component
  * @param icol index of column contributed by this component (e.g. if component
  * contributes 3 columns then icol is between 0 and 2)
  * @return matrix index of column icol
  */
-int GenMatVecInterface::matrixGetColIndex(int idx)
+int GenMatVecInterface::matrixGetColIndex(int icol)
 {
   return -1;
 }
@@ -400,7 +400,7 @@ void BaseComponent::setXCBuf(void *buf)
 }
 
 /**
- * Return the location of the data exchange buffer.
+ * Return the location of the data exchange buffer
  * @param buf void pointer to exchange buffer
  */
 void BaseComponent::getXCBuf(void **buf)
@@ -467,9 +467,8 @@ void
 BaseBusComponent::addBranch(const
   boost::shared_ptr<BaseComponent> & branch)
 {
-//  boost::weak_ptr<BaseComponent> tbranch(branch);
-//  p_branches.push_back(tbranch);
-  p_branches.push_back(branch);
+  boost::weak_ptr<BaseComponent> tbranch(branch);
+  p_branches.push_back(tbranch);
 }
 
 /**
@@ -481,9 +480,8 @@ void
 BaseBusComponent::addBus(const
   boost::shared_ptr<BaseComponent> & bus)
 {
-//  boost::weak_ptr<BaseComponent> tbus(bus);
-//  p_buses.push_back(tbus);
-  p_buses.push_back(bus);
+  boost::weak_ptr<BaseComponent> tbus(bus);
+  p_buses.push_back(tbus);
 }
 
 /**
@@ -497,8 +495,7 @@ void BaseBusComponent::getNeighborBranches(
   int i;
   int size = p_branches.size();
   for (i=0; i<size; i++) {
-//    boost::shared_ptr<BaseComponent> branch = p_branches[i].lock();
-    boost::shared_ptr<BaseComponent> branch = p_branches[i];
+    boost::shared_ptr<BaseComponent> branch = p_branches[i].lock();
     nghbrs.push_back(branch);
   }
 }
@@ -514,8 +511,7 @@ void BaseBusComponent::getNeighborBuses(
   int i;
   int size = p_buses.size();
   for (i=0; i<size; i++) {
-//    boost::shared_ptr<BaseComponent> bus = p_buses[i].lock();
-    boost::shared_ptr<BaseComponent> bus = p_buses[i];
+    boost::shared_ptr<BaseComponent> bus = p_buses[i].lock();
     nghbrs.push_back(bus);
   }
 }
@@ -614,8 +610,7 @@ BaseBranchComponent::~BaseBranchComponent(void)
 void BaseBranchComponent::setBus1(const
   boost::shared_ptr<BaseComponent> & bus)
 {
-//  p_bus1 = boost::weak_ptr<BaseComponent>(bus);
-  p_bus1 = boost::shared_ptr<BaseComponent>(bus);
+  p_bus1 = boost::weak_ptr<BaseComponent>(bus);
 }
 
 /**
@@ -625,8 +620,7 @@ void BaseBranchComponent::setBus1(const
 void BaseBranchComponent::setBus2(const
   boost::shared_ptr<BaseComponent> & bus)
 {
-//  p_bus2 = boost::weak_ptr<BaseComponent>(bus);
-  p_bus2 = boost::shared_ptr<BaseComponent>(bus);
+  p_bus2 = boost::weak_ptr<BaseComponent>(bus);
 }
 
 /**

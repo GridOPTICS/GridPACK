@@ -824,7 +824,6 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
     vectorGetElementIndices(idx);
     for (i=0; i<nmeas; i++) {
        std::string type = p_meas[i].p_type;
-       printf("bus = %d, type =(%s)\n",getOriginalIndex(), type.c_str());
        //printf("bus = %d, type =%s\n",getOriginalIndex(), p_meas[i].p_type);
        if (type == "VM") {
          int index = getGlobalIndex();
@@ -845,7 +844,6 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
            yfbusi = imag (yfbus);
            branch->getVTheta(this, &v, &theta);
            ret +=  v * (yfbusr*cos(theta) + yfbusi*sin(theta));
-           ncnt++;
          }
          ret *= p_v; 
          int index = getGlobalIndex();
@@ -866,7 +864,6 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
            yfbusi = imag (yfbus);
            branch->getVTheta(this,&v,&theta);
            ret +=  v * (yfbusr*sin(theta) - yfbusi*cos(theta));
-           ncnt++;
          }
          ret *= p_v; 
          int index = getGlobalIndex();
