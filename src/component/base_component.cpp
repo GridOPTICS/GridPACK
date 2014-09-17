@@ -400,6 +400,15 @@ void BaseComponent::setXCBuf(void *buf)
 }
 
 /**
+ * Return the location of the data exchange buffer.
+ * @param buf void pointer to exchange buffer
+ */
+void BaseComponent::getXCBuf(void **buf)
+{
+  *buf = NULL;
+}
+
+/**
  * Set an internal variable that can be used to control the behavior of the
  * component. This function doesn't need to be implemented, but if needed,
  * it can be used to change the behavior of the network in different phases
@@ -458,8 +467,9 @@ void
 BaseBusComponent::addBranch(const
   boost::shared_ptr<BaseComponent> & branch)
 {
-  boost::weak_ptr<BaseComponent> tbranch(branch);
-  p_branches.push_back(tbranch);
+//  boost::weak_ptr<BaseComponent> tbranch(branch);
+//  p_branches.push_back(tbranch);
+  p_branches.push_back(branch);
 }
 
 /**
@@ -471,8 +481,9 @@ void
 BaseBusComponent::addBus(const
   boost::shared_ptr<BaseComponent> & bus)
 {
-  boost::weak_ptr<BaseComponent> tbus(bus);
-  p_buses.push_back(tbus);
+//  boost::weak_ptr<BaseComponent> tbus(bus);
+//  p_buses.push_back(tbus);
+  p_buses.push_back(bus);
 }
 
 /**
@@ -486,7 +497,8 @@ void BaseBusComponent::getNeighborBranches(
   int i;
   int size = p_branches.size();
   for (i=0; i<size; i++) {
-    boost::shared_ptr<BaseComponent> branch = p_branches[i].lock();
+//    boost::shared_ptr<BaseComponent> branch = p_branches[i].lock();
+    boost::shared_ptr<BaseComponent> branch = p_branches[i];
     nghbrs.push_back(branch);
   }
 }
@@ -502,7 +514,8 @@ void BaseBusComponent::getNeighborBuses(
   int i;
   int size = p_buses.size();
   for (i=0; i<size; i++) {
-    boost::shared_ptr<BaseComponent> bus = p_buses[i].lock();
+//    boost::shared_ptr<BaseComponent> bus = p_buses[i].lock();
+    boost::shared_ptr<BaseComponent> bus = p_buses[i];
     nghbrs.push_back(bus);
   }
 }
@@ -601,7 +614,8 @@ BaseBranchComponent::~BaseBranchComponent(void)
 void BaseBranchComponent::setBus1(const
   boost::shared_ptr<BaseComponent> & bus)
 {
-  p_bus1 = boost::weak_ptr<BaseComponent>(bus);
+//  p_bus1 = boost::weak_ptr<BaseComponent>(bus);
+  p_bus1 = boost::shared_ptr<BaseComponent>(bus);
 }
 
 /**
@@ -611,7 +625,8 @@ void BaseBranchComponent::setBus1(const
 void BaseBranchComponent::setBus2(const
   boost::shared_ptr<BaseComponent> & bus)
 {
-  p_bus2 = boost::weak_ptr<BaseComponent>(bus);
+//  p_bus2 = boost::weak_ptr<BaseComponent>(bus);
+  p_bus2 = boost::shared_ptr<BaseComponent>(bus);
 }
 
 /**

@@ -57,7 +57,7 @@ class MatVecInterface {
     virtual bool matrixDiagSize(int *isize, int *jsize) const;
 
     /**
-     * Return the values of for a diagonal matrix block. The values are
+     * Return the values for a diagonal matrix block. The values are
      * returned in row-major order.
      * @param values pointer to matrix block values
      * @return false if network component does not contribute
@@ -76,7 +76,7 @@ class MatVecInterface {
     virtual bool matrixForwardSize(int *isize, int *jsize) const;
 
     /**
-     * Return the values of for an off-diagonl matrix block. The values are
+     * Return the values of an off-diagonl matrix block. The values are
      * for the forward direction and are returned in row-major order.
      * @param values pointer to matrix block values
      * @return false if network component does not contribute
@@ -95,7 +95,7 @@ class MatVecInterface {
     virtual bool matrixReverseSize(int *isize, int *jsize) const;
 
     /**
-     * Return the values of for an off-diagonl matrix block. The values are
+     * Return the values for an off-diagonl matrix block. The values are
      * for the reverse direction and are returned in row-major order.
      * @param values pointer to matrix block values
      * @return false if network component does not contribute
@@ -223,20 +223,20 @@ class GenMatVecInterface {
     virtual void matrixSetColIndex(int icol, int idx);
 
     /**
-     * Get the row index corresponding to the rows contributed by this component
+     * Get the row index for the rows contributed by this component
      * @param irow index of row contributed by this component (e.g. if component
      * contributes 3 rows then irow is between 0 and 2)
      * @return matrix index of row irow
      */
-    virtual int matrixGetRowIndex(int idx);
+    virtual int matrixGetRowIndex(int irow);
 
     /**
-     * Get the column index corresponding to the columns contributed by this component
+     * Get the column index for the columns contributed by this component
      * @param icol index of column contributed by this component (e.g. if component
      * contributes 3 columns then icol is between 0 and 2)
      * @return matrix index of column icol
      */
-    virtual int matrixGetColIndex(int idx);
+    virtual int matrixGetColIndex(int icol);
 
     /**
      * Return the number of matrix values contributed by this component
@@ -254,7 +254,7 @@ class GenMatVecInterface {
     virtual void matrixGetValues(ComplexType *values, int *rows, int*cols);
 
     /**
-     * Return number of elements in vector from component
+     * Return number of elements in vector coming from component
      * @return number of elements contributed from component
      */
     virtual int vectorNumElements() const;
@@ -344,6 +344,12 @@ class BaseComponent
      * @param buf void pointer to exchange buffer
      */
     virtual void setXCBuf(void *buf);
+
+    /**
+     * Return the location of the data exchange buffer.
+     * @param buf void pointer to exchange buffer
+     */
+    virtual void getXCBuf(void **buf);
 
     /**
      * Set an internal variable that can be used to control the behavior of the
@@ -502,11 +508,13 @@ class BaseBusComponent
     /**
      * Branches that are connect to bus
      */
-    std::vector<boost::weak_ptr<BaseComponent> > p_branches;
+//    std::vector<boost::weak_ptr<BaseComponent> > p_branches;
+    std::vector<boost::shared_ptr<BaseComponent> > p_branches;
     /**
      * Buses that are connect to bus via a branch
      */
-    std::vector<boost::weak_ptr<BaseComponent> > p_buses;
+//    std::vector<boost::weak_ptr<BaseComponent> > p_buses;
+    std::vector<boost::shared_ptr<BaseComponent> > p_buses;
 
     /**
      * Is this a reference bus?
@@ -627,8 +635,10 @@ class BaseBranchComponent
     /**
      *  Pointers to buses at either end of branch
      */
-    boost::weak_ptr<BaseComponent> p_bus1;
-    boost::weak_ptr<BaseComponent> p_bus2;
+//    boost::weak_ptr<BaseComponent> p_bus1;
+//    boost::weak_ptr<BaseComponent> p_bus2;
+    boost::shared_ptr<BaseComponent> p_bus1;
+    boost::shared_ptr<BaseComponent> p_bus2;
 
     /**
      *  Original indices for bus 1 and bus 2 (assigned from input file)
