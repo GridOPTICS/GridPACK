@@ -11,21 +11,23 @@
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 
-add_library(gridpackf_network OBJECT
-  network_c.cpp
-  network_f.F90
-  test_component.F90
+add_library(gridpackf_mapper OBJECT
+  mapper_c.cpp
+  mapper_f.F90
 )
 
-add_executable(fortran_network_test
-  network_test.F90
-  $<TARGET_OBJECTS:gridpackf_network>
-  $<TARGET_OBJECTS:gridpackf_parallel>
-  $<TARGET_OBJECTS:gridpackf_component>
-)
+#add_dependencies( gridpackf_factory $<TARGET_OBJECTS:gridpackf_network> )
 
-target_link_libraries(fortran_network_test
-  ${MPI_Fortran_LIBRARIES}
-  ${GRIDPACK_LIBS}
-)
+#add_executable(fortran_factory_test
+#  factory_test.F90
+#  $<TARGET_OBJECTS:gridpackf_factory>
+#  $<TARGET_OBJECTS:gridpackf_network>
+#  $<TARGET_OBJECTS:gridpackf_parallel>
+#  $<TARGET_OBJECTS:gridpackf_component>
+#)
+
+#target_link_libraries(fortran_factory_test
+#  ${MPI_Fortran_LIBRARIES}
+#  ${GRIDPACK_LIBS}
+#)
 

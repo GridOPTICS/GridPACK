@@ -87,7 +87,7 @@ module gridpack_mapper
 ! @param mapper pointer to mapper
 ! @param matrix pointer to Fortran matrix object
 !
-    subroutine p_full_matrix_map_remap_to_matrix(mapper, matrix) binc(c)
+    subroutine p_full_matrix_map_remap_to_matrix(mapper, matrix) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(in) :: mapper
@@ -216,7 +216,7 @@ module gridpack_mapper
 ! @param mapper pointer to mapper
 ! @param matrix pointer to Fortran matrix object
 !
-    subroutine p_gen_matrix_map_remap_to_matrix(mapper, matrix) binc(c)
+    subroutine p_gen_matrix_map_remap_to_matrix(mapper, matrix) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(in) :: mapper
@@ -276,10 +276,11 @@ module gridpack_mapper
       type(C_PTR), intent(in) :: vector
     end subroutine p_gen_vector_map_map_to_bus
   end interface
+  contains
 !
 ! Create a full matrix map
 ! @param p_mapper pointer to Fortran full matrix map object
-! @param network pointer to Fortran network object
+! @param p_network pointer to Fortran network object
 !
   subroutine full_matrix_map_create(p_mapper, p_network)
     use, intrinsic :: iso_c_binding
@@ -287,7 +288,6 @@ module gridpack_mapper
     implicit none
     class(full_matrix_map), intent(inout) :: p_mapper
     class(network), intent(in) :: p_network
-    p_mapper%p_network => p_network
     call p_full_matrix_map_create(p_mapper%p_mapper, p_network%p_network)
     return
   end subroutine full_matrix_map_create
@@ -318,42 +318,42 @@ module gridpack_mapper
 !
 ! Update a matrix from the network
 ! @param p_mapper pointer to mapper
-! @param matrix pointer to Fortran matrix object
+! @param p_matrix pointer to Fortran matrix object
 !
   subroutine full_matrix_map_remap_to_matrix(p_mapper, p_matrix)
     use, intrinsic :: iso_c_binding
     implicit none
     class(full_matrix_map), intent(in) :: p_mapper
     class(matrix), intent(in) :: p_matrix
-    call p_full_matrix_map_remap_to_matrix(p_mapper%p_mapper,
+    call p_full_matrix_map_remap_to_matrix(p_mapper%p_mapper, &
       p_matrix%mat)
     return
   end subroutine full_matrix_map_remap_to_matrix
 !
 ! Overwrite selected elements of existing matrix.
 ! @param p_mapper pointer to mapper
-! @param matrix pointer to Fortran matrix object
+! @param p_matrix pointer to Fortran matrix object
 !
   subroutine full_matrix_map_overwrite_matrix(p_mapper, p_matrix)
     use, intrinsic :: iso_c_binding
     implicit none
     class(full_matrix_map), intent(in) :: p_mapper
     class(matrix), intent(in) :: p_matrix
-    call p_full_matrix_map_overwrite_matrix(p_mapper%p_mapper,
+    call p_full_matrix_map_overwrite_matrix(p_mapper%p_mapper, &
       p_matrix%mat)
     return
   end subroutine full_matrix_map_overwrite_matrix
 !
 ! Increment selected elements of existing matrix.
 ! @param p_mapper pointer to mapper
-! @param matrix pointer to Fortran matrix object
+! @param p_matrix pointer to Fortran matrix object
 !
   subroutine full_matrix_map_increment_matrix(p_mapper, p_matrix)
     use, intrinsic :: iso_c_binding
     implicit none
     class(full_matrix_map), intent(in) :: p_mapper
     class(matrix), intent(in) :: p_matrix
-    call p_full_matrix_map_increment_matrix(p_mapper%p_mapper,
+    call p_full_matrix_map_increment_matrix(p_mapper%p_mapper, &
       p_matrix%mat)
     return
   end subroutine full_matrix_map_increment_matrix
@@ -371,7 +371,7 @@ module gridpack_mapper
     class(full_matrix_map), intent(in) :: p_mapper
     logical(C_BOOL) ret
     ret = p_full_matrix_map_check(p_mapper%p_mapper)
-    check = ret
+    full_matrix_map_check = ret
     return
   end function full_matrix_map_check
 !
@@ -382,7 +382,7 @@ module gridpack_mapper
   subroutine bus_vector_map_create(p_mapper, p_network)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(full_matrix_map), intent(inout) :: p_mapper
+    class(bus_vector_map), intent(inout) :: p_mapper
     class(network), intent(in) :: p_network
     call p_bus_vector_map_create(p_mapper%p_mapper, p_network%p_network)
     return
@@ -391,10 +391,12 @@ module gridpack_mapper
 ! Destroy a bus vector map
 ! @param p_mapper pointer to Fortran bus vector map object
 !
-  subroutine bus_vector_map_destroy(mapper)
+  subroutine bus_vector_map_destroy(p_mapper)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(full_matrix_map), intent(inout) :: p_mapper
+    class(bus_vector_map), intent(inout) :: p_mapper
+    call p_bus_vector_map_destroy(p_mapper%p_mapper)
+    return
   end subroutine bus_vector_map_destroy
 !
 ! Create a vector from the current bus state
@@ -404,21 +406,21 @@ module gridpack_mapper
   function bus_vector_map_map_to_vector(p_mapper) result(fvector)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(full_matrix_map), intent(in) :: p_mapper
-    class(vector) :: fvector
-    fvector%mat = p_bus_vector_map_map_to_vector(p_mapper)
+    class(bus_vector_map), intent(in) :: p_mapper
+    type(vector) :: fvector
+    fvector%vec = p_bus_vector_map_map_to_vector(p_mapper%p_mapper)
     return
   end function bus_vector_map_map_to_vector
 !
 ! Reset a vector from the current bus state (vector should be created with the
 ! same mapper)
 ! @param p_mapper pointer to mapper
-! @param vector pointer to Fortran vector object
+! @param p_vector pointer to Fortran vector object
 !
   subroutine bus_vector_map_remap_to_vector(p_mapper, p_vector)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(full_matrix_map), intent(in) :: p_mapper
+    class(bus_vector_map), intent(in) :: p_mapper
     class(vector), intent(in) :: p_vector
     call p_bus_vector_map_remap_to_vector(p_mapper%p_mapper,p_vector%vec)
     return
@@ -426,12 +428,12 @@ module gridpack_mapper
 !
 ! Push data from a vector to the network buses
 ! @param p_mapper pointer to mapper
-! @param vector pointer to Fortran vector object
+! @param p_vector pointer to Fortran vector object
 !
   subroutine bus_vector_map_map_to_bus(p_mapper, p_vector)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(full_matrix_map), intent(in) :: p_mapper
+    class(bus_vector_map), intent(in) :: p_mapper
     class(vector), intent(in) :: p_vector
     call p_bus_vector_map_map_to_bus(p_mapper%p_mapper,p_vector%vec)
     return
@@ -468,22 +470,22 @@ module gridpack_mapper
     use, intrinsic :: iso_c_binding
     implicit none
     class(gen_matrix_map), intent(in) :: p_mapper
-    class(matrix) fmatrix
+    type(matrix) fmatrix
     fmatrix%mat = p_gen_matrix_map_map_to_matrix(p_mapper%p_mapper)
     return
   end function gen_matrix_map_map_to_matrix
 !
 ! Update a matrix from the network
 ! @param p_mapper pointer to mapper
-! @param matrix pointer to Fortran matrix object
+! @param p_matrix pointer to Fortran matrix object
 !
-  subroutine gen_matrix_map_remap_to_matrix(p_mapper, matrix)
+  subroutine gen_matrix_map_remap_to_matrix(p_mapper, p_matrix)
     use, intrinsic :: iso_c_binding
     implicit none
     class(gen_matrix_map), intent(in) :: p_mapper
-    class(matrix), intent(inout) :: matrix
-    call p_gen_matrix_map_remap_to_matrix(p_mapper%p_mapper,
-       matrix%mat)
+    class(matrix), intent(in) :: p_matrix
+    call p_gen_matrix_map_remap_to_matrix(p_mapper%p_mapper, &
+       p_matrix%mat)
     return
   end subroutine gen_matrix_map_remap_to_matrix
 !
@@ -506,7 +508,7 @@ module gridpack_mapper
   subroutine gen_vector_map_destroy(p_mapper)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(gen_vector_map), intent(in) :: p_mapper
+    class(gen_vector_map), intent(inout) :: p_mapper
     call p_gen_vector_map_destroy(p_mapper%p_mapper)
     return
   end subroutine gen_vector_map_destroy
@@ -515,11 +517,11 @@ module gridpack_mapper
 ! @param p_mapper pointer to mapper
 ! @return pointer to Fortran vector object
 !
-  function gen_vector_map_map_to_vector(p_mapper) return(fvector)
+  function gen_vector_map_map_to_vector(p_mapper) result(fvector)
     use, intrinsic :: iso_c_binding
     implicit none
     class(gen_vector_map), intent(in) :: p_mapper
-    class(vector) fvector
+    type(vector) fvector
     fvector%vec = p_gen_vector_map_map_to_vector(p_mapper%p_mapper)
     return
   end function gen_vector_map_map_to_vector
@@ -527,27 +529,27 @@ module gridpack_mapper
 ! Reset a vector from the current bus state (vector should be created with the
 ! same mapper)
 ! @param p_mapper pointer to mapper
-! @param vector pointer to Fortran vector object
+! @param p_vector pointer to Fortran vector object
 !
-  subroutine gen_vector_map_remap_to_vector(mapper, vector)
+  subroutine gen_vector_map_remap_to_vector(p_mapper, p_vector)
     use, intrinsic :: iso_c_binding
     implicit none
     class(gen_vector_map), intent(in) :: p_mapper
-    class(vector), intent(inout) :: vector
-    call p_gen_vector_map_remap_to_vector(p_mapper%p_mapper, vector%vec)
+    class(vector), intent(in) :: p_vector
+    call p_gen_vector_map_remap_to_vector(p_mapper%p_mapper, p_vector%vec)
     return
   end subroutine gen_vector_map_remap_to_vector
 !
 ! Push data from a vector to the network buses
 ! @param p_mapper pointer to mapper
-! @param vector pointer to Fortran vector object
+! @param p_vector pointer to Fortran vector object
 !
-  subroutine gen_vector_map_map_to_bus(mapper, vector)
+  subroutine gen_vector_map_map_to_bus(p_mapper, p_vector)
     use, intrinsic :: iso_c_binding
     implicit none
     class(gen_vector_map), intent(in) :: p_mapper
-    class(vector), intent(inout) :: vector
-    call p_gen_vector_map_map_to_bus(p_mapper%p_mapper, vector%vec)
+    class(vector), intent(in) :: p_vector
+    call p_gen_vector_map_map_to_bus(p_mapper%p_mapper, p_vector%vec)
     return
   end subroutine gen_vector_map_map_to_bus
 end module gridpack_mapper

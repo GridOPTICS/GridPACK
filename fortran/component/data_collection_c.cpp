@@ -14,6 +14,7 @@
  * 
  */
 // -------------------------------------------------------------
+#include <string.h>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include "gridpack/component/data_collection.hpp"
 
@@ -45,7 +46,10 @@ extern "C" bool data_collection_get_logical_value(dataWrapper *wdata, char *name
 extern "C" bool data_collection_get_string_value(dataWrapper *wdata, char *name,
       char *value)
 {
-  return wdata->data->getValue(name,value);
+  std::string s_value;
+  bool ret = wdata->data->getValue(name,&s_value);
+  strcpy(value,s_value.c_str());
+  return ret;
 }
 extern "C" bool data_collection_get_real_value(dataWrapper *wdata, char *name,
       float *value)
@@ -81,7 +85,10 @@ extern "C" bool data_collection_get_logical_indexed_value(dataWrapper *wdata, ch
 extern "C" bool data_collection_get_string_indexed_value(dataWrapper *wdata, char *name,
       char *value, int idx)
 {
-  return wdata->data->getValue(name,value,idx);
+  std::string s_value;
+  bool ret = wdata->data->getValue(name,&s_value,idx);
+  strcpy(value,s_value.c_str());
+  return ret;
 }
 extern "C" bool data_collection_get_real_indexed_value(dataWrapper *wdata, char *name,
       float *value, int idx)

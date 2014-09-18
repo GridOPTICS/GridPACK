@@ -19,7 +19,7 @@
 PROGRAM network_test
   USE gridpack_network
   USE gridpack_parallel
-  USE gridpack_component
+  USE application_components
   USE, intrinsic :: iso_c_binding
 
   IMPLICIT NONE
@@ -38,8 +38,8 @@ PROGRAM network_test
   logical ok, t_ok
   integer nbus, nbranch, nnghbr
   integer, allocatable :: nghbr(:), nghbr_bus(:)
-  class(bus_component), pointer :: bus_ptr
-  class(branch_component), pointer :: branch_ptr
+  class(application_bus), pointer :: bus_ptr
+  class(application_branch), pointer :: branch_ptr
   type(C_PTR) xc_ptr
 !
 ! Initialize gridpack and create world communicator

@@ -3,7 +3,7 @@
 !
 module gridpack_network
   use, intrinsic :: iso_c_binding
-  use gridpack_component
+  use application_components
   implicit none
 !
 ! Define network type
@@ -1355,8 +1355,8 @@ module gridpack_network
       implicit none
       class(network), intent(in) :: p_network
       integer, value, intent(in) :: idx
-      class(bus_component), pointer :: bus
-      type(bus_wrapper), pointer :: wbus
+      class(application_bus), pointer :: bus
+      type(application_bus_wrapper), pointer :: wbus
       integer(C_INT) c_idx
       type(C_PTR) ptr
       c_idx = idx
@@ -1376,8 +1376,8 @@ module gridpack_network
       implicit none
       class(network), intent(in) :: p_network
       integer, value, intent(in) :: idx
-      class(branch_component), pointer :: branch
-      type(branch_wrapper), pointer :: wbranch
+      class(application_branch), pointer :: branch
+      type(application_branch_wrapper), pointer :: wbranch
       integer(C_INT) c_idx
       type(C_PTR) ptr
       c_idx = idx
