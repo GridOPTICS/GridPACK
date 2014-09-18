@@ -8,7 +8,7 @@
 /**
  * @file   petsc_dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-09-12 14:44:40 d3g096
+ * @date   2014-09-18 09:29:27 d3g096
  * 
  * @brief  
  * 
@@ -84,8 +84,8 @@ PETScDAESolverImplementation::FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot,
   // Copy PETSc's current estimate into 
 
   // Should be the case, but just make sure
-  BOOST_ASSERT(jac == solver->p_petsc_J);
-  BOOST_ASSERT(B == solver->p_petsc_J);
+  BOOST_ASSERT(jac == *(solver->p_petsc_J));
+  BOOST_ASSERT(B == *(solver->p_petsc_J));
 
   boost::scoped_ptr<Vector> 
     xtmp(new Vector(new PETScVectorImplementation(x, false))),

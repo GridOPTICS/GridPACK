@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-09-12 14:05:59 d3g096
+ * @date   2014-09-18 09:27:16 d3g096
  * 
  * @brief  
  * 
@@ -206,8 +206,8 @@ PetscNonlinearSolverImplementation::FormJacobian(SNES snes, Vec x,
   // Copy PETSc's current estimate into 
 
   // Should be the case, but just make sure
-  BOOST_ASSERT(jac == solver->p_petsc_J);
-  BOOST_ASSERT(B == solver->p_petsc_J);
+  BOOST_ASSERT(jac == *(solver->p_petsc_J));
+  BOOST_ASSERT(B == *(solver->p_petsc_J));
 
   // Not sure about this
   BOOST_ASSERT(x == *(solver->p_petsc_X));
