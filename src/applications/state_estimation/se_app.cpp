@@ -7,7 +7,7 @@
 /**
  * @file   se_app.cpp
  * @author Yousu Chen 
- * @date   2/24/2014
+ * @date   2014-09-18 12:27:18 d3g096
  * Last updated: 8/5/2014 
  *
  * @brief
@@ -111,10 +111,10 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   } else {
     config->open("input.xml",p_comm);
   }
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = config->getCursor("Configuration.State_estimation");
+  gridpack::utility::Configuration::CursorPtr cursor, secursor;
+  secursor = config->getCursor("Configuration.State_estimation");
   std::string filename;
-  if (!cursor->get("networkConfiguration",&filename)) {
+  if (!secursor->get("networkConfiguration",&filename)) {
      printf("No network configuration specified\n");
      return;
   }
@@ -130,7 +130,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   ///////////////////////////////////////////////////////////////////
   // Read in measurement file
   std::string measurementfile;
-  if (!cursor->get("measurementList", &measurementfile)) {
+  if (!secursor->get("measurementList", &measurementfile)) {
     measurementfile = "IEEE14_meas.xml";
   }
   bool ok = config->open(measurementfile, p_comm);
@@ -262,7 +262,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     // create a linear solver
     gridpack::math::LinearSolver solver(*Gain);
-    solver.configure(cursor);
+    solver.configure(secursor);
     printf("Got to DeltaX\n");
 
     // Solve linear equation

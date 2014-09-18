@@ -3,5 +3,15 @@
   <State_estimation>
     <networkConfiguration> 3bus.raw </networkConfiguration>
     <measurementList>3bus_meas.xml</measurementList>
+    <LinearSolver>
+      <SolutionTolerance>1.0E-30</SolutionTolerance>
+      <RelativeTolerance>1.0E-6</RelativeTolerance>
+      <MaxIterations>200</MaxIterations>
+      <PETScOptions>
+        -ksp_monitor
+        -ksp_view
+        -ksp_divtol 1.0E06
+      </PETScOptions>
+    </LinearSolver>
   </State_estimation>
 </Configuration>
