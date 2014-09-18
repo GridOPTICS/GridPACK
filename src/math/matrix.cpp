@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-02-17 13:01:13 d3g096
+ * @date   2014-09-18 12:18:47 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -107,7 +107,7 @@ diagonal(const Matrix& A)
 Vector *
 multiply(const Matrix& A, const Vector& x)
 {
-  Vector *result(new Vector(x.communicator(), x.localSize()));
+  Vector *result(new Vector(x.communicator(), A.localRows()));
   multiply(A, x, *result);
   return result;
 }
