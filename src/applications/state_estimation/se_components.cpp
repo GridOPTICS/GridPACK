@@ -824,11 +824,8 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
     vectorGetElementIndices(idx);
     for (i=0; i<nmeas; i++) {
        std::string type = p_meas[i].p_type;
-       //printf("bus = %d, type =%s\n",getOriginalIndex(), p_meas[i].p_type);
        if (type == "VM") {
          int index = getGlobalIndex();
-//         values[ncnt] = static_cast<double>(index),meas[i].p_value-p_v; 
-//         values[ncnt] = p_meas[i].p_value-p_v; 
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-p_v),0.0);
          ncnt++;
        } else if (type == "PI") {
@@ -845,10 +842,9 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
            branch->getVTheta(this, &v, &theta);
            ret +=  v * (yfbusr*cos(theta) + yfbusi*sin(theta));
          }
+         ret += p_v * p_ybusr;
          ret *= p_v; 
          int index = getGlobalIndex();
-//         values[ncnt] = static_cast<double>(index), meas[i].p_value-ret;
-//         values[ncnt] = p_meas[i].p_value-ret;
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
          ncnt++;
        } else if (type == "QI") {
@@ -865,16 +861,13 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
            branch->getVTheta(this,&v,&theta);
            ret +=  v * (yfbusr*sin(theta) - yfbusi*cos(theta));
          }
+         ret += - p_v * p_ybusi;
          ret *= p_v; 
          int index = getGlobalIndex();
-//         values[ncnt] = static_cast<double>(index), p_meas[i].p_value-ret;
-//         values[ncnt] = p_meas[i].p_value-ret;
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
          ncnt++;
       } else if (type == "VA") {
          int index = getGlobalIndex();
-//         values[ncnt] = static_cast<double>(index),p_meas[i].p_value-p_a; 
-//         values[ncnt] = p_meas[i].p_value-p_a; 
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-p_a),0.0);
          ncnt++;
       }

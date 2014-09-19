@@ -258,6 +258,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     printf("Got to RHS\n");
 
     boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
+    RHS->print();
     printf("Got to Solver\n");
 
     // create a linear solver
@@ -267,7 +268,9 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
+    X->zero(); //might not need to do this
     solver.solve(*RHS, *X);
+    X->print();
     printf("Got to updateBus\n");
 //    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
 
