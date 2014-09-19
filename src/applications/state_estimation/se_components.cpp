@@ -824,6 +824,7 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
     vectorGetElementIndices(idx);
     for (i=0; i<nmeas; i++) {
        std::string type = p_meas[i].p_type;
+//       printf("bus = %d, type =%s row: %d\n",getOriginalIndex(),p_meas[i].p_type,idx[i]);
        if (type == "VM") {
          int index = getGlobalIndex();
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-p_v),0.0);
@@ -1660,6 +1661,10 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
     theta = bus1->getPhase() - bus2->getPhase();  
     for (i=0; i<nmeas; i++) {
       std::string type = p_meas[i].p_type;
+      int idx1, idx2;
+      idx1 = getBus1OriginalIndex();
+      idx2 = getBus2OriginalIndex();
+//      printf("branch %d %d type: %s row: %d\n",idx1,idx2,type.c_str(),idx[i]);
       if (type == "PIJ") {
         int nsize = p_tag.size();
         for (j=0; j<nsize; j++) {

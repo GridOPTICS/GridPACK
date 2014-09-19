@@ -204,7 +204,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   printf("Created HJacMap\n");
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
-
+  HJac->print();
   printf("reading done 2\n");
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
@@ -225,6 +225,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     
     // Form estimation vector
+    factory.setMode(Jacobian_H);
     printf("Got to HJac\n");
     HJacMap.mapToMatrix(HJac);
     HJac->print();
@@ -257,7 +258,9 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     HTR->print();
     printf("Got to RHS\n");
 
+    printf("HTR iDim: %d jDim: %d Ez len: %d\n",HTR->rows(),HTR->cols(),Ez->size());
     boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
+    printf("Create Solver\n");
     RHS->print();
     printf("Got to Solver\n");
 
@@ -268,6 +271,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
+    printf("Got to Solve\n");
     X->zero(); //might not need to do this
     solver.solve(*RHS, *X);
     X->print();
@@ -278,6 +282,8 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     // update values
     network->updateBuses();
     printf("Last sentence\n");
+
+    iter++;
 
 
   // End N-R loop
