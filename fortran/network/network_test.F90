@@ -42,6 +42,16 @@ PROGRAM network_test
   class(application_branch), pointer :: branch_ptr
   type(C_PTR) xc_ptr
 !
+!  Example data types. Replace with application-specific values
+!
+    integer(C_INT) int_reg
+    integer(C_LONG) int_long
+    real(C_FLOAT) real_s
+    real(C_DOUBLE) real_d
+    complex(C_FLOAT_COMPLEX) complex_s
+    complex(C_DOUBLE_COMPLEX) complex_d
+    logical(C_BOOL) log_reg
+!
 ! Initialize gridpack and create world communicator
 !
   CALL gridpack_initialize_parallel(ma_stack, ma_heap)
@@ -417,11 +427,11 @@ PROGRAM network_test
 ! Test ghost updates. Start by setting exchange data equal to original bus index
 ! active buses
 ! 
-  bus_ptr => grid%get_bus(1)
+  bus_ptr => bus_cast(grid%get_bus(1))
   bsize = bus_ptr%bus_get_xc_buf_size()
   call grid%alloc_xc_bus_pointers(bsize)
   do i = 1, nbus
-    bus_ptr => grid%get_bus(i)
+    bus_ptr => bus_cast(grid%get_bus(i))
     xc_ptr = bus_ptr%xc_ptr
     call grid%set_xc_bus_buffer(i,xc_ptr)
     if (grid%get_active_bus(i)) then
@@ -430,12 +440,11 @@ PROGRAM network_test
       bus_ptr%xc_buf%idx = -1
     endif
   end do
-  branch_ptr => grid%get_branch(1)
+  branch_ptr => branch_cast(grid%get_branch(1))
   bsize = branch_ptr%branch_get_xc_buf_size()
-#if 1
   call grid%alloc_xc_branch_pointers(bsize)
   do i = 1, nbranch
-    branch_ptr => grid%get_branch(i)
+    branch_ptr => branch_cast(grid%get_branch(i))
     xc_ptr = branch_ptr%xc_ptr
     call grid%set_xc_branch_buffer(i,xc_ptr)
     if (grid%get_active_branch(i)) then
@@ -459,11 +468,11 @@ PROGRAM network_test
 !
   ok = .true.
   do i = 1, nbus
-    bus_ptr => grid%get_bus(i)
+    bus_ptr => bus_cast(grid%get_bus(i))
     if (bus_ptr%xc_buf%idx.ne.grid%get_original_bus_index(i)) ok = .false.
   end do
   do i = 1, nbranch
-    branch_ptr => grid%get_branch(i)
+    branch_ptr => branch_cast(grid%get_branch(i))
     call grid%get_branch_endpoints(i,n1,n2)
     n1 = grid%get_original_bus_index(n1)
     n2 = grid%get_original_bus_index(n2)
@@ -477,7 +486,6 @@ PROGRAM network_test
     write(6,*)
     write(6,'(a)') 'Update operation failed'
   endif
-#endif
 !
 !  Test clean function
 !

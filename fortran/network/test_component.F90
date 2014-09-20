@@ -132,12 +132,14 @@ module application_components
   end type
 !
   type, public :: application_bus_wrapper
-    class(application_bus), pointer :: bus
+    type(application_bus), pointer :: bus
   end type
 !
   type, public :: application_branch_wrapper
     type(application_branch), pointer :: branch
   end type
+  public :: bus_cast
+  public :: branch_cast
 !
   contains
 !
@@ -762,6 +764,21 @@ module application_components
 !  DO NOT EDIT ANYTHING BELOW THIS LINE. THESE FUNCTIONS MUST BE INCLUDED IN
 !  THIS FILE BUT SHOULD NOT BE MODIFIED BY THE APPLICATION DEVELOPER
 !
+! This function converts a C-style pointer coming from the network to a fortran
+! bus pointer
+! @param ptr C-pointer to fortran wrapper
+! @return fortran pointer bus object
+!
+  function bus_cast(ptr) result(bus)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(C_PTR), intent(in) :: ptr
+    type(application_bus), pointer :: bus
+    type(application_bus_wrapper), pointer :: wbus
+    call C_F_POINTER(ptr,wbus)
+    bus => wbus%bus
+    return
+  end function bus_cast
 !
 ! Return the size of the buffer needed for the data exchanges. Note that this
 ! must be the same size for all buses even if all buses do not require the same
@@ -894,6 +911,22 @@ module application_components
     call bus%bus%bus_get_xc_buf(buf)
     return
   end subroutine p_bus_get_xc_buf
+!
+! This function converts a C-style pointer coming from the network to a fortran
+! branch pointer
+! @param ptr C-pointer to fortran wrapper
+! @return fortran pointer branch object
+!
+  function branch_cast(ptr) result(branch)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    type(C_PTR), value, intent(in) :: ptr
+    type(application_branch), pointer :: branch
+    type(application_branch_wrapper), pointer :: wbranch
+    call C_F_POINTER(ptr,wbranch)
+    branch => wbranch%branch
+    return
+  end function branch_cast
 !
 ! Return the size of the buffer needed for the data exchanges. Note that this
 ! must be the same size for all branches even if all branches do not require the same

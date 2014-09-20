@@ -15,35 +15,33 @@ module application_components
 !  types for data declarations
 !
   type, bind(c), public :: bus_xc_data
-!
-!  Example data types. Replace with application-specific values
-!
-    integer(C_INT) int_reg
-    integer(C_LONG) int_long
-    real(C_FLOAT) real_s
-    real(C_DOUBLE) real_d
-    complex(C_FLOAT_COMPLEX) complex_s
-    complex(C_DOUBLE_COMPLEX) complex_d
-    logical(C_BOOL) log_reg
+    complex(C_DOUBLE_COMPLEX) p_val
+    integer(C_INT) p_row_idx
+    integer(C_INT) p_col_idx
+    integer(C_INT) p_vec_idx1
+    integer(C_INT) p_vec_idx2
+    complex(C_DOUBLE_COMPLEX) p_vec1
+    complex(C_DOUBLE_COMPLEX) p_vec2
   end type
 
   type, bind(c), public :: branch_xc_data
-!
-!  Example data types. Replace with application-specific values
-!
-    integer(C_INT) int_reg
-    integer(C_LONG) int_long
-    real(C_FLOAT) real_s
-    real(C_DOUBLE) real_d
-    complex(C_FLOAT_COMPLEX) complex_s
-    complex(C_DOUBLE_COMPLEX) complex_d
-    logical(C_BOOL) log_reg
+    integer(C_INT) p_row_idx
+    integer(C_INT) p_col_idx
+    integer(C_INT) p_vec_idx
+    complex(C_DOUBLE_COMPLEX) p_vec_val
   end type
 
   type, extends(bus_component), public :: application_bus
 !
 !  Application specific data elements go here
 !
+    double complex p_val
+    integer p_row_idx
+    integer p_col_idx
+    integer p_vec_idx1
+    integer p_vec_idx2
+    double complex p_vec1
+    double complex p_vec2
 !
 !  Required data elements are defined here
 !
@@ -52,6 +50,9 @@ module application_components
     contains
 !
 !  Add user-defined function here
+!
+    procedure::bus_get_value
+    procedure::bus_get_values
 !
 !  Matrix-vector interface calls
 !
@@ -99,6 +100,10 @@ module application_components
 !
 !  Application specific data elements go here
 !
+    integer p_row_idx
+    integer p_col_idx
+    integer p_vec_idx
+    double complex p_vec_val
 !
 !  Required data elements are defined here
 !
@@ -169,7 +174,15 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     integer, intent(out) :: isize, jsize
-    bus_matrix_diag_size = .false.
+    if (.not.bus%bus_get_reference_bus()) then
+      isize = 1
+      jsize = 1
+      bus_matrix_diag_size = .true.
+    else
+      isize = 1
+      jsize = 1
+      bus_matrix_diag_size = .false.
+    endif
     return
   end function bus_matrix_diag_size
 !
@@ -183,7 +196,12 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     double complex, intent(out) :: values(*)
-    bus_matrix_diag_values = .false.
+    if (.not.bus%bus_get_reference_bus()) then
+      values(1) = dcmplx(-4.0d00,0.0d00)
+      bus_matrix_diag_values = .true.
+    else
+      bus_matrix_diag_values = .false.
+    endif
     return
   end function bus_matrix_diag_values
 !
@@ -253,7 +271,13 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     integer(C_INT), intent(out) :: isize
-    bus_vector_size = .false.
+    if (.not.bus%bus_get_reference_bus()) then
+      isize = 1
+      bus_vector_size = .true.
+    else
+      bus_vector_size = .false.
+    endif
+    return
   end function bus_vector_size
 !
 ! Return the values of the vector block
@@ -265,7 +289,14 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     double complex, intent(out) :: values(*)
-    bus_vector_values = .false.
+    integer idx
+    if (.not.bus%bus_get_reference_bus()) then
+! TODO: FIX ME     call get_mat_vec_index(idx)
+      bus_vector_values = .true.
+    else
+      bus_vector_values = .false.
+    endif
+    return
   end function bus_vector_values
 !
 ! Set values in network component based on values in a vector or matrix
@@ -276,7 +307,19 @@ module application_components
     implicit none
     class(application_bus) :: bus
     double complex, intent(in) :: values(*)
+    bus%p_val = values(1)
+    return
   end subroutine bus_set_values
+!
+! User function return real part of p_val
+!
+  double precision function bus_get_value(bus)
+    implicit none
+    class(application_bus), intent(in) :: bus
+    bus_get_value = bus%p_val
+    return
+  end function bus_get_value
+!
 !
 ! Return the number of rows in matrix from component
 ! @param bus GridPACK bus object
@@ -285,7 +328,8 @@ module application_components
   integer function bus_matrix_num_rows(bus)
     implicit none
     class(application_bus), intent(in) :: bus
-    bus_matrix_num_rows = 0
+    bus_matrix_num_rows = 1
+    return
   end function bus_matrix_num_rows
 !
 ! Return the number of columns in matrix from component
@@ -295,7 +339,8 @@ module application_components
   integer function bus_matrix_num_cols(bus)
     implicit none
     class(application_bus), intent(in) :: bus
-    bus_matrix_num_cols = 0
+    bus_matrix_num_cols = 1
+    return
   end function bus_matrix_num_cols
 !
 ! Set row indices corresponding to the rows contributed by this component
@@ -308,6 +353,8 @@ module application_components
     implicit none
     class(application_bus) :: bus
     integer, value, intent(in) :: irow, idx
+    bus%p_row_idx = idx
+    return
   end subroutine bus_matrix_set_row_index
 !
 ! Set column indices corresponding to the columns contributed by this component
@@ -320,6 +367,8 @@ module application_components
     implicit none
     class(application_bus) :: bus
     integer(C_INT), value, intent(in) :: icol, idx
+    bus%p_col_idx = idx
+    return
   end subroutine bus_matrix_set_col_index
 !
 ! Get the row index for the rows contributed by this component
@@ -332,7 +381,8 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     integer, value, intent(in) :: irow
-    bus_matrix_get_row_index = -1
+    bus_matrix_get_row_index = bus%p_row_idx
+    return
   end function bus_matrix_get_row_index
 !
 ! Get the col index for the columns contributed by this component
@@ -345,7 +395,8 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     integer, value, intent(in) :: icol
-    bus_matrix_get_col_index = -1
+    bus_matrix_get_col_index = bus%p_col_idx
+    return
   end function bus_matrix_get_col_index
 !
 ! Return the number of matrix values contributed by this component
@@ -355,7 +406,8 @@ module application_components
   integer function bus_matrix_num_values(bus)
     implicit none
     class(application_bus), intent(in) :: bus
-    bus_matrix_num_values = 0
+    bus_matrix_num_values = bus%bus_get_num_neighbors() + 1
+    return
   end function bus_matrix_num_values
 !
 ! Get a list of matrix values contributed by this components along with their
@@ -370,6 +422,29 @@ module application_components
     class(application_bus), intent(in) :: bus
     double complex, intent(out) :: values(*)
     integer, intent(out) :: rows(*), cols(*)
+    class(application_branch), pointer :: branch
+    integer i, im, jm, nsize, idx, jdx1, jdx2
+    nsize = bus%bus_get_num_neighbors()
+    idx = bus%bus_get_global_index()
+    im = bus%bus_matrix_get_row_index(0)
+    do i = 1, nsize
+      jm = bus%bus_matrix_get_col_index(0)
+      rows(i) = im
+      cols(i) = jm
+      branch => bus%bus_get_neighbor_branch(i)
+      jdx1 = branch%branch_get_bus1_global_index()
+      jdx2 = branch%branch_get_bus2_global_index()
+      if (idx.eq.jdx1) then
+        values(i) = dcmplx(dble(idx+jdx2),0.0d00)
+      else
+        values(i) = dcmplx(dble(idx+jdx1),0.0d00)
+      endif
+    end do
+    values(nsize+1) = dcmplx(dble(idx),0.0d00)
+    rows(nsize+1) = im
+    jm = bus%bus_matrix_get_col_index(0)
+    cols(nsize+1) = jm
+    return
   end subroutine bus_matrix_get_values
 !
 ! Return the number of elements in vector coming from component
@@ -379,7 +454,8 @@ module application_components
   integer function bus_vector_num_elements(bus)
     implicit none
     class(application_bus), intent(in) :: bus
-    bus_vector_num_elements = 0
+    bus_vector_num_elements = 2
+    return
   end function bus_vector_num_elements
 !
 ! Set indices corresponding to the elements contributed by this component
@@ -392,6 +468,12 @@ module application_components
     implicit none
     class(application_bus) :: bus
     integer, value, intent(in) :: ielem, idx
+    if (ielem.eq.1) then
+      bus%p_vec_idx1 = idx
+    else
+      bus%p_vec_idx2 = idx
+    endif
+    return
   end subroutine bus_vector_set_element_index
 !
 ! Get a list of vector indices from the component
@@ -402,6 +484,9 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     integer, intent(out) :: idx(*)
+    idx(1) = bus%p_vec_idx1
+    idx(2) = bus%p_vec_idx2
+    return
   end subroutine bus_vector_get_element_indices
 !
 ! Get a list of vector values contributed by this component and their indices
@@ -414,7 +499,24 @@ module application_components
     class(application_bus), intent(in) :: bus
     double complex, intent(out) :: values(*)
     integer, intent(out) :: idx(*)
+    integer index
+    call bus%bus_vector_get_element_indices(idx)
+    index = bus%bus_get_global_index()
+    values(1) = dcmplx(dble(index),0.0d00)
+    values(2) = dcmplx(dble(index+1),0.0d00)
+    return
   end subroutine bus_vector_get_element_values
+!
+!  User function to get vector element values
+!
+  subroutine bus_get_values(bus, values)
+    implicit none
+    class(application_bus), intent(in) :: bus
+    double complex, intent(out) :: values(*)
+    values(1) = dcmplx(dble(bus%p_vec1))
+    values(2) = dcmplx(dble(bus%p_vec2))
+    return
+  end subroutine bus_get_values
 !
 ! Transfer vector values to component
 ! @param bus GridPACK bus object
@@ -424,6 +526,9 @@ module application_components
     implicit none
     class(application_bus) :: bus
     double complex, intent(out) :: values(*)
+    bus%p_vec1 = values(1)
+    bus%p_vec2 = values(2)
+    return
   end subroutine bus_vector_set_element_values
 !
 ! Load data from DataCollection object into corresponding component.
@@ -602,7 +707,7 @@ module application_components
 !
   integer function branch_matrix_num_cols(p_branch)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch), intent(in) :: p_branch
     branch_matrix_num_cols = 0
   end function branch_matrix_num_cols
 !
@@ -638,7 +743,7 @@ module application_components
 !
   integer function branch_matrix_get_row_index(p_branch, irow)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch) :: p_branch
     integer, value, intent(in) :: irow
     branch_matrix_get_row_index = -1
     return

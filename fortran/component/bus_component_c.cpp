@@ -29,6 +29,17 @@ struct branchWrapper {
 };
 
 /**
+ * Get the matrix index for component, based on location of
+ * component in network
+ * @param bus GridPACK bus object
+ * @param idx matrix index of bus
+ */
+extern "C" void p_bus_get_mat_vec_index(busWrapper *wbus, int *idx)
+{
+  return wbus->bus->getMatVecIndex(idx);
+}
+
+/**
  * Return total number of neighboring branches/buses attached to bus
  * @param wbus bus object wrapper
  * @return number of neighboring branches/buses

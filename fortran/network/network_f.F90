@@ -3,7 +3,6 @@
 !
 module gridpack_network
   use, intrinsic :: iso_c_binding
-  use application_components
   implicit none
 !
 ! Define network type
@@ -1355,14 +1354,10 @@ module gridpack_network
       implicit none
       class(network), intent(in) :: p_network
       integer, value, intent(in) :: idx
-      class(application_bus), pointer :: bus
-      type(application_bus_wrapper), pointer :: wbus
+      type(C_PTR) bus
       integer(C_INT) c_idx
-      type(C_PTR) ptr
       c_idx = idx
-      ptr = network_get_bus(p_network%p_network,c_idx)
-      call C_F_POINTER(ptr,wbus)
-      bus => wbus%bus
+      bus = network_get_bus(p_network%p_network,c_idx)
       return
     end function get_bus
 !
@@ -1376,14 +1371,10 @@ module gridpack_network
       implicit none
       class(network), intent(in) :: p_network
       integer, value, intent(in) :: idx
-      class(application_branch), pointer :: branch
-      type(application_branch_wrapper), pointer :: wbranch
+      type(C_PTR) branch
       integer(C_INT) c_idx
-      type(C_PTR) ptr
       c_idx = idx
-      ptr = network_get_branch(p_network%p_network,c_idx)
-      call C_F_POINTER(ptr,wbranch)
-      branch => wbranch%branch
+      branch = network_get_branch(p_network%p_network,c_idx)
       return
     end function get_branch
 end module gridpack_network

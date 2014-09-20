@@ -14,11 +14,11 @@ include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 add_library(gridpackf_network OBJECT
   network_c.cpp
   network_f.F90
-  test_component.F90
 )
 
 add_executable(fortran_network_test
   network_test.F90
+  test_component.F90
   $<TARGET_OBJECTS:gridpackf_network>
   $<TARGET_OBJECTS:gridpackf_parallel>
   $<TARGET_OBJECTS:gridpackf_component>

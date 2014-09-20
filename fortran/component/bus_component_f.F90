@@ -25,6 +25,7 @@ module gridpack_component
     procedure::bus_vector_size => base_bus_vector_size
     procedure::bus_vector_values => base_bus_vector_values
     procedure::bus_set_values => base_bus_set_values
+    procedure, non_overridable::bus_get_mat_vec_index
 !
 !  Generalized matrix-vector interface calls
 !
@@ -180,6 +181,18 @@ module gridpack_component
 !  Interface declaration to C calls
 !
   interface
+!
+! Get the matrix index for component, based on location of
+! component in network
+! @param bus GridPACK bus object
+! @param idx matrix index of bus
+!
+    subroutine p_bus_get_mat_vec_index(bus,idx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: bus
+      integer(C_INT), intent(out) :: idx
+    end subroutine p_bus_get_mat_vec_index
 !
 ! Get the number of neighboring branches/buses
 ! @param bus GridPACK bus object
@@ -483,7 +496,7 @@ module gridpack_component
 ! 
   subroutine base_bus_set_values(bus, values)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     double complex, intent(in) :: values(*)
   end subroutine base_bus_set_values
 !
@@ -514,7 +527,7 @@ module gridpack_component
 !
   subroutine base_bus_matrix_set_row_index(bus, irow, idx)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     integer, value, intent(in) :: irow, idx
   end subroutine base_bus_matrix_set_row_index
 !
@@ -526,7 +539,7 @@ module gridpack_component
 !
   subroutine base_bus_matrix_set_col_index(bus, icol, idx)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     integer(C_INT), value, intent(in) :: icol, idx
   end subroutine base_bus_matrix_set_col_index
 !
@@ -598,7 +611,7 @@ module gridpack_component
 !
   subroutine base_bus_vector_set_element_index(bus, ielem, idx)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     integer, value, intent(in) :: ielem, idx
   end subroutine base_bus_vector_set_element_index
 !
@@ -630,7 +643,7 @@ module gridpack_component
 !
   subroutine base_bus_vector_set_element_values(bus, values)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     double complex, intent(out) :: values(*)
   end subroutine base_bus_vector_set_element_values
 !
@@ -640,7 +653,7 @@ module gridpack_component
 !
   subroutine base_bus_load(bus, data)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     class(data_collection), intent(in) :: data
   end subroutine base_bus_load
 !
@@ -655,7 +668,7 @@ module gridpack_component
 !
   subroutine base_bus_set_mode(bus, mode)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     integer, value, intent(in) :: mode
   end subroutine base_bus_set_mode
 !
@@ -670,11 +683,26 @@ module gridpack_component
 !
   logical function base_bus_serial_write(bus, string, bufsize, signal)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component) :: bus
     character, intent(out) :: string(*)
     integer, value, intent(in) :: bufsize
     character, intent(in) :: signal(*)
   end function base_bus_serial_write
+!
+! Get the matrix index for component, based on location of
+! component in network
+! @param p_bus GridPACK bus object
+! @param idx matrix index of bus
+!
+  subroutine bus_get_mat_vec_index(p_bus,idx)
+    implicit none
+    class(bus_component), intent(in) :: p_bus
+    integer, intent(out) :: idx
+    integer(C_INT) c_idx
+    call p_bus_get_mat_vec_index(p_bus%p_bus, c_idx)
+    idx = c_idx
+    return
+  end subroutine bus_get_mat_vec_index
 !
 ! Get the number of neighboring branches/buses
 ! @param p_bus GridPACK bus object
@@ -1371,7 +1399,7 @@ module gridpack_component
 ! 
   subroutine base_branch_set_values(p_branch, values)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     double complex, intent(in) :: values(*)
   end subroutine base_branch_set_values
 !
@@ -1401,7 +1429,7 @@ module gridpack_component
 !
   subroutine base_branch_matrix_set_row_index(p_branch, irow, idx)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     integer, value, intent(in) :: irow, idx
   end subroutine base_branch_matrix_set_row_index
 !
@@ -1413,7 +1441,7 @@ module gridpack_component
 !
   subroutine base_branch_matrix_set_col_index(p_branch, icol, idx)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     integer(C_INT), value, intent(in) :: icol, idx
   end subroutine base_branch_matrix_set_col_index
 !
@@ -1485,7 +1513,7 @@ module gridpack_component
 !
   subroutine base_branch_vector_set_element_index(p_branch, ielem, idx)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     integer, value, intent(in) :: ielem, idx
   end subroutine base_branch_vector_set_element_index
 !
@@ -1517,7 +1545,7 @@ module gridpack_component
 !
   subroutine base_branch_vector_set_element_values(p_branch, values)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     double complex, intent(out) :: values(*)
   end subroutine base_branch_vector_set_element_values
 !
@@ -1527,7 +1555,7 @@ module gridpack_component
 !
   subroutine base_branch_load(p_branch, data)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     class(data_collection), intent(in) :: data
   end subroutine base_branch_load
 !
@@ -1542,7 +1570,7 @@ module gridpack_component
 !
   subroutine base_branch_set_mode(p_branch, mode)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     integer, value, intent(in) :: mode
   end subroutine base_branch_set_mode
 !
@@ -1557,7 +1585,7 @@ module gridpack_component
 !
   logical function base_branch_serial_write(p_branch, string, bufsize, signal)
     implicit none
-    class(branch_component), intent(in) :: p_branch
+    class(branch_component) :: p_branch
     character, intent(out) :: string(*)
     integer, value, intent(in) :: bufsize
     character, intent(in) :: signal(*)

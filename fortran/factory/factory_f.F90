@@ -10,39 +10,46 @@ module gridpack_factory
 !
   private
 
-  type, public :: factory
+  type, abstract, public :: factory
     type(C_PTR) :: p_factory
-    class(network), pointer :: p_network_int
     contains
-    procedure::create
-    procedure::destroy
-    procedure::set_components
-    procedure::load
-    procedure::set_exchange
-    procedure::set_mode
-    procedure::check_true
-    procedure::set_links
+    procedure(i_create), deferred::create
+    procedure(i_destroy), deferred::destroy
+    procedure, non_overridable::set_components
+    procedure, non_overridable::load
+    procedure, non_overridable::set_exchange
+    procedure, non_overridable::set_mode
+    procedure, non_overridable::check_true
   end type
-  interface
+!
+  abstract interface
 !
 ! Create a new factory
 ! @param factory new GridPACK factory object
 !
-    subroutine factory_create(factory, network) bind(c)
+    subroutine i_create(p_factory, p_network)
       use, intrinsic :: iso_c_binding
+      import factory
+      import network
       implicit none
-      type(C_PTR), intent(inout) :: factory
-      type(C_PTR), intent(in) :: network
-    end subroutine factory_create
+      class(factory), intent(inout) :: p_factory
+      class(network), intent(in) :: p_network
+    end subroutine i_create
 !
 ! Clean up old factory
 ! @param factory old GridPACK factory object
 !
-    subroutine factory_destroy(factory) bind(c)
+    subroutine i_destroy(p_factory)
       use, intrinsic :: iso_c_binding
+      import factory
       implicit none
-      type(C_PTR), intent(inout) :: factory
-    end subroutine factory_destroy
+      class(factory), intent(inout) :: p_factory
+    end subroutine i_destroy
+  end interface
+!
+!  Interface declaration to C calls
+!
+  interface
 !
 ! Set pointers in each bus and branch component so that it points to
 ! connected buses and branches.
@@ -98,43 +105,8 @@ module gridpack_factory
       type(C_PTR), value, intent(in) :: factory
       logical(C_BOOL), value, intent(in) :: flag
     end function factory_check_true
-!
-! Set connections between Fortran and C objects so that other parts of the
-! interface will work
-! @param factory GridPACK factory object
-!
-    subroutine factory_set_links(factory) bind(c)
-      use, intrinsic :: iso_c_binding
-      implicit none
-      type(C_PTR), value, intent(in) :: factory
-    end subroutine factory_set_links
   end interface
   contains
-!
-! Create a new factory
-! @param p_factory new GridPACK factory object
-!
-  subroutine create(p_factory, p_network)
-    use, intrinsic :: iso_c_binding
-    use gridpack_network
-    implicit none
-    class(factory), intent(inout) :: p_factory
-    class(network), target, intent(in) :: p_network
-    p_factory%p_network_int => p_network
-    call factory_create(p_factory%p_factory,p_network%p_network)
-    return
-  end subroutine create
-!
-! Clean up old factory
-! @param p_factory old GridPACK factory object
-!
-  subroutine destroy(p_factory)
-    use, intrinsic :: iso_c_binding
-    implicit none
-    class(factory), intent(inout) :: p_factory
-    call factory_destroy(p_factory%p_factory)
-    return
-  end subroutine destroy
 !
 ! Set pointers in each bus and branch component so that it points to
 ! connected buses and branches.
@@ -204,15 +176,4 @@ module gridpack_factory
     check_true = factory_check_true(p_factory%p_factory, c_flag)
     return
   end function check_true
-!
-! Set connections between Fortran and C objects so that other parts of the
-! interface will work
-! @param p_factory GridPACK factory object
-!
-  subroutine set_links(p_factory)
-    use, intrinsic :: iso_c_binding
-    implicit none
-    class(factory), value, intent(in) :: p_factory
-    call factory_set_links(p_factory%p_factory)
-  end subroutine set_links
 end module gridpack_factory
