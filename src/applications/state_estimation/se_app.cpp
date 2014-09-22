@@ -220,6 +220,11 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   tol = 2.0*tolerance;
   int iter = 0;
 
+  factory.setMode(R_inv);
+  gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
+  Rinv->print();
+
   // Start N-R loop
   while (real(tol) > tolerance && iter < max_iteration) {
 
@@ -239,12 +244,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     // Build measurement equation
     EzMap.mapToVector(Ez);
     Ez->print();
-    printf("Got to R_inv\n");
-
-    factory.setMode(R_inv);
-    gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(network);
-    boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
-    Rinv->print();
     printf("Got to Gain\n");
 
     // Form Gain matrix
@@ -277,6 +276,8 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     X->print();
     printf("Got to updateBus\n");
 //    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
+    tol = X->normInfinity();
+    printf("Iteration %d Tol: %12.6e\n",iter+1,real(tol));
 
   
     // update values

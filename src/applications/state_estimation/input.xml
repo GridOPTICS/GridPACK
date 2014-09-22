@@ -6,7 +6,7 @@
     <LinearSolver>
       <SolutionTolerance>1.0E-30</SolutionTolerance>
       <RelativeTolerance>1.0E-6</RelativeTolerance>
-      <MaxIterations>200</MaxIterations>
+      <MaxIterations>10</MaxIterations>
       <PETScOptions>
         -ksp_monitor
         -ksp_view
