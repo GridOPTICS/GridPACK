@@ -283,7 +283,9 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     tol = X->normInfinity();
     printf("Iteration %d Tol: %12.6e\n",iter+1,real(tol));
 
-    // Push solution back onto bus variables
+     // Push solution back onto bus variables
+    factory.setMode(Voltage);
+     //
     VMap.mapToBus(X);
   
     // update values
