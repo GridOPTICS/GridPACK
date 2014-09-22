@@ -198,6 +198,10 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   branchIO.header("\nybus:\n");
   ybus->print();
 
+  // Create mapper to push voltage data back onto buses
+  factory.setMode(Voltage);
+  gridpack::mapper::BusVectorMap<SENetwork> VMap(network);
+
   // Create initial version of  H Jacobian and estimation vector
   factory.setMode(Jacobian_H);
   printf("reading done 1\n");
@@ -279,6 +283,8 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     tol = X->normInfinity();
     printf("Iteration %d Tol: %12.6e\n",iter+1,real(tol));
 
+    // Push solution back onto bus variables
+    VMap.mapToBus(X);
   
     // update values
     network->updateBuses();

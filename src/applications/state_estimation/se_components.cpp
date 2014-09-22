@@ -119,7 +119,21 @@ bool gridpack::state_estimation::SEBus::matrixDiagValues(ComplexType *values)
  */
 bool gridpack::state_estimation::SEBus::vectorSize(int *size) const
 {
-  return true;
+  if (p_mode == Voltage) {
+    if (!isIsolated()) {
+      if (getReferenceBus()) {
+        return false;
+      } else if (p_isPV) {
+        *size = 1;
+      } else {
+        *size = 2;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  }
+  return false;
 }
 
 /**
@@ -141,18 +155,20 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
 {
   double vt = p_v;
   double at = p_a;
-  p_a -= real(values[0]);
+  if (p_mode == Voltage) {
+    p_a -= real(values[0]);
 #ifdef LARGE_MATRIX
-  p_v -= real(values[1]);
-#else
-  if (!p_isPV) {
     p_v -= real(values[1]);
-  }
+#else
+    if (!p_isPV) {
+      p_v -= real(values[1]);
+    }
 #endif
-  *p_vAng_ptr = p_a;
-  *p_vMag_ptr = p_v;
-//  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
-//      at,vt,real(values[0]),real(values[1]),p_a,p_v);
+    *p_vAng_ptr = p_a;
+    *p_vMag_ptr = p_v;
+  }
+  //  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
+  //      at,vt,real(values[0]),real(values[1]),p_a,p_v);
 }
 
 /**
