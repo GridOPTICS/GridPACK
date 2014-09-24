@@ -38,7 +38,7 @@ module application_factory
       use gridpack_network
       implicit none
       type(C_PTR), intent(inout) :: p_factory
-      type(C_PTR), intent(in) :: p_network
+      type(C_PTR), value, intent(in) :: p_network
     end subroutine factory_create
 !
 ! Clean up old factory

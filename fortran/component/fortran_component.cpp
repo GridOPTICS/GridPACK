@@ -19,58 +19,54 @@
 #include "fortran_component.hpp"
 #include <stdio.h>
 
-extern "C" void* bus_allocate();
+extern "C" void* bus_allocate(void *ptr);
 extern "C" void bus_deallocate(void *ptr);
 extern "C" bool p_bus_matrix_diag_size(void *ptr, int *isize, int *jsize);
-extern "C" void* p_bus_load(gridpack::component::DataCollection *data);
-extern "C" int p_bus_get_xc_buf_size(void *ptr);
-extern "C" void* branch_allocate();
+extern "C" void* p_bus_load(void *ptr, gridpack::component::DataCollection *data);
+extern "C" void* branch_allocate(void *ptr);
 extern "C" void branch_deallocate(void *ptr);
+extern "C" bool p_bus_matrix_diag_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" bool p_bus_matrix_forward_size(void *ptr,
+    int *isize, int *jsize);
+extern "C" bool p_bus_matrix_forward_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" bool p_bus_matrix_reverse_size(void *ptr,
+    int *isize, int *jsize);
+extern "C" bool p_bus_matrix_reverse_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" bool p_bus_vector_size(void *ptr,  int *size);
+extern "C" bool p_bus_vector_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" void  p_bus_set_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" int p_bus_get_xc_buf_size(void *ptr);
+extern "C" void p_bus_set_mode(void *ptr, int mode);
+extern "C" bool  p_bus_serial_write(void *ptr, char *string,
+    int bufsize, const char* signal);
+extern "C" bool p_branch_matrix_diag_size(void *ptr,
+    int *isize, int *jsize);
+extern "C" bool p_branch_matrix_diag_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" bool p_branch_matrix_forward_size(void *ptr,
+    int *isize, int *jsize);
+extern "C" bool p_branch_matrix_forward_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" bool p_branch_matrix_reverse_size(void *ptr,
+    int *isize, int *jsize);
+extern "C" bool p_branch_matrix_reverse_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" bool p_branch_vector_size(void *ptr,  int *size);
+extern "C" bool p_branch_vector_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" void  p_branch_set_values(void *ptr,
+    gridpack::ComplexType *values);
+extern "C" void p_branch_load(void *ptr, gridpack::component::DataCollection
+    *data);
 extern "C" int p_branch_get_xc_buf_size(void *ptr);
-#if 0
-extern "C" bool p_bus_matrix_diag_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" bool p_bus_matrix_forward_size(int network, int idx,
-    int *isize, int *jsize);
-extern "C" bool p_bus_matrix_forward_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" bool p_bus_matrix_reverse_size(int network, int idx,
-    int *isize, int *jsize);
-extern "C" bool p_bus_matrix_reverse_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" bool p_bus_vector_size(int network, int idx,  int *size);
-extern "C" bool p_bus_vector_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" void  p_bus_set_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" void p_bus_load(int network, int idx);
-extern "C" int p_bus_get_xc_buf_size(int network, int idx);
-extern "C" void p_bus_set_mode(int network, int idx, int mode);
-extern "C" bool  p_bus_serial_write(int network, int, char *string,
+extern "C" void p_branch_set_mode(void *ptr, int mode);
+extern "C" bool  p_branch_serial_write(void *ptr, char *string,
     int bufsize, const char* signal);
-extern "C" bool p_branch_matrix_diag_size(int network, int idx,
-    int *isize, int *jsize);
-extern "C" bool p_branch_matrix_diag_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" bool p_branch_matrix_forward_size(int network, int idx,
-    int *isize, int *jsize);
-extern "C" bool p_branch_matrix_forward_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" bool p_branch_matrix_reverse_size(int network, int idx,
-    int *isize, int *jsize);
-extern "C" bool p_branch_matrix_reverse_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" bool p_branch_vector_size(int network, int idx,  int *size);
-extern "C" bool p_branch_vector_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" void  p_branch_set_values(int network, int idx,
-    gridpack::ComplexType *values);
-extern "C" void p_branch_load(int network, int idx);
-extern "C" int p_branch_get_xc_buf_size(int network, int idx);
-extern "C" void p_branch_set_mode(int network, int idx, int mode);
-extern "C" bool  p_branch_serial_write(int network, int, char *string,
-    int bufsize, const char* signal);
-#endif
 
 // Base implementation of the MatVecInterface. These functions should be
 // overwritten in actual components
@@ -85,7 +81,7 @@ namespace fortran_component {
  */
 FortranBusComponent::FortranBusComponent(void)
 {
-  p_fortran_bus_ptr = bus_allocate();
+  p_fortran_bus_ptr = bus_allocate(this);
 }
 
 /**
@@ -117,8 +113,7 @@ bool FortranBusComponent::matrixDiagSize(int *isize, int *jsize) const
  */
 bool FortranBusComponent::matrixDiagValues(gridpack::ComplexType *values)
 {
-  //return p_bus_matrix_diag_values(p_network, p_local_index, values);
-  return false;
+  return p_bus_matrix_diag_values(p_fortran_bus_ptr, values);
 }
 
 /**
@@ -131,8 +126,7 @@ bool FortranBusComponent::matrixDiagValues(gridpack::ComplexType *values)
  */
 bool FortranBusComponent::matrixForwardSize(int *isize, int *jsize) const
 {
-  //return p_bus_matrix_forward_size(p_network, p_local_index, isize, jsize);
-  return false;
+  return p_bus_matrix_forward_size(p_fortran_bus_ptr, isize, jsize);
 }
 
 /**
@@ -145,8 +139,7 @@ bool FortranBusComponent::matrixForwardSize(int *isize, int *jsize) const
  */
 bool FortranBusComponent::matrixReverseSize(int *isize, int *jsize) const
 {
-  //return p_bus_matrix_reverse_size(p_network, p_local_index, isize, jsize);
-  return false;
+  return p_bus_matrix_reverse_size(p_fortran_bus_ptr, isize, jsize);
 }
 
 /**
@@ -158,8 +151,7 @@ bool FortranBusComponent::matrixReverseSize(int *isize, int *jsize) const
  */
 bool FortranBusComponent::matrixForwardValues(gridpack::ComplexType *values)
 {
-  //return p_bus_matrix_forward_values(p_network, p_local_index, values);
-  return false;
+  return p_bus_matrix_forward_values(p_fortran_bus_ptr, values);
 }
 
 /**
@@ -171,8 +163,7 @@ bool FortranBusComponent::matrixForwardValues(gridpack::ComplexType *values)
  */
 bool FortranBusComponent::matrixReverseValues(gridpack::ComplexType *values)
 {
-  //return p_bus_matrix_reverse_values(p_network, p_local_index, values);
-  return false;
+  return p_bus_matrix_reverse_values(p_fortran_bus_ptr, values);
 }
 
 /** 
@@ -183,8 +174,7 @@ bool FortranBusComponent::matrixReverseValues(gridpack::ComplexType *values)
  */
 bool FortranBusComponent::vectorSize(int *isize) const
 {
-  //return p_bus_vector_size(p_network, p_local_index, isize);
-  return false;
+  return p_bus_vector_size(p_fortran_bus_ptr, isize);
 }
 
 /**
@@ -194,7 +184,7 @@ bool FortranBusComponent::vectorSize(int *isize) const
  */
 void FortranBusComponent::setValues(gridpack::ComplexType *values)
 {
-  //p_bus_set_values(p_network, p_local_index, values);
+  p_bus_set_values(p_fortran_bus_ptr, values);
 }
 
 /**
@@ -205,8 +195,7 @@ void FortranBusComponent::setValues(gridpack::ComplexType *values)
  */
 bool FortranBusComponent::vectorValues(gridpack::ComplexType *values)
 {
-  //return p_bus_vector_values(p_network, p_local_index, values);
-  return false;
+  return p_bus_vector_values(p_fortran_bus_ptr, values);
 }
 
 /**
@@ -217,8 +206,7 @@ void FortranBusComponent::load(boost::shared_ptr
     <gridpack::component::DataCollection> data)
 {
   gridpack::component::DataCollection *data_ptr = data.get();
-  p_bus_load(data_ptr);
-  //p_bus_load(p_network, p_local_index);
+  p_bus_load(p_fortran_bus_ptr, data_ptr);
 }
 
 /**
@@ -246,7 +234,7 @@ int FortranBusComponent::getXCBufSize(void)
  */
 void FortranBusComponent::setMode(int mode)
 {
-  //p_bus_set_mode(p_network, p_local_index, mode);
+  p_bus_set_mode(p_fortran_bus_ptr, mode);
 }
 
 /**
@@ -261,7 +249,7 @@ void FortranBusComponent::setMode(int mode)
 bool FortranBusComponent::serialWrite(char *string, const int bufsize,
     const char *signal)
 {
-  //return p_bus_serial_write(p_network, p_local_index, string, bufsize, signal);
+  return p_bus_serial_write(p_fortran_bus_ptr, string, bufsize, signal);
   return false;
 }
 
@@ -335,7 +323,7 @@ void* FortranBusComponent::getFortranPointer() const
  */
 FortranBranchComponent::FortranBranchComponent(void)
 {
-  p_fortran_branch_ptr = branch_allocate();
+  p_fortran_branch_ptr = branch_allocate(this);
 }
 
 /**
@@ -355,8 +343,7 @@ FortranBranchComponent::~FortranBranchComponent(void)
  */
 bool FortranBranchComponent::matrixDiagSize(int *isize, int *jsize) const
 {
-  //return p_branch_matrix_diag_size(p_network, p_local_index, isize, jsize);
-  return false;
+  return p_branch_matrix_diag_size(p_fortran_branch_ptr, isize, jsize);
 }
 
 /**
@@ -368,8 +355,7 @@ bool FortranBranchComponent::matrixDiagSize(int *isize, int *jsize) const
  */
 bool FortranBranchComponent::matrixDiagValues(gridpack::ComplexType *values)
 {
-  //return p_branch_matrix_diag_values(p_network, p_local_index, values);
-  return false;
+  return p_branch_matrix_diag_values(p_fortran_branch_ptr, values);
 }
 
 /**
@@ -382,8 +368,7 @@ bool FortranBranchComponent::matrixDiagValues(gridpack::ComplexType *values)
  */
 bool FortranBranchComponent::matrixForwardSize(int *isize, int *jsize) const
 {
-  //return p_branch_matrix_forward_size(p_network, p_local_index, isize, jsize);
-  return false;
+  return p_branch_matrix_forward_size(p_fortran_branch_ptr, isize, jsize);
 }
 
 /**
@@ -396,8 +381,7 @@ bool FortranBranchComponent::matrixForwardSize(int *isize, int *jsize) const
  */
 bool FortranBranchComponent::matrixReverseSize(int *isize, int *jsize) const
 {
-  //return p_branch_matrix_reverse_size(p_network, p_local_index, isize, jsize);
-  return false;
+  return p_branch_matrix_reverse_size(p_fortran_branch_ptr, isize, jsize);
 }
 
 /**
@@ -409,8 +393,7 @@ bool FortranBranchComponent::matrixReverseSize(int *isize, int *jsize) const
  */
 bool FortranBranchComponent::matrixForwardValues(gridpack::ComplexType *values)
 {
-  //return p_branch_matrix_forward_values(p_network, p_local_index, values);
-  return false;
+  return p_branch_matrix_forward_values(p_fortran_branch_ptr, values);
 }
 
 /**
@@ -422,8 +405,7 @@ bool FortranBranchComponent::matrixForwardValues(gridpack::ComplexType *values)
  */
 bool FortranBranchComponent::matrixReverseValues(gridpack::ComplexType *values)
 {
-  //return p_branch_matrix_reverse_values(p_network, p_local_index, values);
-  return false;
+  return p_branch_matrix_reverse_values(p_fortran_branch_ptr, values);
 }
 
 /** 
@@ -434,8 +416,7 @@ bool FortranBranchComponent::matrixReverseValues(gridpack::ComplexType *values)
  */
 bool FortranBranchComponent::vectorSize(int *isize) const
 {
-  //return p_branch_vector_size(p_network, p_local_index, isize);
-  return false;
+  return p_branch_vector_size(p_fortran_branch_ptr, isize);
 }
 
 /**
@@ -445,7 +426,7 @@ bool FortranBranchComponent::vectorSize(int *isize) const
  */
 void FortranBranchComponent::setValues(gridpack::ComplexType *values)
 {
-  //p_branch_set_values(p_network, p_local_index, values);
+  p_branch_set_values(p_fortran_branch_ptr, values);
 }
 
 /**
@@ -456,8 +437,7 @@ void FortranBranchComponent::setValues(gridpack::ComplexType *values)
  */
 bool FortranBranchComponent::vectorValues(gridpack::ComplexType *values)
 {
-  //return p_branch_vector_values(p_network, p_local_index, values);
-  return false;
+  return p_branch_vector_values(p_fortran_branch_ptr, values);
 }
 
 /**
@@ -468,7 +448,8 @@ void
 FortranBranchComponent::load(boost::shared_ptr
     <gridpack::component::DataCollection> data)
 {
-  //p_branch_load(p_network, p_local_index);
+  gridpack::component::DataCollection *data_ptr = data.get();
+  p_branch_load(p_fortran_branch_ptr, data_ptr);
 }
 
 /**
@@ -496,7 +477,7 @@ int FortranBranchComponent::getXCBufSize(void)
  */
 void FortranBranchComponent::setMode(int mode)
 {
-  //p_branch_set_mode(p_network, p_local_index, mode);
+  p_branch_set_mode(p_fortran_branch_ptr, mode);
 }
 
 /**
@@ -511,8 +492,7 @@ void FortranBranchComponent::setMode(int mode)
 bool FortranBranchComponent::serialWrite(char *string, const int bufsize,
     const char *signal)
 {
-  //return p_branch_serial_write(p_network, p_local_index, string, bufsize, signal);
-  return false;
+  return p_branch_serial_write(p_fortran_branch_ptr, string, bufsize, signal);
 }
 
 /**

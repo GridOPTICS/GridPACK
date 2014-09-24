@@ -57,20 +57,19 @@ extern "C" void p_full_matrix_map_destroy(FortranFullMatrixMap **map)
  */
 extern "C" void* p_full_matrix_map_map_to_matrix(FortranFullMatrixMap *map)
 {
-  matrixWrapper *matrix = new matrixWrapper;
-  matrix->matrix = map->mapToMatrix();
+  FortranMatrix *matrix = map->intMapToMatrix();
   return matrix;
 }
 
 /**
  * Update a matrix from the network
  * @param map pointer to Fortran FullMatrixMap object
- * @param pointer to matrix wrapper
+ * @param matrix pointer to matrix
  */
 extern "C" void p_full_matrix_map_remap_to_matrix(FortranFullMatrixMap *map,
-    matrixWrapper *wmatrix)
+    FortranMatrix *matrix)
 {
-  map->mapToMatrix(wmatrix->matrix);
+  map->mapToMatrix(*matrix);
 }
 
 /**
@@ -134,22 +133,21 @@ extern "C" void p_bus_vector_map_destroy(FortranBusVectorMap **map)
  * @param map pointer to Fortran BusVectorMap object
  * @return pointer to vector wrapper
  */
-extern "C" void* p_bus_vector_map_map_to_vector(FortranGenVectorMap *map)
+extern "C" void* p_bus_vector_map_map_to_vector(FortranBusVectorMap *map)
 {
-  vectorWrapper *vector = new vectorWrapper;
-  vector->vector = map->mapToVector();
+  FortranVector *vector = map->intMapToVector();
   return vector;
 }
 
 /**
  * Update a vector from the network
  * @param map pointer to Fortran BusVectorMap object
- * @param pointer to vector wrapper
+ * @param vector pointer to vector
  */
-extern "C" void p_bus_vector_map_remap_to_vector(FortranGenVectorMap *map,
-    vectorWrapper *wvector)
+extern "C" void p_bus_vector_map_remap_to_vector(FortranBusVectorMap *map,
+    FortranVector *vector)
 {
-  map->mapToVector(wvector->vector);
+  map->mapToVector(*vector);
 }
 
 /**
@@ -157,10 +155,10 @@ extern "C" void p_bus_vector_map_remap_to_vector(FortranGenVectorMap *map,
  * @param map pointer to Fortran BusVectorMap object
  * @param pointer to vector wrapper
  */
-extern "C" void p_bus_vector_map_map_to_bus(FortranGenVectorMap *map,
-    vectorWrapper *wvector)
+extern "C" void p_bus_vector_map_map_to_bus(FortranBusVectorMap *map,
+    FortranVector *vector)
 {
-  map->mapToVector(wvector->vector);
+  map->mapToBus(*vector);
 }
 
 /**
@@ -257,7 +255,8 @@ extern "C" void p_gen_vector_map_remap_to_vector(FortranGenVectorMap *map,
  * @param pointer to vector wrapper
  */
 extern "C" void p_gen_vector_map_map_to_bus(FortranGenVectorMap *map,
-    vectorWrapper *wvector)
+    FortranVector *vector)
 {
-  map->mapToVector(wvector->vector);
+  printf("Function mapToBus function not implemented yet in GenVectorMap\n");
+//  map->mapToBus(*vector);
 }

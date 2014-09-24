@@ -61,7 +61,7 @@ module gridpack_mapper
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(inout) :: mapper
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
     end subroutine p_full_matrix_map_create
 !
 ! Destroy a full matrix map
@@ -80,7 +80,7 @@ module gridpack_mapper
     type(C_PTR) function p_full_matrix_map_map_to_matrix(mapper) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: mapper
     end function p_full_matrix_map_map_to_matrix
 !
 ! Update a matrix from the network
@@ -90,8 +90,8 @@ module gridpack_mapper
     subroutine p_full_matrix_map_remap_to_matrix(mapper, matrix) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: matrix
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: matrix
     end subroutine p_full_matrix_map_remap_to_matrix
 !
 ! Overwrite selected elements of existing matrix.
@@ -101,8 +101,8 @@ module gridpack_mapper
     subroutine p_full_matrix_map_overwrite_matrix(mapper, matrix) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: matrix
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: matrix
     end subroutine p_full_matrix_map_overwrite_matrix
 !
 ! Increment selected elements of existing matrix.
@@ -112,8 +112,8 @@ module gridpack_mapper
     subroutine p_full_matrix_map_increment_matrix(mapper, matrix) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: matrix
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: matrix
     end subroutine p_full_matrix_map_increment_matrix
 !
 ! Check to see if matrix looks well formed. This method runs through all
@@ -126,7 +126,7 @@ module gridpack_mapper
     logical(C_BOOL) function p_full_matrix_map_check(mapper) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: mapper
     end function p_full_matrix_map_check
 !
 ! Create a bus vector map
@@ -137,7 +137,7 @@ module gridpack_mapper
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(inout) :: mapper
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
     end subroutine p_bus_vector_map_create
 !
 ! Destroy a bus vector map
@@ -156,7 +156,7 @@ module gridpack_mapper
     type(C_PTR) function p_bus_vector_map_map_to_vector(mapper) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: mapper
     end function p_bus_vector_map_map_to_vector
 !
 ! Reset a vector from the current bus state (vector should be created with the
@@ -167,8 +167,8 @@ module gridpack_mapper
     subroutine p_bus_vector_map_remap_to_vector(mapper, vector) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: vector
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: vector
     end subroutine p_bus_vector_map_remap_to_vector
 !
 ! Push data from a vector to the network buses
@@ -178,8 +178,8 @@ module gridpack_mapper
     subroutine p_bus_vector_map_map_to_bus(mapper, vector) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: vector
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: vector
     end subroutine p_bus_vector_map_map_to_bus
 !
 ! Create a generic matrix map
@@ -190,7 +190,7 @@ module gridpack_mapper
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(inout) :: mapper
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
     end subroutine p_gen_matrix_map_create
 !
 ! Destroy a generic matrix map
@@ -209,7 +209,7 @@ module gridpack_mapper
     type(C_PTR) function p_gen_matrix_map_map_to_matrix(mapper) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: mapper
     end function p_gen_matrix_map_map_to_matrix
 !
 ! Update a matrix from the network
@@ -219,8 +219,8 @@ module gridpack_mapper
     subroutine p_gen_matrix_map_remap_to_matrix(mapper, matrix) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: matrix
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: matrix
     end subroutine p_gen_matrix_map_remap_to_matrix
 !
 ! Create a generic vector map
@@ -231,7 +231,7 @@ module gridpack_mapper
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(inout) :: mapper
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
     end subroutine p_gen_vector_map_create
 !
 ! Destroy a generic vector map
@@ -250,7 +250,7 @@ module gridpack_mapper
     type(C_PTR) function p_gen_vector_map_map_to_vector(mapper) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: mapper
     end function p_gen_vector_map_map_to_vector
 !
 ! Reset a vector from the current bus state (vector should be created with the
@@ -261,8 +261,8 @@ module gridpack_mapper
     subroutine p_gen_vector_map_remap_to_vector(mapper, vector) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: vector
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: vector
     end subroutine p_gen_vector_map_remap_to_vector
 !
 ! Push data from a vector to the network buses
@@ -272,8 +272,8 @@ module gridpack_mapper
     subroutine p_gen_vector_map_map_to_bus(mapper, vector) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: mapper
-      type(C_PTR), intent(in) :: vector
+      type(C_PTR), value, intent(in) :: mapper
+      type(C_PTR), value, intent(in) :: vector
     end subroutine p_gen_vector_map_map_to_bus
   end interface
   contains

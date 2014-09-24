@@ -14,10 +14,6 @@ struct networkWrapper {
 
 typedef gridpack::fortran_component::FortranBusComponent FortranBus;
 
-struct busWrapper {
-    boost::shared_ptr<FortranBus> bus;
-};
-
 /**
  * Create a new network
  * @param network pointer to new Fortran network object

@@ -14,14 +14,16 @@
 ! ----------------------------------------------------------------
 ! PROGRAM mapper_test
 ! ----------------------------------------------------------------
-#define XDIM 10
-#define YDIM 10
+#define XDIM 3
+#define YDIM 3
 PROGRAM mapper_test
   USE, intrinsic :: iso_c_binding
   USE gridpack_network
-  USE gridpack_parallel
-  USE gridpack_matrix
   USE gridpack_mapper
+  USE gridpack_parallel
+  USE gridpack_math
+  USE gridpack_vector
+  USE gridpack_matrix
   USE application_components
   USE application_factory
 
@@ -44,19 +46,23 @@ PROGRAM mapper_test
   integer, allocatable :: bus_index(:)
   type(application_bus), pointer :: bus_ptr
   type(application_branch), pointer :: branch_ptr
-  type(app_factory), pointer :: map_factory
+  type(app_factory) :: map_factory
   type(matrix) :: mmatrix
+  type(vector) :: vvector
   type(full_matrix_map) :: fm_map
+  type(bus_vector_map) :: bv_map
   type(C_PTR) xc_ptr
   logical bus_added
   integer one, chk, idx, jdx, isize, jsize
   double complex v
   double precision rv
+  integer lo, hi, rlo, rhi
 !
 ! Initialize gridpack and create world communicator
 !
   CALL gridpack_initialize_parallel(ma_stack, ma_heap)
   CALL comm%initialize()
+  CALL gridpack_initialize_math()
   me = comm%rank()
   nprocs = comm%size()
 !
@@ -266,16 +272,127 @@ PROGRAM mapper_test
         call mmatrix%get_element(idx, idx, v)
         rv = real(v)
         if (rv.ne.-4.0d00) then
-          write(6,'(a,i5,a,i5,a,i5,e12.4)') 'p[',me, &
+          write(6,'(a,i5,a,i5,a,i5,a,e12.4)') 'p[',me, &
            '] Diagonal matrix error i: ',idx,' j: ',idx,' v: ',rv
           chk = 1
         endif
       endif
     endif
   end do
+!
+! Get min and max row indices
+!
+  rhi = 0
+  rlo = XDIM*YDIM
+  do i = 1, nbus
+    if (grid%get_active_bus(i)) then
+      bus_ptr => bus_cast(grid%get_bus(i))
+      call bus_ptr%bus_get_mat_vec_index(idx)
+      if (rhi.lt.idx) rhi = idx
+      if (rlo.gt.idx) rhi = idx
+    endif
+  end do
+  do i = 1, nbranch
+    branch_ptr => branch_cast(grid%get_branch(i))
+    if (branch_ptr%branch_matrix_forward_size(isize,jsize).and. &
+        isize.gt.0.and.jsize.gt.0) then
+      call branch_ptr%branch_get_mat_vec_indices(idx,jdx)
+      idx = idx - 1
+      jdx = jdx - 1
+      if (idx.ge.rlo-1.and.idx.le.rhi-1) then
+        call mmatrix%get_element(idx,jdx,v);
+        rv = real(v)
+        if (rv.ne.1.0d00) then
+          write(6,'(a,i5,a,i5,a,i5,a,e12.4)') 'p[',me, &
+            '] Forward matrix error i: ',idx,' j: ',jdx,' v: ',rv
+          chk = 1
+        endif
+      endif
+      if (jdx.ge.rlo-1.and.idx.le.rhi-1) then
+        call mmatrix%get_element(jdx,idx,v);
+        rv = real(v)
+        if (rv.ne.1.0d00) then
+          write(6,'(a,i5,a,i5,a,i5,a,e12.4)') 'p[',me, &
+            '] Reverse matrix error i: ',jdx,' j: ',idx,' v: ',rv
+          chk = 1
+        endif
+      endif
+    endif
+  end do
+  call ga_igop(1,chk,1,"+")
+  if (me.eq.0) then
+    write(6,*)
+    if (chk.eq.0) then
+      write(6,'(a)') 'Matrix elements are ok'
+    else
+      write(6,'(a)') 'Error found in matrix elements'
+    endif
+  endif
+  if (me.eq.0) then
+    write(6,*)
+    write(6,'(a)') 'Testing bus_vector_map'
+  endif
+  call bv_map%bus_vector_map_create(grid)
+  vvector = bv_map%bus_vector_map_map_to_vector()
+!
+! Check to see if vector has correct values
+!
+  chk = 0
+  do i = 1, nbus
+    if (grid%get_active_bus(i)) then
+      bus_ptr => bus_cast(grid%get_bus(i))
+      if (bus_ptr%bus_vector_size(isize)) then
+        call bus_ptr%bus_get_mat_vec_index(idx)
+        idx = idx - 1
+        call vvector%get_element(idx,v)
+        rv = real(v)
+        if (rv.ne.dble(idx+1)) then
+          write(6,'(a,i5,a,i5,a,e12.4)') 'p[',me, &
+            '] vector error i: ',idx,' v: ',rv
+          chk = 1
+        endif
+      endif
+    endif
+  end do
+  call ga_igop(2,chk,1,"+")
+  if (me.eq.0) then
+    write(6,*)
+    if (chk.eq.0) then
+      write(6,'(a)') 'Vector elements are ok'
+    else
+      write(6,'(a)') 'Error found in vector elements'
+    endif
+  endif
+  if (me.eq.0) then
+    write(6,*)
+    write(6,'(a)') 'Testing map_to_bus'
+  endif
+!
+! Multiply values in vector by factor of 2
+! 
+  call vvector%local_index_range(lo,hi)
+  do i = lo, hi
+    call vvector%get_element(i,v)
+    v = 2.0d00*v
+    call vvector%set_element(i,v)
+  end do
+!
+! Push values back onto buses
+!
+  call bv_map%bus_vector_map_map_to_bus(vvector)
+  chk = 0
+  do i = 1, nbus
+    if (grid%get_active_bus(i)) then
+      bus_ptr => bus_cast(grid%get_bus(i))
+      if (bus_ptr%bus_vector_size(isize)) then
+        call bus_ptr%bus_get_mat_vec_index(idx)
+      endif
+    endif
+  end do
   call map_factory%destroy()
   call grid%destroy()
   CALL comm%finalize()
+  CALL gridpack_finalize_math()
   CALL gridpack_finalize_parallel()
 END PROGRAM mapper_test
 !

@@ -22,11 +22,11 @@ add_executable(fortran_mapper_test
   mapper_test.F90
   mapper_component.F90
   mapper_factory.F90
-  $<TARGET_OBJECTS:gridpackf_factory>
-  $<TARGET_OBJECTS:gridpackf_component>
   $<TARGET_OBJECTS:gridpackf_network>
-  $<TARGET_OBJECTS:gridpackf_parallel>
+  $<TARGET_OBJECTS:gridpackf_factory>
   $<TARGET_OBJECTS:gridpackf_mapper>
+  $<TARGET_OBJECTS:gridpackf_component>
+  $<TARGET_OBJECTS:gridpackf_parallel>
   $<TARGET_OBJECTS:gridpackf_math>
 )
 

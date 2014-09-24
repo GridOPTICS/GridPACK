@@ -21,7 +21,6 @@ struct networkWrapper {
 extern "C" void factory_create(FortranFactory **factory,
     networkWrapper *wnetwork)
 {
-
   *factory = new FortranFactory(wnetwork->network);
 }
 

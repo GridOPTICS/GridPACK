@@ -15,6 +15,7 @@
  */
 // -------------------------------------------------------------
 #include "fortran_component.hpp"
+#include <stdio.h>
 
 typedef gridpack::fortran_component::FortranBusComponent FortranBus;
 
@@ -34,170 +35,183 @@ struct branchWrapper {
  * @param bus GridPACK bus object
  * @param idx matrix index of bus
  */
-extern "C" void p_bus_get_mat_vec_index(busWrapper *wbus, int *idx)
+extern "C" void p_bus_get_mat_vec_index(FortranBus *bus, int *idx)
 {
-  return wbus->bus->getMatVecIndex(idx);
+  return bus->getMatVecIndex(idx);
 }
 
 /**
  * Return total number of neighboring branches/buses attached to bus
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  * @return number of neighboring branches/buses
  */
-extern "C" int p_bus_get_num_neighbors(busWrapper *wbus)
+extern "C" int p_bus_get_num_neighbors(FortranBus *bus)
 {
-  return wbus->bus->getNumNeighbors();
+  return bus->getNumNeighbors();
 }
 
 /**
  * Get pointer to bus that is attached to calling bus via a branch
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  * @param idx index of neighboring bus (value is between 0 and number of
  * neighbors -1)
- * @return pointer to bus wrapper
+ * @return pointer to bus
  */
-extern "C" void* p_bus_get_neighbor_bus(busWrapper *wbus, int idx)
+extern "C" void* p_bus_get_neighbor_bus(FortranBus *bus, int idx)
 {
-  return static_cast<void*>(wbus->bus->getNeighborBus(idx));
+  return static_cast<void*>(bus->getNeighborBus(idx));
 }
 
 /**
  * Get pointer to branch that is attached to calling bus
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  * @param idx index of neighboring branch (value is between 0 and number of
  * neighbors -1)
- * @return pointer to branch wrapper
+ * @return pointer to branch
  */
-extern "C" void* p_bus_get_neighbor_branch(busWrapper *wbus, int idx)
+extern "C" void* p_bus_get_neighbor_branch(FortranBus *bus, int idx)
 {
-  return static_cast<void*>(wbus->bus->getNeighborBranch(idx));
+  return static_cast<void*>(bus->getNeighborBranch(idx));
 }
 
 /**
  * Clear all pointers to neighboring branches
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  */
-extern "C" void p_bus_clear_branches(busWrapper *wbus)
+extern "C" void p_bus_clear_branches(FortranBus *bus)
 {
-  wbus->bus->clearBranches();
+  bus->clearBranches();
 }
 
 /**
  * Clear all pointers to neighboring buses
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  */
-extern "C" void p_bus_clear_buses(busWrapper *wbus)
+extern "C" void p_bus_clear_buses(FortranBus *bus)
 {
-  wbus->bus->clearBuses();
+  bus->clearBuses();
 }
 
 /**
  * Set reference bus status
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  * @param status true if bus is reference bus
  */
-extern "C" void p_bus_set_reference_bus(busWrapper *wbus, bool status)
+extern "C" void p_bus_set_reference_bus(FortranBus *bus, bool status)
 {
-  wbus->bus->setReferenceBus(status);
+  bus->setReferenceBus(status);
 }
 
 /**
  * Get reference bus status
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  * @return true if bus is reference bus
  */
-extern "C" bool p_bus_get_reference_bus(busWrapper *wbus)
+extern "C" bool p_bus_get_reference_bus(FortranBus *bus)
 {
-  return wbus->bus->getReferenceBus();
+  return bus->getReferenceBus();
 }
 
 /**
  * Return the original index (from input file) of bus
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  * @return original index
  */
-extern "C" int p_bus_get_original_index(busWrapper *wbus)
+extern "C" int p_bus_get_original_index(FortranBus *bus)
 {
-  return wbus->bus->getOriginalIndex();
+  return bus->getOriginalIndex();
 }
 
 /**
  * Return the global index of bus
- * @param wbus bus object wrapper
+ * @param bus bus object pointer
  * @return global index
  */
-extern "C" int p_bus_get_global_index(busWrapper *wbus)
+extern "C" int p_bus_get_global_index(FortranBus *bus)
 {
-  return wbus->bus->getGlobalIndex();
+  return bus->getGlobalIndex();
 }
 
 /**
  * Clear all pointers to buses at each end of branch
- * @param wbus bus object wrapper
+ * @param branch branch object pointer
  */
-extern "C" void p_branch_clear_buses(branchWrapper *wbranch)
+extern "C" void p_branch_clear_buses(FortranBranch *branch)
 {
-  wbranch->branch->clearBuses();
+  branch->clearBuses();
+}
+
+/**
+ * Get the matrix index for component, based on location of
+ * component in network
+ * @param branch GridPACK branch object
+ * @param idx matrix row index of bus
+ * @param idx matrix column index of bus
+ */
+extern "C" void p_branch_get_mat_vec_indices(FortranBranch *branch,
+    int *idx, int *jdx)
+{
+  return branch->getMatVecIndices(idx,jdx);
 }
 
 /**
  * Get pointer to bus that is attached to "from" end of branch
- * @param wbus bus object wrapper
- * @return pointer to bus wrapper
+ * @param branch branch object pointer
+ * @return pointer to branch
  */
-extern "C" void* p_branch_get_bus1(branchWrapper *wbranch)
+extern "C" void* p_branch_get_bus1(FortranBranch *branch)
 {
-  FortranBus *bus = dynamic_cast<FortranBus*>(wbranch->branch->getBus1().get());
+  FortranBus *bus = dynamic_cast<FortranBus*>(branch->getBus1().get());
   return bus->getFortranPointer();
 }
 
 /**
  * Get pointer to bus that is attached to "to" end of branch
- * @param wbus bus object wrapper
- * @return pointer to bus wrapper
+ * @param branch branch object pointer
+ * @return pointer to bus
  */
-extern "C" void* p_branch_get_bus2(branchWrapper *wbranch)
+extern "C" void* p_branch_get_bus2(FortranBranch *branch)
 {
-  FortranBus *bus = dynamic_cast<FortranBus*>(wbranch->branch->getBus2().get());
+  FortranBus *bus = dynamic_cast<FortranBus*>(branch->getBus2().get());
   return bus->getFortranPointer();
 }
 
 /**
  * Get original index of "from" bus
- * @param wbus bus object wrapper
+ * @param branch branch object pointer
  * @return original index from network
  */
-extern "C" int p_branch_get_bus1_original_index(branchWrapper *wbranch)
+extern "C" int p_branch_get_bus1_original_index(FortranBranch *branch)
 {
-  return wbranch->branch->getBus1OriginalIndex();
+  return branch->getBus1OriginalIndex();
 }
 
 /**
  * Get original index of "to" bus
- * @param wbus bus object wrapper
+ * @param branch branch object pointer
  * @return original index from network
  */
-extern "C" int p_branch_get_bus2_original_index(branchWrapper *wbranch)
+extern "C" int p_branch_get_bus2_original_index(FortranBranch *branch)
 {
-  return wbranch->branch->getBus2OriginalIndex();
+  return branch->getBus2OriginalIndex();
 }
 
 /**
  * Get original index of "from" bus
- * @param wbus bus object wrapper
+ * @param branch branch object pointer
  * @return original index from network
  */
-extern "C" int p_branch_get_bus1_global_index(branchWrapper *wbranch)
+extern "C" int p_branch_get_bus1_global_index(FortranBranch *branch)
 {
-  return wbranch->branch->getBus1GlobalIndex();
+  return branch->getBus1GlobalIndex();
 }
 
 /**
  * Get original index of "to" bus
- * @param wbus bus object wrapper
+ * @param branch branch object pointer
  * @return original index from network
  */
-extern "C" int p_branch_get_bus2_global_index(branchWrapper *wbranch)
+extern "C" int p_branch_get_bus2_global_index(FortranBranch *branch)
 {
-  return wbranch->branch->getBus2GlobalIndex();
+  return branch->getBus2GlobalIndex();
 }

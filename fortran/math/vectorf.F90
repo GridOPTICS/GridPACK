@@ -32,6 +32,7 @@ MODULE gridpack_vector
      PROCEDURE :: local_index_range
      PROCEDURE :: set_element
      PROCEDURE :: add_element
+     PROCEDURE :: get_element
      PROCEDURE :: zero
      PROCEDURE :: fill 
      PROCEDURE :: norm1
@@ -91,6 +92,14 @@ MODULE gridpack_vector
        INTEGER (c_int), VALUE, INTENT(IN) :: i
        COMPLEX(c_double_complex), INTENT(IN) :: x
      END SUBROUTINE vector_add_element
+
+     SUBROUTINE vector_get_element(vec, i, x) BIND(c)
+       USE iso_c_binding, ONLY: c_ptr, c_int, c_double_complex
+       IMPLICIT NONE
+       TYPE (c_ptr), VALUE, INTENT(IN) :: vec
+       INTEGER (c_int), VALUE, INTENT(IN) :: i
+       COMPLEX(c_double_complex), INTENT(OUT) :: x
+     END SUBROUTINE vector_get_element
 
      SUBROUTINE vector_zero(vec) BIND(c)
        USE iso_c_binding, ONLY: c_ptr
@@ -224,6 +233,17 @@ CONTAINS
     COMPLEX(c_double_complex), INTENT(IN) :: x
     CALL vector_add_element(this%vec, i, x)
   END SUBROUTINE add_element
+
+  ! ----------------------------------------------------------------
+  ! SUBROUTINE get_element
+  ! ----------------------------------------------------------------
+  SUBROUTINE get_element(this, i, x)
+    IMPLICIT NONE
+    CLASS (vector), INTENT(IN) :: this
+    INTEGER, INTENT(IN) :: i
+    COMPLEX(c_double_complex), INTENT(OUT) :: x
+    CALL vector_get_element(this%vec, i, x)
+  END SUBROUTINE get_element
 
   ! ----------------------------------------------------------------
   ! SUBROUTINE zero

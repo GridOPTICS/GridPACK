@@ -12,6 +12,7 @@ module gridpack_component
 !
   type, abstract, public :: bus_component
     type (C_PTR) :: p_bus
+    type (C_PTR) :: c_this
     contains
 !
 !  Matrix-vector interface calls
@@ -66,6 +67,7 @@ module gridpack_component
 !
   type, abstract, public :: branch_component
     type (C_PTR) :: p_branch
+    type (C_PTR) :: c_this
     contains
 !
 !  Matrix-vector interface calls
@@ -79,6 +81,7 @@ module gridpack_component
     procedure::branch_vector_size => base_branch_vector_size
     procedure::branch_vector_values => base_branch_vector_values
     procedure::branch_set_values => base_branch_set_values
+    procedure, non_overridable::branch_get_mat_vec_indices
 !
 !  Generalized matrix-vector interface calls
 !
@@ -310,6 +313,19 @@ module gridpack_component
       type(C_PTR), value, intent(in) :: bus
     end subroutine p_bus_set_global_index
 #endif
+!
+! Get the matrix indices for component, based on location of
+! component in network
+! @param bus GridPACK bus object
+! @param idx matrix row index of branch
+! @param jdx matrix column index of branch
+!
+    subroutine p_branch_get_mat_vec_indices(branch,idx,jdx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: branch
+      integer(C_INT), intent(out) :: idx, jdx
+    end subroutine p_branch_get_mat_vec_indices
 !
 ! Get pointer to bus that is attached to "from" end of branch
 ! @param branch GridPACK branch object
@@ -699,7 +715,7 @@ module gridpack_component
     class(bus_component), intent(in) :: p_bus
     integer, intent(out) :: idx
     integer(C_INT) c_idx
-    call p_bus_get_mat_vec_index(p_bus%p_bus, c_idx)
+    call p_bus_get_mat_vec_index(p_bus%c_this, c_idx)
     idx = c_idx
     return
   end subroutine bus_get_mat_vec_index
@@ -712,7 +728,7 @@ module gridpack_component
     implicit none
     class(bus_component), intent(in) :: p_bus
     integer(C_INT) c_ret
-    c_ret = p_bus_get_num_neighbors(p_bus%p_bus)
+    c_ret = p_bus_get_num_neighbors(p_bus%c_this)
     bus_get_num_neighbors = c_ret
     return
   end function bus_get_num_neighbors
@@ -724,7 +740,7 @@ module gridpack_component
     use, intrinsic :: iso_c_binding
     implicit none
     class(bus_component), value, intent(in) :: p_bus
-    call p_bus_clear_branches(p_bus%p_bus)
+    call p_bus_clear_branches(p_bus%c_this)
     return
   end subroutine bus_clear_branches
 !
@@ -734,8 +750,8 @@ module gridpack_component
   subroutine bus_clear_buses(p_bus)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(bus_component), value, intent(in) :: p_bus
-    call p_bus_clear_buses(p_bus%p_bus)
+    class(bus_component), intent(in) :: p_bus
+    call p_bus_clear_buses(p_bus%c_this)
     return
   end subroutine bus_clear_buses
 !
@@ -750,7 +766,7 @@ module gridpack_component
     logical, value, intent(in) :: status
     logical(C_BOOL) c_status
     c_status = status
-    call p_bus_set_reference_bus(p_bus%p_bus,c_status)
+    call p_bus_set_reference_bus(p_bus%c_this,c_status)
     return
   end subroutine bus_set_reference_bus
 !
@@ -761,9 +777,9 @@ module gridpack_component
   logical function bus_get_reference_bus(p_bus)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(bus_component), value, intent(in) :: p_bus
+    class(bus_component), intent(in) :: p_bus
     logical(C_BOOL) c_ret
-    c_ret = p_bus_get_reference_bus(p_bus%p_bus)
+    c_ret = p_bus_get_reference_bus(p_bus%c_this)
     bus_get_reference_bus = c_ret
     return
   end function bus_get_reference_bus
@@ -777,7 +793,7 @@ module gridpack_component
     implicit none
     class(bus_component), value, intent(in) :: p_bus
     integer(C_INT) c_ret
-    c_ret = p_bus_get_original_index(p_bus%p_bus)
+    c_ret = p_bus_get_original_index(p_bus%c_this)
     bus_get_original_index = c_ret
     return
   end function bus_get_original_index
@@ -791,10 +807,11 @@ module gridpack_component
     implicit none
     class(bus_component), value, intent(in) :: p_bus
     integer(C_INT) c_ret
-    c_ret = p_bus_get_global_index(p_bus%p_bus)
+    c_ret = p_bus_get_global_index(p_bus%c_this)
     bus_get_global_index = c_ret
     return
   end function bus_get_global_index
+#if 0
 !
 ! Return size of matrix block on the diagonal contributed by bus
 ! @param ptr C pointer to GridPACK bus object
@@ -1284,6 +1301,7 @@ module gridpack_component
     p_bus_serial_write = f_ret
     return
   end function p_bus_serial_write
+#endif
 !
 ! Return size of matrix block on the diagonal contributed by component
 ! @param p_branch GridPACK branch object
@@ -1591,6 +1609,23 @@ module gridpack_component
     character, intent(in) :: signal(*)
   end function base_branch_serial_write
 !
+! Get the matrix indices for component, based on location of
+! component in network
+! @param bus GridPACK bus object
+! @param idx matrix row index of branch
+! @param jdx matrix column index of branch
+!
+  subroutine branch_get_mat_vec_indices(p_branch, idx, jdx)
+    implicit none
+    class(branch_component) :: p_branch
+    integer, intent(out) :: idx, jdx
+    integer(C_INT) c_idx, c_jdx
+    call p_branch_get_mat_vec_indices(p_branch%c_this, c_idx, c_jdx)
+    idx = c_idx
+    jdx = c_jdx
+    return
+  end subroutine branch_get_mat_vec_indices
+!
 ! Clear all pointers to buses at each end of branch
 ! @param p_branch GridPACK branch object
 !
@@ -1598,7 +1633,7 @@ module gridpack_component
     use, intrinsic :: iso_c_binding
     implicit none
     class(branch_component), value, intent(in) :: p_branch
-    call p_branch_clear_buses(p_branch%p_branch)
+    call p_branch_clear_buses(p_branch%c_this)
     return
   end subroutine branch_clear_buses
 !
@@ -1611,7 +1646,7 @@ module gridpack_component
     implicit none
     class(branch_component), value, intent(in) :: p_branch
     integer(C_INT) c_idx
-    c_idx = p_branch_get_bus1_original_index(p_branch%p_branch)
+    c_idx = p_branch_get_bus1_original_index(p_branch%c_this)
     branch_get_bus1_original_index = c_idx
     return
   end function branch_get_bus1_original_index
@@ -1625,7 +1660,7 @@ module gridpack_component
     implicit none
     class(branch_component), value, intent(in) :: p_branch
     integer(C_INT) c_idx
-    c_idx = p_branch_get_bus2_original_index(p_branch%p_branch)
+    c_idx = p_branch_get_bus2_original_index(p_branch%c_this)
     branch_get_bus2_original_index = c_idx
     return
   end function branch_get_bus2_original_index
@@ -1639,7 +1674,7 @@ module gridpack_component
     implicit none
     class(branch_component), value, intent(in) :: p_branch
     integer(C_INT) c_idx
-    c_idx = p_branch_get_bus1_global_index(p_branch%p_branch)
+    c_idx = p_branch_get_bus1_global_index(p_branch%c_this)
     branch_get_bus1_global_index = c_idx
     return
   end function branch_get_bus1_global_index
@@ -1653,7 +1688,7 @@ module gridpack_component
     implicit none
     class(branch_component), value, intent(in) :: p_branch
     integer(C_INT) c_idx
-    c_idx = p_branch_get_bus2_global_index(p_branch%p_branch)
+    c_idx = p_branch_get_bus2_global_index(p_branch%c_this)
     branch_get_bus2_global_index = c_idx
     return
   end function branch_get_bus2_global_index

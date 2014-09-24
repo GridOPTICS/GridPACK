@@ -25,7 +25,8 @@ module gridpack_factory
   abstract interface
 !
 ! Create a new factory
-! @param factory new GridPACK factory object
+! @param p_factory new GridPACK factory object
+! @param p_network GridPACK Fortran network object
 !
     subroutine i_create(p_factory, p_network)
       use, intrinsic :: iso_c_binding
@@ -33,11 +34,11 @@ module gridpack_factory
       import network
       implicit none
       class(factory), intent(inout) :: p_factory
-      class(network), intent(in) :: p_network
+      class(network), target, intent(in) :: p_network
     end subroutine i_create
 !
 ! Clean up old factory
-! @param factory old GridPACK factory object
+! @param p_factory old GridPACK factory object
 !
     subroutine i_destroy(p_factory)
       use, intrinsic :: iso_c_binding
@@ -115,7 +116,7 @@ module gridpack_factory
   subroutine set_components(p_factory)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(factory), value, intent(in) :: p_factory
+    class(factory), intent(in) :: p_factory
     call factory_set_components(p_factory%p_factory)
     return
   end subroutine set_components
@@ -128,7 +129,7 @@ module gridpack_factory
   subroutine load(p_factory)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(factory), value, intent(in) :: p_factory
+    class(factory), intent(in) :: p_factory
     call factory_load(p_factory%p_factory)
     return
   end subroutine load
@@ -140,7 +141,7 @@ module gridpack_factory
   subroutine set_exchange(p_factory)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(factory), value, intent(in) :: p_factory
+    class(factory), intent(in) :: p_factory
     call factory_set_exchange(p_factory%p_factory)
     return
   end subroutine set_exchange
@@ -152,7 +153,7 @@ module gridpack_factory
   subroutine set_mode(p_factory, mode)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(factory), value, intent(in) :: p_factory
+    class(factory), intent(in) :: p_factory
     integer, value, intent(in) :: mode
     integer(C_INT) c_mode
     c_mode = mode
@@ -169,7 +170,7 @@ module gridpack_factory
   logical(C_BOOL) function check_true(p_factory, flag)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(factory), value, intent(in) :: p_factory
+    class(factory), intent(in) :: p_factory
     logical, value, intent(in) :: flag
     logical(C_BOOL) c_flag
     c_flag = flag
