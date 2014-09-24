@@ -18,16 +18,17 @@ add_library(gridpackf_parser OBJECT
 
 #add_dependencies( gridpackf_factory $<TARGET_OBJECTS:gridpackf_parser> )
 
-#add_executable(fortran_parser_test
-#  factory_test.F90
-#  $<TARGET_OBJECTS:gridpackf_parser>
-#  $<TARGET_OBJECTS:gridpackf_network>
-#  $<TARGET_OBJECTS:gridpackf_parallel>
-#  $<TARGET_OBJECTS:gridpackf_component>
-#)
+add_executable(fortran_parser_test
+  parser_test.F90
+  parser_component.F90
+  $<TARGET_OBJECTS:gridpackf_parser>
+  $<TARGET_OBJECTS:gridpackf_network>
+  $<TARGET_OBJECTS:gridpackf_parallel>
+  $<TARGET_OBJECTS:gridpackf_component>
+)
 
-#target_link_libraries(fortran_parser_test
-#  ${MPI_Fortran_LIBRARIES}
-#  ${GRIDPACK_LIBS}
-#)
+target_link_libraries(fortran_parser_test
+  ${MPI_Fortran_LIBRARIES}
+  ${GRIDPACK_LIBS}
+)
 

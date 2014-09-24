@@ -1,7 +1,7 @@
 !
 !  Fortran parser functions
 !
-module gridpack_mapper
+module gridpack_parser
   use, intrinsic :: iso_c_binding
   use gridpack_network
   implicit none
@@ -28,7 +28,7 @@ module gridpack_mapper
       use, intrinsic :: iso_c_binding
       implicit none
       type(C_PTR), intent(inout) :: parser
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
     end subroutine pti23_parser_create
 !
 ! Destroy a PTI23 parser
@@ -47,7 +47,7 @@ module gridpack_mapper
     subroutine pti23_parser_parse(parser, string) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: parser
+      type(C_PTR), value, intent(in) :: parser
       character(C_CHAR), intent(in) :: string(*)
     end subroutine pti23_parser_parse
   end interface
@@ -59,6 +59,7 @@ module gridpack_mapper
 !
   subroutine create(p_parser, p_network)
     use, intrinsic :: iso_c_binding
+    use gridpack_network
     implicit none
     class(pti23_parser), intent(inout) :: p_parser
     class(network), intent(in) :: p_network
@@ -85,8 +86,18 @@ module gridpack_mapper
     use, intrinsic :: iso_c_binding
     implicit none
     class(pti23_parser), intent(in) :: p_parser
-    character, intent(in) :: string(*)
-    call pti23_parser_parse(p_parser%p_parser, string)
+    character(len=*), intent(in) :: string
+    character(C_CHAR) str_dummy(512)
+    integer i,slen
+    slen = len(trim(string))
+    if (slen.gt.511) then
+      write(6,'(a)') 'File name too long in pti23_parser%parse'
+    endif
+    do i=1, slen
+      str_dummy(i) = string(i:i)
+    end do
+    str_dummy(slen+1) = C_NULL_CHAR
+    call pti23_parser_parse(p_parser%p_parser, str_dummy)
     return
   end subroutine parse
-end module gridpack_mapper
+end module gridpack_parser

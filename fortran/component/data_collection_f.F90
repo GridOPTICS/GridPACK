@@ -13,6 +13,16 @@ module gridpack_data_collection
     integer :: p_idx
     contains
     procedure::get_int_value
+    procedure::get_logical_value
+    procedure::get_string_value
+    procedure::get_real_value
+    procedure::get_double_value
+    procedure::get_int_indexed_value
+    procedure::get_logical_indexed_value
+    procedure::get_string_indexed_value
+    procedure::get_real_indexed_value
+    procedure::get_double_indexed_value
+    procedure::bind
   end type
 !
   type, public :: data_wrapper
@@ -137,11 +147,13 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     integer, intent(out) :: value
     logical c_ret
     integer(C_INT) c_value
-    c_ret = data_collection_get_int_value(p_data%p_data,name,c_value)
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
+    c_ret = data_collection_get_int_value(p_data%p_data,cstring,c_value)
     value = c_value
     get_int_value = c_ret
     return
@@ -150,11 +162,13 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     logical, intent(out) :: value
     logical c_ret
     logical(C_BOOL) c_value
-    c_ret = data_collection_get_logical_value(p_data%p_data,name,c_value)
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
+    c_ret = data_collection_get_logical_value(p_data%p_data,cstring,c_value)
     value = c_value
     get_logical_value = c_ret
     return
@@ -163,10 +177,12 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     character(C_CHAR), intent(inout) :: value(*)
     logical c_ret
-    c_ret = data_collection_get_string_value(p_data%p_data,name,value)
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
+    c_ret = data_collection_get_string_value(p_data%p_data,cstring,value)
     get_string_value = c_ret
     return
   end function get_string_value
@@ -174,11 +190,13 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     real, intent(out) :: value
     logical c_ret
     real(C_FLOAT) c_value
-    c_ret = data_collection_get_real_value(p_data%p_data,name,value)
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
+    c_ret = data_collection_get_real_value(p_data%p_data,cstring,value)
     value = c_value
     get_real_value = c_ret
     return
@@ -187,11 +205,13 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     double precision, intent(out) :: value
     logical c_ret
     real(C_DOUBLE) c_value
-    c_ret = data_collection_get_double_value(p_data%p_data,name,c_value)
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
+    c_ret = data_collection_get_double_value(p_data%p_data,cstring,c_value)
     value = c_value
     get_double_value = c_ret
     return
@@ -211,14 +231,16 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     integer, intent(out) :: value
     integer, intent(in) :: idx
     logical c_ret
     integer(C_INT) c_idx
     integer(C_INT) c_value
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
     c_idx = idx
-    c_ret = data_collection_get_int_indexed_value(p_data%p_data,name,c_value,c_idx)
+    c_ret = data_collection_get_int_indexed_value(p_data%p_data,cstring,c_value,c_idx)
     value = c_value
     get_int_indexed_value = c_ret
     return
@@ -227,14 +249,16 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     logical, intent(out) :: value
     integer, intent(in) :: idx
     logical c_ret
     integer(C_INT) c_idx
     logical(C_BOOL) c_value
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
     c_idx = idx
-    c_ret = data_collection_get_logical_indexed_value(p_data%p_data,name,c_value,c_idx)
+    c_ret = data_collection_get_logical_indexed_value(p_data%p_data,cstring,c_value,c_idx)
     value = c_value
     get_logical_indexed_value = c_ret
     return
@@ -243,13 +267,15 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     character, intent(inout) :: value(*)
     integer, intent(in) :: idx
     logical c_ret
     integer(C_INT) c_idx
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
     c_idx = idx
-    c_ret = data_collection_get_string_indexed_value(p_data%p_data,name,value,c_idx)
+    c_ret = data_collection_get_string_indexed_value(p_data%p_data,cstring,value,c_idx)
     get_string_indexed_value = c_ret
     return
   end function get_string_indexed_value
@@ -257,14 +283,16 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     real, intent(out) :: value
     integer, intent(in) :: idx
     logical c_ret
     integer(C_INT) c_idx
     real(C_FLOAT) c_value
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
     c_idx = idx
-    c_ret = data_collection_get_real_indexed_value(p_data%p_data,name,c_value,c_idx)
+    c_ret = data_collection_get_real_indexed_value(p_data%p_data,cstring,c_value,c_idx)
     value = c_value
     get_real_indexed_value = c_ret
     return
@@ -273,16 +301,49 @@ module gridpack_data_collection
     use, intrinsic :: iso_c_binding
     implicit none
     class(data_collection), intent(in) :: p_data
-    character, intent(in) :: name(*)
+    character(len=*), intent(in) :: name
     double precision, intent(out) :: value
     integer, intent(in) :: idx
     logical c_ret
     integer(C_INT) c_idx
     real(C_DOUBLE) c_value
+    character(C_CHAR) :: cstring(512)
+    call fstring_convert(name,cstring)
     c_idx = idx
-    c_ret = data_collection_get_double_indexed_value(p_data%p_data,name,c_value,c_idx)
+    c_ret = data_collection_get_double_indexed_value(p_data%p_data,cstring,c_value,c_idx)
     value = c_value
     get_double_indexed_value = c_ret
     return
   end function get_double_indexed_value
+!
+! This subroutine binds a pointer to the C DataCollection object to the
+! corresponding Fortran object
+! @param ptr pointer to C DataCollection object
+! @return Fortran pointer to data collection object
+!
+  subroutine bind(p_data, ptr)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(data_collection), intent(inout) :: p_data
+    type(C_PTR), value, intent(in) :: ptr
+    p_data%p_data = ptr
+    return
+  end subroutine bind
+!
+! Utility routine to add C_NULL_CHAR to end of fortran strings
+! @param fstring string coming from Fortran calling program
+! @param cstring string with appended null character
+!
+   subroutine fstring_convert(fstring,cstring)
+     use, intrinsic :: iso_c_binding
+     implicit none
+     character(len=*), intent(in) :: fstring
+     character(C_CHAR), intent(inout):: cstring(*)
+     integer flen, i
+     flen = len(trim(fstring))
+     do i = 1, flen
+       cstring(i) = fstring(i:i)
+     end do
+     cstring(flen+1) = C_NULL_CHAR
+   end subroutine fstring_convert
 end module gridpack_data_collection

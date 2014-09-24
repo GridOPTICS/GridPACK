@@ -33,33 +33,33 @@ struct dataWrapper {
  * @return false if no element of the correct name and type exists in
  * data_collection object
  */
-extern "C" bool data_collection_get_int_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_int_value(FortranData *data, char *name,
       int *value)
 {
-  return wdata->data->getValue(name,value);
+  return data->getValue(name,value);
 }
-extern "C" bool data_collection_get_logical_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_logical_value(FortranData *data, char *name,
       bool *value)
 {
-  return wdata->data->getValue(name,value);
+  return data->getValue(name,value);
 }
-extern "C" bool data_collection_get_string_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_string_value(FortranData *data, char *name,
       char *value)
 {
   std::string s_value;
-  bool ret = wdata->data->getValue(name,&s_value);
+  bool ret = data->getValue(name,&s_value);
   strcpy(value,s_value.c_str());
   return ret;
 }
-extern "C" bool data_collection_get_real_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_real_value(FortranData *data, char *name,
       float *value)
 {
-  return wdata->data->getValue(name,value);
+  return data->getValue(name,value);
 }
-extern "C" bool data_collection_get_double_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_double_value(FortranData *data, char *name,
       double *value)
 {
-  return wdata->data->getValue(name,value);
+  return data->getValue(name,value);
 }
 /**
  * Retrieve current value of existing data element in
@@ -72,31 +72,36 @@ extern "C" bool data_collection_get_double_value(dataWrapper *wdata, char *name,
  * @return false if no element of the correct name and type exists in
  * data_collection object
  */
-extern "C" bool data_collection_get_int_indexed_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_int_indexed_value(FortranData *data, char *name,
       int *value, int idx)
 {
-  return wdata->data->getValue(name,value,idx);
+  idx--;
+  return data->getValue(name,value,idx);
 }
-extern "C" bool data_collection_get_logical_indexed_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_logical_indexed_value(FortranData *data, char *name,
       bool *value, int idx)
 {
-  return wdata->data->getValue(name,value,idx);
+  idx--;
+  return data->getValue(name,value,idx);
 }
-extern "C" bool data_collection_get_string_indexed_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_string_indexed_value(FortranData *data, char *name,
       char *value, int idx)
 {
+  idx--;
   std::string s_value;
-  bool ret = wdata->data->getValue(name,&s_value,idx);
+  bool ret = data->getValue(name,&s_value,idx);
   strcpy(value,s_value.c_str());
   return ret;
 }
-extern "C" bool data_collection_get_real_indexed_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_real_indexed_value(FortranData *data, char *name,
       float *value, int idx)
 {
-  return wdata->data->getValue(name,value,idx);
+  idx--;
+  return data->getValue(name,value,idx);
 }
-extern "C" bool data_collection_get_double_indexed_value(dataWrapper *wdata, char *name,
+extern "C" bool data_collection_get_double_indexed_value(FortranData *data, char *name,
       double *value, int idx)
 {
-  return wdata->data->getValue(name,value,idx);
+  idx--;
+  return data->getValue(name,value,idx);
 }

@@ -569,3 +569,27 @@ extern "C" void* network_get_branch(networkWrapper *wnetwork, int idx)
   idx--;
   return wnetwork->network->getBranch(idx)->getFortranPointer();
 }
+
+/**
+ * Return a void pointer to the internal fortran bus data collection object
+ * @param network pointer to Fortran network object
+ * @param idx index of bus object
+ * @return void pointer to fortran bus data collection object
+ */
+extern "C" void* network_get_bus_data(networkWrapper *wnetwork, int idx)
+{
+  idx--;
+  return wnetwork->network->getBusData(idx).get();
+}
+
+/**
+ * Return a void pointer to the internal fortran branch data collection object
+ * @param network pointer to Fortran network object
+ * @param idx index of branch object
+ * @return void pointer to fortran branch data collection object
+ */
+extern "C" void* network_get_branch_data(networkWrapper *wnetwork, int idx)
+{
+  idx--;
+  return wnetwork->network->getBranchData(idx).get();
+}

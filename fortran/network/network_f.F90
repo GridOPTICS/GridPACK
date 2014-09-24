@@ -3,6 +3,7 @@
 !
 module gridpack_network
   use, intrinsic :: iso_c_binding
+  use gridpack_data_collection
   implicit none
 !
 ! Define network type
@@ -57,6 +58,8 @@ module gridpack_network
     procedure::update_branches
     procedure::get_bus
     procedure::get_branch
+    procedure::get_bus_data
+    procedure::get_branch_data
   end type
 !
 !  Interface declaration to C calls
@@ -607,6 +610,30 @@ module gridpack_network
       type(C_PTR), value, intent(in) :: network
       integer(C_INT), value, intent(in) :: idx
     end function network_get_branch
+!
+! Get C pointer to bus data
+! @param network GridPACK network object
+! @param idx bus index
+! @return C pointer to fortran data collection object
+!
+    type(C_PTR) function network_get_bus_data(network,idx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: idx
+    end function network_get_bus_data
+!
+! Get C pointer to branch data
+! @param network GridPACK network object
+! @param idx branch index
+! @return C pointer to fortran data collection object
+!
+    type(C_PTR) function network_get_branch_data(network,idx) bind(c)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      type(C_PTR), value, intent(in) :: network
+      integer(C_INT), value, intent(in) :: idx
+    end function network_get_branch_data
   end interface
   contains
 !
@@ -1377,4 +1404,38 @@ module gridpack_network
       branch = network_get_branch(p_network%p_network,c_idx)
       return
     end function get_branch
+!
+! Get Fortran pointer to bus data collection
+! @param p_network GridPACK network object
+! @param idx bus index
+! @return pointer to Fortran data collection object
+!
+    function get_bus_data(p_network,idx) result(data)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      class(network), intent(in) :: p_network
+      integer, value, intent(in) :: idx
+      type(C_PTR) :: data
+      integer(C_INT) c_idx
+      c_idx = idx
+      data = network_get_bus_data(p_network%p_network,c_idx)
+      return
+    end function get_bus_data
+!
+! Get Fortran pointer to branch data collection
+! @param p_network GridPACK network object
+! @param idx branch index
+! @return pointer to Fortran data collection object
+!
+    function get_branch_data(p_network,idx) result(data)
+      use, intrinsic :: iso_c_binding
+      implicit none
+      class(network), intent(in) :: p_network
+      integer, value, intent(in) :: idx
+      type(C_PTR) :: data
+      integer(C_INT) c_idx
+      c_idx = idx
+      data = network_get_branch_data(p_network%p_network,c_idx)
+      return
+    end function get_branch_data
 end module gridpack_network
