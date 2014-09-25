@@ -164,8 +164,8 @@ void gridpack::state_estimation::SEBus::setValues(gridpack::ComplexType *values)
     *p_vAng_ptr = p_a;
     *p_vMag_ptr = p_v;
   }
-  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
-        at,vt,real(values[0]),real(values[1]),p_a,p_v);
+//  printf("at: %12.6f vt: %12.6f da: %12.6f dv: %12.6f  p_a: %12.6f p_v: %12.6f\n",
+//        at,vt,real(values[0]),real(values[1]),p_a,p_v);
 }
 
 /**
@@ -875,7 +875,7 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
            branch->getVTheta(this,&v,&theta);
            ret +=  v * (yfbusr*sin(theta) - yfbusi*cos(theta));
          }
-         ret += - p_v * p_ybusi;
+         ret -= p_v * p_ybusi;
          ret *= p_v; 
          int index = getGlobalIndex();
          values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret),0.0);
@@ -1495,7 +1495,6 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-v2*(gij*sin(theta)
                     - bij*cos(theta))-2*(bij +p_shunt_admt_b1[j])*v1,0.0);
-              //printf("g1=%8.4f b1=%8.4f\n", p_shunt_admt_g1[j], p_shunt_admt_b1[j]);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
