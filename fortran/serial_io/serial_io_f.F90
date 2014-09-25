@@ -43,7 +43,7 @@ module gridpack_serial_io
       implicit none
       type(C_PTR), intent(inout) :: writer
       integer(C_INT), value, intent(in) :: max_len
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
     end subroutine bus_serial_io_create
 !
 ! Destroy a bus serial IO object
@@ -62,7 +62,7 @@ module gridpack_serial_io
     subroutine bus_serial_io_open(writer, filename) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
       character(C_CHAR), intent(in) :: filename(*)
     end subroutine bus_serial_io_open
 !
@@ -72,7 +72,7 @@ module gridpack_serial_io
     subroutine bus_serial_io_close(writer) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
     end subroutine bus_serial_io_close
 !
 ! Write output from network to output
@@ -81,7 +81,7 @@ module gridpack_serial_io
     subroutine bus_serial_io_write(writer, signal) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
       character(C_CHAR), intent(in) :: signal(*)
     end subroutine bus_serial_io_write
 !
@@ -94,7 +94,7 @@ module gridpack_serial_io
     subroutine bus_serial_io_header(writer, str) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
       character(C_CHAR), intent(in) :: str(*)
     end subroutine bus_serial_io_header
 !
@@ -108,7 +108,7 @@ module gridpack_serial_io
       implicit none
       type(C_PTR), intent(inout) :: writer
       integer(C_INT), value, intent(in) :: max_len
-      type(C_PTR), intent(in) :: network
+      type(C_PTR), value, intent(in) :: network
     end subroutine branch_serial_io_create
 !
 ! Destroy a branch serial IO object
@@ -127,7 +127,7 @@ module gridpack_serial_io
     subroutine branch_serial_io_open(writer, filename) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
       character(C_CHAR), intent(in) :: filename(*)
     end subroutine branch_serial_io_open
 !
@@ -137,7 +137,7 @@ module gridpack_serial_io
     subroutine branch_serial_io_close(writer) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
     end subroutine branch_serial_io_close
 !
 ! Write output from network to output
@@ -146,7 +146,7 @@ module gridpack_serial_io
     subroutine branch_serial_io_write(writer, signal) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
       character(C_CHAR), intent(in) :: signal(*)
     end subroutine branch_serial_io_write
 !
@@ -159,7 +159,7 @@ module gridpack_serial_io
     subroutine branch_serial_io_header(writer, str) bind(c)
       use, intrinsic :: iso_c_binding
       implicit none
-      type(C_PTR), intent(in) :: writer
+      type(C_PTR), value, intent(in) :: writer
       character(C_CHAR), intent(in) :: str(*)
     end subroutine branch_serial_io_header
   end interface
@@ -224,8 +224,16 @@ module gridpack_serial_io
     use, intrinsic :: iso_c_binding
     implicit none
     class(bus_serial_io), intent(in) :: p_writer
-    character, intent(in) :: signal(*)
-    call bus_serial_io_write(p_writer%p_writer, signal)
+    character(len=*), intent(in) :: signal
+    character(C_CHAR) c_string(512)
+    integer slen, i
+    slen = len(trim(signal))
+    slen = min(slen,511)
+    do i=1, slen
+      c_string(i) = signal(i:i)
+    end do
+    c_string(slen+1) = C_NULL_CHAR
+    call bus_serial_io_write(p_writer%p_writer, c_string)
     return
   end subroutine bus_write
 !
@@ -239,8 +247,16 @@ module gridpack_serial_io
     use, intrinsic :: iso_c_binding
     implicit none
     class(bus_serial_io), intent(in) :: p_writer
-    character, intent(in) :: str(*)
-    call bus_serial_io_header(p_writer%p_writer,str)
+    character(len=*), intent(in) :: str
+    character(C_CHAR) :: c_string(512)
+    integer slen, i
+    slen = len(trim(str))
+    slen = min(slen,511)
+    do i = 1, slen
+      c_string(i) = str(i:i)
+    end do
+    c_string(slen+1) = C_NULL_CHAR
+    call bus_serial_io_header(p_writer%p_writer,c_string)
     return
   end subroutine bus_header
 !
@@ -303,8 +319,16 @@ module gridpack_serial_io
     use, intrinsic :: iso_c_binding
     implicit none
     class(branch_serial_io), intent(in) :: p_writer
-    character, intent(in) :: signal(*)
-    call branch_serial_io_write(p_writer%p_writer, signal)
+    character(len=*), intent(in) :: signal
+    character(C_CHAR) c_string(512)
+    integer slen, i
+    slen = len(trim(signal))
+    slen = min(slen,511)
+    do i=1, slen
+      c_string(i) = signal(i:i)
+    end do
+    c_string(slen+1) = C_NULL_CHAR
+    call branch_serial_io_write(p_writer%p_writer, c_string)
     return
   end subroutine branch_write
 !
@@ -318,8 +342,16 @@ module gridpack_serial_io
     use, intrinsic :: iso_c_binding
     implicit none
     class(branch_serial_io), intent(in) :: p_writer
-    character, intent(in) :: str(*)
-    call branch_serial_io_header(p_writer%p_writer,str)
+    character(len=*), intent(in) :: str
+    character(C_CHAR) :: c_string(512)
+    integer slen, i
+    slen = len(trim(str))
+    slen = min(slen,511)
+    do i = 1, slen
+      c_string(i) = str(i:i)
+    end do
+    c_string(slen+1) = C_NULL_CHAR
+    call branch_serial_io_header(p_writer%p_writer,c_string)
     return
   end subroutine branch_header
 end module gridpack_serial_io

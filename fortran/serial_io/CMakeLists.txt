@@ -18,16 +18,19 @@ add_library(gridpackf_serial_io OBJECT
 
 #add_dependencies( gridpackf_factory $<TARGET_OBJECTS:gridpackf_serial_io> )
 
-#add_executable(fortran_serial_io_test
-#  factory_test.F90
-#  $<TARGET_OBJECTS:gridpackf_serial_io>
-#  $<TARGET_OBJECTS:gridpackf_network>
-#  $<TARGET_OBJECTS:gridpackf_parallel>
-#  $<TARGET_OBJECTS:gridpackf_component>
-#)
+add_executable(fortran_serial_io_test
+  serial_io_test.F90
+  serial_io_component.F90
+  serial_io_factory.F90
+  $<TARGET_OBJECTS:gridpackf_serial_io>
+  $<TARGET_OBJECTS:gridpackf_network>
+  $<TARGET_OBJECTS:gridpackf_parallel>
+  $<TARGET_OBJECTS:gridpackf_component>
+  $<TARGET_OBJECTS:gridpackf_factory>
+)
 
-#target_link_libraries(fortran_serial_io_test
-#  ${MPI_Fortran_LIBRARIES}
-#  ${GRIDPACK_LIBS}
-#)
+target_link_libraries(fortran_serial_io_test
+  ${MPI_Fortran_LIBRARIES}
+  ${GRIDPACK_LIBS}
+)
 

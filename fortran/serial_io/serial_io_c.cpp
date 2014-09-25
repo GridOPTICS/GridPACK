@@ -79,6 +79,9 @@ extern "C" void bus_serial_io_write(FortranBusSerialIO *writer, char *signal)
  */
 extern "C" void bus_serial_io_header(FortranBusSerialIO *writer, char *str)
 {
+  int slen = strlen(str);
+  str[slen] = '\n';
+  str[slen+1] = '\0';
   writer->header(str);
 }
 
@@ -147,5 +150,8 @@ extern "C" void branch_serial_io_write(FortranBranchSerialIO *writer, char *sign
  */
 extern "C" void branch_serial_io_header(FortranBranchSerialIO *writer, char *str)
 {
+  int slen = strlen(str);
+  str[slen] = '\n';
+  str[slen+1] = '\0';
   writer->header(str);
 }
