@@ -74,12 +74,9 @@ module application_components
     procedure :: bus_get_voltage
     procedure :: bus_get_complex_voltage
     procedure :: bus_get_phase
-    procedure :: bus_get_gen_status
-    procedure :: bus_get_generators
     procedure :: bus_is_pv
     procedure :: bus_set_voltage
     procedure :: bus_set_phase
-    procedure :: bus_set_gen_status
     procedure :: bus_set_is_pv
     procedure :: bus_reset_is_pv
     procedure :: bus_set_sbus
@@ -478,7 +475,7 @@ module application_components
 !
   logical function bus_chk_q_lim(bus)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     class(application_branch), pointer :: branch_ptr
     double precision qmin, qmax
     double precision pp, qq, p, q
@@ -543,7 +540,7 @@ module application_components
 ! 
   subroutine bus_set_values(bus, values)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     double complex, intent(in) :: values(*)
     double precision vt, at
     vt = bus%p_v
@@ -588,7 +585,7 @@ module application_components
 !
   subroutine bus_matrix_set_row_index(bus, irow, idx)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     integer, value, intent(in) :: irow, idx
   end subroutine bus_matrix_set_row_index
 !
@@ -600,7 +597,7 @@ module application_components
 !
   subroutine bus_matrix_set_col_index(bus, icol, idx)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     integer(C_INT), value, intent(in) :: icol, idx
   end subroutine bus_matrix_set_col_index
 !
@@ -672,7 +669,7 @@ module application_components
 !
   subroutine bus_vector_set_element_index(bus, ielem, idx)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     integer, value, intent(in) :: ielem, idx
   end subroutine bus_vector_set_element_index
 !
@@ -704,7 +701,7 @@ module application_components
 !
   subroutine bus_vector_set_element_values(bus, values)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     double complex, intent(out) :: values(*)
   end subroutine bus_vector_set_element_values
 !
@@ -714,7 +711,7 @@ module application_components
 !
   subroutine bus_load(bus, data)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     class(data_collection), intent(in) :: data
     double precision pi, pg, qg, vs, qmin, qmax, sbase
     integer itype, i, ngen, gstatus, icnt
@@ -821,7 +818,7 @@ module application_components
 !
   subroutine bus_set_y_matrix(bus)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     class(application_branch), pointer :: branch
     double complex ybus
     integer i,nnghbr
@@ -846,10 +843,124 @@ module application_components
 !
    double complex function bus_get_ymatrix(bus)
      implicit none
-     class(application_bus) :: bus
+     class(application_bus), intent(in) :: bus
      bus_get_ymatrix = dcmplx(bus%p_ybusr,bus%p_ybusi)
      return
    end function bus_get_ymatrix
+!
+! Reset the voltage and phase angle to initial values
+! @param bus GridPACK bus object
+!
+   subroutine bus_reset_voltage
+     implicit none
+     class(application_bus), intent(in) :: bus
+     bus%p_v = bus%p_voltage
+     bus%p_a = bus%p_angle
+     bus%xc_buf%v_mag = bus%p_v
+     bus%xc_buf%v_ang = bus%p_a
+     return
+   end subroutine bus_reset_voltage
+!
+! Return the voltage magnitude on this bus
+! @param bus GridPACK bus object
+!
+   double precision function bus_get_voltage(bus)
+     implicit none
+     class(application_bus), intent(in) :: bus
+     bus_get_voltage = bus%xc_buf%v_mag
+     return
+   end function bus_get_voltage
+!
+! Return the value of the phase angle on this bus
+! @param bus GridPACK bus object
+!
+   double precision function bus_get_phase(bus)
+     implicit none
+     class(application_bus), intent(in) :: bus
+     bus_get_phase = bus%xc_buf%v_ang
+     return
+   end function bus_get_voltage
+!
+! Return whether or not bus is a PV bus (V held fixed in powerflow equations)
+! @param bus GridPACK bus object
+! @return true if bus is PV bus
+!
+  logical function bus_is_pv
+     implicit none
+     class(application_bus), intent(in) :: bus
+     bus_is_pv = bus%p_ispv
+     return
+  end function bus_is_pv
+!
+! Set is PV status
+! @param bus GridPACK bus object
+! @param status PV status (1 if bus is PV)
+!
+  subroutine bus_set_is_pv(bus,status)
+    implicit none
+    class(application_bus), intent(in) :: bus
+    integer, intent(in) :: status
+    bus%p_saveispv = bus%p_ispv
+    bus%p_ispv = status
+    bus%p_v = bus%p_voltage
+    return
+  end subroutine bus_set_is_pv
+!
+! Reset is PV status
+! @param bus GridPACK bus object
+! @param status PV status (1 if bus is PV)
+!
+  subroutine bus_reset_is_pv(bus)
+    implicit none
+    class(application_bus), intent(in) :: bus
+    bus%p_ispv = bus%p_saveispv
+    return
+  end subroutine bus_reset_is_pv
+!
+! Set S-bus
+! @param bus GridPACK bus object
+!
+  subroutine bus_set_sbus(bus)
+    implicit none
+    class(application_bus), intent(in) :: bus
+    integer i, ngen
+    double precision pg, qg
+    logical usegen
+    complex double sbus
+    usegen = .false.
+    ngen = bus%p_ngen
+    do i = 1, ngen
+      if (bus%p_gstatus(i).eq.1) then
+        pg = pg + bus%p_pg(i)
+        qg = qg + bus%p_qg(i)
+        usegen = .true.
+      endif
+    end do
+    if (usegen) then
+      sbus = dcmplx((pg-bus%p_pl)/bus%p_sbase,(qg-bus%p_ql)/bus%p_sbase)
+      bus%p_p0 = real(sbus)
+      bus%p_q0 = dimag(sbus)
+    else
+      sbus = dcmplx(-bus%p_pl/bus%p_sbase,bus%p_ql/bus%p_sbase)
+      bus%p_p0 = real(sbus)
+      bus%p_q0 = dimag(sbus)
+    endif
+    return
+  end subroutine bus_set_sbus
+!
+! Return the complex voltage on this bus
+!
+  double complex function bus_get_complex_voltage(bus)
+    implicit none
+    class(application_bus), intent(in) :: bus
+    double complex ret
+    bus%p_a = bus%xc_buf%v_ang
+    bus%p_v = bus%xc_buf%v_mag
+    ret = dcmplx(cos(bus%p_a),sin(bus%p_a))
+    ret = bus%p_v*ret
+    bus_get_complex_voltage = ret
+    return
+  end function bus_get_complex_voltage
 !
 ! Set an internal variable that can be used to control the behavior of the
 ! component. This function doesn't need to be implemented, but if needed it can
@@ -862,7 +973,7 @@ module application_components
 !
   subroutine bus_set_mode(bus, mode)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     integer, value, intent(in) :: mode
     bus%p_mode = mode
     return
@@ -879,10 +990,31 @@ module application_components
 !
   logical function bus_serial_write(bus, string, bufsize, signal)
     implicit none
-    class(application_bus) :: bus
+    class(application_bus), intent(in) :: bus
     character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
     character(len=*), intent(in) :: signal
+    double precision pi, angle
+    double complex v(2)
+    integer nnghbr
+    if (len(trim(signal)).eq.0) then
+      pi = 4.0d00*atan(1.0d00) 
+      angle = bus%p_a*180.0d00/pi
+      write(string,'(a,i6,a,f12.6,a,f12.6)') '     ', &
+        bus%bus_get_original_index(),'      ',angle,'      ',bus%p_v
+      bus_serial_write = .true.
+      return
+    else if (trim(signal).eq.'pq') then
+      call bus%bus_vector_values(v)
+      nngbhr = bus%bus_get_num_neighbors()
+      write(string,'(a,i6,a,f12.6,a,f12.6,a,i2)') '     ', &
+        bus%bus_get_original_index(),'      ',real(v(1)),'      ', &
+        real(v(2)),'      ',nngbhrs
+      bus_serial_write = .true.
+      return
+    endif
+    bus_serial_write = .false.
+    return
   end function bus_serial_write
 !
 ! Return size of matrix block on the diagonal contributed by component
