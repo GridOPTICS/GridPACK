@@ -678,11 +678,18 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           SEBranch *branch
             = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
           SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
-          if (bus == this) bus = dynamic_cast<SEBus*>(branch->getBus2().get());
           branch->getVTheta(this, &v, &theta);
-          ComplexType yfbus=branch->getForwardYBus();
-          yfbusr = real (yfbus);
-          yfbusi = imag (yfbus);
+          ComplexType yfbus;
+          if (bus == this) {
+            yfbus=branch->getForwardYBus();
+	    bus = dynamic_cast<SEBus*>(branch->getBus2().get());
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          } else {
+            yfbus=branch->getReverseYBus();
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          }
           // to discuss, how to use YBus branch data in bus 
           ret1 += p_v * v * (-yfbusr*sin(theta) + yfbusi*cos(theta));
           if (!bus->getReferenceBus()) {
@@ -732,11 +739,18 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           SEBranch *branch
             = dynamic_cast<SEBranch*>(branch_nghbrs[j].get());
           SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
-          if (bus == this) bus = dynamic_cast<SEBus*>(branch->getBus2().get());
           branch->getVTheta(this, &v, &theta);
-          ComplexType yfbus=branch->getForwardYBus();
-          yfbusr = real (yfbus);
-          yfbusi = imag (yfbus);
+          ComplexType yfbus;
+          if (bus == this) {
+            yfbus=branch->getForwardYBus();
+	    bus = dynamic_cast<SEBus*>(branch->getBus2().get());
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          } else {
+            yfbus=branch->getReverseYBus();
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          }
           ret1 += p_v * v * (yfbusr*cos(theta) + yfbusi*sin(theta));
           if (!bus->getReferenceBus()) {
             values[ncnt] = gridpack::ComplexType(p_v*v*(-yfbusr*cos(theta)-yfbusi*sin(theta)),0.0);
@@ -850,9 +864,17 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
          for (j=0; j<nsize; j++) {
            gridpack::state_estimation::SEBranch *branch
              = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[j].get());
-           ComplexType yfbus=branch->getForwardYBus();
-           yfbusr = real (yfbus);
-           yfbusi = imag (yfbus);
+          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
+          ComplexType yfbus;
+          if (bus == this) {
+            yfbus=branch->getForwardYBus();
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          } else {
+            yfbus=branch->getReverseYBus();
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          }
            branch->getVTheta(this, &v, &theta);
            ret +=  v * (yfbusr*cos(theta) + yfbusi*sin(theta));
          }
@@ -869,9 +891,17 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
          for (j=0; j<nsize; j++) {
            gridpack::state_estimation::SEBranch *branch
              = dynamic_cast<gridpack::state_estimation::SEBranch*>(branch_nghbrs[j].get());
-           ComplexType yfbus=branch->getForwardYBus();
-           yfbusr = real (yfbus);
-           yfbusi = imag (yfbus);
+          SEBus *bus = dynamic_cast<SEBus*>(branch->getBus1().get());
+          ComplexType yfbus;
+          if (bus == this) {
+            yfbus=branch->getForwardYBus();
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          } else {
+            yfbus=branch->getReverseYBus();
+            yfbusr = real (yfbus);
+            yfbusi = imag (yfbus);
+          }
            branch->getVTheta(this,&v,&theta);
            ret +=  v * (yfbusr*sin(theta) - yfbusi*cos(theta));
          }
@@ -1259,7 +1289,7 @@ void gridpack::state_estimation::SEBranch::configureSE(void)
   for (i=0; i<nmeas; i++) {
     std::string type = p_meas[i].p_type;
     std::string ckt = p_meas[i].p_ckt;
-    if (type == "PIJ" || type == "QIJ" || type == "IIJ") {
+    if (type == "PIJ" || type == "QIJ" || type == "IIJ" || type == "PJI" || type == "QJI" || type == "IJI") {
       int nsize = p_tag.size();
       for (j=0; j<nsize; j++) {
         if (p_tag[j] == ckt) {
@@ -1424,6 +1454,11 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
           if (p_tag[j] == ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
+            if (p_tap_ratio[i] != 0.0) {
+              gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+              a = p_tap_ratio[i]*a;
+              ret = ret/conj(a);
+            }
             double gij=real(ret);
             double bij=imag(ret);
             if (!bus1->getReferenceBus()) {
@@ -1476,6 +1511,11 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
           if (p_tag[j] == ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
+            if (p_tap_ratio[i] != 0.0) {
+              gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+              a = p_tap_ratio[i]*a;
+              ret = ret/conj(a);
+            }
             double gij=real(ret);
             double bij=imag(ret);
             if (!bus1->getReferenceBus()) {
@@ -1683,6 +1723,11 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
           if (p_tag[j] == p_meas[i].p_ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
+            if (p_tap_ratio[i] != 0.0) {
+              gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+              a = p_tap_ratio[i]*a;
+              ret = ret/conj(a);
+            }
             double gij=real(ret);
             double bij=imag(ret);
             ret1 =  v1*v1* (gij + p_shunt_admt_g1[j]) - v1*v2*(gij*cos(theta) + bij*sin(theta));
@@ -1696,6 +1741,11 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
           if (p_tag[j] == p_meas[i].p_ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
+            if (p_tap_ratio[i] != 0.0) {
+              gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
+              a = p_tap_ratio[i]*a;
+              ret = ret/(conj(a)*a);
+            }
             double gij=real(ret);
             double bij=imag(ret);
             ret2 = - v1*v1* (bij + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
