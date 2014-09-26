@@ -97,6 +97,24 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   return Ret;
 }
 
+/**
+ * Generate matrix from current component state on network and return a
+ * conventional pointer to it. Used for Fortran interface
+ * @return return a pointer to new matrix
+ */
+gridpack::math::Matrix* intMapToMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxRowIndex-p_minRowIndex+1;
+  gridpack::math::Matrix*
+    Ret(new gridpack::math::Matrix(comm, blockSize, p_colBlockSize, p_nz_per_row));
+  loadBusData(*Ret,false);
+  loadBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
 
 /**
  * Reset existing matrix from current component state on network

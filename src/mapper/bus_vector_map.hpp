@@ -89,7 +89,33 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(Ret,true);
+  loadBusData(*Ret,true);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
+  if (p_timer) p_timer->start(t_set);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  if (p_timer) p_timer->stop(t_set);
+  return Ret;
+}
+
+/**
+ * Create a vector from the current bus state and return a conventional pointer
+ * to it. Used for Fortran interface
+ * @return return pointer to new vector
+ */
+gridpack::math::Vector* intMapToVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int t_new, t_bus, t_set;
+  if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
+  if (p_timer) p_timer->start(t_new);
+  gridpack::math::Vector*
+     Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
+  if (p_timer) p_timer->stop(t_new);
+  if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
+  loadBusData(*Ret,true);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
@@ -155,8 +181,10 @@ void mapToBus(const gridpack::math::Vector &vector)
         size = sizes[idx];
         offset = offsets[idx];
         for (j=0; j<size; j++) {
+          printf("Calling getElement for idx: %d\n",offset+j);
           vector.getElement(offset+j,values[j]); 
         }
+        printf("Calling setValues\n");
         p_network->getBus(i)->setValues(values);
       }
     }

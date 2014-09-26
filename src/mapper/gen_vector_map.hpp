@@ -85,6 +85,24 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   return Ret;
 }
 
+/**
+ * Generate vector from current component state on network and return a
+ * conventional pointer to it. Used for Fortran interface.
+ * @return return a pointer to new vector
+ */
+gridpack::math::Vector* intMapToVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int blockSize = p_maxIndex-p_minIndex+1;
+  gridpack::math::Vector*
+    Ret(new gridpack::math::Vector(comm, blockSize));
+  loadBusData(*Ret,false);
+  loadBranchData(*Ret,false);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  return Ret;
+}
+
 
 /**
  * Reset existing vector from current component state on network

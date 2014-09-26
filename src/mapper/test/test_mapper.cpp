@@ -696,7 +696,7 @@ void run (const int &me, const int &nprocs)
         network->getBus(i)->getMatVecIndex(&idx);
         rv = network->getBus(i)->getValue();
         if (rv != (double)(2*idx)) {
-          printf("p[%d] Bus error i: %d v: %f expected: %f\n",me,idx,rv,double(2*idx));
+          printf("p[%d] Bus error i: %d v: %f expected: %f\n",me,idx,rv,(double)(2*idx));
           chk = 1;
         }
       }
@@ -707,7 +707,7 @@ void run (const int &me, const int &nprocs)
     if (chk == 0) {
       printf("\nBus values are ok\n");
     } else {
-      printf("\nError found in bus value\n");
+      printf("\nError found in bus values\n");
     }
   }
 

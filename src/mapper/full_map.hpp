@@ -101,6 +101,9 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int t_new, t_bus, t_branch, t_set;
+//  for (int i=0; i<p_rowBlockSize; i++) {
+//    printf ("p_nz_per_row[%d]: %d\n",i,p_nz_per_row[i]);
+//  }
   if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
   if (p_timer) p_timer->start(t_new);
   GA_Pgroup_sync(p_GAgrp);
@@ -113,11 +116,47 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
-  loadBusData(Ret,false);
+  loadBusData(*Ret,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
   if (p_timer) p_timer->start(t_branch);
-  loadBranchData(Ret,false);
+  loadBranchData(*Ret,false);
+  if (p_timer) p_timer->stop(t_branch);
+  if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
+  if (p_timer) p_timer->start(t_set);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  if (p_timer) p_timer->stop(t_set);
+  return Ret;
+}
+
+/**
+ * Generate matrix from current component state on network and return
+ * a conventional pointer to it. Used for Fortran interface
+ * @return return a pointer to new matrix
+ */
+gridpack::math::Matrix* intMapToMatrix(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int t_new, t_bus, t_branch, t_set;
+  if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
+  if (p_timer) p_timer->start(t_new);
+  GA_Pgroup_sync(p_GAgrp);
+  gridpack::math::Matrix*
+#ifndef NZ_PER_ROW
+    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
+#else
+    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
+#endif
+  if (p_timer) p_timer->stop(t_new);
+  if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
+  loadBusData(*Ret,false);
+  if (p_timer) p_timer->stop(t_new);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
+  if (p_timer) p_timer->start(t_branch);
+  loadBranchData(*Ret,false);
   if (p_timer) p_timer->stop(t_branch);
   if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
   if (p_timer) p_timer->start(t_set);
