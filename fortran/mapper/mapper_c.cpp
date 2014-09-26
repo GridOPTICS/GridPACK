@@ -116,6 +116,7 @@ extern "C" void p_bus_vector_map_create(FortranBusVectorMap **map,
     networkWrapper *wnetwork)
 {
   *map = new FortranBusVectorMap(wnetwork->network);
+  printf("New bus_vector_map: %p\n",*map);
 }
 
 /**
@@ -124,6 +125,7 @@ extern "C" void p_bus_vector_map_create(FortranBusVectorMap **map,
  */
 extern "C" void p_bus_vector_map_destroy(FortranBusVectorMap **map)
 {
+  printf("Old bus_vector_map: %p\n",*map);
   delete (*map);
   *map = NULL;
 }
@@ -136,6 +138,7 @@ extern "C" void p_bus_vector_map_destroy(FortranBusVectorMap **map)
 extern "C" void* p_bus_vector_map_map_to_vector(FortranBusVectorMap *map)
 {
   FortranVector *vector = map->intMapToVector();
+  printf("p[%d] Completed intMapToVector vector: %p map: %p\n",GA_Nodeid(),vector,map);
   return vector;
 }
 
@@ -158,7 +161,9 @@ extern "C" void p_bus_vector_map_remap_to_vector(FortranBusVectorMap *map,
 extern "C" void p_bus_vector_map_map_to_bus(FortranBusVectorMap *map,
     FortranVector *vector)
 {
+  printf("p[%d] Calling mapToBus vector vector: %p map: %p\n",GA_Nodeid(),vector,map);
   map->mapToBus(*vector);
+  printf("Completed mapToBus\n");
 }
 
 /**

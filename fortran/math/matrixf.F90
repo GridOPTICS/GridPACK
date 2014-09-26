@@ -261,7 +261,7 @@ CONTAINS
     INTEGER(c_int) :: ci, cj
     ci = i
     cj = j
-    CALL matrix_set_element(this%mat, i, j, x)
+    CALL matrix_set_element(this%mat, ci, cj, x)
   END SUBROUTINE set_element
 
   ! ----------------------------------------------------------------
@@ -275,7 +275,7 @@ CONTAINS
     INTEGER(c_int) :: ci, cj
     ci = i
     cj = j
-    CALL matrix_add_element(this%mat, i, j, x)
+    CALL matrix_add_element(this%mat, ci, cj, x)
   END SUBROUTINE add_element
 
   ! ----------------------------------------------------------------
@@ -289,7 +289,7 @@ CONTAINS
     INTEGER(c_int) :: ci, cj
     ci = i
     cj = j
-    CALL matrix_get_element(this%mat, i, j, x)
+    CALL matrix_get_element(this%mat, ci, cj, x)
   END SUBROUTINE get_element
 
   ! ----------------------------------------------------------------

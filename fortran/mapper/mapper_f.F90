@@ -435,7 +435,9 @@ module gridpack_mapper
     implicit none
     class(bus_vector_map), intent(in) :: p_mapper
     class(vector), intent(in) :: p_vector
+    write(6,'(a)') 'Calling p_bus_vector_map_map_to_bus'
     call p_bus_vector_map_map_to_bus(p_mapper%p_mapper,p_vector%vec)
+    write(6,'(a)') 'Completed p_bus_vector_map_map_to_bus'
     return
   end subroutine bus_vector_map_map_to_bus
 !

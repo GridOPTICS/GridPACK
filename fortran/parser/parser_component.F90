@@ -463,19 +463,19 @@ module application_components
   logical function bus_serial_write(bus, string, bufsize, signal)
     implicit none
     class(application_bus) :: bus
-    character, intent(out) :: string(*)
+    character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
-    character, intent(in) :: signal(*)
+    character(len=*), intent(in) :: signal
   end function bus_serial_write
 !
 ! Return size of matrix block on the diagonal contributed by component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param isize,jsize number of rows and columns of matrix block
 ! @return false if network component does not contribute matrix element
 !
-  logical function branch_matrix_diag_size(p_branch, isize, jsize)
+  logical function branch_matrix_diag_size(branch, isize, jsize)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     integer isize, jsize
     branch_matrix_diag_size = .false.
     return
@@ -483,13 +483,13 @@ module application_components
 !
 ! Return the values for a diagonal matrix block. The values are returned in
 ! row-major order.
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values array that contains matrix values
 ! @return false if network component does not contribute matrix element
 !
-  logical function branch_matrix_diag_values(p_branch, values)
+  logical function branch_matrix_diag_values(branch, values)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
     branch_matrix_diag_values = .false.
     return
@@ -497,13 +497,13 @@ module application_components
 !
 ! Return size of off-diagonal matrix block contributed by component. The values
 ! are in the forward direction
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param isize,jsize number of rows and columns of matrix block
 ! @return false if network component does not contribute matrix element
 !
-  logical function branch_matrix_forward_size(p_branch, isize, jsize)
+  logical function branch_matrix_forward_size(branch, isize, jsize)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     integer, intent(out) :: isize, jsize
     branch_matrix_forward_size = .false.
     return
@@ -511,14 +511,14 @@ module application_components
 !
 ! Return size of off-diagonal matrix block contributed by component. The values
 ! are in the reverse direction
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param isize,jsize number of rows and columns of matrix block
 ! @return false if network component does not contribute matrix element
 !
-  logical function branch_matrix_reverse_size(p_branch, isize, jsize)
+  logical function branch_matrix_reverse_size(branch, isize, jsize)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     integer, intent(out) :: isize, jsize 
     branch_matrix_reverse_size = .false.
     return
@@ -526,13 +526,13 @@ module application_components
 !
 ! Return the values of off-diagonal matrix block. The values are for the forward
 ! direction and are returned in row-major order.
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values array that contains matrix values
 ! @return false if network component does not contribute matrix element
 !
-  logical function branch_matrix_forward_values(p_branch, values)
+  logical function branch_matrix_forward_values(branch, values)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
     branch_matrix_forward_values = .false.
     return
@@ -540,209 +540,209 @@ module application_components
 !
 ! Return the values of off-diagonal matrix block. The values are for the reverse
 ! direction and are returned in row-major order.
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values array that contains matrix values
 ! @return false if network component does not contribute matrix element
 !
-  logical function branch_matrix_reverse_values(p_branch, values)
+  logical function branch_matrix_reverse_values(branch, values)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
     branch_matrix_reverse_values = .false.
     return
   end function branch_matrix_reverse_values
 !
 ! Return the size of vector block contributed by component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param isize number of vector elements
 ! @return false if network component does not contribute vector element
 !
-  logical function branch_vector_size(p_branch, isize)
+  logical function branch_vector_size(branch, isize)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     integer(C_INT), intent(out) :: isize
     branch_vector_size = .false.
   end function branch_vector_size
 !
 ! Return the values of the vector block
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values array that contains vector values
 ! @return false if network component does not contribute vector element
 ! 
-  logical function branch_vector_values(p_branch, values)
+  logical function branch_vector_values(branch, values)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
     branch_vector_values = .false.
   end function branch_vector_values
 !
 ! Set values in network component based on values in a vector or matrix
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values array that contains vector values
 ! 
-  subroutine branch_set_values(p_branch, values)
+  subroutine branch_set_values(branch, values)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch) :: branch
     double complex, intent(in) :: values(*)
   end subroutine branch_set_values
 !
 ! Return the number of rows in matrix from component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @return number of rows from component
 !
-  integer function branch_matrix_num_rows(p_branch)
+  integer function branch_matrix_num_rows(branch)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     branch_matrix_num_rows = 0
   end function branch_matrix_num_rows
 !
 ! Return the number of columns in matrix from component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @return number of columns from component
 !
-  integer function branch_matrix_num_cols(p_branch)
+  integer function branch_matrix_num_cols(branch)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch), intent(in) :: branch
     branch_matrix_num_cols = 0
   end function branch_matrix_num_cols
 !
 ! Set row indices corresponding to the rows contributed by this component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param irow index of row contributed by this component (e.g. if component
 ! contributes 3 rows then irow is between 0 and 2)
 ! @param idx matrix index of row irow
 !
-  subroutine branch_matrix_set_row_index(p_branch, irow, idx)
+  subroutine branch_matrix_set_row_index(branch, irow, idx)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch) :: branch
     integer, value, intent(in) :: irow, idx
   end subroutine branch_matrix_set_row_index
 !
 ! Set column indices corresponding to the columns contributed by this component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param icol index of column contributed by this component (e.g. if component
 ! contributes 3 columns then icol is between 0 and 2)
 ! @param idx matrix index of column icol
 !
-  subroutine branch_matrix_set_col_index(p_branch, icol, idx)
+  subroutine branch_matrix_set_col_index(branch, icol, idx)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch) :: branch
     integer(C_INT), value, intent(in) :: icol, idx
   end subroutine branch_matrix_set_col_index
 !
 ! Get the row index for the rows contributed by this component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param irow index of row contributed by this component (e.g. if component
 ! contributes 3 rows then irow is between 0 and 2)
 ! @return matrix index of row irow
 !
-  integer function branch_matrix_get_row_index(p_branch, irow)
+  integer function branch_matrix_get_row_index(branch, irow)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     integer, value, intent(in) :: irow
     branch_matrix_get_row_index = -1
     return
   end function branch_matrix_get_row_index
 !
 ! Get the col index for the columns contributed by this component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param icol index of column contributed by this component (e.g. if component
 ! contributes 3 columns then icol is between 0 and 2)
 ! @return matrix index of column icol
 !
-  integer function branch_matrix_get_col_index(p_branch, icol)
+  integer function branch_matrix_get_col_index(branch, icol)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     integer, value, intent(in) :: icol
     branch_matrix_get_col_index = -1
     return
   end function branch_matrix_get_col_index
 !
 ! Return the number of matrix values contributed by this component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @return number of matrix values
 !
-  integer function branch_matrix_num_values(p_branch)
+  integer function branch_matrix_num_values(branch)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     branch_matrix_num_values = 0
   end function branch_matrix_num_values
 !
 ! Get a list of matrix values contributed by this components along with their
 ! matrix indices
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values list of matrix element values
 ! @param rows row indices for the matrix elements
 ! @param cols column indices for the matrix elements
 !
-  subroutine branch_matrix_get_values(p_branch, values, rows, cols)
+  subroutine branch_matrix_get_values(branch, values, rows, cols)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
     integer, intent(out) :: rows(*), cols(*)
   end subroutine branch_matrix_get_values
 !
 ! Return the number of elements in vector coming from component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @return number of elements contributed from component
 !
-  integer function branch_vector_num_elements(p_branch)
+  integer function branch_vector_num_elements(branch)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     branch_vector_num_elements = 0
   end function branch_vector_num_elements
 !
 ! Set indices corresponding to the elements contributed by this component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param ielem index of element contributed by this component (e.g. if component
 ! contributes 3 elements then ielem is between 0 and 2)
 ! @param idx vector index of element ielem
 !
-  subroutine branch_vector_set_element_index(p_branch, ielem, idx)
+  subroutine branch_vector_set_element_index(branch, ielem, idx)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch) :: branch
     integer, value, intent(in) :: ielem, idx
   end subroutine branch_vector_set_element_index
 !
 ! Get a list of vector indices from the component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param idx list of indices the component maps onto
 !
-  subroutine branch_vector_get_element_indices(p_branch, idx)
+  subroutine branch_vector_get_element_indices(branch, idx)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     integer, intent(out) :: idx(*)
   end subroutine branch_vector_get_element_indices
 !
 ! Get a list of vector values contributed by this component and their indices
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values list of vector element values
 ! @param idx indices of the vector elements
 !
-  subroutine branch_vector_get_element_values(p_branch, values, idx)
+  subroutine branch_vector_get_element_values(branch, values, idx)
     implicit none
-    class(application_branch), intent(in) :: p_branch
+    class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
     integer, intent(out) :: idx(*)
   end subroutine branch_vector_get_element_values
 !
 ! Transfer vector values to component
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param values list of vector element values
 !
-  subroutine branch_vector_set_element_values(p_branch, values)
+  subroutine branch_vector_set_element_values(branch, values)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch) :: branch
     double complex, intent(out) :: values(*)
   end subroutine branch_vector_set_element_values
 !
 ! Load data from DataCollection object into corresponding component.
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param data DataCollection object associated with component
 !
-  subroutine branch_load(p_branch, data)
+  subroutine branch_load(branch, data)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch) :: branch
     class(data_collection), intent(in) :: data
   end subroutine branch_load
 !
@@ -752,30 +752,30 @@ module application_components
 ! calculation. For example, if a different matrix needs to be generated at
 ! different times, the mode can be change to get different values from the
 ! matrix-vector interface functions.
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param mode integer indicating which mode should be used
 !
-  subroutine branch_set_mode(p_branch, mode)
+  subroutine branch_set_mode(branch, mode)
     implicit none
-    class(application_branch) :: p_branch
+    class(application_branch) :: branch
     integer, value, intent(in) :: mode
   end subroutine branch_set_mode
 !
 ! Copy a string for output into buffer. The behavior of this method can be
 ! altered by inputting different values for the signal string
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param string buffer containing string to be written to output
 ! @param bufsize size of string buffer in bytes
 ! @param signal string to control behavior of routine (e.g. what
 ! properties to write
 ! @return true if component is writing a contribution, false otherwise
 !
-  logical function branch_serial_write(p_branch, string, bufsize, signal)
+  logical function branch_serial_write(branch, string, bufsize, signal)
     implicit none
-    class(application_branch) :: p_branch
-    character, intent(out) :: string(*)
+    class(application_branch) :: branch
+    character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
-    character, intent(in) :: signal(*)
+    character(len=*), intent(in) :: signal
   end function branch_serial_write
 !
 !  DO NOT EDIT ANYTHING BELOW THIS LINE. THESE FUNCTIONS MUST BE INCLUDED IN
@@ -822,44 +822,44 @@ module application_components
   end subroutine bus_get_xc_buf
 !
 ! Get get pointer to branch that is attached to calling bus
-! @param p_bus GridPACK bus object
+! @param bus GridPACK bus object
 ! @param idx index of neighboring branch (value is between 0 and number of
 ! neighbors -1)
 ! @return pointer to branch
 !
-  function bus_get_neighbor_branch(p_bus, idx) result(branch_ptr)
+  function bus_get_neighbor_branch(bus, idx) result(branch_ptr)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(application_bus), value, intent(in) :: p_bus
+    class(application_bus), value, intent(in) :: bus
     integer, value, intent(in) :: idx
     type(application_branch), pointer :: branch_ptr
     type(application_branch_wrapper), pointer :: wbranch
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
-    ptr = p_bus_get_neighbor_branch(p_bus%c_this,c_idx)
+    ptr = p_bus_get_neighbor_branch(bus%c_this,c_idx)
     call C_F_POINTER(ptr,wbranch)
     branch_ptr => wbranch%branch
     return
   end function bus_get_neighbor_branch
 !
 ! Get get pointer to bus that is attached to calling bus via a branch
-! @param p_bus GridPACK bus object
+! @param bus GridPACK bus object
 ! @param idx index of neighboring bus (value is between 0 and number of
 ! neighbors -1)
 ! @return pointer to bus
 !
-  function bus_get_neighbor_bus(p_bus, idx) result(bus_ptr)
+  function bus_get_neighbor_bus(bus, idx) result(bus_ptr)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(application_bus), value, intent(in) :: p_bus
+    class(application_bus), value, intent(in) :: bus
     integer, value, intent(in) :: idx
     class(application_bus), pointer :: bus_ptr
     type(application_bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
-    ptr = p_bus_get_neighbor_bus(p_bus%c_this,c_idx)
+    ptr = p_bus_get_neighbor_bus(bus%c_this,c_idx)
     call C_F_POINTER(ptr,wbus)
     bus_ptr => wbus%bus
     return
@@ -1069,7 +1069,9 @@ module application_components
     logical f_ret
     call C_F_POINTER(ptr,bus)
     f_ret = bus%bus%bus_vector_size(f_isize)
+    isize = f_isize
     p_bus_vector_size = f_ret
+    return
   end function p_bus_vector_size
 !
 ! Return the values of the vector block
@@ -1404,19 +1406,35 @@ module application_components
 ! @return true if component is writing a contribution, false otherwise
 !
   logical(C_BOOL) function p_bus_serial_write(ptr, string, bufsize, &
-      signal) bind(c)
+      signal, signal_len, write_len) bind(c)
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
     type(application_bus_wrapper), pointer :: bus
     character(C_CHAR), intent(out) :: string(*)
-    integer(C_INT), value, intent(in) :: bufsize
+    integer(C_INT), value, intent(in) :: bufsize, signal_len
     character(C_CHAR), intent(in) :: signal(*)
+    integer(C_INT), intent(out) :: write_len
+    character(len=bufsize) fstring
+    character(len=signal_len) fsignal
     logical f_ret
-    integer f_bufsize
+    integer f_bufsize, slen, i, fslen
     call C_F_POINTER(ptr,bus)
     f_bufsize = bufsize
-    f_ret = bus%bus%bus_serial_write(string,f_bufsize,signal)
+    fslen = signal_len
+    do i = 1, fslen
+      fsignal(i:i) = signal(i)
+    end do
+    f_ret = bus%bus%bus_serial_write(fstring,f_bufsize,fsignal)
+    slen = len(trim(fstring))
+    slen = min(bufsize-1,slen)
+    i = 1
+    do while (i.le.slen.and.f_ret)
+      string(i) = fstring(i:i)
+      i = i + 1
+    end do
+    string(slen+1) = C_NULL_CHAR
+    write_len = slen+1
     p_bus_serial_write = f_ret
     return
   end function p_bus_serial_write
@@ -1442,7 +1460,7 @@ module application_components
 ! must be the same size for all branches even if all branches do not require the same
 ! parameters. Thus, the buffer must be big enough to exchange all variables a
 ! branch might need, even if individual branches do use all the variables
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @return size of buffer in bytes
 !
   integer function branch_get_xc_buf_size(branch)
@@ -1452,7 +1470,7 @@ module application_components
   end function branch_get_xc_buf_size
 !
 ! Return the location of the data exchange buffer.
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @param pointer to exchange buffer
 !
   subroutine branch_get_xc_buf(branch, buf)
@@ -1463,34 +1481,34 @@ module application_components
   end subroutine branch_get_xc_buf
 !
 ! Get pointer to bus that is attached to "from" end of branch
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @return pointer to bus wrapper
 !
-  function branch_get_bus1(p_branch) result(bus_ptr)
+  function branch_get_bus1(branch) result(bus_ptr)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(application_branch), value, intent(in) :: p_branch
+    class(application_branch), value, intent(in) :: branch
     class(application_bus), pointer :: bus_ptr
     type(application_bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
-    ptr = p_branch_get_bus1(p_branch%c_this)
+    ptr = p_branch_get_bus1(branch%c_this)
     call C_F_POINTER(ptr,wbus)
     bus_ptr => wbus%bus
     return
   end function branch_get_bus1
 !
 ! Get pointer to bus that is attached to "to" end of branch
-! @param p_branch GridPACK branch object
+! @param branch GridPACK branch object
 ! @return pointer to bus wrapper
 !
-  function branch_get_bus2(p_branch) result(bus_ptr)
+  function branch_get_bus2(branch) result(bus_ptr)
     use, intrinsic :: iso_c_binding
     implicit none
-    class(application_branch), value, intent(in) :: p_branch
+    class(application_branch), value, intent(in) :: branch
     class(application_bus), pointer :: bus_ptr
     type(application_bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
-    ptr = p_branch_get_bus2(p_branch%c_this)
+    ptr = p_branch_get_bus2(branch%c_this)
     call C_F_POINTER(ptr,wbus)
     bus_ptr => wbus%bus
     return
@@ -1700,7 +1718,9 @@ module application_components
     logical f_ret
     call C_F_POINTER(ptr,branch)
     f_ret = branch%branch%branch_vector_size(f_isize)
+    isize = f_isize
     p_branch_vector_size = f_ret
+    return
   end function p_branch_vector_size
 !
 ! Return the values of the vector block
@@ -2035,19 +2055,35 @@ module application_components
 ! @return true if component is writing a contribution, false otherwise
 !
   logical(C_BOOL) function p_branch_serial_write(ptr, string, bufsize, &
-      signal) bind(c)
+      signal, signal_len, write_len) bind(c)
     use, intrinsic :: iso_c_binding
     implicit none
     type(C_PTR), value, intent(in) :: ptr
     type(application_branch_wrapper), pointer :: branch
     character(C_CHAR), intent(out) :: string(*)
-    integer(C_INT), value, intent(in) :: bufsize
+    integer(C_INT), value, intent(in) :: bufsize, signal_len
     character(C_CHAR), intent(in) :: signal(*)
+    integer(C_INT), intent(out) :: write_len 
+    character(len=bufsize) fstring
+    character(len=signal_len) fsignal
     logical f_ret
-    integer f_bufsize
+    integer f_bufsize, slen, i, fslen
     call C_F_POINTER(ptr,branch)
     f_bufsize = bufsize
-    f_ret = branch%branch%branch_serial_write(string,f_bufsize,signal)
+    fslen = signal_len
+    do i = 1, fslen
+      fsignal(i:i) = signal(i)
+    end do
+    f_ret = branch%branch%branch_serial_write(fstring,f_bufsize,fsignal)
+    slen = len(trim(fstring))
+    slen = min(bufsize-2,slen)
+    i = 1
+    do while (i.le.slen.and.f_ret)
+      string(i) = fstring(i:i)
+      i = i + 1
+    end do
+    string(slen+1) = C_NULL_CHAR
+    write_len = slen+1
     p_branch_serial_write = f_ret
     return
   end function p_branch_serial_write

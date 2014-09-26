@@ -17,6 +17,7 @@
 
 #include "gridpack/component/base_component.hpp"
 #include "fortran_component.hpp"
+#include <string.h>
 #include <stdio.h>
 
 extern "C" void* bus_allocate(void *ptr);
@@ -43,7 +44,7 @@ extern "C" void  p_bus_set_values(void *ptr,
 extern "C" int p_bus_get_xc_buf_size(void *ptr);
 extern "C" void p_bus_set_mode(void *ptr, int mode);
 extern "C" bool  p_bus_serial_write(void *ptr, char *string,
-    int bufsize, const char* signal);
+    int bufsize, const char* signal, int signal_len, int *write_len);
 extern "C" bool p_branch_matrix_diag_size(void *ptr,
     int *isize, int *jsize);
 extern "C" bool p_branch_matrix_diag_values(void *ptr,
@@ -66,7 +67,7 @@ extern "C" void p_branch_load(void *ptr, gridpack::component::DataCollection
 extern "C" int p_branch_get_xc_buf_size(void *ptr);
 extern "C" void p_branch_set_mode(void *ptr, int mode);
 extern "C" bool  p_branch_serial_write(void *ptr, char *string,
-    int bufsize, const char* signal);
+    int bufsize, const char* signal, int signal_len, int *write_len);
 
 // Base implementation of the MatVecInterface. These functions should be
 // overwritten in actual components
@@ -184,6 +185,7 @@ bool FortranBusComponent::vectorSize(int *isize) const
  */
 void FortranBusComponent::setValues(gridpack::ComplexType *values)
 {
+  printf("Calling p_bus_set_values from C\n");
   p_bus_set_values(p_fortran_bus_ptr, values);
 }
 
@@ -249,8 +251,13 @@ void FortranBusComponent::setMode(int mode)
 bool FortranBusComponent::serialWrite(char *string, const int bufsize,
     const char *signal)
 {
-  return p_bus_serial_write(p_fortran_bus_ptr, string, bufsize, signal);
-  return false;
+  int signal_len = strlen(signal);
+  int write_len;
+  bool ret = p_bus_serial_write(p_fortran_bus_ptr, string, bufsize, signal,
+      signal_len, &write_len);
+  string[write_len] = '\n';
+  string[write_len+1] = '\0';
+  return ret;
 }
 
 /**
@@ -492,7 +499,13 @@ void FortranBranchComponent::setMode(int mode)
 bool FortranBranchComponent::serialWrite(char *string, const int bufsize,
     const char *signal)
 {
-  return p_branch_serial_write(p_fortran_branch_ptr, string, bufsize, signal);
+  int signal_len = strlen(signal);
+  int write_len;
+  bool ret = p_branch_serial_write(p_fortran_branch_ptr, string, bufsize, signal,
+      signal_len, &write_len);
+  string[write_len] = '\n';
+  string[write_len+1] = '\0';
+  return ret;
 }
 
 /**

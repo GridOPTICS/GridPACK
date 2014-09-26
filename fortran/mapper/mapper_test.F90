@@ -24,6 +24,7 @@ PROGRAM mapper_test
   USE gridpack_math
   USE gridpack_vector
   USE gridpack_matrix
+  USE gridpack_component
   USE application_components
   USE application_factory
 
@@ -355,6 +356,7 @@ PROGRAM mapper_test
     endif
   end do
   call ga_igop(2,chk,1,"+")
+!  call bv_map%bus_vector_map_destroy()
   if (me.eq.0) then
     write(6,*)
     if (chk.eq.0) then
@@ -371,7 +373,7 @@ PROGRAM mapper_test
 ! Multiply values in vector by factor of 2
 ! 
   call vvector%local_index_range(lo,hi)
-  do i = lo, hi
+  do i = lo, hi-1
     call vvector%get_element(i,v)
     v = 2.0d00*v
     call vvector%set_element(i,v)
@@ -379,16 +381,39 @@ PROGRAM mapper_test
 !
 ! Push values back onto buses
 !
+  write(6,'(a)') 'Got to 1'
+!  call bv_map%bus_vector_map_destroy()
+!  call bv_map%bus_vector_map_create(grid)
   call bv_map%bus_vector_map_map_to_bus(vvector)
+  write(6,'(a)') 'Got to 2'
   chk = 0
   do i = 1, nbus
     if (grid%get_active_bus(i)) then
+  write(6,'(a)') 'Got to 3'
       bus_ptr => bus_cast(grid%get_bus(i))
+  write(6,'(a)') 'Got to 4'
       if (bus_ptr%bus_vector_size(isize)) then
+  write(6,'(a)') 'Got to 5'
         call bus_ptr%bus_get_mat_vec_index(idx)
+  write(6,'(a)') 'Got to 6'
+        rv = bus_ptr%bus_get_value()
+  write(6,'(a)') 'Got to 7'
+        if (rv.ne.dble(2*idx)) then
+          write(6,'(a,i4,a,i4,a,f12.4,a,f12.4)') 'p[',me,'] Bus error i: ', &
+           idx,' v: ',rv,' expected: ',dble(2*idx)
+        endif
       endif
     endif
   end do
+  if (me.eq.0) then
+    write(6,*)
+    if (chk.eq.0) then
+      write(6,'(a)') 'Bus values are ok'
+    else
+      write(6,'(a)') 'Error found in bus values'
+    endif
+  endif
+  call ga_igop(3,chk,1,"+")
   call map_factory%destroy()
   call grid%destroy()
   CALL comm%finalize()

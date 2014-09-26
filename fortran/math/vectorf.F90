@@ -220,7 +220,9 @@ CONTAINS
     CLASS (vector), INTENT(IN) :: this
     INTEGER, INTENT(IN) :: i
     COMPLEX(c_double_complex), INTENT(IN) :: x
-    CALL vector_set_element(this%vec, i, x)
+    INTEGER(c_int) ci
+    ci = i
+    CALL vector_set_element(this%vec, ci, x)
   END SUBROUTINE set_element
 
   ! ----------------------------------------------------------------
@@ -231,7 +233,9 @@ CONTAINS
     CLASS (vector), INTENT(IN) :: this
     INTEGER, INTENT(IN) :: i
     COMPLEX(c_double_complex), INTENT(IN) :: x
-    CALL vector_add_element(this%vec, i, x)
+    INTEGER(c_int) ci
+    ci = i
+    CALL vector_add_element(this%vec, ci, x)
   END SUBROUTINE add_element
 
   ! ----------------------------------------------------------------
@@ -242,7 +246,9 @@ CONTAINS
     CLASS (vector), INTENT(IN) :: this
     INTEGER, INTENT(IN) :: i
     COMPLEX(c_double_complex), INTENT(OUT) :: x
-    CALL vector_get_element(this%vec, i, x)
+    INTEGER(c_int) ci
+    ci = i
+    CALL vector_get_element(this%vec, ci, x)
   END SUBROUTINE get_element
 
   ! ----------------------------------------------------------------
