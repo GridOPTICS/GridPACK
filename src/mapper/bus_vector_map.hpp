@@ -181,10 +181,8 @@ void mapToBus(const gridpack::math::Vector &vector)
         size = sizes[idx];
         offset = offsets[idx];
         for (j=0; j<size; j++) {
-          printf("Calling getElement for idx: %d\n",offset+j);
           vector.getElement(offset+j,values[j]); 
         }
-        printf("Calling setValues\n");
         p_network->getBus(i)->setValues(values);
       }
     }
