@@ -73,6 +73,21 @@ configuration_get_double(CursorWrapper *cwrap,
 }
 
 extern "C" bool
+configuration_get_string(CursorWrapper *cwrap, 
+                       char *key,
+                       char *s,
+                       int *slen)
+{
+  bool result;
+  std::string string = s;
+  result = cwrap->cursor->get(key, &string);
+  strcpy(s,string.c_str());
+  *slen = strlen(s);
+  // std::cout << "get_string: " << key << ": " << *d << std::endl;
+  return result;
+}
+
+extern "C" bool
 configuration_ok(CursorWrapper *cwrap)
 {
   bool result(false);

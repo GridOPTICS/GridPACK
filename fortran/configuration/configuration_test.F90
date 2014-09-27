@@ -23,6 +23,7 @@ PROGRAM configuration_test
   LOGICAL :: flag
   DOUBLE PRECISION :: rvalue
   INTEGER :: ivalue
+  CHARACTER(128) :: string
 
   CALL gridpack_initialize_parallel(ma_stack, ma_heap)
   CALL comm%initialize()
@@ -71,6 +72,14 @@ PROGRAM configuration_test
      WRITE(*,*) 'ERROR: did not find GridPACK.Real'
   END IF
 
+  IF (cur1%get_string("String", string)) THEN
+     IF (trim(string).ne.'Dog') THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.String: ', trim(string)
+     END IF
+  ELSE 
+     WRITE(*,*) 'ERROR: did not find GridPACK.String'
+  END IF
+
   cur2 = conf%get_cursor("GridPACK.Subpath")
   IF (.NOT. cur2%ok()) THEN
      WRITE(*,*) 'ERROR: cur2: did not find GridPACK.Subpath'
@@ -100,6 +109,14 @@ PROGRAM configuration_test
      WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Real'
   END IF
 
+  IF (cur2%get_string("String", string)) THEN
+     IF (trim(string).ne.'Hamster') THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.String: ', trim(string)
+     END IF
+  ELSE 
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.String'
+  END IF
+
   CALL conf%set_path("GridPACK.Subpath")
   IF (.NOT. conf%ok()) THEN
      WRITE(*,*) 'ERROR: conf: did not find GridPACK.Subpath'
@@ -127,6 +144,14 @@ PROGRAM configuration_test
      END IF
   ELSE 
      WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.Real'
+  END IF
+
+  IF (conf%get_string("String", string)) THEN
+     IF (trim(string).ne.'Hamster') THEN
+        WRITE (*,*) 'ERROR: wrong value for GridPACK.String: ', trim(string)
+     END IF
+  ELSE 
+     WRITE(*,*) 'ERROR: did not find GridPACK.Subpath.String'
   END IF
 
   CALL cur1%finalize()

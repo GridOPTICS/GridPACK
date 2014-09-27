@@ -23,6 +23,7 @@ MODULE gridpack_configuration
      PROCEDURE :: get_bool
      PROCEDURE :: get_int
      PROCEDURE :: get_double
+     PROCEDURE :: get_string
   END type cursor
 
   INTERFACE
@@ -63,6 +64,15 @@ MODULE gridpack_configuration
        CHARACTER (kind=c_char), INTENT(IN) :: key(*)
        REAL (c_double), INTENT(OUT) :: d
      END FUNCTION configuration_get_double
+
+     LOGICAL(c_bool) FUNCTION configuration_get_string(cur, key, s, slen) BIND(c)
+       USE iso_c_binding, ONLY: c_char, c_ptr, c_bool, c_int
+       IMPLICIT NONE
+       TYPE (c_ptr), VALUE, INTENT(IN) :: cur
+       CHARACTER (kind=c_char), INTENT(IN) :: key(*)
+       CHARACTER (kind=c_char), INTENT(OUT) :: s(*)
+       INTEGER (c_int), INTENT(OUT) :: slen
+     END FUNCTION configuration_get_string
 
      LOGICAL(C_BOOL) FUNCTION configuration_ok(cur) BIND(c)
        USE iso_c_binding, ONLY: c_ptr, c_bool
@@ -228,6 +238,34 @@ CONTAINS
     DEALLOCATE(ckey)
     IF (get_double) d = cd
   END FUNCTION get_double
+
+  ! ----------------------------------------------------------------
+  ! LOGICAL FUNCTION get_string
+  ! ----------------------------------------------------------------
+  LOGICAL FUNCTION get_string(this, key, s)
+    IMPLICIT NONE
+    CLASS (cursor), INTENT(IN) :: this
+    CHARACTER (LEN=*), INTENT(IN) :: key
+    CHARACTER(len=*), INTENT(OUT) :: s
+    CHARACTER (c_char), ALLOCATABLE :: ckey(:)
+    CHARACTER(512) :: stmp
+    CHARACTER(c_char) :: cs(512)
+    INTEGER(C_INT) slen
+    INTEGER :: flen, i
+    flen = LEN_TRIM(key)
+    ALLOCATE(ckey(flen+1))
+    CALL f2cstring(key, ckey)
+    get_string = configuration_get_string(this%impl, ckey, cs, slen)
+    DEALLOCATE(ckey)
+  !
+  !  Use the extra copy to put a Fortran string termination character
+  !  at the end of the string
+  !
+    do i = 1, slen
+      stmp(i:i) = cs(i)
+    end do
+    s = stmp(1:slen)
+  END FUNCTION get_string
 
   ! ----------------------------------------------------------------
   ! SUBROUTINE finalize
