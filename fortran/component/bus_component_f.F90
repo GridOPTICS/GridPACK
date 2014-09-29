@@ -61,6 +61,7 @@ module gridpack_component
     procedure, non_overridable::bus_get_reference_bus
     procedure, non_overridable::bus_get_original_index
     procedure, non_overridable::bus_get_global_index
+    procedure, non_overridable::bus_compare
   end type
 !
 !  Define branch component type
@@ -114,6 +115,7 @@ module gridpack_component
     procedure, non_overridable::branch_get_bus2_original_index
     procedure, non_overridable::branch_get_bus1_global_index
     procedure, non_overridable::branch_get_bus2_global_index
+    procedure, non_overridable::branch_compare
   end type
 !
   type, public :: bus_wrapper
@@ -811,6 +813,27 @@ module gridpack_component
     bus_get_global_index = c_ret
     return
   end function bus_get_global_index
+!
+! Compare two Fortran bus objects to see if they point to the same C object
+! @param bus GridPACK bus object
+! @param other second GridPACK bus object
+! @return true if both buses point to the same C object, false otherwise
+!
+  logical function bus_compare(bus,other)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(bus_component), value, intent(in) :: bus
+    class(bus_component), value, intent(in) :: other
+    integer idx1, idx2
+    idx1 = bus%bus_get_global_index()
+    idx2 = other%bus_get_global_index()
+    if (idx1.eq.idx2) then
+      bus_compare = .true.
+    else
+      bus_compare = .false.
+    endif
+    return
+  end function bus_compare
 #if 0
 !
 ! Return size of matrix block on the diagonal contributed by bus
@@ -1692,4 +1715,27 @@ module gridpack_component
     branch_get_bus2_global_index = c_idx
     return
   end function branch_get_bus2_global_index
+!
+! Compare two Fortran branch objects to see if they point to the same C object
+! @param branch GridPACK branch object
+! @param other second GridPACK branch object
+! @return true if both branches point to the same C object, false otherwise
+!
+  logical function branch_compare(branch,other)
+    use, intrinsic :: iso_c_binding
+    implicit none
+    class(branch_component), value, intent(in) :: branch
+    class(branch_component), value, intent(in) :: other
+    integer idx1, idx2, o1, o2
+    idx1 = branch%branch_get_bus1_global_index()
+    idx2 = branch%branch_get_bus2_global_index()
+    o1 = other%branch_get_bus1_global_index()
+    o2 = other%branch_get_bus2_global_index()
+    if (idx1.eq.o1.and.idx2.eq.o2) then
+      branch_compare = .true.
+    else
+      branch_compare = .false.
+    endif
+    return
+  end function branch_compare
 end module gridpack_component

@@ -5,6 +5,7 @@ module application_factory
   use, intrinsic :: iso_c_binding
   use gridpack_network
   use gridpack_factory
+  use application_components
   implicit none
 !
 !  Define factory type

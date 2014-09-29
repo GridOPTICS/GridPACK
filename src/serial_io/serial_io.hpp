@@ -176,7 +176,6 @@ class SerialBusIO {
       }
     }
 
-
     // Set up buffers to scatter strings to global buffer
     int **index;
     index = new int*[nwrites];

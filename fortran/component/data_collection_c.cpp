@@ -17,6 +17,7 @@
 #include <string.h>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include "gridpack/component/data_collection.hpp"
+#include <stdio.h>
 
 typedef gridpack::component::DataCollection FortranData;
 

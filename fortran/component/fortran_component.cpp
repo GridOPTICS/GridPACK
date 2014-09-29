@@ -185,7 +185,6 @@ bool FortranBusComponent::vectorSize(int *isize) const
  */
 void FortranBusComponent::setValues(gridpack::ComplexType *values)
 {
-  printf("Calling p_bus_set_values from C\n");
   p_bus_set_values(p_fortran_bus_ptr, values);
 }
 
@@ -300,6 +299,7 @@ void* FortranBusComponent::getNeighborBus(int idx) const
   std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > buses;
   getNeighborBuses(buses);
   return dynamic_cast<FortranBusComponent*>(buses[idx].get())->getFortranPointer();
+  //return buses[idx].get();
 }
 
 /**
@@ -310,8 +310,9 @@ void* FortranBusComponent::getNeighborBus(int idx) const
 void* FortranBusComponent::getNeighborBranch(int idx) const
 {
   std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
-  getNeighborBuses(branches);
-  return branches[idx].get();
+  getNeighborBranches(branches);
+  return dynamic_cast<FortranBranchComponent*>(branches[idx].get())->getFortranPointer();
+  //return branches[idx].get();
 }
 
 /**

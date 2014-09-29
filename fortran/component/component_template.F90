@@ -831,15 +831,13 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
-    integer, value, intent(in) :: idx
     type(application_branch), pointer :: branch_ptr
-    type(application_branch_wrapper), pointer :: wbranch
+    integer, value, intent(in) :: idx
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_branch(bus%c_this,c_idx)
-    call C_F_POINTER(ptr,wbranch)
-    branch_ptr => wbranch%branch
+    branch_ptr => branch_cast(ptr)
     return
   end function bus_get_neighbor_branch
 !
@@ -853,15 +851,13 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
+    type(application_bus), pointer :: bus_ptr
     integer, value, intent(in) :: idx
-    class(application_bus), pointer :: bus_ptr
-    type(application_bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_bus(bus%c_this,c_idx)
-    call C_F_POINTER(ptr,wbus)
-    bus_ptr => wbus%bus
+    bus_ptr => bus_cast(ptr)
     return
   end function bus_get_neighbor_bus
 !
@@ -1367,9 +1363,9 @@ module application_components
     type(C_PTR), value, intent(in) :: ptr
     type(C_PTR), value, intent(in) :: data_ptr
     type(application_bus_wrapper), pointer :: bus
-    type(data_collection), pointer :: data
+    type(data_collection) :: data
     call C_F_POINTER(ptr,bus)
-    call C_F_POINTER(data_ptr,data)
+    data%p_data = data_ptr
     call bus%bus%bus_load(data)
     return
   end subroutine p_bus_load
@@ -2016,9 +2012,9 @@ module application_components
     type(C_PTR), value, intent(in) :: ptr
     type(C_PTR), value, intent(in) :: data_ptr
     type(application_branch_wrapper), pointer :: branch
-    type(data_collection), pointer :: data
+    type(data_collection) :: data
     call C_F_POINTER(ptr,branch)
-    call C_F_POINTER(data_ptr,data)
+    data%p_data = data_ptr
     call branch%branch%branch_load(data)
     return
   end subroutine p_branch_load

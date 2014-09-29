@@ -59,6 +59,7 @@ extern "C" int p_bus_get_num_neighbors(FortranBus *bus)
  */
 extern "C" void* p_bus_get_neighbor_bus(FortranBus *bus, int idx)
 {
+  idx--;
   return static_cast<void*>(bus->getNeighborBus(idx));
 }
 
@@ -71,6 +72,7 @@ extern "C" void* p_bus_get_neighbor_bus(FortranBus *bus, int idx)
  */
 extern "C" void* p_bus_get_neighbor_branch(FortranBus *bus, int idx)
 {
+  idx--;
   return static_cast<void*>(bus->getNeighborBranch(idx));
 }
 

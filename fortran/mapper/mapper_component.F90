@@ -1541,7 +1541,7 @@ module application_components
     type(application_bus_wrapper), pointer :: bus
     type(data_collection), pointer :: data
     call C_F_POINTER(ptr,bus)
-    call C_F_POINTER(data_ptr,data)
+    data%p_data = data_ptr
     call bus%bus%bus_load(data)
     return
   end subroutine p_bus_load
@@ -2188,9 +2188,9 @@ module application_components
     type(C_PTR), value, intent(in) :: ptr
     type(C_PTR), value, intent(in) :: data_ptr
     type(application_branch_wrapper), pointer :: branch
-    type(data_collection), pointer :: data
+    type(data_collection) :: data
     call C_F_POINTER(ptr,branch)
-    call C_F_POINTER(data_ptr,data)
+    data%p_data = data_ptr
     call branch%branch%branch_load(data)
     return
   end subroutine p_branch_load

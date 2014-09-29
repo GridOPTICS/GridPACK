@@ -461,15 +461,15 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
   for (i=0; i<nbus; i++) {
     iptr = (int*)network.getXCBusBuffer(i);
     if (iptr) {
-    if (network.getActiveBus(i)) {
-      *iptr = network.getGlobalBusIndex(i);
-    } else {
-      *iptr = -1;
-    }
+      if (network.getActiveBus(i)) {
+        *iptr = network.getGlobalBusIndex(i);
+      } else {
+        *iptr = -1;
+      }
     } else {
       printf("p[%d] null iptr at 1: %d\n",me,i);
     }
-   // printf("p[%d] iptr1: %d\n",me,*iptr);
+    // printf("p[%d] iptr1: %d\n",me,*iptr);
   }
   for (i=0; i<nbranch; i++) {
     iptr = (int*)network.getXCBranchBuffer(i);

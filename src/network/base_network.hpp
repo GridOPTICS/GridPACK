@@ -299,7 +299,9 @@ explicit BaseNetwork(const parallel::Communicator& comm)
   p_inactiveBranchIndices = NULL;
   p_branchRcvBuf = NULL;
   p_busXCBuffers = NULL;
+  p_external_bus = false;
   p_branchXCBuffers = NULL;
+  p_external_branch = false;
   p_allocatedBus = false;
   p_allocatedBranch = false;
 }
@@ -315,8 +317,10 @@ virtual ~BaseNetwork(void)
     int size = p_buses.size();
     int i;
     if (p_allocatedBus) {
-      for(i=0; i<size; i++) {
-        delete static_cast<char*>(p_busXCBuffers[i]);
+      if (!p_external_bus) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
       }
       p_allocatedBus = false;
     }
@@ -326,8 +330,10 @@ virtual ~BaseNetwork(void)
     int size = p_branches.size();
     int i;
     if (p_allocatedBranch) {
-      for(i=0; i<size; i++) {
-        delete static_cast<char*>(p_branchXCBuffers[i]);
+      if (!p_external_branch) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
       }
       p_allocatedBranch = false;
     }
@@ -1230,7 +1236,7 @@ void clean(void)
 }
 
 /**
- * Allocate buffers for exchanging data for ghost buses
+ * Allocate array of pointers to buffers for exchanging data for ghost buses
  * @param size size (in bytes) of buffer
  */
 void allocXCBus(int size)
@@ -1243,8 +1249,10 @@ void allocXCBus(int size)
   int i;
   if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
     if (p_allocatedBus) {
-      for(i=0; i<nsize; i++) {
-        delete static_cast<char*>(p_busXCBuffers[i]);
+      if (!p_external_bus) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
       }
       p_allocatedBus = false;
     }
@@ -1259,6 +1267,7 @@ void allocXCBus(int size)
     }
     p_busXCBufSize = size;
     p_allocatedBus = true;
+    p_external_bus = false;
   }
 }
 
@@ -1272,12 +1281,15 @@ void freeXCBus(void)
     int i;
     int nsize = p_buses.size();
     if (p_allocatedBus) {
-      for(i=0; i<nsize; i++) {
-        delete static_cast<char*>(p_busXCBuffers[i]);
+      if (!p_external_bus) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
       }
       p_allocatedBus = false;
     }
     delete [] p_busXCBuffers;
+    p_external_bus = false;
     p_busXCBufSize = 0;
   }
 }
@@ -1293,8 +1305,10 @@ void allocXCBusPointers(int size)
   int i;
   if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
     if (p_allocatedBus) {
-      for(i=0; i<nsize; i++) {
-        delete static_cast<char*>(p_busXCBuffers[i]);
+      if (!p_external_bus) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
       }
       p_allocatedBus = false;
     }
@@ -1306,6 +1320,7 @@ void allocXCBusPointers(int size)
     p_busXCBuffers = new void*[nsize];
     p_busXCBufSize = size;
   }
+  p_external_bus = true;
 }
 
 /**
@@ -1351,13 +1366,16 @@ void allocXCBranch(int size)
   int i;
   if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
     if (p_allocatedBranch) {
-      for(i=0; i<nsize; i++) {
-        delete static_cast<char*>(p_branchXCBuffers[i]);
+      if (!p_external_branch) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
       }
       p_allocatedBranch = false;
     }
     delete [] p_branchXCBuffers;
     p_branchXCBufSize = 0;
+    p_external_branch = true;
   }
   // Allocate new buffers if size is greater than zero
   if (size > 0 && nsize > 0) {
@@ -1380,13 +1398,16 @@ void freeXCBranch(void)
     int size = p_branches.size();
     int i;
     if (p_allocatedBranch) {
-      for(i=0; i<size; i++) {
-        delete static_cast<char*>(p_branchXCBuffers[i]);
+      if (!p_external_branch) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
       }
       p_allocatedBranch = false;
     }
     delete [] p_branchXCBuffers;
     p_branchXCBufSize = 0;
+    p_external_branch = false;
   }
 }
 
@@ -1406,7 +1427,7 @@ void* getXCBranchBuffer(int idx)
 }
 
 /**
- * Allocate buffers for exchanging data for ghost branchs
+ * Allocate array of pointers to buffers for exchanging data for ghost branchs
  * @param size size of buffers that will be assigned to pointers
  */
 void allocXCBranchPointers(int size)
@@ -1416,8 +1437,10 @@ void allocXCBranchPointers(int size)
   int i;
   if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
     if (p_allocatedBranch) {
-      for(i=0; i<nsize; i++) {
-        delete static_cast<char*>(p_branchXCBuffers[i]);
+      if (!p_external_branch) {
+        for(i=0; i<nsize; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
       }
       p_allocatedBranch = false;
     }
@@ -1429,6 +1452,7 @@ void allocXCBranchPointers(int size)
     p_branchXCBuffers = new void*[nsize];
     p_branchXCBufSize = size;
   }
+  p_external_branch = true;
 }
 
 /**
@@ -1943,6 +1967,7 @@ private:
   int p_busXCBufSize;
   void **p_busXCBuffers;
   bool p_allocatedBus;
+  bool p_external_bus;
 
   /**
    * Vector of buffers for exchange of branch data to ghost branches
@@ -1950,6 +1975,7 @@ private:
   int p_branchXCBufSize;
   void **p_branchXCBuffers;
   bool p_allocatedBranch;
+  bool p_external_branch;
 
   /**
    * Global array handle and other parameters used for bus exchanges

@@ -10,7 +10,7 @@ module application_components
 !
 !  Declare global variables
 !
-  integer JACOBIAN, YBUS, RHS, STATE, SCAL
+  integer, public :: JACOBIAN, YBUS, RHS, STATE, SCAL
   parameter(JACOBIAN=1, YBUS=2, RHS=3, STATE=4, SCAL=5)
 !
 !  Define bus and branch component type and exchange buffers
@@ -42,6 +42,7 @@ module application_components
     double precision p_shunt_gs
     double precision p_shunt_bs
     logical p_shunt
+    logical p_load
     integer p_mode
     logical p_isolated
     double precision p_ybusr, p_ybusi
@@ -49,14 +50,14 @@ module application_components
 !  Powerflow parameters
 !
     double precision p_v, p_a, p_P0, p_Q0
-    double precision p_angle, p_voltage
+    double precision p_theta, p_angle, p_voltage
     double precision, allocatable :: p_pg(:), p_qg(:)
     double precision, allocatable :: p_qmax(:), p_qmin(:), p_vs(:)
     integer, allocatable :: p_gstatus(:)
     integer p_ngen
     double precision p_pl, p_ql, p_sbase, p_pinj, p_qinj
     logical p_ispv, p_saveispv
-    character(32) p_gid(:)
+    character(32), allocatable :: p_gid(:)
 !
 !  Required data elements are defined here
 !
@@ -75,8 +76,6 @@ module application_components
     procedure :: bus_get_complex_voltage
     procedure :: bus_get_phase
     procedure :: bus_is_pv
-    procedure :: bus_set_voltage
-    procedure :: bus_set_phase
     procedure :: bus_set_is_pv
     procedure :: bus_reset_is_pv
     procedure :: bus_set_sbus
@@ -131,6 +130,27 @@ module application_components
 !
 !  Application specific data elements go here
 !
+!  Y-matrix parameters
+!
+    double precision, allocatable :: p_reactance(:)
+    double precision, allocatable :: p_resistance(:)
+    double precision, allocatable :: p_tap_ratio(:)
+    double precision, allocatable :: p_phase_shift(:)
+    double precision, allocatable :: p_charging(:)
+    double precision, allocatable :: p_shunt_admt_g1(:)
+    double precision, allocatable :: p_shunt_admt_b1(:)
+    double precision, allocatable :: p_shunt_admt_g2(:)
+    double precision, allocatable :: p_shunt_admt_b2(:)
+    double precision, allocatable :: p_rate_a(:)
+    logical, allocatable :: p_xform(:), p_shunt(:)
+    integer p_mode
+    double precision p_ybusr_frwd, p_ybusi_frwd
+    double precision p_ybusr_rvrs, p_ybusi_rvrs
+    logical, allocatable :: p_branch_status(:), p_switched(:)
+    character(2), allocatable :: p_tag(:)
+    double precision p_theta, p_sbase
+    integer p_elems
+    logical p_isolated, p_active
 !
 !  Required data elements are defined here
 !
@@ -139,6 +159,18 @@ module application_components
     contains
 !
 !  Add user-defined function here
+!
+    procedure::branch_set_y_matrix
+    procedure::branch_get_forward_y_matrix
+    procedure::branch_get_reverse_y_matrix
+    procedure::branch_get_admittance
+    procedure::branch_get_transformer
+    procedure::branch_get_shunt
+    procedure::branch_get_line_element
+    procedure::branch_get_line_tags
+    procedure::branch_get_jacobian
+    procedure::branch_get_pq
+    procedure::branch_get_complex_power
 !
 !  Matrix-vector interface calls
 !
@@ -207,17 +239,17 @@ module application_components
     isize = 1
     jsize = 1
     bus_matrix_diag_size = .true.
-    if (p_mode.eq.JACOBIAN) then
-      if (.not.bus%is_isolated()) then
+    if (bus%p_mode.eq.JACOBIAN) then
+      if (.not.bus%bus_is_isolated()) then
 #ifdef LARGE_MATRIX
         isize = 2
         jsize = 2
         bus_matrix_diag_size = .true.
 #else
-        if (bus%get_reference_bus()) then
+        if (bus%bus_get_reference_bus()) then
           bus_matrix_diag_size = .false.
           return
-        else if (p_ispv) then
+        else if (bus%p_ispv) then
           isize = 1
           jsize = 1
         else
@@ -230,8 +262,8 @@ module application_components
       else
         bus_matrix_diag_size = .false.
       endif
-    else if (p_mode.eq.YBUS) then
-      if (.not.bus%is_isolated()) then
+    else if (bus%p_mode.eq.YBUS) then
+      if (.not.bus%bus_is_isolated()) then
         bus_matrix_diag_size = .true.
         isize = 1
         jsize = 1
@@ -253,14 +285,14 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     double complex, intent(out) :: values(*)
-    if (p_mode.eq.JACOBIAN) then
-      if (.not.bus%is_isolated()) then
+    if (bus%p_mode.eq.JACOBIAN) then
+      if (.not.bus%bus_is_isolated()) then
 #ifdef LARGE_MATRIX
-        if (.not.get_reference_bus()) then
-          values(1) = -p_qinj - p_ybusi * p_v * p_v
-          values(2) = p_pinj - p_ybusr * p_v * p_v
-          values(3) = p_pinj/p_v + p_ybusr *  p_v
-          values(4) = p_qinj/p_v - p_ybusi *  p_v
+        if (.not.bus%bus_get_reference_bus()) then
+          values(1) = -bus%p_qinj - bus%p_ybusi * bus%p_v * bus%p_v
+          values(2) = bus%p_pinj - bus%p_ybusr * bus%p_v * bus%p_v
+          values(3) = bus%p_pinj/bus%p_v + bus%p_ybusr *  bus%p_v
+          values(4) = bus%p_qinj/bus%p_v - bus%p_ybusi *  bus%p_v
 ! Fix up elements if bus is PV bus
           if (p_ispv)
             values(2) = dcmplx(0.0d00,0.0d00)
@@ -276,14 +308,14 @@ module application_components
         bus_matrix_diag_values = .true.
         return
 #else
-        if (.not.get_reference_bus().and.(.not.p_ispv)) then
-          values(1) = -p_qinj - p_ybusi * p_v * p_v
-          values(2) = p_pinj - p_ybusr * p_v * p_v
-          values(3) = p_pinj/p_v + p_ybusr *  p_v
-          values(4) = p_qinj/p_v - p_ybusi *  p_v
+        if (.not.bus%bus_get_reference_bus().and.(.not.bus%p_ispv)) then
+          values(1) = -bus%p_qinj - bus%p_ybusi * bus%p_v * bus%p_v
+          values(2) = bus%p_pinj - bus%p_ybusr * bus%p_v * bus%p_v
+          values(3) = bus%p_pinj/bus%p_v + bus%p_ybusr *  bus%p_v
+          values(4) = bus%p_qinj/bus%p_v - bus%p_ybusi *  bus%p_v
           bus_matrix_diag_values = .true.
-        else if (.not.get_reference_bus().and.p_ispv) then
-          values(1) = -p_qinj - p_ybusi * p_v * p_v
+        else if (.not.bus%bus_get_reference_bus().and.bus%p_ispv) then
+          values(1) = -bus%p_qinj - bus%p_ybusi * bus%p_v * bus%p_v
           bus_matrix_diag_values = .true.
         else
           bus_matrix_diag_values = .false.
@@ -291,10 +323,10 @@ module application_components
         return
 #endif
       endif
-    else if (p_mode.eq.YBUS) then
-      if (.not.bus%is_isolated()) then
+    else if (bus%p_mode.eq.YBUS) then
+      if (.not.bus%bus_is_isolated()) then
         bus_matrix_diag_values = .true.
-        values(1) = dcmplx(p_ybusr,p_ybusi)
+        values(1) = dcmplx(bus%p_ybusr,bus%p_ybusi)
       else
         bus_matrix_diag_values = .false.
       endif
@@ -369,20 +401,20 @@ module application_components
     implicit none
     class(application_bus), intent(in) :: bus
     integer(C_INT), intent(out) :: isize
-    if (p_mode.eq.RHS.or.p_mode.eq.STATE) then
-      if (.not.is_isolated()) then
+    if (bus%p_mode.eq.RHS.or.bus%p_mode.eq.STATE) then
+      if (.not.bus%bus_is_isolated()) then
 #ifdef LARGE_MATRIX
         bus_vector_size = .true.
-        size = 2
+        isize = 2
 #else
-        if (get_reference_bus()) then
+        if (bus%bus_get_reference_bus()) then
           bus_vector_size = .false.
-        else if (p_ispv) then
+        else if (bus%p_ispv) then
           bus_vector_size = .true.
-          size = 1
+          isize = 1
         else
           bus_vector_size = .true.
-          size = 2
+          isize = 2
         endif
 #endif
         return
@@ -390,12 +422,12 @@ module application_components
         bus_vector_size = .false.
         return
       endif
-    else if (p_mode.eq.SCAL) then
+    else if (bus%p_mode.eq.SCAL) then
       bus_vector_size = .true.
-      size = 1
+      isize = 1
     else
       bus_vector_size = .true.
-      size = 2
+      isize = 2
     endif
     return
   end function bus_vector_size
@@ -407,48 +439,51 @@ module application_components
 ! 
   logical function bus_vector_values(bus, values)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     double complex, intent(out) :: values(*)
     double precision retr, reti
-    type(application_branch) branch
+    type(application_branch), pointer :: branch
     integer nbranch, i
     double precision pp, qq, p, q
     bus_vector_values = .true.
-    if (p_mode.eq.SCAL) then
-      retr = p_v *cos(p_a)
-      reti = p_v *sin(p_a)
+    if (bus%p_mode.eq.SCAL) then
+      retr = bus%p_v *cos(bus%p_a)
+      reti = bus%p_v *sin(bus%p_a)
       values(1) = dcmplx(retr,reti)
-    else if (p_mode.eq.STATE) then
-      values(1) = dcmplx(p_v,0.0d00)
-      values(2) = dcmplx(p_a,0.0d00)
-    else if (p_mode.eq.RHS) then
-      if (.not.is_isolated()) then
-        if (.not.get_reference_bus()) then
+    else if (bus%p_mode.eq.STATE) then
+      values(1) = dcmplx(bus%p_v,0.0d00)
+      values(2) = dcmplx(bus%p_a,0.0d00)
+    else if (bus%p_mode.eq.RHS) then
+      if (.not.bus%bus_is_isolated()) then
+        if (.not.bus%bus_get_reference_bus()) then
           nbranch = bus%bus_get_num_neighbors()
           pp = 0.0d00
           qq = 0.0d00
           do i = 1, nbranch
-            branch = get_neighbor_branch(i)
-            branch%getPQ(bus,p,q)
+            branch => bus%bus_get_neighbor_branch(i)
+            call branch%branch_get_pq(bus,p,q)
             pp = pp + p
             qq = qq + q
           end do
+          write(6,'(a,2f16.8)') ' P and Q: ',pp,qq
 ! Also add bus i's own Pi, Qi
-          pp = pp + p_v*p_v*p_ybusr
-          qq = qq + p_v*p_v*(-p_ybusi)
-          p_pinj = pp
-          p_qinj = qq
-          pp = pp - p_p0
-          qq = qq - p_q0
+          write(6,'(a,f16.8,a,f16.8,a,f16.8)') 'V: ',bus%p_v, &
+               ' ybusr: ',bus%p_ybusr,' ybusi: ',bus%p_ybusi
+          pp = pp + bus%p_v*bus%p_v*bus%p_ybusr
+          qq = qq + bus%p_v*bus%p_v*(-bus%p_ybusi)
+          bus%p_pinj = pp
+          bus%p_qinj = qq
+          pp = pp - bus%p_p0
+          qq = qq - bus%p_q0
           values(1) = dcmplx(pp,0.0d00)
 #ifdef LARGE_MATRIX
-          if (.not.p_ispv) then
+          if (.not.bus%p_ispv) then
             values(2) = dcmplx(qq,0.0d00)
           else
             values(2) = dcmplx(0.0d00,0.0d00)
           endif
 #else
-          if (.not.p_ispv) then
+          if (.not.bus%p_ispv) then
             values(2) = dcmplx(qq,0.0d00)
           endif
 #endif
@@ -467,6 +502,7 @@ module application_components
         return
       endif
       return
+    end if
   end function bus_vector_values
 !
 ! Check QLIM
@@ -475,8 +511,8 @@ module application_components
 !
   logical function bus_chk_q_lim(bus)
     implicit none
-    class(application_bus), intent(in) :: bus
-    class(application_branch), pointer :: branch_ptr
+    class(application_bus), intent(inout) :: bus
+    type(application_branch), pointer :: branch
     double precision qmin, qmax
     double precision pp, qq, p, q
     integer i, nsize
@@ -495,18 +531,19 @@ module application_components
       pp = 0.0d00
       qq = 0.0d00
       do i = 1, nsize
-        branch_ptr => bus%bus_get_neighbor_branch(i)
-        call branch%get_pq(bus,p,q)
+        branch => bus%bus_get_neighbor_branch(i)
+        call branch%branch_get_pq(bus,p,q)
         pp = pp + p
         qq = qq + q
       end do
       write(6,'(a,i4,3(a,f16.8))') ' Gen ',bus%bus_get_original_index(), &
-        ': Q = ',-qq,', p_QL = ',p_ql,', Q+p_Q0 = ',-qq+bus%p_ql,', QMAX = ',qmax
+        ': Q = ',-qq,', p_QL = ',bus%p_ql,', Q+p_Q0 = ', &
+        -qq+bus%p_ql,', QMAX = ',qmax
       if (-qq+bus%p_ql.gt.qmax) then
         write(6,'(a,i4,2(a,f16.8))') ' Gen ',bus%bus_get_original_index(), &
           ' exceeds the QMAX limit ',-qq+bus%p_ql,' vs ',qmax
         bus%p_ql = bus%p_ql+qmax
-        bus%p_ispv = 0
+        bus%p_ispv = .false.
         do i = 1, bus%p_ngen
           bus%p_gstatus(i) = 0
         end do
@@ -516,7 +553,7 @@ module application_components
         write(6,'(a,i4,2(a,f16.8))') ' Gen ',bus%bus_get_original_index(), &
           ' exceeds the QMIN limit ',-qq+bus%p_ql,' vs ',qmin
         bus%p_ql = bus%p_ql+qmin
-        bus%p_ispv = 0
+        bus%p_ispv = .false.
         do i = 1, bus%p_ngen
           bus%p_gstatus(i) = 0
         end do
@@ -540,7 +577,7 @@ module application_components
 ! 
   subroutine bus_set_values(bus, values)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     double complex, intent(in) :: values(*)
     double precision vt, at
     vt = bus%p_v
@@ -549,12 +586,12 @@ module application_components
 #ifdef LARGE_MATRIX
     bus%p_v = bus%p_v - real(values(2))
 #else
-    if (.not.bus%is_pv) then
+    if (.not.bus%bus_is_pv()) then
       bus%p_v = bus%p_v - real(values(2))
     endif
 #endif
-    bus%xc_data%v_ang = bus%p_a
-    bus%xc_data%v_mag = bus%p_v
+    bus%xc_buf%v_ang = bus%p_a
+    bus%xc_buf%v_mag = bus%p_v
   end subroutine bus_set_values
 !
 ! Return the number of rows in matrix from component
@@ -711,7 +748,7 @@ module application_components
 !
   subroutine bus_load(bus, data)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     class(data_collection), intent(in) :: data
     double precision pi, pg, qg, vs, qmin, qmax, sbase
     integer itype, i, ngen, gstatus, icnt
@@ -731,7 +768,7 @@ module application_components
     bus%p_ql = 0.0d00
     bus%p_sbase = 0.0d00
     bus%p_mode = YBUS
-    p_isolated = .false.
+    bus%p_isolated = .false.
 !
 !  Load Y-matrix parameters
 !
@@ -747,7 +784,7 @@ module application_components
     bus%p_sbase = sbase
 !
     if (itype.eq.3) then
-      call bus%set_reference_bus(.true.)
+      call bus%bus_set_reference_bus(.true.)
     else if (itype.eq.4) then
       bus%p_isolated = .true.
     endif
@@ -773,39 +810,42 @@ module application_components
     bus%p_load = bus%p_load.and.data%get_double_value('LOAD_QL',bus%p_ql)
 !
     bus%p_ngen = 0
-    if (data%get_int_value('GENERATOR_NUMBER',bus%p_ngen)) then
-      ngen = bus%p_ngen
-      allocate(bus%p_pg(ngen))
-      allocate(bus%p_qg(ngen))
-      allocate(bus%p_gstatus(ngen))
-      allocate(bus%p_qmin(ngen))
-      allocate(bus%p_qmax(ngen))
-      allocate(bus%p_gid(ngen))
-      icnt = 0
-      do i = 1, ngen
-        lgen = .true.
-        lgen = lgen.and.data%get_double_value('GENERATOR_PG',pg,i)
-        lgen = lgen.and.data%get_double_value('GENERATOR_QG',qg,i)
-        lgen = lgen.and.data%get_double_value('GENERATOR_VS',vs,i)
-        lgen = lgen.and.data%get_int_value('GENERATOR_STAT',gstatus,i)
-        lgen = lgen.and.data%get_double_value('GENERATOR_QMIN',qmin,i)
-        lgen = lgen.and.data%get_double_value('GENERATOR_QMAX',qmax,i)
-        if (lgen) then
-          icnt = icnt + 1
-          bus%p_pg(icnt) = pg 
-          bus%p_qg(icnt) = qg 
-          bus%p_gstatus(icnt) = gstatus 
-          bus%p_qmin(icnt) = qmin 
-          bus%p_qmax(icnt) = qmax 
-          if (gstatus.eq.1) then
-            bus%p_v = vs
-            if (itype.eq.2) then p_ispv = .true.
+    if (data%get_int_value('GENERATOR_NUMBER',ngen)) then
+      bus%p_ngen = ngen
+      if (ngen.gt.0) then
+        allocate(bus%p_pg(ngen))
+        allocate(bus%p_qg(ngen))
+        allocate(bus%p_gstatus(ngen))
+        allocate(bus%p_qmin(ngen))
+        allocate(bus%p_qmax(ngen))
+        allocate(bus%p_gid(ngen))
+        icnt = 0
+        do i = 1, ngen
+          lgen = .true.
+          lgen = lgen.and.data%get_double_indexed_value('GENERATOR_PG',pg,i)
+          lgen = lgen.and.data%get_double_indexed_value('GENERATOR_QG',qg,i)
+          lgen = lgen.and.data%get_double_indexed_value('GENERATOR_VS',vs,i)
+          lgen = lgen.and.data%get_int_indexed_value('GENERATOR_STAT',gstatus,i)
+          lgen = lgen.and.data%get_double_indexed_value('GENERATOR_QMIN',qmin,i)
+          lgen = lgen.and.data%get_double_indexed_value('GENERATOR_QMAX',qmax,i)
+          if (lgen) then
+            icnt = icnt + 1
+            bus%p_pg(icnt) = pg 
+            bus%p_qg(icnt) = qg 
+            bus%p_gstatus(icnt) = gstatus 
+            bus%p_qmin(icnt) = qmin 
+            bus%p_qmax(icnt) = qmax 
+            if (gstatus.eq.1) then
+              bus%p_v = vs
+              if (itype.eq.2) bus%p_ispv = .true.
+            endif
+            id = '-1'
+            ok = data%get_string_indexed_value('GENERATOR_ID',id,i)
+            bus%p_gid(icnt) = id
           endif
-          id = '-1'
-          ok = data%get_string_value('GENERATOR_ID',id,i)
-          bus%p_gid = id
-        endif
-      end do
+        end do
+        bus%p_ngen = icnt
+      endif
     endif
     bus%p_saveisPV = bus%p_ispv
     bus%xc_buf%v_ang = bus%p_a
@@ -818,22 +858,30 @@ module application_components
 !
   subroutine bus_set_y_matrix(bus)
     implicit none
-    class(application_bus), intent(in) :: bus
-    class(application_branch), pointer :: branch
+    class(application_bus), intent(inout) :: bus
+    type(application_branch), pointer :: branch
     double complex ybus
     integer i,nnghbr
     ybus = dcmplx(0.0d00,0.0d00)
+    nnghbr = bus%bus_get_num_neighbors()
     do i = 1, nnghbr
       branch => bus%bus_get_neighbor_branch(i)
-      ybus = ybus + branch%get_admittance()
-      ybus = ybus + branch%get_transformer(bus)
-      ybus = ybus + branch%get_shunt(bus)
+!      write(6,'(a,2f16.8)') 'admittance: ',real(branch%branch_get_admittance()), &
+!        dimag(branch%branch_get_admittance())
+      ybus = ybus - branch%branch_get_admittance()
+!      write(6,'(a,2f16.8)') 'transformer: ',real(branch%branch_get_transformer(bus)), &
+!        dimag(branch%branch_get_transformer(bus))
+      ybus = ybus - branch%branch_get_transformer(bus)
+!      write(6,'(a,2f16.8)') 'shunt: ',real(branch%branch_get_shunt(bus)), &
+!        dimag(branch%branch_get_shunt(bus))
+      ybus = ybus + branch%branch_get_shunt(bus)
     end do
     if (bus%p_shunt) then
+      write(6,'(a,2f16.8)') 'Shunt values: ',bus%p_shunt_gs,bus%p_shunt_bs
       ybus = ybus + dcmplx(bus%p_shunt_gs,bus%p_shunt_bs)
     endif
     bus%p_ybusr = real(ybus)
-    bus%p_ybusi =imag(ybus)
+    bus%p_ybusi = dimag(ybus)
     return
   end subroutine bus_set_y_matrix
 !
@@ -841,19 +889,19 @@ module application_components
 ! @param bus GridPACK bus object
 ! @return value of y-matrix for this bus
 !
-   double complex function bus_get_ymatrix(bus)
+   double complex function bus_get_y_matrix(bus)
      implicit none
      class(application_bus), intent(in) :: bus
-     bus_get_ymatrix = dcmplx(bus%p_ybusr,bus%p_ybusi)
+     bus_get_y_matrix = dcmplx(bus%p_ybusr,bus%p_ybusi)
      return
-   end function bus_get_ymatrix
+   end function bus_get_y_matrix
 !
 ! Reset the voltage and phase angle to initial values
 ! @param bus GridPACK bus object
 !
-   subroutine bus_reset_voltage
+   subroutine bus_reset_voltage(bus)
      implicit none
-     class(application_bus), intent(in) :: bus
+     class(application_bus), intent(inout) :: bus
      bus%p_v = bus%p_voltage
      bus%p_a = bus%p_angle
      bus%xc_buf%v_mag = bus%p_v
@@ -879,13 +927,13 @@ module application_components
      class(application_bus), intent(in) :: bus
      bus_get_phase = bus%xc_buf%v_ang
      return
-   end function bus_get_voltage
+   end function bus_get_phase
 !
 ! Return whether or not bus is a PV bus (V held fixed in powerflow equations)
 ! @param bus GridPACK bus object
 ! @return true if bus is PV bus
 !
-  logical function bus_is_pv
+  logical function bus_is_pv(bus)
      implicit none
      class(application_bus), intent(in) :: bus
      bus_is_pv = bus%p_ispv
@@ -898,10 +946,14 @@ module application_components
 !
   subroutine bus_set_is_pv(bus,status)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     integer, intent(in) :: status
     bus%p_saveispv = bus%p_ispv
-    bus%p_ispv = status
+    if (status.eq.0) then
+      bus%p_ispv = .false.
+    else
+      bus%p_ispv = .true.
+    endif
     bus%p_v = bus%p_voltage
     return
   end subroutine bus_set_is_pv
@@ -912,7 +964,7 @@ module application_components
 !
   subroutine bus_reset_is_pv(bus)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     bus%p_ispv = bus%p_saveispv
     return
   end subroutine bus_reset_is_pv
@@ -922,11 +974,11 @@ module application_components
 !
   subroutine bus_set_sbus(bus)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     integer i, ngen
     double precision pg, qg
     logical usegen
-    complex double sbus
+    double complex sbus
     usegen = .false.
     ngen = bus%p_ngen
     do i = 1, ngen
@@ -941,7 +993,7 @@ module application_components
       bus%p_p0 = real(sbus)
       bus%p_q0 = dimag(sbus)
     else
-      sbus = dcmplx(-bus%p_pl/bus%p_sbase,bus%p_ql/bus%p_sbase)
+      sbus = dcmplx(-bus%p_pl/bus%p_sbase,-bus%p_ql/bus%p_sbase)
       bus%p_p0 = real(sbus)
       bus%p_q0 = dimag(sbus)
     endif
@@ -952,7 +1004,7 @@ module application_components
 !
   double complex function bus_get_complex_voltage(bus)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     double complex ret
     bus%p_a = bus%xc_buf%v_ang
     bus%p_v = bus%xc_buf%v_mag
@@ -961,6 +1013,28 @@ module application_components
     bus_get_complex_voltage = ret
     return
   end function bus_get_complex_voltage
+!
+! Return whether or not a bus is isolated
+! @param bus GridPACK bus object
+! @return true if bus is isolated
+!
+  logical function bus_is_isolated(bus)
+    implicit none
+    class(application_bus), intent(in) :: bus
+    bus_is_isolated = bus%p_isolated
+    return
+  end function bus_is_isolated
+!
+! Change isolated status of bus
+! @param bus GridPACK bus object
+!
+  subroutine bus_set_isolated(bus, status)
+    implicit none
+    class(application_bus), intent(inout) :: bus
+    logical, intent(in) :: status
+    bus%p_isolated = status
+    return
+  end subroutine bus_set_isolated
 !
 ! Set an internal variable that can be used to control the behavior of the
 ! component. This function doesn't need to be implemented, but if needed it can
@@ -973,7 +1047,7 @@ module application_components
 !
   subroutine bus_set_mode(bus, mode)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     integer, value, intent(in) :: mode
     bus%p_mode = mode
     return
@@ -990,13 +1064,14 @@ module application_components
 !
   logical function bus_serial_write(bus, string, bufsize, signal)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
     character(len=*), intent(in) :: signal
     double precision pi, angle
     double complex v(2)
     integer nnghbr
+    logical ok
     if (len(trim(signal)).eq.0) then
       pi = 4.0d00*atan(1.0d00) 
       angle = bus%p_a*180.0d00/pi
@@ -1005,11 +1080,11 @@ module application_components
       bus_serial_write = .true.
       return
     else if (trim(signal).eq.'pq') then
-      call bus%bus_vector_values(v)
-      nngbhr = bus%bus_get_num_neighbors()
+      ok = bus%bus_vector_values(v)
+      nnghbr = bus%bus_get_num_neighbors()
       write(string,'(a,i6,a,f12.6,a,f12.6,a,i2)') '     ', &
         bus%bus_get_original_index(),'      ',real(v(1)),'      ', &
-        real(v(2)),'      ',nngbhrs
+        real(v(2)),'      ',nnghbr
       bus_serial_write = .true.
       return
     endif
@@ -1054,6 +1129,59 @@ module application_components
     implicit none
     class(application_branch), intent(in) :: branch
     integer, intent(out) :: isize, jsize
+    logical ok, bus1pv, bus2pv
+    class(application_bus), pointer :: bus1, bus2
+    if (branch%p_mode.eq.JACOBIAN) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_get_reference_bus()
+      ok = ok.and.(.not.bus2%bus_get_reference_bus())
+      ok = ok.and.(.not.bus1%bus_is_isolated())
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      ok = ok.and.branch%p_active
+      if (ok) then
+#ifdef LARGE_MATRIX
+        isize = 2
+        jsize = 2
+        branch_matrix_forward_size = .true.
+#else
+        bus1PV = bus1%bus_is_pv()
+        bus2PV = bus2%bus_is_pv()
+        if (bus1PV.and.bus2PV) then
+          isize = 1
+          jsize = 1
+          branch_matrix_forward_size = .true.
+        else if (bus1PV) then
+          isize = 1
+          jsize = 2
+          branch_matrix_forward_size = .true.
+        else if (bus2PV) then
+          isize = 2
+          jsize = 1
+          branch_matrix_forward_size = .true.
+        else
+          isize = 2
+          jsize = 2
+          branch_matrix_forward_size = .true.
+        endif
+#endif
+      else
+        branch_matrix_forward_size = .true.
+      endif
+    else if (branch%p_mode.eq.YBUS) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_is_isolated()
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      if (branch%p_active.and.ok) then
+        isize = 1
+        jsize = 1
+        branch_matrix_forward_size = .true.
+      else
+        branch_matrix_forward_size = .false.
+      endif
+      return
+    endif
     branch_matrix_forward_size = .false.
     return
   end function branch_matrix_forward_size
@@ -1069,6 +1197,59 @@ module application_components
     implicit none
     class(application_branch), intent(in) :: branch
     integer, intent(out) :: isize, jsize 
+    logical ok, bus1pv, bus2pv
+    class(application_bus), pointer :: bus1, bus2
+    if (branch%p_mode.eq.JACOBIAN) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_get_reference_bus()
+      ok = ok.and.(.not.bus2%bus_get_reference_bus())
+      ok = ok.and.(.not.bus1%bus_is_isolated())
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      ok = ok.and.branch%p_active
+      if (ok) then
+#ifdef LARGE_MATRIX
+        isize = 2
+        jsize = 2
+        branch_matrix_reverse_size = .true.
+#else
+        bus1PV = bus1%bus_is_pv()
+        bus2PV = bus2%bus_is_pv()
+        if (bus1PV.and.bus2PV) then
+          isize = 1
+          jsize = 1
+          branch_matrix_reverse_size = .true.
+        else if (bus1PV) then
+          isize = 2
+          jsize = 1
+          branch_matrix_reverse_size = .true.
+        else if (bus2PV) then
+          isize = 1
+          jsize = 2
+          branch_matrix_reverse_size = .true.
+        else
+          isize = 2
+          jsize = 2
+          branch_matrix_reverse_size = .true.
+        endif
+#endif
+      else
+        branch_matrix_reverse_size = .true.
+      endif
+    else if (branch%p_mode.eq.YBUS) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_is_isolated()
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      if (branch%p_active.and.ok) then
+        isize = 1
+        jsize = 1
+        branch_matrix_reverse_size = .true.
+      else
+        branch_matrix_reverse_size = .false.
+      endif
+      return
+    endif
     branch_matrix_reverse_size = .false.
     return
   end function branch_matrix_reverse_size
@@ -1083,6 +1264,96 @@ module application_components
     implicit none
     class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
+    class(application_bus), pointer :: bus1, bus2
+    double precision t11, t12, t21, t22
+    double precision cs, sn, ybusr, ybusi, v1, v2
+    logical ok, bus1PV, bus2PV
+    if (branch%p_mode.eq.JACOBIAN) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_get_reference_bus()
+      ok = ok.and.(.not.bus2%bus_get_reference_bus())
+      ok = ok.and.(.not.bus1%bus_is_isolated())
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      ok = ok.and.branch%p_active
+      if (ok) then
+        cs = cos(branch%p_theta)
+        sn = sin(branch%p_theta)
+        bus1PV = bus1%bus_is_pv()
+        bus2PV = bus2%bus_is_pv()
+        ybusr = branch%p_ybusr_frwd
+        ybusi = branch%p_ybusi_frwd
+        v1 = bus1%bus_get_voltage()
+        v2 = bus2%bus_get_voltage()
+#ifdef LARGE_MATRIX
+        values(1) = ybusr*sn - ybusi*cs
+        values(2) = ybusr*cs + ybusi*sn
+        values(3) = ybusr*cs + ybusi*sn
+        values(4) = ybusr*sn - ybusi*cs
+        values(1) = v1*v2*values(1)
+        values(2) = -v1*v2*values(2)
+        values(3) = v1*values(3)
+        values(4) = v1*values(4)
+!
+!  Fix up matrix if one or both buses at the end of the branch is a PV bus
+!
+        if (bus1PV.and.bus2PV) then
+          values(2) = dcmplx(0.0d00,0.0d00)
+          values(3) = dcmplx(0.0d00,0.0d00)
+          values(4) = dcmplx(0.0d00,0.0d00)
+        else if (bus1PV) then
+          values(2) = dcmplx(0.0d00,0.0d00)
+          values(4) = dcmplx(0.0d00,0.0d00)
+        else if (bus2PV) then
+          values(3) = dcmplx(0.0d00,0.0d00)
+          values(4) = dcmplx(0.0d00,0.0d00)
+        endif
+#else
+        if (bus1PV.and.bus2PV) then
+          values(1) = ybusr*sn - ybusi*cs
+          values(1) = v1*v2*values(1)
+        else if (bus1PV) then
+          values(1) = ybusr*sn - ybusi*cs
+          values(2) = ybusr*cs + ybusi*sn
+          values(1) = v1*v2*values(1)
+          values(2) = v1*values(2)
+        else if (bus2PV) then
+          values(1) = ybusr*sn - ybusi*cs
+          values(2) = ybusr*cs + ybusi*sn
+          values(1) = v1*v2*values(1)
+          values(2) = -v1*v2*values(2)
+        else
+          values(1) = ybusr*sn - ybusi*cs
+          values(2) = ybusr*cs + ybusi*sn
+          values(3) = ybusr*cs + ybusi*sn
+          values(4) = ybusr*sn - ybusi*cs
+          values(1) = v1*v2*values(1)
+          values(2) = -v1*v2*values(2)
+          values(3) = v1*values(3)
+          values(4) = v1*values(4)
+        endif
+#endif
+        branch_matrix_forward_values = .true.
+        return
+      else        
+        branch_matrix_forward_values = .false.
+        return
+      endif
+    else if (branch%p_mode.eq.YBUS) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_is_isolated()
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      ok = ok.and.branch%p_active
+      if (ok) then
+        values(1) = dcmplx(branch%p_ybusr_frwd,branch%p_ybusi_frwd)
+        branch_matrix_forward_values = .true.
+        return
+      else
+        branch_matrix_forward_values = .false.
+        return
+      endif
+    endif
     branch_matrix_forward_values = .false.
     return
   end function branch_matrix_forward_values
@@ -1097,6 +1368,96 @@ module application_components
     implicit none
     class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
+    class(application_bus), pointer :: bus1, bus2
+    double precision t11, t12, t21, t22
+    double precision cs, sn, ybusr, ybusi, v1, v2
+    logical ok, bus1PV, bus2PV
+    if (branch%p_mode.eq.JACOBIAN) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_get_reference_bus()
+      ok = ok.and.(.not.bus2%bus_get_reference_bus())
+      ok = ok.and.(.not.bus1%bus_is_isolated())
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      ok = ok.and.branch%p_active
+      if (ok) then
+        cs = cos(-branch%p_theta)
+        sn = sin(-branch%p_theta)
+        bus1PV = bus1%bus_is_pv()
+        bus2PV = bus2%bus_is_pv()
+        ybusr = branch%p_ybusr_rvrs
+        ybusi = branch%p_ybusi_rvrs
+        v1 = bus1%bus_get_voltage()
+        v2 = bus2%bus_get_voltage()
+#ifdef LARGE_MATRIX
+        values(1) = ybusr*sn - ybusi*cs
+        values(2) = ybusr*cs + ybusi*sn
+        values(3) = ybusr*cs + ybusi*sn
+        values(4) = ybusr*sn - ybusi*cs
+        values(1) = v1*v2*values(1)
+        values(2) = -v1*v2*values(2)
+        values(3) = v2*values(3)
+        values(4) = v2*values(4)
+!
+!  Fix up matrix if one or both buses at the end of the branch is a PV bus
+!
+        if (bus1PV.and.bus2PV) then
+          values(2) = dcmplx(0.0d00,0.0d00)
+          values(3) = dcmplx(0.0d00,0.0d00)
+          values(4) = dcmplx(0.0d00,0.0d00)
+        else if (bus1PV) then
+          values(3) = dcmplx(0.0d00,0.0d00)
+          values(4) = dcmplx(0.0d00,0.0d00)
+        else if (bus2PV) then
+          values(2) = dcmplx(0.0d00,0.0d00)
+          values(4) = dcmplx(0.0d00,0.0d00)
+        endif
+#else
+        if (bus1PV.and.bus2PV) then
+          values(1) = ybusr*sn - ybusi*cs
+          values(1) = v1*v2*values(1)
+        else if (bus1PV) then
+          values(1) = ybusr*sn - ybusi*cs
+          values(2) = ybusr*cs + ybusi*sn
+          values(1) = v1*v2*values(1)
+          values(2) = -v1*v2*values(2)
+        else if (bus2PV) then
+          values(1) = ybusr*sn - ybusi*cs
+          values(2) = ybusr*cs + ybusi*sn
+          values(1) = v1*v2*values(1)
+          values(2) = v2*values(1)
+        else
+          values(1) = ybusr*sn - ybusi*cs
+          values(2) = ybusr*cs + ybusi*sn
+          values(3) = ybusr*cs + ybusi*sn
+          values(4) = ybusr*sn - ybusi*cs
+          values(1) = v1*v2*values(1)
+          values(2) = -v1*v2*values(2)
+          values(3) = v2*values(3)
+          values(4) = v2*values(4)
+        endif
+#endif
+        branch_matrix_reverse_values = .true.
+        return
+      else        
+        branch_matrix_reverse_values = .false.
+        return
+      endif
+    else if (branch%p_mode.eq.YBUS) then
+      bus1 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus1()
+      ok = .not.bus1%bus_is_isolated()
+      ok = ok.and.(.not.bus2%bus_is_isolated())
+      ok = ok.and.branch%p_active
+      if (ok) then
+        values(1) = dcmplx(branch%p_ybusr_rvrs,branch%p_ybusi_rvrs)
+        branch_matrix_reverse_values = .true.
+        return
+      else
+        branch_matrix_reverse_values = .false.
+        return
+      endif
+    endif
     branch_matrix_reverse_values = .false.
     return
   end function branch_matrix_reverse_values
@@ -1281,9 +1642,332 @@ module application_components
 !
   subroutine branch_vector_set_element_values(branch, values)
     implicit none
-    class(application_branch) :: branch
+    class(application_branch), intent(in) :: branch
     double complex, intent(out) :: values(*)
   end subroutine branch_vector_set_element_values
+!
+! Calculate contributions to the admittance matrix from the branches
+! @param branch GridPACK branch object
+!
+  subroutine branch_set_y_matrix(branch)
+    implicit none
+    class(application_branch), intent(inout) :: branch
+    integer i, nelems
+    double complex ret,a
+    branch%p_ybusr_frwd = 0.0d00
+    branch%p_ybusi_frwd = 0.0d00
+    branch%p_ybusr_rvrs = 0.0d00
+    branch%p_ybusi_rvrs = 0.0d00
+    nelems = branch%p_elems
+    do i = 1, nelems
+      ret = dcmplx(branch%p_resistance(i),branch%p_reactance(i))
+      ret = dcmplx(-1.0d00,0.0d00)/ret
+      a = dcmplx(cos(branch%p_phase_shift(i)),sin(branch%p_phase_shift(i)))
+      a = a*dcmplx(branch%p_tap_ratio(i),0.0d00)
+      if (branch%p_switched(i)) a = conjg(a)
+      if (branch%p_branch_status(i)) then
+        if (branch%p_xform(i)) then
+          branch%p_ybusr_frwd = branch%p_ybusr_frwd + real(ret/conjg(a))
+          branch%p_ybusi_frwd = branch%p_ybusi_frwd + dimag(ret/conjg(a))
+          branch%p_ybusr_rvrs = branch%p_ybusr_rvrs + real(ret/a)
+          branch%p_ybusi_rvrs = branch%p_ybusi_rvrs + dimag(ret/a)
+        else
+          branch%p_ybusr_frwd = branch%p_ybusr_frwd + real(ret)
+          branch%p_ybusi_frwd = branch%p_ybusi_frwd + dimag(ret)
+          branch%p_ybusr_rvrs = branch%p_ybusr_rvrs + real(ret)
+          branch%p_ybusi_rvrs = branch%p_ybusi_rvrs + dimag(ret)
+        endif
+      endif
+    end do
+    return
+  end subroutine branch_set_y_matrix
+!
+! Get values of y-matrix. These can be used in subsequent calculations
+! @param branch GridPACK branch object
+! @return complex forward y-matrix element 
+!
+  double complex function branch_get_forward_y_matrix(branch)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    branch_get_forward_y_matrix = dcmplx(branch%p_ybusr_frwd,branch%p_ybusi_frwd)
+    return
+  end function branch_get_forward_y_matrix
+!
+! Get values of y-matrix. These can be used in subsequent calculations
+! @param branch GridPACK branch object
+! @return complex reverse y-matrix element 
+!
+  double complex function branch_get_reverse_y_matrix(branch)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    branch_get_reverse_y_matrix = dcmplx(branch%p_ybusr_rvrs,branch%p_ybusi_rvrs)
+    return
+  end function branch_get_reverse_y_matrix
+!
+! Evaluate the complex admittance for the branch
+! @param branch GridPACK branch object
+! @return complex admittance from branch 
+!
+  double complex function branch_get_admittance(branch)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    integer i
+    double complex ret, tmp
+    ret = dcmplx(0.0d00,0.0d00)
+    do i = 1, branch%p_elems
+      tmp = dcmplx(branch%p_resistance(i),branch%p_reactance(i))
+      if (.not.branch%p_xform(i).and.branch%p_branch_status(i)) then
+        tmp = -1.0/tmp
+      else
+        tmp = dcmplx(0.0d00,0.0d00)
+      endif
+      ret = ret + tmp
+    end do
+    branch_get_admittance = ret
+    return
+  end function branch_get_admittance
+!
+! Evaluate the contribution from transformers for the branch
+! @param branch GridPACK branch object
+! @param bus pointer to bus at one or the other end of the branch
+! @return transformer contribution to Y-matrix from branch 
+!
+  double complex function branch_get_transformer(branch, bus)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    class(application_bus), pointer, intent(in) :: bus
+    class(application_bus), pointer :: bus1, bus2
+    double complex ret, tmp, tmpb, a
+    integer i
+    ret = dcmplx(0.0d00,0.0d00)
+    do i = 1, branch%p_elems
+      tmp = dcmplx(branch%p_resistance(i),branch%p_reactance(i))
+      write(6,'(a,2f16.8)') 'tmp: ',real(tmp),dimag(tmp)
+      tmpb = dcmplx(0.0d00,0.5d00*branch%p_charging(i))
+      write(6,'(a,2f16.8)') 'tmpB: ',real(tmpb),dimag(tmpb)
+      if (branch%p_xform(i).and.branch%p_branch_status(i)) then
+        tmp = dcmplx(-1.0d00,0.0d00)/tmp
+        tmp = tmp - tmpb
+        a = dcmplx(cos(branch%p_phase_shift(i)),sin(branch%p_phase_shift(i)))
+        a = a*branch%p_tap_ratio(i)
+      write(6,'(a,2f16.8)') 'a: ',real(a),dimag(a)
+        bus1 => branch%branch_get_bus1()
+        bus2 => branch%branch_get_bus2()
+        if ((.not.branch%p_switched(i).and.bus%bus_compare(bus1)).or. &
+            (branch%p_switched(i).and.bus%bus_compare(bus2))) then
+          tmp = tmp/(conjg(a)*a)
+          write(6,'(a)') 'Switched'
+        endif
+      write(6,'(a,2f16.8)') 'TMP: ',real(tmp),dimag(tmp)
+      else
+        tmp = dcmplx(0.0d00,0.0d00)
+      endif
+      ret = ret + tmp
+    end do
+    branch_get_transformer = ret
+    return
+  end function branch_get_transformer
+!
+! Evaluate the contribution from shunts for the branch
+! @param branch GridPACK branch object
+! @param bus pointer to bus at one or the other end of the branch
+! @return shunt contribution to Y-matrix from branch 
+!
+  double complex function branch_get_shunt(branch, bus)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    class(application_bus), pointer, intent(in) :: bus
+    class(application_bus), pointer :: bus1, bus2
+    double precision retr, reti, tmpr, tmpi
+    integer i
+    retr = 0.0d00
+    reti = 0.0d00
+    do i = 1, branch%p_elems
+      if (branch%p_shunt(i).and.branch%p_branch_status(i)) then
+        tmpr = 0.0d00
+        tmpi = 0.0d00
+        if (.not.branch%p_xform(i)) then
+          tmpi = 0.5d00*branch%p_charging(i)
+          tmpr = 0.0d00
+        endif
+        bus1 => branch%branch_get_bus1()
+        bus2 => branch%branch_get_bus2()
+        if (bus%bus_compare(bus1)) then
+          tmpr = tmpr + branch%p_shunt_admt_g1(i)
+          tmpi = tmpi + branch%p_shunt_admt_b1(i)
+        else if (bus%bus_compare(bus2)) then
+          tmpr = tmpr + branch%p_shunt_admt_g2(i)
+          tmpi = tmpi + branch%p_shunt_admt_b2(i)
+        endif
+      else
+        tmpr = 0.0d00
+        tmpi = 0.0d00
+      endif
+      retr = retr + tmpr
+      reti = reti + tmpi
+    end do
+    branch_get_shunt = dcmplx(retr,reti)
+    return
+  end function branch_get_shunt
+!
+! Return contribution to Y-matrix from a specific transmission element
+! @param branch GridPACK branch object
+! @param tag character string for transmission element
+! @param yii contribution from "from" bus
+! @param yij contribution from line element
+!
+  subroutine branch_get_line_element(branch, tag, yii, yij)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    character(len=*), intent(in) :: tag
+    double complex, intent(out) :: yii, yij
+    double complex zero, flow, y, aij, bij
+    integer i, idx
+    idx = -1
+    zero = dcmplx(0.0d00,0.0d00)
+    flow = zero
+    yii = zero
+    yij = zero
+    do i = 1, branch%p_elems
+      if (trim(tag).eq.trim(branch%p_tag(i))) then
+        idx = i
+        exit
+      endif
+    end do
+    if (idx.gt.0) then
+      y = dcmplx(branch%p_resistance(idx),branch%p_reactance(idx))
+      bij = dcmplx(0.0d00,branch%p_charging(idx))
+      if (y.ne.zero) y = dcmplx(-1.0d00,0.0d00)/y
+      if (branch%p_xform(idx)) then
+        aij = dcmplx(cos(branch%p_phase_shift(idx)),sin(branch%p_phase_shift(idx)))
+        aij = aij*branch%p_tap_ratio(idx)
+        if (aij.ne.zero) then
+          yij = y/conjg(aij)
+          yii = -(y-0.5d00*bij)
+          yii = yii/(aij*conjg(aij))
+        else
+          yij = y/aij
+          yii = -(y-0.5d00*bij)
+        endif
+      else
+        yij = y
+        yii = -(yij-0.5d00*bij)
+      endif
+    endif
+  end subroutine branch_get_line_element
+!
+! Return vector of tags
+! @param branch GridPACK branch object
+! @param tags vector of character strings containing tags
+! @param ilen length of character strings
+!
+  subroutine branch_get_line_tags(branch, tags, ilen)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    integer, intent(in) :: ilen
+    character(len=ilen), intent(inout) :: tags(*)
+    integer i
+    do i = 1, branch%p_elems
+      tags(i) = trim(branch%p_tag(i))
+    end do
+    return
+  end subroutine branch_get_line_tags
+!
+!
+!
+! Return complex power for each line element
+! @param branch GridPACK branch object
+! @param tag line element identifier
+! @return complex power associated with line elemenet labeled by tag
+!
+  double complex function branch_get_complex_power(branch, tag)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    character(len=*), intent(in) :: tag
+    double complex vi, vj, yii, yij, s 
+    class(application_bus), pointer :: bus1, bus2
+    s = dcmplx(0.0d00,0.0d00)
+    bus1 => branch%branch_get_bus1()
+    vi = bus1%bus_get_complex_voltage()
+    bus2 => branch%branch_get_bus2()
+    vj = bus2%bus_get_complex_voltage()
+    call branch%branch_get_line_element(tag,yii,yij)
+    s = vi*conjg(yii*vi+yij*vj)*branch%p_sbase
+    branch_get_complex_power = s
+    return
+  end function branch_get_complex_power
+!
+! Return the contribution to the Jacobian in the powerflow equations comming
+! from a branch
+! @param branch GridPACK branch object
+! @param bus pointer to bus at one end of branch
+! @param values an array of 4 real doubles that holds return matrix element  
+!
+  subroutine branch_get_jacobian(branch, bus, values)
+    implicit none
+    class(application_branch), intent(in) :: branch
+    class(application_bus), pointer, intent(in) :: bus
+    class(application_bus), pointer :: bus1, bus2
+    double precision, intent(out) :: values(*)
+    double precision v, cs, sn, ybusr, ybusi
+    bus1 => branch%branch_get_bus1()
+    bus2 => branch%branch_get_bus2()
+    if (bus%bus_compare(bus1)) then
+      v = bus2%bus_get_voltage()
+      cs = cos(branch%p_theta)
+      sn = sin(branch%p_theta)
+      ybusr = branch%p_ybusr_frwd
+      ybusi = branch%p_ybusi_frwd
+    else if (bus%bus_compare(bus2)) then
+      v = bus1%bus_get_voltage()
+      cs = cos(-branch%p_theta)
+      sn = sin(-branch%p_theta)
+      ybusr = branch%p_ybusr_rvrs
+      ybusi = branch%p_ybusi_rvrs
+    else
+      write(6,'(a)') 'No bus match in branch_get_jacobian call'
+    endif
+    values(1) = v*(ybusr*sn - ybusi*cs)
+    values(2) = -v*(ybusr*cs + ybusi*sn)
+    values(3) = ybusr*cs + ybusi*sn
+    values(4) = ybusr*sn - ybusi*cs
+    return
+  end subroutine branch_get_jacobian
+!
+! Return contribution to constraints
+! @param branch GridPACK branch object
+! @param bus pointer to bus at one end of branch
+! @param p real part of constraint
+! @param q imaginary part of constraint
+!
+  subroutine branch_get_pq(branch,bus,p,q)
+    class(application_branch), intent(inout) :: branch
+    class(application_bus), pointer, intent(in) :: bus
+    double precision, intent(out) :: p, q
+    class(application_bus), pointer :: bus1, bus2
+    double precision v1, v2, cs, sn, ybusr, ybusi
+    bus1 => branch%branch_get_bus1()
+    bus2 => branch%branch_get_bus2()
+    v1 = bus1%bus_get_voltage()
+    v2 = bus2%bus_get_voltage()
+    branch%p_theta = bus1%bus_get_phase() - bus2%bus_get_phase()
+    if (bus%bus_compare(bus1)) then
+      cs = cos(branch%p_theta)
+      sn = sin(branch%p_theta)
+      ybusr = branch%p_ybusr_frwd
+      ybusi = branch%p_ybusi_frwd
+    else if (bus%bus_compare(bus2)) then
+      cs = cos(-branch%p_theta)
+      sn = sin(-branch%p_theta)
+      ybusr = branch%p_ybusr_rvrs
+      ybusi = branch%p_ybusi_rvrs
+    else
+      write(6,'(a)') 'No bus match in branch_get_pq call'
+    endif
+    p = v1*v2*(ybusr*cs + ybusi*sn)
+    q = v1*v2*(ybusr*sn - ybusi*cs)
+    return
+  end subroutine branch_get_pq
 !
 ! Load data from DataCollection object into corresponding component.
 ! @param branch GridPACK branch object
@@ -1291,8 +1975,87 @@ module application_components
 !
   subroutine branch_load(branch, data)
     implicit none
-    class(application_branch) :: branch
+    class(application_branch), intent(inout) :: branch
     class(data_collection), intent(in) :: data
+    logical ok, lvar, xform, shunt, rate
+    double precision rvar, pi
+    character(32) svar
+    integer ivar, idx, nelems
+!
+!  Initialize some values
+!
+    branch%p_elems = 0
+    branch%p_theta = 0.0d00
+    branch%p_sbase = 0.0d00
+    branch%p_mode = YBUS
+!
+    pi = 4.0d00*atan(1.0d00)
+    ok = data%get_int_value('BRANCH_NUM_ELEMENTS',branch%p_elems)
+    ok = .true.
+    nelems = branch%p_elems
+    branch%p_active = .false.
+    if (nelems.gt.0) then
+      allocate(branch%p_reactance(nelems))
+      allocate(branch%p_resistance(nelems))
+      allocate(branch%p_phase_shift(nelems))
+      allocate(branch%p_tap_ratio(nelems))
+      allocate(branch%p_tag(nelems))
+      allocate(branch%p_xform(nelems))
+      allocate(branch%p_branch_status(nelems))
+      allocate(branch%p_switched(nelems))
+      allocate(branch%p_charging(nelems))
+      allocate(branch%p_shunt_admt_g1(nelems))
+      allocate(branch%p_shunt_admt_b1(nelems))
+      allocate(branch%p_shunt_admt_g2(nelems))
+      allocate(branch%p_shunt_admt_b2(nelems))
+      allocate(branch%p_shunt(nelems))
+      allocate(branch%p_rate_a(nelems))
+      do idx = 1, nelems
+        xform = .true.
+        xform = xform.and.data%get_double_indexed_value('BRANCH_X',rvar,idx)
+        branch%p_reactance(idx) = rvar
+        xform = xform.and.data%get_double_indexed_value('BRANCH_R',rvar,idx)
+        branch%p_resistance(idx) = rvar
+        ok = ok.and.data%get_double_indexed_value('BRANCH_SHIFT',rvar,idx)
+        rvar = -rvar*pi/180.0d00
+        branch%p_phase_shift(idx) = rvar
+        ok = ok.and.data%get_double_indexed_value('BRANCH_TAP',rvar,idx)
+        branch%p_tap_ratio(idx) = rvar
+        ok = ok.and.data%get_string_indexed_value('BRANCH_CKT',svar,idx)
+        branch%p_tag(idx) = trim(svar)
+        if (rvar.ne.0.0d00) then
+          branch%p_xform(idx) = xform
+        else
+          branch%p_xform(idx) = .false.
+        endif
+        ivar = 1
+        xform = xform.and.data%get_int_indexed_value('BRANCH_STATUS',ivar,idx)
+        if (ivar.eq.1) then
+          branch%p_branch_status(idx) = .true.
+        else
+          branch%p_branch_status(idx) = .false.
+        endif
+        if (ivar.eq.1) branch%p_active = .true.
+        ok = data%get_logical_indexed_value('BRANCH_SWITCHED', lvar, idx)
+        if (.not.ok) lvar = .false.
+        branch%p_switched(idx) = lvar
+        shunt = .true.
+        shunt = shunt.and.data%get_double_indexed_value('BRANCH_B',rvar,idx)
+        branch%p_charging(idx) = rvar
+        shunt = shunt.and.data%get_double_indexed_value('BRANCH_SHUNT_ADMTTNC_G1',rvar,idx)
+        branch%p_shunt_admt_g1(idx) = rvar
+        shunt = shunt.and.data%get_double_indexed_value('BRANCH_SHUNT_ADMTTNC_B1',rvar,idx)
+        branch%p_shunt_admt_b1(idx) = rvar
+        shunt = shunt.and.data%get_double_indexed_value('BRANCH_SHUNT_ADMTTNC_G2',rvar,idx)
+        branch%p_shunt_admt_g2(idx) = rvar
+        shunt = shunt.and.data%get_double_indexed_value('BRANCH_SHUNT_ADMTTNC_B2',rvar,idx)
+        branch%p_shunt_admt_b2(idx) = rvar
+        branch%p_shunt(idx) = shunt
+        rate = data%get_double_indexed_value('BRANCH_RATING_A',rvar,idx)
+        branch%p_rate_a(idx) = rvar
+      end do
+    endif
+    return
   end subroutine branch_load
 !
 ! Set an internal variable that can be used to control the behavior of the
@@ -1308,6 +2071,8 @@ module application_components
     implicit none
     class(application_branch) :: branch
     integer, value, intent(in) :: mode
+    branch%p_mode = mode
+    return
   end subroutine branch_set_mode
 !
 ! Copy a string for output into buffer. The behavior of this method can be
@@ -1325,6 +2090,69 @@ module application_components
     character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
     character(len=*), intent(in) :: signal
+    class(application_bus), pointer :: bus1, bus2
+    character(128) buf
+    character(12), allocatable :: tags(:)
+    integer i, ilen, oldlen
+    double complex s
+    logical found
+    double precision ss, p, q
+    bus1 => branch%branch_get_bus1()
+    bus2 => branch%branch_get_bus2()
+    allocate(tags(branch%p_elems))
+    call branch%branch_get_line_tags(tags,12)
+    if (len(trim(signal)).ne.0.and.trim(signal).eq.'flow') then
+      found = .false.
+      ilen = 0
+      oldlen = 0
+      do i = 1, branch%p_elems
+        s = branch%branch_get_complex_power(tags(i))
+        p = real(s)
+        q = dimag(s)
+        if (.not.branch%p_branch_status(i)) p = 0.0d00
+        if (.not.branch%p_branch_status(i)) q = 0.0d00
+        ss = sqrt(p**2+q**2)
+        if (ss.gt.branch%p_rate_a(i).and.branch%p_rate_a(i).ne.0.0d00) then
+          write(buf,'(a,i6,a,i6,a,a2,a,f12.6,a,f12.6,a,f8.2,a,f8.2,a)') &
+            '     ',bus1%bus_get_original_index(),'      ', &
+            bus2%bus_get_original_index(),'        ',trim(tags(i)), &
+            '  ',p,'         ',q,'     ',branch%p_rate_a(i),'     ', &
+            branch%p_rate_a(i)*100.0d00,'%'
+          ilen = ilen + len(trim(buf))
+          if (ilen+1<bufsize) then
+            string(oldlen+1:ilen) = trim(buf)
+            ilen = ilen + 1
+            string(ilen:ilen) = new_line('a')
+            oldlen = ilen
+          endif
+        endif
+      end do
+      branch_serial_write = found
+    else
+      ilen = 0
+      oldlen = 0
+      do i = 1, branch%p_elems
+        s = branch%branch_get_complex_power(tags(i))
+        p = real(s)
+        q = dimag(s)
+        if (.not.branch%p_branch_status(i)) p = 0.0d00
+        if (.not.branch%p_branch_status(i)) q = 0.0d00
+        write(buf,'(a,i6,a,i6,a,a,a,f12.6,a,f12.6)') '     ', &
+          bus1%bus_get_original_index(),'      ', &
+          bus2%bus_get_original_index(),'     ',trim(tags(i)),'   ', &
+          p,'         ',q
+        ilen = ilen + len(trim(buf))
+        if (ilen+1<bufsize) then
+          string(oldlen+1:ilen) = trim(buf)
+          ilen = ilen + 1
+          string(ilen:ilen) = new_line('a')
+          oldlen = ilen
+        endif
+      end do
+      branch_serial_write = .true.
+    endif
+    deallocate(tags)
+    return
   end function branch_serial_write
 !
 !  DO NOT EDIT ANYTHING BELOW THIS LINE. THESE FUNCTIONS MUST BE INCLUDED IN
@@ -1380,15 +2208,13 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
-    integer, value, intent(in) :: idx
     type(application_branch), pointer :: branch_ptr
-    type(application_branch_wrapper), pointer :: wbranch
+    integer, value, intent(in) :: idx
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_branch(bus%c_this,c_idx)
-    call C_F_POINTER(ptr,wbranch)
-    branch_ptr => wbranch%branch
+    branch_ptr => branch_cast(ptr)
     return
   end function bus_get_neighbor_branch
 !
@@ -1402,15 +2228,13 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
+    type(application_bus), pointer :: bus_ptr
     integer, value, intent(in) :: idx
-    class(application_bus), pointer :: bus_ptr
-    type(application_bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_bus(bus%c_this,c_idx)
-    call C_F_POINTER(ptr,wbus)
-    bus_ptr => wbus%bus
+    bus_ptr => bus_cast(ptr)
     return
   end function bus_get_neighbor_bus
 !
@@ -1916,9 +2740,9 @@ module application_components
     type(C_PTR), value, intent(in) :: ptr
     type(C_PTR), value, intent(in) :: data_ptr
     type(application_bus_wrapper), pointer :: bus
-    type(data_collection), pointer :: data
+    type(data_collection) :: data
     call C_F_POINTER(ptr,bus)
-    call C_F_POINTER(data_ptr,data)
+    data%p_data = data_ptr
     call bus%bus%bus_load(data)
     return
   end subroutine p_bus_load
@@ -2565,9 +3389,9 @@ module application_components
     type(C_PTR), value, intent(in) :: ptr
     type(C_PTR), value, intent(in) :: data_ptr
     type(application_branch_wrapper), pointer :: branch
-    type(data_collection), pointer :: data
+    type(data_collection) :: data
     call C_F_POINTER(ptr,branch)
-    call C_F_POINTER(data_ptr,data)
+    data%p_data = data_ptr
     call branch%branch%branch_load(data)
     return
   end subroutine p_branch_load
