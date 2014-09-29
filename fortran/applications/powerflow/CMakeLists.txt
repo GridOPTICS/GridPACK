@@ -5,20 +5,8 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created August 5, 2014 by Bruce Palmer
-# Last Change: 2014-08-06 13:53:21 d3g096
+# Last Change: 2014-09-29 12:29:27 d3g096
 # -------------------------------------------------------------
-
-add_dependencies(
-gridpackf_network
-gridpackf_factory
-gridpackf_mapper
-gridpackf_component
-gridpackf_math
-gridpackf_parser
-gridpackf_serial_io
-gridpackf_configuration
-gridpackf_parallel
-)
 
 add_executable(powerflow.x
   pf_components.F90
@@ -56,4 +44,15 @@ add_custom_target(powerflow_input
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
 )
 
-add_dependencies(powerflow.x powerflow_input)
+add_dependencies(powerflow.x
+  powerflow_input
+  gridpackf_network
+  gridpackf_factory
+  gridpackf_mapper
+  gridpackf_component
+  gridpackf_math
+  gridpackf_parser
+  gridpackf_serial_io
+  gridpackf_configuration
+  gridpackf_parallel
+)

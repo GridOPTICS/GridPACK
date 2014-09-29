@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created August 5, 2014 by Bruce Palmer
-# Last Change: 2014-08-06 13:53:21 d3g096
+# Last Change: 2014-09-29 12:31:29 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -16,7 +16,9 @@ add_library(gridpackf_serial_io OBJECT
   serial_io_f.F90
 )
 
-#add_dependencies( gridpackf_factory $<TARGET_OBJECTS:gridpackf_serial_io> )
+add_dependencies(gridpackf_serial_io
+  gridpackf_network
+)
 
 add_executable(fortran_serial_io_test
   serial_io_test.F90

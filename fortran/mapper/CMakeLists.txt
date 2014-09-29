@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created August 5, 2014 by Bruce Palmer
-# Last Change: 2014-08-06 13:53:21 d3g096
+# Last Change: 2014-09-29 12:30:17 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -16,7 +16,9 @@ add_library(gridpackf_mapper OBJECT
   mapper_f.F90
 )
 
-#add_dependencies( gridpackf_mapper $<TARGET_OBJECTS:gridpackf_network> )
+add_dependencies(gridpackf_mapper 
+  gridpackf_network
+)
 
 add_executable(fortran_mapper_test
   mapper_test.F90
