@@ -219,7 +219,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
   // Convergence and iteration parameters
   double tolerance = cursor->get("tolerance",1.0e-6);
-  int max_iteration = cursor->get("maxIteration",50);
+  int max_iteration = cursor->get("maxIteration",20);
   ComplexType tol;
 
   tol = 2.0*tolerance;
