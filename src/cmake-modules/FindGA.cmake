@@ -1,5 +1,5 @@
-# GridPACK Note:  This file was found 18June2013 here:
-# https://github.com/OP2/OP2-Common/blob/master/cmake/modules/FindGA.cmake
+# GridPACK Note:  This file is base on that found 18June2013 here:
+# https://github.com/OP2/OP2-Common/blob/master/cmake/modules/FindParMETIS.cmake
 #
 # - Try to find GA libraries
 # Once done this will define

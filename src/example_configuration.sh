@@ -14,21 +14,25 @@ common_flags="\
 
 if [ $host == "flophouse" ]; then
 
-    CC=/usr/bin/gcc44
+
+    prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
+    PATH="${prefix}/bin:${PATH}"
+    export PATH
+
+    CC="$prefix/bin/gcc"
     export CC
-    CXX=/usr/bin/g++44
+    CXX="$prefix/bin/g++"
     export CXX
     CFLAGS="-pthread"
     export CFLAGS
     CXXFLAGS="-pthread"
     export CXXFLAGS
 
-    prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
     cmake -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-linux2-g++44-opt' \
+        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.5.2" \
+        -D PETSC_ARCH:STRING='linux-gnu48-complex-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \

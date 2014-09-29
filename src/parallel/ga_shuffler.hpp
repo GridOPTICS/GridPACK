@@ -10,7 +10,7 @@
 /**
  * @file   ga_shuffler.hpp
  * @author William A. Perkins
- * @date   2014-03-06 11:47:29 d3g096
+ * @date   2014-04-01 10:40:55 d3g096
  * 
  * @brief  
  * 
@@ -143,6 +143,10 @@ public:
         gasize->put(&lo[0], &hi[0], &(p_gaBufferSize[0]), &ld[0]);
         for (int p = 0; p < nproc; ++p) {
           if (p != me) {
+            std::cerr << "gaShuffler: " 
+                      << me << ": sending " << p_gaBufferSize[p] 
+                      << " integers to process " << p
+                      << std::endl;
             lo[0] = hi[0] = p;
             lo[1] = 0; hi[1] = p_gaBufferSize[p] - 1;
             ga->put(&lo[0], &hi[0], &(p_gaBuffers[p][0]), &ld[0]);
@@ -157,6 +161,10 @@ public:
         lo[1] = 0; hi[1] = mybufsize - 1;
         p_gaBuffers[me].clear();
         p_gaBuffers[me].resize(mybufsize);
+        std::cerr << "gaShuffler: " 
+                  << me << ": getting " << mybufsize
+                  << " integers from process " << src
+                  << std::endl;
         ga->get(&lo[0], &hi[0], &(p_gaBuffers[me][0]), &ld[1]);
         int buflen(p_gaBuffers[me].size());
         std::string s((char *)(&(p_gaBuffers[me][0])), 
