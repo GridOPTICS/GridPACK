@@ -702,9 +702,9 @@ module gridpack_component
   logical function base_bus_serial_write(bus, string, bufsize, signal)
     implicit none
     class(bus_component) :: bus
-    character, intent(out) :: string(*)
+    character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
-    character, intent(in) :: signal(*)
+    character(len=*), intent(in) :: signal
   end function base_bus_serial_write
 !
 ! Get the matrix index for component, based on location of
@@ -1627,9 +1627,9 @@ module gridpack_component
   logical function base_branch_serial_write(branch, string, bufsize, signal)
     implicit none
     class(branch_component) :: branch
-    character, intent(out) :: string(*)
+    character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
-    character, intent(in) :: signal(*)
+    character(len=*), intent(in) :: signal
   end function base_branch_serial_write
 !
 ! Get the matrix indices for component, based on location of

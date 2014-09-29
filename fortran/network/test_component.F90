@@ -449,9 +449,9 @@ module application_components
   logical function bus_serial_write(bus, string, bufsize, signal)
     implicit none
     class(application_bus) :: bus
-    character, intent(out) :: string(*)
+    character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
-    character, intent(in) :: signal(*)
+    character(len=*), intent(in) :: signal
   end function bus_serial_write
 !
 ! Return size of matrix block on the diagonal contributed by component
@@ -759,9 +759,9 @@ module application_components
   logical function branch_serial_write(branch, string, bufsize, signal)
     implicit none
     class(application_branch) :: branch
-    character, intent(out) :: string(*)
+    character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
-    character, intent(in) :: signal(*)
+    character(len=*), intent(in) :: signal
   end function branch_serial_write
 !
 !  DO NOT EDIT ANYTHING BELOW THIS LINE. THESE FUNCTIONS MUST BE INCLUDED IN
