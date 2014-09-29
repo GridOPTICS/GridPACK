@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-09-12 14:07:23 d3g096
+ * @date   2014-09-29 09:46:23 d3g096
  * 
  * @brief  
  * 
@@ -17,6 +17,7 @@
 // -------------------------------------------------------------
 
 #include <petscsnes.h>
+#include "petsc_exception.hpp"
 #include "nonlinear_solver_implementation.hpp"
 #include "petsc_configurable.hpp"
 

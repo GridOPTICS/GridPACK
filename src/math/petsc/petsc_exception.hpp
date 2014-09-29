@@ -8,7 +8,7 @@
 /**
  * @file   petsc_exception.hpp
  * @author William A. Perkins
- * @date   2014-09-12 13:36:44 d3g096
+ * @date   2014-09-29 09:47:51 d3g096
  * 
  * @brief 
  * 
@@ -16,9 +16,19 @@
  */
 // -------------------------------------------------------------
 
+#ifndef _petsc_exception_hpp_
+#define _petsc_exception_hpp_
+
 #include <string>
 #include <exception>
 #include <petscsys.h>
+
+// You gotta love PETSc consistency 
+
+#if PETSC_VERSION_(3,4,0)
+#undef PETSC_VERSION_RELEASE
+#define PETSC_VERSION_RELEASE 0
+#endif
 
 // With PETSc version 3.5, PETSc::Exception was no longer defined.  It
 // was replaced with std::runtime_error. 
@@ -70,3 +80,5 @@ protected:
 
 } // namespace math
 } // namespace gridpack
+
+#endif

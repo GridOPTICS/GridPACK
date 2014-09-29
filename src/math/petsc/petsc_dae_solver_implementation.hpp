@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-09-12 14:43:12 d3g096
+ * @date   2014-09-29 09:49:31 d3g096
  * 
  * @brief  
  * 
@@ -22,6 +22,7 @@
 #define _petsc_dae_solver_implementation_hpp_
 
 #include <petscts.h>
+#include "petsc_exception.hpp"
 #include "dae_solver_implementation.hpp"
 #include "petsc_configurable.hpp"
 
