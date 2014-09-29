@@ -449,9 +449,9 @@ module application_components
   logical function bus_serial_write(bus, string, bufsize, signal)
     implicit none
     class(application_bus) :: bus
-    character(len=*), intent(inout) :: string
+    character, intent(out) :: string(*)
     integer, value, intent(in) :: bufsize
-    character(len=*), intent(in) :: signal
+    character, intent(in) :: signal(*)
   end function bus_serial_write
 !
 ! Return size of matrix block on the diagonal contributed by component
@@ -759,9 +759,9 @@ module application_components
   logical function branch_serial_write(branch, string, bufsize, signal)
     implicit none
     class(application_branch) :: branch
-    character(len=*), intent(inout) :: string
+    character, intent(out) :: string(*)
     integer, value, intent(in) :: bufsize
-    character(len=*), intent(in) :: signal
+    character, intent(in) :: signal(*)
   end function branch_serial_write
 !
 !  DO NOT EDIT ANYTHING BELOW THIS LINE. THESE FUNCTIONS MUST BE INCLUDED IN
@@ -791,6 +791,7 @@ module application_components
 ! @return size of buffer in bytes
 !
   integer function bus_get_xc_buf_size(bus)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), intent(in) :: bus
     bus_get_xc_buf_size = c_sizeof(bus%xc_buf)
@@ -801,9 +802,11 @@ module application_components
 ! @param pointer to exchange buffer
 !
   subroutine bus_get_xc_buf(bus, buf)
+    use, intrinsic :: iso_c_binding
     implicit none
-    class(application_bus), target, intent(in) :: bus
+    class(application_bus), intent(in) :: bus
     type(C_PTR), intent(out) :: buf
+    type(bus_xc_data), pointer :: bogus
     buf = c_loc(bus%xc_buf)
   end subroutine bus_get_xc_buf
 !
@@ -1448,6 +1451,7 @@ module application_components
 ! @return size of buffer in bytes
 !
   integer function branch_get_xc_buf_size(branch)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_branch), intent(in) :: branch
     branch_get_xc_buf_size = c_sizeof(branch%xc_buf)
@@ -1458,8 +1462,9 @@ module application_components
 ! @param pointer to exchange buffer
 !
   subroutine branch_get_xc_buf(branch, buf)
+    use, intrinsic :: iso_c_binding
     implicit none
-    class(application_branch), target, intent(in) :: branch
+    class(application_branch), intent(in) :: branch
     type(C_PTR), intent(out) :: buf
     buf = c_loc(branch%xc_buf)
   end subroutine branch_get_xc_buf
