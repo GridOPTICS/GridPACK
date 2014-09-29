@@ -13,7 +13,10 @@ include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 
 add_library(gridpackf_mapper OBJECT
   mapper_c.cpp
-  mapper_f.F90
+  full_map_f.F90
+  bus_vector_map_f.F90
+  gen_matrix_map_f.F90
+  gen_vector_map_f.F90
 )
 
 add_dependencies(gridpackf_mapper 

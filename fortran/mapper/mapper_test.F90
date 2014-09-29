@@ -19,12 +19,14 @@
 PROGRAM mapper_test
   USE, intrinsic :: iso_c_binding
   USE gridpack_network
-  USE gridpack_mapper
+  USE gridpack_full_matrix_map
+  USE gridpack_bus_vector_map
+  USE gridpack_gen_matrix_map
+  USE gridpack_gen_vector_map
   USE gridpack_parallel
   USE gridpack_math
   USE gridpack_vector
   USE gridpack_matrix
-  USE gridpack_component
   USE application_components
   USE application_factory
 
@@ -256,8 +258,8 @@ PROGRAM mapper_test
     write(6,*)
     write(6,'(a)') 'Testing full_matrix_map'
   endif
-  call fm_map%full_matrix_map_create(grid)
-  mmatrix = fm_map%full_matrix_map_map_to_matrix()
+  call fm_map%create(grid)
+  mmatrix = fm_map%map_to_matrix()
   one = 1
   chk = 0
   nbus = grid%num_buses()
@@ -333,8 +335,8 @@ PROGRAM mapper_test
     write(6,*)
     write(6,'(a)') 'Testing bus_vector_map'
   endif
-  call bv_map%bus_vector_map_create(grid)
-  vvector = bv_map%bus_vector_map_map_to_vector()
+  call bv_map%create(grid)
+  vvector = bv_map%map_to_vector()
 !
 ! Check to see if vector has correct values
 !
@@ -356,7 +358,7 @@ PROGRAM mapper_test
     endif
   end do
   call ga_igop(2,chk,1,"+")
-!  call bv_map%bus_vector_map_destroy()
+!  call bv_map%destroy()
   if (me.eq.0) then
     write(6,*)
     if (chk.eq.0) then
@@ -382,9 +384,9 @@ PROGRAM mapper_test
 ! Push values back onto buses
 !
   write(6,'(a)') 'Got to 1'
-!  call bv_map%bus_vector_map_destroy()
-!  call bv_map%bus_vector_map_create(grid)
-  call bv_map%bus_vector_map_map_to_bus(vvector)
+!  call bv_map%destroy()
+!  call bv_map%create(grid)
+  call bv_map%map_to_bus(vvector)
   write(6,'(a)') 'Got to 2'
   chk = 0
   do i = 1, nbus

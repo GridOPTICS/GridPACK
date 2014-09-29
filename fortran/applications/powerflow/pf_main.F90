@@ -20,16 +20,17 @@ PROGRAM powerflow
   USE gridpack_configuration
   USE gridpack_network
   USE gridpack_parser
-  USE gridpack_mapper
+  USE gridpack_full_matrix_map
+  USE gridpack_bus_vector_map
   USE gridpack_serial_io
   USE gridpack_parallel
   USE gridpack_math
   USE gridpack_vector
   USE gridpack_matrix
   USE gridpack_linear_solver
-  USE gridpack_component
   USE application_components
   USE application_factory
+  USE gridpack_component
 
   IMPLICIT NONE
   TYPE (communicator) :: comm
@@ -49,6 +50,7 @@ PROGRAM powerflow
   logical ok
   character(512) filename
   character(512) iobuf
+  character(512) dbug
   double precision tolerance
   integer max_iteration, iter
   double complex tol
@@ -123,9 +125,9 @@ PROGRAM powerflow
   write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 8'
   call factory%set_y_bus()
 !
-  call y_map%full_matrix_map_create(grid)
+  call y_map%create(grid)
   write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 9'
-  y = y_map%full_matrix_map_map_to_matrix()
+  y = y_map%map_to_matrix()
   call bus_io%bus_header("")
   call bus_io%bus_header("Y-matrix")
   call y%print()
@@ -135,21 +137,23 @@ PROGRAM powerflow
   call bus_io%bus_header("Iteration 0")
 !
   call factory%set_mode(RHS)
-  call v_map%bus_vector_map_create(grid)
-  pq = v_map%bus_vector_map_map_to_vector()
+  call v_map%create(grid)
+  pq = v_map%map_to_vector()
   call bus_io%bus_header("")
   call bus_io%bus_header("PQ vector")
   call pq%print()
 !
   call factory%set_mode(JACOBIAN)
-  call j_map%full_matrix_map_create(grid)
-  j = j_map%full_matrix_map_map_to_matrix()
+  call j_map%create(grid)
+  j = j_map%map_to_matrix()
   call bus_io%bus_header("")
   call bus_io%bus_header("Jacobian matrix")
   call j%print()
 !
   x = pq%clone()
 !
+  ok = crs%get_string("LinearSolver.PETScOptions",dbug)
+  write(6,'(a,a)') 'Debug string: ',dbug
   call solver%initialize(j,crs)
 !
   tol = dcmplx(2.0d00*tolerance,0.0d00)
@@ -170,11 +174,11 @@ PROGRAM powerflow
 !
   do while (real(tol).gt.tolerance.and.iter.lt.max_iteration)
     call factory%set_mode(RHS)
-    call v_map%bus_vector_map_map_to_bus(x)
+    call v_map%map_to_bus(x)
     call grid%update_buses()
-    call v_map%bus_vector_map_remap_to_vector(pq)
+    call v_map%remap_to_vector(pq)
     call factory%set_mode(JACOBIAN)
-    call j_map%full_matrix_map_remap_to_matrix(j)
+    call j_map%remap_to_matrix(j)
     call x%zero()
     call solver%solve(pq,x)
     tol = pq%norm_infinity()
@@ -188,7 +192,7 @@ PROGRAM powerflow
 ! Push final results back onto buses
 !
   call factory%set_mode(RHS)
-  call v_map%bus_vector_map_map_to_bus(x)
+  call v_map%map_to_bus(x)
   call grid%update_buses()
   write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 14'
 !
@@ -213,9 +217,9 @@ PROGRAM powerflow
   call bus_io%bus_destroy()
   call branch_io%branch_destroy()
   call factory%destroy()
-  call y_map%full_matrix_map_destroy()
-  call j_map%full_matrix_map_destroy()
-  call v_map%bus_vector_map_destroy()
+  call y_map%destroy()
+  call j_map%destroy()
+  call v_map%destroy()
   call grid%destroy()
   call crs%finalize()
   call config%finalize()
