@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created August 5, 2014 by Bruce Palmer
-# Last Change: 2014-08-06 13:53:21 d3g096
+# Last Change: 2014-09-29 15:03:31 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -16,7 +16,9 @@ add_library(gridpackf_parser OBJECT
   parser_f.F90
 )
 
-#add_dependencies( gridpackf_factory $<TARGET_OBJECTS:gridpackf_parser> )
+add_dependencies(gridpackf_parser
+  gridpackf_network
+)
 
 add_executable(fortran_parser_test
   parser_test.F90
@@ -32,3 +34,14 @@ target_link_libraries(fortran_parser_test
   ${GRIDPACK_LIBS}
 )
 
+add_custom_target(parser_input
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/parser_data.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+)
+
+add_dependencies(fortran_parser_test
+  parser_input
+)

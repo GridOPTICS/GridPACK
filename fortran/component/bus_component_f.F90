@@ -152,7 +152,7 @@ module gridpack_component
       use, intrinsic :: iso_c_binding
       import bus_component
       implicit none
-      class(bus_component), intent(in) :: bus
+      class(bus_component), target, intent(in) :: bus
       type(C_PTR), intent(out) :: buf
     end subroutine i_bus_get_xc_buf
 !
@@ -178,7 +178,7 @@ module gridpack_component
       use, intrinsic :: iso_c_binding
       import branch_component
       implicit none
-      class(branch_component), intent(in) :: branch
+      class(branch_component), target, intent(in) :: branch
       type(C_PTR), intent(out) :: buf
     end subroutine i_branch_get_xc_buf
   end interface

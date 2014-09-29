@@ -825,7 +825,7 @@ module application_components
 !
   subroutine bus_get_xc_buf(bus, buf)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), target, intent(in) :: bus
     type(C_PTR), intent(out) :: buf
     buf = c_loc(bus%xc_buf)
   end subroutine bus_get_xc_buf
@@ -1484,7 +1484,7 @@ module application_components
 !
   subroutine branch_get_xc_buf(branch, buf)
     implicit none
-    class(application_branch), intent(in) :: branch
+    class(application_branch), target, intent(in) :: branch
     type(C_PTR), intent(out) :: buf
     buf = c_loc(branch%xc_buf)
   end subroutine branch_get_xc_buf
