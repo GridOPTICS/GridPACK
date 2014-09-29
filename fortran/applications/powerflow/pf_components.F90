@@ -465,10 +465,7 @@ module application_components
             pp = pp + p
             qq = qq + q
           end do
-          write(6,'(a,2f16.8)') ' P and Q: ',pp,qq
 ! Also add bus i's own Pi, Qi
-          write(6,'(a,f16.8,a,f16.8,a,f16.8)') 'V: ',bus%p_v, &
-               ' ybusr: ',bus%p_ybusr,' ybusi: ',bus%p_ybusi
           pp = pp + bus%p_v*bus%p_v*bus%p_ybusr
           qq = qq + bus%p_v*bus%p_v*(-bus%p_ybusi)
           bus%p_pinj = pp
@@ -866,18 +863,11 @@ module application_components
     nnghbr = bus%bus_get_num_neighbors()
     do i = 1, nnghbr
       branch => bus%bus_get_neighbor_branch(i)
-!      write(6,'(a,2f16.8)') 'admittance: ',real(branch%branch_get_admittance()), &
-!        dimag(branch%branch_get_admittance())
       ybus = ybus - branch%branch_get_admittance()
-!      write(6,'(a,2f16.8)') 'transformer: ',real(branch%branch_get_transformer(bus)), &
-!        dimag(branch%branch_get_transformer(bus))
       ybus = ybus - branch%branch_get_transformer(bus)
-!      write(6,'(a,2f16.8)') 'shunt: ',real(branch%branch_get_shunt(bus)), &
-!        dimag(branch%branch_get_shunt(bus))
       ybus = ybus + branch%branch_get_shunt(bus)
     end do
     if (bus%p_shunt) then
-      write(6,'(a,2f16.8)') 'Shunt values: ',bus%p_shunt_gs,bus%p_shunt_bs
       ybus = ybus + dcmplx(bus%p_shunt_gs,bus%p_shunt_bs)
     endif
     bus%p_ybusr = real(ybus)
@@ -1133,7 +1123,7 @@ module application_components
     class(application_bus), pointer :: bus1, bus2
     if (branch%p_mode.eq.JACOBIAN) then
       bus1 => branch%branch_get_bus1()
-      bus2 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus2()
       ok = .not.bus1%bus_get_reference_bus()
       ok = ok.and.(.not.bus2%bus_get_reference_bus())
       ok = ok.and.(.not.bus1%bus_is_isolated())
@@ -1166,8 +1156,9 @@ module application_components
         endif
 #endif
       else
-        branch_matrix_forward_size = .true.
+        branch_matrix_forward_size = .false.
       endif
+      return
     else if (branch%p_mode.eq.YBUS) then
       bus1 => branch%branch_get_bus1()
       bus2 => branch%branch_get_bus1()
@@ -1201,7 +1192,7 @@ module application_components
     class(application_bus), pointer :: bus1, bus2
     if (branch%p_mode.eq.JACOBIAN) then
       bus1 => branch%branch_get_bus1()
-      bus2 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus2()
       ok = .not.bus1%bus_get_reference_bus()
       ok = ok.and.(.not.bus2%bus_get_reference_bus())
       ok = ok.and.(.not.bus1%bus_is_isolated())
@@ -1234,8 +1225,9 @@ module application_components
         endif
 #endif
       else
-        branch_matrix_reverse_size = .true.
+        branch_matrix_reverse_size = .false.
       endif
+      return
     else if (branch%p_mode.eq.YBUS) then
       bus1 => branch%branch_get_bus1()
       bus2 => branch%branch_get_bus1()
@@ -1270,7 +1262,7 @@ module application_components
     logical ok, bus1PV, bus2PV
     if (branch%p_mode.eq.JACOBIAN) then
       bus1 => branch%branch_get_bus1()
-      bus2 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus2()
       ok = .not.bus1%bus_get_reference_bus()
       ok = ok.and.(.not.bus2%bus_get_reference_bus())
       ok = ok.and.(.not.bus1%bus_is_isolated())
@@ -1374,7 +1366,7 @@ module application_components
     logical ok, bus1PV, bus2PV
     if (branch%p_mode.eq.JACOBIAN) then
       bus1 => branch%branch_get_bus1()
-      bus2 => branch%branch_get_bus1()
+      bus2 => branch%branch_get_bus2()
       ok = .not.bus1%bus_get_reference_bus()
       ok = ok.and.(.not.bus2%bus_get_reference_bus())
       ok = ok.and.(.not.bus1%bus_is_isolated())
@@ -1742,23 +1734,18 @@ module application_components
     ret = dcmplx(0.0d00,0.0d00)
     do i = 1, branch%p_elems
       tmp = dcmplx(branch%p_resistance(i),branch%p_reactance(i))
-      write(6,'(a,2f16.8)') 'tmp: ',real(tmp),dimag(tmp)
       tmpb = dcmplx(0.0d00,0.5d00*branch%p_charging(i))
-      write(6,'(a,2f16.8)') 'tmpB: ',real(tmpb),dimag(tmpb)
       if (branch%p_xform(i).and.branch%p_branch_status(i)) then
         tmp = dcmplx(-1.0d00,0.0d00)/tmp
         tmp = tmp - tmpb
         a = dcmplx(cos(branch%p_phase_shift(i)),sin(branch%p_phase_shift(i)))
         a = a*branch%p_tap_ratio(i)
-      write(6,'(a,2f16.8)') 'a: ',real(a),dimag(a)
         bus1 => branch%branch_get_bus1()
         bus2 => branch%branch_get_bus2()
         if ((.not.branch%p_switched(i).and.bus%bus_compare(bus1)).or. &
             (branch%p_switched(i).and.bus%bus_compare(bus2))) then
           tmp = tmp/(conjg(a)*a)
-          write(6,'(a)') 'Switched'
         endif
-      write(6,'(a,2f16.8)') 'TMP: ',real(tmp),dimag(tmp)
       else
         tmp = dcmplx(0.0d00,0.0d00)
       endif
@@ -1991,6 +1978,9 @@ module application_components
 !
     pi = 4.0d00*atan(1.0d00)
     ok = data%get_int_value('BRANCH_NUM_ELEMENTS',branch%p_elems)
+    if (.not.ok) branch%p_elems = 0
+    ok = data%get_double_value('CASE_SBASE',branch%p_sbase)
+    if (.not.ok) branch%p_sbase = 0.0d00
     ok = .true.
     nelems = branch%p_elems
     branch%p_active = .false.
@@ -2105,6 +2095,7 @@ module application_components
       found = .false.
       ilen = 0
       oldlen = 0
+      string(1:) = ''
       do i = 1, branch%p_elems
         s = branch%branch_get_complex_power(tags(i))
         p = real(s)
@@ -2119,10 +2110,13 @@ module application_components
             '  ',p,'         ',q,'     ',branch%p_rate_a(i),'     ', &
             branch%p_rate_a(i)*100.0d00,'%'
           ilen = ilen + len(trim(buf))
-          if (ilen+1<bufsize) then
+          if ((i.lt.branch%p_elems.and.ilen+1.lt.bufsize).or. &
+              (ilen.lt.bufsize)) then
             string(oldlen+1:ilen) = trim(buf)
-            ilen = ilen + 1
-            string(ilen:ilen) = new_line('a')
+            if (i.lt.branch%p_elems) then
+              ilen = ilen + 1
+              string(ilen:ilen) = new_line('a')
+            endif
             oldlen = ilen
           endif
         endif
@@ -2131,21 +2125,24 @@ module application_components
     else
       ilen = 0
       oldlen = 0
+      string(1:) = ''
       do i = 1, branch%p_elems
         s = branch%branch_get_complex_power(tags(i))
         p = real(s)
         q = dimag(s)
         if (.not.branch%p_branch_status(i)) p = 0.0d00
         if (.not.branch%p_branch_status(i)) q = 0.0d00
-        write(buf,'(a,i6,a,i6,a,a,a,f12.6,a,f12.6)') '     ', &
+        write(buf(1:),'(a,i6,a,i6,a,a,a,f12.6,a,f12.6)') '     ', &
           bus1%bus_get_original_index(),'      ', &
           bus2%bus_get_original_index(),'     ',trim(tags(i)),'   ', &
           p,'         ',q
         ilen = ilen + len(trim(buf))
-        if (ilen+1<bufsize) then
+        if ((i.lt.branch%p_elems.and.ilen+1.lt.bufsize).or.(ilen.lt.bufsize)) then
           string(oldlen+1:ilen) = trim(buf)
-          ilen = ilen + 1
-          string(ilen:ilen) = new_line('a')
+          if (i.lt.branch%p_elems) then
+            ilen = ilen + 1
+            string(ilen:ilen) = new_line('a')
+          endif
           oldlen = ilen
         endif
       end do
