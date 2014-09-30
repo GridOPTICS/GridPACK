@@ -1568,13 +1568,6 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
             if (!bus2->getReferenceBus()) {
               jm = bus2->matrixGetColIndex(0);
-              if (p_tap_ratio[j] != 0.0) {
-                gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-                a = p_tap_ratio[j]*a;
-                ret = ret/(conj(a)*a);
-                gij=real(ret);
-                bij=imag(ret);
-              }
               values[ncnt] = gridpack::ComplexType(v1*v2*(gij*cos(theta)
                     + bij*sin(theta)),0.0);
               rows[ncnt] = im;
@@ -1588,13 +1581,6 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               ncnt++;
             } else {  // reference bus, only for dQIJ/DVJ
               jm = bus2->matrixGetColIndex(0);
-              if (p_tap_ratio[j] != 0.0) {
-                gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-                a = p_tap_ratio[j]*a;
-                ret = ret/(conj(a)*a);
-                gij=real(ret);
-                bij=imag(ret);
-              }
               values[ncnt] = gridpack::ComplexType(-v1*(gij*sin(theta)
                     - bij*cos(theta)),0.0);
               rows[ncnt] = im;
@@ -1813,24 +1799,26 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            gridpack::ComplexType retq(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
+            retq = 1.0/retq;
+            gridpack::ComplexType tmpB(0.0,0.5*p_charging[j]);
+            printf ("temB = %8.4f\n", imag(tmpB));
+            retq += tmpB;
+            double gijt=real(retq);
+            double bijt=imag(retq);
             if (p_tap_ratio[j] != 0.0) {
               gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
               a = p_tap_ratio[j]*a;
               t = p_tap_ratio[j]*p_tap_ratio[j];
-              gijt = real(ret/t);
-              bijt = imag(ret/t);
+              gijt = real(retq/t);
+              bijt = imag(retq/t);
               ret = ret/conj(a);
             }
             double gij=real(ret);
             double bij=imag(ret);
-            if (p_tap_ratio[j] != 0.0) {
-              ret2 = - v1*v1* (bijt + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
-            } else {
-              ret2 = - v1*v1* (bij + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
-            }
-            printf("branch %d %d type: %s row: %d\n",idx1,idx2,type.c_str(),idx[i]);
-            printf("ret2=%8.4f, meas=%8.4f\n",ret2, p_meas[i].p_value);
+            ret2 = - v1*v1* (bijt + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
+            //printf("ret2=%8.4f, meas=%8.4f\n",ret2, p_meas[i].p_value);
           }
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret2),0.0);
