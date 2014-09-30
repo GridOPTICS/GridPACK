@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 15, 2014 by William A. Perkins
-! Last Change: 2014-05-29 13:29:02 d3g096
+! Last Change: 2014-09-15 10:03:32 d3g096
 ! ----------------------------------------------------------------
 
 ! ----------------------------------------------------------------
@@ -16,10 +16,12 @@
 ! ----------------------------------------------------------------
 MODULE gridpack_math
 
-  USE iso_c_binding
+  USE iso_c_binding, ONLY : c_double_complex
   USE gridpack_vector
   USE gridpack_matrix
+  USE gridpack_configuration
   USE gridpack_linear_solver
+  USE gridpack_nonlinear_solver
 
   IMPLICIT NONE
 

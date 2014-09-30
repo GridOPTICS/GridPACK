@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May 12, 2014 by William A. Perkins
-# Last Change: 2014-08-22 08:15:29 d3g096
+# Last Change: 2014-09-15 08:43:18 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpackf_math OBJECT
@@ -17,6 +17,8 @@ add_library(gridpackf_math OBJECT
   matrixf.F90
   linear_solverc.cpp
   linear_solverf.F90
+  nonlinear_solver_f.F90
+  nonlinear_solver_c.cpp
 )
 
 add_dependencies(gridpackf_math 
@@ -71,4 +73,15 @@ target_link_libraries(linear_solver_test
   ${GRIDPACK_LIBS}
 )
 add_dependencies(linear_solver_test math_input)
+
+add_executable(nonlinear_solver_test
+  nonlinear_solver_test.F90
+  $<TARGET_OBJECTS:gridpackf_math>
+  $<TARGET_OBJECTS:gridpackf_configuration>
+  $<TARGET_OBJECTS:gridpackf_parallel>
+)
+target_link_libraries(nonlinear_solver_test
+  ${GRIDPACK_LIBS}
+)
+add_dependencies(nonlinear_solver_test math_input)
 

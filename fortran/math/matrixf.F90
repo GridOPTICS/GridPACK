@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 27, 2014 by William A. Perkins
-! Last Change: 2014-08-14 12:48:28 d3g096
+! Last Change: 2014-08-27 12:19:51 d3g096
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_matrix
@@ -180,6 +180,10 @@ MODULE gridpack_matrix
      END SUBROUTINE matrix_zero
 
   END INTERFACE
+
+  TYPE, PUBLIC :: matrix_wrap
+     CLASS(matrix), POINTER :: matrix
+  END type matrix_wrap
 
 CONTAINS
 

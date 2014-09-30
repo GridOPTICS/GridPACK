@@ -5,7 +5,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 15, 2014 by William A. Perkins
-! Last Change: 2014-08-14 12:50:24 d3g096
+! Last Change: 2014-09-15 08:34:33 d3g096
 ! ----------------------------------------------------------------
 PROGRAM vector_test
 
@@ -18,7 +18,7 @@ PROGRAM vector_test
   INTEGER(c_int) :: ma_stack = 200000, ma_heap = 200000
 
   TYPE (vector) :: vec, vec2
-  INTEGER :: me, lo, hi, i
+  INTEGER :: me, lo, hi, i, p
   COMPLEX(c_double_complex) :: myx
   COMPLEX(c_double_complex) :: norm1, norm2, norminf
 
@@ -40,19 +40,32 @@ PROGRAM vector_test
 
   CALL vec%local_index_range(lo, hi)
   !WRITE (*,*) lo, hi
-  DO i = lo, hi
+  DO i = lo, hi-1
      myx = cmplx(i, me)
      CALL vec%set_element(i, myx)
   END DO
   CALL vec%ready()
   CALL vec%print()
 
-  DO i = lo, hi
+  DO i = lo, hi-1
      myx = cmplx(i, me)
      CALL vec%add_element(i, myx)
   END DO
   CALL vec%ready()
   CALL vec%print()
+
+  IF (me .EQ. 0) THEN
+     WRITE (*,*) 'Using get_element():'
+  END IF
+  DO p = 0, comm%size()
+     IF (p .EQ. me) THEN
+        DO i = lo, hi-1
+           CALL vec%get_element(i, myx)
+           WRITE (*,"(I2, ': ', I2, ': (', F5.1, ', ', F5.1, ')')"), me, i, myx
+        END DO
+     END IF
+     CALL comm%barrier()
+  END DO
 
   norm1 = vec%norm1()
   norm2 = vec%norm2()

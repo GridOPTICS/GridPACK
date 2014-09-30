@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 15, 2014 by William A. Perkins
-! Last Change: 2014-08-14 12:49:04 d3g096
+! Last Change: 2014-09-29 08:32:06 d3g096
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_vector
@@ -151,6 +151,10 @@ MODULE gridpack_vector
      END FUNCTION vector_clone
 
   END INTERFACE
+
+  TYPE, PUBLIC :: vector_wrap
+     CLASS(vector), POINTER :: vector
+  END type vector_wrap
 
 CONTAINS
 
