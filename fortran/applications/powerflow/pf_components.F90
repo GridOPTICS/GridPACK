@@ -1,3 +1,11 @@
+! ----------------------------------------------------------------
+! file: pf_components.f90
+! ----------------------------------------------------------------
+! ----------------------------------------------------------------
+! Copyright (c) 2013 Battelle Memorial Institute
+! Licensed under modified BSD License. A copy of this license can be found
+! in the LICENSE file in the top level directory of this distribution.
+! ----------------------------------------------------------------
 !
 !  Fortran application component
 !
@@ -587,6 +595,7 @@ module application_components
       bus%p_v = bus%p_v - real(values(2))
     endif
 #endif
+    write(6,'(a,2f16.8)') 'v(1),v(2): ',real(values(1)),real(values(2))
     bus%xc_buf%v_ang = bus%p_a
     bus%xc_buf%v_mag = bus%p_v
   end subroutine bus_set_values
@@ -1417,7 +1426,7 @@ module application_components
           values(1) = ybusr*sn - ybusi*cs
           values(2) = ybusr*cs + ybusi*sn
           values(1) = v1*v2*values(1)
-          values(2) = v2*values(1)
+          values(2) = v2*values(2)
         else
           values(1) = ybusr*sn - ybusi*cs
           values(2) = ybusr*cs + ybusi*sn
@@ -1644,6 +1653,7 @@ module application_components
   subroutine branch_set_y_matrix(branch)
     implicit none
     class(application_branch), intent(inout) :: branch
+    class(application_bus), pointer :: bus1, bus2
     integer i, nelems
     double complex ret,a
     branch%p_ybusr_frwd = 0.0d00
@@ -1671,6 +1681,9 @@ module application_components
         endif
       endif
     end do
+    bus1 => branch%branch_get_bus1()
+    bus2 => branch%branch_get_bus2()
+    branch%p_theta = bus1%bus_get_phase() - bus2%bus_get_phase()
     return
   end subroutine branch_set_y_matrix
 !

@@ -32,6 +32,7 @@
     -->
     <LinearSolver>
       <PETScOptions>
+        -ksp_initial_guess_nonzero false
         -ksp_view
         -ksp_type richardson
         -pc_type lu

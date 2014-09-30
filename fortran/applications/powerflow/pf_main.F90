@@ -96,37 +96,27 @@ PROGRAM powerflow
 !
 ! Create factory
 !
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 1'
   call factory%create(grid)
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 2'
   call factory%load()
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 3'
 !
 ! Set network components
 !
   call factory%set_components()
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 4'
 !
 ! Configure exchange buffers
 !
   call factory%set_exchange()
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 5'
 !
 ! Initialize bus data exchange
 !
   call grid%init_bus_update() 
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 6'
 !
 ! Set up y-matrix components
 !
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 7'
-!
   call factory%set_mode(YBUS)
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 8'
   call factory%set_y_bus()
 !
   call y_map%create(grid)
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 9'
   y = y_map%map_to_matrix()
   call bus_io%bus_header("")
   call bus_io%bus_header("Y-matrix")
@@ -152,8 +142,6 @@ PROGRAM powerflow
 !
   x = pq%clone()
 !
-  ok = crs%get_string("LinearSolver.PETScOptions",dbug)
-  write(6,'(a,a)') 'Debug string: ',dbug
   call solver%initialize(j,crs)
 !
   tol = dcmplx(2.0d00*tolerance,0.0d00)
@@ -168,15 +156,16 @@ PROGRAM powerflow
   call bus_io%bus_header("")
   call bus_io%bus_header("Solution vector")
   call x%print
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 10'
   tol = pq%norm_infinity()
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 11'
 !
   do while (real(tol).gt.tolerance.and.iter.lt.max_iteration)
     call factory%set_mode(RHS)
     call v_map%map_to_bus(x)
     call grid%update_buses()
     call v_map%remap_to_vector(pq)
+  call bus_io%bus_header("")
+  call bus_io%bus_header("new PQ vector")
+  call pq%print
     call factory%set_mode(JACOBIAN)
     call j_map%remap_to_matrix(j)
     call x%zero()
@@ -187,14 +176,12 @@ PROGRAM powerflow
     call bus_io%bus_header(iobuf)
     iter = iter + 1
   end do
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 12'
 !
 ! Push final results back onto buses
 !
   call factory%set_mode(RHS)
   call v_map%map_to_bus(x)
   call grid%update_buses()
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 14'
 !
   call branch_io%branch_create(512,grid)
   call branch_io%branch_header("")
@@ -202,9 +189,7 @@ PROGRAM powerflow
   call branch_io%branch_header("")
   call branch_io%branch_header("        Bus 1       Bus 2   CKT         P" // &
                         "                    Q")
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 15'
   call branch_io%branch_write("")
-  write(6,'(a,i4,a)') 'p[',comm%rank(),'] Got to 16'
 !
   call bus_io%bus_header("")
   call bus_io%bus_header("   Bus Voltages and Phase Angles")
