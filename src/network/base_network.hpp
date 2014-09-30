@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2014-03-06 09:40:19 d3g096
+ * @date   2014-09-29 12:00:25 d3g096
  * 
  * @brief  
  * 
@@ -23,6 +23,8 @@
 #include <vector>
 #include <map>
 #include <boost/smart_ptr/shared_ptr.hpp>
+#include <boost/serialization/singleton.hpp>
+#include <boost/serialization/extended_type_info.hpp>
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/type_traits.hpp>
 #include <ga.h>
