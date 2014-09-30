@@ -123,6 +123,9 @@ module application_factory
     end do
     return
   end subroutine set_pq
+
+  include 'factory_inc.F90'
+  
 !
 !  DO NOT EDIT ANYTHING BELOW THIS LINE. THESE FUNCTIONS MUST BE INCLUDED IN
 !  THIS FILE BUT SHOULD NOT BE MODIFIED BY THE APPLICATION DEVELOPER

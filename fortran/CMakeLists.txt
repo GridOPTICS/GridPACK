@@ -11,7 +11,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2014-08-14 14:48:37 d3g096
+# Last Change: 2014-09-30 13:52:17 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.8.10)
@@ -70,6 +70,9 @@ set(CMAKE_Fortran_MODULE_DIRECTORY ${CMAKE_BINARY_DIR}/modules)
 
 # Put the top source directory in the include directories
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# Put the (Fortran) include directory in the include directories
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 add_subdirectory(parallel)
 add_subdirectory(configuration)
