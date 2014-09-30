@@ -331,7 +331,7 @@ class BaseFactory {
         if (branchXCSize > 0) {
           for (i=0; i<nbranch; i++) {
             p_network->getBranch(i)->getXCBuf(&ptr);
-            p_network->setXCBusBuffer(i,ptr);
+            p_network->setXCBranchBuffer(i,ptr);
           }
         }
       }
