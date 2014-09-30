@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created September 24, 2014 by Bruce Palmer
-! Last Change: 2014-09-24 14:07:10 d3g293
+! Last Change: 2014-09-30 07:31:40 d3g096
 ! ----------------------------------------------------------------
 
 ! ----------------------------------------------------------------
@@ -19,7 +19,6 @@
 PROGRAM serial_io_test
   USE, intrinsic :: iso_c_binding
   USE gridpack_network
-  USE gridpack_mapper
   USE gridpack_parallel
   USE gridpack_serial_io
   USE application_components

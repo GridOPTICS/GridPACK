@@ -582,7 +582,7 @@ module application_components
 ! 
   subroutine bus_set_values(bus, values)
     implicit none
-    class(application_bus), intent(inout) :: bus
+    class(application_bus) :: bus
     double complex, intent(in) :: values(*)
     double precision vt, at
     vt = bus%p_v
@@ -630,7 +630,7 @@ module application_components
 !
   subroutine bus_matrix_set_row_index(bus, irow, idx)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus) :: bus
     integer, value, intent(in) :: irow, idx
   end subroutine bus_matrix_set_row_index
 !
@@ -642,7 +642,7 @@ module application_components
 !
   subroutine bus_matrix_set_col_index(bus, icol, idx)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus) :: bus
     integer(C_INT), value, intent(in) :: icol, idx
   end subroutine bus_matrix_set_col_index
 !
@@ -714,7 +714,7 @@ module application_components
 !
   subroutine bus_vector_set_element_index(bus, ielem, idx)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus) :: bus
     integer, value, intent(in) :: ielem, idx
   end subroutine bus_vector_set_element_index
 !
@@ -746,7 +746,7 @@ module application_components
 !
   subroutine bus_vector_set_element_values(bus, values)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus) :: bus
     double complex, intent(out) :: values(*)
   end subroutine bus_vector_set_element_values
 !
@@ -756,7 +756,7 @@ module application_components
 !
   subroutine bus_load(bus, data)
     implicit none
-    class(application_bus), intent(inout) :: bus
+    class(application_bus) :: bus
     class(data_collection), intent(in) :: data
     double precision pi, pg, qg, vs, qmin, qmax, sbase
     integer itype, i, ngen, gstatus, icnt
@@ -1048,7 +1048,7 @@ module application_components
 !
   subroutine bus_set_mode(bus, mode)
     implicit none
-    class(application_bus), intent(inout) :: bus
+    class(application_bus) :: bus
     integer, value, intent(in) :: mode
     bus%p_mode = mode
     return
@@ -1065,7 +1065,7 @@ module application_components
 !
   logical function bus_serial_write(bus, string, bufsize, signal)
     implicit none
-    class(application_bus), intent(inout) :: bus
+    class(application_bus) :: bus
     character(len=*), intent(inout) :: string
     integer, value, intent(in) :: bufsize
     character(len=*), intent(in) :: signal
@@ -1645,7 +1645,7 @@ module application_components
 !
   subroutine branch_vector_set_element_values(branch, values)
     implicit none
-    class(application_branch), intent(in) :: branch
+    class(application_branch) :: branch
     double complex, intent(out) :: values(*)
   end subroutine branch_vector_set_element_values
 !
@@ -1742,7 +1742,7 @@ module application_components
   double complex function branch_get_transformer(branch, bus)
     implicit none
     class(application_branch), intent(in) :: branch
-    class(application_bus), pointer, intent(in) :: bus
+    class(application_bus), intent(in) :: bus
     class(application_bus), pointer :: bus1, bus2
     double complex ret, tmp, tmpb, a
     integer i
@@ -1778,7 +1778,7 @@ module application_components
   double complex function branch_get_shunt(branch, bus)
     implicit none
     class(application_branch), intent(in) :: branch
-    class(application_bus), pointer, intent(in) :: bus
+    class(application_bus), intent(in) :: bus
     class(application_bus), pointer :: bus1, bus2
     double precision retr, reti, tmpr, tmpi
     integer i
@@ -1944,7 +1944,7 @@ module application_components
 !
   subroutine branch_get_pq(branch,bus,p,q)
     class(application_branch), intent(inout) :: branch
-    class(application_bus), pointer, intent(in) :: bus
+    class(application_bus), intent(in) :: bus
     double precision, intent(out) :: p, q
     class(application_bus), pointer :: bus1, bus2
     double precision v1, v2, cs, sn, ybusr, ybusi
@@ -1977,7 +1977,7 @@ module application_components
 !
   subroutine branch_load(branch, data)
     implicit none
-    class(application_branch), intent(inout) :: branch
+    class(application_branch) :: branch
     class(data_collection), intent(in) :: data
     logical ok, lvar, xform, shunt, rate
     double precision rvar, pi

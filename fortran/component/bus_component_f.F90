@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created September 30, 2014 by Bruce Palmer
-! Last Change: 2014-09-30 14:07:10 d3g293
+! Last Change: 2014-09-30 12:17:03 d3g096
 ! ----------------------------------------------------------------
 !
 !  Fortran bus network component
@@ -515,7 +515,7 @@ module gridpack_component
 ! 
   logical function base_bus_vector_values(bus, values)
     implicit none
-    class(bus_component), intent(in) :: bus
+    class(bus_component), intent(inout) :: bus
     double complex, intent(out) :: values(*)
     base_bus_vector_values = .false.
   end function base_bus_vector_values

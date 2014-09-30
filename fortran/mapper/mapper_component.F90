@@ -290,7 +290,7 @@ module application_components
 ! 
   logical function bus_vector_values(bus, values)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     double complex, intent(out) :: values(*)
     integer idx
     if (.not.bus%bus_get_reference_bus()) then

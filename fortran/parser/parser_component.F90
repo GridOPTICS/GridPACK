@@ -263,7 +263,7 @@ module application_components
 ! 
   logical function bus_vector_values(bus, values)
     implicit none
-    class(application_bus), intent(in) :: bus
+    class(application_bus), intent(inout) :: bus
     double complex, intent(out) :: values(*)
     bus_vector_values = .false.
   end function bus_vector_values
