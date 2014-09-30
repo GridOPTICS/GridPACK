@@ -595,9 +595,11 @@ module application_components
       bus%p_v = bus%p_v - real(values(2))
     endif
 #endif
-    write(6,'(a,2f16.8)') 'v(1),v(2): ',real(values(1)),real(values(2))
+!    write(6,'(a,i4,a,2f16.8)') 'bus ',bus%bus_get_original_index(),' v(1),v(2): ',real(values(1)),real(values(2))
     bus%xc_buf%v_ang = bus%p_a
     bus%xc_buf%v_mag = bus%p_v
+    write(6,'(a,i4,a,2f16.8)') 'bus ',bus%bus_get_original_index(),' v_ang,v_mag: ', &
+      bus%xc_buf%v_ang,bus%xc_buf%v_mag
   end subroutine bus_set_values
 !
 ! Return the number of rows in matrix from component

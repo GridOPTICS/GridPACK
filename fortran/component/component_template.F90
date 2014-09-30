@@ -1,3 +1,15 @@
+! ----------------------------------------------------------------
+! file: component_template.f90
+! ----------------------------------------------------------------
+! ----------------------------------------------------------------
+! Copyright (c) 2013 Battelle Memorial Institute
+! Licensed under modified BSD License. A copy of this license can be found
+! in the LICENSE file in the top level directory of this distribution.
+! ----------------------------------------------------------------
+! ----------------------------------------------------------------
+! Created September 30, 2014 by Bruce Palmer
+! Last Change: 2014-09-30 14:07:10 d3g293
+! ----------------------------------------------------------------
 !
 !  Fortran application component
 !
@@ -805,6 +817,7 @@ module application_components
 ! @return size of buffer in bytes
 !
   integer function bus_get_xc_buf_size(bus)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), intent(in) :: bus
     bus_get_xc_buf_size = c_sizeof(bus%xc_buf)
@@ -815,6 +828,7 @@ module application_components
 ! @param pointer to exchange buffer
 !
   subroutine bus_get_xc_buf(bus, buf)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), target, intent(in) :: bus
     type(C_PTR), intent(out) :: buf
@@ -831,13 +845,15 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
-    type(application_branch), pointer :: branch_ptr
     integer, value, intent(in) :: idx
+    type(application_branch), pointer :: branch_ptr
+    type(application_branch_wrapper), pointer :: branch_ptr
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_branch(bus%c_this,c_idx)
-    branch_ptr => branch_cast(ptr)
+    call C_F_POINTER(ptr,wbranch)
+    branch_ptr => wbranch%branch
     return
   end function bus_get_neighbor_branch
 !
@@ -851,13 +867,15 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
-    type(application_bus), pointer :: bus_ptr
     integer, value, intent(in) :: idx
+    type(application_bus), pointer :: bus_ptr
+    type(application_bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_bus(bus%c_this,c_idx)
-    bus_ptr => bus_cast(ptr)
+    call C_F_POINTER(ptr,wbus)
+    bus_ptr => wbus%bus
     return
   end function bus_get_neighbor_bus
 !
@@ -1460,6 +1478,7 @@ module application_components
 ! @return size of buffer in bytes
 !
   integer function branch_get_xc_buf_size(branch)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_branch), intent(in) :: branch
     branch_get_xc_buf_size = c_sizeof(branch%xc_buf)
@@ -1470,6 +1489,7 @@ module application_components
 ! @param pointer to exchange buffer
 !
   subroutine branch_get_xc_buf(branch, buf)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_branch), target, intent(in) :: branch
     type(C_PTR), intent(out) :: buf
