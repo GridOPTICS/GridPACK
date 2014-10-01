@@ -8,7 +8,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 15, 2014 by William A. Perkins
-! Last Change: 2014-09-29 08:32:06 d3g096
+! Last Change: 2014-10-01 07:31:27 d3g096
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_vector
@@ -33,6 +33,7 @@ MODULE gridpack_vector
      PROCEDURE :: set_element
      PROCEDURE :: add_element
      PROCEDURE :: get_element
+     PROCEDURE :: get_all_elements
      PROCEDURE :: zero
      PROCEDURE :: fill 
      PROCEDURE :: norm1
@@ -100,6 +101,13 @@ MODULE gridpack_vector
        INTEGER (c_int), VALUE, INTENT(IN) :: i
        COMPLEX(c_double_complex), INTENT(OUT) :: x
      END SUBROUTINE vector_get_element
+
+     SUBROUTINE vector_get_all_elements(vec, x) BIND(c)
+       USE iso_c_binding, ONLY: c_ptr, c_double_complex
+       IMPLICIT NONE
+       TYPE (c_ptr), VALUE, INTENT(IN) :: vec
+       TYPE (c_ptr), VALUE, INTENT(IN) :: x
+     END SUBROUTINE vector_get_all_elements
 
      SUBROUTINE vector_zero(vec) BIND(c)
        USE iso_c_binding, ONLY: c_ptr
@@ -254,6 +262,19 @@ CONTAINS
     ci = i
     CALL vector_get_element(this%vec, ci, x)
   END SUBROUTINE get_element
+
+  ! ----------------------------------------------------------------
+  ! SUBROUTINE get_all_elements
+  ! ----------------------------------------------------------------
+  SUBROUTINE get_all_elements(this, xout)
+    IMPLICIT NONE
+    CLASS (vector), INTENT(IN) :: this
+    COMPLEX(c_double_complex), TARGET, INTENT(OUT) :: xout(*)
+    TYPE (c_ptr) :: xptr
+    xptr = c_loc(xout)
+    CALL vector_get_all_elements(this%vec, xptr)
+  END SUBROUTINE get_all_elements
+
 
   ! ----------------------------------------------------------------
   ! SUBROUTINE zero

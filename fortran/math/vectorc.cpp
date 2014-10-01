@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created May 15, 2014 by William A. Perkins
-// Last Change: 2014-07-15 12:46:48 d3g096
+// Last Change: 2014-10-01 07:04:42 d3g096
 // -------------------------------------------------------------
 
 #include <gridpack/parallel/communicator.hpp>
@@ -69,6 +69,15 @@ vector_get_element(gridpack::math::Vector *v,
                    gridpack::ComplexType *x)
 {
   v->getElement(i, *x);
+}
+
+extern "C" void
+vector_get_all_elements(gridpack::math::Vector *v, 
+                        gridpack::ComplexType *x)
+{
+  // Note there is no check on length of array pointed to by x; how
+  // can there be?
+  v->get_all_elements(x);
 }
 
 extern "C" void

@@ -5,7 +5,7 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created May 15, 2014 by William A. Perkins
-! Last Change: 2014-09-15 08:34:33 d3g096
+! Last Change: 2014-10-01 07:33:05 d3g096
 ! ----------------------------------------------------------------
 PROGRAM vector_test
 
@@ -21,6 +21,7 @@ PROGRAM vector_test
   INTEGER :: me, lo, hi, i, p
   COMPLEX(c_double_complex) :: myx
   COMPLEX(c_double_complex) :: norm1, norm2, norminf
+  COMPLEX(c_double_complex), ALLOCATABLE :: xall(:)
 
   CALL gridpack_initialize_parallel(ma_stack, ma_heap)
   CALL gridpack_initialize_math()
@@ -66,6 +67,18 @@ PROGRAM vector_test
      END IF
      CALL comm%barrier()
   END DO
+
+  IF (me .EQ. 0) THEN
+     WRITE (*,*) 'Using get_all_elements():'
+  END IF
+  ALLOCATE(xall(vec%size()))
+  CALL vec%get_all_elements(xall)
+  IF (me .EQ. 0) THEN
+     DO i = 0, vec%size() - 1
+        WRITE (*, "(I2, ': (', F5.1, ', ', F5.1, ')')") i, xall(i+1)
+     END DO
+  END IF
+  DEALLOCATE(xall)
 
   norm1 = vec%norm1()
   norm2 = vec%norm2()
