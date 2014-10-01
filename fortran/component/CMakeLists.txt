@@ -18,8 +18,8 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 
 add_library(gridpackf_component OBJECT
-  bus_component_c.cpp
-  bus_component_f.F90
+  component_c.cpp
+  component_f.F90
   data_collection_c.cpp
   data_collection_f.F90
   fortran_component.cpp

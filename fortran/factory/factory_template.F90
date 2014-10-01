@@ -68,32 +68,9 @@ module application_factory
 !  Add application-specific methods here
 !
 !
-!  DO NOT EDIT ANYTHING BELOW THIS LINE. THESE FUNCTIONS MUST BE INCLUDED IN
-!  THIS FILE BUT SHOULD NOT BE MODIFIED BY THE APPLICATION DEVELOPER
+!  DO NOT REMOVE THIS INCLUDE FILE. IT CONTAINS FUNCTIONS THAT MUST
+!  BE INCLUDED IN THIS FILE BUT SHOULD NOT BE MODIFIED BY THE
+!  APPLICATION DEVELOPER
 !
-! Create a new factory
-! @param p_factory new GridPACK factory object
-! @param p_network pointer to GridPACK network object
-!
-  subroutine create(p_factory, p_network)
-    use, intrinsic :: iso_c_binding
-    use gridpack_network
-    implicit none
-    class(app_factory), intent(inout) :: p_factory
-    class(network), target, intent(in) :: p_network
-    p_factory%p_network_int => p_network
-    call factory_create(p_factory%p_factory,p_network%p_network)
-    return
-  end subroutine create
-!
-! Clean up old factory
-! @param p_factory old GridPACK factory object
-!
-  subroutine destroy(p_factory)
-    use, intrinsic :: iso_c_binding
-    implicit none
-    class(app_factory), intent(inout) :: p_factory
-    call factory_destroy(p_factory%p_factory)
-    return
-  end subroutine destroy
+  include 'factory_inc.F90'
 end module application_factory

@@ -13,8 +13,8 @@
 ! ----------------------------------------------------------------
 ! PROGRAM mapper_test
 ! ----------------------------------------------------------------
-#define XDIM 3
-#define YDIM 3
+#define XDIM 10
+#define YDIM 10
 PROGRAM mapper_test
   USE, intrinsic :: iso_c_binding
   USE gridpack_network
@@ -382,23 +382,16 @@ PROGRAM mapper_test
 !
 ! Push values back onto buses
 !
-  write(6,'(a)') 'Got to 1'
 !  call bv_map%destroy()
 !  call bv_map%create(grid)
   call bv_map%map_to_bus(vvector)
-  write(6,'(a)') 'Got to 2'
   chk = 0
   do i = 1, nbus
     if (grid%get_active_bus(i)) then
-  write(6,'(a)') 'Got to 3'
       bus_ptr => bus_cast(grid%get_bus(i))
-  write(6,'(a)') 'Got to 4'
       if (bus_ptr%bus_vector_size(isize)) then
-  write(6,'(a)') 'Got to 5'
         call bus_ptr%bus_get_mat_vec_index(idx)
-  write(6,'(a)') 'Got to 6'
         rv = bus_ptr%bus_get_value()
-  write(6,'(a)') 'Got to 7'
         if (rv.ne.dble(2*idx)) then
           write(6,'(a,i4,a,i4,a,f12.4,a,f12.4)') 'p[',me,'] Bus error i: ', &
            idx,' v: ',rv,' expected: ',dble(2*idx)

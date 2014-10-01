@@ -48,7 +48,7 @@ PROGRAM powerflow
   type(branch_serial_io) branch_io
   type(linear_solver) solver
   logical ok
-  character(512) filename
+  character(512) filename, inputfile
   character(512) iobuf
   character(512) dbug
   double precision tolerance
@@ -66,7 +66,13 @@ PROGRAM powerflow
   call grid%create(comm)  
 !
   call config%initialize()
-  ok = config%open(comm,"input.xml")
+  call get_command_argument(1,inputfile)
+  ok = .false.
+  if (len_trim(inputfile).gt.0) then
+    ok = config%open(comm,trim(inputfile))
+  endif
+  if (.not.ok) ok = config%open(comm,"input.xml")
+  if (.not.ok) stop
   crs = config%get_cursor("Configuration.Powerflow")
   if (.not.crs%get_string("networkConfiguration",filename)) then
     write(6,'(a)') 'No network configuration file specified'
