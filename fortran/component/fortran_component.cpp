@@ -42,6 +42,7 @@ extern "C" bool p_bus_vector_values(void *ptr,
 extern "C" void  p_bus_set_values(void *ptr,
     gridpack::ComplexType *values);
 extern "C" int p_bus_get_xc_buf_size(void *ptr);
+extern "C" int p_bus_get_xc_buf(void *ptr, void **buf);
 extern "C" void p_bus_set_mode(void *ptr, int mode);
 extern "C" bool  p_bus_serial_write(void *ptr, char *string,
     int bufsize, const char* signal, int signal_len, int *write_len);
@@ -65,6 +66,7 @@ extern "C" void  p_branch_set_values(void *ptr,
 extern "C" void p_branch_load(void *ptr, gridpack::component::DataCollection
     *data);
 extern "C" int p_branch_get_xc_buf_size(void *ptr);
+extern "C" int p_branch_get_xc_buf(void *ptr, void **buf);
 extern "C" void p_branch_set_mode(void *ptr, int mode);
 extern "C" bool  p_branch_serial_write(void *ptr, char *string,
     int bufsize, const char* signal, int signal_len, int *write_len);
@@ -222,6 +224,15 @@ void FortranBusComponent::load(boost::shared_ptr
 int FortranBusComponent::getXCBufSize(void)
 {
   return p_bus_get_xc_buf_size(p_fortran_bus_ptr);
+}
+
+/**
+ * Return the location of the data exchange buffer
+ * @param buf void pointer to exchange buffer
+ */
+void FortranBusComponent::getXCBuf(void **buf)
+{
+  p_bus_get_xc_buf(p_fortran_bus_ptr, buf);
 }
 
 /**
@@ -472,6 +483,15 @@ FortranBranchComponent::load(boost::shared_ptr
 int FortranBranchComponent::getXCBufSize(void)
 {
   return p_branch_get_xc_buf_size(p_fortran_branch_ptr);
+}
+
+/**
+ * Return the location of the data exchange buffer
+ * @param buf void pointer to exchange buffer
+ */
+void FortranBranchComponent::getXCBuf(void **buf)
+{
+  p_branch_get_xc_buf(p_fortran_branch_ptr, buf);
 }
 
 /**

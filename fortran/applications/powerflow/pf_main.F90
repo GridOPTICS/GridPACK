@@ -116,11 +116,11 @@ PROGRAM powerflow
   call factory%set_mode(YBUS)
   call factory%set_y_bus()
 !
-  call y_map%create(grid)
-  y = y_map%map_to_matrix()
-  call bus_io%bus_header("")
-  call bus_io%bus_header("Y-matrix")
-  call y%print()
+!  call y_map%create(grid)
+!  y = y_map%map_to_matrix()
+!  call bus_io%bus_header("")
+!  call bus_io%bus_header("Y-matrix")
+!  call y%print()
 !
   call factory%set_s_bus()
   call bus_io%bus_header("")
@@ -129,16 +129,16 @@ PROGRAM powerflow
   call factory%set_mode(RHS)
   call v_map%create(grid)
   pq = v_map%map_to_vector()
-  call bus_io%bus_header("")
-  call bus_io%bus_header("PQ vector")
-  call pq%print()
+!  call bus_io%bus_header("")
+!  call bus_io%bus_header("PQ vector")
+!  call pq%print()
 !
   call factory%set_mode(JACOBIAN)
   call j_map%create(grid)
   j = j_map%map_to_matrix()
-  call bus_io%bus_header("")
-  call bus_io%bus_header("Jacobian matrix")
-  call j%print()
+!  call bus_io%bus_header("")
+!  call bus_io%bus_header("Jacobian matrix")
+!  call j%print()
 !
   x = pq%clone()
 !
@@ -153,9 +153,9 @@ PROGRAM powerflow
   call bus_io%bus_header("")
   call bus_io%bus_header("Calling solver")
   call solver%solve(pq,x)
-  call bus_io%bus_header("")
-  call bus_io%bus_header("Solution vector")
-  call x%print
+!  call bus_io%bus_header("")
+!  call bus_io%bus_header("Solution vector")
+!  call x%print
   tol = pq%norm_infinity()
 !
   do while (real(tol).gt.tolerance.and.iter.lt.max_iteration)
@@ -163,9 +163,9 @@ PROGRAM powerflow
     call v_map%map_to_bus(x)
     call grid%update_buses()
     call v_map%remap_to_vector(pq)
-  call bus_io%bus_header("")
-  call bus_io%bus_header("new PQ vector")
-  call pq%print
+!  call bus_io%bus_header("")
+!  call bus_io%bus_header("new PQ vector")
+!  call pq%print
     call factory%set_mode(JACOBIAN)
     call j_map%remap_to_matrix(j)
     call x%zero()

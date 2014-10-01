@@ -1,3 +1,19 @@
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
+/**
+ * @file   network_c.cpp
+ * @author Bruce Palmer
+ * @date   2014-08-4 11:05:08 d3g293
+ * 
+ * @brief  
+ * 
+ * 
+ */
+// -------------------------------------------------------------
 #include "gridpack/parallel/communicator.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "../component/fortran_component.hpp"

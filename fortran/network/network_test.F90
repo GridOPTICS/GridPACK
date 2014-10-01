@@ -1,5 +1,5 @@
 ! ----------------------------------------------------------------
-! file: hello.f90
+! file: network_test.f90
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Copyright (c) 2013 Battelle Memorial Institute
@@ -8,14 +8,13 @@
 ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! Created August 4, 2014 by Bruce Palmer
-! Last Change: 2014-08-04 14:07:10 d3g293
 ! ----------------------------------------------------------------
 
 ! ----------------------------------------------------------------
 ! PROGRAM network_test
 ! ----------------------------------------------------------------
-#define XDIM 10
-#define YDIM 10
+#define XDIM 20
+#define YDIM 20
 PROGRAM network_test
   USE gridpack_network
   USE gridpack_parallel
@@ -461,8 +460,10 @@ PROGRAM network_test
 !
   call grid%init_bus_update
   call grid%update_buses
+#if 1
   call grid%init_branch_update
   call grid%update_branches
+#endif
 !
 ! Check updates
 !
@@ -471,6 +472,7 @@ PROGRAM network_test
     bus_ptr => bus_cast(grid%get_bus(i))
     if (bus_ptr%xc_buf%idx.ne.grid%get_original_bus_index(i)) ok = .false.
   end do
+#if 1
   do i = 1, nbranch
     branch_ptr => branch_cast(grid%get_branch(i))
     call grid%get_branch_endpoints(i,n1,n2)
@@ -478,6 +480,7 @@ PROGRAM network_test
     n2 = grid%get_original_bus_index(n2)
     if (branch_ptr%xc_buf%idx1.ne.n1.or.branch_ptr%xc_buf%idx2.ne.n2) ok = .false.
   end do
+#endif
   call check_ok(ok) 
   if (me.eq.0.and.ok) then
     write(6,*)
@@ -486,6 +489,7 @@ PROGRAM network_test
     write(6,*)
     write(6,'(a)') 'Update operation failed'
   endif
+#if 1
 !
 !  Test clean function
 !
@@ -598,6 +602,7 @@ PROGRAM network_test
     write(6,*)
     write(6,'(a)') 'Bus and branches are ok after clean operation'
   endif
+#endif
   call grid%destroy()
   CALL comm%finalize()
   CALL gridpack_finalize_parallel()

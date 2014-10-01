@@ -139,6 +139,12 @@ class FortranBusComponent
     int getXCBufSize(void);
 
     /**
+     * Return the location of the data exchange buffer
+     * @param buf void pointer to exchange buffer
+     */
+    void getXCBuf(void **bus);
+
+    /**
      * Set an internal variable that can be used to control the behavior of the
      * component. This function doesn't need to be implemented, but if needed,
      * it can be used to change the behavior of the network in different phases
@@ -322,6 +328,12 @@ class FortranBranchComponent
      * @return size of buffer
      */
     int getXCBufSize(void);
+
+    /**
+     * Return the location of the data exchange buffer
+     * @param buf void pointer to exchange buffer
+     */
+    void getXCBuf(void **bus);
 
     /**
      * Set an internal variable that can be used to control the behavior of the

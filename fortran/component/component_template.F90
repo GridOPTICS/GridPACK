@@ -847,13 +847,11 @@ module application_components
     class(application_bus), value, intent(in) :: bus
     integer, value, intent(in) :: idx
     type(application_branch), pointer :: branch_ptr
-    type(application_branch_wrapper), pointer :: branch_ptr
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_branch(bus%c_this,c_idx)
-    call C_F_POINTER(ptr,wbranch)
-    branch_ptr => wbranch%branch
+    branch_ptr => branch_cast(ptr)
     return
   end function bus_get_neighbor_branch
 !
@@ -869,13 +867,11 @@ module application_components
     class(application_bus), value, intent(in) :: bus
     integer, value, intent(in) :: idx
     type(application_bus), pointer :: bus_ptr
-    type(application_bus_wrapper), pointer :: wbus
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
     ptr = p_bus_get_neighbor_bus(bus%c_this,c_idx)
-    call C_F_POINTER(ptr,wbus)
-    bus_ptr => wbus%bus
+    bus_ptr => bus_cast(ptr)
     return
   end function bus_get_neighbor_bus
 !

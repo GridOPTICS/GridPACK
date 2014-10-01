@@ -1,3 +1,19 @@
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
+// -------------------------------------------------------------
+/**
+ * @file   mapper_c.cpp
+ * @author Bruce Palmer
+ * @date   2014-09-15 d3g293
+ * 
+ * @brief  
+ * 
+ * 
+ */
+// -------------------------------------------------------------
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
@@ -116,7 +132,6 @@ extern "C" void p_bus_vector_map_create(FortranBusVectorMap **map,
     networkWrapper *wnetwork)
 {
   *map = new FortranBusVectorMap(wnetwork->network);
-  printf("New bus_vector_map: %p\n",*map);
 }
 
 /**
@@ -125,7 +140,6 @@ extern "C" void p_bus_vector_map_create(FortranBusVectorMap **map,
  */
 extern "C" void p_bus_vector_map_destroy(FortranBusVectorMap **map)
 {
-  printf("Old bus_vector_map: %p\n",*map);
   delete (*map);
   *map = NULL;
 }
@@ -138,7 +152,7 @@ extern "C" void p_bus_vector_map_destroy(FortranBusVectorMap **map)
 extern "C" void* p_bus_vector_map_map_to_vector(FortranBusVectorMap *map)
 {
   FortranVector *vector = map->intMapToVector();
-  printf("p[%d] Completed intMapToVector vector: %p map: %p\n",GA_Nodeid(),vector,map);
+//  printf("p[%d] Completed intMapToVector vector: %p map: %p\n",GA_Nodeid(),vector,map);
   return vector;
 }
 
@@ -161,9 +175,8 @@ extern "C" void p_bus_vector_map_remap_to_vector(FortranBusVectorMap *map,
 extern "C" void p_bus_vector_map_map_to_bus(FortranBusVectorMap *map,
     FortranVector *vector)
 {
-  printf("p[%d] Calling mapToBus vector vector: %p map: %p\n",GA_Nodeid(),vector,map);
+//  printf("p[%d] Calling mapToBus vector vector: %p map: %p\n",GA_Nodeid(),vector,map);
   map->mapToBus(*vector);
-  printf("Completed mapToBus\n");
 }
 
 /**

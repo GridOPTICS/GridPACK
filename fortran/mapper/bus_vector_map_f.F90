@@ -1,3 +1,14 @@
+! ----------------------------------------------------------------
+! file: bus_vector_map_f.F90
+! ----------------------------------------------------------------
+! ----------------------------------------------------------------
+! Copyright (c) 2013 Battelle Memorial Institute
+! Licensed under modified BSD License. A copy of this license can be found
+! in the LICENSE file in the top level directory of this distribution.
+! ----------------------------------------------------------------
+! ----------------------------------------------------------------
+! Created September 15, 2014 by Bruce Palmer
+! ----------------------------------------------------------------
 !
 !  Fortran mapper functions
 !
@@ -138,9 +149,7 @@ module gridpack_bus_vector_map
     implicit none
     class(bus_vector_map), intent(in) :: p_mapper
     class(vector), intent(in) :: p_vector
-    write(6,'(a)') 'Calling p_bus_vector_map_map_to_bus'
     call p_bus_vector_map_map_to_bus(p_mapper%p_mapper,p_vector%vec)
-    write(6,'(a)') 'Completed p_bus_vector_map_map_to_bus'
     return
   end subroutine map_to_bus
 end module gridpack_bus_vector_map

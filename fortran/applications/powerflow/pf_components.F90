@@ -595,11 +595,8 @@ module application_components
       bus%p_v = bus%p_v - real(values(2))
     endif
 #endif
-!    write(6,'(a,i4,a,2f16.8)') 'bus ',bus%bus_get_original_index(),' v(1),v(2): ',real(values(1)),real(values(2))
     bus%xc_buf%v_ang = bus%p_a
     bus%xc_buf%v_mag = bus%p_v
-    write(6,'(a,i4,a,2f16.8)') 'bus ',bus%bus_get_original_index(),' v_ang,v_mag: ', &
-      bus%xc_buf%v_ang,bus%xc_buf%v_mag
   end subroutine bus_set_values
 !
 ! Return the number of rows in matrix from component
@@ -2194,6 +2191,7 @@ module application_components
 ! @return size of buffer in bytes
 !
   integer function bus_get_xc_buf_size(bus)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), intent(in) :: bus
     bus_get_xc_buf_size = c_sizeof(bus%xc_buf)
@@ -2204,6 +2202,7 @@ module application_components
 ! @param pointer to exchange buffer
 !
   subroutine bus_get_xc_buf(bus, buf)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), target, intent(in) :: bus
     type(C_PTR), intent(out) :: buf
@@ -2220,8 +2219,8 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
-    type(application_branch), pointer :: branch_ptr
     integer, value, intent(in) :: idx
+    type(application_branch), pointer :: branch_ptr
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
@@ -2240,8 +2239,8 @@ module application_components
     use, intrinsic :: iso_c_binding
     implicit none
     class(application_bus), value, intent(in) :: bus
-    type(application_bus), pointer :: bus_ptr
     integer, value, intent(in) :: idx
+    type(application_bus), pointer :: bus_ptr
     type(C_PTR) ptr
     integer(C_INT) c_idx
     c_idx = idx
@@ -2849,6 +2848,7 @@ module application_components
 ! @return size of buffer in bytes
 !
   integer function branch_get_xc_buf_size(branch)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_branch), intent(in) :: branch
     branch_get_xc_buf_size = c_sizeof(branch%xc_buf)
@@ -2859,6 +2859,7 @@ module application_components
 ! @param pointer to exchange buffer
 !
   subroutine branch_get_xc_buf(branch, buf)
+    use, intrinsic :: iso_c_binding
     implicit none
     class(application_branch), target, intent(in) :: branch
     type(C_PTR), intent(out) :: buf

@@ -1,3 +1,14 @@
+! ----------------------------------------------------------------
+! file: parser_f.F90
+! ----------------------------------------------------------------
+! ----------------------------------------------------------------
+! Copyright (c) 2013 Battelle Memorial Institute
+! Licensed under modified BSD License. A copy of this license can be found
+! in the LICENSE file in the top level directory of this distribution.
+! ----------------------------------------------------------------
+! ----------------------------------------------------------------
+! Created September 17, 2014 by Bruce Palmer
+! ----------------------------------------------------------------
 !
 !  Fortran parser functions
 !
