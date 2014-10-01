@@ -169,7 +169,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<SENetwork> busIO(128, network);
-  gridpack::serial_io::SerialBranchIO<SENetwork> branchIO(128, network);
+  gridpack::serial_io::SerialBranchIO<SENetwork> branchIO(256, network);
   char ioBuf[128];
 
   // create factory
@@ -301,15 +301,22 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 //  branchIO.write();
 
 
-//  busIO.header("\n   State Estimation Outputs\n");
-//  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
-//  busIO.write();
-
   busIO.header("\n   State Estimation Outputs\n");
+  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+  busIO.write();
+  branchIO.header("\n   Branch Power Flow (p.u.)\n");
+  branchIO.header("\n        Bus 1       Bus 2            P                    Q\n");
+  branchIO.write();
+
+  busIO.header("\n   Comparison of Bus Measurements and Estimations\n");
   busIO.header("\n   Type  Bus Number       Measurement       Estimate"
                  "           Difference          Deviation\n");
   busIO.write("se");
 
+  branchIO.header("\n   Comparison of Branch Measurements and Estimations\n");
+  branchIO.header("\n   Type     FromBus    ToBus       Measurement       Estimate"
+                 "           Difference          Deviation\n");
+  branchIO.write("se");
 
   // Output 
 

@@ -470,6 +470,13 @@ class SEBranch
     void getV1V2Theta(gridpack::state_estimation::SEBranch *branch, double *v1, double *v2, double *theta);
 
     /**
+     * Return contribution to constraints
+     * @param p: real part of constraint
+     * @param q: imaginary part of constraint
+     */
+    void getPQ(SEBus *bus, double *p, double *q);
+
+    /**
      * Return number of rows in matrix from component
      * @return number of rows from component
      */

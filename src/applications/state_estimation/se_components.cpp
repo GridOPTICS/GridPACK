@@ -400,6 +400,23 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
     sprintf(string, "     %6d      %12.6f         %12.6f      %2d\n",
         getOriginalIndex(),real(v[0]),real(v[1]),branches.size());
   } else if (!strcmp(signal,"se")) {
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int nsize = branches.size();
+    double p,q,P, Q;
+    P = 0.0;
+    Q = 0.0;
+    for (int j=0; j<nsize; j++) {
+       gridpack::state_estimation::SEBranch *branch
+          = dynamic_cast<gridpack::state_estimation::SEBranch*>(branches[j].get());
+       branch->getPQ(this, &p, &q);
+       P += p;
+       Q += q;
+    }
+    P += p_v*p_v*p_ybusr;
+    Q += p_v*p_v*(-p_ybusi);
+    p_Pinj = P;
+    p_Qinj = Q;
     if (p_meas.size()>0) {
       int nmeas = p_meas.size();
       char buf[128];
@@ -416,7 +433,10 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
         double estimate;
         if (meas_type == "VM") {
           estimate = p_v;
-          sprintf(buf,"    %s  %8d   %16.8f  %16.8f   %16.8f    %16.8f\n",
+          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+/*          sprintf(buf,"    %s  %8d   %16.8f  %16.8f   %16.8f    %16.8f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           int buflen = strlen(buf);
@@ -424,8 +444,18 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
             sprintf(string,"%s",buf);
             ilen += buflen;
           }
+*/
         } else if (meas_type == "PI") {
+          estimate = p_Pinj + p_P0;
+          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+          
         } else if (meas_type == "QI") {
+          estimate = p_Qinj + p_Q0;
+          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         }
       }
       if (ilen == 0) return false;
@@ -1247,11 +1277,68 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
     dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
   v2 = bus2->getComplexVoltage();
   y = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-  s = v1*conj(y*(v1-v2));
-  double p = real(s)*p_sbase;
-  double q = imag(s)*p_sbase;
-  sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
+  s = -v1*conj(y*(v1-v2));
+  double p = real(s);
+  double q = imag(s);
+//  double pi = 4.0*atan(1.0);
+//  double angle = p_a*180.0/pi;
+  if (signal == NULL) {
+    sprintf(string, "     %6d      %6d      %12.6f         %12.6f\n",
       bus1->getOriginalIndex(),bus2->getOriginalIndex(),p,q);
+  } else if (!strcmp(signal,"se")) {
+    if (p_meas.size()>0) {
+      int nmeas = p_meas.size();
+      char buf[128];
+      int ilen = 0;
+      std::string meas_type,type;
+      for (int i=0; i<nmeas; i++) {
+        meas_type = p_meas[i].p_type;
+        if (meas_type.length() == 3) {
+          type = meas_type;
+        } else if (meas_type.length() == 2) {
+            type = " ";
+            type.append(meas_type);
+       }
+        double estimate;
+        if (meas_type == "PIJ") {
+          estimate = p;
+          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(), bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+/*              sprintf(buf,"    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(), bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+          int buflen = strlen(buf);
+          //printf("PIJ: bufsize = %d, buflen+ilen=%d\n",bufsize,buflen+ilen);
+          if (buflen + ilen < bufsize) {
+            sprintf(string,"%s",buf);
+            ilen += buflen;
+          }
+*/
+        } else if (meas_type == "QIJ") {
+          estimate = q;
+          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+/*          sprintf(buf,"    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+          int buflen = strlen(buf);
+          //printf("QIJ: bufsize = %d, buflen+ilen=%d\n",bufsize,buflen+ilen);
+          if (buflen + ilen < bufsize) {
+            sprintf(string,"%s",buf);
+            ilen += buflen;
+          }
+*/
+        } else if (meas_type == "IIJ") {
+        }
+      }
+      if (ilen == 0) return false;
+      return true;
+    } else {
+      return false;
+    }
+  }
   return true;
 }
 /**
@@ -1890,4 +1977,36 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
     } 
   } else if (p_mode == R_inv) {
   }
+}
+/**
+ * Return contribution to constraints
+ * @param p: real part of constraint
+ * @param q: imaginary part of constraint
+ */
+void gridpack::state_estimation::SEBranch::getPQ(gridpack::state_estimation::SEBus *bus, double *p, double *q)
+{
+  gridpack::state_estimation::SEBus *bus1 = 
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
+  double v1 = bus1->getVoltage();
+  gridpack::state_estimation::SEBus *bus2 = 
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
+  double v2 = bus2->getVoltage();
+  double cs, sn;
+  double ybusr, ybusi;
+  p_theta = bus1->getPhase() - bus2->getPhase();
+  if (bus == bus1) {
+    cs = cos(p_theta);
+    sn = sin(p_theta);
+    ybusr = p_ybusr_frwd;
+    ybusi = p_ybusi_frwd;
+  } else if (bus == bus2) {
+    cs = cos(-p_theta);
+    sn = sin(-p_theta);
+    ybusr = p_ybusr_rvrs;
+    ybusi = p_ybusi_rvrs;
+  } else {
+    // TODO: Some kind of error
+  }
+  *p = v1*v2*(ybusr*cs+ybusi*sn);
+  *q = v1*v2*(ybusr*sn-ybusi*cs);
 }
