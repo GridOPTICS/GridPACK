@@ -17,11 +17,8 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/network/base_network.hpp"
-#include "gridpack/factory/base_factory.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "pf_factory.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
 
 
 namespace gridpack {

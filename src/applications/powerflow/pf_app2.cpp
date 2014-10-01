@@ -21,15 +21,7 @@
 #include <ga++.h>
 
 #include "pf_app2.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/math/math.hpp"
-#include "gridpack/math/newton_raphson_solver.hpp"
-#include "gridpack/math/nonlinear_solver.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
-#include "gridpack/utilities/uncopyable.hpp"
+#include "gridpack/include/gridpack.hpp"
 
 
 namespace gridpack {

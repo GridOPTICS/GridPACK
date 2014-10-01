@@ -16,7 +16,7 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
-#include "gridpack/math/math.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "pf_app.hpp"
 
 // Calling program for the powerflow applications
@@ -29,7 +29,7 @@ main(int argc, char **argv)
   gridpack::math::Initialize();
 
   GA_Initialize();
-  int stack = 200000, heap = 200000;
+  int stack = 8000000, heap = 8000000;
   MA_init(C_DBL, stack, heap);
 
   gridpack::powerflow::PFApp app;

@@ -834,7 +834,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
     ok = ok && !bus2->getReferenceBus();
     ok = ok && !bus1->isIsolated();
     ok = ok && !bus2->isIsolated();
-    ok = ok && (p_active == 1);
+    ok = ok && (p_active);
     if (ok) {
       double t11, t12, t21, t22;
       double cs = cos(-p_theta);

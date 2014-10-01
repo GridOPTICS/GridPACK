@@ -165,11 +165,11 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_mmap);
 #if 0
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-#endif
-  timer->stop(t_mmap);
 //  busIO.header("\nY-matrix values\n");
 //  Y->print();
 //  Y->save("Ybus.m");
+#endif
+  timer->stop(t_mmap);
 
   timer->start(t_fact);
   factory.setMode(S_Cal);
@@ -193,14 +193,13 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_vmap);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   timer->stop(t_vmap);
-  PQ->print();
+//  PQ->print();
   timer->start(t_cmap);
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
   timer->stop(t_cmap);
   timer->start(t_mmap);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
-//  J->print();
   timer->stop(t_mmap);
   busIO.header("\nJacobian values\n");
 //  J->print();
@@ -253,6 +252,8 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     // Create new versions of Jacobian and PQ vector
     timer->start(t_vmap);
     vMap.mapToVector(PQ);
+  busIO.header("\nnew PQ vector\n");
+  PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     factory.setMode(Jacobian);

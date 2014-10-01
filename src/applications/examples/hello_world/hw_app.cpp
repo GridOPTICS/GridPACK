@@ -70,6 +70,7 @@ void gridpack::hello_world::HWApp::execute(int argc, char** argv)
   busIO.write();
 
 
+  // Create serial IO object to export data from branches
   gridpack::serial_io::SerialBranchIO<HWNetwork> branchIO(128,network);
   branchIO.header("\nMessage from branches\n");
   branchIO.write();

@@ -1723,7 +1723,6 @@ void initBranchUpdate(void)
     GA_Set_pgroup(p_branchGA, grp);
     GA_Allocate(p_branchGA);
     p_branchGASet = true;
-
     // Sort buses into local and ghost lists
     int idx, icnt = 0, lcnt=0;
     for (i=0; i<size; i++) {
