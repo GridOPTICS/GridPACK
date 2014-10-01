@@ -5,7 +5,7 @@
   ! ----------------------------------------------------------------
   ! ----------------------------------------------------------------
   ! Created August 22, 2014 by William A. Perkins
-  ! Last Change: 2014-09-15 09:45:33 d3g096
+  ! Last Change: 2014-10-01 08:01:58 d3g096
   ! ----------------------------------------------------------------
 ! ----------------------------------------------------------------
 ! MODULE gridpack_nonlinear_solver
@@ -110,12 +110,23 @@ MODULE gridpack_nonlinear_solver
      TYPE (c_ptr), PRIVATE :: impl
      TYPE (builder_wrap), POINTER, PRIVATE :: bldr
    CONTAINS
-     PROCEDURE :: initialize 
+     PROCEDURE :: initialize => nonlinear_initialize
      PROCEDURE :: finalize      ! should be FINAL
      PROCEDURE :: solve
   END type nonlinear_solver
 
+  ! ----------------------------------------------------------------
+  ! 
+  ! ----------------------------------------------------------------
+  TYPE, EXTENDS(nonlinear_solver), PUBLIC :: newton_raphson_solver
+     CONTAINS
+       PROCEDURE :: initialize => newton_initialize
+  END type newton_raphson_solver
+     
+
+  ! ----------------------------------------------------------------
   ! External C routines for nonlinear solver instances.
+  ! ----------------------------------------------------------------
   INTERFACE
      FUNCTION nonlinear_solver_create(comm, conf, lsize, bldr) BIND(c)
        USE iso_c_binding, ONLY : c_ptr, c_int
@@ -126,6 +137,16 @@ MODULE gridpack_nonlinear_solver
        TYPE (c_ptr), INTENT(IN), VALUE :: bldr
        TYPE (c_ptr) :: nonlinear_solver_create
      END FUNCTION nonlinear_solver_create
+
+     FUNCTION newton_solver_create(comm, conf, lsize, bldr) BIND(c)
+       USE iso_c_binding, ONLY : c_ptr, c_int
+       IMPLICIT NONE
+       TYPE (c_ptr), INTENT(IN), VALUE :: comm
+       TYPE (c_ptr), INTENT(IN), VALUE :: conf
+       INTEGER(c_int), INTENT(IN), VALUE :: lsize
+       TYPE (c_ptr), INTENT(IN), VALUE :: bldr
+       TYPE (c_ptr) :: newton_solver_create
+     END FUNCTION newton_solver_create
 
      FUNCTION nonlinear_solver_jacobian(slvr) BIND(c)
        USE iso_c_binding, ONLY : c_ptr
@@ -243,9 +264,9 @@ CONTAINS
   END SUBROUTINE builder_build_function
 
   ! ----------------------------------------------------------------
-  ! SUBROUTINE initialize
+  ! SUBROUTINE nonlinear_initialize
   ! ----------------------------------------------------------------
-  SUBROUTINE initialize(this, comm, conf, local_size, bldr)
+  SUBROUTINE nonlinear_initialize(this, comm, conf, local_size, bldr)
     IMPLICIT NONE
     CLASS(nonlinear_solver), INTENT(INOUT) :: this
     CLASS(communicator), INTENT(IN) :: comm
@@ -259,7 +280,7 @@ CONTAINS
     this%bldr%bldr => bldr
     bldrloc = C_LOC(this%bldr)
     this%impl = nonlinear_solver_create(comm%comm, conf%impl, csize, bldrloc)
-  END SUBROUTINE initialize
+  END SUBROUTINE nonlinear_initialize
 
 
   SUBROUTINE finalize(this)
@@ -276,6 +297,24 @@ CONTAINS
     CALL nonlinear_solver_solve(this%impl, x%vec)
   END SUBROUTINE solve
 
+  ! ----------------------------------------------------------------
+  ! SUBROUTINE newton_initialize
+  ! ----------------------------------------------------------------
+  SUBROUTINE newton_initialize(this, comm, conf, local_size, bldr)
+    IMPLICIT NONE
+    CLASS(newton_raphson_solver), INTENT(INOUT) :: this
+    CLASS(communicator), INTENT(IN) :: comm
+    CLASS(cursor), INTENT(IN) :: conf
+    INTEGER, INTENT(IN) :: local_size
+    CLASS(builder), POINTER, INTENT(IN) :: bldr
+    INTEGER(c_int) :: csize
+    TYPE (c_ptr) :: bldrloc
+    csize = local_size
+    ALLOCATE(this%bldr)
+    this%bldr%bldr => bldr
+    bldrloc = C_LOC(this%bldr)
+    this%impl = newton_solver_create(comm%comm, conf%impl, csize, bldrloc)
+  END SUBROUTINE newton_initialize
 
 END MODULE gridpack_nonlinear_solver
 

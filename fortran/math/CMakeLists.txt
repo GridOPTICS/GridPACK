@@ -5,7 +5,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May 12, 2014 by William A. Perkins
-# Last Change: 2014-09-15 08:43:18 d3g096
+# Last Change: 2014-10-01 08:33:13 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpackf_math OBJECT
@@ -84,4 +84,19 @@ target_link_libraries(nonlinear_solver_test
   ${GRIDPACK_LIBS}
 )
 add_dependencies(nonlinear_solver_test math_input)
+
+add_executable(newton_solver_test
+  nonlinear_solver_test.F90
+  $<TARGET_OBJECTS:gridpackf_math>
+  $<TARGET_OBJECTS:gridpackf_configuration>
+  $<TARGET_OBJECTS:gridpackf_parallel>
+)
+set_target_properties(newton_solver_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "NEWTON=1"
+)
+target_link_libraries(newton_solver_test
+  ${GRIDPACK_LIBS}
+)
+add_dependencies(newton_solver_test math_input)
 

@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_c.cpp
  * @author William A. Perkins
- * @date   2014-09-30 15:06:48 d3g096
+ * @date   2014-10-01 08:03:28 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,7 @@
 #include <boost/scoped_ptr.hpp>
 #include "configuration/cursor_wrapper.hpp"
 #include <gridpack/math/nonlinear_solver.hpp>
+#include <gridpack/math/newton_raphson_solver.hpp>
 
 // callable functions in the Fortran module
 
@@ -83,7 +84,7 @@ protected:
 // struct NonlinearSolverWrapper
 // -------------------------------------------------------------
 struct NonlinearSolverWrapper {
-  boost::scoped_ptr<gridpack::math::NonlinearSolver> impl;
+  boost::scoped_ptr<gridpack::math::NonlinearSolverInterface> impl;
   boost::scoped_ptr<FortranBuilder> bldr;
 };
 
@@ -101,6 +102,27 @@ nonlinear_solver_create(gridpack::parallel::Communicator *comm,
   gridpack::math::JacobianBuilder j = boost::ref(*(result->bldr));
   gridpack::math::FunctionBuilder f = boost::ref(*(result->bldr));
   result->impl.reset(new gridpack::math::NonlinearSolver(*comm, local_size, j, f));
+  gridpack::utility::Configuration::CursorPtr cursor;
+  if (conf != NULL) {
+    cursor = conf->cursor;
+  } else {
+    cursor = gridpack::utility::Configuration::configuration()->getCursor("");
+  }
+  result->impl->configure(cursor);
+  return result;
+}
+
+extern "C" NonlinearSolverWrapper *
+newton_solver_create(gridpack::parallel::Communicator *comm,
+                     CursorWrapper *conf,
+                     int local_size,
+                     void *builder)
+{
+  NonlinearSolverWrapper *result(new NonlinearSolverWrapper);
+  result->bldr.reset(new FortranBuilder(builder));
+  gridpack::math::JacobianBuilder j = boost::ref(*(result->bldr));
+  gridpack::math::FunctionBuilder f = boost::ref(*(result->bldr));
+  result->impl.reset(new gridpack::math::NewtonRaphsonSolver(*comm, local_size, j, f));
   gridpack::utility::Configuration::CursorPtr cursor;
   if (conf != NULL) {
     cursor = conf->cursor;
