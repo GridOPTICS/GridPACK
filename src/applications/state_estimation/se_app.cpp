@@ -128,6 +128,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   // partition network
   network->partition();
 
+
   ///////////////////////////////////////////////////////////////////
   // Read in measurement file
   std::string measurementfile;
@@ -205,17 +206,12 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
   // Create initial version of  H Jacobian and estimation vector
   factory.setMode(Jacobian_H);
-  printf("reading done 1\n");
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
-  printf("Created HJacMap\n");
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
   HJac->print();
-  printf("reading done 2\n");
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
-  printf("reading done 3\n");
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
-  printf("reading done 4\n");
 
   // Convergence and iteration parameters
   double tolerance = cursor->get("tolerance",1.0e-6);
@@ -258,7 +254,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 //  printf("Got to H'*Rinv\n");
 
     // Form right hand side vector
-    boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac,*Rinv));
+    boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
 //  HTR->print();
 //  printf("Got to RHS\n");
 
@@ -305,9 +301,14 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 //  branchIO.write();
 
 
+//  busIO.header("\n   State Estimation Outputs\n");
+//  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+//  busIO.write();
+
   busIO.header("\n   State Estimation Outputs\n");
-  busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
-  busIO.write();
+  busIO.header("\n   Type  Bus Number       Measurement       Estimate"
+                 "           Difference          Deviation\n");
+  busIO.write("se");
 
 
   // Output 

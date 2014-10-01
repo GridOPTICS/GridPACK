@@ -399,6 +399,40 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
     getNeighborBranches(branches);
     sprintf(string, "     %6d      %12.6f         %12.6f      %2d\n",
         getOriginalIndex(),real(v[0]),real(v[1]),branches.size());
+  } else if (!strcmp(signal,"se")) {
+    if (p_meas.size()>0) {
+      int nmeas = p_meas.size();
+      char buf[128];
+      int ilen = 0;
+      std::string meas_type,type;
+      for (int i=0; i<nmeas; i++) {
+        meas_type = p_meas[i].p_type;
+        if (meas_type.length() == 3) {
+          type = meas_type;
+        } else if (meas_type.length() == 2) {
+            type = " ";
+            type.append(meas_type);
+        }
+        double estimate;
+        if (meas_type == "VM") {
+          estimate = p_v;
+          sprintf(buf,"    %s  %8d   %16.8f  %16.8f   %16.8f    %16.8f\n",
+              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
+              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+          int buflen = strlen(buf);
+          if (buflen + ilen < bufsize) {
+            sprintf(string,"%s",buf);
+            ilen += buflen;
+          }
+        } else if (meas_type == "PI") {
+        } else if (meas_type == "QI") {
+        }
+      }
+      if (ilen == 0) return false;
+      return true;
+    } else {
+      return false;
+    }
   }
   return true;
 }
