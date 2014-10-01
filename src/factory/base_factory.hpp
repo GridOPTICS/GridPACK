@@ -301,7 +301,7 @@ class BaseFactory {
       if (flag) {
         p_network->allocXCBranch(branchXCSize);
       } else {
-        p_network->allocXCBranchPointers(busXCSize);
+        p_network->allocXCBranchPointers(branchXCSize);
       }
 
       int i;
