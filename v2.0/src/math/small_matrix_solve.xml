@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 
+    Copyright (c) 2013 Battelle Memorial Institute
+    Licensed under modified BSD License. A copy of this license can be found
+    in the LICENSE file in the top level directory of this distribution.
+  -->
+<SmallMatrixSolve>
+  <LinearMatrixSolver>
+    <!-- 
+         These options are used if SuperLU was built into PETSc 
+    -->
+    <Ordering>nd</Ordering>
+    <Package>superlu_dist</Package>
+    <Fill>5</Fill>
+
+    <!-- 
+         These options are use for the LinearSolver if SuperLU is not
+         available 
+    -->
+    <LinearSolver>
+      <SolutionTolerance>1.0e-18</SolutionTolerance>
+      <RelativeTolerance>1.0e-10</RelativeTolerance>
+      <MaxIterations>200</MaxIterations>
+      <PETScOptions>
+        -ksp_monitor
+        -ksp_view
+      </PETScOptions>
+    </LinearSolver>
+  </LinearMatrixSolver>>
+</SmallMatrixSolve>

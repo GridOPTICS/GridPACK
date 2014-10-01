@@ -1,0 +1,5 @@
+-ksp_atol 1.23e-18
+-ksp_rtol 1.23e-10
+-snes_atol 1.23e-20
+-snes_rtol 1.23e-20
+-snes_max_it 27
