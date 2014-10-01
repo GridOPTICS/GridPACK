@@ -1,0 +1,12 @@
+<GridPACK>
+  <Real>1.234E05</Real>
+  <Boolean>true</Boolean>
+  <Integer>5</Integer>
+  <String> Dog </String>
+  <Subpath>
+    <Real>1.23</Real>
+    <Boolean>false</Boolean>
+    <Integer>3</Integer>
+    <String> Hamster </String>
+  </Subpath>
+</GridPACK>
