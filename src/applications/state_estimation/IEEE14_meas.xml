@@ -247,7 +247,7 @@
     <Type>QIJ</Type>
     <FromBus>1</FromBus>
     <ToBus>2</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>-0.2040</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -255,7 +255,7 @@
     <Type>QIJ</Type>
     <FromBus>1</FromBus>
     <ToBus>5</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0385</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -263,7 +263,7 @@
     <Type>QIJ</Type>
     <FromBus>2</FromBus>
     <ToBus>3</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0356</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -271,7 +271,7 @@
     <Type>QIJ</Type>
     <FromBus>2</FromBus>
     <ToBus>4</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>-0.0155</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -279,7 +279,7 @@
     <Type>QIJ</Type>
     <FromBus>2</FromBus>
     <ToBus>5</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0117</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -287,7 +287,7 @@
     <Type>QIJ</Type>
     <FromBus>3</FromBus>
     <ToBus>4</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0447</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -295,7 +295,7 @@
     <Type>QIJ</Type>
     <FromBus>4</FromBus>
     <ToBus>5</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.1582</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -303,7 +303,7 @@
     <Type>QIJ</Type>
     <FromBus>4</FromBus>
     <ToBus>7</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>-0.0968</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -311,7 +311,7 @@
     <Type>QIJ</Type>
     <FromBus>4</FromBus>
     <ToBus>9</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>-0.0043</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -319,7 +319,7 @@
     <Type>QIJ</Type>
     <FromBus>5</FromBus>
     <ToBus>6</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.1247</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -327,7 +327,7 @@
     <Type>QIJ</Type>
     <FromBus>6</FromBus>
     <ToBus>11</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0356</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -335,7 +335,7 @@
     <Type>QIJ</Type>
     <FromBus>6</FromBus>
     <ToBus>12</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0250</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -343,7 +343,7 @@
     <Type>QIJ</Type>
     <FromBus>6</FromBus>
     <ToBus>13</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0722</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -351,7 +351,7 @@
     <Type>QIJ</Type>
     <FromBus>7</FromBus>
     <ToBus>8</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>-0.1716</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -359,7 +359,7 @@
     <Type>QIJ</Type>
     <FromBus>7</FromBus>
     <ToBus>9</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0578</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -367,7 +367,7 @@
     <Type>QIJ</Type>
     <FromBus>9</FromBus>
     <ToBus>10</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0422</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -375,7 +375,7 @@
     <Type>QIJ</Type>
     <FromBus>9</FromBus>
     <ToBus>14</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0361</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -383,7 +383,7 @@
     <Type>QIJ</Type>
     <FromBus>10</FromBus>
     <ToBus>11</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>-0.0162</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -391,7 +391,7 @@
     <Type>QIJ</Type>
     <FromBus>12</FromBus>
     <ToBus>13</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0075</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>
@@ -399,7 +399,7 @@
     <Type>QIJ</Type>
     <FromBus>13</FromBus>
     <ToBus>14</ToBus>
-    <CKT>1 </CKT>
+    <CKT>BL</CKT>
     <Values>0.0175</Value>
     <Deviation>0.0100</Deviation>
   </Measurement>

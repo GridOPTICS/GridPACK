@@ -1572,8 +1572,10 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
       type = p_meas[i].p_type;
       if (type == "PIJ") {
         int nsize = p_tag.size();
+        int found = 0; 
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
+            found = 1;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
             if (p_tap_ratio[j] != 0.0) {
@@ -1640,11 +1642,16 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
           } 
         }
+        if (found ==0) {
+	   printf("warning: no branch found: from %d to %d ckt %s\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), ckt.c_str());
+        }
       } else if (type == "QIJ") {
         int nsize = p_tag.size();
+        int found=0;
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            found = 1;
             ret = 1.0/ret;
             if (p_tap_ratio[j] != 0.0) {
               gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
@@ -1710,11 +1717,16 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
           } 
         }
+        if (found ==0) {
+	   printf("warning: no branch found: from %d to %d ckt %s\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), ckt.c_str());
+        }
       } else if (type == "IIJ") {  // Need more work to support transformer 
         int nsize = p_tag.size();
+        int found = 0;
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            found = 1;
             ret = 1.0/ret;
             if (p_tap_ratio[j] != 0.0) {
               gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
@@ -1784,6 +1796,9 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
               ncnt++;
             }
           } 
+        }
+        if (found ==0) {
+	   printf("warning: no branch found: from %d to %d ckt %s\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), ckt.c_str());
         }
       }
     }
@@ -1924,7 +1939,7 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
             ret = 1.0/ret;
             retq = 1.0/retq;
             gridpack::ComplexType tmpB(0.0,0.5*p_charging[j]);
-            printf ("temB = %8.4f\n", imag(tmpB));
+//            printf ("temB = %8.4f\n", imag(tmpB));
             retq += tmpB;
             double gijt=real(retq);
             double bijt=imag(retq);
