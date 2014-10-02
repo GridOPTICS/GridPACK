@@ -36,6 +36,14 @@
     <Deviation>0.02</Deviation>
   </Measurement>
   <Measurement>
+    <Type>QIJ</Type>
+    <FromBus>2</FromBus>
+    <ToBus>3</ToBus>
+    <CKT>BL</CKT>
+    <Value>0.04</Value>
+    <Deviation>0.02</Deviation>
+  </Measurement>
+  <Measurement>
     <Type>PI</Type>
     <Bus>1</Bus>
     <Value>0.23</Value>
