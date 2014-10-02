@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <State_estimation>
-    <networkConfiguration> 3bus.raw </networkConfiguration>
-    <measurementList>3bus_new_meas.xml</measurementList>
+    <networkConfiguration> IEEE14.raw </networkConfiguration>
+    <measurementList>IEEE14_meas.xml</measurementList>
     <LinearSolver>
       <SolutionTolerance>1.0E-30</SolutionTolerance>
       <RelativeTolerance>1.0E-6</RelativeTolerance>
