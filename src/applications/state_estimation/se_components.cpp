@@ -143,6 +143,12 @@ bool gridpack::state_estimation::SEBus::vectorSize(int *size) const
  */
 bool gridpack::state_estimation::SEBus::vectorValues(ComplexType *values)
 {
+  if (p_mode == Voltage) {
+    // This needs to return true to properly set up the mapper for pushing
+    // voltage values back on to the buses
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -753,7 +759,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           ComplexType yfbus;
           if (bus == this) {
             yfbus=branch->getForwardYBus();
-	    bus = dynamic_cast<SEBus*>(branch->getBus2().get());
+            bus = dynamic_cast<SEBus*>(branch->getBus2().get());
             yfbusr = real (yfbus);
             yfbusi = imag (yfbus);
           } else {
@@ -814,7 +820,7 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
           ComplexType yfbus;
           if (bus == this) {
             yfbus=branch->getForwardYBus();
-	    bus = dynamic_cast<SEBus*>(branch->getBus2().get());
+            bus = dynamic_cast<SEBus*>(branch->getBus2().get());
             yfbusr = real (yfbus);
             yfbusi = imag (yfbus);
           } else {
@@ -1551,7 +1557,7 @@ int gridpack::state_estimation::SEBranch::matrixNumValues() const
  * @param rows: pointer to matrix block rows
  * @param cols: pointer to matrix block cols
 */
-void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values, int *rows, int *cols)
+void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, int *rows, int *cols)
 {
   if (p_mode == Jacobian_H) {
     SEBus *bus1 = dynamic_cast<SEBus*>(getBus1().get());
@@ -1570,12 +1576,12 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
       im = matrixGetRowIndex(i);
       ckt = p_meas[i].p_ckt;
       type = p_meas[i].p_type;
+      bool found = false;
       if (type == "PIJ") {
         int nsize = p_tag.size();
-        int found = 0; 
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
-            found = 1;
+            found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
             if (p_tap_ratio[j] != 0.0) {
@@ -1642,16 +1648,12 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
           } 
         }
-        if (found ==0) {
-	   printf("warning: no branch found: from %d to %d ckt %s\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), ckt.c_str());
-        }
       } else if (type == "QIJ") {
         int nsize = p_tag.size();
-        int found=0;
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
+            found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
-            found = 1;
             ret = 1.0/ret;
             if (p_tap_ratio[j] != 0.0) {
               gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
@@ -1717,16 +1719,12 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
           } 
         }
-        if (found ==0) {
-	   printf("warning: no branch found: from %d to %d ckt %s\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), ckt.c_str());
-        }
       } else if (type == "IIJ") {  // Need more work to support transformer 
         int nsize = p_tag.size();
-        int found = 0;
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == ckt) {
+            found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
-            found = 1;
             ret = 1.0/ret;
             if (p_tap_ratio[j] != 0.0) {
               gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
@@ -1797,9 +1795,14 @@ void gridpack::state_estimation::SEBranch:: matrixGetValues(ComplexType *values,
             }
           } 
         }
-        if (found ==0) {
-	   printf("warning: no branch found: from %d to %d ckt %s\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), ckt.c_str());
-        }
+      }
+      if (!found) {
+        printf("No match found for branch measurement\n   type: %s\n"
+               "   branch: %d %d\n   ckt_id: %s\n   value: %f\n"
+               "   deviation: %f\n",p_meas[i].p_type,p_meas[i].p_fbusid,
+               p_meas[i].p_tbusid,p_meas[i].p_ckt,p_meas[i].p_value,
+               p_meas[i].p_deviation);
+
       }
     }
   } else if (p_mode == R_inv) {
