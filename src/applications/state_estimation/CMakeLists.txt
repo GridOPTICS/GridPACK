@@ -59,13 +59,7 @@ add_custom_target(se.x.input
   DEPENDS 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.txt
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
 )
 
-# -------------------------------------------------------------
-# TEST: pf_network_test
-# -------------------------------------------------------------
-#add_executable(pf_network_test test/pf_network_test.cpp)
-#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-#gridpack_add_unit_test(pf_network_test pf_network_test)
-
+add_dependencies(se.x se.x.input)

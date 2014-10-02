@@ -2,7 +2,7 @@
 <Configuration>
   <State_estimation>
     <networkConfiguration> 3bus.raw </networkConfiguration>
-    <measurementList>3bus_meas.xml</measurementList>
+    <measurementList>3bus_new_meas.xml</measurementList>
     <LinearSolver>
       <SolutionTolerance>1.0E-30</SolutionTolerance>
       <RelativeTolerance>1.0E-6</RelativeTolerance>

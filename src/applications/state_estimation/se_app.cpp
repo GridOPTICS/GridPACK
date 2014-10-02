@@ -168,8 +168,8 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
 
   // Create serial IO object to export data from buses or branches
-  gridpack::serial_io::SerialBusIO<SENetwork> busIO(128, network);
-  gridpack::serial_io::SerialBranchIO<SENetwork> branchIO(256, network);
+  gridpack::serial_io::SerialBusIO<SENetwork> busIO(512, network);
+  gridpack::serial_io::SerialBranchIO<SENetwork> branchIO(512, network);
   char ioBuf[128];
 
   // create factory
