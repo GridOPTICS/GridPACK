@@ -78,6 +78,10 @@ std::vector<gridpack::state_estimation::Measurement>
         measurements[idx]->get("ToBus", &tbusid);
         std::string ckt;
         measurements[idx]->get("CKT", &ckt);
+        // Fix up tag so that single character tags are right-justified
+        if (ckt.length() == 1) {
+          ckt.insert(0,1,' ');
+        }
         gridpack::state_estimation::Measurement measurement;
         strcpy(measurement.p_type,meas_type.c_str());
         measurement.p_fbusid = fbusid;
@@ -208,6 +212,7 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(Jacobian_H);
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
+  branchIO.header("\nHJac:\n");
   HJac->print();
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
@@ -267,18 +272,24 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     // create a linear solver
     gridpack::math::LinearSolver solver(*Gain);
     solver.configure(secursor);
+    
+    busIO.header("\n Print Gain matrix\n");
+    Gain->print();
 //  printf("Got to DeltaX\n");
 
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
 //    printf("Got to Solve\n");
+    busIO.header("\n Print RHS vector\n");
+    RHS->print();
     X->zero(); //might not need to do this
     solver.solve(*RHS, *X);
 //  X->print();
 //  printf("Got to updateBus\n");
 //    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
     tol = X->normInfinity();
-    printf("Iteration %d Tol: %12.6e\n",iter+1,real(tol));
+    sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+    busIO.header(ioBuf);
 
      // Push solution back onto bus variables
     factory.setMode(Voltage);
@@ -309,13 +320,13 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   branchIO.write();
 
   busIO.header("\n   Comparison of Bus Measurements and Estimations\n");
-  busIO.header("\n   Type  Bus Number       Measurement       Estimate"
-                 "           Difference          Deviation\n");
+  busIO.header("\n   Type  Bus Number      Measurement          Estimate"
+                 "         Difference           Deviation\n");
   busIO.write("se");
 
   branchIO.header("\n   Comparison of Branch Measurements and Estimations\n");
-  branchIO.header("\n   Type     FromBus    ToBus       Measurement       Estimate"
-                 "           Difference          Deviation\n");
+  branchIO.header("\n   Type CKT   FromBus     ToBus       Measurement          Estimate"
+                 "         Difference           Deviation\n");
   branchIO.write("se");
 
   // Output 

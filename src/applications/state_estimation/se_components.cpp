@@ -443,7 +443,7 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
+          sprintf(buf,"    %s %8d    %16.4f  %16.4f   %16.4f    %16.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "PI") {
@@ -451,7 +451,7 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
+          sprintf(buf,"    %s %8d    %16.4f  %16.4f   %16.4f    %16.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
 
@@ -460,7 +460,7 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
+          sprintf(buf,"    %s %8d    %16.4f  %16.4f   %16.4f    %16.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         }
@@ -1303,9 +1303,10 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
       int nmeas = p_meas.size();
       char buf[128];
       int ilen = 0;
-      std::string meas_type,type;
+      std::string meas_type,type, ckt;
       for (int i=0; i<nmeas; i++) {
         meas_type = p_meas[i].p_type;
+        ckt = p_meas[i].p_ckt;
         if (meas_type.length() == 3) {
           type = meas_type;
         } else if (meas_type.length() == 2) {
@@ -1319,17 +1320,17 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
           //          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(), bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
-              type.c_str(), bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
-              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+          sprintf(buf,"    %s  %s%8d  %8d    %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(),ckt.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "QIJ") {
           estimate = q;
           //          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
-              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
-              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+          sprintf(buf,"    %s  %s%8d  %8d    %16.4f  %16.4f   %16.4f    %16.4f\n",
+              type.c_str(),ckt.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "IIJ") {
         }
         int buflen = strlen(buf);
