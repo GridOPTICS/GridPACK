@@ -447,16 +447,15 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "PI") {
-          estimate = p_Pinj + p_P0;
+          estimate = p_Pinj;
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
           sprintf(buf,"    %s %8d    %16.4f  %16.4f   %16.4f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-
         } else if (meas_type == "QI") {
-          estimate = p_Qinj + p_Q0;
+          estimate = p_Qinj;
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
@@ -1320,7 +1319,7 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
           //          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(), bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d  %8d  %s  %16.4f  %16.4f   %16.4f    %8.4f\n",
+          sprintf(buf,"    %s  %8d  %8d   %s %16.4f  %16.4f   %16.4f    %8.4f\n",
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "QIJ") {
@@ -1328,7 +1327,7 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
           //          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d  %8d  %s  %16.4f  %16.4f   %16.4f    %8.4f\n",
+          sprintf(buf,"    %s  %8d  %8d   %s %16.4f  %16.4f   %16.4f    %8.4f\n",
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "IIJ") {
