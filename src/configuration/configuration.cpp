@@ -108,6 +108,7 @@ bool Configuration::open(const std::string & file) {
 #endif 
 	std::string str;
 	std::ifstream input(file.c_str());
+   int n = -1;
 	if(!input.bad()) {
 		input.seekg(0, std::ios::end);   
 		str.reserve((unsigned) input.tellg());
@@ -115,11 +116,19 @@ bool Configuration::open(const std::string & file) {
 
 		str.assign((std::istreambuf_iterator<char>(input)),
 					std::istreambuf_iterator<char>());
-	}
+      n = 0;
+   }
 #ifdef CONFIGURATION_USE_MPI
-	int n = str.size();
+   if (n >= 0) {
+	  n = str.size();
+   }
 	MPI_Bcast(&n, 1, MPI_INT, rank, comm);
-	MPI_Bcast((void*) str.c_str(), n, MPI_CHAR, rank, comm);
+   if (n > 0) {
+	  MPI_Bcast((void*) str.c_str(), n, MPI_CHAR, rank, comm);
+   } else {
+     std::cout<<"Configure: Unable to open file "<<file<<std::endl;
+     return false;
+   }
 #endif
     // Load the XML file into the property tree. If reading fails
     // (cannot open file, parse error), an exception is thrown.
@@ -163,6 +172,7 @@ bool Configuration::initialize_internal(MPI_Comm comm) {
 	MPI_Comm_rank(comm,&rank);
 	int n ;
 	MPI_Bcast(&n, 1, MPI_INT, 0, comm);
+   if (n == 0) return false;
 	assert(n > 0 && n < (1<<20)); // sanity check
 	char * buffer = new char[n+1];
 	MPI_Bcast(buffer, n, MPI_CHAR, 0, comm);

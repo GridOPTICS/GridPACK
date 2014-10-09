@@ -71,13 +71,16 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   // read configuration file
   gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
   config->enableLogging(&std::cout);
+  bool opened;
   if (argc >= 2 && argv[1] != NULL) {
     char inputfile[256];
     sprintf(inputfile,"%s",argv[1]);
-    config->open(inputfile,world);
+    opened = config->open(inputfile,world);
   } else {
-    config->open("input.xml",world);
+    opened = config->open("input.xml",world);
   }
+  if (!opened) return;
+
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename;
