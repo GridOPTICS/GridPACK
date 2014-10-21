@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:43:37 d3g096
+ * @date   2014-10-21 13:46:28 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -53,8 +53,8 @@ PETScMatrixImplementation::p_getCommunicator(const Mat& m)
  * @param dense 
  */
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, 
-                                                     const int& local_cols,
+                                                     const PETScMatrixImplementation::IdxType& local_rows, 
+                                                     const PETScMatrixImplementation::IdxType& local_cols,
                                                      const bool& dense)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
@@ -68,9 +68,9 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
 }
 
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, 
-                                                     const int& local_cols,
-                                                     const int& max_nonzero_per_row)
+                                                     const PETScMatrixImplementation::IdxType& local_rows, 
+                                                     const PETScMatrixImplementation::IdxType& local_cols,
+                                                     const PETScMatrixImplementation::IdxType& max_nonzero_per_row)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
@@ -79,9 +79,9 @@ PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicato
 }
 
 PETScMatrixImplementation::PETScMatrixImplementation(const parallel::Communicator& comm,
-                                                     const int& local_rows, 
-                                                     const int& local_cols,
-                                                     const int *nonzero_by_row)
+                                                     const PETScMatrixImplementation::IdxType& local_rows, 
+                                                     const PETScMatrixImplementation::IdxType& local_cols,
+                                                     const PETScMatrixImplementation::IdxType *nonzero_by_row)
   : MatrixImplementation(comm),
     p_matrixWrapped(false)
 {
@@ -129,8 +129,8 @@ PETScMatrixImplementation::~PETScMatrixImplementation(void)
 // -------------------------------------------------------------
 void
 PETScMatrixImplementation::p_build_matrix(const parallel::Communicator& comm,
-                                          const int& local_rows, 
-                                          const int& local_cols)
+                                          const PETScMatrixImplementation::IdxType& local_rows, 
+                                          const PETScMatrixImplementation::IdxType& local_cols)
 {
   PetscErrorCode ierr(0);
   try {
@@ -193,7 +193,7 @@ PETScMatrixImplementation::p_set_sparse_matrix(void)
 }
 
 void 
-PETScMatrixImplementation::p_set_sparse_matrix(const int& max_nz_per_row)
+PETScMatrixImplementation::p_set_sparse_matrix(const PETScMatrixImplementation::IdxType& max_nz_per_row)
 {
   PetscErrorCode ierr(0);
   const PetscInt diagonal_non_zero_guess(max_nz_per_row);
@@ -222,10 +222,10 @@ PETScMatrixImplementation::p_set_sparse_matrix(const int& max_nz_per_row)
 }
 
 void 
-PETScMatrixImplementation::p_set_sparse_matrix(const int *nz_by_row)
+PETScMatrixImplementation::p_set_sparse_matrix(const PETScMatrixImplementation::IdxType *nz_by_row)
 {
   std::vector<PetscInt> diagnz;
-  int lrows(this->localRows());
+  PETScMatrixImplementation::IdxType lrows(this->localRows());
   diagnz.reserve(lrows);
   std::copy(nz_by_row, nz_by_row+lrows, 
             std::back_inserter(diagnz));
@@ -260,7 +260,7 @@ PETScMatrixImplementation::p_set_sparse_matrix(const int *nz_by_row)
 // PETScMatrixImplementation::p_local_row_range
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_localRowRange(int& lo, int& hi) const
+PETScMatrixImplementation::p_localRowRange(PETScMatrixImplementation::IdxType& lo, PETScMatrixImplementation::IdxType& hi) const
 {
   PetscErrorCode ierr(0);
   try {
@@ -276,11 +276,11 @@ PETScMatrixImplementation::p_localRowRange(int& lo, int& hi) const
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_rows
 // -------------------------------------------------------------
-int 
+PETScMatrixImplementation::IdxType 
 PETScMatrixImplementation::p_rows(void) const
 {
   PetscErrorCode ierr(0);
-  int result(0);
+  PETScMatrixImplementation::IdxType result(0);
   try {
     PetscInt rows;
     ierr = MatGetSize(p_matrix, &rows, PETSC_NULL); CHKERRXX(ierr);
@@ -294,11 +294,11 @@ PETScMatrixImplementation::p_rows(void) const
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_local_rows
 // -------------------------------------------------------------
-int
+PETScMatrixImplementation::IdxType
 PETScMatrixImplementation::p_localRows(void) const
 {
   PetscErrorCode ierr(0);
-  int result(0);
+  PETScMatrixImplementation::IdxType result(0);
   try {
     PetscInt rows;
     ierr = MatGetLocalSize(p_matrix, &rows, PETSC_NULL); CHKERRXX(ierr);
@@ -312,11 +312,11 @@ PETScMatrixImplementation::p_localRows(void) const
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_cols
 // -------------------------------------------------------------
-int
+PETScMatrixImplementation::IdxType
 PETScMatrixImplementation::p_cols(void) const
 {
   PetscErrorCode ierr(0);
-  int result(0);
+  PETScMatrixImplementation::IdxType result(0);
   try {
     PetscInt cols;
     ierr = MatGetSize(p_matrix, PETSC_NULL, &cols); CHKERRXX(ierr);
@@ -330,11 +330,11 @@ PETScMatrixImplementation::p_cols(void) const
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_local_rows
 // -------------------------------------------------------------
-int
+PETScMatrixImplementation::IdxType
 PETScMatrixImplementation::p_localCols(void) const
 {
   PetscErrorCode ierr(0);
-  int result(0);
+  PETScMatrixImplementation::IdxType result(0);
   try {
     PetscInt cols;
     ierr = MatGetLocalSize(p_matrix, PETSC_NULL, &cols); CHKERRXX(ierr);
@@ -348,8 +348,9 @@ PETScMatrixImplementation::p_localCols(void) const
 // PETScMatrixImplementation::p_setElement
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_setElement(const int& i, const int& j, 
-                                         const ComplexType& x)
+PETScMatrixImplementation::p_setElement(const PETScMatrixImplementation::IdxType& i, 
+                                        const PETScMatrixImplementation::IdxType& j, 
+                                        const PETScMatrixImplementation::TheType& x)
 {
   PetscErrorCode ierr(0);
   try {
@@ -363,12 +364,13 @@ PETScMatrixImplementation::p_setElement(const int& i, const int& j,
 // PETScMatrixImplementation::p_set_elements
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_setElements(const int& n, 
-                                          const int *i, const int *j, 
-                                          const ComplexType *x)
+PETScMatrixImplementation::p_setElements(const PETScMatrixImplementation::IdxType& n, 
+                                         const PETScMatrixImplementation::IdxType *i, 
+                                         const PETScMatrixImplementation::IdxType *j, 
+                                         const PETScMatrixImplementation::TheType *x)
 {
   // FIXME: There's probably a better way
-  for (int k = 0; k < n; k++) {
+  for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
     this->p_setElement(i[k], j[k], x[k]);
   }
 }
@@ -377,8 +379,9 @@ PETScMatrixImplementation::p_setElements(const int& n,
 // PETScMatrixImplementation::p_add_element
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_addElement(const int& i, const int& j, 
-                                         const ComplexType& x)
+PETScMatrixImplementation::p_addElement(const PETScMatrixImplementation::IdxType& i, 
+                                        const PETScMatrixImplementation::IdxType& j, 
+                                        const PETScMatrixImplementation::TheType& x)
 {
   PetscErrorCode ierr(0);
   try {
@@ -392,12 +395,13 @@ PETScMatrixImplementation::p_addElement(const int& i, const int& j,
 // PETScMatrixImplementation::p_add_elements
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_addElements(const int& n, 
-                                          const int *i, const int *j, 
-                                          const ComplexType *x)
+PETScMatrixImplementation::p_addElements(const PETScMatrixImplementation::IdxType& n, 
+                                         const PETScMatrixImplementation::IdxType *i, 
+                                         const PETScMatrixImplementation::IdxType *j, 
+                                         const PETScMatrixImplementation::TheType *x)
 {
   // FIXME: There's probably a better way
-  for (int k = 0; k < n; k++) {
+  for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
     this->p_addElement(i[k], j[k], x[k]);
   }
 }
@@ -406,12 +410,13 @@ PETScMatrixImplementation::p_addElements(const int& n,
 // PETScMatrixImplementation::p_get_element
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_getElement(const int& i, const int& j, 
-                                         ComplexType& x) const
+PETScMatrixImplementation::p_getElement(const PETScMatrixImplementation::IdxType& i, 
+                                        const PETScMatrixImplementation::IdxType& j, 
+                                        PETScMatrixImplementation::TheType& x) const
 {
   PetscErrorCode ierr(0);
   try {
-    static const int one(1);
+    static const PETScMatrixImplementation::IdxType one(1);
     PetscInt iidx[one] = { i };
     PetscInt jidx[one] = { j };
     ierr = MatGetValues(p_matrix, one, &iidx[0], one, &jidx[0], &x); CHKERRXX(ierr);
@@ -424,9 +429,10 @@ PETScMatrixImplementation::p_getElement(const int& i, const int& j,
 // PETScMatrixImplementation::p_get_elements
 // -------------------------------------------------------------
 void
-PETScMatrixImplementation::p_getElements(const int& n,
-                                          const int *i, const int *j, 
-                                          ComplexType *x) const
+PETScMatrixImplementation::p_getElements(const PETScMatrixImplementation::IdxType& n,
+                                         const PETScMatrixImplementation::IdxType *i, 
+                                         const PETScMatrixImplementation::IdxType *j, 
+                                         PETScMatrixImplementation::TheType *x) const
 {
   // FIXME: There is a better way
   for (int k = 0; k < n; k++) {
@@ -479,11 +485,11 @@ PETScMatrixImplementation::p_conjugate(void)
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_norm2
 // -------------------------------------------------------------
-ComplexType
+double
 PETScMatrixImplementation::p_norm2(void) const
 {
   PetscErrorCode ierr(0);
-  ComplexType result(0.0);
+  double result(0.0);
   try {
     PetscReal norm;
     ierr = MatNorm(p_matrix, NORM_FROBENIUS, &norm); CHKERRXX(ierr);

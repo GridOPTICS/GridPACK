@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-10-21 12:03:12 d3g096
+ * @date   2014-10-21 13:48:22 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -134,7 +134,7 @@ BOOST_AUTO_TEST_CASE( storage )
     B(gridpack::math::storageType(*A, tmptype));
   BOOST_CHECK_EQUAL(B->storageType(), tmptype);
   // norms should be identical
-  BOOST_CHECK_CLOSE(abs(A->norm2()), abs(B->norm2()), delta*delta);
+  BOOST_CHECK_CLOSE(A->norm2(), B->norm2(), delta);
 }
 
 BOOST_AUTO_TEST_CASE( set_and_get )
@@ -494,7 +494,7 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
 
   // norms of the diagonal matrix and original vector should be very
   // close
-  double Bnorm(abs(B->norm2()));
+  double Bnorm(B->norm2());
   double vnorm(dvector->norm2());
   BOOST_CHECK_CLOSE(Bnorm, vnorm, delta);
 
@@ -955,7 +955,7 @@ BOOST_AUTO_TEST_CASE( load_save )
   B->scale(-1.0);
   B->add(*A);
 
-  BOOST_CHECK_CLOSE(real(B->norm2()), 0.0, delta);
+  BOOST_CHECK_CLOSE(B->norm2(), 0.0, delta);
 
 }
 

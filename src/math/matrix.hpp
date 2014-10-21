@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2014-02-19 11:45:12 d3g096
+ * @date   2014-10-21 13:37:57 d3g096
  * 
  * @brief  
  * 
@@ -47,7 +47,8 @@ namespace math {
  */
 class Matrix 
   : public parallel::WrappedDistributed,
-    private utility::Uncopyable
+    private utility::Uncopyable,
+    public BaseMatrixInterface<ComplexType>
 {
 public:
 
@@ -139,245 +140,8 @@ public:
    */
   ~Matrix(void);
 
-  /// Get the global number of rows in this matrix
-  /** 
-   * @e Local.
-   * 
-   * 
-   * @return total number of rows
-   */
-  int rows(void) const
-  {
-    return p_matrix_impl->rows();
-  }
-
-  /// Get the number of local rows in this matirx
-  /** 
-   * @e Local.
-   * 
-   * 
-   * @return number of rows owned by this process
-   */
-  int localRows(void) const
-  {
-    return p_matrix_impl->localRows();
-  }
-
-  /** 
-   * @deprecated does not meet coding standards, use localRows()
-   * 
-   * 
-   * @return 
-   */
-  int local_rows(void) const
-  {
-    return this->localRows();
-  }
-
-  /// Get the range of global row indexes owned by this process
-  /** 
-   * @e Local.
-   * 
-   * 
-   * 
-   * @param lo first (0-based) index of locally owned rows
-   * @param hi one more than the last (0-based) index of locally owned rows
-   */
-  void localRowRange(int& lo, int& hi) const
-  {
-    p_matrix_impl->localRowRange(lo, hi);
-  }
-
-  /** 
-   * @deprecated does not meet coding standards, use localRowRange()
-   * 
-   * 
-   * @param lo 
-   * @param hi 
-   */
-  void local_row_range(int& lo, int& hi) const
-  {
-    this->localRowRange(lo, hi);
-  }
-
-  /// Get the global number of columns in this matrix
-  /** 
-   * @e Local.
-   * 
-   * 
-   * @return number of columns in matrix
-   */
-  int cols(void) const
-  {
-    return p_matrix_impl->cols();
-  }
-
-  /// Get the number of local columns in this matrix
-  int localCols(void) const
-  {
-    return p_matrix_impl->localCols();
-  }
-
   /// Get the storage type of this matrix
   StorageType storageType(void) const;
-
-  /// Set an individual element
-  /** 
-   * @e Local.
-   *
-   * This overwrites the value at the specified @c i row and @c j
-   * column.  ready() must be called after all setElement() calls and
-   * before using the matrix.
-   * 
-   * @param i global (0-based) row index
-   * @param j global (0-based) column index
-   * @param x value to place in matrix
-   */
-  void setElement(const int& i, const int& j, const ComplexType& x)
-  {
-    p_matrix_impl->setElement(i, j, x);
-  }
-
-  /** 
-   * @deprecated does not meet coding standards, use setElement()
-   * 
-   * 
-   * @param i 
-   * @param j 
-   * @param x 
-   */
-  void set_element(const int& i, const int& j, const ComplexType& x)
-  {
-    p_matrix_impl->setElement(i, j, x);
-  }
-
-  /// Set an several elements
-  /** 
-   * @e Local.
-   *
-   * This overwrites values at several locations in the
-   * matrix. ready() must be called after all setElements() calls and
-   * before using the matrix.
-   * 
-   * @param n number of values to place in 
-   * @param i array of @c n global, 0-based row indexes
-   * @param j array of @c n global, 0-based column indexes
-   * @param x array of @c n values to replace existing matrix elements
-   */
-  void setElements(const int& n, const int *i, const int *j, const ComplexType *x)
-  {
-    p_matrix_impl->setElements(n, i, j, x);
-  }
-
-  /// Add to an individual element
-  /** 
-   * @e Local.
-   * 
-   * 
-   * @param i global, 0-based row index
-   * @param j global, 0-based column index
-   * @param x value to add to matrix element
-   */
-  void addElement(const int& i, const int& j, const ComplexType& x)
-  {
-    p_matrix_impl->addElement(i, j, x);
-  }
-
-  /** 
-   * @deprecated does not meet coding standards, use addElement()
-   * 
-   * @param i 
-   * @param j 
-   * @param x 
-   */
-  void add_element(const int& i, const int& j, const ComplexType& x)
-  {
-    this->addElement(i, j, x);
-  }
-
-  /// Add to an several elements
-  /** 
-   * @e Local.
-   * 
-   * @param n number of elements to update
-   * @param i array of @c n global, 0-based row indexes
-   * @param j array of @c n global, 0-based column indexes
-   * @param x array of @c n values to add to existing matrix elements
-   */
-  void addElements(const int& n, const int *i, const int *j, const ComplexType *x)
-  {
-    p_matrix_impl->addElements(n, i, j, x);
-  }
-
-  /** 
-   * @deprecated does not meet coding standards, use addElements()
-   * 
-   * @param n 
-   * @param i 
-   * @param j 
-   * @param x 
-   */
-  void add_elements(const int& n, const int *i, const int *j, const ComplexType *x)
-  {
-    this->addElements(n, i, j, x);
-  }
-
-  /// Get an individual element
-  /** 
-   * @c Local.
-   * 
-   * Only local elements may be retrieved using this method.
-   * 
-   * @param i global, 0-based row index
-   * @param j global, 0-based column index
-   * @param x variable in which to place retrieved value
-   */
-  void getElement(const int& i, const int& j, ComplexType& x) const
-  {
-    p_matrix_impl->getElement(i, j, x);
-  }
-
-  /** 
-   * @deprecated does not meet coding standards, use getElement
-   * 
-   * 
-   * @param i 
-   * @param j 
-   * @param x 
-   */
-  void get_element(const int& i, const int& j, ComplexType& x) const
-  {
-    this->getElement(i, j, x);
-  }
-
-  /// Get an several elements
-  /** 
-   * @c Local.
-   *
-   * Only local elements may be retrieved using this method.
-   * 
-   * @param n number of elements to retrieve
-   * @param i array of @c n global, 0-based row indexes
-   * @param j array of @c n global, 0-based column indexes
-   * @param x array of @c n values in which retrieved values are to be placed
-   */
-  void getElements(const int& n, const int *i, const int *j, ComplexType *x) const
-  {
-    p_matrix_impl->getElements(n, i, j, x);
-  }
-
-  /** 
-   * @deprecated does not meet coding standards, use getElements
-   * 
-   * @param n 
-   * @param i 
-   * @param j 
-   * @param x 
-   */
-  void get_elements(const int& n, const int *i, const int *j, ComplexType *x) const
-  {
-    this->getElements(n, i, j, x);
-  }
 
   /// Make this matrix the identity matrix
   /** 
@@ -387,54 +151,6 @@ public:
    * 
    */
   void identity(void);
-
-  /// Replace all elements with their real parts
-  void real(void)
-  {
-    p_matrix_impl->real();
-  }
-
-  /// Replace all elements with their imaginary parts
-  void imaginary(void)
-  {
-    p_matrix_impl->imaginary();
-  }
-
-  /// Replace all elements with their complex gradient
-  void conjugate(void)
-  {
-    p_matrix_impl->conjugate();
-  }
-
-
-  /// Compute the matrix L<sup>2</sup> norm
-  /** 
-   * @e Collective.
-   *
-   * The vector L<sup>2</sup>, or Euclidian, norm is computed as
-   * \f[
-   *   \left\| \mathbf{A} \right\| ~ = ~ \sqrt{\sum_{ij} A_{ij}^{2}}
-   * \f]
-   * 
-   * @return  L<sup>2</sup> norm of this matrix
-   */
-  ComplexType norm2(void) const
-  {
-    return p_matrix_impl->norm2();
-  }
-
-  /// Indicate the matrix is ready to use
-  /** 
-   * @e Collective.
-   *
-   * This is used to indicate that the matrix is ready to use.  This
-   * must be called after @e all setElement() or addElement() calls
-   * and before the vector is used for any operation.
-   */
-  void ready(void)
-  {
-    p_matrix_impl->ready();
-  }
 
   //! @cond DEVDOC
 
@@ -591,6 +307,76 @@ protected:
 
   /// The actual implementation
   boost::scoped_ptr<MatrixImplementation> p_matrix_impl;
+
+  /// Get the global index range of the locally owned rows (specialized)
+  void p_localRowRange(IdxType& lo, IdxType& hi) const
+  { p_matrix_impl->localRowRange(lo, hi); }
+
+  /// Get the total number of rows in this matrix (specialized)
+  IdxType p_rows(void) const
+  { return p_matrix_impl->rows(); }
+
+  /// Get the number of local rows in this matirx (specialized)
+  IdxType p_localRows(void) const
+  { return p_matrix_impl->localRows(); }
+
+  /// Get the number of columns in this matrix (specialized)
+  IdxType p_cols(void) const
+  { return p_matrix_impl->cols(); }
+
+  /// Get the number of local rows in this matirx (specialized)
+  IdxType p_localCols(void) const
+  { return p_matrix_impl->localCols(); }
+
+  /// Set an individual element
+  void p_setElement(const IdxType& i, const IdxType& j, const TheType& x)
+  { p_matrix_impl->setElement(i, j, x); }
+
+  /// Set an several element
+  void p_setElements(const IdxType& n, 
+                     const IdxType *i, const IdxType *j, 
+                     const TheType *x)
+  { p_matrix_impl->setElements(n, i, j, x); }
+
+  /// Add to  an individual element
+  void p_addElement(const IdxType& i, const IdxType& j, const TheType& x)
+  { p_matrix_impl->addElement(i, j, x); }
+
+  /// Add to  an several element
+  void p_addElements(const IdxType& n, 
+                     const IdxType *i, const IdxType *j, 
+                     const TheType *x)
+  { p_matrix_impl->addElements(n, i, j, x); }
+
+  /// Get an individual element
+  void p_getElement(const IdxType& i, const IdxType& j, TheType& x) const
+  { p_matrix_impl->getElement(i, j, x); }
+
+  /// Get an several element
+  void p_getElements(const IdxType& n, 
+                     const IdxType *i, const IdxType *j, 
+                     TheType *x) const
+  { p_matrix_impl->getElements(n, i, j, x); }
+
+  /// Replace all elements with their real parts
+  void p_real(void)
+  { p_matrix_impl->real(); }
+
+  /// Replace all elements with their imaginary parts
+  void p_imaginary(void)
+  { p_matrix_impl->imaginary(); }
+
+  /// Replace all elements with their complex gradient
+  void p_conjugate(void)
+  { p_matrix_impl->conjugate(); }
+
+  /// Compute the matrix L<sup>2</sup> norm (specialized)
+  double p_norm2(void) const
+  { return p_matrix_impl->norm2(); }
+
+  /// Make this instance ready to use
+  void p_ready(void)
+  { p_matrix_impl->ready(); }
 
   /// Is a Matrix compatible with this one (throws if not)
   void p_check_compatible(const Matrix& A) const;

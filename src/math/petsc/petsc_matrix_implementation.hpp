@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2014-02-19 11:47:43 d3g096
+ * @date   2014-10-21 12:55:19 d3g096
  * 
  * @brief  
  * 
@@ -42,18 +42,18 @@ public:
 
   /// Default constructor
   PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const int& local_rows, const int& local_cols,
+                            const IdxType& local_rows, const IdxType& local_cols,
                             const bool& dense = false);
 
   /// Construct a sparse matrix with an estimate of (maximum) usage
   PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const int& local_rows, const int& local_cols,
-                            const int& max_nonzero_per_row);
+                            const IdxType& local_rows, const IdxType& local_cols,
+                            const IdxType& max_nonzero_per_row);
 
   /// Construct a sparse matrix with number of nonzeros in each row
   PETScMatrixImplementation(const parallel::Communicator& comm,
-                            const int& local_rows, const int& local_cols,
-                            const int *nonzeros_by_row);
+                            const IdxType& local_rows, const IdxType& local_cols,
+                            const IdxType *nonzeros_by_row);
   
 
   /// Make a new instance from an existing PETSc matrix
@@ -87,7 +87,7 @@ protected:
 
   /// Build the generic PETSc matrix instance
   void p_build_matrix(const parallel::Communicator& comm,
-                      const int& local_rows, const int& cols);
+                      const IdxType& local_rows, const IdxType& cols);
 
   /// Set up a dense matrix
   void p_set_dense_matrix(void);
@@ -96,53 +96,53 @@ protected:
   void p_set_sparse_matrix(void);
 
   /// Set up a sparse matrix and preallocate it using the maximum nonzeros per row
-  void p_set_sparse_matrix(const int& max_nz_per_row);
+  void p_set_sparse_matrix(const IdxType& max_nz_per_row);
 
   /// Set up a sparse matrix and preallocate it using known nonzeros for each row
-  void p_set_sparse_matrix(const int *nz_by_row);
+  void p_set_sparse_matrix(const IdxType *nz_by_row);
 
   /// Get the global index range of the locally owned rows (specialized)
-  void p_localRowRange(int& lo, int& hi) const;
+  void p_localRowRange(IdxType& lo, IdxType& hi) const;
 
   /// Get the total number of rows in this matrix (specialized)
-  int p_rows(void) const;
+  IdxType p_rows(void) const;
 
   /// Get the number of local rows in this matirx (specialized)
-  int p_localRows(void) const;
+  IdxType p_localRows(void) const;
 
   /// Get the number of columns in this matrix (specialized)
-  int p_cols(void) const;
+  IdxType p_cols(void) const;
 
   /// Get the number of local rows in this matirx (specialized)
-  int p_localCols(void) const;
+  IdxType p_localCols(void) const;
 
   /// Set an individual element
-  void p_setElement(const int& i, const int& j, const ComplexType& x);
+  void p_setElement(const IdxType& i, const IdxType& j, const TheType& x);
 
   /// Set an several element
-  void p_setElements(const int& n, const int *i, const int *j, const ComplexType *x);
+  void p_setElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x);
 
   // /// Set all elements in a row
-  // void p_set_row(const int& i, const int *j, const ComplexType *x);
+  // void p_set_row(const IdxType& i, const IdxType *j, const TheType *x);
 
   // /// Set all elements in a region
-  // void p_set_region(const int& ni, const int& nj, 
-  //                          const int *i, const int *j, const ComplexType *x);
+  // void p_set_region(const IdxType& ni, const IdxType& nj, 
+  //                          const IdxType *i, const IdxType *j, const TheType *x);
 
   /// Add to  an individual element
-  void p_addElement(const int& i, const int& j, const ComplexType& x);
+  void p_addElement(const IdxType& i, const IdxType& j, const TheType& x);
 
   /// Add to  an several element
-  void p_addElements(const int& n, const int *i, const int *j, const ComplexType *x);
+  void p_addElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x);
 
   // /// Add to  all elements in a row
-  // void p_add_row(const int& i, const int *j, const ComplexType *x);
+  // void p_add_row(const IdxType& i, const IdxType *j, const TheType *x);
 
   /// Get an individual element
-  void p_getElement(const int& i, const int& j, ComplexType& x) const;
+  void p_getElement(const IdxType& i, const IdxType& j, TheType& x) const;
 
   /// Get an several element
-  void p_getElements(const int& n, const int *i, const int *j, ComplexType *x) const;
+  void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, TheType *x) const;
 
   /// Replace all elements with their real parts
   void p_real(void);
@@ -154,7 +154,7 @@ protected:
   void p_conjugate(void);
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
-  ComplexType p_norm2(void) const;
+  double p_norm2(void) const;
 
   /// Make this instance ready to use
   void p_ready(void);
