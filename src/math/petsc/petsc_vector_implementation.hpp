@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-14 11:32:42 d3g096
+ * @date   2014-10-21 09:30:52 d3g096
  * 
  * @brief  
  * 
@@ -48,7 +48,7 @@ public:
    * @return 
    */
   PETScVectorImplementation(const parallel::Communicator& comm,
-                            const int& local_length);
+                            const IdxType& local_length);
 
   /// Construct from an existing PETSc vector
   PETScVectorImplementation(Vec& pvec, const bool& copyvec = true);
@@ -79,10 +79,10 @@ protected:
   static parallel::Communicator p_getCommunicator(const Vec& v);
 
   /// Minimum global index on this processor
-  int p_minIndex;
+  IdxType p_minIndex;
 
   /// Maximum global index on this processor
-  int p_maxIndex;
+  IdxType p_maxIndex;
 
   /// The PETSc representation
   Vec p_vector;
@@ -91,52 +91,52 @@ protected:
   bool p_vectorWrapped;
 
   /// Get the global vector length
-  int p_size(void) const;
+  IdxType p_size(void) const;
 
   /// Get the size of the vector local part
-  int p_localSize(void) const;
+  IdxType p_localSize(void) const;
 
   /// Get the local min/max global indexes (specialized)
-  void p_localIndexRange(int& lo, int& hi) const;
+  void p_localIndexRange(IdxType& lo, IdxType& hi) const;
 
   /// Set an individual element (specialized)
-  void p_setElement(const int& i, const ComplexType& x);
+  void p_setElement(const IdxType& i, const TheType& x);
 
   /// Set an several elements (specialized)
-  void p_setElements(const int& n, const int *i, const ComplexType *x);
+  void p_setElements(const IdxType& n, const IdxType *i, const TheType *x);
 
   /// Add to an individual element (specialized)
-  void p_addElement(const int& i, const ComplexType& x);
+  void p_addElement(const IdxType& i, const TheType& x);
 
   /// Add to an several elements (specialized)
-  void p_addElements(const int& n, const int *i, const ComplexType *x);
+  void p_addElements(const IdxType& n, const IdxType *i, const TheType *x);
 
   /// Get an individual (local) element (specialized)
-  void p_getElement(const int& i, ComplexType& x) const;
+  void p_getElement(const IdxType& i, TheType& x) const;
 
   /// Get an several (local) elements (specialized)
-  void p_getElements(const int& n, const int *i, ComplexType *x) const;
+  void p_getElements(const IdxType& n, const IdxType *i, TheType *x) const;
 
   /// Get all of vector elements (on all processes)
-  void p_getAllElements(ComplexType *x) const;
+  void p_getAllElements(TheType *x) const;
 
   /// Make all the elements zero (specialized)
   void p_zero(void);
 
   /// Make all the elements the specified value (specialized)
-  void p_fill(const ComplexType& v);
+  void p_fill(const TheType& v);
 
   /// Common method to compute norms 
-  ComplexType p_norm(const NormType& t) const;
+  double p_norm(const NormType& t) const;
 
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
-  ComplexType p_norm1(void) const;
+  double p_norm1(void) const;
 
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
-  ComplexType p_norm2(void) const;
+  double p_norm2(void) const;
 
   /// Compute the vector infinity (or maximum) norm (specialized)
-  ComplexType p_normInfinity(void) const;
+  double p_normInfinity(void) const;
 
   /// Replace all elements with its absolute value (specialized) 
   void p_abs(void);

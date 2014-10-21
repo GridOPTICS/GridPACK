@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:44:08 d3g096
+ * @date   2014-10-21 09:36:45 d3g096
  * 
  * @brief  
  * 
@@ -33,7 +33,7 @@ namespace math {
 // PETScVectorImplementation:: constructors / destructor
 // -------------------------------------------------------------
 PETScVectorImplementation::PETScVectorImplementation(const parallel::Communicator& comm,
-                                                     const int& local_length)
+                                                     const PETScVectorImplementation::IdxType& local_length)
   : VectorImplementation(comm), p_minIndex(-1), p_maxIndex(-1), 
     p_vectorWrapped(false)
 {
@@ -126,14 +126,14 @@ PETScVectorImplementation::~PETScVectorImplementation(void)
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_size
 // -------------------------------------------------------------
-int 
+PETScVectorImplementation::IdxType 
 PETScVectorImplementation::p_size(void) const
 {
   PetscErrorCode ierr;
   try {
     PetscInt gsize;
     ierr = VecGetSize(this->p_vector, &gsize); CHKERRXX(ierr);
-    return static_cast<int>(gsize);
+    return static_cast<IdxType>(gsize);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
@@ -142,14 +142,14 @@ PETScVectorImplementation::p_size(void) const
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_localSize
 // -------------------------------------------------------------
-int 
+PETScVectorImplementation::IdxType 
 PETScVectorImplementation::p_localSize(void) const
 {
   PetscErrorCode ierr;
   try {
     PetscInt gsize;
     ierr = VecGetLocalSize(this->p_vector, &gsize); CHKERRXX(ierr);
-    return static_cast<int>(gsize);
+    return static_cast<IdxType>(gsize);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
@@ -159,7 +159,8 @@ PETScVectorImplementation::p_localSize(void) const
 // PETScVectorImplementation::p_localIndexRange
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_localIndexRange(int& lo, int& hi) const
+PETScVectorImplementation::p_localIndexRange(PETScVectorImplementation::IdxType& lo, 
+                                             PETScVectorImplementation::IdxType& hi) const
 {
   lo = p_minIndex;
   hi = p_maxIndex;
@@ -175,7 +176,8 @@ PETScVectorImplementation::p_localIndexRange(int& lo, int& hi) const
  * @param x value
  */
 void
-PETScVectorImplementation::p_setElement(const int& i, const ComplexType& x)
+PETScVectorImplementation::p_setElement(const PETScVectorImplementation::IdxType& i, 
+                                        const PETScVectorImplementation::TheType& x)
 {
   PetscErrorCode ierr;
   try {
@@ -189,7 +191,9 @@ PETScVectorImplementation::p_setElement(const int& i, const ComplexType& x)
 // PETScVectorImplementation::p_setElements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_setElements(const int& n, const int *i, const ComplexType *x)
+PETScVectorImplementation::p_setElements(const PETScVectorImplementation::IdxType& n, 
+                                         const PETScVectorImplementation::IdxType *i, 
+                                         const PETScVectorImplementation::TheType *x)
 {
   PetscErrorCode ierr;
   try {
@@ -203,7 +207,8 @@ PETScVectorImplementation::p_setElements(const int& n, const int *i, const Compl
 // PETScVectorImplementation::p_addElement
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_addElement(const int& i, const ComplexType& x)
+PETScVectorImplementation::p_addElement(const PETScVectorImplementation::IdxType& i, 
+                                        const PETScVectorImplementation::TheType& x)
 {
   PetscErrorCode ierr;
   try {
@@ -217,7 +222,9 @@ PETScVectorImplementation::p_addElement(const int& i, const ComplexType& x)
 // PETScVectorImplementation::p_addElements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_addElements(const int& n, const int *i, const ComplexType *x)
+PETScVectorImplementation::p_addElements(const PETScVectorImplementation::IdxType& n, 
+                                         const PETScVectorImplementation::IdxType *i, 
+                                         const PETScVectorImplementation::TheType *x)
 {
   PetscErrorCode ierr;
   try {
@@ -231,7 +238,8 @@ PETScVectorImplementation::p_addElements(const int& n, const int *i, const Compl
 // PETScVectorImplementation::p_getElement
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_getElement(const int& i, ComplexType& x) const
+PETScVectorImplementation::p_getElement(const PETScVectorImplementation::IdxType& i, 
+                                        PETScVectorImplementation::TheType& x) const
 {
   this->p_getElements(1, &i, &x);
 }
@@ -240,7 +248,9 @@ PETScVectorImplementation::p_getElement(const int& i, ComplexType& x) const
 // PETScVectorImplementation::p_get_elements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_getElements(const int& n, const int *i, ComplexType *x) const
+PETScVectorImplementation::p_getElements(const PETScVectorImplementation::IdxType& n, 
+                                         const PETScVectorImplementation::IdxType *i, 
+                                         PETScVectorImplementation::TheType *x) const
 {
   // FIXME: Cannot get off process elements
   PetscErrorCode ierr;
@@ -255,13 +265,13 @@ PETScVectorImplementation::p_getElements(const int& n, const int *i, ComplexType
 // PETScVectorImplementation::p_get_all_elements
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_getAllElements(ComplexType *x) const
+PETScVectorImplementation::p_getAllElements(PETScVectorImplementation::TheType *x) const
 {
   PetscErrorCode ierr(0);
   try {
     VecScatter scatter;
     Vec all;
-    int n(this->size());
+    IdxType n(this->size());
     ierr = VecScatterCreateToAll(p_vector, &scatter, &all); CHKERRXX(ierr);
     ierr = VecScatterBegin(scatter, p_vector, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
     ierr = VecScatterEnd(scatter, p_vector, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
@@ -282,7 +292,7 @@ PETScVectorImplementation::p_getAllElements(ComplexType *x) const
 void
 PETScVectorImplementation::p_zero(void)
 {
-  ComplexType v(0.0, 0.0);
+  TheType v(0.0, 0.0);
   this->fill(v);
 }
 
@@ -290,7 +300,7 @@ PETScVectorImplementation::p_zero(void)
 // PETScVectorImplementation::p_fill
 // -------------------------------------------------------------
 void
-PETScVectorImplementation::p_fill(const ComplexType& v)
+PETScVectorImplementation::p_fill(const PETScVectorImplementation::TheType& v)
 {
   PetscErrorCode ierr(0);
   try {
@@ -304,10 +314,10 @@ PETScVectorImplementation::p_fill(const ComplexType& v)
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_norm
 // -------------------------------------------------------------
-ComplexType
+double
 PETScVectorImplementation::p_norm(const NormType& t) const
 {
-  ComplexType result;
+  double result;
   PetscErrorCode ierr(0);
   try {
     PetscReal v;
@@ -323,7 +333,7 @@ PETScVectorImplementation::p_norm(const NormType& t) const
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_norm1
 // -------------------------------------------------------------
-ComplexType
+double
 PETScVectorImplementation::p_norm1(void) const
 {
   return p_norm(NORM_1);
@@ -333,7 +343,7 @@ PETScVectorImplementation::p_norm1(void) const
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_norm2
 // -------------------------------------------------------------
-ComplexType
+double
 PETScVectorImplementation::p_norm2(void) const
 {
   return p_norm(NORM_2);
@@ -342,7 +352,7 @@ PETScVectorImplementation::p_norm2(void) const
 // -------------------------------------------------------------
 // PETScVectorImplementation::p_normInfinity
 // -------------------------------------------------------------
-ComplexType
+double
 PETScVectorImplementation::p_normInfinity(void) const
 {
   return p_norm(NORM_INFINITY);
@@ -418,7 +428,7 @@ VectorImplementation *
  PETScVectorImplementation::p_clone(void) const
 {
   parallel::Communicator comm(this->communicator());
-  int local_size(this->localSize());
+  IdxType local_size(this->localSize());
   
   PETScVectorImplementation *result = 
     new PETScVectorImplementation(comm, local_size);

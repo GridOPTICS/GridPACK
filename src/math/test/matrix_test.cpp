@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-09-18 09:20:18 d3g096
+ * @date   2014-10-21 12:03:12 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -490,11 +490,12 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
 
   boost::scoped_ptr<gridpack::math::Matrix> 
     B(gridpack::math::diagonal(*dvector, the_storage_type));
+  dvector->print();
 
   // norms of the diagonal matrix and original vector should be very
   // close
   double Bnorm(abs(B->norm2()));
-  double vnorm(abs(dvector->norm2()));
+  double vnorm(dvector->norm2());
   BOOST_CHECK_CLOSE(Bnorm, vnorm, delta);
 
   // make the diagonal matrix back into a vector and see that it has
@@ -532,11 +533,11 @@ BOOST_AUTO_TEST_CASE( AddDiagonal )
     d(diagonal(*A));
   d->print();
 
-  double norm(abs(d->norm1())/d->size());
+  double norm(d->norm1()/static_cast<double>(d->size()));
 
   BOOST_CHECK_CLOSE(norm, 2.0, delta);
 
-  norm = abs(d->norm2())/sqrt(d->size());
+  norm = d->norm2()/sqrt(static_cast<double>(d->size()));
 
   BOOST_CHECK_CLOSE(norm, 2.0, delta);
 }
