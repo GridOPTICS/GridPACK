@@ -9,11 +9,9 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2014-10-21 13:37:57 d3g096
+ * @date   2014-10-22 08:24:52 d3g096
  * 
- * @brief  
- * 
- * 
+ * @brief  Declaration of the Matrix class.
  */
 // -------------------------------------------------------------
 // -------------------------------------------------------------
@@ -378,9 +376,16 @@ protected:
   void p_ready(void)
   { p_matrix_impl->ready(); }
 
+  /// Allow visits by implementation visitors
+  void p_accept(ImplementationVisitor& visitor)
+  { p_matrix_impl->accept(visitor); }
+
+  /// Allow visits by implementation visitors
+  void p_accept(ConstImplementationVisitor& visitor) const
+  { p_matrix_impl->accept(visitor); }
+
   /// Is a Matrix compatible with this one (throws if not)
   void p_check_compatible(const Matrix& A) const;
-
 };
 
 // -------------------------------------------------------------

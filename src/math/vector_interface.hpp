@@ -10,7 +10,7 @@
 /**
  * @file   vector_interface.hpp
  * @author William A. Perkins
- * @date   2014-10-21 11:19:20 d3g096
+ * @date   2014-10-21 15:14:50 d3g096
  * 
  * @brief  
  * 
@@ -26,6 +26,10 @@
 #ifndef _vector_interface_hpp_
 #define _vector_interface_hpp_
 
+
+
+#include "gridpack/math/implementation_visitable.hpp"
+
 namespace gridpack {
 namespace math {
 
@@ -38,6 +42,7 @@ namespace math {
  */
 template<typename T, typename I = int> 
 class BaseVectorInterface 
+  : public ImplementationVisitable
 {
 public:
 
@@ -46,6 +51,7 @@ public:
 
   /// Default constructor.
   BaseVectorInterface(void)
+    : ImplementationVisitable()
   {}
 
   /// Destructor

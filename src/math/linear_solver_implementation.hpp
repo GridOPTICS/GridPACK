@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-01-09 12:09:55 d3g096
+ * @date   2014-10-22 09:13:34 d3g096
  * 
  * @brief  
  * 
@@ -26,7 +26,7 @@
 #define _linear_solver_implementation_hpp_
 
 #include <boost/scoped_ptr.hpp>
-#include <gridpack/math/matrix.hpp>
+#include <gridpack/math/linear_solver_interface.hpp>
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/configuration/configurable.hpp>
@@ -40,7 +40,8 @@ namespace math {
 class LinearSolverImplementation 
   : public parallel::Distributed,
     public utility::Configurable,
-    private utility::Uncopyable
+    private utility::Uncopyable,
+    public BaseLinearSolverInterface
 {
 public:
   
@@ -50,73 +51,6 @@ public:
   /// Destructor
   ~LinearSolverImplementation(void);
   
-  /// Solve w/ the specified RHS, put result in specified vector
-  void solve(const Vector& b, Vector& x) const
-  {
-    this->p_solve(b, x);
-  }
-
-  /// Solve multiple systems w/ each column of the Matrix a single RHS
-  Matrix *solve(const Matrix& B) const;
-
-  /// Get the solution tolerance
-  /** 
-   * 
-   * 
-   * 
-   * @return current solution tolerance
-   */
-  double tolerance(void) const
-  {
-    return p_solutionTolerance;
-  }
-
-  /// Set the solver tolerance
-  /** 
-   * 
-   * 
-   * @param tol 
-   */
-  void tolerance(const double& tol) 
-  {
-    p_solutionTolerance = tol;
-  }
-
-  /// Get the maximum iterations
-  /** 
-   * 
-   * 
-   * 
-   * @return 
-   */
-  int maximumIterations(void) const
-  {
-    return p_maxIterations;
-  }
-
-  /// Set the maximum iterations
-  /** 
-   * 
-   * 
-   * @param n current maximum number of iterations
-   */
-  void maximumIterations(const int& n) 
-  {
-    p_maxIterations = n;
-  }
-
-  /// Allow visits by implemetation visitor
-  void accept(ImplementationVisitor& visitor)
-  {
-    this->p_accept(visitor);
-  }
-
-  /// Allow visits by const implemetation visitor
-  void accept(ConstImplementationVisitor& visitor) const
-  {
-    this->p_accept(visitor);
-  }
-
 protected:
 
   /// The solution residual norm tolerance
@@ -142,22 +76,20 @@ protected:
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
 
-  /// Solve w/ the specified RHS, put result in specified vector
-  /** 
-   * Can be called repeatedly with different @c b and @c x vectors
-   * 
-   * @param b Vector containing right hand side of linear system
-   * @param x Vector containing initial solution estimate; final
-   * solution is put into this.
-   */
-  virtual void p_solve(const Vector& b, Vector& x) const = 0;
+  /// Get the solution tolerance (specialized)
+  double p_tolerance(void) const;
 
-  /// Allow visits by implementation visitors
-  virtual void p_accept(ImplementationVisitor& visitor) = 0;
+  /// Set the solver tolerance (specialized)
+  void p_tolerance(const double& tol);
 
-  /// Allow visits by implementation visitors
-  virtual void p_accept(ConstImplementationVisitor& visitor) const = 0;
+  /// Get the maximum iterations (specialized)
+  int p_maximumIterations(void) const;
 
+  /// Set the maximum solution iterations
+  void p_maximumIterations(const int& n);
+
+  /// Solve multiple systems w/ each column of the Matrix a single RHS
+  Matrix *p_solve(const Matrix& B) const;
 };
 
 } // namespace math

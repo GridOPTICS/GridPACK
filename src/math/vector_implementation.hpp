@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2014-10-21 09:23:22 d3g096
+ * @date   2014-10-21 14:54:30 d3g096
  * 
  * @brief  
  * 
@@ -53,22 +53,6 @@ public:
   ~VectorImplementation(void);
 
   // -------------------------------------------------------------
-  // Allow visitors
-  // -------------------------------------------------------------
-
-  /// Allow visits by implemetation visitor
-  void accept(ImplementationVisitor& visitor)
-  {
-    this->p_accept(visitor);
-  }
-
-  /// Allow visits by const implemetation visitor
-  void accept(ConstImplementationVisitor& visitor) const
-  {
-    this->p_accept(visitor);
-  }
-
-  // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
 
@@ -97,12 +81,6 @@ protected:
 
   /// Replace all elements with its exponential (specialized)
   void p_exp(void);
-
-  /// Allow visits by implementation visitors
-  virtual void p_accept(ImplementationVisitor& visitor) = 0;
-  
-  /// Allow visits by implementation visitors
-  virtual void p_accept(ConstImplementationVisitor& visitor) const = 0;
 
   /// Make an exact replica of this instance (specialized)
   virtual VectorImplementation *p_clone(void) const = 0;

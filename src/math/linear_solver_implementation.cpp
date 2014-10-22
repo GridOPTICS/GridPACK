@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-19 12:40:51 d3g096
+ * @date   2014-10-22 09:12:58 d3g096
  * 
  * @brief  
  * 
@@ -52,10 +52,10 @@ LinearSolverImplementation::~LinearSolverImplementation(void)
 }
 
 // -------------------------------------------------------------
-// LinearSolverImplementation::solve
+// LinearSolverImplementation::p_solve
 // -------------------------------------------------------------
 Matrix *
-LinearSolverImplementation::solve(const Matrix& B) const
+LinearSolverImplementation::p_solve(const Matrix& B) const
 {
   Vector b(B.communicator(), B.localRows());
   Vector X(B.communicator(), B.localRows());
@@ -95,6 +95,37 @@ LinearSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
     p_relativeTolerance = props->get("RelativeTolerance", p_solutionTolerance);
     p_maxIterations = props->get("MaxIterations", p_maxIterations);
   }
+}
+
+
+// -------------------------------------------------------------
+// LinearSolverImplementation::p_tolerance
+// -------------------------------------------------------------
+double
+LinearSolverImplementation::p_tolerance(void) const
+{
+  return p_solutionTolerance;
+}
+
+void
+LinearSolverImplementation::p_tolerance(const double& tol)
+{
+  p_solutionTolerance = tol;
+}
+
+// -------------------------------------------------------------
+// LinearSolverImplementation::p_maximumIterations
+// -------------------------------------------------------------
+int
+LinearSolverImplementation::p_maximumIterations(void) const
+{
+  return p_maxIterations;
+}
+
+void
+LinearSolverImplementation::p_maximumIterations(const int& n) 
+{
+  p_maxIterations = n;
 }
 
 

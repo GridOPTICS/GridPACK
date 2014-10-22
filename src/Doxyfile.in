@@ -723,10 +723,6 @@ EXCLUDE                = @CMAKE_CURRENT_SOURCE_DIR@/build \
                          @CMAKE_CURRENT_SOURCE_DIR@/sandbox \
                          @CMAKE_CURRENT_SOURCE_DIR@/old_code \
                          @CMAKE_CURRENT_SOURCE_DIR@/cmake-modules \
-                         @CMAKE_CURRENT_SOURCE_DIR@/math/implementation_visitor.hpp \
-                         @CMAKE_CURRENT_SOURCE_DIR@/math/vector_implementation.hpp \
-                         @CMAKE_CURRENT_SOURCE_DIR@/math/matrix_implementation.hpp \
-                         @CMAKE_CURRENT_SOURCE_DIR@/math/linear_solver_implementation.hpp \
                          @CMAKE_CURRENT_SOURCE_DIR@/math/petsc \
                          @CMAKE_CURRENT_SOURCE_DIR@/partition/parmetis \
                          @CMAKE_CURRENT_SOURCE_DIR@/build

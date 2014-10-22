@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2014-01-09 12:03:20 d3g096
+ * @date   2014-10-22 09:20:30 d3g096
  * 
  * @brief  
  * 
@@ -65,7 +65,8 @@ namespace math {
 class LinearSolver 
   : public parallel::WrappedDistributed,
     public utility::WrappedConfigurable,
-    private utility::Uncopyable
+    private utility::Uncopyable, 
+    public BaseLinearSolverInterface
 {
 public:
   
@@ -96,6 +97,88 @@ public:
    */
   ~LinearSolver(void);
 
+protected:
+
+  /// Where the work really happens
+  /**
+   * The Pimpl idiom is used for \ref LinearSolverImplementation
+   * "implementation", so user code is completely independent of the
+   * underlying library. This class simply provides an interface on a
+   * specific \ref LinearSolverImplementation "implementation".
+   */
+  boost::scoped_ptr<LinearSolverImplementation> p_solver;
+
+  /// Get the solution tolerance (specialized)
+  /** 
+   * 
+   * 
+   * 
+   * @return current solution tolerance
+   */
+  double p_tolerance(void) const
+  {
+    return p_solver->tolerance();
+  }
+
+  /// Set the solver tolerance (specialized)
+  /** 
+   * 
+   * 
+   * @param tol new solution tolerance
+   */
+  void p_tolerance(const double& tol)
+  {
+    p_solver->tolerance(tol);
+  }
+
+  /// Get the maximum iterations (specialized)
+  /** 
+   * 
+   * 
+   * 
+   * @return current maximum number of solution iterations
+   */
+  int p_maximumIterations(void) const
+  {
+    return p_solver->maximumIterations();
+  }
+
+
+  /// Set the maximum solution iterations (specialized)
+  /** 
+   * 
+   * 
+   * @param n new maximum number of iterations
+   */
+  void p_maximumIterations(const int& n)
+  {
+    p_solver->maximumIterations(n);
+  }
+
+  /// Allow visits by implemetation visitor
+  /** 
+   * This simply passes an ImplementationVisitor on to the \ref
+   * LinearSolverImplementation "implementation".
+   * 
+   * @param visitor 
+   */
+  void p_accept(ImplementationVisitor& visitor)
+  {
+    p_solver->accept(visitor);
+  }
+
+  /// Allow visits by implemetation visitor
+  /** 
+   * This simply passes a ConstImplementationVisitor on to the \ref
+   * LinearSolverImplementation "implementation".
+   * 
+   * @param visitor 
+   */
+  void p_accept(ConstImplementationVisitor& visitor) const
+  {
+    p_solver->accept(visitor);
+  }
+
   /// Solve w/ the specified RHS, put result in specified vector
   /** 
    * @e Collective.
@@ -114,7 +197,7 @@ public:
    * @param b Vector containing right hand side of linear system
    * @param x solution Vector
    */
-  void solve(const Vector& b, Vector& x) const
+  void p_solve(const Vector& b, Vector& x) const
   {
     p_solver->solve(b, x);
   }
@@ -127,97 +210,11 @@ public:
    * 
    * @return @e dense solution Matrix -- each column is the solution for the corresponding column in @c B
    */
-  Matrix *solve(const Matrix& B) const
+  Matrix *p_solve(const Matrix& B) const
   {
     return p_solver->solve(B);
   }
 
-  /// Get the solution tolerance
-  /** 
-   * 
-   * 
-   * 
-   * @return current solution tolerance
-   */
-  double tolerance(void) const
-  {
-    return p_solver->tolerance();
-  }
-
-  /// Set the solver tolerance
-  /** 
-   * 
-   * 
-   * @param tol new solution tolerance
-   */
-  void tolerance(const double& tol)
-  {
-    p_solver->tolerance(tol);
-  }
-
-  /// Get the maximum iterations
-  /** 
-   * 
-   * 
-   * 
-   * @return current maximum number of solution iterations
-   */
-  int maximumIterations(void) const
-  {
-    return p_solver->maximumIterations();
-  }
-
-
-  /// Set the maximum solution iterations
-  /** 
-   * 
-   * 
-   * @param n new maximum number of iterations
-   */
-  void maximumIterations(const int& n)
-  {
-    p_solver->maximumIterations(n);
-  }
-
-
-  //! @cond DEVDOC
-
-  /// Allow visits by implemetation visitor
-  /** 
-   * This simply passes an ImplementationVisitor on to the \ref
-   * LinearSolverImplementation "implementation".
-   * 
-   * @param visitor 
-   */
-  void accept(ImplementationVisitor& visitor)
-  {
-    p_solver->accept(visitor);
-  }
-
-  /// Allow visits by implemetation visitor
-  /** 
-   * This simply passes a ConstImplementationVisitor on to the \ref
-   * LinearSolverImplementation "implementation".
-   * 
-   * @param visitor 
-   */
-  void accept(ConstImplementationVisitor& visitor) const
-  {
-    p_solver->accept(visitor);
-  }
-
-  //! @endcond
-
-protected:
-
-  /// Where the work really happens
-  /**
-   * The Pimpl idiom is used for \ref LinearSolverImplementation
-   * "implementation", so user code is completely independent of the
-   * underlying library. This class simply provides an interface on a
-   * specific \ref LinearSolverImplementation "implementation".
-   */
-  boost::scoped_ptr<LinearSolverImplementation> p_solver;
 
 };
 

@@ -9,7 +9,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2014-10-21 12:52:31 d3g096
+ * @date   2014-10-21 14:31:51 d3g096
  * 
  * @brief  
  * 
@@ -34,9 +34,6 @@
 namespace gridpack {
 namespace math {
 
-class ImplementationVisitor;
-class ConstImplementationVisitor;
-
 // -------------------------------------------------------------
 //  class MatrixImplementation
 // -------------------------------------------------------------
@@ -53,18 +50,6 @@ public:
   /// Destructor
   virtual ~MatrixImplementation(void);
 
-  /// Allow visits by implemetation visitor
-  void accept(ImplementationVisitor& visitor)
-  {
-    this->p_accept(visitor);
-  }
-
-  /// Allow visits by const implemetation visitor
-  void accept(ConstImplementationVisitor& visitor) const
-  {
-    this->p_accept(visitor);
-  }
-
   /// Make an exact replica of this instance
   MatrixImplementation *clone(void) const
   {
@@ -73,12 +58,6 @@ public:
 
 
 protected:
-
-  /// Allow visits by implementation visitors
-  virtual void p_accept(ImplementationVisitor& visitor) = 0;
-
-  /// Allow visits by implementation visitors
-  virtual void p_accept(ConstImplementationVisitor& visitor) const = 0;
 
   /// Make an exact replica of this instance (specialized)
   virtual MatrixImplementation *p_clone(void) const = 0;

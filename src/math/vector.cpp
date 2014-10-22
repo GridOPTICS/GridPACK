@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2013-11-12 10:55:53 d3g096
+ * @date   2014-10-21 14:49:44 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 

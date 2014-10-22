@@ -10,9 +10,9 @@
 /**
  * @file   matrix_interface.hpp
  * @author William A. Perkins
- * @date   2014-10-21 13:30:33 d3g096
+ * @date   2014-10-22 08:31:00 d3g096
  * 
- * @brief  
+ * @brief  Declaration of the abstract BaseMatrixInterface template class. 
  * 
  * 
  */
@@ -25,15 +25,18 @@
 #ifndef _matrix_interface_hpp_
 #define _matrix_interface_hpp_
 
+#include "gridpack/math/implementation_visitable.hpp"
+
 namespace gridpack {
 namespace math {
-
 
 // -------------------------------------------------------------
 //  class BaseMatrixInterface
 // -------------------------------------------------------------
+/// Abstract interface for matrix classes
 template<typename T, typename I = int>
 class BaseMatrixInterface 
+  : public ImplementationVisitable
 {
 public:
 
@@ -42,6 +45,7 @@ public:
 
   /// Default constructor.
   BaseMatrixInterface(void)
+    : ImplementationVisitable()
   {}
 
   /// Destructor
@@ -262,34 +266,34 @@ protected:
   /// Get the number of local rows in this matirx (specialized)
   virtual IdxType p_localCols(void) const = 0;
 
-  /// Set an individual element
+  /// Set an individual element (specialized)
   virtual void p_setElement(const IdxType& i, const IdxType& j, const TheType& x) = 0;
 
-  /// Set an several element
+  /// Set an several element (specialized)
   virtual void p_setElements(const IdxType& n, const IdxType *i, const IdxType *j, 
                              const TheType *x) = 0;
 
-  /// Add to  an individual element
+  /// Add to  an individual element (specialized)
   virtual void p_addElement(const IdxType& i, const IdxType& j, const TheType& x) = 0;
 
-  /// Add to  an several element
+  /// Add to  an several element (specialized)
   virtual void p_addElements(const IdxType& n, const IdxType *i, const IdxType *j, 
                              const TheType *x) = 0;
 
-  /// Get an individual element
+  /// Get an individual element (specialized)
   virtual void p_getElement(const IdxType& i, const IdxType& j, TheType& x) const = 0;
 
-  /// Get an several element
+  /// Get an several element (specialized)
   virtual void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, 
                              TheType *x) const = 0;
 
-  /// Replace all elements with their real parts
+  /// Replace all elements with their real parts (specialized)
   virtual void p_real(void) = 0;
 
-  /// Replace all elements with their imaginary parts
+  /// Replace all elements with their imaginary parts (specialized)
   virtual void p_imaginary(void) = 0;
 
-  /// Replace all elements with their complex gradient
+  /// Replace all elements with their complex gradient (specialized)
   virtual void p_conjugate(void) = 0;
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)

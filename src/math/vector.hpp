@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2014-10-21 11:19:42 d3g096
+ * @date   2014-10-21 14:48:14 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -103,28 +103,6 @@ public:
   ~Vector(void);
 
   //! @cond DEVDOC
-
-  /// Allow visits by implemetation visitor
-  /** 
-   * 
-   * 
-   * @param visitor 
-   */
-  void accept(ImplementationVisitor& visitor)
-  {
-    p_vector_impl->accept(visitor);
-  }
-
-  /// Allow visits by implemetation vistor (no changes to this allowed)
-  /** 
-   * 
-   * 
-   * @param visitor 
-   */
-  void accept(ConstImplementationVisitor& visitor) const
-  {
-    p_vector_impl->accept(visitor);
-  }
 
   //! @endcond
 
@@ -346,6 +324,18 @@ protected:
   /// Make this instance ready to use
   void p_ready(void)
   { p_vector_impl->ready(); }
+
+  /// Allow visits by implemetation visitor
+  void p_accept(ImplementationVisitor& visitor)
+  {
+    p_vector_impl->accept(visitor);
+  }
+
+  /// Allow visits by implemetation vistor (no changes to this allowed)
+  void p_accept(ConstImplementationVisitor& visitor) const
+  {
+    p_vector_impl->accept(visitor);
+  }
 
   /// Is this Vector compatible with this one, throw if not
   /** 
