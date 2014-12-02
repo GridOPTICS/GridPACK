@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2014-03-19 08:29:40 d3g096
+ * @date   2014-11-26 11:13:21 d3g096
  * 
  * @brief  
  * 
@@ -68,6 +68,9 @@ protected:
 
   /// Fill levels to use in decomposition
   int p_fill;
+
+  /// Flag to enable pivoting
+  bool p_pivot;
 
   /// Do what is necessary to build this instance
   void p_build(const std::string& option_prefix);

@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-10-21 13:48:22 d3g096
+ * @date   2014-11-25 07:10:24 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -506,7 +506,7 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
 
   bvector->scale(-1.0);
   bvector->add(*dvector);
-  vnorm = abs(bvector->norm2());
+  vnorm = bvector->norm2();
   
   // norm should be really really small
   BOOST_CHECK(vnorm < delta*delta);

@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2014-07-01 13:40:52 d3g096
+# Last Change: 2014-11-26 08:30:34 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -149,6 +149,28 @@ add_custom_target(small_matrix_solve_input
   ${CMAKE_CURRENT_SOURCE_DIR}/small_matrix_solve.xml
 )
 add_dependencies(small_matrix_solve small_matrix_solve_input)
+
+# -------------------------------------------------------------
+# matrix inverter program (not a unit test)
+# -------------------------------------------------------------
+add_executable(matrix_inverse matrix_inverse.cpp)
+target_link_libraries(matrix_inverse  gridpack_math ${target_libraries})
+add_custom_target(matrix_inverse_input
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+)
+add_dependencies(matrix_inverse matrix_inverse_input)
+
 
 # -------------------------------------------------------------
 # vector test suite
