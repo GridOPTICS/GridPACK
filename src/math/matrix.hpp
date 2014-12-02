@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2014-10-22 08:24:52 d3g096
+ * @date   2014-11-25 14:39:31 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -572,6 +572,9 @@ extern void multiply(const Matrix& A, const Vector& x, Vector& result);
  * @param result same size and distribution as @c x
  */
 extern void transposeMultiply(const Matrix& A, const Vector& x, Vector& result);
+
+/// Create a new matrix and load its contents from the specified (binary) file
+extern Matrix *matrixLoadBinary(const parallel::Communicator&comm, const char *filename);
 
 
 } // namespace math
