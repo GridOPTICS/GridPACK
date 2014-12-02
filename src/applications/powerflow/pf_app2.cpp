@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2014-02-10 12:53:36 d3g096
+ * @date   2014-11-25 07:12:27 d3g096
  * 
  * @brief  
  * 
@@ -113,7 +113,7 @@ struct PFSolverHelper
     Xdelta->equate(Xcur);
     Xdelta->scale(-1.0);
     Xdelta->add(*Xold);
-    double snorm(abs(Xdelta->norm2()));
+    double snorm(Xdelta->norm2());
     if (Xdelta->processor_rank() == 0) {
       std::cout << "PFSolverHelper::update(): solution residual: " << snorm << std::endl;
     }
