@@ -244,7 +244,10 @@ diagonal(const Matrix& A, Vector& result)
   }
 
   if (result.size() != A.rows()) {
-    throw gridpack::Exception("incompatible: sizes do not match");
+    char buf[128];
+    sprintf(buf,"Matrix::diagonal incompatible: sizes do not match."
+        " Matrix rows: %d Vector length: %d",A.rows(),result.size());
+    throw gridpack::Exception(buf);
   }
 
   const Mat *pA(PETScMatrix(A));

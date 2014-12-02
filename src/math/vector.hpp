@@ -235,11 +235,11 @@ protected:
 
   /// Get the global vector length (specialized)
   IdxType p_size(void) const
-  { p_vector_impl->size(); }
+  { return p_vector_impl->size(); }
 
   /// Get the size of the vector local part (specialized)
   IdxType p_localSize(void) const
-  { p_vector_impl->localSize(); }
+  { return p_vector_impl->localSize(); }
 
   /// Get the local min/max global indexes (specialized)
   void p_localIndexRange(IdxType& lo, IdxType& hi) const
