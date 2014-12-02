@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:42:40 d3g096
+ * @date   2014-11-25 14:28:57 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -305,7 +305,7 @@ Matrix::save(const char* filename) const
 }
 
 // -------------------------------------------------------------
-// Vector::loadBinary
+// Matrix::loadBinary
 // -------------------------------------------------------------
 void
 Matrix::loadBinary(const char* filename)
