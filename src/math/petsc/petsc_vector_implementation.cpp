@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2014-10-28 13:09:54 d3g096
+ * @date   2014-10-28 14:26:47 d3g096
  * 
  * @brief  
  * 
@@ -292,6 +292,16 @@ void
 PETScVectorImplementation::p_conjugate(void)
 {
   p_vwrap.conjugate();
+}
+
+
+// -------------------------------------------------------------
+// PETScVectorImplementation::p_exp
+// -------------------------------------------------------------
+void
+PETScVectorImplementation::p_exp(void)
+{
+  p_vwrap.exp();
 }
 
 

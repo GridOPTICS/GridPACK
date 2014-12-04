@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2014-10-28 13:41:59 d3g096
+ * @date   2014-10-28 14:26:10 d3g096
  * 
  * @brief  
  * 
@@ -122,6 +122,9 @@ protected:
 
   /// Replace all elements with their complex conjugate
   void p_conjugate(void);
+
+  /// Replace all elements with its exponential (specialized)
+  void p_exp(void);
 
   // FIXME: more ...
 
