@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:49:28 d3g096
+ * @date   2014-11-25 14:37:07 d3g096
  * 
  * @brief  
  * 
@@ -244,7 +244,10 @@ diagonal(const Matrix& A, Vector& result)
   }
 
   if (result.size() != A.rows()) {
-    throw gridpack::Exception("incompatible: sizes do not match");
+    char buf[128];
+    sprintf(buf,"Matrix::diagonal incompatible: sizes do not match."
+        " Matrix rows: %d Vector length: %d",A.rows(),result.size());
+    throw gridpack::Exception(buf);
   }
 
   const Mat *pA(PETScMatrix(A));
@@ -376,6 +379,43 @@ storageType(const Matrix& A, const Matrix::StorageType& new_type)
 
   return result;
 }
+
+// -------------------------------------------------------------
+// matrixLoadBinary
+// -------------------------------------------------------------
+Matrix *
+matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
+{
+  PetscErrorCode ierr;
+  Matrix *result = NULL;
+  try {
+    Mat mat;
+    ierr = MatCreate(comm, &mat); CHKERRXX(ierr);
+    if (comm.size() == 1) {
+      ierr = MatSetType(mat, MATSEQAIJ); CHKERRXX(ierr);
+    } else {
+      ierr = MatSetType(mat, MATMPIAIJ); CHKERRXX(ierr);
+    }
+    ierr = MatSetFromOptions(mat); CHKERRXX(ierr);
+
+    PetscViewer viewer;
+    ierr = PetscViewerBinaryOpen(comm,
+                                 filename,
+                                 FILE_MODE_READ,
+                                 &viewer); CHKERRXX(ierr);
+    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+    ierr = MatLoad(mat, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+
+    PETScMatrixImplementation *result_impl = 
+      new PETScMatrixImplementation(mat, true);
+    result = new Matrix(result_impl);
+    ierr = MatDestroy(&mat); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}  
 
 } // namespace math
 } // namespace gridpack

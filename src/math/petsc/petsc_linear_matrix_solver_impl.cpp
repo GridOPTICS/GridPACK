@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:43:14 d3g096
+ * @date   2014-11-26 14:24:37 d3g096
  * 
  * @brief  
  * 
@@ -43,9 +43,10 @@ PetscLinearMatrixSolverImplementation::p_supportedOrderingType[] =  {
   MATORDERINGRCM,
   MATORDERINGQMD,
   MATORDERINGROWLENGTH,
+  MATORDERINGWBM,
+  MATORDERINGSPECTRAL,
   MATORDERINGAMD
 };
-
 MatSolverPackage 
 PetscLinearMatrixSolverImplementation::p_supportedSolverPackage[] = {
   MATSOLVERSUPERLU_DIST,
@@ -64,7 +65,7 @@ PetscLinearMatrixSolverImplementation::PetscLinearMatrixSolverImplementation(con
     p_orderingType(MATORDERINGND),
     p_solverPackage(MATSOLVERSUPERLU_DIST),
     p_factorType(MAT_FACTOR_LU),
-    p_fill(5)
+    p_fill(5), p_pivot(false)
 {
   // FIXME: maybe enforce the following: A is square, A uses sparse storage
 }
@@ -76,7 +77,7 @@ PetscLinearMatrixSolverImplementation::~PetscLinearMatrixSolverImplementation(vo
     PetscBool ok;
     ierr = PetscInitialized(&ok);
     if (ok) {
-      ierr = MatDestroy(&p_Fmat);
+      // ierr = MatDestroy(&p_Fmat);
     }
   } catch (...) {
     // just eat it
@@ -124,7 +125,7 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
   if (!found) {
     std::string msg = 
       boost::str(boost::format("%s PETSc configuration: unrecognized \"Ordering\": \"%s\"") %
-                 this->configurationKey() % p_orderingType);
+                 this->configurationKey() % mstr);
     throw Exception(msg);
   }
 
@@ -148,7 +149,7 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
   if (!found) {
     std::string msg = 
       boost::str(boost::format("%s PETSc PETSc configuration: unrecognized \"Package\": \"%s\"") %
-                 this->configurationKey() % p_solverPackage);
+                 this->configurationKey() % mstr);
     throw Exception(msg);
   }
 
@@ -173,6 +174,7 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
   
   if (props) {
     p_fill = props->get("Fill", p_fill);
+    p_pivot = props->get("Pivot", p_pivot);
   }
   if (p_fill <= 0) {
     std::string msg = 
@@ -198,9 +200,10 @@ PetscLinearMatrixSolverImplementation::p_factor(void) const
     MatFactorInfo  info;
     IS perm, iperm;
 
-    ierr = MatGetOrdering(*A, MATORDERINGND, &perm, &iperm); CHKERRXX(ierr);
+    ierr = MatGetOrdering(*A, p_orderingType, &perm, &iperm); CHKERRXX(ierr);
     ierr = MatGetFactor(*A, p_solverPackage, p_factorType, &p_Fmat);CHKERRXX(ierr);
     info.fill = p_fill;
+    info.dtcol = (p_pivot ? 1 : 0);
 
     ierr = MatLUFactorSymbolic(p_Fmat, *A, perm, iperm, &info); CHKERRXX(ierr);
     ierr = MatLUFactorNumeric(p_Fmat, *A, &info); CHKERRXX(ierr);
