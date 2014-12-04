@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created October 28, 2014 by William A. Perkins
-// Last Change: 2014-10-30 11:21:12 d3g096
+// Last Change: 2014-10-30 14:12:46 d3g096
 // -------------------------------------------------------------
 
 
@@ -283,6 +283,20 @@ PetscVectorWrapper::exp(void)
 }  
 
 // -------------------------------------------------------------
+// PetscVectorWrapper::reciprocal
+// -------------------------------------------------------------
+void
+PetscVectorWrapper::reciprocal(void)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = VecReciprocal(p_vector); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
 // PetscVectorWrapper::ready
 // -------------------------------------------------------------
 void
@@ -296,6 +310,91 @@ PetscVectorWrapper::ready(void)
     throw PETScException(ierr, e);
   }
 
+}
+
+// -------------------------------------------------------------
+// petsc_print_vector
+// -------------------------------------------------------------
+static void
+petsc_print_vector(const Vec vec, const char* filename, PetscViewerFormat format)
+{
+  PetscErrorCode ierr;
+  try {
+    PetscViewer viewer;
+    MPI_Comm comm = PetscObjectComm((PetscObject)vec);
+    if (filename != NULL) {
+      ierr = PetscViewerASCIIOpen(comm, filename, &viewer); ; CHKERRXX(ierr);
+    } else {
+      ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
+    }
+    ierr = PetscViewerSetFormat(viewer, format); ; CHKERRXX(ierr);
+    ierr = VecView(vec, viewer); CHKERRXX(ierr);
+    if (filename != NULL) {
+      ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+    }
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PetscVectorWrapper::print
+// -------------------------------------------------------------
+void
+PetscVectorWrapper::print(const char* filename) const
+{
+  petsc_print_vector(p_vector, filename, PETSC_VIEWER_ASCII_INDEX);
+}
+
+// -------------------------------------------------------------
+// PetscVectorWrapper::save
+// -------------------------------------------------------------
+void
+PetscVectorWrapper::save(const char* filename) const
+{
+  petsc_print_vector(p_vector, filename, PETSC_VIEWER_ASCII_MATLAB);
+}
+
+// -------------------------------------------------------------
+// PetscVectorWrapper::loadBinary
+// -------------------------------------------------------------
+void
+PetscVectorWrapper::loadBinary(const char* filename)
+{
+  PetscErrorCode ierr;
+  try {
+    PetscViewer viewer;
+    MPI_Comm comm = PetscObjectComm((PetscObject)p_vector);
+    ierr = PetscViewerBinaryOpen(comm,
+                                 filename,
+                                 FILE_MODE_READ,
+                                 &viewer); CHKERRXX(ierr);
+    ierr = VecLoad(p_vector, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// PetscVectorWrapper::saveBinary
+// -------------------------------------------------------------
+void
+PetscVectorWrapper::saveBinary(const char* filename) const
+{
+  PetscErrorCode ierr;
+  try {
+    PetscViewer viewer;
+    MPI_Comm comm = PetscObjectComm((PetscObject)p_vector);
+    ierr = PetscViewerBinaryOpen(comm,
+                                 filename,
+                                 FILE_MODE_WRITE,
+                                 &viewer); CHKERRXX(ierr);
+    ierr = VecView(p_vector, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
 }
 
 // -------------------------------------------------------------

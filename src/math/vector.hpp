@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2014-10-21 14:48:14 d3g096
+ * @date   2014-10-30 14:20:46 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -27,9 +27,6 @@
 
 namespace gridpack {
 namespace math {
-
-// forward declarations
-class Vector;
 
 // -------------------------------------------------------------
 //  class Vector
@@ -90,7 +87,7 @@ public:
    * 
    * @return new vector instance using the specified implementation
    */
-  explicit Vector(VectorImplementation *vimpl);
+  explicit Vector(VectorImplementation<ComplexType> *vimpl);
 
   /// Destructor
   /** 
@@ -114,71 +111,14 @@ public:
    */
   Vector *clone(void) const
   {
-    VectorImplementation *pimpl_clone = p_vector_impl->clone();
+    VectorImplementation<ComplexType> *pimpl_clone = p_vector_impl->clone();
     Vector *result = new Vector(pimpl_clone);
     return result;
   }
 
-  /// Print to named file or standard output
-  /** 
-   * @e Collective.
-   *
-   * 
-   *
-   * The format is dependent on the specific vector implementation.
-   * 
-   * @param filename optional file
-   */
-  void print(const char* filename = NULL) const;
-
-  /// Save, in MatLAB format, to named file (collective)
-  /** 
-   * @e Collective.
-   *
-   * 
-   * 
-   * @param filename 
-   */
-  void save(const char *filename) const;
-
-  /// Load from a named file of whatever binary format the math library uses
-  /** 
-   * @e Collective.
-   *
-   * The underlying math library generally supports some way to save a
-   * Vector to a file. This will load elements from a file of that
-   * format.
-   * 
-   * @param filename 
-   */
-  void loadBinary(const char *filename);
-
-
-  /// Save to named file in whatever binary format the math library uses
-  /** 
-   * @e Collective.
-   *
-   * The underlying math library generally supports some way to save a
-   * Vector to a file.  This routine uses whatever format that can be
-   * read by ::loadBinary(). 
-   * 
-   * @param filename 
-   */
-  void saveBinary(const char *filename) const;
-
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
-
-  /// Multiply all elements by the specified value
-  /** 
-   * @e Collective.
-   *
-   * 
-   * 
-   * @param x 
-   */
-  void scale(const TheType& x);
 
   /// Add the specified vector
   /** 
@@ -211,15 +151,6 @@ public:
    */
   void equate(const Vector& x);
 
-  /// Replace all elements with their reciprocal
-  /** 
-   * @e Collective.
-   *
-   * 
-   * 
-   */
-  void reciprocal(void);
-
   /// Element-by-element multiply by another Vector
   void elementMultiply(const Vector& x);
 
@@ -231,7 +162,7 @@ public:
 protected:
   
   /// Where stuff really happens
-  boost::scoped_ptr<VectorImplementation> p_vector_impl;
+  boost::scoped_ptr< VectorImplementation<ComplexType> > p_vector_impl;
 
   /// Get the global vector length (specialized)
   IdxType p_size(void) const
@@ -289,6 +220,10 @@ protected:
   void p_fill(const TheType& v)
   { p_vector_impl->fill(v); }
 
+  /// Scale all elements by a single value (specialized)
+  void p_scale(const TheType& x)
+  { p_vector_impl->scale(x); }
+
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   double p_norm1(void) const
   { return p_vector_impl->norm1(); }
@@ -321,9 +256,29 @@ protected:
   void p_exp(void)
   { p_vector_impl->exp(); }
 
-  /// Make this instance ready to use
+  /// Replace all elements with its reciprocal (specialized)
+  void p_reciprocal(void)
+  { p_vector_impl->reciprocal(); }
+
+  /// Make this instance ready to use (specialized)
   void p_ready(void)
   { p_vector_impl->ready(); }
+
+  /// Print to named file or standard output (specialized)
+  void p_print(const char* filename = NULL) const 
+  { p_vector_impl->print(filename); }
+
+  /// Save, in MatLAB format, to named file (collective) (specialized)
+  void p_save(const char *filename) const 
+  { p_vector_impl->save(filename); }
+
+  /// Load from a named file of whatever binary format the math library uses (specialized)
+  void p_loadBinary(const char *filename) 
+  { p_vector_impl->loadBinary(filename); }
+
+  /// Save to named file in whatever binary format the math library uses (specialized)
+  void p_saveBinary(const char *filename) const 
+  { p_vector_impl->saveBinary(filename); }
 
   /// Allow visits by implemetation visitor
   void p_accept(ImplementationVisitor& visitor)
@@ -372,7 +327,12 @@ protected:
  * 
  * @return pointer to new allocated Vector instance
  */
-extern Vector *add(const Vector& A, const Vector& B);
+inline Vector *add(const Vector& A, const Vector& B)
+{
+  Vector *result(A.clone());
+  result->add(B);
+  return result;
+}
 
 /// Subtract two Vector instances and put the result in a new one
 /** 
@@ -390,10 +350,15 @@ extern Vector *add(const Vector& A, const Vector& B);
  * 
  * @return pointer to new allocated Vector instance
  */
-extern Vector *subtract(const Vector& A, const Vector& B);
+// inline Vector *subtract(const Vector& A, const Vector& B);
 
 /// Create a vector containing the absolute value/magnitude of the specified vector
-extern Vector *abs(const Vector& x);
+inline Vector *abs(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->abs();
+  return result;
+}
 
 /// Create a vector containing the real part of the specified vector
 /** 
@@ -403,7 +368,13 @@ extern Vector *abs(const Vector& x);
  *  
  * @return pointer to new vector instance containing real part of @c x
  */
-extern Vector *real(const Vector& x);
+inline Vector *real(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->real();
+  return result;
+}
+
 
 /// Create a vector containing the imaginar part of the specified vector
 /** 
@@ -413,7 +384,12 @@ extern Vector *real(const Vector& x);
  * 
  * @return pointer to new vector instance containing imaginary part of @c x
  */
-extern Vector *imaginary(const Vector& x);
+inline Vector *imaginary(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->imaginary();
+  return result;
+}
 
 /// Create a vector containing the complex conjugate of @c x
 /** 
@@ -423,7 +399,12 @@ extern Vector *imaginary(const Vector& x);
  * 
  * @return pointer to new vector instance containing the complex conjugate of @c x
  */
-extern Vector* conjugate(const Vector& x);
+inline Vector* conjugate(const Vector& x)
+{
+  Vector *result(x.clone());
+  result->conjugate();
+  return result;
+}
 
 
 
@@ -443,7 +424,11 @@ extern Vector* conjugate(const Vector& x);
  * @param B 
  * @param result vector in which to place the sum of @c A and @c B
  */
-extern void add(const Vector& A, const Vector& B, Vector& result);
+inline void add(const Vector& A, const Vector& B, Vector& result)
+{
+  result.equate(A);
+  result.add(B);
+}
 
 
 

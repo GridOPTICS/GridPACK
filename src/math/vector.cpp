@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-10-21 14:49:44 d3g096
+ * @date   2014-10-30 13:23:32 d3g096
  * 
  * @brief  Part of Vector independent of specific implementation
  * 
@@ -29,7 +29,7 @@ namespace math {
 // -------------------------------------------------------------
 // Vector:: constructors / destructor
 // -------------------------------------------------------------
-Vector::Vector(VectorImplementation *vimpl)
+Vector::Vector(VectorImplementation<ComplexType> *vimpl)
   : parallel::WrappedDistributed(vimpl), utility::Uncopyable(),
     p_vector_impl(vimpl)
 {
@@ -53,56 +53,6 @@ Vector::p_checkCompatible(const Vector& x) const
   if (this->size() != x.size()) {
     throw gridpack::Exception("incompatible: sizes do not match");
   }
-}
-
-// -------------------------------------------------------------
-// add
-// -------------------------------------------------------------
-Vector *
-add(const Vector& A, const Vector& B)
-{
-  Vector *result(A.clone());
-  result->add(B);
-  return result;
-}
-
-void
-add(const Vector& A, const Vector& B, Vector& result)
-{
-  result.equate(A);
-  result.add(B);
-}
-
-Vector *
-abs(const Vector& x)
-{
-  Vector *result(x.clone());
-  result->abs();
-  return result;
-}
-
-Vector *
-real(const Vector& x)
-{
-  Vector *result(x.clone());
-  result->real();
-  return result;
-}
-
-Vector *
-imaginary(const Vector& x)
-{
-  Vector *result(x.clone());
-  result->imaginary();
-  return result;
-}
-
-Vector *
-conjugate(const Vector& x)
-{
-  Vector *result(x.clone());
-  result->conjugate();
-  return result;
 }
 
 } // namespace math

@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created October 24, 2014 by William A. Perkins
-// Last Change: 2014-10-30 11:20:35 d3g096
+// Last Change: 2014-10-30 14:14:53 d3g096
 // -------------------------------------------------------------
 
 
@@ -120,8 +120,23 @@ public:
   /// Replace all elements with its exponential
   void exp(void);
 
+  /// Replace all elements with its reciprocal
+  void reciprocal(void);
+
   /// Make this instance ready to use
   void ready(void);
+
+  /// Print to named file or standard output
+  void print(const char* filename = NULL) const;
+
+  /// Save, in MatLAB format, to named file (collective)
+  void save(const char *filename) const;
+
+  /// Load from a named file of whatever binary format the math library uses
+  void loadBinary(const char *filename);
+
+  /// Save to named file in whatever binary format the math library uses
+  void saveBinary(const char *filename) const;
 
 protected:
 

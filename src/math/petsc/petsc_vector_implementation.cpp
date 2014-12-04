@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2014-10-30 11:59:30 d3g096
+ * @date   2014-10-30 12:07:12 d3g096
  * 
  * @brief  
  * 
@@ -16,11 +16,7 @@
  */
 // -------------------------------------------------------------
 
-#include <petscsys.h>
-#include "implementation_visitor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
-#include "petsc/petsc_exception.hpp"
-#include "petsc/petsc_vector_extractor.hpp"
 
 namespace gridpack {
 namespace math {

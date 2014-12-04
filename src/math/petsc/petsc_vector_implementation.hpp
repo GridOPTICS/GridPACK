@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2014-10-30 11:55:25 d3g096
+ * @date   2014-10-30 14:19:21 d3g096
  * 
  * @brief  
  * 
@@ -35,9 +35,13 @@ namespace math {
  * 
  * 
  */
+template <typename T>
 class PETScVectorImplementation 
-  : public VectorImplementation {
+  : public VectorImplementation<T> {
 public:
+
+  typedef typename VectorImplementation<T>::IdxType IdxType;
+  typedef typename VectorImplementation<T>::TheType TheType;
 
   /// Default constructor.
   /** 
@@ -50,12 +54,12 @@ public:
    */
   PETScVectorImplementation(const parallel::Communicator& comm,
                             const IdxType& local_length)
-    : VectorImplementation(comm), p_vwrap(comm, local_length)
+    : VectorImplementation<T>(comm), p_vwrap(comm, local_length)
   { }
 
   /// Construct from an existing PETSc vector
   PETScVectorImplementation(Vec& pvec, const bool& copyvec = true)
-    : VectorImplementation(PetscVectorWrapper::getCommunicator(pvec)), 
+    : VectorImplementation<T>(PetscVectorWrapper::getCommunicator(pvec)), 
       p_vwrap(pvec, copyvec)
   { }
 
@@ -220,6 +224,18 @@ protected:
     }
   }  
 
+  /// Scale all elements by a single value
+  void p_scale(const TheType& x)
+  {
+    Vec *vec = p_vwrap.getVector();
+    PetscErrorCode ierr(0);
+    try {
+      ierr = VecScale(*vec, x); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   double p_norm1(void) const
   {
@@ -256,6 +272,12 @@ protected:
     p_vwrap.exp();
   }
 
+  /// Replace all elements with its reciprocal (specialized)
+  void p_reciprocal(void)
+  {
+    p_vwrap.reciprocal();
+  }
+
   /// Make this instance ready to use
   void p_ready(void)
   {
@@ -268,6 +290,30 @@ protected:
     p_vwrap.accept(visitor);
   }
 
+  /// Print to named file or standard output (specialized)
+  void p_print(const char* filename = NULL) const 
+  { 
+    p_vwrap.print(filename); 
+  }
+
+  /// Save, in MatLAB format, to named file (collective) (specialized)
+  void p_save(const char *filename) const 
+  { 
+    p_vwrap.save(filename); 
+  }
+
+  /// Load from a named file of whatever binary format the math library uses (specialized)
+  void p_loadBinary(const char *filename) 
+  { 
+    p_vwrap.loadBinary(filename); 
+  }
+
+  /// Save to named file in whatever binary format the math library uses (specialized)
+  void p_saveBinary(const char *filename) const 
+  { 
+    p_vwrap.saveBinary(filename); 
+  }
+
   /// Allow visits by implemetation visitor
   void p_accept(ConstImplementationVisitor& visitor) const
   {
@@ -275,13 +321,13 @@ protected:
   }
 
   /// Make an exact replica of this instance (specialized)
-  VectorImplementation *p_clone(void) const
+  VectorImplementation<T> *p_clone(void) const
   {
     parallel::Communicator comm(this->communicator());
     IdxType local_size(this->localSize());
     
-    PETScVectorImplementation *result = 
-      new PETScVectorImplementation(comm, local_size);
+    PETScVectorImplementation<T> *result = 
+      new PETScVectorImplementation<T>(comm, local_size);
     PetscErrorCode ierr;
     
     Vec *to_vec(result->p_vwrap.getVector());

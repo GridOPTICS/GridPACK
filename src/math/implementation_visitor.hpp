@@ -9,7 +9,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2014-10-30 11:22:21 d3g096
+ * @date   2014-10-30 12:17:07 d3g096
  * 
  * @brief  
  * 
@@ -31,7 +31,6 @@ namespace gridpack {
 namespace math {
 
 class MatrixImplementation;
-class VectorImplementation;
 class LinearSolverImplementation;
 
 class PetscVectorWrapper;
@@ -60,7 +59,6 @@ public:
   virtual ~ImplementationVisitor(void);
 
   /// The default visit (should just assert or do nothing)
-  virtual void visit(VectorImplementation&);
   virtual void visit(PetscVectorWrapper&);
 
   virtual void visit(MatrixImplementation&);
@@ -92,7 +90,6 @@ public:
   virtual ~ConstImplementationVisitor(void);
 
   /// The default visit, const version (should just assert or do nothing)
-  virtual void visit(const VectorImplementation&);
   virtual void visit(const PetscVectorWrapper&);
 
   virtual void visit(const MatrixImplementation&);

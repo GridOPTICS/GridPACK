@@ -8,7 +8,7 @@
 /**
  * @file   vector_implementation.cpp
  * @author William A. Perkins
- * @date   2014-10-30 09:29:47 d3g096
+ * @date   2014-10-30 12:06:15 d3g096
  * 
  * @brief  
  * 
@@ -28,54 +28,9 @@ stupid_exp(const gridpack::ComplexType& x)
 
 
 #include "vector_implementation.hpp"
-#include <cmath>
-#include <vector>
-#include <boost/iterator/counting_iterator.hpp>
 
 namespace gridpack {
 namespace math {
-
-
-// -------------------------------------------------------------
-//  class VectorImplementation
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// VectorImplementation::p_exp
-// -------------------------------------------------------------
-inline void
-VectorImplementation::p_exp(void)
-{
-  int lo, hi;
-  this->localIndexRange(lo, hi);
-  std::vector<ComplexType> x(hi-lo);
-  this->getElementRange(lo, hi, &x[0]);
-  for (std::vector<ComplexType>::iterator i = x.begin();
-       i != x.end(); ++i) {
-    ComplexType x(*i);
-    *i = stupid_exp(x);
-  }
-  this->setElementRange(lo, hi, &x[0]);
-  this->ready();
-}
-
-// -------------------------------------------------------------
-// VectorImplementation::p_conjugate
-// -------------------------------------------------------------
-inline void
-VectorImplementation::p_conjugate(void)
-{
-  int lo, hi;
-  this->localIndexRange(lo, hi);
-  std::vector<ComplexType> x(hi-lo);
-  this->getElementRange(lo, hi, &x[0]);
-  for (std::vector<ComplexType>::iterator i = x.begin();
-       i != x.end(); ++i) {
-    *i = conj(*i);
-  }
-  this->setElementRange(lo, hi, &x[0]);
-  this->ready();
-}
 
 
 } // namespace math
