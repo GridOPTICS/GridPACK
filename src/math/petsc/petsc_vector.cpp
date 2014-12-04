@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:44:17 d3g096
+ * @date   2014-10-28 13:43:21 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -45,7 +45,7 @@ Vector::Vector(const parallel::Communicator& comm, const int& local_length)
 // Vector::scale
 // -------------------------------------------------------------
 void 
-Vector::scale(const ComplexType& x)
+Vector::scale(const Vector::TheType& x)
 {
   Vec *vec(PETScVector(*this));
   PetscErrorCode ierr(0);
@@ -60,7 +60,7 @@ Vector::scale(const ComplexType& x)
 // Vector::add
 // -------------------------------------------------------------
 void
-Vector::add(const Vector& x, const ComplexType& scale)
+Vector::add(const Vector& x, const Vector::TheType& scale)
 {
   this->p_checkCompatible(x);
   PetscErrorCode ierr(0);
@@ -77,7 +77,7 @@ Vector::add(const Vector& x, const ComplexType& scale)
 }
 
 void
-Vector::add(const ComplexType& x)
+Vector::add(const Vector::TheType& x)
 {
   Vec *vec(PETScVector(*this));
   PetscErrorCode ierr(0);

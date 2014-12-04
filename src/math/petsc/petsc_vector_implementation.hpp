@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2014-10-21 09:30:52 d3g096
+ * @date   2014-10-28 13:41:59 d3g096
  * 
  * @brief  
  * 
@@ -20,8 +20,8 @@
 #ifndef _petsc_vector_implementation_h_
 #define _petsc_vector_implementation_h_
 
-#include <petscvec.h>
 #include "vector_implementation.hpp"
+#include "petsc/petsc_vector_wrapper.hpp"
 
 namespace gridpack {
 namespace math {
@@ -62,33 +62,15 @@ public:
 
   /// Get (a pointer to) the PETSc implementation
 
-  const Vec *getVector(void) const
-  {
-    return &p_vector;
-  }
+  const Vec *getVector(void) const;
 
   /// Get (a pointer to) the PETSc implementation
-  Vec *getVector(void)
-  {
-    return &p_vector;
-  }
+  Vec *getVector(void);
 
 protected:
-
-  /// Extract a Communicator from a PETSc vector
-  static parallel::Communicator p_getCommunicator(const Vec& v);
-
-  /// Minimum global index on this processor
-  IdxType p_minIndex;
-
-  /// Maximum global index on this processor
-  IdxType p_maxIndex;
-
-  /// The PETSc representation
-  Vec p_vector;
-
-  /// Was @c p_vector created or just wrapped
-  bool p_vectorWrapped;
+  
+  /// Where the actual vector is stored
+  PetscVectorWrapper p_vwrap;
 
   /// Get the global vector length
   IdxType p_size(void) const;
@@ -125,9 +107,6 @@ protected:
 
   /// Make all the elements the specified value (specialized)
   void p_fill(const TheType& v);
-
-  /// Common method to compute norms 
-  double p_norm(const NormType& t) const;
 
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   double p_norm1(void) const;
