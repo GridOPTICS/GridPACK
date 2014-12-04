@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created October 24, 2014 by William A. Perkins
-// Last Change: 2014-10-28 12:46:39 d3g096
+// Last Change: 2014-10-30 11:20:35 d3g096
 // -------------------------------------------------------------
 
 
@@ -17,6 +17,7 @@
 
 #include <petscvec.h>
 #include "parallel/communicator.hpp"
+#include "implementation_visitable.hpp"
 
 namespace gridpack {
 namespace math {
@@ -28,7 +29,9 @@ namespace math {
  * Provide numeric type independent access to a PETSc Vec instance.
  * 
  */
-class PetscVectorWrapper {
+class PetscVectorWrapper 
+  : public ImplementationVisitable
+{
 public:
 
   /// Default constructor.
@@ -136,6 +139,12 @@ protected:
 
   /// Compute Vec norm in the specified way
   double p_norm(const NormType& t) const;
+
+  /// Allow visits by implemetation visitor
+  void p_accept(ImplementationVisitor& visitor);
+
+  /// Allow visits by implemetation visitor
+  void p_accept(ConstImplementationVisitor& visitor) const;
 
 };
 

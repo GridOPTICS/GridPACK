@@ -8,7 +8,7 @@
 /**
  * @file   implementation_visitor.cpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:00 d3g096
+ * @date   2014-10-30 11:22:45 d3g096
  * 
  * @brief  
  * 
@@ -54,7 +54,7 @@ ImplementationVisitor::visit(VectorImplementation&)
 }
 
 void 
-ImplementationVisitor::visit(PETScVectorImplementation&)
+ImplementationVisitor::visit(PetscVectorWrapper&)
 {
   BOOST_ASSERT(false);
 }
@@ -109,7 +109,7 @@ ConstImplementationVisitor::visit(const VectorImplementation&)
 }
 
 void 
-ConstImplementationVisitor::visit(const PETScVectorImplementation&)
+ConstImplementationVisitor::visit(const PetscVectorWrapper&)
 {
   BOOST_ASSERT(false);
 }

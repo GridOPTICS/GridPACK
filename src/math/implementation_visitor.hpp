@@ -9,7 +9,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:07 d3g096
+ * @date   2014-10-30 11:22:21 d3g096
  * 
  * @brief  
  * 
@@ -34,7 +34,7 @@ class MatrixImplementation;
 class VectorImplementation;
 class LinearSolverImplementation;
 
-class PETScVectorImplementation;
+class PetscVectorWrapper;
 class PETScMatrixImplementation;
 class PETScLinearSolverImplementation;
 
@@ -61,7 +61,7 @@ public:
 
   /// The default visit (should just assert or do nothing)
   virtual void visit(VectorImplementation&);
-  virtual void visit(PETScVectorImplementation&);
+  virtual void visit(PetscVectorWrapper&);
 
   virtual void visit(MatrixImplementation&);
   virtual void visit(PETScMatrixImplementation&);
@@ -93,7 +93,7 @@ public:
 
   /// The default visit, const version (should just assert or do nothing)
   virtual void visit(const VectorImplementation&);
-  virtual void visit(const PETScVectorImplementation&);
+  virtual void visit(const PetscVectorWrapper&);
 
   virtual void visit(const MatrixImplementation&);
   virtual void visit(const PETScMatrixImplementation&);

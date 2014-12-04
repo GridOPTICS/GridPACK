@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_extractor.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:25:32 d3g096
+ * @date   2014-10-30 11:27:34 d3g096
  * 
  * @brief  
  * 
@@ -22,7 +22,7 @@
 
 #include "gridpack/utilities/uncopyable.hpp"
 #include "vector.hpp"
-#include "petsc/petsc_vector_implementation.hpp"
+#include "petsc/petsc_vector_wrapper.hpp"
 #include "implementation_visitor.hpp"
 
 namespace gridpack {
@@ -45,9 +45,9 @@ public:
   ~PETScVectorExtractor(void) {}
 
   /// Get the vector
-  void visit(PETScVectorImplementation& petsc_impl)
+  void visit(PetscVectorWrapper& petsc_wrap)
   {
-    p_vector = petsc_impl.getVector();
+    p_vector = petsc_wrap.getVector();
   }
 
   Vec *vector(void)
@@ -80,9 +80,9 @@ public:
   ~PETScConstVectorExtractor(void) {}
 
   /// Get the vector
-  void visit(const PETScVectorImplementation& petsc_impl) 
+  void visit(const PetscVectorWrapper& petsc_wrap) 
   {
-    p_vector = petsc_impl.getVector();
+    p_vector = petsc_wrap.getVector();
   }
 
   const Vec *vector(void)

@@ -7,12 +7,13 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created October 28, 2014 by William A. Perkins
-// Last Change: 2014-10-28 13:13:28 d3g096
+// Last Change: 2014-10-30 11:21:12 d3g096
 // -------------------------------------------------------------
 
 
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_vector_wrapper.hpp"
+#include "implementation_visitor.hpp"
 
 namespace gridpack {
 namespace math {
@@ -295,6 +296,21 @@ PetscVectorWrapper::ready(void)
     throw PETScException(ierr, e);
   }
 
+}
+
+// -------------------------------------------------------------
+// PetscVectorWrapper::p_accept
+// -------------------------------------------------------------
+void 
+PetscVectorWrapper::p_accept(ImplementationVisitor& visitor)
+{
+  visitor.visit(*this);
+}
+
+void 
+PetscVectorWrapper::p_accept(ConstImplementationVisitor& visitor) const
+{
+  visitor.visit(*this);
 }
 
 
