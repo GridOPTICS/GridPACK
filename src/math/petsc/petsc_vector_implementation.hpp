@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2014-10-30 14:19:21 d3g096
+ * @date   2014-11-03 12:09:20 d3g096
  * 
  * @brief  
  * 
@@ -35,13 +35,13 @@ namespace math {
  * 
  * 
  */
-template <typename T>
+template <typename T, typename I = int>
 class PETScVectorImplementation 
-  : public VectorImplementation<T> {
+  : public VectorImplementation<T, I> {
 public:
 
-  typedef typename VectorImplementation<T>::IdxType IdxType;
-  typedef typename VectorImplementation<T>::TheType TheType;
+  typedef typename VectorImplementation<T, I>::IdxType IdxType;
+  typedef typename VectorImplementation<T, I>::TheType TheType;
 
   /// Default constructor.
   /** 
@@ -69,19 +69,6 @@ public:
    * 
    */
   ~PETScVectorImplementation(void) {}
-
-  // /// Get (a pointer to) the PETSc implementation
-
-  // const Vec *getVector(void) const
-  // {
-  //   return p_vwrap.getVector();
-  // }
-
-  // /// Get (a pointer to) the PETSc implementation
-  // Vec *getVector(void)
-  // {
-  //   return p_vwrap.getVector();
-  // }
 
 protected:
   
@@ -121,7 +108,8 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      ierr = VecSetValue(*v, i, x, INSERT_VALUES); CHKERRXX(ierr);
+      PetscScalar px(x);
+      ierr = VecSetValue(*v, i, px, INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -145,7 +133,8 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      ierr = VecSetValue(*v, i, x, ADD_VALUES); CHKERRXX(ierr);
+      PetscScalar px(x);
+      ierr = VecSetValue(*v, i, px, ADD_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -230,7 +219,8 @@ protected:
     Vec *vec = p_vwrap.getVector();
     PetscErrorCode ierr(0);
     try {
-      ierr = VecScale(*vec, x); CHKERRXX(ierr);
+      PetscScalar px(x);
+      ierr = VecScale(*vec, px); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }

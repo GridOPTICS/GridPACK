@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2014-12-04 14:29:19 d3g096
+ * @date   2014-12-04 14:37:17 d3g096
  * 
  * @brief  
  * 
@@ -39,16 +39,16 @@ class ConstImplementationVisitor;
 // -------------------------------------------------------------
 //  class VectorImplementation
 // -------------------------------------------------------------
-template <typename T>
+template <typename T, typename I = int>
 class VectorImplementation 
   : private utility::Uncopyable,
     public parallel::Distributed,
-    public BaseVectorInterface<T>
+    public BaseVectorInterface<T, I>
 {
 public:
 
-  typedef typename BaseVectorInterface<T>::IdxType IdxType;
-  typedef typename BaseVectorInterface<T>::TheType TheType;
+  typedef typename BaseVectorInterface<T, I>::IdxType IdxType;
+  typedef typename BaseVectorInterface<T, I>::TheType TheType;
 
   /// Default constructor.
   VectorImplementation(const parallel::Communicator& comm)
@@ -113,9 +113,9 @@ protected:
   {
     int lo, hi;
     this->localIndexRange(lo, hi);
-    std::vector<ComplexType> x(hi-lo);
+    std::vector<TheType> x(hi-lo);
     this->getElementRange(lo, hi, &x[0]);
-    for (std::vector<ComplexType>::iterator i = x.begin();
+    for (typename std::vector<TheType>::iterator i = x.begin();
          i != x.end(); ++i) {
       *i = imag(*i);
     }

@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2014-10-30 14:20:46 d3g096
+ * @date   2014-11-03 14:46:15 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -24,19 +24,20 @@
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/math/vector_implementation.hpp>
+#include <gridpack/utilities/exception.hpp>
 
 namespace gridpack {
 namespace math {
 
 // -------------------------------------------------------------
-//  class Vector
+//  class VectorT
 // -------------------------------------------------------------
 /// A parallel or serial vector of values
 /**
  * This class encapsulates a vector of values.  
  * 
- * When a Vector is instantiated it is ready to be filled using calls
- * to methods like setElement().  When the Vector is filled, all
+ * When a VectorT is instantiated it is ready to be filled using calls
+ * to methods like setElement().  When the VectorT is filled, all
  * processors must be notified that it is ready to use with a call to
  * ready().  
  *
@@ -54,12 +55,21 @@ namespace math {
  * specific \ref VectorImplementation "implementation".
  * 
  */
-class Vector 
+template <typename T, typename I = int>
+class VectorT
   : public parallel::WrappedDistributed,
     private utility::Uncopyable,
-    public BaseVectorInterface<ComplexType>
+    public BaseVectorInterface<T, I>
 {
+protected:
+
+  /// The implementation type for this 
+  typedef class VectorImplementation<T, I> ImplType;
+  
 public:
+
+  typedef typename BaseVectorInterface<T, I>::IdxType IdxType;
+  typedef typename BaseVectorInterface<T, I>::TheType TheType;
 
   /// Default constructor.
   /** 
@@ -75,7 +85,7 @@ public:
    * 
    * @return empty vector instance
    */
-  Vector(const parallel::Communicator& comm, const int& local_length);
+  VectorT(const parallel::Communicator& comm, const int& local_length);
 
   /// Constuct with an existing implementation
   /** 
@@ -87,7 +97,11 @@ public:
    * 
    * @return new vector instance using the specified implementation
    */
-  explicit Vector(VectorImplementation<ComplexType> *vimpl);
+  explicit VectorT(ImplType *vimpl)
+    : parallel::WrappedDistributed(vimpl), utility::Uncopyable(),
+      p_vector_impl(vimpl)
+  { }
+
 
   /// Destructor
   /** 
@@ -97,7 +111,8 @@ public:
    * involved in the \ref parallel::Communicator "communicator" used
    * to instantiate it.
    */
-  ~Vector(void);
+  ~VectorT(void)
+  { }
 
   //! @cond DEVDOC
 
@@ -109,10 +124,10 @@ public:
    *
    * @return 
    */
-  Vector *clone(void) const
+  VectorT *clone(void) const
   {
-    VectorImplementation<ComplexType> *pimpl_clone = p_vector_impl->clone();
-    Vector *result = new Vector(pimpl_clone);
+    ImplType *pimpl_clone = p_vector_impl->clone();
+    VectorT *result = new VectorT(pimpl_clone);
     return result;
   }
 
@@ -129,7 +144,7 @@ public:
    * @param x 
    * @param scale 
    */
-  void add(const Vector& x, const TheType& scale = 1.0);
+  void add(const VectorT& x, const TheType& scale = 1.0);
 
   /// Add the specified value to all elements
   /** 
@@ -149,20 +164,20 @@ public:
    * 
    * @param x 
    */
-  void equate(const Vector& x);
+  void equate(const VectorT& x);
 
   /// Element-by-element multiply by another Vector
-  void elementMultiply(const Vector& x);
+  void elementMultiply(const VectorT& x);
 
   /// ELement-by-element divide by another Vector
-  void elementDivide(const Vector& x);
+  void elementDivide(const VectorT& x);
 
   // friend Vector *reorder(const Vector& A, const Reordering& r);
 
 protected:
-  
+
   /// Where stuff really happens
-  boost::scoped_ptr< VectorImplementation<ComplexType> > p_vector_impl;
+  boost::scoped_ptr<ImplType> p_vector_impl;
 
   /// Get the global vector length (specialized)
   IdxType p_size(void) const
@@ -304,7 +319,16 @@ protected:
    * 
    * @param x vector to check
    */
-  void p_checkCompatible(const Vector& x) const;
+  void p_checkCompatible(const VectorT& x) const
+  {
+    // if (this->communicator() != x.communicator()) {
+    //   throw gridpack::Exception("incompatible: communicators do not match");
+    // }
+
+    if (this->size() != x.size()) {
+      throw gridpack::Exception("incompatible: sizes do not match");
+    }
+  }
 };
 
 // -------------------------------------------------------------
@@ -327,9 +351,10 @@ protected:
  * 
  * @return pointer to new allocated Vector instance
  */
-inline Vector *add(const Vector& A, const Vector& B)
+template <typename T, typename I>
+VectorT<T, I> *add(const VectorT<T, I>& A, const VectorT<T, I>& B)
 {
-  Vector *result(A.clone());
+  VectorT<T, I> *result(A.clone());
   result->add(B);
   return result;
 }
@@ -353,9 +378,10 @@ inline Vector *add(const Vector& A, const Vector& B)
 // inline Vector *subtract(const Vector& A, const Vector& B);
 
 /// Create a vector containing the absolute value/magnitude of the specified vector
-inline Vector *abs(const Vector& x)
+template <typename T, typename I>
+VectorT<T, I> *abs(const VectorT<T, I>& x)
 {
-  Vector *result(x.clone());
+  VectorT<T, I> *result(x.clone());
   result->abs();
   return result;
 }
@@ -368,9 +394,10 @@ inline Vector *abs(const Vector& x)
  *  
  * @return pointer to new vector instance containing real part of @c x
  */
-inline Vector *real(const Vector& x)
+template <typename T, typename I>
+VectorT<T, I> *real(const VectorT<T, I>& x)
 {
-  Vector *result(x.clone());
+  VectorT<T, I> *result(x.clone());
   result->real();
   return result;
 }
@@ -384,9 +411,10 @@ inline Vector *real(const Vector& x)
  * 
  * @return pointer to new vector instance containing imaginary part of @c x
  */
-inline Vector *imaginary(const Vector& x)
+template <typename T, typename I>
+VectorT<T, I> *imaginary(const VectorT<T, I>& x)
 {
-  Vector *result(x.clone());
+  VectorT<T, I> *result(x.clone());
   result->imaginary();
   return result;
 }
@@ -399,14 +427,13 @@ inline Vector *imaginary(const Vector& x)
  * 
  * @return pointer to new vector instance containing the complex conjugate of @c x
  */
-inline Vector* conjugate(const Vector& x)
+template <typename T, typename I>
+VectorT<T, I>* conjugate(const VectorT<T, I>& x)
 {
-  Vector *result(x.clone());
+  VectorT<T, I> *result(x.clone());
   result->conjugate();
   return result;
 }
-
-
 
 // -------------------------------------------------------------
 // Vector Operations (results into existing instances)
@@ -424,13 +451,16 @@ inline Vector* conjugate(const Vector& x)
  * @param B 
  * @param result vector in which to place the sum of @c A and @c B
  */
-inline void add(const Vector& A, const Vector& B, Vector& result)
+template <typename T, typename I>
+void add(const VectorT<T, I>& A, const VectorT<T, I>& B, VectorT<T, I>& result)
 {
   result.equate(A);
   result.add(B);
 }
 
 
+typedef class VectorT<ComplexType> Vector;
+typedef class VectorT<double> RealVector;
 
 } // namespace utility
 } // namespace gridpack

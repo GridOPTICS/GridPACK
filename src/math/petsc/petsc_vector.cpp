@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-10-30 14:13:18 d3g096
+ * @date   2014-11-03 14:47:30 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -30,22 +30,26 @@ namespace math {
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
-// Vector:: constructors / destructor
+// VectorT:: constructors / destructor
 // -------------------------------------------------------------
-Vector::Vector(const parallel::Communicator& comm, const int& local_length)
+template <typename T, typename I>
+VectorT<T, I>::VectorT(const parallel::Communicator& comm, const int& local_length)
   : parallel::WrappedDistributed(), utility::Uncopyable()
 {
-  PETScVectorImplementation<ComplexType> *impl = 
-    new PETScVectorImplementation<ComplexType>(comm, local_length);
+  PETScVectorImplementation<T, I> *impl = 
+    new PETScVectorImplementation<T, I>(comm, local_length);
   p_vector_impl.reset(impl);
   p_setDistributed(impl);
 }
+template VectorT<ComplexType>::VectorT(const parallel::Communicator& comm, 
+                                       const int& local_length);
 
 // -------------------------------------------------------------
-// Vector::add
+// VectorT::add
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Vector::add(const Vector& x, const Vector::TheType& scale)
+VectorT<T, I>::add(const VectorT<T, I>& x, const VectorT<T, I>::TheType& scale)
 {
   this->p_checkCompatible(x);
   PetscErrorCode ierr(0);
@@ -61,8 +65,14 @@ Vector::add(const Vector& x, const Vector::TheType& scale)
   }
 }
 
+template void VectorT<ComplexType>::add(const VectorT<ComplexType>& x, 
+                                        const typename VectorT<ComplexType>::TheType& scale);
+template void VectorT<double>::add(const VectorT<double>& x, 
+                                   const typename VectorT<double>::TheType& scale);
+
+template <typename T, typename I>
 void
-Vector::add(const Vector::TheType& x)
+VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
 {
   Vec *vec(PETScVector(*this));
   PetscErrorCode ierr(0);
@@ -73,12 +83,15 @@ Vector::add(const Vector::TheType& x)
   }
 }
 
+template void VectorT<ComplexType, int>::add(const typename VectorT<ComplexType>::TheType& x);
+template void VectorT<double, int>::add(const typename VectorT<double>::TheType& x);
 
 // -------------------------------------------------------------
-// Vector::equate
+// VectorT::equate
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Vector::equate(const Vector& x)
+VectorT<T, I>::equate(const VectorT<T, I>& x)
 {
   this->p_checkCompatible(x);
   PetscErrorCode ierr(0);
@@ -91,11 +104,16 @@ Vector::equate(const Vector& x)
   }
 }
 
+template void VectorT<ComplexType, int>::equate(const VectorT<ComplexType>& x);
+template void VectorT<double, int>::equate(const VectorT<double>& x);
+
+
 // -------------------------------------------------------------
-// Vector::elementMultiply
+// VectorT::elementMultiply
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Vector::elementMultiply(const Vector& x)
+VectorT<T, I>::elementMultiply(const VectorT<T, I>& x)
 {
   Vec *vec(PETScVector(*this));
   const Vec *xvec(PETScVector(x));
@@ -107,11 +125,15 @@ Vector::elementMultiply(const Vector& x)
   }
 }  
 
+template void VectorT<ComplexType, int>::elementMultiply(const VectorT<ComplexType>& x);
+template void VectorT<double, int>::elementMultiply(const VectorT<double>& x);
+
 // -------------------------------------------------------------
-// Vector::elementDivide
+// VectorT::elementDivide
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Vector::elementDivide(const Vector& x)
+VectorT<T, I>::elementDivide(const VectorT<T, I>& x)
 {
   Vec *vec(PETScVector(*this));
   const Vec *xvec(PETScVector(x));
@@ -122,6 +144,9 @@ Vector::elementDivide(const Vector& x)
     throw PETScException(ierr, e);
   }
 }  
+
+template void VectorT<ComplexType, int>::elementDivide(const VectorT<ComplexType> &x);
+template void VectorT<double, int>::elementDivide(const VectorT<double> &x);
 
 
 } // namespace math

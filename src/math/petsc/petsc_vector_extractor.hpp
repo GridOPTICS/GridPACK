@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_extractor.hpp
  * @author William A. Perkins
- * @date   2014-10-30 11:27:34 d3g096
+ * @date   2014-11-03 14:51:00 d3g096
  * 
  * @brief  
  * 
@@ -101,8 +101,9 @@ protected:
 // PETScVector
 // -------------------------------------------------------------
 /// Get a PETSc vector from a Vector
-inline Vec *
-PETScVector(Vector& A)
+template <typename T, typename I>
+Vec *
+PETScVector(VectorT<T, I>& A)
 {
   Vec *result(NULL);
   PETScVectorExtractor extract;
@@ -117,8 +118,9 @@ PETScVector(Vector& A)
 }
 
 /// Get a (const) PETSc vector from a Vector
-inline const Vec *
-PETScVector(const Vector& A)
+template <typename T, typename I>
+const Vec *
+PETScVector(const VectorT<T, I>& A)
 {
   const Vec *result(NULL);
   PETScConstVectorExtractor extract;
