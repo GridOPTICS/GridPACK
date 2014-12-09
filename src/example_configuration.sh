@@ -23,9 +23,9 @@ if [ $host == "flophouse" ]; then
     export CC
     CXX="$prefix/bin/g++"
     export CXX
-    CFLAGS="-pthread"
+    CFLAGS="-pthread -Wall -Wno-unused-but-set-variable"
     export CFLAGS
-    CXXFLAGS="-pthread"
+    CXXFLAGS="-pthread -Wall -Wno-unused-but-set-variable"
     export CXXFLAGS
 
     cmake -Wdev --debug-trycompile \

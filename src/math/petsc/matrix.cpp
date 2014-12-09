@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-11-25 14:28:57 d3g096
+ * @date   2014-12-09 10:36:39 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -269,6 +269,8 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
                                     "# ---- -------- --------\n");  CHKERRXX(ierr);
       ierr = PetscViewerASCIIPrintf(viewer, "# %4d %8d %8d\n", 
                                     nproc, grow, gcol);  CHKERRXX(ierr);
+    default:
+      break;
     }
     ierr = MatView(mat, viewer); CHKERRXX(ierr);
     if (filename != NULL) {

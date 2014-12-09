@@ -7,7 +7,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-26 15:26:04 d3g096
+ * @date   2014-12-09 09:51:37 d3g096
  * 
  * @brief  
  * 
@@ -183,7 +183,7 @@ GraphPartitionerImplementation::partition(void)
 
   std::vector<int> nodeidx(locnodes);
   std::vector<int *> stupid(locnodes);
-  for (Index n = 0; n < locnodes; ++n) {
+  for (Index n = 0; n < static_cast<Index>(locnodes); ++n) {
     nodeidx[n] = p_adjacency_list.node_index(n);
     stupid[n] = &nodeidx[n];
   }
@@ -220,7 +220,7 @@ GraphPartitionerImplementation::partition(void)
   stupid.resize(locedges);
   std::vector<int> e1dest(locedges);
 
-  for (Index e = 0; e < locedges; ++e) {
+  for (Index e = 0; e < static_cast<Index>(locedges); ++e) {
     Index n1, n2;
     p_adjacency_list.edge(e, n1, n2);
     nodeidx[e] = std::min(n1, n2);
@@ -230,7 +230,7 @@ GraphPartitionerImplementation::partition(void)
   node_dest->gather(&e1dest[0], &stupid[0], locedges);
 
   if (verbose) {
-    for (Index e = 0; e < locedges; ++e) {
+    for (Index e = 0; e < static_cast<Index>(locedges); ++e) {
       Index n1, n2;
       p_adjacency_list.edge(e, n1, n2);
       std::cout << processor_rank() << ": active edge " << e
@@ -251,7 +251,7 @@ GraphPartitionerImplementation::partition(void)
   if (timer != NULL) timer->start(t_gedge_dest);
 
   std::vector<int> e2dest(locedges);
-  for (Index e = 0; e < locedges; ++e) {
+  for (Index e = 0; e < static_cast<Index>(locedges); ++e) {
     Index n1, n2;
     p_adjacency_list.edge(e, n1, n2);
     nodeidx[e] = std::max(n1, n2);
@@ -261,7 +261,7 @@ GraphPartitionerImplementation::partition(void)
   node_dest->gather(&e2dest[0], &stupid[0], locedges);
   
   if (verbose) {
-    for (Index e = 0; e < locedges; ++e) {
+    for (Index e = 0; e < static_cast<Index>(locedges); ++e) {
       Index n1, n2;
       p_adjacency_list.edge(e, n1, n2);
       std::cout << processor_rank() << ": ghost edge " << e
@@ -400,7 +400,7 @@ GraphPartitionerImplementation::partition(void)
       lo[0] = 0; hi[0] = allnodes - 1;
       node_dest_count->get(&lo[0], &hi[0], &lcount[0], &ld[0]);
 
-      for (Index e = 0; e < locedges; ++e) {
+      for (Index e = 0; e < static_cast<Index>(locedges); ++e) {
         Index n1, n2;
         p_adjacency_list.edge(e, n1, n2);
         
@@ -448,7 +448,7 @@ GraphPartitionerImplementation::partition(void)
   p_ghost_node_destinations.clear();
   p_ghost_node_destinations.resize(locnodes);
   std::vector<int> tmpdest(this->processor_size(), 0);
-  for (Index n = 0; n < locnodes; ++n) {
+  for (Index n = 0; n < static_cast<Index>(locnodes); ++n) {
     Index nid(p_adjacency_list.node_index(n));
     p_ghost_node_destinations[n].clear();
     

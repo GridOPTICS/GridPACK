@@ -6,7 +6,7 @@
 /**
  * @file   component_serialization.cpp
  * @author William A. Perkins
- * @date   2013-09-10 14:27:41 d3g096
+ * @date   2014-12-09 09:47:52 d3g096
  * 
  * @brief  Serialization tests for various network component classes
  * 
@@ -435,4 +435,5 @@ main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  return result;
 }

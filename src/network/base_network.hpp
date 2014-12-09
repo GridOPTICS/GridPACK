@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2014-09-29 12:00:25 d3g096
+ * @date   2014-12-09 10:13:06 d3g096
  * 
  * @brief  
  * 
@@ -920,7 +920,7 @@ void partition(void)
   timer = NULL;
   timer = gridpack::utility::CoarseTimer::instance();
 
-  int t_total, t_part, t_bus_dist, t_gbus_dist, t_branch_dist;
+  int t_total(0), t_part(0), t_bus_dist(0), t_branch_dist(0);
 
   if (timer != NULL) {
     t_total = timer->createCategory("BaseNetwork<>::partition(): Total");

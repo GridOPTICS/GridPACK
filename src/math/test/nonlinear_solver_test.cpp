@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 09:07:06 d3g096
+ * @date   2014-12-09 09:47:23 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -275,8 +275,6 @@ struct build_thing
     int lo, hi;
     X.localIndexRange(lo, hi);
     
-    int imin(std::max(lo-1, 0));
-    int imax(std::min(hi+1, n));
     std::vector<gridpack::ComplexType> x(n);
     X.getAllElements(&x[0]);
 

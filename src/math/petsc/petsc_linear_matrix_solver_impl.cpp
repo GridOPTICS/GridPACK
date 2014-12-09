@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2014-11-26 14:24:37 d3g096
+ * @date   2014-12-09 09:45:45 d3g096
  * 
  * @brief  
  * 
@@ -99,8 +99,6 @@ PetscLinearMatrixSolverImplementation::p_build(const std::string& option_prefix)
 void
 PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
-  PetscErrorCode ierr(0);
-
   std::string mstr;
   size_t n;
   bool found;
@@ -114,7 +112,7 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
 
   n = sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
   found = false;
-  for (int i = 0; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     if (mstr == p_supportedOrderingType[i]) {
       p_orderingType = p_supportedOrderingType[i];
       found = true;
@@ -138,7 +136,7 @@ PetscLinearMatrixSolverImplementation::p_configure(utility::Configuration::Curso
 
   n = sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
   found = false;
-  for (int i = 0; i < n; ++i) {
+  for (size_t i = 0; i < n; ++i) {
     if (mstr == p_supportedSolverPackage[i]) {
       p_solverPackage = p_supportedSolverPackage[i];
       found = true;
