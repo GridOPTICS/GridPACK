@@ -6,7 +6,7 @@
 /**
  * @file   simple_adjacency.cpp
  * @author William A. Perkins
- * @date   2013-07-25 09:35:05 d3g096
+ * @date   2014-12-09 10:43:16 d3g096
  * 
  * @brief  
  * 
@@ -107,7 +107,8 @@ simple_adjacency_list(const gridpack::parallel::Communicator& comm,
        e != my_edges.end(); ++e) {
     AdjacencyList::Index from(*e), to(from+1);
     if (from < 0) from = AdjacencyList::bogus;
-    if (to > global_nodes - 1) to = AdjacencyList::bogus;
+    if (to > static_cast<AdjacencyList::Index>(global_nodes) - 1) 
+      to = AdjacencyList::bogus;
     adlist->add_edge(*e, from, to);
   }
   adlist->ready();
@@ -140,7 +141,8 @@ simple_graph_partitioner(const gridpack::parallel::Communicator& comm,
        e != my_edges.end(); ++e) {
     GraphPartitioner::Index from(*e), to(from+1);
     if (from < 0) from = AdjacencyList::bogus;
-    if (to > global_nodes - 1) to = AdjacencyList::bogus;
+    if (to > static_cast<GraphPartitioner::Index>(global_nodes) - 1) 
+      to = AdjacencyList::bogus;
     partitioner->add_edge(*e, from, to);
   }
   return partitioner;

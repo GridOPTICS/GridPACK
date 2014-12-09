@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-11-25 14:37:07 d3g096
+ * @date   2014-12-09 10:50:39 d3g096
  * 
  * @brief  
  * 
@@ -16,8 +16,6 @@
  */
 // -------------------------------------------------------------
 
-
-static const char* SCCS_ID = "$Id$ Battelle PNL";
 
 #define GA_DENSE_TRANSPOSE 0
 
@@ -348,7 +346,7 @@ storageType(const Matrix& A, const Matrix::StorageType& new_type)
   Matrix *result(A.clone());
   int nproc(result->processor_size());
 
-  MatType new_mat_type;
+  MatType new_mat_type(MATSEQAIJ);
 
   if (result->storageType() != new_type) {
     switch (new_type) {

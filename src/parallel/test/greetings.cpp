@@ -7,7 +7,7 @@
 /**
  * @file   greetings.cpp
  * @author William A. Perkins
- * @date   2014-02-10 14:39:36 d3g096
+ * @date   2014-12-09 09:39:25 d3g096
  * 
  * @brief  A simple test of the GridPACK parallel environment
  * 
@@ -43,7 +43,6 @@ main(int argc, char **argv)
     int nprocs = world.size();
     int me = world.rank();
     int i;
-    char buf[128];
 
     for (i=0; i<nprocs; i++) {
       if (i == me) {
@@ -85,7 +84,6 @@ main(int argc, char **argv)
 
     if (me == 0) printf("\nTesting assignment operator for communicators:\n\n");
     if (nprocs > 1) {
-      int nsize = gcomm.size();
       for (i=0; i<nprocs; i++) {
         if (i == me) 
           printf("(assignment) I am process %d (original process is %d) of %d.\n",
@@ -96,7 +94,6 @@ main(int argc, char **argv)
     gridpack::parallel::Communicator cpcomm(gcomm);
     if (me == 0) printf("\nTesting copy constructor for communicators:\n\n");
     if (nprocs > 1) {
-      int nsize = gcomm.size();
       for (i=0; i<nprocs; i++) {
         if (i == me) 
           printf("(copy) I am process %d (original process is %d) of %d.\n",

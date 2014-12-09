@@ -8,7 +8,7 @@
 /**
  * @file   configurable.h
  * @author William A. Perkins
- * @date   2013-11-08 09:00:49 d3g096
+ * @date   2014-12-09 09:43:11 d3g096
  * 
  * @brief  
  * 
@@ -77,8 +77,8 @@ public:
 
   /// Copy constructor
   Configurable(const Configurable& old) 
-    : p_key(old.p_key),
-      p_configCursor(old.p_configCursor),
+    : p_configCursor(old.p_configCursor),
+      p_key(old.p_key),
       p_isConfigured(false)
   {}
 
@@ -117,15 +117,15 @@ protected:
 
   /// Default constructor (only for children)
   Configurable(void) 
-    : p_key("bogus"), 
-      p_configCursor(),
+    : p_configCursor(),
+      p_key("bogus"), 
       p_isConfigured(false)
   {}
 
   /// Construct with a specified path (only for children)
   Configurable(const std::string& key) 
-    : p_key(key),
-      p_configCursor(),
+    : p_configCursor(),
+      p_key(key),
       p_isConfigured(false)
   {}
 

@@ -8,7 +8,7 @@
 /**
  * @file   math.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:42:29 d3g096
+ * @date   2014-12-09 11:05:20 d3g096
  * 
  * @brief  
  * 
@@ -61,6 +61,9 @@ Initialize(void)
   int mpi_err, me, nproc;
   mpi_err = MPI_Comm_rank(PETSC_COMM_WORLD, &me);
   mpi_err = MPI_Comm_size(PETSC_COMM_WORLD, &nproc);
+  if (mpi_err > 0) {
+    throw gridpack::Exception("MPI initialization failed");
+  }
   if (me == 0) {
     printf("\nGridPACK math module configured on %d processors\n",nproc);
   }

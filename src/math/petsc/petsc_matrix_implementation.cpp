@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2014-10-21 13:46:28 d3g096
+ * @date   2014-12-09 11:08:52 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -110,13 +110,13 @@ PETScMatrixImplementation::PETScMatrixImplementation(Mat& m, const bool& copyMat
 
 PETScMatrixImplementation::~PETScMatrixImplementation(void)
 {
-  PetscErrorCode ierr;
+  PetscErrorCode ierr(0);
   if (!p_matrixWrapped) {
     try  {
       PetscBool ok;
-      ierr = PetscInitialized(&ok);
+      ierr = PetscInitialized(&ok); CHKERRXX(ierr);
       if (ok) {
-        ierr = MatDestroy(&p_matrix);
+        ierr = MatDestroy(&p_matrix); CHKERRXX(ierr);
       }
     } catch (...) {
       // just eat it

@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-07-01 13:38:11 d3g096
+ * @date   2014-12-09 09:46:12 d3g096
  * 
  * @brief  
  * 
@@ -55,7 +55,7 @@ assemble(const int imax, const int jmax,
   int ilo, ihi;
   b.localIndexRange(ilo, ihi);
 
-  int i, j, ierr;
+  int i, j;
   float ap, aw, ae, as, an, bp;
 
   int iP, iN, iS, iE, iW;
