@@ -7,7 +7,7 @@
 /**
  * @file   se_components.cpp
  * @author Yousu Chen
- * @date   2/24/2014 
+ * @date   2014-12-09 14:25:20 d3g096
  * 
  * @brief  
  * 
@@ -109,6 +109,7 @@ bool gridpack::state_estimation::SEBus::matrixDiagValues(ComplexType *values)
        }
 */
   }
+  return false;
 }
 
 /**
@@ -593,6 +594,7 @@ int gridpack::state_estimation::SEBus::matrixNumCols() const
   } else if (p_mode == R_inv) {
     return p_meas.size();
   }
+  return 0;
 }
 
 /**
@@ -657,6 +659,7 @@ int gridpack::state_estimation::SEBus::matrixGetRowIndex(int idx)
   } else if (p_mode == R_inv) {
     return p_rowRidx[idx];
   }
+  return 0;
 }
 
 /**
@@ -675,6 +678,7 @@ int gridpack::state_estimation::SEBus::matrixGetColIndex(int idx)
   } else if (p_mode == R_inv) {
     return p_colRidx[idx];
   }
+  return 0;
 }
 
 /**
@@ -688,6 +692,7 @@ int gridpack::state_estimation::SEBus::matrixNumValues() const
   } else if (p_mode == R_inv) {
     return p_meas.size();
   }
+  return 0;
 }
 
 /**
@@ -1041,12 +1046,14 @@ bool gridpack::state_estimation::SEBranch::matrixForwardSize(int *isize, int *js
   if (p_mode == YBus) {
     return YMBranch::matrixForwardSize(isize,jsize);
   }
+  return false;
 }
 bool gridpack::state_estimation::SEBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   if (p_mode == YBus) {
     return YMBranch::matrixReverseSize(isize,jsize);
   }
+  return false;
 }
 
 /**
@@ -1064,6 +1071,7 @@ bool gridpack::state_estimation::SEBranch::matrixForwardValues(ComplexType *valu
 //    values[3] = p_ybusr_frwd;
     return YMBranch::matrixForwardValues(values);
   }
+  return false;
 }
 
 bool gridpack::state_estimation::SEBranch::matrixReverseValues(ComplexType *values)
@@ -1075,6 +1083,7 @@ bool gridpack::state_estimation::SEBranch::matrixReverseValues(ComplexType *valu
   //  values[3] = p_ybusr_rvrs;
     return YMBranch::matrixForwardValues(values);
   }
+  return false;
 }
 
 // Calculate contributions to the admittance matrix from the branches
@@ -1457,6 +1466,7 @@ int gridpack::state_estimation::SEBranch::matrixNumCols() const
   } else if (p_mode == R_inv) {
     return p_meas.size();
   }
+  return 0;
 }
 
 /**
@@ -1518,6 +1528,7 @@ int gridpack::state_estimation::SEBranch::matrixGetRowIndex(int idx)
   } else if (p_mode == R_inv) {
     return p_rowRidx[idx];
   }
+  return 0;
 }
 
 /**
@@ -1536,6 +1547,7 @@ int gridpack::state_estimation::SEBranch::matrixGetColIndex(int idx)
   } else if (p_mode == R_inv) {
     return p_colRidx[idx];
   }
+  return 0;
 }
 
 /**
@@ -1549,6 +1561,7 @@ int gridpack::state_estimation::SEBranch::matrixNumValues() const
   } else if (p_mode == R_inv) {
     return p_meas.size();
   }
+  return 0;
 }
 
 /**

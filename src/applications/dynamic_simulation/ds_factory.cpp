@@ -7,7 +7,7 @@
 /**
  * @file   ds_factory.cpp
  * @author Shuangshuang Jin 
- * @date   September 19, 2013
+ * @date   2014-12-09 14:20:51 d3g096
  * 
  * @brief  
  * 
@@ -85,6 +85,7 @@ gridpack::dynamic_simulation::DSFactory::setFactor(int sw2_2, int sw3_2)
       return ret;
     }
   }
+  return dummy;
 }
 
 /**

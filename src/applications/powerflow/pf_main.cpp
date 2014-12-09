@@ -7,7 +7,7 @@
 /**
  * @file   pf_main.cpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:31:40 d3g096
+ * @date   2014-12-09 14:39:50 d3g096
  * 
  * @brief  
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the powerflow applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries
@@ -41,4 +42,5 @@ main(int argc, char **argv)
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
+  return ierr;
 }

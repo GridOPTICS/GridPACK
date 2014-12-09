@@ -361,6 +361,7 @@ class PTI23_parser
           ntok1 = line.find_first_not_of(' ',0);
           ntok2 = ntok1;
         }
+        return ret;
       }
 
       // Extract extension from file name and convert it to lower case

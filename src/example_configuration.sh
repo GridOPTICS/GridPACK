@@ -45,9 +45,11 @@ elif [ $host == "pe10900" ]; then
     # avoid using the system compilers and MPI wrappers -- use MacPorts
 
     CC=/opt/local/bin/gcc
-    export CC
+    CFLAGS="-Wreturn-type"
+    export CC CFLAGS
     CXX=/opt/local/bin/g++
-    export CXX
+    CXXFLAGS="-Wreturn-type"
+    export CXX CXXFLAGS
 
     cmake $options \
         -D GA_DIR:STRING="$prefix" \

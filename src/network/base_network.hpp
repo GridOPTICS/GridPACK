@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2014-12-09 10:13:06 d3g096
+ * @date   2014-12-09 14:14:28 d3g096
  * 
  * @brief  
  * 
@@ -709,13 +709,15 @@ bool addBranchNeighbor(int idx, int br_idx)
  */
 bool getActiveBus(int idx)
 {
+  bool result(false);
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx].p_activeBus;
+    result = p_buses[idx].p_activeBus;
   } else {
     printf("gridpack::network::getActiveBus: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -725,11 +727,13 @@ bool getActiveBus(int idx)
  */
 int getOriginalBusIndex(int idx)
 {
+  int result(-1);
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx].p_originalBusIndex;
+    result = p_buses[idx].p_originalBusIndex;
   } else {
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -739,11 +743,13 @@ int getOriginalBusIndex(int idx)
  */
 int getGlobalBusIndex(int idx)
 {
+  int result(-1);
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx].p_globalBusIndex;
+    result = p_buses[idx].p_globalBusIndex;
   } else {
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -753,11 +759,13 @@ int getGlobalBusIndex(int idx)
  */
 BusPtr getBus(int idx)
 {
+  BusPtr result;
   if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
-    return p_buses[idx].p_bus;
+    result = p_buses[idx].p_bus;
   }
+  return result;
 }
 
 /**
@@ -767,11 +775,13 @@ BusPtr getBus(int idx)
  */
 bool getActiveBranch(int idx)
 {
+  bool result;
   if (idx >= 0 && idx < p_branches.size()) {
-    return p_branches[idx].p_activeBranch;
+    result = p_branches[idx].p_activeBranch;
   } else {
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -781,11 +791,13 @@ bool getActiveBranch(int idx)
  */
 int getGlobalBranchIndex(int idx)
 {
+  int result(-1);
   if (idx >= 0 && idx < p_branches.size()) {
-    return p_branches[idx].p_globalBranchIndex;
+    result = p_branches[idx].p_globalBranchIndex;
   } else {
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -795,11 +807,13 @@ int getGlobalBranchIndex(int idx)
  */
 BranchPtr getBranch(int idx)
 {
+  BranchPtr result;
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx].p_branch;
+    result = p_branches[idx].p_branch;
   }
+  return result;
 }
 
 /**
@@ -826,11 +840,13 @@ void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
  */
 boost::shared_ptr<component::DataCollection> getBusData(int idx)
 {
+  boost::shared_ptr<component::DataCollection> result;
   if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
-    return p_buses[idx].p_data;
+    result =  p_buses[idx].p_data;
   }
+  return result;
 }
 
 /**
@@ -841,11 +857,13 @@ boost::shared_ptr<component::DataCollection> getBusData(int idx)
  */
 boost::shared_ptr<component::DataCollection> getBranchData(int idx)
 {
+  boost::shared_ptr<component::DataCollection> result;
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx].p_data;
+    result = p_branches[idx].p_data;
   }
+  return result;
 }
 
 /**
@@ -855,11 +873,13 @@ boost::shared_ptr<component::DataCollection> getBranchData(int idx)
  */
 std::vector<int> getConnectedBranches(int idx) const
 {
+  std::vector<int> result;
   if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
-    return p_buses[idx].p_branchNeighbors;
+    result = p_buses[idx].p_branchNeighbors;
   }
+  return result;
 }
 
 /**
@@ -869,12 +889,12 @@ std::vector<int> getConnectedBranches(int idx) const
  */
 std::vector<int> getConnectedBuses(int idx) const
 {
+  std::vector<int> ret;
   if (idx<0 || idx >= p_buses.size()) {
     // TODO: Some kind of error
   } else {
     std::vector<int> branches = p_buses[idx].p_branchNeighbors;
     int size = branches.size();
-    std::vector<int> ret;
     int i, j;
     for (i=0; i<size; i++) {
       j = branches[i];
@@ -884,8 +904,8 @@ std::vector<int> getConnectedBuses(int idx) const
         ret.push_back(p_branches[j].p_localBusIndex2);
       }
     }
-    return ret;
   }
+  return ret;
 }
 
 

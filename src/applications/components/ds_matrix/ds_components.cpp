@@ -7,7 +7,7 @@
 /**
  * @file   ds_components.cpp
  * @author Shuangshuang Jin 
- * @date   2013-11-19 13:46:09 d3g096
+ * @date   2014-12-09 14:20:30 d3g096
  * 
  * @brief  
  * 
@@ -286,6 +286,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       return true;
     }
   }
+  return false;
 }
 
 /**
@@ -495,6 +496,7 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
       return false;
     }
   }
+  return false;
 }
 
 void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
@@ -665,6 +667,8 @@ void gridpack::dynamic_simulation::DSBus::setMode(int mode)
  */
 double gridpack::dynamic_simulation::DSBus::getVoltage(void)
 {
+  double result(0.0);
+  return result;
 }
 
 /**
@@ -673,6 +677,8 @@ double gridpack::dynamic_simulation::DSBus::getVoltage(void)
  */
 double gridpack::dynamic_simulation::DSBus::getPhase(void)
 {
+  double result(0.0);
+  return result;  
 }
 
 /**
@@ -1197,7 +1203,7 @@ gridpack::dynamic_simulation::DSBranch::getShunt(gridpack::dynamic_simulation::D
 gridpack::ComplexType 
 gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2)
 { 
-  double retr, reti;
+  double retr(-999.0), reti(-999.0);
   int i;
   gridpack::dynamic_simulation::DSBus *bus1 =
     dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
@@ -1233,6 +1239,7 @@ gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, in
     return gridpack::ComplexType(-999.0, -999.0); // return a dummy value
   }
 */
+  return gridpack::ComplexType(retr, reti);
 }
 gridpack::ComplexType 
 gridpack::dynamic_simulation::DSBranch::getUpdateFactor()
