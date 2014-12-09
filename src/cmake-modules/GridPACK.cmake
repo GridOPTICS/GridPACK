@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2013-11-13 14:20:22 d3g096
+# Last Change: 2014-12-09 15:21:43 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -30,6 +30,18 @@ function(gridpack_add_serial_unit_test test_name test_program)
 endfunction(gridpack_add_serial_unit_test)
 
 # -------------------------------------------------------------
+# gridpack_add_serial_run_test
+#
+# This provides a way to consistly add a test that just runs a program
+# on one processor without using ${MPI_EXEC}. Success or failure is
+# based on the exit code.
+# -------------------------------------------------------------
+function(gridpack_add_serial_run_test test_name test_program)
+  set(the_test_name "${test_name}_serial")
+  add_test("${the_test_name}" "${test_program}")
+endfunction(gridpack_add_serial_run_test)
+
+# -------------------------------------------------------------
 # gridpack_add_parallel_unit_test
 # -------------------------------------------------------------
 function(gridpack_add_parallel_unit_test test_name test_program)
@@ -42,6 +54,19 @@ function(gridpack_add_parallel_unit_test test_name test_program)
     FAIL_REGULAR_EXPRESSION "failure detected"
   )
 endfunction(gridpack_add_parallel_unit_test)
+
+# -------------------------------------------------------------
+# gridpack_add_parallel_run_test
+#
+# This provides a way to consistly add a test that just runs a program
+# on multiple processors using ${MPI_EXEC}. Success or failure is
+# based on the exit code.
+# -------------------------------------------------------------
+function(gridpack_add_parallel_run_test test_name test_program)
+  set(the_test_name "${test_name}_parallel")
+  add_test("${the_test_name}"
+    ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ${test_program} ${MPIEXEC_POSTFLAGS})
+endfunction(gridpack_add_parallel_run_test)
 
 
 # -------------------------------------------------------------
@@ -57,3 +82,18 @@ function(gridpack_add_unit_test test_name test_program)
     gridpack_add_parallel_unit_test("${test_name}" "${test_program}")
   endif ()
 endfunction(gridpack_add_unit_test)
+
+
+# -------------------------------------------------------------
+# gridpack_add_run_test
+#
+# A way to consistently add both a serial and parallel run test of the
+# same executable
+# -------------------------------------------------------------
+
+function(gridpack_add_run_test test_name test_program)
+  gridpack_add_serial_run_test("${test_name}" "${test_program}")
+  if (MPIEXEC) 
+    gridpack_add_parallel_run_test("${test_name}" "${test_program}")
+  endif ()
+endfunction(gridpack_add_run_test)

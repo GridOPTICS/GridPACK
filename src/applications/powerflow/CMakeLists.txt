@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-28 13:13:59 d3g096
+# Last Change: 2014-12-09 15:19:12 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -100,6 +100,12 @@ target_link_libraries(pf_network_test powerflow_app ${target_libraries})
 gridpack_add_unit_test(pf_network_test pf_network_test)
 
 # -------------------------------------------------------------
+# run applications as tests
+# -------------------------------------------------------------
+gridpack_add_run_test("powerflow" powerflow.x)
+gridpack_add_run_test("powerflow2" powerflow2)
+
+# -------------------------------------------------------------
 # install as a sample application
 # -------------------------------------------------------------
 
@@ -123,3 +129,4 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/pti08.xml
   DESTINATION doc/gridpack/example/powerflow
 )
+
