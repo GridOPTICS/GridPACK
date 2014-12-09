@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2014-12-09 09:45:45 d3g096
+ * @date   2014-12-09 11:06:21 d3g096
  * 
  * @brief  
  * 
@@ -72,7 +72,7 @@ PetscLinearMatrixSolverImplementation::PetscLinearMatrixSolverImplementation(con
 
 PetscLinearMatrixSolverImplementation::~PetscLinearMatrixSolverImplementation(void)
 {
-  PetscErrorCode ierr;
+  PetscErrorCode ierr(0);
   try  {
     PetscBool ok;
     ierr = PetscInitialized(&ok);

@@ -6,7 +6,7 @@
 /**
  * @file   parmetis_graph_partitioner_impl.cpp
  * @author William A. Perkins
- * @date   2013-07-09 11:27:50 d3g096
+ * @date   2014-12-09 11:08:05 d3g096
  * 
  * @brief  
  * 
@@ -145,6 +145,9 @@ ParMETISGraphPartitionerImpl::p_partition(void)
                                 &options[0],
                                 &edgecut, &part[0],
                                 &comm);
+  if (status != 0) {
+    // FIXME: throw an exception
+  }
 
   // "part" contains the destination processors; transfer this to the
   // local array

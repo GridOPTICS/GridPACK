@@ -8,7 +8,7 @@
 /**
  * @file   petsc_vector_implementation.cpp
  * @author William A. Perkins
- * @date   2014-10-21 09:36:45 d3g096
+ * @date   2014-12-09 11:09:26 d3g096
  * 
  * @brief  
  * 
@@ -108,14 +108,14 @@ PETScVectorImplementation::~PETScVectorImplementation(void)
 {
   // Bad things happen (e.g. race condition on RHEL5) if one tries
   // to destroy a PETSc thing after PETSc is finalized.
-  PetscErrorCode ierr;
+  PetscErrorCode ierr(0);
   
   if (!p_vectorWrapped) {
     try  {
       PetscBool ok;
-      ierr = PetscInitialized(&ok);
+      ierr = PetscInitialized(&ok); CHKERRXX(ierr);
       if (ok) {
-        ierr = VecDestroy(&p_vector);
+        ierr = VecDestroy(&p_vector); CHKERRXX(ierr);
       }
     } catch (...) {
       // just eat it
