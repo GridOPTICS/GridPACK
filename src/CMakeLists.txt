@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2014-09-29 11:55:35 d3g096
+# Last Change: 2014-12-09 10:32:55 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -146,15 +146,10 @@ endif(DOXYGEN_FOUND)
 # Options for all Programs/Libraries
 # -------------------------------------------------------------
 
-# remove annoying warnings produced by the GNU compiler about
-# deprecated variables/functions; some are caused by GridPACK code
-# (these, particularly string constants should be fixed) and some are
-# caused by Boost::MPI
-
+# remove annoying warnings produced by the GNU compiler about the use
+# of string constants, which are used a lot in GridPACK
 if (CMAKE_COMPILER_IS_GNUCXX) 
     add_definitions(
-        -Wno-deprecated 
-        -Wno-deprecated-declarations
         -Wno-write-strings
     )
 endif()
