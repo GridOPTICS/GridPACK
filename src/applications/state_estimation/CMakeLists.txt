@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-12-09 15:28:11 d3g096
+# Last Change: 2014-12-10 07:36:08 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -67,4 +67,4 @@ add_dependencies(se.x se.x.input)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("state_estimation" se.x)
+#gridpack_add_run_test("state_estimation" se.x input.xml)

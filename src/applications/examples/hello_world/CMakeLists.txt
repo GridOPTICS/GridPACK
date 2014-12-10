@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-28 13:13:49 d3g096
+# Last Change: 2014-12-10 07:41:44 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -51,6 +51,10 @@ add_custom_target(hello_world.x.input
 )
 add_dependencies(hello_world.x hello_world.x.input)
 
+# -------------------------------------------------------------
+# run application as test
+# -------------------------------------------------------------
+gridpack_add_run_test("hello_world" hello_world.x 10x10.raw)
 
 # -------------------------------------------------------------
 # install as a sample application

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-12-09 15:19:12 d3g096
+# Last Change: 2014-12-10 07:45:44 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -102,8 +102,8 @@ gridpack_add_unit_test(pf_network_test pf_network_test)
 # -------------------------------------------------------------
 # run applications as tests
 # -------------------------------------------------------------
-gridpack_add_run_test("powerflow" powerflow.x)
-gridpack_add_run_test("powerflow2" powerflow2)
+gridpack_add_run_test("powerflow" powerflow.x input.xml)
+gridpack_add_run_test("powerflow2" powerflow2 input.xml)
 
 # -------------------------------------------------------------
 # install as a sample application
