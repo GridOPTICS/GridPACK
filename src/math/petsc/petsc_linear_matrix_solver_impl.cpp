@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.cpp
  * @author William A. Perkins
- * @date   2014-12-09 11:06:21 d3g096
+ * @date   2014-12-10 08:55:50 d3g096
  * 
  * @brief  
  * 
@@ -42,10 +42,13 @@ PetscLinearMatrixSolverImplementation::p_supportedOrderingType[] =  {
   MATORDERING1WD,
   MATORDERINGRCM,
   MATORDERINGQMD,
-  MATORDERINGROWLENGTH,
+  MATORDERINGROWLENGTH
+#if PETSC_VERSION_GT(3,5,0)
+,
   MATORDERINGWBM,
   MATORDERINGSPECTRAL,
   MATORDERINGAMD
+#endif
 };
 MatSolverPackage 
 PetscLinearMatrixSolverImplementation::p_supportedSolverPackage[] = {
