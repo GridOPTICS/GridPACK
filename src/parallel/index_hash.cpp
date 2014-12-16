@@ -21,6 +21,7 @@
 #include <parallel/communicator.hpp>
 #include "index_hash.hpp"
 
+
 // -------------------------------------------------------------
 //  class GlobalIndexHashMap
 // -------------------------------------------------------------
@@ -41,7 +42,7 @@ GlobalIndexHashMap::~GlobalIndexHashMap(void)
 {
 }
 
-// add key-value pairs to hash map where key is singe integer
+// add key-value pairs to hash map where key is single integer.
 // @param pairs list of key-value pairs where both keys and values are
 //              integers
 void GlobalIndexHashMap::addPairs(std::vector<std::pair<int,int> > &pairs)
@@ -217,7 +218,7 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
 {
   // Need to distribute keys to processors that hold the corresponding values.
   // Start by constructing a linked list of where each key needs to go
-  int i;
+  int i, j;
   int size = keys.size();
   // ndest[idx] number of values to send to processor idx, nrecv[idx] is number
   // of values received from processor idx
@@ -248,12 +249,10 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
   ierr = MPI_Alltoall(ndest, one, MPI_INT, nrecv, one, MPI_INT, p_comm);
   // nrecv now contains the number of keys that will be received from other
   // processors. Use this information to set up send and receive along with
-  // their offsets for a all-to-all-v call
+  // their offsets for an all-to-all-v call
   int rsize = 0;
   for (i=0; i<p_nprocs; i++) {
     rsize += nrecv[i];
-    ndest[i] = ndest[i];
-    nrecv[i] = nrecv[i];
   }
   int send_keys[size];
   int recv_keys[rsize];
@@ -282,35 +281,76 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
   // Send buffer is full so distribute contents to all processors
   ierr = MPI_Alltoallv(send_keys, ndest, s_offsets, MPI_INT,
       recv_keys, nrecv, r_offsets, MPI_INT, p_comm);
-  // keys are available, so find corresponding values
-  boost::unordered_map<int, int>::iterator it;
-  int send_values[rsize];
-  for (i=0; i<rsize; i++) {
-    it = p_umap.find(recv_keys[i]);
-    if (it != p_umap.end()) {
-      send_values[i] = it->second;
-    } else {
-      // TODO: Some kind of error
-    }
-  }
-  // send values back to requesting processor using all-to-all
-  int recv_values[size];
-  ierr = MPI_Alltoallv(send_values, nrecv, r_offsets, MPI_INT,
-      recv_values, ndest, s_offsets, MPI_INT, p_comm);
-  // values in recv_values buffer into values vector
-  values.clear();
-  values.reserve(size);
+  // keys are available, so find corresponding values. Need to pass through data
+  // twice, once to evaluate how many values are being returned and once to set
+  // up return data structures
+  std::multimap<int, int>::iterator it;
+  int lo, hi;
   for (i=0; i<p_nprocs; i++) {
-    int offset = s_offsets[i];
-    if (ndest[i] > 0) {
-      int count = offset;
-      int j = ltop[i];
-      while (j >= 0) {
-        values[j] = recv_values[count];
-        j = ldest[j];
-        count++;
+    lo = r_offsets[i];
+    hi = lo+nrecv[i];
+    ndest[i] = 0;
+    for (j=lo; j<hi; j++) {
+      it = p_umap.find(recv_keys[j]);
+      if (it != p_umap.end()) {
+        while (it != p_umap.upper_bound(recv_keys[j])) {
+          ndest[i]++;
+          it++;
+        }
       }
     }
+  }
+  s_offsets[0] = 0;
+  size = ndest[0];
+  for (i=1; i<p_nprocs; i++) {
+    size += ndest[i];
+    s_offsets[i] = s_offsets[i-1] + ndest[i-1];
+  }
+  for (i=0; i<p_nprocs; i++) {
+    ndest[i] = 2*ndest[i];
+    s_offsets[i] = 2*s_offsets[i];
+  }
+  int send_values[2*size];
+  // Pack returning data into send buffer
+  count = 0;
+  for (i=0; i<p_nprocs; i++) {
+    lo = r_offsets[i];
+    hi = lo+nrecv[i];
+    for (j=lo; j<hi; j++) {
+      it = p_umap.find(recv_keys[j]);
+      if (it != p_umap.end()) {
+        while (it != p_umap.upper_bound(recv_keys[j])) {
+          send_values[2*count] = recv_keys[j];
+          send_values[2*count+1] = it->second;
+          count++;
+          it++;
+        }
+      }
+    }
+  }
+  // Send dimensions of returning blocks to all processors
+  ierr = MPI_Alltoall(ndest, one, MPI_INT, nrecv, one, MPI_INT, p_comm);
+
+  // Evaluate offsets for returning data
+  r_offsets[0] = 0;
+  rsize = nrecv[0];
+  for (i=1; i<p_nprocs; i++) {
+    r_offsets[i] = r_offsets[i-1] + nrecv[i-1];
+    rsize += nrecv[i];
+  }
+  int ret_values[rsize];
+  // send values back to requesting processor using all-to-all
+  ierr = MPI_Alltoallv(send_values, ndest, s_offsets, MPI_INT,
+      ret_values, nrecv, r_offsets, MPI_INT, p_comm);
+  ierr = MPI_Barrier(p_comm);
+
+  // repack data into output
+  keys.clear();
+  values.clear();
+  size = rsize/2;
+  for (i=0; i<size; i++) {
+    keys.push_back(ret_values[2*i]);
+    values.push_back(ret_values[2*i+1]);
   }
 }
 
@@ -323,7 +363,7 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
 {
   // Need to distribute keys to processors that hold the corresponding values.
   // Start by constructing a linked list of where each key needs to go
-  int i;
+  int i, j;
   int size = keys.size();
   // ndest[idx] number of values to send to processor idx, nrecv[idx] is number
   // of values received from processor idx
@@ -354,12 +394,10 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
   ierr = MPI_Alltoall(ndest, one, MPI_INT, nrecv, one, MPI_INT, p_comm);
   // nrecv now contains the number of keys that will be received from other
   // processors. Use this information to set up send and receive along with
-  // their offsets for a all-to-all-v call
+  // their offsets for an all-to-all-v call
   int rsize = 0;
   for (i=0; i<p_nprocs; i++) {
     rsize += nrecv[i];
-    ndest[i] = 2*ndest[i];
-    nrecv[i] = 2*nrecv[i];
   }
   int send_keys[2*size];
   int recv_keys[2*rsize];
@@ -368,8 +406,12 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
   s_offsets[0] = 0;
   r_offsets[0] = 0;
   for (i=1; i<p_nprocs; i++) {
-    s_offsets[i] = s_offsets[i-1]+ndest[i-1];
-    r_offsets[i] = r_offsets[i-1]+nrecv[i-1];
+    s_offsets[i] = s_offsets[i-1]+2*ndest[i-1];
+    r_offsets[i] = r_offsets[i-1]+2*nrecv[i-1];
+  }
+  for (i=0; i<p_nprocs; i++) {
+    ndest[i] = 2*ndest[i];
+    nrecv[i] = 2*nrecv[i];
   }
   // Fill up send_keys array with key-value pairs using the linked list
   int count;
@@ -389,44 +431,81 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
   // Send buffer is full so distribute contents to all processors
   ierr = MPI_Alltoallv(send_keys, ndest, s_offsets, MPI_INT,
       recv_keys, nrecv, r_offsets, MPI_INT, p_comm);
-  // keys are available, so find corresponding values
-  std::pair<int,int> rcv_key;
-  boost::unordered_map<std::pair<int,int>, int>::iterator it;
-  int send_values[rsize];
-  for (i=0; i<rsize; i++) {
-    rcv_key = std::pair<int,int>(recv_keys[2*i],recv_keys[2*i+1]);
-    it = p_pmap.find(rcv_key);
-    if (it != p_pmap.end()) {
-      send_values[i] = it->second;
-    } else {
-      // TODO: Some kind of error
-    }
-  }
-  // send values back to requesting processor using all-to-all
-  int recv_values[size];
-  // values are smaller than keys, so make adjustment
+  // keys are available, so find corresponding values. Need to pass through data
+  // twice, once to evaluate how many values are being returned and once to set
+  // up return data structures
+  std::multimap<std::pair<int,int>,int>::iterator it;
+  std::pair<int,int> key;
+  int lo, hi;
   for (i=0; i<p_nprocs; i++) {
-    ndest[i] = ndest[i]/2;
-    nrecv[i] = nrecv[i]/2;
-    r_offsets[i] = r_offsets[i]/2;
-    s_offsets[i] = s_offsets[i]/2;
-  }
-  ierr = MPI_Alltoallv(send_values, nrecv, r_offsets, MPI_INT,
-      recv_values, ndest, s_offsets, MPI_INT, p_comm);
-  // values in recv_values buffer into values vector
-  values.clear();
-  values.reserve(size);
-  for (i=0; i<p_nprocs; i++) {
-    int offset = s_offsets[i];
-    if (ndest[i] > 0) {
-      int count = offset;
-      int j = ltop[i];
-      while (j >= 0) {
-        values[j] = recv_values[count];
-        j = ldest[j];
-        count++;
+    lo = r_offsets[i]/2;
+    hi = lo+nrecv[i]/2;
+    ndest[i] = 0;
+    for (j=lo; j<hi; j++) {
+      key = std::pair<int,int>(recv_keys[2*j],recv_keys[2*j+1]);
+      it = p_pmap.find(key);
+      if (it != p_pmap.end()) {
+        while (it != p_pmap.upper_bound(key)) {
+          ndest[i]++;
+          it++;
+        }
       }
     }
+  }
+  s_offsets[0] = 0;
+  size = ndest[0];
+  for (i=1; i<p_nprocs; i++) {
+    size += ndest[i];
+    s_offsets[i] = s_offsets[i-1] + ndest[i-1];
+  }
+  for (i=0; i<p_nprocs; i++) {
+    ndest[i] = 3*ndest[i];
+    s_offsets[i] = 3*s_offsets[i];
+  }
+  int send_values[3*size];
+  // Pack returning data into send buffer
+  count = 0;
+  for (i=0; i<p_nprocs; i++) {
+    lo = r_offsets[i]/2;
+    hi = lo+nrecv[i]/2;
+    for (j=lo; j<hi; j++) {
+      key = std::pair<int,int>(recv_keys[2*j],recv_keys[2*j+1]);
+      it = p_pmap.find(key);
+      if (it != p_pmap.end()) {
+        while (it != p_pmap.upper_bound(key)) {
+          send_values[3*count] = key.first;
+          send_values[3*count+1] = key.second;
+          send_values[3*count+2] = it->second;
+          count++;
+          it++;
+        }
+      }
+    }
+  }
+  // Send dimensions of returning blocks to all processors
+  ierr = MPI_Alltoall(ndest, one, MPI_INT, nrecv, one, MPI_INT, p_comm);
+
+  // Evaluate offsets for returning data
+  r_offsets[0] = 0;
+  rsize = nrecv[0];
+  for (i=1; i<p_nprocs; i++) {
+    r_offsets[i] = r_offsets[i-1] + nrecv[i-1];
+    rsize += nrecv[i];
+  }
+  int ret_values[rsize];
+  // send values back to requesting processor using all-to-all
+  ierr = MPI_Alltoallv(send_values, ndest, s_offsets, MPI_INT,
+      ret_values, nrecv, r_offsets, MPI_INT, p_comm);
+  ierr = MPI_Barrier(p_comm);
+
+  // repack data into output
+  keys.clear();
+  values.clear();
+  size = rsize/3;
+  for (i=0; i<size; i++) {
+    key = std::pair<int,int>(ret_values[3*i],ret_values[3*i+1]);
+    keys.push_back(key);
+    values.push_back(ret_values[3*i+2]);
   }
 }
 

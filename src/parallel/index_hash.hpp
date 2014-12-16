@@ -22,7 +22,7 @@
 #ifndef _hash_map_hpp_
 #define _hash_map_hpp_
 
-#include <boost/unordered_map.hpp>
+#include <map>
 #include <vector>
 #include <parallel/communicator.hpp>
 
@@ -82,9 +82,9 @@ private:
 
   MPI_Comm p_comm;
 
-  boost::unordered_map<int, int> p_umap;
+  std::multimap<int, int> p_umap;
   
-  boost::unordered_map<std::pair<int,int>, int> p_pmap;
+  std::multimap<std::pair<int,int>, int> p_pmap;
 };
 
 
