@@ -1238,6 +1238,111 @@ void clean(void)
 }
 
 /**
+ * Remove all buses and branches from the system.
+ */
+void clear(void)
+{
+  int i, size;
+  // Clean up exchange buffers if they have been allocated
+  if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
+    int size = p_buses.size();
+    int i;
+    if (p_allocatedBus) {
+      if (!p_external_bus) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
+      }
+      p_allocatedBus = false;
+    }
+    delete [] p_busXCBuffers;
+  }
+  if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
+    int size = p_branches.size();
+    int i;
+    if (p_allocatedBranch) {
+      if (!p_external_branch) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
+      }
+      p_allocatedBranch = false;
+    }
+    delete [] p_branchXCBuffers;
+  }
+  if (p_activeBusIndices) {
+    for (i=0; i<p_numActiveBuses; i++) {
+      delete p_activeBusIndices[i];
+    }
+    delete [] p_activeBusIndices;
+  }
+  if (p_busSndBuf) {
+    delete [] ((char*)p_busSndBuf);
+  }
+  if (p_inactiveBusIndices) {
+    for (i=0; i<0; i<p_numInactiveBuses) {
+      delete p_inactiveBusIndices[i];
+    }
+    delete [] p_inactiveBusIndices;
+  }
+  if (p_busRcvBuf) {
+    delete [] ((char*)p_busRcvBuf);
+  }
+  if (p_activeBranchIndices) {
+    for (i=0; i<0; i<p_numActiveBranches) {
+      delete p_activeBranchIndices[i];
+    }
+    delete [] p_activeBranchIndices;
+  }
+  if (p_branchSndBuf) {
+    delete [] ((char*)p_branchSndBuf);
+  }
+  if (p_inactiveBranchIndices) {
+    for (i=0; i<0; i<p_numInactiveBranches) {
+      delete p_inactiveBranchIndices[i];
+    }
+    delete [] p_inactiveBranchIndices;
+  }
+  if (p_branchSndBuf) {
+    delete [] ((char*)p_branchRcvBuf);
+  }
+  if (p_branchGASet) {
+    GA_Destroy(p_branchGA);
+    NGA_Deregister_type(p_branchXCBufType);
+  }
+  if (p_busGASet) {
+    GA_Destroy(p_busGA);
+    NGA_Deregister_type(p_busXCBufType);
+  }
+  // Get rid of all buses and branches
+  p_bus.clear();
+  p_branch.clear();
+
+  //reset all internal parameters to their initial state
+  p_refBus = -1;
+  p_busXCBufSize = 0;
+  p_branchXCBufSize = 0;
+  p_busXCBufType = 0;
+  p_branchXCBufType = 0;
+  p_busGASet = false;
+  p_branchGASet = false;
+  p_activeBusIndices = NULL;
+  p_busSndBuf = NULL;
+  p_inactiveBusIndices = NULL;
+  p_busRcvBuf = NULL;
+  p_activeBranchIndices = NULL;
+  p_branchSndBuf = NULL;
+  p_inactiveBranchIndices = NULL;
+  p_branchRcvBuf = NULL;
+  p_busXCBuffers = NULL;
+  p_external_bus = false;
+  p_branchXCBuffers = NULL;
+  p_external_branch = false;
+  p_allocatedBus = false;
+  p_allocatedBranch = false;
+}
+
+/**
  * Allocate array of pointers to buffers for exchanging data for ghost buses
  * @param size size (in bytes) of buffer
  */

@@ -438,6 +438,19 @@ bool BaseComponent::serialWrite(char *string, const int bufsize, const char *sig
   // and branches can be built
 }
 
+/**
+ * Save state variables inside the component to a DataCollection object.
+ * This can be used as a way of moving data in a way that is useful for
+ * creating output or for copying state data from one network to another.
+ * @param data data collection object into which new values are inserted
+ */
+void BaseComponent::saveData(
+    boost::shared_ptr<gridpack::component::DataCollection> &data)
+{
+  // This is a no-op that can be overridden by the user to store internal state
+  // variables in the data collection object
+}
+
 // Base implementation for a bus object. Provides a mechanism for the bus to
 // provide a list of the branches that are directly connected to it as well as a
 // mechanism for returning a list of the buses that are connected to it via a

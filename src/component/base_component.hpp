@@ -373,6 +373,15 @@ class BaseComponent
      */
     virtual bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
+    /**
+     * Save state variables inside the component to a DataCollection object.
+     * This can be used as a way of moving data in a way that is useful for
+     * creating output or for copying state data from one network to another.
+     * @param data data collection object into which new values are inserted
+     */
+    virtual void saveData(boost::shared_ptr<gridpack::component::DataCollection>
+        &data);
+
   protected:
     /**
      * A buffer that can be used for exchanging component data. This is
