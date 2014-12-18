@@ -557,7 +557,7 @@ public:
     for (i=0; i<base_keys.size(); i++) {
       keyMap.insert(std::pair<std::pair<int,int>,int>(base_keys[i],procLoc[i]));
     }
-    std::vector<_bus_data_type> newValues;
+    std::vector<_branch_data_type> newValues;
     std::vector<std::pair<int,int> > newKeys;
     std::vector<int> destProcs;
     j = 0;
