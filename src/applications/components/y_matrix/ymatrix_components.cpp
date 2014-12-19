@@ -357,12 +357,14 @@ void gridpack::ymatrix::YMBranch::load(
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_SHIFT, &rvar, idx);
+    rvar = 0.0
+    ok = data->getValue(BRANCH_SHIFT, &rvar, idx);
     rvar = -rvar*pi/180.0; 
     p_phase_shift.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
+    rvar = 0.0;
+    ok = data->getValue(BRANCH_TAP, &rvar, idx);
     p_tap_ratio.push_back(rvar); 
-    ok = ok && data->getValue(BRANCH_CKT, &svar, idx);
+    ok = data->getValue(BRANCH_CKT, &svar, idx);
     p_tag.push_back(svar);
     if (rvar != 0.0) {
       p_xform.push_back(xform);
