@@ -357,7 +357,7 @@ void gridpack::ymatrix::YMBranch::load(
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
-    rvar = 0.0
+    rvar = 0.0;
     ok = data->getValue(BRANCH_SHIFT, &rvar, idx);
     rvar = -rvar*pi/180.0; 
     p_phase_shift.push_back(rvar);
