@@ -1315,8 +1315,8 @@ void clear(void)
     NGA_Deregister_type(p_busXCBufType);
   }
   // Get rid of all buses and branches
-  p_bus.clear();
-  p_branch.clear();
+  p_buses.clear();
+  p_branches.clear();
 
   //reset all internal parameters to their initial state
   p_refBus = -1;
