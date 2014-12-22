@@ -35,6 +35,7 @@ gridpack::component::DataCollection & gridpack::component::DataCollection::opera
   p_floats = rhs.p_floats;
   p_doubles = rhs.p_doubles;
   p_complexType = rhs.p_complexType;
+  return *this;
 }
 
 /**

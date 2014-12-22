@@ -835,8 +835,8 @@ void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
   } else {
     printf("gridpack::network::getGlobalBranchIndex: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_branches.size()));
-    idx1 = -1;
-    idx2 = -1;
+    *idx1 = -1;
+    *idx2 = -1;
     // TODO: some kind of error
   }
 }
