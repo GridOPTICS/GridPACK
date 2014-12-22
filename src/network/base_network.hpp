@@ -716,6 +716,7 @@ bool getActiveBus(int idx)
            idx, static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
+  return false;
 }
 
 /**
@@ -728,8 +729,11 @@ int getOriginalBusIndex(int idx)
   if (idx >= 0 && idx < p_buses.size()) {
     return p_buses[idx].p_originalBusIndex;
   } else {
+    printf("gridpack::network::getOriginalBusIndex: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
+  return -1;
 }
 
 /**
@@ -742,8 +746,11 @@ int getGlobalBusIndex(int idx)
   if (idx >= 0 && idx < p_buses.size()) {
     return p_buses[idx].p_globalBusIndex;
   } else {
+    printf("gridpack::network::getGlobalBusIndex: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
+  return -1;
 }
 
 /**
@@ -754,10 +761,14 @@ int getGlobalBusIndex(int idx)
 BusPtr getBus(int idx)
 {
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getBus: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
     return p_buses[idx].p_bus;
   }
+  boost::shared_ptr<_bus> null;
+  return null;
 }
 
 /**
@@ -770,8 +781,11 @@ bool getActiveBranch(int idx)
   if (idx >= 0 && idx < p_branches.size()) {
     return p_branches[idx].p_activeBranch;
   } else {
+    printf("gridpack::network::getActiveBranch: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
     // TODO: some kind of error
   }
+  return false;
 }
 
 /**
@@ -784,8 +798,11 @@ int getGlobalBranchIndex(int idx)
   if (idx >= 0 && idx < p_branches.size()) {
     return p_branches[idx].p_globalBranchIndex;
   } else {
+    printf("gridpack::network::getGlobalBranchIndex: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
     // TODO: some kind of error
   }
+  return -1;
 }
 
 /**
@@ -800,6 +817,8 @@ BranchPtr getBranch(int idx)
   } else {
     return p_branches[idx].p_branch;
   }
+  boost::shared_ptr<_branch> null;
+  return null;
 }
 
 /**
@@ -814,6 +833,10 @@ void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
     *idx1 = p_branches[idx].p_originalBusIndex1;
     *idx2 = p_branches[idx].p_originalBusIndex2;
   } else {
+    printf("gridpack::network::getGlobalBranchIndex: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
+    idx1 = -1;
+    idx2 = -1;
     // TODO: some kind of error
   }
 }
@@ -827,10 +850,14 @@ void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
 boost::shared_ptr<component::DataCollection> getBusData(int idx)
 {
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getBusData: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
     return p_buses[idx].p_data;
   }
+  boost::shared_ptr<component::DataCollection> null;
+  return null;
 }
 
 /**
@@ -842,10 +869,14 @@ boost::shared_ptr<component::DataCollection> getBusData(int idx)
 boost::shared_ptr<component::DataCollection> getBranchData(int idx)
 {
   if (idx<0 || idx >= p_branches.size()) {
+    printf("gridpack::network::getBranchData: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
     // TODO: Some kind of error
   } else {
     return p_branches[idx].p_data;
   }
+  boost::shared_ptr<component::DataCollection> null;
+  return null;
 }
 
 /**
@@ -856,10 +887,14 @@ boost::shared_ptr<component::DataCollection> getBranchData(int idx)
 std::vector<int> getConnectedBranches(int idx) const
 {
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getConnectedBranches: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
     return p_buses[idx].p_branchNeighbors;
   }
+  std::vector<int> null;
+  return null;
 }
 
 /**
@@ -870,6 +905,8 @@ std::vector<int> getConnectedBranches(int idx) const
 std::vector<int> getConnectedBuses(int idx) const
 {
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getConnectedBuses: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
     std::vector<int> branches = p_buses[idx].p_branchNeighbors;
@@ -886,6 +923,8 @@ std::vector<int> getConnectedBuses(int idx) const
     }
     return ret;
   }
+  std::vector<int> null;
+  return null;
 }
 
 
@@ -899,6 +938,10 @@ std::vector<int> getConnectedBuses(int idx) const
 void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 {
   if (idx<0 || idx >= p_branches.size()) {
+    printf("gridpack::network::getBranchEndpoints: illegal index: %d size: %d\n",
+        idx, static_cast<int>(p_branches.size()));
+    *bus1 = -1;
+    *bus2 = -1;
     // TODO: some kind of error
   } else {
     *bus1 = p_branches[idx].p_localBusIndex1;
