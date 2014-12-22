@@ -150,7 +150,7 @@ class PTI33_parser
           find_owner(input);
           //find_line(input);
 #endif
-#if 1
+#if 0
           // debug
           int i;
           printf("BUS data size: %d\n",(int)p_busData.size());
