@@ -197,7 +197,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_mmap);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   timer->stop(t_mmap);
-  busIO.header("\nJacobian values\n");
+//  busIO.header("\nJacobian values\n");
 //  J->print();
 
   // Create X vector by cloning PQ

@@ -983,6 +983,27 @@ class PTI33_parser
                 std::getline(input, line);
                 continue;
               }
+              // Get internal indices corresponding to buses 1,2,3
+              int l_idx1, l_idx2, l_idx3;
+              std::map<int,int>::iterator it;
+              it = p_busMap.find(o_idx1);
+              if (it != p_busMap.end()) {
+                l_idx1 = it->second;
+              } else {
+                printf("No match found for bus %s\n",split_line[0].c_str());
+              }
+              it = p_busMap.find(o_idx2);
+              if (it != p_busMap.end()) {
+                l_idx2 = it->second;
+              } else {
+                printf("No match found for bus %s\n",split_line[1].c_str());
+              }
+              it = p_busMap.find(o_idx3);
+              if (it != p_busMap.end()) {
+                l_idx3 = it->second;
+              } else {
+                printf("No match found for bus %s\n",split_line[2].c_str());
+              }
               // Create a new bus and three new branches. No need to check
               // previous branches to see if they match since they are all
               // linked to new bus. Also don't need to add these to the branch
@@ -1000,27 +1021,29 @@ class PTI33_parser
               data->addValue(BUS_BASEKV,0.0);
               data->addValue(BUS_TYPE,1);
               int ival;
-              p_busData[o_idx1]->getValue(BUS_AREA,&ival);
-              data->setValue(BUS_AREA,ival);
-              p_busData[o_idx1]->getValue(BUS_OWNER,&ival);
-              data->setValue(BUS_OWNER,&ival);
+              p_busData[l_idx1]->getValue(BUS_AREA,&ival);
+              data->addValue(BUS_AREA,ival);
+              p_busData[l_idx1]->getValue(BUS_OWNER,&ival);
+              data->addValue(BUS_OWNER,&ival);
               double rval = 0.0;
               double rvol;
-              p_busData[o_idx1]->getValue(BUS_VOLTAGE_MAG,&rvol);
+              p_busData[l_idx1]->getValue(BUS_VOLTAGE_MAG,&rvol);
               rval += rvol;
-              p_busData[o_idx2]->getValue(BUS_VOLTAGE_MAG,&rvol);
+              p_busData[l_idx2]->getValue(BUS_VOLTAGE_MAG,&rvol);
               rval += rvol;
-              p_busData[o_idx3]->getValue(BUS_VOLTAGE_MAG,&rvol);
+              p_busData[l_idx3]->getValue(BUS_VOLTAGE_MAG,&rvol);
               rval += rvol;
-              data->setValue(BUS_VOLTAGE_MAG,rval);
+              rval = rval/3.0;
+              data->addValue(BUS_VOLTAGE_MAG,rval);
               rval = 0.0;
-              p_busData[o_idx1]->getValue(BUS_VOLTAGE_ANG,&rvol);
+              p_busData[l_idx1]->getValue(BUS_VOLTAGE_ANG,&rvol);
               rval += rvol;
-              p_busData[o_idx2]->getValue(BUS_VOLTAGE_ANG,&rvol);
+              p_busData[l_idx2]->getValue(BUS_VOLTAGE_ANG,&rvol);
               rval += rvol;
-              p_busData[o_idx3]->getValue(BUS_VOLTAGE_ANG,&rvol);
+              p_busData[l_idx3]->getValue(BUS_VOLTAGE_ANG,&rvol);
               rval += rvol;
-              data->setValue(BUS_VOLTAGE_ANG,rval);
+              rval = rval/3.0;
+              data->addValue(BUS_VOLTAGE_ANG,rval);
 
               // parse remainder of line 1
               int stat;
