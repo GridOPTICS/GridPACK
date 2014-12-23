@@ -85,6 +85,7 @@ gridpack::dynamic_simulation::DSFactory::setFactor(int sw2_2, int sw3_2)
       return ret;
     }
   }
+  return dummy;
 }
 
 /**

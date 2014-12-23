@@ -220,6 +220,7 @@ bool gridpack::ymatrix::YMBranch::matrixForwardSize(int *isize, int *jsize) cons
       return false;
     }
   }
+  return false;
 }
 bool gridpack::ymatrix::YMBranch::matrixReverseSize(int *isize, int *jsize) const
 {
@@ -238,6 +239,7 @@ bool gridpack::ymatrix::YMBranch::matrixReverseSize(int *isize, int *jsize) cons
       return false;
     }
   }
+  return false;
 }
 
 /**
@@ -262,6 +264,7 @@ bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
       return false;
     }
   }
+  return false;
 }
 
 bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
@@ -280,6 +283,7 @@ bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
       return false;
     }
   }
+  return false;
 }
 
 // Calculate contributions to the admittance matrix from the branches
@@ -574,10 +578,13 @@ bool gridpack::ymatrix::YMBranch::setLineStatus(std::string tag,
     bool status)
 {
   int i;
+  bool found = false;
   for (i=0; i<p_elems; i++) {
     if (tag == p_tag[i]) {
       p_branch_status[i] = status;
+      found = true;
       break;
     }
   }
+  return found;
 }

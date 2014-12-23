@@ -198,6 +198,7 @@ bool gridpack::resistor_grid::RGBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
   sprintf(string,"Voltage on bus %d: %12.6f\n",getOriginalIndex(),p_voltage);
+  return true;
 }
 
 /**
