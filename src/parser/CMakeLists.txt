@@ -102,6 +102,7 @@ install(FILES
   dictionary.hpp
   PTI23_parser.hpp
   PTI33_parser.hpp
+  GOSS_parser.hpp
   hash_distr.hpp
   DESTINATION include/gridpack/parser
 )

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Powerflow>
-    <networkConfiguration> IEEE14.raw </networkConfiguration>
+    <networkConfiguration_GOSS> full_gp_north_118.xml </networkConfiguration_GOSS>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
     <!--

@@ -15,8 +15,7 @@
 
 #define OLD_MAP
 
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
+#include <boost/algorithm/string/split.hpp> #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #ifndef OLD_MAP
 #include <boost/unordered_map.hpp>
 #endif
@@ -976,7 +975,10 @@ class PTI33_parser
               std::vector<std::string>  split_line2;
               boost::split(split_line2, line, boost::algorithm::is_any_of(","),
                 boost::token_compress_on);
-              if (split_line2.size() < 4) {
+              // Check to see if transformer is active
+              int stat;
+              stat = atoi(split_line[11].c_str());
+              if (split_line2.size() < 4 || stat == 0) {
                 std::getline(input, line);
                 std::getline(input, line);
                 std::getline(input, line);
@@ -1046,8 +1048,6 @@ class PTI33_parser
               data->addValue(BUS_VOLTAGE_ANG,rval);
 
               // parse remainder of line 1
-              int stat;
-              stat = atoi(split_line[11].c_str());
               double mag1, mag2;
               mag1 = atof(split_line[7].c_str());
               mag2 = atof(split_line[8].c_str());
@@ -1187,9 +1187,9 @@ class PTI33_parser
               data3->addValue(BRANCH_SHUNT_ADMTTNC_G2,0.0,0);
               data3->addValue(BRANCH_SHUNT_ADMTTNC_B2,0.0,0);
               if (stat == 1 || stat == 2 || stat == 4) {
-                data2->addValue(BRANCH_STATUS,1,0);
+                data3->addValue(BRANCH_STATUS,1,0);
               } else {
-                data2->addValue(BRANCH_STATUS,0,0);
+                data3->addValue(BRANCH_STATUS,0,0);
               }
             } else {
               // Skip 3-winding transformers (for now)
@@ -1240,6 +1240,9 @@ class PTI33_parser
                   data(new gridpack::component::DataCollection);
                 l_idx = p_branchData.size();
                 p_branchData.push_back(data);
+                std::pair<std::pair<int,int>,int> item;
+                item = std::pair<std::pair<int,int>,int>(branch_pair,l_idx);
+                p_branchMap.insert(item);
                 nelems = 0;
                 p_branchData[l_idx]->addValue(BRANCH_NUM_ELEMENTS,nelems);
               }
