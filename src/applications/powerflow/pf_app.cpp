@@ -66,7 +66,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   }
   if (!opened) return;
 
-  printf("p[%d] Got to 1\n",world.rank());
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename;
@@ -81,7 +80,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
       return;
     }
   }
-  printf("p[%d] Got to 2 filename: (%s)\n",world.rank(),filename.c_str());
   // Convergence and iteration parameters
   double tolerance = cursor->get("tolerance",1.0e-6);
   int max_iteration = cursor->get("maxIteration",50);
@@ -96,10 +94,8 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     gridpack::parser::PTI33_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
   } else if (filetype == GOSS) {
-  printf("p[%d] Got to 3\n",world.rank());
     gridpack::parser::GOSS_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
-  printf("p[%d] Got to 4\n",world.rank());
   }
   timer->stop(t_pti);
 

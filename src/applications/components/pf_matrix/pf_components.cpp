@@ -949,10 +949,10 @@ void gridpack::powerflow::PFBranch::load(
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_SHIFT, &rvar, idx);
+    ok = data->getValue(BRANCH_SHIFT, &rvar, idx);
     rvar = -rvar*pi/180.0; 
     p_phase_shift.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
+    ok = data->getValue(BRANCH_TAP, &rvar, idx);
     p_tap_ratio.push_back(rvar); 
     if (rvar != 0.0) {
       p_xform.push_back(xform);
@@ -960,9 +960,11 @@ void gridpack::powerflow::PFBranch::load(
       p_xform.push_back(false);
     }
     ivar = 1;
-    data->getValue(BRANCH_STATUS, &ivar, idx);
+    ok = data->getValue(BRANCH_STATUS, &ivar, idx);
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     p_branch_status.push_back(static_cast<bool>(ivar));
-    if (ivar == 1) p_active = true;
+    if (ivar == 1 && ok) p_active = true;
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
     p_charging.push_back(rvar);

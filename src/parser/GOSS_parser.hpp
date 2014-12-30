@@ -71,7 +71,7 @@ class GOSS_parser
 
     /// Constructor
     explicit GOSS_parser(boost::shared_ptr<_network> network) :nBuses(0),
-      p_network(network), nBranches(0), p_case_sbase(0) {};
+      p_network(network), nBranches(0), p_case_sbase(0), p_configExists(false) {};
 
 
     /**
@@ -85,6 +85,10 @@ class GOSS_parser
      */
     virtual void parse(const std::string & xmlFileName)
     {
+      p_timer = gridpack::utility::CoarseTimer::instance();
+      p_timer->configTimer(false);
+      int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
+      p_timer->start(t_total);
       // setup parser
       boost::property_tree::ptree xmlTree;
 
@@ -99,12 +103,15 @@ class GOSS_parser
       loadCase(xmlTree);
       loadBusData(xmlTree);
       loadBranchData(xmlTree);
+      createNetwork();
+      p_timer->stop(t_total);
+      p_timer->configTimer(true);
     }
 
     int getNBuses()             {return nBuses;};
-    std::string getCaseId()     {return p_case_id;};
+    int getCaseId()             {return p_case_id;};
     int getNBranches()          {return nBranches;};
-    int getCaseSbase()          {return p_case_sbase;};
+    double getCaseSbase()       {return p_case_sbase;};
 
     void copyDataCollection(std::vector<boost::shared_ptr
         <gridpack::component::DataCollection> > & busCollection,
@@ -276,18 +283,19 @@ class GOSS_parser
     void loadCase(boost::property_tree::ptree & xmlTree)
     {
       boost::property_tree::ptree caseXMLTree =
-        xmlTree.get_child("application.GridpackPowergrid");
+        xmlTree.get_child("GridpackPowergrid");
+//        xmlTree.get_child("application.GridpackPowergrid");
 
       BOOST_FOREACH( boost::property_tree::ptree::value_type
           const& caseAttr, caseXMLTree)
       {
         if (caseAttr.first == "CASE_SBASE")
         {
-          p_case_sbase    = atoi(caseAttr.second.data().c_str());
+          p_case_sbase    = atof(caseAttr.second.data().c_str());
         }
         if (caseAttr.first == "CASE_ID")
         {
-          p_case_id    = caseAttr.second.data();
+          p_case_id    = atoi(caseAttr.second.data().c_str());
         }
       }
     }
@@ -304,7 +312,8 @@ class GOSS_parser
     void loadBusData(boost::property_tree::ptree & xmlTree)
     {
       boost::property_tree::ptree busXMLTree =
-        xmlTree.get_child("application.GridpackPowergrid.Buses");
+        xmlTree.get_child("GridpackPowergrid.Buses");
+//        xmlTree.get_child("application.GridpackPowergrid.Buses");
 
       // loop through XML Bus subtree "Buses"
       BOOST_FOREACH( boost::property_tree::ptree::value_type
@@ -385,7 +394,8 @@ class GOSS_parser
     void loadBranchData(boost::property_tree::ptree & xmlTree)
     {
       boost::property_tree::ptree branchXMLTree =
-        xmlTree.get_child("application.GridpackPowergrid.Branches");
+        xmlTree.get_child("GridpackPowergrid.Branches");
+//        xmlTree.get_child("application.GridpackPowergrid.Branches");
 
       // loop through XML Bus subtree "Buses"
       BOOST_FOREACH( boost::property_tree::ptree::value_type const& branchTree,
@@ -559,16 +569,11 @@ class GOSS_parser
         p_branchCollection[i]->getValue(BRANCH_TOBUS,&idx2);
         p_network->addBranch(idx1, idx2);
         p_network->setGlobalBranchIndex(i,i+offset_branch[me]);
-        int g_idx1, g_idx2;
 #ifdef OLD_MAP
         std::map<int, int>::iterator it;
 #else
         boost::unordered_map<int, int>::iterator it;
 #endif
-        it = p_busMap.find(idx1);
-        g_idx1 = it->second;
-        it = p_busMap.find(idx2);
-        g_idx2 = it->second;
         *(p_network->getBranchData(i)) = *(p_branchCollection[i]);
         p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
         p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
@@ -609,9 +614,10 @@ class GOSS_parser
       p_branchCollection;
     std::map<std::string, XML_TYPE> typeMap;
 
-    std::string              p_case_id;
-    int                      p_case_sbase;
+    int                      p_case_id;
+    double                   p_case_sbase;
     gridpack::utility::CoarseTimer *p_timer;
+    bool                     p_configExists;
 }; /* end of GOSS_parser */
 
 } /* namespace parser */
