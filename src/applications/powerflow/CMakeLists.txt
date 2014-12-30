@@ -49,12 +49,6 @@ add_executable(powerflow.x
 
 target_link_libraries(powerflow.x ${target_libraries})
 
-add_executable(powerflow2
-  pf_app2.cpp
-  pf_factory.cpp
-)
-target_link_libraries(powerflow2 ${target_libraries})
-
 # Put files necessary to run powerflow.x in binary directory.
 # gridpack.petscrc is temporary -- it will be incorporated into
 # input.xml
@@ -90,14 +84,13 @@ add_custom_target(powerflow.x.input
 
 )
 add_dependencies(powerflow.x powerflow.x.input)
-add_dependencies(powerflow2 powerflow.x.input)
 
 # -------------------------------------------------------------
 # TEST: pf_network_test
 # -------------------------------------------------------------
-add_executable(pf_network_test test/pf_network_test.cpp)
-target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-gridpack_add_unit_test(pf_network_test pf_network_test)
+#add_executable(pf_network_test test/pf_network_test.cpp)
+#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
+#gridpack_add_unit_test(pf_network_test pf_network_test)
 
 # -------------------------------------------------------------
 # install as a sample application
@@ -111,8 +104,6 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.hpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
