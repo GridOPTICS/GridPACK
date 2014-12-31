@@ -4,7 +4,7 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 /*
- * GOSSparser.hpp
+ * GOSS_parser.hpp
  *
  *  Created on: May 23, 2013
  *      Author: Kevin Glass, Bruce Palmer
@@ -37,6 +37,7 @@
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/network/base_network.hpp"
+#include "gridpack/parser/base_parser.hpp"
 /*
  *       <xs:complexType name="transmissionElements">
  *         <xs:sequence>
@@ -63,15 +64,20 @@ namespace gridpack {
 namespace parser {
 
 template <class _network>
-class GOSS_parser
+class GOSS_parser : BaseParser<_network>
 {
   public:
 
     enum XML_TYPE {INTEGER, BOOLEAN, DOUBLE, CHARACTER, STRING, N_TYPES};
 
     /// Constructor
-    explicit GOSS_parser(boost::shared_ptr<_network> network) :nBuses(0),
-      p_network(network), nBranches(0), p_case_sbase(0), p_configExists(false) {};
+    explicit GOSS_parser(boost::shared_ptr<_network> network) : nBuses(0),
+      p_network(network), nBranches(0), p_case_sbase(0.0), p_case_id(0),
+      p_configExists(false)
+    {
+      setNetwork(network);
+      p_comm = network->communicator();
+    }
 
 
     /**
@@ -103,7 +109,7 @@ class GOSS_parser
       loadCase(xmlTree);
       loadBusData(xmlTree);
       loadBranchData(xmlTree);
-      createNetwork();
+      this->createNetwork(p_busCollection, p_branchCollection);
       p_timer->stop(t_total);
       p_timer->configTimer(true);
     }
@@ -171,6 +177,7 @@ class GOSS_parser
     void setupXMLTree(const std::string & xmlFileName,
         boost::property_tree::ptree & xmlTree)
     {
+      if (p_comm.rank() != 0) return;
       try {
         read_xml(xmlFileName, xmlTree);
       } catch (boost::property_tree::xml_parser_error  & e) {
@@ -185,6 +192,7 @@ class GOSS_parser
      *********************************************************************** */
     void setTypeAssociations(boost::property_tree::ptree &  xmlTree)
     {
+      if (p_comm.rank() != 0) return;
       std::string          name("");
       boost::property_tree::ptree schemaStyleAttr;
 
@@ -282,22 +290,38 @@ class GOSS_parser
      *********************************************************************** */
     void loadCase(boost::property_tree::ptree & xmlTree)
     {
-      boost::property_tree::ptree caseXMLTree =
-        xmlTree.get_child("GridpackPowergrid");
+      if (p_comm.rank() == 0) {
+        boost::property_tree::ptree caseXMLTree =
+          xmlTree.get_child("GridpackPowergrid");
 //        xmlTree.get_child("application.GridpackPowergrid");
 
-      BOOST_FOREACH( boost::property_tree::ptree::value_type
-          const& caseAttr, caseXMLTree)
-      {
-        if (caseAttr.first == "CASE_SBASE")
+        BOOST_FOREACH( boost::property_tree::ptree::value_type
+            const& caseAttr, caseXMLTree)
         {
-          p_case_sbase    = atof(caseAttr.second.data().c_str());
-        }
-        if (caseAttr.first == "CASE_ID")
-        {
-          p_case_id    = atoi(caseAttr.second.data().c_str());
+          if (caseAttr.first == "CASE_SBASE")
+          {
+            p_case_sbase    = atof(caseAttr.second.data().c_str());
+          }
+          if (caseAttr.first == "CASE_ID")
+          {
+            p_case_id    = atoi(caseAttr.second.data().c_str());
+          }
         }
       }
+
+      // Transmit p_case_sbase and p_case_id to all processors
+      double sval =  p_case_sbase;
+      double rval;
+      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+      int nprocs = p_network->communicator().size();
+      int ierr = MPI_Allreduce(&sval,&rval,1,MPI_DOUBLE,MPI_SUM,comm);
+      p_case_sbase = rval;
+      this->setCaseSBase(p_case_sbase);
+      int isval, irval;
+      isval = p_case_id;
+      ierr = MPI_Allreduce(&isval,&irval,1,MPI_INT,MPI_SUM,comm);
+      p_case_id = irval;
+      this->setCaseID(p_case_id);
     }
 
     /* ************************************************************************
@@ -311,6 +335,7 @@ class GOSS_parser
      *********************************************************************** */
     void loadBusData(boost::property_tree::ptree & xmlTree)
     {
+      if (p_comm.rank() != 0) return;
       boost::property_tree::ptree busXMLTree =
         xmlTree.get_child("GridpackPowergrid.Buses");
 //        xmlTree.get_child("application.GridpackPowergrid.Buses");
@@ -393,6 +418,7 @@ class GOSS_parser
      *********************************************************************** */
     void loadBranchData(boost::property_tree::ptree & xmlTree)
     {
+      if (p_comm.rank() != 0) return;
       boost::property_tree::ptree branchXMLTree =
         xmlTree.get_child("GridpackPowergrid.Branches");
 //        xmlTree.get_child("application.GridpackPowergrid.Branches");
@@ -522,81 +548,6 @@ class GOSS_parser
       }
     }
 
-    void createNetwork(void)
-    {
-      int t_create = p_timer->createCategory("Parser:createNetwork");
-      p_timer->start(t_create);
-      int me(p_network->communicator().rank());
-      int nprocs(p_network->communicator().size());
-      int i;
-      // Exchange information on number of buses and branches on each
-      // processor
-      int sbus[nprocs], sbranch[nprocs];
-      int nbus[nprocs], nbranch[nprocs];
-      for (i=0; i<nprocs; i++) {
-        sbus[i] = 0;
-        sbranch[i] = 0;
-      }
-      sbus[me] = p_busCollection.size();
-      sbranch[me] = p_branchCollection.size();
-      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
-      int ierr;
-      ierr = MPI_Allreduce(sbus,nbus,nprocs,MPI_INT,MPI_SUM,comm);
-      ierr = MPI_Allreduce(sbranch,nbranch,nprocs,MPI_INT,MPI_SUM,comm);
-      // evaluate offsets for buses and branches
-      int offset_bus[nprocs], offset_branch[nprocs];
-      offset_bus[0] = 0;
-      offset_branch[0] = 0;
-      for (i=1; i<nprocs; i++) {
-        offset_bus[i] = offset_bus[i-1]+nbus[i-1];
-        offset_branch[i] = offset_branch[i-1]+nbranch[i-1];
-      }
-
-      int numBus = p_busCollection.size();
-      for (i=0; i<numBus; i++) {
-        int idx;
-        p_busCollection[i]->getValue(BUS_NUMBER,&idx);
-        p_network->addBus(idx);
-        p_network->setGlobalBusIndex(i,i+offset_bus[me]);
-        *(p_network->getBusData(i)) = *(p_busCollection[i]);
-        p_network->getBusData(i)->addValue(CASE_ID,p_case_id);
-        p_network->getBusData(i)->addValue(CASE_SBASE,p_case_sbase);
-      }
-      int numBranch = p_branchCollection.size();
-      for (i=0; i<numBranch; i++) {
-        int idx1, idx2;
-        p_branchCollection[i]->getValue(BRANCH_FROMBUS,&idx1);
-        p_branchCollection[i]->getValue(BRANCH_TOBUS,&idx2);
-        p_network->addBranch(idx1, idx2);
-        p_network->setGlobalBranchIndex(i,i+offset_branch[me]);
-#ifdef OLD_MAP
-        std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
-        *(p_network->getBranchData(i)) = *(p_branchCollection[i]);
-        p_network->getBranchData(i)->addValue(CASE_ID,p_case_id);
-        p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
-      }
-      p_configExists = true;
-#if 1
-      // debug
-      printf("Number of buses: %d\n",numBus);
-      for (i=0; i<numBus; i++) {
-        printf("Dumping bus: %d\n",i);
-        p_network->getBusData(i)->dump();
-      }
-      printf("Number of branches: %d\n",numBranch);
-      for (i=0; i<numBranch; i++) {
-        printf("Dumping branch: %d\n",i);
-        p_network->getBranchData(i)->dump();
-      }
-#endif
-      p_busCollection.clear();
-      p_branchCollection.clear();
-      p_timer->stop(t_create);
-    }
-
     /* ************************************************************************
      **************************************************************************
      ***** OBJECT DATA
@@ -614,6 +565,7 @@ class GOSS_parser
       p_branchCollection;
     std::map<std::string, XML_TYPE> typeMap;
 
+    parallel::Communicator   p_comm;
     int                      p_case_id;
     double                   p_case_sbase;
     gridpack::utility::CoarseTimer *p_timer;
