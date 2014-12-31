@@ -136,7 +136,7 @@ class BaseParser
         p_network->getBranchData(i)->addValue(CASE_SBASE,p_case_sbase);
       }
       p_configExists = true;
-#if 1
+#if 0
       // debug
       printf("Number of buses: %d\n",numBus);
       for (i=0; i<numBus; i++) {
