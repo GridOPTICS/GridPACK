@@ -18,8 +18,11 @@
 
 // -------------------------------------------------------------
 
+#include <ga.h>
 #include <parallel/communicator.hpp>
 #include "index_hash.hpp"
+
+#define HASH_WITH_MPI
 
 
 // -------------------------------------------------------------
@@ -35,6 +38,7 @@ GlobalIndexHashMap::GlobalIndexHashMap(const parallel::Communicator &comm)
   p_nprocs = comm.size();
   p_me = comm.rank();
   p_comm = static_cast<MPI_Comm>(comm);
+  p_GAgrp = comm.getGroup();
 }
 
 // Default destructor
@@ -50,7 +54,7 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<int,int> > &pairs)
   // Need to distribute key-value pairs between processors based on the value
   // returned by the hashValue function. Start by constructing a linked list of
   // where each pair needs to go
-  int i;
+  int i, j;
   int size = pairs.size();
   // ndest[idx] number of values to send to processor idx, nrecv[idx] is number
   // of values received from processor idx
@@ -74,6 +78,7 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<int,int> > &pairs)
     ldest[i] = ltop[hash];
     ltop[hash] = i;
   }
+#ifdef HASH_WITH_MPI
   // send data to processors based on linked list. Start by evaluating how much
   // data will be received from other processors using an all-to-all call
   int ierr;
@@ -123,6 +128,102 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<int,int> > &pairs)
     second = recv_pair[2*i+1];
     p_umap.insert(std::pair<int, int>(first,second));
   }
+#else
+  // Create a global array to count how many values are coming from each
+  // processor and use this to create a set of offsets
+  int g_offset = GA_Create_handle();
+  int dims = p_nprocs;
+  int one = 1;
+  int blocks = 1;
+  GA_Set_data(g_offset,one,&dims,C_INT);
+  GA_Set_chunk(g_offset, &blocks);
+  GA_Set_pgroup(g_offset, p_GAgrp);
+  GA_Allocate(g_offset);
+  GA_Zero(g_offset);
+
+  // Get offsets on remote processors
+  int r_offset[p_nprocs];
+  for (i=0; i<p_nprocs; i++) {
+    if (ndest[i] > 0) {
+      r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
+    } else {
+      r_offset[i] = 0;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+  // Copy values from global array to local array and evaluate global offsets
+  int numValues[p_nprocs];
+  int lo, hi;
+  lo = 0;
+  hi = p_nprocs-1;
+  if (p_me == 0) {
+    NGA_Get(g_offset,&lo,&hi,numValues,&one);
+  } else {
+    for (i=0; i<p_nprocs; i++) {
+      numValues[i] = 0;
+    }
+  }
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
+  GA_Destroy(g_offset);
+  int totalVals = 0;
+  for (i=0; i<p_nprocs; i++) {
+    r_offset[i] += totalVals;
+    totalVals += numValues[i];
+  }
+  if (totalVals == 0) return;
+
+  // Create a global array that can hold all values
+  int dtype = NGA_Register_type(sizeof(std::pair<int,int>));
+  int g_data = GA_Create_handle();
+  dims = totalVals+1;
+  GA_Set_data(g_data,one,&dims,dtype);
+  GA_Set_pgroup(g_data,p_GAgrp);
+  int mapc[p_nprocs];
+  mapc[0] = 0;
+  for (i=1; i<p_nprocs; i++) {
+    mapc[i] = mapc[i-1] + numValues[i-1];
+  }
+  blocks = p_nprocs;
+  GA_Set_irreg_distr(g_data,mapc,&blocks);
+  GA_Allocate(g_data);
+  NGA_Deregister_type(dtype);
+
+  // Repack values and send them to the processor that owns the corresponding
+  // keys
+  std::pair<int,int> *data_pairs;
+  int ncnt;
+  for (i=0; i<p_nprocs; i++) {
+    j = ltop[i];
+    ncnt = 0;
+    if (j >= 0) {
+      data_pairs = new std::pair<int,int>[ndest[i]];
+      while (j >= 0) {
+        data_pairs[ncnt] = pairs[j];
+        j = ldest[j];
+        ncnt++;
+      }
+      lo = r_offset[i];
+      hi = lo + ndest[i] - 1;
+      NGA_Put(g_data, &lo, &hi, data_pairs, &one);
+      delete [] data_pairs;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Data is now on the processor. Store it in hash map
+  lo = mapc[p_me];
+  hi = mapc[p_me] + numValues[p_me] - 1;
+  int ld;
+  p_umap.clear();
+  if (lo<=hi) {
+    NGA_Access(g_data,&lo,&hi,&data_pairs,&ld);
+    for (i=0; i<numValues[p_me]; i++) {
+      p_umap.insert(data_pairs[i]);
+    }
+    NGA_Release(g_data,&lo,&hi);
+  }
+  GA_Destroy(g_data);
+#endif
 }
 
 // add key-value pairs to hash map where key is another index pair of integers
@@ -133,7 +234,7 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<std::pair<int,int>,int> 
   // Need to distribute key-value pairs between processors based on the value
   // returned by the hashValue function. Start by constructing a linked list of
   // where each pair needs to go
-  int i;
+  int i, j;
   int size = pairs.size();
   // ndest[idx] number of values to send to processor idx, nrecv[idx] is number
   // of values received from processor idx
@@ -157,6 +258,7 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<std::pair<int,int>,int> 
     ldest[i] = ltop[hash];
     ltop[hash] = i;
   }
+#ifdef HASH_WITH_MPI
   // send data to processors based on linked list. Start by evaluating how much
   // data will be received from other processors using an all-to-all call
   int ierr;
@@ -208,6 +310,102 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<std::pair<int,int>,int> 
     third = recv_pair[3*i+2];
     p_pmap.insert(std::pair<std::pair<int,int>,int>(std::pair<int, int>(first,second),third));
   }
+#else
+  // Create a global array to count how many values are coming from each
+  // processor and use this to create a set of offsets
+  int g_offset = GA_Create_handle();
+  int dims = p_nprocs;
+  int one = 1;
+  int blocks = 1;
+  GA_Set_data(g_offset,one,&dims,C_INT);
+  GA_Set_chunk(g_offset, &blocks);
+  GA_Set_pgroup(g_offset, p_GAgrp);
+  GA_Allocate(g_offset);
+  GA_Zero(g_offset);
+
+  // Get offsets on remote processors
+  int r_offset[p_nprocs];
+  for (i=0; i<p_nprocs; i++) {
+    if (ndest[i] > 0) {
+      r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
+    } else {
+      r_offset[i] = 0;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+  // Copy values from global array to local array and evaluate global offsets
+  int numValues[p_nprocs];
+  int lo, hi;
+  lo = 0;
+  hi = p_nprocs-1;
+  if (p_me == 0) {
+    NGA_Get(g_offset,&lo,&hi,numValues,&one);
+  } else {
+    for (i=0; i<p_nprocs; i++) {
+      numValues[i] = 0;
+    }
+  }
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
+  GA_Destroy(g_offset);
+  int totalVals = 0;
+  for (i=0; i<p_nprocs; i++) {
+    r_offset[i] += totalVals;
+    totalVals += numValues[i];
+  }
+  if (totalVals == 0) return;
+
+  // Create a global array that can hold all values
+  int dtype = NGA_Register_type(sizeof(std::pair<std::pair<int,int>,int>));
+  int g_data = GA_Create_handle();
+  dims = totalVals+1;
+  GA_Set_data(g_data,one,&dims,dtype);
+  GA_Set_pgroup(g_data,p_GAgrp);
+  int mapc[p_nprocs];
+  mapc[0] = 0;
+  for (i=1; i<p_nprocs; i++) {
+    mapc[i] = mapc[i-1] + numValues[i-1];
+  }
+  blocks = p_nprocs;
+  GA_Set_irreg_distr(g_data,mapc,&blocks);
+  GA_Allocate(g_data);
+  NGA_Deregister_type(dtype);
+
+  // Repack values and send them to the processor that owns the corresponding
+  // keys
+  std::pair<std::pair<int,int>,int> *data_pairs;
+  int ncnt;
+  for (i=0; i<p_nprocs; i++) {
+    j = ltop[i];
+    ncnt = 0;
+    if (j >= 0) {
+      data_pairs = new std::pair<std::pair<int,int>,int>[ndest[i]];
+      while (j >= 0) {
+        data_pairs[ncnt] = pairs[j];
+        j = ldest[j];
+        ncnt++;
+      }
+      lo = r_offset[i];
+      hi = lo + ndest[i] - 1;
+      NGA_Put(g_data, &lo, &hi, data_pairs, &one);
+      delete [] data_pairs;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Data is now on the processor. Store it in hash map
+  lo = mapc[p_me];
+  hi = mapc[p_me] + numValues[p_me] - 1;
+  int ld;
+  p_pmap.clear();
+  if (lo<=hi) {
+    NGA_Access(g_data,&lo,&hi,&data_pairs,&ld);
+    for (i=0; i<numValues[p_me]; i++) {
+      p_pmap.insert(data_pairs[i]);
+    }
+    NGA_Release(g_data,&lo,&hi);
+  }
+  GA_Destroy(g_data);
+#endif
 }
 
 // get values corresponding to a list of keys from the hash map where key is a
@@ -242,6 +440,7 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
     ldest[i] = ltop[hash];
     ltop[hash] = i;
   }
+#ifdef HASH_WITH_MPI
   // send keys to processors based on linked list. Start by evaluating how much
   // data will be received from other processors using an all-to-all call
   int ierr;
@@ -352,6 +551,216 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
     keys.push_back(ret_values[2*i]);
     values.push_back(ret_values[2*i+1]);
   }
+#else
+  // Create a global array to count how many values are coming from each
+  // processor and use this to create a set of offsets
+  int g_offset = GA_Create_handle();
+  int dims = p_nprocs;
+  int one = 1;
+  int blocks = 1;
+  GA_Set_data(g_offset,one,&dims,C_INT);
+  GA_Set_chunk(g_offset, &blocks);
+  GA_Set_pgroup(g_offset, p_GAgrp);
+  GA_Allocate(g_offset);
+  GA_Zero(g_offset);
+
+  // Get offsets on remote processors
+  int r_offset[p_nprocs];
+  for (i=0; i<p_nprocs; i++) {
+    if (ndest[i] > 0) {
+      r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
+    } else {
+      r_offset[i] = 0;
+    }
+    r_offset[i] = 2*r_offset[i];
+  }
+  GA_Pgroup_sync(p_GAgrp);
+  // Copy values from global array to local array and evaluate global offsets
+  int numValues[p_nprocs];
+  int lo, hi;
+  lo = 0;
+  hi = p_nprocs-1;
+  if (p_me == 0) {
+    NGA_Get(g_offset,&lo,&hi,numValues,&one);
+  } else {
+    for (i=0; i<p_nprocs; i++) {
+      numValues[i] = 0;
+    }
+  }
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
+  int totalVals = 0;
+  for (i=0; i<p_nprocs; i++) {
+    r_offset[i] += totalVals;
+    totalVals += 2*numValues[i];
+  }
+  if (totalVals == 0) return;
+
+  // Create a global array that can hold all key values
+  int g_data = GA_Create_handle();
+  dims = totalVals+1;
+  GA_Set_data(g_data,one,&dims,C_INT);
+  GA_Set_pgroup(g_data,p_GAgrp);
+  int mapc[p_nprocs];
+  mapc[0] = 0;
+  for (i=1; i<p_nprocs; i++) {
+    mapc[i] = mapc[i-1] + 2*numValues[i-1];
+  }
+  blocks = p_nprocs;
+  GA_Set_irreg_distr(g_data,mapc,&blocks);
+  GA_Allocate(g_data);
+
+  // Repack keys and send them to the processor that owns the corresponding
+  // values
+  int *data_keys;
+  int ncnt;
+  for (i=0; i<p_nprocs; i++) {
+    j = ltop[i];
+    ncnt = 0;
+    if (j >= 0) {
+      data_keys = new int[2*ndest[i]];
+      while (j >= 0) {
+        data_keys[2*ncnt] = keys[j];
+        data_keys[2*ncnt+1] = p_me;
+        j = ldest[j];
+        ncnt++;
+      }
+      lo = r_offset[i];
+      hi = lo + 2*ndest[i] - 1;
+      NGA_Put(g_data, &lo, &hi, data_keys, &one);
+      delete [] data_keys;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Keys are now all on processor holding the values, along with information on
+  // the processor requesting the values.
+  int nval = numValues[p_me];
+  lo = mapc[p_me];
+  hi = lo + 2*numValues[p_me] - 1;
+  int ld;
+  std::vector<int> data_pairs;
+  if (lo<=hi) {
+    NGA_Access(g_data,&lo,&hi,&data_keys,&ld);
+    std::multimap<int,int>::iterator it;
+    for (i=0; i<nval; i++) {
+      it = p_umap.find(data_keys[2*i]);
+      if (it != p_umap.end()) {
+        while(it != p_umap.upper_bound(data_keys[2*i])) {
+          data_pairs.push_back(data_keys[2*i]);
+          data_pairs.push_back(data_keys[2*i+1]);
+          data_pairs.push_back(it->second);
+          it++;
+        }
+      } else {
+        printf("p[%d] key not found: %d\n",p_me,data_keys[2*i]);
+      }
+    }
+    NGA_Release(g_data,&lo,&hi);
+  }
+  GA_Destroy(g_data);
+
+  // Now need to repack data and send it back to requesting processor
+  size = data_pairs.size()/3;
+  int lreturn[size];
+  // initialize all arrays
+  for (i=0; i<p_nprocs; i++) {
+    ndest[i] = 0;
+    ltop[i] = -1;
+  }
+  for (i=0; i<size; i++) {
+    lreturn[i] = -1;
+  }
+  // create linked list of return values
+  for (i=0; i<size; i++) {
+    j = data_pairs[3*i+1];
+    ndest[j]++;
+    lreturn[i] = ltop[j];
+    ltop[j] = i;
+  }
+
+  // Evaluate offsets for returning values
+  GA_Zero(g_offset);
+
+  // Get offsets on remote processors
+  for (i=0; i<p_nprocs; i++) {
+    if (ndest[i] > 0) {
+      r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
+    } else {
+      r_offset[i] = 0;
+    }
+    r_offset[i] = 2*r_offset[i];
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Copy values from global array to local array and evaluate global offsets
+  lo = 0;
+  hi = p_nprocs-1;
+  if (p_me == 0) {
+    NGA_Get(g_offset,&lo,&hi,numValues,&one);
+  } else {
+    for (i=0; i<p_nprocs; i++) {
+      numValues[i] = 0;
+    }
+  }
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
+  GA_Destroy(g_offset);
+  totalVals = 0;
+  for (i=0; i<p_nprocs; i++) {
+    r_offset[i] += totalVals;
+    totalVals += 2*numValues[i];
+  }
+
+  // Create a global array that can hold all key-value pairs
+  g_data = GA_Create_handle();
+  dims = totalVals+1;
+  GA_Set_data(g_data,one,&dims,C_INT);
+  GA_Set_pgroup(g_data,p_GAgrp);
+  mapc[0] = 0;
+  for (i=1; i<p_nprocs; i++) {
+    mapc[i] = mapc[i-1] + 2*numValues[i-1];
+  }
+  blocks = p_nprocs;
+  GA_Set_irreg_distr(g_data,mapc,&blocks);
+  GA_Allocate(g_data);
+
+  // Repack key-value pairs and send them to the processor that requested the
+  // values
+  for (i=0; i<p_nprocs; i++) {
+    j = ltop[i];
+    ncnt = 0;
+    if (j >= 0) {
+      data_keys = new int[2*ndest[i]];
+      while (j >= 0) {
+        data_keys[2*ncnt] = data_pairs[3*j];
+        data_keys[2*ncnt+1] = data_pairs[3*j+2];
+        j = lreturn[j];
+        ncnt++;
+      }
+      lo = r_offset[i];
+      hi = lo + 2*ndest[i] - 1;
+      NGA_Put(g_data, &lo, &hi, data_keys, &one);
+      delete [] data_keys;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Data has been returned to requesting process. Unpack it and fill the keys
+  // and values arrays
+  nval = numValues[p_me];
+  lo = mapc[p_me];
+  hi = lo + 2*numValues[p_me] - 1;
+  keys.clear();
+  values.clear();
+  if (lo<=hi) {
+    NGA_Access(g_data,&lo,&hi,&data_keys,&ld);
+    for (i=0; i<nval; i++) {
+      keys.push_back(data_keys[2*i]);
+      values.push_back(data_keys[2*i+1]);
+    }
+    NGA_Release(g_data,&lo,&hi);
+  }
+  GA_Destroy(g_data);
+#endif
 }
 
 // get values corresponding to a list of keys from the hash map where key is a
@@ -387,6 +796,7 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
     ldest[i] = ltop[hash];
     ltop[hash] = i;
   }
+#ifdef HASH_WITH_MPI
   // send keys to processors based on linked list. Start by evaluating how much
   // data will be received from other processors using an all-to-all call
   int ierr;
@@ -507,6 +917,222 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
     keys.push_back(key);
     values.push_back(ret_values[3*i+2]);
   }
+#else
+  // Create a global array to count how many values are coming from each
+  // processor and use this to create a set of offsets
+  int g_offset = GA_Create_handle();
+  int dims = p_nprocs;
+  int one = 1;
+  int blocks = 1;
+  GA_Set_data(g_offset,one,&dims,C_INT);
+  GA_Set_chunk(g_offset, &blocks);
+  GA_Set_pgroup(g_offset, p_GAgrp);
+  GA_Allocate(g_offset);
+  GA_Zero(g_offset);
+
+  // Get offsets on remote processors
+  int r_offset[p_nprocs];
+  for (i=0; i<p_nprocs; i++) {
+    if (ndest[i] > 0) {
+      r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
+    } else {
+      r_offset[i] = 0;
+    }
+    r_offset[i] = 3*r_offset[i];
+  }
+  GA_Pgroup_sync(p_GAgrp);
+  // Copy values from global array to local array and evaluate global offsets
+  int numValues[p_nprocs];
+  int lo, hi;
+  lo = 0;
+  hi = p_nprocs-1;
+  if (p_me == 0) {
+    NGA_Get(g_offset,&lo,&hi,numValues,&one);
+  } else {
+    for (i=0; i<p_nprocs; i++) {
+      numValues[i] = 0;
+    }
+  }
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
+  int totalVals = 0;
+  for (i=0; i<p_nprocs; i++) {
+    r_offset[i] += totalVals;
+    totalVals += 3*numValues[i];
+  }
+  if (totalVals == 0) return;
+
+  // Create a global array that can hold all key values
+  int g_data = GA_Create_handle();
+  dims = totalVals+1;
+  GA_Set_data(g_data,one,&dims,C_INT);
+  GA_Set_pgroup(g_data,p_GAgrp);
+  int mapc[p_nprocs];
+  mapc[0] = 0;
+  for (i=1; i<p_nprocs; i++) {
+    mapc[i] = mapc[i-1] + 3*numValues[i-1];
+  }
+  blocks = p_nprocs;
+  GA_Set_irreg_distr(g_data,mapc,&blocks);
+  GA_Allocate(g_data);
+
+  // Repack keys and send them to the processor that owns the corresponding
+  // values
+  int *data_keys;
+  int ncnt;
+  for (i=0; i<p_nprocs; i++) {
+    j = ltop[i];
+    ncnt = 0;
+    if (j >= 0) {
+      data_keys = new int[3*ndest[i]];
+      while (j >= 0) {
+        data_keys[3*ncnt] = keys[j].first;
+        data_keys[3*ncnt+1] = keys[j].second;
+        data_keys[3*ncnt+2] = p_me;
+        j = ldest[j];
+        ncnt++;
+      }
+      lo = r_offset[i];
+      hi = lo + 3*ndest[i] - 1;
+      NGA_Put(g_data, &lo, &hi, data_keys, &one);
+      delete [] data_keys;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Keys are now all on processor holding the values, along with information on
+  // the processor requesting the values.
+  int nval = numValues[p_me];
+  lo = mapc[p_me];
+  hi = lo + 3*numValues[p_me] - 1;
+  int ld;
+  std::vector<int> data_pairs;
+  if (lo<=hi) {
+    NGA_Access(g_data,&lo,&hi,&data_keys,&ld);
+    std::multimap<std::pair<int,int>,int>::iterator it;
+    for (i=0; i<nval; i++) {
+      std::pair<int,int> key
+        = std::pair<int,int>(data_keys[3*i],data_keys[3*i+1]);
+      it = p_pmap.find(key);
+      if (it != p_pmap.end()) {
+        while(it != p_pmap.upper_bound(key)) {
+          data_pairs.push_back(data_keys[3*i]);
+          data_pairs.push_back(data_keys[3*i+1]);
+          data_pairs.push_back(data_keys[3*i+2]);
+          data_pairs.push_back(it->second);
+          it++;
+        }
+      } else {
+        printf("p[%d] key not found: < %d, %d>\n",p_me,data_keys[3*i],
+            data_keys[3*i+1]);
+      }
+    }
+    NGA_Release(g_data,&lo,&hi);
+  }
+  GA_Destroy(g_data);
+
+  // Now need to repack data and send it back to requesting processor
+  size = data_pairs.size()/4;
+  int lreturn[size];
+  // initialize all arrays
+  for (i=0; i<p_nprocs; i++) {
+    ndest[i] = 0;
+    ltop[i] = -1;
+  }
+  for (i=0; i<size; i++) {
+    lreturn[i] = -1;
+  }
+  // create linked list of return values
+  for (i=0; i<size; i++) {
+    j = data_pairs[4*i+2];
+    ndest[j]++;
+    lreturn[i] = ltop[j];
+    ltop[j] = i;
+  }
+
+  // Evaluate offsets for returning values
+  GA_Zero(g_offset);
+
+  // Get offsets on remote processors
+  for (i=0; i<p_nprocs; i++) {
+    if (ndest[i] > 0) {
+      r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
+    } else {
+      r_offset[i] = 0;
+    }
+    r_offset[i] = 3*r_offset[i];
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Copy values from global array to local array and evaluate global offsets
+  lo = 0;
+  hi = p_nprocs-1;
+  if (p_me == 0) {
+    NGA_Get(g_offset,&lo,&hi,numValues,&one);
+  } else {
+    for (i=0; i<p_nprocs; i++) {
+      numValues[i] = 0;
+    }
+  }
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
+  GA_Destroy(g_offset);
+  totalVals = 0;
+  for (i=0; i<p_nprocs; i++) {
+    r_offset[i] += totalVals;
+    totalVals += 3*numValues[i];
+  }
+
+  // Create a global array that can hold all key-value pairs
+  g_data = GA_Create_handle();
+  dims = totalVals+1;
+  GA_Set_data(g_data,one,&dims,C_INT);
+  GA_Set_pgroup(g_data,p_GAgrp);
+  mapc[0] = 0;
+  for (i=1; i<p_nprocs; i++) {
+    mapc[i] = mapc[i-1] + 3*numValues[i-1];
+  }
+  blocks = p_nprocs;
+  GA_Set_irreg_distr(g_data,mapc,&blocks);
+  GA_Allocate(g_data);
+
+  // Repack key-value pairs and send them to the processor that requested the
+  // values
+  for (i=0; i<p_nprocs; i++) {
+    j = ltop[i];
+    ncnt = 0;
+    if (j >= 0) {
+      data_keys = new int[3*ndest[i]];
+      while (j >= 0) {
+        data_keys[3*ncnt] = data_pairs[4*j];
+        data_keys[3*ncnt+1] = data_pairs[4*j+1];
+        data_keys[3*ncnt+2] = data_pairs[4*j+3];
+        j = lreturn[j];
+        ncnt++;
+      }
+      lo = r_offset[i];
+      hi = lo + 3*ndest[i] - 1;
+      NGA_Put(g_data, &lo, &hi, data_keys, &one);
+      delete [] data_keys;
+    }
+  }
+  GA_Pgroup_sync(p_GAgrp);
+
+  // Data has been returned to requesting process. Unpack it and fill the keys
+  // and values arrays
+  nval = numValues[p_me];
+  lo = mapc[p_me];
+  hi = lo + 3*numValues[p_me] - 1;
+  keys.clear();
+  values.clear();
+  if (lo<=hi) {
+    NGA_Access(g_data,&lo,&hi,&data_keys,&ld);
+    for (i=0; i<nval; i++) {
+      keys.push_back(std::pair<int,int>(data_keys[3*i],data_keys[3*i+1]));
+      values.push_back(data_keys[3*i+2]);
+    }
+    NGA_Release(g_data,&lo,&hi);
+  }
+  GA_Destroy(g_data);
+#endif
 }
 
 // hash function for indices. Maps the value of key into the interval [0,p_nprocs-1]

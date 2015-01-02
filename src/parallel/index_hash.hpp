@@ -79,6 +79,7 @@ private:
 
   int p_nprocs;
   int p_me;
+  int p_GAgrp;
 
   MPI_Comm p_comm;
 
