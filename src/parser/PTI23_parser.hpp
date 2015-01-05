@@ -51,7 +51,7 @@ class PTI23_parser : BaseParser<_network>
     PTI23_parser(boost::shared_ptr<_network> network)
       : p_network(network), p_configExists(false)
     { 
-      setNetwork(network);
+      this->setNetwork(network);
     }
 
     /**
