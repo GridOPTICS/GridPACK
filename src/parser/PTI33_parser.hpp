@@ -961,6 +961,7 @@ class PTI33_parser : BaseParser<_network>
             p_busData[l_idx3]->getValue(BUS_VOLTAGE_MAG,&rvol);
             rval += rvol;
             rval = rval/3.0;
+            rval = 1.0;
             data->addValue(BUS_VOLTAGE_MAG,rval);
             rval = 0.0;
             p_busData[l_idx1]->getValue(BUS_VOLTAGE_ANG,&rvol);
@@ -970,6 +971,7 @@ class PTI33_parser : BaseParser<_network>
             p_busData[l_idx3]->getValue(BUS_VOLTAGE_ANG,&rvol);
             rval += rvol;
             rval = rval/3.0;
+            rval = 0.0;
             data->addValue(BUS_VOLTAGE_ANG,rval);
 
             // parse remainder of line 1
