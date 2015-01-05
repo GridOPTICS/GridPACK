@@ -75,7 +75,7 @@ class GOSS_parser : BaseParser<_network>
       p_network(network), nBranches(0), p_case_sbase(0.0), p_case_id(0),
       p_configExists(false)
     {
-      setNetwork(network);
+      this->setNetwork(network);
       p_comm = network->communicator();
     }
 
@@ -148,7 +148,7 @@ class GOSS_parser : BaseParser<_network>
 
     void test_dumpTypeMap()
     {
-      std::map<std::string, XML_TYPE>::iterator type;
+      typename std::map<std::string, XML_TYPE>::iterator type;
       for (type = typeMap.begin(); type != typeMap.end(); ++type)
       {
         std::cout << "<" << type->first << "; ";

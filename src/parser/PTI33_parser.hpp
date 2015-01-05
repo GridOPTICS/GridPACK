@@ -50,7 +50,7 @@ class PTI33_parser : BaseParser<_network>
     PTI33_parser(boost::shared_ptr<_network> network)
       : p_network(network), p_configExists(false), p_maxBusIndex(-1)
     {
-      setNetwork(network);
+      this->setNetwork(network);
     }
 
     /**
