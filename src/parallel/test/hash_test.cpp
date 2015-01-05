@@ -122,6 +122,7 @@ main(int argc, char **argv)
 
     // Test list in which all processors contribute
     // Create pairs of values and add them to hashmap
+    ntotal = NVALUES*nprocs;
     std::vector<std::pair<std::pair<int,int>, int> > pairs2;
     for (i = 0; i<NVALUES; i++) {
       int ival = me*NVALUES + i;

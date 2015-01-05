@@ -7,7 +7,7 @@
 /**
  * @file   se_components.cpp
  * @author Yousu Chen
- * @date   2014-12-09 14:25:20 d3g096
+ * @date   2015-01-05 15:15:26 d3g096
  * 
  * @brief  
  * 
@@ -405,7 +405,8 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
     sprintf(string, "     %6d      %12.6f         %12.6f      %2d\n",
-        getOriginalIndex(),real(v[0]),real(v[1]),branches.size());
+        getOriginalIndex(),real(v[0]),real(v[1]),
+        static_cast<int>(branches.size()));
   } else if (!strcmp(signal,"se")) {
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
@@ -654,12 +655,12 @@ int gridpack::state_estimation::SEBus::matrixGetRowIndex(int idx)
   if (p_mode == Jacobian_H) {
     if (idx >= p_rowJidx.size())
       printf("violation in bus:matrixGetColIndex bus: %d size: %d idx: %d\n",
-          getOriginalIndex(),idx,p_rowJidx.size());
+          getOriginalIndex(),idx,static_cast<int>(p_rowJidx.size()));
     return p_rowJidx[idx];
   } else if (p_mode == R_inv) {
     return p_rowRidx[idx];
   }
-  return 0;
+  return -1;
 }
 
 /**
@@ -673,12 +674,12 @@ int gridpack::state_estimation::SEBus::matrixGetColIndex(int idx)
   if (p_mode == Jacobian_H) {
     if (idx >= p_colJidx.size())
       printf("violation in bus:matrixGetColIndex bus: %d size: %d idx: %d\n",
-          getOriginalIndex(),idx,p_colJidx.size());
+          getOriginalIndex(),idx,static_cast<int>(p_colJidx.size()));
     return p_colJidx[idx];
   } else if (p_mode == R_inv) {
     return p_colRidx[idx];
   }
-  return 0;
+  return -1;
 }
 
 /**
@@ -1528,7 +1529,7 @@ int gridpack::state_estimation::SEBranch::matrixGetRowIndex(int idx)
   } else if (p_mode == R_inv) {
     return p_rowRidx[idx];
   }
-  return 0;
+  return -1;
 }
 
 /**
@@ -1542,12 +1543,13 @@ int gridpack::state_estimation::SEBranch::matrixGetColIndex(int idx)
   if (p_mode == Jacobian_H) {
     if (idx >= p_colJidx.size())
       printf("violation in branch:matrixGetColIndex branch: %d %d size: %d idx: %d\n",
-          getBus1OriginalIndex(),getBus2OriginalIndex(),idx,p_colJidx.size());
+          getBus1OriginalIndex(),getBus2OriginalIndex(),idx,
+          static_cast<int>(p_colJidx.size()));
     return p_colJidx[idx];
   } else if (p_mode == R_inv) {
     return p_colRidx[idx];
   }
-  return 0;
+  return -1;
 }
 
 /**

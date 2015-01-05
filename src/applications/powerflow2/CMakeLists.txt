@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2015-01-05 15:24:28 d3g096
+# Last Change: 2015-01-05 15:24:24 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -37,23 +37,21 @@ if (PARMETIS_FOUND)
   include_directories(BEFORE ${PARMETIS_INCLUDE_DIR})
 endif()
 
-add_library(powerflow_app
+add_library(powerflow_app2
   pf_factory.cpp
 )
 
-add_executable(powerflow.x
-   pf_app.cpp
-   pf_factory.cpp
-   pf_main.cpp
+add_executable(powerflow2
+  pf_app2.cpp
+  pf_factory.cpp
 )
+target_link_libraries(powerflow2 ${target_libraries})
 
-target_link_libraries(powerflow.x ${target_libraries})
-
-# Put files necessary to run powerflow.x in binary directory.
+# Put files necessary to run powerflow2 in binary directory.
 # gridpack.petscrc is temporary -- it will be incorporated into
 # input.xml
 
-add_custom_target(powerflow.x.input
+add_custom_target(powerflow2.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
@@ -61,10 +59,6 @@ add_custom_target(powerflow.x.input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -78,24 +72,16 @@ add_custom_target(powerflow.x.input
   DEPENDS 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
 
 )
-add_dependencies(powerflow.x powerflow.x.input)
-
-# -------------------------------------------------------------
-# TEST: pf_network_test
-# -------------------------------------------------------------
-#add_executable(pf_network_test test/pf_network_test.cpp)
-#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-#gridpack_add_unit_test(pf_network_test pf_network_test)
+add_dependencies(powerflow2 powerflow2.x.input)
 
 # -------------------------------------------------------------
 # run applications as tests
 # -------------------------------------------------------------
-gridpack_add_run_test("powerflow" powerflow.x input.xml)
+gridpack_add_run_test("powerflow2" powerflow2 input.xml)
 
 # -------------------------------------------------------------
 # install as a sample application
@@ -106,17 +92,14 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.hpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.hpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/pti08.xml
-  DESTINATION doc/gridpack/example/powerflow
+  DESTINATION doc/gridpack/example/powerflow2
 )
-

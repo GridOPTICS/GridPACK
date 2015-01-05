@@ -32,12 +32,11 @@ add_definitions(${GRIDPACK_DEFINITIONS})
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 
-add_executable(powerflow.x
-  pf_main.cpp
-  pf_app.cpp
+add_executable(powerflow2
+  pf_app2.cpp
   pf_factory.cpp
 )
-target_link_libraries(powerflow.x ${GRIDPACK_LIBS})
+target_link_libraries(powerflow2 ${GRIDPACK_LIBS})
 
 add_custom_target(powerflow.input
  
@@ -53,5 +52,4 @@ add_custom_target(powerflow.input
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
 )
-add_dependencies(powerflow.x powerflow.input)
-
+add_dependencies(powerflow2 powerflow.input)

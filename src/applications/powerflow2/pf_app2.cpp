@@ -226,16 +226,29 @@ PFApp2::execute(int argc, char** argv)
   }
   utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
-  std::string filename = cursor->get("networkConfiguration",
-      "No network configuration specified");
+  std::string filename;
+  int filetype = 23;
+  if (!cursor->get("networkConfiguration",&filename)) {
+    if (!cursor->get("networkConfiguration_v33",&filename)) {
+      printf("No network configuration file specified\n");
+      return;
+    } else {
+      filetype = 33;
+    }
+  }
 
   // load input file
   utility::CoarseTimer *timer =
     utility::CoarseTimer::instance();
   int t_pti = timer->createCategory("PTI Parser");
   timer->start(t_pti);
-  parser::PTI23_parser<PFNetwork> parser(network);
-  parser.parse(filename.c_str());
+  if (filetype == 23) {
+    parser::PTI23_parser<PFNetwork> parser(network);
+    parser.parse(filename.c_str());
+  } else {
+    parser::PTI33_parser<PFNetwork> parser(network);
+    parser.parse(filename.c_str());
+  }
   timer->stop(t_pti);
 
   // partition network

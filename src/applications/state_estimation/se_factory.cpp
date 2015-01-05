@@ -75,7 +75,7 @@ void gridpack::state_estimation::SEFactory::setMeasurements(
   std::vector<std::pair<int,int> > branch_keys;
   std::vector<gridpack::state_estimation::Measurement> bus_meas;
   std::vector<gridpack::state_estimation::Measurement> branch_meas;
-  int i, nbus, nbranch, idx1, idx2;
+  int i, idx1, idx2;
   std::pair<int,int> key;
   for (i=0; i<size; i++) {
     std::string meas_type = measurements[i].p_type;

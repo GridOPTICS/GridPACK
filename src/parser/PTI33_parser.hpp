@@ -4,19 +4,18 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 /*
- * PTI23parser.hpp
+ * PTI33parser.hpp
  *
- *  Created on: May 23, 2013
+ *  Created on: December 10, 2014
  *      Author: Kevin Glass, Bruce Palmer
  */
 
-#ifndef PTI23_PARSER_HPP_
-#define PTI23_PARSER_HPP_
+#ifndef PTI33_PARSER_HPP_
+#define PTI33_PARSER_HPP_
 
 #define OLD_MAP
 
-#include <boost/algorithm/string/split.hpp>
-#include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
+#include <boost/algorithm/string/split.hpp> #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #ifndef OLD_MAP
 #include <boost/unordered_map.hpp>
 #endif
@@ -39,7 +38,7 @@ namespace parser {
 
 
 template <class _network>
-class PTI23_parser : BaseParser<_network>
+class PTI33_parser : BaseParser<_network>
 {
   public:
     /// Constructor 
@@ -48,16 +47,16 @@ class PTI23_parser : BaseParser<_network>
      * @param network network object that will be filled with contents
      * of network configuration file (must be child of network::BaseNetwork<>)
      */
-    PTI23_parser(boost::shared_ptr<_network> network)
-      : p_network(network), p_configExists(false)
-    { 
+    PTI33_parser(boost::shared_ptr<_network> network)
+      : p_network(network), p_configExists(false), p_maxBusIndex(-1)
+    {
       this->setNetwork(network);
     }
 
     /**
      * Destructor
      */
-    virtual ~PTI23_parser()
+    virtual ~PTI33_parser()
     {
       p_busData.clear();      // unnecessary
       p_branchData.clear();
@@ -87,7 +86,7 @@ class PTI23_parser : BaseParser<_network>
 
   protected:
     /*
-     * A case is the collection of all data associated with a PTI23 file.
+     * A case is the collection of all data associated with a PTI33 file.
      * Each case is a a vector of data_set objects the contain all the data
      * associated with a partition of the PTI file. For example, the bus
      * data in the file constitutes a data_set. Each data_set is a vector of
@@ -107,10 +106,8 @@ class PTI23_parser : BaseParser<_network>
 
       int me(p_network->communicator().rank());
 
-      p_case_id = 0;
-      p_case_sbase = 0.0;
+      std::ifstream            input;
       if (me == 0) {
-        std::ifstream            input;
         input.open(fileName.c_str());
         if (!input.is_open()) {
           char buf[512];
@@ -118,22 +115,37 @@ class PTI23_parser : BaseParser<_network>
               fileName.c_str());
           throw gridpack::Exception(buf);
         }
-
         find_case(input);
+      } else {
+        p_case_sbase = 0.0;
+        p_case_id = 0;
+      }
+
+      // Transmit CASE_SBASE to all processors
+      double sval =  p_case_sbase;
+      double rval;
+      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+      int nprocs = p_network->communicator().size();
+      int ierr = MPI_Allreduce(&sval,&rval,1,MPI_DOUBLE,MPI_SUM,comm);
+      p_case_sbase = rval;
+      // Transmit CASE_ID to all processors
+      int isval, irval;
+      isval = p_case_id;
+      ierr = MPI_Allreduce(&isval,&irval,1,MPI_INT,MPI_SUM,comm);
+      p_case_id = irval;
+      this->setCaseID(p_case_id);
+      this->setCaseSBase(p_case_sbase);
+
+      if (me == 0) {
         find_buses(input);
-        // Add a hideous hack so that it is possible to determine if a load
-        // block is present in the file. Sometimes it is and sometimes it
-        // isn't
-        bool parsed = true;
-        std::string oldline;
-        //          find_loads(input,oldline,parsed);
-        find_generators(input,oldline,parsed);
+        find_loads(input);
+        find_fixed_shunts(input);
+        find_generators(input);
         find_branches(input);
         find_transformer(input);
+#if 0
         find_area(input);
         find_2term(input);
-        find_shunt(input);
-#if 0
         find_imped_corr(input);
         find_multi_term(input);
         find_multi_section(input);
@@ -158,28 +170,7 @@ class PTI23_parser : BaseParser<_network>
 #endif
         input.close();
       }
-      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
-      int ierr;
-      // Transmit CASE_ID and CASE_SBASE to all processors
-      int isval, irval;
-      if (me == 0) {
-        isval = p_case_id;
-      } else {
-        isval = 0;
-      }
-      ierr = MPI_Allreduce(&isval,&irval,1,MPI_INT,MPI_SUM,comm);
-      p_case_id = irval;
-      double sval, rval;
-      if (me == 0) {
-        sval = p_case_sbase;
-      } else {
-        sval = 0.0;
-      }
-      ierr = MPI_Allreduce(&sval,&rval,1,MPI_DOUBLE,MPI_SUM,comm);
-      p_case_sbase = rval;
       p_timer->stop(t_case);
-      this->setCaseID(p_case_id);
-      this->setCaseSBase(p_case_sbase);
     }
 
     /**
@@ -289,7 +280,6 @@ class PTI23_parser : BaseParser<_network>
         ntok1 = line.find_first_not_of(' ',0);
         ntok2 = ntok1;
       }
-      return ret;
     }
 
     // Extract extension from file name and convert it to lower case
@@ -317,11 +307,7 @@ class PTI23_parser : BaseParser<_network>
 
     void find_case(std::ifstream & input)
     {
-      //      data_set                                           case_set;
       std::string                                        line;
-      //      std::vector<gridpack::component::DataCollection>   case_instance;
-
-      //      gridpack::component::DataCollection                data;
 
       std::getline(input, line);
       while (check_comment(line)) {
@@ -329,7 +315,8 @@ class PTI23_parser : BaseParser<_network>
       }
       std::vector<std::string>  split_line;
 
-      boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(" "), boost::token_compress_on);
+      boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
+          boost::token_compress_on);
 
       // CASE_ID             "IC"                   ranged integer
       p_case_id = atoi(split_line[0].c_str());
@@ -338,18 +325,22 @@ class PTI23_parser : BaseParser<_network>
       p_case_sbase = atof(split_line[1].c_str());
 
       /*  These do not appear in the dictionary
-      // CASE_RECORD2        "RECORD2"              string
-      std::getline(input, line);
-      data.addValue(CASE_RECORD2, line.c_str());
-      case_instance.push_back(data);
+      // REVISION_ID
+      if (split_line.size() > 2)
+      p_revision_id = atoi(split_line[2].c_str());
 
-      // CASE_RECORD3        "RECORD3"              string
-      std::getline(input, line);
-      data.addValue(CASE_RECORD3, line.c_str());
-      case_instance.push_back(data);
+      // XFRRAT_UNITS
+      if (split_line.size() > 3)
+      p_xffrat_units = atof(split_line[3].c_str());
+
+      // NXFRAT_UNITS
+      if (split_line.size() > 4)
+      p_nxfrat_units = atof(split_line[4].c_str());
+
+      // BASE_FREQ
+      if (split_line.size() > 5)
+      p_base_freq = atof(split_line[5].c_str());
        */
-      //       case_set.push_back(case_instance);
-      //       case_data->push_back(case_set);
 
     }
 
@@ -364,37 +355,40 @@ class PTI23_parser : BaseParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
         boost::shared_ptr<gridpack::component::DataCollection>
           data(new gridpack::component::DataCollection);
         int nstr = split_line.size();
 
         // BUS_I               "I"                   integer
         o_idx = atoi(split_line[0].c_str());
+        if (p_maxBusIndex<o_idx) p_maxBusIndex = o_idx;
         data->addValue(BUS_NUMBER, o_idx);
         p_busData.push_back(data);
         p_busMap.insert(std::pair<int,int>(o_idx,index));
 
         // BUS_NAME             "NAME"                 string
-        if (nstr > 9) data->addValue(BUS_NAME, split_line[9].c_str());
+        std::string bus_name = split_line[1];
+
+        //store bus removes white space around name
+        storeBus(bus_name, o_idx);
+        if (nstr > 1) data->addValue(BUS_NAME, bus_name.c_str());
 
         // BUS_BASEKV           "BASKV"               float
-        if (nstr > 10) data->addValue(BUS_BASEKV, atof(split_line[10].c_str()));
+        if (nstr > 2) data->addValue(BUS_BASEKV, atof(split_line[2].c_str()));
 
         // BUS_TYPE               "IDE"                   integer
-        if (nstr > 1) data->addValue(BUS_TYPE, atoi(split_line[1].c_str()));
-
-        // BUS_SHUNT_GL              "GL"                  float
-        if (nstr > 4) data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
-
-        // BUS_SHUNT_BL              "BL"                  float
-        if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
-
-        // BUS_ZONE            "ZONE"                integer
-        if (nstr > 11) data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
+        if (nstr > 3) data->addValue(BUS_TYPE, atoi(split_line[3].c_str()));
 
         // BUS_AREA            "IA"                integer
-        if (nstr > 6) data->addValue(BUS_AREA, atoi(split_line[6].c_str()));
+        if (nstr > 4) data->addValue(BUS_AREA, atoi(split_line[4].c_str()));
+
+        // BUS_ZONE            "ZONE"                integer
+        if (nstr > 5) data->addValue(BUS_ZONE, atoi(split_line[5].c_str()));
+
+        // BUS_OWNER              "IA"                  integer
+        if (nstr > 6) data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
 
         // BUS_VOLTAGE_MAG              "VM"                  float
         if (nstr > 7) data->addValue(BUS_VOLTAGE_MAG, atof(split_line[7].c_str()));
@@ -402,40 +396,29 @@ class PTI23_parser : BaseParser<_network>
         // BUS_VOLTAGE_ANG              "VA"                  float
         if (nstr > 8) data->addValue(BUS_VOLTAGE_ANG, atof(split_line[8].c_str()));
 
-        // BUS_OWNER              "IA"                  integer
-        if (nstr > 6) data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
-
-        // LOAD_PL                "PL"                  float
-        if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()));
-
-        // LOAD_QL                "QL"                  float
-        if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()));
-
+        // TODO: Need to add NVHI, NVLO, EVHI, EVLO
         index++;
         std::getline(input, line);
       }
     }
 
-    void find_loads(std::ifstream & input, std::string &oldline, bool &parsed)
+    void find_loads(std::ifstream & input)
     {
       std::string          line;
       std::getline(input, line); //this should be the first line of the block
 
-      parsed = true;
-      int nline = 0;
       while(test_end(line)) {
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
-        if (nline == 0 && split_line.size() > 15) {
-          oldline = line;
-          parsed = false;
-          return;
-        }
-        nline++;
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
 
         // LOAD_BUSNUMBER               "I"                   integer
         int l_idx, o_idx;
-        o_idx = atoi(split_line[0].c_str());
+        o_idx = getBusIndex(split_line[0]);
+        if (o_idx < 0) {
+          getline(input, line);
+          continue;
+        }
 #ifdef OLD_MAP
         std::map<int, int>::iterator it;
 #else
@@ -465,46 +448,93 @@ class PTI23_parser : BaseParser<_network>
         // LOAD_ZONE            "ZONE"                integer
         if (nstr > 4) p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[4].c_str()));
 
-        // LOAD_PL              "PG"                  float
+        // LOAD_PL              "PL"                  float
         if (nstr > 5) p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[5].c_str()));
 
-        // LOAD_QL              "QG"                  float
+        // LOAD_QL              "QL"                  float
         if (nstr > 6) p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[6].c_str()));
 
-        // LOAD_IP              "QT"                  float
+        // LOAD_IP              "IP"                  float
         if (nstr > 7) p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[7].c_str()));
 
-        // LOAD_IQ              "QB"                  float
+        // LOAD_IQ              "IQ"                  float
         if (nstr > 8) p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[8].c_str()));
 
-        // LOAD_YP              "VS"                  float
+        // LOAD_YP              "YP"                  float
         if (nstr > 9) p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[9].c_str()));
 
-        // LOAD_YQ            "IREG"                integer
+        // LOAD_YQ            "YQ"                integer
         if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[10].c_str()));
 
-        // LOAD_OWNER              "IA"                  integer
-        if (nstr > 11) p_busData[l_idx]->addValue(LOAD_OWNER, atoi(split_line[11].c_str()));
+        // TODO: add variables OWNER, SCALE, INTRPT
 
         std::getline(input, line);
       }
     }
 
-    void find_generators(std::ifstream & input, std::string &oldline, bool &parsed)
+    void find_fixed_shunts(std::ifstream & input)
     {
       std::string          line;
-      if (parsed) {
-        std::getline(input, line); //this should be the first line of the block
-      } else {
-        line = oldline;
-      }
+      std::getline(input, line); //this should be the first line of the block
+
       while(test_end(line)) {
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
+
+        // SHUNT_BUSNUMBER               "I"                   integer
+        int l_idx, o_idx;
+        o_idx = getBusIndex(split_line[0]);
+#ifdef OLD_MAP
+        std::map<int, int>::iterator it;
+#else
+        boost::unordered_map<int, int>::iterator it;
+#endif
+        it = p_busMap.find(o_idx);
+        if (it != p_busMap.end()) {
+          l_idx = it->second;
+        } else {
+          std::getline(input, line);
+          continue;
+        }
+        int nstr = split_line.size();
+
+        p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
+
+#if 0
+        // FIXED_SHUNT_ID              "ID"                  integer
+        std::string tag = clean2Char(split_line[1]);
+        if (nstr > 1) p_busData[l_idx]->addValue(FIXED_SHUNT_ID, tag.c_str());
+
+        // FIXED_SHUNT_STATUS              "STATUS"                  integer
+        if (nstr > 2) p_busData[l_idx]->addValue(FIXED_SHUNT_STATUS,
+            atoi(split_line[2].c_str()));
+#endif
+
+        // BUS_SHUNT_GL              "GL"                  float
+        if (nstr > 3) p_busData[l_idx]->addValue(BUS_SHUNT_GL,
+            atof(split_line[3].c_str()));
+
+        // BUS_SHUNT_BL              "BL"                  float
+        if (nstr > 4) p_busData[l_idx]->addValue(BUS_SHUNT_BL,
+            atof(split_line[4].c_str()));
+
+        std::getline(input, line);
+      }
+    }
+
+    void find_generators(std::ifstream & input)
+    {
+      std::string          line;
+      std::getline(input, line); //this should be the first line of the block
+      while(test_end(line)) {
+        std::vector<std::string>  split_line;
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
 
         // GENERATOR_BUSNUMBER               "I"                   integer
         int l_idx, o_idx;
-        o_idx = atoi(split_line[0].c_str());
+        o_idx = getBusIndex(split_line[0]);
 #ifdef OLD_MAP
         std::map<int, int>::iterator it;
 #else
@@ -524,7 +554,7 @@ class PTI23_parser : BaseParser<_network>
         if (!p_busData[l_idx]->getValue(GENERATOR_NUMBER, &ngen)) ngen = 0;
 
 
-        p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()), ngen);
+        p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, o_idx, ngen);
 
         // Clean up 2 character tag
         std::string tag = clean2Char(split_line[1]);
@@ -560,22 +590,14 @@ class PTI23_parser : BaseParser<_network>
             atof(split_line[8].c_str()), ngen);
 
         // GENERATOR_ZSOURCE                                complex
-        if (nstr > 9) p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
+        if (nstr > 10) p_busData[l_idx]->addValue(GENERATOR_ZSOURCE,
             gridpack::ComplexType(atof(split_line[9].c_str()),
               atof(split_line[10].c_str())), ngen);
 
         // GENERATOR_XTRAN                              complex
-        if (nstr > 11) p_busData[l_idx]->addValue(GENERATOR_XTRAN,
+        if (nstr > 12) p_busData[l_idx]->addValue(GENERATOR_XTRAN,
             gridpack::ComplexType(atof(split_line[11].c_str()),
               atof(split_line[12].c_str())), ngen);
-
-        // GENERATOR_RT              "RT"                  float
-        if (nstr > 11) p_busData[l_idx]->addValue(GENERATOR_RT, atof(split_line[11].c_str()),
-            ngen);
-
-        // GENERATOR_XT              "XT"                  float
-        if (nstr > 12) p_busData[l_idx]->addValue(GENERATOR_XT, atof(split_line[12].c_str()),
-            ngen);
 
         // GENERATOR_GTAP              "GTAP"                  float
         if (nstr > 13) p_busData[l_idx]->addValue(GENERATOR_GTAP,
@@ -597,31 +619,7 @@ class PTI23_parser : BaseParser<_network>
         if (nstr > 17) p_busData[l_idx]->addValue(GENERATOR_PMIN,
             atof(split_line[17].c_str()), ngen);
 
-        // Pick up some non-standard values for Dynamic Simulation
-        // GENERATOR_REACTANCE                             float
-        if (nstr > 18) p_busData[l_idx]->addValue(GENERATOR_REACTANCE,
-            atof(split_line[18].c_str()), ngen);
-
-        // GENERATOR_RESISTANCE                             float
-        if (nstr > 19) p_busData[l_idx]->addValue(GENERATOR_RESISTANCE,
-            atof(split_line[19].c_str()), ngen);
-
-        // GENERATOR_TRANSIENT_REACTANCE                             float
-        if (nstr > 20) p_busData[l_idx]->addValue(GENERATOR_TRANSIENT_REACTANCE,
-            atof(split_line[20].c_str()), ngen);
-
-        // GENERATOR_SUBTRANSIENT_REACTANCE                             float
-        if (nstr > 21) p_busData[l_idx]->addValue(GENERATOR_SUBTRANSIENT_REACTANCE,
-            atof(split_line[21].c_str()), ngen);
-
-        // Pick up some more non-standard values for Dynamic Simulation
-        // GENERATOR_INERTIA_CONSTANT_H                           float
-        if (nstr > 22) p_busData[l_idx]->addValue(GENERATOR_INERTIA_CONSTANT_H,
-            atof(split_line[22].c_str()), ngen);
-
-        // GENERATOR_DAMPING_COEFFICIENT_0                           float
-        if (nstr > 23) p_busData[l_idx]->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
-            atof(split_line[23].c_str()), ngen);
+        // TODO: add variables Oi, Fi, WMOD, WPF
 
         // Increment number of generators in data object
         if (ngen == 0) {
@@ -642,11 +640,12 @@ class PTI23_parser : BaseParser<_network>
       gridpack::component::DataCollection *data;
       while(std::getline(input,line)) {
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
 
         // GENERATOR_BUSNUMBER               "I"                   integer
         int l_idx, o_idx;
-        o_idx = atoi(split_line[0].c_str());
+        o_idx = getBusIndex(split_line[0]);
 #ifdef OLD_MAP
         std::map<int, int>::iterator it;
 #else
@@ -737,14 +736,11 @@ class PTI23_parser : BaseParser<_network>
       while(test_end(line)) {
         std::pair<int, int> branch_pair;
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
 
-        o_idx1 = atoi(split_line[0].c_str());
-        o_idx2 = atoi(split_line[1].c_str());
-
-        // Switch sign if indices are negative
-        if (o_idx1 < 0) o_idx1 = -o_idx1;
-        if (o_idx2 < 0) o_idx2 = -o_idx2;
+        o_idx1 = getBusIndex(split_line[0]);
+        o_idx2 = getBusIndex(split_line[1]);
 
         // Check to see if pair has already been created
         int l_idx = 0;
@@ -800,70 +796,78 @@ class PTI23_parser : BaseParser<_network>
         // BRANCH_SWITCHED
         p_branchData[l_idx]->addValue(BRANCH_SWITCHED, switched, nelems);
 
+        int nstr = split_line.size();
         // Clean up 2 character tag
         std::string tag = clean2Char(split_line[2]);
         // BRANCH_CKT          "CKT"                 character
-        p_branchData[l_idx]->addValue(BRANCH_CKT, tag.c_str(),
-            nelems);
+        if (nstr > 2) p_branchData[l_idx]->addValue(BRANCH_CKT,
+            tag.c_str(), nelems);
 
         // BRANCH_R            "R"                   float
-        p_branchData[l_idx]->addValue(BRANCH_R, atof(split_line[3].c_str()),
-            nelems);
+        if (nstr > 3) p_branchData[l_idx]->addValue(BRANCH_R,
+            atof(split_line[3].c_str()), nelems);
 
         // BRANCH_X            "X"                   float
-        p_branchData[l_idx]->addValue(BRANCH_X, atof(split_line[4].c_str()),
-            nelems);
+        if (nstr > 4) p_branchData[l_idx]->addValue(BRANCH_X,
+            atof(split_line[4].c_str()), nelems);
 
         // BRANCH_B            "B"                   float
-        p_branchData[l_idx]->addValue(BRANCH_B, atof(split_line[5].c_str()),
-            nelems);
+        if (nstr > 5) p_branchData[l_idx]->addValue(BRANCH_B,
+            atof(split_line[5].c_str()), nelems);
 
         // BRANCH_RATING_A        "RATEA"               float
-        p_branchData[l_idx]->addValue(BRANCH_RATING_A,
+        if (nstr > 6) p_branchData[l_idx]->addValue(BRANCH_RATING_A,
             atof(split_line[6].c_str()), nelems);
 
         // BBRANCH_RATING_        "RATEB"               float
-        p_branchData[l_idx]->addValue(BRANCH_RATING_B,
+        if (nstr > 7) p_branchData[l_idx]->addValue(BRANCH_RATING_B,
             atof(split_line[7].c_str()), nelems);
 
         // BRANCH_RATING_C        "RATEC"               float
-        p_branchData[l_idx]->addValue(BRANCH_RATING_C,
+        if (nstr > 8) p_branchData[l_idx]->addValue(BRANCH_RATING_C,
             atof(split_line[8].c_str()), nelems);
 
-        // BRANCH_TAP        "RATIO"               float
-        p_branchData[l_idx]->addValue(BRANCH_TAP, atof(split_line[9].c_str()), nelems);
-
-        // BRANCH_SHIFT        "SHIFT"               float
-        p_branchData[l_idx]->addValue(BRANCH_SHIFT,
-            atof(split_line[10].c_str()), nelems);
-
         // BRANCH_SHUNT_ADMTTNC_G1        "GI"               float
-        p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_G1,
-            atof(split_line[11].c_str()), nelems);
+        if (nstr > 9) p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_G1,
+            atof(split_line[9].c_str()), nelems);
 
         // BRANCH_SHUNT_ADMTTNC_B1        "BI"               float
-        p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_B1,
-            atof(split_line[12].c_str()), nelems);
+        if (nstr > 10) p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_B1,
+            atof(split_line[10].c_str()), nelems);
 
         // BRANCH_SHUNT_ADMTTNC_G2        "GJ"               float
-        p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_G2,
-            atof(split_line[13].c_str()), nelems);
+        if (nstr > 11) p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_G2,
+            atof(split_line[11].c_str()), nelems);
 
         // BRANCH_SHUNT_ADMTTNC_B2        "BJ"               float
-        p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_B2,
-            atof(split_line[14].c_str()), nelems);
+        if (nstr > 12) p_branchData[l_idx]->addValue(BRANCH_SHUNT_ADMTTNC_B2,
+            atof(split_line[12].c_str()), nelems);
 
         // BRANCH_STATUS        "STATUS"               integer
-        p_branchData[l_idx]->addValue(BRANCH_STATUS,
-            atoi(split_line[15].c_str()), nelems);
+        if (nstr > 13) p_branchData[l_idx]->addValue(BRANCH_STATUS,
+            atoi(split_line[13].c_str()), nelems);
 
+        // TODO: add variables LEN, Oi, Fi
         nelems++;
         p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
         std::getline(input, line);
       }
     }
 
-    // TODO: This code is NOT handling these elements correctly. Need to bring
+    // Utility function to parse lines in 3-winding transformer block
+    bool parse3WindXForm(std::vector<std::string>split_line, double *windv,
+        double* ang, double *ratea, double *rateb, double *ratec)
+    {
+      *windv = atof(split_line[0].c_str());
+      *ang = atof(split_line[2].c_str());
+      *ratea = atof(split_line[3].c_str());
+      *rateb = atof(split_line[4].c_str());
+      *ratec = atof(split_line[5].c_str());
+      bool ret = true;
+      return ret && (split_line.size() > 5);
+    }
+
+    // This code is NOT handling these elements correctly. Need to bring
     // it in line with find_branch routine and the definitions in the
     // ex_pti_file
     void find_transformer(std::ifstream & input)
@@ -874,214 +878,431 @@ class PTI23_parser : BaseParser<_network>
 
       std::pair<int, int>   branch_pair;
 
-      // get the branch that has the same to and from buses that the transformer hadto
+      // Save current number of branches
+      int index = p_branchData.size();
+
+      bool wind3X = true;
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
+        int o_idx1, o_idx2;
+        o_idx1 = getBusIndex(split_line[0]);
+        o_idx2 = getBusIndex(split_line[1]);
 
-        // KG: I'm assuming the BRANCH_FROMBUS is the bus index we need to match
-        int fromBus = atoi(split_line[0].c_str());
-        if (fromBus < 0) fromBus = -fromBus;
+        // Check for 2-winding or 3-winding transformer
+        int k = getBusIndex(split_line[2]);
+        if (k != 0) {
+          if (wind3X) {
+            int o_idx3 = k;
+            std::getline(input, line);
+            std::vector<std::string>  split_line2;
+            boost::split(split_line2, line, boost::algorithm::is_any_of(","),
+                boost::token_compress_on);
+            // Check to see if transformer is active
+            int stat;
+            stat = atoi(split_line[11].c_str());
+            if (split_line2.size() < 4 || stat == 0) {
+              std::getline(input, line);
+              std::getline(input, line);
+              std::getline(input, line);
+              std::getline(input, line);
+              continue;
+            }
+            // Get internal indices corresponding to buses 1,2,3
+            int l_idx1, l_idx2, l_idx3;
+            std::map<int,int>::iterator it;
+            it = p_busMap.find(o_idx1);
+            if (it != p_busMap.end()) {
+              l_idx1 = it->second;
+            } else {
+              printf("No match found for bus %s\n",split_line[0].c_str());
+            }
+            it = p_busMap.find(o_idx2);
+            if (it != p_busMap.end()) {
+              l_idx2 = it->second;
+            } else {
+              printf("No match found for bus %s\n",split_line[1].c_str());
+            }
+            it = p_busMap.find(o_idx3);
+            if (it != p_busMap.end()) {
+              l_idx3 = it->second;
+            } else {
+              printf("No match found for bus %s\n",split_line[2].c_str());
+            }
+            // Create a new bus and three new branches. No need to check
+            // previous branches to see if they match since they are all
+            // linked to new bus. Also don't need to add these to the branch
+            // map data structure since they cannot match any regular branch
+            // lines or transformers
+            boost::shared_ptr<gridpack::component::DataCollection>
+              data(new gridpack::component::DataCollection);
+            int n_idx = p_busData.size();
+            p_busData.push_back(data);
+            p_maxBusIndex++;
+            data->addValue(BUS_NUMBER,p_maxBusIndex);
+            char cbuf[128];
+            sprintf(cbuf,"DUMMY_BUS-%d-%d-%d",o_idx1,o_idx2,o_idx3);
+            data->addValue(BUS_NAME,cbuf);
+            data->addValue(BUS_BASEKV,0.0);
+            data->addValue(BUS_TYPE,1);
+            int ival;
+            p_busData[l_idx1]->getValue(BUS_AREA,&ival);
+            data->addValue(BUS_AREA,ival);
+            p_busData[l_idx1]->getValue(BUS_OWNER,&ival);
+            data->addValue(BUS_OWNER,&ival);
+            double rval = 0.0;
+            double rvol;
+            p_busData[l_idx1]->getValue(BUS_VOLTAGE_MAG,&rvol);
+            rval += rvol;
+            p_busData[l_idx2]->getValue(BUS_VOLTAGE_MAG,&rvol);
+            rval += rvol;
+            p_busData[l_idx3]->getValue(BUS_VOLTAGE_MAG,&rvol);
+            rval += rvol;
+            rval = rval/3.0;
+            data->addValue(BUS_VOLTAGE_MAG,rval);
+            rval = 0.0;
+            p_busData[l_idx1]->getValue(BUS_VOLTAGE_ANG,&rvol);
+            rval += rvol;
+            p_busData[l_idx2]->getValue(BUS_VOLTAGE_ANG,&rvol);
+            rval += rvol;
+            p_busData[l_idx3]->getValue(BUS_VOLTAGE_ANG,&rvol);
+            rval += rvol;
+            rval = rval/3.0;
+            data->addValue(BUS_VOLTAGE_ANG,rval);
 
-        // KG: I'm assuming the BRANCH_TOBUS is the bus index we need to match
-        int toBus = atoi(split_line[1].c_str());
-        if (toBus < 0) toBus = -toBus;
+            // parse remainder of line 1
+            double mag1, mag2;
+            mag1 = atof(split_line[7].c_str());
+            mag2 = atof(split_line[8].c_str());
+            // Clean up 2 character tag
+            std::string tag = clean2Char(split_line[3]);
 
-        // find branch corresponding to this transformer line
-        int l_idx = 0;
-        branch_pair = std::pair<int,int>(fromBus, toBus);
-#ifdef OLD_MAP
-        std::map<std::pair<int, int>, int>::iterator it;
-#else
-        boost::unordered_map<std::pair<int, int>, int>::iterator it;
-#endif
-        it = p_branchMap.find(branch_pair);
+            // parse line 2
+            double r12, r23, r31, x12, x23, x31, sb12, sb23, sb31;
+            double r1, r2, r3, x1, x2, x3, b1, b2, b3;
+            r12 = atof(split_line2[0].c_str());
+            x12 = atof(split_line2[1].c_str());
+            sb12 = atof(split_line2[2].c_str());
+            r23 = atof(split_line2[3].c_str());
+            x23 = atof(split_line2[4].c_str());
+            sb23 = atof(split_line2[5].c_str());
+            r31 = atof(split_line2[6].c_str());
+            x31 = atof(split_line2[7].c_str());
+            sb31 = atof(split_line2[8].c_str());
+            r1 = 0.5*(r12+r31-r23);
+            x1 = 0.5*(x12+x31-x23);
+            b1 = 0.0;
+            r2 = 0.5*(r12+r23-r31);
+            x2 = 0.5*(x12+x23-x31);
+            b2 = 0.0;
+            r3 = 0.5*(r23+r31-r12);
+            x3 = 0.5*(x23+x31-x12);
+            b3 = 0.0;
+            // correct R and X values, if necessary
+            if (sb12 != p_case_sbase && sb12 == 0.0) {
+              r1 = r1*p_case_sbase/sb12;
+              x1 = x1*p_case_sbase/sb12;
+            }
+            if (sb23 != p_case_sbase && sb23 == 0.0) {
+              r2 = r2*p_case_sbase/sb23;
+              x2 = x2*p_case_sbase/sb23;
+            }
+            if (sb31 != p_case_sbase && sb31 == 0.0) {
+              r3 = r3*p_case_sbase/sb31;
+              x3 = x3*p_case_sbase/sb31;
+            }
 
-        if (it != p_branchMap.end()) {
-          l_idx = it->second;
+            // create branch between new bus and bus I
+            int index = p_branchData.size();
+            boost::shared_ptr<gridpack::component::DataCollection>
+              data1(new gridpack::component::DataCollection);
+            p_branchData.push_back(data1);
+            std::getline(input, line);
+            std::vector<std::string> split_line3;
+            boost::split(split_line3, line, boost::algorithm::is_any_of(","),
+                boost::token_compress_on);
+            double windv, ang, ratea, rateb, ratec;
+            parse3WindXForm(split_line3, &windv, &ang, &ratea, &rateb, &ratec);
+            data1->addValue(BRANCH_INDEX,index);
+            data1->addValue(BRANCH_FROMBUS,o_idx1);
+            data1->addValue(BRANCH_TOBUS,p_maxBusIndex);
+            data1->addValue(BRANCH_NUM_ELEMENTS,1);
+            data1->addValue(BRANCH_CKT,tag.c_str(),0);
+            data1->addValue(BRANCH_R,r1,0);
+            data1->addValue(BRANCH_X,x1,0);
+            data1->addValue(BRANCH_B,b1,0);
+            data1->addValue(BRANCH_RATING_A,ratea,0);
+            data1->addValue(BRANCH_RATING_B,rateb,0);
+            data1->addValue(BRANCH_RATING_C,ratec,0);
+            data1->addValue(BRANCH_TAP,windv,0);
+            data1->addValue(BRANCH_SHIFT,ang,0);
+            data1->addValue(BRANCH_SWITCHED,false,0);
+            data1->addValue(BRANCH_SHUNT_ADMTTNC_G1,mag1,0);
+            data1->addValue(BRANCH_SHUNT_ADMTTNC_B1,mag2,0);
+            data1->addValue(BRANCH_SHUNT_ADMTTNC_G2,0.0,0);
+            data1->addValue(BRANCH_SHUNT_ADMTTNC_B2,0.0,0);
+            if (stat == 1 || stat == 2 || stat == 3) {
+              data1->addValue(BRANCH_STATUS,1,0);
+            } else {
+              data1->addValue(BRANCH_STATUS,0,0);
+            }
+
+            // create branch between new bus and bus J
+            index++;
+            boost::shared_ptr<gridpack::component::DataCollection>
+              data2(new gridpack::component::DataCollection);
+            p_branchData.push_back(data2);
+            std::getline(input, line);
+            std::vector<std::string> split_line4;
+            boost::split(split_line4, line, boost::algorithm::is_any_of(","),
+                boost::token_compress_on);
+            parse3WindXForm(split_line4, &windv, &ang, &ratea, &rateb, &ratec);
+            data2->addValue(BRANCH_INDEX,index);
+            data2->addValue(BRANCH_FROMBUS,o_idx2);
+            data2->addValue(BRANCH_TOBUS,p_maxBusIndex);
+            data2->addValue(BRANCH_NUM_ELEMENTS,1);
+            data2->addValue(BRANCH_CKT,tag.c_str(),0);
+            data2->addValue(BRANCH_R,r2,0);
+            data2->addValue(BRANCH_X,x2,0);
+            data2->addValue(BRANCH_B,b2,0);
+            data2->addValue(BRANCH_RATING_A,ratea,0);
+            data2->addValue(BRANCH_RATING_B,rateb,0);
+            data2->addValue(BRANCH_RATING_C,ratec,0);
+            data2->addValue(BRANCH_TAP,windv,0);
+            data2->addValue(BRANCH_SHIFT,ang,0);
+            data2->addValue(BRANCH_SWITCHED,false,0);
+            data2->addValue(BRANCH_SHUNT_ADMTTNC_G1,0.0,0);
+            data2->addValue(BRANCH_SHUNT_ADMTTNC_B1,0.0,0);
+            data2->addValue(BRANCH_SHUNT_ADMTTNC_G2,0.0,0);
+            data2->addValue(BRANCH_SHUNT_ADMTTNC_B2,0.0,0);
+            if (stat == 1 || stat == 3 || stat == 4) {
+              data2->addValue(BRANCH_STATUS,1,0);
+            } else {
+              data2->addValue(BRANCH_STATUS,0,0);
+            }
+
+            // create branch between new bus and bus K
+            index++;
+            boost::shared_ptr<gridpack::component::DataCollection>
+              data3(new gridpack::component::DataCollection);
+            p_branchData.push_back(data3);
+            std::getline(input, line);
+            std::vector<std::string> split_line5;
+            boost::split(split_line5, line, boost::algorithm::is_any_of(","),
+                boost::token_compress_on);
+            parse3WindXForm(split_line5, &windv, &ang, &ratea, &rateb, &ratec);
+            data3->addValue(BRANCH_INDEX,index);
+            data3->addValue(BRANCH_FROMBUS,o_idx3);
+            data3->addValue(BRANCH_TOBUS,p_maxBusIndex);
+            data3->addValue(BRANCH_NUM_ELEMENTS,1);
+            data3->addValue(BRANCH_CKT,tag.c_str(),0);
+            data3->addValue(BRANCH_R,r3,0);
+            data3->addValue(BRANCH_X,x3,0);
+            data3->addValue(BRANCH_B,b3,0);
+            data3->addValue(BRANCH_RATING_A,ratea,0);
+            data3->addValue(BRANCH_RATING_B,rateb,0);
+            data3->addValue(BRANCH_RATING_C,ratec,0);
+            data3->addValue(BRANCH_TAP,windv,0);
+            data3->addValue(BRANCH_SHIFT,ang,0);
+            data3->addValue(BRANCH_SWITCHED,false,0);
+            data3->addValue(BRANCH_SHUNT_ADMTTNC_G1,0.0,0);
+            data3->addValue(BRANCH_SHUNT_ADMTTNC_B1,0.0,0);
+            data3->addValue(BRANCH_SHUNT_ADMTTNC_G2,0.0,0);
+            data3->addValue(BRANCH_SHUNT_ADMTTNC_B2,0.0,0);
+            if (stat == 1 || stat == 2 || stat == 4) {
+              data3->addValue(BRANCH_STATUS,1,0);
+            } else {
+              data3->addValue(BRANCH_STATUS,0,0);
+            }
+          } else {
+            // Skip 3-winding transformers (for now)
+            std::getline(input, line);
+            std::getline(input, line);
+            std::getline(input, line);
+            std::getline(input, line);
+            continue;
+          }
         } else {
           std::getline(input, line);
-          continue;
-        }
+          std::vector<std::string>  split_line2;
+          boost::split(split_line2, line, boost::algorithm::is_any_of(","),
+              boost::token_compress_on);
 
-        // Find number of transmission elements on this branch and then
-        // compare the circuit number for this transformer adjustment with
-        // BRANCH_CKT values
-        int nelems = 0;
-        p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
-        std::string b_ckt(clean2Char(split_line[2]));
-        int i;
-        int idx = -1;
-        for (i=0; i<nelems; i++) {
-          std::string t_ckt;
-          p_branchData[l_idx]->getValue(BRANCH_CKT,&t_ckt,i);
-          if (b_ckt == t_ckt) {
-            idx = i;
-            break;
-          }
-        }
-        if (idx == -1) {
-          printf("No match for transformer from %d to %d\n",
-              fromBus,toBus);
-          continue;
-        }
-
-        /*
-         * type: integer
-         * TRANSFORMER_CONTROL
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_CONTROL,
-            atoi(split_line[3].c_str()),idx);
-
-        /*
-         * type: float
-         * TRANSFORMER_RMA
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_RMA,
-            atof(split_line[4].c_str()),idx);
-
-        /*
-         * type: float
-         * TRANSFORMER_RMI
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_RMI,
-            atof(split_line[5].c_str()),idx);
-
-        /*
-         * type: float
-         * TRANSFORMER_VMA
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_VMA,
-            atof(split_line[6].c_str()),idx);
-
-        /*
-         * type: float
-         * TRANSFORMER_VMI
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_VMI,
-            atof(split_line[7].c_str()),idx);
-
-        /*
-         * type: float
-         * TRANSFORMER_STEP
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_STEP,
-            atof(split_line[8].c_str()),idx);
-
-        /*
-         * type: float
-         * TRANSFORMER_TABLE
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_TABLE,
-            atof(split_line[9].c_str()),idx);
-
-        // This stuff is probably all wrong
-#if 0
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_BUS1 "TRANSFORMER_BUS1"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_BUS1, atoi(split_line[0].c_str()));
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_BUS2 "TRANSFORMER_BUS2"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_BUS2, atoi(split_line[1].c_str()));
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_BUS3 "TRANSFORMER_BUS3"
-         */
-        //          data->addValue(TRANSFORMER_BUS3, atoi(split_line[1].c_str()));
-
-        /*
-         * type: string
-         * #define TRANSFORMER_CKT "TRANSFORMER_CKT"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_CKT, split_line[2].c_str());
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_CW "TRANSFORMER_CW"
-         X            */
-        p_branchData[l_idx]->addValue(TRANSFORMER_CW, atoi(split_line[3].c_str()));
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_CZ "TRANSFORMER_CZ"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_CZ, atoi(split_line[5].c_str()));
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_CM "TRANSFORMER_CM"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_CM, atoi(split_line[5].c_str()));
-
-        /*
-         * type: real float
-         * #define TRANSFORMER_MAG1 "TRANSFORMER_MAG1"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_MAG1, atof(split_line[5].c_str()));
-
-        /*
-         * type: real float
-         * #define TRANSFORMER_MAG2 "TRANSFORMER_MAG2"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_MAG2, atof(split_line[5].c_str()));
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_NMETR "TRANSFORMER_NMETR"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_NMETR, atoi(split_line[1].c_str()));
-
-        /*
-         * type: string
-         * #define TRANSFORMER_NAME "TRANSFORMER_NAME"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_NAME, split_line[2].c_str());
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_STATUS "TRANSFORMER_STATUS"
-         *
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_STATUS, atoi(split_line[1].c_str()));
-
-        /*
-         * type: integer
-         * #define TRANSFORMER_OWNER "TRANSFORMER_OWNER"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_OWNER, atoi(split_line[1].c_str()));
-
-        /*
-         * type: real float
-         * #define TRANSFORMER_R1_2 "TRANSFORMER_R1_2"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_R1_2, atof(split_line[1].c_str()));
-
-        /*
-         * type: real float
-         * #define TRANSFORMER_X1_2 "TRANSFORMER_X1_2"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_X1_2, atof(split_line[1].c_str()));
-
-        /*
-         * type: real float
-         * #define TRANSFORMER_SBASE1_2 "TRANSFORMER_SBASE1_2"
-         */
-        p_branchData[l_idx]->addValue(TRANSFORMER_SBASE1_2, atof(split_line[1].c_str()));
+          std::getline(input, line);
+          std::vector<std::string>  split_line3;
+          boost::split(split_line3, line, boost::algorithm::is_any_of(","),
+              boost::token_compress_on);
+          // Skip last line of 2-winding transformer block
+          std::getline(input, line);
+          // find branch corresponding to this transformer line. If it doesn't
+          // exist, create one
+          int l_idx = 0;
+          branch_pair = std::pair<int,int>(o_idx1, o_idx2);
+#ifdef OLD_MAP
+          std::map<std::pair<int, int>, int>::iterator it;
+#else
+          boost::unordered_map<std::pair<int, int>, int>::iterator it;
 #endif
+          it = p_branchMap.find(branch_pair);
+          bool switched = false;
+          int nelems;
+          if (it != p_branchMap.end()) {
+            l_idx = it->second;
+            p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+          } else {
+            // Check to see if from and to buses have been switched
+            std::pair<int, int> new_branch_pair;
+            new_branch_pair = std::pair<int,int>(o_idx2, o_idx1);
+            it = p_branchMap.find(new_branch_pair);
+            if (it != p_branchMap.end()) {
+              l_idx = it->second;
+              p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+              switched = true;
+            } else {
+              boost::shared_ptr<gridpack::component::DataCollection>
+                data(new gridpack::component::DataCollection);
+              l_idx = p_branchData.size();
+              p_branchData.push_back(data);
+              std::pair<std::pair<int,int>,int> item;
+              item = std::pair<std::pair<int,int>,int>(branch_pair,l_idx);
+              p_branchMap.insert(item);
+              nelems = 0;
+              p_branchData[l_idx]->addValue(BRANCH_NUM_ELEMENTS,nelems);
+            }
+          }
 
+          // If nelems=0 then this is new branch. Add parameters defining
+          // branch
+          if (nelems == 0) {
+            // BRANCH_INDEX                   integer
+            p_branchData[l_idx]->addValue(BRANCH_INDEX,
+                index);
+
+            // BRANCH_FROMBUS            "I"  integer
+            p_branchData[l_idx]->addValue(BRANCH_FROMBUS,
+                o_idx1);
+
+            // BRANCH_TOBUS              "J"  integer
+            p_branchData[l_idx]->addValue(BRANCH_TOBUS,
+                o_idx2);
+
+            // add pair to branch map
+            p_branchMap.insert(std::pair<std::pair<int,int>,int >
+                (branch_pair, index));
+            index++;
+          }
+
+          // Clean up 2 character tag
+          std::string tag = clean2Char(split_line[3]);
+          // BRANCH_CKT          "CKT"                 character
+          p_branchData[l_idx]->addValue(BRANCH_CKT, tag.c_str(), nelems);
+
+          // Add remaining parameters from line 1
+          /*
+           * type: float
+           * TRANSFORMER_MAG1
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_MAG1,
+              atof(split_line[7].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_MAG2
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_MAG2,
+              atof(split_line[8].c_str()),nelems);
+
+          /*
+           * type: integer
+           * BRANCH_STATUS
+           */
+          p_branchData[l_idx]->addValue(BRANCH_STATUS,
+              atoi(split_line[11].c_str()),nelems);
+
+          // Add parameters from line 2
+          /*
+           * type: float
+           * SBASE2
+           */
+          double sbase2 = atof(split_line2[2].c_str());
+
+          /*
+           * type: float
+           * BRANCH_R
+           */
+          double rval = atof(split_line2[0].c_str());
+          if (sbase2 == p_case_sbase || sbase2 == 0.0) {
+            p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
+          } else {
+            rval = rval*p_case_sbase/sbase2;
+            p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
+          }
+
+          /*
+           * type: float
+           * BRANCH_X
+           */
+          rval = atof(split_line2[1].c_str());
+          if (sbase2 == p_case_sbase || sbase2 == 0.0) {
+            p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
+          } else {
+            rval = rval*p_case_sbase/sbase2;
+            p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
+          }
+
+          /*
+           * type: float
+           * BRANCH_B
+           */
+          rval = 0.0;
+          p_branchData[l_idx]->addValue(BRANCH_B,rval,nelems);
+
+          // Add parameters from line 3
+          /*
+           * type: float
+           * BRANCH_TAP
+           */
+          p_branchData[l_idx]->addValue(BRANCH_TAP,
+              atof(split_line3[0].c_str()),nelems);
+
+          /*
+           * type: float
+           * BRANCH_SHIFT
+           */
+          p_branchData[l_idx]->addValue(BRANCH_SHIFT,
+              atof(split_line3[2].c_str()),nelems);
+
+          /*
+           * type: float
+           * BRANCH_RATING_A
+           */
+          p_branchData[l_idx]->addValue(BRANCH_RATING_A,
+              atof(split_line3[3].c_str()),nelems);
+
+          /*
+           * type: float
+           * BRANCH_RATING_B
+           */
+          p_branchData[l_idx]->addValue(BRANCH_RATING_B,
+              atof(split_line3[4].c_str()),nelems);
+
+          /*
+           * type: float
+           * BRANCH_RATING_C
+           */
+          p_branchData[l_idx]->addValue(BRANCH_RATING_C,
+              atof(split_line3[4].c_str()),nelems);
+
+          nelems++;
+          p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
+        }
         std::getline(input, line);
       }
     }
 
+#if 0
     void find_area(std::ifstream & input)
     {
       std::string          line;
@@ -1090,7 +1311,8 @@ class PTI23_parser : BaseParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
 
         // AREAINTG_ISW           "ISW"                  integer
         int l_idx, o_idx;
@@ -1536,6 +1758,7 @@ class PTI23_parser : BaseParser<_network>
         std::getline(input, line);
       }
     }
+#endif
 
     // Distribute data uniformly on processors
     void brdcst_data(void)
@@ -1709,6 +1932,113 @@ class PTI23_parser : BaseParser<_network>
         return false;
       }
     }
+
+    /**
+     * Remove leading and trailing blanks
+     */
+    void remove_blanks(std::string &str)
+    {
+      int ntok1 = str.find_first_not_of(' ',0);
+      int ntok2 = str.length()-1;
+      while (str[ntok2] == ' ') {ntok2--;}
+      str = str.substr(ntok1, ntok2-ntok1+1);
+    }
+
+    /**
+     * Check to see if string represents a character string. Look for single
+     * quotes. Strip off white space and remove quotes if returning true
+     */
+    bool check_string(std::string &str)
+    {
+      int ntok1 = str.find_first_not_of(' ',0);
+      if (ntok1 != std::string::npos && str[ntok1] == '\'') {
+        ntok1++;
+        int ntok2 = str.find_first_of('\'',ntok1);
+        if (ntok2-ntok1 > 1 && ntok2 != std::string::npos) {
+          ntok2--;
+          str = str.substr(ntok1, ntok2-ntok1+1);
+        } else if (ntok2 == std::string::npos && str.length()-1 - ntok1 > 1) {
+          ntok2 = str.length()-1;
+          str = str.substr(ntok1, ntok2-ntok1+1);
+        } else {
+          str.clear();
+        }
+        // strip off any remaining trailing blanks
+        if (str.length() > 0) remove_blanks(str);
+        return true;
+      } else {
+        // string may not have single quotes but remove leading and trailing
+        // blanks, if any
+        remove_blanks(str);
+        return false;
+      }
+    }
+
+    /**
+     * Split bus name into its name and base bus voltage. Assume that incoming
+     * string has been stripped of single quotes and leading and trailing
+     * white space. The name and the voltage are suppose to be delimited by at
+     * least 3 white spaces
+     */
+    void parseBusName(std::string &string, std::string &name, double &voltage)
+    {
+      // If string contains 12 or less characters, assume it is just a name
+      name = string;
+      voltage = 0.0;
+      int len = string.length();
+      if (len > 12) {
+        // look for 3 consecutive blank characters
+        int ntok1 = string.find("   ",0);
+        if (ntok1 != std::string::npos) {
+          name = string.substr(0,ntok1);
+          int ntok2 = string.find_first_not_of(' ',ntok1);
+          if (ntok2 != std::string::npos) {
+            voltage = atof(string.substr(ntok2,len-ntok2).c_str());
+          }
+        }
+      }
+      return;
+    }
+
+    /**
+     * add bus name to p_nameMap data structure, along with the original bus
+     * index. Assume bus name is not paired with base bus voltage.
+     */
+    void storeBus(std::string &string, int idx)
+    {
+      check_string(string);
+      std::pair<std::string,int> name_pair;
+      name_pair = std::pair<std::string,int>(string,abs(idx));
+      p_nameMap.insert(name_pair);
+    }
+
+    /**
+     * Get bus index from bus name string. If the bus name string does not
+     * have quotes, assume it represents an integer index. If it does have
+     * quotes, find the corresponding index in the p_nameMap data structure
+     */
+    int getBusIndex(std::string str)
+    {
+      if (check_string(str)) {
+        std::string name;
+        double voltage;
+        parseBusName(str,name,voltage);
+#ifdef OLD_MAP
+        std::map<std::string,int>::iterator it;
+#else
+        boost::unordered_map<std::string, int>::iterator it;
+#endif
+        it = p_nameMap.find(name);
+        if (it != p_nameMap.end()) {
+          return it->second;
+        } else {
+          return -1;
+        }
+      } else {
+        return abs(atoi(str.c_str()));
+      }
+    }
+
     /*
      * The case_data is the collection of all data points in the case file.
      * Each collection in the case data contains the data associated with a given
@@ -1751,8 +2081,10 @@ class PTI23_parser : BaseParser<_network>
     // Map of PTI indices to index in p_busData
 #ifdef OLD_MAP
     std::map<int,int> p_busMap;
+    std::map<std::string,int> p_nameMap;
 #else
     boost::unordered_map<int, int> p_busMap;
+    boost::unordered_map<std::string, int> p_nameMap;
 #endif
     // Map of PTI index pair to index in p_branchData
 #ifdef OLD_MAP
@@ -1763,10 +2095,11 @@ class PTI23_parser : BaseParser<_network>
 
     // Global variables that apply to whole network
     int p_case_id;
+    int p_maxBusIndex;
     double p_case_sbase;
     gridpack::utility::CoarseTimer *p_timer;
 };
 
 } /* namespace parser */
 } /* namespace gridpack */
-#endif /* PTI23PARSER_HPP_ */
+#endif /* PTI33PARSER_HPP_ */

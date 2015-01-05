@@ -141,6 +141,7 @@ bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
       return false;
     }
   }
+  return false;
 }
 
 /**
@@ -247,7 +248,8 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
       return false;
     }
   }
- }
+  return false;
+}
 
 
 /**
@@ -258,59 +260,58 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
  */
 bool gridpack::powerflow::PFBus::chkQlim(void)
 {
-//    printf("p_isPV = %d Gen %d exceeds the QMAX limit %f \n", p_isPV, getOriginalIndex(),(p_Qinj-p_Q0)*p_sbase);
-    if (p_isPV) {
-      double qmax, qmin;
-      qmax = 0.0;
-      qmin = 0.0;
-      for (int i=0; i<p_gstatus.size(); i++) {
-        if (p_gstatus[i] == 1) {
-          qmax += p_qmax[i];
-          qmin += p_qmin[i];
-        }
+  //    printf("p_isPV = %d Gen %d exceeds the QMAX limit %f \n", p_isPV, getOriginalIndex(),(p_Qinj-p_Q0)*p_sbase);
+  if (p_isPV) {
+    double qmax, qmin;
+    qmax = 0.0;
+    qmin = 0.0;
+    for (int i=0; i<p_gstatus.size(); i++) {
+      if (p_gstatus[i] == 1) {
+        qmax += p_qmax[i];
+        qmin += p_qmin[i];
       }
-      printf(" PV Check: Gen %d =, p_ql = %f, QMAX = %f\n", getOriginalIndex(),p_ql, qmax);
-      std::vector<boost::shared_ptr<BaseComponent> > branches;
-      getNeighborBranches(branches);
-      int size = branches.size();
-      int i;
-      double P, Q, p, q;
-      P = 0.0;
-      Q = 0.0;
-      for (i=0; i<size; i++) {
-        gridpack::powerflow::PFBranch *branch
-          = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
-        branch->getPQ(this, &p, &q);
-        P += p;
-        Q += q;
-      }
+    }
+    printf(" PV Check: Gen %d =, p_ql = %f, QMAX = %f\n", getOriginalIndex(),p_ql, qmax);
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    int i;
+    double P, Q, p, q;
+    P = 0.0;
+    Q = 0.0;
+    for (i=0; i<size; i++) {
+      gridpack::powerflow::PFBranch *branch
+        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+      branch->getPQ(this, &p, &q);
+      P += p;
+      Q += q;
+    }
 
-      printf("Gen %d: Q = %f, p_QL = %f, Q+p_Q0 = %f, QMAX = %f \n", getOriginalIndex(),-Q,p_ql,-Q+p_ql, qmax);  
-//      if (-Q > qmax ) { 
-      if (-Q+p_ql > qmax ) { 
-        printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmax);  
-        p_ql = p_ql+qmax;
-        p_isPV = 0;
-        for (int i=0; i<p_gstatus.size(); i++) {
-          p_gstatus[i] = 0;
-        }
-        return true;
-      //} else if (-Q < qmin) {
-      } else if (-Q+p_ql < qmin) {
-        printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmin);  
-        p_ql = p_ql+qmin;
-        p_isPV = 0;
-        for (int i=0; i<p_gstatus.size(); i++) {
-          p_gstatus[i] = 0;
-        }
-        return true;
-      } else {
-        return false;
+    printf("Gen %d: Q = %f, p_QL = %f, Q+p_Q0 = %f, QMAX = %f \n", getOriginalIndex(),-Q,p_ql,-Q+p_ql, qmax);  
+    if (-Q+p_ql > qmax ) { 
+      printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmax);  
+      p_ql = p_ql+qmax;
+      p_isPV = 0;
+      for (int i=0; i<p_gstatus.size(); i++) {
+        p_gstatus[i] = 0;
       }
+      return true;
+    } else if (-Q+p_ql < qmin) {
+      printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmin);  
+      p_ql = p_ql+qmin;
+      p_isPV = 0;
+      for (int i=0; i<p_gstatus.size(); i++) {
+        p_gstatus[i] = 0;
+      }
+      return true;
     } else {
-      printf(" PQ Check: bus: %d, p_ql = %f\n", getOriginalIndex(),p_ql);
       return false;
     }
+  } else {
+    printf(" PQ Check: bus: %d, p_ql = %f\n", getOriginalIndex(),p_ql);
+    return false;
+  }
+  return false;
 }
 
 /**
@@ -600,7 +601,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
     sprintf(string, "     %6d      %12.6f      %12.6f      %2d\n",
-        getOriginalIndex(),real(v[0]),real(v[1]),branches.size());
+        getOriginalIndex(),real(v[0]),real(v[1]),
+        static_cast<int>(branches.size()));
   }
   return true;
 }
@@ -697,6 +699,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize, int *jsize) co
   } else if (p_mode == YBus) {
     return YMBranch::matrixForwardSize(isize,jsize);
   }
+  return false;
 }
 bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) const
 {
@@ -742,6 +745,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseSize(int *isize, int *jsize) co
   } else if (p_mode == YBus) {
     return YMBranch::matrixReverseSize(isize,jsize);
   }
+  return false;
 }
 
 /**
@@ -821,6 +825,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
   } else if (p_mode == YBus) {
     return YMBranch::matrixForwardValues(values);
   }
+  return false;
 }
 
 bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
@@ -894,6 +899,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
   } else if (p_mode == YBus) {
     return YMBranch::matrixForwardValues(values);
   }
+  return false;
 }
 
 // Calculate contributions to the admittance matrix from the branches
@@ -943,10 +949,10 @@ void gridpack::powerflow::PFBranch::load(
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_SHIFT, &rvar, idx);
+    ok = data->getValue(BRANCH_SHIFT, &rvar, idx);
     rvar = -rvar*pi/180.0; 
     p_phase_shift.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
+    ok = data->getValue(BRANCH_TAP, &rvar, idx);
     p_tap_ratio.push_back(rvar); 
     if (rvar != 0.0) {
       p_xform.push_back(xform);
@@ -954,9 +960,11 @@ void gridpack::powerflow::PFBranch::load(
       p_xform.push_back(false);
     }
     ivar = 1;
-    data->getValue(BRANCH_STATUS, &ivar, idx);
+    ok = data->getValue(BRANCH_STATUS, &ivar, idx);
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     p_branch_status.push_back(static_cast<bool>(ivar));
-    if (ivar == 1) p_active = true;
+    if (ivar == 1 && ok) p_active = true;
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
     p_charging.push_back(rvar);
@@ -1137,4 +1145,5 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     } 
     return true;
   }
+  return false;
 }

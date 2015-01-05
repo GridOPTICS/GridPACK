@@ -15,26 +15,9 @@
  */
 // -------------------------------------------------------------
 
-#if 0
-#include <iostream>
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/vector.hpp"
-#include "gridpack/math/linear_solver.hpp"
-#include "gridpack/math/newton_raphson_solver.hpp"
-#include "gridpack/math/nonlinear_solver.hpp"
-#include "pf_app.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
-#include "pf_factory.hpp"
-#include "gridpack/timer/coarse_timer.hpp"
-#else
 #include "gridpack/include/gridpack.hpp"
 #include "pf_app.hpp"
 #include "pf_factory.hpp"
-#endif
 
 
 // Calling program for powerflow application
@@ -52,6 +35,8 @@ gridpack::powerflow::PFApp::PFApp(void)
 gridpack::powerflow::PFApp::~PFApp(void)
 {
 }
+
+enum Parser{PTI23, PTI33, GOSS};
 
 /**
  * Execute application
@@ -84,9 +69,16 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename;
+  int filetype = PTI23;
   if (!cursor->get("networkConfiguration",&filename)) {
-     printf("No network configuration file specified\n");
-     return;
+    if (cursor->get("networkConfiguration_v33",&filename)) {
+      filetype = PTI33;
+    } else if (cursor->get("networkConfiguration_GOSS",&filename)) {
+      filetype = GOSS;
+    } else {
+      printf("No network configuration file specified\n");
+      return;
+    }
   }
   // Convergence and iteration parameters
   double tolerance = cursor->get("tolerance",1.0e-6);
@@ -95,8 +87,16 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 
   int t_pti = timer->createCategory("PTI Parser");
   timer->start(t_pti);
-  gridpack::parser::PTI23_parser<PFNetwork> parser(network);
-  parser.parse(filename.c_str());
+  if (filetype == PTI23) {
+    gridpack::parser::PTI23_parser<PFNetwork> parser(network);
+    parser.parse(filename.c_str());
+  } else if (filetype == PTI33) {
+    gridpack::parser::PTI33_parser<PFNetwork> parser(network);
+    parser.parse(filename.c_str());
+  } else if (filetype == GOSS) {
+    gridpack::parser::GOSS_parser<PFNetwork> parser(network);
+    parser.parse(filename.c_str());
+  }
   timer->stop(t_pti);
 
   // Create serial IO object to export data from buses
@@ -168,8 +168,8 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_mmap);
 #if 0
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-//  busIO.header("\nY-matrix values\n");
-//  Y->print();
+  busIO.header("\nY-matrix values\n");
+  Y->print();
 //  Y->save("Ybus.m");
 #endif
   timer->stop(t_mmap);
@@ -204,7 +204,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_mmap);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   timer->stop(t_mmap);
-  busIO.header("\nJacobian values\n");
+//  busIO.header("\nJacobian values\n");
 //  J->print();
 
   // Create X vector by cloning PQ

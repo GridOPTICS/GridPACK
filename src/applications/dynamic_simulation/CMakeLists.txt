@@ -21,8 +21,8 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_ymatrix_components
     gridpack_dsmatrix_components
+    gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
