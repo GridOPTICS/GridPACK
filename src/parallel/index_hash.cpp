@@ -22,7 +22,7 @@
 #include <parallel/communicator.hpp>
 #include "index_hash.hpp"
 
-#define HASH_WITH_MPI
+//#define HASH_WITH_MPI
 
 
 // -------------------------------------------------------------
