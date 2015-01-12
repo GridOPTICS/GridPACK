@@ -116,7 +116,6 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/pti08.xml
   DESTINATION doc/gridpack/example/powerflow
 )
 

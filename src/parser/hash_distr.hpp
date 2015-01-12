@@ -24,6 +24,8 @@
 
 //#define SYSTOLIC
 
+//#define HASH_WITH_MPI
+
 #include <ga.h>
 #include <boost/unordered_map.hpp>
 #include "gridpack/parallel/index_hash.hpp"
@@ -39,17 +41,6 @@ template <typename _network,
           typename _branch_data_type>
  class HashDistribution {
 private:
-
-  struct tdata
-  {
-    char p_type[4];
-    int p_busid;
-    int p_fbusid;
-    int p_tbusid;
-    char p_ckt[3];
-    double p_value;
-    double p_deviation;
-  };
 
   typedef struct{int idx;
            _bus_data_type data;
@@ -226,8 +217,8 @@ public:
     }
     GA_Destroy(g_vals);
 #else
-    int nprocs = GA_Pgroup_nnodes(p_GAgrp);
-    int me = GA_Pgroup_nodeid(p_GAgrp);
+    int nprocs = p_network->communicator().size();
+    int me = p_network->communicator().rank();
     // Get global indices corresponding to keys
     int i,j;
     // Create a list of unique keys
@@ -287,6 +278,95 @@ public:
       ldest[i] = ltop[iproc]; 
       ltop[iproc] = i;
     }
+#ifdef HASH_WITH_MPI
+    // Use all-to-all call to determine number of unique keys coming from each
+    // processor
+    int srcNum[nprocs];
+    int ierr;
+    int one = 1;
+    MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+    ierr = MPI_Alltoall(destNum,one,MPI_INT,srcNum,one,MPI_INT,comm);
+
+    // Each process now knows how much data it will receive. Pack data data into
+    // an appropriate sized buffer and send it to processors using a all-to-all
+    // vector call
+    bus_data_pair *sendBuf;
+    sendBuf = new bus_data_pair[newValues.size()];
+    // Fill sendBuf with data from newValues and newKeys
+    int icnt;
+    for (i=0; i<nprocs; i++) {
+      j = ltop[i];
+      if (j>=0) {
+        while(j >= 0) {
+          sendBuf[icnt].idx = newKeys[j];
+          sendBuf[icnt].data = newValues[j];
+          j = ldest[j];
+          icnt++;
+        }
+      }
+    }
+
+    // Evaluate offsets for data being sent and received and then correct all
+    // sizes by the number of bytes in bus_data_pair structure
+    int elemsize =  sizeof(bus_data_pair);
+    int destOffset[nprocs];
+    int srcOffset[nprocs];
+    destOffset[0] = 0;
+    srcOffset[0] = 0;
+    for (i=1; i<nprocs; i++) {
+      destOffset[i] = destOffset[i-1] + destNum[i-1];
+      srcOffset[i] = srcOffset[i-1] + srcNum[i-1];
+    }
+    int nvalues = 0;
+    for (i=0; i<nprocs; i++) {
+      nvalues += srcNum[i];
+      destOffset[i] = elemsize*destOffset[i];
+      destNum[i] = elemsize*destNum[i];
+      srcOffset[i] = elemsize*srcOffset[i];
+      srcNum[i] = elemsize*srcNum[i];
+    }
+
+    // Allocate buffer to receive data from other processors
+    bus_data_pair *recvBuf;
+    recvBuf = new bus_data_pair[nvalues];
+    
+    // Transmit data and clean up buffers that are no longer needed
+    ierr = MPI_Alltoallv(sendBuf, destNum, destOffset, MPI_BYTE, recvBuf,
+        srcNum, srcOffset, MPI_BYTE, comm);
+    delete [] sendBuf;
+
+    // Data is now available on processor that can use it. Pack it into final
+    // data structures. Start by creating a map between global and local bus
+    // indices on this processors
+    keys.clear();
+    values.clear();
+    int nbus = p_network->numBuses();
+    std::multimap<int,int> idxMap;
+    std::pair<int,int> idxPair;
+    // Create map between global index and local index for locally held buses
+    for (i=0; i<nbus; i++) {
+      idxPair = std::pair<int,int>(p_network->getOriginalBusIndex(i),i);
+      idxMap.insert(idxPair);
+    }
+    // Get data from recvBuf and pack keys and values arrays
+    // with local indices and data
+    std::multimap<int,int>::iterator it;
+    for (i=0; i<nvalues; i++) {
+      it = idxMap.find(recvBuf[i].idx);
+      if (it != idxMap.end()) {
+        while (it != idxMap.upper_bound(recvBuf[i].idx)) {
+          keys.push_back(it->second);
+          values.push_back(recvBuf[i].data);
+          it++;
+        }
+      } else {
+        printf("p[%d] Unresolved original bus index: %d\n",me,
+            recvBuf[i].idx);
+      }
+    }
+
+    delete [] recvBuf;
+#else
     // Find total number of values going to each processor
     // and get offsets on each processor for each set  of values
     int g_numValues = GA_Create_handle();
@@ -308,6 +388,7 @@ public:
         r_offset[i] = 0;
       }
     }
+    GA_Pgroup_sync(p_GAgrp);
     // Copy values from global array to local array
     int numValues[nprocs];
     int lo, hi;
@@ -366,9 +447,6 @@ public:
         }
         lo = r_offset[i];
         hi = lo + destNum[i] - 1;
-        for (j = 0; j<destNum[i]; j++) {
-          tdata tmp = *((tdata*)(&bus_data[j].data));
-        }
         NGA_Put(g_data,&lo,&hi,bus_data,&one);
         delete [] bus_data;
       }
@@ -379,7 +457,7 @@ public:
     keys.clear();
     values.clear();
     int nbus = p_network->numBuses();
-    boost::unordered_map<int,int> idxMap;
+    std::multimap<int,int> idxMap;
     std::pair<int,int> idxPair;
     // Create map between global index and local index for locally held buses
     for (i=0; i<nbus; i++) {
@@ -392,13 +470,15 @@ public:
     lo = mapc[me];
     hi = lo + ndata - 1;
     NGA_Access(g_data,&lo,&hi,&bus_data,&one);
-    boost::unordered_map<int,int>::iterator it;
+    std::multimap<int,int>::iterator it;
     for (i=0; i<ndata; i++) {
       it = idxMap.find(bus_data[i].idx);
       if (it != idxMap.end()) {
-        keys.push_back(it->second);
-        values.push_back(bus_data[i].data);
-          tdata tmp = *((tdata*)(&bus_data[i].data));
+        while (it != idxMap.upper_bound(bus_data[i].idx)) {
+          keys.push_back(it->second);
+          values.push_back(bus_data[i].data);
+          it++;
+        }
       } else {
         printf("p[%d] Unresolved original bus index: %d\n",me,
             bus_data[i].idx);
@@ -406,6 +486,7 @@ public:
     }
     NGA_Release(g_data,&lo,&hi);
     GA_Destroy(g_data);
+#endif
 #endif
   }
 
@@ -532,8 +613,8 @@ public:
     }
     GA_Destroy(g_vals);
 #else
-    int nprocs = GA_Pgroup_nnodes(p_GAgrp);
-    int me = GA_Pgroup_nodeid(p_GAgrp);
+    int nprocs = p_network->communicator().size();
+    int me = p_network->communicator().rank();
     // Get global indices corresponding to keys
     int i,j;
     // Create a list of unique keys
@@ -593,6 +674,100 @@ public:
       ldest[i] = ltop[iproc]; 
       ltop[iproc] = i;
     }
+#ifdef HASH_WITH_MPI
+    // Use all-to-all call to determine number of unique keys coming from each
+    // processor
+    int srcNum[nprocs];
+    int ierr;
+    int one = 1;
+    MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+    ierr = MPI_Alltoall(destNum,one,MPI_INT,srcNum,one,MPI_INT,comm);
+
+    // Each process now knows how much data it will receive. Pack data data into
+    // an appropriate sized buffer and send it to processors using a all-to-all
+    // vector call
+    branch_data_pair *sendBuf;
+    sendBuf = new branch_data_pair[newValues.size()];
+    // Fill sendBuf with data from newValues and newKeys
+    int icnt;
+    for (i=0; i<nprocs; i++) {
+      j = ltop[i];
+      if (j>=0) {
+        while(j >= 0) {
+          sendBuf[icnt].idx1 = newKeys[j].first;
+          sendBuf[icnt].idx2 = newKeys[j].second;
+          sendBuf[icnt].data = newValues[j];
+          j = ldest[j];
+          icnt++;
+        }
+      }
+    }
+
+    // Evaluate offsets for data being sent and received and then correct all
+    // sizes by the number of bytes in branch_data_pair structure
+    int elemsize =  sizeof(branch_data_pair);
+    int destOffset[nprocs];
+    int srcOffset[nprocs];
+    destOffset[0] = 0;
+    srcOffset[0] = 0;
+    for (i=1; i<nprocs; i++) {
+      destOffset[i] = destOffset[i-1] + destNum[i-1];
+      srcOffset[i] = srcOffset[i-1] + srcNum[i-1];
+    }
+    int nvalues = 0;
+    for (i=0; i<nprocs; i++) {
+      nvalues += srcNum[i];
+      destOffset[i] = elemsize*destOffset[i];
+      destNum[i] = elemsize*destNum[i];
+      srcOffset[i] = elemsize*srcOffset[i];
+      srcNum[i] = elemsize*srcNum[i];
+    }
+
+    // Allocate buffer to receive data from other processors
+    branch_data_pair *recvBuf;
+    recvBuf = new branch_data_pair[nvalues];
+    
+    // Transmit data and clean up buffers that are no longer needed
+    ierr = MPI_Alltoallv(sendBuf, destNum, destOffset, MPI_BYTE, recvBuf,
+        srcNum, srcOffset, MPI_BYTE, comm);
+    delete [] sendBuf;
+
+    // Data is now available on processor that can use it. Pack it into final
+    // data structures. Start by creating a map between global and local branch
+    // indices on this processor
+    values.clear();
+    branch_ids.clear();
+    int nbranch = p_network->numBranches();
+    std::multimap<std::pair<int,int>,int> idxMap;
+    std::pair<std::pair<int,int>,int> idxPair;
+    // Create map between global index and local index for locally held buses
+    int idx1, idx2;
+    std::pair<int,int> key;
+    for (i=0; i<nbranch; i++) {
+      p_network->getOriginalBranchEndpoints(i,&idx1,&idx2);
+      key = std::pair<int,int>(idx1,idx2);
+      idxPair = std::pair<std::pair<int,int>,int>(key,i);
+      idxMap.insert(idxPair);
+    }
+    // Get data from recvBuf and pack keys and values arrays
+    // with local indices and data
+    std::multimap<std::pair<int,int>,int>::iterator it;
+    for (i=0; i<nvalues; i++) {
+      key = std::pair<int,int>(recvBuf[i].idx1,recvBuf[i].idx2);
+      it = idxMap.find(key);
+      if (it != idxMap.end()) {
+        if (it != idxMap.upper_bound(key)) {
+          branch_ids.push_back(it->second);
+          values.push_back(recvBuf[i].data);
+        }
+      } else {
+        printf("p[%d] Unresolved original branch index: < %d, %d>\n",me,
+            recvBuf[i].idx1,recvBuf[i].idx2);
+      }
+    }
+
+    delete [] recvBuf;
+#else
     // Find total number of values going to each processor
     // and get offsets on each processor for each set  of values
     int g_numValues = GA_Create_handle();
@@ -614,6 +789,7 @@ public:
         r_offset[i] = 0;
       }
     }
+    GA_Pgroup_sync(p_GAgrp);
     // Copy values from global array to local array
     int numValues[nprocs];
     int lo, hi;
@@ -674,9 +850,6 @@ public:
         }
         lo = r_offset[i];
         hi = lo + destNum[i] - 1;
-        for (j = 0; j<destNum[i]; j++) {
-          tdata tmp = *((tdata*)(&branch_data[j].data));
-        }
         NGA_Put(g_data,&lo,&hi,branch_data,&one);
         delete [] branch_data;
       }
@@ -687,7 +860,7 @@ public:
     keys.clear();
     values.clear();
     int nbranch = p_network->numBranches();
-    boost::unordered_map<std::pair<int,int>,int> idxMap;
+    std::multimap<std::pair<int,int>,int> idxMap;
     std::pair<std::pair<int,int>,int> idxPair;
     // Create map between global index and local index for locally held branches
     int idx1, idx2;
@@ -702,13 +875,16 @@ public:
     lo = mapc[me];
     hi = lo + ndata - 1;
     NGA_Access(g_data,&lo,&hi,&branch_data,&one);
-    boost::unordered_map<std::pair<int,int>,int>::iterator it;
+    std::multimap<std::pair<int,int>,int>::iterator it;
+    std::pair<int,int> key;
     for (i=0; i<ndata; i++) {
-      it = idxMap.find(std::pair<int,int>(branch_data[i].idx1,branch_data[i].idx2));
+      key = std::pair<int,int>(branch_data[i].idx1,branch_data[i].idx2);
+      it = idxMap.find(key);
       if (it != idxMap.end()) {
-        branch_ids.push_back(it->second);
-        values.push_back(branch_data[i].data);
-          tdata tmp = *((tdata*)(&branch_data[i].data));
+        if (it != idxMap.upper_bound(key)) {
+          branch_ids.push_back(it->second);
+          values.push_back(branch_data[i].data);
+        }
       } else {
         printf("p[%d] Unresolved original branch index: < %d, %d >\n",me,
             branch_data[i].idx1,branch_data[i].idx2);
@@ -716,6 +892,7 @@ public:
     }
     NGA_Release(g_data,&lo,&hi);
     GA_Destroy(g_data);
+#endif
 #endif
   }
 

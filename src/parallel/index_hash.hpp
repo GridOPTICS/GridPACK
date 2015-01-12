@@ -24,7 +24,7 @@
 
 #include <map>
 #include <vector>
-#include <parallel/communicator.hpp>
+#include "gridpack/parallel/communicator.hpp"
 
 namespace gridpack {
 namespace hash_map {

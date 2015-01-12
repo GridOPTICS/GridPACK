@@ -15,7 +15,8 @@
 
 #define OLD_MAP
 
-#include <boost/algorithm/string/split.hpp> #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #ifndef OLD_MAP
 #include <boost/unordered_map.hpp>
 #endif

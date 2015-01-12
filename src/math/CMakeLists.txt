@@ -47,22 +47,26 @@ set(gridpack_math_headers
   dae_solver.hpp
   dae_solver_functions.hpp
   dae_solver_implementation.hpp
+  implementation_visitable.hpp
   implementation_visitor.hpp
   linear_matrix_solver.hpp
   linear_matrix_solver_implementation.hpp
   linear_solver.hpp
   linear_solver_implementation.hpp
+  linear_solver_interface.hpp
   math.hpp
   matrix.hpp
   matrix_implementation.hpp
+  matrix_interface.hpp
   newton_raphson_solver.hpp
   newton_raphson_solver_implementation.hpp
-  nonlinear_solver.hpp
   nonlinear_solver_functions.hpp
+  nonlinear_solver.hpp
   nonlinear_solver_implementation.hpp
   nonlinear_solver_interface.hpp
   vector.hpp
   vector_implementation.hpp
+  vector_interface.hpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
