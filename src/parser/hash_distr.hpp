@@ -60,11 +60,14 @@ public:
   HashDistribution(const boost::shared_ptr<_network> network)
     : p_network(network)
   {
+#ifndef SYSTOLIC
     p_indexHashMap.reset(new
         gridpack::hash_map::GlobalIndexHashMap(p_network->communicator()));
+#endif
     p_GAgrp = p_network->communicator().getGroup();
     int me = p_network->communicator().rank();
 
+#ifndef SYSTOLIC
     // Initialize hash map using original bus indices and global indices
     int i,ikey,ival,idx1,idx2;
     std::vector<std::pair<int,int> > busPairs;
@@ -88,6 +91,7 @@ public:
     }
     p_indexHashMap->addPairs(branchPairs);
     branchPairs.clear();
+#endif
 
     //store size of data items
     p_size_bus_data = sizeof(bus_data_pair);
@@ -559,7 +563,7 @@ public:
     GA_Set_data(g_vals,one,&total_values,g_type);
 //    GA_Set_irreg_distr(g_vals,mapc,&nprocs);
     GA_Set_pgroup(g_vals,p_GAgrp);
-    if (GA_Allocate(g_vals)) {
+    if (!GA_Allocate(g_vals)) {
       //TODO: some kind of error
     }
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
