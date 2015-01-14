@@ -169,7 +169,7 @@ public:
     GA_Set_data(g_vals,one,&total_values,g_type);
 //    GA_Set_irreg_distr(g_vals,mapc,&nprocs);
     GA_Set_pgroup(g_vals,p_GAgrp);
-    if (GA_Allocate(g_vals)) {
+    if (!GA_Allocate(g_vals)) {
       //TODO: some kind of error
     }
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
