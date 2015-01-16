@@ -48,6 +48,9 @@ endif()
 add_executable(parser_test test/parser_test.cpp)
 target_link_libraries(parser_test ${target_libraries})
 
+add_executable(hash_distr_test test/hash_distr_test.cpp)
+target_link_libraries(hash_distr_test ${target_libraries})
+
 add_custom_target(test_parser_input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -70,7 +73,7 @@ add_custom_target(test_parser_input
 add_dependencies(parser_test test_parser_input)
 #add_dependencies(PTI23_test test_parser_input)
 
-add_test(test_parser_serial parser_test)
+add_test(parser_test hash_distr_test)
 
 
 #!!add_test(NAME greetings_parallel COMMAND 

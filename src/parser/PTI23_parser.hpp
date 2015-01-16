@@ -78,6 +78,7 @@ class PTI23_parser : BaseParser<_network>
         getCase(fileName);
         //brdcst_data();
         this->createNetwork(p_busData,p_branchData);
+        p_configExists = this->configExists();
       } else if (ext == "dyr") {
         getDS(fileName);
       }
