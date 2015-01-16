@@ -109,7 +109,7 @@ gridpack_add_unit_test(shuffle shuffle_test)
 # -------------------------------------------------------------
 add_executable(hash_test test/hash_test.cpp)
 target_link_libraries(hash_test gridpack_parallel 
-  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES} gridpack_timer)
 
 add_test(hash_test_serial hash_test)
 add_test(hash_test_parallel 

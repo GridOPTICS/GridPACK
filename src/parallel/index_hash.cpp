@@ -652,7 +652,7 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
           it++;
         }
       } else {
-        printf("p[%d] key not found: %d\n",p_me,data_keys[2*i]);
+        printf("p[%d] (index_hash) key not found: %d\n",p_me,data_keys[2*i]);
       }
     }
     NGA_Release(g_data,&lo,&hi);
@@ -1022,8 +1022,8 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
           it++;
         }
       } else {
-        printf("p[%d] key not found: < %d, %d>\n",p_me,data_keys[3*i],
-            data_keys[3*i+1]);
+        printf("p[%d] (index_hash) key not found: < %d, %d>\n",
+            p_me,data_keys[3*i],data_keys[3*i+1]);
       }
     }
     NGA_Release(g_data,&lo,&hi);
