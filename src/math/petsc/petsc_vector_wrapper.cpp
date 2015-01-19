@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created October 28, 2014 by William A. Perkins
-// Last Change: 2014-10-30 14:12:46 d3g096
+// Last Change: 2015-01-19 10:53:41 d3g096
 // -------------------------------------------------------------
 
 
@@ -177,6 +177,33 @@ PetscVectorWrapper::localIndexRange(PetscInt& lo,
   lo = p_minIndex;
   hi = p_maxIndex;
 }
+
+// -------------------------------------------------------------
+// PetscVectorWrapper::getAllElements
+// -------------------------------------------------------------
+void
+PetscVectorWrapper::getAllElements(PetscScalar *x) const
+{
+  PetscErrorCode ierr(0);
+  try {
+    const Vec *v = getVector();
+    VecScatter scatter;
+    Vec all;
+    PetscInt n(this->size());
+    ierr = VecScatterCreateToAll(*v, &scatter, &all); CHKERRXX(ierr);
+    ierr = VecScatterBegin(scatter, *v, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
+    ierr = VecScatterEnd(scatter, *v, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
+    const PetscScalar *tmp;
+    ierr = VecGetArrayRead(all, &tmp); CHKERRXX(ierr);
+    std::copy(tmp, tmp + n, &x[0]);
+    ierr = VecRestoreArrayRead(all, &tmp); CHKERRXX(ierr);
+    ierr = VecScatterDestroy(&scatter); CHKERRXX(ierr);
+    ierr = VecDestroy(&all); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+  
 
 // -------------------------------------------------------------
 // PetscVectorWrapper::zero

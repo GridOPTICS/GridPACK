@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-11-03 14:47:30 d3g096
+ * @date   2014-11-14 12:27:11 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -43,6 +43,8 @@ VectorT<T, I>::VectorT(const parallel::Communicator& comm, const int& local_leng
 }
 template VectorT<ComplexType>::VectorT(const parallel::Communicator& comm, 
                                        const int& local_length);
+template VectorT<RealType>::VectorT(const parallel::Communicator& comm, 
+                                    const int& local_length);
 
 // -------------------------------------------------------------
 // VectorT::add
@@ -67,8 +69,8 @@ VectorT<T, I>::add(const VectorT<T, I>& x, const VectorT<T, I>::TheType& scale)
 
 template void VectorT<ComplexType>::add(const VectorT<ComplexType>& x, 
                                         const typename VectorT<ComplexType>::TheType& scale);
-template void VectorT<double>::add(const VectorT<double>& x, 
-                                   const typename VectorT<double>::TheType& scale);
+template void VectorT<RealType>::add(const VectorT<RealType>& x, 
+                                     const typename VectorT<RealType>::TheType& scale);
 
 template <typename T, typename I>
 void
@@ -84,7 +86,7 @@ VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
 }
 
 template void VectorT<ComplexType, int>::add(const typename VectorT<ComplexType>::TheType& x);
-template void VectorT<double, int>::add(const typename VectorT<double>::TheType& x);
+template void VectorT<double, int>::add(const typename VectorT<RealType>::TheType& x);
 
 // -------------------------------------------------------------
 // VectorT::equate
@@ -105,7 +107,7 @@ VectorT<T, I>::equate(const VectorT<T, I>& x)
 }
 
 template void VectorT<ComplexType, int>::equate(const VectorT<ComplexType>& x);
-template void VectorT<double, int>::equate(const VectorT<double>& x);
+template void VectorT<double, int>::equate(const VectorT<RealType>& x);
 
 
 // -------------------------------------------------------------
@@ -126,7 +128,7 @@ VectorT<T, I>::elementMultiply(const VectorT<T, I>& x)
 }  
 
 template void VectorT<ComplexType, int>::elementMultiply(const VectorT<ComplexType>& x);
-template void VectorT<double, int>::elementMultiply(const VectorT<double>& x);
+template void VectorT<double, int>::elementMultiply(const VectorT<RealType>& x);
 
 // -------------------------------------------------------------
 // VectorT::elementDivide
@@ -146,7 +148,7 @@ VectorT<T, I>::elementDivide(const VectorT<T, I>& x)
 }  
 
 template void VectorT<ComplexType, int>::elementDivide(const VectorT<ComplexType> &x);
-template void VectorT<double, int>::elementDivide(const VectorT<double> &x);
+template void VectorT<double, int>::elementDivide(const VectorT<RealType> &x);
 
 
 } // namespace math

@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created October 24, 2014 by William A. Perkins
-// Last Change: 2014-10-30 14:14:53 d3g096
+// Last Change: 2015-01-19 10:19:07 d3g096
 // -------------------------------------------------------------
 
 
@@ -98,6 +98,9 @@ public:
    * @param hi one more than the last (0-based) index of locally owned elements
    */
   void localIndexRange(PetscInt& lo, PetscInt& hi) const;
+
+  /// Get all elements in the vector
+  void getAllElements(PetscScalar *x) const;
 
   /// Make all the elements zero
   void zero(void);

@@ -21,6 +21,7 @@ set(target_libraries
 
 # implementation independent math sources
 list(APPEND gridpack_math_sources
+  vector_implementation.cpp
   # matrix.cpp
   # matrix_implementation.cpp
   # linear_solver.cpp
@@ -173,9 +174,18 @@ add_dependencies(matrix_inverse matrix_inverse_input)
 # -------------------------------------------------------------
 # vector test suite
 # -------------------------------------------------------------
-add_executable(vector_test test/vector_test.cpp)
-target_link_libraries(vector_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(vector vector_test)
+add_executable(complex_vector_test test/vector_test.cpp)
+target_link_libraries(complex_vector_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_vector complex_vector_test)
+
+add_executable(real_vector_test test/vector_test.cpp)
+set_target_properties(real_vector_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_vector_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_vector real_vector_test)
+
 
 # -------------------------------------------------------------
 # matrix test suite (one each for dense and sparse)

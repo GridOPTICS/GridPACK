@@ -24,7 +24,6 @@
 #ifndef _vector_implementation_h_
 #define _vector_implementation_h_
 
-
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/utilities/complex.hpp>
@@ -94,39 +93,16 @@ protected:
   }
 
   /// Replace all elements with their real part (specialized)
-  void p_real(void)
-  {
-    int lo, hi;
-    this->localIndexRange(lo, hi);
-    std::vector<TheType> x(hi-lo);
-    this->getElementRange(lo, hi, &x[0]);
-    typename std::vector<TheType>::iterator i;
-    for (i = x.begin(); i != x.end(); ++i) {
-      *i = std::real(*i);
-    }
-    this->setElementRange(lo, hi, &x[0]);
-    this->ready();
-  }
+  void p_real(void);
 
   /// Replace all elements with their imaginary part (specialized)
-  void p_imaginary(void)
-  {
-    int lo, hi;
-    this->localIndexRange(lo, hi);
-    std::vector<TheType> x(hi-lo);
-    this->getElementRange(lo, hi, &x[0]);
-    for (typename std::vector<TheType>::iterator i = x.begin();
-         i != x.end(); ++i) {
-      *i = imag(*i);
-    }
-    this->setElementRange(lo, hi, &x[0]);
-    this->ready();
-  }
+  void p_imaginary(void);
 
   /// Make an exact replica of this instance (specialized)
   virtual VectorImplementation *p_clone(void) const = 0;
   
 };
+
 
 } // namespace math
 } // namespace gridpack

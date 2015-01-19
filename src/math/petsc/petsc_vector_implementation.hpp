@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2014-11-03 12:09:20 d3g096
+ * @date   2015-01-19 10:51:12 d3g096
  * 
  * @brief  
  * 
@@ -20,6 +20,7 @@
 #ifndef _petsc_vector_implementation_h_
 #define _petsc_vector_implementation_h_
 
+#include "complex_operators.hpp"
 #include "vector_implementation.hpp"
 #include "petsc/petsc_vector_wrapper.hpp"
 #include "petsc/petsc_exception.hpp"
@@ -71,9 +72,10 @@ public:
   ~PETScVectorImplementation(void) {}
 
 protected:
-  
+
   /// Where the actual vector is stored
   PetscVectorWrapper p_vwrap;
+
 
   /// Get the global vector length
   IdxType p_size(void) const
@@ -109,7 +111,8 @@ protected:
     try {
       Vec *v = p_vwrap.getVector();
       PetscScalar px(x);
-      ierr = VecSetValue(*v, i, px, INSERT_VALUES); CHKERRXX(ierr);
+      PetscInt idx(i);
+      ierr = VecSetValue(*v, idx, px, INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -121,7 +124,11 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      ierr = VecSetValues(*v, n, i, x, INSERT_VALUES); CHKERRXX(ierr);
+      for (int idx = 0; idx < n; ++idx) {
+        this->p_setElement(i[idx], x[idx]);
+      }
+      // FIXME:
+      // ierr = VecSetValues(*v, n, i, x, INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -146,7 +153,11 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      ierr = VecSetValues(*v, n, i, x, ADD_VALUES); CHKERRXX(ierr);
+      for (int idx = 0; idx < n; ++idx) {
+        this->p_addElement(i[idx], x[idx]);
+      }
+      // FIXME:
+      // ierr = VecSetValues(*v, n, i, x, ADD_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -155,42 +166,33 @@ protected:
   /// Get an individual (local) element (specialized)
   void p_getElement(const IdxType& i, TheType& x) const
   {
-    this->p_getElements(1, &i, &x);
+    PetscErrorCode ierr(0);
+    try {
+      const Vec *v = p_vwrap.getVector();
+      PetscScalar y;
+      PetscInt idx(i);
+      ierr = VecGetValues(*v, 1, &idx, &y); CHKERRXX(ierr);
+      equate<PetscScalar, TheType>(x, y);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
   }
 
   /// Get an several (local) elements (specialized)
   void p_getElements(const IdxType& n, const IdxType *i, TheType *x) const
   {
-    // FIXME: Cannot get off process elements
-    PetscErrorCode ierr;
-    try {
-      const Vec *v = p_vwrap.getVector();
-      ierr = VecGetValues(*v, n, i, x); CHKERRXX(ierr);
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
+    for (int idx = 0; idx < n; ++idx) {
+      this->p_getElement(i[idx], x[idx]);
     }
   }
 
   /// Get all of vector elements (on all processes)
   void p_getAllElements(TheType *x) const
   {
-    PetscErrorCode ierr(0);
-    try {
-      const Vec *v = p_vwrap.getVector();
-      VecScatter scatter;
-      Vec all;
-      IdxType n(this->size());
-      ierr = VecScatterCreateToAll(*v, &scatter, &all); CHKERRXX(ierr);
-      ierr = VecScatterBegin(scatter, *v, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
-      ierr = VecScatterEnd(scatter, *v, all, INSERT_VALUES, SCATTER_FORWARD); CHKERRXX(ierr);
-      const PetscScalar *tmp;
-      ierr = VecGetArrayRead(all, &tmp); CHKERRXX(ierr);
-      std::copy(tmp, tmp + n, &x[0]);
-      ierr = VecRestoreArrayRead(all, &tmp); CHKERRXX(ierr);
-      ierr = VecScatterDestroy(&scatter); CHKERRXX(ierr);
-      ierr = VecDestroy(&all); CHKERRXX(ierr);
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
+    std::vector<PetscScalar> px(this->size());
+    p_vwrap.getAllElements(&px[0]);
+    for (size_t i = 0; i < px.size(); ++i) {
+      equate<PetscScalar, TheType>(x[i], px[i]);
     }
   }
 
