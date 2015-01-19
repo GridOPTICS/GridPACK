@@ -7,7 +7,7 @@
 /**
  * @file   ds_main.cpp
  * @author Shuangshuang Jin
- * @date   September 19, 2013
+ * @date   2014-12-09 14:24:22 d3g096
  *
  * @brief
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the dynamis simulation applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries

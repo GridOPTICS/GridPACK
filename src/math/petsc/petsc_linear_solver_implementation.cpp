@@ -8,7 +8,7 @@
 /**
  * @file   petsc_linear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-09-29 09:43:09 d3g096
+ * @date   2014-12-09 11:11:59 d3g096
  * 
  * @brief  
  * 
@@ -44,12 +44,12 @@ PETScLinearSolverImplementation::PETScLinearSolverImplementation(Matrix& A)
 
 PETScLinearSolverImplementation::~PETScLinearSolverImplementation(void)
 {
-  PetscErrorCode ierr;
+  PetscErrorCode ierr(0);
   try  {
     PetscBool ok;
     ierr = PetscInitialized(&ok);
     if (ok) {
-      ierr = KSPDestroy(&p_KSP);
+      ierr = KSPDestroy(&p_KSP); CHKERRXX(ierr);
     }
   } catch (...) {
     // just eat it

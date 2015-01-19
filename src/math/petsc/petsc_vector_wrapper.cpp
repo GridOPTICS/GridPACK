@@ -1,16 +1,24 @@
 // -------------------------------------------------------------
-// file: petsc_vector_wrapper.cpp
+/*
+ *     Copyright (c) 2013 Battelle Memorial Institute
+ *     Licensed under modified BSD License. A copy of this license can be found
+ *     in the LICENSE file in the top level directory of this distribution.
+ */
 // -------------------------------------------------------------
-// -------------------------------------------------------------
-// Battelle Memorial Institute
-// Pacific Northwest Laboratory
-// -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created October 28, 2014 by William A. Perkins
-// Last Change: 2015-01-19 10:53:41 d3g096
+/**
+ * @file   petsc_vector_implementation.cpp
+ * @author William A. Perkins
+ * @date   2015-01-19 12:21:15 d3g096
+ * 
+ * @brief  
+ * 
+ * 
+ */
 // -------------------------------------------------------------
 
-
+#include <petscsys.h>
+#include "implementation_visitor.hpp"
+#include "petsc/petsc_vector_implementation.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_vector_wrapper.hpp"
 #include "implementation_visitor.hpp"
@@ -120,14 +128,14 @@ PetscVectorWrapper::~PetscVectorWrapper(void)
 {
   // Bad things happen (e.g. race condition on RHEL5) if one tries
   // to destroy a PETSc thing after PETSc is finalized.
-  PetscErrorCode ierr;
+  PetscErrorCode ierr(0);
   
   if (!p_vectorWrapped) {
     try  {
       PetscBool ok;
-      ierr = PetscInitialized(&ok);
+      ierr = PetscInitialized(&ok); CHKERRXX(ierr);
       if (ok) {
-        ierr = VecDestroy(&p_vector);
+        ierr = VecDestroy(&p_vector); CHKERRXX(ierr);
       }
     } catch (...) {
       // just eat it

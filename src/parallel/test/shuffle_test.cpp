@@ -6,7 +6,7 @@
 /**
  * @file   shuffle_test.cpp
  * @author William A. Perkins
- * @date   2014-03-05 10:42:20 d3g096
+ * @date   2014-12-09 09:43:15 d3g096
  * 
  * @brief  A test of the Shuffler<> class
  * 
@@ -58,6 +58,7 @@ std::ostream&
 operator<<(std::ostream& out, const Tester& t)
 {
   out << t.index << " (" << t.label << ")";
+  return out;
 }
 
 BOOST_AUTO_TEST_SUITE ( shuffler ) 
@@ -143,7 +144,6 @@ BOOST_AUTO_TEST_CASE( multi_tester_shuffle )
 {
   boost::mpi::communicator world;
   const int local_size(5);
-  const int global_size(local_size*world.size());
   std::vector<Tester> things;
   std::vector<int> dest;
 

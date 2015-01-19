@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-05 08:10:28 d3g096
+# Last Change: 2014-12-10 07:42:59 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -56,6 +56,12 @@ add_custom_target(resistor_grid.x.input
 
 )
 add_dependencies(resistor_grid.x resistor_grid.x.input)
+
+
+# -------------------------------------------------------------
+# run application as test
+# -------------------------------------------------------------
+gridpack_add_run_test("resistor_grid" resistor_grid.x input.xml)
 
 # -------------------------------------------------------------
 # install as a sample application

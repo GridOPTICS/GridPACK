@@ -48,6 +48,9 @@ endif()
 add_executable(parser_test test/parser_test.cpp)
 target_link_libraries(parser_test ${target_libraries})
 
+add_executable(hash_distr_test test/hash_distr_test.cpp)
+target_link_libraries(hash_distr_test ${target_libraries})
+
 add_custom_target(test_parser_input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -70,7 +73,7 @@ add_custom_target(test_parser_input
 add_dependencies(parser_test test_parser_input)
 #add_dependencies(PTI23_test test_parser_input)
 
-add_test(test_parser_serial parser_test)
+add_test(parser_test hash_distr_test)
 
 
 #!!add_test(NAME greetings_parallel COMMAND 
@@ -101,6 +104,9 @@ add_test(test_parser_serial parser_test)
 install(FILES 
   dictionary.hpp
   PTI23_parser.hpp
+  PTI33_parser.hpp
+  GOSS_parser.hpp
   hash_distr.hpp
+  base_parser.hpp
   DESTINATION include/gridpack/parser
 )

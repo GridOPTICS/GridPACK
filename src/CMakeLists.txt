@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-01-12 12:13:19 d3g096
+# Last Change: 2015-01-19 12:18:41 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -159,15 +159,10 @@ endif(DOXYGEN_FOUND)
 # Options for all Programs/Libraries
 # -------------------------------------------------------------
 
-# remove annoying warnings produced by the GNU compiler about
-# deprecated variables/functions; some are caused by GridPACK code
-# (these, particularly string constants should be fixed) and some are
-# caused by Boost::MPI
-
+# remove annoying warnings produced by the GNU compiler about the use
+# of string constants, which are used a lot in GridPACK
 if (CMAKE_COMPILER_IS_GNUCXX) 
     add_definitions(
-        -Wno-deprecated 
-        -Wno-deprecated-declarations
         -Wno-write-strings
     )
 endif()
@@ -183,12 +178,13 @@ add_subdirectory(utilities)
 add_subdirectory(parallel)
 add_subdirectory(configuration)
 add_subdirectory(math)
-#add_subdirectory(component)
-#add_subdirectory(partition)
+# add_subdirectory(component)
+# add_subdirectory(partition)
 # add_subdirectory(network)
 # add_subdirectory(factory)
 # add_subdirectory(mapper)
 # add_subdirectory(applications/powerflow)
+# add_subdirectory(applications/powerflow2)
 # add_subdirectory(applications/dynamic_simulation)
 # add_subdirectory(applications/contingency_analysis)
 # add_subdirectory(applications/state_estimation)

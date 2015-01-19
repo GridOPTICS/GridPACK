@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-28 13:13:59 d3g096
+# Last Change: 2015-01-05 15:24:28 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -21,8 +21,8 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_ymatrix_components
     gridpack_pfmatrix_components
+    gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -48,12 +48,6 @@ add_executable(powerflow.x
 )
 
 target_link_libraries(powerflow.x ${target_libraries})
-
-add_executable(powerflow2
-  pf_app2.cpp
-  pf_factory.cpp
-)
-target_link_libraries(powerflow2 ${target_libraries})
 
 # Put files necessary to run powerflow.x in binary directory.
 # gridpack.petscrc is temporary -- it will be incorporated into
@@ -90,14 +84,18 @@ add_custom_target(powerflow.x.input
 
 )
 add_dependencies(powerflow.x powerflow.x.input)
-add_dependencies(powerflow2 powerflow.x.input)
 
 # -------------------------------------------------------------
 # TEST: pf_network_test
 # -------------------------------------------------------------
-add_executable(pf_network_test test/pf_network_test.cpp)
-target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-gridpack_add_unit_test(pf_network_test pf_network_test)
+#add_executable(pf_network_test test/pf_network_test.cpp)
+#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
+#gridpack_add_unit_test(pf_network_test pf_network_test)
+
+# -------------------------------------------------------------
+# run applications as tests
+# -------------------------------------------------------------
+gridpack_add_run_test("powerflow" powerflow.x input.xml)
 
 # -------------------------------------------------------------
 # install as a sample application
@@ -111,8 +109,6 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.hpp  
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
@@ -120,6 +116,6 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/pti08.xml
   DESTINATION doc/gridpack/example/powerflow
 )
+

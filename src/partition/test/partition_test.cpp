@@ -7,7 +7,7 @@
 /**
  * @file   partition_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 08:30:59 d3g096
+ * @date   2014-12-09 10:01:37 d3g096
  * 
  * @brief  Unit test suite for various partition classes.
  * 
@@ -51,7 +51,6 @@ BOOST_AUTO_TEST_CASE( adjacency )
 {
   gridpack::parallel::Communicator world;
   const int global_nodes(4*world.size());
-  const int global_edges(global_nodes - 1);
   
   using gridpack::network::AdjacencyList;
 
@@ -89,7 +88,7 @@ BOOST_AUTO_TEST_CASE( adjacency )
     }
 
     // node n should connect to node n+1 except for the last
-    if (node < global_nodes - 1) {
+    if (node < static_cast<AdjacencyList::Index>(global_nodes) - 1) {
       p = std::find(nbr.begin(), nbr.end(), node + 1);
       BOOST_CHECK(p != nbr.end());
     }
@@ -106,7 +105,6 @@ BOOST_AUTO_TEST_CASE( random_partition )
 {
   gridpack::parallel::Communicator world;
   const int global_nodes(5*world.size());
-  const int global_edges(global_nodes - 1);
   
   using gridpack::network::GraphPartitioner;
 
@@ -188,7 +186,8 @@ BOOST_AUTO_TEST_CASE( unbalanced_partition )
        e != my_edges.end(); ++e) {
     GraphPartitioner::Index from(*e), to(from+1);
     if (from < 0) from = AdjacencyList::bogus;
-    if (to > global_nodes - 1) to = AdjacencyList::bogus;
+    if (to > static_cast<GraphPartitioner::Index>(global_nodes) - 1) 
+      to = AdjacencyList::bogus;
     partitioner.add_edge(*e, from, to);
   }
 

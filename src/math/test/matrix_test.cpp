@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-11-25 07:10:24 d3g096
+ * @date   2014-12-09 09:59:51 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -653,9 +653,10 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
     {  7.0, -1.0,
        0.0,  1.0,
       -3.0,  4.0 };
-  static const gridpack::ComplexType cvalues[] =
-    { -11.0, 25.0,
-        6.0, 21.0 }; 
+  // This should be the result
+  // static const gridpack::ComplexType cvalues[] =
+  //   { -11.0, 25.0,
+  //       6.0, 21.0 }; 
   boost::scoped_ptr<gridpack::math::Matrix> 
     A(new gridpack::math::Matrix(world, 2, 3)),
     B(new gridpack::math::Matrix(world, 3, 2,
@@ -801,7 +802,6 @@ BOOST_AUTO_TEST_CASE( AnotherNonSquareTranspose )
     };
   static const int n(29);
 
-  size_t nproc(world.size());
   size_t me(world.rank());
 
   boost::scoped_ptr<gridpack::math::Matrix> A;

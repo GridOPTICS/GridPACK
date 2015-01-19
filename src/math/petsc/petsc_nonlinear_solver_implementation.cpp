@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-09-18 09:27:16 d3g096
+ * @date   2014-12-09 11:09:10 d3g096
  * 
  * @brief  
  * 
@@ -81,12 +81,12 @@ PetscNonlinearSolverImplementation::PetscNonlinearSolverImplementation(Matrix& J
 
 PetscNonlinearSolverImplementation::~PetscNonlinearSolverImplementation(void)
 {
-  PetscErrorCode ierr;
+  PetscErrorCode ierr(0);
   try  {
     PetscBool ok;
-    ierr = PetscInitialized(&ok);
+    ierr = PetscInitialized(&ok); CHKERRXX(ierr);
     if (ok) {
-      ierr = SNESDestroy(&p_snes);
+      ierr = SNESDestroy(&p_snes); CHKERRXX(ierr);
     }
   } catch (...) {
     // just eat it

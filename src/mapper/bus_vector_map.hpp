@@ -81,7 +81,7 @@ BusVectorMap(boost::shared_ptr<_network> network)
 boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
-  int t_new, t_bus, t_set;
+  int t_new(0), t_bus(0), t_set(0);
   if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
   if (p_timer) p_timer->start(t_new);
   boost::shared_ptr<gridpack::math::Vector>
@@ -132,7 +132,7 @@ gridpack::math::Vector* intMapToVector(void)
  */
 void mapToVector(gridpack::math::Vector &vector)
 {
-  int t_bus, t_set;
+  int t_bus(0), t_set(0);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
   vector.zero();
@@ -455,7 +455,7 @@ void setBusOffsets(void)
   int *data = new int[p_busContribution];
   int *ptr = data;
   icnt = 0;
-  int t_idx, t_gat;
+  int t_idx(0), t_gat(0);
   if (p_timer) t_idx = p_timer->createCategory("setBusOffsets: Set Index Arrays");
   if (p_timer) p_timer->start(t_idx);
   boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
@@ -504,7 +504,7 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   // Add vector elements
   boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
   ComplexType *values = new ComplexType[p_maxIBlock];
-  int t_bus;
+  int t_bus(0);
   if (p_timer) t_bus = p_timer->createCategory("loadBusData: Add Vector Elements");
   if (p_timer) p_timer->start(t_bus);
   int j;

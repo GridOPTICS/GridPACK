@@ -8,7 +8,7 @@
 /**
  * @file   shuffler.hpp
  * @author William A. Perkins
- * @date   2014-03-05 12:05:37 d3g096
+ * @date   2014-12-09 13:35:20 d3g096
  * 
  * @brief  A thing to redistribute a vector of things over several processors 
  * 
@@ -138,8 +138,12 @@ public:
           srcsizes[i] = 0;
         }
       }
-      int ierr = MPI_Allreduce(srcsizes,tsizes,nprocs,MPI_INT,MPI_SUM,
-          static_cast<MPI_Comm>(comm));
+      int ierr;
+      ierr = MPI_Allreduce(srcsizes,tsizes,nprocs,MPI_INT,MPI_SUM,
+                           static_cast<MPI_Comm>(comm));
+      if (ierr != 0) {
+        // FIXME: throw
+      }
       //create receive buffer
      // printf("p[%d] Got to 2\n",me);
       ThingVector tmp;

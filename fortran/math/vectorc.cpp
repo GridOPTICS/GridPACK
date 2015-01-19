@@ -77,7 +77,7 @@ vector_get_all_elements(gridpack::math::Vector *v,
 {
   // Note there is no check on length of array pointed to by x; how
   // can there be?
-  v->get_all_elements(x);
+  v->getAllElements(x);
 }
 
 extern "C" void

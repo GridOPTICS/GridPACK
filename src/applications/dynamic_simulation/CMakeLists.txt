@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2013-08-09 11:41:42 d3g096
+# Last Change: 2014-12-10 07:33:25 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -21,8 +21,8 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_ymatrix_components
     gridpack_dsmatrix_components
+    gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -63,3 +63,9 @@ add_custom_target(ds.x.input
 )
 
 add_dependencies(ds.x ds.x.input)
+
+# -------------------------------------------------------------
+# run application as test
+# -------------------------------------------------------------
+gridpack_add_run_test("dynamic_segmentation" ds.x input.xml)
+

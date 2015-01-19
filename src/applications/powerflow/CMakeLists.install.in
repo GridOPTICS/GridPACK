@@ -39,12 +39,6 @@ add_executable(powerflow.x
 )
 target_link_libraries(powerflow.x ${GRIDPACK_LIBS})
 
-add_executable(powerflow2
-  pf_app2.cpp
-  pf_factory.cpp
-)
-target_link_libraries(powerflow2 ${GRIDPACK_LIBS})
-
 add_custom_target(powerflow.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -60,5 +54,4 @@ add_custom_target(powerflow.input
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
 )
 add_dependencies(powerflow.x powerflow.input)
-add_dependencies(powerflow2 powerflow.input)
 

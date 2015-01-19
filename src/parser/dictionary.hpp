@@ -112,6 +112,11 @@
  */
 #define BUS_OWNER "BUS_OWNER"
 
+/**
+ * Flag that indicates that bus was generated from a 3-winding transformer
+ * type: boolean
+ */
+#define BUS_3WINDING "BUS_3WINDING"
 
 // LOAD DATA
 
@@ -502,6 +507,12 @@
  */
 #define BRANCH_SHUNT_ADMTTNC_B2 "BRANCH_SHUNT_ADMTTNC_B2"
 
+/**
+ * Flag that indicates that branch was generated from a 3-winding transformer
+ * type: boolean
+ * indexed
+ */
+#define BRANCH_3WINDING "BRANCH_3WINDING"
 
 /**
  * Initial branch status

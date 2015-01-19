@@ -10,7 +10,7 @@
 /**
  * @file   ga_shuffler.hpp
  * @author William A. Perkins
- * @date   2014-04-01 10:40:55 d3g096
+ * @date   2014-12-09 09:41:31 d3g096
  * 
  * @brief  
  * 
@@ -131,7 +131,7 @@ public:
     boost::mpi::all_reduce(communicator(), lmaxsize, thesize, 
                            boost::mpi::maximum<size_t>());
 
-    int dims[2] = { nproc, thesize + 1 };
+    int dims[2] = { nproc, static_cast<int>(thesize) + 1 };
     int lo[2], hi[2], ld[2] = {1, 1};
     boost::scoped_ptr<GA::GlobalArray> 
       ga(new GA::GlobalArray(p_gaType, 2, dims, "serialized data", NULL)),

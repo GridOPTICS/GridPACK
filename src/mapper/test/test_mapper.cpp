@@ -80,11 +80,11 @@ class TestBus
     return real(p_val);
   }
 
-  int matrixNumRows() {
+  int matrixNumRows() const {
     return 1;
   }
 
-  int matrixNumCols() {
+  int matrixNumCols() const {
     return 1;
   }
 
@@ -106,7 +106,7 @@ class TestBus
     return p_col_idx;
   }
 
-  int matrixNumValues() {
+  int matrixNumValues() const {
     std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > nghbrs;
     getNeighborBranches(nghbrs);
     return nghbrs.size()+1;
@@ -248,11 +248,11 @@ class TestBranch
     return ret;
   }
 
-  int matrixNumRows() {
+  int matrixNumRows() const {
     return 1;
   }
 
-  int matrixNumCols() {
+  int matrixNumCols() const {
     return 1;
   }
 
@@ -272,7 +272,7 @@ class TestBranch
     return p_col_idx;
   }
 
-  int matrixNumValues() {
+  int matrixNumValues() const {
     return 2;
   }
 
@@ -860,6 +860,7 @@ void run (const int &me, const int &nprocs)
 
 }
 
+int
 main (int argc, char **argv) {
 
   // Initialize MPI libraries
@@ -887,4 +888,5 @@ main (int argc, char **argv) {
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
+  return ierr;
 }

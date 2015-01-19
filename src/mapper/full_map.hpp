@@ -310,6 +310,7 @@ bool check(void)
       }
     }
   }
+  return ok;
 }
 
 private:
@@ -889,7 +890,7 @@ void setBranchOffsets(void)
   int *i_ptr = i_data;
   int *j_ptr = j_data;
   icnt = 0;
-  int t_idx;
+  int t_idx(0);
   if (p_timer) t_idx = p_timer->createCategory("setBranchOffsets: Set Index Arrays");
   if (p_timer) p_timer->start(t_idx);
   boost::shared_ptr<gridpack::component::BaseBranchComponent> branch;
@@ -928,7 +929,7 @@ void setBranchOffsets(void)
   if (p_timer) p_timer->stop(t_idx);
 
   // Gather matrix offsets
-  int t_gat;
+  int t_gat(0);
   if (p_timer) t_gat = p_timer->createCategory("setBranchOffsets: Gather Offsets");
   if (p_timer) p_timer->start(t_gat);
   p_i_branchOffsets = new int[p_branchContribution];
@@ -955,7 +956,7 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 {
   int i,idx,jdx,isize,jsize,icnt;
   // Add matrix elements
-  int t_add;
+  int t_add(0);
   if (p_timer) t_add = p_timer->createCategory("loadBranchData: Add Matrix Elements");
   if (p_timer) p_timer->start(t_add);
   boost::shared_ptr<gridpack::component::BaseBranchComponent> branch;

@@ -23,9 +23,9 @@ if [ $host == "flophouse" ]; then
     export CC
     CXX="$prefix/bin/g++"
     export CXX
-    CFLAGS="-pthread"
+    CFLAGS="-pthread -Wall"
     export CFLAGS
-    CXXFLAGS="-pthread"
+    CXXFLAGS="-pthread -Wall"
     export CXXFLAGS
 
     cmake -Wdev --debug-trycompile \
@@ -45,15 +45,17 @@ elif [ $host == "pe10900" ]; then
     # avoid using the system compilers and MPI wrappers -- use MacPorts
 
     CC=/opt/local/bin/gcc
-    export CC
+    CFLAGS="-Wreturn-type"
+    export CC CFLAGS
     CXX=/opt/local/bin/g++
-    export CXX
+    CXXFLAGS="-Wreturn-type"
+    export CXX CXXFLAGS
 
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
         -D GA_EXTRA_LIBS:STRING="-lblas" \
         -D BOOST_ROOT:STRING='/opt/local' \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.5.2" \
+        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
         -D PETSC_ARCH:STRING='arch-macosx-complex-opt' \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \

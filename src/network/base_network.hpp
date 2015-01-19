@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2014-09-29 12:00:25 d3g096
+ * @date   2015-01-05 15:16:52 d3g096
  * 
  * @brief  
  * 
@@ -709,13 +709,15 @@ bool addBranchNeighbor(int idx, int br_idx)
  */
 bool getActiveBus(int idx)
 {
+  bool result(false);
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx].p_activeBus;
+    result = p_buses[idx].p_activeBus;
   } else {
     printf("gridpack::network::getActiveBus: illegal index: %d size: %d\n",
            idx, static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -725,11 +727,15 @@ bool getActiveBus(int idx)
  */
 int getOriginalBusIndex(int idx)
 {
+  int result(-1);
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx].p_originalBusIndex;
+    result = p_buses[idx].p_originalBusIndex;
   } else {
+    printf("gridpack::network::getOriginalBusIndex: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -739,11 +745,15 @@ int getOriginalBusIndex(int idx)
  */
 int getGlobalBusIndex(int idx)
 {
+  int result(-1);
   if (idx >= 0 && idx < p_buses.size()) {
-    return p_buses[idx].p_globalBusIndex;
+    result = p_buses[idx].p_globalBusIndex;
   } else {
+    printf("gridpack::network::getGlobalBusIndex: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -753,11 +763,15 @@ int getGlobalBusIndex(int idx)
  */
 BusPtr getBus(int idx)
 {
+  BusPtr result;
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getBus: illegal index: %d size: %d\n",
+        idx,static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
-    return p_buses[idx].p_bus;
+    result = p_buses[idx].p_bus;
   }
+  return result;
 }
 
 /**
@@ -767,11 +781,15 @@ BusPtr getBus(int idx)
  */
 bool getActiveBranch(int idx)
 {
+  bool result;
   if (idx >= 0 && idx < p_branches.size()) {
-    return p_branches[idx].p_activeBranch;
+    result = p_branches[idx].p_activeBranch;
   } else {
+    printf("gridpack::network::getActiveBranch: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -781,11 +799,15 @@ bool getActiveBranch(int idx)
  */
 int getGlobalBranchIndex(int idx)
 {
+  int result(-1);
   if (idx >= 0 && idx < p_branches.size()) {
-    return p_branches[idx].p_globalBranchIndex;
+    result = p_branches[idx].p_globalBranchIndex;
   } else {
+    printf("gridpack::network::getGlobalBranchIndex: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
     // TODO: some kind of error
   }
+  return result;
 }
 
 /**
@@ -795,11 +817,13 @@ int getGlobalBranchIndex(int idx)
  */
 BranchPtr getBranch(int idx)
 {
+  BranchPtr result;
   if (idx<0 || idx >= p_branches.size()) {
     // TODO: Some kind of error
   } else {
-    return p_branches[idx].p_branch;
+    result = p_branches[idx].p_branch;
   }
+  return result;
 }
 
 /**
@@ -814,6 +838,10 @@ void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
     *idx1 = p_branches[idx].p_originalBusIndex1;
     *idx2 = p_branches[idx].p_originalBusIndex2;
   } else {
+    printf("gridpack::network::getGlobalBranchIndex: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
+    *idx1 = -1;
+    *idx2 = -1;
     // TODO: some kind of error
   }
 }
@@ -826,11 +854,15 @@ void getOriginalBranchEndpoints(int idx, int *idx1, int *idx2)
  */
 boost::shared_ptr<component::DataCollection> getBusData(int idx)
 {
+  boost::shared_ptr<component::DataCollection> result;
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getBusData: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
-    return p_buses[idx].p_data;
+    result =  p_buses[idx].p_data;
   }
+  return result;
 }
 
 /**
@@ -841,11 +873,15 @@ boost::shared_ptr<component::DataCollection> getBusData(int idx)
  */
 boost::shared_ptr<component::DataCollection> getBranchData(int idx)
 {
+  boost::shared_ptr<component::DataCollection> result;
   if (idx<0 || idx >= p_branches.size()) {
+    printf("gridpack::network::getBranchData: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_branches.size()));
     // TODO: Some kind of error
   } else {
-    return p_branches[idx].p_data;
+    result = p_branches[idx].p_data;
   }
+  return result;
 }
 
 /**
@@ -855,11 +891,15 @@ boost::shared_ptr<component::DataCollection> getBranchData(int idx)
  */
 std::vector<int> getConnectedBranches(int idx) const
 {
+  std::vector<int> result;
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getConnectedBranches: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
-    return p_buses[idx].p_branchNeighbors;
+    result = p_buses[idx].p_branchNeighbors;
   }
+  return result;
 }
 
 /**
@@ -869,12 +909,14 @@ std::vector<int> getConnectedBranches(int idx) const
  */
 std::vector<int> getConnectedBuses(int idx) const
 {
+  std::vector<int> ret;
   if (idx<0 || idx >= p_buses.size()) {
+    printf("gridpack::network::getConnectedBuses: illegal index: %d size: %d\n",
+           idx, static_cast<int>(p_buses.size()));
     // TODO: Some kind of error
   } else {
     std::vector<int> branches = p_buses[idx].p_branchNeighbors;
     int size = branches.size();
-    std::vector<int> ret;
     int i, j;
     for (i=0; i<size; i++) {
       j = branches[i];
@@ -884,8 +926,8 @@ std::vector<int> getConnectedBuses(int idx) const
         ret.push_back(p_branches[j].p_localBusIndex2);
       }
     }
-    return ret;
   }
+  return ret;
 }
 
 
@@ -899,6 +941,10 @@ std::vector<int> getConnectedBuses(int idx) const
 void getBranchEndpoints(int idx, int *bus1, int *bus2) const
 {
   if (idx<0 || idx >= p_branches.size()) {
+    printf("gridpack::network::getBranchEndpoints: illegal index: %d size: %d\n",
+        idx, static_cast<int>(p_branches.size()));
+    *bus1 = -1;
+    *bus2 = -1;
     // TODO: some kind of error
   } else {
     *bus1 = p_branches[idx].p_localBusIndex1;
@@ -920,7 +966,7 @@ void partition(void)
   timer = NULL;
   timer = gridpack::utility::CoarseTimer::instance();
 
-  int t_total, t_part, t_bus_dist, t_gbus_dist, t_branch_dist;
+  int t_total(0), t_part(0), t_bus_dist(0), t_branch_dist(0);
 
   if (timer != NULL) {
     t_total = timer->createCategory("BaseNetwork<>::partition(): Total");
@@ -1235,6 +1281,111 @@ void clean(void)
   if (p_refBus != -1) {
     p_refBus = buses[p_refBus];
   }
+}
+
+/**
+ * Remove all buses and branches from the system.
+ */
+void clear(void)
+{
+  int i, size;
+  // Clean up exchange buffers if they have been allocated
+  if (p_busXCBufSize != 0 && p_busXCBuffers != NULL) {
+    int size = p_buses.size();
+    int i;
+    if (p_allocatedBus) {
+      if (!p_external_bus) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_busXCBuffers[i]);
+        }
+      }
+      p_allocatedBus = false;
+    }
+    delete [] p_busXCBuffers;
+  }
+  if (p_branchXCBufSize != 0 && p_branchXCBuffers != NULL) {
+    int size = p_branches.size();
+    int i;
+    if (p_allocatedBranch) {
+      if (!p_external_branch) {
+        for(i=0; i<size; i++) {
+          delete static_cast<char*>(p_branchXCBuffers[i]);
+        }
+      }
+      p_allocatedBranch = false;
+    }
+    delete [] p_branchXCBuffers;
+  }
+  if (p_activeBusIndices) {
+    for (i=0; i<p_numActiveBuses; i++) {
+      delete p_activeBusIndices[i];
+    }
+    delete [] p_activeBusIndices;
+  }
+  if (p_busSndBuf) {
+    delete [] ((char*)p_busSndBuf);
+  }
+  if (p_inactiveBusIndices) {
+    for (i=0; i<0; i<p_numInactiveBuses) {
+      delete p_inactiveBusIndices[i];
+    }
+    delete [] p_inactiveBusIndices;
+  }
+  if (p_busRcvBuf) {
+    delete [] ((char*)p_busRcvBuf);
+  }
+  if (p_activeBranchIndices) {
+    for (i=0; i<0; i<p_numActiveBranches) {
+      delete p_activeBranchIndices[i];
+    }
+    delete [] p_activeBranchIndices;
+  }
+  if (p_branchSndBuf) {
+    delete [] ((char*)p_branchSndBuf);
+  }
+  if (p_inactiveBranchIndices) {
+    for (i=0; i<0; i<p_numInactiveBranches) {
+      delete p_inactiveBranchIndices[i];
+    }
+    delete [] p_inactiveBranchIndices;
+  }
+  if (p_branchSndBuf) {
+    delete [] ((char*)p_branchRcvBuf);
+  }
+  if (p_branchGASet) {
+    GA_Destroy(p_branchGA);
+    NGA_Deregister_type(p_branchXCBufType);
+  }
+  if (p_busGASet) {
+    GA_Destroy(p_busGA);
+    NGA_Deregister_type(p_busXCBufType);
+  }
+  // Get rid of all buses and branches
+  p_buses.clear();
+  p_branches.clear();
+
+  //reset all internal parameters to their initial state
+  p_refBus = -1;
+  p_busXCBufSize = 0;
+  p_branchXCBufSize = 0;
+  p_busXCBufType = 0;
+  p_branchXCBufType = 0;
+  p_busGASet = false;
+  p_branchGASet = false;
+  p_activeBusIndices = NULL;
+  p_busSndBuf = NULL;
+  p_inactiveBusIndices = NULL;
+  p_busRcvBuf = NULL;
+  p_activeBranchIndices = NULL;
+  p_branchSndBuf = NULL;
+  p_inactiveBranchIndices = NULL;
+  p_branchRcvBuf = NULL;
+  p_busXCBuffers = NULL;
+  p_external_bus = false;
+  p_branchXCBuffers = NULL;
+  p_external_branch = false;
+  p_allocatedBus = false;
+  p_allocatedBranch = false;
 }
 
 /**

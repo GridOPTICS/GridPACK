@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2014-12-04 15:17:19 d3g096
+# Last Change: 2015-01-19 12:22:43 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -46,22 +46,26 @@ set(gridpack_math_headers
   dae_solver.hpp
   dae_solver_functions.hpp
   dae_solver_implementation.hpp
+  implementation_visitable.hpp
   implementation_visitor.hpp
   linear_matrix_solver.hpp
   linear_matrix_solver_implementation.hpp
   linear_solver.hpp
   linear_solver_implementation.hpp
+  linear_solver_interface.hpp
   math.hpp
   matrix.hpp
   matrix_implementation.hpp
+  matrix_interface.hpp
   newton_raphson_solver.hpp
   newton_raphson_solver_implementation.hpp
-  nonlinear_solver.hpp
   nonlinear_solver_functions.hpp
+  nonlinear_solver.hpp
   nonlinear_solver_implementation.hpp
   nonlinear_solver_interface.hpp
   vector.hpp
   vector_implementation.hpp
+  vector_interface.hpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -152,23 +156,23 @@ add_library(gridpack_math
 # -------------------------------------------------------------
 # matrix inverter program (not a unit test)
 # -------------------------------------------------------------
-add_executable(matrix_inverse matrix_inverse.cpp)
-target_link_libraries(matrix_inverse  gridpack_math ${target_libraries})
-add_custom_target(matrix_inverse_input
+# add_executable(matrix_inverse matrix_inverse.cpp)
+# target_link_libraries(matrix_inverse  gridpack_math ${target_libraries})
+# add_custom_target(matrix_inverse_input
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
-  ${CMAKE_CURRENT_BINARY_DIR}
+#   COMMAND ${CMAKE_COMMAND} -E copy 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+#   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
+#   COMMAND ${CMAKE_COMMAND} -E copy 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+#   ${CMAKE_CURRENT_BINARY_DIR}
 
-  DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
-)
-add_dependencies(matrix_inverse matrix_inverse_input)
+#   DEPENDS
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+# )
+# add_dependencies(matrix_inverse matrix_inverse_input)
 
 
 # -------------------------------------------------------------
