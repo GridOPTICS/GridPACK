@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-01-19 12:22:43 d3g096
+# Last Change: 2015-01-20 10:00:05 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -173,6 +173,12 @@ add_library(gridpack_math
 #   ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
 # )
 # add_dependencies(matrix_inverse matrix_inverse_input)
+
+# -------------------------------------------------------------
+# numeric test suite
+# -------------------------------------------------------------
+add_executable(numeric_test test/numeric_test.cpp)
+gridpack_add_serial_unit_test(numeric numeric_test)
 
 
 # -------------------------------------------------------------
