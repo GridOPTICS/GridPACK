@@ -9,7 +9,7 @@
 /**
  * @file   numeric_test.cpp
  * @author William A. Perkins
- * @date   2015-01-20 09:51:53 d3g096
+ * @date   2015-01-20 10:55:18 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,7 @@
 #include <iostream>
 
 #include "numeric_type_check.hpp"
-
+#include "value_transfer.hpp"
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -43,6 +43,19 @@ BOOST_AUTO_TEST_CASE(TypeCheck)
   BOOST_CHECK(!gridpack::math::TypeCheck< std::complex<float> >::check()); 
 }
   
+BOOST_AUTO_TEST_SUITE_END()
+
+BOOST_AUTO_TEST_SUITE(Transfer)
+
+BOOST_AUTO_TEST_CASE(Real_Complex)
+{
+  gridpack::RealType r[2] = { 1.0, 1.0 };
+  gridpack::ComplexType *c;
+  gridpack::math::ValueTransfer<gridpack::RealType, gridpack::ComplexType> trans(2, &r[0]);
+  c = trans.to();
+  std::cout << *c << std::endl;
+}
+
 BOOST_AUTO_TEST_SUITE_END()
 
 // -------------------------------------------------------------
