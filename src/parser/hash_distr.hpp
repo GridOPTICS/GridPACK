@@ -297,7 +297,7 @@ public:
     bus_data_pair *sendBuf;
     sendBuf = new bus_data_pair[newValues.size()];
     // Fill sendBuf with data from newValues and newKeys
-    int icnt;
+    int icnt=0;
     for (i=0; i<nprocs; i++) {
       j = ltop[i];
       if (j>=0) {
@@ -693,7 +693,7 @@ public:
     branch_data_pair *sendBuf;
     sendBuf = new branch_data_pair[newValues.size()];
     // Fill sendBuf with data from newValues and newKeys
-    int icnt;
+    int icnt = 0;
     for (i=0; i<nprocs; i++) {
       j = ltop[i];
       if (j>=0) {
