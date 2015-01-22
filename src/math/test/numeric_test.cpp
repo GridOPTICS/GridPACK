@@ -9,7 +9,7 @@
 /**
  * @file   numeric_test.cpp
  * @author William A. Perkins
- * @date   2015-01-20 10:55:18 d3g096
+ * @date   2015-01-22 08:06:59 d3g096
  * 
  * @brief  
  * 
@@ -51,9 +51,27 @@ BOOST_AUTO_TEST_CASE(Real_Complex)
 {
   gridpack::RealType r[2] = { 1.0, 1.0 };
   gridpack::ComplexType *c;
-  gridpack::math::ValueTransfer<gridpack::RealType, gridpack::ComplexType> trans(2, &r[0]);
+  gridpack::math::ValueTransfer<gridpack::RealType, gridpack::ComplexType> 
+    trans(2, &r[0]);
   c = trans.to();
   std::cout << *c << std::endl;
+
+  (*c) *= 2.0;
+  gridpack::math::ValueTransfer<gridpack::ComplexType, gridpack::RealType> 
+    rtrans(1, c, &r[0]); 
+  std::cout << "(" << r[0] << "," << r[1] << ")" << std::endl;
+
+
+  gridpack::RealType *x;
+  gridpack::math::ValueTransfer<gridpack::RealType, gridpack::RealType>
+    real_trans(2, &r[0]);
+  x = real_trans.to();
+  std::cout << "(" << x[0] << "," << x[1] << ")" << std::endl;
+
+  gridpack::ComplexType cx;
+  gridpack::math::ValueTransfer<gridpack::ComplexType, gridpack::ComplexType>
+    complex_trans(1, c, &cx);
+  std::cout << cx << std::endl;
 }
 
 BOOST_AUTO_TEST_SUITE_END()

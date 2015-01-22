@@ -10,7 +10,7 @@
 /**
  * @file   numeric_type_check.hpp
  * @author William A. Perkins
- * @date   2015-01-20 09:34:49 d3g096
+ * @date   2015-01-20 13:13:39 d3g096
  * 
  * @brief  
  * 
@@ -56,6 +56,10 @@ public:
   static bool check(void) 
   {
     return OK::value;
+  }
+  static bool isComplex(void)
+  {
+    return boost::is_same<T, ComplexType>::value;
   }
 };
 

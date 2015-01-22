@@ -10,7 +10,7 @@
 /**
  * @file   value_transfer.hpp
  * @author William A. Perkins
- * @date   2015-01-20 10:55:27 d3g096
+ * @date   2015-01-22 08:14:54 d3g096
  * 
  * @brief  
  * 
@@ -62,11 +62,12 @@ private:
 public:
 
   /// Default constructor.
-  ValueTransfer(const unsigned int& from_size, FromType* from)
+  ValueTransfer(const unsigned int& from_size, FromType* from, ToType* to = NULL)
     : utility::Uncopyable(),
-      p_fromSize(from_size), p_from(from)
+      p_fromSize(from_size), p_from(from),
+      p_toSize(), p_to()
   {
-      p_setup();
+    p_setup(to);
   }
 
   /// Destructor
@@ -100,34 +101,47 @@ protected:
   boost::shared_array<ToType> p_to;
 
   /// Do the setup  
-  void p_setup(void);
-
+  inline void p_setup(ToType *to);
 };
 
 template <>
-void
-ValueTransfer<RealType, RealType>::p_setup(void)
+inline void
+ValueTransfer<RealType, RealType>::p_setup(RealType *to)
 {
   p_toSize = p_fromSize;
-  p_to.reset(p_from, null_deleter());
+  if (to == NULL) {
+    p_to.reset(p_from, null_deleter());
+  } else {
+    p_to.reset(to, null_deleter());
+    std::copy(p_from, p_from + p_fromSize, p_to.get());
+  }
 }
 
 template <>
-void
-ValueTransfer<ComplexType, ComplexType>::p_setup(void)
+inline void
+ValueTransfer<ComplexType, ComplexType>::p_setup(ComplexType *to)
 {
   p_toSize = p_fromSize;
-  p_to.reset(p_from, null_deleter());
+  if (to == NULL) {
+    p_to.reset(p_from, null_deleter());
+  } else {
+    p_to.reset(to, null_deleter());
+    std::copy(p_from, p_from + p_fromSize, p_to.get());
+  }
 }
 
 template <>
-void
-ValueTransfer<RealType, ComplexType>::p_setup(void)
+inline void
+ValueTransfer<RealType, ComplexType>::p_setup(ComplexType *to)
 {
   const unsigned int TWO(2);
   BOOST_ASSERT(p_fromSize > 1);
   p_toSize = p_fromSize/TWO;
-  p_to.reset(new ComplexType[p_toSize]);
+  if (to == NULL) {
+    p_to.reset(new ComplexType[p_toSize]);
+  } else {
+    p_to.reset(to, null_deleter());
+  }
   unsigned int fidx(0), tidx(0);
   for (fidx = 0; fidx < p_fromSize; fidx += TWO, ++tidx) {
     p_to.get()[tidx] = ComplexType(p_from[fidx], p_from[fidx+1]);
@@ -135,20 +149,53 @@ ValueTransfer<RealType, ComplexType>::p_setup(void)
 }
 
 template<>
-void
-ValueTransfer<ComplexType, RealType>::p_setup(void)
+inline void
+ValueTransfer<ComplexType, RealType>::p_setup(RealType *to)
 {
-  const unsigned int TWO(2);
+   const unsigned int TWO(2);
   p_toSize = p_fromSize*TWO;
-  p_to.reset(new RealType[p_toSize]);
+  if (to == NULL) {
+    p_to.reset(new RealType[p_toSize]);
+  } else {
+    p_to.reset(to, null_deleter());
+  }
   unsigned int fidx(0), tidx(0);
   for (fidx = 0; fidx < p_fromSize; ++fidx, ++tidx += TWO) {
     p_to.get()[tidx] = std::real(p_from[fidx]);
     p_to.get()[tidx+1] = std::imag(p_from[fidx]);
   }
 }
-  
+
+// -------------------------------------------------------------
+// storage_size
+// -------------------------------------------------------------
+/// Get the number of library elements used to represent a scalar
+/** 
+ * complex -> complex -> 1
+ * real -> real -> 1
+ * real -> complex -> 1
+ * complex -> real -> 2
+ * 
+ * @return 
+ */
+template <typename ScalarType, typename LibraryType>
+inline unsigned int
+storage_size(void)
+{
+  BOOST_ASSERT(TypeCheck<ScalarType>::OK::value);
+  BOOST_ASSERT(TypeCheck<LibraryType>::OK::value);
+  if (boost::mpl::and_< 
+      boost::is_same<ScalarType, ComplexType>,
+      boost::is_same<LibraryType, RealType> >::value) {
+    return 2;
+  } else {
+    return 1;
+  }
+}
+
 } // namespace math
 } // namespace gridpack
+
+
 
 #endif
