@@ -75,8 +75,8 @@ void gridpack::powerflow::PFAppModule::readNetwork(
     }
   }
   // Convergence and iteration parameters
-  double p_tolerance = cursor->get("tolerance",1.0e-6);
-  int p_max_iteration = cursor->get("maxIteration",50);
+  p_tolerance = cursor->get("tolerance",1.0e-6);
+  p_max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
 
   int t_pti = timer->createCategory("Powerflow: Network Parser");

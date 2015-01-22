@@ -198,7 +198,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
         int ii = jp*p_ngen + ip;
         if (ip == jp) {
           double ra = p_r[ip] * p_sbase / p_mva[ip];
-          double xd;
+          double xd = 0.0;
           if (p_dstr[ip] == 0) { 
             xd = p_dtr[ip] * p_sbase / p_mva[ip];
           }
