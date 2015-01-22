@@ -10,7 +10,7 @@
 /**
  * @file   value_transfer.hpp
  * @author William A. Perkins
- * @date   2015-01-22 08:14:54 d3g096
+ * @date   2015-01-22 14:26:39 d3g096
  * 
  * @brief  
  * 
@@ -40,10 +40,13 @@ namespace math {
 //  class valueTransfer
 // -------------------------------------------------------------
 /**
- * This provides a consistent way to 
+ * This provides a consistent way to transfer values between RealType
+ * and ComplexType arrays, being (hopefully) smart about when memory
+ * is allocated. The transfer works both ways: complex <-> real. This
+ * is not approprate for the case of real math with a complex-based
+ * math library!
  * 
  */
-
 template <typename FromType, typename ToType>
 class ValueTransfer 
   : private utility::Uncopyable
@@ -67,6 +70,8 @@ public:
       p_fromSize(from_size), p_from(from),
       p_toSize(), p_to()
   {
+    p_toSize = p_computeToSize();
+    BOOST_ASSERT(p_toSize > 0);
     p_setup(to);
   }
 
@@ -88,6 +93,9 @@ public:
 
 protected:
 
+  /// Two
+  static const unsigned int TWO = 2;
+
   /// The size of the from buffer
   const unsigned int p_fromSize;
 
@@ -100,65 +108,110 @@ protected:
   /// The "to" buffer
   boost::shared_array<ToType> p_to;
 
+  /// Compute the size of the "to" buffer
+  virtual inline unsigned int p_computeToSize(void);
+
   /// Do the setup  
   inline void p_setup(ToType *to);
+
+  /// Copy the value
+  virtual inline void p_copy(void);
+
+};
+
+
+// -------------------------------------------------------------
+// ValueTransfer<>::p_computeToSize
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline unsigned int
+ValueTransfer<FromType, ToType>::p_computeToSize(void)
+{
+  BOOST_STATIC_ASSERT(boost::is_same<FromType, ToType>::value);
+  return p_fromSize;
+}
+
+template <>
+inline unsigned int
+ValueTransfer<RealType, ComplexType>::p_computeToSize(void)
+{
+  return p_fromSize/TWO;
 };
 
 template <>
-inline void
+inline unsigned int
+ValueTransfer<ComplexType, RealType>::p_computeToSize(void)
+{
+  return p_fromSize*TWO;
+};
+
+// -------------------------------------------------------------
+// ValueTransfer<>::p_setup
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline void  
+ValueTransfer<FromType, ToType>::p_setup(ToType *to)
+{
+  if (to != NULL) {
+    p_to.reset(to, null_deleter());
+  } else {
+    p_to.reset(new ToType[p_toSize]);
+  }
+  p_copy();
+}
+
+template <>
+inline void  
 ValueTransfer<RealType, RealType>::p_setup(RealType *to)
 {
-  p_toSize = p_fromSize;
-  if (to == NULL) {
-    p_to.reset(p_from, null_deleter());
-  } else {
+  if (to != NULL) {
     p_to.reset(to, null_deleter());
-    std::copy(p_from, p_from + p_fromSize, p_to.get());
+    p_copy();
+  } else {
+    p_to.reset(p_from, null_deleter());
   }
-}
+};
 
 template <>
-inline void
+inline void  
 ValueTransfer<ComplexType, ComplexType>::p_setup(ComplexType *to)
 {
-  p_toSize = p_fromSize;
-  if (to == NULL) {
-    p_to.reset(p_from, null_deleter());
-  } else {
+  if (to != NULL) {
     p_to.reset(to, null_deleter());
-    std::copy(p_from, p_from + p_fromSize, p_to.get());
+    p_copy();
+  } else {
+    p_to.reset(p_from, null_deleter());
   }
+};
+
+
+
+// -------------------------------------------------------------
+// ValueTransfer<>::p_copy
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline void
+ValueTransfer<FromType, ToType>::p_copy(void)
+{
+  BOOST_STATIC_ASSERT(boost::is_same<FromType, ToType>::value);
+  if (p_from != p_to.get()) 
+    std::copy(p_from, p_from + p_fromSize, p_to.get());
 }
 
 template <>
 inline void
-ValueTransfer<RealType, ComplexType>::p_setup(ComplexType *to)
+ValueTransfer<RealType, ComplexType>::p_copy(void)
 {
-  const unsigned int TWO(2);
-  BOOST_ASSERT(p_fromSize > 1);
-  p_toSize = p_fromSize/TWO;
-  if (to == NULL) {
-    p_to.reset(new ComplexType[p_toSize]);
-  } else {
-    p_to.reset(to, null_deleter());
-  }
   unsigned int fidx(0), tidx(0);
   for (fidx = 0; fidx < p_fromSize; fidx += TWO, ++tidx) {
     p_to.get()[tidx] = ComplexType(p_from[fidx], p_from[fidx+1]);
   }
-}
+};
 
-template<>
+template <>
 inline void
-ValueTransfer<ComplexType, RealType>::p_setup(RealType *to)
+ValueTransfer<ComplexType, RealType>::p_copy(void)
 {
-   const unsigned int TWO(2);
-  p_toSize = p_fromSize*TWO;
-  if (to == NULL) {
-    p_to.reset(new RealType[p_toSize]);
-  } else {
-    p_to.reset(to, null_deleter());
-  }
   unsigned int fidx(0), tidx(0);
   for (fidx = 0; fidx < p_fromSize; ++fidx, ++tidx += TWO) {
     p_to.get()[tidx] = std::real(p_from[fidx]);
@@ -179,7 +232,7 @@ ValueTransfer<ComplexType, RealType>::p_setup(RealType *to)
  * @return 
  */
 template <typename ScalarType, typename LibraryType>
-inline unsigned int
+unsigned int
 storage_size(void)
 {
   BOOST_ASSERT(TypeCheck<ScalarType>::OK::value);

@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-01-20 10:00:05 d3g096
+# Last Change: 2015-01-22 14:23:33 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -66,6 +66,9 @@ set(gridpack_math_headers
   vector.hpp
   vector_implementation.hpp
   vector_interface.hpp
+  value_transfer.hpp
+  complex_operations.hpp
+  numeric_type_check.hpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})

@@ -10,7 +10,7 @@
 /**
  * @file   numeric_type_check.hpp
  * @author William A. Perkins
- * @date   2015-01-20 13:13:39 d3g096
+ * @date   2015-01-22 11:12:22 d3g096
  * 
  * @brief  
  * 
@@ -53,14 +53,12 @@ public:
   typedef boost::mpl::not_<
     boost::is_same<Found, NotFound>
   > OK;
-  static bool check(void) 
-  {
-    return OK::value;
-  }
-  static bool isComplex(void)
-  {
-    return boost::is_same<T, ComplexType>::value;
-  }
+  static const bool check = OK::value;
+  static const bool isComplex = boost::is_same<T, ComplexType>::value;
+  template <typename Other>
+  struct isSame {
+    static const bool value = boost::is_same<T, Other>::value;
+  };
 };
 
 } // namespace math

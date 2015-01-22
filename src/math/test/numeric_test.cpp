@@ -9,7 +9,7 @@
 /**
  * @file   numeric_test.cpp
  * @author William A. Perkins
- * @date   2015-01-22 08:06:59 d3g096
+ * @date   2015-01-22 14:30:43 d3g096
  * 
  * @brief  
  * 
@@ -30,17 +30,23 @@
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 
+static const double delta(0.0001);
+
 BOOST_AUTO_TEST_SUITE(Numeric)
 
-BOOST_AUTO_TEST_CASE(TypeCheck)
+BOOST_AUTO_TEST_CASE(TypeChecking)
 {
-  BOOST_CHECK(gridpack::math::TypeCheck<gridpack::RealType>::check());
-  BOOST_CHECK(gridpack::math::TypeCheck<gridpack::ComplexType>::check());
-  BOOST_CHECK(!gridpack::math::TypeCheck<float>::check());
-  BOOST_CHECK(!gridpack::math::TypeCheck<int>::check());
-  BOOST_CHECK(gridpack::math::TypeCheck<double>::check());
-  BOOST_CHECK(gridpack::math::TypeCheck< std::complex<double> >::check()); 
-  BOOST_CHECK(!gridpack::math::TypeCheck< std::complex<float> >::check()); 
+  using namespace gridpack::math;
+  BOOST_CHECK(!TypeCheck<gridpack::RealType>::isSame<gridpack::ComplexType>::value);
+  BOOST_CHECK(TypeCheck<gridpack::RealType>::isSame<gridpack::RealType>::value);
+  BOOST_CHECK(TypeCheck<gridpack::ComplexType>::isSame<gridpack::ComplexType>::value);
+  BOOST_CHECK(TypeCheck<gridpack::RealType>::check);
+  BOOST_CHECK(TypeCheck<gridpack::ComplexType>::check);
+  BOOST_CHECK(!TypeCheck<float>::check);
+  BOOST_CHECK(!TypeCheck<int>::check);
+  BOOST_CHECK(TypeCheck<double>::check);
+  BOOST_CHECK(TypeCheck< std::complex<double> >::check); 
+  BOOST_CHECK(!TypeCheck< std::complex<float> >::check); 
 }
   
 BOOST_AUTO_TEST_SUITE_END()
@@ -55,6 +61,8 @@ BOOST_AUTO_TEST_CASE(Real_Complex)
     trans(2, &r[0]);
   c = trans.to();
   std::cout << *c << std::endl;
+  BOOST_CHECK_CLOSE(std::real(*c), r[0], delta);
+  BOOST_CHECK_CLOSE(std::imag(*c), r[1], delta);
 
   (*c) *= 2.0;
   gridpack::math::ValueTransfer<gridpack::ComplexType, gridpack::RealType> 
