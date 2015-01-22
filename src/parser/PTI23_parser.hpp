@@ -50,7 +50,7 @@ class PTI23_parser : BaseParser<_network>
      * of network configuration file (must be child of network::BaseNetwork<>)
      */
     PTI23_parser(boost::shared_ptr<_network> network)
-      : p_network(network), p_configExists(false)
+      : p_network(network)
     { 
       this->setNetwork(network);
     }
@@ -79,7 +79,6 @@ class PTI23_parser : BaseParser<_network>
         getCase(fileName);
         //brdcst_data();
         this->createNetwork(p_busData,p_branchData);
-        p_configExists = this->configExists();
       } else if (ext == "dyr") {
         getDS(fileName);
       }
@@ -204,8 +203,6 @@ class PTI23_parser : BaseParser<_network>
      */
     void getDS(const std::string & fileName)
     {
-
-      if (!p_configExists) return;
       int t_ds = p_timer->createCategory("Parser:getDS");
       p_timer->start(t_ds);
       int me(p_network->communicator().rank());
@@ -248,7 +245,6 @@ class PTI23_parser : BaseParser<_network>
     void getDSExternal(const std::string & fileName)
     {
 
-      if (!p_configExists) return;
       //      int t_ds = p_timer->createCategory("Parser:getDS");
       //      p_timer->start(t_ds);
       int me(p_network->communicator().rank());
@@ -864,7 +860,14 @@ class PTI23_parser : BaseParser<_network>
         data.bus_id = o_idx;
 
         int nstr = split_line.size();
-        if (split_line[nstr-1] == "\\") nstr--;
+        if (split_line[nstr-1] == "\\") {
+          nstr--;
+        } else {
+          int nlen = split_line[nstr-1].length();
+          if ((split_line[nstr-1])[nlen-1] == '\\') {
+            split_line[nstr-1].erase(nlen-1,1);
+          }
+        }
 
         // Clean up 2 character tag for generator ID
         std::string tag = clean2Char(split_line[2]);
@@ -1909,8 +1912,6 @@ class PTI23_parser : BaseParser<_network>
      * data set and each data set is a
      */
     boost::shared_ptr<_network> p_network;
-
-    bool p_configExists;
 
     // Vector of bus data objects
     std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_busData;

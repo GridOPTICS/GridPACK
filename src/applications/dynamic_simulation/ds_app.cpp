@@ -15,18 +15,9 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/vector.hpp"
-#include "gridpack/math/linear_solver.hpp"
-#include "gridpack/math/linear_matrix_solver.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_app.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
-#include "gridpack/timer/coarse_timer.hpp"
 
 // Calling program for dynamic simulation application
 
@@ -93,7 +84,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   parser.parse(filename.c_str());
   cursor = config->getCursor("Configuration.Dynamic_simulation");
   filename = cursor->get("generatorParameters","");
+#if 0
   if (filename.size() > 0) parser.parse(filename.c_str());
+#else
+  if (filename.size() > 0) parser.externalParse(filename.c_str());
+#endif
   timer->stop(t_setup);
 
   int t_part = timer->createCategory("Partition Network");
