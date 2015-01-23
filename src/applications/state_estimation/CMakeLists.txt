@@ -21,6 +21,7 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
+    gridpack_sematrix_components
     gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
@@ -35,7 +36,6 @@ endif()
 
 add_executable(se.x
    se_app.cpp
-   se_components.cpp
    se_factory.cpp
    se_main.cpp
 )

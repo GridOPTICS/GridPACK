@@ -20,7 +20,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/include/gridpack.hpp"
-#include "se_components.hpp"
+#include "gridpack/applications/components/se_matrix/se_components.hpp"
 
 namespace gridpack {
 namespace state_estimation {
