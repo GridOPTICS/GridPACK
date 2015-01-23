@@ -316,15 +316,6 @@ class PTI33_parser : BaseParser<_network>
           data->setValue(GENERATOR_DAMPING_COEFFICIENT_0,
               ds_data[i].damping, g_id);
         }
-
-        // GENERATOR_TRANSIENT_REACTANCE                         float
-        if (!data->getValue(GENERATOR_TRANSIENT_REACTANCE,&rval,g_id)) {
-          data->addValue(GENERATOR_TRANSIENT_REACTANCE,
-              ds_data[i].reactance, g_id);
-        } else {
-          data->setValue(GENERATOR_TRANSIENT_REACTANCE,
-              ds_data[i].reactance, g_id);
-        }
       }
       //      p_timer->stop(t_ds);
     }
@@ -762,6 +753,8 @@ class PTI33_parser : BaseParser<_network>
       std::string          line;
       gridpack::component::DataCollection *data;
       while(std::getline(input,line)) {
+        int idx = line.find('/');
+        if (idx != std::string::npos) line.erase(idx,line.length()-idx);
         std::vector<std::string>  split_line;
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
@@ -775,13 +768,6 @@ class PTI33_parser : BaseParser<_network>
         boost::unordered_map<int, int>::iterator it;
 #endif
         int nstr = split_line.size();
-        if (split_line[nstr-1] == "\\") nstr--;
-        it = p_busMap.find(o_idx);
-        if (it != p_busMap.end()) {
-          l_idx = it->second;
-        } else {
-          continue;
-        }
         data = dynamic_cast<gridpack::component::DataCollection*>
           (p_network->getBusData(l_idx).get());
 
@@ -833,17 +819,6 @@ class PTI33_parser : BaseParser<_network>
                 atof(split_line[4].c_str()), g_id);
           }
         }
-
-        // GENERATOR_TRANSIENT_REACTANCE                             float
-        if (nstr > 5) {
-          if (!data->getValue(GENERATOR_TRANSIENT_REACTANCE,&rval,g_id)) {
-            data->addValue(GENERATOR_TRANSIENT_REACTANCE,
-                atof(split_line[5].c_str()), g_id);
-          } else {
-            data->setValue(GENERATOR_TRANSIENT_REACTANCE,
-                atof(split_line[5].c_str()), g_id);
-          }
-        }
       }
     }
 
@@ -852,6 +827,8 @@ class PTI33_parser : BaseParser<_network>
       std::string          line;
       ds_vector->clear();
       while(std::getline(input,line)) {
+        int idx = line.find('/');
+        if (idx != std::string::npos) line.erase(idx,line.length()-idx);
         std::vector<std::string> split_line;
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
@@ -864,14 +841,6 @@ class PTI33_parser : BaseParser<_network>
         data.bus_id = o_idx;
 
         int nstr = split_line.size();
-        if (split_line[nstr-1] == "\\") {
-          nstr--;
-        } else {
-          int nlen = split_line[nstr-1].length();
-          if ((split_line[nstr-1])[nlen-1] == '\\') {
-            split_line[nstr-1].erase(nlen-1,1);
-          }
-        }
 
         // Clean up 2 character tag for generator ID
         std::string tag = clean2Char(split_line[2]);
@@ -890,11 +859,6 @@ class PTI33_parser : BaseParser<_network>
         // GENERATOR_DAMPING_COEFFICIENT_0                          float
         if (nstr > 4) {
           data.damping = atof(split_line[4].c_str());
-        }
-
-        // GENERATOR_TRANSIENT_REACTANCE                            float
-        if (nstr > 5) {
-          data.reactance = atof(split_line[5].c_str());
         }
         ds_vector->push_back(data);
       }
