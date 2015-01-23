@@ -623,7 +623,10 @@ void gridpack::dynamic_simulation::DSBus::load(
       lgen = lgen && data->getValue(GENERATOR_MBASE, &mva, i); 
       if (!data->getValue(GENERATOR_RESISTANCE, &r, i)) r=0.0; // r
       if (!data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &dstr,i)) dstr = 0.0; // dstr
-      lgen = lgen && data->getValue(GENERATOR_TRANSIENT_REACTANCE, &dtr,i); // dtr
+      gridpack::ComplexType zsrc;
+      //lgen = lgen && data->getValue(GENERATOR_TRANSIENT_REACTANCE, &dtr,i); // dtr
+      lgen = lgen && data->getValue(GENERATOR_ZSOURCE, &zsrc,i); // dtr
+      dtr = imag(zsrc);
       // SJin: need to be added to parser
       lgen = lgen && data->getValue(GENERATOR_INERTIA_CONSTANT_H, &h, i); // h
       lgen = lgen && data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &d0, i); // d0
