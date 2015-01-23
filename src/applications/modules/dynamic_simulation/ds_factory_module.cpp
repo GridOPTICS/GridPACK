@@ -17,7 +17,6 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "ds_factory_module.hpp"
 
 namespace gridpack {
