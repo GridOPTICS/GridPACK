@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2014-12-04 14:37:17 d3g096
+ * @date   2015-01-26 10:50:14 d3g096
  * 
  * @brief  
  * 
@@ -28,6 +28,7 @@
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/utilities/complex.hpp>
 #include <gridpack/math/vector_interface.hpp>
+#include <gridpack/math/complex_operators.hpp>
 
 namespace gridpack {
 namespace math {
@@ -58,6 +59,13 @@ public:
   ~VectorImplementation(void)
   {}
 
+  /// Apply some operator on the vector elements
+  void applyOperation(base_unary_function<TheType>& op)
+  {
+    this->p_applyOperation(op);
+  }
+
+
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
@@ -69,6 +77,10 @@ public:
   }
 
 protected:
+
+  /// 
+  virtual void p_applyOperation(base_unary_function<TheType>& op) = 0;
+
 
   /// Get a range of elements (lo to hi-1) (specialized)
   void p_setElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
