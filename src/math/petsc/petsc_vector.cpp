@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2015-01-26 09:01:45 d3g096
+ * @date   2015-01-26 10:40:22 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -60,7 +60,8 @@ VectorT<T, I>::add(const VectorT<T, I>& x, const VectorT<T, I>::TheType& scale)
   const Vec *xvec(PETScVector(x));
   Vec *yvec(PETScVector(*this));
   try {
-    PetscScalar alpha(scale);
+    PetscScalar alpha =
+      gridpack::math::equate<PetscScalar, TheType>(scale);
     
     // This call computes y = x + alpha*y. Where y is p_vector.  
     ierr = VecAXPY(*yvec, alpha, *xvec);
@@ -84,7 +85,7 @@ VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
     try {
       PetscScalar tmpx =
         gridpack::math::equate<PetscScalar, TheType>(x);
-      ierr = VecShift(*vec, x); CHKERRXX(ierr);
+      ierr = VecShift(*vec, tmpx); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }

@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-01-26 09:55:58 d3g096
+ * @date   2015-01-26 10:41:00 d3g096
  * 
  * @brief  
  * 
@@ -154,9 +154,13 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      PetscScalar px(x);
-      PetscInt idx(i/elementSize);
-      ierr = VecSetValue(*v, idx, px, INSERT_VALUES); CHKERRXX(ierr);
+      PetscScalar px[elementSize];
+      TheType tmp(x);
+      ValueTransfer<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      PetscInt idx[elementSize];
+      idx[0] = i/elementSize;
+      if (elementSize > 1) idx[1] = (i+1)/elementSize;
+      ierr = VecSetValues(*v, elementSize, &idx[0], &px[0], INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -177,7 +181,8 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      PetscScalar px(x);
+      PetscScalar px = 
+        gridpack::math::equate<PetscScalar, TheType>(x);
       ierr = VecSetValue(*v, i, px, ADD_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
@@ -259,7 +264,8 @@ protected:
       Vec *vec = p_vwrap.getVector();
       PetscErrorCode ierr(0);
       try {
-        PetscScalar px(x);
+        PetscScalar px =
+          gridpack::math::equate<PetscScalar, TheType>(x);
         ierr = VecScale(*vec, px); CHKERRXX(ierr);
       } catch (const PETSC_EXCEPTION_TYPE& e) {
         throw PETScException(ierr, e);
