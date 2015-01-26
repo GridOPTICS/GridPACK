@@ -10,7 +10,7 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-01-26 09:57:23 d3g096
+ * @date   2015-01-26 14:58:02 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -163,15 +163,26 @@ struct setvalue : public base_unary_function<T>
   T operator() (const T& x) const { return value; }
 };
 
+// -------------------------------------------------------------
+// setvalue
+// -------------------------------------------------------------
+template <typename T> 
+struct addvalue : public base_unary_function<T>
+{
+  const T value;
+  addvalue(const T& v) : value(v) {}
+  T operator() (const T& x) const { return x+value; }
+};
+
 
 // -------------------------------------------------------------
 // multiply
 // -------------------------------------------------------------
 template <typename T> 
-struct multiply : public base_unary_function<T>
+struct multiplyvalue : public base_unary_function<T>
 {
   const T factor;
-  multiply(const T& f) : factor(f) {}
+  multiplyvalue(const T& f) : factor(f) {}
   T operator() (const T& x) const { return x*factor; }
 };
 
@@ -220,9 +231,36 @@ struct reciprocal : public base_unary_function<T>
 {
   T operator() (const T& x) const { 
     T one(1.0);
-    return 1.0/x; 
+    return one/x; 
   }
 };
+
+// -------------------------------------------------------------
+// conjugate
+// -------------------------------------------------------------
+template <typename T> 
+struct conjugate_value : public base_unary_function<T>
+{
+  inline T operator() (const T& x) const;
+};
+
+template <>
+inline RealType
+conjugate_value<RealType>::operator() (const RealType& x) const
+{
+  return x;
+}
+
+template <>
+inline ComplexType
+conjugate_value<ComplexType>::operator() (const ComplexType& x) const
+{
+  return std::conj(x);
+}
+
+
+
+
 
 
   

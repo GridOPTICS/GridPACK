@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-01-26 10:41:00 d3g096
+ * @date   2015-01-26 14:45:19 d3g096
  * 
  * @brief  
  * 
@@ -80,7 +80,7 @@ public:
    */
   PETScVectorImplementation(const parallel::Communicator& comm,
                             const IdxType& local_length)
-    : VectorImplementation<T>(comm), p_vwrap(comm, local_length)
+    : VectorImplementation<T>(comm), p_vwrap(comm, local_length*elementSize)
   { }
 
   /// Construct from an existing PETSc vector
@@ -154,13 +154,15 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      PetscScalar px[elementSize];
+      unsigned int n(elementSize);
+      PetscScalar px[n];
       TheType tmp(x);
       ValueTransfer<TheType, PetscScalar> trans(1, &tmp, &px[0]);
-      PetscInt idx[elementSize];
-      idx[0] = i/elementSize;
-      if (elementSize > 1) idx[1] = (i+1)/elementSize;
-      ierr = VecSetValues(*v, elementSize, &idx[0], &px[0], INSERT_VALUES); CHKERRXX(ierr);
+      PetscInt idx[n];
+      for (int j = 0; j < n; ++j) {
+        idx[j] = i*n + j;
+      }
+      ierr = VecSetValues(*v, n, &idx[0], &px[0], INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -181,9 +183,15 @@ protected:
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      PetscScalar px = 
-        gridpack::math::equate<PetscScalar, TheType>(x);
-      ierr = VecSetValue(*v, i, px, ADD_VALUES); CHKERRXX(ierr);
+      unsigned int n(elementSize);
+      PetscScalar px[n];
+      TheType tmp(x);
+      ValueTransfer<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      PetscInt idx[n];
+      for (int j = 0; j < n; ++j) {
+        idx[j] = i*n + j;
+      }
+      ierr = VecSetValues(*v, n, &idx[0], &px[0], ADD_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -201,13 +209,17 @@ protected:
   /// Get an individual (local) element (specialized)
   void p_getElement(const IdxType& i, TheType& x) const
   {
-    PetscErrorCode ierr(0);
+    PetscErrorCode ierr;
     try {
       const Vec *v = p_vwrap.getVector();
-      PetscScalar y;
-      PetscInt idx(i);
-      ierr = VecGetValues(*v, 1, &idx, &y); CHKERRXX(ierr);
-      x = equate<TheType, PetscScalar>(y);
+      unsigned int n(elementSize);
+      PetscScalar px[n];
+      PetscInt idx[n];
+      for (int j = 0; j < n; ++j) {
+        idx[j] = i*n + j;
+      }
+      ierr = VecGetValues(*v, n, &idx[0], &px[0]); CHKERRXX(ierr);
+      ValueTransfer<PetscScalar, TheType> trans(n, &px[0], &x);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -225,11 +237,10 @@ protected:
   /// Get all of vector elements (on all processes)
   void p_getAllElements(TheType *x) const
   {
-    std::vector<PetscScalar> px(this->size());
+    unsigned int n(p_vwrap.size());
+    std::vector<PetscScalar> px(n);
     p_vwrap.getAllElements(&px[0]);
-    for (size_t i = 0; i < px.size(); ++i) {
-      x[i] = equate<TheType, PetscScalar>(px[i]);
-    }
+    ValueTransfer<PetscScalar, TheType> trans(n, &px[0], x);
   }
 
   /// Make all the elements zero (specialized)
@@ -271,7 +282,7 @@ protected:
         throw PETScException(ierr, e);
       }
     } else {
-      gridpack::math::multiply<TheType> op(x);
+      gridpack::math::multiplyvalue<TheType> op(x);
       p_applyOperation(op);
     } 
   }
@@ -329,7 +340,8 @@ protected:
     if (useLibrary::value) {
       p_vwrap.conjugate();
     } else {
-      BOOST_ASSERT(false);
+      conjugate_value<TheType> op;
+      p_applyOperation(op);
     }
   }
 

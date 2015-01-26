@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2015-01-26 10:40:22 d3g096
+ * @date   2015-01-26 15:02:51 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -79,8 +79,8 @@ template <typename T, typename I>
 void
 VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
 {
-  Vec *vec(PETScVector(*this));
   if (PETScVectorImplementation<T, I>::useLibrary::value) {
+    Vec *vec(PETScVector(*this));
     PetscErrorCode ierr(0);
     try {
       PetscScalar tmpx =
@@ -90,7 +90,8 @@ VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
       throw PETScException(ierr, e);
     }
   } else {
-    BOOST_ASSERT(false);
+    gridpack::math::addvalue<TheType> op(x);
+    this->p_vector_impl->applyOperation(op);
   }
 }
 
