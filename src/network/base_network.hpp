@@ -474,10 +474,11 @@ int totalBranches(void)
 void setReferenceBus(int idx)
 {
   p_refBus = idx;
-  if (idx > 0 && idx <= p_buses.size()) {
+  if (idx >= 0 && idx < p_buses.size()) {
     p_buses[idx].p_refFlag = true;
   } else {
-    p_buses[idx].p_refFlag = false;
+    printf("Illegal bus index specified for reference bus idx: %d size: %d\n",
+        idx,p_buses.size());
   }
 }
 
@@ -1282,6 +1283,63 @@ void clean(void)
     p_refBus = buses[p_refBus];
   }
 }
+
+/**
+ * Copy network new network. The component classes of the new network do not
+ * need to be the same as the component classes of the old network. This
+ * function can be used to create different types of networks that can be used
+ * to solve different problems. The new network is already partitioned so it
+ * is not necessary to call the partitioner.
+ * @param new_network a new network of a different type than the calling network
+ */
+template <class _new_bus, class _new_branch> void clone(
+    boost::shared_ptr<gridpack::network::BaseNetwork
+    <_new_bus,_new_branch> > &new_network)
+{
+  new_network->clear();
+  int i, j, nsize, idx, jdx;
+  int numBus = numBuses();
+  int numBranch = numBranches();
+  // Add buses to new network
+  for (i=0; i<numBus; i++) {
+    idx = getOriginalBusIndex(i);
+    new_network->addBus(idx);
+    idx = getGlobalBusIndex(i);
+    new_network->setGlobalBusIndex(i,idx);
+    *(new_network->getBusData(i)) = *(getBusData(i));
+    new_network->setActiveBus(i,getActiveBus(i));
+    // set neighbor indices
+    std::vector<int> nghbrs;
+    nghbrs = getConnectedBranches(i);
+    nsize = nghbrs.size();
+    for (j=0; j<nsize; j++) {
+      new_network->addBranchNeighbor(i,nghbrs[j]);
+    }
+  }
+  // Set reference bus on new network
+  if (getReferenceBus() != -1) {
+    new_network->setReferenceBus(getReferenceBus());
+  }
+  // Add branches to new network
+  for (i=0; i<numBranch; i++) {
+    getOriginalBranchEndpoints(i,&idx,&jdx);
+    new_network->addBranch(idx,jdx);
+    idx = getGlobalBranchIndex(i);
+    new_network->setGlobalBranchIndex(i,idx);
+    *(new_network->getBranchData(i)) = *(getBranchData(i));
+    new_network->setActiveBranch(i,getActiveBranch(i));
+    // set bus indices at either end of branch
+    getBranchEndpoints(i,&idx,&jdx);
+    new_network->setLocalBusIndex1(i,idx);
+    new_network->setLocalBusIndex2(i,jdx);
+    j = getGlobalBusIndex(idx);
+    new_network->setGlobalBusIndex1(i,j);
+    j = getGlobalBusIndex(jdx);
+    new_network->setGlobalBusIndex2(i,j);
+  }
+}
+
+
 
 /**
  * Remove all buses and branches from the system.

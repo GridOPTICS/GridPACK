@@ -17,12 +17,7 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/network/base_network.hpp"
-#include "gridpack/factory/base_factory.hpp"
-#include "gridpack/applications/components/ds_matrix/ds_components.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {

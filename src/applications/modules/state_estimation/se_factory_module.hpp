@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   se_factory.hpp
- * @author Yousu Chen 
- * @date   2/24/2014 
+ * @file   se_factory_module.hpp
+ * @author Yousu Chen, Bruce Palmer 
+ * @date   1/23/2015
  * 
  * @brief  
  * 
@@ -15,8 +15,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _se_factory_h_
-#define _se_factory_h_
+#ifndef _se_factory_module_h_
+#define _se_factory_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/include/gridpack.hpp"
@@ -25,19 +25,19 @@
 namespace gridpack {
 namespace state_estimation {
 
-class SEFactory
+class SEFactoryModule
   : public gridpack::factory::BaseFactory<SENetwork> {
   public:
     /**
      * Basic constructor
      * @param network: network associated with factory
      */
-    SEFactory(NetworkPtr network);
+    SEFactoryModule(NetworkPtr network);
 
     /**
      * Basic destructor
      */
-    ~SEFactory();
+    ~SEFactoryModule();
 
     /**
      * Create the admittance (Y-Bus) matrix
