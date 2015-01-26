@@ -9,7 +9,7 @@
 /**
  * @file   numeric_test.cpp
  * @author William A. Perkins
- * @date   2015-01-22 14:30:43 d3g096
+ * @date   2015-01-22 15:58:03 d3g096
  * 
  * @brief  
  * 
@@ -48,6 +48,17 @@ BOOST_AUTO_TEST_CASE(TypeChecking)
   BOOST_CHECK(TypeCheck< std::complex<double> >::check); 
   BOOST_CHECK(!TypeCheck< std::complex<float> >::check); 
 }
+
+BOOST_AUTO_TEST_CASE(MPL) 
+{
+  using namespace gridpack;
+  typedef 
+    boost::mpl::bool_<
+      boost::is_same<RealType, RealType>::value ||
+      boost::is_same<RealType, ComplexType>::value
+    >::type test1;
+  BOOST_CHECK(test1::value);
+}
   
 BOOST_AUTO_TEST_SUITE_END()
 
@@ -80,6 +91,17 @@ BOOST_AUTO_TEST_CASE(Real_Complex)
   gridpack::math::ValueTransfer<gridpack::ComplexType, gridpack::ComplexType>
     complex_trans(1, c, &cx);
   std::cout << cx << std::endl;
+}
+
+BOOST_AUTO_TEST_CASE(StorageSize)
+{
+  using namespace gridpack;
+  using namespace gridpack::math;
+
+  BOOST_CHECK_EQUAL((storage_size<RealType, RealType>::value), 1);
+  BOOST_CHECK_EQUAL((storage_size<ComplexType, ComplexType>::value), 1);
+  BOOST_CHECK_EQUAL((storage_size<ComplexType, RealType>::value), 2);
+  BOOST_CHECK_EQUAL((storage_size<RealType, ComplexType>::value), 1);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

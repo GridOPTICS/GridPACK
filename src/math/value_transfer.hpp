@@ -10,7 +10,7 @@
 /**
  * @file   value_transfer.hpp
  * @author William A. Perkins
- * @date   2015-01-22 14:26:39 d3g096
+ * @date   2015-01-22 15:25:09 d3g096
  * 
  * @brief  
  * 
@@ -232,19 +232,17 @@ ValueTransfer<ComplexType, RealType>::p_copy(void)
  * @return 
  */
 template <typename ScalarType, typename LibraryType>
-unsigned int
-storage_size(void)
-{
-  BOOST_ASSERT(TypeCheck<ScalarType>::OK::value);
-  BOOST_ASSERT(TypeCheck<LibraryType>::OK::value);
-  if (boost::mpl::and_< 
-      boost::is_same<ScalarType, ComplexType>,
-      boost::is_same<LibraryType, RealType> >::value) {
-    return 2;
-  } else {
-    return 1;
-  }
-}
+struct storage_size
+  : boost::mpl::if_<
+      typename boost::mpl::and_< 
+        boost::is_same<ScalarType, ComplexType>,
+        boost::is_same<LibraryType, RealType> >::type,
+      boost::mpl::int_<2>,
+    boost::mpl::int_<1> 
+  >::type
+{};
+
+
 
 } // namespace math
 } // namespace gridpack

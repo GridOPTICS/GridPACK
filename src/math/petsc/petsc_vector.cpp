@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2014-11-14 12:27:11 d3g096
+ * @date   2015-01-26 09:01:45 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -18,6 +18,7 @@
 
 #include <iostream>
 #include "vector.hpp"
+#include "complex_operators.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
@@ -54,12 +55,13 @@ void
 VectorT<T, I>::add(const VectorT<T, I>& x, const VectorT<T, I>::TheType& scale)
 {
   this->p_checkCompatible(x);
+  
   PetscErrorCode ierr(0);
   const Vec *xvec(PETScVector(x));
   Vec *yvec(PETScVector(*this));
   try {
     PetscScalar alpha(scale);
-
+    
     // This call computes y = x + alpha*y. Where y is p_vector.  
     ierr = VecAXPY(*yvec, alpha, *xvec);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -77,11 +79,17 @@ void
 VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
 {
   Vec *vec(PETScVector(*this));
-  PetscErrorCode ierr(0);
-  try {
-    ierr = VecShift(*vec, x); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+  if (PETScVectorImplementation<T, I>::useLibrary::value) {
+    PetscErrorCode ierr(0);
+    try {
+      PetscScalar tmpx =
+        gridpack::math::equate<PetscScalar, TheType>(x);
+      ierr = VecShift(*vec, x); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  } else {
+    BOOST_ASSERT(false);
   }
 }
 
@@ -91,6 +99,14 @@ template void VectorT<double, int>::add(const typename VectorT<RealType>::TheTyp
 // -------------------------------------------------------------
 // VectorT::equate
 // -------------------------------------------------------------
+/** 
+ * Make this vector equal to another.  This works regardless of the
+ * underlying PETSc type. 
+ * 
+ * @param x vector to copy
+ * 
+ * @return 
+ */
 template <typename T, typename I>
 void
 VectorT<T, I>::equate(const VectorT<T, I>& x)
@@ -109,7 +125,6 @@ VectorT<T, I>::equate(const VectorT<T, I>& x)
 template void VectorT<ComplexType, int>::equate(const VectorT<ComplexType>& x);
 template void VectorT<double, int>::equate(const VectorT<RealType>& x);
 
-
 // -------------------------------------------------------------
 // VectorT::elementMultiply
 // -------------------------------------------------------------
@@ -117,13 +132,18 @@ template <typename T, typename I>
 void
 VectorT<T, I>::elementMultiply(const VectorT<T, I>& x)
 {
+  this->p_checkCompatible(x);
   Vec *vec(PETScVector(*this));
   const Vec *xvec(PETScVector(x));
   PetscErrorCode ierr(0);
   try {
-    ierr = VecPointwiseMult(*vec, *vec, *xvec); CHKERRXX(ierr);
+    if (PETScVectorImplementation<T, I>::useLibrary::value) {
+      ierr = VecPointwiseMult(*vec, *vec, *xvec); CHKERRXX(ierr);
+    } else {
+      BOOST_ASSERT(false);
+    }
   } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+      throw PETScException(ierr, e);
   }
 }  
 

@@ -10,7 +10,7 @@
 /**
  * @file   numeric_type_check.hpp
  * @author William A. Perkins
- * @date   2015-01-22 11:12:22 d3g096
+ * @date   2015-01-22 15:06:17 d3g096
  * 
  * @brief  
  * 
@@ -28,6 +28,7 @@
 
 #include <boost/mpl/vector.hpp>
 #include <boost/mpl/find.hpp>
+#include <boost/mpl/if.hpp>
 #include <boost/type_traits/is_same.hpp>
 
 #include <gridpack/utilities/complex.hpp>
@@ -56,9 +57,8 @@ public:
   static const bool check = OK::value;
   static const bool isComplex = boost::is_same<T, ComplexType>::value;
   template <typename Other>
-  struct isSame {
-    static const bool value = boost::is_same<T, Other>::value;
-  };
+  struct isSame : boost::is_same<T, Other>::type
+  {};
 };
 
 } // namespace math

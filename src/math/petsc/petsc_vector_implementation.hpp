@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-01-19 10:51:12 d3g096
+ * @date   2015-01-26 09:55:58 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,7 @@
 #define _petsc_vector_implementation_h_
 
 #include "complex_operators.hpp"
+#include "value_transfer.hpp"
 #include "vector_implementation.hpp"
 #include "petsc/petsc_vector_wrapper.hpp"
 #include "petsc/petsc_exception.hpp"
@@ -43,6 +44,30 @@ public:
 
   typedef typename VectorImplementation<T, I>::IdxType IdxType;
   typedef typename VectorImplementation<T, I>::TheType TheType;
+
+  /// A flag (type) to denote whether the library can be used
+  /**
+   * Some operations can be passed directly to the underlying library
+   * if the TheType is the same as the PETSc type @e or the PETSc type
+   * is complex.  This type computes and stores that flag. 
+   * 
+   */
+
+  typedef 
+  typename boost::mpl::bool_<
+    boost::is_same<TheType, PetscScalar>::value ||
+    boost::is_same<ComplexType, PetscScalar>::value
+  >::type useLibrary;
+
+  /// The number of library elements used to represent a single vector element
+  static const unsigned int elementSize = 
+    boost::mpl::if_< useLibrary, 
+                     boost::mpl::int_<1>, 
+                     boost::mpl::int_<2> >::type::value;
+
+    // storage_size<TheType, PetscScalar>::value;
+
+
 
   /// Default constructor.
   /** 
@@ -73,20 +98,39 @@ public:
 
 protected:
 
+  /// A vector of TheType
+  typedef std::vector<TheType> TheVector;
+
   /// Where the actual vector is stored
   PetscVectorWrapper p_vwrap;
 
+  // -------------------------------------------------------------
+  // p_applyOperation
+  // -------------------------------------------------------------
+  void p_applyOperation(base_unary_function<TheType>& op)
+  {
+    PetscErrorCode ierr;
+    Vec *v = p_vwrap.getVector();
+    PetscScalar *p;
+    PetscInt n;
+    ierr = VecGetLocalSize(*v, &n); CHKERRXX(ierr);
+    ierr = VecGetArray(*v, &p);  CHKERRXX(ierr);
+    unary_operation<TheType, PetscScalar>(static_cast<unsigned int>(n), 
+                                          p, op);
+    ierr = VecRestoreArray(*v, &p); CHKERRXX(ierr);
+    this->ready();
+  }
 
   /// Get the global vector length
   IdxType p_size(void) const
   {
-    return p_vwrap.size();
+    return p_vwrap.size()/elementSize;
   }
 
   /// Get the size of the vector local part
   IdxType p_localSize(void) const
   {
-    return p_vwrap.localSize();
+    return p_vwrap.localSize()/elementSize;
   }
 
   /// Get the local min/max global indexes (specialized)
@@ -94,8 +138,8 @@ protected:
   {
     PetscInt plo, phi;
     p_vwrap.localIndexRange(plo, phi);
-    lo = plo;
-    hi = phi;
+    lo = plo/elementSize;
+    hi = phi/elementSize;
   }
 
   /// Set an individual element (specialized)
@@ -111,7 +155,7 @@ protected:
     try {
       Vec *v = p_vwrap.getVector();
       PetscScalar px(x);
-      PetscInt idx(i);
+      PetscInt idx(i/elementSize);
       ierr = VecSetValue(*v, idx, px, INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
@@ -121,16 +165,9 @@ protected:
   /// Set an several elements (specialized)
   void p_setElements(const IdxType& n, const IdxType *i, const TheType *x)
   {
-    PetscErrorCode ierr;
-    try {
-      Vec *v = p_vwrap.getVector();
-      for (int idx = 0; idx < n; ++idx) {
-        this->p_setElement(i[idx], x[idx]);
-      }
-      // FIXME:
-      // ierr = VecSetValues(*v, n, i, x, INSERT_VALUES); CHKERRXX(ierr);
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
+    // FIXME: should be able to set multiple values
+    for (int idx = 0; idx < n; ++idx) {
+      this->p_setElement(i[idx], x[idx]);
     }
   }
 
@@ -150,16 +187,9 @@ protected:
   /// Add to an several elements (specialized)
   void p_addElements(const IdxType& n, const IdxType *i, const TheType *x)
   {
-    PetscErrorCode ierr;
-    try {
-      Vec *v = p_vwrap.getVector();
-      for (int idx = 0; idx < n; ++idx) {
-        this->p_addElement(i[idx], x[idx]);
-      }
-      // FIXME:
-      // ierr = VecSetValues(*v, n, i, x, ADD_VALUES); CHKERRXX(ierr);
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
+    // FIXME: should be able to add multiple values
+    for (int idx = 0; idx < n; ++idx) {
+      this->p_addElement(i[idx], x[idx]);
     }
   }
 
@@ -172,7 +202,7 @@ protected:
       PetscScalar y;
       PetscInt idx(i);
       ierr = VecGetValues(*v, 1, &idx, &y); CHKERRXX(ierr);
-      equate<PetscScalar, TheType>(x, y);
+      x = equate<TheType, PetscScalar>(y);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -181,6 +211,7 @@ protected:
   /// Get an several (local) elements (specialized)
   void p_getElements(const IdxType& n, const IdxType *i, TheType *x) const
   {
+    // FIXME: should be able to get multiple values
     for (int idx = 0; idx < n; ++idx) {
       this->p_getElement(i[idx], x[idx]);
     }
@@ -192,7 +223,7 @@ protected:
     std::vector<PetscScalar> px(this->size());
     p_vwrap.getAllElements(&px[0]);
     for (size_t i = 0; i < px.size(); ++i) {
-      equate<PetscScalar, TheType>(x[i], px[i]);
+      x[i] = equate<TheType, PetscScalar>(px[i]);
     }
   }
 
@@ -203,13 +234,19 @@ protected:
   }
 
   /// Make all the elements the specified value (specialized)
-  void p_fill(const TheType& v)
+  void p_fill(const TheType& value)
   {
     PetscErrorCode ierr(0);
     try {
-      PetscScalar pv(v);
-      Vec *v = p_vwrap.getVector();
-      ierr = VecSet(*v, pv); CHKERRXX(ierr);
+      if (useLibrary::value) {
+        Vec *v = p_vwrap.getVector();
+        PetscScalar pv = 
+          equate<PetscScalar, TheType>(value);
+        ierr = VecSet(*v, pv); CHKERRXX(ierr);
+      } else {
+        setvalue<TheType> op(value);
+        p_applyOperation(op);
+      }
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -218,56 +255,98 @@ protected:
   /// Scale all elements by a single value
   void p_scale(const TheType& x)
   {
-    Vec *vec = p_vwrap.getVector();
-    PetscErrorCode ierr(0);
-    try {
-      PetscScalar px(x);
-      ierr = VecScale(*vec, px); CHKERRXX(ierr);
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
-    }
+    if (useLibrary::value) {
+      Vec *vec = p_vwrap.getVector();
+      PetscErrorCode ierr(0);
+      try {
+        PetscScalar px(x);
+        ierr = VecScale(*vec, px); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      gridpack::math::multiply<TheType> op(x);
+      p_applyOperation(op);
+    } 
   }
 
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   double p_norm1(void) const
   {
-    return p_vwrap.norm1();
+    double result;
+    if (useLibrary::value) {
+      result = p_vwrap.norm1();
+    } else {
+      BOOST_ASSERT(false);
+    }
+    return result;
   }
 
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
   double p_norm2(void) const
   {
-    return p_vwrap.norm2();
+    double result;
+    if (useLibrary::value) {
+      result = p_vwrap.norm2();
+    } else {
+      BOOST_ASSERT(false);
+    }
+    return result;
   }
 
   /// Compute the vector infinity (or maximum) norm (specialized)
   double p_normInfinity(void) const
   {
-    return p_vwrap.normInfinity();
+    double result;
+    if (useLibrary::value) {
+      result = p_vwrap.normInfinity();
+    } else {
+      BOOST_ASSERT(false);
+    }
+    return result;
   }
 
   /// Replace all elements with its absolute value (specialized) 
   void p_abs(void)
   {
-    p_vwrap.abs();
+    if (useLibrary::value) {
+      p_vwrap.abs();
+    } else {
+      absvalue<TheType> op;
+      p_applyOperation(op);
+    }
   }
 
   /// Replace all elements with their complex conjugate
   void p_conjugate(void)
   {
-    p_vwrap.conjugate();
+    if (useLibrary::value) {
+      p_vwrap.conjugate();
+    } else {
+      BOOST_ASSERT(false);
+    }
   }
 
   /// Replace all elements with its exponential (specialized)
   void p_exp(void)
   {
-    p_vwrap.exp();
+    if (useLibrary::value) {
+      p_vwrap.exp();
+    } else {
+      exponential<TheType> op;
+      p_applyOperation(op);
+    }
   }
 
   /// Replace all elements with its reciprocal (specialized)
   void p_reciprocal(void)
   {
-    p_vwrap.reciprocal();
+    if (useLibrary::value) {
+      p_vwrap.reciprocal();
+    } else {
+      reciprocal<TheType> op;
+      p_applyOperation(op);
+    }
   }
 
   /// Make this instance ready to use
