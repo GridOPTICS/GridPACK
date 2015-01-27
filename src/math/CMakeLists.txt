@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-01-22 14:23:33 d3g096
+# Last Change: 2015-01-27 11:02:57 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -22,8 +22,8 @@ set(target_libraries
 # implementation independent math sources
 list(APPEND gridpack_math_sources
   vector_implementation.cpp
-  # matrix.cpp
-  # matrix_implementation.cpp
+  matrix.cpp
+  matrix_implementation.cpp
   # linear_solver.cpp
   # linear_solver_implementation.cpp
   # linear_matrix_solver.cpp
@@ -92,9 +92,9 @@ if (PETSC_FOUND)
       petsc/petsc_math.cpp
       petsc/petsc_vector.cpp
       petsc/petsc_vector_wrapper.cpp
-      # petsc/petsc_matrix.cpp
-      # petsc/petsc_matrix_implementation.cpp
-      # petsc/petsc_matrix_operations.cpp
+      petsc/petsc_matrix.cpp
+      petsc/petsc_matrix_implementation.cpp
+      petsc/petsc_matrix_operations.cpp
       # petsc/petsc_linear_solver.cpp
       # petsc/petsc_linear_solver_implementation.cpp
       # petsc/petsc_linear_matrix_solver.cpp
@@ -203,17 +203,17 @@ gridpack_add_unit_test(real_vector real_vector_test)
 # -------------------------------------------------------------
 # matrix test suite (one each for dense and sparse)
 # -------------------------------------------------------------
-# add_executable(sparse_matrix_test test/matrix_test.cpp)
-# target_link_libraries(sparse_matrix_test gridpack_math ${target_libraries})
-# gridpack_add_unit_test(sparse_matrix sparse_matrix_test)
+add_executable(sparse_matrix_test test/matrix_test.cpp)
+target_link_libraries(sparse_matrix_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(sparse_matrix sparse_matrix_test)
 
-# add_executable(dense_matrix_test test/matrix_test.cpp)
-# set_target_properties(dense_matrix_test
-#   PROPERTIES
-#   COMPILE_DEFINITIONS "TEST_DENSE=YES"
-# )
-# target_link_libraries(dense_matrix_test gridpack_math ${target_libraries})
-# gridpack_add_unit_test(dense_matrix dense_matrix_test)
+add_executable(dense_matrix_test test/matrix_test.cpp)
+set_target_properties(dense_matrix_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_DENSE=YES"
+)
+target_link_libraries(dense_matrix_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(dense_matrix dense_matrix_test)
 
 # -------------------------------------------------------------
 # linear solver test suite
