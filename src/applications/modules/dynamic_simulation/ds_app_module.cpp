@@ -17,7 +17,6 @@
 
 #include "gridpack/include/gridpack.hpp"
 #include "ds_app_module.hpp"
-#include "ds_factory_module.hpp"
 
 // Calling program for dynamic simulation application
 

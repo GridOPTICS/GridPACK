@@ -9,8 +9,7 @@
 # file: CMakeLists.txt
 # -------------------------------------------------------------
 # -------------------------------------------------------------
-# Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-12-10 07:36:08 d3g096
+# Created January 19, 2015 by William A. Perkins, Bruce Palmer
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -34,37 +33,28 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-add_executable(se.x
-   se_app.cpp
-   se_factory.cpp
-   se_main.cpp
+add_library(gridpack_state_estimation_module
+  se_app_module.cpp
+  se_factory_module.cpp
 )
 
-target_link_libraries(se.x ${target_libraries})
+# -------------------------------------------------------------
+# component serialization tests
+# -------------------------------------------------------------
+target_link_libraries(gridpack_state_estimation_module ${target_libraries})
 
-add_custom_target(se.x.input
- 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  DEPENDS 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  se_app_module.hpp
+  se_factory_module.hpp
+  DESTINATION include/gridpack/applications/modules/state_estimation
 )
 
-add_dependencies(se.x se.x.input)
+install(TARGETS 
+  gridpack_state_estimation_module
+  DESTINATION lib
+)
 
-# -------------------------------------------------------------
-# run application as test
-# -------------------------------------------------------------
-#gridpack_add_run_test("state_estimation" se.x input.xml)
+

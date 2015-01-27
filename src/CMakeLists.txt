@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-01-22 08:37:46 d3g096
+# Last Change: 2015-01-27 10:26:07 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -192,9 +192,11 @@ add_subdirectory(math)
 # add_subdirectory(applications/examples/resistor_grid)
 # add_subdirectory(applications/modules/powerflow)
 # add_subdirectory(applications/modules/dynamic_simulation)
+# add_subdirectory(applications/modules/state_estimation)
 # add_subdirectory(applications/components/y_matrix)
 # add_subdirectory(applications/components/pf_matrix)
 # add_subdirectory(applications/components/ds_matrix)
+# add_subdirectory(applications/components/se_matrix)
 # add_subdirectory(parser)
 # add_subdirectory(serial_io)
 add_subdirectory(timer)

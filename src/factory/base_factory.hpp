@@ -383,43 +383,6 @@ class BaseFactory {
     }
 
     /**
-     * Copy network used to instantiate factory to a new network. The component
-     * classes of the new network do not need to be the same as the component
-     * classes of the old network. This function can be used to create different
-     * types of networks that can be used to solve different problems. The new
-     * network is already partitioned so it is not necessary to call the
-     * partitioner.
-     */
-    void clone(boost::shared_ptr<network::BaseNetwork<component::BaseBusComponent,
-        component::BaseBranchComponent> > new_network)
-    {
-      new_network->clear();
-      int i, idx, jdx;
-      int numBus = p_network->numBuses();
-      int numBranch = p_network->numBranches();
-      // Add buses to new network
-      for (i=0; i<numBus; i++) {
-        idx = p_network->getOriginalBusIndex(i);
-        new_network->addBus(idx);
-        idx = p_network->getGlobalBusIndex(i);
-        new_network->setGlobalBusIndex(i,idx);
-        *(new_network->getBusData(i)) = *(p_network->getBusData(i));
-        new_network->setActiveBus(i,p_network->getActiveBus(i));
-      }
-      // Set reference bus on new network
-      new_network->setReferenceBus(p_network->getReferenceBus());
-      // Add branches to new network
-      for (i=0; i<numBranch; i++) {
-        p_network->getOriginalBranchEndpoints(i,&idx,&jdx);
-        new_network->addBranch(idx,jdx);
-        idx = p_network->getGlobalBranchIndex(i);
-        p_network->setGlobalBranchIndex(i,idx);
-        *(new_network->getBranchData(i)) = *(p_network->getBranchData(i));
-        new_network->setActiveBranch(i,p_network->getActiveBranch(i));
-      }
-    }
-
-    /**
      * Save internal state variables of the buses and branches to the
      * associated data collection object for possible use in output or to
      * transfer them to another network

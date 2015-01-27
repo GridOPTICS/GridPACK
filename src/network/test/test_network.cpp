@@ -452,6 +452,68 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
   }
   BOOST_CHECK(ok);
 
+  // Test clone operation
+  bool test_clone = true;
+  if (test_clone) {
+    boost::shared_ptr<gridpack::network::BaseNetwork<TestBus, TestBranch> >
+      network2(new gridpack::network::BaseNetwork<TestBus, TestBranch> (world));
+    network.clone<TestBus, TestBranch>(network2);
+    ok = true;
+    n = network2->numBuses();
+    if (n != nbus) {
+      printf("number of buses in clone %d does not match original %d\n",n,nbus);
+      ok = false;
+    }
+    for (i=0; i<nbus; i++) {
+      if (network.getOriginalBusIndex(i) != network2->getOriginalBusIndex(i))
+        ok = false;
+      if (network.getGlobalBusIndex(i) != network2->getGlobalBusIndex(i))
+        ok = false;
+      std::vector<int> buses = network.getConnectedBuses(i);
+      std::vector<int> buses2 = network2->getConnectedBuses(i);
+      if (network.getActiveBus(i) != network2->getActiveBus(i)) ok = false;
+      if (buses.size() != buses2.size()) ok = false;
+      for (j=0; j<buses.size(); j++) {
+        if (buses[j] != buses2[j]) ok = false;
+      }
+    }
+    if (network.getReferenceBus() != network2->getReferenceBus()) ok = false;
+    n = network2->numBranches();
+    if (n != nbranch) {
+      printf("number of branches in clone %d does not match original %d\n",
+          n,nbranch);
+      ok = false;
+    }
+    for (i=0; i<nbranch; i++) {
+      if (network.getGlobalBranchIndex(i) != network2->getGlobalBranchIndex(i))
+        ok = false;
+      int idx1, idx2, jdx1, jdx2;
+      network.getOriginalBranchEndpoints(i,&idx1,&jdx1);
+      network2->getOriginalBranchEndpoints(i,&idx2,&jdx2);
+      if (idx1 != idx2 || jdx1 != jdx2) ok = false;
+      if (network.getGlobalBranchIndex(i) != network2->getGlobalBranchIndex(i))
+        ok = false;
+      if (network.getActiveBranch(i) != network2->getActiveBranch(i)) ok = false;
+      network.getBranchEndpoints(i,&idx1,&jdx1);
+      network2->getBranchEndpoints(i,&idx2,&jdx2);
+      if (idx1 != idx2 || jdx1 != jdx2) ok = false;
+      if (network.getGlobalBusIndex(idx1)
+          != network2->getGlobalBusIndex(idx2)) ok = false;
+      if (network.getGlobalBusIndex(jdx1)
+          != network2->getGlobalBusIndex(jdx2)) ok = false;
+    }
+    oks = (int)ok;
+    ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+    ok = (bool)okr;
+    if (me == 0 && ok) {
+      printf("\nNetwork clone function is ok\n");
+    } else if (me == 0) {
+      printf("\nNetwork clone function failed\n");
+    }
+    BOOST_CHECK(ok);
+  }
+  
+
   // Test ghost update operations. Start by allocating exchange buffers and
   // assigning values to them
   network.allocXCBus(sizeof(int));

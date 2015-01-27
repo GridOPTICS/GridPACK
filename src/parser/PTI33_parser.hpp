@@ -49,7 +49,7 @@ class PTI33_parser : BaseParser<_network>
      * of network configuration file (must be child of network::BaseNetwork<>)
      */
     PTI33_parser(boost::shared_ptr<_network> network)
-      : p_network(network), p_configExists(false), p_maxBusIndex(-1)
+      : p_network(network), p_maxBusIndex(-1)
     {
       this->setNetwork(network);
     }
@@ -78,12 +78,25 @@ class PTI33_parser : BaseParser<_network>
         getCase(fileName);
         //brdcst_data();
         this->createNetwork(p_busData,p_branchData);
-        p_configExists = this->configExists();
       } else if (ext == "dyr") {
         getDS(fileName);
       }
       p_timer->stop(t_total);
       p_timer->configTimer(true);
+    }
+
+    /**
+     * Parse a second file after original network has been distributed. This
+     * requires the data in the second file to be distributed to all network
+     * objects that need the data
+     * @param fileName name of file
+     */
+    void externalParse(const std::string &fileName)
+    {
+      std::string ext = getExtension(fileName);
+      if (ext == "dyr") {
+        getDSExternal(fileName);
+      }
     }
 
   protected:
@@ -182,7 +195,6 @@ class PTI33_parser : BaseParser<_network>
     void getDS(const std::string & fileName)
     {
 
-      if (!p_configExists) return;
       int t_ds = p_timer->createCategory("Parser:getDS");
       p_timer->start(t_ds);
       int me(p_network->communicator().rank());
@@ -206,6 +218,106 @@ class PTI33_parser : BaseParser<_network>
         p_network->getBusData(i)->dump();
       }
 #endif
+    }
+
+    struct ds_params{
+      int bus_id; // ID of bus that owns generator
+      char gen_id[3]; // Generator ID
+      char gen_model[8];  // Generator model
+      double inertia;  // Inertia constant 0
+      double damping;  // Damping coefficient
+      double reactance; // Transient reactance
+    };
+
+    /**
+     * This routine opens up a .dyr file with parameters for dynamic
+     * simulation and distributes the parameters to whatever
+     * processor holds the
+     * corresponding buses. It assumes that a .raw file has
+     * already been parsed
+     */
+    void getDSExternal(const std::string & fileName)
+    {
+
+      //      int t_ds = p_timer->createCategory("Parser:getDS");
+      //      p_timer->start(t_ds);
+      int me(p_network->communicator().rank());
+
+      std::vector<ds_params> ds_data;
+      if (me == 0) {
+        std::ifstream            input;
+        input.open(fileName.c_str());
+        if (!input.is_open()) {
+          // p_timer->stop(t_ds);
+          return;
+        }
+        find_ds_vector(input, &ds_data);
+        input.close();
+      }
+      int nsize = ds_data.size();
+      std::vector<int> buses;
+      int i;
+      for (i=0; i<nsize; i++) {
+        buses.push_back(ds_data[i].bus_id);
+      }
+      gridpack::hash_distr::HashDistribution<_network,ds_params,ds_params>
+        distr(p_network);
+      distr.distributeBusValues(buses,ds_data);
+
+      // Now match data with corresponding data collection objects
+      gridpack::component::DataCollection *data;
+      nsize = buses.size();
+      for (i=0; i<nsize; i++) {
+        int l_idx = buses[i];
+        data = dynamic_cast<gridpack::component::DataCollection*>
+          (p_network->getBusData(l_idx).get());
+
+        // Find out how many generators are already on bus
+        int ngen;
+        if (!data->getValue(GENERATOR_NUMBER, &ngen)) continue;
+        // Identify index of generator to which this data applies
+        int g_id = -1;
+        // Clean up 2 character tag for generator ID
+        std::string tag = ds_data[i].gen_id;
+        int i;
+        for (i=0; i<ngen; i++) {
+          std::string t_id;
+          data->getValue(GENERATOR_ID,&t_id,i);
+          if (tag == t_id) {
+            g_id = i;
+            break;
+          }
+        }
+        if (g_id == -1) continue;
+
+        std::string sval;
+        double rval;
+        // GENERATOR_MODEL              "MODEL"                  string
+        if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+          data->addValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
+        } else {
+          data->setValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
+        }
+
+        // GENERATOR_INERTIA_CONSTANT_H                          float
+        if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H,&rval,g_id)) {
+          data->addValue(GENERATOR_INERTIA_CONSTANT_H,
+              ds_data[i].inertia, g_id);
+        } else {
+          data->setValue(GENERATOR_INERTIA_CONSTANT_H,
+              ds_data[i].inertia, g_id);
+        }
+
+        // GENERATOR_DAMPING_COEFFICIENT_0                       float
+        if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&rval,g_id)) {
+          data->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
+              ds_data[i].damping, g_id);
+        } else {
+          data->setValue(GENERATOR_DAMPING_COEFFICIENT_0,
+              ds_data[i].damping, g_id);
+        }
+      }
+      //      p_timer->stop(t_ds);
     }
 
     // Clean up 2 character tags so that single quotes are removed and single
@@ -641,6 +753,8 @@ class PTI33_parser : BaseParser<_network>
       std::string          line;
       gridpack::component::DataCollection *data;
       while(std::getline(input,line)) {
+        int idx = line.find('/');
+        if (idx != std::string::npos) line.erase(idx,line.length()-idx);
         std::vector<std::string>  split_line;
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
@@ -654,13 +768,6 @@ class PTI33_parser : BaseParser<_network>
         boost::unordered_map<int, int>::iterator it;
 #endif
         int nstr = split_line.size();
-        if (split_line[nstr-1] == "\\") nstr--;
-        it = p_busMap.find(o_idx);
-        if (it != p_busMap.end()) {
-          l_idx = it->second;
-        } else {
-          continue;
-        }
         data = dynamic_cast<gridpack::component::DataCollection*>
           (p_network->getBusData(l_idx).get());
 
@@ -712,17 +819,48 @@ class PTI33_parser : BaseParser<_network>
                 atof(split_line[4].c_str()), g_id);
           }
         }
+      }
+    }
 
-        // GENERATOR_TRANSIENT_REACTANCE                             float
-        if (nstr > 5) {
-          if (!data->getValue(GENERATOR_TRANSIENT_REACTANCE,&rval,g_id)) {
-            data->addValue(GENERATOR_TRANSIENT_REACTANCE,
-                atof(split_line[5].c_str()), g_id);
-          } else {
-            data->setValue(GENERATOR_TRANSIENT_REACTANCE,
-                atof(split_line[5].c_str()), g_id);
-          }
+    void find_ds_vector(std::ifstream & input, std::vector<ds_params> *ds_vector)
+    {
+      std::string          line;
+      ds_vector->clear();
+      while(std::getline(input,line)) {
+        int idx = line.find('/');
+        if (idx != std::string::npos) line.erase(idx,line.length()-idx);
+        std::vector<std::string> split_line;
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
+
+        ds_params data;
+
+        // GENERATOR_BUSNUMBER                "I"                   integer
+        int o_idx;
+        o_idx = atoi(split_line[0].c_str());
+        data.bus_id = o_idx;
+
+        int nstr = split_line.size();
+
+        // Clean up 2 character tag for generator ID
+        std::string tag = clean2Char(split_line[2]);
+        strcpy(data.gen_id, tag.c_str());
+
+        std::string sval;
+        double rval;
+        // GENERATOR_MODEL                 "MODEL"                  integer
+        strcpy(data.gen_model, split_line[1].c_str());
+
+        // GENERATOR_INERTIA_CONSTANT_H                             float
+        if (nstr > 3) {
+          data.inertia = atof(split_line[3].c_str());
         }
+
+        // GENERATOR_DAMPING_COEFFICIENT_0                          float
+        if (nstr > 4) {
+          data.damping = atof(split_line[4].c_str());
+        }
+        ds_vector->push_back(data);
       }
     }
 
@@ -2075,8 +2213,6 @@ class PTI33_parser : BaseParser<_network>
      * data set and each data set is a
      */
     boost::shared_ptr<_network> p_network;
-
-    bool p_configExists;
 
     // Vector of bus data objects
     std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_busData;
