@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2015-01-26 15:02:51 d3g096
+ * @date   2015-01-27 08:19:41 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -26,6 +26,32 @@
 namespace gridpack {
 namespace math {
 
+// -------------------------------------------------------------
+// applyBinaryOperator
+// -------------------------------------------------------------
+template <typename T>
+static void
+applyBinaryOperator(Vec *v1, const Vec *v2, 
+                    base_binary_function<T>& op)
+{
+  PetscErrorCode ierr;
+
+  PetscInt n1, n2;
+  ierr = VecGetLocalSize(*v1, &n1); CHKERRXX(ierr);
+  ierr = VecGetLocalSize(*v2, &n2); CHKERRXX(ierr);
+  BOOST_ASSERT(n1 == n2);
+
+  PetscScalar *x1;
+  const PetscScalar *x2;
+  ierr = VecGetArray(*v1, &x1);  CHKERRXX(ierr);
+  ierr = VecGetArrayRead(*v2, &x2); CHKERRXX(ierr);
+  binary_operation<T, PetscScalar>(n1, x1, x2, op);
+  ierr = VecRestoreArrayRead(*v2, &x2); 
+  ierr = VecRestoreArray(*v1, &x1);  CHKERRXX(ierr);
+  ierr = VecAssemblyBegin(*v1); CHKERRXX(ierr);
+  ierr = VecAssemblyEnd(*v1); 
+}
+  
 // -------------------------------------------------------------
 //  class Vector
 // -------------------------------------------------------------
@@ -50,6 +76,16 @@ template VectorT<RealType>::VectorT(const parallel::Communicator& comm,
 // -------------------------------------------------------------
 // VectorT::add
 // -------------------------------------------------------------
+/** 
+ * This should work fine regardless of what PetscScalar is.
+ * 
+ * @param T 
+ * @param x 
+ * @param T 
+ * @param scale 
+ * 
+ * @return 
+ */
 template <typename T, typename I>
 void
 VectorT<T, I>::add(const VectorT<T, I>& x, const VectorT<T, I>::TheType& scale)
@@ -142,7 +178,8 @@ VectorT<T, I>::elementMultiply(const VectorT<T, I>& x)
     if (PETScVectorImplementation<T, I>::useLibrary::value) {
       ierr = VecPointwiseMult(*vec, *vec, *xvec); CHKERRXX(ierr);
     } else {
-      BOOST_ASSERT(false);
+      multiplyvalue2<T> op;
+      applyBinaryOperator<T>(vec, xvec, op);
     }
   } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
@@ -159,13 +196,19 @@ template <typename T, typename I>
 void
 VectorT<T, I>::elementDivide(const VectorT<T, I>& x)
 {
+  this->p_checkCompatible(x);
   Vec *vec(PETScVector(*this));
   const Vec *xvec(PETScVector(x));
   PetscErrorCode ierr(0);
   try {
-    ierr = VecPointwiseDivide(*vec, *vec, *xvec); CHKERRXX(ierr);
+    if (PETScVectorImplementation<T, I>::useLibrary::value) {
+      ierr = VecPointwiseDivide(*vec, *vec, *xvec); CHKERRXX(ierr);
+    } else {
+      dividevalue2<T> op;
+      applyBinaryOperator<T>(vec, xvec, op);
+    }
   } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+      throw PETScException(ierr, e);
   }
 }  
 

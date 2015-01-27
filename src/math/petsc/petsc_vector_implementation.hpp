@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-01-26 14:45:19 d3g096
+ * @date   2015-01-27 10:02:10 d3g096
  * 
  * @brief  
  * 
@@ -157,7 +157,8 @@ protected:
       unsigned int n(elementSize);
       PetscScalar px[n];
       TheType tmp(x);
-      ValueTransfer<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      trans.go();
       PetscInt idx[n];
       for (int j = 0; j < n; ++j) {
         idx[j] = i*n + j;
@@ -186,7 +187,8 @@ protected:
       unsigned int n(elementSize);
       PetscScalar px[n];
       TheType tmp(x);
-      ValueTransfer<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      trans.go();
       PetscInt idx[n];
       for (int j = 0; j < n; ++j) {
         idx[j] = i*n + j;
@@ -219,7 +221,8 @@ protected:
         idx[j] = i*n + j;
       }
       ierr = VecGetValues(*v, n, &idx[0], &px[0]); CHKERRXX(ierr);
-      ValueTransfer<PetscScalar, TheType> trans(n, &px[0], &x);
+      ValueTransferFromLibrary<PetscScalar, TheType> trans(n, &px[0], &x);
+      trans.go();
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -240,7 +243,8 @@ protected:
     unsigned int n(p_vwrap.size());
     std::vector<PetscScalar> px(n);
     p_vwrap.getAllElements(&px[0]);
-    ValueTransfer<PetscScalar, TheType> trans(n, &px[0], x);
+    ValueTransferFromLibrary<PetscScalar, TheType> trans(n, &px[0], x);
+    trans.go();
   }
 
   /// Make all the elements zero (specialized)

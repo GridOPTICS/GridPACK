@@ -10,7 +10,7 @@
 /**
  * @file   value_transfer.hpp
  * @author William A. Perkins
- * @date   2015-01-22 15:25:09 d3g096
+ * @date   2015-01-27 10:00:48 d3g096
  * 
  * @brief  
  * 
@@ -51,28 +51,17 @@ template <typename FromType, typename ToType>
 class ValueTransfer 
   : private utility::Uncopyable
 {
-private:
-
-  BOOST_STATIC_ASSERT(TypeCheck<FromType>::OK::value);
-  BOOST_STATIC_ASSERT(TypeCheck<ToType>::OK::value);
-
-  /// A thing to provide a null delete operation
-  struct null_deleter {
-    void operator()(void const *p) const {}
-  };
-  
-  
 public:
 
   /// Default constructor.
   ValueTransfer(const unsigned int& from_size, FromType* from, ToType* to = NULL)
     : utility::Uncopyable(),
-      p_fromSize(from_size), p_from(from),
-      p_toSize(), p_to()
+      p_fromSize(from_size), p_from(from), 
+      p_to()
   {
-    p_toSize = p_computeToSize();
-    BOOST_ASSERT(p_toSize > 0);
-    p_setup(to);
+    if (to != NULL) {
+      p_to.reset(to, null_deleter());
+    }
   }
 
   /// Destructor
@@ -82,7 +71,14 @@ public:
   /// Get the length of the "to" buffer
   unsigned int size(void) const
   {
-    return p_toSize;
+    return p_computeToSize();
+  }
+
+  /// do whatever is necessary to set up and copy values
+  void go(void)
+  {
+    this->p_setup();
+    this->p_copy();
   }
 
   /// Get a pointer to the "to" buffer
@@ -102,21 +98,29 @@ protected:
   /// The from buffer
   FromType *p_from;
 
-  /// The size of the to buffer
-  unsigned int p_toSize;
-
   /// The "to" buffer
   boost::shared_array<ToType> p_to;
 
   /// Compute the size of the "to" buffer
-  virtual inline unsigned int p_computeToSize(void);
+  virtual inline unsigned int p_computeToSize(void) const; 
 
   /// Do the setup  
-  inline void p_setup(ToType *to);
+  inline void p_setup(void);
 
   /// Copy the value
   virtual inline void p_copy(void);
 
+private:
+
+  BOOST_STATIC_ASSERT(TypeCheck<FromType>::OK::value);
+  BOOST_STATIC_ASSERT(TypeCheck<ToType>::OK::value);
+
+  /// A thing to provide a null delete operation
+  struct null_deleter {
+    void operator()(void const *p) const {}
+  };
+  
+  
 };
 
 
@@ -125,7 +129,7 @@ protected:
 // -------------------------------------------------------------
 template <typename FromType, typename ToType>
 inline unsigned int
-ValueTransfer<FromType, ToType>::p_computeToSize(void)
+ValueTransfer<FromType, ToType>::p_computeToSize(void) const
 {
   BOOST_STATIC_ASSERT(boost::is_same<FromType, ToType>::value);
   return p_fromSize;
@@ -133,14 +137,14 @@ ValueTransfer<FromType, ToType>::p_computeToSize(void)
 
 template <>
 inline unsigned int
-ValueTransfer<RealType, ComplexType>::p_computeToSize(void)
+ValueTransfer<RealType, ComplexType>::p_computeToSize(void) const
 {
   return p_fromSize/TWO;
 };
 
 template <>
 inline unsigned int
-ValueTransfer<ComplexType, RealType>::p_computeToSize(void)
+ValueTransfer<ComplexType, RealType>::p_computeToSize(void) const
 {
   return p_fromSize*TWO;
 };
@@ -150,40 +154,30 @@ ValueTransfer<ComplexType, RealType>::p_computeToSize(void)
 // -------------------------------------------------------------
 template <typename FromType, typename ToType>
 inline void  
-ValueTransfer<FromType, ToType>::p_setup(ToType *to)
+ValueTransfer<FromType, ToType>::p_setup()
 {
-  if (to != NULL) {
-    p_to.reset(to, null_deleter());
-  } else {
-    p_to.reset(new ToType[p_toSize]);
+  if (!p_to) {
+    p_to.reset(new ToType[this->size()]);
   }
-  p_copy();
 }
 
 template <>
 inline void  
-ValueTransfer<RealType, RealType>::p_setup(RealType *to)
+ValueTransfer<RealType, RealType>::p_setup()
 {
-  if (to != NULL) {
-    p_to.reset(to, null_deleter());
-    p_copy();
-  } else {
+  if (!p_to) {
     p_to.reset(p_from, null_deleter());
   }
 };
 
 template <>
 inline void  
-ValueTransfer<ComplexType, ComplexType>::p_setup(ComplexType *to)
+ValueTransfer<ComplexType, ComplexType>::p_setup()
 {
-  if (to != NULL) {
-    p_to.reset(to, null_deleter());
-    p_copy();
-  } else {
+  if (!p_to) {
     p_to.reset(p_from, null_deleter());
   }
 };
-
 
 
 // -------------------------------------------------------------
@@ -213,11 +207,143 @@ inline void
 ValueTransfer<ComplexType, RealType>::p_copy(void)
 {
   unsigned int fidx(0), tidx(0);
-  for (fidx = 0; fidx < p_fromSize; ++fidx, ++tidx += TWO) {
+  for (fidx = 0; fidx < p_fromSize; ++fidx, tidx += TWO) {
     p_to.get()[tidx] = std::real(p_from[fidx]);
     p_to.get()[tidx+1] = std::imag(p_from[fidx]);
   }
 }
+
+// -------------------------------------------------------------
+//  class ValueTransferToLibrary
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+class ValueTransferToLibrary 
+  : public ValueTransfer<FromType, ToType>
+{
+public:
+
+  /// Default constructor.
+  ValueTransferToLibrary(const unsigned int& from_size, FromType* from, ToType* to = NULL)
+    : ValueTransfer<FromType, ToType>(from_size, from, to)
+  {}
+
+  /// Destructor
+  ~ValueTransferToLibrary(void) {}
+
+protected:
+
+  /// Compute the size of the "to" buffer
+  inline unsigned int p_computeToSize(void) const;
+
+  /// Copy the value
+  inline void p_copy(void);
+};
+
+// -------------------------------------------------------------
+// ValueTransferToLibrary<>::p_computeToSize
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline unsigned int
+ValueTransferToLibrary<FromType, ToType>::p_computeToSize(void) const
+{
+  return ValueTransfer<FromType, ToType>::p_computeToSize();
+}
+
+template <>
+inline unsigned int
+ValueTransferToLibrary<RealType, ComplexType>::p_computeToSize(void) const
+{
+  return p_fromSize;
+}
+
+
+// -------------------------------------------------------------
+// ValueTransferToLibrary<>::p_copy
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline void
+ValueTransferToLibrary<FromType, ToType>::p_copy(void)
+{
+  ValueTransfer<FromType, ToType>::p_copy();
+}
+
+
+template <>
+inline void
+ValueTransferToLibrary<RealType, ComplexType>::p_copy(void)
+{
+  unsigned int fidx(0), tidx(0);
+  for (fidx = 0; fidx < p_fromSize; ++fidx, ++tidx) {
+    p_to.get()[tidx] = p_from[fidx];
+  }
+}
+
+
+// -------------------------------------------------------------
+//  class ValueTransferFromLibrary
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+class ValueTransferFromLibrary 
+  : public ValueTransfer<FromType, ToType>
+{
+public:
+
+  /// Default constructor.
+  ValueTransferFromLibrary(const unsigned int& from_size, FromType* from, ToType* to = NULL)
+    : ValueTransfer<FromType, ToType>(from_size, from, to)
+  {}
+
+  /// Destructor
+  ~ValueTransferFromLibrary(void) {}
+
+protected:
+  
+  /// Compute the size of the "to" buffer
+  inline unsigned int p_computeToSize(void) const;
+
+  /// Copy the value
+  inline void p_copy(void);
+};
+
+// -------------------------------------------------------------
+// ValueTransferFromLibrary<>::p_computeToSize
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline unsigned int
+ValueTransferFromLibrary<FromType, ToType>::p_computeToSize(void) const
+{
+  return ValueTransfer<FromType, ToType>::p_computeToSize();
+}
+
+template <>
+inline unsigned int
+ValueTransferFromLibrary<ComplexType, RealType>::p_computeToSize(void) const
+{
+  return p_fromSize;
+}
+
+
+// -------------------------------------------------------------
+// ValueTransferFromLibrary<>::p_copy
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline void
+ValueTransferFromLibrary<FromType, ToType>::p_copy(void)
+{
+  ValueTransfer<FromType, ToType>::p_copy();
+}
+
+
+template <>
+inline void
+ValueTransferFromLibrary<ComplexType, RealType>::p_copy(void)
+{
+  unsigned int fidx(0), tidx(0);
+  for (fidx = 0; fidx < p_fromSize; ++fidx, ++tidx) {
+    p_to.get()[tidx] = std::real(p_from[fidx]);
+  }
+}
+
 
 // -------------------------------------------------------------
 // storage_size
@@ -241,6 +367,9 @@ struct storage_size
     boost::mpl::int_<1> 
   >::type
 {};
+
+
+
 
 
 

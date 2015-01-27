@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2015-01-26 11:26:48 d3g096
+ * @date   2015-01-27 08:20:40 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -369,80 +369,79 @@ BOOST_AUTO_TEST_CASE( elementwise )
   v2.fill(x);
   v3.fill(y);
 
-  // FIXME
-  // v1.elementMultiply(v3);
-  // v2.elementDivide(v3);
+  v1.elementMultiply(v3);
+  v2.elementDivide(v3);
 
-  // int lo, hi;
-  // v1.localIndexRange(lo, hi);
+  int lo, hi;
+  v1.localIndexRange(lo, hi);
 
-  // for (int i = lo; i < hi; ++i) {
-  //   TestType z1, z2;
-  //   v1.getElement(i, z1);
-  //   v2.getElement(i, z2);
-  //   TEST_VALUE_CLOSE(z1, x*y, delta);
-  //   TEST_VALUE_CLOSE(z2, x/y, delta);
-  // }
+  for (int i = lo; i < hi; ++i) {
+    TestType z1, z2;
+    v1.getElement(i, z1);
+    v2.getElement(i, z2);
+    TEST_VALUE_CLOSE(z1, x*y, delta);
+    TEST_VALUE_CLOSE(z2, x/y, delta);
+  }
 }
 
-// BOOST_AUTO_TEST_CASE( elementwise2 )
-// {
-//   gridpack::parallel::Communicator world;
-//   static int three(3);
-//   gridpack::math::VectorT<TestType> v1(world, three);
-//   gridpack::math::VectorT<TestType> v2(world, three);
-//   gridpack::math::VectorT<TestType> v3(world, three);
-//   gridpack::math::VectorT<TestType> v4(world, three);
+BOOST_AUTO_TEST_CASE( elementwise2 )
+{
+  gridpack::parallel::Communicator world;
+  static int three(3);
+  gridpack::math::VectorT<TestType> v1(world, three);
+  gridpack::math::VectorT<TestType> v2(world, three);
+  gridpack::math::VectorT<TestType> v3(world, three);
+  gridpack::math::VectorT<TestType> v4(world, three);
 
-//   TestType x1[three];
-//   x1[0] = TestType(TEST_VALUE(0.348262, 3.4343));
-//   x1[1] = TestType(TEST_VALUE(1.50794,  2.76069));
-//   x1[2] = TestType(TEST_VALUE(1.04059,  4.50791));
+  TestType x1[three];
+  x1[0] = TestType(TEST_VALUE(0.348262, 3.4343));
+  x1[1] = TestType(TEST_VALUE(1.50794,  2.76069));
+  x1[2] = TestType(TEST_VALUE(1.04059,  4.50791));
 
-//   TestType x2[three];
-//   x2[0] = TestType(TEST_VALUE(1.08099,  0.0391692));
-//   x2[1] = TestType(TEST_VALUE(1.04585,  0.378384));
-//   x2[2] = TestType(TEST_VALUE(1.08145,  0.249638));
+  TestType x2[three];
+  x2[0] = TestType(TEST_VALUE(1.08099,  0.0391692));
+  x2[1] = TestType(TEST_VALUE(1.04585,  0.378384));
+  x2[2] = TestType(TEST_VALUE(1.08145,  0.249638));
 
-//   int lo, hi;
-//   v1.localIndexRange(lo, hi);
+  int lo, hi;
+  v1.localIndexRange(lo, hi);
 
-//   for (int i = lo; i < hi; ++i) {
-//     v1.setElement(i, x1[i]);
-//     v2.setElement(i, x2[i]);
-//     v3.setElement(i, x1[i]*x2[i]);
-//   }
-//   v1.ready();
-//   v2.ready();
-//   v3.ready();
+  for (int i = lo; i < hi; ++i) {
+    v1.setElement(i, x1[i]);
+    v2.setElement(i, x2[i]);
+    v3.setElement(i, x1[i]*x2[i]);
+  }
+  v1.ready();
+  v2.ready();
+  v3.ready();
 
-//   v3.print();
+  v3.print();
   
-//   v4.equate(v1);
-//   v4.elementMultiply(v2);
+  v4.equate(v1);
+  v4.elementMultiply(v2);
 
-//   v4.print();
+  v4.print();
 
-//   for (int i = lo; i < hi; ++i) {
-//     TestType x, y;
-//     v3.getElement(i, x);
-//     v4.getElement(i, y);
-//     TEST_VALUE_CLOSE(y, x, delta);
-//   }
+  for (int i = lo; i < hi; ++i) {
+    TestType x, y;
+    v3.getElement(i, x);
+    v4.getElement(i, y);
+    TEST_VALUE_CLOSE(y, x, delta);
+  }
 
-//   // it should be commutative
+  // it should be commutative
 
-//   v4.equate(v2);
-//   v4.elementMultiply(v1);
-//   v4.print();
+  v4.equate(v2);
+  v4.elementMultiply(v1);
+  v4.print();
 
-//   for (int i = lo; i < hi; ++i) {
-//     TestType x, y;
-//     v3.getElement(i, x);
-//     v4.getElement(i, y);
-//     TEST_VALUE_CLOSE(y, x, delta);
-//   }
-// }
+  for (int i = lo; i < hi; ++i) {
+    TestType x, y;
+    v3.getElement(i, x);
+    v4.getElement(i, y);
+    TEST_VALUE_CLOSE(y, x, delta);
+  }
+}
 
 BOOST_AUTO_TEST_CASE( exp )
 {

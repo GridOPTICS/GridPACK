@@ -10,7 +10,7 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-01-26 14:58:02 d3g096
+ * @date   2015-01-27 08:57:40 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -60,51 +60,51 @@ equate<RealType, ComplexType>(const ComplexType& f)
   
 /*
 
-template <typename To, typename From>
-inline void equate(To& t, const From& f)
-{
+  template <typename To, typename From>
+  inline void equate(To& t, const From& f)
+  {
   BOOST_STATIC_ASSERT(boost::is_same<From, To>::value);
   t = f;
-}
+  }
 
-template <>
-inline void equate<ComplexType, RealType>(ComplexType& t, const RealType& f)
-{
+  template <>
+  inline void equate<ComplexType, RealType>(ComplexType& t, const RealType& f)
+  {
   t = f;
-}
+  }
 
-template <>
-inline void equate<RealType, ComplexType>(RealType& t, const ComplexType& f)
-{
+  template <>
+  inline void equate<RealType, ComplexType>(RealType& t, const ComplexType& f)
+  {
   t = std::real(f);
-}
+  }
 */
 
-/// Get the real part of a number
-/** 
- * instantiate only for gridpack::RealType and gridpack::ComplexType;
- * other types should produce a compilation error (not a link error)
- * 
- * @param value 
- * 
- * @return 
- */
-template <typename T> inline RealType realpart(const T& value);
+// /// Get the real part of a number
+// /** 
+//  * instantiate only for gridpack::RealType and gridpack::ComplexType;
+//  * other types should produce a compilation error (not a link error)
+//  * 
+//  * @param value 
+//  * 
+//  * @return 
+//  */
+// template <typename T> inline RealType realpart(const T& value);
 
 
-// Instantiation for real values
-template <> 
-inline RealType realpart<RealType>(const RealType& value)
-{
-  return value;
-}
+// // Instantiation for real values
+// template <> 
+// inline RealType realpart<RealType>(const RealType& value)
+// {
+//   return value;
+// }
 
-// Instantiation for complex values
-template <> 
-inline RealType realpart<ComplexType>(const ComplexType& value)
-{
-  return std::real(value);
-}
+// // Instantiation for complex values
+// template <> 
+// inline RealType realpart<ComplexType>(const ComplexType& value)
+// {
+//   return std::real(value);
+// }
 
 // -------------------------------------------------------------
 // base_unary_function
@@ -118,16 +118,41 @@ struct base_unary_function : public std::unary_function<T, T>
 // -------------------------------------------------------------
 // unary_operation
 // -------------------------------------------------------------
+/** 
+ * This function applies an operator to each element in an array of
+ * type T that is stored in an array of type @c StorageType. The
+ * values array @c are replaced.
+ *
+ * In this implementation, it is assumed that types @c T and @c
+ * StorageType are the same or castable to each other.
+ * 
+ * @param size the number of type @c T elements to be operated on
+ * @param x the elements stored as @c StorageType
+ * @param op 
+ */
 template <typename T, typename StorageType>
 inline void
 unary_operation(const unsigned int& size, StorageType *x, 
                 base_unary_function<T>& op)
 {
-  for (unsigned int i = 0; i < size; i += 2) {
+  for (unsigned int i = 0; i < size; ++i) {
     x[i] = op(x[i]);
   }
 }
 
+
+/** 
+ * In this specialization, ComplexType values are stored in a
+ * RealType vector, two RealType values are used for each ComplexType.
+ * So, a temporary ComplexType is made from 2 RealType entries,
+ * operated on, then split back into two RealType elements.
+ * 
+ * @param size 
+ * @param x 
+ * @param op 
+ * 
+ * @return 
+ */
 template <>
 inline void
 unary_operation<ComplexType, RealType>(const unsigned int& size, RealType *x, 
@@ -141,14 +166,24 @@ unary_operation<ComplexType, RealType>(const unsigned int& size, RealType *x,
   }
 }
 
+/** 
+ * In this specialization, RealType values are stored in a ComplexType
+ * array. It is assumed that only the real part is used.
+ * 
+ * @param size 
+ * @param x 
+ * @param op 
+ * 
+ * @return 
+ */
 template <>
 inline void
 unary_operation<RealType, ComplexType>(const unsigned int& size, ComplexType *x, 
                                        base_unary_function<RealType>& op)
 {
   for (unsigned int i = 0; i < size; ++i) {
-    ComplexType tmp(x[i]);
-    x[i] = op(std::real(tmp));
+    RealType tmp(std::real(x[i]));
+    x[i] = op(tmp);
   }
 }
 
@@ -164,7 +199,7 @@ struct setvalue : public base_unary_function<T>
 };
 
 // -------------------------------------------------------------
-// setvalue
+// addvalue
 // -------------------------------------------------------------
 template <typename T> 
 struct addvalue : public base_unary_function<T>
@@ -213,7 +248,6 @@ struct absvalue<ComplexType> : public base_unary_function<ComplexType>
   }
 };
 
-
 // -------------------------------------------------------------
 // exponential
 // -------------------------------------------------------------
@@ -258,12 +292,122 @@ conjugate_value<ComplexType>::operator() (const ComplexType& x) const
   return std::conj(x);
 }
 
+// -------------------------------------------------------------
+// binary_operation
+// -------------------------------------------------------------
+template <typename T> 
+struct base_binary_function : public std::binary_function<T, T, T>
+{
+  virtual T operator() (const T& x1, const T& x2) const = 0;
+};
+
+// -------------------------------------------------------------
+// binary_operation
+// -------------------------------------------------------------
+/** 
+ * This function combines two arrays of type @c T that are stored as
+ * type @c StorageType using some operation.  The values in @c x1 are
+ * replaced with the result of the operation.
+ *
+ * In this implementation, it is assumed that types @c T and @c
+ * StorageType are the same or castable to each other and that one @c
+ * StorageType element is used to represent one @c T element.
+ * 
+ * @param size 
+ * @param x1 
+ * @param x2 
+ * @param op 
+ */
+template <typename T, typename StorageType>
+inline void
+binary_operation(const unsigned int& size, 
+                 StorageType *x1, const StorageType *x2,
+                 base_binary_function<T>& op)
+{
+  for (unsigned int i = 0; i < size; i += 1) {
+    T result = op(x1[i], x2[i]);
+    x1[i] = result;
+  }
+}
 
 
+/** 
+ * This function combines two arrays of type @c T that are stored as
+ * type @c StorageType using some operation.  The values in @c x1 are
+ * replaced with the result of the operation.
+ *
+ * In this specialization, ComplexType values are stored in a
+ * RealType vector, two RealType values are used for each ComplexType.
+ * So, temporary ComplexType's are made from 2 RealType entries,
+ * operated on, then split back into two RealType elements.
+ * 
+ * @param size 
+ * @param x1 
+ * @param x2 
+ * @param op 
+ * 
+ * @return 
+ */
+template <>
+inline void
+binary_operation<ComplexType, RealType>(const unsigned int& size, 
+                                        RealType *x1, const RealType *x2,
+                                        base_binary_function<ComplexType>& op)
+{
+  for (unsigned int i = 0; i < size; i += 2) {
+    ComplexType tmp1(x1[i], x1[i+1]);
+    ComplexType tmp2(x2[i], x2[i+1]);
+    ComplexType result(op(tmp1, tmp2));
+    x1[i] = std::real(result);
+    x1[i+1] = std::imag(result);
+  }
+}
 
+/** 
+ * This function combines two arrays of type @c T that are stored as
+ * type @c StorageType using some operation.  The values in @c x1 are
+ * replaced with the result of the operation.
+ *
+ * 
+ * @param size 
+ * @param x1 
+ * @param x2 
+ * @param op 
+ * 
+ * @return 
+ */
+template <>
+inline void
+binary_operation<RealType, ComplexType>(const unsigned int& size, 
+                                        ComplexType *x1, const ComplexType *x2,
+                                        base_binary_function<RealType>& op)
+{
+  for (unsigned int i = 0; i < size; ++i) {
+    RealType tmp1(std::real(x1[i]));
+    RealType tmp2(std::real(x2[i]));
+    RealType result(op(tmp1, tmp2));
+    x1[i] = result;
+  }
+}
 
+// -------------------------------------------------------------
+// multiplyvalue2
+// -------------------------------------------------------------
+template <typename T> 
+struct multiplyvalue2 : public base_binary_function<T>
+{
+  T operator() (const T& x1, const T& x2) const { return x1*x2; }
+};
 
-  
+// -------------------------------------------------------------
+// dividevalue2
+// -------------------------------------------------------------
+template <typename T> 
+struct dividevalue2 : public base_binary_function<T>
+{
+  T operator() (const T& x1, const T& x2) const { return x1/x2; }
+};
+
 
 } // namespace math
 } // namespace gridpack
