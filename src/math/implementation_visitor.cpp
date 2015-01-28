@@ -8,7 +8,7 @@
 /**
  * @file   implementation_visitor.cpp
  * @author William A. Perkins
- * @date   2014-10-30 12:16:49 d3g096
+ * @date   2015-01-28 10:21:26 d3g096
  * 
  * @brief  
  * 
@@ -45,6 +45,12 @@ ImplementationVisitor::~ImplementationVisitor(void)
 // -------------------------------------------------------------
 void 
 ImplementationVisitor::visit(PetscVectorWrapper&)
+{
+  BOOST_ASSERT(false);
+}
+
+void 
+ImplementationVisitor::visit(PetscMatrixWrapper&)
 {
   BOOST_ASSERT(false);
 }
@@ -94,6 +100,12 @@ ConstImplementationVisitor::~ConstImplementationVisitor(void)
 // -------------------------------------------------------------
 void 
 ConstImplementationVisitor::visit(const PetscVectorWrapper&)
+{
+  BOOST_ASSERT(false);
+}
+
+void 
+ConstImplementationVisitor::visit(const PetscMatrixWrapper&)
 {
   BOOST_ASSERT(false);
 }
