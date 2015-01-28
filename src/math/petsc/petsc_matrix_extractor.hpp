@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_extractor.hpp
  * @author William A. Perkins
- * @date   2013-10-09 13:24:22 d3g096
+ * @date   2015-01-28 11:07:17 d3g096
  * 
  * @brief  
  * 
@@ -23,12 +23,10 @@
 #include <boost/assert.hpp>
 #include "gridpack/utilities/uncopyable.hpp"
 #include "implementation_visitor.hpp"
+#include "petsc/petsc_matrix_wrapper.hpp"
 
 namespace gridpack {
 namespace math {
-
-class Matrix;
-class PETScMatrixImplementation;
 
 // -------------------------------------------------------------
 //  class PETScMatrixExtractor
@@ -49,9 +47,9 @@ public:
   {}
 
   /// 
-  void visit(PETScMatrixImplementation& petsc_impl)
+  void visit(PetscMatrixWrapper& petsc_impl)
   {
-    matrix_ = petsc_impl.get_matrix();
+    matrix_ = petsc_impl.getMatrix();
   }
 
   Mat *matrix(void) const
@@ -84,9 +82,9 @@ public:
   {}
 
   /// 
-  void visit(const PETScMatrixImplementation& petsc_impl)
+  void visit(const PetscMatrixWrapper& petsc_impl)
   {
-    matrix_ = petsc_impl.get_matrix();
+    matrix_ = petsc_impl.getMatrix();
   }
 
   const Mat *matrix(void) const

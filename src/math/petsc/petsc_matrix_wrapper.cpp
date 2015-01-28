@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_wrapper.cpp
  * @author William A. Perkins
- * @date   2015-01-28 10:28:09 d3g096
+ * @date   2015-01-28 11:01:42 d3g096
  * 
  * @brief  
  * 
@@ -36,7 +36,7 @@ namespace math {
 // PETScMatrixImplementation::p_getCommunicator
 // -------------------------------------------------------------
 parallel::Communicator
-PetscMatrixWrapper::p_getCommunicator(const Mat& m)
+PetscMatrixWrapper::getCommunicator(const Mat& m)
 {
   MPI_Comm comm(PetscObjectComm((PetscObject)m));
   parallel::Communicator result(comm);
@@ -160,7 +160,7 @@ PetscMatrixWrapper::p_set_dense_matrix(void)
 {
   PetscErrorCode ierr(0);
   try {
-    parallel::Communicator comm(p_getCommunicator(p_matrix));
+    parallel::Communicator comm(getCommunicator(p_matrix));
     if (comm.size() == 1) {
       ierr = MatSetType(p_matrix, MATSEQDENSE); CHKERRXX(ierr);
       ierr = MatSeqDenseSetPreallocation(p_matrix, PETSC_NULL); CHKERRXX(ierr);
@@ -181,7 +181,7 @@ PetscMatrixWrapper::p_set_sparse_matrix(void)
 {
   PetscErrorCode ierr(0);
   try {
-    parallel::Communicator comm(p_getCommunicator(p_matrix));
+    parallel::Communicator comm(getCommunicator(p_matrix));
     if (comm.size() == 1) {
       ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
     } else {
@@ -203,7 +203,7 @@ PetscMatrixWrapper::p_set_sparse_matrix(const PetscInt& max_nz_per_row)
   offdiagonal_non_zero_guess = std::max(offdiagonal_non_zero_guess, 10);
 
   try {
-    parallel::Communicator comm(p_getCommunicator(p_matrix));
+    parallel::Communicator comm(getCommunicator(p_matrix));
     if (comm.size() == 1) {
       ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
       ierr = MatSeqAIJSetPreallocation(p_matrix, 
@@ -235,7 +235,7 @@ PetscMatrixWrapper::p_set_sparse_matrix(const PetscInt *nz_by_row)
 
   PetscErrorCode ierr(0);
   try {
-    parallel::Communicator comm(p_getCommunicator(p_matrix));
+    parallel::Communicator comm(getCommunicator(p_matrix));
     if (comm.size() == 1) {
       ierr = MatSetType(p_matrix, MATSEQAIJ); CHKERRXX(ierr);
       ierr = MatSeqAIJSetPreallocation(p_matrix, 
@@ -423,7 +423,7 @@ PetscMatrixWrapper::ready(void)
     if (false) {
       MatInfo info;
       ierr = MatGetInfo(p_matrix,MAT_LOCAL,&info);
-      parallel::Communicator comm(p_getCommunicator(p_matrix));
+      parallel::Communicator comm(getCommunicator(p_matrix));
       std::cerr << comm.rank() << ": Matrix::ready(): "
                 << "size = (" << this->rows() << "x" << this->cols() << "), "
                 << "#assembled = " << info.assemblies << ", "
@@ -519,7 +519,7 @@ PetscMatrixWrapper::loadBinary(const char* filename)
   PetscErrorCode ierr;
   try {
     PetscViewer viewer;
-    parallel::Communicator comm(p_getCommunicator(p_matrix));
+    parallel::Communicator comm(getCommunicator(p_matrix));
     ierr = PetscViewerBinaryOpen(comm,
                                  filename,
                                  FILE_MODE_READ,
@@ -541,7 +541,7 @@ PetscMatrixWrapper::saveBinary(const char* filename) const
   PetscErrorCode ierr;
   try {
     PetscViewer viewer;
-    parallel::Communicator comm(p_getCommunicator(p_matrix));
+    parallel::Communicator comm(getCommunicator(p_matrix));
     ierr = PetscViewerBinaryOpen(comm,
                                  filename,
                                  FILE_MODE_WRITE,

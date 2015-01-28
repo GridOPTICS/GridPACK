@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2014-10-21 12:55:19 d3g096
+ * @date   2015-01-28 10:58:55 d3g096
  * 
  * @brief  
  * 
@@ -22,7 +22,7 @@
 
 #include <petscmat.h>
 #include "matrix_implementation.hpp"
-
+#include "petsc_matrix_wrapper.hpp"
 
 namespace gridpack {
 namespace math {
@@ -65,56 +65,52 @@ public:
   /// Get the PETSc matrix
   Mat *get_matrix(void)
   {
-    return &p_matrix;
+    return p_mwrap.getMatrix();
   }
 
   /// Get the PETSc matrix (const version)
   const Mat *get_matrix(void) const
   {
-    return &p_matrix;
+    return p_mwrap.getMatrix();
   }
 
 protected:
 
-  /// Extract a Communicator from a PETSc vector
-  static parallel::Communicator p_getCommunicator(const Mat& m);
-
-  /// The PETSc matrix representation
-  Mat p_matrix;
-
-  /// Was @c p_matrix created or just wrapped
-  bool p_matrixWrapped;
-
-  /// Build the generic PETSc matrix instance
-  void p_build_matrix(const parallel::Communicator& comm,
-                      const IdxType& local_rows, const IdxType& cols);
-
-  /// Set up a dense matrix
-  void p_set_dense_matrix(void);
-
-  /// Set up a sparse matrix that is not preallocated
-  void p_set_sparse_matrix(void);
-
-  /// Set up a sparse matrix and preallocate it using the maximum nonzeros per row
-  void p_set_sparse_matrix(const IdxType& max_nz_per_row);
-
-  /// Set up a sparse matrix and preallocate it using known nonzeros for each row
-  void p_set_sparse_matrix(const IdxType *nz_by_row);
+  /// The actual PETSc matrix to be used
+  PetscMatrixWrapper p_mwrap;
 
   /// Get the global index range of the locally owned rows (specialized)
-  void p_localRowRange(IdxType& lo, IdxType& hi) const;
+  void p_localRowRange(IdxType& lo, IdxType& hi) const
+  {
+    PetscInt plo, phi;
+    p_mwrap.localRowRange(plo, phi);
+    lo = plo;
+    hi = phi;
+  }
 
   /// Get the total number of rows in this matrix (specialized)
-  IdxType p_rows(void) const;
+  IdxType p_rows(void) const
+  {
+    return p_mwrap.rows();
+  }
 
   /// Get the number of local rows in this matirx (specialized)
-  IdxType p_localRows(void) const;
+  IdxType p_localRows(void) const
+  {
+    return p_mwrap.localRows();
+  }
 
   /// Get the number of columns in this matrix (specialized)
-  IdxType p_cols(void) const;
+  IdxType p_cols(void) const
+  {
+    return p_mwrap.cols();
+  }
 
   /// Get the number of local rows in this matirx (specialized)
-  IdxType p_localCols(void) const;
+  IdxType p_localCols(void) const
+  {
+    return p_mwrap.localCols();
+  }
 
   /// Set an individual element
   void p_setElement(const IdxType& i, const IdxType& j, const TheType& x);
@@ -145,25 +141,46 @@ protected:
   void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, TheType *x) const;
 
   /// Replace all elements with their real parts
-  void p_real(void);
+  void p_real(void)
+  {
+    p_mwrap.real();
+  }
 
   /// Replace all elements with their imaginary parts
-  void p_imaginary(void);
+  void p_imaginary(void)
+  {
+    p_mwrap.imaginary();
+  }
 
   /// Replace all elements with their complex gradient
-  void p_conjugate(void);
+  void p_conjugate(void)
+  {
+    p_mwrap.conjugate();
+  }
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
-  double p_norm2(void) const;
+  double p_norm2(void) const
+  {
+    return p_mwrap.norm2();
+  }
 
   /// Make this instance ready to use
-  void p_ready(void);
+  void p_ready(void)
+  {
+    p_mwrap.ready();
+  }
 
   /// Allow visits by implementation visitors
-  void p_accept(ImplementationVisitor& visitor);
+  void p_accept(ImplementationVisitor& visitor)
+  {
+    p_mwrap.accept(visitor);
+  }
 
   /// Allow visits by implementation visitors
-  void p_accept(ConstImplementationVisitor& visitor) const;
+  void p_accept(ConstImplementationVisitor& visitor) const
+  {
+    p_mwrap.accept(visitor);
+  }
 
   /// Make an exact replica of this instance (specialized)
   MatrixImplementation *p_clone(void) const;

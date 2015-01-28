@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 28, 2015 by William A. Perkins
-// Last Change: 2015-01-28 10:27:27 d3g096
+// Last Change: 2015-01-28 10:58:32 d3g096
 // -------------------------------------------------------------
 
 
@@ -33,6 +33,9 @@ class PetscMatrixWrapper
   : public ImplementationVisitable
 {
 public:
+
+  /// Extract a Communicator from a PETSc vector
+  static parallel::Communicator getCommunicator(const Mat& m);
 
   /// Default constructor.
   PetscMatrixWrapper(const parallel::Communicator& comm,
@@ -98,21 +101,18 @@ public:
   void saveBinary(const char *filename) const;
 
   /// Get the PETSc matrix
-  Mat *get_matrix(void)
+  Mat *getMatrix(void)
   {
     return &p_matrix;
   }
 
   /// Get the PETSc matrix (const version)
-  const Mat *get_matrix(void) const
+  const Mat *getMatrix(void) const
   {
     return &p_matrix;
   }
 
 protected:
-
-  /// Extract a Communicator from a PETSc vector
-  static parallel::Communicator p_getCommunicator(const Mat& m);
 
   /// The real PETSc matrix
   Mat p_matrix;
