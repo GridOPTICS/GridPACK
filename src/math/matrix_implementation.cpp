@@ -8,7 +8,7 @@
 /**
  * @file   matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2013-10-09 12:24:04 d3g096
+ * @date   2015-01-28 11:51:24 d3g096
  * 
  * @brief  
  * 
@@ -22,23 +22,6 @@
 namespace gridpack {
 namespace math {
 
-
-// -------------------------------------------------------------
-//  class MatrixImplementation
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// MatrixImplementation:: constructors / destructor
-// -------------------------------------------------------------
-MatrixImplementation::MatrixImplementation(const parallel::Communicator& comm)
-  : utility::Uncopyable(), parallel::Distributed(comm)
-{
-  
-}
-
-MatrixImplementation::~MatrixImplementation(void)
-{
-}
 
 } // namespace math
 } // namespace gridpack

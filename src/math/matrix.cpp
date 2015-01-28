@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-09-18 12:18:47 d3g096
+ * @date   2015-01-28 11:53:28 d3g096
  * 
  * @brief  Generic part of Matrix implementation
  * 
@@ -26,7 +26,7 @@ namespace math {
 // -------------------------------------------------------------
 // Matrix constructor
 // -------------------------------------------------------------
-Matrix::Matrix(MatrixImplementation *impl)
+Matrix::Matrix(MatrixImplementation<Matrix::TheType> *impl)
   : parallel::WrappedDistributed(impl), 
     utility::Uncopyable(),
     p_matrix_impl(impl)

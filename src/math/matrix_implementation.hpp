@@ -9,7 +9,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2014-10-21 14:31:51 d3g096
+ * @date   2015-01-28 11:51:17 d3g096
  * 
  * @brief  
  * 
@@ -37,18 +37,24 @@ namespace math {
 // -------------------------------------------------------------
 //  class MatrixImplementation
 // -------------------------------------------------------------
+template <typename T>
 class MatrixImplementation 
   : private utility::Uncopyable,
     public parallel::Distributed,
-    public BaseMatrixInterface<ComplexType>
+    public BaseMatrixInterface<T>
 {
 public:
 
   /// Default constructor.
-  MatrixImplementation(const parallel::Communicator& comm);
+  MatrixImplementation(const parallel::Communicator& comm)
+    : utility::Uncopyable(), parallel::Distributed(comm)
+  {
+  }
 
   /// Destructor
-  virtual ~MatrixImplementation(void);
+  virtual ~MatrixImplementation(void)
+  {
+  }
 
   /// Make an exact replica of this instance
   MatrixImplementation *clone(void) const

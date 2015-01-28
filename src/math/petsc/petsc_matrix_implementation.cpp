@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2015-01-28 11:01:01 d3g096
+ * @date   2015-01-28 11:55:29 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -180,7 +180,7 @@ PETScMatrixImplementation::p_getElements(const PETScMatrixImplementation::IdxTyp
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_clone
 // -------------------------------------------------------------
-MatrixImplementation *
+MatrixImplementation<ComplexType> *
 PETScMatrixImplementation::p_clone(void) const
 {
   PETScMatrixImplementation *result =

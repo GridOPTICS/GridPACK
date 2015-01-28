@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-01-28 10:58:55 d3g096
+ * @date   2015-01-28 11:50:30 d3g096
  * 
  * @brief  
  * 
@@ -36,7 +36,7 @@ namespace math {
  * 
  */
 class PETScMatrixImplementation
-  : public MatrixImplementation
+  : public MatrixImplementation<ComplexType>
 {
 public:
 

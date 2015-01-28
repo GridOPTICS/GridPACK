@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2014-11-25 14:39:31 d3g096
+ * @date   2015-01-28 11:52:52 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -128,7 +128,7 @@ public:
    * 
    * @return 
    */
-  Matrix(MatrixImplementation *impl);
+  Matrix(MatrixImplementation<TheType> *impl);
 
   /// Destructor
   /** 
@@ -177,7 +177,7 @@ public:
    */
   Matrix *clone(void) const
   {
-    MatrixImplementation *pimpl_clone =
+    MatrixImplementation<TheType> *pimpl_clone =
       this->p_matrix_impl->clone();
     Matrix *result = new Matrix(pimpl_clone);
     return result;
@@ -304,7 +304,7 @@ public:
 protected:
 
   /// The actual implementation
-  boost::scoped_ptr<MatrixImplementation> p_matrix_impl;
+  boost::scoped_ptr< MatrixImplementation<TheType> > p_matrix_impl;
 
   /// Get the global index range of the locally owned rows (specialized)
   void p_localRowRange(IdxType& lo, IdxType& hi) const
