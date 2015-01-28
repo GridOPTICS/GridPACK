@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-12-09 10:36:39 d3g096
+ * @date   2015-01-28 13:04:44 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -44,12 +44,12 @@ Matrix::Matrix(const parallel::Communicator& comm,
 {
   switch (storage_type) {
   case Sparse:
-    p_matrix_impl.reset(new PETScMatrixImplementation(comm,
-                                                      local_rows, cols, false));
+    p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
+                                                                  local_rows, cols, false));
     break;
   case Dense:
-    p_matrix_impl.reset(new PETScMatrixImplementation(comm,
-                                                      local_rows, cols, true));
+    p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
+                                                                   local_rows, cols, true));
     break;
   default:
     BOOST_ASSERT(false);
@@ -66,9 +66,9 @@ Matrix::Matrix(const parallel::Communicator& comm,
   : parallel::WrappedDistributed(), utility::Uncopyable(),
     p_matrix_impl()
 {
-  p_matrix_impl.reset(new PETScMatrixImplementation(comm,
-                                                    local_rows, cols, 
-                                                    max_nz_per_row));
+  p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
+                                                                 local_rows, cols, 
+                                                                 max_nz_per_row));
   BOOST_ASSERT(p_matrix_impl);
   p_setDistributed(p_matrix_impl.get());
 }
@@ -80,9 +80,9 @@ Matrix::Matrix(const parallel::Communicator& comm,
   : parallel::WrappedDistributed(), utility::Uncopyable(),
     p_matrix_impl()
 {
-  p_matrix_impl.reset(new PETScMatrixImplementation(comm,
-                                                    local_rows, cols, 
-                                                    nz_by_row));
+  p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
+                                                                 local_rows, cols, 
+                                                                 nz_by_row));
   BOOST_ASSERT(p_matrix_impl);
   p_setDistributed(p_matrix_impl.get());
 }

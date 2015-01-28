@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-12-09 10:50:39 d3g096
+ * @date   2015-01-28 13:08:26 d3g096
  * 
  * @brief  
  * 
@@ -176,8 +176,8 @@ transpose(const Matrix& A)
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
-  PETScMatrixImplementation *result_impl = 
-    new PETScMatrixImplementation(pAtrans, true);
+  PETScMatrixImplementation<ComplexType> *result_impl = 
+    new PETScMatrixImplementation<ComplexType>(pAtrans, true);
   Matrix *result = new Matrix(result_impl);
 
   return result;
@@ -331,8 +331,8 @@ multiply(const Matrix& A, const Matrix& B)
     throw PETScException(ierr, e);
   }
 
-  PETScMatrixImplementation *result_impl = 
-    new PETScMatrixImplementation(Cmat, true);
+  PETScMatrixImplementation<ComplexType> *result_impl = 
+    new PETScMatrixImplementation<ComplexType>(Cmat, true);
   Matrix *result = new Matrix(result_impl);
   return result;
 }
@@ -405,8 +405,8 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
     ierr = MatLoad(mat, viewer); CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
 
-    PETScMatrixImplementation *result_impl = 
-      new PETScMatrixImplementation(mat, true);
+    PETScMatrixImplementation<ComplexType> *result_impl = 
+      new PETScMatrixImplementation<ComplexType>(mat, true);
     result = new Matrix(result_impl);
     ierr = MatDestroy(&mat); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {

@@ -9,7 +9,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-01-28 11:51:17 d3g096
+ * @date   2015-01-28 13:00:23 d3g096
  * 
  * @brief  
  * 
@@ -37,11 +37,11 @@ namespace math {
 // -------------------------------------------------------------
 //  class MatrixImplementation
 // -------------------------------------------------------------
-template <typename T>
+template <typename T, typename I = int>
 class MatrixImplementation 
   : private utility::Uncopyable,
     public parallel::Distributed,
-    public BaseMatrixInterface<T>
+    public BaseMatrixInterface<T, I>
 {
 public:
 

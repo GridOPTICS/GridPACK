@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-01-28 11:50:30 d3g096
+ * @date   2015-01-28 13:06:42 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,7 @@
 #define _petsc_matrix_implementation_h_
 
 #include <petscmat.h>
+#include "petsc_exception.hpp"
 #include "matrix_implementation.hpp"
 #include "petsc_matrix_wrapper.hpp"
 
@@ -35,32 +36,53 @@ namespace math {
  * 
  * 
  */
+template <typename T, typename I = int>
 class PETScMatrixImplementation
-  : public MatrixImplementation<ComplexType>
+  : public MatrixImplementation<T, I>
 {
 public:
+
+  typedef typename MatrixImplementation<T, I>::TheType TheType;
+  typedef typename MatrixImplementation<T, I>::IdxType IdxType;
 
   /// Default constructor
   PETScMatrixImplementation(const parallel::Communicator& comm,
                             const IdxType& local_rows, const IdxType& local_cols,
-                            const bool& dense = false);
+                            const bool& dense = false)
+    : MatrixImplementation<T, I>(comm),
+      p_mwrap(comm, local_rows, local_cols, dense)
+  {
+  }
 
   /// Construct a sparse matrix with an estimate of (maximum) usage
   PETScMatrixImplementation(const parallel::Communicator& comm,
                             const IdxType& local_rows, const IdxType& local_cols,
-                            const IdxType& max_nonzero_per_row);
+                            const IdxType& max_nonzero_per_row)
+    : MatrixImplementation<T, I>(comm),
+      p_mwrap(comm, local_rows, local_cols, max_nonzero_per_row)
+  {
+  }
 
   /// Construct a sparse matrix with number of nonzeros in each row
   PETScMatrixImplementation(const parallel::Communicator& comm,
                             const IdxType& local_rows, const IdxType& local_cols,
-                            const IdxType *nonzeros_by_row);
-  
+                            const IdxType *nonzeros_by_row)
+    : MatrixImplementation<T, I>(comm),
+      p_mwrap(comm, local_rows, local_cols, nonzeros_by_row)
+  {
+  }
 
   /// Make a new instance from an existing PETSc matrix
-  PETScMatrixImplementation(Mat& m, const bool& copymat = true);
+  PETScMatrixImplementation(Mat& m, const bool& copyMat = true)
+    : MatrixImplementation<T, I>(PetscMatrixWrapper::getCommunicator(m)),
+      p_mwrap(m, copyMat)
+  {
+  }
 
   /// Destructor
-  ~PETScMatrixImplementation(void);
+  ~PETScMatrixImplementation(void)
+  {
+  }
 
   /// Get the PETSc matrix
   Mat *get_matrix(void)
@@ -113,32 +135,70 @@ protected:
   }
 
   /// Set an individual element
-  void p_setElement(const IdxType& i, const IdxType& j, const TheType& x);
+  void p_setElement(const IdxType& i, const IdxType& j, const TheType& x)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      Mat *mat = p_mwrap.getMatrix();
+      ierr = MatSetValue(*mat, i, j, x, INSERT_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Set an several element
-  void p_setElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x);
-
-  // /// Set all elements in a row
-  // void p_set_row(const IdxType& i, const IdxType *j, const TheType *x);
-
-  // /// Set all elements in a region
-  // void p_set_region(const IdxType& ni, const IdxType& nj, 
-  //                          const IdxType *i, const IdxType *j, const TheType *x);
+  void p_setElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x)
+  {
+    // FIXME: There's probably a better way
+    for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
+      this->p_setElement(i[k], j[k], x[k]);
+    }
+  }
 
   /// Add to  an individual element
-  void p_addElement(const IdxType& i, const IdxType& j, const TheType& x);
+  void p_addElement(const IdxType& i, const IdxType& j, const TheType& x)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      Mat *mat = p_mwrap.getMatrix();
+      ierr = MatSetValue(*mat, i, j, x, ADD_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Add to  an several element
-  void p_addElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x);
-
-  // /// Add to  all elements in a row
-  // void p_add_row(const IdxType& i, const IdxType *j, const TheType *x);
+  void p_addElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x)
+  {
+    // FIXME: There's probably a better way
+    for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
+      this->p_addElement(i[k], j[k], x[k]);
+    }
+  }
 
   /// Get an individual element
-  void p_getElement(const IdxType& i, const IdxType& j, TheType& x) const;
+  void p_getElement(const IdxType& i, const IdxType& j, TheType& x) const
+  {
+    PetscErrorCode ierr(0);
+    try {
+      const Mat *mat = p_mwrap.getMatrix();
+      static const PETScMatrixImplementation::IdxType one(1);
+      PetscInt iidx[one] = { i };
+      PetscInt jidx[one] = { j };
+      ierr = MatGetValues(*mat, one, &iidx[0], one, &jidx[0], &x); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Get an several element
-  void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, TheType *x) const;
+  void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, TheType *x) const
+  {
+    // FIXME: There is a better way
+    for (int k = 0; k < n; k++) {
+      this->p_getElement(i[k], j[k], x[k]);
+    }
+  }
 
   /// Replace all elements with their real parts
   void p_real(void)
@@ -183,7 +243,13 @@ protected:
   }
 
   /// Make an exact replica of this instance (specialized)
-  MatrixImplementation *p_clone(void) const;
+  MatrixImplementation<T, I> *p_clone(void) const
+  {
+    PETScMatrixImplementation<T, I> *result =
+      new PETScMatrixImplementation<T, I>(*(const_cast<Mat*>(p_mwrap.getMatrix())), true);
+    return result;
+  }
+
 
 };
 
