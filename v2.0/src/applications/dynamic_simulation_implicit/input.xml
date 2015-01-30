@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Dynamic_simulation>
+    <networkConfiguration> case9.raw </networkConfiguration>
+    <generatorParameters>case9_classical.dyr</generatorParameters>
+    <simulationTime>0.1</simulationTime>
+    <timeStep>0.01</timeStep>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 0.03</beginFault>
+        <endFault>   0.06</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.01</timeStep>
+      </faultEvent>
+    </faultEvents>
+    <DAESolver>
+      <PETScOptions>
+	-ts_type cn
+      </PETScOptions>
+    </DAESolver>
+  </Dynamic_simulation>
+</Configuration>
