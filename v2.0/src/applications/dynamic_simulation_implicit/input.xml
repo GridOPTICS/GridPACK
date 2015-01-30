@@ -16,6 +16,11 @@
     <DAESolver>
       <PETScOptions>
 	-ts_type cn
+	-ts_monitor
+	-snes_monitor
+<!--	-snes_type test
+	-snes_test_display
+-->
       </PETScOptions>
     </DAESolver>
   </Dynamic_simulation>

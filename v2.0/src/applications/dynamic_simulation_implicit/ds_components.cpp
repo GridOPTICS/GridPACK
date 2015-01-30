@@ -259,95 +259,93 @@ bool gridpack::dsimplicit::DSBus::matrixDiagValues(ComplexType *values)
   int delta_idx; // Location of delta for geni in the soluton vector for this bus
   int dw_idx;   // Location of dw for geni in the solution vector for this bus
   
-  if(p_mode == INIT_X) {
-    for(i=0; i < nvar; i++) {
-      for(j=0; j < nvar; j++) {
-	values[nvar*i + j] = 0.0;
-      }
-    }
-  } else { // end of (p_mode == INIT_X)
-    if(p_isolated) {
-      values[VD_col_start+VD_idx] = values[VQ_col_start+VQ_idx] = 1.0;
-      values[VD_col_start+VQ_idx] = values[VQ_col_start+VD_idx] = 0.0;
-      return true;
-    }
-
-    std::vector<boost::shared_ptr<BaseComponent> > branches;
-    // Get the edges connected to this bus
-    gridpack::component::BaseBusComponent::getNeighborBranches(branches);
-    // Number of branches connected to this
-    int nconnbranch = branches.size();
-    for(i=0; i < nconnbranch; i++) {
-      gridpack::dsimplicit::DSBranch *branch = dynamic_cast<gridpack::dsimplicit::DSBranch*>(branches[i].get());
-      gridpack::dsimplicit::DSBus *busf = dynamic_cast<gridpack::dsimplicit::DSBus*>((branch->getBus1()).get());
-      gridpack::dsimplicit::DSBus *bust = dynamic_cast<gridpack::dsimplicit::DSBus*>((branch->getBus2()).get());
-      
-      if(this == busf) {
-	/* This bus is the from bus of branch[i] */
-	double Gff=0.0,Bff=0.0;
-	branch->getForwardSelfAdmittance(&Gff,&Bff);
-	values[VD_col_start + VD_idx] += -Bff;
-	values[VQ_col_start + VD_idx] += -Gff;
-	values[VD_col_start + VQ_idx] += -Gff;
-	values[VQ_col_start + VQ_idx] +=  Bff;
-      } else {
-	double Gtt,Btt;
-	/* This bus is the to bus of branch[i] */
-	branch->getReverseSelfAdmittance(&Gtt,&Btt);
-	values[VD_col_start + VD_idx] += -Btt;
-	values[VQ_col_start + VD_idx] += -Gtt;
-	values[VD_col_start + VQ_idx] += -Gtt;
-	values[VQ_col_start + VQ_idx] +=  Btt;
-      }
-    }
-    // Partials of contributions from shunt elements
-    values[VD_col_start + VD_idx] += -p_bl;
-    values[VQ_col_start + VD_idx] += -p_gl;
-    values[VD_col_start + VQ_idx] += -p_gl;
-    values[VQ_col_start + VQ_idx] +=  p_bl;
-
-    // Partials of contributions from load
-    // Assuming constant impedance load
-    double yp,yq;
-    yp = p_pl/(p_Vm0*p_Vm0);
-    yq = p_ql/(p_Vm0*p_Vm0);
-    values[VD_col_start + VD_idx] +=  yq;
-    values[VQ_col_start + VD_idx] += -yp;
-    values[VD_col_start + VQ_idx] += -yp;
-    values[VQ_col_start + VQ_idx] += -yq;
-
-    // Partials of generator equations and contributions to the network<->generator
-    int ctr=0;
-    for(i=0; i < p_ngen; i++) {
-      if(p_gstatus[i]) {
-	delta_col_start = (2+ctr)*nvar;
-	dw_col_start    = (2+ctr+1)*nvar;
-	delta_idx       = 2 + 2*ctr;
-	dw_idx          = 2 + 2*ctr + 1;
-	
-	// TO DO
-	// Partials of generator equations w.r.t generator variables
-	values[delta_col_start+delta_idx] = -p_TSshift; 
-	values[dw_col_start+delta_idx]    = 1.0/p_ws;
-	values[delta_col_start+dw_idx]    = (-p_VD*p_Ep[i]*cos(p_delta[i])/p_Xdp[i] - p_VQ*p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
-	values[dw_col_start+dw_idx]       = -p_TSshift - p_D[i]/(2*p_H[i]);
-	
-	// Partials of generator equations w.r.t VD, VQ
-	values[VD_col_start+dw_idx] = (-p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
-	values[VQ_col_start+dw_idx] = (p_Ep[i]*cos(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
-	
-	// Partials of generator current injections into the network w.r.t generator variables
-	values[delta_col_start + VD_idx] = p_Ep[i]*sin(p_delta[i])/p_Xdp[i];
-	values[delta_col_start + VQ_idx] = p_Ep[i]*cos(p_delta[i])/p_Xdp[i];
-	
-	// Partials of generator current injections into the network w.r.t VD, VQ
-	values[VD_col_start + VD_idx] +=  1/p_Xdp[i];
-	values[VQ_col_start + VQ_idx] += -1/p_Xdp[i];
-	
-	ctr += 2;
-      }
+  // Zero out values first in case they haven't been zeroed out.
+  for(i=0; i < nvar; i++) {
+    for(j=0; j < nvar; j++) {
+      values[nvar*i + j] = 0.0;
     }
   }
+   
+ if(p_isolated) {
+   values[VD_col_start+VD_idx] = values[VQ_col_start+VQ_idx] = 1.0;
+   values[VD_col_start+VQ_idx] = values[VQ_col_start+VD_idx] = 0.0;
+   return true;
+ }
+ 
+ std::vector<boost::shared_ptr<BaseComponent> > branches;
+ // Get the edges connected to this bus
+ gridpack::component::BaseBusComponent::getNeighborBranches(branches);
+ // Number of branches connected to this
+ int nconnbranch = branches.size();
+ for(i=0; i < nconnbranch; i++) {
+   gridpack::dsimplicit::DSBranch *branch = dynamic_cast<gridpack::dsimplicit::DSBranch*>(branches[i].get());
+   gridpack::dsimplicit::DSBus *busf = dynamic_cast<gridpack::dsimplicit::DSBus*>((branch->getBus1()).get());
+   gridpack::dsimplicit::DSBus *bust = dynamic_cast<gridpack::dsimplicit::DSBus*>((branch->getBus2()).get());
+   
+   if(this == busf) {
+     /* This bus is the from bus of branch[i] */
+     double Gff=0.0,Bff=0.0;
+     branch->getForwardSelfAdmittance(&Gff,&Bff);
+     values[VD_col_start + VD_idx] += -Bff;
+     values[VQ_col_start + VD_idx] += -Gff;
+     values[VD_col_start + VQ_idx] += -Gff;
+     values[VQ_col_start + VQ_idx] +=  Bff;
+   } else {
+     double Gtt=0.0,Btt=0.0;
+     /* This bus is the to bus of branch[i] */
+     branch->getReverseSelfAdmittance(&Gtt,&Btt);
+     values[VD_col_start + VD_idx] += -Btt;
+     values[VQ_col_start + VD_idx] += -Gtt;
+     values[VD_col_start + VQ_idx] += -Gtt;
+     values[VQ_col_start + VQ_idx] +=  Btt;
+   }
+ }
+ // Partials of contributions from shunt elements
+ values[VD_col_start + VD_idx] += -p_bl;
+ values[VQ_col_start + VD_idx] += -p_gl;
+ values[VD_col_start + VQ_idx] += -p_gl;
+ values[VQ_col_start + VQ_idx] +=  p_bl;
+ 
+ // Partials of contributions from load
+ // Assuming constant impedance load
+ double yp,yq;
+ yp = p_pl/(p_Vm0*p_Vm0);
+ yq = p_ql/(p_Vm0*p_Vm0);
+ values[VD_col_start + VD_idx] +=  yq;
+ values[VQ_col_start + VD_idx] += -yp;
+ values[VD_col_start + VQ_idx] += -yp;
+ values[VQ_col_start + VQ_idx] += -yq;
+ 
+ // Partials of generator equations and contributions to the network<->generator
+ int ctr=0;
+ for(i=0; i < p_ngen; i++) {
+   if(p_gstatus[i]) {
+     delta_col_start = (2+ctr)*nvar;
+     dw_col_start    = (2+ctr+1)*nvar;
+     delta_idx       = 2 + 2*ctr;
+     dw_idx          = 2 + 2*ctr + 1;
+     
+     // Partials of generator equations w.r.t generator variables
+     values[delta_col_start+delta_idx] = -p_TSshift; 
+     values[dw_col_start+delta_idx]    = 1.0/p_ws;
+     values[delta_col_start+dw_idx]    = (-p_VD*p_Ep[i]*cos(p_delta[i])/p_Xdp[i] - p_VQ*p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
+     values[dw_col_start+dw_idx]       = -p_TSshift - p_D[i]/(2*p_H[i]);
+     
+     // Partials of generator equations w.r.t VD, VQ
+     values[VD_col_start+dw_idx] = (-p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
+     values[VQ_col_start+dw_idx] = (p_Ep[i]*cos(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
+     
+     // Partials of generator current injections into the network w.r.t generator variables
+     values[delta_col_start + VD_idx] = p_Ep[i]*sin(p_delta[i])/p_Xdp[i];
+     values[delta_col_start + VQ_idx] = p_Ep[i]*cos(p_delta[i])/p_Xdp[i];
+     
+     // Partials of generator current injections into the network w.r.t VD, VQ
+     values[VD_col_start + VD_idx] +=  1/p_Xdp[i];
+     values[VQ_col_start + VQ_idx] +=  -1/p_Xdp[i];
+     
+     ctr += 2;
+   }
+ }
 }
 
 /**
@@ -465,7 +463,7 @@ bool gridpack::dsimplicit::DSBus::vectorValues(ComplexType *values)
 	
 	// Generator equations
 	values[delta_idx] = p_dw[i]/p_ws - p_deltadot[i];
-	values[dw_idx]    = (p_Pm[i] - p_VD*p_Ep[i]*sin(p_delta[i])/p_Xdp[i] + p_VQ*p_Ep[i]*cos(p_delta[i])/p_Xdp[i])/(2*p_H[i]) - p_dwdot[i];
+	values[dw_idx]    = (p_Pm[i] - p_VD*p_Ep[i]*sin(p_delta[i])/p_Xdp[i] + p_VQ*p_Ep[i]*cos(p_delta[i])/p_Xdp[i] - p_D[i]*p_dw[i])/(2*p_H[i]) - p_dwdot[i];
 	
 	// Generator current injections in the network
 	IgenD += (-p_VQ + p_Ep[i]*sin(p_delta[i]))/p_Xdp[i];
@@ -518,6 +516,30 @@ void gridpack::dsimplicit::DSBus::setXCBuf(void *buf)
  */
 void gridpack::dsimplicit::DSBus::setValues(gridpack::ComplexType *values)
 {
+  int i,ctr=2;
+  if(p_mode == XVECTOBUS) { // Push values from X vector back onto the bus 
+    p_VD = real(values[0]);
+    p_VQ = real(values[1]);
+    if(!p_isolated) {
+      // Push the generator state variables from X onto the bus
+      for(i=0; i < p_ngen; i++) {
+	if(p_gstatus[i]) {
+	  p_delta[i] = real(values[ctr]);
+	  p_dw[i]    = real(values[ctr+1]);
+	  ctr += 2;
+	}
+      }
+    }
+  } else if(p_mode == XDOTVECTOBUS) { // Push the derivatives of delta and dw onto the bus
+    if(p_isolated) return;
+    for(i=0; i < p_ngen; i++) {
+      if(p_gstatus[i]) {
+	p_deltadot[i] = real(values[ctr]);
+	p_dwdot[i]    = real(values[ctr+1]);
+	ctr += 2;
+      }
+    }
+  }
 }
 
 /**
@@ -762,6 +784,7 @@ bool gridpack::dsimplicit::DSBranch::serialWrite(char *string, const int
 bool gridpack::dsimplicit::DSBranch::getForwardSelfAdmittance(double *Gff,double *Bff)
 {
   int i;
+  *Gff = *Bff = 0.0;
   for(i=0; i < p_nparlines; i++) {
     if(p_status[i]) {
       *Gff += p_Gff[i];
@@ -774,6 +797,7 @@ bool gridpack::dsimplicit::DSBranch::getForwardSelfAdmittance(double *Gff,double
 bool gridpack::dsimplicit::DSBranch::getReverseSelfAdmittance(double *Gtt,double *Btt)
 {
   int i;
+  *Gtt = *Btt = 0.0;
   for(i=0; i < p_nparlines; i++) {
     if(p_status[i]) {
       *Gtt += p_Gtt[i];
@@ -786,6 +810,7 @@ bool gridpack::dsimplicit::DSBranch::getReverseSelfAdmittance(double *Gtt,double
 bool gridpack::dsimplicit::DSBranch::getForwardTransferAdmittance(double *Gft,double *Bft)
 {
   int i;
+  *Gft = *Bft = 0.0;
   for(i=0; i < p_nparlines; i++) {
     if(p_status[i]) {
       *Gft += p_Gft[i];
@@ -798,6 +823,7 @@ bool gridpack::dsimplicit::DSBranch::getForwardTransferAdmittance(double *Gft,do
 bool gridpack::dsimplicit::DSBranch::getReverseTransferAdmittance(double *Gtf,double *Btf)
 {
   int i;
+  *Gtf = *Btf = 0.0;
   for(i=0; i < p_nparlines; i++) {
     if(p_status[i]) {
       *Gtf += p_Gtf[i];

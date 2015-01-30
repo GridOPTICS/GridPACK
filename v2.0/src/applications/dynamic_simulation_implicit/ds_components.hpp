@@ -26,7 +26,7 @@
 namespace gridpack {
 namespace dsimplicit {
 
-enum DSMode{INIT_X,RESIDUAL_EVAL};
+enum DSMode{INIT_X,RESIDUAL_EVAL,XVECTOBUS,XDOTVECTOBUS};
 
 class DSBus
   : public gridpack::component::BaseBusComponent {

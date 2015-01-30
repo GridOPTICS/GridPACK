@@ -62,6 +62,21 @@ public:
 		   const gridpack::math::Vector& Xdot, 
 		   const double& shift, gridpack::math::Matrix& J)
   {
+    p_factory.setTSshift(shift);
+    // Push current values in X vector back into network components
+    p_factory.setMode(XVECTOBUS);
+    p_VecMapper.mapToBus(X);
+    p_factory.setMode(XDOTVECTOBUS);
+    // Push current values in Xdot vector back into network components
+    p_VecMapper.mapToBus(Xdot);
+
+    // Update ghost buses
+    p_network->updateBuses();
+
+    // Evaluate the residual f(x) - xdot
+    p_factory.setMode(RESIDUAL_EVAL);
+    p_MatMapper.mapToMatrix(J);
+    //    J.print();
   }
 
   /// Build the RHS function
@@ -69,11 +84,25 @@ public:
 		   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
 		   gridpack::math::Vector& F)
   {
-    X.print();
+    // Push current values in X vector back into network components
+    p_factory.setMode(XVECTOBUS);
+    p_VecMapper.mapToBus(X);
+    p_factory.setMode(XDOTVECTOBUS);
+    // Push current values in Xdot vector back into network components
+    p_VecMapper.mapToBus(Xdot);
+
+    // Update ghost buses
+    p_network->updateBuses();
+
+    // Evaluate the residual f(x) - xdot
+    p_factory.setMode(RESIDUAL_EVAL);
+    p_VecMapper.mapToVector(F);
+    F.ready();
+    //    F.print();
   }
 
   void solve(const gridpack::parallel::Communicator& comm,
-             gridpack::utility::Configuration::CursorPtr conf,double t0,boost::shared_ptr<gridpack::math::Vector> X)
+             gridpack::utility::Configuration::CursorPtr& conf,double t0,boost::shared_ptr<gridpack::math::Vector> X)
   {
     int maxsteps = 10000;
     gridpack::math::DAEJacobianBuilder jbuilder = boost::ref(*this);
@@ -194,16 +223,17 @@ void gridpack::dsimplicit::DSApp::execute(int argc, char** argv)
   gridpack::mapper::FullMatrixMap<DSNetwork> MatMapper(network); // Mapper for creating vectors
 
   boost::shared_ptr<gridpack::math::Vector> X = VecMapper.mapToVector();
-  boost::shared_ptr<gridpack::math::Vector> R(X->clone());
+#if DEBUG
   X->print();
 
-  boost::shared_ptr<gridpack::math::Matrix> J = MatMapper.mapToMatrix();
+  //  boost::shared_ptr<gridpack::math::Matrix> J = MatMapper.mapToMatrix();
   factory.setMode(RESIDUAL_EVAL);
   MatMapper.mapToMatrix(J);
   R->zero();
   VecMapper.mapToVector(R);
   R->print();
   J->print();
+#endif
   timer->stop(t_createMatVec);
 
   // Set up bus data exchange buffers. Need to decide what data needs to be
