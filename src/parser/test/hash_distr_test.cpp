@@ -18,8 +18,10 @@
 #include "gridpack/parser/hash_distr.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 
-#define XDIM 100
-#define YDIM 100
+#define XDIM 10
+#define YDIM 10
+
+#define NUM_TEST_VALS 10;
 
 struct test_data { int idx;
                    int idx1;
@@ -37,6 +39,7 @@ class TestBus
   }
 
   std::vector<test_data> p_data;
+  std::vector<int*> p_vec;
 };
 
 BOOST_CLASS_EXPORT(TestBus);
@@ -52,6 +55,7 @@ class TestBranch
   }
 
   std::vector<test_data> p_data;
+  std::vector<double*> p_vec;
 };
 
 BOOST_CLASS_EXPORT(TestBranch);
@@ -545,6 +549,135 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
     printf("\nAsymmetric distribution of branches succeeded\n\n");
   } else if (me == 0 && !ok) {
     printf("\nAsymmetric distribution of branches failed\n\n");
+  }
+
+  // Create second HashDistribution object and test dispersing data vectors to
+  // processors that own the corresponding buses/branches
+  int nvals = NUM_TEST_VALS;
+  int k;
+  // Create bus data
+  bus_keys.clear();
+  std::vector<int*> bus_vec;
+  for (i=min_bus; i<=max_bus; i++) {
+    ix = i%XDIM;
+    iy = (i-ix)/XDIM;
+    n = 2*i;
+    n1 = n%3+1;
+    for (j=0; j<n1; j++) {
+      bus_keys.push_back(n);
+      int *idata = new int[nvals];
+      for (k=0; k<nvals; k++) {
+        idata[k] = n+j+k;
+      }
+      bus_vec.push_back(idata);
+    }
+  }
+  //Create branch data
+  branch_keys.clear();
+  std::vector<double*> branch_vec;
+  for (i=min_branch; i<=max_branch; i++) {
+    if (i<half_branch) {
+      ix = i%(XDIM-1);
+      iy = (i-ix)/(XDIM-1);
+      n1 = 2*(iy*XDIM+ix);
+      n2 = 2*(iy*XDIM+ix+1);
+    } else {
+      n = i - half_branch;
+      ix = n%XDIM;
+      iy = (n-ix)/XDIM;
+      n1 = 2*(iy*XDIM+ix);
+      n2 = 2*((iy+1)*XDIM+ix);
+    }
+    n = (n1+n2)%3+1;
+    for (j=0; j<n; j++) {
+      double *ddata = new double[nvals];
+      for (k=0; k<nvals; k++) {
+        ddata[k] = static_cast<double>(n1+n2+j+k);
+      }
+      branch_keys.push_back(std::pair<int,int>(n1,n2));
+      branch_vec.push_back(ddata);
+    }
+  }
+  gridpack::hash_distr::HashDistribution<TestNetwork, int, double>
+    distr_v(network);
+  distr_v.distributeBusValues(bus_keys, bus_vec, nvals);
+  branch_ids.clear();
+  distr_v.distributeBranchValues(branch_keys, branch_ids, branch_vec, nvals);
+
+  // Copy data to bus and branch objects
+  nsize = bus_keys.size();
+  for (i=0; i<nsize; i++) {
+    dynamic_cast<TestBus*>(network->getBus(bus_keys[i]).get())->
+      p_vec.push_back(bus_vec[i]);
+  }
+  nsize = branch_ids.size();
+  for (i=0; i<nsize; i++) {
+    dynamic_cast<TestBranch*>(network->getBranch(branch_ids[i]).get())->
+      p_vec.push_back(branch_vec[i]);
+  }
+
+  // Check to see if values are correct
+  std::vector<int*> test_int;
+  ok = true;
+  for (i=0; i<nbus; i++) {
+    test_int = dynamic_cast<TestBus*>(network->getBus(i).get())->p_vec;
+    bus_id = network->getOriginalBusIndex(i);
+    ndata = test_int.size();
+    if (ndata != bus_id%3 + 1) {
+      ok = false;
+      printf("p[%d] vector<int> bus %d failed ndata: %d\n",me,bus_id,ndata);
+    }
+    for (j=0; j<ndata; j++) {
+      int *iptr = test_int[j];
+      for (k=0; k<nvals; k++) {
+        if (bus_id+j+k != iptr[k]) {
+          ok = false;
+          printf("p[%d] vector<int> bus %d failed j: %d k: %d ptr: %d\n",
+              me,bus_id,j,k,iptr[k]);
+        }
+      }
+    }
+  }
+  BOOST_CHECK(ok);
+  oks = static_cast<int>(ok);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = static_cast<bool>(okr);
+  if (me == 0 && ok) {
+    printf("\nDistribution of bus vectors succeeded\n\n");
+  } else if (me == 0 && !ok) {
+    printf("\nDistribution of bus vectors failed\n\n");
+  }
+
+  std::vector<double*> test_double;
+  ok = true;
+  for (i=0; i<nbranch; i++) {
+    test_double = dynamic_cast<TestBranch*>(network->getBranch(i).get())->p_vec;
+    network->getOriginalBranchEndpoints(i,&from_bus,&to_bus);
+    ndata = test_double.size();
+    if (ndata != (from_bus+to_bus)%3 + 1) {
+      ok = false;
+      printf("p[%d] vector<double> branch < %d, %d> failed ndata: %d\n",
+          me,from_bus,to_bus,ndata);
+    }
+    for (j=0; j<ndata; j++) {
+      double *rptr = test_double[j];
+      for (k=0; k<nvals; k++) {
+        if (static_cast<double>(from_bus+to_bus+j+k) != rptr[k]) {
+          ok = false;
+          printf("p[%d] vector<double> branch < %d, %d> failed j: %d k: %d ptr: %16.2f\n",
+              me,from_bus,to_bus,j,k,rptr[k]);
+        }
+      }
+    }
+  }
+  BOOST_CHECK(ok);
+  oks = static_cast<int>(ok);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = static_cast<bool>(okr);
+  if (me == 0 && ok) {
+    printf("\nDistribution of branch vectors succeeded\n\n");
+  } else if (me == 0 && !ok) {
+    printf("\nDistribution of branch vectors failed\n\n");
   }
 
   timer->dump();
