@@ -546,15 +546,15 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
-    printf("\nAsymmetric distribution of branches succeeded\n\n");
+    printf("\nAsymmetric distribution of branches succeeded\n");
   } else if (me == 0 && !ok) {
-    printf("\nAsymmetric distribution of branches failed\n\n");
+    printf("\nAsymmetric distribution of branches failed\n");
   }
 
   // Create second HashDistribution object and test dispersing data vectors to
   // processors that own the corresponding buses/branches
   int nvals = NUM_TEST_VALS;
-  int k;
+  int k, l;
   // Create bus data
   bus_keys.clear();
   std::vector<int*> bus_vec;
@@ -627,8 +627,20 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
       ok = false;
       printf("p[%d] vector<int> bus %d failed ndata: %d\n",me,bus_id,ndata);
     }
+    int *iptr;
+    // Data may have gotten shuffled so sort it by increasing values of
+    // first integer
+    for (k=0; k<ndata; k++) {
+      for (l=k; l<ndata; l++) {
+        if ((test_int[k])[0] > (test_int[l])[0]) {
+          iptr = test_int[k];
+          test_int[k] = test_int[l];
+          test_int[l] = iptr;
+        }
+      }
+    }
     for (j=0; j<ndata; j++) {
-      int *iptr = test_int[j];
+      iptr = test_int[j];
       for (k=0; k<nvals; k++) {
         if (bus_id+j+k != iptr[k]) {
           ok = false;
@@ -643,9 +655,9 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
-    printf("\nDistribution of bus vectors succeeded\n\n");
+    printf("\nDistribution of bus vectors succeeded\n");
   } else if (me == 0 && !ok) {
-    printf("\nDistribution of bus vectors failed\n\n");
+    printf("\nDistribution of bus vectors failed\n");
   }
 
   std::vector<double*> test_double;
@@ -659,8 +671,18 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
       printf("p[%d] vector<double> branch < %d, %d> failed ndata: %d\n",
           me,from_bus,to_bus,ndata);
     }
+    double *rptr;
+    for (k=0; k<ndata; k++) {
+      for (l=k; l<ndata; l++) {
+        if ((test_double[k])[0] > (test_double[l])[0]) {
+          rptr = test_double[k];
+          test_double[k] = test_double[l];
+          test_double[l] = rptr;
+        }
+      }
+    }
     for (j=0; j<ndata; j++) {
-      double *rptr = test_double[j];
+      rptr = test_double[j];
       for (k=0; k<nvals; k++) {
         if (static_cast<double>(from_bus+to_bus+j+k) != rptr[k]) {
           ok = false;
