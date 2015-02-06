@@ -633,7 +633,7 @@ public:
     int nprocs = p_network->communicator().size();
     int me = p_network->communicator().rank();
     // Get global indices corresponding to keys
-    int i,j, k;
+    int i,j;
     // Create a list of unique keys
     std::vector<int> base_keys;
     std::set<int> key_check;
@@ -655,7 +655,7 @@ public:
     for (i=0; i<base_keys.size(); i++) {
       keyMap.insert(std::pair<int,int>(base_keys[i],procLoc[i]));
     }
-    std::vector<*_bus_data_type> newValues;
+    std::vector<_bus_data_type*> newValues;
     std::vector<int> newKeys;
     std::vector<int> destProcs;
     std::multimap<int,int>::iterator itk;
@@ -871,7 +871,7 @@ public:
 
     // Repack values and send them to the processor with the corresponding buses
     char *bus_data, *ptr;
-    _bus_data_type *dptr;
+    int k;
     for (i=0; i<nprocs; i++) {
       j = ltop[i];
       if (j >= 0) {
@@ -1381,7 +1381,6 @@ public:
           " arrays don't match ksize: %d vsize: %d\n",me,ksize,vsize);
       return;
     }
-    printf("p[%d] ksize: %d vsize: %d\n",me,ksize,vsize);
     
     // Construct mapc array for irregular distribution
     int i, j;
@@ -1522,7 +1521,7 @@ public:
     for (i=0; i<base_keys.size(); i++) {
       keyMap.insert(std::pair<std::pair<int,int>,int>(base_keys[i],procLoc[i]));
     }
-    std::vector<_branch_data_type> newValues;
+    std::vector<_branch_data_type*> newValues;
     std::vector<std::pair<int,int> > newKeys;
     std::vector<int> destProcs;
     std::multimap<std::pair<int,int>,int>::iterator itk;
@@ -1579,6 +1578,7 @@ public:
       * (sizeof(_branch_data_type)*nvals+2*sizeof(int))];
     // Fill sendBuf with data from newValues and newKeys
     char *ptr = sendBuf;
+    int k;
     for (i=0; i<nprocs; i++) {
       j = ltop[i];
       if (j>=0) {
@@ -1586,7 +1586,7 @@ public:
           ((int*)ptr)[0] = newKeys[j].first;
           ((int*)ptr)[1] = newKeys[j].second;
           ptr += 2*sizeof(int);
-          dptr = (*_branch_data_type)ptr;
+          dptr = (_branch_data_type*)ptr;
           for (k=0; k<nvals; k++) {
             dptr[k] = (newValues[j])[k];
           }
@@ -1598,7 +1598,7 @@ public:
 
     // Evaluate offsets for data being sent and received and then correct all
     // sizes by the number of bytes in branch_data_pair structure
-    int elemsize =  nvals*sizeof(branch_data_type)+2*sizeof(int);
+    int elemsize =  nvals*sizeof(_branch_data_type)+2*sizeof(int);
     int destOffset[nprocs];
     int srcOffset[nprocs];
     destOffset[0] = 0;
@@ -1650,7 +1650,7 @@ public:
     // with local indices and data
     std::multimap<std::pair<int,int>,int>::iterator it;
     _branch_data_type *rptr;
-    ptr = recvBuf
+    ptr = recvBuf;
     for (i=0; i<nvalues; i++) {
       key = std::pair<int,int>(((int*)ptr)[0], ((int*)ptr)[1]);
       ptr += 2*sizeof(int);
@@ -1743,7 +1743,7 @@ public:
     // Repack values and send them to the processor with the corresponding
     // branches
     char *branch_data, *ptr;
-    branch_data_type *dptr;
+    int k;
     for (i=0; i<nprocs; i++) {
       j = ltop[i];
       if (j >= 0) {
