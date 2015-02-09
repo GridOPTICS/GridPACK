@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-02-09 11:37:59 d3g096
+ * @date   2015-02-09 14:56:54 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -420,8 +420,12 @@ protected:
 
 };
 
+typedef MatrixT<ComplexType> ComplexMatrix;
+typedef MatrixT<RealType> RealMatrix;
+
 /// The main matrix type
-typedef MatrixT<ComplexType> Matrix;
+typedef ComplexMatrix Matrix;
+
 
 // -------------------------------------------------------------
 // Matrix Operations
