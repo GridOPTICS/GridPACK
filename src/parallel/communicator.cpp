@@ -189,5 +189,91 @@ Communicator::sync(void) const
   GA_Pgroup_sync(p_private->handle());
 }    
 
+/**
+ * Sum vector over all processors in the communicator
+ * @param x vector of values to be summed
+ * @param nvals number of values in vector
+ */
+void Communicator::sum(float *x, int nvals)
+{
+  int i;
+  float *src = new float[nvals];
+  float *dest = new float[nvals];
+  for (i=0; i<nvals; i++) {
+    src[i] = x[i];
+  }
+  boost::mpi::all_reduce(p_comm, &src[0], nvals, &dest[0], std::plus<float>());
+  for (i=0; i<nvals; i++) {
+    x[i] = dest[i];
+  }
+  delete [] src;
+  delete [] dest;
+}
+
+void Communicator::sum(double *x, int nvals)
+{
+  int i;
+  double *src = new double[nvals];
+  double *dest = new double[nvals];
+  for (i=0; i<nvals; i++) {
+    src[i] = x[i];
+  }
+  boost::mpi::all_reduce(p_comm, &src[0], nvals, &dest[0], std::plus<double>());
+  for (i=0; i<nvals; i++) {
+    x[i] = dest[i];
+  }
+  delete [] src;
+  delete [] dest;
+}
+
+void Communicator::sum(int *x, int nvals)
+{
+  int i;
+  int *src = new int[nvals];
+  int *dest = new int[nvals];
+  for (i=0; i<nvals; i++) {
+    src[i] = x[i];
+  }
+  boost::mpi::all_reduce(p_comm, &src[0], nvals, &dest[0], std::plus<int>());
+  for (i=0; i<nvals; i++) {
+    x[i] = dest[i];
+  }
+  delete [] src;
+  delete [] dest;
+}
+
+void Communicator::sum(long *x, int nvals)
+{
+  int i;
+  long *src = new long[nvals];
+  long *dest = new long[nvals];
+  for (i=0; i<nvals; i++) {
+    src[i] = x[i];
+  }
+  boost::mpi::all_reduce(p_comm, &src[0], nvals, &dest[0], std::plus<long>());
+  for (i=0; i<nvals; i++) {
+    x[i] = dest[i];
+  }
+  delete [] src;
+  delete [] dest;
+}
+
+void Communicator::sum(gridpack::ComplexType *x, int nvals)
+{
+  int i;
+  gridpack::ComplexType *src = new gridpack::ComplexType[nvals];
+  gridpack::ComplexType *dest = new gridpack::ComplexType[nvals];
+  for (i=0; i<nvals; i++) {
+    src[i] = x[i];
+  }
+  boost::mpi::all_reduce(p_comm, &src[0], nvals, &dest[0],
+      std::plus<gridpack::ComplexType>());
+  for (i=0; i<nvals; i++) {
+    x[i] = dest[i];
+  }
+  delete [] src;
+  delete [] dest;
+}
+
 } // namespace parallel
 } // namespace gridpack

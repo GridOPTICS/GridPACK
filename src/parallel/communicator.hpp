@@ -22,6 +22,7 @@
 
 #include <boost/mpi.hpp>
 #include <boost/shared_ptr.hpp>
+#include "gridpack/utilities/complex.hpp"
 
 namespace gridpack {
 namespace parallel {
@@ -125,6 +126,17 @@ public:
 
   /// Sync GA process group
   void sync(void) const;
+
+  /**
+   * Sum vector over all processors in the communicator
+   * @param x vector of values to be summed
+   * @param nvals number of values in vector
+   */
+  void sum(float *x, int nvals);
+  void sum(double *x, int nvals);
+  void sum(int *x, int nvals);
+  void sum(long *x, int nvals);
+  void sum(gridpack::ComplexType *x, int nvals);
 
 protected:
   
