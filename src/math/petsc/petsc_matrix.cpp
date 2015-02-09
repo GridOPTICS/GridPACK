@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-02-09 11:28:26 d3g096
+ * @date   2015-02-09 15:41:36 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -65,6 +65,12 @@ MatrixT<ComplexType>::MatrixT(const parallel::Communicator& comm,
                               const int& cols,
                               const MatrixStorageType& storage_type);
 
+template 
+MatrixT<RealType>::MatrixT(const parallel::Communicator& comm,
+                           const int& local_rows,
+                           const int& cols,
+                           const MatrixStorageType& storage_type);
+
 template <typename T, typename I>
 MatrixT<T, I>::MatrixT(const parallel::Communicator& comm,
                        const int& local_rows,
@@ -86,6 +92,12 @@ MatrixT<ComplexType>::MatrixT(const parallel::Communicator& comm,
                               const int& cols,
                               const int& max_nz_per_row);
 
+template 
+MatrixT<RealType>::MatrixT(const parallel::Communicator& comm,
+                           const int& local_rows,
+                           const int& cols,
+                           const int& max_nz_per_row);
+
 template <typename T, typename I>
 MatrixT<T, I>::MatrixT(const parallel::Communicator& comm,
                        const int& local_rows,
@@ -103,6 +115,12 @@ MatrixT<T, I>::MatrixT(const parallel::Communicator& comm,
 
 template 
 MatrixT<ComplexType>::MatrixT(const parallel::Communicator& comm,
+                              const int& local_rows,
+                              const int& cols,
+                              const int *nz_by_row);
+
+template 
+MatrixT<RealType>::MatrixT(const parallel::Communicator& comm,
                               const int& local_rows,
                               const int& cols,
                               const int *nz_by_row);
@@ -130,6 +148,10 @@ template
 void
 MatrixT<ComplexType>::equate(const MatrixT<ComplexType>& B);
 
+template 
+void
+MatrixT<RealType>::equate(const MatrixT<RealType>& B);
+
 // -------------------------------------------------------------
 // Matrix::scale
 // -------------------------------------------------------------
@@ -152,6 +174,10 @@ MatrixT<T, I>::scale(const MatrixT<T, I>::TheType& xin)
 template 
 void
 MatrixT<ComplexType>::scale(const ComplexType& xin);
+
+template 
+void
+MatrixT<RealType>::scale(const RealType& xin);
 
 // -------------------------------------------------------------
 // Matrix::add
@@ -177,6 +203,10 @@ template
 void
 MatrixT<ComplexType>::add(const MatrixT<ComplexType>& B);
 
+template 
+void
+MatrixT<RealType>::add(const MatrixT<RealType>& B);
+
 // -------------------------------------------------------------
 // Matrix::addDiagonal
 // -------------------------------------------------------------
@@ -197,6 +227,10 @@ MatrixT<T, I>::addDiagonal(const VectorT<T, I>& x)
 template 
 void
 MatrixT<ComplexType>::addDiagonal(const VectorT<ComplexType>& x);
+
+template 
+void
+MatrixT<RealType>::addDiagonal(const VectorT<RealType>& x);
 
 // -------------------------------------------------------------
 // Matrix::identity
@@ -231,6 +265,10 @@ template
 void
 MatrixT<ComplexType>::identity(void);
 
+template 
+void
+MatrixT<RealType>::identity(void);
+
 // -------------------------------------------------------------
 // Matrix::zero
 // -------------------------------------------------------------
@@ -250,6 +288,10 @@ MatrixT<T, I>::zero(void)
 template 
 void
 MatrixT<ComplexType>::zero(void);
+
+template 
+void
+MatrixT<RealType>::zero(void);
 
 // -------------------------------------------------------------
 // Matrix::multiplyDiagonal
@@ -278,6 +320,10 @@ MatrixT<T, I>::multiplyDiagonal(const VectorT<T, I>& x)
 template 
 void
 MatrixT<ComplexType>::multiplyDiagonal(const VectorT<ComplexType>& x);
+
+template 
+void
+MatrixT<RealType>::multiplyDiagonal(const VectorT<RealType>& x);
 
 // -------------------------------------------------------------
 // Matrix::storageType

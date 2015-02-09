@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-02-09 15:09:26 d3g096
+ * @date   2015-02-09 15:51:06 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -52,6 +52,7 @@ typedef gridpack::ComplexType TestType;
 #endif
 
 typedef gridpack::math::MatrixT<TestType> TestMatrixType;
+typedef gridpack::math::VectorT<TestType> TestVectorType;
 
 static const gridpack::math::MatrixStorageType the_storage_type =
 #ifdef TEST_DENSE
@@ -267,7 +268,7 @@ BOOST_AUTO_TEST_CASE( multiple_set_and_get )
 
     // fill w/ bogus values 
     std::vector<TestType> 
-      y(n, TestType(-1.0, 1.0));
+      y(n, TEST_VALUE(-1.0, 1.0));
     
     int startidx(0);
     if (i <= 0) {
@@ -488,7 +489,7 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
     A(make_and_fill_test_matrix(world, 3, global_size));
   int icolumn(global_size/2);
 
-  boost::scoped_ptr<gridpack::math::Vector>  
+  boost::scoped_ptr< TestVectorType >  
     cvector(gridpack::math::column(*A, icolumn)),
     dvector(gridpack::math::diagonal(*A));
 
@@ -524,7 +525,7 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
   // make the diagonal matrix back into a vector and see that it has
   // not changed
 
-  boost::scoped_ptr<gridpack::math::Vector>  
+  boost::scoped_ptr<TestVectorType>  
     bvector(gridpack::math::diagonal(*B));
 
   bvector->scale(-1.0);
@@ -545,15 +546,14 @@ BOOST_AUTO_TEST_CASE( AddDiagonal )
 
   A->print();
 
-  boost::scoped_ptr<gridpack::math::Vector>  
-    v(new gridpack::math::Vector(A->communicator(), A->localRows()));
+  boost::scoped_ptr<TestVectorType>  
+    v(new TestVectorType(A->communicator(), A->localRows()));
   v->fill(1.0);
 
   A->addDiagonal(*v);
   A->print();
 
-  boost::scoped_ptr<gridpack::math::Vector>  
-    d(diagonal(*A));
+  boost::scoped_ptr<TestVectorType> d(diagonal(*A));
   d->print();
 
   double norm(d->norm1()/static_cast<double>(d->size()));
@@ -580,8 +580,8 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
   A->print();
   T->print();
 
-  boost::scoped_ptr<gridpack::math::Vector>  
-    xvector(new gridpack::math::Vector(A->communicator(), A->localRows())),
+  boost::scoped_ptr<TestVectorType> 
+    xvector(new TestVectorType(A->communicator(), A->localRows())),
     yvector, zvector;
 
   xvector->fill(scale);
@@ -594,8 +594,7 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
   for (int i = lo; i < hi; ++i) {
     int bw(bandwidth);
     if (i == 0 || i == global_size - 1) bw--;
-    TestType 
-      x(static_cast<TestType>(i*bw)*scale), y, z;
+    TestType x(static_cast<TestType>(i*bw)*scale), y, z;
     yvector->getElement(i, y);
     TEST_VALUE_CLOSE(x, y, delta);
 
@@ -612,8 +611,8 @@ BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
   gridpack::parallel::Communicator world;
   boost::scoped_ptr<TestMatrixType> 
     A(make_and_fill_test_matrix(world, 3, global_size));
-  boost::scoped_ptr<gridpack::math::Vector>
-    dscale(new gridpack::math::Vector(A->communicator(), A->localRows()));
+  boost::scoped_ptr<TestVectorType>
+    dscale(new TestVectorType(A->communicator(), A->localRows()));
   TestType z(2.0);
   dscale->fill(z);
 
@@ -627,8 +626,7 @@ BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
   A->localRowRange(lo, hi);
 
   for (int i = lo; i < hi; ++i) {
-    TestType 
-      x(static_cast<TestType>(i)*z), y;
+    TestType x(static_cast<TestType>(i)*z), y;
     A->getElement(i, i, y);
     TEST_VALUE_CLOSE(x, y, delta);
   }
@@ -885,7 +883,7 @@ BOOST_AUTO_TEST_CASE( ComplexOperations )
 
   for (int i = lo; i < hi; ++i) {
     TestType 
-      x(static_cast<double>(i), static_cast<double>(i));
+      x(TEST_VALUE(static_cast<double>(i), static_cast<double>(i)));
     int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       A->setElement(i, j, x);
@@ -901,17 +899,15 @@ BOOST_AUTO_TEST_CASE( ComplexOperations )
   for (int i = lo; i < hi; ++i) {
     int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
-      TestType a, areal, aimag, aconj, b;      
-      A->getElement(i, j, a);
-      Areal->getElement(i, j, areal);
-      Aimag->getElement(i, j, aimag);
-      Aconj->getElement(i, j, aconj);
-      b = real(a);
-      TEST_VALUE_CLOSE(b, areal, delta);
-      b = imag(a);
-      TEST_VALUE_CLOSE(b, aimag, delta);
-      b = conj(a);
-      TEST_VALUE_CLOSE(b, aconj, delta);
+      TestType y;
+      gridpack::ComplexType a, areal, aimag, aconj; 
+      A->getElement(i, j, y); a = y;
+      Areal->getElement(i, j, y); areal = y;
+      Aimag->getElement(i, j, y); aimag = y;
+      Aconj->getElement(i, j, y); aconj = y;
+      BOOST_CHECK_CLOSE(real(a), real(areal), delta);
+      BOOST_CHECK_CLOSE(imag(a), imag(aimag), delta);
+      BOOST_CHECK_CLOSE(imag(a), -imag(aconj), delta);
     }
   }
 }

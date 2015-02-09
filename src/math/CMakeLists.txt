@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-02-09 14:20:38 d3g096
+# Last Change: 2015-02-09 15:12:12 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -210,13 +210,13 @@ add_executable(complex_sparse_matrix_test test/matrix_test.cpp)
 target_link_libraries(complex_sparse_matrix_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(complex_sparse_matrix sparse_matrix_test)
 
-# add_executable(real_sparse_matrix_test test/matrix_test.cpp)
-# set_target_properties(real_sparse_matrix_test
-#   PROPERTIES
-#   COMPILE_DEFINITIONS "TEST_REAL=YES"
-# )
-# target_link_libraries(real_sparse_matrix_test gridpack_math ${target_libraries})
-# gridpack_add_unit_test(real_sparse_matrix sparse_matrix_test)
+add_executable(real_sparse_matrix_test test/matrix_test.cpp)
+set_target_properties(real_sparse_matrix_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_sparse_matrix_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_sparse_matrix sparse_matrix_test)
 
 add_executable(complex_dense_matrix_test test/matrix_test.cpp)
 set_target_properties(complex_dense_matrix_test

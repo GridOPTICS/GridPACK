@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-01-28 14:23:58 d3g096
+ * @date   2015-02-09 15:31:17 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,7 @@
 #include "petsc_exception.hpp"
 #include "matrix_implementation.hpp"
 #include "petsc_matrix_wrapper.hpp"
+#include "value_transfer.hpp"
 
 namespace gridpack {
 namespace math {
@@ -140,7 +141,8 @@ protected:
     PetscErrorCode ierr(0);
     try {
       Mat *mat = p_mwrap.getMatrix();
-      ierr = MatSetValue(*mat, i, j, x, INSERT_VALUES); CHKERRXX(ierr);
+      PetscScalar px = x;
+      ierr = MatSetValue(*mat, i, j, px, INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -161,7 +163,8 @@ protected:
     PetscErrorCode ierr(0);
     try {
       Mat *mat = p_mwrap.getMatrix();
-      ierr = MatSetValue(*mat, i, j, x, ADD_VALUES); CHKERRXX(ierr);
+      PetscScalar px = x;
+      ierr = MatSetValue(*mat, i, j, px, ADD_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -185,7 +188,11 @@ protected:
       static const PETScMatrixImplementation::IdxType one(1);
       PetscInt iidx[one] = { i };
       PetscInt jidx[one] = { j };
-      ierr = MatGetValues(*mat, one, &iidx[0], one, &jidx[0], &x); CHKERRXX(ierr);
+      PetscScalar px;
+      ierr = MatGetValues(*mat, one, &iidx[0], one, &jidx[0], &px); CHKERRXX(ierr);
+      // x = px;
+      ValueTransferFromLibrary<PetscScalar, TheType> trans(one, &px, &x);
+      trans.go();
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }

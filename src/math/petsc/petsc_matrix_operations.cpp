@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-02-09 11:29:24 d3g096
+ * @date   2015-02-09 15:33:14 d3g096
  * 
  * @brief  
  * 
@@ -62,10 +62,16 @@ transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result)
     throw Exception(msg);
   }
 }
+
 template
 void 
 transpose<ComplexType, int>(const MatrixT<ComplexType, int>& A, 
                             MatrixT<ComplexType, int>& result);
+
+template
+void 
+transpose<RealType, int>(const MatrixT<RealType, int>& A, 
+                         MatrixT<RealType, int>& result);
 
 // -------------------------------------------------------------
 // transpose
@@ -182,9 +188,9 @@ transpose(const MatrixT<T, I>& A)
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
-  PETScMatrixImplementation<ComplexType> *result_impl = 
-    new PETScMatrixImplementation<ComplexType>(pAtrans, true);
-  Matrix *result = new Matrix(result_impl);
+  PETScMatrixImplementation<T, I> *result_impl = 
+    new PETScMatrixImplementation<T, I>(pAtrans, true);
+  MatrixT<T, I> *result = new MatrixT<T, I>(result_impl);
 
   return result;
 }
@@ -192,6 +198,10 @@ transpose(const MatrixT<T, I>& A)
 template
 MatrixT<ComplexType, int> *
 transpose(const MatrixT<ComplexType, int>& A);
+
+template
+MatrixT<RealType, int> *
+transpose(const MatrixT<RealType, int>& A);
 
 // -------------------------------------------------------------
 // transposeMultiply
@@ -211,11 +221,18 @@ transposeMultiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>&
     throw PETScException(ierr, e);
   }
 }
+
 template
 void
 transposeMultiply(const MatrixT<ComplexType, int>& A, 
                   const VectorT<ComplexType, int>& x, 
                   VectorT<ComplexType, int>& result);
+
+template
+void
+transposeMultiply(const MatrixT<RealType, int>& A, 
+                  const VectorT<RealType, int>& x, 
+                  VectorT<RealType, int>& result);
 
 // -------------------------------------------------------------
 // column
@@ -247,6 +264,11 @@ template
 void
 column(const MatrixT<ComplexType, int>& A, 
        const int& cidx, VectorT<ComplexType, int>& result);
+
+template
+void
+column(const MatrixT<RealType, int>& A, 
+       const int& cidx, VectorT<RealType, int>& result);
 
 // -------------------------------------------------------------
 // diagonal
@@ -286,11 +308,17 @@ void
 diagonal<ComplexType, int>(const MatrixT<ComplexType, int>& A, 
                            VectorT<ComplexType, int>& result);
 
+template
+void
+diagonal<RealType, int>(const MatrixT<RealType, int>& A, 
+                           VectorT<RealType, int>& result);
+
 template <typename T, typename I>
 MatrixT<T, I> *
 diagonal(const VectorT<T, I>& x, const MatrixStorageType& stype)
 {
-  Matrix *result(new Matrix(x.communicator(), x.localSize(), x.localSize(), stype));
+  MatrixT<T, I> *result(new MatrixT<T,I>(x.communicator(), 
+                                         x.localSize(), x.localSize(), stype));
   const Vec *pX(PETScVector(x));
   Mat *pA(PETScMatrix(*result));
   PetscErrorCode ierr(0);
@@ -301,9 +329,14 @@ diagonal(const VectorT<T, I>& x, const MatrixStorageType& stype)
   }
   return result;
 }
+
 template
 MatrixT<ComplexType, int> *
 diagonal(const VectorT<ComplexType, int>& x, const MatrixStorageType& stype);
+
+template
+MatrixT<RealType, int> *
+diagonal(const VectorT<RealType, int>& x, const MatrixStorageType& stype);
 
 // -------------------------------------------------------------
 // multiply
@@ -339,6 +372,12 @@ multiply(const MatrixT<ComplexType, int>& A,
          const VectorT<ComplexType, int>& x, 
          VectorT<ComplexType, int>& result);
 
+template
+void
+multiply(const MatrixT<RealType, int>& A, 
+         const VectorT<RealType, int>& x, 
+         VectorT<RealType, int>& result);
+
 template <typename T, typename I>
 void
 multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
@@ -362,6 +401,12 @@ multiply(const MatrixT<ComplexType, int>& A,
          const MatrixT<ComplexType, int>& B, 
          MatrixT<ComplexType, int>& result);
 
+template
+void
+multiply(const MatrixT<RealType, int>& A, 
+         const MatrixT<RealType, int>& B, 
+         MatrixT<RealType, int>& result);
+
 template <typename T, typename I>
 MatrixT<T, I> *
 multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
@@ -377,15 +422,19 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     throw PETScException(ierr, e);
   }
 
-  PETScMatrixImplementation<ComplexType> *result_impl = 
-    new PETScMatrixImplementation<ComplexType>(Cmat, true);
-  Matrix *result = new Matrix(result_impl);
+  PETScMatrixImplementation<T, I> *result_impl = 
+    new PETScMatrixImplementation<T, I>(Cmat, true);
+  MatrixT<T, I> *result = new MatrixT<T, I>(result_impl);
   return result;
 }
 
 template
 MatrixT<ComplexType, int> *
 multiply(const MatrixT<ComplexType, int>& A, const MatrixT<ComplexType, int>& B);
+
+template
+MatrixT<RealType, int> *
+multiply(const MatrixT<RealType, int>& A, const MatrixT<RealType, int>& B);
 
 // -------------------------------------------------------------
 // storageType
@@ -431,11 +480,15 @@ template
 MatrixStorageType
 MatrixT<ComplexType>::storageType(void) const;
 
+template 
+MatrixStorageType
+MatrixT<RealType>::storageType(void) const;
+
 template <typename T, typename I>
 MatrixT<T, I> *
 storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
 {
-  Matrix *result(A.clone());
+  MatrixT<T, I> *result(A.clone());
   int nproc(result->processor_size());
 
   MatType new_mat_type(MATSEQAIJ);
@@ -475,6 +528,11 @@ MatrixT<ComplexType, int> *
 storageType(const MatrixT<ComplexType, int>& A, 
             const MatrixStorageType& new_type);
 
+template
+MatrixT<RealType, int> *
+storageType(const MatrixT<RealType, int>& A, 
+            const MatrixStorageType& new_type);
+
 // -------------------------------------------------------------
 // matrixLoadBinary
 // -------------------------------------------------------------
@@ -483,7 +541,7 @@ MatrixT<T, I> *
 matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
 {
   PetscErrorCode ierr;
-  Matrix *result = NULL;
+  MatrixT<T, I> *result = NULL;
   try {
     Mat mat;
     ierr = MatCreate(comm, &mat); CHKERRXX(ierr);
@@ -503,9 +561,9 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
     ierr = MatLoad(mat, viewer); CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
 
-    PETScMatrixImplementation<ComplexType> *result_impl = 
-      new PETScMatrixImplementation<ComplexType>(mat, true);
-    result = new Matrix(result_impl);
+    PETScMatrixImplementation<T, I> *result_impl = 
+      new PETScMatrixImplementation<T, I>(mat, true);
+    result = new MatrixT<T, I>(result_impl);
     ierr = MatDestroy(&mat); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -515,6 +573,10 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
 
 template
 MatrixT<ComplexType, int> *
+matrixLoadBinary(const parallel::Communicator& comm, const char* filename);
+
+template
+MatrixT<RealType, int> *
 matrixLoadBinary(const parallel::Communicator& comm, const char* filename);
 
 

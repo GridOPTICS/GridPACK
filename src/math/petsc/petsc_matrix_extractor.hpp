@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_extractor.hpp
  * @author William A. Perkins
- * @date   2015-01-28 11:07:17 d3g096
+ * @date   2015-02-09 15:21:53 d3g096
  * 
  * @brief  
  * 
@@ -102,8 +102,9 @@ protected:
 // PETScMatrix
 // -------------------------------------------------------------
 /// Get a PETSc matrix from a Matrix
-inline Mat *
-PETScMatrix(Matrix& A)
+template <typename T, typename I>
+Mat *
+PETScMatrix(MatrixT<T, I>& A)
 {
   Mat *result(NULL);
   PETScMatrixExtractor extract;
@@ -118,8 +119,9 @@ PETScMatrix(Matrix& A)
 }
 
 /// Get a (const) PETSc matrix from a Matrix
-inline const Mat *
-PETScMatrix(const Matrix& A)
+template <typename T, typename I>
+const Mat *
+PETScMatrix(const MatrixT<T, I>& A)
 {
   const Mat *result(NULL);
   PETScConstMatrixExtractor extract;
