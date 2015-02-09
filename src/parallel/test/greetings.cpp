@@ -100,7 +100,75 @@ main(int argc, char **argv)
               gcomm.rank(),me,gcomm.size());
       }
     }
+    // Test sum operations
+#define NVALS 10
+    if (me == 0) printf("\nTesting summation operator for communicators\n\n");
+    int nvals = NVALS;
+    float xf[NVALS];
+    int ok = 0;
+    for (i=0; i<nvals; i++) {
+      xf[i] = static_cast<float>(i);
+    }
+    world.sum(xf,nvals);
+    for (i=0; i<nvals; i++) {
+      if (xf[i] != static_cast<float>(i*nprocs)) {
+        printf("(sum) failure for float value %d\n",i);
+        ok = 1;
+      }
+    }
+    double xd[NVALS];
+    for (i=0; i<nvals; i++) {
+      xd[i] = static_cast<double>(i);
+    }
+    world.sum(xd,nvals);
+    for (i=0; i<nvals; i++) {
+      if (xd[i] != static_cast<double>(i*nprocs)) {
+        printf("(sum) failure for double value %d\n",i);
+        ok = 1;
+      }
+    }
+    int xi[NVALS];
+    for (i=0; i<nvals; i++) {
+      xi[i] = i;
+    }
+    world.sum(xi,nvals);
+    for (i=0; i<nvals; i++) {
+      if (xi[i] != i*nprocs) {
+        printf("(sum) failure for int value %d\n",i);
+        ok = 1;
+      }
+    }
+    long xl[NVALS];
+    for (i=0; i<nvals; i++) {
+      xl[i] = static_cast<long>(i);
+    }
+    world.sum(xl,nvals);
+    for (i=0; i<nvals; i++) {
+      if (xl[i] != static_cast<long>(i*nprocs)) {
+        printf("(sum) failure for long value %d\n",i);
+        ok = 1;
+      }
+    }
+    gridpack::ComplexType xc[NVALS];
+    for (i=0; i<nvals; i++) {
+      xc[i] = gridpack::ComplexType(static_cast<double>(i),
+          static_cast<double>(i));
+    }
+    world.sum(xc,nvals);
+    for (i=0; i<nvals; i++) {
+      if (xc[i] != gridpack::ComplexType(static_cast<double>(i*nprocs),
+            static_cast<double>(i*nprocs))) {
+        printf("(sum) failure for complex value %d\n",i);
+        ok = 1;
+      }
+    }
+    if (me == 0 && ok == 0) {
+      printf("\nSummation test for communicators passed\n\n");
+    } else if (me == 0) {
+      printf("\nSummation test for communicators failed\n\n");
+    }
   }
+
   return 0;
 }
 
