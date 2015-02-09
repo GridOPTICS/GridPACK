@@ -10,7 +10,7 @@
 /**
  * @file   matrix_interface.hpp
  * @author William A. Perkins
- * @date   2014-10-22 08:31:00 d3g096
+ * @date   2015-01-28 13:59:21 d3g096
  * 
  * @brief  Declaration of the abstract BaseMatrixInterface template class. 
  * 
@@ -249,6 +249,65 @@ public:
     this->p_ready();
   }
 
+  /// Print to named file or standard output
+  /** 
+   * @e Collective.
+   *
+   * 
+   *
+   * The format is dependent on the specific vector implementation.
+   * 
+   * @param filename optional file
+   */
+  void print(const char* filename = NULL) const
+  {
+    this->p_print(filename);
+  }
+
+  /// Save, in MatLAB format, to named file (collective)
+  /** 
+   * @e Collective.
+   *
+   * 
+   * 
+   * @param filename 
+   */
+  void save(const char *filename) const
+  {
+    this->p_save(filename);
+  }
+
+  /// Load from a named file of whatever binary format the math library uses
+  /** 
+   * @e Collective.
+   *
+   * The underlying math library generally supports some way to save a
+   * Vector to a file. This will load elements from a file of that
+   * format.
+   * 
+   * @param filename 
+   */
+  void loadBinary(const char *filename)
+  {
+    this->p_loadBinary(filename);
+  }
+
+
+  /// Save to named file in whatever binary format the math library uses
+  /** 
+   * @e Collective.
+   *
+   * The underlying math library generally supports some way to save a
+   * Vector to a file.  This routine uses whatever format that can be
+   * read by ::loadBinary(). 
+   * 
+   * @param filename 
+   */
+  void saveBinary(const char *filename) const
+  {
+    this->p_saveBinary(filename);
+  }
+
 protected:
 
   /// Get the global index range of the locally owned rows (specialized)
@@ -302,6 +361,17 @@ protected:
   /// Make this instance ready to use
   virtual void p_ready(void) = 0;
 
+  /// Print to named file or standard output
+  virtual void p_print(const char* filename = NULL) const = 0;
+
+  /// Save, in MatLAB format, to named file (collective)
+  virtual void p_save(const char *filename) const = 0;
+
+  /// Load from a named file of whatever binary format the math library uses
+  virtual void p_loadBinary(const char *filename) = 0;
+
+  /// Save to named file in whatever binary format the math library uses
+  virtual void p_saveBinary(const char *filename) const = 0;
 };
 
 

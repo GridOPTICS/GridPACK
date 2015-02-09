@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-01-28 10:03:34 d3g096
+# Last Change: 2015-02-09 11:38:32 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -57,6 +57,7 @@ set(gridpack_math_headers
   matrix.hpp
   matrix_implementation.hpp
   matrix_interface.hpp
+  matrix_storage_type.hpp
   newton_raphson_solver.hpp
   newton_raphson_solver_implementation.hpp
   nonlinear_solver_functions.hpp
@@ -96,6 +97,7 @@ if (PETSC_FOUND)
       petsc/petsc_matrix_implementation.cpp
       petsc/petsc_matrix_operations.cpp
       petsc/petsc_matrix_wrapper.cpp
+      petsc/petsc_matrix.cpp
       # petsc/petsc_linear_solver.cpp
       # petsc/petsc_linear_solver_implementation.cpp
       # petsc/petsc_linear_matrix_solver.cpp

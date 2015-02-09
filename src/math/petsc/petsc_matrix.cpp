@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-01-28 13:04:44 d3g096
+ * @date   2015-02-09 11:28:26 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -35,21 +35,22 @@ namespace math {
 // -------------------------------------------------------------
 // Matrix:: constructors / destructor
 // -------------------------------------------------------------
-Matrix::Matrix(const parallel::Communicator& comm,
-               const int& local_rows,
-               const int& cols,
-               const StorageType& storage_type)
+template <typename T, typename I>
+MatrixT<T, I>::MatrixT(const parallel::Communicator& comm,
+                       const int& local_rows,
+                       const int& cols,
+                       const MatrixStorageType& storage_type)
   : parallel::WrappedDistributed(), utility::Uncopyable(),
     p_matrix_impl()
 {
   switch (storage_type) {
   case Sparse:
-    p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
-                                                                  local_rows, cols, false));
+    p_matrix_impl.reset(new PETScMatrixImplementation<T, I>(comm,
+                                                            local_rows, cols, false));
     break;
   case Dense:
-    p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
-                                                                   local_rows, cols, true));
+    p_matrix_impl.reset(new PETScMatrixImplementation<T, I>(comm,
+                                                            local_rows, cols, true));
     break;
   default:
     BOOST_ASSERT(false);
@@ -58,42 +59,60 @@ Matrix::Matrix(const parallel::Communicator& comm,
   p_setDistributed(p_matrix_impl.get());
 }
 
+template 
+MatrixT<ComplexType>::MatrixT(const parallel::Communicator& comm,
+                              const int& local_rows,
+                              const int& cols,
+                              const MatrixStorageType& storage_type);
 
-Matrix::Matrix(const parallel::Communicator& comm,
-               const int& local_rows,
-               const int& cols,
-               const int& max_nz_per_row)
+template <typename T, typename I>
+MatrixT<T, I>::MatrixT(const parallel::Communicator& comm,
+                       const int& local_rows,
+                       const int& cols,
+                       const int& max_nz_per_row)
   : parallel::WrappedDistributed(), utility::Uncopyable(),
     p_matrix_impl()
 {
-  p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
-                                                                 local_rows, cols, 
-                                                                 max_nz_per_row));
+  p_matrix_impl.reset(new PETScMatrixImplementation<T, I>(comm,
+                                                          local_rows, cols, 
+                                                          max_nz_per_row));
   BOOST_ASSERT(p_matrix_impl);
   p_setDistributed(p_matrix_impl.get());
 }
 
-Matrix::Matrix(const parallel::Communicator& comm,
-               const int& local_rows,
-               const int& cols,
-               const int *nz_by_row)
+template 
+MatrixT<ComplexType>::MatrixT(const parallel::Communicator& comm,
+                              const int& local_rows,
+                              const int& cols,
+                              const int& max_nz_per_row);
+
+template <typename T, typename I>
+MatrixT<T, I>::MatrixT(const parallel::Communicator& comm,
+                       const int& local_rows,
+                       const int& cols,
+                       const int *nz_by_row)
   : parallel::WrappedDistributed(), utility::Uncopyable(),
     p_matrix_impl()
 {
-  p_matrix_impl.reset(new PETScMatrixImplementation<ComplexType>(comm,
-                                                                 local_rows, cols, 
-                                                                 nz_by_row));
+  p_matrix_impl.reset(new PETScMatrixImplementation<T, I>(comm,
+                                                          local_rows, cols, 
+                                                          nz_by_row));
   BOOST_ASSERT(p_matrix_impl);
   p_setDistributed(p_matrix_impl.get());
 }
 
-
+template 
+MatrixT<ComplexType>::MatrixT(const parallel::Communicator& comm,
+                              const int& local_rows,
+                              const int& cols,
+                              const int *nz_by_row);
 
 // -------------------------------------------------------------
 // Matrix::equate
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Matrix::equate(const Matrix& B)
+MatrixT<T, I>::equate(const MatrixT<T, I>& B)
 {
   this->p_check_compatible(B);
   Mat *pA(PETScMatrix(*this));
@@ -101,18 +120,22 @@ Matrix::equate(const Matrix& B)
 
   PetscErrorCode ierr(0);
   try {
-    PetscScalar one(1.0);
     ierr = MatCopy(*pB, *pA, DIFFERENT_NONZERO_PATTERN); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }
 
+template 
+void
+MatrixT<ComplexType>::equate(const MatrixT<ComplexType>& B);
+
 // -------------------------------------------------------------
 // Matrix::scale
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Matrix::scale(const ComplexType& xin)
+MatrixT<T, I>::scale(const MatrixT<T, I>::TheType& xin)
 {
   Mat *pA(PETScMatrix(*this));
 
@@ -125,13 +148,17 @@ Matrix::scale(const ComplexType& xin)
     throw PETScException(ierr, e);
   }
 }
-    
+
+template 
+void
+MatrixT<ComplexType>::scale(const ComplexType& xin);
 
 // -------------------------------------------------------------
 // Matrix::add
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Matrix::add(const Matrix& B)
+MatrixT<T, I>::add(const MatrixT<T, I>& B)
 {
   this->p_check_compatible(B);
   Mat *pA(PETScMatrix(*this));
@@ -146,11 +173,16 @@ Matrix::add(const Matrix& B)
   }
 }
 
+template 
+void
+MatrixT<ComplexType>::add(const MatrixT<ComplexType>& B);
+
 // -------------------------------------------------------------
 // Matrix::addDiagonal
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Matrix::addDiagonal(const Vector& x)
+MatrixT<T, I>::addDiagonal(const VectorT<T, I>& x)
 {
   const Vec *pX(PETScVector(x));
   Mat *pA(PETScMatrix(*this));
@@ -162,11 +194,16 @@ Matrix::addDiagonal(const Vector& x)
   }
 }
 
+template 
+void
+MatrixT<ComplexType>::addDiagonal(const VectorT<ComplexType>& x);
+
 // -------------------------------------------------------------
 // Matrix::identity
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Matrix::identity(void)
+MatrixT<T, I>::identity(void)
 {
   Mat *pA(PETScMatrix(*this));
 
@@ -190,12 +227,16 @@ Matrix::identity(void)
     throw PETScException(ierr, e);
   }
 }
+template 
+void
+MatrixT<ComplexType>::identity(void);
 
 // -------------------------------------------------------------
 // Matrix::zero
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Matrix::zero(void)
+MatrixT<T, I>::zero(void)
 {
   Mat *pA(PETScMatrix(*this));
 
@@ -206,12 +247,16 @@ Matrix::zero(void)
     throw PETScException(ierr, e);
   }
 }
+template 
+void
+MatrixT<ComplexType>::zero(void);
 
 // -------------------------------------------------------------
 // Matrix::multiplyDiagonal
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-Matrix::multiplyDiagonal(const Vector& x)
+MatrixT<T, I>::multiplyDiagonal(const VectorT<T, I>& x)
 {
   const Vec *pscale(PETScVector(x));
   Mat *pA(PETScMatrix(*this));
@@ -230,166 +275,12 @@ Matrix::multiplyDiagonal(const Vector& x)
   }
 }
 
-// -------------------------------------------------------------
-// petsc_print_matrix
-// -------------------------------------------------------------
-static void
-petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format)
-{
-  PetscErrorCode ierr;
-  try {
-    PetscViewer viewer;
-    MPI_Comm comm = PetscObjectComm((PetscObject)mat);
-    int me, nproc;
-    ierr = MPI_Comm_rank(comm, &me);
-    ierr = MPI_Comm_size(comm, &nproc);
-    if (filename != NULL) {
-      ierr = PetscViewerASCIIOpen(comm, filename, &viewer); CHKERRXX(ierr);
-    } else {
-      ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
-    }
-    ierr = PetscViewerSetFormat(viewer, format);
-    PetscInt grow, gcol, lrow, lcol;
-    switch (format) {
-    case PETSC_VIEWER_DEFAULT:
-      ierr = MatGetSize(mat, &grow, &gcol); CHKERRXX(ierr);
-      ierr = MatGetLocalSize(mat, &lrow, &lcol); CHKERRXX(ierr);
-      ierr = PetscViewerASCIISynchronizedAllow(viewer, PETSC_TRUE); CHKERRXX(ierr);
-      ierr = PetscViewerASCIIPrintf(viewer,             
-                                    "# Matrix distribution\n"); CHKERRXX(ierr);
-      ierr = PetscViewerASCIIPrintf(viewer,             
-                                    "# proc   rows     cols\n");  CHKERRXX(ierr);
-      ierr = PetscViewerASCIIPrintf(viewer,             
-                                    "# ---- -------- --------\n"); CHKERRXX(ierr);
-      ierr = PetscViewerASCIISynchronizedPrintf(viewer, "# %4d %8d %8d\n",
-                                                me, lrow, lcol);  CHKERRXX(ierr);
-      ierr = PetscViewerFlush(viewer); CHKERRXX(ierr);
-      ierr = MPI_Barrier(comm);
-      ierr = PetscViewerASCIIPrintf(viewer,             
-                                    "# ---- -------- --------\n");  CHKERRXX(ierr);
-      ierr = PetscViewerASCIIPrintf(viewer, "# %4d %8d %8d\n", 
-                                    nproc, grow, gcol);  CHKERRXX(ierr);
-    default:
-      break;
-    }
-    ierr = MatView(mat, viewer); CHKERRXX(ierr);
-    if (filename != NULL) {
-      ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-    } else {
-      // FIXME: causes a SEGV?
-      // ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-    }
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-
-
-// -------------------------------------------------------------
-// Matrix::print
-// -------------------------------------------------------------
+template 
 void
-Matrix::print(const char* filename) const
-{
-  const Mat *mat(PETScMatrix(*this));
-  
-  petsc_print_matrix(*mat, filename, PETSC_VIEWER_DEFAULT);
-}
-
-// -------------------------------------------------------------
-// Matrix::save
-// -------------------------------------------------------------
-void
-Matrix::save(const char* filename) const
-{
-  const Mat *mat(PETScMatrix(*this));
-  petsc_print_matrix(*mat, filename, PETSC_VIEWER_ASCII_MATLAB);
-}
-
-// -------------------------------------------------------------
-// Matrix::loadBinary
-// -------------------------------------------------------------
-void
-Matrix::loadBinary(const char* filename)
-{
-  PetscErrorCode ierr;
-  Mat *mat(PETScMatrix(*this));
-  try {
-    PetscViewer viewer;
-    ierr = PetscViewerBinaryOpen(this->communicator(),
-                                 filename,
-                                 FILE_MODE_READ,
-                                 &viewer); CHKERRXX(ierr);
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
-    ierr = MatLoad(*mat, viewer); CHKERRXX(ierr);
-    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-
-// -------------------------------------------------------------
-// Matrix::saveBinary
-// -------------------------------------------------------------
-void
-Matrix::saveBinary(const char* filename) const
-{
-  PetscErrorCode ierr;
-  const Mat *mat(PETScMatrix(*this));
-  try {
-    PetscViewer viewer;
-    ierr = PetscViewerBinaryOpen(this->communicator(),
-                                 filename,
-                                 FILE_MODE_WRITE,
-                                 &viewer); CHKERRXX(ierr);
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
-    ierr = MatView(*mat, viewer); CHKERRXX(ierr);
-    ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-
+MatrixT<ComplexType>::multiplyDiagonal(const VectorT<ComplexType>& x);
 
 // -------------------------------------------------------------
 // Matrix::storageType
 // -------------------------------------------------------------
-Matrix::StorageType
-Matrix::storageType(void) const
-{
-  StorageType result;
-  PetscErrorCode ierr;
-  const Mat *mat(PETScMatrix(*this));
-  try {
-    MatType thetype;
-    ierr = MatGetType(*mat, &thetype); CHKERRXX(ierr);
-
-    // this relies on the fact that MatType is actual a pointer to a
-    // char string -- need to test string contents, not pointers
-    std::string stype(thetype);
-
-    if (stype == MATSEQDENSE ||
-        stype == MATDENSE ||
-        stype == MATMPIDENSE) {
-      result = Dense;
-    } else if (stype == MATSEQAIJ || 
-               stype == MATMPIAIJ) {
-      result = Sparse;
-    } else {
-      std::string msg("Matrix: unexpected PETSc storage type: ");
-      msg += "\"";
-      msg += stype;
-      msg += "\"";
-      throw Exception(msg);
-    }
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  } catch (const Exception& e) {
-    throw;
-  }
-  return result;
-}
-
-
 } // namespace math
 } // namespace gridpack

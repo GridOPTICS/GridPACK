@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-01-28 13:08:26 d3g096
+ * @date   2015-02-09 11:29:24 d3g096
  * 
  * @brief  
  * 
@@ -40,8 +40,9 @@ namespace math {
 // -------------------------------------------------------------
 // transpose
 // -------------------------------------------------------------
+template <typename T, typename I>
 void 
-transpose(const Matrix& A, Matrix& result)
+transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result)
 {
   // This only works if the matrixes are the correct size
   if ((A.cols() == result.rows() &&
@@ -61,12 +62,17 @@ transpose(const Matrix& A, Matrix& result)
     throw Exception(msg);
   }
 }
+template
+void 
+transpose<ComplexType, int>(const MatrixT<ComplexType, int>& A, 
+                            MatrixT<ComplexType, int>& result);
 
 // -------------------------------------------------------------
 // transpose
 // -------------------------------------------------------------
-Matrix *
-transpose(const Matrix& A)
+template <typename T, typename I>
+MatrixT<T, I> *
+transpose(const MatrixT<T, I>& A)
 {
   const Mat *pA(PETScMatrix(A));
   Mat pAtrans;
@@ -183,11 +189,16 @@ transpose(const Matrix& A)
   return result;
 }
 
+template
+MatrixT<ComplexType, int> *
+transpose(const MatrixT<ComplexType, int>& A);
+
 // -------------------------------------------------------------
 // transposeMultiply
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-transposeMultiply(const Matrix& A, const Vector& x, Vector& result)
+transposeMultiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result)
 {
   const Mat *Amat(PETScMatrix(A));
   const Vec *Xvec(PETScVector(x));
@@ -200,12 +211,18 @@ transposeMultiply(const Matrix& A, const Vector& x, Vector& result)
     throw PETScException(ierr, e);
   }
 }
+template
+void
+transposeMultiply(const MatrixT<ComplexType, int>& A, 
+                  const VectorT<ComplexType, int>& x, 
+                  VectorT<ComplexType, int>& result);
 
 // -------------------------------------------------------------
 // column
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-column(const Matrix& A, const int& cidx, Vector& result)
+column(const MatrixT<T, I>& A, const int& cidx, VectorT<T, I>& result)
 {
   if (result.communicator() != A.communicator()) {
     throw gridpack::Exception("incompatible: communicators do not match");
@@ -226,11 +243,17 @@ column(const Matrix& A, const int& cidx, Vector& result)
   }
 }  
 
+template
+void
+column(const MatrixT<ComplexType, int>& A, 
+       const int& cidx, VectorT<ComplexType, int>& result);
+
 // -------------------------------------------------------------
 // diagonal
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-diagonal(const Matrix& A, Vector& result)
+diagonal(const MatrixT<T, I>& A, VectorT<T, I>& result)
 {
   if (result.communicator() != A.communicator()) {
     throw gridpack::Exception("incompatible: communicators do not match");
@@ -258,8 +281,14 @@ diagonal(const Matrix& A, Vector& result)
   }
 }  
 
-Matrix *
-diagonal(const Vector& x, const Matrix::StorageType& stype)
+template
+void
+diagonal<ComplexType, int>(const MatrixT<ComplexType, int>& A, 
+                           VectorT<ComplexType, int>& result);
+
+template <typename T, typename I>
+MatrixT<T, I> *
+diagonal(const VectorT<T, I>& x, const MatrixStorageType& stype)
 {
   Matrix *result(new Matrix(x.communicator(), x.localSize(), x.localSize(), stype));
   const Vec *pX(PETScVector(x));
@@ -272,13 +301,16 @@ diagonal(const Vector& x, const Matrix::StorageType& stype)
   }
   return result;
 }
-
+template
+MatrixT<ComplexType, int> *
+diagonal(const VectorT<ComplexType, int>& x, const MatrixStorageType& stype);
 
 // -------------------------------------------------------------
 // multiply
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-multiply(const Matrix& A, const Vector& x, Vector& result)
+multiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result)
 {
   const Mat *Amat(PETScMatrix(A));
   const Vec *Xvec(PETScVector(x));
@@ -301,8 +333,15 @@ multiply(const Matrix& A, const Vector& x, Vector& result)
   }
 }
 
+template
 void
-multiply(const Matrix& A, const Matrix& B, Matrix& result)
+multiply(const MatrixT<ComplexType, int>& A, 
+         const VectorT<ComplexType, int>& x, 
+         VectorT<ComplexType, int>& result);
+
+template <typename T, typename I>
+void
+multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
 {
   const Mat *Amat(PETScMatrix(A));
   const Mat *Bmat(PETScMatrix(B));
@@ -317,8 +356,15 @@ multiply(const Matrix& A, const Matrix& B, Matrix& result)
   }
 }
 
-Matrix *
-multiply(const Matrix& A, const Matrix& B)
+template
+void
+multiply(const MatrixT<ComplexType, int>& A, 
+         const MatrixT<ComplexType, int>& B, 
+         MatrixT<ComplexType, int>& result);
+
+template <typename T, typename I>
+MatrixT<T, I> *
+multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
 {
   const Mat *Amat(PETScMatrix(A));
   const Mat *Bmat(PETScMatrix(B));
@@ -337,11 +383,57 @@ multiply(const Matrix& A, const Matrix& B)
   return result;
 }
 
+template
+MatrixT<ComplexType, int> *
+multiply(const MatrixT<ComplexType, int>& A, const MatrixT<ComplexType, int>& B);
+
 // -------------------------------------------------------------
 // storageType
 // -------------------------------------------------------------
-Matrix *
-storageType(const Matrix& A, const Matrix::StorageType& new_type)
+template <typename T, typename I>
+MatrixStorageType
+MatrixT<T, I>::storageType(void) const
+{
+  MatrixStorageType result;
+  PetscErrorCode ierr;
+  const Mat *mat(PETScMatrix(*this));
+  try {
+    MatType thetype;
+    ierr = MatGetType(*mat, &thetype); CHKERRXX(ierr);
+
+    // this relies on the fact that MatType is actual a pointer to a
+    // char string -- need to test string contents, not pointers
+    std::string stype(thetype);
+
+    if (stype == MATSEQDENSE ||
+        stype == MATDENSE ||
+        stype == MATMPIDENSE) {
+      result = Dense;
+    } else if (stype == MATSEQAIJ || 
+               stype == MATMPIAIJ) {
+      result = Sparse;
+    } else {
+      std::string msg("Matrix: unexpected PETSc storage type: ");
+      msg += "\"";
+      msg += stype;
+      msg += "\"";
+      throw Exception(msg);
+    }
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  } catch (const Exception& e) {
+    throw;
+  }
+  return result;
+}
+
+template 
+MatrixStorageType
+MatrixT<ComplexType>::storageType(void) const;
+
+template <typename T, typename I>
+MatrixT<T, I> *
+storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
 {
   Matrix *result(A.clone());
   int nproc(result->processor_size());
@@ -350,14 +442,14 @@ storageType(const Matrix& A, const Matrix::StorageType& new_type)
 
   if (result->storageType() != new_type) {
     switch (new_type) {
-    case (Matrix::Dense):
+    case (Dense):
       if (nproc > 1) {
         new_mat_type = MATDENSE;
       } else {
         new_mat_type = MATSEQDENSE;
       } 
       break;
-    case (Matrix::Sparse):
+    case (Sparse):
       if (nproc > 1) {
         new_mat_type = MATMPIAIJ;
       } else {
@@ -378,10 +470,16 @@ storageType(const Matrix& A, const Matrix::StorageType& new_type)
   return result;
 }
 
+template
+MatrixT<ComplexType, int> *
+storageType(const MatrixT<ComplexType, int>& A, 
+            const MatrixStorageType& new_type);
+
 // -------------------------------------------------------------
 // matrixLoadBinary
 // -------------------------------------------------------------
-Matrix *
+template <typename T, typename I>
+MatrixT<T, I> *
 matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
 {
   PetscErrorCode ierr;
@@ -414,6 +512,11 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
   }
   return result;
 }  
+
+template
+MatrixT<ComplexType, int> *
+matrixLoadBinary(const parallel::Communicator& comm, const char* filename);
+
 
 } // namespace math
 } // namespace gridpack

@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-12-09 09:59:51 d3g096
+ * @date   2015-01-28 14:46:30 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -31,11 +31,11 @@
 static const int local_size(5);
 static const double delta(0.0001);
 
-static const gridpack::math::Matrix::StorageType the_storage_type =
+static const gridpack::math::MatrixStorageType the_storage_type =
 #ifdef TEST_DENSE
-  gridpack::math::Matrix::Dense;
+  gridpack::math::Dense;
 #else
-  gridpack::math::Matrix::Sparse;
+  gridpack::math::Sparse;
 #endif
 
 static const std::string print_prefix = 
@@ -100,7 +100,7 @@ BOOST_AUTO_TEST_CASE( construction )
   BOOST_CHECK_EQUAL(A->localRows(), local_size);
   BOOST_CHECK_EQUAL(A->rows(), global_size);
   BOOST_CHECK_EQUAL(A->cols(), global_size);
-  gridpack::math::Matrix::StorageType tmptype(A->storageType());
+  gridpack::math::MatrixStorageType tmptype(A->storageType());
   BOOST_CHECK_EQUAL(tmptype, the_storage_type);
 
   gridpack::parallel::Communicator self(world.divide(1));
@@ -119,15 +119,15 @@ BOOST_AUTO_TEST_CASE( storage )
   boost::scoped_ptr<gridpack::math::Matrix> 
     A(make_and_fill_test_matrix(world, 3, global_size));
 
-  gridpack::math::Matrix::StorageType tmptype(A->storageType());
+  gridpack::math::MatrixStorageType tmptype(A->storageType());
   BOOST_CHECK_EQUAL(tmptype, the_storage_type);
 
   switch (A->storageType()) {
-  case (gridpack::math::Matrix::Dense):
-    tmptype = gridpack::math::Matrix::Sparse;
+  case (gridpack::math::Dense):
+    tmptype = gridpack::math::Sparse;
     break;
-  case (gridpack::math::Matrix::Sparse):
-    tmptype = gridpack::math::Matrix::Dense;
+  case (gridpack::math::Sparse):
+    tmptype = gridpack::math::Dense;
     break;
   }
   boost::scoped_ptr<gridpack::math::Matrix> 
@@ -622,7 +622,7 @@ BOOST_AUTO_TEST_CASE( MultiplyIdentity )
   boost::scoped_ptr<gridpack::math::Matrix> 
     A(make_and_fill_test_matrix(world, bandwidth, global_size)),
     B(new gridpack::math::Matrix(A->communicator(), A->localRows(), A->localCols(), 
-                                 gridpack::math::Matrix::Sparse));
+                                 gridpack::math::Sparse));
   B->identity();
   boost::scoped_ptr<gridpack::math::Matrix> 
     C(gridpack::math::multiply(*A, *B));
@@ -660,7 +660,7 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
   boost::scoped_ptr<gridpack::math::Matrix> 
     A(new gridpack::math::Matrix(world, 2, 3)),
     B(new gridpack::math::Matrix(world, 3, 2,
-                                 gridpack::math::Matrix::Sparse));
+                                 gridpack::math::Sparse));
 
   std::vector<int> iidx(2*3) , jidx(2*3);
   int k(0);
@@ -806,10 +806,10 @@ BOOST_AUTO_TEST_CASE( AnotherNonSquareTranspose )
 
   boost::scoped_ptr<gridpack::math::Matrix> A;
   switch (the_storage_type) {
-  case gridpack::math::Matrix::Dense:
+  case gridpack::math::Dense:
     A.reset(new gridpack::math::Matrix(world, isize, jsize, the_storage_type));
     break;
-  case gridpack::math::Matrix::Sparse:
+  case gridpack::math::Sparse:
     A.reset(new gridpack::math::Matrix(world, isize, jsize, jsize));
     break;
   default:
@@ -834,10 +834,10 @@ BOOST_AUTO_TEST_CASE( AnotherNonSquareTranspose )
 
   boost::scoped_ptr<gridpack::math::Matrix> C;
   switch (the_storage_type) {
-  case gridpack::math::Matrix::Dense:
+  case gridpack::math::Dense:
     C.reset(new gridpack::math::Matrix(world, jsize, isize, the_storage_type));
     break;
-  case gridpack::math::Matrix::Sparse:
+  case gridpack::math::Sparse:
     C.reset(new gridpack::math::Matrix(world, jsize, isize, isize));
     break;
   default:
@@ -969,10 +969,10 @@ BOOST_AUTO_TEST_SUITE_END()
 bool init_function()
 {
   switch (the_storage_type) {
-  case gridpack::math::Matrix::Dense:
+  case gridpack::math::Dense:
     BOOST_TEST_MESSAGE("Testing Dense Matrices ...");
     break;
-  case gridpack::math::Matrix::Sparse:
+  case gridpack::math::Sparse:
     BOOST_TEST_MESSAGE("Testing Sparse Matrices ...");
     break;
   default:

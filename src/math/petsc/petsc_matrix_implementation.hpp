@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-01-28 13:06:42 d3g096
+ * @date   2015-01-28 14:23:58 d3g096
  * 
  * @brief  
  * 
@@ -228,6 +228,30 @@ protected:
   void p_ready(void)
   {
     p_mwrap.ready();
+  }
+
+  /// Print to named file or standard output
+  void p_print(const char* filename = NULL) const
+  {
+    p_mwrap.print(filename);
+  }
+
+  /// Save, in MatLAB format, to named file (collective)
+  void p_save(const char *filename) const
+  {
+    p_mwrap.save(filename);
+  }
+
+  /// Load from a named file of whatever binary format the math library uses
+  void p_loadBinary(const char *filename)
+  {
+    p_mwrap.loadBinary(filename);
+  }
+
+  /// Save to named file in whatever binary format the math library uses
+  void p_saveBinary(const char *filename) const
+  {
+    p_mwrap.saveBinary(filename);
   }
 
   /// Allow visits by implementation visitors
