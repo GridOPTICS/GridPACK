@@ -21,6 +21,7 @@
 
 #include <iostream>
 #include <vector>
+#include <string>
 #include <list>
 #include <algorithm>
 #include <iterator>
@@ -39,12 +40,15 @@ namespace mpi = boost::mpi;
 #include <boost/random/variate_generator.hpp>
 #include <boost/random/uniform_int.hpp>
 
+#define VEC_LENGTH 5
+
 struct Thing {
   int value;
   int orig_owner;
   int owner;
   int localidx;
   int claimed;
+  std::vector<std::string> twister;
 
   /// Serialization method
   template <class Archive>
@@ -55,6 +59,7 @@ struct Thing {
     ar & owner;
     ar & localidx;
     ar & claimed;
+    ar & twister;
   }
 };
 
@@ -99,6 +104,7 @@ main(int argc, char **argv)
   ivector src, allsrc;
   ivector dest, alldest;
   ivector lidx, alllidx;
+  std::vector<std::vector<std::string> > lstring;
 
   boost::mt19937 rengine(time(0) + world.rank());
   boost::variate_generator<boost::mt19937&, boost::uniform_int<> > 
@@ -117,6 +123,12 @@ main(int argc, char **argv)
     src.push_back(t->owner);
     dest.push_back(t->claimed);
     lidx.push_back(localidx);
+    for (int i=0; i<VEC_LENGTH; i++) {
+      char buf[128];
+      sprintf(buf,"gidx: %d localidx: %d orig_owner: %d i: %d",
+          gidx,localidx,world.rank(),i);
+      t->twister.push_back(buf);
+    }
   }
 
   std::cout << world.rank() << ": ";
