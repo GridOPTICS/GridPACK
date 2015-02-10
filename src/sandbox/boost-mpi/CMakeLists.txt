@@ -19,10 +19,6 @@ project (BoostMPI)
 # This is a C++ project exclusively
 enable_language(CXX)
 
-# where to look for special .cmake files
-#list (APPEND CMAKE_MODULE_PATH "cmake-modules")
-#include(BoostMPI)
-
 # turn testing on
 enable_testing()
 
