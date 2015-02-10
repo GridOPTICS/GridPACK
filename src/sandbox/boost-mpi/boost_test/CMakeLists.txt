@@ -23,4 +23,9 @@ add_executable(shuffle.x
    shuffle.cpp
 )
 
+add_executable(redistribute.x
+   redistribute.cpp
+)
+
 target_link_libraries(shuffle.x ${target_libraries})
+target_link_libraries(redistribute.x ${target_libraries})
