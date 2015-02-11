@@ -19,12 +19,13 @@ set(target_libraries
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
-#add_library(powerflow_app
-#  pf_factory.cpp
-#)
-
 add_executable(shuffle.x
    shuffle.cpp
 )
 
+add_executable(redistribute.x
+   redistribute.cpp
+)
+
 target_link_libraries(shuffle.x ${target_libraries})
+target_link_libraries(redistribute.x ${target_libraries})
