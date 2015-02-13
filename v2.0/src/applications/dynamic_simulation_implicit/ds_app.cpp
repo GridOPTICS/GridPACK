@@ -37,19 +37,15 @@ class DSProblem
   gridpack::mapper::FullMatrixMap<gridpack::dsimplicit::DSNetwork>& p_MatMapper;
 
   int p_localsize;
-  double p_maxtime;
-  double p_stepsize;
+
 public:
   // Default constructor
-  DSProblem(gridpack::dsimplicit::DSFactory& factory,boost::shared_ptr<gridpack::dsimplicit::DSNetwork>& network,gridpack::mapper::BusVectorMap<gridpack::dsimplicit::DSNetwork>& VecMapper, gridpack::mapper::FullMatrixMap<gridpack::dsimplicit::DSNetwork>& MatMapper,
-	    int localsize,double maxtime, double stepsize)
+  DSProblem(gridpack::dsimplicit::DSFactory& factory,boost::shared_ptr<gridpack::dsimplicit::DSNetwork>& network,gridpack::mapper::BusVectorMap<gridpack::dsimplicit::DSNetwork>& VecMapper, gridpack::mapper::FullMatrixMap<gridpack::dsimplicit::DSNetwork>& MatMapper,int localsize)
   : p_factory(factory), 
     p_network(network), 
     p_VecMapper(VecMapper), 
     p_MatMapper(MatMapper),
-    p_localsize(localsize),
-    p_maxtime(maxtime),
-    p_stepsize(stepsize)
+    p_localsize(localsize)
   {}
 
   // Destructor
@@ -99,21 +95,6 @@ public:
     p_VecMapper.mapToVector(F);
     F.ready();
     //    F.print();
-  }
-
-  void solve(const gridpack::parallel::Communicator& comm,
-             gridpack::utility::Configuration::CursorPtr& conf,double t0,boost::shared_ptr<gridpack::math::Vector> X)
-  {
-    int maxsteps = 10000;
-    gridpack::math::DAEJacobianBuilder jbuilder = boost::ref(*this);
-    gridpack::math::DAEFunctionBuilder fbuilder = boost::ref(*this);
-    
-    gridpack::math::DAESolver solver(comm, p_localsize, jbuilder, fbuilder);
-    solver.configure(conf);
-
-    solver.initialize(t0,p_stepsize,*X);
-
-    solver.solve(p_maxtime,maxsteps);
   }
 };
 
@@ -250,9 +231,38 @@ void gridpack::dsimplicit::DSApp::execute(int argc, char** argv)
   timer->stop(t_updt);
 
   int lsize= X->localSize();
-  DSProblem dsprob(factory,network,VecMapper,MatMapper,lsize,0.1,0.01);
+  double maxtime(0.10);
+  int maxsteps(10000);
+  DSProblem dsprob(factory,network,VecMapper,MatMapper,lsize);
 
-  dsprob.solve(world,cursor,0,X);
+  gridpack::math::DAEJacobianBuilder jbuilder = boost::ref(dsprob);
+  gridpack::math::DAEFunctionBuilder fbuilder = boost::ref(dsprob);
+
+  gridpack::math::DAESolver daesolver(world, lsize, jbuilder, fbuilder);
+
+  // Get simulation time length
+  double tmax;
+  cursor->get("simulationTime",&tmax);
+
+  // Read fault parameters
+  double faultontime(0.1),faultofftime(0.2),faultbus(9);
+  cursor->get("faultontime",&faultontime);
+  cursor->get("faultofftime",&faultofftime);
+
+  // Pre-fault solve
+  daesolver.configure(cursor);
+  daesolver.initialize(0,0.01,*X);
+  daesolver.solve(faultontime,maxsteps);
+
+  // Fault-on solve
+  maxsteps = 10000;
+  daesolver.initialize(faultontime,0.01,*X);
+  daesolver.solve(faultofftime,maxsteps);
+
+  // Post-fault solve
+  maxsteps = 10000;
+  daesolver.initialize(faultofftime,0.01,*X);
+  daesolver.solve(tmax,maxsteps);
 
   timer->stop(t_setup);
   timer->stop(t_total);
