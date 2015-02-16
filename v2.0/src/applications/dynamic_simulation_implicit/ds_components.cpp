@@ -325,24 +325,32 @@ bool gridpack::dsimplicit::DSBus::matrixDiagValues(ComplexType *values)
      delta_idx       = 2 + 2*ctr;
      dw_idx          = 2 + 2*ctr + 1;
      
+     if(p_mode == FAULT_EVAL) {
+       values[delta_col_start+delta_idx] = 1.0;
+       values[dw_col_start+dw_idx]       = 1.0;
+
+       // Partials of generator current injections into the network w.r.t VD, VQ
+       values[VD_col_start + VD_idx] +=  1/p_Xdp[i];
+       values[VQ_col_start + VQ_idx] +=  -1/p_Xdp[i];
+     } else {
      // Partials of generator equations w.r.t generator variables
-     values[delta_col_start+delta_idx] = -p_TSshift; 
-     values[dw_col_start+delta_idx]    = 1.0/p_ws;
-     values[delta_col_start+dw_idx]    = (-p_VD*p_Ep[i]*cos(p_delta[i])/p_Xdp[i] - p_VQ*p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
-     values[dw_col_start+dw_idx]       = -p_TSshift - p_D[i]/(2*p_H[i]);
-     
-     // Partials of generator equations w.r.t VD, VQ
-     values[VD_col_start+dw_idx] = (-p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
-     values[VQ_col_start+dw_idx] = (p_Ep[i]*cos(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
-     
-     // Partials of generator current injections into the network w.r.t generator variables
-     values[delta_col_start + VD_idx] = p_Ep[i]*sin(p_delta[i])/p_Xdp[i];
-     values[delta_col_start + VQ_idx] = p_Ep[i]*cos(p_delta[i])/p_Xdp[i];
-     
-     // Partials of generator current injections into the network w.r.t VD, VQ
-     values[VD_col_start + VD_idx] +=  1/p_Xdp[i];
-     values[VQ_col_start + VQ_idx] +=  -1/p_Xdp[i];
-     
+       values[delta_col_start+delta_idx] = -p_TSshift; 
+       values[dw_col_start+delta_idx]    = 1.0/p_ws;
+       values[delta_col_start+dw_idx]    = (-p_VD*p_Ep[i]*cos(p_delta[i])/p_Xdp[i] - p_VQ*p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
+       values[dw_col_start+dw_idx]       = -p_TSshift - p_D[i]/(2*p_H[i]);
+       
+       // Partials of generator equations w.r.t VD, VQ
+       values[VD_col_start+dw_idx] = (-p_Ep[i]*sin(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
+       values[VQ_col_start+dw_idx] = (p_Ep[i]*cos(p_delta[i])/p_Xdp[i])/(2*p_H[i]);
+       
+       // Partials of generator current injections into the network w.r.t generator variables
+       values[delta_col_start + VD_idx] = p_Ep[i]*sin(p_delta[i])/p_Xdp[i];
+       values[delta_col_start + VQ_idx] = p_Ep[i]*cos(p_delta[i])/p_Xdp[i];
+       
+       // Partials of generator current injections into the network w.r.t VD, VQ
+       values[VD_col_start + VD_idx] +=  1/p_Xdp[i];
+       values[VQ_col_start + VQ_idx] +=  -1/p_Xdp[i];
+     }
      ctr += 2;
    }
  }
@@ -387,7 +395,7 @@ bool gridpack::dsimplicit::DSBus::vectorValues(ComplexType *values)
 	}
       }
     } 
-  } else if(p_mode == RESIDUAL_EVAL) { /* Values go in F */
+  } else if(p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) { /* Values go in F */
     int i;
     int VD_idx=0; // Location of VD in the solution vector for this bus
     int VQ_idx=1; // Location of VQ in the solution vector for this bus
@@ -461,10 +469,14 @@ bool gridpack::dsimplicit::DSBus::vectorValues(ComplexType *values)
 	delta_idx       = 2 + 2*ctr;
 	dw_idx          = 2 + 2*ctr + 1;
 	
-	// Generator equations
-	values[delta_idx] = p_dw[i]/p_ws - p_deltadot[i];
-	values[dw_idx]    = (p_Pm[i] - p_VD*p_Ep[i]*sin(p_delta[i])/p_Xdp[i] + p_VQ*p_Ep[i]*cos(p_delta[i])/p_Xdp[i] - p_D[i]*p_dw[i])/(2*p_H[i]) - p_dwdot[i];
-	
+	if(p_mode == FAULT_EVAL) {
+	  values[delta_idx] = values[dw_idx] = 0.0;
+	} else {
+	  // Generator equations
+	  values[delta_idx] = p_dw[i]/p_ws - p_deltadot[i];
+	  values[dw_idx]    = (p_Pm[i] - p_VD*p_Ep[i]*sin(p_delta[i])/p_Xdp[i] + p_VQ*p_Ep[i]*cos(p_delta[i])/p_Xdp[i] - p_D[i]*p_dw[i])/(2*p_H[i]) - p_dwdot[i];
+	}
+
 	// Generator current injections in the network
 	IgenD += (-p_VQ + p_Ep[i]*sin(p_delta[i]))/p_Xdp[i];
 	IgenQ += (p_VD - p_Ep[i]*cos(p_delta[i]))/p_Xdp[i];
@@ -727,7 +739,7 @@ bool gridpack::dsimplicit::DSBranch::matrixForwardValues(ComplexType *values)
   bust->getNvar(&nvart);
 
   values[0] = values[1] = values[2] = values[3] = 0.0;
-  if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL) {
+  if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) {
     for(i=0; i < p_nparlines;i++) {
       if(p_status[i]) {
 	values[0]       += -p_Bft[i];
@@ -755,7 +767,7 @@ bool gridpack::dsimplicit::DSBranch::matrixReverseValues(ComplexType *values)
   bust->getNvar(&nvart);
 
 
-  if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL) {
+  if(p_mode == INIT_X || p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) {
     for(i=0; i < p_nparlines;i++) {
       if(p_status[i]) {
 	values[0]       += -p_Btf[i];

@@ -26,7 +26,7 @@
 namespace gridpack {
 namespace dsimplicit {
 
-enum DSMode{INIT_X,RESIDUAL_EVAL,XVECTOBUS,XDOTVECTOBUS};
+  enum DSMode{INIT_X,RESIDUAL_EVAL,XVECTOBUS,XDOTVECTOBUS,FAULT_EVAL};
 
 class DSBus
   : public gridpack::component::BaseBusComponent {
@@ -136,6 +136,15 @@ class DSBus
   int getXCBufSize(void);
 
   void setXCBuf(void*);
+
+  /*
+    Add Bus shunts
+  */
+  void addBusShunt(double Gs,double Bs)
+  {
+    p_gl += Gs;
+    p_bl += Bs;
+  }
   private:
   // Anything declared here should be set in the Archive class in exactly the same order!!
   // Data needed for calculations

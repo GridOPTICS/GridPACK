@@ -8,6 +8,8 @@
     <faultbus>9</faultbus>
     <faultontime>0.1</faultofftime>
     <faultofftime>0.3</faultofftime>
+    <Gfault>0.0</Gfault>
+    <Bfault>99999</Bfault>
     <DAESolver>
       <PETScOptions>
 	-ts_type cn

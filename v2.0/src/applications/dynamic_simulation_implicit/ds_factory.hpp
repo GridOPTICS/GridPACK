@@ -49,6 +49,12 @@ class DSFactory
    * Set the shift value provided by TS onto bus components 
    */
   void setTSshift(double);
+
+  /**
+   * Insert fault impedance 
+   */
+  void setfault(int,double,double);
+
   private:
   // NetworkPtr is a typedef for boost::shared_ptr<_network> defined in base_factory.hpp
     NetworkPtr p_network;

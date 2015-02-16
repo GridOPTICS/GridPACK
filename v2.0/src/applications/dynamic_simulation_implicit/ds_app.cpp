@@ -46,13 +46,38 @@ public:
     p_VecMapper(VecMapper), 
     p_MatMapper(MatMapper),
     p_localsize(localsize)
-  {}
+  {
+    J = p_MatMapper.mapToMatrix();
+  }
 
   // Destructor
   ~DSProblem(void)
   {}
 
-  /// Build a Jacobian
+  // A place to build/store the Jacobian
+  // We should be able to reuse the Jacobian created for DAESolve.
+  // Need to somehow eliminate the need for creating this second Jacobian.
+  // The nonlinear solver interface needs to be changed.
+  boost::shared_ptr<gridpack::math::Matrix> J;
+
+  // Build the Jacobian for the nonlinear solver at tfaulton or tfaultoff
+  void
+  operator() (const gridpack::math::Vector& X,gridpack::math::Matrix& J)
+  {
+    // Push current values in X vector back into network components
+    p_factory.setMode(XVECTOBUS);
+    p_VecMapper.mapToBus(X);
+
+    // Update ghost buses
+    p_network->updateBuses();
+
+    // Evaluate the fault residual Jacobian
+    p_factory.setMode(FAULT_EVAL);
+    p_MatMapper.mapToMatrix(J);
+    
+  }
+
+  /// Build the DAE Jacobian
   void operator() (const double& time, 
 		   const gridpack::math::Vector& X, 
 		   const gridpack::math::Vector& Xdot, 
@@ -62,20 +87,40 @@ public:
     // Push current values in X vector back into network components
     p_factory.setMode(XVECTOBUS);
     p_VecMapper.mapToBus(X);
-    p_factory.setMode(XDOTVECTOBUS);
+
     // Push current values in Xdot vector back into network components
+    p_factory.setMode(XDOTVECTOBUS);
     p_VecMapper.mapToBus(Xdot);
 
     // Update ghost buses
     p_network->updateBuses();
 
-    // Evaluate the residual f(x) - xdot
+    // Evaluate the DAE Jacobian
     p_factory.setMode(RESIDUAL_EVAL);
     p_MatMapper.mapToMatrix(J);
     //    J.print();
   }
 
-  /// Build the RHS function
+  // Build the residual for the nonlinear solver at tfaulton and tfaultoff
+  void
+  operator() (const gridpack::math::Vector& X, gridpack::math::Vector& F)
+  {
+    // Push current values in X vector back into network components
+    p_factory.setMode(XVECTOBUS);
+    p_VecMapper.mapToBus(X);
+
+    // Update ghost buses
+    p_network->updateBuses();
+
+    // Evaluate the residual f(x) - xdot
+    p_factory.setMode(FAULT_EVAL);
+    p_VecMapper.mapToVector(F);
+    F.ready();
+    //    F.print();
+  }
+
+
+  /// Build the DAE RHS function
   void operator() (const double& time, 
 		   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
 		   gridpack::math::Vector& F)
@@ -83,8 +128,9 @@ public:
     // Push current values in X vector back into network components
     p_factory.setMode(XVECTOBUS);
     p_VecMapper.mapToBus(X);
-    p_factory.setMode(XDOTVECTOBUS);
+
     // Push current values in Xdot vector back into network components
+    p_factory.setMode(XDOTVECTOBUS);
     p_VecMapper.mapToBus(Xdot);
 
     // Update ghost buses
@@ -235,31 +281,56 @@ void gridpack::dsimplicit::DSApp::execute(int argc, char** argv)
   int maxsteps(10000);
   DSProblem dsprob(factory,network,VecMapper,MatMapper,lsize);
 
-  gridpack::math::DAEJacobianBuilder jbuilder = boost::ref(dsprob);
-  gridpack::math::DAEFunctionBuilder fbuilder = boost::ref(dsprob);
+  gridpack::math::DAEJacobianBuilder daejbuilder = boost::ref(dsprob);
+  gridpack::math::DAEFunctionBuilder daefbuilder = boost::ref(dsprob);
 
-  gridpack::math::DAESolver daesolver(world, lsize, jbuilder, fbuilder);
+  gridpack::math::DAESolver daesolver(world, lsize, daejbuilder, daefbuilder);
 
   // Get simulation time length
   double tmax;
   cursor->get("simulationTime",&tmax);
 
   // Read fault parameters
-  double faultontime(0.1),faultofftime(0.2),faultbus(9);
+  double faultontime(0.1),faultofftime(0.2);
+  int    faultbus(9);
+  double Gfault(0.0),Bfault(0.0);
   cursor->get("faultontime",&faultontime);
   cursor->get("faultofftime",&faultofftime);
+  cursor->get("faultbus",&faultbus);
+  cursor->get("Gfault",&Gfault);
+  cursor->get("Bfault",&Bfault);
 
-  // Pre-fault solve
+  // Create nonlinear solver for solving the algebraic equations at fault-on/fault-off time instants
+  math::JacobianBuilder jbuildf = boost::ref(dsprob);
+  math::FunctionBuilder fbuildf = boost::ref(dsprob);
+
+  boost::scoped_ptr<gridpack::math::NonlinearSolverInterface> nlsolver;
+  nlsolver.reset(new gridpack::math::NonlinearSolver(*(dsprob.J),jbuildf,fbuildf));
+  nlsolver->configure(cursor);
+	      
+  // Pre-fault time-stepping
   daesolver.configure(cursor);
   daesolver.initialize(0,0.01,*X);
   daesolver.solve(faultontime,maxsteps);
 
-  // Fault-on solve
+  // Set fault
+  printf("Applying a fault on bus %d at t = %3.2f\n",faultbus,faultontime);
+  factory.setfault(faultbus,-Gfault,-Bfault);
+  // Solve algebraic fault-on equations
+  nlsolver->solve(*X);
+
+  // Fault-on time-stepping
   maxsteps = 10000;
   daesolver.initialize(faultontime,0.01,*X);
   daesolver.solve(faultofftime,maxsteps);
 
-  // Post-fault solve
+  // Remove fault
+  printf("Removing fault on bus %d at t = %3.2f\n",faultbus,faultontime);
+  factory.setfault(faultbus,Gfault,Bfault);
+  // Solve algebraic fault-on equations
+  nlsolver->solve(*X);
+
+  // Post-fault time-stepping
   maxsteps = 10000;
   daesolver.initialize(faultofftime,0.01,*X);
   daesolver.solve(tmax,maxsteps);
