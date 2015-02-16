@@ -1,8 +1,11 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Dynamic_simulation>
-    <networkConfiguration> case9.raw </networkConfiguration>
+<!--    <networkConfiguration> case9.raw </networkConfiguration>
     <generatorParameters>case9_classical.dyr</generatorParameters>
+-->
+    <networkConfiguration> IEEE_145bus_v23_PSLF.raw </networkConfiguration>
+    <generatorParameters>IEEE_145b_classical_model.dyr</generatorParameters>
     <simulationTime>2.0</simulationTime>
     <timeStep>0.01</timeStep>
     <faultbus>9</faultbus>

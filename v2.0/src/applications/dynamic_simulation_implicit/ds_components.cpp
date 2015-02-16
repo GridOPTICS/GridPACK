@@ -414,6 +414,7 @@ bool gridpack::dsimplicit::DSBus::vectorValues(ComplexType *values)
     gridpack::component::BaseBusComponent::getNeighborBranches(branches);
     // Number of branches connected to this
     int nconnbranch = branches.size();
+    //    printf("Nconnbranch = %d\n",nconnbranch);
     double IbrD=0.0,IbrQ=0.0;
     for(i=0; i < nconnbranch; i++) {
       gridpack::dsimplicit::DSBranch *branch = dynamic_cast<gridpack::dsimplicit::DSBranch*>(branches[i].get());
@@ -484,8 +485,13 @@ bool gridpack::dsimplicit::DSBus::vectorValues(ComplexType *values)
 	ctr += 2;
       }
     }
+
     values[VD_idx] = IgenQ - IshuntQ - IbrQ - IloadQ;
     values[VQ_idx] = IgenD - IshuntD - IbrD - IloadD;
+
+    //    printf("Bus %d:misQ = %4.3f  IgenQ = %4.3f  IshuntQ = %4.3f  IbrQ = %4.3f  IloadQ = %4.3f\n",getOriginalIndex(),real(values[VD_idx]),IgenQ,IshuntQ,IbrQ,IloadQ);
+    //    printf("Bus %d:misD = %4.3f  IgenD = %4.3f  IshuntD = %4.3f  IbrD = %4.3f  IloadD = %4.3f\n",getOriginalIndex(),real(values[VQ_idx]),IgenD,IshuntD,IbrD,IloadD);
+
   }
   return true;
 }

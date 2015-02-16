@@ -140,7 +140,7 @@ public:
     p_factory.setMode(RESIDUAL_EVAL);
     p_VecMapper.mapToVector(F);
     F.ready();
-    //    F.print();
+    //F.print();
   }
 };
 
@@ -253,13 +253,15 @@ void gridpack::dsimplicit::DSApp::execute(int argc, char** argv)
 #if DEBUG
   X->print();
 
-  //  boost::shared_ptr<gridpack::math::Matrix> J = MatMapper.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Vector> R = VecMapper.mapToVector();
+  boost::shared_ptr<gridpack::math::Matrix> J = MatMapper.mapToMatrix();
   factory.setMode(RESIDUAL_EVAL);
   MatMapper.mapToMatrix(J);
   R->zero();
   VecMapper.mapToVector(R);
-  R->print();
-  J->print();
+  //  R->print();
+  //  J->print();
+  exit(1);
 #endif
   timer->stop(t_createMatVec);
 
