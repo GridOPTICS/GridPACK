@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <State_estimation>
+    <networkConfiguration> IEEE14.raw </networkConfiguration>
+    <measurementList>IEEE14_meas.xml</measurementList>
+    <!--
+    <LinearSolver>
+      <SolutionTolerance>1.0E-30</SolutionTolerance>
+      <RelativeTolerance>1.0E-6</RelativeTolerance>
+      <MaxIterations>10</MaxIterations>
+      <PETScOptions>
+        -ksp_monitor
+        -ksp_view
+        -ksp_divtol 1.0E06
+      </PETScOptions>
+    </LinearSolver>
+    -->
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </State_estimation>
+</Configuration>

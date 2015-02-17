@@ -94,7 +94,7 @@ function(gridpack_setup)
   )
 
   find_library(GRIDPACK_STATE_ESTIMATION_MODULE_LIBRARY
-    NAMES gridpack_dynamic_simulation_module
+    NAMES gridpack_state_estimation_module
     HINTS ${GRIDPACK_LIB_DIR}
   )
 

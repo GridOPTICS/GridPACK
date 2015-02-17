@@ -135,8 +135,8 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   p_network->partition();
 
   // Create serial IO object to export data from buses or branches
-  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(2048, p_network));
-  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(128, p_network));
+  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(1024, p_network));
+  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(1024, p_network));
 }
 
 /**
