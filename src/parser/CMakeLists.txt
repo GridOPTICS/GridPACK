@@ -73,7 +73,8 @@ add_custom_target(test_parser_input
 add_dependencies(parser_test test_parser_input)
 #add_dependencies(PTI23_test test_parser_input)
 
-add_test(parser_test hash_distr_test)
+add_test(parser_test parser_test)
+add_test(hash_distr_test hash_distr_test)
 
 
 #!!add_test(NAME greetings_parallel COMMAND 
