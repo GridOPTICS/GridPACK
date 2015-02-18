@@ -495,7 +495,32 @@ void gridpack::state_estimation::SEBus::addMeasurement(
     gridpack::state_estimation::Measurement measurement)
 {
   p_meas.push_back(measurement);
-  //TODO: Implement this method
+}
+
+/**
+ * Sort measurements so that they are in a consistent order
+ */
+void gridpack::state_estimation::SEBus::sortMeasurements(void)
+{
+  // Use a multi-map to create an ordered list of measurements
+  std::multimap<std::string,gridpack::state_estimation::Measurement> map;
+  int nsize = p_meas.size();
+  int i;
+  char sbuf[32];
+  for (i=0; i<nsize; i++) {
+    // Create a unique (hopefully) key for each measurement
+    sprintf(sbuf,"%s%s%f",p_meas[i].p_type,p_meas[i].p_ckt,p_meas[i].p_value);
+    std::string key = sbuf;
+    map.insert(std::pair<std::string,
+        gridpack::state_estimation::Measurement>(key,p_meas[i]));
+  }
+  p_meas.clear();
+  std::multimap<std::string,gridpack::state_estimation::Measurement>::iterator it;
+  it = map.begin();
+  while (it != map.end()) {
+    p_meas.push_back(it->second);
+    it++;
+  }
 }
 
 /**
@@ -1377,7 +1402,32 @@ void gridpack::state_estimation::SEBranch::addMeasurement(
     gridpack::state_estimation::Measurement measurement)
 {
   p_meas.push_back(measurement);
-  //TODO: Implement this method
+}
+
+/**
+ * Sort measurements so that they are in a consistent order
+ */
+void gridpack::state_estimation::SEBranch::sortMeasurements(void)
+{
+  // Use a multi-map to create an ordered list of measurements
+  std::multimap<std::string,gridpack::state_estimation::Measurement> map;
+  int nsize = p_meas.size();
+  int i;
+  char sbuf[32];
+  for (i=0; i<nsize; i++) {
+    // Create a unique (hopefully) key for each measurement
+    sprintf(sbuf,"%s%s%f",p_meas[i].p_type,p_meas[i].p_ckt,p_meas[i].p_value);
+    std::string key = sbuf;
+    map.insert(std::pair<std::string,
+        gridpack::state_estimation::Measurement>(key,p_meas[i]));
+  }
+  p_meas.clear();
+  std::multimap<std::string,gridpack::state_estimation::Measurement>::iterator it;
+  it = map.begin();
+  while (it != map.end()) {
+    p_meas.push_back(it->second);
+    it++;
+  }
 }
 
 /**
