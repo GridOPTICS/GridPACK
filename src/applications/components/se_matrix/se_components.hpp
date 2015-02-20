@@ -219,6 +219,11 @@ class SEBus
     void addMeasurement(Measurement measurement);
 
     /**
+     * Sort measurements so that they are in a consistent order
+     */
+    void sortMeasurements(void);
+
+    /**
      * Return number of rows in matrix from component
      * @return number of rows from component
      */
@@ -454,6 +459,11 @@ class SEBranch
      * internal paramters
      */
     void addMeasurement(Measurement measurement);
+
+    /**
+     * Sort measurements so that they are in a consistent order
+     */
+    void sortMeasurements(void);
 
     /**
      * Return contribution to constraints
