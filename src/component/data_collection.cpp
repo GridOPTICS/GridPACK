@@ -765,7 +765,7 @@ void gridpack::component::DataCollection::dump(void)
 #ifdef OLD_MAP
   std::map<std::string, int>::iterator int_it;
 #else
-  boost::unordered_map<std::string, int>::iterator it;
+  boost::unordered_map<std::string, int>::iterator int_it;
 #endif
   int_it = p_ints.begin();
   int i = 0;
@@ -779,7 +779,7 @@ void gridpack::component::DataCollection::dump(void)
 #ifdef OLD_MAP
   std::map<std::string, long>::iterator long_it;
 #else
-  boost::unordered_map<std::string, long>::iterator it;
+  boost::unordered_map<std::string, long>::iterator long_it;
 #endif
   long_it = p_longs.begin();
   while (long_it != p_longs.end()) {
@@ -792,7 +792,7 @@ void gridpack::component::DataCollection::dump(void)
 #ifdef OLD_MAP
   std::map<std::string, bool>::iterator bool_it;
 #else
-  boost::unordered_map<std::string, bool>::iterator it;
+  boost::unordered_map<std::string, bool>::iterator bool_it;
 #endif
   bool_it = p_bools.begin();
   while (bool_it != p_bools.end()) {
@@ -805,7 +805,7 @@ void gridpack::component::DataCollection::dump(void)
 #ifdef OLD_MAP
   std::map<std::string, std::string>::iterator str_it;
 #else
-  boost::unordered_map<std::string, std::string>::iterator it;
+  boost::unordered_map<std::string, std::string>::iterator str_it;
 #endif
   str_it = p_strings.begin();
   while (str_it != p_strings.end()) {
@@ -818,7 +818,7 @@ void gridpack::component::DataCollection::dump(void)
 #ifdef OLD_MAP
   std::map<std::string, float>::iterator flt_it;
 #else
-  boost::unordered_map<std::string, float>::iterator it;
+  boost::unordered_map<std::string, float>::iterator flt_it;
 #endif
   flt_it = p_floats.begin();
   while (flt_it != p_floats.end()) {
@@ -831,7 +831,7 @@ void gridpack::component::DataCollection::dump(void)
 #ifdef OLD_MAP
   std::map<std::string, double>::iterator dbl_it;
 #else
-  boost::unordered_map<std::string, double>::iterator it;
+  boost::unordered_map<std::string, double>::iterator dbl_it;
 #endif
   dbl_it = p_doubles.begin();
   while (dbl_it != p_doubles.end()) {
@@ -844,7 +844,7 @@ void gridpack::component::DataCollection::dump(void)
 #ifdef OLD_MAP
   std::map<std::string, gridpack::ComplexType>::iterator cmplx_it;
 #else
-  boost::unordered_map<std::string, gridpack::ComplexType>::iterator it;
+  boost::unordered_map<std::string, gridpack::ComplexType>::iterator cmplx_it;
 #endif
   cmplx_it = p_complexType.begin();
   while (cmplx_it != p_complexType.end()) {

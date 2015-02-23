@@ -124,8 +124,8 @@ private:
       & p_originalBusIndex
       & p_globalBusIndex
       & p_branchNeighbors
-      & p_bus
-      & p_data
+      & *p_bus
+      & *p_data
       & p_refFlag;
   }
 
@@ -237,8 +237,8 @@ private:
       & p_globalBusIndex2
       & p_localBusIndex1
       & p_localBusIndex2
-      & p_branch
-      & p_data;
+      & *p_branch
+      & *p_data;
   }
 
 };
