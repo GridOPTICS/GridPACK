@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-02-09 15:31:17 d3g096
+ * @date   2015-02-18 09:27:59 d3g096
  * 
  * @brief  
  * 
@@ -22,6 +22,7 @@
 
 #include <petscmat.h>
 #include "petsc_exception.hpp"
+#include "petsc_types.hpp"
 #include "matrix_implementation.hpp"
 #include "petsc_matrix_wrapper.hpp"
 #include "value_transfer.hpp"
@@ -46,12 +47,28 @@ public:
   typedef typename MatrixImplementation<T, I>::TheType TheType;
   typedef typename MatrixImplementation<T, I>::IdxType IdxType;
 
+  /// A flag to denote whether the library can be used directly
+  /**
+   * Some operations can be passed directly to the underlying library
+   * if the TheType is the same as the PETSc type @e or the PETSc type
+   * is complex.  This type computes and stores that flag. 
+   * 
+   */
+  static const bool useLibrary = UsePetscLibrary<TheType>::value;
+
+  /// The number of library elements used to represent a single vector element
+  static const unsigned int elementSize = PetscElementSize<TheType>::value;
+  
+
   /// Default constructor
   PETScMatrixImplementation(const parallel::Communicator& comm,
                             const IdxType& local_rows, const IdxType& local_cols,
                             const bool& dense = false)
     : MatrixImplementation<T, I>(comm),
-      p_mwrap(comm, local_rows, local_cols, dense)
+      p_mwrap(new PetscMatrixWrapper(comm, 
+                                     local_rows*elementSize, 
+                                     local_cols*elementSize, 
+                                     dense))
   {
   }
 
@@ -60,7 +77,10 @@ public:
                             const IdxType& local_rows, const IdxType& local_cols,
                             const IdxType& max_nonzero_per_row)
     : MatrixImplementation<T, I>(comm),
-      p_mwrap(comm, local_rows, local_cols, max_nonzero_per_row)
+      p_mwrap(new PetscMatrixWrapper(comm, 
+                                     local_rows*elementSize, 
+                                     local_cols*elementSize, 
+                                     max_nonzero_per_row))
   {
   }
 
@@ -68,15 +88,31 @@ public:
   PETScMatrixImplementation(const parallel::Communicator& comm,
                             const IdxType& local_rows, const IdxType& local_cols,
                             const IdxType *nonzeros_by_row)
-    : MatrixImplementation<T, I>(comm),
-      p_mwrap(comm, local_rows, local_cols, nonzeros_by_row)
+    : MatrixImplementation<T, I>(comm)
   {
+    if (elementSize > 1) {
+      std::vector<IdxType> tmp(local_rows*elementSize);
+      for (unsigned int i = 0; i < tmp.size(); i += elementSize) {
+        tmp[i] = nonzeros_by_row[i];
+        tmp[i+1] = nonzeros_by_row[i];
+      }
+      p_mwrap.reset(new PetscMatrixWrapper(comm, 
+                                           local_rows*elementSize, 
+                                           local_cols*elementSize, 
+                                           &tmp[0]));
+    } else {
+      p_mwrap.reset(new PetscMatrixWrapper(comm, 
+                                           local_rows*elementSize, 
+                                           local_cols*elementSize, 
+                                           nonzeros_by_row));
+    }
+                    
   }
 
   /// Make a new instance from an existing PETSc matrix
   PETScMatrixImplementation(Mat& m, const bool& copyMat = true)
     : MatrixImplementation<T, I>(PetscMatrixWrapper::getCommunicator(m)),
-      p_mwrap(m, copyMat)
+      p_mwrap(new PetscMatrixWrapper(m, copyMat))
   {
   }
 
@@ -88,51 +124,51 @@ public:
   /// Get the PETSc matrix
   Mat *get_matrix(void)
   {
-    return p_mwrap.getMatrix();
+    return p_mwrap->getMatrix();
   }
 
   /// Get the PETSc matrix (const version)
   const Mat *get_matrix(void) const
   {
-    return p_mwrap.getMatrix();
+    return p_mwrap->getMatrix();
   }
 
 protected:
 
   /// The actual PETSc matrix to be used
-  PetscMatrixWrapper p_mwrap;
+  boost::scoped_ptr<PetscMatrixWrapper> p_mwrap;
 
   /// Get the global index range of the locally owned rows (specialized)
   void p_localRowRange(IdxType& lo, IdxType& hi) const
   {
     PetscInt plo, phi;
-    p_mwrap.localRowRange(plo, phi);
-    lo = plo;
-    hi = phi;
+    p_mwrap->localRowRange(plo, phi);
+    lo = plo/elementSize;
+    hi = phi/elementSize;
   }
 
   /// Get the total number of rows in this matrix (specialized)
   IdxType p_rows(void) const
   {
-    return p_mwrap.rows();
+    return p_mwrap->rows()/elementSize;
   }
 
   /// Get the number of local rows in this matirx (specialized)
   IdxType p_localRows(void) const
   {
-    return p_mwrap.localRows();
+    return p_mwrap->localRows()/elementSize;
   }
 
   /// Get the number of columns in this matrix (specialized)
   IdxType p_cols(void) const
   {
-    return p_mwrap.cols();
+    return p_mwrap->cols()/elementSize;
   }
 
   /// Get the number of local rows in this matirx (specialized)
   IdxType p_localCols(void) const
   {
-    return p_mwrap.localCols();
+    return p_mwrap->localCols()/elementSize;
   }
 
   /// Set an individual element
@@ -140,8 +176,9 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      Mat *mat = p_mwrap.getMatrix();
-      PetscScalar px = x;
+      Mat *mat = p_mwrap->getMatrix();
+      PetscScalar px = 
+        gridpack::math::equate<PetscScalar, TheType>(x);
       ierr = MatSetValue(*mat, i, j, px, INSERT_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
@@ -162,8 +199,9 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      Mat *mat = p_mwrap.getMatrix();
-      PetscScalar px = x;
+      Mat *mat = p_mwrap->getMatrix();
+      PetscScalar px =
+        gridpack::math::equate<PetscScalar, TheType>(x);
       ierr = MatSetValue(*mat, i, j, px, ADD_VALUES); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
@@ -184,7 +222,7 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      const Mat *mat = p_mwrap.getMatrix();
+      const Mat *mat = p_mwrap->getMatrix();
       static const PETScMatrixImplementation::IdxType one(1);
       PetscInt iidx[one] = { i };
       PetscInt jidx[one] = { j };
@@ -210,74 +248,74 @@ protected:
   /// Replace all elements with their real parts
   void p_real(void)
   {
-    p_mwrap.real();
+    p_mwrap->real();
   }
 
   /// Replace all elements with their imaginary parts
   void p_imaginary(void)
   {
-    p_mwrap.imaginary();
+    p_mwrap->imaginary();
   }
 
   /// Replace all elements with their complex gradient
   void p_conjugate(void)
   {
-    p_mwrap.conjugate();
+    p_mwrap->conjugate();
   }
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
   double p_norm2(void) const
   {
-    return p_mwrap.norm2();
+    return p_mwrap->norm2();
   }
 
   /// Make this instance ready to use
   void p_ready(void)
   {
-    p_mwrap.ready();
+    p_mwrap->ready();
   }
 
   /// Print to named file or standard output
   void p_print(const char* filename = NULL) const
   {
-    p_mwrap.print(filename);
+    p_mwrap->print(filename);
   }
 
   /// Save, in MatLAB format, to named file (collective)
   void p_save(const char *filename) const
   {
-    p_mwrap.save(filename);
+    p_mwrap->save(filename);
   }
 
   /// Load from a named file of whatever binary format the math library uses
   void p_loadBinary(const char *filename)
   {
-    p_mwrap.loadBinary(filename);
+    p_mwrap->loadBinary(filename);
   }
 
   /// Save to named file in whatever binary format the math library uses
   void p_saveBinary(const char *filename) const
   {
-    p_mwrap.saveBinary(filename);
+    p_mwrap->saveBinary(filename);
   }
 
   /// Allow visits by implementation visitors
   void p_accept(ImplementationVisitor& visitor)
   {
-    p_mwrap.accept(visitor);
+    p_mwrap->accept(visitor);
   }
 
   /// Allow visits by implementation visitors
   void p_accept(ConstImplementationVisitor& visitor) const
   {
-    p_mwrap.accept(visitor);
+    p_mwrap->accept(visitor);
   }
 
   /// Make an exact replica of this instance (specialized)
   MatrixImplementation<T, I> *p_clone(void) const
   {
     PETScMatrixImplementation<T, I> *result =
-      new PETScMatrixImplementation<T, I>(*(const_cast<Mat*>(p_mwrap.getMatrix())), true);
+      new PETScMatrixImplementation<T, I>(*(const_cast<Mat*>(p_mwrap->getMatrix())), true);
     return result;
   }
 

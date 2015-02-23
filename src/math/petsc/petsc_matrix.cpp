@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-02-09 15:41:36 d3g096
+ * @date   2015-02-17 14:55:27 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -19,6 +19,7 @@
 #include "boost/assert.hpp"
 #include "boost/format.hpp"
 #include "matrix.hpp"
+#include "complex_operators.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
@@ -164,7 +165,8 @@ MatrixT<T, I>::scale(const MatrixT<T, I>::TheType& xin)
   PetscErrorCode ierr(0);
   
   try {
-    PetscScalar x(xin);
+    PetscScalar x = 
+      gridpack::math::equate<PetscScalar, TheType>(xin);
     ierr = MatScale(*pA, x); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);

@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2015-01-27 08:19:41 d3g096
+ * @date   2015-02-18 08:19:20 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -115,7 +115,7 @@ template <typename T, typename I>
 void
 VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
 {
-  if (PETScVectorImplementation<T, I>::useLibrary::value) {
+  if (PETScVectorImplementation<T, I>::useLibrary) {
     Vec *vec(PETScVector(*this));
     PetscErrorCode ierr(0);
     try {
@@ -175,7 +175,7 @@ VectorT<T, I>::elementMultiply(const VectorT<T, I>& x)
   const Vec *xvec(PETScVector(x));
   PetscErrorCode ierr(0);
   try {
-    if (PETScVectorImplementation<T, I>::useLibrary::value) {
+    if (PETScVectorImplementation<T, I>::useLibrary) {
       ierr = VecPointwiseMult(*vec, *vec, *xvec); CHKERRXX(ierr);
     } else {
       multiplyvalue2<T> op;
@@ -201,7 +201,7 @@ VectorT<T, I>::elementDivide(const VectorT<T, I>& x)
   const Vec *xvec(PETScVector(x));
   PetscErrorCode ierr(0);
   try {
-    if (PETScVectorImplementation<T, I>::useLibrary::value) {
+    if (PETScVectorImplementation<T, I>::useLibrary) {
       ierr = VecPointwiseDivide(*vec, *vec, *xvec); CHKERRXX(ierr);
     } else {
       dividevalue2<T> op;

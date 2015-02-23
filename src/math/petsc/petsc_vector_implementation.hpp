@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-01-27 10:02:10 d3g096
+ * @date   2015-02-18 08:24:43 d3g096
  * 
  * @brief  
  * 
@@ -25,6 +25,7 @@
 #include "vector_implementation.hpp"
 #include "petsc/petsc_vector_wrapper.hpp"
 #include "petsc/petsc_exception.hpp"
+#include "petsc/petsc_types.hpp"
 
 namespace gridpack {
 namespace math {
@@ -45,29 +46,17 @@ public:
   typedef typename VectorImplementation<T, I>::IdxType IdxType;
   typedef typename VectorImplementation<T, I>::TheType TheType;
 
-  /// A flag (type) to denote whether the library can be used
+  /// A flag to denote whether the library can be used directly
   /**
    * Some operations can be passed directly to the underlying library
    * if the TheType is the same as the PETSc type @e or the PETSc type
    * is complex.  This type computes and stores that flag. 
    * 
    */
-
-  typedef 
-  typename boost::mpl::bool_<
-    boost::is_same<TheType, PetscScalar>::value ||
-    boost::is_same<ComplexType, PetscScalar>::value
-  >::type useLibrary;
+  static const bool useLibrary = UsePetscLibrary<TheType>::value;
 
   /// The number of library elements used to represent a single vector element
-  static const unsigned int elementSize = 
-    boost::mpl::if_< useLibrary, 
-                     boost::mpl::int_<1>, 
-                     boost::mpl::int_<2> >::type::value;
-
-    // storage_size<TheType, PetscScalar>::value;
-
-
+  static const unsigned int elementSize = PetscElementSize<TheType>::value;
 
   /// Default constructor.
   /** 
@@ -258,7 +247,7 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      if (useLibrary::value) {
+      if (useLibrary) {
         Vec *v = p_vwrap.getVector();
         PetscScalar pv = 
           equate<PetscScalar, TheType>(value);
@@ -275,7 +264,7 @@ protected:
   /// Scale all elements by a single value
   void p_scale(const TheType& x)
   {
-    if (useLibrary::value) {
+    if (useLibrary) {
       Vec *vec = p_vwrap.getVector();
       PetscErrorCode ierr(0);
       try {
@@ -295,7 +284,7 @@ protected:
   double p_norm1(void) const
   {
     double result;
-    if (useLibrary::value) {
+    if (useLibrary) {
       result = p_vwrap.norm1();
     } else {
       BOOST_ASSERT(false);
@@ -307,7 +296,7 @@ protected:
   double p_norm2(void) const
   {
     double result;
-    if (useLibrary::value) {
+    if (useLibrary) {
       result = p_vwrap.norm2();
     } else {
       BOOST_ASSERT(false);
@@ -319,7 +308,7 @@ protected:
   double p_normInfinity(void) const
   {
     double result;
-    if (useLibrary::value) {
+    if (useLibrary) {
       result = p_vwrap.normInfinity();
     } else {
       BOOST_ASSERT(false);
@@ -330,7 +319,7 @@ protected:
   /// Replace all elements with its absolute value (specialized) 
   void p_abs(void)
   {
-    if (useLibrary::value) {
+    if (useLibrary) {
       p_vwrap.abs();
     } else {
       absvalue<TheType> op;
@@ -341,7 +330,7 @@ protected:
   /// Replace all elements with their complex conjugate
   void p_conjugate(void)
   {
-    if (useLibrary::value) {
+    if (useLibrary) {
       p_vwrap.conjugate();
     } else {
       conjugate_value<TheType> op;
@@ -352,7 +341,7 @@ protected:
   /// Replace all elements with its exponential (specialized)
   void p_exp(void)
   {
-    if (useLibrary::value) {
+    if (useLibrary) {
       p_vwrap.exp();
     } else {
       exponential<TheType> op;
@@ -363,7 +352,7 @@ protected:
   /// Replace all elements with its reciprocal (specialized)
   void p_reciprocal(void)
   {
-    if (useLibrary::value) {
+    if (useLibrary) {
       p_vwrap.reciprocal();
     } else {
       reciprocal<TheType> op;
