@@ -402,6 +402,40 @@ class BaseFactory {
       }
     }
 
+    /**
+     * Debugging call that will dump contents of DataCollection objects on each
+     * bus and branch. This call will attempt to guarantee that output is
+     * generated sequentially from each processor but this will probably fail
+     * because of IO buffering
+     */
+    void dumpData(void)
+    {
+      int i, iproc;
+      int numBus = p_network->numBuses();
+      int numBranch = p_network->numBranches();
+      // Write out data to buses
+      int nprocs = p_network->communicator().size();
+      int me = p_network->communicator().rank();
+      for (iproc = 0; iproc<nprocs; iproc++) {
+        if (iproc == me) {
+          for (i=0; i<numBus; i++) {
+            printf("p[%d] Printing data for bus %d\n",me,i);
+            p_network->getBusData(i)->dump();
+          }
+        }
+        GA_Sync();
+      }
+      for (iproc = 0; iproc<nprocs; iproc++) {
+        if (iproc == me) {
+          for (i=0; i<numBranch; i++) {
+            printf("p[%d] Printing data for branch %d\n",me,i);
+            p_network->getBranchData(i)->dump();
+          }
+        }
+        GA_Sync();
+      }
+    }
+
   protected:
 
     NetworkPtr p_network;

@@ -725,7 +725,8 @@ void run (const int &me, const int &nprocs)
       idx = network->getGlobalBusIndex(i);
       int rows[nvals];
       int cols[nvals];
-      gridpack::ComplexType values[nvals];
+      gridpack::ComplexType *values;
+      values = new gridpack::ComplexType[nvals];
       icnt = 0;
       std::vector<int> nghbrs = network->getConnectedBranches(i);
       for (j=0; j<nghbrs.size(); j++) {
@@ -743,6 +744,7 @@ void run (const int &me, const int &nprocs)
           }
         }
       }
+      delete [] values;
       G->getElement(im,im,v);
       if (v != static_cast<gridpack::ComplexType>(idx)) {
          chk = 1;
