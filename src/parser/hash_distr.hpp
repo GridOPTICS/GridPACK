@@ -22,7 +22,7 @@
 #ifndef _hash_distr_hpp_
 #define _hash_distr_hpp_
 
-#define SYSTOLIC
+//#define SYSTOLIC
 
 //#define HASH_WITH_MPI
 
@@ -385,7 +385,8 @@ public:
     GA_Allocate(g_numValues);
     GA_Zero(g_numValues);
     int r_offset[nprocs];
-    for (i=0; i<nprocs; i++) {
+    for (j=0; j<nprocs; j++) {
+      i = (j+me)%nprocs;
       if (destNum[i] > 0) {
         r_offset[i] = NGA_Read_inc(g_numValues,&i,destNum[i]);
       } else {
@@ -818,7 +819,8 @@ public:
     GA_Allocate(g_numValues);
     GA_Zero(g_numValues);
     int r_offset[nprocs];
-    for (i=0; i<nprocs; i++) {
+    for (j=0; j<nprocs; j++) {
+      i = (j+me)%nprocs;
       if (destNum[i] > 0) {
         r_offset[i] = NGA_Read_inc(g_numValues,&i,destNum[i]);
       } else {
@@ -1241,7 +1243,8 @@ public:
     GA_Allocate(g_numValues);
     GA_Zero(g_numValues);
     int r_offset[nprocs];
-    for (i=0; i<nprocs; i++) {
+    for (j=0; j<nprocs; j++) {
+      i = (j+me)%nprocs;
       if (destNum[i] > 0) {
         r_offset[i] = NGA_Read_inc(g_numValues,&i,destNum[i]);
       } else {
@@ -1689,7 +1692,8 @@ public:
     GA_Allocate(g_numValues);
     GA_Zero(g_numValues);
     int r_offset[nprocs];
-    for (i=0; i<nprocs; i++) {
+    for (j=0; j<nprocs; j++) {
+      i = (j+me)%nprocs;
       if (destNum[i] > 0) {
         r_offset[i] = NGA_Read_inc(g_numValues,&i,destNum[i]);
       } else {
