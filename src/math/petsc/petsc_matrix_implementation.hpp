@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-02-18 09:27:59 d3g096
+ * @date   2015-02-24 14:57:15 d3g096
  * 
  * @brief  
  * 
@@ -172,17 +172,34 @@ protected:
   }
 
   /// Set an individual element
-  void p_setElement(const IdxType& i, const IdxType& j, const TheType& x)
+  void p_setElement(const IdxType& i, const IdxType& j, const TheType& x, 
+                    InsertMode mode)
   {
     PetscErrorCode ierr(0);
     try {
       Mat *mat = p_mwrap->getMatrix();
-      PetscScalar px = 
-        gridpack::math::equate<PetscScalar, TheType>(x);
-      ierr = MatSetValue(*mat, i, j, px, INSERT_VALUES); CHKERRXX(ierr);
+      TheType tmp(x);
+      PetscScalar px[elementSize*elementSize];
+      MatrixValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      trans.go();
+      int n(elementSize);
+      PetscInt iidx[elementSize], jidx[elementSize];
+      for (int ii = 0; ii < elementSize; ++ii) {
+        iidx[ii] = i*elementSize + ii;
+      }
+      for (int jj = 0; jj < elementSize; ++jj) {
+        jidx[jj] = j*elementSize + jj;
+      }
+      ierr = MatSetValues(*mat, n, &iidx[0], n, &jidx[0], &px[0], mode); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
+  }
+
+
+  void p_setElement(const IdxType& i, const IdxType& j, const TheType& x)
+  {
+    p_setElement(i, j, x, INSERT_VALUES);
   }
 
   /// Set an several element
@@ -197,15 +214,7 @@ protected:
   /// Add to  an individual element
   void p_addElement(const IdxType& i, const IdxType& j, const TheType& x)
   {
-    PetscErrorCode ierr(0);
-    try {
-      Mat *mat = p_mwrap->getMatrix();
-      PetscScalar px =
-        gridpack::math::equate<PetscScalar, TheType>(x);
-      ierr = MatSetValue(*mat, i, j, px, ADD_VALUES); CHKERRXX(ierr);
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
-    }
+    p_setElement(i, j, x, ADD_VALUES);
   }
 
   /// Add to  an several element
@@ -222,14 +231,18 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      const Mat *mat = p_mwrap->getMatrix();
-      static const PETScMatrixImplementation::IdxType one(1);
-      PetscInt iidx[one] = { i };
-      PetscInt jidx[one] = { j };
-      PetscScalar px;
-      ierr = MatGetValues(*mat, one, &iidx[0], one, &jidx[0], &px); CHKERRXX(ierr);
-      // x = px;
-      ValueTransferFromLibrary<PetscScalar, TheType> trans(one, &px, &x);
+      Mat *mat = p_mwrap->getMatrix();
+      PetscScalar px[elementSize*elementSize];
+      int n(elementSize);
+      PetscInt iidx[elementSize], jidx[elementSize];
+      for (int ii = 0; ii < elementSize; ++ii) {
+        iidx[ii] = i*elementSize + ii;
+      }
+      for (int jj = 0; jj < elementSize; ++jj) {
+        jidx[jj] = j*elementSize + jj;
+      }
+      ierr = MatGetValues(*mat, n, &iidx[0], n, &jidx[0], &px[0]); CHKERRXX(ierr);
+      MatrixValueTransferFromLibrary<PetscScalar, TheType> trans(1, &px[0], &x);
       trans.go();
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);

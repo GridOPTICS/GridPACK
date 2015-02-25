@@ -10,7 +10,7 @@
 /**
  * @file   value_transfer.hpp
  * @author William A. Perkins
- * @date   2015-01-27 10:00:48 d3g096
+ * @date   2015-02-23 13:43:33 d3g096
  * 
  * @brief  
  * 
@@ -344,6 +344,143 @@ ValueTransferFromLibrary<ComplexType, RealType>::p_copy(void)
   }
 }
 
+
+// -------------------------------------------------------------
+//  class MatrixValueTransferToLibrary
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+class MatrixValueTransferToLibrary 
+  : public ValueTransferToLibrary<FromType, ToType>
+{
+public:
+
+  /// Default constructor.
+  MatrixValueTransferToLibrary(const unsigned int& from_size, 
+                               FromType* from, ToType* to = NULL)
+    : ValueTransferToLibrary<FromType, ToType>(from_size, from, to)
+  {}
+
+
+  /// Destructor
+  ~MatrixValueTransferToLibrary(void) {}
+
+protected:
+
+  /// Compute the size of the "to" buffer
+  inline unsigned int p_computeToSize(void) const;
+
+  /// Copy the value
+  inline void p_copy(void);
+
+};
+
+// -------------------------------------------------------------
+// MatrixValueTransferToLibrary::p_computeToSize
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline unsigned int
+MatrixValueTransferToLibrary<FromType, ToType>::p_computeToSize(void) const
+{
+  return ValueTransferToLibrary<FromType, ToType>::p_computeToSize();
+}
+
+template <>
+inline unsigned int
+MatrixValueTransferToLibrary<ComplexType, RealType>::p_computeToSize(void) const
+{
+  return p_fromSize*TWO*TWO;
+}
+
+// -------------------------------------------------------------
+// MatrixValueTransferToLibrary::p_copy
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline void
+MatrixValueTransferToLibrary<FromType, ToType>::p_copy(void)
+{
+  ValueTransferToLibrary<FromType, ToType>::p_copy();
+}
+
+template <>
+inline void
+MatrixValueTransferToLibrary<ComplexType, RealType>::p_copy(void)
+{
+  unsigned int fidx(0), tidx(0);
+  for (; fidx < p_fromSize; ++fidx) {
+    ComplexType x(p_from[fidx]);
+    p_to.get()[tidx] = std::real(x); ++tidx;
+    p_to.get()[tidx] = -std::imag(x); ++tidx;
+    p_to.get()[tidx] = std::imag(x); ++tidx;
+    p_to.get()[tidx] = std::real(x); ++tidx;
+  }
+}
+
+// -------------------------------------------------------------
+//  class MatrixValueTransferFromLibrary
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+class MatrixValueTransferFromLibrary 
+  : public ValueTransferFromLibrary<FromType, ToType>
+{
+public:
+
+  /// Default constructor.
+  MatrixValueTransferFromLibrary(const unsigned int& from_size, 
+                               FromType* from, ToType* to = NULL)
+    : ValueTransferFromLibrary<FromType, ToType>(from_size, from, to)
+  {}
+
+
+  /// Destructor
+  ~MatrixValueTransferFromLibrary(void) {}
+
+protected:
+
+  /// Compute the size of the "to" buffer
+  inline unsigned int p_computeToSize(void) const;
+
+  /// Copy the value
+  inline void p_copy(void);
+
+};
+
+// -------------------------------------------------------------
+// MatrixValueTransferFromLibrary::p_computeToSize
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline unsigned int
+MatrixValueTransferFromLibrary<FromType, ToType>::p_computeToSize(void) const
+{
+  return ValueTransferFromLibrary<FromType, ToType>::p_computeToSize();
+}
+
+template <>
+inline unsigned int
+MatrixValueTransferFromLibrary<RealType, ComplexType>::p_computeToSize(void) const
+{
+  return p_fromSize/TWO/TWO;
+}
+
+// -------------------------------------------------------------
+// MatrixValueTransferFromLibrary::p_copy
+// -------------------------------------------------------------
+template <typename FromType, typename ToType>
+inline void
+MatrixValueTransferFromLibrary<FromType, ToType>::p_copy(void)
+{
+  ValueTransferFromLibrary<FromType, ToType>::p_copy();
+}
+
+template <>
+inline void
+MatrixValueTransferFromLibrary<RealType, ComplexType>::p_copy(void)
+{
+  unsigned int fidx(0), tidx(0);
+  for (; fidx < p_fromSize; fidx += TWO*TWO, ++tidx) {
+    ComplexType x(p_from[fidx], -p_from[fidx+1]);
+    p_to.get()[tidx] = x;
+  }
+}
 
 // -------------------------------------------------------------
 // storage_size
