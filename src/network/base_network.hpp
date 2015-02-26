@@ -478,7 +478,7 @@ void setReferenceBus(int idx)
     p_buses[idx].p_refFlag = true;
   } else {
     printf("Illegal bus index specified for reference bus idx: %d size: %d\n",
-        idx,p_buses.size());
+        idx,static_cast<int>(p_buses.size()));
   }
 }
 
