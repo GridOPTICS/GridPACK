@@ -760,10 +760,17 @@ class PTI23_parser : BaseParser<_network>
       std::string          line;
       gridpack::component::DataCollection *data;
       while(std::getline(input,line)) {
+        std::string record = line;
         int idx = line.find('/');
-        if (idx != std::string::npos) line.erase(idx,line.length()-idx);
+        while (idx == std::string::npos) {
+          std::getline(input,line);
+          idx = line.find('/');
+          record.append(line);
+        }
+        idx = record.find('/');
+        if (idx != std::string::npos) record.erase(idx,record.length()-idx);
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::split(split_line, record, boost::algorithm::is_any_of(","), boost::token_compress_on);
 
         // GENERATOR_BUSNUMBER               "I"                   integer
         int l_idx, o_idx;
@@ -839,10 +846,18 @@ class PTI23_parser : BaseParser<_network>
       std::string          line;
       ds_vector->clear();
       while(std::getline(input,line)) {
+        std::string record = line;
         int idx = line.find('/');
-        if (idx != std::string::npos) line.erase(idx,line.length()-idx);
+        while (idx == std::string::npos) {
+          std::getline(input,line);
+          idx = line.find('/');
+          record.append(line);
+        }
+        idx = record.find('/');
+        if (idx != std::string::npos) record.erase(idx,record.length()-idx);
         std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
+        boost::split(split_line, record, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
 
         ds_params data;
 
