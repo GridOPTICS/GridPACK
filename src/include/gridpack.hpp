@@ -26,6 +26,7 @@
 #include "gridpack/parallel/environment.hpp"
 #include "gridpack/parallel/ga_shuffler.hpp"
 #include "gridpack/parallel/index_hash.hpp"
+#include "gridpack/parallel/random.hpp"
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/parallel/printit.hpp"
 #include "gridpack/parallel/shuffler.hpp"
