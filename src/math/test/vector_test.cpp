@@ -379,12 +379,14 @@ BOOST_AUTO_TEST_CASE( elementwise2 )
   gridpack::math::Vector v3(world, three);
   gridpack::math::Vector v4(world, three);
 
-  gridpack::ComplexType x1[three];
+  gridpack::ComplexType *x1;
+  x1 = new gridpack::ComplexType[three];
   x1[0] = gridpack::ComplexType(0.348262, 3.4343 );
   x1[1] = gridpack::ComplexType(1.50794,  2.76069);
   x1[2] = gridpack::ComplexType(1.04059,  4.50791);
 
-  gridpack::ComplexType x2[three];
+  gridpack::ComplexType *x2;
+  x2 = new gridpack::ComplexType[three];
   x2[0] = gridpack::ComplexType(1.08099,  0.0391692);
   x2[1] = gridpack::ComplexType(1.04585,  0.378384);
   x2[2] = gridpack::ComplexType(1.08145,  0.249638);
@@ -397,6 +399,8 @@ BOOST_AUTO_TEST_CASE( elementwise2 )
     v2.setElement(i, x2[i]);
     v3.setElement(i, x1[i]*x2[i]);
   }
+  delete [] x1;
+  delete [] x2;
   v1.ready();
   v2.ready();
   v3.ready();

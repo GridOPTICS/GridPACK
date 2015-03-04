@@ -143,7 +143,8 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<int,int> > &pairs)
 
   // Get offsets on remote processors
   int r_offset[p_nprocs];
-  for (i=0; i<p_nprocs; i++) {
+  for (j=0; j<p_nprocs; j++) {
+    i = (j+p_me)%p_nprocs;
     if (ndest[i] > 0) {
       r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
     } else {
@@ -325,7 +326,8 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<std::pair<int,int>,int> 
 
   // Get offsets on remote processors
   int r_offset[p_nprocs];
-  for (i=0; i<p_nprocs; i++) {
+  for (j=0; j<p_nprocs; j++) {
+    i = (j+p_me)%p_nprocs;
     if (ndest[i] > 0) {
       r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
     } else {
@@ -566,7 +568,8 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
 
   // Get offsets on remote processors
   int r_offset[p_nprocs];
-  for (i=0; i<p_nprocs; i++) {
+  for (j=0; j<p_nprocs; j++) {
+    i = (j+p_me)%p_nprocs;
     if (ndest[i] > 0) {
       r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
     } else {
@@ -682,7 +685,8 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
   GA_Zero(g_offset);
 
   // Get offsets on remote processors
-  for (i=0; i<p_nprocs; i++) {
+  for (j=0; j<p_nprocs; j++) {
+    i = (j+p_me)%p_nprocs;
     if (ndest[i] > 0) {
       r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
     } else {
@@ -932,7 +936,8 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
 
   // Get offsets on remote processors
   int r_offset[p_nprocs];
-  for (i=0; i<p_nprocs; i++) {
+  for (j=0; j<p_nprocs; j++) {
+    i = (j+p_me)%p_nprocs;
     if (ndest[i] > 0) {
       r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
     } else {
@@ -1053,7 +1058,8 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
   GA_Zero(g_offset);
 
   // Get offsets on remote processors
-  for (i=0; i<p_nprocs; i++) {
+  for (j=0; j<p_nprocs; j++) {
+    i = (j+p_me)%p_nprocs;
     if (ndest[i] > 0) {
       r_offset[i] = NGA_Read_inc(g_offset, &i, ndest[i]);
     } else {

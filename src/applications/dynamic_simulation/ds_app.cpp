@@ -85,8 +85,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   filename = cursor->get("generatorParameters","");
 #if 0
   if (filename.size() > 0) parser.parse(filename.c_str());
-#else
-  if (filename.size() > 0) parser.externalParse(filename.c_str());
 #endif
   timer->stop(t_setup);
 
@@ -95,6 +93,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // partition network
   network->partition();
   timer->stop(t_part);
+#if 1
+  if (filename.size() > 0) parser.externalParse(filename.c_str());
+#endif
 
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<DSNetwork> busIO(2048, network);
