@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-02-24 14:36:30 d3g096
+# Last Change: 2015-02-25 14:21:48 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -24,10 +24,10 @@ list(APPEND gridpack_math_sources
   vector_implementation.cpp
   matrix.cpp
   matrix_implementation.cpp
-  # linear_solver.cpp
-  # linear_solver_implementation.cpp
-  # linear_matrix_solver.cpp
-  # linear_matrix_solver_implementation.cpp
+  linear_solver.cpp
+  linear_solver_implementation.cpp
+  linear_matrix_solver.cpp
+  linear_matrix_solver_implementation.cpp
   # basic_linear_matrix_solver_implementation.cpp
   # nonlinear_solver_interface.hpp
   # nonlinear_solver_interface.cpp
@@ -98,8 +98,8 @@ if (PETSC_FOUND)
       petsc/petsc_matrix_operations.cpp
       petsc/petsc_matrix_wrapper.cpp
       petsc/petsc_matrix.cpp
-      # petsc/petsc_linear_solver.cpp
-      # petsc/petsc_linear_solver_implementation.cpp
+      petsc/petsc_linear_solver.cpp
+      petsc/petsc_linear_solver_implementation.cpp
       # petsc/petsc_linear_matrix_solver.cpp
       # petsc/petsc_linear_matrix_solver_impl.cpp
       # petsc/petsc_nonlinear_solver_implementation.cpp
@@ -234,23 +234,15 @@ set_target_properties(real_dense_matrix_test
 target_link_libraries(real_dense_matrix_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(real_dense_matrix complex_dense_matrix_test)
 
-# add_executable(real_dense_matrix_test test/matrix_test.cpp)
-# set_target_properties(real_dense_matrix_test
-#   PROPERTIES
-#   COMPILE_DEFINITIONS "TEST_DENSE=YES TEST_REAL=YES"
-# )
-# target_link_libraries(real_dense_matrix_test gridpack_math ${target_libraries})
-# gridpack_add_unit_test(real_dense_matrix dense_matrix_test)
-
 # -------------------------------------------------------------
 # linear solver test suite
 # -------------------------------------------------------------
-# add_executable(linear_solver_test test/linear_solver_test.cpp)
-# target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
-# gridpack_add_unit_test(linear_solver linear_solver_test)
-# if (PETSC_FOUND)
-#    add_dependencies(linear_solver_test math_test_input)
-# endif()
+add_executable(linear_solver_test test/linear_solver_test.cpp)
+target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(linear_solver linear_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(linear_solver_test math_test_input)
+endif()
 
 # -------------------------------------------------------------
 # nonlinear solver test suite

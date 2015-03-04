@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2015-02-18 08:19:20 d3g096
+ * @date   2015-03-04 12:59:17 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -46,12 +46,31 @@ applyBinaryOperator(Vec *v1, const Vec *v2,
   ierr = VecGetArray(*v1, &x1);  CHKERRXX(ierr);
   ierr = VecGetArrayRead(*v2, &x2); CHKERRXX(ierr);
   binary_operation<T, PetscScalar>(n1, x1, x2, op);
-  ierr = VecRestoreArrayRead(*v2, &x2); 
+  ierr = VecRestoreArrayRead(*v2, &x2); CHKERRXX(ierr);
   ierr = VecRestoreArray(*v1, &x1);  CHKERRXX(ierr);
   ierr = VecAssemblyBegin(*v1); CHKERRXX(ierr);
   ierr = VecAssemblyEnd(*v1); 
 }
-  
+
+// -------------------------------------------------------------
+// applyBinaryOperator
+// -------------------------------------------------------------
+template <typename T>
+static void
+applyUnaryOperator(Vec *v, base_unary_function<T>& op)
+{
+  PetscErrorCode ierr;
+
+  PetscInt n;
+  ierr = VecGetLocalSize(*v, &n); CHKERRXX(ierr);
+  PetscScalar *x;
+  ierr = VecGetArray(*v, &x);  CHKERRXX(ierr);
+  unary_operation<T, PetscScalar>(n, x, op);
+  ierr = VecRestoreArray(*v, &x);  CHKERRXX(ierr);
+  ierr = VecAssemblyBegin(*v); CHKERRXX(ierr);
+  ierr = VecAssemblyEnd(*v); 
+}
+
 // -------------------------------------------------------------
 //  class Vector
 // -------------------------------------------------------------
@@ -96,11 +115,15 @@ VectorT<T, I>::add(const VectorT<T, I>& x, const VectorT<T, I>::TheType& scale)
   const Vec *xvec(PETScVector(x));
   Vec *yvec(PETScVector(*this));
   try {
-    PetscScalar alpha =
-      gridpack::math::equate<PetscScalar, TheType>(scale);
-    
-    // This call computes y = x + alpha*y. Where y is p_vector.  
-    ierr = VecAXPY(*yvec, alpha, *xvec);
+    if (PETScVectorImplementation<T, I>::useLibrary) {
+      PetscScalar alpha =
+        gridpack::math::equate<PetscScalar, TheType>(scale);
+      // This call computes y = x + alpha*y. Where y is p_vector.  
+      ierr = VecAXPY(*yvec, alpha, *xvec);
+    } else {
+      scaleAdd2<T> op(scale);
+      applyBinaryOperator<T>(yvec, xvec, op);
+    }
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
@@ -119,9 +142,14 @@ VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
     Vec *vec(PETScVector(*this));
     PetscErrorCode ierr(0);
     try {
-      PetscScalar tmpx =
-        gridpack::math::equate<PetscScalar, TheType>(x);
-      ierr = VecShift(*vec, tmpx); CHKERRXX(ierr);
+      if (PETScVectorImplementation<T, I>::useLibrary) {
+        PetscScalar tmpx =
+          gridpack::math::equate<PetscScalar, TheType>(x);
+        ierr = VecShift(*vec, tmpx); CHKERRXX(ierr);
+      } else {
+        addvalue<TheType> op(x);
+        applyUnaryOperator(vec, op);
+      }        
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }

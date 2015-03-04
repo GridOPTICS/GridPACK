@@ -10,7 +10,7 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-01-27 08:57:40 d3g096
+ * @date   2015-03-04 13:22:19 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -293,6 +293,135 @@ conjugate_value<ComplexType>::operator() (const ComplexType& x) const
 }
 
 // -------------------------------------------------------------
+// base_accumulator_function
+// -------------------------------------------------------------
+template <typename T, typename ResultType>
+struct base_accumulator_function : public std::unary_function<T, void>
+{
+  ResultType accum;
+  virtual void operator() (const T& t) = 0;
+  virtual ResultType result(void) const 
+  {
+    return accum;
+  }
+  base_accumulator_function(void) 
+    : std::unary_function<T, void>(), accum(0.0)
+  {}
+};
+
+// -------------------------------------------------------------
+// accumulator_operation
+// -------------------------------------------------------------
+
+template <typename T, typename StorageType>
+inline void
+accumulator_operation(const unsigned int& size, const StorageType *x, 
+                      base_accumulator_function<T, RealType>& op)
+{
+  for (unsigned int i = 0; i < size; ++i) {
+    op(x[i]);
+  }
+}
+
+template <>
+inline void
+accumulator_operation<RealType, ComplexType>(const unsigned int& size, 
+                                             const ComplexType *x, 
+                                             base_accumulator_function<RealType, RealType>& op)
+{
+  for (unsigned int i = 0; i < size; i += 1) {
+    RealType tmp(real(x[i]));
+    op(tmp);
+  }
+}
+
+template <>
+inline void
+accumulator_operation<ComplexType, RealType>(const unsigned int& size, 
+                                             const RealType *x, 
+                                             base_accumulator_function<ComplexType, RealType>& op)
+{
+  for (unsigned int i = 0; i < size; i += 2) {
+    ComplexType tmp(x[i], x[i+1]);
+    op(tmp);
+  }
+}
+  
+
+// -------------------------------------------------------------
+// l1_norm
+// -------------------------------------------------------------
+template <typename T>
+struct l1_norm : public base_accumulator_function<T, RealType>
+{
+  inline void operator() (const T& t);
+};
+
+template <>
+inline void
+l1_norm<RealType>::operator() (const RealType& x)
+{
+  accum += ::abs(x);
+}
+
+template <>
+inline void
+l1_norm<ComplexType>::operator() (const ComplexType& x)
+{
+  accum += std::abs(x);
+}
+
+// -------------------------------------------------------------
+// l2_norm
+// -------------------------------------------------------------
+template <typename T>
+struct l2_norm : public base_accumulator_function<T, RealType>
+{
+  inline void operator() (const T& x);
+};
+
+template <>
+inline void
+l2_norm<RealType>::operator() (const RealType& x)
+{
+  accum += x*x;
+}
+
+template <>
+inline void
+l2_norm<ComplexType>::operator() (const ComplexType& x)
+{
+  RealType rx(std::abs(x));
+  accum += rx*rx;
+}
+
+// -------------------------------------------------------------
+// infinity_norm
+// -------------------------------------------------------------
+template <typename T>
+struct infinity_norm : public base_accumulator_function<T, RealType>
+{
+  inline void operator() (const T& x);
+};
+
+template <>
+inline void
+infinity_norm<RealType>::operator() (const RealType& x)
+{
+  
+  accum = std::max(accum, ::fabs(x));
+}
+
+template <>
+inline void
+infinity_norm<ComplexType>::operator() (const ComplexType& x)
+{
+  
+  accum = std::max(accum, std::abs(x));
+}
+
+
+// -------------------------------------------------------------
 // binary_operation
 // -------------------------------------------------------------
 template <typename T> 
@@ -406,6 +535,19 @@ template <typename T>
 struct dividevalue2 : public base_binary_function<T>
 {
   T operator() (const T& x1, const T& x2) const { return x1/x2; }
+};
+
+// -------------------------------------------------------------
+// scaleAdd2
+// -------------------------------------------------------------
+template <typename T>
+struct scaleAdd2 : public base_binary_function<T>
+{
+  T alpha;
+  T operator() (const T& x1, const T& x2) const { return x1 + alpha*x2; }
+  scaleAdd2(const T& a = 1.0)
+    : base_binary_function<T>(), alpha(a)
+  {}
 };
 
 

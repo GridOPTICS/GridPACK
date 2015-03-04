@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-02-24 14:57:15 d3g096
+ * @date   2015-02-25 14:23:54 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,7 @@
 #define _petsc_matrix_implementation_h_
 
 #include <petscmat.h>
+#include <boost/scoped_ptr.hpp>
 #include "petsc_exception.hpp"
 #include "petsc_types.hpp"
 #include "matrix_implementation.hpp"

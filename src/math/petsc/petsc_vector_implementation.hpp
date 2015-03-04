@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-02-18 08:24:43 d3g096
+ * @date   2015-03-04 12:20:43 d3g096
  * 
  * @brief  
  * 
@@ -93,9 +93,7 @@ protected:
   /// Where the actual vector is stored
   PetscVectorWrapper p_vwrap;
 
-  // -------------------------------------------------------------
-  // p_applyOperation
-  // -------------------------------------------------------------
+  /// Apply a specific unary operation to the vector
   void p_applyOperation(base_unary_function<TheType>& op)
   {
     PetscErrorCode ierr;
@@ -109,6 +107,23 @@ protected:
     ierr = VecRestoreArray(*v, &p); CHKERRXX(ierr);
     this->ready();
   }
+
+  /// Apply a specificy accumulator operation to the vector
+  RealType p_applyAccumulator(base_accumulator_function<TheType, RealType>& op) const
+  {
+    RealType result;
+    PetscErrorCode ierr;
+    const Vec *v = p_vwrap.getVector();
+    const PetscScalar *p;
+    PetscInt n;
+    ierr = VecGetLocalSize(*v, &n); CHKERRXX(ierr);
+    ierr = VecGetArrayRead(*v, &p);  CHKERRXX(ierr);
+    accumulator_operation<TheType, PetscScalar>(static_cast<unsigned int>(n), p, op);
+    ierr = VecRestoreArrayRead(*v, &p); CHKERRXX(ierr);
+    result = op.result();
+    return result;
+  }
+
 
   /// Get the global vector length
   IdxType p_size(void) const
@@ -287,7 +302,9 @@ protected:
     if (useLibrary) {
       result = p_vwrap.norm1();
     } else {
-      BOOST_ASSERT(false);
+      l1_norm<TheType> op;
+      double lresult(p_applyAccumulator(op));
+      boost::mpi::all_reduce(this->communicator(), lresult, result, std::plus<double>());
     }
     return result;
   }
@@ -299,7 +316,10 @@ protected:
     if (useLibrary) {
       result = p_vwrap.norm2();
     } else {
-      BOOST_ASSERT(false);
+      l2_norm<TheType> op;
+      double lresult(p_applyAccumulator(op));
+      boost::mpi::all_reduce(this->communicator(), lresult, result, std::plus<double>());
+      result = sqrt(result);
     }
     return result;
   }
@@ -311,7 +331,9 @@ protected:
     if (useLibrary) {
       result = p_vwrap.normInfinity();
     } else {
-      BOOST_ASSERT(false);
+      infinity_norm<TheType> op;
+      double lresult(p_applyAccumulator(op));
+      boost::mpi::all_reduce(this->communicator(), lresult, result, boost::mpi::maximum<double>());
     }
     return result;
   }
