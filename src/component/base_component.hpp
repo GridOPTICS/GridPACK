@@ -288,6 +288,36 @@ class GenMatVecInterface {
      */
     virtual void vectorSetElementValues(ComplexType *values);
 
+    /**
+     * Return number of rows and columns in matrix from component
+     * Number of columns must be the same for all components
+     * @return size of block contributed by component
+     */
+    virtual void slabSize(int *rows, int *cols) const;
+
+    /**
+     * Set indices corresponding to the rows contributed by this
+     * component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @param idx row index of row irow
+     */
+    virtual void slabSetRowIndex(int irow, int idx);
+
+    /**
+     * Get list of row indices from component
+     * @param idx list of row indices that component maps onto
+     */
+    virtual void slabGetRowIndices(int *idx);
+
+    /**
+     * Get a list of row values contributed by this component and their
+     * indices
+     * @param values list of values for rows
+     * @param idx indices for the matrix rows
+     */
+    virtual void slabGetValues(std::vector<ComplexType*> &values, int *idx);
+
   private:
 
   friend class boost::serialization::access;
