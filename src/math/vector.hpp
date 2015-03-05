@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2014-11-03 14:46:15 d3g096
+ * @date   2015-03-05 09:44:10 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -459,8 +459,9 @@ void add(const VectorT<T, I>& A, const VectorT<T, I>& B, VectorT<T, I>& result)
 }
 
 
-typedef class VectorT<ComplexType> Vector;
+typedef class VectorT<ComplexType> ComplexVector;
 typedef class VectorT<double> RealVector;
+typedef ComplexVector Vector;
 
 } // namespace utility
 } // namespace gridpack

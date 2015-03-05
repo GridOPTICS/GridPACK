@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-02-24 15:11:00 d3g096
+ * @date   2015-03-05 07:50:39 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -479,6 +479,34 @@ BOOST_AUTO_TEST_CASE( Transpose )
   }
 }
 
+BOOST_AUTO_TEST_CASE( ColumnOps )
+{
+  int global_size;
+  gridpack::parallel::Communicator world;
+  boost::scoped_ptr<TestMatrixType> 
+    A(make_and_fill_test_matrix(world, 3, global_size));
+  A->print();
+  int icolumn(global_size/2);
+
+  boost::scoped_ptr< TestVectorType >  
+    cvector(gridpack::math::column(*A, icolumn));
+  cvector->print();
+  
+  int lo, hi;
+  cvector->localIndexRange(lo, hi);
+
+  for (int i = -1; i <= 1; ++i) {
+    int idx(icolumn+i);
+    if (lo <= idx && idx < hi) {
+      TestType 
+        x(static_cast<TestType>(idx));
+      TestType y;
+      cvector->getElement(idx, y);
+      TEST_VALUE_CLOSE(x, y, delta);
+    }
+  }
+}
+
 // FIXME
 // BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
 // {
@@ -535,6 +563,7 @@ BOOST_AUTO_TEST_CASE( Transpose )
 //   BOOST_CHECK(vnorm < delta*delta);
 // }
 
+// FIXME
 // BOOST_AUTO_TEST_CASE( AddDiagonal )
 // {
 //   int global_size;

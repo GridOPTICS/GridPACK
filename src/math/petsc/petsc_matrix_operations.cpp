@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-02-09 15:33:14 d3g096
+ * @date   2015-03-05 07:54:29 d3g096
  * 
  * @brief  
  * 
@@ -254,7 +254,8 @@ column(const MatrixT<T, I>& A, const int& cidx, VectorT<T, I>& result)
   Vec *pX(PETScVector(result));
   PetscErrorCode ierr(0);
   try {
-    ierr = MatGetColumnVector(*pA, *pX, cidx); CHKERRXX(ierr);
+    PetscInt c(cidx*PetscElementSize<T>::value);
+    ierr = MatGetColumnVector(*pA, *pX, c); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
