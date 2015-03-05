@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2015-03-05 12:50:30 d3g096
+ * @date   2015-03-05 13:09:23 d3g096
  * 
  * @brief  
  * 
@@ -199,7 +199,10 @@ protected:
 
 };
 
-typedef LinearSolverT<ComplexType> LinearSolver;
+typedef LinearSolverT<ComplexType> ComplexLinearSolver;
+typedef LinearSolverT<RealType> RealLinearSolver;
+
+typedef ComplexLinearSolver LinearSolver;
 
 } // namespace math
 } // namespace gridpack

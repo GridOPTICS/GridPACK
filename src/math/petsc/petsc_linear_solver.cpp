@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2015-03-05 12:57:18 d3g096
+ * @date   2015-03-05 13:17:17 d3g096
  * 
  * @brief  
  * 
@@ -44,6 +44,9 @@ LinearSolverT<T, I>::LinearSolverT(LinearSolverT<T, I>::MatrixType& A)
 
 template
 LinearSolverT<ComplexType>::LinearSolverT(LinearSolverT<ComplexType>::MatrixType& A);
+
+template
+LinearSolverT<RealType>::LinearSolverT(LinearSolverT<RealType>::MatrixType& A);
 
 } // namespace math
 } // namespace gridpack

@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-03-05 12:14:31 d3g096
+# Last Change: 2015-03-05 13:19:07 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -234,11 +234,11 @@ gridpack_add_unit_test(real_dense_matrix complex_dense_matrix_test)
 # -------------------------------------------------------------
 # linear solver test suite
 # -------------------------------------------------------------
-add_executable(linear_solver_test test/linear_solver_test.cpp)
-target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(linear_solver linear_solver_test)
+add_executable(real_linear_solver_test test/linear_solver_test.cpp)
+target_link_libraries(real_linear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_linear_solver real_linear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(linear_solver_test math_test_input)
+   add_dependencies(real_linear_solver_test math_test_input)
 endif()
 
 add_executable(complex_linear_solver_test test/complex_linear_solver_test.cpp)

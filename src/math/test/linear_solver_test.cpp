@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-03-05 07:57:36 d3g096
+ * @date   2015-03-05 13:15:49 d3g096
  * 
  * @brief  
  * 
@@ -41,8 +41,8 @@ BOOST_AUTO_TEST_SUITE(LinearSolverTest)
 // -------------------------------------------------------------
 void
 assemble(const int imax, const int jmax, 
-         gridpack::math::Matrix& A, 
-         gridpack::math::Vector& b)
+         gridpack::math::RealMatrix& A, 
+         gridpack::math::RealVector& b)
 {
   static const float k = 1000;  /* conductivity, W/m/K */
   static const float t = 0.01;  /* plate thickness, m */
@@ -150,12 +150,12 @@ BOOST_AUTO_TEST_CASE( Versteeg )
   }
     
 
-  std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, local_size, 
+  std::auto_ptr<gridpack::math::RealMatrix> 
+    A(new gridpack::math::RealMatrix(world, local_size, local_size, 
                                  gridpack::math::Sparse));
-  std::auto_ptr<gridpack::math::Vector>
-    b(new gridpack::math::Vector(world, local_size)),
-    x(new gridpack::math::Vector(world, local_size));
+  std::auto_ptr<gridpack::math::RealVector>
+    b(new gridpack::math::RealVector(world, local_size)),
+    x(new gridpack::math::RealVector(world, local_size));
 
   assemble(imax, jmax, *A, *b);
   A->ready();
@@ -167,14 +167,14 @@ BOOST_AUTO_TEST_CASE( Versteeg )
   A->print();
   b->print();
 
-  std::auto_ptr<gridpack::math::LinearSolver> 
-    solver(new gridpack::math::LinearSolver(*A));
+  std::auto_ptr<gridpack::math::RealLinearSolver> 
+    solver(new gridpack::math::RealLinearSolver(*A));
 
   BOOST_REQUIRE(test_config);
   solver->configure(test_config);
   solver->solve(*b, *x);
 
-  std::auto_ptr<gridpack::math::Vector>
+  std::auto_ptr<gridpack::math::RealVector>
     res(multiply(*A, *x));
   res->add(*b, -1.0);
 
@@ -194,14 +194,14 @@ BOOST_AUTO_TEST_CASE( Versteeg )
       int ilo, ihi;
       x->localIndexRange(ilo, ihi);
       for (int iP = ilo; iP < ihi; ++iP) {
-        gridpack::ComplexType val, r;
+        gridpack::RealType val, r;
         x->getElement(iP, val);
         res->getElement(iP, r);
         int i = iP/jmax;
         int j = iP - i*jmax;
         
         std::cout << boost::str(boost::format("%8d%8d%8d%12.6f%12.3e") %
-                                iP % i % j % real(val) % real(r))
+                                iP % i % j % val % r)
                   << std::endl;
         std::cout.flush();
       }
@@ -230,49 +230,49 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
   }
     
 
-  std::auto_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, local_size, local_size, 
+  std::auto_ptr<gridpack::math::RealMatrix> 
+    A(new gridpack::math::RealMatrix(world, local_size, local_size, 
                                  gridpack::math::Sparse)),
-    I(new gridpack::math::Matrix(world, local_size, local_size, 
+    I(new gridpack::math::RealMatrix(world, local_size, local_size, 
                                  gridpack::math::Sparse));
   I->identity();
 
-  std::auto_ptr<gridpack::math::Vector>
-    b(new gridpack::math::Vector(world, local_size));
+  std::auto_ptr<gridpack::math::RealVector>
+    b(new gridpack::math::RealVector(world, local_size));
 
   assemble(imax, jmax, *A, *b);
   A->ready();
   b->ready();
 
-  std::auto_ptr<gridpack::math::LinearSolver> 
-    solver(new gridpack::math::LinearSolver(*A));
+  std::auto_ptr<gridpack::math::RealLinearSolver> 
+    solver(new gridpack::math::RealLinearSolver(*A));
 
   BOOST_REQUIRE(test_config);
   solver->configurationKey("LinearMatrixSolver");
   solver->configure(test_config);
 
-  std::auto_ptr<gridpack::math::Matrix> 
+  std::auto_ptr<gridpack::math::RealMatrix> 
     Ainv(solver->solve(*I));
-  std::auto_ptr<gridpack::math::Vector>
+  std::auto_ptr<gridpack::math::RealVector>
     x(multiply(*Ainv, *b));
 
-  std::auto_ptr<gridpack::math::Vector>
+  std::auto_ptr<gridpack::math::RealVector>
     res(multiply(*A, *x));
   res->add(*b, -1.0);
   res->print();
 
   // Ainv->print();
 
-  gridpack::ComplexType l1norm(res->norm1());
-  gridpack::ComplexType l2norm(res->norm2());
+  double l1norm(res->norm1());
+  double l2norm(res->norm2());
 
   if (world.rank() == 0) {
     std::cout << "Residual L1 Norm = " << l1norm << std::endl;
     std::cout << "Residual L2 Norm = " << l2norm << std::endl;
   }
 
-  BOOST_CHECK(real(l1norm) < 1.0e-05);
-  BOOST_CHECK(real(l2norm) < 1.0e-05);
+  BOOST_CHECK(l1norm < 1.0e-05);
+  BOOST_CHECK(l2norm < 1.0e-05);
   
 }
 
@@ -309,12 +309,12 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
 //   std::auto_ptr<gridpack::math::Matrix> 
 //     A(new gridpack::math::Matrix(world, local_size, local_size, 
 //                                  gridpack::math::Sparse)),
-//     I(new gridpack::math::Matrix(world, local_size, local_size, 
+//     I(new gridpack::math::RealMatrix(world, local_size, local_size, 
 //                                  gridpack::math::Dense));
 //   I->identity();
 
-//   std::auto_ptr<gridpack::math::Vector>
-//     b(new gridpack::math::Vector(world, local_size));
+//   std::auto_ptr<gridpack::math::RealVector>
+//     b(new gridpack::math::RealVector(world, local_size));
 
 //   assemble(imax, jmax, *A, *b);
 //   A->ready();
@@ -327,7 +327,7 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
 //   solver->configurationKey("LinearMatrixSolver");
 //   solver->configure(test_config);
 
-//   std::auto_ptr<gridpack::math::Matrix> 
+//   std::auto_ptr<gridpack::math::RealMatrix> 
 //     Ainv(solver->solve(*I));
 //   std::auto_ptr<gridpack::math::Vector>
 //     x(multiply(*Ainv, *b));
@@ -338,8 +338,8 @@ BOOST_AUTO_TEST_CASE ( VersteegInverse )
 
 //   // Ainv->print();
 
-//   gridpack::ComplexType l1norm(res->norm1());
-//   gridpack::ComplexType l2norm(res->norm2());
+//   double l1norm(res->norm1());
+//   double l2norm(res->norm2());
 
 //   if (world.rank() == 0) {
 //     std::cout << "Residual L1 Norm = " << l1norm << std::endl;
