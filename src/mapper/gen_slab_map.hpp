@@ -23,6 +23,7 @@
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/component/base_component.hpp>
 #include <gridpack/network/base_network.hpp>
+#include <gridpack/utilities/exception.hpp>
 #include <gridpack/math/vector.hpp>
 
 //#define DBG_CHECK
@@ -195,7 +196,9 @@ void getDimensions(void)
   GA_Pgroup_igop(p_GAgrp, &maxCols, 1, "max");
   if (maxCols != minCols) okCols = false;
   if (!okCols && p_me == 0) {
-    printf("(GenSlabMap) Number of columns not uniform across all processors\n");
+    char buf[512];
+    sprintf(buf,"(GenSlabMap) Number of columns not uniform across all processors\n");
+    throw gridpack::Exception(buf);
   }
   // Get total row dimension and evaluate offsets for processor
   p_Dim = sizebuf[0];
