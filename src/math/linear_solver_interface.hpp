@@ -6,7 +6,7 @@
 /**
  * @file   linear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2015-03-05 11:57:24 d3g096
+ * @date   2015-03-05 12:47:40 d3g096
  * 
  * @brief  
  * 
@@ -31,10 +31,14 @@ namespace math {
 // -------------------------------------------------------------
 //  class BaseLinearSolverInterface
 // -------------------------------------------------------------
+template <typename T, typename I>
 class BaseLinearSolverInterface 
 //   : public ImplementationVisitable
 {
 public:
+
+  typedef MatrixT<T, I> MatrixType;
+  typedef VectorT<T, I> VectorType;
 
   /// Default constructor.
   BaseLinearSolverInterface(void)
@@ -109,7 +113,7 @@ public:
    * @param b Vector containing right hand side of linear system
    * @param x solution Vector
    */
-  void solve(const Vector& b, Vector& x) const
+  void solve(const VectorType& b, VectorType& x) const
   {
     this->p_solve(b, x);
   }
@@ -121,7 +125,7 @@ public:
    * 
    * @return @e dense solution Matrix -- each column is the solution for the corresponding column in @c B
    */
-  Matrix *solve(const Matrix& B) const
+  MatrixType *solve(const MatrixType& B) const
   {
     return this->p_solve(B);
   }
@@ -149,10 +153,10 @@ protected:
    * @param x Vector containing initial solution estimate; final
    * solution is put into this.
    */
-  virtual void p_solve(const Vector& b, Vector& x) const = 0;
+  virtual void p_solve(const VectorType& b, VectorType& x) const = 0;
 
   /// Solve multiple systems w/ each column of the Matrix a single RHS
-  virtual Matrix *p_solve(const Matrix& B) const = 0;
+  virtual MatrixType *p_solve(const MatrixType& B) const = 0;
 
 };
 

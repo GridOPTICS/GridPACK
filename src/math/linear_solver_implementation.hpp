@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-05 11:59:57 d3g096
+ * @date   2015-03-05 12:49:11 d3g096
  * 
  * @brief  
  * 
@@ -37,13 +37,19 @@ namespace math {
 // -------------------------------------------------------------
 //  class LinearSolverImplementation
 // -------------------------------------------------------------
+template <typename T, typename I>
 class LinearSolverImplementation 
   : public parallel::Distributed,
     public utility::Configurable,
     private utility::Uncopyable,
-    public BaseLinearSolverInterface
+    public BaseLinearSolverInterface<T, I>
 {
 public:
+
+  typedef T TheType;
+  typedef I IdxType;
+  typedef typename BaseLinearSolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename BaseLinearSolverInterface<T, I>::VectorType VectorType;
   
   /// Default constructor.
   LinearSolverImplementation(const parallel::Communicator& comm)
@@ -119,11 +125,11 @@ protected:
   }
 
   /// Solve multiple systems w/ each column of the Matrix a single RHS
-  Matrix *p_solve(const Matrix& B) const
+  MatrixType *p_solve(const MatrixType& B) const
   {
-    Vector b(B.communicator(), B.localRows());
-    Vector X(B.communicator(), B.localRows());
-    Matrix *result(new Matrix(B.communicator(), B.localRows(), B.localCols(), Dense));
+    VectorType b(B.communicator(), B.localRows());
+    VectorType X(B.communicator(), B.localRows());
+    MatrixType *result(new MatrixType(B.communicator(), B.localRows(), B.localCols(), Dense));
 
     int ilo, ihi;
     X.localIndexRange(ilo, ihi);
@@ -137,8 +143,8 @@ protected:
       // std::cout << X.processor_rank() << ": X: " << ilo << "-" << ihi << std::endl;
       // X.print();
       // X.getElementRange(ilo, ihi, &locX[0]);
-      for (int i = ilo; i < ihi; ++i) {
-        ComplexType v;
+      for (IdxType i = ilo; i < ihi; ++i) {
+        TheType v;
         X.getElement(i, v);
         result->setElement(i, j, v);
       }

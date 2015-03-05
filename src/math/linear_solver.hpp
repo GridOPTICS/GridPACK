@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2015-03-05 12:08:16 d3g096
+ * @date   2015-03-05 12:50:30 d3g096
  * 
  * @brief  
  * 
@@ -62,14 +62,18 @@ namespace math {
  * "implementation".
  * 
  */
-class LinearSolver 
+template <typename T, typename I = int>
+class LinearSolverT 
   : public parallel::WrappedDistributed,
     public utility::WrappedConfigurable,
     private utility::Uncopyable, 
-    public BaseLinearSolverInterface
+    public BaseLinearSolverInterface<T, I>
 {
 public:
   
+  typedef typename BaseLinearSolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename BaseLinearSolverInterface<T, I>::VectorType VectorType;
+
   /// Default constructor.
   /** 
    * @e Collective
@@ -85,7 +89,7 @@ public:
    * 
    * @return new LinearSolver instance
    */
-  LinearSolver(Matrix& A);
+  LinearSolverT(MatrixType& A);
   
   /// Destructor
   /** 
@@ -95,7 +99,7 @@ public:
    * all processes involved in calling the constructor.
    * 
    */
-  ~LinearSolver(void)
+  ~LinearSolverT(void)
   {}
 
 protected:
@@ -107,7 +111,7 @@ protected:
    * underlying library. This class simply provides an interface on a
    * specific \ref LinearSolverImplementation "implementation".
    */
-  boost::scoped_ptr<LinearSolverImplementation> p_solver;
+  boost::scoped_ptr< LinearSolverImplementation<T, I> > p_solver;
 
   /// Get the solution tolerance (specialized)
   /** 
@@ -174,7 +178,7 @@ protected:
    * @param b Vector containing right hand side of linear system
    * @param x solution Vector
    */
-  void p_solve(const Vector& b, Vector& x) const
+  void p_solve(const VectorType& b, VectorType& x) const
   {
     p_solver->solve(b, x);
   }
@@ -187,13 +191,15 @@ protected:
    * 
    * @return @e dense solution Matrix -- each column is the solution for the corresponding column in @c B
    */
-  Matrix *p_solve(const Matrix& B) const
+  MatrixType *p_solve(const MatrixType& B) const
   {
     return p_solver->solve(B);
   }
 
 
 };
+
+typedef LinearSolverT<ComplexType> LinearSolver;
 
 } // namespace math
 } // namespace gridpack

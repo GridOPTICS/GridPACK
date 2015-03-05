@@ -9,7 +9,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2015-03-05 12:02:41 d3g096
+ * @date   2015-03-05 12:51:12 d3g096
  * 
  * @brief  
  * 
@@ -30,11 +30,8 @@
 namespace gridpack {
 namespace math {
 
-class LinearSolverImplementation;
-
 class PetscVectorWrapper;
 class PetscMatrixWrapper;
-class PETScLinearSolverImplementation;
 
 // -------------------------------------------------------------
 //  class ImplementationVisitor

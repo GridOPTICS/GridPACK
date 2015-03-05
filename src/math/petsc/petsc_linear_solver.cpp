@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2014-01-09 12:14:05 d3g096
+ * @date   2015-03-05 12:57:18 d3g096
  * 
  * @brief  
  * 
@@ -30,17 +30,20 @@ namespace math {
 // -------------------------------------------------------------
 // LinearSolver:: constructors / destructor
 // -------------------------------------------------------------
-LinearSolver::LinearSolver(Matrix& A)
+template <typename T, typename I>
+LinearSolverT<T, I>::LinearSolverT(LinearSolverT<T, I>::MatrixType& A)
   : parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
     utility::Uncopyable(),
-    p_solver(new PETScLinearSolverImplementation(A))
+    p_solver(new PETScLinearSolverImplementation<T, I>(A))
 {
   p_setDistributed(p_solver.get());
   p_setConfigurable(p_solver.get());
   // empty
 }
 
+template
+LinearSolverT<ComplexType>::LinearSolverT(LinearSolverT<ComplexType>::MatrixType& A);
 
 } // namespace math
 } // namespace gridpack
