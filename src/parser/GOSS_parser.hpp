@@ -465,13 +465,11 @@ class GOSS_parser : BaseParser<_network>
               BOOST_FOREACH( boost::property_tree::ptree::value_type transAttr,
                       branchAttr.second)
               {
-                  std::cout << "Trans attr = " << transAttr.first << std::endl;
                   if (transAttr.first == "Line")
                   {
                       BOOST_FOREACH( boost::property_tree::ptree::value_type lineSet,
                               transAttr.second)
                       {
-                          std::cout << "line attr = " << lineSet.first << " value = " << lineSet.second.data().c_str() << std::endl;
                               loadCollection(data, lineSet, nLines);
                       }
                       ++nLines;
@@ -487,8 +485,11 @@ class GOSS_parser : BaseParser<_network>
               } // end search for transmission elements
           } else   // transmission element not found
           loadCollection(data, branchAttr);
-        }
       }
+      data->addValue("LINE_NUMBER", nLines);
+      data->addValue("TRANSFORMER_NUMBER", nTransformers);
+      totalLines += nLines;
+      totalTransformers += nTransformers;
       p_branchCollection.push_back(data);
       ++nBranches;
     }
