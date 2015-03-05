@@ -18,6 +18,7 @@ add_library(gridpack_parallel
   communicator.cpp
   distributed.cpp
   index_hash.cpp
+  random.cpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -37,7 +38,7 @@ install(FILES
   ga_shuffler.hpp
   printit.hpp
   task_manager.hpp
-  index_hash.hpp
+  random.hpp
   DESTINATION include/gridpack/parallel
 )
 
@@ -114,6 +115,17 @@ target_link_libraries(hash_test gridpack_parallel
 add_test(hash_test_serial hash_test)
 add_test(hash_test_parallel 
   ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} hash_test ${MPIEXEC_POSTFLAGS})
+# -------------------------------------------------------------
+# TEST: random_test
+# A simple program to test the random number generator
+# -------------------------------------------------------------
+add_executable(random_test test/random_test.cpp)
+target_link_libraries(random_test gridpack_parallel 
+  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+add_test(random_test_serial random_test)
+add_test(random_test_parallel 
+  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} random_test ${MPIEXEC_POSTFLAGS})
 #set_tests_properties(hash_test_serial hash_test_parallel
 #  PROPERTIES 
 #  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"

@@ -352,6 +352,7 @@ void gridpack::state_estimation::SEBus::setMode(int mode)
  */
 double gridpack::state_estimation::SEBus::getVoltage()
 {
+  p_v = *p_vMag_ptr;
   return *p_vMag_ptr;
 }
 
@@ -380,6 +381,7 @@ bool gridpack::state_estimation::SEBus::isIsolated(void) const
  */
 double gridpack::state_estimation::SEBus::getPhase()
 {
+  p_a = *p_vAng_ptr;
   return *p_vAng_ptr;
 }
 
@@ -394,6 +396,8 @@ double gridpack::state_estimation::SEBus::getPhase()
 bool gridpack::state_estimation::SEBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
+  p_v = *p_vMag_ptr;
+  p_a = *p_vAng_ptr;
   if (signal == NULL) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
@@ -491,7 +495,32 @@ void gridpack::state_estimation::SEBus::addMeasurement(
     gridpack::state_estimation::Measurement measurement)
 {
   p_meas.push_back(measurement);
-  //TODO: Implement this method
+}
+
+/**
+ * Sort measurements so that they are in a consistent order
+ */
+void gridpack::state_estimation::SEBus::sortMeasurements(void)
+{
+  // Use a multi-map to create an ordered list of measurements
+  std::multimap<std::string,gridpack::state_estimation::Measurement> map;
+  int nsize = p_meas.size();
+  int i;
+  char sbuf[32];
+  for (i=0; i<nsize; i++) {
+    // Create a unique (hopefully) key for each measurement
+    sprintf(sbuf,"%s%s%f",p_meas[i].p_type,p_meas[i].p_ckt,p_meas[i].p_value);
+    std::string key = sbuf;
+    map.insert(std::pair<std::string,
+        gridpack::state_estimation::Measurement>(key,p_meas[i]));
+  }
+  p_meas.clear();
+  std::multimap<std::string,gridpack::state_estimation::Measurement>::iterator it;
+  it = map.begin();
+  while (it != map.end()) {
+    p_meas.push_back(it->second);
+    it++;
+  }
 }
 
 /**
@@ -500,6 +529,8 @@ void gridpack::state_estimation::SEBus::addMeasurement(
  */
 gridpack::ComplexType gridpack::state_estimation::SEBus::getComplexVoltage(void)
 {
+  p_a = *p_vAng_ptr;
+  p_v = *p_vMag_ptr;
   gridpack::ComplexType ret(cos(p_a),sin(p_a));
   ret = ret*p_v;
   return ret;
@@ -704,6 +735,8 @@ int gridpack::state_estimation::SEBus::matrixNumValues() const
 */
 void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int *rows, int *cols)
 {
+  p_v = *p_vMag_ptr;
+  p_a = *p_vAng_ptr;
   if (p_mode == Jacobian_H) {
     int nmeas = p_meas.size(); // Suppose p_meas is the vector of all the measurements on this bus
     int ncnt = 0;
@@ -924,6 +957,8 @@ void gridpack::state_estimation::SEBus::matrixGetValues(ComplexType *values, int
 */
 void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *values, int *idx)
 {
+  p_a = *p_vAng_ptr;
+  p_v = *p_vMag_ptr;
   if (p_mode == Jacobian_H) {
     int nmeas = p_meas.size(); // Suppose p_meas is the vector of all the measurements on this bus
     int ncnt = 0;
@@ -1367,7 +1402,32 @@ void gridpack::state_estimation::SEBranch::addMeasurement(
     gridpack::state_estimation::Measurement measurement)
 {
   p_meas.push_back(measurement);
-  //TODO: Implement this method
+}
+
+/**
+ * Sort measurements so that they are in a consistent order
+ */
+void gridpack::state_estimation::SEBranch::sortMeasurements(void)
+{
+  // Use a multi-map to create an ordered list of measurements
+  std::multimap<std::string,gridpack::state_estimation::Measurement> map;
+  int nsize = p_meas.size();
+  int i;
+  char sbuf[32];
+  for (i=0; i<nsize; i++) {
+    // Create a unique (hopefully) key for each measurement
+    sprintf(sbuf,"%s%s%f",p_meas[i].p_type,p_meas[i].p_ckt,p_meas[i].p_value);
+    std::string key = sbuf;
+    map.insert(std::pair<std::string,
+        gridpack::state_estimation::Measurement>(key,p_meas[i]));
+  }
+  p_meas.clear();
+  std::multimap<std::string,gridpack::state_estimation::Measurement>::iterator it;
+  it = map.begin();
+  while (it != map.end()) {
+    p_meas.push_back(it->second);
+    it++;
+  }
 }
 
 /**

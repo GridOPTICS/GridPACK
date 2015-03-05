@@ -111,6 +111,16 @@ void gridpack::state_estimation::SEFactory::setMeasurements(
   }
   branch_ids.clear();
   branch_meas.clear();
+  nsize = p_network->numBuses();
+  // Sort measurements on each bus and branch so that they are in a consistent
+  // order on all components
+  for (i=0; i<nsize; i++) {
+    p_network->getBus(i)->sortMeasurements();
+  }
+  nsize = p_network->numBranches();
+  for (i=0; i<nsize; i++) {
+    p_network->getBranch(i)->sortMeasurements();
+  }
 }
 
 /**

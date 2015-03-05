@@ -135,8 +135,8 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   p_network->partition();
 
   // Create serial IO object to export data from buses or branches
-  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(2048, p_network));
-  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(128, p_network));
+  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(1024, p_network));
+  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(1024, p_network));
 }
 
 /**
@@ -161,10 +161,15 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   // Convergence and iteration parameters
   double p_tolerance = secursor->get("tolerance",1.0e-6);
   int p_max_iteration = secursor->get("maxIteration",20);
+  char buf[128];
+  sprintf(buf,"Tolerance: %12.4e\n",p_tolerance);
+  p_busIO->header(buf);
+  sprintf(buf,"Maximum number of iterations: %de\n",p_max_iteration);
+  p_busIO->header(buf);
 
   // Create serial IO object to export data from buses or branches
-  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(2048, p_network));
-  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(128, p_network));
+  p_busIO.reset(new gridpack::serial_io::SerialBusIO<SENetwork>(1024, p_network));
+  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<SENetwork>(1024, p_network));
 }
 
 /**

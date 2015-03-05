@@ -768,6 +768,12 @@ class PTI33_parser : BaseParser<_network>
         boost::unordered_map<int, int>::iterator it;
 #endif
         int nstr = split_line.size();
+        it = p_busMap.find(o_idx);
+        if (it != p_busMap.end()) {
+          l_idx = it->second;
+        } else {
+          continue;
+        }
         data = dynamic_cast<gridpack::component::DataCollection*>
           (p_network->getBusData(l_idx).get());
 
