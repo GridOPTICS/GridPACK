@@ -71,9 +71,10 @@ class GOSS_parser : BaseParser<_network>
     enum XML_TYPE {INTEGER, BOOLEAN, DOUBLE, CHARACTER, STRING, N_TYPES};
 
     /// Constructor
-    explicit GOSS_parser(boost::shared_ptr<_network> network) : nBuses(0),
-      p_network(network), nBranches(0), p_case_sbase(0.0), p_case_id(0),
-      p_configExists(false)
+    explicit GOSS_parser(boost::shared_ptr<_network> network) :
+      p_network(network), nBuses(0), nBranches(0)  , totalGenerators(0),
+      totalLines(0), totalTransformers(0), totalLoads(0), p_case_sbase(0.0),
+      p_case_id(0), p_configExists(false)
     {
       this->setNetwork(network);
       p_comm = network->communicator();
@@ -346,6 +347,12 @@ class GOSS_parser : BaseParser<_network>
       {
         readBus(busTree);
       }
+      boost::shared_ptr<gridpack::component::DataCollection>
+          data(new gridpack::component::DataCollection);
+      data->addValue("N_GENERATORS", totalGenerators);
+      data->addValue("N_LOADS", totalLoads);
+      p_busCollection.push_back(data1);
+
     }
 
     /* ***********************************************************************
@@ -403,8 +410,13 @@ class GOSS_parser : BaseParser<_network>
           loadCollection(data, busAttr);
         }
       }
+      data->addValue("GENERATOR_NUMBER", nGenerators);
+      data->addValue("LOADS_NUMBER", nLoads);
       p_busCollection.push_back(data);
       ++nBuses;
+
+      totalGenerators += nGenerators;
+      totalLoads += nLoads;
     }
 
     /* ************************************************************************
@@ -429,29 +441,51 @@ class GOSS_parser : BaseParser<_network>
       {
         readBranch(branchTree);
       }
-    }
+      boost::shared_ptr<gridpack::component::DataCollection>
+          data(new gridpack::component::DataCollection);
+      data->addValue("N_TRANSFORMERS", totalTransformers);
+      data->addValue("N_LINES", totalLines);
+      p_branchCollection.push_back(data);
+   }
 
     void readBranch(boost::property_tree::ptree::value_type const & branchTree)
     {
       boost::shared_ptr<gridpack::component::DataCollection>
         data(new gridpack::component::DataCollection);
+      int                  nTransformers  = 0;
+      int                  nLines         = 0;
 
       BOOST_FOREACH( boost::property_tree::ptree::value_type branchAttr,
           branchTree.second)
       {
 
-        if (branchAttr.first == "TransmissionElements")
-        {
-          BOOST_FOREACH( boost::property_tree::ptree::value_type lineSet,
-              branchAttr.second)
+          std::cout << "Branch attr = " << branchAttr.first << std::endl;
+          if (branchAttr.first == "TransmissionElements")
           {
-            BOOST_FOREACH( boost::property_tree::ptree::value_type lineAttr,
-                lineSet.second)
-            {
-              loadCollection(data, lineAttr);
-            }
-          }
-        } else {
+              BOOST_FOREACH( boost::property_tree::ptree::value_type transAttr,
+                      branchAttr.second)
+              {
+                  std::cout << "Trans attr = " << transAttr.first << std::endl;
+                  if (transAttr.first == "Line")
+                  {
+                      BOOST_FOREACH( boost::property_tree::ptree::value_type lineSet,
+                              transAttr.second)
+                      {
+                          std::cout << "line attr = " << lineSet.first << " value = " << lineSet.second.data().c_str() << std::endl;
+                              loadCollection(data, lineSet, nLines);
+                      }
+                      ++nLines;
+                  } else if (transAttr.first == "Transformer")
+                  {
+                      BOOST_FOREACH( boost::property_tree::ptree::value_type transformerSet,
+                              transAttr.second)
+                      {
+                          loadCollection(data, transformerSet, nTransformers);
+                      }
+                      ++nTransformers;
+                  }
+              } // end search for transmission elements
+          } else   // transmission element not found
           loadCollection(data, branchAttr);
         }
       }
@@ -557,6 +591,10 @@ class GOSS_parser : BaseParser<_network>
 
     int                      nBuses;
     int                      nBranches;
+    int                      totalGenerators;
+    int                      totalLines;
+    int                      totalLoads;
+    int                      totalTransformers;
 
     // Vector of data collection objects
     std::vector<boost::shared_ptr<gridpack::component::DataCollection> >
