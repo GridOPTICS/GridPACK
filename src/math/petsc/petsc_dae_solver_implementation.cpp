@@ -8,7 +8,7 @@
 /**
  * @file   petsc_dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-12-09 13:34:30 d3g096
+ * @date   2015-03-05 14:51:44 d3g096
  * 
  * @brief  
  * 
@@ -88,8 +88,8 @@ PETScDAESolverImplementation::FormIJacobian(TS ts, PetscReal t, Vec x, Vec xdot,
   BOOST_ASSERT(B == *(solver->p_petsc_J));
 
   boost::scoped_ptr<Vector> 
-    xtmp(new Vector(new PETScVectorImplementation(x, false))),
-    xdottmp(new Vector(new PETScVectorImplementation(xdot, false)));
+    xtmp(new Vector(new PETScVectorImplementation<ComplexType, int>(x, false))),
+    xdottmp(new Vector(new PETScVectorImplementation<ComplexType, int>(xdot, false)));
 
   // Call the user-specified function (object) to form the Jacobian
   (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, solver->p_J);
@@ -113,9 +113,9 @@ PETScDAESolverImplementation::FormIFunction(TS ts, PetscReal t, Vec x, Vec xdot,
     (PETScDAESolverImplementation *)dummy;
 
   boost::scoped_ptr<Vector> 
-    xtmp(new Vector(new PETScVectorImplementation(x, false))),
-    xdottmp(new Vector(new PETScVectorImplementation(xdot, false))),
-    ftmp(new Vector(new PETScVectorImplementation(F, false)));
+    xtmp(new Vector(new PETScVectorImplementation<ComplexType, int>(x, false))),
+    xdottmp(new Vector(new PETScVectorImplementation<ComplexType, int>(xdot, false))),
+    ftmp(new Vector(new PETScVectorImplementation<ComplexType, int>(F, false)));
 
   (solver->p_Fbuilder)(t, *xtmp, *xdottmp, *ftmp);
   return ierr;

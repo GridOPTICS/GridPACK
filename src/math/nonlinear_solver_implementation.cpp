@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-19 12:03:59 d3g096
+ * @date   2015-03-05 14:42:53 d3g096
  * 
  * @brief  Abstract class NonlinearSolverImplementation implementation 
  * 
@@ -57,7 +57,7 @@ NonlinearSolverImplementation::NonlinearSolverImplementation(const parallel::Com
   //           << "NonlinearSolverImplementation: construct Jacobian matrix: "
   //           << local_size << " x " << cols
   //           << std::endl;
-  p_J.reset(new Matrix(this->communicator(), local_size, local_size, Matrix::Sparse));
+  p_J.reset(new Matrix(this->communicator(), local_size, local_size, Sparse));
 }
 
 NonlinearSolverImplementation::NonlinearSolverImplementation(Matrix& J,

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-12-09 11:09:10 d3g096
+ * @date   2015-03-05 14:43:28 d3g096
  * 
  * @brief  
  * 
@@ -241,10 +241,10 @@ PetscNonlinearSolverImplementation::FormFunction(SNES snes, Vec x, Vec f, void *
   // user function
 
   boost::scoped_ptr<Vector> 
-    xtmp(new Vector(new PETScVectorImplementation(x, false)));
+    xtmp(new Vector(new PETScVectorImplementation<ComplexType, int>(x, false)));
 
   boost::scoped_ptr<Vector> 
-    ftmp(new Vector(new PETScVectorImplementation(f, false)));
+    ftmp(new Vector(new PETScVectorImplementation<ComplexType, int>(f, false)));
 
   // Call the user-specified function (object) to form the RHS
   (solver->p_function)(*xtmp, *ftmp);
