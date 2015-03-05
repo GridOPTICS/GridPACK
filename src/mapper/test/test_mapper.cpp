@@ -16,9 +16,11 @@
 #include "gridpack/mapper/gen_matrix_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/gen_vector_map.hpp"
+#include "gridpack/mapper/gen_slab_map.hpp"
 
 #define XDIM 100
 #define YDIM 100
+#define NSLAB 20
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -179,11 +181,47 @@ class TestBus
     values[1] = p_vec2;
   }
 
+  void slabSize(int *isize, int *jsize)
+  {
+    *isize = 2;
+    *jsize = NSLAB;
+  }
+
+  void slabSetRowIndex(int irow, int idx)
+  {
+    if (irow == 0) {
+      p_slab_idx1 = idx;
+    } else {
+      p_slab_idx2 = idx;
+    }
+  }
+
+  void slabGetRowIndices(int *idx)
+  {
+    idx[0] = p_slab_idx1;
+    idx[1] = p_slab_idx2;
+  }
+
+  void slabGetValues(std::vector<gridpack::ComplexType*> &values, int *idx)
+  {
+    slabGetRowIndices(idx);
+    int index = getGlobalIndex();
+    int i;
+    (values[0])[0] = gridpack::ComplexType(static_cast<double>(index),0.0);
+    (values[1])[0] = gridpack::ComplexType(static_cast<double>(index+1),0.0);
+    for (i=1; i<NSLAB; i++) {
+      (values[0])[i] = (values[0])[i-1]+gridpack::ComplexType(1.0,0.0);
+      (values[1])[i] = (values[1])[i-1]+gridpack::ComplexType(1.0,0.0);
+    }
+  }
+
   gridpack::ComplexType p_val;
   int p_row_idx;
   int p_col_idx;
   int p_vec_idx1;
   int p_vec_idx2;
+  int p_slab_idx1;
+  int p_slab_idx2;
   gridpack::ComplexType p_vec1, p_vec2;
 };
 
@@ -327,9 +365,38 @@ class TestBranch
     values[0] = p_vec_val;
   }
 
+  void slabSize(int *isize, int *jsize)
+  {
+    *isize = 1;
+    *jsize = NSLAB;
+  }
+
+  void slabSetRowIndex(int irow, int idx)
+  {
+    p_slab_idx = idx;
+  }
+
+  void slabGetRowIndices(int *idx)
+  {
+    idx[0] = p_slab_idx;
+  }
+
+  void slabGetValues(std::vector<gridpack::ComplexType*> &values, int *idx)
+  {
+    slabGetRowIndices(idx);
+    int idx1 = getBus1GlobalIndex();
+    int idx2 = getBus2GlobalIndex();
+    int i;
+    (values[0])[0] = gridpack::ComplexType(static_cast<double>(idx1+idx2),0.0);
+    for (i=1; i<NSLAB; i++) {
+      (values[0])[i] = (values[0])[i-1]+gridpack::ComplexType(1.0,0.0);
+    }
+  }
+
   int p_row_idx;
   int p_col_idx;
   int p_vec_idx;
+  int p_slab_idx;
   gridpack::ComplexType p_vec_val;
 };
 
@@ -859,6 +926,62 @@ void run (const int &me, const int &nprocs)
       printf("\nError found in network value\n");
     }
   }
+
+  if (me == 0) {
+    printf("\nTesting generalized slab interface\n");
+  }
+  gridpack::mapper::GenSlabMap<TestNetwork> gsMap(network); 
+  boost::shared_ptr<gridpack::math::Matrix> GS = gsMap.mapToMatrix();
+
+  // Check to see if matrix has correct values
+  chk = 0;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      idx = network->getBus(i)->getGlobalIndex();
+      int indices[2];
+      network->getBus(i)->slabGetRowIndices(indices);
+
+      for (j=0; j<NSLAB; j++) {
+        GS->getElement(indices[0],j,v);
+        if (idx+j != static_cast<int>(real(v))) {
+          printf("Mismatch found (bus) expected: %d actual: %d\n",
+              idx+j,static_cast<int>(real(v)));
+          chk = 1;
+        }
+        GS->getElement(indices[1],j,v);
+        if (idx+j+1 != static_cast<int>(real(v))) {
+          printf("Mismatch found (bus) expected: %d actual: %d\n",
+              idx+j+1,static_cast<int>(real(v)));
+          chk = 1;
+        }
+      }
+    }
+  }
+  for (i=0; i<nbranch; i++) {
+    if (network->getActiveBranch(i)) {
+      int idx1 = network->getBranch(i)->getBus1GlobalIndex();
+      int idx2 = network->getBranch(i)->getBus2GlobalIndex();
+      int index;
+      network->getBranch(i)->vectorGetElementIndices(&index);
+      for(j=0; j<NSLAB; j++) {
+        GS->getElement(index,j,v);
+        if (idx1+idx2+j != static_cast<int>(real(v))) {
+          printf("Mismatch found (branch) expected: %d actual: %d\n",
+              idx1+idx2+j,static_cast<int>(real(v)));
+          chk = 1;
+        }
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nSlab matrix elements are ok\n");
+    } else {
+      printf("\nError found in slab matrix elements\n");
+    }
+  }
+
 
 }
 
