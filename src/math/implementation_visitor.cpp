@@ -8,7 +8,7 @@
 /**
  * @file   implementation_visitor.cpp
  * @author William A. Perkins
- * @date   2015-01-28 13:02:59 d3g096
+ * @date   2015-03-05 12:13:27 d3g096
  * 
  * @brief  
  * 
@@ -55,18 +55,6 @@ ImplementationVisitor::visit(PetscMatrixWrapper&)
   BOOST_ASSERT(false);
 }
 
-void 
-ImplementationVisitor::visit(LinearSolverImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ImplementationVisitor::visit(PETScLinearSolverImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
 // -------------------------------------------------------------
 //  class ConstImplementationVisitor
 // -------------------------------------------------------------
@@ -97,19 +85,6 @@ ConstImplementationVisitor::visit(const PetscMatrixWrapper&)
 {
   BOOST_ASSERT(false);
 }
-
-void 
-ConstImplementationVisitor::visit(const LinearSolverImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ConstImplementationVisitor::visit(const PETScLinearSolverImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
 
 } // namespace math
 } // namespace gridpack

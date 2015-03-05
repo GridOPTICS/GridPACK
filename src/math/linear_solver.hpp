@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2014-10-22 09:20:30 d3g096
+ * @date   2015-03-05 12:08:16 d3g096
  * 
  * @brief  
  * 
@@ -95,7 +95,8 @@ public:
    * all processes involved in calling the constructor.
    * 
    */
-  ~LinearSolver(void);
+  ~LinearSolver(void)
+  {}
 
 protected:
 
@@ -153,30 +154,6 @@ protected:
   void p_maximumIterations(const int& n)
   {
     p_solver->maximumIterations(n);
-  }
-
-  /// Allow visits by implemetation visitor
-  /** 
-   * This simply passes an ImplementationVisitor on to the \ref
-   * LinearSolverImplementation "implementation".
-   * 
-   * @param visitor 
-   */
-  void p_accept(ImplementationVisitor& visitor)
-  {
-    p_solver->accept(visitor);
-  }
-
-  /// Allow visits by implemetation visitor
-  /** 
-   * This simply passes a ConstImplementationVisitor on to the \ref
-   * LinearSolverImplementation "implementation".
-   * 
-   * @param visitor 
-   */
-  void p_accept(ConstImplementationVisitor& visitor) const
-  {
-    p_solver->accept(visitor);
   }
 
   /// Solve w/ the specified RHS, put result in specified vector

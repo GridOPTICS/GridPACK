@@ -6,7 +6,7 @@
 /**
  * @file   linear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2014-10-22 09:12:07 d3g096
+ * @date   2015-03-05 11:57:24 d3g096
  * 
  * @brief  
  * 
@@ -23,7 +23,6 @@
 #define _linear_solver_interface_hpp_
 
 #include "gridpack/math/matrix.hpp"
-#include "gridpack/math/implementation_visitable.hpp"
 
 namespace gridpack {
 namespace math {
@@ -33,13 +32,12 @@ namespace math {
 //  class BaseLinearSolverInterface
 // -------------------------------------------------------------
 class BaseLinearSolverInterface 
-  : public ImplementationVisitable
+//   : public ImplementationVisitable
 {
 public:
 
   /// Default constructor.
   BaseLinearSolverInterface(void)
-    : ImplementationVisitable()
   {}
 
   /// Destructor

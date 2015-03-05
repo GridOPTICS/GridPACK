@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-10-22 09:13:34 d3g096
+ * @date   2015-03-05 11:59:57 d3g096
  * 
  * @brief  
  * 
@@ -46,11 +46,22 @@ class LinearSolverImplementation
 public:
   
   /// Default constructor.
-  LinearSolverImplementation(const parallel::Communicator& comm);
+  LinearSolverImplementation(const parallel::Communicator& comm)
+    : parallel::Distributed(comm),
+      utility::Configurable("LinearSolver"),
+      utility::Uncopyable(),
+      p_solutionTolerance(1.0e-06),
+      p_relativeTolerance(p_solutionTolerance),
+      p_maxIterations(100)
+  {
+  }
 
   /// Destructor
-  ~LinearSolverImplementation(void);
-  
+  ~LinearSolverImplementation(void)
+  {
+    // empty
+  }
+
 protected:
 
   /// The solution residual norm tolerance
@@ -74,22 +85,69 @@ protected:
   int p_maxIterations;
 
   /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::CursorPtr props);
+  void p_configure(utility::Configuration::CursorPtr props)
+  {
+    if (props) {
+      p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
+      p_relativeTolerance = props->get("RelativeTolerance", p_solutionTolerance);
+      p_maxIterations = props->get("MaxIterations", p_maxIterations);
+    }
+  }
 
   /// Get the solution tolerance (specialized)
-  double p_tolerance(void) const;
+  double p_tolerance(void) const
+  {
+    return p_solutionTolerance;
+  }
 
   /// Set the solver tolerance (specialized)
-  void p_tolerance(const double& tol);
+  void p_tolerance(const double& tol)
+  {
+    p_solutionTolerance = tol;
+  }
 
   /// Get the maximum iterations (specialized)
-  int p_maximumIterations(void) const;
+  int p_maximumIterations(void) const
+  {
+    return p_maxIterations;
+  }
 
   /// Set the maximum solution iterations
-  void p_maximumIterations(const int& n);
+  void p_maximumIterations(const int& n)
+  {
+    p_maxIterations = n;
+  }
 
   /// Solve multiple systems w/ each column of the Matrix a single RHS
-  Matrix *p_solve(const Matrix& B) const;
+  Matrix *p_solve(const Matrix& B) const
+  {
+    Vector b(B.communicator(), B.localRows());
+    Vector X(B.communicator(), B.localRows());
+    Matrix *result(new Matrix(B.communicator(), B.localRows(), B.localCols(), Dense));
+
+    int ilo, ihi;
+    X.localIndexRange(ilo, ihi);
+    // std::vector<ComplexType> locX(X.localSize());
+
+    for (int j = 0; j < B.cols(); ++j) {
+      column(B, j, b);
+      X.zero();
+      X.ready();
+      this->solve(b, X);
+      // std::cout << X.processor_rank() << ": X: " << ilo << "-" << ihi << std::endl;
+      // X.print();
+      // X.getElementRange(ilo, ihi, &locX[0]);
+      for (int i = ilo; i < ihi; ++i) {
+        ComplexType v;
+        X.getElement(i, v);
+        result->setElement(i, j, v);
+      }
+    }
+  
+    result->ready();
+    return result;
+  }
+
 };
 
 } // namespace math

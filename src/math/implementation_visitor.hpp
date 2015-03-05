@@ -9,7 +9,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2015-01-28 13:02:40 d3g096
+ * @date   2015-03-05 12:02:41 d3g096
  * 
  * @brief  
  * 
@@ -60,10 +60,6 @@ public:
   /// The default visit (should just assert or do nothing)
   virtual void visit(PetscVectorWrapper&);
   virtual void visit(PetscMatrixWrapper&);
-
-  virtual void visit(LinearSolverImplementation&);
-  virtual void visit(PETScLinearSolverImplementation&);
-
 };
 
 // -------------------------------------------------------------
@@ -89,10 +85,6 @@ public:
   /// The default visit, const version (should just assert or do nothing)
   virtual void visit(const PetscVectorWrapper&);
   virtual void visit(const PetscMatrixWrapper&);
-
-  virtual void visit(const LinearSolverImplementation&);
-  virtual void visit(const PETScLinearSolverImplementation&);
-
 };
 
 } // namespace math
