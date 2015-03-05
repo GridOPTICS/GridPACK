@@ -342,6 +342,46 @@ void GenMatVecInterface::vectorGetElementValues(ComplexType *values, int *idx)
 void GenMatVecInterface::vectorSetElementValues(ComplexType *values)
 {
 }
+
+/**
+ * Return number of rows and columns in matrix from component
+ * Number of columns must be the same for all components
+ * @return size of block contributed by component
+ */
+void GenMatVecInterface::slabSize(int *rows, int *cols) const
+{
+  *rows = 0;
+  *cols = 0;
+}
+
+/**
+ * Set indices corresponding to the rows contributed by this component
+ * @param irow index of row contributed by this component (e.g. if component
+ * contributes 3 rows then irow is between 0 and 2)
+ * @param idx row index of row irow
+ */
+void GenMatVecInterface::slabSetRowIndex(int irow, int idx)
+{
+}
+
+/**
+ * Get list of row indices from component
+ * @param idx list of row indices that component maps onto
+ */
+void GenMatVecInterface::slabGetRowIndices(int *idx)
+{
+}
+
+/**
+ * Get a list of row values contributed by this component and their
+ * indices
+ * @param values list of values for rows
+ * @param idx indices for the matrix rows
+ */
+void GenMatVecInterface::slabGetValues(std::vector<ComplexType*> &values, int *idx)
+{
+}
+
  
 // The base implementation for bus and branch components.
 
