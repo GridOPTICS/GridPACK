@@ -8,7 +8,7 @@
 /**
  * @file   complex_linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-03-05 10:06:10 d3g096
+ * @date   2015-03-06 14:10:57 d3g096
  * 
  * @brief  
  * 
@@ -28,36 +28,31 @@
 #include "gridpack/utilities/exception.hpp"
 #include "math.hpp"
 #include "linear_solver.hpp"
+#include "linear_matrix_solver.hpp"
 
 /// The configuration used for these tests
 static gridpack::utility::Configuration::CursorPtr test_config;
 
+using namespace gridpack;
 
-BOOST_AUTO_TEST_SUITE(ComplexLinearSolverTest)
-
-// ------------------------------------------------------------- This
-// test solves the Helmboltz equation on a unit square. It's taken
-// directly from PETSc KSP example 11
-// (http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex11.c.html)
-// -------------------------------------------------------------
-BOOST_AUTO_TEST_CASE(Helmboltz)
+static void
+assemble_helmboltz(const parallel::Communicator& comm,
+                   boost::shared_ptr<math::ComplexMatrix>& A, 
+                   boost::shared_ptr<math::ComplexVector>& u, 
+                   boost::shared_ptr<math::ComplexVector>& b)
 {
-  using namespace gridpack;
-
   const int n(6), dim(n*n);
 
-  parallel::Communicator world;
-  int local_size(dim/world.size());
+  int local_size(dim/comm.size());
 
-  if (world.rank() == world.size() - 1) {
-    local_size = dim - local_size*(world.size() - 1);
+  if (comm.rank() == comm.size() - 1) {
+    local_size = dim - local_size*(comm.size() - 1);
   }
-
-  boost::scoped_ptr<math::ComplexMatrix> 
-    A(new math::ComplexMatrix(world, local_size, local_size, 12));
-  std::cerr << world.rank() << " of " << world.size() 
+  std::cerr << comm.rank() << " of " << comm.size() 
             << ": local_size = " << local_size 
             << std::endl;
+
+  A.reset(new math::ComplexMatrix(comm, local_size, local_size, 12));
 
   const RealType h2(1.0/static_cast<RealType>((n+1)*(n+1)));
   const RealType sigma1(100.0);
@@ -78,17 +73,32 @@ BOOST_AUTO_TEST_CASE(Helmboltz)
   }
   A->ready();
 
-  boost::scoped_ptr<math::ComplexVector> 
-    u(new math::ComplexVector(world, local_size)),
-    x(u->clone());
+  u.reset(new math::ComplexVector(comm, local_size));
   u->fill(0.5);
   u->ready();
+
+  b.reset(u->clone());
+  math::multiply(*A, *u, *b);
+}
+
+
+BOOST_AUTO_TEST_SUITE(ComplexLinearSolverTest)
+
+// ------------------------------------------------------------- This
+// test solves the Helmboltz equation on a unit square. It's taken
+// directly from PETSc KSP example 11
+// (http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex11.c.html)
+// -------------------------------------------------------------
+BOOST_AUTO_TEST_CASE(Helmboltz)
+{
+  parallel::Communicator world;
+  boost::shared_ptr<math::ComplexMatrix> A;
+  boost::shared_ptr<math::ComplexVector> u, b, x;
+  assemble_helmboltz(world, A, u, b);
+
+  x.reset(u->clone()),
   x->fill(0.0);
   x->ready();
-
-  // rig the game, so we know the answer
-  boost::scoped_ptr<math::ComplexVector>
-    b(math::multiply(*A, *u));
 
   boost::scoped_ptr<math::LinearSolver> 
     solver(new math::LinearSolver(*A));
@@ -99,7 +109,33 @@ BOOST_AUTO_TEST_CASE(Helmboltz)
   // check the answer
   x->add(*u, -1.0);
   BOOST_CHECK(x->norm2() < 1.0E-04);
-  
+}
+
+BOOST_AUTO_TEST_CASE(HelmboltzInverse)
+{
+  parallel::Communicator world;
+  boost::shared_ptr<math::ComplexMatrix> A, I, Ainv;
+  boost::shared_ptr<math::ComplexVector> u, b, x;
+  assemble_helmboltz(world, A, u, b);
+
+  I.reset(new math::ComplexMatrix(A->communicator(),
+                                  A->localRows(),
+                                  A->localCols(),
+                                  math::Dense));
+  I->identity();
+
+  boost::scoped_ptr<math::LinearMatrixSolver> 
+    solver(new math::LinearMatrixSolver(*A));
+
+  BOOST_REQUIRE(test_config);
+  solver->configure(test_config);
+  Ainv.reset(solver->solve(*I));
+
+  x.reset(math::multiply(*Ainv, *b));
+
+  // check the answer
+  x->add(*u, -1.0);
+  BOOST_CHECK(x->norm2() < 1.0E-04);
 }
 
 BOOST_AUTO_TEST_SUITE_END()

@@ -10,7 +10,7 @@
 /**
  * @file   linear_matrix_solver.hpp
  * @author William A. Perkins
- * @date   2013-11-07 12:47:30 d3g096
+ * @date   2015-03-06 12:33:45 d3g096
  * 
  * @brief  Declaration of the LinearMatrixSolver class
  * 
@@ -42,20 +42,31 @@ namespace math {
  * 
  * 
  */
-class LinearMatrixSolver
-  : public parallel::WrappedDistributed,
+template <typename T, typename I = int>
+class LinearMatrixSolverT
+  : public BaseLinearMatrixSolverInterface<T, I>, 
+    public parallel::WrappedDistributed,
     public utility::WrappedConfigurable,
     private utility::Uncopyable
 {
 public:
 
+  typedef typename BaseLinearMatrixSolverInterface<T, I>::MatrixType MatrixType;
+
   /// Default constructor.
-  LinearMatrixSolver(const Matrix& A);
+  LinearMatrixSolverT(const MatrixType& A);
 
   /// Destructor
-  ~LinearMatrixSolver(void);
+  ~LinearMatrixSolverT(void)
+  {}
 
-  /// Solve multiple systems
+protected:
+
+  /// Where the work is actually done
+  boost::scoped_ptr< LinearMatrixSolverImplementation<T, I> > p_impl;
+
+
+  /// Solve multiple systems w/ the specified RHS Matrix (specialized)
   /** 
    * Each column in @c B represent a single right hand side. Each
    * column in the returned Matrix contains the solution corresponding
@@ -67,16 +78,16 @@ public:
    * 
    * @return (dense) solution Matrix
    */
-  Matrix *solve(const Matrix& B) const
+  MatrixType *p_solve(const MatrixType& B) const
   {
     return p_impl->solve(B);
   }
 
-protected:
-
-  /// Where the work is actually done
-  boost::scoped_ptr<LinearMatrixSolverImplementation> p_impl;
 };
+
+typedef LinearMatrixSolverT<ComplexType> ComplexLinearMatrixSolver;
+typedef LinearMatrixSolverT<RealType> RealLinearMatrixSolver;
+typedef ComplexLinearMatrixSolver LinearMatrixSolver;
 
 } // namespace math
 } // namespace gridpack

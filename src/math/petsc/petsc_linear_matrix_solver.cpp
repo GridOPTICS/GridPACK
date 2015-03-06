@@ -8,7 +8,7 @@
 /**
  * @file   linear_matrix_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:49:59 d3g096
+ * @date   2015-03-06 12:56:52 d3g096
  * 
  * @brief  
  * 
@@ -30,20 +30,28 @@ namespace math {
 // -------------------------------------------------------------
 // LinearMatrixSolver:: constructors / destructor
 // -------------------------------------------------------------
-LinearMatrixSolver::LinearMatrixSolver(const Matrix& A)
-  : parallel::WrappedDistributed(),
+template <typename T, typename I>
+LinearMatrixSolverT<T, I>::LinearMatrixSolverT(const LinearMatrixSolverT<T, I>::MatrixType& A)
+  : BaseLinearMatrixSolverInterface<T, I>(),
+    parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
     utility::Uncopyable()
 {
 #ifdef PETSC_HAVE_SUPERLU
-  p_impl.reset(new PetscLinearMatrixSolverImplementation(A));
+  p_impl.reset(new PetscLinearMatrixSolverImplementation<T, I>(A));
 #else
-  p_impl.reset(new BasicLinearMatrixSolverImplementation(A));
+  p_impl.reset(new BasicLinearMatrixSolverImplementation<T, I>(A));
 #endif
   p_setDistributed(p_impl.get());
   p_setConfigurable(p_impl.get());
 }
 
+
+template
+LinearMatrixSolverT<ComplexType>::LinearMatrixSolverT(const LinearMatrixSolverT<ComplexType>::MatrixType& A);
+
+template
+LinearMatrixSolverT<RealType>::LinearMatrixSolverT(const LinearMatrixSolverT<RealType>::MatrixType& A);
 
 } // namespace math
 } // namespace gridpack

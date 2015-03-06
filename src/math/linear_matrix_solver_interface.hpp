@@ -6,57 +6,47 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 // -------------------------------------------------------------
+// -------------------------------------------------------------
 /**
- * @file   linear_matrix_solver_implementation.hpp
+ * @file   linear_matrix_solver_interface.hpp
  * @author William A. Perkins
- * @date   2015-03-06 12:17:02 d3g096
+ * @date   2015-03-06 11:51:39 d3g096
  * 
- * @brief  Declaration of LinearMatrixSolverImplementation class
+ * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
 
-#ifndef _linear_matrix_solver_implementation_hpp_
-#define _linear_matrix_solver_implementation_hpp_
+#ifndef _linear_matrix_solver_interface_hpp_
+#define _linear_matrix_solver_interface_hpp_
 
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/configuration/configurable.hpp"
 #include "gridpack/utilities/uncopyable.hpp"
-#include "gridpack/math/linear_matrix_solver_interface.hpp"
+#include "gridpack/math/matrix.hpp"
+
 
 namespace gridpack {
 namespace math {
 
 // -------------------------------------------------------------
-//  class LinearMatrixSolverImplementation
+//  class BaseLinearMatrixSolverInterface
 // -------------------------------------------------------------
-/// 
-template <typename T, typename I>
-class LinearMatrixSolverImplementation 
-  : public BaseLinearMatrixSolverInterface<T, I>,
-    public parallel::Distributed,
-    public utility::Configurable,
-    private utility::Uncopyable
+template <typename T, typename I = int>
+class BaseLinearMatrixSolverInterface 
 {
 public:
 
-  typedef typename BaseLinearMatrixSolverInterface<T, I>::MatrixType MatrixType;
+  typedef MatrixT<T, I> MatrixType;
 
   /// Default constructor.
-  LinearMatrixSolverImplementation(const MatrixType& A)
-    : BaseLinearMatrixSolverInterface<T, I>(),
-      parallel::Distributed(A.communicator()),
-      utility::Configurable(),
-      utility::Uncopyable(),
-      p_A(A.clone())
-  {
-    configurationKey("LinearMatrixSolver");
-  }
+  BaseLinearMatrixSolverInterface(void)
+  {}
 
 
   /// Destructor
-  ~LinearMatrixSolverImplementation(void)
+  virtual ~BaseLinearMatrixSolverInterface(void)
   {}
 
   /// Solve w/ the specified RHS Matrix, return (dense) Matrix
@@ -67,17 +57,15 @@ public:
 
 protected:
 
-  /// The coefficient matrix (may not need to remember)
-  boost::scoped_ptr<MatrixType> p_A;
-  
   /// Solve w/ the specified RHS Matrix (specialized)
   virtual MatrixType *p_solve(const MatrixType& B) const = 0;
 
 };
 
 
+
+
 } // namespace math
 } // namespace gridpack
-
 
 #endif
