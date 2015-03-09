@@ -8,7 +8,7 @@
 /**
  * @file   complex_linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-03-06 14:10:57 d3g096
+ * @date   2015-03-09 10:08:01 d3g096
  * 
  * @brief  
  * 
@@ -52,7 +52,7 @@ assemble_helmboltz(const parallel::Communicator& comm,
             << ": local_size = " << local_size 
             << std::endl;
 
-  A.reset(new math::ComplexMatrix(comm, local_size, local_size, 12));
+  A.reset(new math::ComplexMatrix(comm, local_size, local_size, 6));
 
   const RealType h2(1.0/static_cast<RealType>((n+1)*(n+1)));
   const RealType sigma1(100.0);
