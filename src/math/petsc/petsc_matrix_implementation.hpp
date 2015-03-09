@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-02-25 14:23:54 d3g096
+ * @date   2015-03-09 09:42:48 d3g096
  * 
  * @brief  
  * 
@@ -78,11 +78,13 @@ public:
                             const IdxType& local_rows, const IdxType& local_cols,
                             const IdxType& max_nonzero_per_row)
     : MatrixImplementation<T, I>(comm),
-      p_mwrap(new PetscMatrixWrapper(comm, 
-                                     local_rows*elementSize, 
-                                     local_cols*elementSize, 
-                                     max_nonzero_per_row))
+      p_mwrap()
   {
+    IdxType tmp(max_nonzero_per_row*elementSize);
+    p_mwrap.reset(new PetscMatrixWrapper(comm, 
+                                         local_rows*elementSize, 
+                                         local_cols*elementSize, 
+                                         tmp));
   }
 
   /// Construct a sparse matrix with number of nonzeros in each row
@@ -91,23 +93,17 @@ public:
                             const IdxType *nonzeros_by_row)
     : MatrixImplementation<T, I>(comm)
   {
-    if (elementSize > 1) {
-      std::vector<IdxType> tmp(local_rows*elementSize);
-      for (unsigned int i = 0; i < tmp.size(); i += elementSize) {
-        tmp[i] = nonzeros_by_row[i];
-        tmp[i+1] = nonzeros_by_row[i];
+    std::vector<IdxType> tmp(local_rows*elementSize);
+    for (unsigned int i = 0; i < local_rows; ++i) {
+      tmp[i*elementSize] = nonzeros_by_row[i]*elementSize;
+      if (elementSize > 1) {
+        tmp[i*elementSize+1] = nonzeros_by_row[i]*elementSize;
       }
-      p_mwrap.reset(new PetscMatrixWrapper(comm, 
-                                           local_rows*elementSize, 
-                                           local_cols*elementSize, 
-                                           &tmp[0]));
-    } else {
-      p_mwrap.reset(new PetscMatrixWrapper(comm, 
-                                           local_rows*elementSize, 
-                                           local_cols*elementSize, 
-                                           nonzeros_by_row));
     }
-                    
+    p_mwrap.reset(new PetscMatrixWrapper(comm, 
+                                         local_rows*elementSize, 
+                                         local_cols*elementSize, 
+                                         &tmp[0]));
   }
 
   /// Make a new instance from an existing PETSc matrix
