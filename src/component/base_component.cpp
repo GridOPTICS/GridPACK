@@ -485,7 +485,7 @@ bool BaseComponent::serialWrite(char *string, const int bufsize, const char *sig
  * @param data data collection object into which new values are inserted
  */
 void BaseComponent::saveData(
-    boost::shared_ptr<gridpack::component::DataCollection> &data)
+    boost::shared_ptr<gridpack::component::DataCollection> data)
 {
   // This is a no-op that can be overridden by the user to store internal state
   // variables in the data collection object

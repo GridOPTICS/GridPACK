@@ -55,6 +55,7 @@ main(int argc, char **argv)
     pf_app.initialize();
     pf_app.solve();
     pf_app.write();
+    pf_app.saveData();
   }
 
   GA_Terminate();

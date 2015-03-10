@@ -396,6 +396,7 @@ void gridpack::powerflow::PFBus::load(
   double pg, qg, vs,qmax,qmin;
   ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+    double qtot = 0.0;
     for (i=0; i<ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
@@ -409,6 +410,8 @@ void gridpack::powerflow::PFBus::load(
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
         p_qmax.push_back(qmax);
+        qtot += qmax;
+        p_pFac.push_back(qmax);
         p_qmin.push_back(qmin);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
@@ -418,6 +421,9 @@ void gridpack::powerflow::PFBus::load(
         data->getValue(GENERATOR_ID,&id,i);
         p_gid.push_back(id);
       }
+    }
+    for (i=0; i<ngen; i++) {
+      p_pFac[i] = p_pFac[i]/qtot;
     }
   }
   p_saveisPV = p_isPV;
@@ -618,6 +624,39 @@ gridpack::ComplexType gridpack::powerflow::PFBus::getComplexVoltage(void)
   gridpack::ComplexType ret(cos(p_a),sin(p_a));
   ret = ret*p_v;
   return ret;
+}
+
+/**
+ * Save state variables inside the component to a DataCollection object.
+ * This can be used as a way of moving data in a way that is useful for
+ * creating output or for copying state data from one network to another.
+ * @param data data collection object into which new values are inserted
+ */
+void gridpack::powerflow::PFBus::saveData(
+    boost::shared_ptr<gridpack::component::DataCollection> data)
+{
+  double rval;
+  int i;
+  if (!data->setValue("BUS_PF_VMAG",*p_vMag_ptr)) {
+    data->addValue("BUS_PF_VMAG",*p_vMag_ptr);
+  }
+  rval = *p_vAng_ptr;
+  double pi = 4.0*atan(1.0);
+  rval = 180.0*rval/pi;
+  if (!data->setValue("BUS_PF_VANG",rval)) {
+    data->addValue("BUS_PF_VANG",rval);
+  }
+  int ngen=p_pFac.size();
+  for (i=0; i<ngen; i++) {
+    rval = p_pFac[i]*p_Pinj;
+    if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
+      data->setValue("GENERATOR_PF_PGEN",rval,i);
+    }
+    rval = p_pFac[i]*p_Qinj;
+    if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
+      data->setValue("GENERATOR_PF_QGEN",rval,i);
+    }
+  }
 }
 
 /**

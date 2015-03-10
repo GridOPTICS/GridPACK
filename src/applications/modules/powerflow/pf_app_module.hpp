@@ -66,6 +66,11 @@ class PFAppModule
      */
     void write();
 
+    /**
+     * Save results of powerflow calculation to data collection objects
+     */
+    void saveData();
+
   private:
 
     // pointer to network
