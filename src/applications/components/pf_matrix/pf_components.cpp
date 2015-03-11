@@ -660,6 +660,78 @@ void gridpack::powerflow::PFBus::saveData(
 }
 
 /**
+ * Modify parameters inside the bus module. This is designed to be
+ * extensible
+ * @param name character string describing parameter to be modified
+ * @param value new value of parameter
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::powerflow::PFBus::setParam(std::string &name,
+    double value, int idx)
+{
+  if (name == GENERATOR_PG) {
+    if (idx >= 0 && idx<p_pg.size()) {
+      p_pg[idx] = value;
+    }
+  } else if (name == GENERATOR_QG) {
+    if (idx >= 0 && idx<p_qg.size()) {
+      p_qg[idx] = value;
+    }
+  }
+}
+
+/**
+ * Access parameters inside the bus module. This is designed to be
+ * extensible
+ * @param name character string describing parameter to be accessed
+ * @param value value of parameter
+ * @param idx index (if necessary) of variable to be accessed
+ */
+void gridpack::powerflow::PFBus::getParam(std::string &name,
+    double *value, int idx)
+{
+  if (name == GENERATOR_PG) {
+    if (idx >= 0 && idx<p_pg.size()) {
+      *value = p_pg[idx];
+    }
+  } else if (name == GENERATOR_QG) {
+    if (idx >= 0 && idx<p_qg.size()) {
+      *value = p_qg[idx];
+    }
+  }
+}
+
+void gridpack::powerflow::PFBus::getParam(std::string &name,
+    int *value, int idx)
+{
+  if (name == GENERATOR_NUMBER) {
+    *value = p_pg.size();
+  }
+}
+
+/**
+ * Get index of internal bus element based on character string identifier
+ * @param name character string describing element
+ * @return index of element
+ */
+int gridpack::powerflow::PFBus::getElementIndex(std::string &tag)
+{
+  if (tag == "GENERATOR") {
+    int i;
+    int nsize = static_cast<int>(p_gid.size());
+    for (i=0; i<nsize; i++) {
+      if (tag == p_gid[i]) {
+        return i;
+      }
+    }
+  }
+  return -1;
+
+}
+
+
+
+/**
  *  Simple constructor
  */
 gridpack::powerflow::PFBranch::PFBranch(void)

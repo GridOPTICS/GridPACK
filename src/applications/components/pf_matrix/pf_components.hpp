@@ -225,6 +225,32 @@ class PFBus
     void saveData(boost::shared_ptr<gridpack::component::DataCollection>
           data);
 
+    /**
+     * Modify parameters inside the bus module. This is designed to be
+     * extensible
+     * @param name character string describing parameter to be modified
+     * @param value new value of parameter
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string &name, double value, int idx);
+
+    /**
+     * Access parameters inside the bus module. This is designed to be
+     * extensible
+     * @param name character string describing parameter to be accessed
+     * @param value value of parameter
+     * @param idx index (if necessary) of variable to be accessed
+     */
+    void getParam(std::string &name, double *value, int idx);
+    void getParam(std::string &name, int *value, int idx);
+
+    /**
+     * Get index of internal bus element based on character string identifier
+     * @param name character string describing element
+     * @return index of element
+     */
+    int getElementIndex(std::string &tag);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
