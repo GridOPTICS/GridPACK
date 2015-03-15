@@ -124,6 +124,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->start(t_matset);
   factory.setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(network);
+#if 0
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
   ///branchIO.header("\n=== orginal ybus: ============\n");
   ///orgYbus->print();
@@ -143,13 +144,16 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///busIO.header("\n=== perm: ============\n");
   ///perm->print(); 
 
+#endif
   // Form a transposed matrix of perm
   int t_trans = timer->createCategory("Matrix Transpose");
+#if 0
   timer->start(t_trans);
    boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
   timer->stop(t_trans);
   ///busIO.header("\n=== permTrans: ============\n");
   ///permTrans->print();
+#endif
 
   // Construct matrix Y_a using extracted xd and ra from gen data, 
   // and construct its diagonal matrix diagY_a
@@ -166,9 +170,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
   int t_matmul = timer->createCategory("Matrix Multiply");
+#if 0
   timer->start(t_matmul);
   boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans));
   timer->stop(t_matmul);
+#endif
   ///busIO.header("\n=== Ymod: ============\n");
   ///Ymod->print(); 
  
@@ -201,6 +207,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->start(t_matset);
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense(gridpack::math::storageType(*Y_c, denseType));
    
+#if 0
   // Form matrix permYmod
   factory.setMode(permYMOD);
   gridpack::mapper::FullMatrixMap<DSNetwork> pymMap(network);
@@ -209,13 +216,16 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///permYmod->print();
 
   // Update ybus: ybus = ybus+permYmod (different dimension) => prefy11ybus
+#endif
   factory.setMode(updateYbus);
+#if 0
 
   boost::shared_ptr<gridpack::math::Vector> vPermYmod(diagonal(*permYmod));
   ///busIO.header("\n=== vPermYmod: ============\n");
   ///vPermYmod->print();
   gridpack::mapper::BusVectorMap<DSNetwork> permYmodMap(network);
   permYmodMap.mapToBus(vPermYmod);
+#endif
 
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
   timer->stop(t_matset);
