@@ -17,7 +17,7 @@
 #ifndef FULLMATRIXMAP_HPP_
 #define FULLMATRIXMAP_HPP_
 
-//#define NZ_PER_ROW
+#define NZ_PER_ROW
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <ga.h>
@@ -95,9 +95,10 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 
 /**
  * Generate matrix from current component state on network
+ * @param isDense set to true if creating a dense matrix
  * @return return a pointer to new matrix
  */
-boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
+boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int t_new, t_bus, t_branch, t_set;
@@ -107,12 +108,17 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
   if (p_timer) p_timer->start(t_new);
   GA_Pgroup_sync(p_GAgrp);
-  boost::shared_ptr<gridpack::math::Matrix>
+  boost::shared_ptr<gridpack::math::Matrix> Ret;
+  if (isDense) {
+    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
+        gridpack::math::Matrix::Dense));
+  } else {
 #ifndef NZ_PER_ROW
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
+    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
 #else
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
+    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
 #endif
+  }
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
@@ -133,21 +139,27 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 /**
  * Generate matrix from current component state on network and return
  * a conventional pointer to it. Used for Fortran interface
+ * @param isDense set to true if creating a dense matrix
  * @return return a pointer to new matrix
  */
-gridpack::math::Matrix* intMapToMatrix(void)
+gridpack::math::Matrix* intMapToMatrix(bool isDense = false)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int t_new, t_bus, t_branch, t_set;
   if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
   if (p_timer) p_timer->start(t_new);
   GA_Pgroup_sync(p_GAgrp);
-  gridpack::math::Matrix*
+  gridpack::math::Matrix *Ret;
+  if (isDense) {
+    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
+        gridpack::math::Matrix::Dense);
+  } else {
 #ifndef NZ_PER_ROW
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
+    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow);
 #else
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
+    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row);
 #endif
+  }
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);

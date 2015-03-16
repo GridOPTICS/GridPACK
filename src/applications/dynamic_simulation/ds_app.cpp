@@ -140,11 +140,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(PERM);
   gridpack::mapper::FullMatrixMap<DSNetwork> permMap(network);
   boost::shared_ptr<gridpack::math::Matrix> perm = permMap.mapToMatrix();
+#endif
   timer->stop(t_matset);
   ///busIO.header("\n=== perm: ============\n");
   ///perm->print(); 
 
-#endif
   // Form a transposed matrix of perm
   int t_trans = timer->createCategory("Matrix Transpose");
 #if 0
@@ -183,15 +183,17 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Then construct Y_b's transposed matrix Y_c: Y_c = Y_b'
   // This two steps can be done by using a P matrix to get Y_c directly.
   timer->start(t_matset);
+#if 0
   factory.setMode(PMatrix);
   gridpack::mapper::FullMatrixMap<DSNetwork> pMap(network);
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
+#endif
   ///busIO.header("\n=== P: ============\n");
   ///P->print();
   factory.setMode(YC);
   gridpack::mapper::FullMatrixMap<DSNetwork> cMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> Y_c = cMap.mapToMatrix();
-  Y_c->scale(-1.0);
+  boost::shared_ptr<gridpack::math::Matrix> Y_cDense = cMap.mapToMatrix(true);
+  //Y_c->scale(-1.0);
   ///busIO.header("\n=== Y_c: ============\n");
   ///Y_c->print();
   factory.setMode(YB);
@@ -201,13 +203,13 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///busIO.header("\n=== Y_b: ============\n");
   ///Y_b->print();
   
-  Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
+  //Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
   // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
   //gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
   timer->start(t_matset);
+#if 0
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense(gridpack::math::storageType(*Y_c, denseType));
    
-#if 0
   // Form matrix permYmod
   factory.setMode(permYMOD);
   gridpack::mapper::FullMatrixMap<DSNetwork> pymMap(network);
