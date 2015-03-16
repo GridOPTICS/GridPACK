@@ -321,7 +321,7 @@ virtual ~BaseNetwork(void)
     if (p_allocatedBus) {
       if (!p_external_bus) {
         for(i=0; i<size; i++) {
-          delete static_cast<char*>(p_busXCBuffers[i]);
+          delete [] static_cast<char*>(p_busXCBuffers[i]);
         }
       }
       p_allocatedBus = false;
@@ -334,7 +334,7 @@ virtual ~BaseNetwork(void)
     if (p_allocatedBranch) {
       if (!p_external_branch) {
         for(i=0; i<size; i++) {
-          delete static_cast<char*>(p_branchXCBuffers[i]);
+          delete [] static_cast<char*>(p_branchXCBuffers[i]);
         }
       }
       p_allocatedBranch = false;
@@ -1351,7 +1351,7 @@ void clear(void)
     if (p_allocatedBus) {
       if (!p_external_bus) {
         for(i=0; i<size; i++) {
-          delete static_cast<char*>(p_busXCBuffers[i]);
+          delete [] static_cast<char*>(p_busXCBuffers[i]);
         }
       }
       p_allocatedBus = false;
@@ -1364,7 +1364,7 @@ void clear(void)
     if (p_allocatedBranch) {
       if (!p_external_branch) {
         for(i=0; i<size; i++) {
-          delete static_cast<char*>(p_branchXCBuffers[i]);
+          delete [] static_cast<char*>(p_branchXCBuffers[i]);
         }
       }
       p_allocatedBranch = false;
@@ -1459,7 +1459,7 @@ void allocXCBus(int size)
     if (p_allocatedBus) {
       if (!p_external_bus) {
         for(i=0; i<nsize; i++) {
-          delete static_cast<char*>(p_busXCBuffers[i]);
+          delete [] static_cast<char*>(p_busXCBuffers[i]);
         }
       }
       p_allocatedBus = false;
@@ -1491,7 +1491,7 @@ void freeXCBus(void)
     if (p_allocatedBus) {
       if (!p_external_bus) {
         for(i=0; i<nsize; i++) {
-          delete static_cast<char*>(p_busXCBuffers[i]);
+          delete [] static_cast<char*>(p_busXCBuffers[i]);
         }
       }
       p_allocatedBus = false;
@@ -1515,7 +1515,7 @@ void allocXCBusPointers(int size)
     if (p_allocatedBus) {
       if (!p_external_bus) {
         for(i=0; i<nsize; i++) {
-          delete static_cast<char*>(p_busXCBuffers[i]);
+          delete [] static_cast<char*>(p_busXCBuffers[i]);
         }
       }
       p_allocatedBus = false;
@@ -1558,6 +1558,7 @@ void* getXCBusBuffer(int idx)
   } else {
     return static_cast<void*>(p_busXCBuffers[idx]);
   }
+  return NULL;
 }
 
 /**
@@ -1576,7 +1577,7 @@ void allocXCBranch(int size)
     if (p_allocatedBranch) {
       if (!p_external_branch) {
         for(i=0; i<nsize; i++) {
-          delete static_cast<char*>(p_branchXCBuffers[i]);
+          delete [] static_cast<char*>(p_branchXCBuffers[i]);
         }
       }
       p_allocatedBranch = false;
@@ -1608,7 +1609,7 @@ void freeXCBranch(void)
     if (p_allocatedBranch) {
       if (!p_external_branch) {
         for(i=0; i<size; i++) {
-          delete static_cast<char*>(p_branchXCBuffers[i]);
+          delete [] static_cast<char*>(p_branchXCBuffers[i]);
         }
       }
       p_allocatedBranch = false;
@@ -1632,6 +1633,7 @@ void* getXCBranchBuffer(int idx)
   } else {
     return static_cast<void*>(p_branchXCBuffers[idx]);
   }
+  return NULL;
 }
 
 /**
@@ -1647,7 +1649,7 @@ void allocXCBranchPointers(int size)
     if (p_allocatedBranch) {
       if (!p_external_branch) {
         for(i=0; i<nsize; i++) {
-          delete static_cast<char*>(p_branchXCBuffers[i]);
+          delete [] static_cast<char*>(p_branchXCBuffers[i]);
         }
       }
       p_allocatedBranch = false;
