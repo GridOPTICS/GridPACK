@@ -17,7 +17,7 @@
 #ifndef FULLMATRIXMAP_HPP_
 #define FULLMATRIXMAP_HPP_
 
-#define NZ_PER_ROW
+//#define NZ_PER_ROW
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <ga.h>
