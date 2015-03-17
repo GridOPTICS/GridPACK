@@ -659,6 +659,7 @@ void gridpack::dynamic_simulation::DSBus::load(
       }
     }
   }
+  p_ngen = p_pg.size();
 
   /*// assume switch info is set up here instead of reading from the input file
   sw2_2 = 5; // 6-1
