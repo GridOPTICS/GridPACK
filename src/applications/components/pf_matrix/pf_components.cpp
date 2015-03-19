@@ -396,6 +396,7 @@ void gridpack::powerflow::PFBus::load(
   double pg, qg, vs,qmax,qmin;
   ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+    double qtot = 0.0;
     for (i=0; i<ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
@@ -409,6 +410,8 @@ void gridpack::powerflow::PFBus::load(
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
         p_qmax.push_back(qmax);
+        qtot += qmax;
+        p_pFac.push_back(qmax);
         p_qmin.push_back(qmin);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
@@ -418,6 +421,9 @@ void gridpack::powerflow::PFBus::load(
         data->getValue(GENERATOR_ID,&id,i);
         p_gid.push_back(id);
       }
+    }
+    for (i=0; i<ngen; i++) {
+      p_pFac[i] = p_pFac[i]/qtot;
     }
   }
   p_saveisPV = p_isPV;
@@ -619,6 +625,111 @@ gridpack::ComplexType gridpack::powerflow::PFBus::getComplexVoltage(void)
   ret = ret*p_v;
   return ret;
 }
+
+/**
+ * Save state variables inside the component to a DataCollection object.
+ * This can be used as a way of moving data in a way that is useful for
+ * creating output or for copying state data from one network to another.
+ * @param data data collection object into which new values are inserted
+ */
+void gridpack::powerflow::PFBus::saveData(
+    boost::shared_ptr<gridpack::component::DataCollection> data)
+{
+  double rval;
+  int i;
+  if (!data->setValue("BUS_PF_VMAG",*p_vMag_ptr)) {
+    data->addValue("BUS_PF_VMAG",*p_vMag_ptr);
+  }
+  rval = *p_vAng_ptr;
+  double pi = 4.0*atan(1.0);
+  rval = 180.0*rval/pi;
+  if (!data->setValue("BUS_PF_VANG",rval)) {
+    data->addValue("BUS_PF_VANG",rval);
+  }
+  int ngen=p_pFac.size();
+  for (i=0; i<ngen; i++) {
+    rval = p_pFac[i]*p_Pinj;
+    if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
+      data->setValue("GENERATOR_PF_PGEN",rval,i);
+    }
+    rval = p_pFac[i]*p_Qinj;
+    if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
+      data->setValue("GENERATOR_PF_QGEN",rval,i);
+    }
+  }
+}
+
+/**
+ * Modify parameters inside the bus module. This is designed to be
+ * extensible
+ * @param name character string describing parameter to be modified
+ * @param value new value of parameter
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::powerflow::PFBus::setParam(std::string &name,
+    double value, int idx)
+{
+  if (name == GENERATOR_PG) {
+    if (idx >= 0 && idx<p_pg.size()) {
+      p_pg[idx] = value;
+    }
+  } else if (name == GENERATOR_QG) {
+    if (idx >= 0 && idx<p_qg.size()) {
+      p_qg[idx] = value;
+    }
+  }
+}
+
+/**
+ * Access parameters inside the bus module. This is designed to be
+ * extensible
+ * @param name character string describing parameter to be accessed
+ * @param value value of parameter
+ * @param idx index (if necessary) of variable to be accessed
+ */
+void gridpack::powerflow::PFBus::getParam(std::string &name,
+    double *value, int idx)
+{
+  if (name == GENERATOR_PG) {
+    if (idx >= 0 && idx<p_pg.size()) {
+      *value = p_pg[idx];
+    }
+  } else if (name == GENERATOR_QG) {
+    if (idx >= 0 && idx<p_qg.size()) {
+      *value = p_qg[idx];
+    }
+  }
+}
+
+void gridpack::powerflow::PFBus::getParam(std::string &name,
+    int *value, int idx)
+{
+  if (name == GENERATOR_NUMBER) {
+    *value = p_pg.size();
+  }
+}
+
+/**
+ * Get index of internal bus element based on character string identifier
+ * @param name character string describing element
+ * @param tag character string specifying bus element
+ * @return index of element
+ */
+int gridpack::powerflow::PFBus::getElementIndex(std::string &name, std::string &tag)
+{
+  if (name == "GENERATOR") {
+    int i;
+    int nsize = static_cast<int>(p_gid.size());
+    for (i=0; i<nsize; i++) {
+      if (tag == p_gid[i]) {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
+
+
 
 /**
  *  Simple constructor

@@ -161,8 +161,6 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       return false;
     }
   } else if (p_mode == YL) {
-    p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
-    p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
     //printf("p_ybusr=%f, p_ybusi=%f\n", p_ybusr, p_ybusi);
     gridpack::ComplexType ret(p_ybusr, p_ybusi);
     values[0] = ret;
@@ -275,8 +273,19 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     } 
   } else if (p_mode == updateYbus) {
     if (p_ngen > 0) {
-      double ur = p_ybusr + real(p_permYmod); 
-      double ui = p_ybusi + imag(p_permYmod); 
+      gridpack::ComplexType permYmod = 0.0;
+      for (int ip = 0; ip < p_ngen; ip++) {
+        double ra = p_r[ip] * p_sbase / p_mva[ip];
+        double xd;
+        if (p_dstr[ip] == 0) { 
+          xd = p_dtr[ip] * p_sbase / p_mva[ip];
+        }
+        gridpack::ComplexType Y_a(ra, xd);
+        Y_a = 1.0 / Y_a;
+        permYmod += Y_a;
+      } 
+      double ur = p_ybusr + real(permYmod); 
+      double ui = p_ybusi + imag(permYmod); 
       gridpack::ComplexType u(ur, ui);
       values[0] = u;
       return true;
@@ -557,6 +566,8 @@ void gridpack::dynamic_simulation::DSBus::setYBus(void)
   ret = YMBus::getYBus();
   p_ybusr = real(ret);
   p_ybusi = imag(ret);
+  p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
+  p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
 }
 
 /**
@@ -648,6 +659,7 @@ void gridpack::dynamic_simulation::DSBus::load(
       }
     }
   }
+  p_ngen = p_pg.size();
 
   /*// assume switch info is set up here instead of reading from the input file
   sw2_2 = 5; // 6-1

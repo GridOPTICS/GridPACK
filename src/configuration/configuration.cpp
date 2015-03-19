@@ -102,6 +102,10 @@ bool Configuration::open(const std::string & file) {
 #ifdef CONFIGURATION_USE_MPI
     MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
 	MPI_Comm_rank(comm,&rank);
+
+   // This represents some hideously confusing programming. The MPI_Bcast calls
+   // below are matched in the initialize_internal function call so that all
+   // processors actually participate in the collectives.
 	if(rank != 0) {
 		return initialize_internal(comm);
 	}

@@ -124,6 +124,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->start(t_matset);
   factory.setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(network);
+#if 0
   boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
   ///branchIO.header("\n=== orginal ybus: ============\n");
   ///orgYbus->print();
@@ -139,17 +140,20 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(PERM);
   gridpack::mapper::FullMatrixMap<DSNetwork> permMap(network);
   boost::shared_ptr<gridpack::math::Matrix> perm = permMap.mapToMatrix();
+#endif
   timer->stop(t_matset);
   ///busIO.header("\n=== perm: ============\n");
   ///perm->print(); 
 
   // Form a transposed matrix of perm
   int t_trans = timer->createCategory("Matrix Transpose");
+#if 0
   timer->start(t_trans);
    boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
   timer->stop(t_trans);
   ///busIO.header("\n=== permTrans: ============\n");
   ///permTrans->print();
+#endif
 
   // Construct matrix Y_a using extracted xd and ra from gen data, 
   // and construct its diagonal matrix diagY_a
@@ -166,9 +170,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
   int t_matmul = timer->createCategory("Matrix Multiply");
+#if 0
   timer->start(t_matmul);
   boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans));
   timer->stop(t_matmul);
+#endif
   ///busIO.header("\n=== Ymod: ============\n");
   ///Ymod->print(); 
  
@@ -177,15 +183,17 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Then construct Y_b's transposed matrix Y_c: Y_c = Y_b'
   // This two steps can be done by using a P matrix to get Y_c directly.
   timer->start(t_matset);
+#if 0
   factory.setMode(PMatrix);
   gridpack::mapper::FullMatrixMap<DSNetwork> pMap(network);
   boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
+#endif
   ///busIO.header("\n=== P: ============\n");
   ///P->print();
   factory.setMode(YC);
   gridpack::mapper::FullMatrixMap<DSNetwork> cMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> Y_c = cMap.mapToMatrix();
-  Y_c->scale(-1.0);
+  boost::shared_ptr<gridpack::math::Matrix> Y_cDense = cMap.mapToMatrix(true);
+  //Y_c->scale(-1.0);
   ///busIO.header("\n=== Y_c: ============\n");
   ///Y_c->print();
   factory.setMode(YB);
@@ -195,10 +203,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///busIO.header("\n=== Y_b: ============\n");
   ///Y_b->print();
   
-  Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
+  //Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
   // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
   //gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
   timer->start(t_matset);
+#if 0
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense(gridpack::math::storageType(*Y_c, denseType));
    
   // Form matrix permYmod
@@ -209,13 +218,16 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///permYmod->print();
 
   // Update ybus: ybus = ybus+permYmod (different dimension) => prefy11ybus
+#endif
   factory.setMode(updateYbus);
+#if 0
 
   boost::shared_ptr<gridpack::math::Vector> vPermYmod(diagonal(*permYmod));
   ///busIO.header("\n=== vPermYmod: ============\n");
   ///vPermYmod->print();
   gridpack::mapper::BusVectorMap<DSNetwork> permYmodMap(network);
   permYmodMap.mapToBus(vPermYmod);
+#endif
 
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
   timer->stop(t_matset);

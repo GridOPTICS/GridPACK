@@ -410,7 +410,7 @@ class BaseComponent
      * @param data data collection object into which new values are inserted
      */
     virtual void saveData(boost::shared_ptr<gridpack::component::DataCollection>
-        &data);
+        data);
 
   protected:
     /**

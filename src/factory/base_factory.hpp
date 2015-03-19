@@ -149,8 +149,10 @@ class BaseFactory {
 
       activeBus[me] = numActiveBus;
       activeBranch[me] = numActiveBranch;
-      GA_Pgroup_igop(grp,activeBus,nprocs,"+");
-      GA_Pgroup_igop(grp,activeBranch,nprocs,"+");
+      char cplus[2];
+      strcpy(cplus,"+");
+      GA_Pgroup_igop(grp,activeBus,nprocs,cplus);
+      GA_Pgroup_igop(grp,activeBranch,nprocs,cplus);
 
       // Create indices for buses. Start by creating a global array with an entry
       // for each bus
@@ -374,7 +376,9 @@ class BaseFactory {
       }
       int grp = p_network->communicator().getGroup();
       int nprocs = GA_Pgroup_nnodes(grp);
-      GA_Pgroup_igop(grp,&iok,1,"+");
+      char cplus[2];
+      strcpy(cplus,"+");
+      GA_Pgroup_igop(grp,&iok,1,cplus);
       if (iok == nprocs) {
         return true;
       } else {

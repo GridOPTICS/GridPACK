@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   pf_test.cpp
+ * @file   ds_test.cpp
  * @author Bruce Palmer
  * @date   February 16, 2015
  *
@@ -17,7 +17,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "pf_app_module.hpp"
+#include "ds_app_module.hpp"
 
 // Calling program for the contingency_analysis applications
 
@@ -46,16 +46,16 @@ main(int argc, char **argv)
       config->open("input.xml",world);
     }
 
-    // setup and run powerflow calculation
-    boost::shared_ptr<gridpack::powerflow::PFNetwork>
-      pf_network(new gridpack::powerflow::PFNetwork(world));
+    // setup and run state estimation calculation
+    boost::shared_ptr<gridpack::dynamic_simulation::DSNetwork>
+      ds_network(new gridpack::dynamic_simulation::DSNetwork(world));
 
-    gridpack::powerflow::PFAppModule pf_app;
-    pf_app.readNetwork(pf_network,config);
-    pf_app.initialize();
-    pf_app.solve();
-    pf_app.write();
-    pf_app.saveData();
+    gridpack::dynamic_simulation::DSAppModule ds_app;
+    ds_app.readNetwork(ds_network,config);
+    ds_app.readGenerators();
+    ds_app.initialize();
+    ds_app.solve();
+    ds_app.write();
   }
 
   GA_Terminate();

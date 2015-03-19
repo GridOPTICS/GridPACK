@@ -95,9 +95,10 @@ FullMatrixMap(boost::shared_ptr<_network> network)
 
 /**
  * Generate matrix from current component state on network
+ * @param isDense set to true if creating a dense matrix
  * @return return a pointer to new matrix
  */
-boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
+boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int t_new, t_bus, t_branch, t_set;
@@ -107,12 +108,17 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
   if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
   if (p_timer) p_timer->start(t_new);
   GA_Pgroup_sync(p_GAgrp);
-  boost::shared_ptr<gridpack::math::Matrix>
+  boost::shared_ptr<gridpack::math::Matrix> Ret;
+  if (isDense) {
+    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
+        gridpack::math::Matrix::Dense));
+  } else {
 #ifndef NZ_PER_ROW
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
+    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
 #else
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
+    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
 #endif
+  }
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
@@ -133,21 +139,27 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 /**
  * Generate matrix from current component state on network and return
  * a conventional pointer to it. Used for Fortran interface
+ * @param isDense set to true if creating a dense matrix
  * @return return a pointer to new matrix
  */
-gridpack::math::Matrix* intMapToMatrix(void)
+gridpack::math::Matrix* intMapToMatrix(bool isDense = false)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int t_new, t_bus, t_branch, t_set;
   if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
   if (p_timer) p_timer->start(t_new);
   GA_Pgroup_sync(p_GAgrp);
-  gridpack::math::Matrix*
+  gridpack::math::Matrix *Ret;
+  if (isDense) {
+    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
+        gridpack::math::Matrix::Dense);
+  } else {
 #ifndef NZ_PER_ROW
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
+    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow);
 #else
-    Ret(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
+    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row);
 #endif
+  }
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
@@ -339,7 +351,9 @@ void setupGlobalArrays(int nActiveBuses)
 
   p_totalBuses = nActiveBuses;
 
-  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,"+");
+  char cplus[2];
+  strcpy(cplus,"+");
+  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,cplus);
 
   // the gaMatBlksI and gaMatBlksJ arrays contain the matrix blocks sizes for
   // individual block contributions
@@ -683,8 +697,10 @@ void setupOffsetArrays()
   }
   p_rowBlockSize = iSize;
   p_colBlockSize = jSize;
-  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,"max");
-  GA_Pgroup_igop(p_GAgrp,&p_maxJBlock,one,"max");
+  char cmax[4];
+  strcpy(cmax,"max");
+  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,cmax);
+  GA_Pgroup_igop(p_GAgrp,&p_maxJBlock,one,cmax);
 
   for (i = 0; i<p_nNodes; i++) {
     itmp[i] = 0;
@@ -694,8 +710,10 @@ void setupOffsetArrays()
   jtmp[p_me] = jSize;
 //  printf("p[%d] (FullMatrixMap) iSize: %d jSize: %d\n",p_me,iSize,jSize);
 
-  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, "+");
-  GA_Pgroup_igop(p_GAgrp,jtmp, p_nNodes, "+");
+  char cplus[2];
+  strcpy(cplus,"+");
+  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, cplus);
+  GA_Pgroup_igop(p_GAgrp,jtmp, p_nNodes, cplus);
 
   int offsetArrayISize = 0;
   int offsetArrayJSize = 0;
@@ -721,7 +739,7 @@ void setupOffsetArrays()
   }
   offset[p_me] = p_activeBuses;
 //  printf("p[%d] (FullMatrixMap) activeBuses: %d\n",p_me,p_activeBuses);
-  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,"+");
+  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,cplus);
 
   int *mapc = new int[p_nNodes];
   mapc[0]=0;
