@@ -132,7 +132,9 @@ public:
       sizes[i] = 0;
     }
     sizes[me] = ksize;
-    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,plus);
     int *mapc = new int[nprocs];
     mapc[0] = 0;
     int total_values = sizes[0];
@@ -406,7 +408,9 @@ public:
         numValues[i] = 0;
       }
     }
-    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,plus);
     GA_Destroy(g_numValues);
 
     // Create a global array that can hold all values. Partition the array so
@@ -526,7 +530,9 @@ public:
       sizes[i] = 0;
     }
     sizes[me] = ksize;
-    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,plus);
     int *mapc = new int[nprocs];
     mapc[0] = 0;
     int total_values = sizes[0];
@@ -840,7 +846,9 @@ public:
         numValues[i] = 0;
       }
     }
-    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,plus);
     GA_Destroy(g_numValues);
 
     // Create a global array that can hold all values. Partition the array so
@@ -981,7 +989,9 @@ public:
       sizes[i] = 0;
     }
     sizes[me] = ksize;
-    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,plus);
     int *mapc = new int[nprocs];
     mapc[0] = 0;
     int total_values = sizes[0];
@@ -1264,7 +1274,9 @@ public:
         numValues[i] = 0;
       }
     }
-    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,plus);
     GA_Destroy(g_numValues);
 
     // Create a global array that can hold all values. Partition the array so
@@ -1392,7 +1404,9 @@ public:
       sizes[i] = 0;
     }
     sizes[me] = ksize;
-    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,sizes,nprocs,plus);
     int *mapc = new int[nprocs];
     mapc[0] = 0;
     int total_values = sizes[0];
@@ -1713,7 +1727,9 @@ public:
         numValues[i] = 0;
       }
     }
-    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,"+");
+    char plus[2];
+    strcpy(plus,"+");
+    GA_Pgroup_igop(p_GAgrp,numValues,nprocs,plus);
     GA_Destroy(g_numValues);
 
     // Create a global array that can hold all values. Partition the array so

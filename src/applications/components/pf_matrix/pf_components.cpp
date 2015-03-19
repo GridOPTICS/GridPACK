@@ -712,11 +712,12 @@ void gridpack::powerflow::PFBus::getParam(std::string &name,
 /**
  * Get index of internal bus element based on character string identifier
  * @param name character string describing element
+ * @param tag character string specifying bus element
  * @return index of element
  */
-int gridpack::powerflow::PFBus::getElementIndex(std::string &tag)
+int gridpack::powerflow::PFBus::getElementIndex(std::string &name, std::string &tag)
 {
-  if (tag == "GENERATOR") {
+  if (name == "GENERATOR") {
     int i;
     int nsize = static_cast<int>(p_gid.size());
     for (i=0; i<nsize; i++) {
@@ -726,7 +727,6 @@ int gridpack::powerflow::PFBus::getElementIndex(std::string &tag)
     }
   }
   return -1;
-
 }
 
 

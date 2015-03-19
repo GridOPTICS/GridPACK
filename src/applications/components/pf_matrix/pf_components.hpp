@@ -247,9 +247,10 @@ class PFBus
     /**
      * Get index of internal bus element based on character string identifier
      * @param name character string describing element
+     * @param tag character string specifying bus element
      * @return index of element
      */
-    int getElementIndex(std::string &tag);
+    int getElementIndex(std::string &name, std::string &tag);
 
   private:
     double p_shunt_gs;
