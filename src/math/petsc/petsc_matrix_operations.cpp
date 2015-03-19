@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-12-09 10:50:39 d3g096
+ * @date   2015-03-18 09:54:50 d3g096
  * 
  * @brief  
  * 
@@ -301,6 +301,91 @@ multiply(const Matrix& A, const Vector& x, Vector& result)
   }
 }
 
+
+// -------------------------------------------------------------
+// Matrix-Matrix Multiply
+// -------------------------------------------------------------
+// Apparently, multiplying two dense matrices is something people
+// don't generally do.  PETSc, on its own, cannot multiply two
+// MATMPIDENSE matrices, but it can multiply to MATELEMENTAL dense
+// matrices, if the Elemental package is included in the build.
+// There's a bunch of extra code here to convert MATMPIDENSE matrices
+// to MATELEMENTAL matrices, do the multiplication, then convert the
+// result back.  However, I should have investigated further before
+// coding this, because MATELEMENTAL can be converted to MATDENSE, but
+// MATDENSE cannot be converted to MATELEMENTAL. Go figure.
+
+#if 0
+#if defined(PETSC_HAVE_ELEMENTAL)
+
+static bool
+check_dense(const Mat *A, const Mat *B)
+{
+  bool result(false);
+  PetscErrorCode ierr(0);
+  MatType Atype, Btype;
+  try {
+    ierr = MatGetType(*A, &Atype); CHKERRXX(ierr);
+    ierr = MatGetType(*B, &Btype); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+  std::string at(Atype), bt(Btype);
+  result = ( (at == MATDENSE || at == MATMPIDENSE) && 
+             (bt == MATDENSE || bt == MATMPIDENSE) );
+  return result;
+}
+
+static void
+multiply_dense(const Mat *A, const Mat *B, Mat *C)
+{
+  Mat Ae, Be, Ce;
+
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatConvert(*A, MATELEMENTAL, MAT_INITIAL_MATRIX, &Ae); CHKERRXX(ierr);
+    ierr = MatConvert(*B, MATELEMENTAL, MAT_INITIAL_MATRIX, &Be); CHKERRXX(ierr);
+    ierr = MatMatMult(Ae, Be, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Ce); CHKERRXX(ierr);
+    ierr = MatConvert(Ce, MATDENSE, MAT_INITIAL_MATRIX, C); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+static void
+multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
+{
+  PetscErrorCode ierr(0);
+  try {
+    if (check_dense(A, B)) {
+      multiply_dense(A, B, C);
+    } else {
+      ierr = MatMatMult(*A, *B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, C); CHKERRXX(ierr);
+    }
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+#else
+
+static void
+multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatMatMult(*A, *B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, C); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+#endif
+#endif
+
+// -------------------------------------------------------------
+// multiply
+// -------------------------------------------------------------
 void
 multiply(const Matrix& A, const Matrix& B, Matrix& result)
 {
