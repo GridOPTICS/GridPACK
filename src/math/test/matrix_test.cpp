@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-03-18 10:12:09 d3g096
+ * @date   2015-03-19 15:25:26 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -660,6 +660,10 @@ testMatrixMultiply(gridpack::math::Matrix *A,
     {  7.0, -1.0,
        0.0,  1.0,
       -3.0,  4.0 };
+  // This should be the result
+  // static const gridpack::ComplexType cvalues[] =
+  //   { -11.0, 25.0,
+  //       6.0, 21.0 }; 
 
   std::vector<int> iidx(2*3) , jidx(2*3);
   int k(0);
@@ -710,24 +714,15 @@ testMatrixMultiply(gridpack::math::Matrix *A,
   }
 }
 
-// FIXME
-#ifndef TEST_DENSE
-
 BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiplySame )
 {
   gridpack::parallel::Communicator world;
 
-  // This should be the result
-  // static const gridpack::ComplexType cvalues[] =
-  //   { -11.0, 25.0,
-  //       6.0, 21.0 }; 
   boost::scoped_ptr<gridpack::math::Matrix> 
     A(new gridpack::math::Matrix(world, 2, 3, the_storage_type)),
     B(new gridpack::math::Matrix(world, 3, 2, the_storage_type));
   testMatrixMultiply(A.get(), B.get());
 }
-
-#endif
 
 BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiplyDifferent )
 {
