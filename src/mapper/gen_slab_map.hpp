@@ -178,6 +178,16 @@ void mapToNetwork(const gridpack::math::Matrix &matrix)
   GA_Pgroup_sync(p_GAgrp);
 }
 
+/**
+ * Push data from matrix onto buses and branches. Matrix must be
+ * created with the mapToMatrix method using the same GenSlabMap
+ * @param matrix matrix containing data to be pushed to network
+ */
+void mapToNetwork(boost::shared_ptr<gridpack::math::Matrix> &matrix)
+{
+  mapToNetwork(*matrix);
+}
+
 private:
 
 /**
