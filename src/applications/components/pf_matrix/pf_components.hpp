@@ -216,6 +216,42 @@ class PFBus
     */
     bool chkQlim(void);
 
+    /**
+     * Save state variables inside the component to a DataCollection object.
+     * This can be used as a way of moving data in a way that is useful for
+     * creating output or for copying state data from one network to another.
+     * @param data data collection object into which new values are inserted
+     */
+    void saveData(boost::shared_ptr<gridpack::component::DataCollection>
+          data);
+
+    /**
+     * Modify parameters inside the bus module. This is designed to be
+     * extensible
+     * @param name character string describing parameter to be modified
+     * @param value new value of parameter
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string &name, double value, int idx);
+
+    /**
+     * Access parameters inside the bus module. This is designed to be
+     * extensible
+     * @param name character string describing parameter to be accessed
+     * @param value value of parameter
+     * @param idx index (if necessary) of variable to be accessed
+     */
+    void getParam(std::string &name, double *value, int idx);
+    void getParam(std::string &name, int *value, int idx);
+
+    /**
+     * Get index of internal bus element based on character string identifier
+     * @param name character string describing element
+     * @param tag character string specifying bus element
+     * @return index of element
+     */
+    int getElementIndex(std::string &name, std::string &tag);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -232,7 +268,7 @@ class PFBus
     double p_angle;   // initial bus angle read from parser
     double p_voltage; // initial bus voltage read from parser
     // newly added priavate variables:
-    std::vector<double> p_pg, p_qg;
+    std::vector<double> p_pg, p_qg, p_pFac;
     std::vector<int> p_gstatus;
     std::vector<double> p_qmax,p_qmin;
     std::vector<double> p_vs;
@@ -266,7 +302,7 @@ private:
       & p_ybusr & p_ybusi
       & p_P0 & p_Q0
       & p_angle & p_voltage
-      & p_pg & p_qg
+      & p_pg & p_qg & p_pFac
       & p_gstatus
       & p_vs & p_gid
       & p_pl & p_ql

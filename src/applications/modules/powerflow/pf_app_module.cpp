@@ -331,3 +331,11 @@ void gridpack::powerflow::PFAppModule::write()
   timer->stop(t_write);
   timer->stop(t_total);
 }
+
+/**
+ * Save results of powerflow calculation to data collection objects
+ */
+void gridpack::powerflow::PFAppModule::saveData()
+{
+  p_factory->saveData();
+}

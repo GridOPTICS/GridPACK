@@ -57,4 +57,33 @@ install(TARGETS
   DESTINATION lib
 )
 
+# -------------------------------------------------------------
+# Create simple test that runs state estimation code
+# -------------------------------------------------------------
+add_executable(ds_test test/ds_test.cpp)
+target_link_libraries (ds_test gridpack_dynamic_simulation_module
+${target_libraries})
 
+add_custom_target(ds_test_input
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE_145b_classical_model.dyr
+)
+
+add_dependencies (ds_test ds_test_input)
+
+add_test(ds_test ds_test)

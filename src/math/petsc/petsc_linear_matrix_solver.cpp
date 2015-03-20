@@ -8,7 +8,7 @@
 /**
  * @file   linear_matrix_solver.cpp
  * @author William A. Perkins
- * @date   2015-03-06 12:56:52 d3g096
+ * @date   2015-03-20 06:59:05 d3g096
  * 
  * @brief  
  * 
@@ -31,7 +31,7 @@ namespace math {
 // LinearMatrixSolver:: constructors / destructor
 // -------------------------------------------------------------
 template <typename T, typename I>
-LinearMatrixSolverT<T, I>::LinearMatrixSolverT(const LinearMatrixSolverT<T, I>::MatrixType& A)
+LinearMatrixSolverT<T, I>::LinearMatrixSolverT(LinearMatrixSolverT<T, I>::MatrixType& A)
   : BaseLinearMatrixSolverInterface<T, I>(),
     parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
@@ -48,10 +48,10 @@ LinearMatrixSolverT<T, I>::LinearMatrixSolverT(const LinearMatrixSolverT<T, I>::
 
 
 template
-LinearMatrixSolverT<ComplexType>::LinearMatrixSolverT(const LinearMatrixSolverT<ComplexType>::MatrixType& A);
+LinearMatrixSolverT<ComplexType>::LinearMatrixSolverT(LinearMatrixSolverT<ComplexType>::MatrixType& A);
 
 template
-LinearMatrixSolverT<RealType>::LinearMatrixSolverT(const LinearMatrixSolverT<RealType>::MatrixType& A);
+LinearMatrixSolverT<RealType>::LinearMatrixSolverT(LinearMatrixSolverT<RealType>::MatrixType& A);
 
 } // namespace math
 } // namespace gridpack

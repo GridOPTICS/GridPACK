@@ -10,7 +10,11 @@
 /**
  * @file   linear_matrix_solver.hpp
  * @author William A. Perkins
- * @date   2015-03-06 12:33:45 d3g096
+<<<<<<< variant A
+ * @date   2015-03-20 06:19:09 d3g096
+>>>>>>> variant B
+ * @date   2015-02-13 08:29:11 d3g096
+======= end
  * 
  * @brief  Declaration of the LinearMatrixSolver class
  * 
@@ -54,7 +58,7 @@ public:
   typedef typename BaseLinearMatrixSolverInterface<T, I>::MatrixType MatrixType;
 
   /// Default constructor.
-  LinearMatrixSolverT(const MatrixType& A);
+  LinearMatrixSolverT(MatrixType& A);
 
   /// Destructor
   ~LinearMatrixSolverT(void)
