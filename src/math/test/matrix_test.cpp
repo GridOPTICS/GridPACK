@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2014-12-09 09:59:51 d3g096
+ * @date   2015-03-19 15:25:26 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -36,6 +36,13 @@ static const gridpack::math::Matrix::StorageType the_storage_type =
   gridpack::math::Matrix::Dense;
 #else
   gridpack::math::Matrix::Sparse;
+#endif
+
+static const gridpack::math::Matrix::StorageType the_other_storage_type =
+#ifdef TEST_DENSE
+  gridpack::math::Matrix::Sparse;
+#else
+  gridpack::math::Matrix::Dense;
 #endif
 
 static const std::string print_prefix = 
@@ -84,7 +91,6 @@ make_and_fill_test_matrix(const gridpack::parallel::Communicator& comm,
   return A;
 }
 BOOST_AUTO_TEST_SUITE(MatrixTest)
-
 
 BOOST_AUTO_TEST_CASE( construction )
 {
@@ -642,10 +648,11 @@ BOOST_AUTO_TEST_CASE( MultiplyIdentity )
   }
 }
 
-BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
+static void
+testMatrixMultiply(gridpack::math::Matrix *A,
+                   gridpack::math::Matrix *B)
 {
-  gridpack::parallel::Communicator world;
-
+  gridpack::parallel::Communicator comm(A->communicator());
   static const gridpack::ComplexType avalues[] =
     { 1.0,  2.0,  6.0,
       3.0,  4.0,  5.0 };
@@ -657,17 +664,13 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
   // static const gridpack::ComplexType cvalues[] =
   //   { -11.0, 25.0,
   //       6.0, 21.0 }; 
-  boost::scoped_ptr<gridpack::math::Matrix> 
-    A(new gridpack::math::Matrix(world, 2, 3)),
-    B(new gridpack::math::Matrix(world, 3, 2,
-                                 gridpack::math::Matrix::Sparse));
 
   std::vector<int> iidx(2*3) , jidx(2*3);
   int k(0);
   for (int i = 0; i < 2; ++i) {
     for (int j = 0; j < 3; ++j) {
-      iidx[k] = i + world.rank()*2;
-      jidx[k] = j + world.rank()*3;
+      iidx[k] = i + comm.rank()*2;
+      jidx[k] = j + comm.rank()*3;
       k++;
     }
   }
@@ -678,8 +681,8 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
   k = 0;
   for (int i = 0; i < 3; ++i) {
     for (int j = 0; j < 2; ++j) {
-      iidx[k] = i + world.rank()*3;
-      jidx[k] = j + world.rank()*2;
+      iidx[k] = i + comm.rank()*3;
+      jidx[k] = j + comm.rank()*2;
       k++;
     }
   }
@@ -688,25 +691,47 @@ BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiply )
   B->ready();
   B->print();
 
-  boost::scoped_ptr<gridpack::math::Matrix>
-    C(gridpack::math::multiply(*A, *B));
+  try {
+    boost::scoped_ptr<gridpack::math::Matrix> C;
+    C.reset(gridpack::math::multiply(*A, *B));
+    C->print();
+    
+    BOOST_CHECK_EQUAL(C->rows(), 2*comm.size());
+    BOOST_CHECK_EQUAL(C->cols(), 2*comm.size());
+    
+    gridpack::ComplexType x, y;
+    C->getElement(2*comm.rank(), 2*comm.rank(), x);
+    y = -11.0;
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+    
+    C->getElement(2*comm.rank()+1, 2*comm.rank()+1, x);
+    y = 21.0;
+    BOOST_CHECK_CLOSE(real(x), real(y), delta);
+    BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+  } catch (const gridpack::Exception& e) {
+    BOOST_ERROR("Matrix-matrix multiply failed with an exception");
+  }
+}
 
-  C->print();
+BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiplySame )
+{
+  gridpack::parallel::Communicator world;
 
-  BOOST_CHECK_EQUAL(C->rows(), 2*world.size());
-  BOOST_CHECK_EQUAL(C->cols(), 2*world.size());
+  boost::scoped_ptr<gridpack::math::Matrix> 
+    A(new gridpack::math::Matrix(world, 2, 3, the_storage_type)),
+    B(new gridpack::math::Matrix(world, 3, 2, the_storage_type));
+  testMatrixMultiply(A.get(), B.get());
+}
 
-  gridpack::ComplexType x, y;
-  C->getElement(2*world.rank(), 2*world.rank(), x);
-  y = -11.0;
-  BOOST_CHECK_CLOSE(real(x), real(y), delta);
-  BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+BOOST_AUTO_TEST_CASE ( MatrixMatrixMultiplyDifferent )
+{
+  gridpack::parallel::Communicator world;
 
-  C->getElement(2*world.rank()+1, 2*world.rank()+1, x);
-  y = 21.0;
-  BOOST_CHECK_CLOSE(real(x), real(y), delta);
-  BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
-
+  boost::scoped_ptr<gridpack::math::Matrix> 
+    A(new gridpack::math::Matrix(world, 2, 3, the_storage_type)),
+    B(new gridpack::math::Matrix(world, 3, 2, the_other_storage_type));
+  testMatrixMultiply(A.get(), B.get());
 }
 
 BOOST_AUTO_TEST_CASE( NonSquareTranspose )

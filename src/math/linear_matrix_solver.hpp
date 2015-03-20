@@ -10,7 +10,7 @@
 /**
  * @file   linear_matrix_solver.hpp
  * @author William A. Perkins
- * @date   2013-11-07 12:47:30 d3g096
+ * @date   2015-02-13 08:29:11 d3g096
  * 
  * @brief  Declaration of the LinearMatrixSolver class
  * 
@@ -50,7 +50,7 @@ class LinearMatrixSolver
 public:
 
   /// Default constructor.
-  LinearMatrixSolver(const Matrix& A);
+  LinearMatrixSolver(Matrix& A);
 
   /// Destructor
   ~LinearMatrixSolver(void);
