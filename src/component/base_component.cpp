@@ -382,6 +382,14 @@ void GenMatVecInterface::slabGetValues(std::vector<ComplexType*> &values, int *i
 {
 }
 
+/**
+ * Transfer slab values to component
+ * @param values list of slab values
+ */
+void GenMatVecInterface::slabSetValues(ComplexType **values)
+{
+}
+
  
 // The base implementation for bus and branch components.
 
