@@ -130,6 +130,54 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
   mapToMatrix(*matrix);
 }
 
+/**
+ * Push data from matrix onto buses and branches. Matrix must be
+ * created with the mapToMatrix method using the same GenSlabMap
+ * @param matrix matrix containing data to be pushed to network
+ */
+void mapToNetwork(const gridpack::math::Matrix &matrix)
+{
+  int i, j, k;
+  ComplexType **values = new ComplexType*[p_maxValues];
+  for (i=0; i<p_maxValues; i++) {
+    values[i] = new ComplexType[p_nColumns];
+  }
+  int *idx = new int[p_maxValues];
+  int ncols, nrows;
+  // get values from buses
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->slabSize(&nrows,&ncols);
+      p_network->getBus(i)->slabGetRowIndices(idx);
+      for (j=0; j<nrows; j++) {
+        for (k=0; k<ncols; k++) {
+          matrix.getElement(idx[j], k, (values[j])[k]);
+        }
+      }
+      p_network->getBus(i)->slabSetValues(values);
+    }
+  }
+  // get values from branches
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      p_network->getBranch(i)->slabSize(&nrows,&ncols);
+      p_network->getBranch(i)->slabGetRowIndices(idx);
+      for (j=0; j<nrows; j++) {
+        for (k=0; k<ncols; k++) {
+          matrix.getElement(idx[j], k, (values[j])[k]);
+        }
+      }
+      p_network->getBranch(i)->slabSetValues(values);
+    }
+  }
+  for (i=0; i<p_maxValues; i++) {
+    delete[] values[i];
+  }
+  delete [] values;
+  delete [] idx;
+  GA_Pgroup_sync(p_GAgrp);
+}
+
 private:
 
 /**

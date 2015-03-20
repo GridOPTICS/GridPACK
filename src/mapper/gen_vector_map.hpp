@@ -128,9 +128,10 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 }
 
 /**
- * Push data from vector onto buses. Vector must be created with the
- * mapToVector method using the same GenVectorMap
- * @param vector vector containing data to be pushed to buses
+ * Push data from vector onto buses and branches. Vector must
+ * be created with the mapToVector method using the same
+ * GenVectorMap
+ * @param vector vector containing data to be pushed to network
  */
 void mapToNetwork(const gridpack::math::Vector &vector)
 {
@@ -165,9 +166,10 @@ void mapToNetwork(const gridpack::math::Vector &vector)
 }
 
 /**
- * Push data from vector onto buses. Vector must be created with the
- * mapToVector method using the same GenVectorMap
- * @param vector vector containing data to be pushed to buses
+ * Push data from vector onto buses and branches. Vector must
+ * be created with the mapToVector method using the same
+ * GenVectorMap
+ * @param vector vector containing data to be pushed to network
  */
 void mapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
