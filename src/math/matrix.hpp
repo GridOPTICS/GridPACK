@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2014-11-25 14:39:31 d3g096
+ * @date   2015-03-23 09:49:49 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -137,6 +137,22 @@ public:
    * to instantiate it.
    */
   ~Matrix(void);
+
+  /// Create a densematrix with global size
+  /** 
+   * A special routine to create a dense matrix with a known global
+   * size leaving the distribution up to the underlying math library.
+   * 
+   * @param comm parallel environment
+   * @param global_rows total number of rows on all processes
+   * @param global_cols total number of columns on all processes
+   * 
+   * @return 
+   */
+  static Matrix *
+  createDenseGlobal(const parallel::Communicator& comm,
+                    const int& global_rows,
+                    const int& global_cols);
 
   /// Get the storage type of this matrix
   StorageType storageType(void) const;

@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2014-12-09 10:36:39 d3g096
+ * @date   2015-03-23 09:54:53 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -31,6 +31,25 @@ namespace math {
 // -------------------------------------------------------------
 //  class Matrix
 // -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// Matrix static members
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// Matrix::createDenseGlobal
+// -------------------------------------------------------------
+Matrix *
+Matrix::createDenseGlobal(const parallel::Communicator& comm,
+                          const int& global_rows,
+                          const int& global_cols)
+{
+  PETScMatrixImplementation *impl = 
+    PETScMatrixImplementation::createDenseGlobal(comm, global_rows, global_cols);
+  Matrix *result = new Matrix(impl);
+  return result;
+}
+
 
 // -------------------------------------------------------------
 // Matrix:: constructors / destructor
