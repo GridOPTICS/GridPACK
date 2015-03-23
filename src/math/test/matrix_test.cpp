@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-03-19 15:25:26 d3g096
+ * @date   2015-03-23 10:28:36 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -117,6 +117,37 @@ BOOST_AUTO_TEST_CASE( construction )
   BOOST_CHECK_EQUAL(B->cols(), local_size);
 
 }
+
+#ifdef TEST_DENSE
+BOOST_AUTO_TEST_CASE(denseConstruction)
+{
+  gridpack::parallel::Communicator world;
+  int rows(5*world.size()), cols(3);
+  boost::scoped_ptr<gridpack::math::Matrix> 
+    A(gridpack::math::Matrix::createDenseGlobal(world, rows, cols));
+
+  int lo, hi;
+  A->localRowRange(lo, hi);
+ 
+  for (int i = lo; i < hi; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      gridpack::ComplexType x(static_cast<double>(i*(j+1)));
+      A->setElement(i, j, x);
+    }
+  }
+  A->ready();
+
+  for (int i = lo; i < hi; ++i) {
+    for (int j = 0; j < cols; ++j) {
+      gridpack::ComplexType x(static_cast<double>(i*(j+1))), y;
+      A->getElement(i, j, y);
+      BOOST_CHECK_CLOSE(real(x), real(y), delta);
+      BOOST_CHECK_CLOSE(abs(x), abs(y), delta);
+    }
+  }
+  
+}
+#endif
 
 BOOST_AUTO_TEST_CASE( storage )
 {
