@@ -318,6 +318,12 @@ class GenMatVecInterface {
      */
     virtual void slabGetValues(std::vector<ComplexType*> &values, int *idx);
 
+    /**
+     * Transfer slab values to component
+     * @param values list of slab values
+     */
+    virtual void slabSetValues(ComplexType **values);
+
   private:
 
   friend class boost::serialization::access;

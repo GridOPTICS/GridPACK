@@ -351,7 +351,7 @@ class GOSS_parser : BaseParser<_network>
           data(new gridpack::component::DataCollection);
       data->addValue("N_GENERATORS", totalGenerators);
       data->addValue("N_LOADS", totalLoads);
-      p_busCollection.push_back(data1);
+      p_busCollection.push_back(data);
 
     }
 
