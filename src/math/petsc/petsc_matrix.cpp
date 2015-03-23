@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-02-17 14:55:27 d3g096
+ * @date   2015-03-23 12:02:30 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -125,6 +125,35 @@ MatrixT<RealType>::MatrixT(const parallel::Communicator& comm,
                               const int& local_rows,
                               const int& cols,
                               const int *nz_by_row);
+
+
+// -------------------------------------------------------------
+// Matrix::createDenseGlobal
+// -------------------------------------------------------------
+template <typename T, typename I>
+MatrixT<T, I> *
+MatrixT<T, I>::createDenseGlobal(const parallel::Communicator& comm,
+                                 const int& global_rows,
+                                 const int& global_cols)
+{
+  PETScMatrixImplementation<T, I> *impl = 
+    PETScMatrixImplementation<T, I>::createDenseGlobal(comm, global_rows, global_cols);
+  MatrixT<T, I> *result = new MatrixT<T, I>(impl);
+  return result;
+}
+
+template 
+MatrixT<ComplexType> *
+MatrixT<ComplexType>::createDenseGlobal(const parallel::Communicator& comm,
+                                        const int& global_rows,
+                                        const int& global_cols);
+
+template 
+MatrixT<RealType> *
+MatrixT<RealType>::createDenseGlobal(const parallel::Communicator& comm,
+                                        const int& global_rows,
+                                        const int& global_cols);
+
 
 // -------------------------------------------------------------
 // Matrix::equate

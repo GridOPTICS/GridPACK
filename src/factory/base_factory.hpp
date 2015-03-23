@@ -216,6 +216,9 @@ class BaseFactory {
         p_network->getBranch(i)->getBus2()->getMatVecIndex(&idx2);
         p_network->getBranch(i)->setMatVecIndices(idx1,idx2);
       }
+      
+      // Set internal maps
+      p_network->setMap();
       timer->stop(t_setc);
       timer->configTimer(true);
     }

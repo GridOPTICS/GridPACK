@@ -2145,6 +2145,62 @@ void writeGraph(const std::string& outname)
   }
 }
 
+/**
+ * Set up multimap data structures on each processor
+ */
+void setMap(void)
+{
+  int nbus = numBuses();
+  int nbranch = numBranches();
+  int i,idx,idx1,idx2;
+  p_busMap.clear();
+  for (i=0; i<nbus; i++) {
+    idx = getOriginalBusIndex(i);
+    p_busMap.insert(std::pair<int,int>(idx,i));
+  }
+  p_branchMap.clear();
+  for (i=0; i<nbranch; i++) {
+    getOriginalBranchEndpoints(i, &idx1, &idx2);
+    p_branchMap.insert(std::pair<std::pair<int,int>,int>(std::pair<int,int>(idx1,idx2),i));
+  }
+}
+
+/**
+ * Find the local indices given the original index of a bus.
+ * Ghost buses may show up more than once.
+ * @param idx original index of bus
+ * @return set of local indices of bus. If vector is empty, no buses found
+ */
+std::vector<int> getLocalBusIndices(int idx) {
+  std::multimap<int,int>::iterator it;
+  it = p_busMap.find(idx);
+  std::vector<int> ret;
+  while (it != p_busMap.upper_bound(idx)) {
+    ret.push_back(it->second);
+    it++;
+  }
+  return ret;
+}
+
+/**
+ * Find the local indices given the original bus pair indices of a branch.
+ * @param idx1 original index of bus1
+ * @param idx2 original index of bus2
+ * @return set of local indices of branch. If vector is empty, no branch found
+ */
+std::vector<int> getLocalBranchIndices(int idx1, int idx2) {
+  std::multimap<std::pair<int,int>,int>::iterator it;
+  std::pair<int,int> pair = std::pair<int,int>(idx1,idx2);
+  it = p_branchMap.find(pair);
+  std::vector<int> ret;
+  while (it != p_branchMap.upper_bound(pair)) {
+    ret.push_back(it->second);
+    it++;
+  }
+  return ret;
+}
+
+
 protected:
 
 /**
@@ -2228,6 +2284,12 @@ private:
   int p_numActiveBranches;
   void *p_branchSndBuf;
   void *p_branchRcvBuf;
+
+  /**
+   * Map structures that can map between Original and local indices
+   */
+  std::multimap<int,int> p_busMap;
+  std::multimap<std::pair<int,int>,int> p_branchMap;
 };
 }  //namespace network
 }  //namespace gridpack
