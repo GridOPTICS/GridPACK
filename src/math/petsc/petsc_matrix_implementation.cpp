@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2014-12-09 11:08:52 d3g096
+ * @date   2015-03-23 10:26:11 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -123,6 +123,35 @@ PETScMatrixImplementation::~PETScMatrixImplementation(void)
     }
   }
 }
+
+// -------------------------------------------------------------
+// PETScMatrixImplementation::createDenseGlobal
+// -------------------------------------------------------------
+PETScMatrixImplementation *
+PETScMatrixImplementation::createDenseGlobal(const parallel::Communicator& comm,
+                                             const PETScMatrixImplementation::IdxType& global_rows, 
+                                             const PETScMatrixImplementation::IdxType& global_cols)
+{
+  PetscErrorCode ierr(0);
+  Mat mtmp;
+  PETScMatrixImplementation *result;
+  try {
+    ierr = MatCreate(comm, &mtmp); CHKERRXX(ierr);
+    ierr = MatSetSizes(mtmp, PETSC_DECIDE, PETSC_DECIDE, global_rows, global_cols); CHKERRXX(ierr);
+    if (comm.size() == 1) {
+      ierr = MatSetType(mtmp, MATSEQDENSE); CHKERRXX(ierr);
+      ierr = MatSeqDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
+    } else {
+      ierr = MatSetType(mtmp, MATDENSE); CHKERRXX(ierr);
+      ierr = MatMPIDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
+    }
+    result = new PETScMatrixImplementation(mtmp, false);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+  return result;
+}
+
 
 // -------------------------------------------------------------
 // PETScMatrixImplementation::p_build_matrix
