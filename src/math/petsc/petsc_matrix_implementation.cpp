@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_implementation.cpp
  * @author William A. Perkins
- * @date   2015-03-23 10:26:11 d3g096
+ * @date   2015-03-24 11:27:08 d3g096
  * 
  * @brief  PETSc-specific matrix implementation
  * 
@@ -125,19 +125,26 @@ PETScMatrixImplementation::~PETScMatrixImplementation(void)
 }
 
 // -------------------------------------------------------------
-// PETScMatrixImplementation::createDenseGlobal
+// PETScMatrixImplementation::createDense
 // -------------------------------------------------------------
 PETScMatrixImplementation *
-PETScMatrixImplementation::createDenseGlobal(const parallel::Communicator& comm,
-                                             const PETScMatrixImplementation::IdxType& global_rows, 
-                                             const PETScMatrixImplementation::IdxType& global_cols)
+PETScMatrixImplementation::createDense(const parallel::Communicator& comm,
+                                       const PETScMatrixImplementation::IdxType& global_rows, 
+                                       const PETScMatrixImplementation::IdxType& global_cols,
+                                       const PETScMatrixImplementation::IdxType& local_rows, 
+                                       const PETScMatrixImplementation::IdxType& local_cols)
 {
   PetscErrorCode ierr(0);
   Mat mtmp;
   PETScMatrixImplementation *result;
   try {
+    PetscInt grow(global_rows > 0 ? global_rows : PETSC_DETERMINE);
+    PetscInt gcol(global_cols > 0 ? global_cols : PETSC_DETERMINE);
+    PetscInt lrow(local_rows > 0 ? local_rows : PETSC_DECIDE);
+    PetscInt lcol(local_cols > 0 ? local_cols : PETSC_DECIDE);
+
     ierr = MatCreate(comm, &mtmp); CHKERRXX(ierr);
-    ierr = MatSetSizes(mtmp, PETSC_DECIDE, PETSC_DECIDE, global_rows, global_cols); CHKERRXX(ierr);
+    ierr = MatSetSizes(mtmp, lrow, lcol, grow, gcol); CHKERRXX(ierr);
     if (comm.size() == 1) {
       ierr = MatSetType(mtmp, MATSEQDENSE); CHKERRXX(ierr);
       ierr = MatSeqDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);

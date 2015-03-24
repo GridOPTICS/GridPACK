@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-03-23 09:34:25 d3g096
+ * @date   2015-03-24 10:46:26 d3g096
  * 
  * @brief  
  * 
@@ -62,12 +62,14 @@ public:
   /// Destructor
   ~PETScMatrixImplementation(void);
 
-  /// Create a dense matrix with global sizes
+  /// Create a sparse matrix with more or less specific ownership
   static 
   PETScMatrixImplementation *
-  createDenseGlobal(const parallel::Communicator& comm,
-                    const IdxType& global_rows, 
-                    const IdxType& global_cols);
+  createDense(const parallel::Communicator& comm,
+              const IdxType& global_rows,
+              const IdxType& global_cols,
+              const IdxType& local_rows,
+              const IdxType& local_cols);
 
   /// Get the PETSc matrix
   Mat *get_matrix(void)
