@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-03-23 09:49:49 d3g096
+ * @date   2015-03-24 10:51:28 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -154,6 +154,26 @@ public:
                     const int& global_rows,
                     const int& global_cols);
 
+  /// Create a ::Dense Matrix instance with more/less specific ownership
+  /** 
+   * 
+   * 
+   * @param comm 
+   * @param stype 
+   * @param global_rows 
+   * @param global_cols 
+   * @param local_rows 
+   * @param local_cols 
+   * 
+   * @return 
+   */
+  static Matrix *
+  createDense(const parallel::Communicator& comm,
+              const int& global_rows,
+              const int& global_cols,
+              const int& local_rows,
+              const int& local_cols);
+  
   /// Get the storage type of this matrix
   StorageType storageType(void) const;
 
