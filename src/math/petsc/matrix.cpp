@@ -182,6 +182,22 @@ Matrix::addDiagonal(const Vector& x)
 }
 
 // -------------------------------------------------------------
+// Matrix::shift
+// -------------------------------------------------------------
+void
+Matrix::addDiagonal(const ComplexType& x)
+{
+  const PetscScalar a(x);
+  Mat *pA(PETScMatrix(*this));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatShift(*pA, a); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
 // Matrix::identity
 // -------------------------------------------------------------
 void

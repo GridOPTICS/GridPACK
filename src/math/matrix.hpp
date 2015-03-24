@@ -285,6 +285,14 @@ public:
    */
   void addDiagonal(const Vector& x);
 
+  /// Shift the diagonal of this matrix by the specified value
+  /** 
+   * @c Collective.
+   * 
+   * @param x 
+   */
+  void addDiagonal(const ComplexType& x);
+
   /// Add another matrix to this one, in place
   /** 
    * @e Collective.
