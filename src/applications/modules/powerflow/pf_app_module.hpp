@@ -24,6 +24,25 @@
 namespace gridpack {
 namespace powerflow {
 
+struct pathBranch{
+  int fromBus;
+  int toBus;
+  std::string branchID;
+};
+
+struct stressBus{
+  int busID;
+  std::string genID;
+  double participation;
+};
+
+struct pathStress{
+  std::string name;
+  std::vector<pathBranch> path;
+  std::vector<stressBus> sourceArea;
+  std::vector<stressBus> sinkArea;
+};
+
 // Calling program for powerflow application
 
 class PFAppModule
@@ -60,6 +79,9 @@ class PFAppModule
      * Execute the iterative solve portion of the application
      */
     void solve();
+    void solve_step1();
+    void solve_updatePg(std::vector<pathStress> pstress, std::vector<double> p_slice3Values);
+    void solve_step2();
 
     /**
      * Write out results of powerflow calculation to standard output

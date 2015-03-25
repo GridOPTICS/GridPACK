@@ -53,6 +53,14 @@ class PFFactoryModule
     void setSBus(void);
 
     /**
+      * Update pg of specified bus element based on their genID
+      * @param busID
+      * @param genID
+      * @param value
+      */
+    void updatePg(int busID, std::string genID, double value);
+
+    /**
      * Create the PQ 
      */
     void setPQ(void);

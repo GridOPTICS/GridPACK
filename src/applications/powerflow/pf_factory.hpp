@@ -64,6 +64,11 @@ class PFFactory
      */
     void setJacobian(void);
 
+    /**
+     * Update Pg 
+     */
+    void updatePg(int busID, std::string genID, double value);
+    
   private:
 
     NetworkPtr p_network;
