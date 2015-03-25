@@ -650,11 +650,11 @@ void gridpack::powerflow::PFBus::saveData(
   for (i=0; i<ngen; i++) {
     rval = p_pFac[i]*p_Pinj;
     if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
-      data->setValue("GENERATOR_PF_PGEN",rval,i);
+      data->addValue("GENERATOR_PF_PGEN",rval,i);
     }
     rval = p_pFac[i]*p_Qinj;
     if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
-      data->setValue("GENERATOR_PF_QGEN",rval,i);
+      data->addValue("GENERATOR_PF_QGEN",rval,i);
     }
   }
 }
