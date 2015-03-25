@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-12-04 13:50:19 d3g096
+ * @date   2015-03-25 12:21:40 d3g096
  * 
  * @brief  
  * 
@@ -40,19 +40,60 @@ class NonlinearSolverImplementation
 {
 public:
 
+  /// A functor to keep smart pointers from deleting their pointer
+  struct null_deleter
+  {
+    void operator()(void const *) const { }
+  };
+
   /// Default constructor.
   NonlinearSolverImplementation(const parallel::Communicator& comm,
                                 const int& local_size,
                                 JacobianBuilder form_jacobian,
-                                FunctionBuilder form_function);
+                                FunctionBuilder form_function)
+    : parallel::Distributed(comm), 
+      utility::Configurable("NonlinearSolver"), 
+      utility::Uncopyable(),
+      p_J(), p_F(), 
+      p_X((Vector *)NULL, null_deleter()),  // pointer set by solve()
+      p_jacobian(form_jacobian), 
+      p_function(form_function),
+      p_solutionTolerance(1.0e-05),
+      p_functionTolerance(1.0e-10),
+    p_maxIterations(50)
+  {
+    p_F.reset(new Vector(this->communicator(), local_size));
+    // std::cout << this->processor_rank() << ": "
+    //           << "NonlinearSolverImplementation: construct Jacobian matrix: "
+    //           << local_size << " x " << cols
+    //           << std::endl;
+    p_J.reset(new Matrix(this->communicator(), local_size, local_size, Sparse));
+  }
 
   /// Constructor that uses an existing Jacobian Matrix.
   NonlinearSolverImplementation(Matrix& J,
                                 JacobianBuilder form_jacobian,
-                                FunctionBuilder form_function);
+                                FunctionBuilder form_function)
+    : parallel::Distributed(J.communicator()), 
+      utility::Configurable("NonlinearSolver"), 
+      utility::Uncopyable(),
+      p_J(&J, null_deleter()), p_F(), 
+      p_X((Vector *)NULL, null_deleter()),  // pointer set by solve()
+      p_jacobian(form_jacobian), 
+      p_function(form_function),
+      p_solutionTolerance(1.0e-05),
+      p_functionTolerance(1.0e-10),
+      p_maxIterations(50)
+  {
+    p_F.reset(new Vector(this->communicator(), J.localRows()));
+  }
+
 
   /// Destructor
-  virtual ~NonlinearSolverImplementation(void);
+  virtual ~NonlinearSolverImplementation(void)
+  {
+    // empty
+  }
 
   /// Get the solution tolerance
   /** 
@@ -101,7 +142,11 @@ public:
   }
 
   /// Solve w/ using the specified initial guess, put solution in same vector
-  void solve(Vector& x);
+  void solve(Vector& x)
+  {
+    p_X.reset(&x, null_deleter());
+    this->p_solve();
+  }
 
 protected:
 
@@ -133,7 +178,15 @@ protected:
   virtual void p_solve(void) = 0;
 
   /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::CursorPtr props);
+  void p_configure(utility::Configuration::CursorPtr props)
+  {
+    if (props) {
+      p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
+      p_functionTolerance = props->get("FunctionTolerance", p_functionTolerance);
+      p_maxIterations = props->get("MaxIterations", p_maxIterations);
+    }
+  }
+
 };
 
 

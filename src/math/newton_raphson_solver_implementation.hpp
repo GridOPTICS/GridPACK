@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-12-04 13:56:03 d3g096
+ * @date   2015-03-25 13:38:39 d3g096
  * 
  * @brief  
  * 
@@ -20,9 +20,10 @@
 #ifndef _newton_raphson_solver_implementation_hpp_
 #define _newton_raphson_solver_implementation_hpp_
 
+#include <iostream>
 #include <boost/scoped_ptr.hpp>
-#include "nonlinear_solver_implementation.hpp"
 #include "nonlinear_solver_functions.hpp"
+#include "nonlinear_solver_implementation.hpp"
 #include "linear_solver.hpp"
 
 namespace gridpack {
@@ -82,12 +83,23 @@ public:
   NewtonRaphsonSolverImplementation(const parallel::Communicator& comm,
                                     const int& local_size,
                                     JacobianBuilder form_jacobian,
-                                    FunctionBuilder form_function);
+                                    FunctionBuilder form_function)
+    : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
+      p_linear_solver()
+  {
+    this->configurationKey("NewtonRaphsonSolver");
+  }
+
   
   /// Construct with an existing Jacobian Matrix
   NewtonRaphsonSolverImplementation(Matrix& J,
                                     JacobianBuilder form_jacobian,
-                                    FunctionBuilder form_function);
+                                    FunctionBuilder form_function)
+    : NonlinearSolverImplementation(J, form_jacobian, form_function),
+      p_linear_solver()
+  {
+    this->configurationKey("NewtonRaphsonSolver");
+  }
 
   /// Destructor
   /**
@@ -95,7 +107,9 @@ public:
    * the \ref parallel::Communicator "communicator" used for \ref
    * NewtonRaphsonSolverImplementation() "construction".
    */
-  ~NewtonRaphsonSolverImplementation(void);
+  ~NewtonRaphsonSolverImplementation(void)
+  {
+  }
 
 
 protected:
@@ -114,7 +128,36 @@ protected:
   boost::scoped_ptr<LinearSolver> p_linear_solver;
 
   /// Solve w/ using the specified initial guess (specialized)
-  void p_solve(void);
+  void p_solve(void)
+  {
+    ComplexType stol(1.0e+30);
+    ComplexType ftol(1.0e+30);
+    int iter(0);
+
+    boost::scoped_ptr<Vector> deltaX(p_X->clone());
+    while (real(stol) > p_solutionTolerance && iter < p_maxIterations) {
+      p_function(*p_X, *p_F);
+      p_F->scale(-1.0);
+      p_jacobian(*p_X, *p_J);
+      if (!p_linear_solver) {
+        p_linear_solver.reset(new LinearSolver(*p_J));
+        p_linear_solver->configure(this->p_configCursor);
+      } 
+      deltaX->zero();
+      p_linear_solver->solve(*p_F, *deltaX);
+      stol = deltaX->norm2();
+      ftol = p_F->norm2();
+      p_X->add(*deltaX);
+      iter += 1;
+      if (this->processor_rank() == 0) {
+        std::cout << "Newton-Raphson "
+                  << "iteration " << iter << ": "
+                  << "solution residual norm = " << real(stol) << ", "
+                  << "function norm = " << real(ftol)
+                  << std::endl;
+      }
+    }
+  }
 
 };
 
