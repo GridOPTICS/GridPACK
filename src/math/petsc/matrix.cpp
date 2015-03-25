@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-03-23 09:54:53 d3g096
+ * @date   2015-03-24 10:50:59 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -37,15 +37,19 @@ namespace math {
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
-// Matrix::createDenseGlobal
+// Matrix::create
 // -------------------------------------------------------------
 Matrix *
-Matrix::createDenseGlobal(const parallel::Communicator& comm,
-                          const int& global_rows,
-                          const int& global_cols)
+Matrix::createDense(const parallel::Communicator& comm,
+                    const int& global_rows,
+                    const int& global_cols,
+                    const int& local_rows,
+                    const int& local_cols)
 {
   PETScMatrixImplementation *impl = 
-    PETScMatrixImplementation::createDenseGlobal(comm, global_rows, global_cols);
+    PETScMatrixImplementation::createDense(comm, 
+                                           global_rows, global_cols,
+                                           local_rows, local_cols);
   Matrix *result = new Matrix(impl);
   return result;
 }
@@ -176,6 +180,22 @@ Matrix::addDiagonal(const Vector& x)
   PetscErrorCode ierr(0);
   try {
     ierr = MatDiagonalSet(*pA, *pX, ADD_VALUES); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+// -------------------------------------------------------------
+// Matrix::shift
+// -------------------------------------------------------------
+void
+Matrix::addDiagonal(const ComplexType& x)
+{
+  const PetscScalar a(x);
+  Mat *pA(PETScMatrix(*this));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatShift(*pA, a); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
