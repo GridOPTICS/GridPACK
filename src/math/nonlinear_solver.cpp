@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver.cpp
  * @author William A. Perkins
- * @date   2013-10-09 12:26:14 d3g096
+ * @date   2015-03-25 14:31:08 d3g096
  * 
  * @brief  Generic implementation of NonlinearSolver
  * 
@@ -20,17 +20,6 @@
 
 namespace gridpack {
 namespace math {
-
-// -------------------------------------------------------------
-//  class NonlinearSolver
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// NonlinearSolver:: constructors / destructor
-// -------------------------------------------------------------
-NonlinearSolver::~NonlinearSolver(void)
-{
-}
 
 } // namespace math
 } // namespace gridpack

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-25 12:14:52 d3g096
+ * @date   2015-03-25 14:41:21 d3g096
  * 
  * @brief  
  * 
@@ -146,8 +146,10 @@ protected:
 
 
   /// Solve w/ using the specified initial guess (specialized)
-  void p_solve(void)
+  void p_solve(Vector& x)
   {
+    NonlinearSolverImplementation::p_solve(x);
+
     PetscErrorCode ierr(0);
     p_petsc_X = PETScVector(*p_X);
     int me(this->processor_rank());

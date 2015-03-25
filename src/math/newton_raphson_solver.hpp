@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver.hpp
  * @author William A. Perkins
- * @date   2013-12-04 13:54:21 d3g096
+ * @date   2015-03-25 14:34:45 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,7 @@
 #ifndef _newton_raphson_solver_hpp_
 #define _newton_raphson_solver_hpp_
 
-#include "gridpack/math/nonlinear_solver_interface.hpp"
+#include <gridpack/math/nonlinear_solver.hpp>
 
 namespace gridpack {
 namespace math {
@@ -45,7 +45,7 @@ namespace math {
  * NewtonRaphsonSolverImplementation class.
  */
 class NewtonRaphsonSolver 
-  : public NonlinearSolverInterface {
+  : public NonlinearSolver {
 public:
 
   /// Default constructor.
@@ -79,7 +79,6 @@ public:
    * NewtonRaphsonSolver() "construction".
    */
   ~NewtonRaphsonSolver(void);
-
 };
 
 

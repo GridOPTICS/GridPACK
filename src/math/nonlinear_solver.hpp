@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver.hpp
  * @author William A. Perkins
- * @date   2013-12-04 14:09:39 d3g096
+ * @date   2015-03-25 14:38:39 d3g096
  * 
  * @brief  
  * 
@@ -21,7 +21,7 @@
 #define _nonlinear_solver_hpp_
 
 #include <boost/scoped_ptr.hpp>
-#include "gridpack/math/nonlinear_solver_interface.hpp"
+#include "gridpack/math/nonlinear_solver_implementation.hpp"
 
 namespace gridpack {
 namespace math {
@@ -52,9 +52,15 @@ namespace math {
  * Implementation ...
  */
 class NonlinearSolver 
-  : public NonlinearSolverInterface
+  : public NonlinearSolverInterface<ComplexType>,
+    public parallel::WrappedDistributed,
+    public utility::WrappedConfigurable,
+    private utility::Uncopyable 
 {
 public:
+
+  typedef typename NonlinearSolverInterface<ComplexType>::VectorType VectorType;
+  typedef typename NonlinearSolverInterface<ComplexType>::MatrixType MatrixType;
 
   /// Default constructor.
   /** 
@@ -86,7 +92,74 @@ public:
    * the \ref parallel::Communicator "communicator" used for \ref
    * NonlinearSolver() "construction".
    */
-  ~NonlinearSolver(void);
+  ~NonlinearSolver(void)
+  { }
+
+protected:
+
+  /// A constuctor for children that avoids instantiating an implementation
+  NonlinearSolver(void)
+    : NonlinearSolverInterface<ComplexType>(),
+      parallel::WrappedDistributed(),
+      utility::WrappedConfigurable(),
+      utility::Uncopyable()
+  {}
+
+
+  /// Where things really happen
+  /**
+   * The Pimpl idiom is used for \ref NonlinearSolverImplementation
+   * "implementation", so user code is completely independent of the
+   * underlying library. This class simply provides an interface to a
+   * specific \ref NonlinearSolverImplementation "implementation".
+   * 
+   */
+  boost::scoped_ptr<NonlinearSolverImplementation> p_impl;
+
+  /// Get the solution tolerance (specialized)
+  double p_tolerance(void) const
+  {
+    return p_impl->tolerance();
+  }
+
+  /// Set the solver tolerance (specialized)
+  void p_tolerance(const double& tol)
+  {
+    p_impl->tolerance(tol);
+  }
+
+  /// Get the maximum iterations (specialized)
+  int p_maximumIterations(void) const
+  {
+    return p_impl->maximumIterations();
+  }
+
+  /// Set the maximum solution iterations  (specialized)
+  void p_maximumIterations(const int& n) 
+  {
+    p_impl->maximumIterations(n);
+  }
+
+  /// Solve w/ the specified initial estimated, put result in same vector
+  void p_solve(VectorType& x)
+  {
+    p_impl->solve(x);
+  }
+
+  /// Set the implementation
+  /** 
+   * Does what is necessary to set the \ref
+   * NonlinearSolverImplementation "implementation".  Subclasses are
+   * required to call this at construction.
+   * 
+   * @param impl specific nonlinear solver implementation to use
+   */
+  void p_setImpl(NonlinearSolverImplementation *impl)
+  {
+    p_impl.reset(impl);
+    p_setDistributed(p_impl.get());
+    p_setConfigurable(p_impl.get());
+  }
 
 };
 

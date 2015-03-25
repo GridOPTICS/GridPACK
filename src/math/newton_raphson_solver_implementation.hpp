@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-25 13:38:39 d3g096
+ * @date   2015-03-25 14:52:31 d3g096
  * 
  * @brief  
  * 
@@ -128,8 +128,9 @@ protected:
   boost::scoped_ptr<LinearSolver> p_linear_solver;
 
   /// Solve w/ using the specified initial guess (specialized)
-  void p_solve(void)
+  void p_solve(Vector& x)
   {
+    NonlinearSolverImplementation::p_solve(x);
     ComplexType stol(1.0e+30);
     ComplexType ftol(1.0e+30);
     int iter(0);
