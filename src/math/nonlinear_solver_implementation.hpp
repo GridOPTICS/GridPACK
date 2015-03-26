@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-25 14:11:10 d3g096
+ * @date   2015-03-25 15:24:58 d3g096
  * 
  * @brief  
  * 
@@ -35,13 +35,19 @@ namespace math {
 // -------------------------------------------------------------
 //  class NonlinearSolverImplementation
 // -------------------------------------------------------------
+template <typename T, typename I = int>
 class NonlinearSolverImplementation 
-  : public NonlinearSolverInterface<ComplexType>, 
+  : public NonlinearSolverInterface<T, I>, 
     public parallel::Distributed,
     public utility::Configurable,
     private utility::Uncopyable
 {
 public:
+
+  typedef typename NonlinearSolverInterface<T, I>::VectorType VectorType;
+  typedef typename NonlinearSolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename NLSBuilder<T, I>::Jacobian JacobianBuilder;
+  typedef typename NLSBuilder<T, I>::Function FunctionBuilder;
 
   /// A functor to keep smart pointers from deleting their pointer
   struct null_deleter

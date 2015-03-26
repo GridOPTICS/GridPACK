@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver.cpp
  * @author William A. Perkins
- * @date   2015-03-25 14:33:06 d3g096
+ * @date   2015-03-26 12:12:37 d3g096
  * 
  * @brief  PETSc-specific implementation of NonlinearSolver
  * 
@@ -29,29 +29,42 @@ namespace math {
 // -------------------------------------------------------------
 // NonlinearSolver:: constructors / destructor
 // -------------------------------------------------------------
-NonlinearSolver::NonlinearSolver(const parallel::Communicator& comm,
-                                 const int& local_size,
-                                 JacobianBuilder form_jacobian,
-                                 FunctionBuilder form_function)
-  : NonlinearSolverInterface<ComplexType>(),
+template <typename T, typename I>
+NonlinearSolverT<T, I>::NonlinearSolverT(const parallel::Communicator& comm,
+                                         const int& local_size,
+                                         NonlinearSolverT<T, I>::JacobianBuilder form_jacobian,
+                                         NonlinearSolverT<T, I>::FunctionBuilder form_function)
+  : NonlinearSolverInterface<T, I>(),
     parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
     utility::Uncopyable()
 {
-  p_setImpl(new PetscNonlinearSolverImplementation(comm, local_size, 
-                                                    form_jacobian, form_function));
+  p_setImpl(new PetscNonlinearSolverImplementation<T, I>(comm, local_size, 
+                                                         form_jacobian, form_function));
 }
 
-NonlinearSolver::NonlinearSolver(Matrix& J,
-                                 JacobianBuilder form_jacobian,
-                                 FunctionBuilder form_function)
-  : NonlinearSolverInterface<ComplexType>(),
+template
+NonlinearSolverT<ComplexType>::NonlinearSolverT(const parallel::Communicator& comm,
+                                                const int& local_size,
+                                                NonlinearSolverT<ComplexType>::JacobianBuilder form_jacobian,
+                                                NonlinearSolverT<ComplexType>::FunctionBuilder form_function);
+
+template <typename T, typename I>
+NonlinearSolverT<T, I>::NonlinearSolverT(NonlinearSolverT<T, I>::MatrixType& J,
+                                         NonlinearSolverT<T, I>::JacobianBuilder form_jacobian,
+                                         NonlinearSolverT<T, I>::FunctionBuilder form_function)
+  : NonlinearSolverInterface<T, I>(),
     parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
     utility::Uncopyable()
 {
-  p_setImpl(new PetscNonlinearSolverImplementation(J, form_jacobian, form_function));
+  p_setImpl(new PetscNonlinearSolverImplementation<T, I>(J, form_jacobian, form_function));
 }
+
+template
+NonlinearSolverT<ComplexType>::NonlinearSolverT(NonlinearSolverT<ComplexType>::MatrixType& J,
+                                                NonlinearSolverT<ComplexType>::JacobianBuilder form_jacobian,
+                                                NonlinearSolverT<ComplexType>::FunctionBuilder form_function);
 
 } // namespace math
 } // namespace gridpack

@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-12-09 09:47:23 d3g096
+ * @date   2015-03-25 16:00:02 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -77,8 +77,8 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = build_tiny_jacobian_1();
-  gridpack::math::FunctionBuilder f = build_tiny_function_1();
+  gridpack::math::NonlinearSolver::JacobianBuilder j = build_tiny_jacobian_1();
+  gridpack::math::NonlinearSolver::FunctionBuilder f = build_tiny_function_1();
 
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
 
@@ -107,8 +107,8 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = build_tiny_jacobian_1();
-  gridpack::math::FunctionBuilder f = build_tiny_function_1();
+  gridpack::math::NewtonRaphsonSolver::JacobianBuilder j = build_tiny_jacobian_1();
+  gridpack::math::NewtonRaphsonSolver::FunctionBuilder f = build_tiny_function_1();
 
   gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
 
@@ -172,8 +172,8 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = &build_tiny_jacobian_2;
-  gridpack::math::FunctionBuilder f = &build_tiny_function_2;
+  gridpack::math::NonlinearSolver::JacobianBuilder j = &build_tiny_jacobian_2;
+  gridpack::math::NonlinearSolver::FunctionBuilder f = &build_tiny_function_2;
 
   gridpack::math::NonlinearSolver solver(self, 2, j, f);
 
@@ -202,8 +202,8 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = &build_tiny_jacobian_2;
-  gridpack::math::FunctionBuilder f = &build_tiny_function_2;
+  gridpack::math::NewtonRaphsonSolver::JacobianBuilder j = &build_tiny_jacobian_2;
+  gridpack::math::NewtonRaphsonSolver::FunctionBuilder f = &build_tiny_function_2;
 
   gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
 
@@ -315,8 +315,8 @@ BOOST_AUTO_TEST_CASE( example2 )
 
   build_thing thing;
 
-  gridpack::math::JacobianBuilder j = thing;
-  gridpack::math::FunctionBuilder f = thing;
+  gridpack::math::NonlinearSolver::JacobianBuilder j = thing;
+  gridpack::math::NonlinearSolver::FunctionBuilder f = thing;
 
   gridpack::math::NonlinearSolver solver(world, local_size, j, f);
 
@@ -346,8 +346,8 @@ BOOST_AUTO_TEST_CASE( example2_nr )
 
   build_thing thing;
 
-  gridpack::math::JacobianBuilder j = thing;
-  gridpack::math::FunctionBuilder f = thing;
+  gridpack::math::NewtonRaphsonSolver::JacobianBuilder j = thing;
+  gridpack::math::NewtonRaphsonSolver::FunctionBuilder f = thing;
 
   gridpack::math::NewtonRaphsonSolver solver(world, local_size, j, f);
 

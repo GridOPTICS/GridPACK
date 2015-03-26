@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-25 14:41:21 d3g096
+ * @date   2015-03-25 15:51:34 d3g096
  * 
  * @brief  
  * 
@@ -35,18 +35,24 @@ MonitorNorms(SNES snes, PetscInt its, PetscReal fgnorm, void *dummy);
 // -------------------------------------------------------------
 //  class PetscNonlinearSolverImplementation
 // -------------------------------------------------------------
+template <typename T, typename I = int>
 class PetscNonlinearSolverImplementation 
-  : public NonlinearSolverImplementation,
+  : public NonlinearSolverImplementation<T, I>,
     private PETScConfigurable
 {
 public:
+
+  typedef typename NonlinearSolverImplementation<T, I>::VectorType VectorType;
+  typedef typename NonlinearSolverImplementation<T, I>::MatrixType MatrixType;
+  typedef typename NonlinearSolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename NonlinearSolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
 
   /// Default constructor.
   PetscNonlinearSolverImplementation(const parallel::Communicator& comm,
                                      const int& local_size,
                                      JacobianBuilder form_jacobian,
                                      FunctionBuilder form_function)
-    : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
+    : NonlinearSolverImplementation<T, I>(comm, local_size, form_jacobian, form_function),
       PETScConfigurable(this->communicator()),
       p_snes(), 
       p_petsc_J(), p_petsc_F(),
@@ -60,7 +66,7 @@ public:
   PetscNonlinearSolverImplementation(Matrix& J,
                                      JacobianBuilder form_jacobian,
                                      FunctionBuilder form_function)
-    : NonlinearSolverImplementation(J, form_jacobian, form_function),
+    : NonlinearSolverImplementation<T, I>(J, form_jacobian, form_function),
       PETScConfigurable(this->communicator()),
       p_snes(), 
       p_petsc_J(), p_petsc_F(),
@@ -104,16 +110,16 @@ protected:
     PetscErrorCode ierr(0);
     try {
       ierr  = SNESCreate(this->communicator(), &p_snes); CHKERRXX(ierr);
-      p_petsc_F = PETScVector(*p_F);
+      p_petsc_F = PETScVector(*(this->p_F));
 
-      if (!p_function.empty()) {
+      if (!this->p_function.empty()) {
         ierr = SNESSetFunction(p_snes, *p_petsc_F, FormFunction, 
                                static_cast<void *>(this)); CHKERRXX(ierr);
       }
 
-      p_petsc_J = PETScMatrix(*p_J);
+      p_petsc_J = PETScMatrix(*(this->p_J));
     
-      if (!p_jacobian.empty()) {
+      if (!this->p_jacobian.empty()) {
         ierr = SNESSetJacobian(p_snes, *p_petsc_J, *p_petsc_J, FormJacobian, 
                                static_cast<void *>(this)); CHKERRXX(ierr);
       }
@@ -131,10 +137,10 @@ protected:
       ierr = SNESMonitorSet(p_snes, MonitorNorms, PETSC_NULL, PETSC_NULL); CHKERRXX(ierr);
 
       ierr = SNESSetTolerances(p_snes, 
-                               p_functionTolerance, 
+                               this->p_functionTolerance, 
                                PETSC_DEFAULT,
-                               p_solutionTolerance,
-                               p_maxIterations, 
+                               this->p_solutionTolerance,
+                               this->p_maxIterations, 
                                PETSC_DEFAULT);
                              
       ierr = SNESSetFromOptions(p_snes); CHKERRXX(ierr);
@@ -146,12 +152,12 @@ protected:
 
 
   /// Solve w/ using the specified initial guess (specialized)
-  void p_solve(Vector& x)
+  void p_solve(VectorType& x)
   {
-    NonlinearSolverImplementation::p_solve(x);
+    NonlinearSolverImplementation<T, I>::p_solve(x);
 
     PetscErrorCode ierr(0);
-    p_petsc_X = PETScVector(*p_X);
+    p_petsc_X = PETScVector(*(this->p_X));
     int me(this->processor_rank());
 
     try {
@@ -184,7 +190,7 @@ protected:
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
   {
-    NonlinearSolverImplementation::p_configure(props);
+    NonlinearSolverImplementation<T, I>::p_configure(props);
     this->build(props);
   }
 
@@ -266,10 +272,10 @@ protected:
     // user function
 
     boost::scoped_ptr<Vector> 
-      xtmp(new Vector(new PETScVectorImplementation<ComplexType, int>(x, false)));
+      xtmp(new Vector(new PETScVectorImplementation<T, I>(x, false)));
 
     boost::scoped_ptr<Vector> 
-      ftmp(new Vector(new PETScVectorImplementation<ComplexType, int>(f, false)));
+      ftmp(new Vector(new PETScVectorImplementation<T, I>(f, false)));
 
     // Call the user-specified function (object) to form the RHS
     (solver->p_function)(*xtmp, *ftmp);

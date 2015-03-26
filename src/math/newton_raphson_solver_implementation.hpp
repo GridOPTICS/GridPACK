@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-25 14:52:31 d3g096
+ * @date   2015-03-26 11:50:39 d3g096
  * 
  * @brief  
  * 
@@ -61,10 +61,15 @@ namespace math {
  * Vector::norm2() "norm" of \f$ \Delta \mathbf{x}^{k} \f$ is less
  * then some specified small tolerance.
  */
+template <typename T, typename I>
 class NewtonRaphsonSolverImplementation 
-  : public NonlinearSolverImplementation
+  : public NonlinearSolverImplementation<T, I>
 {
 public:
+
+  typedef typename NonlinearSolverImplementation<T, I>::VectorType VectorType;
+  typedef typename NonlinearSolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename NonlinearSolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
 
   /// Default constructor.
   /** 
@@ -84,7 +89,7 @@ public:
                                     const int& local_size,
                                     JacobianBuilder form_jacobian,
                                     FunctionBuilder form_function)
-    : NonlinearSolverImplementation(comm, local_size, form_jacobian, form_function),
+    : NonlinearSolverImplementation<T, I>(comm, local_size, form_jacobian, form_function),
       p_linear_solver()
   {
     this->configurationKey("NewtonRaphsonSolver");
@@ -92,10 +97,10 @@ public:
 
   
   /// Construct with an existing Jacobian Matrix
-  NewtonRaphsonSolverImplementation(Matrix& J,
+  NewtonRaphsonSolverImplementation(MatrixT<T, I>& J,
                                     JacobianBuilder form_jacobian,
                                     FunctionBuilder form_function)
-    : NonlinearSolverImplementation(J, form_jacobian, form_function),
+    : NonlinearSolverImplementation<T, I>(J, form_jacobian, form_function),
       p_linear_solver()
   {
     this->configurationKey("NewtonRaphsonSolver");
@@ -128,27 +133,27 @@ protected:
   boost::scoped_ptr<LinearSolver> p_linear_solver;
 
   /// Solve w/ using the specified initial guess (specialized)
-  void p_solve(Vector& x)
+  void p_solve(VectorType& x)
   {
-    NonlinearSolverImplementation::p_solve(x);
+    NonlinearSolverImplementation<T, I>::p_solve(x);
     ComplexType stol(1.0e+30);
     ComplexType ftol(1.0e+30);
     int iter(0);
 
-    boost::scoped_ptr<Vector> deltaX(p_X->clone());
-    while (real(stol) > p_solutionTolerance && iter < p_maxIterations) {
-      p_function(*p_X, *p_F);
-      p_F->scale(-1.0);
-      p_jacobian(*p_X, *p_J);
+    boost::scoped_ptr<VectorType> deltaX(this->p_X->clone());
+    while (real(stol) > this->p_solutionTolerance && iter < this->p_maxIterations) {
+      this->p_function(*(this->p_X), *(this->p_F));
+      this->p_F->scale(-1.0);
+      this->p_jacobian(*(this->p_X), *(this->p_J));
       if (!p_linear_solver) {
-        p_linear_solver.reset(new LinearSolver(*p_J));
+        p_linear_solver.reset(new LinearSolverT<T, I>(*(this->p_J)));
         p_linear_solver->configure(this->p_configCursor);
       } 
       deltaX->zero();
-      p_linear_solver->solve(*p_F, *deltaX);
+      p_linear_solver->solve(*(this->p_F), *deltaX);
       stol = deltaX->norm2();
-      ftol = p_F->norm2();
-      p_X->add(*deltaX);
+      ftol = this->p_F->norm2();
+      this->p_X->add(*deltaX);
       iter += 1;
       if (this->processor_rank() == 0) {
         std::cout << "Newton-Raphson "

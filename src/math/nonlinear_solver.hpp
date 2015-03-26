@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver.hpp
  * @author William A. Perkins
- * @date   2015-03-25 14:38:39 d3g096
+ * @date   2015-03-25 15:54:13 d3g096
  * 
  * @brief  
  * 
@@ -51,22 +51,25 @@ namespace math {
  *
  * Implementation ...
  */
-class NonlinearSolver 
-  : public NonlinearSolverInterface<ComplexType>,
+template <typename T, typename I = int>
+class NonlinearSolverT 
+  : public NonlinearSolverInterface<T, I>,
     public parallel::WrappedDistributed,
     public utility::WrappedConfigurable,
     private utility::Uncopyable 
 {
 public:
 
-  typedef typename NonlinearSolverInterface<ComplexType>::VectorType VectorType;
-  typedef typename NonlinearSolverInterface<ComplexType>::MatrixType MatrixType;
+  typedef typename NonlinearSolverImplementation<T, I>::VectorType VectorType;
+  typedef typename NonlinearSolverImplementation<T, I>::MatrixType MatrixType;
+  typedef typename NonlinearSolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename NonlinearSolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
 
   /// Default constructor.
   /** 
    * @e Collective.
    *
-   * A NonlinearSolver must be constructed simultaneously on all
+   * A NonlinearSolverT must be constructed simultaneously on all
    * processes involved in @c comm.  
    * 
    * @param comm communicator on which the instance is to exist
@@ -74,32 +77,32 @@ public:
    * @param form_jacobian function to fill the Jacobian Matrix, \f$\left[ \mathbf{J}\left( \mathbf{x} \right) \right]\f$
    * @param form_function function to fill the RHS function Vector, \f$\mathbf{F}\left( \mathbf{x} \right)\f$
    * 
-   * @return new NonlinearSolver instance
+   * @return new NonlinearSolverT instance
    */
-  NonlinearSolver(const parallel::Communicator& comm,
+  NonlinearSolverT(const parallel::Communicator& comm,
                   const int& local_size,
                   JacobianBuilder form_jacobian,
                   FunctionBuilder form_function);
 
 
-  NonlinearSolver(Matrix& J,
-                  JacobianBuilder form_jacobian,
-                  FunctionBuilder form_function);
+  NonlinearSolverT(MatrixType& J,
+                   JacobianBuilder form_jacobian,
+                   FunctionBuilder form_function);
 
   /// Destructor
   /**
    * This must be called simultaneously by all processes involved in
    * the \ref parallel::Communicator "communicator" used for \ref
-   * NonlinearSolver() "construction".
+   * NonlinearSolverT() "construction".
    */
-  ~NonlinearSolver(void)
+  ~NonlinearSolverT(void)
   { }
 
 protected:
 
   /// A constuctor for children that avoids instantiating an implementation
-  NonlinearSolver(void)
-    : NonlinearSolverInterface<ComplexType>(),
+  NonlinearSolverT(void)
+    : NonlinearSolverInterface<T, I>(),
       parallel::WrappedDistributed(),
       utility::WrappedConfigurable(),
       utility::Uncopyable()
@@ -114,7 +117,7 @@ protected:
    * specific \ref NonlinearSolverImplementation "implementation".
    * 
    */
-  boost::scoped_ptr<NonlinearSolverImplementation> p_impl;
+  boost::scoped_ptr< NonlinearSolverImplementation<T, I> > p_impl;
 
   /// Get the solution tolerance (specialized)
   double p_tolerance(void) const
@@ -154,7 +157,7 @@ protected:
    * 
    * @param impl specific nonlinear solver implementation to use
    */
-  void p_setImpl(NonlinearSolverImplementation *impl)
+  void p_setImpl(NonlinearSolverImplementation<T, I> *impl)
   {
     p_impl.reset(impl);
     p_setDistributed(p_impl.get());
@@ -162,6 +165,10 @@ protected:
   }
 
 };
+
+typedef NonlinearSolverT<ComplexType> ComplexNonlinearSolver;
+typedef NonlinearSolverT<RealType> RealNonlinearSolver;
+typedef ComplexNonlinearSolver NonlinearSolver;
 
 
 } // namespace math

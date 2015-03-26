@@ -8,7 +8,7 @@
 /**
  * @file   newton_raphson_solver.cpp
  * @author William A. Perkins
- * @date   2015-03-25 14:37:42 d3g096
+ * @date   2015-03-25 15:27:44 d3g096
  * 
  * @brief  
  * 
@@ -23,36 +23,6 @@
 namespace gridpack {
 namespace math {
 
-// -------------------------------------------------------------
-//  class NewtonRaphsonSolver
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// NewtonRaphsonSolver:: constructors / destructor
-// -------------------------------------------------------------
-NewtonRaphsonSolver::NewtonRaphsonSolver(const parallel::Communicator& comm,
-                                         const int& local_size,
-                                         JacobianBuilder form_jacobian,
-                                         FunctionBuilder form_function)
-  : NonlinearSolver()
-{
-  p_setImpl(new NewtonRaphsonSolverImplementation(comm, local_size,
-                                                   form_jacobian,
-                                                   form_function));
-}
-
-NewtonRaphsonSolver::NewtonRaphsonSolver(Matrix& J,
-                                         JacobianBuilder form_jacobian,
-                                         FunctionBuilder form_function)
-  : NonlinearSolver()
-{
-  p_setImpl(new NewtonRaphsonSolverImplementation(J, form_jacobian, form_function));
-}
-
-
-NewtonRaphsonSolver::~NewtonRaphsonSolver(void)
-{
-}
 
 } // namespace math
 } // namespace gridpack
