@@ -46,6 +46,7 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_sbase = 0.0;
   p_mode = YBus;
   setReferenceBus(false);
+  p_ngen = 0;
 }
 
 /**
@@ -394,10 +395,9 @@ void gridpack::powerflow::PFBus::load(
   bool lgen;
   int i, ngen, gstatus;
   double pg, qg, vs,qmax,qmin;
-  ngen = 0;
-  if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+  if (data->getValue(GENERATOR_NUMBER, &p_ngen)) {
     double qtot = 0.0;
-    for (i=0; i<ngen; i++) {
+    for (i=0; i<p_ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
@@ -583,6 +583,25 @@ void gridpack::powerflow::PFBus::setSBus(void)
     p_P0 = real(sBus);
     p_Q0 = imag(sBus);
   } 
+}
+
+/**
+ ** Update pg of specified bus element based on their genID
+ ** @param busID
+ ** @param genID
+ ** @param value
+ **/
+void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double value)
+{
+   if (getOriginalIndex() == busID) {
+     if (p_ngen > 0) {
+       for (int i = 0; i < p_ngen; i++) {
+         if (p_gid[i] == genID) {
+           p_pg[i] += value;
+         }
+       }
+     }
+   }
 }
 
 /**

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-03-19 15:30:03 d3g096
+ * @date   2015-03-26 10:35:51 d3g096
  * 
  * @brief  
  * 
@@ -399,25 +399,48 @@ multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
 // -------------------------------------------------------------
 static 
 void
-multiply_dense(const Matrix& A, const Matrix& B, Matrix& result)
+multiply_dense(const Matrix& A, const Matrix& B, Matrix& C)
 {
-  BOOST_ASSERT(A.rows() == result.rows());
-  BOOST_ASSERT(B.cols() == result.cols());
+  BOOST_ASSERT(A.rows() == C.rows());
+  BOOST_ASSERT(B.cols() == C.cols());
+
+  // PetscErrorCode ierr(0);
+  // ierr = PetscSynchronizedPrintf(A.communicator(), 
+  //                                "multiply_dense: %d: A: (%dx%d), (%dx%d)\n",
+  //                                A.communicator().rank(), 
+  //                                A.rows(), A.cols(), A.localRows(), A.localCols()); 
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(A.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
+  // ierr = PetscSynchronizedPrintf(B.communicator(), 
+  //                                "multiply_dense: %d: B: (%dx%d), (%dx%d)\n",
+  //                                B.communicator().rank(), 
+  //                                B.rows(), B.cols(), B.localRows(), B.localCols()); 
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(B.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
+  // ierr = PetscSynchronizedPrintf(C.communicator(), 
+  //                                "multiply_dense: %d: C: (%dx%d), (%dx%d)\n",
+  //                                C.communicator().rank(), 
+  //                                C.rows(), C.cols(), C.localRows(), C.localCols());
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(C.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
   boost::scoped_ptr<Vector> 
     bc(new Vector(B.communicator(), B.localRows())), 
-    rc(new Vector(result.communicator(), result.localRows()));
+    rc(new Vector(C.communicator(), C.localRows()));
   int lo, hi;
   rc->localIndexRange(lo, hi);
-  for (int j = 0; j < A.rows(); ++j) {
+  for (int j = 0; j < B.cols(); ++j) {
     column(B, j, *bc);
     multiply(A, *bc, *rc);
     for (int i = lo; i < hi; ++i) {
       ComplexType v;
       rc->getElement(i, v);
-      result.setElement(i, j, v);
+      C.setElement(i, j, v);
     }
   }
-  result.ready();
+  C.ready();
 }  
 
 static 
@@ -426,9 +449,11 @@ multiply_dense(const Matrix& A, const Matrix& B)
 {
   BOOST_ASSERT(A.cols() == B.rows());
   BOOST_ASSERT(A.localCols() == B.localRows());
-  Matrix *result(new Matrix(A.communicator(), A.localRows(), B.localCols(), Matrix::Dense));
-  multiply_dense(A, B, *result);
-  return result;
+  Matrix *C(Matrix::createDense(A.communicator(),
+                                A.rows(), B.cols(),
+                                A.localRows(), B.localCols()));
+  multiply_dense(A, B, *C);
+  return C;
 }
 
 // -------------------------------------------------------------
