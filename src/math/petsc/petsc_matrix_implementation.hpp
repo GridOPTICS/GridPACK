@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-03-23 12:56:07 d3g096
+ * @date   2015-03-27 12:18:49 d3g096
  * 
  * @brief  
  * 
@@ -118,38 +118,39 @@ public:
   {
   }
 
-  /// Create a dense matrix with global sizes
+  /// Create a sparse matrix with more or less specific ownership
   static 
   PETScMatrixImplementation *
-  createDenseGlobal(const parallel::Communicator& comm,
-                    const IdxType& global_rows, 
-                    const IdxType& global_cols)
+  createDense(const parallel::Communicator& comm,
+              const IdxType& global_rows, 
+              const IdxType& global_cols,
+              const IdxType& local_rows, 
+              const IdxType& local_cols)
   {
-    int rows(global_rows*elementSize);
-    int cols(global_cols*elementSize);
-
     PetscErrorCode ierr(0);
     Mat mtmp;
     PETScMatrixImplementation *result;
-
-    // FIXME: should this be in PetscMatrixWrapper
     try {
-      ierr = MatCreate(comm, &mtmp); CHKERRXX(ierr);
-      ierr = MatSetSizes(mtmp, PETSC_DECIDE, PETSC_DECIDE, rows, cols); CHKERRXX(ierr);
-    if (comm.size() == 1) {
-      ierr = MatSetType(mtmp, MATSEQDENSE); CHKERRXX(ierr);
-      ierr = MatSeqDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
-    } else {
-      ierr = MatSetType(mtmp, MATDENSE); CHKERRXX(ierr);
-      ierr = MatMPIDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
-    }
-    result = new PETScMatrixImplementation(mtmp, false);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-  return result;
-}
+      PetscInt grow(global_rows > 0 ? global_rows*elementSize : PETSC_DETERMINE);
+      PetscInt gcol(global_cols > 0 ? global_cols*elementSize : PETSC_DETERMINE);
+      PetscInt lrow(local_rows > 0 ? local_rows*elementSize : PETSC_DECIDE);
+      PetscInt lcol(local_cols > 0 ? local_cols*elementSize : PETSC_DECIDE);
 
+      ierr = MatCreate(comm, &mtmp); CHKERRXX(ierr);
+      ierr = MatSetSizes(mtmp, lrow, lcol, grow, gcol); CHKERRXX(ierr);
+      if (comm.size() == 1) {
+        ierr = MatSetType(mtmp, MATSEQDENSE); CHKERRXX(ierr);
+        ierr = MatSeqDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
+      } else {
+        ierr = MatSetType(mtmp, MATDENSE); CHKERRXX(ierr);
+        ierr = MatMPIDenseSetPreallocation(mtmp, PETSC_NULL); CHKERRXX(ierr);
+      }
+      result = new PETScMatrixImplementation(mtmp, false);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+    return result;
+  }
 
   /// Get the PETSc matrix
   Mat *get_matrix(void)

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-03-20 06:58:44 d3g096
+ * @date   2015-03-27 10:50:52 d3g096
  * 
  * @brief  
  * 
@@ -479,25 +479,48 @@ multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
 // -------------------------------------------------------------
 template <typename T, typename I>
 static void
-multiply_dense(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
+multiply_dense(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& C)
 {
-  BOOST_ASSERT(A.rows() == result.rows());
-  BOOST_ASSERT(B.cols() == result.cols());
+  BOOST_ASSERT(A.rows() == C.rows());
+  BOOST_ASSERT(B.cols() == C.cols());
   boost::scoped_ptr< VectorT<T, I> > 
     bc(new VectorT<T, I>(B.communicator(), B.localRows())), 
-    rc(new VectorT<T, I>(result.communicator(), result.localRows()));
+    rc(new VectorT<T, I>(C.communicator(), C.localRows()));
+
+  // PetscErrorCode ierr(0);
+  // ierr = PetscSynchronizedPrintf(A.communicator(), 
+  //                                "multiply_dense: %d: A: (%dx%d), (%dx%d)\n",
+  //                                A.communicator().rank(), 
+  //                                A.rows(), A.cols(), A.localRows(), A.localCols()); 
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(A.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
+  // ierr = PetscSynchronizedPrintf(B.communicator(), 
+  //                                "multiply_dense: %d: B: (%dx%d), (%dx%d)\n",
+  //                                B.communicator().rank(), 
+  //                                B.rows(), B.cols(), B.localRows(), B.localCols()); 
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(B.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
+  // ierr = PetscSynchronizedPrintf(C.communicator(), 
+  //                                "multiply_dense: %d: C: (%dx%d), (%dx%d)\n",
+  //                                C.communicator().rank(), 
+  //                                C.rows(), C.cols(), C.localRows(), C.localCols());
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(C.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
   int lo, hi;
   rc->localIndexRange(lo, hi);
-  for (int j = 0; j < A.rows(); ++j) {
+  for (int j = 0; j < B.cols(); ++j) {
     column(B, j, *bc);
     multiply(A, *bc, *rc);
     for (int i = lo; i < hi; ++i) {
       typename VectorT<T, I>::TheType v;
       rc->getElement(i, v);
-      result.setElement(i, j, v);
+      C.setElement(i, j, v);
     }
   }
-  result.ready();
+  C.ready();
 }  
 
 template
@@ -518,9 +541,11 @@ multiply_dense(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
 {
   BOOST_ASSERT(A.cols() == B.rows());
   BOOST_ASSERT(A.localCols() == B.localRows());
-  MatrixT<T, I> *result(new MatrixT<T, I>(A.communicator(), A.localRows(), B.localCols(), Dense));
-  multiply_dense(A, B, *result);
-  return result;
+  MatrixT<T, I> *C(MatrixT<T, I>::createDense(A.communicator(),
+                                              A.rows(), B.cols(),
+                                              A.localRows(), B.localCols()));
+  multiply_dense(A, B, *C);
+  return C;
 }
 
 template 

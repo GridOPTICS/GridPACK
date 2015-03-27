@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-03-23 11:26:40 d3g096
+ * @date   2015-03-27 12:20:25 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -136,22 +136,26 @@ public:
   {
   }
 
-  /// Create a densematrix with global size
+  /// Create a ::Dense Matrix instance with more/less specific ownership
   /** 
-   * A special routine to create a dense matrix with a known global
-   * size leaving the distribution up to the underlying math library.
    * 
-   * @param comm parallel environment
-   * @param global_rows total number of rows on all processes
-   * @param global_cols total number of columns on all processes
+   * 
+   * @param comm 
+   * @param stype 
+   * @param global_rows 
+   * @param global_cols 
+   * @param local_rows 
+   * @param local_cols 
    * 
    * @return 
    */
-  static MatrixT<T, I> *
-  createDenseGlobal(const parallel::Communicator& comm,
-                    const int& global_rows,
-                    const int& global_cols);
-
+  static MatrixT *
+  createDense(const parallel::Communicator& comm,
+              const int& global_rows,
+              const int& global_cols,
+              const int& local_rows,
+              const int& local_cols);
+  
   /// Get the storage type of this matrix
   MatrixStorageType storageType(void) const;
 
@@ -242,6 +246,14 @@ public:
    * @param x 
    */
   void addDiagonal(const VectorT<T, I>& x);
+
+  /// Shift the diagonal of this matrix by the specified value
+  /** 
+   * @c Collective.
+   * 
+   * @param x 
+   */
+  void addDiagonal(const TheType& x);
 
   /// Add another matrix to this one, in place
   /** 

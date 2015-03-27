@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-03-23 12:02:30 d3g096
+ * @date   2015-03-27 12:25:45 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -128,31 +128,39 @@ MatrixT<RealType>::MatrixT(const parallel::Communicator& comm,
 
 
 // -------------------------------------------------------------
-// Matrix::createDenseGlobal
+// Matrix::createDense
 // -------------------------------------------------------------
 template <typename T, typename I>
 MatrixT<T, I> *
-MatrixT<T, I>::createDenseGlobal(const parallel::Communicator& comm,
-                                 const int& global_rows,
-                                 const int& global_cols)
+MatrixT<T, I>::createDense(const parallel::Communicator& comm,
+                           const int& global_rows,
+                           const int& global_cols,
+                           const int& local_rows,
+                           const int& local_cols)
 {
   PETScMatrixImplementation<T, I> *impl = 
-    PETScMatrixImplementation<T, I>::createDenseGlobal(comm, global_rows, global_cols);
+    PETScMatrixImplementation<T, I>::createDense(comm, 
+                                                 global_rows, global_cols,
+                                                 local_rows, local_cols);
   MatrixT<T, I> *result = new MatrixT<T, I>(impl);
   return result;
 }
 
 template 
 MatrixT<ComplexType> *
-MatrixT<ComplexType>::createDenseGlobal(const parallel::Communicator& comm,
-                                        const int& global_rows,
-                                        const int& global_cols);
+MatrixT<ComplexType>::createDense(const parallel::Communicator& comm,
+                                  const int& global_rows,
+                                  const int& global_cols,
+                                  const int& local_rows,
+                                  const int& local_cols);
 
 template 
 MatrixT<RealType> *
-MatrixT<RealType>::createDenseGlobal(const parallel::Communicator& comm,
-                                        const int& global_rows,
-                                        const int& global_cols);
+MatrixT<RealType>::createDense(const parallel::Communicator& comm,
+                               const int& global_rows,
+                               const int& global_cols,
+                               const int& local_rows,
+                               const int& local_cols);
 
 
 // -------------------------------------------------------------
@@ -262,6 +270,34 @@ MatrixT<ComplexType>::addDiagonal(const VectorT<ComplexType>& x);
 template 
 void
 MatrixT<RealType>::addDiagonal(const VectorT<RealType>& x);
+
+// -------------------------------------------------------------
+// Matrix::addDiagonal
+// FIXME: will not work with complex matrices on real library
+// -------------------------------------------------------------
+template <typename T, typename I>
+void
+MatrixT<T, I>::addDiagonal(const MatrixT<T, I>::TheType& x)
+{
+  PetscScalar a = 
+    gridpack::math::equate<PetscScalar, TheType>(x);
+  Mat *pA(PETScMatrix(*this));
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatShift(*pA, a); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+template 
+void
+MatrixT<ComplexType>::addDiagonal(const MatrixT<ComplexType>::TheType& x);
+
+template 
+void
+MatrixT<RealType>::addDiagonal(const MatrixT<RealType>::TheType& x);
+
 
 // -------------------------------------------------------------
 // Matrix::identity

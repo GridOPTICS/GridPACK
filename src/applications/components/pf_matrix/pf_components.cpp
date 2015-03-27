@@ -46,6 +46,7 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_sbase = 0.0;
   p_mode = YBus;
   setReferenceBus(false);
+  p_ngen = 0;
 }
 
 /**
@@ -237,6 +238,25 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
         return true;
       } else {
 #ifdef LARGE_MATRIX
+        std::vector<boost::shared_ptr<BaseComponent> > branches;
+        getNeighborBranches(branches);
+        int size = branches.size();
+        int i;
+        double P, Q, p, q;
+        P = 0.0;
+        Q = 0.0;
+        for (i=0; i<size; i++) {
+          gridpack::powerflow::PFBranch *branch
+            = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+          branch->getPQ(this, &p, &q);
+          P += p;
+          Q += q;
+        }
+        // Also add bus i's own Pi, Qi
+        P += p_v*p_v*p_ybusr;
+        Q += p_v*p_v*(-p_ybusi);
+        p_Pinj = P;
+        p_Qinj = Q;
         values[0] = 0.0;
         values[1] = 0.0;
         return true;
@@ -394,10 +414,9 @@ void gridpack::powerflow::PFBus::load(
   bool lgen;
   int i, ngen, gstatus;
   double pg, qg, vs,qmax,qmin;
-  ngen = 0;
-  if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+  if (data->getValue(GENERATOR_NUMBER, &p_ngen)) {
     double qtot = 0.0;
-    for (i=0; i<ngen; i++) {
+    for (i=0; i<p_ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
@@ -586,6 +605,25 @@ void gridpack::powerflow::PFBus::setSBus(void)
 }
 
 /**
+ ** Update pg of specified bus element based on their genID
+ ** @param busID
+ ** @param genID
+ ** @param value
+ **/
+void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double value)
+{
+   if (getOriginalIndex() == busID) {
+     if (p_ngen > 0) {
+       for (int i = 0; i < p_ngen; i++) {
+         if (p_gid[i] == genID) {
+           p_pg[i] += value;
+         }
+       }
+     }
+   }
+}
+
+/**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
  * @param bufsize size of string buffer in bytes
@@ -647,14 +685,40 @@ void gridpack::powerflow::PFBus::saveData(
     data->addValue("BUS_PF_VANG",rval);
   }
   int ngen=p_pFac.size();
+  // Evalate p_Pinj and p_Qinj if bus is reference bus. This is skipped when
+  // evaluating matrix elements.
+#ifndef LARGE_MATRIX
+  if (getReferenceBus() || isIsolated()) {
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    double P, Q, p, q;
+    P = 0.0;
+    Q = 0.0;
+    for (i=0; i<size; i++) {
+      gridpack::powerflow::PFBranch *branch
+        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+      branch->getPQ(this, &p, &q);
+      P += p;
+      Q += q;
+    }
+    // Also add bus i's own Pi, Qi
+    P += p_v*p_v*p_ybusr;
+    Q += p_v*p_v*(-p_ybusi);
+    p_Pinj = P;
+    p_Qinj = Q;
+  }
+#endif
   for (i=0; i<ngen; i++) {
     rval = p_pFac[i]*p_Pinj;
+    printf("Pgen: %f ",rval);
     if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
-      data->setValue("GENERATOR_PF_PGEN",rval,i);
+      data->addValue("GENERATOR_PF_PGEN",rval,i);
     }
     rval = p_pFac[i]*p_Qinj;
+    printf("Qgen: %f\n",rval);
     if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
-      data->setValue("GENERATOR_PF_QGEN",rval,i);
+      data->addValue("GENERATOR_PF_QGEN",rval,i);
     }
   }
 }

@@ -285,12 +285,12 @@ class PTI23_parser : BaseParser<_network>
         int g_id = -1;
         // Clean up 2 character tag for generator ID
         std::string tag = ds_data[i].gen_id;
-        int i;
-        for (i=0; i<ngen; i++) {
+        int j;
+        for (j=0; j<ngen; j++) {
           std::string t_id;
-          data->getValue(GENERATOR_ID,&t_id,i);
+          data->getValue(GENERATOR_ID,&t_id,j);
           if (tag == t_id) {
-            g_id = i;
+            g_id = j;
             break;
           }
         }
