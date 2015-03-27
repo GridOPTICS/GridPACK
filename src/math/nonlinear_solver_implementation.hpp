@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-25 15:24:58 d3g096
+ * @date   2015-03-26 14:27:58 d3g096
  * 
  * @brief  
  * 
@@ -60,43 +60,43 @@ public:
                                 const int& local_size,
                                 JacobianBuilder form_jacobian,
                                 FunctionBuilder form_function)
-    : NonlinearSolverInterface<ComplexType>(),
+    : NonlinearSolverInterface<T, I>(),
       parallel::Distributed(comm), 
       utility::Configurable("NonlinearSolver"), 
       utility::Uncopyable(),
       p_J(), p_F(), 
-      p_X((Vector *)NULL, null_deleter()),  // pointer set by solve()
+      p_X((VectorType *)NULL, null_deleter()),  // pointer set by solve()
       p_jacobian(form_jacobian), 
       p_function(form_function),
       p_solutionTolerance(1.0e-05),
-      p_functionTolerance(1.0e-10),
+    p_functionTolerance(1.0e-10),
     p_maxIterations(50)
   {
-    p_F.reset(new Vector(this->communicator(), local_size));
+    p_F.reset(new VectorType(this->communicator(), local_size));
     // std::cout << this->processor_rank() << ": "
     //           << "NonlinearSolverImplementation: construct Jacobian matrix: "
     //           << local_size << " x " << cols
     //           << std::endl;
-    p_J.reset(new Matrix(this->communicator(), local_size, local_size, Sparse));
+    p_J.reset(new MatrixType(this->communicator(), local_size, local_size, Sparse));
   }
 
   /// Constructor that uses an existing Jacobian Matrix.
-  NonlinearSolverImplementation(Matrix& J,
+  NonlinearSolverImplementation(MatrixType& J,
                                 JacobianBuilder form_jacobian,
                                 FunctionBuilder form_function)
-    : NonlinearSolverInterface<ComplexType>(),
+    : NonlinearSolverInterface<T, I>(),
       parallel::Distributed(J.communicator()), 
       utility::Configurable("NonlinearSolver"), 
       utility::Uncopyable(),
       p_J(&J, null_deleter()), p_F(), 
-      p_X((Vector *)NULL, null_deleter()),  // pointer set by solve()
+      p_X((VectorType *)NULL, null_deleter()),  // pointer set by solve()
       p_jacobian(form_jacobian), 
       p_function(form_function),
       p_solutionTolerance(1.0e-05),
       p_functionTolerance(1.0e-10),
       p_maxIterations(50)
   {
-    p_F.reset(new Vector(this->communicator(), J.localRows()));
+    p_F.reset(new VectorType(this->communicator(), J.localRows()));
   }
 
 
@@ -110,13 +110,13 @@ public:
 protected:
 
   /// A place to compute and store the Jacobian
-  boost::shared_ptr<Matrix> p_J;
+  boost::shared_ptr<MatrixType> p_J;
 
   /// A place to compute and store the RHS
-  boost::shared_ptr<Vector> p_F;
+  boost::shared_ptr<VectorType> p_F;
 
   /// A vector containing to current solution estimate
-  boost::shared_ptr<Vector> p_X;
+  boost::shared_ptr<VectorType> p_X;
 
   /// A thing to build a Jacobian
   JacobianBuilder p_jacobian;
@@ -158,7 +158,7 @@ protected:
   }
 
   /// Solve w/ using the specified initial guess, put solution in same vector
-  void p_solve(Vector& x)
+  void p_solve(VectorType& x)
   {
     // children should call this is their own p_solve()
     p_X.reset(&x, null_deleter());

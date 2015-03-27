@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-03-23 12:47:48 d3g096
+# Last Change: 2015-03-27 08:15:33 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -247,12 +247,24 @@ endif()
 # -------------------------------------------------------------
 # nonlinear solver test suite
 # -------------------------------------------------------------
-add_executable(nonlinear_solver_test test/nonlinear_solver_test.cpp)
-target_link_libraries(nonlinear_solver_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(nonlinear_solver nonlinear_solver_test)
+add_executable(complex_nonlinear_solver_test test/nonlinear_solver_test.cpp)
+target_link_libraries(complex_nonlinear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_nonlinear_solver complex_nonlinear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(nonlinear_solver_test math_test_input)
+   add_dependencies(complex_nonlinear_solver_test math_test_input)
 endif()
+
+add_executable(real_nonlinear_solver_test test/nonlinear_solver_test.cpp)
+set_target_properties(real_nonlinear_solver_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_nonlinear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_nonlinear_solver real_nonlinear_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(real_nonlinear_solver_test math_test_input)
+endif()
+
 
 # -------------------------------------------------------------
 # DAE solver test suite

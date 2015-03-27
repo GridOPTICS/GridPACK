@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver.cpp
  * @author William A. Perkins
- * @date   2015-03-26 12:12:37 d3g096
+ * @date   2015-03-26 12:54:41 d3g096
  * 
  * @brief  PETSc-specific implementation of NonlinearSolver
  * 
@@ -49,6 +49,12 @@ NonlinearSolverT<ComplexType>::NonlinearSolverT(const parallel::Communicator& co
                                                 NonlinearSolverT<ComplexType>::JacobianBuilder form_jacobian,
                                                 NonlinearSolverT<ComplexType>::FunctionBuilder form_function);
 
+template
+NonlinearSolverT<RealType>::NonlinearSolverT(const parallel::Communicator& comm,
+                                             const int& local_size,
+                                             NonlinearSolverT<RealType>::JacobianBuilder form_jacobian,
+                                             NonlinearSolverT<RealType>::FunctionBuilder form_function);
+
 template <typename T, typename I>
 NonlinearSolverT<T, I>::NonlinearSolverT(NonlinearSolverT<T, I>::MatrixType& J,
                                          NonlinearSolverT<T, I>::JacobianBuilder form_jacobian,
@@ -65,6 +71,11 @@ template
 NonlinearSolverT<ComplexType>::NonlinearSolverT(NonlinearSolverT<ComplexType>::MatrixType& J,
                                                 NonlinearSolverT<ComplexType>::JacobianBuilder form_jacobian,
                                                 NonlinearSolverT<ComplexType>::FunctionBuilder form_function);
+
+template
+NonlinearSolverT<RealType>::NonlinearSolverT(NonlinearSolverT<RealType>::MatrixType& J,
+                                             NonlinearSolverT<RealType>::JacobianBuilder form_jacobian,
+                                             NonlinearSolverT<RealType>::FunctionBuilder form_function);
 
 } // namespace math
 } // namespace gridpack

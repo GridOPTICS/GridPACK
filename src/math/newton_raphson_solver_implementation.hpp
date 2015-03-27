@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-26 11:50:39 d3g096
+ * @date   2015-03-27 08:29:42 d3g096
  * 
  * @brief  
  * 
@@ -130,18 +130,18 @@ protected:
   int p_max_iterations;
 
   /// The linear solver
-  boost::scoped_ptr<LinearSolver> p_linear_solver;
+  boost::scoped_ptr< LinearSolverT<T, I> > p_linear_solver;
 
   /// Solve w/ using the specified initial guess (specialized)
   void p_solve(VectorType& x)
   {
     NonlinearSolverImplementation<T, I>::p_solve(x);
-    ComplexType stol(1.0e+30);
-    ComplexType ftol(1.0e+30);
+    double stol(1.0e+30);
+    double ftol(1.0e+30);
     int iter(0);
 
     boost::scoped_ptr<VectorType> deltaX(this->p_X->clone());
-    while (real(stol) > this->p_solutionTolerance && iter < this->p_maxIterations) {
+    while (stol > this->p_solutionTolerance && iter < this->p_maxIterations) {
       this->p_function(*(this->p_X), *(this->p_F));
       this->p_F->scale(-1.0);
       this->p_jacobian(*(this->p_X), *(this->p_J));
@@ -158,8 +158,8 @@ protected:
       if (this->processor_rank() == 0) {
         std::cout << "Newton-Raphson "
                   << "iteration " << iter << ": "
-                  << "solution residual norm = " << real(stol) << ", "
-                  << "function norm = " << real(ftol)
+                  << "solution residual norm = " << stol << ", "
+                  << "function norm = " << ftol
                   << std::endl;
       }
     }

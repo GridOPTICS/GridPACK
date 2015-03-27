@@ -8,7 +8,7 @@
 /**
  * @file   petsc_nonlinear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-25 15:51:34 d3g096
+ * @date   2015-03-26 14:25:10 d3g096
  * 
  * @brief  
  * 
@@ -63,7 +63,7 @@ public:
 
 
   /// Construct with an existing Jacobian Matrix
-  PetscNonlinearSolverImplementation(Matrix& J,
+  PetscNonlinearSolverImplementation(MatrixType& J,
                                      JacobianBuilder form_jacobian,
                                      FunctionBuilder form_function)
     : NonlinearSolverImplementation<T, I>(J, form_jacobian, form_function),
@@ -271,11 +271,11 @@ protected:
     // solution and function vectors are wrapped temporarily for the
     // user function
 
-    boost::scoped_ptr<Vector> 
-      xtmp(new Vector(new PETScVectorImplementation<T, I>(x, false)));
+    boost::scoped_ptr< VectorType > 
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false)));
 
-    boost::scoped_ptr<Vector> 
-      ftmp(new Vector(new PETScVectorImplementation<T, I>(f, false)));
+    boost::scoped_ptr< VectorType > 
+      ftmp(new VectorType(new PETScVectorImplementation<T, I>(f, false)));
 
     // Call the user-specified function (object) to form the RHS
     (solver->p_function)(*xtmp, *ftmp);
