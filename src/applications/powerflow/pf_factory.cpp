@@ -93,6 +93,19 @@ void gridpack::powerflow::PFFactory::setPQ(void)
 }
 
 /**
+ * Update Pg
+ */
+void gridpack::powerflow::PFFactory::updatePg(int busID, std::string genID, double value)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  int genIndex=0;
+  for (i=0; i<numBus; i++) {
+    dynamic_cast<PFBus*>(p_network->getBus(i).get())->updatePg(busID, genID, value);    
+  }
+}
+
+/**
  * Create the Jacobian matrix
  */
 void gridpack::powerflow::PFFactory::setJacobian(void)

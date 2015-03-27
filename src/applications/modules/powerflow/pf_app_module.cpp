@@ -309,6 +309,209 @@ void gridpack::powerflow::PFAppModule::solve()
 }
 
 /**
+ * Execute the iterative solve portion of the application
+ */
+void gridpack::powerflow::PFAppModule::solve_step1()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Powerflow: Total Application");
+  timer->start(t_total);
+
+  // set YBus components so that you can create Y matrix
+  int t_fact = timer->createCategory("Powerflow: Factory Operations");
+  timer->start(t_fact);
+  p_factory->setYBus();
+  timer->stop(t_fact);
+
+  int t_cmap = timer->createCategory("Powerflow: Create Mappers");
+  timer->start(t_cmap);
+  p_factory->setMode(YBus); 
+#if 0
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
+#endif
+  timer->stop(t_cmap);
+  int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
+  timer->start(t_mmap);
+#if 0
+  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+  p_busIO->header("\nY-matrix values\n");
+  Y->print();
+//  Y->save("Ybus.m");
+#endif
+  timer->stop(t_mmap);
+
+  timer->start(t_fact);
+  p_factory->setMode(S_Cal);
+  timer->stop(t_fact);
+  timer->start(t_cmap);
+  gridpack::mapper::BusVectorMap<PFNetwork> vvMap(p_network);
+  timer->stop(t_cmap);
+  timer->stop(t_total);
+}
+
+//
+// solve for RTPT
+//
+void gridpack::powerflow::PFAppModule::solve_updatePg(std::vector<pathStress> pstress, std::vector<double> p_slice3Values)
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Powerflow: Total Application");
+  timer->start(t_total);
+
+  if (pstress.size() == 3) {
+    for (int i = 0; i < p_slice3Values.size(); i++) {
+      p_factory.reset(new gridpack::powerflow::PFFactoryModule(p_network));
+      double deltaP3 = p_slice3Values[i];
+      for (int j = 0; j < pstress[2].sourceArea.size(); j++) {
+        int ps_busID = pstress[2].sourceArea[j].busID;
+        std::string ps_genID = pstress[2].sourceArea[j].genID;
+        double ps_pg = deltaP3 * pstress[2].sourceArea[j].participation;
+  	p_factory->updatePg(ps_busID, ps_genID, ps_pg);
+      }
+      for (int j = 0; j < pstress[2].sinkArea.size(); j++) {
+        int ps_busID = pstress[2].sinkArea[j].busID;
+        std::string ps_genID = pstress[2].sinkArea[j].genID;
+        double ps_pg = -deltaP3 * pstress[2].sinkArea[j].participation;
+  	p_factory->updatePg(ps_busID, ps_genID, ps_pg);
+      }
+      solve_step2();
+      write();
+    }
+  }
+}
+
+//
+// solve for RTPT
+//
+void gridpack::powerflow::PFAppModule::solve_step2()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Powerflow: Total Application");
+  timer->start(t_total);
+
+  // make Sbus components to create S vector
+  int t_fact = timer->createCategory("Powerflow: Factory Operations");
+  timer->start(t_fact);
+  p_factory->setSBus();
+  timer->stop(t_fact);
+  p_busIO->header("\nIteration 0\n");
+
+  // Set PQ
+  int t_cmap = timer->createCategory("Powerflow: Create Mappers");
+  timer->start(t_cmap);
+  p_factory->setMode(RHS); 
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
+  int t_vmap = timer->createCategory("Powerflow: Map to Vector");
+  timer->stop(t_cmap);
+  timer->start(t_vmap);
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  timer->stop(t_vmap);
+//  PQ->print();
+  timer->start(t_cmap);
+  p_factory->setMode(Jacobian);
+  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
+  timer->stop(t_cmap);
+  int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
+  timer->start(t_mmap);
+  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+  timer->stop(t_mmap);
+//  p_busIO->header("\nJacobian values\n");
+//  J->print();
+
+  // Create X vector by cloning PQ
+  boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Powerflow");
+  // Create linear solver
+  int t_csolv = timer->createCategory("Powerflow: Create Linear Solver");
+  timer->start(t_csolv);
+  gridpack::math::LinearSolver solver(*J);
+  solver.configure(cursor);
+  timer->stop(t_csolv);
+
+  gridpack::ComplexType tol = 2.0*p_tolerance;
+  int iter = 0;
+
+  // First iteration
+  X->zero(); //might not need to do this
+  p_busIO->header("\nCalling solver\n");
+  int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
+  timer->start(t_lsolv);
+//    char dbgfile[32];
+//    sprintf(dbgfile,"j0.bin");
+//    J->saveBinary(dbgfile);
+//    sprintf(dbgfile,"pq0.bin");
+//    PQ->saveBinary(dbgfile);
+  solver.solve(*PQ, *X);
+  timer->stop(t_lsolv);
+  tol = PQ->normInfinity();
+
+  // Create timer for map to bus
+  int t_bmap = timer->createCategory("Powerflow: Map to Bus");
+  int t_updt = timer->createCategory("Powerflow: Bus Update");
+  char ioBuf[128];
+
+  while (real(tol) > p_tolerance && iter < p_max_iteration) {
+    // Push current values in X vector back into network components
+    // Need to implement setValues method in PFBus class in order for this to
+    // work
+    timer->start(t_bmap);
+    p_factory->setMode(RHS);
+    vMap.mapToBus(X);
+    timer->stop(t_bmap);
+
+    // Exchange data between ghost buses (I don't think we need to exchange data
+    // between branches)
+    timer->start(t_updt);
+    p_network->updateBuses();
+    timer->stop(t_updt);
+
+    // Create new versions of Jacobian and PQ vector
+    timer->start(t_vmap);
+    vMap.mapToVector(PQ);
+//    p_busIO->header("\nnew PQ vector\n");
+//    PQ->print();
+    timer->stop(t_vmap);
+    timer->start(t_mmap);
+    p_factory->setMode(Jacobian);
+    jMap.mapToMatrix(J);
+    timer->stop(t_mmap);
+
+    // Create linear solver
+    timer->start(t_lsolv);
+    X->zero(); //might not need to do this
+//    sprintf(dbgfile,"j%d.bin",iter+1);
+//    J->saveBinary(dbgfile);
+//    sprintf(dbgfile,"pq%d.bin",iter+1);
+//    PQ->saveBinary(dbgfile);
+    solver.solve(*PQ, *X);
+    timer->stop(t_lsolv);
+
+    tol = PQ->normInfinity();
+    sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
+    p_busIO->header(ioBuf);
+    iter++;
+  }
+
+  // Push final result back onto buses
+  timer->start(t_bmap);
+  p_factory->setMode(RHS);
+  vMap.mapToBus(X);
+  timer->stop(t_bmap);
+
+  // Make sure that ghost buses have up-to-date values before printing out
+  // results
+  timer->start(t_updt);
+  p_network->updateBuses();
+  timer->stop(t_updt);
+  timer->stop(t_total);
+}
+
+/**
  * Write out results of powerflow calculation to standard output
  */
 void gridpack::powerflow::PFAppModule::write()

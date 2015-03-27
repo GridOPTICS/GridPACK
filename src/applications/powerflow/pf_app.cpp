@@ -83,6 +83,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   // Convergence and iteration parameters
   double tolerance = cursor->get("tolerance",1.0e-6);
   int max_iteration = cursor->get("maxIteration",50);
+  bool qlim = cursor->get("qLimit",1);
   ComplexType tol;
 
   int t_pti = timer->createCategory("PTI Parser");
