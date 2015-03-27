@@ -77,18 +77,13 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxIndex-p_minIndex+1;
-#if 0
   boost::shared_ptr<gridpack::math::Matrix>
     Ret(new gridpack::math::Matrix(comm, blockSize,p_nColumns,
     gridpack::math::Matrix::Dense));
-#endif
-  boost::shared_ptr<gridpack::math::Matrix> Ret(
-    gridpack::math::Matrix::createDense(comm,0,p_nColumns,blockSize,0));
-  Ret->ready();
-  Ret->zero();
   loadBusData(*Ret,false);
   loadBranchData(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
   return Ret;
 }
 
@@ -101,18 +96,13 @@ gridpack::math::Matrix* intMapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxIndex-p_minIndex+1;
-#if 0
   gridpack::math::Matrix*
     Ret(new gridpack::math::Matrix(comm, blockSize,p_nColumns,
     gridpack::math::Matrix::Dense));
-#endif
-  boost::shared_ptr<gridpack::math::Matrix> Ret(
-    gridpack::math::Matrix::createDense(comm,0,p_nColumns,blockSize,0));
-  Ret->ready();
-  Ret->zero();
   loadBusData(*Ret,false);
   loadBranchData(*Ret,false);
   GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
   return Ret;
 }
 
