@@ -238,6 +238,25 @@ bool gridpack::powerflow::PFBus::vectorValues(ComplexType *values)
         return true;
       } else {
 #ifdef LARGE_MATRIX
+        std::vector<boost::shared_ptr<BaseComponent> > branches;
+        getNeighborBranches(branches);
+        int size = branches.size();
+        int i;
+        double P, Q, p, q;
+        P = 0.0;
+        Q = 0.0;
+        for (i=0; i<size; i++) {
+          gridpack::powerflow::PFBranch *branch
+            = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+          branch->getPQ(this, &p, &q);
+          P += p;
+          Q += q;
+        }
+        // Also add bus i's own Pi, Qi
+        P += p_v*p_v*p_ybusr;
+        Q += p_v*p_v*(-p_ybusi);
+        p_Pinj = P;
+        p_Qinj = Q;
         values[0] = 0.0;
         values[1] = 0.0;
         return true;
@@ -666,12 +685,38 @@ void gridpack::powerflow::PFBus::saveData(
     data->addValue("BUS_PF_VANG",rval);
   }
   int ngen=p_pFac.size();
+  // Evalate p_Pinj and p_Qinj if bus is reference bus. This is skipped when
+  // evaluating matrix elements.
+#ifndef LARGE_MATRIX
+  if (getReferenceBus() || isIsolated()) {
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    double P, Q, p, q;
+    P = 0.0;
+    Q = 0.0;
+    for (i=0; i<size; i++) {
+      gridpack::powerflow::PFBranch *branch
+        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+      branch->getPQ(this, &p, &q);
+      P += p;
+      Q += q;
+    }
+    // Also add bus i's own Pi, Qi
+    P += p_v*p_v*p_ybusr;
+    Q += p_v*p_v*(-p_ybusi);
+    p_Pinj = P;
+    p_Qinj = Q;
+  }
+#endif
   for (i=0; i<ngen; i++) {
     rval = p_pFac[i]*p_Pinj;
+    printf("Pgen: %f ",rval);
     if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
       data->addValue("GENERATOR_PF_PGEN",rval,i);
     }
     rval = p_pFac[i]*p_Qinj;
+    printf("Qgen: %f\n",rval);
     if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
       data->addValue("GENERATOR_PF_QGEN",rval,i);
     }
