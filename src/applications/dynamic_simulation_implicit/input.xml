@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Dynamic_simulation>
+    <networkConfiguration> case9.raw </networkConfiguration>
+    <generatorParameters>case9_classical.dyr</generatorParameters>
+<!--    <networkConfiguration> IEEE_145bus_v23_PSLF.raw </networkConfiguration>
+    <generatorParameters>IEEE_145b_classical_model.dyr</generatorParameters>
+-->
+    <simulationTime>2.0</simulationTime>
+    <timeStep>0.01</timeStep>
+    <faultbus>9</faultbus>
+    <faultontime>0.1</faultofftime>
+    <faultofftime>0.3</faultofftime>
+    <Gfault>0.0</Gfault>
+    <Bfault>99999</Bfault>
+    <DAESolver>
+      <PETScOptions>
+	-ts_type cn
+	-ts_exact_final_time MATCHSTEP
+	-ts_monitor
+	-snes_monitor
+	-pc_type bjacobi
+	-sub_pc_type lu
+	-sub_pc_factor_mat_ordering_type qmd
+<!--	-pc_factor_mat_solver_package superlu_dist -->
+<!--	-snes_type test
+	-snes_test_display
+-->
+      </PETScOptions>
+    </DAESolver>
+  </Dynamic_simulation>
+</Configuration>
