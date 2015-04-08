@@ -591,7 +591,7 @@ void gridpack::powerflow::PFBus::setSBus(void)
  ** @param genID
  ** @param value
  **/
-void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double value)
+/*void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double value)
 {
    if (getOriginalIndex() == busID) {
      if (p_ngen > 0) {
@@ -603,7 +603,7 @@ void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double v
      }
    }
 }
-
+*/
 /**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
@@ -682,21 +682,32 @@ void gridpack::powerflow::PFBus::saveData(
  * Modify parameters inside the bus module. This is designed to be
  * extensible
  * @param name character string describing parameter to be modified
+ * @param busID generator bus number
+ * @param genID specified genID
  * @param value new value of parameter
- * @param idx index (if necessary) of variable to be modified
  */
-void gridpack::powerflow::PFBus::setParam(std::string &name,
-    double value, int idx)
+//void gridpack::powerflow::PFBus::setParam(std::string &name, int busID, 
+void gridpack::powerflow::PFBus::setParam(int busID, 
+    std::string genID, double value) 
 {
-  if (name == GENERATOR_PG) {
-    if (idx >= 0 && idx<p_pg.size()) {
-      p_pg[idx] = value;
-    }
-  } else if (name == GENERATOR_QG) {
-    if (idx >= 0 && idx<p_qg.size()) {
-      p_qg[idx] = value;
-    }
-  }
+//  if (name == GENERATOR_PG) {
+   if (getOriginalIndex() == busID) {
+     if (p_ngen > 0) {
+       for (int i = 0; i < p_ngen; i++) {
+         if (p_gid[i] == genID) {
+           p_pg[i] += value;
+         }
+       }
+     }
+   }
+   // if (idx >= 0 && idx<p_pg.size()) {
+   //   p_pg[idx] = value;
+   // }
+//  } else if (name == GENERATOR_QG) {
+   // if (idx >= 0 && idx<p_qg.size()) {
+   //   p_qg[idx] = value;
+   // }
+//  }
 }
 
 /**
