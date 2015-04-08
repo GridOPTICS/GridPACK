@@ -39,6 +39,7 @@ install(FILES
   printit.hpp
   task_manager.hpp
   random.hpp
+  index_hash.hpp
   DESTINATION include/gridpack/parallel
 )
 
