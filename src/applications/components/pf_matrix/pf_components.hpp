@@ -206,7 +206,7 @@ class PFBus
      * @param genID
      * @param value
      **/
-    void updatePg(int busID, std::string genID, double value);
+//    void updatePg(int busID, std::string genID, double value);
 
 
     /**
@@ -241,7 +241,8 @@ class PFBus
      * @param value new value of parameter
      * @param idx index (if necessary) of variable to be modified
      */
-    void setParam(std::string &name, double value, int idx);
+//    void setParam(std::string &name, int busID, std::string genID, double value);
+    void setParam(int busID, std::string genID, double value);
 
     /**
      * Access parameters inside the bus module. This is designed to be

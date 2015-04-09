@@ -54,10 +54,12 @@ class PFFactoryModule
 
     /**
       * Update pg of specified bus element based on their genID
+      * @param name 
       * @param busID
       * @param genID
       * @param value
       */
+//    void updatePg(std::string &name, int busID, std::string genID, double value);
     void updatePg(int busID, std::string genID, double value);
 
     /**

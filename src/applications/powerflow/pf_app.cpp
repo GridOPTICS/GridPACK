@@ -175,6 +175,9 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 #endif
   timer->stop(t_mmap);
 
+// start QLim Loop
+  while (qlim){
+
   timer->start(t_fact);
   factory.setMode(S_Cal);
   timer->stop(t_fact);
@@ -301,6 +304,10 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_updt);
   network->updateBuses();
   timer->stop(t_updt);
+
+  qlim = factory.chkQlim();
+  } // qlim loop
+
 
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(512,network);
   branchIO.header("\n   Branch Power Flow\n");

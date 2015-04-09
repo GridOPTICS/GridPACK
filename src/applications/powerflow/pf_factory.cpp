@@ -93,16 +93,18 @@ void gridpack::powerflow::PFFactory::setPQ(void)
 }
 
 /**
- * Update Pg
+ * Check QLim
  */
-void gridpack::powerflow::PFFactory::updatePg(int busID, std::string genID, double value)
+bool gridpack::powerflow::PFFactory::chkQlim()
 {
   int numBus = p_network->numBuses();
   int i;
-  int genIndex=0;
+  int genIndex = 0;
+  bool qlim = 0; 
   for (i=0; i<numBus; i++) {
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->updatePg(busID, genID, value);    
+     qlim = qlim || dynamic_cast<PFBus*>(p_network->getBus(i).get())->chkQlim();
   }
+  return(qlim);
 }
 
 /**

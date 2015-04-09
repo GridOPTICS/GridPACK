@@ -79,9 +79,9 @@ class PFAppModule
      * Execute the iterative solve portion of the application
      */
     void solve();
-    void solve_step1();
-    void solve_updatePg(std::vector<pathStress> pstress, std::vector<double> p_slice3Values);
-    void solve_step2();
+//    void solve_step1();
+//    void solve_updatePg(std::vector<pathStress> pstress, std::vector<double> p_slice3Values);
+//    void solve_step2();
 
     /**
      * Write out results of powerflow calculation to standard output

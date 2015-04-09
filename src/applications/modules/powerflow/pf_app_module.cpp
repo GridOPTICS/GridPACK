@@ -311,7 +311,7 @@ void gridpack::powerflow::PFAppModule::solve()
 /**
  * Execute the iterative solve portion of the application
  */
-void gridpack::powerflow::PFAppModule::solve_step1()
+/* void gridpack::powerflow::PFAppModule::solve_step1()
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -510,6 +510,7 @@ void gridpack::powerflow::PFAppModule::solve_step2()
   timer->stop(t_updt);
   timer->stop(t_total);
 }
+*/
 
 /**
  * Write out results of powerflow calculation to standard output

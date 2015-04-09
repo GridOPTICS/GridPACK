@@ -291,7 +291,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
         qmin += p_qmin[i];
       }
     }
-    printf(" PV Check: Gen %d =, p_ql = %f, QMAX = %f\n", getOriginalIndex(),p_ql, qmax);
+//    printf(" PV Check: Gen %d =, p_ql = %f, QMAX = %f\n", getOriginalIndex(),p_ql, qmax);
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
     int size = branches.size();
@@ -307,7 +307,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       Q += q;
     }
 
-    printf("Gen %d: Q = %f, p_QL = %f, Q+p_Q0 = %f, QMAX = %f \n", getOriginalIndex(),-Q,p_ql,-Q+p_ql, qmax);  
+//    printf("Gen %d: Q = %f, p_QL = %f, Q+p_Q0 = %f, QMAX = %f \n", getOriginalIndex(),-Q,p_ql,-Q+p_ql, qmax);  
     if (-Q+p_ql > qmax ) { 
       printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmax);  
       p_ql = p_ql+qmax;
@@ -328,7 +328,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       return false;
     }
   } else {
-    printf(" PQ Check: bus: %d, p_ql = %f\n", getOriginalIndex(),p_ql);
+    //printf(" PQ Check: bus: %d, p_ql = %f\n", getOriginalIndex(),p_ql);
     return false;
   }
   return false;
