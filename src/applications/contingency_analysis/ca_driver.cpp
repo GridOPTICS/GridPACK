@@ -15,19 +15,10 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/parallel/task_manager.hpp"
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/vector.hpp"
-#include "gridpack/math/linear_solver.hpp"
-#include "gridpack/math/linear_matrix_solver.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/contingency_analysis/ca_driver.hpp"
 #include "gridpack/applications/contingency_analysis/ca_app.hpp"
-#include "gridpack/timer/coarse_timer.hpp"
 
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
@@ -51,11 +42,11 @@ gridpack::contingency_analysis::CADriver::~CADriver(void)
  * @param cursor pointer to contingencies in input deck
  * @return vector of contingencies
  */
-std::vector<gridpack::contingency_analysis::Contingency>
+std::vector<gridpack::powerflow::Contingency>
   gridpack::contingency_analysis::CADriver::getContingencies(
       gridpack::utility::Configuration::ChildCursors contingencies)
 {
-  std::vector<gridpack::contingency_analysis::Contingency> ret;
+  std::vector<gridpack::powerflow::Contingency> ret;
   int size = contingencies.size();
   int idx;
   for (idx = 0; idx < size; idx++) {
@@ -102,15 +93,15 @@ std::vector<gridpack::contingency_analysis::Contingency>
       }
       // Check to make sure we found everything
       if (bus_ids.size() == 2*line_names.size()) {
-        gridpack::contingency_analysis::Contingency contingency;
+        gridpack::powerflow::Contingency contingency;
         contingency.p_name = ca_name;
-        contingency.p_id = idx + 1;
         contingency.p_type = Branch;
         int i;
         for (i = 0; i < line_names.size(); i++) {
           contingency.p_from.push_back(bus_ids[2*i]);
           contingency.p_to.push_back(bus_ids[2*i+1]);
           contingency.p_ckt.push_back(line_names[i]);
+          contingency.p_saveLineStatus.push_back(true);
         }
         ret.push_back(contingency);
       }
@@ -148,14 +139,14 @@ std::vector<gridpack::contingency_analysis::Contingency>
       }
       // Check to make sure we found everything
       if (bus_ids.size() == gen_ids.size()) {
-        gridpack::contingency_analysis::Contingency contingency;
+        gridpack::powerflow::Contingency contingency;
         contingency.p_name = ca_name;
-        contingency.p_id = idx + 1;
         contingency.p_type = Generator;
         int i;
         for (i = 0; i < bus_ids.size(); i++) {
           contingency.p_busid.push_back(bus_ids[i]);
           contingency.p_genid.push_back(gen_ids[i]);
+          contingency.p_saveGenStatus.push_back(true);
         }
         ret.push_back(contingency);
       }
@@ -191,10 +182,24 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Contingency_analysis");
   int grp_size;
+  double Vmin, Vmax;
   if (!cursor->get("groupSize",&grp_size)) {
     grp_size = 1;
   }
+  if (!cursor->get("minVoltage",&Vmin)) {
+    Vmin = 0.9;
+  }
+  if (!cursor->get("maxVoltage",&Vmax)) {
+    Vmax = 1.1;
+  }
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
+
+  // Create powerflow applications on each task communicator
+  boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network(new gridpack::powerflow::PFNetwork(task_comm));
+  gridpack::powerflow::PFAppModule pf_app;
+  pf_app.readNetwork(pf_network,config);
+  pf_app.initialize();
 
   // Read in contingency file
   std::string contingencyfile;
@@ -204,11 +209,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   bool ok = config->open(contingencyfile,world);
 
   // get a list of contingencies
-  cursor =
-    config->getCursor("ContingencyList.Contingency_analysis.Contingencies");
+  cursor = config->getCursor(
+      "ContingencyList.Contingency_analysis.Contingencies");
   gridpack::utility::Configuration::ChildCursors contingencies;
   if (cursor) cursor->children(contingencies);
-  std::vector<gridpack::contingency_analysis::Contingency>
+  std::vector<gridpack::powerflow::Contingency>
     events = getContingencies(contingencies);
   if (world.rank() == 0) {
     int idx;
@@ -233,10 +238,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
 
-  // Create contingency applications on each task communicator
-  gridpack::contingency_analysis::CAApp ca_app(task_comm);
-  ca_app.init(argc,argv);
-
   // set up task manager
   gridpack::parallel::TaskManager taskmgr(world);
   int ntasks = events.size();
@@ -244,9 +245,26 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   // evaluate contingencies
   int task_id;
+  char sbuf[128];
   while (taskmgr.nextTask(task_comm, &task_id)) {
     printf("Executing task %d on process %d\n",task_id,world.rank());
-    ca_app.execute(events[task_id]);
+    sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
+    pf_app.open(sbuf);
+    pf_app.setContingency(events[task_id]);
+    pf_app.solve();
+    pf_app.write();
+    bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
+    ok = ok & pf_app.checkLineOverloadViolations();
+    if (ok) {
+      sprintf(sbuf,"\nNo violation for contingency %s\n",
+          events[task_id].p_name.c_str());
+    } else {
+      sprintf(sbuf,"\nViolation for contingency %s\n",
+          events[task_id].p_name.c_str());
+    }
+    pf_app.print(sbuf);
+    pf_app.unSetContingency(events[task_id]);
+    pf_app.close();
   }
   taskmgr.printStats();
 
