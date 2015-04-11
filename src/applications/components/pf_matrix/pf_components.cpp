@@ -527,11 +527,19 @@ double gridpack::powerflow::PFBus::getPhase()
 
 /**
  * Get generator status
+ * @param gen_id generator ID
  * @return vector of generator statuses
  */
-std::vector<int> gridpack::powerflow::PFBus::getGenStatus()
+bool gridpack::powerflow::PFBus::getGenStatus(std::string gen_id)
 {
-  return p_gstatus;
+  int i;
+  int gsize = p_gstatus.size();
+  for (i=0; i<gsize; i++) {
+    if (gen_id == p_gid[i]) {
+      return p_gstatus[i];
+    }
+  }
+  return false;
 }
 
 /**
@@ -548,13 +556,14 @@ std::vector<std::string> gridpack::powerflow::PFBus::getGenerators()
  * @param gen_id generator ID
  * @param status generator status
  */
-void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, int status)
+void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
 {
   int i;
-  for (i=0; i<p_gstatus.size(); i++) {
+  int gsize = p_gstatus.size();
+  for (i=0; i<gsize; i++) {
     if (gen_id == p_gid[i]) {
       p_gstatus[i] = status;
-      break;
+      return;
     }
   }
 }
@@ -714,12 +723,10 @@ void gridpack::powerflow::PFBus::saveData(
 #endif
   for (i=0; i<ngen; i++) {
     rval = p_pFac[i]*p_Pinj+p_pl/p_sbase;
-    printf("Pgen: %f ",rval);
     if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
       data->addValue("GENERATOR_PF_PGEN",rval,i);
     }
     rval = p_pFac[i]*p_Qinj+p_ql/p_sbase;
-    printf("Qgen: %f\n",rval);
     if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
       data->addValue("GENERATOR_PF_QGEN",rval,i);
     }
@@ -1154,6 +1161,9 @@ void gridpack::powerflow::PFBranch::load(
       = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     p_branch_status.push_back(static_cast<bool>(ivar));
     if (ivar == 1 && ok) p_active = true;
+    std::string tag;
+    ok = data->getValue(BRANCH_CKT, &tag, idx);
+    p_ckt.push_back(tag);
     bool shunt = true;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
     p_charging.push_back(rvar);
@@ -1336,3 +1346,39 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
   }
   return false;
 }
+
+/**
+ * Get the status of the branch element
+ * @param tag character string identifying branch element
+ * @return status of branch element
+ */
+bool gridpack::powerflow::PFBranch::getBranchStatus(std::string tag)
+{
+  int i;
+  int bsize = p_branch_status.size();
+  for (i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      return p_branch_status[i];
+    }
+  }
+  return false;
+}
+
+/**
+ * Set the status of the branch element
+ * @param tag character string identifying branch element
+ * @param status status of branch element
+ */
+void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status)
+{
+  int i;
+  int bsize = p_branch_status.size();
+  for (i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      p_branch_status[i] = status;
+      return;
+    }
+  }
+}
+
+
