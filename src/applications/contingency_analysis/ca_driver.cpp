@@ -18,7 +18,6 @@
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/contingency_analysis/ca_driver.hpp"
-#include "gridpack/applications/contingency_analysis/ca_app.hpp"
 
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
