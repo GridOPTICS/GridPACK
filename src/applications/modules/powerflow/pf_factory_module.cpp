@@ -94,18 +94,180 @@ void gridpack::powerflow::PFFactoryModule::setPQ(void)
 
 /**
  * Update pg of specified bus element based on their genID
+ * @param name 
  * @param busID
  * @param genID
  * @param value
  */
+//void gridpack::powerflow::PFFactoryModule::updatePg(std::string &name, int busID, std::string genID, double value)
 void gridpack::powerflow::PFFactoryModule::updatePg(int busID, std::string genID, double value)
 {
   int numBus = p_network->numBuses();
   int i;
   int genIndex=0;
   for (i=0; i<numBus; i++) {
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->updatePg(busID, genID, value);
+//    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(name,busID, genID, value);
+    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(busID, genID, value);
   }
+}
+
+/**
+ * Check for lone buses in the system. Do this by looking for buses that
+ * have no branches attached to them or for whom all the branches attached
+ * to the bus have all transmission elements with status false (the element
+ * is off). Set status of bus to isolated so that it does not contribute to
+ * powerflow matrix
+ * @param stream optional stream pointer that can be used to print out IDs
+ * of isolated buses
+ * @return false if there is an isolated bus in the network
+ */
+bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
+{
+  int numBus = p_network->numBuses();
+  int i, j, k;
+  bool bus_ok = true;
+  char buf[128];
+  p_saveIsolatedStatus.clear();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>
+      (p_network->getBus(i).get());
+    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+    bus->getNeighborBranches(branches);
+    int size = branches.size();
+    bool ok = true;
+    if (size == 0) {
+      ok = false;
+    }
+    if (ok) {
+      ok = false;
+      for (j=0; j<size; j++) {
+        bool branch_ok = false;
+        std::vector<bool> status =
+          dynamic_cast<gridpack::powerflow::PFBranch*>
+          (branches[j].get())->getLineStatus();
+        int nlines = status.size();
+        for (k=0; k<nlines; k++) {
+          if (status[k]) branch_ok = true;
+        }
+        if (branch_ok) ok = true;
+      }
+    }
+    if (!ok) {
+      sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
+      p_saveIsolatedStatus.push_back(bus->isIsolated());
+      bus->setIsolated(true);
+      if (stream != NULL) *stream << buf;
+    }
+    if (!ok) bus_ok = false;
+  }
+  // Check whether bus_ok is true on all processors
+  return checkTrue(!bus_ok);
+}
+
+/**
+ * Set lone buses back to their original status.
+ */
+void gridpack::powerflow::PFFactoryModule::clearLoneBus()
+{
+  if (p_saveIsolatedStatus.size() == 0) return;
+  int numBus = p_network->numBuses();
+  int i, j, k;
+  int ncount = 0;
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>
+      (p_network->getBus(i).get());
+    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+    bus->getNeighborBranches(branches);
+    int size = branches.size();
+    bool ok = true;
+    if (size == 0) {
+      ok = false;
+    }
+    if (ok) {
+      ok = false;
+      for (j=0; j<size; j++) {
+        bool branch_ok = false;
+        std::vector<bool> status =
+          dynamic_cast<gridpack::powerflow::PFBranch*>
+          (branches[j].get())->getLineStatus();
+        int nlines = status.size();
+        for (k=0; k<nlines; k++) {
+          if (status[k]) branch_ok = true;
+        }
+        if (branch_ok) ok = true;
+      }
+    }
+    if (!ok) {
+      bus->setIsolated(p_saveIsolatedStatus[ncount]);
+      ncount++;
+    }
+  }
+}
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
+    double Vmin, double Vmax)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      //bus->setVoltageLimits(Vmin, Vmax);
+      double V = bus->getVoltage();
+      if (V < Vmin || V > Vmax) bus_ok = false;
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
+ * Check to see if there are any line overload violations in the
+ * network
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
+{
+  int numBranch = p_network->numBranches();
+  int i;
+  bool branch_ok = true;
+  for (i=0; i<numBranch; i++) {
+    if (p_network->getActiveBranch(i)) {
+      gridpack::powerflow::PFBranch *branch =
+        dynamic_cast<gridpack::powerflow::PFBranch*>
+        (p_network->getBranch(i).get());
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (branch->getBus1().get());
+      // Loop over all lines in the branch and choose the smallest rating value
+      int nlines;
+      p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      std::vector<std::string> tags = branch->getLineTags();
+      double rateA;
+      for (int k = 0; k<nlines; k++) {
+        if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
+          if (rateA > 0.0) {
+            gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+            double pq = abs(s);
+            if (pq > rateA) branch_ok = false;
+          }
+        }
+      }
+    }
+  }
+  return checkTrue(branch_ok);
 }
 
 } // namespace powerflow

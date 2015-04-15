@@ -149,9 +149,10 @@ class PFBus
 
     /**
      * Get generator status
-     * @return vector of generator statuses
+     * @param gen_id generator ID
+     * @return current status of generator
      */
-    std::vector<int> getGenStatus();
+    bool getGenStatus(std::string gen_id);
 
     /**
      * Get list of generator IDs
@@ -181,7 +182,7 @@ class PFBus
      * @param gen_id generator ID
      * @param status generator status
      */
-    void setGenStatus(std::string gen_id, int status);
+    void setGenStatus(std::string gen_id, bool status);
 
     /**
      * Set isPV status
@@ -206,7 +207,7 @@ class PFBus
      * @param genID
      * @param value
      **/
-    void updatePg(int busID, std::string genID, double value);
+//    void updatePg(int busID, std::string genID, double value);
 
 
     /**
@@ -241,7 +242,8 @@ class PFBus
      * @param value new value of parameter
      * @param idx index (if necessary) of variable to be modified
      */
-    void setParam(std::string &name, double value, int idx);
+//    void setParam(std::string &name, int busID, std::string genID, double value);
+    void setParam(int busID, std::string genID, double value);
 
     /**
      * Access parameters inside the bus module. This is designed to be
@@ -416,6 +418,20 @@ class PFBranch
      */
     bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
+    /**
+     * Get the status of the branch element
+     * @param tag character string identifying branch element
+     * @return status of branch element
+     */
+    bool getBranchStatus(std::string tag);
+
+    /**
+     * Set the status of the branch element
+     * @param tag character string identifying branch element
+     * @param status status of branch element
+     */
+    void setBranchStatus(std::string tag, bool status);
+
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
@@ -429,6 +445,7 @@ class PFBranch
     std::vector<bool> p_xform, p_shunt;
     std::vector<double> p_rateA;
     std::vector<bool> p_branch_status;
+    std::vector<std::string> p_ckt;
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
@@ -457,6 +474,8 @@ private:
       & p_shunt_admt_b2
       & p_xform & p_shunt 
       & p_rateA
+      & p_branch_status
+      & p_ckt
       & p_mode
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs

@@ -1,11 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Contingency_analysis>
-    <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
     <contingencyList>contingencies.xml</contingencyList>
     <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
+  </Contingency_analysis>
+  <Powerflow>
+    <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-6</tolerance>
     <LinearSolver>
@@ -16,5 +18,5 @@
         -ksp_max_it 1
       </PETScOptions>
     </LinearSolver>
-  </Contingency_analysis>
+  </Powerflow>
 </Configuration>

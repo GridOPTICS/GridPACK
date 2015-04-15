@@ -14,6 +14,7 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_powerflow_module
     gridpack_components
     gridpack_factory
     gridpack_partition
@@ -36,9 +37,6 @@ endif()
 
 add_executable(ca.x
    ca_driver.cpp
-   ca_app.cpp
-   ca_factory.cpp
-   ca_components.cpp
    ca_main.cpp
 )
 

@@ -65,9 +65,9 @@ class PFFactory
     void setJacobian(void);
 
     /**
-     * Update Pg 
+     * Check Qlimit
      */
-    void updatePg(int busID, std::string genID, double value);
+    bool chkQlim(void);
     
   private:
 

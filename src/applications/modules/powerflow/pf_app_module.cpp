@@ -243,7 +243,13 @@ void gridpack::powerflow::PFAppModule::solve()
 //    J->saveBinary(dbgfile);
 //    sprintf(dbgfile,"pq0.bin");
 //    PQ->saveBinary(dbgfile);
-  solver.solve(*PQ, *X);
+  try {
+    solver.solve(*PQ, *X);
+  } catch (const gridpack::Exception e) {
+    p_busIO->header("Solver failure\n\n");
+    timer->stop(t_lsolv);
+    return;
+  }
   timer->stop(t_lsolv);
   tol = PQ->normInfinity();
 
@@ -285,7 +291,13 @@ void gridpack::powerflow::PFAppModule::solve()
 //    J->saveBinary(dbgfile);
 //    sprintf(dbgfile,"pq%d.bin",iter+1);
 //    PQ->saveBinary(dbgfile);
-    solver.solve(*PQ, *X);
+    try {
+      solver.solve(*PQ, *X);
+    } catch (const gridpack::Exception e) {
+      p_busIO->header("Solver failure\n\n");
+      timer->stop(t_lsolv);
+      return;
+    }
     timer->stop(t_lsolv);
 
     tol = PQ->normInfinity();
@@ -311,7 +323,7 @@ void gridpack::powerflow::PFAppModule::solve()
 /**
  * Execute the iterative solve portion of the application
  */
-void gridpack::powerflow::PFAppModule::solve_step1()
+/* void gridpack::powerflow::PFAppModule::solve_step1()
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -510,9 +522,10 @@ void gridpack::powerflow::PFAppModule::solve_step2()
   timer->stop(t_updt);
   timer->stop(t_total);
 }
+*/
 
 /**
- * Write out results of powerflow calculation to standard output
+ * Write out results of powerflow calculation to standard output or a file
  */
 void gridpack::powerflow::PFAppModule::write()
 {
@@ -536,9 +549,161 @@ void gridpack::powerflow::PFAppModule::write()
 }
 
 /**
+ * Redirect output from standard out
+ * @param filename name of file to write results to
+ */
+void gridpack::powerflow::PFAppModule::open(const char *filename)
+{
+  p_busIO->open(filename);
+  p_branchIO->setStream(p_busIO->getStream());
+}
+
+void gridpack::powerflow::PFAppModule::close()
+{
+  p_busIO->close();
+  p_branchIO->setStream(p_busIO->getStream());
+}
+
+/**
+ * Print string. This can be used to direct output to the file opened using
+ * the open command
+ * @param buf string to be printed
+ */
+void gridpack::powerflow::PFAppModule::print(const char *buf)
+{
+  p_busIO->header(buf);
+}
+
+/**
  * Save results of powerflow calculation to data collection objects
  */
 void gridpack::powerflow::PFAppModule::saveData()
 {
   p_factory->saveData();
+}
+
+/**
+ * Set a contingency
+ * @param event data describing location and type of contingency
+ * @return false if location of contingency is not found in
+ * network
+ */
+bool gridpack::powerflow::PFAppModule::setContingency(
+    gridpack::powerflow::Contingency &event)
+{
+  bool ret = true;
+  if (event.p_type == Generator) {
+    int ngen = event.p_busid.size();
+    int i, j, idx, jdx;
+    for (i=0; i<ngen; i++) {
+      idx = event.p_busid[i];
+      std::string tag = event.p_genid[i];
+      std::vector<int> lids = p_network->getLocalBusIndices(idx);
+      if (lids.size() == 0) ret = false;
+      gridpack::powerflow::PFBus *bus;
+      for (j=0; j<lids.size(); j++) {
+        jdx = lids[j];
+        bus = dynamic_cast<gridpack::powerflow::PFBus*>(
+            p_network->getBus(jdx).get());
+        event.p_saveGenStatus[i] = bus->getGenStatus(tag);
+        bus->setGenStatus(tag, false);
+      }
+    }
+  } else if (event.p_type == Branch) {
+    int to, from;
+    int nline = event.p_to.size();
+    int i, j, idx, jdx;
+    for (i=0; i<nline; i++) {
+      to = event.p_to[i];
+      from = event.p_from[i];
+      std::string tag = event.p_ckt[i];
+      std::vector<int> lids = p_network->getLocalBranchIndices(to,from);
+      if (lids.size() == 0) ret = false;
+      gridpack::powerflow::PFBranch *branch;
+      for (j=0; j<lids.size(); j++) {
+        jdx = lids[j];
+        branch = dynamic_cast<gridpack::powerflow::PFBranch*>(
+            p_network->getBranch(jdx).get());
+        event.p_saveLineStatus[i] = branch->getBranchStatus(tag);
+        branch->setBranchStatus(tag, false);
+      }
+    }
+  } else {
+    ret = false;
+  }
+  p_factory->checkLoneBus();
+  return ret;
+}
+
+/**
+ * Return system to the state before the contingency
+ * @param event data describing location and type of contingency
+ * @return false if location of contingency is not found in network
+ */
+bool gridpack::powerflow::PFAppModule::unSetContingency(
+    gridpack::powerflow::Contingency &event)
+{
+  bool ret = true;
+  if (event.p_type == Generator) {
+    int ngen = event.p_busid.size();
+    int i, j, idx, jdx;
+    for (i=0; i<ngen; i++) {
+      idx = event.p_busid[i];
+      std::string tag = event.p_genid[i];
+      std::vector<int> lids = p_network->getLocalBusIndices(idx);
+      if (lids.size() == 0) ret = false;
+      gridpack::powerflow::PFBus *bus;
+      for (j=0; j<lids.size(); j++) {
+        jdx = lids[j];
+        bus = dynamic_cast<gridpack::powerflow::PFBus*>(
+            p_network->getBus(jdx).get());
+        bus->setGenStatus(tag, event.p_saveGenStatus[i]);
+      }
+    }
+  } else if (event.p_type == Branch) {
+    int to, from;
+    int nline = event.p_to.size();
+    int i, j, idx, jdx;
+    for (i=0; i<nline; i++) {
+      to = event.p_to[i];
+      from = event.p_from[i];
+      std::string tag = event.p_ckt[i];
+      std::vector<int> lids = p_network->getLocalBranchIndices(to,from);
+      if (lids.size() == 0) ret = false;
+      gridpack::powerflow::PFBranch *branch;
+      for (j=0; j<lids.size(); j++) {
+        jdx = lids[j];
+        branch = dynamic_cast<gridpack::powerflow::PFBranch*>(
+            p_network->getBranch(jdx).get());
+        branch->setBranchStatus(tag,event.p_saveLineStatus[i]);
+      }
+    }
+  } else {
+    ret = false;
+  }
+  p_factory->clearLoneBus();
+  return ret;
+}
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
+    double Vmin, double Vmax)
+{
+  bool ret = p_factory->checkVoltageViolations(Vmin,Vmax);
+
+}
+
+/**
+ * Check to see if there are any line overload violations in the
+ * network
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
+{
+  bool ret = p_factory->checkLineOverloadViolations();
 }

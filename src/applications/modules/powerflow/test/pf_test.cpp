@@ -16,7 +16,7 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
-#include "gridpack/math/math.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "pf_app_module.hpp"
 
 // Calling program for the contingency_analysis applications
