@@ -288,19 +288,24 @@ void gridpack::state_estimation::SEBus::load(
   //printf("p_pl=%f,p_ql=%f\n",p_pl,p_ql);
   bool lgen;
   int i, ngen, gstatus;
-  double pg, qg, vs;
+  double pg, qg, vs, qmin, qmax;
   ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+    double qtot = 0.0;
     for (i=0; i<ngen; i++) {
       lgen = true;
       lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
       lgen = lgen && data->getValue(GENERATOR_VS, &vs,i);
       lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
+      lgen = lgen && data->getValue(GENERATOR_QMAX, &qmin,i);
+      lgen = lgen && data->getValue(GENERATOR_QMAX, &qmax,i);
       if (lgen) {
         p_pg.push_back(pg);
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
+        p_qmax.push_back(qmin);
+        p_qmax.push_back(qmax);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
           if (itype == 2) p_isPV = true;
@@ -578,6 +583,47 @@ void gridpack::state_estimation::SEBus::configureSE(void)
     }
   } 
   p_numElements = ncnt;
+}
+
+/**
+ * Save state variables inside the component to a DataCollection object.
+ * This can be used as a way of moving data in a way that is useful for
+ * creating output or for copying state data from one network to another.
+ * @param data data collection object into which new values are inserted
+ */
+void gridpack::state_estimation::SEBus::saveData(
+    boost::shared_ptr<gridpack::component::DataCollection> data)
+{
+  double rval;
+  int i;
+  if (!data->setValue("BUS_SE_VMAG",*p_vMag_ptr)) {
+    data->addValue("BUS_SE_VMAG",*p_vMag_ptr);
+  }
+  rval = *p_vAng_ptr;
+  double pi = 4.0*atan(1.0);
+  rval = 180.0*rval/pi;
+  if (!data->setValue("BUS_SE_VANG",rval)) {
+    data->addValue("BUS_SE_VANG",rval);
+  }
+  int ngen=p_qmin.size();
+  double sum_qmin = 0.0;
+  double sum_qmax = 0.0;
+  for (i=0; i<ngen; i++) {
+    sum_qmin += p_qmin[i];
+    sum_qmax += p_qmax[i];
+  }
+  for (i=0; i<ngen; i++) {
+    rval = p_pg[i];
+    if (!data->setValue("GENERATOR_SE_PGEN",rval,i)) {
+      data->addValue("GENERATOR_SE_PGEN",rval,i);
+    }
+    rval = p_qmin[i] + (p_Qinj-sum_qmin)*(p_qmax[i]-p_qmin[i])
+      / (sum_qmax - sum_qmin);
+    rval += p_ql/p_sbase;
+    if (!data->setValue("GENERATOR_SE_QGEN",rval,i)) {
+      data->addValue("GENERATOR_SE_QGEN",rval,i);
+    }
+  }
 }
 
 /**
