@@ -622,19 +622,21 @@ void gridpack::powerflow::PFBus::setSBus(void)
  ** @param genID
  ** @param value
  **/
-/*void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double value)
+/*
+void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double value)
 {
-   if (getOriginalIndex() == busID) {
-     if (p_ngen > 0) {
-       for (int i = 0; i < p_ngen; i++) {
-         if (p_gid[i] == genID) {
-           p_pg[i] += value;
-         }
-       }
-     }
-   }
+  if (getOriginalIndex() == busID) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        if (p_gid[i] == genID) {
+          p_pg[i] += value;
+        }
+      }
+    }
+  }
 }
 */
+
 /**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
@@ -1381,4 +1383,20 @@ void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status
   }
 }
 
-
+/**
+ * get branch rating value
+ * @param tag transmission element ID
+ * @return branch rating value
+ */
+double gridpack::powerflow::PFBranch::getBranchRating(std::string tag)
+{
+  int i;
+  int bsize = p_ckt.size();
+  double ret = 0.0;
+  for (i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      return p_rateA[i];
+    }
+  }
+  return ret;
+}

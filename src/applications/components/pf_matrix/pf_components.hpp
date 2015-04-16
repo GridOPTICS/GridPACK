@@ -209,7 +209,6 @@ class PFBus
      **/
 //    void updatePg(int busID, std::string genID, double value);
 
-
     /**
      * Write output from buses to standard out
      * @param string (output) string with information to be printed out
@@ -431,6 +430,13 @@ class PFBranch
      * @param status status of branch element
      */
     void setBranchStatus(std::string tag, bool status);
+
+    /**
+     * get branch rating value
+     * @param tag transmission element ID
+     * @return branch rating value
+     */
+    double getBranchRating(std::string tag);
 
   private:
     std::vector<double> p_reactance;

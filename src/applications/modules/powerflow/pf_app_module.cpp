@@ -62,6 +62,9 @@ void gridpack::powerflow::PFAppModule::readNetwork(
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
+  if (cursor == NULL) {
+    printf("No Powerflow block detected in input deck\n");
+  }
   std::string filename;
   int filetype = PTI23;
   if (!cursor->get("networkConfiguration",&filename)) {
@@ -617,7 +620,7 @@ bool gridpack::powerflow::PFAppModule::setContingency(
       to = event.p_to[i];
       from = event.p_from[i];
       std::string tag = event.p_ckt[i];
-      std::vector<int> lids = p_network->getLocalBranchIndices(to,from);
+      std::vector<int> lids = p_network->getLocalBranchIndices(from,to);
       if (lids.size() == 0) ret = false;
       gridpack::powerflow::PFBranch *branch;
       for (j=0; j<lids.size(); j++) {
@@ -668,7 +671,7 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
       to = event.p_to[i];
       from = event.p_from[i];
       std::string tag = event.p_ckt[i];
-      std::vector<int> lids = p_network->getLocalBranchIndices(to,from);
+      std::vector<int> lids = p_network->getLocalBranchIndices(from,to);
       if (lids.size() == 0) ret = false;
       gridpack::powerflow::PFBranch *branch;
       for (j=0; j<lids.size(); j++) {
