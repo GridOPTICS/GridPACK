@@ -103,7 +103,7 @@ class PFAppModule
      * Execute the iterative solve portion of the application
      * @return false if an error was caught in the solution algorithm
      */
-    void solve();
+    bool solve();
 //    void solve_step1();
 //    void solve_updatePg(std::vector<pathStress> pstress, std::vector<double> p_slice3Values);
 //    void solve_step2();

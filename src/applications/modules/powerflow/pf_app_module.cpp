@@ -157,9 +157,11 @@ void gridpack::powerflow::PFAppModule::initialize()
 
 /**
  * Execute the iterative solve portion of the application
+ * @return false if an error was encountered in the solution
  */
-void gridpack::powerflow::PFAppModule::solve()
+bool gridpack::powerflow::PFAppModule::solve()
 {
+  bool ret = true;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -251,7 +253,7 @@ void gridpack::powerflow::PFAppModule::solve()
   } catch (const gridpack::Exception e) {
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
-    return;
+    return false;
   }
   timer->stop(t_lsolv);
   tol = PQ->normInfinity();
@@ -299,7 +301,7 @@ void gridpack::powerflow::PFAppModule::solve()
     } catch (const gridpack::Exception e) {
       p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
-      return;
+      return false;
     }
     timer->stop(t_lsolv);
 
@@ -308,6 +310,8 @@ void gridpack::powerflow::PFAppModule::solve()
     p_busIO->header(ioBuf);
     iter++;
   }
+
+  if (iter >= p_max_iteration) ret = false;
 
   // Push final result back onto buses
   timer->start(t_bmap);
@@ -321,6 +325,7 @@ void gridpack::powerflow::PFAppModule::solve()
   p_network->updateBuses();
   timer->stop(t_updt);
   timer->stop(t_total);
+  return ret;
 }
 
 /**
