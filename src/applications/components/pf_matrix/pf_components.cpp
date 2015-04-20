@@ -47,6 +47,7 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_mode = YBus;
   setReferenceBus(false);
   p_ngen = 0;
+  p_data = NULL;
 }
 
 /**
@@ -389,6 +390,7 @@ void gridpack::powerflow::PFBus::setXCBuf(void *buf)
 void gridpack::powerflow::PFBus::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  p_data = data.get();
   YMBus::load(data);
 
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
@@ -398,9 +400,8 @@ void gridpack::powerflow::PFBus::load(
   double pi = 4.0*atan(1.0);
   p_angle = p_angle*pi/180.0;
   p_a = p_angle;
-  int itype;
-  data->getValue(BUS_TYPE, &itype);
-  if (itype == 3) {
+  data->getValue(BUS_TYPE, &p_type);
+  if (p_type == 3) {
     setReferenceBus(true);
   }
 
@@ -426,6 +427,10 @@ void gridpack::powerflow::PFBus::load(
       lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
       lgen = lgen && data->getValue(GENERATOR_QMAX, &qmax,i);
       lgen = lgen && data->getValue(GENERATOR_QMIN, &qmin,i);
+      double pt = 0.0;
+      double pb = 0.0;
+      ok =  data->getValue(GENERATOR_PMAX,&pt,i);
+      ok =  data->getValue(GENERATOR_PMIN,&pb,i);
       if (lgen) {
         p_pg.push_back(pg);
         p_qg.push_back(qg);
@@ -434,9 +439,11 @@ void gridpack::powerflow::PFBus::load(
         qtot += qmax;
         p_pFac.push_back(qmax);
         p_qmin.push_back(qmin);
+        p_pt.push_back(pt);
+        p_pb.push_back(pb);
         if (gstatus == 1) {
           p_v = vs; //reset initial PV voltage to set voltage
-          if (itype == 2) p_isPV = true;
+          if (p_type == 2) p_isPV = true;
         }
         std::string id("-1");
         data->getValue(GENERATOR_ID,&id,i);
@@ -661,6 +668,73 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     sprintf(string, "     %6d      %12.6f      %12.6f      %2d\n",
         getOriginalIndex(),real(v[0]),real(v[1]),
         static_cast<int>(branches.size()));
+  } else if (!strcmp(signal,"record")) {
+    char sbuf[128];
+    int slen = 0;
+    sprintf(sbuf,"%8d, %4d, %16.8f, %16.8f,",getOriginalIndex(),p_type,
+        p_pl/p_sbase,p_ql/p_sbase);
+    int len = strlen(sbuf);
+    if (len<=bufsize) {
+      sprintf(sbuf,"%s",string);
+      slen += len;
+      string += len;
+    }
+    double pgen = 0.0;
+    double qgen = 0.0;
+    double qmin = 0.0;
+    double qmax = 0.0;
+    int ngen = p_ngen;
+    int i;
+    for (i=0; i<ngen; i++) {
+      if (p_gstatus[i]) pgen += p_pg[i];
+      if (p_gstatus[i]) qgen += p_qg[i];
+      if (p_gstatus[i]) qmin += p_qmin[i];
+      if (p_gstatus[i]) qmax += p_qmax[i];
+    }
+    sprintf(sbuf," %16.8f, %16.8f, %16.8f, %16.8f,",
+        pgen/p_sbase,qgen/p_sbase,qmax/p_sbase,qmin/p_sbase);
+    len = strlen(sbuf);
+    if (slen+len<=bufsize) {
+      sprintf(sbuf,"%s",string);
+      slen += len;
+      string += len;
+    }
+    int gstatus = 0;
+    double pt = 0.0;
+    double pb = 0.0;
+    for (i=0; i<ngen; i++) {
+      if (p_gstatus[i]) gstatus = 1;
+      if (p_gstatus[i]) pt += p_pt[i];
+      if (p_gstatus[i]) pb += p_pb[i];
+    }
+    sprintf(sbuf," %16.8f, %16.8f, %1d,",pt,pb,gstatus);
+    len = strlen(sbuf);
+    if (slen+len<=bufsize) {
+      sprintf(sbuf,"%s",string);
+      slen += len;
+      string += len;
+    }
+    double gl, bl;
+    YMBus::getShuntValues(&gl, &bl);
+    int area;
+    p_data->getValue(BUS_AREA,&area);
+    sprintf(sbuf," %16.8f, %16.8f, %8d,",gl,bl,area);
+    len = strlen(sbuf);
+    if (slen+len<=bufsize) {
+      sprintf(sbuf,"%s",string);
+      slen += len;
+      string += len;
+    }
+    double zero = 0.0;
+    int nzone;
+    p_data->getValue(BUS_ZONE,&nzone);
+    sprintf(sbuf," %16.8f, %8d, %16.8f, %16.8f\n",zero,nzone,zero,zero);
+    len = strlen(sbuf);
+    if (slen+len<=bufsize) {
+      sprintf(sbuf,"%s",string);
+      slen += len;
+      string += len;
+    }
   }
   return true;
 }

@@ -283,17 +283,25 @@ class PFBus
     std::vector<double> p_qmax,p_qmin;
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
+    std::vector<double> p_pt;
+    std::vector<double> p_pb;
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV, p_saveisPV;
     int p_ngen;
+    int p_type;
 
     /**
      * Variables that are exchanged between buses
      */
     double* p_vMag_ptr;
     double* p_vAng_ptr;
+    
+    /**
+     * Cache a pointer to DataCollection object
+     */
+    gridpack::component::DataCollection *p_data;
 
 private:
 
@@ -316,11 +324,13 @@ private:
       & p_pg & p_qg & p_pFac
       & p_gstatus
       & p_vs & p_gid
+      & p_pt & p_pb
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
       & p_isPV
-      & p_saveisPV;
+      & p_saveisPV
+      & p_ngen & p_type;
   }  
 
 };

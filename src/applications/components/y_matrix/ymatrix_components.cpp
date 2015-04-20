@@ -169,6 +169,18 @@ void gridpack::ymatrix::YMBus::setIsolated(const bool flag)
 }
 
 /**
+ * Get shunt values
+ * @param gl shunt GL value
+ * @param bl shunt BL value
+ */
+void gridpack::ymatrix::YMBus::getShuntValues(double *bl,
+    double *gl) const
+{
+  *bl = p_shunt_bs;
+  *gl = p_shunt_gs;
+}
+
+/**
  *  Simple constructor
  */
 gridpack::ymatrix::YMBranch::YMBranch(void)

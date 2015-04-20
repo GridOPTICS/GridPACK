@@ -99,8 +99,15 @@ class YMBus
      */
     void setIsolated(const bool flag);
 
+    /**
+     * Get shunt values
+     * @param gl shunt GL value
+     * @param bl shunt BL value
+     */
+    void getShuntValues(double *bl, double *gl) const;
+
   private:
-      double p_shunt_gs;
+    double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
     int p_mode;
