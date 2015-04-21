@@ -1233,8 +1233,6 @@ void gridpack::powerflow::PFBranch::load(
     }
     ivar = 1;
     ok = data->getValue(BRANCH_STATUS, &ivar, idx);
-    gridpack::powerflow::PFBus *bus1
-      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
     p_branch_status.push_back(static_cast<bool>(ivar));
     if (ivar == 1 && ok) p_active = true;
     std::string tag;
@@ -1255,6 +1253,10 @@ void gridpack::powerflow::PFBranch::load(
     bool rate = true;
     rate = rate && data->getValue(BRANCH_RATING_A,&rvar,idx);
     p_rateA.push_back(rvar);
+    rate = rate && data->getValue(BRANCH_RATING_B,&rvar,idx);
+    p_rateB.push_back(rvar);
+    rate = rate && data->getValue(BRANCH_RATING_C,&rvar,idx);
+    p_rateC.push_back(rvar);
   }
 }
 
@@ -1372,12 +1374,26 @@ gridpack::ComplexType gridpack::powerflow::PFBranch::getComplexPower(
 bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
                                                 const char *signal)
 {
-  gridpack::powerflow::PFBus *bus1 = 
-    dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
-  gridpack::powerflow::PFBus *bus2 =
-    dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
   char buf[128];
-  if (signal != NULL && !strcmp(signal,"flow")) {
+  if (signal == NULL) {
+    gridpack::ComplexType s;
+    std::vector<std::string> tags = getLineTags();
+    int i;
+    int ilen = 0;
+    for (i=0; i<p_elems; i++) {
+      s = getComplexPower(tags[i]);
+      double p = real(s);
+      double q = imag(s);
+      if (!p_branch_status[i]) p = 0.0;
+      if (!p_branch_status[i]) q = 0.0;
+      sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
+          getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),p,q);
+      ilen += strlen(buf);
+      if (ilen<bufsize) sprintf(string,"%s",buf);
+      string += strlen(buf);
+    } 
+    return true;
+  } else if (!strcmp(signal,"flow")) {
     gridpack::ComplexType s;
     std::vector<std::string> tags = getLineTags();
     int i;
@@ -1392,7 +1408,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       double S = sqrt(p*p+q*q);
       if (S > p_rateA[i] && p_rateA[i] != 0.0){
         sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
-    	  bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),
+    	  getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
           p,q,p_rateA[i],S/p_rateA[i]*100,"%");
         ilen += strlen(buf);
         if (ilen<bufsize) sprintf(string,"%s",buf);
@@ -1401,23 +1417,34 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       }
     }
     return found;
-  } else {
-    gridpack::ComplexType s;
-    std::vector<std::string> tags = getLineTags();
-    int i;
-    int ilen = 0;
-    for (i=0; i<p_elems; i++) {
-      s = getComplexPower(tags[i]);
-      double p = real(s);
-      double q = imag(s);
-      if (!p_branch_status[i]) p = 0.0;
-      if (!p_branch_status[i]) q = 0.0;
-      sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
-          bus1->getOriginalIndex(),bus2->getOriginalIndex(),tags[i].c_str(),p,q);
-      ilen += strlen(buf);
-      if (ilen<bufsize) sprintf(string,"%s",buf);
-      string += strlen(buf);
-    } 
+  } else if (!strcmp(signal,"record")) {
+    double pi = 4.0*atan(1.0);
+    int slen = 0;
+    int i, idx, jdx;
+    for (i = 0; i<p_elems; i++) {
+      idx = getBus1OriginalIndex();
+      jdx = getBus2OriginalIndex();
+      sprintf(buf,"%8d, %8d, %2s,",idx,jdx,p_ckt[i].c_str());
+      int len = strlen(buf);
+      if (len<=bufsize) {
+        sprintf(buf,"%s",string);
+        slen += len;
+        string += len;
+      }
+      double yi, yj;
+      sprintf(buf," %16.8f, %16.8f, %16.8f, %16.8f, %16.8f",
+          yi,yj,p_rateA[i],p_rateB[i],p_rateC[i]);
+      len = strlen(buf);
+      if (slen+len<=bufsize) {
+        sprintf(buf,"%s",string);
+        slen += len;
+        string += len;
+      }
+      double rval = 180.0*p_phase_shift[i]/pi;
+      idx = 0;
+      if (p_branch_status[i]) idx = 1;
+      sprintf(buf," %16.8f, %16.8f, %1d\n",p_tap_ratio[i],rval,idx);
+    }
     return true;
   }
   return false;
@@ -1462,7 +1489,7 @@ void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status
  * @param tag transmission element ID
  * @return branch rating value
  */
-double gridpack::powerflow::PFBranch::getBranchRating(std::string tag)
+double gridpack::powerflow::PFBranch::getBranchRatingA(std::string tag)
 {
   int i;
   int bsize = p_ckt.size();
@@ -1470,6 +1497,43 @@ double gridpack::powerflow::PFBranch::getBranchRating(std::string tag)
   for (i=0; i<bsize; i++) {
     if (tag == p_ckt[i]) {
       return p_rateA[i];
+    }
+  }
+  return ret;
+}
+
+/**
+ * get branch rating B value
+ * @param tag transmission element ID
+ * @return branch rating value
+ */
+double gridpack::powerflow::PFBranch::getBranchRatingB(std::string tag)
+{
+  int i;
+  int bsize = p_ckt.size();
+  double ret = 0.0;
+  for (i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      return p_rateB[i];
+    }
+  }
+  return ret;
+}
+
+
+/**
+ * get branch rating C value
+ * @param tag transmission element ID
+ * @return branch rating value
+ */
+double gridpack::powerflow::PFBranch::getBranchRatingC(std::string tag)
+{
+  int i;
+  int bsize = p_ckt.size();
+  double ret = 0.0;
+  for (i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      return p_rateC[i];
     }
   }
   return ret;

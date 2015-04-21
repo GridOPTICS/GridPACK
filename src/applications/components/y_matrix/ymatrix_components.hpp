@@ -246,6 +246,13 @@ class YMBranch
      */
     void setMode(int mode);
 
+    /**
+     * Get branch susceptance (charging)
+     * @param tag string identifier for transmission element
+     * @return value of susceptance
+     */
+    double getSusceptance(std::string tag);
+
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;

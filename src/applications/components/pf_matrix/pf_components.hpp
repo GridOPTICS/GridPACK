@@ -442,11 +442,25 @@ class PFBranch
     void setBranchStatus(std::string tag, bool status);
 
     /**
-     * get branch rating value
+     * get branch rating A value
      * @param tag transmission element ID
      * @return branch rating value
      */
-    double getBranchRating(std::string tag);
+    double getBranchRatingA(std::string tag);
+
+    /**
+     * get branch rating B value
+     * @param tag transmission element ID
+     * @return branch rating value
+     */
+    double getBranchRatingB(std::string tag);
+
+    /**
+     * get branch rating C value
+     * @param tag transmission element ID
+     * @return branch rating value
+     */
+    double getBranchRatingC(std::string tag);
 
   private:
     std::vector<double> p_reactance;
@@ -460,6 +474,8 @@ class PFBranch
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
     std::vector<double> p_rateA;
+    std::vector<double> p_rateB;
+    std::vector<double> p_rateC;
     std::vector<bool> p_branch_status;
     std::vector<std::string> p_ckt;
     int p_mode;

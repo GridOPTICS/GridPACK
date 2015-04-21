@@ -600,3 +600,19 @@ bool gridpack::ymatrix::YMBranch::setLineStatus(std::string tag,
   }
   return found;
 }
+
+/**
+ * Get branch susceptance (charging)
+ * @param tag string identifier for transmission element
+ * @return value of susceptance
+ */
+double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
+{
+  int i;
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      return p_charging[i];
+    }
+  }
+  return 0.0;
+}
