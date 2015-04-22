@@ -671,14 +671,15 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
         static_cast<int>(branches.size()));
   } else if (!strcmp(signal,"record")) {
     char sbuf[128];
+    char *cptr = string;
     int slen = 0;
     sprintf(sbuf,"%8d, %4d, %16.8f, %16.8f,",getOriginalIndex(),p_type,
         p_pl/p_sbase,p_ql/p_sbase);
     int len = strlen(sbuf);
     if (len<=bufsize) {
-      sprintf(sbuf,"%s",string);
+      sprintf(cptr,"%s",sbuf);
       slen += len;
-      string += len;
+      cptr += len;
     }
     double pgen = 0.0;
     double qgen = 0.0;
@@ -696,9 +697,9 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
         pgen/p_sbase,qgen/p_sbase,qmax/p_sbase,qmin/p_sbase);
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
-      sprintf(sbuf,"%s",string);
+      sprintf(cptr,"%s",sbuf);
       slen += len;
-      string += len;
+      cptr += len;
     }
     int gstatus = 0;
     double pt = 0.0;
@@ -711,9 +712,9 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     sprintf(sbuf," %16.8f, %16.8f, %1d,",pt,pb,gstatus);
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
-      sprintf(sbuf,"%s",string);
+      sprintf(cptr,"%s",sbuf);
       slen += len;
-      string += len;
+      cptr += len;
     }
     double gl, bl;
     YMBus::getShuntValues(&gl, &bl);
@@ -722,9 +723,9 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     sprintf(sbuf," %16.8f, %16.8f, %8d,",gl,bl,area);
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
-      sprintf(sbuf,"%s",string);
+      sprintf(cptr,"%s",sbuf);
       slen += len;
-      string += len;
+      cptr += len;
     }
     double zero = 0.0;
     int nzone;
@@ -732,9 +733,9 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     sprintf(sbuf," %16.8f, %8d, %16.8f, %16.8f\n",zero,nzone,zero,zero);
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
-      sprintf(sbuf,"%s",string);
+      sprintf(cptr,"%s",sbuf);
       slen += len;
-      string += len;
+      cptr += len;
     }
   }
   return true;
@@ -1436,6 +1437,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     }
     return found;
   } else if (!strcmp(signal,"record")) {
+    char *cptr = string;
     double pi = 4.0*atan(1.0);
     int slen = 0;
     int i, idx, jdx;
@@ -1445,9 +1447,9 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       sprintf(buf,"%8d, %8d, %2s,",idx,jdx,p_ckt[i].c_str());
       int len = strlen(buf);
       if (len<=bufsize) {
-        sprintf(buf,"%s",string);
+        sprintf(cptr,"%s",buf);
         slen += len;
-        string += len;
+        cptr += len;
       }
       double yi = 0.0;
       double yj = 0.0;
@@ -1455,14 +1457,19 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
           yi,yj,p_rateA[i],p_rateB[i],p_rateC[i]);
       len = strlen(buf);
       if (slen+len<=bufsize) {
-        sprintf(buf,"%s",string);
+        sprintf(cptr,"%s",buf);
         slen += len;
-        string += len;
+        cptr += len;
       }
       double rval = 180.0*p_phase_shift[i]/pi;
       idx = 0;
       if (p_branch_status[i]) idx = 1;
       sprintf(buf," %16.8f, %16.8f, %1d\n",p_tap_ratio[i],rval,idx);
+      if (slen+len<=bufsize) {
+        sprintf(cptr,"%s",buf);
+        slen += len;
+        cptr += len;
+      }
     }
     return true;
   }
