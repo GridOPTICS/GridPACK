@@ -110,9 +110,12 @@ class PFAppModule
 
     /**
      * Write out results of powerflow calculation to standard output
-     * @param filename name of file to write results to
+     * Separate calls for writing only data from buses or branches
+     * @param signal tell underlying write what records to print
      */
     void write();
+    void writeBus(const char* signal);
+    void writeBranch(const char* signal);
 
     /**
      * Redirect output from standard out

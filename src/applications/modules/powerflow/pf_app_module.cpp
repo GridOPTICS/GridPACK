@@ -556,6 +556,34 @@ void gridpack::powerflow::PFAppModule::write()
   timer->stop(t_total);
 }
 
+void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Powerflow: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Powerflow: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_busIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
+void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Powerflow: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Powerflow: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_branchIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
 /**
  * Redirect output from standard out
  * @param filename name of file to write results to
