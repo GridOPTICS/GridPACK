@@ -262,12 +262,25 @@ class PFBus
      */
     int getElementIndex(std::string &name, std::string &tag);
 
+    /**
+     * Set parameter to ignore voltage violations
+     * @param flag value of ignore parameter
+     */
+    void setIgnore(bool flag);
+
+    /**
+     * Get parameter to ignore voltage violations
+     * @return value of ignore parameter
+     */
+    bool getIgnore();
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
     bool p_load;
     int p_mode;
+    bool p_ignore;
 
     // p_v and p_a are initialized to p_voltage and p_angle respectively,
     // but may be subject to change during the NR iterations
@@ -317,6 +330,7 @@ private:
       & p_shunt
       & p_load
       & p_mode
+      & p_ignore
       & p_v & p_a & p_theta
       & p_ybusr & p_ybusi
       & p_P0 & p_Q0
@@ -462,7 +476,22 @@ class PFBranch
      */
     double getBranchRatingC(std::string tag);
 
+    /**
+     * Set parameter to ignore voltage violations
+     * @param tag identifier of line element
+     * @param flag value of ignore parameter
+     */
+    void setIgnore(std::string tag, bool flag);
+
+    /**
+     * Get parameter to ignore voltage violations
+     * @param tag identifier of line element
+     * @return value of ignore parameter
+     */
+    bool getIgnore(std::string tag);
+
   private:
+    std::vector<bool> p_ignore;
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
     std::vector<double> p_tap_ratio;
@@ -495,6 +524,7 @@ private:
   void serialize(Archive & ar, const unsigned int version)
   {
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
+      & p_ignore
       & p_reactance
       & p_resistance
       & p_tap_ratio

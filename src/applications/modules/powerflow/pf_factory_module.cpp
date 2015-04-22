@@ -226,11 +226,53 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
       //bus->setVoltageLimits(Vmin, Vmax);
-      double V = bus->getVoltage();
-      if (V < Vmin || V > Vmax) bus_ok = false;
+      if (!bus->getIgnore()) {
+        double V = bus->getVoltage();
+        if (V < Vmin || V > Vmax) bus_ok = false;
+      }
     }
   }
   return checkTrue(bus_ok);
+}
+
+/**
+ * Set "ignore" parameter on all buses with violations so that subsequent
+ * checks are not counted as violations
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ */
+void gridpack::powerflow::PFFactoryModule::ignoreVoltageViolations(double Vmin,
+    double Vmax)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      double V = bus->getVoltage();
+      if (V < Vmin || V > Vmax) bus->setIgnore(true);
+    }
+  }
+}
+
+
+/**
+ * Clear "ignore" parameter on all buses
+ */
+void gridpack::powerflow::PFFactoryModule::clearVoltageViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->setIgnore(false);
+    }
+  }
 }
 
 /**
@@ -248,9 +290,40 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
       gridpack::powerflow::PFBranch *branch =
         dynamic_cast<gridpack::powerflow::PFBranch*>
         (p_network->getBranch(i).get());
-      gridpack::powerflow::PFBus *bus =
-        dynamic_cast<gridpack::powerflow::PFBus*>
-        (branch->getBus1().get());
+      // Loop over all lines in the branch and choose the smallest rating value
+      int nlines;
+      p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      std::vector<std::string> tags = branch->getLineTags();
+      double rateA;
+      for (int k = 0; k<nlines; k++) {
+        if (!branch->getIgnore(tags[k])) {
+          if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
+            if (rateA > 0.0) {
+              gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+              double pq = abs(s);
+              if (pq > rateA) branch_ok = false;
+            }
+          }
+        }
+      }
+    }
+  }
+  return checkTrue(branch_ok);
+}
+
+/**
+ * Set "ignore" paramter on all lines with violations so that subsequent
+ * checks are not counted as violations
+ */
+void gridpack::powerflow::PFFactoryModule::ignoreLineOverloadViolations()
+{
+  int numBranch = p_network->numBranches();
+  int i;
+  for (i=0; i<numBranch; i++) {
+    if (p_network->getActiveBranch(i)) {
+      gridpack::powerflow::PFBranch *branch =
+        dynamic_cast<gridpack::powerflow::PFBranch*>
+        (p_network->getBranch(i).get());
       // Loop over all lines in the branch and choose the smallest rating value
       int nlines;
       p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
@@ -261,13 +334,36 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
           if (rateA > 0.0) {
             gridpack::ComplexType s = branch->getComplexPower(tags[k]);
             double pq = abs(s);
-            if (pq > rateA) branch_ok = false;
+            if (pq > rateA) branch->setIgnore(tags[k],true);
           }
         }
       }
     }
   }
-  return checkTrue(branch_ok);
+}
+
+/**
+ * Clear "ignore" parameter on all lines
+ */
+void gridpack::powerflow::PFFactoryModule::clearLineOverloadViolations()
+{
+  int numBranch = p_network->numBranches();
+  int i;
+  for (i=0; i<numBranch; i++) {
+    if (p_network->getActiveBranch(i)) {
+      gridpack::powerflow::PFBranch *branch =
+        dynamic_cast<gridpack::powerflow::PFBranch*>
+        (p_network->getBranch(i).get());
+      // Loop over all lines in the branch and choose the smallest rating value
+      int nlines;
+      p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      std::vector<std::string> tags = branch->getLineTags();
+      double rateA;
+      for (int k = 0; k<nlines; k++) {
+        branch->setIgnore(tags[k],false);
+      }
+    }
+  }
 }
 
 } // namespace powerflow

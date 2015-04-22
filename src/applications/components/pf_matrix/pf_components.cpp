@@ -48,6 +48,7 @@ gridpack::powerflow::PFBus::PFBus(void)
   setReferenceBus(false);
   p_ngen = 0;
   p_data = NULL;
+  p_ignore = false;
 }
 
 /**
@@ -890,7 +891,23 @@ int gridpack::powerflow::PFBus::getElementIndex(std::string &name, std::string &
   return -1;
 }
 
+/**
+ * Set parameter to ignore voltage violations
+ * @param flag value of ignore parameter
+ */
+void gridpack::powerflow::PFBus::setIgnore(bool flag)
+{
+  p_ignore = flag;
+}
 
+/**
+ * Get parameter to ignore voltage violations
+ * @return value of ignore parameter
+ */
+bool gridpack::powerflow::PFBus::getIgnore()
+{
+  return p_ignore;
+}
 
 /**
  *  Simple constructor
@@ -1257,6 +1274,7 @@ void gridpack::powerflow::PFBranch::load(
     p_rateB.push_back(rvar);
     rate = rate && data->getValue(BRANCH_RATING_C,&rvar,idx);
     p_rateC.push_back(rvar);
+    p_ignore.push_back(false);
   }
 }
 
@@ -1539,3 +1557,39 @@ double gridpack::powerflow::PFBranch::getBranchRatingC(std::string tag)
   }
   return ret;
 }
+
+/**
+ * Set parameter to ignore voltage violations
+ * @param tag identifier of line element
+ * @param flag value of ignore parameter
+ */
+void gridpack::powerflow::PFBranch::setIgnore(std::string tag, bool flag)
+{
+  int i;
+  int bsize = p_ckt.size();
+  for (i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      p_ignore[i] = flag;
+    }
+  }
+}
+
+/**
+ * Get parameter to ignore voltage violations
+ * @param tag identifier of line element
+ * @return value of ignore parameter
+ */
+bool gridpack::powerflow::PFBranch::getIgnore(std::string tag)
+{
+  int i;
+  int bsize = p_ckt.size();
+  bool ret = false;
+  for (i=0; i<bsize; i++) {
+    if (tag == p_ckt[i]) {
+      return p_ignore[i];
+    }
+  }
+  return ret;
+}
+
+

@@ -93,10 +93,34 @@ class PFFactoryModule
     bool checkVoltageViolations(double Vmin, double Vmax);
 
     /**
+     * Set "ignore" parameter on all buses with violations so that subsequent
+     * checks are not counted as violations
+     * @param minV maximum voltage limit
+     * @param maxV maximum voltage limit
+     */
+    void ignoreVoltageViolations(double Vmin, double Vmax);
+
+    /**
+     * Clear "ignore" parameter on all buses
+     */
+    void clearVoltageViolations();
+
+    /**
      * Check to see if there are any line overload violations in the network
      * @return true if no violations found
      */
     bool checkLineOverloadViolations();
+
+    /**
+     * Set "ignore" paramter on all lines with violations so that subsequent
+     * checks are not counted as violations
+     */
+    void ignoreLineOverloadViolations();
+
+    /**
+     * Clear "ignore" parameter on all lines
+     */
+    void clearLineOverloadViolations();
 
   private:
 

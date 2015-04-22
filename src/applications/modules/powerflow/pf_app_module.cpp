@@ -731,7 +731,26 @@ bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
     double Vmin, double Vmax)
 {
   bool ret = p_factory->checkVoltageViolations(Vmin,Vmax);
+}
 
+/**
+ * Set "ignore" parameter on all buses with violations so that subsequent
+ * checks are not counted as violations
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ */
+void gridpack::powerflow::PFAppModule::ignoreVoltageViolations(double Vmin,
+    double Vmax)
+{
+  p_factory->ignoreVoltageViolations(Vmin,Vmax);
+}
+
+/**
+ * Clear "ignore" parameter on all buses
+ */
+void gridpack::powerflow::PFAppModule::clearVoltageViolations()
+{
+  p_factory->clearVoltageViolations();
 }
 
 /**
@@ -743,3 +762,4 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
 {
   bool ret = p_factory->checkLineOverloadViolations();
 }
+
