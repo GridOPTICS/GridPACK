@@ -1431,7 +1431,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
         slen += len;
         string += len;
       }
-      double yi, yj;
+      double yi = 0.0;
+      double yj = 0.0;
       sprintf(buf," %16.8f, %16.8f, %16.8f, %16.8f, %16.8f",
           yi,yj,p_rateA[i],p_rateB[i],p_rateC[i]);
       len = strlen(buf);
