@@ -42,39 +42,10 @@ class BaseParser
     /// Constructor
     explicit BaseParser() : p_configExists(false) {}
 
-
     /**
      * Destructor
      */
     virtual ~BaseParser(){}
-
-  protected:
-
-    /* ************************************************************************
-     **************************************************************************
-     ***** PROTECTED SCOPE
-     **************************************************************************
-     *********************************************************************** */
-    /**
-     * Assign network to internal network pointer variable
-     */
-    void setNetwork(boost::shared_ptr<_network> network)
-    {
-      p_network = network;
-    }
-
-    /**
-     * Set some global parameters
-     */
-    void setCaseID(int id)
-    {
-      p_case_id = id;
-    }
-
-    void setCaseSBase(double sb)
-    {
-      p_case_sbase = sb;
-    }
 
     void createNetwork(std::vector<boost::shared_ptr<component::DataCollection> >
         &busData, std::vector<boost::shared_ptr<component::DataCollection> >
@@ -152,6 +123,34 @@ class BaseParser
       busData.clear();
       branchData.clear();
       p_timer->stop(t_create);
+    }
+
+  protected:
+
+    /* ************************************************************************
+     **************************************************************************
+     ***** PROTECTED SCOPE
+     **************************************************************************
+     *********************************************************************** */
+    /**
+     * Assign network to internal network pointer variable
+     */
+    void setNetwork(boost::shared_ptr<_network> network)
+    {
+      p_network = network;
+    }
+
+    /**
+     * Set some global parameters
+     */
+    void setCaseID(int id)
+    {
+      p_case_id = id;
+    }
+
+    void setCaseSBase(double sb)
+    {
+      p_case_sbase = sb;
     }
 
     bool configExists(void)
