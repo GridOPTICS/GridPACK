@@ -202,7 +202,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   timer->start(t_fact);
   p_factory->setSBus();
   timer->stop(t_fact);
-  p_busIO->header("\nIteration 0\n");
+//  p_busIO->header("\nIteration 0\n");
 
   // Set PQ
   timer->start(t_cmap);
@@ -240,7 +240,7 @@ bool gridpack::powerflow::PFAppModule::solve()
 
   // First iteration
   X->zero(); //might not need to do this
-  p_busIO->header("\nCalling solver\n");
+  //p_busIO->header("\nCalling solver\n");
   int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
   timer->start(t_lsolv);
 //    char dbgfile[32];
