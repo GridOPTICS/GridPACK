@@ -76,20 +76,22 @@ class DSAppModule
     /**
      * Execute the time integration portion of the application
      */
-    void solve();
+    void solve(gridpack::dynamic_simulation::DSBranch::Event fault);
 
     /**
      * Write out final results of dynamic simulation calculation to standard output
      */
     void write();
 
-  private:
-
     /**
-     * Utility function to convert faults that are in event list into
-     * internal data structure that can be used by code
+     * Read faults from external file and form a list of faults
+     * @param cursor pointer to open file contain fault or faults
+     * @return a list of fault events
      */
-    void setFaultEvents();
+    std::vector<gridpack::dynamic_simulation::DSBranch::Event>
+      getFaults(gridpack::utility::Configuration::CursorPtr cursor);
+
+  private:
 
     std::vector<gridpack::dynamic_simulation::DSBranch::Event> p_faults;
 

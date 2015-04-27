@@ -694,7 +694,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       if (p_gstatus[i]) qmax += p_qmax[i];
     }
     sprintf(sbuf," %16.8f, %16.8f, %16.8f, %16.8f,",
-        pgen/p_sbase,qgen/p_sbase,qmax/p_sbase,qmin/p_sbase);
+        pgen,qgen,qmax,qmin);
+//        pgen/p_sbase,qgen/p_sbase,qmax/p_sbase,qmin/p_sbase);
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
       sprintf(cptr,"%s",sbuf);
@@ -729,8 +730,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     }
     double zero = 0.0;
     int nzone;
+    double basekv;
     p_data->getValue(BUS_ZONE,&nzone);
-    sprintf(sbuf," %16.8f, %8d, %16.8f, %16.8f\n",zero,nzone,zero,zero);
+    p_data->getValue(BUS_BASEKV,&basekv);
+    double pi = 4.0*atan(1.0);
+    double angle = p_a*180.0/pi;
+    sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",p_v,angle,basekv,nzone,1.1,0.9);
+    //sprintf(sbuf," %16.8f, %8d, %16.8f, %16.8f\n",zero,nzone,zero,zero);
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
       sprintf(cptr,"%s",sbuf);
@@ -1451,10 +1457,10 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
         slen += len;
         cptr += len;
       }
-      double yi = 0.0;
-      double yj = 0.0;
-      sprintf(buf," %16.8f, %16.8f, %16.8f, %16.8f, %16.8f",
-          yi,yj,p_rateA[i],p_rateB[i],p_rateC[i]);
+//      double yi = 0.0;
+//      double yj = 0.0;
+      sprintf(buf," %12.6f, %12.6f, %12.6f, 0.0, 0.0, %8.2f, %8.2f, %8.2f,",
+         p_resistance[i],p_reactance[i],p_charging[i],p_rateA[i],p_rateB[i],p_rateC[i]);
       len = strlen(buf);
       if (slen+len<=bufsize) {
         sprintf(cptr,"%s",buf);
@@ -1464,7 +1470,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       double rval = 180.0*p_phase_shift[i]/pi;
       idx = 0;
       if (p_branch_status[i]) idx = 1;
-      sprintf(buf," %16.8f, %16.8f, %1d\n",p_tap_ratio[i],rval,idx);
+      sprintf(buf," %12.4f, %12.4f, %1d\n",p_tap_ratio[i],rval,idx);
       if (slen+len<=bufsize) {
         sprintf(cptr,"%s",buf);
         slen += len;
