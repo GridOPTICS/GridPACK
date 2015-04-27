@@ -198,7 +198,7 @@ class PTI23_parser : public BasePTIParser<_network>
           p_timer->stop(t_ds);
           return;
         }
-        find_ds_par(input);
+        this->find_ds_par(input);
         input.close();
       }
       p_timer->stop(t_ds);
