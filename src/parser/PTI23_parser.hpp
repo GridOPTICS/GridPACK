@@ -13,13 +13,9 @@
 #ifndef PTI23_PARSER_HPP_
 #define PTI23_PARSER_HPP_
 
-#define OLD_MAP
 
 #include <boost/algorithm/string/split.hpp>
 #include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
-#ifndef OLD_MAP
-#include <boost/unordered_map.hpp>
-#endif
 #include <vector>
 #include <map>
 #include <cstdio>
@@ -30,6 +26,7 @@
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/parser/base_parser.hpp"
+#include "gridpack/parser/base_pti_parser.hpp"
 #include "gridpack/parser/hash_distr.hpp"
 
 #define TERM_CHAR '0'
@@ -40,7 +37,7 @@ namespace parser {
 
 
 template <class _network>
-class PTI23_parser : BaseParser<_network>
+class PTI23_parser : public BasePTIParser<_network>
 {
   public:
     /// Constructor 
@@ -74,30 +71,16 @@ class PTI23_parser : BaseParser<_network>
       p_timer->configTimer(false);
       int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
       p_timer->start(t_total);
-      std::string ext = getExtension(fileName);
+      std::string ext = this->getExtension(fileName);
       if (ext == "raw") {
         getCase(fileName);
         //brdcst_data();
         this->createNetwork(p_busData,p_branchData);
       } else if (ext == "dyr") {
-        getDS(fileName);
+        this->getDS(fileName);
       }
       p_timer->stop(t_total);
       p_timer->configTimer(true);
-    }
-
-    /**
-     * Parse a second file after original network has been distributed. This
-     * requires the data in the second file to be distributed to all network
-     * objects that need the data
-     * @param fileName name of file
-     */
-    void externalParse(const std::string &fileName)
-    {
-      std::string ext = getExtension(fileName);
-      if (ext == "dyr") {
-        getDSExternal(fileName);
-      }
     }
 
   protected:
@@ -144,6 +127,7 @@ class PTI23_parser : BaseParser<_network>
         //          find_loads(input,oldline,parsed);
         find_generators(input,oldline,parsed);
         find_branches(input);
+        this->setMaps(&p_busMap, &p_branchMap);
         find_transformer(input);
         find_area(input);
         find_2term(input);
@@ -214,7 +198,7 @@ class PTI23_parser : BaseParser<_network>
           p_timer->stop(t_ds);
           return;
         }
-        find_ds_par(input);
+        this->find_ds_par(input);
         input.close();
       }
       p_timer->stop(t_ds);
@@ -556,11 +540,7 @@ class PTI23_parser : BaseParser<_network>
         // LOAD_BUSNUMBER               "I"                   integer
         int l_idx, o_idx;
         o_idx = atoi(split_line[0].c_str());
-#ifdef OLD_MAP
         std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
         it = p_busMap.find(o_idx);
         if (it != p_busMap.end()) {
           l_idx = it->second;
@@ -573,7 +553,7 @@ class PTI23_parser : BaseParser<_network>
         p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
 
         // LOAD_ID              "ID"                  integer
-        std::string tag = clean2Char(split_line[1]);
+        std::string tag = this->clean2Char(split_line[1]);
         if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str());
 
         // LOAD_STATUS              "ID"                  integer
@@ -625,11 +605,7 @@ class PTI23_parser : BaseParser<_network>
         // GENERATOR_BUSNUMBER               "I"                   integer
         int l_idx, o_idx;
         o_idx = atoi(split_line[0].c_str());
-#ifdef OLD_MAP
         std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
         int nstr = split_line.size();
         it = p_busMap.find(o_idx);
         if (it != p_busMap.end()) {
@@ -647,7 +623,7 @@ class PTI23_parser : BaseParser<_network>
         p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()), ngen);
 
         // Clean up 2 character tag
-        std::string tag = clean2Char(split_line[1]);
+        std::string tag = this->clean2Char(split_line[1]);
         // GENERATOR_ID              "ID"                  integer
         p_busData[l_idx]->addValue(GENERATOR_ID, tag.c_str(), ngen);
 
@@ -756,146 +732,6 @@ class PTI23_parser : BaseParser<_network>
       }
     }
 
-    void find_ds_par(std::ifstream & input)
-    {
-      std::string          line;
-      gridpack::component::DataCollection *data;
-      while(std::getline(input,line)) {
-        std::string record = line;
-        int idx = line.find('/');
-        while (idx == std::string::npos) {
-          std::getline(input,line);
-          idx = line.find('/');
-          record.append(line);
-        }
-        idx = record.find('/');
-        if (idx != std::string::npos) record.erase(idx,record.length()-idx);
-        std::vector<std::string>  split_line;
-        boost::split(split_line, record, boost::algorithm::is_any_of(","), boost::token_compress_on);
-
-        // GENERATOR_BUSNUMBER               "I"                   integer
-        int l_idx, o_idx;
-        o_idx = atoi(split_line[0].c_str());
-#ifdef OLD_MAP
-        std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
-        int nstr = split_line.size();
-        it = p_busMap.find(o_idx);
-        if (it != p_busMap.end()) {
-          l_idx = it->second;
-        } else {
-          continue;
-        }
-        data = dynamic_cast<gridpack::component::DataCollection*>
-          (p_network->getBusData(l_idx).get());
-
-        // Find out how many generators are already on bus
-        int ngen;
-        if (!data->getValue(GENERATOR_NUMBER, &ngen)) continue;
-        // Identify index of generator to which this data applies
-        int g_id = -1;
-        // Clean up 2 character tag for generator ID
-        std::string tag = clean2Char(split_line[2]);
-        int i;
-        for (i=0; i<ngen; i++) {
-          std::string t_id;
-          data->getValue(GENERATOR_ID,&t_id,i);
-          if (tag == t_id) {
-            g_id = i;
-            break;
-          }
-        }
-        if (g_id == -1) continue;
-
-        std::string sval;
-        double rval;
-        // GENERATOR_MODEL              "MODEL"                  string
-        if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
-          data->addValue(GENERATOR_MODEL, split_line[1].c_str(), g_id);
-        } else {
-          data->setValue(GENERATOR_MODEL, split_line[1].c_str(), g_id);
-        }
-
-        // GENERATOR_INERTIA_CONSTANT_H                           float
-        if (nstr > 3) {
-          if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H,&rval,g_id)) {
-            data->addValue(GENERATOR_INERTIA_CONSTANT_H,
-                atof(split_line[3].c_str()), g_id);
-          } else {
-            data->setValue(GENERATOR_INERTIA_CONSTANT_H,
-                atof(split_line[3].c_str()), g_id);
-          }
-        } 
-
-        // GENERATOR_DAMPING_COEFFICIENT_0                           float
-        if (nstr > 4) {
-          if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&rval,g_id)) {
-            data->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
-                atof(split_line[4].c_str()), g_id);
-          } else {
-            data->setValue(GENERATOR_DAMPING_COEFFICIENT_0,
-                atof(split_line[4].c_str()), g_id);
-          }
-        }
-      }
-    }
-
-    void find_ds_vector(std::ifstream & input, std::vector<ds_params> *ds_vector)
-    {
-      std::string          line;
-      ds_vector->clear();
-      while(std::getline(input,line)) {
-        std::string record = line;
-        int idx = line.find('/');
-        while (idx == std::string::npos) {
-          std::getline(input,line);
-          idx = line.find('/');
-          record.append(line);
-        }
-        idx = record.find('/');
-        if (idx != std::string::npos) record.erase(idx,record.length()-idx);
-        std::vector<std::string>  split_line;
-        boost::split(split_line, record, boost::algorithm::is_any_of(","),
-            boost::token_compress_on);
-
-        ds_params data;
-
-        // GENERATOR_BUSNUMBER               "I"                   integer
-        int o_idx;
-        o_idx = atoi(split_line[0].c_str());
-        data.bus_id = o_idx;
-
-        int nstr = split_line.size();
-
-        // Clean up 2 character tag for generator ID
-        std::string tag = clean2Char(split_line[2]);
-        strcpy(data.gen_id, tag.c_str());
-
-        std::string sval;
-        double rval;
-        // GENERATOR_MODEL              "MODEL"                  integer
-        strcpy(data.gen_model, split_line[1].c_str());
-
-        // GENERATOR_INERTIA_CONSTANT_H                           float
-        if (nstr > 3) {
-          data.inertia = atof(split_line[3].c_str());
-        } 
-
-        // GENERATOR_DAMPING_COEFFICIENT_0                           float
-        if (nstr > 4) {
-          data.damping = atof(split_line[4].c_str());
-        }
-
-        // GENERATOR_TRANSIENT_REACTANCE                             float
-        if (nstr > 5) {
-          data.reactance = atof(split_line[5].c_str());
-        }
-        ds_vector->push_back(data);
-      }
-    }
-
     void find_branches(std::ifstream & input)
     {
       std::string line;
@@ -920,11 +756,7 @@ class PTI23_parser : BaseParser<_network>
         // Check to see if pair has already been created
         int l_idx = 0;
         branch_pair = std::pair<int,int>(o_idx1, o_idx2);
-#ifdef OLD_MAP
         std::map<std::pair<int, int>, int>::iterator it;
-#else
-        boost::unordered_map<std::pair<int, int>, int>::iterator it;
-#endif
         it = p_branchMap.find(branch_pair);
 
         bool switched = false;
@@ -972,7 +804,7 @@ class PTI23_parser : BaseParser<_network>
         p_branchData[l_idx]->addValue(BRANCH_SWITCHED, switched, nelems);
 
         // Clean up 2 character tag
-        std::string tag = clean2Char(split_line[2]);
+        std::string tag = this->clean2Char(split_line[2]);
         // BRANCH_CKT          "CKT"                 character
         p_branchData[l_idx]->addValue(BRANCH_CKT, tag.c_str(),
             nelems);
@@ -1063,11 +895,7 @@ class PTI23_parser : BaseParser<_network>
         // find branch corresponding to this transformer line
         int l_idx = 0;
         branch_pair = std::pair<int,int>(fromBus, toBus);
-#ifdef OLD_MAP
         std::map<std::pair<int, int>, int>::iterator it;
-#else
-        boost::unordered_map<std::pair<int, int>, int>::iterator it;
-#endif
         it = p_branchMap.find(branch_pair);
 
         if (it != p_branchMap.end()) {
@@ -1082,7 +910,7 @@ class PTI23_parser : BaseParser<_network>
         // BRANCH_CKT values
         int nelems = 0;
         p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
-        std::string b_ckt(clean2Char(split_line[2]));
+        std::string b_ckt(this->clean2Char(split_line[2]));
         int i;
         int idx = -1;
         for (i=0; i<nelems; i++) {
@@ -1266,11 +1094,7 @@ class PTI23_parser : BaseParser<_network>
         // AREAINTG_ISW           "ISW"                  integer
         int l_idx, o_idx;
         o_idx = atoi(split_line[1].c_str());
-#ifdef OLD_MAP
         std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
         it = p_busMap.find(o_idx);
         if (it != p_busMap.end()) {
           l_idx = it->second;
@@ -1341,11 +1165,7 @@ class PTI23_parser : BaseParser<_network>
          */
         int l_idx, o_idx;
         l_idx = atoi(split_line[0].c_str());
-#ifdef OLD_MAP
         std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
         it = p_busMap.find(l_idx);
         if (it != p_busMap.end()) {
           o_idx = it->second;
@@ -1918,17 +1738,9 @@ class PTI23_parser : BaseParser<_network>
     // Vector of branch data objects
     std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_branchData;
     // Map of PTI indices to index in p_busData
-#ifdef OLD_MAP
     std::map<int,int> p_busMap;
-#else
-    boost::unordered_map<int, int> p_busMap;
-#endif
     // Map of PTI index pair to index in p_branchData
-#ifdef OLD_MAP
     std::map<std::pair<int, int>, int> p_branchMap;
-#else
-    boost::unordered_map<std::pair<int, int>, int> p_branchMap;
-#endif
 
     // Global variables that apply to whole network
     int p_case_id;

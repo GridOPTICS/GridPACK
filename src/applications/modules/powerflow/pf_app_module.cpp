@@ -62,6 +62,9 @@ void gridpack::powerflow::PFAppModule::readNetwork(
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.Powerflow");
+  if (cursor == NULL) {
+    printf("No Powerflow block detected in input deck\n");
+  }
   std::string filename;
   int filetype = PTI23;
   if (!cursor->get("networkConfiguration",&filename)) {
@@ -154,9 +157,11 @@ void gridpack::powerflow::PFAppModule::initialize()
 
 /**
  * Execute the iterative solve portion of the application
+ * @return false if an error was encountered in the solution
  */
-void gridpack::powerflow::PFAppModule::solve()
+bool gridpack::powerflow::PFAppModule::solve()
 {
+  bool ret = true;
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
@@ -197,7 +202,7 @@ void gridpack::powerflow::PFAppModule::solve()
   timer->start(t_fact);
   p_factory->setSBus();
   timer->stop(t_fact);
-  p_busIO->header("\nIteration 0\n");
+//  p_busIO->header("\nIteration 0\n");
 
   // Set PQ
   timer->start(t_cmap);
@@ -235,7 +240,7 @@ void gridpack::powerflow::PFAppModule::solve()
 
   // First iteration
   X->zero(); //might not need to do this
-  p_busIO->header("\nCalling solver\n");
+  //p_busIO->header("\nCalling solver\n");
   int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
   timer->start(t_lsolv);
 //    char dbgfile[32];
@@ -248,7 +253,7 @@ void gridpack::powerflow::PFAppModule::solve()
   } catch (const gridpack::Exception e) {
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
-    return;
+    return false;
   }
   timer->stop(t_lsolv);
   tol = PQ->normInfinity();
@@ -296,7 +301,7 @@ void gridpack::powerflow::PFAppModule::solve()
     } catch (const gridpack::Exception e) {
       p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
-      return;
+      return false;
     }
     timer->stop(t_lsolv);
 
@@ -305,6 +310,8 @@ void gridpack::powerflow::PFAppModule::solve()
     p_busIO->header(ioBuf);
     iter++;
   }
+
+  if (iter >= p_max_iteration) ret = false;
 
   // Push final result back onto buses
   timer->start(t_bmap);
@@ -318,6 +325,7 @@ void gridpack::powerflow::PFAppModule::solve()
   p_network->updateBuses();
   timer->stop(t_updt);
   timer->stop(t_total);
+  return ret;
 }
 
 /**
@@ -548,6 +556,34 @@ void gridpack::powerflow::PFAppModule::write()
   timer->stop(t_total);
 }
 
+void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Powerflow: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Powerflow: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_busIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
+void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Powerflow: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Powerflow: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_branchIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
 /**
  * Redirect output from standard out
  * @param filename name of file to write results to
@@ -617,7 +653,7 @@ bool gridpack::powerflow::PFAppModule::setContingency(
       to = event.p_to[i];
       from = event.p_from[i];
       std::string tag = event.p_ckt[i];
-      std::vector<int> lids = p_network->getLocalBranchIndices(to,from);
+      std::vector<int> lids = p_network->getLocalBranchIndices(from,to);
       if (lids.size() == 0) ret = false;
       gridpack::powerflow::PFBranch *branch;
       for (j=0; j<lids.size(); j++) {
@@ -668,7 +704,7 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
       to = event.p_to[i];
       from = event.p_from[i];
       std::string tag = event.p_ckt[i];
-      std::vector<int> lids = p_network->getLocalBranchIndices(to,from);
+      std::vector<int> lids = p_network->getLocalBranchIndices(from,to);
       if (lids.size() == 0) ret = false;
       gridpack::powerflow::PFBranch *branch;
       for (j=0; j<lids.size(); j++) {
@@ -695,7 +731,26 @@ bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
     double Vmin, double Vmax)
 {
   bool ret = p_factory->checkVoltageViolations(Vmin,Vmax);
+}
 
+/**
+ * Set "ignore" parameter on all buses with violations so that subsequent
+ * checks are not counted as violations
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ */
+void gridpack::powerflow::PFAppModule::ignoreVoltageViolations(double Vmin,
+    double Vmax)
+{
+  p_factory->ignoreVoltageViolations(Vmin,Vmax);
+}
+
+/**
+ * Clear "ignore" parameter on all buses
+ */
+void gridpack::powerflow::PFAppModule::clearVoltageViolations()
+{
+  p_factory->clearVoltageViolations();
 }
 
 /**
@@ -707,3 +762,4 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
 {
   bool ret = p_factory->checkLineOverloadViolations();
 }
+

@@ -289,6 +289,14 @@ class SEBus
      */
     void configureSE(void);
 
+    /**
+     * Save state variables inside the component to a DataCollection object.
+     * This can be used as a way of moving data in a way that is useful for
+     * creating output or for copying state data from one network to another.
+     * @param data data collection object into which new values are inserted
+     */
+    void saveData(boost::shared_ptr<gridpack::component::DataCollection> data);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -308,6 +316,8 @@ class SEBus
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
     std::vector<double> p_vs;
+    std::vector<double> p_qmin;
+    std::vector<double> p_qmax;
     std::vector<int> p_gid;
     double p_pl, p_ql;
     double p_sbase;
