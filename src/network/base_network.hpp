@@ -2193,7 +2193,7 @@ std::vector<int> getLocalBranchIndices(int idx1, int idx2) {
   it = p_branchMap.find(pair);
   std::vector<int> ret;
   if (it != p_branchMap.end()) {
-    while (it < p_branchMap.upper_bound(pair)) {
+    while (it != p_branchMap.upper_bound(pair)) {
       ret.push_back(it->second);
       it++;
     }
