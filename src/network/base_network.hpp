@@ -2172,9 +2172,11 @@ std::vector<int> getLocalBusIndices(int idx) {
   std::multimap<int,int>::iterator it;
   it = p_busMap.find(idx);
   std::vector<int> ret;
-  while (it != p_busMap.upper_bound(idx)) {
-    ret.push_back(it->second);
-    it++;
+  if (it != p_busMap.end()) {
+    while (it != p_busMap.upper_bound(idx)) {
+      ret.push_back(it->second);
+      it++;
+    }
   }
   return ret;
 }
@@ -2190,9 +2192,11 @@ std::vector<int> getLocalBranchIndices(int idx1, int idx2) {
   std::pair<int,int> pair = std::pair<int,int>(idx1,idx2);
   it = p_branchMap.find(pair);
   std::vector<int> ret;
-  while (it != p_branchMap.upper_bound(pair)) {
-    ret.push_back(it->second);
-    it++;
+  if (it != p_branchMap.end()) {
+    while (it < p_branchMap.upper_bound(pair)) {
+      ret.push_back(it->second);
+      it++;
+    }
   }
   return ret;
 }
