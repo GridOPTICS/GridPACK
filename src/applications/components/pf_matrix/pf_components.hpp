@@ -209,7 +209,6 @@ class PFBus
      **/
 //    void updatePg(int busID, std::string genID, double value);
 
-
     /**
      * Write output from buses to standard out
      * @param string (output) string with information to be printed out
@@ -263,12 +262,25 @@ class PFBus
      */
     int getElementIndex(std::string &name, std::string &tag);
 
+    /**
+     * Set parameter to ignore voltage violations
+     * @param flag value of ignore parameter
+     */
+    void setIgnore(bool flag);
+
+    /**
+     * Get parameter to ignore voltage violations
+     * @return value of ignore parameter
+     */
+    bool getIgnore();
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
     bool p_shunt;
     bool p_load;
     int p_mode;
+    bool p_ignore;
 
     // p_v and p_a are initialized to p_voltage and p_angle respectively,
     // but may be subject to change during the NR iterations
@@ -284,17 +296,25 @@ class PFBus
     std::vector<double> p_qmax,p_qmin;
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
+    std::vector<double> p_pt;
+    std::vector<double> p_pb;
     double p_pl, p_ql;
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV, p_saveisPV;
     int p_ngen;
+    int p_type;
 
     /**
      * Variables that are exchanged between buses
      */
     double* p_vMag_ptr;
     double* p_vAng_ptr;
+    
+    /**
+     * Cache a pointer to DataCollection object
+     */
+    gridpack::component::DataCollection *p_data;
 
 private:
 
@@ -310,6 +330,7 @@ private:
       & p_shunt
       & p_load
       & p_mode
+      & p_ignore
       & p_v & p_a & p_theta
       & p_ybusr & p_ybusi
       & p_P0 & p_Q0
@@ -317,11 +338,13 @@ private:
       & p_pg & p_qg & p_pFac
       & p_gstatus
       & p_vs & p_gid
+      & p_pt & p_pb
       & p_pl & p_ql
       & p_sbase
       & p_Pinj & p_Qinj
       & p_isPV
-      & p_saveisPV;
+      & p_saveisPV
+      & p_ngen & p_type;
   }  
 
 };
@@ -432,7 +455,43 @@ class PFBranch
      */
     void setBranchStatus(std::string tag, bool status);
 
+    /**
+     * get branch rating A value
+     * @param tag transmission element ID
+     * @return branch rating value
+     */
+    double getBranchRatingA(std::string tag);
+
+    /**
+     * get branch rating B value
+     * @param tag transmission element ID
+     * @return branch rating value
+     */
+    double getBranchRatingB(std::string tag);
+
+    /**
+     * get branch rating C value
+     * @param tag transmission element ID
+     * @return branch rating value
+     */
+    double getBranchRatingC(std::string tag);
+
+    /**
+     * Set parameter to ignore voltage violations
+     * @param tag identifier of line element
+     * @param flag value of ignore parameter
+     */
+    void setIgnore(std::string tag, bool flag);
+
+    /**
+     * Get parameter to ignore voltage violations
+     * @param tag identifier of line element
+     * @return value of ignore parameter
+     */
+    bool getIgnore(std::string tag);
+
   private:
+    std::vector<bool> p_ignore;
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
     std::vector<double> p_tap_ratio;
@@ -444,6 +503,8 @@ class PFBranch
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
     std::vector<double> p_rateA;
+    std::vector<double> p_rateB;
+    std::vector<double> p_rateC;
     std::vector<bool> p_branch_status;
     std::vector<std::string> p_ckt;
     int p_mode;
@@ -463,6 +524,7 @@ private:
   void serialize(Archive & ar, const unsigned int version)
   {
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
+      & p_ignore
       & p_reactance
       & p_resistance
       & p_tap_ratio

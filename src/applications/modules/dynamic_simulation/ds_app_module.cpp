@@ -72,10 +72,6 @@ void gridpack::dynamic_simulation::DSAppModule::readNetwork(
     // TODO: some kind of error
   }
 
-  // Read in information about fault events and store them in internal data
-  // structure
-  setFaultEvents();
-
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
   parser.parse(filename.c_str());
@@ -94,6 +90,59 @@ void gridpack::dynamic_simulation::DSAppModule::readNetwork(
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(2048, network));
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<DSNetwork>(128, network));
   timer->stop(t_total);
+}
+
+/**
+ * Read faults from external file and form a list of faults
+ * @param cursor pointer to open file contain fault or faults
+ * @return a list of fault events
+ */
+std::vector<gridpack::dynamic_simulation::DSBranch::Event>
+  gridpack::dynamic_simulation::DSAppModule::
+  getFaults(gridpack::utility::Configuration::CursorPtr cursor)
+{
+  gridpack::utility::Configuration::CursorPtr list;
+  list = cursor->getCursor("faultEvents");
+  gridpack::utility::Configuration::ChildCursors events;
+  std::vector<gridpack::dynamic_simulation::DSBranch::Event> ret;
+  if (list) {
+    list->children(events);
+    int size = events.size();
+    int idx;
+    // Parse fault events
+    for (idx=0; idx<size; idx++) {
+      gridpack::dynamic_simulation::DSBranch::Event event;
+      event.start = events[idx]->get("beginFault",0.0);
+      event.end = events[idx]->get("endFault",0.0);
+      std::string indices = events[idx]->get("faultBranch","0 0");
+      //Parse indices to get from and to indices of branch
+      int ntok1 = indices.find_first_not_of(' ',0);
+      int ntok2 = indices.find(' ',ntok1);
+      if (ntok2 - ntok1 > 0 && ntok1 != std::string::npos && ntok2 !=
+          std::string::npos) {
+        event.from_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
+        ntok1 = indices.find_first_not_of(' ',ntok2);
+        ntok2 = indices.find(' ',ntok1);
+        if (ntok1 != std::string::npos && ntok1 < indices.length()) {
+          if (ntok2 == std::string::npos) {
+            ntok2 = indices.length();
+          }
+          event.to_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
+        } else {
+          event.from_idx = 0;
+          event.to_idx = 0;
+        }
+      } else {
+        event.from_idx = 0;
+        event.to_idx = 0;
+      }
+      event.step = events[idx]->get("timeStep",0.0);
+      if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
+        ret.push_back(event);
+      }
+    }
+  }
+  return ret;
 }
 
 /**
@@ -134,10 +183,6 @@ void gridpack::dynamic_simulation::DSAppModule::setNetwork(
     // TODO: some kind of error
   }
 
-  // Read in information about fault events and store them in internal data
-  // structure
-  setFaultEvents();
-
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(2048, network));
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<DSNetwork>(128, network));
@@ -176,7 +221,8 @@ void gridpack::dynamic_simulation::DSAppModule::initialize()
   timer->stop(t_total);
 }
 
-void gridpack::dynamic_simulation::DSAppModule::solve()
+void gridpack::dynamic_simulation::DSAppModule::solve(
+    gridpack::dynamic_simulation::DSBranch::Event fault)
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -312,8 +358,8 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
   // Update ybus values at fault stage
   //-----------------------------------------------------------------------
   // Read the switch info from faults Event from input.xml
-  int sw2_2 = p_faults[0].from_idx - 1;
-  int sw3_2 = p_faults[0].to_idx - 1;
+  int sw2_2 = fault.from_idx - 1;
+  int sw3_2 = fault.to_idx - 1;
 
   boost::shared_ptr<gridpack::math::Matrix> fy11ybus(prefy11ybus->clone());
   ///p_branchIO.header("\n=== fy11ybus(original): ============\n");
@@ -324,7 +370,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
   fy11ybus->ready();
 #else
   timer->start(t_matset);
-  p_factory->setEvent(p_faults[0]);
+  p_factory->setEvent(fault);
   p_factory->setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
   timer->stop(t_matset);
@@ -523,11 +569,11 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
   static double sw1[4];
   static double sw7[4];
   sw1[0] = 0.0;
-  sw1[1] = p_faults[0].start;
-  sw1[2] = p_faults[0].end;
+  sw1[1] = fault.start;
+  sw1[2] = fault.end;
   sw1[3] = p_sim_time;
   sw7[0] = p_time_step;
-  sw7[1] = p_faults[0].step;
+  sw7[1] = fault.step;
   sw7[2] = p_time_step;
   sw7[3] = p_time_step;
   simu_k = 0; 
@@ -744,76 +790,4 @@ void gridpack::dynamic_simulation::DSAppModule::write()
   sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n", p_S_Steps+1);
   p_busIO->header(ioBuf);
   timer->stop(t_total);
-}
-
-/**
- * Utility function to convert faults that are in event list into
- * internal data structure that can be used by code
- */
-void gridpack::dynamic_simulation::DSAppModule::setFaultEvents()
-{
-  gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation.faultEvents");
-  gridpack::utility::Configuration::ChildCursors events;
-  if (cursor) cursor->children(events);
-  int size = events.size();
-  int idx;
-  // Parse fault events
-  for (idx=0; idx<size; idx++) {
-    gridpack::dynamic_simulation::DSBranch::Event event;
-    event.start = events[idx]->get("beginFault",0.0);
-    event.end = events[idx]->get("endFault",0.0);
-    std::string indices = events[idx]->get("faultBranch","0 0");
-    //Parse indices to get from and to indices of branch
-    int ntok1 = indices.find_first_not_of(' ',0);
-    int ntok2 = indices.find(' ',ntok1);
-    if (ntok2 - ntok1 > 0 && ntok1 != std::string::npos && ntok2 !=
-        std::string::npos) {
-      event.from_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
-      ntok1 = indices.find_first_not_of(' ',ntok2);
-      ntok2 = indices.find(' ',ntok1);
-      if (ntok1 != std::string::npos && ntok1 < indices.length()) {
-        if (ntok2 == std::string::npos) {
-          ntok2 = indices.length();
-        }
-        event.to_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
-      } else {
-        event.from_idx = 0;
-        event.to_idx = 0;
-      }
-    } else {
-      event.from_idx = 0;
-      event.to_idx = 0;
-    }
-    event.step = events[idx]->get("timeStep",0.0);
-    if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
-      p_faults.push_back(event);
-    }
-  }
-#if 0
-  // Find local indices of branches on which faults occur. Start by constructing
-  // a map object that maps to local branch indices using branch index pairs as the key
-  std::map<std::pair<int, int>, int> pairMap;
-  int numBranch = network->numBranches();
-  for (idx = 0; idx<numBranch; idx++) {
-    // Only set branch index for locally held branches
-    if (network->getActiveBranch(idx)) {
-      int idx1, idx2;
-      network->getOriginalBranchEndpoints(idx, &idx1, &idx2);
-      std::pair<int, int> branch_pair(idx1, idx2);
-      pairMap.insert(std::pair<std::pair<int, int>, int>(branch_pair,idx));
-    }
-  }
-  // run through all events and see if the branch exists on this processor. If
-  // it does, then set the branch_idx member to the local branch index.
-  size = p_faults.size();
-  for (idx=0; idx<size; idx++) {
-    std::map<std::pair<int, int>, int>::iterator it;
-    std::pair<int, int> branch_pair(p_faults[idx].from_idx, p_faults[idx].to_idx);
-    it = pairMap.find(branch_pair);
-    if (it != pairMap.end()) {
-      p_faults[idx].branch_idx = it->second;
-    }
-  }
-#endif
 }

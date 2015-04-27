@@ -622,6 +622,7 @@ void gridpack::dynamic_simulation::DSBus::load(
   int i, gstatus;
   double pg, qg, mva, r, dstr, dtr;
   double h, d0;
+  p_ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &p_ngen)) {
     for (i=0; i<p_ngen; i++) {
       lgen = true;
@@ -659,7 +660,6 @@ void gridpack::dynamic_simulation::DSBus::load(
       }
     }
   }
-  p_ngen = p_pg.size();
 
   /*// assume switch info is set up here instead of reading from the input file
   sw2_2 = 5; // 6-1
