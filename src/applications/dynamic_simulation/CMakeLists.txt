@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-12-10 07:33:25 d3g096
+# Last Change: 2015-04-27 10:30:17 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -67,5 +67,5 @@ add_dependencies(ds.x ds.x.input)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("dynamic_segmentation" ds.x input.xml)
+gridpack_add_run_test("dynamic_simulation" ds.x input.xml)
 
