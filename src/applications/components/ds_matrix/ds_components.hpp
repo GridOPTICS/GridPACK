@@ -192,6 +192,15 @@ class DSBus
      */
     bool serialWrite(char *string, const int bufsize, const char *signal);
 
+    /**
+     * Set an internal parameter that specifies that the rotor speed and angle
+     * for the generator corresponding to the string tag are to be printed to
+     * output
+     * @param tag 2-character identifier of generator
+     * @param flag set to true to monitor generator
+     */
+    void setWatch(std::string tag, bool flag);
+
 
   private:
     double p_shunt_gs;
@@ -213,6 +222,7 @@ class DSBus
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
     std::vector<std::string> p_genid;
+    std::vector<bool> p_watch;
 
     // DAE related variables
     //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
@@ -253,7 +263,8 @@ class DSBus
           & p_pelect & p_eprime
           & p_elect_final & p_mech_final
           & p_mac_ang_final & p_mac_spd_final
-          & p_genid;
+          & p_genid
+          & p_watch;
       }
 
 };

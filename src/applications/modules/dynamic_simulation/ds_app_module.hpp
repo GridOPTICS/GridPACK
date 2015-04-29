@@ -76,12 +76,25 @@ class DSAppModule
     /**
      * Execute the time integration portion of the application
      */
-    void solve();
+    void solve(gridpack::dynamic_simulation::DSBranch::Event fault);
 
     /**
      * Write out final results of dynamic simulation calculation to standard output
      */
     void write();
+
+    /**
+     * Read faults from external file and form a list of faults
+     * @param cursor pointer to open file contain fault or faults
+     * @return a list of fault events
+     */
+    std::vector<gridpack::dynamic_simulation::DSBranch::Event>
+      getFaults(gridpack::utility::Configuration::CursorPtr cursor);
+
+    /**
+     * Read in generators that should be monitored during simulation
+     */
+    void setGeneratorWatch();
 
   private:
 
@@ -90,6 +103,27 @@ class DSAppModule
      * internal data structure that can be used by code
      */
     void setFaultEvents();
+
+    /**
+     * Open file (specified in input deck) to write generator results to.
+     * Rotor angle and speeds from generators specified in input deck will be
+     * written to this file at specified time intervals
+     */
+    void openGeneratorWatchFile();
+
+    /**
+     * Close file contain generator watch results
+     */
+    void closeGeneratorWatchFile();
+
+    /**
+     * Clean up 2 character tags so that single quotes are removed and single
+     * character tags are right-justified. These tags can be delimited by a
+     * pair of single quotes, a pair of double quotes, or no quotes
+     * @param string original string before reformatting
+     * @return 2 character string that is right-justified
+     */
+    std::string clean2Char(std::string string);
 
     std::vector<gridpack::dynamic_simulation::DSBranch::Event> p_faults;
 
@@ -121,6 +155,22 @@ class DSAppModule
 
     // pointer to configuration module
     gridpack::utility::Configuration *p_config;
+
+    // Flag indicating that generators are to be monitored
+    bool p_generatorWatch;
+
+    // Frequency to write out generator watch results
+    int p_watchFrequency;
+
+    // bus indices of generators that are being monitored
+    std::vector<int> p_gen_buses;
+
+    // tags of generators that are being monitored
+    std::vector<std::string> p_tags;
+
+    // pointer to bus IO module that is used for generator results
+    boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSNetwork> >
+      p_generatorIO;
 };
 
 } // dynamic simulation

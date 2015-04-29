@@ -25,6 +25,7 @@
  */
 gridpack::dynamic_simulation::DSAppModule::DSAppModule(void)
 {
+  p_generatorWatch = false;
 }
 
 /**
@@ -72,10 +73,6 @@ void gridpack::dynamic_simulation::DSAppModule::readNetwork(
     // TODO: some kind of error
   }
 
-  // Read in information about fault events and store them in internal data
-  // structure
-  setFaultEvents();
-
   // load input file
   gridpack::parser::PTI23_parser<DSNetwork> parser(network);
   parser.parse(filename.c_str());
@@ -94,6 +91,59 @@ void gridpack::dynamic_simulation::DSAppModule::readNetwork(
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(2048, network));
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<DSNetwork>(128, network));
   timer->stop(t_total);
+}
+
+/**
+ * Read faults from external file and form a list of faults
+ * @param cursor pointer to open file contain fault or faults
+ * @return a list of fault events
+ */
+std::vector<gridpack::dynamic_simulation::DSBranch::Event>
+  gridpack::dynamic_simulation::DSAppModule::
+  getFaults(gridpack::utility::Configuration::CursorPtr cursor)
+{
+  gridpack::utility::Configuration::CursorPtr list;
+  list = cursor->getCursor("faultEvents");
+  gridpack::utility::Configuration::ChildCursors events;
+  std::vector<gridpack::dynamic_simulation::DSBranch::Event> ret;
+  if (list) {
+    list->children(events);
+    int size = events.size();
+    int idx;
+    // Parse fault events
+    for (idx=0; idx<size; idx++) {
+      gridpack::dynamic_simulation::DSBranch::Event event;
+      event.start = events[idx]->get("beginFault",0.0);
+      event.end = events[idx]->get("endFault",0.0);
+      std::string indices = events[idx]->get("faultBranch","0 0");
+      //Parse indices to get from and to indices of branch
+      int ntok1 = indices.find_first_not_of(' ',0);
+      int ntok2 = indices.find(' ',ntok1);
+      if (ntok2 - ntok1 > 0 && ntok1 != std::string::npos && ntok2 !=
+          std::string::npos) {
+        event.from_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
+        ntok1 = indices.find_first_not_of(' ',ntok2);
+        ntok2 = indices.find(' ',ntok1);
+        if (ntok1 != std::string::npos && ntok1 < indices.length()) {
+          if (ntok2 == std::string::npos) {
+            ntok2 = indices.length();
+          }
+          event.to_idx = atoi(indices.substr(ntok1,ntok2-ntok1).c_str());
+        } else {
+          event.from_idx = 0;
+          event.to_idx = 0;
+        }
+      } else {
+        event.from_idx = 0;
+        event.to_idx = 0;
+      }
+      event.step = events[idx]->get("timeStep",0.0);
+      if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
+        ret.push_back(event);
+      }
+    }
+  }
+  return ret;
 }
 
 /**
@@ -134,10 +184,6 @@ void gridpack::dynamic_simulation::DSAppModule::setNetwork(
     // TODO: some kind of error
   }
 
-  // Read in information about fault events and store them in internal data
-  // structure
-  setFaultEvents();
-
   // Create serial IO object to export data from buses or branches
   p_busIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(2048, network));
   p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<DSNetwork>(128, network));
@@ -176,7 +222,8 @@ void gridpack::dynamic_simulation::DSAppModule::initialize()
   timer->stop(t_total);
 }
 
-void gridpack::dynamic_simulation::DSAppModule::solve()
+void gridpack::dynamic_simulation::DSAppModule::solve(
+    gridpack::dynamic_simulation::DSBranch::Event fault)
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -312,8 +359,8 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
   // Update ybus values at fault stage
   //-----------------------------------------------------------------------
   // Read the switch info from faults Event from input.xml
-  int sw2_2 = p_faults[0].from_idx - 1;
-  int sw3_2 = p_faults[0].to_idx - 1;
+  int sw2_2 = fault.from_idx - 1;
+  int sw3_2 = fault.to_idx - 1;
 
   boost::shared_ptr<gridpack::math::Matrix> fy11ybus(prefy11ybus->clone());
   ///p_branchIO.header("\n=== fy11ybus(original): ============\n");
@@ -324,7 +371,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
   fy11ybus->ready();
 #else
   timer->start(t_matset);
-  p_factory->setEvent(p_faults[0]);
+  p_factory->setEvent(fault);
   p_factory->setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
   timer->stop(t_matset);
@@ -523,11 +570,11 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
   static double sw1[4];
   static double sw7[4];
   sw1[0] = 0.0;
-  sw1[1] = p_faults[0].start;
-  sw1[2] = p_faults[0].end;
+  sw1[1] = fault.start;
+  sw1[2] = fault.end;
   sw1[3] = p_sim_time;
   sw7[0] = p_time_step;
-  sw7[1] = p_faults[0].step;
+  sw7[1] = fault.step;
   sw7[2] = p_time_step;
   sw7[3] = p_time_step;
   simu_k = 0; 
@@ -548,6 +595,9 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
   p_S_Steps = 1; 
   last_S_Steps = -1;
 
+  p_generatorIO->header("t");
+  if (p_generatorWatch) p_generatorIO->write("watch_header");
+  p_generatorIO->header("\n");
   for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
     if (I_Steps < steps1) {
       p_S_Steps = I_Steps;
@@ -693,6 +743,17 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
     vecTemp->scale(0.5); 
     mac_spd_s1->equate(*mac_spd_s0); 
     mac_spd_s1->add(*vecTemp, h_sol2); 
+    if (p_generatorWatch && I_Steps%p_watchFrequency == 0) {
+      p_factory->setMode(init_mac_ang);
+      XMap3.mapToBus(mac_ang_s1);
+      p_factory->setMode(init_mac_spd);
+      XMap3.mapToBus(mac_spd_s1);
+      char tbuf[32];
+      sprintf(tbuf,"%8.4f",static_cast<double>(I_Steps)*p_time_step);
+      p_generatorIO->header(tbuf);
+      p_generatorIO->write("watch");
+      p_generatorIO->header("\n");
+    }
 
     // Print to screen
     if (last_S_Steps != p_S_Steps) {
@@ -722,6 +783,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve()
     
     last_S_Steps = p_S_Steps;
   }
+  closeGeneratorWatchFile();
   timer->stop(t_total);
 }
 /**
@@ -744,6 +806,128 @@ void gridpack::dynamic_simulation::DSAppModule::write()
   sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n", p_S_Steps+1);
   p_busIO->header(ioBuf);
   timer->stop(t_total);
+}
+
+/**
+ * Clean up 2 character tags so that single quotes are removed and single
+ * character tags are right-justified. These tags can be delimited by a
+ * pair of single quotes, a pair of double quotes, or no quotes
+ * @param string original string before reformatting
+ * @return 2 character string that is right-justified
+ */
+std::string gridpack::dynamic_simulation::DSAppModule::clean2Char(
+    std::string string)
+{
+  std::string tag = string;
+  // Find and remove single or double quotes
+  int ntok1 = tag.find('\'',0);
+  bool sngl_qt = true;
+  bool no_qt = false;
+  // if no single quote found, then assume double quote or no quote
+  if (ntok1 == std::string::npos) {
+    ntok1 = tag.find('\"',0);
+    // if no double quote found then assume no quote
+    if (ntok1 == std::string::npos) {
+      ntok1 = tag.find_first_not_of(' ',0);
+      no_qt = true;
+    } else {
+      sngl_qt = false;
+    }
+  }
+  int ntok2;
+  if (sngl_qt) {
+    ntok1 = tag.find_first_not_of('\'',ntok1);
+    ntok2 = tag.find('\'',ntok1);
+  } else if (no_qt) {
+    ntok2 = tag.find(' ',ntok1);
+  } else {
+    ntok1 = tag.find_first_not_of('\"',ntok1);
+    ntok2 = tag.find('\"',ntok1);
+  }
+  if (ntok2 == std::string::npos) ntok2 = tag.length();
+  std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
+  //get rid of white space
+  ntok1 = clean_tag.find_first_not_of(' ',0);
+  ntok2 = clean_tag.find(' ',ntok1);
+  if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
+  tag = clean_tag.substr(ntok1,ntok2-ntok1);
+  if (tag.length() == 1) {
+    clean_tag = " ";
+    clean_tag.append(tag);
+  } else {
+    clean_tag = tag;
+  }
+  return clean_tag;
+}
+
+/**
+ * Read in generators that should be monitored during simulation
+ */
+void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
+{
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  if (!cursor->get("generatorWatchFrequency",&p_watchFrequency)) {
+    p_watchFrequency = 1;
+  }
+  char buf[128];
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
+  gridpack::utility::Configuration::ChildCursors generators;
+  if (cursor) cursor->children(generators);
+  int i, j, idx, id, len;
+  int ncnt = generators.size();
+  std::string generator, tag, clean_tag;
+  gridpack::dynamic_simulation::DSBus *bus;
+  if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+  for (i=0; i<ncnt; i++) {
+    // Parse contents of "generator" field to get bus ID and generator tag
+    generators[i]->get("busID",&id);
+    generators[i]->get("generatorID",&tag);
+    clean_tag = clean2Char(tag);
+    // Find local bus indices for generator
+    std::vector<int> local_ids = p_network->getLocalBusIndices(id);
+    for (j=0; j<local_ids.size(); j++) {
+      bus = dynamic_cast<gridpack::dynamic_simulation::DSBus*>
+        (p_network->getBus(local_ids[j]).get());
+      bus->setWatch(clean_tag,true);
+    }
+    sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,clean_tag.c_str());
+    p_busIO->header(buf);
+  }
+  if (ncnt > 0) {
+    p_generatorWatch = true;
+    sprintf(buf,"Generator Watch Frequency: %d\n",p_watchFrequency);
+    p_busIO->header(buf);
+    openGeneratorWatchFile();
+  }
+}
+
+/**
+ * Close file contain generator watch results
+ */
+void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
+{
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  std::string filename;
+  if (cursor->get("generatorWatchFileName",&filename)) {
+    p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(128,
+          p_network));
+    p_generatorIO->open(filename.c_str());
+  } else {
+    p_busIO->header("No Generator Watch File Name Found\n");
+    p_generatorWatch = false;
+  }
+}
+
+/**
+ * Close file contain generator watch results
+ */
+void gridpack::dynamic_simulation::DSAppModule::closeGeneratorWatchFile()
+{
+  if (p_generatorWatch) {
+    p_generatorIO->close();
+  }
 }
 
 /**

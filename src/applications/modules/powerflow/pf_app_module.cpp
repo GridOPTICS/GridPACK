@@ -730,7 +730,8 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
     double Vmin, double Vmax)
 {
-  bool ret = p_factory->checkVoltageViolations(Vmin,Vmax);
+  return p_factory->checkVoltageViolations(Vmin,Vmax);
+
 }
 
 /**
@@ -760,6 +761,6 @@ void gridpack::powerflow::PFAppModule::clearVoltageViolations()
  */
 bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
 {
-  bool ret = p_factory->checkLineOverloadViolations();
+  return p_factory->checkLineOverloadViolations();
 }
 
