@@ -58,6 +58,7 @@ main(int argc, char **argv)
     std::vector<gridpack::dynamic_simulation::DSBranch::Event> faults;
     faults = ds_app.getFaults(cursor);
     ds_app.initialize();
+    ds_app.setGeneratorWatch();
     ds_app.solve(faults[0]);
     ds_app.write();
   }

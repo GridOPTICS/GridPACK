@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-03-27 08:15:33 d3g096
+# Last Change: 2015-04-30 15:17:10 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -89,6 +89,7 @@ if (PETSC_FOUND)
       petsc/petsc_vector.cpp
       petsc/petsc_vector_wrapper.cpp
       petsc/petsc_matrix.cpp
+      petsc/ga_matrix.cpp
       petsc/petsc_matrix_implementation.cpp
       petsc/petsc_matrix_operations.cpp
       petsc/petsc_matrix_wrapper.cpp
@@ -122,7 +123,7 @@ if (PETSC_FOUND)
       ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.xml
 
       )
-       
+
 else()
 
     message(FATAL_ERROR "A math implementation (e.g. PETSc) must be specified")
@@ -276,8 +277,15 @@ if (PETSC_FOUND)
    add_dependencies(dae_solver_test math_test_input)
 endif()
 
-  
 
+# -------------------------------------------------------------
+# Test GA-based Dense Matrix
+# -------------------------------------------------------------
+if (PETSC_FOUND)
+  add_executable(petsc_ga_matrix_test test/petsc_ga_matrix.cpp) 
+  target_link_libraries(petsc_ga_matrix_test gridpack_math ${target_libraries})
+  gridpack_add_unit_test(petsc_ga_matrix petsc_ga_matrix_test)
+endif()
 
 # -------------------------------------------------------------
 # installation

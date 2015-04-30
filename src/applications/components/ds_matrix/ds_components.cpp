@@ -7,7 +7,7 @@
 /**
  * @file   ds_components.cpp
  * @author Shuangshuang Jin 
- * @date   2015-01-05 15:14:55 d3g096
+ * @date   2015-04-30 14:48:06 d3g096
  * 
  * @brief  
  * 
@@ -657,6 +657,7 @@ void gridpack::dynamic_simulation::DSBus::load(
         std::string id("-1");
         bool ok = data->getValue(GENERATOR_ID,&id,i);
         p_genid.push_back(id);
+        p_watch.push_back(false);
       }
     }
   }
@@ -685,8 +686,7 @@ void gridpack::dynamic_simulation::DSBus::setMode(int mode)
  */
 double gridpack::dynamic_simulation::DSBus::getVoltage(void)
 {
-  double result(0.0);
-  return result;
+  return p_voltage;
 }
 
 /**
@@ -695,8 +695,7 @@ double gridpack::dynamic_simulation::DSBus::getVoltage(void)
  */
 double gridpack::dynamic_simulation::DSBus::getPhase(void)
 {
-  double result(0.0);
-  return result;  
+  return p_angle;
 }
 
 /**
@@ -774,22 +773,84 @@ void gridpack::dynamic_simulation::DSBus::clearEvent()
 bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
-  if (p_ngen == 0) return false;
-  int i;
-  char buf[128];
-  char *ptr = string;
-  int idx = getOriginalIndex();
-  int len = 0;
-  for (i=0; i<p_ngen; i++) {
-    sprintf(buf,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
-      idx,p_genid[i].c_str(),real(p_mac_ang_final[i]),real(p_mac_spd_final[i]),
-      real(p_mech_final[i]),real(p_elect_final[i]));
-    int slen = strlen(buf);
-    len += slen;
-    if (len < bufsize) sprintf(ptr,"%s",buf);
-    ptr += slen;
+  if (signal == NULL) {
+    if (p_ngen == 0) return false;
+    int i;
+    char buf[128];
+    char *ptr = string;
+    int idx = getOriginalIndex();
+    int len = 0;
+    for (i=0; i<p_ngen; i++) {
+      sprintf(buf,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
+          idx,p_genid[i].c_str(),real(p_mac_ang_final[i]),real(p_mac_spd_final[i]),
+          real(p_mech_final[i]),real(p_elect_final[i]));
+      int slen = strlen(buf);
+      len += slen;
+      if (len < bufsize) sprintf(ptr,"%s",buf);
+      ptr += slen;
+    }
+    return true;
+  } else if (!strcmp(signal,"watch_header")) {
+    if (p_ngen == 0) return false;
+    int i;
+    char buf[128];
+    char *ptr = string;
+    int idx = getOriginalIndex();
+    int len = 0;
+    for (i=0; i<p_ngen; i++) {
+      std::string tstr;
+      if ((p_genid[i])[0] == ' ') {
+        tstr = (p_genid[i])[1];
+      } else {
+        tstr = p_genid[i];
+      }
+      if (p_watch[i]) {
+        sprintf(buf,", %d_%s_angle, %d_%s_speed",
+            idx,tstr.c_str(),idx,tstr.c_str());
+        int slen = strlen(buf);
+        if (len+slen < bufsize) sprintf(ptr,"%s",buf);
+        len += slen;
+        ptr += slen;
+      }
+    }
+    if (len > 0) return true;
+  } else if (!strcmp(signal,"watch")) {
+    if (p_ngen == 0) return false;
+    int i;
+    char buf[128];
+    char *ptr = string;
+    int len = 0;
+    for (i=0; i<p_ngen; i++) {
+      if (p_watch[i]) {
+        sprintf(buf,", %f, %f",real(p_mac_ang_final[i]),
+            real(p_mac_spd_final[i]));
+        int slen = strlen(buf);
+        if (len + slen < bufsize) sprintf(ptr,"%s",buf);
+        len += slen;
+        ptr += slen;
+      }
+    }
+    if (len > 0) return true;
   }
-  return true;
+  return false;
+}
+
+/**
+ * Set an internal parameter that specifies that the rotor speed and angle
+ * for the generator corresponding to the string tag are to be printed to
+ * output
+ * @param tag 2-character identifier of generator
+ * @param flag set to true to monitor generator
+ */
+void gridpack::dynamic_simulation::DSBus::setWatch(std::string tag, bool flag)
+{
+  int i;
+  for (i=0; i<p_genid.size(); i++) {
+    if (tag == p_genid[i]) {
+      p_watch[i] = flag;
+      break;
+    }
+  }
 }
 
 /**
@@ -1225,7 +1286,7 @@ gridpack::dynamic_simulation::DSBranch::getShunt(gridpack::dynamic_simulation::D
 gridpack::ComplexType 
 gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2)
 { 
-  double retr(-999.0), reti(-999.0);
+  double retr, reti;
   int i;
   gridpack::dynamic_simulation::DSBus *bus1 =
     dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
@@ -1262,7 +1323,6 @@ gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, in
     return gridpack::ComplexType(-999.0, -999.0); // return a dummy value
   }
 */
-  return gridpack::ComplexType(retr, reti);
 }
 gridpack::ComplexType 
 gridpack::dynamic_simulation::DSBranch::getUpdateFactor()

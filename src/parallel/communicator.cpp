@@ -275,5 +275,73 @@ void Communicator::sum(gridpack::ComplexType *x, int nvals)
   delete [] dest;
 }
 
+/**
+ * Find maximum of vector components over all processors
+ * in the communicator
+ * @param x vector of values to be evaluated
+ * @param nvals number of values in vector
+ */
+void Communicator::max(float *x, int nvals)
+{
+  char cmax[4];
+  strcpy(cmax,"max");
+  GA_Fgop(x,nvals,cmax);
+}
+
+void Communicator::max(double *x, int nvals)
+{
+  char cmax[4];
+  strcpy(cmax,"max");
+  GA_Dgop(x,nvals,cmax);
+}
+
+void Communicator::max(int *x, int nvals)
+{
+  char cmax[4];
+  strcpy(cmax,"max");
+  GA_Igop(x,nvals,cmax);
+}
+
+void Communicator::max(long *x, int nvals)
+{
+  char cmax[4];
+  strcpy(cmax,"max");
+  GA_Lgop(x,nvals,cmax);
+}
+
+/**
+ * Find minimum of vector components over all processors
+ * in the communicator
+ * @param x vector of values to be evaluated
+ * @param nvals number of values in vector
+ */
+void Communicator::min(float *x, int nvals)
+{
+  char cmin[4];
+  strcpy(cmin,"min");
+  GA_Fgop(x,nvals,cmin);
+}
+
+void Communicator::min(double *x, int nvals)
+{
+  char cmin[4];
+  strcpy(cmin,"min");
+  GA_Dgop(x,nvals,cmin);
+}
+
+void Communicator::min(int *x, int nvals)
+{
+  char cmin[4];
+  strcpy(cmin,"min");
+  GA_Igop(x,nvals,cmin);
+}
+
+void Communicator::min(long *x, int nvals)
+{
+  char cmin[4];
+  strcpy(cmin,"min");
+  GA_Lgop(x,nvals,cmin);
+}
+
 } // namespace parallel
 } // namespace gridpack
