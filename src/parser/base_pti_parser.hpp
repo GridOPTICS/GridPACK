@@ -252,8 +252,6 @@ class BasePTIParser : public BaseParser<_network>
     void getUCExternal(const std::string & fileName)
     {
 
-      //      int t_ds = p_timer->createCategory("Parser:getDS");
-      //      p_timer->start(t_ds);
       int me(p_network->communicator().rank());
 
       std::vector<uc_params> uc_data;
@@ -261,7 +259,6 @@ class BasePTIParser : public BaseParser<_network>
         std::ifstream            input;
         input.open(fileName.c_str());
         if (!input.is_open()) {
-          // p_timer->stop(t_ds);
           return;
         }
         find_uc_vector(input, &uc_data);
@@ -290,7 +287,7 @@ class BasePTIParser : public BaseParser<_network>
         // Identify index of generator to which this data applies
         int g_id = -1;
         // Clean up 2 character tag for generator ID
-        std::string tag = ds_data[i].gen_id;
+        std::string tag = uc_data[i].gen_id;
         int j;
         for (j=0; j<ngen; j++) {
           std::string t_id;
@@ -303,7 +300,7 @@ class BasePTIParser : public BaseParser<_network>
         if (g_id == -1) continue;
 
         double rval;
-        int ival
+        int ival;
         if (!data->getValue("GENERATOR_TYPE",&ival,g_id)) {
           data->addValue("GENERATOR_TYPE", uc_data[i].type, g_id);
         } else {
@@ -388,7 +385,6 @@ class BasePTIParser : public BaseParser<_network>
           data->setValue("GENERATOR_SHUT_CAP", uc_data[i].shut_cap, g_id);
         }
       }
-      //      p_timer->stop(t_ds);
     }
 
     // Clean up 2 character tags so that single quotes are removed and single
@@ -477,13 +473,13 @@ class BasePTIParser : public BaseParser<_network>
       int ntok2 = line,find(',',ntok1);
       if (ntok2 == std::string::npos) ntok2 = line.length()-1;
       while (ntok1 != std::string::npos) {
-        std::string token = line.subst(ntok1,ntok2-ntok1);
+        std::string token = line.substr(ntok1,ntok2-ntok1);
         int itok1, itok2;
         itok1 = token.find_first_not_of(' ',0);
         itok2 = token.find_last_not_of(' ',itok1);
         ret.push_back(token.substr(itok1,itok2-itok1+1));
         ntok1 = line.find_first_not_of(' ',ntok2);
-        ntok2 = line,find(',',ntok1);
+        ntok2 = line.find(',',ntok1);
         if (ntok2 == std::string::npos) ntok2 = line.length()-1;
       }
     }
