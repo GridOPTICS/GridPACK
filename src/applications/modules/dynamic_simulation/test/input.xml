@@ -13,6 +13,22 @@
         <timeStep>   0.01</timeStep>
       </faultEvent>
     </faultEvents>
+    <generatorWatch>
+      <generator>
+       <busID> 95 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+      <generator>
+       <busID> 99 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+      <generator>
+       <busID> 100 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+    </generatorWatch>
+    <generatorWatchFrequency> 2 </generatorWatchFrequency>
+    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
     <LinearMatrixSolver>
       <!--
         These options are used if SuperLU was built into PETSc 

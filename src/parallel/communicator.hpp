@@ -138,6 +138,28 @@ public:
   void sum(long *x, int nvals);
   void sum(gridpack::ComplexType *x, int nvals);
 
+  /**
+   * Find maximum of vector components over all processors
+   * in the communicator
+   * @param x vector of values to be evaluated
+   * @param nvals number of values in vector
+   */
+  void max(float *x, int nvals);
+  void max(double *x, int nvals);
+  void max(int *x, int nvals);
+  void max(long *x, int nvals);
+
+  /**
+   * Find minimum of vector components over all processors
+   * in the communicator
+   * @param x vector of values to be evaluated
+   * @param nvals number of values in vector
+   */
+  void min(float *x, int nvals);
+  void min(double *x, int nvals);
+  void min(int *x, int nvals);
+  void min(long *x, int nvals);
+
 protected:
   
   /// Swap contents with another instance
