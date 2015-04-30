@@ -7,7 +7,7 @@
 /**
  * @file   ds_components.cpp
  * @author Shuangshuang Jin 
- * @date   2015-01-05 15:14:55 d3g096
+ * @date   2015-04-30 14:48:06 d3g096
  * 
  * @brief  
  * 
@@ -686,8 +686,7 @@ void gridpack::dynamic_simulation::DSBus::setMode(int mode)
  */
 double gridpack::dynamic_simulation::DSBus::getVoltage(void)
 {
-  double result(0.0);
-  return result;
+  return p_voltage;
 }
 
 /**
@@ -696,8 +695,7 @@ double gridpack::dynamic_simulation::DSBus::getVoltage(void)
  */
 double gridpack::dynamic_simulation::DSBus::getPhase(void)
 {
-  double result(0.0);
-  return result;  
+  return p_angle;
 }
 
 /**
@@ -1288,7 +1286,7 @@ gridpack::dynamic_simulation::DSBranch::getShunt(gridpack::dynamic_simulation::D
 gridpack::ComplexType 
 gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2)
 { 
-  double retr(-999.0), reti(-999.0);
+  double retr, reti;
   int i;
   gridpack::dynamic_simulation::DSBus *bus1 =
     dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
@@ -1325,7 +1323,6 @@ gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, in
     return gridpack::ComplexType(-999.0, -999.0); // return a dummy value
   }
 */
-  return gridpack::ComplexType(retr, reti);
 }
 gridpack::ComplexType 
 gridpack::dynamic_simulation::DSBranch::getUpdateFactor()
