@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-04-29 14:25:01 d3g096
+ * @date   2015-04-30 12:50:16 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,7 @@
 
 #include "math.hpp"
 #include "gridpack/parallel/parallel.hpp"
-#include "petsc/ga_matrix.h"
+#include "petsc/ga_matrix.hpp"
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
