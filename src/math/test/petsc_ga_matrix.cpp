@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-04-30 12:50:16 d3g096
+ * @date   2015-05-01 12:35:30 d3g096
  * 
  * @brief  
  * 
@@ -34,8 +34,55 @@ BOOST_AUTO_TEST_CASE( construction )
   gridpack::parallel::Communicator world;
 
   Mat A;
+  PetscInt lrows, lcols;
+  PetscInt lo, hi;
 
   ierr = MatCreateDenseGA(world, 5, 5, PETSC_DETERMINE, PETSC_DETERMINE, &A); CHKERRXX(ierr);
+  ierr = MatGetLocalSize(A, &lrows, &lcols);  CHKERRXX(ierr);
+
+  BOOST_CHECK_EQUAL(lrows, 5);
+  BOOST_CHECK_EQUAL(lcols, 5);
+
+  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
+  PetscScalar x(0.0);
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatSetValues(A, 1, &i, 1, &j, &x, INSERT_VALUES);  CHKERRXX(ierr);
+      x += 1.0;
+    }
+  }
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+
+  PetscScalar y(0.0);
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(x, y);
+      y += 1.0;
+    }
+  }
+
+  x = 0.0;
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatSetValues(A, 1, &i, 1, &j, &x, ADD_VALUES);  CHKERRXX(ierr);
+      x += 1.0;
+    }
+  }
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+
+  y = 0.0;
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(x, 2.0*y);
+      y += 1.0;
+    }
+  }
+
+
   ierr = MatDestroy(&A);
 }
 

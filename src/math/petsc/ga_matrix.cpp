@@ -6,20 +6,45 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-04-30 12:51:34 d3g096
+ * @date   2015-05-01 12:38:40 d3g096
  * 
  * @brief  
  * 
  * 
  */
 
-#include <stdio.h>
+
+#include <boost/assert.hpp>
+
 #include <ga.h>
 #include "ga_matrix.hpp"
 
-/* -------------------------------------------------------------
-   struct MatGACtx
-   ------------------------------------------------------------- */
+
+// -------------------------------------------------------------
+// Determine the Global Arrays data type from PETSc configuration
+// -------------------------------------------------------------
+#if defined(PETSC_USE_REAL_DOUBLE)
+
+#if defined(PETSC_USE_COMPLEX)
+#define MT_PETSC_SCALAR MT_C_DCPL
+#else 
+#define MT_PETSC_SCALAR MT_C_DBL
+#endif
+
+#else
+
+#if defined(PETSC_USE_COMPLEX)
+#define MT_PETSC_SCALAR MT_C_SCPL;
+#else
+#define MT_PETSC_SCALAR MT_C_FLOAT
+#endif
+
+#endif
+
+
+// -------------------------------------------------------------
+// struct MatGACtx
+// -------------------------------------------------------------
 struct MatGACtx {
   int gaGroup;                  /**< GA process group handle */
   int ga;                       /**< GA handle */
@@ -27,10 +52,73 @@ struct MatGACtx {
   int hi[2];                    /**< Upper limits of "local" matrix ownership */
 };
 
+// -------------------------------------------------------------
+// CreateMatGA
+// -------------------------------------------------------------
+static
+PetscErrorCode
+CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
+{
+  PetscErrorCode ierr = 0;
+  int dims[2] = {grows, gcols};
+  int chunk[2] = {1, gcols};
 
-/* -------------------------------------------------------------
-   MatSetValuesDenseGA
-   ------------------------------------------------------------- */
+  /* Do not honor local ownership request, initially. */
+
+  *ga = NGA_Create(MT_PETSC_SCALAR, 2, dims, "PETSc Dense Matrix", chunk);
+  PetscScalar z(0.0);
+  GA_Fill(*ga, &z);
+  
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// CreateVecGA
+// -------------------------------------------------------------
+static
+PetscErrorCode
+CreateVecGA(int pgroup, int lrows, int grows, int *ga)
+{
+  PetscErrorCode ierr = 0;
+  int dims[1] = {grows};
+
+  /* Do not honor local ownership request, initially. */
+
+  *ga = NGA_Create(MT_PETSC_SCALAR, 1, dims, "PETSc Vector", NULL);
+  
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// Vec2GA
+// -------------------------------------------------------------
+static
+PetscErrorCode
+Vec2GA(Vec x, int pgroup, int *ga)
+{
+  int lrows, rows;
+  int lo, hi, ld = 1;
+  PetscErrorCode ierr = 0;
+  PetscScalar *v;
+  
+  ierr = VecGetLocalSize(x, &lrows); CHKERRQ(ierr);
+  ierr = VecGetSize(x, &rows); CHKERRQ(ierr);
+  ierr = CreateVecGA(pgroup, lrows, rows, ga); CHKERRQ(ierr);
+  
+  ierr = VecGetOwnershipRange(x, &lo, &hi); CHKERRQ(ierr);
+
+  ierr = VecGetArray(x, &v); CHKERRQ(ierr);
+  NGA_Put(*ga, &lo, &hi, v, &ld);
+  ierr = VecRestoreArray(x, &v); CHKERRQ(ierr);
+    
+  return ierr;
+}
+  
+
+
+// -------------------------------------------------------------
+// MatSetValuesDenseGA
+// -------------------------------------------------------------
 static 
 PetscErrorCode
 MatSetValuesDenseGA(Mat mat, 
@@ -40,7 +128,7 @@ MatSetValuesDenseGA(Mat mat,
   PetscErrorCode ierr = 0;
   struct MatGACtx *ctx;  
   int i, j, idx;
-  PetscScalar vij;
+  PetscScalar vij, one(1.0);
   int lo[2], hi[2], ld[2] = {1, 1};
   ierr = MatShellGetContext(mat, (void *)&ctx); CHKERRQ(ierr);
 
@@ -52,15 +140,24 @@ MatSetValuesDenseGA(Mat mat,
       lo[1] = idxn[j];
       hi[1] = idxn[j];
       vij = v[idx];
-      NGA_Put(ctx->ga, lo, hi, (void *)&vij, ld);
+      switch (addv) {
+      case INSERT_VALUES:
+        NGA_Put(ctx->ga, lo, hi, (void *)&vij, ld);
+        break;
+      case ADD_VALUES:
+        NGA_Acc(ctx->ga, lo, hi, (void *)&vij, ld, &one);
+        break;
+      default:
+        BOOST_ASSERT_MSG(false, "Unknown set operation");
+      }
     }
   }
   return ierr;
 }
 
-/* -------------------------------------------------------------
-   MatGetValuesDenseGA
-   ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// MatGetValuesDenseGA
+// -------------------------------------------------------------
 static 
 PetscErrorCode
 MatGetValuesDenseGA(Mat mat, 
@@ -88,9 +185,9 @@ MatGetValuesDenseGA(Mat mat,
   return ierr;
 }
 
-/* -------------------------------------------------------------
-   MatAssemmblyBeginDenseGA
-   ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// MatAssemmblyBeginDenseGA
+// -------------------------------------------------------------
 static
 PetscErrorCode
 MatAssemmblyBeginDenseGA(Mat mat, MatAssemblyType type)
@@ -101,9 +198,9 @@ MatAssemmblyBeginDenseGA(Mat mat, MatAssemblyType type)
   return ierr;
 }
 
-/* -------------------------------------------------------------
-   MatAssemmblyEndDenseGA
-   ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// MatAssemmblyEndDenseGA
+// -------------------------------------------------------------
 static
 PetscErrorCode
 MatAssemmblyEndDenseGA(Mat mat, MatAssemblyType type)
@@ -112,12 +209,33 @@ MatAssemmblyEndDenseGA(Mat mat, MatAssemblyType type)
   struct MatGACtx *ctx;
   ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
   GA_Pgroup_sync(ctx->gaGroup);
+  // GA_Print(ctx->ga);
   return ierr;
 }
 
-/* -------------------------------------------------------------
-   MatDestroyDenseGA
-   ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// MatMultDenseGA
+// -------------------------------------------------------------
+static
+PetscErrorCode
+MatMultDenseGA(Mat mat, Vec x, Vec y)
+{
+  PetscErrorCode ierr = 0;
+  struct MatGACtx *ctx;
+  ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
+  
+
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// MatViewDenseGA
+// -------------------------------------------------------------
+
+
+// -------------------------------------------------------------
+// MatDestroyDenseGA
+// -------------------------------------------------------------
 static
 PetscErrorCode
 MatDestroyDenseGA(Mat A)
@@ -131,9 +249,9 @@ MatDestroyDenseGA(Mat A)
   return ierr;
 }
 
-/* -------------------------------------------------------------
-   MPIComm2GApgroup
-   ------------------------------------------------------------- */
+// -------------------------------------------------------------
+// MPIComm2GApgroup
+// -------------------------------------------------------------
 static
 PetscErrorCode
 MPIComm2GApgroup(MPI_Comm comm, int *pGrpHandle)
@@ -158,55 +276,12 @@ MPIComm2GApgroup(MPI_Comm comm, int *pGrpHandle)
   return ierr;
 }
 
-/* -------------------------------------------------------------
-   GAPetscScalar
-   ------------------------------------------------------------- */
-static
-int
-GAPetscScalar(void)
-{
-  int result;
-  result = 0;
-#if defined(PETSC_USE_REAL_DOUBLE)
-  result = MT_C_DBL;
-#if defined(PETSC_USE_COMPLEX)
-  result = MT_C_DCPL;
-#endif
-
-#else
-
-  result = MT_C_FLOAT;
-#if defined(PETSC_USE_COMPLEX)
-  result = MT_C_sCPL;
-#endif
-
-#endif
-
-  return result;
-}
-
-/* -------------------------------------------------------------
-   GA2PetscType
-   ------------------------------------------------------------- */
-static
-PetscErrorCode
-CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
-{
-  PetscErrorCode ierr = 0;
-  int dims[2] = {grows, gcols};
-  int chunk[2] = {1, gcols};
-
-  /* Do not honor local ownership request, initially. */
-
-  *ga = NGA_Create(GAPetscScalar(), 2, dims, "PETSc Dense Matrix", chunk);
-  
-  return ierr;
-}
 
 
-/* -------------------------------------------------------------
-   MatCreateDenseGA
-   ------------------------------------------------------------- */
+
+// -------------------------------------------------------------
+// MatCreateDenseGA
+// -------------------------------------------------------------
 PetscErrorCode
 MatCreateDenseGA(MPI_Comm comm, 
                  PetscInt m,PetscInt n,PetscInt M,PetscInt N, 
