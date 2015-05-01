@@ -666,7 +666,7 @@ class BasePTIParser : public BaseParser<_network>
 
         int nstr = split_line.size();
         if (nstr > 1) {
-          data.name = atoi(split_line[1].c_str());
+          data.type = atoi(split_line[1].c_str());
         }
         if (nstr > 2) {
           data.init_level = atof(split_line[2].c_str());
