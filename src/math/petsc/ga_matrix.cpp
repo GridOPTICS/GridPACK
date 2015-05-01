@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-04-29 15:18:28 d3g096
+ * @date   2015-04-30 12:51:34 d3g096
  * 
  * @brief  
  * 
@@ -15,7 +15,7 @@
 
 #include <stdio.h>
 #include <ga.h>
-#include "ga_matrix.h"
+#include "ga_matrix.hpp"
 
 /* -------------------------------------------------------------
    struct MatGACtx

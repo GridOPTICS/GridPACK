@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.h
  * @author William A. Perkins
- * @date   2015-04-29 14:28:44 d3g096
+ * @date   2015-04-30 12:48:41 d3g096
  * 
  * @brief  
  * 
@@ -32,7 +32,7 @@
  * 
  * @return 
  */
-PETSC_EXTERN
+extern
 PetscErrorCode
 MatCreateDenseGA(MPI_Comm comm, 
                  PetscInt m,PetscInt n,PetscInt M,PetscInt N, 
