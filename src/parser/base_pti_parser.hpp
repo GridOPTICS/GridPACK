@@ -465,6 +465,7 @@ class BasePTIParser : public BaseParser<_network>
 
     // Tokenize a string on comma's and remove white space from beginning and
     // end of token
+#if 0
     std::vector<std::string> commaTokenizer(std::string input)
     {
       std::vector<std::string> ret;
@@ -483,6 +484,7 @@ class BasePTIParser : public BaseParser<_network>
         if (ntok2 == std::string::npos) ntok2 = line.length()-1;
       }
     }
+#endif
 
     // Extract extension from file name and convert it to lower case
     std::string getExtension(const std::string file)
