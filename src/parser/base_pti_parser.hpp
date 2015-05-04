@@ -231,8 +231,8 @@ class BasePTIParser : public BaseParser<_network>
       double min_gen; // Minimum generation
       double max_gen; // Maximum generation
       double max_oper; // Maximum operating generation
-      double min_up;
-      double min_down;
+      int min_up;
+      int min_down;
       double ramp_up;
       double ramp_down;
       double start_up; // Start up cost
@@ -681,10 +681,10 @@ class BasePTIParser : public BaseParser<_network>
           data.max_oper = atof(split_line[5].c_str());
         }
         if (nstr > 6) {
-          data.min_up = atof(split_line[6].c_str());
+          data.min_up = atoi(split_line[6].c_str());
         }
         if (nstr > 7) {
-          data.min_down = atof(split_line[7].c_str());
+          data.min_down = atoi(split_line[7].c_str());
         }
         if (nstr > 8) {
           data.ramp_up = atof(split_line[8].c_str());
