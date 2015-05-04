@@ -185,7 +185,8 @@ bool Configuration::initialize_internal(MPI_Comm comm) {
 		pimpl->initialize(input);
 	}
 	catch(...) {
-		std::cout << "Configuration::initiaze fails for rank " << rank << std::endl;
+		std::cout << "Configuration::initialize fails for rank " << rank
+        << ". Make sure that there are no XML formatting errors in file." << std::endl;
 		return false;
 	}
 	return true;
