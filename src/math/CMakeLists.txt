@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-05-05 12:13:00 d3g096
+# Last Change: 2015-05-05 12:40:30 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -271,13 +271,23 @@ endif()
 # -------------------------------------------------------------
 # DAE solver test suite
 # -------------------------------------------------------------
-add_executable(dae_solver_test test/dae_solver_test.cpp)
-target_link_libraries(dae_solver_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(complex_dae_solver dae_solver_test)
+add_executable(complex_dae_solver_test test/dae_solver_test.cpp)
+target_link_libraries(complex_dae_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_dae_solver complex_dae_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(dae_solver_test math_test_input)
+   add_dependencies(complex_dae_solver_test math_test_input)
 endif()
 
+add_executable(real_dae_solver_test test/dae_solver_test.cpp)
+set_target_properties(real_dae_solver_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_dae_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_dae_solver real_dae_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(real_dae_solver_test math_test_input)
+endif()
 
 # -------------------------------------------------------------
 # Test GA-based Dense Matrix

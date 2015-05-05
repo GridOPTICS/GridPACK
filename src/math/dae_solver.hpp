@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2015-05-05 12:09:39 d3g096
+ * @date   2015-05-05 12:43:05 d3g096
  * 
  * @brief  
  * 
@@ -122,7 +122,7 @@ protected:
   /// Initialize the system (specialized)
   void p_initialize(const double& t0,
                     const double& deltat0,
-                    Vector& x0)
+                    VectorType& x0)
   {
     p_impl->initialize(t0, deltat0, x0);
   }
