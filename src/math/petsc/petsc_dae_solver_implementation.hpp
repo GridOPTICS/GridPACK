@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-09-29 09:49:31 d3g096
+ * @date   2015-05-05 10:12:34 d3g096
  * 
  * @brief  
  * 
@@ -41,8 +41,8 @@ public:
   /// Default constructor.
   PETScDAESolverImplementation(const parallel::Communicator& comm, 
                                const int local_size,
-                               DAEJacobianBuilder& jbuilder,
-                               DAEFunctionBuilder& fbuilder);
+                               DAESolverImplementation::JacobianBuilder& jbuilder,
+                               DAESolverImplementation::FunctionBuilder& fbuilder);
 
   /// Destructor
   ~PETScDAESolverImplementation(void);

@@ -8,7 +8,7 @@
 /**
  * @file   dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-02-19 12:04:43 d3g096
+ * @date   2015-05-05 10:11:29 d3g096
  * 
  * @brief  
  * 
@@ -29,8 +29,8 @@ namespace math {
 // -------------------------------------------------------------
 DAESolverImplementation::DAESolverImplementation(const parallel::Communicator& comm, 
                                                  const int local_size,
-                                                 DAEJacobianBuilder& jbuilder,
-                                                 DAEFunctionBuilder& fbuilder)
+                                                 DAESolverImplementation::JacobianBuilder& jbuilder,
+                                                 DAESolverImplementation::FunctionBuilder& fbuilder)
   : parallel::Distributed(comm),
     utility::Configurable("DAESolver"),
     utility::Uncopyable(),

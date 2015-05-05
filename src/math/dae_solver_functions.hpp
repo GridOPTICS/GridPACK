@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_functions.hpp
  * @author William A. Perkins
- * @date   2013-11-11 09:54:39 d3g096
+ * @date   2015-05-05 10:08:39 d3g096
  * 
  * @brief  
  * 
@@ -27,18 +27,25 @@
 namespace gridpack {
 namespace math {
 
-typedef 
-boost::function<void (const double& time, 
-                      const Vector& x, const Vector& xdot, 
-                      const double& shift, Matrix& J)> 
-DAEJacobianBuilder;
+template <typename T, typename I = int>
+struct DAEBuilder {
+  
+  typedef VectorT<T, I> VectorType;
+  typedef MatrixT<T, I> MatrixType;
 
-typedef 
-boost::function<void (const double& time, 
-                      const Vector& x, const Vector& xdot, 
-                      Vector& F)> 
-DAEFunctionBuilder;
+  typedef 
+  boost::function<void (const double& time, 
+                        const VectorType& x, const VectorType& xdot, 
+                        const double& shift, MatrixType& J)> 
+  Jacobian;
 
+  typedef 
+  boost::function<void (const double& time, 
+                        const VectorType& x, const VectorType& xdot, 
+                        VectorType& F)> 
+  Function;
+
+};
 
 
 } // namespace math

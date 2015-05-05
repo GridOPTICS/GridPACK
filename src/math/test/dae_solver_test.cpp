@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-02-11 07:40:46 d3g096
+ * @date   2015-05-05 10:16:47 d3g096
  * 
  * @brief  
  * 
@@ -78,8 +78,8 @@ public:
   void solve(const gridpack::parallel::Communicator& comm,
              gridpack::utility::Configuration::CursorPtr conf)
   {
-    gridpack::math::DAEJacobianBuilder jbuilder = boost::ref(*this);
-    gridpack::math::DAEFunctionBuilder fbuilder = boost::ref(*this);
+    gridpack::math::DAESolver::JacobianBuilder jbuilder = boost::ref(*this);
+    gridpack::math::DAESolver::FunctionBuilder fbuilder = boost::ref(*this);
     
     gridpack::math::DAESolver solver(comm, p_size, jbuilder, fbuilder);
     solver.configure(conf);

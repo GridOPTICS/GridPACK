@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-04-30 15:17:10 d3g096
+# Last Change: 2015-05-05 09:55:00 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -40,6 +40,7 @@ set(gridpack_math_headers
   basic_linear_matrix_solver_implementation.hpp
   dae_solver.hpp
   dae_solver_functions.hpp
+  dae_solver_interface.hpp
   dae_solver_implementation.hpp
   implementation_visitable.hpp
   implementation_visitor.hpp

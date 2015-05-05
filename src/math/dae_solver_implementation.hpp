@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-11-14 11:39:40 d3g096
+ * @date   2015-05-05 10:08:32 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,7 @@
 #define _dae_solver_implementation_hpp_
 
 #include <boost/shared_ptr.hpp>
+#include <gridpack/math/dae_solver_interface.hpp>
 #include <gridpack/math/dae_solver_functions.hpp>
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
@@ -33,64 +34,41 @@ namespace math {
 //  class DAESolverImplementation
 // -------------------------------------------------------------
 class DAESolverImplementation 
-  : public parallel::Distributed,
+  : public DAESolverInterface<ComplexType>,
+    public parallel::Distributed,
     public utility::Configurable,
     private utility::Uncopyable
 {
 public:
 
+  typedef typename DAESolverInterface<ComplexType>::VectorType VectorType;
+  typedef typename DAESolverInterface<ComplexType>::MatrixType MatrixType;
+  typedef typename DAEBuilder<ComplexType>::Jacobian JacobianBuilder;
+  typedef typename DAEBuilder<ComplexType>::Function FunctionBuilder;
+  
+
   /// Default constructor.
   DAESolverImplementation(const parallel::Communicator& comm, 
                           const int local_size,
-                          DAEJacobianBuilder& jbuilder,
-                          DAEFunctionBuilder& fbuilder);
+                          JacobianBuilder& jbuilder,
+                          FunctionBuilder& fbuilder);
 
   /// Destructor
   ~DAESolverImplementation(void);
 
-  /// Initialize the solver
-  /** 
-   * 
-   * 
-   * @param t0 start time, corresponding to @c x0
-   * @param deltat0 initial time step
-   * @param x0 initial solution corresponding to @c t0
-   */
-  void initialize(const double& t0,
-                  const double& deltat0,
-                  Vector& x0)
-  {
-    this->p_initialize(t0, deltat0, x0);
-  }
-
-  /// Solve the system
-  void solve(double& maxtime, int& maxsteps)
-  {
-    this->p_solve(maxtime, maxsteps);
-  }
-
 protected:
 
   /// A matrix to hold the Jacobian
-  Matrix p_J;
+  MatrixType p_J;
 
   /// A function to build the RHS vector
-  DAEFunctionBuilder p_Fbuilder;
+  FunctionBuilder p_Fbuilder;
 
   /// A function to build the Jacobian
-  DAEJacobianBuilder p_Jbuilder;
+  JacobianBuilder p_Jbuilder;
 
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
-
-  /// Initialize the system (specialized)
-  virtual void p_initialize(const double& t0,
-                            const double& deltat0,
-                            Vector& x0) = 0;
-                       
-
-  /// Solve the system (specialized)
-  virtual void p_solve(double& maxtime, int& maxsteps) = 0;
 
 };
 

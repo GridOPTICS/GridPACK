@@ -8,7 +8,7 @@
 /**
  * @file   petsc_dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2015-03-05 14:51:44 d3g096
+ * @date   2015-05-05 10:12:58 d3g096
  * 
  * @brief  
  * 
@@ -127,8 +127,8 @@ PETScDAESolverImplementation::FormIFunction(TS ts, PetscReal t, Vec x, Vec xdot,
 // -------------------------------------------------------------
 PETScDAESolverImplementation::PETScDAESolverImplementation(const parallel::Communicator& comm, 
                                                            const int local_size,
-                                                           DAEJacobianBuilder& jbuilder,
-                                                           DAEFunctionBuilder& fbuilder)
+                                                           DAESolverImplementation::JacobianBuilder& jbuilder,
+                                                           DAESolverImplementation::FunctionBuilder& fbuilder)
   : DAESolverImplementation(comm, local_size, jbuilder, fbuilder),
     PETScConfigurable(this->communicator()),
     p_ts(),
