@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2014-10-21 14:48:14 d3g096
+ * @date   2015-03-05 09:44:10 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -24,22 +24,20 @@
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/math/vector_implementation.hpp>
+#include <gridpack/utilities/exception.hpp>
 
 namespace gridpack {
 namespace math {
 
-// forward declarations
-class Vector;
-
 // -------------------------------------------------------------
-//  class Vector
+//  class VectorT
 // -------------------------------------------------------------
 /// A parallel or serial vector of values
 /**
  * This class encapsulates a vector of values.  
  * 
- * When a Vector is instantiated it is ready to be filled using calls
- * to methods like setElement().  When the Vector is filled, all
+ * When a VectorT is instantiated it is ready to be filled using calls
+ * to methods like setElement().  When the VectorT is filled, all
  * processors must be notified that it is ready to use with a call to
  * ready().  
  *
@@ -57,12 +55,21 @@ class Vector;
  * specific \ref VectorImplementation "implementation".
  * 
  */
-class Vector 
+template <typename T, typename I = int>
+class VectorT
   : public parallel::WrappedDistributed,
     private utility::Uncopyable,
-    public BaseVectorInterface<ComplexType>
+    public BaseVectorInterface<T, I>
 {
+protected:
+
+  /// The implementation type for this 
+  typedef class VectorImplementation<T, I> ImplType;
+  
 public:
+
+  typedef typename BaseVectorInterface<T, I>::IdxType IdxType;
+  typedef typename BaseVectorInterface<T, I>::TheType TheType;
 
   /// Default constructor.
   /** 
@@ -78,7 +85,7 @@ public:
    * 
    * @return empty vector instance
    */
-  Vector(const parallel::Communicator& comm, const int& local_length);
+  VectorT(const parallel::Communicator& comm, const int& local_length);
 
   /// Constuct with an existing implementation
   /** 
@@ -90,7 +97,11 @@ public:
    * 
    * @return new vector instance using the specified implementation
    */
-  explicit Vector(VectorImplementation *vimpl);
+  explicit VectorT(ImplType *vimpl)
+    : parallel::WrappedDistributed(vimpl), utility::Uncopyable(),
+      p_vector_impl(vimpl)
+  { }
+
 
   /// Destructor
   /** 
@@ -100,7 +111,8 @@ public:
    * involved in the \ref parallel::Communicator "communicator" used
    * to instantiate it.
    */
-  ~Vector(void);
+  ~VectorT(void)
+  { }
 
   //! @cond DEVDOC
 
@@ -112,73 +124,16 @@ public:
    *
    * @return 
    */
-  Vector *clone(void) const
+  VectorT *clone(void) const
   {
-    VectorImplementation *pimpl_clone = p_vector_impl->clone();
-    Vector *result = new Vector(pimpl_clone);
+    ImplType *pimpl_clone = p_vector_impl->clone();
+    VectorT *result = new VectorT(pimpl_clone);
     return result;
   }
-
-  /// Print to named file or standard output
-  /** 
-   * @e Collective.
-   *
-   * 
-   *
-   * The format is dependent on the specific vector implementation.
-   * 
-   * @param filename optional file
-   */
-  void print(const char* filename = NULL) const;
-
-  /// Save, in MatLAB format, to named file (collective)
-  /** 
-   * @e Collective.
-   *
-   * 
-   * 
-   * @param filename 
-   */
-  void save(const char *filename) const;
-
-  /// Load from a named file of whatever binary format the math library uses
-  /** 
-   * @e Collective.
-   *
-   * The underlying math library generally supports some way to save a
-   * Vector to a file. This will load elements from a file of that
-   * format.
-   * 
-   * @param filename 
-   */
-  void loadBinary(const char *filename);
-
-
-  /// Save to named file in whatever binary format the math library uses
-  /** 
-   * @e Collective.
-   *
-   * The underlying math library generally supports some way to save a
-   * Vector to a file.  This routine uses whatever format that can be
-   * read by ::loadBinary(). 
-   * 
-   * @param filename 
-   */
-  void saveBinary(const char *filename) const;
 
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
-
-  /// Multiply all elements by the specified value
-  /** 
-   * @e Collective.
-   *
-   * 
-   * 
-   * @param x 
-   */
-  void scale(const TheType& x);
 
   /// Add the specified vector
   /** 
@@ -189,7 +144,7 @@ public:
    * @param x 
    * @param scale 
    */
-  void add(const Vector& x, const TheType& scale = 1.0);
+  void add(const VectorT& x, const TheType& scale = 1.0);
 
   /// Add the specified value to all elements
   /** 
@@ -209,29 +164,20 @@ public:
    * 
    * @param x 
    */
-  void equate(const Vector& x);
-
-  /// Replace all elements with their reciprocal
-  /** 
-   * @e Collective.
-   *
-   * 
-   * 
-   */
-  void reciprocal(void);
+  void equate(const VectorT& x);
 
   /// Element-by-element multiply by another Vector
-  void elementMultiply(const Vector& x);
+  void elementMultiply(const VectorT& x);
 
   /// ELement-by-element divide by another Vector
-  void elementDivide(const Vector& x);
+  void elementDivide(const VectorT& x);
 
   // friend Vector *reorder(const Vector& A, const Reordering& r);
 
 protected:
-  
+
   /// Where stuff really happens
-  boost::scoped_ptr<VectorImplementation> p_vector_impl;
+  boost::scoped_ptr<ImplType> p_vector_impl;
 
   /// Get the global vector length (specialized)
   IdxType p_size(void) const
@@ -289,6 +235,10 @@ protected:
   void p_fill(const TheType& v)
   { p_vector_impl->fill(v); }
 
+  /// Scale all elements by a single value (specialized)
+  void p_scale(const TheType& x)
+  { p_vector_impl->scale(x); }
+
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   double p_norm1(void) const
   { return p_vector_impl->norm1(); }
@@ -321,9 +271,29 @@ protected:
   void p_exp(void)
   { p_vector_impl->exp(); }
 
-  /// Make this instance ready to use
+  /// Replace all elements with its reciprocal (specialized)
+  void p_reciprocal(void)
+  { p_vector_impl->reciprocal(); }
+
+  /// Make this instance ready to use (specialized)
   void p_ready(void)
   { p_vector_impl->ready(); }
+
+  /// Print to named file or standard output (specialized)
+  void p_print(const char* filename = NULL) const 
+  { p_vector_impl->print(filename); }
+
+  /// Save, in MatLAB format, to named file (collective) (specialized)
+  void p_save(const char *filename) const 
+  { p_vector_impl->save(filename); }
+
+  /// Load from a named file of whatever binary format the math library uses (specialized)
+  void p_loadBinary(const char *filename) 
+  { p_vector_impl->loadBinary(filename); }
+
+  /// Save to named file in whatever binary format the math library uses (specialized)
+  void p_saveBinary(const char *filename) const 
+  { p_vector_impl->saveBinary(filename); }
 
   /// Allow visits by implemetation visitor
   void p_accept(ImplementationVisitor& visitor)
@@ -349,7 +319,16 @@ protected:
    * 
    * @param x vector to check
    */
-  void p_checkCompatible(const Vector& x) const;
+  void p_checkCompatible(const VectorT& x) const
+  {
+    // if (this->communicator() != x.communicator()) {
+    //   throw gridpack::Exception("incompatible: communicators do not match");
+    // }
+
+    if (this->size() != x.size()) {
+      throw gridpack::Exception("incompatible: sizes do not match");
+    }
+  }
 };
 
 // -------------------------------------------------------------
@@ -372,7 +351,13 @@ protected:
  * 
  * @return pointer to new allocated Vector instance
  */
-extern Vector *add(const Vector& A, const Vector& B);
+template <typename T, typename I>
+VectorT<T, I> *add(const VectorT<T, I>& A, const VectorT<T, I>& B)
+{
+  VectorT<T, I> *result(A.clone());
+  result->add(B);
+  return result;
+}
 
 /// Subtract two Vector instances and put the result in a new one
 /** 
@@ -390,10 +375,16 @@ extern Vector *add(const Vector& A, const Vector& B);
  * 
  * @return pointer to new allocated Vector instance
  */
-extern Vector *subtract(const Vector& A, const Vector& B);
+// inline Vector *subtract(const Vector& A, const Vector& B);
 
 /// Create a vector containing the absolute value/magnitude of the specified vector
-extern Vector *abs(const Vector& x);
+template <typename T, typename I>
+VectorT<T, I> *abs(const VectorT<T, I>& x)
+{
+  VectorT<T, I> *result(x.clone());
+  result->abs();
+  return result;
+}
 
 /// Create a vector containing the real part of the specified vector
 /** 
@@ -403,7 +394,14 @@ extern Vector *abs(const Vector& x);
  *  
  * @return pointer to new vector instance containing real part of @c x
  */
-extern Vector *real(const Vector& x);
+template <typename T, typename I>
+VectorT<T, I> *real(const VectorT<T, I>& x)
+{
+  VectorT<T, I> *result(x.clone());
+  result->real();
+  return result;
+}
+
 
 /// Create a vector containing the imaginar part of the specified vector
 /** 
@@ -413,7 +411,13 @@ extern Vector *real(const Vector& x);
  * 
  * @return pointer to new vector instance containing imaginary part of @c x
  */
-extern Vector *imaginary(const Vector& x);
+template <typename T, typename I>
+VectorT<T, I> *imaginary(const VectorT<T, I>& x)
+{
+  VectorT<T, I> *result(x.clone());
+  result->imaginary();
+  return result;
+}
 
 /// Create a vector containing the complex conjugate of @c x
 /** 
@@ -423,9 +427,13 @@ extern Vector *imaginary(const Vector& x);
  * 
  * @return pointer to new vector instance containing the complex conjugate of @c x
  */
-extern Vector* conjugate(const Vector& x);
-
-
+template <typename T, typename I>
+VectorT<T, I>* conjugate(const VectorT<T, I>& x)
+{
+  VectorT<T, I> *result(x.clone());
+  result->conjugate();
+  return result;
+}
 
 // -------------------------------------------------------------
 // Vector Operations (results into existing instances)
@@ -443,9 +451,17 @@ extern Vector* conjugate(const Vector& x);
  * @param B 
  * @param result vector in which to place the sum of @c A and @c B
  */
-extern void add(const Vector& A, const Vector& B, Vector& result);
+template <typename T, typename I>
+void add(const VectorT<T, I>& A, const VectorT<T, I>& B, VectorT<T, I>& result)
+{
+  result.equate(A);
+  result.add(B);
+}
 
 
+typedef class VectorT<ComplexType> ComplexVector;
+typedef class VectorT<double> RealVector;
+typedef ComplexVector Vector;
 
 } // namespace utility
 } // namespace gridpack

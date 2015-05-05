@@ -7,7 +7,7 @@
 /**
  * @file   ds_app.cpp
  * @author Shuangshuang Jin
- * @date   September 19, 2013
+ * @date   2015-03-06 14:48:54 d3g096
  *
  * @brief
  *
@@ -164,7 +164,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///busIO.header("\n=== diagY_a: ============\n");
   ///diagY_a->print(); 
   // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
-  gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
+  gridpack::math::MatrixStorageType denseType = gridpack::math::Dense;
   boost::shared_ptr<gridpack::math::Matrix> Y_a(gridpack::math::storageType(*diagY_a, denseType));
   timer->stop(t_matset);
 

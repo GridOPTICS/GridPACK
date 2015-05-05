@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2014-10-21 09:30:52 d3g096
+ * @date   2015-03-04 12:20:43 d3g096
  * 
  * @brief  
  * 
@@ -20,8 +20,12 @@
 #ifndef _petsc_vector_implementation_h_
 #define _petsc_vector_implementation_h_
 
-#include <petscvec.h>
+#include "complex_operators.hpp"
+#include "value_transfer.hpp"
 #include "vector_implementation.hpp"
+#include "petsc/petsc_vector_wrapper.hpp"
+#include "petsc/petsc_exception.hpp"
+#include "petsc/petsc_types.hpp"
 
 namespace gridpack {
 namespace math {
@@ -34,9 +38,25 @@ namespace math {
  * 
  * 
  */
+template <typename T, typename I = int>
 class PETScVectorImplementation 
-  : public VectorImplementation {
+  : public VectorImplementation<T, I> {
 public:
+
+  typedef typename VectorImplementation<T, I>::IdxType IdxType;
+  typedef typename VectorImplementation<T, I>::TheType TheType;
+
+  /// A flag to denote whether the library can be used directly
+  /**
+   * Some operations can be passed directly to the underlying library
+   * if the TheType is the same as the PETSc type @e or the PETSc type
+   * is complex.  This type computes and stores that flag. 
+   * 
+   */
+  static const bool useLibrary = UsePetscLibrary<TheType>::value;
+
+  /// The number of library elements used to represent a single vector element
+  static const unsigned int elementSize = PetscElementSize<TheType>::value;
 
   /// Default constructor.
   /** 
@@ -48,120 +68,382 @@ public:
    * @return 
    */
   PETScVectorImplementation(const parallel::Communicator& comm,
-                            const IdxType& local_length);
+                            const IdxType& local_length)
+    : VectorImplementation<T>(comm), p_vwrap(comm, local_length*elementSize)
+  { }
 
   /// Construct from an existing PETSc vector
-  PETScVectorImplementation(Vec& pvec, const bool& copyvec = true);
+  PETScVectorImplementation(Vec& pvec, const bool& copyvec = true)
+    : VectorImplementation<T>(PetscVectorWrapper::getCommunicator(pvec)), 
+      p_vwrap(pvec, copyvec)
+  { }
 
   /// Destructor
   /** 
    * @e Collective
    * 
    */
-  ~PETScVectorImplementation(void);
-
-  /// Get (a pointer to) the PETSc implementation
-
-  const Vec *getVector(void) const
-  {
-    return &p_vector;
-  }
-
-  /// Get (a pointer to) the PETSc implementation
-  Vec *getVector(void)
-  {
-    return &p_vector;
-  }
+  ~PETScVectorImplementation(void) {}
 
 protected:
 
-  /// Extract a Communicator from a PETSc vector
-  static parallel::Communicator p_getCommunicator(const Vec& v);
+  /// A vector of TheType
+  typedef std::vector<TheType> TheVector;
 
-  /// Minimum global index on this processor
-  IdxType p_minIndex;
+  /// Where the actual vector is stored
+  PetscVectorWrapper p_vwrap;
 
-  /// Maximum global index on this processor
-  IdxType p_maxIndex;
+  /// Apply a specific unary operation to the vector
+  void p_applyOperation(base_unary_function<TheType>& op)
+  {
+    PetscErrorCode ierr;
+    Vec *v = p_vwrap.getVector();
+    PetscScalar *p;
+    PetscInt n;
+    ierr = VecGetLocalSize(*v, &n); CHKERRXX(ierr);
+    ierr = VecGetArray(*v, &p);  CHKERRXX(ierr);
+    unary_operation<TheType, PetscScalar>(static_cast<unsigned int>(n), 
+                                          p, op);
+    ierr = VecRestoreArray(*v, &p); CHKERRXX(ierr);
+    this->ready();
+  }
 
-  /// The PETSc representation
-  Vec p_vector;
+  /// Apply a specificy accumulator operation to the vector
+  RealType p_applyAccumulator(base_accumulator_function<TheType, RealType>& op) const
+  {
+    RealType result;
+    PetscErrorCode ierr;
+    const Vec *v = p_vwrap.getVector();
+    const PetscScalar *p;
+    PetscInt n;
+    ierr = VecGetLocalSize(*v, &n); CHKERRXX(ierr);
+    ierr = VecGetArrayRead(*v, &p);  CHKERRXX(ierr);
+    accumulator_operation<TheType, PetscScalar>(static_cast<unsigned int>(n), p, op);
+    ierr = VecRestoreArrayRead(*v, &p); CHKERRXX(ierr);
+    result = op.result();
+    return result;
+  }
 
-  /// Was @c p_vector created or just wrapped
-  bool p_vectorWrapped;
 
   /// Get the global vector length
-  IdxType p_size(void) const;
+  IdxType p_size(void) const
+  {
+    return p_vwrap.size()/elementSize;
+  }
 
   /// Get the size of the vector local part
-  IdxType p_localSize(void) const;
+  IdxType p_localSize(void) const
+  {
+    return p_vwrap.localSize()/elementSize;
+  }
 
   /// Get the local min/max global indexes (specialized)
-  void p_localIndexRange(IdxType& lo, IdxType& hi) const;
+  void p_localIndexRange(IdxType& lo, IdxType& hi) const
+  {
+    PetscInt plo, phi;
+    p_vwrap.localIndexRange(plo, phi);
+    lo = plo/elementSize;
+    hi = phi/elementSize;
+  }
 
   /// Set an individual element (specialized)
-  void p_setElement(const IdxType& i, const TheType& x);
+  /** 
+   * If you try to set an off processor value, it will be ignored
+   * 
+   * @param i global vector index
+   * @param x value
+   */
+  void p_setElement(const IdxType& i, const TheType& x)
+  {
+    PetscErrorCode ierr;
+    try {
+      Vec *v = p_vwrap.getVector();
+      unsigned int n(elementSize);
+      PetscScalar px[n];
+      TheType tmp(x);
+      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      trans.go();
+      PetscInt idx[n];
+      for (int j = 0; j < n; ++j) {
+        idx[j] = i*n + j;
+      }
+      ierr = VecSetValues(*v, n, &idx[0], &px[0], INSERT_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Set an several elements (specialized)
-  void p_setElements(const IdxType& n, const IdxType *i, const TheType *x);
+  void p_setElements(const IdxType& n, const IdxType *i, const TheType *x)
+  {
+    // FIXME: should be able to set multiple values
+    for (int idx = 0; idx < n; ++idx) {
+      this->p_setElement(i[idx], x[idx]);
+    }
+  }
 
   /// Add to an individual element (specialized)
-  void p_addElement(const IdxType& i, const TheType& x);
+  void p_addElement(const IdxType& i, const TheType& x)
+  {
+    PetscErrorCode ierr;
+    try {
+      Vec *v = p_vwrap.getVector();
+      unsigned int n(elementSize);
+      PetscScalar px[n];
+      TheType tmp(x);
+      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
+      trans.go();
+      PetscInt idx[n];
+      for (int j = 0; j < n; ++j) {
+        idx[j] = i*n + j;
+      }
+      ierr = VecSetValues(*v, n, &idx[0], &px[0], ADD_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Add to an several elements (specialized)
-  void p_addElements(const IdxType& n, const IdxType *i, const TheType *x);
+  void p_addElements(const IdxType& n, const IdxType *i, const TheType *x)
+  {
+    // FIXME: should be able to add multiple values
+    for (int idx = 0; idx < n; ++idx) {
+      this->p_addElement(i[idx], x[idx]);
+    }
+  }
 
   /// Get an individual (local) element (specialized)
-  void p_getElement(const IdxType& i, TheType& x) const;
+  void p_getElement(const IdxType& i, TheType& x) const
+  {
+    PetscErrorCode ierr;
+    try {
+      const Vec *v = p_vwrap.getVector();
+      unsigned int n(elementSize);
+      PetscScalar px[n];
+      PetscInt idx[n];
+      for (int j = 0; j < n; ++j) {
+        idx[j] = i*n + j;
+      }
+      ierr = VecGetValues(*v, n, &idx[0], &px[0]); CHKERRXX(ierr);
+      ValueTransferFromLibrary<PetscScalar, TheType> trans(n, &px[0], &x);
+      trans.go();
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
 
   /// Get an several (local) elements (specialized)
-  void p_getElements(const IdxType& n, const IdxType *i, TheType *x) const;
+  void p_getElements(const IdxType& n, const IdxType *i, TheType *x) const
+  {
+    // FIXME: should be able to get multiple values
+    for (int idx = 0; idx < n; ++idx) {
+      this->p_getElement(i[idx], x[idx]);
+    }
+  }
 
   /// Get all of vector elements (on all processes)
-  void p_getAllElements(TheType *x) const;
+  void p_getAllElements(TheType *x) const
+  {
+    unsigned int n(p_vwrap.size());
+    std::vector<PetscScalar> px(n);
+    p_vwrap.getAllElements(&px[0]);
+    ValueTransferFromLibrary<PetscScalar, TheType> trans(n, &px[0], x);
+    trans.go();
+  }
 
   /// Make all the elements zero (specialized)
-  void p_zero(void);
+  void p_zero(void)
+  {
+    p_vwrap.zero();
+  }
 
   /// Make all the elements the specified value (specialized)
-  void p_fill(const TheType& v);
+  void p_fill(const TheType& value)
+  {
+    PetscErrorCode ierr(0);
+    try {
+      if (useLibrary) {
+        Vec *v = p_vwrap.getVector();
+        PetscScalar pv = 
+          equate<PetscScalar, TheType>(value);
+        ierr = VecSet(*v, pv); CHKERRXX(ierr);
+      } else {
+        setvalue<TheType> op(value);
+        p_applyOperation(op);
+      }
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }  
 
-  /// Common method to compute norms 
-  double p_norm(const NormType& t) const;
+  /// Scale all elements by a single value
+  void p_scale(const TheType& x)
+  {
+    if (useLibrary) {
+      Vec *vec = p_vwrap.getVector();
+      PetscErrorCode ierr(0);
+      try {
+        PetscScalar px =
+          gridpack::math::equate<PetscScalar, TheType>(x);
+        ierr = VecScale(*vec, px); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      gridpack::math::multiplyvalue<TheType> op(x);
+      p_applyOperation(op);
+    } 
+  }
 
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
-  double p_norm1(void) const;
+  double p_norm1(void) const
+  {
+    double result;
+    if (useLibrary) {
+      result = p_vwrap.norm1();
+    } else {
+      l1_norm<TheType> op;
+      double lresult(p_applyAccumulator(op));
+      boost::mpi::all_reduce(this->communicator(), lresult, result, std::plus<double>());
+    }
+    return result;
+  }
 
   /// Compute the vector L2 norm (root of sum of squares) (specialized)
-  double p_norm2(void) const;
+  double p_norm2(void) const
+  {
+    double result;
+    if (useLibrary) {
+      result = p_vwrap.norm2();
+    } else {
+      l2_norm<TheType> op;
+      double lresult(p_applyAccumulator(op));
+      boost::mpi::all_reduce(this->communicator(), lresult, result, std::plus<double>());
+      result = sqrt(result);
+    }
+    return result;
+  }
 
   /// Compute the vector infinity (or maximum) norm (specialized)
-  double p_normInfinity(void) const;
+  double p_normInfinity(void) const
+  {
+    double result;
+    if (useLibrary) {
+      result = p_vwrap.normInfinity();
+    } else {
+      infinity_norm<TheType> op;
+      double lresult(p_applyAccumulator(op));
+      boost::mpi::all_reduce(this->communicator(), lresult, result, boost::mpi::maximum<double>());
+    }
+    return result;
+  }
 
   /// Replace all elements with its absolute value (specialized) 
-  void p_abs(void);
+  void p_abs(void)
+  {
+    if (useLibrary) {
+      p_vwrap.abs();
+    } else {
+      absvalue<TheType> op;
+      p_applyOperation(op);
+    }
+  }
 
   /// Replace all elements with their complex conjugate
-  void p_conjugate(void);
+  void p_conjugate(void)
+  {
+    if (useLibrary) {
+      p_vwrap.conjugate();
+    } else {
+      conjugate_value<TheType> op;
+      p_applyOperation(op);
+    }
+  }
 
-  // FIXME: more ...
+  /// Replace all elements with its exponential (specialized)
+  void p_exp(void)
+  {
+    if (useLibrary) {
+      p_vwrap.exp();
+    } else {
+      exponential<TheType> op;
+      p_applyOperation(op);
+    }
+  }
+
+  /// Replace all elements with its reciprocal (specialized)
+  void p_reciprocal(void)
+  {
+    if (useLibrary) {
+      p_vwrap.reciprocal();
+    } else {
+      reciprocal<TheType> op;
+      p_applyOperation(op);
+    }
+  }
 
   /// Make this instance ready to use
-  void p_ready(void);
+  void p_ready(void)
+  {
+    p_vwrap.ready();
+  }
 
   /// Allow visits by implemetation visitor
-  void p_accept(ImplementationVisitor& visitor);
+  void p_accept(ImplementationVisitor& visitor)
+  {
+    p_vwrap.accept(visitor);
+  }
+
+  /// Print to named file or standard output (specialized)
+  void p_print(const char* filename = NULL) const 
+  { 
+    p_vwrap.print(filename); 
+  }
+
+  /// Save, in MatLAB format, to named file (collective) (specialized)
+  void p_save(const char *filename) const 
+  { 
+    p_vwrap.save(filename); 
+  }
+
+  /// Load from a named file of whatever binary format the math library uses (specialized)
+  void p_loadBinary(const char *filename) 
+  { 
+    p_vwrap.loadBinary(filename); 
+  }
+
+  /// Save to named file in whatever binary format the math library uses (specialized)
+  void p_saveBinary(const char *filename) const 
+  { 
+    p_vwrap.saveBinary(filename); 
+  }
 
   /// Allow visits by implemetation visitor
-  void p_accept(ConstImplementationVisitor& visitor) const;
+  void p_accept(ConstImplementationVisitor& visitor) const
+  {
+    p_vwrap.accept(visitor);
+  }
 
   /// Make an exact replica of this instance (specialized)
-  VectorImplementation *p_clone(void) const;
+  VectorImplementation<T> *p_clone(void) const
+  {
+    parallel::Communicator comm(this->communicator());
+    IdxType local_size(this->localSize());
+    
+    PETScVectorImplementation<T> *result = 
+      new PETScVectorImplementation<T>(comm, local_size);
+    PetscErrorCode ierr;
+    
+    Vec *to_vec(result->p_vwrap.getVector());
 
-  // -------------------------------------------------------------
-  // In-place Vector Operation Methods (change this instance)
-  // -------------------------------------------------------------
-
+    try {
+      const Vec *v = p_vwrap.getVector();
+      ierr = VecCopy(*v, *to_vec); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+    return result;
+  }
 };
 
 

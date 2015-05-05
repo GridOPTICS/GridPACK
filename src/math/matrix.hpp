@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-03-24 10:51:28 d3g096
+ * @date   2015-03-27 12:20:25 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -27,6 +27,7 @@
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/math/matrix_implementation.hpp>
 #include <gridpack/math/vector.hpp>
+#include <gridpack/math/matrix_storage_type.hpp>
 
 
 namespace gridpack {
@@ -43,27 +44,16 @@ namespace math {
  * serial storage scheme is created, otherwise it's parallel. 
  *
  */
-class Matrix 
+template <typename T, typename I = int>
+class MatrixT
   : public parallel::WrappedDistributed,
     private utility::Uncopyable,
-    public BaseMatrixInterface<ComplexType>
+    public BaseMatrixInterface<T, I>
 {
 public:
 
-  /// The types of matrices that can be created
-  /**
-   * The gridpack::math library provides two storage schemes for
-   * matrices. This is used by Matrix and MatrixImplementation
-   * subclasses.
-   *
-   * The actual storage scheme and memory used is dependent upon the
-   * underlying math library implementation.
-   * 
-   */
-  enum StorageType { 
-    Dense,                      /**< dense matrix storage scheme */
-    Sparse                      /**< sparse matrix storage scheme */
-  };
+  typedef typename BaseMatrixInterface<T, I>::TheType TheType;
+  typedef typename BaseMatrixInterface<T, I>::IdxType IdxType;
 
   /// Constructor.
   /** 
@@ -79,10 +69,10 @@ public:
    * 
    * @return 
    */
-  Matrix(const parallel::Communicator& dist,
-         const int& local_rows,
-         const int& local_cols,
-         const StorageType& storage_type = Sparse);
+  MatrixT(const parallel::Communicator& dist,
+          const int& local_rows,
+          const int& local_cols,
+          const MatrixStorageType& storage_type = Sparse);
 
   /// Sparse matrix constructor with maximum number of nonzeros in a row
   /** 
@@ -97,12 +87,12 @@ public:
    * @param local_cols matrix columns to be owned by the local process
    * @param max_nz_per_row maximum number of nonzeros in a row
    * 
-   * @return new Matrix
+   * @return new MatrixT
    */
-  Matrix(const parallel::Communicator& dist,
-         const int& local_rows,
-         const int& local_cols,
-         const int& max_nz_per_row);
+  MatrixT(const parallel::Communicator& dist,
+          const int& local_rows,
+          const int& local_cols,
+          const int& max_nz_per_row);
   
   /// Sparse matrix constructor with number of nonzeros for each row
   /** 
@@ -115,10 +105,10 @@ public:
    * 
    * @return 
    */
-  Matrix(const parallel::Communicator& dist,
-         const int& local_rows,
-         const int& local_cols,
-         const int *nz_by_row);
+  MatrixT(const parallel::Communicator& dist,
+          const int& local_rows,
+          const int& local_cols,
+          const int *nz_by_row);
 
   /// Construct with an existing (allocated) implementation 
   /** 
@@ -128,7 +118,13 @@ public:
    * 
    * @return 
    */
-  Matrix(MatrixImplementation *impl);
+  MatrixT(MatrixImplementation<T, I> *impl)
+    : parallel::WrappedDistributed(impl), 
+      utility::Uncopyable(),
+      p_matrix_impl(impl)
+  {
+    BOOST_ASSERT(p_matrix_impl);
+  }
 
   /// Destructor
   /** 
@@ -136,23 +132,9 @@ public:
    * involved in the \ref parallel::Communicator "communicator" used
    * to instantiate it.
    */
-  ~Matrix(void);
-
-  /// Create a densematrix with global size
-  /** 
-   * A special routine to create a dense matrix with a known global
-   * size leaving the distribution up to the underlying math library.
-   * 
-   * @param comm parallel environment
-   * @param global_rows total number of rows on all processes
-   * @param global_cols total number of columns on all processes
-   * 
-   * @return 
-   */
-  static Matrix *
-  createDenseGlobal(const parallel::Communicator& comm,
-                    const int& global_rows,
-                    const int& global_cols);
+  ~MatrixT(void)
+  {
+  }
 
   /// Create a ::Dense Matrix instance with more/less specific ownership
   /** 
@@ -167,7 +149,7 @@ public:
    * 
    * @return 
    */
-  static Matrix *
+  static MatrixT *
   createDense(const parallel::Communicator& comm,
               const int& global_rows,
               const int& global_cols,
@@ -175,7 +157,7 @@ public:
               const int& local_cols);
   
   /// Get the storage type of this matrix
-  StorageType storageType(void) const;
+  MatrixStorageType storageType(void) const;
 
   /// Make this matrix the identity matrix
   /** 
@@ -211,53 +193,13 @@ public:
    * 
    * @return pointer to new (allocated) matrix instance
    */
-  Matrix *clone(void) const
+  MatrixT *clone(void) const
   {
-    MatrixImplementation *pimpl_clone =
+    MatrixImplementation<T, I> *pimpl_clone =
       this->p_matrix_impl->clone();
-    Matrix *result = new Matrix(pimpl_clone);
+    MatrixT *result = new MatrixT(pimpl_clone);
     return result;
   }
-
-  /// Print to named file or standard output
-  /** 
-   * @e Collective
-   * 
-   * @param filename name of file to write, or NULL for standard output
-   */
-  void print(const char* filename = NULL) const;
-
-  /// Save, in MatLAB format, to named file
-  /** 
-   * @e Collective
-   * 
-   * @param filename name of file to write
-   */
-  void save(const char *filename) const;
-
-  /// Load from a named file of whatever binary format the math library uses
-  /** 
-   * @e Collective.
-   *
-   * The underlying math library generally supports some way to save a
-   * Matrix to a file. This will load elements from a file of that
-   * format.
-   * 
-   * @param filename 
-   */
-  void loadBinary(const char *filename);
-
-  /// Save to named file in whatever binary format the math library uses
-  /** 
-   * @e Collective.
-   *
-   * The underlying math library generally supports some way to save a
-   * Matrix to a file.  This routine uses whatever format that can be
-   * read by ::loadBinary(). 
-   * 
-   * @param filename 
-   */
-  void saveBinary(const char *filename) const;
 
   // -------------------------------------------------------------
   // Matrix Operation Methods
@@ -277,15 +219,15 @@ public:
    * 
    * @param A 
    */
-  void equate(const Matrix& A);
+  void equate(const MatrixT& A);
 
-  /// Scale this entire Matrix by the given value
+  /// Scale this entire MatrixT by the given value
   /** 
    * @e Collective.
    * 
    * @param x factor by which all elements in the matrix are multiplied
    */
-  void scale(const ComplexType& x);
+  void scale(const TheType& x);
 
   /// Multiply this matrix diagonal by the specified vector
   /** 
@@ -295,7 +237,7 @@ public:
    * 
    * @param x factor by which all diagonal elements in the matrix are multiplied
    */
-  void multiplyDiagonal(const Vector& x);
+  void multiplyDiagonal(const VectorT<T, I>& x);
 
   /// Add the specified vector to the diagonal of this matrix
   /** 
@@ -303,7 +245,7 @@ public:
    * 
    * @param x 
    */
-  void addDiagonal(const Vector& x);
+  void addDiagonal(const VectorT<T, I>& x);
 
   /// Shift the diagonal of this matrix by the specified value
   /** 
@@ -311,7 +253,7 @@ public:
    * 
    * @param x 
    */
-  void addDiagonal(const ComplexType& x);
+  void addDiagonal(const TheType& x);
 
   /// Add another matrix to this one, in place
   /** 
@@ -323,7 +265,7 @@ public:
    * 
    * @param A matrix to add to this instance
    */
-  void add(const Matrix& A);
+  void add(const MatrixT& A);
 
   /// Zero all entries in the matrix
   /** 
@@ -333,104 +275,272 @@ public:
   void zero(void);
 
   // -------------------------------------------------------------
-  // Matrix Operations 
+  // MatrixT Operations 
   //
   // all allocate new instances and throw when arguments are
   // inconsistent
   // -------------------------------------------------------------
-  // friend Matrix *factorize(const Matrix& A);
-  // friend Matrix *inverse(const Matrix& A);
-  // friend Matrix *reorder(const Matrix& A, const Reordering& r);
-  // friend Matrix *identity(const Matrix& A);
-  friend Matrix *multiply(const Matrix& A, const Matrix& B);
-  friend Matrix *transpose(const Matrix& A);
+  // friend MatrixT *factorize(const MatrixT& A);
+  // friend MatrixT *inverse(const MatrixT& A);
+  // friend MatrixT *reorder(const MatrixT& A, const Reordering& r);
+  // friend MatrixT *identity(const MatrixT& A);
+  // friend template <typename T, typename I>
+  // MatrixT<T, I> *multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B);
+  // friend template <typename T, typename I>
+  // MatrixT<T, I> *transpose(const MatrixT<T, I>& A);
 
 protected:
 
   /// The actual implementation
-  boost::scoped_ptr<MatrixImplementation> p_matrix_impl;
+  boost::scoped_ptr< MatrixImplementation<T, I> > p_matrix_impl;
 
   /// Get the global index range of the locally owned rows (specialized)
   void p_localRowRange(IdxType& lo, IdxType& hi) const
-  { p_matrix_impl->localRowRange(lo, hi); }
+  { 
+    p_matrix_impl->localRowRange(lo, hi); 
+  }
 
   /// Get the total number of rows in this matrix (specialized)
   IdxType p_rows(void) const
-  { return p_matrix_impl->rows(); }
+  { 
+    return p_matrix_impl->rows(); 
+  }
 
   /// Get the number of local rows in this matirx (specialized)
   IdxType p_localRows(void) const
-  { return p_matrix_impl->localRows(); }
+  { 
+    return p_matrix_impl->localRows(); 
+  }
 
   /// Get the number of columns in this matrix (specialized)
   IdxType p_cols(void) const
-  { return p_matrix_impl->cols(); }
+  { 
+    return p_matrix_impl->cols(); 
+  }
 
   /// Get the number of local rows in this matirx (specialized)
   IdxType p_localCols(void) const
-  { return p_matrix_impl->localCols(); }
+  { 
+    return p_matrix_impl->localCols(); 
+  }
 
   /// Set an individual element
   void p_setElement(const IdxType& i, const IdxType& j, const TheType& x)
-  { p_matrix_impl->setElement(i, j, x); }
+  { 
+    p_matrix_impl->setElement(i, j, x); 
+  }
 
   /// Set an several element
   void p_setElements(const IdxType& n, 
                      const IdxType *i, const IdxType *j, 
                      const TheType *x)
-  { p_matrix_impl->setElements(n, i, j, x); }
+  { 
+    p_matrix_impl->setElements(n, i, j, x); 
+  }
 
   /// Add to  an individual element
   void p_addElement(const IdxType& i, const IdxType& j, const TheType& x)
-  { p_matrix_impl->addElement(i, j, x); }
+  { 
+    p_matrix_impl->addElement(i, j, x); 
+  }
 
   /// Add to  an several element
   void p_addElements(const IdxType& n, 
                      const IdxType *i, const IdxType *j, 
                      const TheType *x)
-  { p_matrix_impl->addElements(n, i, j, x); }
+  { 
+    p_matrix_impl->addElements(n, i, j, x); 
+  }
 
   /// Get an individual element
   void p_getElement(const IdxType& i, const IdxType& j, TheType& x) const
-  { p_matrix_impl->getElement(i, j, x); }
+  { 
+    p_matrix_impl->getElement(i, j, x); 
+  }
 
   /// Get an several element
   void p_getElements(const IdxType& n, 
                      const IdxType *i, const IdxType *j, 
                      TheType *x) const
-  { p_matrix_impl->getElements(n, i, j, x); }
+  { 
+    p_matrix_impl->getElements(n, i, j, x); 
+  }
 
   /// Replace all elements with their real parts
   void p_real(void)
-  { p_matrix_impl->real(); }
+  { 
+    p_matrix_impl->real(); 
+  }
 
   /// Replace all elements with their imaginary parts
   void p_imaginary(void)
-  { p_matrix_impl->imaginary(); }
+  { 
+    p_matrix_impl->imaginary(); 
+  }
 
   /// Replace all elements with their complex gradient
   void p_conjugate(void)
-  { p_matrix_impl->conjugate(); }
+  { 
+    p_matrix_impl->conjugate(); 
+  }
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
   double p_norm2(void) const
-  { return p_matrix_impl->norm2(); }
+  { 
+    return p_matrix_impl->norm2(); 
+  }
 
   /// Make this instance ready to use
   void p_ready(void)
-  { p_matrix_impl->ready(); }
+  { 
+    p_matrix_impl->ready(); 
+  }
+
+  /// Print to named file or standard output
+  void p_print(const char* filename = NULL) const
+  {
+    p_matrix_impl->print(filename);
+  }
+
+   /// Save, in MatLAB format, to named file (collective)
+  void p_save(const char *filename) const
+  {
+    p_matrix_impl->save(filename);
+  }
+
+  /// Load from a named file of whatever binary format the math library uses
+  void p_loadBinary(const char *filename)
+  {
+    p_matrix_impl->loadBinary(filename);
+  }
+
+  /// Save to named file in whatever binary format the math library uses
+  void p_saveBinary(const char *filename) const
+  {
+    p_matrix_impl->saveBinary(filename);
+  }
 
   /// Allow visits by implementation visitors
   void p_accept(ImplementationVisitor& visitor)
-  { p_matrix_impl->accept(visitor); }
+  { 
+    p_matrix_impl->accept(visitor); 
+  }
 
   /// Allow visits by implementation visitors
   void p_accept(ConstImplementationVisitor& visitor) const
-  { p_matrix_impl->accept(visitor); }
+  { 
+    p_matrix_impl->accept(visitor); 
+  }
 
-  /// Is a Matrix compatible with this one (throws if not)
-  void p_check_compatible(const Matrix& A) const;
+  /// Is a MatrixT compatible with this one (throws if not)
+  void p_check_compatible(const MatrixT& A) const
+  {
+    // FIXME: should be able to check this:
+    // if (this->communicator() != A.communicator()) {
+    //   throw gridpack::Exception("incompatible: communicators do not match");
+    // }
+
+    if ((this->rows() != A.rows()) || (this->cols() != A.cols())) {
+      throw gridpack::Exception("incompatible: sizes do not match");
+    }
+    return;
+  }
+
 };
+
+typedef MatrixT<ComplexType> ComplexMatrix;
+typedef MatrixT<RealType> RealMatrix;
+
+/// The main matrix type
+typedef ComplexMatrix Matrix;
+
+
+// -------------------------------------------------------------
+// Matrix Operations
+//
+// put results in existing instance and throw when arguments are
+// inconsistent
+// -------------------------------------------------------------
+
+/// Add two Matrix instances and put the result in a third
+template <typename T, typename I>
+void add(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
+{
+  result.equate(A);
+  result.add(B);
+}
+
+/// Make the transpose of a Matrix and put it in another
+/** 
+ * 
+ * 
+ * @param A 
+ * @param result 
+ */
+template <typename T, typename I>
+void 
+transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result);
+
+/// Get a column from the Matrix and put in specified Vector
+/** 
+ * 
+ * 
+ * @param A 
+ * @param cidx 
+ * @param x 
+ */
+template <typename T, typename I>
+void 
+column(const MatrixT<T, I>& A, const int& cidx, VectorT<T, I>& x);
+
+/// Get the diagonal from a Matrix and put it in specified Vector
+/** 
+ * 
+ * @param A 
+ * @param x 
+ */
+template <typename T, typename I>
+void 
+diagonal(const MatrixT<T, I>& A, VectorT<T, I>& x);
+
+/// Multiply two Matrix instances and put result in existing Matrix
+/** 
+ * 
+ * 
+ * @param A 
+ * @param B 
+ * @param result 
+ */
+template <typename T, typename I>
+void 
+multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result);
+
+/// Multiply a Matrix by a Vector and put result in existing Vector
+/** 
+ * @c A, @c x, and @c result must all have the same \ref
+ * parallel::Communicator "communicator". @c x and @c result must be
+ * the same size. The length of @c x must be the number of columns in
+ * @c A. If these conditions are not met, an exception is thrown.
+ * 
+ * @param A 
+ * @param x 
+ * @param result 
+ */
+template <typename T, typename I>
+void 
+multiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result);
+
+/// Multiply the transpose of a Matrix by a Vector and put the result in existing Vector
+/** 
+ * 
+ * 
+ * @param A 
+ * @param x 
+ * @param result same size and distribution as @c x
+ */
+template <typename T, typename I>
+void 
+transposeMultiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result);
 
 // -------------------------------------------------------------
 // Matrix Operations 
@@ -452,7 +562,13 @@ protected:
  * 
  * @return pointer to new Matrix containing A+B
  */
-extern Matrix *add(const Matrix& A, const Matrix& B);
+template <typename T, typename I>
+MatrixT<T, I> *add(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
+{
+  MatrixT<T, I> *result = A.clone();
+  add(A, B, *result);
+  return result;
+}
 
 /// Make the transpose of a Matrix
 /** 
@@ -464,7 +580,8 @@ extern Matrix *add(const Matrix& A, const Matrix& B);
  * 
  * @return pointer to a new Matrix containing A<sup>T</sup>
  */
-extern Matrix *transpose(const Matrix& A);
+template <typename T, typename I>
+MatrixT<T, I> *transpose(const MatrixT<T, I>& A);
 
 /// Get a column from the Matrix and put in new Vector
 /** 
@@ -475,7 +592,14 @@ extern Matrix *transpose(const Matrix& A);
  * 
  * @return 
  */
-extern Vector *column(const Matrix& A, const int& cidx);
+template <typename T, typename I>
+VectorT<T, I> *column(const MatrixT<T, I>& A, const int& cidx)
+{
+  VectorT<T, I> *colv(new VectorT<T, I>(A.communicator(), A.localRows()));
+  column<T, I>(A, cidx, *colv);
+  return colv;
+}
+
 
 /// Get the diagonal from a Matrix and put in new Vector
 /** 
@@ -485,7 +609,13 @@ extern Vector *column(const Matrix& A, const int& cidx);
  * 
  * @return pointer to new, allocated Vector containing the diagonal elements of @c A
  */
-extern Vector *diagonal(const Matrix& A);
+template <typename T, typename I>
+VectorT<T, I> *diagonal(const MatrixT<T, I>& A)
+{
+  VectorT<T, I> *colv(new VectorT<T, I>(A.communicator(), A.localRows()));
+  diagonal<T, I>(A, *colv);
+  return colv;
+}
 
 /// Make a diagonal Matrix from a Vector
 /** 
@@ -497,8 +627,9 @@ extern Vector *diagonal(const Matrix& A);
  * 
  * @return 
  */
-extern Matrix *diagonal(const Vector& x, 
-                        const Matrix::StorageType& stype = Matrix::Sparse);
+template <typename T, typename I>
+MatrixT<T, I> *diagonal(const VectorT<T, I>& x, 
+                        const MatrixStorageType& stype = Sparse);
 
 /// Multiply two Matrix instances and make a new one
 /** 
@@ -509,7 +640,8 @@ extern Matrix *diagonal(const Vector& x,
  * 
  * @return 
  */
-extern Matrix *multiply(const Matrix& A, const Matrix& B);
+template <typename T, typename I>
+MatrixT<T, I> *multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B);
 
 /// Multiply a Matrix by a Vector and make a new Vector for the result
 /** 
@@ -519,7 +651,13 @@ extern Matrix *multiply(const Matrix& A, const Matrix& B);
  * 
  * @return 
  */
-extern Vector *multiply(const Matrix& A, const Vector& x);
+template <typename T, typename I>
+VectorT<T, I> *multiply(const MatrixT<T, I>& A, const VectorT<T, I>& x)
+{
+  VectorT<T, I> *result(new VectorT<T, I>(x.communicator(), A.localRows()));
+  multiply<T, I>(A, x, *result);
+  return result;
+}
 
 /// Multiply the transpose of a Matrix by a Vector and make a new Vector for the result
 /** 
@@ -530,95 +668,61 @@ extern Vector *multiply(const Matrix& A, const Vector& x);
  * 
  * @return 
  */
-extern Vector *transposeMultiply(const Matrix& A, const Vector& x);
+template <typename T, typename I>
+VectorT<T, I> *transposeMultiply(const MatrixT<T, I>& A, const VectorT<T, I>& x)
+{
+  VectorT<T, I> *result(new VectorT<T, I>(x.communicator(), x.localSize()));
+  transposeMultiply<T, I>(A, x, *result);
+  return result;
+}
 
 /// Make an identity matrix with the same ownership as the specified matrix
-extern Matrix *identity(const Matrix& A);
+template <typename T, typename I>
+MatrixT<T, I> *identity(const MatrixT<T, I>& A)
+{
+  MatrixT<T, I> *result(A.clone());
+  result->identity();
+  return result;
+}
+
 
 /// Create a new matrix containing the real part of the specified matrix
-extern Matrix *real(const Matrix& A);
+template <typename T, typename I>
+MatrixT<T, I> *real(const MatrixT<T, I>& A)
+{
+  MatrixT<T, I> *result = A.clone();
+  result->real();
+  return result;
+}
 
 /// Create a new matrix containing the imaginary part of the specified matrix
-extern Matrix *imaginary(const Matrix& A);
+template <typename T, typename I>
+MatrixT<T, I> *imaginary(const MatrixT<T, I>& A)
+{
+  MatrixT<T, I> *result = A.clone();
+  result->imaginary();
+  return result;
+}
 
 /// Create a new matrix containing the complex conjugate of the specified matrix
-extern Matrix *conjugate(const Matrix& A);
+template <typename T, typename I>
+MatrixT<T, I> *conjugate(const MatrixT<T, I>& A)
+{
+  MatrixT<T, I> *result = A.clone();
+  result->conjugate();
+  return result;
+}
+
 
 /// Create a copy of a Matrix, possibly with a different storage type
-extern Matrix *storageType(const Matrix& A, const Matrix::StorageType& new_type);
-
-// -------------------------------------------------------------
-// Matrix Operations
-//
-// put results in existing instance and throw when arguments are
-// inconsistent
-// -------------------------------------------------------------
-
-/// Add two Matrix instances and put the result in a third
-extern void add(const Matrix& A, const Matrix& B, Matrix& result);
-
-/// Make the transpose of a Matrix and put it in another
-/** 
- * 
- * 
- * @param A 
- * @param result 
- */
-extern void transpose(const Matrix& A, Matrix& result);
-
-/// Get a column from the Matrix and put in specified Vector
-/** 
- * 
- * 
- * @param A 
- * @param cidx 
- * @param x 
- */
-extern void column(const Matrix& A, const int& cidx, Vector& x);
-
-/// Get the diagonal from a Matrix and put it in specified Vector
-/** 
- * 
- * @param A 
- * @param x 
- */
-extern void diagonal(const Matrix& A, Vector& x);
-
-/// Multiply two Matrix instances and put result in existing Matrix
-/** 
- * 
- * 
- * @param A 
- * @param B 
- * @param result 
- */
-extern void multiply(const Matrix& A, const Matrix& B, Matrix& result);
-
-/// Multiply a Matrix by a Vector and put result in existing Vector
-/** 
- * @c A, @c x, and @c result must all have the same \ref
- * parallel::Communicator "communicator". @c x and @c result must be
- * the same size. The length of @c x must be the number of columns in
- * @c A. If these conditions are not met, an exception is thrown.
- * 
- * @param A 
- * @param x 
- * @param result 
- */
-extern void multiply(const Matrix& A, const Vector& x, Vector& result);
-
-/// Multiply the transpose of a Matrix by a Vector and put the result in existing Vector
-/** 
- * 
- * 
- * @param A 
- * @param x 
- * @param result same size and distribution as @c x
- */
-extern void transposeMultiply(const Matrix& A, const Vector& x, Vector& result);
+template <typename T, typename I>
+extern MatrixT<T, I> *
+storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type);
 
 /// Create a new matrix and load its contents from the specified (binary) file
-extern Matrix *matrixLoadBinary(const parallel::Communicator&comm, const char *filename);
+template <typename T, typename I>
+extern MatrixT<T, I> *
+matrixLoadBinary(const parallel::Communicator&comm, const char *filename);
 
 
 } // namespace math

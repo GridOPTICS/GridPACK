@@ -8,24 +8,20 @@
 /**
  * @file   linear_solver.cpp
  * @author William A. Perkins
- * @date   2013-10-11 10:07:58 d3g096
+ * @date   2015-03-05 13:17:17 d3g096
  * 
  * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
-// -------------------------------------------------------------
-// Created June 14, 2013 by William A. Perkins
-// Last Change: 2013-05-03 12:23:12 d3g096
-// -------------------------------------------------------------
 
-#include <boost/format.hpp>
 #include "linear_solver.hpp"
-#include "gridpack/utilities/exception.hpp"
+#include "petsc/petsc_linear_solver_implementation.hpp"
 
 namespace gridpack {
 namespace math {
+
 
 // -------------------------------------------------------------
 //  class LinearSolver
@@ -34,17 +30,23 @@ namespace math {
 // -------------------------------------------------------------
 // LinearSolver:: constructors / destructor
 // -------------------------------------------------------------
-LinearSolver::~LinearSolver(void)
+template <typename T, typename I>
+LinearSolverT<T, I>::LinearSolverT(LinearSolverT<T, I>::MatrixType& A)
+  : parallel::WrappedDistributed(),
+    utility::WrappedConfigurable(),
+    utility::Uncopyable(),
+    p_solver(new PETScLinearSolverImplementation<T, I>(A))
 {
+  p_setDistributed(p_solver.get());
+  p_setConfigurable(p_solver.get());
   // empty
 }
 
-// -------------------------------------------------------------
-// LinearSolver::solve
-// -------------------------------------------------------------
+template
+LinearSolverT<ComplexType>::LinearSolverT(LinearSolverT<ComplexType>::MatrixType& A);
 
-
-
+template
+LinearSolverT<RealType>::LinearSolverT(LinearSolverT<RealType>::MatrixType& A);
 
 } // namespace math
 } // namespace gridpack

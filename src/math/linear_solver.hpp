@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2014-10-22 09:20:30 d3g096
+ * @date   2015-03-05 13:09:23 d3g096
  * 
  * @brief  
  * 
@@ -62,14 +62,18 @@ namespace math {
  * "implementation".
  * 
  */
-class LinearSolver 
+template <typename T, typename I = int>
+class LinearSolverT 
   : public parallel::WrappedDistributed,
     public utility::WrappedConfigurable,
     private utility::Uncopyable, 
-    public BaseLinearSolverInterface
+    public BaseLinearSolverInterface<T, I>
 {
 public:
   
+  typedef typename BaseLinearSolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename BaseLinearSolverInterface<T, I>::VectorType VectorType;
+
   /// Default constructor.
   /** 
    * @e Collective
@@ -85,7 +89,7 @@ public:
    * 
    * @return new LinearSolver instance
    */
-  LinearSolver(Matrix& A);
+  LinearSolverT(MatrixType& A);
   
   /// Destructor
   /** 
@@ -95,7 +99,8 @@ public:
    * all processes involved in calling the constructor.
    * 
    */
-  ~LinearSolver(void);
+  ~LinearSolverT(void)
+  {}
 
 protected:
 
@@ -106,7 +111,7 @@ protected:
    * underlying library. This class simply provides an interface on a
    * specific \ref LinearSolverImplementation "implementation".
    */
-  boost::scoped_ptr<LinearSolverImplementation> p_solver;
+  boost::scoped_ptr< LinearSolverImplementation<T, I> > p_solver;
 
   /// Get the solution tolerance (specialized)
   /** 
@@ -155,30 +160,6 @@ protected:
     p_solver->maximumIterations(n);
   }
 
-  /// Allow visits by implemetation visitor
-  /** 
-   * This simply passes an ImplementationVisitor on to the \ref
-   * LinearSolverImplementation "implementation".
-   * 
-   * @param visitor 
-   */
-  void p_accept(ImplementationVisitor& visitor)
-  {
-    p_solver->accept(visitor);
-  }
-
-  /// Allow visits by implemetation visitor
-  /** 
-   * This simply passes a ConstImplementationVisitor on to the \ref
-   * LinearSolverImplementation "implementation".
-   * 
-   * @param visitor 
-   */
-  void p_accept(ConstImplementationVisitor& visitor) const
-  {
-    p_solver->accept(visitor);
-  }
-
   /// Solve w/ the specified RHS, put result in specified vector
   /** 
    * @e Collective.
@@ -197,7 +178,7 @@ protected:
    * @param b Vector containing right hand side of linear system
    * @param x solution Vector
    */
-  void p_solve(const Vector& b, Vector& x) const
+  void p_solve(const VectorType& b, VectorType& x) const
   {
     p_solver->solve(b, x);
   }
@@ -210,13 +191,18 @@ protected:
    * 
    * @return @e dense solution Matrix -- each column is the solution for the corresponding column in @c B
    */
-  Matrix *p_solve(const Matrix& B) const
+  MatrixType *p_solve(const MatrixType& B) const
   {
     return p_solver->solve(B);
   }
 
 
 };
+
+typedef LinearSolverT<ComplexType> ComplexLinearSolver;
+typedef LinearSolverT<RealType> RealLinearSolver;
+
+typedef ComplexLinearSolver LinearSolver;
 
 } // namespace math
 } // namespace gridpack
