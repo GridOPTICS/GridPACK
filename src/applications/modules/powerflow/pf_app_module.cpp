@@ -251,7 +251,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   try {
     solver.solve(*PQ, *X);
   } catch (const gridpack::Exception e) {
-    p_busIO->header("Solver failure\n\n");
+    //p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
     return false;
   }
@@ -299,7 +299,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
-      p_busIO->header("Solver failure\n\n");
+//      p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
       return false;
     }
