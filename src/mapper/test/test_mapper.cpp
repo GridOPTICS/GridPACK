@@ -1072,6 +1072,7 @@ void run (const int &me, const int &nprocs)
 
 }
 
+int
 main (int argc, char **argv) {
 
   // Initialize MPI libraries
@@ -1099,4 +1100,5 @@ main (int argc, char **argv) {
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
+  return ierr;
 }

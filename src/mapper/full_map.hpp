@@ -324,6 +324,7 @@ bool check(void)
       }
     }
   }
+  return ok;
 }
 
 private:
