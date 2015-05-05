@@ -375,7 +375,7 @@ void gridpack::ymatrix::YMBranch::load(
     p_resistance.push_back(rvar);
     rvar = 0.0;
     ok = data->getValue(BRANCH_SHIFT, &rvar, idx);
-    rvar = -rvar*pi/180.0; 
+    rvar = rvar*pi/180.0; 
     p_phase_shift.push_back(rvar);
     rvar = 0.0;
     ok = data->getValue(BRANCH_TAP, &rvar, idx);
@@ -539,6 +539,7 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
     gridpack::ComplexType yij,aij,bij;
     yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
     bij = gridpack::ComplexType(0.0,p_charging[idx]);
+    //bij = 0.0;
     if (yij != zero) yij = -1.0/yij;
     if (p_xform[idx]) {
       // evaluate flow for transformer
