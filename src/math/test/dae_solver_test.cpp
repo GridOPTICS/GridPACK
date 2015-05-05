@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-02-11 07:40:46 d3g096
+ * @date   2015-05-05 12:37:50 d3g096
  * 
  * @brief  
  * 
@@ -30,6 +30,27 @@
 #include "math.hpp"
 #include "dae_solver.hpp"
 
+#ifdef TEST_REAL
+
+typedef gridpack::RealType TestType;
+
+#define TEST_VALUE_CLOSE(x, y, delta) \
+  BOOST_CHECK_CLOSE((y), (x), delta);
+
+#define TEST_VALUE(r, i) (r)
+
+#else 
+
+typedef gridpack::ComplexType TestType;
+#define TEST_VALUE_CLOSE(x, y, delta) \
+  BOOST_CHECK_CLOSE(real(y), real(x), delta); \
+  BOOST_CHECK_CLOSE( abs(y), abs(x), delta);
+
+#define TEST_VALUE(r, i) TestType(r,i)
+
+#endif
+
+
 /// The configuration used for these tests
 static gridpack::utility::Configuration::CursorPtr test_config;
 
@@ -40,6 +61,10 @@ class Problem
   : private gridpack::utility::Uncopyable
 {
 public:
+
+  typedef gridpack::math::DAESolverT<TestType> TheSolverType;
+  typedef TheSolverType::VectorType VectorType;
+  typedef TheSolverType::MatrixType MatrixType;
 
   /// Default constructor.
   Problem(const int& local_size, const double& maxtime, const double outstep)
@@ -61,30 +86,30 @@ public:
 
   /// Build a Jacobian
   virtual void operator() (const double& time, 
-                           const gridpack::math::Vector& X, 
-                           const gridpack::math::Vector& Xdot, 
-                           const double& shift, gridpack::math::Matrix& J) = 0;
+                           const VectorType& X, 
+                           const VectorType& Xdot, 
+                           const double& shift, MatrixType& J) = 0;
 
   /// Build the RHS function
   virtual void operator() (const double& time, 
-                           const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-                           gridpack::math::Vector& F) = 0;
+                           const VectorType& X, const VectorType& Xdot, 
+                           VectorType& F) = 0;
 
   /// Get the initial solution
-  virtual gridpack::math::Vector *initial(const gridpack::parallel::Communicator& comm) = 0;
+  virtual VectorType *initial(const gridpack::parallel::Communicator& comm) = 0;
   
 
   /// Solve the problem
   void solve(const gridpack::parallel::Communicator& comm,
              gridpack::utility::Configuration::CursorPtr conf)
   {
-    gridpack::math::DAEJacobianBuilder jbuilder = boost::ref(*this);
-    gridpack::math::DAEFunctionBuilder fbuilder = boost::ref(*this);
+    TheSolverType::JacobianBuilder jbuilder = boost::ref(*this);
+    TheSolverType::FunctionBuilder fbuilder = boost::ref(*this);
     
-    gridpack::math::DAESolver solver(comm, p_size, jbuilder, fbuilder);
+    TheSolverType solver(comm, p_size, jbuilder, fbuilder);
     solver.configure(conf);
 
-    std::auto_ptr<gridpack::math::Vector> x(initial(comm));
+    std::auto_ptr<VectorType> x(initial(comm));
     
     double t0(0.0), t(t0);
     solver.initialize(t0, 0.001, *x);
@@ -128,13 +153,13 @@ public:
 
   /// Build a Jacobian
   void operator() (const double& time, 
-                   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-                   const double& shift, gridpack::math::Matrix& J)
+                   const VectorType& X, const VectorType& Xdot, 
+                   const double& shift, MatrixType& J)
   {
     int lo, hi;
     X.localIndexRange(lo, hi);
     BOOST_ASSERT((hi-lo) == this->size());
-    std::vector<gridpack::ComplexType> x(this->size());
+    std::vector<TestType> x(this->size());
     X.getElementRange(lo, hi, &x[0]);
     J.setElement(lo+0, lo+0, shift + 0.04);
     J.setElement(lo+0, lo+1, -1.0e+04*x[2]);
@@ -150,13 +175,13 @@ public:
 
   /// Build the RHS vector
   void operator() (const double& time, 
-                   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-                   gridpack::math::Vector& F)
+                   const VectorType& X, const VectorType& Xdot, 
+                   VectorType& F)
   {
     int lo, hi;
     X.localIndexRange(lo, hi);
     BOOST_ASSERT((hi-lo) == this->size());
-    std::vector<gridpack::ComplexType> x(this->size()), xdot(this->size());
+    std::vector<TestType> x(this->size()), xdot(this->size());
     X.getElementRange(lo, hi, &x[0]);
     Xdot.getElementRange(lo, hi, &xdot[0]);
     F.setElement(lo+0, xdot[0] + 0.04*x[0] - 1.0E+04*x[1]*x[2]);
@@ -167,10 +192,10 @@ public:
 
   /// Get the initial solution
   /// 
-  gridpack::math::Vector *initial(const gridpack::parallel::Communicator& comm)
+  VectorType *initial(const gridpack::parallel::Communicator& comm)
   {
-    gridpack::math::Vector *result = 
-      new gridpack::math::Vector(comm, this->size());
+    VectorType *result = 
+      new VectorType(comm, this->size());
     result->zero();
     int lo, hi;
     result->localIndexRange(lo, hi);
@@ -200,13 +225,13 @@ public:
 
   /// Build a Jacobian
   void operator() (const double& time, 
-                   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-                   const double& shift, gridpack::math::Matrix& J)
+                   const VectorType& X, const VectorType& Xdot, 
+                   const double& shift, MatrixType& J)
   {
     int lo, hi;
     X.localIndexRange(lo, hi);
     BOOST_ASSERT((hi-lo) == this->size());
-    std::vector<gridpack::ComplexType> x(this->size());
+    std::vector<TestType> x(this->size());
     X.getElementRange(lo, hi, &x[0]);
     J.setElement(lo+0, lo+0, shift - 77.27*((1. - 8.375e-6*x[0] - x[1]) - 8.375e-6*x[0]));
     J.setElement(lo+0, lo+1, -77.27*(1. - x[0]));
@@ -222,13 +247,13 @@ public:
 
   /// Build the RHS vector
   void operator() (const double& time, 
-                   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-                   gridpack::math::Vector& F)
+                   const VectorType& X, const VectorType& Xdot, 
+                   VectorType& F)
   {
     int lo, hi;
     X.localIndexRange(lo, hi);
     BOOST_ASSERT((hi-lo) == this->size());
-    std::vector<gridpack::ComplexType> x(this->size()), xdot(this->size());
+    std::vector<TestType> x(this->size()), xdot(this->size());
     X.getElementRange(lo, hi, &x[0]);
     Xdot.getElementRange(lo, hi, &xdot[0]);
     F.setElement(lo+0, xdot[0] - 77.27*(x[1] + x[0]*(1. - 8.375e-6*x[0] - x[1])));
@@ -239,10 +264,10 @@ public:
 
   /// Get the initial solution
   /// 
-  gridpack::math::Vector *initial(const gridpack::parallel::Communicator& comm)
+  VectorType *initial(const gridpack::parallel::Communicator& comm)
   {
-    gridpack::math::Vector *result = 
-      new gridpack::math::Vector(comm, this->size());
+    VectorType *result = 
+      new VectorType(comm, this->size());
     result->zero();
     int lo, hi;
     result->localIndexRange(lo, hi);
@@ -275,13 +300,13 @@ public:
 
   /// Build a Jacobian
   void operator() (const double& time, 
-                   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-                   const double& shift, gridpack::math::Matrix& J)
+                   const VectorType& X, const VectorType& Xdot, 
+                   const double& shift, MatrixType& J)
   {
     int lo, hi;
     X.localIndexRange(lo, hi);
     BOOST_ASSERT((hi-lo) == this->size());
-    std::vector<gridpack::ComplexType> x(this->size());
+    std::vector<TestType> x(this->size());
     X.getElementRange(lo, hi, &x[0]);
     J.setElement(lo+0, lo+0, shift + p_lambda);
     J.ready();
@@ -289,14 +314,14 @@ public:
 
   /// Build the RHS vector
   void operator() (const double& t, 
-                   const gridpack::math::Vector& X, const gridpack::math::Vector& Xdot, 
-                   gridpack::math::Vector& F)
+                   const VectorType& X, const VectorType& Xdot, 
+                   VectorType& F)
   {
     double l(p_lambda);
     int lo, hi;
     X.localIndexRange(lo, hi);
     BOOST_ASSERT((hi-lo) == this->size());
-    std::vector<gridpack::ComplexType> x(this->size()), xdot(this->size());
+    std::vector<TestType> x(this->size()), xdot(this->size());
     X.getElementRange(lo, hi, &x[0]);
     Xdot.getElementRange(lo, hi, &xdot[0]);
     F.setElement(lo+0, xdot[0] + l*(x[0] - cos(t)));
@@ -305,10 +330,10 @@ public:
 
   /// Get the initial solution
   /// 
-  gridpack::math::Vector *initial(const gridpack::parallel::Communicator& comm)
+  VectorType *initial(const gridpack::parallel::Communicator& comm)
   {
-    gridpack::math::Vector *result = 
-      new gridpack::math::Vector(comm, this->size());
+    VectorType *result = 
+      new VectorType(comm, this->size());
     result->zero();
     int lo, hi;
     double t(0.0);

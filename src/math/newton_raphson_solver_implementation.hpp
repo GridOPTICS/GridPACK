@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2013-12-04 13:56:03 d3g096
+ * @date   2015-03-27 08:29:42 d3g096
  * 
  * @brief  
  * 
@@ -20,9 +20,10 @@
 #ifndef _newton_raphson_solver_implementation_hpp_
 #define _newton_raphson_solver_implementation_hpp_
 
+#include <iostream>
 #include <boost/scoped_ptr.hpp>
-#include "nonlinear_solver_implementation.hpp"
 #include "nonlinear_solver_functions.hpp"
+#include "nonlinear_solver_implementation.hpp"
 #include "linear_solver.hpp"
 
 namespace gridpack {
@@ -60,10 +61,15 @@ namespace math {
  * Vector::norm2() "norm" of \f$ \Delta \mathbf{x}^{k} \f$ is less
  * then some specified small tolerance.
  */
+template <typename T, typename I>
 class NewtonRaphsonSolverImplementation 
-  : public NonlinearSolverImplementation
+  : public NonlinearSolverImplementation<T, I>
 {
 public:
+
+  typedef typename NonlinearSolverImplementation<T, I>::VectorType VectorType;
+  typedef typename NonlinearSolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename NonlinearSolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
 
   /// Default constructor.
   /** 
@@ -82,12 +88,23 @@ public:
   NewtonRaphsonSolverImplementation(const parallel::Communicator& comm,
                                     const int& local_size,
                                     JacobianBuilder form_jacobian,
-                                    FunctionBuilder form_function);
+                                    FunctionBuilder form_function)
+    : NonlinearSolverImplementation<T, I>(comm, local_size, form_jacobian, form_function),
+      p_linear_solver()
+  {
+    this->configurationKey("NewtonRaphsonSolver");
+  }
+
   
   /// Construct with an existing Jacobian Matrix
-  NewtonRaphsonSolverImplementation(Matrix& J,
+  NewtonRaphsonSolverImplementation(MatrixT<T, I>& J,
                                     JacobianBuilder form_jacobian,
-                                    FunctionBuilder form_function);
+                                    FunctionBuilder form_function)
+    : NonlinearSolverImplementation<T, I>(J, form_jacobian, form_function),
+      p_linear_solver()
+  {
+    this->configurationKey("NewtonRaphsonSolver");
+  }
 
   /// Destructor
   /**
@@ -95,7 +112,9 @@ public:
    * the \ref parallel::Communicator "communicator" used for \ref
    * NewtonRaphsonSolverImplementation() "construction".
    */
-  ~NewtonRaphsonSolverImplementation(void);
+  ~NewtonRaphsonSolverImplementation(void)
+  {
+  }
 
 
 protected:
@@ -111,10 +130,40 @@ protected:
   int p_max_iterations;
 
   /// The linear solver
-  boost::scoped_ptr<LinearSolver> p_linear_solver;
+  boost::scoped_ptr< LinearSolverT<T, I> > p_linear_solver;
 
   /// Solve w/ using the specified initial guess (specialized)
-  void p_solve(void);
+  void p_solve(VectorType& x)
+  {
+    NonlinearSolverImplementation<T, I>::p_solve(x);
+    double stol(1.0e+30);
+    double ftol(1.0e+30);
+    int iter(0);
+
+    boost::scoped_ptr<VectorType> deltaX(this->p_X->clone());
+    while (stol > this->p_solutionTolerance && iter < this->p_maxIterations) {
+      this->p_function(*(this->p_X), *(this->p_F));
+      this->p_F->scale(-1.0);
+      this->p_jacobian(*(this->p_X), *(this->p_J));
+      if (!p_linear_solver) {
+        p_linear_solver.reset(new LinearSolverT<T, I>(*(this->p_J)));
+        p_linear_solver->configure(this->p_configCursor);
+      } 
+      deltaX->zero();
+      p_linear_solver->solve(*(this->p_F), *deltaX);
+      stol = deltaX->norm2();
+      ftol = this->p_F->norm2();
+      this->p_X->add(*deltaX);
+      iter += 1;
+      if (this->processor_rank() == 0) {
+        std::cout << "Newton-Raphson "
+                  << "iteration " << iter << ": "
+                  << "solution residual norm = " << stol << ", "
+                  << "function norm = " << ftol
+                  << std::endl;
+      }
+    }
+  }
 
 };
 

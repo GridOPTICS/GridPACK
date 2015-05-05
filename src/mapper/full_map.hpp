@@ -111,7 +111,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
   boost::shared_ptr<gridpack::math::Matrix> Ret;
   if (isDense) {
     Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
-        gridpack::math::Matrix::Dense));
+        gridpack::math::Dense));
   } else {
 #ifndef NZ_PER_ROW
     Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
@@ -153,7 +153,7 @@ gridpack::math::Matrix* intMapToMatrix(bool isDense = false)
   gridpack::math::Matrix *Ret;
   if (isDense) {
     Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
-        gridpack::math::Matrix::Dense);
+        gridpack::math::Dense);
   } else {
 #ifndef NZ_PER_ROW
     Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,

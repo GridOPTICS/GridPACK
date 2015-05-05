@@ -8,5 +8,6 @@
 #include <boost/serialization/complex.hpp>
 
 namespace gridpack{
-  typedef std::complex<double> ComplexType;
+typedef double RealType;
+typedef std::complex<RealType> ComplexType;
 }

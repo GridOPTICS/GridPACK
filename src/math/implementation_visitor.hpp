@@ -9,7 +9,7 @@
 /**
  * @file   implementation_visitor.hpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:07 d3g096
+ * @date   2015-03-05 12:51:12 d3g096
  * 
  * @brief  
  * 
@@ -30,13 +30,8 @@
 namespace gridpack {
 namespace math {
 
-class MatrixImplementation;
-class VectorImplementation;
-class LinearSolverImplementation;
-
-class PETScVectorImplementation;
-class PETScMatrixImplementation;
-class PETScLinearSolverImplementation;
+class PetscVectorWrapper;
+class PetscMatrixWrapper;
 
 // -------------------------------------------------------------
 //  class ImplementationVisitor
@@ -60,15 +55,8 @@ public:
   virtual ~ImplementationVisitor(void);
 
   /// The default visit (should just assert or do nothing)
-  virtual void visit(VectorImplementation&);
-  virtual void visit(PETScVectorImplementation&);
-
-  virtual void visit(MatrixImplementation&);
-  virtual void visit(PETScMatrixImplementation&);
-
-  virtual void visit(LinearSolverImplementation&);
-  virtual void visit(PETScLinearSolverImplementation&);
-
+  virtual void visit(PetscVectorWrapper&);
+  virtual void visit(PetscMatrixWrapper&);
 };
 
 // -------------------------------------------------------------
@@ -92,15 +80,8 @@ public:
   virtual ~ConstImplementationVisitor(void);
 
   /// The default visit, const version (should just assert or do nothing)
-  virtual void visit(const VectorImplementation&);
-  virtual void visit(const PETScVectorImplementation&);
-
-  virtual void visit(const MatrixImplementation&);
-  virtual void visit(const PETScMatrixImplementation&);
-
-  virtual void visit(const LinearSolverImplementation&);
-  virtual void visit(const PETScLinearSolverImplementation&);
-
+  virtual void visit(const PetscVectorWrapper&);
+  virtual void visit(const PetscMatrixWrapper&);
 };
 
 } // namespace math
