@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-05-01 12:38:40 d3g096
+ * @date   2015-05-05 07:22:07 d3g096
  * 
  * @brief  
  * 
@@ -26,20 +26,45 @@
 #if defined(PETSC_USE_REAL_DOUBLE)
 
 #if defined(PETSC_USE_COMPLEX)
+typedef DoubleComplex PetscScalarGA;
 #define MT_PETSC_SCALAR MT_C_DCPL
+#define GA_GEMM GA_Zgemm
 #else 
+typedef double PetscScalarGA;
 #define MT_PETSC_SCALAR MT_C_DBL
+#define GA_GEMM GA_Dgemm
 #endif
 
 #else
 
 #if defined(PETSC_USE_COMPLEX)
+typedef SingleComplex PetscScalarGA;
 #define MT_PETSC_SCALAR MT_C_SCPL;
+#define GA_GEMM GA_Cgemm
 #else
+typedef float PetscScalarGA;
 #define MT_PETSC_SCALAR MT_C_FLOAT
+#define GA_GEMM GA_Sgemm
 #endif
 
 #endif
+
+static const PetscScalarGA one =
+#if defined(PETSC_USE_COMPLEX)
+  { 1.0, 0.0 }
+#else
+  1.0
+#endif
+  ;
+
+static const PetscScalarGA zero =
+#if defined(PETSC_USE_COMPLEX)
+  { 0.0, 0.0 }
+#else
+  0.0
+#endif
+  ;
+  
 
 
 // -------------------------------------------------------------
@@ -61,7 +86,7 @@ CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
 {
   PetscErrorCode ierr = 0;
   int dims[2] = {grows, gcols};
-  int chunk[2] = {1, gcols};
+  int chunk[2] = { 1, 1 };
 
   /* Do not honor local ownership request, initially. */
 
@@ -73,48 +98,65 @@ CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
 }
 
 // -------------------------------------------------------------
-// CreateVecGA
-// -------------------------------------------------------------
-static
-PetscErrorCode
-CreateVecGA(int pgroup, int lrows, int grows, int *ga)
-{
-  PetscErrorCode ierr = 0;
-  int dims[1] = {grows};
-
-  /* Do not honor local ownership request, initially. */
-
-  *ga = NGA_Create(MT_PETSC_SCALAR, 1, dims, "PETSc Vector", NULL);
-  
-  return ierr;
-}
-
-// -------------------------------------------------------------
 // Vec2GA
 // -------------------------------------------------------------
 static
 PetscErrorCode
-Vec2GA(Vec x, int pgroup, int *ga)
+Vec2GA(Vec x, int pgroup, int *ga, bool trans = false)
 {
   int lrows, rows;
-  int lo, hi, ld = 1;
   PetscErrorCode ierr = 0;
-  PetscScalar *v;
   
   ierr = VecGetLocalSize(x, &lrows); CHKERRQ(ierr);
   ierr = VecGetSize(x, &rows); CHKERRQ(ierr);
-  ierr = CreateVecGA(pgroup, lrows, rows, ga); CHKERRQ(ierr);
   
-  ierr = VecGetOwnershipRange(x, &lo, &hi); CHKERRQ(ierr);
-
+  PetscInt vlo, vhi;
+  ierr = VecGetOwnershipRange(x, &vlo, &vhi); CHKERRQ(ierr);
+  
+  PetscScalar *v;
   ierr = VecGetArray(x, &v); CHKERRQ(ierr);
-  NGA_Put(*ga, &lo, &hi, v, &ld);
+
+  int lo[2] = {0,0}, hi[2] = {0,0}, ld[2] = {1,1};
+  if (!trans) {
+    ierr = CreateMatGA(pgroup, lrows, 1, rows, 1, ga); CHKERRQ(ierr);
+    lo[0] = vlo; 
+    hi[0] = vhi-1;
+  } else {
+    ierr = CreateMatGA(pgroup, 1, lrows, 1, rows, ga); CHKERRQ(ierr);
+    lo[1] = vlo; 
+    hi[1] = vhi-1;
+  }
+  NGA_Put(*ga, lo, hi, v, ld);
+  // GA_Print(*ga);
   ierr = VecRestoreArray(x, &v); CHKERRQ(ierr);
     
   return ierr;
 }
-  
 
+// -------------------------------------------------------------
+// GA2Vec
+// -------------------------------------------------------------
+static
+int
+GA2Vec(int ga, Vec x)
+{
+  int lrows, rows;
+  PetscErrorCode ierr = 0;
+  
+  ierr = VecGetLocalSize(x, &lrows); CHKERRQ(ierr);
+  ierr = VecGetSize(x, &rows); CHKERRQ(ierr);
+  
+  PetscInt vlo, vhi;
+  ierr = VecGetOwnershipRange(x, &vlo, &vhi); CHKERRQ(ierr);
+  
+  PetscScalar *v;
+  ierr = VecGetArray(x, &v); CHKERRQ(ierr);
+   int lo[2] = {vlo,0}, hi[2] = {vhi-1,0}, ld[2] = {1,1};
+  NGA_Get(ga, lo, hi, v, ld);
+  ierr = VecRestoreArray(x, &v); CHKERRQ(ierr);
+    
+  return ierr;
+}  
 
 // -------------------------------------------------------------
 // MatSetValuesDenseGA
@@ -220,10 +262,30 @@ static
 PetscErrorCode
 MatMultDenseGA(Mat mat, Vec x, Vec y)
 {
+  // FIXME: I'm assuming the Mat and Vec's are compatible and that's
+  // been checked somewhere else. Probably a mistake.
+
   PetscErrorCode ierr = 0;
   struct MatGACtx *ctx;
   ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
-  
+
+  PetscInt Arows, Acols;
+  ierr = MatGetSize(mat, &Arows, &Acols); CHKERRQ(ierr);
+
+  int g_x, g_y;
+  ierr = Vec2GA(x, ctx->gaGroup, &g_x, true); CHKERRQ(ierr);
+  ierr = Vec2GA(y, ctx->gaGroup, &g_y, true); CHKERRQ(ierr);
+
+  PetscScalarGA alpha(one), beta(zero);
+  GA_Print(ctx->ga);
+  GA_Print(g_x);
+  GA_Print(g_y);
+  GA_GEMM('N', 'N', Arows, 1, Acols, alpha, ctx->ga, g_x, beta, g_y);
+
+  ierr = GA2Vec(g_y, y); CHKERRQ(ierr);
+
+  GA_Destroy(g_y);
+  GA_Destroy(g_x);
 
   return ierr;
 }
@@ -312,6 +374,7 @@ MatCreateDenseGA(MPI_Comm comm,
 
   ierr = MatShellSetOperation(*A, MATOP_SET_VALUES, (void(*)(void))MatSetValuesDenseGA); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*A, MATOP_GET_VALUES, (void(*)(void))MatGetValuesDenseGA); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*A, MATOP_MULT, (void(*)(void))MatMultDenseGA); CHKERRQ(ierr); 
 
   ierr = MatShellSetOperation(*A, MATOP_ASSEMBLY_BEGIN, (void(*)(void))MatAssemmblyBeginDenseGA); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*A, MATOP_ASSEMBLY_END, (void(*)(void))MatAssemmblyEndDenseGA); CHKERRQ(ierr);

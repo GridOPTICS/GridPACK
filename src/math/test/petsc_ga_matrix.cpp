@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-01 12:35:30 d3g096
+ * @date   2015-05-05 08:42:42 d3g096
  * 
  * @brief  
  * 
@@ -26,6 +26,8 @@
 #define BOOST_TEST_ALTERNATIVE_INIT_API
 #include <boost/test/included/unit_test.hpp>
 
+static const PetscInt local_size(5);
+
 BOOST_AUTO_TEST_SUITE(GAMatrixTest)
 
 BOOST_AUTO_TEST_CASE( construction )
@@ -37,7 +39,7 @@ BOOST_AUTO_TEST_CASE( construction )
   PetscInt lrows, lcols;
   PetscInt lo, hi;
 
-  ierr = MatCreateDenseGA(world, 5, 5, PETSC_DETERMINE, PETSC_DETERMINE, &A); CHKERRXX(ierr);
+  ierr = MatCreateDenseGA(world, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE, &A); CHKERRXX(ierr);
   ierr = MatGetLocalSize(A, &lrows, &lcols);  CHKERRXX(ierr);
 
   BOOST_CHECK_EQUAL(lrows, 5);
@@ -84,6 +86,55 @@ BOOST_AUTO_TEST_CASE( construction )
 
 
   ierr = MatDestroy(&A);
+}
+
+BOOST_AUTO_TEST_CASE( VectorMultiply )
+{
+  PetscErrorCode ierr(0);
+  gridpack::parallel::Communicator world;
+
+  Mat A;
+  PetscInt lrows, lcols;
+  PetscInt grows, gcols;
+  PetscInt lo, hi;
+
+  ierr = MatCreateDenseGA(world, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE, &A); CHKERRXX(ierr);
+  ierr = MatGetLocalSize(A, &lrows, &lcols);  CHKERRXX(ierr);
+  ierr = MatGetSize(A, &grows, &gcols); CHKERRXX(ierr);
+
+  BOOST_CHECK_EQUAL(lrows, 5);
+  BOOST_CHECK_EQUAL(lcols, 5);
+
+  PetscScalar v(2.0);
+  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
+  for (int i = lo; i < hi; ++i) {
+    ierr = MatSetValues(A, 1, &i, 1, &i, &v, INSERT_VALUES);  CHKERRXX(ierr);
+  }
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+
+  Vec x, y;
+  ierr = VecCreate(world, &x); CHKERRXX(ierr);
+  ierr = VecSetSizes(x, lcols, gcols); CHKERRXX(ierr);
+  ierr = VecSetFromOptions(x); CHKERRXX(ierr);
+  v = 1.0;
+  ierr = VecSet(x, v); CHKERRXX(ierr);
+  ierr = VecAssemblyBegin(x);
+  ierr = VecAssemblyEnd(x);
+
+  ierr = VecCreate(world, &y); CHKERRXX(ierr);
+  ierr = VecSetSizes(y, lrows, grows); CHKERRXX(ierr);
+  ierr = VecSetFromOptions(y); CHKERRXX(ierr);
+  v = 0.0;
+  ierr = VecSet(y, v); CHKERRXX(ierr);
+  ierr = VecAssemblyBegin(y);
+  ierr = VecAssemblyEnd(y);
+
+  // FIXME: ierr = MatMult(A, x, y); CHKERRXX(ierr);
+
+  ierr = VecDestroy(&x); CHKERRXX(ierr);
+  ierr = VecDestroy(&y); CHKERRXX(ierr);
+  ierr = MatDestroy(&A); CHKERRXX(ierr);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
