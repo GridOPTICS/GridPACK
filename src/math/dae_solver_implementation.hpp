@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-05-05 10:08:32 d3g096
+ * @date   2015-05-05 10:26:34 d3g096
  * 
  * @brief  
  * 
@@ -33,28 +33,40 @@ namespace math {
 // -------------------------------------------------------------
 //  class DAESolverImplementation
 // -------------------------------------------------------------
+template <typename T, typename I = int>
 class DAESolverImplementation 
-  : public DAESolverInterface<ComplexType>,
+  : public DAESolverInterface<T, I>,
     public parallel::Distributed,
     public utility::Configurable,
     private utility::Uncopyable
 {
 public:
 
-  typedef typename DAESolverInterface<ComplexType>::VectorType VectorType;
-  typedef typename DAESolverInterface<ComplexType>::MatrixType MatrixType;
-  typedef typename DAEBuilder<ComplexType>::Jacobian JacobianBuilder;
-  typedef typename DAEBuilder<ComplexType>::Function FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::VectorType VectorType;
+  typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename DAEBuilder<T, I>::Jacobian JacobianBuilder;
+  typedef typename DAEBuilder<T, I>::Function FunctionBuilder;
   
 
   /// Default constructor.
   DAESolverImplementation(const parallel::Communicator& comm, 
                           const int local_size,
                           JacobianBuilder& jbuilder,
-                          FunctionBuilder& fbuilder);
+                          FunctionBuilder& fbuilder)
+    : parallel::Distributed(comm),
+      utility::Configurable("DAESolver"),
+      utility::Uncopyable(),
+      p_J(comm, local_size, local_size),
+      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder)
+  {
+    
+  }
+
 
   /// Destructor
-  ~DAESolverImplementation(void);
+  ~DAESolverImplementation(void)
+  {
+  }
 
 protected:
 
@@ -68,7 +80,8 @@ protected:
   JacobianBuilder p_Jbuilder;
 
   /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::CursorPtr props);
+  void p_configure(utility::Configuration::CursorPtr props)
+  {}
 
 };
 

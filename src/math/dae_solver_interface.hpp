@@ -10,7 +10,7 @@
 /**
  * @file   dae_solver_interface.hpp
  * @author William A. Perkins
- * @date   2015-05-05 09:58:49 d3g096
+ * @date   2015-05-05 11:44:17 d3g096
  * 
  * @brief  
  * 
@@ -88,7 +88,7 @@ protected:
   /// Initialize the system (specialized)
   virtual void p_initialize(const double& t0,
                             const double& deltat0,
-                            Vector& x0) = 0;
+                            VectorType& x0) = 0;
                        
 
   /// Solve the system (specialized)

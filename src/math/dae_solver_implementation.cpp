@@ -8,7 +8,7 @@
 /**
  * @file   dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2015-05-05 10:11:29 d3g096
+ * @date   2015-05-05 10:26:31 d3g096
  * 
  * @brief  
  * 
@@ -19,40 +19,6 @@
 
 namespace gridpack {
 namespace math {
-
-// -------------------------------------------------------------
-//  class DAESolverImplementation
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// DAESolverImplementation:: constructors / destructor
-// -------------------------------------------------------------
-DAESolverImplementation::DAESolverImplementation(const parallel::Communicator& comm, 
-                                                 const int local_size,
-                                                 DAESolverImplementation::JacobianBuilder& jbuilder,
-                                                 DAESolverImplementation::FunctionBuilder& fbuilder)
-  : parallel::Distributed(comm),
-    utility::Configurable("DAESolver"),
-    utility::Uncopyable(),
-    p_J(comm, local_size, local_size),
-    p_Fbuilder(fbuilder), p_Jbuilder(jbuilder)
-{
-  
-}
-
-DAESolverImplementation::~DAESolverImplementation(void)
-{
-}
-
-// -------------------------------------------------------------
-// DAESolverImplementation::p_configure
-// -------------------------------------------------------------
-void
-DAESolverImplementation::p_configure(utility::Configuration::CursorPtr props)
-{
-  // empty
-}
-
 
 } // namespace math
 } // namespace gridpack

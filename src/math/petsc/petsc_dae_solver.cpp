@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.cpp
  * @author William A. Perkins
- * @date   2015-05-05 10:13:34 d3g096
+ * @date   2015-05-05 12:08:09 d3g096
  * 
  * @brief  
  * 
@@ -30,18 +30,31 @@ namespace math {
 // -------------------------------------------------------------
 // DAESolver:: constructors / destructor
 // -------------------------------------------------------------
-DAESolver::DAESolver(const parallel::Communicator& comm, 
-                     const int local_size,
-                     DAESolverImplementation::JacobianBuilder& jbuilder,
-                     DAESolverImplementation::FunctionBuilder& fbuilder)
+template <typename T, typename I>
+DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm, 
+                             const int local_size,
+                             DAESolverT<T, I>::JacobianBuilder& jbuilder,
+                             DAESolverT<T, I>::FunctionBuilder& fbuilder)
   : parallel::WrappedDistributed(),
     utility::WrappedConfigurable(),
     utility::Uncopyable(),
     p_impl()
 {
-  p_setImpl(new PETScDAESolverImplementation(comm, local_size,
-                                             jbuilder, fbuilder));
+  p_setImpl(new PETScDAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder));
 }
+
+
+template 
+DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm, 
+                                    const int local_size,
+                                    DAESolverT<ComplexType>::JacobianBuilder& jbuilder,
+                                    DAESolverT<ComplexType>::FunctionBuilder& fbuilder);
+
+template 
+DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm, 
+                                    const int local_size,
+                                    DAESolverT<RealType>::JacobianBuilder& jbuilder,
+                                    DAESolverT<RealType>::FunctionBuilder& fbuilder);
 
 } // namespace math
 } // namespace gridpack

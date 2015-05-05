@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-05-05 09:55:00 d3g096
+# Last Change: 2015-05-05 12:13:00 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -273,7 +273,7 @@ endif()
 # -------------------------------------------------------------
 add_executable(dae_solver_test test/dae_solver_test.cpp)
 target_link_libraries(dae_solver_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(dae_solver dae_solver_test)
+gridpack_add_unit_test(complex_dae_solver dae_solver_test)
 if (PETSC_FOUND)
    add_dependencies(dae_solver_test math_test_input)
 endif()
