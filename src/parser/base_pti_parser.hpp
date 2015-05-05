@@ -64,6 +64,8 @@ class BasePTIParser : public BaseParser<_network>
       std::string ext = getExtension(fileName);
       if (ext == "dyr") {
         getDSExternal(fileName);
+      } else if (ext == "uc") {
+        getUCExternal(fileName);
       }
     }
 
@@ -221,6 +223,170 @@ class BasePTIParser : public BaseParser<_network>
       //      p_timer->stop(t_ds);
     }
 
+    struct uc_params{
+      int bus_id; // ID of bus that owns generator
+      char gen_id[3]; // Generator ID
+      int type;
+      double init_level; // Initial production level
+      double min_gen; // Minimum generation
+      double max_gen; // Maximum generation
+      double max_oper; // Maximum operating generation
+      int min_up;
+      int min_down;
+      double ramp_up;
+      double ramp_down;
+      double start_up; // Start up cost
+      double const_cost; // Constant cost
+      double lin_cost; // Linear cost
+      double co_2_cost;
+      double init_prd; // Init periods
+      double start_cap; // Startup cap
+      double shut_cap; // Shutdown cap
+    } ;
+
+    /**
+     * This routine opens up a .uc file with parameters for a unit commitment
+     * calculationand distributes the parameters to whatever processor holds the
+     * corresponding buses. It assumes that a .raw file has already been parsed
+     */
+    void getUCExternal(const std::string & fileName)
+    {
+
+      int me(p_network->communicator().rank());
+
+      std::vector<uc_params> uc_data;
+      if (me == 0) {
+        std::ifstream            input;
+        input.open(fileName.c_str());
+        if (!input.is_open()) {
+          return;
+        }
+        find_uc_vector(input, &uc_data);
+        input.close();
+      }
+      int nsize = uc_data.size();
+      std::vector<int> buses;
+      int i;
+      for (i=0; i<nsize; i++) {
+        buses.push_back(uc_data[i].bus_id);
+      }
+      gridpack::hash_distr::HashDistribution<_network,uc_params,uc_params>
+        distr(p_network);
+      distr.distributeBusValues(buses,uc_data);
+      // Now match data with corresponding data collection objects
+      gridpack::component::DataCollection *data;
+      nsize = buses.size();
+      for (i=0; i<nsize; i++) {
+        int l_idx = buses[i];
+        data = dynamic_cast<gridpack::component::DataCollection*>
+          (p_network->getBusData(l_idx).get());
+
+        // Find out how many generators are already on bus
+        int ngen;
+        if (!data->getValue(GENERATOR_NUMBER, &ngen)) continue;
+        // Identify index of generator to which this data applies
+        int g_id = -1;
+        // Clean up 2 character tag for generator ID
+        std::string tag = uc_data[i].gen_id;
+        int j;
+        for (j=0; j<ngen; j++) {
+          std::string t_id;
+          data->getValue(GENERATOR_ID,&t_id,j);
+          if (tag == t_id) {
+            g_id = j;
+            break;
+          }
+        }
+        if (g_id == -1) continue;
+
+        double rval;
+        int ival;
+        if (!data->getValue("GENERATOR_TYPE",&ival,g_id)) {
+          data->addValue("GENERATOR_TYPE", uc_data[i].type, g_id);
+        } else {
+          data->setValue("GENERATOR_TYPE", uc_data[i].type, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_INIT_LEVEL",&rval,g_id)) {
+          data->addValue("GENERATOR_INIT_LEVEL", uc_data[i].init_level, g_id);
+        } else {
+          data->setValue("GENERATOR_INIT_LEVEL", uc_data[i].init_level, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_MIN_GEN",&rval,g_id)) {
+          data->addValue("GENERATOR_MIN_GEN", uc_data[i].min_gen, g_id);
+        } else {
+          data->setValue("GENERATOR_MIN_GEN", uc_data[i].min_gen, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_MAX_GEN",&rval,g_id)) {
+          data->addValue("GENERATOR_MAX_GEN", uc_data[i].max_gen, g_id);
+        } else {
+          data->setValue("GENERATOR_MAX_GEN", uc_data[i].max_gen, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_MIN_UP",&rval,g_id)) {
+          data->addValue("GENERATOR_MIN_UP", uc_data[i].min_up, g_id);
+        } else {
+          data->setValue("GENERATOR_MIN_UP", uc_data[i].min_up, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_MIN_DOWN",&rval,g_id)) {
+          data->addValue("GENERATOR_MIN_DOWN", uc_data[i].min_down, g_id);
+        } else {
+          data->setValue("GENERATOR_MIN_DOWN", uc_data[i].min_down, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_RAMP_UP",&rval,g_id)) {
+          data->addValue("GENERATOR_RAMP_UP", uc_data[i].ramp_up, g_id);
+        } else {
+          data->setValue("GENERATOR_RAMP_UP", uc_data[i].ramp_up, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_RAMP_DOWN",&rval,g_id)) {
+          data->addValue("GENERATOR_RAMP_DOWN", uc_data[i].ramp_down, g_id);
+        } else {
+          data->setValue("GENERATOR_RAMP_DOWN", uc_data[i].ramp_down, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_START_UP",&rval,g_id)) {
+          data->addValue("GENERATOR_START_UP", uc_data[i].start_up, g_id);
+        } else {
+          data->setValue("GENERATOR_START_UP", uc_data[i].start_up, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_CONST_COST",&rval,g_id)) {
+          data->addValue("GENERATOR_CONST_COST", uc_data[i].const_cost, g_id);
+        } else {
+          data->setValue("GENERATOR_CONST_COST", uc_data[i].const_cost, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_CO_2_COST",&rval,g_id)) {
+          data->addValue("GENERATOR_CO_2_COST", uc_data[i].co_2_cost, g_id);
+        } else {
+          data->setValue("GENERATOR_CO_2_COST", uc_data[i].co_2_cost, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_INIT_PRD",&rval,g_id)) {
+          data->addValue("GENERATOR_INIT_PRD", uc_data[i].init_prd, g_id);
+        } else {
+          data->setValue("GENERATOR_INIT_PRD", uc_data[i].init_prd, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_START_CAP",&rval,g_id)) {
+          data->addValue("GENERATOR_START_CAP", uc_data[i].start_cap, g_id);
+        } else {
+          data->setValue("GENERATOR_START_CAP", uc_data[i].start_cap, g_id);
+        }
+
+        if (!data->getValue("GENERATOR_SHUT_CAP",&rval,g_id)) {
+          data->addValue("GENERATOR_SHUT_CAP", uc_data[i].shut_cap, g_id);
+        } else {
+          data->setValue("GENERATOR_SHUT_CAP", uc_data[i].shut_cap, g_id);
+        }
+      }
+    }
+
     // Clean up 2 character tags so that single quotes are removed and single
     // character tags are right-justified. These tags can be delimited by a
     // pair of single quotes, a pair of double quotes, or no quotes
@@ -292,10 +458,33 @@ class BasePTIParser : public BaseParser<_network>
         } else {
           ret.push_back(line.substr(ntok1,ntok2-ntok1));
         }
-        ntok1 = line.find_first_not_of(' ',0);
+        ntok1 = line.find_first_not_of(' ',ntok2);
         ntok2 = ntok1;
       }
     }
+
+    // Tokenize a string on comma's and remove white space from beginning and
+    // end of token
+#if 0
+    std::vector<std::string> commaTokenizer(std::string input)
+    {
+      std::vector<std::string> ret;
+      std::string line = input;
+      int ntok1 = line.find_first_not_of(' ',0);
+      int ntok2 = line,find(',',ntok1);
+      if (ntok2 == std::string::npos) ntok2 = line.length()-1;
+      while (ntok1 != std::string::npos) {
+        std::string token = line.substr(ntok1,ntok2-ntok1);
+        int itok1, itok2;
+        itok1 = token.find_first_not_of(' ',0);
+        itok2 = token.find_last_not_of(' ',itok1);
+        ret.push_back(token.substr(itok1,itok2-itok1+1));
+        ntok1 = line.find_first_not_of(' ',ntok2);
+        ntok2 = line.find(',',ntok1);
+        if (ntok2 == std::string::npos) ntok2 = line.length()-1;
+      }
+    }
+#endif
 
     // Extract extension from file name and convert it to lower case
     std::string getExtension(const std::string file)
@@ -459,6 +648,79 @@ class BasePTIParser : public BaseParser<_network>
           data.reactance = atof(split_line[5].c_str());
         }
         ds_vector->push_back(data);
+      }
+    }
+
+    void find_uc_vector(std::ifstream & input, std::vector<uc_params> *uc_vector)
+    {
+      std::string          line;
+      uc_vector->clear();
+      // Ignore first line containing header information
+      std::getline(input,line);
+      while(std::getline(input,line)) {
+        std::vector<std::string>  split_line;
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_on);
+
+        uc_params data;
+
+        int nstr = split_line.size();
+        if (nstr > 1) {
+          data.type = atoi(split_line[1].c_str());
+        }
+        if (nstr > 2) {
+          data.init_level = atof(split_line[2].c_str());
+        }
+        if (nstr > 3) {
+          data.min_gen = atof(split_line[3].c_str());
+        }
+        if (nstr > 4) {
+          data.max_gen = atof(split_line[4].c_str());
+        }
+        if (nstr > 5) {
+          data.max_oper = atof(split_line[5].c_str());
+        }
+        if (nstr > 6) {
+          data.min_up = atoi(split_line[6].c_str());
+        }
+        if (nstr > 7) {
+          data.min_down = atoi(split_line[7].c_str());
+        }
+        if (nstr > 8) {
+          data.ramp_up = atof(split_line[8].c_str());
+        }
+        if (nstr > 9) {
+          data.ramp_down = atof(split_line[9].c_str());
+        }
+        if (nstr > 10) {
+          data.start_up = atof(split_line[10].c_str());
+        }
+        if (nstr > 11) {
+          data.const_cost = atof(split_line[11].c_str());
+        }
+        if (nstr > 12) {
+          data.lin_cost = atof(split_line[12].c_str());
+        }
+        if (nstr > 13) {
+          data.co_2_cost = atof(split_line[13].c_str());
+        }
+        if (nstr > 14) {
+          data.init_prd = atof(split_line[14].c_str());
+        }
+        if (nstr > 15) {
+          data.start_cap = atof(split_line[15].c_str());
+        }
+        if (nstr > 16) {
+          data.shut_cap = atof(split_line[16].c_str());
+        }
+        if (nstr > 17) {
+          data.bus_id = atoi(split_line[17].c_str());
+        }
+        if (nstr > 18) {
+          // Clean up 2 character tag for generator ID
+          std::string tag = clean2Char(split_line[18]);
+          strcpy(data.gen_id, tag.c_str());
+        }
       }
     }
 
