@@ -46,6 +46,11 @@ main(int argc, char **argv)
       config->open("input.xml",world);
     }
 
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow");
+    bool useNonLinear = false;
+    useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+
     // setup and run powerflow calculation
     boost::shared_ptr<gridpack::powerflow::PFNetwork>
       pf_network(new gridpack::powerflow::PFNetwork(world));
@@ -53,7 +58,11 @@ main(int argc, char **argv)
     gridpack::powerflow::PFAppModule pf_app;
     pf_app.readNetwork(pf_network,config);
     pf_app.initialize();
-    pf_app.solve();
+    if (useNonLinear) {
+      pf_app.nl_solve();
+    } else {
+      pf_app.solve();
+    }
     pf_app.write();
     pf_app.saveData();
   }

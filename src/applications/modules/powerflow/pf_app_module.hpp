@@ -100,13 +100,18 @@ class PFAppModule
     void initialize();
 
     /**
-     * Execute the iterative solve portion of the application
+     * Execute the iterative solve portion of the application using a hand-coded
+     * Newton-Raphson solver
      * @return false if an error was caught in the solution algorithm
      */
     bool solve();
-//    void solve_step1();
-//    void solve_updatePg(std::vector<pathStress> pstress, std::vector<double> p_slice3Values);
-//    void solve_step2();
+
+    /**
+     * Execute the iterative solve portion of the application using a library
+     * non-linear solver
+     * @return false if an error was caught in the solution algorithm
+     */
+    bool nl_solve();
 
     /**
      * Write out results of powerflow calculation to standard output
