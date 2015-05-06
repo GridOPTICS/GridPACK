@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-03-06 14:27:22 d3g096
+# Last Change: 2015-05-06 09:13:16 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -202,4 +202,4 @@ add_subdirectory(serial_io)
 add_subdirectory(timer)
 add_subdirectory(include)
 
-# add_subdirectory(lib)
+add_subdirectory(lib)
