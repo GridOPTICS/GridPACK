@@ -8,7 +8,7 @@
 /**
  * @file   petsc_dae_solver_implementation.cpp
  * @author William A. Perkins
- * @date   2014-12-09 11:06:04 d3g096
+ * @date   2014-12-09 13:34:30 d3g096
  * 
  * @brief  
  * 
@@ -142,9 +142,9 @@ PETScDAESolverImplementation::~PETScDAESolverImplementation(void)
   PetscErrorCode ierr(0);
   try  {
     PetscBool ok;
-    ierr = PetscInitialized(&ok);
+    ierr = PetscInitialized(&ok); CHKERRXX(ierr);
     if (ok) {
-      ierr = TSDestroy(&p_ts);
+      ierr = TSDestroy(&p_ts); CHKERRXX(ierr);
     }
   } catch (...) {
     // just eat it

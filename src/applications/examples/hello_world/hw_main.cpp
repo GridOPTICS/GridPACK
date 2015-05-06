@@ -7,7 +7,7 @@
 /**
  * @file   hw_main.cpp
  * @author Bruce Palmer
- * @date   January 27, 2014
+ * @date   2014-12-09 14:40:37 d3g096
  * 
  * @brief  
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the hello_world applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries
@@ -41,4 +42,5 @@ main(int argc, char **argv)
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
+  return ierr;
 }

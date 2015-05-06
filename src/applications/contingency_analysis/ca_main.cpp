@@ -7,7 +7,7 @@
 /**
  * @file   ca_main.cpp
  * @author Yousu Chen 
- * @date   January 20, 2014
+ * @date   2014-12-09 14:40:10 d3g096
  *
  * @brief
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the contingency_analysis applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries
@@ -41,5 +42,6 @@ main(int argc, char **argv)
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
+  return ierr;
 }
 

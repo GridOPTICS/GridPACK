@@ -7,7 +7,7 @@
 /**
  * @file   rg_main.cpp
  * @author Bruce Palmer
- * @date   2014-02-05 08:26:07 d3g096
+ * @date   2014-12-09 14:41:19 d3g096
  * 
  * @brief  
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the resistor_grid applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries
@@ -41,4 +42,5 @@ main(int argc, char **argv)
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
+  return ierr;
 }
