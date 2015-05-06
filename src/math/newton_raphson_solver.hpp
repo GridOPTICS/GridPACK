@@ -9,7 +9,7 @@
 /**
  * @file   newton_raphson_solver.hpp
  * @author William A. Perkins
- * @date   2013-12-04 13:54:21 d3g096
+ * @date   2015-03-26 11:45:34 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,8 @@
 #ifndef _newton_raphson_solver_hpp_
 #define _newton_raphson_solver_hpp_
 
-#include "gridpack/math/nonlinear_solver_interface.hpp"
+#include <gridpack/math/nonlinear_solver.hpp>
+#include <gridpack/math/newton_raphson_solver_implementation.hpp>
 
 namespace gridpack {
 namespace math {
@@ -44,9 +45,15 @@ namespace math {
  * This class is simply an interface to the
  * NewtonRaphsonSolverImplementation class.
  */
-class NewtonRaphsonSolver 
-  : public NonlinearSolverInterface {
+template <typename T, typename I = int>
+class NewtonRaphsonSolverT
+  : public NonlinearSolverT<T, I> {
 public:
+
+  typedef typename NonlinearSolverImplementation<T, I>::VectorType VectorType;
+  typedef typename NonlinearSolverImplementation<T, I>::MatrixType MatrixType;
+  typedef typename NonlinearSolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename NonlinearSolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
 
   /// Default constructor.
   /** 
@@ -62,26 +69,41 @@ public:
    * 
    * @return new NonlinearSolver instance
    */
-  NewtonRaphsonSolver(const parallel::Communicator& comm,
-                      const int& local_size,
-                      JacobianBuilder form_jacobian,
-                      FunctionBuilder form_function);
+  NewtonRaphsonSolverT(const parallel::Communicator& comm,
+                       const int& local_size,
+                       JacobianBuilder form_jacobian,
+                       FunctionBuilder form_function)
+    : NonlinearSolverT<T, I>()
+  {
+    this->p_setImpl(new NewtonRaphsonSolverImplementation<T, I>(comm, local_size,
+                                                                form_jacobian,
+                                                                form_function));
+  }
 
   /// Construct with an existing Jacobian Matrix
-  NewtonRaphsonSolver(Matrix& J,
-                      JacobianBuilder form_jacobian,
-                      FunctionBuilder form_function);
-  
+  NewtonRaphsonSolverT(MatrixType& J,
+                       JacobianBuilder form_jacobian,
+                       FunctionBuilder form_function)
+    : NonlinearSolverT<T, I>()
+  {
+    this->p_setImpl(new NewtonRaphsonSolverImplementation<T, I>(J, 
+                                                                form_jacobian, 
+                                                                form_function));
+  }
+
   /// Destructor
   /**
    * This must be called simultaneously by all processes involved in
    * the \ref parallel::Communicator "communicator" used for \ref
    * NewtonRaphsonSolver() "construction".
    */
-  ~NewtonRaphsonSolver(void);
-
+  ~NewtonRaphsonSolverT(void)
+  { }
 };
 
+typedef NewtonRaphsonSolverT<ComplexType> ComplexNewtonRaphsonSolver;
+typedef NewtonRaphsonSolverT<RealType> RealNewtonRaphsonSolver;
+typedef ComplexNewtonRaphsonSolver NewtonRaphsonSolver;
 
 } // namespace math
 } // namespace gridpack

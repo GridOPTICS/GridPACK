@@ -9,7 +9,7 @@
 /**
  * @file   pf_app2.cpp
  * @author William A. Perkins
- * @date   2014-11-25 07:12:27 d3g096
+ * @date   2015-03-26 11:57:50 d3g096
  * 
  * @brief  
  * 
@@ -299,10 +299,10 @@ PFApp2::execute(int argc, char** argv)
   timer->start(t_lsolv);
 
   PFSolverHelper helper(factory, network);
-  math::JacobianBuilder jbuildf = boost::ref(helper);
-  math::FunctionBuilder fbuildf = boost::ref(helper);
+  math::NonlinearSolver::JacobianBuilder jbuildf = boost::ref(helper);
+  math::NonlinearSolver::FunctionBuilder fbuildf = boost::ref(helper);
 
-  boost::scoped_ptr<math::NonlinearSolverInterface> solver;
+  boost::scoped_ptr<math::NonlinearSolver> solver;
   if (useNewton) {
     math::NewtonRaphsonSolver *tmpsolver = 
       new math::NewtonRaphsonSolver(*(helper.J), jbuildf, fbuildf);

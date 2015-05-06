@@ -10,7 +10,7 @@
 /**
  * @file   vector_interface.hpp
  * @author William A. Perkins
- * @date   2014-10-21 15:14:50 d3g096
+ * @date   2014-10-30 14:18:39 d3g096
  * 
  * @brief  
  * 
@@ -265,6 +265,12 @@ public:
     this->p_fill(v);
   }
 
+  /// Scale all elements by a single value
+  void scale(const TheType& x)
+  {
+    this->p_scale(x);
+  }
+
   /// Compute the vector L1 norm (sum of absolute value)
   double norm1(void) const
   {
@@ -313,10 +319,75 @@ public:
     this->p_exp();
   }
 
+  /// Replace all elements with its reciprocal
+  void reciprocal(void)
+  {
+    this->p_reciprocal();
+  }
+
   /// Make this instance ready to use
   void ready(void)
   {
     this->p_ready();
+  }
+
+  /// Print to named file or standard output
+  /** 
+   * @e Collective.
+   *
+   * 
+   *
+   * The format is dependent on the specific vector implementation.
+   * 
+   * @param filename optional file
+   */
+  void print(const char* filename = NULL) const
+  {
+    this->p_print(filename);
+  }
+
+  /// Save, in MatLAB format, to named file (collective)
+  /** 
+   * @e Collective.
+   *
+   * 
+   * 
+   * @param filename 
+   */
+  void save(const char *filename) const
+  {
+    this->p_save(filename);
+  }
+
+  /// Load from a named file of whatever binary format the math library uses
+  /** 
+   * @e Collective.
+   *
+   * The underlying math library generally supports some way to save a
+   * Vector to a file. This will load elements from a file of that
+   * format.
+   * 
+   * @param filename 
+   */
+  void loadBinary(const char *filename)
+  {
+    this->p_loadBinary(filename);
+  }
+
+
+  /// Save to named file in whatever binary format the math library uses
+  /** 
+   * @e Collective.
+   *
+   * The underlying math library generally supports some way to save a
+   * Vector to a file.  This routine uses whatever format that can be
+   * read by ::loadBinary(). 
+   * 
+   * @param filename 
+   */
+  void saveBinary(const char *filename) const
+  {
+    this->p_saveBinary(filename);
   }
 
 protected:
@@ -363,6 +434,9 @@ protected:
   /// Fill all the elements with the specified value (specialized)
   virtual void p_fill(const TheType& v) = 0;
 
+  /// Scale all elements by a single value (specialized)
+  virtual void p_scale(const TheType& x) = 0;
+
   /// Compute the vector L1 norm (sum of absolute value) (specialized)
   virtual double p_norm1(void) const = 0;
 
@@ -387,8 +461,24 @@ protected:
   /// Replace all elements with its exponential (specialized)
   virtual void p_exp(void) = 0;
 
+  /// Replace all elements with its reciprocal (specialized)
+  virtual void p_reciprocal(void) = 0;
+
   /// Make this instance ready to use
   virtual void p_ready(void) = 0;
+
+  /// Print to named file or standard output
+  virtual void p_print(const char* filename = NULL) const = 0;
+
+  /// Save, in MatLAB format, to named file (collective)
+  virtual void p_save(const char *filename) const = 0;
+
+  /// Load from a named file of whatever binary format the math library uses
+  virtual void p_loadBinary(const char *filename) = 0;
+
+  /// Save to named file in whatever binary format the math library uses
+  virtual void p_saveBinary(const char *filename) const = 0;
+
 };
 
 

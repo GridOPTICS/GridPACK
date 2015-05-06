@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2014-10-21 14:54:30 d3g096
+ * @date   2015-01-26 10:50:14 d3g096
  * 
  * @brief  
  * 
@@ -24,11 +24,11 @@
 #ifndef _vector_implementation_h_
 #define _vector_implementation_h_
 
-
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/utilities/complex.hpp>
 #include <gridpack/math/vector_interface.hpp>
+#include <gridpack/math/complex_operators.hpp>
 
 namespace gridpack {
 namespace math {
@@ -39,18 +39,32 @@ class ConstImplementationVisitor;
 // -------------------------------------------------------------
 //  class VectorImplementation
 // -------------------------------------------------------------
+template <typename T, typename I = int>
 class VectorImplementation 
   : private utility::Uncopyable,
     public parallel::Distributed,
-    public BaseVectorInterface<ComplexType>
+    public BaseVectorInterface<T, I>
 {
 public:
 
+  typedef typename BaseVectorInterface<T, I>::IdxType IdxType;
+  typedef typename BaseVectorInterface<T, I>::TheType TheType;
+
   /// Default constructor.
-  VectorImplementation(const parallel::Communicator& comm);
+  VectorImplementation(const parallel::Communicator& comm)
+    : utility::Uncopyable(), parallel::Distributed(comm)
+  {}
 
   /// Destructor
-  ~VectorImplementation(void);
+  ~VectorImplementation(void)
+  {}
+
+  /// Apply some operator on the vector elements
+  void applyOperation(base_unary_function<TheType>& op)
+  {
+    this->p_applyOperation(op);
+  }
+
 
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
@@ -64,11 +78,31 @@ public:
 
 protected:
 
-  /// Get a range of elements (lo to hi-1) (specialized)
-  void p_setElementRange(const IdxType& lo, const IdxType& hi, TheType *x);
+  /// 
+  virtual void p_applyOperation(base_unary_function<TheType>& op) = 0;
+
 
   /// Get a range of elements (lo to hi-1) (specialized)
-  void p_getElementRange(const IdxType& lo, const IdxType& hi, TheType *x) const;
+  void p_setElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
+  {
+    std::vector<int> i;
+    i.reserve(hi-lo);
+    std::copy(boost::counting_iterator<int>(lo),
+              boost::counting_iterator<int>(hi),
+              std::back_inserter(i));
+    this->p_setElements(i.size(), &i[0], x);
+  }
+
+  /// Get a range of elements (lo to hi-1) (specialized)
+  void p_getElementRange(const IdxType& lo, const IdxType& hi, TheType *x) const
+  {
+    std::vector<int> i;
+    i.reserve(hi-lo);
+    std::copy(boost::counting_iterator<int>(lo),
+              boost::counting_iterator<int>(hi),
+              std::back_inserter(i));
+    this->p_getElements(i.size(), &i[0], x);
+  }
 
   /// Replace all elements with their real part (specialized)
   void p_real(void);
@@ -76,16 +110,11 @@ protected:
   /// Replace all elements with their imaginary part (specialized)
   void p_imaginary(void);
 
-  /// Replace all elements with their complex conjugate
-  void p_conjugate(void);
-
-  /// Replace all elements with its exponential (specialized)
-  void p_exp(void);
-
   /// Make an exact replica of this instance (specialized)
   virtual VectorImplementation *p_clone(void) const = 0;
   
 };
+
 
 } // namespace math
 } // namespace gridpack

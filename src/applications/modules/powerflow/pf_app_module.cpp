@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2014-01-28 11:39:16 d3g096
+ * @date   2015-05-06 12:51:38 d3g096
  * 
  * @brief  
  * 
@@ -358,10 +358,10 @@ bool gridpack::powerflow::PFAppModule::nl_solve()
   timer->start(t_lsolv);
 
   PFSolverHelper helper(p_factory, p_network);
-  math::JacobianBuilder jbuildf = boost::ref(helper);
-  math::FunctionBuilder fbuildf = boost::ref(helper);
+  math::NonlinearSolver::JacobianBuilder jbuildf = boost::ref(helper);
+  math::NonlinearSolver::FunctionBuilder fbuildf = boost::ref(helper);
 
-  boost::scoped_ptr<math::NonlinearSolverInterface> solver;
+  boost::scoped_ptr<math::NonlinearSolver> solver;
   if (useNewton) {
     math::NewtonRaphsonSolver *tmpsolver =
       new math::NewtonRaphsonSolver(*(helper.J), jbuildf, fbuildf);

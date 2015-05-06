@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-04-30 12:48:19 d3g096
+# Last Change: 2015-05-06 09:26:45 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -21,15 +21,9 @@ set(target_libraries
 
 # implementation independent math sources
 list(APPEND gridpack_math_sources
-  vector.cpp
   vector_implementation.cpp
   matrix.cpp
   matrix_implementation.cpp
-  linear_solver.cpp
-  linear_solver_implementation.cpp
-  linear_matrix_solver.cpp
-  linear_matrix_solver_implementation.cpp
-  basic_linear_matrix_solver_implementation.cpp
   nonlinear_solver_interface.hpp
   nonlinear_solver_interface.cpp
   nonlinear_solver.cpp
@@ -46,11 +40,14 @@ set(gridpack_math_headers
   basic_linear_matrix_solver_implementation.hpp
   dae_solver.hpp
   dae_solver_functions.hpp
+  dae_solver_interface.hpp
   dae_solver_implementation.hpp
+  complex_operators.hpp
   implementation_visitable.hpp
   implementation_visitor.hpp
   linear_matrix_solver.hpp
   linear_matrix_solver_implementation.hpp
+  linear_matrix_solver_interface.hpp
   linear_solver.hpp
   linear_solver_implementation.hpp
   linear_solver_interface.hpp
@@ -58,6 +55,7 @@ set(gridpack_math_headers
   matrix.hpp
   matrix_implementation.hpp
   matrix_interface.hpp
+  matrix_storage_type.hpp
   newton_raphson_solver.hpp
   newton_raphson_solver_implementation.hpp
   nonlinear_solver_functions.hpp
@@ -67,6 +65,8 @@ set(gridpack_math_headers
   vector.hpp
   vector_implementation.hpp
   vector_interface.hpp
+  value_transfer.hpp
+  numeric_type_check.hpp
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -87,21 +87,21 @@ if (PETSC_FOUND)
     list(APPEND gridpack_math_sources 
       petsc/petsc_exception.cpp
       petsc/petsc_configurable.cpp
-      petsc/math.cpp
-      petsc/vector.cpp
-      petsc/petsc_vector_implementation.cpp
-      petsc/matrix.cpp
+      petsc/petsc_math.cpp
+      petsc/petsc_vector.cpp
+      petsc/petsc_vector_wrapper.cpp
+      petsc/petsc_matrix.cpp
       petsc/ga_matrix.cpp
       petsc/petsc_matrix_implementation.cpp
       petsc/petsc_matrix_operations.cpp
-      petsc/linear_solver.cpp
-      petsc/petsc_linear_solver_implementation.cpp
-      petsc/linear_matrix_solver.cpp
-      petsc/petsc_linear_matrix_solver_impl.cpp
+      petsc/petsc_matrix_wrapper.cpp
+      petsc/petsc_matrix.cpp
+      petsc/petsc_linear_solver.cpp
+      petsc/petsc_linear_matrix_solver.cpp
       petsc/petsc_nonlinear_solver_implementation.cpp
-      petsc/nonlinear_solver.cpp
+      petsc/petsc_nonlinear_solver.cpp
       petsc/petsc_dae_solver_implementation.cpp
-      petsc/dae_solver.cpp
+      petsc/petsc_dae_solver.cpp
     )  
 
     set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
@@ -142,93 +142,153 @@ add_library(gridpack_math
 # -------------------------------------------------------------
 # a small test (not a unit test)
 # -------------------------------------------------------------
-add_executable(small_matrix_solve small_matrix_solve.cpp)
-target_link_libraries(small_matrix_solve  gridpack_math ${target_libraries})
-add_custom_target(small_matrix_solve_input
+# add_executable(small_matrix_solve small_matrix_solve.cpp)
+# target_link_libraries(small_matrix_solve  gridpack_math ${target_libraries})
+# add_custom_target(small_matrix_solve_input
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/small_matrix_solve.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
+#   COMMAND ${CMAKE_COMMAND} -E copy 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/small_matrix_solve.xml
+#   ${CMAKE_CURRENT_BINARY_DIR}
 
-  DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/small_matrix_solve.xml
-)
-add_dependencies(small_matrix_solve small_matrix_solve_input)
+#   DEPENDS
+#   ${CMAKE_CURRENT_SOURCE_DIR}/small_matrix_solve.xml
+# )
+# add_dependencies(small_matrix_solve small_matrix_solve_input)
 
 # -------------------------------------------------------------
 # matrix inverter program (not a unit test)
 # -------------------------------------------------------------
-add_executable(matrix_inverse matrix_inverse.cpp)
-target_link_libraries(matrix_inverse  gridpack_math ${target_libraries})
-add_custom_target(matrix_inverse_input
+# add_executable(matrix_inverse matrix_inverse.cpp)
+# target_link_libraries(matrix_inverse  gridpack_math ${target_libraries})
+# add_custom_target(matrix_inverse_input
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
-  ${CMAKE_CURRENT_BINARY_DIR}
+#   COMMAND ${CMAKE_COMMAND} -E copy 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+#   ${CMAKE_CURRENT_BINARY_DIR}
 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
+#   COMMAND ${CMAKE_COMMAND} -E copy 
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+#   ${CMAKE_CURRENT_BINARY_DIR}
 
-  DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
-  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
-)
-add_dependencies(matrix_inverse matrix_inverse_input)
+#   DEPENDS
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+#   ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+# )
+# add_dependencies(matrix_inverse matrix_inverse_input)
+
+# -------------------------------------------------------------
+# numeric test suite
+# -------------------------------------------------------------
+add_executable(numeric_test test/numeric_test.cpp)
+gridpack_add_serial_unit_test(numeric numeric_test)
 
 
 # -------------------------------------------------------------
 # vector test suite
 # -------------------------------------------------------------
-add_executable(vector_test test/vector_test.cpp)
-target_link_libraries(vector_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(vector vector_test)
+add_executable(complex_vector_test test/vector_test.cpp)
+target_link_libraries(complex_vector_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_vector complex_vector_test)
+
+add_executable(real_vector_test test/vector_test.cpp)
+set_target_properties(real_vector_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_vector_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_vector real_vector_test)
+
 
 # -------------------------------------------------------------
 # matrix test suite (one each for dense and sparse)
 # -------------------------------------------------------------
-add_executable(sparse_matrix_test test/matrix_test.cpp)
-target_link_libraries(sparse_matrix_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(sparse_matrix sparse_matrix_test)
+add_executable(complex_sparse_matrix_test test/matrix_test.cpp)
+target_link_libraries(complex_sparse_matrix_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_sparse_matrix complex_sparse_matrix_test)
 
-add_executable(dense_matrix_test test/matrix_test.cpp)
-set_target_properties(dense_matrix_test
+add_executable(real_sparse_matrix_test test/matrix_test.cpp)
+set_target_properties(real_sparse_matrix_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_sparse_matrix_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_sparse_matrix real_sparse_matrix_test)
+
+add_executable(complex_dense_matrix_test test/matrix_test.cpp)
+set_target_properties(complex_dense_matrix_test
   PROPERTIES
   COMPILE_DEFINITIONS "TEST_DENSE=YES"
 )
-target_link_libraries(dense_matrix_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(dense_matrix dense_matrix_test)
+target_link_libraries(complex_dense_matrix_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_dense_matrix complex_dense_matrix_test)
+
+add_executable(real_dense_matrix_test test/matrix_test.cpp)
+set_target_properties(real_dense_matrix_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_DENSE=YES;TEST_REAL=YES"
+)
+target_link_libraries(real_dense_matrix_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_dense_matrix complex_dense_matrix_test)
 
 # -------------------------------------------------------------
 # linear solver test suite
 # -------------------------------------------------------------
-add_executable(linear_solver_test test/linear_solver_test.cpp)
-target_link_libraries(linear_solver_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(linear_solver linear_solver_test)
+add_executable(real_linear_solver_test test/linear_solver_test.cpp)
+target_link_libraries(real_linear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_linear_solver real_linear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(linear_solver_test math_test_input)
+   add_dependencies(real_linear_solver_test math_test_input)
+endif()
+
+add_executable(complex_linear_solver_test test/complex_linear_solver_test.cpp)
+target_link_libraries(complex_linear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_linear_solver complex_linear_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(complex_linear_solver_test math_test_input)
 endif()
 
 # -------------------------------------------------------------
 # nonlinear solver test suite
 # -------------------------------------------------------------
-add_executable(nonlinear_solver_test test/nonlinear_solver_test.cpp)
-target_link_libraries(nonlinear_solver_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(nonlinear_solver nonlinear_solver_test)
+add_executable(complex_nonlinear_solver_test test/nonlinear_solver_test.cpp)
+target_link_libraries(complex_nonlinear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_nonlinear_solver complex_nonlinear_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(nonlinear_solver_test math_test_input)
+   add_dependencies(complex_nonlinear_solver_test math_test_input)
 endif()
+
+add_executable(real_nonlinear_solver_test test/nonlinear_solver_test.cpp)
+set_target_properties(real_nonlinear_solver_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_nonlinear_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_nonlinear_solver real_nonlinear_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(real_nonlinear_solver_test math_test_input)
+endif()
+
 
 # -------------------------------------------------------------
 # DAE solver test suite
 # -------------------------------------------------------------
-add_executable(dae_solver_test test/dae_solver_test.cpp)
-target_link_libraries(dae_solver_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(dae_solver dae_solver_test)
+add_executable(complex_dae_solver_test test/dae_solver_test.cpp)
+target_link_libraries(complex_dae_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_dae_solver complex_dae_solver_test)
 if (PETSC_FOUND)
-   add_dependencies(dae_solver_test math_test_input)
+   add_dependencies(complex_dae_solver_test math_test_input)
 endif()
 
+add_executable(real_dae_solver_test test/dae_solver_test.cpp)
+set_target_properties(real_dae_solver_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+)
+target_link_libraries(real_dae_solver_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_dae_solver real_dae_solver_test)
+if (PETSC_FOUND)
+   add_dependencies(real_dae_solver_test math_test_input)
+endif()
 
 # -------------------------------------------------------------
 # Test GA-based Dense Matrix
