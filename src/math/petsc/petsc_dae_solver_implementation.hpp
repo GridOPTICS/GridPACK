@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-05-05 11:47:11 d3g096
+ * @date   2015-05-07 11:35:41 d3g096
  * 
  * @brief  
  * 
@@ -212,8 +212,8 @@ protected:
     BOOST_ASSERT(*B == *solver->p_petsc_J);
 
     boost::scoped_ptr<VectorType> 
-      xtmp(new VectorType(new PETScVectorImplementation(x, false))),
-      xdottmp(new VectorType(new PETScVectorImplementation(xdot, false)));
+      xtmp(new VectorType(new PETScVectorImplementation<T, I>(x, false))),
+      xdottmp(new VectorType(new PETScVectorImplementation<T, I>(xdot, false)));
 
     // Call the user-specified function (object) to form the Jacobian
     (solver->p_Jbuilder)(t, *xtmp, *xdottmp, a, solver->p_J);
