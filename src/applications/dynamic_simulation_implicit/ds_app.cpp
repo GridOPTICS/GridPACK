@@ -7,7 +7,7 @@
 /**
  * @file   ds_app.cpp
  * @author Shrirang Abhyankar
- * @date   2015-01-23 08:25:44 d3g096
+ * @date   2015-05-07 10:01:29 d3g096
  * 
  * @brief  
  * Example for testing PETSc's implicit solvers
@@ -283,8 +283,8 @@ void gridpack::dsimplicit::DSApp::execute(int argc, char** argv)
   int maxsteps(10000);
   DSProblem dsprob(factory,network,VecMapper,MatMapper,lsize);
 
-  gridpack::math::DAEJacobianBuilder daejbuilder = boost::ref(dsprob);
-  gridpack::math::DAEFunctionBuilder daefbuilder = boost::ref(dsprob);
+  gridpack::math::DAESolver::JacobianBuilder daejbuilder = boost::ref(dsprob);
+  gridpack::math::DAESolver::FunctionBuilder daefbuilder = boost::ref(dsprob);
 
   gridpack::math::DAESolver daesolver(world, lsize, daejbuilder, daefbuilder);
 
@@ -303,10 +303,10 @@ void gridpack::dsimplicit::DSApp::execute(int argc, char** argv)
   cursor->get("Bfault",&Bfault);
 
   // Create nonlinear solver for solving the algebraic equations at fault-on/fault-off time instants
-  math::JacobianBuilder jbuildf = boost::ref(dsprob);
-  math::FunctionBuilder fbuildf = boost::ref(dsprob);
+  math::NonlinearSolver::JacobianBuilder jbuildf = boost::ref(dsprob);
+  math::NonlinearSolver::FunctionBuilder fbuildf = boost::ref(dsprob);
 
-  boost::scoped_ptr<gridpack::math::NonlinearSolverInterface> nlsolver;
+  boost::scoped_ptr<gridpack::math::NonlinearSolver> nlsolver;
   nlsolver.reset(new gridpack::math::NonlinearSolver(*(dsprob.J),jbuildf,fbuildf));
   nlsolver->configure(cursor);
 	      
