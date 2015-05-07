@@ -411,8 +411,8 @@ void gridpack::powerflow::PFBus::load(
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
   p_load = true;
-  p_load = p_load && data->getValue(LOAD_PL, &p_pl);
-  p_load = p_load && data->getValue(LOAD_QL, &p_ql);
+  p_load = p_load && data->getValue(LOAD_PL, &p_pl,0);
+  p_load = p_load && data->getValue(LOAD_QL, &p_ql,0);
   bool lgen;
   int i, gstatus;
   double pg, qg, vs,qmax,qmin;

@@ -302,41 +302,74 @@ class PTI33_parser : public BasePTIParser<_network>
           continue;
         }
         int nstr = split_line.size();
+        // Find out how many loads are already on bus
+        int nld;
+        if (!p_busData[l_idx]->getValue(LOAD_NUMBER, &nld)) nld = 0;
 
-        p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
+
+        p_busData[l_idx]->addValue(LOAD_BUSNUMBER, o_idx, nld);
+
+        if (nstr > 1) {
+          // Clean up 2 character tag
+          std::string tag = this->clean2Char(split_line[1]);
+          // LOAD_ID              "ID"                  integer
+          p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(), nld);
+        }
 
         // LOAD_ID              "ID"                  integer
         std::string tag = this->clean2Char(split_line[1]);
-        if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str());
+        if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(),nld);
 
         // LOAD_STATUS              "ID"                  integer
-        if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[2].c_str()));
+        if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS,
+            atoi(split_line[2].c_str()), nld);
 
         // LOAD_AREA            "AREA"                integer
-        if (nstr > 3) p_busData[l_idx]->addValue(LOAD_AREA, atoi(split_line[3].c_str()));
+        if (nstr > 3) p_busData[l_idx]->addValue(LOAD_AREA,
+            atoi(split_line[3].c_str()), nld);
 
         // LOAD_ZONE            "ZONE"                integer
-        if (nstr > 4) p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[4].c_str()));
+        if (nstr > 4) p_busData[l_idx]->addValue(LOAD_ZONE,
+            atoi(split_line[4].c_str()), nld);
 
         // LOAD_PL              "PL"                  float
-        if (nstr > 5) p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[5].c_str()));
+        if (nstr > 5) {
+          if (nld == 0) p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[5].c_str()));
+          p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[5].c_str()), nld);
+        }
 
         // LOAD_QL              "QL"                  float
-        if (nstr > 6) p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[6].c_str()));
+        if (nstr > 6) {
+          if (nld == 0) p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[6].c_str()));
+          p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[6].c_str()), nld);
+        }
 
         // LOAD_IP              "IP"                  float
-        if (nstr > 7) p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[7].c_str()));
+        if (nstr > 7) p_busData[l_idx]->addValue(LOAD_IP,
+            atof(split_line[7].c_str()), nld);
 
         // LOAD_IQ              "IQ"                  float
-        if (nstr > 8) p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[8].c_str()));
+        if (nstr > 8) p_busData[l_idx]->addValue(LOAD_IQ,
+            atof(split_line[8].c_str()), nld);
 
         // LOAD_YP              "YP"                  float
-        if (nstr > 9) p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[9].c_str()));
+        if (nstr > 9) p_busData[l_idx]->addValue(LOAD_YP,
+            atof(split_line[9].c_str()), nld);
 
         // LOAD_YQ            "YQ"                integer
-        if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[10].c_str()));
+        if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ,
+            atoi(split_line[10].c_str()), nld);
 
         // TODO: add variables OWNER, SCALE, INTRPT
+
+        // Increment number of loads in data object
+        if (nld == 0) {
+          nld = 1;
+          p_busData[l_idx]->addValue(LOAD_NUMBER,nld);
+        } else {
+          nld++;
+          p_busData[l_idx]->setValue(LOAD_NUMBER,nld);
+        }
 
         std::getline(input, line);
       }
@@ -369,25 +402,47 @@ class PTI33_parser : public BasePTIParser<_network>
         }
         int nstr = split_line.size();
 
-        p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
+        // Find out how many shunts are already on bus
+        int nshnt;
+        if (!p_busData[l_idx]->getValue(SHUNT_NUMBER, &nshnt)) nshnt = 0;
 
-#if 0
-        // FIXED_SHUNT_ID              "ID"                  integer
-        std::string tag = this->clean2Char(split_line[1]);
-        if (nstr > 1) p_busData[l_idx]->addValue(FIXED_SHUNT_ID, tag.c_str());
+        p_busData[l_idx]->addValue(SHUNT_BUSNUMBER, o_idx, nshnt);
 
-        // FIXED_SHUNT_STATUS              "STATUS"                  integer
-        if (nstr > 2) p_busData[l_idx]->addValue(FIXED_SHUNT_STATUS,
-            atoi(split_line[2].c_str()));
-#endif
+        if (nstr > 1) {
+          // Clean up 2 character tag
+          std::string tag = this->clean2Char(split_line[1]);
+          // SHUNT_ID              "ID"                  integer
+          p_busData[l_idx]->addValue(SHUNT_ID, tag.c_str(), nshnt);
+        }
+
+        // SHUNT_STATUS              "STATUS"                  integer
+        if (nstr > 2) p_busData[l_idx]->addValue(SHUNT_STATUS,
+            atoi(split_line[2].c_str()), nshnt);
 
         // BUS_SHUNT_GL              "GL"                  float
-        if (nstr > 3) p_busData[l_idx]->addValue(BUS_SHUNT_GL,
-            atof(split_line[3].c_str()));
+        if (nstr > 3) {
+          if (nshnt==0) p_busData[l_idx]->addValue(BUS_SHUNT_GL,
+              atof(split_line[3].c_str()));
+          p_busData[l_idx]->addValue(BUS_SHUNT_GL,
+              atof(split_line[3].c_str()),nshnt);
+        }
 
         // BUS_SHUNT_BL              "BL"                  float
-        if (nstr > 4) p_busData[l_idx]->addValue(BUS_SHUNT_BL,
-            atof(split_line[4].c_str()));
+        if (nstr > 4) {
+          if (nshnt == 0) p_busData[l_idx]->addValue(BUS_SHUNT_BL,
+              atof(split_line[4].c_str()));
+          p_busData[l_idx]->addValue(BUS_SHUNT_BL,
+              atof(split_line[4].c_str()),nshnt);
+        }
+
+        // Increment number of shunts in data object
+        if (nshnt == 0) {
+          nshnt = 1;
+          p_busData[l_idx]->addValue(SHUNT_NUMBER,nshnt);
+        } else {
+          nshnt++;
+          p_busData[l_idx]->setValue(SHUNT_NUMBER,nshnt);
+        }
 
         std::getline(input, line);
       }

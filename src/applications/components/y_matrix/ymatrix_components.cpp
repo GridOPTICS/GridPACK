@@ -125,8 +125,8 @@ void gridpack::ymatrix::YMBus::load(
   double sbase;
   data->getValue(CASE_SBASE, &sbase);
   p_shunt = true;
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs,0);
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs,0);
   p_shunt_gs /= sbase;
   p_shunt_bs /= sbase;
   // Check to see if bus is reference bus

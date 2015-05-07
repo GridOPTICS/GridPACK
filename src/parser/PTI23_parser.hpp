@@ -124,7 +124,6 @@ class PTI23_parser : public BasePTIParser<_network>
         // isn't
         bool parsed = true;
         std::string oldline;
-        //          find_loads(input,oldline,parsed);
         find_generators(input,oldline,parsed);
         find_branches(input);
         this->setMaps(&p_busMap, &p_branchMap);
@@ -252,9 +251,13 @@ class PTI23_parser : public BasePTIParser<_network>
 
         // BUS_SHUNT_GL              "GL"                  float
         if (nstr > 4) data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
+        if (nstr > 4) data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()),0);
 
         // BUS_SHUNT_BL              "BL"                  float
         if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
+        if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()),0);
+        data->addValue(SHUNT_NUMBER,1);
+        data->addValue(SHUNT_BUSNUMBER,o_idx);
 
         // BUS_ZONE            "ZONE"                integer
         if (nstr > 11) data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
@@ -273,81 +276,15 @@ class PTI23_parser : public BasePTIParser<_network>
 
         // LOAD_PL                "PL"                  float
         if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()));
+        if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()),0);
 
         // LOAD_QL                "QL"                  float
         if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()));
+        if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()),0);
+        data->addValue(LOAD_NUMBER,1);
+        data->addValue(LOAD_BUSNUMBER,o_idx);
 
         index++;
-        std::getline(input, line);
-      }
-    }
-
-    void find_loads(std::ifstream & input, std::string &oldline, bool &parsed)
-    {
-      std::string          line;
-      std::getline(input, line); //this should be the first line of the block
-
-      parsed = true;
-      int nline = 0;
-      while(test_end(line)) {
-        std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
-        if (nline == 0 && split_line.size() > 15) {
-          oldline = line;
-          parsed = false;
-          return;
-        }
-        nline++;
-
-        // LOAD_BUSNUMBER               "I"                   integer
-        int l_idx, o_idx;
-        o_idx = atoi(split_line[0].c_str());
-        std::map<int, int>::iterator it;
-        it = p_busMap.find(o_idx);
-        if (it != p_busMap.end()) {
-          l_idx = it->second;
-        } else {
-          std::getline(input, line);
-          continue;
-        }
-        int nstr = split_line.size();
-
-        p_busData[l_idx]->addValue(LOAD_BUSNUMBER, atoi(split_line[0].c_str()));
-
-        // LOAD_ID              "ID"                  integer
-        std::string tag = this->clean2Char(split_line[1]);
-        if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str());
-
-        // LOAD_STATUS              "ID"                  integer
-        if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS, atoi(split_line[2].c_str()));
-
-        // LOAD_AREA            "AREA"                integer
-        if (nstr > 3) p_busData[l_idx]->addValue(LOAD_AREA, atoi(split_line[3].c_str()));
-
-        // LOAD_ZONE            "ZONE"                integer
-        if (nstr > 4) p_busData[l_idx]->addValue(LOAD_ZONE, atoi(split_line[4].c_str()));
-
-        // LOAD_PL              "PG"                  float
-        if (nstr > 5) p_busData[l_idx]->addValue(LOAD_PL, atof(split_line[5].c_str()));
-
-        // LOAD_QL              "QG"                  float
-        if (nstr > 6) p_busData[l_idx]->addValue(LOAD_QL, atof(split_line[6].c_str()));
-
-        // LOAD_IP              "QT"                  float
-        if (nstr > 7) p_busData[l_idx]->addValue(LOAD_IP, atof(split_line[7].c_str()));
-
-        // LOAD_IQ              "QB"                  float
-        if (nstr > 8) p_busData[l_idx]->addValue(LOAD_IQ, atof(split_line[8].c_str()));
-
-        // LOAD_YP              "VS"                  float
-        if (nstr > 9) p_busData[l_idx]->addValue(LOAD_YP, atof(split_line[9].c_str()));
-
-        // LOAD_YQ            "IREG"                integer
-        if (nstr > 10) p_busData[l_idx]->addValue(LOAD_YQ, atoi(split_line[10].c_str()));
-
-        // LOAD_OWNER              "IA"                  integer
-        if (nstr > 11) p_busData[l_idx]->addValue(LOAD_OWNER, atoi(split_line[11].c_str()));
-
         std::getline(input, line);
       }
     }
