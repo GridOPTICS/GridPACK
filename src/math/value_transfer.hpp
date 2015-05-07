@@ -10,7 +10,7 @@
 /**
  * @file   value_transfer.hpp
  * @author William A. Perkins
- * @date   2015-02-23 13:43:33 d3g096
+ * @date   2015-05-07 11:09:35 d3g096
  * 
  * @brief  
  * 
@@ -92,6 +92,9 @@ protected:
   /// Two
   static const unsigned int TWO = 2;
 
+  /// Are the from and to types the same?
+  static const bool p_isSame = boost::is_same<FromType, ToType>::value;
+
   /// The size of the from buffer
   const unsigned int p_fromSize;
 
@@ -131,7 +134,7 @@ template <typename FromType, typename ToType>
 inline unsigned int
 ValueTransfer<FromType, ToType>::p_computeToSize(void) const
 {
-  BOOST_STATIC_ASSERT(boost::is_same<FromType, ToType>::value);
+  BOOST_STATIC_ASSERT(p_isSame);
   return p_fromSize;
 }
 
@@ -187,7 +190,7 @@ template <typename FromType, typename ToType>
 inline void
 ValueTransfer<FromType, ToType>::p_copy(void)
 {
-  BOOST_STATIC_ASSERT(boost::is_same<FromType, ToType>::value);
+  BOOST_STATIC_ASSERT(p_isSame);
   if (p_from != p_to.get()) 
     std::copy(p_from, p_from + p_fromSize, p_to.get());
 }
