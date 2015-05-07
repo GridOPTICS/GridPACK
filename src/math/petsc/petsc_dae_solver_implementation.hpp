@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-05-07 11:35:41 d3g096
+ * @date   2015-05-07 13:34:21 d3g096
  * 
  * @brief  
  * 
@@ -48,6 +48,7 @@ public:
   typedef typename DAESolverImplementation<T, I>::MatrixType MatrixType;
   typedef typename DAESolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverImplementation<T, I>::StepFunction StepFunction;
 
 
   /// Default constructor.
@@ -111,6 +112,9 @@ protected:
       p_petsc_J = PETScMatrix(this->p_J);
       ierr = TSSetIFunction(p_ts, NULL, FormIFunction, this); CHKERRXX(ierr);
       ierr = TSSetIJacobian(p_ts, *p_petsc_J, *p_petsc_J, FormIJacobian, this); CHKERRXX(ierr);
+      ierr = TSSetApplicationContext(p_ts, this); CHKERRXX(ierr);
+      ierr = TSSetPreStep(p_ts, PreTimeStep); CHKERRXX(ierr);
+      ierr = TSSetPostStep(p_ts, PostTimeStep); CHKERRXX(ierr);
 
       ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
       // ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr);
@@ -191,6 +195,7 @@ protected:
       throw;
     }
   }
+
 
 #if PETSC_VERSION_LT(3,5,0)
 
@@ -273,6 +278,47 @@ protected:
       ftmp(new VectorType(new PETScVectorImplementation<T, I>(F, false)));
 
     (solver->p_Fbuilder)(t, *xtmp, *xdottmp, *ftmp);
+    return ierr;
+  }
+
+
+  /// Routine called after each time step
+  static PetscErrorCode PostTimeStep(TS ts)
+  {
+    PetscErrorCode ierr(0);
+
+    void *dummy;
+    ierr = TSGetApplicationContext(ts, &dummy); CHKERRXX(ierr);
+
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    if (solver->p_postStepFunc) {
+      PetscReal thetime;
+      ierr = TSGetTime(ts, &thetime); CHKERRXX(ierr);
+      solver->p_postStepFunc(thetime);
+    }
+    return ierr;
+  }
+
+  /// Routine called before each time step
+  static PetscErrorCode PreTimeStep(TS ts)
+  {
+    PetscErrorCode ierr(0);
+
+    void *dummy;
+    ierr = TSGetApplicationContext(ts, &dummy); CHKERRXX(ierr);
+
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    if (solver->p_preStepFunc) {
+      PetscReal thetime;
+      ierr = TSGetTime(ts, &thetime); CHKERRXX(ierr);
+      solver->p_preStepFunc(thetime);
+    }
     return ierr;
   }
 

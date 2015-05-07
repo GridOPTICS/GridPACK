@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-05-05 10:26:34 d3g096
+ * @date   2015-05-07 13:17:12 d3g096
  * 
  * @brief  
  * 
@@ -22,7 +22,6 @@
 
 #include <boost/shared_ptr.hpp>
 #include <gridpack/math/dae_solver_interface.hpp>
-#include <gridpack/math/dae_solver_functions.hpp>
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/configuration/configurable.hpp>
@@ -44,8 +43,9 @@ public:
 
   typedef typename DAESolverInterface<T, I>::VectorType VectorType;
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
-  typedef typename DAEBuilder<T, I>::Jacobian JacobianBuilder;
-  typedef typename DAEBuilder<T, I>::Function FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
   
 
   /// Default constructor.
@@ -79,9 +79,27 @@ protected:
   /// A function to build the Jacobian
   JacobianBuilder p_Jbuilder;
 
+  /// An optional function to call before each time step
+  StepFunction p_preStepFunc;
+
+  /// An optional function to call after each time step
+  StepFunction p_postStepFunc;
+
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
   {}
+
+  /// Set a function to call before each time step (specialized)
+  void p_preStep(StepFunction& f)
+  {
+    p_preStepFunc = f;
+  }
+
+  /// Set a function to call after each time step (specialized)
+  void p_postStep(StepFunction& f)
+  {
+    p_postStepFunc = f;
+  }
 
 };
 
