@@ -10,7 +10,7 @@
 /**
  * @file   dae_solver_interface.hpp
  * @author William A. Perkins
- * @date   2015-05-05 11:44:17 d3g096
+ * @date   2015-05-07 13:16:29 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,8 @@
 #include <gridpack/math/vector.hpp>
 #include <gridpack/math/matrix.hpp>
 
+#include <gridpack/math/dae_solver_functions.hpp>
+
 namespace gridpack {
 namespace math {
 
@@ -35,8 +37,11 @@ class DAESolverInterface
 {
 public:
 
-  typedef VectorT<T, I> VectorType;
-  typedef MatrixT<T, I> MatrixType;
+  typedef typename DAEBuilder<T, I>::VectorType VectorType;
+  typedef typename DAEBuilder<T, I>::MatrixType MatrixType;
+  typedef typename DAEBuilder<T, I>::Jacobian JacobianBuilder;
+  typedef typename DAEBuilder<T, I>::Function FunctionBuilder;
+  typedef typename DAEBuilder<T, I>::StepFunction StepFunction;
 
   /// Default constructor.
   DAESolverInterface(void)
@@ -83,6 +88,18 @@ public:
     this->p_solve(maxtime, maxsteps);
   }
 
+  /// Set a function to call before each time step
+  void preStep(StepFunction& f)
+  {
+    this->p_preStep(f);
+  }
+
+  /// Set a function to call before each time step
+  void postStep(StepFunction& f)
+  {
+    this->p_postStep(f);
+  }
+
 protected:
 
   /// Initialize the system (specialized)
@@ -93,6 +110,13 @@ protected:
 
   /// Solve the system (specialized)
   virtual void p_solve(double& maxtime, int& maxsteps) = 0;
+
+  /// Set a function to call before each time step (specialized)
+  virtual void p_preStep(StepFunction& f) = 0;
+
+  /// Set a function to call after each time step (specialized)
+  virtual void p_postStep(StepFunction& f) = 0;
+
 };
 
 
