@@ -216,7 +216,7 @@ class DSBus
     bool p_isGen;
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
-    std::vector<double> p_mva, p_r, p_dstr, p_dtr;
+    std::vector<double> p_mva, p_r, p_dtr;
     int p_ngen;
     int p_type;
     gridpack::ComplexType p_permYmod;
@@ -256,7 +256,7 @@ class DSBus
           & p_isGen
           & p_pg & p_qg
           & p_gstatus
-          & p_mva & p_r & p_dstr & p_dtr
+          & p_mva & p_r & p_dtr
           & p_ngen & p_type & p_permYmod
           & p_from_flag & p_to_flag
           & p_h & p_d0
