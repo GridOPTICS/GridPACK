@@ -659,22 +659,33 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
   if (signal == NULL) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
-    sprintf(string, "     %6d      %12.6f         %12.6f\n",
-        getOriginalIndex(),angle,p_v);
+    if (!isIsolated()) {
+      sprintf(string, "     %6d      %12.6f         %12.6f\n",
+            getOriginalIndex(),angle,p_v);
+    } else {
+      sprintf(string, "     %6d      %12.6f         %12.6f\n",
+            getOriginalIndex(),0.0,0.0);
+    }
   } else if (!strcmp(signal,"pq")) {
     gridpack::ComplexType v[2];
     vectorValues(v);
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
-    sprintf(string, "     %6d      %12.6f      %12.6f      %2d\n",
-        getOriginalIndex(),real(v[0]),real(v[1]),
-        static_cast<int>(branches.size()));
+    if (!isIsolated()) {
+      sprintf(string, "     %6d      %12.6f      %12.6f      %2d\n",
+            getOriginalIndex(),real(v[0]),real(v[1]),
+            static_cast<int>(branches.size()));
+    } else {
+      sprintf(string, "     %6d      %12.6f      %12.6f      %2d\n",
+            getOriginalIndex(),0.0, 0.0,
+            static_cast<int>(branches.size()));
+    }
   } else if (!strcmp(signal,"record")) {
     char sbuf[128];
     char *cptr = string;
     int slen = 0;
     sprintf(sbuf,"%8d, %4d, %16.8f, %16.8f,",getOriginalIndex(),p_type,
-        p_pl/p_sbase,p_ql/p_sbase);
+            p_pl/p_sbase,p_ql/p_sbase);
     int len = strlen(sbuf);
     if (len<=bufsize) {
       sprintf(cptr,"%s",sbuf);
@@ -694,8 +705,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       if (p_gstatus[i]) qmax += p_qmax[i];
     }
     sprintf(sbuf," %16.8f, %16.8f, %16.8f, %16.8f,",
-        pgen,qgen,qmax,qmin);
-//        pgen/p_sbase,qgen/p_sbase,qmax/p_sbase,qmin/p_sbase);
+            pgen/p_sbase,qgen/p_sbase,qmax/p_sbase,qmin/p_sbase);
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
       sprintf(cptr,"%s",sbuf);
@@ -735,8 +745,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     p_data->getValue(BUS_BASEKV,&basekv);
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
-    sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",p_v,angle,basekv,nzone,1.1,0.9);
-    //sprintf(sbuf," %16.8f, %8d, %16.8f, %16.8f\n",zero,nzone,zero,zero);
+    double vmax = 1.1;
+    double vmin = 0.9;
+    if (!isIsolated()) {
+      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",p_v,angle,basekv,nzone,vmax,vmin);
+    } else {
+      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",0.0,0.0,basekv,nzone,vmax,vmin);
+    }
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
       sprintf(cptr,"%s",sbuf);
@@ -1400,6 +1415,14 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
                                                 const char *signal)
 {
   char buf[128];
+  gridpack::powerflow::PFBus *bus1
+    = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+  gridpack::powerflow::PFBus *bus2
+    = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+  bool ok = p_active;
+  if (ok) {
+
+
   if (signal == NULL) {
     gridpack::ComplexType s;
     std::vector<std::string> tags = getLineTags();
@@ -1411,6 +1434,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       double q = imag(s);
       if (!p_branch_status[i]) p = 0.0;
       if (!p_branch_status[i]) q = 0.0;
+      if (bus1->isIsolated() | bus2->isIsolated()) p=0.0;
+      if (bus1->isIsolated() | bus2->isIsolated()) q=0.0;
       sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
           getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),p,q);
       ilen += strlen(buf);
@@ -1430,6 +1455,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       double q = imag(s);
       if (!p_branch_status[i]) p = 0.0;
       if (!p_branch_status[i]) q = 0.0;
+      if (bus1->isIsolated() | bus2->isIsolated()) p=0.0;
+      if (bus1->isIsolated() | bus2->isIsolated()) q=0.0;
       double S = sqrt(p*p+q*q);
       if (S > p_rateA[i] && p_rateA[i] != 0.0){
         sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
@@ -1479,6 +1506,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
     }
     return true;
   }
+  return false;
+  } // ok loop
   return false;
 }
 
