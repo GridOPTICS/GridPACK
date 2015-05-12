@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2015-03-24 08:26:13 d3g096
+# Last Change: 2015-05-12 11:31:19 d3g096
 # -------------------------------------------------------------
 
 # This is used to specify a time out for GridPACK unit tests. It's 5
@@ -59,7 +59,7 @@ endfunction(gridpack_add_serial_run_test)
 function(gridpack_add_parallel_unit_test test_name test_program)
   set(the_test_name "${test_name}_parallel")
   add_test("${the_test_name}"
-    ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} ${test_program} ${MPIEXEC_POSTFLAGS})
+    ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} ${MPIEXEC_MAX_NUMPROCS} ${MPIEXEC_PREFLAGS} ${test_program} ${MPIEXEC_POSTFLAGS})
   set_tests_properties("${the_test_name}"
     PROPERTIES 
     PASS_REGULAR_EXPRESSION "No errors detected"
