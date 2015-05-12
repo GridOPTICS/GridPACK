@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-12 10:08:52 d3g096
+ * @date   2015-05-12 15:11:04 d3g096
  * 
  * @brief  
  * 
@@ -30,12 +30,12 @@ static const PetscInt local_size(5);
 
 BOOST_AUTO_TEST_SUITE(GAMatrixTest)
 
-BOOST_AUTO_TEST_CASE( ConstructConvert )
+BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
 {
   PetscErrorCode ierr(0);
   gridpack::parallel::Communicator world;
 
-  Mat A, B;
+  Mat A, B, C;
   PetscInt lrows, lcols;
   PetscInt lo, hi;
 
@@ -111,14 +111,24 @@ BOOST_AUTO_TEST_CASE( ConstructConvert )
 
   BOOST_TEST_MESSAGE("Get Matrix Values");
 
-  for (int i = lo; i < hi; ++i) {
+   for (int i = lo; i < hi; ++i) {
     for (int j = lo; j < hi; ++j) {
       ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
       ierr = MatGetValues(B, 1, &i, 1, &j, &y);  CHKERRXX(ierr);
       BOOST_CHECK_EQUAL(x, y);
-      y += 1.0;
     }
   }
+
+  BOOST_TEST_MESSAGE("Duplicate Matrix");
+  ierr = MatDuplicate(A, MAT_COPY_VALUES, &C);  CHKERRXX(ierr);
+   for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      ierr = MatGetValues(C, 1, &i, 1, &j, &y);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(x, y);
+    }
+  }
+    
 
   ierr = MatDestroy(&B);
   ierr = MatDestroy(&A);

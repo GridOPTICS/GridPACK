@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-05-12 09:48:24 d3g096
+ * @date   2015-05-12 15:05:50 d3g096
  * 
  * @brief  
  * 
@@ -76,6 +76,8 @@ struct MatGACtx {
   int lo[2];                    /**< Lower limits of "local" matrix ownership */
   int hi[2];                    /**< Upper limits of "local" matrix ownership */
 };
+
+static PetscErrorCode MatSetOperationsDenseGA(Mat A);
 
 // -------------------------------------------------------------
 // CreateMatGA
@@ -260,6 +262,18 @@ MatAssemmblyEndDenseGA(Mat mat, MatAssemblyType type)
 }
 
 // -------------------------------------------------------------
+// MatConvertFromDense
+// -------------------------------------------------------------
+static 
+PetscErrorCode
+MatConvertFromDense(Mat mat, MatType newtype, MatReuse reuse, Mat *M)
+{
+  PetscErrorCode ierr = 0;
+  
+  return ierr;
+}
+
+// -------------------------------------------------------------
 // MatMultDenseGA
 // -------------------------------------------------------------
 static
@@ -309,6 +323,11 @@ MatMultDenseGA(Mat mat, Vec x, Vec y)
 
   return ierr;
 }
+
+// -------------------------------------------------------------
+// MatMult
+// -------------------------------------------------------------
+
 
 // -------------------------------------------------------------
 // MatViewDenseGA
@@ -364,7 +383,43 @@ MPIComm2GApgroup(MPI_Comm comm, int *pGrpHandle)
   return ierr;
 }
 
+// -------------------------------------------------------------
+// MatDuplicateDenseGA
+// -------------------------------------------------------------
+static
+PetscErrorCode
+MatDuplicateDenseGA(Mat mat, MatDuplicateOption op, Mat *M)
+{
+  PetscErrorCode ierr = 0;
+  struct MatGACtx *ctx, *newctx;
+  ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
 
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)mat, &comm); CHKERRQ(ierr);
+
+  PetscInt lrows, grows, lcols, gcols;
+  ierr = MatGetSize(mat, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(mat, &lrows, &lcols); CHKERRQ(ierr);
+
+  ierr = PetscMalloc(sizeof(struct MatGACtx), &newctx); CHKERRQ(ierr);
+  newctx->gaGroup = ctx->gaGroup;
+  newctx->ga = GA_Duplicate(ctx->ga, "PETSc Dense Matrix");
+
+  ierr = MatCreateShell(comm, lrows, lcols, grows, gcols, newctx, M); CHKERRQ(ierr);
+  ierr = MatSetOperationsDenseGA(*M);
+
+  PetscScalar z(0.0);
+  switch (op) {
+  case (MAT_COPY_VALUES):
+    GA_Copy(ctx->ga, newctx->ga);
+    break;
+  default:
+    GA_Fill(newctx->ga, &z);
+    break;
+  }
+
+  return ierr;
+}
 
 
 // -------------------------------------------------------------
@@ -397,15 +452,26 @@ MatCreateDenseGA(MPI_Comm comm,
   
   ierr = CreateMatGA(ctx->gaGroup, lrows, lcols, grows, gcols, &(ctx->ga)); CHKERRQ(ierr);
   ierr = MatCreateShell(comm, lrows, lcols, grows, gcols, ctx, A); CHKERRQ(ierr);
+  ierr = MatSetOperationsDenseGA(*A);
 
-  ierr = MatShellSetOperation(*A, MATOP_SET_VALUES, (void(*)(void))MatSetValuesDenseGA); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*A, MATOP_GET_VALUES, (void(*)(void))MatGetValuesDenseGA); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*A, MATOP_MULT, (void(*)(void))MatMultDenseGA); CHKERRQ(ierr); 
-
-  ierr = MatShellSetOperation(*A, MATOP_ASSEMBLY_BEGIN, (void(*)(void))MatAssemmblyBeginDenseGA); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*A, MATOP_ASSEMBLY_END, (void(*)(void))MatAssemmblyEndDenseGA); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*A, MATOP_DESTROY,  (void(*)(void))MatDestroyDenseGA); CHKERRQ(ierr);
-  
-  
   return ierr;
 }
+
+// -------------------------------------------------------------
+// MatSetOperationsDenseGA
+// -------------------------------------------------------------
+static
+PetscErrorCode
+MatSetOperationsDenseGA(Mat A)
+{
+  PetscErrorCode ierr = 0;
+  ierr = MatShellSetOperation(A, MATOP_SET_VALUES, (void(*)(void))MatSetValuesDenseGA); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(A, MATOP_GET_VALUES, (void(*)(void))MatGetValuesDenseGA); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(A, MATOP_MULT, (void(*)(void))MatMultDenseGA); CHKERRQ(ierr); 
+  ierr = MatShellSetOperation(A, MATOP_DUPLICATE, (void(*)(void))MatDuplicateDenseGA); CHKERRQ(ierr); 
+  ierr = MatShellSetOperation(A, MATOP_ASSEMBLY_BEGIN, (void(*)(void))MatAssemmblyBeginDenseGA); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(A, MATOP_ASSEMBLY_END, (void(*)(void))MatAssemmblyEndDenseGA); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(A, MATOP_DESTROY,  (void(*)(void))MatDestroyDenseGA); CHKERRQ(ierr);
+  return ierr;
+}
+
