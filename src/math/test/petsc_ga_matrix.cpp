@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-05 08:42:42 d3g096
+ * @date   2015-05-12 10:08:52 d3g096
  * 
  * @brief  
  * 
@@ -30,20 +30,25 @@ static const PetscInt local_size(5);
 
 BOOST_AUTO_TEST_SUITE(GAMatrixTest)
 
-BOOST_AUTO_TEST_CASE( construction )
+BOOST_AUTO_TEST_CASE( ConstructConvert )
 {
   PetscErrorCode ierr(0);
   gridpack::parallel::Communicator world;
 
-  Mat A;
+  Mat A, B;
   PetscInt lrows, lcols;
   PetscInt lo, hi;
+
+
+  BOOST_TEST_MESSAGE("Create Matrix");
 
   ierr = MatCreateDenseGA(world, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE, &A); CHKERRXX(ierr);
   ierr = MatGetLocalSize(A, &lrows, &lcols);  CHKERRXX(ierr);
 
   BOOST_CHECK_EQUAL(lrows, 5);
   BOOST_CHECK_EQUAL(lcols, 5);
+
+  BOOST_TEST_MESSAGE("Fill Matrix");
 
   ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
   PetscScalar x(0.0);
@@ -53,8 +58,14 @@ BOOST_AUTO_TEST_CASE( construction )
       x += 1.0;
     }
   }
+
+  BOOST_TEST_MESSAGE("Assemble Matrix");
+  
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+
+
+  BOOST_TEST_MESSAGE("Get Matrix Values");
 
   PetscScalar y(0.0);
   for (int i = lo; i < hi; ++i) {
@@ -65,6 +76,9 @@ BOOST_AUTO_TEST_CASE( construction )
     }
   }
 
+  BOOST_TEST_MESSAGE("Add Matrix Values");
+  world.barrier();
+
   x = 0.0;
   for (int i = lo; i < hi; ++i) {
     for (int j = lo; j < hi; ++j) {
@@ -72,6 +86,9 @@ BOOST_AUTO_TEST_CASE( construction )
       x += 1.0;
     }
   }
+
+  BOOST_TEST_MESSAGE("Assemble Matrix");
+
   ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
 
@@ -84,7 +101,26 @@ BOOST_AUTO_TEST_CASE( construction )
     }
   }
 
+  BOOST_TEST_MESSAGE("Convert Matrix");
 
+  ierr = MatConvert(A, MATDENSE, MAT_INITIAL_MATRIX, &B);  CHKERRXX(ierr);
+
+  BOOST_TEST_MESSAGE("View Converted Matrix");
+
+  ierr = MatView(B, PETSC_VIEWER_STDOUT_WORLD); CHKERRXX(ierr);
+
+  BOOST_TEST_MESSAGE("Get Matrix Values");
+
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      ierr = MatGetValues(B, 1, &i, 1, &j, &y);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(x, y);
+      y += 1.0;
+    }
+  }
+
+  ierr = MatDestroy(&B);
   ierr = MatDestroy(&A);
 }
 
@@ -130,7 +166,7 @@ BOOST_AUTO_TEST_CASE( VectorMultiply )
   ierr = VecAssemblyBegin(y);
   ierr = VecAssemblyEnd(y);
 
-  // FIXME: ierr = MatMult(A, x, y); CHKERRXX(ierr);
+  ierr = MatMult(A, x, y); CHKERRXX(ierr);
 
   ierr = VecDestroy(&x); CHKERRXX(ierr);
   ierr = VecDestroy(&y); CHKERRXX(ierr);

@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-05-05 07:22:07 d3g096
+ * @date   2015-05-12 09:48:24 d3g096
  * 
  * @brief  
  * 
@@ -129,7 +129,8 @@ Vec2GA(Vec x, int pgroup, int *ga, bool trans = false)
   NGA_Put(*ga, lo, hi, v, ld);
   // GA_Print(*ga);
   ierr = VecRestoreArray(x, &v); CHKERRQ(ierr);
-    
+
+  GA_Pgroup_sync(pgroup);
   return ierr;
 }
 
@@ -251,6 +252,9 @@ MatAssemmblyEndDenseGA(Mat mat, MatAssemblyType type)
   struct MatGACtx *ctx;
   ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
   GA_Pgroup_sync(ctx->gaGroup);
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)mat,&comm); CHKERRQ(ierr);
+  ierr = MPI_Barrier(comm);
   // GA_Print(ctx->ga);
   return ierr;
 }
@@ -273,19 +277,35 @@ MatMultDenseGA(Mat mat, Vec x, Vec y)
   ierr = MatGetSize(mat, &Arows, &Acols); CHKERRQ(ierr);
 
   int g_x, g_y;
-  ierr = Vec2GA(x, ctx->gaGroup, &g_x, true); CHKERRQ(ierr);
-  ierr = Vec2GA(y, ctx->gaGroup, &g_y, true); CHKERRQ(ierr);
+  ierr = Vec2GA(x, ctx->gaGroup, &g_x, false); CHKERRQ(ierr);
+  ierr = Vec2GA(y, ctx->gaGroup, &g_y, false); CHKERRQ(ierr);
 
   PetscScalarGA alpha(one), beta(zero);
-  GA_Print(ctx->ga);
-  GA_Print(g_x);
-  GA_Print(g_y);
-  GA_GEMM('N', 'N', Arows, 1, Acols, alpha, ctx->ga, g_x, beta, g_y);
+  int ndim, itype, lo[2] = {0,0}, ahi[2], xhi[2], yhi[2];
+  NGA_Inquire(ctx->ga, &itype, &ndim, ahi);
+  ahi[0] -= 1; ahi[1] -= 1;
+  NGA_Inquire(g_x, &itype, &ndim, xhi);
+  xhi[0] -= 1; xhi[1] -= 1;
+  NGA_Inquire(g_y, &itype, &ndim, yhi);
+  yhi[0] -= 1; yhi[1] -= 1;
+  // GA_Print(ctx->ga);
+  // GA_Print(g_x);
+  // GA_Print(g_y);
+  NGA_Matmul_patch('N', 'N', &alpha, &beta, 
+                   ctx->ga, lo, ahi,
+                   g_x, lo, xhi,
+                   g_y, lo, yhi);
+
+  GA_Pgroup_sync(ctx->gaGroup);
 
   ierr = GA2Vec(g_y, y); CHKERRQ(ierr);
 
   GA_Destroy(g_y);
   GA_Destroy(g_x);
+
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)mat,&comm); CHKERRQ(ierr);
+  ierr = MPI_Barrier(comm);
 
   return ierr;
 }
@@ -303,8 +323,14 @@ PetscErrorCode
 MatDestroyDenseGA(Mat A)
 {
   PetscErrorCode ierr = 0;
+
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)A,&comm); CHKERRQ(ierr);
+  ierr = MPI_Barrier(comm);
+
   struct MatGACtx *ctx;
   ierr = MatShellGetContext(A, &ctx); CHKERRQ(ierr);
+  GA_Pgroup_sync(ctx->gaGroup);
   GA_Destroy(ctx->ga);
   GA_Pgroup_destroy(ctx->gaGroup);
   ierr = PetscFree(ctx);
