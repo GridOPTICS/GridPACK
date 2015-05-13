@@ -197,9 +197,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
         if (ip == jp) {
           double ra = p_r[ip] * p_sbase / p_mva[ip];
           double xd = 0.0;
-          if (p_dstr[ip] == 0) { 
-            xd = p_dtr[ip] * p_sbase / p_mva[ip];
-          }
+          xd = p_dtr[ip] * p_sbase / p_mva[ip];
           gridpack::ComplexType Y_a(ra, xd);
           Y_a = 1.0 / Y_a;
           values[ii] = Y_a;
@@ -216,9 +214,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       for (int i = 0; i < p_ngen; i++) {
         double ra = p_r[i] * p_sbase / p_mva[i];
         double xd;
-        if (p_dstr[i] == 0) { 
-          xd = p_dtr[i] * p_sbase / p_mva[i];
-        }
+        xd = p_dtr[i] * p_sbase / p_mva[i];
         gridpack::ComplexType Y_a(ra, xd);
         Y_a = 1.0 / Y_a;
         values[i] = Y_a;
@@ -233,9 +229,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       for (int i = 0; i < p_ngen; i++) {
         double ra = p_r[i] * p_sbase / p_mva[i];
         double xd;
-        if (p_dstr[i] == 0) { 
-          xd = p_dtr[i] * p_sbase / p_mva[i];
-        }
+        xd = p_dtr[i] * p_sbase / p_mva[i];
         gridpack::ComplexType Y_a(ra, xd);
         Y_a = 1.0 / Y_a;
         values[i] = -Y_a;
@@ -250,9 +244,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       for (int ip = 0; ip < p_ngen; ip++) {
         double ra = p_r[ip] * p_sbase / p_mva[ip];
         double xd;
-        if (p_dstr[ip] == 0) { 
-          xd = p_dtr[ip] * p_sbase / p_mva[ip];
-        }
+        xd = p_dtr[ip] * p_sbase / p_mva[ip];
         gridpack::ComplexType Y_a(ra, xd);
         Y_a = 1.0 / Y_a;
         values[0] += Y_a;
@@ -277,9 +269,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
       for (int ip = 0; ip < p_ngen; ip++) {
         double ra = p_r[ip] * p_sbase / p_mva[ip];
         double xd;
-        if (p_dstr[ip] == 0) { 
-          xd = p_dtr[ip] * p_sbase / p_mva[ip];
-        }
+        xd = p_dtr[ip] * p_sbase / p_mva[ip];
         gridpack::ComplexType Y_a(ra, xd);
         Y_a = 1.0 / Y_a;
         permYmod += Y_a;
@@ -620,7 +610,7 @@ void gridpack::dynamic_simulation::DSBus::load(
 
   bool lgen;
   int i, gstatus;
-  double pg, qg, mva, r, dstr, dtr;
+  double pg, qg, mva, r, dtr;
   double h, d0;
   p_ngen = 0;
   if (data->getValue(GENERATOR_NUMBER, &p_ngen)) {
@@ -633,11 +623,10 @@ void gridpack::dynamic_simulation::DSBus::load(
       qg /= p_sbase;
 
       lgen = lgen && data->getValue(GENERATOR_MBASE, &mva, i); 
-      if (!data->getValue(GENERATOR_RESISTANCE, &r, i)) r=0.0; // r
-      if (!data->getValue(GENERATOR_SUBTRANSIENT_REACTANCE, &dstr,i)) dstr = 0.0; // dstr
       gridpack::ComplexType zsrc;
       //lgen = lgen && data->getValue(GENERATOR_TRANSIENT_REACTANCE, &dtr,i); // dtr
       lgen = lgen && data->getValue(GENERATOR_ZSOURCE, &zsrc,i); // dtr
+      r = real(zsrc);
       dtr = imag(zsrc);
       // SJin: need to be added to parser
       lgen = lgen && data->getValue(GENERATOR_INERTIA_CONSTANT_H, &h, i); // h
@@ -649,7 +638,6 @@ void gridpack::dynamic_simulation::DSBus::load(
 
         p_mva.push_back(mva);
         p_r.push_back(r);
-        p_dstr.push_back(dstr);
         p_dtr.push_back(dtr);
 
         p_h.push_back(h);

@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2015-05-05 12:43:05 d3g096
+ * @date   2015-05-07 13:15:37 d3g096
  * 
  * @brief  
  * 
@@ -44,8 +44,9 @@ public:
 
   typedef typename DAESolverInterface<T, I>::VectorType VectorType;
   typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
-  typedef typename DAESolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
-  typedef typename DAESolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
 
 
   /// Default constructor.
@@ -104,7 +105,6 @@ public:
     p_impl->solve(maxtime, maxsteps);
   }
 
-  
 protected:
   
   /// Where things really happen
@@ -134,6 +134,17 @@ protected:
     p_impl->solve(maxtime, maxsteps);
   }
 
+  /// Set a function to call before each time step (specialized)
+  void p_preStep(StepFunction& f)
+  {
+    p_impl->preStep(f);
+  }
+
+  /// Set a function to call after each time step (specialized)
+  void p_postStep(StepFunction& f)
+  {
+    p_impl->postStep(f);
+  }
 };
 
 typedef DAESolverT<ComplexType> ComplexDAESolver;

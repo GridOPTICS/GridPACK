@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-05-05 12:37:50 d3g096
+ * @date   2015-05-07 13:58:52 d3g096
  * 
  * @brief  
  * 
@@ -95,6 +95,19 @@ public:
                            const VectorType& X, const VectorType& Xdot, 
                            VectorType& F) = 0;
 
+  /// Report the time before the timestep
+  static void reportPreTime(const double time)
+  {
+    std::cerr << "Pre  time step: the time is now " << time << std::endl;
+  }
+
+  /// Report the time after the timestep
+  static void reportPostTime(const double time)
+  {
+    std::cerr << "Post time step: the time is now " << time << std::endl;
+  }
+  
+
   /// Get the initial solution
   virtual VectorType *initial(const gridpack::parallel::Communicator& comm) = 0;
   
@@ -105,9 +118,15 @@ public:
   {
     TheSolverType::JacobianBuilder jbuilder = boost::ref(*this);
     TheSolverType::FunctionBuilder fbuilder = boost::ref(*this);
+    TheSolverType::StepFunction sfunc;
     
     TheSolverType solver(comm, p_size, jbuilder, fbuilder);
     solver.configure(conf);
+
+    sfunc = &reportPreTime;
+    solver.preStep(sfunc);
+    sfunc = &reportPostTime;
+    solver.postStep(sfunc);
 
     std::auto_ptr<VectorType> x(initial(comm));
     
