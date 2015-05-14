@@ -320,7 +320,8 @@ bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
   } else if (p_mode == init_pelect || p_mode == init_eprime ||
       p_mode == init_mac_ang || p_mode == init_mac_spd ||
       p_mode == init_eqprime || p_mode == init_pmech ||
-      p_mode == init_mva || p_mode == init_d0 || p_mode == init_h) {
+      p_mode == init_mva || p_mode == init_d0 || p_mode == init_h ||
+      p_mode == Eprime0 || p_mode == Eprime1) {
     if (p_ngen > 0) {
       //*size = 1;
       *size = p_ngen;
@@ -427,6 +428,24 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
     } else {
       return false;
     }
+  } else if (p_mode == Eprime0) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[i] = p_eprime_s0[i];
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == Eprime1) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        values[i] = p_eprime_s1[i];
+      }
+      return true;
+    } else {
+      return false;
+    }
   } else if (p_mode == init_mac_ang) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
@@ -528,6 +547,10 @@ void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
     p_elect_final.clear();
     for (i=0; i<p_ngen; i++) {
       p_elect_final.push_back(values[i]);
+    }
+  } else if (p_mode == Current) {
+    for (i=0; i<p_ngen; i++) {
+      p_curr[i] = values[i];
     }
   }
 }
@@ -778,6 +801,23 @@ bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
       ptr += slen;
     }
     return true;
+  } else if (!strcmp(signal,"new")) {
+    if (p_ngen == 0) return false;
+    int i;
+    char buf[128];
+    char *ptr = string;
+    int idx = getOriginalIndex();
+    int len = 0;
+    for (i=0; i<p_ngen; i++) {
+      sprintf(buf,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
+          idx,p_genid[i].c_str(),real(p_mac_ang_s1[i]),real(p_mac_spd_s1[i]),
+          real(p_mech[i]),real(p_pelect[i]));
+      int slen = strlen(buf);
+      len += slen;
+      if (len < bufsize) sprintf(ptr,"%s",buf);
+      ptr += slen;
+    }
+    return true;
   } else if (!strcmp(signal,"watch_header")) {
     if (p_ngen == 0) return false;
     int i;
@@ -808,6 +848,7 @@ bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
     char buf[128];
     char *ptr = string;
     int len = 0;
+#if 1
     for (i=0; i<p_ngen; i++) {
       if (p_watch[i]) {
         sprintf(buf,", %f, %f",real(p_mac_ang_final[i]),
@@ -818,6 +859,18 @@ bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
         ptr += slen;
       }
     }
+#else
+    for (i=0; i<p_ngen; i++) {
+      if (p_watch[i]) {
+        sprintf(buf,", %f, %f",real(p_mac_ang_s1[i]),
+            real(p_mac_spd_s1[i]));
+        int slen = strlen(buf);
+        if (len + slen < bufsize) sprintf(ptr,"%s",buf);
+        len += slen;
+        ptr += slen;
+      }
+    }
+#endif
     if (len > 0) return true;
   }
   return false;
@@ -838,6 +891,198 @@ void gridpack::dynamic_simulation::DSBus::setWatch(std::string tag, bool flag)
       p_watch[i] = flag;
       break;
     }
+  }
+}
+
+/**
+ * Initialize dynamic simulation data structures
+ */
+void gridpack::dynamic_simulation::DSBus::setDSParams()
+{
+  if (p_ngen == 0) return;
+  int i;
+  gridpack::ComplexType tmp;
+  // Variables set in this routine
+  p_pelect.clear();
+  p_eprime.clear();
+  p_eprime_s0.clear();
+  p_mac_ang_s0.clear();
+  p_mac_spd_s0.clear();
+  p_eqprime.clear();
+  p_mech.clear();
+  // Variables used in other routines
+  p_eprime_s1.clear();
+  p_mac_ang_s1.clear();
+  p_mac_spd_s1.clear();
+  p_dmac_ang_s0.clear();
+  p_dmac_spd_s0.clear();
+  p_dmac_ang_s1.clear();
+  p_dmac_spd_s1.clear();
+  p_curr.clear();
+  gridpack::ComplexType zero(0.0,0.0);
+  for (i=0; i<p_ngen; i++) {
+    p_pelect.push_back(p_pg[i]);
+    double mva = p_sbase / p_mva[i]; 
+    double eterm = p_voltage;
+    double pelect = p_pg[i];
+    double qelect = p_qg[i];
+    double currr = sqrt(pelect * pelect + qelect * qelect) / eterm * mva;
+    double phi = atan2(qelect, pelect);  
+    double vi = p_angle;
+    gridpack::ComplexType v(0.0, vi);
+    v = eterm * exp(v);
+    double curri = p_angle - phi;
+    gridpack::ComplexType curr(0.0, curri);
+    curr = currr * exp(curr);
+    gridpack::ComplexType jay(0.0, 1.0);
+    tmp = v + jay * p_dtr[i] * curr;
+    p_eprime.push_back(tmp);
+    p_eprime_s0.push_back(tmp);
+    tmp = atan2(imag(p_eprime[i]), real(p_eprime[i]));
+    p_mac_ang_s0.push_back(tmp);
+    p_mac_spd_s0.push_back(1.0);
+    p_eqprime.push_back(abs(p_eprime[i]));
+    p_mech.push_back(abs(p_pelect[i]));
+    p_eprime_s1.push_back(zero);
+    p_mac_ang_s1.push_back(zero);
+    p_mac_spd_s1.push_back(zero);
+    p_dmac_ang_s0.push_back(zero);
+    p_dmac_spd_s0.push_back(zero);
+    p_dmac_ang_s1.push_back(zero);
+    p_dmac_spd_s1.push_back(zero);
+    p_curr.push_back(zero);
+    p_dbg.push_back(zero);
+  }
+}
+
+/**
+ * Evaluate first part of a dynamic simulation step
+ * @param t_inc time increment
+ * @param flag false if step is not initial step
+ */
+void gridpack::dynamic_simulation::DSBus::initDSStep(bool flag)
+{
+  if (p_ngen == 0) return;
+  int i;
+  // If first step then copy completed step values to initial step values
+  if (!flag) {
+    for (i=0; i<p_ngen; i++) {
+      p_mac_ang_s0[i] = p_mac_ang_s1[i];
+      p_mac_spd_s0[i] = p_mac_spd_s1[i];
+      p_eprime_s0[i] = p_eprime_s1[i];
+    }
+  }
+  gridpack::ComplexType tmp, jay;
+  jay = gridpack::ComplexType(0.0,1.0);
+  for (i=0; i<p_ngen; i++) {
+    tmp = p_mac_ang_s0[i];
+    tmp = jay*tmp;
+    tmp = exp(tmp);
+    tmp = tmp*p_eqprime[i];
+    p_eprime_s0[i] = tmp;
+  }
+}
+
+/**
+ * Evaluate predictor part of dynamic simulation step
+ */
+void gridpack::dynamic_simulation::DSBus::predDSStep(double t_inc)
+{
+  if (p_ngen == 0) return;
+  int i;
+  gridpack::ComplexType tmp, jay, one;
+  double pi = 4.0*atan(1.0);
+  const double sysFreq = 60.0;
+  double basrad =  2.0 * pi *sysFreq;
+  jay = gridpack::ComplexType(0.0,1.0);
+  one = gridpack::ComplexType(1.0,0.0);
+  for (i=0; i<p_ngen; i++) {
+    double mva = p_sbase / p_mva[i]; 
+    // p_pelect
+    p_curr[i] = conj(p_curr[i]);
+    tmp = p_eprime_s0[i];
+    tmp = tmp * p_curr[i];
+    p_pelect[i] = tmp;
+    p_pelect[i] = gridpack::ComplexType(real(p_pelect[i]),0.0);
+    // p_dmac_ang_s0
+    tmp = p_mac_spd_s0[i]-one;
+    tmp *= basrad;
+    p_dmac_ang_s0[i] = tmp;
+    // p_dmac_spd_s0
+    tmp = p_pelect[i];
+    tmp *= mva;
+    p_dmac_spd_s0[i] = p_mech[i];
+    p_dmac_spd_s0[i] -= tmp;
+    tmp = p_mac_spd_s0[i]-one;
+    tmp *= p_d0[i];
+    p_dmac_spd_s0[i] -= tmp;
+    p_dmac_spd_s0[i] /= (2.0*p_h[i]);
+    // p_mac_ang_s1 and p_mac_spd_s1
+    p_mac_ang_s1[i] = p_mac_ang_s0[i];
+    p_mac_ang_s1[i] += t_inc*p_dmac_ang_s0[i];
+    p_mac_spd_s1[i] = p_mac_spd_s0[i];
+    p_mac_spd_s1[i] += t_inc*p_dmac_spd_s0[i];
+    // p_eprime_s1
+    p_eprime_s1[i] = p_eqprime[i]*exp(jay*p_mac_ang_s1[i]);
+  }
+}
+
+/**
+ * Evaluate corrector part of dynamic simulation step
+ */
+void gridpack::dynamic_simulation::DSBus::corrDSStep(double t_inc)
+{
+  if (p_ngen == 0) return;
+  int i;
+  gridpack::ComplexType tmp, jay, one;
+  double pi = 4.0*atan(1.0);
+  const double sysFreq = 60.0;
+  double basrad =  2.0 * pi *sysFreq;
+  jay = gridpack::ComplexType(0.0,1.0);
+  one = gridpack::ComplexType(1.0,0.0);
+  for (i=0; i<p_ngen; i++) {
+    double mva = p_sbase / p_mva[i]; 
+    // p_pelect
+    p_curr[i] = conj(p_curr[i]);
+    tmp = p_eprime_s1[i];
+    tmp = tmp * p_curr[i];
+    p_pelect[i] = tmp;
+    p_pelect[i] = gridpack::ComplexType(real(p_pelect[i]),0.0);
+    // p_dmac_ang_s1
+    tmp = p_mac_spd_s1[i]-one;
+    tmp *= basrad;
+    p_dmac_ang_s1[i] = tmp;
+    // p_dmac_spd_s1
+    tmp = p_pelect[i];
+    tmp *= mva;
+    p_dmac_spd_s1[i] = p_mech[i];
+    p_dmac_spd_s1[i] -= tmp;
+    tmp = p_mac_spd_s1[i]-one;
+    tmp *= p_d0[i];
+    p_dmac_spd_s1[i] -= tmp;
+    p_dmac_spd_s1[i] /= (2.0*p_h[i]);
+    // p_mac_ang_s1 and p_mac_spd_s1
+#if 0
+    tmp = p_dmac_ang_s0[i];
+    tmp += p_dmac_ang_s1[i];
+    tmp *= 0.5;
+    p_mac_ang_s1[i] = p_mac_ang_s0[i];
+    p_mac_ang_s1[i] += t_inc*tmp;
+#else
+    tmp = 0.5*(p_dmac_ang_s0[i]+p_dmac_ang_s1[i]);
+    p_mac_ang_s1[i] = p_mac_ang_s0[i]+t_inc*tmp;
+#endif
+
+#if 0
+    tmp = p_dmac_spd_s0[i];
+    tmp += p_dmac_spd_s1[i];
+    tmp *= 0.5;
+    p_mac_ang_s1[i] = p_mac_ang_s0[i];
+    p_mac_ang_s1[i] += t_inc*tmp;
+#else
+    tmp = 0.5*(p_dmac_spd_s0[i]+p_dmac_spd_s1[i]);
+    p_mac_spd_s1[i] = p_mac_spd_s0[i]+t_inc*tmp;
+#endif
   }
 }
 

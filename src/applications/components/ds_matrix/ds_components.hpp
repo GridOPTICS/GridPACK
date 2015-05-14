@@ -53,7 +53,7 @@ namespace dynamic_simulation {
 enum DSMode{YBUS, YL, PERM, PERMTrans, YA, permYMOD, YB, PMatrix, updateYbus,
             DAE_init, init_pelect, init_eprime, init_mac_ang, init_mac_spd,
             init_eqprime, init_pmech, init_mva, init_d0, init_h, onFY,
-            posFY, YC};
+            posFY, YC, Eprime0, Eprime1, Current};
 
 class DSBus
   : public gridpack::ymatrix::YMBus
@@ -201,6 +201,28 @@ class DSBus
      */
     void setWatch(std::string tag, bool flag);
 
+    /**
+     * Initialize dynamic simulation data structures
+     */
+    void setDSParams();
+
+    /**
+     * Evaluate first part of a dynamic simulation step
+     * @param flag false if step is not initial step
+     */
+    void initDSStep(bool flag);
+
+    /**
+     * Evaluate predictor part of dynamic simulation step
+     * @param t_inc time increment
+     */
+    void predDSStep(double t_inc);
+
+    /**
+     * Evaluate corrector part of dynamic simulation step
+     * @param t_inc time increment
+     */
+    void corrDSStep(double t_inc);
 
   private:
     double p_shunt_gs;
@@ -223,16 +245,26 @@ class DSBus
     bool p_from_flag, p_to_flag;
     std::vector<std::string> p_genid;
     std::vector<bool> p_watch;
+    double p_time;
 
     // DAE related variables
     //double user_eqprime, user_pmech, user_gen_d0, user_gen_h; // User app context variables
     //int user_ngen; // User app context variables
     std::vector<double> p_h, p_d0;
     //std::vector<double> x, xdot; // DAE variables
-    std::vector<gridpack::ComplexType> p_pelect, p_eprime;
+    std::vector<gridpack::ComplexType> p_eprime;
 
     std::vector<gridpack::ComplexType> p_elect_final, p_mech_final;
     std::vector<gridpack::ComplexType> p_mac_ang_final, p_mac_spd_final;
+
+    std::vector<gridpack::ComplexType> p_pelect, p_eprime_s0, p_eprime_s1;
+    std::vector<gridpack::ComplexType> p_mac_ang_s0, p_mac_spd_s0;
+    std::vector<gridpack::ComplexType> p_mac_ang_s1, p_mac_spd_s1;
+    std::vector<gridpack::ComplexType> p_dmac_ang_s0, p_dmac_spd_s0;
+    std::vector<gridpack::ComplexType> p_dmac_ang_s1, p_dmac_spd_s1;
+    std::vector<gridpack::ComplexType> p_eqprime, p_mech, p_curr;
+
+    std::vector<gridpack::ComplexType> p_dbg;
 
     gridpack::component::BaseBranchComponent* p_branch;
 
@@ -263,8 +295,14 @@ class DSBus
           & p_pelect & p_eprime
           & p_elect_final & p_mech_final
           & p_mac_ang_final & p_mac_spd_final
+          & p_pelect & p_eprime_s0 & p_eprime_s1
+          & p_mac_ang_s0 & p_mac_spd_s0
+          & p_mac_ang_s1 & p_mac_spd_s1
+          & p_dmac_ang_s1 & p_dmac_spd_s1
+          & p_eqprime & p_mech & p_curr
           & p_genid
-          & p_watch;
+          & p_watch
+          & p_time;
       }
 
 };
