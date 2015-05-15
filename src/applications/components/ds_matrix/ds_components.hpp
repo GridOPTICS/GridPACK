@@ -18,28 +18,6 @@
 #ifndef _ds_components_h_
 #define _ds_components_h_
 
-/**
- * Some preprocessor string declarations. These will need to be put in an
- * include file someplace else. Just declare them here for the time being.
- */
-
-/*
-#define BRANCH_REACTANCE   "branch_reactance"
-#define BRANCH_RESISTANCE  "branch_resistance"
-#define BRANCH_TAP_RATIO   "branch_tap_ratio"
-#define BRANCH_PHASE_SHIFT "branch_phase_shift"
-#define BRANCH_CHARGING    "branch_charging"
-#define BUS_SHUNT_GS    "branch_shunt_gs"
-#define BUS_SHUNT_BS    "branch_shunt_bs"
-*/
-
-/* These are defined in dictionary.hpp. */
-
-/* #define BRANCH_SHUNT_ADMTTNC_G1 "branch_shunt_admttnc_g1" */
-/* #define BRANCH_SHUNT_ADMTTNC_B1 "branch_shunt_admttnc_b1" */
-/* #define BRANCH_SHUNT_ADMTTNC_G2 "branch_shunt_admttnc_g2" */
-/* #define BRANCH_SHUNT_ADMTTNC_B2 "branch_shunt_admttnc_b2" */
-
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/base_component.hpp"
@@ -50,10 +28,8 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, PERM, PERMTrans, YA, permYMOD, YB, PMatrix, updateYbus,
-            DAE_init, init_pelect, init_eprime, init_mac_ang, init_mac_spd,
-            init_eqprime, init_pmech, init_mva, init_d0, init_h, onFY,
-            posFY, YC, Eprime0, Eprime1, Current};
+enum DSMode{YBUS, YA, YB, YC, updateYbus,
+            DAE_init, onFY, posFY, Eprime0, Eprime1, Current};
 
 class DSBus
   : public gridpack::ymatrix::YMBus
@@ -252,10 +228,6 @@ class DSBus
     //int user_ngen; // User app context variables
     std::vector<double> p_h, p_d0;
     //std::vector<double> x, xdot; // DAE variables
-    std::vector<gridpack::ComplexType> p_eprime;
-
-    std::vector<gridpack::ComplexType> p_elect_final, p_mech_final;
-    std::vector<gridpack::ComplexType> p_mac_ang_final, p_mac_spd_final;
 
     std::vector<gridpack::ComplexType> p_pelect, p_eprime_s0, p_eprime_s1;
     std::vector<gridpack::ComplexType> p_mac_ang_s0, p_mac_spd_s0;
@@ -263,8 +235,6 @@ class DSBus
     std::vector<gridpack::ComplexType> p_dmac_ang_s0, p_dmac_spd_s0;
     std::vector<gridpack::ComplexType> p_dmac_ang_s1, p_dmac_spd_s1;
     std::vector<gridpack::ComplexType> p_eqprime, p_mech, p_curr;
-
-    std::vector<gridpack::ComplexType> p_dbg;
 
     gridpack::component::BaseBranchComponent* p_branch;
 
@@ -292,9 +262,7 @@ class DSBus
           & p_ngen & p_type & p_permYmod
           & p_from_flag & p_to_flag
           & p_h & p_d0
-          & p_pelect & p_eprime
-          & p_elect_final & p_mech_final
-          & p_mac_ang_final & p_mac_spd_final
+          & p_pelect
           & p_pelect & p_eprime_s0 & p_eprime_s1
           & p_mac_ang_s0 & p_mac_spd_s0
           & p_mac_ang_s1 & p_mac_spd_s1

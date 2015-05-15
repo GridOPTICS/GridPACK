@@ -18,8 +18,6 @@
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_app.hpp"
 
-#define USE_NEW_CODE
-
 // Calling program for dynamic simulation application
 
 /**
@@ -85,9 +83,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   parser.parse(filename.c_str());
   cursor = config->getCursor("Configuration.Dynamic_simulation");
   filename = cursor->get("generatorParameters","");
-#if 0
-  if (filename.size() > 0) parser.parse(filename.c_str());
-#endif
   timer->stop(t_setup);
 
   int t_part = timer->createCategory("Partition Network");
@@ -95,9 +90,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // partition network
   network->partition();
   timer->stop(t_part);
-#if 1
   if (filename.size() > 0) parser.externalParse(filename.c_str());
-#endif
 
   // Create serial IO object to export data from buses or branches
   gridpack::serial_io::SerialBusIO<DSNetwork> busIO(2048, network);
@@ -126,37 +119,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->start(t_matset);
   factory.setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(network);
-#if 0
-  boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
-  ///branchIO.header("\n=== orginal ybus: ============\n");
-  ///orgYbus->print();
-
-  // Form constant impedance load admittance yl for all buses and add it to 
-  // system Y matrix: ybus = ybus + yl
-  factory.setMode(YL);
-  boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
-  ///branchIO.header("\n=== ybus after added yl: ============\n");
-  ///ybus->print();
- 
-  // Construct permutation matrix perm by checking for multiple generators at a bus
-  factory.setMode(PERM);
-  gridpack::mapper::FullMatrixMap<DSNetwork> permMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> perm = permMap.mapToMatrix();
-#endif
   timer->stop(t_matset);
-  ///busIO.header("\n=== perm: ============\n");
-  ///perm->print(); 
 
-  // Form a transposed matrix of perm
   int t_trans = timer->createCategory("Matrix Transpose");
-#if 0
-  timer->start(t_trans);
-   boost::shared_ptr<gridpack::math::Matrix> permTrans(transpose(*perm));
-  timer->stop(t_trans);
-  ///busIO.header("\n=== permTrans: ============\n");
-  ///permTrans->print();
-#endif
-
   // Construct matrix Y_a using extracted xd and ra from gen data, 
   // and construct its diagonal matrix diagY_a
   timer->start(t_matset);
@@ -172,32 +137,15 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
   int t_matmul = timer->createCategory("Matrix Multiply");
-#if 0
-  timer->start(t_matmul);
-  boost::shared_ptr<gridpack::math::Matrix> Ymod(multiply(*diagY_a, *permTrans));
-  timer->stop(t_matmul);
-#endif
-  ///busIO.header("\n=== Ymod: ============\n");
-  ///Ymod->print(); 
- 
   // Form matrix Y_b: Y_b(1:ngen, jg) = -Ymod, where jg represents the 
   // corresponding index sets of buses that the generators are connected to. 
   // Then construct Y_b's transposed matrix Y_c: Y_c = Y_b'
   // This two steps can be done by using a P matrix to get Y_c directly.
   timer->start(t_matset);
-#if 0
-  factory.setMode(PMatrix);
-  gridpack::mapper::FullMatrixMap<DSNetwork> pMap(network);
-  boost::shared_ptr<gridpack::math::Matrix> P = pMap.mapToMatrix();
-#endif
-  ///busIO.header("\n=== P: ============\n");
-  ///P->print();
   factory.setMode(YC);
   gridpack::mapper::FullMatrixMap<DSNetwork> cMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense = cMap.mapToMatrix(true);
-  //Y_c->scale(-1.0);
-  ///busIO.header("\n=== Y_c: ============\n");
-  ///Y_c->print();
+
   factory.setMode(YB);
   gridpack::mapper::FullMatrixMap<DSNetwork> bMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y_b = bMap.mapToMatrix();
@@ -205,32 +153,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///busIO.header("\n=== Y_b: ============\n");
   ///Y_b->print();
   
-  //Y_c->scale(-1.0); // scale Y_c by -1.0 for linear solving
-  // Convert Y_c from sparse matrix to dense matrix Y_cDense so that SuperLU_DIST can solve
-  //gridpack::math::Matrix::StorageType denseType = gridpack::math::Matrix::Dense;
   timer->start(t_matset);
-#if 0
-  boost::shared_ptr<gridpack::math::Matrix> Y_cDense(gridpack::math::storageType(*Y_c, denseType));
-   
-  // Form matrix permYmod
-  factory.setMode(permYMOD);
-  gridpack::mapper::FullMatrixMap<DSNetwork> pymMap(network);
-  boost::shared_ptr<gridpack::math::Matrix>  permYmod= pymMap.mapToMatrix();
-  ///busIO.header("\n=== permYmod: ============\n");
-  ///permYmod->print();
-
-  // Update ybus: ybus = ybus+permYmod (different dimension) => prefy11ybus
-#endif
   factory.setMode(updateYbus);
-#if 0
-
-  boost::shared_ptr<gridpack::math::Vector> vPermYmod(diagonal(*permYmod));
-  ///busIO.header("\n=== vPermYmod: ============\n");
-  ///vPermYmod->print();
-  gridpack::mapper::BusVectorMap<DSNetwork> permYmodMap(network);
-  permYmodMap.mapToBus(vPermYmod);
-#endif
-
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
   timer->stop(t_matset);
   ///branchIO.header("\n=== prefy11ybus: ============\n");
@@ -271,16 +195,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   ///branchIO.header("\n=== fy11ybus(original): ============\n");
   ///fy11ybus->print();
   gridpack::ComplexType x(0.0, -1e7);
-#if 0
-  fy11ybus->setElement(sw2_2, sw2_2, -x);
-  fy11ybus->ready();
-#else
   timer->start(t_matset);
   factory.setEvent(faults[0]);
   factory.setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
   timer->stop(t_matset);
-#endif
   ///branchIO.header("\n=== fy11ybus: ============\n");
   ///fy11ybus->print();
 
@@ -306,35 +225,15 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Update ybus values at clear fault stage
   //-----------------------------------------------------------------------
   // Get the updating factor for posfy11 stage ybus
-#if 0
-  gridpack::ComplexType myValue = factory.setFactor(sw2_2, sw3_2);
-#endif
   timer->start(t_matset);
   boost::shared_ptr<gridpack::math::Matrix> posfy11ybus(prefy11ybus->clone());
   timer->stop(t_matset);
   ///branchIO.header("\n=== posfy11ybus (original): ============\n");
   ///posfy11ybus->print();
-#if 0
-  gridpack::ComplexType big(0.0, 1e7);
-  gridpack::ComplexType x11 = big - myValue;
-  posfy11ybus->addElement(sw2_2, sw2_2, x+x11);
-
-  gridpack::ComplexType x12 = myValue;
-  posfy11ybus->addElement(sw2_2, sw3_2, x12);
-
-  gridpack::ComplexType x21 = myValue;
-  posfy11ybus->addElement(sw3_2, sw2_2, x21);
-
-  gridpack::ComplexType x22 = -myValue; 
-  posfy11ybus->addElement(sw3_2, sw3_2, x22);
-  
-  posfy11ybus->ready(); 
-#else
   timer->start(t_matset);
   factory.setMode(posFY);
   ybusMap.incrementMatrix(posfy11ybus);
   timer->stop(t_matset);
-#endif
   ///branchIO.header("\n=== posfy11ybus: ============\n");
   ///posfy11ybus->print();
     
@@ -359,110 +258,18 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Integration implementation (Modified Euler Method)
   //-----------------------------------------------------------------------
  
-#ifndef USE_NEW_CODE
-  // Map to create vector pelect  
-  int t_vecset = timer->createCategory("Setup Vector");
-  timer->start(t_vecset);
-  factory.setMode(init_pelect);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap1(network);
-  boost::shared_ptr<gridpack::math::Vector> pelect = XMap1.mapToVector();
-  ///busIO.header("\n=== pelect: ===\n");
-  ///pelect->print();
-
-  // Map to create vector eprime_s0 
-  factory.setMode(init_eprime);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap2(network);
-  boost::shared_ptr<gridpack::math::Vector> eprime_s0 = XMap2.mapToVector();
-  ///busIO.header("\n=== eprime: ===\n");
-  ///eprime_s0->print();
-
-  // Map to create vector mac_ang_s0
-  factory.setMode(init_mac_ang);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap3(network);
-  boost::shared_ptr<gridpack::math::Vector> mac_ang_s0 = XMap3.mapToVector();
-  ///busIO.header("\n=== mac_ang_s0: ===\n");
-  ///mac_ang_s0->print();
-
-  // Map to create vector mac_spd_s0
-  factory.setMode(init_mac_spd);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap4(network);
-  boost::shared_ptr<gridpack::math::Vector> mac_spd_s0 = XMap4.mapToVector();
-  ///busIO.header("\n=== mac_spd_s0: ===\n");
-  ///mac_spd_s0->print();
-
-  // Map to create vector eqprime
-  factory.setMode(init_eqprime);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap5(network);
-  boost::shared_ptr<gridpack::math::Vector> eqprime = XMap5.mapToVector();
-  ///busIO.header("\n=== eqprime: ===\n");
-  ///eqprime->print();
-
-  // Map to create vector pmech  
-  factory.setMode(init_pmech);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap6(network);
-  boost::shared_ptr<gridpack::math::Vector> pmech = XMap6.mapToVector();
-  ///busIO.header("\n=== pmech: ===\n");
-  ///pmech->print();
-
-  // Map to create vector mva
-  factory.setMode(init_mva);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap7(network);
-  boost::shared_ptr<gridpack::math::Vector> mva = XMap7.mapToVector();
-  ///busIO.header("\n=== mva: ===\n");
-  ///mva->print();
-
-  // Map to create vector d0
-  factory.setMode(init_d0);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap8(network);
-  boost::shared_ptr<gridpack::math::Vector> d0 = XMap8.mapToVector();
-  ///busIO.header("\n=== d0: ===\n");
-  ///d0->print();
-
-  // Map to create vector h
-  factory.setMode(init_h);
-  gridpack::mapper::BusVectorMap<DSNetwork> XMap9(network);
-  boost::shared_ptr<gridpack::math::Vector> h = XMap9.mapToVector();
-  ///busIO.header("\n=== h: ===\n");
-  ///h->print();
-
-  ///busIO.header("\n============Start of Simulation:=====================\n");
-
-  // Declare vector mac_ang_s1, mac_spd_s1
-  boost::shared_ptr<gridpack::math::Vector> mac_ang_s1(mac_ang_s0->clone()); 
-  boost::shared_ptr<gridpack::math::Vector> mac_spd_s1(mac_spd_s0->clone()); 
- 
-  // Declare vector eprime_s1
-  boost::shared_ptr<gridpack::math::Vector> eprime_s1(mac_ang_s0->clone());
- 
-  // Declare vector dmac_ang_s0, dmac_spd_s0, dmac_ang_s1, dmac_spd_s1
-  boost::shared_ptr<gridpack::math::Vector> dmac_ang_s0(mac_ang_s0->clone()); 
-  boost::shared_ptr<gridpack::math::Vector> dmac_ang_s1(mac_ang_s0->clone()); 
-  boost::shared_ptr<gridpack::math::Vector> dmac_spd_s0(mac_spd_s0->clone()); 
-  boost::shared_ptr<gridpack::math::Vector> dmac_spd_s1(mac_spd_s0->clone()); 
-
-  // Declare vector curr
-  boost::shared_ptr<gridpack::math::Vector> curr(mac_ang_s0->clone());
-  timer->stop(t_vecset);
-#else
   factory.setDSParams();
   factory.setMode(Eprime0);
   gridpack::mapper::BusVectorMap<DSNetwork> Emap(network);
   boost::shared_ptr<gridpack::math::Vector> eprime_s0 = Emap.mapToVector();
   boost::shared_ptr<gridpack::math::Vector> eprime_s1(eprime_s0->clone());
   boost::shared_ptr<gridpack::math::Vector> curr(eprime_s0->clone());
-#endif
 
   timer->start(t_trans);
   boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
   timer->stop(t_trans);
-
-#ifndef USE_NEW_CODE
-  timer->start(t_vecset);
-  boost::shared_ptr<gridpack::math::Vector> vecTemp(mac_ang_s0->clone());
-  timer->stop(t_vecset);
-#endif
 
   // Simulation related variables
   int simu_k;
@@ -542,19 +349,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       flagF2 = 2;
     }
 
-#ifndef USE_NEW_CODE
-    if (I_Steps !=0 && last_S_Steps != S_Steps) {
-      mac_ang_s0->equate(*mac_ang_s1); 
-      mac_spd_s0->equate(*mac_spd_s1); 
-      eprime_s0->equate(*eprime_s1); 
-    }
-
-    vecTemp->equate(*mac_ang_s0); 
-    vecTemp->scale(jay); 
-    vecTemp->exp(); 
-    vecTemp->elementMultiply(*eqprime); 
-    eprime_s0->equate(*vecTemp); 
-#else
     if (I_Steps !=0 && last_S_Steps != S_Steps) {
       factory.initDSStep(false);
     } else {
@@ -562,7 +356,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     }
     factory.setMode(Eprime0);
     Emap.mapToVector(eprime_s0);
-#endif
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
     int t_trnsmul = timer->createCategory("Transpose Multiply");
@@ -579,51 +372,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     } 
     timer->stop(t_trnsmul);
     
-#ifndef USE_NEW_CODE
-    // ---------- CALL mac_em2(k,S_Steps): ----------
-    // ---------- pelect: ----------
-    curr->conjugate(); 
-    vecTemp->equate(*eprime_s0);
-    vecTemp->elementMultiply(*curr);
-    pelect->equate(*vecTemp); 
-    pelect->real(); //Get the real part of pelect
-    // ---------- dmac_ang: ----------
-    vecTemp->equate(*mac_spd_s0); 
-    vecTemp->add(-1.0); 
-    vecTemp->scale(basrad); 
-    dmac_ang_s0->equate(*vecTemp); 
-    // ---------- dmac_spd: ----------
-    vecTemp->equate(*pelect);
-    vecTemp->elementMultiply(*mva); 
-    dmac_spd_s0->equate(*pmech); 
-    dmac_spd_s0->add(*vecTemp, -1.0); 
-    vecTemp->equate(*mac_spd_s0); 
-    vecTemp->add(-1.0); 
-    vecTemp->elementMultiply(*d0); 
-    dmac_spd_s0->add(*vecTemp, -1.0); 
-    vecTemp->equate(*h); 
-    vecTemp->scale(2.0); 
-    dmac_spd_s0->elementDivide(*vecTemp); 
-
-    mac_ang_s1->equate(*mac_ang_s0); 
-    vecTemp->equate(*dmac_ang_s0);
-    mac_ang_s1->add(*dmac_ang_s0, h_sol1); 
-    mac_spd_s1->equate(*mac_spd_s0); 
-    vecTemp->equate(*dmac_spd_s0);
-    mac_spd_s1->add(*vecTemp, h_sol1); 
-
-    vecTemp->equate(*mac_ang_s1); 
-    vecTemp->scale(jay); 
-    vecTemp->exp(); 
-    vecTemp->elementMultiply(*eqprime);
-    eprime_s1->equate(*vecTemp); 
-#else
     factory.setMode(Current);
     Emap.mapToBus(curr);
     factory.predDSStep(h_sol1);
     factory.setMode(Eprime1);
     Emap.mapToVector(eprime_s1);
-#endif
 
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     timer->start(t_trnsmul);
@@ -639,47 +392,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     }
     timer->stop(t_trnsmul);
 
-#ifndef USE_NEW_CODE
-    // ---------- CALL mac_em2(k,S_Steps+1): ---------- 
-    // ---------- pelect: ----------
-    curr->conjugate(); 
-    vecTemp->equate(*eprime_s1);
-    vecTemp->elementMultiply(*curr); 
-    pelect->equate(*vecTemp); 
-    pelect->real(); //Get the real part of pelect
-    // ---------- dmac_ang: ----------
-    vecTemp->equate(*mac_spd_s1); 
-    vecTemp->add(-1.0); 
-    vecTemp->scale(basrad); 
-    dmac_ang_s1->equate(*vecTemp); 
-    // ---------- dmac_spd: ----------
-    vecTemp->equate(*pelect);
-    vecTemp->elementMultiply(*mva); 
-    dmac_spd_s1->equate(*pmech); 
-    dmac_spd_s1->add(*vecTemp, -1.0); 
-    vecTemp->equate(*mac_spd_s1); 
-    vecTemp->add(-1.0); 
-    vecTemp->elementMultiply(*d0); 
-    dmac_spd_s1->add(*vecTemp, -1.0); 
-    vecTemp->equate(*h); 
-    vecTemp->scale(2.0); 
-    dmac_spd_s1->elementDivide(*vecTemp); 
-
-    vecTemp->equate(*dmac_ang_s0); 
-    vecTemp->add(*dmac_ang_s1); 
-    vecTemp->scale(0.5); 
-    mac_ang_s1->equate(*mac_ang_s0); 
-    mac_ang_s1->add(*vecTemp, h_sol2); 
-    vecTemp->equate(*dmac_spd_s0); 
-    vecTemp->add(*dmac_spd_s1); 
-    vecTemp->scale(0.5); 
-    mac_spd_s1->equate(*mac_spd_s0); 
-    mac_spd_s1->add(*vecTemp, h_sol2); 
-#else
     factory.setMode(Current);
     Emap.mapToBus(curr);
     factory.corrDSStep(h_sol2);
-#endif
 
     // Print to screen
     if (last_S_Steps != S_Steps) {
@@ -693,16 +408,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       //busIO.header(ioBuf);
     }
     if (I_Steps == simu_k) {
-#ifndef USE_NEW_CODE
-      factory.setMode(init_mac_ang);
-      XMap3.mapToBus(mac_ang_s1);
-      factory.setMode(init_mac_spd);
-      XMap3.mapToBus(mac_spd_s1);
-      factory.setMode(init_pmech);
-      XMap6.mapToBus(pmech);
-      factory.setMode(init_pelect);
-      XMap1.mapToBus(pelect);
-#endif
       sprintf(ioBuf, "\n========================S_Steps = %d=========================\n",
           S_Steps+1);
       busIO.header(ioBuf);
@@ -713,11 +418,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       //mac_spd_s1->print();  
       //pmech->print();
       //pelect->print();
-#ifndef USE_NEW_CODE
       busIO.write();
-#else
-      busIO.write("new");
-#endif
       sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n",
           S_Steps+1);
       busIO.header(ioBuf);
