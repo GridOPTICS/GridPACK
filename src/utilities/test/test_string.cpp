@@ -7,13 +7,14 @@
 /**
  * @file   test_string.cpp
  * @author Bruce Palmer
- * @date   May 13, 2015
+ * @date   2015-05-15 09:38:07 d3g096
  * 
  * @brief  A simple test of the string utility class
  * 
  * 
  */
 
+#include <cstdio>
 #include "string_utils.hpp"
 
 int main(int argc, char **argv)
