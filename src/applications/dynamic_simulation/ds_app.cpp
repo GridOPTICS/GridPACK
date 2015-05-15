@@ -18,6 +18,8 @@
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_app.hpp"
 
+#define USE_NEW_CODE
+
 // Calling program for dynamic simulation application
 
 /**
@@ -357,6 +359,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Integration implementation (Modified Euler Method)
   //-----------------------------------------------------------------------
  
+#ifndef USE_NEW_CODE
   // Map to create vector pelect  
   int t_vecset = timer->createCategory("Setup Vector");
   timer->start(t_vecset);
@@ -440,6 +443,14 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   // Declare vector curr
   boost::shared_ptr<gridpack::math::Vector> curr(mac_ang_s0->clone());
   timer->stop(t_vecset);
+#else
+  factory.setDSParams();
+  factory.setMode(Eprime0);
+  gridpack::mapper::BusVectorMap<DSNetwork> Emap(network);
+  boost::shared_ptr<gridpack::math::Vector> eprime_s0 = Emap.mapToVector();
+  boost::shared_ptr<gridpack::math::Vector> eprime_s1(eprime_s0->clone());
+  boost::shared_ptr<gridpack::math::Vector> curr(eprime_s0->clone());
+#endif
 
   timer->start(t_trans);
   boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
@@ -447,9 +458,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
   timer->stop(t_trans);
 
+#ifndef USE_NEW_CODE
   timer->start(t_vecset);
   boost::shared_ptr<gridpack::math::Vector> vecTemp(mac_ang_s0->clone());
   timer->stop(t_vecset);
+#endif
 
   // Simulation related variables
   int simu_k;
@@ -529,6 +542,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       flagF2 = 2;
     }
 
+#ifndef USE_NEW_CODE
     if (I_Steps !=0 && last_S_Steps != S_Steps) {
       mac_ang_s0->equate(*mac_ang_s1); 
       mac_spd_s0->equate(*mac_spd_s1); 
@@ -540,6 +554,15 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->exp(); 
     vecTemp->elementMultiply(*eqprime); 
     eprime_s0->equate(*vecTemp); 
+#else
+    if (I_Steps !=0 && last_S_Steps != S_Steps) {
+      factory.initDSStep(false);
+    } else {
+      factory.initDSStep(true);
+    }
+    factory.setMode(Eprime0);
+    Emap.mapToVector(eprime_s0);
+#endif
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
     int t_trnsmul = timer->createCategory("Transpose Multiply");
@@ -556,6 +579,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     } 
     timer->stop(t_trnsmul);
     
+#ifndef USE_NEW_CODE
     // ---------- CALL mac_em2(k,S_Steps): ----------
     // ---------- pelect: ----------
     curr->conjugate(); 
@@ -593,6 +617,13 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->exp(); 
     vecTemp->elementMultiply(*eqprime);
     eprime_s1->equate(*vecTemp); 
+#else
+    factory.setMode(Current);
+    Emap.mapToBus(curr);
+    factory.predDSStep(h_sol1);
+    factory.setMode(Eprime1);
+    Emap.mapToVector(eprime_s1);
+#endif
 
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     timer->start(t_trnsmul);
@@ -608,6 +639,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     }
     timer->stop(t_trnsmul);
 
+#ifndef USE_NEW_CODE
     // ---------- CALL mac_em2(k,S_Steps+1): ---------- 
     // ---------- pelect: ----------
     curr->conjugate(); 
@@ -643,6 +675,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     vecTemp->scale(0.5); 
     mac_spd_s1->equate(*mac_spd_s0); 
     mac_spd_s1->add(*vecTemp, h_sol2); 
+#else
+    factory.setMode(Current);
+    Emap.mapToBus(curr);
+    factory.corrDSStep(h_sol2);
+#endif
 
     // Print to screen
     if (last_S_Steps != S_Steps) {
@@ -656,6 +693,7 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       //busIO.header(ioBuf);
     }
     if (I_Steps == simu_k) {
+#ifndef USE_NEW_CODE
       factory.setMode(init_mac_ang);
       XMap3.mapToBus(mac_ang_s1);
       factory.setMode(init_mac_spd);
@@ -664,7 +702,9 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       XMap6.mapToBus(pmech);
       factory.setMode(init_pelect);
       XMap1.mapToBus(pelect);
-      sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps+1);
+#endif
+      sprintf(ioBuf, "\n========================S_Steps = %d=========================\n",
+          S_Steps+1);
       busIO.header(ioBuf);
       sprintf(ioBuf, "\n         Bus ID     Generator ID"
           "    mac_ang         mac_spd         mech            elect\n\n");
@@ -673,8 +713,13 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       //mac_spd_s1->print();  
       //pmech->print();
       //pelect->print();
+#ifndef USE_NEW_CODE
       busIO.write();
-      sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n", S_Steps+1);
+#else
+      busIO.write("new");
+#endif
+      sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n",
+          S_Steps+1);
       busIO.header(ioBuf);
     } // End of Print to screen 
     

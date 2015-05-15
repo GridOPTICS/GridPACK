@@ -13,6 +13,10 @@
 # Last Change: 2013-06-11 15:00:23 d3g096
 # -------------------------------------------------------------
 
+set(target_libraries 
+  ${Boost_LIBRARIES} 
+)
+
 # -------------------------------------------------------------
 # gridpack header installation
 # -------------------------------------------------------------
@@ -27,3 +31,10 @@ install(FILES
   DESTINATION include/gridpack/utilities
 )
 
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+
+# -------------------------------------------------------------
+# TEST: test_network
+# -------------------------------------------------------------
+add_executable(test_string test/test_string.cpp)
+target_link_libraries(test_string ${target_libraries})
