@@ -65,4 +65,10 @@ int main(int argc, char **argv)
   str = " BL ";
   tag = util.clean2Char(str);
   printf("expected: (BL) found: (%s)\n",tag.c_str());
+  str = "\' SQ \'";
+  tag = util.clean2Char(str);
+  printf("expected: (SQ) found: (%s)\n",tag.c_str());
+  str = "\" DQ \"";
+  tag = util.clean2Char(str);
+  printf("expected: (DQ) found: (%s)\n",tag.c_str());
 }

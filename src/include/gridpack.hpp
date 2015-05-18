@@ -37,6 +37,7 @@
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/parser/hash_distr.hpp"
 #include "gridpack/parser/dictionary.hpp"
+#include "gridpack/utility/string_utils.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/timer/local_timer.hpp"

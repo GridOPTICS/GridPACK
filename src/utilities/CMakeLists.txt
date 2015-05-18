@@ -28,6 +28,7 @@ install(FILES
   doxygen_dummy.hpp
   indexed.hpp
   sanity_interface.hpp
+  string_utils.hpp
   DESTINATION include/gridpack/utilities
 )
 
