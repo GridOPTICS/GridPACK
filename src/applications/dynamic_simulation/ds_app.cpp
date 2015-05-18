@@ -18,6 +18,8 @@
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/dynamic_simulation/ds_app.hpp"
 
+#define USE_NEW_CODE
+
 // Calling program for dynamic simulation application
 
 /**
@@ -476,31 +478,5 @@ std::vector<gridpack::dynamic_simulation::DSBranch::Event>
       faults.push_back(event);
     }
   }
-#if 0
-  // Find local indices of branches on which faults occur. Start by constructing
-  // a map object that maps to local branch indices using branch index pairs as the key
-  std::map<std::pair<int, int>, int> pairMap;
-  int numBranch = network->numBranches();
-  for (idx = 0; idx<numBranch; idx++) {
-    // Only set branch index for locally held branches
-    if (network->getActiveBranch(idx)) {
-      int idx1, idx2;
-      network->getOriginalBranchEndpoints(idx, &idx1, &idx2);
-      std::pair<int, int> branch_pair(idx1, idx2);
-      pairMap.insert(std::pair<std::pair<int, int>, int>(branch_pair,idx));
-    }
-  }
-  // run through all events and see if the branch exists on this processor. If
-  // it does, then set the branch_idx member to the local branch index.
-  size = faults.size();
-  for (idx=0; idx<size; idx++) {
-    std::map<std::pair<int, int>, int>::iterator it;
-    std::pair<int, int> branch_pair(faults[idx].from_idx, faults[idx].to_idx);
-    it = pairMap.find(branch_pair);
-    if (it != pairMap.end()) {
-      faults[idx].branch_idx = it->second;
-    }
-  }
-#endif
   return faults;
 }
