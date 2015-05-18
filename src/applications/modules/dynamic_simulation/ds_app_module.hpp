@@ -116,15 +116,6 @@ class DSAppModule
      */
     void closeGeneratorWatchFile();
 
-    /**
-     * Clean up 2 character tags so that single quotes are removed and single
-     * character tags are right-justified. These tags can be delimited by a
-     * pair of single quotes, a pair of double quotes, or no quotes
-     * @param string original string before reformatting
-     * @return 2 character string that is right-justified
-     */
-    std::string clean2Char(std::string string);
-
     std::vector<gridpack::dynamic_simulation::DSBranch::Event> p_faults;
 
     // pointer to network
