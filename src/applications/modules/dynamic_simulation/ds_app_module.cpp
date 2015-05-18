@@ -228,6 +228,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Dynamic Simulation: Total Application");
+#if 0
   timer->start(t_total);
   int t_matset = timer->createCategory("Dynamic Simulation: Matrix Setup");
   timer->start(t_matset);
@@ -785,6 +786,288 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   }
   closeGeneratorWatchFile();
   timer->stop(t_total);
+#else
+  timer->start(t_total);
+  int t_matset = timer->createCategory("Matrix Setup");
+  timer->start(t_matset);
+  p_factory->setMode(YBUS);
+  gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(p_network);
+  timer->stop(t_matset);
+
+  int t_trans = timer->createCategory("Matrix Transpose");
+  // Construct matrix diagY_a using xd and ra extracted from gen data, 
+  timer->start(t_matset);
+  p_factory->setMode(YA);
+  gridpack::mapper::FullMatrixMap<DSNetwork> yaMap(p_network);
+  boost::shared_ptr<gridpack::math::Matrix> diagY_a = yaMap.mapToMatrix();
+  // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
+  gridpack::math::MatrixStorageType denseType = gridpack::math::Dense;
+  boost::shared_ptr<gridpack::math::Matrix> Y_a(gridpack::math::storageType(*diagY_a, denseType));
+  timer->stop(t_matset);
+
+  int t_matmul = timer->createCategory("Matrix Multiply");
+  // Construct Y_c as a dense matrix
+  timer->start(t_matset);
+  p_factory->setMode(YC);
+  gridpack::mapper::FullMatrixMap<DSNetwork> cMap(p_network);
+  boost::shared_ptr<gridpack::math::Matrix> Y_cDense = cMap.mapToMatrix(true);
+
+  // Construct Y_b
+  p_factory->setMode(YB);
+  gridpack::mapper::FullMatrixMap<DSNetwork> bMap(p_network);
+  boost::shared_ptr<gridpack::math::Matrix> Y_b = bMap.mapToMatrix();
+  timer->stop(t_matset);
+  
+  timer->start(t_matset);
+  p_factory->setMode(updateYbus);
+  boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
+  timer->stop(t_matset);
+
+  // Solve linear equations ybus * X = Y_c
+  int t_solve = timer->createCategory("Solve Linear Equation");
+  timer->start(t_solve);
+  gridpack::math::LinearMatrixSolver solver1(*prefy11ybus);
+  boost::shared_ptr<gridpack::math::Matrix> prefy11X(solver1.solve(*Y_cDense));
+  timer->stop(t_solve);
+  
+  //-----------------------------------------------------------------------
+  // Compute prefy11
+  //-----------------------------------------------------------------------
+  // Form reduced admittance matrix prefy11: prefy11 = Y_b * X
+  timer->start(t_matmul);
+  boost::shared_ptr<gridpack::math::Matrix> prefy11(multiply(*Y_b, *prefy11X)); 
+  timer->stop(t_matmul);
+  // Update prefy11: prefy11 = Y_a + prefy11
+  prefy11->add(*Y_a);
+
+  //-----------------------------------------------------------------------
+  // Compute fy11
+  // Update ybus values at beginning of fault
+  //-----------------------------------------------------------------------
+  // Read the switch info from fault. Event from input.xml
+  int sw2_2 = fault.from_idx - 1;
+  int sw3_2 = fault.to_idx - 1;
+
+  boost::shared_ptr<gridpack::math::Matrix> fy11ybus(prefy11ybus->clone());
+  gridpack::ComplexType x(0.0, -1e7);
+  timer->start(t_matset);
+  p_factory->setEvent(fault);
+  p_factory->setMode(onFY);
+  ybusMap.overwriteMatrix(fy11ybus);
+  timer->stop(t_matset);
+
+  // Solve linear equations of fy11ybus * X = Y_c
+  timer->start(t_solve);
+  gridpack::math::LinearMatrixSolver solver2(*fy11ybus);
+  boost::shared_ptr<gridpack::math::Matrix> fy11X(solver2.solve(*Y_cDense)); 
+  timer->stop(t_solve);
+  
+  // Form reduced admittance matrix fy11: fy11 = Y_b * X
+  timer->start(t_matmul);
+  boost::shared_ptr<gridpack::math::Matrix> fy11(multiply(*Y_b, *fy11X)); 
+  timer->stop(t_matmul);
+  // Update fy11: fy11 = Y_a + fy11
+  fy11->add(*Y_a);
+
+  //-----------------------------------------------------------------------
+  // Compute posfy11
+  // Update ybus values at clear fault stage
+  //-----------------------------------------------------------------------
+  // Get the updating factor for posfy11 stage ybus
+  timer->start(t_matset);
+  boost::shared_ptr<gridpack::math::Matrix> posfy11ybus(prefy11ybus->clone());
+  timer->stop(t_matset);
+  timer->start(t_matset);
+  p_factory->setMode(posFY);
+  ybusMap.incrementMatrix(posfy11ybus);
+  timer->stop(t_matset);
+    
+  // Solve linear equations of posfy11ybus * X = Y_c
+  timer->start(t_solve);
+  gridpack::math::LinearMatrixSolver solver3(*posfy11ybus);
+  boost::shared_ptr<gridpack::math::Matrix> posfy11X(solver3.solve(*Y_cDense)); 
+  timer->stop(t_solve);
+  
+  // Form reduced admittance matrix posfy11: posfy11 = Y_b * X
+  timer->start(t_matmul);
+  boost::shared_ptr<gridpack::math::Matrix> posfy11(multiply(*Y_b, *posfy11X)); 
+  timer->stop(t_matmul);
+  // Update posfy11: posfy11 = Y_a + posfy11
+  posfy11->add(*Y_a);
+
+  //-----------------------------------------------------------------------
+  // Integration implementation (Modified Euler Method)
+  //-----------------------------------------------------------------------
+ 
+  p_factory->setDSParams();
+  p_factory->setMode(Eprime0);
+  // create vectors used in solution method
+  gridpack::mapper::BusVectorMap<DSNetwork> Emap(p_network);
+  boost::shared_ptr<gridpack::math::Vector> eprime_s0 = Emap.mapToVector();
+  boost::shared_ptr<gridpack::math::Vector> eprime_s1(eprime_s0->clone());
+  boost::shared_ptr<gridpack::math::Vector> curr(eprime_s0->clone());
+
+  timer->start(t_trans);
+  boost::shared_ptr<gridpack::math::Matrix> trans_prefy11(transpose(*prefy11));
+  boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
+  boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
+  timer->stop(t_trans);
+
+  // Simulation related variables
+  int simu_k;
+  int t_step[20];
+  double t_width[20];
+  int flagF;
+  int S_Steps;
+  int last_S_Steps;
+  int steps3, steps2, steps1;
+  double h_sol1, h_sol2;
+  int flagF1, flagF2;
+  int I_Steps;
+
+  const double sysFreq = 60.0;
+  double pi = 4.0*atan(1.0);
+  const double basrad = 2.0 * pi * sysFreq;
+  gridpack::ComplexType jay(0.0, 1.0);
+
+  // switch info is set up here 
+  int nswtch = 4;
+  static double sw1[4];
+  static double sw7[4];
+  sw1[0] = 0.0;
+  sw1[1] = fault.start;
+  sw1[2] = fault.end;
+  sw1[3] = p_sim_time;
+  sw7[0] = p_time_step;
+  sw7[1] = fault.step;
+  sw7[2] = p_time_step;
+  sw7[3] = p_time_step;
+  simu_k = 0; 
+  for (int i = 0; i < nswtch-1; i++) {
+    t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);   
+    t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i];
+    simu_k += t_step[i];
+  }
+  simu_k++;
+
+  steps3 = t_step[0] + t_step[1] + t_step[2] - 1;
+  steps2 = t_step[0] + t_step[1] - 1;
+  steps1 = t_step[0] - 1;
+  h_sol1 = t_width[0];
+  h_sol2 = h_sol1;
+  flagF1 = 0; 
+  flagF2 = 0; 
+  S_Steps = 1; 
+  last_S_Steps = -1;
+
+  p_generatorIO->header("t");
+  if (p_generatorWatch) p_generatorIO->write("watch_header");
+  p_generatorIO->header("\n");
+  for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
+    if (I_Steps < steps1) {
+      S_Steps = I_Steps;
+      flagF1 = 0;
+      flagF2 = 0;
+    } else if (I_Steps == steps1) { 
+      S_Steps = I_Steps;
+      flagF1 = 0;
+      flagF2 = 1;
+    } else if (I_Steps == steps1+1) {
+      S_Steps = I_Steps;
+      flagF1 = 1;
+      flagF2 = 1;
+    } else if ((I_Steps>steps1+1) && (I_Steps<steps2+1)) {
+      S_Steps = I_Steps - 1;
+      flagF1 = 1;
+      flagF2 = 1;
+    } else if (I_Steps==steps2+1) {
+      S_Steps = I_Steps - 1;
+      flagF1 = 1;
+      flagF2 = 2;
+    } else if (I_Steps==steps2+2) {
+      S_Steps = I_Steps - 1;
+      flagF1 = 2;
+      flagF2 = 2;
+    } else if (I_Steps>steps2+2) {
+      S_Steps = I_Steps - 2;
+      flagF1 = 2;
+      flagF2 = 2;
+    }
+
+    if (I_Steps !=0 && last_S_Steps != S_Steps) {
+      p_factory->initDSStep(false);
+    } else {
+      p_factory->initDSStep(true);
+    }
+    p_factory->setMode(Eprime0);
+    Emap.mapToVector(eprime_s0);
+     
+    // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
+    int t_trnsmul = timer->createCategory("Transpose Multiply");
+    timer->start(t_trnsmul);
+    if (flagF1 == 0) {
+      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
+      //transposeMultiply(*prefy11,*eprime_s0,*curr);
+    } else if (flagF1 == 1) {
+      curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
+      //transposeMultiply(*fy11,*eprime_s0,*curr);
+    } else if (flagF1 == 2) {
+      curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
+      //transposeMultiply(*posfy11,*eprime_s0,*curr);
+    } 
+    timer->stop(t_trnsmul);
+    
+    p_factory->setMode(Current);
+    Emap.mapToBus(curr);
+    p_factory->predDSStep(h_sol1);
+    p_factory->setMode(Eprime1);
+    Emap.mapToVector(eprime_s1);
+
+    // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
+    timer->start(t_trnsmul);
+    if (flagF2 == 0) {
+      curr.reset(multiply(*trans_prefy11, *eprime_s1)); //MatMultTranspose(prefy11, eprime_s1, curr);
+      //transposeMultiply(*prefy11,*eprime_s1,*curr);
+    } else if (flagF2 == 1) {
+      curr.reset(multiply(*trans_fy11, *eprime_s1)); //MatMultTranspose(fy11, eprime_s1, curr);
+      //transposeMultiply(*fy11,*eprime_s1,*curr);
+    } else if (flagF2 == 2) {
+      curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
+      //transposeMultiply(*posfy11,*eprime_s1,*curr);
+    }
+    timer->stop(t_trnsmul);
+
+    p_factory->setMode(Current);
+    Emap.mapToBus(curr);
+    p_factory->corrDSStep(h_sol2);
+
+    if (p_generatorWatch && I_Steps%p_watchFrequency == 0) {
+      char tbuf[32];
+      sprintf(tbuf,"%8.4f",static_cast<double>(I_Steps)*p_time_step);
+      p_generatorIO->header(tbuf);
+      p_generatorIO->write("watch");
+      p_generatorIO->header("\n");
+    }
+    // Print to screen
+    if (I_Steps == simu_k) {
+      char ioBuf[128];
+      sprintf(ioBuf, "\n========================S_Steps = %d=========================\n",
+          S_Steps+1);
+      p_busIO->header(ioBuf);
+      sprintf(ioBuf, "\n         Bus ID     Generator ID"
+          "    mac_ang         mac_spd         mech            elect\n\n");
+      p_busIO->header(ioBuf);
+      p_busIO->write();
+      sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n",
+          S_Steps+1);
+      p_busIO->header(ioBuf);
+    } // End of Print to screen 
+    
+    last_S_Steps = S_Steps;
+  }
+  closeGeneratorWatchFile();
+  timer->stop(t_total);
+#endif
 }
 /**
  * Write out final results of dynamic simulation calculation to
@@ -806,58 +1089,6 @@ void gridpack::dynamic_simulation::DSAppModule::write()
   sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n", p_S_Steps+1);
   p_busIO->header(ioBuf);
   timer->stop(t_total);
-}
-
-/**
- * Clean up 2 character tags so that single quotes are removed and single
- * character tags are right-justified. These tags can be delimited by a
- * pair of single quotes, a pair of double quotes, or no quotes
- * @param string original string before reformatting
- * @return 2 character string that is right-justified
- */
-std::string gridpack::dynamic_simulation::DSAppModule::clean2Char(
-    std::string string)
-{
-  std::string tag = string;
-  // Find and remove single or double quotes
-  int ntok1 = tag.find('\'',0);
-  bool sngl_qt = true;
-  bool no_qt = false;
-  // if no single quote found, then assume double quote or no quote
-  if (ntok1 == std::string::npos) {
-    ntok1 = tag.find('\"',0);
-    // if no double quote found then assume no quote
-    if (ntok1 == std::string::npos) {
-      ntok1 = tag.find_first_not_of(' ',0);
-      no_qt = true;
-    } else {
-      sngl_qt = false;
-    }
-  }
-  int ntok2;
-  if (sngl_qt) {
-    ntok1 = tag.find_first_not_of('\'',ntok1);
-    ntok2 = tag.find('\'',ntok1);
-  } else if (no_qt) {
-    ntok2 = tag.find(' ',ntok1);
-  } else {
-    ntok1 = tag.find_first_not_of('\"',ntok1);
-    ntok2 = tag.find('\"',ntok1);
-  }
-  if (ntok2 == std::string::npos) ntok2 = tag.length();
-  std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
-  //get rid of white space
-  ntok1 = clean_tag.find_first_not_of(' ',0);
-  ntok2 = clean_tag.find(' ',ntok1);
-  if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
-  tag = clean_tag.substr(ntok1,ntok2-ntok1);
-  if (tag.length() == 1) {
-    clean_tag = " ";
-    clean_tag.append(tag);
-  } else {
-    clean_tag = tag;
-  }
-  return clean_tag;
 }
 
 /**
@@ -883,7 +1114,8 @@ void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
     // Parse contents of "generator" field to get bus ID and generator tag
     generators[i]->get("busID",&id);
     generators[i]->get("generatorID",&tag);
-    clean_tag = clean2Char(tag);
+    gridpack::utility::StringUtils util;
+    clean_tag = util.clean2Char(tag);
     // Find local bus indices for generator
     std::vector<int> local_ids = p_network->getLocalBusIndices(id);
     for (j=0; j<local_ids.size(); j++) {
@@ -974,30 +1206,4 @@ void gridpack::dynamic_simulation::DSAppModule::setFaultEvents()
       p_faults.push_back(event);
     }
   }
-#if 0
-  // Find local indices of branches on which faults occur. Start by constructing
-  // a map object that maps to local branch indices using branch index pairs as the key
-  std::map<std::pair<int, int>, int> pairMap;
-  int numBranch = network->numBranches();
-  for (idx = 0; idx<numBranch; idx++) {
-    // Only set branch index for locally held branches
-    if (network->getActiveBranch(idx)) {
-      int idx1, idx2;
-      network->getOriginalBranchEndpoints(idx, &idx1, &idx2);
-      std::pair<int, int> branch_pair(idx1, idx2);
-      pairMap.insert(std::pair<std::pair<int, int>, int>(branch_pair,idx));
-    }
-  }
-  // run through all events and see if the branch exists on this processor. If
-  // it does, then set the branch_idx member to the local branch index.
-  size = p_faults.size();
-  for (idx=0; idx<size; idx++) {
-    std::map<std::pair<int, int>, int>::iterator it;
-    std::pair<int, int> branch_pair(p_faults[idx].from_idx, p_faults[idx].to_idx);
-    it = pairMap.find(branch_pair);
-    if (it != pairMap.end()) {
-      p_faults[idx].branch_idx = it->second;
-    }
-  }
-#endif
 }
