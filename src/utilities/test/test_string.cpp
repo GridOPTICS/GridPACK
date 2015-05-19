@@ -15,6 +15,7 @@
  */
 
 #include "string_utils.hpp"
+#include <stdio.h>
 
 int main(int argc, char **argv)
 {
