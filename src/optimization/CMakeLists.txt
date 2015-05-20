@@ -14,16 +14,18 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+  gridpack_components
+  gridpack_factory
+  gridpack_partition
+  gridpack_parallel
+  gridpack_math
   gridpack_timer
+  ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
-  ${CPLEX_LIBRARIES} 
-)
-
-set(target_libraries 
-  gridpack_components gridpack_parallel
-  ${target_libraries} 
+  ${CPLEX_LIBRARIES}
+  ${PETSC_LIBRARIES}
 )
 
     add_definitions(
@@ -48,30 +50,38 @@ add_executable(test_optim
 )
 target_link_libraries(test_optim ${target_libraries})
 
-#!!target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+add_executable(uc.x
+   test_app/uc_app.cpp
+   test_app/uc_components.cpp
+   test_app/uc_main.cpp
+)
 
-#!!add_test(NAME greetings_serial COMMAND $<TARGET_FILE:greetings>)
-#!!add_test(NAME greetings_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(greetings_serial greetings_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#!!)
+target_link_libraries(uc.x ${target_libraries})
 
-# -------------------------------------------------------------
-# TEST: mpi_test
-# A simple MPI test using boost::test
-# -------------------------------------------------------------
-#!!add_executable(mpi_test test/mpi_test.cpp)
-#!!target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+add_custom_target(uc.x.input
 
-#!!add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-#!!add_test(NAME mpi_test_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(mpi_test_serial mpi_test_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "No errors detected"
-#!!)
+   COMMAND ${CMAKE_COMMAND} -E copy
+   ${CMAKE_CURRENT_SOURCE_DIR}/test_app/uc_test.raw
+   ${CMAKE_CURRENT_BINARY_DIR} 
+
+   DEPENDS
+   ${CMAKE_CURRENT_SOURCE_DIR}/test_app/uc_test.raw
+
+   COMMAND ${CMAKE_COMMAND} -E copy
+   ${CMAKE_CURRENT_SOURCE_DIR}/test_app/gen.uc
+   ${CMAKE_CURRENT_BINARY_DIR} 
+
+   DEPENDS
+   ${CMAKE_CURRENT_SOURCE_DIR}/test_app/gen.uc
+
+   COMMAND ${CMAKE_COMMAND} -E copy
+   ${CMAKE_CURRENT_SOURCE_DIR}/test_app/loads.txt
+   ${CMAKE_CURRENT_BINARY_DIR} 
+
+   DEPENDS
+   ${CMAKE_CURRENT_SOURCE_DIR}/test_app/loads.txt
+)
+add_dependencies(uc.x uc.x.input)
 
 # -------------------------------------------------------------
 # installation
