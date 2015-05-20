@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-20 06:58:36 d3g096
+ * @date   2015-05-20 09:43:57 d3g096
  * 
  * @brief  
  * 
@@ -30,6 +30,49 @@
 
 static const PetscInt local_size(5);
 
+static
+PetscErrorCode
+fill_pattern(Mat A, InsertMode addv)
+{
+  PetscErrorCode ierr(0);
+  PetscScalar x(0.0);
+  PetscInt lo, hi;
+
+  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatSetValues(A, 1, &i, 1, &j, &x, addv);  CHKERRXX(ierr);
+      x += 1.0;
+    }
+  }
+
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  return ierr;
+}  
+
+static
+void
+convert_and_check(Mat A)
+{
+  PetscErrorCode ierr(0);
+  PetscInt lo, hi;
+  Mat B;
+
+  ierr = MatConvertToDenseGA(A, &B); CHKERRXX(ierr);
+  ierr = MatGetOwnershipRange(B, &lo, &hi);  CHKERRXX(ierr);
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      PetscScalar x;
+      PetscScalar y;
+      ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      ierr = MatGetValues(B, 1, &i, 1, &j, &y);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(x, y);
+    }
+  }
+  ierr = MatDestroy(&B); CHKERRXX(ierr);
+}  
+
 BOOST_AUTO_TEST_SUITE(GAMatrixTest)
 
 BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
@@ -38,6 +81,7 @@ BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
   gridpack::parallel::Communicator world;
 
   Mat A, B, C;
+  PetscScalar x(0.0);
   PetscInt lrows, lcols;
   PetscInt lo, hi;
 
@@ -52,23 +96,11 @@ BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
 
   BOOST_TEST_MESSAGE("Fill Matrix");
 
-  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
-  PetscScalar x(0.0);
-  for (int i = lo; i < hi; ++i) {
-    for (int j = lo; j < hi; ++j) {
-      ierr = MatSetValues(A, 1, &i, 1, &j, &x, INSERT_VALUES);  CHKERRXX(ierr);
-      x += 1.0;
-    }
-  }
-
-  BOOST_TEST_MESSAGE("Assemble Matrix");
-  
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
-
+  ierr = fill_pattern(A, INSERT_VALUES); CHKERRXX(ierr);
 
   BOOST_TEST_MESSAGE("Get Matrix Values");
 
+  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
   PetscScalar y(0.0);
   for (int i = lo; i < hi; ++i) {
     for (int j = lo; j < hi; ++j) {
@@ -80,18 +112,7 @@ BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
 
   BOOST_TEST_MESSAGE("Add Matrix Values");
 
-  x = 0.0;
-  for (int i = lo; i < hi; ++i) {
-    for (int j = lo; j < hi; ++j) {
-      ierr = MatSetValues(A, 1, &i, 1, &j, &x, ADD_VALUES);  CHKERRXX(ierr);
-      x += 1.0;
-    }
-  }
-
-  BOOST_TEST_MESSAGE("Assemble Matrix");
-
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  ierr = fill_pattern(A, ADD_VALUES); CHKERRXX(ierr);
 
   BOOST_TEST_MESSAGE("Get Matrix Values");
 
@@ -139,6 +160,55 @@ BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
 
   ierr = MatDestroy(&A); CHKERRXX(ierr);
 }
+
+BOOST_AUTO_TEST_CASE( Dense2GA )
+{
+  PetscErrorCode ierr(0);
+  gridpack::parallel::Communicator comm;
+
+  Mat A;
+  PetscInt lrows = 5, lcols = 5;
+  PetscScalar x;
+
+  ierr = MatCreate(comm, &A); CHKERRXX(ierr);
+  ierr = MatSetSizes(A, lrows, lcols, PETSC_DETERMINE, PETSC_DETERMINE); CHKERRXX(ierr);
+  if (comm.size() == 1) {
+    ierr = MatSetType(A, MATSEQDENSE); CHKERRXX(ierr);
+  } else {
+    ierr = MatSetType(A, MATDENSE); CHKERRXX(ierr);
+  }
+  ierr = MatSetFromOptions(A); CHKERRXX(ierr);
+  ierr = MatSetUp(A); CHKERRXX(ierr);
+  
+  ierr = fill_pattern(A, INSERT_VALUES); CHKERRXX(ierr);
+  
+  convert_and_check(A);
+
+  ierr = MatDestroy(&A); CHKERRXX(ierr);
+}
+
+BOOST_AUTO_TEST_CASE( Sparse2GA )
+{
+  PetscErrorCode ierr(0);
+  gridpack::parallel::Communicator comm;
+
+  Mat A;
+  PetscInt lrows = 5, lcols = 5;
+  PetscScalar x;
+
+  ierr = MatCreate(comm, &A); CHKERRXX(ierr);
+  ierr = MatSetSizes(A, lrows, lcols, PETSC_DETERMINE, PETSC_DETERMINE); CHKERRXX(ierr);
+  ierr = MatSetType(A, MATAIJ); CHKERRXX(ierr);
+  ierr = MatSetFromOptions(A); CHKERRXX(ierr);
+  ierr = MatSetUp(A); CHKERRXX(ierr);
+  
+  ierr = fill_pattern(A, INSERT_VALUES); CHKERRXX(ierr);
+
+  convert_and_check(A);
+
+  ierr = MatDestroy(&A); CHKERRXX(ierr);
+}
+
 
 BOOST_AUTO_TEST_CASE( VectorMultiply )
 {
