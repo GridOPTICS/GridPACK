@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-05-15 09:32:38 d3g096
+ * @date   2015-05-19 14:33:09 d3g096
  * 
  * @brief  
  * 
@@ -83,15 +83,29 @@ PetscErrorCode
 CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
 {
   PetscErrorCode ierr = 0;
-  int dims[2] = {grows, gcols};
-  int chunk[2] = { 1, 1 };
 
-  /* Do not honor local ownership request, initially. */
+  /* Try to honor local ownership request (of rows). */
+
+  int nprocs = GA_Pgroup_nnodes(pgroup);
+  int me = GA_Pgroup_nodeid(pgroup);
+  int tmapc[nprocs+1];
+  int mapc[nprocs+1];
+  int i;
+
+  for (i = 0; i < nprocs+1; i++) tmapc[i] = 0;
+  tmapc[me] = lrows;
+  GA_Pgroup_igop(pgroup, tmapc, nprocs+1, "+");
+  mapc[0] = 0;
+  for (i = 1; i < nprocs; i++) mapc[i] = mapc[i-1]+tmapc[i-1];
+  mapc[nprocs] = 0;
+
+  int dims[2] = {grows, gcols};
+  int blocks[2] = { nprocs, 1 };
 
   *ga = GA_Create_handle();
-  GA_Set_pgroup(*ga, pgroup);
   GA_Set_data(*ga, 2, dims, MT_PETSC_SCALAR);
-  GA_Set_chunk(*ga, chunk);
+  GA_Set_irreg_distr(*ga, mapc, blocks);
+  GA_Set_pgroup(*ga, pgroup);
   if (!GA_Allocate(*ga)) {
     ierr = 1;
   }
@@ -259,21 +273,10 @@ MatAssemmblyEndDenseGA(Mat mat, MatAssemblyType type)
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)mat,&comm); CHKERRQ(ierr);
   ierr = MPI_Barrier(comm);
-  GA_Print(ctx->ga);
+  // GA_Print(ctx->ga);
   return ierr;
 }
 
-// -------------------------------------------------------------
-// MatConvertFromDense
-// -------------------------------------------------------------
-static 
-PetscErrorCode
-MatConvertFromDense(Mat mat, MatType newtype, MatReuse reuse, Mat *M)
-{
-  PetscErrorCode ierr = 0;
-  
-  return ierr;
-}
 
 // -------------------------------------------------------------
 // MatMultDenseGA

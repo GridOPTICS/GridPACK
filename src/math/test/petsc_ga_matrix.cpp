@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-15 09:30:48 d3g096
+ * @date   2015-05-20 06:58:36 d3g096
  * 
  * @brief  
  * 
@@ -79,7 +79,6 @@ BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
   }
 
   BOOST_TEST_MESSAGE("Add Matrix Values");
-  GA_Sync();
 
   x = 0.0;
   for (int i = lo; i < hi; ++i) {
@@ -122,27 +121,23 @@ BOOST_AUTO_TEST_CASE( ConstructConvertDuplicate )
       BOOST_CHECK_EQUAL(x, y);
     }
   }
-  ierr = MatDestroy(&B);
+  ierr = MatDestroy(&B); CHKERRXX(ierr);
 
-  GA_Sync();
   BOOST_TEST_MESSAGE("Duplicate Matrix");
-  ierr = MatDuplicate(A, MAT_DO_NOT_COPY_VALUES, &C);  CHKERRXX(ierr);
+  ierr = MatDuplicate(A, MAT_COPY_VALUES, &C);  CHKERRXX(ierr);
 
-  GA_Sync();
+  BOOST_TEST_MESSAGE("Get Matrix Values");
 
-  // BOOST_TEST_MESSAGE("Get Matrix Values");
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      ierr = MatGetValues(C, 1, &i, 1, &j, &y);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(x, y);
+    }
+  }
+  ierr = MatDestroy(&C); CHKERRXX(ierr);
 
-  // for (int i = lo; i < hi; ++i) {
-  //   for (int j = lo; j < hi; ++j) {
-  //     ierr = MatGetValues(A, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
-  //     ierr = MatGetValues(C, 1, &i, 1, &j, &y);  CHKERRXX(ierr);
-  //     // BOOST_CHECK_EQUAL(x, y);
-  //   }
-  // }
-  ierr = MatDestroy(&C);
-    
-
-  ierr = MatDestroy(&A);
+  ierr = MatDestroy(&A); CHKERRXX(ierr);
 }
 
 BOOST_AUTO_TEST_CASE( VectorMultiply )
@@ -189,6 +184,14 @@ BOOST_AUTO_TEST_CASE( VectorMultiply )
 
   ierr = MatMult(A, x, y); CHKERRXX(ierr);
 
+  ierr = VecGetOwnershipRange(y, &lo, &hi); CHKERRXX(ierr);
+  v = 2.0;
+  for (int i = lo; i < hi; ++i) {
+    PetscScalar xtmp;
+    ierr = VecGetValues(y, 1, &i, &xtmp); CHKERRXX(ierr);
+    BOOST_CHECK_EQUAL(v, xtmp);
+  }
+
   ierr = VecDestroy(&x); CHKERRXX(ierr);
   ierr = VecDestroy(&y); CHKERRXX(ierr);
   ierr = MatDestroy(&A); CHKERRXX(ierr);
@@ -223,8 +226,18 @@ BOOST_AUTO_TEST_CASE(Transpose)
   ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
 
   ierr = MatTranspose(A, MAT_INITIAL_MATRIX, &Atrans); CHKERRXX(ierr);
-  ierr = MatDestroy(&A); CHKERRXX(ierr);
+
+  PetscScalar x;
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      v = (PetscScalar)j;
+      ierr = MatGetValues(Atrans, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(v, x);
+    }
+  }
+
   ierr = MatDestroy(&Atrans); CHKERRXX(ierr);
+  ierr = MatDestroy(&A); CHKERRXX(ierr);
 }
 
 BOOST_AUTO_TEST_SUITE_END()
