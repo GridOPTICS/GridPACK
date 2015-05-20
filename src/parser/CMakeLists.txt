@@ -109,5 +109,6 @@ install(FILES
   GOSS_parser.hpp
   hash_distr.hpp
   base_parser.hpp
+  base_pti_parser.hpp
   DESTINATION include/gridpack/parser
 )

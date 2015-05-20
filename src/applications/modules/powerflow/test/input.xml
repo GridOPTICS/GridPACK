@@ -55,6 +55,7 @@
          used. Otherwise, a PETSc-based NonlinearSolver is
          used. Configuration parameters for both are included here. 
     -->
+    <UseNonLinear>false</UseNonLinear>
     <UseNewton>false</UseNewton>
     <NewtonRaphsonSolver>
       <SolutionTolerance>1.0E-05</SolutionTolerance>

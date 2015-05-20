@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2014-12-09 09:47:23 d3g096
+ * @date   2015-03-27 08:24:09 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -33,6 +33,30 @@
 /// The configuration used for these tests
 static gridpack::utility::Configuration::CursorPtr test_config;
 
+#ifdef TEST_REAL
+
+typedef gridpack::RealType TestType;
+
+#define TEST_VALUE_CLOSE(x, y, delta) \
+  BOOST_CHECK_CLOSE((y), (x), delta);
+
+#define TEST_VALUE(r, i) (r)
+
+#else 
+
+typedef gridpack::ComplexType TestType;
+#define TEST_VALUE_CLOSE(x, y, delta) \
+  BOOST_CHECK_CLOSE(real(y), real(x), delta); \
+  BOOST_CHECK_CLOSE( abs(y), abs(x), delta);
+
+#define TEST_VALUE(r, i) TestType(r,i)
+
+#endif
+
+typedef gridpack::math::NonlinearSolverT<TestType> TheNonlinearSolver;
+typedef gridpack::math::NewtonRaphsonSolverT<TestType> TheNewtonRaphsonSolver;
+typedef typename TheNonlinearSolver::VectorType VectorType;
+typedef typename TheNonlinearSolver::MatrixType MatrixType;
 
 BOOST_AUTO_TEST_SUITE(NonlinearSolverTest)
 
@@ -44,9 +68,9 @@ BOOST_AUTO_TEST_SUITE(NonlinearSolverTest)
 
 struct build_tiny_jacobian_1
 {
-  void operator() (const gridpack::math::Vector& X, gridpack::math::Matrix& J) const
+  void operator() (const VectorType& X, MatrixType& J) const
   {
-    gridpack::ComplexType x, y;
+    TestType x, y;
     X.getElement(0, x);
     X.getElement(1, y);
     J.setElement(0, 0, 2.0*x-2.0);
@@ -60,9 +84,9 @@ struct build_tiny_jacobian_1
 
 struct build_tiny_function_1
 {
-  void operator() (const gridpack::math::Vector& X, gridpack::math::Vector& F) const
+  void operator() (const VectorType& X, VectorType& F) const
   {
-    gridpack::ComplexType x, y;
+    TestType x, y;
     X.getElement(0, x);
     X.getElement(1, y);
     F.setElement(0, x*x - 2.0*x - y + 0.5);
@@ -77,15 +101,15 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = build_tiny_jacobian_1();
-  gridpack::math::FunctionBuilder f = build_tiny_function_1();
+  TheNonlinearSolver::JacobianBuilder j = build_tiny_jacobian_1();
+  TheNonlinearSolver::FunctionBuilder f = build_tiny_function_1();
 
-  gridpack::math::NonlinearSolver solver(self, 2, j, f);
+  TheNonlinearSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
   solver.configure(test_config);
 
-  gridpack::math::Vector X(self, 2);
+  VectorType X(self, 2);
   X.setElement(0, 2.00);
   X.setElement(1, 0.25);
   X.ready();
@@ -93,12 +117,12 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
   BOOST_TEST_MESSAGE("tiny_serial_1 results:");
   X.print();
 
-  gridpack::ComplexType x, y;
+  TestType x, y;
   X.getElement(0, x);
   X.getElement(1, y);
 
-  BOOST_CHECK_CLOSE(real(x), 1.900677, 1.0e-04);
-  BOOST_CHECK_CLOSE(real(y), 0.3112186, 1.0e-04);
+  TEST_VALUE_CLOSE(x, static_cast<TestType>(1.900677), 1.0e-04);
+  TEST_VALUE_CLOSE(y, static_cast<TestType>(0.3112186), 1.0e-04);
 
 }
 
@@ -107,10 +131,10 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = build_tiny_jacobian_1();
-  gridpack::math::FunctionBuilder f = build_tiny_function_1();
+  TheNewtonRaphsonSolver::JacobianBuilder j = build_tiny_jacobian_1();
+  TheNewtonRaphsonSolver::FunctionBuilder f = build_tiny_function_1();
 
-  gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
+  TheNewtonRaphsonSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
   solver.configure(test_config);
@@ -119,7 +143,7 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
   BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
-  gridpack::math::Vector X(self, 2);
+  VectorType X(self, 2);
   X.setElement(0, 2.00);
   X.setElement(1, 0.25);
   X.ready();
@@ -127,12 +151,12 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
   BOOST_TEST_MESSAGE("tiny_serial_1 results (newton-raphson):");
   X.print();
 
-  gridpack::ComplexType x, y;
+  TestType x, y;
   X.getElement(0, x);
   X.getElement(1, y);
 
-  BOOST_CHECK_CLOSE(real(x), 1.900677, 1.0e-04);
-  BOOST_CHECK_CLOSE(real(y), 0.3112186, 1.0e-04);
+  TEST_VALUE_CLOSE(x, static_cast<TestType>(1.900677), 1.0e-04);
+  TEST_VALUE_CLOSE(y, static_cast<TestType>(0.3112186), 1.0e-04);
 
 }
 
@@ -142,9 +166,9 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
 // -------------------------------------------------------------
 
 void 
-build_tiny_jacobian_2(const gridpack::math::Vector& X, gridpack::math::Matrix& J)
+build_tiny_jacobian_2(const VectorType& X, MatrixType& J)
 {
-  gridpack::ComplexType x, y;
+  TestType x, y;
   X.getElement(0, x);
   X.getElement(1, y);
   J.setElement(0, 0, 2.0*x + y);
@@ -156,9 +180,9 @@ build_tiny_jacobian_2(const gridpack::math::Vector& X, gridpack::math::Matrix& J
 }
 
 void
-build_tiny_function_2(const gridpack::math::Vector& X, gridpack::math::Vector& F)
+build_tiny_function_2(const VectorType& X, VectorType& F)
 {
-  gridpack::ComplexType x, y;
+  TestType x, y;
   X.getElement(0, x);
   X.getElement(1, y);
   F.setElement(0, x*x + x*y - 3.0);
@@ -172,15 +196,15 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = &build_tiny_jacobian_2;
-  gridpack::math::FunctionBuilder f = &build_tiny_function_2;
+  TheNonlinearSolver::JacobianBuilder j = &build_tiny_jacobian_2;
+  TheNonlinearSolver::FunctionBuilder f = &build_tiny_function_2;
 
-  gridpack::math::NonlinearSolver solver(self, 2, j, f);
+  TheNonlinearSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
   solver.configure(test_config);
 
-  gridpack::math::Vector X(self, 2);
+  VectorType X(self, 2);
   X.setElement(0, 2.00);
   X.setElement(1, 3.00);
   X.ready();
@@ -189,12 +213,12 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
   BOOST_TEST_MESSAGE("tiny_serial_2 results:");
   X.print();
 
-  gridpack::ComplexType x, y;
+  TestType x, y;
   X.getElement(0, x);
   X.getElement(1, y);
 
-  BOOST_CHECK_CLOSE(real(x), 1.0, 1.0e-04);
-  BOOST_CHECK_CLOSE(real(y), 2.0, 1.0e-04);
+  TEST_VALUE_CLOSE(x, static_cast<TestType>(1.0), 1.0e-04);
+  TEST_VALUE_CLOSE(y, static_cast<TestType>(2.0), 1.0e-04);
 }
 
 BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
@@ -202,10 +226,10 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
   boost::mpi::communicator world;
   boost::mpi::communicator self = world.split(world.rank());
 
-  gridpack::math::JacobianBuilder j = &build_tiny_jacobian_2;
-  gridpack::math::FunctionBuilder f = &build_tiny_function_2;
+  TheNewtonRaphsonSolver::JacobianBuilder j = &build_tiny_jacobian_2;
+  TheNewtonRaphsonSolver::FunctionBuilder f = &build_tiny_function_2;
 
-  gridpack::math::NewtonRaphsonSolver solver(self, 2, j, f);
+  TheNewtonRaphsonSolver solver(self, 2, j, f);
 
   BOOST_REQUIRE(test_config);
   solver.configure(test_config);
@@ -214,7 +238,7 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
   BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
-  gridpack::math::Vector X(self, 2);
+  VectorType X(self, 2);
   X.setElement(0, 2.00);
   X.setElement(1, 3.00);
   X.ready();
@@ -223,12 +247,12 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
   BOOST_TEST_MESSAGE("tiny_serial_2 results:");
   X.print();
 
-  gridpack::ComplexType x, y;
+  TestType x, y;
   X.getElement(0, x);
   X.getElement(1, y);
 
-  BOOST_CHECK_CLOSE(real(x), 1.0, 1.0e-04);
-  BOOST_CHECK_CLOSE(real(y), 2.0, 1.0e-04);
+  TEST_VALUE_CLOSE(x, static_cast<TestType>(1.0), 1.0e-04);
+  TEST_VALUE_CLOSE(y, static_cast<TestType>(2.0), 1.0e-04);
 }
 
 // -------------------------------------------------------------
@@ -236,11 +260,11 @@ BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
 // -------------------------------------------------------------
 struct build_thing
 {
-  void operator() (const gridpack::math::Vector& X, gridpack::math::Matrix& J) const
+  void operator() (const VectorType& X, MatrixType& J) const
   {
     int n(X.size());
-    gridpack::ComplexType d(static_cast<double>(n - 1));
-    gridpack::ComplexType h(1.0/d);
+    TestType d(static_cast<double>(n - 1));
+    TestType h(1.0/d);
     d *= d;
 
     int lo, hi;
@@ -252,9 +276,9 @@ struct build_thing
       } else {
         int i[3] = { row,     row, row };
         int j[3] = { row - 1, row, row + 1 };
-        gridpack::ComplexType x;
+        TestType x;
         X.getElement(row, x);
-        gridpack::ComplexType A[3] = 
+        TestType A[3] = 
           { d, -2.0*d + 2.0*x, d};
         J.setElements(3, i, j, A);
       }
@@ -264,29 +288,29 @@ struct build_thing
     // J.print();
   }
 
-  void operator() (const gridpack::math::Vector& X, gridpack::math::Vector& F) const
+  void operator() (const VectorType& X, VectorType& F) const
   {
     int n(X.size());
-    gridpack::ComplexType d(static_cast<double>(n - 1));
-    gridpack::ComplexType h(1.0/d);
+    TestType d(static_cast<double>(n - 1));
+    TestType h(1.0/d);
 
     d *= d;
 
     int lo, hi;
     X.localIndexRange(lo, hi);
     
-    std::vector<gridpack::ComplexType> x(n);
+    std::vector<TestType> x(n);
     X.getAllElements(&x[0]);
 
     for (int row = lo; row < hi; ++row) {
-      gridpack::ComplexType f;
+      TestType f;
       int i(row);
       if (row == 0) {
         f = x[i];
       } else if (row == n - 1) {
         f = x[i] - 1.0;
       } else {
-        gridpack::ComplexType xp, g;
+        TestType xp, g;
         xp = static_cast<double>(row)*h;
         g = 6.0*xp + pow(xp+1.0e-12, 6);
         f = d*(x[i-1] - 2.0*x[i] + x[i+1]) + x[i]*x[i] - g;
@@ -315,15 +339,15 @@ BOOST_AUTO_TEST_CASE( example2 )
 
   build_thing thing;
 
-  gridpack::math::JacobianBuilder j = thing;
-  gridpack::math::FunctionBuilder f = thing;
+  TheNonlinearSolver::JacobianBuilder j = thing;
+  TheNonlinearSolver::FunctionBuilder f = thing;
 
-  gridpack::math::NonlinearSolver solver(world, local_size, j, f);
+  TheNonlinearSolver solver(world, local_size, j, f);
 
   BOOST_REQUIRE(test_config);
   solver.configure(test_config);
 
-  gridpack::math::Vector X(world, local_size);
+  VectorType X(world, local_size);
   X.fill(0.5);
   X.ready();
   solver.solve(X);
@@ -346,10 +370,10 @@ BOOST_AUTO_TEST_CASE( example2_nr )
 
   build_thing thing;
 
-  gridpack::math::JacobianBuilder j = thing;
-  gridpack::math::FunctionBuilder f = thing;
+  TheNewtonRaphsonSolver::JacobianBuilder j = thing;
+  TheNewtonRaphsonSolver::FunctionBuilder f = thing;
 
-  gridpack::math::NewtonRaphsonSolver solver(world, local_size, j, f);
+  TheNewtonRaphsonSolver solver(world, local_size, j, f);
 
   BOOST_REQUIRE(test_config);
   solver.configure(test_config);
@@ -358,7 +382,7 @@ BOOST_AUTO_TEST_CASE( example2_nr )
   BOOST_CHECK_CLOSE(solver.tolerance(), 1.0e-10, 1.0e-04);
   BOOST_CHECK_EQUAL(solver.maximumIterations(), 100);
 
-  gridpack::math::Vector X(world, local_size);
+  VectorType X(world, local_size);
   X.fill(0.5);
   X.ready();
   solver.solve(X);

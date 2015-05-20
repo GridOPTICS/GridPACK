@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2014-03-19 08:25:06 d3g096
+# Last Change: 2015-05-06 09:18:13 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -93,7 +93,7 @@ if (PETSC_FOUND)
   add_definitions (${PETSC_DEFINITIONS})
 endif()
 
-add_library(gridpack ${SOURCES})
+# add_library(gridpack ${SOURCES})
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GridPACK.cmake.in 
   ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake @ONLY)

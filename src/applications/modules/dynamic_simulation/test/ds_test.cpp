@@ -53,8 +53,13 @@ main(int argc, char **argv)
     gridpack::dynamic_simulation::DSAppModule ds_app;
     ds_app.readNetwork(ds_network,config);
     ds_app.readGenerators();
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Dynamic_simulation");
+    std::vector<gridpack::dynamic_simulation::DSBranch::Event> faults;
+    faults = ds_app.getFaults(cursor);
     ds_app.initialize();
-    ds_app.solve();
+    ds_app.setGeneratorWatch();
+    ds_app.solve(faults[0]);
     ds_app.write();
   }
 

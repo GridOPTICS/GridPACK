@@ -125,8 +125,8 @@ void gridpack::ymatrix::YMBus::load(
   double sbase;
   data->getValue(CASE_SBASE, &sbase);
   p_shunt = true;
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs,0);
+  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs,0);
   p_shunt_gs /= sbase;
   p_shunt_bs /= sbase;
   // Check to see if bus is reference bus
@@ -166,6 +166,18 @@ bool gridpack::ymatrix::YMBus::isIsolated(void) const
 void gridpack::ymatrix::YMBus::setIsolated(const bool flag)
 {
   p_isolated = flag;
+}
+
+/**
+ * Get shunt values
+ * @param gl shunt GL value
+ * @param bl shunt BL value
+ */
+void gridpack::ymatrix::YMBus::getShuntValues(double *bl,
+    double *gl) const
+{
+  *bl = p_shunt_bs;
+  *gl = p_shunt_gs;
 }
 
 /**
@@ -363,7 +375,7 @@ void gridpack::ymatrix::YMBranch::load(
     p_resistance.push_back(rvar);
     rvar = 0.0;
     ok = data->getValue(BRANCH_SHIFT, &rvar, idx);
-    rvar = -rvar*pi/180.0; 
+    rvar = rvar*pi/180.0; 
     p_phase_shift.push_back(rvar);
     rvar = 0.0;
     ok = data->getValue(BRANCH_TAP, &rvar, idx);
@@ -527,6 +539,7 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
     gridpack::ComplexType yij,aij,bij;
     yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
     bij = gridpack::ComplexType(0.0,p_charging[idx]);
+    //bij = 0.0;
     if (yij != zero) yij = -1.0/yij;
     if (p_xform[idx]) {
       // evaluate flow for transformer
@@ -587,4 +600,20 @@ bool gridpack::ymatrix::YMBranch::setLineStatus(std::string tag,
     }
   }
   return found;
+}
+
+/**
+ * Get branch susceptance (charging)
+ * @param tag string identifier for transmission element
+ * @return value of susceptance
+ */
+double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
+{
+  int i;
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      return p_charging[i];
+    }
+  }
+  return 0.0;
 }

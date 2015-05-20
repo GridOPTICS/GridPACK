@@ -8,7 +8,7 @@
 /**
  * @file   dae_solver.cpp
  * @author William A. Perkins
- * @date   2013-11-13 09:49:20 d3g096
+ * @date   2015-05-05 10:01:24 d3g096
  * 
  * @brief  
  * 
@@ -19,29 +19,6 @@
 
 namespace gridpack {
 namespace math {
-
-// -------------------------------------------------------------
-//  class DAESolver
-// -------------------------------------------------------------
-
-// -------------------------------------------------------------
-// DAESolver:: constructors / destructor
-// -------------------------------------------------------------
-DAESolver::~DAESolver(void)
-{
-}
-
-// -------------------------------------------------------------
-// DAESolver::p_setImpl
-// -------------------------------------------------------------
-void
-DAESolver::p_setImpl(DAESolverImplementation *impl)
-{
-  p_impl.reset(impl);
-  p_setDistributed(p_impl.get());
-  p_setConfigurable(p_impl.get());
-}
-
 
 } // namespace math
 } // namespace gridpack

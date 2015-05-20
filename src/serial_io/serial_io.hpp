@@ -121,6 +121,7 @@ class SerialBusIO {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       if (p_fout->is_open()) p_fout->close();
     }
+    p_useFile = false;
   }
 
   /**

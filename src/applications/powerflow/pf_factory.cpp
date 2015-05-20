@@ -93,6 +93,22 @@ void gridpack::powerflow::PFFactory::setPQ(void)
 }
 
 /**
+ * Check QLim
+ */
+bool gridpack::powerflow::PFFactory::chkQlim()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  int genIndex = 0;
+  bool qlim = false; 
+  for (i=0; i<numBus; i++) {
+     qlim = qlim || dynamic_cast<PFBus*>(p_network->getBus(i).get())->chkQlim();
+  }
+  qlim = checkTrue(qlim); 
+  return(qlim);
+}
+
+/**
  * Create the Jacobian matrix
  */
 void gridpack::powerflow::PFFactory::setJacobian(void)

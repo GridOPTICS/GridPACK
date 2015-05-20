@@ -18,26 +18,13 @@
 #ifndef _ca_driver_h_
 #define _ca_driver_h_
 
-#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 
 namespace gridpack {
 namespace contingency_analysis {
 
 enum ContingencyType{Generator, Branch};
-
-struct Contingency
-{
-  int p_type;
-  std::string p_name;
-  int p_id;
-  // Line contingencies
-  std::vector<int> p_from;
-  std::vector<int> p_to;
-  std::vector<std::string> p_ckt;
-  // Generator contingencies
-  std::vector<int> p_busid;
-  std::vector<std::string> p_genid;
-};
 
 // Calling program for contingency analysis application
 class CADriver
@@ -58,7 +45,7 @@ class CADriver
      * @param cursor pointer to contingencies in input deck
      * @return vector of contingencies
      */
-    std::vector<gridpack::contingency_analysis::Contingency> getContingencies(
+    std::vector<gridpack::powerflow::Contingency> getContingencies(
         gridpack::utility::Configuration::ChildCursors contingencies);
 
     /**

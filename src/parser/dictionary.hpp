@@ -68,21 +68,6 @@
 #define BUS_TYPE "BUS_TYPE"
 
 /**
- * Active component of the shunt admittance to ground, entered in MW. 
- * Default value is 0.0
- * type: real float
- */
-#define BUS_SHUNT_GL "BUS_SHUNT_GL"
-
-/**
- * Reactive component of shunt admittance to ground, entered in Mvar. 
- * positive for a capacitor and negative for a reactor
- * Default value is 0.0
- * type: real float
- */
-#define BUS_SHUNT_BL "BUS_SHUNT_BL"
-
-/**
  * Area number
  * type: integer
  */
@@ -118,11 +103,57 @@
  */
 #define BUS_3WINDING "BUS_3WINDING"
 
+// Shunt data
+
+/**
+ * Number of shunts on bus
+ * type: integer
+ */
+#define SHUNT_NUMBER "SHUNT_NUMBER"
+
+/**
+ * Character string to identify shunt on buses with more than one shunt
+ * type: string
+ * indexed
+ */
+#define SHUNT_ID "SHUNT_ID"
+
+/**
+ * Flag for shunt being on or off
+ * type: integer
+ * indexed
+ */
+#define SHUNT_STATUS "SHUNT_STATUS"
+
+/**
+ * Active component of the shunt admittance to ground, entered in MW. 
+ * Default value is 0.0
+ * type: real float
+ * indexed
+ */
+#define BUS_SHUNT_GL "BUS_SHUNT_GL"
+
+/**
+ * Reactive component of shunt admittance to ground, entered in Mvar. 
+ * positive for a capacitor and negative for a reactor
+ * Default value is 0.0
+ * type: real float
+ * indexed
+ */
+#define BUS_SHUNT_BL "BUS_SHUNT_BL"
+
 // LOAD DATA
+
+/**
+ * Number of loads on bus
+ * type: integer
+ */
+#define LOAD_NUMBER "LOAD_NUMBER"
 
 /**
  * The Bus number to which the load is connected
  * type: integer
+ * indexed
  */
 #define LOAD_BUSNUMBER "LOAD_BUSNUMBER"
 
@@ -130,6 +161,7 @@
  * Non-blank alphanumeric identifier to distinguish different loads connected to the same bus.
  * Default value: ’1’
  * type: string
+ * indexed
  */
 #define LOAD_ID "LOAD_ID"
 
@@ -139,60 +171,70 @@
  *  0: out-of-service
  * Default value is 1
  * type: integer
+ * indexed
  */
 #define LOAD_STATUS "LOAD_STATUS"
 
 /**
  * Area to which the load is assigned
  * type: integer
+ * indexed
  */
 #define LOAD_AREA "LOAD_AREA"
 
 /**
  * Zone to which the load is assigned
  * type: integer
+ * indexed
  */
 #define LOAD_ZONE "LOAD_ZONE"
 
 /**
  * Active power component of constant power load; entered in MW
  * type: real float
+ * indexed
  */
 #define LOAD_PL "LOAD_PL"
 
 /**
  * Reactive power component of constant power load; entered in MVar
  * type: real float
+ * indexed
  */
 #define LOAD_QL "LOAD_QL"
 
 /**
  * Active power component of constant current load; entered in MW 
  * type: real float
+ * indexed
  */
 #define LOAD_IP "LOAD_IP"
 
 /**
  * Reactive power component of constant current load; entered in Mvar
  * type: real float
+ * indexed
  */
 #define LOAD_IQ "LOAD_IQ"
 
 /**
  * Active power component of constant admittance load; entered in MW
  * type: real float
+ * indexed
  */
 #define LOAD_YP "LOAD_YP"
 
 /**
  * Reactive power component of constant admittance load; entered in MVar
  * type: real float
+ * indexed
  */
 #define LOAD_YQ "LOAD_YQ"
 
 /**
  * Owner to which the load is assigned
  * type: integer
+ * indexed
  */
 #define LOAD_OWNER "LOAD_OWNER"
 

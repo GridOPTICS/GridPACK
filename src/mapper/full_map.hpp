@@ -111,10 +111,11 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
   boost::shared_ptr<gridpack::math::Matrix> Ret;
   if (isDense) {
     Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
-        gridpack::math::Matrix::Dense));
+        gridpack::math::Dense));
   } else {
 #ifndef NZ_PER_ROW
-    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow));
+    Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
+          p_maxcol));
 #else
     Ret.reset(new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
 #endif
@@ -152,10 +153,11 @@ gridpack::math::Matrix* intMapToMatrix(bool isDense = false)
   gridpack::math::Matrix *Ret;
   if (isDense) {
     Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
-        gridpack::math::Matrix::Dense);
+        gridpack::math::Dense);
   } else {
 #ifndef NZ_PER_ROW
-    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_maxrow);
+    Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize,
+        p_maxcol);
 #else
     Ret = new gridpack::math::Matrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row);
 #endif
@@ -322,6 +324,7 @@ bool check(void)
       }
     }
   }
+  return ok;
 }
 
 private:
@@ -350,7 +353,9 @@ void setupGlobalArrays(int nActiveBuses)
 
   p_totalBuses = nActiveBuses;
 
-  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,"+");
+  char cplus[2];
+  strcpy(cplus,"+");
+  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,cplus);
 
   // the gaMatBlksI and gaMatBlksJ arrays contain the matrix blocks sizes for
   // individual block contributions
@@ -464,9 +469,9 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
   *icount = 0;
   *jcount = 0;
 
-  int i,j,maxrow,idx,jdx;
+  int i,j,maxcol,idx,jdx;
 
-  p_maxrow = 0;
+  p_maxcol = 0;
   std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
   
   bool chk;
@@ -479,7 +484,7 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
     status = p_network->getBus(i)->matrixDiagSize(&iSize, &jSize);
     int isave = iSize;
     if (status) {
-      maxrow = 0;
+      maxcol = 0;
       p_network->getBus(i)->getMatVecIndex(&index);
       if (iSize > 0) {
         iSizeArray[*icount]     = iSize;
@@ -491,7 +496,7 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
         *(jIndexArray[*jcount])  = index;
         (*jcount)++;
       }
-      maxrow += jSize;
+      maxcol += jSize;
       branches.clear();
       p_network->getBus(i)->getNeighborBranches(branches);
 #ifdef NZ_PER_ROW
@@ -506,17 +511,17 @@ void loadBusArrays(int * iSizeArray, int * jSizeArray,
         } else {
           chk = branches[j]->matrixReverseSize(&iSize, &jSize);
         }
-        if (chk) maxrow += jSize;
+        if (chk) maxcol += jSize;
 #ifdef NZ_PER_ROW
 //        addrow = addrow || chk;
 #endif
       }
-      if (p_maxrow < maxrow) p_maxrow = maxrow;
+      if (p_maxcol < maxcol) p_maxcol = maxcol;
 #ifdef NZ_PER_ROW
-      // Add maxrow entry for each row in block
+      // Add maxcol entry for each row in block
 //      if (addrow) {
         for (j=0; j<isave; j++) {
-          nz_per_row.push_back(maxrow);
+          nz_per_row.push_back(maxcol);
         }
 //      }
 #endif
@@ -651,7 +656,6 @@ void setupOffsetArrays()
   int *itmp = new int[p_nNodes];
   int *jtmp = new int[p_nNodes];
 
-  int *rptr;
   int i, idx;
   int one = 1;
 
@@ -694,8 +698,10 @@ void setupOffsetArrays()
   }
   p_rowBlockSize = iSize;
   p_colBlockSize = jSize;
-  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,"max");
-  GA_Pgroup_igop(p_GAgrp,&p_maxJBlock,one,"max");
+  char cmax[4];
+  strcpy(cmax,"max");
+  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,cmax);
+  GA_Pgroup_igop(p_GAgrp,&p_maxJBlock,one,cmax);
 
   for (i = 0; i<p_nNodes; i++) {
     itmp[i] = 0;
@@ -705,8 +711,10 @@ void setupOffsetArrays()
   jtmp[p_me] = jSize;
 //  printf("p[%d] (FullMatrixMap) iSize: %d jSize: %d\n",p_me,iSize,jSize);
 
-  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, "+");
-  GA_Pgroup_igop(p_GAgrp,jtmp, p_nNodes, "+");
+  char cplus[2];
+  strcpy(cplus,"+");
+  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, cplus);
+  GA_Pgroup_igop(p_GAgrp,jtmp, p_nNodes, cplus);
 
   int offsetArrayISize = 0;
   int offsetArrayJSize = 0;
@@ -714,15 +722,6 @@ void setupOffsetArrays()
     offsetArrayISize += itmp[i];
     offsetArrayJSize += jtmp[i];
   }
-
-  // Calculate matrix dimension
-  p_iDim = 0;
-  p_jDim = 0;
-  for (i=0; i<p_nNodes; i++) {
-    p_iDim += itmp[i];
-    p_jDim += jtmp[i];
-  }
-  // printf("p[%d] (FullMatrixMap) iDim: %d jDim: %d\n",p_me,p_iDim,p_jDim);
 
   // Create map array so that offset arrays can be created with a specified
   // distribution
@@ -732,7 +731,7 @@ void setupOffsetArrays()
   }
   offset[p_me] = p_activeBuses;
 //  printf("p[%d] (FullMatrixMap) activeBuses: %d\n",p_me,p_activeBuses);
-  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,"+");
+  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,cplus);
 
   int *mapc = new int[p_nNodes];
   mapc[0]=0;
@@ -797,7 +796,7 @@ void setupOffsetArrays()
  */
 void setBusOffsets(void)
 {
-  int i,idx,jdx,isize,jsize,icnt;
+  int i,idx,isize,jsize,icnt;
   int **indices = new int*[p_busContribution];
   int *data = new int[p_busContribution];
   int *ptr = data;
@@ -1091,19 +1090,15 @@ int                         p_totalBuses;
 int                         p_activeBuses;
 
     // matrix information
-int                         p_iDim;
-int                         p_jDim;
 int                         p_minRowIndex;
 int                         p_maxRowIndex;
 int                         p_rowBlockSize;
 int                         p_colBlockSize;
-int                         p_minColIndex;
-int                         p_maxColIndex;
 int                         p_busContribution;
 int                         p_branchContribution;
 int                         p_maxIBlock;
 int                         p_maxJBlock;
-int                         p_maxrow;
+int                         p_maxcol;
 #ifdef NZ_PER_ROW
 int*                        p_nz_per_row;
 #endif

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2014-12-09 10:50:39 d3g096
+ * @date   2015-03-27 10:50:52 d3g096
  * 
  * @brief  
  * 
@@ -40,8 +40,9 @@ namespace math {
 // -------------------------------------------------------------
 // transpose
 // -------------------------------------------------------------
+template <typename T, typename I>
 void 
-transpose(const Matrix& A, Matrix& result)
+transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result)
 {
   // This only works if the matrixes are the correct size
   if ((A.cols() == result.rows() &&
@@ -62,11 +63,22 @@ transpose(const Matrix& A, Matrix& result)
   }
 }
 
+template
+void 
+transpose<ComplexType, int>(const MatrixT<ComplexType, int>& A, 
+                            MatrixT<ComplexType, int>& result);
+
+template
+void 
+transpose<RealType, int>(const MatrixT<RealType, int>& A, 
+                         MatrixT<RealType, int>& result);
+
 // -------------------------------------------------------------
 // transpose
 // -------------------------------------------------------------
-Matrix *
-transpose(const Matrix& A)
+template <typename T, typename I>
+MatrixT<T, I> *
+transpose(const MatrixT<T, I>& A)
 {
   const Mat *pA(PETScMatrix(A));
   Mat pAtrans;
@@ -176,18 +188,27 @@ transpose(const Matrix& A)
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
-  PETScMatrixImplementation *result_impl = 
-    new PETScMatrixImplementation(pAtrans, true);
-  Matrix *result = new Matrix(result_impl);
+  PETScMatrixImplementation<T, I> *result_impl = 
+    new PETScMatrixImplementation<T, I>(pAtrans, true);
+  MatrixT<T, I> *result = new MatrixT<T, I>(result_impl);
 
   return result;
 }
 
+template
+MatrixT<ComplexType, int> *
+transpose(const MatrixT<ComplexType, int>& A);
+
+template
+MatrixT<RealType, int> *
+transpose(const MatrixT<RealType, int>& A);
+
 // -------------------------------------------------------------
 // transposeMultiply
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-transposeMultiply(const Matrix& A, const Vector& x, Vector& result)
+transposeMultiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result)
 {
   const Mat *Amat(PETScMatrix(A));
   const Vec *Xvec(PETScVector(x));
@@ -201,11 +222,24 @@ transposeMultiply(const Matrix& A, const Vector& x, Vector& result)
   }
 }
 
+template
+void
+transposeMultiply(const MatrixT<ComplexType, int>& A, 
+                  const VectorT<ComplexType, int>& x, 
+                  VectorT<ComplexType, int>& result);
+
+template
+void
+transposeMultiply(const MatrixT<RealType, int>& A, 
+                  const VectorT<RealType, int>& x, 
+                  VectorT<RealType, int>& result);
+
 // -------------------------------------------------------------
 // column
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-column(const Matrix& A, const int& cidx, Vector& result)
+column(const MatrixT<T, I>& A, const int& cidx, VectorT<T, I>& result)
 {
   if (result.communicator() != A.communicator()) {
     throw gridpack::Exception("incompatible: communicators do not match");
@@ -220,17 +254,29 @@ column(const Matrix& A, const int& cidx, Vector& result)
   Vec *pX(PETScVector(result));
   PetscErrorCode ierr(0);
   try {
-    ierr = MatGetColumnVector(*pA, *pX, cidx); CHKERRXX(ierr);
+    PetscInt c(cidx*PetscElementSize<T>::value);
+    ierr = MatGetColumnVector(*pA, *pX, c); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
 }  
 
+template
+void
+column(const MatrixT<ComplexType, int>& A, 
+       const int& cidx, VectorT<ComplexType, int>& result);
+
+template
+void
+column(const MatrixT<RealType, int>& A, 
+       const int& cidx, VectorT<RealType, int>& result);
+
 // -------------------------------------------------------------
 // diagonal
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-diagonal(const Matrix& A, Vector& result)
+diagonal(const MatrixT<T, I>& A, VectorT<T, I>& result)
 {
   if (result.communicator() != A.communicator()) {
     throw gridpack::Exception("incompatible: communicators do not match");
@@ -258,10 +304,22 @@ diagonal(const Matrix& A, Vector& result)
   }
 }  
 
-Matrix *
-diagonal(const Vector& x, const Matrix::StorageType& stype)
+template
+void
+diagonal<ComplexType, int>(const MatrixT<ComplexType, int>& A, 
+                           VectorT<ComplexType, int>& result);
+
+template
+void
+diagonal<RealType, int>(const MatrixT<RealType, int>& A, 
+                           VectorT<RealType, int>& result);
+
+template <typename T, typename I>
+MatrixT<T, I> *
+diagonal(const VectorT<T, I>& x, const MatrixStorageType& stype)
 {
-  Matrix *result(new Matrix(x.communicator(), x.localSize(), x.localSize(), stype));
+  MatrixT<T, I> *result(new MatrixT<T,I>(x.communicator(), 
+                                         x.localSize(), x.localSize(), stype));
   const Vec *pX(PETScVector(x));
   Mat *pA(PETScMatrix(*result));
   PetscErrorCode ierr(0);
@@ -273,12 +331,21 @@ diagonal(const Vector& x, const Matrix::StorageType& stype)
   return result;
 }
 
+template
+MatrixT<ComplexType, int> *
+diagonal(const VectorT<ComplexType, int>& x, const MatrixStorageType& stype);
+
+template
+MatrixT<RealType, int> *
+diagonal(const VectorT<RealType, int>& x, const MatrixStorageType& stype);
+
 
 // -------------------------------------------------------------
 // multiply
 // -------------------------------------------------------------
+template <typename T, typename I>
 void
-multiply(const Matrix& A, const Vector& x, Vector& result)
+multiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result)
 {
   const Mat *Amat(PETScMatrix(A));
   const Vec *Xvec(PETScVector(x));
@@ -301,63 +368,337 @@ multiply(const Matrix& A, const Vector& x, Vector& result)
   }
 }
 
+template
 void
-multiply(const Matrix& A, const Matrix& B, Matrix& result)
-{
-  const Mat *Amat(PETScMatrix(A));
-  const Mat *Bmat(PETScMatrix(B));
-  Mat *Cmat(PETScMatrix(result));
+multiply(const MatrixT<ComplexType, int>& A, 
+         const VectorT<ComplexType, int>& x, 
+         VectorT<ComplexType, int>& result);
 
+template
+void
+multiply(const MatrixT<RealType, int>& A, 
+         const VectorT<RealType, int>& x, 
+         VectorT<RealType, int>& result);
+
+
+// -------------------------------------------------------------
+// check_dense
+// -------------------------------------------------------------
+static bool
+check_dense(const Mat *A, const Mat *B)
+{
+  bool result(false);
   PetscErrorCode ierr(0);
+  MatType Atype, Btype;
   try {
-    ierr = MatDestroy(Cmat); CHKERRXX(ierr);
-    ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
+    ierr = MatGetType(*A, &Atype); CHKERRXX(ierr);
+    ierr = MatGetType(*B, &Btype); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
-}
-
-Matrix *
-multiply(const Matrix& A, const Matrix& B)
-{
-  const Mat *Amat(PETScMatrix(A));
-  const Mat *Bmat(PETScMatrix(B));
-  Mat Cmat;
-
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-
-  PETScMatrixImplementation *result_impl = 
-    new PETScMatrixImplementation(Cmat, true);
-  Matrix *result = new Matrix(result_impl);
+  std::string at(Atype), bt(Btype);
+  result = ( (at == MATDENSE || at == MATMPIDENSE) && 
+             (bt == MATDENSE || bt == MATMPIDENSE) );
+  
   return result;
 }
+
+#if 0
+
+// -------------------------------------------------------------
+// Matrix-Matrix Multiply via Elemental 
+// -------------------------------------------------------------
+
+// This may be available in the next version of PETSc (> 3.5.3 or 3.6
+// maybe).
+
+// Apparently, multiplying two dense matrices is something people
+// don't generally do.  PETSc, on its own, cannot multiply two
+// MATMPIDENSE matrices, but it can multiply to MATELEMENTAL dense
+// matrices, if the Elemental package is included in the build.
+// There's a bunch of extra code here to convert MATMPIDENSE matrices
+// to MATELEMENTAL matrices, do the multiplication, then convert the
+// result back.  However, I should have investigated further before
+// coding this, because MATELEMENTAL can be converted to MATDENSE, but
+// MATDENSE cannot be converted to MATELEMENTAL. Go figure.
+
+#if defined(PETSC_HAVE_ELEMENTAL)
+
+static void
+multiply_dense(const Mat *A, const Mat *B, Mat *C)
+{
+  Mat Ae, Be, Ce;
+
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatConvert(*A, MATELEMENTAL, MAT_INITIAL_MATRIX, &Ae); CHKERRXX(ierr);
+    ierr = MatConvert(*B, MATELEMENTAL, MAT_INITIAL_MATRIX, &Be); CHKERRXX(ierr);
+    ierr = MatMatMult(Ae, Be, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Ce); CHKERRXX(ierr);
+    ierr = MatConvert(Ce, MATDENSE, MAT_INITIAL_MATRIX, C); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+static void
+multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
+{
+  PetscErrorCode ierr(0);
+  try {
+    if (check_dense(A, B)) {
+      multiply_dense(A, B, C);
+    } else {
+      ierr = MatMatMult(*A, *B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, C); CHKERRXX(ierr);
+    }
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+#else
+
+static void
+multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
+{
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatMatMult(*A, *B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, C); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
+
+#endif
+
+#endif
+
+// -------------------------------------------------------------
+// multiply_dense
+// 
+// This multiplies two dense PETSc matrices basically by hand
+// -------------------------------------------------------------
+template <typename T, typename I>
+static void
+multiply_dense(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& C)
+{
+  BOOST_ASSERT(A.rows() == C.rows());
+  BOOST_ASSERT(B.cols() == C.cols());
+  boost::scoped_ptr< VectorT<T, I> > 
+    bc(new VectorT<T, I>(B.communicator(), B.localRows())), 
+    rc(new VectorT<T, I>(C.communicator(), C.localRows()));
+
+  // PetscErrorCode ierr(0);
+  // ierr = PetscSynchronizedPrintf(A.communicator(), 
+  //                                "multiply_dense: %d: A: (%dx%d), (%dx%d)\n",
+  //                                A.communicator().rank(), 
+  //                                A.rows(), A.cols(), A.localRows(), A.localCols()); 
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(A.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
+  // ierr = PetscSynchronizedPrintf(B.communicator(), 
+  //                                "multiply_dense: %d: B: (%dx%d), (%dx%d)\n",
+  //                                B.communicator().rank(), 
+  //                                B.rows(), B.cols(), B.localRows(), B.localCols()); 
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(B.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
+  // ierr = PetscSynchronizedPrintf(C.communicator(), 
+  //                                "multiply_dense: %d: C: (%dx%d), (%dx%d)\n",
+  //                                C.communicator().rank(), 
+  //                                C.rows(), C.cols(), C.localRows(), C.localCols());
+  // CHKERRXX(ierr);
+  // ierr = PetscSynchronizedFlush(C.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
+
+  int lo, hi;
+  rc->localIndexRange(lo, hi);
+  for (int j = 0; j < B.cols(); ++j) {
+    column(B, j, *bc);
+    multiply(A, *bc, *rc);
+    for (int i = lo; i < hi; ++i) {
+      typename VectorT<T, I>::TheType v;
+      rc->getElement(i, v);
+      C.setElement(i, j, v);
+    }
+  }
+  C.ready();
+}  
+
+template
+static void
+multiply_dense(const MatrixT<ComplexType, int>& A, 
+               const MatrixT<ComplexType, int>& B, 
+               MatrixT<ComplexType, int>& result);
+
+template
+static void
+multiply_dense(const MatrixT<RealType, int>& A, 
+               const MatrixT<RealType, int>& B, 
+               MatrixT<RealType, int>& result);
+
+template <typename T, typename I>
+static MatrixT<T, I> *
+multiply_dense(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
+{
+  BOOST_ASSERT(A.cols() == B.rows());
+  BOOST_ASSERT(A.localCols() == B.localRows());
+  MatrixT<T, I> *C(MatrixT<T, I>::createDense(A.communicator(),
+                                              A.rows(), B.cols(),
+                                              A.localRows(), B.localCols()));
+  multiply_dense(A, B, *C);
+  return C;
+}
+
+template 
+static MatrixT<ComplexType, int> *
+multiply_dense(const MatrixT<ComplexType, int>& A, 
+               const MatrixT<ComplexType, int>& B);
+
+template 
+static MatrixT<RealType, int> *
+multiply_dense(const MatrixT<RealType, int>& A, 
+               const MatrixT<RealType, int>& B);
+
+
+template <typename T, typename I>
+void
+multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
+{
+  // special method required for parallel dense*dense
+  if (A.communicator().size() > 1 &&
+      A.storageType() == Dense &&
+      B.storageType() == Dense) {
+    multiply_dense(A, B, result);
+  } else {
+    const Mat *Amat(PETScMatrix(A));
+    const Mat *Bmat(PETScMatrix(B));
+    Mat *Cmat(PETScMatrix(result));
+    
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatDestroy(Cmat); CHKERRXX(ierr);
+      ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+}
+
+template
+void
+multiply(const MatrixT<ComplexType, int>& A, 
+         const MatrixT<ComplexType, int>& B, 
+         MatrixT<ComplexType, int>& result);
+
+template
+void
+multiply(const MatrixT<RealType, int>& A, 
+         const MatrixT<RealType, int>& B, 
+         MatrixT<RealType, int>& result);
+
+template <typename T, typename I>
+MatrixT<T, I> *
+multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
+{
+  MatrixT<T, I> *result;
+  // special method required for parallel dense*dense
+  if (A.communicator().size() > 1 &&
+      A.storageType() == Dense &&
+      B.storageType() == Dense) {
+    result = multiply_dense(A, B);
+  } else {
+    const Mat *Amat(PETScMatrix(A));
+    const Mat *Bmat(PETScMatrix(B));
+    Mat Cmat;
+
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+
+    PETScMatrixImplementation<T, I> *result_impl = 
+      new PETScMatrixImplementation<T, I>(Cmat, true);
+    result = new MatrixT<T, I>(result_impl);
+  }
+  return result;
+}
+
+template
+MatrixT<ComplexType, int> *
+multiply(const MatrixT<ComplexType, int>& A, const MatrixT<ComplexType, int>& B);
+
+template
+MatrixT<RealType, int> *
+multiply(const MatrixT<RealType, int>& A, const MatrixT<RealType, int>& B);
 
 // -------------------------------------------------------------
 // storageType
 // -------------------------------------------------------------
-Matrix *
-storageType(const Matrix& A, const Matrix::StorageType& new_type)
+template <typename T, typename I>
+MatrixStorageType
+MatrixT<T, I>::storageType(void) const
 {
-  Matrix *result(A.clone());
+  MatrixStorageType result;
+  PetscErrorCode ierr;
+  const Mat *mat(PETScMatrix(*this));
+  try {
+    MatType thetype;
+    ierr = MatGetType(*mat, &thetype); CHKERRXX(ierr);
+
+    // this relies on the fact that MatType is actual a pointer to a
+    // char string -- need to test string contents, not pointers
+    std::string stype(thetype);
+
+    if (stype == MATSEQDENSE ||
+        stype == MATDENSE ||
+        stype == MATMPIDENSE) {
+      result = Dense;
+    } else if (stype == MATSEQAIJ || 
+               stype == MATMPIAIJ) {
+      result = Sparse;
+    } else {
+      std::string msg("Matrix: unexpected PETSc storage type: ");
+      msg += "\"";
+      msg += stype;
+      msg += "\"";
+      throw Exception(msg);
+    }
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  } catch (const Exception& e) {
+    throw;
+  }
+  return result;
+}
+
+template 
+MatrixStorageType
+MatrixT<ComplexType>::storageType(void) const;
+
+template 
+MatrixStorageType
+MatrixT<RealType>::storageType(void) const;
+
+template <typename T, typename I>
+MatrixT<T, I> *
+storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
+{
+  MatrixT<T, I> *result(A.clone());
   int nproc(result->processor_size());
 
   MatType new_mat_type(MATSEQAIJ);
 
   if (result->storageType() != new_type) {
     switch (new_type) {
-    case (Matrix::Dense):
+    case (Dense):
       if (nproc > 1) {
         new_mat_type = MATDENSE;
       } else {
         new_mat_type = MATSEQDENSE;
       } 
       break;
-    case (Matrix::Sparse):
+    case (Sparse):
       if (nproc > 1) {
         new_mat_type = MATMPIAIJ;
       } else {
@@ -378,14 +719,25 @@ storageType(const Matrix& A, const Matrix::StorageType& new_type)
   return result;
 }
 
+template
+MatrixT<ComplexType, int> *
+storageType(const MatrixT<ComplexType, int>& A, 
+            const MatrixStorageType& new_type);
+
+template
+MatrixT<RealType, int> *
+storageType(const MatrixT<RealType, int>& A, 
+            const MatrixStorageType& new_type);
+
 // -------------------------------------------------------------
 // matrixLoadBinary
 // -------------------------------------------------------------
-Matrix *
+template <typename T, typename I>
+MatrixT<T, I> *
 matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
 {
   PetscErrorCode ierr;
-  Matrix *result = NULL;
+  MatrixT<T, I> *result = NULL;
   try {
     Mat mat;
     ierr = MatCreate(comm, &mat); CHKERRXX(ierr);
@@ -405,15 +757,24 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
     ierr = MatLoad(mat, viewer); CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
 
-    PETScMatrixImplementation *result_impl = 
-      new PETScMatrixImplementation(mat, true);
-    result = new Matrix(result_impl);
+    PETScMatrixImplementation<T, I> *result_impl = 
+      new PETScMatrixImplementation<T, I>(mat, true);
+    result = new MatrixT<T, I>(result_impl);
     ierr = MatDestroy(&mat); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }
   return result;
 }  
+
+template
+MatrixT<ComplexType, int> *
+matrixLoadBinary(const parallel::Communicator& comm, const char* filename);
+
+template
+MatrixT<RealType, int> *
+matrixLoadBinary(const parallel::Communicator& comm, const char* filename);
+
 
 } // namespace math
 } // namespace gridpack

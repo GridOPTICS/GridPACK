@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2013-11-14 13:57:55 d3g096
+ * @date   2015-05-07 13:15:37 d3g096
  * 
  * @brief  
  * 
@@ -26,19 +26,28 @@ namespace gridpack {
 namespace math {
 
 // -------------------------------------------------------------
-//  class DAESolver
+//  class DAESolverT
 // -------------------------------------------------------------
 /// A solver for systems differential algebraic equations (DAE)
 /**
  * 
  * 
  */
-class DAESolver 
-  : public parallel::WrappedDistributed,
+template <typename T, typename I = int>
+class DAESolverT 
+  : public DAESolverInterface<T, I>,
+    public parallel::WrappedDistributed,
     public utility::WrappedConfigurable,
     private utility::Uncopyable
 {
 public:
+
+  typedef typename DAESolverInterface<T, I>::VectorType VectorType;
+  typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
+  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
+  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
+  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+
 
   /// Default constructor.
   /** 
@@ -51,13 +60,14 @@ public:
    * 
    * @return 
    */
-  DAESolver(const parallel::Communicator& comm, 
-            const int local_size,
-            DAEJacobianBuilder& jbuilder,
-            DAEFunctionBuilder& fbuilder);
+  DAESolverT(const parallel::Communicator& comm, 
+             const int local_size,
+             JacobianBuilder& jbuilder,
+             FunctionBuilder& fbuilder);
 
   /// Destructor
-  ~DAESolver(void);
+  ~DAESolverT(void)
+  {}
 
   /// Initialize the solver
   /** 
@@ -70,7 +80,7 @@ public:
    */
   void initialize(const double& t0,
                   const double& deltat0,
-                  Vector& x0)
+                  VectorType& x0)
   {
     p_impl->initialize(t0, deltat0, x0);
   }
@@ -95,17 +105,51 @@ public:
     p_impl->solve(maxtime, maxsteps);
   }
 
-  
 protected:
   
   /// Where things really happen
-  boost::scoped_ptr<DAESolverImplementation> p_impl;
+  boost::scoped_ptr<DAESolverImplementation<T, I> > p_impl;
 
   /// Set the implementation
-  void p_setImpl(DAESolverImplementation *impl);
+  void p_setImpl(DAESolverImplementation<T, I> *impl)
+  {
+    p_impl.reset(impl);
+    p_setDistributed(p_impl.get());
+    p_setConfigurable(p_impl.get());
+  }
+
+
+  /// Initialize the system (specialized)
+  void p_initialize(const double& t0,
+                    const double& deltat0,
+                    VectorType& x0)
+  {
+    p_impl->initialize(t0, deltat0, x0);
+  }
+                       
+
+  /// Solve the system (specialized)
+  void p_solve(double& maxtime, int& maxsteps)
+  {
+    p_impl->solve(maxtime, maxsteps);
+  }
+
+  /// Set a function to call before each time step (specialized)
+  void p_preStep(StepFunction& f)
+  {
+    p_impl->preStep(f);
+  }
+
+  /// Set a function to call after each time step (specialized)
+  void p_postStep(StepFunction& f)
+  {
+    p_impl->postStep(f);
+  }
 };
 
-
+typedef DAESolverT<ComplexType> ComplexDAESolver;
+typedef DAESolverT<RealType> RealDAESolver;
+typedef ComplexDAESolver DAESolver;
 
 } // namespace math
 } // namespace gridpack

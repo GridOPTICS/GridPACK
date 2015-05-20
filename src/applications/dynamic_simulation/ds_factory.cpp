@@ -7,7 +7,7 @@
 /**
  * @file   ds_factory.cpp
  * @author Shuangshuang Jin 
- * @date   September 19, 2013
+ * @date   2014-12-09 14:20:51 d3g096
  * 
  * @brief  
  * 
@@ -123,6 +123,58 @@ bool gridpack::dynamic_simulation::DSFactory::checkGen(void)
   bool ret = false;
   if (ok == p_network->communicator().size()) ret = true;
   return ret;
+}
+
+
+/**
+ * Initialize dynamic simulation data structures
+ */
+void gridpack::dynamic_simulation::DSFactory::setDSParams()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  for (i=0; i<numBus; i++) {
+    dynamic_cast<DSBus*>(p_network->getBus(i).get())->setDSParams();
+  }
+}
+
+/**
+ * Evaluate first part of a dynamic simulation step
+ * @param flag false if step is not initial step
+ */
+void gridpack::dynamic_simulation::DSFactory::initDSStep(bool flag)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  for (i=0; i<numBus; i++) {
+    dynamic_cast<DSBus*>(p_network->getBus(i).get())->initDSStep(flag);
+  }
+}
+
+/**
+ * Evaluate predictor part of dynamic simulation step
+ * @param t_inc time increment
+ */
+void gridpack::dynamic_simulation::DSFactory::predDSStep(double t_inc)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  for (i=0; i<numBus; i++) {
+    dynamic_cast<DSBus*>(p_network->getBus(i).get())->predDSStep(t_inc);
+  }
+}
+
+/**
+ * Evaluate corrector part of dynamic simulation step
+ * @param t_inc time increment
+ */
+void gridpack::dynamic_simulation::DSFactory::corrDSStep(double t_inc)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  for (i=0; i<numBus; i++) {
+    dynamic_cast<DSBus*>(p_network->getBus(i).get())->corrDSStep(t_inc);
+  }
 }
 
 } // namespace dynamic_simulation

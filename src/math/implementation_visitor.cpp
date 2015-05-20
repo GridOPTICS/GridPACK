@@ -8,7 +8,7 @@
 /**
  * @file   implementation_visitor.cpp
  * @author William A. Perkins
- * @date   2013-10-09 12:23:00 d3g096
+ * @date   2015-03-05 12:13:27 d3g096
  * 
  * @brief  
  * 
@@ -43,42 +43,14 @@ ImplementationVisitor::~ImplementationVisitor(void)
 // -------------------------------------------------------------
 // ImplementationVisitor::visit
 // -------------------------------------------------------------
-/** 
- * 
- * 
- */
 void 
-ImplementationVisitor::visit(VectorImplementation&)
+ImplementationVisitor::visit(PetscVectorWrapper&)
 {
   BOOST_ASSERT(false);
 }
 
 void 
-ImplementationVisitor::visit(PETScVectorImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ImplementationVisitor::visit(MatrixImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ImplementationVisitor::visit(PETScMatrixImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ImplementationVisitor::visit(LinearSolverImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ImplementationVisitor::visit(PETScLinearSolverImplementation&)
+ImplementationVisitor::visit(PetscMatrixWrapper&)
 {
   BOOST_ASSERT(false);
 }
@@ -103,41 +75,16 @@ ConstImplementationVisitor::~ConstImplementationVisitor(void)
 // ConstImplementationVisitor::visit
 // -------------------------------------------------------------
 void 
-ConstImplementationVisitor::visit(const VectorImplementation&)
+ConstImplementationVisitor::visit(const PetscVectorWrapper&)
 {
   BOOST_ASSERT(false);
 }
 
 void 
-ConstImplementationVisitor::visit(const PETScVectorImplementation&)
+ConstImplementationVisitor::visit(const PetscMatrixWrapper&)
 {
   BOOST_ASSERT(false);
 }
-
-void 
-ConstImplementationVisitor::visit(const MatrixImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ConstImplementationVisitor::visit(const PETScMatrixImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ConstImplementationVisitor::visit(const LinearSolverImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
-void 
-ConstImplementationVisitor::visit(const PETScLinearSolverImplementation&)
-{
-  BOOST_ASSERT(false);
-}
-
 
 } // namespace math
 } // namespace gridpack

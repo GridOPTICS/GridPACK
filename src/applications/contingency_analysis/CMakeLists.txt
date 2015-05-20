@@ -10,10 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-12 08:34:18 d3g096
+# Last Change: 2014-12-10 07:37:26 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_powerflow_module
     gridpack_components
     gridpack_factory
     gridpack_partition
@@ -36,9 +37,6 @@ endif()
 
 add_executable(ca.x
    ca_driver.cpp
-   ca_app.cpp
-   ca_factory.cpp
-   ca_components.cpp
    ca_main.cpp
 )
 
@@ -74,3 +72,7 @@ add_dependencies(ca.x ca.x.input)
 #target_link_libraries(pf_network_test powerflow_app ${target_libraries})
 #gridpack_add_unit_test(pf_network_test pf_network_test)
 
+# -------------------------------------------------------------
+# run application as test
+# -------------------------------------------------------------
+gridpack_add_run_test("contingency_analysis" ca.x input.xml)

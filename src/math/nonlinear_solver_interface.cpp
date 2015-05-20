@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_interface.cpp
  * @author William A. Perkins
- * @date   2013-11-08 11:51:17 d3g096
+ * @date   2015-03-25 14:03:13 d3g096
  * 
  * @brief  Implementation of NonlinearSolverInterface
  * 
@@ -25,32 +25,16 @@ namespace math {
 //  class NonlinearSolverInterface
 // -------------------------------------------------------------
 
-// -------------------------------------------------------------
-// NonlinearSolverInterface:: constructors / destructor
-// -------------------------------------------------------------
-NonlinearSolverInterface::NonlinearSolverInterface()
-  : parallel::WrappedDistributed(), 
-    utility::WrappedConfigurable(),
-    utility::Uncopyable(),
-    p_impl()
-{
-  
-}
-
-NonlinearSolverInterface::~NonlinearSolverInterface(void)
-{
-}
-
-// -------------------------------------------------------------
-// NonlinearSolverInterface::p_setImpl
-// -------------------------------------------------------------
-void
-NonlinearSolverInterface::p_setImpl(NonlinearSolverImplementation *impl)
-{
-  p_impl.reset(impl);
-  p_setDistributed(p_impl.get());
-  p_setConfigurable(p_impl.get());
-}
+// // -------------------------------------------------------------
+// // NonlinearSolverInterface::p_setImpl
+// // -------------------------------------------------------------
+// void
+// NonlinearSolverInterface::p_setImpl(NonlinearSolverImplementation *impl)
+// {
+//   p_impl.reset(impl);
+//   p_setDistributed(p_impl.get());
+//   p_setConfigurable(p_impl.get());
+// }
 
 
 

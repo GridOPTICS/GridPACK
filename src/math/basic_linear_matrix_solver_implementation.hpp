@@ -9,7 +9,7 @@
 /**
  * @file   basic_linear_matrix_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2014-01-09 12:14:35 d3g096
+ * @date   2015-03-06 12:17:58 d3g096
  * 
  * @brief  
  * 
@@ -30,27 +30,42 @@ namespace math {
 //  class BasicLinearMatrixSolverImplementation
 // -------------------------------------------------------------
 /// 
+template <typename T, typename I = int>
 class BasicLinearMatrixSolverImplementation 
-  : public LinearMatrixSolverImplementation
+  : public LinearMatrixSolverImplementation<T, I>
 {
 public:
 
+  typedef typename BaseLinearMatrixSolverInterface<T, I>::MatrixType MatrixType;
+
   /// Default constructor.
-  BasicLinearMatrixSolverImplementation(Matrix& A);
+  BasicLinearMatrixSolverImplementation(MatrixType& A)
+    : LinearMatrixSolverImplementation<T, I>(A),
+      p_solver(A)
+  {
+  }
+
 
   /// Destructor
-  ~BasicLinearMatrixSolverImplementation(void);
+  ~BasicLinearMatrixSolverImplementation(void)
+  {}
 
 protected:
 
   /// The linear solver instance used for this
-  LinearSolver p_solver;
+  LinearSolverT<T, I> p_solver;
 
   /// Solve w/ the specified RHS Matrix (specialized)
-  Matrix *p_solve(const Matrix& B) const;
+  MatrixType *p_solve(const MatrixType& B) const
+  {
+    return p_solver.solve(B);
+  }
 
   /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::CursorPtr props);
+  void p_configure(utility::Configuration::CursorPtr props)
+  {
+    p_solver.configure(props);
+  }
 
 };
 

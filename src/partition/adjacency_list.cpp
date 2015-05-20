@@ -115,10 +115,12 @@ AdjacencyList::ready(void)
   // Find total number of nodes and edges. Assume no duplicates
   int nedges = p_edges.size();
   int total_edges = nedges;
-  GA_Pgroup_igop(grp,&total_edges, 1, "+");
+  char plus[2];
+  strcpy(plus,"+");
+  GA_Pgroup_igop(grp,&total_edges, 1, plus);
   int nnodes = p_original_nodes.size();
   int total_nodes = nnodes;
-  GA_Pgroup_igop(grp,&total_nodes, 1, "+");
+  GA_Pgroup_igop(grp,&total_nodes, 1, plus);
 
   // Create a global array containing original indices of all nodes and indexed
   // by the global index of the node
@@ -128,7 +130,7 @@ AdjacencyList::ready(void)
     dist[p] = 0;
   }
   dist[me] = nnodes;
-  GA_Pgroup_igop(grp,dist,nprocs,"+");
+  GA_Pgroup_igop(grp,dist,nprocs,plus);
   int *mapc = new int[nprocs+1];
   mapc[0] = 0;
   for (p=1; p<nprocs; p++) {
@@ -220,7 +222,7 @@ AdjacencyList::ready(void)
     dist[p] = 0;
   }
   dist[me] = nedges;
-  GA_Pgroup_igop(grp,dist, nprocs, "+");
+  GA_Pgroup_igop(grp,dist, nprocs, plus);
   int offset[nprocs];
   offset[0] = 0;
   for (p=1; p<nprocs; p++) {

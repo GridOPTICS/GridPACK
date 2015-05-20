@@ -61,6 +61,29 @@ class DSFactory
      */
     bool checkGen(void);
 
+    /**
+     * Initialize dynamic simulation data structures
+     */
+    void setDSParams();
+
+    /**
+     * Evaluate first part of a dynamic simulation step
+     * @param flag false if step is not initial step
+     */
+    void initDSStep(bool flag);
+
+    /**
+     * Evaluate predictor part of dynamic simulation step
+     * @param t_inc time increment
+     */
+    void predDSStep(double t_inc);
+
+    /**
+     * Evaluate corrector part of dynamic simulation step
+     * @param t_inc time increment
+     */
+    void corrDSStep(double t_inc);
+
   private:
 
     NetworkPtr p_network;

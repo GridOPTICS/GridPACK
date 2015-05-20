@@ -149,8 +149,10 @@ class BaseFactory {
 
       activeBus[me] = numActiveBus;
       activeBranch[me] = numActiveBranch;
-      GA_Pgroup_igop(grp,activeBus,nprocs,"+");
-      GA_Pgroup_igop(grp,activeBranch,nprocs,"+");
+      char cplus[2];
+      strcpy(cplus,"+");
+      GA_Pgroup_igop(grp,activeBus,nprocs,cplus);
+      GA_Pgroup_igop(grp,activeBranch,nprocs,cplus);
 
       // Create indices for buses. Start by creating a global array with an entry
       // for each bus
@@ -214,6 +216,9 @@ class BaseFactory {
         p_network->getBranch(i)->getBus2()->getMatVecIndex(&idx2);
         p_network->getBranch(i)->setMatVecIndices(idx1,idx2);
       }
+      
+      // Set internal maps
+      p_network->setMap();
       timer->stop(t_setc);
       timer->configTimer(true);
     }
@@ -374,7 +379,9 @@ class BaseFactory {
       }
       int grp = p_network->communicator().getGroup();
       int nprocs = GA_Pgroup_nnodes(grp);
-      GA_Pgroup_igop(grp,&iok,1,"+");
+      char cplus[2];
+      strcpy(cplus,"+");
+      GA_Pgroup_igop(grp,&iok,1,cplus);
       if (iok == nprocs) {
         return true;
       } else {

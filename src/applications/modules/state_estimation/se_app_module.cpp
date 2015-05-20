@@ -124,8 +124,8 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   }
 
   // Convergence and iteration parameters
-  double p_tolerance = secursor->get("tolerance",1.0e-6);
-  int p_max_iteration = secursor->get("maxIteration",20);
+  p_tolerance = secursor->get("tolerance",1.0e-6);
+  p_max_iteration = secursor->get("maxIteration",20);
 
   // load input file
   gridpack::parser::PTI23_parser<SENetwork> parser(p_network);
@@ -159,8 +159,8 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   secursor = p_config->getCursor("Configuration.State_estimation");
 
   // Convergence and iteration parameters
-  double p_tolerance = secursor->get("tolerance",1.0e-6);
-  int p_max_iteration = secursor->get("maxIteration",20);
+  p_tolerance = secursor->get("tolerance",1.0e-6);
+  p_max_iteration = secursor->get("maxIteration",20);
   char buf[128];
   sprintf(buf,"Tolerance: %12.4e\n",p_tolerance);
   p_busIO->header(buf);
@@ -392,3 +392,10 @@ void gridpack::state_estimation::SEAppModule::write(void)
   // Output 
 }
 
+/**
+ * Save results of state estimation calculation to data collection objects
+ */
+void gridpack::state_estimation::SEAppModule::saveData(void)
+{
+  p_factory->saveData();
+}

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-28 13:13:59 d3g096
+# Last Change: 2015-01-05 15:24:24 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -77,6 +77,11 @@ add_custom_target(powerflow2.x.input
 
 )
 add_dependencies(powerflow2 powerflow2.x.input)
+
+# -------------------------------------------------------------
+# run applications as tests
+# -------------------------------------------------------------
+gridpack_add_run_test("powerflow2" powerflow2 input.xml)
 
 # -------------------------------------------------------------
 # install as a sample application

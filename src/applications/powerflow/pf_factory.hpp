@@ -64,6 +64,11 @@ class PFFactory
      */
     void setJacobian(void);
 
+    /**
+     * Check Qlimit
+     */
+    bool chkQlim(void);
+    
   private:
 
     NetworkPtr p_network;

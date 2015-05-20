@@ -93,6 +93,11 @@ class SEAppModule
      */
     void write();
 
+    /**
+     * Save results of state estimation calculation to data collection objects
+     */
+    void saveData();
+
     private:
 
     // pointer to network

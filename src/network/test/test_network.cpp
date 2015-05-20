@@ -513,6 +513,47 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     BOOST_CHECK(ok);
   }
   
+  // Test map functions
+  network.setMap();
+  ok = true;
+  std::vector<int> originalBus;
+  for (i=0; i<nbus; i++) {
+    originalBus.push_back(network.getOriginalBusIndex(i));
+  }
+  for (i=0; i<nbus; i++) {
+    std::vector<int> localBus;
+    localBus = network.getLocalBusIndices(originalBus[i]);
+    bool found = false;
+    for (j=0; j<localBus.size(); j++) {
+      if (localBus[j] == i) found = true;
+    }
+    if (!found) ok = false;
+  }
+  std::vector<std::pair<int,int> > originalBranch;
+  
+  for (i=0; i<nbranch; i++) {
+    int idx1, idx2;
+    network.getOriginalBranchEndpoints(i,&idx1,&idx2);
+    originalBranch.push_back(std::pair<int,int>(idx1,idx2));
+  }
+  for (i=0; i<nbranch; i++) {
+    std::vector<int> localBranch;
+    localBranch = network.getLocalBranchIndices(originalBranch[i].first,
+        originalBranch[i].second);
+    bool found = false;
+    for (j=0; j<localBranch.size(); j++) {
+      if (localBranch[j] == i) found = true;
+    }
+    if (!found) ok = false;
+  }
+
+  oks = (int)ok;
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ok = (bool)okr;
+  if (me == 0 && ok) {
+    printf("\nMap functions are ok\n");
+  }
+  BOOST_CHECK(ok);
 
   // Test ghost update operations. Start by allocating exchange buffers and
   // assigning values to them

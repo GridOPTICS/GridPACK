@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2014-12-09 10:32:55 d3g096
+# Last Change: 2015-05-06 09:13:16 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -82,8 +82,21 @@ if (NOT PETSC_HAVE_MPI)
   message(FATAL_ERROR "PETSc installation is not parallel (--with-mpi=1)")
 endif()
 
-if (NOT PETSC_USE_COMPLEX) 
-  message (FATAL_ERROR "PETSc installation does not use complex (--with-scalar-type=complex)")
+# PETSc can be compiled for double precsion (--with-precision=double)
+# complex (--with-scalar-type=complex) or real
+# (--with-scalar-type=real).  This is to determine what that
+# underlying type is.
+
+if (PETSC_USE_REAL_DOUBLE) 
+  message(STATUS "PETSc installation is double precision (--with-precision=double) -- good")
+else()
+  message(FATAL_ERROR "PETSc installation is not double precision (--with-precision=double)")
+endif()
+
+if (PETSC_USE_COMPLEX) 
+  message (STATUS "PETSc installation uses complex type (--with-scalar-type=complex)")
+else()
+  message (STATUS "PETSc installation uses real type (--with-scalar-type=real)")
 endif()
 
 # This is probably redundant
@@ -173,6 +186,7 @@ add_subdirectory(mapper)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/powerflow2)
 add_subdirectory(applications/dynamic_simulation)
+add_subdirectory(applications/dynamic_simulation_implicit)
 add_subdirectory(applications/contingency_analysis)
 add_subdirectory(applications/state_estimation)
 add_subdirectory(applications/examples/hello_world)

@@ -27,9 +27,15 @@ class TestBus
   public: 
 
   TestBus(void) {
+    p_vals = new double*[2];
+    p_vals[0] = new double[NSLAB];
+    p_vals[1] = new double[NSLAB];
   }
 
   ~TestBus(void) {
+    delete [] p_vals[0];
+    delete [] p_vals[1];
+    delete [] p_vals;
   }
 
   bool matrixDiagSize(int *isize, int *jsize) const {
@@ -215,6 +221,20 @@ class TestBus
     }
   }
 
+  void slabSetValues(gridpack::ComplexType **values)
+  {
+    int k;
+    for (k=0; k<NSLAB; k++) {
+      (p_vals[0])[k] = real((values[0])[k]);
+      (p_vals[1])[k] = real((values[1])[k]);
+    }
+  }
+
+  double* getSlabArray(int idx)
+  {
+    return p_vals[idx];
+  }
+
   gridpack::ComplexType p_val;
   int p_row_idx;
   int p_col_idx;
@@ -223,6 +243,7 @@ class TestBus
   int p_slab_idx1;
   int p_slab_idx2;
   gridpack::ComplexType p_vec1, p_vec2;
+  double **p_vals;
 };
 
 class TestBranch
@@ -230,9 +251,13 @@ class TestBranch
   public: 
 
   TestBranch(void) {
+    p_vals = new double*[1];
+    p_vals[0] = new double[NSLAB];
   }
 
   ~TestBranch(void) {
+    delete [] p_vals[0];
+    delete [] p_vals;
   }
 
   bool matrixForwardSize(int *isize, int *jsize) const {
@@ -393,11 +418,25 @@ class TestBranch
     }
   }
 
+  void slabSetValues(gridpack::ComplexType **values)
+  {
+    int k;
+    for (k=0; k<NSLAB; k++) {
+      (p_vals[0])[k] = real((values[0])[k]);
+    }
+  }
+
+  double* getSlabArray(int idx)
+  {
+    return p_vals[idx];
+  }
+
   int p_row_idx;
   int p_col_idx;
   int p_vec_idx;
   int p_slab_idx;
   gridpack::ComplexType p_vec_val;
+  double **p_vals;
 };
 
 void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
@@ -982,9 +1021,58 @@ void run (const int &me, const int &nprocs)
     }
   }
 
+  // Test mapToNetwork function for a slab mapper
+  if (me == 0) {
+    printf("\nTesting mapToNetwork function for  slab interface\n");
+  }
+  gsMap.mapToNetwork(*GS);
+  // Check to see if network has correct values
+  chk = 0;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      idx = network->getBus(i)->getGlobalIndex();
+      double *d0 = network->getBus(i)->getSlabArray(0);
+      double *d1 = network->getBus(i)->getSlabArray(1);
+      for (j=0; j<NSLAB; j++) {
+        if (idx+j != static_cast<int>(d0[j])) {
+          printf("Mismatch found (bus) for array 0 expected: %d actual: %d\n",
+              idx+j,static_cast<int>(d0[j]));
+          chk = 1;
+        }
+        if (idx+j+1 != static_cast<int>(d1[j])) {
+          printf("Mismatch found (bus) for array 1 expected: %d actual: %d\n",
+              idx+j+1,static_cast<int>(d1[j]));
+          chk = 1;
+        }
+      }
+    }
+  }
+  for (i=0; i<nbranch; i++) {
+    if (network->getActiveBranch(i)) {
+      int idx1 = network->getBranch(i)->getBus1GlobalIndex();
+      int idx2 = network->getBranch(i)->getBus2GlobalIndex();
+      double *d = network->getBranch(i)->getSlabArray(0);
+      for(j=0; j<NSLAB; j++) {
+        if (idx1+idx2+j != static_cast<int>(d[j])) {
+          printf("Mismatch found (branch) for array expected: %d actual: %d\n",
+              idx1+idx2+j,static_cast<int>(d[j]));
+          chk = 1;
+        }
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nSlab mapToNetwork ok\n");
+    } else {
+      printf("\nError found in array from matrixToNetwork\n");
+    }
+  }
 
 }
 
+int
 main (int argc, char **argv) {
 
   // Initialize MPI libraries
@@ -1012,4 +1100,5 @@ main (int argc, char **argv) {
   gridpack::math::Finalize();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
+  return ierr;
 }

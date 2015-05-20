@@ -83,6 +83,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   // Convergence and iteration parameters
   double tolerance = cursor->get("tolerance",1.0e-6);
   int max_iteration = cursor->get("maxIteration",50);
+  bool qlim = cursor->get("qLimit",false);
   ComplexType tol;
 
   int t_pti = timer->createCategory("PTI Parser");
@@ -174,6 +175,10 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 #endif
   timer->stop(t_mmap);
 
+// start QLim Loop
+  bool repeat = true; 
+  while (repeat){
+
   timer->start(t_fact);
   factory.setMode(S_Cal);
   timer->stop(t_fact);
@@ -255,8 +260,8 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     // Create new versions of Jacobian and PQ vector
     timer->start(t_vmap);
     vMap.mapToVector(PQ);
-  busIO.header("\nnew PQ vector\n");
-  PQ->print();
+    busIO.header("\nnew PQ vector\n");
+    PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     factory.setMode(Jacobian);
@@ -300,6 +305,17 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_updt);
   network->updateBuses();
   timer->stop(t_updt);
+
+  if (qlim == true) {
+    qlim = factory.chkQlim();
+    if (qlim == false) {
+      repeat = false ;
+    }
+  } else {
+    repeat = false;
+  }
+  } // repeat loop
+
 
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(512,network);
   branchIO.header("\n   Branch Power Flow\n");
