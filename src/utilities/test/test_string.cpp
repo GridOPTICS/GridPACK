@@ -7,7 +7,7 @@
 /**
  * @file   test_string.cpp
  * @author Bruce Palmer
- * @date   2015-05-15 09:38:07 d3g096
+ * @date   2015-05-20 07:38:59 d3g096
  * 
  * @brief  A simple test of the string utility class
  * 
@@ -71,4 +71,14 @@ int main(int argc, char **argv)
   str = "\" DQ \"";
   tag = util.clean2Char(str);
   printf("expected: (DQ) found: (%s)\n",tag.c_str());
+
+  str = "\" Test String 1 \"";
+  tag = util.trimQuotes(str);
+  printf("expected: (Test String 1) found: (%s)\n",tag.c_str());
+  str = "\'Test String 2 \'";
+  tag = util.trimQuotes(str);
+  printf("expected: (Test String 2) found: (%s)\n",tag.c_str());
+  str = " Test String 3 ";
+  tag = util.trimQuotes(str);
+  printf("expected: (Test String 3) found: (%s)\n",tag.c_str());
 }

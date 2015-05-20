@@ -119,8 +119,50 @@ public:
   }
 
   /**
+   * Trim any quotes from the beginning and end of a string
+   * @param str string with quotes at beginning and end
+   * @return string with quotes and leading and trailing white space removed
+   */
+  std::string trimQuotes(std::string &str)
+  {
+    std::string tag = str;
+    // Find and remove single or double quotes
+    int ntok1 = tag.find('\'',0);
+    bool sngl_qt = true;
+    bool no_qt = false;
+    // if no single quote found, then assume double quote or no quote
+    if (ntok1 == std::string::npos) {
+      ntok1 = tag.find('\"',0);
+      // if no double quote found then assume no quote
+      if (ntok1 == std::string::npos) {
+        ntok1 = tag.find_first_not_of(' ',0);
+        no_qt = true;
+      } else {
+        sngl_qt = false;
+      }
+    }
+    int ntok2;
+    if (sngl_qt) {
+      ntok1 = tag.find_first_not_of('\'',ntok1);
+      ntok2 = tag.find('\'',ntok1);
+    } else if (no_qt) {
+      ntok2 = tag.find_last_not_of(' ',ntok1)+1;
+    } else {
+      ntok1 = tag.find_first_not_of('\"',ntok1);
+      ntok2 = tag.find('\"',ntok1);
+    }
+    if (ntok2 == std::string::npos) ntok2 = tag.length();
+    std::string clean_tag = tag.substr(ntok1,ntok2-ntok1);
+    //get rid of white space
+    trim(clean_tag);
+    return clean_tag;
+  }
+
+  /**
    * Tokenize a string on blanks and return a vector of strings
    * Blanks within single or double quotes are ignored
+   * @param str string of tokens separated by blank characters
+   * @return vector containing individual tokens
    */
   std::vector<std::string> blankTokenizer(std::string &str)
   {
