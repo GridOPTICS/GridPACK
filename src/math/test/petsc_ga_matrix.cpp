@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-20 09:43:57 d3g096
+ * @date   2015-05-20 14:49:22 d3g096
  * 
  * @brief  
  * 
@@ -168,15 +168,10 @@ BOOST_AUTO_TEST_CASE( Dense2GA )
 
   Mat A;
   PetscInt lrows = 5, lcols = 5;
-  PetscScalar x;
 
   ierr = MatCreate(comm, &A); CHKERRXX(ierr);
   ierr = MatSetSizes(A, lrows, lcols, PETSC_DETERMINE, PETSC_DETERMINE); CHKERRXX(ierr);
-  if (comm.size() == 1) {
-    ierr = MatSetType(A, MATSEQDENSE); CHKERRXX(ierr);
-  } else {
-    ierr = MatSetType(A, MATDENSE); CHKERRXX(ierr);
-  }
+  ierr = MatSetType(A, MATDENSE); CHKERRXX(ierr);
   ierr = MatSetFromOptions(A); CHKERRXX(ierr);
   ierr = MatSetUp(A); CHKERRXX(ierr);
   
@@ -194,7 +189,6 @@ BOOST_AUTO_TEST_CASE( Sparse2GA )
 
   Mat A;
   PetscInt lrows = 5, lcols = 5;
-  PetscScalar x;
 
   ierr = MatCreate(comm, &A); CHKERRXX(ierr);
   ierr = MatSetSizes(A, lrows, lcols, PETSC_DETERMINE, PETSC_DETERMINE); CHKERRXX(ierr);
@@ -265,6 +259,54 @@ BOOST_AUTO_TEST_CASE( VectorMultiply )
   ierr = VecDestroy(&x); CHKERRXX(ierr);
   ierr = VecDestroy(&y); CHKERRXX(ierr);
   ierr = MatDestroy(&A); CHKERRXX(ierr);
+}
+
+BOOST_AUTO_TEST_CASE( SquareMatrixMultiply )
+{
+  Mat A, B, C, Cbase;
+  PetscErrorCode ierr(0);
+  gridpack::parallel::Communicator comm;
+
+  // do a multiply with a pair of normal sparse matrices for a check
+  // (dense multiply may not be available in parallel)
+
+  ierr = MatCreate(comm, &A); CHKERRXX(ierr);
+  ierr = MatSetSizes(A, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE); CHKERRXX(ierr);
+  ierr = MatSetType(A, MATAIJ); CHKERRXX(ierr);
+  ierr = MatSetFromOptions(A); CHKERRXX(ierr);
+  ierr = MatSetUp(A); CHKERRXX(ierr);
+  ierr = fill_pattern(A, INSERT_VALUES); CHKERRXX(ierr);
+  ierr = MatDuplicate(A, MAT_COPY_VALUES, &B); CHKERRXX(ierr);
+  ierr = MatMatMult(A, B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cbase); CHKERRXX(ierr);
+
+  ierr = MatDestroy(&A); CHKERRXX(ierr);
+  ierr = MatDestroy(&B); CHKERRXX(ierr);
+
+  // Do the same multiply with GA-based matrices
+
+  ierr = MatCreateDenseGA(comm, local_size, local_size, PETSC_DETERMINE, PETSC_DETERMINE, &A); 
+  CHKERRXX(ierr);
+  ierr = fill_pattern(A, INSERT_VALUES); CHKERRXX(ierr);
+  ierr = MatDuplicate(A, MAT_COPY_VALUES, &B); CHKERRXX(ierr);
+
+  ierr = MatMatMult(A, B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &C);
+  PetscInt lo, hi;
+  ierr = MatGetOwnershipRange(Cbase, &lo, &hi); CHKERRXX(ierr);
+  for (int i = lo; i < hi; ++i) {
+    for (int j = lo; j < hi; ++j) {
+      PetscScalar x;
+      PetscScalar y;
+      ierr = MatGetValues(Cbase, 1, &i, 1, &j, &x);  CHKERRXX(ierr);
+      ierr = MatGetValues(C, 1, &i, 1, &j, &y);  CHKERRXX(ierr);
+      BOOST_CHECK_EQUAL(x, y);
+    }
+  }
+
+  ierr = MatDestroy(&A); CHKERRXX(ierr);
+  ierr = MatDestroy(&B); CHKERRXX(ierr);
+  ierr = MatDestroy(&C); CHKERRXX(ierr);
+  ierr = MatDestroy(&Cbase); CHKERRXX(ierr);
+
 }
 
 BOOST_AUTO_TEST_CASE(Transpose)

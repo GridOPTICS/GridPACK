@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-05-20 09:42:06 d3g096
+ * @date   2015-05-20 14:41:17 d3g096
  * 
  * @brief  
  * 
@@ -309,13 +309,13 @@ MatMult_DenseGA(Mat mat, Vec x, Vec y)
   yhi[0] -= 1; yhi[1] -= 1;
   // GA_Print(ctx->ga);
   // GA_Print(g_x);
-  // GA_Print(g_y);
   NGA_Matmul_patch('N', 'N', &alpha, &beta, 
                    ctx->ga, lo, ahi,
                    g_x, lo, xhi,
                    g_y, lo, yhi);
 
   GA_Pgroup_sync(ctx->gaGroup);
+  // GA_Print(g_y);
 
   ierr = GA2Vec(g_y, y); CHKERRQ(ierr);
 
@@ -330,8 +330,79 @@ MatMult_DenseGA(Mat mat, Vec x, Vec y)
 }
 
 // -------------------------------------------------------------
-// MatMult
+// MatMatMult_DenseGA
 // -------------------------------------------------------------
+static
+PetscErrorCode
+MatMatMult_DenseGA(Mat A, Mat B, MatReuse scall, PetscReal fill, Mat *C)
+{
+
+  // matrix sizes appear to be checked before here, so we won't do it again
+
+  PetscErrorCode ierr = 0;
+
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)A, &comm); CHKERRQ(ierr);
+
+  MatType atype, btype;
+  ierr = MatGetType(A, &atype);
+  ierr = MatGetType(B, &btype);
+
+  PetscBool issame;
+  PetscStrcmp(atype, btype, &issame);
+
+  Mat Bga, Cga;
+  struct MatGACtx *Actx, *Bctx, *Cctx;
+
+  ierr = MatShellGetContext(A, &Actx); CHKERRQ(ierr);
+
+  if (issame) {
+    Bga = B;
+  } else {
+    ierr = MatConvertToDenseGA(B, &Bga);
+  }
+  ierr = MatShellGetContext(Bga, &Bctx); CHKERRQ(ierr);
+
+  PetscInt lrows, lcols, grows, gcols, junk;
+
+  ierr = MatGetSize(A, &grows, &junk);  CHKERRQ(ierr);
+  ierr = MatGetSize(B, &junk, &gcols);  CHKERRQ(ierr);
+  ierr = MatGetLocalSize(A, &lrows, &junk); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(B, &junk, &lcols); CHKERRQ(ierr);
+
+  ierr = MatCreateDenseGA(comm, lrows, lcols, grows, gcols, &Cga); CHKERRQ(ierr);
+  ierr = MatShellGetContext(Cga, &Cctx); CHKERRQ(ierr);
+
+  PetscScalarGA alpha(one), beta(zero);
+  int ndim, itype, lo[2] = {0,0}, ahi[2], bhi[2], chi[2];
+  NGA_Inquire(Actx->ga, &itype, &ndim, ahi);
+  ahi[0] -= 1; ahi[1] -= 1;
+  NGA_Inquire(Bctx->ga, &itype, &ndim, bhi);
+  bhi[0] -= 1; bhi[1] -= 1;
+  NGA_Inquire(Cctx->ga, &itype, &ndim, chi);
+  chi[0] -= 1; chi[1] -= 1;
+  // GA_Print(Actx->ga);
+  // GA_Print(Bctx->ga);
+  NGA_Matmul_patch('N', 'N', &alpha, &beta, 
+                   Actx->ga, lo, ahi,
+                   Bctx->ga, lo, bhi,
+                   Cctx->ga, lo, chi);
+  // GA_Print(Cctx->ga);
+
+  switch (scall) {
+  case MAT_REUSE_MATRIX:
+    ierr = MatCopy(Cga, *C, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
+  case MAT_INITIAL_MATRIX:
+  default:
+    ierr = MatDuplicate(Cga, MAT_COPY_VALUES, C); CHKERRQ(ierr);
+    break;
+  }
+
+  if (!issame) ierr = MatDestroy(&Bga); CHKERRQ(ierr);
+  ierr = MatDestroy(&Cga); CHKERRQ(ierr);
+  
+  return ierr;
+}
 
 // -------------------------------------------------------------
 // MatTranspose_DenseGA
@@ -544,6 +615,7 @@ MatSetOperations_DenseGA(Mat A)
   ierr = MatShellSetOperation(A, MATOP_GET_VALUES, (void(*)(void))MatGetValues_DenseGA); CHKERRQ(ierr);
   ierr = MatShellSetOperation(A, MATOP_ZERO_ENTRIES, (void(*)(void))MatZeroEntries_DenseGA); CHKERRQ(ierr);
   ierr = MatShellSetOperation(A, MATOP_MULT, (void(*)(void))MatMult_DenseGA); CHKERRQ(ierr); 
+  ierr = MatShellSetOperation(A, MATOP_MAT_MULT, (void(*)(void))MatMatMult_DenseGA); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(A, MATOP_TRANSPOSE, (void(*)(void))MatTranspose_DenseGA); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(A, MATOP_DUPLICATE, (void(*)(void))MatDuplicate_DenseGA); CHKERRQ(ierr); 
   ierr = MatShellSetOperation(A, MATOP_ASSEMBLY_BEGIN, (void(*)(void))MatAssemmblyBegin_DenseGA); CHKERRQ(ierr);
