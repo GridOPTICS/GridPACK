@@ -420,6 +420,90 @@
 #define GENERATOR_DAMPING_COEFFICIENT_0 "GENERATOR_DAMPING_COEFFICENT_0"
 
 /**
+ * Generator TDOP
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_TDOP "GENERATOR_TDOP"
+
+/**
+ * Generator TDOPP
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_TDOPP "GENERATOR_TDOPP"
+
+/**
+ * Generator TQOP
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_TQOP "GENERATOR_TQOP"
+
+/**
+ * Generator TQOPP
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_TQOPP "GENERATOR_TQOPP"
+
+/**
+ * Generator XD
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_XD "GENERATOR_XD"
+
+/**
+ * Generator XQ
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_XQ "GENERATOR_XQ"
+
+/**
+ * Generator XDP
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_XDP "GENERATOR_XDP"
+
+/**
+ * Generator XQP
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_XQP "GENERATOR_XQP"
+
+/**
+ * Generator XDPP
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_XDPP "GENERATOR_XDPP"
+
+/**
+ * Generator XL
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_XL "GENERATOR_XL"
+
+/**
+ * Generator S1
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_S1 "GENERATOR_S1"
+
+/**
+ * Generator S12
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_S12 "GENERATOR_S12"
+
+/**
  * Non-blank alphanumeric string to identify model being used for generator	
  * type: string
  * indexed

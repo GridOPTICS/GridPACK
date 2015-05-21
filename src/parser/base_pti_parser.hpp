@@ -127,10 +127,12 @@ class BasePTIParser : public BaseParser<_network>
       double reactance; // Transient reactance
       double tdop;
       double tdopp;
+      double tqop;
       double tqopp;
       double xd;
       double xq;
       double xdp;
+      double xqp;
       double xdpp;
       double xl;
       double s1;
@@ -232,7 +234,8 @@ class BasePTIParser : public BaseParser<_network>
             data->setValue(GENERATOR_TRANSIENT_REACTANCE,
                 ds_data[i].reactance, g_id);
           }
-        } else if (!strcmp(ds_data[i].gen_model,"GENSAL")) {
+        } else if (!strcmp(ds_data[i].gen_model,"GENSAL") ||
+            !strcmp(ds_data[i].gen_model,"GENROU")) {
           // GENERATOR_TDOP
           if (!data->getValue(GENERATOR_TDOP,&rval,g_id)) {
             data->addValue(GENERATOR_TDOP,ds_data[i].tdop, g_id);
@@ -322,6 +325,24 @@ class BasePTIParser : public BaseParser<_network>
             data->addValue(GENERATOR_XL, ds_data[i].s12, g_id);
           } else {
             data->setValue(GENERATOR_S12, ds_data[i].s12, g_id);
+          }
+
+          if (!strcmp(ds_data[i].gen_model,"GENROU")) {
+            // GENERATOR_TQOP
+            if (!data->getValue(GENERATOR_TQOP,&rval,g_id)) {
+              data->addValue(GENERATOR_TQOP,
+                  ds_data[i].tqop, g_id);
+            } else {
+              data->setValue(GENERATOR_TQOP, ds_data[i].tqop, g_id);
+            }
+
+            // GENERATOR_XQP
+            if (!data->getValue(GENERATOR_XQP,&rval,g_id)) {
+              data->addValue(GENERATOR_XQP,
+                  ds_data[i].xqp, g_id);
+            } else {
+              data->setValue(GENERATOR_XQP, ds_data[i].xqp, g_id);
+            }
           }
         }
       }
@@ -741,6 +762,160 @@ class BasePTIParser : public BaseParser<_network>
                   atof(split_line[14].c_str()), g_id);
             }
           } 
+        } else if (sval == "GENROU") {
+          // GENERATOR_TDOP
+          if (nstr > 3) {
+            if (!data->getValue(GENERATOR_TDOP,&rval,g_id)) {
+              data->addValue(GENERATOR_TDOP,
+                  atof(split_line[3].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_TDOP,
+                  atof(split_line[3].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_TDOPP
+          if (nstr > 4) {
+            if (!data->getValue(GENERATOR_TDOPP,&rval,g_id)) {
+              data->addValue(GENERATOR_TDOPP,
+                  atof(split_line[4].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_TDOPP,
+                  atof(split_line[4].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_TQOP
+          if (nstr > 5) {
+            if (!data->getValue(GENERATOR_TQOP,&rval,g_id)) {
+              data->addValue(GENERATOR_TQOP,
+                  atof(split_line[5].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_TQOP,
+                  atof(split_line[5].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_TQOPP
+          if (nstr > 6) {
+            if (!data->getValue(GENERATOR_TQOPP,&rval,g_id)) {
+              data->addValue(GENERATOR_TQOPP,
+                  atof(split_line[6].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_TQOPP,
+                  atof(split_line[6].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_INERTIA_CONSTANT_H                           float
+          if (nstr > 7) {
+            if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H,&rval,g_id)) {
+              data->addValue(GENERATOR_INERTIA_CONSTANT_H,
+                  atof(split_line[7].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_INERTIA_CONSTANT_H,
+                  atof(split_line[7].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_DAMPING_COEFFICIENT_0                           float
+          if (nstr > 8) {
+            if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&rval,g_id)) {
+              data->addValue(GENERATOR_DAMPING_COEFFICIENT_0,
+                  atof(split_line[8].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_DAMPING_COEFFICIENT_0,
+                  atof(split_line[8].c_str()), g_id);
+            }
+          }
+
+          // GENERATOR_XD
+          if (nstr > 9) {
+            if (!data->getValue(GENERATOR_XD,&rval,g_id)) {
+              data->addValue(GENERATOR_XD,
+                  atof(split_line[9].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_XD,
+                  atof(split_line[9].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_XQ
+          if (nstr > 10) {
+            if (!data->getValue(GENERATOR_XQ,&rval,g_id)) {
+              data->addValue(GENERATOR_XQ,
+                  atof(split_line[10].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_XQ,
+                  atof(split_line[9].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_XDP
+          if (nstr > 11) {
+            if (!data->getValue(GENERATOR_XDP,&rval,g_id)) {
+              data->addValue(GENERATOR_XDP,
+                  atof(split_line[11].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_XDP,
+                  atof(split_line[11].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_XQP
+          if (nstr > 12) {
+            if (!data->getValue(GENERATOR_XQP,&rval,g_id)) {
+              data->addValue(GENERATOR_XQP,
+                  atof(split_line[12].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_XQP,
+                  atof(split_line[12].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_XDPP
+          if (nstr > 13) {
+            if (!data->getValue(GENERATOR_XDPP,&rval,g_id)) {
+              data->addValue(GENERATOR_XDPP,
+                  atof(split_line[13].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_XDPP,
+                  atof(split_line[13].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_XL
+          if (nstr > 14) {
+            if (!data->getValue(GENERATOR_XL,&rval,g_id)) {
+              data->addValue(GENERATOR_XL,
+                  atof(split_line[14].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_XL,
+                  atof(split_line[14].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_S1
+          if (nstr > 15) {
+            if (!data->getValue(GENERATOR_S1,&rval,g_id)) {
+              data->addValue(GENERATOR_XL,
+                  atof(split_line[15].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_S1,
+                  atof(split_line[15].c_str()), g_id);
+            }
+          } 
+
+          // GENERATOR_S12
+          if (nstr > 16) {
+            if (!data->getValue(GENERATOR_S12,&rval,g_id)) {
+              data->addValue(GENERATOR_XL,
+                  atof(split_line[16].c_str()), g_id);
+            } else {
+              data->setValue(GENERATOR_S12,
+                  atof(split_line[16].c_str()), g_id);
+            }
+          } 
         }
       }
     }
@@ -860,6 +1035,76 @@ class BasePTIParser : public BaseParser<_network>
           // GENERATOR_S12
           if (nstr > 14) {
             data.s12 = atof(split_line[14].c_str());
+          } 
+        } else if (sval == "GENROU") {
+          // GENERATOR_TDOP
+          if (nstr > 3) {
+            data.tdop = atof(split_line[3].c_str());
+          } 
+
+          // GENERATOR_TDOPP
+          if (nstr > 4) {
+            data.tdopp = atof(split_line[4].c_str());
+          } 
+
+          // GENERATOR_TQOP
+          if (nstr > 5) {
+            data.tqop = atof(split_line[5].c_str());
+          } 
+
+          // GENERATOR_TQOPP
+          if (nstr > 6) {
+            data.tqopp = atof(split_line[6].c_str());
+          } 
+
+          // GENERATOR_INERTIA_CONSTANT_H                           float
+          if (nstr > 7) {
+            data.inertia = atof(split_line[7].c_str());
+          } 
+
+          // GENERATOR_DAMPING_COEFFICIENT_0                           float
+          if (nstr > 8) {
+            data.damping = atof(split_line[8].c_str());
+          }
+
+          // GENERATOR_XD
+          if (nstr > 9) {
+            data.xd = atof(split_line[9].c_str());
+          } 
+
+          // GENERATOR_XQ
+          if (nstr > 10) {
+            data.xq = atof(split_line[10].c_str());
+          } 
+
+          // GENERATOR_XDP
+          if (nstr > 11) {
+            data.xdp = atof(split_line[11].c_str());
+          } 
+
+          // GENERATOR_XQP
+          if (nstr > 12) {
+            data.xqp = atof(split_line[12].c_str());
+          } 
+
+          // GENERATOR_XDPP
+          if (nstr > 13) {
+            data.xdpp = atof(split_line[13].c_str());
+          } 
+
+          // GENERATOR_XL
+          if (nstr > 14) {
+            data.xl = atof(split_line[14].c_str());
+          } 
+
+          // GENERATOR_S1
+          if (nstr > 15) {
+            data.s1 = atof(split_line[15].c_str());
+          } 
+
+          // GENERATOR_S12
+          if (nstr > 16) {
+            data.s12 = atof(split_line[16].c_str());
           } 
         }
         ds_vector->push_back(data);

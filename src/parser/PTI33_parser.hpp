@@ -309,15 +309,16 @@ class PTI33_parser : public BasePTIParser<_network>
 
         p_busData[l_idx]->addValue(LOAD_BUSNUMBER, o_idx, nld);
 
+        gridpack::utility::StringUtils util;
         if (nstr > 1) {
           // Clean up 2 character tag
-          std::string tag = this->clean2Char(split_line[1]);
+          std::string tag = util.clean2Char(split_line[1]);
           // LOAD_ID              "ID"                  integer
           p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(), nld);
         }
 
         // LOAD_ID              "ID"                  integer
-        std::string tag = this->clean2Char(split_line[1]);
+        std::string tag = util.clean2Char(split_line[1]);
         if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(),nld);
 
         // LOAD_STATUS              "ID"                  integer
@@ -410,7 +411,8 @@ class PTI33_parser : public BasePTIParser<_network>
 
         if (nstr > 1) {
           // Clean up 2 character tag
-          std::string tag = this->clean2Char(split_line[1]);
+          gridpack::utility::StringUtils util;
+          std::string tag = util.clean2Char(split_line[1]);
           // SHUNT_ID              "ID"                  integer
           p_busData[l_idx]->addValue(SHUNT_ID, tag.c_str(), nshnt);
         }
@@ -482,7 +484,8 @@ class PTI33_parser : public BasePTIParser<_network>
         p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, o_idx, ngen);
 
         // Clean up 2 character tag
-        std::string tag = this->clean2Char(split_line[1]);
+        gridpack::utility::StringUtils util;
+        std::string tag = util.clean2Char(split_line[1]);
         // GENERATOR_ID              "ID"                  integer
         p_busData[l_idx]->addValue(GENERATOR_ID, tag.c_str(), ngen);
 
@@ -633,7 +636,8 @@ class PTI33_parser : public BasePTIParser<_network>
 
         int nstr = split_line.size();
         // Clean up 2 character tag
-        std::string tag = this->clean2Char(split_line[2]);
+        gridpack::utility::StringUtils util;
+        std::string tag = util.clean2Char(split_line[2]);
         // BRANCH_CKT          "CKT"                 character
         if (nstr > 2) p_branchData[l_idx]->addValue(BRANCH_CKT,
             tag.c_str(), nelems);
@@ -814,7 +818,8 @@ class PTI33_parser : public BasePTIParser<_network>
             mag1 = atof(split_line[7].c_str());
             mag2 = atof(split_line[8].c_str());
             // Clean up 2 character tag
-            std::string tag = this->clean2Char(split_line[3]);
+            gridpack::utility::StringUtils util;
+            std::string tag = util.clean2Char(split_line[3]);
 
             // parse line 2
             double r12, r23, r31, x12, x23, x31, sb12, sb23, sb31;
@@ -1032,7 +1037,8 @@ class PTI33_parser : public BasePTIParser<_network>
           }
 
           // Clean up 2 character tag
-          std::string tag = this->clean2Char(split_line[3]);
+          gridpack::utility::StringUtils util;
+          std::string tag = util.clean2Char(split_line[3]);
           // BRANCH_CKT          "CKT"                 character
           p_branchData[l_idx]->addValue(BRANCH_CKT, tag.c_str(), nelems);
 
