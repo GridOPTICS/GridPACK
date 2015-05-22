@@ -10,7 +10,7 @@
 /**
  * @file   matrix_interface.hpp
  * @author William A. Perkins
- * @date   2015-01-28 13:59:21 d3g096
+ * @date   2015-05-22 09:13:22 d3g096
  * 
  * @brief  Declaration of the abstract BaseMatrixInterface template class. 
  * 
@@ -282,7 +282,7 @@ public:
    * @e Collective.
    *
    * The underlying math library generally supports some way to save a
-   * Vector to a file. This will load elements from a file of that
+   * matrix to a file. This will load elements from a file of that
    * format.
    * 
    * @param filename 
@@ -298,7 +298,7 @@ public:
    * @e Collective.
    *
    * The underlying math library generally supports some way to save a
-   * Vector to a file.  This routine uses whatever format that can be
+   * matrix to a file.  This routine uses whatever format that can be
    * read by ::loadBinary(). 
    * 
    * @param filename 

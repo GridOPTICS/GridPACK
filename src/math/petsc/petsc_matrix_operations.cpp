@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-03-27 10:50:52 d3g096
+ * @date   2015-05-22 08:27:48 d3g096
  * 
  * @brief  
  * 
@@ -26,6 +26,7 @@
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include "matrix.hpp"
+#include "fallback_matrix_operations.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
@@ -206,6 +207,16 @@ transpose(const MatrixT<RealType, int>& A);
 // -------------------------------------------------------------
 // transposeMultiply
 // -------------------------------------------------------------
+/** 
+ * Works for complex regardless of underlying PETSc element type.
+ * 
+ * @param T 
+ * @param A 
+ * @param T 
+ * @param x 
+ * @param T 
+ * @param result 
+ */
 template <typename T, typename I>
 void
 transposeMultiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result)
@@ -237,6 +248,15 @@ transposeMultiply(const MatrixT<RealType, int>& A,
 // -------------------------------------------------------------
 // column
 // -------------------------------------------------------------
+/** 
+ * Works for complex regardless of underlying PETSc element type
+ * 
+ * @param T 
+ * @param A 
+ * @param cidx 
+ * @param T 
+ * @param result 
+ */
 template <typename T, typename I>
 void
 column(const MatrixT<T, I>& A, const int& cidx, VectorT<T, I>& result)
@@ -274,6 +294,13 @@ column(const MatrixT<RealType, int>& A,
 // -------------------------------------------------------------
 // diagonal
 // -------------------------------------------------------------
+/** 
+ * For complex matrix/vector on top of a real PETSc, a fallback has to
+ * be used.
+ * 
+ * @param A 
+ * @param result 
+ */
 template <typename T, typename I>
 void
 diagonal(const MatrixT<T, I>& A, VectorT<T, I>& result)
@@ -290,17 +317,21 @@ diagonal(const MatrixT<T, I>& A, VectorT<T, I>& result)
   if (result.size() != A.rows()) {
     char buf[128];
     sprintf(buf,"Matrix::diagonal incompatible: sizes do not match."
-        " Matrix rows: %d Vector length: %d",A.rows(),result.size());
+            " Matrix rows: %d Vector length: %d",A.rows(),result.size());
     throw gridpack::Exception(buf);
   }
 
-  const Mat *pA(PETScMatrix(A));
-  Vec *pX(PETScVector(result));
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatGetDiagonal(*pA, *pX); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+  if (PETScMatrixImplementation<T, I>::useLibrary) {
+    const Mat *pA(PETScMatrix(A));
+    Vec *pX(PETScVector(result));
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatGetDiagonal(*pA, *pX); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  } else {
+    fallback::diagonal(A, result);
   }
 }  
 
@@ -312,21 +343,27 @@ diagonal<ComplexType, int>(const MatrixT<ComplexType, int>& A,
 template
 void
 diagonal<RealType, int>(const MatrixT<RealType, int>& A, 
-                           VectorT<RealType, int>& result);
+                        VectorT<RealType, int>& result);
 
 template <typename T, typename I>
 MatrixT<T, I> *
 diagonal(const VectorT<T, I>& x, const MatrixStorageType& stype)
 {
-  MatrixT<T, I> *result(new MatrixT<T,I>(x.communicator(), 
-                                         x.localSize(), x.localSize(), stype));
-  const Vec *pX(PETScVector(x));
-  Mat *pA(PETScMatrix(*result));
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatDiagonalSet(*pA, *pX, INSERT_VALUES); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+  MatrixT<T, I> *result;
+
+  if (PETScMatrixImplementation<T, I>::useLibrary) {
+    result = new MatrixT<T,I>(x.communicator(), 
+                              x.localSize(), x.localSize(), stype);
+    const Vec *pX(PETScVector(x));
+    Mat *pA(PETScMatrix(*result));
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatDiagonalSet(*pA, *pX, INSERT_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  } else {
+    result = fallback::diagonal(x, stype);
   }
   return result;
 }

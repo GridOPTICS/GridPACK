@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-03-27 12:18:49 d3g096
+ * @date   2015-05-22 09:36:27 d3g096
  * 
  * @brief  
  * 
@@ -27,6 +27,7 @@
 #include "matrix_implementation.hpp"
 #include "petsc_matrix_wrapper.hpp"
 #include "value_transfer.hpp"
+#include "fallback_matrix_methods.hpp"
 
 namespace gridpack {
 namespace math {
@@ -310,7 +311,13 @@ protected:
   /// Compute the matrix L<sup>2</sup> norm (specialized)
   double p_norm2(void) const
   {
-    return p_mwrap->norm2();
+    double result;
+    if (useLibrary) {
+      result = p_mwrap->norm2();
+    } else {
+      result = fallback::norm2<T, I>(this->communicator(), *this);
+    }
+    return result;
   }
 
   /// Make this instance ready to use

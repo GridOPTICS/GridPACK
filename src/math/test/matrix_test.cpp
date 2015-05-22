@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-03-27 10:31:59 d3g096
+ * @date   2015-05-22 09:24:34 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -552,94 +552,90 @@ BOOST_AUTO_TEST_CASE( ColumnOps )
   }
 }
 
-// FIXME
-// BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
-// {
-//   int global_size;
-//   gridpack::parallel::Communicator world;
-//   boost::scoped_ptr<TestMatrixType> 
-//     A(make_and_fill_test_matrix(world, 3, global_size));
-//   int icolumn(global_size/2);
+BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
+{
+  int global_size;
+  gridpack::parallel::Communicator world;
+  boost::scoped_ptr< TestMatrixType > 
+    A(make_and_fill_test_matrix(world, 3, global_size));
+  int icolumn(global_size/2);
 
-//   boost::scoped_ptr< TestVectorType >  
-//     cvector(gridpack::math::column(*A, icolumn)),
-//     dvector(gridpack::math::diagonal(*A));
+  boost::scoped_ptr< TestVectorType >  
+    cvector(gridpack::math::column(*A, icolumn)),
+    dvector(gridpack::math::diagonal(*A));
 
-//   int lo, hi;
-//   cvector->localIndexRange(lo, hi);
+  int lo, hi;
+  cvector->localIndexRange(lo, hi);
 
-//   for (int i = -1; i <= 1; ++i) {
-//     int idx(icolumn+i);
-//     if (lo <= idx && idx < hi) {
-//       TestType 
-//         x(static_cast<TestType>(idx));
-//       TestType y;
-//       cvector->getElement(idx, y);
-//       TEST_VALUE_CLOSE(x, y, delta);
-//       if (idx == icolumn) {
-//         dvector->getElement(idx, y);
-//         TEST_VALUE_CLOSE(x, y, delta);
-//       }
-//     }
-//     (cvector->communicator()).barrier();
-//   }
+  for (int i = -1; i <= 1; ++i) {
+    int idx(icolumn+i);
+    if (lo <= idx && idx < hi) {
+      TestType x(static_cast<TestType>(idx));
+      TestType y;
+      cvector->getElement(idx, y);
+      TEST_VALUE_CLOSE(x, y, delta);
+      if (idx == icolumn) {
+        dvector->getElement(idx, y);
+        TEST_VALUE_CLOSE(x, y, delta);
+      }
+    }
+    (cvector->communicator()).barrier();
+  }
 
-//   boost::scoped_ptr<TestMatrixType> 
-//     B(gridpack::math::diagonal(*dvector, the_storage_type));
-//   dvector->print();
+  boost::scoped_ptr< TestMatrixType > 
+    B(gridpack::math::diagonal(*dvector, the_storage_type));
+  dvector->print();
 
-//   // norms of the diagonal matrix and original vector should be very
-//   // close
-//   double Bnorm(B->norm2());
-//   double vnorm(dvector->norm2());
-//   BOOST_CHECK_CLOSE(Bnorm, vnorm, delta);
+  // norms of the diagonal matrix and original vector should be very
+  // close
+  double Bnorm(B->norm2());
+  double vnorm(dvector->norm2());
+  // FIXME: Matrix norm2 not working
+  BOOST_CHECK_CLOSE(Bnorm, vnorm, delta);
 
-//   // make the diagonal matrix back into a vector and see that it has
-//   // not changed
+  // make the diagonal matrix back into a vector and see that it has
+  // not changed
 
-//   boost::scoped_ptr<TestVectorType>  
-//     bvector(gridpack::math::diagonal(*B));
+  boost::scoped_ptr<TestVectorType>  
+    bvector(gridpack::math::diagonal(*B));
 
-//   bvector->scale(-1.0);
-//   bvector->add(*dvector);
-//   vnorm = bvector->norm2();
+  bvector->scale(-1.0);
+  bvector->add(*dvector);
+  vnorm = bvector->norm2();
   
-//   // norm should be really really small
-//   BOOST_CHECK(vnorm < delta*delta);
-// }
+  // norm should be really really small
+  BOOST_CHECK(vnorm < delta*delta);
+}
 
-// FIXME
-// BOOST_AUTO_TEST_CASE( AddDiagonal )
-// {
-//   int global_size;
-//   gridpack::parallel::Communicator world;
-//   boost::scoped_ptr<TestMatrixType> 
-//     A(make_test_matrix(world, global_size));
-//   A->identity();
+BOOST_AUTO_TEST_CASE( AddDiagonal )
+{
+  int global_size;
+  gridpack::parallel::Communicator world;
+  boost::scoped_ptr<TestMatrixType> 
+    A(make_test_matrix(world, global_size));
+  A->identity();
 
-//   A->print();
+  A->print();
 
-//   boost::scoped_ptr<TestVectorType>  
-//     v(new TestVectorType(A->communicator(), A->localRows()));
-//   v->fill(1.0);
+  boost::scoped_ptr<TestVectorType>  
+    v(new TestVectorType(A->communicator(), A->localRows()));
+  v->fill(1.0);
 
-//   A->addDiagonal(*v);
-//   A->print();
+  A->addDiagonal(*v);
+  A->print();
 
-//   boost::scoped_ptr<TestVectorType> d(diagonal(*A));
-//   d->print();
+  boost::scoped_ptr<TestVectorType> d(diagonal(*A));
+  d->print();
 
-//   double norm(d->norm1()/static_cast<double>(d->size()));
+  double norm(d->norm1()/static_cast<double>(d->size()));
 
-//   BOOST_CHECK_CLOSE(norm, 2.0, delta);
+  BOOST_CHECK_CLOSE(norm, 2.0, delta);
 
-//   norm = d->norm2()/sqrt(static_cast<double>(d->size()));
+  norm = d->norm2()/sqrt(static_cast<double>(d->size()));
 
-//   BOOST_CHECK_CLOSE(norm, 2.0, delta);
-// }
+  BOOST_CHECK_CLOSE(norm, 2.0, delta);
+}
   
-  
-
 BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
 {
   static const int bandwidth(3);
