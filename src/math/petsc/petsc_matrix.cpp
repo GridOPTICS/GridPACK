@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-03-27 12:25:45 d3g096
+ * @date   2015-05-22 11:28:58 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -19,6 +19,7 @@
 #include "boost/assert.hpp"
 #include "boost/format.hpp"
 #include "matrix.hpp"
+#include "fallback_matrix_operations.hpp"
 #include "complex_operators.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
@@ -191,34 +192,6 @@ void
 MatrixT<RealType>::equate(const MatrixT<RealType>& B);
 
 // -------------------------------------------------------------
-// Matrix::scale
-// -------------------------------------------------------------
-template <typename T, typename I>
-void
-MatrixT<T, I>::scale(const MatrixT<T, I>::TheType& xin)
-{
-  Mat *pA(PETScMatrix(*this));
-
-  PetscErrorCode ierr(0);
-  
-  try {
-    PetscScalar x = 
-      gridpack::math::equate<PetscScalar, TheType>(xin);
-    ierr = MatScale(*pA, x); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-
-template 
-void
-MatrixT<ComplexType>::scale(const ComplexType& xin);
-
-template 
-void
-MatrixT<RealType>::scale(const RealType& xin);
-
-// -------------------------------------------------------------
 // Matrix::add
 // -------------------------------------------------------------
 template <typename T, typename I>
@@ -271,32 +244,32 @@ template
 void
 MatrixT<RealType>::addDiagonal(const VectorT<RealType>& x);
 
-// -------------------------------------------------------------
-// Matrix::addDiagonal
-// FIXME: will not work with complex matrices on real library
-// -------------------------------------------------------------
-template <typename T, typename I>
-void
-MatrixT<T, I>::addDiagonal(const MatrixT<T, I>::TheType& x)
-{
-  PetscScalar a = 
-    gridpack::math::equate<PetscScalar, TheType>(x);
-  Mat *pA(PETScMatrix(*this));
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatShift(*pA, a); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
+// // -------------------------------------------------------------
+// // Matrix::addDiagonal
+// // FIXME: will not work with complex matrices on real library
+// // -------------------------------------------------------------
+// template <typename T, typename I>
+// void
+// MatrixT<T, I>::addDiagonal(const MatrixT<T, I>::TheType& x)
+// {
+//   PetscScalar a = 
+//     gridpack::math::equate<PetscScalar, TheType>(x);
+//   Mat *pA(PETScMatrix(*this));
+//   PetscErrorCode ierr(0);
+//   try {
+//     ierr = MatShift(*pA, a); CHKERRXX(ierr);
+//   } catch (const PETSC_EXCEPTION_TYPE& e) {
+//     throw PETScException(ierr, e);
+//   }
+// }
 
-template 
-void
-MatrixT<ComplexType>::addDiagonal(const MatrixT<ComplexType>::TheType& x);
+// template 
+// void
+// MatrixT<ComplexType>::addDiagonal(const MatrixT<ComplexType>::TheType& x);
 
-template 
-void
-MatrixT<RealType>::addDiagonal(const MatrixT<RealType>::TheType& x);
+// template 
+// void
+// MatrixT<RealType>::addDiagonal(const MatrixT<RealType>::TheType& x);
 
 
 // -------------------------------------------------------------
@@ -337,50 +310,30 @@ void
 MatrixT<RealType>::identity(void);
 
 // -------------------------------------------------------------
-// Matrix::zero
-// -------------------------------------------------------------
-template <typename T, typename I>
-void
-MatrixT<T, I>::zero(void)
-{
-  Mat *pA(PETScMatrix(*this));
-
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-template 
-void
-MatrixT<ComplexType>::zero(void);
-
-template 
-void
-MatrixT<RealType>::zero(void);
-
-// -------------------------------------------------------------
 // Matrix::multiplyDiagonal
 // -------------------------------------------------------------
 template <typename T, typename I>
 void
 MatrixT<T, I>::multiplyDiagonal(const VectorT<T, I>& x)
 {
-  const Vec *pscale(PETScVector(x));
-  Mat *pA(PETScMatrix(*this));
-  PetscErrorCode ierr(0);
-  try {
-    Vec diagorig, diagnew;
-    ierr = VecDuplicate(*pscale, &diagorig);  CHKERRXX(ierr);
-    ierr = VecDuplicate(*pscale, &diagnew);  CHKERRXX(ierr);
-    ierr = MatGetDiagonal(*pA, diagorig); CHKERRXX(ierr);
-    ierr = VecPointwiseMult(diagnew, diagorig, *pscale); CHKERRXX(ierr);
-    ierr = MatDiagonalSet(*pA, diagnew, INSERT_VALUES); CHKERRXX(ierr);
-    ierr = VecDestroy(&diagorig); CHKERRXX(ierr); 
-    ierr = VecDestroy(&diagnew); CHKERRXX(ierr); 
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+  if (PETScMatrixImplementation<T, I>::useLibrary) {
+    const Vec *pscale(PETScVector(x));
+    Mat *pA(PETScMatrix(*this));
+    PetscErrorCode ierr(0);
+    try {
+      Vec diagorig, diagnew;
+      ierr = VecDuplicate(*pscale, &diagorig);  CHKERRXX(ierr);
+      ierr = VecDuplicate(*pscale, &diagnew);  CHKERRXX(ierr);
+      ierr = MatGetDiagonal(*pA, diagorig); CHKERRXX(ierr);
+      ierr = VecPointwiseMult(diagnew, diagorig, *pscale); CHKERRXX(ierr);
+      ierr = MatDiagonalSet(*pA, diagnew, INSERT_VALUES); CHKERRXX(ierr);
+      ierr = VecDestroy(&diagorig); CHKERRXX(ierr); 
+      ierr = VecDestroy(&diagnew); CHKERRXX(ierr); 
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  } else {
+    fallback::multiplyDiagonal<T, I>(*this, x);
   }
 }
 

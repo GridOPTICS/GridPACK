@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 28, 2015 by William A. Perkins
-// Last Change: 2015-01-28 10:58:32 d3g096
+// Last Change: 2015-05-22 10:34:08 d3g096
 // -------------------------------------------------------------
 
 
@@ -84,6 +84,9 @@ public:
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
   double norm2(void) const;
+
+  /// Zero all entries in the matrix
+  void zero(void);
 
   /// Make this instance ready to use
   void ready(void);

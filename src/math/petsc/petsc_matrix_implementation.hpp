@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-05-22 09:36:27 d3g096
+ * @date   2015-05-22 11:31:18 d3g096
  * 
  * @brief  
  * 
@@ -290,6 +290,40 @@ protected:
     }
   }
 
+  /// Scale this entire MatrixT by the given value (specialized)
+  void p_scale(const TheType& xin)
+  {
+    Mat *pA(p_mwrap->getMatrix());
+
+    PetscErrorCode ierr(0);
+  
+    try {
+      PetscScalar x = 
+        gridpack::math::equate<PetscScalar, TheType>(xin);
+      ierr = MatScale(*pA, x); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
+  /// Shift the diagonal of this matrix by the specified value (specialized)
+  void p_addDiagonal(const TheType& x)
+  {
+    if (useLibrary) {
+      PetscScalar a = 
+        gridpack::math::equate<PetscScalar, TheType>(x);
+      Mat *pA(p_mwrap->getMatrix());
+      PetscErrorCode ierr(0);
+      try {
+        ierr = MatShift(*pA, a); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      fallback::addDiagonal(*this, x);
+    }
+  }
+
   /// Replace all elements with their real parts
   void p_real(void)
   {
@@ -318,6 +352,12 @@ protected:
       result = fallback::norm2<T, I>(this->communicator(), *this);
     }
     return result;
+  }
+
+  /// Zero all entries in the matrix (specialized)
+  void p_zero(void)
+  {
+    p_mwrap->zero();
   }
 
   /// Make this instance ready to use

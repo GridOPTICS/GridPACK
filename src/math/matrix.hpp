@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-03-27 12:20:25 d3g096
+ * @date   2015-05-22 11:32:18 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -221,14 +221,6 @@ public:
    */
   void equate(const MatrixT& A);
 
-  /// Scale this entire MatrixT by the given value
-  /** 
-   * @e Collective.
-   * 
-   * @param x factor by which all elements in the matrix are multiplied
-   */
-  void scale(const TheType& x);
-
   /// Multiply this matrix diagonal by the specified vector
   /** 
    * @e Collective.
@@ -247,14 +239,6 @@ public:
    */
   void addDiagonal(const VectorT<T, I>& x);
 
-  /// Shift the diagonal of this matrix by the specified value
-  /** 
-   * @c Collective.
-   * 
-   * @param x 
-   */
-  void addDiagonal(const TheType& x);
-
   /// Add another matrix to this one, in place
   /** 
    * @e Collective.
@@ -266,13 +250,6 @@ public:
    * @param A matrix to add to this instance
    */
   void add(const MatrixT& A);
-
-  /// Zero all entries in the matrix
-  /** 
-   * @e Collective.
-   * 
-   */
-  void zero(void);
 
   // -------------------------------------------------------------
   // MatrixT Operations 
@@ -366,6 +343,18 @@ protected:
     p_matrix_impl->getElements(n, i, j, x); 
   }
 
+  /// Scale this entire MatrixT by the given value (specialized)
+  void p_scale(const TheType& x)
+  {
+    p_matrix_impl->scale(x);
+  }
+
+  /// Shift the diagonal of this matrix by the specified value (specialized)
+  void p_addDiagonal(const TheType& x)
+  {
+    p_matrix_impl->addDiagonal(x);
+  }
+
   /// Replace all elements with their real parts
   void p_real(void)
   { 
@@ -388,6 +377,12 @@ protected:
   double p_norm2(void) const
   { 
     return p_matrix_impl->norm2(); 
+  }
+
+  /// Zero all entries in the matrix (specialized)
+  void p_zero(void)
+  {
+    p_matrix_impl->zero();
   }
 
   /// Make this instance ready to use

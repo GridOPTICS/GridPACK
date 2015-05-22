@@ -10,7 +10,7 @@
 /**
  * @file   fallback_matrix_operations.hpp
  * @author William A. Perkins
- * @date   2015-05-22 09:16:53 d3g096
+ * @date   2015-05-22 11:16:59 d3g096
  * 
  * @brief  
  * 
@@ -113,15 +113,25 @@ column(const MatrixT<T, I>& A, const I& cidx, VectorT<T, I>& c)
  */
 template <typename T, typename I>
 void 
-multiplyDiagonal(MatrixT<T, I> A, const VectorT<T, I>& x)
+multiplyDiagonal(MatrixT<T, I>& A, const VectorT<T, I>& x)
 {
+  I lrows(A.localRows());
+  std::vector<T> dnew(lrows);
   I lo, hi;
   x.localIndexRange(lo, hi);
   for (I i = lo; i < hi; ++i) {
     T v;
     x.getElement(i, v);
-    A.addElement(i, i, v);
+    dnew[i-lo] = v;
+    A.getElement(i, i, v);
+    dnew[i-lo] *= v;
   }
+
+  for (I i = lo; i < hi; ++i) {
+    T v(dnew[i-lo]);
+    A.setElement(i, i, v);
+  }
+
   A.ready();
 }
 
@@ -144,24 +154,6 @@ addDiagonal(MatrixT<T, I>& A, const VectorT<T, I>& x)
     T v;
     x.getElement(i, v);
     A->addElement(i, i, v);
-  }
-  A->ready();
-}
-
-/// Shift the diagonal of this matrix by the specified value
-/** 
- * @c Collective.
- * 
- * @param x 
- */
-template <typename T, typename I>
-void 
-addDiagonal(MatrixT<T, I>& A, const T& x)
-{
-  I lo, hi;
-  A->localRowRange(lo, hi);
-  for (I i = lo; i < hi; ++i) {
-    A->addElement(i, i, x);
   }
   A->ready();
 }
