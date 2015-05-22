@@ -8,7 +8,7 @@
 /**
  * @file   communicator.hpp
  * @author William A. Perkins
- * @date   2014-02-13 09:25:03 d3g096
+ * @date   2015-05-22 09:46:11 d3g096
  * 
  * @brief  
  * 
@@ -132,11 +132,11 @@ public:
    * @param x vector of values to be summed
    * @param nvals number of values in vector
    */
-  void sum(float *x, int nvals);
-  void sum(double *x, int nvals);
-  void sum(int *x, int nvals);
-  void sum(long *x, int nvals);
-  void sum(gridpack::ComplexType *x, int nvals);
+  void sum(float *x, int nvals) const;
+  void sum(double *x, int nvals) const;
+  void sum(int *x, int nvals) const;
+  void sum(long *x, int nvals) const;
+  void sum(gridpack::ComplexType *x, int nvals) const;
 
   /**
    * Find maximum of vector components over all processors
@@ -144,10 +144,10 @@ public:
    * @param x vector of values to be evaluated
    * @param nvals number of values in vector
    */
-  void max(float *x, int nvals);
-  void max(double *x, int nvals);
-  void max(int *x, int nvals);
-  void max(long *x, int nvals);
+  void max(float *x, int nvals) const;
+  void max(double *x, int nvals) const;
+  void max(int *x, int nvals) const;
+  void max(long *x, int nvals) const;
 
   /**
    * Find minimum of vector components over all processors
@@ -155,10 +155,10 @@ public:
    * @param x vector of values to be evaluated
    * @param nvals number of values in vector
    */
-  void min(float *x, int nvals);
-  void min(double *x, int nvals);
-  void min(int *x, int nvals);
-  void min(long *x, int nvals);
+  void min(float *x, int nvals) const;
+  void min(double *x, int nvals) const;
+  void min(int *x, int nvals) const;
+  void min(long *x, int nvals) const;
 
 protected:
   
