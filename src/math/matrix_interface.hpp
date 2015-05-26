@@ -10,7 +10,7 @@
 /**
  * @file   matrix_interface.hpp
  * @author William A. Perkins
- * @date   2015-05-22 11:30:56 d3g096
+ * @date   2015-05-22 12:02:44 d3g096
  * 
  * @brief  Declaration of the abstract BaseMatrixInterface template class. 
  * 
@@ -202,15 +202,16 @@ public:
     this->p_getElements(n, i, j, x);
   }
 
-  /// Scale this entire MatrixT by the given value
+  /// Make this matrix the identity matrix
   /** 
-   * @e Collective.
+   * @e Collective
+   *
    * 
-   * @param x factor by which all elements in the matrix are multiplied
+   * 
    */
-  void scale(const TheType& x)
+  void identity(void)
   {
-    this->p_scale(x);
+    this->p_identity();
   }
 
   /// Shift the diagonal of this matrix by the specified value 
@@ -222,6 +223,17 @@ public:
   void addDiagonal(const TheType& x)
   {
     this->p_addDiagonal(x);
+  }
+
+  /// Scale this entire MatrixT by the given value
+  /** 
+   * @e Collective.
+   * 
+   * @param x factor by which all elements in the matrix are multiplied
+   */
+  void scale(const TheType& x)
+  {
+    this->p_scale(x);
   }
 
   /// Replace all elements with their real parts
@@ -378,11 +390,14 @@ protected:
   virtual void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, 
                              TheType *x) const = 0;
 
-  /// Scale this entire MatrixT by the given value (specialized)
-  virtual void p_scale(const TheType& x) = 0;
-
   /// Shift the diagonal of this matrix by the specified value (specialized)
   virtual void p_addDiagonal(const TheType& x) = 0;
+
+  /// Make this matrix the identity matrix (specialized)
+  virtual void p_identity(void) = 0;
+
+  /// Scale this entire MatrixT by the given value (specialized)
+  virtual void p_scale(const TheType& x) = 0;
 
   /// Replace all elements with their real parts (specialized)
   virtual void p_real(void) = 0;

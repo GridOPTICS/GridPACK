@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-22 11:28:58 d3g096
+ * @date   2015-05-26 09:13:30 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -243,71 +243,6 @@ MatrixT<ComplexType>::addDiagonal(const VectorT<ComplexType>& x);
 template 
 void
 MatrixT<RealType>::addDiagonal(const VectorT<RealType>& x);
-
-// // -------------------------------------------------------------
-// // Matrix::addDiagonal
-// // FIXME: will not work with complex matrices on real library
-// // -------------------------------------------------------------
-// template <typename T, typename I>
-// void
-// MatrixT<T, I>::addDiagonal(const MatrixT<T, I>::TheType& x)
-// {
-//   PetscScalar a = 
-//     gridpack::math::equate<PetscScalar, TheType>(x);
-//   Mat *pA(PETScMatrix(*this));
-//   PetscErrorCode ierr(0);
-//   try {
-//     ierr = MatShift(*pA, a); CHKERRXX(ierr);
-//   } catch (const PETSC_EXCEPTION_TYPE& e) {
-//     throw PETScException(ierr, e);
-//   }
-// }
-
-// template 
-// void
-// MatrixT<ComplexType>::addDiagonal(const MatrixT<ComplexType>::TheType& x);
-
-// template 
-// void
-// MatrixT<RealType>::addDiagonal(const MatrixT<RealType>::TheType& x);
-
-
-// -------------------------------------------------------------
-// Matrix::identity
-// -------------------------------------------------------------
-template <typename T, typename I>
-void
-MatrixT<T, I>::identity(void)
-{
-  Mat *pA(PETScMatrix(*this));
-
-  PetscErrorCode ierr(0);
-  try {
-    PetscBool flag;
-    PetscScalar one(1.0);
-    ierr = MatAssembled(*pA, &flag); CHKERRXX(ierr);
-    if (!flag) {
-      int lo, hi;
-      this->localRowRange(lo, hi);
-      for (int i = lo; i < hi; ++i) {
-        this->setElement(i, i, 1.0);
-      }
-      this->ready();
-    } else {
-      ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
-      ierr = MatShift(*pA, one); CHKERRXX(ierr);
-    }
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-template 
-void
-MatrixT<ComplexType>::identity(void);
-
-template 
-void
-MatrixT<RealType>::identity(void);
 
 // -------------------------------------------------------------
 // Matrix::multiplyDiagonal

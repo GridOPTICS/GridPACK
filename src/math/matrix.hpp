@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-05-22 11:32:18 d3g096
+ * @date   2015-05-26 08:54:26 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -158,15 +158,6 @@ public:
   
   /// Get the storage type of this matrix
   MatrixStorageType storageType(void) const;
-
-  /// Make this matrix the identity matrix
-  /** 
-   * @e Collective
-   *
-   * 
-   * 
-   */
-  void identity(void);
 
   //! @cond DEVDOC
 
@@ -353,6 +344,12 @@ protected:
   void p_addDiagonal(const TheType& x)
   {
     p_matrix_impl->addDiagonal(x);
+  }
+
+  /// Make this matrix the identity matrix (specialized)
+  void p_identity(void) 
+  {
+    p_matrix_impl->identity();
   }
 
   /// Replace all elements with their real parts

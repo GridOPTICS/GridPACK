@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-05-22 09:24:34 d3g096
+ * @date   2015-05-26 12:03:06 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -1058,8 +1058,8 @@ BOOST_AUTO_TEST_CASE( load_save )
 
   boost::scoped_ptr<TestMatrixType> 
     B(new TestMatrixType(A->communicator(), 
-                                 A->localRows(), A->localCols(),
-                                 the_storage_type));
+                         A->localRows(), A->localCols(),
+                         the_storage_type));
   B->loadBinary(out.c_str());
 
   B->scale(-1.0);

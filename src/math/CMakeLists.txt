@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-05-21 10:24:08 d3g096
+# Last Change: 2015-05-26 12:04:31 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -216,7 +216,7 @@ set_target_properties(real_dense_matrix_test
   COMPILE_DEFINITIONS "TEST_DENSE=YES;TEST_REAL=YES"
 )
 target_link_libraries(real_dense_matrix_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(real_dense_matrix complex_dense_matrix_test)
+gridpack_add_unit_test(real_dense_matrix real_dense_matrix_test)
 
 # -------------------------------------------------------------
 # linear solver test suite

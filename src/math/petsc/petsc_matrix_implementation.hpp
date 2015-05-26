@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-05-22 11:31:18 d3g096
+ * @date   2015-05-22 12:58:43 d3g096
  * 
  * @brief  
  * 
@@ -293,16 +293,20 @@ protected:
   /// Scale this entire MatrixT by the given value (specialized)
   void p_scale(const TheType& xin)
   {
-    Mat *pA(p_mwrap->getMatrix());
-
-    PetscErrorCode ierr(0);
-  
-    try {
-      PetscScalar x = 
-        gridpack::math::equate<PetscScalar, TheType>(xin);
-      ierr = MatScale(*pA, x); CHKERRXX(ierr);
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
+    if (useLibrary) {
+      Mat *pA(p_mwrap->getMatrix());
+      
+      PetscErrorCode ierr(0);
+      
+      try {
+        PetscScalar x = 
+          gridpack::math::equate<PetscScalar, TheType>(xin);
+        ierr = MatScale(*pA, x); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      throw gridpack::Exception("PETScMatrixImplementation<>::p_scale not implemented");
     }
   }
 
@@ -321,6 +325,32 @@ protected:
       }
     } else {
       fallback::addDiagonal(*this, x);
+    }
+  }
+
+  /// Make this matrix the identity matrix (specialized)
+  void p_identity(void)
+  {
+    Mat *pA(p_mwrap->getMatrix());
+
+    PetscErrorCode ierr(0);
+    try {
+      PetscBool flag;
+      PetscScalar one(1.0);
+      ierr = MatAssembled(*pA, &flag); CHKERRXX(ierr);
+      if (!flag) {
+        int lo, hi;
+        this->localRowRange(lo, hi);
+        for (int i = lo; i < hi; ++i) {
+          this->setElement(i, i, 1.0);
+        }
+        this->ready();
+      } else {
+        ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
+        ierr = MatShift(*pA, one); CHKERRXX(ierr);
+      }
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
     }
   }
 
