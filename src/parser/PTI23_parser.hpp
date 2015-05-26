@@ -322,7 +322,8 @@ class PTI23_parser : public BasePTIParser<_network>
         p_busData[l_idx]->addValue(GENERATOR_BUSNUMBER, atoi(split_line[0].c_str()), ngen);
 
         // Clean up 2 character tag
-        std::string tag = this->clean2Char(split_line[1]);
+        gridpack::utility::StringUtils util;
+        std::string tag = util.clean2Char(split_line[1]);
         // GENERATOR_ID              "ID"                  integer
         p_busData[l_idx]->addValue(GENERATOR_ID, tag.c_str(), ngen);
 
@@ -503,7 +504,8 @@ class PTI23_parser : public BasePTIParser<_network>
         p_branchData[l_idx]->addValue(BRANCH_SWITCHED, switched, nelems);
 
         // Clean up 2 character tag
-        std::string tag = this->clean2Char(split_line[2]);
+        gridpack::utility::StringUtils util;
+        std::string tag = util.clean2Char(split_line[2]);
         // BRANCH_CKT          "CKT"                 character
         p_branchData[l_idx]->addValue(BRANCH_CKT, tag.c_str(),
             nelems);
@@ -609,7 +611,8 @@ class PTI23_parser : public BasePTIParser<_network>
         // BRANCH_CKT values
         int nelems = 0;
         p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
-        std::string b_ckt(this->clean2Char(split_line[2]));
+        gridpack::utility::StringUtils util;
+        std::string b_ckt(util.clean2Char(split_line[2]));
         int i;
         int idx = -1;
         for (i=0; i<nelems; i++) {
