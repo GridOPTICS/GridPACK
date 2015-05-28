@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-05-26 12:03:06 d3g096
+ * @date   2015-05-28 08:21:05 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -484,9 +484,11 @@ BOOST_AUTO_TEST_CASE( scale )
   boost::scoped_ptr<TestMatrixType> 
     A(make_and_fill_test_matrix(world, 3, global_size));
 
-  TestType z(2.0);
+  TestType z(TEST_VALUE(2.0, 2.0));
+  // A->print();
   A->scale(z);
-  
+  // A->print();
+
   int lo, hi;
   A->localRowRange(lo, hi);
 

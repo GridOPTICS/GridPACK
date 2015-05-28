@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-05-22 12:58:43 d3g096
+ * @date   2015-05-28 08:57:47 d3g096
  * 
  * @brief  
  * 
@@ -28,6 +28,10 @@
 #include "petsc_matrix_wrapper.hpp"
 #include "value_transfer.hpp"
 #include "fallback_matrix_methods.hpp"
+
+
+extern PetscErrorCode 
+sillyMatScaleComplex(Mat A, const gridpack::ComplexType& px);
 
 namespace gridpack {
 namespace math {
@@ -290,14 +294,14 @@ protected:
     }
   }
 
+          
+
   /// Scale this entire MatrixT by the given value (specialized)
   void p_scale(const TheType& xin)
   {
+    PetscErrorCode ierr(0);
+    Mat *pA(p_mwrap->getMatrix());
     if (useLibrary) {
-      Mat *pA(p_mwrap->getMatrix());
-      
-      PetscErrorCode ierr(0);
-      
       try {
         PetscScalar x = 
           gridpack::math::equate<PetscScalar, TheType>(xin);
@@ -306,7 +310,9 @@ protected:
         throw PETScException(ierr, e);
       }
     } else {
-      throw gridpack::Exception("PETScMatrixImplementation<>::p_scale not implemented");
+      ComplexType px = 
+        gridpack::math::equate<ComplexType, TheType>(xin);
+      ierr = sillyMatScaleComplex(*pA, px); CHKERRXX(ierr);
     }
   }
 
