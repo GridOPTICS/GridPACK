@@ -10,7 +10,7 @@
 /**
  * @file   fallback_matrix_operations.hpp
  * @author William A. Perkins
- * @date   2015-05-22 11:16:59 d3g096
+ * @date   2015-05-28 10:43:08 d3g096
  * 
  * @brief  
  * 
@@ -156,6 +156,46 @@ addDiagonal(MatrixT<T, I>& A, const VectorT<T, I>& x)
     A->addElement(i, i, v);
   }
   A->ready();
+}
+
+
+// -------------------------------------------------------------
+// denseMatrixMultiply
+// -------------------------------------------------------------
+template <typename T, typename I>
+void
+denseMatrixMultiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& C)
+{
+  BOOST_ASSERT(A.rows() == C.rows());
+  BOOST_ASSERT(B.cols() == C.cols());
+  boost::scoped_ptr< VectorT<T, I> > 
+    bc(new VectorT<T, I>(B.communicator(), B.localRows())), 
+    rc(new VectorT<T, I>(C.communicator(), C.localRows()));
+  int lo, hi;
+  rc->localIndexRange(lo, hi);
+  for (int j = 0; j < B.cols(); ++j) {
+    math::column(B, j, *bc);
+    math::multiply(A, *bc, *rc);
+    for (int i = lo; i < hi; ++i) {
+      typename VectorT<T, I>::TheType v;
+      rc->getElement(i, v);
+      C.setElement(i, j, v);
+    }
+  }
+  C.ready();
+}
+
+template <typename T, typename I>
+MatrixT<T, I> *
+denseMatrixMultiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
+{
+  BOOST_ASSERT(A.cols() == B.rows());
+  BOOST_ASSERT(A.localCols() == B.localRows());
+  MatrixT<T, I> *C(MatrixT<T, I>::createDense(A.communicator(),
+                                              A.rows(), B.cols(),
+                                              A.localRows(), B.localCols()));
+  denseMatrixMultiply(A, B, *C);
+  return C;
 }
 
 

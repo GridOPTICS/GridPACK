@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-05-28 08:21:05 d3g096
+ * @date   2015-05-28 11:31:07 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -592,7 +592,6 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
   // close
   double Bnorm(B->norm2());
   double vnorm(dvector->norm2());
-  // FIXME: Matrix norm2 not working
   BOOST_CHECK_CLOSE(Bnorm, vnorm, delta);
 
   // make the diagonal matrix back into a vector and see that it has

@@ -10,7 +10,7 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-03-04 13:22:19 d3g096
+ * @date   2015-05-28 11:24:21 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -57,54 +57,6 @@ equate<RealType, ComplexType>(const ComplexType& f)
   t = std::real(f);
   return t;
 }
-  
-/*
-
-  template <typename To, typename From>
-  inline void equate(To& t, const From& f)
-  {
-  BOOST_STATIC_ASSERT(boost::is_same<From, To>::value);
-  t = f;
-  }
-
-  template <>
-  inline void equate<ComplexType, RealType>(ComplexType& t, const RealType& f)
-  {
-  t = f;
-  }
-
-  template <>
-  inline void equate<RealType, ComplexType>(RealType& t, const ComplexType& f)
-  {
-  t = std::real(f);
-  }
-*/
-
-// /// Get the real part of a number
-// /** 
-//  * instantiate only for gridpack::RealType and gridpack::ComplexType;
-//  * other types should produce a compilation error (not a link error)
-//  * 
-//  * @param value 
-//  * 
-//  * @return 
-//  */
-// template <typename T> inline RealType realpart(const T& value);
-
-
-// // Instantiation for real values
-// template <> 
-// inline RealType realpart<RealType>(const RealType& value)
-// {
-//   return value;
-// }
-
-// // Instantiation for complex values
-// template <> 
-// inline RealType realpart<ComplexType>(const ComplexType& value)
-// {
-//   return std::real(value);
-// }
 
 // -------------------------------------------------------------
 // base_unary_function

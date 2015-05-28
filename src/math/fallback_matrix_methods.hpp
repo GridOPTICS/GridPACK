@@ -10,7 +10,7 @@
 /**
  * @file   fall_back_matrix_methods.hpp
  * @author William A. Perkins
- * @date   2015-05-22 11:21:53 d3g096
+ * @date   2015-05-28 11:28:10 d3g096
  * 
  * @brief  
  * 
@@ -53,19 +53,21 @@ template <typename T, typename I>
 double 
 norm2(const parallel::Communicator& comm, const BaseMatrixInterface<T, I>& A)
 {
-  RealType result(0.0);
   I ncols(A.cols());
   I lo, hi;
   A.localRowRange(lo, hi);
+  double result;
+  struct l2_norm<T> accum;
 
   T v;
   for (I i = lo; i < hi; ++i) {
     for (I j = 0; j < ncols; ++j) {
       A.getElement(i, j, v);
       v *= v;
-      result += equate<RealType, T>(v);
+      accum(v);
     }
   }
+  result = equate<RealType, T>(accum.result());
   comm.sum(&result, 1);
   result = sqrt(result);
   return result;
