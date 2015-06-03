@@ -100,6 +100,9 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
   // create lp env
   IloEnv env;
   if(me == 0) {
+  //
+  // read demands and reserve from an input file
+  //
     std::vector<std::vector<double> > loads;
     std::ifstream fin("loads.txt");
     std::string line;
@@ -116,6 +119,12 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
     const IloInt numHorizons = size;
 //    const IloInt numHorizons = 2;
     const IloInt numUnits = optim.totalGen;
+//
+// create array on each process to store results from optimization
+    int arr_size = numUnits*numHorizons;
+    double *sol_power = new double[arr_size] ();
+    int *sol_onOff = new int[arr_size] ();
+//   
     IloNumArray minPower(env);
     IloNumArray maxPower(env);
     IloNumArray minUpTime(env);
@@ -320,7 +329,7 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
       expr3.end();
       expr3 = IloSum(powerReserved[p]);
       ucmdl.add( expr3 >= reserve[p]);
-printf("reserve- %f\n",reserve[p]);
+//printf("reserve- %f\n",reserve[p]);
       expr3.end();
     }
 // Solve model
@@ -336,14 +345,18 @@ printf("reserve- %f\n",reserve[p]);
     cplex.solve();
     cplex.out() << "solution status = " << cplex.getStatus() << std::endl;
     cplex.out() << "cost   = " << cplex.getObjValue() << std::endl;
+    int busid;
     for (IloInt i = 0; i < numUnits; i++) {
+      busid = optim.busID[i];
       for (IloInt p = 0; p < numHorizons; p++) {
-          env.out() << "At time " << p << " Power produced by unit " << i << " " <<
+//#if 0
+          env.out() << "At time " << p << " Power produced by unit " << i << " " << "on bus  " << busid << " " <<
           cplex.getValue(onOff[p][i]) << "  " <<
           cplex.getValue(start_Up[p][i]) << "  " <<
           cplex.getValue(shutDown[p][i]) << "  " <<
           cplex.getValue(powerReserved[p][i]) << "  " <<
           cplex.getValue(powerProduced[p][i]) << std::endl;
+//#endif
 #if 0
           rval = cplex.getValue(powerProduced[p][i]);
           if (!data->setValue("POWER_PRODUCED",rval,i)) {
