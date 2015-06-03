@@ -66,6 +66,7 @@ class Optimizer
     double *uc_startCap ;
     double *uc_shutCap ;
     double *uc_opMaxGen ;
+    int *busID;
     int totalGen;
     /**
      * Default Constructor
@@ -216,12 +217,16 @@ class Optimizer
       uc_shutCap = new double[totalGen] ();
       uc_opMaxGen = new double[totalGen] ();
       uc_startCap = new double[totalGen] ();
+      busID = new int[totalGen] ();
       int index = offset[me];
+      int busid;
       for (int i=0; i<p_nBuses; i++){
         if(p_network->getActiveBus(i)) {
           ngen = p_network->getBus(i)->numGen;
           if(ngen > 0) {
             for (int j=0; j<ngen; j++){
+              p_network->getBusData(i)->getValue("GENERATOR_BUSNUMBER",&busid,j);
+              busID[index] = busid;        
               uc_iniLevel[index] = p_network->getBus(i)->p_iniLevel[j];
               uc_minUpTime[index] = p_network->getBus(i)->p_minUpTime[j];
               uc_minDownTime[index] = p_network->getBus(i)->p_minDownTime[j];
@@ -242,6 +247,7 @@ class Optimizer
           }
         }
       }
+      GA_Pgroup_igop(grp,busID, totalGen, "+");
       GA_Pgroup_dgop(grp,uc_iniLevel, totalGen, "+");
       GA_Pgroup_dgop(grp,uc_minUpTime, totalGen, "+");
       GA_Pgroup_dgop(grp,uc_minDownTime, totalGen, "+");
