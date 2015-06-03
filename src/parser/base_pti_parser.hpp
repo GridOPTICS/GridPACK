@@ -119,6 +119,7 @@ class BasePTIParser : public BaseParser<_network>
     }
 
     struct ds_params{
+      // Generator parameters
       int bus_id; // ID of bus that owns generator
       char gen_id[3]; // Generator ID
       char gen_model[8];  // Generator model
@@ -137,6 +138,60 @@ class BasePTIParser : public BaseParser<_network>
       double xl;
       double s1;
       double s12;
+      // Exciter parameters
+      int jbus;
+      int m;
+      double k;
+      double t1;
+      double t2;
+      double t3;
+      double uo;
+      double uc;
+      double pmax;
+      double pmin;
+      double t4;
+      double k1;
+      double k2;
+      double t5;
+      double k3;
+      double k4;
+      double t6;
+      double k5;
+      double k6;
+      double t7;
+      double k7;
+      double k8;
+      double db1;
+      double err;
+      double db2;
+      double gv1;
+      double pgv1;
+      double gv2;
+      double pgv2;
+      double gv3;
+      double pgv3;
+      double gv4;
+      double pgv4;
+      double gv5;
+      double pgv5;
+      int iblock;
+      // Governor parameters
+      double tr;
+      double ka;
+      double ta;
+      double tb;
+      double tc;
+      double vrmax;
+      double vrmin;
+      double ke;
+      double te;
+      double kf;
+      double tf1;
+      double rswitch;
+      double e1;
+      double se1;
+      double e2;
+      double se2;
     };
 
     /**
@@ -343,6 +398,371 @@ class BasePTIParser : public BaseParser<_network>
             } else {
               data->setValue(GENERATOR_XQP, ds_data[i].xqp, g_id);
             }
+          }
+        } else if (!strcmp(ds_data[i].gen_model,"WSIEG1")) {
+          // EXCITER_JBUS
+          if (!data->getValue(EXCITER_JBUS,&ival,g_id)) {
+            data->addValue(EXCITER_JBUS, ds_data[i].jbus, g_id);
+          } else {
+            data->setValue(EXCITER_JBUS, ds_data[i].jbus, g_id);
+          }
+
+          // EXCITER_M
+          if (!data->getValue(EXCITER_M,&ival,g_id)) {
+            data->addValue(EXCITER_M, ds_data[i].m, g_id);
+          } else {
+            data->setValue(EXCITER_M, ds_data[i].m, g_id);
+          }
+
+          // EXCITER_K
+          if (!data->getValue(EXCITER_K,&rval,g_id)) {
+            data->addValue(EXCITER_K, ds_data[i].k, g_id);
+          } else {
+            data->setValue(EXCITER_K, ds_data[i].k, g_id);
+          }
+
+          // EXCITER_T1
+          if (!data->getValue(EXCITER_T1,&rval,g_id)) {
+            data->addValue(EXCITER_T1, ds_data[i].t1, g_id);
+          } else {
+            data->setValue(EXCITER_T1, ds_data[i].t1, g_id);
+          }
+
+          // EXCITER_T2
+          if (!data->getValue(EXCITER_T2,&rval,g_id)) {
+            data->addValue(EXCITER_T2, ds_data[i].t2, g_id);
+          } else {
+            data->setValue(EXCITER_T2, ds_data[i].t2, g_id);
+          }
+
+          // EXCITER_T3
+          if (!data->getValue(EXCITER_T3,&rval,g_id)) {
+            data->addValue(EXCITER_T3, ds_data[i].t2, g_id);
+          } else {
+            data->setValue(EXCITER_T3, ds_data[i].t3, g_id);
+          }
+
+          // EXCITER_UO
+          if (!data->getValue(EXCITER_UO,&rval,g_id)) {
+            data->addValue(EXCITER_UO, ds_data[i].uo, g_id);
+          } else {
+            data->setValue(EXCITER_UO, ds_data[i].uo, g_id);
+          }
+
+          // EXCITER_UC
+          if (!data->getValue(EXCITER_UC,&rval,g_id)) {
+            data->addValue(EXCITER_UC, ds_data[i].uc, g_id);
+          } else {
+            data->setValue(EXCITER_UC, ds_data[i].uc, g_id);
+          }
+
+          // EXCITER_PMAX
+          if (!data->getValue(EXCITER_PMAX,&rval,g_id)) {
+            data->addValue(EXCITER_PMAX, ds_data[i].pmax, g_id);
+          } else {
+            data->setValue(EXCITER_PMAX, ds_data[i].pmax, g_id);
+          }
+
+          // EXCITER_PMIN
+          if (!data->getValue(EXCITER_PMIN,&rval,g_id)) {
+            data->addValue(EXCITER_PMIN, ds_data[i].pmin, g_id);
+          } else {
+            data->setValue(EXCITER_PMIN, ds_data[i].pmin, g_id);
+          }
+
+          // EXCITER_T4
+          if (!data->getValue(EXCITER_T4,&rval,g_id)) {
+            data->addValue(EXCITER_T4, ds_data[i].t4, g_id);
+          } else {
+            data->setValue(EXCITER_T4, ds_data[i].t4, g_id);
+          }
+
+          // EXCITER_K1
+          if (!data->getValue(EXCITER_K1,&rval,g_id)) {
+            data->addValue(EXCITER_K1, ds_data[i].k1, g_id);
+          } else {
+            data->setValue(EXCITER_K1, ds_data[i].k1, g_id);
+          }
+
+          // EXCITER_K2
+          if (!data->getValue(EXCITER_K2,&rval,g_id)) {
+            data->addValue(EXCITER_K2, ds_data[i].k2, g_id);
+          } else {
+            data->setValue(EXCITER_K2, ds_data[i].k2, g_id);
+          }
+
+          // EXCITER_T5
+          if (!data->getValue(EXCITER_T5,&rval,g_id)) {
+            data->addValue(EXCITER_T5, ds_data[i].t5, g_id);
+          } else {
+            data->setValue(EXCITER_T5, ds_data[i].t5, g_id);
+          }
+
+          // EXCITER_K3
+          if (!data->getValue(EXCITER_K3,&rval,g_id)) {
+            data->addValue(EXCITER_K3, ds_data[i].k3, g_id);
+          } else {
+            data->setValue(EXCITER_K3, ds_data[i].k3, g_id);
+          }
+
+          // EXCITER_K4
+          if (!data->getValue(EXCITER_K4,&rval,g_id)) {
+            data->addValue(EXCITER_K4, ds_data[i].k4, g_id);
+          } else {
+            data->setValue(EXCITER_K4, ds_data[i].k4, g_id);
+          }
+
+          // EXCITER_T6
+          if (!data->getValue(EXCITER_T6,&rval,g_id)) {
+            data->addValue(EXCITER_T6, ds_data[i].t6, g_id);
+          } else {
+            data->setValue(EXCITER_T6, ds_data[i].t6, g_id);
+          }
+
+          // EXCITER_K5
+          if (!data->getValue(EXCITER_K5,&rval,g_id)) {
+            data->addValue(EXCITER_K5, ds_data[i].k5, g_id);
+          } else {
+            data->setValue(EXCITER_K5, ds_data[i].k5, g_id);
+          }
+
+          // EXCITER_K6
+          if (!data->getValue(EXCITER_K6,&rval,g_id)) {
+            data->addValue(EXCITER_K6, ds_data[i].k6, g_id);
+          } else {
+            data->setValue(EXCITER_K6, ds_data[i].k6, g_id);
+          }
+
+          // EXCITER_T7
+          if (!data->getValue(EXCITER_T7,&rval,g_id)) {
+            data->addValue(EXCITER_T7, ds_data[i].t7, g_id);
+          } else {
+            data->setValue(EXCITER_T7, ds_data[i].t7, g_id);
+          }
+
+          // EXCITER_K7
+          if (!data->getValue(EXCITER_K7,&rval,g_id)) {
+            data->addValue(EXCITER_K7, ds_data[i].k7, g_id);
+          } else {
+            data->setValue(EXCITER_K7, ds_data[i].k7, g_id);
+          }
+
+          // EXCITER_K8
+          if (!data->getValue(EXCITER_K8,&rval,g_id)) {
+            data->addValue(EXCITER_K8, ds_data[i].k8, g_id);
+          } else {
+            data->setValue(EXCITER_K8, ds_data[i].k8, g_id);
+          }
+
+          // EXCITER_DB1
+          if (!data->getValue(EXCITER_DB1,&rval,g_id)) {
+            data->addValue(EXCITER_DB1, ds_data[i].db1, g_id);
+          } else {
+            data->setValue(EXCITER_DB1, ds_data[i].db1, g_id);
+          }
+
+          // EXCITER_ERR
+          if (!data->getValue(EXCITER_ERR,&rval,g_id)) {
+            data->addValue(EXCITER_ERR, ds_data[i].err, g_id);
+          } else {
+            data->setValue(EXCITER_ERR, ds_data[i].err, g_id);
+          }
+
+          // EXCITER_DB2
+          if (!data->getValue(EXCITER_DB2,&rval,g_id)) {
+            data->addValue(EXCITER_DB2, ds_data[i].db2, g_id);
+          } else {
+            data->setValue(EXCITER_DB2, ds_data[i].db2, g_id);
+          }
+
+          // EXCITER_GV1
+          if (!data->getValue(EXCITER_GV1,&rval,g_id)) {
+            data->addValue(EXCITER_GV1, ds_data[i].gv1, g_id);
+          } else {
+            data->setValue(EXCITER_GV1, ds_data[i].gv1, g_id);
+          }
+
+          // EXCITER_PGV1
+          if (!data->getValue(EXCITER_PGV1,&rval,g_id)) {
+            data->addValue(EXCITER_PGV1, ds_data[i].pgv1, g_id);
+          } else {
+            data->setValue(EXCITER_PGV1, ds_data[i].pgv1, g_id);
+          }
+
+          // EXCITER_GV2
+          if (!data->getValue(EXCITER_GV2,&rval,g_id)) {
+            data->addValue(EXCITER_GV2, ds_data[i].gv2, g_id);
+          } else {
+            data->setValue(EXCITER_GV2, ds_data[i].gv2, g_id);
+          }
+
+          // EXCITER_PGV2
+          if (!data->getValue(EXCITER_PGV2,&rval,g_id)) {
+            data->addValue(EXCITER_PGV2, ds_data[i].pgv2, g_id);
+          } else {
+            data->setValue(EXCITER_PGV2, ds_data[i].pgv2, g_id);
+          }
+
+          // EXCITER_GV3
+          if (!data->getValue(EXCITER_GV3,&rval,g_id)) {
+            data->addValue(EXCITER_GV3, ds_data[i].gv3, g_id);
+          } else {
+            data->setValue(EXCITER_GV3, ds_data[i].gv3, g_id);
+          }
+
+          // EXCITER_PGV3
+          if (!data->getValue(EXCITER_PGV3,&rval,g_id)) {
+            data->addValue(EXCITER_PGV3, ds_data[i].pgv3, g_id);
+          } else {
+            data->setValue(EXCITER_PGV3, ds_data[i].pgv3, g_id);
+          }
+
+          // EXCITER_GV4
+          if (!data->getValue(EXCITER_GV4,&rval,g_id)) {
+            data->addValue(EXCITER_GV4, ds_data[i].gv4, g_id);
+          } else {
+            data->setValue(EXCITER_GV4, ds_data[i].gv4, g_id);
+          }
+
+          // EXCITER_PGV4
+          if (!data->getValue(EXCITER_PGV4,&rval,g_id)) {
+            data->addValue(EXCITER_PGV4, ds_data[i].pgv4, g_id);
+          } else {
+            data->setValue(EXCITER_PGV4, ds_data[i].pgv4, g_id);
+          }
+
+          // EXCITER_GV5
+          if (!data->getValue(EXCITER_GV5,&rval,g_id)) {
+            data->addValue(EXCITER_GV5, ds_data[i].gv5, g_id);
+          } else {
+            data->setValue(EXCITER_GV5, ds_data[i].gv5, g_id);
+          }
+
+          // EXCITER_PGV5
+          if (!data->getValue(EXCITER_PGV5,&rval,g_id)) {
+            data->addValue(EXCITER_PGV5, ds_data[i].pgv5, g_id);
+          } else {
+            data->setValue(EXCITER_PGV5, ds_data[i].pgv5, g_id);
+          }
+
+          // EXCITER_IBLOCK
+          if (!data->getValue(EXCITER_IBLOCK,&ival,g_id)) {
+            data->addValue(EXCITER_IBLOCK, ds_data[i].iblock, g_id);
+          } else {
+            data->setValue(EXCITER_IBLOCK, ds_data[i].iblock, g_id);
+          }
+        } else if (!strcmp(ds_data[i].gen_model,"EXDC1") ||
+            !strcmp(ds_data[i].gen_model,"EXDC2")) {
+          // GOVERNOR_TR
+          if (!data->getValue(GOVERNOR_TR,&rval,g_id)) {
+            data->addValue(GOVERNOR_TR, ds_data[i].tr, g_id);
+          } else {
+            data->setValue(GOVERNOR_TR, ds_data[i].tr, g_id);
+          }
+
+          // GOVERNOR_KA
+          if (!data->getValue(GOVERNOR_KA,&rval,g_id)) {
+            data->addValue(GOVERNOR_KA, ds_data[i].ka, g_id);
+          } else {
+            data->setValue(GOVERNOR_KA, ds_data[i].ka, g_id);
+          }
+
+          // GOVERNOR_TA
+          if (!data->getValue(GOVERNOR_TA,&rval,g_id)) {
+            data->addValue(GOVERNOR_TA, ds_data[i].ta, g_id);
+          } else {
+            data->setValue(GOVERNOR_TA, ds_data[i].ta, g_id);
+          }
+
+          // GOVERNOR_TB
+          if (!data->getValue(GOVERNOR_TB,&rval,g_id)) {
+            data->addValue(GOVERNOR_TB, ds_data[i].tb, g_id);
+          } else {
+            data->setValue(GOVERNOR_TB, ds_data[i].tb, g_id);
+          }
+
+          // GOVERNOR_TC
+          if (!data->getValue(GOVERNOR_TC,&rval,g_id)) {
+            data->addValue(GOVERNOR_TC, ds_data[i].tc, g_id);
+          } else {
+            data->setValue(GOVERNOR_TC, ds_data[i].tc, g_id);
+          }
+
+          // GOVERNOR_VRMAX
+          if (!data->getValue(GOVERNOR_VRMAX,&rval,g_id)) {
+            data->addValue(GOVERNOR_VRMAX, ds_data[i].vrmax, g_id);
+          } else {
+            data->setValue(GOVERNOR_VRMAX, ds_data[i].vrmax, g_id);
+          }
+
+          // GOVERNOR_VRMIN
+          if (!data->getValue(GOVERNOR_VRMIN,&rval,g_id)) {
+            data->addValue(GOVERNOR_VRMIN, ds_data[i].vrmin, g_id);
+          } else {
+            data->setValue(GOVERNOR_VRMIN, ds_data[i].vrmin, g_id);
+          }
+
+          // GOVERNOR_KE
+          if (!data->getValue(GOVERNOR_KE,&rval,g_id)) {
+            data->addValue(GOVERNOR_KE, ds_data[i].ke, g_id);
+          } else {
+            data->setValue(GOVERNOR_KE, ds_data[i].ke, g_id);
+          }
+
+          // GOVERNOR_TE
+          if (!data->getValue(GOVERNOR_TE,&rval,g_id)) {
+            data->addValue(GOVERNOR_TE, ds_data[i].te, g_id);
+          } else {
+            data->setValue(GOVERNOR_TE, ds_data[i].te, g_id);
+          }
+
+          // GOVERNOR_KF
+          if (!data->getValue(GOVERNOR_KF,&rval,g_id)) {
+            data->addValue(GOVERNOR_KF, ds_data[i].kf, g_id);
+          } else {
+            data->setValue(GOVERNOR_KF, ds_data[i].kf, g_id);
+          }
+
+          // GOVERNOR_TF1
+          if (!data->getValue(GOVERNOR_TF1,&rval,g_id)) {
+            data->addValue(GOVERNOR_TF1, ds_data[i].tf1, g_id);
+          } else {
+            data->setValue(GOVERNOR_TF1, ds_data[i].tf1, g_id);
+          }
+
+          // GOVERNOR_SWITCH
+          if (!data->getValue(GOVERNOR_SWITCH,&rval,g_id)) {
+            data->addValue(GOVERNOR_SWITCH, ds_data[i].rswitch, g_id);
+          } else {
+            data->setValue(GOVERNOR_SWITCH, ds_data[i].rswitch, g_id);
+          }
+
+          // GOVERNOR_E1
+          if (!data->getValue(GOVERNOR_E1,&rval,g_id)) {
+            data->addValue(GOVERNOR_E1, ds_data[i].e1, g_id);
+          } else {
+            data->setValue(GOVERNOR_E1, ds_data[i].e1, g_id);
+          }
+
+          // GOVERNOR_SE1
+          if (!data->getValue(GOVERNOR_SE1,&rval,g_id)) {
+            data->addValue(GOVERNOR_SE1, ds_data[i].se1, g_id);
+          } else {
+            data->setValue(GOVERNOR_SE1, ds_data[i].se1, g_id);
+          }
+
+          // GOVERNOR_E2
+          if (!data->getValue(GOVERNOR_E2,&rval,g_id)) {
+            data->addValue(GOVERNOR_E2, ds_data[i].e2, g_id);
+          } else {
+            data->setValue(GOVERNOR_E2, ds_data[i].e2, g_id);
+          }
+
+          // GOVERNOR_SE2
+          if (!data->getValue(GOVERNOR_SE2,&rval,g_id)) {
+            data->addValue(GOVERNOR_SE2, ds_data[i].se2, g_id);
+          } else {
+            data->setValue(GOVERNOR_SE2, ds_data[i].se2, g_id);
           }
         }
       }
@@ -595,6 +1015,7 @@ class BasePTIParser : public BaseParser<_network>
 
         std::string sval;
         double rval;
+        int ival;
 
         // GENERATOR_MODEL              "MODEL"                  string
         if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
@@ -916,6 +1337,578 @@ class BasePTIParser : public BaseParser<_network>
                   atof(split_line[16].c_str()), g_id);
             }
           } 
+        } else if (sval == "WSIEG1") {
+          // EXCITER_JBUS
+          if (nstr > 3) {
+            if (!data->getValue(EXCITER_JBUS,&ival,g_id)) {
+              data->addValue(EXCITER_JBUS,
+                  atoi(split_line[3].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_JBUS,
+                  atoi(split_line[3].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_M
+          if (nstr > 4) {
+            if (!data->getValue(EXCITER_M,&ival,g_id)) {
+              data->addValue(EXCITER_M,
+                  atoi(split_line[4].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_M,
+                  atoi(split_line[4].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K
+          if (nstr > 5) {
+            if (!data->getValue(EXCITER_K,&rval,g_id)) {
+              data->addValue(EXCITER_K,
+                  atof(split_line[5].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K,
+                  atof(split_line[5].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_T1
+          if (nstr > 6) {
+            if (!data->getValue(EXCITER_T1,&rval,g_id)) {
+              data->addValue(EXCITER_T1,
+                  atof(split_line[6].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_T1,
+                  atof(split_line[6].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_T2
+          if (nstr > 7) {
+            if (!data->getValue(EXCITER_T2,&rval,g_id)) {
+              data->addValue(EXCITER_T2,
+                  atof(split_line[7].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_T2,
+                  atof(split_line[7].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_T3
+          if (nstr > 8) {
+            if (!data->getValue(EXCITER_T3,&rval,g_id)) {
+              data->addValue(EXCITER_T3,
+                  atof(split_line[8].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_T3,
+                  atof(split_line[8].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_UO
+          if (nstr > 9) {
+            if (!data->getValue(EXCITER_UO,&rval,g_id)) {
+              data->addValue(EXCITER_UO,
+                  atof(split_line[9].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_UO,
+                  atof(split_line[9].c_str()), g_id);
+            }
+          }
+
+          // EXCITER_UC
+          if (nstr > 10) {
+            if (!data->getValue(EXCITER_UC,&rval,g_id)) {
+              data->addValue(EXCITER_UC,
+                  atof(split_line[10].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_UC,
+                  atof(split_line[10].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_PMAX
+          if (nstr > 11) {
+            if (!data->getValue(EXCITER_PMAX,&rval,g_id)) {
+              data->addValue(EXCITER_PMAX,
+                  atof(split_line[11].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_PMAX,
+                  atof(split_line[11].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_PMIN
+          if (nstr > 12) {
+            if (!data->getValue(EXCITER_PMIN,&rval,g_id)) {
+              data->addValue(EXCITER_PMIN,
+                  atof(split_line[12].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_PMIN,
+                  atof(split_line[12].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_T4
+          if (nstr > 13) {
+            if (!data->getValue(EXCITER_T4,&rval,g_id)) {
+              data->addValue(EXCITER_T4,
+                  atof(split_line[13].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_T4,
+                  atof(split_line[13].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K1
+          if (nstr > 14) {
+            if (!data->getValue(EXCITER_K1,&rval,g_id)) {
+              data->addValue(EXCITER_K1,
+                  atof(split_line[14].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K1,
+                  atof(split_line[14].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K2
+          if (nstr > 15) {
+            if (!data->getValue(EXCITER_K2,&rval,g_id)) {
+              data->addValue(EXCITER_K2,
+                  atof(split_line[15].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K2,
+                  atof(split_line[15].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_T5
+          if (nstr > 16) {
+            if (!data->getValue(EXCITER_T5,&rval,g_id)) {
+              data->addValue(EXCITER_T5,
+                  atof(split_line[16].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_T5,
+                  atof(split_line[16].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K3
+          if (nstr > 17) {
+            if (!data->getValue(EXCITER_K3,&rval,g_id)) {
+              data->addValue(EXCITER_K3,
+                  atof(split_line[17].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K3,
+                  atof(split_line[17].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K4
+          if (nstr > 18) {
+            if (!data->getValue(EXCITER_K4,&rval,g_id)) {
+              data->addValue(EXCITER_K4,
+                  atof(split_line[18].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K4,
+                  atof(split_line[18].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_T6
+          if (nstr > 19) {
+            if (!data->getValue(EXCITER_T6,&rval,g_id)) {
+              data->addValue(EXCITER_T6,
+                  atof(split_line[19].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_T6,
+                  atof(split_line[19].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K5
+          if (nstr > 20) {
+            if (!data->getValue(EXCITER_K5,&rval,g_id)) {
+              data->addValue(EXCITER_K5,
+                  atof(split_line[20].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K5,
+                  atof(split_line[20].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K6
+          if (nstr > 21) {
+            if (!data->getValue(EXCITER_K6,&rval,g_id)) {
+              data->addValue(EXCITER_K6,
+                  atof(split_line[21].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K6,
+                  atof(split_line[21].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_T7
+          if (nstr > 22) {
+            if (!data->getValue(EXCITER_T7,&rval,g_id)) {
+              data->addValue(EXCITER_T7,
+                  atof(split_line[22].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_T7,
+                  atof(split_line[22].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K7
+          if (nstr > 23) {
+            if (!data->getValue(EXCITER_K7,&rval,g_id)) {
+              data->addValue(EXCITER_K7,
+                  atof(split_line[23].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K7,
+                  atof(split_line[23].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_K8
+          if (nstr > 24) {
+            if (!data->getValue(EXCITER_K8,&rval,g_id)) {
+              data->addValue(EXCITER_K8,
+                  atof(split_line[24].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_K8,
+                  atof(split_line[24].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_DB1
+          if (nstr > 25) {
+            if (!data->getValue(EXCITER_DB1,&rval,g_id)) {
+              data->addValue(EXCITER_DB1,
+                  atof(split_line[25].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_DB1,
+                  atof(split_line[25].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_ERR
+          if (nstr > 26) {
+            if (!data->getValue(EXCITER_ERR,&rval,g_id)) {
+              data->addValue(EXCITER_ERR,
+                  atof(split_line[26].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_ERR,
+                  atof(split_line[26].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_DB2
+          if (nstr > 27) {
+            if (!data->getValue(EXCITER_DB2,&rval,g_id)) {
+              data->addValue(EXCITER_DB2,
+                  atof(split_line[27].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_DB2,
+                  atof(split_line[27].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_GV1
+          if (nstr > 28) {
+            if (!data->getValue(EXCITER_GV1,&rval,g_id)) {
+              data->addValue(EXCITER_GV1,
+                  atof(split_line[28].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_GV1,
+                  atof(split_line[28].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_PGV1
+          if (nstr > 29) {
+            if (!data->getValue(EXCITER_PGV1,&rval,g_id)) {
+              data->addValue(EXCITER_PGV1,
+                  atof(split_line[29].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_PGV1,
+                  atof(split_line[29].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_GV2
+          if (nstr > 30) {
+            if (!data->getValue(EXCITER_GV2,&rval,g_id)) {
+              data->addValue(EXCITER_GV2,
+                  atof(split_line[30].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_GV2,
+                  atof(split_line[30].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_PGV2
+          if (nstr > 31) {
+            if (!data->getValue(EXCITER_PGV2,&rval,g_id)) {
+              data->addValue(EXCITER_PGV2,
+                  atof(split_line[31].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_PGV2,
+                  atof(split_line[31].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_GV3
+          if (nstr > 32) {
+            if (!data->getValue(EXCITER_GV3,&rval,g_id)) {
+              data->addValue(EXCITER_GV3,
+                  atof(split_line[32].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_GV3,
+                  atof(split_line[32].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_PGV3
+          if (nstr > 33) {
+            if (!data->getValue(EXCITER_PGV3,&rval,g_id)) {
+              data->addValue(EXCITER_PGV3,
+                  atof(split_line[33].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_PGV3,
+                  atof(split_line[33].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_GV4
+          if (nstr > 34) {
+            if (!data->getValue(EXCITER_GV4,&rval,g_id)) {
+              data->addValue(EXCITER_GV4,
+                  atof(split_line[34].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_GV4,
+                  atof(split_line[34].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_PGV4
+          if (nstr > 35) {
+            if (!data->getValue(EXCITER_PGV4,&rval,g_id)) {
+              data->addValue(EXCITER_PGV4,
+                  atof(split_line[35].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_PGV4,
+                  atof(split_line[35].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_GV5
+          if (nstr > 36) {
+            if (!data->getValue(EXCITER_GV5,&rval,g_id)) {
+              data->addValue(EXCITER_GV5,
+                  atof(split_line[36].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_GV4,
+                  atof(split_line[36].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_PGV5
+          if (nstr > 37) {
+            if (!data->getValue(EXCITER_PGV5,&rval,g_id)) {
+              data->addValue(EXCITER_PGV5,
+                  atof(split_line[37].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_PGV5,
+                  atof(split_line[37].c_str()), g_id);
+            }
+          } 
+
+          // EXCITER_IBLOCK
+          if (nstr > 38) {
+            if (!data->getValue(EXCITER_IBLOCK,&ival,g_id)) {
+              data->addValue(EXCITER_PGV5,
+                  atoi(split_line[38].c_str()), g_id);
+            } else {
+              data->setValue(EXCITER_IBLOCK,
+                  atoi(split_line[38].c_str()), g_id);
+            }
+          } 
+        } else if (sval == "EXDC1" || sval == "EXDC2") {
+          // GOVERNOR_TR
+          if (nstr > 3) {
+            if (!data->getValue(GOVERNOR_TR,&rval,g_id)) {
+              data->addValue(GOVERNOR_TR,
+                  atof(split_line[3].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_TR,
+                  atof(split_line[3].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_KA
+          if (nstr > 4) {
+            if (!data->getValue(GOVERNOR_KA,&rval,g_id)) {
+              data->addValue(GOVERNOR_KA,
+                  atof(split_line[4].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_KA,
+                  atof(split_line[4].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_TA
+          if (nstr > 5) {
+            if (!data->getValue(GOVERNOR_TA,&rval,g_id)) {
+              data->addValue(GOVERNOR_TA,
+                  atof(split_line[5].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_TA,
+                  atof(split_line[5].c_str()), g_id);
+            }
+          }
+
+          // GOVERNOR_TB
+          if (nstr > 6) {
+            if (!data->getValue(GOVERNOR_TB,&rval,g_id)) {
+              data->addValue(GOVERNOR_TB,
+                  atof(split_line[6].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_TB,
+                  atof(split_line[6].c_str()), g_id);
+            }
+          }
+
+          // GOVERNOR_TC
+          if (nstr > 7) {
+            if (!data->getValue(GOVERNOR_TC,&rval,g_id)) {
+              data->addValue(GOVERNOR_TC,
+                  atof(split_line[7].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_TC,
+                  atof(split_line[7].c_str()), g_id);
+            }
+          }
+
+          // GOVERNOR_VRMAX
+          if (nstr > 8) {
+            if (!data->getValue(GOVERNOR_VRMAX,&rval,g_id)) {
+              data->addValue(GOVERNOR_VRMAX,
+                  atof(split_line[8].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_VRMAX,
+                  atof(split_line[8].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_VRMIN
+          if (nstr > 9) {
+            if (!data->getValue(GOVERNOR_VRMIN,&rval,g_id)) {
+              data->addValue(GOVERNOR_VRMIN,
+                  atof(split_line[9].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_VRMIN,
+                  atof(split_line[9].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_KE
+          if (nstr > 10) {
+            if (!data->getValue(GOVERNOR_KE,&rval,g_id)) {
+              data->addValue(GOVERNOR_KE,
+                  atof(split_line[10].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_KE,
+                  atof(split_line[10].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_TE
+          if (nstr > 11) {
+            if (!data->getValue(GOVERNOR_TE,&rval,g_id)) {
+              data->addValue(GOVERNOR_TE,
+                  atof(split_line[11].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_TE,
+                  atof(split_line[11].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_KF
+          if (nstr > 12) {
+            if (!data->getValue(GOVERNOR_KF,&rval,g_id)) {
+              data->addValue(GOVERNOR_KF,
+                  atof(split_line[12].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_KF,
+                  atof(split_line[12].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_TF1
+          if (nstr > 13) {
+            if (!data->getValue(GOVERNOR_TF1,&rval,g_id)) {
+              data->addValue(GOVERNOR_TF1,
+                  atof(split_line[13].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_TF1,
+                  atof(split_line[13].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_SWITCH
+          if (nstr > 14) {
+            if (!data->getValue(GOVERNOR_SWITCH,&rval,g_id)) {
+              data->addValue(GOVERNOR_SWITCH,
+                  atof(split_line[14].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_SWITCH,
+                  atof(split_line[14].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_E1
+          if (nstr > 15) {
+            if (!data->getValue(GOVERNOR_E1,&rval,g_id)) {
+              data->addValue(GOVERNOR_E1,
+                  atof(split_line[15].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_E1,
+                  atof(split_line[15].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_SE1
+          if (nstr > 16) {
+            if (!data->getValue(GOVERNOR_SE1,&rval,g_id)) {
+              data->addValue(GOVERNOR_SE1,
+                  atof(split_line[16].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_SE1,
+                  atof(split_line[16].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_E2
+          if (nstr > 17) {
+            if (!data->getValue(GOVERNOR_E2,&rval,g_id)) {
+              data->addValue(GOVERNOR_E2,
+                  atof(split_line[17].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_E2,
+                  atof(split_line[17].c_str()), g_id);
+            }
+          } 
+
+          // GOVERNOR_SE1
+          if (nstr > 18) {
+            if (!data->getValue(GOVERNOR_SE2,&rval,g_id)) {
+              data->addValue(GOVERNOR_SE2,
+                  atof(split_line[18].c_str()), g_id);
+            } else {
+              data->setValue(GOVERNOR_SE2,
+                  atof(split_line[18].c_str()), g_id);
+            }
+          } 
         }
       }
     }
@@ -954,6 +1947,7 @@ class BasePTIParser : public BaseParser<_network>
 
         std::string sval;
         double rval;
+        integer ival;
 
         sval = util.trimQuotes(split_line[1]);
         util.toUpper(sval);
@@ -1106,6 +2100,266 @@ class BasePTIParser : public BaseParser<_network>
           if (nstr > 16) {
             data.s12 = atof(split_line[16].c_str());
           } 
+        } else if (sval == "WSIEG1") {
+          // EXCITER_JBUS
+          if (nstr > 3) {
+            data.jbus = atoi(split_line[3].c_str());
+          }
+
+          // EXCITER_M
+          if (nstr > 4) {
+            data.m = atoi(split_line[4].c_str());
+          }
+
+          // EXCITER_K
+          if (nstr > 5) {
+            data.m = atof(split_line[5].c_str());
+          }
+
+          // EXCITER_T1
+          if (nstr > 6) {
+            data.t1 = atof(split_line[6].c_str());
+          }
+
+          // EXCITER_T2
+          if (nstr > 7) {
+            data.t2 = atof(split_line[7].c_str());
+          }
+
+          // EXCITER_T3
+          if (nstr > 8) {
+            data.t3 = atof(split_line[8].c_str());
+          }
+
+          // EXCITER_UO
+          if (nstr > 9) {
+            data.uo = atof(split_line[9].c_str());
+          }
+
+          // EXCITER_UC
+          if (nstr > 10) {
+            data.uc = atof(split_line[10].c_str());
+          }
+
+          // EXCITER_PMAX
+          if (nstr > 11) {
+            data.pmax = atof(split_line[11].c_str());
+          }
+
+          // EXCITER_PMIN
+          if (nstr > 12) {
+            data.pmin = atof(split_line[12].c_str());
+          }
+
+          // EXCITER_T4
+          if (nstr > 13) {
+            data.t4 = atof(split_line[13].c_str());
+          }
+
+          // EXCITER_K1
+          if (nstr > 14) {
+            data.k1 = atof(split_line[14].c_str());
+          }
+
+          // EXCITER_K2
+          if (nstr > 15) {
+            data.k2 = atof(split_line[15].c_str());
+          }
+
+          // EXCITER_T5
+          if (nstr > 16) {
+            data.t5 = atof(split_line[16].c_str());
+          }
+
+          // EXCITER_K3
+          if (nstr > 17) {
+            data.k3 = atof(split_line[17].c_str());
+          }
+
+          // EXCITER_K4
+          if (nstr > 18) {
+            data.k4 = atof(split_line[18].c_str());
+          }
+
+          // EXCITER_T6
+          if (nstr > 19) {
+            data.t6 = atof(split_line[19].c_str());
+          }
+
+          // EXCITER_K5
+          if (nstr > 20) {
+            data.k5 = atof(split_line[20].c_str());
+          }
+
+          // EXCITER_K6
+          if (nstr > 21) {
+            data.k6 = atof(split_line[21].c_str());
+          }
+
+          // EXCITER_T7
+          if (nstr > 22) {
+            data.t7 = atof(split_line[22].c_str());
+          }
+
+          // EXCITER_K7
+          if (nstr > 23) {
+            data.k7 = atof(split_line[23].c_str());
+          }
+
+          // EXCITER_K8
+          if (nstr > 24) {
+            data.k8 = atof(split_line[24].c_str());
+          }
+
+          // EXCITER_DB1
+          if (nstr > 25) {
+            data.db1 = atof(split_line[25].c_str());
+          }
+
+          // EXCITER_ERR
+          if (nstr > 26) {
+            data.err = atof(split_line[26].c_str());
+          }
+
+          // EXCITER_DB2
+          if (nstr > 27) {
+            data.db2 = atof(split_line[27].c_str());
+          }
+
+          // EXCITER_GV1
+          if (nstr > 28) {
+            data.gv1 = atof(split_line[28].c_str());
+          }
+
+          // EXCITER_PGV1
+          if (nstr > 29) {
+            data.pgv1 = atof(split_line[29].c_str());
+          }
+
+          // EXCITER_GV2
+          if (nstr > 30) {
+            data.gv2 = atof(split_line[30].c_str());
+          }
+
+          // EXCITER_PGV2
+          if (nstr > 31) {
+            data.pgv2 = atof(split_line[31].c_str());
+          }
+
+          // EXCITER_GV3
+          if (nstr > 32) {
+            data.gv3 = atof(split_line[32].c_str());
+          }
+
+          // EXCITER_PGV3
+          if (nstr > 33) {
+            data.pgv3 = atof(split_line[33].c_str());
+          }
+
+          // EXCITER_GV4
+          if (nstr > 34) {
+            data.gv4 = atof(split_line[34].c_str());
+          }
+
+          // EXCITER_PGV4
+          if (nstr > 35) {
+            data.pgv4 = atof(split_line[35].c_str());
+          }
+
+          // EXCITER_GV5
+          if (nstr > 36) {
+            data.gv5 = atof(split_line[36].c_str());
+          }
+
+          // EXCITER_PGV5
+          if (nstr > 37) {
+            data.pgv5 = atof(split_line[37].c_str());
+          }
+
+          // EXCITER_IBLOCK
+          if (nstr > 38) {
+            data.iblock = atof(split_line[38].c_str());
+          }
+        } else if (sval == "EXDC1" || sval == "EXDC2") {
+          // GOVERNOR_TR
+          if (nstr > 3) {
+            data.tr = atof(split_line[3].c_str());
+          }
+
+          // GOVERNOR_KA
+          if (nstr > 4) {
+            data.ka = atof(split_line[4].c_str());
+          }
+
+          // GOVERNOR_TA
+          if (nstr > 5) {
+            data.ta = atof(split_line[5].c_str());
+          }
+
+          // GOVERNOR_TB
+          if (nstr > 6) {
+            data.tb = atof(split_line[6].c_str());
+          }
+
+          // GOVERNOR_TC
+          if (nstr > 7) {
+            data.tc = atof(split_line[7].c_str());
+          }
+
+          // GOVERNOR_VRMAX
+          if (nstr > 8) {
+            data.vrmax = atof(split_line[8].c_str());
+          }
+
+          // GOVERNOR_VRMIN
+          if (nstr > 9) {
+            data.vrmin = atof(split_line[9].c_str());
+          }
+
+          // GOVERNOR_KE
+          if (nstr > 10) {
+            data.ke = atof(split_line[10].c_str());
+          }
+
+          // GOVERNOR_TE
+          if (nstr > 11) {
+            data.te = atof(split_line[11].c_str());
+          }
+
+          // GOVERNOR_KF
+          if (nstr > 12) {
+            data.kf = atof(split_line[12].c_str());
+          }
+
+          // GOVERNOR_TF1
+          if (nstr > 13) {
+            data.tf1 = atof(split_line[13].c_str());
+          }
+
+          // GOVERNOR_SWITCH
+          if (nstr > 14) {
+            data.rswitch = atof(split_line[14].c_str());
+          }
+
+          // GOVERNOR_E1
+          if (nstr > 15) {
+            data.e1 = atof(split_line[15].c_str());
+          }
+
+          // GOVERNOR_SE1
+          if (nstr > 16) {
+            data.se1 = atof(split_line[16].c_str());
+          }
+
+          // GOVERNOR_E2
+          if (nstr > 17) {
+            data.e2 = atof(split_line[17].c_str());
+          }
+
+          // GOVERNOR_SE2
+          if (nstr > 18) {
+            data.se2 = atof(split_line[18].c_str());
+          }
         }
         ds_vector->push_back(data);
       }
