@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2015-05-19 09:42:42 d3g096
+ * @date   2015-06-03 09:52:06 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -157,11 +157,19 @@ BOOST_AUTO_TEST_CASE( add_and_get_element )
     TestType x;
     x = static_cast<double>(i);
     v1.setElement(i, x);
-    v1.addElement(i, x);
     idx.push_back(i);
     val.push_back(x);
   }
   v2.setElements(idx.size(), &idx[0], &val[0]);
+
+  v1.ready();
+  v2.ready();
+
+  for (int i = lo; i < hi; ++i) {
+    TestType x;
+    x = static_cast<double>(i);
+    v1.addElement(i, x);
+  }
   v2.addElements(idx.size(), &idx[0], &val[0]);
 
   v1.ready();
