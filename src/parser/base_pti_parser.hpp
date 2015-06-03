@@ -254,6 +254,7 @@ class BasePTIParser : public BaseParser<_network>
 
         std::string sval;
         double rval;
+        int ival;
         // GENERATOR_MODEL              "MODEL"        string
         if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
           data->addValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
@@ -1947,7 +1948,7 @@ class BasePTIParser : public BaseParser<_network>
 
         std::string sval;
         double rval;
-        integer ival;
+        int ival;
 
         sval = util.trimQuotes(split_line[1]);
         util.toUpper(sval);
