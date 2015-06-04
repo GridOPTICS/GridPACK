@@ -83,6 +83,8 @@ target_link_libraries(vecdist ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LI
 add_executable(exception exception.cpp)
 target_link_libraries(exception ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
+add_executable(densemat densemat.cpp)
+target_link_libraries(densemat ${PETSC_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 add_executable(greetings greetings.cpp)
 target_link_libraries(greetings ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})

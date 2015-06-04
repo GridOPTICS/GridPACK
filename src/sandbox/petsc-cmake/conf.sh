@@ -5,14 +5,27 @@ host=`uname -n`
 rm -f CMakeCache.txt 
 
 if [ $host == "flophouse" ]; then
+
     prefix="/net/flophouse/files0/perksoft/linux64"
+    PATH="${prefix}/bin:${PATH}"
+    export PATH
+
+    CC="$prefix/bin/gcc"
+    export CC
+    CXX="$prefix/bin/g++"
+    export CXX
+    CFLAGS="-pthread -Wall"
+    export CFLAGS
+    CXXFLAGS="-pthread -Wall"
+    export CXXFLAGS
+
     cmake -Wno-dev \
         -D Boost_DIR:STRING="$prefix" \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
+        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
         -D PETSC_ARCH:STRING='arch-linux2-complex-opt' \
-        -D MPI_CXX_COMPILER:STRING='mpicxx' \
-        -D MPI_C_COMPILER:STRING='mpicc' \
-        -D MPIEXEC:STRING='mpiexec' \
+        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
+        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
+        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
         -D CMAKE_BUILD_TYPE:STRING="Debug" \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         ..
