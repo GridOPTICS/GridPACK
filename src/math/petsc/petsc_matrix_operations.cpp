@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-05-28 10:13:16 d3g096
+ * @date   2015-06-04 13:46:41 d3g096
  * 
  * @brief  
  * 
@@ -547,12 +547,12 @@ template <typename T, typename I>
 MatrixT<T, I> *
 storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
 {
-  MatrixT<T, I> *result(A.clone());
-  int nproc(result->processor_size());
+  int nproc(A.processor_size());
 
+  MatrixT<T, I> *result;
   MatType new_mat_type(MATSEQAIJ);
 
-  if (result->storageType() != new_type) {
+  if (A.storageType() != new_type) {
     switch (new_type) {
     case (Dense):
       if (nproc > 1) {
@@ -570,13 +570,20 @@ storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
       break;
     }
   
-    Mat *mat(PETScMatrix(*result));
+    const Mat *Amat(PETScMatrix(A));
+    Mat B;
     PetscErrorCode ierr(0);
     try {
-      ierr = MatConvert(*mat, new_mat_type, MAT_REUSE_MATRIX, mat); CHKERRXX(ierr);
+      ierr = MatConvert(*Amat, new_mat_type, MAT_INITIAL_MATRIX, &B); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
+
+    PETScMatrixImplementation<T, I> *result_impl = 
+      new PETScMatrixImplementation<T, I>(B, true);
+    result = new MatrixT<T, I>(result_impl);
+    ierr = MatDestroy(&B); CHKERRXX(ierr);
+    
   }
 
   return result;

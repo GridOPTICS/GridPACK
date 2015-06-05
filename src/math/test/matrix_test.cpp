@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-05-28 11:31:07 d3g096
+ * @date   2015-06-05 13:04:45 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -192,19 +192,20 @@ BOOST_AUTO_TEST_CASE( storage )
   gridpack::math::MatrixStorageType tmptype(A->storageType());
   BOOST_CHECK_EQUAL(tmptype, the_storage_type);
 
-  switch (A->storageType()) {
-  case (gridpack::math::Dense):
-    tmptype = gridpack::math::Sparse;
-    break;
-  case (gridpack::math::Sparse):
-    tmptype = gridpack::math::Dense;
-    break;
-  }
+  tmptype = the_other_storage_type;
+  
   boost::scoped_ptr< TestMatrixType > 
     B(gridpack::math::storageType(*A, tmptype));
   BOOST_CHECK_EQUAL(B->storageType(), tmptype);
+
+  double Anorm(A->norm2());
+  double Bnorm(B->norm2());
+
   // norms should be identical
-  BOOST_CHECK_CLOSE(A->norm2(), B->norm2(), delta);
+  BOOST_CHECK_CLOSE(Anorm, Bnorm, delta);
+
+  B.reset();
+  A.reset();
 }
 
 BOOST_AUTO_TEST_CASE( set_and_get )
@@ -587,6 +588,7 @@ BOOST_AUTO_TEST_CASE( ColumnDiagonalOps )
   boost::scoped_ptr< TestMatrixType > 
     B(gridpack::math::diagonal(*dvector, the_storage_type));
   dvector->print();
+  B->print();
 
   // norms of the diagonal matrix and original vector should be very
   // close
@@ -1000,9 +1002,8 @@ BOOST_AUTO_TEST_CASE( ComplexOperations )
       Aimag->getElement(i, j, y); aimag = y;
       Aconj->getElement(i, j, y); aconj = y;
       BOOST_CHECK_CLOSE(real(a), real(areal), delta);
-      //BOOST_CHECK_CLOSE(imag(a), imag(aimag), delta);
-      // FIXME
-      // BOOST_CHECK_CLOSE(imag(a), -imag(aconj), delta);
+      BOOST_CHECK_CLOSE(imag(a), real(aimag), delta);
+      BOOST_CHECK_CLOSE(imag(a), -imag(aconj), delta);
     }
   }
 }

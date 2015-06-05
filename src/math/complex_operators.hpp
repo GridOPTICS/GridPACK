@@ -10,7 +10,7 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-05-28 11:24:21 d3g096
+ * @date   2015-06-05 12:56:17 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -40,6 +40,14 @@ namespace math {
 // -------------------------------------------------------------
 // equate
 // -------------------------------------------------------------
+/// 
+/** 
+ * This allows a general way to do @c "x = y" 
+ * 
+ * @param f 
+ * 
+ * @return 
+ */
 template <typename To, typename From>
 inline To 
 equate(const From& f)
@@ -243,6 +251,53 @@ conjugate_value<ComplexType>::operator() (const ComplexType& x) const
 {
   return std::conj(x);
 }
+
+// -------------------------------------------------------------
+// real_value
+// -------------------------------------------------------------
+template <typename T> 
+struct real_value : public base_unary_function<T>
+{
+  inline T operator() (const T& x) const;
+};
+
+template <>
+inline RealType
+real_value<RealType>::operator() (const RealType& x) const
+{
+  return x;
+}
+
+template <>
+inline ComplexType
+real_value<ComplexType>::operator() (const ComplexType& x) const
+{
+  return std::real(x);
+}
+
+// -------------------------------------------------------------
+// imaginary_value
+// -------------------------------------------------------------
+template <typename T> 
+struct imaginary_value : public base_unary_function<T>
+{
+  inline T operator() (const T& x) const;
+};
+
+template <>
+inline RealType
+imaginary_value<RealType>::operator() (const RealType& x) const
+{
+  return 0.0;
+}
+
+template <>
+inline ComplexType
+imaginary_value<ComplexType>::operator() (const ComplexType& x) const
+{
+  return std::imag(x);
+}
+
 
 // -------------------------------------------------------------
 // base_accumulator_function
