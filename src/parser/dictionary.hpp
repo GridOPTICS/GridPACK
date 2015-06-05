@@ -510,6 +510,372 @@
  */
 #define GENERATOR_MODEL "GENERATOR_MODEL"
 
+// EXCITER DATA
+/**
+ * Generator JBUS
+ * type: integer
+ * indexed
+ */
+#define EXCITER_JBUS "EXCITER_JBUS"
+
+/**
+ * Exciter M
+ * type: integer
+ * indexed
+ */
+#define EXCITER_M "EXCITER_M"
+
+/**
+ * Exciter K
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K "EXCITER_K"
+
+/**
+ * Exciter T1
+ * type: real float
+ * indexed
+ */
+#define EXCITER_T1 "EXCITER_T1"
+
+/**
+ * Exciter T2
+ * type: real float
+ * indexed
+ */
+#define EXCITER_T2 "EXCITER_T2"
+
+/**
+ * Exciter T3
+ * type: real float
+ * indexed
+ */
+#define EXCITER_T3 "EXCITER_T3"
+
+/**
+ * Exciter UO
+ * type: real float
+ * indexed
+ */
+#define EXCITER_UO "EXCITER_UO"
+
+/**
+ * Exciter UC
+ * type: real float
+ * indexed
+ */
+#define EXCITER_UC "EXCITER_UC"
+
+/**
+ * Exciter PMAX
+ * type: real float
+ * indexed
+ */
+#define EXCITER_PMAX "EXCITER_PMAX"
+
+/**
+ * Exciter PMIN
+ * type: real float
+ * indexed
+ */
+#define EXCITER_PMIN "EXCITER_PMIN"
+
+/**
+ * Exciter T4
+ * type: real float
+ * indexed
+ */
+#define EXCITER_T4 "EXCITER_T4"
+
+/**
+ * Exciter K1
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K1 "EXCITER_K1"
+
+/**
+ * Exciter K2
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K2 "EXCITER_K2"
+
+/**
+ * Exciter T5
+ * type: real float
+ * indexed
+ */
+#define EXCITER_T5 "EXCITER_T5"
+
+/**
+ * Exciter K3
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K3 "EXCITER_K3"
+
+/**
+ * Exciter K4
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K4 "EXCITER_K4"
+
+/**
+ * Exciter T6
+ * type: real float
+ * indexed
+ */
+#define EXCITER_T6 "EXCITER_T6"
+
+/**
+ * Exciter K5
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K5 "EXCITER_K5"
+
+/**
+ * Exciter K6
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K6 "EXCITER_K6"
+
+/**
+ * Exciter T7
+ * type: real float
+ * indexed
+ */
+#define EXCITER_T7 "EXCITER_T7"
+
+/**
+ * Exciter K7
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K7 "EXCITER_K7"
+
+/**
+ * Exciter K8
+ * type: real float
+ * indexed
+ */
+#define EXCITER_K8 "EXCITER_K8"
+
+/**
+ * Exciter DB1
+ * type: real float
+ * indexed
+ */
+#define EXCITER_DB1 "EXCITER_DB1"
+
+/**
+ * Exciter ERR
+ * type: real float
+ * indexed
+ */
+#define EXCITER_ERR "EXCITER_ERR"
+
+/**
+ * Exciter DB2
+ * type: real float
+ * indexed
+ */
+#define EXCITER_DB2 "EXCITER_DB2"
+
+/**
+ * Exciter GV1
+ * type: real float
+ * indexed
+ */
+#define EXCITER_GV1 "EXCITER_GV1"
+
+/**
+ * Exciter PGV1
+ * type: real float
+ * indexed
+ */
+#define EXCITER_PGV1 "EXCITER_PGV1"
+
+/**
+ * Exciter GV2
+ * type: real float
+ * indexed
+ */
+#define EXCITER_GV2 "EXCITER_GV2"
+
+/**
+ * Exciter PGV2
+ * type: real float
+ * indexed
+ */
+#define EXCITER_PGV2 "EXCITER_PGV2"
+
+/**
+ * Exciter GV3
+ * type: real float
+ * indexed
+ */
+#define EXCITER_GV3 "EXCITER_GV3"
+
+/**
+ * Exciter PGV3
+ * type: real float
+ * indexed
+ */
+#define EXCITER_PGV3 "EXCITER_PGV3"
+
+/**
+ * Exciter GV4
+ * type: real float
+ * indexed
+ */
+#define EXCITER_GV4 "EXCITER_GV4"
+
+/**
+ * Exciter PGV4
+ * type: real float
+ * indexed
+ */
+#define EXCITER_PGV4 "EXCITER_PGV4"
+
+/**
+ * Exciter GV5
+ * type: real float
+ * indexed
+ */
+#define EXCITER_GV5 "EXCITER_GV5"
+
+/**
+ * Exciter PGV5
+ * type: real float
+ * indexed
+ */
+#define EXCITER_PGV5 "EXCITER_PGV5"
+
+/**
+ * Exciter IBLOCK
+ * type: integer
+ * indexed
+ */
+#define EXCITER_IBLOCK "EXCITER_IBLOCK"
+
+// GOVERNOR DATA
+/**
+ * Governor TR
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TR "GOVERNOR_TR"
+
+/**
+ * Governor KA
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KA "GOVERNOR_KA"
+
+/**
+ * Governor TA
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TA "GOVERNOR_TA"
+
+/**
+ * Governor TB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TB "GOVERNOR_TB"
+
+/**
+ * Governor TC
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TC "GOVERNOR_TC"
+
+/**
+ * Governor VRMAX
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VRMAX "GOVERNOR_VRMAX"
+
+/**
+ * Governor VRMIN
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VRMIN "GOVERNOR_VRMIN"
+
+/**
+ * Governor KE
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KE "GOVERNOR_KE"
+
+/**
+ * Governor TE
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TE "GOVERNOR_TE"
+
+/**
+ * Governor KF
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KF "GOVERNOR_KF"
+
+/**
+ * Governor TF1
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TF1 "GOVERNOR_TF1"
+
+/**
+ * Governor SWITCH
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_SWITCH "GOVERNOR_SWITCH"
+
+/**
+ * Governor E1
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_E1 "GOVERNOR_E1"
+
+/**
+ * Governor SE1
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_SE1 "GOVERNOR_SE1"
+
+/**
+ * Governor E2
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_E2 "GOVERNOR_E2"
+
+/**
+ * Governor SE2
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_SE2 "GOVERNOR_SE2"
+
 // BRANCH DATA
 /**
  * Global index used to sort branches into a fixed order
