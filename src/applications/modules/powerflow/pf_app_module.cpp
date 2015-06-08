@@ -358,18 +358,18 @@ bool gridpack::powerflow::PFAppModule::nl_solve()
   timer->start(t_lsolv);
 
   PFSolverHelper helper(p_factory, p_network);
-  math::NonlinearSolver::JacobianBuilder jbuildf = boost::ref(helper);
-  math::NonlinearSolver::FunctionBuilder fbuildf = boost::ref(helper);
+  math::RealNonlinearSolver::JacobianBuilder jbuildf = boost::ref(helper);
+  math::RealNonlinearSolver::FunctionBuilder fbuildf = boost::ref(helper);
 
-  boost::scoped_ptr<math::NonlinearSolver> solver;
+  boost::scoped_ptr<math::RealNonlinearSolver> solver;
   if (useNewton) {
-    math::NewtonRaphsonSolver *tmpsolver =
-      new math::NewtonRaphsonSolver(*(helper.J), jbuildf, fbuildf);
+    math::RealNewtonRaphsonSolver *tmpsolver =
+      new math::RealNewtonRaphsonSolver(*(helper.J), jbuildf, fbuildf);
     tmpsolver->tolerance(p_tolerance);
     tmpsolver->maximumIterations(p_max_iteration);
     solver.reset(tmpsolver);
   } else {
-    solver.reset(new math::NonlinearSolver(*(helper.J),
+    solver.reset(new math::RealNonlinearSolver(*(helper.J),
           jbuildf, fbuildf));
   }
 
