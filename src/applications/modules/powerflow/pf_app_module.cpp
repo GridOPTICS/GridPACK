@@ -212,7 +212,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
   timer->stop(t_cmap);
   timer->start(t_vmap);
-  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+  boost::shared_ptr<gridpack::math::RealVector> PQ = vMap.mapToRealVector();
   timer->stop(t_vmap);
 //  PQ->print();
   timer->start(t_cmap);
@@ -220,20 +220,20 @@ bool gridpack::powerflow::PFAppModule::solve()
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
   timer->stop(t_cmap);
   timer->start(t_mmap);
-  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
   timer->stop(t_mmap);
 //  p_busIO->header("\nJacobian values\n");
 //  J->print();
 
   // Create X vector by cloning PQ
-  boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+  boost::shared_ptr<gridpack::math::RealVector> X(PQ->clone());
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Powerflow");
   // Create linear solver
   int t_csolv = timer->createCategory("Powerflow: Create Linear Solver");
   timer->start(t_csolv);
-  gridpack::math::LinearSolver solver(*J);
+  gridpack::math::RealLinearSolver solver(*J);
   solver.configure(cursor);
   timer->stop(t_csolv);
 
@@ -282,13 +282,13 @@ bool gridpack::powerflow::PFAppModule::solve()
 
     // Create new versions of Jacobian and PQ vector
     timer->start(t_vmap);
-    vMap.mapToVector(PQ);
+    vMap.mapToRealVector(PQ);
 //    p_busIO->header("\nnew PQ vector\n");
 //    PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     p_factory->setMode(Jacobian);
-    jMap.mapToMatrix(J);
+    jMap.mapToRealMatrix(J);
     timer->stop(t_mmap);
 
     // Create linear solver
