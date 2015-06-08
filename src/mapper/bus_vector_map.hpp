@@ -100,6 +100,31 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
 }
 
 /**
+ * Create a vector from the current bus state
+ * @return return pointer to new vector
+ */
+boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int t_new(0), t_bus(0), t_set(0);
+  if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
+  if (p_timer) p_timer->start(t_new);
+  boost::shared_ptr<gridpack::math::RealVector>
+             Ret(new gridpack::math::RealVector(comm, p_rowBlockSize));
+  if (p_timer) p_timer->stop(t_new);
+  if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
+  loadRealBusData(*Ret,true);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
+  if (p_timer) p_timer->start(t_set);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  if (p_timer) p_timer->stop(t_set);
+  return Ret;
+}
+
+/**
  * Create a vector from the current bus state and return a conventional pointer
  * to it. Used for Fortran interface
  * @return return pointer to new vector
@@ -149,12 +174,44 @@ void mapToVector(gridpack::math::Vector &vector)
 
 /**
  * Reset a vector from the current bus state (vector should be created with same
+ * mapper)
+ * @param vector existing vector that should be reset
+ */
+void mapToRealVector(gridpack::math::RealVector &vector)
+{
+  int t_bus(0), t_set(0);
+  if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
+  if (p_timer) p_timer->start(t_set);
+  vector.zero();
+  if (p_timer) p_timer->stop(t_set);
+  if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
+  loadRealBusData(vector,false);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) p_timer->start(t_set);
+  GA_Pgroup_sync(p_GAgrp);
+  vector.ready();
+  if (p_timer) p_timer->stop(t_set);
+}
+
+/**
+ * Reset a vector from the current bus state (vector should be created with same
  * mapper). 
  * @param vector existing vector that should be reset
  */
 void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
   mapToVector(*vector);
+}
+
+/**
+ * Reset a vector from the current bus state (vector should be created with same
+ * mapper). 
+ * @param vector existing vector that should be reset
+ */
+void mapToRealVector(boost::shared_ptr<gridpack::math::RealVector> &vector)
+{
+  mapToRealVector(*vector);
 }
 
 /**
@@ -198,7 +255,48 @@ void mapToBus(const gridpack::math::Vector &vector)
  * mapToVector method using the same BusVectorMap
  * @param vector vector containing data to be pushed to buses
  */
+void mapToBus(const gridpack::math::RealVector &vector)
+{
+  // Assume that row partitioning is working correctly
+  int nRows = p_maxRowIndex - p_minRowIndex + 1;
+  int *sizes = new int[nRows];
+  int *offsets = new int[nRows];
+  int one = 1;
+  NGA_Get(gaVecBlksI,&p_minRowIndex,&p_maxRowIndex,sizes,&one);
+  NGA_Get(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,offsets,&one);
+  RealType *values = new RealType[p_maxIBlock];
+  int i, j, idx, size, offset;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      if (p_network->getBus(i)->vectorSize(&size)) {
+        p_network->getBus(i)->getMatVecIndex(&idx);
+        idx = idx - p_minRowIndex;
+        size = sizes[idx];
+        offset = offsets[idx];
+        for (j=0; j<size; j++) {
+          vector.getElement(offset+j,values[j]); 
+        }
+        p_network->getBus(i)->setValues(values);
+      }
+    }
+  }
+  delete [] sizes;
+  delete [] offsets;
+  delete [] values;
+  GA_Pgroup_sync(p_GAgrp);
+}
+
+/**
+ * Push data from vector onto buses. Vector must be created with the
+ * mapToVector method using the same BusVectorMap
+ * @param vector vector containing data to be pushed to buses
+ */
 void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
+{
+  mapToBus(*vector);
+}
+
+void mapToBus(boost::shared_ptr<gridpack::math::RealVector> &vector)
 {
   mapToBus(*vector);
 }
@@ -548,9 +646,63 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
  * @param vector vector to which contributions are added
  * @param flag flag to distinguish new vector (true) from existing vector * (false)
  */
+void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
+{
+  int i,idx,isize,icnt;
+  // Add vector elements
+  boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
+  RealType *values = new RealType[p_maxIBlock];
+  int t_bus(0);
+  if (p_timer) t_bus = p_timer->createCategory("loadBusData: Add Vector Elements");
+  if (p_timer) p_timer->start(t_bus);
+  int j;
+  int jcnt = 0;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      bus = p_network->getBus(i);
+      if (bus->vectorSize(&isize)) {
+#ifdef DGB_CHECK
+        for (j=0; j<isize; j++) values[j] = 0.0;
+#endif
+        bus->vectorValues(values);
+        icnt = 0;
+        for (j=0; j<isize; j++) {
+          idx = p_Offsets[jcnt] + j;
+//          if (flag) {
+            vector.addElement(idx, values[icnt]);
+//          } else {
+//            vector.setElement(idx, values[icnt]);
+//          } 
+          icnt++;
+        }
+        jcnt++;
+      }
+    }
+  }
+  if (p_timer) p_timer->stop(t_bus);
+
+  // Clean up arrays
+  delete [] values;
+}
+
+/**
+ * Add block contributions from buses to vector
+ * @param vector vector to which contributions are added
+ * @param flag flag to distinguish new vector (true) from existing vector * (false)
+ */
 void loadBusData(boost::shared_ptr<gridpack::math::Vector> &vector, bool flag)
 {
   loadBusData(*vector, flag);
+}
+
+/**
+ * Add block contributions from buses to vector
+ * @param vector vector to which contributions are added
+ * @param flag flag to distinguish new vector (true) from existing vector * (false)
+ */
+void loadRealBusData(boost::shared_ptr<gridpack::math::RealVector> &vector, bool flag)
+{
+  loadRealBusData(*vector, flag);
 }
 
 /**
