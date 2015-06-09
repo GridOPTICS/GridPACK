@@ -10,7 +10,7 @@
 /**
  * @file   matrix_interface.hpp
  * @author William A. Perkins
- * @date   2015-01-28 13:59:21 d3g096
+ * @date   2015-06-05 14:21:37 d3g096
  * 
  * @brief  Declaration of the abstract BaseMatrixInterface template class. 
  * 
@@ -201,6 +201,13 @@ public:
   {
     this->p_getElements(n, i, j, x);
   }
+  
+  /// Get a row and put it in a local array
+  void getRow(const IdxType& row, TheType *x) const
+  {
+    this->p_getRow(row, x);
+  }
+  
 
   /// Replace all elements with their real parts
   void real(void)
@@ -345,6 +352,9 @@ protected:
   /// Get an several element (specialized)
   virtual void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, 
                              TheType *x) const = 0;
+
+  ///  Get a row and put it in a local array (specialized)
+  virtual void p_getRow(const IdxType& row, TheType *x) const = 0;
 
   /// Replace all elements with their real parts (specialized)
   virtual void p_real(void) = 0;

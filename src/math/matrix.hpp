@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-03-27 12:20:25 d3g096
+ * @date   2015-06-05 14:22:42 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -364,6 +364,12 @@ protected:
                      TheType *x) const
   { 
     p_matrix_impl->getElements(n, i, j, x); 
+  }
+
+  ///  Get a row and put it in a local array (specialized)
+  void p_getRow(const IdxType& row, TheType *x) const
+  {
+    p_matrix_impl->getRow(row, x);
   }
 
   /// Replace all elements with their real parts

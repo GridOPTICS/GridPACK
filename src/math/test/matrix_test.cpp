@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-03-27 10:31:59 d3g096
+ * @date   2015-06-08 14:52:33 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -524,18 +524,38 @@ BOOST_AUTO_TEST_CASE( Transpose )
   }
 }
 
+BOOST_AUTO_TEST_CASE( GetRow )
+{
+  int global_size;
+  gridpack::parallel::Communicator world;
+  boost::scoped_ptr<TestMatrixType> 
+    A(make_and_fill_test_matrix(world, 3, global_size));
+
+  TestMatrixType::IdxType lo, hi, j;
+  A->localRowRange(lo, hi);
+
+  // get the first row on each processor; each processor can get a
+  // different row
+
+  std::vector<TestType> vals(A->cols());
+  A->getRow(lo, &vals[0]);
+  for (j = 0; j < A->cols(); ++j) {
+    TestType x;
+    A->getElement(lo, j, x);
+    TEST_VALUE_CLOSE(vals[j], x, delta);
+  }
+}
+
 BOOST_AUTO_TEST_CASE( ColumnOps )
 {
   int global_size;
   gridpack::parallel::Communicator world;
   boost::scoped_ptr<TestMatrixType> 
     A(make_and_fill_test_matrix(world, 3, global_size));
-  A->print();
   int icolumn(global_size/2);
 
   boost::scoped_ptr< TestVectorType >  
     cvector(gridpack::math::column(*A, icolumn));
-  cvector->print();
   
   int lo, hi;
   cvector->localIndexRange(lo, hi);
@@ -650,8 +670,8 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
     A(make_and_fill_test_matrix(world, bandwidth, global_size)),
     T(transpose(*A));
 
-  A->print();
-  T->print();
+  // A->print();
+  // T->print();
 
   boost::scoped_ptr<TestVectorType> 
     xvector(new TestVectorType(A->communicator(), A->localRows())),
@@ -692,8 +712,8 @@ BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
   A->multiplyDiagonal(*dscale);
 
   std::cout << "From MultiplyDiagonalTest" << std::endl;
-  dscale->print();
-  A->print();
+  // dscale->print();
+  // A->print();
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -761,7 +781,7 @@ testMatrixMultiply(TestMatrixType *A,
   }
   A->setElements(2*3, &iidx[0], &jidx[0], &avalues[0]);
   A->ready();
-  A->print();
+  // A->print();
 
   k = 0;
   for (int i = 0; i < 3; ++i) {
@@ -774,7 +794,7 @@ testMatrixMultiply(TestMatrixType *A,
 
   B->setElements(3*2, &iidx[0], &jidx[0], &bvalues[0]);
   B->ready();
-  B->print();
+  // B->print();
 
   try {
     boost::scoped_ptr<TestMatrixType> C;

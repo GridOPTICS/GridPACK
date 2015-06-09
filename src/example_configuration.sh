@@ -32,11 +32,12 @@ if [ $host == "flophouse" ]; then
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
         -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.5.2" \
-        -D PETSC_ARCH:STRING='linux-gnu48-complex-opt' \
+        -D PETSC_ARCH:STRING='linux-gnu48-real-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
     
@@ -55,7 +56,7 @@ elif [ $host == "pe10900" ]; then
         -D GA_EXTRA_LIBS:STRING="-lblas" \
         -D BOOST_ROOT:STRING='/opt/local' \
         -D PETSC_DIR:STRING="$prefix/../petsc-3.5.2" \
-        -D PETSC_ARCH:STRING='arch-macosx-real-opt' \
+        -D PETSC_ARCH:STRING='arch-macosx-complex-opt' \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
