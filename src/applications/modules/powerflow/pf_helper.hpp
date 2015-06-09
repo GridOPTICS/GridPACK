@@ -43,14 +43,14 @@ struct PFSolverHelper
   boost::shared_ptr<PFNetwork> p_network;
 
   // A place to build/store the Jacobian
-  boost::shared_ptr<math::Matrix> J;
+  boost::shared_ptr<math::RealMatrix> J;
 
   // The network state estimate from previous solver iteration
   /**
    * See ::update() for why this is necessary.
    * 
    */
-  boost::shared_ptr<math::Vector> Xold;
+  boost::shared_ptr<math::RealVector> Xold;
 
   /**
    * The current network state estimate.
@@ -60,14 +60,14 @@ struct PFSolverHelper
    * afterward.
    * 
    */
-  boost::shared_ptr<math::Vector> X;
+  boost::shared_ptr<math::RealVector> X;
 
   /**
    * The difference between the current and previous estimate.
    * See ::update() for why this is necessary.
    * 
    */
-  boost::shared_ptr<math::Vector> Xdelta;
+  boost::shared_ptr<math::RealVector> Xdelta;
 
   /** 
    * Constructor
@@ -82,14 +82,14 @@ struct PFSolverHelper
   {
     p_factory->setMode(State);
     mapper::BusVectorMap<PFNetwork> vMap(p_network);
-    Xold = vMap.mapToVector();
+    Xold = vMap.mapToRealVector();
     // Xold->print();
     X.reset(Xold->clone());
     Xdelta.reset(Xold->clone());
     Xdelta->zero();
     p_factory->setMode(Jacobian);
     mapper::FullMatrixMap<PFNetwork> jMap(p_network);
-    J = jMap.mapToMatrix();
+    J = jMap.mapToRealMatrix();
   }
   
   /** 
@@ -105,7 +105,7 @@ struct PFSolverHelper
    * @param Xcur current state estimate from the solver
    */
   void
-  update(const math::Vector& Xcur)
+  update(const math::RealVector& Xcur)
   {
     
     Xdelta->equate(Xcur);
@@ -137,7 +137,7 @@ struct PFSolverHelper
    * @param J Jacobian 
    */
   void
-  operator() (const math::Vector& Xcur, math::Matrix& theJ)
+  operator() (const math::RealVector& Xcur, math::RealMatrix& theJ)
   {
     // In both the Netwon-Raphson and PETSc nonlinear solver (some
     // methods) implementations, the RHS function builder is called
@@ -153,7 +153,7 @@ struct PFSolverHelper
     mapper::FullMatrixMap<PFNetwork> jMap(p_network);
     
     // build the Jacobian
-    jMap.mapToMatrix(theJ);
+    jMap.mapToRealMatrix(theJ);
   }
   
   /** 
@@ -170,7 +170,7 @@ struct PFSolverHelper
    * @param PQ computed RHS vector
    */
   void
-  operator() (const math::Vector& Xcur, math::Vector& PQ)
+  operator() (const math::RealVector& Xcur, math::RealVector& PQ)
   {
     // In both the Netwon-Raphson and PETSc nonlinear solver
     // implementations, this is called before the Jacobian builder, so
@@ -184,7 +184,7 @@ struct PFSolverHelper
     mapper::BusVectorMap<PFNetwork> vMap(p_network);
     
     // build the RHS vector
-    vMap.mapToVector(PQ);
+    vMap.mapToRealVector(PQ);
     printf("norm of PQ: %f\n",PQ.norm2());
   }
 };

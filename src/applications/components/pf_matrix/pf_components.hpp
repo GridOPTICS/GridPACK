@@ -60,6 +60,7 @@ class PFBus
      *        matrix element
      */
     bool matrixDiagValues(ComplexType *values);
+    bool matrixDiagValues(RealType *values);
 
     /**
      * Return size of vector block contributed by component
@@ -76,6 +77,7 @@ class PFBus
      *        vector element
      */
     bool vectorValues(ComplexType *values);
+    bool vectorValues(RealType *values);
 
     /**
      * Set the internal values of the voltage magnitude and phase angle. Need this
@@ -83,6 +85,7 @@ class PFBus
      * @param values array containing voltage magnitude and angle
      */
     void setValues(gridpack::ComplexType *values);
+    void setValues(gridpack::RealType *values);
 
     /**
      * Return the size of the buffer used in data exchanges on the network.
@@ -379,6 +382,8 @@ class PFBranch
      */
     bool matrixForwardValues(ComplexType *values);
     bool matrixReverseValues(ComplexType *values);
+    bool matrixForwardValues(RealType *values);
+    bool matrixReverseValues(RealType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent

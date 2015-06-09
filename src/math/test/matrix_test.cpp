@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-06-05 13:04:45 d3g096
+ * @date   2015-06-09 15:07:01 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -17,6 +17,7 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include <iterator>
 #include <boost/assert.hpp>
 #include <boost/mpi/collectives.hpp>
 #include "gridpack/parallel/parallel.hpp"
@@ -527,18 +528,93 @@ BOOST_AUTO_TEST_CASE( Transpose )
   }
 }
 
+BOOST_AUTO_TEST_CASE( GetRowLocal )
+{
+  int global_size;
+  gridpack::parallel::Communicator world;
+  boost::scoped_ptr<TestMatrixType> 
+    A(make_and_fill_test_matrix(world, 3, global_size));
+
+  int nrow(2);
+  int ncol(A->cols());
+  TestMatrixType::IdxType lo, hi, j, i, ridx[nrow];
+  A->localRowRange(lo, hi);
+
+  // get the first row on each processor; each processor can get a
+  // different row
+
+  std::vector<TestType> vals(nrow*ncol);
+  
+  for (i = 0; i < nrow; ++i) {
+    ridx[i] = lo + i + 1;
+  }
+  A->getRowBlock(nrow, &ridx[0], &vals[0]);
+
+  // std::cout << world.rank() << ": ";
+  // std::copy(vals.begin(), vals.end(), 
+  //           std::ostream_iterator<TestType>(std::cout, ", "));
+  // std::cout << std::endl;
+  ncol = A->cols();
+  for (i = 0; i < nrow; ++i) {
+    for (j = 0; j < ncol; ++j) {
+      TestType x;
+      A->getElement(lo + i + 1, j, x);
+      TEST_VALUE_CLOSE(vals[j + i*ncol], x, delta);
+    }
+  }
+}
+
+BOOST_AUTO_TEST_CASE( GetRow )
+{
+  int global_size;
+  gridpack::parallel::Communicator world;
+  int me(world.rank()), nproc(world.size());
+  boost::scoped_ptr<TestMatrixType> 
+    A(make_and_fill_test_matrix(world, 3, global_size));
+
+  int nrow(2);
+  int ncol(A->cols());
+  TestMatrixType::IdxType lo, hi, j, i;
+  std::vector<TestMatrixType::IdxType> lridx(nproc, 0), ridx(nproc, 0);
+  A->localRowRange(lo, hi);
+  lridx[me] = lo;
+
+  boost::mpi::all_reduce(world, &lridx[0], nproc, &ridx[0],
+                         std::plus<TestMatrixType::IdxType>());
+
+  // shift the row indices around so each process gets a row from the
+  // next
+
+  lo = ridx[0];
+  for (i = 0; i < nproc-1; ++i) {
+    ridx[i] = ridx[i+1];
+  }
+  ridx[nproc-1] = lo;
+
+  std::vector<TestType> vals(nrow*ncol);
+  lo = ridx[me];
+  for (i = 0; i < nrow; ++i) {
+    ridx[i] = lo + i + 1;
+  }
+  A->getRowBlock(nrow, &ridx[0], &vals[0]);
+  std::cout << world.rank() << ": ";
+  std::copy(vals.begin(), vals.end(), 
+            std::ostream_iterator<TestType>(std::cout, ", "));
+  std::cout << std::endl;
+}
+
+  
+
 BOOST_AUTO_TEST_CASE( ColumnOps )
 {
   int global_size;
   gridpack::parallel::Communicator world;
   boost::scoped_ptr<TestMatrixType> 
     A(make_and_fill_test_matrix(world, 3, global_size));
-  A->print();
   int icolumn(global_size/2);
 
   boost::scoped_ptr< TestVectorType >  
     cvector(gridpack::math::column(*A, icolumn));
-  cvector->print();
   
   int lo, hi;
   cvector->localIndexRange(lo, hi);
@@ -649,8 +725,8 @@ BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
     A(make_and_fill_test_matrix(world, bandwidth, global_size)),
     T(transpose(*A));
 
-  A->print();
-  T->print();
+  // A->print();
+  // T->print();
 
   boost::scoped_ptr<TestVectorType> 
     xvector(new TestVectorType(A->communicator(), A->localRows())),
@@ -691,8 +767,8 @@ BOOST_AUTO_TEST_CASE( MultiplyDiagonalTest )
   A->multiplyDiagonal(*dscale);
 
   std::cout << "From MultiplyDiagonalTest" << std::endl;
-  dscale->print();
-  A->print();
+  // dscale->print();
+  // A->print();
 
   int lo, hi;
   A->localRowRange(lo, hi);
@@ -760,7 +836,7 @@ testMatrixMultiply(TestMatrixType *A,
   }
   A->setElements(2*3, &iidx[0], &jidx[0], &avalues[0]);
   A->ready();
-  A->print();
+  // A->print();
 
   k = 0;
   for (int i = 0; i < 3; ++i) {
@@ -773,7 +849,7 @@ testMatrixMultiply(TestMatrixType *A,
 
   B->setElements(3*2, &iidx[0], &jidx[0], &bvalues[0]);
   B->ready();
-  B->print();
+  // B->print();
 
   try {
     boost::scoped_ptr<TestMatrixType> C;

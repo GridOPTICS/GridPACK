@@ -138,6 +138,50 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
 }
 
 /**
+ * Generate real matrix from current component state on network
+ * @param isDense set to true if creating a dense matrix
+ * @return return a pointer to new matrix
+ */
+boost::shared_ptr<gridpack::math::RealMatrix> mapToRealMatrix(bool isDense = false)
+{
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  int t_new, t_bus, t_branch, t_set;
+//  for (int i=0; i<p_rowBlockSize; i++) {
+//    printf ("p_nz_per_row[%d]: %d\n",i,p_nz_per_row[i]);
+//  }
+  if (p_timer) t_new = p_timer->createCategory("Mapper: New Matrix");
+  if (p_timer) p_timer->start(t_new);
+  GA_Pgroup_sync(p_GAgrp);
+  boost::shared_ptr<gridpack::math::RealMatrix> Ret;
+  if (isDense) {
+    Ret.reset(new gridpack::math::RealMatrix(comm, p_rowBlockSize, p_colBlockSize,
+        gridpack::math::Dense));
+  } else {
+#ifndef NZ_PER_ROW
+    Ret.reset(new gridpack::math::RealMatrix(comm, p_rowBlockSize, p_colBlockSize,
+          p_maxcol));
+#else
+    Ret.reset(new gridpack::math::RealMatrix(comm, p_rowBlockSize, p_colBlockSize, p_nz_per_row));
+#endif
+  }
+  if (p_timer) p_timer->stop(t_new);
+  if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
+  loadRealBusData(*Ret,false);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
+  if (p_timer) p_timer->start(t_branch);
+  loadRealBranchData(*Ret,false);
+  if (p_timer) p_timer->stop(t_branch);
+  if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
+  if (p_timer) p_timer->start(t_set);
+  GA_Pgroup_sync(p_GAgrp);
+  Ret->ready();
+  if (p_timer) p_timer->stop(t_set);
+  return Ret;
+}
+
+/**
  * Generate matrix from current component state on network and return
  * a conventional pointer to it. Used for Fortran interface
  * @param isDense set to true if creating a dense matrix
@@ -211,9 +255,44 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
  * Reset existing matrix from current component state on network
  * @param matrix existing matrix (should be generated from same mapper)
  */
+void mapToRealMatrix(gridpack::math::RealMatrix &matrix)
+{
+  int t_set, t_bus, t_branch;
+  GA_Pgroup_sync(p_GAgrp);
+  if (p_timer) t_set = p_timer->createCategory("Mapper: Set Matrix");
+  if (p_timer) p_timer->start(t_set);
+  matrix.zero();
+  if (p_timer) p_timer->stop(t_set);
+  if (p_timer) t_bus = p_timer->createCategory("Mapper: Load Bus Data");
+  if (p_timer) p_timer->start(t_bus);
+  loadRealBusData(matrix,false);
+  if (p_timer) p_timer->stop(t_bus);
+  if (p_timer) t_branch = p_timer->createCategory("Mapper: Load Branch Data");
+  if (p_timer) p_timer->start(t_branch);
+  loadRealBranchData(matrix,false);
+  if (p_timer) p_timer->stop(t_branch);
+  if (p_timer) p_timer->start(t_set);
+  GA_Pgroup_sync(p_GAgrp);
+  matrix.ready();
+  if (p_timer) p_timer->stop(t_set);
+}
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
   mapToMatrix(*matrix);
+}
+
+/**
+ * Reset existing matrix from current component state on network
+ * @param matrix existing matrix (should be generated from same mapper)
+ */
+void mapToRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
+{
+  mapToRealMatrix(*matrix);
 }
 
 /**
@@ -877,6 +956,51 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 }
 
 /**
+ * Add diagonal block contributions from buses to real matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ */
+void loadRealBusData(gridpack::math::RealMatrix &matrix, bool flag)
+{
+  int i,idx,jdx,isize,jsize,icnt;
+  boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
+  // Add matrix elements
+  RealType *values = new RealType[p_maxIBlock*p_maxJBlock];
+  int j,k;
+  int jcnt = 0;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      bus = p_network->getBus(i);
+      if (bus->matrixDiagSize(&isize,&jsize)) {
+#ifdef DBG_CHECK
+        int ijsize = isize*jsize;
+        for (k=0; k<ijsize; k++) values[k] = 0.0;
+#endif
+        if (bus->matrixDiagValues(values)) {
+          icnt = 0;
+          for (k=0; k<jsize; k++) {
+            jdx = p_j_busOffsets[jcnt] + k;
+            for (j=0; j<isize; j++) {
+              idx = p_i_busOffsets[jcnt] + j;
+              if (flag) {
+                matrix.addElement(idx, jdx, values[icnt]);
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
+              icnt++;
+            }
+          }
+        }
+        jcnt++;
+      }
+    }
+  }
+
+  // Clean up arrays
+  delete [] values;
+}
+
+/**
  * Add diagonal block contributions from buses to matrix
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
@@ -884,6 +1008,16 @@ void loadBusData(gridpack::math::Matrix &matrix, bool flag)
 void loadBusData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 {
   loadBusData(*matrix, flag);
+}
+
+/**
+ * Add diagonal block contributions from buses to real matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ */
+void loadRealBusData(boost::shared_ptr<gridpack::math::RealMatrix> &matrix, bool flag)
+{
+  loadRealBusData(*matrix, flag);
 }
 
 /**
@@ -1035,6 +1169,83 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 }
 
 /**
+ * Add off-diagonal block contributions from branches to real matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ */
+void loadRealBranchData(gridpack::math::RealMatrix &matrix, bool flag)
+{
+  int i,idx,jdx,isize,jsize,icnt;
+  // Add matrix elements
+  int t_add(0);
+  if (p_timer) t_add = p_timer->createCategory("loadBranchData: Add Matrix Elements");
+  if (p_timer) p_timer->start(t_add);
+  boost::shared_ptr<gridpack::component::BaseBranchComponent> branch;
+  RealType *values = new RealType[p_maxIBlock*p_maxJBlock];
+  int j,k;
+  int jcnt = 0;
+  for (i=0; i<p_nBranches; i++) {
+    branch = p_network->getBranch(i);
+    if (branch->matrixForwardSize(&isize,&jsize)) {
+      branch->getMatVecIndices(&idx, &jdx);
+      if (idx >= p_minRowIndex && idx <= p_maxRowIndex) {
+#ifdef DBG_CHECK
+        int ijsize = isize*jsize;
+        for (k=0; k<ijsize; k++) values[k] = 0.0;
+#endif
+        if (branch->matrixForwardValues(values)) {
+          icnt = 0;
+          for (k=0; k<jsize; k++) {
+            jdx = p_j_branchOffsets[jcnt] + k;
+            for (j=0; j<isize; j++) {
+              idx = p_i_branchOffsets[jcnt] + j;
+              if (flag) {
+                matrix.addElement(idx, jdx, values[icnt]);
+              } else {
+                matrix.setElement(idx, jdx, values[icnt]);
+              }
+              icnt++;
+            }
+          }
+        }
+        jcnt++;
+      }
+    }
+    if (branch->matrixReverseSize(&isize,&jsize)) {
+      branch->getMatVecIndices(&idx, &jdx);
+      if (jdx >= p_minRowIndex && jdx <= p_maxRowIndex) {
+#ifdef DBG_CHECK
+        int ijsize = isize*jsize;
+        for (k=0; k<ijsize; k++) values[k] = 0.0;
+#endif
+        if (branch->matrixReverseValues(values)) {
+          icnt = 0;
+          // Note that because the indices have been reversed, we need to switch
+          // the ordering of the offsets as well
+          for (k=0; k<jsize; k++) {
+            idx = p_j_branchOffsets[jcnt] + k;
+            for (j=0; j<isize; j++) {
+              jdx = p_i_branchOffsets[jcnt] + j;
+              if (flag) {
+                matrix.addElement(jdx, idx, values[icnt]);
+              } else {
+                matrix.setElement(jdx, idx, values[icnt]);
+              }
+              icnt++;
+            }
+          }
+        }
+        jcnt++;
+      }
+    }
+  }
+  if (p_timer) p_timer->stop(t_add);
+
+  // Clean up array
+  delete [] values;
+}
+
+/**
  * Add off-diagonal block contributions from branches to matrix
  * @param matrix matrix to which contributions are added
  * @param flag flag to distinguish new matrix (true) from old (false)
@@ -1042,6 +1253,16 @@ void loadBranchData(gridpack::math::Matrix &matrix, bool flag)
 void loadBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
 {
   loadBranchData(*matrix, flag);
+}
+
+/**
+ * Add off-diagonal block contributions from branches to real matrix
+ * @param matrix matrix to which contributions are added
+ * @param flag flag to distinguish new matrix (true) from old (false)
+ */
+void loadRealBranchData(boost::shared_ptr<gridpack::math::Matrix> &matrix, bool flag)
+{
+  loadRealBranchData(*matrix, flag);
 }
 
 /**
