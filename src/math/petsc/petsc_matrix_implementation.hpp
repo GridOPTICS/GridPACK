@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-06-08 14:37:16 d3g096
+ * @date   2015-06-09 12:39:09 d3g096
  * 
  * @brief  
  * 
@@ -289,31 +289,73 @@ protected:
     }
   }
 
-  ///  Get a row and put it in a local array (specialized)
-  void p_getRow(const IdxType& row, TheType *x) const
+  // ///  Get a row and put it in a local array (specialized)
+  // void p_getRow(const IdxType& row, TheType *x) const
+  // {
+  //   PetscErrorCode ierr(0);
+  //   try {
+  //     Mat *mat = p_mwrap->getMatrix();
+  //     MPI_Comm comm(PetscObjectComm((PetscObject)*mat));
+  //     PetscInt n(this->cols()*elementSize);
+      
+  //     PetscInt ridx(row*elementSize);
+  //     std::vector<PetscInt> cidx(n);
+
+  //     IS irow, icol;
+  //     ierr = ISCreateGeneral(comm, 1, &ridx, PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
+  //     for (PetscInt j = 0; j < n; ++j) cidx[j] = j;
+  //     ierr = ISCreateGeneral(comm, n, &cidx[0], PETSC_COPY_VALUES, &icol); CHKERRXX(ierr);
+
+  //     Mat *sub;
+  //     ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
+
+  //     std::vector<PetscScalar> cval(n);
+  //     ridx = 0;
+  //     ierr = MatGetValues(*sub, 1, &ridx, n, &cidx[0], &cval[0]); CHKERRXX(ierr);
+      
+  //     MatrixValueTransferFromLibrary<PetscScalar, TheType> trans(n, &cval[0], x);
+  //     trans.go();
+
+  //     ierr = MatDestroyMatrices(1, &sub); CHKERRXX(ierr);
+
+  //   } catch (const PETSC_EXCEPTION_TYPE& e) {
+  //     throw PETScException(ierr, e);
+  //   }
+  // }
+
+  /// Get some rows and put them in a local array (specialized)
+  void p_getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const
   {
     PetscErrorCode ierr(0);
     try {
       Mat *mat = p_mwrap->getMatrix();
       MPI_Comm comm(PetscObjectComm((PetscObject)*mat));
-      PetscInt n(this->cols()*elementSize);
+      PetscInt ncol(this->cols()*elementSize);
       
-      PetscInt ridx(row*elementSize);
-      std::vector<PetscInt> cidx(n);
+      std::vector<PetscInt> ridx(nrow);
+      std::vector<PetscInt> cidx(ncol);
 
       IS irow, icol;
-      ierr = ISCreateGeneral(comm, 1, &ridx, PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
-      for (PetscInt j = 0; j < n; ++j) cidx[j] = j;
-      ierr = ISCreateGeneral(comm, n, &cidx[0], PETSC_COPY_VALUES, &icol); CHKERRXX(ierr);
+      for (PetscInt i = 0; i < nrow; ++i) {
+        ridx[i] = rows[i]*elementSize;
+      }
+      ierr = ISCreateGeneral(comm, nrow, &ridx[0], PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
+      for (PetscInt j = 0; j < ncol; ++j) {
+        cidx[j] = j;
+      }
+      ierr = ISCreateGeneral(comm, ncol, &cidx[0], PETSC_COPY_VALUES, &icol); CHKERRXX(ierr);
 
       Mat *sub;
       ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
 
-      std::vector<PetscScalar> cval(n);
-      ridx = 0;
-      ierr = MatGetValues(*sub, 1, &ridx, n, &cidx[0], &cval[0]); CHKERRXX(ierr);
+      std::vector<PetscScalar> cval(nrow*ncol);
+      for (PetscInt i = 0; i < nrow; ++i) {
+        ridx[i] = i;
+      }
+      ierr = MatGetValues(*sub, nrow, &ridx[0], ncol, &cidx[0], &cval[0]); CHKERRXX(ierr);
+
       
-      MatrixValueTransferFromLibrary<PetscScalar, TheType> trans(n, &cval[0], x);
+      ValueTransferFromLibrary<PetscScalar, TheType> trans(nrow*ncol, &cval[0], x);
       trans.go();
 
       ierr = MatDestroyMatrices(1, &sub); CHKERRXX(ierr);
@@ -322,6 +364,7 @@ protected:
       throw PETScException(ierr, e);
     }
   }
+
 
   /// Replace all elements with their real parts
   void p_real(void)

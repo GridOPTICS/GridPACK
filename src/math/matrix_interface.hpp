@@ -10,7 +10,7 @@
 /**
  * @file   matrix_interface.hpp
  * @author William A. Perkins
- * @date   2015-06-05 14:21:37 d3g096
+ * @date   2015-06-09 08:33:47 d3g096
  * 
  * @brief  Declaration of the abstract BaseMatrixInterface template class. 
  * 
@@ -208,6 +208,25 @@ public:
     this->p_getRow(row, x);
   }
   
+  /// Get some rows and put them in a local array
+  /** 
+   * (Collective)
+   *
+   * This gets the elements in the specified rows and puts them in the
+   * specified array.  It is assumed that the array is appropriately
+   * sized (nrow * columns).  While this is collective, each processor
+   * may get a different set of rows.  Row/column ownership should not
+   * matter.
+   * 
+   * @param nrow 
+   * @param rows 
+   * @param x 
+   */
+  void getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const
+  {
+    this->p_getRowBlock(nrow, rows, x);
+  }
+  
 
   /// Replace all elements with their real parts
   void real(void)
@@ -354,7 +373,13 @@ protected:
                              TheType *x) const = 0;
 
   ///  Get a row and put it in a local array (specialized)
-  virtual void p_getRow(const IdxType& row, TheType *x) const = 0;
+  virtual void p_getRow(const IdxType& row, TheType *x) const
+  {
+    p_getRowBlock(1, &row, x);
+  }
+
+  /// Get some rows and put them in a local array (specialized)
+  virtual void p_getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const = 0;
 
   /// Replace all elements with their real parts (specialized)
   virtual void p_real(void) = 0;
