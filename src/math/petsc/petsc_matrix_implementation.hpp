@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-06-09 15:09:49 d3g096
+ * @date   2015-06-11 06:53:36 d3g096
  * 
  * @brief  
  * 
@@ -207,10 +207,16 @@ protected:
       // part of all values will be negative; so copy the values to
       // another array and take the congjugate
 
-      conjugate_value<TheType> c;
-      std::transform(rvals.begin(), rvals.end(), rvals.begin(), c);
+      if (elementSize > 1) {
+        conjugate_value<TheType> c;
+        std::transform(rvals.begin(), rvals.end(), rvals.begin(), c);
+      }
 
       // apply the operator
+
+      
+      // FIXME: I should be able to do it this way:
+      // std::transform(rvals.begin(), rvals.end(), rvals.begin(), op);
 
       for (typename std::vector<TheType>::iterator r = rvals.begin();
            r != rvals.end(); ++r) {
@@ -244,7 +250,7 @@ protected:
     PetscInt lo, hi;
     ierr = MatGetOwnershipRange(*A, &lo, &hi); CHKERRXX(ierr);
    
-    std::vector<PetscScalar> rvals;
+    std::vector<TheType> rvals;
     for (PetscInt i = lo; i < hi; i += elementSize) {
       PetscInt ncols;
       const PetscInt *cidx;
@@ -253,11 +259,14 @@ protected:
 
       ierr = MatGetRow(*A, i, &ncols, &cidx, &p); CHKERRXX(ierr);
 
+
       // The arrays from MatGetRow are read only; make a copy of the values
 
-      size = ncols;
+      size = ncols/elementSize;
       rvals.resize(size);
-      std::copy(p, p+size, rvals.begin());
+      ValueTransferFromLibrary<PetscScalar, TheType> 
+        trans(ncols, const_cast<PetscScalar *>(p), &rvals[0]);
+      trans.go();
 
       ierr = MatRestoreRow(*A, i, &ncols, &cidx, &p); CHKERRXX(ierr);
 
@@ -267,11 +276,16 @@ protected:
 
       if (elementSize > 1) {
         conjugate_value<TheType> c;
-        unary_operation<TheType, PetscScalar>(size, &rvals[0], c);
+        std::transform(rvals.begin(), rvals.end(), rvals.begin(), c);
       }
+       
+      // FIXME: I should be able to do it this way:
+      // std::for_each(rvals.begin(), rvals.end(), op);
 
-      accumulator_operation<TheType, PetscScalar>(size, &rvals[0], op);
-
+      for (typename std::vector<TheType>::iterator r = rvals.begin();
+           r != rvals.end(); ++r) {
+        op(*r);
+      }
     }
     result = op.result();
     return result;
@@ -461,40 +475,6 @@ protected:
       throw PETScException(ierr, e);
     }
   }
-
-  // ///  Get a row and put it in a local array (specialized)
-  // void p_getRow(const IdxType& row, TheType *x) const
-  // {
-  //   PetscErrorCode ierr(0);
-  //   try {
-  //     Mat *mat = p_mwrap->getMatrix();
-  //     MPI_Comm comm(PetscObjectComm((PetscObject)*mat));
-  //     PetscInt n(this->cols()*elementSize);
-      
-  //     PetscInt ridx(row*elementSize);
-  //     std::vector<PetscInt> cidx(n);
-
-  //     IS irow, icol;
-  //     ierr = ISCreateGeneral(comm, 1, &ridx, PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
-  //     for (PetscInt j = 0; j < n; ++j) cidx[j] = j;
-  //     ierr = ISCreateGeneral(comm, n, &cidx[0], PETSC_COPY_VALUES, &icol); CHKERRXX(ierr);
-
-  //     Mat *sub;
-  //     ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
-
-  //     std::vector<PetscScalar> cval(n);
-  //     ridx = 0;
-  //     ierr = MatGetValues(*sub, 1, &ridx, n, &cidx[0], &cval[0]); CHKERRXX(ierr);
-      
-  //     MatrixValueTransferFromLibrary<PetscScalar, TheType> trans(n, &cval[0], x);
-  //     trans.go();
-
-  //     ierr = MatDestroyMatrices(1, &sub); CHKERRXX(ierr);
-
-  //   } catch (const PETSC_EXCEPTION_TYPE& e) {
-  //     throw PETScException(ierr, e);
-  //   }
-  // }
 
   /// Get some rows and put them in a local array (specialized)
   void p_getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const

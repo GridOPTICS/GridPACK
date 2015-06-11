@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-06-04 13:46:41 d3g096
+ * @date   2015-06-10 10:38:15 d3g096
  * 
  * @brief  
  * 
@@ -584,6 +584,8 @@ storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
     result = new MatrixT<T, I>(result_impl);
     ierr = MatDestroy(&B); CHKERRXX(ierr);
     
+  } else {
+    result = A.clone();
   }
 
   return result;
