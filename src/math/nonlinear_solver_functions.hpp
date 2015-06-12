@@ -9,7 +9,7 @@
 /**
  * @file   nonlinear_solver_functions.hpp
  * @author William A. Perkins
- * @date   2015-03-25 15:41:38 d3g096
+ * @date   2015-06-12 10:24:12 d3g096
  * 
  * @brief Declaration of function (objects) used by nonlinear solvers
  * to build a Jacobian and RHS.
@@ -107,10 +107,10 @@ struct NLSBuilder {
 
 };
 
-typedef typename NLSBuilder<ComplexType>::Jacobian ComplexJacobianBuilder;
-typedef typename NLSBuilder<ComplexType>::Function ComplexFunctionBuilder;
-typedef typename NLSBuilder<RealType>::Jacobian RealJacobianBuilder;
-typedef typename NLSBuilder<RealType>::Function RealFunctionBuilder;
+typedef NLSBuilder<ComplexType>::Jacobian ComplexJacobianBuilder;
+typedef NLSBuilder<ComplexType>::Function ComplexFunctionBuilder;
+typedef NLSBuilder<RealType>::Jacobian RealJacobianBuilder;
+typedef NLSBuilder<RealType>::Function RealFunctionBuilder;
 
 
 } // namespace math

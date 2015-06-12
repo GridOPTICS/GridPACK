@@ -8,7 +8,7 @@
 /**
  * @file   vector.cpp
  * @author William A. Perkins
- * @date   2015-03-04 12:59:17 d3g096
+ * @date   2015-06-12 14:01:18 d3g096
  * 
  * @brief  PETSc-specific part of Vector
  * 
@@ -130,9 +130,9 @@ VectorT<T, I>::add(const VectorT<T, I>& x, const VectorT<T, I>::TheType& scale)
 }
 
 template void VectorT<ComplexType>::add(const VectorT<ComplexType>& x, 
-                                        const typename VectorT<ComplexType>::TheType& scale);
+                                        const VectorT<ComplexType>::TheType& scale);
 template void VectorT<RealType>::add(const VectorT<RealType>& x, 
-                                     const typename VectorT<RealType>::TheType& scale);
+                                     const VectorT<RealType>::TheType& scale);
 
 template <typename T, typename I>
 void
@@ -159,8 +159,8 @@ VectorT<T, I>::add(const VectorT<T, I>::TheType& x)
   }
 }
 
-template void VectorT<ComplexType, int>::add(const typename VectorT<ComplexType>::TheType& x);
-template void VectorT<double, int>::add(const typename VectorT<RealType>::TheType& x);
+template void VectorT<ComplexType, int>::add(const VectorT<ComplexType>::TheType& x);
+template void VectorT<double, int>::add(const VectorT<RealType>::TheType& x);
 
 // -------------------------------------------------------------
 // VectorT::equate

@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-03-27 08:24:09 d3g096
+ * @date   2015-06-12 14:02:15 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -55,8 +55,8 @@ typedef gridpack::ComplexType TestType;
 
 typedef gridpack::math::NonlinearSolverT<TestType> TheNonlinearSolver;
 typedef gridpack::math::NewtonRaphsonSolverT<TestType> TheNewtonRaphsonSolver;
-typedef typename TheNonlinearSolver::VectorType VectorType;
-typedef typename TheNonlinearSolver::MatrixType MatrixType;
+typedef TheNonlinearSolver::VectorType VectorType;
+typedef TheNonlinearSolver::MatrixType MatrixType;
 
 BOOST_AUTO_TEST_SUITE(NonlinearSolverTest)
 
