@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created November 14, 2014 by William A. Perkins
-// Last Change: 2015-01-16 08:34:50 d3g096
+// Last Change: 2015-06-12 09:11:48 d3g096
 // -------------------------------------------------------------
 
 
@@ -24,7 +24,7 @@ VectorImplementation<ComplexType>::p_real(void)
   this->localIndexRange(lo, hi);
   std::vector<TheType> x(hi-lo);
   this->getElementRange(lo, hi, &x[0]);
-  typename std::vector<TheType>::iterator i;
+  std::vector<TheType>::iterator i;
   for (i = x.begin(); i != x.end(); ++i) {
     *i = std::real(*i);
   }
@@ -50,7 +50,7 @@ VectorImplementation<ComplexType>::p_imaginary(void)
   this->localIndexRange(lo, hi);
   std::vector<TheType> x(hi-lo);
   this->getElementRange(lo, hi, &x[0]);
-  for (typename std::vector<TheType>::iterator i = x.begin();
+  for (std::vector<TheType>::iterator i = x.begin();
        i != x.end(); ++i) {
     *i = imag(*i);
   }
