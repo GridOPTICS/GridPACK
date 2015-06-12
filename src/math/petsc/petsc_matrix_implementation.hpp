@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-06-09 15:09:49 d3g096
+ * @date   2015-06-12 10:00:46 d3g096
  * 
  * @brief  
  * 
@@ -345,7 +345,7 @@ protected:
   void p_setElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x)
   {
     // FIXME: There's probably a better way
-    for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
+    for (IdxType k = 0; k < n; k++) {
       this->p_setElement(i[k], j[k], x[k]);
     }
   }
@@ -360,7 +360,7 @@ protected:
   void p_addElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x)
   {
     // FIXME: There's probably a better way
-    for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
+    for (IdxType k = 0; k < n; k++) {
       this->p_addElement(i[k], j[k], x[k]);
     }
   }
