@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-05-20 14:41:17 d3g096
+ * @date   2015-06-11 14:49:20 d3g096
  * 
  * @brief  
  * 
@@ -359,7 +359,7 @@ MatMatMult_DenseGA(Mat A, Mat B, MatReuse scall, PetscReal fill, Mat *C)
   if (issame) {
     Bga = B;
   } else {
-    ierr = MatConvertToDenseGA(B, &Bga);
+    ierr = MatConvertToDenseGA(B, &Bga); CHKERRQ(ierr);
   }
   ierr = MatShellGetContext(Bga, &Bctx); CHKERRQ(ierr);
 
