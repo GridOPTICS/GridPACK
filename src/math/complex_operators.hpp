@@ -10,7 +10,7 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-06-05 12:56:17 d3g096
+ * @date   2015-06-12 09:12:12 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -368,7 +368,7 @@ template <>
 inline void
 l1_norm<RealType>::operator() (const RealType& x)
 {
-  accum += ::abs(x);
+  accum += ::fabs(x);
 }
 
 template <>
