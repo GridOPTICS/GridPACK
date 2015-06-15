@@ -512,7 +512,21 @@
 
 // GOVERNOR DATA
 /**
- * Governor JBUS
+ * Flag to indicate that exciter is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_EXCITER "HAS_EXCITER"
+
+/**
+ * Exciter model
+ * type: string
+ * indexed
+ */
+#define EXCITER_MODEL "EXCITER_MODEL"
+
+/**
+ * Generator JBUS
  * type: integer
  * indexed
  */
@@ -765,7 +779,21 @@
 
 // EXCITER DATA
 /**
- * Exciter TR
+ * Flag to indicate that governor is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_GOVERNOR "HAS_GOVERNOR"
+
+/**
+ * Governor model
+ * type: string
+ * indexed
+ */
+#define GOVERNOR_MODEL "GOVERNOR_MODEL"
+
+/**
+ * Governor TR
  * type: real float
  * indexed
  */
