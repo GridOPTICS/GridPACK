@@ -139,6 +139,8 @@ class BasePTIParser : public BaseParser<_network>
       double s1;
       double s12;
       // Exciter parameters
+      char ex_model[8];  // Exciter model
+      bool has_exciter;
       int jbus;
       int m;
       double k;
@@ -176,6 +178,8 @@ class BasePTIParser : public BaseParser<_network>
       double pgv5;
       int iblock;
       // Governor parameters
+      char gov_model[8];  // Exciter model
+      bool has_governor;
       double tr;
       double ka;
       double ta;
@@ -255,6 +259,7 @@ class BasePTIParser : public BaseParser<_network>
         std::string sval;
         double rval;
         int ival;
+        bool bval=true;
         // GENERATOR_MODEL              "MODEL"        string
         if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
           data->addValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
@@ -401,6 +406,20 @@ class BasePTIParser : public BaseParser<_network>
             }
           }
         } else if (!strcmp(ds_data[i].gen_model,"WSIEG1")) {
+          // HAS_GOVERNOR
+          if (!data->getValue(HAS_GOVERNOR,&bval,g_id)) {
+            data->addValue(HAS_GOVERNOR, true, g_id);
+          } else {
+            data->setValue(HAS_GOVERNOR, true, g_id);
+          }
+
+          // GOVERNOR_NAME
+          if (!data->getValue(GOVERNOR_MODEL,&sval,g_id)) {
+            data->addValue(GOVERNOR_MODEL, ds_data[i].gen_model, g_id);
+          } else {
+            data->setValue(GOVERNOR_MODEL, ds_data[i].gen_model, g_id);
+          }
+
           // GOVERNOR_JBUS
           if (!data->getValue(GOVERNOR_JBUS,&ival,g_id)) {
             data->addValue(GOVERNOR_JBUS, ds_data[i].jbus, g_id);
@@ -654,6 +673,20 @@ class BasePTIParser : public BaseParser<_network>
           }
         } else if (!strcmp(ds_data[i].gen_model,"EXDC1") ||
             !strcmp(ds_data[i].gen_model,"EXDC2")) {
+          // HAS_EXCITER
+          if (!data->getValue(HAS_EXCITER,&bval,g_id)) {
+            data->addValue(HAS_EXCITER, true, g_id);
+          } else {
+            data->setValue(HAS_EXCITER, true, g_id);
+          }
+
+          // EXCITER_MODEL
+          if (!data->getValue(EXCITER_MODEL,&sval,g_id)) {
+            data->addValue(EXCITER_MODEL, ds_data[i].gen_model, g_id);
+          } else {
+            data->setValue(EXCITER_MODEL, ds_data[i].gen_model, g_id);
+          }
+
           // EXCITER_TR
           if (!data->getValue(EXCITER_TR,&rval,g_id)) {
             data->addValue(EXCITER_TR, ds_data[i].tr, g_id);
@@ -1017,20 +1050,20 @@ class BasePTIParser : public BaseParser<_network>
         std::string sval;
         double rval;
         int ival;
+        bool bval;
 
         // GENERATOR_MODEL              "MODEL"                  string
-        if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
-          sval = util.trimQuotes(split_line[1]);
-          util.toUpper(sval);
-          data->addValue(GENERATOR_MODEL, sval.c_str(), g_id);
-        } else {
-          sval = util.trimQuotes(split_line[1]);
-          util.toUpper(sval);
-          data->setValue(GENERATOR_MODEL, sval.c_str(), g_id);
-        }
-
+        sval = util.trimQuotes(split_line[1]);
+        util.toUpper(sval);
 
         if (sval == "GENCLS") {
+          // GENERATOR_MODEL              "MODEL"                  string
+          if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+            data->addValue(GENERATOR_MODEL, sval.c_str(), g_id);
+          } else {
+            data->setValue(GENERATOR_MODEL, sval.c_str(), g_id);
+          }
+
           // GENERATOR_INERTIA_CONSTANT_H                           float
           if (nstr > 3) {
             if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H,&rval,g_id)) {
@@ -1053,6 +1086,13 @@ class BasePTIParser : public BaseParser<_network>
             }
           }
         } else if (sval == "GENSAL") {
+          // GENERATOR_MODEL              "MODEL"                  string
+          if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+            data->addValue(GENERATOR_MODEL, sval.c_str(), g_id);
+          } else {
+            data->setValue(GENERATOR_MODEL, sval.c_str(), g_id);
+          }
+
           // GENERATOR_TDOP
           if (nstr > 3) {
             if (!data->getValue(GENERATOR_TDOP,&rval,g_id)) {
@@ -1185,6 +1225,13 @@ class BasePTIParser : public BaseParser<_network>
             }
           } 
         } else if (sval == "GENROU") {
+          // GENERATOR_MODEL              "MODEL"                  string
+          if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+            data->addValue(GENERATOR_MODEL, sval.c_str(), g_id);
+          } else {
+            data->setValue(GENERATOR_MODEL, sval.c_str(), g_id);
+          }
+
           // GENERATOR_TDOP
           if (nstr > 3) {
             if (!data->getValue(GENERATOR_TDOP,&rval,g_id)) {
@@ -1339,6 +1386,21 @@ class BasePTIParser : public BaseParser<_network>
             }
           } 
         } else if (sval == "WSIEG1") {
+          // HAS_GOVERNOR
+          if (!data->getValue(HAS_GOVERNOR,&bval,g_id)) {
+            data->addValue(HAS_GOVERNOR, true, g_id);
+          } else {
+            data->setValue(HAS_GOVERNOR, true, g_id);
+          }
+
+          // GOVERNOR_MODEL
+          std::string stmp;
+          if (!data->getValue(GOVERNOR_MODEL,&stmp,g_id)) {
+            data->addValue(GOVERNOR_MODEL, sval.c_str(), g_id);
+          } else {
+            data->setValue(GOVERNOR_MODEL, sval.c_str(), g_id);
+          }
+
           // GOVERNOR_JBUS
           if (nstr > 3) {
             if (!data->getValue(GOVERNOR_JBUS,&ival,g_id)) {
@@ -1735,6 +1797,21 @@ class BasePTIParser : public BaseParser<_network>
             }
           } 
         } else if (sval == "EXDC1" || sval == "EXDC2") {
+          // HAS_EXCITER
+          if (!data->getValue(HAS_EXCITER,&bval,g_id)) {
+            data->addValue(HAS_EXCITER, true, g_id);
+          } else {
+            data->setValue(HAS_EXCITER, true, g_id);
+          }
+
+          // EXCITER_MODEL
+          std::string stmp;
+          if (!data->getValue(EXCITER_MODEL,&stmp,g_id)) {
+            data->addValue(EXCITER_MODEL, sval.c_str(), g_id);
+          } else {
+            data->setValue(EXCITER_MODEL, sval.c_str(), g_id);
+          }
+
           // EXCITER_TR
           if (nstr > 3) {
             if (!data->getValue(EXCITER_TR,&rval,g_id)) {
