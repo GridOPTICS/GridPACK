@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-06-04 13:46:41 d3g096
+ * @date   2015-06-11 15:05:17 d3g096
  * 
  * @brief  
  * 
@@ -32,6 +32,7 @@
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
+#include "petsc/ga_matrix.hpp"
 
 namespace gridpack {
 namespace math {
@@ -425,17 +426,28 @@ template <typename T, typename I>
 void
 multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
 {
+    PetscErrorCode ierr(0);
+
   // special method required for parallel dense*dense
   if (A.communicator().size() > 1 &&
       A.storageType() == Dense &&
       B.storageType() == Dense) {
-    fallback::denseMatrixMultiply(A, B, result);
+    const Mat *Amat(PETScMatrix(A));
+    const Mat *Bmat(PETScMatrix(B));
+    Mat Aga, Bga;
+    Mat *Cmat(PETScMatrix(result));
+    ierr = MatConvertToDenseGA(*Amat, &Aga); CHKERRXX(ierr);
+    ierr = MatConvertToDenseGA(*Bmat, &Bga); CHKERRXX(ierr);
+    ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
+    // fallback::denseMatrixMultiply(A, B, result);
+
+    ierr = MatDestroy(&Aga); CHKERRXX(ierr);
+    ierr = MatDestroy(&Bga); CHKERRXX(ierr);
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
     Mat *Cmat(PETScMatrix(result));
     
-    PetscErrorCode ierr(0);
     try {
       ierr = MatDestroy(Cmat); CHKERRXX(ierr);
       ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
@@ -461,18 +473,33 @@ template <typename T, typename I>
 MatrixT<T, I> *
 multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
 {
+  PetscErrorCode ierr(0);
   MatrixT<T, I> *result;
   // special method required for parallel dense*dense
   if (A.communicator().size() > 1 &&
       A.storageType() == Dense &&
       B.storageType() == Dense) {
-    result = fallback::denseMatrixMultiply(A, B);
+    Mat Aga, Bga, Cmat;
+    const Mat *Amat(PETScMatrix(A));
+    const Mat *Bmat(PETScMatrix(B));
+    ierr = MatConvertToDenseGA(*Amat, &Aga); CHKERRXX(ierr);
+    ierr = MatConvertToDenseGA(*Bmat, &Bga); CHKERRXX(ierr);
+    ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
+    // result = fallback::denseMatrixMultiply(A, B);
+
+    PETScMatrixImplementation<T, I> *result_impl = 
+      new PETScMatrixImplementation<T, I>(Cmat, true);
+    result = new MatrixT<T, I>(result_impl);
+
+    ierr = MatDestroy(&Aga); CHKERRXX(ierr);
+    ierr = MatDestroy(&Bga); CHKERRXX(ierr);
+    ierr = MatDestroy(&Cmat); CHKERRXX(ierr);
+
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
     Mat Cmat;
 
-    PetscErrorCode ierr(0);
     try {
       ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -584,6 +611,8 @@ storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
     result = new MatrixT<T, I>(result_impl);
     ierr = MatDestroy(&B); CHKERRXX(ierr);
     
+  } else {
+    result = A.clone();
   }
 
   return result;

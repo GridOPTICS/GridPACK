@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-06-09 15:07:01 d3g096
+ * @date   2015-06-16 07:01:44 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -698,7 +698,8 @@ BOOST_AUTO_TEST_CASE( AddDiagonal )
 
   boost::scoped_ptr<TestVectorType>  
     v(new TestVectorType(A->communicator(), A->localRows()));
-  v->fill(1.0);
+  TestType z = TEST_VALUE(1.0, 1.0);
+  v->fill(z);
 
   A->addDiagonal(*v);
   A->print();
@@ -706,13 +707,16 @@ BOOST_AUTO_TEST_CASE( AddDiagonal )
   boost::scoped_ptr<TestVectorType> d(diagonal(*A));
   d->print();
 
-  double norm(d->norm1()/static_cast<double>(d->size()));
+  v->add(1.0);
+  double vnorm(v->norm1());
+  double dnorm(d->norm1());
 
-  BOOST_CHECK_CLOSE(norm, 2.0, delta);
+  BOOST_CHECK_CLOSE(vnorm, dnorm, delta);
 
-  norm = d->norm2()/sqrt(static_cast<double>(d->size()));
+  vnorm = v->norm2();
+  dnorm = A->norm2();
 
-  BOOST_CHECK_CLOSE(norm, 2.0, delta);
+  BOOST_CHECK_CLOSE(vnorm, dnorm, delta);
 }
   
 BOOST_AUTO_TEST_CASE( MatrixVectorMultiply )
