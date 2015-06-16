@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-06-09 15:05:31 d3g096
+ * @date   2015-06-16 08:32:49 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -228,7 +228,7 @@ public:
    * 
    * @param x 
    */
-  void addDiagonal(const VectorT<T, I>& x);
+  void addDiagonalVector(const VectorT<T, I>& x);
 
   /// Add another matrix to this one, in place
   /** 
