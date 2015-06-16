@@ -10,7 +10,7 @@
 /**
  * @file   fallback_matrix_operations.hpp
  * @author William A. Perkins
- * @date   2015-05-28 10:43:08 d3g096
+ * @date   2015-06-16 07:31:12 d3g096
  * 
  * @brief  
  * 
@@ -153,9 +153,9 @@ addDiagonal(MatrixT<T, I>& A, const VectorT<T, I>& x)
   for (I i = lo; i < hi; ++i) {
     T v;
     x.getElement(i, v);
-    A->addElement(i, i, v);
+    A.addElement(i, i, v);
   }
-  A->ready();
+  A.ready();
 }
 
 
