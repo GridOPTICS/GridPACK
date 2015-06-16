@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-06-16 07:01:44 d3g096
+ * @date   2015-06-16 08:33:29 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -701,7 +701,7 @@ BOOST_AUTO_TEST_CASE( AddDiagonal )
   TestType z = TEST_VALUE(1.0, 1.0);
   v->fill(z);
 
-  A->addDiagonal(*v);
+  A->addDiagonalVector(*v);
   A->print();
 
   boost::scoped_ptr<TestVectorType> d(diagonal(*A));
@@ -715,6 +715,30 @@ BOOST_AUTO_TEST_CASE( AddDiagonal )
 
   vnorm = v->norm2();
   dnorm = A->norm2();
+
+  BOOST_CHECK_CLOSE(vnorm, dnorm, delta);
+}
+
+BOOST_AUTO_TEST_CASE( AddDiagonal2 )
+{
+  int global_size;
+  gridpack::parallel::Communicator world;
+  boost::scoped_ptr<TestMatrixType> 
+    A(make_test_matrix(world, global_size));
+  A->identity();
+
+  A->print();
+
+  TestType z = TEST_VALUE(1.0, 1.0);
+
+  A->addDiagonal(z);
+  A->print();
+
+  boost::scoped_ptr<TestVectorType> d(diagonal(*A));
+  d->print();
+
+  double vnorm = d->norm2();
+  double dnorm = A->norm2();
 
   BOOST_CHECK_CLOSE(vnorm, dnorm, delta);
 }

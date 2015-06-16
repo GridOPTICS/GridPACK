@@ -8,7 +8,7 @@
 /**
  * @file   matrix.cpp
  * @author William A. Perkins
- * @date   2015-06-16 07:30:11 d3g096
+ * @date   2015-06-16 08:34:11 d3g096
  * 
  * @brief  PETSc specific part of Matrix
  * 
@@ -224,7 +224,7 @@ MatrixT<RealType>::add(const MatrixT<RealType>& B);
 // -------------------------------------------------------------
 template <typename T, typename I>
 void
-MatrixT<T, I>::addDiagonal(const VectorT<T, I>& x)
+MatrixT<T, I>::addDiagonalVector(const VectorT<T, I>& x)
 {
   if (PETScMatrixImplementation<T, I>::useLibrary) {
     const Vec *pX(PETScVector(x));
@@ -242,11 +242,11 @@ MatrixT<T, I>::addDiagonal(const VectorT<T, I>& x)
 
 template 
 void
-MatrixT<ComplexType>::addDiagonal(const VectorT<ComplexType>& x);
+MatrixT<ComplexType>::addDiagonalVector(const VectorT<ComplexType>& x);
 
 template 
 void
-MatrixT<RealType>::addDiagonal(const VectorT<RealType>& x);
+MatrixT<RealType>::addDiagonalVector(const VectorT<RealType>& x);
 
 // -------------------------------------------------------------
 // Matrix::multiplyDiagonal
