@@ -347,11 +347,13 @@ class GOSS_parser : BaseParser<_network>
       {
         readBus(busTree);
       }
+#if 0
       boost::shared_ptr<gridpack::component::DataCollection>
           data(new gridpack::component::DataCollection);
       data->addValue("N_GENERATORS", totalGenerators);
       data->addValue("N_LOADS", totalLoads);
       p_busCollection.push_back(data);
+#endif
 
     }
 
@@ -441,11 +443,13 @@ class GOSS_parser : BaseParser<_network>
       {
         readBranch(branchTree);
       }
+#if 0
       boost::shared_ptr<gridpack::component::DataCollection>
           data(new gridpack::component::DataCollection);
       data->addValue("N_TRANSFORMERS", totalTransformers);
       data->addValue("N_LINES", totalLines);
       p_branchCollection.push_back(data);
+#endif
    }
 
     void readBranch(boost::property_tree::ptree::value_type const & branchTree)

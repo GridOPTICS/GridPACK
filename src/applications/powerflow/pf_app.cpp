@@ -132,6 +132,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_load);
   factory.load();
   timer->stop(t_load);
+  factory.dumpData();
 
   // set network components using factory
   int t_setc = timer->createCategory("Factory: Set Components");
@@ -219,6 +220,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   int t_csolv = timer->createCategory("Create Linear Solver");
   timer->start(t_csolv);
   gridpack::math::LinearSolver solver(*J);
+  J->print();
   solver.configure(cursor);
   timer->stop(t_csolv);
 

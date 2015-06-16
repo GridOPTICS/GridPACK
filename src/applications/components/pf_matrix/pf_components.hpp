@@ -277,6 +277,22 @@ class PFBus
      */
     bool getIgnore();
 
+    /**
+     * Evaluate diagonal block of Jacobian for power flow calculation and return
+     * result as an array of real values
+     * @param rvals values of Jacobian block
+     * @return number of values returned
+     */
+    int diagonalJacobianValues(double *rvals);
+
+    /**
+     * Evaluate RHS values for powerflow equation and return result as an array
+     * of real values
+     * @param rvals values of Jacobian block
+     * @return number of values returned
+     */
+    int rhsValues(double *rvals);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -494,6 +510,15 @@ class PFBranch
      * @return value of ignore parameter
      */
     bool getIgnore(std::string tag);
+
+    /**
+     * Evaluate off-diagonal block of Jacobian for power flow calculation
+     * and return result as an array of real values
+     * @param rvals values of Jacobian block
+     * @return number of values returned
+     */
+    int forwardJacobianValues(double *rvals);
+    int reverseJacobianValues(double *rvals);
 
   private:
     std::vector<bool> p_ignore;
