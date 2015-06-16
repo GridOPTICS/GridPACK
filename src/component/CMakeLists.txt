@@ -27,6 +27,7 @@ endif()
 add_library(gridpack_components
   base_component.cpp
   data_collection.cpp
+  optimization_ifc.cpp
 )
 
 # -------------------------------------------------------------
@@ -42,6 +43,7 @@ gridpack_add_unit_test(component_serialization component_serialization_test)
 install(FILES 
   base_component.hpp  
   data_collection.hpp
+  optimization_ifc.hpp
   DESTINATION include/gridpack/component
 )
 
