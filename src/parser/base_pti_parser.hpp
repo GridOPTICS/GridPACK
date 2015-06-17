@@ -997,8 +997,12 @@ class BasePTIParser : public BaseParser<_network>
       std::string          line;
       gridpack::component::DataCollection *data;
       while(std::getline(input,line)) {
+        // Check to see if line is blank
+        int idx = line.find_first_not_of(' ');
+        if (idx == std::string::npos) continue;
+
         std::string record = line;
-        int idx = line.find('/');
+        idx = line.find('/');
         while (idx == std::string::npos) {
           std::getline(input,line);
           idx = line.find('/');
@@ -1996,8 +2000,12 @@ class BasePTIParser : public BaseParser<_network>
       std::string          line;
       ds_vector->clear();
       while(std::getline(input,line)) {
+        // Check to see if line is blank
+        int idx = line.find_first_not_of(' ');
+        if (idx == std::string::npos) continue;
+
         std::string record = line;
-        int idx = line.find('/');
+        idx = line.find('/');
         while (idx == std::string::npos) {
           std::getline(input,line);
           idx = line.find('/');
