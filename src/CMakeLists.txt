@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-05-06 09:13:16 d3g096
+# Last Change: 2015-06-23 13:29:22 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -70,11 +70,14 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 message(STATUS "Checking PETSc ...")
 find_package (PETSc COMPONENTS CXX REQUIRED)
 
-if (NOT EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+else()
   message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
 endif()
 
-include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
 
 # checks 
 
