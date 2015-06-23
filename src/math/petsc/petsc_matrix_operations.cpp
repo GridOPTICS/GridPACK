@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-06-11 15:05:17 d3g096
+ * @date   2015-06-18 10:30:09 d3g096
  * 
  * @brief  
  * 
@@ -420,13 +420,30 @@ multiply(const MatrixT<RealType, int>& A,
 
 
 // -------------------------------------------------------------
+// multiply_dense
+// -------------------------------------------------------------
+static 
+PetscErrorCode 
+multiply_dense(const Mat& A, const Mat& B, Mat& C)
+{
+  PetscErrorCode ierr(0);
+  Mat Aga, Bga;
+  ierr = MatConvertToDenseGA(A, &Aga); CHKERRQ(ierr);
+  ierr = MatConvertToDenseGA(B, &Bga); CHKERRQ(ierr);
+  ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &C); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aga); CHKERRQ(ierr);
+  ierr = MatDestroy(&Bga); CHKERRQ(ierr);
+  return ierr;
+}
+
+// -------------------------------------------------------------
 // (Matrix) multiply
 // -------------------------------------------------------------
 template <typename T, typename I>
 void
 multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
 {
-    PetscErrorCode ierr(0);
+  PetscErrorCode ierr(0);
 
   // special method required for parallel dense*dense
   if (A.communicator().size() > 1 &&
@@ -434,15 +451,8 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
       B.storageType() == Dense) {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
-    Mat Aga, Bga;
     Mat *Cmat(PETScMatrix(result));
-    ierr = MatConvertToDenseGA(*Amat, &Aga); CHKERRXX(ierr);
-    ierr = MatConvertToDenseGA(*Bmat, &Bga); CHKERRXX(ierr);
-    ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
-    // fallback::denseMatrixMultiply(A, B, result);
-
-    ierr = MatDestroy(&Aga); CHKERRXX(ierr);
-    ierr = MatDestroy(&Bga); CHKERRXX(ierr);
+    ierr = multiply_dense(*Amat, *Bmat, *Cmat); CHKERRXX(ierr);
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
@@ -479,22 +489,16 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
   if (A.communicator().size() > 1 &&
       A.storageType() == Dense &&
       B.storageType() == Dense) {
-    Mat Aga, Bga, Cmat;
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
-    ierr = MatConvertToDenseGA(*Amat, &Aga); CHKERRXX(ierr);
-    ierr = MatConvertToDenseGA(*Bmat, &Bga); CHKERRXX(ierr);
-    ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
-    // result = fallback::denseMatrixMultiply(A, B);
+    Mat Cmat;
+    ierr = multiply_dense(*Amat, *Bmat, Cmat); CHKERRXX(ierr);
 
     PETScMatrixImplementation<T, I> *result_impl = 
       new PETScMatrixImplementation<T, I>(Cmat, true);
     result = new MatrixT<T, I>(result_impl);
 
-    ierr = MatDestroy(&Aga); CHKERRXX(ierr);
-    ierr = MatDestroy(&Bga); CHKERRXX(ierr);
     ierr = MatDestroy(&Cmat); CHKERRXX(ierr);
-
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
