@@ -50,8 +50,10 @@ BOOST_AUTO_TEST_CASE( SerialInputTest )
   std::string filename = cursor->get("networkConfiguration",
       "No network configuration specified");
 
+  gridpack::parallel::Communicator comm;
+  MPI_Comm mpi_world = static_cast<MPI_Comm>(comm);
   int me;
-  int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  int ierr = MPI_Comm_rank(mpi_world, &me);
   int t_read = timer->createCategory("Serial Read");
   timer->start(t_read);
   if (me == 0) {

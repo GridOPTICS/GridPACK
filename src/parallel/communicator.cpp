@@ -18,6 +18,9 @@
 // -------------------------------------------------------------
 
 #include <ga++.h>
+#if USE_PROGRESS_RANKS
+#include <ga-mpi.h>
+#endif
 #include "gridpack/utilities/uncopyable.hpp"
 #include "communicator.hpp"
 
@@ -81,7 +84,12 @@ private:
 // Communicator:: constructors / destructor
 // -------------------------------------------------------------
 Communicator::Communicator(void)
+#if USE_PROGRESS_RANKS
+  : p_comm(GA_MPI_Comm(),boost::mpi::comm_duplicate),
+    p_private(new CommunicatorPrivate())
+#else
   : p_comm(), p_private(new CommunicatorPrivate())
+#endif
 {
   
 }

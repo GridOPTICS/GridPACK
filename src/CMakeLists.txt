@@ -29,6 +29,11 @@ include(GridPACK)
 # turn testing on
 enable_testing()
 
+# add user configuration options
+option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
+if (USE_PROGRESS_RANKS)
+  add_definitions (-DUSE_PROGRESS_RANKS)
+endif()
 # -------------------------------------------------------------
 # MPI compiler
 # -------------------------------------------------------------
