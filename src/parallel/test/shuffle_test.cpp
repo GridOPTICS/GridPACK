@@ -65,7 +65,9 @@ BOOST_AUTO_TEST_SUITE ( shuffler )
 
 BOOST_AUTO_TEST_CASE( int_shuffle )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator comm;
+  boost::mpi::communicator world(static_cast<MPI_Comm>(comm),
+      boost::mpi::comm_duplicate);
   const int local_size(5);
   const int global_size(local_size*world.size());
   std::vector<int> things;
@@ -90,7 +92,9 @@ BOOST_AUTO_TEST_CASE( int_shuffle )
 
 BOOST_AUTO_TEST_CASE( string_shuffle )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator comm;
+  boost::mpi::communicator world(static_cast<MPI_Comm>(comm),
+      boost::mpi::comm_duplicate);
   const int local_size(5);
   const int global_size(local_size*world.size());
   std::vector<std::string> things;
@@ -117,7 +121,9 @@ BOOST_AUTO_TEST_CASE( string_shuffle )
 
 BOOST_AUTO_TEST_CASE( tester_shuffle )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator comm;
+  boost::mpi::communicator world(static_cast<MPI_Comm>(comm),
+      boost::mpi::comm_duplicate);
   const int local_size(5);
   const int global_size(local_size*world.size());
   std::vector<Tester> things;
@@ -142,7 +148,9 @@ BOOST_AUTO_TEST_CASE( tester_shuffle )
 
 BOOST_AUTO_TEST_CASE( multi_tester_shuffle )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator comm;
+  boost::mpi::communicator world(static_cast<MPI_Comm>(comm),
+      boost::mpi::comm_duplicate);
   const int local_size(5);
   std::vector<Tester> things;
   std::vector<int> dest;
@@ -207,7 +215,9 @@ BOOST_AUTO_TEST_CASE( stringShuffle )
 
 BOOST_AUTO_TEST_CASE( testerShuffle )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator comm;
+  boost::mpi::communicator world(static_cast<MPI_Comm>(comm),
+      boost::mpi::comm_duplicate);
   const int local_size(5);
   const int global_size(local_size*world.size());
   std::vector<Tester> things;

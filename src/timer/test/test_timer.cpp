@@ -28,11 +28,13 @@ BOOST_AUTO_TEST_SUITE ( CoarseTimerTest )
 
 BOOST_AUTO_TEST_CASE( Timings )
 {
+  gridpack::parallel::Communicator comm;
+  MPI_Comm mpi_world = static_cast<MPI_Comm>(comm);
   int i;
   double t;
   int me, nprocs;
-  int ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  int ierr = MPI_Comm_rank(mpi_world, &me);
+  ierr = MPI_Comm_size(mpi_world, &nprocs);
 
   // Grab an instance of timer
   gridpack::utility::CoarseTimer *timer =
@@ -63,10 +65,10 @@ BOOST_AUTO_TEST_CASE( Timings )
   timer->stop(t_success);
   timer->stop(t_fail2);
   double tavg,tmax,tmin;
-  ierr=MPI_Allreduce(&t_chk, &tavg, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  ierr=MPI_Allreduce(&t_chk, &tavg, 1, MPI_DOUBLE, MPI_SUM, mpi_world);
   tavg = tavg/static_cast<double>(nprocs);
-  ierr=MPI_Allreduce(&t_chk, &tmax, 1, MPI_DOUBLE, MPI_MAX, MPI_COMM_WORLD);
-  ierr=MPI_Allreduce(&t_chk, &tmin, 1, MPI_DOUBLE, MPI_MIN, MPI_COMM_WORLD);
+  ierr=MPI_Allreduce(&t_chk, &tmax, 1, MPI_DOUBLE, MPI_MAX, mpi_world);
+  ierr=MPI_Allreduce(&t_chk, &tmin, 1, MPI_DOUBLE, MPI_MIN, mpi_world);
   if (me == 0) {
     printf("Average time from MPI_Wtime(): %12.6f\n",tavg);
     printf("Maximum time from MPI_Wtime(): %12.6f\n",tmax);

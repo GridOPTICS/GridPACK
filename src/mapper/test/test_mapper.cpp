@@ -1077,16 +1077,21 @@ main (int argc, char **argv) {
 
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
-  int me;
-  // Initialize Math libraries
-  gridpack::math::Initialize();
 
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  int nprocs;
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  // Initialize GA libraries
   GA_Initialize();
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
+
+  // Initialize Math libraries
+  gridpack::math::Initialize();
+  gridpack::parallel::Communicator comm;
+  MPI_Comm world = static_cast<MPI_Comm>(comm);
+
+  int me;
+  ierr = MPI_Comm_rank(world, &me);
+  int nprocs;
+  ierr = MPI_Comm_size(world, &nprocs);
   if (me == 0) {
     printf("Testing Mapper Module\n");
     printf("\nTest Network is %d X %d\n",XDIM,YDIM);
