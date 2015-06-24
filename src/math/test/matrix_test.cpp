@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-06-16 08:33:29 d3g096
+ * @date   2015-06-24 07:51:50 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -45,8 +45,8 @@ typedef gridpack::RealType TestType;
 
 typedef gridpack::ComplexType TestType;
 #define TEST_VALUE_CLOSE(x, y, delta) \
-  BOOST_CHECK_CLOSE(real(y), real(x), delta); \
-  BOOST_CHECK_CLOSE( abs(y), abs(x), delta);
+  BOOST_CHECK_CLOSE(std::real(y), std::real(x), delta); \
+  BOOST_CHECK_CLOSE(std::imag(y), std::imag(x), delta); 
 
 #define TEST_VALUE(r, i) TestType(r,i)
 
@@ -114,6 +114,7 @@ make_and_fill_test_matrix(const gridpack::parallel::Communicator& comm,
   A->ready();
   return A;
 }
+
 BOOST_AUTO_TEST_SUITE(MatrixTest)
 
 BOOST_AUTO_TEST_CASE( construction )
@@ -507,26 +508,44 @@ BOOST_AUTO_TEST_CASE( scale )
 
 BOOST_AUTO_TEST_CASE( Transpose )
 {
+  BOOST_TEST_MESSAGE("Transpose");
   int global_size;
   gridpack::parallel::Communicator world;
   boost::scoped_ptr<TestMatrixType> 
-    A(make_and_fill_test_matrix(world, 3, global_size));
+    A(make_test_matrix(world, global_size));
 
-  boost::scoped_ptr<TestMatrixType> B(gridpack::math::transpose(*A));
+  int bandwidth(3);
+  int halfbw(std::max((bandwidth - 1)/2, 0));
 
   int lo, hi;
   A->localRowRange(lo, hi);
+ 
+  for (int i = lo; i < hi; ++i) {
+    TestType x(TEST_VALUE(i, i));
+    int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
+    for (int j = jmin; j <= jmax; ++j) {
+      A->setElement(i, j, x);
+    }
+  }
+  A->ready();
+  A->print();
 
+  boost::scoped_ptr<TestMatrixType> B(gridpack::math::transpose(*A));
+
+  B->print();
+  B->localRowRange(lo, hi);
   for (int i = lo; i < hi; ++i) {
     int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
     for (int j = jmin; j <= jmax; ++j) {
       TestType 
-        x(static_cast<TestType>(j)), y;
+        x(TEST_VALUE(j, j)), y;
       B->getElement(i, j, y);
       TEST_VALUE_CLOSE(x, y, delta);
     }
   }
 }
+
+
 
 BOOST_AUTO_TEST_CASE( GetRowLocal )
 {

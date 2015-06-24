@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-06-18 10:30:09 d3g096
+ * @date   2015-06-24 07:56:27 d3g096
  * 
  * @brief  
  * 
@@ -56,6 +56,9 @@ transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result)
       ierr = MatTranspose(*pA, MAT_REUSE_MATRIX, pAtrans); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
+    }
+    if (!PETScMatrixImplementation<T, I>::useLibrary) {
+      result.conjugate();
     }
   } else {
     std::string msg = 
@@ -193,7 +196,10 @@ transpose(const MatrixT<T, I>& A)
   PETScMatrixImplementation<T, I> *result_impl = 
     new PETScMatrixImplementation<T, I>(pAtrans, true);
   MatrixT<T, I> *result = new MatrixT<T, I>(result_impl);
-
+  
+  if (!PETScMatrixImplementation<T, I>::useLibrary) {
+    result->conjugate();
+  }
   return result;
 }
 
