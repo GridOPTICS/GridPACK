@@ -6,6 +6,7 @@
 
 #include "mpi.h"
 #include <math.h>
+#include "gridpack/parallel/communicator.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 
 gridpack::utility::CoarseTimer
@@ -77,8 +78,10 @@ void gridpack::utility::CoarseTimer::dump(void) const
 {
   // Loop over all categories
   int me, nproc, i, j;
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  gridpack::parallel::Communicator comm;
+  MPI_Comm world = static_cast<MPI_Comm>(comm);
+  MPI_Comm_rank(world, &me);
+  MPI_Comm_size(world, &nproc);
 
   // Create temporary arrays to hold timing statistics
   int *scheck = new int[nproc];
@@ -98,9 +101,9 @@ void gridpack::utility::CoarseTimer::dump(void) const
     int rncheck = 0;
     if (p_istop[i] > 0 || p_start[i] > 0) sncheck = 1;
     stime[me] = p_time[i];
-    MPI_Allreduce(scheck, rcheck, nproc, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allreduce(&sncheck, &rncheck, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-    MPI_Allreduce(stime, rtime, nproc, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+    MPI_Allreduce(scheck, rcheck, nproc, MPI_INT, MPI_SUM, world);
+    MPI_Allreduce(&sncheck, &rncheck, 1, MPI_INT, MPI_SUM, world);
+    MPI_Allreduce(stime, rtime, nproc, MPI_DOUBLE, MPI_SUM, world);
     bool ok = true;
     double max = rtime[0];
     double min = rtime[0];
@@ -150,8 +153,10 @@ void gridpack::utility::CoarseTimer::dumpProfile(const int idx) const
 {
   // Loop over all categories
   int me, nproc, j;
-  MPI_Comm_rank(MPI_COMM_WORLD, &me);
-  MPI_Comm_size(MPI_COMM_WORLD, &nproc);
+  gridpack::parallel::Communicator comm;
+  MPI_Comm world = static_cast<MPI_Comm>(comm);
+  MPI_Comm_rank(world, &me);
+  MPI_Comm_size(world, &nproc);
 
   // Create temporary arrays to hold timing statistics
   int *scheck = new int[nproc];
@@ -170,9 +175,9 @@ void gridpack::utility::CoarseTimer::dumpProfile(const int idx) const
   int rncheck = 0;
   if (p_istop[idx] > 0 || p_start[idx] > 0) sncheck = 1;
   stime[me] = p_time[idx];
-  MPI_Allreduce(scheck, rcheck, nproc, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(&sncheck, &rncheck, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
-  MPI_Allreduce(stime, rtime, nproc, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(scheck, rcheck, nproc, MPI_INT, MPI_SUM, world);
+  MPI_Allreduce(&sncheck, &rncheck, 1, MPI_INT, MPI_SUM, world);
+  MPI_Allreduce(stime, rtime, nproc, MPI_DOUBLE, MPI_SUM, world);
   bool ok = true;
   if (ok && me == 0 && rncheck > 0) {
     printf("Timing profile for: %s\n",p_title[idx].c_str());
@@ -196,13 +201,15 @@ void gridpack::utility::CoarseTimer::dumpProfile(const int idx) const
 void gridpack::utility::CoarseTimer::dumpProfile(const std::string title)
 {
   std::map<std::string, int>::iterator it;
+  gridpack::parallel::Communicator comm;
+  MPI_Comm world = static_cast<MPI_Comm>(comm);
   it = p_title_map.find(title);
   if (it != p_title_map.end()) {
     int idx = it->second;
     dumpProfile(idx);
   } else {
     int me;
-    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+    MPI_Comm_rank(world, &me);
     if (me == 0) {
       printf("No statistics for:%s\n",title.c_str()); 
     }
