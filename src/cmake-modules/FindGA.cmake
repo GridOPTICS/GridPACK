@@ -105,6 +105,26 @@ if (GA_INCLUDE_DIR AND GA_LIBRARY AND ARMCI_LIBRARY)
     ${GA_CXX_LIBRARY} ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS} ${MPI_LIBRARIES})
 
   # Build and run test program
+if (USE_PROGRESS_RANKS) 
+  include(CheckCXXSourceRuns)
+  check_cxx_source_runs("
+#include <mpi.h>
+#include <ga++.h>
+
+int main()
+{
+  // FIXME: Find a simple but sensible test for GA
+
+  // Initialise MPI
+  MPI::Init();
+
+  // Finalize MPI
+  MPI::Finalize();
+
+  return 0;
+}
+" GA_TEST_RUNS)
+else()
   include(CheckCXXSourceRuns)
   check_cxx_source_runs("
 #include <mpi.h>
@@ -129,6 +149,7 @@ int main()
   return 0;
 }
 " GA_TEST_RUNS)
+endif()
 endif()
 
 # Standard package handling
