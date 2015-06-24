@@ -26,12 +26,13 @@ main(int argc, char **argv)
 {
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
-  // Initialize Math libraries
-  gridpack::math::Initialize();
 
   GA_Initialize();
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
+
+  // Initialize Math libraries
+  gridpack::math::Initialize();
 
   gridpack::hello_world::HWApp app;
   app.execute(argc, argv);
