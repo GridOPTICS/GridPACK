@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-03-20 14:59:38 d3g096
+# Last Change: 2015-06-25 13:00:42 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -60,10 +60,17 @@ add_executable(greetings test/greetings.cpp)
 target_link_libraries(greetings gridpack_parallel 
   ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-add_test(greetings_serial greetings)
+if (NOT USE_PROGRESS_RANKS)
+  add_test(greetings_serial greetings)
+  set_tests_properties(greetings_serial
+    PROPERTIES 
+    PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
+    )
+endif()
+
 add_test(greetings_parallel 
   ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} greetings ${MPIEXEC_POSTFLAGS})
-set_tests_properties(greetings_serial greetings_parallel
+set_tests_properties(greetings_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
 )
@@ -76,13 +83,7 @@ add_executable(task_test test/task_test.cpp)
 target_link_libraries(task_test gridpack_parallel 
   ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-add_test(task_test_serial task_test)
-add_test(task_test_parallel 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} task_test ${MPIEXEC_POSTFLAGS})
-#set_tests_properties(task_test_serial task_test_parallel
-#  PROPERTIES 
-#  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#)
+gridpack_add_run_test(task_test task_test "")
 
 # -------------------------------------------------------------
 # TEST: mpi_test
@@ -90,8 +91,8 @@ add_test(task_test_parallel
 # -------------------------------------------------------------
 add_executable(mpi_test test/mpi_test.cpp)
 target_link_libraries(mpi_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-gridpack_add_unit_test(mpi_test mpi_test)
 
+gridpack_add_unit_test(mpi_test mpi_test)
 
 # -------------------------------------------------------------
 # TEST: shuffle_test
@@ -113,9 +114,8 @@ add_executable(hash_test test/hash_test.cpp)
 target_link_libraries(hash_test gridpack_parallel 
   ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES} gridpack_timer)
 
-add_test(hash_test_serial hash_test)
-add_test(hash_test_parallel 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} hash_test ${MPIEXEC_POSTFLAGS})
+gridpack_add_unit_test(hash_test hash_test)
+
 # -------------------------------------------------------------
 # TEST: random_test
 # A simple program to test the random number generator
@@ -124,10 +124,4 @@ add_executable(random_test test/random_test.cpp)
 target_link_libraries(random_test gridpack_parallel 
   ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
-add_test(random_test_serial random_test)
-add_test(random_test_parallel 
-  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} random_test ${MPIEXEC_POSTFLAGS})
-#set_tests_properties(hash_test_serial hash_test_parallel
-#  PROPERTIES 
-#  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#)
+gridpack_add_run_test(random_test random_test "")

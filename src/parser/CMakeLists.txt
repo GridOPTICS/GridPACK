@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-08-06 13:24:48 d3g096
+# Last Change: 2015-06-25 13:10:19 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -48,9 +48,6 @@ endif()
 add_executable(parser_test test/parser_test.cpp)
 target_link_libraries(parser_test ${target_libraries})
 
-add_executable(hash_distr_test test/hash_distr_test.cpp)
-target_link_libraries(hash_distr_test ${target_libraries})
-
 add_custom_target(test_parser_input
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -73,31 +70,15 @@ add_custom_target(test_parser_input
 add_dependencies(parser_test test_parser_input)
 #add_dependencies(PTI23_test test_parser_input)
 
-add_test(parser_test parser_test)
-add_test(hash_distr_test hash_distr_test)
-
-
-#!!add_test(NAME greetings_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(greetings_serial greetings_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#!!)
+gridpack_add_run_test(parser_test parser_test "IEEE14.raw")
 
 # -------------------------------------------------------------
-# TEST: mpi_test
-# A simple MPI test using boost::test
+# TEST: hash_distr_test
 # -------------------------------------------------------------
-#!!add_executable(mpi_test test/mpi_test.cpp)
-#!!target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+add_executable(hash_distr_test test/hash_distr_test.cpp)
+target_link_libraries(hash_distr_test ${target_libraries})
 
-#!!add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-#!!add_test(NAME mpi_test_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(mpi_test_serial mpi_test_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "No errors detected"
-#!!)
+gridpack_add_unit_test(hash_distr_test hash_distr_test)
 
 # -------------------------------------------------------------
 # installation

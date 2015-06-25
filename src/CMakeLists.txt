@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-06-23 13:29:22 d3g096
+# Last Change: 2015-06-24 09:53:26 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -32,7 +32,7 @@ enable_testing()
 # add user configuration options
 option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
 if (USE_PROGRESS_RANKS)
-  add_definitions (-DUSE_PROGRESS_RANKS)
+  add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
 # -------------------------------------------------------------
 # MPI compiler

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2015-05-12 11:31:19 d3g096
+# Last Change: 2015-06-25 12:25:27 d3g096
 # -------------------------------------------------------------
 
 # This is used to specify a time out for GridPACK unit tests. It's 5
@@ -94,7 +94,9 @@ endfunction(gridpack_add_parallel_run_test)
 # -------------------------------------------------------------
 
 function(gridpack_add_unit_test test_name test_program)
-  gridpack_add_serial_unit_test("${test_name}" "${test_program}")
+  if (NOT USE_PROGRESS_RANKS)
+    gridpack_add_serial_unit_test("${test_name}" "${test_program}")
+  endif()
   if (MPIEXEC) 
     gridpack_add_parallel_unit_test("${test_name}" "${test_program}")
   endif ()
@@ -109,7 +111,9 @@ endfunction(gridpack_add_unit_test)
 # -------------------------------------------------------------
 
 function(gridpack_add_run_test test_name test_program test_input)
-  gridpack_add_serial_run_test("${test_name}" "${test_program}"  "${test_input}")
+  if (NOT USE_PROGRESS_RANKS)
+    gridpack_add_serial_run_test("${test_name}" "${test_program}"  "${test_input}")
+  endif()
   if (MPIEXEC) 
     gridpack_add_parallel_run_test("${test_name}" "${test_program}"  "${test_input}")
   endif ()

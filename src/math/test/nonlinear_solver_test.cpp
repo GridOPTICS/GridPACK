@@ -8,7 +8,7 @@
 /**
  * @file   nonlinear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-06-12 14:02:15 d3g096
+ * @date   2015-06-25 12:09:44 d3g096
  * 
  * @brief  Unit tests for NonlinearSolver
  * 
@@ -98,8 +98,8 @@ struct build_tiny_function_1
 
 BOOST_AUTO_TEST_CASE( tiny_serial_1 )
 {
-  boost::mpi::communicator world;
-  boost::mpi::communicator self = world.split(world.rank());
+  gridpack::parallel::Communicator world;
+  gridpack::parallel::Communicator self = world.split(world.rank());
 
   TheNonlinearSolver::JacobianBuilder j = build_tiny_jacobian_1();
   TheNonlinearSolver::FunctionBuilder f = build_tiny_function_1();
@@ -128,8 +128,8 @@ BOOST_AUTO_TEST_CASE( tiny_serial_1 )
 
 BOOST_AUTO_TEST_CASE( tiny_nr_serial_1 )
 {
-  boost::mpi::communicator world;
-  boost::mpi::communicator self = world.split(world.rank());
+  gridpack::parallel::Communicator world;
+  gridpack::parallel::Communicator self = world.split(world.rank());
 
   TheNewtonRaphsonSolver::JacobianBuilder j = build_tiny_jacobian_1();
   TheNewtonRaphsonSolver::FunctionBuilder f = build_tiny_function_1();
@@ -193,8 +193,8 @@ build_tiny_function_2(const VectorType& X, VectorType& F)
 
 BOOST_AUTO_TEST_CASE( tiny_serial_2 )
 {
-  boost::mpi::communicator world;
-  boost::mpi::communicator self = world.split(world.rank());
+  gridpack::parallel::Communicator world;
+  gridpack::parallel::Communicator self = world.split(world.rank());
 
   TheNonlinearSolver::JacobianBuilder j = &build_tiny_jacobian_2;
   TheNonlinearSolver::FunctionBuilder f = &build_tiny_function_2;
@@ -223,8 +223,8 @@ BOOST_AUTO_TEST_CASE( tiny_serial_2 )
 
 BOOST_AUTO_TEST_CASE( tiny_nr_serial_2 )
 {
-  boost::mpi::communicator world;
-  boost::mpi::communicator self = world.split(world.rank());
+  gridpack::parallel::Communicator world;
+  gridpack::parallel::Communicator self = world.split(world.rank());
 
   TheNewtonRaphsonSolver::JacobianBuilder j = &build_tiny_jacobian_2;
   TheNewtonRaphsonSolver::FunctionBuilder f = &build_tiny_function_2;
@@ -325,7 +325,7 @@ struct build_thing
 
 BOOST_AUTO_TEST_CASE( example2 )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator world;
   int local_size(4);
 
   // Make sure local ownership specifications work
@@ -356,7 +356,7 @@ BOOST_AUTO_TEST_CASE( example2 )
 
 BOOST_AUTO_TEST_CASE( example2_nr )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator world;
   int local_size(4);
 
   // Make sure local ownership specifications work
