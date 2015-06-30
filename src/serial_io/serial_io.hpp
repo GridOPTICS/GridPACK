@@ -153,6 +153,115 @@ class SerialBusIO {
     }
   }
 
+  /**
+   * This is a function that can use the machinery that has been set up in the
+   * serialBusIO class to move data to the head node
+   * @param vector of data at the head node (this vector will be empty on all
+   * other nodes)
+   */
+  template <class _data_type> void gatherData(std::vector<_data_type>
+      &data_vector, const char* signal = NULL)
+  {
+    int nBus = p_network->numBuses();
+    if (sizeof(_data_type) > p_size) {
+      // TODO: Some kind of error
+    }
+    _data_type data;
+    int dsize = sizeof(_data_type);
+    int nwrites = 0;
+    int i;
+    int one = 1;
+
+    // Count up total strings being written from this processor
+    for (i=0; i<nBus; i++) {
+      if (p_network->getActiveBus(i) &&
+          p_network->getBus(i)->getDataItem(&data,signal)) {
+        nwrites++;
+      }
+    }
+
+    // Set up buffers to scatter strings to global buffer
+    int **index;
+    index = new int*[nwrites];
+    int ones[nwrites];
+    char *strbuf;
+    if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
+    char *ptr = strbuf;
+    nwrites = 0;
+    for (i=0; i<nBus; i++) {
+      if (p_network->getActiveBus(i) &&
+          p_network->getBus(i)->getDataItem(ptr,signal)) {
+        index[nwrites] = new int;
+        *(index[nwrites]) = p_network->getGlobalBusIndex(i);
+        ones[nwrites] = 1;
+        nwrites++;
+        ptr += p_size;
+      }
+    }
+
+    // Scatter data to global buffer and set mask array
+    GA_Zero(p_maskGA);
+    if (nwrites > 0) {
+      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+      NGA_Scatter(p_maskGA,ones,index,nwrites);
+    }
+    if (nwrites*p_size > 0) delete [] strbuf;
+    GA_Pgroup_sync(p_GAgrp);
+    for (i=0; i<nwrites; i++) {
+      delete index[i];
+    }
+    delete [] index;
+
+    // String data is now stored on global array. Process 0 now retrieves data
+    // from each successive processor and writes it to standard out  
+    data_vector.clear();
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      int nprocs = GA_Pgroup_nnodes(p_GAgrp);
+      int lo, hi;
+      for (i=0; i<nprocs; i++) {
+        NGA_Distribution(p_maskGA, i, &lo, &hi);
+        int ld = hi - lo + 1;
+        // Figure out how many strings are coming from process i
+        int imask[ld];
+        NGA_Get(p_maskGA,&lo,&hi,imask,&one);
+        int j;
+        nwrites = 0;
+        for (j=0; j<ld; j++) {
+          if (imask[j] == 1) {
+            nwrites++;
+          }
+        }
+        // Create buffers to retrieve strings from process i
+        if (nwrites > 0) {
+          char iobuf[p_size*nwrites];
+          index = new int*[nwrites];
+          nwrites = 0;
+          for (j=0; j<ld; j++) {
+            if (imask[j] == 1) {
+              index[nwrites] = new int;
+              *(index[nwrites]) = j + lo;
+              nwrites++;
+            }
+          }
+          NGA_Gather(p_stringGA,iobuf,index,nwrites);
+          ptr = iobuf;
+          nwrites = 0;
+          for (j=0; j<ld; j++) {
+            if (imask[j] == 1) {
+              memcpy(&data,ptr,dsize);
+              data_vector.push_back(data);
+              ptr += p_size;
+              delete index[nwrites];
+              nwrites++;
+            }
+          }
+          delete [] index;
+        }
+      }
+    }
+    GA_Pgroup_sync(p_GAgrp);
+  }
+
   protected:
 
   /**

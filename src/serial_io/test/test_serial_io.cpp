@@ -21,6 +21,8 @@ class TestBus
   : public gridpack::component::BaseBusComponent {
   public: 
 
+  typedef struct {int id;} test_data;
+
   TestBus(void) {
   }
 
@@ -30,6 +32,11 @@ class TestBus
   bool serialWrite(char *string, const int bufsize, const char *signal) {
     sprintf(string,"  Bus: %4d      %4d\n",getOriginalIndex(),
         getGlobalIndex());
+    return true;
+  }
+
+  bool getDataItem(void *data, const char* string) {
+    static_cast<test_data*>(data)->id = getOriginalIndex();
     return true;
   }
 };
@@ -259,6 +266,30 @@ void run (const int &me, const int &nprocs)
   branchIO.header("\n  Branch Properties\n");
   branchIO.header("\n         Original1  Original2  Global1 Global2\n");
   branchIO.write();
+
+  busIO.header("\n Test gather data functionality\n");
+  std::vector<TestBus::test_data> data;
+  busIO.gatherData<TestBus::test_data>(data);
+  if (me == 0) {
+    if (data.size() != XDIM*YDIM) {
+      printf("\n    Mismatch in size of gathered data expected: %d actual: %d\n",
+          XDIM*YDIM, static_cast<int>(data.size()));
+    } else {
+      printf("\n    Size of gathered data is ok\n");
+    }
+    bool ok = true;
+    for (i=0; i<data.size(); i++) {
+      if (data[i].id != 2*i) {
+        printf(" Index: %d ID: %d\n",2*i,data[i].id);
+        ok = false;
+      }
+    }
+    if (!ok) {
+      printf("\n    Values of gathered data are wrong\n");
+    } else {
+      printf("\n    Values of gathered data are ok\n");
+    }
+  }
 }
 
 int

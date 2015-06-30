@@ -414,7 +414,7 @@ class BaseComponent
      * @param string buffer containing string to be written to output
      * @param bufsize size of string buffer in bytes
      * @param signal string to control behavior of routine (e.g. what
-     * properties to write
+     * properties to write)
      * @return true if component is writing a contribution, false otherwise
      */
     virtual bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
@@ -427,6 +427,16 @@ class BaseComponent
      */
     virtual void saveData(boost::shared_ptr<gridpack::component::DataCollection>
         data);
+
+    /**
+     * Retrieve an opaque data item from component. Different items may be
+     * returned based on the value of signal.
+     * @param data item to retrieve from component
+     * @param signal string to control behavior of routine (e.g. what
+     * data item to return)
+     * @return true if component is returning data element, false otherwise
+     */
+    virtual bool getDataItem(void *data, const char *signal = NULL);
 
   protected:
     /**

@@ -522,6 +522,19 @@ bool BaseComponent::serialWrite(char *string, const int bufsize, const char *sig
 }
 
 /**
+ * Retrieve an opaque data item from component. Different items may be
+ * returned based on the value of signal.
+ * @param data item to retrieve from component
+ * @param signal string to control behavior of routine (e.g. what
+ * item to return)
+ * @return true if component is returning data element, false otherwise
+ */
+bool BaseComponent::getDataItem(void *data, const char *signal)
+{
+  return false;
+}
+
+/**
  * Save state variables inside the component to a DataCollection object.
  * This can be used as a way of moving data in a way that is useful for
  * creating output or for copying state data from one network to another.
