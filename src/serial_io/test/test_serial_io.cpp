@@ -45,6 +45,9 @@ class TestBranch
   : public gridpack::component::BaseBranchComponent {
   public: 
 
+  typedef struct {int id1;
+                  int id2;} test_data;
+
   TestBranch(void) {
   }
 
@@ -56,6 +59,12 @@ class TestBranch
         getBus2OriginalIndex(),
         getBus1GlobalIndex(),
         getBus2GlobalIndex());
+    return true;
+  }
+
+  bool getDataItem(void *data, const char* string) {
+    static_cast<test_data*>(data)->id1 = getBus1OriginalIndex();
+    static_cast<test_data*>(data)->id2 = getBus2OriginalIndex();
     return true;
   }
 };
@@ -267,27 +276,65 @@ void run (const int &me, const int &nprocs)
   branchIO.header("\n         Original1  Original2  Global1 Global2\n");
   branchIO.write();
 
+  // Test gatherData functionality
   busIO.header("\n Test gather data functionality\n");
-  std::vector<TestBus::test_data> data;
-  busIO.gatherData<TestBus::test_data>(data);
+  std::vector<TestBus::test_data> bus_data;
+  busIO.gatherData<TestBus::test_data>(bus_data);
   if (me == 0) {
-    if (data.size() != XDIM*YDIM) {
+    if (bus_data.size() != XDIM*YDIM) {
       printf("\n    Mismatch in size of gathered data expected: %d actual: %d\n",
-          XDIM*YDIM, static_cast<int>(data.size()));
+          XDIM*YDIM, static_cast<int>(bus_data.size()));
     } else {
-      printf("\n    Size of gathered data is ok\n");
+      printf("\n    Size of gathered data on buses is ok\n");
     }
     bool ok = true;
-    for (i=0; i<data.size(); i++) {
-      if (data[i].id != 2*i) {
-        printf(" Index: %d ID: %d\n",2*i,data[i].id);
+    for (i=0; i<bus_data.size(); i++) {
+      if (bus_data[i].id != 2*i) {
+        printf(" Index: %d ID: %d\n",2*i,bus_data[i].id);
         ok = false;
       }
     }
     if (!ok) {
-      printf("\n    Values of gathered data are wrong\n");
+      printf("\n    Values of gathered data on buses are wrong\n");
     } else {
-      printf("\n    Values of gathered data are ok\n");
+      printf("\n    Values of gathered data on buses are ok\n");
+    }
+  }
+  std::vector<TestBranch::test_data> branch_data;
+  branchIO.gatherData<TestBranch::test_data>(branch_data);
+  if (me == 0) {
+    if (branch_data.size() != (XDIM-1)*YDIM+XDIM*(YDIM-1)) {
+      printf("\n    Mismatch in size of gathered data expected: %d actual: %d\n",
+          (XDIM-1)*YDIM+XDIM*(YDIM-1), static_cast<int>(branch_data.size()));
+    } else {
+      printf("\n    Size of gathered data on branches is ok\n");
+    }
+    bool ok = true;
+    int offset = (XDIM-1)*YDIM;
+    for (i=0; i<branch_data.size(); i++) {
+      if (i < offset) {
+        n = i;
+        ix = n%(XDIM-1);
+        iy = (n-ix)/(XDIM-1);
+        n1 = iy*XDIM+ix;
+        n2 = iy*XDIM+ix+1;
+      } else {
+        n = i-offset;
+        ix = n%XDIM;
+        iy = (n-ix)/XDIM;
+        n1 = iy*XDIM+ix;
+        n2 = (iy+1)*XDIM+ix;
+      }
+      if (branch_data[i].id1 != 2*n1 || branch_data[i].id2 != 2*n2) {
+        printf(" n1: %d n2: %d ID1: %d ID2 %d\n",2*n1,2*n2,branch_data[i].id1,
+            branch_data[i].id2);
+        ok = false;
+      }
+    }
+    if (!ok) {
+      printf("\n    Values of gathered data on branches are wrong\n");
+    } else {
+      printf("\n    Values of gathered data on branches are ok\n");
     }
   }
 }
