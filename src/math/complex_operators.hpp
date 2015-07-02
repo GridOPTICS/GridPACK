@@ -10,7 +10,7 @@
 /**
  * @file   complex_operators.hpp
  * @author William A. Perkins
- * @date   2015-03-04 13:22:19 d3g096
+ * @date   2015-06-12 09:12:12 d3g096
  * 
  * @brief This header provides type interregation utilities and some math
  * operators for the math library
@@ -40,6 +40,14 @@ namespace math {
 // -------------------------------------------------------------
 // equate
 // -------------------------------------------------------------
+/// 
+/** 
+ * This allows a general way to do @c "x = y" 
+ * 
+ * @param f 
+ * 
+ * @return 
+ */
 template <typename To, typename From>
 inline To 
 equate(const From& f)
@@ -57,54 +65,6 @@ equate<RealType, ComplexType>(const ComplexType& f)
   t = std::real(f);
   return t;
 }
-  
-/*
-
-  template <typename To, typename From>
-  inline void equate(To& t, const From& f)
-  {
-  BOOST_STATIC_ASSERT(boost::is_same<From, To>::value);
-  t = f;
-  }
-
-  template <>
-  inline void equate<ComplexType, RealType>(ComplexType& t, const RealType& f)
-  {
-  t = f;
-  }
-
-  template <>
-  inline void equate<RealType, ComplexType>(RealType& t, const ComplexType& f)
-  {
-  t = std::real(f);
-  }
-*/
-
-// /// Get the real part of a number
-// /** 
-//  * instantiate only for gridpack::RealType and gridpack::ComplexType;
-//  * other types should produce a compilation error (not a link error)
-//  * 
-//  * @param value 
-//  * 
-//  * @return 
-//  */
-// template <typename T> inline RealType realpart(const T& value);
-
-
-// // Instantiation for real values
-// template <> 
-// inline RealType realpart<RealType>(const RealType& value)
-// {
-//   return value;
-// }
-
-// // Instantiation for complex values
-// template <> 
-// inline RealType realpart<ComplexType>(const ComplexType& value)
-// {
-//   return std::real(value);
-// }
 
 // -------------------------------------------------------------
 // base_unary_function
@@ -293,6 +253,53 @@ conjugate_value<ComplexType>::operator() (const ComplexType& x) const
 }
 
 // -------------------------------------------------------------
+// real_value
+// -------------------------------------------------------------
+template <typename T> 
+struct real_value : public base_unary_function<T>
+{
+  inline T operator() (const T& x) const;
+};
+
+template <>
+inline RealType
+real_value<RealType>::operator() (const RealType& x) const
+{
+  return x;
+}
+
+template <>
+inline ComplexType
+real_value<ComplexType>::operator() (const ComplexType& x) const
+{
+  return std::real(x);
+}
+
+// -------------------------------------------------------------
+// imaginary_value
+// -------------------------------------------------------------
+template <typename T> 
+struct imaginary_value : public base_unary_function<T>
+{
+  inline T operator() (const T& x) const;
+};
+
+template <>
+inline RealType
+imaginary_value<RealType>::operator() (const RealType& x) const
+{
+  return 0.0;
+}
+
+template <>
+inline ComplexType
+imaginary_value<ComplexType>::operator() (const ComplexType& x) const
+{
+  return std::imag(x);
+}
+
+
+// -------------------------------------------------------------
 // base_accumulator_function
 // -------------------------------------------------------------
 template <typename T, typename ResultType>
@@ -361,7 +368,7 @@ template <>
 inline void
 l1_norm<RealType>::operator() (const RealType& x)
 {
-  accum += ::abs(x);
+  accum += ::fabs(x);
 }
 
 template <>

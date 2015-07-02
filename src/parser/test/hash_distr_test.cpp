@@ -120,11 +120,13 @@ BOOST_AUTO_TEST_SUITE ( TestHashDistribution )
 BOOST_AUTO_TEST_CASE( TestHashFunctions )
 {
 
+  gridpack::parallel::Communicator comm;
+  MPI_Comm mpi_world = static_cast<MPI_Comm>(comm);
   int ierr;
   int me;
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  ierr = MPI_Comm_rank(mpi_world, &me);
   int nprocs;
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  ierr = MPI_Comm_size(mpi_world, &nprocs);
 
   // Get timer
   gridpack::utility::CoarseTimer *timer =
@@ -371,7 +373,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   }
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nDistribution of buses succeeded\n");
@@ -403,7 +405,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   }
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nDistribution of branches succeeded\n");
@@ -512,7 +514,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   }
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nAsymmetric distribution of buses succeeded\n");
@@ -543,7 +545,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   }
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nAsymmetric distribution of branches succeeded\n");
@@ -652,7 +654,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   }
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nDistribution of bus vectors succeeded\n");
@@ -694,7 +696,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   }
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nDistribution of branch vectors succeeded\n\n");

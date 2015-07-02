@@ -9,7 +9,7 @@
 /**
  * @file   communicator.cpp
  * @author William A. Perkins
- * @date   2014-02-13 09:22:41 d3g096
+ * @date   2015-05-22 09:47:03 d3g096
  * 
  * @brief  
  * 
@@ -18,6 +18,9 @@
 // -------------------------------------------------------------
 
 #include <ga++.h>
+#if USE_PROGRESS_RANKS
+#include <ga-mpi.h>
+#endif
 #include "gridpack/utilities/uncopyable.hpp"
 #include "communicator.hpp"
 
@@ -81,7 +84,12 @@ private:
 // Communicator:: constructors / destructor
 // -------------------------------------------------------------
 Communicator::Communicator(void)
+#if USE_PROGRESS_RANKS
+  : p_comm(GA_MPI_Comm(),boost::mpi::comm_duplicate),
+    p_private(new CommunicatorPrivate())
+#else
   : p_comm(), p_private(new CommunicatorPrivate())
+#endif
 {
   
 }
@@ -194,7 +202,7 @@ Communicator::sync(void) const
  * @param x vector of values to be summed
  * @param nvals number of values in vector
  */
-void Communicator::sum(float *x, int nvals)
+void Communicator::sum(float *x, int nvals) const
 {
   int i;
   float *src = new float[nvals];
@@ -210,7 +218,7 @@ void Communicator::sum(float *x, int nvals)
   delete [] dest;
 }
 
-void Communicator::sum(double *x, int nvals)
+void Communicator::sum(double *x, int nvals) const
 {
   int i;
   double *src = new double[nvals];
@@ -226,7 +234,7 @@ void Communicator::sum(double *x, int nvals)
   delete [] dest;
 }
 
-void Communicator::sum(int *x, int nvals)
+void Communicator::sum(int *x, int nvals) const
 {
   int i;
   int *src = new int[nvals];
@@ -242,7 +250,7 @@ void Communicator::sum(int *x, int nvals)
   delete [] dest;
 }
 
-void Communicator::sum(long *x, int nvals)
+void Communicator::sum(long *x, int nvals) const
 {
   int i;
   long *src = new long[nvals];
@@ -258,7 +266,7 @@ void Communicator::sum(long *x, int nvals)
   delete [] dest;
 }
 
-void Communicator::sum(gridpack::ComplexType *x, int nvals)
+void Communicator::sum(gridpack::ComplexType *x, int nvals) const
 {
   int i;
   gridpack::ComplexType *src = new gridpack::ComplexType[nvals];
@@ -281,28 +289,28 @@ void Communicator::sum(gridpack::ComplexType *x, int nvals)
  * @param x vector of values to be evaluated
  * @param nvals number of values in vector
  */
-void Communicator::max(float *x, int nvals)
+void Communicator::max(float *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
   GA_Fgop(x,nvals,cmax);
 }
 
-void Communicator::max(double *x, int nvals)
+void Communicator::max(double *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
   GA_Dgop(x,nvals,cmax);
 }
 
-void Communicator::max(int *x, int nvals)
+void Communicator::max(int *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
   GA_Igop(x,nvals,cmax);
 }
 
-void Communicator::max(long *x, int nvals)
+void Communicator::max(long *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
@@ -315,28 +323,28 @@ void Communicator::max(long *x, int nvals)
  * @param x vector of values to be evaluated
  * @param nvals number of values in vector
  */
-void Communicator::min(float *x, int nvals)
+void Communicator::min(float *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");
   GA_Fgop(x,nvals,cmin);
 }
 
-void Communicator::min(double *x, int nvals)
+void Communicator::min(double *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");
   GA_Dgop(x,nvals,cmin);
 }
 
-void Communicator::min(int *x, int nvals)
+void Communicator::min(int *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");
   GA_Igop(x,nvals,cmin);
 }
 
-void Communicator::min(long *x, int nvals)
+void Communicator::min(long *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");

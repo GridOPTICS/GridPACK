@@ -60,6 +60,7 @@ class PFBus
      *        matrix element
      */
     bool matrixDiagValues(ComplexType *values);
+    bool matrixDiagValues(RealType *values);
 
     /**
      * Return size of vector block contributed by component
@@ -76,6 +77,7 @@ class PFBus
      *        vector element
      */
     bool vectorValues(ComplexType *values);
+    bool vectorValues(RealType *values);
 
     /**
      * Set the internal values of the voltage magnitude and phase angle. Need this
@@ -83,6 +85,7 @@ class PFBus
      * @param values array containing voltage magnitude and angle
      */
     void setValues(gridpack::ComplexType *values);
+    void setValues(gridpack::RealType *values);
 
     /**
      * Return the size of the buffer used in data exchanges on the network.
@@ -274,6 +277,22 @@ class PFBus
      */
     bool getIgnore();
 
+    /**
+     * Evaluate diagonal block of Jacobian for power flow calculation and return
+     * result as an array of real values
+     * @param rvals values of Jacobian block
+     * @return number of values returned
+     */
+    int diagonalJacobianValues(double *rvals);
+
+    /**
+     * Evaluate RHS values for powerflow equation and return result as an array
+     * of real values
+     * @param rvals values of Jacobian block
+     * @return number of values returned
+     */
+    int rhsValues(double *rvals);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -379,6 +398,8 @@ class PFBranch
      */
     bool matrixForwardValues(ComplexType *values);
     bool matrixReverseValues(ComplexType *values);
+    bool matrixForwardValues(RealType *values);
+    bool matrixReverseValues(RealType *values);
 
     /**
      * Set values of YBus matrix. These can then be used in subsequent
@@ -489,6 +510,15 @@ class PFBranch
      * @return value of ignore parameter
      */
     bool getIgnore(std::string tag);
+
+    /**
+     * Evaluate off-diagonal block of Jacobian for power flow calculation
+     * and return result as an array of real values
+     * @param rvals values of Jacobian block
+     * @return number of values returned
+     */
+    int forwardJacobianValues(double *rvals);
+    int reverseJacobianValues(double *rvals);
 
   private:
     std::vector<bool> p_ignore;

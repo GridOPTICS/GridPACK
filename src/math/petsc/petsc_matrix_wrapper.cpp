@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_wrapper.cpp
  * @author William A. Perkins
- * @date   2015-01-28 11:01:42 d3g096
+ * @date   2015-05-22 10:33:37 d3g096
  * 
  * @brief  
  * 
@@ -409,6 +409,20 @@ PetscMatrixWrapper::norm2(void) const
   return result;
 }
 
+// -------------------------------------------------------------
+// PetscMatrixWrapper::zero
+// -------------------------------------------------------------
+void
+PetscMatrixWrapper::zero(void)
+{
+  Mat *mat = getMatrix();
+  PetscErrorCode ierr(0);
+  try {
+    ierr = MatZeroEntries(*mat); CHKERRXX(ierr);
+  } catch (const PETSC_EXCEPTION_TYPE& e) {
+    throw PETScException(ierr, e);
+  }
+}
 
 // -------------------------------------------------------------
 // PetscMatrixWrapper::p_ready

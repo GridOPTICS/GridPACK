@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-05-06 09:26:45 d3g096
+# Last Change: 2015-05-28 08:49:36 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -22,16 +22,6 @@ set(target_libraries
 # implementation independent math sources
 list(APPEND gridpack_math_sources
   vector_implementation.cpp
-  matrix.cpp
-  matrix_implementation.cpp
-  nonlinear_solver_interface.hpp
-  nonlinear_solver_interface.cpp
-  nonlinear_solver.cpp
-  nonlinear_solver_implementation.cpp
-  newton_raphson_solver.cpp
-  newton_raphson_solver_implementation.cpp 
-  dae_solver.cpp
-  dae_solver_implementation.cpp
   implementation_visitor.cpp
 )
 
@@ -87,12 +77,12 @@ if (PETSC_FOUND)
     list(APPEND gridpack_math_sources 
       petsc/petsc_exception.cpp
       petsc/petsc_configurable.cpp
+      petsc/petsc_misc.cpp
       petsc/petsc_math.cpp
       petsc/petsc_vector.cpp
       petsc/petsc_vector_wrapper.cpp
       petsc/petsc_matrix.cpp
       petsc/ga_matrix.cpp
-      petsc/petsc_matrix_implementation.cpp
       petsc/petsc_matrix_operations.cpp
       petsc/petsc_matrix_wrapper.cpp
       petsc/petsc_matrix.cpp
@@ -100,7 +90,6 @@ if (PETSC_FOUND)
       petsc/petsc_linear_matrix_solver.cpp
       petsc/petsc_nonlinear_solver_implementation.cpp
       petsc/petsc_nonlinear_solver.cpp
-      petsc/petsc_dae_solver_implementation.cpp
       petsc/petsc_dae_solver.cpp
     )  
 
@@ -228,7 +217,7 @@ set_target_properties(real_dense_matrix_test
   COMPILE_DEFINITIONS "TEST_DENSE=YES;TEST_REAL=YES"
 )
 target_link_libraries(real_dense_matrix_test gridpack_math ${target_libraries})
-gridpack_add_unit_test(real_dense_matrix complex_dense_matrix_test)
+gridpack_add_unit_test(real_dense_matrix real_dense_matrix_test)
 
 # -------------------------------------------------------------
 # linear solver test suite

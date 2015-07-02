@@ -64,6 +64,7 @@ class MatVecInterface {
      *        matrix element
      */
     virtual bool matrixDiagValues(ComplexType *values);
+    virtual bool matrixDiagValues(RealType *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
@@ -83,6 +84,7 @@ class MatVecInterface {
      *        matrix element
      */
     virtual bool matrixForwardValues(ComplexType *values);
+    virtual bool matrixForwardValues(RealType *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
@@ -102,6 +104,7 @@ class MatVecInterface {
      *        matrix element
      */
     virtual bool matrixReverseValues(ComplexType *values);
+    virtual bool matrixReverseValues(RealType *values);
 
     /**
      * Return size of vector block contributed by component
@@ -118,6 +121,7 @@ class MatVecInterface {
      *        vector element
      */
     virtual bool vectorValues(ComplexType *values);
+    virtual bool vectorValues(RealType *values);
 
     /**
      * Set values in the bus or branch component based on values in a vector or
@@ -125,6 +129,7 @@ class MatVecInterface {
      * @param values values in vector or matrix
      */
     virtual void setValues(ComplexType *values);
+    virtual void setValues(RealType *values);
 
     /**
      * Set the matrix index for diagonal matrix components or vector component,
@@ -252,6 +257,7 @@ class GenMatVecInterface {
      * @param cols column indices for the matrix elements
      */
     virtual void matrixGetValues(ComplexType *values, int *rows, int*cols);
+    virtual void matrixGetValues(RealType *values, int *rows, int*cols);
 
     /**
      * Return number of elements in vector from component
@@ -281,12 +287,14 @@ class GenMatVecInterface {
      * @param idx indices for the vector elements
      */
     virtual void vectorGetElementValues(ComplexType *values, int *idx);
+    virtual void vectorGetElementValues(RealType *values, int *idx);
 
     /**
      * Transfer vector values to component
      * @param values list of vector element values
      */
     virtual void vectorSetElementValues(ComplexType *values);
+    virtual void vectorSetElementValues(RealType *values);
 
     /**
      * Return number of rows and columns in matrix from component
@@ -317,12 +325,14 @@ class GenMatVecInterface {
      * @param idx indices for the matrix rows
      */
     virtual void slabGetValues(std::vector<ComplexType*> &values, int *idx);
+    virtual void slabGetValues(std::vector<RealType*> &values, int *idx);
 
     /**
      * Transfer slab values to component
      * @param values list of slab values
      */
     virtual void slabSetValues(ComplexType **values);
+    virtual void slabSetValues(RealType **values);
 
   private:
 
@@ -404,7 +414,7 @@ class BaseComponent
      * @param string buffer containing string to be written to output
      * @param bufsize size of string buffer in bytes
      * @param signal string to control behavior of routine (e.g. what
-     * properties to write
+     * properties to write)
      * @return true if component is writing a contribution, false otherwise
      */
     virtual bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
@@ -417,6 +427,16 @@ class BaseComponent
      */
     virtual void saveData(boost::shared_ptr<gridpack::component::DataCollection>
         data);
+
+    /**
+     * Retrieve an opaque data item from component. Different items may be
+     * returned based on the value of signal.
+     * @param data item to retrieve from component
+     * @param signal string to control behavior of routine (e.g. what
+     * data item to return)
+     * @return true if component is returning data element, false otherwise
+     */
+    virtual bool getDataItem(void *data, const char *signal = NULL);
 
   protected:
     /**

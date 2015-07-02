@@ -275,7 +275,9 @@ BOOST_AUTO_TEST_CASE( DataCollection_bin )
 
 BOOST_AUTO_TEST_CASE( DataCollection_mpi )
 {
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator comm;
+  boost::mpi::communicator world(static_cast<MPI_Comm>(comm),
+      boost::mpi::comm_duplicate);
   char key[] = "key name";
 
   // each process makes an instance
@@ -358,7 +360,9 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
 BOOST_AUTO_TEST_CASE ( Component_mpi )
 {
 
-  boost::mpi::communicator world;
+  gridpack::parallel::Communicator comm;
+  boost::mpi::communicator world(static_cast<MPI_Comm>(comm),
+      boost::mpi::comm_duplicate);
 
   typedef boost::shared_ptr<gridpack::component::BaseComponent> CompPtr;
   CompPtr compin, compout;

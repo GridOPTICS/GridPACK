@@ -102,11 +102,12 @@ if (GA_INCLUDE_DIR AND GA_LIBRARY AND ARMCI_LIBRARY)
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${GA_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
   set(CMAKE_REQUIRED_LIBRARIES 
-    ${GA_CXX_LIBRARY} ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS} ${MPI_LIBRARIES})
+    ${GA_CXX_LIBRARY} ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS} ${MPI_LIBRARIES}
+    )
 
-  # Build and run test program
-  include(CheckCXXSourceRuns)
-  check_cxx_source_runs("
+# Build and run test program, maybe
+
+set(ga_test_src "
 #include <mpi.h>
 #include <ga++.h>
 
@@ -128,8 +129,18 @@ int main()
 
   return 0;
 }
-" GA_TEST_RUNS)
+")
+
+include(CheckCXXSourceRuns)
+include(CheckCXXSourceCompiles)
+if (USE_PROGRESS_RANKS) 
+  check_cxx_source_compiles("${ga_test_src}" GA_TEST_RUNS)
+else()
+  check_cxx_source_runs("${ga_test_src}" GA_TEST_RUNS)
 endif()
+endif()
+
+unset(ga_test_src)
 
 # Standard package handling
 include(FindPackageHandleStandardArgs)

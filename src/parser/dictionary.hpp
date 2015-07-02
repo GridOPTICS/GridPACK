@@ -510,371 +510,399 @@
  */
 #define GENERATOR_MODEL "GENERATOR_MODEL"
 
-// EXCITER DATA
+// GOVERNOR DATA
+/**
+ * Flag to indicate that exciter is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_EXCITER "HAS_EXCITER"
+
+/**
+ * Exciter model
+ * type: string
+ * indexed
+ */
+#define EXCITER_MODEL "EXCITER_MODEL"
+
 /**
  * Generator JBUS
  * type: integer
  * indexed
  */
-#define EXCITER_JBUS "EXCITER_JBUS"
+#define GOVERNOR_JBUS "GOVERNOR_JBUS"
 
 /**
- * Exciter M
+ * Governor M
  * type: integer
  * indexed
  */
-#define EXCITER_M "EXCITER_M"
+#define GOVERNOR_M "GOVERNOR_M"
 
 /**
- * Exciter K
+ * Governor K
  * type: real float
  * indexed
  */
-#define EXCITER_K "EXCITER_K"
+#define GOVERNOR_K "GOVERNOR_K"
 
 /**
- * Exciter T1
+ * Governor T1
  * type: real float
  * indexed
  */
-#define EXCITER_T1 "EXCITER_T1"
+#define GOVERNOR_T1 "GOVERNOR_T1"
 
 /**
- * Exciter T2
+ * Governor T2
  * type: real float
  * indexed
  */
-#define EXCITER_T2 "EXCITER_T2"
+#define GOVERNOR_T2 "GOVERNOR_T2"
 
 /**
- * Exciter T3
+ * Governor T3
  * type: real float
  * indexed
  */
-#define EXCITER_T3 "EXCITER_T3"
+#define GOVERNOR_T3 "GOVERNOR_T3"
 
 /**
- * Exciter UO
+ * Governor UO
  * type: real float
  * indexed
  */
-#define EXCITER_UO "EXCITER_UO"
+#define GOVERNOR_UO "GOVERNOR_UO"
 
 /**
- * Exciter UC
+ * Governor UC
  * type: real float
  * indexed
  */
-#define EXCITER_UC "EXCITER_UC"
+#define GOVERNOR_UC "GOVERNOR_UC"
 
 /**
- * Exciter PMAX
+ * Governor PMAX
  * type: real float
  * indexed
  */
-#define EXCITER_PMAX "EXCITER_PMAX"
+#define GOVERNOR_PMAX "GOVERNOR_PMAX"
 
 /**
- * Exciter PMIN
+ * Governor PMIN
  * type: real float
  * indexed
  */
-#define EXCITER_PMIN "EXCITER_PMIN"
+#define GOVERNOR_PMIN "GOVERNOR_PMIN"
 
 /**
- * Exciter T4
+ * Governor T4
  * type: real float
  * indexed
  */
-#define EXCITER_T4 "EXCITER_T4"
+#define GOVERNOR_T4 "GOVERNOR_T4"
 
 /**
- * Exciter K1
+ * Governor K1
  * type: real float
  * indexed
  */
-#define EXCITER_K1 "EXCITER_K1"
+#define GOVERNOR_K1 "GOVERNOR_K1"
 
 /**
- * Exciter K2
+ * Governor K2
  * type: real float
  * indexed
  */
-#define EXCITER_K2 "EXCITER_K2"
+#define GOVERNOR_K2 "GOVERNOR_K2"
 
 /**
- * Exciter T5
+ * Governor T5
  * type: real float
  * indexed
  */
-#define EXCITER_T5 "EXCITER_T5"
+#define GOVERNOR_T5 "GOVERNOR_T5"
 
 /**
- * Exciter K3
+ * Governor K3
  * type: real float
  * indexed
  */
-#define EXCITER_K3 "EXCITER_K3"
+#define GOVERNOR_K3 "GOVERNOR_K3"
 
 /**
- * Exciter K4
+ * Governor K4
  * type: real float
  * indexed
  */
-#define EXCITER_K4 "EXCITER_K4"
+#define GOVERNOR_K4 "GOVERNOR_K4"
 
 /**
- * Exciter T6
+ * Governor T6
  * type: real float
  * indexed
  */
-#define EXCITER_T6 "EXCITER_T6"
+#define GOVERNOR_T6 "GOVERNOR_T6"
 
 /**
- * Exciter K5
+ * Governor K5
  * type: real float
  * indexed
  */
-#define EXCITER_K5 "EXCITER_K5"
+#define GOVERNOR_K5 "GOVERNOR_K5"
 
 /**
- * Exciter K6
+ * Governor K6
  * type: real float
  * indexed
  */
-#define EXCITER_K6 "EXCITER_K6"
+#define GOVERNOR_K6 "GOVERNOR_K6"
 
 /**
- * Exciter T7
+ * Governor T7
  * type: real float
  * indexed
  */
-#define EXCITER_T7 "EXCITER_T7"
+#define GOVERNOR_T7 "GOVERNOR_T7"
 
 /**
- * Exciter K7
+ * Governor K7
  * type: real float
  * indexed
  */
-#define EXCITER_K7 "EXCITER_K7"
+#define GOVERNOR_K7 "GOVERNOR_K7"
 
 /**
- * Exciter K8
+ * Governor K8
  * type: real float
  * indexed
  */
-#define EXCITER_K8 "EXCITER_K8"
+#define GOVERNOR_K8 "GOVERNOR_K8"
 
 /**
- * Exciter DB1
+ * Governor DB1
  * type: real float
  * indexed
  */
-#define EXCITER_DB1 "EXCITER_DB1"
+#define GOVERNOR_DB1 "GOVERNOR_DB1"
 
 /**
- * Exciter ERR
+ * Governor ERR
  * type: real float
  * indexed
  */
-#define EXCITER_ERR "EXCITER_ERR"
+#define GOVERNOR_ERR "GOVERNOR_ERR"
 
 /**
- * Exciter DB2
+ * Governor DB2
  * type: real float
  * indexed
  */
-#define EXCITER_DB2 "EXCITER_DB2"
+#define GOVERNOR_DB2 "GOVERNOR_DB2"
 
 /**
- * Exciter GV1
+ * Governor GV1
  * type: real float
  * indexed
  */
-#define EXCITER_GV1 "EXCITER_GV1"
+#define GOVERNOR_GV1 "GOVERNOR_GV1"
 
 /**
- * Exciter PGV1
+ * Governor PGV1
  * type: real float
  * indexed
  */
-#define EXCITER_PGV1 "EXCITER_PGV1"
+#define GOVERNOR_PGV1 "GOVERNOR_PGV1"
 
 /**
- * Exciter GV2
+ * Governor GV2
  * type: real float
  * indexed
  */
-#define EXCITER_GV2 "EXCITER_GV2"
+#define GOVERNOR_GV2 "GOVERNOR_GV2"
 
 /**
- * Exciter PGV2
+ * Governor PGV2
  * type: real float
  * indexed
  */
-#define EXCITER_PGV2 "EXCITER_PGV2"
+#define GOVERNOR_PGV2 "GOVERNOR_PGV2"
 
 /**
- * Exciter GV3
+ * Governor GV3
  * type: real float
  * indexed
  */
-#define EXCITER_GV3 "EXCITER_GV3"
+#define GOVERNOR_GV3 "GOVERNOR_GV3"
 
 /**
- * Exciter PGV3
+ * Governor PGV3
  * type: real float
  * indexed
  */
-#define EXCITER_PGV3 "EXCITER_PGV3"
+#define GOVERNOR_PGV3 "GOVERNOR_PGV3"
 
 /**
- * Exciter GV4
+ * Governor GV4
  * type: real float
  * indexed
  */
-#define EXCITER_GV4 "EXCITER_GV4"
+#define GOVERNOR_GV4 "GOVERNOR_GV4"
 
 /**
- * Exciter PGV4
+ * Governor PGV4
  * type: real float
  * indexed
  */
-#define EXCITER_PGV4 "EXCITER_PGV4"
+#define GOVERNOR_PGV4 "GOVERNOR_PGV4"
 
 /**
- * Exciter GV5
+ * Governor GV5
  * type: real float
  * indexed
  */
-#define EXCITER_GV5 "EXCITER_GV5"
+#define GOVERNOR_GV5 "GOVERNOR_GV5"
 
 /**
- * Exciter PGV5
+ * Governor PGV5
  * type: real float
  * indexed
  */
-#define EXCITER_PGV5 "EXCITER_PGV5"
+#define GOVERNOR_PGV5 "GOVERNOR_PGV5"
 
 /**
- * Exciter IBLOCK
+ * Governor IBLOCK
  * type: integer
  * indexed
  */
-#define EXCITER_IBLOCK "EXCITER_IBLOCK"
+#define GOVERNOR_IBLOCK "GOVERNOR_IBLOCK"
 
-// GOVERNOR DATA
+// EXCITER DATA
+/**
+ * Flag to indicate that governor is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_GOVERNOR "HAS_GOVERNOR"
+
+/**
+ * Governor model
+ * type: string
+ * indexed
+ */
+#define GOVERNOR_MODEL "GOVERNOR_MODEL"
+
 /**
  * Governor TR
  * type: real float
  * indexed
  */
-#define GOVERNOR_TR "GOVERNOR_TR"
+#define EXCITER_TR "EXCITER_TR"
 
 /**
- * Governor KA
+ * Exciter KA
  * type: real float
  * indexed
  */
-#define GOVERNOR_KA "GOVERNOR_KA"
+#define EXCITER_KA "EXCITER_KA"
 
 /**
- * Governor TA
+ * Exciter TA
  * type: real float
  * indexed
  */
-#define GOVERNOR_TA "GOVERNOR_TA"
+#define EXCITER_TA "EXCITER_TA"
 
 /**
- * Governor TB
+ * Exciter TB
  * type: real float
  * indexed
  */
-#define GOVERNOR_TB "GOVERNOR_TB"
+#define EXCITER_TB "EXCITER_TB"
 
 /**
- * Governor TC
+ * Exciter TC
  * type: real float
  * indexed
  */
-#define GOVERNOR_TC "GOVERNOR_TC"
+#define EXCITER_TC "EXCITER_TC"
 
 /**
- * Governor VRMAX
+ * Exciter VRMAX
  * type: real float
  * indexed
  */
-#define GOVERNOR_VRMAX "GOVERNOR_VRMAX"
+#define EXCITER_VRMAX "EXCITER_VRMAX"
 
 /**
- * Governor VRMIN
+ * Exciter VRMIN
  * type: real float
  * indexed
  */
-#define GOVERNOR_VRMIN "GOVERNOR_VRMIN"
+#define EXCITER_VRMIN "EXCITER_VRMIN"
 
 /**
- * Governor KE
+ * Exciter KE
  * type: real float
  * indexed
  */
-#define GOVERNOR_KE "GOVERNOR_KE"
+#define EXCITER_KE "EXCITER_KE"
 
 /**
- * Governor TE
+ * Exciter TE
  * type: real float
  * indexed
  */
-#define GOVERNOR_TE "GOVERNOR_TE"
+#define EXCITER_TE "EXCITER_TE"
 
 /**
- * Governor KF
+ * Exciter KF
  * type: real float
  * indexed
  */
-#define GOVERNOR_KF "GOVERNOR_KF"
+#define EXCITER_KF "EXCITER_KF"
 
 /**
- * Governor TF1
+ * Exciter TF1
  * type: real float
  * indexed
  */
-#define GOVERNOR_TF1 "GOVERNOR_TF1"
+#define EXCITER_TF1 "EXCITER_TF1"
 
 /**
- * Governor SWITCH
+ * Exciter SWITCH
  * type: real float
  * indexed
  */
-#define GOVERNOR_SWITCH "GOVERNOR_SWITCH"
+#define EXCITER_SWITCH "EXCITER_SWITCH"
 
 /**
- * Governor E1
+ * Exciter E1
  * type: real float
  * indexed
  */
-#define GOVERNOR_E1 "GOVERNOR_E1"
+#define EXCITER_E1 "EXCITER_E1"
 
 /**
- * Governor SE1
+ * Exciter SE1
  * type: real float
  * indexed
  */
-#define GOVERNOR_SE1 "GOVERNOR_SE1"
+#define EXCITER_SE1 "EXCITER_SE1"
 
 /**
- * Governor E2
+ * Exciter E2
  * type: real float
  * indexed
  */
-#define GOVERNOR_E2 "GOVERNOR_E2"
+#define EXCITER_E2 "EXCITER_E2"
 
 /**
- * Governor SE2
+ * Exciter SE2
  * type: real float
  * indexed
  */
-#define GOVERNOR_SE2 "GOVERNOR_SE2"
+#define EXCITER_SE2 "EXCITER_SE2"
 
 // BRANCH DATA
 /**

@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-03-27 10:50:52 d3g096
+ * @date   2015-06-24 07:56:27 d3g096
  * 
  * @brief  
  * 
@@ -26,11 +26,13 @@
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include "matrix.hpp"
+#include "fallback_matrix_operations.hpp"
 #include "petsc/petsc_exception.hpp"
 #include "petsc/petsc_matrix_implementation.hpp"
 #include "petsc/petsc_matrix_extractor.hpp"
 #include "petsc/petsc_vector_implementation.hpp"
 #include "petsc/petsc_vector_extractor.hpp"
+#include "petsc/ga_matrix.hpp"
 
 namespace gridpack {
 namespace math {
@@ -54,6 +56,9 @@ transpose(const MatrixT<T, I>& A, MatrixT<T, I>& result)
       ierr = MatTranspose(*pA, MAT_REUSE_MATRIX, pAtrans); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
+    }
+    if (!PETScMatrixImplementation<T, I>::useLibrary) {
+      result.conjugate();
     }
   } else {
     std::string msg = 
@@ -191,7 +196,10 @@ transpose(const MatrixT<T, I>& A)
   PETScMatrixImplementation<T, I> *result_impl = 
     new PETScMatrixImplementation<T, I>(pAtrans, true);
   MatrixT<T, I> *result = new MatrixT<T, I>(result_impl);
-
+  
+  if (!PETScMatrixImplementation<T, I>::useLibrary) {
+    result->conjugate();
+  }
   return result;
 }
 
@@ -206,6 +214,16 @@ transpose(const MatrixT<RealType, int>& A);
 // -------------------------------------------------------------
 // transposeMultiply
 // -------------------------------------------------------------
+/** 
+ * Works for complex regardless of underlying PETSc element type.
+ * 
+ * @param T 
+ * @param A 
+ * @param T 
+ * @param x 
+ * @param T 
+ * @param result 
+ */
 template <typename T, typename I>
 void
 transposeMultiply(const MatrixT<T, I>& A, const VectorT<T, I>& x, VectorT<T, I>& result)
@@ -237,6 +255,15 @@ transposeMultiply(const MatrixT<RealType, int>& A,
 // -------------------------------------------------------------
 // column
 // -------------------------------------------------------------
+/** 
+ * Works for complex regardless of underlying PETSc element type
+ * 
+ * @param T 
+ * @param A 
+ * @param cidx 
+ * @param T 
+ * @param result 
+ */
 template <typename T, typename I>
 void
 column(const MatrixT<T, I>& A, const int& cidx, VectorT<T, I>& result)
@@ -274,6 +301,13 @@ column(const MatrixT<RealType, int>& A,
 // -------------------------------------------------------------
 // diagonal
 // -------------------------------------------------------------
+/** 
+ * For complex matrix/vector on top of a real PETSc, a fallback has to
+ * be used.
+ * 
+ * @param A 
+ * @param result 
+ */
 template <typename T, typename I>
 void
 diagonal(const MatrixT<T, I>& A, VectorT<T, I>& result)
@@ -290,17 +324,21 @@ diagonal(const MatrixT<T, I>& A, VectorT<T, I>& result)
   if (result.size() != A.rows()) {
     char buf[128];
     sprintf(buf,"Matrix::diagonal incompatible: sizes do not match."
-        " Matrix rows: %d Vector length: %d",A.rows(),result.size());
+            " Matrix rows: %d Vector length: %d",A.rows(),result.size());
     throw gridpack::Exception(buf);
   }
 
-  const Mat *pA(PETScMatrix(A));
-  Vec *pX(PETScVector(result));
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatGetDiagonal(*pA, *pX); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+  if (PETScMatrixImplementation<T, I>::useLibrary) {
+    const Mat *pA(PETScMatrix(A));
+    Vec *pX(PETScVector(result));
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatGetDiagonal(*pA, *pX); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  } else {
+    fallback::diagonal(A, result);
   }
 }  
 
@@ -312,21 +350,27 @@ diagonal<ComplexType, int>(const MatrixT<ComplexType, int>& A,
 template
 void
 diagonal<RealType, int>(const MatrixT<RealType, int>& A, 
-                           VectorT<RealType, int>& result);
+                        VectorT<RealType, int>& result);
 
 template <typename T, typename I>
 MatrixT<T, I> *
 diagonal(const VectorT<T, I>& x, const MatrixStorageType& stype)
 {
-  MatrixT<T, I> *result(new MatrixT<T,I>(x.communicator(), 
-                                         x.localSize(), x.localSize(), stype));
-  const Vec *pX(PETScVector(x));
-  Mat *pA(PETScMatrix(*result));
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatDiagonalSet(*pA, *pX, INSERT_VALUES); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
+  MatrixT<T, I> *result;
+
+  if (PETScMatrixImplementation<T, I>::useLibrary) {
+    result = new MatrixT<T,I>(x.communicator(), 
+                              x.localSize(), x.localSize(), stype);
+    const Vec *pX(PETScVector(x));
+    Mat *pA(PETScMatrix(*result));
+    PetscErrorCode ierr(0);
+    try {
+      ierr = MatDiagonalSet(*pA, *pX, INSERT_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  } else {
+    result = fallback::diagonal(x, stype);
   }
   return result;
 }
@@ -341,7 +385,7 @@ diagonal(const VectorT<RealType, int>& x, const MatrixStorageType& stype);
 
 
 // -------------------------------------------------------------
-// multiply
+// (Vector) multiply
 // -------------------------------------------------------------
 template <typename T, typename I>
 void
@@ -382,198 +426,44 @@ multiply(const MatrixT<RealType, int>& A,
 
 
 // -------------------------------------------------------------
-// check_dense
-// -------------------------------------------------------------
-static bool
-check_dense(const Mat *A, const Mat *B)
-{
-  bool result(false);
-  PetscErrorCode ierr(0);
-  MatType Atype, Btype;
-  try {
-    ierr = MatGetType(*A, &Atype); CHKERRXX(ierr);
-    ierr = MatGetType(*B, &Btype); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-  std::string at(Atype), bt(Btype);
-  result = ( (at == MATDENSE || at == MATMPIDENSE) && 
-             (bt == MATDENSE || bt == MATMPIDENSE) );
-  
-  return result;
-}
-
-#if 0
-
-// -------------------------------------------------------------
-// Matrix-Matrix Multiply via Elemental 
-// -------------------------------------------------------------
-
-// This may be available in the next version of PETSc (> 3.5.3 or 3.6
-// maybe).
-
-// Apparently, multiplying two dense matrices is something people
-// don't generally do.  PETSc, on its own, cannot multiply two
-// MATMPIDENSE matrices, but it can multiply to MATELEMENTAL dense
-// matrices, if the Elemental package is included in the build.
-// There's a bunch of extra code here to convert MATMPIDENSE matrices
-// to MATELEMENTAL matrices, do the multiplication, then convert the
-// result back.  However, I should have investigated further before
-// coding this, because MATELEMENTAL can be converted to MATDENSE, but
-// MATDENSE cannot be converted to MATELEMENTAL. Go figure.
-
-#if defined(PETSC_HAVE_ELEMENTAL)
-
-static void
-multiply_dense(const Mat *A, const Mat *B, Mat *C)
-{
-  Mat Ae, Be, Ce;
-
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatConvert(*A, MATELEMENTAL, MAT_INITIAL_MATRIX, &Ae); CHKERRXX(ierr);
-    ierr = MatConvert(*B, MATELEMENTAL, MAT_INITIAL_MATRIX, &Be); CHKERRXX(ierr);
-    ierr = MatMatMult(Ae, Be, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Ce); CHKERRXX(ierr);
-    ierr = MatConvert(Ce, MATDENSE, MAT_INITIAL_MATRIX, C); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-
-static void
-multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
-{
-  PetscErrorCode ierr(0);
-  try {
-    if (check_dense(A, B)) {
-      multiply_dense(A, B, C);
-    } else {
-      ierr = MatMatMult(*A, *B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, C); CHKERRXX(ierr);
-    }
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-
-#else
-
-static void
-multiply_dense_maybe(const Mat *A, const Mat *B, Mat *C)
-{
-  PetscErrorCode ierr(0);
-  try {
-    ierr = MatMatMult(*A, *B, MAT_INITIAL_MATRIX, PETSC_DEFAULT, C); CHKERRXX(ierr);
-  } catch (const PETSC_EXCEPTION_TYPE& e) {
-    throw PETScException(ierr, e);
-  }
-}
-
-#endif
-
-#endif
-
-// -------------------------------------------------------------
 // multiply_dense
-// 
-// This multiplies two dense PETSc matrices basically by hand
 // -------------------------------------------------------------
-template <typename T, typename I>
-static void
-multiply_dense(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& C)
+static 
+PetscErrorCode 
+multiply_dense(const Mat& A, const Mat& B, Mat& C)
 {
-  BOOST_ASSERT(A.rows() == C.rows());
-  BOOST_ASSERT(B.cols() == C.cols());
-  boost::scoped_ptr< VectorT<T, I> > 
-    bc(new VectorT<T, I>(B.communicator(), B.localRows())), 
-    rc(new VectorT<T, I>(C.communicator(), C.localRows()));
-
-  // PetscErrorCode ierr(0);
-  // ierr = PetscSynchronizedPrintf(A.communicator(), 
-  //                                "multiply_dense: %d: A: (%dx%d), (%dx%d)\n",
-  //                                A.communicator().rank(), 
-  //                                A.rows(), A.cols(), A.localRows(), A.localCols()); 
-  // CHKERRXX(ierr);
-  // ierr = PetscSynchronizedFlush(A.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
-
-  // ierr = PetscSynchronizedPrintf(B.communicator(), 
-  //                                "multiply_dense: %d: B: (%dx%d), (%dx%d)\n",
-  //                                B.communicator().rank(), 
-  //                                B.rows(), B.cols(), B.localRows(), B.localCols()); 
-  // CHKERRXX(ierr);
-  // ierr = PetscSynchronizedFlush(B.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
-
-  // ierr = PetscSynchronizedPrintf(C.communicator(), 
-  //                                "multiply_dense: %d: C: (%dx%d), (%dx%d)\n",
-  //                                C.communicator().rank(), 
-  //                                C.rows(), C.cols(), C.localRows(), C.localCols());
-  // CHKERRXX(ierr);
-  // ierr = PetscSynchronizedFlush(C.communicator(), PETSC_STDOUT); CHKERRXX(ierr);
-
-  int lo, hi;
-  rc->localIndexRange(lo, hi);
-  for (int j = 0; j < B.cols(); ++j) {
-    column(B, j, *bc);
-    multiply(A, *bc, *rc);
-    for (int i = lo; i < hi; ++i) {
-      typename VectorT<T, I>::TheType v;
-      rc->getElement(i, v);
-      C.setElement(i, j, v);
-    }
-  }
-  C.ready();
-}  
-
-template
-static void
-multiply_dense(const MatrixT<ComplexType, int>& A, 
-               const MatrixT<ComplexType, int>& B, 
-               MatrixT<ComplexType, int>& result);
-
-template
-static void
-multiply_dense(const MatrixT<RealType, int>& A, 
-               const MatrixT<RealType, int>& B, 
-               MatrixT<RealType, int>& result);
-
-template <typename T, typename I>
-static MatrixT<T, I> *
-multiply_dense(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
-{
-  BOOST_ASSERT(A.cols() == B.rows());
-  BOOST_ASSERT(A.localCols() == B.localRows());
-  MatrixT<T, I> *C(MatrixT<T, I>::createDense(A.communicator(),
-                                              A.rows(), B.cols(),
-                                              A.localRows(), B.localCols()));
-  multiply_dense(A, B, *C);
-  return C;
+  PetscErrorCode ierr(0);
+  Mat Aga, Bga;
+  ierr = MatConvertToDenseGA(A, &Aga); CHKERRQ(ierr);
+  ierr = MatConvertToDenseGA(B, &Bga); CHKERRQ(ierr);
+  ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &C); CHKERRQ(ierr);
+  ierr = MatDestroy(&Aga); CHKERRQ(ierr);
+  ierr = MatDestroy(&Bga); CHKERRQ(ierr);
+  return ierr;
 }
 
-template 
-static MatrixT<ComplexType, int> *
-multiply_dense(const MatrixT<ComplexType, int>& A, 
-               const MatrixT<ComplexType, int>& B);
-
-template 
-static MatrixT<RealType, int> *
-multiply_dense(const MatrixT<RealType, int>& A, 
-               const MatrixT<RealType, int>& B);
-
-
+// -------------------------------------------------------------
+// (Matrix) multiply
+// -------------------------------------------------------------
 template <typename T, typename I>
 void
 multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B, MatrixT<T, I>& result)
 {
+  PetscErrorCode ierr(0);
+
   // special method required for parallel dense*dense
   if (A.communicator().size() > 1 &&
       A.storageType() == Dense &&
       B.storageType() == Dense) {
-    multiply_dense(A, B, result);
+    const Mat *Amat(PETScMatrix(A));
+    const Mat *Bmat(PETScMatrix(B));
+    Mat *Cmat(PETScMatrix(result));
+    ierr = multiply_dense(*Amat, *Bmat, *Cmat); CHKERRXX(ierr);
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
     Mat *Cmat(PETScMatrix(result));
     
-    PetscErrorCode ierr(0);
     try {
       ierr = MatDestroy(Cmat); CHKERRXX(ierr);
       ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, Cmat); CHKERRXX(ierr);
@@ -599,18 +489,27 @@ template <typename T, typename I>
 MatrixT<T, I> *
 multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
 {
+  PetscErrorCode ierr(0);
   MatrixT<T, I> *result;
   // special method required for parallel dense*dense
   if (A.communicator().size() > 1 &&
       A.storageType() == Dense &&
       B.storageType() == Dense) {
-    result = multiply_dense(A, B);
+    const Mat *Amat(PETScMatrix(A));
+    const Mat *Bmat(PETScMatrix(B));
+    Mat Cmat;
+    ierr = multiply_dense(*Amat, *Bmat, Cmat); CHKERRXX(ierr);
+
+    PETScMatrixImplementation<T, I> *result_impl = 
+      new PETScMatrixImplementation<T, I>(Cmat, true);
+    result = new MatrixT<T, I>(result_impl);
+
+    ierr = MatDestroy(&Cmat); CHKERRXX(ierr);
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
     Mat Cmat;
 
-    PetscErrorCode ierr(0);
     try {
       ierr = MatMatMult(*Amat, *Bmat, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cmat); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -654,7 +553,8 @@ MatrixT<T, I>::storageType(void) const
         stype == MATDENSE ||
         stype == MATMPIDENSE) {
       result = Dense;
-    } else if (stype == MATSEQAIJ || 
+    } else if (stype == MATAIJ || 
+               stype == MATSEQAIJ || 
                stype == MATMPIAIJ) {
       result = Sparse;
     } else {
@@ -684,12 +584,12 @@ template <typename T, typename I>
 MatrixT<T, I> *
 storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
 {
-  MatrixT<T, I> *result(A.clone());
-  int nproc(result->processor_size());
+  int nproc(A.processor_size());
 
+  MatrixT<T, I> *result;
   MatType new_mat_type(MATSEQAIJ);
 
-  if (result->storageType() != new_type) {
+  if (A.storageType() != new_type) {
     switch (new_type) {
     case (Dense):
       if (nproc > 1) {
@@ -707,13 +607,22 @@ storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
       break;
     }
   
-    Mat *mat(PETScMatrix(*result));
+    const Mat *Amat(PETScMatrix(A));
+    Mat B;
     PetscErrorCode ierr(0);
     try {
-      ierr = MatConvert(*mat, new_mat_type, MAT_REUSE_MATRIX, mat); CHKERRXX(ierr);
+      ierr = MatConvert(*Amat, new_mat_type, MAT_INITIAL_MATRIX, &B); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
+
+    PETScMatrixImplementation<T, I> *result_impl = 
+      new PETScMatrixImplementation<T, I>(B, true);
+    result = new MatrixT<T, I>(result_impl);
+    ierr = MatDestroy(&B); CHKERRXX(ierr);
+    
+  } else {
+    result = A.clone();
   }
 
   return result;

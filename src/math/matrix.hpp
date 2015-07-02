@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-03-27 12:20:25 d3g096
+ * @date   2015-06-16 08:32:49 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -159,15 +159,6 @@ public:
   /// Get the storage type of this matrix
   MatrixStorageType storageType(void) const;
 
-  /// Make this matrix the identity matrix
-  /** 
-   * @e Collective
-   *
-   * 
-   * 
-   */
-  void identity(void);
-
   //! @cond DEVDOC
 
   /// Allow visits by implemetation visitor
@@ -221,14 +212,6 @@ public:
    */
   void equate(const MatrixT& A);
 
-  /// Scale this entire MatrixT by the given value
-  /** 
-   * @e Collective.
-   * 
-   * @param x factor by which all elements in the matrix are multiplied
-   */
-  void scale(const TheType& x);
-
   /// Multiply this matrix diagonal by the specified vector
   /** 
    * @e Collective.
@@ -245,15 +228,7 @@ public:
    * 
    * @param x 
    */
-  void addDiagonal(const VectorT<T, I>& x);
-
-  /// Shift the diagonal of this matrix by the specified value
-  /** 
-   * @c Collective.
-   * 
-   * @param x 
-   */
-  void addDiagonal(const TheType& x);
+  void addDiagonalVector(const VectorT<T, I>& x);
 
   /// Add another matrix to this one, in place
   /** 
@@ -266,13 +241,6 @@ public:
    * @param A matrix to add to this instance
    */
   void add(const MatrixT& A);
-
-  /// Zero all entries in the matrix
-  /** 
-   * @e Collective.
-   * 
-   */
-  void zero(void);
 
   // -------------------------------------------------------------
   // MatrixT Operations 
@@ -366,6 +334,36 @@ protected:
     p_matrix_impl->getElements(n, i, j, x); 
   }
 
+  /// Scale this entire MatrixT by the given value (specialized)
+  void p_scale(const TheType& x)
+  {
+    p_matrix_impl->scale(x);
+  }
+
+  /// Shift the diagonal of this matrix by the specified value (specialized)
+  void p_addDiagonal(const TheType& x)
+  {
+    p_matrix_impl->addDiagonal(x);
+  }
+
+  /// Make this matrix the identity matrix (specialized)
+  void p_identity(void) 
+  {
+    p_matrix_impl->identity();
+  }
+
+  ///  Get a row and put it in a local array (specialized)
+  void p_getRow(const IdxType& row, TheType *x) const
+  {
+    p_matrix_impl->getRow(row, x);
+  }
+
+  /// Get some rows and put them in a local array (specialized)
+  void p_getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const
+  {
+    p_matrix_impl->getRowBlock(nrow, rows, x);
+  }
+
   /// Replace all elements with their real parts
   void p_real(void)
   { 
@@ -388,6 +386,12 @@ protected:
   double p_norm2(void) const
   { 
     return p_matrix_impl->norm2(); 
+  }
+
+  /// Zero all entries in the matrix (specialized)
+  void p_zero(void)
+  {
+    p_matrix_impl->zero();
   }
 
   /// Make this instance ready to use

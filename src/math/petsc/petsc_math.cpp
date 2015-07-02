@@ -17,6 +17,9 @@
 // -------------------------------------------------------------
 
 #include <petscsys.h>
+#if USE_PROGRESS_RANKS
+#include "ga-mpi.h"
+#endif
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/petsc/petsc_exception.hpp"
 
@@ -33,6 +36,11 @@ Initialize(void)
   if (Initialized()) return;
   PetscErrorCode ierr(0);
   PetscBool flg;
+#if USE_PROGRESS_RANKS
+  gridpack::parallel::Communicator comm;
+  MPI_Comm world = GA_MPI_Comm();
+  PETSC_COMM_WORLD = world;
+#endif
   try {
 // Turn this on to enable PETSc logging.
 #if 0

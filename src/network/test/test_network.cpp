@@ -106,11 +106,13 @@ BOOST_AUTO_TEST_SUITE ( TestNetwork )
 BOOST_AUTO_TEST_CASE( TestNetworkTopology )
 {
 
+  gridpack::parallel::Communicator comm;
+  MPI_Comm mpi_world = static_cast<MPI_Comm>(comm);
   int ierr;
   int me;
-  ierr = MPI_Comm_rank(MPI_COMM_WORLD, &me);
+  ierr = MPI_Comm_rank(mpi_world, &me);
   int nprocs;
-  ierr = MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
+  ierr = MPI_Comm_size(mpi_world, &nprocs);
 
   // Create network
   gridpack::parallel::Communicator world;
@@ -254,7 +256,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
   } 
   BOOST_CHECK_EQUAL(network.numBuses(), n);
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nNumber of buses on each process ok\n");
@@ -269,7 +271,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
   }
   BOOST_CHECK_EQUAL(network.totalBuses(), n);
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nTotal number of buses ok\n");
@@ -283,7 +285,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
   }
   BOOST_CHECK_EQUAL(network.numBranches(), n);
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nNumber of branches on each process ok\n");
@@ -298,7 +300,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
   }
   BOOST_CHECK_EQUAL(n, ncnt);
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nTotal number of branches ok\n");
@@ -362,7 +364,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     }
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nActive bus settings ok\n");
@@ -391,7 +393,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     }
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nActive branch settings ok\n");
@@ -445,7 +447,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     }
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nBus neighbors are ok\n");
@@ -503,7 +505,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
           != network2->getGlobalBusIndex(jdx2)) ok = false;
     }
     oks = (int)ok;
-    ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+    ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
     ok = (bool)okr;
     if (me == 0 && ok) {
       printf("\nNetwork clone function is ok\n");
@@ -548,7 +550,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
   }
 
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nMap functions are ok\n");
@@ -599,7 +601,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     }
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nBus update ok\n");
@@ -618,7 +620,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     }
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nBranch update ok\n");
@@ -640,12 +642,12 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     ok = false;
   } 
   oks = n;
-  ierr = MPI_Allreduce(&oks, &n, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &n, 1, MPI_INT, MPI_SUM, mpi_world);
   if (n != XDIM*YDIM) {
     ok = false;
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nNumber of buses after clean ok\n");
@@ -658,12 +660,12 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     ok = false;
   }
   oks = n;
-  ierr = MPI_Allreduce(&oks, &n, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &n, 1, MPI_INT, MPI_SUM, mpi_world);
   if (n != (XDIM-1)*YDIM+XDIM*(YDIM-1)) {
     ok = false;
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nNumber of branches after clean ok\n");
@@ -720,7 +722,7 @@ BOOST_AUTO_TEST_CASE( TestNetworkTopology )
     }
   }
   oks = (int)ok;
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = (bool)okr;
   if (me == 0 && ok) {
     printf("\nBuses and branches are ok after clean operation\n");

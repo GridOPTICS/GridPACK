@@ -86,4 +86,4 @@ add_custom_target(ds_test_input
 
 add_dependencies (ds_test ds_test_input)
 
-add_test(ds_test ds_test)
+gridpack_add_run_test(ds_test ds_test "input.xml")

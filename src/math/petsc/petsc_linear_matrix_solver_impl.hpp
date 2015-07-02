@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2015-03-06 13:00:26 d3g096
+ * @date   2015-06-24 08:39:45 d3g096
  * 
  * @brief  
  * 
@@ -84,11 +84,17 @@ protected:
   /// List of supported matrix ordering
   static MatOrderingType p_supportedOrderingType[];
 
+  /// Number of supported matrix orderings
+  static int p_nSupportedOrderingTypes;
+
   /// PETSc matrix ordering type
   MatOrderingType p_orderingType;
 
   /// List of supported solver packages
   static MatSolverPackage p_supportedSolverPackage[];
+
+  /// Number of supported solver packages
+  static int p_nSupportedSolverPackages;
 
   /// PETSC solver package for factorization
   MatSolverPackage p_solverPackage;
@@ -122,7 +128,7 @@ protected:
     }
     boost::to_lower(mstr);
 
-    n = sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
+    n = p_nSupportedOrderingTypes;
     found = false;
     for (size_t i = 0; i < n; ++i) {
       if (mstr == p_supportedOrderingType[i]) {
@@ -146,7 +152,7 @@ protected:
     }
     boost::to_lower(mstr);
 
-    n = sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
+    n = p_nSupportedSolverPackages;
     found = false;
     for (size_t i = 0; i < n; ++i) {
       if (mstr == p_supportedSolverPackage[i]) {
@@ -275,6 +281,11 @@ PetscLinearMatrixSolverImplementation<T, I>::p_supportedOrderingType[] = {
 };
 
 template <typename T, typename I>
+int
+PetscLinearMatrixSolverImplementation<T, I>::p_nSupportedOrderingTypes =
+  sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
+
+template <typename T, typename I>
 MatSolverPackage
 PetscLinearMatrixSolverImplementation<T, I>::p_supportedSolverPackage[] = {
   MATSOLVERSUPERLU_DIST,
@@ -282,6 +293,11 @@ PetscLinearMatrixSolverImplementation<T, I>::p_supportedSolverPackage[] = {
   MATSOLVERMUMPS,
   MATSOLVERPETSC
 };
+
+template <typename T, typename I>
+int
+PetscLinearMatrixSolverImplementation<T, I>::p_nSupportedSolverPackages = 
+  sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
 
 } // namespace math
 } // namespace gridpack

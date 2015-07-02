@@ -65,6 +65,11 @@ bool MatVecInterface::matrixDiagValues(ComplexType *values)
 {
   return false;
 }
+bool MatVecInterface::matrixDiagValues(RealType *values)
+{
+  return false;
+}
+
 
 /**
  * Return size of off-diagonal matrix block contributed by component. The
@@ -90,6 +95,10 @@ bool MatVecInterface::matrixForwardSize(int *isize,
  *        matrix element
  */
 bool MatVecInterface::matrixForwardValues(ComplexType *values)
+{
+  return false;
+}
+bool MatVecInterface::matrixForwardValues(RealType *values)
 {
   return false;
 }
@@ -121,6 +130,10 @@ bool MatVecInterface::matrixReverseValues(ComplexType *values)
 {
   return false;
 }
+bool MatVecInterface::matrixReverseValues(RealType *values)
+{
+  return false;
+}
 
 /**
  * Return size of vector block contributed by component
@@ -144,6 +157,10 @@ bool MatVecInterface::vectorValues(ComplexType *values)
 {
   return false;
 }
+bool MatVecInterface::vectorValues(RealType *values)
+{
+  return false;
+}
 
 /**
  * Set values in the bus or branch component based on values in a vector or
@@ -151,6 +168,9 @@ bool MatVecInterface::vectorValues(ComplexType *values)
  * @param values values in vector or matrix
  */
 void MatVecInterface::setValues(ComplexType *values)
+{
+}
+void MatVecInterface::setValues(RealType *values)
 {
 }
 
@@ -295,6 +315,9 @@ int GenMatVecInterface::matrixNumValues() const
 void GenMatVecInterface::matrixGetValues(ComplexType *values, int *rows, int*cols)
 {
 }
+void GenMatVecInterface::matrixGetValues(RealType *values, int *rows, int*cols)
+{
+}
 
 /**
  * Return number of elements in vector from component
@@ -334,12 +357,18 @@ void GenMatVecInterface::vectorGetElementIndices(int *idx)
 void GenMatVecInterface::vectorGetElementValues(ComplexType *values, int *idx)
 {
 }
+void GenMatVecInterface::vectorGetElementValues(RealType *values, int *idx)
+{
+}
 
 /**
  * Transfer vector values to component
  * @param values list of vector element values
  */
 void GenMatVecInterface::vectorSetElementValues(ComplexType *values)
+{
+}
+void GenMatVecInterface::vectorSetElementValues(RealType *values)
 {
 }
 
@@ -381,12 +410,18 @@ void GenMatVecInterface::slabGetRowIndices(int *idx)
 void GenMatVecInterface::slabGetValues(std::vector<ComplexType*> &values, int *idx)
 {
 }
+void GenMatVecInterface::slabGetValues(std::vector<RealType*> &values, int *idx)
+{
+}
 
 /**
  * Transfer slab values to component
  * @param values list of slab values
  */
 void GenMatVecInterface::slabSetValues(ComplexType **values)
+{
+}
+void GenMatVecInterface::slabSetValues(RealType **values)
 {
 }
 
@@ -484,6 +519,19 @@ bool BaseComponent::serialWrite(char *string, const int bufsize, const char *sig
   return false;
   // This is defined so that generic operations for writing strings from buses
   // and branches can be built
+}
+
+/**
+ * Retrieve an opaque data item from component. Different items may be
+ * returned based on the value of signal.
+ * @param data item to retrieve from component
+ * @param signal string to control behavior of routine (e.g. what
+ * item to return)
+ * @return true if component is returning data element, false otherwise
+ */
+bool BaseComponent::getDataItem(void *data, const char *signal)
+{
+  return false;
 }
 
 /**

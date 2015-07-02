@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-03-27 12:18:49 d3g096
+ * @date   2015-06-12 14:35:49 d3g096
  * 
  * @brief  
  * 
@@ -27,6 +27,11 @@
 #include "matrix_implementation.hpp"
 #include "petsc_matrix_wrapper.hpp"
 #include "value_transfer.hpp"
+#include "fallback_matrix_methods.hpp"
+
+
+extern PetscErrorCode 
+sillyMatScaleComplex(Mat A, const gridpack::ComplexType& px);
 
 namespace gridpack {
 namespace math {
@@ -153,13 +158,13 @@ public:
   }
 
   /// Get the PETSc matrix
-  Mat *get_matrix(void)
+  Mat *getMatrix(void)
   {
     return p_mwrap->getMatrix();
   }
 
   /// Get the PETSc matrix (const version)
-  const Mat *get_matrix(void) const
+  const Mat *getMatrix(void) const
   {
     return p_mwrap->getMatrix();
   }
@@ -168,6 +173,123 @@ protected:
 
   /// The actual PETSc matrix to be used
   boost::scoped_ptr<PetscMatrixWrapper> p_mwrap;
+
+  /// Apply a specific unary operation to the vector
+  void p_applyOperation(base_unary_function<TheType>& op)
+  {
+    PetscErrorCode ierr;
+
+    Mat *A = this->getMatrix();
+    PetscInt lo, hi;
+    ierr = MatGetOwnershipRange(*A, &lo, &hi); CHKERRXX(ierr);
+
+    boost::scoped_ptr< PETScMatrixImplementation<T, I> > 
+      tmp(new PETScMatrixImplementation<T, I>(*A, true));
+
+    std::vector<TheType> rvals;
+    for (PetscInt i = lo; i < hi; i += 2) {
+      PetscInt ncols;
+      const PetscInt *cidx;
+      const PetscScalar *p;
+      int size;
+
+      ierr = MatGetRow(*A, i, &ncols, &cidx, &p); CHKERRXX(ierr);
+
+      // The arrays from MatGetRow are read only; make a copy of the values
+
+      size = ncols/elementSize;
+      rvals.resize(size);
+      ValueTransferFromLibrary<PetscScalar, TheType> 
+        trans(ncols, const_cast<PetscScalar *>(p), &rvals[0]);
+      trans.go();
+      
+      // if TheType is complex and PetscScalar is real, the imaginary
+      // part of all values will be negative; so copy the values to
+      // another array and take the congjugate
+
+      if (elementSize > 1) {
+        conjugate_value<TheType> c;
+        std::transform(rvals.begin(), rvals.end(), rvals.begin(), c);
+      }
+
+      // apply the operator
+
+      
+      // FIXME: I should be able to do it this way:
+      // std::transform(rvals.begin(), rvals.end(), rvals.begin(), op);
+
+      for (typename std::vector<TheType>::iterator r = rvals.begin();
+           r != rvals.end(); ++r) {
+        *r = op(*r);
+      }
+
+      // put the new values in the temporary matrix
+      for (int k = 0; k < ncols; k += elementSize) {
+        int iidx(i/elementSize);
+        int jidx(cidx[k]/elementSize);
+        tmp->setElement(iidx, jidx, rvals[k/elementSize]);
+      }
+
+      ierr = MatRestoreRow(*A, i, &ncols, &cidx, &p); CHKERRXX(ierr);
+    }
+    tmp->ready();
+
+    // copy the temporary matrix values back to the original matrix
+
+    Mat *B = tmp->getMatrix();
+    ierr = MatCopy(*B, *A, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
+  }
+
+  /// Apply a specificy accumulator operation to the vector
+  RealType p_applyAccumulator(base_accumulator_function<TheType, RealType>& op) const
+  {
+    RealType result(0.0);
+    PetscErrorCode ierr;
+    const Mat *A = this->getMatrix();
+    
+    PetscInt lo, hi;
+    ierr = MatGetOwnershipRange(*A, &lo, &hi); CHKERRXX(ierr);
+   
+    std::vector<TheType> rvals;
+    for (PetscInt i = lo; i < hi; i += elementSize) {
+      PetscInt ncols;
+      const PetscInt *cidx;
+      const PetscScalar *p;
+      int size;
+
+      ierr = MatGetRow(*A, i, &ncols, &cidx, &p); CHKERRXX(ierr);
+
+
+      // The arrays from MatGetRow are read only; make a copy of the values
+
+      size = ncols/elementSize;
+      rvals.resize(size);
+      ValueTransferFromLibrary<PetscScalar, TheType> 
+        trans(ncols, const_cast<PetscScalar *>(p), &rvals[0]);
+      trans.go();
+
+      ierr = MatRestoreRow(*A, i, &ncols, &cidx, &p); CHKERRXX(ierr);
+
+      // if TheType is complex and PetscScalar is real, the imaginary
+      // part of all values will be negative; so copy the values to
+      // another array and take the congjugate
+
+      if (elementSize > 1) {
+        conjugate_value<TheType> c;
+        std::transform(rvals.begin(), rvals.end(), rvals.begin(), c);
+      }
+       
+      // FIXME: I should be able to do it this way:
+      // std::for_each(rvals.begin(), rvals.end(), op);
+
+      for (typename std::vector<TheType>::iterator r = rvals.begin();
+           r != rvals.end(); ++r) {
+        op(*r);
+      }
+    }
+    result = op.result();
+    return result;
+  }
 
   /// Get the global index range of the locally owned rows (specialized)
   void p_localRowRange(IdxType& lo, IdxType& hi) const
@@ -237,7 +359,7 @@ protected:
   void p_setElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x)
   {
     // FIXME: There's probably a better way
-    for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
+    for (IdxType k = 0; k < n; k++) {
       this->p_setElement(i[k], j[k], x[k]);
     }
   }
@@ -252,7 +374,7 @@ protected:
   void p_addElements(const IdxType& n, const IdxType *i, const IdxType *j, const TheType *x)
   {
     // FIXME: There's probably a better way
-    for (PETScMatrixImplementation::IdxType k = 0; k < n; k++) {
+    for (IdxType k = 0; k < n; k++) {
       this->p_addElement(i[k], j[k], x[k]);
     }
   }
@@ -289,28 +411,167 @@ protected:
     }
   }
 
+          
+
+  /// Scale this entire MatrixT by the given value (specialized)
+  void p_scale(const TheType& xin)
+  {
+    PetscErrorCode ierr(0);
+    Mat *pA(p_mwrap->getMatrix());
+    if (useLibrary) {
+      try {
+        PetscScalar x = 
+          gridpack::math::equate<PetscScalar, TheType>(xin);
+        ierr = MatScale(*pA, x); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      gridpack::math::multiplyvalue<TheType> op(xin);
+      p_applyOperation(op);
+    }
+  }
+
+  /// Shift the diagonal of this matrix by the specified value (specialized)
+  void p_addDiagonal(const TheType& x)
+  {
+    if (useLibrary) {
+      PetscScalar a = 
+        gridpack::math::equate<PetscScalar, TheType>(x);
+      Mat *pA(p_mwrap->getMatrix());
+      PetscErrorCode ierr(0);
+      try {
+        ierr = MatShift(*pA, a); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      fallback::addDiagonal(*this, x);
+    }
+  }
+
+  /// Make this matrix the identity matrix (specialized)
+  void p_identity(void)
+  {
+    Mat *pA(p_mwrap->getMatrix());
+
+    PetscErrorCode ierr(0);
+    try {
+      PetscBool flag;
+      PetscScalar one(1.0);
+      ierr = MatAssembled(*pA, &flag); CHKERRXX(ierr);
+      if (!flag) {
+        int lo, hi;
+        this->localRowRange(lo, hi);
+        for (int i = lo; i < hi; ++i) {
+          this->setElement(i, i, 1.0);
+        }
+        this->ready();
+      } else {
+        ierr = MatZeroEntries(*pA); CHKERRXX(ierr);
+        ierr = MatShift(*pA, one); CHKERRXX(ierr);
+      }
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
+  /// Get some rows and put them in a local array (specialized)
+  void p_getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const
+  {
+    PetscErrorCode ierr(0);
+    try {
+      Mat *mat = p_mwrap->getMatrix();
+      MPI_Comm comm(PetscObjectComm((PetscObject)*mat));
+      PetscInt ncol(this->cols()*elementSize);
+      
+      std::vector<PetscInt> ridx(nrow);
+      std::vector<PetscInt> cidx(ncol);
+
+      IS irow, icol;
+      for (PetscInt i = 0; i < nrow; ++i) {
+        ridx[i] = rows[i]*elementSize;
+      }
+      ierr = ISCreateGeneral(comm, nrow, &ridx[0], PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
+      for (PetscInt j = 0; j < ncol; ++j) {
+        cidx[j] = j;
+      }
+      ierr = ISCreateGeneral(comm, ncol, &cidx[0], PETSC_COPY_VALUES, &icol); CHKERRXX(ierr);
+
+      Mat *sub;
+      ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
+
+      std::vector<PetscScalar> cval(nrow*ncol);
+      for (PetscInt i = 0; i < nrow; ++i) {
+        ridx[i] = i;
+      }
+      ierr = MatGetValues(*sub, nrow, &ridx[0], ncol, &cidx[0], &cval[0]); CHKERRXX(ierr);
+
+      
+      ValueTransferFromLibrary<PetscScalar, TheType> trans(nrow*ncol, &cval[0], x);
+      trans.go();
+
+      ierr = MatDestroyMatrices(1, &sub); CHKERRXX(ierr);
+
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    }
+  }
+
   /// Replace all elements with their real parts
   void p_real(void)
   {
-    p_mwrap->real();
+    if (useLibrary) {
+      p_mwrap->real();
+    } else {
+      real_value<TheType> op;
+      p_applyOperation(op);
+    }
+      
   }
 
   /// Replace all elements with their imaginary parts
   void p_imaginary(void)
   {
-    p_mwrap->imaginary();
+    if (useLibrary) {
+      p_mwrap->imaginary();
+    } else {
+      imaginary_value<TheType> op;
+      p_applyOperation(op);
+    }
   }
 
   /// Replace all elements with their complex gradient
   void p_conjugate(void)
   {
-    p_mwrap->conjugate();
+    if (useLibrary) {
+      p_mwrap->conjugate();
+    } else {
+      conjugate_value<TheType> op;
+      p_applyOperation(op);
+    }
   }
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
   double p_norm2(void) const
   {
-    return p_mwrap->norm2();
+    double result;
+    if (useLibrary) {
+      result = p_mwrap->norm2();
+    } else {
+      // l2_norm<TheType> op;
+      // double lresult(p_applyAccumulator(op));
+      // boost::mpi::all_reduce(this->communicator(), lresult, result, std::plus<double>());
+      // result = sqrt(result);
+      result = fallback::norm2<T, I>(this->communicator(), *this);
+    }
+    return result;
+  }
+
+  /// Zero all entries in the matrix (specialized)
+  void p_zero(void)
+  {
+    p_mwrap->zero();
   }
 
   /// Make this instance ready to use

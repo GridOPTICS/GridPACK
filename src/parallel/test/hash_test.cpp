@@ -80,7 +80,8 @@ BOOST_AUTO_TEST_SUITE ( TestHashDistribution )
 
 BOOST_AUTO_TEST_CASE( TestHashFunctions )
 {
-
+  gridpack::parallel::Communicator comm;
+  MPI_Comm mpi_world = static_cast<MPI_Comm>(comm);
   int ierr;
   int me;
   gridpack::parallel::Communicator world;
@@ -209,7 +210,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   int oks, okr;
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nKey test succeeded\n");
@@ -268,7 +269,7 @@ BOOST_AUTO_TEST_CASE( TestHashFunctions )
   }
   BOOST_CHECK(ok);
   oks = static_cast<int>(ok);
-  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, MPI_COMM_WORLD);
+  ierr = MPI_Allreduce(&oks, &okr, 1, MPI_INT, MPI_PROD, mpi_world);
   ok = static_cast<bool>(okr);
   if (me == 0 && ok) {
     printf("\nPair key test succeeded\n\n");

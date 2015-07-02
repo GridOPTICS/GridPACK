@@ -7,7 +7,7 @@
 /**
  * @file   ds_test.cpp
  * @author Bruce Palmer
- * @date   February 16, 2015
+ * @date   2015-06-25 14:19:20 d3g096
  *
  * @brief
  */
@@ -23,14 +23,8 @@
 
 main(int argc, char **argv)
 {
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-  // Intialize Math libraries
+  gridpack::parallel::Environment env(argc,argv);
   gridpack::math::Initialize();
-
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
 
   if (1) {
     gridpack::parallel::Communicator world;
@@ -63,11 +57,8 @@ main(int argc, char **argv)
     ds_app.write();
   }
 
-  GA_Terminate();
-
   // Terminate Math libraries
   gridpack::math::Finalize();
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
+  return 0;
 }
 

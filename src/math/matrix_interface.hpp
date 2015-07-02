@@ -10,7 +10,7 @@
 /**
  * @file   matrix_interface.hpp
  * @author William A. Perkins
- * @date   2015-01-28 13:59:21 d3g096
+ * @date   2015-06-09 15:06:46 d3g096
  * 
  * @brief  Declaration of the abstract BaseMatrixInterface template class. 
  * 
@@ -201,6 +201,66 @@ public:
   {
     this->p_getElements(n, i, j, x);
   }
+  
+  /// Get a row and put it in a local array
+  void getRow(const IdxType& row, TheType *x) const
+  {
+    this->p_getRow(row, x);
+  }
+  
+  /// Get some rows and put them in a local array
+  /** 
+   * (Collective)
+   *
+   * This gets the elements in the specified rows and puts them in the
+   * specified array.  It is assumed that the array is appropriately
+   * sized (nrow * columns).  While this is collective, each processor
+   * may get a different set of rows.  Row/column ownership should not
+   * matter.
+   * 
+   * @param nrow 
+   * @param rows 
+   * @param x 
+   */
+  void getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const
+  {
+    this->p_getRowBlock(nrow, rows, x);
+  }
+  
+
+  /// Make this matrix the identity matrix
+  /** 
+   * @e Collective
+   *
+   * 
+   * 
+   */
+  void identity(void)
+  {
+    this->p_identity();
+  }
+
+  /// Shift the diagonal of this matrix by the specified value 
+  /** 
+   * @c Collective.
+   * 
+   * @param x 
+   */
+  void addDiagonal(const TheType& x)
+  {
+    this->p_addDiagonal(x);
+  }
+
+  /// Scale this entire MatrixT by the given value
+  /** 
+   * @e Collective.
+   * 
+   * @param x factor by which all elements in the matrix are multiplied
+   */
+  void scale(const TheType& x)
+  {
+    this->p_scale(x);
+  }
 
   /// Replace all elements with their real parts
   void real(void)
@@ -234,6 +294,16 @@ public:
   double norm2(void) const
   {
     return this->p_norm2();
+  }
+
+  /// Zero all entries in the matrix
+  /** 
+   * @e Collective.
+   * 
+   */
+  void zero(void)
+  {
+    this->p_zero();
   }
 
   /// Indicate the matrix is ready to use
@@ -282,7 +352,7 @@ public:
    * @e Collective.
    *
    * The underlying math library generally supports some way to save a
-   * Vector to a file. This will load elements from a file of that
+   * matrix to a file. This will load elements from a file of that
    * format.
    * 
    * @param filename 
@@ -298,7 +368,7 @@ public:
    * @e Collective.
    *
    * The underlying math library generally supports some way to save a
-   * Vector to a file.  This routine uses whatever format that can be
+   * matrix to a file.  This routine uses whatever format that can be
    * read by ::loadBinary(). 
    * 
    * @param filename 
@@ -346,6 +416,25 @@ protected:
   virtual void p_getElements(const IdxType& n, const IdxType *i, const IdxType *j, 
                              TheType *x) const = 0;
 
+  /// Shift the diagonal of this matrix by the specified value (specialized)
+  virtual void p_addDiagonal(const TheType& x) = 0;
+
+  /// Make this matrix the identity matrix (specialized)
+  virtual void p_identity(void) = 0;
+
+  /// Scale this entire MatrixT by the given value (specialized)
+  virtual void p_scale(const TheType& x) = 0;
+
+  ///  Get a row and put it in a local array (specialized)
+  virtual void p_getRow(const IdxType& row, TheType *x) const
+  {
+    p_getRowBlock(1, &row, x);
+  }
+
+  /// Get some rows and put them in a local array (specialized)
+  virtual void p_getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const = 0;
+
+
   /// Replace all elements with their real parts (specialized)
   virtual void p_real(void) = 0;
 
@@ -357,6 +446,9 @@ protected:
 
   /// Compute the matrix L<sup>2</sup> norm (specialized)
   virtual double p_norm2(void) const = 0;
+
+  /// Zero all entries in the matrix (specialized)
+  virtual void p_zero(void) = 0;
 
   /// Make this instance ready to use
   virtual void p_ready(void) = 0;
