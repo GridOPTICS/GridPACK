@@ -34,6 +34,14 @@ option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
 if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
+
+# should cplex or gurobi be used
+option(USE_CPLEX
+  "Use optimization software CPLEX libraries." OFF)
+
+option(USE_GUROBI
+  "Use optimization software GUROBI libraries." OFF)
+
 # -------------------------------------------------------------
 # MPI compiler
 # -------------------------------------------------------------
@@ -136,6 +144,24 @@ message(STATUS "Checking GA ...")
 find_package(GA REQUIRED)
 
 # -------------------------------------------------------------
+#  Add optimization libraries, if requested
+# -------------------------------------------------------------
+# add the CPLEX library?
+if( USE_CPLEX)
+  message(STATUS "Checking cplex ...")
+  find_package(CPLEX REQUIRED)
+endif( USE_CPLEX)
+
+# add the GUROBI library?
+IF( USE_GUROBI)
+  message(STATUS "Checking Gurobi ...")
+  find_package(GUROBI REQUIRED)
+endif (USE_GUROBI)
+
+#message(STATUS "Checking concert ...")
+#find_package(CONCERT REQUIRED)
+
+# -------------------------------------------------------------
 # Doxygen
 # -------------------------------------------------------------
 find_package(Doxygen)
@@ -191,6 +217,9 @@ add_subdirectory(partition)
 add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(mapper)
+if (USE_CPLEX OR USE_GUROBI)
+add_subdirectory(optimization)
+endif()
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/powerflow2)
 add_subdirectory(applications/dynamic_simulation)
