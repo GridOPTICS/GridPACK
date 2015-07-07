@@ -159,15 +159,19 @@ protected:
     try {
       Vec *v = p_vwrap.getVector();
       unsigned int n(elementSize);
-      PetscScalar px[n];
+      PetscScalar *px;
+      px = new PetscScalar[n];
       TheType tmp(x);
       ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
       trans.go();
-      PetscInt idx[n];
+      PetscInt *idx;
+      idx = new PetscInt[n];
       for (int j = 0; j < n; ++j) {
         idx[j] = i*n + j;
       }
       ierr = VecSetValues(*v, n, &idx[0], &px[0], INSERT_VALUES); CHKERRXX(ierr);
+      delete [] px;
+      delete [] idx;
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -189,15 +193,19 @@ protected:
     try {
       Vec *v = p_vwrap.getVector();
       unsigned int n(elementSize);
-      PetscScalar px[n];
+      PetscScalar *px;
+      px = new PetscScalar[n];
       TheType tmp(x);
       ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
       trans.go();
-      PetscInt idx[n];
+      PetscInt *idx;
+      idx = new PetscInt[n];
       for (int j = 0; j < n; ++j) {
         idx[j] = i*n + j;
       }
       ierr = VecSetValues(*v, n, &idx[0], &px[0], ADD_VALUES); CHKERRXX(ierr);
+      delete [] px;
+      delete [] idx;
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -219,14 +227,18 @@ protected:
     try {
       const Vec *v = p_vwrap.getVector();
       unsigned int n(elementSize);
-      PetscScalar px[n];
-      PetscInt idx[n];
+      PetscScalar *px;
+      px = new PetscScalar[n];
+      PetscInt *idx;
+      idx = new PetscInt[n];
       for (int j = 0; j < n; ++j) {
         idx[j] = i*n + j;
       }
       ierr = VecGetValues(*v, n, &idx[0], &px[0]); CHKERRXX(ierr);
       ValueTransferFromLibrary<PetscScalar, TheType> trans(n, &px[0], &x);
       trans.go();
+      delete [] px;
+      delete [] idx;
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
