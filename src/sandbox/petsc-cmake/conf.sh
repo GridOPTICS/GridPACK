@@ -6,7 +6,7 @@ rm -f CMakeCache.txt
 
 if [ $host == "flophouse" ]; then
 
-    prefix="/net/flophouse/files0/perksoft/linux64"
+    prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
     PATH="${prefix}/bin:${PATH}"
     export PATH
 
@@ -19,10 +19,10 @@ if [ $host == "flophouse" ]; then
     CXXFLAGS="-pthread -Wall"
     export CXXFLAGS
 
-    cmake -Wno-dev \
+    cmake -Wdev --debug-trycompile\
         -D Boost_DIR:STRING="$prefix" \
         -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-linux2-complex-opt' \
+        -D PETSC_ARCH:STRING='arch-linux2-g++44-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \

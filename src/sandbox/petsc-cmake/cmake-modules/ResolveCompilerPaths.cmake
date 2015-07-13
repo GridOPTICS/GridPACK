@@ -1,3 +1,5 @@
+# GridPACK Note:  This file was found 10Oct2013 here:
+# https://github.com/jedbrown/cmake-modules/blob/master/ResolveCompilerPaths.cmake
 # ResolveCompilerPaths - this module defines two macros
 #
 # RESOLVE_LIBRARIES (XXX_LIBRARIES LINK_LINE)

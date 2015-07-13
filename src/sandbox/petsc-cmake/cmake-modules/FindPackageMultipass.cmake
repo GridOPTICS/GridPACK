@@ -1,3 +1,5 @@
+# GridPACK Note:  This file was found 10Oct2013 here:
+# https://github.com/jedbrown/cmake-modules/blob/master/FindPackageMultipass.cmake
 # PackageMultipass - this module defines two macros
 #
 # FIND_PACKAGE_MULTIPASS (Name CURRENT
