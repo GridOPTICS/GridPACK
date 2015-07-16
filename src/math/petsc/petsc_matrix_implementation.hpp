@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-06-12 14:35:49 d3g096
+ * @date   2015-07-16 12:42:35 d3g096
  * 
  * @brief  
  * 
@@ -497,6 +497,8 @@ protected:
         cidx[j] = j;
       }
       ierr = ISCreateGeneral(comm, ncol, &cidx[0], PETSC_COPY_VALUES, &icol); CHKERRXX(ierr);
+      ierr = ISSort(irow); CHKERRXX(ierr);
+      ierr = ISSort(icol); CHKERRXX(ierr);
 
       Mat *sub;
       ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
