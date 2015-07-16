@@ -150,6 +150,70 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void mapToNetwork(const gridpack::math::Matrix &matrix)
 {
+#if 0
+  int i, j, k;
+  ComplexType *values;
+  ComplexType **varray;
+  ComplexType **vptr;
+  int *idx;
+  int *iptr;
+  int ncols, nrows;
+  // get values from buses
+  idx = new int[p_busRows];
+  values = new ComplexType[p_nColumns*p_busRows];
+  varray = new ComplexType*[p_busRows];
+  for (i=0; i<p_busRows; i++) {
+    varray[i] = values + i*p_nColumns;
+  }
+  iptr = idx;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->slabSize(&nrows,&ncols);
+      p_network->getBus(i)->slabGetRowIndices(iptr);
+      iptr += nrows;
+    }
+  }
+  matrix.getRowBlock(p_busRows, idx, values);
+  vptr = varray;
+  for (i=0; i<p_nBuses; i++) {
+    if (p_network->getActiveBus(i)) {
+      p_network->getBus(i)->slabSize(&nrows,&ncols);
+      p_network->getBus(i)->slabSetValues(vptr);
+      vptr += nrows;
+    }
+  }
+  delete [] idx;
+  delete [] varray;
+  delete [] values;
+  // get values from branches
+  idx = new int[p_branchRows];
+  values = new ComplexType[p_nColumns*p_branchRows];
+  varray = new ComplexType*[p_branchRows];
+  for (i=0; i<p_branchRows; i++) {
+    varray[i] = values + i*p_nColumns;
+  }
+  iptr = idx;
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      p_network->getBranch(i)->slabSize(&nrows,&ncols);
+      p_network->getBranch(i)->slabGetRowIndices(iptr);
+      iptr += nrows;
+    }
+  }
+  matrix.getRowBlock(p_branchRows, idx, values);
+  vptr = varray;
+  for (i=0; i<p_nBranches; i++) {
+    if (p_network->getActiveBranch(i)) {
+      p_network->getBranch(i)->slabSize(&nrows,&ncols);
+      p_network->getBranch(i)->slabSetValues(vptr);
+      vptr += nrows;
+    }
+  }
+  delete [] idx;
+  delete [] varray;
+  delete [] values;
+  GA_Pgroup_sync(p_GAgrp);
+#else
   int i, j, k;
   ComplexType **values = new ComplexType*[p_maxValues];
   for (i=0; i<p_maxValues; i++) {
@@ -189,6 +253,7 @@ void mapToNetwork(const gridpack::math::Matrix &matrix)
   delete [] values;
   delete [] idx;
   GA_Pgroup_sync(p_GAgrp);
+#endif
 }
 
 /**
@@ -230,21 +295,25 @@ void getDimensions(void)
   bool okCols = true;
   // Get number of rows contributed by each bus
   p_maxValues = 0;
+  p_busRows = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       p_network->getBus(i)->slabSize(&ival,&jval);
       if (p_maxValues < ival) p_maxValues = ival;
       nRows += ival;
+      p_busRows += ival;
       if (nCols == 0 && ival > 0) nCols = jval;
       if (ival > 0 && jval != nCols) okCols = false;
     }
   }
   // Get number of rows and columns contributed by each branch
+  p_branchRows = 0;
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
       p_network->getBranch(i)->slabSize(&ival,&jval);
       if (p_maxValues < ival) p_maxValues = ival;
       nRows += ival;
+      p_branchRows += ival;
       if (nCols == 0 && ival > 0) nCols = jval;
       if (ival > 0 && jval != nCols) okCols = false;
     }
@@ -588,6 +657,8 @@ int                         p_nBranches;
 
     // matrix information
 int                         p_nColumns;
+int                         p_busRows;
+int                         p_branchRows;
 int                         p_Dim;
 int                         p_minIndex;
 int                         p_maxIndex;
