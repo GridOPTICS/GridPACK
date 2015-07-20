@@ -811,8 +811,8 @@ class BasePTIParser : public BaseParser<_network>
       double min_gen; // Minimum generation
       double max_gen; // Maximum generation
       double max_oper; // Maximum operating generation
-      int min_up;
-      int min_down;
+      double min_up;
+      double min_down;
       double ramp_up;
       double ramp_down;
       double start_up; // Start up cost
@@ -905,6 +905,11 @@ class BasePTIParser : public BaseParser<_network>
           data->setValue("GENERATOR_MAX_GEN", uc_data[i].max_gen, g_id);
         }
 
+        if (!data->getValue("GENERATOR_MAX_OP_GEN",&rval,g_id)) {
+          data->addValue("GENERATOR_MAX_OP_GEN", uc_data[i].max_gen, g_id);
+        } else {
+          data->setValue("GENERATOR_MAX_OP_GEN", uc_data[i].max_gen, g_id);
+        }
         if (!data->getValue("GENERATOR_MIN_UP",&rval,g_id)) {
           data->addValue("GENERATOR_MIN_UP", uc_data[i].min_up, g_id);
         } else {
@@ -940,7 +945,11 @@ class BasePTIParser : public BaseParser<_network>
         } else {
           data->setValue("GENERATOR_CONST_COST", uc_data[i].const_cost, g_id);
         }
-
+        if (!data->getValue("GENERATOR_LIN_COST",&rval,g_id)) {
+          data->addValue("GENERATOR_LIN_COST", uc_data[i].lin_cost, g_id);
+        } else {
+          data->setValue("GENERATOR_LIN_COST", uc_data[i].lin_cost, g_id);
+        }
         if (!data->getValue("GENERATOR_CO_2_COST",&rval,g_id)) {
           data->addValue("GENERATOR_CO_2_COST", uc_data[i].co_2_cost, g_id);
         } else {
@@ -961,6 +970,7 @@ class BasePTIParser : public BaseParser<_network>
 
         if (!data->getValue("GENERATOR_SHUT_CAP",&rval,g_id)) {
           data->addValue("GENERATOR_SHUT_CAP", uc_data[i].shut_cap, g_id);
+printf("uc_shut_cap  %d %f",i,uc_data[i].shut_cap);
         } else {
           data->setValue("GENERATOR_SHUT_CAP", uc_data[i].shut_cap, g_id);
         }
@@ -2481,10 +2491,10 @@ class BasePTIParser : public BaseParser<_network>
           data.max_oper = atof(split_line[5].c_str());
         }
         if (nstr > 6) {
-          data.min_up = atoi(split_line[6].c_str());
+          data.min_up = atof(split_line[6].c_str());
         }
         if (nstr > 7) {
-          data.min_down = atoi(split_line[7].c_str());
+          data.min_down = atof(split_line[7].c_str());
         }
         if (nstr > 8) {
           data.ramp_up = atof(split_line[8].c_str());
@@ -2522,6 +2532,7 @@ class BasePTIParser : public BaseParser<_network>
           std::string tag = util.clean2Char(split_line[18]);
           strcpy(data.gen_id, tag.c_str());
         }
+        uc_vector->push_back(data);
       }
     }
 

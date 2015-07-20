@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-06-24 07:51:50 d3g096
+ * @date   2015-07-16 13:09:54 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -21,6 +21,7 @@
 #include <boost/assert.hpp>
 #include <boost/mpi/collectives.hpp>
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/parallel/random.hpp"
 #include "math.hpp"
 #include "matrix.hpp"
 #include "gridpack/utilities/exception.hpp"
@@ -554,7 +555,7 @@ BOOST_AUTO_TEST_CASE( GetRowLocal )
   boost::scoped_ptr<TestMatrixType> 
     A(make_and_fill_test_matrix(world, 3, global_size));
 
-  int nrow(2);
+  int nrow(2);                  // rows per processor to extract
   int ncol(A->cols());
   TestMatrixType::IdxType lo, hi, j, i, ridx[nrow];
   A->localRowRange(lo, hi);
@@ -591,7 +592,7 @@ BOOST_AUTO_TEST_CASE( GetRow )
   boost::scoped_ptr<TestMatrixType> 
     A(make_and_fill_test_matrix(world, 3, global_size));
 
-  int nrow(2);
+  int nrow(1);
   int ncol(A->cols());
   TestMatrixType::IdxType lo, hi, j, i;
   std::vector<TestMatrixType::IdxType> lridx(nproc, 0), ridx(nproc, 0);
@@ -611,11 +612,7 @@ BOOST_AUTO_TEST_CASE( GetRow )
   ridx[nproc-1] = lo;
 
   std::vector<TestType> vals(nrow*ncol);
-  lo = ridx[me];
-  for (i = 0; i < nrow; ++i) {
-    ridx[i] = lo + i + 1;
-  }
-  A->getRowBlock(nrow, &ridx[0], &vals[0]);
+  A->getRowBlock(nrow, &ridx[me], &vals[0]);
   std::cout << world.rank() << ": ";
   std::copy(vals.begin(), vals.end(), 
             std::ostream_iterator<TestType>(std::cout, ", "));
