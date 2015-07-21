@@ -37,6 +37,14 @@ class UCApp
     ~UCApp(void);
 
     /**
+     * Get time series data for loads and reserves and move them to individual
+     * buses
+     * @param filename name of file containing load and reserves time series
+     * data
+     */
+    void getLoadsAndReserves(const char* filename);
+
+    /**
      * Execute application
      * @param argc number of arguments
      * @param argv list of character strings
@@ -45,6 +53,8 @@ class UCApp
 
 
   private:
+
+    boost::shared_ptr<UCNetwork> p_network;
 };
 
 } // unit_commitment

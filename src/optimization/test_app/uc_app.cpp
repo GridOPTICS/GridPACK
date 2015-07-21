@@ -23,11 +23,14 @@
 #include <sstream>
 #include <string>
 
+#include <boost/algorithm/string/split.hpp>
+#include <boost/algorithm/string/classification.hpp> // needed of is_any_of()
 #include "uc_optimizer.hpp"
 #include "uc_factory.hpp"
 #include "uc_app.hpp"
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/hash_distr.hpp"
 #include "mpi.h"
 #include <ilcplex/ilocplex.h>
 #include <stdlib.h>
@@ -51,6 +54,75 @@ gridpack::unit_commitment::UCApp::~UCApp(void)
 }
 
 /**
+ * Get time series data for loads and reserves and move them to individual
+ * buses
+ * @param filename name of file containing load and reserves time series
+ * data
+ */
+void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
+{
+  int me = p_network->communicator().rank();
+  std::ifstream input;
+  int nvals = 0;
+  int i;
+  gridpack::utility::StringUtils util;
+  if (me == 0) {
+    input.open(filename);
+    if (!input.is_open()) {
+      char buf[512];
+      sprintf(buf,"Failed to open file with load and reserve time series data: %s\n\n",
+          filename);
+      throw gridpack::Exception(buf);
+    }
+    std::string line;
+    std::getline(input,line);
+    std::vector<std::string>  split_line;
+    // tokenize the first line and find out how many values are in time series
+    // data
+    boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
+        boost::token_compress_on);
+    nvals = split_line.size();
+    nvals = (nvals-1)/2;
+  }
+  p_network->communicator().sum(&nvals,1);
+  const int nsize = 2*nvals*sizeof(double);
+  typedef char[nsize] ts_data;
+  std::vector<ts_data> series; 
+  std::vector<int> bus_ids;
+  double *lptr, *rptr;
+  // read in times series values on each of the buses
+  if (me == 0) {
+    while (std::getline(input, line)) {
+      ts_data data;
+      lptr = static_cast<double*>(data);
+      rptr = lptr + nvals;
+      boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
+          boost::token_compress_on);
+      bus_ids.push_back(atoi(split_line[0].c_str()));
+      for (i=0; i<nvals; i++) {
+        lptr[i] = atof(split line[2*i+1].c_str());
+        rptr[i] = atof(split line[2*i+2].c_str());
+      }
+      series.push_back(data);
+    }
+    input.close();
+  }
+  // distribute data from process 0 to the processes that have the corresponding
+  // buses
+  gridpack::hash_distr::HashDistribution<p_network,ts_data,ts_data> hash;
+  hash.distributeBusValues(bus_ids; series);
+  nvals = size.bus_ids;
+  for (i=0; i<nvals; i++) {
+    gridpack::unit_commitment::UCBus *bus;
+    bus = dynamic_cast<gridpack::unit_commitment::UCBus*>(
+        p_network->getBus(bus_ids[i]).get());
+    lptr = static_cast<double*>(series[i]);
+    rptr = lptr + nvals;
+    bus->setTimeSeries(series[i].load,series[i].reserve);
+  }
+}
+
+/**
  * Execute application
  * @param argc number of arguments
  * @param argv list of character strings
@@ -62,35 +134,40 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
 {
   // load input file
   gridpack::parallel::Communicator world;
-  boost::shared_ptr<UCNetwork> network(new UCNetwork(world));
+  p_network.reset(new UCNetwork(world));
 
   // read configuration file
   std::string filename = "uc_test.raw";
 
   // Read in external PTI file with network configuration
-  gridpack::parser::PTI23_parser<UCNetwork> parser(network);
+  gridpack::parser::PTI23_parser<UCNetwork> parser(p_network);
   parser.parse(filename.c_str());
 
   // partition network
-  network->partition();
+  p_network->partition();
 
   // load uc parameters
   filename = "gen.uc";
 //  if (filename.size() > 0) parser.parse(filename.c_str());
-  parser.parse(filename.c_str());
-#if 0
+//  parser.parse(filename.c_str());
+//#if 0
   parser.externalParse(filename.c_str());
-#endif
+//#endif
 
 
   // create factory
-  gridpack::unit_commitment::UCFactory factory(network);
+  gridpack::unit_commitment::UCFactory factory(p_network);
   factory.load();
 
   // create optimization object
-  gridpack::unit_commitment::UCoptimizer optim(network);
+  gridpack::unit_commitment::UCoptimizer optim(p_network);
   // get uc parameters
   optim.getUCparam();
+  int idx = 5644;
+  double dlo;
+  double dhi;
+  optim.optVariableBounds(idx, &dlo, &dhi);
+  printf("lo-hi %f %f\n",dlo,dhi);
 
   // prepare for optimization
   double rval;
@@ -115,8 +192,11 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
       }
       loads.push_back(lineData);         // add row to loads
     }
+    fin.close();
     int size = loads.size();
-    const IloInt numHorizons = size;
+//    const IloInt numHorizons = size;
+    int totalV = optim.numOptVariables();
+    const IloInt numHorizons = optim.totalHorizons;
 //    const IloInt numHorizons = 2;
     const IloInt numUnits = optim.totalGen;
 //
@@ -239,7 +319,7 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
       for (IloInt i = 0; i < numUnits; i++) {
          obj += costConst[i]*onOff[p][i]
               + startUp[i]*start_Up[p][i]
-              + costLinear[i]*powerProduced[p][i];
+              + costLinear[i]*powerProduced[p][i]
               + costQuad[i]*powerProduced[p][i]*powerProduced[p][i];
       }
     }

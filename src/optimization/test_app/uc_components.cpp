@@ -96,6 +96,14 @@ void gridpack::unit_commitment::UCBus::load(const
    }
 }
 /**
+  * objective cost
+  */
+double gridpack::unit_commitment::UCBus::objectiveFunction(void) {
+  double obj;
+  obj = 2.0;
+  return obj;
+}
+/**
   * uc solution
   */
 bool gridpack::unit_commitment::UCBus::solution(void)
@@ -112,6 +120,19 @@ bool gridpack::unit_commitment::UCBus::solution(void)
   }
 #endif
   return true;
+}
+
+/**
+ * Set internal vectors that store time series data for loads and
+ * reserves
+ * @param load vector of load values
+ * @param reserve vector of reserve values
+ */
+void gridpack::unit_commitment::UCBus::setTimeSeries(std::vector<double> load,
+    std::vector<double> reserve)
+{
+  p_load = load;
+  p_reserve = reserve;
 }
 
 /**
