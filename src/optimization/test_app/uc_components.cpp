@@ -140,3 +140,15 @@ void gridpack::unit_commitment::UCBranch::load(
 {
 }
 
+/**
+ * Set internal vectors that store time series data for loads and
+ * reserves
+ * @param load vector of load values
+ * @param reserve vector of reserve values
+ */
+void gridpack::unit_commitment::setTimeSeries(std::vector<double> load,
+    std::vector<double> reserve)
+{
+  p_load = load;
+  p_reserve = reserve;
+}
