@@ -65,6 +65,7 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
   std::ifstream input;
   int nvals = 0;
   int i;
+  gridpack::utility::StringUtils util;
   if (me == 0) {
     input.open(filename);
     if (!input.is_open()) {
@@ -73,7 +74,6 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
           filename);
       throw gridpack::Exception(buf);
     }
-    gridpack::utility::StringUtils util;
     std::string line;
     std::getline(input,line);
     std::vector<std::string>  split_line;
@@ -84,25 +84,28 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
     nvals = split_line.size();
     nvals = (nvals-1)/2;
   }
-  p_network->communicator().add(nvals);
-  typedef struct{ double load[nvals];
-                  double reserve[nvals];
-                } ts_data;
+  p_network->communicator().sum(&nvals,1);
+  const int nsize = 2*nvals*sizeof(double);
+  typedef char[nsize] ts_data;
   std::vector<ts_data> series; 
   std::vector<int> bus_ids;
+  double *lptr, *rptr;
   // read in times series values on each of the buses
   if (me == 0) {
     while (std::getline(input, line)) {
       ts_data data;
+      lptr = static_cast<double*>(data);
+      rptr = lptr + nvals;
       boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
           boost::token_compress_on);
       bus_ids.push_back(atoi(split_line[0].c_str()));
       for (i=0; i<nvals; i++) {
-        data.load[i] = atof(split line[2*i+1].c_str());
-        data.reserve[i] = atof(split line[2*i+2].c_str());
+        lptr[i] = atof(split line[2*i+1].c_str());
+        rptr[i] = atof(split line[2*i+2].c_str());
       }
-
+      series.push_back(data);
     }
+    input.close();
   }
   // distribute data from process 0 to the processes that have the corresponding
   // buses
@@ -113,9 +116,10 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
     gridpack::unit_commitment::UCBus *bus;
     bus = dynamic_cast<gridpack::unit_commitment::UCBus*>(
         p_network->getBus(bus_ids[i]).get());
+    lptr = static_cast<double*>(series[i]);
+    rptr = lptr + nvals;
     bus->setTimeSeries(series[i].load,series[i].reserve);
   }
-  input.close();
 }
 
 /**
@@ -145,10 +149,10 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
   // load uc parameters
   filename = "gen.uc";
 //  if (filename.size() > 0) parser.parse(filename.c_str());
-  parser.parse(filename.c_str());
-#if 0
+//  parser.parse(filename.c_str());
+//#if 0
   parser.externalParse(filename.c_str());
-#endif
+//#endif
 
 
   // create factory
@@ -159,6 +163,11 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
   gridpack::unit_commitment::UCoptimizer optim(p_network);
   // get uc parameters
   optim.getUCparam();
+  int idx = 5644;
+  double dlo;
+  double dhi;
+  optim.optVariableBounds(idx, &dlo, &dhi);
+  printf("lo-hi %f %f\n",dlo,dhi);
 
   // prepare for optimization
   double rval;
@@ -183,8 +192,11 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
       }
       loads.push_back(lineData);         // add row to loads
     }
+    fin.close();
     int size = loads.size();
-    const IloInt numHorizons = size;
+//    const IloInt numHorizons = size;
+    int totalV = optim.numOptVariables();
+    const IloInt numHorizons = optim.totalHorizons;
 //    const IloInt numHorizons = 2;
     const IloInt numUnits = optim.totalGen;
 //
@@ -307,7 +319,7 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
       for (IloInt i = 0; i < numUnits; i++) {
          obj += costConst[i]*onOff[p][i]
               + startUp[i]*start_Up[p][i]
-              + costLinear[i]*powerProduced[p][i];
+              + costLinear[i]*powerProduced[p][i]
               + costQuad[i]*powerProduced[p][i]*powerProduced[p][i];
       }
     }

@@ -20,6 +20,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
+#include "gridpack/component/optimization_ifc.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/network/base_network.hpp"
 
@@ -27,7 +28,8 @@ namespace gridpack {
 namespace unit_commitment {
 
 class UCBus
-  : public gridpack::component::BaseBusComponent
+  : public gridpack::component::BaseBusComponent,
+    public gridpack::component::OptimizationInterface
  {
   public:
     /**
@@ -49,6 +51,10 @@ class UCBus
      */
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
+    /**
+     * get objective function
+    */
+    double objectiveFunction(void);
     /** 
      * get solution
      */
