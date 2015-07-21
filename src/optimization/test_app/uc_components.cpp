@@ -125,14 +125,18 @@ bool gridpack::unit_commitment::UCBus::solution(void)
 /**
  * Set internal vectors that store time series data for loads and
  * reserves
- * @param load vector of load values
- * @param reserve vector of reserve values
+ * @param data array containing time series values
+ * @param nvals number of values in time series data
  */
-void gridpack::unit_commitment::UCBus::setTimeSeries(std::vector<double> load,
-    std::vector<double> reserve)
+void void gridpack::unit_commitment::UCBus::setTimeSeries(uc_ts_data *data, int nvals)
 {
-  p_load = load;
-  p_reserve = reserve;
+  int i;
+  p_load.clear();
+  p_reserve.clear();
+  for (i=0; i<nvals; i++) {
+    p_load.push_back(data[i].load)
+    p_reserve.push_back(data[i].reserve)
+  }
 }
 
 /**

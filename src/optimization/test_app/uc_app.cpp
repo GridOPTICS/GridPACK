@@ -85,23 +85,19 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
     nvals = (nvals-1)/2;
   }
   p_network->communicator().sum(&nvals,1);
-  const int nsize = 2*nvals*sizeof(double);
-  typedef char[nsize] ts_data;
-  std::vector<ts_data> series; 
+  std::vector<*ts_data> series; 
   std::vector<int> bus_ids;
   double *lptr, *rptr;
   // read in times series values on each of the buses
   if (me == 0) {
     while (std::getline(input, line)) {
-      ts_data data;
-      lptr = static_cast<double*>(data);
-      rptr = lptr + nvals;
+      ts_data *data = new ts_data[nvals];
       boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
           boost::token_compress_on);
       bus_ids.push_back(atoi(split_line[0].c_str()));
       for (i=0; i<nvals; i++) {
-        lptr[i] = atof(split line[2*i+1].c_str());
-        rptr[i] = atof(split line[2*i+2].c_str());
+        data[i].load = atof(split line[2*i+1].c_str());
+        data[i].reserve = atof(split line[2*i+2].c_str());
       }
       series.push_back(data);
     }
@@ -110,15 +106,19 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
   // distribute data from process 0 to the processes that have the corresponding
   // buses
   gridpack::hash_distr::HashDistribution<p_network,ts_data,ts_data> hash;
-  hash.distributeBusValues(bus_ids; series);
+  int ndata;
+  if (me == 0) {
+    ndata = nvals;
+  } else {
+    ndata = 0;
+  }
+  hash.distributeBusValues(bus_ids; series, nvals);
   nvals = size.bus_ids;
   for (i=0; i<nvals; i++) {
     gridpack::unit_commitment::UCBus *bus;
     bus = dynamic_cast<gridpack::unit_commitment::UCBus*>(
         p_network->getBus(bus_ids[i]).get());
-    lptr = static_cast<double*>(series[i]);
-    rptr = lptr + nvals;
-    bus->setTimeSeries(series[i].load,series[i].reserve);
+    bus->setTimeSeries(series[i], nvals);
   }
 }
 

@@ -32,6 +32,8 @@ class UCBus
     public gridpack::component::OptimizationInterface
  {
   public:
+    typedef struct { double load;
+                     double reserve; } us_ts_data;
     /**
      *  Simple constructor
      */
@@ -62,10 +64,10 @@ class UCBus
 
     /**
      * Set internal vectors that store time series data for loads and reserves
-     * @param load vector of load values
-     * @param reserve vector of reserve values
+     * @param data array containing time series values
+     * @param nvals number of values in time series data
      */
-    void setTimeSeries(std::vector<double> load, std::vector<double> reserve);
+    void setTimeSeries(uc_ts_data *data, int nvals);
 
     int numGen;
     std::vector<double> p_iniLevel;
