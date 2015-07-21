@@ -2209,7 +2209,7 @@ printf("uc_shut_cap  %d %f",i,uc_data[i].shut_cap);
 
           // GOVERNOR_K
           if (nstr > 5) {
-            data.m = atof(split_line[5].c_str());
+            data.k = atof(split_line[5].c_str());
           }
 
           // GOVERNOR_T1
@@ -2374,7 +2374,7 @@ printf("uc_shut_cap  %d %f",i,uc_data[i].shut_cap);
 
           // GOVERNOR_IBLOCK
           if (nstr > 38) {
-            data.iblock = atof(split_line[38].c_str());
+            data.iblock = atoi(split_line[38].c_str());
           }
         } else if (sval == "EXDC1" || sval == "EXDC2") {
           // EXCITER_TR
