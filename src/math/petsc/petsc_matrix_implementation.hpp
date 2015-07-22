@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-07-16 12:42:35 d3g096
+ * @date   2015-07-22 08:11:49 d3g096
  * 
  * @brief  
  * 
@@ -22,6 +22,7 @@
 
 #include <petscmat.h>
 #include <boost/scoped_ptr.hpp>
+#include <boost/format.hpp>
 #include "petsc_exception.hpp"
 #include "petsc_types.hpp"
 #include "matrix_implementation.hpp"
@@ -488,30 +489,74 @@ protected:
       std::vector<PetscInt> ridx(nrow);
       std::vector<PetscInt> cidx(ncol);
 
-      IS irow, icol;
+      // FIXME: Use permutations to manipulate the order of row
+      // indexes and order of resulting sub matrix
+
+      IS irow, irowperm, irowinvert, icol;
       for (PetscInt i = 0; i < nrow; ++i) {
         ridx[i] = rows[i]*elementSize;
       }
-      ierr = ISCreateGeneral(comm, nrow, &ridx[0], PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
-      for (PetscInt j = 0; j < ncol; ++j) {
-        cidx[j] = j;
-      }
-      ierr = ISCreateGeneral(comm, ncol, &cidx[0], PETSC_COPY_VALUES, &icol); CHKERRXX(ierr);
+      ierr = ISCreateGeneral(PETSC_COMM_SELF, nrow, &ridx[0], 
+                             PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
+      ierr = ISSortPermutation(irow, PETSC_TRUE, &irowperm); CHKERRXX(ierr);
+      ierr = ISSetPermutation(irowperm); CHKERRXX(ierr);
+      ierr = ISInvertPermutation(irowperm, PETSC_DECIDE, &irowinvert); CHKERRXX(ierr);
+      ierr = ISDestroy(&irowperm); CHKERRXX(ierr);
+      ierr = ISDestroy(&irow); CHKERRXX(ierr);
+
+      ierr = ISCreateGeneral(comm, nrow, &ridx[0], 
+                             PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
+
+      ierr = ISCreateStride(comm, ncol, 0, 1, &icol); CHKERRXX(ierr);
+      
+      // std::string oname;
+      // PetscViewer v;
+      // oname = boost::str(boost::format("isrow%02d.txt") % this->processor_rank());
+      // ierr = PetscViewerASCIIOpen(comm, oname.c_str(), &v); CHKERRXX(ierr);
+      // ierr = ISView(irow, v); CHKERRXX(ierr);
+      // ierr = PetscViewerDestroy(&v); CHKERRXX(ierr);
+
+      ierr = ISCreateGeneral(comm, nrow, &ridx[0], 
+                             PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
       ierr = ISSort(irow); CHKERRXX(ierr);
-      ierr = ISSort(icol); CHKERRXX(ierr);
+
+      // oname = boost::str(boost::format("isrow%02d_sorted.txt") % this->processor_rank());
+      // ierr = PetscViewerASCIIOpen(comm, oname.c_str(), &v); CHKERRXX(ierr);
+      // ierr = ISView(irow, v); CHKERRXX(ierr);
+      // ierr = PetscViewerDestroy(&v); CHKERRXX(ierr);
 
       Mat *sub;
       ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
 
-      std::vector<PetscScalar> cval(nrow*ncol);
-      for (PetscInt i = 0; i < nrow; ++i) {
-        ridx[i] = i;
+      std::vector<PetscScalar> cval(ncol);
+      for (PetscInt j = 0; j < ncol; ++j) {
+        cidx[j] = j;
       }
-      ierr = MatGetValues(*sub, nrow, &ridx[0], ncol, &cidx[0], &cval[0]); CHKERRXX(ierr);
+      const PetscInt *irp;
+      ierr = ISGetIndices(irowinvert, &irp); CHKERRXX(ierr);
+      int xoff(0);
+      for (PetscInt i = 0; i < nrow; ++i, xoff += ncol/elementSize) {
+        PetscInt row(irp[i]);
+        
+        ierr = MatGetValues(*sub, 1, &row, ncol, &cidx[0], &cval[0]); CHKERRXX(ierr);
 
-      
-      ValueTransferFromLibrary<PetscScalar, TheType> trans(nrow*ncol, &cval[0], x);
-      trans.go();
+        // when the library uses real values to represent complex, we
+        // need to take the conjugate of what comes from the matrix.
+        if (!useLibrary) {
+          conjugate_value<TheType> op;
+          unary_operation<TheType, PetscScalar>(ncol, &cval[0], op);
+        }
+
+        // transfer matrix values to the caller's array
+        ValueTransferFromLibrary<PetscScalar, TheType> trans(ncol, &cval[0], &x[xoff]);
+        trans.go();
+        
+      }
+      ierr = ISRestoreIndices(irowinvert, &irp); CHKERRXX(ierr);
+
+      ierr = ISDestroy(&irowinvert); CHKERRXX(ierr);
+      ierr = ISDestroy(&irow); CHKERRXX(ierr);
+      ierr = ISDestroy(&icol); CHKERRXX(ierr);
 
       ierr = MatDestroyMatrices(1, &sub); CHKERRXX(ierr);
 
