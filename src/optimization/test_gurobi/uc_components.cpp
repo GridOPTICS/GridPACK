@@ -98,7 +98,7 @@ void gridpack::unit_commitment::UCBus::load(const
 /**
   * objective cost
   */
-double gridpack::unit_commitment::UCBus::objectiveFunction(void) {
+double objectiveFunction(void) {
   double obj;
   obj = 2.0;
   return obj;
@@ -120,23 +120,6 @@ bool gridpack::unit_commitment::UCBus::solution(void)
   }
 #endif
   return true;
-}
-
-/**
- * Set internal vectors that store time series data for loads and
- * reserves
- * @param data array containing time series values
- * @param nvals number of values in time series data
- */
-void void gridpack::unit_commitment::UCBus::setTimeSeries(uc_ts_data *data, int nvals)
-{
-  int i;
-  p_load.clear();
-  p_reserve.clear();
-  for (i=0; i<nvals; i++) {
-    p_load.push_back(data[i].load)
-    p_reserve.push_back(data[i].reserve)
-  }
 }
 
 /**
