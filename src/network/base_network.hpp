@@ -966,7 +966,7 @@ void partition(void)
 {
   gridpack::utility::CoarseTimer *timer;
   timer = NULL;
-  timer = gridpack::utility::CoarseTimer::instance();
+//  timer = gridpack::utility::CoarseTimer::instance();
 
   int t_total(0), t_part(0), t_bus_dist(0), t_branch_dist(0);
 
