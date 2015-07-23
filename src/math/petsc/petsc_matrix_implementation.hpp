@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-07-22 08:11:49 d3g096
+ * @date   2015-07-23 09:37:53 d3g096
  * 
  * @brief  
  * 
@@ -25,14 +25,12 @@
 #include <boost/format.hpp>
 #include "petsc_exception.hpp"
 #include "petsc_types.hpp"
+#include "petsc_misc.hpp"
 #include "matrix_implementation.hpp"
 #include "petsc_matrix_wrapper.hpp"
 #include "value_transfer.hpp"
 #include "fallback_matrix_methods.hpp"
 
-
-extern PetscErrorCode 
-sillyMatScaleComplex(Mat A, const gridpack::ComplexType& px);
 
 namespace gridpack {
 namespace math {
@@ -477,6 +475,7 @@ protected:
     }
   }
 
+
   /// Get some rows and put them in a local array (specialized)
   void p_getRowBlock(const IdxType& nrow, const IdxType *rows, TheType *x) const
   {
@@ -489,20 +488,24 @@ protected:
       std::vector<PetscInt> ridx(nrow);
       std::vector<PetscInt> cidx(ncol);
 
-      // FIXME: Use permutations to manipulate the order of row
-      // indexes and order of resulting sub matrix
-
       IS irow, irowperm, irowinvert, icol;
       for (PetscInt i = 0; i < nrow; ++i) {
         ridx[i] = rows[i]*elementSize;
       }
+
+#if PETSC_VERSION_LT(3,6,0)
+      std::vector<PetscInt> permidx(sortPermutation<PetscInt, PetscInt>(ridx));
+      ierr = ISCreateGeneral(PETSC_COMM_SELF, nrow, &permidx[0], 
+                             PETSC_COPY_VALUES, &irowperm); CHKERRXX(ierr);
+#else
       ierr = ISCreateGeneral(PETSC_COMM_SELF, nrow, &ridx[0], 
                              PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
       ierr = ISSortPermutation(irow, PETSC_TRUE, &irowperm); CHKERRXX(ierr);
+      ierr = ISDestroy(&irow); CHKERRXX(ierr);
+#endif
       ierr = ISSetPermutation(irowperm); CHKERRXX(ierr);
       ierr = ISInvertPermutation(irowperm, PETSC_DECIDE, &irowinvert); CHKERRXX(ierr);
       ierr = ISDestroy(&irowperm); CHKERRXX(ierr);
-      ierr = ISDestroy(&irow); CHKERRXX(ierr);
 
       ierr = ISCreateGeneral(comm, nrow, &ridx[0], 
                              PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
