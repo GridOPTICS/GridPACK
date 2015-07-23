@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-04 12:20:43 d3g096
+ * @date   2015-07-23 14:33:08 d3g096
  * 
  * @brief  
  * 
@@ -155,101 +155,79 @@ protected:
    */
   void p_setElement(const IdxType& i, const TheType& x)
   {
-    PetscErrorCode ierr;
-    try {
-      Vec *v = p_vwrap.getVector();
-      unsigned int n(elementSize);
-      PetscScalar *px;
-      px = new PetscScalar[n];
-      TheType tmp(x);
-      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
-      trans.go();
-      PetscInt *idx;
-      idx = new PetscInt[n];
-      for (int j = 0; j < n; ++j) {
-        idx[j] = i*n + j;
-      }
-      ierr = VecSetValues(*v, n, &idx[0], &px[0], INSERT_VALUES); CHKERRXX(ierr);
-      delete [] px;
-      delete [] idx;
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
-    }
+    p_setElements(1, &i, &x);
   }
 
   /// Set an several elements (specialized)
   void p_setElements(const IdxType& n, const IdxType *i, const TheType *x)
   {
-    // FIXME: should be able to set multiple values
-    for (int idx = 0; idx < n; ++idx) {
-      this->p_setElement(i[idx], x[idx]);
+    PetscErrorCode ierr;
+    try {
+      Vec *v = p_vwrap.getVector();
+      ValueTransferToLibrary<TheType, PetscScalar> trans(n, const_cast<TheType *>(x));
+      trans.go();
+      std::vector<PetscInt> idx(n*elementSize);
+      for (int j = 0; j < n; ++j) {
+        idx[j*elementSize] = i[j]*elementSize;
+        if (elementSize > 1) 
+          idx[j*elementSize+1] = idx[j*elementSize]+1;
+      }
+      ierr = VecSetValues(*v, n*elementSize, &idx[0], trans.to(), INSERT_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
     }
   }
 
   /// Add to an individual element (specialized)
   void p_addElement(const IdxType& i, const TheType& x)
   {
-    PetscErrorCode ierr;
-    try {
-      Vec *v = p_vwrap.getVector();
-      unsigned int n(elementSize);
-      PetscScalar *px;
-      px = new PetscScalar[n];
-      TheType tmp(x);
-      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
-      trans.go();
-      PetscInt *idx;
-      idx = new PetscInt[n];
-      for (int j = 0; j < n; ++j) {
-        idx[j] = i*n + j;
-      }
-      ierr = VecSetValues(*v, n, &idx[0], &px[0], ADD_VALUES); CHKERRXX(ierr);
-      delete [] px;
-      delete [] idx;
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
-    }
+    p_addElements(1, &i, &x);
   }
 
   /// Add to an several elements (specialized)
   void p_addElements(const IdxType& n, const IdxType *i, const TheType *x)
   {
-    // FIXME: should be able to add multiple values
-    for (int idx = 0; idx < n; ++idx) {
-      this->p_addElement(i[idx], x[idx]);
+    PetscErrorCode ierr;
+    try {
+      Vec *v = p_vwrap.getVector();
+      ValueTransferToLibrary<TheType, PetscScalar> trans(n, const_cast<TheType *>(x));
+      trans.go();
+      std::vector<PetscInt> idx(n*elementSize);
+      for (int j = 0; j < n; ++j) {
+        idx[j*elementSize] = i[j]*elementSize;
+        if (elementSize > 1) 
+          idx[j*elementSize+1] = idx[j*elementSize]+1;
+      }
+      ierr = VecSetValues(*v, n*elementSize, &idx[0], trans.to(), ADD_VALUES); CHKERRXX(ierr);
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
     }
   }
 
   /// Get an individual (local) element (specialized)
   void p_getElement(const IdxType& i, TheType& x) const
   {
-    PetscErrorCode ierr;
-    try {
-      const Vec *v = p_vwrap.getVector();
-      unsigned int n(elementSize);
-      PetscScalar *px;
-      px = new PetscScalar[n];
-      PetscInt *idx;
-      idx = new PetscInt[n];
-      for (int j = 0; j < n; ++j) {
-        idx[j] = i*n + j;
-      }
-      ierr = VecGetValues(*v, n, &idx[0], &px[0]); CHKERRXX(ierr);
-      ValueTransferFromLibrary<PetscScalar, TheType> trans(n, &px[0], &x);
-      trans.go();
-      delete [] px;
-      delete [] idx;
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
-    }
+    p_getElements(1, &i, &x);
   }
 
   /// Get an several (local) elements (specialized)
   void p_getElements(const IdxType& n, const IdxType *i, TheType *x) const
   {
-    // FIXME: should be able to get multiple values
-    for (int idx = 0; idx < n; ++idx) {
-      this->p_getElement(i[idx], x[idx]);
+    PetscErrorCode ierr;
+    try {
+      const Vec *v = p_vwrap.getVector();
+      std::vector<PetscScalar> px(n*elementSize);
+      std::vector<PetscInt> idx(n*elementSize);
+      for (int j = 0; j < n; ++j) {
+        idx[j*elementSize] = i[j]*elementSize;
+        if (elementSize > 1) 
+          idx[j*elementSize+1] = idx[j*elementSize]+1;
+      }
+      ierr = VecGetValues(*v, n*elementSize, &idx[0], &px[0]); CHKERRXX(ierr);
+      ValueTransferFromLibrary<PetscScalar, TheType> trans(n*elementSize, &px[0], x);
+      trans.go();
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
     }
   }
 
