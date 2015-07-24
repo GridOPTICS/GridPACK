@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-07-23 14:33:08 d3g096
+ * @date   2015-07-24 09:19:42 d3g096
  * 
  * @brief  
  * 
@@ -155,7 +155,19 @@ protected:
    */
   void p_setElement(const IdxType& i, const TheType& x)
   {
-    p_setElements(1, &i, &x);
+    PetscErrorCode ierr;
+    if (useLibrary) {
+      try {
+        Vec *v = p_vwrap.getVector();
+        PetscScalar pv = equate<PetscScalar, TheType>(x);
+        PetscInt pidx(i);
+        ierr = VecSetValue(*v, pidx, pv, INSERT_VALUES); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      p_setElements(1, &i, &x);
+    }
   }
 
   /// Set an several elements (specialized)
@@ -181,7 +193,19 @@ protected:
   /// Add to an individual element (specialized)
   void p_addElement(const IdxType& i, const TheType& x)
   {
-    p_addElements(1, &i, &x);
+    PetscErrorCode ierr;
+    if (useLibrary) {
+      try {
+        Vec *v = p_vwrap.getVector();
+        PetscScalar pv = equate<PetscScalar, TheType>(x);
+        PetscInt pidx(i);
+        ierr = VecSetValue(*v, pidx, pv, ADD_VALUES); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      p_addElements(1, &i, &x);
+    }
   }
 
   /// Add to an several elements (specialized)
@@ -207,7 +231,20 @@ protected:
   /// Get an individual (local) element (specialized)
   void p_getElement(const IdxType& i, TheType& x) const
   {
-    p_getElements(1, &i, &x);
+    PetscErrorCode ierr;
+    if (useLibrary) {
+      try {
+        const Vec *v = p_vwrap.getVector();
+        PetscScalar pv;
+        PetscInt pidx(i);
+        ierr = VecGetValues(*v, 1, &pidx, &pv); CHKERRXX(ierr);
+        x = equate<TheType, PetscScalar>(pv);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      p_getElements(1, &i, &x);
+    }
   }
 
   /// Get an several (local) elements (specialized)
