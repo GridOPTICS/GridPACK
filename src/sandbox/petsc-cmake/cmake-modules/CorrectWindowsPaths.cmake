@@ -1,3 +1,5 @@
+# GridPACK Note:  This file was found 10Oct2013 here:
+# https://github.com/jedbrown/cmake-modules/blob/master/CorrectWindowsPaths.cmake
 # CorrectWindowsPaths - this module defines one macro
 #
 # CONVERT_CYGWIN_PATH( PATH )

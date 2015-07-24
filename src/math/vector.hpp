@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2015-03-05 09:44:10 d3g096
+ * @date   2015-07-24 08:51:32 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -199,7 +199,7 @@ protected:
   void p_setElements(const IdxType& n, const IdxType *i, const TheType *x)
   { p_vector_impl->setElements(n, i, x); }
 
-  /// Get a range of elements (lo to hi-1) (specialized)
+  /// Set a range of elements (lo to hi-1) (specialized)
   void p_setElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
   { p_vector_impl->setElementRange(lo, hi, x); }
 
@@ -210,6 +210,10 @@ protected:
   /// Add to an several elements (specialized)
   void p_addElements(const IdxType& n, const IdxType *i, const TheType *x)
   { p_vector_impl->addElements(n, i, x); }
+
+  /// Add to a range of elements (lo to hi-1) (specialized)
+  void p_addElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
+  { p_vector_impl->addElementRange(lo, hi, x); }
 
   /// Get an individual element (specialized)
   void p_getElement(const IdxType& i, TheType& x) const

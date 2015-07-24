@@ -10,7 +10,7 @@
 /**
  * @file   vector_interface.hpp
  * @author William A. Perkins
- * @date   2014-10-30 14:18:39 d3g096
+ * @date   2015-07-24 08:50:39 d3g096
  * 
  * @brief  
  * 
@@ -187,6 +187,29 @@ public:
   void addElements(const IdxType& n, const IdxType *i, const TheType *x)
   {
     this->p_addElements(n, i, x);
+  }
+
+  /// Add to a range of elements (lo to hi-1)
+  /** 
+   * @e Local.
+   * 
+   * An example that adds to the  the locally owned part of the vector:
+   * \code{.cpp}
+   * Vector v(...);
+   * int lo, hi;
+   * v.local_index_range(lo, hi);
+   * std::vector<ComplexType> x(v.local_size())
+   * // fill x with appropriate values
+   * v.addElement_range(lo, hi, &x[0]);
+   * \endcode
+   * 
+   * @param lo lowest global (0-based) index to fill
+   * @param hi one more than the highest global (0-based) index to fill
+   * @param x array of hi - lo values
+   */
+  void addElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
+  {
+    this->p_addElementRange(lo, hi, x);
   }
 
   /// Get an individual element
@@ -415,6 +438,9 @@ protected:
 
   /// Add to an several elements (specialized)
   virtual void p_addElements(const IdxType& n, const IdxType *i, const TheType *x) = 0;
+
+  /// Add to a range of elements (lo to hi-1) (specialized)
+  virtual void p_addElementRange(const IdxType& lo, const IdxType& hi, TheType *x) = 0;
 
   /// Get an individual element (specialized)
   virtual void p_getElement(const IdxType& i, TheType& x) const = 0;

@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2015-01-26 10:50:14 d3g096
+ * @date   2015-07-24 08:52:05 d3g096
  * 
  * @brief  
  * 
@@ -82,7 +82,7 @@ protected:
   virtual void p_applyOperation(base_unary_function<TheType>& op) = 0;
 
 
-  /// Get a range of elements (lo to hi-1) (specialized)
+  /// Set a range of elements (lo to hi-1) (specialized)
   void p_setElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
   {
     std::vector<int> i;
@@ -91,6 +91,17 @@ protected:
               boost::counting_iterator<int>(hi),
               std::back_inserter(i));
     this->p_setElements(i.size(), &i[0], x);
+  }
+
+  /// Set a range of elements (lo to hi-1) (specialized)
+  void p_addElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
+  {
+    std::vector<int> i;
+    i.reserve(hi-lo);
+    std::copy(boost::counting_iterator<int>(lo),
+              boost::counting_iterator<int>(hi),
+              std::back_inserter(i));
+    this->p_addElements(i.size(), &i[0], x);
   }
 
   /// Get a range of elements (lo to hi-1) (specialized)

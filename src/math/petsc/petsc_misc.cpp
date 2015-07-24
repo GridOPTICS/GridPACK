@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created May 27, 2015 by William A. Perkins
-// Last Change: 2015-05-28 09:19:15 d3g096
+// Last Change: 2015-07-23 09:06:38 d3g096
 // -------------------------------------------------------------
 
 
@@ -15,7 +15,7 @@
 #include <petscmath.h>
 #include <petscmat.h>
 
-#include "gridpack/utilities/complex.hpp"
+#include "petsc_misc.hpp"
 
 /// Scale a complex DENSE matrix
 /** 
@@ -65,3 +65,9 @@ sillyMatScaleComplex(Mat A, const gridpack::ComplexType& px)
 #endif
   return ierr;
 }
+
+
+
+
+
+

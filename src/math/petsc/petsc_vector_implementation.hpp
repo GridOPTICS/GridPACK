@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-04 12:20:43 d3g096
+ * @date   2015-07-24 10:32:00 d3g096
  * 
  * @brief  
  * 
@@ -146,110 +146,118 @@ protected:
     hi = phi/elementSize;
   }
 
-  /// Set an individual element (specialized)
-  /** 
-   * If you try to set an off processor value, it will be ignored
-   * 
-   * @param i global vector index
-   * @param x value
-   */
-  void p_setElement(const IdxType& i, const TheType& x)
+  void p_setOrAddElement(const IdxType& i, const TheType& x, InsertMode mode)
+  {
+    PetscErrorCode ierr;
+    if (useLibrary) {
+      try {
+        Vec *v = p_vwrap.getVector();
+        PetscScalar pv = equate<PetscScalar, TheType>(x);
+        PetscInt pidx(i);
+        ierr = VecSetValue(*v, pidx, pv, mode); CHKERRXX(ierr);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
+      }
+    } else {
+      p_setOrAddElements(1, &i, &x, mode);
+    }
+  }
+
+  /// Set an several elements (specialized)
+  void p_setOrAddElements(const IdxType& n, const IdxType *i, const TheType *x, 
+                          InsertMode mode)
   {
     PetscErrorCode ierr;
     try {
       Vec *v = p_vwrap.getVector();
-      unsigned int n(elementSize);
-      PetscScalar *px;
-      px = new PetscScalar[n];
-      TheType tmp(x);
-      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
-      trans.go();
-      PetscInt *idx;
-      idx = new PetscInt[n];
-      for (int j = 0; j < n; ++j) {
-        idx[j] = i*n + j;
+      const IdxType *theindexes;
+      PetscInt *idx = NULL;
+
+      // try to avoid allocating an array for indexes: assumes that PetscInt == IdxType
+      if (elementSize == 1) {
+        theindexes = i;         
+      } else {
+        idx = new PetscInt[n*elementSize];
+        for (int j = 0; j < n; ++j) {
+          idx[j*elementSize] = i[j]*elementSize;
+          if (elementSize > 1) 
+            idx[j*elementSize+1] = idx[j*elementSize]+1;
+        }
+        theindexes = idx;
       }
-      ierr = VecSetValues(*v, n, &idx[0], &px[0], INSERT_VALUES); CHKERRXX(ierr);
-      delete [] px;
-      delete [] idx;
+      ValueTransferToLibrary<TheType, PetscScalar> trans(n, const_cast<TheType *>(x));
+      trans.go();
+      ierr = VecSetValues(*v, n*elementSize, &theindexes[0], trans.to(), mode); CHKERRXX(ierr);
+      if (idx != NULL) {
+        delete [] idx;
+      }
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
+  }
+
+
+  /// Set an individual element (specialized)
+  void p_setElement(const IdxType& i, const TheType& x)
+  {
+    p_setOrAddElement(i, x, INSERT_VALUES);
   }
 
   /// Set an several elements (specialized)
   void p_setElements(const IdxType& n, const IdxType *i, const TheType *x)
   {
-    // FIXME: should be able to set multiple values
-    for (int idx = 0; idx < n; ++idx) {
-      this->p_setElement(i[idx], x[idx]);
-    }
+    p_setOrAddElements(n, i, x, INSERT_VALUES);
   }
 
   /// Add to an individual element (specialized)
   void p_addElement(const IdxType& i, const TheType& x)
   {
-    PetscErrorCode ierr;
-    try {
-      Vec *v = p_vwrap.getVector();
-      unsigned int n(elementSize);
-      PetscScalar *px;
-      px = new PetscScalar[n];
-      TheType tmp(x);
-      ValueTransferToLibrary<TheType, PetscScalar> trans(1, &tmp, &px[0]);
-      trans.go();
-      PetscInt *idx;
-      idx = new PetscInt[n];
-      for (int j = 0; j < n; ++j) {
-        idx[j] = i*n + j;
-      }
-      ierr = VecSetValues(*v, n, &idx[0], &px[0], ADD_VALUES); CHKERRXX(ierr);
-      delete [] px;
-      delete [] idx;
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
-    }
+    p_setOrAddElement(i, x, ADD_VALUES);
   }
 
   /// Add to an several elements (specialized)
   void p_addElements(const IdxType& n, const IdxType *i, const TheType *x)
   {
-    // FIXME: should be able to add multiple values
-    for (int idx = 0; idx < n; ++idx) {
-      this->p_addElement(i[idx], x[idx]);
-    }
+    p_setOrAddElements(n, i, x, ADD_VALUES);
   }
 
   /// Get an individual (local) element (specialized)
   void p_getElement(const IdxType& i, TheType& x) const
   {
     PetscErrorCode ierr;
-    try {
-      const Vec *v = p_vwrap.getVector();
-      unsigned int n(elementSize);
-      PetscScalar *px;
-      px = new PetscScalar[n];
-      PetscInt *idx;
-      idx = new PetscInt[n];
-      for (int j = 0; j < n; ++j) {
-        idx[j] = i*n + j;
+    if (useLibrary) {
+      try {
+        const Vec *v = p_vwrap.getVector();
+        PetscScalar pv;
+        PetscInt pidx(i);
+        ierr = VecGetValues(*v, 1, &pidx, &pv); CHKERRXX(ierr);
+        x = equate<TheType, PetscScalar>(pv);
+      } catch (const PETSC_EXCEPTION_TYPE& e) {
+        throw PETScException(ierr, e);
       }
-      ierr = VecGetValues(*v, n, &idx[0], &px[0]); CHKERRXX(ierr);
-      ValueTransferFromLibrary<PetscScalar, TheType> trans(n, &px[0], &x);
-      trans.go();
-      delete [] px;
-      delete [] idx;
-    } catch (const PETSC_EXCEPTION_TYPE& e) {
-      throw PETScException(ierr, e);
+    } else {
+      p_getElements(1, &i, &x);
     }
   }
 
   /// Get an several (local) elements (specialized)
   void p_getElements(const IdxType& n, const IdxType *i, TheType *x) const
   {
-    // FIXME: should be able to get multiple values
-    for (int idx = 0; idx < n; ++idx) {
-      this->p_getElement(i[idx], x[idx]);
+    PetscErrorCode ierr;
+    try {
+      const Vec *v = p_vwrap.getVector();
+      std::vector<PetscScalar> px(n*elementSize);
+      std::vector<PetscInt> idx(n*elementSize);
+      for (int j = 0; j < n; ++j) {
+        idx[j*elementSize] = i[j]*elementSize;
+        if (elementSize > 1) 
+          idx[j*elementSize+1] = idx[j*elementSize]+1;
+      }
+      ierr = VecGetValues(*v, n*elementSize, &idx[0], &px[0]); CHKERRXX(ierr);
+      ValueTransferFromLibrary<PetscScalar, TheType> trans(n*elementSize, &px[0], x);
+      trans.go();
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
     }
   }
 

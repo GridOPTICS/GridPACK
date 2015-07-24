@@ -150,7 +150,7 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void mapToNetwork(const gridpack::math::Matrix &matrix)
 {
-#if 0
+#if 1
   int i, j, k;
   ComplexType *values;
   ComplexType **varray;
