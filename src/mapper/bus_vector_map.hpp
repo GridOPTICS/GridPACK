@@ -43,10 +43,12 @@ BusVectorMap(boost::shared_ptr<_network> network)
   : p_network(network)
 {
   p_Offsets                        = NULL;
+  p_contributingBusIDs             = NULL;
+  p_ISize                          = NULL;
   int                     iSize    = 0;
 
   p_timer = NULL;
-  // p_timer = gridpack::utility::CoarseTimer::instance();
+  p_timer = gridpack::utility::CoarseTimer::instance();
 
   p_GAgrp = network->communicator().getGroup();
   p_me = GA_Pgroup_nodeid(p_GAgrp);
@@ -57,19 +59,22 @@ BusVectorMap(boost::shared_ptr<_network> network)
 
   p_activeBuses         = getActiveBuses();
 
+  contributions();
+
   setupGlobalArrays(p_activeBuses);  // allocate globalIndex arrays
 
   setupIndexingArrays();
 
   setupOffsetArrays();
 
-  contributions();
   setBusOffsets();
 }
 
 ~BusVectorMap()
 {
   if (p_Offsets != NULL) delete [] p_Offsets;
+  if (p_contributingBusIDs != NULL) delete [] p_contributingBusIDs;
+  if (p_ISize != NULL) delete [] p_ISize;
   GA_Destroy(gaVecBlksI);
   GA_Destroy(gaOffsetI);
 }
@@ -364,7 +369,6 @@ void setupIndexingArrays()
 
   // set up bus indexing
   allocateIndexArray(p_nBuses, &iSizeArray, &iIndexArray);
-
   loadBusArrays(iSizeArray, iIndexArray, &count);
   scatterIndexingArrays(iSizeArray, iIndexArray, count);
   deleteIndexArrays(p_nBuses, iSizeArray, iIndexArray);
@@ -401,6 +405,9 @@ void loadBusArrays(int * iSizeArray, int ** iIndexArray, int *count)
   bool                     status         = true;
 
   *count = 0;
+  p_contributingBusIDs = new int[p_busContribution];
+  p_ISize = new int[p_busContribution];
+  int icnt = 0;
   for (int i = 0; i < p_nBuses; i++) {
     status = p_network->getBus(i)->vectorSize(&iSize);
     if (status) {
@@ -408,6 +415,11 @@ void loadBusArrays(int * iSizeArray, int ** iIndexArray, int *count)
       iSizeArray[*count]     = iSize;
       *(iIndexArray[*count])  = index;
       (*count)++;
+    }
+    if (status && p_network->getActiveBus(i)) {
+      p_contributingBusIDs[icnt] = i;
+      p_ISize[icnt] = iSize;
+      icnt++;
     }
   }
 }
@@ -613,6 +625,7 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   if (p_timer) p_timer->start(t_bus);
   int j;
   int jcnt = 0;
+#if 0
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       bus = p_network->getBus(i);
@@ -635,6 +648,41 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
       }
     }
   }
+#else
+#if 0
+    for (i=0; i<p_busContribution; i++) {
+      bus = p_network->getBus(p_contributingBusIDs[i]);
+      bus->vectorValues(values);
+      isize = p_ISize[jcnt];
+      for (j=0; j<isize; j++) {
+        idx = p_Offsets[jcnt] + j;
+        vector.addElement(idx, values[j]);
+      }
+      jcnt++;
+    }
+#endif
+    ComplexType *vbuf = new ComplexType[p_numValues];
+    int *ibuf = new int[p_numValues];
+    icnt = 0;
+    for (i=0; i<p_busContribution; i++) {
+      bus = p_network->getBus(p_contributingBusIDs[i]);
+      bus->vectorValues(values);
+      isize = p_ISize[jcnt];
+      for (j=0; j<isize; j++) {
+        vbuf[icnt] = values[j];
+        idx = p_Offsets[jcnt] + j;
+        ibuf[icnt] = idx;
+        icnt++;
+      }
+      jcnt++;
+    }
+    vector.addElements(icnt,ibuf,vbuf);
+    delete [] vbuf;
+    delete [] ibuf;
+#if 0
+  }
+#endif
+#endif
   if (p_timer) p_timer->stop(t_bus);
 
   // Clean up arrays
@@ -714,9 +762,13 @@ void contributions(void)
   // Get number of contributions from buses
   int isize, jsize;
   p_busContribution = 0;
+  p_numValues = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->vectorSize(&isize)) p_busContribution++;
+      if (p_network->getBus(i)->vectorSize(&isize)) {
+        p_busContribution++;
+        p_numValues += isize;
+      }
     }
   }
 }
@@ -738,8 +790,11 @@ int                         p_maxRowIndex;
 int                         p_rowBlockSize;
 int                         p_busContribution;
 int                         p_maxIBlock;
+int                         p_numValues;
 
 int*                        p_Offsets;
+int*                        p_contributingBusIDs;
+int*                        p_ISize;
 
     // global vector block size array
 int                         gaVecBlksI; // g_idx
