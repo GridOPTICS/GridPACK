@@ -9,7 +9,7 @@
 /**
  * @file   petsc_vector_implementation.hpp
  * @author William A. Perkins
- * @date   2015-07-24 10:11:18 d3g096
+ * @date   2015-07-24 10:32:00 d3g096
  * 
  * @brief  
  * 
@@ -174,7 +174,7 @@ protected:
       PetscInt *idx = NULL;
 
       // try to avoid allocating an array for indexes: assumes that PetscInt == IdxType
-      if (useLibrary) {
+      if (elementSize == 1) {
         theindexes = i;         
       } else {
         idx = new PetscInt[n*elementSize];
