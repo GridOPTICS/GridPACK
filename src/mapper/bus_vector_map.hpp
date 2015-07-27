@@ -705,6 +705,7 @@ void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
   if (p_timer) p_timer->start(t_bus);
   int j;
   int jcnt = 0;
+#if 0
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       bus = p_network->getBus(i);
@@ -727,6 +728,26 @@ void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
       }
     }
   }
+#else
+    RealType *vbuf = new RealType[p_numValues];
+    int *ibuf = new int[p_numValues];
+    icnt = 0;
+    for (i=0; i<p_busContribution; i++) {
+      bus = p_network->getBus(p_contributingBusIDs[i]);
+      bus->vectorValues(values);
+      isize = p_ISize[jcnt];
+      for (j=0; j<isize; j++) {
+        vbuf[icnt] = values[j];
+        idx = p_Offsets[jcnt] + j;
+        ibuf[icnt] = idx;
+        icnt++;
+      }
+      jcnt++;
+    }
+    vector.addElements(icnt,ibuf,vbuf);
+    delete [] vbuf;
+    delete [] ibuf;
+#endif
   if (p_timer) p_timer->stop(t_bus);
 
   // Clean up arrays
