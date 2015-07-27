@@ -46,6 +46,7 @@ BusVectorMap(boost::shared_ptr<_network> network)
   p_contributingBusIDs             = NULL;
   p_ISize                          = NULL;
   int                     iSize    = 0;
+  p_contributingBuses              = NULL;
 
   p_timer = NULL;
   p_timer = gridpack::utility::CoarseTimer::instance();
@@ -75,6 +76,7 @@ BusVectorMap(boost::shared_ptr<_network> network)
   if (p_Offsets != NULL) delete [] p_Offsets;
   if (p_contributingBusIDs != NULL) delete [] p_contributingBusIDs;
   if (p_ISize != NULL) delete [] p_ISize;
+  if (p_contributingBuses != NULL) delete [] p_contributingBuses;
   GA_Destroy(gaVecBlksI);
   GA_Destroy(gaOffsetI);
 }
@@ -407,6 +409,8 @@ void loadBusArrays(int * iSizeArray, int ** iIndexArray, int *count)
   *count = 0;
   p_contributingBusIDs = new int[p_busContribution];
   p_ISize = new int[p_busContribution];
+  p_contributingBuses 
+    = new gridpack::component::BaseBusComponent*[p_busContribution];
   int icnt = 0;
   for (int i = 0; i < p_nBuses; i++) {
     status = p_network->getBus(i)->vectorSize(&iSize);
@@ -419,6 +423,7 @@ void loadBusArrays(int * iSizeArray, int ** iIndexArray, int *count)
     if (status && p_network->getActiveBus(i)) {
       p_contributingBusIDs[icnt] = i;
       p_ISize[icnt] = iSize;
+      p_contributingBuses[icnt] = p_network->getBus(i).get();
       icnt++;
     }
   }
@@ -661,9 +666,14 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
       jcnt++;
     }
 #endif
+    int t_pack, t_add;
+    if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
+    if (p_timer) p_timer->start(t_pack);
     ComplexType *vbuf = new ComplexType[p_numValues];
+    ComplexType *vptr = vbuf;
     int *ibuf = new int[p_numValues];
     icnt = 0;
+#if 0
     for (i=0; i<p_busContribution; i++) {
       bus = p_network->getBus(p_contributingBusIDs[i]);
       bus->vectorValues(values);
@@ -676,7 +686,25 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
       }
       jcnt++;
     }
+#else
+    for (i=0; i<p_busContribution; i++) {
+      p_contributingBuses[i]->vectorValues(vptr);
+      isize = p_ISize[jcnt];
+      vptr += isize;
+      idx = p_Offsets[jcnt];
+      for (j=0; j<isize; j++) {
+        ibuf[icnt] = idx;
+        idx++;
+        icnt++;
+      }
+      jcnt++;
+    }
+#endif
+    if (p_timer) p_timer->stop(t_pack);
+    if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
+    if (p_timer) p_timer->start(t_add);
     vector.addElements(icnt,ibuf,vbuf);
+    if (p_timer) p_timer->stop(t_add);
     delete [] vbuf;
     delete [] ibuf;
 #if 0
@@ -729,9 +757,14 @@ void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
     }
   }
 #else
+    int t_pack, t_add;
+    if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
+    if (p_timer) p_timer->start(t_pack);
     RealType *vbuf = new RealType[p_numValues];
+    RealType *vptr = vbuf;
     int *ibuf = new int[p_numValues];
     icnt = 0;
+#if 0
     for (i=0; i<p_busContribution; i++) {
       bus = p_network->getBus(p_contributingBusIDs[i]);
       bus->vectorValues(values);
@@ -744,7 +777,25 @@ void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
       }
       jcnt++;
     }
+#else
+    for (i=0; i<p_busContribution; i++) {
+      p_contributingBuses[i]->vectorValues(vptr);
+      isize = p_ISize[jcnt];
+      vptr += isize;
+      idx = p_Offsets[jcnt];
+      for (j=0; j<isize; j++) {
+        ibuf[icnt] = idx;
+        idx++;
+        icnt++;
+      }
+      jcnt++;
+    }
+#endif
+    if (p_timer) p_timer->stop(t_pack);
+    if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
+    if (p_timer) p_timer->start(t_add);
     vector.addElements(icnt,ibuf,vbuf);
+    if (p_timer) p_timer->stop(t_add);
     delete [] vbuf;
     delete [] ibuf;
 #endif
@@ -816,6 +867,7 @@ int                         p_numValues;
 int*                        p_Offsets;
 int*                        p_contributingBusIDs;
 int*                        p_ISize;
+gridpack::component::BaseBusComponent **p_contributingBuses;
 
     // global vector block size array
 int                         gaVecBlksI; // g_idx
