@@ -44,13 +44,27 @@ class BaseFactory {
       : p_network(network)
     { 
       p_profile = false;
+      p_numBuses = p_network->numBuses();
+      p_numBranches = p_network->numBranches();
+      p_buses = new gridpack::component::BaseBusComponent*[p_numBuses];
+      p_branches = new gridpack::component::BaseBranchComponent*[p_numBranches];
+      int i;
+      for (i=0; i<p_numBuses; i++) {
+        p_buses[i] = p_network->getBus(i).get();
+      }
+      for (i=0; i<p_numBranches; i++) {
+        p_branches[i] = p_network->getBranch(i).get();
+      }
     }
 
     /**
      * Destructor
      */
     virtual ~BaseFactory(void)
-    {}
+    {
+      delete [] p_buses;
+      delete [] p_branches;
+    }
 
     /**
      * Set pointers in each bus and branch component so that it points to
@@ -350,17 +364,12 @@ class BaseFactory {
      */
     virtual void setMode(int mode)
     {
-      int nbus, nbranch;
-
-      nbus = p_network->numBuses();
-      nbranch = p_network->numBranches();
-
       int i;
-      for (i=0; i<nbus; i++) {
-        p_network->getBus(i)->setMode(mode);
+      for (i=0; i<p_numBuses; i++) {
+        p_buses[i]->setMode(mode);
       }
-      for (i=0; i<nbranch; i++) {
-        p_network->getBranch(i)->setMode(mode);
+      for (i=0; i<p_numBranches; i++) {
+        p_branches[i]->setMode(mode);
       }
     }
 
@@ -449,6 +458,13 @@ class BaseFactory {
 
     bool p_profile;
 
+    int p_numBuses;
+
+    int p_numBranches;
+
+    gridpack::component::BaseBusComponent **p_buses;
+
+    gridpack::component::BaseBranchComponent **p_branches;
 };
 
 }    // factory
