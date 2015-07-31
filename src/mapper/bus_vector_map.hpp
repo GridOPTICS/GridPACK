@@ -119,8 +119,10 @@ boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
   int t_new(0), t_bus(0), t_set(0);
   if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
   if (p_timer) p_timer->start(t_new);
+//  boost::shared_ptr<gridpack::math::RealVector>
+//             Ret(new gridpack::math::RealVector(comm, p_rowBlockSize));
   boost::shared_ptr<gridpack::math::RealVector>
-             Ret(new gridpack::math::RealVector(comm, p_rowBlockSize));
+             Ret(new gridpack::math::RealVector(comm, p_numValues));
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
@@ -145,8 +147,10 @@ gridpack::math::Vector* intMapToVector(void)
   int t_new, t_bus, t_set;
   if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
   if (p_timer) p_timer->start(t_new);
+//  gridpack::math::Vector*
+//     Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
   gridpack::math::Vector*
-     Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
+     Ret(new gridpack::math::Vector(comm, p_numValues));
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
@@ -713,7 +717,6 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
         idx++;
         icnt++;
       }
-      jcnt++;
       vptr += isize;
     }
     if (p_timer) p_timer->stop(t_pack);
@@ -789,7 +792,6 @@ void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
         icnt++;
       }
       vptr += isize;
-      jcnt++;
     }
     if (p_timer) p_timer->stop(t_pack);
     if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
