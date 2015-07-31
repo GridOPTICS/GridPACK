@@ -224,7 +224,9 @@ void getDimensions(void)
     sizebuf[i] = 0;
   }
   sizebuf[p_me] = nRows;
-  GA_Pgroup_igop(p_GAgrp, sizebuf, p_nNodes, "+");
+  char plus[2];
+  strcpy(plus,"+");
+  GA_Pgroup_igop(p_GAgrp, sizebuf, p_nNodes, plus);
   // Get total vector dimension and evaluate offsets for processor
   p_Dim = sizebuf[0];
   p_Offsets[0] = 0;
@@ -329,8 +331,10 @@ void setOffsets(void)
   }
   t_busMap[p_me] = nbus;
   t_branchMap[p_me] = nbranch;
-  GA_Pgroup_igop(p_GAgrp, t_busMap, p_nNodes, "+");
-  GA_Pgroup_igop(p_GAgrp, t_branchMap, p_nNodes, "+");
+  char plus[2];
+  strcpy(plus,"+");
+  GA_Pgroup_igop(p_GAgrp, t_busMap, p_nNodes, plus);
+  GA_Pgroup_igop(p_GAgrp, t_branchMap, p_nNodes, plus);
   int *busMap = new int[p_nNodes];
   int *branchMap = new int[p_nNodes];
   busMap[0] = 0;
