@@ -324,22 +324,16 @@ void getDimensions(void)
     sizebuf[i] = 0;
   }
   sizebuf[p_me] = nRows;
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, sizebuf, p_nNodes, plus);
+  GA_Pgroup_igop(p_GAgrp, sizebuf, p_nNodes, "+");
   int maxCols, minCols;
   if (!okCols) {
     minCols = -1;
   } else {
     minCols = nCols;
   }
-  char cmin[4];
-  strcpy(cmin,"min");
-  GA_Pgroup_igop(p_GAgrp, &minCols, 1, cmin);
+  GA_Pgroup_igop(p_GAgrp, &minCols, 1, "min");
   maxCols = nCols;
-  char cmax[4];
-  strcpy(cmax,"max");
-  GA_Pgroup_igop(p_GAgrp, &maxCols, 1, cmax);
+  GA_Pgroup_igop(p_GAgrp, &maxCols, 1, "max");
   if (maxCols != minCols) okCols = false;
   if (!okCols && p_me == 0) {
     char buf[512];
@@ -454,10 +448,8 @@ void setOffsets(void)
   }
   t_busMap[p_me] = nbus;
   t_branchMap[p_me] = nbranch;
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, t_busMap, p_nNodes, plus);
-  GA_Pgroup_igop(p_GAgrp, t_branchMap, p_nNodes, plus);
+  GA_Pgroup_igop(p_GAgrp, t_busMap, p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp, t_branchMap, p_nNodes, "+");
   int *busMap = new int[p_nNodes];
   int *branchMap = new int[p_nNodes];
   busMap[0] = 0;

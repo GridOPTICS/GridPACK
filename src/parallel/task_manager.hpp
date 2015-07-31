@@ -128,9 +128,7 @@ public:
     } else {
       *next = 0;
     }
-    char plus[2];
-    strcpy(plus,"+");
-    GA_Pgroup_igop(comm.getGroup(),next,one,plus);
+    GA_Pgroup_igop(comm.getGroup(),next,one,"+");
     if (*next < p_ntasks) {
       p_task_count++;
       return true;
@@ -162,9 +160,7 @@ public:
     int i;
     for (i=0; i<nprocs; i++) procs[i] = 0;
     procs[GA_Pgroup_nodeid(p_grp)] = p_task_count;
-    char plus[2];
-    strcpy(plus,"+");
-    GA_Pgroup_igop(p_grp,procs,nprocs,plus);
+    GA_Pgroup_igop(p_grp,procs,nprocs,"+");
     // print out number of tasks evaluated on each processor
     if (me == 0) {
       printf("\nNumber of tasks per processors\n");

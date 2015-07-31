@@ -164,9 +164,7 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<int,int> > &pairs)
       numValues[i] = 0;
     }
   }
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, plus);
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
   GA_Destroy(g_offset);
   int totalVals = 0;
   for (i=0; i<p_nprocs; i++) {
@@ -349,9 +347,7 @@ void GlobalIndexHashMap::addPairs(std::vector<std::pair<std::pair<int,int>,int> 
       numValues[i] = 0;
     }
   }
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, plus);
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
   GA_Destroy(g_offset);
   int totalVals = 0;
   for (i=0; i<p_nprocs; i++) {
@@ -594,9 +590,7 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
       numValues[i] = 0;
     }
   }
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, plus);
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
   int totalVals = 0;
   for (i=0; i<p_nprocs; i++) {
     r_offset[i] += totalVals;
@@ -712,7 +706,7 @@ void GlobalIndexHashMap::getValues(std::vector<int> &keys, std::vector<int> &val
       numValues[i] = 0;
     }
   }
-  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, plus);
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
   GA_Destroy(g_offset);
   totalVals = 0;
   for (i=0; i<p_nprocs; i++) {
@@ -964,9 +958,7 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
       numValues[i] = 0;
     }
   }
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, plus);
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
   int totalVals = 0;
   for (i=0; i<p_nprocs; i++) {
     r_offset[i] += totalVals;
@@ -1087,7 +1079,7 @@ void GlobalIndexHashMap::getValues(std::vector<std::pair<int,int> > &keys,
       numValues[i] = 0;
     }
   }
-  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, plus);
+  GA_Pgroup_igop(p_GAgrp, numValues, p_nprocs, "+");
   GA_Destroy(g_offset);
   totalVals = 0;
   for (i=0; i<p_nprocs; i++) {

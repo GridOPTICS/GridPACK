@@ -432,9 +432,7 @@ void setupGlobalArrays(int nActiveBuses)
 
   p_totalBuses = nActiveBuses;
 
-  char cplus[2];
-  strcpy(cplus,"+");
-  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,cplus);
+  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,"+");
 
   // the gaMatBlksI and gaMatBlksJ arrays contain the matrix blocks sizes for
   // individual block contributions
@@ -777,10 +775,8 @@ void setupOffsetArrays()
   }
   p_rowBlockSize = iSize;
   p_colBlockSize = jSize;
-  char cmax[4];
-  strcpy(cmax,"max");
-  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,cmax);
-  GA_Pgroup_igop(p_GAgrp,&p_maxJBlock,one,cmax);
+  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,"max");
+  GA_Pgroup_igop(p_GAgrp,&p_maxJBlock,one,"max");
 
   for (i = 0; i<p_nNodes; i++) {
     itmp[i] = 0;
@@ -790,10 +786,8 @@ void setupOffsetArrays()
   jtmp[p_me] = jSize;
 //  printf("p[%d] (FullMatrixMap) iSize: %d jSize: %d\n",p_me,iSize,jSize);
 
-  char cplus[2];
-  strcpy(cplus,"+");
-  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, cplus);
-  GA_Pgroup_igop(p_GAgrp,jtmp, p_nNodes, cplus);
+  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp,jtmp, p_nNodes, "+");
 
   int offsetArrayISize = 0;
   int offsetArrayJSize = 0;
@@ -810,7 +804,7 @@ void setupOffsetArrays()
   }
   offset[p_me] = p_activeBuses;
 //  printf("p[%d] (FullMatrixMap) activeBuses: %d\n",p_me,p_activeBuses);
-  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,cplus);
+  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,"+");
 
   int *mapc = new int[p_nNodes];
   mapc[0]=0;

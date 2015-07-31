@@ -383,9 +383,7 @@ void setupGlobalArrays(int nActiveBuses)
 
   p_totalBuses = nActiveBuses;
 
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,plus);
+  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,"+");
 
   // the gaVecBlksI array contains the vector blocks sizes for
   // individual block contributions
@@ -540,18 +538,14 @@ void setupOffsetArrays()
     if (iSizes[i] > 0) iSize += iSizes[i];
   }
   p_rowBlockSize = iSize;
-  char cmax[4];
-  strcpy(cmax,"max");
-  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,cmax);
+  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,"max");
 
   for (i = 0; i<p_nNodes; i++) {
     itmp[i] = 0;
   }
   itmp[p_me] = iSize;
 
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, plus);
+  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, "+");
 
   int offsetArrayISize = 0;
   for (i = 0; i < p_me; i++) {
@@ -571,7 +565,7 @@ void setupOffsetArrays()
     offset[i] = 0;
   }
   offset[p_me] = p_activeBuses;
-  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,plus);
+  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,"+");
 
   int *mapc = new int[p_nNodes];
   mapc[0]=0;

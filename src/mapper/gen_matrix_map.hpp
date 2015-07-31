@@ -237,9 +237,7 @@ void getDimensions(void)
   }
   sizebuf[2*p_me] = nRows;
   sizebuf[2*p_me+1] = nCols;
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, sizebuf, 2*p_nNodes, plus);
+  GA_Pgroup_igop(p_GAgrp, sizebuf, 2*p_nNodes, "+");
   // Get total matrix dimensions and evaluate offsets for processor
   p_iDim = sizebuf[0];
   p_jDim = sizebuf[1];
@@ -375,10 +373,8 @@ void setOffsets(void)
   }
   t_busMap[p_me] = nbus;
   t_branchMap[p_me] = nbranch;
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp, t_busMap, p_nNodes, plus);
-  GA_Pgroup_igop(p_GAgrp, t_branchMap, p_nNodes, plus);
+  GA_Pgroup_igop(p_GAgrp, t_busMap, p_nNodes, "+");
+  GA_Pgroup_igop(p_GAgrp, t_branchMap, p_nNodes, "+");
   int *busMap = new int[p_nNodes];
   int *branchMap = new int[p_nNodes];
   busMap[0] = 0;

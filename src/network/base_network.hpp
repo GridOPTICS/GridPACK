@@ -437,9 +437,7 @@ int totalBuses(void)
     if (p_buses[i].p_activeBus) total++;
   }
   int grp = this->communicator().getGroup();
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(grp,&total,1,plus);
+  GA_Pgroup_igop(grp,&total,1,"+");
   return total;
 }
 
@@ -465,9 +463,7 @@ int totalBranches(void)
     if (p_branches[i].p_activeBranch) total++;
   }
   int grp = this->communicator().getGroup();
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(grp,&total,1,plus);
+  GA_Pgroup_igop(grp,&total,1,"+");
   return total;
 }
 
@@ -1745,9 +1741,7 @@ void initBusUpdate(void)
         totBuses[i] = 0;
       }
     }
-    char plus[2];
-    strcpy(plus,"+");
-    GA_Pgroup_igop(grp,totBuses,nprocs,plus);
+    GA_Pgroup_igop(grp,totBuses,nprocs,"+");
     distr[0] = 0;
     p_busTotal = totBuses[0];
     for (i=1; i<nprocs; i++) {
@@ -1922,9 +1916,7 @@ void initBranchUpdate(void)
         totBranches[i] = 0;
       }
     }
-    char plus[2];
-    strcpy(plus,"+");
-    GA_Pgroup_igop(grp,totBranches,nprocs,plus);
+    GA_Pgroup_igop(grp,totBranches,nprocs,"+");
     distr[0] = 0;
     p_branchTotal = totBranches[0];
     for (i=1; i<nprocs; i++) {
