@@ -8,7 +8,7 @@
 /**
  * @file   named.h
  * @author William A. Perkins
- * @date   Mon Mar 25 11:11:41 2013
+ * @date   2015-07-30 13:03:10 d3g096
  * 
  * @brief  
  * 
@@ -31,6 +31,13 @@
 
 #include <string>
 
+// Forward declaration required for serialization
+namespace boost {
+namespace serialization {
+class access;
+} // namespace serialization
+} // namespace boost
+
 namespace gridpack {
 namespace utility {
 
@@ -41,31 +48,52 @@ class Named {
 public:
 
   /// Default constructor.
-  Named(void);
+  Named(void)
+    : p_name()
+  {}
+
+  /// Construct with a value
+  Named(const std::string& s)
+    : p_name(s)
+  {}
+
+  /// Construct with a C-string
+  Named(const char *s)
+    : p_name(s)
+  {}
 
   /// Protected copy constructor to avoid unwanted copies.
-  Named(const Named& old);
+  Named(const Named& old)
+    : p_name(old.p_name)
+  {}
 
   /// Destructor
-  virtual ~Named(void);
+  virtual ~Named(void) {}
 
   /// Get this instance's name
   std::string name(void) const
   {
-    return name_;
+    return p_name;
   }
 
   /// Set this instance's name
   void name(const std::string& s)
   {
-    name_ = s;
+    p_name = s;
   }
 
 protected:
 
   /// The name of this instance
-  std::string name_;
+  std::string p_name;
 
+private:
+
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & p_name;
+  }
 };
 
 } // namespace utility
