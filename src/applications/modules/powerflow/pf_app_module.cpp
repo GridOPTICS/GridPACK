@@ -20,6 +20,8 @@
 #include "pf_factory_module.hpp"
 #include "pf_helper.hpp"
 
+//#define USE_REAL_VALUES
+
 /**
  * Basic constructor
  */
@@ -212,7 +214,11 @@ bool gridpack::powerflow::PFAppModule::solve()
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(p_network);
   timer->stop(t_cmap);
   timer->start(t_vmap);
+#ifdef USE_REAL_VALUES
   boost::shared_ptr<gridpack::math::RealVector> PQ = vMap.mapToRealVector();
+#else
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+#endif
   timer->stop(t_vmap);
 //  PQ->print();
   timer->start(t_cmap);
@@ -220,20 +226,32 @@ bool gridpack::powerflow::PFAppModule::solve()
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
   timer->stop(t_cmap);
   timer->start(t_mmap);
+#ifdef USE_REAL_VALUES
   boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
+#else
+  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+#endif
   timer->stop(t_mmap);
 //  p_busIO->header("\nJacobian values\n");
 //  J->print();
 
   // Create X vector by cloning PQ
+#ifdef USE_REAL_VALUES
   boost::shared_ptr<gridpack::math::RealVector> X(PQ->clone());
+#else
+  boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+#endif
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Powerflow");
   // Create linear solver
   int t_csolv = timer->createCategory("Powerflow: Create Linear Solver");
   timer->start(t_csolv);
+#ifdef USE_REAL_VALUES
   gridpack::math::RealLinearSolver solver(*J);
+#else
+  gridpack::math::LinearSolver solver(*J);
+#endif
   solver.configure(cursor);
   timer->stop(t_csolv);
 
@@ -282,13 +300,21 @@ bool gridpack::powerflow::PFAppModule::solve()
 
     // Create new versions of Jacobian and PQ vector
     timer->start(t_vmap);
+#ifdef USE_REAL_VALUES
     vMap.mapToRealVector(PQ);
+#else
+    vMap.mapToVector(PQ);
+#endif
 //    p_busIO->header("\nnew PQ vector\n");
 //    PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     p_factory->setMode(Jacobian);
+#ifdef USE_REAL_VALUES
     jMap.mapToRealMatrix(J);
+#else
+    jMap.mapToMatrix(J);
+#endif
     timer->stop(t_mmap);
 
     // Create linear solver
