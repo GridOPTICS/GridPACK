@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-07-31 13:19:15 d3g096
+ * @date   2015-07-31 13:38:55 d3g096
  * 
  * @brief  
  * 
@@ -33,8 +33,14 @@ main(int argc, char **argv)
   go::ExpressionPtr four(new go::IntegerConstant(4));
   go::ExpressionPtr six(new go::IntegerConstant(6));
   go::ExpressionPtr two(new go::IntegerConstant(2));
+  go::VariablePtr A(new go::RealVariable(13.0));
+  go::VariablePtr B(new go::RealVariable(0.0, -1.0, 1.0));
+  go::VariablePtr C(new go::IntegerVariable(0, -1, 1));
   go::ExpressionPtr junk;
-  junk = four*six + two;
+  junk = A*4.0;
+  junk->evaluate();
+  std::cout << std::endl;
+  junk = four*six + two*C;
   junk->evaluate();
   std::cout << std::endl;
   junk = four * 6 + 2;

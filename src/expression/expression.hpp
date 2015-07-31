@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-07-31 13:18:36 d3g096
+ * @date   2015-07-31 13:43:01 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,8 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/base_object.hpp>
+
+#include "variable.hpp"
 
 namespace gridpack {
 namespace optimization {
@@ -104,6 +106,45 @@ private:
 
 typedef ConstantExpression<int> IntegerConstant;
 typedef ConstantExpression<double> RealConstant;
+
+// -------------------------------------------------------------
+//  class VariableExpression
+// -------------------------------------------------------------
+class VariableExpression
+  : public Expression
+{
+public:
+
+  /// Default constructor.
+  VariableExpression(VariablePtr v)
+    : Expression(), p_var(v)
+  {}
+
+  /// Destructor
+  ~VariableExpression(void) 
+  {}
+
+protected:
+  
+  /// The variable in question
+  VariablePtr p_var;
+
+  void p_evaluate(void) const
+  {
+    std::cout << p_var->name();
+  }
+  
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar  & boost::serialization::base_object<Expression>(*this);
+    ar & p_var;
+  }
+};
 
 
 // -------------------------------------------------------------
@@ -206,6 +247,18 @@ ExpressionPtr operator+(ExpressionPtr lhs, T rhs)
   return lhs + c;
 }
 
+ExpressionPtr operator+(VariablePtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  return v + rhs;
+}
+
+ExpressionPtr operator+(ExpressionPtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  return lhs + v;
+}
+
 
 // -------------------------------------------------------------
 //  class Multiplication
@@ -267,6 +320,35 @@ ExpressionPtr operator*(ExpressionPtr lhs, T rhs)
   ExpressionPtr c(new ConstantExpression<T>(rhs));
   return lhs * c;
 }
+
+ExpressionPtr operator*(VariablePtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  return v * rhs;
+}
+
+ExpressionPtr operator*(ExpressionPtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  return lhs * v;
+}
+
+template <typename T>
+ExpressionPtr operator*(T lhs, VariablePtr rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(lhs));
+  ExpressionPtr v(new VariableExpression(rhs));
+  return c * v;
+}
+
+template <typename T>
+ExpressionPtr operator*(VariablePtr lhs, T rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  return v * c;
+}
+
 
 
 } // namespace optimization
