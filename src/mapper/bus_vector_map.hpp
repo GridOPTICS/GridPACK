@@ -58,17 +58,8 @@ BusVectorMap(boost::shared_ptr<_network> network)
 
   p_nBuses = p_network->numBuses();
 
-//  p_activeBuses         = getActiveBuses();
-
   contributions();
 
-//  setupGlobalArrays(p_activeBuses);  // allocate gaVecBlksI arrays
-
-//  setupIndexingArrays();
-
-//  setupOffsetArrays();
-
-//  setBusOffsets();
   setBusIndexArrays();
 }
 
@@ -78,8 +69,6 @@ BusVectorMap(boost::shared_ptr<_network> network)
   if (p_ISize != NULL) delete [] p_ISize;
   if (p_contributingBuses != NULL) delete [] p_contributingBuses;
   if (p_Indices != NULL) delete [] p_Indices;
-//  GA_Destroy(gaVecBlksI);
-//  GA_Destroy(gaOffsetI);
 }
 
 /**
@@ -92,8 +81,6 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   int t_new(0), t_bus(0), t_set(0);
   if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
   if (p_timer) p_timer->start(t_new);
-//  boost::shared_ptr<gridpack::math::Vector>
-//             Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
   boost::shared_ptr<gridpack::math::Vector>
              Ret(new gridpack::math::Vector(comm, p_numValues));
   if (p_timer) p_timer->stop(t_new);
@@ -120,7 +107,7 @@ boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
   if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
   if (p_timer) p_timer->start(t_new);
   boost::shared_ptr<gridpack::math::RealVector>
-             Ret(new gridpack::math::RealVector(comm, p_rowBlockSize));
+             Ret(new gridpack::math::RealVector(comm, p_numValues));
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
@@ -146,7 +133,7 @@ gridpack::math::Vector* intMapToVector(void)
   if (p_timer) t_new = p_timer->createCategory("Vector Map: New Vector");
   if (p_timer) p_timer->start(t_new);
   gridpack::math::Vector*
-     Ret(new gridpack::math::Vector(comm, p_rowBlockSize));
+     Ret(new gridpack::math::Vector(comm, p_numValues));
   if (p_timer) p_timer->stop(t_new);
   if (p_timer) t_bus = p_timer->createCategory("Vector Map: Load Bus Data");
   if (p_timer) p_timer->start(t_bus);
@@ -231,41 +218,13 @@ void mapToRealVector(boost::shared_ptr<gridpack::math::RealVector> &vector)
  */
 void mapToBus(const gridpack::math::Vector &vector)
 {
-  // Assume that row partitioning is working correctly
-  int nRows = p_maxRowIndex - p_minRowIndex + 1;
-#if 0
-  ComplexType *values = new ComplexType[p_maxIBlock];
-  int *sizes = new int[nRows];
-  int *offsets = new int[nRows];
-  int one = 1;
-  NGA_Get(gaVecBlksI,&p_minRowIndex,&p_maxRowIndex,sizes,&one);
-  NGA_Get(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,offsets,&one);
-  int i, j, idx, size, offset;
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->vectorSize(&size)) {
-        p_network->getBus(i)->getMatVecIndex(&idx);
-        idx = idx - p_minRowIndex;
-        size = sizes[idx];
-        offset = offsets[idx];
-        for (j=0; j<size; j++) {
-          vector.getElement(offset+j,values[j]); 
-        }
-        p_network->getBus(i)->setValues(values);
-      }
-    }
-  }
-  delete [] values;
-  delete [] sizes;
-  delete [] offsets;
-#else
   ComplexType *values = new ComplexType[p_numValues];
   int t_get, t_unpack;
   int i, j, isize, offset;
   int one = 1;
   if (p_timer) t_get = p_timer->createCategory("mapToBus: get Data");
   if (p_timer) p_timer->start(t_get);
-  vector.getElements(p_busContribution, p_Indices, values);
+  vector.getElements(p_numValues, p_Indices, values);
   if (p_timer) p_timer->stop(t_get);
   ComplexType *vptr = values;
   if (p_timer) t_unpack = p_timer->createCategory("mapToBus: set Data");
@@ -277,7 +236,6 @@ void mapToBus(const gridpack::math::Vector &vector)
   }
   if (p_timer) p_timer->stop(t_unpack);
   delete [] values;
-#endif
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -288,41 +246,13 @@ void mapToBus(const gridpack::math::Vector &vector)
  */
 void mapToBus(const gridpack::math::RealVector &vector)
 {
-  // Assume that row partitioning is working correctly
-  int nRows = p_maxRowIndex - p_minRowIndex + 1;
-#if 0
-  int *sizes = new int[nRows];
-  int *offsets = new int[nRows];
-  int one = 1;
-  NGA_Get(gaVecBlksI,&p_minRowIndex,&p_maxRowIndex,sizes,&one);
-  NGA_Get(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,offsets,&one);
-  RealType *values = new RealType[p_maxIBlock];
-  int i, j, idx, size, offset;
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      if (p_network->getBus(i)->vectorSize(&size)) {
-        p_network->getBus(i)->getMatVecIndex(&idx);
-        idx = idx - p_minRowIndex;
-        size = sizes[idx];
-        offset = offsets[idx];
-        for (j=0; j<size; j++) {
-          vector.getElement(offset+j,values[j]); 
-        }
-        p_network->getBus(i)->setValues(values);
-      }
-    }
-  }
-  delete [] sizes;
-  delete [] offsets;
-  delete [] values;
-#else
   RealType *values = new RealType[p_numValues];
   int t_get, t_unpack;
   int i, j, isize, offset;
   int one = 1;
   if (p_timer) t_get = p_timer->createCategory("mapToBus: get Data");
   if (p_timer) p_timer->start(t_get);
-  vector.getElements(p_busContribution, p_Indices, values);
+  vector.getElements(p_numValues, p_Indices, values);
   if (p_timer) p_timer->stop(t_get);
   RealType *vptr = values;
   if (p_timer) t_unpack = p_timer->createCategory("mapToBus: set Data");
@@ -334,7 +264,6 @@ void mapToBus(const gridpack::math::RealVector &vector)
   }
   if (p_timer) p_timer->stop(t_unpack);
   delete [] values;
-#endif
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -355,307 +284,6 @@ void mapToBus(boost::shared_ptr<gridpack::math::RealVector> &vector)
 
 private:
 /**
- * Return the number of active buses on this process
- * @return number of active buses
- */
-int getActiveBuses(void)
-{
-  int nActiveBuses = 0;
-  for (int i = 0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      nActiveBuses++;
-    }
-  }
-  return nActiveBuses;
-}
-
-/**
- * Allocate the gaVecBlksI global array
- * @param nActiveBuses the number of active buses on this process
- */
-void setupGlobalArrays(int nActiveBuses)
-{
-  int one = 1;
-
-  p_totalBuses = nActiveBuses;
-
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp,&p_totalBuses,one,plus);
-
-  // the gaVecBlksI array contains the vector blocks sizes for
-  // individual block contributions
-  createIndexGA(&gaVecBlksI, p_totalBuses);
-}
-
-/**
- * Create a global array of integers
- * @param size size of global array
- */
-void createIndexGA(int * handle, int size)
-{
-  int one = 1;
-  *handle = GA_Create_handle();
-  GA_Set_data(*handle, one, &size, C_INT);
-  GA_Set_pgroup(*handle,p_GAgrp);
-  if (!GA_Allocate(*handle)) {
-    // TODO: some kind of error
-  }
-  GA_Zero(*handle);
-}
-
-/**
- * Set up global arrays that contain all vector block sizes.
- * These will then be used to create offset arrays.
- */
-void setupIndexingArrays()
-{
-  int                    * iSizeArray     = NULL;
-  int                   ** iIndexArray    = NULL;
-  int                      count          = 0;
-
-  // set up bus indexing
-  allocateIndexArray(p_nBuses, &iSizeArray, &iIndexArray);
-  loadBusArrays(iSizeArray, iIndexArray, &count);
-  scatterIndexingArrays(iSizeArray, iIndexArray, count);
-  deleteIndexArrays(p_nBuses, iSizeArray, iIndexArray);
-  GA_Pgroup_sync(p_GAgrp);
-}
-
-/**
- * Allocate arrays that hold sizes and approximate indices of vector elements
- * @param n number of elements in array
- * @param iSizeArray array containing size of vector block
- * @param iIndexArray array containing index of vector block
- */
-void allocateIndexArray(int n, int ** iSizeArray, int *** iIndexArray)
-{
-  *iSizeArray         = new int[n];
-  *iIndexArray        = new int*[n];
-
-  for(int i = 0; i < n; i++) {
-    (*iIndexArray)[i]  = new int;
-  }
-}
-
-/**
- * Load arrays containing vector block sizes and indices
- * These come from buses
- * @param iSizeArray array containing size of vector block along i axis
- * @param iIndexArray array containing i index of vector block
- * @param count return total number of non-zero blocks
- */
-void loadBusArrays(int * iSizeArray, int ** iIndexArray, int *count)
-{
-  int                      index          = 0;
-  int                      iSize          = 0;
-  bool                     status         = true;
-
-  *count = 0;
-  p_ISize = new int[p_busContribution];
-  int icnt = 0;
-  for (int i = 0; i < p_nBuses; i++) {
-    status = p_network->getBus(i)->vectorSize(&iSize);
-    if (status) {
-      p_network->getBus(i)->getMatVecIndex(&index);
-      iSizeArray[*count]     = iSize;
-      *(iIndexArray[*count])  = index;
-      (*count)++;
-    }
-    if (status && p_network->getActiveBus(i)) {
-      p_ISize[icnt] = iSize;
-      p_contributingBuses[icnt] = p_network->getBus(i).get();
-      icnt++;
-    }
-  }
-}
-
-/**
- *  Clean up index arrays
- *  @param n array size
- *  @param iSizeArray array containing size of vector block along i axis
- *  @param iIndexArray array containing i index of vector block
- */
-void deleteIndexArrays(int n, int * iSizeArray, int ** iIndexArray)
-{
-  for(int i = 0; i < n; i++) {
-    delete iIndexArray[i];
-  }
-  delete [] iIndexArray;
-  delete [] iSizeArray;
-}
-
-/**
- * Scatter elements into global arrays
- * @param iSizeArray array containing size of vector block along i axis
- * @param iIndexArray array containing i index of vector block
- * @param count number of elements to be scattered
- */
-void scatterIndexingArrays(int * iSizeArray, int ** iIndexArray, int count)
-{
-  if (count > 0) NGA_Scatter(gaVecBlksI, iSizeArray, iIndexArray, count);
-}
-
-/**
- * Set up the offset arrays that will be used to find the exact location of
- * each vector block in the vector produced by the mapper
- */
-void setupOffsetArrays()
-{
-  int *itmp = new int[p_nNodes];
-
-  int *rptr;
-  int i, idx;
-  int one = 1;
-
-  // We need to decompose this vector so that each processor has a contiguous
-  // set of elements. The MatVec indices are set up so that the active
-  // buses on each processor are indexed consecutively. This index can be used
-  // to set up this partition.
-  p_minRowIndex = p_totalBuses;
-  p_maxRowIndex = 0;
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      p_network->getBus(i)->getMatVecIndex(&idx);
-      if (idx > p_maxRowIndex) p_maxRowIndex = idx;
-      if (idx < p_minRowIndex) p_minRowIndex = idx;
-    }
-  }
-  // Create array to hold information about desired elements
-  int nRows = p_maxRowIndex-p_minRowIndex+1;
-  int *iSizes = new int[nRows]; 
-  GA_Pgroup_sync(p_GAgrp);
-  NGA_Get(gaVecBlksI,&p_minRowIndex,&p_maxRowIndex,iSizes,&one);
-
-  // Calculate total number of elements associated with row block and column
-  // block associated with this processor
-  int iSize = 0;
-  p_maxIBlock = 0;
-  for (i=0; i<nRows; i++) {
-    if (p_maxIBlock < iSizes[i]) p_maxIBlock = iSizes[i];
-    if (iSizes[i] > 0) iSize += iSizes[i];
-  }
-  p_rowBlockSize = iSize;
-  char cmax[4];
-  strcpy(cmax,"max");
-  GA_Pgroup_igop(p_GAgrp,&p_maxIBlock,one,cmax);
-
-  for (i = 0; i<p_nNodes; i++) {
-    itmp[i] = 0;
-  }
-  itmp[p_me] = iSize;
-
-  char plus[2];
-  strcpy(plus,"+");
-  GA_Pgroup_igop(p_GAgrp,itmp, p_nNodes, plus);
-
-  int offsetArrayISize = 0;
-  for (i = 0; i < p_me; i++) {
-    offsetArrayISize += itmp[i];
-  }
-
-  // Calculate vector length
-  int p_iDim = 0;
-  for (i=0; i<p_nNodes; i++) {
-    p_iDim += itmp[i];
-  }
-
-  // Create map array so that offset arrays can be created with a specified
-  // distribution
-  int *offset = new int[p_nNodes];
-  for (i=0; i<p_nNodes; i++) {
-    offset[i] = 0;
-  }
-  offset[p_me] = p_activeBuses;
-  GA_Pgroup_igop(p_GAgrp,offset,p_nNodes,plus);
-
-  int *mapc = new int[p_nNodes];
-  mapc[0]=0;
-  for (i=1; i<p_nNodes; i++) {
-    mapc[i] = mapc[i-1] + offset[i-1];
-  }
-
-  delete [] offset;
-  delete [] itmp;
-
-  // Create arrays that will hold final offsets
-  gaOffsetI = GA_Create_handle();
-  GA_Set_data(gaOffsetI, one, &p_totalBuses, C_INT);
-  GA_Set_irreg_distr(gaOffsetI, mapc, &p_nNodes);
-  GA_Set_pgroup(gaOffsetI,p_GAgrp);
-  if (!GA_Allocate(gaOffsetI)) {
-    // TODO: some kind of error
-  }
-  GA_Zero(gaOffsetI);
-
-  // Evaluate offsets for this processor
-  int *iOffsets = new int[nRows]; 
-  iOffsets[0] = offsetArrayISize;
-  for (i=1; i<nRows; i++) {
-    iOffsets[i] = iOffsets[i-1] + iSizes[i-1];
-  }
-
-  // Put offsets into global arrays
-  if (nRows > 0) {
-    NGA_Put(gaOffsetI,&p_minRowIndex,&p_maxRowIndex,iOffsets,&one);
-  }
-  GA_Pgroup_sync(p_GAgrp);
-
-  delete [] mapc;
-  delete [] iSizes;
-  delete [] iOffsets;
-}
-
-/**
- * Set up offset arrays that are used to evaluate index locations of individual
- * vector elements generated by buses.
- */
-void setBusOffsets(void)
-{
-  int i,idx,isize,icnt;
-  int **indices = new int*[p_busContribution];
-  int *data = new int[p_busContribution];
-  int *ptr = data;
-  icnt = 0;
-  int t_idx(0), t_gat(0);
-  if (p_timer) t_idx = p_timer->createCategory("setBusOffsets: Set Index Arrays");
-  if (p_timer) p_timer->start(t_idx);
-  boost::shared_ptr<gridpack::component::BaseBusComponent> bus;
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      bus = p_network->getBus(i);
-      if (bus->vectorSize(&isize)) {
-        indices[icnt] = ptr;
-        bus->getMatVecIndex(&idx);
-        *(indices[icnt]) = idx;
-        ptr++;
-        icnt++;
-      }
-    }
-  }
-  if (icnt != p_busContribution) {
-    // TODO: some kind of error
-    printf("p[%d] Mismatch icnt: %d busContribution: %d\n",
-        GA_Nodeid(),icnt,p_busContribution);
-  }
-  if (p_timer) p_timer->stop(t_idx);
-
-  // Gather vector offsets
-  if (p_timer) t_gat = p_timer->createCategory("setBusOffsets: Gather Offsets");
-  if (p_timer) p_timer->start(t_gat);
-  p_Offsets = new int[p_busContribution];
-  if (p_busContribution > 0) {
-    NGA_Gather(gaOffsetI,p_Offsets,indices,p_busContribution);
-  }
-  if (p_timer) p_timer->stop(t_gat);
-  // Clean up arrays
-  if (p_busContribution > 0) {
-    delete [] indices;
-    delete [] data;
-  }
-}
-
-/**
  * Add block contributions from buses to vector
  * @param vector vector to which contributions are added
  * @param flag flag to distinguish new vector (true) from existing vector * (false)
@@ -669,64 +297,31 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   if (p_timer) t_bus = p_timer->createCategory("loadBusData: Add Vector Elements");
   if (p_timer) p_timer->start(t_bus);
   int j;
-  int jcnt = 0;
-#if 0
-  ComplexType *values = new ComplexType[p_maxIBlock];
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      bus = p_network->getBus(i);
-      if (bus->vectorSize(&isize)) {
-#ifdef DGB_CHECK
-        for (j=0; j<isize; j++) values[j] = 0.0;
-#endif
-        bus->vectorValues(values);
-        icnt = 0;
-        for (j=0; j<isize; j++) {
-          idx = p_Offsets[jcnt] + j;
-//          if (flag) {
-            vector.addElement(idx, values[icnt]);
-//          } else {
-//            vector.setElement(idx, values[icnt]);
-//          } 
-          icnt++;
-        }
-        jcnt++;
-      }
+  int t_pack, t_add;
+  if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
+  if (p_timer) p_timer->start(t_pack);
+  ComplexType *vbuf = new ComplexType[p_numValues];
+  ComplexType *vptr = vbuf;
+  int *ibuf = new int[p_numValues];
+  icnt = 0;
+  for (i=0; i<p_busContribution; i++) {
+    p_contributingBuses[i]->vectorValues(vptr);
+    isize = p_ISize[i];
+    idx = p_Offsets[i];
+    for (j=0; j<isize; j++) {
+      ibuf[icnt] = idx;
+      idx++;
+      icnt++;
     }
+    vptr += isize;
   }
-  // Clean up arrays
-  delete [] values;
-#else
-    int t_pack, t_add;
-    if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
-    if (p_timer) p_timer->start(t_pack);
-    ComplexType *vbuf = new ComplexType[p_numValues];
-    ComplexType *vptr = vbuf;
-    int *ibuf = new int[p_numValues];
-    icnt = 0;
-    for (i=0; i<p_busContribution; i++) {
-      p_contributingBuses[i]->vectorValues(vptr);
-      isize = p_ISize[i];
-      idx = p_Offsets[i];
-      for (j=0; j<isize; j++) {
-        ibuf[icnt] = idx;
-        idx++;
-        icnt++;
-      }
-      jcnt++;
-      vptr += isize;
-    }
-    if (p_timer) p_timer->stop(t_pack);
-    if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
-    if (p_timer) p_timer->start(t_add);
-    vector.addElements(p_numValues,ibuf,vbuf);
-    if (p_timer) p_timer->stop(t_add);
-    delete [] vbuf;
-    delete [] ibuf;
-#if 0
-  }
-#endif
-#endif
+  if (p_timer) p_timer->stop(t_pack);
+  if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
+  if (p_timer) p_timer->start(t_add);
+  vector.addElements(p_numValues,ibuf,vbuf);
+  if (p_timer) p_timer->stop(t_add);
+  delete [] vbuf;
+  delete [] ibuf;
   if (p_timer) p_timer->stop(t_bus);
 }
 
@@ -744,63 +339,32 @@ void loadRealBusData(gridpack::math::RealVector &vector, bool flag)
   if (p_timer) t_bus = p_timer->createCategory("loadBusData: Add Vector Elements");
   if (p_timer) p_timer->start(t_bus);
   int j;
-  int jcnt = 0;
-#if 0
-  RealType *values = new RealType[p_maxIBlock];
-  for (i=0; i<p_nBuses; i++) {
-    if (p_network->getActiveBus(i)) {
-      bus = p_network->getBus(i);
-      if (bus->vectorSize(&isize)) {
-#ifdef DGB_CHECK
-        for (j=0; j<isize; j++) values[j] = 0.0;
-#endif
-        bus->vectorValues(values);
-        icnt = 0;
-        for (j=0; j<isize; j++) {
-          idx = p_Offsets[jcnt] + j;
-//          if (flag) {
-            vector.addElement(idx, values[icnt]);
-//          } else {
-//            vector.setElement(idx, values[icnt]);
-//          } 
-          icnt++;
-        }
-        jcnt++;
-      }
+  int t_pack, t_add;
+  if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
+  if (p_timer) p_timer->start(t_pack);
+  RealType *vbuf = new RealType[p_numValues];
+  RealType *vptr = vbuf;
+  int *ibuf = new int[p_numValues];
+  icnt = 0;
+  for (i=0; i<p_busContribution; i++) {
+    p_contributingBuses[i]->vectorValues(vptr);
+    isize = p_ISize[i];
+    idx = p_Offsets[i];
+    for (j=0; j<isize; j++) {
+      ibuf[icnt] = idx;
+      idx++;
+      icnt++;
     }
+    vptr += isize;
   }
-  // Clean up arrays
-  delete [] values;
-#else
-    int t_pack, t_add;
-    if (p_timer) t_pack = p_timer->createCategory("loadBusData: Fill Buffer");
-    if (p_timer) p_timer->start(t_pack);
-    RealType *vbuf = new RealType[p_numValues];
-    RealType *vptr = vbuf;
-    int *ibuf = new int[p_numValues];
-    icnt = 0;
-    for (i=0; i<p_busContribution; i++) {
-      p_contributingBuses[i]->vectorValues(vptr);
-      isize = p_ISize[i];
-      idx = p_Offsets[i];
-      for (j=0; j<isize; j++) {
-        ibuf[icnt] = idx;
-        idx++;
-        icnt++;
-      }
-      vptr += isize;
-      jcnt++;
-    }
-    if (p_timer) p_timer->stop(t_pack);
-    if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
-    if (p_timer) p_timer->start(t_add);
-    vector.addElements(p_numValues,ibuf,vbuf);
-    if (p_timer) p_timer->stop(t_add);
-    delete [] vbuf;
-    delete [] ibuf;
-#endif
+  if (p_timer) p_timer->stop(t_pack);
+  if (p_timer) t_add = p_timer->createCategory("loadBusData: Add Elements");
+  if (p_timer) p_timer->start(t_add);
+  vector.addElements(p_numValues,ibuf,vbuf);
+  if (p_timer) p_timer->stop(t_add);
+  delete [] vbuf;
+  delete [] ibuf;
   if (p_timer) p_timer->stop(t_bus);
-
 }
 
 /**
@@ -833,10 +397,8 @@ void contributions(void)
   int isize;
   p_busContribution = 0;
   p_numValues = 0;
-  p_activeBuses = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      p_activeBuses++;
       if (p_network->getBus(i)->vectorSize(&isize)) {
         p_busContribution++;
         p_numValues += isize;
@@ -904,16 +466,9 @@ int                         p_nNodes;
     // network information
 boost::shared_ptr<_network> p_network;
 int                         p_nBuses;
-int                         p_totalBuses;
-int                         p_activeBuses;
 
     // vector information
-int                         p_iDim;
-int                         p_minRowIndex; // Minimum global bus index
-int                         p_maxRowIndex; // Maximum global bus index
-int                         p_rowBlockSize; // Number of rows for this process
 int                         p_busContribution;  // Number of buses contributing to vector
-int                         p_maxIBlock; // Maximum block contributed by a bus
 int                         p_numValues; // Number of values contributed to vector
 
 int*                        p_Offsets;
@@ -922,8 +477,6 @@ int*                        p_Indices;
 gridpack::component::BaseBusComponent **p_contributingBuses;
 
     // global vector block size array
-int                         gaVecBlksI; // g_idx
-int                         gaOffsetI; // g_ioff
 int                         p_GAgrp; // GA group
 
     // pointer to timer

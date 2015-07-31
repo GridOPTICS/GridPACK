@@ -79,13 +79,32 @@ class TestBus
       return false;
     }
   }
+
+  bool vectorValues(gridpack::RealType *values) {
+    if (!getReferenceBus()) {
+      int idx;
+      getMatVecIndex(&idx);
+      *values = (double)idx;
+      return true;
+    } else {
+      return false;
+    }
+  }
   
   void setValues(gridpack::ComplexType *values) {
     p_val = *values;
   }
 
+  void setValues(gridpack::RealType *values) {
+    p_rval = *values;
+  }
+
   double getValue() {
     return real(p_val);
+  }
+
+  double getRealValue() {
+    return p_rval;
   }
 
   int matrixNumRows() const {
@@ -236,6 +255,7 @@ class TestBus
   }
 
   gridpack::ComplexType p_val;
+  gridpack::RealType p_rval;
   int p_row_idx;
   int p_col_idx;
   int p_vec_idx1;
@@ -753,6 +773,7 @@ void run (const int &me, const int &nprocs)
   gridpack::mapper::BusVectorMap<TestNetwork> vMap(network); 
   boost::shared_ptr<gridpack::math::Vector> V = vMap.mapToVector();
   vMap.mapToVector(V);
+  boost::shared_ptr<gridpack::math::RealVector> rV = vMap.mapToRealVector();
 
   // Check to see if vector has correct values
   chk = 0;
@@ -776,6 +797,30 @@ void run (const int &me, const int &nprocs)
       printf("\nVector elements are ok\n");
     } else {
       printf("\nError found in vector elements\n");
+    }
+  }
+
+  // Check to see if real vector has correct values
+  chk = 0;
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      if (network->getBus(i)->vectorSize(&isize)) {
+        network->getBus(i)->getMatVecIndex(&idx);
+        idx--;
+        rV->getElement(idx,rv);
+        if (rv != (double)(idx+1)) {
+          printf("p[%d] vector error i: %d v: %f\n",me,idx,rv);
+          chk = 1;
+        }
+      }
+    }
+  }
+  GA_Igop(&chk,one,"+");
+  if (me == 0) {
+    if (chk == 0) {
+      printf("\nReal vector elements are ok\n");
+    } else {
+      printf("\nError found in real vector elements\n");
     }
   }
 

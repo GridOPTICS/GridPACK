@@ -79,14 +79,12 @@ class BaseFactory {
       timer->configTimer(p_profile);
       int t_setc = timer->createCategory("Factory:setComponents");
       timer->start(t_setc);
-      int numBus = p_network->numBuses();
-      int numBranch = p_network->numBranches();
       int i, j;
       int idx1, idx2;
 
       // Set pointers for buses at either end of each branch
       int numActiveBranch = 0;
-      for (i=0; i<numBranch; i++) {
+      for (i=0; i<p_numBranches; i++) {
         int branch_idx, bus1_idx, bus2_idx;
         p_network->getBranchEndpoints(i, &idx1, &idx2);
         p_network->getBranch(i)->setBus1(p_network->getBus(idx1));
@@ -100,7 +98,7 @@ class BaseFactory {
 
       // Set pointers for branches and buses connected to each bus
       int numActiveBus = 0;
-      for (i=0; i<numBus; i++) {
+      for (i=0; i<p_numBuses; i++) {
         p_network->getBus(i)->clearBuses();
         std::vector<int> nghbrBus = p_network->getConnectedBuses(i);
         for (j=0; j<nghbrBus.size(); j++) {
@@ -124,11 +122,11 @@ class BaseFactory {
       }
 
       // Set bus and branch indices
-      for (i=0; i<numBus; i++) {
+      for (i=0; i<p_numBuses; i++) {
         p_network->getBus(i)->setOriginalIndex(p_network->getOriginalBusIndex(i));
         p_network->getBus(i)->setGlobalIndex(p_network->getGlobalBusIndex(i));
       }
-      for (i=0; i<numBranch; i++) {
+      for (i=0; i<p_numBranches; i++) {
         gridpack::component::BaseBusComponent *bus1 =
           dynamic_cast<gridpack::component::BaseBusComponent*>
           (p_network->getBranch(i)->getBus1().get());
@@ -189,7 +187,7 @@ class BaseFactory {
       int *ibus_val = new int[numActiveBus];
       int **ibus_idx = new int*[numActiveBus];
       int icnt = 0;
-      for (i=0; i<numBus; i++) {
+      for (i=0; i<p_numBuses; i++) {
         if (p_network->getActiveBus(i)) {
           ibus_idx[icnt] = new int;
           *(ibus_idx[icnt]) = p_network->getGlobalBusIndex(i);
@@ -206,15 +204,15 @@ class BaseFactory {
       delete [] ibus_val;
 
       // Now gather values for both active and inactive buses
-      ibus_val = new int[numBus];
-      ibus_idx = new int*[numBus];
-      for (i=0; i<numBus; i++) {
+      ibus_val = new int[p_numBuses];
+      ibus_idx = new int*[p_numBuses];
+      for (i=0; i<p_numBuses; i++) {
         ibus_idx[i] = new int;
         *(ibus_idx[i]) = p_network->getGlobalBusIndex(i);
       }
-      NGA_Gather(g_bus,ibus_val,ibus_idx,numBus);
+      NGA_Gather(g_bus,ibus_val,ibus_idx,p_numBuses);
       // Assign the MatVecIndex for the bus and clean up arrays
-      for (i=0; i<numBus; i++) {
+      for (i=0; i<p_numBuses; i++) {
         p_network->getBus(i)->setMatVecIndex(ibus_val[i]);
         delete ibus_idx[i];
       }
@@ -225,7 +223,7 @@ class BaseFactory {
       GA_Destroy(g_bus);
 
       // Finish by assigning MatVecIndices for the branches
-      for (i=0; i<numBranch; i++) {
+      for (i=0; i<p_numBranches; i++) {
         p_network->getBranch(i)->getBus1()->getMatVecIndex(&idx1);
         p_network->getBranch(i)->getBus2()->getMatVecIndex(&idx2);
         p_network->getBranch(i)->setMatVecIndices(idx1,idx2);
@@ -252,16 +250,13 @@ class BaseFactory {
       timer->start(t_load);
       int t_nbus = timer->createCategory("Factory:load:nbus");
       timer->start(t_nbus);
-      int numBus = p_network->numBuses();
-      int numBranch = p_network->numBranches();
       timer->stop(t_nbus);
-   //   printf("p[%d] numBus: %d numBranch: %d\n",GA_Nodeid(),numBus,numBranch);
       int i;
 
       // Invoke load method on all bus objects
       int t_load1 = timer->createCategory("Factory:load:bus");
       timer->start(t_load1);
-      for (i=0; i<numBus; i++) {
+      for (i=0; i<p_numBuses; i++) {
         p_network->getBus(i)->load(p_network->getBusData(i));
         if (p_network->getBus(i)->getReferenceBus())
           p_network->setReferenceBus(i);
@@ -271,7 +266,7 @@ class BaseFactory {
       // Invoke load method on all branch objects
       int t_load2 = timer->createCategory("Factory:load:branch");
       timer->start(t_load2);
-      for (i=0; i<numBranch; i++) {
+      for (i=0; i<p_numBranches; i++) {
         p_network->getBranch(i)->load(p_network->getBranchData(i));
       }
       timer->stop(t_load2);
@@ -295,8 +290,8 @@ class BaseFactory {
       int busXCSize, branchXCSize;
       int nbus, nbranch;
 
-      nbus = p_network->numBuses();
-      nbranch = p_network->numBranches();
+      nbus = p_numBuses;
+      nbranch = p_numBranches;
 
       // Get size of bus and branch exchange buffers from first local bus and branch
       // components. These must be the same for all bus and branch components
@@ -406,16 +401,38 @@ class BaseFactory {
     void saveData(void)
     {
       int i;
-      int numBus = p_network->numBuses();
-      int numBranch = p_network->numBranches();
       // Save data on buses
-      for (i=0; i<numBus; i++) {
-        p_network->getBus(i)->saveData(p_network->getBusData(i));
+      for (i=0; i<p_numBuses; i++) {
+        p_buses[i]->saveData(p_network->getBusData(i));
       }
       // Save data on branches
-      for (i=0; i<numBranch; i++) {
-        p_network->getBranch(i)->saveData(p_network->getBranchData(i));
+      for (i=0; i<p_numBranches; i++) {
+        p_branches[i]->saveData(p_network->getBranchData(i));
       }
+    }
+
+    /**
+     * return a pointer to the bus list
+     * @param buses pointer to a list of base bus component pointers
+     * @param nbus number of buses on processor
+     */
+    void getBusPointers(gridpack::component::BaseBusComponent ***buses,
+        int *nbus)
+    {
+      *buses = p_buses;
+      *nbus = p_numBuses;
+    }
+
+    /**
+     * return a pointer to the branch list
+     * @param branches pointer to a list of base branch component pointers
+     * @param nbranch number of branches on processor
+     */
+    void getBranchPointers(gridpack::component::BaseBranchComponent ***branches,
+        int *nbranch)
+    {
+      *branches = p_branches;
+      *nbranch = p_numBranches;
     }
 
     /**
@@ -427,14 +444,12 @@ class BaseFactory {
     void dumpData(void)
     {
       int i, iproc;
-      int numBus = p_network->numBuses();
-      int numBranch = p_network->numBranches();
       // Write out data to buses
       int nprocs = p_network->communicator().size();
       int me = p_network->communicator().rank();
       for (iproc = 0; iproc<nprocs; iproc++) {
         if (iproc == me) {
-          for (i=0; i<numBus; i++) {
+          for (i=0; i<p_numBuses; i++) {
             printf("p[%d] Printing data for bus %d\n",me,i);
             p_network->getBusData(i)->dump();
           }
@@ -443,7 +458,7 @@ class BaseFactory {
       }
       for (iproc = 0; iproc<nprocs; iproc++) {
         if (iproc == me) {
-          for (i=0; i<numBranch; i++) {
+          for (i=0; i<p_numBranches; i++) {
             printf("p[%d] Printing data for branch %d\n",me,i);
             p_network->getBranchData(i)->dump();
           }
