@@ -406,8 +406,12 @@ void gridpack::powerflow::PFBus::load(
         p_ngen++;
       }
     }
-    for (i=0; i<p_ngen; i++) {
-      p_pFac[i] = p_pFac[i]/qtot;
+    if (qtot != 0.0 && p_ngen > 1) {
+      for (i=0; i<p_ngen; i++) {
+        p_pFac[i] = p_pFac[i]/qtot;
+      }
+    } else {
+      p_pFac[0] = 1.0;
     }
   }
   p_saveisPV = p_isPV;
