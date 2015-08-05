@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-09 09:19:09 d3g096
+# Last Change: 2015-07-30 13:20:39 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -37,7 +37,6 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif(
 )
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (CPLEX_FOUND)
   include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
 endif()
