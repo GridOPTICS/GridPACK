@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-06-24 07:56:27 d3g096
+ * @date   2015-08-06 15:11:04 d3g096
  * 
  * @brief  
  * 
@@ -433,12 +433,16 @@ PetscErrorCode
 multiply_dense(const Mat& A, const Mat& B, Mat& C)
 {
   PetscErrorCode ierr(0);
-  Mat Aga, Bga;
+  Mat Aga, Bga, Cga;
+
   ierr = MatConvertToDenseGA(A, &Aga); CHKERRQ(ierr);
   ierr = MatConvertToDenseGA(B, &Bga); CHKERRQ(ierr);
-  ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &C); CHKERRQ(ierr);
+  ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cga); CHKERRQ(ierr);
+  ierr = MatConvertGAToDense(Cga, &C); CHKERRXX(ierr);
+  
   ierr = MatDestroy(&Aga); CHKERRQ(ierr);
   ierr = MatDestroy(&Bga); CHKERRQ(ierr);
+  ierr = MatDestroy(&Cga); CHKERRQ(ierr);
   return ierr;
 }
 
@@ -501,10 +505,8 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     ierr = multiply_dense(*Amat, *Bmat, Cmat); CHKERRXX(ierr);
 
     PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(Cmat, true);
+      new PETScMatrixImplementation<T, I>(Cmat, false);
     result = new MatrixT<T, I>(result_impl);
-
-    ierr = MatDestroy(&Cmat); CHKERRXX(ierr);
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
@@ -517,7 +519,7 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     }
 
     PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(Cmat, true);
+      new PETScMatrixImplementation<T, I>(Cmat, false);
     result = new MatrixT<T, I>(result_impl);
   }
   return result;
