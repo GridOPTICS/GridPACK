@@ -13,9 +13,9 @@
  * 
  */
 
+#include <parmetis.h>
 #include <algorithm>
 #include <utility>
-#include <parmetis.h>
 #include <boost/mpi/collectives.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/serialization/utility.hpp>
