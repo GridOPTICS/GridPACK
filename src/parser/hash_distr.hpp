@@ -22,7 +22,7 @@
 #ifndef _hash_distr_hpp_
 #define _hash_distr_hpp_
 
-//#define SYSTOLIC
+#define SYSTOLIC
 
 //#define HASH_WITH_MPI
 
@@ -206,7 +206,7 @@ public:
       int nsize = hi - lo + 1;
       if (lo <= hi) {
         list = new bus_data_pair[nsize];
-        NGA_Get(g_vals, &lo, &hi, list, &one);
+        if (lo<=hi) NGA_Get(g_vals, &lo, &hi, list, &one);
         int j;
         for (j=0; j<nsize; j++) {
           it = hmap.find(list[j].idx);
@@ -402,7 +402,7 @@ public:
     lo = 0;
     hi = nprocs-1;
     if (me == 0) {
-      NGA_Get(g_numValues,&lo,&hi,numValues,&one);
+      if (lo<=hi) NGA_Get(g_numValues,&lo,&hi,numValues,&one);
     } else {
       for (i=0; i<nprocs; i++) {
         numValues[i] = 0;
@@ -456,7 +456,7 @@ public:
         }
         lo = r_offset[i];
         hi = lo + destNum[i] - 1;
-        NGA_Put(g_data,&lo,&hi,bus_data,&one);
+        if (lo<=hi) NGA_Put(g_data,&lo,&hi,bus_data,&one);
         delete [] bus_data;
       }
     }
@@ -478,7 +478,7 @@ public:
     int ndata = numValues[me];
     lo = mapc[me];
     hi = lo + ndata - 1;
-    NGA_Access(g_data,&lo,&hi,&bus_data,&one);
+    if (lo<=hi) NGA_Access(g_data,&lo,&hi,&bus_data,&one);
     std::multimap<int,int>::iterator it;
     for (i=0; i<ndata; i++) {
       it = idxMap.find(bus_data[i].idx);
@@ -493,7 +493,7 @@ public:
             bus_data[i].idx);
       }
     }
-    NGA_Release(g_data,&lo,&hi);
+    if (lo<=hi) NGA_Release(g_data,&lo,&hi);
     GA_Destroy(g_data);
 #endif
 #endif
@@ -612,7 +612,7 @@ public:
       int nsize = hi - lo + 1;
       if (lo <= hi) {
         list = new char[nsize*(nvals*sizeof(_bus_data_type)+sizeof(int))];
-        NGA_Get(g_vals, &lo, &hi, list, &one);
+        if (lo<=hi) NGA_Get(g_vals, &lo, &hi, list, &one);
         int j, k;
         ptr = list;
         for (j=0; j<nsize; j++) {
@@ -840,7 +840,7 @@ public:
     lo = 0;
     hi = nprocs-1;
     if (me == 0) {
-      NGA_Get(g_numValues,&lo,&hi,numValues,&one);
+      if (lo<=hi) NGA_Get(g_numValues,&lo,&hi,numValues,&one);
     } else {
       for (i=0; i<nprocs; i++) {
         numValues[i] = 0;
@@ -899,7 +899,7 @@ public:
         }
         lo = r_offset[i];
         hi = lo + destNum[i] - 1;
-        NGA_Put(g_data,&lo,&hi,bus_data,&one);
+        if (lo<=hi) NGA_Put(g_data,&lo,&hi,bus_data,&one);
         delete [] bus_data;
       }
     }
@@ -925,7 +925,7 @@ public:
     int ndata = numValues[me];
     lo = mapc[me];
     hi = lo + ndata - 1;
-    NGA_Access(g_data,&lo,&hi,&bus_data,&one);
+    if (lo<=hi) NGA_Access(g_data,&lo,&hi,&bus_data,&one);
     std::multimap<int,int>::iterator it;
     int idx;
     ptr = bus_data;
@@ -951,7 +951,7 @@ public:
             idx);
       }
     }
-    NGA_Release(g_data,&lo,&hi);
+    if (lo<=hi) NGA_Release(g_data,&lo,&hi);
     GA_Destroy(g_data);
 #endif
 #endif
@@ -1064,7 +1064,7 @@ public:
       int nsize = hi - lo + 1;
       if (lo <= hi) {
         list = new branch_data_pair[nsize];
-        NGA_Get(g_vals, &lo, &hi, list, &one);
+        if (lo<=hi) NGA_Get(g_vals, &lo, &hi, list, &one);
         int j;
         std::pair<int,int> key;
         for (j=0; j<nsize; j++) {
@@ -1268,7 +1268,7 @@ public:
     lo = 0;
     hi = nprocs-1;
     if (me == 0) {
-      NGA_Get(g_numValues,&lo,&hi,numValues,&one);
+      if (lo<=hi) NGA_Get(g_numValues,&lo,&hi,numValues,&one);
     } else {
       for (i=0; i<nprocs; i++) {
         numValues[i] = 0;
@@ -1324,7 +1324,7 @@ public:
         }
         lo = r_offset[i];
         hi = lo + destNum[i] - 1;
-        NGA_Put(g_data,&lo,&hi,branch_data,&one);
+        if (lo<=hi) NGA_Put(g_data,&lo,&hi,branch_data,&one);
         delete [] branch_data;
       }
     }
@@ -1348,7 +1348,7 @@ public:
     int ndata = numValues[me];
     lo = mapc[me];
     hi = lo + ndata - 1;
-    NGA_Access(g_data,&lo,&hi,&branch_data,&one);
+    if (lo<=hi) NGA_Access(g_data,&lo,&hi,&branch_data,&one);
     std::multimap<std::pair<int,int>,int>::iterator it;
     std::pair<int,int> key;
     for (i=0; i<ndata; i++) {
@@ -1365,7 +1365,7 @@ public:
             branch_data[i].idx1,branch_data[i].idx2);
       }
     }
-    NGA_Release(g_data,&lo,&hi);
+    if (lo<=hi) NGA_Release(g_data,&lo,&hi);
     GA_Destroy(g_data);
 #endif
 #endif
@@ -1487,7 +1487,7 @@ public:
       int nsize = hi - lo + 1;
       if (lo <= hi) {
         list = new char[nsize*(nvals*sizeof(_branch_data_type)+2*sizeof(int))];
-        NGA_Get(g_vals, &lo, &hi, list, &one);
+        if (lo<=hi) NGA_Get(g_vals, &lo, &hi, list, &one);
         int j, k;
         std::pair<int,int> key;
         ptr = list;
@@ -1721,7 +1721,7 @@ public:
     lo = 0;
     hi = nprocs-1;
     if (me == 0) {
-      NGA_Get(g_numValues,&lo,&hi,numValues,&one);
+      if (lo<=hi) NGA_Get(g_numValues,&lo,&hi,numValues,&one);
     } else {
       for (i=0; i<nprocs; i++) {
         numValues[i] = 0;
@@ -1782,7 +1782,7 @@ public:
         }
         lo = r_offset[i];
         hi = lo + destNum[i] - 1;
-        NGA_Put(g_data,&lo,&hi,branch_data,&one);
+        if (lo<=hi) NGA_Put(g_data,&lo,&hi,branch_data,&one);
         delete [] branch_data;
       }
     }
@@ -1810,7 +1810,7 @@ public:
     int ndata = numValues[me];
     lo = mapc[me];
     hi = lo + ndata - 1;
-    NGA_Access(g_data,&lo,&hi,&branch_data,&one);
+    if (lo<=hi) NGA_Access(g_data,&lo,&hi,&branch_data,&one);
     std::multimap<std::pair<int,int>,int>::iterator it;
     std::pair<int,int> key;
     ptr = branch_data;
@@ -1836,7 +1836,7 @@ public:
             key.first,key.second);
       }
     }
-    NGA_Release(g_data,&lo,&hi);
+    if (lo<=hi) NGA_Release(g_data,&lo,&hi);
     GA_Destroy(g_data);
 #endif
 #endif

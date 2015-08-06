@@ -7,6 +7,7 @@
  * This file is a collection of all the header files in gridpack and is designed
  * so that applications only have to access this one file
  */
+#include "gridpack/parallel/communicator.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/component/optimization_ifc.hpp"
@@ -23,7 +24,6 @@
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/linear_solver.hpp"
-#include "gridpack/parallel/communicator.hpp"
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/parallel/environment.hpp"
 #include "gridpack/parallel/ga_shuffler.hpp"
