@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-06-24 07:56:27 d3g096
+ * @date   2015-08-06 14:41:58 d3g096
  * 
  * @brief  
  * 
@@ -433,12 +433,16 @@ PetscErrorCode
 multiply_dense(const Mat& A, const Mat& B, Mat& C)
 {
   PetscErrorCode ierr(0);
-  Mat Aga, Bga;
+  Mat Aga, Bga, Cga;
+
   ierr = MatConvertToDenseGA(A, &Aga); CHKERRQ(ierr);
   ierr = MatConvertToDenseGA(B, &Bga); CHKERRQ(ierr);
-  ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &C); CHKERRQ(ierr);
+  ierr = MatMatMult(Aga, Bga, MAT_INITIAL_MATRIX, PETSC_DEFAULT, &Cga); CHKERRQ(ierr);
+  ierr = MatConvertGAToDense(Cga, &C); CHKERRXX(ierr);
+  
   ierr = MatDestroy(&Aga); CHKERRQ(ierr);
   ierr = MatDestroy(&Bga); CHKERRQ(ierr);
+  ierr = MatDestroy(&Cga); CHKERRQ(ierr);
   return ierr;
 }
 

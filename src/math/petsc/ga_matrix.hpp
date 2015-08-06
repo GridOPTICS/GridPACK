@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.h
  * @author William A. Perkins
- * @date   2015-06-11 14:47:57 d3g096
+ * @date   2015-08-06 13:42:26 d3g096
  * 
  * @brief  
  * 
@@ -50,5 +50,11 @@ MatCreateDenseGA(MPI_Comm comm,
 extern 
 PetscErrorCode
 MatConvertToDenseGA(Mat A, Mat *B);
+
+/// Convert a GA-based Matrix to a PETSc dense matrix
+extern
+PetscErrorCode
+MatConvertGAToDense(Mat A, Mat *B);
+
 
 #endif
