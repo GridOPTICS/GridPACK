@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2015-08-06 14:41:58 d3g096
+ * @date   2015-08-06 15:11:04 d3g096
  * 
  * @brief  
  * 
@@ -505,10 +505,8 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     ierr = multiply_dense(*Amat, *Bmat, Cmat); CHKERRXX(ierr);
 
     PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(Cmat, true);
+      new PETScMatrixImplementation<T, I>(Cmat, false);
     result = new MatrixT<T, I>(result_impl);
-
-    ierr = MatDestroy(&Cmat); CHKERRXX(ierr);
   } else {
     const Mat *Amat(PETScMatrix(A));
     const Mat *Bmat(PETScMatrix(B));
@@ -521,7 +519,7 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     }
 
     PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(Cmat, true);
+      new PETScMatrixImplementation<T, I>(Cmat, false);
     result = new MatrixT<T, I>(result_impl);
   }
   return result;
