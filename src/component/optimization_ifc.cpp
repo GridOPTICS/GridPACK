@@ -33,62 +33,31 @@ OptimizationInterface::OptimizationInterface(void)
 OptimizationInterface::~OptimizationInterface(void)
 {
 }
+
 /**
- * Get the number of optimization variables contributed from component
- * @return number of optimization variables
+ * Return a vector of optimization variables associated witht this
+ * interface
+ * @return list of variables
  */
-int OptimizationInterface::numOptVariables(void)
+std::vector<gridpack::optimization::Variable*> OptimizationInterface::getVariables()
 {
-  return 0;
+  std::vector<gridpack::optimization::Variable*> ret;
+  return ret;
 }
 
 /**
- * Return the data type of the optimization variable
- * @param idx index of variable inside network component
- * @return data type of network variable
+ * Return contribution from bus to a global constraint
+ * @param tag string that can be parsed by bus to determine which constraint
+ * contribution is being requested
+ * @param flag bool that returns false if there is no contribution to constaint
+ * @return contribution to global constraint
  */
-int OptimizationInterface::optVariableType(int idx)
+gridpack::optimization::Expression*
+  OptimizationInterface::getGlobalConstraint(const char* tag, bool *flag)
 {
-  return OPT_DBL;
-}
-
-/**
- * Return bounds on variable. If the lower bound is a null pointer the lower
- * bound is -inf, if the upper bound is a null pointer, the upper bound is
- * inf
- * @param idx index of variable inside network component
- * @param lo lower bound
- * @param hi upper bound
- */
-void OptimizationInterface::optVariableBounds(int idx, double *lo, double *hi)
-{
-  lo = NULL;
-  hi = NULL;
-}
-
-void OptimizationInterface::optVariableBounds(int idx, int *lo, int *hi)
-{
-  lo = NULL;
-  hi = NULL;
-}
-
-
-/**
- * Return the objective function contributed from the bus 
- */
-double OptimizationInterface::objectiveFunction(void)
-{
-  double value;
-  value = 0.0;
-  return value;
-}
-
-/**
- * Return the solution from the bus 
- */
-bool OptimizationInterface::solution(void)
-{
-  return false;
+  gridpack::optimization::Expression *ret = NULL;
+  *flag = false;
+  return ret;
 }
 
 }  // component
