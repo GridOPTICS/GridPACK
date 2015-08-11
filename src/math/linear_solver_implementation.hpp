@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-05 12:49:11 d3g096
+ * @date   2015-08-11 07:28:49 d3g096
  * 
  * @brief  
  * 
@@ -133,21 +133,21 @@ protected:
 
     int ilo, ihi;
     X.localIndexRange(ilo, ihi);
-    // std::vector<ComplexType> locX(X.localSize());
+    int nloc(X.localSize());
+    std::vector<IdxType> iidx;
+    iidx.reserve(nloc);
+    for (IdxType i = ilo; i < ihi; ++i) { iidx.push_back(i); }
+    std::vector<IdxType> jidx(nloc);
+    std::vector<TheType> locX(nloc);
 
     for (int j = 0; j < B.cols(); ++j) {
       column(B, j, b);
       X.zero();
       X.ready();
       this->solve(b, X);
-      // std::cout << X.processor_rank() << ": X: " << ilo << "-" << ihi << std::endl;
-      // X.print();
-      // X.getElementRange(ilo, ihi, &locX[0]);
-      for (IdxType i = ilo; i < ihi; ++i) {
-        TheType v;
-        X.getElement(i, v);
-        result->setElement(i, j, v);
-      }
+      std::fill(jidx.begin(), jidx.end(), j);
+      X.getElements(nloc, &iidx[0], &locX[0]);
+      result->setElements(nloc, &iidx[0], &jidx[0], &locX[0]);
     }
   
     result->ready();
