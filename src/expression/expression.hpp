@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-07-31 13:43:01 d3g096
+ * @date   2015-08-11 09:34:13 d3g096
  * 
  * @brief  
  * 
@@ -227,6 +227,7 @@ private:
 // -------------------------------------------------------------
 // operator+
 // -------------------------------------------------------------
+inline
 ExpressionPtr operator+(ExpressionPtr lhs, ExpressionPtr rhs)
 {
   ExpressionPtr result(new Addition(lhs, rhs));
@@ -247,12 +248,14 @@ ExpressionPtr operator+(ExpressionPtr lhs, T rhs)
   return lhs + c;
 }
 
+inline
 ExpressionPtr operator+(VariablePtr lhs, ExpressionPtr rhs)
 {
   ExpressionPtr v(new VariableExpression(lhs));
   return v + rhs;
 }
 
+inline
 ExpressionPtr operator+(ExpressionPtr lhs, VariablePtr rhs)
 {
   ExpressionPtr v(new VariableExpression(rhs));
@@ -301,6 +304,7 @@ private:
 // -------------------------------------------------------------
 // operator*
 // -------------------------------------------------------------
+inline
 ExpressionPtr operator*(ExpressionPtr lhs, ExpressionPtr rhs)
 {
   ExpressionPtr result(new Multiplication(lhs, rhs));
@@ -321,12 +325,14 @@ ExpressionPtr operator*(ExpressionPtr lhs, T rhs)
   return lhs * c;
 }
 
+inline
 ExpressionPtr operator*(VariablePtr lhs, ExpressionPtr rhs)
 {
   ExpressionPtr v(new VariableExpression(lhs));
   return v * rhs;
 }
 
+inline
 ExpressionPtr operator*(ExpressionPtr lhs, VariablePtr rhs)
 {
   ExpressionPtr v(new VariableExpression(rhs));
