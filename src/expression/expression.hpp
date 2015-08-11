@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-08-11 09:34:13 d3g096
+ * @date   2015-08-11 11:59:49 d3g096
  * 
  * @brief  
  * 
@@ -353,6 +353,233 @@ ExpressionPtr operator*(VariablePtr lhs, T rhs)
   ExpressionPtr v(new VariableExpression(lhs));
   ExpressionPtr c(new ConstantExpression<T>(rhs));
   return v * c;
+}
+
+
+
+// -------------------------------------------------------------
+//  class Constraint
+// -------------------------------------------------------------
+class Constraint 
+  : public BinaryExpression
+{
+public:
+
+  /// Default constructor.
+  Constraint(ExpressionPtr lhs, ExpressionPtr rhs)
+    : BinaryExpression(lhs, rhs)
+  {}
+
+  /// Destructor
+  ~Constraint(void)
+  {}
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<BinaryExpression>(*this);
+  }
+};
+
+// -------------------------------------------------------------
+//  class LessThan
+// -------------------------------------------------------------
+class LessThan 
+  : public Constraint
+{
+public:
+
+  /// Default constructor.
+  LessThan(ExpressionPtr lhs, ExpressionPtr rhs)
+    : Constraint(lhs, rhs)
+  {}
+
+  /// Destructor
+  ~LessThan(void)
+  {}
+
+protected:
+
+  void p_evaluate(void) const
+  {
+    p_LHS->evaluate();
+    std::cout << " < ";
+    p_RHS->evaluate();
+  }
+
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<Constraint>(*this);
+  }
+};
+
+// -------------------------------------------------------------
+//  class LessThanOrEqual
+// -------------------------------------------------------------
+class LessThanOrEqual 
+  : public Constraint
+{
+public:
+
+  /// Default constructor.
+  LessThanOrEqual(ExpressionPtr lhs, ExpressionPtr rhs)
+    : Constraint(lhs, rhs)
+  {}
+
+  /// Destructor
+  ~LessThanOrEqual(void)
+  {}
+
+protected:
+
+  void p_evaluate(void) const
+  {
+    p_LHS->evaluate();
+    std::cout << " <= ";
+    p_RHS->evaluate();
+  }
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<Constraint>(*this);
+  }
+};
+
+
+// -------------------------------------------------------------
+//  class GreaterThan
+// -------------------------------------------------------------
+class GreaterThan 
+  : public Constraint
+{
+public:
+
+  /// Default constructor.
+  GreaterThan(ExpressionPtr lhs, ExpressionPtr rhs)
+    : Constraint(lhs, rhs)
+  {}
+
+  /// Destructor
+  ~GreaterThan(void)
+  {}
+
+protected:
+
+  void p_evaluate(void) const
+  {
+    p_LHS->evaluate();
+    std::cout << " > ";
+    p_RHS->evaluate();
+  }
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<Constraint>(*this);
+  }
+};
+
+// -------------------------------------------------------------
+//  class GreaterThanOrEqual
+// -------------------------------------------------------------
+class GreaterThanOrEqual 
+  : public Constraint
+{
+public:
+
+  /// Default constructor.
+  GreaterThanOrEqual(ExpressionPtr lhs, ExpressionPtr rhs)
+    : Constraint(lhs, rhs)
+  {}
+
+  /// Destructor
+  ~GreaterThanOrEqual(void)
+  {}
+
+protected:
+
+  void p_evaluate(void) const
+  {
+    p_LHS->evaluate();
+    std::cout << " >= ";
+    p_RHS->evaluate();
+  }
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<Constraint>(*this);
+  }
+};
+
+typedef boost::shared_ptr<Constraint> ConstraintPtr;
+
+
+// -------------------------------------------------------------
+// Constraint operator<
+// -------------------------------------------------------------
+template <typename T>
+ConstraintPtr operator<(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new LessThan(lhs, c));
+  return result;
+}
+
+// -------------------------------------------------------------
+// Constraint operator<=
+// -------------------------------------------------------------
+template <typename T>
+ConstraintPtr operator<=(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new LessThanOrEqual(lhs, c));
+  return result;
+}
+
+// -------------------------------------------------------------
+// Constraint operator>
+// -------------------------------------------------------------
+template <typename T>
+ConstraintPtr operator>(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new GreaterThan(lhs, c));
+  return result;
+}
+
+// -------------------------------------------------------------
+// Constraint operator>=
+// -------------------------------------------------------------
+template <typename T>
+ConstraintPtr operator>=(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new GreaterThanOrEqual(lhs, c));
+  return result;
 }
 
 
