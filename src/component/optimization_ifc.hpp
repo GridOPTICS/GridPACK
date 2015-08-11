@@ -26,6 +26,8 @@
 #include "boost/smart_ptr/weak_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/data_collection.hpp"
+#include "gridpack/expression/variable.hpp"
+#include "gridpack/expression/expression.hpp"
 
 #include <boost/serialization/export.hpp>
 
@@ -41,8 +43,6 @@ namespace component{
 class OptimizationInterface {
   public:
 
-    enum OptType{OPT_INT, OPT_DBL, OPT_BOOL};
-
     /**
      * Constructor
      */
@@ -54,39 +54,20 @@ class OptimizationInterface {
     virtual ~OptimizationInterface(void);
 
     /**
-     * Get the number of optimization variables contributed from component
-     * @return number of optimization variables
+     * Return a vector of optimization variables associated witht this interface
+     * @return list of variables
      */
-    virtual int numOptVariables(void);
+    virtual std::vector<gridpack::optimization::Variable*> getVariables();
 
     /**
-     * Return the data type of the optimization variable
-     * @param idx index of variable inside network component
-     * @return data type of network variable
+     * Return contribution from bus to a global constraint
+     * @param tag string that can be parsed by bus to determine which constraint
+     * contribution is being requested
+     * @param flag bool that returns false if there is no contribution to constaint
+     * @return contribution to global constraint
      */
-    virtual int optVariableType(int idx);
-
-    /**
-     * Return bounds on variable. If the lower bound is a null pointer the lower
-     * bound is -inf, if the upper bound is a null pointer, the upper bound is
-     * inf
-     * @param idx index of variable inside network component
-     * @param lo lower bound
-     * @param hi upper bound
-     */
-    virtual void optVariableBounds(int idx, double *lo, double *hi);
-    virtual void optVariableBounds(int idx, int *lo, int *hi);
-
-    /**
-     * Return the objective function contribution from the component
-     * @return contribution to objective function coming from component
-     */
-    virtual double objectiveFunction(void);
-
-    /**
-     * Return the solution from the bus 
-     */
-    virtual bool solution(void);
+    virtual gridpack::optimization::Expression* getGlobalConstraint(const char*
+        tag, bool *flag);
   private:
 
   friend class boost::serialization::access;
