@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2015-07-24 08:45:20 d3g096
+ * @date   2015-08-12 12:39:22 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -257,6 +257,34 @@ BOOST_AUTO_TEST_CASE( get_all )
       gridpack::ComplexType x = all[index];
       BOOST_CHECK_EQUAL(p, static_cast<int>(real(x)));
     }
+  }
+}
+
+BOOST_AUTO_TEST_CASE( local_clone )
+{
+  gridpack::parallel::Communicator world;
+  gridpack::math::VectorT<TestType> v1(world, local_size);
+
+  int lo, hi;
+  v1.localIndexRange(lo, hi);
+  
+  for (int i = lo; i < hi; ++i) {
+    TestType x(TEST_VALUE(static_cast<double>(i), static_cast<double>(i)));
+    v1.setElement(i, x);
+  }
+  v1.ready();
+
+  boost::scoped_ptr< gridpack::math::VectorT<TestType> > 
+    v2(v1.localClone());
+
+  BOOST_CHECK_EQUAL(v2->processor_size(), 1);
+  
+  for (int i = lo; i < hi; ++i) {
+    TestType x, y;
+    v1.getElement(i, x);
+    v2->getElement(i, y);
+
+    TEST_VALUE_CLOSE(x, y, delta);
   }
 }
 
