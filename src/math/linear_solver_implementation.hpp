@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-11 15:43:50 d3g096
+ * @date   2015-08-12 12:01:45 d3g096
  * 
  * @brief  
  * 
@@ -52,10 +52,11 @@ public:
   typedef typename BaseLinearSolverInterface<T, I>::VectorType VectorType;
   
   /// Default constructor.
-  LinearSolverImplementation(const parallel::Communicator& comm)
-    : parallel::Distributed(comm),
+  LinearSolverImplementation(MatrixType& A)
+    : parallel::Distributed(A.communicator()),
       utility::Configurable("LinearSolver"),
       utility::Uncopyable(),
+      p_matrix(A),
       p_solutionTolerance(1.0e-06),
       p_relativeTolerance(p_solutionTolerance),
       p_maxIterations(100),
@@ -70,6 +71,9 @@ public:
   }
 
 protected:
+
+  /// A reference to coefficient matrix
+  MatrixType& p_matrix;
 
   /// The solution residual norm tolerance
   /**
@@ -101,7 +105,11 @@ protected:
       p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
       p_relativeTolerance = props->get("RelativeTolerance", p_solutionTolerance);
       p_maxIterations = props->get("MaxIterations", p_maxIterations);
+
       p_doSerial = props->get("SerialOnly", p_doSerial);
+
+      // SerialOnly has no effect unless parallel
+      p_doSerial = (p_doSerial && (this->processor_size() > 1));
     }
   }
 
@@ -127,6 +135,28 @@ protected:
   void p_maximumIterations(const int& n)
   {
     p_maxIterations = n;
+  }
+
+  /// Solve the specified system w/ RHS and estimate (result in x)  
+  virtual void p_solve(MatrixType& A, const VectorType& b, VectorType& x) const = 0;
+
+  /// Solve w/ the specified RHS and estimate (result in x)
+  void p_solve(const VectorType& b, VectorType& x) const
+  {
+    if (p_doSerial) {
+      boost::scoped_ptr<MatrixType> Aloc(p_matrix.localClone());
+      boost::scoped_ptr<VectorType> bloc(b.localClone());
+      boost::scoped_ptr<VectorType> xloc(x.localClone());
+      this->p_solve(*Aloc, *bloc, *xloc);
+      IdxType lo, hi;
+      x.localIndexRange(lo, hi);
+      std::vector<TheType> vals(x.localSize());
+      xloc->getElementRange(lo, hi, &vals[0]);
+      x.setElementRange(lo, hi, &vals[0]);
+      x.ready();
+    } else {
+      this->p_solve(p_matrix, b, x);
+    }
   }
 
   /// Solve multiple systems w/ each column of the Matrix a single RHS

@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-03-05 12:54:57 d3g096
+ * @date   2015-08-12 11:52:20 d3g096
  * 
  * @brief  
  * 
@@ -48,9 +48,8 @@ public:
 
   /// Default constructor.
   PETScLinearSolverImplementation(MatrixType& A)
-    : LinearSolverImplementation<T, I>(A.communicator()),
-      PETScConfigurable(this->communicator()),
-      p_A(PETScMatrix(A))
+    : LinearSolverImplementation<T, I>(A),
+      PETScConfigurable(this->communicator())
   {
   }
 
@@ -72,9 +71,6 @@ public:
 
 protected:
 
-  /// The coefficient Matrix
-  Mat *p_A;
-
   /// The PETSc linear solver 
   KSP p_KSP;
 
@@ -83,7 +79,11 @@ protected:
   {
     PetscErrorCode ierr;
     try  {
-      ierr = KSPCreate(this->communicator(), &p_KSP); CHKERRXX(ierr);
+      parallel::Communicator comm(this->communicator());
+      if (this->p_doSerial) {
+        comm = this->communicator().self();
+      }
+      ierr = KSPCreate(comm, &p_KSP); CHKERRXX(ierr);
       ierr = KSPSetInitialGuessNonzero(p_KSP,PETSC_TRUE); CHKERRXX(ierr); 
       ierr = KSPSetOptionsPrefix(p_KSP, option_prefix.c_str()); CHKERRXX(ierr);
       PC pc;
@@ -103,18 +103,19 @@ protected:
   }  
 
   /// Solve w/ the specified RHS and estimate (result in x)
-  void p_solve(const VectorType& b, VectorType& x) const
+  void p_solve(MatrixType& A, const VectorType& b, VectorType& x) const
   {
     PetscErrorCode ierr(0);
     int me(this->processor_rank());
     try {
+      Mat *Amat(PETScMatrix(A));
       const Vec *bvec(PETScVector(b));
       Vec *xvec(PETScVector(x));
 
 #if PETSC_VERSION_LT(3,5,0)
-      ierr = KSPSetOperators(p_KSP, *p_A, *p_A, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
+      ierr = KSPSetOperators(p_KSP, *Amat, *Amat, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
 #else
-      ierr = KSPSetOperators(p_KSP, *p_A, *p_A); CHKERRXX(ierr);
+      ierr = KSPSetOperators(p_KSP, *Amat, *Amat); CHKERRXX(ierr);
 #endif
 
       ierr = KSPSolve(p_KSP, *bvec, *xvec); CHKERRXX(ierr);
