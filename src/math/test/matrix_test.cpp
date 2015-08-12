@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-08-12 12:39:00 d3g096
+ * @date   2015-08-12 15:31:13 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -369,6 +369,8 @@ BOOST_AUTO_TEST_CASE( local_clone )
     B(A->localClone());
 
   BOOST_CHECK_EQUAL(B->processor_size(), 1);
+  BOOST_CHECK_EQUAL(A->rows(), B->rows());
+  BOOST_CHECK_EQUAL(A->cols(), B->cols());
   
   int lo, hi;
   A->localRowRange(lo, hi);
