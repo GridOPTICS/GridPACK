@@ -9,7 +9,7 @@
 /**
  * @file   matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-01-28 13:00:23 d3g096
+ * @date   2015-08-11 15:50:47 d3g096
  * 
  * @brief  
  * 
@@ -62,11 +62,21 @@ public:
     return this->p_clone();
   }
 
+  /// Make a sequential copy of this instance local to this processor
+  MatrixImplementation *localClone(void) const
+  {
+    return this->p_localClone();
+  }
+  
+
 
 protected:
 
   /// Make an exact replica of this instance (specialized)
   virtual MatrixImplementation *p_clone(void) const = 0;
+
+  /// Make a sequential copy of this instance local to this processor (specialized)
+  virtual MatrixImplementation *p_localClone(void) const = 0;
 };
 
 } // namespace utility

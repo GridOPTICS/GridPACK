@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-07-23 09:37:53 d3g096
+ * @date   2015-08-11 16:13:27 d3g096
  * 
  * @brief  
  * 
@@ -674,6 +674,32 @@ protected:
     return result;
   }
 
+  /// Make a sequential copy of this instance local to this processor (specialized)
+  MatrixImplementation<T, I> *p_localClone(void) const
+  {
+    if (this->processor_size() == 1)
+      return this->clone();
+
+    const Mat *Aorig(p_mwrap->getMatrix());
+    Mat *Aloc;
+    IS irow, icol;
+    PetscErrorCode ierr(0);
+    ierr = ISCreateStride(this->communicator(), this->rows(), 0, 1, &irow); CHKERRXX(ierr);
+    ierr = ISCreateStride(this->communicator(), this->cols(), 0, 1, &icol); CHKERRXX(ierr);
+    
+    ierr = MatGetSubMatrices(*Aorig, 1, &irow, &icol, MAT_INITIAL_MATRIX, &Aloc); CHKERRXX(ierr);
+
+    PETScMatrixImplementation<T, I> *result =
+      new PETScMatrixImplementation<T, I>(*Aloc, true);
+    
+    ierr = ISDestroy(&irow); CHKERRXX(ierr);
+    ierr = ISDestroy(&icol); CHKERRXX(ierr);
+    
+    ierr = MatDestroyMatrices(1, &Aloc); CHKERRXX(ierr);
+    
+  
+    return result;
+  }
 
 };
 

@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-11 07:28:49 d3g096
+ * @date   2015-08-11 15:43:50 d3g096
  * 
  * @brief  
  * 
@@ -58,7 +58,8 @@ public:
       utility::Uncopyable(),
       p_solutionTolerance(1.0e-06),
       p_relativeTolerance(p_solutionTolerance),
-      p_maxIterations(100)
+      p_maxIterations(100),
+      p_doSerial(false)
   {
   }
 
@@ -90,6 +91,9 @@ protected:
   /// The maximum number of iterations to perform
   int p_maxIterations;
 
+  /// Use a serial solver, even in parallel environment
+  bool p_doSerial;
+
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
   {
@@ -97,6 +101,7 @@ protected:
       p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
       p_relativeTolerance = props->get("RelativeTolerance", p_solutionTolerance);
       p_maxIterations = props->get("MaxIterations", p_maxIterations);
+      p_doSerial = props->get("SerialOnly", p_doSerial);
     }
   }
 
