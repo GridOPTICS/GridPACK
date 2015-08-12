@@ -8,7 +8,7 @@
 /**
  * @file   communicator.hpp
  * @author William A. Perkins
- * @date   2015-05-22 09:46:11 d3g096
+ * @date   2015-08-11 14:23:12 d3g096
  * 
  * @brief  
  * 
@@ -102,6 +102,12 @@ public:
   Communicator split(int color) const
   {
     return Communicator(p_comm.split(color));
+  }
+
+  /// Get a sub-communicator that is only for this process
+  Communicator self(void) const
+  {
+    return split(this->rank());
   }
 
   /// Split this instance in several communicators
