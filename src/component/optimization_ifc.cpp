@@ -49,14 +49,36 @@ std::vector<gridpack::optimization::Variable*> OptimizationInterface::getVariabl
  * Return contribution from bus to a global constraint
  * @param tag string that can be parsed by bus to determine which constraint
  * contribution is being requested
- * @param flag bool that returns false if there is no contribution to constaint
- * @return contribution to global constraint
+ * @return contribution to global constraint. If no contribution, return null
+ * pointer
  */
 gridpack::optimization::Expression*
-  OptimizationInterface::getGlobalConstraint(const char* tag, bool *flag)
+  OptimizationInterface::getGlobalConstraint(const char* tag)
 {
   gridpack::optimization::Expression *ret = NULL;
-  *flag = false;
+  return ret;
+}
+
+/**
+ * Return a list of local constraints from component
+ * @return list of constraints
+ */
+std::vector<gridpack::optimization::Constraint*>
+  OptimizationInterface::getLocalConstraints()
+{
+  std::vector<gridpack::optimization::Constraint*> ret;
+  return ret;
+}
+
+/**
+ * Return contribution to objective function
+ * @return expression representing contribution to objective function. If no
+ * contribution, return null pointer
+ */
+gridpack::optimization::Expression* 
+  OptimizationInterface::getObjectiveFunction()
+{
+  gridpack::optimization::Expression *ret = NULL;
   return ret;
 }
 
