@@ -136,9 +136,9 @@ public:
   {
     IdxType n(this->size());
     parallel::Communicator self(this->communicator().self());
-    std::vector< VectorT<T, I>::TheType > x(n);
+    std::vector< TheType > x(n);
     this->getAllElements(&x[0]);
-    VectorT<T, I> *result(new VectorT<T, I>(self, n));
+    VectorT *result(new VectorT(self, n));
     IdxType lo, hi;
     result->localIndexRange(lo, hi);
     result->setElementRange(lo, hi, &x[0]);
