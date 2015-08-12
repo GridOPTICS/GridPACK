@@ -63,11 +63,24 @@ class OptimizationInterface {
      * Return contribution from bus to a global constraint
      * @param tag string that can be parsed by bus to determine which constraint
      * contribution is being requested
-     * @param flag bool that returns false if there is no contribution to constaint
-     * @return contribution to global constraint
+     * @return contribution to global constraint. If no contribution, return
+     * null pointer
      */
-    virtual gridpack::optimization::Expression* getGlobalConstraint(const char*
-        tag, bool *flag);
+    virtual gridpack::optimization::Expression* getGlobalConstraint(
+        const char* tag);
+
+    /**
+     * Return a list of local constraints from component
+     * @return list of constraints
+     */
+    virtual std::vector<gridpack::optimization::Constraint*> getLocalConstraints();
+
+    /**
+     * Return contribution to objective function
+     * @return expression representing contribution to objective function. If no
+     * contribution, return null pointer
+     */
+    virtual gridpack::optimization::Expression* getObjectiveFunction();
   private:
 
   friend class boost::serialization::access;
