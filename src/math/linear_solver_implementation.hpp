@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-12 12:01:45 d3g096
+ * @date   2015-08-12 13:54:26 d3g096
  * 
  * @brief  
  * 
@@ -106,7 +106,7 @@ protected:
       p_relativeTolerance = props->get("RelativeTolerance", p_solutionTolerance);
       p_maxIterations = props->get("MaxIterations", p_maxIterations);
 
-      p_doSerial = props->get("SerialOnly", p_doSerial);
+      p_doSerial = props->get("ForceSerial", p_doSerial);
 
       // SerialOnly has no effect unless parallel
       p_doSerial = (p_doSerial && (this->processor_size() > 1));
