@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-12 11:52:20 d3g096
+ * @date   2015-08-13 09:15:02 d3g096
  * 
  * @brief  
  * 
@@ -84,7 +84,9 @@ protected:
         comm = this->communicator().self();
       }
       ierr = KSPCreate(comm, &p_KSP); CHKERRXX(ierr);
-      ierr = KSPSetInitialGuessNonzero(p_KSP,PETSC_TRUE); CHKERRXX(ierr); 
+      if (!this->p_guessZero) {
+        ierr = KSPSetInitialGuessNonzero(p_KSP,PETSC_TRUE); CHKERRXX(ierr); 
+      } 
       ierr = KSPSetOptionsPrefix(p_KSP, option_prefix.c_str()); CHKERRXX(ierr);
       PC pc;
       ierr = KSPGetPC(p_KSP, &pc); CHKERRXX(ierr);

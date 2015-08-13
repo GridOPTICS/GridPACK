@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-12 13:54:26 d3g096
+ * @date   2015-08-13 09:17:56 d3g096
  * 
  * @brief  
  * 
@@ -60,7 +60,8 @@ public:
       p_solutionTolerance(1.0e-06),
       p_relativeTolerance(p_solutionTolerance),
       p_maxIterations(100),
-      p_doSerial(false)
+      p_doSerial(false),
+      p_guessZero(false)
   {
   }
 
@@ -98,6 +99,9 @@ protected:
   /// Use a serial solver, even in parallel environment
   bool p_doSerial;
 
+  /// Assume the initial guess is zero
+  bool p_guessZero;
+
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
   {
@@ -110,6 +114,8 @@ protected:
 
       // SerialOnly has no effect unless parallel
       p_doSerial = (p_doSerial && (this->processor_size() > 1));
+
+      p_guessZero = props->get("InitialGuessZero", p_guessZero);
     }
   }
 
