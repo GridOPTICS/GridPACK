@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-13 09:17:56 d3g096
+ * @date   2015-08-13 11:46:55 d3g096
  * 
  * @brief  
  * 
@@ -61,7 +61,9 @@ public:
       p_relativeTolerance(p_solutionTolerance),
       p_maxIterations(100),
       p_doSerial(false),
-      p_guessZero(false)
+      p_constSerialMatrix(),
+      p_guessZero(false),
+      p_serialSolution()
   {
   }
 
@@ -99,18 +101,46 @@ protected:
   /// Use a serial solver, even in parallel environment
   bool p_doSerial;
 
+  /// Assume the coefficient matrix is constant (only if p_doSerial)
+  /**
+   * When a serial solver is used in a parallel environment
+   * (::p_doSerial is true), the coefficient matrix is collected from
+   * all processes for each solve.  This is unnecessary if the
+   * coefficient matrix is constant. If this flag is true, the
+   * coefficient matrix will be collected only once (and stored as
+   * ::p_serialMatrix). 
+   * 
+   */
+  bool p_constSerialMatrix;
+
+  /// A place to keep the (constant) "serial" matrix if called for
+  mutable boost::scoped_ptr<MatrixType> p_serialMatrix;
+
   /// Assume the initial guess is zero
   bool p_guessZero;
+
+  /// A place to keep the "serial" solution vector, if called for
+  /**
+   * When a serial solver is used in a parallel environment
+   * (::p_doSerial is true), the RHS and solution (guess) vectors are
+   * collected from all processors. If the solution guess is zero
+   * (::p_guessZero is true), then collecting the solution vector is
+   * unnecessary.  This provides a place to put a serial solution
+   * vector.
+   * 
+   */
+  mutable boost::scoped_ptr<VectorType> p_serialSolution;
 
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
   {
     if (props) {
       p_solutionTolerance = props->get("SolutionTolerance", p_solutionTolerance);
-      p_relativeTolerance = props->get("RelativeTolerance", p_solutionTolerance);
+      p_relativeTolerance = props->get("RelativeTolerance", p_relativeTolerance);
       p_maxIterations = props->get("MaxIterations", p_maxIterations);
 
       p_doSerial = props->get("ForceSerial", p_doSerial);
+      p_constSerialMatrix = props->get("SerialMatrixIsConstant", p_constSerialMatrix);
 
       // SerialOnly has no effect unless parallel
       p_doSerial = (p_doSerial && (this->processor_size() > 1));
@@ -150,18 +180,45 @@ protected:
   void p_solve(const VectorType& b, VectorType& x) const
   {
     if (p_doSerial) {
-      boost::scoped_ptr<MatrixType> Aloc(p_matrix.localClone());
+
+      // collect the coefficient matrix to the local processor, if not
+      // already here or it's not constant
+
+      if (!p_serialMatrix ) {
+          p_serialMatrix.reset(p_matrix.localClone());
+      } else if (!p_constSerialMatrix) {
+          p_serialMatrix.reset(p_matrix.localClone());
+      }
+
+      // always collect the RHS vector 
       boost::scoped_ptr<VectorType> bloc(b.localClone());
-      boost::scoped_ptr<VectorType> xloc(x.localClone());
-      this->p_solve(*Aloc, *bloc, *xloc);
+
+      // Collect the initial guess, if it's not zero
+      if (!p_guessZero) {
+        p_serialSolution.reset(x.localClone());
+      } else if (!p_serialSolution) {
+        p_serialSolution.reset(bloc->clone());
+        p_serialSolution->fill(0.0);
+      }
+
+      // solve the system serially
+
+      this->p_solve(*p_serialMatrix, *bloc, *p_serialSolution);
+
+      // each process puts its share of the solution into the parallel
+      // solution vector
+
       IdxType lo, hi;
       x.localIndexRange(lo, hi);
       std::vector<TheType> vals(x.localSize());
-      xloc->getElementRange(lo, hi, &vals[0]);
+      p_serialSolution->getElementRange(lo, hi, &vals[0]);
       x.setElementRange(lo, hi, &vals[0]);
       x.ready();
+
     } else {
+
       this->p_solve(p_matrix, b, x);
+
     }
   }
 

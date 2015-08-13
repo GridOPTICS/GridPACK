@@ -21,9 +21,11 @@
          
     <!-- Uncomment this to check that ForceSerial works (the petsc lu
          preconditioner is serial only
+
     <LinearSolver>
       <MaxIterations>1</MaxIterations>
       <ForceSerial>true</ForceSerial>
+      <SerialMatrixIsConstant>true</SerialMatrixIsConstant>
       <InitialGuessZero>true</InitialGuessZero>
       <PETScPrefix>ls</PETScPrefix>
       <PETScOptions>
