@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-03-06 12:39:31 d3g096
+ * @date   2015-08-13 11:10:06 d3g096
  * 
  * @brief  
  * 
@@ -188,6 +188,24 @@ BOOST_AUTO_TEST_CASE( Versteeg )
 
   BOOST_CHECK(l1norm < 1.0e-05);
   BOOST_CHECK(l2norm < 1.0e-05);
+
+  // solve it again
+
+  x->fill(0.0);
+  solver->solve(*b, *x);
+  multiply(*A, *x, *res);
+  res->add(*b, -1.0);
+
+  if (world.rank() == 0) {
+    std::cout << "Residual L1 Norm = " << l1norm << std::endl;
+    std::cout << "Residual L2 Norm = " << l2norm << std::endl;
+  }
+
+  BOOST_CHECK(l1norm < 1.0e-05);
+  BOOST_CHECK(l2norm < 1.0e-05);
+
+  l1norm = res->norm1();
+  l2norm = res->norm2();
 
   for (int p = 0; p < world.size(); ++p) {
     if (p == world.rank()) {

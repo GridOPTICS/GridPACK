@@ -6,6 +6,7 @@
 #pragma once
 #define CONFIGURATION_USE_MPI 
 #ifndef _configuration_h
+#include <mpi.h>
 // TODO -- any convention on version numbers? 
 // TODO -- any coding conventions? 
 #define _configuration_h 201307
@@ -15,7 +16,6 @@
 #include <memory>
 #include <boost/smart_ptr/shared_ptr.hpp>
 #ifdef CONFIGURATION_USE_MPI
-#include <mpi.h>
 #include "gridpack/parallel/communicator.hpp"
 #endif
 namespace gridpack {

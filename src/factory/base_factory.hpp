@@ -369,6 +369,30 @@ class BaseFactory {
     }
 
     /**
+     * Set the mode for all BaseBusComponent objects in the network.
+     * @param mode integer representing desired mode
+     */
+    virtual void setBusMode(int mode)
+    {
+      int i;
+      for (i=0; i<p_numBuses; i++) {
+        p_buses[i]->setMode(mode);
+      }
+    }
+
+    /**
+     * Set the mode for all BaseBranchComponent objects in the network.
+     * @param mode integer representing desired mode
+     */
+    virtual void setBranchMode(int mode)
+    {
+      int i;
+      for (i=0; i<p_numBranches; i++) {
+        p_branches[i]->setMode(mode);
+      }
+    }
+
+    /**
      * A convenience function that checks to see if something is true on all
      * processors
      * @param flag boolean flag on each processor

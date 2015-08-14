@@ -9,7 +9,7 @@
 /**
  * @file   vector.h
  * @author William A. Perkins
- * @date   2015-07-24 08:51:32 d3g096
+ * @date   2015-08-12 06:25:16 d3g096
  * 
  * @brief  Declaration of the Vector class
  * 
@@ -131,6 +131,21 @@ public:
     return result;
   }
 
+  /// Make a (sequential) copy of a vector local to this processor
+  VectorT *localClone(void) const
+  {
+    IdxType n(this->size());
+    parallel::Communicator self(this->communicator().self());
+    std::vector< TheType > x(n);
+    this->getAllElements(&x[0]);
+    VectorT *result(new VectorT(self, n));
+    IdxType lo, hi;
+    result->localIndexRange(lo, hi);
+    result->setElementRange(lo, hi, &x[0]);
+    result->ready();
+    return result;
+  }
+
   // -------------------------------------------------------------
   // In-place Vector Operation Methods (change this instance)
   // -------------------------------------------------------------
@@ -171,8 +186,6 @@ public:
 
   /// ELement-by-element divide by another Vector
   void elementDivide(const VectorT& x);
-
-  // friend Vector *reorder(const Vector& A, const Reordering& r);
 
 protected:
 

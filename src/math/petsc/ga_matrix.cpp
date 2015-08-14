@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-06-11 14:49:20 d3g096
+ * @date   2015-08-06 14:33:06 d3g096
  * 
  * @brief  
  * 
@@ -14,6 +14,7 @@
  */
 
 
+#include <vector>
 #include <boost/assert.hpp>
 
 #include <ga.h>
@@ -600,6 +601,57 @@ MatConvertToDenseGA(Mat A, Mat *B)
   ierr = MatCopy(A, *B, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
 
   
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// MatConvertGAtoDense
+// -------------------------------------------------------------
+PetscErrorCode
+MatConvertGAToDense(Mat A, Mat *B)
+{
+  PetscErrorCode ierr = 0;
+  MPI_Comm comm;
+  int nproc;
+  struct MatGACtx *ctx;
+  PetscInt lrows, grows, lcols, gcols, lo, hi;
+
+  ierr = PetscObjectGetComm((PetscObject)A, &comm); CHKERRQ(ierr);
+  ierr = MPI_Comm_size(comm, &nproc); 
+
+  ierr = MatShellGetContext(A, &ctx); CHKERRQ(ierr);
+
+  ierr = MatGetSize(A, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(A, &lrows, &lcols); CHKERRQ(ierr);
+
+  ierr = MatCreateDense(comm, lrows, lcols, grows, gcols, NULL, B); CHKERRQ(ierr);
+  
+  ierr = MatCreate(comm, B); CHKERRXX(ierr);
+  ierr = MatSetSizes(*B, lrows, lcols, grows, gcols); CHKERRXX(ierr);
+  if (nproc == 1) {
+    ierr = MatSetType(*B, MATSEQDENSE); CHKERRXX(ierr);
+    ierr = MatSeqDenseSetPreallocation(*B, PETSC_NULL); CHKERRXX(ierr);
+  } else {
+    ierr = MatSetType(*B, MATDENSE); CHKERRXX(ierr);
+    ierr = MatMPIDenseSetPreallocation(*B, PETSC_NULL); CHKERRXX(ierr);
+  }
+  ierr = MatGetOwnershipRange(*B, &lo, &hi); CHKERRQ(ierr);
+
+  std::vector<PetscInt> cidx(gcols);
+  for (PetscInt c = 0; c < gcols; ++c) {
+    cidx[c] = c;
+  }
+  std::vector<PetscScalar> rowvals(gcols);
+  for (PetscInt r = lo; r < hi; ++r) {
+    int glo[2] = {r, 0};
+    int ghi[2] = {r, gcols - 1};
+    int ld[2] = {1,1};
+    NGA_Get(ctx->ga, glo, ghi, &rowvals[0], ld);
+    ierr = MatSetValues(*B, 1, &r, gcols, &cidx[0], &rowvals[0], INSERT_VALUES); CHKERRQ(ierr);
+  }
+
+  ierr = MatAssemblyBegin(*B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*B, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   return ierr;
 }
 

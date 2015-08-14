@@ -3,9 +3,8 @@
  *     Licensed under modified BSD License. A copy of this license can be found
  *     in the LICENSE file in the top level directory of this distribution.
  */
-#include <vector>
-
 #include "mpi.h"
+#include <vector>
 #include <macdecls.h>
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/network/base_network.hpp"

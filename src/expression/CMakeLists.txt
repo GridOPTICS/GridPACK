@@ -19,10 +19,27 @@ set(target_libraries
   ${Boost_LIBRARIES} 
 )
 
+
+add_library(gridpack_expression
+  variable.cpp
+)
+
 add_executable(variable_test variable_test.cpp variable.cpp)
 target_link_libraries(variable_test ${target_libraries})
 
 add_executable(expression_test expression_test.cpp variable.cpp)
 target_link_libraries(expression_test ${target_libraries})
 
+# -------------------------------------------------------------
+# installation
+# -------------------------------------------------------------
+install(FILES 
+  variable.hpp  
+  expression.hpp
+  DESTINATION include/gridpack/expression
+)
 
+install(TARGETS 
+  gridpack_expression
+  DESTINATION lib
+)

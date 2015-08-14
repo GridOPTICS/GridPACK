@@ -8,7 +8,7 @@
 /**
  * @file   doxygen_dummy.hpp
  * @author William A. Perkins
- * @date   2013-09-10 12:55:08 d3g096
+ * @date   2015-08-07 09:03:18 d3g096
  * 
  * @brief  Some bogus code tricks to make Doxygen documentation better
  * 
@@ -30,7 +30,11 @@
 #define _doxygen_dummy_hpp_
 
 namespace boost { 
+
+/// Bogus class class for boost::shared_ptr
 template<class T> class shared_ptr { T *dummy; }; 
+
+/// Bogus class class for boost::scoped_ptr
 template<class T> class scoped_ptr { T *dummy; }; 
 }
 

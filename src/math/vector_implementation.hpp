@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2015-07-24 08:52:05 d3g096
+ * @date   2015-08-14 12:18:33 d3g096
  * 
  * @brief  
  * 
@@ -78,6 +78,21 @@ public:
 
 protected:
 
+  /// A place to store indexes for set/get element range
+  mutable std::vector<IdxType> p_rangeIdx;
+
+  /// Make ::p_rangeIdx
+  void p_buildRangeIdx(void) const
+  {
+    if (p_rangeIdx.empty()) {
+      IdxType n(this->size());
+      p_rangeIdx.reserve(n);
+      std::copy(boost::counting_iterator<int>(0),
+                boost::counting_iterator<int>(n),
+                std::back_inserter(p_rangeIdx));
+    }
+  }
+
   /// 
   virtual void p_applyOperation(base_unary_function<TheType>& op) = 0;
 
@@ -85,34 +100,25 @@ protected:
   /// Set a range of elements (lo to hi-1) (specialized)
   void p_setElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
   {
-    std::vector<int> i;
-    i.reserve(hi-lo);
-    std::copy(boost::counting_iterator<int>(lo),
-              boost::counting_iterator<int>(hi),
-              std::back_inserter(i));
-    this->p_setElements(i.size(), &i[0], x);
+    p_buildRangeIdx();
+    IdxType n(hi - lo);
+    this->p_setElements(n, &p_rangeIdx[lo], x);
   }
 
   /// Set a range of elements (lo to hi-1) (specialized)
   void p_addElementRange(const IdxType& lo, const IdxType& hi, TheType *x)
   {
-    std::vector<int> i;
-    i.reserve(hi-lo);
-    std::copy(boost::counting_iterator<int>(lo),
-              boost::counting_iterator<int>(hi),
-              std::back_inserter(i));
-    this->p_addElements(i.size(), &i[0], x);
+    p_buildRangeIdx();
+    IdxType n(hi - lo);
+    this->p_addElements(n, &p_rangeIdx[lo], x);
   }
 
   /// Get a range of elements (lo to hi-1) (specialized)
   void p_getElementRange(const IdxType& lo, const IdxType& hi, TheType *x) const
   {
-    std::vector<int> i;
-    i.reserve(hi-lo);
-    std::copy(boost::counting_iterator<int>(lo),
-              boost::counting_iterator<int>(hi),
-              std::back_inserter(i));
-    this->p_getElements(i.size(), &i[0], x);
+    p_buildRangeIdx();
+    IdxType n(hi - lo);
+    this->p_getElements(n, &p_rangeIdx[lo], x);
   }
 
   /// Replace all elements with their real part (specialized)

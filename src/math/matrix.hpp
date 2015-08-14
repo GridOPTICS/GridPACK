@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-06-16 08:32:49 d3g096
+ * @date   2015-08-11 15:49:21 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */
@@ -188,6 +188,14 @@ public:
   {
     MatrixImplementation<T, I> *pimpl_clone =
       this->p_matrix_impl->clone();
+    MatrixT *result = new MatrixT(pimpl_clone);
+    return result;
+  }
+
+  MatrixT *localClone(void) const
+  {
+    MatrixImplementation<T, I> *pimpl_clone =
+      this->p_matrix_impl->localClone();
     MatrixT *result = new MatrixT(pimpl_clone);
     return result;
   }

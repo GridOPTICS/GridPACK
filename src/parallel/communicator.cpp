@@ -17,10 +17,10 @@
  */
 // -------------------------------------------------------------
 
-#include <ga++.h>
 #if USE_PROGRESS_RANKS
 #include <ga-mpi.h>
 #endif
+#include <ga++.h>
 #include "gridpack/utilities/uncopyable.hpp"
 #include "communicator.hpp"
 

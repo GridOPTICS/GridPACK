@@ -33,62 +33,53 @@ OptimizationInterface::OptimizationInterface(void)
 OptimizationInterface::~OptimizationInterface(void)
 {
 }
+
 /**
- * Get the number of optimization variables contributed from component
- * @return number of optimization variables
+ * Return a vector of optimization variables associated witht this
+ * interface
+ * @return list of variables
  */
-int OptimizationInterface::numOptVariables(void)
+std::vector<gridpack::optimization::Variable*> OptimizationInterface::getVariables()
 {
-  return 0;
+  std::vector<gridpack::optimization::Variable*> ret;
+  return ret;
 }
 
 /**
- * Return the data type of the optimization variable
- * @param idx index of variable inside network component
- * @return data type of network variable
+ * Return contribution from bus to a global constraint
+ * @param tag string that can be parsed by bus to determine which constraint
+ * contribution is being requested
+ * @return contribution to global constraint. If no contribution, return null
+ * pointer
  */
-int OptimizationInterface::optVariableType(int idx)
+gridpack::optimization::Expression*
+  OptimizationInterface::getGlobalConstraint(const char* tag)
 {
-  return OPT_DBL;
+  gridpack::optimization::Expression *ret = NULL;
+  return ret;
 }
 
 /**
- * Return bounds on variable. If the lower bound is a null pointer the lower
- * bound is -inf, if the upper bound is a null pointer, the upper bound is
- * inf
- * @param idx index of variable inside network component
- * @param lo lower bound
- * @param hi upper bound
+ * Return a list of local constraints from component
+ * @return list of constraints
  */
-void OptimizationInterface::optVariableBounds(int idx, double *lo, double *hi)
+std::vector<gridpack::optimization::Constraint*>
+  OptimizationInterface::getLocalConstraints()
 {
-  lo = NULL;
-  hi = NULL;
-}
-
-void OptimizationInterface::optVariableBounds(int idx, int *lo, int *hi)
-{
-  lo = NULL;
-  hi = NULL;
-}
-
-
-/**
- * Return the objective function contributed from the bus 
- */
-double OptimizationInterface::objectiveFunction(void)
-{
-  double value;
-  value = 0.0;
-  return value;
+  std::vector<gridpack::optimization::Constraint*> ret;
+  return ret;
 }
 
 /**
- * Return the solution from the bus 
+ * Return contribution to objective function
+ * @return expression representing contribution to objective function. If no
+ * contribution, return null pointer
  */
-bool OptimizationInterface::solution(void)
+gridpack::optimization::Expression* 
+  OptimizationInterface::getObjectiveFunction()
 {
-  return false;
+  gridpack::optimization::Expression *ret = NULL;
+  return ret;
 }
 
 }  // component

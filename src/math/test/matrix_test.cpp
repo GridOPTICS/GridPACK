@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-07-16 13:09:54 d3g096
+ * @date   2015-08-12 15:31:13 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -355,6 +355,31 @@ BOOST_AUTO_TEST_CASE( accumulate )
     TestType x(static_cast<double>(2*i));
     TestType y;
     A.getElement(i, i, y);
+    TEST_VALUE_CLOSE(x, y, delta);
+  }
+}
+
+BOOST_AUTO_TEST_CASE( local_clone )
+{
+  gridpack::parallel::Communicator world;
+  int global_size;
+  boost::scoped_ptr< TestMatrixType > 
+    A(make_and_fill_test_matrix(world, 3, global_size));
+  boost::scoped_ptr< TestMatrixType > 
+    B(A->localClone());
+
+  BOOST_CHECK_EQUAL(B->processor_size(), 1);
+  BOOST_CHECK_EQUAL(A->rows(), B->rows());
+  BOOST_CHECK_EQUAL(A->cols(), B->cols());
+  
+  int lo, hi;
+  A->localRowRange(lo, hi);
+
+  for (int i = lo; i < hi; ++i) {
+    TestType x;
+    TestType y;
+    A->getElement(i, i, x);
+    B->getElement(i, i, y);
     TEST_VALUE_CLOSE(x, y, delta);
   }
 }
