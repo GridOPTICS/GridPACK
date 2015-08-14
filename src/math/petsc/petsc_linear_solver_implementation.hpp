@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-13 13:53:26 d3g096
+ * @date   2015-08-14 08:36:10 d3g096
  * 
  * @brief  
  * 
@@ -49,7 +49,8 @@ public:
   /// Default constructor.
   PETScLinearSolverImplementation(MatrixType& A)
     : LinearSolverImplementation<T, I>(A),
-      PETScConfigurable(this->communicator())
+      PETScConfigurable(this->communicator()),
+      p_matrixSet(false)
   {
   }
 
@@ -73,6 +74,9 @@ protected:
 
   /// The PETSc linear solver 
   KSP p_KSP;
+
+  /// For constant matrices, has the coefficient matrix been set
+  mutable bool p_matrixSet;
 
   /// Do what is necessary to build this instance
   void p_build(const std::string& option_prefix)
@@ -116,12 +120,17 @@ protected:
       const Vec *bvec(PETScVector(b));
       Vec *xvec(PETScVector(x));
 
+      if (p_matrixSet && this->p_constSerialMatrix) {
+        // KSPSetOperators can be skipped
+      } else {
 #if PETSC_VERSION_LT(3,5,0)
-      ierr = KSPSetOperators(p_KSP, *Amat, *Amat, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
+        ierr = KSPSetOperators(p_KSP, *Amat, *Amat, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
 #else
-      ierr = KSPSetOperators(p_KSP, *Amat, *Amat); CHKERRXX(ierr);
+        ierr = KSPSetOperators(p_KSP, *Amat, *Amat); CHKERRXX(ierr);
 #endif
-
+        p_matrixSet = true;
+      }
+          
       ierr = KSPSolve(p_KSP, *bvec, *xvec); CHKERRXX(ierr);
       int its;
       KSPConvergedReason reason;

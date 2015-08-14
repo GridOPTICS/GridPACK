@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-13 11:46:55 d3g096
+ * @date   2015-08-14 11:57:13 d3g096
  * 
  * @brief  
  * 
@@ -116,6 +116,9 @@ protected:
   /// A place to keep the (constant) "serial" matrix if called for
   mutable boost::scoped_ptr<MatrixType> p_serialMatrix;
 
+  /// A place to keep the collected "serial" RHS vector, if called for
+  mutable boost::scoped_ptr<VectorType> p_serialRHS;
+
   /// Assume the initial guess is zero
   bool p_guessZero;
 
@@ -131,6 +134,9 @@ protected:
    */
   mutable boost::scoped_ptr<VectorType> p_serialSolution;
 
+  /// A buffer to use for value transfer
+  mutable std::vector<TheType> p_valueBuffer;
+
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
   {
@@ -140,7 +146,7 @@ protected:
       p_maxIterations = props->get("MaxIterations", p_maxIterations);
 
       p_doSerial = props->get("ForceSerial", p_doSerial);
-      p_constSerialMatrix = props->get("SerialMatrixIsConstant", p_constSerialMatrix);
+      p_constSerialMatrix = props->get("SerialMatrixConstant", p_constSerialMatrix);
 
       // SerialOnly has no effect unless parallel
       p_doSerial = (p_doSerial && (this->processor_size() > 1));
@@ -190,20 +196,36 @@ protected:
           p_serialMatrix.reset(p_matrix.localClone());
       }
 
+      // make a buffer for value transfer between vectors
+      if (p_valueBuffer.empty()) {
+        p_valueBuffer.resize(b.size());
+      }
+
       // always collect the RHS vector 
-      boost::scoped_ptr<VectorType> bloc(b.localClone());
+      if (!p_serialRHS) {
+        p_serialRHS.reset(b.localClone());
+      } else {
+        b.getAllElements(&p_valueBuffer[0]);
+        p_serialRHS->setElementRange(0, b.size() - 1, &p_valueBuffer[0]);
+      }
 
       // Collect the initial guess, if it's not zero
-      if (!p_guessZero) {
-        p_serialSolution.reset(x.localClone());
-      } else if (!p_serialSolution) {
-        p_serialSolution.reset(bloc->clone());
-        p_serialSolution->fill(0.0);
+      if (!p_serialSolution) {
+        if (!p_guessZero) {
+          p_serialSolution.reset(x.localClone());
+        } else {
+          p_serialSolution.reset(p_serialRHS->clone());
+        }
+      } else {
+        if (!p_guessZero) {
+          x.getAllElements(&p_valueBuffer[0]);
+          p_serialSolution->setElementRange(0, x.size() - 1, &p_valueBuffer[0]);
+        }
       }
 
       // solve the system serially
 
-      this->p_solve(*p_serialMatrix, *bloc, *p_serialSolution);
+      this->p_solve(*p_serialMatrix, *p_serialRHS, *p_serialSolution);
 
       // each process puts its share of the solution into the parallel
       // solution vector

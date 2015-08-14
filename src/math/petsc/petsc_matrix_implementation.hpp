@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-08-12 15:33:18 d3g096
+ * @date   2015-08-14 09:13:54 d3g096
  * 
  * @brief  
  * 
@@ -530,7 +530,7 @@ protected:
 
       Mat *sub;
       ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
-
+      
       std::vector<PetscScalar> cval(ncol);
       for (PetscInt j = 0; j < ncol; ++j) {
         cidx[j] = j;
@@ -688,6 +688,10 @@ protected:
     ierr = ISCreateStride(this->communicator(), p_mwrap->cols(), 0, 1, &icol); CHKERRXX(ierr);
     
     ierr = MatGetSubMatrices(*Aorig, 1, &irow, &icol, MAT_INITIAL_MATRIX, &Aloc); CHKERRXX(ierr);
+
+    // MatType mt;
+    // ierr = MatGetType(*Aloc, &mt); CHKERRXX(ierr);
+    // std::cout << "Extracted matrix type: " << mt << std::endl;
 
     PETScMatrixImplementation<T, I> *result =
       new PETScMatrixImplementation<T, I>(*Aloc, true);
