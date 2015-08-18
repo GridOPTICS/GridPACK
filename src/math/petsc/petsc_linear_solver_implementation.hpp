@@ -9,7 +9,7 @@
 /**
  * @file   petsc_linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-14 08:36:10 d3g096
+ * @date   2015-08-18 13:40:01 d3g096
  * 
  * @brief  
  * 
@@ -111,14 +111,11 @@ protected:
   }  
 
   /// Solve w/ the specified RHS and estimate (result in x)
-  void p_solve(MatrixType& A, const VectorType& b, VectorType& x) const
+  void p_solveImpl(MatrixType& A, const VectorType& b, VectorType& x) const
   {
     PetscErrorCode ierr(0);
-    int me(this->processor_rank());
     try {
       Mat *Amat(PETScMatrix(A));
-      const Vec *bvec(PETScVector(b));
-      Vec *xvec(PETScVector(x));
 
       if (p_matrixSet && this->p_constSerialMatrix) {
         // KSPSetOperators can be skipped
@@ -130,7 +127,25 @@ protected:
 #endif
         p_matrixSet = true;
       }
+
+      this->p_resolveImpl(b, x);
           
+    } catch (const PETSC_EXCEPTION_TYPE& e) {
+      throw PETScException(ierr, e);
+    } catch (const Exception& e) {
+      throw e;
+    }
+  }
+
+  /// Solve again w/ the specified RHS, put result in specified vector (specialized)
+  void p_resolveImpl(const VectorType& b, VectorType& x) const
+  {
+    PetscErrorCode ierr(0);
+    int me(this->processor_rank());
+    try {
+      const Vec *bvec(PETScVector(b));
+      Vec *xvec(PETScVector(x));
+
       ierr = KSPSolve(p_KSP, *bvec, *xvec); CHKERRXX(ierr);
       int its;
       KSPConvergedReason reason;
@@ -155,7 +170,8 @@ protected:
     } catch (const Exception& e) {
       throw e;
     }
-  }
+  }    
+  
 
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)

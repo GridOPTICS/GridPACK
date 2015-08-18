@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-14 11:57:13 d3g096
+ * @date   2015-08-18 13:40:52 d3g096
  * 
  * @brief  
  * 
@@ -179,8 +179,53 @@ protected:
     p_maxIterations = n;
   }
 
-  /// Solve the specified system w/ RHS and estimate (result in x)  
-  virtual void p_solve(MatrixType& A, const VectorType& b, VectorType& x) const = 0;
+  /// Solve the specified system w/ RHS and estimate (implementation)  
+  virtual void p_solveImpl(MatrixType& A, const VectorType& b, VectorType& x) const = 0;
+
+  /// Solve the system again w/ RHS and estimate (implementation)
+  virtual void p_resolveImpl(const VectorType& b, VectorType& x) const = 0;
+
+  /// Gather the RHS and initial estimate vectors
+  void p_serialSolvePrep(const VectorType& b, VectorType& x) const
+  {
+    // make a buffer for value transfer between vectors
+    if (p_valueBuffer.empty()) {
+      p_valueBuffer.resize(b.size());
+    }
+    
+    // always collect the RHS vector 
+    if (!p_serialRHS) {
+      p_serialRHS.reset(b.localClone());
+    } else {
+      b.getAllElements(&p_valueBuffer[0]);
+      p_serialRHS->setElementRange(0, b.size() - 1, &p_valueBuffer[0]);
+    }
+
+    // Collect the initial guess, if it's not zero
+    if (!p_serialSolution) {
+      if (!p_guessZero) {
+        p_serialSolution.reset(x.localClone());
+      } else {
+        p_serialSolution.reset(p_serialRHS->clone());
+      }
+    } else {
+      if (!p_guessZero) {
+        x.getAllElements(&p_valueBuffer[0]);
+        p_serialSolution->setElementRange(0, x.size() - 1, &p_valueBuffer[0]);
+      }
+    }
+  }
+
+  /// After serial solve, distribute solution
+  void p_serialSolutionDist(VectorType& x) const
+  {
+    BOOST_ASSERT(!p_valueBuffer.empty());
+    IdxType lo, hi;
+    x.localIndexRange(lo, hi);
+    p_serialSolution->getElementRange(lo, hi, &p_valueBuffer[0]);
+    x.setElementRange(lo, hi, &p_valueBuffer[0]);
+    x.ready();
+  }
 
   /// Solve w/ the specified RHS and estimate (result in x)
   void p_solve(const VectorType& b, VectorType& x) const
@@ -195,51 +240,45 @@ protected:
       } else if (!p_constSerialMatrix) {
           p_serialMatrix.reset(p_matrix.localClone());
       }
-
-      // make a buffer for value transfer between vectors
-      if (p_valueBuffer.empty()) {
-        p_valueBuffer.resize(b.size());
-      }
-
-      // always collect the RHS vector 
-      if (!p_serialRHS) {
-        p_serialRHS.reset(b.localClone());
-      } else {
-        b.getAllElements(&p_valueBuffer[0]);
-        p_serialRHS->setElementRange(0, b.size() - 1, &p_valueBuffer[0]);
-      }
-
-      // Collect the initial guess, if it's not zero
-      if (!p_serialSolution) {
-        if (!p_guessZero) {
-          p_serialSolution.reset(x.localClone());
-        } else {
-          p_serialSolution.reset(p_serialRHS->clone());
-        }
-      } else {
-        if (!p_guessZero) {
-          x.getAllElements(&p_valueBuffer[0]);
-          p_serialSolution->setElementRange(0, x.size() - 1, &p_valueBuffer[0]);
-        }
-      }
+      
+      this->p_serialSolvePrep(b, x);
 
       // solve the system serially
 
-      this->p_solve(*p_serialMatrix, *p_serialRHS, *p_serialSolution);
+      this->p_solveImpl(*p_serialMatrix, *p_serialRHS, *p_serialSolution);
 
       // each process puts its share of the solution into the parallel
       // solution vector
 
-      IdxType lo, hi;
-      x.localIndexRange(lo, hi);
-      std::vector<TheType> vals(x.localSize());
-      p_serialSolution->getElementRange(lo, hi, &vals[0]);
-      x.setElementRange(lo, hi, &vals[0]);
-      x.ready();
+      this->p_serialSolutionDist(x);
+
 
     } else {
 
-      this->p_solve(p_matrix, b, x);
+      this->p_solveImpl(p_matrix, b, x);
+
+    }
+  }
+
+  /// Solve again w/ the specified RHS, put result in specified vector (specialized)
+  void p_resolve(const VectorType& b, VectorType& x) const
+  {
+    if (p_doSerial) {
+
+      this->p_serialSolvePrep(b, x);
+
+      // solve the system serially
+
+      this->p_resolveImpl(*p_serialRHS, *p_serialSolution);
+
+      // each process puts its share of the solution into the parallel
+      // solution vector
+
+      this->p_serialSolutionDist(x);
+
+    } else {
+
+      this->p_resolveImpl(b, x);
 
     }
   }
@@ -264,7 +303,11 @@ protected:
       column(B, j, b);
       X.zero();
       X.ready();
-      this->solve(b, X);
+      if (j == 0) {
+        this->solve(b, X);
+      } else {
+        this->resolve(b, X);
+      }
       std::fill(jidx.begin(), jidx.end(), j);
       X.getElements(nloc, &iidx[0], &locX[0]);
       result->setElements(nloc, &iidx[0], &jidx[0], &locX[0]);

@@ -9,7 +9,7 @@
 /**
  * @file   linear_solver.hpp
  * @author William A. Perkins
- * @date   2015-03-05 13:09:23 d3g096
+ * @date   2015-08-18 13:37:16 d3g096
  * 
  * @brief  
  * 
@@ -181,6 +181,12 @@ protected:
   void p_solve(const VectorType& b, VectorType& x) const
   {
     p_solver->solve(b, x);
+  }
+
+  /// Solve again w/ the specified RHS, put result in specified vector (specialized)
+  void p_resolve(const VectorType& b, VectorType& x) const
+  {
+    p_solver->resolve(b, x);
   }
 
   /// Solve multiple systems w/ each column of the Matrix a single RHS
