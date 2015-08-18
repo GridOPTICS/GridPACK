@@ -1020,6 +1020,15 @@ int gridpack::powerflow::PFBus::rhsValues(double *rvals)
 }
 
 /**
+ * Get vector containing generator participation
+ * @return vector of generator participation factors
+ */
+std::vector<double> gridpack::powerflow::PFBus::getGeneratorParticipation()
+{
+  return p_pFac;
+}
+
+/**
  *  Simple constructor
  */
 gridpack::powerflow::PFBranch::PFBranch(void)
