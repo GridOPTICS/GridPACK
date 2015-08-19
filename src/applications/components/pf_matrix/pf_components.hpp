@@ -293,6 +293,12 @@ class PFBus
      */
     int rhsValues(double *rvals);
 
+    /**
+     * Get vector containing generator participation
+     * @return vector of generator participation factors
+     */
+    std::vector<double> getGeneratorParticipation();
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
