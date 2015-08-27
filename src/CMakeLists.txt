@@ -35,6 +35,10 @@ if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
 
+# suppress any checks to see if test codes run. Only check for compilation.
+# use for cross-compilation situations
+option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
+
 # should cplex or gurobi be used
 option(USE_CPLEX
   "Use optimization software CPLEX libraries." OFF)
@@ -49,12 +53,21 @@ message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
 include_directories(AFTER ${MPI_INCLUDE_PATH})
 
+if (ENABLE_CRAY_BUILD)
+  set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
+endif()
+
 # This is here for cmake version 2.6 
-if (NOT MPI_CXX_LIBRARIES)
- set(MPI_CXX_LIBRARIES 
-   ${MPI_LIBRARY} 
-   ${MPI_EXTRA_LIBRARY}
- )
+if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
+# Punt if MPI_LIBRARY or MPI_EXTRA_LIBRARY not found
+  set(MPI_CXX_LIBRARIES "")
+else()
+  if (NOT MPI_CXX_LIBRARIES)
+   set(MPI_CXX_LIBRARIES 
+     ${MPI_LIBRARY} 
+     ${MPI_EXTRA_LIBRARY}
+   )
+  endif()
 endif()
 
 # Perkins found out that this was exactly the wrong thing to do:
@@ -204,6 +217,12 @@ endif()
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (ENABLE_CRAY_BUILD)
+  if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
+    set(MPI_LIBRARY "")
+    set(MPI_EXTRA_LIBRARY "")
+  endif()
+endif()
 
 # -------------------------------------------------------------
 # Subdirectories

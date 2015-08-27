@@ -94,11 +94,13 @@ if (PARMETIS_INCLUDE_DIR AND PARMETIS_LIBRARY AND METIS_LIBRARY)
 
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${PARMETIS_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
-  set(CMAKE_REQUIRED_LIBRARIES ${METIS_LIBRARY} ${PARMETIS_LIBRARY} ${MPI_LIBRARIES})
+  if (NOT ${MPI_LIBRARY})
+    set(CMAKE_REQUIRED_LIBRARIES ${METIS_LIBRARY} ${PARMETIS_LIBRARY})
+  else ()
+    set(CMAKE_REQUIRED_LIBRARIES ${METIS_LIBRARY} ${PARMETIS_LIBRARY} ${MPI_LIBRARIES})
+  endif()
 
-  # Build and run test program
-  include(CheckCXXSourceRuns)
-  check_cxx_source_runs("
+  set(parmetis_test_src "
 #include <mpi.h>
 #include <parmetis.h>
 
@@ -114,7 +116,16 @@ int main()
 
   return 0;
 }
-" PARMETIS_TEST_RUNS)
+")
+
+# Build and run test program
+  include(CheckCXXSourceRuns)
+  include(CheckCXXSourceCompiles)
+  if (CHECK_COMPILATION_ONLY)
+    check_cxx_source_compiles("${parmetis_test_src}" PARMETIS_TEST_RUNS)
+  else()
+    check_cxx_source_runs("${parmetis_test_src}" PARMETIS_TEST_RUNS)
+  endif()
 endif()
 
 # Standard package handling
