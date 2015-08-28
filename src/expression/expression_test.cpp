@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-07-31 13:38:55 d3g096
+ * @date   2015-08-28 09:01:56 d3g096
  * 
  * @brief  
  * 
@@ -37,14 +37,25 @@ main(int argc, char **argv)
   go::VariablePtr B(new go::RealVariable(0.0, -1.0, 1.0));
   go::VariablePtr C(new go::IntegerVariable(0, -1, 1));
   go::ExpressionPtr junk;
+
   junk = A*4.0;
-  junk->evaluate();
-  std::cout << std::endl;
+  junk->evaluate();  std::cout << std::endl;
+
   junk = four*six + two*C;
-  junk->evaluate();
-  std::cout << std::endl;
-  junk = four * 6 + 2;
-  junk->evaluate();
-  std::cout << std::endl;
+  junk->evaluate();  std::cout << std::endl;
+
+  junk = four*(6*C + 2*A);
+  junk->evaluate();  std::cout << std::endl;
+
+  go::ConstraintPtr con;
+  con = ( A < 4 );
+  con->evaluate(); std::cout << std::endl;
+
+  con = junk >= 6;
+  con->evaluate(); std::cout << std::endl;
+
+  con = C == 3;
+  con->evaluate(); std::cout << std::endl;
+
   return 0;
 }

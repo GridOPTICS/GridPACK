@@ -9,7 +9,7 @@
 /**
  * @file   matrix.hpp
  * @author William A. Perkins
- * @date   2015-08-11 15:49:21 d3g096
+ * @date   2015-08-18 14:09:32 d3g096
  * 
  * @brief  Declaration of the Matrix class.
  */

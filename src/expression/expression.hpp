@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-08-11 11:59:49 d3g096
+ * @date   2015-08-28 09:03:56 d3g096
  * 
  * @brief  
  * 
@@ -38,6 +38,9 @@ public:
 
   /// Default constructor.
   Expression(void) {}
+
+  /// Copy constructor
+  Expression(const Expression& old) {}
 
   /// Destructor
   virtual ~Expression(void) {}
@@ -68,6 +71,11 @@ public:
   /// Default constructor.
   ConstantExpression(const T& value)
     : Expression(), p_value(value)
+  {}
+
+  /// Copy constructor
+  ConstantExpression(const ConstantExpression& old)
+    : Expression(old), p_value(old.p_value)
   {}
 
   /// Destructor
@@ -120,9 +128,20 @@ public:
     : Expression(), p_var(v)
   {}
 
+  /// Copy constructor
+  VariableExpression(const VariableExpression& old)
+    : Expression(old), p_var(old.p_var)
+  {}
+
   /// Destructor
   ~VariableExpression(void) 
   {}
+
+  /// Get the variable name
+  std::string name(void) const
+  {
+    return p_var->name();
+  }
 
 protected:
   
@@ -158,6 +177,11 @@ public:
   /// Default constructor.
   BinaryExpression(ExpressionPtr lhs, ExpressionPtr rhs)
     : Expression(), p_LHS(lhs), p_RHS(rhs)
+  {}
+
+  /// Copy constructor
+  BinaryExpression(const BinaryExpression& old)
+    : Expression(old), p_LHS(old.p_LHS), p_RHS(old.p_RHS)
   {}
 
   /// Destructor
@@ -198,6 +222,11 @@ public:
     : BinaryExpression(lhs, rhs)
   {}
 
+  /// Copy constructor
+  Addition(const Addition& old)
+    : BinaryExpression(old)
+  {}
+
   /// Destructor
   ~Addition(void)
   {}
@@ -206,9 +235,11 @@ protected:
 
   void p_evaluate(void) const
   {
+    std::cout << "( ";
     p_LHS->evaluate();
     std::cout << " + ";
     p_RHS->evaluate();
+    std::cout << " )";
   }
 
 
@@ -223,6 +254,8 @@ private:
   }
 
 };
+
+
 
 // -------------------------------------------------------------
 // operator+
@@ -276,6 +309,11 @@ public:
     : BinaryExpression(lhs, rhs)
   {}
 
+  /// Copy constructor
+  Multiplication(const Multiplication& old)
+    : BinaryExpression(old)
+  {}
+
   /// Destructor
   ~Multiplication(void)
   {}
@@ -285,7 +323,7 @@ protected:
   void p_evaluate(void) const
   {
     p_LHS->evaluate();
-    std::cout << " * ";
+    std::cout << "*";
     p_RHS->evaluate();
   }
 
@@ -535,6 +573,45 @@ private:
   }
 };
 
+// -------------------------------------------------------------
+// class Equal
+// -------------------------------------------------------------
+class Equal 
+  : public Constraint
+{
+public:
+
+  /// Default constructor.
+  Equal(ExpressionPtr lhs, ExpressionPtr rhs)
+    : Constraint(lhs, rhs)
+  {}
+
+  /// Destructor
+  ~Equal(void)
+  {}
+
+protected:
+
+  void p_evaluate(void) const
+  {
+    p_LHS->evaluate();
+    std::cout << " == ";
+    p_RHS->evaluate();
+  }
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<Constraint>(*this);
+  }
+};
+
+
+
 typedef boost::shared_ptr<Constraint> ConstraintPtr;
 
 
@@ -549,6 +626,15 @@ ConstraintPtr operator<(ExpressionPtr lhs, T rhs)
   return result;
 }
 
+template <typename T>
+ConstraintPtr operator<(VariablePtr lhs, T rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new LessThan(v, c));
+  return result;
+}
+
 // -------------------------------------------------------------
 // Constraint operator<=
 // -------------------------------------------------------------
@@ -557,6 +643,15 @@ ConstraintPtr operator<=(ExpressionPtr lhs, T rhs)
 {
   ExpressionPtr c(new ConstantExpression<T>(rhs));
   ConstraintPtr result(new LessThanOrEqual(lhs, c));
+  return result;
+}
+
+template <typename T>
+ConstraintPtr operator<=(VariablePtr lhs, T rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new LessThanOrEqual(v, c));
   return result;
 }
 
@@ -571,6 +666,14 @@ ConstraintPtr operator>(ExpressionPtr lhs, T rhs)
   return result;
 }
 
+template <typename T>
+ConstraintPtr operator>(VariablePtr lhs, T rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new GreaterThan(v, c));
+  return result;
+}
 // -------------------------------------------------------------
 // Constraint operator>=
 // -------------------------------------------------------------
@@ -582,6 +685,34 @@ ConstraintPtr operator>=(ExpressionPtr lhs, T rhs)
   return result;
 }
 
+template <typename T>
+ConstraintPtr operator>=(VariablePtr lhs, T rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new GreaterThanOrEqual(v, c));
+  return result;
+}
+
+// -------------------------------------------------------------
+// Constraint operator==
+// -------------------------------------------------------------
+template <typename T>
+ConstraintPtr operator==(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new Equal(lhs, c));
+  return result;
+}
+
+template <typename T>
+ConstraintPtr operator==(VariablePtr lhs, T rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  ConstraintPtr result(new Equal(v, c));
+  return result;
+}
 
 
 } // namespace optimization

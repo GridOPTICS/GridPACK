@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-07-30 15:26:51 d3g096
+ * @date   2015-08-28 08:13:21 d3g096
  * 
  * @brief  
  * 
@@ -77,6 +77,18 @@ public:
   /// Destructor
   virtual ~Variable(void);
 
+  /// Get this variable's id
+  int id(void) const
+  {
+    return p_id;
+  }
+
+  /// Set this variable's id
+  void id(const int& id) 
+  {
+    p_id = id;
+  }
+
   /// Allow visits from visitors
   void accept(VariableVisitor& visitor) const
   {
@@ -94,7 +106,6 @@ protected:
   {
     visitor.visit(*this);
   }
-
 
 private:
   
@@ -141,6 +152,27 @@ public:
   ~BoundedVariableT(void)
   {}
 
+  /// Get the initial value
+  T initial(void) const
+  {
+    return p_initial;
+  }
+
+  /// Set the initial value
+  void initial(const T& value) 
+  {
+    p_initial = value;
+  }
+
+  T lowerBound(void) const
+  {
+    return p_lowBound;
+  }
+  T upperBound(void) const
+  {
+    return p_highBound;
+  }
+
 protected:
 
   static const T p_veryLowValue; /**< lower bound for unbounded variables */
@@ -176,8 +208,6 @@ private:
   }
 
 };
-
-
 
 // -------------------------------------------------------------
 //  class BinaryVariable

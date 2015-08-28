@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-08-13 11:10:06 d3g096
+ * @date   2015-08-18 13:47:32 d3g096
  * 
  * @brief  
  * 
@@ -192,7 +192,7 @@ BOOST_AUTO_TEST_CASE( Versteeg )
   // solve it again
 
   x->fill(0.0);
-  solver->solve(*b, *x);
+  solver->resolve(*b, *x);
   multiply(*A, *x, *res);
   res->add(*b, -1.0);
 
