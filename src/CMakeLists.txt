@@ -58,7 +58,7 @@ if (ENABLE_CRAY_BUILD)
 endif()
 
 # This is here for cmake version 2.6 
-if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
+if (NOT MPI_LIBRARY OR NOT MPI_EXTRA_LIBRARY)
 # Punt if MPI_LIBRARY or MPI_EXTRA_LIBRARY not found
   set(MPI_CXX_LIBRARIES "")
 else()
@@ -69,6 +69,7 @@ else()
    )
   endif()
 endif()
+message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 
 # Perkins found out that this was exactly the wrong thing to do:
 # 
