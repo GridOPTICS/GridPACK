@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2015-07-30 15:23:25 d3g096
+ * @date   2015-08-28 08:42:40 d3g096
  * 
  * @brief  
  * 
@@ -19,6 +19,7 @@
 
 #include <iostream>
 #include <list>
+#include <boost/bind.hpp>
 #include "variable.hpp"
 
 namespace go = gridpack::optimization;
@@ -44,6 +45,27 @@ public:
   {
     std::cout << var.name() << std::endl;
   }
+  void visit(const go::RealVariable& var)
+  {
+    std::cout << var.name() << ": real"
+              << ": (" << var.lowerBound() << ":" << var.upperBound() << ")"
+              << std::endl;
+  }
+
+  void visit(const go::IntegerVariable& var)
+  {
+    std::cout << var.name()  << ": integer"
+              << ": (" << var.lowerBound() << ":" << var.upperBound() << ")"
+              << std::endl;
+  }
+
+  void visit(const go::BinaryVariable& var)
+  {
+    std::cout << var.name() << ": binary"
+              << ": (" << var.lowerBound() << ":" << var.upperBound() << ")"
+              << std::endl;
+  }
+
   
 };
 
@@ -64,5 +86,9 @@ main(int argc, char **argv)
        i != vlist.end(); ++i) {
     (*i)->accept(vp);
   }
+
+  for_each(vlist.begin(), vlist.end(),
+           boost::bind(&go::Variable::accept, _1, boost::ref(vp)));
+  
   return 0;
 }
