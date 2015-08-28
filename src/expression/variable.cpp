@@ -9,7 +9,7 @@
 /**
  * @file   variable.cpp
  * @author William A. Perkins
- * @date   2015-07-30 15:27:14 d3g096
+ * @date   2015-08-28 14:11:51 d3g096
  * 
  * @brief  
  * 
@@ -39,7 +39,7 @@ Variable::Variable()
       utility::Uncopyable(),
       p_id(p_nextID++)
 {
-  Named::name(boost::str(boost::format("V%06d") % p_id));
+  Named::name(boost::str(boost::format("V%d") % p_id));
 }
 
 Variable::~Variable(void)
