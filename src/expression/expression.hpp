@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-08-28 09:03:56 d3g096
+ * @date   2015-08-28 12:05:34 d3g096
  * 
  * @brief  
  * 
@@ -37,13 +37,23 @@ class Expression {
 public:
 
   /// Default constructor.
-  Expression(void) {}
+  Expression(int prec)
+    : p_precedence(prec)
+  {}
 
   /// Copy constructor
-  Expression(const Expression& old) {}
+  Expression(const Expression& old) 
+    : p_precedence(old.p_precedence)
+  {}
 
   /// Destructor
   virtual ~Expression(void) {}
+
+  /// What is the precedence of this expression
+  int precedence(void) const
+  {
+    return p_precedence;
+  }
 
   /// Do whatever 
   void evaluate(void) const
@@ -53,8 +63,23 @@ public:
 
 protected:
 
+  /// The precedence of this expression 
+  const int p_precedence;
+
   virtual void p_evaluate(void) const = 0; 
 
+  /// Constructor for serialization
+  Expression(void) : p_precedence() {}
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & const_cast<int&>(p_precedence);
+  }
 };
 
 typedef boost::shared_ptr<Expression> ExpressionPtr;
@@ -70,7 +95,7 @@ public:
 
   /// Default constructor.
   ConstantExpression(const T& value)
-    : Expression(), p_value(value)
+    : Expression(0), p_value(value)
   {}
 
   /// Copy constructor
@@ -98,7 +123,9 @@ protected:
   }
 
   /// Constructor for serialization
-  ConstantExpression(void) : p_value() {}
+  ConstantExpression(void) 
+    : Expression(), p_value() 
+  {}
 
 private:
   
@@ -108,7 +135,7 @@ private:
   void serialize(Archive &ar, const unsigned int)
   {
     ar  & boost::serialization::base_object<Expression>(*this);
-    ar & const_cast<T>(p_value);
+    ar & const_cast<T&>(p_value);
   }
 };
 
@@ -125,7 +152,7 @@ public:
 
   /// Default constructor.
   VariableExpression(VariablePtr v)
-    : Expression(), p_var(v)
+    : Expression(0), p_var(v)
   {}
 
   /// Copy constructor
@@ -153,6 +180,11 @@ protected:
     std::cout << p_var->name();
   }
   
+  /// Constructor for serialization
+  VariableExpression(void) 
+    : Expression(), p_var() 
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -175,13 +207,16 @@ class BinaryExpression
 public:
 
   /// Default constructor.
-  BinaryExpression(ExpressionPtr lhs, ExpressionPtr rhs)
-    : Expression(), p_LHS(lhs), p_RHS(rhs)
+  BinaryExpression(const int& prec, const std::string& op, 
+                   ExpressionPtr lhs, ExpressionPtr rhs)
+    : Expression(prec), p_operator(op), p_LHS(lhs), p_RHS(rhs)
   {}
 
   /// Copy constructor
   BinaryExpression(const BinaryExpression& old)
-    : Expression(old), p_LHS(old.p_LHS), p_RHS(old.p_RHS)
+    : Expression(old), 
+      p_operator(old.p_operator),
+      p_LHS(old.p_LHS), p_RHS(old.p_RHS)
   {}
 
   /// Destructor
@@ -190,11 +225,34 @@ public:
 
 protected:
 
+  /// The operator used for this instance
+  const std::string p_operator;
+
   /// The left hand side expression
   ExpressionPtr p_LHS;
 
   /// The right hand side expression
   ExpressionPtr p_RHS;
+
+  /// Constructor for serialization
+  BinaryExpression(void) 
+    : Expression()
+  {}
+
+  void p_evaluate(void) const
+  {
+    if (p_LHS->precedence() > this->precedence()) {
+      std::cout << "( "; p_LHS->evaluate(); std::cout << " )";
+    } else {
+      p_LHS->evaluate();
+    }
+    std::cout << " " << this->p_operator << " ";
+    if (p_RHS->precedence() > this->precedence()) {
+      std::cout << "( "; p_RHS->evaluate(); std::cout << " )";
+    } else {
+      p_RHS->evaluate();
+    }
+  }
 
 private:
   
@@ -204,7 +262,7 @@ private:
   void serialize(Archive &ar, const unsigned int)
   {
     ar & boost::serialization::base_object<Expression>(*this);
-    ar & p_LHS & p_RHS;
+    ar & const_cast<std::string&>(p_operator) & p_LHS & p_RHS;
   }
 };
 
@@ -219,7 +277,7 @@ public:
 
   /// Default constructor.
   Addition(ExpressionPtr lhs, ExpressionPtr rhs)
-    : BinaryExpression(lhs, rhs)
+    : BinaryExpression(6, "+", lhs, rhs)
   {}
 
   /// Copy constructor
@@ -230,18 +288,6 @@ public:
   /// Destructor
   ~Addition(void)
   {}
-
-protected:
-
-  void p_evaluate(void) const
-  {
-    std::cout << "( ";
-    p_LHS->evaluate();
-    std::cout << " + ";
-    p_RHS->evaluate();
-    std::cout << " )";
-  }
-
 
 private:
   
@@ -254,8 +300,6 @@ private:
   }
 
 };
-
-
 
 // -------------------------------------------------------------
 // operator+
@@ -306,7 +350,7 @@ public:
 
   /// Default constructor.
   Multiplication(ExpressionPtr lhs, ExpressionPtr rhs)
-    : BinaryExpression(lhs, rhs)
+    : BinaryExpression(5, "*", lhs, rhs)
   {}
 
   /// Copy constructor
@@ -317,15 +361,6 @@ public:
   /// Destructor
   ~Multiplication(void)
   {}
-
-protected:
-
-  void p_evaluate(void) const
-  {
-    p_LHS->evaluate();
-    std::cout << "*";
-    p_RHS->evaluate();
-  }
 
 private:
   
@@ -399,18 +434,25 @@ ExpressionPtr operator*(VariablePtr lhs, T rhs)
 //  class Constraint
 // -------------------------------------------------------------
 class Constraint 
-  : public BinaryExpression
+  : protected BinaryExpression
 {
 public:
 
   /// Default constructor.
-  Constraint(ExpressionPtr lhs, ExpressionPtr rhs)
-    : BinaryExpression(lhs, rhs)
+  Constraint(const int& prec, const std::string& op, 
+             ExpressionPtr lhs, ExpressionPtr rhs)
+    : BinaryExpression(prec, op, lhs, rhs)
   {}
 
   /// Destructor
   ~Constraint(void)
   {}
+
+  /// Do whatever 
+  void evaluate(void) const
+  {
+    this->p_evaluate();
+  }
 
 private:
   
@@ -433,22 +475,12 @@ public:
 
   /// Default constructor.
   LessThan(ExpressionPtr lhs, ExpressionPtr rhs)
-    : Constraint(lhs, rhs)
+    : Constraint(8, "<", lhs, rhs)
   {}
 
   /// Destructor
   ~LessThan(void)
   {}
-
-protected:
-
-  void p_evaluate(void) const
-  {
-    p_LHS->evaluate();
-    std::cout << " < ";
-    p_RHS->evaluate();
-  }
-
 
 private:
   
@@ -471,21 +503,12 @@ public:
 
   /// Default constructor.
   LessThanOrEqual(ExpressionPtr lhs, ExpressionPtr rhs)
-    : Constraint(lhs, rhs)
+    : Constraint(8, "<=", lhs, rhs)
   {}
 
   /// Destructor
   ~LessThanOrEqual(void)
   {}
-
-protected:
-
-  void p_evaluate(void) const
-  {
-    p_LHS->evaluate();
-    std::cout << " <= ";
-    p_RHS->evaluate();
-  }
 
 private:
   
@@ -509,21 +532,12 @@ public:
 
   /// Default constructor.
   GreaterThan(ExpressionPtr lhs, ExpressionPtr rhs)
-    : Constraint(lhs, rhs)
+    : Constraint(8, ">", lhs, rhs)
   {}
 
   /// Destructor
   ~GreaterThan(void)
   {}
-
-protected:
-
-  void p_evaluate(void) const
-  {
-    p_LHS->evaluate();
-    std::cout << " > ";
-    p_RHS->evaluate();
-  }
 
 private:
   
@@ -546,21 +560,12 @@ public:
 
   /// Default constructor.
   GreaterThanOrEqual(ExpressionPtr lhs, ExpressionPtr rhs)
-    : Constraint(lhs, rhs)
+    : Constraint(8, ">=", lhs, rhs)
   {}
 
   /// Destructor
   ~GreaterThanOrEqual(void)
   {}
-
-protected:
-
-  void p_evaluate(void) const
-  {
-    p_LHS->evaluate();
-    std::cout << " >= ";
-    p_RHS->evaluate();
-  }
 
 private:
   
@@ -583,21 +588,12 @@ public:
 
   /// Default constructor.
   Equal(ExpressionPtr lhs, ExpressionPtr rhs)
-    : Constraint(lhs, rhs)
+    : Constraint(9, "==", lhs, rhs)
   {}
 
   /// Destructor
   ~Equal(void)
   {}
-
-protected:
-
-  void p_evaluate(void) const
-  {
-    p_LHS->evaluate();
-    std::cout << " == ";
-    p_RHS->evaluate();
-  }
 
 private:
   

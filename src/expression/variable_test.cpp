@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2015-08-28 08:42:40 d3g096
+ * @date   2015-08-28 10:04:47 d3g096
  * 
  * @brief  
  * 
@@ -85,6 +85,7 @@ main(int argc, char **argv)
   for (std::list<go::VariablePtr>::iterator i = vlist.begin();
        i != vlist.end(); ++i) {
     (*i)->accept(vp);
+    std::cout << (*i)->name() << std::endl;
   }
 
   for_each(vlist.begin(), vlist.end(),
