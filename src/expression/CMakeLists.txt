@@ -10,25 +10,31 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 11, 2013 by William A. Perkins
-# Last Change: 2015-07-31 13:43:36 d3g096
+# Last Change: 2015-08-28 16:31:26 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
+add_library(gridpack_expression
+  variable.cpp
+  expression.cpp
+  optimizer.cpp
+  cplex_optimizer_implementation.cpp
+)
+
 set(target_libraries 
+  gridpack_expression
   ${Boost_LIBRARIES} 
 )
 
-
-add_library(gridpack_expression
-  variable.cpp
-)
-
-add_executable(variable_test variable_test.cpp variable.cpp)
+add_executable(variable_test variable_test.cpp)
 target_link_libraries(variable_test ${target_libraries})
 
-add_executable(expression_test expression_test.cpp variable.cpp)
+add_executable(expression_test expression_test.cpp)
 target_link_libraries(expression_test ${target_libraries})
+
+add_executable(optimizer_test optimizer_test.cpp)
+target_link_libraries(optimizer_test ${target_libraries})
 
 # -------------------------------------------------------------
 # installation

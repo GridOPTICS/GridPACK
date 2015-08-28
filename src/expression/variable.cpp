@@ -9,7 +9,7 @@
 /**
  * @file   variable.cpp
  * @author William A. Perkins
- * @date   2015-08-28 14:11:51 d3g096
+ * @date   2015-08-28 15:01:59 d3g096
  * 
  * @brief  
  * 
@@ -50,11 +50,11 @@ Variable::~Variable(void)
 // template class BoundedVariableT<>
 // -------------------------------------------------------------
 
-template <> const double BoundedVariableT<double>::p_veryLowValue(-1.0E100);
-template <> const double BoundedVariableT<double>::p_veryHighValue(1.0E100);
+template <> const double BoundedVariableT<double>::veryLowValue(-1.0E100);
+template <> const double BoundedVariableT<double>::veryHighValue(1.0E100);
 
-template <> const int BoundedVariableT<int>::p_veryLowValue(INT_MIN);
-template <> const int BoundedVariableT<int>::p_veryHighValue(INT_MAX);
+template <> const int BoundedVariableT<int>::veryLowValue(INT_MIN);
+template <> const int BoundedVariableT<int>::veryHighValue(INT_MAX);
 
 
 // -------------------------------------------------------------
@@ -98,7 +98,7 @@ VariableVisitor::visit(const IntegerVariable& var)
 void
 VariableVisitor::visit(const BinaryVariable& var)
 {
-  this->visit(static_cast<const Variable&>(var));
+  this->visit(static_cast<const IntegerVariable&>(var));
 }
 
 

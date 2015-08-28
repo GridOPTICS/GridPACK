@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-08-28 12:05:34 d3g096
+ * @date   2015-08-28 16:45:35 d3g096
  * 
  * @brief  
  * 
@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <boost/shared_ptr.hpp>
+#include <boost/format.hpp>
 #include <boost/serialization/base_object.hpp>
 
 #include "variable.hpp"
@@ -58,15 +59,22 @@ public:
   /// Do whatever 
   void evaluate(void) const
   {
-    this->p_evaluate();
+    std::cout << this->p_render() << std::endl;
+  }
+
+  /// Make a string representation of this instance
+  std::string render(void) const
+  {
+    return this->p_render();
   }
 
 protected:
 
-  /// The precedence of this expression 
+  /// The precedence of this expression
   const int p_precedence;
 
-  virtual void p_evaluate(void) const = 0; 
+  /// Make a string representation of this instance (specialized)
+  virtual std::string p_render(void) const = 0;
 
   /// Constructor for serialization
   Expression(void) : p_precedence() {}
@@ -117,10 +125,7 @@ protected:
 
   const T p_value;              /**< constant value */
 
-  void p_evaluate(void) const
-  {
-    std::cout << p_value;
-  }
+  std::string p_render(void) const;
 
   /// Constructor for serialization
   ConstantExpression(void) 
@@ -175,9 +180,9 @@ protected:
   /// The variable in question
   VariablePtr p_var;
 
-  void p_evaluate(void) const
+  std::string p_render(void) const
   {
-    std::cout << p_var->name();
+    return p_var->name();
   }
   
   /// Constructor for serialization
@@ -239,19 +244,21 @@ protected:
     : Expression()
   {}
 
-  void p_evaluate(void) const
+  std::string p_render(void) const
   {
+    std::string s("");
     if (p_LHS->precedence() > this->precedence()) {
-      std::cout << "( "; p_LHS->evaluate(); std::cout << " )";
+      s += "( " + p_LHS->render() + ") ";
     } else {
-      p_LHS->evaluate();
+      s += p_LHS->render();
     }
-    std::cout << " " << this->p_operator << " ";
+    s += " " + this->p_operator + " ";
     if (p_RHS->precedence() > this->precedence()) {
-      std::cout << "( "; p_RHS->evaluate(); std::cout << " )";
+      s += "( " + p_RHS->render() + ") ";
     } else {
-      p_RHS->evaluate();
+      s += p_RHS->render();
     }
+    return s;
   }
 
 private:
@@ -451,7 +458,12 @@ public:
   /// Do whatever 
   void evaluate(void) const
   {
-    this->p_evaluate();
+    BinaryExpression::evaluate();
+  }
+
+  std::string render(void) const
+  {
+    return BinaryExpression::render();
   }
 
 private:

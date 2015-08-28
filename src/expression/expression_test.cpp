@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-08-28 09:01:56 d3g096
+ * @date   2015-08-28 12:10:41 d3g096
  * 
  * @brief  
  * 
@@ -46,6 +46,10 @@ main(int argc, char **argv)
 
   junk = four*(6*C + 2*A);
   junk->evaluate();  std::cout << std::endl;
+
+  junk = junk + junk + junk;
+  junk->evaluate();  std::cout << std::endl;
+
 
   go::ConstraintPtr con;
   con = ( A < 4 );
