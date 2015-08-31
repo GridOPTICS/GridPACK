@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-08-28 16:40:39 d3g096
+// Last Change: 2015-08-28 16:58:58 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -38,6 +38,18 @@ ConstantExpression<double>::p_render(void) const
   return boost::str(boost::format("%g") % p_value);
 }
 
+// -------------------------------------------------------------
+// Constraint
+// -------------------------------------------------------------
+Constraint::Constraint(const int& prec, const std::string& op, 
+                       ExpressionPtr lhs, ExpressionPtr rhs)
+  : BinaryExpression(prec, op, lhs, rhs), 
+    utility::Named()
+  {
+    Named::name(boost::str(boost::format("C%d") % p_nextID++));
+  }
+
+int Constraint::p_nextID(0);
 
 } // namespace optimization
 } // namespace gridpack

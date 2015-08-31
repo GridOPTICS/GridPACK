@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-08-28 15:01:17 d3g096
+ * @date   2015-08-31 12:53:55 d3g096
  * 
  * @brief  
  * 
@@ -162,6 +162,13 @@ public:
   void initial(const T& value) 
   {
     p_initial = value;
+  }
+
+  /// Is this variable bounded
+  bool bounded(void) const
+  { 
+    return ((p_lowBound > veryLowValue) ||
+            (p_highBound < veryHighValue));
   }
 
   T lowerBound(void) const

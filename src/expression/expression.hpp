@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-08-28 16:45:35 d3g096
+ * @date   2015-08-31 12:46:54 d3g096
  * 
  * @brief  
  * 
@@ -202,6 +202,120 @@ private:
   }
 };
 
+// -------------------------------------------------------------
+//  class UnaryExpression
+// -------------------------------------------------------------
+class UnaryExpression 
+  : public Expression
+{
+public:
+
+  /// Default constructor.
+  UnaryExpression(const int& prec, const std::string& op, 
+                  ExpressionPtr expr)
+    : Expression(prec), p_operator(op), p_expr(expr)
+  {}
+
+  /// Destructor
+  ~UnaryExpression(void)
+  {}
+
+protected:
+  
+  /// The operator used for this instance
+  const std::string p_operator;
+
+  /// The expression
+  ExpressionPtr p_expr;
+
+  std::string p_render(void) const
+  {
+    std::string s(this->p_operator);
+    if (p_expr->precedence() > this->precedence()) {
+      s += "( " + p_expr->render() + ") ";
+    } else {
+      s += p_expr->render();
+    }
+    return s;
+  }
+  
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<Expression>(*this);
+    ar & const_cast<std::string&>(p_operator) & p_expr;
+  }
+};
+
+
+// -------------------------------------------------------------
+//  class UnaryMinus
+// -------------------------------------------------------------
+class UnaryMinus 
+  : public UnaryExpression
+{
+public:
+
+  /// Default constructor.
+  UnaryMinus(ExpressionPtr expr)
+    : UnaryExpression(3, "-", expr)
+  {}
+
+  /// Protected copy constructor to avoid unwanted copies.
+  UnaryMinus(const UnaryMinus& old)
+    : UnaryExpression(old)
+  {}
+
+  /// Destructor
+  ~UnaryMinus(void) {}
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<UnaryExpression>(*this);
+  }
+};
+
+// -------------------------------------------------------------
+//  class UnaryPlus
+// -------------------------------------------------------------
+class UnaryPlus 
+  : public UnaryExpression
+{
+public:
+
+  /// Default constructor.
+  UnaryPlus(ExpressionPtr expr)
+    : UnaryExpression(3, "+", expr)
+  {}
+
+  /// Protected copy constructor to avoid unwanted copies.
+  UnaryPlus(const UnaryPlus& old)
+    : UnaryExpression(old)
+  {}
+
+  /// Destructor
+  ~UnaryPlus(void) {}
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<UnaryExpression>(*this);
+  }
+};
 
 // -------------------------------------------------------------
 //  class BinaryExpression
@@ -272,80 +386,6 @@ private:
     ar & const_cast<std::string&>(p_operator) & p_LHS & p_RHS;
   }
 };
-
-
-// -------------------------------------------------------------
-//  class Addition
-// -------------------------------------------------------------
-class Addition 
-  : public BinaryExpression
-{
-public:
-
-  /// Default constructor.
-  Addition(ExpressionPtr lhs, ExpressionPtr rhs)
-    : BinaryExpression(6, "+", lhs, rhs)
-  {}
-
-  /// Copy constructor
-  Addition(const Addition& old)
-    : BinaryExpression(old)
-  {}
-
-  /// Destructor
-  ~Addition(void)
-  {}
-
-private:
-  
-  friend class boost::serialization::access;
-  
-  template<class Archive> 
-  void serialize(Archive &ar, const unsigned int)
-  {
-    ar & boost::serialization::base_object<BinaryExpression>(*this);
-  }
-
-};
-
-// -------------------------------------------------------------
-// operator+
-// -------------------------------------------------------------
-inline
-ExpressionPtr operator+(ExpressionPtr lhs, ExpressionPtr rhs)
-{
-  ExpressionPtr result(new Addition(lhs, rhs));
-  return result;
-}
-
-template <typename T>
-ExpressionPtr operator+(T lhs, ExpressionPtr rhs)
-{
-  ExpressionPtr c(new ConstantExpression<T>(lhs));
-  return c + rhs;
-}
-
-template <typename T>
-ExpressionPtr operator+(ExpressionPtr lhs, T rhs)
-{
-  ExpressionPtr c(new ConstantExpression<T>(rhs));
-  return lhs + c;
-}
-
-inline
-ExpressionPtr operator+(VariablePtr lhs, ExpressionPtr rhs)
-{
-  ExpressionPtr v(new VariableExpression(lhs));
-  return v + rhs;
-}
-
-inline
-ExpressionPtr operator+(ExpressionPtr lhs, VariablePtr rhs)
-{
-  ExpressionPtr v(new VariableExpression(rhs));
-  return lhs + v;
-}
-
 
 // -------------------------------------------------------------
 //  class Multiplication
@@ -419,6 +459,14 @@ ExpressionPtr operator*(ExpressionPtr lhs, VariablePtr rhs)
   return lhs * v;
 }
 
+inline
+ExpressionPtr operator*(VariablePtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr lv(new VariableExpression(lhs));
+  ExpressionPtr rv(new VariableExpression(rhs));
+  return lv * rv;
+}
+
 template <typename T>
 ExpressionPtr operator*(T lhs, VariablePtr rhs)
 {
@@ -435,21 +483,204 @@ ExpressionPtr operator*(VariablePtr lhs, T rhs)
   return v * c;
 }
 
+// -------------------------------------------------------------
+//  class Addition
+// -------------------------------------------------------------
+class Addition 
+  : public BinaryExpression
+{
+public:
+
+  /// Default constructor.
+  Addition(ExpressionPtr lhs, ExpressionPtr rhs)
+    : BinaryExpression(6, "+", lhs, rhs)
+  {}
+
+  /// Copy constructor
+  Addition(const Addition& old)
+    : BinaryExpression(old)
+  {}
+
+  /// Destructor
+  ~Addition(void)
+  {}
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<BinaryExpression>(*this);
+  }
+
+};
+
+// -------------------------------------------------------------
+//  class Subtraction
+// -------------------------------------------------------------
+class Subtraction 
+  : public BinaryExpression
+{
+public:
+
+  /// Default constructor.
+  Subtraction(ExpressionPtr lhs, ExpressionPtr rhs)
+    : BinaryExpression(6, "-", lhs, rhs)
+  {}
+
+  /// Copy constructor
+  Subtraction(const Subtraction& old)
+    : BinaryExpression(old)
+  {}
+
+  /// Destructor
+  ~Subtraction(void)
+  {}
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<BinaryExpression>(*this);
+  }
+
+};
+
+// -------------------------------------------------------------
+// operator+
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator+(ExpressionPtr expr)
+{
+  return ExpressionPtr(new UnaryPlus(expr));
+}
+
+inline
+ExpressionPtr operator+(VariablePtr var)
+{
+  ExpressionPtr expr(new VariableExpression(var));
+  return +expr;
+}
+inline
+ExpressionPtr operator+(ExpressionPtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr result(new Addition(lhs, rhs));
+  return result;
+}
+
+template <typename T>
+ExpressionPtr operator+(T lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(lhs));
+  return c + rhs;
+}
+
+template <typename T>
+ExpressionPtr operator+(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  return lhs + c;
+}
+
+inline
+ExpressionPtr operator+(VariablePtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  return v + rhs;
+}
+
+inline
+ExpressionPtr operator+(ExpressionPtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  return lhs + v;
+}
+
+inline
+ExpressionPtr operator+(VariablePtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr lv(new VariableExpression(lhs));
+  ExpressionPtr rv(new VariableExpression(rhs));
+  return lv + rv;
+}
+
+// -------------------------------------------------------------
+// operator-
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator-(ExpressionPtr expr)
+{
+  return ExpressionPtr(new UnaryMinus(expr));
+}
+
+inline
+ExpressionPtr operator-(VariablePtr var)
+{
+  ExpressionPtr expr(new VariableExpression(var));
+  return -expr;
+}
+
+inline
+ExpressionPtr operator-(ExpressionPtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr result(new Subtraction(lhs, rhs));
+  return result;
+}
+
+template <typename T>
+ExpressionPtr operator-(T lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(lhs));
+  return c - rhs;
+}
+
+template <typename T>
+ExpressionPtr operator-(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  return lhs - c;
+}
+
+inline
+ExpressionPtr operator-(VariablePtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  return v - rhs;
+}
+
+inline
+ExpressionPtr operator-(ExpressionPtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  return lhs - v;
+}
+
+inline
+ExpressionPtr operator-(VariablePtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr lv(new VariableExpression(lhs));
+  ExpressionPtr rv(new VariableExpression(rhs));
+  return lv - rv;
+}
 
 
 // -------------------------------------------------------------
 //  class Constraint
 // -------------------------------------------------------------
 class Constraint 
-  : protected BinaryExpression
+  : protected BinaryExpression,
+    public utility::Named
 {
 public:
 
   /// Default constructor.
   Constraint(const int& prec, const std::string& op, 
-             ExpressionPtr lhs, ExpressionPtr rhs)
-    : BinaryExpression(prec, op, lhs, rhs)
-  {}
+             ExpressionPtr lhs, ExpressionPtr rhs);
 
   /// Destructor
   ~Constraint(void)
@@ -465,6 +696,10 @@ public:
   {
     return BinaryExpression::render();
   }
+  
+protected:
+
+  static int p_nextID;
 
 private:
   
@@ -600,7 +835,7 @@ public:
 
   /// Default constructor.
   Equal(ExpressionPtr lhs, ExpressionPtr rhs)
-    : Constraint(9, "==", lhs, rhs)
+    : Constraint(9, "=", lhs, rhs)
   {}
 
   /// Destructor

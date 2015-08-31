@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-08-28 15:47:25 d3g096
+ * @date   2015-08-31 11:49:25 d3g096
  * 
  * @brief  
  * 
@@ -69,13 +69,22 @@ public:
     this->p_addToObjective(expr);
   }
 
-  /// Do the problem
-  void solve(void)
+  /// Maximize the objective
+  void maximize(void)
   {
-    this->p_solve();
+    this->p_solve(Maximize);
+  }
+
+  /// Minimize the objective
+  void minimize(void)
+  {
+    this->p_solve(Minimize);
   }
 
 protected:
+
+  /// Ways in which the objective can be optimized
+  enum p_optimizeMethod { Maximize, Minimize };
   
   /// Add a (local) variable to be optimized (specialized)
   virtual void p_addVariable(VariablePtr v) = 0;
@@ -90,7 +99,7 @@ protected:
   virtual void p_addToObjective(ExpressionPtr expr) = 0;
 
   /// Do the problem (specialized)
-  virtual void p_solve(void) = 0;
+  virtual void p_solve(const p_optimizeMethod& m) = 0;
   
 };
 
@@ -193,9 +202,18 @@ protected:
   }
 
   /// Solve the problem
-  void p_solve(void)
+  void p_solve(const p_optimizeMethod& m)
   {
-    p_impl->solve();
+    switch (m) {
+    case (Maximize):
+      p_impl->maximize();
+      break;
+    case (Minimize):
+      p_impl->minimize();
+      break;
+    default:
+      BOOST_ASSERT(false);
+    }
   }
 };
 

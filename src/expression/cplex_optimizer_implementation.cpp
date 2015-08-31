@@ -9,7 +9,7 @@
 /**
  * @file   cplex_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-08-28 16:44:31 d3g096
+ * @date   2015-08-31 12:56:24 d3g096
  * 
  * @brief  
  * 
@@ -78,18 +78,27 @@ public:
   {
     std::string s;
     s += "";
-    if (var.lowerBound() > var.veryLowValue) {
-      s += boost::str(boost::format("%8.4g") % var.lowerBound());
+    if (var.bounded()) {
+      if (var.lowerBound() > var.veryLowValue) {
+        s += boost::str(boost::format("%8.4g") % var.lowerBound());
+        s += " <= ";
+      } else {
+        s += "        ";
+        s += "    ";
+      }
+      s += boost::str(boost::format("%-4.4s") % var.name());
+      if (var.upperBound() < var.veryHighValue) {
+        s += " <= ";
+        s += boost::str(boost::format("%8.4g") % var.upperBound());
+      } else {
+        s += "        ";
+        s += "    ";
+      }
     } else {
       s += "        ";
-    }
-    s += " <= ";
-    s += boost::str(boost::format("%-4.4s") % var.name());
-    s += " <= ";
-    if (var.lowerBound() < var.veryHighValue) {
-      s += boost::str(boost::format("%8.4g") % var.upperBound());
-    } else {
-      s += "        ";
+      s += "    ";
+      s += boost::str(boost::format("%-4.4s") % var.name());
+      s += " free";
     }
     this->p_stream << s << std::endl;
   }
@@ -100,19 +109,71 @@ public:
     s = "";
     if (var.lowerBound() > var.veryLowValue) {
       s += boost::str(boost::format("%8d") % var.lowerBound());
+      s += " <= ";
     } else {
       s += "        ";
+      s += "    ";
     }
-    s += " <= ";
     s += boost::str(boost::format("%-4.4s") % var.name());
-    s += " <= ";
-    if (var.lowerBound() < var.veryHighValue) {
+    if (var.upperBound() < var.veryHighValue) {
+      s += " <= ";
       s += boost::str(boost::format("%8d") % var.upperBound());
     } else {
+      s += "    ";
       s += "        ";
     }
     this->p_stream << s << std::endl;
   }
+};
+
+// -------------------------------------------------------------
+//  class CPlexGenVarLister
+// -------------------------------------------------------------
+class CPlexGenVarLister 
+  : public CPlexVarVisitor
+{
+public:
+
+  /// Default constructor.
+  CPlexGenVarLister(std::ostream& o)
+    : CPlexVarVisitor(o)
+  {
+  }
+
+  /// Destructor
+  ~CPlexGenVarLister(void)
+  {
+  }
+
+  void visit(const RealVariable& var)
+  {
+    this->p_stream << " " << var.name();
+  };
+};
+
+// -------------------------------------------------------------
+//  class CPlexIntVarLister
+// -------------------------------------------------------------
+class CPlexIntVarLister 
+  : public CPlexVarVisitor
+{
+public:
+
+  /// Default constructor.
+  CPlexIntVarLister(std::ostream& o)
+    : CPlexVarVisitor(o)
+  {
+  }
+
+  /// Destructor
+  ~CPlexIntVarLister(void)
+  {
+  }
+
+  void visit(const IntegerVariable& var)
+  {
+    this->p_stream << " " << var.name();
+  };
 };
 
 // -------------------------------------------------------------
@@ -140,7 +201,6 @@ public:
   };
 };
 
-
 // -------------------------------------------------------------
 //  class CPlexOptimizerImplementation
 // -------------------------------------------------------------
@@ -149,14 +209,29 @@ public:
 // CPlexOptimizerImplementation::p_solve
 // -------------------------------------------------------------
 void
-CPlexOptimizerImplementation::p_solve(void)
+CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& method)
 {
-  std::cout << "\\* Problem name: Test\\*" << std::endl;
+  std::cout << "\\* Problem name: Test\\*" << std::endl << std::endl;
+
+  switch (method) {
+  case Maximize:
+    std::cout << "Maximize" << std::endl;
+    break;
+  case Minimize:
+    std::cout << "Minimize" << std::endl;
+    break;
+  default:
+    BOOST_ASSERT(false);
+  }
+  std::cout << "    "
+            << p_objective->render() 
+            << std::endl << std::endl;
 
   std::cout << "Subject To" << std::endl;
   for (std::vector<ConstraintPtr>:: iterator i = p_constraints.begin();
        i != p_constraints.end(); ++i) {
-    std::cout << (*i)->render() << std::endl;
+    std::cout << " " << (*i)->name() << ": " 
+              <<(*i)->render() << std::endl;
   }
   std::cout << std::endl;   
 
@@ -170,7 +245,27 @@ CPlexOptimizerImplementation::p_solve(void)
   }
   std::cout << std::endl;
 
-  std::cout << "Binaries" << std::endl;
+  std::cout << "General" << std::endl;
+  std::cout << "    ";
+  {
+    CPlexGenVarLister v(std::cout);
+    for_each(p_variables.begin(), p_variables.end(),
+             boost::bind(&Variable::accept, _1, boost::ref(v)));
+
+  }
+  std::cout << std::endl << std::endl;
+
+  std::cout << "Integer" << std::endl;
+  std::cout << "    ";
+  {
+    CPlexIntVarLister v(std::cout);
+    for_each(p_variables.begin(), p_variables.end(),
+             boost::bind(&Variable::accept, _1, boost::ref(v)));
+
+  }
+  std::cout << std::endl << std::endl;
+
+  std::cout << "Binary" << std::endl;
   std::cout << "    ";
   {
     CPlexBinVarLister v(std::cout);

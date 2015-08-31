@@ -10,7 +10,7 @@
 /**
  * @file   cplex_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-28 15:42:26 d3g096
+ * @date   2015-08-31 11:44:02 d3g096
  * 
  * @brief  
  * 
@@ -49,7 +49,7 @@ public:
 protected:
   
   /// Do the problem (specialized)
-  void p_solve(void);
+  void p_solve(const p_optimizeMethod& m);
   
 };
 
