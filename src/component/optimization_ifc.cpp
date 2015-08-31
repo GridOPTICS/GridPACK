@@ -15,6 +15,7 @@
  */
 // -------------------------------------------------------------
 
+#include <boost/smart_ptr/shared_ptr.hpp>
 #include "gridpack/component/optimization_ifc.hpp"
 
 namespace gridpack {
@@ -39,9 +40,10 @@ OptimizationInterface::~OptimizationInterface(void)
  * interface
  * @return list of variables
  */
-std::vector<gridpack::optimization::Variable*> OptimizationInterface::getVariables()
+std::vector<boost::shared_ptr<gridpack::optimization::Variable> >
+  OptimizationInterface::getVariables()
 {
-  std::vector<gridpack::optimization::Variable*> ret;
+  std::vector<boost::shared_ptr<gridpack::optimization::Variable> > ret;
   return ret;
 }
 
@@ -52,10 +54,10 @@ std::vector<gridpack::optimization::Variable*> OptimizationInterface::getVariabl
  * @return contribution to global constraint. If no contribution, return null
  * pointer
  */
-gridpack::optimization::Expression*
+boost::shared_ptr<gridpack::optimization::Expression>
   OptimizationInterface::getGlobalConstraint(const char* tag)
 {
-  gridpack::optimization::Expression *ret = NULL;
+  boost::shared_ptr<gridpack::optimization::Expression> ret;
   return ret;
 }
 
@@ -63,10 +65,10 @@ gridpack::optimization::Expression*
  * Return a list of local constraints from component
  * @return list of constraints
  */
-std::vector<gridpack::optimization::Constraint*>
+std::vector<boost::shared_ptr<gridpack::optimization::Constraint> >
   OptimizationInterface::getLocalConstraints()
 {
-  std::vector<gridpack::optimization::Constraint*> ret;
+  std::vector<boost::shared_ptr<gridpack::optimization::Constraint> > ret;
   return ret;
 }
 
@@ -75,10 +77,10 @@ std::vector<gridpack::optimization::Constraint*>
  * @return expression representing contribution to objective function. If no
  * contribution, return null pointer
  */
-gridpack::optimization::Expression* 
+boost::shared_ptr<gridpack::optimization::Expression>
   OptimizationInterface::getObjectiveFunction()
 {
-  gridpack::optimization::Expression *ret = NULL;
+  boost::shared_ptr<gridpack::optimization::Expression> ret;
   return ret;
 }
 
