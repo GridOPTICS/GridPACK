@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-08-28 08:13:21 d3g096
+ * @date   2015-08-31 12:53:55 d3g096
  * 
  * @brief  
  * 
@@ -136,8 +136,8 @@ public:
   BoundedVariableT(const T& value)
     : Variable(),
       p_initial(value), 
-      p_lowBound(p_veryLowValue),
-      p_highBound(p_veryHighValue)
+      p_lowBound(veryLowValue),
+      p_highBound(veryHighValue)
   {}
 
   /// Construct with an initial value and bounds
@@ -164,6 +164,13 @@ public:
     p_initial = value;
   }
 
+  /// Is this variable bounded
+  bool bounded(void) const
+  { 
+    return ((p_lowBound > veryLowValue) ||
+            (p_highBound < veryHighValue));
+  }
+
   T lowerBound(void) const
   {
     return p_lowBound;
@@ -173,10 +180,13 @@ public:
     return p_highBound;
   }
 
-protected:
+  /// lower bound for unbounded variables
+  static const T veryLowValue; 
 
-  static const T p_veryLowValue; /**< lower bound for unbounded variables */
-  static const T p_veryHighValue; /**< upper bound for unbounded variables */
+  /// upper bound for unbounded variables
+  static const T veryHighValue; 
+
+protected:
 
   T p_initial;                  /**< initial value */
   T p_lowBound;                 /**< lower bound */
@@ -186,8 +196,8 @@ protected:
   BoundedVariableT(void)
     : Variable(),
       p_initial(), 
-      p_lowBound(p_veryLowValue),
-      p_highBound(p_veryHighValue)
+      p_lowBound(veryLowValue),
+      p_highBound(veryHighValue)
   {}
 
   /// Allow visitor from variable visitors (specialized)
