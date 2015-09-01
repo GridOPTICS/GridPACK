@@ -12,7 +12,7 @@ common_flags="\
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
-if [ $host == "flophouse48" ]; then
+if [ $host == "flophouse" ]; then
 
 
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
@@ -42,7 +42,7 @@ if [ $host == "flophouse48" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
-elif [ $host == "flophouse" ]; then
+elif [ $host == "flophouse44" ]; then
 
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
     PATH="${prefix}/bin:${PATH}"

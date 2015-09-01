@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2015-08-28 15:41:56 d3g096
+ * @date   2015-09-01 14:22:48 d3g096
  * 
  * @brief  
  * 
@@ -30,10 +30,13 @@ namespace optimization {
 // -------------------------------------------------------------
 // Optimizer:: constructors / destructor
 // -------------------------------------------------------------
-Optimizer::Optimizer()
-  : OptimizerInterface()
+Optimizer::Optimizer(const parallel::Communicator& comm)
+  : OptimizerInterface(),
+    parallel::WrappedDistributed(),
+    utility::WrappedConfigurable(),
+    p_impl()
 {
-  p_impl.reset(new CPlexOptimizerImplementation);
+  p_setImpl(new CPlexOptimizerImplementation(comm));
 }
 
 Optimizer::~Optimizer(void)

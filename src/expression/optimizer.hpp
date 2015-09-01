@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-08-31 11:49:25 d3g096
+ * @date   2015-09-01 14:21:54 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,8 @@
 #include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/configuration/configurable.hpp>
+#include <gridpack/parallel/distributed.hpp>
 #include <gridpack/expression/expression.hpp>
 
 namespace gridpack {
@@ -107,12 +109,17 @@ protected:
 //  class OptimizerImplementation
 // -------------------------------------------------------------
 class OptimizerImplementation 
-  : public OptimizerInterface
+  : public OptimizerInterface,
+    public parallel::Distributed,
+    public utility::Configurable
 {
 public:
 
   /// Default constructor.
-  OptimizerImplementation(void)
+  OptimizerImplementation(const parallel::Communicator& comm)
+    : OptimizerInterface(),
+      parallel::Distributed(comm),
+      utility::Configurable("Optimizer")
   {}
 
   /// Destructor
@@ -129,6 +136,8 @@ protected:
 
   /// The objective fuction
   ExpressionPtr p_objective;
+
+  /// 
 
   /// Add a (local) variable to be optimized (specialized)
   void p_addVariable(VariablePtr v)
@@ -156,18 +165,27 @@ protected:
       p_objective = expr;
     }
   }
+
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::CursorPtr props)
+  {
+    if (props) {
+    }
+  }
 };
 
 // -------------------------------------------------------------
 //  class Optimizer
 // -------------------------------------------------------------
 class Optimizer 
-  : public OptimizerInterface
+  : public OptimizerInterface,
+    public parallel::WrappedDistributed,
+    public utility::WrappedConfigurable
 {
 public:
 
   /// Default constructor.
-  Optimizer(void);
+  Optimizer(const parallel::Communicator& comm);
 
   /// Destructor
   ~Optimizer(void);
@@ -176,6 +194,22 @@ protected:
   
   /// Where the work happens
   boost::scoped_ptr<OptimizerImplementation> p_impl;
+
+  /// Set the implementation
+  /** 
+   * Does what is necessary to set the \ref
+   * OptimizerImplementation "implementation".  Subclasses are
+   * required to call this at construction.
+   * 
+   * @param impl specific nonlinear solver implementation to use
+   */
+  void p_setImpl(OptimizerImplementation *impl)
+  {
+    p_impl.reset(impl);
+    p_setDistributed(p_impl.get());
+    p_setConfigurable(p_impl.get());
+  }
+  
 
   /// Add a (local) variable to be optimized (specialized)
   void p_addVariable(VariablePtr v)

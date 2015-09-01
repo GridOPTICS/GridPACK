@@ -9,9 +9,9 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-08-31 12:40:30 d3g096
+ * @date   2015-09-01 14:26:28 d3g096
  * 
- * @brief  
+ * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
  * 
  */
@@ -22,6 +22,7 @@
 #include "optimizer.hpp"
 
 namespace go = gridpack::optimization;
+namespace gp = gridpack::parallel;
 
 // -------------------------------------------------------------
 //  Main Program
@@ -29,11 +30,15 @@ namespace go = gridpack::optimization;
 int
 main(int argc, char **argv)
 {
-  go::Optimizer opt;
+  gp::Environment env(argc, argv);
+  gp::Communicator world;
+  gp::Communicator self(world.self());
+  
+  go::Optimizer opt(self);
 
   std::vector<go::VariablePtr> vars;
 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0))); // 0total flow
+  vars.push_back(go::VariablePtr(new go::RealVariable(0))); // 0. total flow
   vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 14.0))); // 1. flow cap from 1->2 
   vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 23.0))); // 2. flow cap from 1->4 
   vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 11.0))); // 3. flow cap from 5->2 

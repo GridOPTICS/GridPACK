@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 11, 2013 by William A. Perkins
-# Last Change: 2015-08-28 16:31:26 d3g096
+# Last Change: 2015-09-01 14:25:11 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -24,7 +24,11 @@ add_library(gridpack_expression
 
 set(target_libraries 
   gridpack_expression
-  ${Boost_LIBRARIES} 
+  gridpack_configuration 
+  gridpack_parallel 
+  ${GA_LIBRARIES}
+  ${Boost_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
 )
 
 add_executable(variable_test variable_test.cpp)

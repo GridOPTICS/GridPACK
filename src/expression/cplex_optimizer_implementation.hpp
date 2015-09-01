@@ -10,7 +10,7 @@
 /**
  * @file   cplex_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2015-08-31 11:44:02 d3g096
+ * @date   2015-09-01 14:22:31 d3g096
  * 
  * @brief  
  * 
@@ -38,8 +38,8 @@ class CPlexOptimizerImplementation
 public:
 
   /// Default constructor.
-  CPlexOptimizerImplementation(void)
-    : OptimizerImplementation()
+  CPlexOptimizerImplementation(const parallel::Communicator& comm)
+    : OptimizerImplementation(comm)
   {}
 
   /// Destructor
