@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2015-05-28 08:49:36 d3g096
+# Last Change: 2015-08-18 14:04:33 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -147,23 +147,23 @@ add_library(gridpack_math
 # -------------------------------------------------------------
 # matrix inverter program (not a unit test)
 # -------------------------------------------------------------
-# add_executable(matrix_inverse matrix_inverse.cpp)
-# target_link_libraries(matrix_inverse  gridpack_math ${target_libraries})
-# add_custom_target(matrix_inverse_input
+add_executable(matrix_inverse matrix_inverse.cpp)
+target_link_libraries(matrix_inverse  gridpack_math ${target_libraries})
+add_custom_target(matrix_inverse_input
 
-#   COMMAND ${CMAKE_COMMAND} -E copy 
-#   ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
-#   ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+  ${CMAKE_CURRENT_BINARY_DIR}
 
-#   COMMAND ${CMAKE_COMMAND} -E copy 
-#   ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
-#   ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
 
-#   DEPENDS
-#   ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
-#   ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
-# )
-# add_dependencies(matrix_inverse matrix_inverse_input)
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.matrix
+  ${CMAKE_CURRENT_SOURCE_DIR}/A.xml
+)
+add_dependencies(matrix_inverse matrix_inverse_input)
 
 # -------------------------------------------------------------
 # numeric test suite

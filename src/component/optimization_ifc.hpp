@@ -57,7 +57,8 @@ class OptimizationInterface {
      * Return a vector of optimization variables associated witht this interface
      * @return list of variables
      */
-    virtual std::vector<gridpack::optimization::Variable*> getVariables();
+    virtual std::vector<boost::shared_ptr<gridpack::optimization::Variable> >
+      getVariables();
 
     /**
      * Return contribution from bus to a global constraint
@@ -66,21 +67,23 @@ class OptimizationInterface {
      * @return contribution to global constraint. If no contribution, return
      * null pointer
      */
-    virtual gridpack::optimization::Expression* getGlobalConstraint(
-        const char* tag);
+    virtual boost::shared_ptr<gridpack::optimization::Expression>
+      getGlobalConstraint(const char* tag);
 
     /**
      * Return a list of local constraints from component
      * @return list of constraints
      */
-    virtual std::vector<gridpack::optimization::Constraint*> getLocalConstraints();
+    virtual std::vector<boost::shared_ptr<gridpack::optimization::Constraint> >
+      getLocalConstraints();
 
     /**
      * Return contribution to objective function
      * @return expression representing contribution to objective function. If no
      * contribution, return null pointer
      */
-    virtual gridpack::optimization::Expression* getObjectiveFunction();
+    virtual boost::shared_ptr<gridpack::optimization::Expression>
+      getObjectiveFunction();
   private:
 
   friend class boost::serialization::access;

@@ -90,7 +90,6 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
-  GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   if (p_timer) p_timer->stop(t_set);
   return Ret;
@@ -115,7 +114,6 @@ boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
-  GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   if (p_timer) p_timer->stop(t_set);
   return Ret;
@@ -141,7 +139,6 @@ gridpack::math::Vector* intMapToVector(void)
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) t_set = p_timer->createCategory("Vector Map: Set Vector");
   if (p_timer) p_timer->start(t_set);
-  GA_Pgroup_sync(p_GAgrp);
   Ret->ready();
   if (p_timer) p_timer->stop(t_set);
   return Ret;
@@ -164,7 +161,6 @@ void mapToVector(gridpack::math::Vector &vector)
   loadBusData(vector,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) p_timer->start(t_set);
-  GA_Pgroup_sync(p_GAgrp);
   vector.ready();
   if (p_timer) p_timer->stop(t_set);
 }
@@ -186,7 +182,6 @@ void mapToRealVector(gridpack::math::RealVector &vector)
   loadRealBusData(vector,false);
   if (p_timer) p_timer->stop(t_bus);
   if (p_timer) p_timer->start(t_set);
-  GA_Pgroup_sync(p_GAgrp);
   vector.ready();
   if (p_timer) p_timer->stop(t_set);
 }
@@ -236,7 +231,6 @@ void mapToBus(const gridpack::math::Vector &vector)
   }
   if (p_timer) p_timer->stop(t_unpack);
   delete [] values;
-  GA_Pgroup_sync(p_GAgrp);
 }
 
 /**
@@ -264,7 +258,6 @@ void mapToBus(const gridpack::math::RealVector &vector)
   }
   if (p_timer) p_timer->stop(t_unpack);
   delete [] values;
-  GA_Pgroup_sync(p_GAgrp);
 }
 
 /**

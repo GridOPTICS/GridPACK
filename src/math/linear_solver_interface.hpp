@@ -6,7 +6,7 @@
 /**
  * @file   linear_solver_interface.hpp
  * @author William A. Perkins
- * @date   2015-03-05 12:47:40 d3g096
+ * @date   2015-08-14 14:51:30 d3g096
  * 
  * @brief  
  * 
@@ -117,6 +117,32 @@ public:
   {
     this->p_solve(b, x);
   }
+
+  /// Solve again w/ the specified RHS, put result in specified vector
+  /** 
+   * @e Collective.
+   *
+   * Solve a linear system of equations again with a different
+   * RHS. This can only be called after ::solve() has been called once
+   * and only if the coefficient matrix has not changed. Vector @c x
+   * should contain the initial solution estimate.  The final solution
+   * is returned in @c x.
+   *
+   * The \ref parallel::Communicator "communicator" @c x and @c b must
+   * be the same and match that of the coefficient Matrix used for
+   * construction. The length of both @c x and @c b must the number of
+   * columns in the coeffienct Matrix used for constructor or passed
+   * the last call to setMatrix().  If these conditions are not met,
+   * an \ref Exception "exception" is thrown.
+   *  
+   * @param b Vector containing right hand side of linear system
+   * @param x solution Vector
+   */
+  void resolve(const VectorType& b, VectorType& x) const
+  {
+    this->p_resolve(b, x);
+  }
+
   /// Solve multiple systems w/ each column of the Matrix a single RHS
   /** 
    * 
@@ -154,6 +180,17 @@ protected:
    * solution is put into this.
    */
   virtual void p_solve(const VectorType& b, VectorType& x) const = 0;
+
+  /// Solve again w/ the specified RHS, put result in specified vector
+  /** 
+   * This assumes that the coefficient matrix has not changed.  Can be
+   * called repeatedly with different @c b and @c x vectors
+   * 
+   * @param b Vector containing right hand side of linear system
+   * @param x Vector containing initial solution estimate; final
+   * solution is put into this.
+   */
+  virtual void p_resolve(const VectorType& b, VectorType& x) const = 0;
 
   /// Solve multiple systems w/ each column of the Matrix a single RHS
   virtual MatrixType *p_solve(const MatrixType& B) const = 0;

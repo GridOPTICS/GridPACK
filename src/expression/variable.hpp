@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-07-30 15:26:51 d3g096
+ * @date   2015-08-31 12:53:55 d3g096
  * 
  * @brief  
  * 
@@ -77,6 +77,18 @@ public:
   /// Destructor
   virtual ~Variable(void);
 
+  /// Get this variable's id
+  int id(void) const
+  {
+    return p_id;
+  }
+
+  /// Set this variable's id
+  void id(const int& id) 
+  {
+    p_id = id;
+  }
+
   /// Allow visits from visitors
   void accept(VariableVisitor& visitor) const
   {
@@ -94,7 +106,6 @@ protected:
   {
     visitor.visit(*this);
   }
-
 
 private:
   
@@ -125,8 +136,8 @@ public:
   BoundedVariableT(const T& value)
     : Variable(),
       p_initial(value), 
-      p_lowBound(p_veryLowValue),
-      p_highBound(p_veryHighValue)
+      p_lowBound(veryLowValue),
+      p_highBound(veryHighValue)
   {}
 
   /// Construct with an initial value and bounds
@@ -141,10 +152,41 @@ public:
   ~BoundedVariableT(void)
   {}
 
-protected:
+  /// Get the initial value
+  T initial(void) const
+  {
+    return p_initial;
+  }
 
-  static const T p_veryLowValue; /**< lower bound for unbounded variables */
-  static const T p_veryHighValue; /**< upper bound for unbounded variables */
+  /// Set the initial value
+  void initial(const T& value) 
+  {
+    p_initial = value;
+  }
+
+  /// Is this variable bounded
+  bool bounded(void) const
+  { 
+    return ((p_lowBound > veryLowValue) ||
+            (p_highBound < veryHighValue));
+  }
+
+  T lowerBound(void) const
+  {
+    return p_lowBound;
+  }
+  T upperBound(void) const
+  {
+    return p_highBound;
+  }
+
+  /// lower bound for unbounded variables
+  static const T veryLowValue; 
+
+  /// upper bound for unbounded variables
+  static const T veryHighValue; 
+
+protected:
 
   T p_initial;                  /**< initial value */
   T p_lowBound;                 /**< lower bound */
@@ -154,8 +196,8 @@ protected:
   BoundedVariableT(void)
     : Variable(),
       p_initial(), 
-      p_lowBound(p_veryLowValue),
-      p_highBound(p_veryHighValue)
+      p_lowBound(veryLowValue),
+      p_highBound(veryHighValue)
   {}
 
   /// Allow visitor from variable visitors (specialized)
@@ -176,8 +218,6 @@ private:
   }
 
 };
-
-
 
 // -------------------------------------------------------------
 //  class BinaryVariable
