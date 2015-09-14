@@ -23,6 +23,29 @@
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
+#ifdef USE_GOSS
+#include <activemq/library/ActiveMQCPP.h>
+#include <decaf/lang/Thread.h>
+#include <decaf/lang/Runnable.h>
+#include <decaf/util/concurrent/CountDownLatch.h>
+#include <decaf/lang/Integer.h>
+#include <decaf/lang/Long.h>
+#include <decaf/lang/System.h>
+#include <activemq/core/ActiveMQConnectionFactory.h>
+#include <activemq/util/Config.h>
+#include <cms/Connection.h>
+#include <cms/Session.h>
+#include <cms/TextMessage.h>
+#include <cms/BytesMessage.h>
+#include <cms/MapMessage.h>
+#include <cms/ExceptionListener.h>
+#include <cms/MessageListener.h>
+using namespace activemq::core;
+using namespace decaf::util::concurrent;
+using namespace decaf::util;
+using namespace decaf::lang;
+using namespace cms;
+#endif
 
 namespace gridpack {
 namespace serial_io {
@@ -65,6 +88,13 @@ class SerialBusIO {
     GA_Set_pgroup(p_maskGA, p_GAgrp);
     GA_Allocate(p_maskGA);
     p_useFile = false;
+#ifdef USE_GOSS
+    p_channel = false;
+    p_connection = NULL;
+    p_session = NULL;
+    p_destination = NULL;
+    p_producer = NULL;
+#endif
   }
 
   /**
@@ -137,6 +167,58 @@ class SerialBusIO {
       write(std::cout, signal);
     }
   }
+
+#ifdef USE_GOSS
+  /**
+   * Open a channel for IO
+   * @param topic tag used in publish-subscribe that will identify messages
+   * from this program
+   * @param URI string for address of broker
+   * @param username account name for server recieve messages
+   * @param passwd password for server
+   */
+  void openChannel(const char *topic, const char *URI,
+      const char *username, const char *passwd)
+  {
+    if (!p_channel) {
+      std::string brokerURI = URI;
+      std::auto_ptr<ConnectionFactory> connectionFactory(
+          ConnectionFactory::createCMSConnectionFactory(brokerURI));
+
+      // Create a Connection
+      p_connection = connectionFactory->createConnection();
+      p_connection->start();
+
+      // Create a Session
+      p_session = p_connection->createSession(Session::AUTO_ACKNOWLEDGE);
+
+      // Create the destination (Topic or Queue)
+      p_destination = p_session->createTopic(topic);
+
+      // Create a MessageProducer from the Session to the Topic
+      p_producer = p_session->createProducer(p_destination);
+      p_producer->setDeliveryMode(DeliveryMode::NON_PERSISTENT);
+
+      p_channel = true;
+    } else {
+      if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+        printf("ERROR: Channel already opened\n");
+      }
+    }
+  }
+
+  /**
+   * Close IO channel
+   */
+  void closeChannel()
+  {
+    if (p_connection) delete p_connection;
+    if (p_session) delete p_session;
+    if (p_destination) delete p_destination;
+    if (p_producer) delete p_producer;
+    p_channel = false;
+  }
+#endif
 
   /**
    * Write single string to standard output. This is used to write headers for a
@@ -356,6 +438,17 @@ class SerialBusIO {
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
               out << ptr;
+#ifndef USE_GOSS
+              out << ptr;
+#else
+              if (p_channel) {
+                std::string text = ptr;
+                std::auto_ptr<TextMessage> message(p_session->createTextMessage(text));
+                p_producer->send(message.get());
+              } else {
+                out << ptr;
+              }
+#endif
               ptr += p_size;
               delete index[nwrites];
               nwrites++;
@@ -378,7 +471,17 @@ class SerialBusIO {
   void header(std::ostream & out, const char *str) const
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+#ifndef USE_GOSS
       out << str;
+#else
+      if (p_channel) {
+        std::string text = str;
+        std::auto_ptr<TextMessage> message(p_session->createTextMessage(text));
+        p_producer->send(message.get());
+      } else {
+        out << str;
+      }
+#endif
     }
   }
 
@@ -391,6 +494,13 @@ class SerialBusIO {
     bool p_useFile;
     boost::shared_ptr<std::ofstream> p_fout;
     int p_GAgrp;
+#ifdef USE_GOSS
+    bool p_channel;
+    Connection *p_connection;
+    Session *p_session;
+    Destination *p_destination;
+    MessageProducer *p_producer;
+#endif
 };
 
 template <class _network>

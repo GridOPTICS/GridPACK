@@ -20,6 +20,13 @@ set(target_libraries
   ${MPI_CXX_LIBRARIES}
 )
 
+if (GOSS_DIR)
+  set(target_libraries
+      ${APR_LIBRARY}
+      ${GOSS_LIBRARY}
+      ${target_libraries})
+endif()
+
 set(target_libraries 
   gridpack_components gridpack_parallel gridpack_math
   ${target_libraries} 

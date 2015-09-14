@@ -26,7 +26,9 @@ set(target_libraries
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    ${PETSC_LIBRARIES}
+    ${GOSS_LIBRARY}
+    ${APR_LIBRARY})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
