@@ -186,7 +186,9 @@ class SerialBusIO {
           ConnectionFactory::createCMSConnectionFactory(brokerURI));
 
       // Create a Connection
-      p_connection = connectionFactory->createConnection();
+      std::string User = username;
+      std::string Pass = passwd;
+      p_connection = connectionFactory->createConnection(User, Pass);
       p_connection->start();
 
       // Create a Session
@@ -437,7 +439,6 @@ class SerialBusIO {
           nwrites = 0;
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
-              out << ptr;
 #ifndef USE_GOSS
               out << ptr;
 #else
