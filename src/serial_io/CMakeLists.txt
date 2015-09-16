@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:29:11 d3g096
+# Last Change: 2015-09-16 14:27:06 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -49,20 +49,21 @@ target_link_libraries(test_serial_io ${target_libraries})
 if (GOSS_DIR)
   add_executable(test_goss test/test_goss.cpp)
   target_link_libraries(test_goss ${target_libraries} ${GOSS_LIBRARY} ${APR_LIBRARY})
+
+  add_custom_target(test_goss_input
+ 
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/input_goss.xml
+    ${CMAKE_CURRENT_BINARY_DIR}
+
+    DEPENDS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/input_goss.xml
+    )
+
+  add_dependencies(test_goss test_goss_input)
+
 endif()
 #
-
-add_custom_target(test_goss_input
- 
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/input_goss.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  DEPENDS 
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/input_goss.xml
-)
-
-add_dependencies(test_goss test_goss_input)
 
 # -------------------------------------------------------------
 # installation
