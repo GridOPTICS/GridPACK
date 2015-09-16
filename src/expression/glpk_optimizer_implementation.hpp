@@ -8,9 +8,9 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 /**
- * @file   lpfile_optimizer_implementation.hpp
+ * @file   glpk_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2015-09-16 10:14:29 d3g096
+ * @date   2015-09-16 10:18:13 d3g096
  * 
  * @brief  
  * 
@@ -18,49 +18,34 @@
  */
 // -------------------------------------------------------------
 
+#ifndef _glpk_optimizer_implementation_hpp_
+#define _glpk_optimizer_implementation_hpp_
 
-#ifndef _lpfile_optimizer_implementation_hpp_
-#define _lpfile_optimizer_implementation_hpp_
-
-#include <iosfwd>
-#include <string>
-#include "optimizer.hpp"
+#include "lpfile_optimizer_implementation.hpp"
 
 namespace gridpack {
 namespace optimization {
 
-
-
 // -------------------------------------------------------------
-//  class LPFileOptimizerImplementation
+//  class GLPKOptimizerImplementation
 // -------------------------------------------------------------
-class LPFileOptimizerImplementation 
-  : public OptimizerImplementation
+class GLPKOptimizerImplementation 
+  : public LPFileOptimizerImplementation
 {
 public:
 
   /// Default constructor.
-  LPFileOptimizerImplementation(const parallel::Communicator& comm)
-    : OptimizerImplementation(comm)
-  {}
+  GLPKOptimizerImplementation(const parallel::Communicator& comm);
 
   /// Destructor
-  ~LPFileOptimizerImplementation(void)
-  {}
+  ~GLPKOptimizerImplementation(void);
 
 protected:
 
-  /// Open a stream to a new temporary file
-  static std::string p_temporaryFileName(void);
-
-  /// Write an LP file to the specified stream
-  virtual void p_write(const p_optimizeMethod& m, std::ostream& out);
-
   /// Do the problem (specialized)
   void p_solve(const p_optimizeMethod& m);
-  
-};
 
+};
 
 } // namespace optimization
 } // namespace gridpack

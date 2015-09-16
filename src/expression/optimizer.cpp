@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2015-09-16 08:25:47 d3g096
+ * @date   2015-09-16 10:12:25 d3g096
  * 
  * @brief  
  * 
@@ -18,7 +18,13 @@
 // -------------------------------------------------------------
 
 #include "optimizer.hpp"
+#if defined(HAVE_CPLEX)
+#include "cplex_optimizer_implementation.hpp"
+#elif defined(HAVE_GLPK)
+#include "glpk_optimizer_implementation.hpp"
+#else
 #include "lpfile_optimizer_implementation.hpp"
+#endif
 
 namespace gridpack {
 namespace optimization {

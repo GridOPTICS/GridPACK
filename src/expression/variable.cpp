@@ -9,7 +9,7 @@
 /**
  * @file   variable.cpp
  * @author William A. Perkins
- * @date   2015-08-28 15:01:59 d3g096
+ * @date   2015-09-16 12:16:22 d3g096
  * 
  * @brief  
  * 
@@ -78,27 +78,99 @@ VariableVisitor::~VariableVisitor(void)
 // VariableVisitor::visit
 // -------------------------------------------------------------
 void
-VariableVisitor::visit(const Variable& var)
+VariableVisitor::visit(Variable& var)
 {
   // do nothing
 }
 
 void
-VariableVisitor::visit(const RealVariable& var)
+VariableVisitor::visit(RealVariable& var)
 {
-  this->visit(static_cast<const Variable&>(var));
+  this->visit(static_cast<Variable&>(var));
 }
 
 void
-VariableVisitor::visit(const IntegerVariable& var)
+VariableVisitor::visit(IntegerVariable& var)
 {
-  this->visit(static_cast<const Variable&>(var));
+  this->visit(static_cast<Variable&>(var));
 }
 
 void
-VariableVisitor::visit(const BinaryVariable& var)
+VariableVisitor::visit(BinaryVariable& var)
 {
-  this->visit(static_cast<const IntegerVariable&>(var));
+  this->visit(static_cast<IntegerVariable&>(var));
+}
+
+
+// -------------------------------------------------------------
+//  class VariableTable
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// VariableTable:: constructors / destructor
+// -------------------------------------------------------------
+VariableTable::VariableTable(std::ostream& out)
+  : VariableVisitor(), p_out(out), p_first(true)
+{
+  
+}
+
+VariableTable::~VariableTable(void)
+{
+}
+
+// -------------------------------------------------------------
+// VariableTable::visit
+// -------------------------------------------------------------
+void 
+VariableTable::visit(RealVariable& var)
+{
+  if (p_first) {
+    p_header();
+    p_first = false;
+  }
+  char fmt[] = "%-10.10s (%c) %10.4g";
+  p_out << boost::str(boost::format(fmt) % var.name() % 'R' % var.initial())
+        << std::endl;
+}
+ 
+void 
+VariableTable::visit(IntegerVariable& var)
+{
+  if (p_first) {
+    p_header();
+    p_first = false;
+  }
+  char fmt[] = "%-10.10s (%c) %10d";
+  p_out << boost::str(boost::format(fmt) % var.name() % 'I' % var.initial())
+        << std::endl;
+}
+
+void 
+VariableTable::visit(BinaryVariable& var)
+{
+  if (p_first) {
+    p_header();
+    p_first = false;
+  }
+  char fmt[] = "%-10.10s (%c) %10d";
+  p_out << boost::str(boost::format(fmt) % var.name() % 'B' % var.initial())
+        << std::endl;
+}
+
+
+static const std::string bar(25, '-');
+
+// -------------------------------------------------------------
+// VariableTable::p_header
+// -------------------------------------------------------------
+void
+VariableTable::p_header(void) const
+{
+  p_out << bar << std::endl
+        << "Variable                 " << std::endl
+        << "Name      Type      Value" << std::endl
+        << bar << std::endl;
 }
 
 

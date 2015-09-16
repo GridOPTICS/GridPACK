@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-09-16 08:20:56 d3g096
+ * @date   2015-09-16 11:31:17 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,8 @@
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
+#include <boost/filesystem.hpp>
+#include "gridpack/utilities/exception.hpp"
 #include "lpfile_optimizer_implementation.hpp"
 
 namespace gridpack {
@@ -69,12 +71,12 @@ public:
   ~LPFileVarBoundsLister(void)
   {}
 
-  void visit(const Variable& var)
+  void visit(Variable& var)
   {
     BOOST_ASSERT(false);
   }
 
-  void visit(const RealVariable& var)
+  void visit(RealVariable& var)
   {
     std::string s;
     s += "";
@@ -103,7 +105,7 @@ public:
     this->p_stream << s << std::endl;
   }
     
-  void visit(const IntegerVariable& var)
+  void visit(IntegerVariable& var)
   {
     std::string s;
     s = "";
@@ -145,7 +147,7 @@ public:
   {
   }
 
-  void visit(const RealVariable& var)
+  void visit(RealVariable& var)
   {
     this->p_stream << " " << var.name();
   };
@@ -170,7 +172,7 @@ public:
   {
   }
 
-  void visit(const IntegerVariable& var)
+  void visit(IntegerVariable& var)
   {
     this->p_stream << " " << var.name();
   };
@@ -195,7 +197,7 @@ public:
   {
   }
 
-  void visit(const BinaryVariable& var)
+  void visit(BinaryVariable& var)
   {
     this->p_stream << " " << var.name();
   };
@@ -206,77 +208,105 @@ public:
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
+// LPFileOptimizerImplementation::p_temporaryFile
+// -------------------------------------------------------------
+std::string
+LPFileOptimizerImplementation::p_temporaryFileName(void)
+{
+  using namespace boost::filesystem;
+  path model("gridpack%%%%.lp");
+  path tmp(temp_directory_path());
+  tmp /= unique_path(model);
+
+  boost::system::error_code ec;
+  file_status istat = status(tmp);
+  std::string result(tmp.c_str());
+  return result;
+  
+}
+
+// -------------------------------------------------------------
+// LPFileOptimizerImplementation::p_write
+// -------------------------------------------------------------
+void
+LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostream& out)
+{
+  out << "\\* Problem name: Test\\*" << std::endl << std::endl;
+
+  switch (method) {
+  case Maximize:
+    out << "Maximize" << std::endl;
+    break;
+  case Minimize:
+    out << "Minimize" << std::endl;
+    break;
+  default:
+    BOOST_ASSERT(false);
+  }
+  out << "    "
+            << p_objective->render() 
+            << std::endl << std::endl;
+
+  out << "Subject To" << std::endl;
+  for (std::vector<ConstraintPtr>:: iterator i = p_constraints.begin();
+       i != p_constraints.end(); ++i) {
+    out << " " << (*i)->name() << ": " 
+              <<(*i)->render() << std::endl;
+  }
+  out << std::endl;   
+
+
+  out << "Bounds" << std::endl;
+  {
+    LPFileVarBoundsLister v(out);
+    for_each(p_variables.begin(), p_variables.end(),
+             boost::bind(&Variable::accept, _1, boost::ref(v)));
+
+  }
+  out << std::endl;
+
+  out << "General" << std::endl;
+  out << "    ";
+  {
+    LPFileGenVarLister v(out);
+    for_each(p_variables.begin(), p_variables.end(),
+             boost::bind(&Variable::accept, _1, boost::ref(v)));
+
+  }
+  out << std::endl << std::endl;
+
+  out << "Integer" << std::endl;
+  out << "    ";
+  {
+    LPFileIntVarLister v(out);
+    for_each(p_variables.begin(), p_variables.end(),
+             boost::bind(&Variable::accept, _1, boost::ref(v)));
+
+  }
+  out << std::endl << std::endl;
+
+  out << "Binary" << std::endl;
+  out << "    ";
+  {
+    LPFileBinVarLister v(out);
+    for_each(p_variables.begin(), p_variables.end(),
+             boost::bind(&Variable::accept, _1, boost::ref(v)));
+
+  }
+  out << std::endl << std::endl;
+
+
+  out << "End" << std::endl;
+}
+
+
+// -------------------------------------------------------------
 // LPFileOptimizerImplementation::p_solve
 // -------------------------------------------------------------
 void
 LPFileOptimizerImplementation::p_solve(const p_optimizeMethod& method)
 {
-  std::cout << "\\* Problem name: Test\\*" << std::endl << std::endl;
-
-  switch (method) {
-  case Maximize:
-    std::cout << "Maximize" << std::endl;
-    break;
-  case Minimize:
-    std::cout << "Minimize" << std::endl;
-    break;
-  default:
-    BOOST_ASSERT(false);
-  }
-  std::cout << "    "
-            << p_objective->render() 
-            << std::endl << std::endl;
-
-  std::cout << "Subject To" << std::endl;
-  for (std::vector<ConstraintPtr>:: iterator i = p_constraints.begin();
-       i != p_constraints.end(); ++i) {
-    std::cout << " " << (*i)->name() << ": " 
-              <<(*i)->render() << std::endl;
-  }
-  std::cout << std::endl;   
-
-
-  std::cout << "Bounds" << std::endl;
-  {
-    LPFileVarBoundsLister v(std::cout);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
-
-  }
-  std::cout << std::endl;
-
-  std::cout << "General" << std::endl;
-  std::cout << "    ";
-  {
-    LPFileGenVarLister v(std::cout);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
-
-  }
-  std::cout << std::endl << std::endl;
-
-  std::cout << "Integer" << std::endl;
-  std::cout << "    ";
-  {
-    LPFileIntVarLister v(std::cout);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
-
-  }
-  std::cout << std::endl << std::endl;
-
-  std::cout << "Binary" << std::endl;
-  std::cout << "    ";
-  {
-    LPFileBinVarLister v(std::cout);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
-
-  }
-  std::cout << std::endl << std::endl;
-
-
-  std::cout << "End" << std::endl;
+  p_write(method, std::cout);
 }
     
   

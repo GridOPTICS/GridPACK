@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-09-16 08:07:03 d3g096
+# Last Change: 2015-09-16 09:34:12 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -88,7 +88,7 @@ message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.49 COMPONENTS mpi serialization random system REQUIRED)
+find_package(Boost 1.49 COMPONENTS mpi serialization random filesystem system REQUIRED)
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
