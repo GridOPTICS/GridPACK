@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-07-30 14:27:59 d3g096
+# Last Change: 2015-09-16 08:07:03 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -45,6 +45,9 @@ option(USE_CPLEX
 
 option(USE_GUROBI
   "Use optimization software GUROBI libraries." OFF)
+
+option(USE_GLPK
+  "Use GNU linear programming kit optimization software library." OFF)
 
 # -------------------------------------------------------------
 # MPI compiler
@@ -171,6 +174,11 @@ IF( USE_GUROBI)
   message(STATUS "Checking Gurobi ...")
   find_package(GUROBI REQUIRED)
 endif (USE_GUROBI)
+
+if(USE_GLPK)
+  message(STATUS "Checking glpk ...")
+  find_package(GLPK REQUIRED)
+endif(USE_GLPK)
 
 #message(STATUS "Checking concert ...")
 #find_package(CONCERT REQUIRED)

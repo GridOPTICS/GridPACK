@@ -10,16 +10,34 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 11, 2013 by William A. Perkins
-# Last Change: 2015-09-01 14:25:11 d3g096
+# Last Change: 2015-09-16 08:24:27 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
-add_library(gridpack_expression
+set(expression_src 
   variable.cpp
   expression.cpp
   optimizer.cpp
-  cplex_optimizer_implementation.cpp
+  lpfile_optimizer_implementation.cpp
+)
+
+if(HAVE_CPLEX)
+  list(APPEND expression_src
+    cplex_optimizer_implementation.cpp
+  )
+  add_definitions(-DHAVE_CPLEX)
+elseif(HAVE_GPLK)
+  list(APPEND expression_src
+    glpk_optimizer_implementation.cpp
+    )
+  add_definitions(-DHAVE_GLPK)
+else()
+  message(WARNING "Optimization library not specified")
+endif()
+
+add_library(gridpack_expression
+  ${expression_src}
 )
 
 set(target_libraries 

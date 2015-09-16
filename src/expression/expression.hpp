@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-08-31 12:46:54 d3g096
+ * @date   2015-09-14 14:03:44 d3g096
  * 
  * @brief  
  * 
@@ -232,7 +232,7 @@ protected:
   {
     std::string s(this->p_operator);
     if (p_expr->precedence() > this->precedence()) {
-      s += "( " + p_expr->render() + ") ";
+      s += "[ " + p_expr->render() + "] ";
     } else {
       s += p_expr->render();
     }
@@ -362,13 +362,13 @@ protected:
   {
     std::string s("");
     if (p_LHS->precedence() > this->precedence()) {
-      s += "( " + p_LHS->render() + ") ";
+      s += "[ " + p_LHS->render() + "] ";
     } else {
       s += p_LHS->render();
     }
     s += " " + this->p_operator + " ";
     if (p_RHS->precedence() > this->precedence()) {
-      s += "( " + p_RHS->render() + ") ";
+      s += "[ " + p_RHS->render() + "] ";
     } else {
       s += p_RHS->render();
     }
@@ -666,6 +666,52 @@ ExpressionPtr operator-(VariablePtr lhs, VariablePtr rhs)
   ExpressionPtr lv(new VariableExpression(lhs));
   ExpressionPtr rv(new VariableExpression(rhs));
   return lv - rv;
+}
+
+// -------------------------------------------------------------
+//  class Exponentiation
+// -------------------------------------------------------------
+class Exponentiation 
+  : public BinaryExpression
+{
+protected:
+
+public:
+
+  /// Default constructor.
+  Exponentiation(ExpressionPtr lhs, int exp)
+    : BinaryExpression(2, "^", lhs, ExpressionPtr(new IntegerConstant(exp)))
+  {}
+
+  /// Protected copy constructor to avoid unwanted copies.
+  Exponentiation(const Exponentiation& old)
+    : BinaryExpression(old)
+  {}
+
+  /// Destructor
+  ~Exponentiation(void)
+  {}
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<BinaryExpression>(*this);
+  }
+};
+
+
+// -------------------------------------------------------------
+// operator^
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator^(ExpressionPtr expr, int exp)
+{
+  ExpressionPtr result(new Exponentiation(expr, exp));
+  return result;
 }
 
 

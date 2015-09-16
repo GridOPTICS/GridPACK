@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-09-01 14:21:54 d3g096
+ * @date   2015-09-14 13:54:11 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,7 @@
 #include <vector>
 #include <boost/scoped_ptr.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
+#include <gridpack/utilities/exception.hpp>
 #include <gridpack/configuration/configurable.hpp>
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/expression/expression.hpp>
@@ -137,7 +138,8 @@ protected:
   /// The objective fuction
   ExpressionPtr p_objective;
 
-  /// 
+  /// The global constraint expressions
+  std::map<std::string, ExpressionPtr> p_globalConstraints;
 
   /// Add a (local) variable to be optimized (specialized)
   void p_addVariable(VariablePtr v)
@@ -154,8 +156,24 @@ protected:
   /// Add the local part of a global constraint (specialized)
   void p_addToGlobalConstraint(const std::string& name, ExpressionPtr expr)
   {
-  }    
+    if (p_globalConstraints[name]) {
+      p_globalConstraints[name] = p_globalConstraints[name] + expr;
+    } else {
+      p_globalConstraints[name] = expr;
+    }
+  }  
 
+  /// Get the global constraint expression
+  ExpressionPtr p_getGlobalConstraint(const std::string& name)
+  {
+    ExpressionPtr result;
+    try {
+      result = p_globalConstraints.at(name);
+    } catch (const std::out_of_range& e) {
+      std::string msg(name);
+    }
+    return result;
+  }
   /// Add to the local part of the global objective function (added to other parts)
   void p_addToObjective(ExpressionPtr expr)
   {
