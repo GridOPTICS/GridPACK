@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <GOSSTest>
+    <channelTopic> XXXX </channelTopic>
+    <channelURI> XXXX </channelURI>
+    <username> XXXX </username>
+    <password> XXXX </password>
+  </GOSSTest>
+</Configuration>

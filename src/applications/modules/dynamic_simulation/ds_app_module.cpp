@@ -1141,6 +1141,7 @@ void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+#ifndef USE_GOSS
   std::string filename;
   if (cursor->get("generatorWatchFileName",&filename)) {
     p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(128,
@@ -1150,6 +1151,23 @@ void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
     p_busIO->header("No Generator Watch File Name Found\n");
     p_generatorWatch = false;
   }
+#else
+  std::string topic, URI, username, passwd;
+  bool ok = true;
+  ok = ok && cursor->get("channelTopic",&topic);
+  ok = ok && cursor->get("channelURI",&URI);
+  ok = ok && cursor->get("username",&username);
+  ok = ok && cursor->get("password",&passwd);
+  if (ok) {
+    p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(128,
+          p_network));
+    p_generatorIO->openChannel(topic.c_str(), URI.c_str(), username.c_str(),
+        passwd.c_str());
+  } else {
+    p_busIO->header("Unable to open channel\n");
+    p_generatorWatch = false;
+  }
+#endif
 }
 
 /**
@@ -1158,7 +1176,11 @@ void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
 void gridpack::dynamic_simulation::DSAppModule::closeGeneratorWatchFile()
 {
   if (p_generatorWatch) {
+#ifndef USE_GOSS
     p_generatorIO->close();
+#else
+    p_generatorIO->closeChannel();
+#endif
   }
 }
 
