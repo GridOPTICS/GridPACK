@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2015-08-28 10:04:47 d3g096
+ * @date   2015-09-16 14:40:45 d3g096
  * 
  * @brief  
  * 
@@ -41,25 +41,25 @@ public:
   ~VariablePrinter(void)
   {}
 
-  void visit(const go::Variable& var)
+  void visit(go::Variable& var)
   {
     std::cout << var.name() << std::endl;
   }
-  void visit(const go::RealVariable& var)
+  void visit(go::RealVariable& var)
   {
     std::cout << var.name() << ": real"
               << ": (" << var.lowerBound() << ":" << var.upperBound() << ")"
               << std::endl;
   }
 
-  void visit(const go::IntegerVariable& var)
+  void visit(go::IntegerVariable& var)
   {
     std::cout << var.name()  << ": integer"
               << ": (" << var.lowerBound() << ":" << var.upperBound() << ")"
               << std::endl;
   }
 
-  void visit(const go::BinaryVariable& var)
+  void visit(go::BinaryVariable& var)
   {
     std::cout << var.name() << ": binary"
               << ": (" << var.lowerBound() << ":" << var.upperBound() << ")"
@@ -81,6 +81,7 @@ main(int argc, char **argv)
   vlist.push_back(go::VariablePtr(new go::IntegerVariable(0, -1, 1)));
   vlist.push_back(go::VariablePtr(new go::BinaryVariable(1)));
 
+  
   VariablePrinter vp;
   for (std::list<go::VariablePtr>::iterator i = vlist.begin();
        i != vlist.end(); ++i) {

@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-09-16 12:07:02 d3g096
+ * @date   2015-09-16 14:43:51 d3g096
  * 
  * @brief  
  * 
@@ -224,7 +224,7 @@ private:
 // -------------------------------------------------------------
 /// Represents a variable that can be only 1 or 0
 class BinaryVariable 
-  : public BoundedVariableT<int>
+  : public IntegerVariable
 {
 public:
 
