@@ -182,9 +182,11 @@ class SerialBusIO {
   {
     if (!p_channel) {
       std::string brokerURI = URI;
-      std::auto_ptr<ConnectionFactory> connectionFactory(
-          ConnectionFactory::createCMSConnectionFactory(brokerURI));
+      //std::auto_ptr<ConnectionFactory> connectionFactory(
+      //ConnectionFactory::createCMSConnectionFactory(brokerURI));
 
+      std::auto_ptr<ActiveMQConnectionFactory>
+        connectionFactory(new ActiveMQConnectionFactory(brokerURI)) ;
       // Create a Connection
       std::string User = username;
       std::string Pass = passwd;
@@ -423,7 +425,7 @@ class SerialBusIO {
           }
         }
         // Create buffers to retrieve strings from process i
-        if (nwrites > 0) {
+	if (nwrites > 0) {
           char iobuf[p_size*nwrites];
           index = new int*[nwrites];
           nwrites = 0;
