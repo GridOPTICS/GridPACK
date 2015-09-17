@@ -20,8 +20,16 @@ set(target_libraries
   ${MPI_CXX_LIBRARIES}
 )
 
+if (GOSS_DIR)
+  set(target_libraries
+      ${APR_LIBRARY}
+      ${GOSS_LIBRARY}
+      ${target_libraries})
+endif()
+
 set(target_libraries 
   gridpack_components gridpack_parallel gridpack_math
+  gridpack_configuration
   ${target_libraries} 
 )
 
@@ -38,29 +46,22 @@ endif()
 # -------------------------------------------------------------
 add_executable(test_serial_io test/test_serial_io.cpp)
 target_link_libraries(test_serial_io ${target_libraries})
-#
-#!!add_test(test_network_serial_iotest_serial_io)
-#!!add_test(NAME greetings_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:greetings> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(greetings_serial greetings_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
-#!!)
+if (GOSS_DIR)
+  add_executable(test_goss test/test_goss.cpp)
+  target_link_libraries(test_goss ${target_libraries} ${GOSS_LIBRARY} ${APR_LIBRARY})
 
-# -------------------------------------------------------------
-# TEST: mpi_test
-# A simple MPI test using boost::test
-# -------------------------------------------------------------
-#!!add_executable(mpi_test test/mpi_test.cpp)
-#!!target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  add_custom_target(test_goss_input
+ 
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/input_goss.xml
+    ${CMAKE_CURRENT_BINARY_DIR}
 
-#!!add_test(NAME mpi_test_serial COMMAND $<TARGET_FILE:mpi_test>)
-#!!add_test(NAME mpi_test_parallel COMMAND 
-#!!  ${MPIEXEC} ${MPIEXEC_NUMPROC_FLAG} 4 ${MPIEXEC_PREFLAGS} $<TARGET_FILE:mpi_test> ${MPIEXEC_POSTFLAGS})
-#!!set_tests_properties(mpi_test_serial mpi_test_parallel
-#!!  PROPERTIES 
-#!!  PASS_REGULAR_EXPRESSION "No errors detected"
-#!!)
+    DEPENDS 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/input_goss.xml
+
+  )
+  add_dependencies(test_goss test_goss_input)
+endif()
 
 # -------------------------------------------------------------
 # installation

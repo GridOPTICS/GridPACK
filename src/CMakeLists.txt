@@ -35,6 +35,18 @@ if (USE_PROGRESS_RANKS)
   add_definitions (-DUSE_PROGRESS_RANKS=1)
 endif()
 
+# add GOSS directory
+option (GOSS_DIR "Point to directory with GOSS files" OFF)
+if (GOSS_DIR)
+  add_definitions (-DUSE_GOSS=1) 
+  include_directories(AFTER ${GOSS_DIR}/include/activemq-cpp-3.8.4)
+  set (GOSS_LIBRARY "${GOSS_DIR}/lib/libactivemq-cpp.a")
+endif()
+if (APR_DIR)
+  include_directories(AFTER ${APR_DIR}/include)
+  set (APR_LIBRARY "${APR_DIR}/.libs/libapr-1.a")
+endif()
+
 # suppress any checks to see if test codes run. Only check for compilation.
 # use for cross-compilation situations
 option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
