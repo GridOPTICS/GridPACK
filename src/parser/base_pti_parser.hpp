@@ -260,14 +260,14 @@ class BasePTIParser : public BaseParser<_network>
         double rval;
         int ival;
         bool bval=true;
-        // GENERATOR_MODEL              "MODEL"        string
-        if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
-          data->addValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
-        } else {
-          data->setValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
-        }
-
         if (!strcmp(ds_data[i].gen_model,"GENCLS")) {
+
+          // GENERATOR_MODEL              "MODEL"        string
+          if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+            data->addValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
+          } else {
+            data->setValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
+          }
 
           // GENERATOR_INERTIA_CONSTANT_H                float
           if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H,&rval,g_id)) {
@@ -297,6 +297,13 @@ class BasePTIParser : public BaseParser<_network>
           }
         } else if (!strcmp(ds_data[i].gen_model,"GENSAL") ||
             !strcmp(ds_data[i].gen_model,"GENROU")) {
+          // GENERATOR_MODEL              "MODEL"        string
+          if (!data->getValue(GENERATOR_MODEL,&sval,g_id)) {
+            data->addValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
+          } else {
+            data->setValue(GENERATOR_MODEL, ds_data[i].gen_model, g_id);
+          }
+
           // GENERATOR_TDOP
           if (!data->getValue(GENERATOR_TDOP,&rval,g_id)) {
             data->addValue(GENERATOR_TDOP,ds_data[i].tdop, g_id);
