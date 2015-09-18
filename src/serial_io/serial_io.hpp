@@ -350,6 +350,19 @@ class SerialBusIO {
     GA_Pgroup_sync(p_GAgrp);
   }
 
+#ifdef USE_GOSS
+  /**
+   * Dump the contents of the channel buffer. Allows users more control over
+   * messsages to the GOSS server
+   */
+  void dumpChannel()
+  {
+    std::auto_ptr<TextMessage> message(p_session->createTextMessage(p_channel_buf));
+    p_producer->send(message.get());
+    p_channel_buf.clear();
+  }
+#endif
+
   protected:
 
   /**
@@ -445,9 +458,7 @@ class SerialBusIO {
               out << ptr;
 #else
               if (p_channel) {
-                std::string text = ptr;
-                std::auto_ptr<TextMessage> message(p_session->createTextMessage(text));
-                p_producer->send(message.get());
+                p_channel_buf.append(ptr);
               } else {
                 out << ptr;
               }
@@ -471,16 +482,14 @@ class SerialBusIO {
    * @param out stream object for output
    * @param str character string containing the header
    */
-  void header(std::ostream & out, const char *str) const
+  void header(std::ostream & out, const char *str)
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
 #ifndef USE_GOSS
       out << str;
 #else
       if (p_channel) {
-        std::string text = str;
-        std::auto_ptr<TextMessage> message(p_session->createTextMessage(text));
-        p_producer->send(message.get());
+        p_channel_buf.append(str);
       } else {
         out << str;
       }
@@ -503,6 +512,7 @@ class SerialBusIO {
     Session *p_session;
     Destination *p_destination;
     MessageProducer *p_producer;
+    std::string p_channel_buf;
 #endif
 };
 
