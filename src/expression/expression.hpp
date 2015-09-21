@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-09-21 11:40:41 d3g096
+ * @date   2015-09-21 14:54:54 d3g096
  * 
  * @brief  
  * 
@@ -45,6 +45,7 @@ class UnaryPlus;
 
 class BinaryExpression;
 class Multiplication;
+class Division;
 class Addition;
 class Subtraction;
 class Exponentiation;
@@ -81,6 +82,7 @@ public:
 
   virtual void visit(BinaryExpression& e);
   virtual void visit(Multiplication& e);
+  virtual void visit(Division& e);
   virtual void visit(Addition& e);
   virtual void visit(Subtraction& e);
   virtual void visit(Exponentiation& e);
@@ -316,7 +318,7 @@ protected:
   {
     std::string s(this->p_operator);
     if (p_expr->precedence() > this->precedence()) {
-      s += "[ " + p_expr->render() + "] ";
+      s += "[" + p_expr->render() + "]";
     } else {
       s += p_expr->render();
     }
@@ -477,13 +479,13 @@ protected:
   {
     std::string s("");
     if (p_LHS->precedence() > this->precedence()) {
-      s += "[ " + p_LHS->render() + "] ";
+      s += "[" + p_LHS->render() + "]";
     } else {
       s += p_LHS->render();
     }
     s += " " + this->p_operator + " ";
     if (p_RHS->precedence() > this->precedence()) {
-      s += "[ " + p_RHS->render() + "] ";
+      s += "[" + p_RHS->render() + "]";
     } else {
       s += p_RHS->render();
     }
@@ -603,6 +605,106 @@ ExpressionPtr operator*(VariablePtr lhs, T rhs)
   ExpressionPtr v(new VariableExpression(lhs));
   ExpressionPtr c(new ConstantExpression<T>(rhs));
   return v * c;
+}
+
+// -------------------------------------------------------------
+//  class Division
+// -------------------------------------------------------------
+class Division 
+  : public BinaryExpression
+{
+public:
+
+  /// Default constructor.
+  Division(ExpressionPtr lhs, ExpressionPtr rhs)
+    : BinaryExpression(5, "/", lhs, rhs)
+  {}
+
+  /// Destructor
+  ~Division(void)
+  {}
+
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
+private:
+  
+  friend class boost::serialization::access;
+  
+  template<class Archive> 
+  void serialize(Archive &ar, const unsigned int)
+  {
+    ar & boost::serialization::base_object<BinaryExpression>(*this);
+  }
+};
+
+
+// -------------------------------------------------------------
+// operator*
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator/(ExpressionPtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr result(new Division(lhs, rhs));
+  return result;
+}
+
+template <typename T>
+ExpressionPtr operator/(T lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(lhs));
+  return c / rhs;
+}
+
+template <typename T>
+ExpressionPtr operator/(ExpressionPtr lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  return lhs / c;
+}
+
+inline
+ExpressionPtr operator/(VariablePtr lhs, ExpressionPtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  return v / rhs;
+}
+
+inline
+ExpressionPtr operator/(ExpressionPtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  return lhs / v;
+}
+
+inline
+ExpressionPtr operator/(VariablePtr lhs, VariablePtr rhs)
+{
+  ExpressionPtr lv(new VariableExpression(lhs));
+  ExpressionPtr rv(new VariableExpression(rhs));
+  return lv / rv;
+}
+
+
+// Do not allow a nonlinear expression
+template <typename T>
+ExpressionPtr operator/(T lhs, VariablePtr rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(lhs));
+  ExpressionPtr v(new VariableExpression(rhs));
+  return c / v;
+}
+
+template <typename T>
+ExpressionPtr operator/(VariablePtr lhs, T rhs)
+{
+  ExpressionPtr v(new VariableExpression(lhs));
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  return v / c;
 }
 
 // -------------------------------------------------------------
@@ -854,6 +956,14 @@ inline
 ExpressionPtr operator^(ExpressionPtr expr, int exp)
 {
   ExpressionPtr result(new Exponentiation(expr, exp));
+  return result;
+}
+
+inline
+ExpressionPtr operator^(VariablePtr v, int exp)
+{
+  ExpressionPtr vexpr(new VariableExpression(v));
+  ExpressionPtr result(new Exponentiation(vexpr, exp));
   return result;
 }
 

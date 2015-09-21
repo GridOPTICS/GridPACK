@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-09-21 11:46:37 d3g096
+// Last Change: 2015-09-21 14:25:00 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -85,6 +85,7 @@ void ExpressionVisitor::visit(UnaryPlus& e) { return; };
 
 void ExpressionVisitor::visit(BinaryExpression& e) { return; };
 void ExpressionVisitor::visit(Multiplication& e) { return; };
+void ExpressionVisitor::visit(Division& e) { return; };
 void ExpressionVisitor::visit(Addition& e) { return; };
 void ExpressionVisitor::visit(Subtraction& e) { return; };
 void ExpressionVisitor::visit(Exponentiation& e) { return; };

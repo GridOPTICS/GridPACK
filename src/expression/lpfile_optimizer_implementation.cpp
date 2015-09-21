@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-09-21 13:45:56 d3g096
+ * @date   2015-09-21 14:23:36 d3g096
  * 
  * @brief  
  * 
@@ -293,18 +293,46 @@ public:
     // check to see that the LHS is a constant, otherwise it's a
     // nonlinear expression that is not handled by the LP language
     if (!lcheck.isConstant) { 
-      BOOST_ASSERT_MSG(false, "Invalid LHS to Multiplication");
+      BOOST_ASSERT_MSG(false, "LPFileConstraintRenderer: Invalid LHS to Multiplication");
     }
 
     // consider switching the LHS and RHS if the RHS is constant; for
     // now, the user should write correctly.
 
-    lhs->accept(*this);
+    lhs->accept(*this);         // it's a constant, right?
     p_out << " ";
     if (rhs->precedence() > e.precedence()) {
       p_group(rhs);
     }
   }
+
+  void visit(Division& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+    ExpressionChecker lcheck;
+    lhs->accept(lcheck);
+
+    ExpressionPtr rhs(e.rhs());
+    ExpressionChecker rcheck;
+    rhs->accept(rcheck);
+
+    // check to see that the RHS is a constant, otherwise it's a
+    // nonlinear expression that is not handled by the LP language
+    if (!lcheck.isConstant) { 
+      BOOST_ASSERT_MSG(false, "LPFileConstraintRenderer: Invalid RHS to Division");
+    }
+
+    // consider switching the LHS and RHS if the RHS is constant; for
+    // now, the user should write correctly.
+
+    if (lhs->precedence() > e.precedence()) {
+      p_group(lhs);
+    } else {
+      lhs->accept(*this);
+    }
+    p_out << "/";
+    rhs->accept(*this);         // it's a constant, right?
+  }  
 
   void visit(Addition& e)
   {
@@ -338,7 +366,7 @@ public:
 
     // Only integer constants are allowed as exponents -- check that
     if (!rcheck.isInteger) {
-      BOOST_ASSERT_MSG(false, "Only integer exponents allowed");
+      BOOST_ASSERT_MSG(false, "LPFileConstraintRenderer: Only integer exponents allowed");
     }
 
     if (lhs->precedence() > e.precedence()) {
