@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-09-16 11:31:17 d3g096
+ * @date   2015-09-21 13:45:56 d3g096
  * 
  * @brief  
  * 
@@ -204,6 +204,213 @@ public:
 };
 
 // -------------------------------------------------------------
+//  class LPFileConstraintRenderer
+// -------------------------------------------------------------
+class LPFileConstraintRenderer 
+  : public ExpressionVisitor
+{
+public:
+
+  /// Default constructor.
+  LPFileConstraintRenderer(std::ostream& out)
+    : ExpressionVisitor(), p_out(out)
+  {}
+
+  /// Destructor
+  ~LPFileConstraintRenderer(void)
+  {}
+
+  void visit(IntegerConstant& e)
+  { 
+    p_out << boost::str(boost::format("%d") % e.value());
+  }
+
+  void visit(RealConstant& e)
+  { 
+    p_out << boost::str(boost::format("%g") % e.value());
+  }
+
+  void visit(VariableExpression& e)
+  { 
+    p_out << e.name();
+  }
+
+  void visit(UnaryExpression& e)
+  {
+    // should not be called
+    BOOST_ASSERT(false);
+  }
+
+  void visit(UnaryMinus& e)
+  {
+    p_out << "-";
+    if (e.rhs()->precedence() > e.precedence()) {
+      p_group(e.rhs());
+    } else {
+      e.rhs()->accept(*this);
+    }
+  }
+
+  void visit(UnaryPlus& e)
+  {
+    p_out << "+";
+    if (e.rhs()->precedence() > e.precedence()) {
+      p_group(e.rhs());
+    } else {
+      e.rhs()->accept(*this);
+    }
+  }
+
+  void visit(BinaryExpression& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+    ExpressionPtr rhs(e.rhs());
+
+    if (lhs->precedence() > e.precedence()) {
+      p_group(lhs);
+    } else {
+      lhs->accept(*this);
+    }
+    p_out << " " << e.op() << " ";
+    if (rhs->precedence() > e.precedence()) {
+      p_group(rhs);
+    } else {
+      rhs->accept(*this);
+    }
+  }
+
+
+  void visit(Multiplication& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+    ExpressionChecker lcheck;
+    lhs->accept(lcheck);
+
+    ExpressionPtr rhs(e.rhs());
+    ExpressionChecker rcheck;
+    rhs->accept(rcheck);
+
+    // check to see that the LHS is a constant, otherwise it's a
+    // nonlinear expression that is not handled by the LP language
+    if (!lcheck.isConstant) { 
+      BOOST_ASSERT_MSG(false, "Invalid LHS to Multiplication");
+    }
+
+    // consider switching the LHS and RHS if the RHS is constant; for
+    // now, the user should write correctly.
+
+    lhs->accept(*this);
+    p_out << " ";
+    if (rhs->precedence() > e.precedence()) {
+      p_group(rhs);
+    }
+  }
+
+  void visit(Addition& e)
+  {
+    this->visit(static_cast<BinaryExpression&>(e));
+  }
+
+  void visit(Subtraction& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+    ExpressionPtr rhs(e.rhs());
+
+    if (lhs->precedence() > e.precedence()) {
+      p_group(lhs);
+    } else {
+      lhs->accept(*this);
+    }
+    p_out << " - ";
+    if (rhs->precedence() >= e.precedence()) {
+      p_group(rhs);
+    } else {
+      rhs->accept(*this);
+    }
+  }
+  void visit(Exponentiation& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+
+    ExpressionPtr rhs(e.rhs());
+    ExpressionChecker rcheck;
+    rhs->accept(rcheck);
+
+    // Only integer constants are allowed as exponents -- check that
+    if (!rcheck.isInteger) {
+      BOOST_ASSERT_MSG(false, "Only integer exponents allowed");
+    }
+
+    if (lhs->precedence() > e.precedence()) {
+      p_group(lhs);
+    } else {
+      lhs->accept(*this);
+    }
+    p_out << "^";
+    rhs->accept(*this);         // it's a constant, right?
+  }
+
+  void visit(Constraint& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+    ExpressionPtr rhs(e.rhs());
+
+    p_out << "  " << e.name() << ": ";
+    if (lhs->precedence() > e.precedence()) {
+      p_group(lhs);
+    } else {
+      lhs->accept(*this);
+    }
+    p_out << " " << e.op() << " ";
+    if (rhs->precedence() > e.precedence()) {
+      p_group(rhs);
+    } else {
+      rhs->accept(*this);
+    }
+    p_out << std::endl;
+  }
+
+  void visit(LessThan& e)
+  {
+    this->visit(static_cast<Constraint&>(e));
+  }
+
+  void visit(LessThanOrEqual& e)
+  {
+    this->visit(static_cast<Constraint&>(e));
+  }
+
+  void visit(GreaterThan& e)
+  {
+    this->visit(static_cast<Constraint&>(e));
+  }
+
+  void visit(GreaterThanOrEqual& e)
+  {
+    this->visit(static_cast<Constraint&>(e));
+  }
+
+  void visit(Equal& e)
+  {
+    this->visit(static_cast<Constraint&>(e));
+  }
+  
+
+protected:
+
+  /// The stream to send renderings
+  std::ostream& p_out;
+
+  /// How to group an expression with higher precedence
+  void p_group(ExpressionPtr e)
+  {
+    p_out << "[";
+    e->accept(*this);
+    p_out << "]";
+  }
+};
+
+// -------------------------------------------------------------
 //  class LPFileOptimizerImplementation
 // -------------------------------------------------------------
 
@@ -248,10 +455,10 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
             << std::endl << std::endl;
 
   out << "Subject To" << std::endl;
-  for (std::vector<ConstraintPtr>:: iterator i = p_constraints.begin();
-       i != p_constraints.end(); ++i) {
-    out << " " << (*i)->name() << ": " 
-              <<(*i)->render() << std::endl;
+  {
+    LPFileConstraintRenderer r(out);
+    for_each(p_constraints.begin(), p_constraints.end(),
+             boost::bind(&Constraint::accept, _1, boost::ref(r)));
   }
   out << std::endl;   
 

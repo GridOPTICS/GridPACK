@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-09-14 14:03:44 d3g096
+ * @date   2015-09-21 11:40:41 d3g096
  * 
  * @brief  
  * 
@@ -30,6 +30,69 @@
 
 namespace gridpack {
 namespace optimization {
+
+// required forward declarations
+
+template <typename T> class ConstantExpression;
+typedef ConstantExpression<int> IntegerConstant;
+typedef ConstantExpression<double> RealConstant;
+
+class VariableExpression;
+
+class UnaryExpression;
+class UnaryMinus;
+class UnaryPlus;
+
+class BinaryExpression;
+class Multiplication;
+class Addition;
+class Subtraction;
+class Exponentiation;
+
+class Constraint;
+class LessThan;
+class LessThanOrEqual;
+class GreaterThan;
+class GreaterThanOrEqual;
+class Equal;
+
+// -------------------------------------------------------------
+//  class ExpressionVisitor
+// -------------------------------------------------------------
+/// A cyclic visitor for the Expression class tree
+class ExpressionVisitor 
+  : private utility::Uncopyable
+{
+public:
+
+  /// Default constructor.
+  ExpressionVisitor(void);
+
+  /// Destructor
+  ~ExpressionVisitor(void);
+
+  virtual void visit(IntegerConstant& e);
+  virtual void visit(RealConstant& e);
+  virtual void visit(VariableExpression& e);
+
+  virtual void visit(UnaryExpression& e);
+  virtual void visit(UnaryMinus& e);
+  virtual void visit(UnaryPlus& e);
+
+  virtual void visit(BinaryExpression& e);
+  virtual void visit(Multiplication& e);
+  virtual void visit(Addition& e);
+  virtual void visit(Subtraction& e);
+  virtual void visit(Exponentiation& e);
+
+  virtual void visit(Constraint& e);
+  virtual void visit(LessThan& e);
+  virtual void visit(LessThanOrEqual& e);
+  virtual void visit(GreaterThan& e);
+  virtual void visit(GreaterThanOrEqual& e);
+  virtual void visit(Equal& e);
+
+};
 
 // -------------------------------------------------------------
 //  class Expression
@@ -68,6 +131,12 @@ public:
     return this->p_render();
   }
 
+  /// Allow visits from visitors
+  void accept(ExpressionVisitor& visitor) 
+  {
+    this->p_accept(visitor);
+  }
+
 protected:
 
   /// The precedence of this expression
@@ -75,6 +144,8 @@ protected:
 
   /// Make a string representation of this instance (specialized)
   virtual std::string p_render(void) const = 0;
+
+  virtual void p_accept(ExpressionVisitor& e) = 0;
 
   /// Constructor for serialization
   Expression(void) : p_precedence() {}
@@ -127,6 +198,11 @@ protected:
 
   std::string p_render(void) const;
 
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
   /// Constructor for serialization
   ConstantExpression(void) 
     : Expression(), p_value() 
@@ -143,9 +219,6 @@ private:
     ar & const_cast<T&>(p_value);
   }
 };
-
-typedef ConstantExpression<int> IntegerConstant;
-typedef ConstantExpression<double> RealConstant;
 
 // -------------------------------------------------------------
 //  class VariableExpression
@@ -185,6 +258,11 @@ protected:
     return p_var->name();
   }
   
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
   /// Constructor for serialization
   VariableExpression(void) 
     : Expression(), p_var() 
@@ -220,6 +298,12 @@ public:
   ~UnaryExpression(void)
   {}
 
+  /// Get the RHS of the expresion
+  ExpressionPtr rhs()
+  {
+    return p_expr;
+  }
+
 protected:
   
   /// The operator used for this instance
@@ -239,7 +323,6 @@ protected:
     return s;
   }
   
-
 private:
   
   friend class boost::serialization::access;
@@ -274,6 +357,13 @@ public:
   /// Destructor
   ~UnaryMinus(void) {}
 
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
 private:
   
   friend class boost::serialization::access;
@@ -305,6 +395,13 @@ public:
 
   /// Destructor
   ~UnaryPlus(void) {}
+
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
 
 private:
   
@@ -341,6 +438,24 @@ public:
   /// Destructor
   ~BinaryExpression(void)
   {}
+
+  const std::string& op(void) const
+  {
+    return p_operator;
+  }
+
+  /// Get the LHS of the expression
+  ExpressionPtr lhs(void) 
+  {
+    return p_LHS;
+  }
+
+  
+  /// Get the RHS of the expresion
+  ExpressionPtr rhs()
+  {
+    return p_RHS;
+  }
 
 protected:
 
@@ -408,6 +523,13 @@ public:
   /// Destructor
   ~Multiplication(void)
   {}
+
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
 
 private:
   
@@ -505,6 +627,13 @@ public:
   ~Addition(void)
   {}
 
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
 private:
   
   friend class boost::serialization::access;
@@ -538,6 +667,13 @@ public:
   /// Destructor
   ~Subtraction(void)
   {}
+
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
 
 private:
   
@@ -692,6 +828,13 @@ public:
   ~Exponentiation(void)
   {}
 
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
 private:
   
   friend class boost::serialization::access;
@@ -737,12 +880,41 @@ public:
   {
     BinaryExpression::evaluate();
   }
+  
+  int precedence() const
+  {
+    return BinaryExpression::precedence();
+  }
 
   std::string render(void) const
   {
     return BinaryExpression::render();
   }
+
+  const std::string& op(void) const
+  {
+    return BinaryExpression::op();
+  }
+
+  /// Get the LHS of the expression
+  ExpressionPtr lhs(void) 
+  {
+    return BinaryExpression::lhs();
+  }
+
   
+  /// Get the RHS of the expresion
+  ExpressionPtr rhs()
+  {
+    return BinaryExpression::rhs();
+  }
+  
+  /// Allow visits from visitors
+  void accept(ExpressionVisitor& visitor) 
+  {
+    BinaryExpression::accept(visitor);
+  }
+
 protected:
 
   static int p_nextID;
@@ -775,6 +947,13 @@ public:
   ~LessThan(void)
   {}
 
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
 private:
   
   friend class boost::serialization::access;
@@ -802,6 +981,13 @@ public:
   /// Destructor
   ~LessThanOrEqual(void)
   {}
+
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
 
 private:
   
@@ -832,6 +1018,13 @@ public:
   ~GreaterThan(void)
   {}
 
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
 private:
   
   friend class boost::serialization::access;
@@ -860,6 +1053,13 @@ public:
   ~GreaterThanOrEqual(void)
   {}
 
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
 private:
   
   friend class boost::serialization::access;
@@ -887,6 +1087,13 @@ public:
   /// Destructor
   ~Equal(void)
   {}
+
+protected:
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
 
 private:
   
@@ -1002,6 +1209,51 @@ ConstraintPtr operator==(VariablePtr lhs, T rhs)
   ConstraintPtr result(new Equal(v, c));
   return result;
 }
+
+// -------------------------------------------------------------
+//  class ExpressionChecker
+// -------------------------------------------------------------
+class ExpressionChecker 
+  : public ExpressionVisitor
+{
+public:
+
+  /// The visited expression is a constant
+  bool isConstant;
+
+  /// The visited expression is an integer constant
+  bool isInteger;
+
+  /// The visited expression is a variable
+  bool isVariable;
+
+  /// Default constructor.
+  ExpressionChecker(void)
+    : ExpressionVisitor(), 
+      isConstant(false), isInteger(false), isVariable(false)
+  {}
+
+  /// Destructor
+  ~ExpressionChecker(void)
+  {}
+
+  void visit(IntegerConstant& e)
+  {
+    isConstant = true;
+    isInteger = true;
+  }
+  void visit(RealConstant& e)
+  {
+    isConstant = true;
+  }
+  void visit(VariableExpression& e)
+  {
+    isVariable = true;
+  }
+};
+
+
+
 
 
 } // namespace optimization
