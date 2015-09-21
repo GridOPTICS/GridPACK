@@ -32,16 +32,12 @@ class TestBus
   }
 
   bool serialWrite(char *string, const int bufsize, const char *signal) {
-    if (getOriginalIndex() == 1) {
-      printf("%f %f\n",p_time,sin(0.1*PI*p_time));
+    if (getOriginalIndex() == 0) {
+      sprintf(string,"%f %f\n",p_time,sin(0.1*PI*p_time));
+      printf("%f $f\n", p_time,sin(0.1*PI*p_time));
       return true;
     }
     return false;
-  }
-
-  bool getDataItem(void *data, const char* string) {
-    static_cast<test_data*>(data)->id = getOriginalIndex();
-    return true;
   }
 
   void setTime(double t)
@@ -277,6 +273,7 @@ void run (const int &me, const int &nprocs, int argc, char **argv)
   } else {
     config->open("input.xml",world);
   }
+  printf("Got to 1\n");
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.GOSSTest");
   std::string topic, URI, username, passwd;
@@ -285,10 +282,16 @@ void run (const int &me, const int &nprocs, int argc, char **argv)
   ok = ok && cursor->get("channelURI",&URI);
   ok = ok && cursor->get("username",&username);
   ok = ok && cursor->get("password",&passwd);
+  printf("channelTopic: (%s)\n",topic.c_str());
+  printf("channelURI: (%s)\n",URI.c_str());
+  printf("username: (%s)\n",username.c_str());
+  printf("password: (%s)\n",passwd.c_str());
   if (ok) {
+  printf("Got to 2\n");
     busIO.openChannel(topic.c_str(), URI.c_str(),
         username.c_str(),
         passwd.c_str());
+  printf("Got to 3\n");
   } else {
     busIO.header("Unable to open channel\n");
     return;
@@ -297,14 +300,17 @@ void run (const int &me, const int &nprocs, int argc, char **argv)
   int istep;
   int nbus = network->numBuses();
   TestBus *bus;
+  printf("Got to 4\n");
   for (istep; istep<100; istep++) {
     // Update time step on buses
     for (i=0; i<nbus; i++) {
       bus = dynamic_cast<TestBus*>(network->getBus(i).get());
-      bus->setTime(static_cast<double>(i));
+      bus->setTime(static_cast<double>(istep));
     }
+  printf("Got to 5\n");
     // write data
     busIO.write();
+  printf("Got to 6\n");
   }
   busIO.closeChannel();
 }
