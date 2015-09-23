@@ -180,7 +180,7 @@ class SerialBusIO {
   void openChannel(const char *topic, const char *URI,
       const char *username, const char *passwd)
   {
-    if (!p_channel) {
+    if (!p_channel && GA_Pgroup_nodeid(p_GAgrp)==0) {
       std::string brokerURI = URI;
       //std::auto_ptr<ConnectionFactory> connectionFactory(
       //ConnectionFactory::createCMSConnectionFactory(brokerURI));
@@ -216,11 +216,13 @@ class SerialBusIO {
    */
   void closeChannel()
   {
-    if (p_connection) delete p_connection;
-    if (p_session) delete p_session;
-    if (p_destination) delete p_destination;
-    if (p_producer) delete p_producer;
-    p_channel = false;
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      if (p_connection) delete p_connection;
+      if (p_session) delete p_session;
+      if (p_destination) delete p_destination;
+      if (p_producer) delete p_producer;
+      p_channel = false;
+    }
   }
 #endif
 
@@ -357,9 +359,11 @@ class SerialBusIO {
    */
   void dumpChannel()
   {
-    std::auto_ptr<TextMessage> message(p_session->createTextMessage(p_channel_buf));
-    p_producer->send(message.get());
-    p_channel_buf.clear();
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      std::auto_ptr<TextMessage> message(p_session->createTextMessage(p_channel_buf));
+      p_producer->send(message.get());
+      p_channel_buf.clear();
+    }
   }
 #endif
 
