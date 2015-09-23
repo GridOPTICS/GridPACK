@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-08-28 16:58:58 d3g096
+// Last Change: 2015-09-21 14:25:00 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -50,6 +50,53 @@ Constraint::Constraint(const int& prec, const std::string& op,
   }
 
 int Constraint::p_nextID(0);
+
+
+// -------------------------------------------------------------
+//  class ExpressionVisitor
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// ExpressionVisitor:: constructors / destructor
+// -------------------------------------------------------------
+ExpressionVisitor::ExpressionVisitor()
+  : utility::Uncopyable()
+{
+  
+}
+
+ExpressionVisitor::~ExpressionVisitor(void)
+{
+}
+
+// -------------------------------------------------------------
+// ExpressionVisitor::visit
+//
+// The default behavior is to do nothing. 
+// -------------------------------------------------------------
+
+void ExpressionVisitor::visit(IntegerConstant& e)  { return; };
+void ExpressionVisitor::visit(RealConstant& e) { return; };
+void ExpressionVisitor::visit(VariableExpression& e) { return; };
+
+void ExpressionVisitor::visit(UnaryExpression& e) { return; };
+void ExpressionVisitor::visit(UnaryMinus& e) { return; };
+void ExpressionVisitor::visit(UnaryPlus& e) { return; };
+
+void ExpressionVisitor::visit(BinaryExpression& e) { return; };
+void ExpressionVisitor::visit(Multiplication& e) { return; };
+void ExpressionVisitor::visit(Division& e) { return; };
+void ExpressionVisitor::visit(Addition& e) { return; };
+void ExpressionVisitor::visit(Subtraction& e) { return; };
+void ExpressionVisitor::visit(Exponentiation& e) { return; };
+
+void ExpressionVisitor::visit(Constraint& e) { return; };
+void ExpressionVisitor::visit(LessThan& e) { return; };
+void ExpressionVisitor::visit(LessThanOrEqual& e) { return; };
+void ExpressionVisitor::visit(GreaterThan& e) { return; };
+void ExpressionVisitor::visit(GreaterThanOrEqual& e) { return; };
+void ExpressionVisitor::visit(Equal& e) { return; };
+
 
 } // namespace optimization
 } // namespace gridpack

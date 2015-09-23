@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2015-08-28 15:41:56 d3g096
+ * @date   2015-09-16 10:12:25 d3g096
  * 
  * @brief  
  * 
@@ -18,7 +18,13 @@
 // -------------------------------------------------------------
 
 #include "optimizer.hpp"
+#if defined(HAVE_CPLEX)
 #include "cplex_optimizer_implementation.hpp"
+#elif defined(HAVE_GLPK)
+#include "glpk_optimizer_implementation.hpp"
+#else
+#include "lpfile_optimizer_implementation.hpp"
+#endif
 
 namespace gridpack {
 namespace optimization {
@@ -30,10 +36,21 @@ namespace optimization {
 // -------------------------------------------------------------
 // Optimizer:: constructors / destructor
 // -------------------------------------------------------------
-Optimizer::Optimizer()
-  : OptimizerInterface()
+Optimizer::Optimizer(const parallel::Communicator& comm)
+  : OptimizerInterface(),
+    parallel::WrappedDistributed(),
+    utility::WrappedConfigurable(),
+    p_impl()
 {
-  p_impl.reset(new CPlexOptimizerImplementation);
+  p_setImpl(
+#if defined(HAVE_CPLEX)
+            new CPlexOptimizerImplementation(comm)
+#elif defined(HAVE_GLPK)
+            new GLPKOptimizerImplementation(comm)
+#else
+            new LPFileOptimizerImplementation(comm)
+#endif
+            );
 }
 
 Optimizer::~Optimizer(void)

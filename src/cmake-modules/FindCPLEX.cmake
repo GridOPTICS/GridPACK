@@ -1,74 +1,47 @@
-# This module finds cplex.
-#
-# User can give CPLEX_ROOT_DIR as a hint stored in the cmake cache.
-#
-# It sets the following variables:
-# CPLEX_FOUND - Set to false, or undefined, if cplex isn't found.
-# CPLEX_INCLUDE_DIRS - include directory
-# CPLEX_LIBRARIES - library files
+# -------------------------------------------------------------
+# file: FindCPLEX.cmake
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Obtained from 
+# http://lemon.cs.elte.hu/trac/lemon/browser/lemon/cmake/FindCPLEX.cmake
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Last Change: 2015-09-16 08:09:15 d3g096
+# -------------------------------------------------------------
 
-FIND_PATH(CPLEX_INCLUDE_DIR ilcplex/cplex.h
-  HINTS ${CPLEX_ROOT_DIR}/cplex/include
-        ${CPLEX_ROOT_DIR}/include
-  PATHS ENV C_INCLUDE_PATH
-        ENV C_PLUS_INCLUDE_PATH
-        ENV INCLUDE_PATH
+SET(CPLEX_ROOT_DIR "" CACHE PATH "CPLEX root directory")
+
+FIND_PATH(CPLEX_INCLUDE_DIR
+  ilcplex/cplex.h
+  PATHS "C:/ILOG/CPLEX91/include"
+  PATHS "/opt/ilog/cplex91/include"
+  HINTS ${CPLEX_ROOT_DIR}/include
 )
-
-FIND_PATH(CPLEX_CONCERT_INCLUDE_DIR
-  ilconcert/iloenv.h
-  HINTS ${CPLEX_ROOT_DIR}/concert/include
-        ${CPLEX_ROOT_DIR}/include
-  PATHS ENV C_INCLUDE_PATH
-        ENV C_PLUS_INCLUDE_PATH
-        ENV INCLUDE_PATH
-)
-
 FIND_LIBRARY(CPLEX_LIBRARY
-  NAMES cplex${CPLEX_WIN_VERSION} cplex
-  HINTS ${CPLEX_ROOT_DIR}/cplex/lib/x86-64_debian4.0_4.1/static_pic
-        ${CPLEX_ROOT_DIR}/cplex/lib/x86-64_sles10_4.1/static_pic
-  PATHS ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
+  cplex91
+  PATHS "C:/ILOG/CPLEX91/lib/msvc7/stat_mda"
+  PATHS "/opt/ilog/cplex91/bin"
+  HINTS ${CPLEX_ROOT_DIR}/bin
 )
-message(STATUS "CPLEX Library: ${CPLEX_LIBRARY}")
 
-FIND_LIBRARY(CPLEX_ILOCPLEX_LIBRARY
-  ilocplex
-  HINTS ${CPLEX_ROOT_DIR}/cplex/lib/x86-64_debian4.0_4.1/static_pic #unix
-        ${CPLEX_ROOT_DIR}/cplex/lib/x86-64_sles10_4.1/static_pic #unix
-  PATHS ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
-)
-message(STATUS "ILOCPLEX Library: ${CPLEX_ILOCPLEX_LIBRARY}")
-
-FIND_LIBRARY(CPLEX_CONCERT_LIBRARY
-  concert
-  HINTS ${CPLEX_ROOT_DIR}/concert/lib/x86-64_debian4.0_4.1/static_pic #unix
-        ${CPLEX_ROOT_DIR}/concert/lib/x86-64_sles10_4.1/static_pic #unix
-  PATHS ENV LIBRARY_PATH
-        ENV LD_LIBRARY_PATH
-)
-message(STATUS "CONCERT Library: ${CPLEX_CONCERT_LIBRARY}")
+INCLUDE(FindPackageHandleStandardArgs)
+FIND_PACKAGE_HANDLE_STANDARD_ARGS(CPLEX DEFAULT_MSG CPLEX_LIBRARY CPLEX_INCLUDE_DIR)
 
 FIND_PATH(CPLEX_BIN_DIR
-  cplex
-  HINTS ${CPLEX_ROOT_DIR}/cplex/bin/x86-64_sles10_4.1 #unix
-  ${CPLEX_ROOT_DIR}/cplex/bin/x86-64_debian4.0_4.1 #unix
-  ENV LIBRARY_PATH
-  ENV LD_LIBRARY_PATH
+  cplex91.dll
+  PATHS "C:/ILOG/CPLEX91/bin/x86_win32"
 )
-message(STATUS "CPLEX Bin Dir: ${CPLEX_BIN_DIR}")
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(CPLEX DEFAULT_MSG
-  CPLEX_LIBRARY CPLEX_INCLUDE_DIR CPLEX_ILOCPLEX_LIBRARY CPLEX_CONCERT_LIBRARY CPLEX_CONCERT_INCLUDE_DIR)
 
 IF(CPLEX_FOUND)
-  SET(CPLEX_INCLUDE_DIRS ${CPLEX_INCLUDE_DIR} ${CPLEX_CONCERT_INCLUDE_DIR})
-  SET(CPLEX_LIBRARIES ${CPLEX_CONCERT_LIBRARY} ${CPLEX_ILOCPLEX_LIBRARY} ${CPLEX_LIBRARY} )
+  SET(CPLEX_INCLUDE_DIRS ${CPLEX_INCLUDE_DIR})
+  SET(CPLEX_LIBRARIES ${CPLEX_LIBRARY})
   IF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     SET(CPLEX_LIBRARIES "${CPLEX_LIBRARIES};m;pthread")
   ENDIF(CMAKE_SYSTEM_NAME STREQUAL "Linux")
 ENDIF(CPLEX_FOUND)
 
-MARK_AS_ADVANCED(CPLEX_LIBRARY CPLEX_INCLUDE_DIR CPLEX_ILOCPLEX_LIBRARY CPLEX_CONCERT_INCLUDE_DIR CPLEX_CONCERT_LIBRARY)
+MARK_AS_ADVANCED(CPLEX_LIBRARY CPLEX_INCLUDE_DIR CPLEX_BIN_DIR)
+
+IF(CPLEX_FOUND)
+  SET(HAVE_CPLEX TRUE)
+ENDIF(CPLEX_FOUND)

@@ -40,6 +40,7 @@ if [ $host == "flophouse48" ]; then
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D USE_GLPK:BOOL=ON \
         $common_flags ..
 
 elif [ $host == "flophouse" ]; then
@@ -68,6 +69,7 @@ elif [ $host == "flophouse" ]; then
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D USE_GLPK:BOOL=ON \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
     

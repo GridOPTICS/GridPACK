@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-08-31 12:53:55 d3g096
+ * @date   2015-09-16 14:43:51 d3g096
  * 
  * @brief  
  * 
@@ -22,7 +22,7 @@
 #ifndef _variable_hpp_
 #define _variable_hpp_
 
-
+#include <iosfwd>
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/base_object.hpp>
 #include <gridpack/utilities/named.hpp>
@@ -54,10 +54,10 @@ public:
   /// Destructor
   virtual ~VariableVisitor(void);
 
-  virtual void visit(const Variable& var);
-  virtual void visit(const RealVariable& var);
-  virtual void visit(const IntegerVariable& var);
-  virtual void visit(const BinaryVariable& var);
+  virtual void visit(Variable& var);
+  virtual void visit(RealVariable& var);
+  virtual void visit(IntegerVariable& var);
+  virtual void visit(BinaryVariable& var);
 };
 
 
@@ -90,7 +90,7 @@ public:
   }
 
   /// Allow visits from visitors
-  void accept(VariableVisitor& visitor) const
+  void accept(VariableVisitor& visitor) 
   {
     this->p_accept(visitor);
   }
@@ -102,7 +102,7 @@ protected:
   int p_id;                     /**< The (local) unique identifer */
 
   /// Allow visitor from variable visitors (specialized)
-  virtual void p_accept(VariableVisitor& visitor) const
+  virtual void p_accept(VariableVisitor& visitor)
   {
     visitor.visit(*this);
   }
@@ -201,7 +201,7 @@ protected:
   {}
 
   /// Allow visitor from variable visitors (specialized)
-  void p_accept(VariableVisitor& visitor) const
+  void p_accept(VariableVisitor& visitor) 
   {
     visitor.visit(*this);
   }
@@ -224,7 +224,7 @@ private:
 // -------------------------------------------------------------
 /// Represents a variable that can be only 1 or 0
 class BinaryVariable 
-  : public BoundedVariableT<int>
+  : public IntegerVariable
 {
 public:
 
@@ -243,7 +243,7 @@ public:
 protected:
 
   /// Allow visitor from variable visitors (specialized)
-  void p_accept(VariableVisitor& visitor) const
+  void p_accept(VariableVisitor& visitor)
   {
     visitor.visit(*this);
   }
@@ -258,6 +258,69 @@ private:
     ar  & boost::serialization::base_object<IntegerVariable>(*this);
   }
 };
+
+// -------------------------------------------------------------
+//  class SetVariableInitial
+// -------------------------------------------------------------
+class SetVariableInitial 
+  : public VariableVisitor
+{
+public:
+
+  /// Default constructor.
+  SetVariableInitial(const double& v)
+    : VariableVisitor(), p_value(v)
+  {}
+
+  /// Destructor
+  ~SetVariableInitial(void)
+  {}
+
+  void visit(RealVariable& var) 
+  {
+    var.initial(p_value);
+  }
+  void visit(IntegerVariable& var)
+  {
+    var.initial(static_cast<int>(p_value));
+  }
+
+protected:
+  
+  double p_value;
+};
+
+// -------------------------------------------------------------
+//  class VariableTable
+// -------------------------------------------------------------
+class VariableTable 
+  : public VariableVisitor
+{
+public:
+
+  /// Default constructor.
+  VariableTable(std::ostream& out);
+
+  /// Destructor
+  ~VariableTable(void);
+
+  void visit(RealVariable& var);
+  void visit(IntegerVariable& var);
+  void visit(BinaryVariable& var);
+
+protected:
+
+  std::ostream& p_out;
+
+  bool p_first;
+
+  void p_header(void) const;
+
+};
+
+
+
+
 
 } // namespace optimization
 } // namespace gridpack
