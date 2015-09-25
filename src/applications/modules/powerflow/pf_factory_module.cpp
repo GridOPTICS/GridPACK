@@ -369,7 +369,7 @@ void gridpack::powerflow::PFFactoryModule::clearLineOverloadViolations()
 /**
  * Reinitialize voltages
  */
-void gridpack::powerflow::PFFactoryModule::reinitVoltages()
+void gridpack::powerflow::PFFactoryModule::resetVoltages()
 {
   int numBus = p_network->numBuses();
   int i;
@@ -378,7 +378,7 @@ void gridpack::powerflow::PFFactoryModule::reinitVoltages()
       gridpack::powerflow::PFBus *bus =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
-      bus->reinitVoltage();
+      bus->resetVoltage();
     }
   }
 }

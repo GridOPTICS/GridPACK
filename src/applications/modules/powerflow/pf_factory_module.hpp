@@ -125,7 +125,7 @@ class PFFactoryModule
     /**
      * Reinitialize voltages
      */
-    void reinitVoltages();
+    void resetVoltages();
   private:
 
     NetworkPtr p_network;

@@ -1029,15 +1029,6 @@ std::vector<double> gridpack::powerflow::PFBus::getGeneratorParticipation()
 }
 
 /**
- * Re-initialize voltage from data collection
- */
-void gridpack::powerflow::PFBus::reinitVoltage()
-{
-  p_v = p_voltage;
-  p_a = p_angle;
-}
-
-/**
  *  Simple constructor
  */
 gridpack::powerflow::PFBranch::PFBranch(void)
