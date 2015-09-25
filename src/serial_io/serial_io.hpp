@@ -181,6 +181,7 @@ class SerialBusIO {
       const char *username, const char *passwd)
   {
     if (!p_channel && GA_Pgroup_nodeid(p_GAgrp)==0) {
+      printf("Opening Channel\n");
       std::string brokerURI = URI;
       //std::auto_ptr<ConnectionFactory> connectionFactory(
       //ConnectionFactory::createCMSConnectionFactory(brokerURI));
@@ -361,6 +362,7 @@ class SerialBusIO {
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       std::auto_ptr<TextMessage> message(p_session->createTextMessage(p_channel_buf));
+      printf("Sending message of length %\n",p_channel_buf.length());
       p_producer->send(message.get());
       p_channel_buf.clear();
     }
