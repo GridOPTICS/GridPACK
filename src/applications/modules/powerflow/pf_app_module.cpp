@@ -20,7 +20,7 @@
 #include "pf_factory_module.hpp"
 #include "pf_helper.hpp"
 
-//#define USE_REAL_VALUES
+#define USE_REAL_VALUES
 
 /**
  * Basic constructor
@@ -646,4 +646,3 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
 {
   return p_factory->checkLineOverloadViolations();
 }
-

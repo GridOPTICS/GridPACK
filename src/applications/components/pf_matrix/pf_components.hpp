@@ -299,6 +299,10 @@ class PFBus
      */
     std::vector<double> getGeneratorParticipation();
 
+    /**
+     * Re-initialize voltage from data collection
+     */
+    void reinitVoltage();
   private:
     double p_shunt_gs;
     double p_shunt_bs;
