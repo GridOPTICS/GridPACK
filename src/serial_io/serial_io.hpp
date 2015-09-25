@@ -205,6 +205,10 @@ class SerialBusIO {
       p_producer->setDeliveryMode(DeliveryMode::NON_PERSISTENT);
 
       p_channel = true;
+
+      std::auto_ptr<TextMessage>
+        message(p_session->createTextMessage("Simulation started"));
+      p_producer->send(message.get());
     } else {
       if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
         printf("ERROR: Channel already opened\n");
@@ -362,7 +366,7 @@ class SerialBusIO {
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       std::auto_ptr<TextMessage> message(p_session->createTextMessage(p_channel_buf));
-      printf("Sending message of length %\n",p_channel_buf.length());
+      printf("Sending message of length %d\n",p_channel_buf.length());
       p_producer->send(message.get());
       p_channel_buf.clear();
     }
