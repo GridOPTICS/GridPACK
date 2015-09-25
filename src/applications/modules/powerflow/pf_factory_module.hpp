@@ -122,6 +122,10 @@ class PFFactoryModule
      */
     void clearLineOverloadViolations();
 
+    /**
+     * Reinitialize voltages
+     */
+    void reinitVoltages();
   private:
 
     NetworkPtr p_network;
