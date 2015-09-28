@@ -206,8 +206,12 @@ class SerialBusIO {
 
       p_channel = true;
 
+      gridpack::utility::CoarseTimer *timer =
+        gridpack::utility::CoarseTimer::instance();
+      char sbuf[128];
+      sprintf(sbuf,"Simulation started %f\n",timer->currentTime());
       std::auto_ptr<TextMessage>
-        message(p_session->createTextMessage("Simulation started"));
+        message(p_session->createTextMessage(sbuf));
       p_producer->send(message.get());
     } else {
       if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
