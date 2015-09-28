@@ -43,8 +43,8 @@ if (GOSS_DIR)
   set (GOSS_LIBRARY "${GOSS_DIR}/lib/libactivemq-cpp.a")
 endif()
 if (APR_DIR)
-  include_directories(AFTER ${APR_DIR}/include)
-  set (APR_LIBRARY "${APR_DIR}/.libs/libapr-1.a")
+  include_directories(AFTER ${APR_DIR}/include/apr-1)
+  set (APR_LIBRARY "${APR_DIR}/lib/libapr-1.a")
 endif()
 
 # suppress any checks to see if test codes run. Only check for compilation.
