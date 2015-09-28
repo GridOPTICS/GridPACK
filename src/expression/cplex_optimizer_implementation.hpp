@@ -9,8 +9,8 @@
 // -------------------------------------------------------------
 /**
  * @file   cplex_optimizer_implementation.hpp
- * @author William A. Perkins
- * @date   2015-09-01 14:22:31 d3g096
+ * @author Yilin Fang 
+ * @date   2015-09-28 12:18:13 d3m045
  * 
  * @brief  
  * 
@@ -18,41 +18,34 @@
  */
 // -------------------------------------------------------------
 
-
 #ifndef _cplex_optimizer_implementation_hpp_
 #define _cplex_optimizer_implementation_hpp_
 
-#include "optimizer.hpp"
+#include "lpfile_optimizer_implementation.hpp"
 
 namespace gridpack {
 namespace optimization {
-
-
 
 // -------------------------------------------------------------
 //  class CPlexOptimizerImplementation
 // -------------------------------------------------------------
 class CPlexOptimizerImplementation 
-  : public OptimizerImplementation
+  : public LPFileOptimizerImplementation
 {
 public:
 
   /// Default constructor.
-  CPlexOptimizerImplementation(const parallel::Communicator& comm)
-    : OptimizerImplementation(comm)
-  {}
+  CPlexOptimizerImplementation(const parallel::Communicator& comm);
 
   /// Destructor
-  ~CPlexOptimizerImplementation(void)
-  {}
+  ~CPlexOptimizerImplementation(void);
 
 protected:
-  
+
   /// Do the problem (specialized)
   void p_solve(const p_optimizeMethod& m);
-  
-};
 
+};
 
 } // namespace optimization
 } // namespace gridpack
