@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 11, 2013 by William A. Perkins
-# Last Change: 2015-09-16 10:19:43 d3g096
+# Last Change: 2015-09-28 15:09:23 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -58,6 +58,9 @@ target_link_libraries(expression_test ${target_libraries})
 
 add_executable(optimizer_test optimizer_test.cpp)
 target_link_libraries(optimizer_test ${target_libraries})
+
+add_executable(uc_test uc_test.cpp)
+target_link_libraries(uc_test ${target_libraries})
 
 # -------------------------------------------------------------
 # installation

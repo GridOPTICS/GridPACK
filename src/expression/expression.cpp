@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-09-21 14:25:00 d3g096
+// Last Change: 2015-09-28 14:55:03 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -22,6 +22,7 @@ std::string
 ConstantExpression<T>::p_render(void) const
 {
   BOOST_ASSERT(false);
+  return "";
 }
 
 template <>

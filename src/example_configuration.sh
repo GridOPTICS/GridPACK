@@ -8,11 +8,11 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
-        -D CMAKE_BUILD_TYPE:STRING=Debug \
+        -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
-if [ $host == "flophouse48" ]; then
+if [ $host == "flophouse" ]; then
 
 
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
@@ -40,10 +40,9 @@ if [ $host == "flophouse48" ]; then
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
-        -D USE_GLPK:BOOL=ON \
         $common_flags ..
 
-elif [ $host == "flophouse" ]; then
+elif [ $host == "flophouse41" ]; then
 
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
     PATH="${prefix}/bin:${PATH}"
