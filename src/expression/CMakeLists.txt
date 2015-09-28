@@ -27,10 +27,16 @@ set(target_libraries
   gridpack_configuration 
   gridpack_parallel 
 )
+add_definitions(
+  -DIL_STD
+)
+
 
 if(USE_CPLEX)
   list(APPEND expression_src cplex_optimizer_implementation.cpp)
   add_definitions(-DHAVE_CPLEX)
+  include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
+  list(APPEND target_libraries ${CPLEX_LIBRARIES})
 elseif(USE_GLPK)
   list(APPEND expression_src glpk_optimizer_implementation.cpp)
   add_definitions(-DHAVE_GLPK)
@@ -49,6 +55,7 @@ list(APPEND target_libraries
   ${Boost_LIBRARIES}
   ${MPI_CXX_LIBRARIES}
 )
+
 
 add_executable(variable_test variable_test.cpp)
 target_link_libraries(variable_test ${target_libraries})
