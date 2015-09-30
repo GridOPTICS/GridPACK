@@ -61,6 +61,7 @@ class PFFactoryModule
       */
 //    void updatePg(std::string &name, int busID, std::string genID, double value);
     void updatePg(int busID, std::string genID, double value);
+    void updateQg(int busID, std::string genID, double value);
 
     /**
      * Create the PQ 
