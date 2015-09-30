@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-09-21 14:23:36 d3g096
+ * @date   2015-09-28 15:56:23 d3g096
  * 
  * @brief  
  * 
@@ -296,13 +296,27 @@ public:
       BOOST_ASSERT_MSG(false, "LPFileConstraintRenderer: Invalid LHS to Multiplication");
     }
 
-    // consider switching the LHS and RHS if the RHS is constant; for
-    // now, the user should write correctly.
+    if (rcheck.isExponentiation) {
+                                // SPECIAL CASE: if the RHS is
+                                // exponentiation, the whole
+                                // expression needs to be grouped
+      p_out << "[";
+      lhs->accept(*this);
+      p_out << " ";
+      rhs->accept(*this);
+      p_out << "]";
+    } else {
+                                // consider switching the LHS and RHS
+                                // if the RHS is constant; for now,
+                                // the user should write correctly.
 
-    lhs->accept(*this);         // it's a constant, right?
-    p_out << " ";
-    if (rhs->precedence() > e.precedence()) {
-      p_group(rhs);
+      lhs->accept(*this);         // it's a constant, right?
+      p_out << " ";
+      if (rhs->precedence() > e.precedence()) {
+        p_group(rhs);
+      } else {
+        rhs->accept(*this);
+      }
     }
   }
 
@@ -374,7 +388,7 @@ public:
     } else {
       lhs->accept(*this);
     }
-    p_out << "^";
+    p_out << " ^ ";
     rhs->accept(*this);         // it's a constant, right?
   }
 
@@ -478,9 +492,12 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
   default:
     BOOST_ASSERT(false);
   }
-  out << "    "
-            << p_objective->render() 
-            << std::endl << std::endl;
+  {
+    LPFileConstraintRenderer r(out);
+    out << "  ";
+    p_objective->accept(r);
+  }
+  out << std::endl << std::endl;
 
   out << "Subject To" << std::endl;
   {

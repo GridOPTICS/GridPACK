@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-09-01 14:26:28 d3g096
+ * @date   2015-09-28 14:59:06 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -59,7 +59,7 @@ main(int argc, char **argv)
     opt.addVariable(*i);
   }
 
-  opt.addConstraint( - vars[1] - vars[2] + vars[0] == -0 );
+  opt.addConstraint( -1.0 * vars[1] - vars[2] + vars[0] == -0 );
   opt.addConstraint( + vars[1] + vars[3] - vars[4] - vars[5] == -0 );
   opt.addConstraint( + vars[4] - vars[6] - vars[7] == -0 );
   opt.addConstraint( + vars[2] + vars[5] - vars[8] == -0 );

@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-09-21 14:54:54 d3g096
+ * @date   2015-09-28 15:43:26 d3g096
  * 
  * @brief  
  * 
@@ -325,6 +325,11 @@ protected:
     return s;
   }
   
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
+  }
+
 private:
   
   friend class boost::serialization::access;
@@ -490,6 +495,11 @@ protected:
       s += p_RHS->render();
     }
     return s;
+  }
+
+  void p_accept(ExpressionVisitor& e)
+  {
+    e.visit(*this);
   }
 
 private:
@@ -1337,10 +1347,13 @@ public:
   /// The visited expression is a variable
   bool isVariable;
 
+  /// The visited expression is exponentiation
+  bool isExponentiation;
+
   /// Default constructor.
   ExpressionChecker(void)
     : ExpressionVisitor(), 
-      isConstant(false), isInteger(false), isVariable(false)
+      isConstant(false), isInteger(false), isVariable(false), isExponentiation(false)
   {}
 
   /// Destructor
@@ -1359,6 +1372,10 @@ public:
   void visit(VariableExpression& e)
   {
     isVariable = true;
+  }
+  void visit(Exponentiation& e)
+  {
+    isExponentiation = true;
   }
 };
 
