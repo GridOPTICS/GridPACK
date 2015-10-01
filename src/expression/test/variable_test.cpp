@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2015-09-16 14:40:45 d3g096
+ * @date   2015-10-01 07:26:47 d3g096
  * 
  * @brief  
  * 
@@ -20,7 +20,13 @@
 #include <iostream>
 #include <list>
 #include <boost/bind.hpp>
+#include "gridpack/utilities/exception.hpp"
+#include "gridpack/parallel/parallel.hpp"
 #include "variable.hpp"
+
+#define BOOST_TEST_NO_MAIN
+#define BOOST_TEST_ALTERNATIVE_INIT_API
+#include <boost/test/included/unit_test.hpp>
 
 namespace go = gridpack::optimization;
 
@@ -65,15 +71,11 @@ public:
               << ": (" << var.lowerBound() << ":" << var.upperBound() << ")"
               << std::endl;
   }
-
-  
 };
 
-// -------------------------------------------------------------
-//  Main Program
-// -------------------------------------------------------------
-int
-main(int argc, char **argv)
+BOOST_AUTO_TEST_SUITE( VectorIOTest )
+
+BOOST_AUTO_TEST_CASE( create )
 {
   std::list<go::VariablePtr> vlist;
   vlist.push_back(go::VariablePtr(new go::RealVariable(13.0)));
@@ -81,16 +83,44 @@ main(int argc, char **argv)
   vlist.push_back(go::VariablePtr(new go::IntegerVariable(0, -1, 1)));
   vlist.push_back(go::VariablePtr(new go::BinaryVariable(1)));
 
-  
-  VariablePrinter vp;
-  for (std::list<go::VariablePtr>::iterator i = vlist.begin();
-       i != vlist.end(); ++i) {
-    (*i)->accept(vp);
-    std::cout << (*i)->name() << std::endl;
-  }
-
+  go::VariableCounter cnt;
   for_each(vlist.begin(), vlist.end(),
-           boost::bind(&go::Variable::accept, _1, boost::ref(vp)));
-  
-  return 0;
+           boost::bind(&go::Variable::accept, _1, boost::ref(cnt)));
+  BOOST_CHECK_EQUAL(cnt.numVar, 4);
+  BOOST_CHECK_EQUAL(cnt.numReal, 2);
+  BOOST_CHECK_EQUAL(cnt.numInt, 1);
+  BOOST_CHECK_EQUAL(cnt.numBin, 1);
+
+  {
+    go::VariableTable vt(std::cout);
+    for_each(vlist.begin(), vlist.end(),
+             boost::bind(&go::Variable::accept, _1, boost::ref(vt)));
+  }
+}
+
+// BOOST_AUTO_TEST_CASE( serialization )
+// {
+
+// }
+
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// -------------------------------------------------------------
+// init_function
+// -------------------------------------------------------------
+bool init_function()
+{
+  return true;
+}
+
+// -------------------------------------------------------------
+//  Main Program
+// -------------------------------------------------------------
+int
+main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc, argv);
+  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  return result;
 }

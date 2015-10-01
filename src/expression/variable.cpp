@@ -9,7 +9,7 @@
 /**
  * @file   variable.cpp
  * @author William A. Perkins
- * @date   2015-09-16 12:16:22 d3g096
+ * @date   2015-10-01 07:25:15 d3g096
  * 
  * @brief  
  * 
@@ -172,6 +172,55 @@ VariableTable::p_header(void) const
         << "Name      Type      Value" << std::endl
         << bar << std::endl;
 }
+
+// -------------------------------------------------------------
+//  class VariableCounter
+// -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// VariableCounter:: constructors / destructor
+// -------------------------------------------------------------
+VariableCounter::VariableCounter()
+  : VariableVisitor(), 
+    numVar(0), numReal(0), numInt(0), numBin(0)
+{
+  
+}
+
+VariableCounter::~VariableCounter(void)
+{
+}
+
+// -------------------------------------------------------------
+// VariableCounter::visit
+// -------------------------------------------------------------
+void 
+VariableCounter::visit(Variable& var)
+{
+  BOOST_ASSERT_MSG(false, "VariableCounter: error: variable type not handled");
+}
+
+void 
+VariableCounter::visit(RealVariable& var)
+{
+  numVar += 1;
+  numReal += 1;
+}
+
+void 
+VariableCounter::visit(IntegerVariable& var)
+{
+  numVar += 1;
+  numInt += 1;
+}
+
+void 
+VariableCounter::visit(BinaryVariable& var)
+{
+  numVar += 1;
+  numBin += 1;
+}
+
 
 
 } // namespace optimization

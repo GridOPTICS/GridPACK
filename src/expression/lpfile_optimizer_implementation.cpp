@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-09-28 15:56:23 d3g096
+ * @date   2015-10-01 07:35:39 d3g096
  * 
  * @brief  
  * 
@@ -517,36 +517,45 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
   }
   out << std::endl;
 
-  out << "General" << std::endl;
-  out << "    ";
-  {
-    LPFileGenVarLister v(out);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
+  VariableCounter cnt;
+  for_each(p_variables.begin(), p_variables.end(),
+           boost::bind(&Variable::accept, _1, boost::ref(cnt)));
 
+  if (cnt.numReal > 0) {
+    out << "General" << std::endl;
+    out << "    ";
+    {
+      LPFileGenVarLister v(out);
+      for_each(p_variables.begin(), p_variables.end(),
+               boost::bind(&Variable::accept, _1, boost::ref(v)));
+      
+    }
+    out << std::endl << std::endl;
   }
-  out << std::endl << std::endl;
 
-  out << "Integer" << std::endl;
-  out << "    ";
-  {
-    LPFileIntVarLister v(out);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
-
+  if (cnt.numInt > 0) {
+    out << "Integer" << std::endl;
+    out << "    ";
+    {
+      LPFileIntVarLister v(out);
+      for_each(p_variables.begin(), p_variables.end(),
+               boost::bind(&Variable::accept, _1, boost::ref(v)));
+      
+    }
+    out << std::endl << std::endl;
   }
-  out << std::endl << std::endl;
 
-  out << "Binary" << std::endl;
-  out << "    ";
-  {
-    LPFileBinVarLister v(out);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
-
+  if (cnt.numBin > 0) {
+    out << "Binary" << std::endl;
+    out << "    ";
+    {
+      LPFileBinVarLister v(out);
+      for_each(p_variables.begin(), p_variables.end(),
+               boost::bind(&Variable::accept, _1, boost::ref(v)));
+      
+    }
+    out << std::endl << std::endl;
   }
-  out << std::endl << std::endl;
-
 
   out << "End" << std::endl;
 }

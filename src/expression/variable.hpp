@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-09-16 14:43:51 d3g096
+ * @date   2015-10-01 07:21:07 d3g096
  * 
  * @brief  
  * 
@@ -315,6 +315,33 @@ protected:
   bool p_first;
 
   void p_header(void) const;
+
+};
+
+
+// -------------------------------------------------------------
+//  class VariableCounter
+// -------------------------------------------------------------
+class VariableCounter 
+  : public VariableVisitor
+{
+public:
+
+  /// Default constructor.
+  VariableCounter(void);
+
+  /// Destructor
+  ~VariableCounter(void);
+
+  int numVar;                   /**< total number of variables */
+  int numReal;                  /**< number of real variables */
+  int numInt;                   /**< number of integer (not binary) variables */
+  int numBin;                   /**< number of binary variables */
+
+  void visit(Variable& var);
+  void visit(RealVariable& var);
+  void visit(IntegerVariable& var);
+  void visit(BinaryVariable& var);
 
 };
 
