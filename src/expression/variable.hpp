@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-10-01 07:21:07 d3g096
+ * @date   2015-10-01 09:16:31 d3g096
  * 
  * @brief  
  * 
@@ -224,7 +224,7 @@ private:
 // -------------------------------------------------------------
 /// Represents a variable that can be only 1 or 0
 class BinaryVariable 
-  : public IntegerVariable
+  : public BoundedVariableT<int>
 {
 public:
 
@@ -246,6 +246,14 @@ protected:
   void p_accept(VariableVisitor& visitor)
   {
     visitor.visit(*this);
+  }
+
+  /// Constructor for serialization
+  BinaryVariable(void)
+    : BoundedVariableT<int>(0)
+  {
+    BoundedVariableT<int>::p_highBound = 1;
+    BoundedVariableT<int>::p_lowBound = 0;
   }
 
 private:

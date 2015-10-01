@@ -8,7 +8,7 @@
 /**
  * @file   named.h
  * @author William A. Perkins
- * @date   2015-07-30 13:03:10 d3g096
+ * @date   2015-10-01 09:07:48 d3g096
  * 
  * @brief  
  * 
@@ -89,6 +89,8 @@ protected:
 
 private:
 
+  friend class boost::serialization::access;
+  
   template<class Archive> 
   void serialize(Archive &ar, const unsigned int)
   {
