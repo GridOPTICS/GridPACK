@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2015-10-01 09:23:58 d3g096
+ * @date   2015-10-01 10:02:00 d3g096
  * 
  * @brief  
  * 
@@ -159,6 +159,42 @@ BOOST_AUTO_TEST_CASE( serialization )
   BOOST_CHECK_EQUAL(cnt0.numReal, cnt1.numReal);
   BOOST_CHECK_EQUAL(cnt0.numInt, cnt1.numInt);
   BOOST_CHECK_EQUAL(cnt0.numBin, cnt1.numBin);
+}
+
+BOOST_AUTO_TEST_CASE( MPIserialization )
+{
+  gridpack::parallel::Communicator world;
+  int me(world.rank()), nproc(world.size());
+
+  std::vector<go::VariablePtr> vlist0, vlist1;
+
+  if (me == 0) {
+    vlist0.push_back(go::VariablePtr(new go::RealVariable(13.0)));
+    vlist0.push_back(go::VariablePtr(new go::RealVariable(0.0, -1.0, 1.0)));
+    vlist0.push_back(go::VariablePtr(new go::IntegerVariable(0, -1, 1)));
+    vlist0.push_back(go::VariablePtr(new go::BinaryVariable(1)));
+  } 
+  boost::mpi::broadcast(world, vlist0, 0);
+
+  go::VariableCounter cnt;
+  for_each(vlist0.begin(), vlist0.end(),
+           boost::bind(&go::Variable::accept, _1, boost::ref(cnt)));
+  BOOST_CHECK_EQUAL(cnt.numVar,  4);
+  BOOST_CHECK_EQUAL(cnt.numReal, 2);
+  BOOST_CHECK_EQUAL(cnt.numInt,  1);
+  BOOST_CHECK_EQUAL(cnt.numBin,  1);
+
+  for (int p = 0; p < nproc; ++p) {
+    if (p == me) {
+      go::VariableTable vt(std::cout);
+      std::cout << std::endl 
+                << "Process " << p << ": " 
+                << std::endl;
+      for_each(vlist0.begin(), vlist0.end(),
+               boost::bind(&go::Variable::accept, _1, boost::ref(vt)));
+    }
+    world.barrier();
+  }
 }
 
 

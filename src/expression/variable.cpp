@@ -9,7 +9,7 @@
 /**
  * @file   variable.cpp
  * @author William A. Perkins
- * @date   2015-10-01 07:25:15 d3g096
+ * @date   2015-10-01 09:50:33 d3g096
  * 
  * @brief  
  * 
@@ -129,8 +129,10 @@ VariableTable::visit(RealVariable& var)
     p_header();
     p_first = false;
   }
-  char fmt[] = "%-10.10s (%c) %10.4g";
-  p_out << boost::str(boost::format(fmt) % var.name() % 'R' % var.initial())
+  char fmt[] = "%-10.10s (%c) %10.4g %10.4g %10.4g";
+  p_out << boost::str(boost::format(fmt) % 
+                      var.name() % 'R' % var.initial() % 
+                      var.lowerBound() % var.upperBound())
         << std::endl;
 }
  
@@ -141,8 +143,10 @@ VariableTable::visit(IntegerVariable& var)
     p_header();
     p_first = false;
   }
-  char fmt[] = "%-10.10s (%c) %10d";
-  p_out << boost::str(boost::format(fmt) % var.name() % 'I' % var.initial())
+  char fmt[] = "%-10.10s (%c) %10d %10d %10d";
+  p_out << boost::str(boost::format(fmt) % 
+                      var.name() % 'I' % var.initial() %
+                      var.lowerBound() % var.upperBound())
         << std::endl;
 }
 
@@ -159,7 +163,7 @@ VariableTable::visit(BinaryVariable& var)
 }
 
 
-static const std::string bar(25, '-');
+static const std::string bar(47, '-');
 
 // -------------------------------------------------------------
 // VariableTable::p_header
@@ -168,8 +172,8 @@ void
 VariableTable::p_header(void) const
 {
   p_out << bar << std::endl
-        << "Variable                 " << std::endl
-        << "Name      Type      Value" << std::endl
+        << "Variable                                       " << std::endl
+        << "Name      Type      Value      Lower      Upper" << std::endl
         << bar << std::endl;
 }
 
