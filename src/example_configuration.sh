@@ -117,6 +117,23 @@ elif [ $host == "olympus.local" ]; then
 	-D MPIEXEC:STRING='mpiexec' \
 	$common_flags ..
 
+elif [ $host == "gridpackvm" ]; then
+
+    prefix="$HOME/gridpack"
+    cmake -Wno-dev --debug-try-compile \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.6.2" \
+	-D PETSC_ARCH:STRING="arch-linux-real-opt" \
+	-D GA_DIR:STRING="$prefix" \
+	-D MPI_CXX_COMPILER:STRING="mpicxx" \
+	-D MPI_C_COMPILER:STRING="mpicc" \
+	-D MPIEXEC:STRING="mpiexec" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/opt/local" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+	$common_flags ..
+
 else
 
     echo "Unknown host: $host"
