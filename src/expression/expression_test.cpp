@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-08-28 12:10:41 d3g096
+ * @date   2015-09-21 15:44:58 d3g096
  * 
  * @brief  
  * 
@@ -48,6 +48,18 @@ main(int argc, char **argv)
   junk->evaluate();  std::cout << std::endl;
 
   junk = junk + junk + junk;
+  junk->evaluate();  std::cout << std::endl;
+
+  junk = 6*C + A/4;
+  junk->evaluate();  std::cout << std::endl;
+
+  junk = (6.0*C + A)/4.6;
+  junk->evaluate();  std::cout << std::endl;
+
+  junk = 6*C + 2*(A^2);
+  junk->evaluate();  std::cout << std::endl;
+
+  junk = 6*C + ((2*A)^2);
   junk->evaluate();  std::cout << std::endl;
 
 

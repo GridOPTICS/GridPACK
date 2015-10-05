@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:29:11 d3g096
+# Last Change: 2015-09-17 10:06:10 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -58,8 +58,8 @@ if (GOSS_DIR)
 
     DEPENDS 
     ${CMAKE_CURRENT_SOURCE_DIR}/test/input_goss.xml
+    )
 
-  )
   add_dependencies(test_goss test_goss_input)
 endif()
 

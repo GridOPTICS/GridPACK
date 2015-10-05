@@ -8,9 +8,9 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 /**
- * @file   cplex_optimizer_implementation.hpp
- * @author Yilin Fang 
- * @date   2015-09-28 12:18:13 d3m045
+ * @file   lpfile_optimizer_implementation.hpp
+ * @author William A. Perkins
+ * @date   2015-09-16 10:14:29 d3g096
  * 
  * @brief  
  * 
@@ -18,34 +18,49 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _cplex_optimizer_implementation_hpp_
-#define _cplex_optimizer_implementation_hpp_
 
-#include "lpfile_optimizer_implementation.hpp"
+#ifndef _lpfile_optimizer_implementation_hpp_
+#define _lpfile_optimizer_implementation_hpp_
+
+#include <iosfwd>
+#include <string>
+#include "optimizer.hpp"
 
 namespace gridpack {
 namespace optimization {
 
+
+
 // -------------------------------------------------------------
-//  class CPlexOptimizerImplementation
+//  class LPFileOptimizerImplementation
 // -------------------------------------------------------------
-class CPlexOptimizerImplementation 
-  : public LPFileOptimizerImplementation
+class LPFileOptimizerImplementation 
+  : public OptimizerImplementation
 {
 public:
 
   /// Default constructor.
-  CPlexOptimizerImplementation(const parallel::Communicator& comm);
+  LPFileOptimizerImplementation(const parallel::Communicator& comm)
+    : OptimizerImplementation(comm)
+  {}
 
   /// Destructor
-  ~CPlexOptimizerImplementation(void);
+  ~LPFileOptimizerImplementation(void)
+  {}
 
 protected:
 
+  /// Open a stream to a new temporary file
+  static std::string p_temporaryFileName(void);
+
+  /// Write an LP file to the specified stream
+  virtual void p_write(const p_optimizeMethod& m, std::ostream& out);
+
   /// Do the problem (specialized)
   void p_solve(const p_optimizeMethod& m);
-
+  
 };
+
 
 } // namespace optimization
 } // namespace gridpack

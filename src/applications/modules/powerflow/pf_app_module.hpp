@@ -193,7 +193,6 @@ class PFAppModule
      * Clear "ignore" parameter on all lines
      */
     void clearLineOverloadViolations();
-
   private:
 
     // pointer to network

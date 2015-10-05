@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-07-30 14:27:59 d3g096
+# Last Change: 2015-09-16 09:34:12 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -43,8 +43,8 @@ if (GOSS_DIR)
   set (GOSS_LIBRARY "${GOSS_DIR}/lib/libactivemq-cpp.a")
 endif()
 if (APR_DIR)
-  include_directories(AFTER ${APR_DIR}/include)
-  set (APR_LIBRARY "${APR_DIR}/.libs/libapr-1.a")
+  include_directories(AFTER ${APR_DIR}/include/apr-1)
+  set (APR_LIBRARY "${APR_DIR}/lib/libapr-1.a")
 endif()
 
 # suppress any checks to see if test codes run. Only check for compilation.
@@ -57,6 +57,9 @@ option(USE_CPLEX
 
 option(USE_GUROBI
   "Use optimization software GUROBI libraries." OFF)
+
+option(USE_GLPK
+  "Use GNU linear programming kit optimization software library." OFF)
 
 # -------------------------------------------------------------
 # MPI compiler
@@ -97,7 +100,7 @@ message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
 set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.49 COMPONENTS mpi serialization random system REQUIRED)
+find_package(Boost 1.49 COMPONENTS mpi serialization random filesystem system REQUIRED)
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
@@ -183,6 +186,11 @@ IF( USE_GUROBI)
   message(STATUS "Checking Gurobi ...")
   find_package(GUROBI REQUIRED)
 endif (USE_GUROBI)
+
+if(USE_GLPK)
+  message(STATUS "Checking glpk ...")
+  find_package(GLPK REQUIRED)
+endif(USE_GLPK)
 
 #message(STATUS "Checking concert ...")
 #find_package(CONCERT REQUIRED)
