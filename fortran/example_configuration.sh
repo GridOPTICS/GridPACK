@@ -64,11 +64,20 @@ elif [ $host == "olympus.local" ]; then
     export FC
 
     prefix="/pic/projects/gridpack/olympus-gnu-4.6"
-    cmake -Wdev --debug-trycompile \
+    cmake $options \
         -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
+elif [ "$host" == "gridpackvm" ]; then
+    
+    prefix="/home/gridpack/gridpack"
+    cmake $options \
+        -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        $common_flags \
+        ..
+    
 else
 
     echo "Unknown host: $host"
