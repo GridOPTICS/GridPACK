@@ -359,6 +359,7 @@ void gridpack::powerflow::PFBus::load(
   if (p_type == 3) {
     setReferenceBus(true);
   }
+  data->getValue(BUS_AREA, &p_area);
 
   // if BUS_TYPE = 2, and gstatus is 1, then bus is a PV bus
   p_isPV = false;
@@ -912,6 +913,14 @@ void gridpack::powerflow::PFBus::setIgnore(bool flag)
 bool gridpack::powerflow::PFBus::getIgnore()
 {
   return p_ignore;
+}
+
+/**
+ * Get area parameter for bus
+ */
+int gridpack::powerflow::PFBus::getArea()
+{
+  return p_area;
 }
 
 /**

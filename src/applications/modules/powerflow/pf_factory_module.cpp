@@ -249,6 +249,33 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
 }
 
 /**
+ * Check to see if there are any voltage violations in the network
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ * @param area only check for voltage violations in this area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
+    int area, double Vmin, double Vmax)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      if (!bus->getIgnore() && bus->getArea() == area) {
+        double V = bus->getVoltage();
+        if (V < Vmin || V > Vmax) bus_ok = false;
+      }
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
  * Set "ignore" parameter on all buses with violations so that subsequent
  * checks are not counted as violations
  * @param minV maximum voltage limit
@@ -315,6 +342,52 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
               gridpack::ComplexType s = branch->getComplexPower(tags[k]);
               double pq = abs(s);
               if (pq > rateA) branch_ok = false;
+            }
+          }
+        }
+      }
+    }
+  }
+  return checkTrue(branch_ok);
+}
+
+/**
+ * Check to see if there are any line overload violations in the
+ * network
+ * @param area only check for voltage violations in this area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(int area)
+{
+  int numBranch = p_network->numBranches();
+  int i;
+  bool branch_ok = true;
+  for (i=0; i<numBranch; i++) {
+    if (p_network->getActiveBranch(i)) {
+      gridpack::powerflow::PFBranch *branch =
+        dynamic_cast<gridpack::powerflow::PFBranch*>
+        (p_network->getBranch(i).get());
+      // get buses at either end
+      gridpack::powerflow::PFBus *bus1 =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (branch->getBus1().get());
+      gridpack::powerflow::PFBus *bus2 =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (branch->getBus2().get());
+      // Loop over all lines in the branch and choose the smallest rating value
+      if (bus1->getArea() == area || bus2->getArea() == area) {
+        int nlines;
+        p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+        std::vector<std::string> tags = branch->getLineTags();
+        double rateA;
+        for (int k = 0; k<nlines; k++) {
+          if (!branch->getIgnore(tags[k])) {
+            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
+              if (rateA > 0.0) {
+                gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+                double pq = abs(s);
+                if (pq > rateA) branch_ok = false;
+              }
             }
           }
         }
