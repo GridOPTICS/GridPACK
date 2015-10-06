@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2015-10-01 10:02:00 d3g096
+ * @date   2015-10-06 09:59:10 d3g096
  * 
  * @brief  
  * 
@@ -22,15 +22,17 @@
 #include <sstream>
 #include <vector>
 #include <boost/bind.hpp>
-#include "gridpack/utilities/exception.hpp"
-#include "gridpack/parallel/parallel.hpp"
-#include "variable.hpp"
 
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/string.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+
+#include "gridpack/utilities/exception.hpp"
+#include "gridpack/parallel/parallel.hpp"
+
+#include "variable.hpp"
 
 /// The type of (non-MPI) serialization archive to use
 typedef boost::archive::binary_oarchive oArchive;
@@ -41,13 +43,6 @@ typedef boost::archive::binary_iarchive iArchive;
 #include <boost/test/included/unit_test.hpp>
 
 namespace go = gridpack::optimization;
-
-#include <boost/serialization/export.hpp>
-
-BOOST_CLASS_EXPORT(go::Variable);
-BOOST_CLASS_EXPORT(go::BoundedVariableT<double>);
-BOOST_CLASS_EXPORT(go::BoundedVariableT<int>);
-BOOST_CLASS_EXPORT(go::BinaryVariable);
 
 // -------------------------------------------------------------
 //  class VariableNamePrinter

@@ -9,7 +9,7 @@
 /**
  * @file   variable.cpp
  * @author William A. Perkins
- * @date   2015-10-01 09:50:33 d3g096
+ * @date   2015-10-06 10:01:57 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,16 @@
 #include <climits>
 #include <boost/format.hpp>
 #include "variable.hpp"
+
+#include <boost/mpi.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Variable);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::BoundedVariableT<double>);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::BoundedVariableT<int>);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::BinaryVariable);
+
 
 namespace gridpack {
 namespace optimization {
@@ -55,7 +65,6 @@ template <> const double BoundedVariableT<double>::veryHighValue(1.0E100);
 
 template <> const int BoundedVariableT<int>::veryLowValue(INT_MIN);
 template <> const int BoundedVariableT<int>::veryHighValue(INT_MAX);
-
 
 // -------------------------------------------------------------
 //  class VariableVisitor

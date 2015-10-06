@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-10-01 09:16:31 d3g096
+ * @date   2015-10-06 10:00:56 d3g096
  * 
  * @brief  
  * 
@@ -27,6 +27,9 @@
 #include <boost/serialization/base_object.hpp>
 #include <gridpack/utilities/named.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
+
+#include <boost/serialization/export.hpp>
+
 
 namespace gridpack {
 namespace optimization {
@@ -353,11 +356,13 @@ public:
 
 };
 
-
-
-
-
 } // namespace optimization
 } // namespace gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Variable);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BoundedVariableT<double>);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BoundedVariableT<int>);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BinaryVariable);
+
 
 #endif
