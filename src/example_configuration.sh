@@ -14,6 +14,7 @@ common_flags="\
 
 if [ $host == "flophouse" ]; then
 
+    # RHEL 5 with GNU 4.8 compilers built from scratch
 
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
     PATH="${prefix}/bin:${PATH}"
@@ -44,6 +45,8 @@ if [ $host == "flophouse" ]; then
 
 elif [ $host == "flophouse41" ]; then
 
+    # RHEL 5 with stock GNU 4.4 compilers
+
     prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
     PATH="${prefix}/bin:${PATH}"
     export PATH
@@ -73,14 +76,16 @@ elif [ $host == "flophouse41" ]; then
         $common_flags ..
     
 elif [ $host == "pe10900" ]; then
-    prefix="/net/flophouse/files0/perksoft/macosx"
 
-    # avoid using the system compilers and MPI wrappers -- use MacPorts
+    # Mac using GNU 4.8 and OpenMPI -- avoid using the system
+    # compilers and MPI wrappers -- using MacPorts
 
     CC=/opt/local/bin/gcc
     export CC
     CXX=/opt/local/bin/g++
     export CXX
+
+    prefix="/net/flophouse/files0/perksoft/macosx"
 
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
@@ -93,6 +98,8 @@ elif [ $host == "pe10900" ]; then
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/opt/local" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
@@ -108,6 +115,23 @@ elif [ $host == "olympus.local" ]; then
 	-D MPI_CXX_COMPILER:STRING='mpicxx' \
 	-D MPI_C_COMPILER:STRING='mpicc' \
 	-D MPIEXEC:STRING='mpiexec' \
+	$common_flags ..
+
+elif [ $host == "gridpackvm" ]; then
+
+    prefix="$HOME/gridpack"
+    cmake -Wno-dev --debug-try-compile \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.6.2" \
+	-D PETSC_ARCH:STRING="arch-linux-real-opt" \
+	-D GA_DIR:STRING="$prefix" \
+	-D MPI_CXX_COMPILER:STRING="mpicxx" \
+	-D MPI_C_COMPILER:STRING="mpicc" \
+	-D MPIEXEC:STRING="mpiexec" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/opt/local" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
 	$common_flags ..
 
 else

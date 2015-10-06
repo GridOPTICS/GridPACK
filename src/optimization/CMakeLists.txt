@@ -28,9 +28,9 @@ set(target_libraries
   ${PETSC_LIBRARIES}
 )
 
-    add_definitions(
-        -DIL_STD
-    )
+add_definitions(
+     -DIL_STD
+)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
@@ -44,10 +44,10 @@ endif()
 # TEST: greetings
 # A simple MPI program
 # -------------------------------------------------------------
-add_executable(test_optim 
-   test/test_optim.cpp
+add_executable(test_expression
+   test/test_expression.cpp
 )
-target_link_libraries(test_optim ${target_libraries})
+target_link_libraries(test_expression ${target_libraries})
 
 add_executable(uc.x
    test_app/uc_app.cpp

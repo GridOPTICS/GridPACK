@@ -107,7 +107,20 @@ void gridpack::powerflow::PFFactoryModule::updatePg(int busID, std::string genID
   int genIndex=0;
   for (i=0; i<numBus; i++) {
 //    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(name,busID, genID, value);
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(busID, genID, value);
+    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(GENERATOR_PG,
+        busID, genID, value);
+  }
+}
+
+void gridpack::powerflow::PFFactoryModule::updateQg(int busID, std::string genID, double value)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  int genIndex=0;
+  for (i=0; i<numBus; i++) {
+//    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(name,busID, genID, value);
+    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(GENERATOR_QG,
+        busID, genID, value);
   }
 }
 
