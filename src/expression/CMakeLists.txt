@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 11, 2013 by William A. Perkins
-# Last Change: 2015-10-06 10:15:22 d3g096
+# Last Change: 2015-10-06 11:30:42 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -79,9 +79,6 @@ add_executable(optimizer_test test/optimizer_test.cpp)
 target_link_libraries(optimizer_test ${target_libraries})
 
 gridpack_add_unit_test("optimizer" optimizer_test)
-
-add_executable(uc_test uc_test.cpp)
-target_link_libraries(uc_test ${target_libraries})
 
 # -------------------------------------------------------------
 # installation

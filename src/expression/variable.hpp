@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-10-06 10:00:56 d3g096
+ * @date   2015-10-06 10:33:11 d3g096
  * 
  * @brief  
  * 
@@ -294,6 +294,42 @@ public:
   void visit(IntegerVariable& var)
   {
     var.initial(static_cast<int>(p_value));
+  }
+
+protected:
+  
+  double p_value;
+};
+
+// -------------------------------------------------------------
+//  class GetVariableInitial
+// -------------------------------------------------------------
+class GetVariableInitial 
+  : public VariableVisitor
+{
+public:
+
+  /// Default constructor.
+  GetVariableInitial(void)
+    : VariableVisitor(), p_value()
+  {}
+
+  /// Destructor
+  ~GetVariableInitial(void)
+  {}
+
+  void visit(RealVariable& var) 
+  {
+    p_value = var.initial();
+  }
+  void visit(IntegerVariable& var)
+  {
+    p_value = static_cast<double>(var.initial());
+  }
+
+  double value(void) const
+  {
+    return p_value;
   }
 
 protected:

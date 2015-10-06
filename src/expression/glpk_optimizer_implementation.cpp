@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created September 16, 2015 by William A. Perkins
-// Last Change: 2015-09-16 12:04:20 d3g096
+// Last Change: 2015-10-06 11:24:02 d3g096
 // -------------------------------------------------------------
 
 
@@ -60,6 +60,12 @@ GLPKOptimizerImplementation::p_solve(const p_optimizeMethod& m)
   glp_prob *lp = glp_create_prob();
   std::cout << tmpname << std::endl;
   ierr = glp_read_lp(lp, NULL, tmpname.c_str());
+  if (ierr != 0) {
+    std::string msg = 
+      boost::str(boost::format("GLPK LP parse failure, code = %d") % ierr);
+    glp_delete_prob(lp);
+    throw gridpack::Exception(msg);
+  }
 
   ierr = glp_simplex(lp, NULL);
 
