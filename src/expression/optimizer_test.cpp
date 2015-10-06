@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-09-28 14:59:06 d3g096
+ * @date   2015-10-06 09:49:33 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -19,21 +19,26 @@
 
 #include <iostream>
 #include <vector>
+
 #include "optimizer.hpp"
+
+#define BOOST_TEST_NO_MAIN
+#define BOOST_TEST_ALTERNATIVE_INIT_API
+#include <boost/test/included/unit_test.hpp>
 
 namespace go = gridpack::optimization;
 namespace gp = gridpack::parallel;
 
+BOOST_AUTO_TEST_SUITE( Optimization )
+
 // -------------------------------------------------------------
-//  Main Program
+// UNIT TEST: flow
+// This is from a GLPK example. A simple network flow optimization. 
 // -------------------------------------------------------------
-int
-main(int argc, char **argv)
+BOOST_AUTO_TEST_CASE( flow )
 {
-  gp::Environment env(argc, argv);
   gp::Communicator world;
   gp::Communicator self(world.self());
-  
   go::Optimizer opt(self);
 
   std::vector<go::VariablePtr> vars;
@@ -73,7 +78,26 @@ main(int argc, char **argv)
   opt.addToObjective(obj);
 
   opt.maximize();
+}
 
-  return 0;
+BOOST_AUTO_TEST_SUITE_END()
+
+// -------------------------------------------------------------
+// init_function
+// -------------------------------------------------------------
+bool init_function()
+{
+  return true;
+}
+
+// -------------------------------------------------------------
+//  Main Program
+// -------------------------------------------------------------
+int
+main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc, argv);
+  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  return result;
 }
 
