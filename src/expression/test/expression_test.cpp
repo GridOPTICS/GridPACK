@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-10-07 14:45:05 d3g096
+ * @date   2015-10-07 15:07:37 d3g096
  * 
  * @brief  
  * 
@@ -23,12 +23,20 @@
 #include <map>
 #include <algorithm>
 #include <boost/bind.hpp>
-#include "expression.hpp"
 
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/vector.hpp>
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+
+#include "gridpack/utilities/exception.hpp"
+#include "gridpack/parallel/parallel.hpp"
+
+#include "expression.hpp"
+
+#define BOOST_TEST_NO_MAIN
+#define BOOST_TEST_ALTERNATIVE_INIT_API
+#include <boost/test/included/unit_test.hpp>
 
 namespace go = gridpack::optimization;
 
@@ -60,15 +68,10 @@ public:
 
 };
 
+BOOST_AUTO_TEST_SUITE( ExpressionTest )
 
-
-// -------------------------------------------------------------
-//  Main Program
-// -------------------------------------------------------------
-int
-main(int argc, char **argv)
+BOOST_AUTO_TEST_CASE( serialize )
 {
-
   std::vector<go::VariablePtr> vars;
   go::VariablePtr A(new go::RealVariable(13.0));
   go::VariablePtr B(new go::RealVariable(0.0, -1.0, 1.0));
@@ -106,41 +109,65 @@ main(int argc, char **argv)
   std::cout << std::endl;
 
   std::string buf;
-  {
-    std::ostringstream oss;
-    boost::archive::binary_oarchive oa(oss);
-    oa & vars & exprs & cons;
-    buf = oss.str();
-  }
-  {
-    std::vector<go::VariablePtr> invars;
-    std::vector<go::ExpressionPtr> inexprs;
-    std::vector<go::ConstraintPtr> incons;
-    std::istringstream iss(buf);
-    boost::archive::binary_iarchive ia(iss);
-    ia & invars & inexprs & incons;
 
-    std::for_each(inexprs.begin(), inexprs.end(), 
-                  boost::bind(&go::Expression::evaluate, _1));
-    std::cout << std::endl;
+  std::ostringstream oss;
+  boost::archive::binary_oarchive oa(oss);
+  oa & vars & exprs & cons;
+  buf = oss.str();
 
-    std::for_each(incons.begin(), incons.end(), 
-                  boost::bind(&go::Expression::evaluate, _1));
+  std::vector<go::VariablePtr> invars;
+  std::vector<go::ExpressionPtr> inexprs;
+  std::vector<go::ConstraintPtr> incons;
+  std::istringstream iss(buf);
+  boost::archive::binary_iarchive ia(iss);
+  ia & invars & inexprs & incons;
 
-    ExpressionVariableChecker vcheck;
-    std::for_each(inexprs.begin(), inexprs.end(), 
-                  boost::bind(&go::Expression::accept, _1, boost::ref(vcheck)));
-    std::for_each(incons.begin(), incons.end(), 
-                  boost::bind(&go::Expression::accept, _1, boost::ref(vcheck)));
+  BOOST_CHECK_EQUAL(vars.size(), invars.size());
+  BOOST_CHECK_EQUAL(exprs.size(), inexprs.size());
+  BOOST_CHECK_EQUAL(cons.size(), incons.size());
+  
+  std::for_each(inexprs.begin(), inexprs.end(), 
+                boost::bind(&go::Expression::evaluate, _1));
+  std::cout << std::endl;
+  
+  std::for_each(incons.begin(), incons.end(), 
+                boost::bind(&go::Expression::evaluate, _1));
+  
+  ExpressionVariableChecker vcheck;
+  std::for_each(inexprs.begin(), inexprs.end(), 
+                boost::bind(&go::Expression::accept, _1, boost::ref(vcheck)));
+  std::for_each(incons.begin(), incons.end(), 
+                boost::bind(&go::Expression::accept, _1, boost::ref(vcheck)));
  
-    std::cout << vcheck.var.size() << std::endl;
-    for (std::map<void *, std::string>::iterator i = vcheck.var.begin();
-         i != vcheck.var.end(); ++i) {
-      std::cout << i->first << ": " << i->second 
-                << ": " << ((go::Variable *)(i->first))->name()
-                << std::endl;
-    }
+  BOOST_CHECK_EQUAL(vcheck.var.size(), 3);
+  for (std::map<void *, std::string>::iterator i = vcheck.var.begin();
+       i != vcheck.var.end(); ++i) {
+    std::string n1(i->second), n2(((go::Variable *)(i->first))->name());
+    BOOST_CHECK_EQUAL(n1, n2);
+    std::cout << i->first << ": " << n1
+              << ": " << n2
+              << std::endl;
   }
-
-  return 0;
 }
+
+BOOST_AUTO_TEST_SUITE_END()
+
+// -------------------------------------------------------------
+// init_function
+// -------------------------------------------------------------
+bool init_function()
+{
+  return true;
+}
+
+// -------------------------------------------------------------
+//  Main Program
+// -------------------------------------------------------------
+int
+main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc, argv);
+  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  return result;
+}
+

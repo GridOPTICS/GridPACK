@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 11, 2013 by William A. Perkins
-# Last Change: 2015-10-06 11:30:42 d3g096
+# Last Change: 2015-10-07 15:08:52 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -69,8 +69,10 @@ gridpack_add_unit_test("optimization_variables" variable_test)
 # -------------------------------------------------------------
 # expression test suite
 # -------------------------------------------------------------
-add_executable(expression_test expression_test.cpp)
+add_executable(expression_test test/expression_test.cpp)
 target_link_libraries(expression_test ${target_libraries})
+
+gridpack_add_unit_test("optimization_expressions" variable_test)
 
 # -------------------------------------------------------------
 # optimizer test suite
