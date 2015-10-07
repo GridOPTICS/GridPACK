@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-10-07 12:37:48 d3g096
+ * @date   2015-10-07 14:19:00 d3g096
  * 
  * @brief  
  * 
@@ -250,6 +250,12 @@ public:
   std::string name(void) const
   {
     return p_var->name();
+  }
+
+  /// Get the variable
+  VariablePtr var(void) const
+  {
+    return p_var;
   }
 
 protected:

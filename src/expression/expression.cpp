@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-10-07 13:11:40 d3g096
+// Last Change: 2015-10-07 14:45:27 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -106,30 +106,80 @@ ExpressionVisitor::~ExpressionVisitor(void)
 // -------------------------------------------------------------
 // ExpressionVisitor::visit
 //
-// The default behavior is to do nothing. 
 // -------------------------------------------------------------
 
+// For constants and variable do nothing
 void ExpressionVisitor::visit(IntegerConstant& e)  { return; };
 void ExpressionVisitor::visit(RealConstant& e) { return; };
 void ExpressionVisitor::visit(VariableExpression& e) { return; };
 
-void ExpressionVisitor::visit(UnaryExpression& e) { return; };
-void ExpressionVisitor::visit(UnaryMinus& e) { return; };
-void ExpressionVisitor::visit(UnaryPlus& e) { return; };
+// Send the visitor to the rhs
+void ExpressionVisitor::visit(UnaryExpression& e)
+{
+  e.rhs()->accept(*this);
+}
+void ExpressionVisitor::visit(UnaryMinus& e)
+{
+  visit(static_cast<UnaryExpression&>(e));
+}
+void ExpressionVisitor::visit(UnaryPlus& e)
+{
+  visit(static_cast<UnaryExpression&>(e));
+}
 
-void ExpressionVisitor::visit(BinaryExpression& e) { return; };
-void ExpressionVisitor::visit(Multiplication& e) { return; };
-void ExpressionVisitor::visit(Division& e) { return; };
-void ExpressionVisitor::visit(Addition& e) { return; };
-void ExpressionVisitor::visit(Subtraction& e) { return; };
-void ExpressionVisitor::visit(Exponentiation& e) { return; };
+// Send the visitor to the rhs and the rhs
+void ExpressionVisitor::visit(BinaryExpression& e) 
+{
+  e.lhs()->accept(*this);
+  e.rhs()->accept(*this);
+}
+void ExpressionVisitor::visit(Multiplication& e)
+{
+  visit(static_cast<BinaryExpression&>(e));
+}
+void ExpressionVisitor::visit(Division& e)
+{
+  visit(static_cast<BinaryExpression&>(e));
+}
+void ExpressionVisitor::visit(Addition& e)
+{
+  visit(static_cast<BinaryExpression&>(e));
+}
+void ExpressionVisitor::visit(Subtraction& e)
+{
+  visit(static_cast<BinaryExpression&>(e));
+}
+void ExpressionVisitor::visit(Exponentiation& e)
+{
+  visit(static_cast<BinaryExpression&>(e));
+}
 
-void ExpressionVisitor::visit(Constraint& e) { return; };
-void ExpressionVisitor::visit(LessThan& e) { return; };
-void ExpressionVisitor::visit(LessThanOrEqual& e) { return; };
-void ExpressionVisitor::visit(GreaterThan& e) { return; };
-void ExpressionVisitor::visit(GreaterThanOrEqual& e) { return; };
-void ExpressionVisitor::visit(Equal& e) { return; };
+// Send the visitor to the rhs and the rhs
+void ExpressionVisitor::visit(Constraint& e)
+{
+  e.lhs()->accept(*this);
+  e.rhs()->accept(*this);
+}
+void ExpressionVisitor::visit(LessThan& e)
+{
+  visit(static_cast<Constraint&>(e));
+}
+void ExpressionVisitor::visit(LessThanOrEqual& e)
+{
+  visit(static_cast<Constraint&>(e));
+}
+void ExpressionVisitor::visit(GreaterThan& e)
+{
+  visit(static_cast<Constraint&>(e));
+}
+void ExpressionVisitor::visit(GreaterThanOrEqual& e)
+{
+  visit(static_cast<Constraint&>(e));
+}
+void ExpressionVisitor::visit(Equal& e)
+{
+  visit(static_cast<Constraint&>(e));
+}
 
 
 } // namespace optimization

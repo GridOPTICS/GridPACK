@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-10-07 13:33:17 d3g096
+ * @date   2015-10-07 14:45:05 d3g096
  * 
  * @brief  
  * 
@@ -20,6 +20,7 @@
 #include <iostream>
 #include <sstream>
 #include <vector>
+#include <map>
 #include <algorithm>
 #include <boost/bind.hpp>
 #include "expression.hpp"
@@ -30,6 +31,36 @@
 #include <boost/archive/binary_iarchive.hpp>
 
 namespace go = gridpack::optimization;
+
+// -------------------------------------------------------------
+//  class ExpressionVariableChecker
+// -------------------------------------------------------------
+class ExpressionVariableChecker 
+  : public go::ExpressionVisitor
+{
+public:
+
+  /// Default constructor.
+  ExpressionVariableChecker(void)
+    : go::ExpressionVisitor()
+  {}
+
+  /// Destructor
+  ~ExpressionVariableChecker(void)
+  {}
+
+  void visit(go::VariableExpression& e)
+  {
+    go::VariablePtr v(e.var());
+    void *vaddr = v.get();
+    var[vaddr] = v->name();
+  } 
+
+  std::map<void *, std::string> var;
+
+};
+
+
 
 // -------------------------------------------------------------
 //  Main Program
@@ -58,7 +89,7 @@ main(int argc, char **argv)
   exprs.push_back( exprs[0] + exprs[1] + exprs[2] );
   exprs.push_back( 6*C + A/4 );
   exprs.push_back( (6.0*C + A)/4.6 ); 
-  exprs.push_back( 6*C + 2*(A^2) ); 
+  exprs.push_back( 6*B + 2*(A^2) ); 
   exprs.push_back( 6*C + ((2*A)^2) ); 
 
   std::for_each(exprs.begin(), exprs.end(), 
@@ -95,8 +126,21 @@ main(int argc, char **argv)
 
     std::for_each(incons.begin(), incons.end(), 
                   boost::bind(&go::Expression::evaluate, _1));
-  }
 
+    ExpressionVariableChecker vcheck;
+    std::for_each(inexprs.begin(), inexprs.end(), 
+                  boost::bind(&go::Expression::accept, _1, boost::ref(vcheck)));
+    std::for_each(incons.begin(), incons.end(), 
+                  boost::bind(&go::Expression::accept, _1, boost::ref(vcheck)));
+ 
+    std::cout << vcheck.var.size() << std::endl;
+    for (std::map<void *, std::string>::iterator i = vcheck.var.begin();
+         i != vcheck.var.end(); ++i) {
+      std::cout << i->first << ": " << i->second 
+                << ": " << ((go::Variable *)(i->first))->name()
+                << std::endl;
+    }
+  }
 
   return 0;
 }
