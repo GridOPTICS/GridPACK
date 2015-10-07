@@ -7,12 +7,40 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-09-28 14:55:03 d3g096
+// Last Change: 2015-10-07 13:11:40 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
 #include <boost/format.hpp>
 #include "expression.hpp"
+
+// Cannot do this because these classes have a boost::shared_ptr member
+// #include <boost/mpi.hpp>
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/shared_ptr.hpp>
+#include <boost/serialization/weak_ptr.hpp>
+#include <boost/archive/binary_oarchive.hpp>
+#include <boost/archive/binary_iarchive.hpp>
+
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::ConstantExpression<int>);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::ConstantExpression<double>);
+
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::VariableExpression);
+
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::UnaryMinus);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::UnaryPlus);
+
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Multiplication);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Division);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Addition);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Subtraction);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Exponentiation);
+
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThan);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThanOrEqual);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::GreaterThan);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::GreaterThanOrEqual);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Equal);
 
 namespace gridpack {
 namespace optimization {
@@ -46,9 +74,14 @@ Constraint::Constraint(const int& prec, const std::string& op,
                        ExpressionPtr lhs, ExpressionPtr rhs)
   : BinaryExpression(prec, op, lhs, rhs), 
     utility::Named()
-  {
-    Named::name(boost::str(boost::format("C%d") % p_nextID++));
-  }
+{
+  Named::name(boost::str(boost::format("C%d") % p_nextID++));
+}
+
+Constraint::Constraint(void)
+  : BinaryExpression(),
+    utility::Named()
+{}
 
 int Constraint::p_nextID(0);
 

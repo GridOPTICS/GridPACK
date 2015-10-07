@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-09-28 15:43:26 d3g096
+ * @date   2015-10-07 12:37:48 d3g096
  * 
  * @brief  
  * 
@@ -25,6 +25,8 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
 #include <boost/serialization/base_object.hpp>
+
+#include <boost/serialization/export.hpp>
 
 #include "variable.hpp"
 
@@ -330,6 +332,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  UnaryExpression(void)
+    : Expression(0)
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -371,6 +378,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  UnaryMinus(void)
+    : UnaryExpression()
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -409,6 +421,11 @@ protected:
   {
     e.visit(*this);
   }
+
+  /// Constructor for serialization
+  UnaryPlus(void)
+    : UnaryExpression()
+  {}
 
 private:
   
@@ -543,6 +560,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  Multiplication(void) 
+    : BinaryExpression()
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -640,6 +662,11 @@ protected:
   {
     e.visit(*this);
   }
+
+  /// Constructor for serialization
+  Division(void) 
+    : BinaryExpression()
+  {}
 
 private:
   
@@ -746,6 +773,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  Addition(void) 
+    : BinaryExpression()
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -786,6 +818,11 @@ protected:
   {
     e.visit(*this);
   }
+
+  /// Constructor for serialization
+  Subtraction(void) 
+    : BinaryExpression()
+  {}
 
 private:
   
@@ -947,6 +984,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  Exponentiation(void) 
+    : BinaryExpression()
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -982,7 +1024,7 @@ ExpressionPtr operator^(VariablePtr v, int exp)
 //  class Constraint
 // -------------------------------------------------------------
 class Constraint 
-  : protected BinaryExpression,
+  : public BinaryExpression,
     public utility::Named
 {
 public:
@@ -995,39 +1037,38 @@ public:
   ~Constraint(void)
   {}
 
-  /// Do whatever 
-  void evaluate(void) const
-  {
-    BinaryExpression::evaluate();
-  }
+  // /// Do whatever 
+  // void evaluate(void) const
+  // {
+  //   BinaryExpression::evaluate();
+  // }
   
-  int precedence() const
-  {
-    return BinaryExpression::precedence();
-  }
+  // int precedence() const
+  // {
+  //   return BinaryExpression::precedence();
+  // }
 
-  std::string render(void) const
-  {
-    return BinaryExpression::render();
-  }
+  // std::string render(void) const
+  // {
+  //   return BinaryExpression::render();
+  // }
 
-  const std::string& op(void) const
-  {
-    return BinaryExpression::op();
-  }
+  // const std::string& op(void) const
+  // {
+  //   return BinaryExpression::op();
+  // }
 
-  /// Get the LHS of the expression
-  ExpressionPtr lhs(void) 
-  {
-    return BinaryExpression::lhs();
-  }
-
+  // /// Get the LHS of the expression
+  // ExpressionPtr lhs(void) 
+  // {
+  //   return BinaryExpression::lhs();
+  // }
   
-  /// Get the RHS of the expresion
-  ExpressionPtr rhs()
-  {
-    return BinaryExpression::rhs();
-  }
+  // /// Get the RHS of the expresion
+  // ExpressionPtr rhs()
+  // {
+  //   return BinaryExpression::rhs();
+  // }
   
   /// Allow visits from visitors
   void accept(ExpressionVisitor& visitor) 
@@ -1038,6 +1079,9 @@ public:
 protected:
 
   static int p_nextID;
+
+  /// Constructor for serialization
+  Constraint(void);
 
 private:
   
@@ -1074,6 +1118,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  LessThan(void) 
+    : Constraint()
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -1108,6 +1157,11 @@ protected:
   {
     e.visit(*this);
   }
+
+  /// Constructor for serialization
+  LessThanOrEqual(void) 
+    : Constraint()
+  {}
 
 private:
   
@@ -1145,6 +1199,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  GreaterThan(void) 
+    : Constraint()
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -1180,6 +1239,11 @@ protected:
     e.visit(*this);
   }
 
+  /// Constructor for serialization
+  GreaterThanOrEqual(void) 
+    : Constraint()
+  {}
+
 private:
   
   friend class boost::serialization::access;
@@ -1214,6 +1278,11 @@ protected:
   {
     e.visit(*this);
   }
+
+  /// Constructor for serialization
+  Equal(void) 
+    : Constraint()
+  {}
 
 private:
   
@@ -1379,11 +1448,28 @@ public:
   }
 };
 
-
-
-
-
 } // namespace optimization
 } // namespace gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::ConstantExpression<int>);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::ConstantExpression<double>);
+
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::VariableExpression);
+
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::UnaryMinus);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::UnaryPlus);
+
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Multiplication);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Division);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Addition);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Subtraction);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Exponentiation);
+
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThan);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThanOrEqual);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::GreaterThan);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::GreaterThanOrEqual);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Equal);
+
 
 #endif
