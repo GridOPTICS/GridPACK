@@ -611,9 +611,9 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
-    double Vmin, double Vmax)
+ int area,    double Vmin, double Vmax)
 {
-  return p_factory->checkVoltageViolations(Vmin,Vmax);
+  return p_factory->checkVoltageViolations(area, Vmin,Vmax);
 
 }
 
@@ -642,7 +642,7 @@ void gridpack::powerflow::PFAppModule::clearVoltageViolations()
  * network
  * @return true if no violations found
  */
-bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
+bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
-  return p_factory->checkLineOverloadViolations();
+  return p_factory->checkLineOverloadViolations(area);
 }
