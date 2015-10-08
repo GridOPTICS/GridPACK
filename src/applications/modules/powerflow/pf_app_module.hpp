@@ -162,6 +162,7 @@ class PFAppModule
      * @return true if no violations found
      */
     bool checkVoltageViolations(double Vmin, double Vmax);
+    bool checkVoltageViolations(int area, double Vmin, double Vmax);
 
     /**
      * Set "ignore" parameter on all buses with violations so that subsequent
@@ -182,6 +183,7 @@ class PFAppModule
      * @return true if no violations found
      */
     bool checkLineOverloadViolations();
+    bool checkLineOverloadViolations(int area);
 
     /**
      * Set "ignore" paramter on all lines with violations so that subsequent

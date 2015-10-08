@@ -278,6 +278,11 @@ class PFBus
     bool getIgnore();
 
     /**
+     * Get area parameter for bus
+     */
+    int getArea();
+
+    /**
      * Evaluate diagonal block of Jacobian for power flow calculation and return
      * result as an array of real values
      * @param rvals values of Jacobian block
@@ -329,6 +334,7 @@ class PFBus
     bool p_isPV, p_saveisPV;
     int p_ngen;
     int p_type;
+    int p_area;
 
     /**
      * Variables that are exchanged between buses
@@ -369,7 +375,8 @@ private:
       & p_Pinj & p_Qinj
       & p_isPV
       & p_saveisPV
-      & p_ngen & p_type;
+      & p_ngen & p_type
+      & p_area;
   }  
 
 };
