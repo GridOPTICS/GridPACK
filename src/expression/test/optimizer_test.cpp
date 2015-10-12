@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-10-06 11:29:34 d3g096
+ * @date   2015-10-09 10:28:38 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -43,7 +43,7 @@ BOOST_AUTO_TEST_CASE( flow )
 
   std::vector<go::VariablePtr> vars;
 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0))); // 0. total flow
+  vars.push_back(go::VariablePtr(new go::RealVariable(0)));            // 0. total flow
   vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 14.0))); // 1. flow cap from 1->2 
   vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 23.0))); // 2. flow cap from 1->4 
   vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 11.0))); // 3. flow cap from 5->2 
@@ -64,15 +64,15 @@ BOOST_AUTO_TEST_CASE( flow )
     opt.addVariable(*i);
   }
 
-  opt.addConstraint( -1.0 * vars[1] - vars[2] + vars[0] == -0 );
-  opt.addConstraint( + vars[1] + vars[3] - vars[4] - vars[5] == -0 );
-  opt.addConstraint( + vars[4] - vars[6] - vars[7] == -0 );
-  opt.addConstraint( + vars[2] + vars[5] - vars[8] == -0 );
-  opt.addConstraint( - vars[3] + vars[6] + vars[8] - vars[9] - vars[10] == -0 );
-  opt.addConstraint( + vars[9] - vars[11] - vars[12] == -0 );
-  opt.addConstraint( + vars[10]+ vars[11] - vars[13] == -0 );
-  opt.addConstraint( + vars[7] + vars[12] - vars[14] == -0 );
-  opt.addConstraint( + vars[13]+ vars[14] - vars[0] == -0 );
+  opt.addConstraint( + vars[1] - vars[2] + vars[0] == 0 );         // node 1
+  opt.addConstraint( + vars[1] + vars[3] - vars[4] - vars[5] == 0 );    // node 2
+  opt.addConstraint( + vars[4] - vars[6] - vars[7] == 0 );              // node 3
+  opt.addConstraint( + vars[2] + vars[5] - vars[8] == 0 );              // node 4
+  opt.addConstraint( - vars[3] + vars[6] + vars[8] - vars[9] - vars[10] == 0 );
+  opt.addConstraint( + vars[9] - vars[11] - vars[12] == 0 );
+  opt.addConstraint( + vars[10]+ vars[11] - vars[13] == 0 );
+  opt.addConstraint( + vars[7] + vars[12] - vars[14] == 0 );
+  opt.addConstraint( + vars[13]+ vars[14] - vars[0] == 0 );
   
   go::ExpressionPtr obj(new go::VariableExpression(vars[0]));
   opt.addToObjective(obj);
