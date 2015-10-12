@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-10-07 14:19:00 d3g096
+ * @date   2015-10-12 13:14:17 d3g096
  * 
  * @brief  
  * 
@@ -28,7 +28,7 @@
 
 #include <boost/serialization/export.hpp>
 
-#include "variable.hpp"
+#include <gridpack/optimization/variable.hpp>
 
 namespace gridpack {
 namespace optimization {

@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-09-14 13:54:11 d3g096
+ * @date   2015-10-12 13:14:31 d3g096
  * 
  * @brief  
  * 
@@ -27,7 +27,7 @@
 #include <gridpack/utilities/exception.hpp>
 #include <gridpack/configuration/configurable.hpp>
 #include <gridpack/parallel/distributed.hpp>
-#include <gridpack/expression/expression.hpp>
+#include <gridpack/optimization/expression.hpp>
 
 namespace gridpack {
 namespace optimization {

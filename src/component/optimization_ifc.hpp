@@ -7,7 +7,7 @@
 /**
  * @file   optimization_ifc.hpp
  * @author Yilin Fang and Bruce Palmer
- * @date   2015-06-12
+ * @date   2015-10-12 13:13:54 d3g096
  * 
  * @brief  
  * 
@@ -26,8 +26,8 @@
 #include "boost/smart_ptr/weak_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/expression/variable.hpp"
-#include "gridpack/expression/expression.hpp"
+#include "gridpack/optimization/variable.hpp"
+#include "gridpack/optimization/expression.hpp"
 
 #include <boost/serialization/export.hpp>
 

@@ -1,13 +1,13 @@
+# -*- mode: cmake -*-
+# -------------------------------------------------------------
+# file: CMakeLists.txt
+# -------------------------------------------------------------
 #
 #     Copyright (c) 2013 Battelle Memorial Institute
 #     Licensed under modified BSD License. A copy of this license can be
 #     found
 #     in the LICENSE file in the top level directory of this distribution.
 #
-# -*- mode: cmake -*-
-# -------------------------------------------------------------
-# file: CMakeLists.txt
-# -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created 
 # Last Change:
@@ -21,32 +21,77 @@ set(target_libraries
   gridpack_expression
   gridpack_parallel
   gridpack_configuration
+)
+
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+
+add_definitions(
+  -DIL_STD
+)
+
+if (GA_FOUND)
+  include_directories(AFTER ${GA_INCLUDE_DIRS})
+endif()
+
+set(expression_src 
+  variable.cpp
+  expression.cpp
+  optimizer.cpp
+  lpfile_optimizer_implementation.cpp
+)
+
+if (USE_CPLEX)
+  list(APPEND expression_src cplex_optimizer_implementation.cpp)
+  include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
+  list(APPEND target_libraries ${CPLEX_LIBRARIES})
+elseif(USE_GLPK)
+  list(APPEND expression_src glpk_optimizer_implementation.cpp)
+  add_definitions(-DHAVE_GLPK)
+  include_directories(BEFORE ${GLPK_INCLUDE_DIR})
+  list(APPEND target_libraries ${GLPK_LIBRARY})
+elseif(USE_GUROBI)
+  include_directories(AFTER ${GUROBI_INCLUDE_DIRS})
+  list(APPEND target_libraries ${GUROBI_LIBRARIES})
+else()
+  message(WARNING "Optimization library not specified")
+endif()
+
+add_library(gridpack_expression
+  ${expression_src}
+)
+
+list(APPEND target_libraries
   ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
-  ${MPI_CXX_LIBRARIES}
   ${PETSC_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
 )
 
-    add_definitions(
-        -DIL_STD
-    )
+# -------------------------------------------------------------
+# variable test suite
+# -------------------------------------------------------------
+add_executable(variable_test test/variable_test.cpp)
+target_link_libraries(variable_test ${target_libraries})
 
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (GA_FOUND)
-  include_directories(AFTER ${GA_INCLUDE_DIRS})
-endif(
-)
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (USE_CPLEX)
-  include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
-  list(APPEND target_libraries ${CPLEX_LIBRARIES})
-endif()
+gridpack_add_unit_test("optimization_variables" variable_test)
 
-if (USE_GUROBI)
-  include_directories(AFTER ${GUROBI_INCLUDE_DIRS})
-  list(APPEND target_libraries ${GUROBI_LIBRARIES})
-endif()
+
+# -------------------------------------------------------------
+# expression test suite
+# -------------------------------------------------------------
+add_executable(expression_test test/expression_test.cpp)
+target_link_libraries(expression_test ${target_libraries})
+
+gridpack_add_unit_test("optimization_expressions" variable_test)
+
+# -------------------------------------------------------------
+# optimizer test suite
+# -------------------------------------------------------------
+add_executable(optimizer_test test/optimizer_test.cpp)
+target_link_libraries(optimizer_test ${target_libraries})
+
+gridpack_add_unit_test("optimizer" optimizer_test)
 
 # -------------------------------------------------------------
 # TEST: 
@@ -145,7 +190,13 @@ endif()
 # installation
 # -------------------------------------------------------------
 install(FILES 
+  variable.hpp  
+  expression.hpp
   optimization.hpp
   DESTINATION include/gridpack/optimization
 )
 
+install(TARGETS 
+  gridpack_expression
+  DESTINATION lib
+)

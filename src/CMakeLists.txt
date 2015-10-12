@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-09-16 09:34:12 d3g096
+# Last Change: 2015-10-12 13:09:44 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -257,10 +257,7 @@ add_subdirectory(partition)
 add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(mapper)
-add_subdirectory(expression)
-if (USE_CPLEX OR USE_GUROBI)
 add_subdirectory(optimization)
-endif()
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/powerflow2)
 add_subdirectory(applications/dynamic_simulation)
