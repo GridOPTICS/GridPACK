@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-10-09 10:28:38 d3g096
+ * @date   2015-10-12 08:40:21 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -64,7 +64,7 @@ BOOST_AUTO_TEST_CASE( flow )
     opt.addVariable(*i);
   }
 
-  opt.addConstraint( + vars[1] - vars[2] + vars[0] == 0 );         // node 1
+  opt.addConstraint( - vars[1] - vars[2] + vars[0] == 0 );         // node 1
   opt.addConstraint( + vars[1] + vars[3] - vars[4] - vars[5] == 0 );    // node 2
   opt.addConstraint( + vars[4] - vars[6] - vars[7] == 0 );              // node 3
   opt.addConstraint( + vars[2] + vars[5] - vars[8] == 0 );              // node 4
