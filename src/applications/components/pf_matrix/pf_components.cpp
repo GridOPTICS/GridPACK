@@ -248,16 +248,16 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     }
 
 //    printf("Gen %d: Q = %f, p_QL = %f, Q+p_Q0 = %f, QMAX = %f \n", getOriginalIndex(),-Q,p_ql,-Q+p_ql, qmax);  
-    if (-Q+p_ql > qmax ) { 
-      printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmax);  
+    if (-Q+p_ql+p_shunt_bs > qmax ) { 
+      printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+p_ql+p_shunt_bs, qmax);  
       p_ql = p_ql+qmax;
       p_isPV = 0;
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus[i] = 0;
       }
       return true;
-    } else if (-Q+p_ql < qmin) {
-      printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+p_ql, qmin);  
+    } else if (-Q+p_ql+p_shunt_bs < qmin) {
+      printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+p_ql+p_shunt_bs, qmin);  
       p_ql = p_ql+qmin;
       p_isPV = 0;
       for (int i=0; i<p_gstatus.size(); i++) {
@@ -687,7 +687,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       cptr += len;
     }
     double gl, bl;
-    YMBus::getShuntValues(&gl, &bl);
+    YMBus::getShuntValues(&bl, &gl);
     int area;
     p_data->getValue(BUS_AREA,&area);
     sprintf(sbuf," %16.8f, %16.8f, %8d,",gl,bl,area);
