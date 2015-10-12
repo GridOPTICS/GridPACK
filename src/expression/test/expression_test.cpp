@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-10-07 15:07:37 d3g096
+ * @date   2015-10-12 08:59:56 d3g096
  * 
  * @brief  
  * 
@@ -23,6 +23,11 @@
 #include <map>
 #include <algorithm>
 #include <boost/bind.hpp>
+
+// These two includes are needed for Boost 1.56
+
+#include <boost/serialization/singleton.hpp>
+#include <boost/serialization/extended_type_info.hpp>
 
 #include <boost/serialization/shared_ptr.hpp>
 #include <boost/serialization/vector.hpp>
