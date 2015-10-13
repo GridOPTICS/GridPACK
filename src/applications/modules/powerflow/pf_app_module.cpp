@@ -271,7 +271,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   try {
     solver.solve(*PQ, *X);
   } catch (const gridpack::Exception e) {
-    //p_busIO->header("Solver failure\n\n");
+    p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
     return false;
   }
@@ -327,7 +327,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
-//      p_busIO->header("Solver failure\n\n");
+      p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
       return false;
     }
@@ -606,23 +606,17 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
 
 /**
  * Check to see if there are any voltage violations in the network
+ * @param area area number. If this parameter is included, only check for
+ * violations in this area
  * @param minV maximum voltage limit
  * @param maxV maximum voltage limit
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
-              double Vmin, double Vmax)
+  double Vmin, double Vmax)
 {
   return p_factory->checkVoltageViolations(Vmin,Vmax);
 }
-
-/**
- * Check to see if there are any voltage violations in the network
- * @param area area number
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
- * @return true if no violations found
- */
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
  int area,    double Vmin, double Vmax)
 {
@@ -652,19 +646,14 @@ void gridpack::powerflow::PFAppModule::clearVoltageViolations()
 /**
  * Check to see if there are any line overload violations in the
  * network
+ * @param area area number. If this parameter is included, only check for
+ * violations in this area
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
 {
   return p_factory->checkLineOverloadViolations();
 }
-
-/**
- * Check to see if there are any line overload violations in the
- * area
- * @param area area name
- * @return true if no violations found
- */
 bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
   return p_factory->checkLineOverloadViolations(area);
