@@ -658,3 +658,11 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
   return p_factory->checkLineOverloadViolations(area);
 }
+
+/**
+ * Reset voltages to values in network configuration file
+ */
+void gridpack::powerflow::PFAppModule::resetVoltages()
+{
+  p_factory->resetVoltages();
+}

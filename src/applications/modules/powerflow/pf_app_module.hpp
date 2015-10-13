@@ -195,6 +195,11 @@ class PFAppModule
      * Clear "ignore" parameter on all lines
      */
     void clearLineOverloadViolations();
+
+    /**
+     * Reset voltages to values in network configuration file
+     */
+    void resetVoltages();
   private:
 
     // pointer to network
