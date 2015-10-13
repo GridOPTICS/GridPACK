@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-10-12 13:14:17 d3g096
+ * @date   2015-10-13 14:06:15 d3g096
  * 
  * @brief  
  * 
@@ -256,6 +256,12 @@ public:
   VariablePtr var(void) const
   {
     return p_var;
+  }
+
+  /// Set the variable (be careful now!)
+  void var(VariablePtr v) 
+  {
+    p_var = v;
   }
 
 protected:
@@ -1097,6 +1103,7 @@ private:
   void serialize(Archive &ar, const unsigned int)
   {
     ar & boost::serialization::base_object<BinaryExpression>(*this);
+    ar & boost::serialization::base_object<utility::Named>(*this);
   }
 };
 

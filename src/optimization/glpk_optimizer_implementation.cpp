@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created September 16, 2015 by William A. Perkins
-// Last Change: 2015-10-06 11:24:02 d3g096
+// Last Change: 2015-10-13 15:34:10 d3g096
 // -------------------------------------------------------------
 
 
@@ -15,6 +15,7 @@
 #include <fstream>
 #include <glpk.h>
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include "glpk_optimizer_implementation.hpp"
 
@@ -44,6 +45,9 @@ GLPKOptimizerImplementation::~GLPKOptimizerImplementation(void)
 void
 GLPKOptimizerImplementation::p_solve(const p_optimizeMethod& m)
 {
+  parallel::Communicator comm(this->communicator());
+  int nproc(comm.size());
+  int me(comm.rank());
   std::string tmpname(p_temporaryFileName());
   std::ofstream tmp;
 
@@ -76,25 +80,32 @@ GLPKOptimizerImplementation::p_solve(const p_optimizeMethod& m)
     throw gridpack::Exception(msg);
   }
 
-  std::cout << "Optimimal variable values:" << std::endl;
+  comm.barrier();
+  for (int p = 0; p < nproc; ++p) {
+    if (p == me) {
+      std::cout << "Optimimal variable values (process " << me << "):" << std::endl;
 
-  int idx = 1;
-  for (std::vector<VariablePtr>::iterator v = p_variables.begin();
-       v != p_variables.end(); ++v, ++idx) {
-    std::string gname(glp_get_col_name(lp, idx));
-    std::string vname((*v)->name());
-
-    std::cout << gname << " " << vname << " " 
-              << glp_get_col_prim(lp, idx) << " " 
-              << glp_get_col_dual(lp, idx) << " "
-              << std::endl;
-
-    SetVariableInitial vset(glp_get_col_prim(lp, idx));
-    (*v)->accept(vset);
-  } 
-  VariableTable vtab(std::cout);
-  std::for_each(p_variables.begin(), p_variables.end(),
-                boost::bind(&Variable::accept, _1, boost::ref(vtab)));
+      int varnum(glp_get_num_cols(lp));
+      for (int idx = 1; idx <= varnum; ++idx) {
+        std::string gname(glp_get_col_name(lp, idx));
+        VariablePtr v(p_allVariables[gname]);
+        std::string vname(v->name());
+        
+        std::cout << gname << " " << vname << " " 
+                  << glp_get_col_prim(lp, idx) << " " 
+                  << glp_get_col_dual(lp, idx) << " "
+                  << std::endl;
+        
+        SetVariableInitial vset(glp_get_col_prim(lp, idx));
+        v->accept(vset);
+      } 
+      VariableTable vtab(std::cout);
+      BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+        i.second->accept(vtab);
+      }
+    }
+    comm.barrier();
+  }
   glp_delete_prob(lp);
 }
 

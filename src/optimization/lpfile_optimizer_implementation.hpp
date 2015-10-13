@@ -10,7 +10,7 @@
 /**
  * @file   lpfile_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2015-09-16 10:14:29 d3g096
+ * @date   2015-10-13 13:11:36 d3g096
  * 
  * @brief  
  * 
@@ -51,7 +51,7 @@ public:
 protected:
 
   /// Open a stream to a new temporary file
-  static std::string p_temporaryFileName(void);
+  std::string p_temporaryFileName(void);
 
   /// Write an LP file to the specified stream
   virtual void p_write(const p_optimizeMethod& m, std::ostream& out);

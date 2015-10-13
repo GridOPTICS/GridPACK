@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-10-12 13:14:31 d3g096
+ * @date   2015-10-13 12:31:02 d3g096
  * 
  * @brief  
  * 
@@ -116,6 +116,9 @@ class OptimizerImplementation
 {
 public:
 
+  /// A map of variable name to variable
+  typedef std::map<std::string, VariablePtr> VarMap;
+
   /// Default constructor.
   OptimizerImplementation(const parallel::Communicator& comm)
     : OptimizerInterface(),
@@ -129,16 +132,25 @@ public:
 
 protected:
 
-  /// The variables involved
+  /// The (local) variables involved
   std::vector<VariablePtr> p_variables;
 
-  /// The collection of constraints involved
+  /// The collection of (local) constraints involved
   std::vector<ConstraintPtr> p_constraints;
 
-  /// The objective fuction
+  /// The (local part of the) objective fuction
   ExpressionPtr p_objective;
 
-  /// The global constraint expressions
+  /// Variables involved from all processes (unique instances)
+  VarMap p_allVariables;
+
+  /// Constraints involved from all processes 
+  std::vector<ConstraintPtr> p_allConstraints;
+
+  /// The entire objective function
+  ExpressionPtr p_fullObjective;
+
+  /// The global constraint expressions (local parts)
   std::map<std::string, ExpressionPtr> p_globalConstraints;
 
   /// Add a (local) variable to be optimized (specialized)
@@ -190,6 +202,9 @@ protected:
     if (props) {
     }
   }
+
+  /// Gather the problem to all processors
+  void p_gatherProblem(void);
 };
 
 // -------------------------------------------------------------

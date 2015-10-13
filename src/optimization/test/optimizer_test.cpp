@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-10-12 08:40:21 d3g096
+ * @date   2015-10-13 15:37:45 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -38,44 +38,172 @@ BOOST_AUTO_TEST_SUITE( Optimization )
 BOOST_AUTO_TEST_CASE( flow )
 {
   gp::Communicator world;
-  gp::Communicator self(world.self());
-  go::Optimizer opt(self);
+  int nproc(world.size());
+  int me(world.rank());
 
-  std::vector<go::VariablePtr> vars;
+  static const int netnodes(9);
+  static const int netedges(14);
 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0)));            // 0. total flow
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 14.0))); // 1. flow cap from 1->2 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 23.0))); // 2. flow cap from 1->4 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 11.0))); // 3. flow cap from 5->2 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 10.0))); // 4. flow cap from 2->3 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0,  9.0))); // 5. flow cap from 2->4 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 12.0))); // 6. flow cap from 3->5 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 18.0))); // 7. flow cap from 3->8 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 26.0))); // 8. flow cap from 4->5 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 25.0))); // 9. flow cap from 5->6 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0,  4.0))); //10. flow cap from 5->7 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0,  7.0))); //11. flow cap from 6->7 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0,  8.0))); //12. flow cap from 6->8 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 15.0))); //13. flow cap from 7->9 
-  vars.push_back(go::VariablePtr(new go::RealVariable(0, 0.0, 20.0))); //14. flow cap from 8->9 
+  BOOST_REQUIRE(nproc <= netnodes);
+
+  go::Optimizer opt(world);
+
+  std::vector<bool> iownnode(netnodes+1);
+  for (int i = 1; i < netnodes+1; ++i) {
+    iownnode[i] = ((i % nproc ) == me);
+  }
+
+  std::vector<go::VariablePtr> vars(netedges+1);
+
+  go::VariablePtr v;
+
+  // flux 0. total flux (all processes need to use this)
+  v.reset(new go::RealVariable(0)); 
+  v->name("TotalFlux"); 
+  vars[0] = v;
+
+  // flux 1. from 1->2 
+  if (iownnode[1] || iownnode[2]) {
+    v.reset(new go::RealVariable(0, 0.0, 14.0)); 
+    v->name("Flux01");
+    vars[1] = v;
+  }
+  // flux 2. from 1->4 
+  if (iownnode[1] || iownnode[4]) {
+    v.reset(new go::RealVariable(0, 0.0, 23.0)); 
+    v->name("Flux02");
+    vars[2] = v;
+  }
+  // 3. from 5->2 
+  if (iownnode[5] || iownnode[2]) {
+    v.reset(new go::RealVariable(0, 0.0, 11.0)); 
+    v->name("Flux03");
+    vars[3] = v;
+  }
+  // 4. from 2->3 
+  if (iownnode[2] || iownnode[3]) {
+    v.reset(new go::RealVariable(0, 0.0, 10.0)); 
+    v->name("Flux04");
+    vars[4] = v;
+  }
+  // 5. from 2->4 
+  if (iownnode[2] || iownnode[4]) {
+    v.reset(new go::RealVariable(0, 0.0,  9.0)); 
+    v->name("Flux05");
+    vars[5] = v;
+  }
+  // 6. from 3->5 
+  if (iownnode[3] || iownnode[5]) {
+    v.reset(new go::RealVariable(0, 0.0, 12.0)); 
+    v->name("Flux06");
+    vars[6] = v;
+  }
+  // 7. from 3->8 
+  if (iownnode[3] || iownnode[8]) {
+    v.reset(new go::RealVariable(0, 0.0, 18.0)); 
+    v->name("Flux07");
+    vars[7] = v;
+  }
+  // 8. from 4->5 
+  if (iownnode[4] || iownnode[5]) {
+    v.reset(new go::RealVariable(0, 0.0, 26.0)); 
+    v->name("Flux08");
+    vars[8] = v;
+  }
+  // 9. from 5->6 
+  if (iownnode[5] || iownnode[6]) {
+    v.reset(new go::RealVariable(0, 0.0, 25.0)); 
+    v->name("Flux09");
+    vars[9] = v;
+  }
+  //10. from 5->7 
+  if (iownnode[5] || iownnode[7]) {
+    v.reset(new go::RealVariable(0, 0.0,  4.0)); 
+    v->name("Flux10");
+    vars[10] = v;
+  }
+  //11. from 6->7 
+  if (iownnode[6] || iownnode[7]) {
+    v.reset(new go::RealVariable(0, 0.0,  7.0)); 
+    v->name("Flux11");
+    vars[11] = v;
+  }
+  //12. from 6->8 
+  if (iownnode[6] || iownnode[8]) {
+    v.reset(new go::RealVariable(0, 0.0,  8.0)); 
+    v->name("Flux12");
+    vars[12] = v;
+  }
+  //13. from 7->9 
+  if (iownnode[7] || iownnode[9]) {
+    v.reset(new go::RealVariable(0, 0.0, 15.0)); 
+    v->name("Flux13");
+    vars[13] = v;
+  }
+  //14. from 8->9 
+  if (iownnode[8] || iownnode[9]) {
+    v.reset(new go::RealVariable(0, 0.0, 20.0)); 
+    v->name("Flux14");
+    vars[14] = v;
+  }
 
   for (std::vector<go::VariablePtr>::iterator i = vars.begin();
        i != vars.end(); ++i) {
-    opt.addVariable(*i);
+    if (*i) { opt.addVariable(*i); }
   }
 
-  opt.addConstraint( - vars[1] - vars[2] + vars[0] == 0 );         // node 1
-  opt.addConstraint( + vars[1] + vars[3] - vars[4] - vars[5] == 0 );    // node 2
-  opt.addConstraint( + vars[4] - vars[6] - vars[7] == 0 );              // node 3
-  opt.addConstraint( + vars[2] + vars[5] - vars[8] == 0 );              // node 4
-  opt.addConstraint( - vars[3] + vars[6] + vars[8] - vars[9] - vars[10] == 0 );
-  opt.addConstraint( + vars[9] - vars[11] - vars[12] == 0 );
-  opt.addConstraint( + vars[10]+ vars[11] - vars[13] == 0 );
-  opt.addConstraint( + vars[7] + vars[12] - vars[14] == 0 );
-  opt.addConstraint( + vars[13]+ vars[14] - vars[0] == 0 );
-  
-  go::ExpressionPtr obj(new go::VariableExpression(vars[0]));
-  opt.addToObjective(obj);
+  go::ConstraintPtr c;
+
+  if ( iownnode[1] ) {
+    c = ( - vars[1] - vars[2] + vars[0] == 0); 
+    c->name("Node1");  
+    opt.addConstraint( c );
+  }
+  if ( iownnode[2] ) {
+    c = ( + vars[1] + vars[3] - vars[4] - vars[5] == 0);  
+    c->name("Node2");  
+    opt.addConstraint( c );
+  }
+  if ( iownnode[3] ) {
+    c = ( + vars[4] - vars[6] - vars[7] == 0 );
+    c->name("Node3");
+    opt.addConstraint( c );
+  }
+  if ( iownnode[4] ) {
+    c = ( + vars[2] + vars[5] - vars[8] == 0 );           
+    c->name("Node4");  
+    opt.addConstraint( c );
+  }
+  if ( iownnode[5] ) {
+    c = ( - vars[3] + vars[6] + vars[8] - vars[9] - vars[10] == 0 ); 
+    c->name("Node5");  
+    opt.addConstraint( c );
+  }
+  if ( iownnode[6] ) {
+    c = ( + vars[9] - vars[11] - vars[12] == 0 );         
+    c->name("Node6");  
+    opt.addConstraint( c );
+  }
+  if ( iownnode[7] ) {
+    c = ( + vars[10]+ vars[11] - vars[13] == 0 ); 
+    c->name("Node7");  
+    opt.addConstraint( c );
+  }
+  if ( iownnode[8] ) {
+    c = ( + vars[7] + vars[12] - vars[14] == 0 ); 
+    c->name("Node8");  
+    opt.addConstraint( c );
+  }
+  if ( iownnode[9] ) {
+    c = ( + vars[13]+ vars[14] - vars[0] == 0 );
+    c->name("Node9");
+    opt.addConstraint( c ); 
+  }
+
+  if (iownnode[1]) {
+    go::ExpressionPtr obj(new go::VariableExpression(vars[0]));
+    opt.addToObjective(obj);
+  }
 
   opt.maximize();
 

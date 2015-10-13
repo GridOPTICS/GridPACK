@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-10-01 07:35:39 d3g096
+ * @date   2015-10-13 14:27:28 d3g096
  * 
  * @brief  
  * 
@@ -18,7 +18,10 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include <fstream>
+#include <algorithm>
 #include <boost/assert.hpp>
+#include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
@@ -88,7 +91,7 @@ public:
         s += "        ";
         s += "    ";
       }
-      s += boost::str(boost::format("%-4.4s") % var.name());
+      s += boost::str(boost::format("%s") % var.name());
       if (var.upperBound() < var.veryHighValue) {
         s += " <= ";
         s += boost::str(boost::format("%8.4g") % var.upperBound());
@@ -99,7 +102,7 @@ public:
     } else {
       s += "        ";
       s += "    ";
-      s += boost::str(boost::format("%-4.4s") % var.name());
+      s += boost::str(boost::format("%s") % var.name());
       s += " free";
     }
     this->p_stream << s << std::endl;
@@ -116,7 +119,7 @@ public:
       s += "        ";
       s += "    ";
     }
-    s += boost::str(boost::format("%-4.4s") % var.name());
+    s += boost::str(boost::format("%s") % var.name());
     if (var.upperBound() < var.veryHighValue) {
       s += " <= ";
       s += boost::str(boost::format("%8d") % var.upperBound());
@@ -463,7 +466,9 @@ std::string
 LPFileOptimizerImplementation::p_temporaryFileName(void)
 {
   using namespace boost::filesystem;
-  path model("gridpack%%%%.lp");
+  std::string pattern = 
+    boost::str(boost::format("%s_%d.lp") % "gridpack%%%%" % this->processor_rank());
+  path model(pattern);
   path tmp(temp_directory_path());
   tmp /= unique_path(model);
 
@@ -480,6 +485,8 @@ LPFileOptimizerImplementation::p_temporaryFileName(void)
 void
 LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostream& out)
 {
+  p_gatherProblem();
+
   out << "\\* Problem name: Test\\*" << std::endl << std::endl;
 
   switch (method) {
@@ -495,15 +502,16 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
   {
     LPFileConstraintRenderer r(out);
     out << "  ";
-    p_objective->accept(r);
+    p_fullObjective->accept(r);
   }
   out << std::endl << std::endl;
 
   out << "Subject To" << std::endl;
   {
     LPFileConstraintRenderer r(out);
-    for_each(p_constraints.begin(), p_constraints.end(),
-             boost::bind(&Constraint::accept, _1, boost::ref(r)));
+    BOOST_FOREACH(ConstraintPtr c, p_allConstraints) {
+      c->accept(r);
+    }
   }
   out << std::endl;   
 
@@ -511,24 +519,25 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
   out << "Bounds" << std::endl;
   {
     LPFileVarBoundsLister v(out);
-    for_each(p_variables.begin(), p_variables.end(),
-             boost::bind(&Variable::accept, _1, boost::ref(v)));
-
+    BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+      i.second->accept(v);
+    }
   }
   out << std::endl;
 
   VariableCounter cnt;
-  for_each(p_variables.begin(), p_variables.end(),
-           boost::bind(&Variable::accept, _1, boost::ref(cnt)));
+  BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+    i.second->accept(cnt);
+  }
 
   if (cnt.numReal > 0) {
     out << "General" << std::endl;
     out << "    ";
     {
       LPFileGenVarLister v(out);
-      for_each(p_variables.begin(), p_variables.end(),
-               boost::bind(&Variable::accept, _1, boost::ref(v)));
-      
+      BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+        i.second->accept(v);
+      }
     }
     out << std::endl << std::endl;
   }
@@ -538,9 +547,9 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
     out << "    ";
     {
       LPFileIntVarLister v(out);
-      for_each(p_variables.begin(), p_variables.end(),
-               boost::bind(&Variable::accept, _1, boost::ref(v)));
-      
+      BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+        i.second->accept(v);
+      }
     }
     out << std::endl << std::endl;
   }
@@ -550,9 +559,9 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
     out << "    ";
     {
       LPFileBinVarLister v(out);
-      for_each(p_variables.begin(), p_variables.end(),
-               boost::bind(&Variable::accept, _1, boost::ref(v)));
-      
+      BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+        i.second->accept(v);
+      }
     }
     out << std::endl << std::endl;
   }
@@ -567,7 +576,16 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
 void
 LPFileOptimizerImplementation::p_solve(const p_optimizeMethod& method)
 {
+  std::string tmpname(p_temporaryFileName());
+  std::ofstream tmp;
+  tmp.open(tmpname.c_str());
+  if (!tmp) {
+    std::string msg("Cannot open temporary file: ");
+    msg += tmpname.c_str();
+    throw gridpack::Exception(msg);
+  }
   p_write(method, std::cout);
+  tmp.close();
 }
     
   
