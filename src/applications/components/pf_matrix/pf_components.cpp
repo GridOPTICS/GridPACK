@@ -1583,6 +1583,7 @@ void gridpack::powerflow::PFBranch::setBranchStatus(std::string tag, bool status
   for (i=0; i<bsize; i++) {
     if (tag == p_ckt[i]) {
       p_branch_status[i] = status;
+      YMBranch::setLineStatus(tag,status);
       return;
     }
   }
