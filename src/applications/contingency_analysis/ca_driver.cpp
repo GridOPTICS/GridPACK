@@ -199,6 +199,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   gridpack::powerflow::PFAppModule pf_app;
   pf_app.readNetwork(pf_network,config);
   pf_app.initialize();
+  pf_app.solve();
+  pf_app.ignoreVoltageViolations(Vmin,Vmax);
 
   // Read in contingency file
   std::string contingencyfile;
@@ -249,19 +251,21 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     printf("Executing task %d on process %d\n",task_id,world.rank());
     sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
     pf_app.open(sbuf);
+    pf_app.resetVoltages();
     pf_app.setContingency(events[task_id]);
-    pf_app.solve();
-    pf_app.write();
-    bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
-    ok = ok & pf_app.checkLineOverloadViolations();
-    if (ok) {
-      sprintf(sbuf,"\nNo violation for contingency %s\n",
-          events[task_id].p_name.c_str());
-    } else {
-      sprintf(sbuf,"\nViolation for contingency %s\n",
-          events[task_id].p_name.c_str());
+    if (pf_app.solve()) {
+      pf_app.write();
+      bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
+      ok = ok & pf_app.checkLineOverloadViolations();
+      if (ok) {
+        sprintf(sbuf,"\nNo violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else {
+        sprintf(sbuf,"\nViolation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      }
+      pf_app.print(sbuf);
     }
-    pf_app.print(sbuf);
     pf_app.unSetContingency(events[task_id]);
     pf_app.close();
   }
