@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-10-13 14:27:28 d3g096
+ * @date   2015-10-16 10:49:39 d3g096
  * 
  * @brief  
  * 
@@ -25,8 +25,69 @@
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
 #include <boost/filesystem.hpp>
+#include <boost/iostreams/filtering_stream.hpp>
+
+namespace io = boost::iostreams;
+
 #include "gridpack/utilities/exception.hpp"
 #include "lpfile_optimizer_implementation.hpp"
+
+// -------------------------------------------------------------
+// line_wrapping_output_filter
+//
+// slightly modified from the Boost iostreams example
+// -------------------------------------------------------------
+class line_wrapping_output_filter : public io::output_filter {
+public:
+  explicit line_wrapping_output_filter(int line_length = 80, int margin = 8)
+    : do_new_line_(false), line_length_(line_length), end_margin_(margin), col_no_(0) 
+  { }
+
+  template<typename Sink>
+  bool put(Sink& dest, int c)
+  {
+    // if the column is past the goal end of line, find the next white space, eat it up, then
+    if (do_new_line_) {
+      if (c == '\n') {
+        do_new_line_ = false;
+      } else if (!std::isspace(c)) {
+        if (!put_char(dest, '\n')) return false;
+        do_new_line_ = false;
+      } else {
+        // eating white space
+        return true;
+      }
+    } else if (col_no_ >= (line_length_ - end_margin_)) {
+      // wait until we see some white space before doing a new line
+      if (std::isspace(c)) {
+        do_new_line_ = true;
+      }
+    }
+    return put_char(dest, c);
+  }
+
+  template<typename Sink>
+  void close(Sink&)
+  { col_no_ = 0; }
+
+private:
+  template<typename Sink>
+  bool put_char(Sink& dest, int c)
+  {
+    if (!io::put(dest, c))
+      return false;
+    if (c != '\n')
+      ++col_no_;
+    else
+      col_no_ = 0;
+    return true;
+  }
+  int  do_new_line_;
+  int  line_length_;
+  int  end_margin_;
+  int  col_no_;
+};
+
 
 namespace gridpack {
 namespace optimization {
@@ -400,7 +461,7 @@ public:
     ExpressionPtr lhs(e.lhs());
     ExpressionPtr rhs(e.rhs());
 
-    p_out << "  " << e.name() << ": ";
+    p_out << e.name() << ": ";
     if (lhs->precedence() > e.precedence()) {
       p_group(lhs);
     } else {
@@ -483,11 +544,15 @@ LPFileOptimizerImplementation::p_temporaryFileName(void)
 // LPFileOptimizerImplementation::p_write
 // -------------------------------------------------------------
 void
-LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostream& out)
+LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostream& output)
 {
   p_gatherProblem();
 
-  out << "\\* Problem name: Test\\*" << std::endl << std::endl;
+  io::filtering_stream<io::output> out;
+  out.push(line_wrapping_output_filter());
+  out.push(output);
+
+  out << "\\* Problem name: GridPACK \\*" << std::endl << std::endl;
 
   switch (method) {
   case Maximize:
@@ -501,7 +566,6 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
   }
   {
     LPFileConstraintRenderer r(out);
-    out << "  ";
     p_fullObjective->accept(r);
   }
   out << std::endl << std::endl;
@@ -532,7 +596,6 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
 
   if (cnt.numReal > 0) {
     out << "General" << std::endl;
-    out << "    ";
     {
       LPFileGenVarLister v(out);
       BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
@@ -544,7 +607,6 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
 
   if (cnt.numInt > 0) {
     out << "Integer" << std::endl;
-    out << "    ";
     {
       LPFileIntVarLister v(out);
       BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
@@ -556,7 +618,6 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
 
   if (cnt.numBin > 0) {
     out << "Binary" << std::endl;
-    out << "    ";
     {
       LPFileBinVarLister v(out);
       BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
