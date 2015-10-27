@@ -18,12 +18,15 @@
 #ifndef _uc_app_h_
 #define _uc_app_h_
 
+#include "uc_factory.hpp"
+
 namespace gridpack {
 namespace unit_commitment {
 
 // Calling program for unit commitment application
 
 class UCApp
+//  : public gridpack::optimization::VariableVisitor 
 {
   public:
     /**

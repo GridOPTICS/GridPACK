@@ -28,12 +28,13 @@ namespace gridpack {
 namespace unit_commitment {
 
 class UCBus
-  : public gridpack::component::BaseBusComponent,
-    public gridpack::component::OptimizationInterface
+  :  public gridpack::component::BaseBusComponent
+// public gridpack::optimization::VariableVisitor,
+//  public gridpack::component::OptimizationInterface
  {
   public:
     typedef struct { double load;
-                     double reserve; } us_ts_data;
+                     double reserve; } uc_ts_data;
     /**
      *  Simple constructor
      */
@@ -88,11 +89,11 @@ class UCBus
     std::vector<double> p_powerProduced;
     std::vector<double> p_powerReserved;
     std::vector<int> p_gen;
+    std::vector<double> p_load;
+    std::vector<double> p_reserve;
   private:
     int p_num_generator;
     int p_bus_id;
-    std::vector<double> p_load;
-    std::vector<double> p_reserve;
 
   friend class boost::serialization::access;
 

@@ -128,14 +128,14 @@ bool gridpack::unit_commitment::UCBus::solution(void)
  * @param data array containing time series values
  * @param nvals number of values in time series data
  */
-void void gridpack::unit_commitment::UCBus::setTimeSeries(uc_ts_data *data, int nvals)
+void gridpack::unit_commitment::UCBus::setTimeSeries(uc_ts_data *data, int nvals)
 {
   int i;
   p_load.clear();
   p_reserve.clear();
   for (i=0; i<nvals; i++) {
-    p_load.push_back(data[i].load)
-    p_reserve.push_back(data[i].reserve)
+    p_load.push_back(data[i].load);
+    p_reserve.push_back(data[i].reserve);
   }
 }
 

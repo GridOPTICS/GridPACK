@@ -18,9 +18,11 @@
 #ifndef _uc_optimizer_h_
 #define _uc_optimizer_h_
 
+#include "gridpack/component/optimization_ifc.hpp"
 #include "gridpack/optimization/optimization.hpp"
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "uc_components.hpp"
+#include "gridpack/expression/optimizer.hpp"
 
 namespace gridpack {
 namespace unit_commitment {

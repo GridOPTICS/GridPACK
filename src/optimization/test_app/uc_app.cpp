@@ -34,8 +34,13 @@
 #include "mpi.h"
 #include <ilcplex/ilocplex.h>
 #include <stdlib.h>
-
-
+#include <ga.h>
+#include "gridpack/network/base_network.hpp"
+//#include "gridpack/expression/variable.hpp"
+//#include "gridpack/expression/expression.hpp"
+#include "gridpack/expression/optimizer.hpp"
+typedef gridpack::unit_commitment::UCBus::uc_ts_data uc_ts_data;
+int Horizons;
 
 // Calling program for unit commitment optimization application
 
@@ -61,11 +66,15 @@ gridpack::unit_commitment::UCApp::~UCApp(void)
  */
 void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
 {
+//  gridpack::parallel::Communicator world;
+//  p_network.reset(new UCNetwork(world));
   int me = p_network->communicator().rank();
   std::ifstream input;
   int nvals = 0;
   int i;
   gridpack::utility::StringUtils util;
+  std::string line;
+  std::vector<std::string>  split_line;
   if (me == 0) {
     input.open(filename);
     if (!input.is_open()) {
@@ -74,30 +83,23 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
           filename);
       throw gridpack::Exception(buf);
     }
-    std::string line;
     std::getline(input,line);
-    std::vector<std::string>  split_line;
-    // tokenize the first line and find out how many values are in time series
-    // data
-    boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
-        boost::token_compress_on);
+    boost::split(split_line, line, boost::is_any_of("\t "),boost::token_compress_on );
     nvals = split_line.size();
     nvals = (nvals-1)/2;
   }
   p_network->communicator().sum(&nvals,1);
-  std::vector<*ts_data> series; 
+  std::vector<uc_ts_data*> series; 
   std::vector<int> bus_ids;
-  double *lptr, *rptr;
   // read in times series values on each of the buses
   if (me == 0) {
     while (std::getline(input, line)) {
-      ts_data *data = new ts_data[nvals];
-      boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
-          boost::token_compress_on);
+      uc_ts_data *data = new uc_ts_data[nvals];
+      boost::split(split_line, line, boost::is_any_of("\t "),boost::token_compress_on);
       bus_ids.push_back(atoi(split_line[0].c_str()));
       for (i=0; i<nvals; i++) {
-        data[i].load = atof(split line[2*i+1].c_str());
-        data[i].reserve = atof(split line[2*i+2].c_str());
+        data[i].load = atof(split_line[2*i+1].c_str());
+        data[i].reserve = atof(split_line[2*i+2].c_str());
       }
       series.push_back(data);
     }
@@ -105,20 +107,32 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
   }
   // distribute data from process 0 to the processes that have the corresponding
   // buses
-  gridpack::hash_distr::HashDistribution<p_network,ts_data,ts_data> hash;
+  gridpack::hash_distr::HashDistribution<UCNetwork,uc_ts_data,uc_ts_data>
+    hash(p_network);
   int ndata;
-  if (me == 0) {
     ndata = nvals;
+/**
+  if (me == 0) {
+//    ndata = nvals;
+  
   } else {
     ndata = 0;
   }
-  hash.distributeBusValues(bus_ids; series, nvals);
-  nvals = size.bus_ids;
+**/
+  Horizons = ndata;
+  hash.distributeBusValues(bus_ids, series, nvals);
+  nvals = bus_ids.size();
+// number of bus with loads input
+//  NbusWloads = nvals;
+  std::vector<double> loads;
+  std::vector<double> reserve;
   for (i=0; i<nvals; i++) {
+    int l_idx = bus_ids[i];
     gridpack::unit_commitment::UCBus *bus;
     bus = dynamic_cast<gridpack::unit_commitment::UCBus*>(
-        p_network->getBus(bus_ids[i]).get());
-    bus->setTimeSeries(series[i], nvals);
+        p_network->getBus(l_idx).get());
+//    bus->setTimeSeries(series[i], nvals);
+    bus->setTimeSeries(series[i], ndata);
   }
 }
 
@@ -146,6 +160,41 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
   // partition network
   p_network->partition();
 
+  gridpack::unit_commitment::UCApp::getLoadsAndReserves("loads.csv");
+
+  int me = MPI::COMM_WORLD.Get_rank();
+
+    int p_nBuses = p_network->numBuses();
+    int ngen;
+
+    gridpack::component::DataCollection *data;
+    gridpack::unit_commitment::UCBus *bus;
+    
+    double *uc_load;
+    double *uc_reserve;
+    uc_load = new double[Horizons] ();
+    uc_reserve = new double[Horizons] ();
+
+    for (int i_bus = 0; i_bus < p_nBuses; i_bus++) {
+      if(p_network->getActiveBus(i_bus)) {
+         data = dynamic_cast<gridpack::component::DataCollection*>
+          (p_network->getBusData(i_bus).get());
+//         if(data->getValue("GENERATOR_NUMBER", &ngen)) {
+           bus = dynamic_cast<gridpack::unit_commitment::UCBus*>(
+            p_network->getBus(i_bus).get());
+// calcuate total load and reserve at each period
+           if( (bus->p_load).size() > 0) {
+             for (int i = 0; i < Horizons; i++) {
+               uc_load[i] += bus->p_load[i];
+               uc_reserve[i] += bus->p_reserve[i];
+             }    
+           }
+//        }
+      }
+    }
+
+    p_network->communicator().sum(uc_load,Horizons);
+    p_network->communicator().sum(uc_reserve,Horizons);
   // load uc parameters
   filename = "gen.uc";
 //  if (filename.size() > 0) parser.parse(filename.c_str());
@@ -161,295 +210,51 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
 
   // create optimization object
   gridpack::unit_commitment::UCoptimizer optim(p_network);
-  // get uc parameters
+// get uc parameters
   optim.getUCparam();
-  int idx = 5644;
-  double dlo;
-  double dhi;
-  optim.optVariableBounds(idx, &dlo, &dhi);
-  printf("lo-hi %f %f\n",dlo,dhi);
+// get demands and reserve for optimizer
+  optim.getLoadsInfo(Horizons,uc_load,uc_reserve);
+// get a vector of optimization variables
+  typedef boost::shared_ptr<gridpack::optimization::Variable> VarPtr;
+  typedef boost::shared_ptr<gridpack::optimization::Expression> ExpPtr;
+  typedef boost::shared_ptr<gridpack::optimization::Constraint> ConstPtr;
 
-  // prepare for optimization
-  double rval;
-  int ival;
-  int me = MPI::COMM_WORLD.Get_rank();
+  gridpack::parallel::Communicator self(world.self());
+  gridpack::optimization::OptimizerP opt(self);
 
-  // create lp env
-  IloEnv env;
-  if(me == 0) {
-  //
-  // read demands and reserve from an input file
-  //
-    std::vector<std::vector<double> > loads;
-    std::ifstream fin("loads.txt");
-    std::string line;
-    while (std::getline(fin, line)) {
-      std::vector<double> lineData;           // create a new row
-      double val;
-      std::istringstream lineStream(line); 
-      while (lineStream >> val) {          // for each value in line
-        lineData.push_back(val);           // add to the current row
-      }
-      loads.push_back(lineData);         // add row to loads
-    }
-    fin.close();
-    int size = loads.size();
-//    const IloInt numHorizons = size;
-    int totalV = optim.numOptVariables();
-    const IloInt numHorizons = optim.totalHorizons;
-//    const IloInt numHorizons = 2;
-    const IloInt numUnits = optim.totalGen;
-//
-// create array on each process to store results from optimization
-    int arr_size = numUnits*numHorizons;
-    double *sol_power = new double[arr_size] ();
-    int *sol_onOff = new int[arr_size] ();
-//   
-    IloNumArray minPower(env);
-    IloNumArray maxPower(env);
-    IloNumArray minUpTime(env);
-    IloNumArray minDownTime(env);
-    IloNumArray costConst(env);
-    IloNumArray costLinear(env);
-    IloNumArray costQuad(env);
-    IloNumArray demand(env);
-    IloNumArray reserve(env);
-    IloNumArray iniLevel(env);
-    IloNumArray shutCap(env);
-    IloNumArray startCap(env);
-    IloNumArray startUp(env);
-    IloNumArray rampUp(env);
-    IloNumArray rampDown(env);
-    IloNumArray initPeriod(env) ;
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_minPower[i];
-      minPower.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_maxPower[i];
-      maxPower.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_minUpTime[i];
-      minUpTime.add(ival);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_minDownTime[i];
-      minDownTime.add(ival);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_costConst[i];
-      costConst.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_costLinear[i];
-      costLinear.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_costQuad[i];
-      costQuad.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_iniLevel[i];
-      iniLevel.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_startUp[i];
-      startUp.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_startCap[i];
-      startCap.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_shutCap[i];
-      shutCap.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_rampUp[i];
-      rampUp.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_rampDown[i];
-      rampDown.add(rval);
-    }
-    for (int i = 0; i < numUnits; i++) {
-      rval = optim.uc_initPeriod[i];
-      initPeriod.add(rval);
-    }
-    for (int i = 0; i < numHorizons; i++) {
-      rval = loads[i][0];
-      demand.add(rval);
-    }
-    for (int i = 0; i < numHorizons; i++) {
-      rval = loads[i][1];
-      reserve.add(rval);
-    }
-    // Parameters for cost function
-    // Variable arrays
-    IntArray2 onOff;
-    IntArray2 start_Up;
-    IntArray2 shutDown;
-    NumArray2 powerProduced;
-    NumArray2 powerReserved;
-    onOff = IntArray2(env,numHorizons);
-    for (IloInt p = 0; p < numHorizons; p++) {
-      onOff[p] = IloIntVarArray(env, numUnits,0,1);
-    }
-    start_Up = IntArray2(env,numHorizons);
-    for (IloInt p = 0; p < numHorizons; p++) {
-      start_Up[p] = IloIntVarArray(env, numUnits,0,1);
-    }
-    shutDown = IntArray2(env,numHorizons);
-    for (IloInt p = 0; p < numHorizons; p++) {
-      shutDown[p] = IloIntVarArray(env, numUnits,0,1);
-    }
-    powerProduced = NumArray2(env,numHorizons);
-    for (IloInt p = 0; p < numHorizons; p++) {
-      powerProduced[p] = IloNumVarArray(env, 0.0,maxPower,ILOFLOAT);
-    }
-    powerReserved = NumArray2(env,numHorizons);
-    for (IloInt p = 0; p < numHorizons; p++) {
-      powerReserved[p] = IloNumVarArray(env, 0.0,maxPower,ILOFLOAT);
-    }
-//  Objective
-    IloModel ucmdl(env);
-    IloExpr obj(env);
-    for (IloInt p = 1; p < numHorizons; p++) {
-      for (IloInt i = 0; i < numUnits; i++) {
-         obj += costConst[i]*onOff[p][i]
-              + startUp[i]*start_Up[p][i]
-              + costLinear[i]*powerProduced[p][i]
-              + costQuad[i]*powerProduced[p][i]*powerProduced[p][i];
-      }
-    }
-
-    ucmdl.add(IloMinimize(env,obj));
-    obj.end();
-//
-//  Constraints
-//  
-//  Initial state, treat as constraint
-    for(int i=0; i< numUnits; i++) {
-      ucmdl.add(onOff[0][i] == 1);
-      ucmdl.add(start_Up[0][i] == 0);
-      ucmdl.add(shutDown[0][i] == 0);
-      ucmdl.add(powerProduced[0][i] == iniLevel[i]);
-    }
-    IloInt upDnPeriod;
-    for (IloInt p = 1; p < numHorizons; p++) {
-      IloExpr expr3(env);
-      for (IloInt i = 0; i < numUnits; i++) {
-         IloExpr expr1(env);
-         IloExpr expr2(env);
-         expr1 = powerProduced[p][i] - 10000*onOff[p][i];
-         ucmdl.add( expr1 <= 0);
-         expr2 = powerProduced[p][i] - minPower[i]*onOff[p][i];
-         ucmdl.add( expr2 >= 0);
-// ramp up constraint
-         expr1 = powerProduced[p][i]+powerReserved[p][i]-powerProduced[p-1][i];
-         ucmdl.add( expr1 <= rampUp[i]);
-// ramp down constraint
-         expr2 = powerProduced[p-1][i]-powerProduced[p][i];
-         ucmdl.add( expr2 <= rampDown[i]);
-
-         expr1.end();
-         expr2.end();
-// minium up and down time
-// on at horizon p
-         IloExpr upDnIndicator(env);
-         upDnIndicator = onOff[p][i] - onOff[p-1][i];
-         if(p == 1) {
-          IloInt initP = (int)(initPeriod[i]);
-          IloExpr upDnIndicator0(env);
-//
-          upDnIndicator0 = onOff[p-1][i]-onOff[p][i];
-          upDnPeriod = std::min(numHorizons, (p+(int)(minUpTime[i]+0.5)-initP));
-          for (IloInt j = p; j < upDnPeriod; j++) {
-             ucmdl.add( upDnIndicator0 - 10000*onOff[j][i] <= 0);
-          }
-          upDnIndicator0.end();
-         } else{
-           upDnPeriod = std::min(numHorizons, (p+(int)(minUpTime[i]+0.5)));
-          for (IloInt j = p; j < upDnPeriod; j++) {
-           ucmdl.add( upDnIndicator - 10000*onOff[j][i] <= 0);
-          }
-         }
-// start up, previous off
-         ucmdl.add( upDnIndicator - 10000*start_Up[p][i] <= 0);
-         upDnIndicator.end();
-// off at horizon p
-         upDnIndicator = 1 - (onOff[p-1][i] - onOff[p][i]);
-         upDnPeriod = std::min(numHorizons, (p+(int)(minDownTime[i]+0.5)));
-         for (IloInt j = p; j < upDnPeriod; j++) {
-           ucmdl.add( upDnIndicator - 10000*onOff[j][i] <= 0);
-         }
-// shut down, previous on
-         upDnIndicator = onOff[p-1][i] - onOff[p][i];
-         ucmdl.add( upDnIndicator - 10000*shutDown[p][i] <= 0);
-         upDnIndicator.end();
-// generation limits
-// startup at horizon p
-         expr1 = powerProduced[p][i]-minPower[i]+powerReserved[p][i];
-         expr2 = (maxPower[i]-minPower[i])*onOff[p][i]
-               -(maxPower[i]-startCap[i])*start_Up[p][i];
-         ucmdl.add( expr1 <= expr2);
-         expr1.end();
-         expr2.end();
-// shutdown at horizon p 
-         expr1 = powerProduced[p-1][i]-minPower[i]+powerReserved[p-1][i];
-         expr2 = (maxPower[i]-minPower[i])*onOff[p-1][i]
-               -(maxPower[i]-shutCap[i])*shutDown[p][i];
-         ucmdl.add( expr1 <= expr2);
-         expr1.end();
-         expr2.end();
-      }
-      expr3 = IloSum(powerProduced[p]);
-      ucmdl.add( expr3 == demand[p]);
-      expr3.end();
-      expr3 = IloSum(powerReserved[p]);
-      ucmdl.add( expr3 >= reserve[p]);
-//printf("reserve- %f\n",reserve[p]);
-      expr3.end();
-    }
-// Solve model
-    IloCplex cplex(env);
-// setup parallel mode and number of threads
-//    cplex.setParam(IloCplex::ParallelMode, 1);
-//    cplex.setParam(IloCplex::Threads, 2);
-    cplex.extract(ucmdl);
-    cplex.exportModel("test_uc.lp");
-    std::ofstream logfile("cplex.log");
-    cplex.setOut(logfile);
-    cplex.setWarning(logfile);
-    cplex.solve();
-    cplex.out() << "solution status = " << cplex.getStatus() << std::endl;
-    cplex.out() << "cost   = " << cplex.getObjValue() << std::endl;
-    int busid;
-    for (IloInt i = 0; i < numUnits; i++) {
-      busid = optim.busID[i];
-      for (IloInt p = 0; p < numHorizons; p++) {
-//#if 0
-          env.out() << "At time " << p << " Power produced by unit " << i << " " << "on bus  " << busid << " " <<
-          cplex.getValue(onOff[p][i]) << "  " <<
-          cplex.getValue(start_Up[p][i]) << "  " <<
-          cplex.getValue(shutDown[p][i]) << "  " <<
-          cplex.getValue(powerReserved[p][i]) << "  " <<
-          cplex.getValue(powerProduced[p][i]) << std::endl;
-//#endif
-#if 0
-          rval = cplex.getValue(powerProduced[p][i]);
-          if (!data->setValue("POWER_PRODUCED",rval,i)) {
-            data->addValue("POWER_PRODUCED",rval,i);
-          }
-          rval = cplex.getValue(powerReserved[p][i]);
-          if (!data->setValue("POWER_RESERVED",rval,i)) {
-            data->addValue("POWER_RESERVED",rval,i);
-          }
-#endif
-      }
-    }
-
+//return list of variables 
+//  VarPtr vptr;
+//  vptr->clear();
+  std::vector<VarPtr> p_vlist;
+  p_vlist.clear();
+  p_vlist = optim.getVariables();
+int ix=0;
+  for (std::vector<VarPtr>::iterator i = p_vlist.begin();
+       i != p_vlist.end(); ++i) {
+    opt.addVariable(*i);
+//printf("ivar--%d\n",ix);
+ix++;
+//    (*i)->accept(optim);
+//    std::cout << (*i)->name() << std::endl;
   }
-  env.end();
+
+//return expression representing contribution to objective function.
+
+//return list of constraints
+//printf("in uc_app----0\n");
+  std::vector<ConstPtr> locConstraint;
+  locConstraint = optim.getLocalConstraints();
+//
+//printf("in uc_app----1\n");
+  for (std::vector<ConstPtr>::iterator ic = locConstraint.begin();
+       ic != locConstraint.end(); ++ic) {
+    opt.addConstraint(*ic);
+//    std::cout << (*ic)->name() << std::endl;
+  }
+//printf("in uc_app----\n");
+  ExpPtr objFunc;
+  objFunc = optim.getObjectiveFunction();
+  opt.addToObjective(objFunc);
+//        objFunc->evaluate(); std::cout << std::endl;
+  opt.minimize();
 } 
