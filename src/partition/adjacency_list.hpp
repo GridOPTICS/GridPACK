@@ -8,7 +8,7 @@
 /**
  * @file   adjacency_list.hpp
  * @author William A. Perkins
- * @date   2013-12-11 09:25:04 d3g096
+ * @date   2015-10-27 13:00:00 d3g096
  * 
  * @brief  Declaration of the AdjacencyList class
  * 
@@ -87,8 +87,8 @@ public:
   /// Add the global index of a local edge and what it connects using the
   /// original indices for the buses at either end of the node
   void add_edge(const Index& edge_index, 
-                const Index& node_index_1,
-                const Index& node_index_2)
+                Index node_index_1,
+                Index node_index_2)
   {
     p_Edge tmp;
     tmp.index = edge_index;
