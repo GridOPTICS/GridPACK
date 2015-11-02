@@ -22,7 +22,7 @@
 #include "gridpack/optimization/optimization.hpp"
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "uc_components.hpp"
-#include "gridpack/expression/optimizer.hpp"
+#include "gridpack/optimization/optimizer.hpp"
 
 namespace gridpack {
 namespace unit_commitment {
@@ -30,14 +30,14 @@ namespace unit_commitment {
 // This example only needs the functionality in the base optimization class
 
 class UCoptimizer
-    : public gridpack::optimization::Optimizer<UCNetwork> {
+    : public gridpack::optimization::NetworkOptimizer<UCNetwork> {
   public:
     /**
      * Basic constructor
      * @param network: network associated with optimization
      */
     UCoptimizer(boost::shared_ptr<UCNetwork> network) 
-      : gridpack::optimization::Optimizer<UCNetwork>(network)
+      : gridpack::optimization::NetworkOptimizer<UCNetwork>(network)
     {
       p_network = network;
     }
