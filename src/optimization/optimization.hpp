@@ -42,7 +42,7 @@ namespace gridpack{
 namespace optimization{
 
 template <class _network>
-class Optimizer
+class NetworkOptimizer
   : public gridpack::optimization::VariableVisitor
 //:
 //  public gridpack::parallel::Communicator
@@ -90,7 +90,7 @@ class Optimizer
      * Default Constructor
      * @param network - network the optimizer works on
      */
-    Optimizer(NetworkPtr network)
+    NetworkOptimizer(NetworkPtr network)
       : p_network(network)
     { 
       p_nBuses = p_network->numBuses();
@@ -107,7 +107,7 @@ class Optimizer
     /**
      * Destructor
      */
-    ~Optimizer(void)
+    ~NetworkOptimizer(void)
     {}
 
     /**
