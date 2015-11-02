@@ -32,13 +32,13 @@
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/hash_distr.hpp"
 #include "mpi.h"
-#include <ilcplex/ilocplex.h>
+//#include <ilcplex/ilocplex.h>
 #include <stdlib.h>
 #include <ga.h>
 #include "gridpack/network/base_network.hpp"
 //#include "gridpack/expression/variable.hpp"
 //#include "gridpack/expression/expression.hpp"
-#include "gridpack/expression/optimizer.hpp"
+#include "gridpack/optimization/optimizer.hpp"
 typedef gridpack::unit_commitment::UCBus::uc_ts_data uc_ts_data;
 int Horizons;
 
@@ -141,8 +141,8 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
  * @param argc number of arguments
  * @param argv list of character strings
  */
-typedef IloArray<IloIntVarArray> IntArray2;
-typedef IloArray<IloNumVarArray> NumArray2;
+//typedef IloArray<IloIntVarArray> IntArray2;
+//typedef IloArray<IloNumVarArray> NumArray2;
 
 void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
 {
@@ -220,7 +220,7 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
   typedef boost::shared_ptr<gridpack::optimization::Constraint> ConstPtr;
 
   gridpack::parallel::Communicator self(world.self());
-  gridpack::optimization::OptimizerP opt(self);
+  gridpack::optimization::Optimizer opt(self);
 
 //return list of variables 
 //  VarPtr vptr;
@@ -245,13 +245,13 @@ ix++;
   std::vector<ConstPtr> locConstraint;
   locConstraint = optim.getLocalConstraints();
 //
-//printf("in uc_app----1\n");
+printf("in uc_app----1\n");
   for (std::vector<ConstPtr>::iterator ic = locConstraint.begin();
        ic != locConstraint.end(); ++ic) {
     opt.addConstraint(*ic);
 //    std::cout << (*ic)->name() << std::endl;
   }
-//printf("in uc_app----\n");
+printf("in uc_app----\n");
   ExpPtr objFunc;
   objFunc = optim.getObjectiveFunction();
   opt.addToObjective(objFunc);
