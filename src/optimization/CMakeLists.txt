@@ -42,6 +42,7 @@ set(expression_src
 
 if (USE_CPLEX)
   list(APPEND expression_src cplex_optimizer_implementation.cpp)
+  add_definitions(-DHAVE_CPLEX)
   include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
   list(APPEND target_libraries ${CPLEX_LIBRARIES})
 elseif(USE_GLPK)
