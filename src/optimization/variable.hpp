@@ -91,6 +91,12 @@ public:
   {
     p_id = id;
   }
+  
+  /// reset the variable's id
+  void clear()
+  {
+    p_nextID = 0;
+  }
 
   /// Allow visits from visitors
   void accept(VariableVisitor& visitor) 
