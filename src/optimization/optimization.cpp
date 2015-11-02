@@ -28,7 +28,7 @@ void a_function(void) {
   boost::mpi::communicator world;
   typedef network::BaseNetwork<component::BaseBusComponent,
                                component::BaseBranchComponent> ANetwork;
-  typedef optimization::Optimizer<ANetwork> AOptimizer;
+  typedef optimization::NetworkOptimizer<ANetwork> AOptimizer;
   AOptimizer::NetworkPtr a_network(new ANetwork(world));
   AOptimizer a_optimizer(a_network);
 }
