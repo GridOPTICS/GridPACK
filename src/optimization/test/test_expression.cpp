@@ -19,9 +19,9 @@
 #include "gridpack/optimization/optimization.hpp"
 #include <ilcplex/ilocplex.h>
 #include <stdlib.h>
-#include "gridpack/expression/variable.hpp"
-#include "gridpack/expression/expression.hpp"
-#include "gridpack/expression/optimizer.hpp"
+#include "gridpack/optimization/variable.hpp"
+#include "gridpack/optimization/expression.hpp"
+#include "gridpack/optimization/optimizer.hpp"
 #include <boost/smart_ptr/shared_ptr.hpp>
 
 #define XDIM 1
@@ -733,7 +733,7 @@ void run (const int &me, const int &nprocs)
       printf("\nError found in objective functions\n");
     }
   }
-  gridpack::optimization::Optimizer<TestNetwork> optim(network);
+  gridpack::optimization::NetworkOptimizer<TestNetwork> optim(network);
 // Get data from the network
   optim.loadBusData(); 
   TestBus bus;
@@ -756,7 +756,7 @@ void run (const int &me, const int &nprocs)
 
 //return list of variables 
   vlist = bus.getVariables();
-  go::OptimizerP opt(self);
+  go::Optimizer opt(self);
 
   for (std::vector<go::VariablePtr>::iterator i = vlist.begin();
        i != vlist.end(); ++i) {
@@ -775,8 +775,9 @@ void run (const int &me, const int &nprocs)
        i != locConstraint.end(); ++i) {
     opt.addConstraint(*i);
   }
-
+printf("Begin optimization----\n");
   opt.minimize(); 
+printf("Finished optimization----\n");
 /**
     IloEnv env;
     IloModel model(env);
@@ -1006,7 +1007,7 @@ main (int argc, char **argv) {
   run(me, nprocs);
 
 //get a list of variables
-  run_unit_commitment();
+//  run_unit_commitment();
 
   GA_Terminate();
 
