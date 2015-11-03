@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-10-16 10:49:39 d3g096
+ * @date   2015-11-03 13:10:41 d3g096
  * 
  * @brief  
  * 
@@ -645,7 +645,7 @@ LPFileOptimizerImplementation::p_solve(const p_optimizeMethod& method)
     msg += tmpname.c_str();
     throw gridpack::Exception(msg);
   }
-  p_write(method, std::cout);
+  p_write(method, tmp);
   tmp.close();
 }
     

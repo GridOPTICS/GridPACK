@@ -7,7 +7,7 @@
 /**
  * @file   uc_app.cpp
  * @author 
- * @date   
+ * @date   2015-11-03 13:40:11 d3g096
  * 
  * @brief  
  * 
@@ -219,8 +219,7 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
   typedef boost::shared_ptr<gridpack::optimization::Expression> ExpPtr;
   typedef boost::shared_ptr<gridpack::optimization::Constraint> ConstPtr;
 
-  gridpack::parallel::Communicator self(world.self());
-  gridpack::optimization::Optimizer opt(self);
+  gridpack::optimization::Optimizer opt(world);
 
 //return list of variables 
 //  VarPtr vptr;

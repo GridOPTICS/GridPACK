@@ -108,6 +108,7 @@ if(USE_CPLEX)
    test/test_expression.cpp
  )
  target_link_libraries(test_expression ${target_libraries})
+endif()
 
 
  add_executable(uc.x
@@ -149,7 +150,6 @@ if(USE_CPLEX)
    ${CMAKE_CURRENT_SOURCE_DIR}/test_app/loads.csv
  )
  add_dependencies(uc.x uc.x.input)
-endif()
 
 if(USE_GUROBI)
  add_executable(uc_gurobi.x
