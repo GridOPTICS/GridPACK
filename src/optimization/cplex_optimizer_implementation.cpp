@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created September 28, 2015 by Yilin Fang
-// Last Change: 2015-09-16 12:16:20 d3m045
+// Last Change: 2015-11-06 07:19:46 d3g096
 // -------------------------------------------------------------
 
 
@@ -15,6 +15,7 @@
 #include <fstream>
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
+#include <cstring>
 #include <ilcplex/ilocplex.h>
 #include "cplex_optimizer_implementation.hpp"
 
@@ -73,6 +74,15 @@ CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& m)
   IloNumArray vals(env);
   cplex.getValues(vals,var);
   env.out() << "solution vector = " << vals << std::endl;
+
+  IloInt n(vals.getSize());
+  for (IloInt i = 0; i < n; ++i) {
+    std::string vname(var[i].getName());
+    VariablePtr v(p_allVariables[vname]);
+    SetVariableInitial vset(vals[i]);
+    v->accept(vset);
+  }
+
 
 }
 
