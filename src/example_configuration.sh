@@ -29,6 +29,8 @@ if [ $host == "flophouse" ]; then
     CXXFLAGS="-pthread -Wall"
     export CXXFLAGS
 
+    cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
+
     cmake -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix/ga-5-4" \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
@@ -38,6 +40,8 @@ if [ $host == "flophouse" ]; then
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
+        -D USE_CPLEX:BOOL=ON \
+        -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
@@ -86,6 +90,7 @@ elif [ $host == "pe10900" ]; then
     export CXX
 
     prefix="/net/flophouse/files0/perksoft/macosx"
+    cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261/"
 
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
@@ -98,7 +103,9 @@ elif [ $host == "pe10900" ]; then
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D USE_GLPK:BOOL=ON \
+        -D USE_CPLEX:BOOL=ON \
+        -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
+        -D USE_GLPK:BOOL=OFF \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
@@ -120,6 +127,7 @@ elif [ $host == "olympus.local" ]; then
 elif [ $host == "gridpackvm" ]; then
 
     prefix="$HOME/gridpack"
+    root="/opt/ibm/ILOG/CPLEX_Studio1261/"
     cmake -Wno-dev --debug-try-compile \
 	-D PETSC_DIR:STRING="$prefix/petsc-3.6.2" \
 	-D PETSC_ARCH:STRING="arch-linux-real-opt" \
@@ -129,8 +137,10 @@ elif [ $host == "gridpackvm" ]; then
 	-D MPIEXEC:STRING="mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
-        -D USE_GLPK:BOOL=ON \
+        -D USE_GLPK:BOOL=OFF \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
+        -D USE_CPLEX:BOOL=ON \
+        -D CPLEX_ROOT_DIR:PATH="$root" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
 	$common_flags ..
 
