@@ -506,7 +506,7 @@ void run (const int &me, const int &nprocs)
       printf("\nError found in objective functions\n");
     }
   }
-  gridpack::optimization::Optimizer<TestNetwork> optim(network);
+  gridpack::optimization::NetworkOptimizer<TestNetwork> optim(network);
 // Get data from the network
   optim.loadBusData(); 
   p_numUnits = optim.numUnits;
