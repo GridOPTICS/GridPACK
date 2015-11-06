@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2015-10-13 15:09:24 d3g096
+ * @date   2015-11-04 09:00:53 d3g096
  * 
  * @brief  
  * 
@@ -19,6 +19,7 @@
 
 #include <sstream>
 #include <boost/bind.hpp>
+#include <boost/format.hpp>
 
 // These two includes are needed for Boost 1.56
 
@@ -79,6 +80,39 @@ protected:
   /// One variable per name
   const OptimizerImplementation::VarMap& p_vmap;
 
+};
+
+
+// -------------------------------------------------------------
+//  class ConstraintRenamer
+// -------------------------------------------------------------
+class ConstraintRenamer 
+  : public ExpressionVisitor
+{
+public:
+
+  /// Default constructor.
+  ConstraintRenamer(void)
+    : ExpressionVisitor(), p_nextID(0)
+  {}
+
+  /// Destructor
+  ~ConstraintRenamer(void)
+  {}
+
+protected:
+
+  /// The constraint id
+  int p_nextID;
+
+  /// Rename constraints
+  void visit(Constraint& e)
+  {
+    std::string nname = 
+      boost::str(boost::format("C%d") % p_nextID++);
+    e.name(nname);
+  }
+  
 };
 
 
@@ -171,6 +205,13 @@ OptimizerImplementation::p_gatherProblem(void)
   std::for_each(p_allConstraints.begin(), p_allConstraints.end(),
                 boost::bind(&Constraint::accept, _1, boost::ref(vs)));
   p_fullObjective->accept(vs);
+
+  // uniquely name all constraints in parallel
+  if (nproc > 1) {
+    ConstraintRenamer r;
+    std::for_each(p_allConstraints.begin(), p_allConstraints.end(),
+                  boost::bind(&Constraint::accept, _1, boost::ref(r)));
+  }
 }
 
 
