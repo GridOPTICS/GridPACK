@@ -977,7 +977,6 @@ class BasePTIParser : public BaseParser<_network>
 
         if (!data->getValue("GENERATOR_SHUT_CAP",&rval,g_id)) {
           data->addValue("GENERATOR_SHUT_CAP", uc_data[i].shut_cap, g_id);
-printf("uc_shut_cap  %d %f",i,uc_data[i].shut_cap);
         } else {
           data->setValue("GENERATOR_SHUT_CAP", uc_data[i].shut_cap, g_id);
         }
