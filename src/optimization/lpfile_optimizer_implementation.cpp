@@ -593,7 +593,7 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
   BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
     i.second->accept(cnt);
   }
-
+/**
   if (cnt.numReal > 0) {
     out << "General" << std::endl;
     {
@@ -604,7 +604,7 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
     }
     out << std::endl << std::endl;
   }
-
+**/
   if (cnt.numInt > 0) {
     out << "Integer" << std::endl;
     {
