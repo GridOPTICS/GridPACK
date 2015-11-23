@@ -7,7 +7,7 @@
 /**
  * @file   optimization.hpp
  * @author 
- * @date   
+ * @date   2015-11-20 11:52:32 d3g096
  * 
  * @brief  
  * 
@@ -120,7 +120,7 @@ class NetworkOptimizer
        std::vector<VarPtr> ret;
 // to avoid accumulating
        VarPtr vptr;
-       vptr->clear(); 
+       // vptr->clear(); 
        ret.clear();
        double rval;
       int grp = p_network->communicator().getGroup();

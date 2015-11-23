@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-10-13 14:06:15 d3g096
+ * @date   2015-11-23 11:46:06 d3g096
  * 
  * @brief  
  * 
@@ -512,16 +512,24 @@ protected:
   std::string p_render(void) const
   {
     std::string s("");
-    if (p_LHS->precedence() > this->precedence()) {
-      s += "[" + p_LHS->render() + "]";
+    if (p_LHS) {
+      if (p_LHS->precedence() > this->precedence()) {
+        s += "[" + p_LHS->render() + "]";
+      } else {
+        s += p_LHS->render();
+      }
     } else {
-      s += p_LHS->render();
+      s += "(empty)";
     }
     s += " " + this->p_operator + " ";
-    if (p_RHS->precedence() > this->precedence()) {
-      s += "[" + p_RHS->render() + "]";
+    if (p_RHS) {
+      if (p_RHS->precedence() > this->precedence()) {
+        s += "[" + p_RHS->render() + "]";
+      } else {
+        s += p_RHS->render();
+      }
     } else {
-      s += p_RHS->render();
+      s += "(empty)";
     }
     return s;
   }
@@ -1049,6 +1057,18 @@ public:
   ~Constraint(void)
   {}
 
+  /// Add something to the LHS
+  void addToLHS(ExpressionPtr e)
+  {
+    if (e) {
+      if (p_LHS) {
+        p_LHS = e + p_LHS;
+      } else {
+        p_LHS = e;
+      }
+    }
+  }
+
   // /// Do whatever 
   // void evaluate(void) const
   // {
@@ -1478,6 +1498,7 @@ BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Addition);
 BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Subtraction);
 BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Exponentiation);
 
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Constraint);
 BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThan);
 BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThanOrEqual);
 BOOST_CLASS_EXPORT_KEY(gridpack::optimization::GreaterThan);

@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-10-13 12:31:02 d3g096
+ * @date   2015-11-23 11:18:59 d3g096
  * 
  * @brief  
  * 
@@ -60,7 +60,22 @@ public:
     this->p_addConstraint(c);
   }
 
-  /// Add the local part of a global constraint (added to other parts)
+  /// Create a global constraint (with possibly empty LHS)
+  /** 
+   * It's assumed that all processes that contribute to a global
+   * constraint will call this routine with an equivalent Constraint
+   * instance, i.e., the operator and RHS will be the same on all
+   * proceses.  
+   * 
+   * @param name 
+   * @param cons 
+   */
+  void createGlobalConstraint(const std::string& name, ConstraintPtr cons)
+  {
+    this->p_createGlobalConstraint(name, cons);
+  }
+
+  /// Add to the LHS of a global constraint
   void addToGlobalConstraint(const std::string& name, ExpressionPtr expr)
   {
     this->p_addToGlobalConstraint(name, expr);
@@ -94,6 +109,9 @@ protected:
 
   /// Add a (local) constraint (specialized)
   virtual void p_addConstraint(ConstraintPtr c) = 0;
+
+  /// Create a global constraint (with possibly empty LHS)
+  virtual void p_createGlobalConstraint(const std::string& name, ConstraintPtr cons) = 0;
 
   /// Add the local part of a global constraint (specialized)
   virtual void p_addToGlobalConstraint(const std::string& name, ExpressionPtr expr) = 0;
@@ -150,8 +168,14 @@ protected:
   /// The entire objective function
   ExpressionPtr p_fullObjective;
 
+  /// A thing to hold named constraints
+  typedef std::map<std::string, ConstraintPtr> ConstraintMap;
+
   /// The global constraint expressions (local parts)
-  std::map<std::string, ExpressionPtr> p_globalConstraints;
+  ConstraintMap p_globalConstraints;
+
+  /// The global constraints from all processes
+  ConstraintMap p_allGlobalConstraints;
 
   /// Add a (local) variable to be optimized (specialized)
   void p_addVariable(VariablePtr v)
@@ -165,27 +189,15 @@ protected:
     p_constraints.push_back(c);
   }
 
+  /// Create a global constraint (with possibly empty LHS) (specialized)
+  void p_createGlobalConstraint(const std::string& name, ConstraintPtr cons);
+
   /// Add the local part of a global constraint (specialized)
-  void p_addToGlobalConstraint(const std::string& name, ExpressionPtr expr)
-  {
-    if (p_globalConstraints[name]) {
-      p_globalConstraints[name] = p_globalConstraints[name] + expr;
-    } else {
-      p_globalConstraints[name] = expr;
-    }
-  }  
+  void p_addToGlobalConstraint(const std::string& name, ExpressionPtr expr);
 
   /// Get the global constraint expression
-  ExpressionPtr p_getGlobalConstraint(const std::string& name)
-  {
-    ExpressionPtr result;
-    try {
-      result = p_globalConstraints.at(name);
-    } catch (const std::out_of_range& e) {
-      std::string msg(name);
-    }
-    return result;
-  }
+  ConstraintPtr p_getGlobalConstraint(const std::string& name);
+
   /// Add to the local part of the global objective function (added to other parts)
   void p_addToObjective(ExpressionPtr expr)
   {
@@ -202,6 +214,9 @@ protected:
     if (props) {
     }
   }
+
+  /// Gather the global constraints from a processor
+  void p_gatherGlobalConstraints(const ConstraintMap& tmpglobal);
 
   /// Gather the problem to all processors
   void p_gatherProblem(void);
@@ -261,6 +276,12 @@ protected:
   {
     p_impl->addToGlobalConstraint(name, expr);
   }    
+
+  /// Create a global constraint (with possibly empty LHS)
+  void p_createGlobalConstraint(const std::string& name, ConstraintPtr cons)
+  {
+    p_impl->createGlobalConstraint(name, cons);
+  }
 
   /// Add to the local part of the global objective function (added to other parts)
   void p_addToObjective(ExpressionPtr expr)

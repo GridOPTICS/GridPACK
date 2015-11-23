@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-10-13 15:37:45 d3g096
+ * @date   2015-11-23 12:00:50 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -53,13 +53,13 @@ BOOST_AUTO_TEST_CASE( flow )
     iownnode[i] = ((i % nproc ) == me);
   }
 
-  std::vector<go::VariablePtr> vars(netedges+1);
+  std::vector<go::VariablePtr> vars(netedges+2);
 
   go::VariablePtr v;
 
-  // flux 0. total flux (all processes need to use this)
-  v.reset(new go::RealVariable(0)); 
-  v->name("TotalFlux"); 
+  // flux 0. total in flux (everybody makes this so it can be checked)
+  v.reset(new go::RealVariable(0.0)); 
+  v->name("TotalInFlux"); 
   vars[0] = v;
 
   // flux 1. from 1->2 
@@ -147,17 +147,32 @@ BOOST_AUTO_TEST_CASE( flow )
     vars[14] = v;
   }
 
+  // 15. total out flux
+  if (iownnode[9]) {
+    v.reset(new go::RealVariable(0.0)); 
+    v->name("TotalOutFlux");
+    vars[15] = v;
+  }
+
   for (std::vector<go::VariablePtr>::iterator i = vars.begin();
        i != vars.end(); ++i) {
     if (*i) { opt.addVariable(*i); }
   }
 
-  go::ConstraintPtr c;
+  // add a global constraint (inflow = outflow)
+  go::ExpressionPtr empty;
+  go::ConstraintPtr c( empty == 0.0 );
+  c->name("inout");
+  opt.createGlobalConstraint(c->name(), c);
+  c.reset();
 
   if ( iownnode[1] ) {
     c = ( - vars[1] - vars[2] + vars[0] == 0); 
     c->name("Node1");  
     opt.addConstraint( c );
+    go::ExpressionPtr v(new go::VariableExpression(vars[0]));
+    opt.addToObjective(v);
+    opt.addToGlobalConstraint("inout", v);
   }
   if ( iownnode[2] ) {
     c = ( + vars[1] + vars[3] - vars[4] - vars[5] == 0);  
@@ -195,14 +210,11 @@ BOOST_AUTO_TEST_CASE( flow )
     opt.addConstraint( c );
   }
   if ( iownnode[9] ) {
-    c = ( + vars[13]+ vars[14] - vars[0] == 0 );
+    c = ( + vars[13]+ vars[14] + vars[15] == 0 );
     c->name("Node9");
     opt.addConstraint( c ); 
-  }
-
-  if (iownnode[1]) {
-    go::ExpressionPtr obj(new go::VariableExpression(vars[0]));
-    opt.addToObjective(obj);
+    go::ExpressionPtr v(new go::VariableExpression(vars[15]));
+    opt.addToGlobalConstraint("inout", v);
   }
 
   opt.maximize();
@@ -214,6 +226,9 @@ BOOST_AUTO_TEST_CASE( flow )
   vars[0]->accept(g);
   BOOST_CHECK_EQUAL(g.value(), 29.0);
 #endif
+
+  world.barrier();
+
 }
 
 // -------------------------------------------------------------
@@ -336,6 +351,9 @@ BOOST_AUTO_TEST_CASE( uc )
   opt.minimize();
 
 #endif
+
+  world.barrier();
+
 }
 
 BOOST_AUTO_TEST_SUITE_END()

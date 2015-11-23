@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-10-07 14:45:27 d3g096
+// Last Change: 2015-11-20 13:12:47 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -36,6 +36,7 @@ BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Addition);
 BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Subtraction);
 BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Exponentiation);
 
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Constraint);
 BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThan);
 BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThanOrEqual);
 BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::GreaterThan);
@@ -73,9 +74,8 @@ ConstantExpression<double>::p_render(void) const
 Constraint::Constraint(const int& prec, const std::string& op, 
                        ExpressionPtr lhs, ExpressionPtr rhs)
   : BinaryExpression(prec, op, lhs, rhs), 
-    utility::Named()
+    utility::Named(boost::str(boost::format("C%d") % p_nextID++))
 {
-  Named::name(boost::str(boost::format("C%d") % p_nextID++));
 }
 
 Constraint::Constraint(void)
