@@ -120,7 +120,7 @@ class NetworkOptimizer
        std::vector<VarPtr> ret;
 // to avoid accumulating
        VarPtr vptr;
-       // vptr->clear(); 
+       vptr->clear(); 
        ret.clear();
        double rval;
       int grp = p_network->communicator().getGroup();
@@ -146,10 +146,10 @@ class NetworkOptimizer
       for (int p=1; p<nprocs; p++) {
         offset[p]= offset[p-1] + genArr[p-1];
       }
-printf("unit and hori--%d %d\n",p_numHorizons,p_numUnits);
+//printf("unit and hori--%d %d\n",p_numHorizons,p_numUnits);
 // 
        int inc = offset[me];
-printf("me--%d %d\n",me,inc);
+//printf("me--%d %d\n",me,inc);
 // power produced
        for (int p = 0; p < p_numHorizons; p++) {
          for (int i = 0; i < p_numUnits; i++) {
@@ -157,7 +157,7 @@ printf("me--%d %d\n",me,inc);
            VarPtr vptr (new RealVariable(0.0, 0.0, rval));
            vptr->name(boost::str(boost::format("id%d") % inc));
            ret.push_back(vptr);
-           std::cout << vptr->name() << " id is " << vptr->id() << std::endl;
+//           std::cout << vptr->name() << " id is " << vptr->id() << std::endl;
            inc++;
          }
        }
@@ -279,22 +279,22 @@ printf("me--%d %d\n",me,inc);
       for(int i=0; i< p_numUnits; i++) {
         onOffCnt = nVarR + i;
         con = vlist[onOffCnt] == 1;
-        con->evaluate(); std::cout << std::endl;
+//        con->evaluate(); std::cout << std::endl;
         ret.push_back(con);
 
         start_UpCnt = nIntVcntOnoff + i;
         con = vlist[start_UpCnt] == 0;
-        con->evaluate(); std::cout << std::endl;
+//        con->evaluate(); std::cout << std::endl;
         ret.push_back(con);
 
         shutDownCnt = nIntVcntStartup + i;
         con = vlist[shutDownCnt] == 0;
-        con->evaluate(); std::cout << std::endl;
+//        con->evaluate(); std::cout << std::endl;
         ret.push_back(con);
 
         powerCnt = i;
         con = vlist[powerCnt] == uc_iniLevel[i];
-        con->evaluate(); std::cout << std::endl;
+//        con->evaluate(); std::cout << std::endl;
         ret.push_back(con);
 
 /**
@@ -327,13 +327,13 @@ printf("me--%d %d\n",me,inc);
 
            expr = powerProduced - 10000*onOff;
            con = expr <= 0;
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( expr1 <= 0);
 
            expr = powerProduced - uc_minPower[i]*onOff;
            con = expr >= 0;
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( expr2 >= 0);
 
@@ -341,14 +341,14 @@ printf("me--%d %d\n",me,inc);
            powerCntm1 = (p-1)*p_numUnits + i;
            expr = powerProduced + powerReserved - vlist[powerCntm1];
            con = expr <= uc_rampUp[i];
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( expr1 <= rampUp[i]);
 
 // ramp down constraint
            expr = vlist[powerCntm1]-powerProduced;
            con = expr <= uc_rampDown[i];
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( expr2 <= rampDown[i]);
 
@@ -365,7 +365,7 @@ printf("me--%d %d\n",me,inc);
               onOffCnttmp = nVarR + j*p_numUnits + i;;
               onOfftmp = vlist[onOffCnttmp];
               con = upDnIndicator - 10000*onOfftmp <= 0;
-              con->evaluate(); std::cout << std::endl;
+//              con->evaluate(); std::cout << std::endl;
               ret.push_back(con);
 //             ucmdl.add( upDnIndicator0 - 10000*onOff[j][i] <= 0);
             }
@@ -375,7 +375,7 @@ printf("me--%d %d\n",me,inc);
               onOffCnttmp = nVarR + j*p_numUnits + i;;
               onOfftmp = vlist[onOffCnttmp];
               con = upDnIndicator - 10000*onOfftmp <= 0;
-              con->evaluate(); std::cout << std::endl;
+//              con->evaluate(); std::cout << std::endl;
               ret.push_back(con);
 //           ucmdl.add( upDnIndicator - 10000*onOff[j][i] <= 0);
             }
@@ -384,7 +384,7 @@ printf("me--%d %d\n",me,inc);
 // start up, previous off
            upDnIndicator = onOff - vlist[onOffCntm1];
            con = upDnIndicator - 10000*start_Up <= 0;
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( upDnIndicator - 10000*start_Up[p][i] <= 0);
 
@@ -395,7 +395,7 @@ printf("me--%d %d\n",me,inc);
              onOffCnttmp = nVarR + j*p_numUnits + i;;
              onOfftmp = vlist[onOffCnttmp];
              con = upDnIndicator - 10000*onOfftmp <= -1;
-             con->evaluate(); std::cout << std::endl;
+//             con->evaluate(); std::cout << std::endl;
              ret.push_back(con);
 //           ucmdl.add( upDnIndicator - 10000*onOff[j][i] <= 0);
            }
@@ -403,7 +403,7 @@ printf("me--%d %d\n",me,inc);
            upDnIndicator = vlist[onOffCntm1] - onOff;
 //         upDnIndicator = onOff[p-1][i] - onOff[p][i];
            con = upDnIndicator - 10000*shutDown <= 0;
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( upDnIndicator - 10000*shutDown[p][i] <= 0);
 
@@ -413,7 +413,7 @@ printf("me--%d %d\n",me,inc);
            - uc_maxPower[i]*onOff + uc_minPower[i]*onOff
                + uc_maxPower[i]*start_Up - uc_startCap[i]*start_Up;
            con = expr <= uc_minPower[i];
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( expr1 <= expr2);
 
@@ -424,7 +424,7 @@ printf("me--%d %d\n",me,inc);
             uc_maxPower[i]*vlist[onOffCnttmp] + uc_minPower[i]*vlist[onOffCnttmp]
                 +uc_maxPower[i]*shutDown - uc_shutCap[i]*shutDown;
            con = expr  <= uc_minPower[i];
-           con->evaluate(); std::cout << std::endl;
+//           con->evaluate(); std::cout << std::endl;
            ret.push_back(con);
 //         ucmdl.add( expr1 <= expr2);
 #if 0
@@ -432,6 +432,7 @@ printf("me--%d %d\n",me,inc);
         }
 
 // global constraint
+
         for (int i = 0; i < p_numUnits; i++) {
            powerCnt = p*p_numUnits + i;
            powerProduced = vlist[powerCnt];
@@ -450,13 +451,15 @@ printf("me--%d %d\n",me,inc);
            }
         }
 //printf("after global---0%d %d\n",p_numUnits,p);
+        con->name("Ebalance");
         con = exprgP == demand[p];
-        con->evaluate(); std::cout << std::endl;
+//        con->evaluate(); std::cout << std::endl;
         ret.push_back(con);
 
 //printf("after global---r%f\n",reserve[p]);
+        con->name("Rbalance");
         con = exprgR >= reserve[p];
-        con->evaluate(); std::cout << std::endl;
+//        con->evaluate(); std::cout << std::endl;
         ret.push_back(con);
 //printf("after global---1\n");
 
@@ -520,7 +523,7 @@ printf("me--%d %d\n",me,inc);
       }
       std::cout << std::endl;
       std::cout << "The objective function is:" << std::endl;
-      obj->evaluate(); std::cout << std::endl;
+//      obj->evaluate(); std::cout << std::endl;
 //printf("finished obj ---\n");
       return obj;
     }
