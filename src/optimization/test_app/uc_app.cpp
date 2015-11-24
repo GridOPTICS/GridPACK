@@ -231,7 +231,6 @@ int ix=0;
   for (std::vector<VarPtr>::iterator i = p_vlist.begin();
        i != p_vlist.end(); ++i) {
     opt.addVariable(*i);
-//printf("ivar--%d\n",ix);
 ix++;
 //    (*i)->accept(optim);
 //    std::cout << (*i)->name() << std::endl;
@@ -240,17 +239,31 @@ ix++;
 //return expression representing contribution to objective function.
 
 //return list of constraints
-//printf("in uc_app----0\n");
   std::vector<ConstPtr> locConstraint;
   locConstraint = optim.getLocalConstraints();
+
+  gridpack::optimization::ExpressionPtr empty;
+  gridpack::optimization::ConstraintPtr c (empty == 0.0);
+  c->name("Ebalance");
+  opt.createGlobalConstraint(c->name(), c);
+  c.reset();
+  c->name("Rbalance");
+  opt.createGlobalConstraint(c->name(), c);
+  c.reset();
 //
-printf("in uc_app----1\n");
   for (std::vector<ConstPtr>::iterator ic = locConstraint.begin();
        ic != locConstraint.end(); ++ic) {
-    opt.addConstraint(*ic);
-//    std::cout << (*ic)->name() << std::endl;
+    if((*ic)->name() == "Ebalance" ) {
+      opt.addToGlobalConstraint("Ebalance", *ic);
+    }
+    else if((*ic)->name() == "Rbalance" ) {
+      opt.addToGlobalConstraint("Rbalance", *ic);
+    }
+    else{
+      opt.addConstraint(*ic);
+    }
+    std::cout << (*ic)->name() << std::endl;
   }
-printf("in uc_app----\n");
   ExpPtr objFunc;
   objFunc = optim.getObjectiveFunction();
   opt.addToObjective(objFunc);
