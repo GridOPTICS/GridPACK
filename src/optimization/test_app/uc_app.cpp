@@ -32,13 +32,11 @@
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/hash_distr.hpp"
 #include "mpi.h"
-//#include <ilcplex/ilocplex.h>
 #include <stdlib.h>
 #include <ga.h>
 #include "gridpack/network/base_network.hpp"
-//#include "gridpack/expression/variable.hpp"
-//#include "gridpack/expression/expression.hpp"
 #include "gridpack/optimization/optimizer.hpp"
+#include <boost/format.hpp>
 typedef gridpack::unit_commitment::UCBus::uc_ts_data uc_ts_data;
 int Horizons;
 
@@ -66,8 +64,6 @@ gridpack::unit_commitment::UCApp::~UCApp(void)
  */
 void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
 {
-//  gridpack::parallel::Communicator world;
-//  p_network.reset(new UCNetwork(world));
   int me = p_network->communicator().rank();
   std::ifstream input;
   int nvals = 0;
@@ -111,19 +107,10 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
     hash(p_network);
   int ndata;
     ndata = nvals;
-/**
-  if (me == 0) {
-//    ndata = nvals;
-  
-  } else {
-    ndata = 0;
-  }
-**/
   Horizons = ndata;
   hash.distributeBusValues(bus_ids, series, nvals);
   nvals = bus_ids.size();
 // number of bus with loads input
-//  NbusWloads = nvals;
   std::vector<double> loads;
   std::vector<double> reserve;
   for (i=0; i<nvals; i++) {
@@ -131,7 +118,6 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
     gridpack::unit_commitment::UCBus *bus;
     bus = dynamic_cast<gridpack::unit_commitment::UCBus*>(
         p_network->getBus(l_idx).get());
-//    bus->setTimeSeries(series[i], nvals);
     bus->setTimeSeries(series[i], ndata);
   }
 }
@@ -141,8 +127,6 @@ void gridpack::unit_commitment::UCApp::getLoadsAndReserves(const char* filename)
  * @param argc number of arguments
  * @param argv list of character strings
  */
-//typedef IloArray<IloIntVarArray> IntArray2;
-//typedef IloArray<IloNumVarArray> NumArray2;
 
 void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
 {
@@ -179,7 +163,6 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
       if(p_network->getActiveBus(i_bus)) {
          data = dynamic_cast<gridpack::component::DataCollection*>
           (p_network->getBusData(i_bus).get());
-//         if(data->getValue("GENERATOR_NUMBER", &ngen)) {
            bus = dynamic_cast<gridpack::unit_commitment::UCBus*>(
             p_network->getBus(i_bus).get());
 // calcuate total load and reserve at each period
@@ -197,11 +180,7 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
     p_network->communicator().sum(uc_reserve,Horizons);
   // load uc parameters
   filename = "gen.uc";
-//  if (filename.size() > 0) parser.parse(filename.c_str());
-//  parser.parse(filename.c_str());
-//#if 0
   parser.externalParse(filename.c_str());
-//#endif
 
 
   // create factory
@@ -222,38 +201,66 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
   gridpack::optimization::Optimizer opt(world);
 
 //return list of variables 
-//  VarPtr vptr;
-//  vptr->clear();
   std::vector<VarPtr> p_vlist;
   p_vlist.clear();
   p_vlist = optim.getVariables();
-int ix=0;
   for (std::vector<VarPtr>::iterator i = p_vlist.begin();
        i != p_vlist.end(); ++i) {
     opt.addVariable(*i);
-//printf("ivar--%d\n",ix);
-ix++;
-//    (*i)->accept(optim);
-//    std::cout << (*i)->name() << std::endl;
   }
 
 //return expression representing contribution to objective function.
 
 //return list of constraints
-//printf("in uc_app----0\n");
   std::vector<ConstPtr> locConstraint;
   locConstraint = optim.getLocalConstraints();
 //
-printf("in uc_app----1\n");
   for (std::vector<ConstPtr>::iterator ic = locConstraint.begin();
        ic != locConstraint.end(); ++ic) {
     opt.addConstraint(*ic);
-//    std::cout << (*ic)->name() << std::endl;
   }
-printf("in uc_app----\n");
+//get the global constraints
+  std::vector<ExpPtr> globalConstraint;
+  globalConstraint = optim.getGlobalConstraint("Energy Balance");
+  ExpPtr pempty;
+  boost::format fmt("PBalance%i");
+  ConstPtr pc;
+  for (int i=1; i<Horizons; i++) {
+    pc = pempty == uc_load[i] ;
+    std::string cname = boost::str(fmt % i);
+    pc->name(cname);
+    opt.createGlobalConstraint(pc->name(), pc);
+   }
+  ExpPtr rempty;
+  boost::format rfmt("RBalance%i");
+  for (int i=1; i<Horizons; i++) {
+    pc = pempty >= uc_reserve[i] ;
+    std::string cname = boost::str(rfmt % i);
+    pc->name(cname);
+    opt.createGlobalConstraint(pc->name(), pc);
+   }
+
+//    opt.addToGlobalConstraint("PBalance",globalConstraint);
+  int pcnt = 1;
+  int rcnt = 1;
+  int icnt = 1;
+  for (std::vector<ExpPtr>::iterator ic = globalConstraint.begin();
+       ic != globalConstraint.end(); ++ic) {
+     if(icnt % 2 == 1) {
+       std::string cname = boost::str(fmt % pcnt);
+       opt.addToGlobalConstraint(cname, *ic);
+       pcnt++;
+     }
+     else{
+       std::string cname = boost::str(rfmt % rcnt);
+       opt.addToGlobalConstraint(cname, *ic);
+       rcnt++;
+     }
+     icnt++;
+  }
+
   ExpPtr objFunc;
   objFunc = optim.getObjectiveFunction();
   opt.addToObjective(objFunc);
-//        objFunc->evaluate(); std::cout << std::endl;
   opt.minimize();
 } 
