@@ -16,6 +16,8 @@
 #include <boost/bind.hpp>
 #include <boost/format.hpp>
 #include <cstring>
+#include <iostream>
+#include <string>
 #include <ilcplex/ilocplex.h>
 #include "cplex_optimizer_implementation.hpp"
 
@@ -73,14 +75,20 @@ CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& m)
 
   IloNumArray vals(env);
   cplex.getValues(vals,var);
-  env.out() << "solution vector = " << vals << std::endl;
+//  env.out() << "solution vector = " << vals << std::endl;
 
   IloInt n(vals.getSize());
+  unsigned sz; 
   for (IloInt i = 0; i < n; ++i) {
     std::string vname(var[i].getName());
+    std::string buff;
+    buff = vname;
+    sz = buff.size();
+    buff.resize(sz+20-sz,' ');
     VariablePtr v(p_allVariables[vname]);
     SetVariableInitial vset(vals[i]);
     v->accept(vset);
+    std::cout << buff << " = " << vals[i] << std::endl;
   }
 
 
