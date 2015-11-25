@@ -67,7 +67,7 @@ class OptimizationInterface {
      * @return contribution to global constraint. If no contribution, return
      * null pointer
      */
-    virtual boost::shared_ptr<gridpack::optimization::Expression>
+    virtual std::vector<boost::shared_ptr<gridpack::optimization::Expression> >
       getGlobalConstraint(const char* tag);
 
     /**
