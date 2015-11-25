@@ -54,10 +54,10 @@ std::vector<boost::shared_ptr<gridpack::optimization::Variable> >
  * @return contribution to global constraint. If no contribution, return null
  * pointer
  */
-boost::shared_ptr<gridpack::optimization::Expression>
+std::vector<boost::shared_ptr<gridpack::optimization::Expression> >
   OptimizationInterface::getGlobalConstraint(const char* tag)
 {
-  boost::shared_ptr<gridpack::optimization::Expression> ret;
+  std::vector<boost::shared_ptr<gridpack::optimization::Expression> >ret;
   return ret;
 }
 
