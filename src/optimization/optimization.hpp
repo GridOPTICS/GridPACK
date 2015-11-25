@@ -130,14 +130,13 @@ class NetworkOptimizer
         offset[p]= offset[p-1] + genArr[p-1];
       }
 // 
-//       int inc = offset[me];
-       int inc = 0; 
 // power produced
        for (int p = 0; p < p_numHorizons; p++) {
+       int inc = offset[me];
          for (int i = 0; i < p_numUnits; i++) {
            rval = uc_maxPower[i];
            VarPtr vptr (new RealVariable(0.0, 0.0, rval));
-           vptr->name(boost::str(boost::format("p_u_%d_t_%d")  %i %p));
+           vptr->name(boost::str(boost::format("p_u_%d_t_%d")  %inc %p));
 
            ret.push_back(vptr);
            inc++;
@@ -145,45 +144,45 @@ class NetworkOptimizer
        }
 
 // reserve required
-       inc = 0; 
        for (int p = 0; p < p_numHorizons; p++) {
+       int inc = offset[me]; 
          for (int i = 0; i < p_numUnits; i++) {
            rval = uc_maxPower[i];
            VarPtr vptr (new RealVariable(0.0, 0.0, rval));
-           vptr->name(boost::str(boost::format("r_u_%d_t_%d") %i %p));
+           vptr->name(boost::str(boost::format("r_u_%d_t_%d") %inc %p));
            ret.push_back(vptr);
 
            inc++;
          }
        }
 // onoff 
-       inc = 0; 
        for (int p = 0; p < p_numHorizons; p++) {
+       int inc = offset[me]; 
          for (int i = 0; i < p_numUnits; i++) {
            VarPtr vptr (new IntegerVariable(0,0,1));
-           vptr->name(boost::str(boost::format("on_u_%d_t_%d") %i %p));
+           vptr->name(boost::str(boost::format("on_u_%d_t_%d") %inc %p));
            ret.push_back(vptr);
 
            inc++;
          }
        }
 // start up 
-       inc = 0; 
        for (int p = 0; p < p_numHorizons; p++) {
+       int inc = offset[me]; 
          for (int i = 0; i < p_numUnits; i++) {
            VarPtr vptr (new IntegerVariable(0,0,1));
-           vptr->name(boost::str(boost::format("up_u_%d_t_%d") %i %p));
+           vptr->name(boost::str(boost::format("up_u_%d_t_%d") %inc %p));
            ret.push_back(vptr);
 
            inc++;
          }
        }
 // shut down
-       inc = 0; 
        for (int p = 0; p < p_numHorizons; p++) {
+       int inc = offset[me]; 
          for (int i = 0; i < p_numUnits; i++) {
            VarPtr vptr (new IntegerVariable(0,0,1));
-           vptr->name(boost::str(boost::format("dn_u_%d_t_%d") %i %p));
+           vptr->name(boost::str(boost::format("dn_u_%d_t_%d") %inc %p));
            ret.push_back(vptr);
 
            inc++;
