@@ -120,6 +120,8 @@ GraphPartitionerImplementation::partition(void)
 {
   static const bool verbose(false);
 
+  // Make sure that all GA communication has been flushed from the system
+  communicator().sync();
   gridpack::utility::CoarseTimer *timer;
   timer = NULL;
   // timer = gridpack::utility::CoarseTimer::instance();
