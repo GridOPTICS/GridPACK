@@ -383,6 +383,7 @@ GraphPartitionerImplementation::partition(void)
 
   dims[0] = allnodes;
   dims[1] = maxconn;
+  ld[0] = maxconn;
 
   node_dest.reset(new GA::GlobalArray(MT_C_INT, 2, &dims[0], 
                                       "Ghost node dest processes", NULL));
