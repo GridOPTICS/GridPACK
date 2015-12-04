@@ -1,14 +1,52 @@
 #! /bin/sh
 
-host=`uname -n`
 
-rm -f CMakeCache.txt 
+# -------------------------------------------------------------
+# handle command line options
+# -------------------------------------------------------------
+usage="$0 [-d|-r] [name]"
+
+set -- `getopt d $*`
+if [ $? != 0 ]; then
+    echo $usage >&2
+    exit 2
+fi
+
+build="RelWithDebInfo"
+for o in $*; do
+    case $o in
+        -d)
+            build="Debug"
+            shift
+            ;;
+        -r)
+            build="Release"
+            shift
+            ;;
+        --)
+            shift
+            break
+            ;;
+        *)
+            echo "$0: error: $o: unknown option" >&2
+            echo $usage >&2
+            exit 2
+    esac
+done
+
+if [ $# -gt 0 ]; then
+    host="$1"
+else
+    host=`uname -n`
+fi
+
+rm -rf CMakeCache.txt CMakeFiles
 
 options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
-        -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+        -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
@@ -47,7 +85,7 @@ if [ $host == "flophouse" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
-elif [ $host == "flophouse41" ]; then
+elif [ $host == "flophouse44" ]; then
 
     # RHEL 5 with stock GNU 4.4 compilers
 
@@ -109,6 +147,44 @@ elif [ $host == "pe10900" ]; then
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
+
+elif [ $host == "pe10900intel" ]; then
+
+    # CMake really, really likes to use the wrong compiler. This
+    # system uses MacPorts to supply a GNU 4.8 compiler. In order to
+    # get GridPACK to build with the Intel compilers, the MacPorts
+    # compilers need to be avoided. Do this as root:
+    # 
+    # port select gcc none
+
+    prefix="/opt/intel/openmpi"
+    PATH="$prefix/bin:$PATH" 
+    RPATH="$prefix/lib:/opt/intel/lib"
+    DYLD_LIBRARY_PATH="$RPATH"
+
+    CC=icc
+    CXX=icpc
+    CFLAGS="-static-intel"
+    CXXFLAGS="-static-intel"
+
+    export PATH CC CXX CFLAGS CXXFLAGS RPATH DYLD_LIBRARY_PATH
+
+    cmake -Wdev --debug-trycompile \
+        -D GA_DIR:STRING="$prefix" \
+        -D BOOST_ROOT:STRING="$prefix" \
+        -D PETSC_DIR:STRING="$prefix/petsc-3.6.0" \
+        -D PETSC_ARCH:STRING="arch-macosx-complex-opt" \
+        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
+        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
+        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D USE_GLPK:BOOL=OFF \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+        ..
+
 
 elif [ $host == "olympus.local" ]; then
 
