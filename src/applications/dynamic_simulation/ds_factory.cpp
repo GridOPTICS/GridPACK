@@ -62,28 +62,6 @@ void gridpack::dynamic_simulation::DSFactory::setYBus(void)
 }
 
 /**
- * Get the updating factor for posfy11 stage ybus
- */
-gridpack::ComplexType
-gridpack::dynamic_simulation::DSFactory::setFactor(int sw2_2, int sw3_2)
-{
-  gridpack::ComplexType dummy(-999.0, -999.0);
-
-  int numBranch = p_network->numBranches();
-  int i;
-
-  // Invoke getPosfy11YbusUpdateFactor method on all branch objects
-  for (i=0; i<numBranch; i++) {
-    gridpack::ComplexType ret = (dynamic_cast<DSBranch*>(p_network->getBranch(i).get()))
-      ->getPosfy11YbusUpdateFactor(sw2_2, sw3_2);
-    if (ret != dummy) {
-      return ret;
-    }
-  }
-  return dummy;
-}
-
-/**
  * Apply an event to all branches in the system
  * @param event a struct describing a fault
  */
@@ -115,7 +93,8 @@ bool gridpack::dynamic_simulation::DSFactory::checkGen(void)
       count += dynamic_cast<DSBus*>(p_network->getBus(i).get())->getNumGen();
     }
   }
-  printf("p[%d] number of generators: %d\n",p_network->communicator().rank(),count);
+  printf("p[%d] number of generators: %d\n",
+      p_network->communicator().rank(),count);
   int iok = 0;
   if (count > 0) iok = 1;
   int ok;

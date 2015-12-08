@@ -45,11 +45,6 @@ class DSFactory
     void setYBus(void);
 
     /**
-     * Get the updating factor for posfy11 stage ybus
-     */
-    gridpack::ComplexType setFactor(int sw2_2, int sw3_2);
-
-    /**
      * Apply an event to all branches in the system
      * @param event a struct describing a fault
      */

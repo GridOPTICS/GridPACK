@@ -51,7 +51,8 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   int t_setup = timer->createCategory("Read in Data");
   timer->start(t_setup);
   // read configuration file
-  gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
+  gridpack::utility::Configuration *config
+    = gridpack::utility::Configuration::configuration();
   if (argc >= 2 && argv[1] != NULL) {
     char inputfile[256];
     sprintf(inputfile,"%s",argv[1]);
@@ -130,11 +131,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   factory.setMode(YA);
   gridpack::mapper::FullMatrixMap<DSNetwork> yaMap(network);
   boost::shared_ptr<gridpack::math::Matrix> diagY_a = yaMap.mapToMatrix();
-  ///busIO.header("\n=== diagY_a: ============\n");
-  ///diagY_a->print(); 
-  // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
+  // Convert diagY_a from sparse matrix to dense matrix Y_a
+  // so that SuperLU_DIST can solve
   gridpack::math::MatrixStorageType denseType = gridpack::math::Dense;
-  boost::shared_ptr<gridpack::math::Matrix> Y_a(gridpack::math::storageType(*diagY_a, denseType));
+  boost::shared_ptr<gridpack::math::Matrix>
+    Y_a(gridpack::math::storageType(*diagY_a, denseType));
   timer->stop(t_matset);
 
   // Construct matrix Ymod: Ymod = diagY_a * permTrans
@@ -152,26 +153,18 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   gridpack::mapper::FullMatrixMap<DSNetwork> bMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Y_b = bMap.mapToMatrix();
   timer->stop(t_matset);
-  ///busIO.header("\n=== Y_b: ============\n");
-  ///Y_b->print();
   
   timer->start(t_matset);
   factory.setMode(updateYbus);
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
   timer->stop(t_matset);
-  ///branchIO.header("\n=== prefy11ybus: ============\n");
-  ///prefy11ybus->print();
 
   // Solve linear equations of ybus * X = Y_c
-  //gridpack::math::LinearSolver solver1(*prefy11ybus);
-  //solver1.configure(cursor);
   int t_solve = timer->createCategory("Solve Linear Equation");
   timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver1(*prefy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> prefy11X(solver1.solve(*Y_cDense));
   timer->stop(t_solve);
-  ///branchIO.header("\n=== prefy11X: ============\n");
-  ///prefy11X->print(); 
   
   //-----------------------------------------------------------------------
   // Compute prefy11
@@ -182,8 +175,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->stop(t_matmul);
   // Update prefy11: prefy11 = Y_a + prefy11
   prefy11->add(*Y_a);
-  ///branchIO.header("\n=== Reduced Ybus: prefy11: ============\n");
-  ///prefy11->print();
 
   //-----------------------------------------------------------------------
   // Compute fy11
@@ -194,24 +185,18 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   int sw3_2 = faults[0].to_idx - 1;
 
   boost::shared_ptr<gridpack::math::Matrix> fy11ybus(prefy11ybus->clone());
-  ///branchIO.header("\n=== fy11ybus(original): ============\n");
-  ///fy11ybus->print();
   gridpack::ComplexType x(0.0, -1e7);
   timer->start(t_matset);
   factory.setEvent(faults[0]);
   factory.setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
   timer->stop(t_matset);
-  ///branchIO.header("\n=== fy11ybus: ============\n");
-  ///fy11ybus->print();
 
   // Solve linear equations of fy11ybus * X = Y_c
   timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver2(*fy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> fy11X(solver2.solve(*Y_cDense)); 
   timer->stop(t_solve);
-  ///branchIO.header("\n=== fy11X: ============\n");
-  ///fy11X->print();
   
   // Form reduced admittance matrix fy11: fy11 = Y_b * X
   timer->start(t_matmul);
@@ -219,8 +204,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->stop(t_matmul);
   // Update fy11: fy11 = Y_a + fy11
   fy11->add(*Y_a);
-  ///branchIO.header("\n=== Reduced Ybus: fy11: ============\n");
-  ///fy11->print();
 
   //-----------------------------------------------------------------------
   // Compute posfy11
@@ -230,22 +213,17 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->start(t_matset);
   boost::shared_ptr<gridpack::math::Matrix> posfy11ybus(prefy11ybus->clone());
   timer->stop(t_matset);
-  ///branchIO.header("\n=== posfy11ybus (original): ============\n");
-  ///posfy11ybus->print();
+
   timer->start(t_matset);
   factory.setMode(posFY);
   ybusMap.incrementMatrix(posfy11ybus);
   timer->stop(t_matset);
-  ///branchIO.header("\n=== posfy11ybus: ============\n");
-  ///posfy11ybus->print();
     
   // Solve linear equations of posfy11ybus * X = Y_c
   timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver3(*posfy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> posfy11X(solver3.solve(*Y_cDense)); 
   timer->stop(t_solve);
-  ///branchIO.header("\n=== posfy11X: ============\n");
-  ///posfy11X->print();
   
   // Form reduced admittance matrix posfy11: posfy11 = Y_b * X
   timer->start(t_matmul);
@@ -253,8 +231,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
   timer->stop(t_matmul);
   // Update posfy11: posfy11 = Y_a + posfy11
   posfy11->add(*Y_a);
-  ///branchIO.header("\n=== Reduced Ybus: posfy11: ============\n");
-  ///posfy11->print();
 
   //-----------------------------------------------------------------------
   // Integration implementation (Modified Euler Method)
@@ -363,14 +339,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     int t_trnsmul = timer->createCategory("Transpose Multiply");
     timer->start(t_trnsmul);
     if (flagF1 == 0) {
-      curr.reset(multiply(*trans_prefy11, *eprime_s0)); //MatMultTranspose(prefy11, eprime_s0, curr);
-      //transposeMultiply(*prefy11,*eprime_s0,*curr);
+      curr.reset(multiply(*trans_prefy11, *eprime_s0));
     } else if (flagF1 == 1) {
-      curr.reset(multiply(*trans_fy11, *eprime_s0)); //MatMultTranspose(fy11, eprime_s0, curr);
-      //transposeMultiply(*fy11,*eprime_s0,*curr);
+      curr.reset(multiply(*trans_fy11, *eprime_s0));
     } else if (flagF1 == 2) {
-      curr.reset(multiply(*trans_posfy11, *eprime_s0)); //MatMultTranspose(posfy11, eprime_s0, curr);
-      //transposeMultiply(*posfy11,*eprime_s0,*curr);
+      curr.reset(multiply(*trans_posfy11, *eprime_s0));
     } 
     timer->stop(t_trnsmul);
     
@@ -383,14 +356,11 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     timer->start(t_trnsmul);
     if (flagF2 == 0) {
-      curr.reset(multiply(*trans_prefy11, *eprime_s1)); //MatMultTranspose(prefy11, eprime_s1, curr);
-      //transposeMultiply(*prefy11,*eprime_s1,*curr);
+      curr.reset(multiply(*trans_prefy11, *eprime_s1));
     } else if (flagF2 == 1) {
-      curr.reset(multiply(*trans_fy11, *eprime_s1)); //MatMultTranspose(fy11, eprime_s1, curr);
-      //transposeMultiply(*fy11,*eprime_s1,*curr);
+      curr.reset(multiply(*trans_fy11, *eprime_s1));
     } else if (flagF2 == 2) {
-      curr.reset(multiply(*trans_posfy11, *eprime_s1)); //MatMultTranspose(posfy11, eprime_s1, curr);
-      //transposeMultiply(*posfy11,*eprime_s1,*curr);
+      curr.reset(multiply(*trans_posfy11, *eprime_s1));
     }
     timer->stop(t_trnsmul);
 
@@ -400,14 +370,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
 
     // Print to screen
     if (last_S_Steps != S_Steps) {
-      //sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps);
-      //busIO.header(ioBuf);
-      //mac_ang_s0->print();  
-      //mac_spd_s0->print();  
-      //pmech->print();
-      //pelect->print();
-      //sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps);
-      //busIO.header(ioBuf);
     }
     if (I_Steps == simu_k) {
       sprintf(ioBuf, "\n========================S_Steps = %d=========================\n",
@@ -416,10 +378,6 @@ void gridpack::dynamic_simulation::DSApp::execute(int argc, char** argv)
       sprintf(ioBuf, "\n         Bus ID     Generator ID"
           "    mac_ang         mac_spd         mech            elect\n\n");
       busIO.header(ioBuf);
-      //mac_ang_s1->print();  
-      //mac_spd_s1->print();  
-      //pmech->print();
-      //pelect->print();
       busIO.write();
       sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n",
           S_Steps+1);
