@@ -66,8 +66,6 @@ std::vector<gridpack::state_estimation::Measurement>
         measurement.p_busid = busid;
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
-        //printf("%s %d %f %f\n", measurement.p_type.c_str(), measurement.p_busid,
-        //  measurement.p_value, measurement.p_deviation);
         ret.push_back(measurement); 
       } else if (meas_type == "PIJ" || meas_type == "PJI" ||
           meas_type == "QIJ" || meas_type == "QJI" ||
@@ -89,9 +87,6 @@ std::vector<gridpack::state_estimation::Measurement>
         strcpy(measurement.p_ckt,ckt.c_str());
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
-        //printf("%s %d %d %s %f %f\n", measurement.p_type.c_str(), measurement.p_fbusid,
-        //  measurement.p_tbusid, measurement.p_ckt.c_str(), measurement.p_value,
-        //  measurement.p_deviation);
         ret.push_back(measurement);
       } 
     }
@@ -108,7 +103,8 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   boost::shared_ptr<SENetwork> network(new SENetwork(p_comm));
 
   // read configuration file
-  gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
+  gridpack::utility::Configuration *config
+    = gridpack::utility::Configuration::configuration();
   if (argc >= 2 && argv[1] != NULL) {
     char inputfile[256];
     sprintf(inputfile,"%s",argv[1]);
@@ -183,7 +179,8 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   // set network components using factory
   factory.setComponents();
 
-  // Set up bus data exchange buffers. Need to decide what data needs to be exchanged
+  // Set up bus data exchange buffers. Need to decide what
+  // data needs to be exchanged
   factory.setExchange();
 
   // Add measurements to buses and branches
@@ -201,8 +198,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<SENetwork> ybusMap(network);
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
-  branchIO.header("\nybus:\n");
-  ybus->print();
 
   // Create mapper to push voltage data back onto buses
   factory.setMode(Voltage);
@@ -212,8 +207,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(Jacobian_H);
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
-  branchIO.header("\nHJac:\n");
-  HJac->print();
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
@@ -229,64 +222,37 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(R_inv);
   gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
-//  Rinv->print();
 
   // Start N-R loop
   while (real(tol) > tolerance && iter < max_iteration) {
-
     
     // Form estimation vector
     factory.setMode(Jacobian_H);
-//    printf("Got to HJac\n");
     HJacMap.mapToMatrix(HJac);
-//  HJac->print();
-//  printf("Got to H'\n");
 
     // Form H'
     boost::shared_ptr<gridpack::math::Matrix> trans_HJac(transpose(*HJac));
-//  trans_HJac->print();
-//  printf("Got to Ez\n");
 
     // Build measurement equation
     EzMap.mapToVector(Ez);
-//  Ez->print();
-//  printf("Got to Gain\n");
 
     // Form Gain matrix
     boost::shared_ptr<gridpack::math::Matrix> Gain1(multiply(*trans_HJac, *Rinv));
     boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*Gain1, *HJac));
-//  Gain->print();
-//  printf("Got to H'*Rinv\n");
 
     // Form right hand side vector
     boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
-//  HTR->print();
-//  printf("Got to RHS\n");
 
-//  printf("HTR iDim: %d jDim: %d Ez len: %d\n",HTR->rows(),HTR->cols(),Ez->size());
     boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
-//  printf("Create Solver\n");
-//  RHS->print();
-//  printf("Got to Solver\n");
 
     // create a linear solver
     gridpack::math::LinearSolver solver(*Gain);
     solver.configure(secursor);
     
-    busIO.header("\n Print Gain matrix\n");
-    Gain->print();
-//  printf("Got to DeltaX\n");
-
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
-//    printf("Got to Solve\n");
-    busIO.header("\n Print RHS vector\n");
-    RHS->print();
     X->zero(); //might not need to do this
     solver.solve(*RHS, *X);
-//  X->print();
-//  printf("Got to updateBus\n");
-//    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
     tol = X->normInfinity();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
@@ -298,19 +264,11 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   
     // update values
     network->updateBuses();
-//  printf("Last sentence\n");
 
     iter++;
 
   // End N-R loop
   }
-
-//  gridpack::serial_io::SerialBranchIO<SENetwork> branchIO(512,network);
-//  branchIO.header("\n   Branch Power Flow\n");
-//  branchIO.header("\n        Bus 1       Bus 2   CKT         P"
-//                  "                    Q\n");
-//  branchIO.write();
-
 
   busIO.header("\n   State Estimation Outputs\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");

@@ -59,8 +59,6 @@ class SEApp
     void execute(int argc, char** argv);
 
     private:
-      //boost::shared_ptr<SENetwork> p_network;
-      //boost::shared_ptr<SEFactory> p_factory;
     gridpack::parallel::Communicator p_comm;
 };
 
