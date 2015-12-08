@@ -167,7 +167,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   timer->start(t_total);
 
   // read configuration file
-  gridpack::utility::Configuration *config = gridpack::utility::Configuration::configuration();
+  gridpack::utility::Configuration *config
+    = gridpack::utility::Configuration::configuration();
   if (argc >= 2 && argv[1] != NULL) {
     char inputfile[256];
     sprintf(inputfile,"%s",argv[1]);
