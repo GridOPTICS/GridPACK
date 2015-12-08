@@ -54,16 +54,6 @@ class PFFactory
      */
     void setSBus(void);
 
-    /**
-     * Create the PQ 
-     */
-    void setPQ(void);
-
-    /**
-     * Create the Jacobian matrix
-     */
-    void setJacobian(void);
-
   private:
 
     NetworkPtr p_network;

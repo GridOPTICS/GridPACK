@@ -27,7 +27,7 @@
 namespace gridpack {
 namespace powerflow {
 
-/// A helper functor for the powerflow solver.
+// A helper functor for the powerflow solver.
 /**
  * This is a utility functor that provides functions that build the
  * Jacobian and RHS from the network.  
@@ -94,7 +94,7 @@ struct PFSolverHelper
     J = jMap.mapToMatrix();
   }
   
-  /// Push the current estimated state back onto the network 
+  // Push the current estimated state back onto the network 
   /** 
    * The network state (voltage, phase) is updated with the current
    * estimate from the nonlinear solver.
@@ -115,7 +115,8 @@ struct PFSolverHelper
     Xdelta->add(*Xold);
     double snorm(Xdelta->norm2());
     if (Xdelta->processor_rank() == 0) {
-      std::cout << "PFSolverHelper::update(): solution residual: " << snorm << std::endl;
+      std::cout << "PFSolverHelper::update(): solution residual: "
+        << snorm << std::endl;
     }
 
     // Xdelta->print();
@@ -130,7 +131,7 @@ struct PFSolverHelper
     
   }
   
-  /// Build the Jacobian Matrix
+  // Build the Jacobian Matrix
   /** 
    * This is called by the nonlinear solver each iteration to build
    * the Jacobian from the current network state.  
@@ -157,7 +158,7 @@ struct PFSolverHelper
     jMap.mapToMatrix(theJ);
   }
   
-  /// Build the RHS function vector
+  // Build the RHS function vector
   /** 
    * This is called by the nonlinear solver each iteration to build
    * the RHS vector from the current network state.  This is also
@@ -177,7 +178,6 @@ struct PFSolverHelper
     // implementations, this is called before the Jacobian builder, so
     // we may only need to map the solution back on to the network here.
     
-    // X.print();
     update(Xcur);
     
     // set to build RHS vector
