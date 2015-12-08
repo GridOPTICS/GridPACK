@@ -55,16 +55,6 @@ class PFFactory
     void setSBus(void);
 
     /**
-     * Create the PQ 
-     */
-    void setPQ(void);
-
-    /**
-     * Create the Jacobian matrix
-     */
-    void setJacobian(void);
-
-    /**
      * Check Qlimit
      */
     bool chkQlim(void);
