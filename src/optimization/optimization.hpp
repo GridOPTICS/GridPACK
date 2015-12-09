@@ -122,7 +122,8 @@ class NetworkOptimizer
       for (int p=0; p<nprocs; p++) {
         genArr[p] = 0;
       }
-      genArr[me] = p_numUnits*p_numHorizons*5;
+//      genArr[me] = p_numUnits*p_numHorizons*5;
+      genArr[me] = p_numUnits;
       GA_Pgroup_igop(grp,genArr, nprocs, "+");
       int offset[nprocs];
       offset[0] = 0;
