@@ -47,6 +47,9 @@ CPlexOptimizerImplementation::~CPlexOptimizerImplementation(void)
 void
 CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& m)
 {
+  parallel::Communicator comm(this->communicator());
+  int nproc(comm.size());
+  int me(comm.rank());
   std::string tmpname(p_temporaryFileName());
   std::ofstream tmp;
 
@@ -76,10 +79,11 @@ CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& m)
   IloNumArray vals(env);
   cplex.getValues(vals,var);
 //  env.out() << "solution vector = " << vals << std::endl;
-
-  IloInt n(vals.getSize());
-  unsigned sz; 
-  for (IloInt i = 0; i < n; ++i) {
+  comm.barrier();
+  if(me == 0) {
+   IloInt n(vals.getSize());
+   unsigned sz; 
+   for (IloInt i = 0; i < n; ++i) {
     std::string vname(var[i].getName());
     std::string buff;
     buff = vname;
@@ -89,8 +93,8 @@ CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& m)
     SetVariableInitial vset(vals[i]);
     v->accept(vset);
     std::cout << buff << " = " << vals[i] << std::endl;
+   }
   }
-
 
 }
 
