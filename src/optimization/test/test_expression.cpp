@@ -184,12 +184,12 @@ class TestBus
  * pointer
  */
 
-    ExpPtr getGlobalConstraint(const char* tag) {
+    std::vector<ExpPtr> getGlobalConstraint(const char* tag) {
 /**
          expr3 = IloSum(powerProduced[p]);
          ucmdl.add( expr3 == demand[p]);
 **/
-      ExpPtr ret;
+      std::vector<ExpPtr> ret;
       return ret;
     }
 
