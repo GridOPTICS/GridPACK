@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created September 28, 2015 by Yilin Fang
-// Last Change: 2015-11-06 07:19:46 d3g096
+// Last Change: 2015-12-10 10:28:07 d3g096
 // -------------------------------------------------------------
 
 
@@ -80,10 +80,9 @@ CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& m)
   cplex.getValues(vals,var);
 //  env.out() << "solution vector = " << vals << std::endl;
   comm.barrier();
-  if(me == 0) {
-   IloInt n(vals.getSize());
-   unsigned sz; 
-   for (IloInt i = 0; i < n; ++i) {
+  IloInt n(vals.getSize());
+  unsigned sz; 
+  for (IloInt i = 0; i < n; ++i) {
     std::string vname(var[i].getName());
     std::string buff;
     buff = vname;
@@ -92,10 +91,10 @@ CPlexOptimizerImplementation::p_solve(const p_optimizeMethod& m)
     VariablePtr v(p_allVariables[vname]);
     SetVariableInitial vset(vals[i]);
     v->accept(vset);
-    std::cout << buff << " = " << vals[i] << std::endl;
-   }
+    if(me == 0) {
+      std::cout << buff << " = " << vals[i] << std::endl;
+    }
   }
-
 }
 
 } // namespace optimization
