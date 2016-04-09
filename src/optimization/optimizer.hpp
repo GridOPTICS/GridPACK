@@ -22,6 +22,7 @@
 #define _optimizer_hpp_
 
 #include <vector>
+#include <map>
 #include <boost/scoped_ptr.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/utilities/exception.hpp>
