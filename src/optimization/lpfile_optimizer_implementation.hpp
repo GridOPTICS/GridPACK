@@ -24,6 +24,7 @@
 
 #include <iosfwd>
 #include <string>
+#include <map>
 #include "optimizer.hpp"
 
 namespace gridpack {
