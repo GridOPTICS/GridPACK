@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_app.cpp
+ * @file   dsf_app_module.cpp
  * @author Shuangshuang Jin
  * @Last modified:  May 13, 2015
  *

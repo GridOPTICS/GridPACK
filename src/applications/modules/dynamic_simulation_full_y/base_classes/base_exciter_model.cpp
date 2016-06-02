@@ -24,14 +24,14 @@
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::BaseExciterModel::BaseExciterModel(void)
+gridpack::dynamic_simulation::DSFBaseExciterModel::DSFBaseExciterModel(void)
 {
 }
 
 /**
  *  Basic destructor
  */
-gridpack::dynamic_simulation::BaseExciterModel::~BaseExciterModel(void)
+gridpack::dynamic_simulation::DSFBaseExciterModel::~DSFBaseExciterModel(void)
 {
 }
 
@@ -40,9 +40,9 @@ gridpack::dynamic_simulation::BaseExciterModel::~BaseExciterModel(void)
  * @param data collection of exciter parameters from input files
  * @param index of exciter on bus
  * TODO: might want to move this functionality to
- * BaseExciterModel
+ * DSFBaseExciterModel
  */
-void gridpack::dynamic_simulation::BaseExciterModel::load(
+void gridpack::dynamic_simulation::DSFBaseExciterModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
@@ -54,7 +54,7 @@ void gridpack::dynamic_simulation::BaseExciterModel::load(
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::BaseExciterModel::init(
+void gridpack::dynamic_simulation::DSFBaseExciterModel::init(
     double mag, double ang, double ts)
 {
 }
@@ -64,7 +64,7 @@ void gridpack::dynamic_simulation::BaseExciterModel::init(
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseExciterModel::predictor(
+void gridpack::dynamic_simulation::DSFBaseExciterModel::predictor(
     double t_inc, bool flag)
 {
 }
@@ -74,17 +74,16 @@ void gridpack::dynamic_simulation::BaseExciterModel::predictor(
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseExciterModel::corrector(
+void gridpack::dynamic_simulation::DSFBaseExciterModel::corrector(
     double t_inc, bool flag)
 {
 }
 
 /**
-/**
  * Set the field voltage parameter inside the exciter
  * @param fldv value of the field voltage
  */
-void gridpack::dynamic_simulation::BaseExciterModel::
+void gridpack::dynamic_simulation::DSFBaseExciterModel::
 setFieldVoltage(double fldv)
 {
 }
@@ -93,7 +92,7 @@ setFieldVoltage(double fldv)
  * Set the field current parameter inside the exciter
  * @param fldc value of the field current
  */
-void gridpack::dynamic_simulation::BaseExciterModel::
+void gridpack::dynamic_simulation::DSFBaseExciterModel::
 setFieldCurrent(double fldc)
 {
 }
@@ -102,7 +101,7 @@ setFieldCurrent(double fldc)
  * Get the value of the field voltage parameter
  * @return value of field voltage
  */
-double gridpack::dynamic_simulation::BaseExciterModel::
+double gridpack::dynamic_simulation::DSFBaseExciterModel::
 getFieldVoltage()
 {
   return 0.0;
@@ -112,7 +111,7 @@ getFieldVoltage()
  * Get the value of the field current parameter
  * @return value of field current
  */
-double gridpack::dynamic_simulation::BaseExciterModel::
+double gridpack::dynamic_simulation::DSFBaseExciterModel::
 getFieldCurrent()
 {
   return 0.0;
@@ -122,7 +121,7 @@ getFieldCurrent()
  * Set the value of the Vterminal
  * @return value of field current
  */
-void gridpack::dynamic_simulation::BaseExciterModel::setVterminal(double mag)
+void gridpack::dynamic_simulation::DSFBaseExciterModel::setVterminal(double mag)
 {
 }
 
@@ -130,7 +129,7 @@ void gridpack::dynamic_simulation::BaseExciterModel::setVterminal(double mag)
  * Set the value of the omega
  * @return value of field current
  */
-void gridpack::dynamic_simulation::BaseExciterModel::setOmega(double omega)
+void gridpack::dynamic_simulation::DSFBaseExciterModel::setOmega(double omega)
 {
 }
 

@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_app.hpp
+ * @file   dsf_app_module.hpp
  * @author Shuangshuang Jin
  * @date   Feb 04, 2015
  *
@@ -15,8 +15,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _dsf_app_h_
-#define _dsf_app_h_
+#ifndef _dsf_app_module_h_
+#define _dsf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "dsf_factory_module.hpp"

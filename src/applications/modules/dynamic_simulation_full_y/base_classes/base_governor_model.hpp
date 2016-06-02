@@ -22,24 +22,24 @@
 
 namespace gridpack {
 namespace dynamic_simulation {
-class BaseGovernorModel
+class DSFBaseGovernorModel
 {
   public:
     /**
      * Basic constructor
      */
-    BaseGovernorModel();
+    DSFBaseGovernorModel();
 
     /**
      * Basic destructor
      */
-    virtual ~BaseGovernorModel();
+    virtual ~DSFBaseGovernorModel();
 
     /**
      * Load parameters from DataCollection object into governor model
      * @param data collection of governor parameters from input files
      * @param index of governor on bus
-     * TODO: might want to move this functionality to BaseGovernorModel
+     * TODO: might want to move this functionality to DSFBaseGovernorModel
      */
     virtual void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);

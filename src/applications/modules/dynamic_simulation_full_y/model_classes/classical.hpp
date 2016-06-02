@@ -23,24 +23,24 @@
 
 namespace gridpack {
 namespace dynamic_simulation {
-class ClassicalGenerator : public BaseGeneratorModel
+class DSFClassicalGenerator : public DSFBaseGeneratorModel
 {
   public:
     /**
      * Basic constructor
      */
-    ClassicalGenerator();
+    DSFClassicalGenerator();
 
     /**
      * Basic destructor
      */
-    virtual ~ClassicalGenerator();
+    virtual ~DSFClassicalGenerator();
 
     /**
      * Load parameters from DataCollection object into generator model
      * @param data collection of generator parameters from input files
      * @param index of generator on bus
-     * TODO: might want to move this functionality to BaseGeneratorModel
+     * TODO: might want to move this functionality to DSFBaseGeneratorModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);

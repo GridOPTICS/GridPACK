@@ -5,7 +5,7 @@
  */
 // -----------------------------------------------------------
 /**
- * @file   generator_factory.cpp
+ * @file   dsf_generator_factory_module.cpp
  * @author Bruce Palmer
  * @Last modified:   May 18, 2015
  * 
@@ -16,19 +16,19 @@
 
 #include "gridpack/include/gridpack.hpp"
 #include "dsf_generator_factory_module.hpp"
-#include "classical.hpp"
+#include "model_classes/classical.hpp"
 
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::GeneratorFactory::GeneratorFactory(void)
+gridpack::dynamic_simulation::DSFGeneratorFactory::DSFGeneratorFactory(void)
 {
 }
 
 /**
  *  Basic destructor
  */
-gridpack::dynamic_simulation::GeneratorFactory::~GeneratorFactory(void)
+gridpack::dynamic_simulation::DSFGeneratorFactory::~DSFGeneratorFactory(void)
 {
 }
 
@@ -38,18 +38,18 @@ gridpack::dynamic_simulation::GeneratorFactory::~GeneratorFactory(void)
  * @return pointer to model. If string does not correspond
  * to a generator model, then return NULL pointer
  */
-gridpack::dynamic_simulation::BaseGeneratorModel*
-  gridpack::dynamic_simulation::GeneratorFactory::createGeneratorModel(
+gridpack::dynamic_simulation::DSFBaseGeneratorModel*
+  gridpack::dynamic_simulation::DSFGeneratorFactory::createGeneratorModel(
     std::string model)
 {
   std::string type = p_util.trimQuotes(model);
   p_util.toUpper(type);
 
-  gridpack::dynamic_simulation::BaseGeneratorModel* ret;
+  gridpack::dynamic_simulation::DSFBaseGeneratorModel* ret;
   if (type == "GENCLS") {
-    gridpack::dynamic_simulation::ClassicalGenerator *tmp;
-    tmp =  new gridpack::dynamic_simulation::ClassicalGenerator;
-    ret = dynamic_cast<gridpack::dynamic_simulation::BaseGeneratorModel*>(tmp);
+    gridpack::dynamic_simulation::DSFClassicalGenerator *tmp;
+    tmp =  new gridpack::dynamic_simulation::DSFClassicalGenerator;
+    ret = dynamic_cast<gridpack::dynamic_simulation::DSFBaseGeneratorModel*>(tmp);
   } else {
     ret = NULL;
   }
@@ -62,14 +62,14 @@ gridpack::dynamic_simulation::BaseGeneratorModel*
  * @return pointer to model. If string does not correspond to a exciter
  * model, then return NULL pointer
  */
-gridpack::dynamic_simulation::BaseExciterModel*
-gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
+gridpack::dynamic_simulation::DSFBaseExciterModel*
+gridpack::dynamic_simulation::DSFGeneratorFactory::createExciterModel(
     std::string model)
 {
   std::string type = p_util.trimQuotes(model);
   p_util.toUpper(type);
 
-  gridpack::dynamic_simulation::BaseExciterModel* ret;
+  gridpack::dynamic_simulation::DSFBaseExciterModel* ret;
   ret = NULL;
   return ret;
 }
@@ -80,14 +80,14 @@ gridpack::dynamic_simulation::GeneratorFactory::createExciterModel(
  * @return pointer to model. If string does not correspond to a governor
  * model, then return NULL pointer
  */
-gridpack::dynamic_simulation::BaseGovernorModel*
-gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
+gridpack::dynamic_simulation::DSFBaseGovernorModel*
+gridpack::dynamic_simulation::DSFGeneratorFactory::createGovernorModel(
     std::string model)
 {
   std::string type = p_util.trimQuotes(model);
   p_util.toUpper(type);
 
-  gridpack::dynamic_simulation::BaseGovernorModel* ret;
+  gridpack::dynamic_simulation::DSFBaseGovernorModel* ret;
   ret = NULL;
   return ret;
 }

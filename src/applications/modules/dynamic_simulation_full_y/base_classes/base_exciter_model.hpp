@@ -22,24 +22,24 @@
 
 namespace gridpack {
 namespace dynamic_simulation {
-class BaseExciterModel
+class DSFBaseExciterModel
 {
   public:
     /**
      * Basic constructor
      */
-    BaseExciterModel();
+    DSFBaseExciterModel();
 
     /**
      * Basic destructor
      */
-    virtual ~BaseExciterModel();
+    virtual ~DSFBaseExciterModel();
 
     /**
      * Load parameters from DataCollection object into exciter model
      * @param data collection of exciter parameters from input files
      * @param index of exciter on bus
-     * TODO: might want to move this functionality to BaseExciterModel
+     * TODO: might want to move this functionality to DSFBaseExciterModel
      */
     virtual void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);

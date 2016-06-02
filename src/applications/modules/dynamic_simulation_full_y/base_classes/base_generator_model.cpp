@@ -24,7 +24,7 @@
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::BaseGeneratorModel::BaseGeneratorModel(void)
+gridpack::dynamic_simulation::DSFBaseGeneratorModel::DSFBaseGeneratorModel(void)
 {
   p_watch = false;
   p_hasExciter = false;
@@ -34,7 +34,7 @@ gridpack::dynamic_simulation::BaseGeneratorModel::BaseGeneratorModel(void)
 /**
  *  Basic destructor
  */
-gridpack::dynamic_simulation::BaseGeneratorModel::~BaseGeneratorModel(void)
+gridpack::dynamic_simulation::DSFBaseGeneratorModel::~DSFBaseGeneratorModel(void)
 {
 }
 
@@ -43,9 +43,9 @@ gridpack::dynamic_simulation::BaseGeneratorModel::~BaseGeneratorModel(void)
  * @param data collection of generator parameters from input files
  * @param index of generator on bus
  * TODO: might want to move this functionality to
- * BaseGeneratorModel
+ * DSFBaseGeneratorModel
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::load(
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
@@ -57,7 +57,7 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::load(
  * @param ang voltage angle
  * @param ts time step
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::init(
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::init(
     double mag, double ang, double ts) 
 {
 }
@@ -66,7 +66,7 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::init(
  * Return contribution to Norton current
  * @return contribution to Norton vector
  */
-gridpack::ComplexType gridpack::dynamic_simulation::BaseGeneratorModel::INorton()
+gridpack::ComplexType gridpack::dynamic_simulation::DSFBaseGeneratorModel::INorton()
 {
   return gridpack::ComplexType(0.0,0.0);
 }
@@ -75,7 +75,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::BaseGeneratorModel::INorton(
  * Return Norton impedence
  * @return value of Norton impedence
  */
-gridpack::ComplexType gridpack::dynamic_simulation::BaseGeneratorModel::NortonImpedence()
+gridpack::ComplexType gridpack::dynamic_simulation::DSFBaseGeneratorModel::NortonImpedence()
 {
   return gridpack::ComplexType(0.0,0.0);
 }
@@ -84,7 +84,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::BaseGeneratorModel::NortonIm
  * Predict new state variables for time step
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::predictor_currentInjection(bool flag)
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::predictor_currentInjection(bool flag)
 {
 }
 
@@ -92,7 +92,7 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::predictor_currentInjectio
  * Correct new state variables for time step
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::corrector_currentInjection(bool flag)
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::corrector_currentInjection(bool flag)
 {
 }
 
@@ -101,7 +101,7 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::corrector_currentInjectio
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::predictor(
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::predictor(
     double t_inc, bool flag)
 {
 }
@@ -111,7 +111,7 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::predictor(
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::corrector(
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::corrector(
     double t_inc, bool flag)
 {
 }
@@ -119,7 +119,7 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::corrector(
 /**
  * Set voltage on each generator
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::setVoltage(
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::setVoltage(
     gridpack::ComplexType voltage)
 {
 }
@@ -128,7 +128,7 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::setVoltage(
  * Get the value of the field voltage parameter
  * @return value of field voltage
  */
-double gridpack::dynamic_simulation::BaseGeneratorModel::
+double gridpack::dynamic_simulation::DSFBaseGeneratorModel::
 getFieldVoltage()
 {
   return 0.0;
@@ -142,7 +142,7 @@ getFieldVoltage()
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::dynamic_simulation::BaseGeneratorModel::
+bool gridpack::dynamic_simulation::DSFBaseGeneratorModel::
 serialWrite(char *string, const int bufsize, const char *signal)
 {
   return false;
@@ -153,49 +153,49 @@ serialWrite(char *string, const int bufsize, const char *signal)
  * @param signal character string used to determine behavior
  * @param string buffer that contains output
  */
-void gridpack::dynamic_simulation::BaseGeneratorModel::write(
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::write(
     const char* signal, char *string)
 {
 }
 
-double gridpack::dynamic_simulation::BaseGeneratorModel::
+double gridpack::dynamic_simulation::DSFBaseGeneratorModel::
 getAngle()
 {
   return 0.0;
 }
 
 void
-gridpack::dynamic_simulation::BaseGeneratorModel::setGovernor(boost::shared_ptr<BaseGovernorModel>
+gridpack::dynamic_simulation::DSFBaseGeneratorModel::setGovernor(boost::shared_ptr<DSFBaseGovernorModel>
     &governor)
 {
   p_governor = governor;
 }
 
 void
-gridpack::dynamic_simulation::BaseGeneratorModel::setExciter(boost::shared_ptr<BaseExciterModel>
+gridpack::dynamic_simulation::DSFBaseGeneratorModel::setExciter(boost::shared_ptr<DSFBaseExciterModel>
     &exciter)
 {
   p_exciter = exciter;
 }
 
-void gridpack::dynamic_simulation::BaseGeneratorModel::setWatch(bool flag)
+void gridpack::dynamic_simulation::DSFBaseGeneratorModel::setWatch(bool flag)
 {
   p_watch = flag;
 }
 
-bool gridpack::dynamic_simulation::BaseGeneratorModel::getWatch()
+bool gridpack::dynamic_simulation::DSFBaseGeneratorModel::getWatch()
 {
   return p_watch;
 }
 
-boost::shared_ptr<gridpack::dynamic_simulation::BaseGovernorModel>
-gridpack::dynamic_simulation::BaseGeneratorModel::getGovernor()
+boost::shared_ptr<gridpack::dynamic_simulation::DSFBaseGovernorModel>
+gridpack::dynamic_simulation::DSFBaseGeneratorModel::getGovernor()
 {
   return p_governor;
 }
 
-boost::shared_ptr<gridpack::dynamic_simulation::BaseExciterModel>
-gridpack::dynamic_simulation::BaseGeneratorModel::getExciter()
+boost::shared_ptr<gridpack::dynamic_simulation::DSFBaseExciterModel>
+gridpack::dynamic_simulation::DSFBaseGeneratorModel::getExciter()
 {
   return p_exciter;
 }

@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_factory.hpp
+ * @file   dsf_factory_module.hpp
  * @author Shuangshuang Jin 
  * @date   Feb 04, 2015
  * @last modified date   May 13, 2015
@@ -16,8 +16,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _dsf_factory_h_
-#define _dsf_factory_h_
+#ifndef _dsf_factory_module_h_
+#define _dsf_factory_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/include/gridpack.hpp"

@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   generator_factory.hpp
+ * @file   dsf_generator_factory_module.hpp
  * @author Bruce Palmer
  * @Last modified:   May 19, 2015
  * 
@@ -14,29 +14,29 @@
  * 
  */
 
-#ifndef generator_factory_h_
-#define generator_factory_h_
+#ifndef dsf_generator_factory_module_h_
+#define dsf_generator_factory_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/include/gridpack.hpp"
-#include "base_generator_model.hpp"
-#include "base_exciter_model.hpp"
-#include "base_governor_model.hpp"
+#include "base_classes/base_generator_model.hpp"
+#include "base_classes/base_exciter_model.hpp"
+#include "base_classes/base_governor_model.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
-class GeneratorFactory
+class DSFGeneratorFactory
 {
   public:
     /**
      * Basic constructor
      */
-    GeneratorFactory();
+    DSFGeneratorFactory();
 
     /**
      * Basic destructor
      */
-    virtual ~GeneratorFactory();
+    virtual ~DSFGeneratorFactory();
 
     /**
      * Create a generator model
@@ -44,7 +44,7 @@ class GeneratorFactory
      * @return pointer to model. If string does not correspond to a generator
      * model, then return NULL pointer
      */
-    BaseGeneratorModel* createGeneratorModel(std::string model);
+    DSFBaseGeneratorModel* createGeneratorModel(std::string model);
 
     /**
      * Create an exciter model
@@ -52,7 +52,7 @@ class GeneratorFactory
      * @return pointer to model. If string does not correspond to a exciter
      * model, then return NULL pointer
      */
-    BaseExciterModel* createExciterModel(std::string model);
+    DSFBaseExciterModel* createExciterModel(std::string model);
 
     /**
      * Create an governor model
@@ -60,7 +60,7 @@ class GeneratorFactory
      * @return pointer to model. If string does not correspond to a governor
      * model, then return NULL pointer
      */
-    BaseGovernorModel* createGovernorModel(std::string model);
+    DSFBaseGovernorModel* createGovernorModel(std::string model);
 
   private:
 

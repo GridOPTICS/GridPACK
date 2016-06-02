@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_components.cpp
+ * @file   dsf_components_module.cpp
  * @author Shuangshuang Jin 
  * @date   2013-11-19 13:46:09 d3g096
  * @date   2014-03-06 15:22:00 d3m956
@@ -549,7 +549,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   double pg, qg, mva, r, dstr, dtr;
   double h, d0;
   bool has_ex, has_gov;
-  GeneratorFactory genFactory;
+  DSFGeneratorFactory genFactory;
   p_generators.clear();
   int idx;
   data->getValue(BUS_NUMBER,&idx);
@@ -576,19 +576,19 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0) {
         p_pg.push_back(pg);
         //std::cout << "generator: " << model << std::endl;
-        BaseGeneratorModel *generator
+        DSFBaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
         has_ex = false;
         has_gov = false;
         data->getValue(HAS_EXCITER, &has_ex, i);
         data->getValue(HAS_GOVERNOR, &has_gov, i);
         if (generator) {
-          //boost::shared_ptr<BaseGeneratorModel> tmp;
+          //boost::shared_ptr<DSFBaseGeneratorModel> tmp;
           //tmp.reset(generator);
-          //boost::shared_ptr<BaseGenerator> basegen;
-          //basegen.reset(new BaseGenerator);
+          //boost::shared_ptr<DSFBaseGenerator> basegen;
+          //basegen.reset(new DSFBaseGenerator);
           //basegen->setGeneratorModel(tmp);
-          boost::shared_ptr<BaseGeneratorModel> basegen;
+          boost::shared_ptr<DSFBaseGeneratorModel> basegen;
           basegen.reset(generator);
           p_generators.push_back(basegen);
           data->getValue(GENERATOR_ID, &genid, i);
@@ -596,9 +596,9 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           if (has_ex) {
             if (data->getValue(EXCITER_MODEL, &model, i)) {
               //std::cout << "exciter: " << model << std::endl;
-              BaseExciterModel *exciter
+              DSFBaseExciterModel *exciter
                 = genFactory.createExciterModel(model);
-              boost::shared_ptr<BaseExciterModel> ex;
+              boost::shared_ptr<DSFBaseExciterModel> ex;
               ex.reset(exciter);
               p_generators[icnt]->setExciter(ex);
             }
@@ -606,9 +606,9 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           if (has_gov) {
             if (data->getValue(GOVERNOR_MODEL, &model, i)) {
               //std::cout << "governor: " << model << std::endl;
-              BaseGovernorModel *governor
+              DSFBaseGovernorModel *governor
                 = genFactory.createGovernorModel(model);
-              boost::shared_ptr<BaseGovernorModel> gov;
+              boost::shared_ptr<DSFBaseGovernorModel> gov;
               gov.reset(governor);
               p_generators[icnt]->setGovernor(gov);
             }

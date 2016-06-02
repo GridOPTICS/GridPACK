@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_components.hpp
+ * @file   dsf_components_module.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   May 13, 2015
  * 
@@ -15,8 +15,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _dsf_components_h_
-#define _dsf_components_h_
+#ifndef _dsf_components_module_h_
+#define _dsf_components_module_h_
 
 //#define USE_FNCS
 /**
@@ -307,9 +307,9 @@ class DSFullBus
 
     gridpack::component::BaseBranchComponent* p_branch;
 
-    //std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseGenerator> >
+    //std::vector<boost::shared_ptr<gridpack::dynamic_simulation::DSFBaseGenerator> >
       //p_generators;
-    std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseGeneratorModel> >
+    std::vector<boost::shared_ptr<gridpack::dynamic_simulation::DSFBaseGeneratorModel> >
       p_generators;
 
     bool p_isolated;

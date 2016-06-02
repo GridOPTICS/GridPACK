@@ -24,24 +24,24 @@
 
 namespace gridpack {
 namespace dynamic_simulation {
-class BaseGeneratorModel
+class DSFBaseGeneratorModel
 {
   public:
     /**
      * Basic constructor
      */
-    BaseGeneratorModel();
+    DSFBaseGeneratorModel();
 
     /**
      * Basic destructor
      */
-    virtual ~BaseGeneratorModel();
+    virtual ~DSFBaseGeneratorModel();
 
     /**
      * Load parameters from DataCollection object into generator model
      * @param data collection of generator parameters from input files
      * @param index of generator on bus
-     * TODO: might want to move this functionality to BaseGeneratorModel
+     * TODO: might want to move this functionality to DSFBaseGeneratorModel
      */
     virtual void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -123,13 +123,13 @@ class BaseGeneratorModel
      */
     virtual void write(const char* signal, char* string);
 
-    void setGovernor(boost::shared_ptr<BaseGovernorModel> &p_governor);
+    void setGovernor(boost::shared_ptr<DSFBaseGovernorModel> &p_governor);
 
-    void setExciter(boost::shared_ptr<BaseExciterModel> &p_exciter);
+    void setExciter(boost::shared_ptr<DSFBaseExciterModel> &p_exciter);
 
-    boost::shared_ptr<BaseGovernorModel> getGovernor();
+    boost::shared_ptr<DSFBaseGovernorModel> getGovernor();
 
-    boost::shared_ptr<BaseExciterModel> getExciter();
+    boost::shared_ptr<DSFBaseExciterModel> getExciter();
 
     void setWatch(bool flag);
 
@@ -139,8 +139,8 @@ class BaseGeneratorModel
 
     bool p_hasExciter;
     bool p_hasGovernor;
-    boost::shared_ptr<BaseGovernorModel> p_governor;
-    boost::shared_ptr<BaseExciterModel> p_exciter;
+    boost::shared_ptr<DSFBaseGovernorModel> p_governor;
+    boost::shared_ptr<DSFBaseExciterModel> p_exciter;
     bool p_watch;
 
 };

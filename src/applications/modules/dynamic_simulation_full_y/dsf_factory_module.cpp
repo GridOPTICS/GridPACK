@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_factory.cpp
+ * @file   dsf_factory_module.cpp
  * @author Shuangshuang Jin 
  * @date   Feb 04, 2015
  * @last modified date   May 13, 2015

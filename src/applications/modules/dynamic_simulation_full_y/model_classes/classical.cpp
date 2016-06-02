@@ -25,7 +25,7 @@
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::ClassicalGenerator::ClassicalGenerator(void)
+gridpack::dynamic_simulation::DSFClassicalGenerator::DSFClassicalGenerator(void)
 {
   p_PI = 4.0*atan(1.0);
 }
@@ -33,7 +33,7 @@ gridpack::dynamic_simulation::ClassicalGenerator::ClassicalGenerator(void)
 /**
  *  Basic destructor
  */
-gridpack::dynamic_simulation::ClassicalGenerator::~ClassicalGenerator(void)
+gridpack::dynamic_simulation::DSFClassicalGenerator::~DSFClassicalGenerator(void)
 {
 }
 
@@ -42,7 +42,7 @@ gridpack::dynamic_simulation::ClassicalGenerator::~ClassicalGenerator(void)
  * @param data collection of generator parameters from input files
  * @param index of generator on bus
  */
-void gridpack::dynamic_simulation::ClassicalGenerator::load(
+void gridpack::dynamic_simulation::DSFClassicalGenerator::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
@@ -77,7 +77,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::load(
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
+void gridpack::dynamic_simulation::DSFClassicalGenerator::init(double mag,
     double ang, double ts) 
 { 
   p_pg *= p_sbase; // p_pg *= p_sbase if dsf read network from powerflow solution!
@@ -155,7 +155,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
  * Return contribution to Norton current
  * @return contribution to Norton vector
  */
-gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::INorton()
+gridpack::ComplexType gridpack::dynamic_simulation::DSFClassicalGenerator::INorton()
 {
   return p_INorton;
 }
@@ -165,7 +165,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::INorton(
  * Return Norton impedence
  * @return value of Norton impedence
  */
-gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::NortonImpedence()
+gridpack::ComplexType gridpack::dynamic_simulation::DSFClassicalGenerator::NortonImpedence()
 {
   double ra = p_r * p_sbase / p_mva;
   double xd;
@@ -182,7 +182,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::NortonIm
  * Predict part calculate current injections
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::ClassicalGenerator::predictor_currentInjection(bool flag)
+void gridpack::dynamic_simulation::DSFClassicalGenerator::predictor_currentInjection(bool flag)
 {
   if (!flag) {
     p_mac_ang_s0 = p_mac_ang_s1;
@@ -208,7 +208,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor_currentInjectio
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::ClassicalGenerator::predictor(
+void gridpack::dynamic_simulation::DSFClassicalGenerator::predictor(
     double t_inc, bool flag)
 {
   gridpack::ComplexType jay, curr;
@@ -247,7 +247,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor(
  * Correct part calculate current injections
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::ClassicalGenerator::corrector_currentInjection(bool flag)
+void gridpack::dynamic_simulation::DSFClassicalGenerator::corrector_currentInjection(bool flag)
 {
   gridpack::ComplexType jay(0.0, 1.0);
   p_INorton = p_eprime_s1 / (p_dtr * jay);
@@ -266,7 +266,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector_currentInjectio
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::ClassicalGenerator::corrector(
+void gridpack::dynamic_simulation::DSFClassicalGenerator::corrector(
     double t_inc, bool flag)
 {
   gridpack::ComplexType jay, curr;
@@ -318,7 +318,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector(
 /**
  * Set voltage on each generator
  */
-void gridpack::dynamic_simulation::ClassicalGenerator::setVoltage(
+void gridpack::dynamic_simulation::DSFClassicalGenerator::setVoltage(
     gridpack::ComplexType voltage)
 {
   p_volt = voltage;
@@ -332,7 +332,7 @@ void gridpack::dynamic_simulation::ClassicalGenerator::setVoltage(
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::dynamic_simulation::ClassicalGenerator::
+bool gridpack::dynamic_simulation::DSFClassicalGenerator::
 serialWrite(char *string, const int bufsize, const char *signal)
 {
   bool ret = false;
@@ -380,7 +380,7 @@ serialWrite(char *string, const int bufsize, const char *signal)
 /**
  * Get the roter angle
  */
-double gridpack::dynamic_simulation::ClassicalGenerator::getAngle()
+double gridpack::dynamic_simulation::DSFClassicalGenerator::getAngle()
 {
   return real(p_mac_ang_s1);
 }

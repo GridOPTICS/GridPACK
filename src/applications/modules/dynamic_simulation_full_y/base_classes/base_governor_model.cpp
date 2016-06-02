@@ -24,14 +24,14 @@
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::BaseGovernorModel::BaseGovernorModel(void)
+gridpack::dynamic_simulation::DSFBaseGovernorModel::DSFBaseGovernorModel(void)
 {
 }
 
 /**
  *  Basic destructor
  */
-gridpack::dynamic_simulation::BaseGovernorModel::~BaseGovernorModel(void)
+gridpack::dynamic_simulation::DSFBaseGovernorModel::~DSFBaseGovernorModel(void)
 {
 }
 
@@ -40,9 +40,9 @@ gridpack::dynamic_simulation::BaseGovernorModel::~BaseGovernorModel(void)
  * @param data collection of governor parameters from input files
  * @param index of governor on bus
  * TODO: might want to move this functionality to
- * BaseGovernorModel
+ * DSFBaseGovernorModel
  */
-void gridpack::dynamic_simulation::BaseGovernorModel::load(
+void gridpack::dynamic_simulation::DSFBaseGovernorModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
@@ -54,7 +54,7 @@ void gridpack::dynamic_simulation::BaseGovernorModel::load(
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::BaseGovernorModel::init(
+void gridpack::dynamic_simulation::DSFBaseGovernorModel::init(
     double mag, double ang, double ts)
 {
 }
@@ -64,7 +64,7 @@ void gridpack::dynamic_simulation::BaseGovernorModel::init(
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseGovernorModel::predictor(
+void gridpack::dynamic_simulation::DSFBaseGovernorModel::predictor(
     double t_inc, bool flag)
 {
 }
@@ -74,7 +74,7 @@ void gridpack::dynamic_simulation::BaseGovernorModel::predictor(
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::BaseGovernorModel::corrector(
+void gridpack::dynamic_simulation::DSFBaseGovernorModel::corrector(
     double t_inc, bool flag)
 {
 }
@@ -83,7 +83,7 @@ void gridpack::dynamic_simulation::BaseGovernorModel::corrector(
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power
  */
-void gridpack::dynamic_simulation::BaseGovernorModel::
+void gridpack::dynamic_simulation::DSFBaseGovernorModel::
 setMechanicalPower(double pmech)
 {
 }
@@ -92,7 +92,7 @@ setMechanicalPower(double pmech)
  * Set the rotor speed deviation inside the governor
  * @param delta_o value of the rotor speed deviation
  */
-void gridpack::dynamic_simulation::BaseGovernorModel::
+void gridpack::dynamic_simulation::DSFBaseGovernorModel::
 setRotorSpeedDeviation(double delta_o)
 {
 }
@@ -101,7 +101,7 @@ setRotorSpeedDeviation(double delta_o)
  * Get the value of the mechanical power
  * @return value of mechanical power
  */
-double gridpack::dynamic_simulation::BaseGovernorModel::
+double gridpack::dynamic_simulation::DSFBaseGovernorModel::
 getMechanicalPower()
 {
   return 0.0;
@@ -111,7 +111,7 @@ getMechanicalPower()
  * Get the value of the rotor speed deviation
  * 
  */
-double gridpack::dynamic_simulation::BaseGovernorModel::
+double gridpack::dynamic_simulation::DSFBaseGovernorModel::
 getRotorSpeedDeviation()
 {
   return 0.0;
