@@ -41,10 +41,10 @@ main(int argc, char **argv)
   gridpack::powerflow::PFApp app;
   app.execute(argc, argv);
 
-  GA_Terminate();
-
   // Terminate Math libraries
   gridpack::math::Finalize();
+
+  GA_Terminate();
 #if 0
   // Clean up MPI libraries
   ierr = MPI_Finalize();

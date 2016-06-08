@@ -19,7 +19,7 @@
 #define _ds_app_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_factory.hpp"
+#include "ds_factory.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {

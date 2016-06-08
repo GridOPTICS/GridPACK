@@ -600,8 +600,8 @@ class PTI33_parser : public BasePTIParser<_network>
           new_branch_pair = std::pair<int,int>(o_idx2, o_idx1);
           it = p_branchMap.find(new_branch_pair);
           if (it != p_branchMap.end()) {
-            printf("Found multiple lines with switched buses 1: %d 2: %d\n",
-                o_idx1,o_idx2);
+//            printf("Found multiple lines with switched buses 1: %d 2: %d\n",
+//                o_idx1,o_idx2);
             l_idx = it->second;
             p_branchData[l_idx]->getValue(BRANCH_NUM_ELEMENTS,&nelems);
             switched = true;

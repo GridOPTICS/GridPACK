@@ -16,7 +16,7 @@
 // -------------------------------------------------------------
 
 #include "gridpack/include/gridpack.hpp"
-#include "gridpack/applications/dynamic_simulation/ds_app.hpp"
+#include "ds_app.hpp"
 
 #define USE_NEW_CODE
 
