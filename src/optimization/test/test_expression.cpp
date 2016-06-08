@@ -184,14 +184,14 @@ class TestBus
  * pointer
  */
 
-    ExpPtr getGlobalConstraint(const char* tag) {
-/**
-         expr3 = IloSum(powerProduced[p]);
-         ucmdl.add( expr3 == demand[p]);
-**/
-      ExpPtr ret;
-      return ret;
-    }
+//     ExpPtr getGlobalConstraint(const char* tag) {
+// /**
+//          expr3 = IloSum(powerProduced[p]);
+//          ucmdl.add( expr3 == demand[p]);
+// **/
+//       ExpPtr ret;
+//       return ret;
+//     }
 
     /**
      * Return a list of local constraints from component
