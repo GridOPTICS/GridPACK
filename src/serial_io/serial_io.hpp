@@ -286,14 +286,15 @@ class SerialBusIO {
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
     char *ptr = strbuf;
-    nwrites = 0;
+    int ncnt = 0;
     for (i=0; i<nBus; i++) {
+      if (ncnt >= nwrites) break;
       if (p_network->getActiveBus(i) &&
           p_network->getBus(i)->getDataItem(ptr,signal)) {
-        index[nwrites] = new int;
-        *(index[nwrites]) = p_network->getGlobalBusIndex(i);
-        ones[nwrites] = 1;
-        nwrites++;
+        index[ncnt] = new int;
+        *(index[ncnt]) = p_network->getGlobalBusIndex(i);
+        ones[ncnt] = 1;
+        ncnt++;
         ptr += p_size;
       }
     }
@@ -408,21 +409,22 @@ class SerialBusIO {
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
     char *ptr = strbuf;
-    nwrites = 0;
+    int ncnt = 0;
     for (i=0; i<nBus; i++) {
+      if (ncnt >= nwrites) break;
       if (p_network->getActiveBus(i) &&
           p_network->getBus(i)->serialWrite(ptr,p_size,signal)) {
-        index[nwrites] = new int;
-        *(index[nwrites]) = p_network->getGlobalBusIndex(i);
-        ones[nwrites] = 1;
-        nwrites++;
+        index[ncnt] = new int;
+        *(index[ncnt]) = p_network->getGlobalBusIndex(i);
+        ones[ncnt] = 1;
+        ncnt++;
         ptr += p_size;
       }
     }
 
     // Scatter data to global buffer and set mask array
     GA_Zero(p_maskGA);
-    if (nwrites > 0) {
+    if (ncnt > 0) {
       NGA_Scatter(p_stringGA,strbuf,index,nwrites);
       NGA_Scatter(p_maskGA,ones,index,nwrites);
     }
@@ -452,7 +454,7 @@ class SerialBusIO {
           }
         }
         // Create buffers to retrieve strings from process i
-	if (nwrites > 0) {
+        if (nwrites > 0) {
           char iobuf[p_size*nwrites];
           index = new int*[nwrites];
           nwrites = 0;
@@ -680,14 +682,15 @@ class SerialBranchIO {
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
     char *ptr = strbuf;
-    nwrites = 0;
+    int ncnt = 0;
     for (i=0; i<nBranch; i++) {
+      if (ncnt >= nwrites) break;
       if (p_network->getActiveBranch(i) &&
           p_network->getBranch(i)->getDataItem(ptr,signal)) {
-        index[nwrites] = new int;
-        *(index[nwrites]) = p_network->getGlobalBranchIndex(i);
-        ones[nwrites] = 1;
-        nwrites++;
+        index[ncnt] = new int;
+        *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
+        ones[ncnt] = 1;
+        ncnt++;
         ptr += p_size;
       }
     }
@@ -783,14 +786,15 @@ class SerialBranchIO {
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
     char *ptr = strbuf;
-    nwrites = 0;
+    int ncnt = 0;
     for (i=0; i<nBranch; i++) {
+      if (ncnt >= nwrites) break;
       if (p_network->getActiveBranch(i) &&
           p_network->getBranch(i)->serialWrite(ptr,p_size,signal)) {
-        index[nwrites] = new int;
-        *(index[nwrites]) = p_network->getGlobalBranchIndex(i);
-        ones[nwrites] = 1;
-        nwrites++;
+        index[ncnt] = new int;
+        *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
+        ones[ncnt] = 1;
+        ncnt++;
         ptr += p_size;
       }
     }
