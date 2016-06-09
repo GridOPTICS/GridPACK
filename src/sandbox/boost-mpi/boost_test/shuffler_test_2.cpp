@@ -71,7 +71,9 @@ main(int argc, char **argv)
 
   shuffle(world, mine, dest);
   printit(world, mine, "Again: ");
-  
+
+  std::cout << world.rank() << ": exiting " << std::endl;
+  world.barrier();
   return 0;
 }
 
