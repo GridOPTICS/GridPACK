@@ -22,6 +22,7 @@
 #include <vector>
 #include <iterator>
 #include <algorithm>
+#include <numeric>
 #include <boost/mpi/environment.hpp>
 #include <boost/mpi/communicator.hpp>
 #include <boost/mpi/collectives.hpp>
