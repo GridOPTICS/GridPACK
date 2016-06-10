@@ -3,7 +3,8 @@
 cmake_minimum_required (VERSION 2.6.4)
 project (PETScTest)
 
-list (APPEND CMAKE_MODULE_PATH "${PETScTest_SOURCE_DIR}/cmake-modules")
+list (APPEND CMAKE_MODULE_PATH 
+  "${PETScTest_SOURCE_DIR}/../../../cmake")
 
 # This is a C++ project exclusively
 enable_language(CXX)
@@ -44,11 +45,13 @@ find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
 message(STATUS "Checking PETSc ...")
 find_package (PETSc COMPONENTS CXX REQUIRED)
 
-if (NOT EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+else()
   message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
 endif()
-
-include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
 
 # checks 
 
