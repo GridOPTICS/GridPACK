@@ -282,6 +282,8 @@ class SerialBusIO {
     // Set up buffers to scatter strings to global buffer
     int **index;
     index = new int*[nwrites];
+    int *indexbuf = new int[nwrites];
+    int *iptr = indexbuf;
     int ones[nwrites];
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
@@ -291,11 +293,12 @@ class SerialBusIO {
       if (ncnt >= nwrites) break;
       if (p_network->getActiveBus(i) &&
           p_network->getBus(i)->getDataItem(ptr,signal)) {
-        index[ncnt] = new int;
+        index[ncnt] = iptr;
         *(index[ncnt]) = p_network->getGlobalBusIndex(i);
         ones[ncnt] = 1;
         ncnt++;
         ptr += p_size;
+        iptr ++;
       }
     }
 
@@ -307,10 +310,8 @@ class SerialBusIO {
     }
     if (nwrites*p_size > 0) delete [] strbuf;
     GA_Pgroup_sync(p_GAgrp);
-    for (i=0; i<nwrites; i++) {
-      delete index[i];
-    }
     delete [] index;
+    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
@@ -335,12 +336,15 @@ class SerialBusIO {
         if (nwrites > 0) {
           char iobuf[p_size*nwrites];
           index = new int*[nwrites];
+          indexbuf = new int[nwrites];
+          iptr = indexbuf;
           nwrites = 0;
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
-              index[nwrites] = new int;
+              index[nwrites] = iptr;
               *(index[nwrites]) = j + lo;
               nwrites++;
+              iptr++;
             }
           }
           NGA_Gather(p_stringGA,iobuf,index,nwrites);
@@ -351,11 +355,11 @@ class SerialBusIO {
               memcpy(&data,ptr,dsize);
               data_vector.push_back(data);
               ptr += p_size;
-              delete index[nwrites];
               nwrites++;
             }
           }
           delete [] index;
+          delete [] indexbuf;
         }
       }
     }
@@ -405,6 +409,8 @@ class SerialBusIO {
     // Set up buffers to scatter strings to global buffer
     int **index;
     index = new int*[nwrites];
+    int *indexbuf = new int[nwrites];
+    int *iptr = indexbuf;
     int ones[nwrites];
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
@@ -414,11 +420,12 @@ class SerialBusIO {
       if (ncnt >= nwrites) break;
       if (p_network->getActiveBus(i) &&
           p_network->getBus(i)->serialWrite(ptr,p_size,signal)) {
-        index[ncnt] = new int;
+        index[ncnt] = iptr;
         *(index[ncnt]) = p_network->getGlobalBusIndex(i);
         ones[ncnt] = 1;
         ncnt++;
         ptr += p_size;
+        iptr++;
       }
     }
 
@@ -430,10 +437,8 @@ class SerialBusIO {
     }
     if (nwrites*p_size > 0) delete [] strbuf;
     GA_Pgroup_sync(p_GAgrp);
-    for (i=0; i<nwrites; i++) {
-      delete index[i];
-    }
     delete [] index;
+    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
@@ -457,12 +462,15 @@ class SerialBusIO {
         if (nwrites > 0) {
           char iobuf[p_size*nwrites];
           index = new int*[nwrites];
+          indexbuf = new int[nwrites];
+          iptr = indexbuf;
           nwrites = 0;
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
-              index[nwrites] = new int;
+              index[nwrites] = iptr;
               *(index[nwrites]) = j + lo;
               nwrites++;
+              iptr++;
             }
           }
           NGA_Gather(p_stringGA,iobuf,index,nwrites);
@@ -480,11 +488,11 @@ class SerialBusIO {
               }
 #endif
               ptr += p_size;
-              delete index[nwrites];
               nwrites++;
             }
           }
           delete [] index;
+          delete [] indexbuf;
         }
       }
     }
@@ -678,6 +686,8 @@ class SerialBranchIO {
     // Set up buffers to scatter strings to global buffer
     int **index;
     index = new int*[nwrites];
+    int *indexbuf = new int[nwrites];
+    int *iptr = indexbuf;
     int ones[nwrites];
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
@@ -687,11 +697,12 @@ class SerialBranchIO {
       if (ncnt >= nwrites) break;
       if (p_network->getActiveBranch(i) &&
           p_network->getBranch(i)->getDataItem(ptr,signal)) {
-        index[ncnt] = new int;
+        index[ncnt] = iptr;
         *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
         ones[ncnt] = 1;
         ncnt++;
         ptr += p_size;
+        iptr++;
       }
     }
 
@@ -703,10 +714,8 @@ class SerialBranchIO {
     }
     if (nwrites*p_size > 0) delete [] strbuf;
     GA_Pgroup_sync(p_GAgrp);
-    for (i=0; i<nwrites; i++) {
-      delete index[i];
-    }
     delete [] index;
+    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
@@ -731,12 +740,15 @@ class SerialBranchIO {
         if (nwrites > 0) {
           char iobuf[p_size*nwrites];
           index = new int*[nwrites];
+          indexbuf = new int[nwrites];
+          iptr = indexbuf;
           nwrites = 0;
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
-              index[nwrites] = new int;
+              index[nwrites] = iptr;
               *(index[nwrites]) = j + lo;
               nwrites++;
+              iptr++;
             }
           }
           NGA_Gather(p_stringGA,iobuf,index,nwrites);
@@ -747,11 +759,11 @@ class SerialBranchIO {
               memcpy(&data,ptr,dsize);
               data_vector.push_back(data);
               ptr += p_size;
-              delete index[nwrites];
               nwrites++;
             }
           }
           delete [] index;
+          delete [] indexbuf;
         }
       }
     }
@@ -782,6 +794,8 @@ class SerialBranchIO {
     // Set up buffers to scatter strings to global buffer
     int **index;
     index = new int*[nwrites];
+    int *indexbuf = new int[nwrites];
+    int *iptr = indexbuf;
     int ones[nwrites];
     char *strbuf;
     if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
@@ -791,11 +805,12 @@ class SerialBranchIO {
       if (ncnt >= nwrites) break;
       if (p_network->getActiveBranch(i) &&
           p_network->getBranch(i)->serialWrite(ptr,p_size,signal)) {
-        index[ncnt] = new int;
+        index[ncnt] = iptr;
         *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
         ones[ncnt] = 1;
         ncnt++;
         ptr += p_size;
+        iptr++;
       }
     }
 
@@ -807,10 +822,8 @@ class SerialBranchIO {
     }
     if (nwrites*p_size > 0) delete [] strbuf;
     GA_Pgroup_sync(p_GAgrp);
-    for (i=0; i<nwrites; i++) {
-      delete index[i];
-    }
     delete [] index;
+    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
@@ -834,12 +847,15 @@ class SerialBranchIO {
         if (nwrites > 0) {
           char iobuf[p_size*nwrites];
           index = new int*[nwrites];
+          indexbuf = new int[nwrites];
+          iptr = indexbuf;
           nwrites = 0;
           for (j=0; j<ld; j++) {
             if (imask[j] == 1) {
-              index[nwrites] = new int;
+              index[nwrites] = iptr;
               *(index[nwrites]) = j + lo;
               nwrites++;
+              iptr++;
             }
           }
           NGA_Gather(p_stringGA,iobuf,index,nwrites);
@@ -849,11 +865,11 @@ class SerialBranchIO {
             if (imask[j] == 1) {
               out << ptr;
               ptr += p_size;
-              delete index[nwrites];
               nwrites++;
             }
           }
           delete [] index;
+          delete [] indexbuf;
         }
       }
     }
