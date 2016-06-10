@@ -4,7 +4,7 @@ cmake_minimum_required (VERSION 2.6.4)
 project (PETScTest)
 
 list (APPEND CMAKE_MODULE_PATH 
-  "${PETScTest_SOURCE_DIR}/../../../cmake")
+  "${PETScTest_SOURCE_DIR}/../../../cmake-jedbrown")
 
 # This is a C++ project exclusively
 enable_language(CXX)
