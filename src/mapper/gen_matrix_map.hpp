@@ -26,6 +26,7 @@
 #include <gridpack/component/base_component.hpp>
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/math/matrix.hpp>
+#include <gridpack/utilities/exception.hpp>
 
 //#define DBG_CHECK
 
@@ -400,7 +401,10 @@ void setOffsets(void)
   GA_Set_irreg_distr(g_bus_row_offsets, busMap, &p_nNodes);
   GA_Set_pgroup(g_bus_row_offsets, p_GAgrp);
   if (!GA_Allocate(g_bus_row_offsets)) {
-    // TODO: Some kind of error
+    char buf[256];
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for bus row offsets\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   GA_Zero(g_bus_row_offsets);
 
@@ -409,7 +413,10 @@ void setOffsets(void)
   GA_Set_irreg_distr(g_bus_column_offsets, busMap, &p_nNodes);
   GA_Set_pgroup(g_bus_column_offsets, p_GAgrp);
   if (!GA_Allocate(g_bus_column_offsets)) {
-    // TODO: Some kind of error
+    char buf[256];
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for bus column offsets\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   GA_Zero(g_bus_column_offsets);
 
@@ -418,7 +425,10 @@ void setOffsets(void)
   GA_Set_irreg_distr(g_branch_row_offsets, branchMap, &p_nNodes);
   GA_Set_pgroup(g_branch_row_offsets, p_GAgrp);
   if (!GA_Allocate(g_branch_row_offsets)) {
-    // TODO: Some kind of error
+    char buf[256];
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for branch row offsets\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   GA_Zero(g_branch_row_offsets);
 
@@ -427,7 +437,10 @@ void setOffsets(void)
   GA_Set_irreg_distr(g_branch_column_offsets, branchMap, &p_nNodes);
   GA_Set_pgroup(g_branch_column_offsets, p_GAgrp);
   if (!GA_Allocate(g_branch_column_offsets)) {
-    // TODO: Some kind of error
+    char buf[256];
+    sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for branch column offsets\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   GA_Zero(g_branch_column_offsets);
 
