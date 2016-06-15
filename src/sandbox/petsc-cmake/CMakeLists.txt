@@ -17,14 +17,14 @@ enable_testing()
 # MPI
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
-find_package (MPI REQUIRED)
+#find_package (MPI REQUIRED)
 
 # This is here for cmake version 2.6 
 if (NOT MPI_CXX_LIBRARIES)
- set(MPI_CXX_LIBRARIES 
-   ${MPI_LIBRARY} 
-   ${MPI_EXTRA_LIBRARY}
- )
+set(MPI_CXX_LIBRARIES 
+  ${MPI_LIBRARY} 
+  ${MPI_EXTRA_LIBRARY}
+)
 endif()
 
 # -------------------------------------------------------------
@@ -34,7 +34,7 @@ endif()
 # PETSc. How can I check that?
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
-find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
+find_package(Boost 1.52 COMPONENTS mpi serialization REQUIRED)
 
 # -------------------------------------------------------------
 # PETSc
@@ -96,4 +96,5 @@ set_tests_properties(greetings
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
 )
+
 
