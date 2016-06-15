@@ -6,7 +6,9 @@ rm -f CMakeCache.txt
 
 if [ $host == "flophouse" ]; then
 
-    prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
+    # RHEL 5 with GNU 4.8 compilers built from scratch
+
+    prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
     PATH="${prefix}/bin:${PATH}"
     export PATH
 
@@ -20,9 +22,9 @@ if [ $host == "flophouse" ]; then
     export CXXFLAGS
 
     cmake -Wdev --debug-trycompile\
-        -D Boost_DIR:STRING="$prefix" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-linux2-g++44-opt' \
+        -D BOOST_ROOT:STRING="$prefix" \
+        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.6.0" \
+        -D PETSC_ARCH:STRING='linux-gnu48-complex-opt' \
         -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
         -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
@@ -32,13 +34,23 @@ if [ $host == "flophouse" ]; then
     
 elif [ $host == "pe10900" ]; then
 
+    # Mac using GNU 4.8 and OpenMPI -- avoid using the system
+    # compilers and MPI wrappers -- using MacPorts
+
+    CC=/opt/local/bin/gcc
+    export CC
+    CXX=/opt/local/bin/g++
+    export CXX
+
+    prefix="/net/flophouse/files0/perksoft/macosx"
+
     cmake -Wno-dev \
         -D Boost_DIR:STRING='/opt/local' \
-        -D PETSC_DIR:STRING='/net/flophouse/files0/perksoft/petsc-3.3-p3' \
-        -D PETSC_ARCH:STRING='arch-darwin-cxx-opt' \
-        -D MPI_CXX_COMPILER:STRING='openmpicxx' \
-        -D MPI_C_COMPILER:STRING='openmpicc' \
-        -D MPIEXEC:STRING='openmpiexec' \
+        -D PETSC_DIR:STRING="$prefix/../petsc-3.4.3" \
+        -D PETSC_ARCH:STRING='arch-macosx-complex-opt' \
+        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
+        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
+        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D CMAKE_BUILD_TYPE:STRING="Debug" \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         ..
