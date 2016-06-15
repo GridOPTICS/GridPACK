@@ -23,7 +23,7 @@
 template <typename T> 
 void
 printit(const boost::mpi::communicator& comm, 
-        const std::vector<T> things,
+        const std::vector<T>& things,
         const std::string& caption)
 {
   if (!caption.empty() && comm.rank() == 0) {
@@ -51,6 +51,7 @@ printit(const boost::mpi::communicator& comm,
     std::cout << "Number of things: " << global_size << std::endl;
   }
   comm.barrier();
+  std::cout << comm.rank() << ": leaving printit()" << std::endl;
 }                                      
 
 

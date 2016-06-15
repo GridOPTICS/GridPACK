@@ -19,6 +19,7 @@
 // Last Change: Fri Mar 30 14:01:03 2012 by William A. Perkins <d3g096@PE10900.pnl.gov>
 // -------------------------------------------------------------
 
+#include <ctime>
 #include <iostream>
 #include <vector>
 #include <list>

@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 #include <utility>
 #include <boost/mpi.hpp>
 #include <boost/serialization/vector.hpp>
