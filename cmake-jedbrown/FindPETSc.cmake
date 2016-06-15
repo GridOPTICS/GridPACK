@@ -275,6 +275,19 @@ int main(int argc,char *argv[]) {
   mark_as_advanced (PETSC_INCLUDE_DIR PETSC_INCLUDE_CONF)
   set (petsc_includes_minimal ${PETSC_INCLUDE_CONF} ${PETSC_INCLUDE_DIR})
 
+  # Special case MS Visual Studio w/ MSMPI. The MPI includes and
+  # library will be needed to run test programs, so add them.  May not
+  # be so special.  Requires find_package(MPI) be called before this. 
+  if (MSVC)
+    if (MPI_C_FOUND)
+      list(APPEND petsc_includes_minimal  ${MPI_C_INCLUDE_PATH})
+      list(APPEND petsc_includes_all  ${MPI_C_INCLUDE_PATH})
+      list(APPEND PETSC_LIBRARIES_TS ${MPI_LIBRARY})
+    else (MPI_C_FOUND)
+      message(WARNING "No MPI library specified for ${CMAKE_C_COMPILER_VERSION}. Expect failure.")
+    endif (MPI_C_FOUND)
+  endif(MSVC)
+
   petsc_test_runs ("${petsc_includes_minimal}" "${PETSC_LIBRARIES_TS}" petsc_works_minimal)
   if (petsc_works_minimal)
     message (STATUS "Minimal PETSc includes and libraries work.  This probably means we are building with shared libs.")
