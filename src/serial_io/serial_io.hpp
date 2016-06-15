@@ -281,37 +281,42 @@ class SerialBusIO {
 
     // Set up buffers to scatter strings to global buffer
     int **index;
-    index = new int*[nwrites];
-    int *indexbuf = new int[nwrites];
-    int *iptr = indexbuf;
-    int ones[nwrites];
-    char *strbuf;
-    if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
-    char *ptr = strbuf;
-    int ncnt = 0;
-    for (i=0; i<nBus; i++) {
-      if (ncnt >= nwrites) break;
-      if (p_network->getActiveBus(i) &&
-          p_network->getBus(i)->getDataItem(ptr,signal)) {
-        index[ncnt] = iptr;
-        *(index[ncnt]) = p_network->getGlobalBusIndex(i);
-        ones[ncnt] = 1;
-        ncnt++;
-        ptr += p_size;
-        iptr ++;
-      }
-    }
-
-    // Scatter data to global buffer and set mask array
-    GA_Zero(p_maskGA);
+    int *indexbuf;
+    int *iptr;
+    char *ptr;
     if (nwrites > 0) {
-      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
-      NGA_Scatter(p_maskGA,ones,index,nwrites);
+      index = new int*[nwrites];
+      indexbuf = new int[nwrites];
+      iptr = indexbuf;
+      int ones[nwrites];
+      char *strbuf;
+      if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
+      ptr = strbuf;
+      int ncnt = 0;
+      for (i=0; i<nBus; i++) {
+        if (ncnt >= nwrites) break;
+        if (p_network->getActiveBus(i) &&
+            p_network->getBus(i)->getDataItem(ptr,signal)) {
+          index[ncnt] = iptr;
+          *(index[ncnt]) = p_network->getGlobalBusIndex(i);
+          ones[ncnt] = 1;
+          ncnt++;
+          ptr += p_size;
+          iptr ++;
+        }
+      }
+
+      // Scatter data to global buffer and set mask array
+      GA_Zero(p_maskGA);
+      if (nwrites > 0) {
+        NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+        NGA_Scatter(p_maskGA,ones,index,nwrites);
+      }
+      if (nwrites*p_size > 0) delete [] strbuf;
+      GA_Pgroup_sync(p_GAgrp);
+      delete [] index;
+      delete [] indexbuf;
     }
-    if (nwrites*p_size > 0) delete [] strbuf;
-    GA_Pgroup_sync(p_GAgrp);
-    delete [] index;
-    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
@@ -408,37 +413,42 @@ class SerialBusIO {
 
     // Set up buffers to scatter strings to global buffer
     int **index;
-    index = new int*[nwrites];
-    int *indexbuf = new int[nwrites];
-    int *iptr = indexbuf;
-    int ones[nwrites];
-    char *strbuf;
-    if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
-    char *ptr = strbuf;
-    int ncnt = 0;
-    for (i=0; i<nBus; i++) {
-      if (ncnt >= nwrites) break;
-      if (p_network->getActiveBus(i) &&
-          p_network->getBus(i)->serialWrite(ptr,p_size,signal)) {
-        index[ncnt] = iptr;
-        *(index[ncnt]) = p_network->getGlobalBusIndex(i);
-        ones[ncnt] = 1;
-        ncnt++;
-        ptr += p_size;
-        iptr++;
+    int *indexbuf;
+    int *iptr;
+    char *ptr;
+    if (nwrites > 0) {
+      index = new int*[nwrites];
+      indexbuf = new int[nwrites];
+      iptr = indexbuf;
+      int ones[nwrites];
+      char *strbuf;
+      if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
+      ptr = strbuf;
+      int ncnt = 0;
+      for (i=0; i<nBus; i++) {
+        if (ncnt >= nwrites) break;
+        if (p_network->getActiveBus(i) &&
+            p_network->getBus(i)->serialWrite(ptr,p_size,signal)) {
+          index[ncnt] = iptr;
+          *(index[ncnt]) = p_network->getGlobalBusIndex(i);
+          ones[ncnt] = 1;
+          ncnt++;
+          ptr += p_size;
+          iptr++;
+        }
       }
-    }
 
-    // Scatter data to global buffer and set mask array
-    GA_Zero(p_maskGA);
-    if (ncnt > 0) {
-      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
-      NGA_Scatter(p_maskGA,ones,index,nwrites);
+      // Scatter data to global buffer and set mask array
+      GA_Zero(p_maskGA);
+      if (ncnt > 0) {
+        NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+        NGA_Scatter(p_maskGA,ones,index,nwrites);
+      }
+      if (nwrites*p_size > 0) delete [] strbuf;
+      GA_Pgroup_sync(p_GAgrp);
+      delete [] index;
+      delete [] indexbuf;
     }
-    if (nwrites*p_size > 0) delete [] strbuf;
-    GA_Pgroup_sync(p_GAgrp);
-    delete [] index;
-    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
@@ -685,37 +695,42 @@ class SerialBranchIO {
 
     // Set up buffers to scatter strings to global buffer
     int **index;
-    index = new int*[nwrites];
-    int *indexbuf = new int[nwrites];
-    int *iptr = indexbuf;
-    int ones[nwrites];
-    char *strbuf;
-    if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
-    char *ptr = strbuf;
-    int ncnt = 0;
-    for (i=0; i<nBranch; i++) {
-      if (ncnt >= nwrites) break;
-      if (p_network->getActiveBranch(i) &&
-          p_network->getBranch(i)->getDataItem(ptr,signal)) {
-        index[ncnt] = iptr;
-        *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
-        ones[ncnt] = 1;
-        ncnt++;
-        ptr += p_size;
-        iptr++;
-      }
-    }
-
-    // Scatter data to global buffer and set mask array
-    GA_Zero(p_maskGA);
+    int *indexbuf;
+    int *iptr;
+    char *ptr;
     if (nwrites > 0) {
-      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
-      NGA_Scatter(p_maskGA,ones,index,nwrites);
+      index = new int*[nwrites];
+      indexbuf = new int[nwrites];
+      iptr = indexbuf;
+      int ones[nwrites];
+      char *strbuf;
+      if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
+      ptr = strbuf;
+      int ncnt = 0;
+      for (i=0; i<nBranch; i++) {
+        if (ncnt >= nwrites) break;
+        if (p_network->getActiveBranch(i) &&
+            p_network->getBranch(i)->getDataItem(ptr,signal)) {
+          index[ncnt] = iptr;
+          *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
+          ones[ncnt] = 1;
+          ncnt++;
+          ptr += p_size;
+          iptr++;
+        }
+      }
+
+      // Scatter data to global buffer and set mask array
+      GA_Zero(p_maskGA);
+      if (nwrites > 0) {
+        NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+        NGA_Scatter(p_maskGA,ones,index,nwrites);
+      }
+      if (nwrites*p_size > 0) delete [] strbuf;
+      GA_Pgroup_sync(p_GAgrp);
+      delete [] index;
+      delete [] indexbuf;
     }
-    if (nwrites*p_size > 0) delete [] strbuf;
-    GA_Pgroup_sync(p_GAgrp);
-    delete [] index;
-    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
@@ -793,37 +808,42 @@ class SerialBranchIO {
 
     // Set up buffers to scatter strings to global buffer
     int **index;
-    index = new int*[nwrites];
-    int *indexbuf = new int[nwrites];
-    int *iptr = indexbuf;
-    int ones[nwrites];
-    char *strbuf;
-    if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
-    char *ptr = strbuf;
-    int ncnt = 0;
-    for (i=0; i<nBranch; i++) {
-      if (ncnt >= nwrites) break;
-      if (p_network->getActiveBranch(i) &&
-          p_network->getBranch(i)->serialWrite(ptr,p_size,signal)) {
-        index[ncnt] = iptr;
-        *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
-        ones[ncnt] = 1;
-        ncnt++;
-        ptr += p_size;
-        iptr++;
-      }
-    }
-
-    // Scatter data to global buffer and set mask array
-    GA_Zero(p_maskGA);
+    int *indexbuf;
+    int *iptr;
+    char *ptr;
     if (nwrites > 0) {
-      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
-      NGA_Scatter(p_maskGA,ones,index,nwrites);
+      index = new int*[nwrites];
+      indexbuf = new int[nwrites];
+      iptr = indexbuf;
+      int ones[nwrites];
+      char *strbuf;
+      if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
+      ptr = strbuf;
+      int ncnt = 0;
+      for (i=0; i<nBranch; i++) {
+        if (ncnt >= nwrites) break;
+        if (p_network->getActiveBranch(i) &&
+            p_network->getBranch(i)->serialWrite(ptr,p_size,signal)) {
+          index[ncnt] = iptr;
+          *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
+          ones[ncnt] = 1;
+          ncnt++;
+          ptr += p_size;
+          iptr++;
+        }
+      }
+
+      // Scatter data to global buffer and set mask array
+      GA_Zero(p_maskGA);
+      if (nwrites > 0) {
+        NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+        NGA_Scatter(p_maskGA,ones,index,nwrites);
+      }
+      if (nwrites*p_size > 0) delete [] strbuf;
+      GA_Pgroup_sync(p_GAgrp);
+      delete [] index;
+      delete [] indexbuf;
     }
-    if (nwrites*p_size > 0) delete [] strbuf;
-    GA_Pgroup_sync(p_GAgrp);
-    delete [] index;
-    delete [] indexbuf;
 
     // String data is now stored on global array. Process 0 now retrieves data
     // from each successive processor and writes it to standard out  
