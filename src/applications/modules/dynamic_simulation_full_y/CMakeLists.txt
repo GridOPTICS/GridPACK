@@ -53,7 +53,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
 # installation
 # -------------------------------------------------------------
 install(FILES 
-  dsf_module.hpp
+  dsf_app_module.hpp
   dsf_factory_module.hpp
   dsf_components_module.hpp
   dsf_generator_factory_module.hpp
