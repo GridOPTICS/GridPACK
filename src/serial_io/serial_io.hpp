@@ -23,6 +23,7 @@
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
+#include "gridpack/utilities/exception.hpp"
 #ifdef USE_GOSS
 #include <activemq/library/ActiveMQCPP.h>
 #include <decaf/lang/Thread.h>
@@ -263,7 +264,12 @@ class SerialBusIO {
   {
     int nBus = p_network->numBuses();
     if (sizeof(_data_type) > p_size) {
-      // TODO: Some kind of error
+      char buf[256];
+      sprintf(buf,"SerialBusIO::gatherData: data_type size inconsistent"
+          " with allocated size: data: %d allocated: %d\n",
+          sizeof(_data_type),p_size);
+      printf(buf);
+      throw gridpack::Exception(buf);
     }
     _data_type data;
     int dsize = sizeof(_data_type);
@@ -679,7 +685,12 @@ class SerialBranchIO {
   {
     int nBranch = p_network->numBranches();
     if (sizeof(_data_type) > p_size) {
-      // TODO: Some kind of error
+      char buf[256];
+      sprintf(buf,"SerialBranchIO::gatherData: data_type size inconsistent"
+          " with allocated size: data: %d allocated: %d\n",
+          sizeof(_data_type),p_size);
+      printf(buf);
+      throw gridpack::Exception(buf);
     }
     _data_type data;
     int dsize = sizeof(_data_type);
