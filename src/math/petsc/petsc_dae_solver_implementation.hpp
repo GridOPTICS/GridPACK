@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-05-07 13:34:21 d3g096
+ * @date   2016-06-16 13:03:07 d3g096
  * 
  * @brief  
  * 
@@ -157,6 +157,7 @@ protected:
     PetscErrorCode ierr(0);
     try {
       ierr = TSSetDuration(p_ts, maxsteps, maxtime); CHKERRXX(ierr);
+      ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr); 
       ierr = TSSolve(p_ts, PETSC_NULL);
       // std::cout << this->processor_rank() << ": "
       //           << "DAESolver::solve() returned " << ierr 
