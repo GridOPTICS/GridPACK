@@ -8,7 +8,7 @@
 /**
  * @file   math.cpp
  * @author William A. Perkins
- * @date   2014-12-09 11:05:20 d3g096
+ * @date   2016-06-16 12:26:01 d3g096
  * 
  * @brief  
  * 
@@ -58,8 +58,15 @@ Initialize(void)
 #else
     ierr = PetscInitializeNoArguments(); CHKERRXX(ierr);
 #endif
-    PetscOptionsHasName(NULL,"-log_summary",&flg);
+    PetscOptionsHasName(
+#if PETSC_VERSION_GE(3,7,0)
+                                    NULL,
+#endif
+                                    NULL, "-log_summary", &flg);
     ierr = PetscOptionsInsertFile(PETSC_COMM_WORLD,
+#if PETSC_VERSION_GE(3,7,0)
+                                    NULL,
+#endif
                                   "gridpack.petscrc",
                                   PETSC_FALSE); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
