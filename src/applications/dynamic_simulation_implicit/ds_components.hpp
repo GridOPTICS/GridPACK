@@ -128,7 +128,7 @@ class DSBus
   /**
     Set the shift value provided by TS
   */
-  void setTSshift(int);
+  void setTSshift(double);
 
   /**
      Set buffer size for exchange

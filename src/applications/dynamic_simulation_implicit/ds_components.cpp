@@ -56,7 +56,7 @@ void gridpack::dsimplicit::DSBus::getNvar(int *nvar) const
 /**
   Set the shift value provided by TS
 */
-void gridpack::dsimplicit::DSBus::setTSshift(int shift)
+void gridpack::dsimplicit::DSBus::setTSshift(double shift)
 {
   p_TSshift = shift;
 }
@@ -354,6 +354,7 @@ bool gridpack::dsimplicit::DSBus::matrixDiagValues(ComplexType *values)
      ctr += 2;
    }
  }
+ return true;
 }
 
 /**
