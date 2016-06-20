@@ -36,6 +36,10 @@
 #include "parser_classes/genrou.hpp"
 #include "parser_classes/wsieg1.hpp"
 #include "parser_classes/exdc1.hpp"
+#include "parser_classes/esst1a.hpp"
+#include "parser_classes/esst4b.hpp"
+#include "parser_classes/ggov1.hpp"
+#include "parser_classes/wshygp.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -135,39 +139,82 @@ class BasePTIParser : public BaseParser<_network>
       double tdopp;
       double tqop;
       double tqopp;
-      double xd;
-      double xq;
+      double gn_xd;
+      double gn_xq;
       double xdp;
       double xqp;
       double xdpp;
-      double xl;
-      double s1;
+      double gn_xl;
+      double gn_s1;
       double s12;
       // Exciter parameters
       char ex_model[8];  // Exciter model
       bool has_exciter;
+      double ex_tr;
+      double ex_ka;
+      double ex_ta;
+      double ex_tb;
+      double ex_tc;
+      double vrmax;
+      double vrmin;
+      double ex_ke;
+      double ex_te;
+      double ex_kf;
+      double tf1;
+      double rswitch;
+      double ex_e1;
+      double se1;
+      double ex_e2;
+      double se2;
+      double uel;
+      double vos;
+      double vimax;
+      double vimin;
+      double tci;
+      double tbi;
+      double vamax;
+      double vamin;
+      double ex_kc;
+      double ex_tf;
+      double klr;
+      double ilr;
+      double kpr;
+      double kir;
+      double kpm;
+      double kim;
+      double vmmax;
+      double vmmin;
+      double ex_kg;
+      double ex_kp;
+      double ex_ki;
+      double vbmax;
+      double ex_xl;
+      double thetap;
+      // Governor parameters
+      char gov_model[8];  // Governor model
+      bool has_governor;
       int jbus;
-      int m;
-      double k;
-      double t1;
-      double t2;
-      double t3;
-      double uo;
-      double uc;
+      int gv_m;
+      double gv_k;
+      double gv_t1;
+      double gv_t2;
+      double gv_t3;
+      double gv_uo;
+      double gv_uc;
       double pmax;
       double pmin;
-      double t4;
-      double k1;
-      double k2;
-      double t5;
-      double k3;
-      double k4;
-      double t6;
-      double k5;
-      double k6;
-      double t7;
-      double k7;
-      double k8;
+      double gv_t4;
+      double gv_k1;
+      double gv_k2;
+      double gv_t5;
+      double gv_k3;
+      double gv_k4;
+      double gv_t6;
+      double gv_k5;
+      double gv_k6;
+      double gv_t7;
+      double gv_k7;
+      double gv_k8;
       double db1;
       double err;
       double db2;
@@ -182,25 +229,54 @@ class BasePTIParser : public BaseParser<_network>
       double gv5;
       double pgv5;
       int iblock;
-      // Governor parameters
-      char gov_model[8];  // Exciter model
-      bool has_governor;
-      double tr;
-      double ka;
-      double ta;
-      double tb;
-      double tc;
-      double vrmax;
-      double vrmin;
-      double ke;
-      double te;
-      double kf;
-      double tf1;
-      double rswitch;
-      double e1;
-      double se1;
-      double e2;
-      double se2;
+      double rselect;
+      double flagswitch;
+      double gv_r;
+      double tpelec;
+      double maxerr;
+      double minerr;
+      double kpgov;
+      double kigov;
+      double kdgov;
+      double tdgov;
+      double vmax;
+      double vmin;
+      double tact;
+      double kturb;
+      double wfnl;
+      double gv_tb;
+      double gv_tc;
+      double teng;
+      double tfload;
+      double kpload;
+      double kiload;
+      double ldref;
+      double gv_dm;
+      double ropen;
+      double rclose;
+      double kimw;
+      double aset;
+      double gv_ka;
+      double gv_ta;
+      double trate;
+      double gv_db;
+      double tsa;
+      double tsb;
+      double rup;
+      double rdown;
+      double gv_td;
+      double gv_kl;
+      double gv_tf;
+      double gv_kd;
+      double gv_kp;
+      double gv_tt;
+      double gv_kg;
+      double gv_tp;
+      double velopen;
+      double velclose;
+      double aturb;
+      double bturb;
+      double tturb;
     };
 
     /**
@@ -280,6 +356,18 @@ class BasePTIParser : public BaseParser<_network>
         } else if (!strcmp(ds_data[i].gen_model,"EXDC1") ||
             !strcmp(ds_data[i].gen_model,"EXDC2")) {
           Exdc1Parser<ds_params> parser;
+          parser.extract(ds_data[i], data, sval, g_id);
+        } else if (!strcmp(ds_data[i].gen_model,"ESST1A")) {
+          Esst1aParser<ds_params> parser;
+          parser.extract(ds_data[i], data, sval, g_id);
+        } else if (!strcmp(ds_data[i].gen_model,"ESST4B")) {
+          Esst4bParser<ds_params> parser;
+          parser.extract(ds_data[i], data, sval, g_id);
+        } else if (!strcmp(ds_data[i].gen_model,"GGOV1")) {
+          Ggov1Parser<ds_params> parser;
+          parser.extract(ds_data[i], data, sval, g_id);
+        } else if (!strcmp(ds_data[i].gen_model,"WSHYGP")) {
+          WshygpParser<ds_params> parser;
           parser.extract(ds_data[i], data, sval, g_id);
         }
       }
@@ -567,6 +655,18 @@ class BasePTIParser : public BaseParser<_network>
         } else if (sval == "EXDC1" || sval == "EXDC2") {
           Exdc1Parser<ds_params> parser;
           parser.parse(split_line, data, sval, g_id);
+        } else if (sval == "ESST1A") {
+          Esst1aParser<ds_params> parser;
+          parser.parse(split_line, data, sval, g_id);
+        } else if (sval == "ESST4A") {
+          Esst4bParser<ds_params> parser;
+          parser.parse(split_line, data, sval, g_id);
+        } else if (sval == "GGOV1") {
+          Ggov1Parser<ds_params> parser;
+          parser.parse(split_line, data, sval, g_id);
+        } else if (sval == "WSHYGP") {
+          WshygpParser<ds_params> parser;
+          parser.parse(split_line, data, sval, g_id);
         }
       }
     }
@@ -631,6 +731,18 @@ class BasePTIParser : public BaseParser<_network>
           parser.store(split_line,data);
         } else if (sval == "EXDC1" || sval == "EXDC2") {
           Exdc1Parser<ds_params> parser;
+          parser.store(split_line,data);
+        } else if (sval == "ESST1A") {
+          Esst1aParser<ds_params> parser;
+          parser.store(split_line,data);
+        } else if (sval == "ESST4B") {
+          Esst4bParser<ds_params> parser;
+          parser.store(split_line,data);
+        } else if (sval == "GGOV1") {
+          Ggov1Parser<ds_params> parser;
+          parser.store(split_line,data);
+        } else if (sval == "WSHYGP") {
+          WshygpParser<ds_params> parser;
           parser.store(split_line,data);
         }
         ds_vector->push_back(data);

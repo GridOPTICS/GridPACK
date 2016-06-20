@@ -4,30 +4,30 @@
  *    in the LICENSE file in the top level directory of this distribution.
  */
 /*
- *  Created on: June 17, 2016
+ *  Created on: June 20, 2016
  *      Author: Bruce Palmer
  */
-#ifndef EXDC1_HPP
-#define EXDC1_HPP
+#ifndef ESST4B_HPP
+#define ESST4B_HPP
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 namespace gridpack {
 namespace parser {
-template <class _data_struct> class Exdc1Parser
+template <class _data_struct> class Esst4bParser
 {
   public:
     /**
      * Constructor
      */
-    explicit Exdc1Parser()
+    explicit Esst4bParser()
     {
     }
 
     /**
      * Destructor
      */
-    virtual ~Exdc1Parser()
+    virtual ~Esst4bParser()
     {
     }
 
@@ -65,32 +65,18 @@ template <class _data_struct> class Exdc1Parser
         data->setValue(EXCITER_TR, data_struct.ex_tr, g_id);
       }
 
-      // EXCITER_KA
-      if (!data->getValue(EXCITER_KA,&rval,g_id)) {
-        data->addValue(EXCITER_KA, data_struct.ex_ka, g_id);
+      // EXCITER_KPR
+      if (!data->getValue(EXCITER_KPR,&rval,g_id)) {
+        data->addValue(EXCITER_KPR, data_struct.kpr, g_id);
       } else {
-        data->setValue(EXCITER_KA, data_struct.ex_ka, g_id);
+        data->setValue(EXCITER_KPR, data_struct.kpr, g_id);
       }
 
-      // EXCITER_TA
-      if (!data->getValue(EXCITER_TA,&rval,g_id)) {
-        data->addValue(EXCITER_TA, data_struct.ex_ta, g_id);
+      // EXCITER_KIR
+      if (!data->getValue(EXCITER_KIR,&rval,g_id)) {
+        data->addValue(EXCITER_KIR, data_struct.kir, g_id);
       } else {
-        data->setValue(EXCITER_TA, data_struct.ex_ta, g_id);
-      }
-
-      // EXCITER_TB
-      if (!data->getValue(EXCITER_TB,&rval,g_id)) {
-        data->addValue(EXCITER_TB, data_struct.ex_tb, g_id);
-      } else {
-        data->setValue(EXCITER_TB, data_struct.ex_tb, g_id);
-      }
-
-      // EXCITER_TC
-      if (!data->getValue(EXCITER_TC,&rval,g_id)) {
-        data->addValue(EXCITER_TC, data_struct.ex_tc, g_id);
-      } else {
-        data->setValue(EXCITER_TC, data_struct.ex_tc, g_id);
+        data->setValue(EXCITER_KIR, data_struct.kir, g_id);
       }
 
       // EXCITER_VRMAX
@@ -107,67 +93,88 @@ template <class _data_struct> class Exdc1Parser
         data->setValue(EXCITER_VRMIN, data_struct.vrmin, g_id);
       }
 
-      // EXCITER_KE
-      if (!data->getValue(EXCITER_KE,&rval,g_id)) {
-        data->addValue(EXCITER_KE, data_struct.ex_ke, g_id);
+      // EXCITER_TA
+      if (!data->getValue(EXCITER_TA,&rval,g_id)) {
+        data->addValue(EXCITER_TA, data_struct.ex_ta, g_id);
       } else {
-        data->setValue(EXCITER_KE, data_struct.ex_ke, g_id);
+        data->setValue(EXCITER_TA, data_struct.ex_ta, g_id);
       }
 
-      // EXCITER_TE
-      if (!data->getValue(EXCITER_TE,&rval,g_id)) {
-        data->addValue(EXCITER_TE, data_struct.ex_te, g_id);
+      // EXCITER_KPM
+      if (!data->getValue(EXCITER_KPM,&rval,g_id)) {
+        data->addValue(EXCITER_KPM, data_struct.kpm, g_id);
       } else {
-        data->setValue(EXCITER_TE, data_struct.ex_te, g_id);
+        data->setValue(EXCITER_KPM, data_struct.kpm, g_id);
       }
 
-      // EXCITER_KF
-      if (!data->getValue(EXCITER_KF,&rval,g_id)) {
-        data->addValue(EXCITER_KF, data_struct.ex_kf, g_id);
+      // EXCITER_KIM
+      if (!data->getValue(EXCITER_KIM,&rval,g_id)) {
+        data->addValue(EXCITER_KIM, data_struct.kim, g_id);
       } else {
-        data->setValue(EXCITER_KF, data_struct.ex_kf, g_id);
+        data->setValue(EXCITER_KIM, data_struct.kim, g_id);
       }
 
-      // EXCITER_TF1
-      if (!data->getValue(EXCITER_TF1,&rval,g_id)) {
-        data->addValue(EXCITER_TF1, data_struct.tf1, g_id);
+      // EXCITER_VMMAX
+      if (!data->getValue(EXCITER_VMMAX,&rval,g_id)) {
+        data->addValue(EXCITER_VMMAX, data_struct.vmmax, g_id);
       } else {
-        data->setValue(EXCITER_TF1, data_struct.tf1, g_id);
+        data->setValue(EXCITER_VMMAX, data_struct.vmmax, g_id);
       }
 
-      // EXCITER_SWITCH
-      if (!data->getValue(EXCITER_SWITCH,&rval,g_id)) {
-        data->addValue(EXCITER_SWITCH, data_struct.rswitch, g_id);
+      // EXCITER_VMMIN
+      if (!data->getValue(EXCITER_VMMIN,&rval,g_id)) {
+        data->addValue(EXCITER_VMMIN, data_struct.vmmin, g_id);
       } else {
-        data->setValue(EXCITER_SWITCH, data_struct.rswitch, g_id);
+        data->setValue(EXCITER_VMMIN, data_struct.vmmin, g_id);
       }
 
-      // EXCITER_E1
-      if (!data->getValue(EXCITER_E1,&rval,g_id)) {
-        data->addValue(EXCITER_E1, data_struct.ex_e1, g_id);
+      // EXCITER_KG
+      if (!data->getValue(EXCITER_KG,&rval,g_id)) {
+        data->addValue(EXCITER_KG, data_struct.ex_kg, g_id);
       } else {
-        data->setValue(EXCITER_E1, data_struct.ex_e1, g_id);
+        data->setValue(EXCITER_KG, data_struct.ex_kg, g_id);
       }
 
-      // EXCITER_SE1
-      if (!data->getValue(EXCITER_SE1,&rval,g_id)) {
-        data->addValue(EXCITER_SE1, data_struct.se1, g_id);
+      // EXCITER_KP
+      if (!data->getValue(EXCITER_KP,&rval,g_id)) {
+        data->addValue(EXCITER_KP, data_struct.ex_kp, g_id);
       } else {
-        data->setValue(EXCITER_SE1, data_struct.se1, g_id);
+        data->setValue(EXCITER_KP, data_struct.ex_kp, g_id);
       }
 
-      // EXCITER_E2
-      if (!data->getValue(EXCITER_E2,&rval,g_id)) {
-        data->addValue(EXCITER_E2, data_struct.ex_e2, g_id);
+      // EXCITER_KI
+      if (!data->getValue(EXCITER_KI,&rval,g_id)) {
+        data->addValue(EXCITER_KI, data_struct.ex_ki, g_id);
       } else {
-        data->setValue(EXCITER_E2, data_struct.ex_e2, g_id);
+        data->setValue(EXCITER_KI, data_struct.ex_ki, g_id);
       }
 
-      // EXCITER_SE2
-      if (!data->getValue(EXCITER_SE2,&rval,g_id)) {
-        data->addValue(EXCITER_SE2, data_struct.se2, g_id);
+      // EXCITER_VBMAX
+      if (!data->getValue(EXCITER_VBMAX,&rval,g_id)) {
+        data->addValue(EXCITER_VBMAX, data_struct.vbmax, g_id);
       } else {
-        data->setValue(EXCITER_SE2, data_struct.se2, g_id);
+        data->setValue(EXCITER_VBMAX, data_struct.vbmax, g_id);
+      }
+
+      // EXCITER_KC
+      if (!data->getValue(EXCITER_KC,&rval,g_id)) {
+        data->addValue(EXCITER_KC, data_struct.ex_kc, g_id);
+      } else {
+        data->setValue(EXCITER_KC, data_struct.ex_kc, g_id);
+      }
+
+      // EXCITER_XL
+      if (!data->getValue(EXCITER_XL,&rval,g_id)) {
+        data->addValue(EXCITER_XL, data_struct.ex_xl, g_id);
+      } else {
+        data->setValue(EXCITER_XL, data_struct.ex_xl, g_id);
+      }
+
+      // EXCITER_THETAP
+      if (!data->getValue(EXCITER_THETAP,&rval,g_id)) {
+        data->addValue(EXCITER_THETAP, data_struct.thetap, g_id);
+      } else {
+        data->setValue(EXCITER_THETAP, data_struct.thetap, g_id);
       }
     }
 
@@ -211,168 +218,179 @@ template <class _data_struct> class Exdc1Parser
         }
       } 
 
-      // EXCITER_KA
+      // EXCITER_KPR
       if (nstr > 4) {
-        if (!data->getValue(EXCITER_KA,&rval,g_id)) {
-          data->addValue(EXCITER_KA,
+        if (!data->getValue(EXCITER_KPR,&rval,g_id)) {
+          data->addValue(EXCITER_KPR,
               atof(split_line[4].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_KA,
+          data->setValue(EXCITER_KPR,
               atof(split_line[4].c_str()), g_id);
         }
       } 
 
-      // EXCITER_TA
+      // EXCITER_KIR
       if (nstr > 5) {
-        if (!data->getValue(EXCITER_TA,&rval,g_id)) {
-          data->addValue(EXCITER_TA,
+        if (!data->getValue(EXCITER_KIR,&rval,g_id)) {
+          data->addValue(EXCITER_KIR,
               atof(split_line[5].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_TA,
+          data->setValue(EXCITER_KIR,
               atof(split_line[5].c_str()), g_id);
-        }
-      }
-
-      // EXCITER_TB
-      if (nstr > 6) {
-        if (!data->getValue(EXCITER_TB,&rval,g_id)) {
-          data->addValue(EXCITER_TB,
-              atof(split_line[6].c_str()), g_id);
-        } else {
-          data->setValue(EXCITER_TB,
-              atof(split_line[6].c_str()), g_id);
-        }
-      }
-
-      // EXCITER_TC
-      if (nstr > 7) {
-        if (!data->getValue(EXCITER_TC,&rval,g_id)) {
-          data->addValue(EXCITER_TC,
-              atof(split_line[7].c_str()), g_id);
-        } else {
-          data->setValue(EXCITER_TC,
-              atof(split_line[7].c_str()), g_id);
         }
       }
 
       // EXCITER_VRMAX
-      if (nstr > 8) {
+      if (nstr > 6) {
         if (!data->getValue(EXCITER_VRMAX,&rval,g_id)) {
           data->addValue(EXCITER_VRMAX,
-              atof(split_line[8].c_str()), g_id);
+              atof(split_line[6].c_str()), g_id);
         } else {
           data->setValue(EXCITER_VRMAX,
+              atof(split_line[6].c_str()), g_id);
+        }
+      }
+
+      // EXCITER_VRMIN
+      if (nstr > 7) {
+        if (!data->getValue(EXCITER_VRMIN,&rval,g_id)) {
+          data->addValue(EXCITER_VRMIN,
+              atof(split_line[7].c_str()), g_id);
+        } else {
+          data->setValue(EXCITER_VRMIN,
+              atof(split_line[7].c_str()), g_id);
+        }
+      }
+
+      // EXCITER_TA
+      if (nstr > 8) {
+        if (!data->getValue(EXCITER_TA,&rval,g_id)) {
+          data->addValue(EXCITER_TA,
+              atof(split_line[8].c_str()), g_id);
+        } else {
+          data->setValue(EXCITER_TA,
               atof(split_line[8].c_str()), g_id);
         }
       } 
 
-      // EXCITER_VRMIN
+      // EXCITER_KPM
       if (nstr > 9) {
-        if (!data->getValue(EXCITER_VRMIN,&rval,g_id)) {
-          data->addValue(EXCITER_VRMIN,
+        if (!data->getValue(EXCITER_KPM,&rval,g_id)) {
+          data->addValue(EXCITER_KPM,
               atof(split_line[9].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_VRMIN,
+          data->setValue(EXCITER_KPM,
               atof(split_line[9].c_str()), g_id);
         }
       } 
 
-      // EXCITER_KE
+      // EXCITER_KIM
       if (nstr > 10) {
-        if (!data->getValue(EXCITER_KE,&rval,g_id)) {
-          data->addValue(EXCITER_KE,
+        if (!data->getValue(EXCITER_KIM,&rval,g_id)) {
+          data->addValue(EXCITER_KIM,
               atof(split_line[10].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_KE,
+          data->setValue(EXCITER_KIM,
               atof(split_line[10].c_str()), g_id);
         }
       } 
 
-      // EXCITER_TE
+      // EXCITER_VMMAX
       if (nstr > 11) {
-        if (!data->getValue(EXCITER_TE,&rval,g_id)) {
-          data->addValue(EXCITER_TE,
+        if (!data->getValue(EXCITER_VMMAX,&rval,g_id)) {
+          data->addValue(EXCITER_VMMAX,
               atof(split_line[11].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_TE,
+          data->setValue(EXCITER_VMMAX,
               atof(split_line[11].c_str()), g_id);
         }
       } 
 
-      // EXCITER_KF
+      // EXCITER_VMMIN
       if (nstr > 12) {
-        if (!data->getValue(EXCITER_KF,&rval,g_id)) {
-          data->addValue(EXCITER_KF,
+        if (!data->getValue(EXCITER_VMMIN,&rval,g_id)) {
+          data->addValue(EXCITER_VMMIN,
               atof(split_line[12].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_KF,
+          data->setValue(EXCITER_VMMIN,
               atof(split_line[12].c_str()), g_id);
         }
       } 
 
-      // EXCITER_TF1
+      // EXCITER_KG
       if (nstr > 13) {
-        if (!data->getValue(EXCITER_TF1,&rval,g_id)) {
-          data->addValue(EXCITER_TF1,
+        if (!data->getValue(EXCITER_KG,&rval,g_id)) {
+          data->addValue(EXCITER_KG,
               atof(split_line[13].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_TF1,
+          data->setValue(EXCITER_KG,
               atof(split_line[13].c_str()), g_id);
         }
       } 
 
-      // EXCITER_SWITCH
+      // EXCITER_KP
       if (nstr > 14) {
-        if (!data->getValue(EXCITER_SWITCH,&rval,g_id)) {
-          data->addValue(EXCITER_SWITCH,
+        if (!data->getValue(EXCITER_KP,&rval,g_id)) {
+          data->addValue(EXCITER_KP,
               atof(split_line[14].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_SWITCH,
+          data->setValue(EXCITER_KP,
               atof(split_line[14].c_str()), g_id);
         }
       } 
 
-      // EXCITER_E1
+      // EXCITER_KI
       if (nstr > 15) {
-        if (!data->getValue(EXCITER_E1,&rval,g_id)) {
-          data->addValue(EXCITER_E1,
+        if (!data->getValue(EXCITER_KI,&rval,g_id)) {
+          data->addValue(EXCITER_KI,
               atof(split_line[15].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_E1,
+          data->setValue(EXCITER_KI,
               atof(split_line[15].c_str()), g_id);
         }
       } 
 
-      // EXCITER_SE1
+      // EXCITER_VBMAX
       if (nstr > 16) {
-        if (!data->getValue(EXCITER_SE1,&rval,g_id)) {
-          data->addValue(EXCITER_SE1,
+        if (!data->getValue(EXCITER_VBMAX,&rval,g_id)) {
+          data->addValue(EXCITER_VBMAX,
               atof(split_line[16].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_SE1,
+          data->setValue(EXCITER_VBMAX,
               atof(split_line[16].c_str()), g_id);
         }
       } 
 
-      // EXCITER_E2
+      // EXCITER_KC
       if (nstr > 17) {
-        if (!data->getValue(EXCITER_E2,&rval,g_id)) {
-          data->addValue(EXCITER_E2,
+        if (!data->getValue(EXCITER_KC,&rval,g_id)) {
+          data->addValue(EXCITER_KC,
               atof(split_line[17].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_E2,
+          data->setValue(EXCITER_KC,
               atof(split_line[17].c_str()), g_id);
         }
       } 
 
-      // EXCITER_SE2
+      // EXCITER_XL
       if (nstr > 18) {
-        if (!data->getValue(EXCITER_SE2,&rval,g_id)) {
-          data->addValue(EXCITER_SE2,
+        if (!data->getValue(EXCITER_XL,&rval,g_id)) {
+          data->addValue(EXCITER_XL,
               atof(split_line[18].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_SE2,
+          data->setValue(EXCITER_XL,
               atof(split_line[18].c_str()), g_id);
+        }
+      } 
+
+      // EXCITER_THETAP
+      if (nstr > 19) {
+        if (!data->getValue(EXCITER_THETAP,&rval,g_id)) {
+          data->addValue(EXCITER_THETAP,
+              atof(split_line[19].c_str()), g_id);
+        } else {
+          data->setValue(EXCITER_THETAP,
+              atof(split_line[19].c_str()), g_id);
         }
       } 
     }
@@ -390,79 +408,84 @@ template <class _data_struct> class Exdc1Parser
         data.ex_tr = atof(split_line[3].c_str());
       }
 
-      // EXCITER_KA
+      // EXCITER_KPR
       if (nstr > 4) {
-        data.ex_ka = atof(split_line[4].c_str());
+        data.kpr = atof(split_line[4].c_str());
       }
 
-      // EXCITER_TA
+      // EXCITER_KIR
       if (nstr > 5) {
-        data.ex_ta = atof(split_line[5].c_str());
-      }
-
-      // EXCITER_TB
-      if (nstr > 6) {
-        data.ex_tb = atof(split_line[6].c_str());
-      }
-
-      // EXCITER_TC
-      if (nstr > 7) {
-        data.ex_tc = atof(split_line[7].c_str());
+        data.kir = atof(split_line[5].c_str());
       }
 
       // EXCITER_VRMAX
-      if (nstr > 8) {
-        data.vrmax = atof(split_line[8].c_str());
+      if (nstr > 6) {
+        data.vrmax = atof(split_line[6].c_str());
       }
 
       // EXCITER_VRMIN
+      if (nstr > 7) {
+        data.vrmin = atof(split_line[7].c_str());
+      }
+
+      // EXCITER_TA
+      if (nstr > 8) {
+        data.ex_ta = atof(split_line[8].c_str());
+      }
+
+      // EXCITER_KPM
       if (nstr > 9) {
-        data.vrmin = atof(split_line[9].c_str());
+        data.kpm = atof(split_line[9].c_str());
       }
 
-      // EXCITER_KE
+      // EXCITER_KIM
       if (nstr > 10) {
-        data.ex_ke = atof(split_line[10].c_str());
+        data.kim = atof(split_line[10].c_str());
       }
 
-      // EXCITER_TE
+      // EXCITER_VMMAX
       if (nstr > 11) {
-        data.ex_te = atof(split_line[11].c_str());
+        data.vmmax = atof(split_line[11].c_str());
       }
 
-      // EXCITER_KF
+      // EXCITER_VMMIN
       if (nstr > 12) {
-        data.ex_kf = atof(split_line[12].c_str());
+        data.vmmin = atof(split_line[12].c_str());
       }
 
-      // EXCITER_TF1
+      // EXCITER_KG
       if (nstr > 13) {
-        data.tf1 = atof(split_line[13].c_str());
+        data.ex_kg = atof(split_line[13].c_str());
       }
 
-      // EXCITER_SWITCH
+      // EXCITER_KP
       if (nstr > 14) {
-        data.rswitch = atof(split_line[14].c_str());
+        data.ex_kp = atof(split_line[14].c_str());
       }
 
-      // EXCITER_E1
+      // EXCITER_KI
       if (nstr > 15) {
-        data.ex_e1 = atof(split_line[15].c_str());
+        data.ex_ki = atof(split_line[15].c_str());
       }
 
-      // EXCITER_SE1
+      // EXCITER_VBMAX
       if (nstr > 16) {
-        data.se1 = atof(split_line[16].c_str());
+        data.vbmax = atof(split_line[16].c_str());
       }
 
-      // EXCITER_E2
+      // EXCITER_KC
       if (nstr > 17) {
-        data.ex_e2 = atof(split_line[17].c_str());
+        data.ex_kc = atof(split_line[17].c_str());
       }
 
-      // EXCITER_SE2
+      // EXCITER_XL
       if (nstr > 18) {
-        data.se2 = atof(split_line[18].c_str());
+        data.ex_xl = atof(split_line[18].c_str());
+      }
+
+      // EXCITER_THETAP
+      if (nstr > 19) {
+        data.thetap = atof(split_line[19].c_str());
       }
     }
 };

@@ -68,51 +68,51 @@ template <class _data_struct> class Wsieg1Parser
 
       // GOVERNOR_M
       if (!data->getValue(GOVERNOR_M,&ival,g_id)) {
-        data->addValue(GOVERNOR_M, data_struct.m, g_id);
+        data->addValue(GOVERNOR_M, data_struct.gv_m, g_id);
       } else {
-        data->setValue(GOVERNOR_M, data_struct.m, g_id);
+        data->setValue(GOVERNOR_M, data_struct.gv_m, g_id);
       }
 
       // GOVERNOR_K
       if (!data->getValue(GOVERNOR_K,&rval,g_id)) {
-        data->addValue(GOVERNOR_K, data_struct.k, g_id);
+        data->addValue(GOVERNOR_K, data_struct.gv_k, g_id);
       } else {
-        data->setValue(GOVERNOR_K, data_struct.k, g_id);
+        data->setValue(GOVERNOR_K, data_struct.gv_k, g_id);
       }
 
       // GOVERNOR_T1
       if (!data->getValue(GOVERNOR_T1,&rval,g_id)) {
-        data->addValue(GOVERNOR_T1, data_struct.t1, g_id);
+        data->addValue(GOVERNOR_T1, data_struct.gv_t1, g_id);
       } else {
-        data->setValue(GOVERNOR_T1, data_struct.t1, g_id);
+        data->setValue(GOVERNOR_T1, data_struct.gv_t1, g_id);
       }
 
       // GOVERNOR_T2
       if (!data->getValue(GOVERNOR_T2,&rval,g_id)) {
-        data->addValue(GOVERNOR_T2, data_struct.t2, g_id);
+        data->addValue(GOVERNOR_T2, data_struct.gv_t2, g_id);
       } else {
-        data->setValue(GOVERNOR_T2, data_struct.t2, g_id);
+        data->setValue(GOVERNOR_T2, data_struct.gv_t2, g_id);
       }
 
       // GOVERNOR_T3
       if (!data->getValue(GOVERNOR_T3,&rval,g_id)) {
-        data->addValue(GOVERNOR_T3, data_struct.t2, g_id);
+        data->addValue(GOVERNOR_T3, data_struct.gv_t2, g_id);
       } else {
-        data->setValue(GOVERNOR_T3, data_struct.t3, g_id);
+        data->setValue(GOVERNOR_T3, data_struct.gv_t3, g_id);
       }
 
       // GOVERNOR_UO
       if (!data->getValue(GOVERNOR_UO,&rval,g_id)) {
-        data->addValue(GOVERNOR_UO, data_struct.uo, g_id);
+        data->addValue(GOVERNOR_UO, data_struct.gv_uo, g_id);
       } else {
-        data->setValue(GOVERNOR_UO, data_struct.uo, g_id);
+        data->setValue(GOVERNOR_UO, data_struct.gv_uo, g_id);
       }
 
       // GOVERNOR_UC
       if (!data->getValue(GOVERNOR_UC,&rval,g_id)) {
-        data->addValue(GOVERNOR_UC, data_struct.uc, g_id);
+        data->addValue(GOVERNOR_UC, data_struct.gv_uc, g_id);
       } else {
-        data->setValue(GOVERNOR_UC, data_struct.uc, g_id);
+        data->setValue(GOVERNOR_UC, data_struct.gv_uc, g_id);
       }
 
       // GOVERNOR_PMAX
@@ -131,86 +131,86 @@ template <class _data_struct> class Wsieg1Parser
 
       // GOVERNOR_T4
       if (!data->getValue(GOVERNOR_T4,&rval,g_id)) {
-        data->addValue(GOVERNOR_T4, data_struct.t4, g_id);
+        data->addValue(GOVERNOR_T4, data_struct.gv_t4, g_id);
       } else {
-        data->setValue(GOVERNOR_T4, data_struct.t4, g_id);
+        data->setValue(GOVERNOR_T4, data_struct.gv_t4, g_id);
       }
 
       // GOVERNOR_K1
       if (!data->getValue(GOVERNOR_K1,&rval,g_id)) {
-        data->addValue(GOVERNOR_K1, data_struct.k1, g_id);
+        data->addValue(GOVERNOR_K1, data_struct.gv_k1, g_id);
       } else {
-        data->setValue(GOVERNOR_K1, data_struct.k1, g_id);
+        data->setValue(GOVERNOR_K1, data_struct.gv_k1, g_id);
       }
 
       // GOVERNOR_K2
       if (!data->getValue(GOVERNOR_K2,&rval,g_id)) {
-        data->addValue(GOVERNOR_K2, data_struct.k2, g_id);
+        data->addValue(GOVERNOR_K2, data_struct.gv_k2, g_id);
       } else {
-        data->setValue(GOVERNOR_K2, data_struct.k2, g_id);
+        data->setValue(GOVERNOR_K2, data_struct.gv_k2, g_id);
       }
 
       // GOVERNOR_T5
       if (!data->getValue(GOVERNOR_T5,&rval,g_id)) {
-        data->addValue(GOVERNOR_T5, data_struct.t5, g_id);
+        data->addValue(GOVERNOR_T5, data_struct.gv_t5, g_id);
       } else {
-        data->setValue(GOVERNOR_T5, data_struct.t5, g_id);
+        data->setValue(GOVERNOR_T5, data_struct.gv_t5, g_id);
       }
 
       // GOVERNOR_K3
       if (!data->getValue(GOVERNOR_K3,&rval,g_id)) {
-        data->addValue(GOVERNOR_K3, data_struct.k3, g_id);
+        data->addValue(GOVERNOR_K3, data_struct.gv_k3, g_id);
       } else {
-        data->setValue(GOVERNOR_K3, data_struct.k3, g_id);
+        data->setValue(GOVERNOR_K3, data_struct.gv_k3, g_id);
       }
 
       // GOVERNOR_K4
       if (!data->getValue(GOVERNOR_K4,&rval,g_id)) {
-        data->addValue(GOVERNOR_K4, data_struct.k4, g_id);
+        data->addValue(GOVERNOR_K4, data_struct.gv_k4, g_id);
       } else {
-        data->setValue(GOVERNOR_K4, data_struct.k4, g_id);
+        data->setValue(GOVERNOR_K4, data_struct.gv_k4, g_id);
       }
 
       // GOVERNOR_T6
       if (!data->getValue(GOVERNOR_T6,&rval,g_id)) {
-        data->addValue(GOVERNOR_T6, data_struct.t6, g_id);
+        data->addValue(GOVERNOR_T6, data_struct.gv_t6, g_id);
       } else {
-        data->setValue(GOVERNOR_T6, data_struct.t6, g_id);
+        data->setValue(GOVERNOR_T6, data_struct.gv_t6, g_id);
       }
 
       // GOVERNOR_K5
       if (!data->getValue(GOVERNOR_K5,&rval,g_id)) {
-        data->addValue(GOVERNOR_K5, data_struct.k5, g_id);
+        data->addValue(GOVERNOR_K5, data_struct.gv_k5, g_id);
       } else {
-        data->setValue(GOVERNOR_K5, data_struct.k5, g_id);
+        data->setValue(GOVERNOR_K5, data_struct.gv_k5, g_id);
       }
 
       // GOVERNOR_K6
       if (!data->getValue(GOVERNOR_K6,&rval,g_id)) {
-        data->addValue(GOVERNOR_K6, data_struct.k6, g_id);
+        data->addValue(GOVERNOR_K6, data_struct.gv_k6, g_id);
       } else {
-        data->setValue(GOVERNOR_K6, data_struct.k6, g_id);
+        data->setValue(GOVERNOR_K6, data_struct.gv_k6, g_id);
       }
 
       // GOVERNOR_T7
       if (!data->getValue(GOVERNOR_T7,&rval,g_id)) {
-        data->addValue(GOVERNOR_T7, data_struct.t7, g_id);
+        data->addValue(GOVERNOR_T7, data_struct.gv_t7, g_id);
       } else {
-        data->setValue(GOVERNOR_T7, data_struct.t7, g_id);
+        data->setValue(GOVERNOR_T7, data_struct.gv_t7, g_id);
       }
 
       // GOVERNOR_K7
       if (!data->getValue(GOVERNOR_K7,&rval,g_id)) {
-        data->addValue(GOVERNOR_K7, data_struct.k7, g_id);
+        data->addValue(GOVERNOR_K7, data_struct.gv_k7, g_id);
       } else {
-        data->setValue(GOVERNOR_K7, data_struct.k7, g_id);
+        data->setValue(GOVERNOR_K7, data_struct.gv_k7, g_id);
       }
 
       // GOVERNOR_K8
       if (!data->getValue(GOVERNOR_K8,&rval,g_id)) {
-        data->addValue(GOVERNOR_K8, data_struct.k8, g_id);
+        data->addValue(GOVERNOR_K8, data_struct.gv_k8, g_id);
       } else {
-        data->setValue(GOVERNOR_K8, data_struct.k8, g_id);
+        data->setValue(GOVERNOR_K8, data_struct.gv_k8, g_id);
       }
 
       // GOVERNOR_DB1
@@ -747,8 +747,6 @@ template <class _data_struct> class Wsieg1Parser
     void store(std::vector<std::string> &split_line,_data_struct &data)
     {
       int nstr = split_line.size();
-      bool bval;
-      int ival;
       // GOVERNOR_JBUS
       if (nstr > 3) {
         data.jbus = atoi(split_line[3].c_str());
@@ -756,37 +754,37 @@ template <class _data_struct> class Wsieg1Parser
 
       // GOVERNOR_M
       if (nstr > 4) {
-        data.m = atoi(split_line[4].c_str());
+        data.gv_m = atoi(split_line[4].c_str());
       }
 
       // GOVERNOR_K
       if (nstr > 5) {
-        data.k = atof(split_line[5].c_str());
+        data.gv_k = atof(split_line[5].c_str());
       }
 
       // GOVERNOR_T1
       if (nstr > 6) {
-        data.t1 = atof(split_line[6].c_str());
+        data.gv_t1 = atof(split_line[6].c_str());
       }
 
       // GOVERNOR_T2
       if (nstr > 7) {
-        data.t2 = atof(split_line[7].c_str());
+        data.gv_t2 = atof(split_line[7].c_str());
       }
 
       // GOVERNOR_T3
       if (nstr > 8) {
-        data.t3 = atof(split_line[8].c_str());
+        data.gv_t3 = atof(split_line[8].c_str());
       }
 
       // GOVERNOR_UO
       if (nstr > 9) {
-        data.uo = atof(split_line[9].c_str());
+        data.gv_uo = atof(split_line[9].c_str());
       }
 
       // GOVERNOR_UC
       if (nstr > 10) {
-        data.uc = atof(split_line[10].c_str());
+        data.gv_uc = atof(split_line[10].c_str());
       }
 
       // GOVERNOR_PMAX
@@ -801,62 +799,62 @@ template <class _data_struct> class Wsieg1Parser
 
       // GOVERNOR_T4
       if (nstr > 13) {
-        data.t4 = atof(split_line[13].c_str());
+        data.gv_t4 = atof(split_line[13].c_str());
       }
 
       // GOVERNOR_K1
       if (nstr > 14) {
-        data.k1 = atof(split_line[14].c_str());
+        data.gv_k1 = atof(split_line[14].c_str());
       }
 
       // GOVERNOR_K2
       if (nstr > 15) {
-        data.k2 = atof(split_line[15].c_str());
+        data.gv_k2 = atof(split_line[15].c_str());
       }
 
       // GOVERNOR_T5
       if (nstr > 16) {
-        data.t5 = atof(split_line[16].c_str());
+        data.gv_t5 = atof(split_line[16].c_str());
       }
 
       // GOVERNOR_K3
       if (nstr > 17) {
-        data.k3 = atof(split_line[17].c_str());
+        data.gv_k3 = atof(split_line[17].c_str());
       }
 
       // GOVERNOR_K4
       if (nstr > 18) {
-        data.k4 = atof(split_line[18].c_str());
+        data.gv_k4 = atof(split_line[18].c_str());
       }
 
       // GOVERNOR_T6
       if (nstr > 19) {
-        data.t6 = atof(split_line[19].c_str());
+        data.gv_t6 = atof(split_line[19].c_str());
       }
 
       // GOVERNOR_K5
       if (nstr > 20) {
-        data.k5 = atof(split_line[20].c_str());
+        data.gv_k5 = atof(split_line[20].c_str());
       }
 
       // GOVERNOR_K6
       if (nstr > 21) {
-        data.k6 = atof(split_line[21].c_str());
+        data.gv_k6 = atof(split_line[21].c_str());
       }
 
       // GOVERNOR_T7
       if (nstr > 22) {
-        data.t7 = atof(split_line[22].c_str());
+        data.gv_t7 = atof(split_line[22].c_str());
       }
 
       // GOVERNOR_K7
       if (nstr > 23) {
-        data.k7 = atof(split_line[23].c_str());
+        data.gv_k7 = atof(split_line[23].c_str());
       }
 
       // GOVERNOR_K8
       if (nstr > 24) {
-        data.k8 = atof(split_line[24].c_str());
+        data.gv_k8 = atof(split_line[24].c_str());
       }
 
       // GOVERNOR_DB1

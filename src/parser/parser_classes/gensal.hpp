@@ -92,16 +92,16 @@ template <class _data_struct> class GensalParser
 
       // GENERATOR_XD
       if (!data->getValue(GENERATOR_XD,&rval,g_id)) {
-        data->addValue(GENERATOR_XD, data_struct.xd, g_id);
+        data->addValue(GENERATOR_XD, data_struct.gn_xd, g_id);
       } else {
-        data->setValue(GENERATOR_XD, data_struct.xd, g_id);
+        data->setValue(GENERATOR_XD, data_struct.gn_xd, g_id);
       }
 
       // GENERATOR_XQ
       if (!data->getValue(GENERATOR_XQ,&rval,g_id)) {
-        data->addValue(GENERATOR_XQ, data_struct.xq, g_id);
+        data->addValue(GENERATOR_XQ, data_struct.gn_xq, g_id);
       } else {
-        data->setValue(GENERATOR_XQ, data_struct.xq, g_id);
+        data->setValue(GENERATOR_XQ, data_struct.gn_xq, g_id);
       }
 
       // GENERATOR_XDP
@@ -121,17 +121,17 @@ template <class _data_struct> class GensalParser
       // GENERATOR_XL
       if (!data->getValue(GENERATOR_XL,&rval,g_id)) {
         data->addValue(GENERATOR_XL,
-            data_struct.xl, g_id);
+            data_struct.gn_xl, g_id);
       } else {
         data->setValue(GENERATOR_XL,
-            data_struct.xl, g_id);
+            data_struct.gn_xl, g_id);
       }
 
       // GENERATOR_S1
       if (!data->getValue(GENERATOR_S1,&rval,g_id)) {
-        data->addValue(GENERATOR_XL, data_struct.s1, g_id);
+        data->addValue(GENERATOR_XL, data_struct.gn_s1, g_id);
       } else {
-        data->setValue(GENERATOR_S1, data_struct.s1, g_id);
+        data->setValue(GENERATOR_S1, data_struct.gn_s1, g_id);
       }
 
       // GENERATOR_S12
@@ -330,12 +330,12 @@ template <class _data_struct> class GensalParser
 
       // GENERATOR_XD
       if (nstr > 8) {
-        data.xd = atof(split_line[8].c_str());
+        data.gn_xd = atof(split_line[8].c_str());
       } 
 
       // GENERATOR_XQ
       if (nstr > 9) {
-        data.xq = atof(split_line[9].c_str());
+        data.gn_xq = atof(split_line[9].c_str());
       } 
 
       // GENERATOR_XDP
@@ -350,12 +350,12 @@ template <class _data_struct> class GensalParser
 
       // GENERATOR_XL
       if (nstr > 12) {
-        data.xl = atof(split_line[12].c_str());
+        data.gn_xl = atof(split_line[12].c_str());
       } 
 
       // GENERATOR_S1
       if (nstr > 13) {
-        data.s1 = atof(split_line[13].c_str());
+        data.gn_s1 = atof(split_line[13].c_str());
       } 
 
       // GENERATOR_S12
