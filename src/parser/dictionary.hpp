@@ -14,9 +14,9 @@
 /**
  *  Variables that can be associated more than once for a bus or a branch can be
  *  indexed by an integer to distinguish different instances. For example,
- *  multiple generators can be associated with a bus and the variables
- *  associated with each generator. The variables that have an associated index
- *  are denoted with the keyword "indexed".
+ *  multiple generators can be associated with a bus and multiple transmission
+ *  elements can be associated with a branch. The variables that have an associated
+ *  index are denoted with the keyword "indexed".
  */
 
 #ifndef DICTIONARY_HPP_

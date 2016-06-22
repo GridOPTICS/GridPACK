@@ -170,8 +170,8 @@ class BasePTIParser : public BaseParser<_network>
       double vos;
       double vimax;
       double vimin;
-      double tci;
-      double tbi;
+      double tc1;
+      double tb1;
       double vamax;
       double vamin;
       double ex_kc;

@@ -179,16 +179,16 @@ template <class _data_struct> class Esst1aParser
 
       // EXCITER_KLR
       if (!data->getValue(EXCITER_KLR,&rval,g_id)) {
-        data->addValue(EXCITER_KLR, data_struct.ex_klr, g_id);
+        data->addValue(EXCITER_KLR, data_struct.klr, g_id);
       } else {
-        data->setValue(EXCITER_KLR, data_struct.ex_klr, g_id);
+        data->setValue(EXCITER_KLR, data_struct.klr, g_id);
       }
 
       // EXCITER_ILR
       if (!data->getValue(EXCITER_ILR,&rval,g_id)) {
-        data->addValue(EXCITER_ILR, data_struct.ex_ilr, g_id);
+        data->addValue(EXCITER_ILR, data_struct.ilr, g_id);
       } else {
-        data->setValue(EXCITER_ILR, data_struct.ex_ilr, g_id);
+        data->setValue(EXCITER_ILR, data_struct.ilr, g_id);
       }
 
       // EXCITER_TF
@@ -469,7 +469,7 @@ template <class _data_struct> class Esst1aParser
 
       // EXCITER_TR
       if (nstr > 5) {
-        data.tr = atof(split_line[5].c_str());
+        data.ex_tr = atof(split_line[5].c_str());
       }
 
       // EXCITER_VIMAX

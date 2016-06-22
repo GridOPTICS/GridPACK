@@ -214,9 +214,9 @@ template <class _data_struct> class Ggov1Parser
 
       // GOVERNOR_DM
       if (!data->getValue(GOVERNOR_DM,&rval,g_id)) {
-        data->addValue(GOVERNOR_DM, data_struct.dm, g_id);
+        data->addValue(GOVERNOR_DM, data_struct.gv_dm, g_id);
       } else {
-        data->setValue(GOVERNOR_DM, data_struct.dm, g_id);
+        data->setValue(GOVERNOR_DM, data_struct.gv_dm, g_id);
       }
 
       // GOVERNOR_ROPEN
@@ -270,9 +270,9 @@ template <class _data_struct> class Ggov1Parser
 
       // GOVERNOR_DB
       if (!data->getValue(GOVERNOR_DB,&rval,g_id)) {
-        data->addValue(GOVERNOR_DB, data_struct.ex_db, g_id);
+        data->addValue(GOVERNOR_DB, data_struct.gv_db, g_id);
       } else {
-        data->setValue(GOVERNOR_DB, data_struct.ex_db, g_id);
+        data->setValue(GOVERNOR_DB, data_struct.gv_db, g_id);
       }
 
       // GOVERNOR_TSA
@@ -754,7 +754,7 @@ template <class _data_struct> class Ggov1Parser
 
       // GOVERNOR_MINERR
       if (nstr > 8) {
-        data.gv_minerr = atof(split_line[8].c_str());
+        data.minerr = atof(split_line[8].c_str());
       }
 
       // GOVERNOR_KPGOV
