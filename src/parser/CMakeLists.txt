@@ -33,6 +33,7 @@ set(target_libraries
     gridpack_timer
     ${target_libraries})
 
+include_directories(AFTER parser_classes)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (GA_FOUND)
@@ -92,4 +93,16 @@ install(FILES
   base_parser.hpp
   base_pti_parser.hpp
   DESTINATION include/gridpack/parser
+)
+install(FILES 
+  parser_classes/gencls.hpp
+  parser_classes/gensal.hpp
+  parser_classes/genrou.hpp
+  parser_classes/wsieg1.hpp
+  parser_classes/exdc1.hpp
+  parser_classes/esst1a.hpp
+  parser_classes/esst4b.hpp
+  parser_classes/ggov1.hpp
+  parser_classes/wshygp.hpp
+  DESTINATION include/gridpack/parser/parser_classes
 )
