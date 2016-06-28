@@ -276,6 +276,7 @@ class SerialBusIO {
     int nwrites = 0;
     int i;
     int one = 1;
+    GA_Zero(p_maskGA);
 
     // Count up total strings being written from this processor
     for (i=0; i<nBus; i++) {
@@ -407,6 +408,7 @@ class SerialBusIO {
     int nwrites = 0;
     int i;
     int one = 1;
+    GA_Zero(p_maskGA);
 
     // Count up total strings being written from this processor
     for (i=0; i<nBus; i++) {
@@ -696,6 +698,7 @@ class SerialBranchIO {
     int nwrites = 0;
     int i;
     int one = 1;
+    GA_Zero(p_maskGA);
 
     // Count up total strings being written from this processor
     for (i=0; i<nBranch; i++) {
@@ -808,6 +811,7 @@ class SerialBranchIO {
     int nwrites = 0;
     int i;
     int one = 1;
+    GA_Zero(p_maskGA);
 
     // Count up total strings being written from this processor
     for (i=0; i<nBranch; i++) {
