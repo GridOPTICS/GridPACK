@@ -315,9 +315,10 @@ class SerialBusIO {
       }
 
       // Scatter data to global buffer and set mask array
-      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
-      NGA_Scatter(p_maskGA,ones,index,nwrites);
-
+      if (ncnt > 0) {
+        NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+        NGA_Scatter(p_maskGA,ones,index,nwrites);
+      }
       if (nwrites*p_size > 0) delete [] strbuf;
       delete [] index;
       delete [] indexbuf;
@@ -736,8 +737,10 @@ class SerialBranchIO {
       }
 
       // Scatter data to global buffer and set mask array
-      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
-      NGA_Scatter(p_maskGA,ones,index,nwrites);
+      if (ncnt > 0) {
+        NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+        NGA_Scatter(p_maskGA,ones,index,nwrites);
+      }
       if (nwrites*p_size > 0) delete [] strbuf;
       delete [] index;
       delete [] indexbuf;
@@ -848,9 +851,10 @@ class SerialBranchIO {
       }
 
       // Scatter data to global buffer and set mask array
-      NGA_Scatter(p_stringGA,strbuf,index,nwrites);
-      NGA_Scatter(p_maskGA,ones,index,nwrites);
-
+      if (ncnt > 0) {
+        NGA_Scatter(p_stringGA,strbuf,index,nwrites);
+        NGA_Scatter(p_maskGA,ones,index,nwrites);
+      }
       if (nwrites*p_size > 0) delete [] strbuf;
       delete [] index;
       delete [] indexbuf;
