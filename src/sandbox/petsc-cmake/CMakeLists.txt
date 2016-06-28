@@ -20,12 +20,18 @@ message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
 
 # This is here for cmake version 2.6 
-if (NOT MPI_CXX_LIBRARIES)
-set(MPI_CXX_LIBRARIES 
-  ${MPI_LIBRARY} 
-  ${MPI_EXTRA_LIBRARY}
-)
+if (NOT MPI_LIBRARY OR NOT MPI_EXTRA_LIBRARY)
+# Punt if MPI_LIBRARY or MPI_EXTRA_LIBRARY not found
+  set(MPI_CXX_LIBRARIES "")
+else()
+  if (NOT MPI_CXX_LIBRARIES)
+   set(MPI_CXX_LIBRARIES 
+     ${MPI_LIBRARY} 
+     ${MPI_EXTRA_LIBRARY}
+   )
+  endif()
 endif()
+message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 
 # -------------------------------------------------------------
 # Boost
@@ -44,6 +50,7 @@ find_package(Boost 1.52 COMPONENTS mpi serialization REQUIRED)
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
 find_package (PETSc COMPONENTS CXX REQUIRED)
+include_directories(AFTER ${MPI_INCLUDE_PATH})
 
 if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")

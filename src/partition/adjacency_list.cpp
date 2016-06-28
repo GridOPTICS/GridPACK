@@ -27,6 +27,7 @@
 #include <boost/mpi/collectives.hpp>
 #include <ga.h>
 #include "adjacency_list.hpp"
+#include "gridpack/utilities/exception.hpp"
 
 namespace gridpack {
 namespace network {
@@ -142,7 +143,11 @@ AdjacencyList::ready(void)
   NGA_Set_data(g_nodes,1,&dims,C_INT);
   NGA_Set_pgroup(g_nodes, grp);
   if (!GA_Allocate(g_nodes)) {
-    //TODO: some kind of error
+    char buf[256];
+    sprintf(buf,"AdjacencyList::ready: Unable to allocate distributed array"
+        " for bus indices\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   int lo, hi;
   lo = mapc[me];
@@ -213,7 +218,11 @@ AdjacencyList::ready(void)
   NGA_Set_irreg_distr(g_edges,dist,&nprocs);
   NGA_Set_pgroup(g_edges, grp);
   if (!GA_Allocate(g_edges)) {
-    //TODO: some kind of error
+    char buf[256];
+    sprintf(buf,"AdjacencyList::ready: Unable to allocate distributed array"
+        " for branch indices\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
 
   // Add edge information to global array. Start by figuring out how much data

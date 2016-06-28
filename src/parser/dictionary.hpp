@@ -14,9 +14,9 @@
 /**
  *  Variables that can be associated more than once for a bus or a branch can be
  *  indexed by an integer to distinguish different instances. For example,
- *  multiple generators can be associated with a bus and the variables
- *  associated with each generator. The variables that have an associated index
- *  are denoted with the keyword "indexed".
+ *  multiple generators can be associated with a bus and multiple transmission
+ *  elements can be associated with a branch. The variables that have an associated
+ *  index are denoted with the keyword "indexed".
  */
 
 #ifndef DICTIONARY_HPP_
@@ -512,18 +512,18 @@
 
 // GOVERNOR DATA
 /**
- * Flag to indicate that exciter is present
+ * Flag to indicate that governor is present
  * type: boolean
  * indexed
  */
-#define HAS_EXCITER "HAS_EXCITER"
+#define HAS_GOVERNOR "HAS_GOVERNOR"
 
 /**
- * Exciter model
+ * Governor model
  * type: string
  * indexed
  */
-#define EXCITER_MODEL "EXCITER_MODEL"
+#define GOVERNOR_MODEL "GOVERNOR_MODEL"
 
 /**
  * Generator JBUS
@@ -777,20 +777,363 @@
  */
 #define GOVERNOR_IBLOCK "GOVERNOR_IBLOCK"
 
+/**
+ * Governor RSELECT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_RSELECT "GOVERNOR_RSELECT"
+
+/**
+ * Governor FLAGSWITCH
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_FLAGSWITCH "GOVERNOR_FLAGSWITCH"
+
+/**
+ * Governor R
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_R "GOVERNOR_R"
+
+/**
+ * Governor TPELEC
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TPELEC "GOVERNOR_TPELEC"
+
+/**
+ * Governor MAXERR
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_MAXERR "GOVERNOR_MAXERR"
+
+/**
+ * Governor MINERR
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_MINERR "GOVERNOR_MINERR"
+
+/**
+ * Governor KPGOV
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KPGOV "GOVERNOR_KPGOV"
+
+/**
+ * Governor KIGOV
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KIGOV "GOVERNOR_KIGOV"
+
+/**
+ * Governor KDGOV
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KDGOV "GOVERNOR_KDGOV"
+
+/**
+ * Governor TDGOV
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TDGOV "GOVERNOR_TDGOV"
+
+/**
+ * Governor VMAX
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VMAX "GOVERNOR_VMAX"
+
+/**
+ * Governor VMIN
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VMIN "GOVERNOR_VMIN"
+
+/**
+ * Governor TACT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TACT "GOVERNOR_TACT"
+
+/**
+ * Governor KTURB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KTURB "GOVERNOR_KTURB"
+
+/**
+ * Governor WFNL
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_WFNL "GOVERNOR_WFNL"
+
+/**
+ * Governor TB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TB "GOVERNOR_TB"
+
+/**
+ * Governor TC
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TC "GOVERNOR_TC"
+
+/**
+ * Governor TENG
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TENG "GOVERNOR_TENG"
+
+/**
+ * Governor TFLOAD
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TFLOAD "GOVERNOR_TFLOAD"
+
+/**
+ * Governor KPLOAD
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KPLOAD "GOVERNOR_KPLOAD"
+
+/**
+ * Governor KILOAD
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KILOAD "GOVERNOR_KILOAD"
+
+/**
+ * Governor LDREF
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_LDREF "GOVERNOR_LDREF"
+
+/**
+ * Governor DM
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_DM "GOVERNOR_DM"
+
+/**
+ * Governor ROPEN
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_ROPEN "GOVERNOR_ROPEN"
+
+/**
+ * Governor RCLOSE
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_RCLOSE "GOVERNOR_RCLOSE"
+
+/**
+ * Governor KIMW
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KIMW "GOVERNOR_KIMW"
+
+/**
+ * Governor ASET
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_ASET "GOVERNOR_ASET"
+
+/**
+ * Governor KA
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KA "GOVERNOR_KA"
+
+/**
+ * Governor TA
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TA "GOVERNOR_TA"
+
+/**
+ * Governor TRATE
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TRATE "GOVERNOR_TRATE"
+
+/**
+ * Governor DB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_DB "GOVERNOR_DB"
+
+/**
+ * Governor TSA
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TSA "GOVERNOR_TSA"
+
+/**
+ * Governor TSB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TSB "GOVERNOR_TSB"
+
+/**
+ * Governor RUP
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_RUP "GOVERNOR_RUP"
+
+/**
+ * Governor RDOWN
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_RDOWN "GOVERNOR_RDOWN"
+
+/**
+ * Governor TD
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TD "GOVERNOR_TD"
+
+/**
+ * Governor KL
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KL "GOVERNOR_KL"
+
+/**
+ * Governor TF
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TF "GOVERNOR_TF"
+
+/**
+ * Governor KD
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KD "GOVERNOR_KD"
+
+/**
+ * Governor KP
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KP "GOVERNOR_KP"
+
+/**
+ * Governor TT
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TT "GOVERNOR_TT"
+
+/**
+ * Governor GV5
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_KG "GOVERNOR_KG"
+
+/**
+ * Governor TP
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TP "GOVERNOR_TP"
+
+/**
+ * Governor VELOPEN
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VELOPEN "GOVERNOR_VELOPEN"
+
+/**
+ * Governor VELCLOSE
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_VELCLOSE "GOVERNOR_VELCLOSE"
+
+/**
+ * Governor ATURB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_ATURB "GOVERNOR_ATURB"
+
+/**
+ * Governor BTURB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_BTURB "GOVERNOR_BTURB"
+
+/**
+ * Governor TTURB
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TTURB "GOVERNOR_TTURB"
+
+/**
+ * Governor TRATE
+ * type: real float
+ * indexed
+ */
+#define GOVERNOR_TRATE "GOVERNOR_TRATE"
+
 // EXCITER DATA
 /**
- * Flag to indicate that governor is present
+ * Flag to indicate that exciter is present
  * type: boolean
  * indexed
  */
-#define HAS_GOVERNOR "HAS_GOVERNOR"
+#define HAS_EXCITER "HAS_EXCITER"
 
 /**
- * Governor model
+ * Exciter model
  * type: string
  * indexed
  */
-#define GOVERNOR_MODEL "GOVERNOR_MODEL"
+#define EXCITER_MODEL "EXCITER_MODEL"
 
 /**
  * Governor TR
@@ -903,6 +1246,181 @@
  * indexed
  */
 #define EXCITER_SE2 "EXCITER_SE2"
+
+/**
+ * Exciter UEL
+ * type: real float
+ * indexed
+ */
+#define EXCITER_UEL "EXCITER_UEL"
+
+/**
+ * Exciter VOS
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VOS "EXCITER_VOS"
+
+/**
+ * Exciter VIMAX
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VIMAX "EXCITER_VIMAX"
+
+/**
+ * Exciter VIMIN
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VIMIN "EXCITER_VIMIN"
+
+/**
+ * Exciter TC1
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TC1 "EXCITER_TC1"
+
+/**
+ * Exciter TB1
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TB1 "EXCITER_TB1"
+
+/**
+ * Exciter VAMAX
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VAMAX "EXCITER_VAMAX"
+
+/**
+ * Exciter VAMIN
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VAMIN "EXCITER_VAMIN"
+
+/**
+ * Exciter KC
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KC "EXCITER_KC"
+
+/**
+ * Exciter TF
+ * type: real float
+ * indexed
+ */
+#define EXCITER_TF "EXCITER_TF"
+
+/**
+ * Exciter KLR
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KLR "EXCITER_KLR"
+
+/**
+ * Exciter ILR
+ * type: real float
+ * indexed
+ */
+#define EXCITER_ILR "EXCITER_ILR"
+
+/**
+ * Exciter KPR
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KPR "EXCITER_KPR"
+
+/**
+ * Exciter KIR
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KIR "EXCITER_KIR"
+
+/**
+ * Exciter KPM
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KPM "EXCITER_KPM"
+
+/**
+ * Exciter KIM
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KIM "EXCITER_KIM"
+
+/**
+ * Exciter VMMAX
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VMMAX "EXCITER_VMMAX"
+
+/**
+ * Exciter VMMIN
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VMMIN "EXCITER_VMMIN"
+
+/**
+ * Exciter KG
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KG "EXCITER_KG"
+
+/**
+ * Exciter KP
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KP "EXCITER_KP"
+
+/**
+ * Exciter KI
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KI "EXCITER_KI"
+
+/**
+ * Exciter VBMAX
+ * type: real float
+ * indexed
+ */
+#define EXCITER_VBMAX "EXCITER_VBMAX"
+
+/**
+ * Exciter KC
+ * type: real float
+ * indexed
+ */
+#define EXCITER_KC "EXCITER_KC"
+
+/**
+ * Exciter XL
+ * type: real float
+ * indexed
+ */
+#define EXCITER_XL "EXCITER_XL"
+
+/**
+ * Exciter THETAP
+ * type: real float
+ * indexed
+ */
+#define EXCITER_THETAP "EXCITER_THETAP"
 
 // BRANCH DATA
 /**

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-10-12 13:09:44 d3g096
+# Last Change: 2016-06-16 14:32:18 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -23,7 +23,10 @@ project (GridPACK)
 enable_language(CXX)
 
 # where to look for special .cmake files
-list (APPEND CMAKE_MODULE_PATH "${GridPACK_SOURCE_DIR}/cmake-modules")
+list (APPEND CMAKE_MODULE_PATH 
+    "${GridPACK_SOURCE_DIR}/cmake-modules"
+    "${GridPACK_SOURCE_DIR}/../cmake-jedbrown"
+)
 include(GridPACK)
 
 # turn testing on
@@ -118,6 +121,8 @@ if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
 elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
 else()
   message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
 endif()
