@@ -17,7 +17,7 @@ enable_testing()
 # MPI
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
-#find_package (MPI REQUIRED)
+find_package (MPI REQUIRED)
 
 # This is here for cmake version 2.6 
 if (NOT MPI_CXX_LIBRARIES)
