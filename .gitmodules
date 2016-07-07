@@ -1,0 +1,3 @@
+[submodule "cmake-jedbrown"]
+	path = cmake-jedbrown
+	url = https://github.com/wperkins/cmake-modules.git
