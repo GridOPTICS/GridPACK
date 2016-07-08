@@ -265,7 +265,7 @@ class BasePTIParser : public BaseParser<_network>
       double rup;
       double rdown;
       double gv_td;
-      double gv_kl;
+      double gv_ki;
       double gv_tf;
       double gv_kd;
       double gv_kp;
