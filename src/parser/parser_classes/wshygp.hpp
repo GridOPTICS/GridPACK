@@ -79,11 +79,11 @@ template <class _data_struct> class WshygpParser
         data->setValue(GOVERNOR_TD, data_struct.gv_td, g_id);
       }
 
-      // GOVERNOR_KL
-      if (!data->getValue(GOVERNOR_KL,&rval,g_id)) {
-        data->addValue(GOVERNOR_KL, data_struct.gv_kl, g_id);
+      // GOVERNOR_KI
+      if (!data->getValue(GOVERNOR_KI,&rval,g_id)) {
+        data->addValue(GOVERNOR_KI, data_struct.gv_ki, g_id);
       } else {
-        data->setValue(GOVERNOR_KL, data_struct.gv_kl, g_id);
+        data->setValue(GOVERNOR_KI, data_struct.gv_ki, g_id);
       }
 
       // GOVERNOR_TF
@@ -331,13 +331,13 @@ template <class _data_struct> class WshygpParser
         }
       } 
 
-      // GOVERNOR_KL
+      // GOVERNOR_KI
       if (nstr > 6) {
-        if (!data->getValue(GOVERNOR_KL,&rval,g_id)) {
-          data->addValue(GOVERNOR_KL,
+        if (!data->getValue(GOVERNOR_KI,&rval,g_id)) {
+          data->addValue(GOVERNOR_KI,
               atof(split_line[6].c_str()), g_id);
         } else {
-          data->setValue(GOVERNOR_KL,
+          data->setValue(GOVERNOR_KI,
               atof(split_line[6].c_str()), g_id);
         }
       } 
@@ -654,7 +654,7 @@ template <class _data_struct> class WshygpParser
 
       // GOVERNOR_KL
       if (nstr > 6) {
-        data.gv_kl = atof(split_line[6].c_str());
+        data.gv_ki = atof(split_line[6].c_str());
       }
 
       // GOVERNOR_TF
