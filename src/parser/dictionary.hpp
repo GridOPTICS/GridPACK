@@ -1030,11 +1030,11 @@
 #define GOVERNOR_TD "GOVERNOR_TD"
 
 /**
- * Governor KL
+ * Governor KI
  * type: real float
  * indexed
  */
-#define GOVERNOR_KL "GOVERNOR_KL"
+#define GOVERNOR_KI "GOVERNOR_KI"
 
 /**
  * Governor TF
