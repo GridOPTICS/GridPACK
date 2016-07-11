@@ -40,6 +40,7 @@ install(FILES
   task_manager.hpp
   random.hpp
   index_hash.hpp
+  global_store.hpp
   DESTINATION include/gridpack/parallel
 )
 
@@ -125,3 +126,13 @@ target_link_libraries(random_test gridpack_parallel
   ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 gridpack_add_run_test(random_test random_test "")
+
+# -------------------------------------------------------------
+# TEST: store_test
+# A simple program to test the global store module
+# -------------------------------------------------------------
+add_executable(store_test test/store_test.cpp)
+target_link_libraries(store_test gridpack_parallel 
+  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+gridpack_add_run_test(store_test store_test "")
