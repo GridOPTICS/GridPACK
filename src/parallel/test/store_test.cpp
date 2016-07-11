@@ -53,7 +53,7 @@ main(int argc, char **argv)
     int lo = me*MAX_VEC/nproc;
     int hi = (me+1)*MAX_VEC/nproc-1;
     int i, j;
-    gridpack::utility::GlobalStore<data_type> bank(world);
+    gridpack::parallel::GlobalStore<data_type> bank(world);
     // Store vectors in global store object
     for (i=lo; i<=hi; i++) {
       std::vector<data_type> vec;

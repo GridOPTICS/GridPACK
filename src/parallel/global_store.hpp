@@ -25,7 +25,7 @@
 #include "gridpack/parallel/communicator.hpp"
 
 namespace gridpack {
-namespace utility {
+namespace parallel {
 
 // -------------------------------------------------------------
 //  class GlobalStore
