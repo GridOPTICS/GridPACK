@@ -7,7 +7,7 @@
 /**
  * @file   store_test.cpp
  * @author Bruce Palmer
- * @date   July 10, 2016
+ * @date   2016-07-12 09:29:08 d3g096
  * 
  * @brief  A simple test of the GridPACK global store module
  * 
@@ -95,6 +95,7 @@ main(int argc, char **argv)
         }
       }
     }
+    world.sync();
     world.sum(&chk,1);
     if (chk == nproc && me == 0) {
       printf("Vectors OK\n");
