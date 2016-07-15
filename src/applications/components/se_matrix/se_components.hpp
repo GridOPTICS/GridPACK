@@ -7,7 +7,7 @@
 /**
  * @file   se_components.hpp
  * @author Yousu Chen 
- * @date   2/24/2014 
+ * @date   2016-07-14 13:37:55 d3g096
  * 
  * @brief  
  * 
@@ -673,8 +673,8 @@ typedef network::BaseNetwork<SEBus, SEBranch > SENetwork;
 }     // state_estimation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::state_estimation::SEBranch)
 
 
 #endif

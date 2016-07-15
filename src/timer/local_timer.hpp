@@ -106,6 +106,6 @@ private:
 }    // utility
 }    // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::utility::LocalTimer);
+BOOST_CLASS_EXPORT_KEY(gridpack::utility::LocalTimer)
 
 #endif // _local_timer_h

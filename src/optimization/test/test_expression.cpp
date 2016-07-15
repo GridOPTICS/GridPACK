@@ -987,6 +987,7 @@ printf("run to here-\n");
   env.end();
 }
 
+int
 main (int argc, char **argv) {
 
   // Initialize MPI libraries

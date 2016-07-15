@@ -7,7 +7,7 @@
 /**
  * @file   ds_components.hpp
  * @author Shuangshuang Jin 
- * @date   September 19, 2013
+ * @date   2016-07-14 13:42:39 d3g096
  * 
  * @brief  
  * 
@@ -426,7 +426,7 @@ typedef network::BaseNetwork<DSBus, DSBranch > DSNetwork;
 }     // dynamic_simulation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBranch)
 
 #endif

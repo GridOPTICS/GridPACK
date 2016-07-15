@@ -7,7 +7,7 @@
 /**
  * @file   ds_components.cpp
  * @author Shrirang Abhyankar
- * @date   2015-01-23 08:25:59 d3g096
+ * @date   2016-07-14 14:29:57 d3g096
  * 
  * @brief  
  * 
@@ -798,6 +798,7 @@ bool gridpack::dsimplicit::DSBranch::matrixReverseValues(ComplexType *values)
 bool gridpack::dsimplicit::DSBranch::serialWrite(char *string, const int
     bufsize,  const char *signal)
 {
+  return false;
 }
 
 bool gridpack::dsimplicit::DSBranch::getForwardSelfAdmittance(double *Gff,double *Bff)

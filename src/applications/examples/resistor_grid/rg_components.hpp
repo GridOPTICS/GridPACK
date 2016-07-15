@@ -7,7 +7,7 @@
 /**
  * @file   rg_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @date   2016-07-14 14:22:49 d3g096
  * 
  * @brief  
  * 
@@ -203,8 +203,8 @@ typedef network::BaseNetwork<RGBus, RGBranch > RGNetwork;
 }     // resistor_grid
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBranch)
 
 
 #endif

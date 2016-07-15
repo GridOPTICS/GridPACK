@@ -7,7 +7,7 @@
 /**
  * @file   dsf_factory_module.cpp
  * @author Shuangshuang Jin 
- * @date   Feb 04, 2015
+ * @date   2016-07-14 13:50:07 d3g096
  * @last modified date   May 13, 2015
  * 
  * @brief  
@@ -105,6 +105,8 @@ gridpack::dynamic_simulation::DSFullFactory::setFactor(int sw2_2, int sw3_2)
       return ret;
     }
   }
+
+  return dummy;
 }
 
 /**

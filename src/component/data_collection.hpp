@@ -183,6 +183,6 @@ private:
 }    // component
 }    // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::component::DataCollection);
+BOOST_CLASS_EXPORT_KEY(gridpack::component::DataCollection)
 
 #endif // _data_collection_h

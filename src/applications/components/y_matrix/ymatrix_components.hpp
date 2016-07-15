@@ -7,7 +7,7 @@
 /**
  * @file   ymatrix_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @date   2016-07-14 13:27:00 d3g096
  * 
  * @brief  
  * 
@@ -310,8 +310,8 @@ private:
 }     // ymatrix
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBranch)
 
 
 #endif

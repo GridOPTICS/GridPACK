@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2015-11-20 13:12:47 d3g096
+// Last Change: 2016-07-14 13:27:01 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -22,26 +22,26 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::ConstantExpression<int>);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::ConstantExpression<double>);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::ConstantExpression<int>)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::ConstantExpression<double>)
 
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::VariableExpression);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::VariableExpression)
 
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::UnaryMinus);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::UnaryPlus);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::UnaryMinus)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::UnaryPlus)
 
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Multiplication);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Division);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Addition);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Subtraction);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Exponentiation);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Multiplication)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Division)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Addition)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Subtraction)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Exponentiation)
 
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Constraint);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThan);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThanOrEqual);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::GreaterThan);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::GreaterThanOrEqual);
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Equal);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Constraint)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThan)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::LessThanOrEqual)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::GreaterThan)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::GreaterThanOrEqual)
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Equal)
 
 namespace gridpack {
 namespace optimization {
@@ -109,9 +109,9 @@ ExpressionVisitor::~ExpressionVisitor(void)
 // -------------------------------------------------------------
 
 // For constants and variable do nothing
-void ExpressionVisitor::visit(IntegerConstant& e)  { return; };
-void ExpressionVisitor::visit(RealConstant& e) { return; };
-void ExpressionVisitor::visit(VariableExpression& e) { return; };
+void ExpressionVisitor::visit(IntegerConstant& e)  { return; }
+void ExpressionVisitor::visit(RealConstant& e) { return; }
+void ExpressionVisitor::visit(VariableExpression& e) { return; }
 
 // Send the visitor to the rhs
 void ExpressionVisitor::visit(UnaryExpression& e)

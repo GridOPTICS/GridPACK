@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2015-10-06 10:33:11 d3g096
+ * @date   2016-07-14 13:18:38 d3g096
  * 
  * @brief  
  * 
@@ -401,10 +401,10 @@ public:
 } // namespace optimization
 } // namespace gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Variable);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BoundedVariableT<double>);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BoundedVariableT<int>);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BinaryVariable);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Variable)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BoundedVariableT<double>)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BoundedVariableT<int>)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::BinaryVariable)
 
 
 #endif

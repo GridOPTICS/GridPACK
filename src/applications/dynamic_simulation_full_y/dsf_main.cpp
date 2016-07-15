@@ -7,7 +7,7 @@
 /**
  * @file   ds_main.cpp
  * @author Shuangshuang Jin
- * @date   Feb 04, 2015
+ * @date   2016-07-14 14:23:30 d3g096
  *
  * @brief
  */
@@ -61,6 +61,7 @@ void transferPFtoDS(
 
 // Calling program for the dynamis simulation applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries

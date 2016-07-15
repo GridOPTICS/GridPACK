@@ -6,7 +6,7 @@
 /**
  * @file   network_partition.cpp
  * @author William A. Perkins
- * @date   2014-03-05 10:38:46 d3g096
+ * @date   2016-07-14 14:02:42 d3g096
  * 
  * @brief  A test of network partitioning
  * 
@@ -53,7 +53,7 @@ private:
   }  
 };
 
-BOOST_CLASS_EXPORT(BogusBus);
+BOOST_CLASS_EXPORT(BogusBus)
 
 // -------------------------------------------------------------
 //  class BogusBranch
@@ -83,7 +83,7 @@ private:
   }  
 };
 
-BOOST_CLASS_EXPORT(BogusBranch);
+BOOST_CLASS_EXPORT(BogusBranch)
 
 // -------------------------------------------------------------
 //  class BogusNetwork

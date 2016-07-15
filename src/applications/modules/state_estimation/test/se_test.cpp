@@ -7,7 +7,7 @@
 /**
  * @file   se_test.cpp
  * @author Bruce Palmer
- * @date   February 16, 2015
+ * @date   2016-07-14 14:23:28 d3g096
  *
  * @brief
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the contingency_analysis applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries

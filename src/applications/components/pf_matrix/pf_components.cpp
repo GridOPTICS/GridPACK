@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2014-02-13 07:35:47 d3g096
+ * @date   2016-07-14 13:49:14 d3g096
  * 
  * @brief  
  * 
@@ -1202,7 +1202,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
     double rvals[4];
     int nvals = forwardJacobianValues(rvals);
     for (int i=0; i<nvals; i++) values[i] = rvals[i];
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1217,7 +1217,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(RealType *values)
 {
   if (p_mode == Jacobian) {
     int nvals = forwardJacobianValues(values);
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1232,7 +1232,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
     double rvals[4];
     int nvals = reverseJacobianValues(rvals);
     for (int i=0; i<nvals; i++) values[i] = rvals[i];
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1247,7 +1247,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(RealType *values)
 {
   if (p_mode == Jacobian) {
     int nvals = reverseJacobianValues(values);
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1385,6 +1385,7 @@ void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus,
     ybusi = p_ybusi_rvrs;
   } else {
     // TODO: Some kind of error
+    return;
   }
   values[0] = v*(ybusr*sn - ybusi*cs);
   values[1] = -v*(ybusr*cs + ybusi*sn);
@@ -1420,6 +1421,7 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
     ybusi = p_ybusi_rvrs;
   } else {
     // TODO: Some kind of error
+    return;
   }
   *p = v1*v2*(ybusr*cs+ybusi*sn);
   *q = v1*v2*(ybusr*sn-ybusi*cs);

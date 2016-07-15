@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2015-04-30 14:55:50 d3g096
+ * @date   2016-07-14 14:07:46 d3g096
  * 
  * @brief  
  * 
@@ -351,7 +351,7 @@ virtual ~BaseNetwork(void)
     delete [] ((char*)p_busSndBuf);
   }
   if (p_inactiveBusIndices) {
-    for (i=0; i<0; i<p_numInactiveBuses) {
+    for (i=0; i<p_numInactiveBuses; ++i) {
       delete p_inactiveBusIndices[i];
     }
     delete [] p_inactiveBusIndices;
@@ -360,7 +360,7 @@ virtual ~BaseNetwork(void)
     delete [] ((char*)p_busRcvBuf);
   }
   if (p_activeBranchIndices) {
-    for (i=0; i<0; i<p_numActiveBranches) {
+    for (i=0; i<p_numActiveBranches; ++i) {
       delete p_activeBranchIndices[i];
     }
     delete [] p_activeBranchIndices;
@@ -369,7 +369,7 @@ virtual ~BaseNetwork(void)
     delete [] ((char*)p_branchSndBuf);
   }
   if (p_inactiveBranchIndices) {
-    for (i=0; i<0; i<p_numInactiveBranches) {
+    for (i=0; i<p_numInactiveBranches; ++i) {
       delete p_inactiveBranchIndices[i];
     }
     delete [] p_inactiveBranchIndices;
@@ -1198,7 +1198,7 @@ void clean(void)
   freeXCBus();
   freeXCBranch();
   if (p_activeBusIndices) {
-    for (i=0; i<0; i<p_numActiveBuses) {
+    for (i=0; i<p_numActiveBuses; ++i) {
       delete p_activeBusIndices[i];
     }
     delete [] p_activeBusIndices;
@@ -1209,7 +1209,7 @@ void clean(void)
     p_busSndBuf = NULL;
   }
   if (p_inactiveBusIndices) {
-    for (i=0; i<0; i<p_numInactiveBuses) {
+    for (i=0; i<p_numInactiveBuses; ++i) {
       delete p_inactiveBusIndices[i];
     }
     delete [] p_inactiveBusIndices;
@@ -1220,7 +1220,7 @@ void clean(void)
     p_busRcvBuf = NULL;
   }
   if (p_activeBranchIndices) {
-    for (i=0; i<0; i<p_numActiveBranches) {
+    for (i=0; i<p_numActiveBranches; ++i) {
       delete p_activeBranchIndices[i];
     }
     delete [] p_activeBranchIndices;
@@ -1231,7 +1231,7 @@ void clean(void)
     p_branchSndBuf = NULL;
   }
   if (p_inactiveBranchIndices) {
-    for (i=0; i<0; i<p_numInactiveBranches) {
+    for (i=0; i<p_numInactiveBranches; ++i) {
       delete p_inactiveBranchIndices[i];
     }
     delete [] p_inactiveBranchIndices;
@@ -1409,7 +1409,7 @@ void clear(void)
     delete [] ((char*)p_busSndBuf);
   }
   if (p_inactiveBusIndices) {
-    for (i=0; i<0; i<p_numInactiveBuses) {
+    for (i=0; i<p_numInactiveBuses; ++i) {
       delete p_inactiveBusIndices[i];
     }
     delete [] p_inactiveBusIndices;
@@ -1418,7 +1418,7 @@ void clear(void)
     delete [] ((char*)p_busRcvBuf);
   }
   if (p_activeBranchIndices) {
-    for (i=0; i<0; i<p_numActiveBranches) {
+    for (i=0; i<p_numActiveBranches; ++i) {
       delete p_activeBranchIndices[i];
     }
     delete [] p_activeBranchIndices;
@@ -1427,7 +1427,7 @@ void clear(void)
     delete [] ((char*)p_branchSndBuf);
   }
   if (p_inactiveBranchIndices) {
-    for (i=0; i<0; i<p_numInactiveBranches) {
+    for (i=0; i<p_numInactiveBranches; ++i) {
       delete p_inactiveBranchIndices[i];
     }
     delete [] p_inactiveBranchIndices;
@@ -1575,8 +1575,8 @@ void setXCBusBuffer(int idx, void* ptr)
   } else {
     char buf[256];
     if (idx < 0 || idx >= p_buses.size()) {
-      sprintf(buf,"BaseNetwork::setXCBusBuffer: illegal index: %d size: %d\n",
-        p_buses.size());
+      sprintf(buf,"BaseNetwork::setXCBusBuffer: illegal index: %d size: %ld\n",
+              idx, p_buses.size());
     } else if (p_busXCBuffers == NULL) {
       sprintf(buf,"BaseNetwork::setXCBusBuffer: buffer already assigned\n");
     }
@@ -1594,8 +1594,8 @@ void* getXCBusBuffer(int idx)
 {
   if (idx < 0 || idx > p_buses.size()) {
     char buf[256];
-    sprintf(buf,"BaseNetwork::getXCBusBuffer: illegal index: %d size: %d\n",
-      p_buses.size());
+    sprintf(buf,"BaseNetwork::getXCBusBuffer: illegal index: %d size: %ld\n",
+            idx, p_buses.size());
     printf("%s",buf);
     throw gridpack::Exception(buf);
   } else {
@@ -1676,7 +1676,7 @@ void* getXCBranchBuffer(int idx)
 {
   if (idx < 0 || idx > p_branches.size()) {
     char buf[256];
-    sprintf(buf,"BaseNetwork::getXCBranchBuffer: illegal index: %d size: %d\n",
+    sprintf(buf,"BaseNetwork::getXCBranchBuffer: illegal index: %d size: %ld\n",
       idx, p_branches.size());
     printf("%s",buf);
     throw gridpack::Exception(buf);
@@ -1727,7 +1727,7 @@ void setXCBranchBuffer(int idx, void* ptr)
   } else {
     char buf[256];
     if (idx < 0 || idx >= p_branches.size()) {
-      sprintf(buf,"BaseNetwork::setXCBranchBuffer: illegal index: %d size: %d\n",
+      sprintf(buf,"BaseNetwork::setXCBranchBuffer: illegal index: %d size: %ld\n",
         idx, p_branches.size());
     } else {
       sprintf(buf,"BaseNetwork::setXCBranchBuffer: buffer already assigned\n");
@@ -1754,7 +1754,7 @@ void initBusUpdate(void)
       NGA_Deregister_type(p_busXCBufType);
     }
     if (p_activeBusIndices) {
-      for (i=0; i<0; i<p_numActiveBuses) {
+      for (i=0; i<p_numActiveBuses; ++i) {
         delete p_activeBusIndices[i];
       }
       delete [] p_activeBusIndices;
@@ -1765,7 +1765,7 @@ void initBusUpdate(void)
       p_busSndBuf = NULL;
     }
     if (p_inactiveBusIndices) {
-      for (i=0; i<0; i<p_numInactiveBuses) {
+      for (i=0; i<p_numInactiveBuses; ++i) {
         delete p_inactiveBusIndices[i];
       }
       delete [] p_inactiveBusIndices;
@@ -1943,7 +1943,7 @@ void initBranchUpdate(void)
       NGA_Deregister_type(p_branchXCBufType);
     }
     if (p_activeBranchIndices) {
-      for (i=0; i<0; i<p_numActiveBranches) {
+      for (i=0; i<p_numActiveBranches; ++i) {
         delete p_activeBranchIndices[i];
       }
       delete [] p_activeBranchIndices;
@@ -1954,7 +1954,7 @@ void initBranchUpdate(void)
       }
     }
     if (p_inactiveBranchIndices) {
-      for (i=0; i<0; i<p_numInactiveBranches) {
+      for (i=0; i<p_numInactiveBranches; ++i) {
         delete p_inactiveBranchIndices[i];
       }
       delete [] p_inactiveBranchIndices;

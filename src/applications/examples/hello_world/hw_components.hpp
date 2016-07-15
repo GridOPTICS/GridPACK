@@ -7,7 +7,7 @@
 /**
  * @file   hw_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @date   2016-07-14 14:22:33 d3g096
  * 
  * @brief  
  * 
@@ -128,8 +128,8 @@ typedef network::BaseNetwork<HWBus, HWBranch > HWNetwork;
 }     // hello_world
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::hello_world::HWBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::hello_world::HWBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::hello_world::HWBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::hello_world::HWBranch)
 
 
 #endif

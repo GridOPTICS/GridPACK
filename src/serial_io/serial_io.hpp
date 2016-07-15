@@ -7,7 +7,7 @@
 /**
  * @file   serial_io.hpp
  * @author Bruce Palmer
- * @date   2016-06-28 07:51:47 d3g096
+ * @date   2016-07-14 14:49:01 d3g096
  * 
  * @brief  
  * 
@@ -266,7 +266,7 @@ class SerialBusIO {
     if (sizeof(_data_type) > p_size) {
       char buf[256];
       sprintf(buf,"SerialBusIO::gatherData: data_type size inconsistent"
-          " with allocated size: data: %d allocated: %d\n",
+          " with allocated size: data: %ld allocated: %d\n",
           sizeof(_data_type),p_size);
       printf(buf);
       throw gridpack::Exception(buf);
@@ -689,7 +689,7 @@ class SerialBranchIO {
     if (sizeof(_data_type) > p_size) {
       char buf[256];
       sprintf(buf,"SerialBranchIO::gatherData: data_type size inconsistent"
-          " with allocated size: data: %d allocated: %d\n",
+          " with allocated size: data: %d allocated: %ld\n",
           sizeof(_data_type),p_size);
       printf(buf);
       throw gridpack::Exception(buf);

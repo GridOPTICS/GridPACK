@@ -7,7 +7,7 @@
 /**
  * @file   se_components.cpp
  * @author Yousu Chen
- * @date   2015-04-30 14:50:17 d3g096
+ * @date   2016-07-14 13:50:44 d3g096
  * 
  * @brief  
  * 
@@ -2145,6 +2145,7 @@ void gridpack::state_estimation::SEBranch::getPQ(gridpack::state_estimation::SEB
     ybusi = p_ybusi_rvrs;
   } else {
     // TODO: Some kind of error
+    return;
   }
   *p = v1*v2*(ybusr*cs+ybusi*sn);
   *q = v1*v2*(ybusr*sn-ybusi*cs);

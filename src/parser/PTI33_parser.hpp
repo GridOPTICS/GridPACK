@@ -790,7 +790,7 @@ class PTI33_parser : public BasePTIParser<_network>
             p_busData[l_idx1]->getValue(BUS_AREA,&ival);
             data->addValue(BUS_AREA,ival);
             p_busData[l_idx1]->getValue(BUS_OWNER,&ival);
-            data->addValue(BUS_OWNER,&ival);
+            data->addValue(BUS_OWNER, ival);
             double rval = 0.0;
             double rvol;
             p_busData[l_idx1]->getValue(BUS_VOLTAGE_MAG,&rvol);

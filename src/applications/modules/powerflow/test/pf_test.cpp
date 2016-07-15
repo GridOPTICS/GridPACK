@@ -7,7 +7,7 @@
 /**
  * @file   pf_test.cpp
  * @author Bruce Palmer
- * @date   2015-06-25 14:17:58 d3g096
+ * @date   2016-07-14 14:23:07 d3g096
  *
  * @brief
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the contingency_analysis applications
 
+int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc,argv);

@@ -105,6 +105,6 @@ private:
 }    // utility
 }    // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::utility::CoarseTimer);
+BOOST_CLASS_EXPORT_KEY(gridpack::utility::CoarseTimer)
 
 #endif // _coarse_timer_h

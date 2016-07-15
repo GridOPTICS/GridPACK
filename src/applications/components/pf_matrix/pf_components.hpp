@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   2014-03-05 14:50:50 d3g096
+ * @date   2016-07-14 13:27:00 d3g096
  * 
  * @brief  
  * 
@@ -596,8 +596,8 @@ private:
 }     // powerflow
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBranch)
 
 
 #endif

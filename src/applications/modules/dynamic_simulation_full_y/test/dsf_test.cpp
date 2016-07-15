@@ -7,7 +7,7 @@
 /**
  * @file   ds_main.cpp
  * @author Shuangshuang Jin
- * @date   Feb 04, 2015
+ * @date   2016-07-14 14:30:38 d3g096
  *
  * @brief
  */
@@ -22,6 +22,7 @@
 
 // test program for dynamic simulation module
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries

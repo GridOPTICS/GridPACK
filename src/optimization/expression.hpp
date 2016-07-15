@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-11-23 11:46:06 d3g096
+ * @date   2016-07-14 13:19:03 d3g096
  * 
  * @brief  
  * 
@@ -1484,26 +1484,26 @@ public:
 } // namespace optimization
 } // namespace gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::ConstantExpression<int>);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::ConstantExpression<double>);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::ConstantExpression<int>)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::ConstantExpression<double>)
 
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::VariableExpression);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::VariableExpression)
 
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::UnaryMinus);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::UnaryPlus);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::UnaryMinus)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::UnaryPlus)
 
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Multiplication);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Division);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Addition);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Subtraction);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Exponentiation);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Multiplication)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Division)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Addition)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Subtraction)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Exponentiation)
 
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Constraint);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThan);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThanOrEqual);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::GreaterThan);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::GreaterThanOrEqual);
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Equal);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Constraint)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThan)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::LessThanOrEqual)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::GreaterThan)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::GreaterThanOrEqual)
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Equal)
 
 
 #endif

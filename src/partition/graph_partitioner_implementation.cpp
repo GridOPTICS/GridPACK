@@ -7,7 +7,7 @@
 /**
  * @file   graph_partitioner_implementation.cpp
  * @author William A. Perkins
- * @date   2014-12-09 09:51:37 d3g096
+ * @date   2016-07-14 13:20:29 d3g096
  * 
  * @brief  
  * 
@@ -144,7 +144,7 @@ GraphPartitionerImplementation::partition(void)
 
   p_adjacency_list.ready();
 
-  int maxdim(2);
+  const int maxdim(2);
   int dims[maxdim], lo[maxdim], hi[maxdim], ld[maxdim];
   ld[0] = 1;
   ld[1] = 1;
