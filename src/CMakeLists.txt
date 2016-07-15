@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2016-07-14 14:18:14 d3g096
+# Last Change: 2016-07-15 08:13:04 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -239,7 +239,6 @@ endif(DOXYGEN_FOUND)
 if (CMAKE_COMPILER_IS_GNUCXX) 
     add_definitions(
       -pedantic
-      -Wno-vla
       -Wno-write-strings
       -Wno-long-long 
       -Wno-sign-compare 

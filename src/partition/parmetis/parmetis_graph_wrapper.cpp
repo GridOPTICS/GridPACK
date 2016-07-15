@@ -7,7 +7,7 @@
 /**
  * @file   parmetis_graph_wrapper.cpp
  * @author William A. Perkins
- * @date   2014-02-13 09:28:27 d3g096
+ * @date   2016-07-15 09:05:44 d3g096
  * 
  * @brief  Implementation of the ParMETISGraphWrapper class
  * 
@@ -72,7 +72,7 @@ void
 ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
                                        const int& gbledges, const int& locedges)
 {
-  int maxdim(two);
+  const int maxdim(two);
   int dims[maxdim], lo[maxdim], hi[maxdim], ld[maxdim];
   int tmp[maxdim];
   int sum;
