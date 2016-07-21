@@ -30,6 +30,13 @@ set(target_libraries
     ${MPI_CXX_LIBRARIES}
     ${PETSC_LIBRARIES})
 
+if (GOSS_DIR)
+  set(target_libraries
+      ${APR_LIBRARY}
+      ${GOSS_LIBRARY}
+      ${target_libraries})
+endif()
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/base_classes
       ${CMAKE_CURRENT_SOURCE_DIR}/model_classes)
