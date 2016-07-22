@@ -40,6 +40,9 @@
 #include "parser_classes/esst4b.hpp"
 #include "parser_classes/ggov1.hpp"
 #include "parser_classes/wshygp.hpp"
+#include "parser_classes/lvshbl.hpp"
+#include "parser_classes/frqtpat.hpp"
+#include "parser_classes/distr1.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -127,11 +130,12 @@ class BasePTIParser : public BaseParser<_network>
 #endif
     }
 
-    struct ds_params{
+    // Data structure to hold generator params
+    struct gen_params{
       // Generator parameters
-      int bus_id; // ID of bus that owns generator
+      int bus_id; // ID of bus that owns device
+      char model[8];  // Model represented by data
       char gen_id[3]; // Generator ID
-      char gen_model[8];  // Generator model
       double inertia;  // Inertia constant 0
       double damping;  // Damping coefficient
       double reactance; // Transient reactance
@@ -148,7 +152,6 @@ class BasePTIParser : public BaseParser<_network>
       double gn_s1;
       double s12;
       // Exciter parameters
-      char ex_model[8];  // Exciter model
       bool has_exciter;
       double ex_tr;
       double ex_ka;
@@ -191,7 +194,6 @@ class BasePTIParser : public BaseParser<_network>
       double ex_xl;
       double thetap;
       // Governor parameters
-      char gov_model[8];  // Governor model
       bool has_governor;
       int jbus;
       int gv_m;
@@ -279,6 +281,75 @@ class BasePTIParser : public BaseParser<_network>
       double tturb;
     };
 
+    // Data structure to hold relay parameters on buses
+    struct bus_relay_params{
+      int bus_id; // ID of bus that owns device
+      char model[8];  // Model represented by data
+      char tag[3]; //
+      int jbus;
+      int mins;
+      int frebus;
+      double v1;
+      double t1;
+      double f1;
+      double v2;
+      double t2;
+      double f2;
+      double v3;
+      double t3;
+      double f3;
+      double tb;
+      double fl;
+      double fu;
+      double tp;
+    };
+
+    // Data structure to hold relay parameters on branches
+    struct branch_relay_params{
+      int from_bus; // ID of from bus
+      int to_bus; // ID of to bus
+      char model[8];  // Model represented by data
+      char id[3];
+      char id1[3];
+      char id2[3];
+      char id3[3];
+      int ibus;
+      int jbus;
+      int ibus1;
+      int jbus1;
+      int ibus2;
+      int jbus2;
+      int ibus3;
+      int jbus3;
+      int rs;
+      int mtype;
+      int bmon;
+      int bltype1;
+      int bltype2;
+      double zone1_time;
+      double zone1_reach;
+      double zone1_cenang;
+      double zone1_cendis;
+      double zone2_time;
+      double zone2_reach;
+      double zone2_cenang;
+      double zone2_cendis;
+      double zone3_time;
+      double zone3_reach;
+      double zone3_cenang;
+      double zone3_cendis;
+      double dirang;
+      double thcur;
+      double sebtime;
+      double serctime;
+      double trbtime;
+      double trrctime;
+      double blint1;
+      double blro1;
+      double blint2;
+      double blro2;
+    };
+
     /**
      * This routine opens up a .dyr file with parameters for dynamic
      * simulation and distributes the parameters to whatever processor holds the
@@ -291,7 +362,9 @@ class BasePTIParser : public BaseParser<_network>
       //      p_timer->start(t_ds);
       int me(p_network->communicator().rank());
 
-      std::vector<ds_params> ds_data;
+      std::vector<gen_params> gen_data;
+      std::vector<bus_relay_params> bus_relay_data;
+      std::vector<branch_relay_params> branch_relay_data;
       if (me == 0) {
         std::ifstream            input;
         input.open(fileName.c_str());
@@ -299,18 +372,18 @@ class BasePTIParser : public BaseParser<_network>
           // p_timer->stop(t_ds);
           return;
         }
-        find_ds_vector(input, &ds_data);
+        find_ds_vector(input, &gen_data, &bus_relay_data, &branch_relay_data);
         input.close();
       }
-      int nsize = ds_data.size();
+      int nsize = gen_data.size();
       std::vector<int> buses;
       int i;
       for (i=0; i<nsize; i++) {
-        buses.push_back(ds_data[i].bus_id);
+        buses.push_back(gen_data[i].bus_id);
       }
-      gridpack::hash_distr::HashDistribution<_network,ds_params,ds_params>
+      gridpack::hash_distr::HashDistribution<_network,gen_params,gen_params>
         distr(p_network);
-      distr.distributeBusValues(buses,ds_data);
+      distr.distributeBusValues(buses,gen_data);
       // Now match data with corresponding data collection objects
       gridpack::component::DataCollection *data;
       nsize = buses.size();
@@ -320,58 +393,105 @@ class BasePTIParser : public BaseParser<_network>
           (p_network->getBusData(l_idx).get());
 
         // Find out how many generators are already on bus
-        int ngen;
-        if (!data->getValue(GENERATOR_NUMBER, &ngen)) continue;
+        int ngen = 0;
+        data->getValue(GENERATOR_NUMBER, &ngen);
         // Identify index of generator to which this data applies
         int g_id = -1;
-        // Clean up 2 character tag for generator ID
-        std::string tag = ds_data[i].gen_id;
-        int j;
-        for (j=0; j<ngen; j++) {
-          std::string t_id;
-          data->getValue(GENERATOR_ID,&t_id,j);
-          if (tag == t_id) {
-            g_id = j;
-            break;
+        if (ngen > 0) {
+          // Clean up 2 character tag for generator ID
+          std::string tag = gen_data[i].gen_id;
+          int j;
+          for (j=0; j<ngen; j++) {
+            std::string t_id;
+            data->getValue(GENERATOR_ID,&t_id,j);
+            if (tag == t_id) {
+              g_id = j;
+              break;
+            }
           }
         }
-        if (g_id == -1) continue;
 
-        std::string sval;
-        double rval;
-        int ival;
-        bool bval=true;
-        if (!strcmp(ds_data[i].gen_model,"GENCLS")) {
-          GenclsParser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"GENSAL")) {
-          GensalParser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"GENROU")) {
-          GenrouParser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"WSIEG1")) {
-          Wsieg1Parser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"EXDC1") ||
-            !strcmp(ds_data[i].gen_model,"EXDC2")) {
-          Exdc1Parser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"ESST1A")) {
-          Esst1aParser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"ESST4B")) {
-          Esst4bParser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"GGOV1")) {
-          Ggov1Parser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
-        } else if (!strcmp(ds_data[i].gen_model,"WSHYGP")) {
-          WshygpParser<ds_params> parser;
-          parser.extract(ds_data[i], data, sval, g_id);
+        // Check to see parameters can be assigned to a generator
+        if (g_id > -1) {
+          if (!strcmp(gen_data[i].model,"GENCLS")) {
+            GenclsParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"GENSAL")) {
+            GensalParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"GENROU")) {
+            GenrouParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"WSIEG1")) {
+            Wsieg1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"EXDC1") ||
+              !strcmp(gen_data[i].model,"EXDC2")) {
+            Exdc1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"ESST1A")) {
+            Esst1aParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"ESST4B")) {
+            Esst4bParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"GGOV1")) {
+            Ggov1Parser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"WSHYGP")) {
+            WshygpParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
+          }
         }
       }
-      //      p_timer->stop(t_ds);
+      // Add parameters for a bus relay
+      nsize = bus_relay_data.size();
+      buses.clear();
+      for (i=0; i<nsize; i++) {
+        buses.push_back(bus_relay_data[i].bus_id);
+      }
+      gridpack::hash_distr::HashDistribution<_network,bus_relay_params,
+        bus_relay_params> distr_bus(p_network);
+      distr_bus.distributeBusValues(buses,bus_relay_data);
+      // Now match data with corresponding data collection objects
+      nsize = buses.size();
+      for (i=0; i<nsize; i++) {
+        int l_idx = buses[i];
+        data = dynamic_cast<gridpack::component::DataCollection*>
+          (p_network->getBusData(l_idx).get());
+        // Add relay data to bus
+        if (!strcmp(bus_relay_data[i].model,"LVSHBL")) {
+          LvshblParser<bus_relay_params> parser;
+          parser.extract(bus_relay_data[i], data);
+        } else if (!strcmp(bus_relay_data[i].model,"FRQTPAT")) {
+          FrqtpatParser<bus_relay_params> parser;
+          parser.extract(bus_relay_data[i], data);
+        }
+      }
+      buses.clear();
+      // Add parameters for a branch relay
+      nsize = branch_relay_data.size();
+      std::vector<std::pair<int,int> > branches;
+      std::vector<int> lbranch;
+      for (i=0; i<nsize; i++) {
+        branches.push_back(std::pair<int,int>(branch_relay_data[i].from_bus,
+              branch_relay_data[i].to_bus));
+      }
+      gridpack::hash_distr::HashDistribution<_network,branch_relay_params,
+        branch_relay_params> distr_branch(p_network);
+      distr_branch.distributeBranchValues(branches,lbranch,branch_relay_data);
+      // Now match data with corresponding data collection objects
+      nsize = lbranch.size();
+      for (i=0; i<nsize; i++) {
+        int l_idx = lbranch[i];
+        data = dynamic_cast<gridpack::component::DataCollection*>
+          (p_network->getBranchData(l_idx).get());
+        // Add relay data to branch
+        if (!strcmp(branch_relay_data[i].model,"DISTR1")) {
+          Distr1Parser<branch_relay_params> parser;
+          parser.extract(branch_relay_data[i], data);
+        }
+      }
     }
 
     struct uc_params{
@@ -547,6 +667,36 @@ class BasePTIParser : public BaseParser<_network>
       }
     }
 
+    // Utility function to check if device is on a generator
+    bool onGenerator(std::string &device) {
+      bool ret = false;
+      if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
+          device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
+          device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
+          device == "WSHYGP") {
+        ret = true;
+      }
+      return ret;
+    }
+
+    // Utility function to check if device is on a bus
+    bool onBus(std::string &device) {
+      bool ret = false;
+      if (device == "LVSHBL" || device == "FRQTPAT") {
+        ret = true;
+      }
+      return ret;
+    }
+
+    // Utility function to check if device is on a branch
+    bool onBranch(std::string &device) {
+      bool ret = false;
+      if (device == "DISTR1") {
+        ret = true;
+      }
+      return ret;
+    }
+
     // Extract extension from file name and convert it to lower case
     std::string getExtension(const std::string file)
     {
@@ -594,87 +744,136 @@ class BasePTIParser : public BaseParser<_network>
         boost::split(split_line, record, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
 
-        // GENERATOR_BUSNUMBER               "I"                   integer
-        int l_idx, o_idx;
-        o_idx = atoi(split_line[0].c_str());
-#ifdef OLD_MAP
-        std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
-        int nstr = split_line.size();
-        it = p_busMap->find(o_idx);
-        if (it != p_busMap->end()) {
-          l_idx = it->second;
-        } else {
-          continue;
-        }
-        data = dynamic_cast<gridpack::component::DataCollection*>
-          (p_network->getBusData(l_idx).get());
-
-        // Find out how many generators are already on bus
-        int ngen;
-        if (!data->getValue(GENERATOR_NUMBER, &ngen)) continue;
-        // Identify index of generator to which this data applies
-        int g_id = -1;
-        // Clean up 2 character tag for generator ID
-        gridpack::utility::StringUtils util;
-        std::string tag = util.clean2Char(split_line[2]);
-        int i;
-        for (i=0; i<ngen; i++) {
-          std::string t_id;
-          data->getValue(GENERATOR_ID,&t_id,i);
-          if (tag == t_id) {
-            g_id = i;
-            break;
-          }
-        }
-        if (g_id == -1) continue;
-
         std::string sval;
-        double rval;
-        int ival;
-        bool bval;
-
-        // GENERATOR_MODEL              "MODEL"                  string
+        // MODEL TYPE              "MODEL"                  string
+        gridpack::utility::StringUtils util;
         sval = util.trimQuotes(split_line[1]);
         util.toUpper(sval);
 
-        if (sval == "GENCLS") {
-          GenclsParser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "GENSAL") {
-          GensalParser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "GENROU") {
-          GenrouParser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "WSIEG1") {
-          Wsieg1Parser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "EXDC1" || sval == "EXDC2") {
-          Exdc1Parser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "ESST1A") {
-          Esst1aParser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "ESST4A") {
-          Esst4bParser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "GGOV1") {
-          Ggov1Parser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
-        } else if (sval == "WSHYGP") {
-          WshygpParser<ds_params> parser;
-          parser.parse(split_line, data, sval, g_id);
+        if (onGenerator(sval)) {
+          // GENERATOR_BUSNUMBER               "I"                   integer
+          int l_idx, o_idx;
+          o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
+          std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
+          it = p_busMap->find(o_idx);
+          if (it != p_busMap->end()) {
+            l_idx = it->second;
+          } else {
+            continue;
+          }
+          data = dynamic_cast<gridpack::component::DataCollection*>
+            (p_network->getBusData(l_idx).get());
+
+          // Find out how many generators are already on bus
+          int ngen = 0;
+          data->getValue(GENERATOR_NUMBER, &ngen);
+          // Identify index of generator to which this data applies
+          int g_id = -1;
+          if (ngen > 0) {
+            // Clean up 2 character tag for generator ID
+            std::string tag = util.clean2Char(split_line[2]);
+            int i;
+            for (i=0; i<ngen; i++) {
+              std::string t_id;
+              data->getValue(GENERATOR_ID,&t_id,i);
+              if (tag == t_id) {
+                g_id = i;
+                break;
+              }
+            }
+          }
+
+          double rval;
+          int ival;
+          bool bval;
+
+          if (g_id > -1) {
+            if (sval == "GENCLS") {
+              GenclsParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "GENSAL") {
+              GensalParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "GENROU") {
+              GenrouParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "WSIEG1") {
+              Wsieg1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "EXDC1" || sval == "EXDC2") {
+              Exdc1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "ESST1A") {
+              Esst1aParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "ESST4A") {
+              Esst4bParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "GGOV1") {
+              Ggov1Parser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "WSHYGP") {
+              WshygpParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            }
+          }
+        } else if (onBus(sval)) {
+          int l_idx, o_idx;
+          if (sval == "LVSHBL") {
+            o_idx = atoi(split_line[0].c_str());
+          } else if (sval == "FRQTPAT") {
+            o_idx = atoi(split_line[3].c_str());
+          }
+#ifdef OLD_MAP
+          std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
+          it = p_busMap->find(o_idx);
+          if (it != p_busMap->end()) {
+            l_idx = it->second;
+          } else {
+            continue;
+          }
+          data = dynamic_cast<gridpack::component::DataCollection*>
+            (p_network->getBusData(l_idx).get());
+          if (sval == "LVSHBL") {
+            LvshblParser<gen_params> parser;
+            parser.parse(split_line, data);
+          } else if (sval == "FRQTPAT") {
+            FrqtpatParser<gen_params> parser;
+            parser.parse(split_line, data);
+          }
+        } else if (onBranch(sval)) {
+          int l_idx, from_idx, to_idx;
+          from_idx = atoi(split_line[0].c_str());
+          to_idx = atoi(split_line[2].c_str());
+          std::map<std::pair<int, int>, int>::iterator it;
+          it = p_branchMap->find(std::pair<int,int>(from_idx,to_idx));
+          if (it != p_branchMap->end()) {
+            l_idx = it->second;
+          } else {
+            continue;
+          }
+          if (sval == "DISTR1") {
+            Distr1Parser<gen_params> parser;
+            parser.parse(split_line, data);
+          }
         }
       }
     }
 
-    void find_ds_vector(std::ifstream & input, std::vector<ds_params> *ds_vector)
+    // Parse file to construct lists of structs representing different devices.
+    void find_ds_vector(std::ifstream & input, std::vector<gen_params> *gen_vector,
+        std::vector<bus_relay_params> *bus_relay_vector,
+        std::vector<branch_relay_params> *branch_relay_vector)
     {
       std::string          line;
-      ds_vector->clear();
+      gen_vector->clear();
       while(std::getline(input,line)) {
         // Check to see if line is blank
         int idx = line.find_first_not_of(' ');
@@ -692,60 +891,86 @@ class BasePTIParser : public BaseParser<_network>
         std::vector<std::string>  split_line;
         boost::split(split_line, record, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
-
-        ds_params data;
-
-        // GENERATOR_BUSNUMBER               "I"                   integer
-        int o_idx;
-        o_idx = atoi(split_line[0].c_str());
-        data.bus_id = o_idx;
-
-        int nstr = split_line.size();
-
-        // Clean up 2 character tag for generator ID
-        gridpack::utility::StringUtils util;
-        std::string tag = util.clean2Char(split_line[2]);
-        strcpy(data.gen_id, tag.c_str());
-
         std::string sval;
-        double rval;
-        int ival;
-
+        gridpack::utility::StringUtils util;
         sval = util.trimQuotes(split_line[1]);
         util.toUpper(sval);
 
-        // GENERATOR_MODEL              "MODEL"                  integer
-        strcpy(data.gen_model, sval.c_str());
+        if (onGenerator(sval)) {
+          gen_params data;
 
-        if (sval == "GENCLS") {
-          GenclsParser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "GENSAL") {
-          GensalParser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "GENROU") {
-          GenrouParser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "WSIEG1") {
-          Wsieg1Parser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "EXDC1" || sval == "EXDC2") {
-          Exdc1Parser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "ESST1A") {
-          Esst1aParser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "ESST4B") {
-          Esst4bParser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "GGOV1") {
-          Ggov1Parser<ds_params> parser;
-          parser.store(split_line,data);
-        } else if (sval == "WSHYGP") {
-          WshygpParser<ds_params> parser;
+          // GENERATOR_BUSNUMBER               "I"                   integer
+          int o_idx;
+          o_idx = atoi(split_line[0].c_str());
+          data.bus_id = o_idx;
+
+          // Clean up 2 character tag for generator ID
+          std::string tag = util.clean2Char(split_line[2]);
+          strcpy(data.gen_id, tag.c_str());
+
+          double rval;
+          int ival;
+
+
+          // GENERATOR_MODEL              "MODEL"                  integer
+          strcpy(data.model, sval.c_str());
+
+          if (sval == "GENCLS") {
+            GenclsParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "GENSAL") {
+            GensalParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "GENROU") {
+            GenrouParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "WSIEG1") {
+            Wsieg1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "EXDC1" || sval == "EXDC2") {
+            Exdc1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "ESST1A") {
+            Esst1aParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "ESST4B") {
+            Esst4bParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "GGOV1") {
+            Ggov1Parser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "WSHYGP") {
+            WshygpParser<gen_params> parser;
+            parser.store(split_line,data);
+          }
+          gen_vector->push_back(data);
+        } else if (onBus(sval)) {
+          bus_relay_params data;
+
+          // RELAY_BUSNUMBER               "I"                   integer
+          int o_idx;
+          if (sval == "LVSHBL") {
+            o_idx = atoi(split_line[0].c_str());
+            data.bus_id = o_idx;
+            LvshblParser<bus_relay_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "FRQTPAT") {
+            o_idx = atoi(split_line[3].c_str());
+            data.bus_id = o_idx;
+            FrqtpatParser<bus_relay_params> parser;
+            parser.store(split_line,data);
+          }
+        } else if (onBranch(sval)) {
+          branch_relay_params data;
+
+          int from_idx, to_idx;
+          from_idx = atoi(split_line[0].c_str());
+          to_idx = atoi(split_line[3].c_str());
+          data.from_bus = from_idx;
+          data.to_bus = to_idx;
+          Distr1Parser<branch_relay_params> parser;
           parser.store(split_line,data);
         }
-        ds_vector->push_back(data);
       }
     }
 

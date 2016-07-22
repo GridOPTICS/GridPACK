@@ -35,19 +35,18 @@ template <class _data_struct> class GensalParser
      * Extract data from _data_struct and store it in data collection object
      * @param data_struct data struct object
      * @param data data collection object
-     * @param model name of generator model
      * @param gen_id index of generator
      */
     void extract(_data_struct &data_struct,
-        gridpack::component::DataCollection *data, std::string &model,
-        int g_id)
+        gridpack::component::DataCollection *data, int g_id)
     {
       double rval;
       // GENERATOR_MODEL              "MODEL"        string
-      if (!data->getValue(GENERATOR_MODEL,&model,g_id)) {
-        data->addValue(GENERATOR_MODEL, data_struct.gen_model, g_id);
+      std::string stmp;
+      if (!data->getValue(GENERATOR_MODEL,&stmp,g_id)) {
+        data->addValue(GENERATOR_MODEL, data_struct.model, g_id);
       } else {
-        data->setValue(GENERATOR_MODEL, data_struct.gen_model, g_id);
+        data->setValue(GENERATOR_MODEL, data_struct.model, g_id);
       }
 
       // GENERATOR_TDOP
@@ -146,17 +145,19 @@ template <class _data_struct> class GensalParser
      * Parser list of strings and store results in data collection object
      * @param split_line list of tokens from .dyr file
      * @param data data collection object
-     * @param model name of generator model
      * @param gen_id index of generator
      */
     void parse(std::vector<std::string> &split_line,
-        gridpack::component::DataCollection *data, std::string &model,
-        int g_id)
+        gridpack::component::DataCollection *data, int g_id)
     {
       double rval;
       int nstr = split_line.size();
       // GENERATOR_MODEL              "MODEL"                  string
-      if (!data->getValue(GENERATOR_MODEL,&model,g_id)) {
+      std::string stmp, model;
+      gridpack::utility::StringUtils util;
+      model = util.trimQuotes(split_line[1]);
+      util.toUpper(model);
+      if (!data->getValue(GENERATOR_MODEL, &stmp, g_id)) {
         data->addValue(GENERATOR_MODEL, model.c_str(), g_id);
       } else {
         data->setValue(GENERATOR_MODEL, model.c_str(), g_id);
@@ -302,6 +303,24 @@ template <class _data_struct> class GensalParser
      */
     void store(std::vector<std::string> &split_line,_data_struct &data)
     {
+      // GENERATOR_BUSNUMBER               "I"                   integer
+      int o_idx;
+      o_idx = atoi(split_line[0].c_str());
+      data.bus_id = o_idx;
+
+      // Clean up 2 character tag for generator ID
+      gridpack::utility::StringUtils util;
+      std::string tag = util.clean2Char(split_line[2]);
+      strcpy(data.gen_id, tag.c_str());
+
+      std::string sval;
+
+      sval = util.trimQuotes(split_line[1]);
+      util.toUpper(sval);
+
+      // GENERATOR_MODEL              "MODEL"                  integer
+      strcpy(data.model, sval.c_str());
+
       int nstr = split_line.size();
       // GENERATOR_TDOP
       if (nstr > 3) {

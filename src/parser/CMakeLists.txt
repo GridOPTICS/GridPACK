@@ -104,5 +104,8 @@ install(FILES
   parser_classes/esst4b.hpp
   parser_classes/ggov1.hpp
   parser_classes/wshygp.hpp
+  parser_classes/lvshbl.hpp
+  parser_classes/frqtpat.hpp
+  parser_classes/distr1.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )
