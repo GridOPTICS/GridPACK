@@ -80,7 +80,7 @@ set_tests_properties(greetings_parallel
 # TEST: task_test
 # A simple program to test the task manager
 # -------------------------------------------------------------
-add_executable(task_test test/task_test.cpp)
+add_executable(task_test test/task_test.cpp ../../timer/local_timer.cpp)
 target_link_libraries(task_test gridpack_parallel 
   ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
