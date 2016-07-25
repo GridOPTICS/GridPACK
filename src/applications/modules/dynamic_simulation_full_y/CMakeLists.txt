@@ -28,7 +28,9 @@ set(target_libraries
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    ${PETSC_LIBRARIES}
+    ${GOSS_LIBRARY}
+    ${APR_LIBRARY})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}
       ${CMAKE_CURRENT_SOURCE_DIR}/base_classes
@@ -48,6 +50,12 @@ add_library(gridpack_dynamic_simulation_full_y_module
    base_classes/base_governor_model.cpp
    model_classes/classical.cpp
 )
+
+# -------------------------------------------------------------
+# component serialization tests
+# -------------------------------------------------------------
+target_link_libraries(gridpack_dynamic_simulation_full_y_module
+                      ${target_libraries})
    
 # -------------------------------------------------------------
 # installation
