@@ -19,6 +19,7 @@
 #include <petscsys.h>
 #if USE_PROGRESS_RANKS
 #include "ga-mpi.h"
+extern "C" int GA_Initialized();
 #endif
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/petsc/petsc_exception.hpp"
@@ -37,7 +38,13 @@ Initialize(void)
   PetscErrorCode ierr(0);
   PetscBool flg;
 #if USE_PROGRESS_RANKS
-  gridpack::parallel::Communicator comm;
+  if (!GA_Initialized()) {
+    char buf[256];
+    sprintf(buf,"GA library using progress ranks not initialized before calling"
+        " gridpack::math::Initialize().");
+    printf("%s\n",buf);
+    throw gridpack::Exception(buf);
+  }
   MPI_Comm world = GA_MPI_Comm();
   PETSC_COMM_WORLD = world;
 #endif
