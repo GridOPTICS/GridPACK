@@ -183,11 +183,9 @@ template <class _data_struct> class LvshblParser
       if (nstr > 2) {
         model = util.clean2Char(split_line[2]);
         if (!data->getValue(RELAY_LID,&stmp,r_id)) {
-          data->addValue(RELAY_LID,
-              atof(model.c_str()), r_id);
+          data->addValue(RELAY_LID, model.c_str(), r_id);
         } else {
-          data->setValue(RELAY_LID,
-              atof(model.c_str()), r_id);
+          data->setValue(RELAY_LID, model.c_str(), r_id);
         }
       } 
 

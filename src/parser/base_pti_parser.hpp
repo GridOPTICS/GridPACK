@@ -960,16 +960,20 @@ class BasePTIParser : public BaseParser<_network>
             FrqtpatParser<bus_relay_params> parser;
             parser.store(split_line,data);
           }
+          bus_relay_vector->push_back(data);
         } else if (onBranch(sval)) {
           branch_relay_params data;
 
           int from_idx, to_idx;
-          from_idx = atoi(split_line[0].c_str());
-          to_idx = atoi(split_line[3].c_str());
-          data.from_bus = from_idx;
-          data.to_bus = to_idx;
-          Distr1Parser<branch_relay_params> parser;
-          parser.store(split_line,data);
+          if (sval == "LVSHBL") {
+            from_idx = atoi(split_line[0].c_str());
+            to_idx = atoi(split_line[3].c_str());
+            data.from_bus = from_idx;
+            data.to_bus = to_idx;
+            Distr1Parser<branch_relay_params> parser;
+            parser.store(split_line,data);
+          }
+          branch_relay_vector->push_back(data);
         }
       }
     }

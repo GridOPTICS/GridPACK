@@ -148,11 +148,9 @@ template <class _data_struct> class FrqtpatParser
       if (nstr > 4) {
         model = util.clean2Char(split_line[4]);
         if (!data->getValue(RELAY_GENID,&stmp,r_id)) {
-          data->addValue(RELAY_GENID,
-              atof(model.c_str()), r_id);
+          data->addValue(RELAY_GENID, model.c_str(), r_id);
         } else {
-          data->setValue(RELAY_GENID,
-              atof(model.c_str()), r_id);
+          data->setValue(RELAY_GENID, model.c_str(), r_id);
         }
       } 
 
