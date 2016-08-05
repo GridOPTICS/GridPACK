@@ -44,11 +44,11 @@ template <class _data_struct> class Distr1Parser
       int ival, r_id;
       std::string stmp;
       // RELAY_NUMBER
-      if (!data->getValue(RELAY_NUMBER,&ival,r_id)) {
+      if (!data->getValue(RELAY_NUMBER,&ival)) {
         ival = 0;
-        data->addValue(RELAY_NUMBER, ival+1, r_id);
+        data->addValue(RELAY_NUMBER, ival+1);
       } else {
-        data->setValue(RELAY_NUMBER, ival+1, r_id);
+        data->setValue(RELAY_NUMBER, ival+1);
       }
       r_id = ival;
 
@@ -320,11 +320,11 @@ template <class _data_struct> class Distr1Parser
       int ival, r_id;
 
       // RELAY_NUMBER
-      if (!data->getValue(RELAY_NUMBER,&ival,r_id)) {
+      if (!data->getValue(RELAY_NUMBER,&ival)) {
         ival = 0;
-        data->addValue(RELAY_NUMBER, ival+1, r_id);
+        data->addValue(RELAY_NUMBER, ival+1);
       } else {
-        data->setValue(RELAY_NUMBER, ival+1, r_id);
+        data->setValue(RELAY_NUMBER, ival+1);
       }
       r_id = ival;
 
