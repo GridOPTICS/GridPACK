@@ -965,7 +965,7 @@ class BasePTIParser : public BaseParser<_network>
           branch_relay_params data;
 
           int from_idx, to_idx;
-          if (sval == "LVSHBL") {
+          if (sval == "DISTR1") {
             from_idx = atoi(split_line[0].c_str());
             to_idx = atoi(split_line[3].c_str());
             data.from_bus = from_idx;
