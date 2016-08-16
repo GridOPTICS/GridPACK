@@ -568,57 +568,111 @@ template <class _data_struct> class Distr1Parser
         }
       } 
 
-      // RELAY_BLTYPE1
+      // RELAY_DIRANG
       if (nstr > 28) {
-        if (!data->getValue(RELAY_BLTYPE1,&ival,r_id)) {
-          data->addValue(RELAY_BLTYPE1, atoi(split_line[28].c_str()), r_id);
+        if (!data->getValue(RELAY_DIRANG,&ival,r_id)) {
+          data->addValue(RELAY_DIRANG, atof(split_line[28].c_str()), r_id);
         } else {
-          data->setValue(RELAY_BLTYPE1, atoi(split_line[28].c_str()), r_id);
+          data->setValue(RELAY_DIRANG, atof(split_line[28].c_str()), r_id);
+        }
+      }
+
+      // RELAY_THCUR
+      if (nstr > 29) {
+        if (!data->getValue(RELAY_THCUR,&ival,r_id)) {
+          data->addValue(RELAY_THCUR, atof(split_line[29].c_str()), r_id);
+        } else {
+          data->setValue(RELAY_THCUR, atof(split_line[29].c_str()), r_id);
+        }
+      }
+
+      // RELAY_SEBTIME
+      if (nstr > 30) {
+        if (!data->getValue(RELAY_SEBTIME,&ival,r_id)) {
+          data->addValue(RELAY_SEBTIME, atof(split_line[30].c_str()), r_id);
+        } else {
+          data->setValue(RELAY_SEBTIME, atof(split_line[30].c_str()), r_id);
+        }
+      }
+
+      // RELAY_SERCTIME
+      if (nstr > 31) {
+        if (!data->getValue(RELAY_SERCTIME,&ival,r_id)) {
+          data->addValue(RELAY_SERCTIME, atof(split_line[31].c_str()), r_id);
+        } else {
+          data->setValue(RELAY_SERCTIME, atof(split_line[31].c_str()), r_id);
+        }
+      }
+
+      // RELAY_TRBTIME
+      if (nstr > 32) {
+        if (!data->getValue(RELAY_TRBTIME,&ival,r_id)) {
+          data->addValue(RELAY_TRBTIME, atof(split_line[32].c_str()), r_id);
+        } else {
+          data->setValue(RELAY_TRBTIME, atof(split_line[32].c_str()), r_id);
+        }
+      }
+
+      // RELAY_TRRCTIME
+      if (nstr > 33) {
+        if (!data->getValue(RELAY_TRRCTIME,&ival,r_id)) {
+          data->addValue(RELAY_TRRCTIME, atof(split_line[33].c_str()), r_id);
+        } else {
+          data->setValue(RELAY_TRRCTIME, atof(split_line[33].c_str()), r_id);
+        }
+      }
+
+      // RELAY_BLTYPE1
+      if (nstr > 34) {
+        if (!data->getValue(RELAY_BLTYPE1,&ival,r_id)) {
+          data->addValue(RELAY_BLTYPE1, atoi(split_line[34].c_str()), r_id);
+        } else {
+          data->setValue(RELAY_BLTYPE1, atoi(split_line[34].c_str()), r_id);
         }
       }
 
       // RELAY_BLINT1
-      if (nstr > 29) {
+      if (nstr > 35) {
         if (!data->getValue(RELAY_BLINT1,&rval,r_id)) {
-          data->addValue(RELAY_BLINT1, atof(split_line[29].c_str()), r_id);
+          data->addValue(RELAY_BLINT1, atof(split_line[35].c_str()), r_id);
         } else {
-          data->setValue(RELAY_BLINT1, atof(split_line[29].c_str()), r_id);
+          data->setValue(RELAY_BLINT1, atof(split_line[35].c_str()), r_id);
         }
       } 
 
       // RELAY_BLRO1
-      if (nstr > 30) {
+      if (nstr > 36) {
         if (!data->getValue(RELAY_BLRO1,&rval,r_id)) {
-          data->addValue(RELAY_BLRO1, atof(split_line[30].c_str()), r_id);
+          data->addValue(RELAY_BLRO1, atof(split_line[36].c_str()), r_id);
         } else {
-          data->setValue(RELAY_BLRO1, atof(split_line[30].c_str()), r_id);
+          data->setValue(RELAY_BLRO1, atof(split_line[36].c_str()), r_id);
         }
       } 
 
       // RELAY_BLTYPE2
-      if (nstr > 31) {
+      if (nstr > 37) {
         if (!data->getValue(RELAY_BLTYPE2,&ival,r_id)) {
-          data->addValue(RELAY_BLTYPE2, atoi(split_line[31].c_str()), r_id);
+          data->addValue(RELAY_BLTYPE2, atoi(split_line[37].c_str()), r_id);
         } else {
-          data->setValue(RELAY_BLTYPE2, atoi(split_line[31].c_str()), r_id);
+          data->setValue(RELAY_BLTYPE2, atoi(split_line[37].c_str()), r_id);
         }
       }
 
       // RELAY_BLINT2
-      if (nstr > 32) {
+      if (nstr > 38) {
         if (!data->getValue(RELAY_BLINT2,&rval,r_id)) {
-          data->addValue(RELAY_BLINT2, atof(split_line[32].c_str()), r_id);
+          data->addValue(RELAY_BLINT2, atof(split_line[38].c_str()), r_id);
         } else {
-          data->setValue(RELAY_BLINT2, atof(split_line[32].c_str()), r_id);
+          data->setValue(RELAY_BLINT2, atof(split_line[38].c_str()), r_id);
         }
       } 
 
       // RELAY_BLRO2
-      if (nstr > 33) {
+      if (nstr > 39) {
         if (!data->getValue(RELAY_BLRO2,&rval,r_id)) {
-          data->addValue(RELAY_BLRO2, atof(split_line[33].c_str()), r_id);
+          data->addValue(RELAY_BLRO2, atof(split_line[39].c_str()), r_id);
         } else {
-          data->setValue(RELAY_BLRO2, atof(split_line[33].c_str()), r_id);
+          data->setValue(RELAY_BLRO2, atof(split_line[39].c_str()), r_id);
         }
       } 
     }
@@ -775,34 +829,64 @@ template <class _data_struct> class Distr1Parser
         data.zone3_cendis = atof(split_line[27].c_str());
       }
 
-      // RELAY_BLTYPE1
+      // RELAY_DIRANG
       if (nstr > 28) {
-        data.bltype1 = atoi(split_line[28].c_str());
+        data.dirang = atof(split_line[28].c_str());
+      }
+
+      // RELAY_THCUR
+      if (nstr > 29) {
+        data.thcur = atof(split_line[29].c_str());
+      }
+
+      // RELAY_SEBTIME
+      if (nstr > 30) {
+        data.sebtime = atof(split_line[30].c_str());
+      }
+
+      // RELAY_SERCTIME
+      if (nstr > 31) {
+        data.serctime = atof(split_line[31].c_str());
+      }
+
+      // RELAY_TRBTIME
+      if (nstr > 32) {
+        data.trbtime = atof(split_line[32].c_str());
+      }
+
+      // RELAY_TRRCTIME
+      if (nstr > 33) {
+        data.trrctime = atof(split_line[33].c_str());
+      }
+
+      // RELAY_BLTYPE1
+      if (nstr > 34) {
+        data.bltype1 = atoi(split_line[34].c_str());
       }
 
       // RELAY_BLINT1
-      if (nstr > 29) {
-        data.blint1 = atof(split_line[29].c_str());
+      if (nstr > 35) {
+        data.blint1 = atof(split_line[35].c_str());
       }
 
       // RELAY_BLRO1
-      if (nstr > 30) {
-        data.blro1 = atof(split_line[30].c_str());
+      if (nstr > 36) {
+        data.blro1 = atof(split_line[36].c_str());
       }
 
       // RELAY_BLTYPE2
-      if (nstr > 31) {
-        data.bltype2 = atoi(split_line[31].c_str());
+      if (nstr > 37) {
+        data.bltype2 = atoi(split_line[37].c_str());
       }
 
       // RELAY_BLINT2
-      if (nstr > 32) {
-        data.blint2 = atof(split_line[32].c_str());
+      if (nstr > 38) {
+        data.blint2 = atof(split_line[38].c_str());
       }
 
       // RELAY_BLRO2
-      if (nstr > 33) {
-        data.blro2 = atof(split_line[33].c_str());
+      if (nstr > 39) {
+        data.blro2 = atof(split_line[39].c_str());
       }
     }
 };
