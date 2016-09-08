@@ -232,12 +232,522 @@
 #define LOAD_YQ "LOAD_YQ"
 
 /**
- * Owner to which the load is assigned
+ * Alphanumeric string describing load model
+ * type: string
+ * indexed
+ */
+#define LOAD_MODEL "LOAD_MODEL"
+
+/**
+ * Load IT
  * type: integer
  * indexed
  */
-#define LOAD_OWNER "LOAD_OWNER"
+#define LOAD_IT "LOAD_IT"
 
+/**
+ * Load RA
+ * type: float
+ * indexed
+ */
+#define LOAD_RA "LOAD_RA"
+
+/**
+ * Load XA
+ * type: float
+ * indexed
+ */
+#define LOAD_XA "LOAD_XA"
+
+/**
+ * Load XM
+ * type: float
+ * indexed
+ */
+#define LOAD_XM "LOAD_XM"
+
+/**
+ * Load R1
+ * type: float
+ * indexed
+ */
+#define LOAD_R1 "LOAD_R1"
+
+/**
+ * Load X1
+ * type: float
+ * indexed
+ */
+#define LOAD_X1 "LOAD_X1"
+
+/**
+ * Load R2
+ * type: float
+ * indexed
+ */
+#define LOAD_R2 "LOAD_R2"
+
+/**
+ * Load X1
+ * type: float
+ * indexed
+ */
+#define LOAD_X2 "LOAD_X2"
+
+/**
+ * Load E1
+ * type: float
+ * indexed
+ */
+#define LOAD_E1 "LOAD_E1"
+
+/**
+ * Load SE1
+ * type: float
+ * indexed
+ */
+#define LOAD_SE1 "LOAD_SE1"
+
+/**
+ * Load E2
+ * type: float
+ * indexed
+ */
+#define LOAD_E2 "LOAD_E2"
+
+/**
+ * Load SE2
+ * type: float
+ * indexed
+ */
+#define LOAD_SE2 "LOAD_SE2"
+
+/**
+ * Load MBASE
+ * type: float
+ * indexed
+ */
+#define LOAD_MBASE "LOAD_MBASE"
+
+/**
+ * Load PMULT
+ * type: float
+ * indexed
+ */
+#define LOAD_PMULT "LOAD_PMULT"
+
+/**
+ * Load H
+ * type: float
+ * indexed
+ */
+#define LOAD_H "LOAD_H"
+
+/**
+ * Load VI
+ * type: float
+ * indexed
+ */
+#define LOAD_VI "LOAD_VI"
+
+/**
+ * Load TI
+ * type: float
+ * indexed
+ */
+#define LOAD_TI "LOAD_TI"
+
+/**
+ * Load TB
+ * type: float
+ * indexed
+ */
+#define LOAD_TB "LOAD_TB"
+
+/**
+ * Load A
+ * type: float
+ * indexed
+ */
+#define LOAD_A "LOAD_A"
+
+/**
+ * Load B
+ * type: float
+ * indexed
+ */
+#define LOAD_B "LOAD_B"
+
+/**
+ * Load D
+ * type: float
+ * indexed
+ */
+#define LOAD_D "LOAD_D"
+
+/**
+ * Load E
+ * type: float
+ * indexed
+ */
+#define LOAD_E "LOAD_E"
+
+/**
+ * Load C0
+ * type: float
+ * indexed
+ */
+#define LOAD_C0 "LOAD_C0"
+
+/**
+ * Load TNOM
+ * type: float
+ * indexed
+ */
+#define LOAD_TNOM "LOAD_TNOM"
+
+/**
+ * Load TSTALL
+ * type: float
+ * indexed
+ */
+#define LOAD_TSTALL "LOAD_TSTALL"
+
+/**
+ * Load TRESTART
+ * type: float
+ * indexed
+ */
+#define LOAD_TRESTART "LOAD_TRESTART"
+
+/**
+ * Load TV
+ * type: float
+ * indexed
+ */
+#define LOAD_TV "LOAD_TV"
+
+/**
+ * Load TF
+ * type: float
+ * indexed
+ */
+#define LOAD_TF "LOAD_TF"
+
+/**
+ * Load COMPLF
+ * type: float
+ * indexed
+ */
+#define LOAD_COMPLF "LOAD_COMPLF"
+
+/**
+ * Load COMPPF
+ * type: float
+ * indexed
+ */
+#define LOAD_COMPPF "LOAD_COMPPF"
+
+/**
+ * Load VSTALL
+ * type: float
+ * indexed
+ */
+#define LOAD_VSTALL "LOAD_VSTALL"
+
+/**
+ * Load RSTALL
+ * type: float
+ * indexed
+ */
+#define LOAD_RSTALL "LOAD_RSTALL"
+
+/**
+ * Load XSTALL
+ * type: float
+ * indexed
+ */
+#define LOAD_XSTALL "LOAD_XSTALL"
+
+/**
+ * Load LFADJ
+ * type: float
+ * indexed
+ */
+#define LOAD_LFADJ "LOAD_LFADJ"
+
+/**
+ * Load KP1
+ * type: float
+ * indexed
+ */
+#define LOAD_KP1 "LOAD_KP1"
+
+/**
+ * Load NP1
+ * type: float
+ * indexed
+ */
+#define LOAD_NP1 "LOAD_NP1"
+
+/**
+ * Load KQ1
+ * type: float
+ * indexed
+ */
+#define LOAD_KQ1 "LOAD_KQ1"
+
+/**
+ * Load NQ1
+ * type: float
+ * indexed
+ */
+#define LOAD_NQ1 "LOAD_NQ1"
+
+/**
+ * Load KP2
+ * type: float
+ * indexed
+ */
+#define LOAD_KP2 "LOAD_KP2"
+
+/**
+ * Load NP2
+ * type: float
+ * indexed
+ */
+#define LOAD_NP2 "LOAD_NP2"
+
+/**
+ * Load KQ2
+ * type: float
+ * indexed
+ */
+#define LOAD_KQ2 "LOAD_KQ2"
+
+/**
+ * Load NQ2
+ * type: float
+ * indexed
+ */
+#define LOAD_NQ2 "LOAD_NQ2"
+
+/**
+ * Load VBRK
+ * type: float
+ * indexed
+ */
+#define LOAD_VBRK "LOAD_VBRK"
+
+/**
+ * Load FRST
+ * type: float
+ * indexed
+ */
+#define LOAD_FRST "LOAD_FRST"
+
+/**
+ * Load VRST
+ * type: float
+ * indexed
+ */
+#define LOAD_VRST "LOAD_VRST"
+
+/**
+ * Load CMPKPF
+ * type: float
+ * indexed
+ */
+#define LOAD_CMPKPF "LOAD_CMPKPF"
+
+/**
+ * Load CMPKQF
+ * type: float
+ * indexed
+ */
+#define LOAD_CMPKQF "LOAD_CMPKQF"
+
+/**
+ * Load VC1OFF
+ * type: float
+ * indexed
+ */
+#define LOAD_VC1OFF "LOAD_VC1OFF"
+
+/**
+ * Load VC2OFF
+ * type: float
+ * indexed
+ */
+#define LOAD_VC2OFF "LOAD_VC2OFF"
+
+/**
+ * Load VC1ON
+ * type: float
+ * indexed
+ */
+#define LOAD_VC1ON "LOAD_VC1ON"
+
+/**
+ * Load VC2ON
+ * type: float
+ * indexed
+ */
+#define LOAD_VC2ON "LOAD_VC2ON"
+
+/**
+ * Load TTH
+ * type: float
+ * indexed
+ */
+#define LOAD_TTH "LOAD_TTH"
+
+/**
+ * Load TH1T
+ * type: float
+ * indexed
+ */
+#define LOAD_TH1T "LOAD_TH1T"
+
+/**
+ * Load TH2T
+ * type: float
+ * indexed
+ */
+#define LOAD_TH2T "LOAD_TH2T"
+
+/**
+ * Load FUVR
+ * type: float
+ * indexed
+ */
+#define LOAD_FUVR "LOAD_FUVR"
+
+/**
+ * Load UVTR1
+ * type: float
+ * indexed
+ */
+#define LOAD_UVTR1 "LOAD_UVTR1"
+
+/**
+ * Load TTR1
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR1 "LOAD_TTR1"
+
+/**
+ * Load UVTR2
+ * type: float
+ * indexed
+ */
+#define LOAD_UVTR2 "LOAD_UVTR2"
+
+/**
+ * Load TTR2
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR2 "LOAD_TTR2"
+
+/**
+ * Load A1
+ * type: float
+ * indexed
+ */
+#define LOAD_A1 "LOAD_A1"
+
+/**
+ * Load A2
+ * type: float
+ * indexed
+ */
+#define LOAD_A2 "LOAD_A2"
+
+/**
+ * Load A3
+ * type: float
+ * indexed
+ */
+#define LOAD_A3 "LOAD_A3"
+
+/**
+ * Load A4
+ * type: float
+ * indexed
+ */
+#define LOAD_A4 "LOAD_A4"
+
+/**
+ * Load A5
+ * type: float
+ * indexed
+ */
+#define LOAD_A5 "LOAD_A5"
+
+/**
+ * Load A6
+ * type: float
+ * indexed
+ */
+#define LOAD_A6 "LOAD_A6"
+
+/**
+ * Load A7
+ * type: float
+ * indexed
+ */
+#define LOAD_A7 "LOAD_A7"
+
+/**
+ * Load A8
+ * type: float
+ * indexed
+ */
+#define LOAD_A8 "LOAD_A8"
+
+/**
+ * Load N1
+ * type: float
+ * indexed
+ */
+#define LOAD_N1 "LOAD_N1"
+
+/**
+ * Load N2
+ * type: float
+ * indexed
+ */
+#define LOAD_N2 "LOAD_N2"
+
+/**
+ * Load N3
+ * type: float
+ * indexed
+ */
+#define LOAD_N3 "LOAD_N3"
+
+/**
+ * Load N4
+ * type: float
+ * indexed
+ */
+#define LOAD_N4 "LOAD_N4"
+
+/**
+ * Load N5
+ * type: float
+ * indexed
+ */
+#define LOAD_N5 "LOAD_N5"
+
+/**
+ * Load N6
+ * type: float
+ * indexed
+ */
+#define LOAD_N6 "LOAD_N6"
 
 // GENERATOR DATA
 /**

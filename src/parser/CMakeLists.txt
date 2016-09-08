@@ -107,5 +107,8 @@ install(FILES
   parser_classes/lvshbl.hpp
   parser_classes/frqtpat.hpp
   parser_classes/distr1.hpp
+  parser_classes/cim6bl.hpp
+  parser_classes/acmtblu1.hpp
+  parser_classes/ieelbl.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )

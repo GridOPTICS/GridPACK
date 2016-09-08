@@ -43,6 +43,9 @@
 #include "parser_classes/lvshbl.hpp"
 #include "parser_classes/frqtpat.hpp"
 #include "parser_classes/distr1.hpp"
+#include "parser_classes/cim6bl.hpp"
+#include "parser_classes/acmtblu1.hpp"
+#include "parser_classes/ieelbl.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -350,6 +353,92 @@ class BasePTIParser : public BaseParser<_network>
       double blro2;
     };
 
+    // Data structure to hold parameters for conventional loads
+    struct load_params{
+      int bus_id; // ID of bus that owns load
+      char model[9];  // Model represented by data
+      char id[3]; // Load ID
+      int it;
+      double ra;
+      double xa;
+      double xm;
+      double r1;
+      double x1;
+      double r2;
+      double x2;
+      double e1;
+      double se1;
+      double e2;
+      double se2;
+      double mbase;
+      double pmult;
+      double h;
+      double vi;
+      double ti;
+      double tb;
+      double a;
+      double b;
+      double d;
+      double e;
+      double c0;
+      double tnom;
+
+      double tstall;
+      double trestart;
+      double tv;
+      double tf;
+      double complf;
+      double comppf;
+      double vstall;
+      double rstall;
+      double xstall;
+      double lfadj;
+      double kp1;
+      double np1;
+      double kq1;
+      double nq1;
+      double kp2;
+      double np2;
+      double kq2;
+      double nq2;
+      double vbrk;
+      double frst;
+      double vrst;
+      double cmpkpf;
+      double cmpkqf;
+      double vc1off;
+      double vc2off;
+      double vc1on;
+      double vc2on;
+      double tth;
+      double th1t;
+      double th2t;
+      double fuvr;
+      double uvtr1;
+      double ttr1;
+      double uvtr2;
+      double ttr2;
+
+      double a1;
+      double a2;
+      double a3;
+      double a4;
+      double a5;
+      double a6;
+      double a7;
+      double a8;
+      double n1;
+      double n2;
+      double n3;
+      double n4;
+      double n5;
+      double n6;
+    };
+
+    // Data structure to hold parameters for composite loads
+    struct cmpst_load_params{
+    };
+
     /**
      * This routine opens up a .dyr file with parameters for dynamic
      * simulation and distributes the parameters to whatever processor holds the
@@ -365,6 +454,7 @@ class BasePTIParser : public BaseParser<_network>
       std::vector<gen_params> gen_data;
       std::vector<bus_relay_params> bus_relay_data;
       std::vector<branch_relay_params> branch_relay_data;
+      std::vector<load_params> load_data;
       if (me == 0) {
         std::ifstream            input;
         input.open(fileName.c_str());
@@ -372,7 +462,8 @@ class BasePTIParser : public BaseParser<_network>
           // p_timer->stop(t_ds);
           return;
         }
-        find_ds_vector(input, &gen_data, &bus_relay_data, &branch_relay_data);
+        find_ds_vector(input, &gen_data, &bus_relay_data,
+            &branch_relay_data, &load_data);
         input.close();
       }
       int nsize = gen_data.size();
@@ -490,6 +581,56 @@ class BasePTIParser : public BaseParser<_network>
         if (!strcmp(branch_relay_data[i].model,"DISTR1")) {
           Distr1Parser<branch_relay_params> parser;
           parser.extract(branch_relay_data[i], data);
+        }
+      }
+
+      // Add parameters for a load
+      nsize = load_data.size();
+      buses.clear();
+      for (i=0; i<nsize; i++) {
+        buses.push_back(load_data[i].bus_id);
+      }
+      gridpack::hash_distr::HashDistribution<_network,load_params,
+        load_params> distr_load(p_network);
+      distr_load.distributeBusValues(buses,load_data);
+      // Now match data with corresponding data collection objects
+      nsize = buses.size();
+      for (i=0; i<nsize; i++) {
+        int l_idx = buses[i];
+        data = dynamic_cast<gridpack::component::DataCollection*>
+          (p_network->getBusData(l_idx).get());
+
+        // Find out how many generators are already on bus
+        int nload = 0;
+        data->getValue(LOAD_NUMBER, &nload);
+        // Identify index of generator to which this data applies
+        int l_id = -1;
+        if (nload > 0) {
+          // Clean up 2 character tag for generator ID
+          std::string tag = load_data[i].id;
+          int j;
+          for (j=0; j<nload; j++) {
+            std::string t_id;
+            data->getValue(LOAD_ID,&t_id,j);
+            if (tag == t_id) {
+              l_id = j;
+              break;
+            }
+          }
+        }
+
+        // Assign parameters to a load
+        if (l_id > -1) {
+          if (!strcmp(bus_relay_data[i].model,"CIM6BL")) {
+            Cim6blParser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          } else if (!strcmp(bus_relay_data[i].model,"IEELBL")) {
+            IeelblParser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          } else if (!strcmp(bus_relay_data[i].model,"ACMTBLU1")) {
+            Acmtblu1Parser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          }
         }
       }
     }
@@ -697,6 +838,17 @@ class BasePTIParser : public BaseParser<_network>
       return ret;
     }
 
+    // Utility function to check if parameters describe a load
+    bool onLoad(std::string &device) {
+      bool ret = false;
+      if (device == "CIM6BL" || device == "USRLOD" ||
+          device == "IEELBL") {
+        ret = true;
+      }
+      return ret;
+    }
+
+
     // Extract extension from file name and convert it to lower case
     std::string getExtension(const std::string file)
     {
@@ -848,6 +1000,56 @@ class BasePTIParser : public BaseParser<_network>
             FrqtpatParser<gen_params> parser;
             parser.parse(split_line, data);
           }
+        } else if (onLoad(sval)) {
+          // Load bus number
+          int l_idx, o_idx;
+          o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
+          std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
+          it = p_busMap->find(o_idx);
+          if (it != p_busMap->end()) {
+            l_idx = it->second;
+          } else {
+            continue;
+          }
+          data = dynamic_cast<gridpack::component::DataCollection*>
+            (p_network->getBusData(l_idx).get());
+
+          // Find out how many generators are already on bus
+          int nload = 0;
+          data->getValue(LOAD_NUMBER, &nload);
+          // Identify index of generator to which this data applies
+          int l_id = -1;
+          if (nload > 0) {
+            // Clean up 2 character tag for generator ID
+            std::string tag = util.clean2Char(split_line[2]);
+            int i;
+            for (i=0; i<nload; i++) {
+              std::string t_id;
+              data->getValue(LOAD_ID,&t_id,i);
+              if (tag == t_id) {
+                l_id = i;
+                break;
+              }
+            }
+          }
+          if (sval == "CIM6BL") {
+            Cim6blParser<gen_params> parser;
+            parser.parse(split_line, data, l_id);
+          } else if (sval == "IEELBL") {
+            IeelblParser<gen_params> parser;
+            parser.parse(split_line, data, l_id);
+          } else if (sval == "USRLOD") {
+            std::string sdev;
+            sdev = util.trimQuotes(split_line[3]);
+            if (sdev == "ACMTBLU1") {
+              Acmtblu1Parser<gen_params> parser;
+              parser.parse(split_line, data, l_id);
+            }
+          }
         } else if (onBranch(sval)) {
           int l_idx, from_idx, to_idx;
           from_idx = atoi(split_line[0].c_str());
@@ -870,7 +1072,8 @@ class BasePTIParser : public BaseParser<_network>
     // Parse file to construct lists of structs representing different devices.
     void find_ds_vector(std::ifstream & input, std::vector<gen_params> *gen_vector,
         std::vector<bus_relay_params> *bus_relay_vector,
-        std::vector<branch_relay_params> *branch_relay_vector)
+        std::vector<branch_relay_params> *branch_relay_vector,
+        std::vector<load_params> *load_vector)
     {
       std::string          line;
       gen_vector->clear();
@@ -945,22 +1148,48 @@ class BasePTIParser : public BaseParser<_network>
           }
           gen_vector->push_back(data);
         } else if (onBus(sval)) {
-          bus_relay_params data;
 
           // RELAY_BUSNUMBER               "I"                   integer
           int o_idx;
           if (sval == "LVSHBL") {
+            bus_relay_params data;
             o_idx = atoi(split_line[0].c_str());
             data.bus_id = o_idx;
             LvshblParser<bus_relay_params> parser;
             parser.store(split_line,data);
+            bus_relay_vector->push_back(data);
           } else if (sval == "FRQTPAT") {
+            bus_relay_params data;
             o_idx = atoi(split_line[3].c_str());
             data.bus_id = o_idx;
             FrqtpatParser<bus_relay_params> parser;
             parser.store(split_line,data);
+            bus_relay_vector->push_back(data);
           }
-          bus_relay_vector->push_back(data);
+        } else if (onLoad(sval)) {
+          // ID of bus that owns load
+          load_params data;
+          int o_idx = atoi(split_line[0].c_str());
+          data.bus_id = o_idx;
+
+          // Clean up 2 character tag for generator ID
+          std::string tag = util.clean2Char(split_line[2]);
+          strcpy(data.id, tag.c_str());
+          if (sval == "CIM6BL") {
+            Cim6blParser<load_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "IEELBL") {
+            IeelblParser<load_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "USRLOD") {
+            std::string sdev;
+            sdev = util.trimQuotes(split_line[3]);
+            if (sdev == "ACMTBLU1") {
+              Acmtblu1Parser<load_params> parser;
+              parser.store(split_line,data);
+            }
+          }
+          load_vector->push_back(data);
         } else if (onBranch(sval)) {
           branch_relay_params data;
 
