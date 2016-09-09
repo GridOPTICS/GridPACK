@@ -46,6 +46,7 @@
 #include "parser_classes/cim6bl.hpp"
 #include "parser_classes/acmtblu1.hpp"
 #include "parser_classes/ieelbl.hpp"
+#include "parser_classes/cmldblu1.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -433,10 +434,114 @@ class BasePTIParser : public BaseParser<_network>
       double n4;
       double n5;
       double n6;
-    };
 
-    // Data structure to hold parameters for composite loads
-    struct cmpst_load_params{
+      double mva;
+      double bss;
+      double rfdr;
+      double xfdr;
+      double fb;
+      double xxf;
+      double tfixhs;
+      double tfixls;
+      double ltc;
+      double tmin;
+      double tmax;
+      double step;
+      double vmin;
+      double vmax;
+      double tdel;
+      double ttap;
+      double rcomp;
+      double xcomp;
+      double fma;
+      double fmb;
+      double fmc;
+      double fmd;
+      double fel;
+      double pfel;
+      double vd1;
+      double vd2;
+      double frcel;
+      double pfs;
+      double p1e;
+      double p1c;
+      double p2e;
+      double p2c;
+      double pfreq;
+      double q1e;
+      double q1c;
+      double q2e;
+      double q2c;
+      double qfreq;
+
+      int mtpa;
+      double lfma;
+      double rsa;
+      double lsa;
+      double lpa;
+      double lppa;
+      double tpoa;
+      double tppoa;
+      double ha;
+      double etrqa;
+      double vtr1a;
+      double ttr1a;
+      double ftr1a;
+      double vrc1a;
+      double trc1a;
+      double vtr2a;
+      double ttr2a;
+      double ftr2a;
+      double vrc2a;
+      double trc2a;
+
+      int mtpb;
+      double lfmb;
+      double rsb;
+      double lsb;
+      double lpb;
+      double lppb;
+      double tpob;
+      double tppob;
+      double hb;
+      double etrqb;
+      double vtr1b;
+      double ttr1b;
+      double ftr1b;
+      double vrc1b;
+      double trc1b;
+      double vtr2b;
+      double ttr2b;
+      double ftr2b;
+      double vrc2b;
+      double trc2b;
+
+      int mtpc;
+      double lfmc;
+      double rsc;
+      double lsc;
+      double lpc;
+      double lppc;
+      double tpoc;
+      double tppoc;
+      double hc;
+      double etrqc;
+      double vtr1c;
+      double ttr1c;
+      double ftr1c;
+      double vrc1c;
+      double trc1c;
+      double vtr2c;
+      double ttr2c;
+      double ftr2c;
+      double vrc2c;
+      double trc2c;
+
+      int mtpd;
+      double lfmd;
+      double trst;
+      double vtr1;
+      double vtr2;
     };
 
     /**
@@ -629,6 +734,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.extract(load_data[i], data, l_id);
           } else if (!strcmp(bus_relay_data[i].model,"ACMTBLU1")) {
             Acmtblu1Parser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          } else if (!strcmp(bus_relay_data[i].model,"CMLDBLU1")) {
+            Cmldblu1Parser<load_params> parser;
             parser.extract(load_data[i], data, l_id);
           }
         }
@@ -1048,6 +1156,9 @@ class BasePTIParser : public BaseParser<_network>
             if (sdev == "ACMTBLU1") {
               Acmtblu1Parser<gen_params> parser;
               parser.parse(split_line, data, l_id);
+            } else if (sdev == "CMLDBLU1") {
+              Cmldblu1Parser<gen_params> parser;
+              parser.parse(split_line, data, l_id);
             }
           }
         } else if (onBranch(sval)) {
@@ -1186,6 +1297,9 @@ class BasePTIParser : public BaseParser<_network>
             sdev = util.trimQuotes(split_line[3]);
             if (sdev == "ACMTBLU1") {
               Acmtblu1Parser<load_params> parser;
+              parser.store(split_line,data);
+            } else if (sdev == "CMLDBLU1") {
+              Cmldblu1Parser<load_params> parser;
               parser.store(split_line,data);
             }
           }

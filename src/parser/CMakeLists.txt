@@ -110,5 +110,6 @@ install(FILES
   parser_classes/cim6bl.hpp
   parser_classes/acmtblu1.hpp
   parser_classes/ieelbl.hpp
+  parser_classes/cmldblu1.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )

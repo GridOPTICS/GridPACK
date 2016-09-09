@@ -200,9 +200,9 @@ template <class _data_struct> class Acmtblu1Parser
 
       // LOAD_CMPKPF
       if (!data->getValue(LOAD_CMPKPF,&rval,l_id)) {
-        data->addValue(LOAD_CMPKPF, data_struct.tb, l_id);
+        data->addValue(LOAD_CMPKPF, data_struct.cmpkpf, l_id);
       } else {
-        data->setValue(LOAD_CMPKPF, data_struct.tb, l_id);
+        data->setValue(LOAD_CMPKPF, data_struct.cmpkpf, l_id);
       }
 
       // LOAD_CMPKQF
@@ -502,7 +502,7 @@ template <class _data_struct> class Acmtblu1Parser
         }
       }
 
-      // LOAD_NP2
+      // LOAD_VRST
       if (nstr > 31) {
         if (!data->getValue(LOAD_VRST,&rval,l_id)) {
           data->addValue(LOAD_VRST, atof(split_line[31].c_str()), l_id);
@@ -511,7 +511,7 @@ template <class _data_struct> class Acmtblu1Parser
         }
       }
 
-      // LOAD_NP2
+      // LOAD_CMPKPF
       if (nstr > 32) {
         if (!data->getValue(LOAD_CMPKPF,&rval,l_id)) {
           data->addValue(LOAD_CMPKPF, atof(split_line[32].c_str()), l_id);

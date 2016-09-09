@@ -749,6 +749,727 @@
  */
 #define LOAD_N6 "LOAD_N6"
 
+/**
+ * Load MVA
+ * type: float
+ * indexed
+ */
+#define LOAD_MVA "LOAD_MVA"
+
+/**
+ * Load BSS
+ * type: float
+ * indexed
+ */
+#define LOAD_BSS "LOAD_BSS"
+
+/**
+ * Load RFDR
+ * type: float
+ * indexed
+ */
+#define LOAD_RFDR "LOAD_RFDR"
+
+/**
+ * Load XFDR
+ * type: float
+ * indexed
+ */
+#define LOAD_XFDR "LOAD_XFDR"
+
+/**
+ * Load FB
+ * type: float
+ * indexed
+ */
+#define LOAD_FB "LOAD_FB"
+
+/**
+ * Load XXF
+ * type: float
+ * indexed
+ */
+#define LOAD_XXF "LOAD_XXF"
+
+/**
+ * Load TFIXHS
+ * type: float
+ * indexed
+ */
+#define LOAD_TFIXHS "LOAD_TFIXHS"
+
+/**
+ * Load TFIXLS
+ * type: float
+ * indexed
+ */
+#define LOAD_TFIXLS "LOAD_TFIXLS"
+
+/**
+ * Load LTC
+ * type: float
+ * indexed
+ */
+#define LOAD_LTC "LOAD_LTC"
+
+/**
+ * Load TMIN
+ * type: float
+ * indexed
+ */
+#define LOAD_TMIN "LOAD_TMIN"
+
+/**
+ * Load TMAX
+ * type: float
+ * indexed
+ */
+#define LOAD_TMAX "LOAD_TMAX"
+
+/**
+ * Load STEP
+ * type: float
+ * indexed
+ */
+#define LOAD_STEP "LOAD_STEP"
+
+/**
+ * Load VMIN
+ * type: float
+ * indexed
+ */
+#define LOAD_VMIN "LOAD_VMIN"
+
+/**
+ * Load VMAX
+ * type: float
+ * indexed
+ */
+#define LOAD_VMAX "LOAD_VMAX"
+
+/**
+ * Load TDEL
+ * type: float
+ * indexed
+ */
+#define LOAD_TDEL "LOAD_TDEL"
+
+/**
+ * Load TTAP
+ * type: float
+ * indexed
+ */
+#define LOAD_TTAP "LOAD_TTAP"
+
+/**
+ * Load RCOMP
+ * type: float
+ * indexed
+ */
+#define LOAD_RCOMP "LOAD_RCOMP"
+
+/**
+ * Load XCOMP
+ * type: float
+ * indexed
+ */
+#define LOAD_XCOMP "LOAD_XCOMP"
+
+/**
+ * Load FMA
+ * type: float
+ * indexed
+ */
+#define LOAD_FMA "LOAD_FMA"
+
+/**
+ * Load FMB
+ * type: float
+ * indexed
+ */
+#define LOAD_FMB "LOAD_FMB"
+
+/**
+ * Load FMC
+ * type: float
+ * indexed
+ */
+#define LOAD_FMC "LOAD_FMC"
+
+/**
+ * Load FMD
+ * type: float
+ * indexed
+ */
+#define LOAD_FMD "LOAD_FMD"
+
+/**
+ * Load FEL
+ * type: float
+ * indexed
+ */
+#define LOAD_FEL "LOAD_FEL"
+
+/**
+ * Load PFEL
+ * type: float
+ * indexed
+ */
+#define LOAD_PFEL "LOAD_PFEL"
+
+/**
+ * Load VD1
+ * type: float
+ * indexed
+ */
+#define LOAD_VD1 "LOAD_VD1"
+
+/**
+ * Load VD2
+ * type: float
+ * indexed
+ */
+#define LOAD_VD2 "LOAD_VD2"
+
+/**
+ * Load FRCEL
+ * type: float
+ * indexed
+ */
+#define LOAD_FRCEL "LOAD_FRCEL"
+
+/**
+ * Load PFS
+ * type: float
+ * indexed
+ */
+#define LOAD_PFS "LOAD_PFS"
+
+/**
+ * Load P1E
+ * type: float
+ * indexed
+ */
+#define LOAD_P1E "LOAD_P1E"
+
+/**
+ * Load P1C
+ * type: float
+ * indexed
+ */
+#define LOAD_P1C "LOAD_P1C"
+
+/**
+ * Load P2E
+ * type: float
+ * indexed
+ */
+#define LOAD_P2E "LOAD_P2E"
+
+/**
+ * Load P2C
+ * type: float
+ * indexed
+ */
+#define LOAD_P2C "LOAD_P2C"
+
+/**
+ * Load PFREQ
+ * type: float
+ * indexed
+ */
+#define LOAD_PFREQ "LOAD_PFREQ"
+
+/**
+ * Load Q1E
+ * type: float
+ * indexed
+ */
+#define LOAD_Q1E "LOAD_Q1E"
+
+/**
+ * Load Q1C
+ * type: float
+ * indexed
+ */
+#define LOAD_Q1C "LOAD_Q1C"
+
+/**
+ * Load Q2E
+ * type: float
+ * indexed
+ */
+#define LOAD_Q2E "LOAD_Q2E"
+
+/**
+ * Load Q2C
+ * type: float
+ * indexed
+ */
+#define LOAD_Q2C "LOAD_Q2C"
+
+/**
+ * Load QFREQ
+ * type: float
+ * indexed
+ */
+#define LOAD_QFREQ "LOAD_QFREQ"
+
+/**
+ * Load MTPA
+ * type: integer
+ * indexed
+ */
+#define LOAD_MTPA "LOAD_MTPA"
+
+/**
+ * Load LFMA
+ * type: float
+ * indexed
+ */
+#define LOAD_LFMA "LOAD_LFMA"
+
+/**
+ * Load RSA
+ * type: float
+ * indexed
+ */
+#define LOAD_RSA "LOAD_RSA"
+
+/**
+ * Load LSA
+ * type: float
+ * indexed
+ */
+#define LOAD_LSA "LOAD_LSA"
+
+/**
+ * Load LPA
+ * type: float
+ * indexed
+ */
+#define LOAD_LPA "LOAD_LPA"
+
+/**
+ * Load LPPA
+ * type: float
+ * indexed
+ */
+#define LOAD_LPPA "LOAD_LPPA"
+
+/**
+ * Load TPOA
+ * type: float
+ * indexed
+ */
+#define LOAD_TPOA "LOAD_TPOA"
+
+/**
+ * Load TPPOA
+ * type: float
+ * indexed
+ */
+#define LOAD_TPPOA "LOAD_TPPOA"
+
+/**
+ * Load HA
+ * type: float
+ * indexed
+ */
+#define LOAD_HA "LOAD_HA"
+
+/**
+ * Load ETRQA
+ * type: float
+ * indexed
+ */
+#define LOAD_ETRQA "LOAD_ETRQA"
+
+/**
+ * Load VTR1A
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR1A "LOAD_VTR1A"
+
+/**
+ * Load TTR1A
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR1A "LOAD_TTR1A"
+
+/**
+ * Load FTR1A
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR1A "LOAD_FTR1A"
+
+/**
+ * Load VRC1A
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC1A "LOAD_VRC1A"
+
+/**
+ * Load TRC1A
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC1A "LOAD_TRC1A"
+
+/**
+ * Load VTR2A
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR2A "LOAD_VTR2A"
+
+/**
+ * Load TTR2A
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR2A "LOAD_TTR2A"
+
+/**
+ * Load FTR2A
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR2A "LOAD_FTR2A"
+
+/**
+ * Load VRC2A
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC2A "LOAD_VRC2A"
+
+/**
+ * Load TRC2A
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC2A "LOAD_TRC2A"
+
+/**
+ * Load MTPB
+ * type: integer
+ * indexed
+ */
+#define LOAD_MTPB "LOAD_MTPB"
+
+/**
+ * Load LFMB
+ * type: float
+ * indexed
+ */
+#define LOAD_LFMB "LOAD_LFMB"
+
+/**
+ * Load RSB
+ * type: float
+ * indexed
+ */
+#define LOAD_RSB "LOAD_RSB"
+
+/**
+ * Load LSB
+ * type: float
+ * indexed
+ */
+#define LOAD_LSB "LOAD_LSB"
+
+/**
+ * Load LPB
+ * type: float
+ * indexed
+ */
+#define LOAD_LPB "LOAD_LPB"
+
+/**
+ * Load LPPB
+ * type: float
+ * indexed
+ */
+#define LOAD_LPPB "LOAD_LPPB"
+
+/**
+ * Load TPOB
+ * type: float
+ * indexed
+ */
+#define LOAD_TPOB "LOAD_TPOB"
+
+/**
+ * Load TPPOB
+ * type: float
+ * indexed
+ */
+#define LOAD_TPPOB "LOAD_TPPOB"
+
+/**
+ * Load HB
+ * type: float
+ * indexed
+ */
+#define LOAD_HB "LOAD_HB"
+
+/**
+ * Load ETRQB
+ * type: float
+ * indexed
+ */
+#define LOAD_ETRQB "LOAD_ETRQB"
+
+/**
+ * Load VTR1B
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR1B "LOAD_VTR1B"
+
+/**
+ * Load TTR1B
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR1B "LOAD_TTR1B"
+
+/**
+ * Load FTR1B
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR1B "LOAD_FTR1B"
+
+/**
+ * Load VRC1B
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC1B "LOAD_VRC1B"
+
+/**
+ * Load TRC1B
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC1B "LOAD_TRC1B"
+
+/**
+ * Load VTR2B
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR2B "LOAD_VTR2B"
+
+/**
+ * Load TTR2B
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR2B "LOAD_TTR2B"
+
+/**
+ * Load FTR2B
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR2B "LOAD_FTR2B"
+
+/**
+ * Load VRC2B
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC2B "LOAD_VRC2B"
+
+/**
+ * Load TRC2B
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC2B "LOAD_TRC2B"
+
+/**
+ * Load MTPC
+ * type: integer
+ * indexed
+ */
+#define LOAD_MTPC "LOAD_MTPC"
+
+/**
+ * Load LFMC
+ * type: float
+ * indexed
+ */
+#define LOAD_LFMC "LOAD_LFMC"
+
+/**
+ * Load RSC
+ * type: float
+ * indexed
+ */
+#define LOAD_RSC "LOAD_RSC"
+
+/**
+ * Load LSC
+ * type: float
+ * indexed
+ */
+#define LOAD_LSC "LOAD_LSC"
+
+/**
+ * Load LPC
+ * type: float
+ * indexed
+ */
+#define LOAD_LPC "LOAD_LPC"
+
+/**
+ * Load LPPC
+ * type: float
+ * indexed
+ */
+#define LOAD_LPPC "LOAD_LPPC"
+
+/**
+ * Load TPOC
+ * type: float
+ * indexed
+ */
+#define LOAD_TPOC "LOAD_TPOC"
+
+/**
+ * Load TPPOC
+ * type: float
+ * indexed
+ */
+#define LOAD_TPPOC "LOAD_TPPOC"
+
+/**
+ * Load HC
+ * type: float
+ * indexed
+ */
+#define LOAD_HC "LOAD_HC"
+
+/**
+ * Load ETRQC
+ * type: float
+ * indexed
+ */
+#define LOAD_ETRQC "LOAD_ETRQC"
+
+/**
+ * Load VTR1C
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR1C "LOAD_VTR1C"
+
+/**
+ * Load TTR1C
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR1C "LOAD_TTR1C"
+
+/**
+ * Load FTR1C
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR1C "LOAD_FTR1C"
+
+/**
+ * Load VRC1C
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC1C "LOAD_VRC1C"
+
+/**
+ * Load TRC1C
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC1C "LOAD_TRC1C"
+
+/**
+ * Load VTR2C
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR2C "LOAD_VTR2C"
+
+/**
+ * Load TTR2C
+ * type: float
+ * indexed
+ */
+#define LOAD_TTR2C "LOAD_TTR2C"
+
+/**
+ * Load FTR2C
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR2C "LOAD_FTR2C"
+
+/**
+ * Load VRC2C
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC2C "LOAD_VRC2C"
+
+/**
+ * Load TRC2C
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC2C "LOAD_TRC2C"
+
+/**
+ * Load MTPD
+ * type: integer
+ * indexed
+ */
+#define LOAD_MTPD "LOAD_MTPD"
+
+/**
+ * Load LFMD
+ * type: float
+ * indexed
+ */
+#define LOAD_LFMD "LOAD_LFMD"
+
+/**
+ * Load TRST
+ * type: float
+ * indexed
+ */
+#define LOAD_TRST "LOAD_TRST"
+
+/**
+ * Load VTR1
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR1 "LOAD_VTR1"
+
+/**
+ * Load VTR2
+ * type: float
+ * indexed
+ */
+#define LOAD_VTR2 "LOAD_VTR2"
+
 // GENERATOR DATA
 /**
  * Number of generators on a bus
@@ -764,7 +1485,8 @@
 #define GENERATOR_BUSNUMBER "GENERATOR_BUSNUMBER"
 
 /**
- * Non-blank alphanumeric machine identifier, used to distinguish among multiple machines connected to the same bus	
+ * Non-blank alphanumeric machine identifier, used to distinguish
+ * among multiple machines connected to the same bus	
  * type: string
  * indexed
  */
