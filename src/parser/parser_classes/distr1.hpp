@@ -276,6 +276,13 @@ template <class _data_struct> class Distr1Parser
         data->setValue(RELAY_TRRCTIME, data_struct.trrctime, r_id);
       }
 
+      // RELAY_BLTYPE1
+      if (!data->getValue(RELAY_BLTYPE1,&ival,r_id)) {
+        data->addValue(RELAY_BLTYPE1, data_struct.bltype1, r_id);
+      } else {
+        data->setValue(RELAY_BLTYPE1, data_struct.bltype1, r_id);
+      }
+
       // RELAY_BLINT1
       if (!data->getValue(RELAY_BLINT1,&rval,r_id)) {
         data->addValue(RELAY_BLINT1, data_struct.blint1, r_id);
@@ -288,6 +295,13 @@ template <class _data_struct> class Distr1Parser
         data->addValue(RELAY_BLRO1, data_struct.blro1, r_id);
       } else {
         data->setValue(RELAY_BLRO1, data_struct.blro1, r_id);
+      }
+
+      // RELAY_BLTYPE2
+      if (!data->getValue(RELAY_BLTYPE2,&ival,r_id)) {
+        data->addValue(RELAY_BLTYPE2, data_struct.bltype2, r_id);
+      } else {
+        data->setValue(RELAY_BLTYPE2, data_struct.bltype2, r_id);
       }
 
       // RELAY_BLINT2
@@ -570,7 +584,7 @@ template <class _data_struct> class Distr1Parser
 
       // RELAY_DIRANG
       if (nstr > 28) {
-        if (!data->getValue(RELAY_DIRANG,&ival,r_id)) {
+        if (!data->getValue(RELAY_DIRANG,&rval,r_id)) {
           data->addValue(RELAY_DIRANG, atof(split_line[28].c_str()), r_id);
         } else {
           data->setValue(RELAY_DIRANG, atof(split_line[28].c_str()), r_id);
@@ -579,7 +593,7 @@ template <class _data_struct> class Distr1Parser
 
       // RELAY_THCUR
       if (nstr > 29) {
-        if (!data->getValue(RELAY_THCUR,&ival,r_id)) {
+        if (!data->getValue(RELAY_THCUR,&rval,r_id)) {
           data->addValue(RELAY_THCUR, atof(split_line[29].c_str()), r_id);
         } else {
           data->setValue(RELAY_THCUR, atof(split_line[29].c_str()), r_id);
@@ -588,7 +602,7 @@ template <class _data_struct> class Distr1Parser
 
       // RELAY_SEBTIME
       if (nstr > 30) {
-        if (!data->getValue(RELAY_SEBTIME,&ival,r_id)) {
+        if (!data->getValue(RELAY_SEBTIME,&rval,r_id)) {
           data->addValue(RELAY_SEBTIME, atof(split_line[30].c_str()), r_id);
         } else {
           data->setValue(RELAY_SEBTIME, atof(split_line[30].c_str()), r_id);
@@ -597,7 +611,7 @@ template <class _data_struct> class Distr1Parser
 
       // RELAY_SERCTIME
       if (nstr > 31) {
-        if (!data->getValue(RELAY_SERCTIME,&ival,r_id)) {
+        if (!data->getValue(RELAY_SERCTIME,&rval,r_id)) {
           data->addValue(RELAY_SERCTIME, atof(split_line[31].c_str()), r_id);
         } else {
           data->setValue(RELAY_SERCTIME, atof(split_line[31].c_str()), r_id);
@@ -606,7 +620,7 @@ template <class _data_struct> class Distr1Parser
 
       // RELAY_TRBTIME
       if (nstr > 32) {
-        if (!data->getValue(RELAY_TRBTIME,&ival,r_id)) {
+        if (!data->getValue(RELAY_TRBTIME,&rval,r_id)) {
           data->addValue(RELAY_TRBTIME, atof(split_line[32].c_str()), r_id);
         } else {
           data->setValue(RELAY_TRBTIME, atof(split_line[32].c_str()), r_id);
@@ -615,7 +629,7 @@ template <class _data_struct> class Distr1Parser
 
       // RELAY_TRRCTIME
       if (nstr > 33) {
-        if (!data->getValue(RELAY_TRRCTIME,&ival,r_id)) {
+        if (!data->getValue(RELAY_TRRCTIME,&rval,r_id)) {
           data->addValue(RELAY_TRRCTIME, atof(split_line[33].c_str()), r_id);
         } else {
           data->setValue(RELAY_TRRCTIME, atof(split_line[33].c_str()), r_id);
