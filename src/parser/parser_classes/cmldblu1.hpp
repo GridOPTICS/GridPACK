@@ -52,7 +52,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       // LOAD_IT
-      if (!data->getValue(LOAD_MVA,&ival,l_id)) {
+      if (!data->getValue(LOAD_IT,&ival,l_id)) {
         data->addValue(LOAD_IT, data_struct.it, l_id);
       } else {
         data->setValue(LOAD_IT, data_struct.it, l_id);
@@ -2634,6 +2634,451 @@ template <class _data_struct> class Cmldblu1Parser
         data.tv = atof(split_line[131].c_str());
       }
     }
+
+    // Transfer data from composite load collection to new transformer
+    // (branch) collection
+    // @param comp_data data collection object from bus containing composite
+    //     load object
+    // @param t_data data collection object from new branch containing
+    //     transformer
+    // @param l_idx index of original composite load
+    void setTransformer(gridpack::component::DataCollection *comp_data,
+        gridpack::component::DataCollection *t_data, int l_idx) {
+      double rval;
+      t_data->addValue(BRANCH_NUM_ELEMENTS, 1);
+      t_data->addValue(BRANCH_SWITCHED, false, 0);
+      t_data->addValue(BRANCH_CKT, " 1", 0);
+      if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
+        t_data->addValue(LOAD_MVA, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_XXF, &rval, l_idx)) {
+        t_data->addValue(LOAD_XXF, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TFIXHS, &rval, l_idx)) {
+        t_data->addValue(LOAD_TFIXHS, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TFIXLS, &rval, l_idx)) {
+        t_data->addValue(LOAD_TFIXLS, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_LTC, &rval, l_idx)) {
+        t_data->addValue(LOAD_LTC, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TMIN, &rval, l_idx)) {
+        t_data->addValue(LOAD_TMIN, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TMAX, &rval, l_idx)) {
+        t_data->addValue(LOAD_TMAX, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_STEP, &rval, l_idx)) {
+        t_data->addValue(LOAD_STEP, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_VMIN, &rval, l_idx)) {
+        t_data->addValue(LOAD_VMIN, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_VMAX, &rval, l_idx)) {
+        t_data->addValue(LOAD_VMAX, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TDEL, &rval, l_idx)) {
+        t_data->addValue(LOAD_TDEL, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TTAP, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTAP, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_RCOMP, &rval, l_idx)) {
+        t_data->addValue(LOAD_RCOMP, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_XCOMP, &rval, l_idx)) {
+        t_data->addValue(LOAD_XCOMP, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMA, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMA, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMB, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMB, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMC, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMC, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMD, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMD, rval, 0);
+      }
+    }
+
+    // Transfer data from composite load collection to new feeder
+    // (branch) collection
+    // @param comp_data data collection object from bus containing composite
+    //     load object
+    // @param t_data data collection object from new branch representing
+    //     feeder
+    // @param l_idx index of original composite load
+    void setFeeder( gridpack::component::DataCollection *comp_data,
+        gridpack::component::DataCollection *t_data, int l_idx) {
+      double rval;
+      t_data->addValue(BRANCH_NUM_ELEMENTS, 1);
+      t_data->addValue(BRANCH_SWITCHED, false, 0);
+      t_data->addValue(BRANCH_CKT, " 1", 0);
+      if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
+        t_data->addValue(LOAD_MVA, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_RFDR, &rval, l_idx)) {
+        t_data->addValue(LOAD_RFDR, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_XFDR, &rval, l_idx)) {
+        t_data->addValue(LOAD_XFDR, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FB, &rval, l_idx)) {
+        t_data->addValue(LOAD_FB, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMA, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMA, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMB, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMB, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMC, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMC, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FMD, &rval, l_idx)) {
+        t_data->addValue(LOAD_FMD, rval, 0);
+      }
+    }
+
+    // Transfer data from composite load collection to load bus
+    // collection
+    // @param comp_data data collection object from bus containing composite
+    //     load object
+    // @param t_data data collection object from new bus representing
+    //     load bus
+    // @param l_idx index of original composite load
+    void setLoadBus( gridpack::component::DataCollection *comp_data,
+        gridpack::component::DataCollection *t_data, int l_idx) {
+      int ival;
+      double rval;
+      t_data->addValue(LOAD_NUMBER, 4);
+      t_data->addValue(LOAD_ID, "M1", 0);
+      if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
+        t_data->addValue(LOAD_MVA, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_MTPA, &ival, l_idx)) {
+        t_data->addValue(LOAD_MTP, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_LFMA, &rval, l_idx)) {
+        t_data->addValue(LOAD_LFM, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_RSA, &rval, l_idx)) {
+        t_data->addValue(LOAD_RS, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_LSA, &rval, l_idx)) {
+        t_data->addValue(LOAD_LS, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_LPA, &rval, l_idx)) {
+        t_data->addValue(LOAD_LP, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_LPPA, &rval, l_idx)) {
+        t_data->addValue(LOAD_LPP, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TPOA, &rval, l_idx)) {
+        t_data->addValue(LOAD_TPO, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TPPOA, &rval, l_idx)) {
+        t_data->addValue(LOAD_TPPO, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_HA, &rval, l_idx)) {
+        t_data->addValue(LOAD_H, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_ETRQA, &rval, l_idx)) {
+        t_data->addValue(LOAD_ETRQ, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_VTR1A, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR1, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TTR1A, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR1, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FTR1A, &rval, l_idx)) {
+        t_data->addValue(LOAD_FTR1, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_VRC1A, &rval, l_idx)) {
+        t_data->addValue(LOAD_VRC1, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TRC1A, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRC1, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_VTR2A, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR2, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TTR2A, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR2, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_FTR2A, &rval, l_idx)) {
+        t_data->addValue(LOAD_FTR2, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_VRC2A, &rval, l_idx)) {
+        t_data->addValue(LOAD_VRC2, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_TRC2A, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRC2, rval, 0);
+      }
+
+      t_data->addValue(LOAD_ID, "M2", 0);
+      if (comp_data->getValue(LOAD_MTPB, &ival, l_idx)) {
+        t_data->addValue(LOAD_MTP, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_LFMB, &rval, l_idx)) {
+        t_data->addValue(LOAD_LFM, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_RSB, &rval, l_idx)) {
+        t_data->addValue(LOAD_RS, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_LSB, &rval, l_idx)) {
+        t_data->addValue(LOAD_LS, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_LPB, &rval, l_idx)) {
+        t_data->addValue(LOAD_LP, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_LPPB, &rval, l_idx)) {
+        t_data->addValue(LOAD_LPP, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_TPOB, &rval, l_idx)) {
+        t_data->addValue(LOAD_TPO, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_TPPOB, &rval, l_idx)) {
+        t_data->addValue(LOAD_TPPO, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_HB, &rval, l_idx)) {
+        t_data->addValue(LOAD_H, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_ETRQB, &rval, l_idx)) {
+        t_data->addValue(LOAD_ETRQ, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_VTR1B, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR1, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_TTR1B, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR1, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_FTR1B, &rval, l_idx)) {
+        t_data->addValue(LOAD_FTR1, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_VRC1B, &rval, l_idx)) {
+        t_data->addValue(LOAD_VRC1, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_TRC1B, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRC1, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_VTR2B, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR2, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_TTR2B, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR2, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_FTR2B, &rval, l_idx)) {
+        t_data->addValue(LOAD_FTR2, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_VRC2B, &rval, l_idx)) {
+        t_data->addValue(LOAD_VRC2, rval, 1);
+      }
+      if (comp_data->getValue(LOAD_TRC2B, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRC2, rval, 1);
+      }
+
+      t_data->addValue(LOAD_ID, "M3", 0);
+      if (comp_data->getValue(LOAD_MTPC, &ival, l_idx)) {
+        t_data->addValue(LOAD_MTP, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_LFMC, &rval, l_idx)) {
+        t_data->addValue(LOAD_LFM, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_RSC, &rval, l_idx)) {
+        t_data->addValue(LOAD_RS, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_LSC, &rval, l_idx)) {
+        t_data->addValue(LOAD_LS, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_LPC, &rval, l_idx)) {
+        t_data->addValue(LOAD_LP, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_LPPC, &rval, l_idx)) {
+        t_data->addValue(LOAD_LPP, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_TPOC, &rval, l_idx)) {
+        t_data->addValue(LOAD_TPO, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_TPPOC, &rval, l_idx)) {
+        t_data->addValue(LOAD_TPPO, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_HC, &rval, l_idx)) {
+        t_data->addValue(LOAD_H, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_ETRQC, &rval, l_idx)) {
+        t_data->addValue(LOAD_ETRQ, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_VTR1C, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR1, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_TTR1C, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR1, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_FTR1C, &rval, l_idx)) {
+        t_data->addValue(LOAD_FTR1, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_VRC1C, &rval, l_idx)) {
+        t_data->addValue(LOAD_VRC1, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_TRC1C, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRC1, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_VTR2C, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR2, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_TTR2C, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR2, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_FTR2C, &rval, l_idx)) {
+        t_data->addValue(LOAD_FTR2, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_VRC2C, &rval, l_idx)) {
+        t_data->addValue(LOAD_VRC2, rval, 2);
+      }
+      if (comp_data->getValue(LOAD_TRC2C, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRC2, rval, 2);
+      }
+
+      t_data->addValue(LOAD_ID, "M4", 0);
+      if (comp_data->getValue(LOAD_MTPD, &ival, l_idx)) {
+        t_data->addValue(LOAD_MTP, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_LFMD, &rval, l_idx)) {
+        t_data->addValue(LOAD_LFM, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_COMPPF, &rval, l_idx)) {
+        t_data->addValue(LOAD_COMPPF, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VSTALL, &rval, l_idx)) {
+        t_data->addValue(LOAD_VSTALL, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_RSTALL, &rval, l_idx)) {
+        t_data->addValue(LOAD_RSTALL, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_XSTALL, &rval, l_idx)) {
+        t_data->addValue(LOAD_XSTALL, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TSTALL, &rval, l_idx)) {
+        t_data->addValue(LOAD_TSTALL, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_FRST, &rval, l_idx)) {
+        t_data->addValue(LOAD_FRST, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VRST, &rval, l_idx)) {
+        t_data->addValue(LOAD_VRST, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TRST, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRST, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_FUVR, &rval, l_idx)) {
+        t_data->addValue(LOAD_FUVR, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VTR1, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TTR1, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VTR2, &rval, l_idx)) {
+        t_data->addValue(LOAD_VTR2, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TTR2, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR2, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VC1OFF, &rval, l_idx)) {
+        t_data->addValue(LOAD_VC1OFF, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VC2OFF, &rval, l_idx)) {
+        t_data->addValue(LOAD_VC2OFF, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VC1ON, &rval, l_idx)) {
+        t_data->addValue(LOAD_VC1ON, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VC2ON, &rval, l_idx)) {
+        t_data->addValue(LOAD_VC2ON, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TTH, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTH, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TH1T, &rval, l_idx)) {
+        t_data->addValue(LOAD_TH1T, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TH2T, &rval, l_idx)) {
+        t_data->addValue(LOAD_TH2T, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TV, &rval, l_idx)) {
+        t_data->addValue(LOAD_TV, rval, 3);
+      }
+    }
+
+    // Transfer data from composite load collection to low side bus
+    // collection
+    // @param comp_data data collection object from bus containing composite
+    //     load object
+    // @param t_data data collection object from new bus representing
+    //     low side bus
+    // @param l_idx index of original composite load
+    void setLowSideBus( gridpack::component::DataCollection *comp_data,
+        gridpack::component::DataCollection *t_data, int l_idx) {
+      double rval;
+      if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
+        t_data->addValue(LOAD_MVA, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_BSS, &rval, l_idx)) {
+        t_data->addValue(LOAD_BSS, rval, 0);
+      }
+    }
+
+    // Expand composite model by creating new buses and branches
+    // @param comp_data data collection object from bus containing composite
+    //     load object
+    // @param new_buses vector of data collection objects representing new buses
+    // @param new_branches vector of data collection objects representing new
+    //     branches
+    // @param l_idx index of original composite load
+    void expandModel(gridpack::component::DataCollection *comp_data,
+        std::vector<gridpack::component::DataCollection*> &new_buses,
+        std::vector<gridpack::component::DataCollection*> &new_branches,
+        int l_idx)
+    {
+      new_buses.clear();
+      new_branches.clear();
+      gridpack::component::DataCollection *bus_ptr;
+      gridpack::component::DataCollection *branch_ptr;
+      // For convenience, add comp_data as first component in new_buses
+      new_buses.push_back(comp_data);
+      // create new data collection to represent low side bus
+      bus_ptr = new gridpack::component::DataCollection;
+      setLowSideBus(comp_data, bus_ptr, l_idx);
+      new_buses.push_back(bus_ptr);
+      // create new data collection to represent load bus
+      bus_ptr = new gridpack::component::DataCollection;
+      setLoadBus(comp_data, bus_ptr, l_idx);
+      new_buses.push_back(bus_ptr);
+      // create new data collection to represent transformer branch
+      branch_ptr = new gridpack::component::DataCollection;
+      setTransformer(comp_data, branch_ptr, l_idx);
+      new_branches.push_back(branch_ptr);
+      // create new data collection to represent feeder branch
+      branch_ptr = new gridpack::component::DataCollection;
+      setFeeder(comp_data, branch_ptr, l_idx);
+      new_branches.push_back(branch_ptr);
+      // Assign endpoint indices (based on local ordering of new buses new_buses
+      // vector) of branches so that we can update neighbor information in the
+      // parser. Start with the transformer branch
+      branch_ptr = new_buses[0];
+      branch_ptr->addValue("BRANCH_FROMBUS",0);
+      branch_ptr->addValue("BRANCH_TOBUS",1);
+      branch_ptr = new_buses[1];
+      branch_ptr->addValue("BRANCH_FROMBUS",1);
+      branch_ptr->addValue("BRANCH_TOBUS",2);
+    }
+
 };
 }  // parser
 }  // gridpack

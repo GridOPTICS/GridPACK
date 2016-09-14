@@ -1470,6 +1470,111 @@
  */
 #define LOAD_VTR2 "LOAD_VTR2"
 
+/**
+ * Load LFM
+ * type: float
+ * indexed
+ */
+#define LOAD_LFM "LOAD_LFM"
+
+/**
+ * Load RS
+ * type: float
+ * indexed
+ */
+#define LOAD_RS "LOAD_RS"
+
+/**
+ * Load LS
+ * type: float
+ * indexed
+ */
+#define LOAD_LS "LOAD_LS"
+
+/**
+ * Load LP
+ * type: float
+ * indexed
+ */
+#define LOAD_LP "LOAD_LP"
+
+/**
+ * Load LPP
+ * type: float
+ * indexed
+ */
+#define LOAD_LPP "LOAD_LPP"
+
+/**
+ * Load TPO
+ * type: float
+ * indexed
+ */
+#define LOAD_TPO "LOAD_TPO"
+
+/**
+ * Load TPPO
+ * type: float
+ * indexed
+ */
+#define LOAD_TPPO "LOAD_TPPO"
+
+/**
+ * Load ETRQ
+ * type: float
+ * indexed
+ */
+#define LOAD_ETRQ "LOAD_ETRQ"
+
+/**
+ * Load FTR1
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR1 "LOAD_FTR1"
+
+/**
+ * Load VRC1
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC1 "LOAD_VRC1"
+
+/**
+ * Load TRC1
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC1 "LOAD_TRC1"
+
+/**
+ * Load FTR2
+ * type: float
+ * indexed
+ */
+#define LOAD_FTR2 "LOAD_FTR2"
+
+/**
+ * Load VRC2
+ * type: float
+ * indexed
+ */
+#define LOAD_VRC2 "LOAD_VRC2"
+
+/**
+ * Load TRC2
+ * type: float
+ * indexed
+ */
+#define LOAD_TRC2 "LOAD_TRC2"
+
+/**
+ * Load MTP
+ * type: integer
+ * indexed
+ */
+#define LOAD_MTP "LOAD_MTP"
+
 // GENERATOR DATA
 /**
  * Number of generators on a bus
