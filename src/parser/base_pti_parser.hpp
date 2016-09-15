@@ -705,10 +705,10 @@ class BasePTIParser : public BaseParser<_network>
         data = dynamic_cast<gridpack::component::DataCollection*>
           (p_network->getBusData(l_idx).get());
 
-        // Find out how many generators are already on bus
+        // Find out how many loads are already on bus
         int nload = 0;
         data->getValue(LOAD_NUMBER, &nload);
-        // Identify index of generator to which this data applies
+        // Identify index of load to which this data applies
         int l_id = -1;
         if (nload > 0) {
           // Clean up 2 character tag for generator ID
@@ -726,16 +726,16 @@ class BasePTIParser : public BaseParser<_network>
 
         // Assign parameters to a load
         if (l_id > -1) {
-          if (!strcmp(bus_relay_data[i].model,"CIM6BL")) {
+          if (!strcmp(load_data[i].model,"CIM6BL")) {
             Cim6blParser<load_params> parser;
             parser.extract(load_data[i], data, l_id);
-          } else if (!strcmp(bus_relay_data[i].model,"IEELBL")) {
+          } else if (!strcmp(load_data[i].model,"IEELBL")) {
             IeelblParser<load_params> parser;
             parser.extract(load_data[i], data, l_id);
-          } else if (!strcmp(bus_relay_data[i].model,"ACMTBLU1")) {
+          } else if (!strcmp(load_data[i].model,"ACMTBLU1")) {
             Acmtblu1Parser<load_params> parser;
             parser.extract(load_data[i], data, l_id);
-          } else if (!strcmp(bus_relay_data[i].model,"CMLDBLU1")) {
+          } else if (!strcmp(load_data[i].model,"CMLDBLU1")) {
             Cmldblu1Parser<load_params> parser;
             parser.extract(load_data[i], data, l_id);
           }
@@ -1126,13 +1126,13 @@ class BasePTIParser : public BaseParser<_network>
           data = dynamic_cast<gridpack::component::DataCollection*>
             (p_network->getBusData(l_idx).get());
 
-          // Find out how many generators are already on bus
+          // Find out how many loads are already on bus
           int nload = 0;
           data->getValue(LOAD_NUMBER, &nload);
-          // Identify index of generator to which this data applies
+          // Identify index of load to which this data applies
           int l_id = -1;
           if (nload > 0) {
-            // Clean up 2 character tag for generator ID
+            // Clean up 2 character tag for load ID
             std::string tag = util.clean2Char(split_line[2]);
             int i;
             for (i=0; i<nload; i++) {
@@ -1283,7 +1283,7 @@ class BasePTIParser : public BaseParser<_network>
           int o_idx = atoi(split_line[0].c_str());
           data.bus_id = o_idx;
 
-          // Clean up 2 character tag for generator ID
+          // Clean up 2 character tag for load ID
           std::string tag = util.clean2Char(split_line[2]);
           strcpy(data.id, tag.c_str());
           if (sval == "CIM6BL") {

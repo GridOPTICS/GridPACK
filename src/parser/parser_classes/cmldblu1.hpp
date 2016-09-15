@@ -2011,7 +2011,7 @@ template <class _data_struct> class Cmldblu1Parser
     {
       std::string sval;
       gridpack::utility::StringUtils util;
-      sval = util.trimQuotes(split_line[1]);
+      sval = util.trimQuotes(split_line[3]);
       util.toUpper(sval);
 
       // LOAD_MODEL              "MODEL"                  integer
