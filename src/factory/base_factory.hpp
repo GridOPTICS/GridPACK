@@ -421,6 +421,31 @@ class BaseFactory {
     }
 
     /**
+     * A convenience function that checks to see if something is true on at
+     * least one processor
+     * @param flag boolean flag on each processor
+     * @return true if flag is true on at least one processor, false otherwise
+     */
+    bool checkTrueSomewhere(bool flag) {
+      int iok;
+      if (flag) {
+        iok = 1;
+      } else {
+        iok = 0;
+      }
+      int grp = p_network->communicator().getGroup();
+      int nprocs = GA_Pgroup_nnodes(grp);
+      char cplus[2];
+      strcpy(cplus,"+");
+      GA_Pgroup_igop(grp,&iok,1,cplus);
+      if (iok > 0) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    /**
      * Save internal state variables of the buses and branches to the
      * associated data collection object for possible use in output or to
      * transfer them to another network

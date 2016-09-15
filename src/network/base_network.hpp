@@ -34,6 +34,7 @@
 #include "gridpack/partition/graph_partitioner.hpp"
 #include "gridpack/parallel/shuffler.hpp"
 #include "gridpack/parallel/ga_shuffler.hpp"
+#include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/utilities/exception.hpp"
 
@@ -1163,10 +1164,14 @@ void partition(void)
       b->p_branch->setBus1(bus1);
       b->p_branch->setBus2(bus2);
 
+      gbus = b->p_globalBusIndex1;
       bus1->addBranch(b->p_branch);
       bus1->addBus(bus2);
+      setGlobalBusIndex1(lidx,gbus); 
+      gbus = b->p_globalBusIndex2;
       bus2->addBranch(b->p_branch);
       bus2->addBus(bus1);
+      setGlobalBusIndex2(lidx,gbus); 
 
       if (b->p_activeBranch) active_branches += 1;
     }
@@ -1310,7 +1315,7 @@ void clean(void)
 }
 
 /**
- * Copy network new network. The component classes of the new network do not
+ * Copy network to new network. The component classes of the new network do not
  * need to be the same as the component classes of the old network. This
  * function can be used to create different types of networks that can be used
  * to solve different problems. The new network is already partitioned so it
@@ -1364,7 +1369,155 @@ template <class _new_bus, class _new_branch> void clone(
   }
 }
 
+/**
+ * Reset global indices on buses and branches
+ * @param flag if true reset indices on all buses and branches. If false,
+ *    assume that global indices have already been set on local buses and
+ *    local branches and only assign indices to ghost buses and branches
+ */
+void resetGlobalIndices(bool flag)
+{
+  int i;
+  int nprocs = communicator()->size();
+  int me = communicator()->rank();
 
+  int idx_buf[nprocs];
+  for (i=0; i<nprocs; i++) idx_buf[i] = 0;
+
+  // Find out how many active buses exist on each processor
+  int localBuses = p_buses.size();
+  int lcnt=0;
+  for (i=0; i<localBuses; i++) {
+    if (getActiveBus(i)) lcnt++;
+  }
+  idx_buf[me] = lcnt;
+  communicator()->sum(idx_buf,nprocs);
+  // Assign global index to active buses on each processor
+  int offset = 0;
+  for (i=0; i<me; i++) offset += idx_buf[i];
+  if (flag) {
+    lcnt = 0;
+    for (i=0; i<localBuses; i++) {
+      if (getActiveBus(i)) {
+        setGlobalBusIndex(i,lcnt+offset);
+        lcnt++;
+      }
+    }
+  }
+
+  // Assign global indices to ghost buses and branch pairs. Start by
+  // creating a hash table that maps original bus indices to global bus indices.
+  // Create a list of pairs between the original bus indices and the new global
+  // indices
+  std::vector<std::pair<int,int> > pairs;
+  for (i=0; i<localBuses; i++) {
+    if (getActiveBus(i)) {
+      lcnt++;
+      pairs.push_back(std::pair<int,int>(getOriginalBusIndex(i),
+            getGlobalBusIndex(i)));
+    }
+  }
+
+  gridpack::hash_map::GlobalIndexHashMap hash_map;
+  hash_map.addPairs(pairs);
+  // set up list of ghost buses that need to be queried to get their global bus
+  // indices
+  std::vector<int> keys;
+  std::vector<int> values;
+  for (i=0; i<localBuses; i++) {
+    if (!getActiveBus(i)) {
+      getOriginalBusIndex(i, &lcnt);
+      keys.push_back(lcnt);
+    }
+  }
+  hash_map.getValues(keys,values);
+  // assign global indices to ghost buses
+  lcnt = 0;
+  for (i=0; i<localBuses; i++) {
+    if (!getActiveBus(i)) {
+      setGlobalBusIndex(i, values[lcnt]);
+      lcnt++;
+    }
+  }
+
+  // set up list of branch endpoint buses that need to be queried to get
+  // their global bus indices
+  keys.clear();
+  values.clear();
+  int localBranches = p_branches.size();
+  int idx1, idx2;
+  for (i=0; i<localBranches; i++) {
+    getOriginalBranchEndpoints(i, &idx1, &idx2);
+    keys.push_back(idx1);
+    keys.push_back(idx2);
+  }
+  hash_map.getValues(keys,values);
+  
+  // Copy global indices to branch endpoints
+  for (i=0; i<localBranches; i++) {
+    setGlobalBusIndex1(i,values[2*i]); 
+    setGlobalBusIndex2(i,values[2*i+1]); 
+  }
+  for (i=0; i<nprocs; i++) idx_buf[i] = 0;
+
+  // Add global indices to branches. Find out how many active branches
+  // exist on each processor
+  lcnt=0;
+  for (i=0; i<localBranches; i++) {
+    if (getActiveBranch(i)) lcnt++;
+  }
+  for (i=0; i<nprocs; i++) idx_buf[i] = 0;
+  idx_buf[me] = lcnt;
+  communicator()->sum(idx_buf,nprocs);
+  // Assign global index to active branches on each processor
+  offset = 0;
+  for (i=0; i<me; i++) offset += idx_buf[i];
+  if (flag) {
+    lcnt = 0;
+    for (i=0; i<localBranches; i++) {
+      if (getActiveBranch(i)) {
+        setGlobalBranchIndex(i,lcnt+offset);
+        lcnt++;
+      }
+    }
+  }
+
+  // Assign global indices to ghost branches. Start by
+  // creating a hash table that maps original branch indices to global bus indices.
+  // Create a list of pairs between the original bus index pairs and the new global
+  // indices
+  std::vector<std::pair<std::pair<int,int>,int> > branch_pairs;
+  for (i=0; i<localBranches; i++) {
+    if (getActiveBranch(i)) {
+      lcnt++;
+      getOriginalBranchEndpoints(i, &idx1, &idx2);
+      branch_pairs.push_back(std::pair<std::pair<int,int>,int>(
+            std::pair<int,int>(idx1,idx2),getGlobalBranchIndex(i)));
+    }
+  }
+
+  gridpack::hash_map::GlobalIndexHashMap branch_map;
+  branch_map.addPairs(branch_pairs);
+  // set up list of ghost branches that need to be queried to get their global
+  // branch indices
+  std::vector<std::pair<int,int> > key_pairs;
+  values.clear();
+  for (i=0; i<localBranches; i++) {
+    if (!getActiveBranch(i)) {
+      getOriginalBranchEndpoints(i, &idx1, &idx2);
+      key_pairs.push_back(std::pair<int,int>(idx1,idx2));
+    }
+  }
+  branch_map.getValues(key_pairs,values);
+  // assign global indices to ghost branches
+  lcnt = 0;
+  for (i=0; i<localBranches; i++) {
+    if (!getActiveBranch(i)) {
+      setGlobalBranchIndex(i, values[lcnt]);
+      lcnt++;
+    }
+  }
+}
 
 /**
  * Remove all buses and branches from the system.

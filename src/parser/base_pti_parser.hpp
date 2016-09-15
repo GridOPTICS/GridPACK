@@ -43,6 +43,10 @@
 #include "parser_classes/lvshbl.hpp"
 #include "parser_classes/frqtpat.hpp"
 #include "parser_classes/distr1.hpp"
+#include "parser_classes/cim6bl.hpp"
+#include "parser_classes/acmtblu1.hpp"
+#include "parser_classes/ieelbl.hpp"
+#include "parser_classes/cmldblu1.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -350,6 +354,196 @@ class BasePTIParser : public BaseParser<_network>
       double blro2;
     };
 
+    // Data structure to hold parameters for conventional loads
+    struct load_params{
+      int bus_id; // ID of bus that owns load
+      char model[9];  // Model represented by data
+      char id[3]; // Load ID
+      int it;
+      double ra;
+      double xa;
+      double xm;
+      double r1;
+      double x1;
+      double r2;
+      double x2;
+      double e1;
+      double se1;
+      double e2;
+      double se2;
+      double mbase;
+      double pmult;
+      double h;
+      double vi;
+      double ti;
+      double tb;
+      double a;
+      double b;
+      double d;
+      double e;
+      double c0;
+      double tnom;
+
+      double tstall;
+      double trestart;
+      double tv;
+      double tf;
+      double complf;
+      double comppf;
+      double vstall;
+      double rstall;
+      double xstall;
+      double lfadj;
+      double kp1;
+      double np1;
+      double kq1;
+      double nq1;
+      double kp2;
+      double np2;
+      double kq2;
+      double nq2;
+      double vbrk;
+      double frst;
+      double vrst;
+      double cmpkpf;
+      double cmpkqf;
+      double vc1off;
+      double vc2off;
+      double vc1on;
+      double vc2on;
+      double tth;
+      double th1t;
+      double th2t;
+      double fuvr;
+      double uvtr1;
+      double ttr1;
+      double uvtr2;
+      double ttr2;
+
+      double a1;
+      double a2;
+      double a3;
+      double a4;
+      double a5;
+      double a6;
+      double a7;
+      double a8;
+      double n1;
+      double n2;
+      double n3;
+      double n4;
+      double n5;
+      double n6;
+
+      double mva;
+      double bss;
+      double rfdr;
+      double xfdr;
+      double fb;
+      double xxf;
+      double tfixhs;
+      double tfixls;
+      double ltc;
+      double tmin;
+      double tmax;
+      double step;
+      double vmin;
+      double vmax;
+      double tdel;
+      double ttap;
+      double rcomp;
+      double xcomp;
+      double fma;
+      double fmb;
+      double fmc;
+      double fmd;
+      double fel;
+      double pfel;
+      double vd1;
+      double vd2;
+      double frcel;
+      double pfs;
+      double p1e;
+      double p1c;
+      double p2e;
+      double p2c;
+      double pfreq;
+      double q1e;
+      double q1c;
+      double q2e;
+      double q2c;
+      double qfreq;
+
+      int mtpa;
+      double lfma;
+      double rsa;
+      double lsa;
+      double lpa;
+      double lppa;
+      double tpoa;
+      double tppoa;
+      double ha;
+      double etrqa;
+      double vtr1a;
+      double ttr1a;
+      double ftr1a;
+      double vrc1a;
+      double trc1a;
+      double vtr2a;
+      double ttr2a;
+      double ftr2a;
+      double vrc2a;
+      double trc2a;
+
+      int mtpb;
+      double lfmb;
+      double rsb;
+      double lsb;
+      double lpb;
+      double lppb;
+      double tpob;
+      double tppob;
+      double hb;
+      double etrqb;
+      double vtr1b;
+      double ttr1b;
+      double ftr1b;
+      double vrc1b;
+      double trc1b;
+      double vtr2b;
+      double ttr2b;
+      double ftr2b;
+      double vrc2b;
+      double trc2b;
+
+      int mtpc;
+      double lfmc;
+      double rsc;
+      double lsc;
+      double lpc;
+      double lppc;
+      double tpoc;
+      double tppoc;
+      double hc;
+      double etrqc;
+      double vtr1c;
+      double ttr1c;
+      double ftr1c;
+      double vrc1c;
+      double trc1c;
+      double vtr2c;
+      double ttr2c;
+      double ftr2c;
+      double vrc2c;
+      double trc2c;
+
+      int mtpd;
+      double lfmd;
+      double trst;
+      double vtr1;
+      double vtr2;
+    };
+
     /**
      * This routine opens up a .dyr file with parameters for dynamic
      * simulation and distributes the parameters to whatever processor holds the
@@ -365,6 +559,7 @@ class BasePTIParser : public BaseParser<_network>
       std::vector<gen_params> gen_data;
       std::vector<bus_relay_params> bus_relay_data;
       std::vector<branch_relay_params> branch_relay_data;
+      std::vector<load_params> load_data;
       if (me == 0) {
         std::ifstream            input;
         input.open(fileName.c_str());
@@ -372,7 +567,8 @@ class BasePTIParser : public BaseParser<_network>
           // p_timer->stop(t_ds);
           return;
         }
-        find_ds_vector(input, &gen_data, &bus_relay_data, &branch_relay_data);
+        find_ds_vector(input, &gen_data, &bus_relay_data,
+            &branch_relay_data, &load_data);
         input.close();
       }
       int nsize = gen_data.size();
@@ -490,6 +686,59 @@ class BasePTIParser : public BaseParser<_network>
         if (!strcmp(branch_relay_data[i].model,"DISTR1")) {
           Distr1Parser<branch_relay_params> parser;
           parser.extract(branch_relay_data[i], data);
+        }
+      }
+
+      // Add parameters for a load
+      nsize = load_data.size();
+      buses.clear();
+      for (i=0; i<nsize; i++) {
+        buses.push_back(load_data[i].bus_id);
+      }
+      gridpack::hash_distr::HashDistribution<_network,load_params,
+        load_params> distr_load(p_network);
+      distr_load.distributeBusValues(buses,load_data);
+      // Now match data with corresponding data collection objects
+      nsize = buses.size();
+      for (i=0; i<nsize; i++) {
+        int l_idx = buses[i];
+        data = dynamic_cast<gridpack::component::DataCollection*>
+          (p_network->getBusData(l_idx).get());
+
+        // Find out how many generators are already on bus
+        int nload = 0;
+        data->getValue(LOAD_NUMBER, &nload);
+        // Identify index of generator to which this data applies
+        int l_id = -1;
+        if (nload > 0) {
+          // Clean up 2 character tag for generator ID
+          std::string tag = load_data[i].id;
+          int j;
+          for (j=0; j<nload; j++) {
+            std::string t_id;
+            data->getValue(LOAD_ID,&t_id,j);
+            if (tag == t_id) {
+              l_id = j;
+              break;
+            }
+          }
+        }
+
+        // Assign parameters to a load
+        if (l_id > -1) {
+          if (!strcmp(bus_relay_data[i].model,"CIM6BL")) {
+            Cim6blParser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          } else if (!strcmp(bus_relay_data[i].model,"IEELBL")) {
+            IeelblParser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          } else if (!strcmp(bus_relay_data[i].model,"ACMTBLU1")) {
+            Acmtblu1Parser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          } else if (!strcmp(bus_relay_data[i].model,"CMLDBLU1")) {
+            Cmldblu1Parser<load_params> parser;
+            parser.extract(load_data[i], data, l_id);
+          }
         }
       }
     }
@@ -697,6 +946,17 @@ class BasePTIParser : public BaseParser<_network>
       return ret;
     }
 
+    // Utility function to check if parameters describe a load
+    bool onLoad(std::string &device) {
+      bool ret = false;
+      if (device == "CIM6BL" || device == "USRLOD" ||
+          device == "IEELBL") {
+        ret = true;
+      }
+      return ret;
+    }
+
+
     // Extract extension from file name and convert it to lower case
     std::string getExtension(const std::string file)
     {
@@ -848,6 +1108,59 @@ class BasePTIParser : public BaseParser<_network>
             FrqtpatParser<gen_params> parser;
             parser.parse(split_line, data);
           }
+        } else if (onLoad(sval)) {
+          // Load bus number
+          int l_idx, o_idx;
+          o_idx = atoi(split_line[0].c_str());
+#ifdef OLD_MAP
+          std::map<int, int>::iterator it;
+#else
+          boost::unordered_map<int, int>::iterator it;
+#endif
+          it = p_busMap->find(o_idx);
+          if (it != p_busMap->end()) {
+            l_idx = it->second;
+          } else {
+            continue;
+          }
+          data = dynamic_cast<gridpack::component::DataCollection*>
+            (p_network->getBusData(l_idx).get());
+
+          // Find out how many generators are already on bus
+          int nload = 0;
+          data->getValue(LOAD_NUMBER, &nload);
+          // Identify index of generator to which this data applies
+          int l_id = -1;
+          if (nload > 0) {
+            // Clean up 2 character tag for generator ID
+            std::string tag = util.clean2Char(split_line[2]);
+            int i;
+            for (i=0; i<nload; i++) {
+              std::string t_id;
+              data->getValue(LOAD_ID,&t_id,i);
+              if (tag == t_id) {
+                l_id = i;
+                break;
+              }
+            }
+          }
+          if (sval == "CIM6BL") {
+            Cim6blParser<load_params> parser;
+            parser.parse(split_line, data, l_id);
+          } else if (sval == "IEELBL") {
+            IeelblParser<load_params> parser;
+            parser.parse(split_line, data, l_id);
+          } else if (sval == "USRLOD") {
+            std::string sdev;
+            sdev = util.trimQuotes(split_line[3]);
+            if (sdev == "ACMTBLU1") {
+              Acmtblu1Parser<load_params> parser;
+              parser.parse(split_line, data, l_id);
+            } else if (sdev == "CMLDBLU1") {
+              Cmldblu1Parser<load_params> parser;
+              parser.parse(split_line, data, l_id);
+            }
+          }
         } else if (onBranch(sval)) {
           int l_idx, from_idx, to_idx;
           from_idx = atoi(split_line[0].c_str());
@@ -870,7 +1183,8 @@ class BasePTIParser : public BaseParser<_network>
     // Parse file to construct lists of structs representing different devices.
     void find_ds_vector(std::ifstream & input, std::vector<gen_params> *gen_vector,
         std::vector<bus_relay_params> *bus_relay_vector,
-        std::vector<branch_relay_params> *branch_relay_vector)
+        std::vector<branch_relay_params> *branch_relay_vector,
+        std::vector<load_params> *load_vector)
     {
       std::string          line;
       gen_vector->clear();
@@ -945,31 +1259,64 @@ class BasePTIParser : public BaseParser<_network>
           }
           gen_vector->push_back(data);
         } else if (onBus(sval)) {
-          bus_relay_params data;
 
           // RELAY_BUSNUMBER               "I"                   integer
           int o_idx;
           if (sval == "LVSHBL") {
+            bus_relay_params data;
             o_idx = atoi(split_line[0].c_str());
             data.bus_id = o_idx;
             LvshblParser<bus_relay_params> parser;
             parser.store(split_line,data);
+            bus_relay_vector->push_back(data);
           } else if (sval == "FRQTPAT") {
+            bus_relay_params data;
             o_idx = atoi(split_line[3].c_str());
             data.bus_id = o_idx;
             FrqtpatParser<bus_relay_params> parser;
             parser.store(split_line,data);
+            bus_relay_vector->push_back(data);
           }
+        } else if (onLoad(sval)) {
+          // ID of bus that owns load
+          load_params data;
+          int o_idx = atoi(split_line[0].c_str());
+          data.bus_id = o_idx;
+
+          // Clean up 2 character tag for generator ID
+          std::string tag = util.clean2Char(split_line[2]);
+          strcpy(data.id, tag.c_str());
+          if (sval == "CIM6BL") {
+            Cim6blParser<load_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "IEELBL") {
+            IeelblParser<load_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "USRLOD") {
+            std::string sdev;
+            sdev = util.trimQuotes(split_line[3]);
+            if (sdev == "ACMTBLU1") {
+              Acmtblu1Parser<load_params> parser;
+              parser.store(split_line,data);
+            } else if (sdev == "CMLDBLU1") {
+              Cmldblu1Parser<load_params> parser;
+              parser.store(split_line,data);
+            }
+          }
+          load_vector->push_back(data);
         } else if (onBranch(sval)) {
           branch_relay_params data;
 
           int from_idx, to_idx;
-          from_idx = atoi(split_line[0].c_str());
-          to_idx = atoi(split_line[3].c_str());
-          data.from_bus = from_idx;
-          data.to_bus = to_idx;
-          Distr1Parser<branch_relay_params> parser;
-          parser.store(split_line,data);
+          if (sval == "DISTR1") {
+            from_idx = atoi(split_line[0].c_str());
+            to_idx = atoi(split_line[3].c_str());
+            data.from_bus = from_idx;
+            data.to_bus = to_idx;
+            Distr1Parser<branch_relay_params> parser;
+            parser.store(split_line,data);
+          }
+          branch_relay_vector->push_back(data);
         }
       }
     }
@@ -1059,6 +1406,172 @@ class BasePTIParser : public BaseParser<_network>
     {
       p_busMap = busMap;
       p_branchMap = branchMap;
+    }
+
+    /**
+     * Expand any compound bus models that may need to be generated based on
+     * parameters in the .dyr files. This function needs to be called after
+     * calling the parser for the .dyr file
+     */
+    void expandBusModels(void)
+    {
+      // Find maximum original bus index. This value can be used to assign
+      // indices to new buses generated by expanding the model
+      int max_idx = -1;
+      int nbus = p_network->numBuses();
+      int totalBuses = p_network->totalBuses();
+      int totalBranches = p_network->totalBranches();
+      int i, j;
+      for (i=0; i<nbus; i++) {
+        if (p_network->activeBus(i)) {
+          if (max_idx < p_network->getOriginalBusIndex(i)) {
+            max_idx = p_network->getOriginalBusIndex(i);
+          }
+        }
+      }
+      p_network->communicator()->max(&max_idx,1);
+
+      // Create new data collection objects corresponding to new buses and
+      // branches for the expanded composite load
+      std::vector<std::vector<gridpack::component::DataCollection*> >
+        new_buses;
+      std::vector<std::vector<gridpack::component::DataCollection*> >
+        new_branches;
+      gridpack::component::DataCollection *data;
+      std::string model;
+      int nload;
+      std::vector<int> comp_buses;
+      for (i=0; i<nbus; i++) {
+        // Only expand bus on process that owns bus. New buses and branches will
+        // not have connections to other processors
+        if (p_network->activeBus(i)) {
+         data = p_network->getBusData(i).get();
+         if (data->getValue("LOAD_NUMBER",&nload)) {
+           for (j=0; j<nload; j++) {
+             if (data->getValue("LOAD_MODEL",&model, j)) {
+               if (model == "CMLDBLU1") {
+                 std::vector<gridpack::component::DataCollection*> buses;
+                 std::vector<gridpack::component::DataCollection*> branches;
+                 Cmldblu1Parser<load_params> parser;
+                 parser.expandModel(data, buses, branches, j);
+                 new_buses.push_back(buses);
+                 new_buses.push_back(branches);
+                 comp_buses.push_back(i);
+               }
+             }
+           }
+         }
+        }
+      }
+
+      // Find new indices for the buses. Start by finding out how many new buses
+      // have been added to the system
+      int nprocs = p_network->communicator()->size();
+      int me = p_network->communicator()->rank();
+      int added_buses[nprocs];
+      for (i=0; i<nprocs; i++) {
+        added_buses[i] = 0;
+      }
+      int numLoads = new_buses.size();
+      // Subtract 1 because bus 0 corresponds to the original bus and
+      // already has an index
+      for (i=0; i<numLoads; i++) {
+        added_buses[me] += new_buses[i].size()-1;
+      }
+      p_network->component()->sum(added_buses,nprocs);
+      int offset[nprocs];
+      offset[0] = 0;
+      for (i=1; i<nprocs; i++) {
+        offset[i] = offset[i-1] + added_buses[i-1];
+      }
+      // Assign new indices to the new buses
+      int icnt = 0;
+      int idx;
+      std::vector<std::vector<int> > local_bus;
+      for (i=0; i<numLoads; i++) {
+        std::vector<int> lidx;
+        lidx.push_back(comp_buses[i]);
+        for (j=1; j<new_buses.size(); j++) {
+          data = (new_buses[i])[j];
+          idx = offset[me]+icnt+max_idx+1;
+          data->addValue(BUS_NUMBER, idx);
+          p_network->addBus(idx);
+          *(p_network->getBusData(nbus+icnt))
+            = *data;
+          p_network->setActiveBus(nbus+icnt,true);
+          lidx.push_back(nbus+icnt);
+          icnt++;
+        }
+        local_bus.push_back(lidx);
+      }
+      // New buses now have original IDs. Need to set "from" and "to"
+      // indices for new branches as well as fixing up neighor lists
+      int from, to, i1, i2;
+      icnt = 0;
+      int nbranch = p_network->numBranches();
+      for (i=0; i<numLoads; i++) {
+        for (j=0; j<new_branches.size(); j++) {
+          // Assign new bus IDs to new branches
+          data = (new_branches[i])[j];
+          data->getValue(BRANCH_FROMBUS,&from);
+          data->getValue(BRANCH_TOBUS,&to);
+          (new_buses[i])[from]->getValue(BUS_NUMBER, &i1);
+          (new_buses[i])[to]->getValue(BUS_NUMBER, &i2);
+          data->setValue(BRANCH_FROMBUS,i1);
+          data->setValue(BRANCH_TOBUS,i2);
+          p_network->addBranch(i1,i2);
+          *(p_network->getBranchData(nbranch+icnt))
+            = *data;
+          p_network->setActiveBranch(nbranch+icnt,true);
+          // Modify neighbor lists etc to account for new buses
+          p_network->setLocalBusIndex1(nbranch+icnt,(local_bus[i])[from]);
+          p_network->setLocalBusIndex2(nbranch+icnt,(local_bus[i])[to]);
+          p_network->addNeighbor((local_bus[i])[from],nbranch+icnt);
+          p_network->addNeighbor((local_bus[i])[to],nbranch+icnt);
+          icnt++;
+        }
+      }
+      // Assign global indices to new buses.
+      icnt = 0;
+      int lcnt = 0;
+      // loop over original buses
+      for (i=0; i<nbus; i++) {
+        if (p_network->getActiveBus(i)) {
+          if (i == comp_buses[icnt]) {
+            // if original bus is composite bus, loop over new buses;
+            for (j=1; j<local_bus[i].size(); j++) {
+              p_network->setGlobalBusIndex((local_bus[i])[j],
+                  totalBuses+offset[me]+lcnt);
+              lcnt++;
+            }
+            icnt++;
+          }
+        }
+      }
+
+      // Add global indices to new local branches.
+      int nbranch_new = p_network->numBranches();
+      int branch_buf[nprocs];
+      for (i=0; i<nprocs; i++) {
+        branch_buf[i] = 0;
+      }
+      branch_buf[me] = nbranch_new-nbranch;
+      p_network->component()->sum(branch_buf,nprocs);
+      offset[0] = 0;
+      for (i=1; i<nprocs; i++) {
+        offset[i] = offset[i-1]+branch_buf[i-1];
+      }
+      icnt = offset[me];
+      for (i=nbranch; i<nbranch_new; i++) {
+        if (p_network->getActiveBranch(i)) {
+          p_network->setGlobalBranchIndex(i,totalBranches+icnt);
+          icnt++;
+        }
+      }
+
+      // Reset remaining indices
+      p_network->resetGlobalIndices(false);
+
     }
 
     /* ************************************************************************

@@ -45,11 +45,11 @@ template <class _data_struct> class LvshblParser
       bool bval;
       std::string stmp;
       // RELAY_NUMBER
-      if (!data->getValue(RELAY_NUMBER,&ival,r_id)) {
+      if (!data->getValue(RELAY_NUMBER,&ival)) {
         ival = 0;
-        data->addValue(RELAY_NUMBER, ival+1, r_id);
+        data->addValue(RELAY_NUMBER, ival+1);
       } else {
-        data->setValue(RELAY_NUMBER, ival+1, r_id);
+        data->setValue(RELAY_NUMBER, ival+1);
       }
       r_id = ival;
 
@@ -160,11 +160,11 @@ template <class _data_struct> class LvshblParser
       int ival, r_id;
 
       // RELAY_NUMBER
-      if (!data->getValue(RELAY_NUMBER,&ival,r_id)) {
+      if (!data->getValue(RELAY_NUMBER,&ival)) {
         ival = 0;
-        data->addValue(RELAY_NUMBER, ival+1, r_id);
+        data->addValue(RELAY_NUMBER, ival+1);
       } else {
-        data->setValue(RELAY_NUMBER, ival+1, r_id);
+        data->setValue(RELAY_NUMBER, ival+1);
       }
       r_id = ival;
 
@@ -183,11 +183,9 @@ template <class _data_struct> class LvshblParser
       if (nstr > 2) {
         model = util.clean2Char(split_line[2]);
         if (!data->getValue(RELAY_LID,&stmp,r_id)) {
-          data->addValue(RELAY_LID,
-              atof(model.c_str()), r_id);
+          data->addValue(RELAY_LID, model.c_str(), r_id);
         } else {
-          data->setValue(RELAY_LID,
-              atof(model.c_str()), r_id);
+          data->setValue(RELAY_LID, model.c_str(), r_id);
         }
       } 
 

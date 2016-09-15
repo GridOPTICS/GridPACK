@@ -91,9 +91,6 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   // load input file
   gridpack::parser::PTI23_parser<DSFullNetwork> parser(network);
   parser.parse(filename.c_str());
-  cursor = config->getCursor("Configuration.Dynamic_simulation");
-  filename = cursor->get("generatorParameters","");
-  if (filename.size() > 0) parser.parse(filename.c_str());
 
   // partition network
   network->partition();
