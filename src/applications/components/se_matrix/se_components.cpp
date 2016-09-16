@@ -1163,7 +1163,7 @@ bool gridpack::state_estimation::SEBranch::matrixReverseValues(ComplexType *valu
   //  values[1] = p_ybusi_rvrs;
   //  values[2] = -p_ybusi_rvrs;
   //  values[3] = p_ybusr_rvrs;
-    return YMBranch::matrixForwardValues(values);
+    return YMBranch::matrixReverseValues(values);
   }
   return false;
 }
