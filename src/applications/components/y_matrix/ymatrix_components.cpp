@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
@@ -106,6 +107,21 @@ void gridpack::ymatrix::YMBus::setYBus(void)
   p_ybusi = imag(ret);
 }
 
+/**
+ * Modify diagonal values of matrix.
+ * @param rval real part of diagonal matrix element
+ * @param ival imaginary part of diagonal matrix element
+ */
+void gridpack::ymatrix::YMBus::setYBusDiag(double rval, double ival)
+{
+  p_ybusr = rval;
+  p_ybusi = ival;
+}
+
+/**
+ * Get values of YBus matrix. These can then be used in subsequent
+ * calculations
+ */
 gridpack::ComplexType gridpack::ymatrix::YMBus::getYBus(void)
 {
   gridpack::ComplexType ret(p_ybusr,p_ybusi);
@@ -270,6 +286,13 @@ bool gridpack::ymatrix::YMBranch::matrixReverseSize(int *isize, int *jsize) cons
  */
 bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
 {
+    gridpack::ymatrix::YMBus *ybus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *ybus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    if (ybus1->getOriginalIndex() == 1 && ybus2->getOriginalIndex() == 5) {
+      printf("calling matrixForwardValues\n");
+    }
   if (p_mode == YBus) {
     gridpack::ymatrix::YMBus *bus1
       = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
@@ -289,6 +312,13 @@ bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
 
 bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
 {
+    gridpack::ymatrix::YMBus *ybus1
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
+    gridpack::ymatrix::YMBus *ybus2
+      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
+    if (ybus1->getOriginalIndex() == 1 && ybus2->getOriginalIndex() == 5) {
+      printf("calling matrixReverseValues\n");
+    }
   if (p_mode == YBus) {
     gridpack::ymatrix::YMBus *bus1
       = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());

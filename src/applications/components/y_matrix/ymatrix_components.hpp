@@ -66,6 +66,13 @@ class YMBus
     void setYBus(void);
 
     /**
+     * Modify diagonal values of matrix.
+     * @param rval real part of diagonal matrix element
+     * @param ival imaginary part of diagonal matrix element
+     */
+    void setYBusDiag(double rval, double ival);
+
+    /**
      * Get values of YBus matrix. These can then be used in subsequent
      * calculations
      */
