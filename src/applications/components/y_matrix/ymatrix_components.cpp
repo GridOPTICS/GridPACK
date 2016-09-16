@@ -286,13 +286,6 @@ bool gridpack::ymatrix::YMBranch::matrixReverseSize(int *isize, int *jsize) cons
  */
 bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
 {
-    gridpack::ymatrix::YMBus *ybus1
-      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
-    gridpack::ymatrix::YMBus *ybus2
-      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
-    if (ybus1->getOriginalIndex() == 1 && ybus2->getOriginalIndex() == 5) {
-      printf("calling matrixForwardValues\n");
-    }
   if (p_mode == YBus) {
     gridpack::ymatrix::YMBus *bus1
       = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
@@ -312,13 +305,6 @@ bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
 
 bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
 {
-    gridpack::ymatrix::YMBus *ybus1
-      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
-    gridpack::ymatrix::YMBus *ybus2
-      = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus2().get());
-    if (ybus1->getOriginalIndex() == 1 && ybus2->getOriginalIndex() == 5) {
-      printf("calling matrixReverseValues\n");
-    }
   if (p_mode == YBus) {
     gridpack::ymatrix::YMBus *bus1
       = dynamic_cast<gridpack::ymatrix::YMBus*>(getBus1().get());
