@@ -1378,8 +1378,8 @@ template <class _new_bus, class _new_branch> void clone(
 void resetGlobalIndices(bool flag)
 {
   int i;
-  int nprocs = communicator()->size();
-  int me = communicator()->rank();
+  int nprocs = communicator().size();
+  int me = communicator().rank();
 
   int idx_buf[nprocs];
   for (i=0; i<nprocs; i++) idx_buf[i] = 0;
@@ -1391,7 +1391,7 @@ void resetGlobalIndices(bool flag)
     if (getActiveBus(i)) lcnt++;
   }
   idx_buf[me] = lcnt;
-  communicator()->sum(idx_buf,nprocs);
+  communicator().sum(idx_buf,nprocs);
   // Assign global index to active buses on each processor
   int offset = 0;
   for (i=0; i<me; i++) offset += idx_buf[i];
@@ -1418,7 +1418,7 @@ void resetGlobalIndices(bool flag)
     }
   }
 
-  gridpack::hash_map::GlobalIndexHashMap hash_map;
+  gridpack::hash_map::GlobalIndexHashMap hash_map(communicator());
   hash_map.addPairs(pairs);
   // set up list of ghost buses that need to be queried to get their global bus
   // indices
@@ -1426,7 +1426,7 @@ void resetGlobalIndices(bool flag)
   std::vector<int> values;
   for (i=0; i<localBuses; i++) {
     if (!getActiveBus(i)) {
-      getOriginalBusIndex(i, &lcnt);
+      lcnt = getOriginalBusIndex(i);
       keys.push_back(lcnt);
     }
   }
@@ -1468,7 +1468,7 @@ void resetGlobalIndices(bool flag)
   }
   for (i=0; i<nprocs; i++) idx_buf[i] = 0;
   idx_buf[me] = lcnt;
-  communicator()->sum(idx_buf,nprocs);
+  communicator().sum(idx_buf,nprocs);
   // Assign global index to active branches on each processor
   offset = 0;
   for (i=0; i<me; i++) offset += idx_buf[i];
@@ -1496,7 +1496,7 @@ void resetGlobalIndices(bool flag)
     }
   }
 
-  gridpack::hash_map::GlobalIndexHashMap branch_map;
+  gridpack::hash_map::GlobalIndexHashMap branch_map(communicator());
   branch_map.addPairs(branch_pairs);
   // set up list of ghost branches that need to be queried to get their global
   // branch indices
