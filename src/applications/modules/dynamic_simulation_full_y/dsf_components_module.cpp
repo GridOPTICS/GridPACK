@@ -930,7 +930,7 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType
 bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == jxd) {
-    return YMBranch::matrixForwardValues(values);
+    return YMBranch::matrixReverseValues(values);
   } else if (p_mode == posFY) {
     if (p_event) {
       values[0] = -getUpdateFactor();

@@ -2011,7 +2011,7 @@ template <class _data_struct> class Cmldblu1Parser
     {
       std::string sval;
       gridpack::utility::StringUtils util;
-      sval = util.trimQuotes(split_line[1]);
+      sval = util.trimQuotes(split_line[3]);
       util.toUpper(sval);
 
       // LOAD_MODEL              "MODEL"                  integer
@@ -3055,28 +3055,32 @@ template <class _data_struct> class Cmldblu1Parser
       // create new data collection to represent low side bus
       bus_ptr = new gridpack::component::DataCollection;
       setLowSideBus(comp_data, bus_ptr, l_idx);
+      bus_ptr->addValue("NEW_BUS_TYPE","LOW_SIDE_BUS");
       new_buses.push_back(bus_ptr);
       // create new data collection to represent load bus
       bus_ptr = new gridpack::component::DataCollection;
       setLoadBus(comp_data, bus_ptr, l_idx);
+      bus_ptr->addValue("NEW_BUS_TYPE","LOAD_BUS");
       new_buses.push_back(bus_ptr);
       // create new data collection to represent transformer branch
       branch_ptr = new gridpack::component::DataCollection;
       setTransformer(comp_data, branch_ptr, l_idx);
+      branch_ptr->addValue("NEW_BRANCH_TYPE","TRANSFORMER");
       new_branches.push_back(branch_ptr);
       // create new data collection to represent feeder branch
       branch_ptr = new gridpack::component::DataCollection;
       setFeeder(comp_data, branch_ptr, l_idx);
+      branch_ptr->addValue("NEW_BRANCH_TYPE","FEEDER");
       new_branches.push_back(branch_ptr);
       // Assign endpoint indices (based on local ordering of new buses new_buses
       // vector) of branches so that we can update neighbor information in the
       // parser. Start with the transformer branch
-      branch_ptr = new_buses[0];
-      branch_ptr->addValue("BRANCH_FROMBUS",0);
-      branch_ptr->addValue("BRANCH_TOBUS",1);
-      branch_ptr = new_buses[1];
-      branch_ptr->addValue("BRANCH_FROMBUS",1);
-      branch_ptr->addValue("BRANCH_TOBUS",2);
+      branch_ptr = new_branches[0];
+      branch_ptr->addValue(BRANCH_FROMBUS,0);
+      branch_ptr->addValue(BRANCH_TOBUS,1);
+      branch_ptr = new_branches[1];
+      branch_ptr->addValue(BRANCH_FROMBUS,1);
+      branch_ptr->addValue(BRANCH_TOBUS,2);
     }
 
 };

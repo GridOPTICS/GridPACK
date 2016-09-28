@@ -68,8 +68,12 @@ main(int argc, char **argv)
     // read in network
     cursor = config->getCursor("Configuration.Dynamic_simulation");
     std::string basefile;
-    cursor->get("networkConfiguration",&basefile);
-    ds_app.readNetwork(ds_network,config,basefile.c_str());
+    int filetype = gridpack::dynamic_simulation::PTI23;
+    if (!cursor->get("networkConfiguration",&basefile)) {
+      cursor->get("networkConfiguration_v33",&basefile);
+      filetype = gridpack::dynamic_simulation::PTI33;
+    }
+    ds_app.readNetwork(ds_network,config,basefile.c_str(),filetype);
 
     // read in information on generators
     ds_app.readGenerators();

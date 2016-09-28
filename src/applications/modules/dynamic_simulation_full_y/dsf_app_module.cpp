@@ -22,6 +22,8 @@
 
 //#define MAP_PROFILE
 
+enum Parser{PTI23, PTI33};
+
 // Calling program for dynamic simulation application
 
 /**
@@ -62,7 +64,7 @@ gridpack::dynamic_simulation::DSFullApp::~DSFullApp(void)
 void gridpack::dynamic_simulation::DSFullApp::readNetwork(
     boost::shared_ptr<DSFullNetwork> &network,
     gridpack::utility::Configuration *config,
-    const char *otherfile)
+    const char *otherfile, int filetype)
 {
   p_comm = network->communicator();
   p_network = network;
@@ -72,8 +74,14 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   std::string filename;
   if (otherfile == NULL) {
+    filetype = PTI23;
     if (!cursor->get("networkConfiguration",&filename)) {
-      printf("No network configuration specified\n");
+      if (cursor->get("networkConfiguration_v33",&filename)) {
+        filetype = PTI33;
+      } else {
+        printf("No network configuration file specified\n");
+        return;
+      }
     }
   } else {
     filename = otherfile;
@@ -89,8 +97,13 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   }
 
   // load input file
-  gridpack::parser::PTI23_parser<DSFullNetwork> parser(network);
-  parser.parse(filename.c_str());
+  if (filetype == PTI23) {
+    gridpack::parser::PTI23_parser<DSFullNetwork> parser(network);
+    parser.parse(filename.c_str());
+  } else if (filetype == PTI33) {
+    gridpack::parser::PTI33_parser<DSFullNetwork> parser(network);
+    parser.parse(filename.c_str());
+  }
 
   // partition network
   network->partition();
@@ -140,10 +153,10 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(void)
   int rank = p_network->communicator().rank();
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-  gridpack::parser::PTI23_parser<DSFullNetwork> parser(p_network);
-  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   std::string filename = cursor->get("generatorParameters","");
+  gridpack::parser::PTI23_parser<DSFullNetwork> parser(p_network);
   if (filename.size() > 0) parser.externalParse(filename.c_str());
+  parser.expandBusModels();
 }
 
 /**
@@ -163,6 +176,7 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
 {
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
+  p_factory->dumpData();
   p_factory->load();
 
   // set network components using factory

@@ -25,6 +25,8 @@
 namespace gridpack {
 namespace dynamic_simulation {
 
+enum {PTI23, PTI33};
+
     // Calling program for dynamic simulation application
 
 class DSFullApp
@@ -58,7 +60,7 @@ class DSFullApp
      */
     void readNetwork(boost::shared_ptr<DSFullNetwork> &network,
         gridpack::utility::Configuration *config,
-        const char *otherfile = NULL);
+        const char *otherfile = NULL, int filetype = PTI23);
 
     /**
      * Assume that DSFullNetwork already exists and just cache an internal pointer
