@@ -720,6 +720,7 @@ public:
     // processor
     int srcNum[nprocs];
     int ierr;
+    int k;
     int one = 1;
     MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
     ierr = MPI_Alltoall(destNum,one,MPI_INT,srcNum,one,MPI_INT,comm);
@@ -770,7 +771,7 @@ public:
 
     // Allocate buffer to receive data from other processors
     char *recvBuf;
-    recvBuf = new char[nvalues*(sizeof(_bus_data_type)+sizeof(int))];
+    recvBuf = new char[nvalues*(sizeof(_bus_data_type)*nvals+sizeof(int))];
     
     // Transmit data and clean up buffers that are no longer needed
     ierr = MPI_Alltoallv(sendBuf, destNum, destOffset, MPI_BYTE, recvBuf,
@@ -1660,7 +1661,7 @@ public:
 
     // Allocate buffer to receive data from other processors
     char *recvBuf;
-    recvBuf = new char[nvalues*(sizeof(_branch_data_type)+2*sizeof(int))];
+    recvBuf = new char[nvalues*(sizeof(_branch_data_type)*nvals+2*sizeof(int))];
     
     // Transmit data and clean up buffers that are no longer needed
     ierr = MPI_Alltoallv(sendBuf, destNum, destOffset, MPI_BYTE, recvBuf,
