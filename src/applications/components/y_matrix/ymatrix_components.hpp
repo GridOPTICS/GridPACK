@@ -15,6 +15,8 @@
  */
 // -------------------------------------------------------------
 
+//#define USE_ACOPF
+
 #ifndef _ymatrix_components_h_
 #define _ymatrix_components_h_
 
@@ -260,6 +262,24 @@ class YMBranch
      */
     double getSusceptance(std::string tag);
 
+#ifdef USE_ACOPF
+    /**
+     * Return components from individual transmission elements
+     * @param yffr list of real parts of Yff
+     * @param yffr list of imaginary parts of Yff
+     * @param yttr list of real parts of Ytt
+     * @param yttr list of imaginary parts of Ytt
+     * @param yftr list of real parts of Yft
+     * @param yftr list of imaginary parts of Yft
+     * @param ytfr list of real parts of Ytf
+     * @param ytfr list of imaginary parts of Ytf
+     */
+    void getYElements(std::vector<double> &yffr, std::vector<double> &yffi,
+                      std::vector<double> &yttr, std::vector<double> &ytti,
+                      std::vector<double> &yftr, std::vector<double> &yfti,
+                      std::vector<double> &ytfr, std::vector<double> &ytfi);
+#endif
+
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
@@ -280,6 +300,12 @@ class YMBranch
     int p_elems;
     bool p_isolated;
     bool p_active;
+#ifdef USE_ACOPF
+    std::vector<double> p_yffr, p_yffi;
+    std::vector<double> p_yttr, p_ytti;
+    std::vector<double> p_yftr, p_yfti;
+    std::vector<double> p_ytfr, p_ytfi;
+#endif
 
 private:
 
@@ -290,6 +316,12 @@ private:
   void serialize(Archive & ar, const unsigned int version)
   {
     ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+#ifdef USE_ACOPF
+      & p_yffr & p_yffi
+      & p_yttr & p_ytti
+      & p_yftr & p_yfti
+      & p_ytfr & p_ytfi
+#endif
       & p_reactance
       & p_resistance
       & p_tap_ratio
