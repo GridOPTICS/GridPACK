@@ -19,6 +19,7 @@ set(target_libraries
   gridpack_math
   gridpack_timer
   gridpack_expression
+  gridpack_optimum
   gridpack_parallel
   gridpack_configuration
 )
@@ -34,8 +35,6 @@ if (GA_FOUND)
 endif()
 
 set(expression_src 
-  variable.cpp
-  expression.cpp
   optimizer.cpp
   lpfile_optimizer_implementation.cpp
 )
@@ -57,7 +56,7 @@ else()
   message(WARNING "Optimization library not specified")
 endif()
 
-add_library(gridpack_expression
+add_library(gridpack_optimum
   ${expression_src}
 )
 
@@ -68,23 +67,6 @@ list(APPEND target_libraries
   ${PETSC_LIBRARIES}
   ${MPI_CXX_LIBRARIES}
 )
-
-# -------------------------------------------------------------
-# variable test suite
-# -------------------------------------------------------------
-add_executable(variable_test test/variable_test.cpp)
-target_link_libraries(variable_test ${target_libraries})
-
-gridpack_add_unit_test("optimization_variables" variable_test)
-
-
-# -------------------------------------------------------------
-# expression test suite
-# -------------------------------------------------------------
-add_executable(expression_test test/expression_test.cpp)
-target_link_libraries(expression_test ${target_libraries})
-
-gridpack_add_unit_test("optimization_expressions" variable_test)
 
 # -------------------------------------------------------------
 # optimizer test suite
@@ -198,6 +180,6 @@ install(FILES
 )
 
 install(TARGETS 
-  gridpack_expression
+  gridpack_optimum
   DESTINATION lib
 )

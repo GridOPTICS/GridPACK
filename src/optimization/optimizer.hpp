@@ -28,7 +28,7 @@
 #include <gridpack/utilities/exception.hpp>
 #include <gridpack/configuration/configurable.hpp>
 #include <gridpack/parallel/distributed.hpp>
-#include <gridpack/optimization/expression.hpp>
+#include <gridpack/expression/expression.hpp>
 
 namespace gridpack {
 namespace optimization {
