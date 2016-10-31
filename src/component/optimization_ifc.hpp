@@ -26,8 +26,8 @@
 #include "boost/smart_ptr/weak_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/optimization/variable.hpp"
-#include "gridpack/optimization/expression.hpp"
+#include "gridpack/expression/variable.hpp"
+#include "gridpack/expression/expression.hpp"
 
 #include <boost/serialization/export.hpp>
 
