@@ -22,6 +22,7 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 set(expression_src 
   variable.cpp
   expression.cpp
+  functions.cpp
 )
 
 add_library(gridpack_expression

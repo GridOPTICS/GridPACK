@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2016-10-31 15:03:09 d3g096
+ * @date   2016-11-01 13:05:12 d3g096
  * 
  * @brief  
  * 
@@ -39,7 +39,7 @@
 #include "gridpack/parallel/parallel.hpp"
 
 #include "gridpack/expression/variable.hpp"
-#include "gridpack/expression/expression.hpp"
+#include "gridpack/expression/functions.hpp"
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -186,6 +186,17 @@ BOOST_AUTO_TEST_CASE( serialize )
               << ": " << n2
               << std::endl;
   }
+}
+
+BOOST_AUTO_TEST_CASE(function_test)
+{
+  go::VariablePtr A(new go::RealVariable(13.0));
+  go::ExpressionPtr f(go::sin(4*A));
+  bool nullchk(f->null());
+  BOOST_CHECK(!nullchk);
+  f->evaluate();
+  f = go::cos(8*A);
+  f->evaluate();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

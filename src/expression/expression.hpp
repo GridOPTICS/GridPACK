@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2016-10-31 14:09:44 d3g096
+ * @date   2016-11-01 13:03:41 d3g096
  * 
  * @brief  
  * 
@@ -59,6 +59,8 @@ class GreaterThan;
 class GreaterThanOrEqual;
 class Equal;
 
+class Function;
+
 // -------------------------------------------------------------
 //  class ExpressionVisitor
 // -------------------------------------------------------------
@@ -95,6 +97,8 @@ public:
   virtual void visit(GreaterThan& e);
   virtual void visit(GreaterThanOrEqual& e);
   virtual void visit(Equal& e);
+
+  virtual void visit(Function& e);
 
 };
 
@@ -158,7 +162,7 @@ protected:
   virtual void p_accept(ExpressionVisitor& e) = 0;
 
   /// Is this expression empty?
-  bool p_null(void) const
+  virtual bool p_null(void) const
   {
     return true;
   }
@@ -221,7 +225,7 @@ protected:
 
   bool p_null(void) const
   {
-    return true;
+    return false;
   }
 
   /// Constructor for serialization
