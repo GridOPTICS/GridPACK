@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2015-10-12 08:59:56 d3g096
+ * @date   2016-11-01 13:05:12 d3g096
  * 
  * @brief  
  * 
@@ -22,6 +22,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <numeric>
 #include <boost/bind.hpp>
 
 // These two includes are needed for Boost 1.56
@@ -37,7 +38,8 @@
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
 
-#include "expression.hpp"
+#include "gridpack/expression/variable.hpp"
+#include "gridpack/expression/functions.hpp"
 
 #define BOOST_TEST_NO_MAIN
 #define BOOST_TEST_ALTERNATIVE_INIT_API
@@ -75,6 +77,14 @@ public:
 
 BOOST_AUTO_TEST_SUITE( ExpressionTest )
 
+BOOST_AUTO_TEST_CASE ( check_null )
+{
+  go::VariablePtr A;
+  go::ExpressionPtr four;
+  go::ExpressionPtr e(4*A*four);
+  BOOST_CHECK(e->null());
+}
+
 BOOST_AUTO_TEST_CASE( serialize )
 {
   std::vector<go::VariablePtr> vars;
@@ -100,6 +110,14 @@ BOOST_AUTO_TEST_CASE( serialize )
   exprs.push_back( 6*B + 2*(A^2) ); 
   exprs.push_back( 6*C + ((2*A)^2) ); 
 
+  bool nullchk;
+
+  nullchk = std::accumulate(exprs.begin(), exprs.end(), false,
+                            boost::bind(std::logical_or<bool>(), _1, 
+                                        boost::bind(&go::Expression::null, _2)));
+
+  BOOST_CHECK(!nullchk);
+
   std::for_each(exprs.begin(), exprs.end(), 
                 boost::bind(&go::Expression::evaluate, _1));
   std::cout << std::endl;
@@ -108,6 +126,11 @@ BOOST_AUTO_TEST_CASE( serialize )
   cons.push_back( A < 4 );
   cons.push_back( exprs.back() >= 6 );
   cons.push_back( C == 3 );
+
+  nullchk = std::accumulate(cons.begin(), cons.end(), false,
+                            boost::bind(std::logical_or<bool>(), _1, 
+                                        boost::bind(&go::Expression::null, _2)));
+  BOOST_CHECK(!nullchk);
 
   std::for_each(cons.begin(), cons.end(), 
                 boost::bind(&go::Expression::evaluate, _1));
@@ -130,11 +153,21 @@ BOOST_AUTO_TEST_CASE( serialize )
   BOOST_CHECK_EQUAL(vars.size(), invars.size());
   BOOST_CHECK_EQUAL(exprs.size(), inexprs.size());
   BOOST_CHECK_EQUAL(cons.size(), incons.size());
+
+  nullchk = std::accumulate(inexprs.begin(), inexprs.end(), false,
+                            boost::bind(std::logical_or<bool>(), _1, 
+                                        boost::bind(&go::Expression::null, _2)));
+  BOOST_CHECK(!nullchk);
   
   std::for_each(inexprs.begin(), inexprs.end(), 
                 boost::bind(&go::Expression::evaluate, _1));
   std::cout << std::endl;
   
+  nullchk = std::accumulate(incons.begin(), incons.end(), false,
+                            boost::bind(std::logical_or<bool>(), _1, 
+                                        boost::bind(&go::Expression::null, _2)));
+  BOOST_CHECK(!nullchk);
+
   std::for_each(incons.begin(), incons.end(), 
                 boost::bind(&go::Expression::evaluate, _1));
   
@@ -153,6 +186,17 @@ BOOST_AUTO_TEST_CASE( serialize )
               << ": " << n2
               << std::endl;
   }
+}
+
+BOOST_AUTO_TEST_CASE(function_test)
+{
+  go::VariablePtr A(new go::RealVariable(13.0));
+  go::ExpressionPtr f(go::sin(4*A));
+  bool nullchk(f->null());
+  BOOST_CHECK(!nullchk);
+  f->evaluate();
+  f = go::cos(8*A);
+  f->evaluate();
 }
 
 BOOST_AUTO_TEST_SUITE_END()

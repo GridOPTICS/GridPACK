@@ -330,11 +330,21 @@ void gridpack::ymatrix::YMBranch::setYBus(void)
   p_ybusi_frwd = 0.0;
   p_ybusr_rvrs = 0.0;
   p_ybusi_rvrs = 0.0;
+#ifdef USE_ACOPF
+  p_yffr.clear();
+  p_yffi.clear();
+  p_yttr.clear();
+  p_ytti.clear();
+  p_yftr.clear();
+  p_yfti.clear();
+  p_ytfr.clear();
+  p_ytfi.clear();
+#endif
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType ret(p_resistance[i],p_reactance[i]);
     ret = -1.0/ret;
     gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
-    a = p_tap_ratio[i]*a;
+    if (p_xform[i]) a = p_tap_ratio[i]*a;
     if (p_switched[i]) a = conj(a);
     if (p_branch_status[i]) {
       if (p_xform[i]) {
@@ -348,6 +358,23 @@ void gridpack::ymatrix::YMBranch::setYBus(void)
         p_ybusr_rvrs += real(ret);
         p_ybusi_rvrs += imag(ret);
       }
+#ifdef USE_ACOPF
+      gridpack::ComplexType j(0.0,1.0);
+      ret = -ret;
+      gridpack::ComplexType yff,ytt,yft,ytf;
+      ytt = ret + 0.5*p_charging[i]*j;
+      yff = ytt/(a*conj(a));
+      yft = -ret/conj(a);
+      ytf = -ret/a;
+      p_yffr.push_back(real(yff));
+      p_yffi.push_back(imag(yff));
+      p_yttr.push_back(real(ytt));
+      p_ytti.push_back(imag(ytt));
+      p_yftr.push_back(real(yft));
+      p_yfti.push_back(imag(yft));
+      p_ytfr.push_back(real(ytf));
+      p_ytfi.push_back(imag(ytf));
+#endif
     }
   }
 }
@@ -641,3 +668,31 @@ double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
   }
   return 0.0;
 }
+
+#ifdef USE_ACOPF
+/**
+ * Return components from individual transmission elements
+ * @param yffr list of real parts of Yff
+ * @param yffr list of imaginary parts of Yff
+ * @param yttr list of real parts of Ytt
+ * @param yttr list of imaginary parts of Ytt
+ * @param yftr list of real parts of Yft
+ * @param yftr list of imaginary parts of Yft
+ * @param ytfr list of real parts of Ytf
+ * @param ytfr list of imaginary parts of Ytf
+ */
+void gridpack::ymatrix::YMBranch::getYElements(
+    std::vector<double> &yffr, std::vector<double> &yffi,
+    std::vector<double> &yttr, std::vector<double> &ytti,
+    std::vector<double> &yftr, std::vector<double> &yfti,
+    std::vector<double> &ytfr, std::vector<double> &ytfi) {
+  yffr = p_yffr;
+  yffi = p_yffi;
+  yttr = p_yttr;
+  ytti = p_ytti;
+  yftr = p_yftr;
+  yfti = p_yfti;
+  ytfr = p_ytfr;
+  ytfi = p_ytfi;
+}
+#endif

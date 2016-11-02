@@ -266,7 +266,13 @@ class PTI33_parser : public BasePTIParser<_network>
         // BUS_VOLTAGE_ANG              "VA"                  float
         if (nstr > 8) data->addValue(BUS_VOLTAGE_ANG, atof(split_line[8].c_str()));
 
-        // TODO: Need to add NVHI, NVLO, EVHI, EVLO
+        // BUS_VOLTAGE_MAX              "VOLTAGE_MAX"               float
+        if (nstr > 9) data->addValue(BUS_VOLTAGE_MAX, atof(split_line[9].c_str()));
+
+        // BUS_VOLTAGE_MIN              "VOLTAGE_MIN"              float
+        if (nstr > 10) data->addValue(BUS_VOLTAGE_MIN, atof(split_line[10].c_str()));
+
+        // TODO: Need to add EVHI, EVLO
         index++;
         std::getline(input, line);
       }

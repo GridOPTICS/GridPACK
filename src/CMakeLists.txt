@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2016-10-03 14:57:49 d3g096
+# Last Change: 2016-11-02 07:15:04 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -278,6 +278,7 @@ add_subdirectory(partition)
 add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(mapper)
+add_subdirectory(expression)
 add_subdirectory(optimization)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/powerflow2)

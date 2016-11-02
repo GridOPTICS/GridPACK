@@ -43,3 +43,5 @@
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/timer/local_timer.hpp"
+#include "gridpack/expression/expression.hpp"
+#include "gridpack/expression/variable.hpp"

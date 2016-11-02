@@ -92,6 +92,18 @@
 #define BUS_VOLTAGE_ANG "BUS_VOLTAGE_ANG"
 
 /**
+ * Maximum allowable bus voltage magnitude, in p. u.
+ * type: real float
+ */
+#define BUS_VOLTAGE_MAX "BUS_VOLTAGE_MAX"
+
+/**
+ * Minimum allowable bus voltage magnitude, in p. u.
+ * type: real float
+ */
+#define BUS_VOLTAGE_MIN "BUS_VOLTAGE_MIN"
+
+/**
  * Owner number
  * type: integer
  */
