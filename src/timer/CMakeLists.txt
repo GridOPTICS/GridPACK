@@ -10,12 +10,19 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2015-06-25 13:12:31 d3g096
+# Last Change: 2016-10-03 13:44:18 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_timer
   coarse_timer.cpp
   local_timer.cpp
+)
+
+target_link_libraries(gridpack_timer
+    gridpack_parallel
+    ${GA_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
 )
 
 set(target_libraries

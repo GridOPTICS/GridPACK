@@ -12,16 +12,6 @@
 # Created 
 # Last Change:
 # -------------------------------------------------------------
-set(target_libraries
-  gridpack_components
-  gridpack_factory
-  gridpack_partition
-  gridpack_math
-  gridpack_timer
-  gridpack_expression
-  gridpack_parallel
-  gridpack_configuration
-)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -40,19 +30,21 @@ set(expression_src
   lpfile_optimizer_implementation.cpp
 )
 
+set(optimizer_libraries)
+
 if (USE_CPLEX)
   list(APPEND expression_src cplex_optimizer_implementation.cpp)
   add_definitions(-DHAVE_CPLEX)
   include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
-  list(APPEND target_libraries ${CPLEX_LIBRARIES})
+  list(APPEND optimizer_libraries ${CPLEX_LIBRARIES})
 elseif(USE_GLPK)
   list(APPEND expression_src glpk_optimizer_implementation.cpp)
   add_definitions(-DHAVE_GLPK)
   include_directories(BEFORE ${GLPK_INCLUDE_DIR})
-  list(APPEND target_libraries ${GLPK_LIBRARY})
+  list(APPEND optimizer_libraries ${GLPK_LIBRARY})
 elseif(USE_GUROBI)
   include_directories(AFTER ${GUROBI_INCLUDE_DIRS})
-  list(APPEND target_libraries ${GUROBI_LIBRARIES})
+  list(APPEND optimizer_libraries ${GUROBI_LIBRARIES})
 else()
   message(WARNING "Optimization library not specified")
 endif()
@@ -61,7 +53,27 @@ add_library(gridpack_expression
   ${expression_src}
 )
 
-list(APPEND target_libraries
+
+target_link_libraries(gridpack_expression
+  gridpack_parallel
+  gridpack_configuration
+  ${optimizer_libraries}
+  ${GA_LIBRARIES} 
+  ${Boost_LIBRARIES} 
+  ${PETSC_LIBRARIES}
+  ${MPI_CXX_LIBRARIES}
+)
+  
+set(target_libraries
+  gridpack_components
+  gridpack_factory
+  gridpack_partition
+  gridpack_math
+  gridpack_timer
+  gridpack_expression
+  gridpack_parallel
+  gridpack_configuration
+  ${optimizer_libraries}
   ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 

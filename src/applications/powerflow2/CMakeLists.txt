@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2015-10-01 13:41:32 d3g096
+# Last Change: 2016-10-03 14:30:59 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -39,6 +39,10 @@ endif()
 
 add_library(powerflow_app2
   pf_factory.cpp
+)
+
+target_link_libraries(powerflow_app2
+  ${target_libraries}
 )
 
 add_executable(powerflow2

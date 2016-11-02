@@ -10,10 +10,18 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2016-07-15 08:13:04 d3g096
+# Last Change: 2016-10-03 14:57:49 d3g096
 # -------------------------------------------------------------
 
-cmake_minimum_required (VERSION 2.6.4)
+# 
+cmake_minimum_required (VERSION 2.8.8)
+
+# This allows the use of LOCATION(target)
+if (POLICY CMP0026)
+  cmake_policy(SET CMP0026 OLD)
+endif (POLICY CMP0026)
+
+
 project (GridPACK)
 
 #set (GridPACK_VERSION_MAJOR 1)

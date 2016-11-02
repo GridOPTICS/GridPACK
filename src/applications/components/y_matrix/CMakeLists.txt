@@ -10,10 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-05 08:19:31 d3g096
+# Last Change: 2016-10-03 14:25:45 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_components
     gridpack_parallel
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

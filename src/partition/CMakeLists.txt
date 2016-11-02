@@ -9,7 +9,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2014-02-26 07:54:54 d3g096
+# Last Change: 2016-10-03 13:59:44 d3g096
 # -------------------------------------------------------------
 
 
@@ -72,6 +72,8 @@ endif()
 add_library(gridpack_partition
   ${gridpack_partition_sources}
 )
+target_link_libraries(gridpack_partition ${target_libraries})
+
 
 # -------------------------------------------------------------
 # partition test suite
