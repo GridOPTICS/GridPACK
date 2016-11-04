@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2015-11-23 11:46:06 d3g096
+ * @date   2016-11-01 13:03:41 d3g096
  * 
  * @brief  
  * 
@@ -59,6 +59,8 @@ class GreaterThan;
 class GreaterThanOrEqual;
 class Equal;
 
+class Function;
+
 // -------------------------------------------------------------
 //  class ExpressionVisitor
 // -------------------------------------------------------------
@@ -96,6 +98,8 @@ public:
   virtual void visit(GreaterThanOrEqual& e);
   virtual void visit(Equal& e);
 
+  virtual void visit(Function& e);
+
 };
 
 // -------------------------------------------------------------
@@ -121,6 +125,12 @@ public:
   int precedence(void) const
   {
     return p_precedence;
+  }
+
+  /// Is this expression empty?
+  virtual bool null(void) const
+  {
+    return this->p_null();
   }
 
   /// Do whatever 
@@ -150,6 +160,12 @@ protected:
   virtual std::string p_render(void) const = 0;
 
   virtual void p_accept(ExpressionVisitor& e) = 0;
+
+  /// Is this expression empty?
+  virtual bool p_null(void) const
+  {
+    return true;
+  }
 
   /// Constructor for serialization
   Expression(void) : p_precedence() {}
@@ -205,6 +221,11 @@ protected:
   void p_accept(ExpressionVisitor& e)
   {
     e.visit(*this);
+  }
+
+  bool p_null(void) const
+  {
+    return false;
   }
 
   /// Constructor for serialization
@@ -279,6 +300,11 @@ protected:
     e.visit(*this);
   }
 
+  bool p_null(void) const
+  {
+    return !static_cast<bool>(p_var);
+  }
+
   /// Constructor for serialization
   VariableExpression(void) 
     : Expression(), p_var() 
@@ -342,6 +368,14 @@ protected:
   void p_accept(ExpressionVisitor& e)
   {
     e.visit(*this);
+  }
+
+  bool p_null(void) const
+  {
+    bool result(true);
+    if (p_expr) 
+      result = p_operator.size() == 0 || p_expr->null();
+    return result;
   }
 
   /// Constructor for serialization
@@ -532,6 +566,17 @@ protected:
       s += "(empty)";
     }
     return s;
+  }
+
+  bool p_null(void) const
+  {
+    bool result(true);
+    if (p_LHS && p_RHS) {
+      result = p_operator.size() == 0 || 
+        p_LHS->null() ||
+        p_RHS->null();
+    }
+    return result;
   }
 
   void p_accept(ExpressionVisitor& e)
