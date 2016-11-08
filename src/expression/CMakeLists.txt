@@ -59,7 +59,8 @@ gridpack_add_unit_test("optimization_expressions" variable_test)
 install(FILES 
   variable.hpp  
   expression.hpp
-  DESTINATION include/gridpack/optimization
+  functions.hpp
+  DESTINATION include/gridpack/expression
 )
 
 install(TARGETS 

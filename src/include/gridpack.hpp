@@ -45,3 +45,4 @@
 #include "gridpack/timer/local_timer.hpp"
 #include "gridpack/expression/expression.hpp"
 #include "gridpack/expression/variable.hpp"
+#include "gridpack/expression/functions.hpp"
