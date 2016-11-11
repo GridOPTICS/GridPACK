@@ -185,8 +185,6 @@ endif()
 # installation
 # -------------------------------------------------------------
 install(FILES 
-  variable.hpp  
-  expression.hpp
   optimization.hpp
   DESTINATION include/gridpack/optimization
 )
