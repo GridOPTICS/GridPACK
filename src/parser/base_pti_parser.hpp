@@ -132,8 +132,6 @@ class BasePTIParser : public BaseParser<_network>
                  std::vector<gridpack::component::DataCollection*> branches;
                  Cmldblu1Parser<load_params> parser;
                  parser.expandModel(data, buses, branches, j);
-                 printf("buses.size: %d branches.size: %d\n",buses.size(),
-                     branches.size());
                  new_buses.push_back(buses);
                  new_branches.push_back(branches);
                  comp_buses.push_back(i);
@@ -169,7 +167,6 @@ class BasePTIParser : public BaseParser<_network>
       for (i=1; i<nprocs; i++) {
         offset[i] = offset[i-1] + added_buses[i-1];
       }
-      printf("Got to 1 numLoads: %d\n",numLoads);
       // Assign new indices to the new buses
       int icnt = 0;
       int idx;
@@ -177,7 +174,6 @@ class BasePTIParser : public BaseParser<_network>
       for (i=0; i<numLoads; i++) {
         std::vector<int> lidx;
         lidx.push_back(comp_buses[i]);
-        printf("new_buses[%d].size: %d\n",i,new_buses[i].size());
         for (j=1; j<new_buses[i].size(); j++) {
           data = (new_buses[i])[j];
           idx = offset[me]+icnt+max_idx+1;
@@ -191,7 +187,6 @@ class BasePTIParser : public BaseParser<_network>
         }
         local_bus.push_back(lidx);
       }
-      printf("Got to 2\n");
       // New buses now have original IDs and are complete.
       // Now need to set "from" and "to"
       // indices for new branches as well as fixing up neighor lists
@@ -220,7 +215,6 @@ class BasePTIParser : public BaseParser<_network>
           icnt++;
         }
       }
-      printf("Got to 3\n");
       // Assign global indices to new buses.
       icnt = 0;
       int lcnt = 0;
@@ -229,10 +223,7 @@ class BasePTIParser : public BaseParser<_network>
         if (p_network->getActiveBus(i)) {
           if (i == comp_buses[icnt]) {
             // if original bus is composite bus, loop over new buses;
-            printf("local_bus[%d].size: %d\n",icnt,local_bus[icnt].size());
             for (j=1; j<local_bus[icnt].size(); j++) {
-              printf("local_bus[%d][%d]: %d\n",(local_bus[icnt])[j]);
-              printf("totalBuses+offset[me]+lcnt: %d\n",totalBuses+offset[me]+lcnt);
               p_network->setGlobalBusIndex((local_bus[icnt])[j],
                   totalBuses+offset[me]+lcnt);
               lcnt++;
@@ -244,19 +235,16 @@ class BasePTIParser : public BaseParser<_network>
 
       // Add global indices to new local branches.
       int nbranch_new = p_network->numBranches();
-      printf("Got to 4 nbranch_new: %d\n",nbranch_new);
       int branch_buf[nprocs];
       for (i=0; i<nprocs; i++) {
         branch_buf[i] = 0;
       }
-      printf("Got to 5\n");
       branch_buf[me] = nbranch_new-nbranch;
       p_network->communicator().sum(branch_buf,nprocs);
       offset[0] = 0;
       for (i=1; i<nprocs; i++) {
         offset[i] = offset[i-1]+branch_buf[i-1];
       }
-      printf("Got to 6\n");
       icnt = offset[me];
       for (i=nbranch; i<nbranch_new; i++) {
         if (p_network->getActiveBranch(i)) {
@@ -264,7 +252,6 @@ class BasePTIParser : public BaseParser<_network>
           icnt++;
         }
       }
-      printf("Got to 7\n");
 
       // Reset remaining indices
       p_network->resetGlobalIndices(false);
@@ -924,6 +911,9 @@ class BasePTIParser : public BaseParser<_network>
             Cmldblu1Parser<load_params> parser;
             parser.extract(load_data[i], data, l_id);
           }
+        } else {
+          printf("No match found for load on bus %d with tag %s\n",
+              load_data[i].bus_id,load_data[i].id);
         }
       }
     }
