@@ -46,6 +46,20 @@ public:
    */
   void trim(std::string &str)
   {
+    // replace tabs and/or carriage returns with blank space
+    int ntok;
+    ntok = str.find('\n',0);
+    while (ntok != std::string::npos) {
+      str[ntok] = ' ';
+      ntok++;
+      ntok = str.find('\n',ntok);
+    }
+    ntok = str.find('\t',0);
+    while (ntok != std::string::npos) {
+      str[ntok] = ' ';
+      ntok++;
+      ntok = str.find('\t',ntok);
+    }
     boost::trim(str);
   };
 
