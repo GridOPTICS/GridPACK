@@ -74,13 +74,16 @@ class PTI33_parser : public BasePTIParser<_network>
       p_timer->configTimer(false);
       int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
       p_timer->start(t_total);
-      std::string ext = this->getExtension(fileName);
+      gridpack::utility::StringUtils util;
+      std::string tmpstr = fileName;
+      util.trim(tmpstr);
+      std::string ext = this->getExtension(tmpstr);
       if (ext == "raw") {
-        getCase(fileName);
+        getCase(tmpstr);
         //brdcst_data();
         this->createNetwork(p_busData,p_branchData);
       } else if (ext == "dyr") {
-        this->getDS(fileName);
+        this->getDS(tmpstr);
       }
       p_timer->stop(t_total);
       p_timer->configTimer(true);
@@ -99,7 +102,6 @@ class PTI33_parser : public BasePTIParser<_network>
      */
     void getCase(const std::string & fileName)
     {
-
       int t_case = p_timer->createCategory("Parser:getCase");
       p_timer->start(t_case);
       p_busData.clear();
@@ -241,7 +243,7 @@ class PTI33_parser : public BasePTIParser<_network>
         // BUS_NAME             "NAME"                 string
         std::string bus_name = split_line[1];
 
-        //store bus removes white space around name
+        //store bus and index as a pair
         storeBus(bus_name, o_idx);
         if (nstr > 1) data->addValue(BUS_NAME, bus_name.c_str());
 

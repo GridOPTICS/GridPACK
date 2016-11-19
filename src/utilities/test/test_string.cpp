@@ -82,4 +82,10 @@ int main(int argc, char **argv)
   str = " Test String 3 ";
   tag = util.trimQuotes(str);
   printf("expected: (Test String 3) found: (%s)\n",tag.c_str());
+  str = "\nTest string 4\n";
+  util.trim(str);
+  printf("expected: (Test String 4) found: (%s)\n",str.c_str());
+  str = "\nTest string 5\t";
+  util.trim(str);
+  printf("expected: (Test String 5) found: (%s)\n",str.c_str());
 }
