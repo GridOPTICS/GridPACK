@@ -328,11 +328,14 @@ class PFBus
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
     std::vector<double> p_pb;
-    double p_pl, p_ql;
+    std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
+    std::vector<int> p_lstatus;
+    std::vector<std::string> p_lid;
     double p_sbase;
     double p_Pinj, p_Qinj;
     bool p_isPV, p_saveisPV;
     int p_ngen;
+    int p_nload;
     int p_type;
     int p_area;
 
@@ -370,12 +373,13 @@ private:
       & p_gstatus
       & p_vs & p_gid
       & p_pt & p_pb
-      & p_pl & p_ql
+      & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
+      & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
       & p_isPV
       & p_saveisPV
-      & p_ngen & p_type
+      & p_ngen & p_type & p_nload
       & p_area;
   }  
 
