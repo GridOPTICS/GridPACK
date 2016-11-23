@@ -52,7 +52,6 @@
     </NonlinearSolver>
   </Powerflow>
   <Dynamic_simulation>
-    <networkConfiguration> IEEE_145bus_v23_PSLF.raw </networkConfiguration>
     <generatorParameters> IEEE_145b_classical_model.dyr </generatorParameters>
     <simulationTime>30</simulationTime>
     <timeStep>0.005</timeStep>
