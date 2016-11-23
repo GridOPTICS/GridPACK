@@ -20,6 +20,7 @@ set(target_libraries
     gridpack_math
     gridpack_configuration
     gridpack_timer
+    gridpack_powerflow_module
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 

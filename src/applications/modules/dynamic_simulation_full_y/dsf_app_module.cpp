@@ -15,7 +15,7 @@
  */
 // -------------------------------------------------------------
 //
-#define USE_TIMESTAMP
+//#define USE_TIMESTAMP
 
 #include "gridpack/include/gridpack.hpp"
 #include "dsf_app_module.hpp"
@@ -176,7 +176,7 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
 {
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
-  p_factory->dumpData();
+  // p_factory->dumpData();
   p_factory->load();
 
   // set network components using factory
