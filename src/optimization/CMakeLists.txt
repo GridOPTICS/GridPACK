@@ -14,7 +14,6 @@
 # -------------------------------------------------------------
 set(target_libraries
   gridpack_components
-  gridpack_factory
   gridpack_partition
   gridpack_math
   gridpack_timer

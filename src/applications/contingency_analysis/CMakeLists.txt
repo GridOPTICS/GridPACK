@@ -16,7 +16,6 @@
 set(target_libraries
     gridpack_powerflow_module
     gridpack_components
-    gridpack_factory
     gridpack_partition
     gridpack_parallel
     gridpack_math

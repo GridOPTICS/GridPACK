@@ -13,9 +13,9 @@
 # Last Change: 2014-01-08 09:01:55 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_factory
-  base_factory.cpp
-)
+#add_library(gridpack_factory
+#  base_factory.cpp
+#)
 
 include_directories(AFTER ${GA_INCLUDE_DIRS})
 
@@ -57,7 +57,7 @@ install(FILES
   DESTINATION include/gridpack/factory
 )
 
-install(TARGETS 
-  gridpack_factory
-  DESTINATION lib
-)
+#install(TARGETS 
+#  gridpack_factory
+#  DESTINATION lib
+#)
