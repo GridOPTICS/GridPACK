@@ -81,6 +81,7 @@ class BasePTIParser : public BaseParser<_network>
       std::string ext = getExtension(fileName);
       if (ext == "dyr") {
         getDSExternal(fileName);
+        expandBusModels();
       } else if (ext == "uc") {
         getUCExternal(fileName);
       }
@@ -124,9 +125,9 @@ class BasePTIParser : public BaseParser<_network>
         // not have connections to other processors
         if (p_network->getActiveBus(i)) {
          data = p_network->getBusData(i).get();
-         if (data->getValue("LOAD_NUMBER",&nload)) {
+         if (data->getValue(LOAD_NUMBER,&nload)) {
            for (j=0; j<nload; j++) {
-             if (data->getValue("LOAD_MODEL",&model, j)) {
+             if (data->getValue(LOAD_MODEL,&model, j)) {
                if (model == "CMLDBLU1") {
                  std::vector<gridpack::component::DataCollection*> buses;
                  std::vector<gridpack::component::DataCollection*> branches;

@@ -2820,7 +2820,7 @@ template <class _data_struct> class Cmldblu1Parser
         t_data->addValue(LOAD_TRC2, rval, 0);
       }
 
-      t_data->addValue(LOAD_ID, "M2", 0);
+      t_data->addValue(LOAD_ID, "M2", 1);
       if (comp_data->getValue(LOAD_MTPB, &ival, l_idx)) {
         t_data->addValue(LOAD_MTP, rval, 1);
       }
@@ -2882,7 +2882,7 @@ template <class _data_struct> class Cmldblu1Parser
         t_data->addValue(LOAD_TRC2, rval, 1);
       }
 
-      t_data->addValue(LOAD_ID, "M3", 0);
+      t_data->addValue(LOAD_ID, "M3", 2);
       if (comp_data->getValue(LOAD_MTPC, &ival, l_idx)) {
         t_data->addValue(LOAD_MTP, rval, 2);
       }
@@ -2944,7 +2944,7 @@ template <class _data_struct> class Cmldblu1Parser
         t_data->addValue(LOAD_TRC2, rval, 2);
       }
 
-      t_data->addValue(LOAD_ID, "M4", 0);
+      t_data->addValue(LOAD_ID, "M4", 3);
       if (comp_data->getValue(LOAD_MTPD, &ival, l_idx)) {
         t_data->addValue(LOAD_MTP, rval, 3);
       }

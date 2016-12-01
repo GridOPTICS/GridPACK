@@ -29,12 +29,12 @@
 #include <boost/type_traits.hpp>
 #include <ga.h>
 #include "gridpack/parallel/distributed.hpp"
+#include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/partition/graph_partitioner.hpp"
 #include "gridpack/parallel/shuffler.hpp"
 #include "gridpack/parallel/ga_shuffler.hpp"
-#include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/utilities/exception.hpp"
 
@@ -1417,7 +1417,7 @@ void resetGlobalIndices(bool flag)
             getGlobalBusIndex(i)));
     }
   }
-
+ 
   gridpack::hash_map::GlobalIndexHashMap hash_map(communicator());
   hash_map.addPairs(pairs);
   // set up list of ghost buses that need to be queried to get their global bus
