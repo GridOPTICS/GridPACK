@@ -19,7 +19,7 @@
 #define _hw_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/factory/base_factory.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "hw_components.hpp"
 
 namespace gridpack {

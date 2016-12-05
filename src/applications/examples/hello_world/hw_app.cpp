@@ -17,10 +17,9 @@
 
 #include <iostream>
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "hw_app.hpp"
 #include "hw_factory.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
 
 
 // Calling program for hello world application

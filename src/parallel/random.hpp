@@ -74,8 +74,8 @@ private:
 };
 
 
-} // namespace gridpack
 } // namespace random
+} // namespace gridpack
 
 #endif
 

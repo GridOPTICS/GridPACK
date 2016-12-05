@@ -19,7 +19,6 @@
 // -------------------------------------------------------------
 
 #include <ga.h>
-#include <parallel/communicator.hpp>
 #include "index_hash.hpp"
 
 //#define HASH_WITH_MPI

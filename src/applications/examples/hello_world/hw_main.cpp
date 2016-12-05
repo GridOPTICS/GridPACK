@@ -16,7 +16,7 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
-#include "gridpack/math/math.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "hw_app.hpp"
 
 // Calling program for the hello_world applications
@@ -24,19 +24,20 @@
 int
 main(int argc, char **argv)
 {
+  gridpack::parallel::Environment env(argc, argv);
+#if 0
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
 
   GA_Initialize();
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
-
-  // Initialize Math libraries
-  gridpack::math::Initialize();
+#endif
 
   gridpack::hello_world::HWApp app;
   app.execute(argc, argv);
 
+#if 0
   GA_Terminate();
 
   // Terminate Math libraries
@@ -44,4 +45,6 @@ main(int argc, char **argv)
   // Clean up MPI libraries
   ierr = MPI_Finalize();
   return ierr;
+#endif
+  return 0;
 }

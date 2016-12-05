@@ -71,13 +71,16 @@ class PTI23_parser : public BasePTIParser<_network>
       p_timer->configTimer(false);
       int t_total = p_timer->createCategory("Parser:Total Elapsed Time");
       p_timer->start(t_total);
-      std::string ext = this->getExtension(fileName);
+      gridpack::utility::StringUtils util;
+      std::string tmpstr = fileName;
+      util.trim(tmpstr);
+      std::string ext = this->getExtension(tmpstr);
       if (ext == "raw") {
-        getCase(fileName);
+        getCase(tmpstr);
         //brdcst_data();
         this->createNetwork(p_busData,p_branchData);
       } else if (ext == "dyr") {
-        this->getDS(fileName);
+        this->getDS(tmpstr);
       }
       p_timer->stop(t_total);
       p_timer->configTimer(true);
@@ -277,6 +280,8 @@ class PTI23_parser : public BasePTIParser<_network>
         // LOAD_PL                "PL"                  float
         if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()));
         if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()),0);
+        std::string tmp(" 1");
+        if (nstr > 2) data->addValue(LOAD_ID,tmp.c_str(),0);
 
         // LOAD_QL                "QL"                  float
         if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()));

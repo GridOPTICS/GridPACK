@@ -13,9 +13,9 @@
 # Last Change: 2016-10-03 14:10:31 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_factory
-  base_factory.cpp
-)
+#add_library(gridpack_factory
+#  base_factory.cpp
+#)
 
 target_link_libraries(gridpack_factory 
   gridpack_components 
@@ -66,7 +66,7 @@ install(FILES
   DESTINATION include/gridpack/factory
 )
 
-install(TARGETS 
-  gridpack_factory
-  DESTINATION lib
-)
+#install(TARGETS 
+#  gridpack_factory
+#  DESTINATION lib
+#)
