@@ -99,10 +99,8 @@ void gridpack::resistor_grid::RGApp::execute(int argc, char** argv)
   // Create serial IO objects to export data
   gridpack::serial_io::SerialBusIO<RGNetwork> busIO(128,network);
   char ioBuf[128];
-
   busIO.header("\nVoltages on buses\n\n");
   busIO.write();
-
 
   gridpack::serial_io::SerialBranchIO<RGNetwork> branchIO(128,network);
   branchIO.header("\nCurrent on branches\n\n");
