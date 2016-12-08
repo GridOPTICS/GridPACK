@@ -10,7 +10,7 @@
 /**
  * @file   file_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2016-12-07 15:23:24 d3g096
+ * @date   2016-12-08 14:59:09 d3g096
  * 
  * @brief  
  * 
@@ -48,6 +48,15 @@ public:
   virtual ~FileOptimizerImplementation(void);
   
 protected:
+
+  /// Output file name
+  std::string p_outputName;
+
+  /// Try to run the file?
+  bool p_runMaybe;
+
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::CursorPtr props);
 
   /// Open a stream to a new temporary file
   virtual std::string p_temporaryFileName(void);

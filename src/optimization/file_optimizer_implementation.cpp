@@ -9,7 +9,7 @@
 /**
  * @file   file_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2016-12-07 15:22:40 d3g096
+ * @date   2016-12-08 14:59:36 d3g096
  * 
  * @brief  
  * 
@@ -47,6 +47,22 @@ FileOptimizerImplementation::~FileOptimizerImplementation(void)
 }
 
 // -------------------------------------------------------------
+// FileOptimizerImplementation::p_configure
+// -------------------------------------------------------------
+void 
+FileOptimizerImplementation::p_configure(utility::Configuration::CursorPtr props)
+{
+  p_outputName = props->get("File", p_outputName);
+  if (!p_outputName.empty()) {
+    int me(this->processor_rank());
+    p_outputName += boost::str(boost::format("%04d") % me);
+  } else {
+    p_outputName = p_temporaryFileName();
+  }
+  p_runMaybe = props->get("Run", true);
+}
+
+// -------------------------------------------------------------
 // FileOptimizerImplementation::p_temporaryFile
 // -------------------------------------------------------------
 std::string
@@ -72,7 +88,7 @@ FileOptimizerImplementation::p_temporaryFileName(void)
 void
 FileOptimizerImplementation::p_solve(const p_optimizeMethod& method)
 {
-  std::string tmpname(p_temporaryFileName());
+  std::string tmpname(p_outputName);
   std::ofstream tmp;
   tmp.open(tmpname.c_str());
   if (!tmp) {

@@ -10,7 +10,7 @@
 /**
  * @file   julia_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2016-12-07 15:25:40 d3g096
+ * @date   2016-12-08 14:56:41 d3g096
  * 
  * @brief  
  * 
@@ -48,8 +48,11 @@ public:
 
 protected:
 
-  /// Open a stream to a new temporary file
-  std::string p_temporaryFileName(void);
+  /// Some extra stuff to put at the beginning of the Julia script
+  std::string p_preamble;
+
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::CursorPtr props);
 
   /// Write an Julia file to the specified stream
   void p_write(const p_optimizeMethod& m, std::ostream& out);

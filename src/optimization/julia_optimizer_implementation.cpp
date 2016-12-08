@@ -9,7 +9,7 @@
 /**
  * @file   julia_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2016-12-08 09:53:04 d3g096
+ * @date   2016-12-08 14:58:51 d3g096
  * 
  * @brief  
  * 
@@ -193,16 +193,16 @@ JuliaOptimizerImplementation::~JuliaOptimizerImplementation(void)
 {
 }
 
-
 // -------------------------------------------------------------
-// JuliaOptimizerImplementation::p_temporaryFileName
+// JuliaOptimizerImplementation::p_configure
 // -------------------------------------------------------------
-std::string
-JuliaOptimizerImplementation::p_temporaryFileName(void)
+void
+JuliaOptimizerImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
-  std::string s(FileOptimizerImplementation::p_temporaryFileName());
-  s += ".jl";
-  return s;
+  FileOptimizerImplementation::p_configure(props);
+  p_outputName += ".jl";
+
+  
 }
 
 

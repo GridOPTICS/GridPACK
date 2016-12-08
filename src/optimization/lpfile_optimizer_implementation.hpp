@@ -10,7 +10,7 @@
 /**
  * @file   lpfile_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2016-12-07 15:23:49 d3g096
+ * @date   2016-12-08 14:33:44 d3g096
  * 
  * @brief  
  * 
@@ -50,8 +50,8 @@ public:
 
 protected:
 
-  /// Open a stream to a new temporary file
-  std::string p_temporaryFileName(void);
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::CursorPtr props);
 
   /// Write an LP file to the specified stream
   virtual void p_write(const p_optimizeMethod& m, std::ostream& out);

@@ -45,16 +45,16 @@ if (USE_CPLEX)
   add_definitions(-DHAVE_CPLEX)
   include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
   list(APPEND target_libraries ${CPLEX_LIBRARIES})
-elseif(USE_GLPK)
+endif()
+if(USE_GLPK)
   list(APPEND expression_src glpk_optimizer_implementation.cpp)
   add_definitions(-DHAVE_GLPK)
   include_directories(BEFORE ${GLPK_INCLUDE_DIR})
   list(APPEND target_libraries ${GLPK_LIBRARY})
-elseif(USE_GUROBI)
+endif()
+if(USE_GUROBI)
   include_directories(AFTER ${GUROBI_INCLUDE_DIRS})
   list(APPEND target_libraries ${GUROBI_LIBRARIES})
-else()
-  message(WARNING "Optimization library not specified")
 endif()
 
 add_library(gridpack_optimum
@@ -76,6 +76,17 @@ add_executable(optimizer_test test/optimizer_test.cpp)
 target_link_libraries(optimizer_test ${target_libraries})
 
 gridpack_add_unit_test("optimizer" optimizer_test)
+
+add_custom_target(optimizer_test_input
+  
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml
+  ${CMAKE_CURRENT_BINARY_DIR} 
+  
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml
+  )
+add_dependencies(optimizer_test optimizer_test_input)
 
 # -------------------------------------------------------------
 # TEST: 

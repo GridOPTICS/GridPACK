@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2016-12-08 09:04:54 d3g096
+ * @date   2016-12-08 14:58:38 d3g096
  * 
  * @brief  
  * 
@@ -300,17 +300,16 @@ protected:
 // -------------------------------------------------------------
 //  class LPFileOptimizerImplementation
 // -------------------------------------------------------------
-// -------------------------------------------------------------
-// LPFileOptimizerImplementation::p_temporaryFileName
-// -------------------------------------------------------------
-std::string
-LPFileOptimizerImplementation::p_temporaryFileName(void)
-{
-  std::string s(FileOptimizerImplementation::p_temporaryFileName());
-  s += ".lp";
-  return s;
-}
 
+// -------------------------------------------------------------
+// LPFileOptimizerImplementation::p_configure
+// -------------------------------------------------------------
+void
+LPFileOptimizerImplementation::p_configure(utility::Configuration::CursorPtr props)
+{
+  FileOptimizerImplementation::p_configure(props);
+  p_outputName += ".lp";
+}
 
 // -------------------------------------------------------------
 // LPFileOptimizerImplementation::p_write

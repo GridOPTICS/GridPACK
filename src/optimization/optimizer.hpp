@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-11-23 11:18:59 d3g096
+ * @date   2016-12-08 13:14:50 d3g096
  * 
  * @brief  
  * 
@@ -209,13 +209,6 @@ protected:
     }
   }
 
-  /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::CursorPtr props)
-  {
-    if (props) {
-    }
-  }
-
   /// Gather the global constraints from a processor
   void p_gatherGlobalConstraints(const ConstraintMap& tmpglobal);
 
@@ -258,7 +251,8 @@ protected:
     p_setDistributed(p_impl.get());
     p_setConfigurable(p_impl.get());
   }
-  
+
+  void p_preconfigure(utility::Configuration::CursorPtr theprops);
 
   /// Add a (local) variable to be optimized (specialized)
   void p_addVariable(VariablePtr v)

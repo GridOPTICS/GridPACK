@@ -1,0 +1,28 @@
+<GridPACK>
+  <OptimizerTests>
+    <FlowTest>
+      <Optimizer>
+        <Solver>GLPK</Solver>
+        <File>FlowTest</File>
+        <JuliaOptions>
+          <Preamble>
+            using GLPK
+          </Preamble>
+          <SolverString>GlpkSolverLP()</SolverString>
+        </JuliaOptions>
+      </Optimizer>
+    </FlowTest>
+    <UCTest>
+      <Optimizer>
+        <Solver>CPLEX</Solver>
+        <File>UCTest</File>
+        <JuliaOptions>
+          <Preamble>
+            using CPLEX
+          </Preamble>
+          <SolverString>CplexSolver()</SolverString>
+        </JuliaOptions>
+      </Optimizer>
+    </UCTest>
+  </OptimizerTests>
+</GridPACK>
