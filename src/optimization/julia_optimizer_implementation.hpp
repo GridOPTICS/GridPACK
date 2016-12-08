@@ -8,59 +8,57 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 /**
- * @file   lpfile_optimizer_implementation.hpp
+ * @file   julia_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2016-12-07 15:23:49 d3g096
+ * @date   2016-12-07 15:25:40 d3g096
  * 
  * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
+// -------------------------------------------------------------
+// Created December  7, 2016 by William A. Perkins
+// Last Change: 2013-05-03 12:23:12 d3g096
+// -------------------------------------------------------------
 
 
-#ifndef _lpfile_optimizer_implementation_hpp_
-#define _lpfile_optimizer_implementation_hpp_
+#ifndef _julia_optimizer_implementation_hpp_
+#define _julia_optimizer_implementation_hpp_
 
-#include <iosfwd>
-#include <string>
 #include "file_optimizer_implementation.hpp"
 
 namespace gridpack {
 namespace optimization {
 
-
-
 // -------------------------------------------------------------
-//  class LPFileOptimizerImplementation
+//  class JuliaOptimizerImplementation
 // -------------------------------------------------------------
-class LPFileOptimizerImplementation 
+/// Base class for optimizers that take the Julia language as input
+class JuliaOptimizerImplementation
   : public FileOptimizerImplementation
 {
 public:
 
   /// Default constructor.
-  LPFileOptimizerImplementation(const parallel::Communicator& comm)
-    : FileOptimizerImplementation(comm)
-  {}
+  JuliaOptimizerImplementation(const parallel::Communicator& comm);
 
   /// Destructor
-  ~LPFileOptimizerImplementation(void)
-  {}
+  ~JuliaOptimizerImplementation(void);
 
 protected:
 
   /// Open a stream to a new temporary file
   std::string p_temporaryFileName(void);
 
-  /// Write an LP file to the specified stream
-  virtual void p_write(const p_optimizeMethod& m, std::ostream& out);
+  /// Write an Julia file to the specified stream
+  void p_write(const p_optimizeMethod& m, std::ostream& out);
 
 };
 
 
+
 } // namespace optimization
 } // namespace gridpack
-
 
 #endif

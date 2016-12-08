@@ -35,7 +35,9 @@ endif()
 
 set(expression_src 
   optimizer.cpp
+  file_optimizer_implementation.cpp
   lpfile_optimizer_implementation.cpp
+  julia_optimizer_implementation.cpp
 )
 
 if (USE_CPLEX)

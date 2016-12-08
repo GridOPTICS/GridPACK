@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2015-11-23 11:58:28 d3g096
+ * @date   2016-12-07 15:15:33 d3g096
  * 
  * @brief  
  * 
@@ -39,7 +39,8 @@
 #elif defined(HAVE_GLPK)
 #include "glpk_optimizer_implementation.hpp"
 #else
-#include "lpfile_optimizer_implementation.hpp"
+// #include "lpfile_optimizer_implementation.hpp"
+#include "julia_optimizer_implementation.hpp"
 #endif
 
 namespace gridpack {
@@ -341,7 +342,8 @@ Optimizer::Optimizer(const parallel::Communicator& comm)
 #elif defined(HAVE_GLPK)
             new GLPKOptimizerImplementation(comm)
 #else
-            new LPFileOptimizerImplementation(comm)
+            //            new LPFileOptimizerImplementation(comm)
+            new JuliaOptimizerImplementation(comm)
 #endif
             );
 }

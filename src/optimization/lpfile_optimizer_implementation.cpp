@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-11-03 13:10:41 d3g096
+ * @date   2016-12-07 15:27:29 d3g096
  * 
  * @brief  
  * 
@@ -24,70 +24,10 @@
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-
-namespace io = boost::iostreams;
 
 #include "gridpack/utilities/exception.hpp"
+#include "line_wrapping_output_filter.hpp"
 #include "lpfile_optimizer_implementation.hpp"
-
-// -------------------------------------------------------------
-// line_wrapping_output_filter
-//
-// slightly modified from the Boost iostreams example
-// -------------------------------------------------------------
-class line_wrapping_output_filter : public io::output_filter {
-public:
-  explicit line_wrapping_output_filter(int line_length = 80, int margin = 8)
-    : do_new_line_(false), line_length_(line_length), end_margin_(margin), col_no_(0) 
-  { }
-
-  template<typename Sink>
-  bool put(Sink& dest, int c)
-  {
-    // if the column is past the goal end of line, find the next white space, eat it up, then
-    if (do_new_line_) {
-      if (c == '\n') {
-        do_new_line_ = false;
-      } else if (!std::isspace(c)) {
-        if (!put_char(dest, '\n')) return false;
-        do_new_line_ = false;
-      } else {
-        // eating white space
-        return true;
-      }
-    } else if (col_no_ >= (line_length_ - end_margin_)) {
-      // wait until we see some white space before doing a new line
-      if (std::isspace(c)) {
-        do_new_line_ = true;
-      }
-    }
-    return put_char(dest, c);
-  }
-
-  template<typename Sink>
-  void close(Sink&)
-  { col_no_ = 0; }
-
-private:
-  template<typename Sink>
-  bool put_char(Sink& dest, int c)
-  {
-    if (!io::put(dest, c))
-      return false;
-    if (c != '\n')
-      ++col_no_;
-    else
-      col_no_ = 0;
-    return true;
-  }
-  int  do_new_line_;
-  int  line_length_;
-  int  end_margin_;
-  int  col_no_;
-};
-
 
 namespace gridpack {
 namespace optimization {
@@ -519,26 +459,17 @@ protected:
 // -------------------------------------------------------------
 //  class LPFileOptimizerImplementation
 // -------------------------------------------------------------
-
 // -------------------------------------------------------------
-// LPFileOptimizerImplementation::p_temporaryFile
+// LPFileOptimizerImplementation::p_temporaryFileName
 // -------------------------------------------------------------
 std::string
 LPFileOptimizerImplementation::p_temporaryFileName(void)
 {
-  using namespace boost::filesystem;
-  std::string pattern = 
-    boost::str(boost::format("%s_%d.lp") % "gridpack%%%%" % this->processor_rank());
-  path model(pattern);
-  path tmp(temp_directory_path());
-  tmp /= unique_path(model);
-
-  boost::system::error_code ec;
-  file_status istat = status(tmp);
-  std::string result(tmp.c_str());
-  return result;
-  
+  std::string s(FileOptimizerImplementation::p_temporaryFileName());
+  s += ".lp";
+  return s;
 }
+
 
 // -------------------------------------------------------------
 // LPFileOptimizerImplementation::p_write
@@ -631,23 +562,6 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
 }
 
 
-// -------------------------------------------------------------
-// LPFileOptimizerImplementation::p_solve
-// -------------------------------------------------------------
-void
-LPFileOptimizerImplementation::p_solve(const p_optimizeMethod& method)
-{
-  std::string tmpname(p_temporaryFileName());
-  std::ofstream tmp;
-  tmp.open(tmpname.c_str());
-  if (!tmp) {
-    std::string msg("Cannot open temporary file: ");
-    msg += tmpname.c_str();
-    throw gridpack::Exception(msg);
-  }
-  p_write(method, tmp);
-  tmp.close();
-}
     
   
 
