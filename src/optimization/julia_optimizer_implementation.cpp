@@ -9,7 +9,7 @@
 /**
  * @file   julia_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2016-12-07 15:30:05 d3g096
+ * @date   2016-12-08 09:53:04 d3g096
  * 
  * @brief  
  * 
@@ -31,6 +31,7 @@
 
 #include "gridpack/utilities/exception.hpp"
 #include "line_wrapping_output_filter.hpp"
+#include "constraint_renderer.hpp"
 #include "julia_optimizer_implementation.hpp"
 
 namespace gridpack {
@@ -108,7 +109,72 @@ protected:
 
 };
 
+// -------------------------------------------------------------
+//  class JuliaConstraintRenderer
+// -------------------------------------------------------------
+class JuliaConstraintRenderer 
+  : public ConstraintRenderer
+{
+public:
 
+  /// Default constructor.
+  JuliaConstraintRenderer(const std::string& mname, std::ostream& out)
+    : ConstraintRenderer(out), p_model(mname)
+  {
+  }
+
+  /// Destructor
+  ~JuliaConstraintRenderer(void)
+  {}
+
+  void visit(Constraint& e)
+  {
+    p_out << "@constraint(" << p_model << ", ";
+    ConstraintRenderer::visit(e);
+    p_out << ")" << std::endl;
+  }
+
+  void visit(Equal& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+    ExpressionPtr rhs(e.rhs());
+
+    p_out << "@constraint(" << p_model << ", ";
+    if (lhs->precedence() > e.precedence()) {
+      p_group(lhs);
+    } else {
+      lhs->accept(*this);
+    }
+    p_out << " " << "==" << " ";
+    if (rhs->precedence() > e.precedence()) {
+      p_group(rhs);
+    } else {
+      rhs->accept(*this);
+    }
+    p_out << ")" << std::endl;
+  }
+
+  void visit(Exponentiation& e)
+  {
+    ExpressionPtr lhs(e.lhs());
+    ExpressionPtr rhs(e.rhs());
+    ExpressionChecker rcheck;
+    rhs->accept(rcheck);
+
+    if (lhs->precedence() > e.precedence()) {
+      p_group(lhs);
+    } else {
+      lhs->accept(*this);
+    }
+    p_out << "^";
+    rhs->accept(*this);         // it's a constant, right?
+  }
+
+protected:
+
+  /// Name of the Model
+  std::string p_model;
+};
 
 // -------------------------------------------------------------
 //  class JuliaOptimizerImplementation
@@ -152,15 +218,54 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   out.push(line_wrapping_output_filter());
   out.push(output);
 
-  out << "using JuMP" << std::endl;
   std::string mname("gpm");
-  out << mname << " = Model()" << std::endl;
+  std::string solver;
+
+  out << "using JuMP" << std::endl;
+
+  // FIXME: configurable
+  // out << "using GLPKMathProgInterface" << std::endl;
+  // solver = "GLPKSolverLP()");
+
+  out << "using CPLEX" << std::endl;
+  solver = "CplexSolver()";
+
+  out << mname << " = Model(solver=" << solver << ")" << std::endl;
   { 
     JuliaVarLister v(mname, out);
     BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
       i.second->accept(v);
     }
   }
+  {
+    JuliaConstraintRenderer r(mname, out);
+    BOOST_FOREACH(ConstraintPtr c, p_allConstraints) {
+      c->accept(r);
+    }
+  }
+  out << "@objective(" << mname << ", ";
+  switch (m) {
+  case Maximize:
+    out << ":Max";
+    break;
+  case Minimize:
+    out << ":Min";
+    break;
+  default:
+    BOOST_ASSERT(false);
+    break;
+  }
+  out << ", ";
+  {
+    ConstraintRenderer r(out);
+    p_fullObjective->accept(r);
+  }
+  out << ")" << std::endl;
+
+  out << "print(" << mname << ")" << std::endl;
+  out << "status = solve(" << mname << ")" << std::endl;
+  out << "println(\"Objective value: \", getobjectivevalue(" << mname << "))" << std::endl;
+
 }
 
 
