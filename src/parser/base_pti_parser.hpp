@@ -647,7 +647,7 @@ class BasePTIParser : public BaseParser<_network>
       double q2c;
       double qfreq;
 
-      int mtpa;
+      double mtpa;
       double lfma;
       double rsa;
       double lsa;
@@ -668,7 +668,7 @@ class BasePTIParser : public BaseParser<_network>
       double vrc2a;
       double trc2a;
 
-      int mtpb;
+      double mtpb;
       double lfmb;
       double rsb;
       double lsb;
@@ -689,7 +689,7 @@ class BasePTIParser : public BaseParser<_network>
       double vrc2b;
       double trc2b;
 
-      int mtpc;
+      double mtpc;
       double lfmc;
       double rsc;
       double lsc;
@@ -710,7 +710,7 @@ class BasePTIParser : public BaseParser<_network>
       double vrc2c;
       double trc2c;
 
-      int mtpd;
+      double mtpd;
       double lfmd;
       double trst;
       double vtr1;

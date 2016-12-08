@@ -79,6 +79,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_RFDR, data_struct.rfdr, l_id);
       }
 
+      // LOAD_XFDR
+      if (!data->getValue(LOAD_XFDR,&rval,l_id)) {
+        data->addValue(LOAD_XFDR, data_struct.xfdr, l_id);
+      } else {
+        data->setValue(LOAD_XFDR, data_struct.xfdr, l_id);
+      }
+
       // LOAD_FB
       if (!data->getValue(LOAD_FB,&rval,l_id)) {
         data->addValue(LOAD_FB, data_struct.fb, l_id);
@@ -318,7 +325,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       // LOAD_MTPA
-      if (!data->getValue(LOAD_MTPA,&ival,l_id)) {
+      if (!data->getValue(LOAD_MTPA,&rval,l_id)) {
         data->addValue(LOAD_MTPA, data_struct.mtpa, l_id);
       } else {
         data->setValue(LOAD_MTPA, data_struct.mtpa, l_id);
@@ -364,6 +371,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->addValue(LOAD_TPOA, data_struct.tpoa, l_id);
       } else {
         data->setValue(LOAD_TPOA, data_struct.tpoa, l_id);
+      }
+
+      // LOAD_TPPOA
+      if (!data->getValue(LOAD_TPPOA,&rval,l_id)) {
+        data->addValue(LOAD_TPPOA, data_struct.tppoa, l_id);
+      } else {
+        data->setValue(LOAD_TPPOA, data_struct.tppoa, l_id);
       }
 
       // LOAD_HA
@@ -451,7 +465,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       // LOAD_MTPB
-      if (!data->getValue(LOAD_MTPB,&ival,l_id)) {
+      if (!data->getValue(LOAD_MTPB,&rval,l_id)) {
         data->addValue(LOAD_MTPB, data_struct.mtpb, l_id);
       } else {
         data->setValue(LOAD_MTPB, data_struct.mtpb, l_id);
@@ -497,6 +511,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->addValue(LOAD_TPOB, data_struct.tpob, l_id);
       } else {
         data->setValue(LOAD_TPOB, data_struct.tpob, l_id);
+      }
+
+      // LOAD_TPPOB
+      if (!data->getValue(LOAD_TPPOB,&rval,l_id)) {
+        data->addValue(LOAD_TPPOB, data_struct.tppob, l_id);
+      } else {
+        data->setValue(LOAD_TPPOB, data_struct.tppob, l_id);
       }
 
       // LOAD_HB
@@ -584,7 +605,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       // LOAD_MTPC
-      if (!data->getValue(LOAD_MTPC,&ival,l_id)) {
+      if (!data->getValue(LOAD_MTPC,&rval,l_id)) {
         data->addValue(LOAD_MTPC, data_struct.mtpc, l_id);
       } else {
         data->setValue(LOAD_MTPC, data_struct.mtpc, l_id);
@@ -630,6 +651,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->addValue(LOAD_TPOC, data_struct.tpoc, l_id);
       } else {
         data->setValue(LOAD_TPOC, data_struct.tpoc, l_id);
+      }
+
+      // LOAD_TPPOC
+      if (!data->getValue(LOAD_TPPOC,&rval,l_id)) {
+        data->addValue(LOAD_TPPOC, data_struct.tppoc, l_id);
+      } else {
+        data->setValue(LOAD_TPPOC, data_struct.tppoc, l_id);
       }
 
       // LOAD_HC
@@ -717,7 +745,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       // LOAD_MTPD
-      if (!data->getValue(LOAD_MTPD,&ival,l_id)) {
+      if (!data->getValue(LOAD_MTPD,&rval,l_id)) {
         data->addValue(LOAD_MTPD, data_struct.mtpd, l_id);
       } else {
         data->setValue(LOAD_MTPD, data_struct.mtpd, l_id);
@@ -1256,10 +1284,10 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPA
       if (nstr > 49) {
-        if (!data->getValue(LOAD_MTPA,&ival,l_id)) {
-          data->addValue(LOAD_MTPA, atoi(split_line[49].c_str()), l_id);
+        if (!data->getValue(LOAD_MTPA,&rval,l_id)) {
+          data->addValue(LOAD_MTPA, atof(split_line[49].c_str()), l_id);
         } else {
-          data->setValue(LOAD_MTPA, atoi(split_line[49].c_str()), l_id);
+          data->setValue(LOAD_MTPA, atof(split_line[49].c_str()), l_id);
         }
       }
 
@@ -1436,10 +1464,10 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPB
       if (nstr > 69) {
-        if (!data->getValue(LOAD_MTPB,&ival,l_id)) {
-          data->addValue(LOAD_MTPB, atoi(split_line[69].c_str()), l_id);
+        if (!data->getValue(LOAD_MTPB,&rval,l_id)) {
+          data->addValue(LOAD_MTPB, atof(split_line[69].c_str()), l_id);
         } else {
-          data->setValue(LOAD_MTPB, atoi(split_line[69].c_str()), l_id);
+          data->setValue(LOAD_MTPB, atof(split_line[69].c_str()), l_id);
         }
       }
 
@@ -1616,10 +1644,10 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPC
       if (nstr > 89) {
-        if (!data->getValue(LOAD_MTPC,&ival,l_id)) {
-          data->addValue(LOAD_MTPC, atoi(split_line[89].c_str()), l_id);
+        if (!data->getValue(LOAD_MTPC,&rval,l_id)) {
+          data->addValue(LOAD_MTPC, atof(split_line[89].c_str()), l_id);
         } else {
-          data->setValue(LOAD_MTPC, atoi(split_line[89].c_str()), l_id);
+          data->setValue(LOAD_MTPC, atof(split_line[89].c_str()), l_id);
         }
       }
 
@@ -1796,10 +1824,10 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPD
       if (nstr > 109) {
-        if (!data->getValue(LOAD_MTPD,&ival,l_id)) {
-          data->addValue(LOAD_MTPD, atoi(split_line[109].c_str()), l_id);
+        if (!data->getValue(LOAD_MTPD,&rval,l_id)) {
+          data->addValue(LOAD_MTPD, atof(split_line[109].c_str()), l_id);
         } else {
-          data->setValue(LOAD_MTPD, atoi(split_line[109].c_str()), l_id);
+          data->setValue(LOAD_MTPD, atof(split_line[109].c_str()), l_id);
         }
       }
 
@@ -2221,7 +2249,7 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPA
       if (nstr > 49) {
-        data.mtpa = atoi(split_line[49].c_str());
+        data.mtpa = atof(split_line[49].c_str());
       }
 
       // LOAD_LFMA
@@ -2321,7 +2349,7 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPB
       if (nstr > 69) {
-        data.mtpb = atoi(split_line[69].c_str());
+        data.mtpb = atof(split_line[69].c_str());
       }
 
       // LOAD_LFMB
@@ -2421,7 +2449,7 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPC
       if (nstr > 89) {
-        data.mtpc = atoi(split_line[89].c_str());
+        data.mtpc = atof(split_line[89].c_str());
       }
 
       // LOAD_LFMC
@@ -2521,7 +2549,7 @@ template <class _data_struct> class Cmldblu1Parser
 
       // LOAD_MTPD
       if (nstr > 109) {
-        data.trc2c = atoi(split_line[109].c_str());
+        data.mtpd = atof(split_line[109].c_str());
       }
 
       // LOAD_LFMD
@@ -2759,7 +2787,7 @@ template <class _data_struct> class Cmldblu1Parser
       if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
         t_data->addValue(LOAD_MVA, rval, 0);
       }
-      if (comp_data->getValue(LOAD_MTPA, &ival, l_idx)) {
+      if (comp_data->getValue(LOAD_MTPA, &rval, l_idx)) {
         t_data->addValue(LOAD_MTP, rval, 0);
       }
       if (comp_data->getValue(LOAD_LFMA, &rval, l_idx)) {
@@ -2821,7 +2849,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       t_data->addValue(LOAD_ID, "M2", 1);
-      if (comp_data->getValue(LOAD_MTPB, &ival, l_idx)) {
+      if (comp_data->getValue(LOAD_MTPB, &rval, l_idx)) {
         t_data->addValue(LOAD_MTP, rval, 1);
       }
       if (comp_data->getValue(LOAD_LFMB, &rval, l_idx)) {
@@ -2883,7 +2911,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       t_data->addValue(LOAD_ID, "M3", 2);
-      if (comp_data->getValue(LOAD_MTPC, &ival, l_idx)) {
+      if (comp_data->getValue(LOAD_MTPC, &rval, l_idx)) {
         t_data->addValue(LOAD_MTP, rval, 2);
       }
       if (comp_data->getValue(LOAD_LFMC, &rval, l_idx)) {
@@ -2945,7 +2973,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       t_data->addValue(LOAD_ID, "M4", 3);
-      if (comp_data->getValue(LOAD_MTPD, &ival, l_idx)) {
+      if (comp_data->getValue(LOAD_MTPD, &rval, l_idx)) {
         t_data->addValue(LOAD_MTP, rval, 3);
       }
       if (comp_data->getValue(LOAD_LFMD, &rval, l_idx)) {
