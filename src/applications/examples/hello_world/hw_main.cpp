@@ -13,9 +13,6 @@
  */
 // -------------------------------------------------------------
 
-#include "mpi.h"
-#include <ga.h>
-#include <macdecls.h>
 #include "gridpack/include/gridpack.hpp"
 #include "hw_app.hpp"
 

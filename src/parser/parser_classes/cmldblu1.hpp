@@ -79,6 +79,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_RFDR, data_struct.rfdr, l_id);
       }
 
+      // LOAD_XFDR
+      if (!data->getValue(LOAD_XFDR,&rval,l_id)) {
+        data->addValue(LOAD_XFDR, data_struct.xfdr, l_id);
+      } else {
+        data->setValue(LOAD_XFDR, data_struct.xfdr, l_id);
+      }
+
       // LOAD_FB
       if (!data->getValue(LOAD_FB,&rval,l_id)) {
         data->addValue(LOAD_FB, data_struct.fb, l_id);
@@ -233,13 +240,6 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_VD2, data_struct.vd2, l_id);
       }
 
-      // LOAD_FRCEL
-      if (!data->getValue(LOAD_FRCEL,&rval,l_id)) {
-        data->addValue(LOAD_FRCEL, data_struct.frcel, l_id);
-      } else {
-        data->setValue(LOAD_FRCEL, data_struct.frcel, l_id);
-      }
-
       // LOAD_PFS
       if (!data->getValue(LOAD_PFS,&rval,l_id)) {
         data->addValue(LOAD_PFS, data_struct.pfs, l_id);
@@ -364,6 +364,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->addValue(LOAD_TPOA, data_struct.tpoa, l_id);
       } else {
         data->setValue(LOAD_TPOA, data_struct.tpoa, l_id);
+      }
+
+      // LOAD_TPPOA
+      if (!data->getValue(LOAD_TPPOA,&rval,l_id)) {
+        data->addValue(LOAD_TPPOA, data_struct.tppoa, l_id);
+      } else {
+        data->setValue(LOAD_TPPOA, data_struct.tppoa, l_id);
       }
 
       // LOAD_HA
@@ -499,6 +506,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_TPOB, data_struct.tpob, l_id);
       }
 
+      // LOAD_TPPOB
+      if (!data->getValue(LOAD_TPPOB,&rval,l_id)) {
+        data->addValue(LOAD_TPPOB, data_struct.tppob, l_id);
+      } else {
+        data->setValue(LOAD_TPPOB, data_struct.tppob, l_id);
+      }
+
       // LOAD_HB
       if (!data->getValue(LOAD_HB,&rval,l_id)) {
         data->addValue(LOAD_HB, data_struct.hb, l_id);
@@ -632,6 +646,13 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_TPOC, data_struct.tpoc, l_id);
       }
 
+      // LOAD_TPPOC
+      if (!data->getValue(LOAD_TPPOC,&rval,l_id)) {
+        data->addValue(LOAD_TPPOC, data_struct.tppoc, l_id);
+      } else {
+        data->setValue(LOAD_TPPOC, data_struct.tppoc, l_id);
+      }
+
       // LOAD_HC
       if (!data->getValue(LOAD_HC,&rval,l_id)) {
         data->addValue(LOAD_HC, data_struct.hc, l_id);
@@ -716,11 +737,32 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_TRC2C, data_struct.trc2c, l_id);
       }
 
-      // LOAD_MTPD
-      if (!data->getValue(LOAD_MTPD,&ival,l_id)) {
-        data->addValue(LOAD_MTPD, data_struct.mtpd, l_id);
+      // LOAD_TSTALL
+      if (!data->getValue(LOAD_TSTALL,&rval,l_id)) {
+        data->addValue(LOAD_TSTALL, data_struct.tstall, l_id);
       } else {
-        data->setValue(LOAD_MTPD, data_struct.mtpd, l_id);
+        data->setValue(LOAD_TSTALL, data_struct.tstall, l_id);
+      }
+
+      // LOAD_TRST
+      if (!data->getValue(LOAD_TRST,&rval,l_id)) {
+        data->addValue(LOAD_TRST, data_struct.trst, l_id);
+      } else {
+        data->setValue(LOAD_TRST, data_struct.trst, l_id);
+      }
+
+      // LOAD_TV
+      if (!data->getValue(LOAD_TV,&rval,l_id)) {
+        data->addValue(LOAD_TV, data_struct.tv, l_id);
+      } else {
+        data->setValue(LOAD_TV, data_struct.tv, l_id);
+      }
+
+      // LOAD_TF
+      if (!data->getValue(LOAD_TF,&rval,l_id)) {
+        data->addValue(LOAD_TF, data_struct.tf, l_id);
+      } else {
+        data->setValue(LOAD_TF, data_struct.tf, l_id);
       }
 
       // LOAD_LFMD
@@ -758,11 +800,74 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_XSTALL, data_struct.xstall, l_id);
       }
 
-      // LOAD_TSTALL
-      if (!data->getValue(LOAD_TSTALL,&rval,l_id)) {
-        data->addValue(LOAD_TSTALL, data_struct.tstall, l_id);
+      // LOAD_LFADJ
+      if (!data->getValue(LOAD_LFADJ,&rval,l_id)) {
+        data->addValue(LOAD_LFADJ, data_struct.lfadj, l_id);
       } else {
-        data->setValue(LOAD_TSTALL, data_struct.tstall, l_id);
+        data->setValue(LOAD_LFADJ, data_struct.lfadj, l_id);
+      }
+
+      // LOAD_KP1
+      if (!data->getValue(LOAD_KP1,&rval,l_id)) {
+        data->addValue(LOAD_KP1, data_struct.kp1, l_id);
+      } else {
+        data->setValue(LOAD_KP1, data_struct.kp1, l_id);
+      }
+
+      // LOAD_NP1
+      if (!data->getValue(LOAD_NP1,&rval,l_id)) {
+        data->addValue(LOAD_NP1, data_struct.np1, l_id);
+      } else {
+        data->setValue(LOAD_NP1, data_struct.np1, l_id);
+      }
+
+      // LOAD_KQ1
+      if (!data->getValue(LOAD_KQ1,&rval,l_id)) {
+        data->addValue(LOAD_KQ1, data_struct.kq1, l_id);
+      } else {
+        data->setValue(LOAD_KQ1, data_struct.kq1, l_id);
+      }
+
+      // LOAD_NQ1
+      if (!data->getValue(LOAD_NQ1,&rval,l_id)) {
+        data->addValue(LOAD_NQ1, data_struct.nq1, l_id);
+      } else {
+        data->setValue(LOAD_NQ1, data_struct.nq1, l_id);
+      }
+
+      // LOAD_KP2
+      if (!data->getValue(LOAD_KP2,&rval,l_id)) {
+        data->addValue(LOAD_KP2, data_struct.kp2, l_id);
+      } else {
+        data->setValue(LOAD_KP2, data_struct.kp2, l_id);
+      }
+
+      // LOAD_NP2
+      if (!data->getValue(LOAD_NP2,&rval,l_id)) {
+        data->addValue(LOAD_NP2, data_struct.np2, l_id);
+      } else {
+        data->setValue(LOAD_NP2, data_struct.np2, l_id);
+      }
+
+      // LOAD_KQ2
+      if (!data->getValue(LOAD_KQ2,&rval,l_id)) {
+        data->addValue(LOAD_KQ2, data_struct.kq2, l_id);
+      } else {
+        data->setValue(LOAD_KQ2, data_struct.kq2, l_id);
+      }
+
+      // LOAD_NQ2
+      if (!data->getValue(LOAD_NQ2,&rval,l_id)) {
+        data->addValue(LOAD_NQ2, data_struct.nq2, l_id);
+      } else {
+        data->setValue(LOAD_NQ2, data_struct.nq2, l_id);
+      }
+
+      // LOAD_VBRK
+      if (!data->getValue(LOAD_VBRK,&rval,l_id)) {
+        data->addValue(LOAD_VBRK, data_struct.vbrk, l_id);
+      } else {
+        data->setValue(LOAD_VBRK, data_struct.vbrk, l_id);
       }
 
       // LOAD_FRST
@@ -779,46 +884,18 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_VRST, data_struct.vrst, l_id);
       }
 
-      // LOAD_TRST
-      if (!data->getValue(LOAD_TRST,&rval,l_id)) {
-        data->addValue(LOAD_TRST, data_struct.trst, l_id);
+      // LOAD_CMPKPF
+      if (!data->getValue(LOAD_CMPKPF,&rval,l_id)) {
+        data->addValue(LOAD_CMPKPF, data_struct.cmpkpf, l_id);
       } else {
-        data->setValue(LOAD_TRST, data_struct.trst, l_id);
+        data->setValue(LOAD_CMPKPF, data_struct.cmpkpf, l_id);
       }
 
-      // LOAD_FUVR
-      if (!data->getValue(LOAD_FUVR,&rval,l_id)) {
-        data->addValue(LOAD_FUVR, data_struct.fuvr, l_id);
+      // LOAD_CMPKQF
+      if (!data->getValue(LOAD_CMPKQF,&rval,l_id)) {
+        data->addValue(LOAD_CMPKQF, data_struct.cmpkqf, l_id);
       } else {
-        data->setValue(LOAD_FUVR, data_struct.fuvr, l_id);
-      }
-
-      // LOAD_VTR1
-      if (!data->getValue(LOAD_VTR1,&rval,l_id)) {
-        data->addValue(LOAD_VTR1, data_struct.vtr1, l_id);
-      } else {
-        data->setValue(LOAD_VTR1, data_struct.vtr1, l_id);
-      }
-
-      // LOAD_TTR1
-      if (!data->getValue(LOAD_TTR1,&rval,l_id)) {
-        data->addValue(LOAD_TTR1, data_struct.ttr1, l_id);
-      } else {
-        data->setValue(LOAD_TTR1, data_struct.ttr1, l_id);
-      }
-
-      // LOAD_VTR2
-      if (!data->getValue(LOAD_VTR2,&rval,l_id)) {
-        data->addValue(LOAD_VTR2, data_struct.vtr2, l_id);
-      } else {
-        data->setValue(LOAD_VTR2, data_struct.vtr2, l_id);
-      }
-
-      // LOAD_TTR2
-      if (!data->getValue(LOAD_TTR2,&rval,l_id)) {
-        data->addValue(LOAD_TTR2, data_struct.ttr2, l_id);
-      } else {
-        data->setValue(LOAD_TTR2, data_struct.ttr2, l_id);
+        data->setValue(LOAD_CMPKQF, data_struct.cmpkqf, l_id);
       }
 
       // LOAD_VC1OFF
@@ -870,11 +947,39 @@ template <class _data_struct> class Cmldblu1Parser
         data->setValue(LOAD_TH2T, data_struct.th2t, l_id);
       }
 
-      // LOAD_TV
-      if (!data->getValue(LOAD_TV,&rval,l_id)) {
-        data->addValue(LOAD_TV, data_struct.tv, l_id);
+      // LOAD_FUVR
+      if (!data->getValue(LOAD_FUVR,&rval,l_id)) {
+        data->addValue(LOAD_FUVR, data_struct.fuvr, l_id);
       } else {
-        data->setValue(LOAD_TV, data_struct.tv, l_id);
+        data->setValue(LOAD_FUVR, data_struct.fuvr, l_id);
+      }
+
+      // LOAD_UVTR1
+      if (!data->getValue(LOAD_UVTR1,&rval,l_id)) {
+        data->addValue(LOAD_UVTR1, data_struct.uvtr1, l_id);
+      } else {
+        data->setValue(LOAD_UVTR1, data_struct.uvtr1, l_id);
+      }
+
+      // LOAD_TTR1
+      if (!data->getValue(LOAD_TTR1,&rval,l_id)) {
+        data->addValue(LOAD_TTR1, data_struct.ttr2, l_id);
+      } else {
+        data->setValue(LOAD_TTR1, data_struct.ttr2, l_id);
+      }
+
+      // LOAD_UVTR2
+      if (!data->getValue(LOAD_UVTR2,&rval,l_id)) {
+        data->addValue(LOAD_UVTR2, data_struct.uvtr2, l_id);
+      } else {
+        data->setValue(LOAD_VC2ON, data_struct.uvtr2, l_id);
+      }
+
+      // LOAD_TTR2
+      if (!data->getValue(LOAD_TTR2,&rval,l_id)) {
+        data->addValue(LOAD_TTR2, data_struct.ttr2, l_id);
+      } else {
+        data->setValue(LOAD_TTR2, data_struct.ttr2, l_id);
       }
     }
 
@@ -1146,858 +1251,957 @@ template <class _data_struct> class Cmldblu1Parser
         }
       }
 
-      // LOAD_FRCEL
-      if (nstr > 37) {
-        if (!data->getValue(LOAD_FRCEL,&rval,l_id)) {
-          data->addValue(LOAD_FRCEL, atof(split_line[37].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_FRCEL, atof(split_line[37].c_str()), l_id);
-        }
-      }
-
       // LOAD_PFS
-      if (nstr > 38) {
+      if (nstr > 37) {
         if (!data->getValue(LOAD_PFS,&rval,l_id)) {
-          data->addValue(LOAD_PFS, atof(split_line[38].c_str()), l_id);
+          data->addValue(LOAD_PFS, atof(split_line[37].c_str()), l_id);
         } else {
-          data->setValue(LOAD_PFS, atof(split_line[38].c_str()), l_id);
+          data->setValue(LOAD_PFS, atof(split_line[37].c_str()), l_id);
         }
       }
 
       // LOAD_P1E
-      if (nstr > 39) {
+      if (nstr > 38) {
         if (!data->getValue(LOAD_P1E,&rval,l_id)) {
-          data->addValue(LOAD_P1E, atof(split_line[39].c_str()), l_id);
+          data->addValue(LOAD_P1E, atof(split_line[38].c_str()), l_id);
         } else {
-          data->setValue(LOAD_P1E, atof(split_line[39].c_str()), l_id);
+          data->setValue(LOAD_P1E, atof(split_line[38].c_str()), l_id);
         }
       }
 
       // LOAD_P1C
-      if (nstr > 40) {
+      if (nstr > 39) {
         if (!data->getValue(LOAD_P1C,&rval,l_id)) {
-          data->addValue(LOAD_P1C, atof(split_line[40].c_str()), l_id);
+          data->addValue(LOAD_P1C, atof(split_line[39].c_str()), l_id);
         } else {
-          data->setValue(LOAD_P1C, atof(split_line[40].c_str()), l_id);
+          data->setValue(LOAD_P1C, atof(split_line[39].c_str()), l_id);
         }
       }
 
       // LOAD_P2E
-      if (nstr > 41) {
+      if (nstr > 40) {
         if (!data->getValue(LOAD_P2E,&rval,l_id)) {
-          data->addValue(LOAD_P2E, atof(split_line[41].c_str()), l_id);
+          data->addValue(LOAD_P2E, atof(split_line[40].c_str()), l_id);
         } else {
-          data->setValue(LOAD_P2E, atof(split_line[41].c_str()), l_id);
+          data->setValue(LOAD_P2E, atof(split_line[40].c_str()), l_id);
         }
       }
 
       // LOAD_P2C
-      if (nstr > 42) {
+      if (nstr > 41) {
         if (!data->getValue(LOAD_P2C,&rval,l_id)) {
-          data->addValue(LOAD_P2C, atof(split_line[42].c_str()), l_id);
+          data->addValue(LOAD_P2C, atof(split_line[41].c_str()), l_id);
         } else {
-          data->setValue(LOAD_P2C, atof(split_line[42].c_str()), l_id);
+          data->setValue(LOAD_P2C, atof(split_line[41].c_str()), l_id);
         }
       }
 
       // LOAD_PFREQ
-      if (nstr > 43) {
+      if (nstr > 42) {
         if (!data->getValue(LOAD_PFREQ,&rval,l_id)) {
-          data->addValue(LOAD_PFREQ, atof(split_line[43].c_str()), l_id);
+          data->addValue(LOAD_PFREQ, atof(split_line[42].c_str()), l_id);
         } else {
-          data->setValue(LOAD_PFREQ, atof(split_line[43].c_str()), l_id);
+          data->setValue(LOAD_PFREQ, atof(split_line[42].c_str()), l_id);
         }
       }
 
       // LOAD_Q1E
-      if (nstr > 44) {
+      if (nstr > 43) {
         if (!data->getValue(LOAD_Q1E,&rval,l_id)) {
-          data->addValue(LOAD_Q1E, atof(split_line[44].c_str()), l_id);
+          data->addValue(LOAD_Q1E, atof(split_line[43].c_str()), l_id);
         } else {
-          data->setValue(LOAD_Q1E, atof(split_line[44].c_str()), l_id);
+          data->setValue(LOAD_Q1E, atof(split_line[43].c_str()), l_id);
         }
       }
 
       // LOAD_Q1C
-      if (nstr > 45) {
+      if (nstr > 44) {
         if (!data->getValue(LOAD_Q1C,&rval,l_id)) {
-          data->addValue(LOAD_Q1C, atof(split_line[45].c_str()), l_id);
+          data->addValue(LOAD_Q1C, atof(split_line[44].c_str()), l_id);
         } else {
-          data->setValue(LOAD_Q1C, atof(split_line[45].c_str()), l_id);
+          data->setValue(LOAD_Q1C, atof(split_line[44].c_str()), l_id);
         }
       }
 
       // LOAD_Q2E
-      if (nstr > 46) {
+      if (nstr > 45) {
         if (!data->getValue(LOAD_Q2E,&rval,l_id)) {
-          data->addValue(LOAD_Q2E, atof(split_line[46].c_str()), l_id);
+          data->addValue(LOAD_Q2E, atof(split_line[45].c_str()), l_id);
         } else {
-          data->setValue(LOAD_Q2E, atof(split_line[46].c_str()), l_id);
+          data->setValue(LOAD_Q2E, atof(split_line[45].c_str()), l_id);
         }
       }
 
       // LOAD_Q2C
-      if (nstr > 47) {
+      if (nstr > 46) {
         if (!data->getValue(LOAD_Q2C,&rval,l_id)) {
-          data->addValue(LOAD_Q2C, atof(split_line[47].c_str()), l_id);
+          data->addValue(LOAD_Q2C, atof(split_line[46].c_str()), l_id);
         } else {
-          data->setValue(LOAD_Q2C, atof(split_line[47].c_str()), l_id);
+          data->setValue(LOAD_Q2C, atof(split_line[46].c_str()), l_id);
         }
       }
 
       // LOAD_QFREQ
-      if (nstr > 48) {
+      if (nstr > 47) {
         if (!data->getValue(LOAD_QFREQ,&rval,l_id)) {
-          data->addValue(LOAD_QFREQ, atof(split_line[48].c_str()), l_id);
+          data->addValue(LOAD_QFREQ, atof(split_line[47].c_str()), l_id);
         } else {
-          data->setValue(LOAD_QFREQ, atof(split_line[48].c_str()), l_id);
+          data->setValue(LOAD_QFREQ, atof(split_line[47].c_str()), l_id);
         }
       }
 
       // LOAD_MTPA
-      if (nstr > 49) {
+      if (nstr > 48) {
         if (!data->getValue(LOAD_MTPA,&ival,l_id)) {
-          data->addValue(LOAD_MTPA, atoi(split_line[49].c_str()), l_id);
+          data->addValue(LOAD_MTPA, atoi(split_line[48].c_str()), l_id);
         } else {
-          data->setValue(LOAD_MTPA, atoi(split_line[49].c_str()), l_id);
+          data->setValue(LOAD_MTPA, atoi(split_line[48].c_str()), l_id);
         }
       }
 
       // LOAD_LFMA
-      if (nstr > 50) {
+      if (nstr > 49) {
         if (!data->getValue(LOAD_LFMA,&rval,l_id)) {
-          data->addValue(LOAD_LFMA, atof(split_line[50].c_str()), l_id);
+          data->addValue(LOAD_LFMA, atof(split_line[49].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LFMA, atof(split_line[50].c_str()), l_id);
+          data->setValue(LOAD_LFMA, atof(split_line[49].c_str()), l_id);
         }
       }
 
       // LOAD_RSA
-      if (nstr > 51) {
+      if (nstr > 50) {
         if (!data->getValue(LOAD_RSA,&rval,l_id)) {
-          data->addValue(LOAD_RSA, atof(split_line[51].c_str()), l_id);
+          data->addValue(LOAD_RSA, atof(split_line[50].c_str()), l_id);
         } else {
-          data->setValue(LOAD_RSA, atof(split_line[51].c_str()), l_id);
+          data->setValue(LOAD_RSA, atof(split_line[50].c_str()), l_id);
         }
       }
 
       // LOAD_LSA
-      if (nstr > 52) {
+      if (nstr > 51) {
         if (!data->getValue(LOAD_LSA,&rval,l_id)) {
-          data->addValue(LOAD_LSA, atof(split_line[52].c_str()), l_id);
+          data->addValue(LOAD_LSA, atof(split_line[51].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LSA, atof(split_line[52].c_str()), l_id);
+          data->setValue(LOAD_LSA, atof(split_line[51].c_str()), l_id);
         }
       }
 
       // LOAD_LPA
-      if (nstr > 53) {
+      if (nstr > 52) {
         if (!data->getValue(LOAD_LPA,&rval,l_id)) {
-          data->addValue(LOAD_LPA, atof(split_line[53].c_str()), l_id);
+          data->addValue(LOAD_LPA, atof(split_line[52].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LPA, atof(split_line[53].c_str()), l_id);
+          data->setValue(LOAD_LPA, atof(split_line[52].c_str()), l_id);
         }
       }
 
       // LOAD_LPPA
-      if (nstr > 54) {
+      if (nstr > 53) {
         if (!data->getValue(LOAD_LPPA,&rval,l_id)) {
-          data->addValue(LOAD_LPPA, atof(split_line[54].c_str()), l_id);
+          data->addValue(LOAD_LPPA, atof(split_line[53].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LPPA, atof(split_line[54].c_str()), l_id);
+          data->setValue(LOAD_LPPA, atof(split_line[53].c_str()), l_id);
         }
       }
 
       // LOAD_TPOA
-      if (nstr > 55) {
+      if (nstr > 54) {
         if (!data->getValue(LOAD_TPOA,&rval,l_id)) {
-          data->addValue(LOAD_TPOA, atof(split_line[55].c_str()), l_id);
+          data->addValue(LOAD_TPOA, atof(split_line[54].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TPOA, atof(split_line[55].c_str()), l_id);
+          data->setValue(LOAD_TPOA, atof(split_line[54].c_str()), l_id);
         }
       }
 
       // LOAD_TPPOA
-      if (nstr > 56) {
+      if (nstr > 55) {
         if (!data->getValue(LOAD_TPPOA,&rval,l_id)) {
-          data->addValue(LOAD_TPPOA, atof(split_line[56].c_str()), l_id);
+          data->addValue(LOAD_TPPOA, atof(split_line[55].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TPPOA, atof(split_line[56].c_str()), l_id);
+          data->setValue(LOAD_TPPOA, atof(split_line[55].c_str()), l_id);
         }
       }
 
       // LOAD_HA
-      if (nstr > 57) {
+      if (nstr > 56) {
         if (!data->getValue(LOAD_HA,&rval,l_id)) {
-          data->addValue(LOAD_HA, atof(split_line[57].c_str()), l_id);
+          data->addValue(LOAD_HA, atof(split_line[56].c_str()), l_id);
         } else {
-          data->setValue(LOAD_HA, atof(split_line[57].c_str()), l_id);
+          data->setValue(LOAD_HA, atof(split_line[56].c_str()), l_id);
         }
       }
 
       // LOAD_ETRQA
-      if (nstr > 58) {
+      if (nstr > 57) {
         if (!data->getValue(LOAD_ETRQA,&rval,l_id)) {
-          data->addValue(LOAD_ETRQA, atof(split_line[58].c_str()), l_id);
+          data->addValue(LOAD_ETRQA, atof(split_line[57].c_str()), l_id);
         } else {
-          data->setValue(LOAD_ETRQA, atof(split_line[58].c_str()), l_id);
+          data->setValue(LOAD_ETRQA, atof(split_line[57].c_str()), l_id);
         }
       }
 
       // LOAD_VTR1A
-      if (nstr > 59) {
+      if (nstr > 58) {
         if (!data->getValue(LOAD_VTR1A,&rval,l_id)) {
-          data->addValue(LOAD_VTR1A, atof(split_line[59].c_str()), l_id);
+          data->addValue(LOAD_VTR1A, atof(split_line[58].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VTR1A, atof(split_line[59].c_str()), l_id);
+          data->setValue(LOAD_VTR1A, atof(split_line[58].c_str()), l_id);
         }
       }
 
       // LOAD_TTR1A
-      if (nstr > 60) {
+      if (nstr > 59) {
         if (!data->getValue(LOAD_TTR1A,&rval,l_id)) {
-          data->addValue(LOAD_TTR1A, atof(split_line[60].c_str()), l_id);
+          data->addValue(LOAD_TTR1A, atof(split_line[59].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TTR1A, atof(split_line[60].c_str()), l_id);
+          data->setValue(LOAD_TTR1A, atof(split_line[59].c_str()), l_id);
         }
       }
 
       // LOAD_FTR1A
-      if (nstr > 61) {
+      if (nstr > 60) {
         if (!data->getValue(LOAD_FTR1A,&rval,l_id)) {
-          data->addValue(LOAD_FTR1A, atof(split_line[61].c_str()), l_id);
+          data->addValue(LOAD_FTR1A, atof(split_line[60].c_str()), l_id);
         } else {
-          data->setValue(LOAD_FTR1A, atof(split_line[61].c_str()), l_id);
+          data->setValue(LOAD_FTR1A, atof(split_line[60].c_str()), l_id);
         }
       }
 
       // LOAD_VRC1A
-      if (nstr > 62) {
+      if (nstr > 61) {
         if (!data->getValue(LOAD_VRC1A,&rval,l_id)) {
-          data->addValue(LOAD_VRC1A, atof(split_line[62].c_str()), l_id);
+          data->addValue(LOAD_VRC1A, atof(split_line[61].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VRC1A, atof(split_line[62].c_str()), l_id);
+          data->setValue(LOAD_VRC1A, atof(split_line[61].c_str()), l_id);
         }
       }
 
       // LOAD_TRC1A
-      if (nstr > 63) {
+      if (nstr > 62) {
         if (!data->getValue(LOAD_TRC1A,&rval,l_id)) {
-          data->addValue(LOAD_TRC1A, atof(split_line[63].c_str()), l_id);
+          data->addValue(LOAD_TRC1A, atof(split_line[62].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TRC1A, atof(split_line[63].c_str()), l_id);
+          data->setValue(LOAD_TRC1A, atof(split_line[62].c_str()), l_id);
         }
       }
 
       // LOAD_VTR2A
-      if (nstr > 64) {
+      if (nstr > 63) {
         if (!data->getValue(LOAD_VTR2A,&rval,l_id)) {
-          data->addValue(LOAD_VTR2A, atof(split_line[64].c_str()), l_id);
+          data->addValue(LOAD_VTR2A, atof(split_line[63].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VTR2A, atof(split_line[64].c_str()), l_id);
+          data->setValue(LOAD_VTR2A, atof(split_line[63].c_str()), l_id);
         }
       }
 
       // LOAD_TTR2A
-      if (nstr > 65) {
+      if (nstr > 64) {
         if (!data->getValue(LOAD_TTR2A,&rval,l_id)) {
-          data->addValue(LOAD_TTR2A, atof(split_line[65].c_str()), l_id);
+          data->addValue(LOAD_TTR2A, atof(split_line[64].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TTR2A, atof(split_line[65].c_str()), l_id);
+          data->setValue(LOAD_TTR2A, atof(split_line[64].c_str()), l_id);
         }
       }
 
       // LOAD_FTR2A
-      if (nstr > 66) {
+      if (nstr > 65) {
         if (!data->getValue(LOAD_FTR2A,&rval,l_id)) {
-          data->addValue(LOAD_FTR2A, atof(split_line[66].c_str()), l_id);
+          data->addValue(LOAD_FTR2A, atof(split_line[65].c_str()), l_id);
         } else {
-          data->setValue(LOAD_FTR2A, atof(split_line[66].c_str()), l_id);
+          data->setValue(LOAD_FTR2A, atof(split_line[65].c_str()), l_id);
         }
       }
 
       // LOAD_VRC2A
-      if (nstr > 67) {
+      if (nstr > 66) {
         if (!data->getValue(LOAD_VRC2A,&rval,l_id)) {
-          data->addValue(LOAD_VRC2A, atof(split_line[67].c_str()), l_id);
+          data->addValue(LOAD_VRC2A, atof(split_line[66].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VRC2A, atof(split_line[67].c_str()), l_id);
+          data->setValue(LOAD_VRC2A, atof(split_line[66].c_str()), l_id);
         }
       }
 
       // LOAD_TRC2A
-      if (nstr > 68) {
+      if (nstr > 67) {
         if (!data->getValue(LOAD_TRC2A,&rval,l_id)) {
-          data->addValue(LOAD_TRC2A, atof(split_line[68].c_str()), l_id);
+          data->addValue(LOAD_TRC2A, atof(split_line[67].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TRC2A, atof(split_line[68].c_str()), l_id);
+          data->setValue(LOAD_TRC2A, atof(split_line[67].c_str()), l_id);
         }
       }
 
       // LOAD_MTPB
-      if (nstr > 69) {
+      if (nstr > 68) {
         if (!data->getValue(LOAD_MTPB,&ival,l_id)) {
-          data->addValue(LOAD_MTPB, atoi(split_line[69].c_str()), l_id);
+          data->addValue(LOAD_MTPB, atoi(split_line[68].c_str()), l_id);
         } else {
-          data->setValue(LOAD_MTPB, atoi(split_line[69].c_str()), l_id);
+          data->setValue(LOAD_MTPB, atoi(split_line[68].c_str()), l_id);
         }
       }
 
       // LOAD_LFMB
-      if (nstr > 70) {
+      if (nstr > 69) {
         if (!data->getValue(LOAD_LFMB,&rval,l_id)) {
-          data->addValue(LOAD_LFMB, atof(split_line[70].c_str()), l_id);
+          data->addValue(LOAD_LFMB, atof(split_line[69].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LFMB, atof(split_line[70].c_str()), l_id);
+          data->setValue(LOAD_LFMB, atof(split_line[69].c_str()), l_id);
         }
       }
 
       // LOAD_RSB
       if (nstr > 71) {
         if (!data->getValue(LOAD_RSB,&rval,l_id)) {
-          data->addValue(LOAD_RSB, atof(split_line[71].c_str()), l_id);
+          data->addValue(LOAD_RSB, atof(split_line[70].c_str()), l_id);
         } else {
-          data->setValue(LOAD_RSB, atof(split_line[71].c_str()), l_id);
+          data->setValue(LOAD_RSB, atof(split_line[70].c_str()), l_id);
         }
       }
 
       // LOAD_LSB
       if (nstr > 72) {
         if (!data->getValue(LOAD_LSB,&rval,l_id)) {
-          data->addValue(LOAD_LSB, atof(split_line[72].c_str()), l_id);
+          data->addValue(LOAD_LSB, atof(split_line[71].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LSB, atof(split_line[72].c_str()), l_id);
+          data->setValue(LOAD_LSB, atof(split_line[71].c_str()), l_id);
         }
       }
 
       // LOAD_LPB
-      if (nstr > 73) {
+      if (nstr > 72) {
         if (!data->getValue(LOAD_LPB,&rval,l_id)) {
-          data->addValue(LOAD_LPB, atof(split_line[73].c_str()), l_id);
+          data->addValue(LOAD_LPB, atof(split_line[72].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LPB, atof(split_line[73].c_str()), l_id);
+          data->setValue(LOAD_LPB, atof(split_line[72].c_str()), l_id);
         }
       }
 
       // LOAD_LPPB
-      if (nstr > 74) {
+      if (nstr > 73) {
         if (!data->getValue(LOAD_LPPB,&rval,l_id)) {
-          data->addValue(LOAD_LPPB, atof(split_line[74].c_str()), l_id);
+          data->addValue(LOAD_LPPB, atof(split_line[73].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LPPB, atof(split_line[74].c_str()), l_id);
+          data->setValue(LOAD_LPPB, atof(split_line[73].c_str()), l_id);
         }
       }
 
       // LOAD_TPOB
-      if (nstr > 75) {
+      if (nstr > 74) {
         if (!data->getValue(LOAD_TPOB,&rval,l_id)) {
-          data->addValue(LOAD_TPOB, atof(split_line[75].c_str()), l_id);
+          data->addValue(LOAD_TPOB, atof(split_line[74].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TPOB, atof(split_line[75].c_str()), l_id);
+          data->setValue(LOAD_TPOB, atof(split_line[74].c_str()), l_id);
         }
       }
 
       // LOAD_TPPOB
-      if (nstr > 76) {
+      if (nstr > 75) {
         if (!data->getValue(LOAD_TPPOB,&rval,l_id)) {
-          data->addValue(LOAD_TPPOB, atof(split_line[76].c_str()), l_id);
+          data->addValue(LOAD_TPPOB, atof(split_line[75].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TPPOB, atof(split_line[76].c_str()), l_id);
+          data->setValue(LOAD_TPPOB, atof(split_line[75].c_str()), l_id);
         }
       }
 
       // LOAD_HB
-      if (nstr > 77) {
+      if (nstr > 76) {
         if (!data->getValue(LOAD_HB,&rval,l_id)) {
-          data->addValue(LOAD_HB, atof(split_line[77].c_str()), l_id);
+          data->addValue(LOAD_HB, atof(split_line[76].c_str()), l_id);
         } else {
-          data->setValue(LOAD_HB, atof(split_line[77].c_str()), l_id);
+          data->setValue(LOAD_HB, atof(split_line[76].c_str()), l_id);
         }
       }
 
       // LOAD_ETRQB
-      if (nstr > 78) {
+      if (nstr > 77) {
         if (!data->getValue(LOAD_ETRQB,&rval,l_id)) {
-          data->addValue(LOAD_ETRQB, atof(split_line[78].c_str()), l_id);
+          data->addValue(LOAD_ETRQB, atof(split_line[77].c_str()), l_id);
         } else {
-          data->setValue(LOAD_ETRQB, atof(split_line[78].c_str()), l_id);
+          data->setValue(LOAD_ETRQB, atof(split_line[77].c_str()), l_id);
         }
       }
 
       // LOAD_VTR1B
-      if (nstr > 79) {
+      if (nstr > 78) {
         if (!data->getValue(LOAD_VTR1B,&rval,l_id)) {
-          data->addValue(LOAD_VTR1B, atof(split_line[79].c_str()), l_id);
+          data->addValue(LOAD_VTR1B, atof(split_line[78].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VTR1B, atof(split_line[79].c_str()), l_id);
+          data->setValue(LOAD_VTR1B, atof(split_line[78].c_str()), l_id);
         }
       }
 
       // LOAD_TTR1B
-      if (nstr > 80) {
+      if (nstr > 79) {
         if (!data->getValue(LOAD_TTR1B,&rval,l_id)) {
-          data->addValue(LOAD_TTR1B, atof(split_line[80].c_str()), l_id);
+          data->addValue(LOAD_TTR1B, atof(split_line[79].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TTR1B, atof(split_line[80].c_str()), l_id);
+          data->setValue(LOAD_TTR1B, atof(split_line[79].c_str()), l_id);
         }
       }
 
       // LOAD_FTR1B
-      if (nstr > 81) {
+      if (nstr > 80) {
         if (!data->getValue(LOAD_FTR1B,&rval,l_id)) {
-          data->addValue(LOAD_FTR1B, atof(split_line[81].c_str()), l_id);
+          data->addValue(LOAD_FTR1B, atof(split_line[80].c_str()), l_id);
         } else {
-          data->setValue(LOAD_FTR1B, atof(split_line[81].c_str()), l_id);
+          data->setValue(LOAD_FTR1B, atof(split_line[80].c_str()), l_id);
         }
       }
 
       // LOAD_VRC1B
-      if (nstr > 82) {
+      if (nstr > 81) {
         if (!data->getValue(LOAD_VRC1B,&rval,l_id)) {
-          data->addValue(LOAD_VRC1B, atof(split_line[82].c_str()), l_id);
+          data->addValue(LOAD_VRC1B, atof(split_line[81].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VRC1B, atof(split_line[82].c_str()), l_id);
+          data->setValue(LOAD_VRC1B, atof(split_line[81].c_str()), l_id);
         }
       }
 
       // LOAD_TRC1B
-      if (nstr > 83) {
+      if (nstr > 82) {
         if (!data->getValue(LOAD_TRC1B,&rval,l_id)) {
-          data->addValue(LOAD_TRC1B, atof(split_line[83].c_str()), l_id);
+          data->addValue(LOAD_TRC1B, atof(split_line[82].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TRC1B, atof(split_line[83].c_str()), l_id);
+          data->setValue(LOAD_TRC1B, atof(split_line[82].c_str()), l_id);
         }
       }
 
       // LOAD_VTR2B
-      if (nstr > 84) {
+      if (nstr > 83) {
         if (!data->getValue(LOAD_VTR2B,&rval,l_id)) {
-          data->addValue(LOAD_VTR2B, atof(split_line[84].c_str()), l_id);
+          data->addValue(LOAD_VTR2B, atof(split_line[83].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VTR2B, atof(split_line[84].c_str()), l_id);
+          data->setValue(LOAD_VTR2B, atof(split_line[83].c_str()), l_id);
         }
       }
 
       // LOAD_TTR2B
-      if (nstr > 85) {
+      if (nstr > 84) {
         if (!data->getValue(LOAD_TTR2B,&rval,l_id)) {
-          data->addValue(LOAD_TTR2B, atof(split_line[85].c_str()), l_id);
+          data->addValue(LOAD_TTR2B, atof(split_line[84].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TTR2B, atof(split_line[85].c_str()), l_id);
+          data->setValue(LOAD_TTR2B, atof(split_line[84].c_str()), l_id);
         }
       }
 
       // LOAD_FTR2B
-      if (nstr > 86) {
+      if (nstr > 85) {
         if (!data->getValue(LOAD_FTR2B,&rval,l_id)) {
-          data->addValue(LOAD_FTR2B, atof(split_line[86].c_str()), l_id);
+          data->addValue(LOAD_FTR2B, atof(split_line[85].c_str()), l_id);
         } else {
-          data->setValue(LOAD_FTR2B, atof(split_line[86].c_str()), l_id);
+          data->setValue(LOAD_FTR2B, atof(split_line[85].c_str()), l_id);
         }
       }
 
       // LOAD_VRC2B
-      if (nstr > 87) {
+      if (nstr > 86) {
         if (!data->getValue(LOAD_VRC2B,&rval,l_id)) {
-          data->addValue(LOAD_VRC2B, atof(split_line[87].c_str()), l_id);
+          data->addValue(LOAD_VRC2B, atof(split_line[86].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VRC2B, atof(split_line[87].c_str()), l_id);
+          data->setValue(LOAD_VRC2B, atof(split_line[86].c_str()), l_id);
         }
       }
 
       // LOAD_TRC2B
-      if (nstr > 88) {
+      if (nstr > 87) {
         if (!data->getValue(LOAD_TRC2B,&rval,l_id)) {
-          data->addValue(LOAD_TRC2B, atof(split_line[88].c_str()), l_id);
+          data->addValue(LOAD_TRC2B, atof(split_line[87].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TRC2B, atof(split_line[88].c_str()), l_id);
+          data->setValue(LOAD_TRC2B, atof(split_line[87].c_str()), l_id);
         }
       }
 
       // LOAD_MTPC
-      if (nstr > 89) {
+      if (nstr > 88) {
         if (!data->getValue(LOAD_MTPC,&ival,l_id)) {
-          data->addValue(LOAD_MTPC, atoi(split_line[89].c_str()), l_id);
+          data->addValue(LOAD_MTPC, atoi(split_line[88].c_str()), l_id);
         } else {
-          data->setValue(LOAD_MTPC, atoi(split_line[89].c_str()), l_id);
+          data->setValue(LOAD_MTPC, atoi(split_line[88].c_str()), l_id);
         }
       }
 
       // LOAD_LFMC
-      if (nstr > 90) {
+      if (nstr > 89) {
         if (!data->getValue(LOAD_LFMC,&rval,l_id)) {
-          data->addValue(LOAD_LFMC, atof(split_line[90].c_str()), l_id);
+          data->addValue(LOAD_LFMC, atof(split_line[89].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LFMC, atof(split_line[90].c_str()), l_id);
+          data->setValue(LOAD_LFMC, atof(split_line[89].c_str()), l_id);
         }
       }
 
       // LOAD_RSC
-      if (nstr > 91) {
+      if (nstr > 90) {
         if (!data->getValue(LOAD_RSC,&rval,l_id)) {
-          data->addValue(LOAD_RSC, atof(split_line[91].c_str()), l_id);
+          data->addValue(LOAD_RSC, atof(split_line[90].c_str()), l_id);
         } else {
-          data->setValue(LOAD_RSC, atof(split_line[91].c_str()), l_id);
+          data->setValue(LOAD_RSC, atof(split_line[90].c_str()), l_id);
         }
       }
 
       // LOAD_LSC
-      if (nstr > 92) {
+      if (nstr > 91) {
         if (!data->getValue(LOAD_LSC,&rval,l_id)) {
-          data->addValue(LOAD_LSC, atof(split_line[92].c_str()), l_id);
+          data->addValue(LOAD_LSC, atof(split_line[91].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LSC, atof(split_line[92].c_str()), l_id);
+          data->setValue(LOAD_LSC, atof(split_line[91].c_str()), l_id);
         }
       }
 
       // LOAD_LPC
-      if (nstr > 93) {
+      if (nstr > 92) {
         if (!data->getValue(LOAD_LPC,&rval,l_id)) {
-          data->addValue(LOAD_LPC, atof(split_line[93].c_str()), l_id);
+          data->addValue(LOAD_LPC, atof(split_line[92].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LPC, atof(split_line[93].c_str()), l_id);
+          data->setValue(LOAD_LPC, atof(split_line[92].c_str()), l_id);
         }
       }
 
       // LOAD_LPPC
-      if (nstr > 94) {
+      if (nstr > 93) {
         if (!data->getValue(LOAD_LPPC,&rval,l_id)) {
-          data->addValue(LOAD_LPPC, atof(split_line[94].c_str()), l_id);
+          data->addValue(LOAD_LPPC, atof(split_line[93].c_str()), l_id);
         } else {
-          data->setValue(LOAD_LPPC, atof(split_line[94].c_str()), l_id);
+          data->setValue(LOAD_LPPC, atof(split_line[93].c_str()), l_id);
         }
       }
 
       // LOAD_TPOC
-      if (nstr > 95) {
+      if (nstr > 94) {
         if (!data->getValue(LOAD_TPOC,&rval,l_id)) {
-          data->addValue(LOAD_TPOC, atof(split_line[95].c_str()), l_id);
+          data->addValue(LOAD_TPOC, atof(split_line[94].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TPOC, atof(split_line[95].c_str()), l_id);
+          data->setValue(LOAD_TPOC, atof(split_line[94].c_str()), l_id);
         }
       }
 
       // LOAD_TPPOC
-      if (nstr > 96) {
+      if (nstr > 95) {
         if (!data->getValue(LOAD_TPPOC,&rval,l_id)) {
-          data->addValue(LOAD_TPPOC, atof(split_line[96].c_str()), l_id);
+          data->addValue(LOAD_TPPOC, atof(split_line[95].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TPPOC, atof(split_line[96].c_str()), l_id);
+          data->setValue(LOAD_TPPOC, atof(split_line[95].c_str()), l_id);
         }
       }
 
       // LOAD_HC
-      if (nstr > 97) {
+      if (nstr > 96) {
         if (!data->getValue(LOAD_HC,&rval,l_id)) {
-          data->addValue(LOAD_HC, atof(split_line[97].c_str()), l_id);
+          data->addValue(LOAD_HC, atof(split_line[96].c_str()), l_id);
         } else {
-          data->setValue(LOAD_HC, atof(split_line[97].c_str()), l_id);
+          data->setValue(LOAD_HC, atof(split_line[96].c_str()), l_id);
         }
       }
 
       // LOAD_ETRQC
-      if (nstr > 98) {
+      if (nstr > 97) {
         if (!data->getValue(LOAD_ETRQC,&rval,l_id)) {
-          data->addValue(LOAD_ETRQC, atof(split_line[98].c_str()), l_id);
+          data->addValue(LOAD_ETRQC, atof(split_line[97].c_str()), l_id);
         } else {
-          data->setValue(LOAD_ETRQC, atof(split_line[98].c_str()), l_id);
+          data->setValue(LOAD_ETRQC, atof(split_line[97].c_str()), l_id);
         }
       }
 
       // LOAD_VTR1C
-      if (nstr > 99) {
+      if (nstr > 98) {
         if (!data->getValue(LOAD_VTR1C,&rval,l_id)) {
-          data->addValue(LOAD_VTR1C, atof(split_line[99].c_str()), l_id);
+          data->addValue(LOAD_VTR1C, atof(split_line[98].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VTR1C, atof(split_line[99].c_str()), l_id);
+          data->setValue(LOAD_VTR1C, atof(split_line[98].c_str()), l_id);
         }
       }
 
       // LOAD_TTR1C
-      if (nstr > 100) {
+      if (nstr > 99) {
         if (!data->getValue(LOAD_TTR1C,&rval,l_id)) {
-          data->addValue(LOAD_TTR1C, atof(split_line[100].c_str()), l_id);
+          data->addValue(LOAD_TTR1C, atof(split_line[99].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TTR1C, atof(split_line[100].c_str()), l_id);
+          data->setValue(LOAD_TTR1C, atof(split_line[99].c_str()), l_id);
         }
       }
 
       // LOAD_FTR1C
-      if (nstr > 101) {
+      if (nstr > 100) {
         if (!data->getValue(LOAD_FTR1C,&rval,l_id)) {
-          data->addValue(LOAD_FTR1C, atof(split_line[101].c_str()), l_id);
+          data->addValue(LOAD_FTR1C, atof(split_line[100].c_str()), l_id);
         } else {
-          data->setValue(LOAD_FTR1C, atof(split_line[101].c_str()), l_id);
+          data->setValue(LOAD_FTR1C, atof(split_line[100].c_str()), l_id);
         }
       }
 
       // LOAD_VRC1C
-      if (nstr > 102) {
+      if (nstr > 101) {
         if (!data->getValue(LOAD_VRC1C,&rval,l_id)) {
-          data->addValue(LOAD_VRC1C, atof(split_line[102].c_str()), l_id);
+          data->addValue(LOAD_VRC1C, atof(split_line[101].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VRC1C, atof(split_line[102].c_str()), l_id);
+          data->setValue(LOAD_VRC1C, atof(split_line[101].c_str()), l_id);
         }
       }
 
       // LOAD_TRC1C
-      if (nstr > 103) {
+      if (nstr > 102) {
         if (!data->getValue(LOAD_TRC1C,&rval,l_id)) {
-          data->addValue(LOAD_TRC1C, atof(split_line[103].c_str()), l_id);
+          data->addValue(LOAD_TRC1C, atof(split_line[102].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TRC1C, atof(split_line[103].c_str()), l_id);
+          data->setValue(LOAD_TRC1C, atof(split_line[102].c_str()), l_id);
         }
       }
 
       // LOAD_VTR2C
-      if (nstr > 104) {
+      if (nstr > 103) {
         if (!data->getValue(LOAD_VTR2C,&rval,l_id)) {
-          data->addValue(LOAD_VTR2C, atof(split_line[104].c_str()), l_id);
+          data->addValue(LOAD_VTR2C, atof(split_line[103].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VTR2C, atof(split_line[104].c_str()), l_id);
+          data->setValue(LOAD_VTR2C, atof(split_line[103].c_str()), l_id);
         }
       }
 
       // LOAD_TTR2C
-      if (nstr > 105) {
+      if (nstr > 104) {
         if (!data->getValue(LOAD_TTR2C,&rval,l_id)) {
-          data->addValue(LOAD_TTR2C, atof(split_line[105].c_str()), l_id);
+          data->addValue(LOAD_TTR2C, atof(split_line[104].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TTR2C, atof(split_line[105].c_str()), l_id);
+          data->setValue(LOAD_TTR2C, atof(split_line[104].c_str()), l_id);
         }
       }
 
       // LOAD_FTR2C
-      if (nstr > 106) {
+      if (nstr > 105) {
         if (!data->getValue(LOAD_FTR2C,&rval,l_id)) {
-          data->addValue(LOAD_FTR2C, atof(split_line[106].c_str()), l_id);
+          data->addValue(LOAD_FTR2C, atof(split_line[105].c_str()), l_id);
         } else {
-          data->setValue(LOAD_FTR2C, atof(split_line[106].c_str()), l_id);
+          data->setValue(LOAD_FTR2C, atof(split_line[105].c_str()), l_id);
         }
       }
 
       // LOAD_VRC2C
-      if (nstr > 107) {
+      if (nstr > 106) {
         if (!data->getValue(LOAD_VRC2C,&rval,l_id)) {
-          data->addValue(LOAD_VRC2C, atof(split_line[107].c_str()), l_id);
+          data->addValue(LOAD_VRC2C, atof(split_line[106].c_str()), l_id);
         } else {
-          data->setValue(LOAD_VRC2C, atof(split_line[107].c_str()), l_id);
+          data->setValue(LOAD_VRC2C, atof(split_line[106].c_str()), l_id);
         }
       }
 
       // LOAD_TRC2C
-      if (nstr > 108) {
+      if (nstr > 107) {
         if (!data->getValue(LOAD_TRC2C,&rval,l_id)) {
-          data->addValue(LOAD_TRC2C, atof(split_line[108].c_str()), l_id);
+          data->addValue(LOAD_TRC2C, atof(split_line[107].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TRC2C, atof(split_line[108].c_str()), l_id);
-        }
-      }
-
-      // LOAD_MTPD
-      if (nstr > 109) {
-        if (!data->getValue(LOAD_MTPD,&ival,l_id)) {
-          data->addValue(LOAD_MTPD, atoi(split_line[109].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_MTPD, atoi(split_line[109].c_str()), l_id);
-        }
-      }
-
-      // LOAD_LFMD
-      if (nstr > 110) {
-        if (!data->getValue(LOAD_LFMD,&rval,l_id)) {
-          data->addValue(LOAD_LFMD, atof(split_line[110].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_LFMD, atof(split_line[110].c_str()), l_id);
-        }
-      }
-
-      // LOAD_COMPPF
-      if (nstr > 111) {
-        if (!data->getValue(LOAD_COMPPF,&rval,l_id)) {
-          data->addValue(LOAD_COMPPF, atof(split_line[111].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_COMPPF, atof(split_line[111].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VSTALL
-      if (nstr > 112) {
-        if (!data->getValue(LOAD_VSTALL,&rval,l_id)) {
-          data->addValue(LOAD_VSTALL, atof(split_line[112].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VSTALL, atof(split_line[112].c_str()), l_id);
-        }
-      }
-
-      // LOAD_RSTALL
-      if (nstr > 113) {
-        if (!data->getValue(LOAD_RSTALL,&rval,l_id)) {
-          data->addValue(LOAD_RSTALL, atof(split_line[113].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_RSTALL, atof(split_line[113].c_str()), l_id);
-        }
-      }
-
-      // LOAD_XSTALL
-      if (nstr > 114) {
-        if (!data->getValue(LOAD_XSTALL,&rval,l_id)) {
-          data->addValue(LOAD_XSTALL, atof(split_line[114].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_XSTALL, atof(split_line[114].c_str()), l_id);
+          data->setValue(LOAD_TRC2C, atof(split_line[107].c_str()), l_id);
         }
       }
 
       // LOAD_TSTALL
-      if (nstr > 115) {
+      if (nstr > 108) {
         if (!data->getValue(LOAD_TSTALL,&rval,l_id)) {
-          data->addValue(LOAD_TSTALL, atof(split_line[115].c_str()), l_id);
+          data->addValue(LOAD_TSTALL, atof(split_line[108].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TSTALL, atof(split_line[115].c_str()), l_id);
-        }
-      }
-
-      // LOAD_FRST
-      if (nstr > 116) {
-        if (!data->getValue(LOAD_FRST,&rval,l_id)) {
-          data->addValue(LOAD_FRST, atof(split_line[116].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_FRST, atof(split_line[116].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VRST
-      if (nstr > 117) {
-        if (!data->getValue(LOAD_VRST,&rval,l_id)) {
-          data->addValue(LOAD_VRST, atof(split_line[117].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VRST, atof(split_line[117].c_str()), l_id);
+          data->setValue(LOAD_TSTALL, atof(split_line[108].c_str()), l_id);
         }
       }
 
       // LOAD_TRST
-      if (nstr > 118) {
+      if (nstr > 109) {
         if (!data->getValue(LOAD_TRST,&rval,l_id)) {
-          data->addValue(LOAD_TRST, atof(split_line[118].c_str()), l_id);
+          data->addValue(LOAD_TRST, atof(split_line[109].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TRST, atof(split_line[118].c_str()), l_id);
-        }
-      }
-
-      // LOAD_FUVR
-      if (nstr > 119) {
-        if (!data->getValue(LOAD_FUVR,&rval,l_id)) {
-          data->addValue(LOAD_FUVR, atof(split_line[119].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_FUVR, atof(split_line[119].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VTR1
-      if (nstr > 120) {
-        if (!data->getValue(LOAD_VTR1,&rval,l_id)) {
-          data->addValue(LOAD_VTR1, atof(split_line[120].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VTR1, atof(split_line[120].c_str()), l_id);
-        }
-      }
-
-      // LOAD_TTR1
-      if (nstr > 121) {
-        if (!data->getValue(LOAD_TTR1,&rval,l_id)) {
-          data->addValue(LOAD_TTR1, atof(split_line[121].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_TTR1, atof(split_line[121].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VTR2
-      if (nstr > 122) {
-        if (!data->getValue(LOAD_VTR2,&rval,l_id)) {
-          data->addValue(LOAD_VTR2, atof(split_line[122].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VTR2, atof(split_line[122].c_str()), l_id);
-        }
-      }
-
-      // LOAD_TTR2
-      if (nstr > 123) {
-        if (!data->getValue(LOAD_TTR2,&rval,l_id)) {
-          data->addValue(LOAD_TTR2, atof(split_line[123].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_TTR2, atof(split_line[123].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VC1OFF
-      if (nstr > 124) {
-        if (!data->getValue(LOAD_VC1OFF,&rval,l_id)) {
-          data->addValue(LOAD_VC1OFF, atof(split_line[124].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VC1OFF, atof(split_line[124].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VC2OFF
-      if (nstr > 125) {
-        if (!data->getValue(LOAD_VC2OFF,&rval,l_id)) {
-          data->addValue(LOAD_VC2OFF, atof(split_line[125].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VC2OFF, atof(split_line[125].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VC1ON
-      if (nstr > 126) {
-        if (!data->getValue(LOAD_VC1ON,&rval,l_id)) {
-          data->addValue(LOAD_VC1ON, atof(split_line[126].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VC1ON, atof(split_line[126].c_str()), l_id);
-        }
-      }
-
-      // LOAD_VC2ON
-      if (nstr > 127) {
-        if (!data->getValue(LOAD_VC2ON,&rval,l_id)) {
-          data->addValue(LOAD_VC2ON, atof(split_line[127].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_VC2ON, atof(split_line[127].c_str()), l_id);
-        }
-      }
-
-      // LOAD_TTH
-      if (nstr > 128) {
-        if (!data->getValue(LOAD_TTH,&rval,l_id)) {
-          data->addValue(LOAD_TTH, atof(split_line[128].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_TTH, atof(split_line[128].c_str()), l_id);
-        }
-      }
-
-      // LOAD_TH1T
-      if (nstr > 129) {
-        if (!data->getValue(LOAD_TH1T,&rval,l_id)) {
-          data->addValue(LOAD_TH1T, atof(split_line[129].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_TH1T, atof(split_line[129].c_str()), l_id);
-        }
-      }
-
-      // LOAD_TH2T
-      if (nstr > 130) {
-        if (!data->getValue(LOAD_TH2T,&rval,l_id)) {
-          data->addValue(LOAD_TH2T, atof(split_line[130].c_str()), l_id);
-        } else {
-          data->setValue(LOAD_TH2T, atof(split_line[130].c_str()), l_id);
+          data->setValue(LOAD_TRST, atof(split_line[109].c_str()), l_id);
         }
       }
 
       // LOAD_TV
-      if (nstr > 131) {
+      if (nstr > 110) {
         if (!data->getValue(LOAD_TV,&rval,l_id)) {
-          data->addValue(LOAD_TV, atof(split_line[131].c_str()), l_id);
+          data->addValue(LOAD_TV, atof(split_line[110].c_str()), l_id);
         } else {
-          data->setValue(LOAD_TV, atof(split_line[131].c_str()), l_id);
+          data->setValue(LOAD_TV, atof(split_line[110].c_str()), l_id);
+        }
+      }
+
+      // LOAD_TF
+      if (nstr > 111) {
+        if (!data->getValue(LOAD_TF,&rval,l_id)) {
+          data->addValue(LOAD_TF, atof(split_line[111].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_TF, atof(split_line[111].c_str()), l_id);
+        }
+      }
+
+      // LOAD_LFMD
+      if (nstr > 112) {
+        if (!data->getValue(LOAD_LFMD,&rval,l_id)) {
+          data->addValue(LOAD_LFMD, atof(split_line[112].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_LFMD, atof(split_line[112].c_str()), l_id);
+        }
+      }
+
+      // LOAD_COMPPF
+      if (nstr > 113) {
+        if (!data->getValue(LOAD_COMPPF,&rval,l_id)) {
+          data->addValue(LOAD_COMPPF, atof(split_line[113].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_COMPPF, atof(split_line[113].c_str()), l_id);
+        }
+      }
+
+      // LOAD_VSTALL
+      if (nstr > 114) {
+        if (!data->getValue(LOAD_VSTALL,&rval,l_id)) {
+          data->addValue(LOAD_VSTALL, atof(split_line[114].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_VSTALL, atof(split_line[114].c_str()), l_id);
+        }
+      }
+
+      // LOAD_RSTALL
+      if (nstr > 115) {
+        if (!data->getValue(LOAD_RSTALL,&rval,l_id)) {
+          data->addValue(LOAD_RSTALL, atof(split_line[115].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_RSTALL, atof(split_line[115].c_str()), l_id);
+        }
+      }
+
+      // LOAD_XSTALL
+      if (nstr > 116) {
+        if (!data->getValue(LOAD_XSTALL,&rval,l_id)) {
+          data->addValue(LOAD_XSTALL, atof(split_line[116].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_XSTALL, atof(split_line[116].c_str()), l_id);
+        }
+      }
+
+      // LOAD_LFADJ
+      if (nstr > 117) {
+        if (!data->getValue(LOAD_LFADJ,&rval,l_id)) {
+          data->addValue(LOAD_LFADJ, atof(split_line[117].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_LFADJ, atof(split_line[117].c_str()), l_id);
+        }
+      }
+
+      // LOAD_KP1
+      if (nstr > 118) {
+        if (!data->getValue(LOAD_KP1,&rval,l_id)) {
+          data->addValue(LOAD_KP1, atof(split_line[118].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_KP1, atof(split_line[118].c_str()), l_id);
+        }
+      }
+
+      // LOAD_NP1
+      if (nstr > 119) {
+        if (!data->getValue(LOAD_NP1,&rval,l_id)) {
+          data->addValue(LOAD_NP1, atof(split_line[119].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_NP1, atof(split_line[119].c_str()), l_id);
+        }
+      }
+
+      // LOAD_KQ1
+      if (nstr > 120) {
+        if (!data->getValue(LOAD_KQ1,&rval,l_id)) {
+          data->addValue(LOAD_KQ1, atof(split_line[120].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_KQ1, atof(split_line[120].c_str()), l_id);
+        }
+      }
+
+      // LOAD_NQ1
+      if (nstr > 121) {
+        if (!data->getValue(LOAD_NQ1,&rval,l_id)) {
+          data->addValue(LOAD_NQ1, atof(split_line[121].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_NQ1, atof(split_line[121].c_str()), l_id);
+        }
+      }
+
+      // LOAD_KP2
+      if (nstr > 122) {
+        if (!data->getValue(LOAD_KP2,&rval,l_id)) {
+          data->addValue(LOAD_KP2, atof(split_line[122].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_KP2, atof(split_line[122].c_str()), l_id);
+        }
+      }
+
+      // LOAD_NP2
+      if (nstr > 123) {
+        if (!data->getValue(LOAD_NP2,&rval,l_id)) {
+          data->addValue(LOAD_NP2, atof(split_line[123].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_NP2, atof(split_line[123].c_str()), l_id);
+        }
+      }
+
+      // LOAD_KQ2
+      if (nstr > 124) {
+        if (!data->getValue(LOAD_KQ2,&rval,l_id)) {
+          data->addValue(LOAD_KQ2, atof(split_line[124].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_KQ2, atof(split_line[124].c_str()), l_id);
+        }
+      }
+
+      // LOAD_NQ2
+      if (nstr > 125) {
+        if (!data->getValue(LOAD_NQ2,&rval,l_id)) {
+          data->addValue(LOAD_NQ2, atof(split_line[125].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_NQ2, atof(split_line[125].c_str()), l_id);
+        }
+      }
+
+      // LOAD_VBRK
+      if (nstr > 126) {
+        if (!data->getValue(LOAD_VBRK,&rval,l_id)) {
+          data->addValue(LOAD_VBRK, atof(split_line[126].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_VBRK, atof(split_line[126].c_str()), l_id);
+        }
+      }
+
+      // LOAD_FRST
+      if (nstr > 127) {
+        if (!data->getValue(LOAD_FRST,&rval,l_id)) {
+          data->addValue(LOAD_FRST, atof(split_line[127].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_FRST, atof(split_line[127].c_str()), l_id);
+        }
+      }
+
+      // LOAD_VRST
+      if (nstr > 128) {
+        if (!data->getValue(LOAD_VRST,&rval,l_id)) {
+          data->addValue(LOAD_VRST, atof(split_line[128].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_VRST, atof(split_line[128].c_str()), l_id);
+        }
+      }
+
+      // LOAD_CMPKPF
+      if (nstr > 129) {
+        if (!data->getValue(LOAD_CMPKPF,&rval,l_id)) {
+          data->addValue(LOAD_CMPKPF, atof(split_line[129].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_CMPKPF, atof(split_line[129].c_str()), l_id);
+        }
+      }
+
+      // LOAD_CMPKQF
+      if (nstr > 130) {
+        if (!data->getValue(LOAD_CMPKQF,&rval,l_id)) {
+          data->addValue(LOAD_CMPKQF, atof(split_line[130].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_CMPKQF, atof(split_line[130].c_str()), l_id);
+        }
+      }
+
+      // LOAD_VC1OFF
+      if (nstr > 131) {
+        if (!data->getValue(LOAD_VC1OFF,&rval,l_id)) {
+          data->addValue(LOAD_VC1OFF, atof(split_line[131].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_VC1OFF, atof(split_line[131].c_str()), l_id);
+        }
+      }
+
+      // LOAD_VC2OFF
+      if (nstr > 132) {
+        if (!data->getValue(LOAD_VC2OFF,&rval,l_id)) {
+          data->addValue(LOAD_VC2OFF, atof(split_line[132].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_VC2OFF, atof(split_line[132].c_str()), l_id);
+        }
+      }
+
+      // LOAD_VC1ON
+      if (nstr > 133) {
+        if (!data->getValue(LOAD_VC1ON,&rval,l_id)) {
+          data->addValue(LOAD_VC1ON, atof(split_line[133].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_VC1ON, atof(split_line[133].c_str()), l_id);
+        }
+      }
+
+      // LOAD_VC2ON
+      if (nstr > 134) {
+        if (!data->getValue(LOAD_VC2ON,&rval,l_id)) {
+          data->addValue(LOAD_VC2ON, atof(split_line[134].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_VC2ON, atof(split_line[134].c_str()), l_id);
+        }
+      }
+
+      // LOAD_TTH
+      if (nstr > 135) {
+        if (!data->getValue(LOAD_TTH,&rval,l_id)) {
+          data->addValue(LOAD_TTH, atof(split_line[135].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_TTH, atof(split_line[135].c_str()), l_id);
+        }
+      }
+
+      // LOAD_TH1T
+      if (nstr > 136) {
+        if (!data->getValue(LOAD_TH1T,&rval,l_id)) {
+          data->addValue(LOAD_TH1T, atof(split_line[136].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_TH1T, atof(split_line[136].c_str()), l_id);
+        }
+      }
+
+      // LOAD_TH2T
+      if (nstr > 137) {
+        if (!data->getValue(LOAD_TH2T,&rval,l_id)) {
+          data->addValue(LOAD_TH2T, atof(split_line[137].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_TH2T, atof(split_line[137].c_str()), l_id);
+        }
+      }
+
+      // LOAD_FUVR
+      if (nstr > 138) {
+        if (!data->getValue(LOAD_FUVR,&rval,l_id)) {
+          data->addValue(LOAD_FUVR, atof(split_line[138].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_FUVR, atof(split_line[138].c_str()), l_id);
+        }
+      }
+
+      // LOAD_UVTR1
+      if (nstr > 139) {
+        if (!data->getValue(LOAD_UVTR1,&rval,l_id)) {
+          data->addValue(LOAD_UVTR1, atof(split_line[139].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_UVTR1, atof(split_line[139].c_str()), l_id);
+        }
+      }
+
+      // LOAD_TTR1
+      if (nstr > 140) {
+        if (!data->getValue(LOAD_TTR1,&rval,l_id)) {
+          data->addValue(LOAD_TTR1, atof(split_line[140].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_TTR1, atof(split_line[140].c_str()), l_id);
+        }
+      }
+
+      // LOAD_UVTR2
+      if (nstr > 141) {
+        if (!data->getValue(LOAD_UVTR2,&rval,l_id)) {
+          data->addValue(LOAD_UVTR2, atof(split_line[141].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_UVTR2, atof(split_line[141].c_str()), l_id);
+        }
+      }
+
+      // LOAD_TTR2
+      if (nstr > 142) {
+        if (!data->getValue(LOAD_TTR2,&rval,l_id)) {
+          data->addValue(LOAD_TTR2, atof(split_line[142].c_str()), l_id);
+        } else {
+          data->setValue(LOAD_TTR2, atof(split_line[142].c_str()), l_id);
         }
       }
     }
@@ -2159,479 +2363,534 @@ template <class _data_struct> class Cmldblu1Parser
         data.vd2 = atof(split_line[36].c_str());
       }
 
-      // LOAD_FRCEL
-      if (nstr > 37) {
-        data.frcel = atof(split_line[37].c_str());
-      }
-
       // LOAD_PFS
-      if (nstr > 38) {
-        data.pfs = atof(split_line[38].c_str());
+      if (nstr > 37) {
+        data.pfs = atof(split_line[37].c_str());
       }
 
       // LOAD_P1E
-      if (nstr > 39) {
-        data.p1e = atof(split_line[39].c_str());
+      if (nstr > 38) {
+        data.p1e = atof(split_line[38].c_str());
       }
 
       // LOAD_P1C
-      if (nstr > 40) {
-        data.p1c = atof(split_line[40].c_str());
+      if (nstr > 39) {
+        data.p1c = atof(split_line[39].c_str());
       }
 
       // LOAD_P2E
-      if (nstr > 41) {
-        data.p2e = atof(split_line[41].c_str());
+      if (nstr > 40) {
+        data.p2e = atof(split_line[40].c_str());
       }
 
       // LOAD_P2C
-      if (nstr > 42) {
-        data.p2c = atof(split_line[42].c_str());
+      if (nstr > 41) {
+        data.p2c = atof(split_line[41].c_str());
       }
 
       // LOAD_PFREQ
-      if (nstr > 43) {
-        data.pfreq = atof(split_line[43].c_str());
+      if (nstr > 42) {
+        data.pfreq = atof(split_line[42].c_str());
       }
 
       // LOAD_Q1E
-      if (nstr > 44) {
-        data.q1e = atof(split_line[44].c_str());
+      if (nstr > 43) {
+        data.q1e = atof(split_line[43].c_str());
       }
 
       // LOAD_Q1C
-      if (nstr > 45) {
-        data.q1c = atof(split_line[45].c_str());
+      if (nstr > 44) {
+        data.q1c = atof(split_line[44].c_str());
       }
 
       // LOAD_Q2E
-      if (nstr > 46) {
-        data.q2e = atof(split_line[46].c_str());
+      if (nstr > 45) {
+        data.q2e = atof(split_line[45].c_str());
       }
 
       // LOAD_Q2C
-      if (nstr > 47) {
-        data.q2c = atof(split_line[47].c_str());
+      if (nstr > 46) {
+        data.q2c = atof(split_line[46].c_str());
       }
 
       // LOAD_QFREQ
-      if (nstr > 48) {
-        data.qfreq = atof(split_line[48].c_str());
+      if (nstr > 47) {
+        data.qfreq = atof(split_line[47].c_str());
       }
 
       // LOAD_MTPA
-      if (nstr > 49) {
-        data.mtpa = atoi(split_line[49].c_str());
+      if (nstr > 48) {
+        data.mtpa = atoi(split_line[48].c_str());
       }
 
       // LOAD_LFMA
-      if (nstr > 50) {
-        data.lfma = atof(split_line[50].c_str());
+      if (nstr > 49) {
+        data.lfma = atof(split_line[49].c_str());
       }
 
       // LOAD_RSA
-      if (nstr > 51) {
-        data.rsa = atof(split_line[51].c_str());
+      if (nstr > 50) {
+        data.rsa = atof(split_line[50].c_str());
       }
 
       // LOAD_LSA
-      if (nstr > 52) {
-        data.lsa = atof(split_line[52].c_str());
+      if (nstr > 51) {
+        data.lsa = atof(split_line[51].c_str());
       }
 
       // LOAD_LPA
-      if (nstr > 53) {
-        data.lpa = atof(split_line[53].c_str());
+      if (nstr > 52) {
+        data.lpa = atof(split_line[52].c_str());
       }
 
       // LOAD_LPPA
-      if (nstr > 54) {
-        data.lppa = atof(split_line[54].c_str());
+      if (nstr > 53) {
+        data.lppa = atof(split_line[53].c_str());
       }
 
       // LOAD_TPOA
-      if (nstr > 55) {
-        data.tpoa = atof(split_line[55].c_str());
+      if (nstr > 54) {
+        data.tpoa = atof(split_line[54].c_str());
       }
 
       // LOAD_TPPOA
-      if (nstr > 56) {
-        data.tppoa = atof(split_line[56].c_str());
+      if (nstr > 55) {
+        data.tppoa = atof(split_line[55].c_str());
       }
 
       // LOAD_HA
-      if (nstr > 57) {
-        data.ha = atof(split_line[57].c_str());
+      if (nstr > 56) {
+        data.ha = atof(split_line[56].c_str());
       }
 
       // LOAD_ETRQA
-      if (nstr > 58) {
-        data.etrqa = atof(split_line[58].c_str());
+      if (nstr > 57) {
+        data.etrqa = atof(split_line[57].c_str());
       }
 
       // LOAD_VTR1A
-      if (nstr > 59) {
-        data.vtr1a = atof(split_line[59].c_str());
+      if (nstr > 58) {
+        data.vtr1a = atof(split_line[58].c_str());
       }
 
       // LOAD_TTR1A
-      if (nstr > 60) {
-        data.ttr1a = atof(split_line[60].c_str());
+      if (nstr > 59) {
+        data.ttr1a = atof(split_line[59].c_str());
       }
 
       // LOAD_FTR1A
-      if (nstr > 61) {
-        data.ftr1a = atof(split_line[61].c_str());
+      if (nstr > 60) {
+        data.ftr1a = atof(split_line[60].c_str());
       }
 
       // LOAD_VRC1A
-      if (nstr > 62) {
-        data.vrc1a = atof(split_line[62].c_str());
+      if (nstr > 61) {
+        data.vrc1a = atof(split_line[61].c_str());
       }
 
       // LOAD_TRC1A
-      if (nstr > 63) {
-        data.trc1a = atof(split_line[63].c_str());
+      if (nstr > 62) {
+        data.trc1a = atof(split_line[62].c_str());
       }
 
       // LOAD_VTR2A
-      if (nstr > 64) {
-        data.vtr2a = atof(split_line[64].c_str());
+      if (nstr > 63) {
+        data.vtr2a = atof(split_line[63].c_str());
       }
 
       // LOAD_TTR2A
-      if (nstr > 65) {
-        data.ttr2a = atof(split_line[65].c_str());
+      if (nstr > 64) {
+        data.ttr2a = atof(split_line[64].c_str());
       }
 
       // LOAD_FTR2A
-      if (nstr > 66) {
-        data.ftr2a = atof(split_line[66].c_str());
+      if (nstr > 65) {
+        data.ftr2a = atof(split_line[65].c_str());
       }
 
       // LOAD_VRC2A
-      if (nstr > 67) {
-        data.vrc2a = atof(split_line[67].c_str());
+      if (nstr > 66) {
+        data.vrc2a = atof(split_line[66].c_str());
       }
 
       // LOAD_TRC2A
-      if (nstr > 68) {
-        data.trc2a = atof(split_line[68].c_str());
+      if (nstr > 67) {
+        data.trc2a = atof(split_line[67].c_str());
       }
 
       // LOAD_MTPB
-      if (nstr > 69) {
-        data.mtpb = atoi(split_line[69].c_str());
+      if (nstr > 68) {
+        data.mtpb = atoi(split_line[68].c_str());
       }
 
       // LOAD_LFMB
-      if (nstr > 70) {
-        data.lfmb = atof(split_line[70].c_str());
+      if (nstr > 69) {
+        data.lfmb = atof(split_line[69].c_str());
       }
 
       // LOAD_RSB
-      if (nstr > 71) {
-        data.rsb = atof(split_line[71].c_str());
+      if (nstr > 70) {
+        data.rsb = atof(split_line[70].c_str());
       }
 
       // LOAD_LSB
-      if (nstr > 72) {
-        data.lsb = atof(split_line[72].c_str());
+      if (nstr > 71) {
+        data.lsb = atof(split_line[71].c_str());
       }
 
       // LOAD_LPB
-      if (nstr > 73) {
-        data.lpb = atof(split_line[73].c_str());
+      if (nstr > 72) {
+        data.lpb = atof(split_line[72].c_str());
       }
 
       // LOAD_LPPB
-      if (nstr > 74) {
-        data.lppb = atof(split_line[74].c_str());
+      if (nstr > 73) {
+        data.lppb = atof(split_line[73].c_str());
       }
 
       // LOAD_TPOB
-      if (nstr > 75) {
-        data.tpob = atof(split_line[75].c_str());
+      if (nstr > 74) {
+        data.tpob = atof(split_line[74].c_str());
       }
 
       // LOAD_TPPOB
-      if (nstr > 76) {
-        data.tppob = atof(split_line[76].c_str());
+      if (nstr > 75) {
+        data.tppob = atof(split_line[75].c_str());
       }
 
       // LOAD_HB
-      if (nstr > 77) {
-        data.hb = atof(split_line[77].c_str());
+      if (nstr > 76) {
+        data.hb = atof(split_line[76].c_str());
       }
 
       // LOAD_ETRQB
-      if (nstr > 78) {
-        data.etrqb = atof(split_line[78].c_str());
+      if (nstr > 77) {
+        data.etrqb = atof(split_line[77].c_str());
       }
 
       // LOAD_VTR1B
-      if (nstr > 79) {
-        data.vtr1b = atof(split_line[79].c_str());
+      if (nstr > 78) {
+        data.vtr1b = atof(split_line[78].c_str());
       }
 
       // LOAD_TTR1B
-      if (nstr > 80) {
-        data.ttr1b = atof(split_line[80].c_str());
+      if (nstr > 79) {
+        data.ttr1b = atof(split_line[79].c_str());
       }
 
       // LOAD_FTR1B
-      if (nstr > 81) {
-        data.ftr1b = atof(split_line[81].c_str());
+      if (nstr > 80) {
+        data.ftr1b = atof(split_line[80].c_str());
       }
 
       // LOAD_VRC1B
-      if (nstr > 82) {
-        data.vrc1b = atof(split_line[82].c_str());
+      if (nstr > 81) {
+        data.vrc1b = atof(split_line[81].c_str());
       }
 
       // LOAD_TRC1B
-      if (nstr > 83) {
-        data.trc1b = atof(split_line[83].c_str());
+      if (nstr > 82) {
+        data.trc1b = atof(split_line[82].c_str());
       }
 
       // LOAD_VTR2B
-      if (nstr > 84) {
-        data.vtr2b = atof(split_line[84].c_str());
+      if (nstr > 83) {
+        data.vtr2b = atof(split_line[83].c_str());
       }
 
       // LOAD_TTR2B
-      if (nstr > 85) {
-        data.ttr2b = atof(split_line[85].c_str());
+      if (nstr > 84) {
+        data.ttr2b = atof(split_line[84].c_str());
       }
 
       // LOAD_FTR2B
-      if (nstr > 86) {
-        data.ftr2b = atof(split_line[86].c_str());
+      if (nstr > 85) {
+        data.ftr2b = atof(split_line[85].c_str());
       }
 
       // LOAD_VRC2B
-      if (nstr > 87) {
-        data.vrc2b = atof(split_line[87].c_str());
+      if (nstr > 86) {
+        data.vrc2b = atof(split_line[86].c_str());
       }
 
       // LOAD_TRC2B
-      if (nstr > 88) {
-        data.trc2b = atof(split_line[88].c_str());
+      if (nstr > 87) {
+        data.trc2b = atof(split_line[87].c_str());
       }
 
       // LOAD_MTPC
-      if (nstr > 89) {
-        data.mtpc = atoi(split_line[89].c_str());
+      if (nstr > 88) {
+        data.mtpc = atoi(split_line[88].c_str());
       }
 
       // LOAD_LFMC
-      if (nstr > 90) {
-        data.lfmc = atof(split_line[90].c_str());
+      if (nstr > 89) {
+        data.lfmc = atof(split_line[89].c_str());
       }
 
       // LOAD_RSC
-      if (nstr > 91) {
-        data.rsc = atof(split_line[91].c_str());
+      if (nstr > 90) {
+        data.rsc = atof(split_line[90].c_str());
       }
 
       // LOAD_LSC
-      if (nstr > 92) {
-        data.lsc = atof(split_line[92].c_str());
+      if (nstr > 91) {
+        data.lsc = atof(split_line[91].c_str());
       }
 
       // LOAD_LPC
-      if (nstr > 93) {
-        data.lpc = atof(split_line[93].c_str());
+      if (nstr > 92) {
+        data.lpc = atof(split_line[92].c_str());
       }
 
       // LOAD_LPPC
-      if (nstr > 94) {
-        data.lppc = atof(split_line[94].c_str());
+      if (nstr > 93) {
+        data.lppc = atof(split_line[93].c_str());
       }
 
       // LOAD_TPOC
-      if (nstr > 95) {
-        data.tpoc = atof(split_line[95].c_str());
+      if (nstr > 94) {
+        data.tpoc = atof(split_line[94].c_str());
       }
 
       // LOAD_TPPOC
-      if (nstr > 96) {
-        data.tppoc = atof(split_line[96].c_str());
+      if (nstr > 95) {
+        data.tppoc = atof(split_line[95].c_str());
       }
 
       // LOAD_HC
-      if (nstr > 97) {
-        data.hc = atof(split_line[97].c_str());
+      if (nstr > 96) {
+        data.hc = atof(split_line[96].c_str());
       }
 
       // LOAD_ETRQC
-      if (nstr > 98) {
-        data.etrqc = atof(split_line[98].c_str());
+      if (nstr > 97) {
+        data.etrqc = atof(split_line[97].c_str());
       }
 
       // LOAD_VTR1C
-      if (nstr > 99) {
-        data.vtr1c = atof(split_line[99].c_str());
+      if (nstr > 98) {
+        data.vtr1c = atof(split_line[98].c_str());
       }
 
       // LOAD_TTR1C
-      if (nstr > 100) {
-        data.ttr1c = atof(split_line[100].c_str());
+      if (nstr > 99) {
+        data.ttr1c = atof(split_line[99].c_str());
       }
 
       // LOAD_FTR1C
-      if (nstr > 101) {
-        data.ftr1c = atof(split_line[101].c_str());
+      if (nstr > 100) {
+        data.ftr1c = atof(split_line[100].c_str());
       }
 
       // LOAD_VRC1C
-      if (nstr > 102) {
-        data.vrc1c = atof(split_line[102].c_str());
+      if (nstr > 101) {
+        data.vrc1c = atof(split_line[101].c_str());
       }
 
       // LOAD_TRC1C
-      if (nstr > 103) {
-        data.trc1c = atof(split_line[103].c_str());
+      if (nstr > 102) {
+        data.trc1c = atof(split_line[102].c_str());
       }
 
       // LOAD_VTR2C
-      if (nstr > 104) {
-        data.vtr2c = atof(split_line[104].c_str());
+      if (nstr > 103) {
+        data.vtr2c = atof(split_line[103].c_str());
       }
 
       // LOAD_TTR2C
-      if (nstr > 105) {
-        data.ttr2c = atof(split_line[105].c_str());
+      if (nstr > 104) {
+        data.ttr2c = atof(split_line[104].c_str());
       }
 
       // LOAD_FTR2C
-      if (nstr > 106) {
-        data.ftr2c = atof(split_line[106].c_str());
+      if (nstr > 105) {
+        data.ftr2c = atof(split_line[105].c_str());
       }
 
       // LOAD_VRC2C
-      if (nstr > 107) {
-        data.vrc2c = atof(split_line[107].c_str());
+      if (nstr > 106) {
+        data.vrc2c = atof(split_line[106].c_str());
       }
 
       // LOAD_TRC2C
-      if (nstr > 108) {
-        data.trc2c = atof(split_line[108].c_str());
-      }
-
-      // LOAD_MTPD
-      if (nstr > 109) {
-        data.trc2c = atoi(split_line[109].c_str());
-      }
-
-      // LOAD_LFMD
-      if (nstr > 110) {
-        data.lfmd = atof(split_line[110].c_str());
-      }
-
-      // LOAD_COMPPF
-      if (nstr > 111) {
-        data.comppf = atof(split_line[111].c_str());
-      }
-
-      // LOAD_VSTALL
-      if (nstr > 112) {
-        data.vstall = atof(split_line[112].c_str());
-      }
-
-      // LOAD_RSTALL
-      if (nstr > 113) {
-        data.rstall = atof(split_line[113].c_str());
-      }
-
-      // LOAD_XSTALL
-      if (nstr > 114) {
-        data.xstall = atof(split_line[114].c_str());
+      if (nstr > 107) {
+        data.trc2c = atof(split_line[107].c_str());
       }
 
       // LOAD_TSTALL
-      if (nstr > 115) {
-        data.tstall = atof(split_line[115].c_str());
-      }
-
-      // LOAD_FRST
-      if (nstr > 116) {
-        data.frst = atof(split_line[116].c_str());
-      }
-
-      // LOAD_VRST
-      if (nstr > 117) {
-        data.vrst = atof(split_line[117].c_str());
+      if (nstr > 108) {
+        data.tstall = atof(split_line[108].c_str());
       }
 
       // LOAD_TRST
-      if (nstr > 118) {
-        data.trst = atof(split_line[118].c_str());
-      }
-
-      // LOAD_FUVR
-      if (nstr > 119) {
-        data.fuvr = atof(split_line[119].c_str());
-      }
-
-      // LOAD_VTR1
-      if (nstr > 120) {
-        data.vtr1 = atof(split_line[120].c_str());
-      }
-
-      // LOAD_TTR1
-      if (nstr > 121) {
-        data.ttr1 = atof(split_line[121].c_str());
-      }
-
-      // LOAD_VTR2
-      if (nstr > 122) {
-        data.vtr2 = atof(split_line[122].c_str());
-      }
-
-      // LOAD_TTR2
-      if (nstr > 123) {
-        data.ttr2 = atof(split_line[123].c_str());
-      }
-
-      // LOAD_VC1OFF
-      if (nstr > 124) {
-        data.vc1off = atof(split_line[124].c_str());
-      }
-
-      // LOAD_VC2OFF
-      if (nstr > 125) {
-        data.vc2off = atof(split_line[125].c_str());
-      }
-
-      // LOAD_VC1ON
-      if (nstr > 126) {
-        data.vc1on = atof(split_line[126].c_str());
-      }
-
-      // LOAD_VC2ON
-      if (nstr > 127) {
-        data.vc2on = atof(split_line[127].c_str());
-      }
-
-      // LOAD_TTH
-      if (nstr > 128) {
-        data.tth = atof(split_line[128].c_str());
-      }
-
-      // LOAD_TH1T
-      if (nstr > 129) {
-        data.th1t = atof(split_line[129].c_str());
-      }
-
-      // LOAD_TH2T
-      if (nstr > 130) {
-        data.th2t = atof(split_line[130].c_str());
+      if (nstr > 109) {
+        data.trst = atof(split_line[109].c_str());
       }
 
       // LOAD_TV
+      if (nstr > 110) {
+        data.tv = atof(split_line[110].c_str());
+      }
+
+      // LOAD_TF
+      if (nstr > 111) {
+        data.tf = atof(split_line[111].c_str());
+      }
+
+      // LOAD_LFMD
+      if (nstr > 112) {
+        data.lfmd = atof(split_line[112].c_str());
+      }
+
+      // LOAD_COMPPF
+      if (nstr > 113) {
+        data.comppf = atof(split_line[113].c_str());
+      }
+
+      // LOAD_VSTALL
+      if (nstr > 114) {
+        data.vstall = atof(split_line[114].c_str());
+      }
+
+      // LOAD_RSTALL
+      if (nstr > 115) {
+        data.rstall = atof(split_line[115].c_str());
+      }
+
+      // LOAD_XSTALL
+      if (nstr > 116) {
+        data.xstall = atof(split_line[116].c_str());
+      }
+
+      // LOAD_LFADJ
+      if (nstr > 117) {
+        data.lfadj = atof(split_line[117].c_str());
+      }
+
+      // LOAD_KP1
+      if (nstr > 118) {
+        data.kp1 = atof(split_line[118].c_str());
+      }
+
+      // LOAD_NP1
+      if (nstr > 119) {
+        data.np1 = atof(split_line[119].c_str());
+      }
+
+      // LOAD_KQ1
+      if (nstr > 120) {
+        data.kq1 = atof(split_line[120].c_str());
+      }
+
+      // LOAD_NQ1
+      if (nstr > 121) {
+        data.nq1 = atof(split_line[121].c_str());
+      }
+
+      // LOAD_KP2
+      if (nstr > 122) {
+        data.kp2 = atof(split_line[122].c_str());
+      }
+
+      // LOAD_NP2
+      if (nstr > 123) {
+        data.np2 = atof(split_line[123].c_str());
+      }
+
+      // LOAD_KQ2
+      if (nstr > 124) {
+        data.kq2 = atof(split_line[124].c_str());
+      }
+
+      // LOAD_NQ2
+      if (nstr > 125) {
+        data.nq2 = atof(split_line[125].c_str());
+      }
+
+      // LOAD_VBRK
+      if (nstr > 126) {
+        data.vbrk = atof(split_line[126].c_str());
+      }
+
+      // LOAD_FRST
+      if (nstr > 127) {
+        data.frst = atof(split_line[127].c_str());
+      }
+
+      // LOAD_VRST
+      if (nstr > 128) {
+        data.vrst = atof(split_line[128].c_str());
+      }
+
+      // LOAD_CMPKPF
+      if (nstr > 129) {
+        data.cmpkpf = atof(split_line[129].c_str());
+      }
+
+      // LOAD_CMPKQF
+      if (nstr > 130) {
+        data.cmpkqf = atof(split_line[130].c_str());
+      }
+
+      // LOAD_VC1OFF
       if (nstr > 131) {
-        data.tv = atof(split_line[131].c_str());
+        data.vc1off = atof(split_line[131].c_str());
+      }
+
+      // LOAD_VC2OFF
+      if (nstr > 132) {
+        data.vc2off = atof(split_line[132].c_str());
+      }
+
+      // LOAD_VC1ON
+      if (nstr > 133) {
+        data.vc1on = atof(split_line[133].c_str());
+      }
+
+      // LOAD_VC2ON
+      if (nstr > 134) {
+        data.vc2on = atof(split_line[134].c_str());
+      }
+
+      // LOAD_TTH
+      if (nstr > 135) {
+        data.tth = atof(split_line[135].c_str());
+      }
+
+      // LOAD_TH1T
+      if (nstr > 136) {
+        data.th1t = atof(split_line[136].c_str());
+      }
+
+      // LOAD_TH2T
+      if (nstr > 137) {
+        data.th2t = atof(split_line[137].c_str());
+      }
+
+      // LOAD_FUVR
+      if (nstr > 138) {
+        data.fuvr = atof(split_line[138].c_str());
+      }
+
+      // LOAD_UVTR1
+      if (nstr > 139) {
+        data.uvtr1 = atof(split_line[139].c_str());
+      }
+
+      // LOAD_TTR1
+      if (nstr > 140) {
+        data.ttr1= atof(split_line[140].c_str());
+      }
+
+      // LOAD_UVTR2
+      if (nstr > 141) {
+        data.uvtr2 = atof(split_line[141].c_str());
+      }
+
+      // LOAD_TTR2
+      if (nstr > 142) {
+        data.ttr2 = atof(split_line[142].c_str());
       }
     }
 
@@ -2760,7 +3019,7 @@ template <class _data_struct> class Cmldblu1Parser
         t_data->addValue(LOAD_MVA, rval, 0);
       }
       if (comp_data->getValue(LOAD_MTPA, &ival, l_idx)) {
-        t_data->addValue(LOAD_MTP, rval, 0);
+        t_data->addValue(LOAD_MTP, ival, 0);
       }
       if (comp_data->getValue(LOAD_LFMA, &rval, l_idx)) {
         t_data->addValue(LOAD_LFM, rval, 0);
@@ -2822,7 +3081,7 @@ template <class _data_struct> class Cmldblu1Parser
 
       t_data->addValue(LOAD_ID, "M2", 1);
       if (comp_data->getValue(LOAD_MTPB, &ival, l_idx)) {
-        t_data->addValue(LOAD_MTP, rval, 1);
+        t_data->addValue(LOAD_MTP, ival, 1);
       }
       if (comp_data->getValue(LOAD_LFMB, &rval, l_idx)) {
         t_data->addValue(LOAD_LFM, rval, 1);
@@ -2884,7 +3143,7 @@ template <class _data_struct> class Cmldblu1Parser
 
       t_data->addValue(LOAD_ID, "M3", 2);
       if (comp_data->getValue(LOAD_MTPC, &ival, l_idx)) {
-        t_data->addValue(LOAD_MTP, rval, 2);
+        t_data->addValue(LOAD_MTP, ival, 2);
       }
       if (comp_data->getValue(LOAD_LFMC, &rval, l_idx)) {
         t_data->addValue(LOAD_LFM, rval, 2);
@@ -2945,8 +3204,18 @@ template <class _data_struct> class Cmldblu1Parser
       }
 
       t_data->addValue(LOAD_ID, "M4", 3);
-      if (comp_data->getValue(LOAD_MTPD, &ival, l_idx)) {
-        t_data->addValue(LOAD_MTP, rval, 3);
+      t_data->addValue(LOAD_MTP, 1, 3);
+      if (comp_data->getValue(LOAD_TSTALL, &rval, l_idx)) {
+        t_data->addValue(LOAD_TSTALL, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TRST, &rval, l_idx)) {
+        t_data->addValue(LOAD_TRST, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TV, &rval, l_idx)) {
+        t_data->addValue(LOAD_TV, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TF, &rval, l_idx)) {
+        t_data->addValue(LOAD_TF, rval, 3);
       }
       if (comp_data->getValue(LOAD_LFMD, &rval, l_idx)) {
         t_data->addValue(LOAD_LFM, rval, 3);
@@ -2963,8 +3232,35 @@ template <class _data_struct> class Cmldblu1Parser
       if (comp_data->getValue(LOAD_XSTALL, &rval, l_idx)) {
         t_data->addValue(LOAD_XSTALL, rval, 3);
       }
-      if (comp_data->getValue(LOAD_TSTALL, &rval, l_idx)) {
-        t_data->addValue(LOAD_TSTALL, rval, 3);
+      if (comp_data->getValue(LOAD_LFADJ, &rval, l_idx)) {
+        t_data->addValue(LOAD_LFADJ, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_KP1, &rval, l_idx)) {
+        t_data->addValue(LOAD_KP1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_NP1, &rval, l_idx)) {
+        t_data->addValue(LOAD_NP1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_KQ1, &rval, l_idx)) {
+        t_data->addValue(LOAD_KQ1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_NQ1, &rval, l_idx)) {
+        t_data->addValue(LOAD_NQ1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_KP2, &rval, l_idx)) {
+        t_data->addValue(LOAD_KP2, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_NP2, &rval, l_idx)) {
+        t_data->addValue(LOAD_NP2, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_KQ2, &rval, l_idx)) {
+        t_data->addValue(LOAD_KQ2, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_NQ2, &rval, l_idx)) {
+        t_data->addValue(LOAD_NQ2, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_VBRK, &rval, l_idx)) {
+        t_data->addValue(LOAD_VBRK, rval, 3);
       }
       if (comp_data->getValue(LOAD_FRST, &rval, l_idx)) {
         t_data->addValue(LOAD_FRST, rval, 3);
@@ -2972,23 +3268,11 @@ template <class _data_struct> class Cmldblu1Parser
       if (comp_data->getValue(LOAD_VRST, &rval, l_idx)) {
         t_data->addValue(LOAD_VRST, rval, 3);
       }
-      if (comp_data->getValue(LOAD_TRST, &rval, l_idx)) {
-        t_data->addValue(LOAD_TRST, rval, 3);
+      if (comp_data->getValue(LOAD_CMPKPF, &rval, l_idx)) {
+        t_data->addValue(LOAD_CMPKPF, rval, 3);
       }
-      if (comp_data->getValue(LOAD_FUVR, &rval, l_idx)) {
-        t_data->addValue(LOAD_FUVR, rval, 3);
-      }
-      if (comp_data->getValue(LOAD_VTR1, &rval, l_idx)) {
-        t_data->addValue(LOAD_VTR1, rval, 3);
-      }
-      if (comp_data->getValue(LOAD_TTR1, &rval, l_idx)) {
-        t_data->addValue(LOAD_TTR1, rval, 3);
-      }
-      if (comp_data->getValue(LOAD_VTR2, &rval, l_idx)) {
-        t_data->addValue(LOAD_VTR2, rval, 3);
-      }
-      if (comp_data->getValue(LOAD_TTR2, &rval, l_idx)) {
-        t_data->addValue(LOAD_TTR2, rval, 3);
+      if (comp_data->getValue(LOAD_CMPKQF, &rval, l_idx)) {
+        t_data->addValue(LOAD_CMPKQF, rval, 3);
       }
       if (comp_data->getValue(LOAD_VC1OFF, &rval, l_idx)) {
         t_data->addValue(LOAD_VC1OFF, rval, 3);
@@ -3011,8 +3295,20 @@ template <class _data_struct> class Cmldblu1Parser
       if (comp_data->getValue(LOAD_TH2T, &rval, l_idx)) {
         t_data->addValue(LOAD_TH2T, rval, 3);
       }
-      if (comp_data->getValue(LOAD_TV, &rval, l_idx)) {
-        t_data->addValue(LOAD_TV, rval, 3);
+      if (comp_data->getValue(LOAD_FUVR, &rval, l_idx)) {
+        t_data->addValue(LOAD_FUVR, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_UVTR1, &rval, l_idx)) {
+        t_data->addValue(LOAD_UVTR1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TTR1, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR1, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_UVTR2, &rval, l_idx)) {
+        t_data->addValue(LOAD_UVTR2, rval, 3);
+      }
+      if (comp_data->getValue(LOAD_TTR2, &rval, l_idx)) {
+        t_data->addValue(LOAD_TTR2, rval, 3);
       }
     }
 

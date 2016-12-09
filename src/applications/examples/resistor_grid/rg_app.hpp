@@ -18,7 +18,7 @@
 #ifndef _rg_app_h_
 #define _rg_app_h_
 
-#include "boost/smart_ptr/shared_ptr.hpp"
+#include "rg_components.hpp"
 
 namespace gridpack {
 namespace resistor_grid {
@@ -44,8 +44,6 @@ class RGApp
      * @param argv list of character strings
      */
     void execute(int argc, char** argv);
-
-  private:
 };
 
 } // resistor_grid
