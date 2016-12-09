@@ -37,17 +37,12 @@ class HWFactory
     HWFactory(boost::shared_ptr<HWNetwork> network)
       : gridpack::factory::BaseFactory<HWNetwork>(network)
     {
-      p_network = network;
     }
 
     /**
      * Basic destructor
      */
     ~HWFactory() {}
-
-  private:
-
-    NetworkPtr p_network;
 };
 
 } // hello_world

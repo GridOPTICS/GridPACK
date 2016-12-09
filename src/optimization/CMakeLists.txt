@@ -25,7 +25,9 @@ endif()
 
 set(expression_src 
   optimizer.cpp
+  file_optimizer_implementation.cpp
   lpfile_optimizer_implementation.cpp
+  julia_optimizer_implementation.cpp
 )
 
 set(optimizer_libraries)
@@ -86,6 +88,17 @@ add_executable(optimizer_test test/optimizer_test.cpp)
 target_link_libraries(optimizer_test ${target_libraries})
 
 gridpack_add_unit_test("optimizer" optimizer_test)
+
+add_custom_target(optimizer_test_input
+  
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml
+  ${CMAKE_CURRENT_BINARY_DIR} 
+  
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml
+  )
+add_dependencies(optimizer_test optimizer_test_input)
 
 # -------------------------------------------------------------
 # TEST: 

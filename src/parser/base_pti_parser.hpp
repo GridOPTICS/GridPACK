@@ -634,7 +634,6 @@ class BasePTIParser : public BaseParser<_network>
       double pfel;
       double vd1;
       double vd2;
-      double frcel;
       double pfs;
       double p1e;
       double p1c;

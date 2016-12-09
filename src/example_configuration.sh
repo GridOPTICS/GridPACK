@@ -81,6 +81,7 @@ if [ $host == "flophouse" ]; then
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
         -D USE_CPLEX:BOOL=ON \
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
+        -D USE_GLPK:BOOL=ON \
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
@@ -103,6 +104,8 @@ elif [ $host == "flophouse44" ]; then
     CXXFLAGS="-pthread -Wall"
     export CXXFLAGS
 
+    cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
+
     cmake -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix" \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
@@ -114,6 +117,8 @@ elif [ $host == "flophouse44" ]; then
         -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D USE_CPLEX:BOOL=ON \
+        -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
         -D USE_GLPK:BOOL=ON \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
@@ -144,7 +149,7 @@ elif [ $host == "pe10900" ]; then
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D USE_CPLEX:BOOL=ON \
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
-        -D USE_GLPK:BOOL=OFF \
+        -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..

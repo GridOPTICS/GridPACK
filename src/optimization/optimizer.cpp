@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2015-11-23 11:58:28 d3g096
+ * @date   2016-12-08 14:13:00 d3g096
  * 
  * @brief  
  * 
@@ -36,11 +36,12 @@
 #include "optimizer.hpp"
 #if defined(HAVE_CPLEX)
 #include "cplex_optimizer_implementation.hpp"
-#elif defined(HAVE_GLPK)
-#include "glpk_optimizer_implementation.hpp"
-#else
-#include "lpfile_optimizer_implementation.hpp"
 #endif
+#if defined(HAVE_GLPK)
+#include "glpk_optimizer_implementation.hpp"
+#endif
+#include "lpfile_optimizer_implementation.hpp"
+#include "julia_optimizer_implementation.hpp"
 
 namespace gridpack {
 namespace optimization {
@@ -335,19 +336,51 @@ Optimizer::Optimizer(const parallel::Communicator& comm)
     utility::WrappedConfigurable(),
     p_impl()
 {
-  p_setImpl(
-#if defined(HAVE_CPLEX)
-            new CPlexOptimizerImplementation(comm)
-#elif defined(HAVE_GLPK)
-            new GLPKOptimizerImplementation(comm)
-#else
-            new LPFileOptimizerImplementation(comm)
-#endif
-            );
+  p_setImpl(new LPFileOptimizerImplementation(comm));
 }
 
 Optimizer::~Optimizer(void)
 {
+}
+
+// -------------------------------------------------------------
+// Optimizer::p_preconfigure
+// -------------------------------------------------------------
+void
+Optimizer::p_preconfigure(utility::Configuration::CursorPtr theprops)
+{
+  parallel::Communicator comm(p_impl->communicator());
+  std::string key(p_impl->configurationKey());
+  utility::Configuration::CursorPtr p = theprops->getCursor(key);
+  std::string solver;
+  solver = p->get("Solver", solver);
+
+  if (!solver.empty()) {
+    p_setImpl(NULL);
+    if (solver == "GLPK") {
+#if defined(HAVE_GLPK)
+      p_setImpl(new GLPKOptimizerImplementation(comm));
+#else
+      throw gridpack::Exception("GLPK Optimizer not supported"); 
+#endif
+    } 
+    if (solver == "CPLEX") {
+#if defined(HAVE_CPLEX)
+      p_setImpl(new CPlexOptimizerImplementation(comm));
+#else
+      throw gridpack::Exception("CPLEX Optimizer not supported"); 
+#endif
+    } 
+    if (solver == "Julia") {
+      p_setImpl(new JuliaOptimizerImplementation(comm));
+    }
+    if (!p_impl) {
+      std::string s("Unknown ptimizer solver type \"");
+      s += solver;
+      s += "\"";
+      throw gridpack::Exception(s); 
+    }
+  }
 }
 
 } // namespace optimization
