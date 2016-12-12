@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2016-12-08 14:13:00 d3g096
+ * @date   2016-12-12 06:53:37 d3g096
  * 
  * @brief  
  * 
@@ -373,6 +373,9 @@ Optimizer::p_preconfigure(utility::Configuration::CursorPtr theprops)
     } 
     if (solver == "Julia") {
       p_setImpl(new JuliaOptimizerImplementation(comm));
+    }
+    if (solver == "LPFile") {
+      p_setImpl(new LPFileOptimizerImplementation(comm));
     }
     if (!p_impl) {
       std::string s("Unknown ptimizer solver type \"");
