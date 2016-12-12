@@ -44,7 +44,7 @@ endif()
 # MPI. How can I check that?
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
-set(Boost_USE_STATIC_LIBS ON)
+#set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.49 COMPONENTS mpi serialization random system REQUIRED)
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 

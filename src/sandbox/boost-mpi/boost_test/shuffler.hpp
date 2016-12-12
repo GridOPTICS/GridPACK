@@ -3,7 +3,7 @@
 /**
  * @file   shuffler.hpp
  * @author William A. Perkins
- * @date   2013-12-16 13:32:05 d3g096
+ * @date   2015-12-18 08:01:12 d3g096
  * 
  * @brief  A thing to redistribute a vector of things over several processors 
  * 
@@ -25,6 +25,7 @@
 
 #include <iostream>
 #include <vector>
+#include <list>
 #include <utility>
 #include <boost/mpi.hpp>
 #include <boost/serialization/vector.hpp>
