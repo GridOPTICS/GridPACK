@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2015-04-27 10:30:17 d3g096
+# Last Change: 2016-12-12 08:51:07 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -23,11 +23,11 @@ set(target_libraries
     gridpack_powerflow_module
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
+    ${PETSC_LIBRARIES}
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES}
     ${GOSS_LIBRARY}
     ${APR_LIBRARY})
 
