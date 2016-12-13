@@ -9,7 +9,7 @@
 /**
  * @file   lpfile_optimizer_implementation.cpp
  * @author William A. Perkins
- * @date   2015-11-03 13:10:41 d3g096
+ * @date   2016-12-08 14:58:38 d3g096
  * 
  * @brief  
  * 
@@ -20,74 +20,14 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
-#include <boost/assert.hpp>
 #include <boost/foreach.hpp>
 #include <boost/format.hpp>
 #include <boost/bind.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/iostreams/filtering_stream.hpp>
-
-namespace io = boost::iostreams;
 
 #include "gridpack/utilities/exception.hpp"
+#include "line_wrapping_output_filter.hpp"
+#include "constraint_renderer.hpp"
 #include "lpfile_optimizer_implementation.hpp"
-
-// -------------------------------------------------------------
-// line_wrapping_output_filter
-//
-// slightly modified from the Boost iostreams example
-// -------------------------------------------------------------
-class line_wrapping_output_filter : public io::output_filter {
-public:
-  explicit line_wrapping_output_filter(int line_length = 80, int margin = 8)
-    : do_new_line_(false), line_length_(line_length), end_margin_(margin), col_no_(0) 
-  { }
-
-  template<typename Sink>
-  bool put(Sink& dest, int c)
-  {
-    // if the column is past the goal end of line, find the next white space, eat it up, then
-    if (do_new_line_) {
-      if (c == '\n') {
-        do_new_line_ = false;
-      } else if (!std::isspace(c)) {
-        if (!put_char(dest, '\n')) return false;
-        do_new_line_ = false;
-      } else {
-        // eating white space
-        return true;
-      }
-    } else if (col_no_ >= (line_length_ - end_margin_)) {
-      // wait until we see some white space before doing a new line
-      if (std::isspace(c)) {
-        do_new_line_ = true;
-      }
-    }
-    return put_char(dest, c);
-  }
-
-  template<typename Sink>
-  void close(Sink&)
-  { col_no_ = 0; }
-
-private:
-  template<typename Sink>
-  bool put_char(Sink& dest, int c)
-  {
-    if (!io::put(dest, c))
-      return false;
-    if (c != '\n')
-      ++col_no_;
-    else
-      col_no_ = 0;
-    return true;
-  }
-  int  do_new_line_;
-  int  line_length_;
-  int  end_margin_;
-  int  col_no_;
-};
-
 
 namespace gridpack {
 namespace optimization {
@@ -271,78 +211,33 @@ public:
 //  class LPFileConstraintRenderer
 // -------------------------------------------------------------
 class LPFileConstraintRenderer 
-  : public ExpressionVisitor
+  : public ConstraintRenderer
 {
 public:
 
   /// Default constructor.
   LPFileConstraintRenderer(std::ostream& out)
-    : ExpressionVisitor(), p_out(out)
+    : ConstraintRenderer(out)
   {}
 
   /// Destructor
   ~LPFileConstraintRenderer(void)
   {}
 
-  void visit(IntegerConstant& e)
-  { 
-    p_out << boost::str(boost::format("%d") % e.value());
-  }
-
-  void visit(RealConstant& e)
-  { 
-    p_out << boost::str(boost::format("%g") % e.value());
-  }
-
-  void visit(VariableExpression& e)
-  { 
-    p_out << e.name();
-  }
-
-  void visit(UnaryExpression& e)
-  {
-    // should not be called
-    BOOST_ASSERT(false);
-  }
-
-  void visit(UnaryMinus& e)
-  {
-    p_out << "-";
-    if (e.rhs()->precedence() > e.precedence()) {
-      p_group(e.rhs());
-    } else {
-      e.rhs()->accept(*this);
-    }
-  }
-
-  void visit(UnaryPlus& e)
-  {
-    p_out << "+";
-    if (e.rhs()->precedence() > e.precedence()) {
-      p_group(e.rhs());
-    } else {
-      e.rhs()->accept(*this);
-    }
-  }
-
-  void visit(BinaryExpression& e)
+  void visit(Exponentiation& e)
   {
     ExpressionPtr lhs(e.lhs());
     ExpressionPtr rhs(e.rhs());
+    ExpressionChecker rcheck;
+    rhs->accept(rcheck);
 
-    if (lhs->precedence() > e.precedence()) {
-      p_group(lhs);
-    } else {
-      lhs->accept(*this);
+    // Only integer constants are allowed as exponents -- check that
+    if (!rcheck.isInteger) {
+      BOOST_ASSERT_MSG(false, "LPFileConstraintRenderer: Only integer exponents allowed");
     }
-    p_out << " " << e.op() << " ";
-    if (rhs->precedence() > e.precedence()) {
-      p_group(rhs);
-    } else {
-      rhs->accept(*this);
-    }
+
+    ConstraintRenderer::visit(e);
   }
-
 
   void visit(Multiplication& e)
   {
@@ -361,18 +256,18 @@ public:
     }
 
     if (rcheck.isExponentiation) {
-                                // SPECIAL CASE: if the RHS is
-                                // exponentiation, the whole
-                                // expression needs to be grouped
+      // SPECIAL CASE: if the RHS is
+      // exponentiation, the whole
+      // expression needs to be grouped
       p_out << "[";
       lhs->accept(*this);
       p_out << " ";
       rhs->accept(*this);
       p_out << "]";
     } else {
-                                // consider switching the LHS and RHS
-                                // if the RHS is constant; for now,
-                                // the user should write correctly.
+      // consider switching the LHS and RHS
+      // if the RHS is constant; for now,
+      // the user should write correctly.
 
       lhs->accept(*this);         // it's a constant, right?
       p_out << " ";
@@ -384,128 +279,14 @@ public:
     }
   }
 
-  void visit(Division& e)
-  {
-    ExpressionPtr lhs(e.lhs());
-    ExpressionChecker lcheck;
-    lhs->accept(lcheck);
-
-    ExpressionPtr rhs(e.rhs());
-    ExpressionChecker rcheck;
-    rhs->accept(rcheck);
-
-    // check to see that the RHS is a constant, otherwise it's a
-    // nonlinear expression that is not handled by the LP language
-    if (!lcheck.isConstant) { 
-      BOOST_ASSERT_MSG(false, "LPFileConstraintRenderer: Invalid RHS to Division");
-    }
-
-    // consider switching the LHS and RHS if the RHS is constant; for
-    // now, the user should write correctly.
-
-    if (lhs->precedence() > e.precedence()) {
-      p_group(lhs);
-    } else {
-      lhs->accept(*this);
-    }
-    p_out << "/";
-    rhs->accept(*this);         // it's a constant, right?
-  }  
-
-  void visit(Addition& e)
-  {
-    this->visit(static_cast<BinaryExpression&>(e));
-  }
-
-  void visit(Subtraction& e)
-  {
-    ExpressionPtr lhs(e.lhs());
-    ExpressionPtr rhs(e.rhs());
-
-    if (lhs->precedence() > e.precedence()) {
-      p_group(lhs);
-    } else {
-      lhs->accept(*this);
-    }
-    p_out << " - ";
-    if (rhs->precedence() >= e.precedence()) {
-      p_group(rhs);
-    } else {
-      rhs->accept(*this);
-    }
-  }
-  void visit(Exponentiation& e)
-  {
-    ExpressionPtr lhs(e.lhs());
-
-    ExpressionPtr rhs(e.rhs());
-    ExpressionChecker rcheck;
-    rhs->accept(rcheck);
-
-    // Only integer constants are allowed as exponents -- check that
-    if (!rcheck.isInteger) {
-      BOOST_ASSERT_MSG(false, "LPFileConstraintRenderer: Only integer exponents allowed");
-    }
-
-    if (lhs->precedence() > e.precedence()) {
-      p_group(lhs);
-    } else {
-      lhs->accept(*this);
-    }
-    p_out << " ^ ";
-    rhs->accept(*this);         // it's a constant, right?
-  }
-
   void visit(Constraint& e)
   {
-    ExpressionPtr lhs(e.lhs());
-    ExpressionPtr rhs(e.rhs());
-
     p_out << e.name() << ": ";
-    if (lhs->precedence() > e.precedence()) {
-      p_group(lhs);
-    } else {
-      lhs->accept(*this);
-    }
-    p_out << " " << e.op() << " ";
-    if (rhs->precedence() > e.precedence()) {
-      p_group(rhs);
-    } else {
-      rhs->accept(*this);
-    }
+    ConstraintRenderer::visit(e);
     p_out << std::endl;
   }
 
-  void visit(LessThan& e)
-  {
-    this->visit(static_cast<Constraint&>(e));
-  }
-
-  void visit(LessThanOrEqual& e)
-  {
-    this->visit(static_cast<Constraint&>(e));
-  }
-
-  void visit(GreaterThan& e)
-  {
-    this->visit(static_cast<Constraint&>(e));
-  }
-
-  void visit(GreaterThanOrEqual& e)
-  {
-    this->visit(static_cast<Constraint&>(e));
-  }
-
-  void visit(Equal& e)
-  {
-    this->visit(static_cast<Constraint&>(e));
-  }
-  
-
 protected:
-
-  /// The stream to send renderings
-  std::ostream& p_out;
 
   /// How to group an expression with higher precedence
   void p_group(ExpressionPtr e)
@@ -521,23 +302,13 @@ protected:
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
-// LPFileOptimizerImplementation::p_temporaryFile
+// LPFileOptimizerImplementation::p_configure
 // -------------------------------------------------------------
-std::string
-LPFileOptimizerImplementation::p_temporaryFileName(void)
+void
+LPFileOptimizerImplementation::p_configure(utility::Configuration::CursorPtr props)
 {
-  using namespace boost::filesystem;
-  std::string pattern = 
-    boost::str(boost::format("%s_%d.lp") % "gridpack%%%%" % this->processor_rank());
-  path model(pattern);
-  path tmp(temp_directory_path());
-  tmp /= unique_path(model);
-
-  boost::system::error_code ec;
-  file_status istat = status(tmp);
-  std::string result(tmp.c_str());
-  return result;
-  
+  FileOptimizerImplementation::p_configure(props);
+  p_outputName += ".lp";
 }
 
 // -------------------------------------------------------------
@@ -631,23 +402,6 @@ LPFileOptimizerImplementation::p_write(const p_optimizeMethod& method, std::ostr
 }
 
 
-// -------------------------------------------------------------
-// LPFileOptimizerImplementation::p_solve
-// -------------------------------------------------------------
-void
-LPFileOptimizerImplementation::p_solve(const p_optimizeMethod& method)
-{
-  std::string tmpname(p_temporaryFileName());
-  std::ofstream tmp;
-  tmp.open(tmpname.c_str());
-  if (!tmp) {
-    std::string msg("Cannot open temporary file: ");
-    msg += tmpname.c_str();
-    throw gridpack::Exception(msg);
-  }
-  p_write(method, tmp);
-  tmp.close();
-}
     
   
 

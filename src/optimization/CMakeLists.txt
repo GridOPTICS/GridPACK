@@ -35,7 +35,9 @@ endif()
 
 set(expression_src 
   optimizer.cpp
+  file_optimizer_implementation.cpp
   lpfile_optimizer_implementation.cpp
+  julia_optimizer_implementation.cpp
 )
 
 if (USE_CPLEX)
@@ -43,16 +45,16 @@ if (USE_CPLEX)
   add_definitions(-DHAVE_CPLEX)
   include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
   list(APPEND target_libraries ${CPLEX_LIBRARIES})
-elseif(USE_GLPK)
+endif()
+if(USE_GLPK)
   list(APPEND expression_src glpk_optimizer_implementation.cpp)
   add_definitions(-DHAVE_GLPK)
   include_directories(BEFORE ${GLPK_INCLUDE_DIR})
   list(APPEND target_libraries ${GLPK_LIBRARY})
-elseif(USE_GUROBI)
+endif()
+if(USE_GUROBI)
   include_directories(AFTER ${GUROBI_INCLUDE_DIRS})
   list(APPEND target_libraries ${GUROBI_LIBRARIES})
-else()
-  message(WARNING "Optimization library not specified")
 endif()
 
 add_library(gridpack_optimum
@@ -74,6 +76,38 @@ add_executable(optimizer_test test/optimizer_test.cpp)
 target_link_libraries(optimizer_test ${target_libraries})
 
 gridpack_add_unit_test("optimizer" optimizer_test)
+
+# Decide which of the available optimizers to use for the unit tests,
+# if any. Try to run the optimization if an optimizer is
+# available. Avoid test failure if an appropriate optimizer is not
+# avaliable.  There are two tests (1) Flow and (2) UC. The latter is
+# quadratic and so requires CPLEX.
+
+if (USE_CPLEX) 
+  set(FlowTestOptimizer CPLEX)
+  set(UCTestOptimizer CPLEX)
+  set(FlowTestRun "true")
+  set(UCTestRun "true")
+elseif(USE_GLPK)
+  set(FlowTestOptimizer GLPK)
+  set(UCTestOptimizer GLPK)
+  set(FlowTestRun "true")
+  set(UCTestRun "false")
+else()
+  set(FlowTestOptimizer Julia)
+  set(UCTestOptimizer LPFile)
+  set(FlowTestRun "false")
+  set(UCTestRun "false")
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml.in
+  ${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml @ONLY)
+
+unset(FlowTestOptimizer)
+unset(UCTestOptimizer)
+unset(FlowTestRun)
+unset(UCTestRun)
 
 # -------------------------------------------------------------
 # TEST: 

@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2015-11-23 12:00:50 d3g096
+ * @date   2016-12-12 06:13:06 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -29,6 +29,9 @@
 namespace go = gridpack::optimization;
 namespace gp = gridpack::parallel;
 
+/// The configuration used for these tests
+static gridpack::utility::Configuration::CursorPtr test_config;
+
 BOOST_AUTO_TEST_SUITE( Optimization )
 
 // -------------------------------------------------------------
@@ -45,8 +48,13 @@ BOOST_AUTO_TEST_CASE( flow )
   static const int netedges(14);
 
   BOOST_REQUIRE(nproc <= netnodes);
+  BOOST_REQUIRE(test_config);
+
+  gridpack::utility::Configuration::CursorPtr
+    flow_config(test_config->getCursor("FlowTest"));
 
   go::Optimizer opt(world);
+  opt.configure(flow_config);
 
   std::vector<bool> iownnode(netnodes+1);
   for (int i = 1; i < netnodes+1; ++i) {
@@ -219,9 +227,8 @@ BOOST_AUTO_TEST_CASE( flow )
 
   opt.maximize();
 
+#if defined(HAVE_GLPK) || defined(HAVE_CPLEX)
   // if an optimizer can be run, the answer is 29
-
-#if defined(HAVE_CPLEX) || defined(HAVE_GLPK)
   go::GetVariableInitial g;
   vars[0]->accept(g);
   BOOST_CHECK_EQUAL(g.value(), 29.0);
@@ -238,7 +245,12 @@ BOOST_AUTO_TEST_CASE( uc )
 {
   gp::Communicator world;
   gp::Communicator self(world.self());
+
+  gridpack::utility::Configuration::CursorPtr
+    uc_config(test_config->getCursor("UCTest"));
+
   go::Optimizer opt(self);
+  opt.configure(uc_config);
 
   std::vector<go::VariablePtr> vars;
 
@@ -337,20 +349,9 @@ BOOST_AUTO_TEST_CASE( uc )
   opt.addToObjective(9.56*vars[8] );
   opt.addToObjective(0.01388*(vars[8]^2));
 
-#if defined(HAVE_GLPK) 
-  // This is a quadratic problem. It will not be understood by GLPK.
-  BOOST_CHECK_THROW(opt.minimize(), gridpack::Exception);
-#elif defined(HAVE_CPLEX)
   // CPLEX should be able to handle this. I don't know what the answer
   // should be though.
   opt.minimize();
-
-#else
-
-  // This should just print the problem
-  opt.minimize();
-
-#endif
 
   world.barrier();
 
@@ -373,7 +374,18 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
+  gridpack::parallel::Communicator world;
+
+  boost::scoped_ptr<gridpack::utility::Configuration> 
+    config(gridpack::utility::Configuration::configuration());
+  
+  config->enableLogging();
+  config->open("gridpack.xml", world);
+
+  test_config = config->getCursor("GridPACK.OptimizerTests");
+
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  return result;
+
+   return result;
 }
 
