@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2016-12-12 06:13:06 d3g096
+ * @date   2016-12-13 07:52:54 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -168,7 +168,7 @@ BOOST_AUTO_TEST_CASE( flow )
   }
 
   // add a global constraint (inflow = outflow)
-  go::ExpressionPtr empty;
+  go::ExpressionPtr empty(new go::RealConstant(0.0));
   go::ConstraintPtr c( empty == 0.0 );
   c->name("inout");
   opt.createGlobalConstraint(c->name(), c);

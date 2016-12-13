@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2014-03-20 14:56:24 d3g096
+# Last Change: 2016-12-12 15:01:05 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -27,6 +27,8 @@ function(gridpack_setup)
   set(GRIDPACK_HAVE_PETSC @PETSC_FOUND@)
   set(GRIDPACK_HAVE_PARMETIS @PARMETIS_FOUND@)
   set(GRIDPACK_HAVE_GA @GA_FOUND@)
+  set(GRIDPACK_HAVE_CPLEX @USE_CPLEX@)
+  set(GRIDPACK_HAVE_GLPK @USE_GLPK@)
 
   find_library(GRIDPACK_COMPONENTS_LIBRARY
     NAMES gridpack_components
@@ -60,6 +62,11 @@ function(gridpack_setup)
 
   find_library(GRIDPACK_EXPRESSION_LIBRARY
     NAMES gridpack_expression
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_OPTIMIZATION_LIBRARY
+    NAMES gridpack_optimum
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
@@ -116,6 +123,7 @@ function(gridpack_setup)
     ${GRIDPACK_CONFIGURATION_LIBRARY}
     ${GRIDPACK_MATH_LIBRARY}
     ${GRIDPACK_EXPRESSION_LIBRARY}
+    ${GRIDPACK_OPTIMIZATION_LIBRARY}
     ${GRIDPACK_PARTITION_LIBRARY}
     ${GRIDPACK_TIMER_LIBRARY}
     ${GRIDPACK_PARALLEL_LIBRARY}
@@ -147,6 +155,14 @@ function(gridpack_setup)
     list(APPEND gp_libs
       @GA_LIBRARIES@
     )
+  endif()
+
+  if (GRIDPACK_HAVE_CPLEX)
+    list(APPEND gp_libs @CPLEX_LIBRARIES@)
+  endif()
+
+  if (GRIDPACK_HAVE_GLPK)
+    list(APPEND gp_libs @GLPK_LIBRARY@)
   endif()
 
   list(APPEND gp_include 
