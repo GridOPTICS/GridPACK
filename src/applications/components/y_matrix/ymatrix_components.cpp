@@ -680,12 +680,14 @@ double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
  * @param yftr list of imaginary parts of Yft
  * @param ytfr list of real parts of Ytf
  * @param ytfr list of imaginary parts of Ytf
+ * @param switched flag on whether line is switched or not
  */
 void gridpack::ymatrix::YMBranch::getYElements(
     std::vector<double> &yffr, std::vector<double> &yffi,
     std::vector<double> &yttr, std::vector<double> &ytti,
     std::vector<double> &yftr, std::vector<double> &yfti,
-    std::vector<double> &ytfr, std::vector<double> &ytfi) {
+    std::vector<double> &ytfr, std::vector<double> &ytfi,
+    std::vector<bool> &switched) {
   yffr = p_yffr;
   yffi = p_yffi;
   yttr = p_yttr;
@@ -694,5 +696,6 @@ void gridpack::ymatrix::YMBranch::getYElements(
   yfti = p_yfti;
   ytfr = p_ytfr;
   ytfi = p_ytfi;
+  switched = p_switched;
 }
 #endif
