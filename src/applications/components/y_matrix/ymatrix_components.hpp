@@ -15,7 +15,7 @@
  */
 // -------------------------------------------------------------
 
-//#define USE_ACOPF
+#define USE_ACOPF
 
 #ifndef _ymatrix_components_h_
 #define _ymatrix_components_h_
@@ -273,11 +273,13 @@ class YMBranch
      * @param yftr list of imaginary parts of Yft
      * @param ytfr list of real parts of Ytf
      * @param ytfr list of imaginary parts of Ytf
+     * @param switched flag on whether line is switched or not
      */
     void getYElements(std::vector<double> &yffr, std::vector<double> &yffi,
                       std::vector<double> &yttr, std::vector<double> &ytti,
                       std::vector<double> &yftr, std::vector<double> &yfti,
-                      std::vector<double> &ytfr, std::vector<double> &ytfi);
+                      std::vector<double> &ytfr, std::vector<double> &ytfi,
+                      std::vector<bool> &switched);
 #endif
 
   private:
