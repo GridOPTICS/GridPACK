@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2016-06-08 12:20:53 d3g096
+# Last Change: 2016-12-12 08:28:15 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -24,11 +24,11 @@ set(target_libraries
     gridpack_configuration
     gridpack_timer
     gridpack_parallel
+    ${PETSC_LIBRARIES}
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    ${MPI_CXX_LIBRARIES})
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 

@@ -207,6 +207,7 @@ endif()
 # -------------------------------------------------------------
 install(FILES 
   optimization.hpp
+  optimizer.hpp
   DESTINATION include/gridpack/optimization
 )
 

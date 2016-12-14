@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2016-11-11 10:05:00 d3g096
+ * @date   2016-12-13 11:51:33 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,7 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/format.hpp>
+#include <boost/assert.hpp>
 #include <boost/static_assert.hpp>
 #include <boost/type_traits/is_same.hpp>
 #include <boost/serialization/base_object.hpp>
@@ -459,7 +460,10 @@ public:
   /// Default constructor.
   UnaryPlus(ExpressionPtr expr)
     : UnaryExpression(3, "+", expr)
-  {}
+  {
+    BOOST_ASSERT_MSG(expr, "UnaryExpression: null expression");
+    BOOST_ASSERT_MSG(!expr->null(), "UnaryExpression: null expression contents");
+  }
 
   /// Protected copy constructor to avoid unwanted copies.
   UnaryPlus(const UnaryPlus& old)
@@ -504,14 +508,16 @@ public:
   BinaryExpression(const int& prec, const std::string& op, 
                    ExpressionPtr lhs, ExpressionPtr rhs)
     : Expression(prec), p_operator(op), p_LHS(lhs), p_RHS(rhs)
-  {}
+  {
+  }
 
   /// Copy constructor
   BinaryExpression(const BinaryExpression& old)
     : Expression(old), 
       p_operator(old.p_operator),
       p_LHS(old.p_LHS), p_RHS(old.p_RHS)
-  {}
+  {
+  }
 
   /// Destructor
   ~BinaryExpression(void)
@@ -539,6 +545,9 @@ protected:
 
   /// The operator used for this instance
   const std::string p_operator;
+
+  /// Can the LHS be empty
+  bool p_emptyLHS;
 
   /// The left hand side expression
   ExpressionPtr p_LHS;
@@ -615,7 +624,12 @@ public:
   /// Default constructor.
   Multiplication(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(5, "*", lhs, rhs)
-  {}
+  {
+    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+  }
 
   /// Copy constructor
   Multiplication(const Multiplication& old)
@@ -713,6 +727,32 @@ ExpressionPtr operator*(VariablePtr lhs, T rhs)
 }
 
 // -------------------------------------------------------------
+// operator*=
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator*=(ExpressionPtr& lhs, ExpressionPtr rhs)
+{
+  lhs = lhs * rhs;
+  return lhs;
+}
+
+template <typename T>
+ExpressionPtr operator*=(ExpressionPtr& lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  lhs = lhs * c;
+  return lhs;
+}
+
+inline
+ExpressionPtr operator*=(ExpressionPtr& lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  lhs = lhs * v;
+  return lhs;
+}
+
+// -------------------------------------------------------------
 //  class Division
 // -------------------------------------------------------------
 class Division 
@@ -723,7 +763,12 @@ public:
   /// Default constructor.
   Division(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(5, "/", lhs, rhs)
-  {}
+  {
+    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+  }
 
   /// Destructor
   ~Division(void)
@@ -754,7 +799,7 @@ private:
 
 
 // -------------------------------------------------------------
-// operator*
+// operator/
 // -------------------------------------------------------------
 inline
 ExpressionPtr operator/(ExpressionPtr lhs, ExpressionPtr rhs)
@@ -818,6 +863,37 @@ ExpressionPtr operator/(VariablePtr lhs, T rhs)
 }
 
 // -------------------------------------------------------------
+// operator/=
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator/=(ExpressionPtr& lhs, ExpressionPtr rhs)
+{
+  // this will fail if lhs is null
+  lhs = lhs / rhs;
+  return lhs;
+}
+
+template <typename T>
+ExpressionPtr operator/=(ExpressionPtr& lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  // this will fail if lhs is null
+  lhs = lhs / c;
+  return lhs;
+}
+
+inline
+ExpressionPtr operator/=(ExpressionPtr& lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  // this will fail if lhs is null
+  lhs = lhs / v;
+  return lhs;
+}
+
+
+
+// -------------------------------------------------------------
 //  class Addition
 // -------------------------------------------------------------
 class Addition 
@@ -828,7 +904,12 @@ public:
   /// Default constructor.
   Addition(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(6, "+", lhs, rhs)
-  {}
+  {
+    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+  }
 
   /// Copy constructor
   Addition(const Addition& old)
@@ -874,7 +955,12 @@ public:
   /// Default constructor.
   Subtraction(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(6, "-", lhs, rhs)
-  {}
+  {
+    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+  }
 
   /// Copy constructor
   Subtraction(const Subtraction& old)
@@ -984,6 +1070,34 @@ ExpressionPtr operator+(VariablePtr lhs, VariablePtr rhs)
 }
 
 // -------------------------------------------------------------
+// operator+=
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator+=(ExpressionPtr& lhs, ExpressionPtr rhs)
+{
+  if (lhs) {
+    lhs = lhs + rhs;
+  } else {
+    lhs = rhs;
+  }
+  return lhs;
+}
+
+template <typename T>
+ExpressionPtr operator+=(ExpressionPtr& lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  return lhs += c;
+}
+
+inline
+ExpressionPtr operator+=(ExpressionPtr& lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  return lhs += v;
+}
+
+// -------------------------------------------------------------
 // operator-
 // -------------------------------------------------------------
 inline
@@ -1059,6 +1173,36 @@ ExpressionPtr operator-(VariablePtr lhs, VariablePtr rhs)
 }
 
 // -------------------------------------------------------------
+// operator-=
+// -------------------------------------------------------------
+inline
+ExpressionPtr operator-=(ExpressionPtr& lhs, ExpressionPtr rhs)
+{
+  if (lhs) {
+    lhs = lhs - rhs;
+  } else {
+    lhs = - rhs;
+  }
+  return lhs;
+}
+
+template <typename T>
+ExpressionPtr operator-=(ExpressionPtr& lhs, T rhs)
+{
+  ExpressionPtr c(new ConstantExpression<T>(rhs));
+  lhs -= c;
+  return lhs;
+}
+
+inline
+ExpressionPtr operator-=(ExpressionPtr& lhs, VariablePtr rhs)
+{
+  ExpressionPtr v(new VariableExpression(rhs));
+  lhs -= v;
+  return lhs;
+}
+
+// -------------------------------------------------------------
 //  class Exponentiation
 // -------------------------------------------------------------
 class Exponentiation 
@@ -1071,7 +1215,10 @@ public:
   /// Default constructor.
   Exponentiation(ExpressionPtr lhs, int exp)
     : BinaryExpression(2, "^", lhs, ExpressionPtr(new IntegerConstant(exp)))
-  {}
+  {
+    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+  }
 
   /// Protected copy constructor to avoid unwanted copies.
   Exponentiation(const Exponentiation& old)
@@ -1145,13 +1292,7 @@ public:
   /// Add something to the LHS
   void addToLHS(ExpressionPtr e)
   {
-    if (e) {
-      if (p_LHS) {
-        p_LHS = e + p_LHS;
-      } else {
-        p_LHS = e;
-      }
-    }
+    p_LHS += e;
   }
 
   // /// Do whatever 

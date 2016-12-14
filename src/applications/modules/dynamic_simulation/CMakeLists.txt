@@ -22,11 +22,11 @@ set(target_libraries
     gridpack_powerflow_module
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
+    ${PETSC_LIBRARIES}
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES}
     ${GOSS_LIBRARY}
     ${APR_LIBRARY})
 

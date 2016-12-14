@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2016-12-12 06:13:06 d3g096
+ * @date   2016-12-13 11:31:12 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 

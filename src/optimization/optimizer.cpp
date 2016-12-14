@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2016-12-12 06:53:37 d3g096
+ * @date   2016-12-13 12:01:01 d3g096
  * 
  * @brief  
  * 
@@ -189,11 +189,13 @@ OptimizerImplementation::p_gatherGlobalConstraints(const ConstraintMap& tmpgloba
   for (c = tmpglobal.begin(); c != tmpglobal.end(); ++c) {
     std::string name(c->first);
     ConstraintPtr cons(c->second);
-    ConstraintMap::iterator gc(p_allGlobalConstraints.find(name));
-    if (gc != p_allGlobalConstraints.end()) {
-      gc->second->addToLHS(cons->lhs());
-    } else {
-      p_allGlobalConstraints[name] = cons;
+    if (cons->lhs()) {
+      ConstraintMap::iterator gc(p_allGlobalConstraints.find(name));
+      if (gc != p_allGlobalConstraints.end()) {
+        gc->second->addToLHS(cons->lhs());
+      } else {
+        p_allGlobalConstraints[name] = cons;
+      }
     }
   }
 }
