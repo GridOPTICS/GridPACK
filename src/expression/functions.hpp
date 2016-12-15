@@ -9,7 +9,7 @@
 /**
  * @file   functions.hpp
  * @author William A. Perkins
- * @date   2016-11-01 12:41:14 d3g096
+ * @date   2016-12-15 07:22:02 d3g096
  * 
  * @brief  
  * 
@@ -62,25 +62,11 @@ protected:
 
   std::vector<ExpressionPtr> p_args;
 
-  std::string p_render(void) const
-  {
-    std::string s(p_fname);
-    s += "(";
-    for (std::vector<ExpressionPtr>::const_iterator i = p_args.begin();
-         i != p_args.end(); ++i) {
-      if (i != p_args.begin()) {
-        s += ", ";
-      }
-      s += (*i)->render();
-    }
-    s += ")";
-    return s;
-  }
+  /// Render the function and its arguments
+  std::string p_render(void) const;
          
-  void p_accept(ExpressionVisitor& e)
-  {
-    e.visit(*this);
-  }
+  /// Let a visitor in
+  void p_accept(ExpressionVisitor& e);
 
   /// Is this expression empty?
   bool p_null(void) const;
