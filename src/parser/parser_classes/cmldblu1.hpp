@@ -2903,10 +2903,29 @@ template <class _data_struct> class Cmldblu1Parser
     // @param l_idx index of original composite load
     void setTransformer(gridpack::component::DataCollection *comp_data,
         gridpack::component::DataCollection *t_data, int l_idx) {
+      int ival;
       double rval;
-      t_data->addValue(BRANCH_NUM_ELEMENTS, 1);
+      ival = 1;
+      t_data->addValue(BRANCH_NUM_ELEMENTS, ival);
+      t_data->addValue(BRANCH_STATUS, ival, 0);
       t_data->addValue(BRANCH_SWITCHED, false, 0);
       t_data->addValue(BRANCH_CKT, " 1", 0);
+      if (comp_data->getValue(LOAD_XFDR, &rval, l_idx)) {
+        t_data->addValue(BRANCH_X, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_RFDR, &rval, l_idx)) {
+        t_data->addValue(BRANCH_R, rval, 0);
+      }
+      rval = 0.0;
+      t_data->addValue(BRANCH_SHIFT, rval, 0);
+      t_data->addValue(BRANCH_B, rval, 0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_G1, rval, 0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_B1, rval, 0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_G2, rval, 0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_B2, rval, 0);
+      rval = 1.0;
+      t_data->addValue(BRANCH_TAP, rval, 0);
+
       if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
         t_data->addValue(LOAD_MVA, rval, 0);
       }
@@ -2972,10 +2991,27 @@ template <class _data_struct> class Cmldblu1Parser
     // @param l_idx index of original composite load
     void setFeeder( gridpack::component::DataCollection *comp_data,
         gridpack::component::DataCollection *t_data, int l_idx) {
+      int ival;
       double rval;
-      t_data->addValue(BRANCH_NUM_ELEMENTS, 1);
+      ival = 1;
+      t_data->addValue(BRANCH_NUM_ELEMENTS, ival);
+      t_data->addValue(BRANCH_STATUS,ival,0);
       t_data->addValue(BRANCH_SWITCHED, false, 0);
       t_data->addValue(BRANCH_CKT, " 1", 0);
+      if (comp_data->getValue(LOAD_XXF, &rval, l_idx)) {
+        t_data->addValue(BRANCH_X, rval, 0);
+      }
+      rval = 0.0;
+      t_data->addValue(BRANCH_R,rval,0);
+      t_data->addValue(BRANCH_B,rval,0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_G1,rval,0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_B1,rval,0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_G2,rval,0);
+      t_data->addValue(BRANCH_SHUNT_ADMTTNC_B2,rval,0);
+      t_data->addValue(BRANCH_SHIFT,rval,0);
+      rval = 1.0;
+      t_data->addValue(BRANCH_TAP,rval,0);
+
       if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
         t_data->addValue(LOAD_MVA, rval, 0);
       }
@@ -3014,6 +3050,16 @@ template <class _data_struct> class Cmldblu1Parser
       int ival;
       double rval;
       // Parameters needed by the bus as a whole
+      if (comp_data->getValue(CASE_SBASE, &rval)) {
+        t_data->addValue(CASE_SBASE, rval);
+      }
+      rval = 0.0;
+      t_data->addValue(BUS_SHUNT_GL, rval, 0);
+      t_data->addValue(BUS_SHUNT_BL, rval, 0);
+      t_data->addValue(SHUNT_BINIT, rval);
+      ival = 1;
+      t_data->addValue(BUS_TYPE, ival);
+
       if (comp_data->getValue(LOAD_P1C, &rval, l_idx)) {
         t_data->addValue(LOAD_P1C, rval);
       }
@@ -3413,12 +3459,24 @@ template <class _data_struct> class Cmldblu1Parser
     void setLowSideBus( gridpack::component::DataCollection *comp_data,
         gridpack::component::DataCollection *t_data, int l_idx) {
       double rval;
+      int ival;
+      if (comp_data->getValue(CASE_SBASE, &rval)) {
+        t_data->addValue(CASE_SBASE, rval);
+      }
+      rval = 0.0;
+      t_data->addValue(BUS_SHUNT_GL, rval, 0);
+      t_data->addValue(SHUNT_BINIT, rval);
+      if (comp_data->getValue(LOAD_BSS, &rval, l_idx)) {
+        t_data->addValue(BUS_SHUNT_BL, rval, 0);
+      }
       if (comp_data->getValue(LOAD_MVA, &rval, l_idx)) {
         t_data->addValue(LOAD_MVA, rval, 0);
       }
       if (comp_data->getValue(LOAD_BSS, &rval, l_idx)) {
         t_data->addValue(LOAD_BSS, rval, 0);
       }
+      ival = 1;
+      t_data->addValue(BUS_TYPE, ival);
     }
 
     // Expand composite model by creating new buses and branches
