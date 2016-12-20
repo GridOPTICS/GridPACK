@@ -115,6 +115,14 @@ class YMBus
      */
     void getShuntValues(double *bl, double *gl) const;
 
+    /**
+     * Set internal parameters inside the Y-bus component
+     * @param name character string describing component to be modified
+     * @param value of parameter to be modified
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string name, double value, int idx);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -261,6 +269,14 @@ class YMBranch
      * @return value of susceptance
      */
     double getSusceptance(std::string tag);
+
+    /**
+     * Set internal parameters inside the Y-branch component
+     * @param name character string describing component to be modified
+     * @param value of parameter to be modified
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string name, double value, int idx);
 
 #ifdef USE_ACOPF
     /**

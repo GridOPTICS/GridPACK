@@ -205,6 +205,20 @@ void gridpack::ymatrix::YMBus::getShuntValues(double *bl,
 }
 
 /**
+ * Set internal parameters inside the Y-bus component
+ * @param name character string describing component to be modified
+ * @param value of parameter to be modified
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::ymatrix::YMBus::setParam(std::string name, double value,
+    int idx)
+{
+  if (name==BUS_SHUNT_BL) {
+    p_shunt_bs = value;
+  }
+}
+
+/**
  *  Simple constructor
  */
 gridpack::ymatrix::YMBranch::YMBranch(void)
@@ -667,6 +681,26 @@ double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
     }
   }
   return 0.0;
+}
+
+/**
+ * Set internal parameters inside the Y-branch component
+ * @param name character string describing component to be modified
+ * @param value of parameter to be modified
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::ymatrix::YMBranch::setParam(std::string name, double value,
+    int idx)
+{
+  if (name==BRANCH_X) {
+    p_reactance[idx] = value;
+  } else if (name==BRANCH_R) {
+    p_resistance[idx] = value;
+  } else if (name==BRANCH_TAP) {
+    p_tap_ratio[idx] = value;
+  } else if (name==BRANCH_SHIFT) {
+    p_phase_shift[idx];
+  }
 }
 
 #ifdef USE_ACOPF
