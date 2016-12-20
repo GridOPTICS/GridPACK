@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created August 28, 2015 by William A. Perkins
-// Last Change: 2016-07-14 13:27:01 d3g096
+// Last Change: 2016-12-20 07:20:15 d3g096
 // -------------------------------------------------------------
 
 #include <boost/assert.hpp>
@@ -76,6 +76,11 @@ Constraint::Constraint(const int& prec, const std::string& op,
   : BinaryExpression(prec, op, lhs, rhs), 
     utility::Named(boost::str(boost::format("C%d") % p_nextID++))
 {
+  // Constraints can have a null LHS
+  // BOOST_ASSERT_MSG(lhs, "Constraint: LHS null");
+  BOOST_ASSERT_MSG(rhs, "Constraint: RHS null");
+  // BOOST_ASSERT_MSG(!lhs->null(), "Constraint: LHS null contents");
+  BOOST_ASSERT_MSG(!rhs->null(), "Constraint: RHS null contests");
 }
 
 Constraint::Constraint(void)

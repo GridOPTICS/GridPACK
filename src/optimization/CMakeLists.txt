@@ -89,16 +89,37 @@ target_link_libraries(optimizer_test ${target_libraries})
 
 gridpack_add_unit_test("optimizer" optimizer_test)
 
-add_custom_target(optimizer_test_input
-  
-  COMMAND ${CMAKE_COMMAND} -E copy
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml
-  ${CMAKE_CURRENT_BINARY_DIR} 
-  
-  DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml
-  )
-add_dependencies(optimizer_test optimizer_test_input)
+# Decide which of the available optimizers to use for the unit tests,
+# if any. Try to run the optimization if an optimizer is
+# available. Avoid test failure if an appropriate optimizer is not
+# avaliable.  There are two tests (1) Flow and (2) UC. The latter is
+# quadratic and so requires CPLEX.
+
+if (USE_CPLEX) 
+  set(FlowTestOptimizer CPLEX)
+  set(UCTestOptimizer CPLEX)
+  set(FlowTestRun "true")
+  set(UCTestRun "true")
+elseif(USE_GLPK)
+  set(FlowTestOptimizer GLPK)
+  set(UCTestOptimizer GLPK)
+  set(FlowTestRun "true")
+  set(UCTestRun "false")
+else()
+  set(FlowTestOptimizer Julia)
+  set(UCTestOptimizer LPFile)
+  set(FlowTestRun "false")
+  set(UCTestRun "false")
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml.in
+  ${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml @ONLY)
+
+unset(FlowTestOptimizer)
+unset(UCTestOptimizer)
+unset(FlowTestRun)
+unset(UCTestRun)
 
 # -------------------------------------------------------------
 # TEST: 
@@ -198,6 +219,7 @@ endif()
 # -------------------------------------------------------------
 install(FILES 
   optimization.hpp
+  optimizer.hpp
   DESTINATION include/gridpack/optimization
 )
 

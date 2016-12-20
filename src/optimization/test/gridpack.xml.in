@@ -2,7 +2,8 @@
   <OptimizerTests>
     <FlowTest>
       <Optimizer>
-        <Solver>GLPK</Solver>
+        <Solver>@FlowTestOptimizer@</Solver>
+        <Run>@FlowTestRun@</Run>
         <File>FlowTest</File>
         <JuliaOptions>
           <Preamble>
@@ -14,7 +15,8 @@
     </FlowTest>
     <UCTest>
       <Optimizer>
-        <Solver>CPLEX</Solver>
+        <Solver>@UCTestOptimizer@</Solver>
+        <Run>@UCTestRun@</Run>
         <File>UCTest</File>
         <JuliaOptions>
           <Preamble>

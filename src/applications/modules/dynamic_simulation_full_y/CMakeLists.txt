@@ -10,19 +10,19 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2015-04-27 10:30:17 d3g096
+# Last Change: 2016-12-14 06:46:55 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_dsmatrix_components
+    gridpack_ymatrix_components
+    gridpack_powerflow_module
     gridpack_components
     gridpack_partition
     gridpack_parallel
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_powerflow_module
-    gridpack_dsmatrix_components
-    gridpack_ymatrix_components
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

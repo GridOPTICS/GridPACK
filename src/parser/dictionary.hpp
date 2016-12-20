@@ -52,6 +52,13 @@
 #define BUS_NAME "BUS_NAME"
 
 /**
+ * Alpha-numeric identifier assigned to new buses that may be
+ * as part of the parsing process
+ * type: string
+ */
+#define NEW_BUS_TYPE "NEW_BUS_TYPE"
+
+/**
  * Bus base voltage, entered in kV. 
  * type: real float
  */
@@ -2788,6 +2795,13 @@
  * type: integer
  */
 #define BRANCH_TOBUS "BRANCH_TOBUS"
+
+/**
+ * Alpha-numeric identifier assigned to new branches that may be
+ * as part of the parsing process
+ * type: string
+ */
+#define NEW_BRANCH_TYPE "NEW_BRANCH_TYPE"
 
 /**
  * Number of transmission elements on branch

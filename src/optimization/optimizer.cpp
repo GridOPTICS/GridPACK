@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2016-12-08 14:13:00 d3g096
+ * @date   2016-12-13 12:01:01 d3g096
  * 
  * @brief  
  * 
@@ -189,11 +189,13 @@ OptimizerImplementation::p_gatherGlobalConstraints(const ConstraintMap& tmpgloba
   for (c = tmpglobal.begin(); c != tmpglobal.end(); ++c) {
     std::string name(c->first);
     ConstraintPtr cons(c->second);
-    ConstraintMap::iterator gc(p_allGlobalConstraints.find(name));
-    if (gc != p_allGlobalConstraints.end()) {
-      gc->second->addToLHS(cons->lhs());
-    } else {
-      p_allGlobalConstraints[name] = cons;
+    if (cons->lhs()) {
+      ConstraintMap::iterator gc(p_allGlobalConstraints.find(name));
+      if (gc != p_allGlobalConstraints.end()) {
+        gc->second->addToLHS(cons->lhs());
+      } else {
+        p_allGlobalConstraints[name] = cons;
+      }
     }
   }
 }
@@ -373,6 +375,9 @@ Optimizer::p_preconfigure(utility::Configuration::CursorPtr theprops)
     } 
     if (solver == "Julia") {
       p_setImpl(new JuliaOptimizerImplementation(comm));
+    }
+    if (solver == "LPFile") {
+      p_setImpl(new LPFileOptimizerImplementation(comm));
     }
     if (!p_impl) {
       std::string s("Unknown ptimizer solver type \"");
