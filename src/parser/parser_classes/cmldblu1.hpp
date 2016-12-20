@@ -2915,7 +2915,7 @@ template <class _data_struct> class Cmldblu1Parser
       }
       rval = 0.0;
       t_data->addValue(BRANCH_SHIFT, rval, 0);
-      t_data->addValue(BRANCH_X, rval, 0);
+      t_data->addValue(BRANCH_R, rval, 0);
       t_data->addValue(BRANCH_B, rval, 0);
       t_data->addValue(BRANCH_SHUNT_ADMTTNC_G1, rval, 0);
       t_data->addValue(BRANCH_SHUNT_ADMTTNC_B1, rval, 0);
