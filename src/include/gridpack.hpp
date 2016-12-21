@@ -38,6 +38,7 @@
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/parser/hash_distr.hpp"
+#include "gridpack/parser/bus_table.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
