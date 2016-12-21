@@ -260,7 +260,7 @@ int main(int argc, char **argv)
     for (j=0; j<values.size(); j++) {
       n = indices[j];
       n1 = network->getOriginalBusIndex(n);
-      if (values[j] != static_cast<double>((n1-1)*100+j)) {
+      if (values[j] != static_cast<double>((n1-1)*100+i)) {
         printf("Error for bus %d\n",n1);
         ok = false;
       }
