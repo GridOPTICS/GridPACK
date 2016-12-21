@@ -261,6 +261,14 @@ public:
       values.push_back(v[i]);
     }
   }
+
+  /**
+   * Return the number of columns in the table
+   */
+  int getNumColumns()
+  {
+    return p_nvals;
+  }
 private:
 
   NetworkPtr p_network;
