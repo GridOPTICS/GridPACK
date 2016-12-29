@@ -616,13 +616,13 @@ void gridpack::powerflow::PFBus::setSBus(void)
       usegen = true;
     }
   }
-  printf ("size of load = %d \n", p_lstatus.size());
+  //printf ("size of load = %d \n", p_lstatus.size());
   for (i=0; i<p_lstatus.size(); i++) {
-    printf ("p_lstatus = %d \n", p_lstatus[i]);
+    //printf ("p_lstatus = %d \n", p_lstatus[i]);
     if (p_lstatus[i] == 1) {
       pl += p_pl[i];
       ql += p_ql[i];
-      printf ("%d: pl = %f \n", i,pl);
+      //printf ("%d: pl = %f \n", i,pl);
     }
   }
   if (p_gstatus.size() > 0 && usegen) {

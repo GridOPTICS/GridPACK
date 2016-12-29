@@ -286,7 +286,9 @@ class PTI23_parser : public BasePTIParser<_network>
         // LOAD_QL                "QL"                  float
         if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()));
         if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()),0);
-        data->addValue(LOAD_NUMBER,1);
+        int ival = 1;
+        data->addValue(LOAD_NUMBER,ival);
+        data->addValue(LOAD_STATUS,ival,0);
         data->addValue(LOAD_BUSNUMBER,o_idx);
 
         index++;

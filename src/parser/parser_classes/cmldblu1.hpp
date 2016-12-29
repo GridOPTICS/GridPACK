@@ -2910,14 +2910,12 @@ template <class _data_struct> class Cmldblu1Parser
       t_data->addValue(BRANCH_STATUS, ival, 0);
       t_data->addValue(BRANCH_SWITCHED, false, 0);
       t_data->addValue(BRANCH_CKT, " 1", 0);
-      if (comp_data->getValue(LOAD_XFDR, &rval, l_idx)) {
+      if (comp_data->getValue(LOAD_XXF, &rval, l_idx)) {
         t_data->addValue(BRANCH_X, rval, 0);
-      }
-      if (comp_data->getValue(LOAD_RFDR, &rval, l_idx)) {
-        t_data->addValue(BRANCH_R, rval, 0);
       }
       rval = 0.0;
       t_data->addValue(BRANCH_SHIFT, rval, 0);
+      t_data->addValue(BRANCH_R, rval, 0);
       t_data->addValue(BRANCH_B, rval, 0);
       t_data->addValue(BRANCH_SHUNT_ADMTTNC_G1, rval, 0);
       t_data->addValue(BRANCH_SHUNT_ADMTTNC_B1, rval, 0);
@@ -2998,11 +2996,13 @@ template <class _data_struct> class Cmldblu1Parser
       t_data->addValue(BRANCH_STATUS,ival,0);
       t_data->addValue(BRANCH_SWITCHED, false, 0);
       t_data->addValue(BRANCH_CKT, " 1", 0);
-      if (comp_data->getValue(LOAD_XXF, &rval, l_idx)) {
+      if (comp_data->getValue(LOAD_RFDR, &rval, l_idx)) {
+        t_data->addValue(BRANCH_R, rval, 0);
+      }
+      if (comp_data->getValue(LOAD_XFDR, &rval, l_idx)) {
         t_data->addValue(BRANCH_X, rval, 0);
       }
       rval = 0.0;
-      t_data->addValue(BRANCH_R,rval,0);
       t_data->addValue(BRANCH_B,rval,0);
       t_data->addValue(BRANCH_SHUNT_ADMTTNC_G1,rval,0);
       t_data->addValue(BRANCH_SHUNT_ADMTTNC_B1,rval,0);

@@ -63,10 +63,15 @@ add_custom_target(test_parser_input
   ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/table.dat
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/test/test.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/test/parser_data.raw
   ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/table.dat
 )
 add_dependencies(parser_test test_parser_input)
 #add_dependencies(PTI23_test test_parser_input)
@@ -82,6 +87,12 @@ target_link_libraries(hash_distr_test ${target_libraries})
 gridpack_add_unit_test(hash_distr_test hash_distr_test)
 
 # -------------------------------------------------------------
+# TEST: bus_table_test
+# -------------------------------------------------------------
+add_executable(bus_table_test test/bus_table_test.cpp)
+target_link_libraries(bus_table_test ${target_libraries})
+
+# -------------------------------------------------------------
 # installation
 # -------------------------------------------------------------
 install(FILES 
@@ -92,6 +103,7 @@ install(FILES
   hash_distr.hpp
   base_parser.hpp
   base_pti_parser.hpp
+  bus_table.hpp
   DESTINATION include/gridpack/parser
 )
 install(FILES 
