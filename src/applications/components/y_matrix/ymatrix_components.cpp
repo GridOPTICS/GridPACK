@@ -699,7 +699,7 @@ void gridpack::ymatrix::YMBranch::setParam(std::string name, double value,
   } else if (name==BRANCH_TAP) {
     p_tap_ratio[idx] = value;
   } else if (name==BRANCH_SHIFT) {
-    p_phase_shift[idx];
+    p_phase_shift[idx] = value;
   }
 }
 
