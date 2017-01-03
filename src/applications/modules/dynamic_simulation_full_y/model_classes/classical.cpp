@@ -228,7 +228,7 @@ void gridpack::dynamic_simulation::DSFClassicalGenerator::predictor(
   curr = p_eprime_s0;
   curr -= p_volt;
   curr = curr/(jay*p_dtr);
-  imag(curr) = -imag(curr);
+  curr = std::conj(curr);
   p_pelect = real(p_eprime_s0 * curr);
   // dmac_ang:
   p_dmac_ang_s0 = (p_mac_spd_s0 - 1.0) * basrad;
@@ -279,7 +279,7 @@ void gridpack::dynamic_simulation::DSFClassicalGenerator::corrector(
   curr = p_eprime_s1;
   curr -= p_volt;
   curr = curr/(jay*p_dtr);
-  imag(curr) = -imag(curr);
+  curr = std::conj(curr);
   p_pelect = real(p_eprime_s1 * curr);
   // dmac_ang:
   p_dmac_ang_s1 = (p_mac_spd_s1 - 1.0) * basrad;

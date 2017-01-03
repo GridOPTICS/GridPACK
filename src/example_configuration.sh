@@ -191,6 +191,32 @@ elif [ $host == "pe10900intel" ]; then
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         ..
 
+elif [ $host == "WE32673" ]; then
+
+    # Mac using stock LLVM compilers and OpenMPI via MacPorts
+
+    CC=/usr/bin/clang
+    export CC
+    CXX=/usr/bin/clang++
+    export CXX
+
+    prefix="/Users/d3g096/Projects/GridPACK"
+
+    cmake $options \
+        -D GA_DIR:STRING="$prefix" \
+        -D BOOST_ROOT:STRING='/opt/local' \
+        -D PETSC_DIR:STRING="/Users/d3g096/Projects/GridPACK/petsc-3.7.4" \
+        -D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
+        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
+        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
+        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D USE_CPLEX:BOOL=OFF \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/opt/local" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        $common_flags ..
 
 elif [ $host == "olympus.local" ]; then
 

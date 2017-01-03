@@ -102,7 +102,7 @@ gridpack::math::Matrix* intMapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxIndex-p_minIndex+1;
-#if 0
+#if 1
   gridpack::math::Matrix*
     Ret(new gridpack::math::Matrix(comm, blockSize,p_nColumns,
                                    gridpack::math::Dense));

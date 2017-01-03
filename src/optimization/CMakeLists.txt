@@ -49,23 +49,8 @@ if (USE_GUROBI)
   list(APPEND optimizer_libraries ${GUROBI_LIBRARIES})
 endif()
 
-add_library(gridpack_optimum
-  ${expression_src}
-)
 
-
-# target_link_libraries(gridpack_optimum
-#   gridpack_parallel
-#   gridpack_configuration
-#   ${optimizer_libraries}
-#   ${GA_LIBRARIES} 
-#   ${Boost_LIBRARIES} 
-#   ${PETSC_LIBRARIES}
-#   ${MPI_CXX_LIBRARIES}
-# )
-  
 set(target_libraries
-  gridpack_optimum
   gridpack_components
   gridpack_partition
   gridpack_math
@@ -82,10 +67,23 @@ set(target_libraries
 )
 
 # -------------------------------------------------------------
+# optimizer library
+# -------------------------------------------------------------
+
+add_library(gridpack_optimum
+  ${expression_src}
+)
+
+target_link_libraries(gridpack_optimum ${target_libraries})
+  
+# -------------------------------------------------------------
 # optimizer test suite
 # -------------------------------------------------------------
 add_executable(optimizer_test test/optimizer_test.cpp)
-target_link_libraries(optimizer_test ${target_libraries})
+target_link_libraries(optimizer_test   
+  gridpack_optimum 
+  ${target_libraries}
+)
 
 gridpack_add_unit_test("optimizer" optimizer_test)
 
@@ -123,7 +121,10 @@ endif()
    test_app/uc_main.cpp
  )
 
- target_link_libraries(uc.x ${target_libraries})
+ target_link_libraries(uc.x 
+   gridpack_optimum
+   ${target_libraries}
+ )
 
  add_custom_target(uc.x.input
 
@@ -164,7 +165,10 @@ if(USE_GUROBI)
    test_gurobi/uc_main.cpp
  )
 
- target_link_libraries(uc_gurobi.x ${target_libraries})
+ target_link_libraries(uc_gurobi.x 
+   gridpack_expression
+   ${target_libraries}
+ )
 
  add_custom_target(uc_gurobi.x.input
 
