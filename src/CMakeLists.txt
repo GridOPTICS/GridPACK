@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2016-12-16 08:08:37 d3g096
+# Last Change: 2017-01-10 08:40:14 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -79,7 +79,7 @@ option(USE_GLPK
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
-include_directories(AFTER ${MPI_INCLUDE_PATH})
+include_directories(AFTER ${MPI_CXX_INCLUDE_PATH})
 
 if (ENABLE_CRAY_BUILD)
   set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
