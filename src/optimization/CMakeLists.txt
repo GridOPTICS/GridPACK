@@ -132,7 +132,10 @@ if(USE_CPLEX)
  add_executable(test_expression 
    test/test_expression.cpp
  )
- target_link_libraries(test_expression ${target_libraries})
+ target_link_libraries(test_expression 
+   gridpack_optimum
+   ${target_libraries}
+ )
 endif()
 
 
