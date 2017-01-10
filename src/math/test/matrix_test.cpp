@@ -8,7 +8,7 @@
 /**
  * @file   matrix_test.cpp
  * @author William A. Perkins
- * @date   2015-08-12 15:31:13 d3g096
+ * @date   2016-12-16 09:35:46 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -20,15 +20,12 @@
 #include <iterator>
 #include <boost/assert.hpp>
 #include <boost/mpi/collectives.hpp>
-#include "gridpack/parallel/parallel.hpp"
 #include "gridpack/parallel/random.hpp"
 #include "math.hpp"
 #include "matrix.hpp"
 #include "gridpack/utilities/exception.hpp"
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#include <boost/test/included/unit_test.hpp>
+#include "test_main.cpp"
 
 static const int local_size(5);
 static const double delta(0.0001);
@@ -1220,35 +1217,3 @@ BOOST_AUTO_TEST_SUITE_END()
 
 
 
-// -------------------------------------------------------------
-// init_function
-// -------------------------------------------------------------
-bool init_function()
-{
-  switch (the_storage_type) {
-  case gridpack::math::Dense:
-    BOOST_TEST_MESSAGE("Testing Dense Matrices ...");
-    break;
-  case gridpack::math::Sparse:
-    BOOST_TEST_MESSAGE("Testing Sparse Matrices ...");
-    break;
-  default:
-    BOOST_ASSERT(false);
-  }
-
-  return true;
-}
-
-// -------------------------------------------------------------
-//  Main Program
-// -------------------------------------------------------------
-int
-main(int argc, char **argv)
-{
-  gridpack::parallel::Environment env(argc, argv);
-  gridpack::parallel::Communicator world;
-  gridpack::math::Initialize();
-  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  gridpack::math::Finalize();
-  return result;
-}
