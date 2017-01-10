@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2015-10-06 10:45:44 d3g096
+ * @date   2016-12-16 08:09:53 d3g096
  * 
  * @brief  
  * 
@@ -160,6 +160,7 @@ BOOST_AUTO_TEST_CASE( serialization )
   BOOST_CHECK_EQUAL(cnt0.numBin, cnt1.numBin);
 }
 
+#if !defined(GRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS)
 BOOST_AUTO_TEST_CASE( MPIserialization )
 {
   gridpack::parallel::Communicator world;
@@ -173,6 +174,7 @@ BOOST_AUTO_TEST_CASE( MPIserialization )
     vlist0.push_back(go::VariablePtr(new go::IntegerVariable(0, -1, 1)));
     vlist0.push_back(go::VariablePtr(new go::BinaryVariable(1)));
   } 
+
   boost::mpi::broadcast(world, vlist0, 0);
 
   go::VariableCounter cnt;
@@ -195,7 +197,7 @@ BOOST_AUTO_TEST_CASE( MPIserialization )
     world.barrier();
   }
 }
-
+#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

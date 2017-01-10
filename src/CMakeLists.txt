@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2016-11-02 07:15:04 d3g096
+# Last Change: 2016-12-16 08:08:37 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -239,22 +239,38 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # -------------------------------------------------------------
-# Options for all Programs/Libraries
+# Compiler specific options
 # -------------------------------------------------------------
 
-# remove annoying warnings produced by the GNU compiler about the use
-# of string constants, which are used a lot in GridPACK
+# FIXME: remove annoying warnings (these warnings probably identify
+# real problems, but there are so many of them they obscure errors
+# that are causing identifiable problems
+
 if (CMAKE_COMPILER_IS_GNUCXX) 
-    add_definitions(
-      -pedantic
-      -Wno-write-strings
-      -Wno-long-long 
-      -Wno-sign-compare 
-      -Wno-unused-variable
-      -Wno-unused-but-set-variable
-      -Wno-maybe-uninitialized
+  add_definitions(
+    -pedantic
+    -Wno-write-strings
+    -Wno-long-long 
+    -Wno-sign-compare 
+    -Wno-unused-variable
+    -Wno-unused-but-set-variable
+    -Wno-maybe-uninitialized
     )
 endif()
+
+# using regular Clang or AppleClang
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_definitions(
+    -Wno-c++11-extensions
+    -Wno-c++11-compat-deprecated-writable-strings
+    -Wno-format-security
+    -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
+    )
+endif()
+
+# -------------------------------------------------------------
+# Options for all Programs/Libraries
+# -------------------------------------------------------------
 
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 

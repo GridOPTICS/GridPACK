@@ -8,7 +8,7 @@
 /**
  * @file   named.h
  * @author William A. Perkins
- * @date   2015-10-01 09:07:48 d3g096
+ * @date   2017-01-10 07:06:36 d3g096
  * 
  * @brief  
  * 
@@ -71,7 +71,7 @@ public:
   virtual ~Named(void) {}
 
   /// Get this instance's name
-  std::string name(void) const
+  virtual std::string name(void) const
   {
     return p_name;
   }

@@ -14,7 +14,6 @@
 # -------------------------------------------------------------
 set(target_libraries
   gridpack_parallel
-  ${Boost_LIBRARIES} 
 )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -30,17 +29,22 @@ add_library(gridpack_expression
 )
 
 list(APPEND target_libraries
-  gridpack_expression
   ${GA_LIBRARIES}
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
 )
 
+target_link_libraries(gridpack_expression ${target_libraries})
+
+
 # -------------------------------------------------------------
 # variable test suite
 # -------------------------------------------------------------
 add_executable(variable_test test/variable_test.cpp)
-target_link_libraries(variable_test ${target_libraries})
+target_link_libraries(variable_test 
+  gridpack_expression
+  ${target_libraries}
+)
 
 gridpack_add_unit_test("optimization_variables" variable_test)
 
@@ -49,7 +53,10 @@ gridpack_add_unit_test("optimization_variables" variable_test)
 # expression test suite
 # -------------------------------------------------------------
 add_executable(expression_test test/expression_test.cpp)
-target_link_libraries(expression_test ${target_libraries})
+target_link_libraries(expression_test 
+  gridpack_expression
+  ${target_libraries}
+)
 
 gridpack_add_unit_test("optimization_expressions" variable_test)
 
