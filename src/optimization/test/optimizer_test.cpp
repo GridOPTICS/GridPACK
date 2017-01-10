@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2016-12-08 14:20:57 d3g096
+ * @date   2016-12-13 11:31:12 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -227,11 +227,12 @@ BOOST_AUTO_TEST_CASE( flow )
 
   opt.maximize();
 
+#if defined(HAVE_GLPK) || defined(HAVE_CPLEX)
   // if an optimizer can be run, the answer is 29
-
   go::GetVariableInitial g;
   vars[0]->accept(g);
   BOOST_CHECK_EQUAL(g.value(), 29.0);
+#endif
 
   world.barrier();
 

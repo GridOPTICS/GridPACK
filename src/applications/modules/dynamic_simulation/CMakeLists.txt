@@ -13,20 +13,20 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_dsmatrix_components
+    gridpack_ymatrix_components
+    gridpack_powerflow_module
     gridpack_components
     gridpack_partition
     gridpack_parallel
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_powerflow_module
-    gridpack_dsmatrix_components
-    gridpack_ymatrix_components
+    ${PETSC_LIBRARIES}
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES}
     ${GOSS_LIBRARY}
     ${APR_LIBRARY})
 

@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2016-12-08 13:14:50 d3g096
+ * @date   2016-12-15 06:29:16 d3g096
  * 
  * @brief  
  * 
@@ -76,16 +76,16 @@ public:
     this->p_createGlobalConstraint(name, cons);
   }
 
-  /// Add to the LHS of a global constraint
+  /// Add to the LHS of a global constraint, maybe
   void addToGlobalConstraint(const std::string& name, ExpressionPtr expr)
   {
-    this->p_addToGlobalConstraint(name, expr);
+    if (expr) this->p_addToGlobalConstraint(name, expr);
   }
 
-  /// Add to the local part of the global objective function (added to other parts)
+  /// Add to the local part of the global objective function, maybe
   void addToObjective(ExpressionPtr expr)
   {
-    this->p_addToObjective(expr);
+    if (expr) this->p_addToObjective(expr);
   }
 
   /// Maximize the objective

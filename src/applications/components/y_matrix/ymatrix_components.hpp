@@ -15,7 +15,7 @@
  */
 // -------------------------------------------------------------
 
-//#define USE_ACOPF
+#define USE_ACOPF
 
 #ifndef _ymatrix_components_h_
 #define _ymatrix_components_h_
@@ -114,6 +114,14 @@ class YMBus
      * @param bl shunt BL value
      */
     void getShuntValues(double *bl, double *gl) const;
+
+    /**
+     * Set internal parameters inside the Y-bus component
+     * @param name character string describing component to be modified
+     * @param value of parameter to be modified
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string name, double value, int idx);
 
   private:
     double p_shunt_gs;
@@ -262,6 +270,14 @@ class YMBranch
      */
     double getSusceptance(std::string tag);
 
+    /**
+     * Set internal parameters inside the Y-branch component
+     * @param name character string describing component to be modified
+     * @param value of parameter to be modified
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string name, double value, int idx);
+
 #ifdef USE_ACOPF
     /**
      * Return components from individual transmission elements
@@ -273,11 +289,13 @@ class YMBranch
      * @param yftr list of imaginary parts of Yft
      * @param ytfr list of real parts of Ytf
      * @param ytfr list of imaginary parts of Ytf
+     * @param switched flag on whether line is switched or not
      */
     void getYElements(std::vector<double> &yffr, std::vector<double> &yffi,
                       std::vector<double> &yttr, std::vector<double> &ytti,
                       std::vector<double> &yftr, std::vector<double> &yfti,
-                      std::vector<double> &ytfr, std::vector<double> &ytfi);
+                      std::vector<double> &ytfr, std::vector<double> &ytfi,
+                      std::vector<bool> &switched);
 #endif
 
   private:

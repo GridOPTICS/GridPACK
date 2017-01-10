@@ -9,7 +9,7 @@
 /**
  * @file   functions.cpp
  * @author William A. Perkins
- * @date   2016-11-01 12:30:58 d3g096
+ * @date   2016-12-15 07:25:29 d3g096
  * 
  * @brief  
  * 
@@ -24,6 +24,7 @@
 #include <algorithm>
 #include <numeric>
 #include <boost/bind.hpp>
+#include <boost/foreach.hpp>
 
 #include "functions.hpp"
 
@@ -76,6 +77,40 @@ Function::p_null(void) const
                                        boost::bind(&Expression::null, _2)));
   return result;
 }
+
+// -------------------------------------------------------------
+// Function::p_render
+// -------------------------------------------------------------
+std::string 
+Function::p_render(void) const
+{
+  std::string s(p_fname);
+  bool first(true);
+  s += "(";
+  BOOST_FOREACH(const ExpressionPtr a, p_args) {
+    if (!first) {
+      s += ", ";
+    }
+    first = false;
+    s += a->render();
+  }
+  s += ")";
+  return s;
+}
+
+
+
+// -------------------------------------------------------------
+// Function::p_accept
+// -------------------------------------------------------------
+void 
+Function::p_accept(ExpressionVisitor& e)
+{
+  BOOST_FOREACH(ExpressionPtr a, p_args) {
+    a->accept(e);
+  }
+}
+
 
 // -------------------------------------------------------------
 // ExpressionVisitor::visit

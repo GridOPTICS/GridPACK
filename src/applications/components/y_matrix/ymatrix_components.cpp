@@ -205,6 +205,20 @@ void gridpack::ymatrix::YMBus::getShuntValues(double *bl,
 }
 
 /**
+ * Set internal parameters inside the Y-bus component
+ * @param name character string describing component to be modified
+ * @param value of parameter to be modified
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::ymatrix::YMBus::setParam(std::string name, double value,
+    int idx)
+{
+  if (name==BUS_SHUNT_BL) {
+    p_shunt_bs = value;
+  }
+}
+
+/**
  *  Simple constructor
  */
 gridpack::ymatrix::YMBranch::YMBranch(void)
@@ -669,6 +683,26 @@ double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
   return 0.0;
 }
 
+/**
+ * Set internal parameters inside the Y-branch component
+ * @param name character string describing component to be modified
+ * @param value of parameter to be modified
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::ymatrix::YMBranch::setParam(std::string name, double value,
+    int idx)
+{
+  if (name==BRANCH_X) {
+    p_reactance[idx] = value;
+  } else if (name==BRANCH_R) {
+    p_resistance[idx] = value;
+  } else if (name==BRANCH_TAP) {
+    p_tap_ratio[idx] = value;
+  } else if (name==BRANCH_SHIFT) {
+    p_phase_shift[idx] = value;
+  }
+}
+
 #ifdef USE_ACOPF
 /**
  * Return components from individual transmission elements
@@ -680,12 +714,14 @@ double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
  * @param yftr list of imaginary parts of Yft
  * @param ytfr list of real parts of Ytf
  * @param ytfr list of imaginary parts of Ytf
+ * @param switched flag on whether line is switched or not
  */
 void gridpack::ymatrix::YMBranch::getYElements(
     std::vector<double> &yffr, std::vector<double> &yffi,
     std::vector<double> &yttr, std::vector<double> &ytti,
     std::vector<double> &yftr, std::vector<double> &yfti,
-    std::vector<double> &ytfr, std::vector<double> &ytfi) {
+    std::vector<double> &ytfr, std::vector<double> &ytfi,
+    std::vector<bool> &switched) {
   yffr = p_yffr;
   yffi = p_yffi;
   yttr = p_yttr;
@@ -694,5 +730,6 @@ void gridpack::ymatrix::YMBranch::getYElements(
   yfti = p_yfti;
   ytfr = p_ytfr;
   ytfi = p_ytfi;
+  switched = p_switched;
 }
 #endif
