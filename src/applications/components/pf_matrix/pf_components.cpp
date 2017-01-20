@@ -410,7 +410,7 @@ void gridpack::powerflow::PFBus::load(
         p_pt.push_back(pt);
         p_pb.push_back(pb);
         if (gstatus == 1) {
-          p_v = vs; //reset initial PV voltage to set voltage
+//          p_v = vs; //reset initial PV voltage to set voltage
           if (p_type == 2) p_isPV = true;
         }
         std::string id("-1");
