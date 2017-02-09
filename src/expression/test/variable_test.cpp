@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2016-12-16 08:09:53 d3g096
+ * @date   2017-02-09 12:38:03 d3g096
  * 
  * @brief  
  * 
@@ -216,6 +216,19 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  return result;
+  gridpack::parallel::Communicator world;
+  int lresult = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  lresult = (lresult == boost::exit_success ? 0 : 1);
+
+  int gresult;
+  boost::mpi::all_reduce(world, lresult, gresult, std::plus<int>());
+  if (world.rank() == 0) {
+    if (gresult == 0) {
+      std::cout << "No errors detected" << std::endl;
+    } else {
+      std::cout << "failure detected" << std::endl;
+    }
+  }
+
+  return gresult;
 }
