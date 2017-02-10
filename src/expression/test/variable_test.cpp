@@ -9,7 +9,7 @@
 /**
  * @file   variable_test.cpp
  * @author William A. Perkins
- * @date   2017-02-09 12:38:03 d3g096
+ * @date   2017-02-10 07:24:25 d3g096
  * 
  * @brief  
  * 
@@ -160,7 +160,6 @@ BOOST_AUTO_TEST_CASE( serialization )
   BOOST_CHECK_EQUAL(cnt0.numBin, cnt1.numBin);
 }
 
-#if !defined(GRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS)
 BOOST_AUTO_TEST_CASE( MPIserialization )
 {
   gridpack::parallel::Communicator world;
@@ -197,7 +196,6 @@ BOOST_AUTO_TEST_CASE( MPIserialization )
     world.barrier();
   }
 }
-#endif
 
 BOOST_AUTO_TEST_SUITE_END()
 

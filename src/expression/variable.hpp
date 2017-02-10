@@ -10,7 +10,7 @@
 /**
  * @file   variable.hpp
  * @author William A. Perkins
- * @date   2016-12-16 06:23:18 d3g096
+ * @date   2017-02-10 07:32:27 d3g096
  * 
  * @brief  
  * 
@@ -25,13 +25,9 @@
 #include <iosfwd>
 #include <boost/shared_ptr.hpp>
 #include <boost/serialization/base_object.hpp>
-#include <boost/serialization/string.hpp>
 #include <boost/serialization/shared_ptr.hpp>
-#include <gridpack/utilities/named.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
-
-#include <boost/serialization/export.hpp>
-
+#include <gridpack/utilities/named.hpp>
 
 namespace gridpack {
 namespace optimization {

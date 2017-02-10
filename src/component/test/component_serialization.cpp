@@ -6,7 +6,7 @@
 /**
  * @file   component_serialization.cpp
  * @author William A. Perkins
- * @date   2017-02-09 12:36:36 d3g096
+ * @date   2017-02-10 07:23:40 d3g096
  * 
  * @brief  Serialization tests for various network component classes
  * 
@@ -445,6 +445,7 @@ main(int argc, char **argv)
 }
 
 
+#if defined(GRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS)
 // For some reason this is required for CLang on Mac for the MPI
 // serialization is implemented. 
 namespace boost
@@ -454,6 +455,7 @@ namespace mpi
 template<> struct is_mpi_datatype<std::string> : public mpl::true_ { };
 }
 }
+#endif
 
 BOOST_CLASS_EXPORT_IMPLEMENT(BogusBus);
 BOOST_CLASS_EXPORT_IMPLEMENT(BogusBranch);

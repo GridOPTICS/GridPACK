@@ -9,7 +9,7 @@
 /**
  * @file   variable.cpp
  * @author William A. Perkins
- * @date   2016-12-16 08:10:34 d3g096
+ * @date   2017-02-10 08:18:20 d3g096
  * 
  * @brief  
  * 
@@ -22,12 +22,21 @@
 #include <boost/format.hpp>
 #include "variable.hpp"
 
-// Can't include this w/ AppleClang
-#if !defined(GRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS)
 #include <boost/mpi.hpp>
-#endif 
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
+
+#if defined(GRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS)
+// For some reason this is required for CLang on Mac for the MPI
+// serialization is implemented. 
+namespace boost
+{
+namespace mpi
+{
+template<> struct is_mpi_datatype<std::string> : public mpl::true_ { };
+}
+}
+#endif
 
 BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Variable)
 BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::BoundedVariableT<double>)

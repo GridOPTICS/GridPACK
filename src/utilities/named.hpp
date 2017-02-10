@@ -8,7 +8,7 @@
 /**
  * @file   named.h
  * @author William A. Perkins
- * @date   2017-01-10 07:06:36 d3g096
+ * @date   2017-02-10 07:31:37 d3g096
  * 
  * @brief  
  * 
@@ -31,12 +31,8 @@
 
 #include <string>
 
-// Forward declaration required for serialization
-namespace boost {
-namespace serialization {
-class access;
-} // namespace serialization
-} // namespace boost
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/export.hpp>
 
 namespace gridpack {
 namespace utility {
@@ -100,5 +96,7 @@ private:
 
 } // namespace utility
 } // namespace gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::utility::Named)
 
 #endif
