@@ -19,5 +19,5 @@ The GridPACK code use some third-party code that is include as a
 submodule.  After cloning this repository, do the following in the
 top-most directory of your clone to get the submodule code:
 
-  git submodule update --init
+        git submodule update --init
 
