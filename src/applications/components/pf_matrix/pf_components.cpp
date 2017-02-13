@@ -792,6 +792,59 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       slen += len;
       cptr += len;
     }
+  } else if (!strcmp(signal,"power")) {
+    char sbuf[128];
+    char *cptr = string;
+    int i, len, slen = 0;
+    int ngen=p_pFac.size();
+    // Evalate p_Pinj and p_Qinj if bus is reference bus. This is skipped when
+    // evaluating matrix elements.
+#ifndef LARGE_MATRIX
+    if (getReferenceBus() || isIsolated()) {
+      std::vector<boost::shared_ptr<BaseComponent> > branches;
+      getNeighborBranches(branches);
+      int size = branches.size();
+      double P, Q, p, q;
+      P = 0.0;
+      Q = 0.0;
+      for (i=0; i<size; i++) {
+        gridpack::powerflow::PFBranch *branch
+          = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+        branch->getPQ(this, &p, &q);
+        P += p;
+        Q += q;
+      }
+      // Also add bus i's own Pi, Qi
+      P += p_v*p_v*p_ybusr;
+      Q += p_v*p_v*(-p_ybusi);
+      p_Pinj = P;
+      p_Qinj = Q;
+    }
+#endif
+    double pl, ql;
+    for (i=0; i<p_pl.size(); i++) {
+      if (p_lstatus[i] == 1) {
+        pl += p_pl[i];
+        ql += p_ql[i];
+      }
+    }
+    for (i=0; i<ngen; i++) {
+      double pval = p_pFac[i]*(p_Pinj+pl/p_sbase);
+      double qval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+      sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
+            getOriginalIndex(),p_gid[i].c_str(),pval,qval);
+      len = strlen(sbuf);
+      if (slen+len<=bufsize) {
+        sprintf(cptr,"%s",sbuf);
+        slen += len;
+        cptr += len;
+      }
+    }
+    if (slen>0) {
+      return true;
+    } else {
+      return false;
+    }
   }
   return true;
 }

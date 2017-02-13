@@ -432,6 +432,9 @@ void gridpack::powerflow::PFAppModule::write()
   p_branchIO->write();
 
 
+  p_busIO->header("\n   Generator Power\n");
+  p_busIO->header("\n   Bus Number  GenID        Pgen              Qgen\n");
+  p_busIO->write("power");
   p_busIO->header("\n   Bus Voltages and Phase Angles\n");
   p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   p_busIO->write();
@@ -465,6 +468,11 @@ void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
   p_branchIO->write(signal);
   timer->stop(t_write);
   timer->stop(t_total);
+}
+
+void gridpack::powerflow::PFAppModule::writeHeader(const char *msg)
+{
+  p_busIO->header(msg);
 }
 
 /**
