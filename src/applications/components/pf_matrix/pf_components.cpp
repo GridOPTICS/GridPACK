@@ -250,7 +250,8 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       P += p;
       Q += q;
     }
-    double pl, ql;
+    double pl =0.0;
+    double ql =0.0;
     for (i=0; i<p_lstatus.size(); i++) {
       if (p_lstatus[i] == 1) {
         pl += p_pl[i];
@@ -821,7 +822,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       p_Qinj = Q;
     }
 #endif
-    double pl, ql;
+    double pl =0.0;
+    double ql =0.0;
     for (i=0; i<p_pl.size(); i++) {
       if (p_lstatus[i] == 1) {
         pl += p_pl[i];
@@ -910,7 +912,8 @@ void gridpack::powerflow::PFBus::saveData(
     p_Qinj = Q;
   }
 #endif
-  double pl, ql;
+  double pl=0.0;
+  double ql=0.0;
   for (i=0; i<p_pl.size(); i++) {
     if (p_lstatus[i] == 1) {
       pl += p_pl[i];
