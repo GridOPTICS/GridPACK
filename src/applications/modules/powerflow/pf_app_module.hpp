@@ -121,6 +121,7 @@ class PFAppModule
     void write();
     void writeBus(const char* signal);
     void writeBranch(const char* signal);
+    void writeHeader(const char *msg);
 
     /**
      * Redirect output from standard out

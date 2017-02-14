@@ -78,6 +78,7 @@ public:
     int ifound = 1;
     int nval = 0;
     int nline = 0;
+    gridpack::utility::StringUtils util;
     if (me == 0) {
       // Cheesy hack to find out how many lines are in the file. Just open
       // the file and read all lines, then close it and open it again.
@@ -89,7 +90,10 @@ public:
       } else {
         std::string line;
         if (std::getline(input,line)) {
+          util.trim(line);
           std::vector<std::string> split_line;
+          boost::split(split_line,line,boost::algorithm::is_any_of(" "),
+              boost::token_compress_on);
           nval = split_line.size() - 2;
           if (nval > 0) {
             nline = 1;
@@ -153,6 +157,7 @@ public:
         std::vector<std::string> split_line;
         std::string line;
         while(std::getline(input,line)) {
+          util.trim(line);
           boost::split(split_line,line,boost::algorithm::is_any_of(" "),
               boost::token_compress_on);
           table_t data;
@@ -250,7 +255,7 @@ public:
     int *ptr = array;
     int i;
     for (i=0; i<nsize; i++) {
-      array[i] = p_nobjs*idx + p_order[i];
+      array[i] = p_nvals*p_order[i] + idx;
       subscript[i] = ptr;
       ptr++;
     }
@@ -287,8 +292,8 @@ private:
 };
 
 
-} // namespace gridpack
 } // namespace bus_table
+} // namespace gridpack
 
 #endif
 
