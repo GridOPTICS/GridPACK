@@ -85,15 +85,23 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   int max_iteration = cursor->get("maxIteration",50);
   bool qlim = cursor->get("qLimit",false);
   ComplexType tol;
+  // Phase shift sign
+  double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
 
   int t_pti = timer->createCategory("PTI Parser");
   timer->start(t_pti);
   if (filetype == PTI23) {
     gridpack::parser::PTI23_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
   } else if (filetype == PTI33) {
     gridpack::parser::PTI33_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
   } else if (filetype == GOSS) {
     gridpack::parser::GOSS_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
@@ -101,7 +109,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->stop(t_pti);
 
   // Create serial IO object to export data from buses
-  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(512,network);
+  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(8192,network);
   char ioBuf[128];
 
   sprintf(ioBuf,"\nMaximum number of iterations: %d\n",max_iteration);
