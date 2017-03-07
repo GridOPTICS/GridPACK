@@ -143,5 +143,60 @@ void gridpack::state_estimation::SEFactory::configureSE(void)
   }
 }
 
+/**
+ * Check for lone buses in the system. Do this by looking for buses that
+ * have no branches attached to them or for whom all the branches attached
+ * to the bus have all transmission elements with status false (the element
+ * is off). Set status of bus to isolated so that it does not contribute to
+ * powerflow matrix
+ * @param stream optional stream pointer that can be used to print out IDs
+ * of isolated buses
+ * @return false if there is an isolated bus in the network
+ */
+bool gridpack::state_estimation::SEFactory::checkLoneBus(std::ofstream *stream)
+{
+  int numBus = p_network->numBuses();
+  int i, j, k;
+  bool bus_ok = true;
+  char buf[128];
+//  p_saveIsolatedStatus.clear();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) continue;
+    gridpack::state_estimation::SEBus *bus =
+      dynamic_cast<gridpack::state_estimation::SEBus*>
+      (p_network->getBus(i).get());
+    std::vector<boost::shared_ptr<gridpack::component::BaseComponent> > branches;
+    bus->getNeighborBranches(branches);
+    int size = branches.size();
+    bool ok = true;
+    if (size == 0) {
+      ok = false;
+    }
+    if (ok) {
+      ok = false;
+      for (j=0; j<size; j++) {
+        bool branch_ok = false;
+        std::vector<bool> status =
+          dynamic_cast<gridpack::state_estimation::SEBranch*>
+          (branches[j].get())->getLineStatus();
+        int nlines = status.size();
+        for (k=0; k<nlines; k++) {
+          if (status[k]) branch_ok = true;
+        }
+        if (branch_ok) ok = true;
+      }
+    }
+    if (!ok) {
+      sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
+      printf("\nLone bus %d found\n",bus->getOriginalIndex());
+      //p_saveIsolatedStatus.push_back(bus->isIsolated());
+      bus->setIsolated(true);
+      if (stream != NULL) *stream << buf;
+    }
+    if (!ok) bus_ok = false;
+  }
+  // Check whether bus_ok is true on all processors
+  return checkTrue(!bus_ok);
+  }
 } // namespace state_estimation
 } // namespace gridpack
