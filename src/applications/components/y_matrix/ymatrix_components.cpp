@@ -435,6 +435,8 @@ void gridpack::ymatrix::YMBranch::load(
   for (idx = 0; idx<p_elems; idx++) {
     bool xform = true;
     xform = xform && data->getValue(BRANCH_X, &rvar, idx);
+    //if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
+//    if (rvar >-1.0e-5 && rvar >=0.0) rvar =-1.0e-5;
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
@@ -612,6 +614,56 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
       aij = p_tap_ratio[idx]*aij;
       if (aij != zero) {
         if (!p_switched[idx]) {
+          *Yij = yij/conj(aij);
+          *Yii = -(yij-0.5*bij);
+          *Yii = (*Yii)/(aij*conj(aij));
+        } else {
+          *Yij = yij/aij;
+          *Yii = -(yij-0.5*bij);
+        }
+      }
+    } else {
+      // evaluate flow for regular line
+      *Yij = yij;
+      *Yii = -((*Yij)-0.5*bij);
+    }
+  }
+}
+
+/**
+ * Return contributions to Y-matrix from a specific transmission element
+ * @param tag character string for transmission element
+ * @param Yii contribution from "from" bus
+ * @param Yij contribution from line element
+ */
+void gridpack::ymatrix::YMBranch::getRvrsLineElements(const std::string tag,
+   gridpack::ComplexType *Yii, gridpack::ComplexType *Yij)// , gridpack::ComplexType *yii)
+{
+  gridpack::ComplexType zero = gridpack::ComplexType(0.0,0.0);
+  gridpack::ComplexType flow = zero;
+  *Yii = zero;
+  *Yij = zero;
+  int i, idx;
+  idx = -1;
+  // find line element corresponding to tag
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx >= 0) {
+    gridpack::ComplexType yij,aij,bij;
+    yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
+    bij = gridpack::ComplexType(0.0,p_charging[idx]);
+    //bij = 0.0;
+    if (yij != zero) yij = -1.0/yij;
+    if (p_xform[idx]) {
+      // evaluate flow for transformer
+      aij = gridpack::ComplexType(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+      aij = p_tap_ratio[idx]*aij;
+      if (aij != zero) {
+        if (p_switched[idx]) {
           *Yij = yij/conj(aij);
           *Yii = -(yij-0.5*bij);
           *Yii = (*Yii)/(aij*conj(aij));
