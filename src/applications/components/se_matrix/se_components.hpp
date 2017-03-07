@@ -464,6 +464,20 @@ class SEBranch
     bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
     /**
+     ** Return complex power for line element
+     ** @param tag describing line element on branch
+     ** @return complex power
+     **/
+    gridpack::ComplexType getComplexPower(std::string tag);
+
+    /**
+     ** Return complex power for line element at to end
+     ** @param tag describing line element on branch
+     ** @return complex power
+     **/
+    gridpack::ComplexType getRvrsComplexPower(std::string tag);
+
+    /**
      * Add a measurement to the branch
      * @param measurement a measurement struct that will be used to assign
      * internal paramters
@@ -614,6 +628,8 @@ class SEBranch
     double p_ybusr_rvrs, p_ybusi_rvrs;
     double p_theta;
     double p_sbase;
+    double p_shunt_bs;
+    double p_shunt_gs;
     std::vector<bool> p_branch_status;
     std::vector<std::string> p_tag;
     int p_elems;
@@ -646,6 +662,7 @@ private:
       & p_shunt_admt_g2
       & p_shunt_admt_b2
       & p_xform & p_shunt
+      & p_shunt_gs & p_shunt_bs
       & p_mode
       & p_ybusr_frwd & p_ybusi_frwd
       & p_ybusr_rvrs & p_ybusi_rvrs
