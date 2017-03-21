@@ -259,6 +259,28 @@ class BasePTIParser : public BaseParser<_network>
 
     }
 
+    /**
+     * Change the sign of the BRANCH_SHIFT variable. The sign convention
+     * for this variable is not consistent across different files
+     */
+    void changePhaseShiftSign()
+    {
+      int i, j, nelems;
+      double rval;
+      boost::shared_ptr<gridpack::component::DataCollection> data;
+      int nbranch = p_network->numBranches();
+      for (i=0; i<nbranch; i++) {
+        data = p_network->getBranchData(i);
+        data->getValue(BRANCH_NUM_ELEMENTS,&nelems);
+        for (j=0; j<nelems; j++) {
+          if (data->getValue(BRANCH_SHIFT,&rval,j)) {
+            rval *= -1.0;
+            data->setValue(BRANCH_SHIFT,rval,j);
+          }
+        }
+      }
+    }
+
   protected:
 
     /* ************************************************************************
@@ -1583,11 +1605,13 @@ class BasePTIParser : public BaseParser<_network>
       p_branchMap = branchMap;
     }
 
+
     /* ************************************************************************
      **************************************************************************
      ***** OBJECT DATA
      **************************************************************************
      *********************************************************************** */
+  private:
     boost::shared_ptr<_network> p_network;
 
     gridpack::utility::CoarseTimer *p_timer;

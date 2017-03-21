@@ -454,7 +454,7 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s %8d    %16.4f  %16.4f   %16.4f    %8.4f\n",
+          sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "PI") {
@@ -462,7 +462,7 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s %8d    %16.4f  %16.4f   %16.4f    %8.4f\n",
+          sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "QI") {
@@ -470,7 +470,7 @@ bool gridpack::state_estimation::SEBus::serialWrite(char *string,
           //          printf("    %s  %8d   %16.4f  %16.4f   %16.4f    %16.4f\n",
           //              type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
           //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s %8d    %16.4f  %16.4f   %16.4f    %8.4f\n",
+          sprintf(buf,"    %s %8d    %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),getOriginalIndex(),p_meas[i].p_value, estimate,
               estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         }
@@ -1406,22 +1406,31 @@ bool gridpack::state_estimation::SEBranch::serialWrite(char *string,
         double estimate;
         buf[0] = '\0';
         if (meas_type == "PIJ") {
-          estimate = p;
-          //          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
-          //              type.c_str(), bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
-          //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d  %8d   %s %16.4f  %16.4f   %16.4f    %8.4f\n",
+          s = getComplexPower(p_meas[i].p_ckt);
+          estimate = real(s)/p_sbase;
+          sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "QIJ") {
-          estimate = q;
-          //          printf("    %s  %8d  %8d  %16.4f  %16.4f   %16.4f    %16.4f\n",
-          //              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(), p_meas[i].p_value, estimate,
-          //              estimate-p_meas[i].p_value,p_meas[i].p_deviation);
-          sprintf(buf,"    %s  %8d  %8d   %s %16.4f  %16.4f   %16.4f    %8.4f\n",
+          s = getComplexPower(p_meas[i].p_ckt);
+          estimate = imag(s)/p_sbase;
+          sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
               type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
               p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
         } else if (meas_type == "IIJ") {
+        } else if (meas_type == "PJI") {
+          s = getRvrsComplexPower(p_meas[i].p_ckt);
+          estimate = real(s)/p_sbase;
+          sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+        } else if (meas_type == "QJI") {
+          s = getRvrsComplexPower(p_meas[i].p_ckt);
+          estimate = imag(s)/p_sbase;
+          sprintf(buf,"    %s  %8d  %8d   %s %16.5f  %16.5f   %16.5f    %8.4f\n",
+              type.c_str(),bus1->getOriginalIndex(),bus2->getOriginalIndex(),ckt.c_str(),
+              p_meas[i].p_value, estimate, estimate-p_meas[i].p_value,p_meas[i].p_deviation);
+        } else if (meas_type == "IJI") {
         }
         int buflen = strlen(buf);
         if (buflen + ilen < bufsize) {
@@ -1687,7 +1696,7 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
     int ncnt = 0;
     int i, j, im, jm, nsize;
     double v1, v2, theta;
-    double t,gij,bij,gijt,bijt; 
+    double t,gij,bij,shifter; 
     std::string ckt, type;
     v1 = bus1->getVoltage();
     v2 = bus2->getVoltage();
@@ -1704,65 +1713,56 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
           if (p_tag[j] == ckt) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
             ret = 1.0/ret;
-            if (p_tap_ratio[j] != 0.0) {
-              gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-              a = p_tap_ratio[j]*a;
-              t = p_tap_ratio[j]*p_tap_ratio[j];
-              gijt = real(ret/t);
-              bijt = imag(ret/t);
-              ret = ret/conj(a);
-            }
             gij=real(ret);
             bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
+            }
+
             if (!bus1->getReferenceBus()) {
               jm = bus1->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(v1*v2*(gij*sin(theta)
-                    -bij*cos(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(1.0/t*v1*v2*(gij*sin(theta+shifter)
+                    -bij*cos(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
               jm = bus1->matrixGetColIndex(1);
-              if (p_tap_ratio[j] != 0.0) {
-                values[ncnt] = gridpack::ComplexType(-v2*(gij*cos(theta)
-                    +bij*sin(theta)) +2*(gijt+p_shunt_admt_g1[j])*v1,0.0);
-              } else {
-                values[ncnt] = gridpack::ComplexType(-v2*(gij*cos(theta)
-                    +bij*sin(theta)) +2*(gij+p_shunt_admt_g1[j])*v1,0.0);
-              }
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*cos(theta+shifter)
+                  +bij*sin(theta+shifter)) +2*gij*v1/(t*t),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dPIJ/DVI
               jm = bus1->matrixGetColIndex(0);
-              if (p_tap_ratio[j] != 0.0) {
-                values[ncnt] = gridpack::ComplexType(-v2*(gijt*cos(theta)
-                    +bij*sin(theta)) +2*(gijt+p_shunt_admt_g1[j])*v1,0.0);
-              } else {
-                values[ncnt] = gridpack::ComplexType(-v2*(gij*cos(theta)
-                   +bij*sin(theta))+2*(gij +p_shunt_admt_g1[j])*v1,0.0);
-              }
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*cos(theta+shifter)
+                  +bij*sin(theta+shifter)) +2*gij*v1/(t*t),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             }
             if (!bus2->getReferenceBus()) {
               jm = bus2->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(-v1*v2*(gij*sin(theta)
-                    -bij*cos(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*v2*(gij*sin(theta+shifter)
+                    -bij*cos(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
               jm = bus2->matrixGetColIndex(1);
-              values[ncnt] = gridpack::ComplexType(-v1*(gij*cos(theta)
-                    +bij*sin(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*cos(theta+shifter)
+                    +bij*sin(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dPIJ/DVJ
               jm = bus2->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(-v1*(gij*cos(theta)
-                    +bij*sin(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*cos(theta+shifter)
+                    +bij*sin(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
@@ -1775,65 +1775,55 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
           if (p_tag[j] == ckt) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
             ret = 1.0/ret;
-            if (p_tap_ratio[j] != 0.0) {
-              gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-              a = p_tap_ratio[j]*a;
-              t = p_tap_ratio[j]*p_tap_ratio[j];
-              gijt = real(ret/t);
-              bijt = imag(ret/t);
-              ret = ret/conj(a);
-            }
             gij=real(ret);
             bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
+            }
             if (!bus1->getReferenceBus()) {
               jm = bus1->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(-v1*v2*(gij*cos(theta)
-                    +bij*sin(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*v2*(gij*cos(theta+shifter)
+                     + bij*sin(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
               jm = bus1->matrixGetColIndex(1);
-              if (p_tap_ratio[j] != 0.0) {
-                values[ncnt] = gridpack::ComplexType(-v2*(gij * sin(theta)
-                    - bij*cos(theta))-2*(bijt+p_shunt_admt_b1[j])*v1,0.0);
-              } else {
-                values[ncnt] = gridpack::ComplexType(-v2*(gij * sin(theta)
-                    - bij*cos(theta))-2*(bij+p_shunt_admt_b1[j])*v1,0.0);
-              }
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij * sin(theta+shifter)
+                    - bij*cos(theta+shifter))-2/(t*t)*(bij+B)*v1,0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dQIJ/DVI
               jm = bus1->matrixGetColIndex(0);
-              if (p_tap_ratio[j] != 0.0) {
-                values[ncnt] = gridpack::ComplexType(-v2*(gij * sin(theta)
-                    - bij*cos(theta))-2*(bijt+p_shunt_admt_b1[j])*v1,0.0);
-              } else {
-                values[ncnt] = gridpack::ComplexType(-v2*(gij*sin(theta)
-                    - bij*cos(theta))-2*(bij +p_shunt_admt_b1[j])*v1,0.0);
-              }
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij * sin(theta+shifter)
+                    - bij*cos(theta+shifter))-2/(t*t)*(bij+B)*v1,0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             }
             if (!bus2->getReferenceBus()) {
               jm = bus2->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(v1*v2*(gij*cos(theta)
-                    + bij*sin(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(1.0/t*v1*v2*(gij*cos(theta+shifter)
+                    + bij*sin(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
               jm = bus2->matrixGetColIndex(1);
-              values[ncnt] = gridpack::ComplexType(-v1*(gij*sin(theta)
-                    - bij*cos(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*sin(theta+shifter)
+                    - bij*cos(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dQIJ/DVJ
               jm = bus2->matrixGetColIndex(0);
-              values[ncnt] = gridpack::ComplexType(-v1*(gij*sin(theta)
-                    - bij*cos(theta)),0.0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*sin(theta+shifter)
+                    - bij*cos(theta+shifter)),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
@@ -1846,17 +1836,17 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
           if (p_tag[j] == ckt) {
             found = true;
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
             ret = 1.0/ret;
-            if (p_tap_ratio[j] != 0.0) {
-              gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-              a = p_tap_ratio[j]*a;
-              t = p_tap_ratio[j]*p_tap_ratio[j];
-              gijt = real(ret/t);
-              bijt = imag(ret/t);
-              ret = ret/conj(a);
-            }
             gij=real(ret);
             bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
+            }
             double Iij = sqrt((gij*gij+bij*bij) *(v1*v1+v2*v2-2*v1*v2*cos(theta))); 
             if (!bus1->getReferenceBus()) {
               jm = bus1->matrixGetColIndex(0);
@@ -1916,6 +1906,130 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
             }
           } 
         }
+      } else if (type == "PJI") {
+        int nsize = p_tag.size();
+        for (j=0; j<nsize; j++) {
+          if (p_tag[j] == ckt) {
+            found = true;
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
+            ret = 1.0/ret;
+            gij=real(ret);
+            bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
+            }
+
+            if (!bus1->getReferenceBus()) {
+              jm = bus1->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*v2*(gij*sin(-theta-shifter)
+                    -bij*cos(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              jm = bus1->matrixGetColIndex(1);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*cos(-theta-shifter)
+                  +bij*sin(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            } else {  // reference bus, only for dPIJ/DVI
+              jm = bus1->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*cos(-theta-shifter)
+                  +bij*sin(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            }
+            if (!bus2->getReferenceBus()) {
+              jm = bus2->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(1.0/t*v1*v2*(gij*sin(-theta-shifter)
+                    -bij*cos(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              jm = bus2->matrixGetColIndex(1);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*cos(-theta-shifter)
+                    +bij*sin(-theta-shifter))+2*gij*v2,0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            } else {  // reference bus, only for dPIJ/DVJ
+              jm = bus2->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*cos(-theta-shifter)
+                    +bij*sin(-theta-shifter))+2*gij*v2,0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            }
+          } 
+        }
+      } else if (type == "QJI") {
+        int nsize = p_tag.size();
+        for (j=0; j<nsize; j++) {
+          if (p_tag[j] == ckt) {
+            found = true;
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
+            ret = 1.0/ret;
+            gij=real(ret);
+            bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
+            }
+            if (!bus1->getReferenceBus()) {
+              jm = bus1->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(1.0/t*v1*v2*(gij*cos(-theta-shifter)
+                     + bij*sin(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              jm = bus1->matrixGetColIndex(1);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*sin(-theta-shifter)
+                    - bij*cos(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            } else {  // reference bus, only for dQIJ/DVI
+              jm = bus1->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*sin(-theta-shifter)
+                    - bij*cos(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            }
+            if (!bus2->getReferenceBus()) {
+              jm = bus2->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*v2*(gij*cos(-theta-shifter)
+                    + bij*sin(-theta-shifter)),0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+              jm = bus2->matrixGetColIndex(1);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*sin(-theta-shifter)
+                    - bij*cos(-theta-shifter))-2*(bij+B)*v2,0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            } else {  // reference bus, only for dQIJ/DVJ
+              jm = bus2->matrixGetColIndex(0);
+              values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*sin(-theta-shifter)
+                    - bij*cos(-theta-shifter))-2*(bij+B)*v2,0.0);
+              rows[ncnt] = im;
+              cols[ncnt] = jm;
+              ncnt++;
+            }
+          } 
+        }
+      } else if (type == "IJI") {  // TO DO
       }
       if (!found) {
         printf("No match found for branch measurement\n   type: %s\n"
@@ -2023,10 +2137,10 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
     for (i=0; i<nmeas; i++) {
       std::string type = p_meas[i].p_type;
       int idx1, idx2;
-      double t;
-      double gijt, bijt;
+      double gij,bij,t,shifter;
       idx1 = getBus1OriginalIndex();
       idx2 = getBus2OriginalIndex();
+      gridpack::ComplexType a(1.0,0.0);
 //      printf("branch %d %d type: %s row: %d\n",idx1,idx2,type.c_str(),idx[i]);
       if (type == "PIJ") {
         int nsize = p_tag.size();
@@ -2034,22 +2148,16 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
           if (p_tag[j] == p_meas[i].p_ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
             ret = 1.0/ret;
+            gij=real(ret);
+            bij=imag(ret);
             if (p_tap_ratio[j] != 0.0) {
-              gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-              a = p_tap_ratio[j]*a;
-              t = p_tap_ratio[j]*p_tap_ratio[j];
-              gijt = real(ret/t);
-              bijt = imag(ret/t);
-              ret = ret/conj(a);
-            }
-            double gij=real(ret);
-            double bij=imag(ret);
-            if (p_tap_ratio[j] != 0.0) {
-              ret1 =  v1*v1* (gijt + p_shunt_admt_g1[j]) - v1*v2*(gij*cos(theta) + bij*sin(theta));
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
             } else {
-              ret1 =  v1*v1* (gij + p_shunt_admt_g1[j]) - v1*v2*(gij*cos(theta) + bij*sin(theta));
+              shifter=0.0;
+              t=1.0;
             }
-      //      printf("ret1=%8.4f, meas=%8.4f\n",ret1, p_meas[i].p_value);
+            ret1 =  v1*v1*gij/(t*t) - 1.0/t*v1*v2*(gij*cos(theta+shifter) + bij*sin(theta+shifter));
           }
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret1),0.0);
@@ -2059,26 +2167,18 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
-            gridpack::ComplexType retq(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
             ret = 1.0/ret;
-            retq = 1.0/retq;
-            gridpack::ComplexType tmpB(0.0,0.5*p_charging[j]);
-//            printf ("temB = %8.4f\n", imag(tmpB));
-            retq += tmpB;
-            double gijt=real(retq);
-            double bijt=imag(retq);
+            gij=real(ret);
+            bij=imag(ret);
             if (p_tap_ratio[j] != 0.0) {
-              gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-              a = p_tap_ratio[j]*a;
-              t = p_tap_ratio[j]*p_tap_ratio[j];
-              gijt = real(retq/t);
-              bijt = imag(retq/t);
-              ret = ret/conj(a);
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
             }
-            double gij=real(ret);
-            double bij=imag(ret);
-            ret2 = - v1*v1* (bijt + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
-            //printf("ret2=%8.4f, meas=%8.4f\n",ret2, p_meas[i].p_value);
+            ret2 = - v1*v1* (bij+B)/(t*t) - 1.0/t*v1*v2*(gij*sin(theta+shifter) - bij*cos(theta+shifter));
           }
         }
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret2),0.0);
@@ -2088,30 +2188,67 @@ void gridpack::state_estimation::SEBranch:: vectorGetElementValues(ComplexType *
         for (j=0; j<nsize; j++) {
           if (p_tag[j] == p_meas[i].p_ckt) {
             gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
             ret = 1.0/ret;
+            gij=real(ret);
+            bij=imag(ret);
             if (p_tap_ratio[j] != 0.0) {
-              gridpack::ComplexType a(cos(p_phase_shift[j]),sin(p_phase_shift[j]));
-              a = p_tap_ratio[j]*a;
-              t = p_tap_ratio[j]*p_tap_ratio[j];
-              gijt = real(ret/t);
-              bijt = imag(ret/t);
-              ret = ret/conj(a);
-            }
-            double gij=real(ret);
-            double bij=imag(ret);
-            if (p_tap_ratio[j] != 0.0) {
-              ret1 =  v1*v1* (gijt + p_shunt_admt_g1[j]) - v1*v2*(gij*cos(theta) + bij*sin(theta));
-              ret2 = -v1*v1* (bijt + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
             } else {
-              ret1 =  v1*v1* (gij + p_shunt_admt_g1[j]) - v1*v2*(gij*cos(theta) + bij*sin(theta));
-              ret2 = - v1*v1* (bij + p_shunt_admt_b1[j]) - v1*v2*(gij*sin(theta) - bij*cos(theta));
+              shifter=0.0;
+              t=1.0;
             }
+            ret1 =  v1*v1*gij/(t*t) - 1.0/t*v1*v2*(gij*cos(theta+shifter) + bij*sin(theta+shifter));
+            ret2 = - v1*v1* (bij+B)/(t*t) - 1.0/t*v1*v2*(gij*sin(theta+shifter) - bij*cos(theta+shifter));
           }
         }
         ret3 = sqrt(ret1*ret1+ret2*ret2)/v1;
         //         values[ncnt] = p_meas[i].p_value-ret;
         values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret3),0.0);
         ncnt++;
+      } else if (type == "PJI") {
+        int nsize = p_tag.size();
+        for (j=0; j<nsize; j++) {
+          if (p_tag[j] == p_meas[i].p_ckt) {
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            ret = 1.0/ret;
+            gij=real(ret);
+            bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
+            }
+            ret1 =  v2*v2*gij - 1.0/t*v1*v2*(gij*cos(-theta-shifter) + bij*sin(-theta-shifter));
+          }
+        }
+        values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret1),0.0);
+        ncnt++;
+      } else if (type == "QJI") {
+        int nsize = p_tag.size();
+        for (j=0; j<nsize; j++) {
+          if (p_tag[j] == p_meas[i].p_ckt) {
+            gridpack::ComplexType ret(p_resistance[j],p_reactance[j]);
+            double B=0.5*p_charging[j];
+            ret = 1.0/ret;
+            gij=real(ret);
+            bij=imag(ret);
+            if (p_tap_ratio[j] != 0.0) {
+              shifter=p_phase_shift[j];
+              t = p_tap_ratio[j];
+            } else {
+              shifter=0.0;
+              t=1.0;
+            }
+            ret2 = - v2*v2* (bij+B) - 1.0/t*v1*v2*(gij*sin(-theta-shifter) - bij*cos(-theta-shifter));
+          }
+        }
+        values[ncnt] = gridpack::ComplexType(static_cast<double>(p_meas[i].p_value-ret2),0.0);
+        ncnt++;
+      } else if (type == "IJI") { //to do
       }
     } 
   } else if (p_mode == R_inv) {
@@ -2149,4 +2286,48 @@ void gridpack::state_estimation::SEBranch::getPQ(gridpack::state_estimation::SEB
   }
   *p = v1*v2*(ybusr*cs+ybusi*sn);
   *q = v1*v2*(ybusr*sn-ybusi*cs);
+}
+
+
+/**
+ * Return complex power for line element at to end
+ * @param tag describing line element on branch
+ * @return complex power
+ */
+gridpack::ComplexType gridpack::state_estimation::SEBranch::getRvrsComplexPower(
+        std::string tag)
+{
+  gridpack::ComplexType vi, vj, Yii, Yij, s;
+  s = ComplexType(0.0,0.0);
+  gridpack::state_estimation::SEBus *bus1 = 
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
+  vj = bus1->getComplexVoltage();
+  gridpack::state_estimation::SEBus *bus2 = 
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
+  vi = bus2->getComplexVoltage();
+  getRvrsLineElements(tag,&Yii,&Yij);
+  s = vi*conj(Yii*vi+Yij*vj)*p_sbase;
+  return s;
+}
+
+
+/**
+ * Return complex power for line element
+ * @param tag describing line element on branch
+ * @return complex power
+ */
+gridpack::ComplexType gridpack::state_estimation::SEBranch::getComplexPower(
+        std::string tag)
+{
+  gridpack::ComplexType vi, vj, Yii, Yij, s;
+  s = ComplexType(0.0,0.0);
+  gridpack::state_estimation::SEBus *bus1 = 
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus1().get());
+  vi = bus1->getComplexVoltage();
+  gridpack::state_estimation::SEBus *bus2 = 
+    dynamic_cast<gridpack::state_estimation::SEBus*>(getBus2().get());
+  vj = bus2->getComplexVoltage();
+  getLineElements(tag,&Yii,&Yij);
+  s = vi*conj(Yii*vi+Yij*vj)*p_sbase;
+  return s;
 }

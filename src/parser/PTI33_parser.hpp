@@ -984,8 +984,11 @@ class PTI33_parser : public BasePTIParser<_network>
           std::vector<std::string>  split_line3;
           boost::split(split_line3, line, boost::algorithm::is_any_of(","),
               boost::token_compress_on);
-          // Skip last line of 2-winding transformer block
+
           std::getline(input, line);
+          std::vector<std::string>  split_line4;
+          boost::split(split_line4, line, boost::algorithm::is_any_of(","),
+              boost::token_compress_on);
           // find branch corresponding to this transformer line. If it doesn't
           // exist, create one
           int l_idx = 0;
@@ -1113,10 +1116,12 @@ class PTI33_parser : public BasePTIParser<_network>
           // Add parameters from line 3
           /*
            * type: float
-           * BRANCH_TAP
+           * BRANCH_TAP: This is the ratio of WINDV1 and WINDV2
            */
-          p_branchData[l_idx]->addValue(BRANCH_TAP,
-              atof(split_line3[0].c_str()),nelems);
+          double windv1 = atof(split_line3[0].c_str());
+          double windv2 = atof(split_line4[0].c_str());
+          double tap = windv1/windv2;
+          p_branchData[l_idx]->addValue(BRANCH_TAP,tap,nelems);
 
           /*
            * type: float
@@ -1144,7 +1149,7 @@ class PTI33_parser : public BasePTIParser<_network>
            * BRANCH_RATING_C
            */
           p_branchData[l_idx]->addValue(BRANCH_RATING_C,
-              atof(split_line3[4].c_str()),nelems);
+              atof(split_line3[5].c_str()),nelems);
 
           nelems++;
           p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
