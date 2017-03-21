@@ -9,7 +9,7 @@
 /**
  * @file   functions.hpp
  * @author William A. Perkins
- * @date   2016-12-15 07:22:02 d3g096
+ * @date   2017-03-21 14:37:50 d3g096
  * 
  * @brief  
  * 
@@ -41,8 +41,13 @@ public:
   /// Destructor
   ~Function(void);
 
+  /// Get the function name
+  const std::string& name(void) const
+  {
+    return p_fname;
+  }
+
   /// Get the function arguments
-  
   const std::vector<ExpressionPtr>& args(void) const
   {
     return p_args;
@@ -98,7 +103,7 @@ typedef boost::shared_ptr<Function> FunctionPtr;
 } // namespace optimization
 } // namespace gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Function);
+BOOST_CLASS_EXPORT_KEY(gridpack::optimization::Function)
 
 
 #endif
