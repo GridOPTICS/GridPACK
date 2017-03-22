@@ -9,7 +9,7 @@
 /**
  * @file   functions.cpp
  * @author William A. Perkins
- * @date   2016-12-15 07:25:29 d3g096
+ * @date   2017-03-22 09:09:12 d3g096
  * 
  * @brief  
  * 
@@ -106,9 +106,7 @@ Function::p_render(void) const
 void 
 Function::p_accept(ExpressionVisitor& e)
 {
-  BOOST_FOREACH(ExpressionPtr a, p_args) {
-    a->accept(e);
-  }
+  e.visit(*this);
 }
 
 
@@ -117,7 +115,9 @@ Function::p_accept(ExpressionVisitor& e)
 // -------------------------------------------------------------
 void ExpressionVisitor::visit(Function& e) 
 {
-  e.accept(*this);
+  BOOST_FOREACH(ExpressionPtr a, e.args()) {
+    a->accept(*this);
+  }
 }
 
 // -------------------------------------------------------------
@@ -132,6 +132,14 @@ sin(ExpressionPtr e)
   return f;
 }
 
+ExpressionPtr
+sin(VariablePtr v)
+{
+  ExpressionPtr e(new VariableExpression(v));
+  return sin(e);
+}
+
+
 // -------------------------------------------------------------
 // cos
 // -------------------------------------------------------------
@@ -144,6 +152,12 @@ cos(ExpressionPtr e)
   return f;
 }
 
+ExpressionPtr
+cos(VariablePtr v)
+{
+  ExpressionPtr e(new VariableExpression(v));
+  return cos(e);
+}
 } // namespace optimization
 } // namespace gridpack
 

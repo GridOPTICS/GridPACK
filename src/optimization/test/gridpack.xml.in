@@ -26,5 +26,14 @@
         </JuliaOptions>
       </Optimizer>
     </UCTest>
+    <FunctionTest>
+      <Optimizer>
+        <Solver>Julia</Solver>
+        <Run>false</Run>
+        <File>FunctionTest</File>
+        <JuliaOptions>
+        </JuliaOptions>
+      </Optimizer>
+    </FunctionTest>
   </OptimizerTests>
 </GridPACK>

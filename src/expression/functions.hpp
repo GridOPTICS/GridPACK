@@ -9,7 +9,7 @@
 /**
  * @file   functions.hpp
  * @author William A. Perkins
- * @date   2017-03-21 14:37:50 d3g096
+ * @date   2017-03-22 07:56:54 d3g096
  * 
  * @brief  
  * 
@@ -93,10 +93,18 @@ private:
   /// Representation of the cosine function
   friend ExpressionPtr cos(ExpressionPtr e);
 
+  /// Representation of the sine function
+  friend ExpressionPtr sin(VariablePtr e);
+  
+  /// Representation of the cosine function
+  friend ExpressionPtr cos(VariablePtr e);
+
 };
 
 extern ExpressionPtr sin(ExpressionPtr e);
 extern ExpressionPtr cos(ExpressionPtr e);
+extern ExpressionPtr sin(VariablePtr e);
+extern ExpressionPtr cos(VariablePtr e);
 
 typedef boost::shared_ptr<Function> FunctionPtr;
 

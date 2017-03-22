@@ -9,7 +9,7 @@
 /**
  * @file   optimizer_test.cpp
  * @author William A. Perkins
- * @date   2016-12-13 11:31:12 d3g096
+ * @date   2017-03-22 08:49:29 d3g096
  * 
  * @brief  Unit tests for gridpack::optimization::Optimizer class
  * 
@@ -17,6 +17,7 @@
  */
 // -------------------------------------------------------------
 
+#include <cmath>
 #include <iostream>
 #include <vector>
 
@@ -356,6 +357,31 @@ BOOST_AUTO_TEST_CASE( uc )
   world.barrier();
 
 }
+
+BOOST_AUTO_TEST_CASE (function)
+{
+  gp::Communicator world;
+  gp::Communicator self(world.self());
+
+  gridpack::utility::Configuration::CursorPtr
+    uc_config(test_config->getCursor("FunctionTest"));
+
+  go::Optimizer opt(self);
+  opt.configure(uc_config);
+
+  go::VariablePtr A(new go::RealVariable(M_PI, 0, 2*M_PI));
+  go::VariablePtr B(new go::RealVariable(M_PI, 0, 2*M_PI));
+
+  opt.addVariable(A);
+  opt.addVariable(B);
+
+  opt.addConstraint( go::sin(A) + go::cos(B) > 0.0 );
+  opt.addToObjective( go::sin(A) + go::sin(B) );
+  
+  opt.minimize();
+
+  world.barrier();
+}  
 
 BOOST_AUTO_TEST_SUITE_END()
 

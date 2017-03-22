@@ -10,7 +10,7 @@
 /**
  * @file   expression.hpp
  * @author William A. Perkins
- * @date   2016-12-20 07:20:48 d3g096
+ * @date   2017-03-22 08:33:21 d3g096
  * 
  * @brief  
  * 
@@ -461,8 +461,8 @@ public:
   UnaryPlus(ExpressionPtr expr)
     : UnaryExpression(3, "+", expr)
   {
-    BOOST_ASSERT_MSG(expr, "UnaryExpression: null expression");
-    BOOST_ASSERT_MSG(!expr->null(), "UnaryExpression: null expression contents");
+    // BOOST_ASSERT_MSG(expr, "UnaryExpression: null expression");
+    // BOOST_ASSERT_MSG(!expr->null(), "UnaryExpression: null expression contents");
   }
 
   /// Protected copy constructor to avoid unwanted copies.
@@ -625,10 +625,10 @@ public:
   Multiplication(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(5, "*", lhs, rhs)
   {
-    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
-    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
-    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
-    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+    // BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    // BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    // BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    // BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
   }
 
   /// Copy constructor
@@ -764,10 +764,10 @@ public:
   Division(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(5, "/", lhs, rhs)
   {
-    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
-    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
-    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
-    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+    // BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    // BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    // BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    // BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
   }
 
   /// Destructor
@@ -905,10 +905,10 @@ public:
   Addition(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(6, "+", lhs, rhs)
   {
-    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
-    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
-    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
-    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+    // BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    // BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    // BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    // BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
   }
 
   /// Copy constructor
@@ -956,10 +956,10 @@ public:
   Subtraction(ExpressionPtr lhs, ExpressionPtr rhs)
     : BinaryExpression(6, "-", lhs, rhs)
   {
-    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
-    BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
-    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
-    BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
+    // BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    // BOOST_ASSERT_MSG(rhs, "BinaryExpression: RHS null");
+    // BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    // BOOST_ASSERT_MSG(!rhs->null(), "BinaryExpression: RHS null contests");
   }
 
   /// Copy constructor
@@ -1216,8 +1216,8 @@ public:
   Exponentiation(ExpressionPtr lhs, int exp)
     : BinaryExpression(2, "^", lhs, ExpressionPtr(new IntegerConstant(exp)))
   {
-    BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
-    BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
+    // BOOST_ASSERT_MSG(lhs, "BinaryExpression: LHS null");
+    // BOOST_ASSERT_MSG(!lhs->null(), "BinaryExpression: LHS null contents");
   }
 
   /// Protected copy constructor to avoid unwanted copies.

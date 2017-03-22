@@ -10,7 +10,7 @@
 /**
  * @file   constraint_renderer.hpp
  * @author William A. Perkins
- * @date   2017-03-21 14:33:06 d3g096
+ * @date   2017-03-22 09:15:48 d3g096
  * 
  * @brief  
  * 
@@ -236,8 +236,8 @@ public:
       }
       first = false;
       a->accept(*this);
-      p_out << a->render();
     }
+    p_out << ")";
   }
 
 protected:
