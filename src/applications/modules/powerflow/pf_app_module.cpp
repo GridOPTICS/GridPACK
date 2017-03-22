@@ -84,15 +84,23 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   p_tolerance = cursor->get("tolerance",1.0e-6);
   p_max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
+  // Phase shift sign
+  double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
 
   int t_pti = timer->createCategory("Powerflow: Network Parser");
   timer->start(t_pti);
   if (filetype == PTI23) {
     gridpack::parser::PTI23_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
   } else if (filetype == PTI33) {
     gridpack::parser::PTI33_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
   } else if (filetype == GOSS) {
     gridpack::parser::GOSS_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());

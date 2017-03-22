@@ -55,6 +55,8 @@ class SEFactory
      */
     void configureSE(void);
 
+    bool checkLoneBus(std::ofstream *stream);
+
   private:
 
     NetworkPtr p_network;

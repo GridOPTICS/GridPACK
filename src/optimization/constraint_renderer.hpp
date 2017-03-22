@@ -10,7 +10,7 @@
 /**
  * @file   constraint_renderer.hpp
  * @author William A. Perkins
- * @date   2016-12-08 09:06:20 d3g096
+ * @date   2017-03-22 09:15:48 d3g096
  * 
  * @brief  
  * 
@@ -30,6 +30,7 @@
 #include <boost/format.hpp>
 
 #include "gridpack/expression/expression.hpp"
+#include "gridpack/expression/functions.hpp"
 
 namespace gridpack {
 namespace optimization {
@@ -223,7 +224,21 @@ public:
   {
     this->visit(static_cast<Constraint&>(e));
   }
-  
+
+  void visit(Function& f)
+  {
+    bool first(true);
+    p_out << f.name(); 
+    p_out << "(";
+    BOOST_FOREACH(const ExpressionPtr a, f.args()) {
+      if (!first) {
+        p_out << ", ";
+      }
+      first = false;
+      a->accept(*this);
+    }
+    p_out << ")";
+  }
 
 protected:
 
