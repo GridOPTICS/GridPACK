@@ -4,15 +4,16 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [name]"
+usage="$0 [-d|-r] [-s] [name]"
 
-set -- `getopt d $*`
+set -- `getopt rds $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
 fi
 
 build="RelWithDebInfo"
+shared="OFF"
 for o in $*; do
     case $o in
         -d)
@@ -21,6 +22,10 @@ for o in $*; do
             ;;
         -r)
             build="Release"
+            shift
+            ;;
+        -s)
+            shared="ON"
             shift
             ;;
         --)
@@ -46,7 +51,7 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
-        -D BUILD_SHARED_LIBS:BOOL=OFF \
+        -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
