@@ -193,7 +193,7 @@ elif [ $host == "pe10900intel" ]; then
 
 elif [ $host == "WE32673" ]; then
 
-    # Mac using stock CLang 3.8 compilers and OpenMPI via MacPorts
+    # Mac using CLang 3.8 compilers and OpenMPI via MacPorts
     # The following MacPorts packages are installed:
     #   clang-3.8 @3.8.1_8+analyzer
     #   openmpi-clang38 @1.10.3_0+gcc6
@@ -209,10 +209,10 @@ elif [ $host == "WE32673" ]; then
     prefix="/Users/d3g096/Projects/GridPACK"
 
     cmake $options \
-        -D GA_DIR:STRING="$prefix" \
+        -D GA_DIR:STRING="/opt/local" \
         -D BOOST_ROOT:STRING="/opt/local" \
-        -D PETSC_DIR:STRING="$prefix/petsc-3.7.4" \
-        -D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
+        -D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
+        -D PETSC_ARCH:STRING="arch-macosx-clang-real-opt" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
