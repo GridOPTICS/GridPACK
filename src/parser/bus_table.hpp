@@ -163,8 +163,8 @@ public:
           table_t data;
           data.order = ncnt;
           std::string tag = split_line[1];
-          util.clean2Char(tag);
-          strncpy(data.tag,tag.c_str(),2);
+          std::string new_tag = util.clean2Char(tag);
+          strncpy(data.tag,new_tag.c_str(),2);
           bus_id.push_back(atoi(split_line[0].c_str()));
           order.push_back(data);
           for (i=0; i<nval; i++) {
@@ -178,6 +178,9 @@ public:
             ptr = buf;
             lo = ncnt*nval;
           }
+        }
+        if (ncnt != nline) {
+          printf("Mismatch parsing data in table %s\n",filename.c_str());
         }
         if (ncnt%NUM_SLICES != 0) {
           hi = nline*nval-1;
@@ -198,13 +201,12 @@ public:
       delete hash;
       p_local_idx.clear();
       p_tags.clear();
-      std::string tmp;
       int i;
       for (i=0; i<bus_id.size(); i++) {
         p_local_idx.push_back(bus_id[i]);
-        tmp.clear();
-        tmp.append(order[i].tag,2);
-        p_tags.push_back(tmp);
+        std::string tmp(order[i].tag);
+        std::string new_tag = util.clean2Char(tmp);
+        p_tags.push_back(new_tag);
         p_order.push_back(order[i].order);
       }
     }
@@ -246,6 +248,10 @@ public:
    */
   void getValues(int idx, std::vector<double> &values) {
     values.clear();
+    if (idx < 0 || idx >= p_nvals) {
+      printf("Requested data is out of range of bus table (%d not in [0,%d])\n",
+          idx,p_nobjs-1);
+    }
     //construct array of indices to retrieve data
     int nsize = p_local_idx.size();
     double v[nsize];

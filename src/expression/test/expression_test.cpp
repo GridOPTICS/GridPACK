@@ -9,7 +9,7 @@
 /**
  * @file   expression_test.cpp
  * @author William A. Perkins
- * @date   2017-03-22 08:26:50 d3g096
+ * @date   2017-03-23 08:05:58 d3g096
  * 
  * @brief  
  * 
@@ -109,6 +109,11 @@ BOOST_AUTO_TEST_CASE( serialize )
   exprs.push_back( (6.0*C + A)/4.6 ); 
   exprs.push_back( 6*B + 2*(A^2) ); 
   exprs.push_back( 6*C + ((2*A)^2) ); 
+
+  exprs.push_back(four + six*A + two*B^2);
+
+  // need to account for C++ operator precedence:
+  exprs.push_back(four + six*A + two*(B^2));
 
   bool nullchk;
 
