@@ -241,21 +241,23 @@ elif [ $host == "olympus.local" ]; then
 elif [ $host == "gridpackvm" ]; then
 
     prefix="$HOME/gridpack"
-    root="/opt/ibm/ILOG/CPLEX_Studio1261/"
+
+    CC=gcc
+    CXX=g++
+    export CC CXX
+
     cmake -Wno-dev --debug-try-compile \
-	-D PETSC_DIR:STRING="$prefix/petsc-3.6.2" \
-	-D PETSC_ARCH:STRING="arch-linux-real-opt" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
+	-D PETSC_ARCH:STRING="arch-ubuntu-real-opt" \
 	-D GA_DIR:STRING="$prefix" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
 	-D MPI_C_COMPILER:STRING="mpicc" \
 	-D MPIEXEC:STRING="mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
-        -D USE_GLPK:BOOL=OFF \
-        -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D USE_CPLEX:BOOL=ON \
-        -D CPLEX_ROOT_DIR:PATH="$root" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/usr" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
 	$common_flags ..
 
 else
