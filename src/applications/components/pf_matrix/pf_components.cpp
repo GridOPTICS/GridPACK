@@ -1204,6 +1204,52 @@ std::vector<double> gridpack::powerflow::PFBus::getGeneratorParticipation()
 }
 
 /**
+ * Set value of real power on individual generators
+ * @param tag generator ID
+ * @param value new value of real power
+ */
+void gridpack::powerflow::PFBus::setGeneratorRealPower(
+    std::string tag, double value)
+{
+  int i, idx;
+  idx = -1;
+  for (i=0; i<p_ngen; i++) {
+    if (p_gid[i] == tag) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx != -1) {
+    p_pg[idx] = value;
+  } else {
+    printf("No generator found for tag: (%s)\n",tag.c_str());
+  }
+}
+
+/**
+ * Set value of real power on individual generators
+ * @param tag generator ID
+ * @param value new value of real power
+ */
+void gridpack::powerflow::PFBus::setLoadRealPower(
+    std::string tag, double value)
+{
+  int i, idx;
+  idx = -1;
+  for (i=0; i<p_ngen; i++) {
+    if (p_lid[i] == tag) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx != -1) {
+    p_pl[idx] = value;
+  } else {
+    printf("No load found for tag: (%s)\n",tag.c_str());
+  }
+}
+
+/**
  *  Simple constructor
  */
 gridpack::powerflow::PFBranch::PFBranch(void)

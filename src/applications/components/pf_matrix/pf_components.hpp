@@ -304,6 +304,20 @@ class PFBus
      */
     std::vector<double> getGeneratorParticipation();
 
+    /**
+     * Set value of real power on individual generators
+     * @param tag generator ID
+     * @param value new value of real power
+     */
+    void setGeneratorRealPower(std::string tag, double value);
+
+    /**
+     * Set value of real power on individual loads
+     * @param tag load ID
+     * @param value new value of real power
+     */
+    void setLoadRealPower(std::string tag, double value);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
