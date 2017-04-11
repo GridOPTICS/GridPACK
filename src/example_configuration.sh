@@ -4,15 +4,16 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [name]"
+usage="$0 [-d|-r] [-s] [name]"
 
-set -- `getopt d $*`
+set -- `getopt rds $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
 fi
 
 build="RelWithDebInfo"
+shared="OFF"
 for o in $*; do
     case $o in
         -d)
@@ -21,6 +22,10 @@ for o in $*; do
             ;;
         -r)
             build="Release"
+            shift
+            ;;
+        -s)
+            shared="ON"
             shift
             ;;
         --)
@@ -46,7 +51,7 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
-        -D BUILD_SHARED_LIBS:BOOL=OFF \
+        -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
@@ -193,7 +198,7 @@ elif [ $host == "pe10900intel" ]; then
 
 elif [ $host == "WE32673" ]; then
 
-    # Mac using stock CLang 3.8 compilers and OpenMPI via MacPorts
+    # Mac using CLang 3.8 compilers and OpenMPI via MacPorts
     # The following MacPorts packages are installed:
     #   clang-3.8 @3.8.1_8+analyzer
     #   openmpi-clang38 @1.10.3_0+gcc6
@@ -209,10 +214,10 @@ elif [ $host == "WE32673" ]; then
     prefix="/Users/d3g096/Projects/GridPACK"
 
     cmake $options \
-        -D GA_DIR:STRING="$prefix" \
+        -D GA_DIR:STRING="/opt/local" \
         -D BOOST_ROOT:STRING="/opt/local" \
-        -D PETSC_DIR:STRING="$prefix/petsc-3.7.4" \
-        -D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
+        -D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
+        -D PETSC_ARCH:STRING="arch-macosx-clang-real-opt" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
@@ -241,21 +246,23 @@ elif [ $host == "olympus.local" ]; then
 elif [ $host == "gridpackvm" ]; then
 
     prefix="$HOME/gridpack"
-    root="/opt/ibm/ILOG/CPLEX_Studio1261/"
+
+    CC=gcc
+    CXX=g++
+    export CC CXX
+
     cmake -Wno-dev --debug-try-compile \
-	-D PETSC_DIR:STRING="$prefix/petsc-3.6.2" \
-	-D PETSC_ARCH:STRING="arch-linux-real-opt" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
+	-D PETSC_ARCH:STRING="arch-ubuntu-real-opt" \
 	-D GA_DIR:STRING="$prefix" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
 	-D MPI_C_COMPILER:STRING="mpicc" \
 	-D MPIEXEC:STRING="mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
-        -D USE_GLPK:BOOL=OFF \
-        -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D USE_CPLEX:BOOL=ON \
-        -D CPLEX_ROOT_DIR:PATH="$root" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/usr" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
 	$common_flags ..
 
 else

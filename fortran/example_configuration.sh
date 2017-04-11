@@ -73,8 +73,8 @@ elif [ "$host" == "gridpackvm" ]; then
     
     prefix="/home/gridpack/gridpack"
     cmake $options \
-        -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D GRIDPACK_DIR:PATH="$prefix" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
         $common_flags \
         ..
     
