@@ -1236,7 +1236,7 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
 {
   int i, idx;
   idx = -1;
-  for (i=0; i<p_ngen; i++) {
+  for (i=0; i<p_nload; i++) {
     if (p_lid[i] == tag) {
       idx = i;
       break;
