@@ -423,6 +423,21 @@ gridpack::ComplexType gridpack::ymatrix::YMBranch::getReverseYBus(void)
 void gridpack::ymatrix::YMBranch::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  // This routine may be called more than once so clear all vectors
+  p_reactance.clear();
+  p_resistance.clear();
+  p_tap_ratio.clear();
+  p_phase_shift.clear();
+  p_charging.clear();
+  p_shunt_admt_g1.clear();
+  p_shunt_admt_b1.clear();
+  p_shunt_admt_g2.clear();
+  p_shunt_admt_b2.clear();
+  p_xform.clear();
+  p_shunt.clear();
+  p_branch_status.clear();
+  p_switched.clear();
+  p_tag.clear();
   bool ok = true;
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;

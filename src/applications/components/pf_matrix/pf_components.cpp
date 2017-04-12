@@ -359,6 +359,21 @@ void gridpack::powerflow::PFBus::load(
   p_data = data.get();
   YMBus::load(data);
 
+  // This routine may be called more than once, so clear all vectors
+  p_pg.clear();
+  p_qg.clear();
+  p_pFac.clear();
+  p_gstatus.clear();
+  p_qmin.clear();
+  p_qmax.clear();
+  p_gid.clear();
+  p_pt.clear();
+  p_pb.clear();
+  p_pl.clear();
+  p_ql.clear();
+  p_lstatus.clear();
+  p_lid.clear();
+
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
@@ -1475,6 +1490,25 @@ void gridpack::powerflow::PFBranch::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   YMBranch::load(data);
+
+  // This routine may be called more than once so clear all vectors
+  p_reactance.clear();
+  p_resistance.clear();
+  p_tap_ratio.clear();
+  p_phase_shift.clear();
+  p_charging.clear();
+  p_shunt_admt_g1.clear();
+  p_shunt_admt_b1.clear();
+  p_shunt_admt_g2.clear();
+  p_shunt_admt_b2.clear();
+  p_xform.clear();
+  p_shunt.clear();
+  p_rateA.clear();
+  p_rateB.clear();
+  p_rateC.clear();
+  p_branch_status.clear();
+  p_ckt.clear();
+  p_ignore.clear();
 
   bool ok = true;
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
