@@ -325,6 +325,7 @@ class PFBus
     bool p_load;
     int p_mode;
     bool p_ignore;
+    bool p_reset;
 
     // p_v and p_a are initialized to p_voltage and p_angle respectively,
     // but may be subject to change during the NR iterations
@@ -394,7 +395,8 @@ private:
       & p_isPV
       & p_saveisPV
       & p_ngen & p_type & p_nload
-      & p_area;
+      & p_area
+      & p_reset;
   }  
 
 };
