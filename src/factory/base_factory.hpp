@@ -255,11 +255,13 @@ class BaseFactory {
       timer->start(t_nbus);
       timer->stop(t_nbus);
       int i;
+      int rank = p_network->communicator().rank();
 
       // Invoke load method on all bus objects
       int t_load1 = timer->createCategory("Factory:load:bus");
       timer->start(t_load1);
       for (i=0; i<p_numBuses; i++) {
+        p_network->getBus(i)->setRank(rank);
         p_network->getBus(i)->load(p_network->getBusData(i));
         if (p_network->getBus(i)->getReferenceBus())
           p_network->setReferenceBus(i);
@@ -270,6 +272,7 @@ class BaseFactory {
       int t_load2 = timer->createCategory("Factory:load:branch");
       timer->start(t_load2);
       for (i=0; i<p_numBranches; i++) {
+        p_network->getBranch(i)->setRank(rank);
         p_network->getBranch(i)->load(p_network->getBranchData(i));
       }
       timer->stop(t_load2);
