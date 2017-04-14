@@ -432,7 +432,7 @@ void GenMatVecInterface::slabSetValues(RealType **values)
  * Simple constructor
  */
 BaseComponent::BaseComponent(void)
-  : p_XCBuf(NULL), p_XCBufSize(0), p_mode(0)
+  : p_XCBuf(NULL), p_XCBufSize(0), p_mode(0), p_rank(-1)
 {
 }
 
@@ -546,6 +546,25 @@ void BaseComponent::saveData(
   // This is a no-op that can be overridden by the user to store internal state
   // variables in the data collection object
 }
+
+/**
+ * Set rank holding the component
+ * @param rank processor rank holding the component
+ */
+void BaseComponent::setRank(int rank)
+{
+  p_rank = rank;
+}
+
+/**
+ * Get rank holding the component
+ * @return processor rank holding the component
+ */
+int BaseComponent::getRank(void) const
+{
+  return p_rank;
+}
+
 
 // Base implementation for a bus object. Provides a mechanism for the bus to
 // provide a list of the branches that are directly connected to it as well as a
