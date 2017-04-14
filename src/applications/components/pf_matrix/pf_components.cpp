@@ -53,7 +53,8 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_ngen = 0;
   p_data = NULL;
   p_ignore = false;
-  p_reset = false;
+  p_vMag_ptr = NULL;
+  p_vAng_ptr = NULL;
 }
 
 /**
@@ -476,11 +477,8 @@ void gridpack::powerflow::PFBus::load(
     }
   }
   // If this is being called a second time, then update pointers
-  if (p_reset) {
-    *p_vMag_ptr = p_v;
-    *p_vAng_ptr = p_a;
-  }
-  p_reset = true;
+  if (p_vMag_ptr) *p_vMag_ptr = p_v;
+  if (p_vAng_ptr) *p_vAng_ptr = p_a;
 }
 
 /**
