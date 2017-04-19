@@ -308,15 +308,19 @@ class PFBus
      * Set value of real power on individual generators
      * @param tag generator ID
      * @param value new value of real power
+     * @param data data collection object associated with bus
      */
-    void setGeneratorRealPower(std::string tag, double value);
+    void setGeneratorRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
 
     /**
      * Set value of real power on individual loads
      * @param tag load ID
      * @param value new value of real power
+     * @param data data collection object associated with bus
      */
-    void setLoadRealPower(std::string tag, double value);
+    void setLoadRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
 
   private:
     double p_shunt_gs;

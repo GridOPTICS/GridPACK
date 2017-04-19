@@ -1227,9 +1227,10 @@ std::vector<double> gridpack::powerflow::PFBus::getGeneratorParticipation()
  * Set value of real power on individual generators
  * @param tag generator ID
  * @param value new value of real power
+ * @param data data collection object associated with bus
  */
 void gridpack::powerflow::PFBus::setGeneratorRealPower(
-    std::string tag, double value)
+    std::string tag, double value, gridpack::component::DataCollection *data)
 {
   int i, idx;
   idx = -1;
@@ -1240,7 +1241,9 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
     }
   }
   if (idx != -1) {
-    p_pg[idx] = value;
+    if (!data->setValue(GENERATOR_PG,value,idx)) {
+      data->addValue(GENERATOR_PG,value,idx);
+    }
   } else {
     printf("No generator found for tag: (%s)\n",tag.c_str());
   }
@@ -1250,9 +1253,10 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
  * Set value of real power on individual generators
  * @param tag generator ID
  * @param value new value of real power
+ * @param data data collection object associated with bus
  */
 void gridpack::powerflow::PFBus::setLoadRealPower(
-    std::string tag, double value)
+    std::string tag, double value, gridpack::component::DataCollection *data)
 {
   int i, idx;
   idx = -1;
@@ -1263,7 +1267,9 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
     }
   }
   if (idx != -1) {
-    p_pl[idx] = value;
+    if (!data->setValue(LOAD_PL,value,idx)) {
+      data->addValue(LOAD_PL,value,idx);
+    }
   } else {
     printf("No load found for tag: (%s)\n",tag.c_str());
   }
