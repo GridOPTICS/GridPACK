@@ -31,23 +31,46 @@ set(target_libraries
     ${GOSS_LIBRARY}
     ${APR_LIBRARY})
 
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR}
-      ${CMAKE_CURRENT_SOURCE_DIR}/base_classes
-      ${CMAKE_CURRENT_SOURCE_DIR}/model_classes)
+set(ds_include_dirs
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/base_classes
+    ${CMAKE_CURRENT_SOURCE_DIR}/model_classes)
+include_directories(BEFORE ${ds_include_dirs})
 
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
 add_library(gridpack_dynamic_simulation_full_y_module
-   dsf_app_module.cpp
-   dsf_factory_module.cpp
-   dsf_components_module.cpp
-   dsf_generator_factory_module.cpp
-   base_classes/base_generator_model.cpp
-   base_classes/base_exciter_model.cpp
-   base_classes/base_governor_model.cpp
-   model_classes/classical.cpp
+  dsf_app_module.cpp
+  dsf_factory.cpp
+  dsf_components.cpp
+  generator_factory.cpp
+  load_factory.cpp
+  relay_factory.cpp
+  base_classes/base_generator_model.cpp
+  base_classes/base_exciter_model.cpp
+  base_classes/base_governor_model.cpp
+  base_classes/base_relay_model.cpp
+  base_classes/base_load_model.cpp
+  model_classes/classical.cpp
+  model_classes/gensal.cpp
+  model_classes/exdc1.cpp
+  model_classes/wsieg1.cpp
+  model_classes/GainBlockClass.cpp
+  model_classes/BackLashClass.cpp
+  model_classes/DBIntClass.cpp
+  model_classes/genrou.cpp
+  model_classes/esst4b.cpp
+  model_classes/esst1a.cpp
+  model_classes/wshygp.cpp
+  model_classes/ggov1.cpp
+  model_classes/lvshbl.cpp
+  model_classes/frqtpat.cpp
+  model_classes/distr1.cpp
+  model_classes/acmotor.cpp
+  model_classes/ieel.cpp
+  model_classes/motorw.cpp
 )
 
 # -------------------------------------------------------------
@@ -61,13 +84,33 @@ target_link_libraries(gridpack_dynamic_simulation_full_y_module
 # -------------------------------------------------------------
 install(FILES 
   dsf_app_module.hpp
-  dsf_factory_module.hpp
-  dsf_components_module.hpp
-  dsf_generator_factory_module.hpp
+  dsf_components.hpp
+  dsf_factory.hpp
+  relay_factory.hpp
+  generator_factory.hpp
+  load_factory.hpp
   base_classes/base_generator_model.hpp
   base_classes/base_exciter_model.hpp
   base_classes/base_governor_model.hpp
+  base_classes/base_relay_model.hpp
+  base_classes/base_load_model.hpp
   model_classes/classical.hpp
+  model_classes/DBIntClass.hpp
+  model_classes/exdc1.hpp
+  model_classes/GainBlockClass.hpp
+  model_classes/gensal.hpp
+  model_classes/wsieg1.hpp
+  model_classes/genrou.hpp
+  model_classes/esst4b.hpp
+  model_classes/esst1a.hpp
+  model_classes/wshygp.hpp
+  model_classes/ggov1.hpp
+  model_classes/lvshbl.hpp
+  model_classes/frqtpat.hpp
+  model_classes/distr1.hpp
+  model_classes/acmotor.hpp
+  model_classes/ieel.hpp
+  model_classes/motorw.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
