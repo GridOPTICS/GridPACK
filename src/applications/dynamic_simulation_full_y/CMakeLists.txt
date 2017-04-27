@@ -30,6 +30,12 @@ set(target_libraries
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
 
+include_directories(BEFORE
+ ${CMAKE_CURRENT_SOURCE_DIR}/../modules/dynamic_simulation_full_y/model_classes)
+include_directories(BEFORE
+ ${CMAKE_CURRENT_SOURCE_DIR}/../modules/dynamic_simulation_full_y/base_classes)
+include_directories(BEFORE
+ ${CMAKE_CURRENT_SOURCE_DIR}/../modules/dynamic_simulation_full_y)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (GA_FOUND)
