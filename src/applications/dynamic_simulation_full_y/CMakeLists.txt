@@ -16,7 +16,6 @@
 set(target_libraries
     gridpack_dynamic_simulation_full_y_module
     gridpack_powerflow_module
-    gridpack_dsmatrix_components
     gridpack_ymatrix_components
     gridpack_components
     gridpack_partition
