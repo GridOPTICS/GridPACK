@@ -26,14 +26,6 @@ main(int argc, char **argv)
 {
 
   gridpack::parallel::Environment env(argc,argv);
-#if 0
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-  GA_Initialize();
-
-  int stack = 8000000, heap = 8000000;
-  MA_init(C_DBL, stack, heap);
-#endif
 
   // Initialize Math libraries
   gridpack::math::Initialize();
@@ -45,11 +37,5 @@ main(int argc, char **argv)
   gridpack::math::Finalize();
 
   GA_Terminate();
-#if 0
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
-  return ierr;
-#else
   return 0;
-#endif
 }

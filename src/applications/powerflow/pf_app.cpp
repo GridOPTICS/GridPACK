@@ -117,22 +117,11 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   sprintf(ioBuf,"\nConvergence tolerance: %f\n",tolerance);
   busIO.header(ioBuf);
 
-//  std::string unpartout(cursor->get("networkUnpartitionedGraph", ""));
-//  std::string partout(cursor->get("networkPartitionedGraph", ""));
-
-//  if (!unpartout.empty()) {
-//    network->writeGraph(unpartout);
-//  }
-
   // partition network
   int t_part = timer->createCategory("Partition");
   timer->start(t_part);
   network->partition();
   timer->stop(t_part);
-
-//  if (!partout.empty()) {
-//    network->writeGraph(partout);
-//  }
 
   // create factory
   gridpack::powerflow::PFFactory factory(network);
@@ -169,19 +158,8 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   int t_cmap = timer->createCategory("Create Mappers");
   timer->start(t_cmap);
   factory.setMode(YBus); 
-#if 0
-  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
-#endif
+
   timer->stop(t_cmap);
-  int t_mmap = timer->createCategory("Map to Matrix");
-  timer->start(t_mmap);
-#if 0
-  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  busIO.header("\nY-matrix values\n");
-  Y->print();
-//  Y->save("Ybus.m");
-#endif
-  timer->stop(t_mmap);
 
 // start QLim Loop
   bool repeat = true; 
@@ -209,16 +187,15 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   timer->start(t_vmap);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
   timer->stop(t_vmap);
-//  PQ->print();
+
   timer->start(t_cmap);
   factory.setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
   timer->stop(t_cmap);
+  int t_mmap = timer->createCategory("Map to Matrix");
   timer->start(t_mmap);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
   timer->stop(t_mmap);
-//  busIO.header("\nJacobian values\n");
-//  J->print();
 
   // Create X vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
@@ -239,11 +216,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   busIO.header("\nCalling solver\n");
   int t_lsolv = timer->createCategory("Solve Linear Equation");
   timer->start(t_lsolv);
-//    char dbgfile[32];
-//    sprintf(dbgfile,"j0.bin");
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq0.bin");
-//    PQ->saveBinary(dbgfile);
   solver.solve(*PQ, *X);
   timer->stop(t_lsolv);
   tol = PQ->normInfinity();
@@ -269,8 +241,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     // Create new versions of Jacobian and PQ vector
     timer->start(t_vmap);
     vMap.mapToVector(PQ);
-//    busIO.header("\nnew PQ vector\n");
-//    PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     factory.setMode(Jacobian);
@@ -280,21 +250,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     // Create linear solver
     timer->start(t_lsolv);
     X->zero(); //might not need to do this
-#if 1
-//    sprintf(dbgfile,"j%d.bin",iter+1);
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq%d.bin",iter+1);
-//    PQ->saveBinary(dbgfile);
     solver.solve(*PQ, *X);
-#else
-//    sprintf(dbgfile,"j%d.bin",iter+1);
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq%d.bin",iter+1);
-//    PQ->saveBinary(dbgfile);
-    gridpack::math::LinearSolver isolver(*J);
-    isolver.configure(cursor);
-    isolver.solve(*PQ, *X);
-#endif
     timer->stop(t_lsolv);
 
     tol = PQ->normInfinity();

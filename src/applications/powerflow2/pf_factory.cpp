@@ -110,37 +110,5 @@ void gridpack::powerflow::PFFactory::setJacobian(void)
   }*/
 }
 
-/**
- * Get values from the admittance (Y-Bus) matrix
- */
-#if 0
-gridpack::ComplexType gridpack::powerflow::PFFactory::calMis(
-    gridpack::math::Vector V,
-    gridpack::math::Vector SBUS)
-{
-  int numBus = p_network->numBuses();
-  int numBranch = p_network->numBranches();
-  int i;
-  gridpack::ComplexType ibus;
-  gridpack::ComplexType mis;
-
-  // MIS = V * conj (YBus * V) - SBUS
-
-  // Invoke getYBus method on all bus objects
-  /* for (i=0; i<numBus; i++) {
-     ibus =
-     (dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get()))->getYBus()
-   * V(i) ;
-   mis(i) = V * conj(ibus
-   }
-
-  // Invoke getYBus method on all branch objects
-  for (i=0; i<numBranch; i++) {
-  (dynamic_cast<gridpack::powerflow::PFBranch*>(p_network->getBranch(i).get()))->getYBus();
-  }*/
-}
-#endif
-
-
 } // namespace powerflow
 } // namespace gridpack

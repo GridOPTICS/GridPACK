@@ -66,8 +66,6 @@ std::vector<gridpack::state_estimation::Measurement>
         measurement.p_busid = busid;
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
-        //printf("%s %d %f %f\n", measurement.p_type.c_str(), measurement.p_busid,
-        //  measurement.p_value, measurement.p_deviation);
         ret.push_back(measurement); 
       } else if (meas_type == "PIJ" || meas_type == "PJI" ||
           meas_type == "QIJ" || meas_type == "QJI" ||
@@ -89,9 +87,6 @@ std::vector<gridpack::state_estimation::Measurement>
         strcpy(measurement.p_ckt,ckt.c_str());
         measurement.p_value = meas_value;
         measurement.p_deviation = meas_deviation;
-/*        printf("%s %d %d %s %f %f\n", ckt.c_str(), measurement.p_fbusid,
-          measurement.p_tbusid, meas_type.c_str(), measurement.p_value,
-          measurement.p_deviation);*/
         ret.push_back(measurement);
       } 
     }
@@ -160,28 +155,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   std::vector<gridpack::state_estimation::Measurement>
     meas = getMeasurements(measurements);
   timer->stop(t_rmea);
-/*
-  if (p_comm.rank() == 0) {
-    int idx;
-    for (idx = 0; idx < meas.size(); idx++) {
-      std::string meas_type = meas[idx].p_type;
-      if (meas_type == "VM" || meas_type == "PI" || meas_type == "QI") {
-        printf("Type: %s\n", meas[idx].p_type);
-        printf("Bus: %d\n", meas[idx].p_busid);
-        printf("Value: %f\n", meas[idx].p_value);
-        printf("Deviation: %f\n", meas[idx].p_deviation);
-      } else if (meas_type == "PIJ" || meas_type == "QIJ") {
-        printf("Type: %s\n", meas[idx].p_type);
-        printf("FromBus: %d\n", meas[idx].p_fbusid);
-        printf("ToBus: %d\n", meas[idx].p_tbusid);
-        printf("CKT: %s\n", meas[idx].p_ckt);
-        printf("Value: %f\n", meas[idx].p_value);
-        printf("Deviation: %f\n", meas[idx].p_deviation);
-      }
-      printf("\n");
-    }
-  }
-*/   
   ///////////////////////////////////////////////////////////////////
 
   // Create serial IO object to export data from buses or branches
@@ -203,7 +176,8 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setComponents();
   timer->stop(t_setc);
 
-  // Set up bus data exchange buffers. Need to decide what data needs to be exchanged
+  // Set up bus data exchange buffers. Need to decide what data needs to
+  // be exchanged
   int t_setx = timer->createCategory("Factory: Set Exchange");
   timer->start(t_setx);
   factory.setExchange();
@@ -221,9 +195,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   network->initBusUpdate();
 
   if (factory.checkLoneBus(busIO.getStream().get())) {
-  //  sprintf(ioBuf,"\nIsolated bus found for contingency %s\n",
-  //      contingency.p_name.c_str());
-  //  busIO.header(ioBuf);
     // Exchange bus status between processors
     network->updateBuses();
   }
@@ -246,8 +217,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(YBus);
   gridpack::mapper::FullMatrixMap<SENetwork> ybusMap(network);
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
-  branchIO.header("\nybus:\n");
- // ybus->print();
 
   // Create mapper to push voltage data back onto buses
   factory.setMode(Voltage);
@@ -257,9 +226,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   factory.setMode(Jacobian_H);
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(network);
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
-  //printf(" ------------HJacMap.mapToMatrix------\n");
-//  branchIO.header("\nHJac:\n");
-//  HJac->print();
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(network);
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
@@ -279,8 +245,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   gridpack::mapper::GenMatrixMap<SENetwork> RinvMap(network);
   boost::shared_ptr<gridpack::math::Matrix> Rinv = RinvMap.mapToMatrix();
   timer->stop(t_rinv);
-//  busIO.header("\n Print Rinv vector outside\n");
-//  Rinv->print();
 
   // Start N-R loop
   int t_solv = timer->createCategory("Solver NRloop");
@@ -297,8 +261,6 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     HJacMap.mapToMatrix(HJac);
     busIO.header("\n Print HJac matrix\n");
     timer->stop(t_H);
-//    HJac->print();
-//  printf("Got to H'\n");
 
     // Form H'
     int t_HT = timer->createCategory("Jacobian_HT");
@@ -306,14 +268,10 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     boost::shared_ptr<gridpack::math::Matrix> trans_HJac(transpose(*HJac));
     busIO.header("\n Print HJac' matrix\n");
     timer->stop(t_HT);
-//    trans_HJac->print();
-//  printf("Got to Ez\n");
 
     // Build measurement equation
     EzMap.mapToVector(Ez);
     busIO.header("\n Print Ez Vector\n");
-//    Ez->print();
-//  printf("Got to Gain\n");
 
     // Form Gain matrix
     int t_gain = timer->createCategory("Gain");
@@ -321,23 +279,13 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     boost::shared_ptr<gridpack::math::Matrix> Gain1(multiply(*trans_HJac, *Rinv));
     boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*Gain1, *HJac));
     timer->stop(t_gain);
-//  Gain->print();
-//  printf("Got to H'*Rinv\n");
 
     // Form right hand side vector
     int t_rhs = timer->createCategory("RHS");
     timer->start(t_rhs);
     boost::shared_ptr<gridpack::math::Matrix> HTR(multiply(*trans_HJac, *Rinv));
-//    busIO.header("\n Print HTR Vector\n");
-//    HTR->print();
-//  printf("Got to RHS\n");
-
-//    printf("HTR iDim: %d jDim: %d Ez len: %d\n",HTR->rows(),HTR->cols(),Ez->size());
     boost::shared_ptr<gridpack::math::Vector> RHS(multiply(*HTR, *Ez));
     timer->stop(t_rhs);
-//  printf("Create Solver\n");
-//  RHS->print();
-//  printf("Got to Solver\n");
 
     // create a linear solver
     int t_sol = timer->createCategory("SE Solver");
@@ -346,24 +294,14 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
 
     solver.configure(secursor);
     
-//    busIO.header("\n Print Gain matrix\n");
-//    Gain->print();
-//  printf("Got to DeltaX\n");
-
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
-//    printf("Got to Solve\n");
-    busIO.header("\n Print RHS vector\n");
-//    RHS->print();
     X->zero(); //might not need to do this
     int t_soleq = timer->createCategory("Pure SE Solver");
     timer->start(t_soleq);
     solver.solve(*RHS, *X);
     timer->stop(t_sol);
     timer->stop(t_soleq);
-//  X->print();
-//  printf("Got to updateBus\n");
-//    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
     tol = X->normInfinity();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
@@ -378,19 +316,12 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
     // update values
     network->updateBuses();
     timer->stop(t_up);
-//  printf("Last sentence\n");
 
     iter++;
 
   // End N-R loop
   }
   timer->stop(t_solv);
-
-//  gridpack::serial_io::SerialBranchIO<SENetwork> branchIO(512,network);
-//  branchIO.header("\n   Branch Power Flow\n");
-//  branchIO.header("\n        Bus 1       Bus 2   CKT         P"
-//                  "                    Q\n");
-//  branchIO.write();
 
   int t_io = timer->createCategory("IO");
   timer->start(t_io);
@@ -416,6 +347,5 @@ void gridpack::state_estimation::SEApp::execute(int argc, char** argv)
   // Output 
   timer->stop(t_total);
   timer->dump();
-
 }
 
