@@ -48,11 +48,11 @@ DSFullFactory::DSFullFactory(DSFullFactory::NetworkPtr network)
   }
 #ifdef USE_FNCS
   p_hash = new gridpack::hash_distr::HashDistribution<DSFullNetwork,
-               gridpack::ComplexType,gridpack::ComplexType>
-               (network);
+         gridpack::ComplexType,gridpack::ComplexType>
+           (network);
   int dsize = sizeof(gridpack::dynamic_simulation::DSFullBus::voltage_data);
   p_busIO = new gridpack::serial_io::SerialBusIO<DSFullNetwork>(dsize,
-                network);
+      network);
 #endif
 }
 
@@ -149,7 +149,6 @@ bool gridpack::dynamic_simulation::DSFullFactory::checkGen(void)
       count += p_buses[i]->getNumGen();
     }
   }
-  //printf("p[%d] number of generators: %d\n",p_network->communicator().rank(),count);
   int iok = 0;
   if (count > 0) iok = 1;
   int ok;
@@ -230,11 +229,11 @@ void gridpack::dynamic_simulation::DSFullFactory::corrector(double t_inc, bool f
  */
 void gridpack::dynamic_simulation::DSFullFactory::dynamicload_post_process(double t_inc, bool flag)
 {
-	int i;
+  int i;
 
-    for (i=0; i<p_numBus; i++) {
-      p_buses[i]->dynamicload_post_process(t_inc,flag);
-    }
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->dynamicload_post_process(t_inc,flag);
+  }
 }
 
 /**
@@ -265,33 +264,32 @@ void gridpack::dynamic_simulation::DSFullFactory::updateBusFreq(double delta_t)
 
 bool gridpack::dynamic_simulation::DSFullFactory::updateBusRelay(bool flag,double delta_t)
 {
-	int i;
-	bool bflag;
-	
-	bflag = false;
-	
-	for (i=0; i<p_numBus; i++) {
-		bflag = bflag || p_buses[i]->updateRelay(flag,delta_t);
-	
-        }
-        return checkTrueSomewhere(bflag); 
-	//return bflag;
-	
+  int i;
+  bool bflag;
+
+  bflag = false;
+
+  for (i=0; i<p_numBus; i++) {
+    bflag = bflag || p_buses[i]->updateRelay(flag,delta_t);
+
+  }
+  return checkTrueSomewhere(bflag); 
+
 }
 
 bool gridpack::dynamic_simulation::DSFullFactory::updateBranchRelay(bool flag,double delta_t)
 {
-	int i;
-	bool bflag;
-	
-	bflag = false;
-	
-	for (i=0; i<p_numBranch; i++) {
-		bflag = bflag || p_branches[i]->updateRelay(flag,delta_t);
-	}
-	
-	return bflag;
-	
+  int i;
+  bool bflag;
+
+  bflag = false;
+
+  for (i=0; i<p_numBranch; i++) {
+    bflag = bflag || p_branches[i]->updateRelay(flag,delta_t);
+  }
+
+  return bflag;
+
 }
 
 /**
@@ -299,12 +297,12 @@ bool gridpack::dynamic_simulation::DSFullFactory::updateBranchRelay(bool flag,do
  */
 void gridpack::dynamic_simulation::DSFullFactory::updateoldbusvoltage()
 {
-	int i;
-	
-	for (i=0; i<p_numBus; i++) {
+  int i;
+
+  for (i=0; i<p_numBus; i++) {
     p_buses[i]->updateoldbusvoltage();
-	
-    }
+
+  }
 }
 
 /**
@@ -312,12 +310,12 @@ void gridpack::dynamic_simulation::DSFullFactory::updateoldbusvoltage()
  */
 void gridpack::dynamic_simulation::DSFullFactory::printallbusvoltage()
 {
-	int i;
-	
-	for (i=0; i<p_numBus; i++) {
+  int i;
+
+  for (i=0; i<p_numBus; i++) {
     p_buses[i]->printbusvoltage();
-	
-    }
+
+  }
 }
 
 /**
@@ -346,14 +344,11 @@ bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
     int nGen = p_buses[i]->getNumGen();
     if (nGen > 0) {
       angle = p_buses[i]->getAngle();
-      //printf("angle = %f\n", angle);
       if (angle > maxAngle) {
         maxAngle = angle;
-        //printf("   max = %f\n", maxAngle);
       }
       if (angle < minAngle) {
         minAngle = angle;
-        //printf("   min = %f\n", minAngle);
       }
       double pi = 4.0*atan(1.0);
       if ((maxAngle - minAngle) > 360 * pi / 180)
@@ -362,7 +357,6 @@ bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
         secure = true; 
     }
   }
-  //printf("max = %f, min = %f\n", maxAngle, minAngle);
   return secure;
 }
 
@@ -371,13 +365,13 @@ bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
  */
 void gridpack::dynamic_simulation::DSFullFactory::setExtendedCmplBusVoltage()
 {
-	int i;
+  int i;
 
   // Invoke updateDSVect method on all bus objects
   for (i=0; i<p_numBus; i++) {
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_buses[i])->setExtendedCmplBusVoltage(p_network->getBusData(i));
   }
-	
+
 }
 
 /**
@@ -385,13 +379,13 @@ void gridpack::dynamic_simulation::DSFullFactory::setExtendedCmplBusVoltage()
  */
 void gridpack::dynamic_simulation::DSFullFactory::LoadExtendedCmplBus()
 {
-	int i;
+  int i;
 
   // Invoke updateDSVect method on all bus objects
   for (i=0; i<p_numBus; i++) {
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_buses[i])->LoadExtendedCmplBus(p_network->getBusData(i));
   }
-	
+
 }
 
 #ifdef USE_FNCS
@@ -431,7 +425,7 @@ void gridpack::dynamic_simulation::DSFullFactory::gatherVoltage()
   // Get data from network buses
   std::vector<gridpack::dynamic_simulation::DSFullBus::voltage_data> data;
   p_busIO->gatherData(data);
-  
+
   // Loop over all data items
   int i;
   if (p_network->communicator().rank() == 0) {
