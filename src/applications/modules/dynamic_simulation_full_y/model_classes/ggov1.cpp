@@ -179,7 +179,6 @@ void gridpack::dynamic_simulation::Ggov1Model::init(double mag, double ang, doub
   if (Db < 0) Db = 0; // disable deadband
   if (Teng < 0) Teng = 0; // Actually for now we ignore this here anyway
 
-  printf("ggov1: Pmech = %f\n", Pmech);
   // State 1
   x1Pelec = GenPelec * GenMVABase /Trate;
   Pmwset = x1Pelec;
@@ -354,16 +353,11 @@ void gridpack::dynamic_simulation::Ggov1Model::predictor(double t_inc, bool flag
   x9Accel_1 = x9Accel + dx9Accel * t_inc;
   x10TempLL_1 = x10TempLL + dx10TempLL * t_inc;
 
-  printf("ggov1 dx: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", dx1Pelec, dx2GovDer, dx3GovInt, dx4Act, dx5LL, dx6Fload, dx7LoadInt, dx8LoadCtrl, dx9Accel, dx10TempLL);
-  printf("ggov1 x: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pelec_1, x2GovDer_1, x3GovInt_1, x4Act_1, x5LL_1, x6Fload_1, x7LoadInt_1, x8LoadCtrl_1, x9Accel_1, x10TempLL_1);
-
   if (Dm > 0) {
     Pmech = (LeadLagOut - Dm * w) * Trate / GenMVABase;
   } else {
     Pmech = LeadLagOut * Trate / GenMVABase;
   } 
-  
-  printf("ggov1 Pmech = %f\n", Pmech);
 }
 
 /**
@@ -484,16 +478,11 @@ void gridpack::dynamic_simulation::Ggov1Model::corrector(double t_inc, bool flag
   x9Accel_1 = x9Accel + (dx9Accel + dx9Accel_1) / 2.0 * t_inc;
   x10TempLL_1 = x10TempLL + (dx10TempLL + dx10TempLL_1) / 2.0 * t_inc;
 
-  printf("ggov1 dx: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", dx1Pelec, dx2GovDer, dx3GovInt, dx4Act, dx5LL, dx6Fload, dx7LoadInt, dx8LoadCtrl, dx9Accel, dx10TempLL);
-  printf("ggov1 x: %f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pelec_1, x2GovDer_1, x3GovInt_1, x4Act_1, x5LL_1, x6Fload_1, x7LoadInt_1, x8LoadCtrl_1, x9Accel_1, x10TempLL_1);
-
   if (Dm > 0) {
     Pmech = (LeadLagOut - Dm * w) * Trate / GenMVABase;
   } else {
     Pmech = LeadLagOut * Trate / GenMVABase;
   } 
-  
-  printf("ggov1 Pmech = %f\n", Pmech);
 }
 
 /**
@@ -522,12 +511,3 @@ double gridpack::dynamic_simulation::Ggov1Model::getMechanicalPower()
 {
   return Pmech; 
 }
-
-/** 
- * Get the value of the rotor speed deviation
- * 
- */
-/*double gridpack::dynamic_simulation::Ggov1Model::getRotorSpeedDeviation()
-{
-  return w;
-}*/

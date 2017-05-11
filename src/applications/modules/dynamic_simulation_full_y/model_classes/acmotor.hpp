@@ -40,7 +40,6 @@ class AcmotorLoad : public BaseLoadModel
      * Load parameters from DataCollection object into load model
      * @param data collection of load parameters from input files
      * @param index of load on bus
-     * TODO: might want to move this functionality to BaseLoadModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx, double loadP, double loadQ, int ibCMPL);
@@ -90,25 +89,25 @@ class AcmotorLoad : public BaseLoadModel
      * @param flag initial step if true
      */
     void corrector(double t_inc, bool flag);
-	
-	/**
-	* post process for time step
-	* @param t_inc time step increment
-	* @param flag initial step if true
-	*/
-	void dynamicload_post_process(double t_inc, bool flag);
-	
-	/**
-	* Set voltage on each load
-	*/
-	void setVoltage(gridpack::ComplexType voltage);
-	
-	/**
- * Set terminal voltage frequency on each load
- */
-	void setFreq(double dFreq);
-	
-	/**
+
+    /**
+     * post process for time step
+     * @param t_inc time step increment
+     * @param flag initial step if true
+     */
+    void dynamicload_post_process(double t_inc, bool flag);
+
+    /**
+     * Set voltage on each load
+     */
+    void setVoltage(gridpack::ComplexType voltage);
+
+    /**
+     * Set terminal voltage frequency on each load
+     */
+    void setFreq(double dFreq);
+
+    /**
      * get intialized reactive power of the dynamic load model
      */
     double getInitReactivePower(void);
@@ -126,13 +125,13 @@ class AcmotorLoad : public BaseLoadModel
     double p_sbase;
     double p_pl, p_ql;
     int p_status;
-    
+
     // AC Motor parameters used in definition
     double Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj;
     double Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2;
     double Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off;
     double Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2;
- 
+
     // Network parameters used in the model
     double volt;
     double freq;
@@ -162,15 +161,15 @@ class AcmotorLoad : public BaseLoadModel
     double UVTimer1, UVTimer2;
     gridpack::ComplexType equivYpq_motorBase;
     double I_conv_factor_M2S;
-   
- 
+
+
     gridpack::ComplexType p_INorton;
 
     double presentMag, presentAng, presentFreq;  //presentFreq is p.u (1.0)
-	gridpack::ComplexType vt_complex;  // load terminal voltage (complex format, pu)
+    gridpack::ComplexType vt_complex;  // load terminal voltage (complex format, pu)
 
     //double Efdinit, Pmechinit;
-            
+
     std::string p_loadid;
     int p_bus_id;
 

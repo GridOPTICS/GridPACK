@@ -43,7 +43,6 @@ class Wsieg1Model : public BaseGovernorModel
      * Load parameters from DataCollection object into governor model
      * @param data collection of governor parameters from input files
      * @param index of governor on bus
-     * TODO: might want to move this functionality to BaseGovernorModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -100,7 +99,6 @@ class Wsieg1Model : public BaseGovernorModel
     double K, T1, T2, T3, Uo, Uc, Pmax, Pmin;
     double T4, K1, K2, T5, K3, K4, T6, K5, K6, T7, K7, K8;
     double Db1, Err, Db2;
-    //double Gv1, PGv1, Gv2, PGv2, Gv3, PGv3, Gv4, PGv4, Gv5, PGv5;
     double Iblock;
 
     // WSIEG1 state variables

@@ -59,57 +59,34 @@ gridpack::dynamic_simulation::WshygpModel::~WshygpModel(void)
  * Load parameters from DataCollection object into governor model
  * @param data collection of governor parameters from input files
  * @param index of governor on bus
- * TODO: might want to move this functionality to
- * WshygpModel
  */
 void gridpack::dynamic_simulation::WshygpModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
   if (!data->getValue(GOVERNOR_TD, &TD, idx)) TD = 0.0; // TBD: TD
-  printf ("TD = %8.4f \n", TD);
   if (!data->getValue(GOVERNOR_KI, &KI, idx)) KI = 0.0; // TBD: KI
-  printf ("KI = %8.4f \n", KI);
   if (!data->getValue(GOVERNOR_KD, &KD, idx)) KD = 0.0; // TBD: KD
-  printf ("KD = %8.4f \n", KD);
   if (!data->getValue(GOVERNOR_KP, &Kp, idx)) Kp = 0.0; // TBD: Kp
-  printf ("Kp = %8.4f \n", Kp);
   if (!data->getValue(GOVERNOR_R, &R, idx)) R = 0.0; // TBD: R
-  printf ("R = %8.4f \n", R);
   if (!data->getValue(GOVERNOR_TT, &Tt, idx)) Tt = 0.0; // TBD: Tt
   Tt = 0.0; // TBD: Tt
-  printf ("Tt = %8.4f \n", Tt);
   if (!data->getValue(GOVERNOR_KG, &KG, idx)) KG = 0.0; // TBD: KG
-  printf ("KG = %8.4f \n", KG);
   if (!data->getValue(GOVERNOR_TP, &TP, idx)) TP = 0.0; // TBD: TP
-  printf ("TP = %8.4f \n", TP);
   if (!data->getValue(GOVERNOR_VELOPEN, &VELopen, idx)) VELopen = 0.0; 
-  printf ("VELopen = %8.4f \n", VELopen);
   if (!data->getValue(GOVERNOR_VELCLOSE, &VELclose, idx)) VELclose = 0.0; 
-  printf ("VELclose = %8.4f \n", VELclose);
   if (!data->getValue(GOVERNOR_PMAX, &Pmax, idx)) Pmax = 0.0; // Pmax
-  printf ("Pmax = %8.4f \n", Pmax);
   if (!data->getValue(GOVERNOR_PMIN, &Pmin, idx)) Pmin = 0.0; // Pmin
-  printf ("Pmin = %8.4f \n", Pmin);
   if (!data->getValue(GOVERNOR_TF, &TF, idx)) TF = 0.0; 
-  printf ("TF = %8.4f \n", TF);
   if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) Trate = 0.0; 
-  printf ("Trate = %8.4f \n", Trate);
   if (!data->getValue(GOVERNOR_ATURB, &Aturb, idx)) Aturb = 0.0; 
-  printf ("Aturb = %8.4f \n", Aturb);
   if (!data->getValue(GOVERNOR_BTURB, &Bturb, idx)) Bturb = 0.0; 
-  printf ("Bturb = %8.4f \n", Bturb);
   if (!data->getValue(GOVERNOR_TTURB, &Tturb, idx)) Tturb = 0.0; 
-  printf ("Tturb = %8.4f \n", Tturb);
   if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
-  printf ("Db1 = %8.4f \n", Db1);
   if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; // Err
-  printf ("Err = %8.4f \n", Err);
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
-  printf ("Db2 = %8.4f \n", Db2);
 
   if (!data->getValue(GENERATOR_MBASE, &GenMVABase, idx)) GenMVABase = 0.0;
-  printf ("Mbase = %8.4f \n", GenMVABase);
 
 }
 
@@ -121,7 +98,6 @@ void gridpack::dynamic_simulation::WshygpModel::load(
  */
 void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, double ts)
 {
-  printf("wshygp: Pmech = %f\n", Pmech);
   // State 1
   double PGV = Pmech * GenMVABase / Trate;
   if (Bturb * Tturb < TS_THRESHOLD * ts) x1Pmech = 0;
@@ -160,7 +136,6 @@ void gridpack::dynamic_simulation::WshygpModel::init(double mag, double ang, dou
   }
   // Initialize the Intentional Deadband
   DBInt.Initialize(Db1, Err, w);
-  printf("wshygp init: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pmech, x2Td, x3Int, x4Der, x5Pelec, x6Valve, x7Gate);
 }
 
 /**
@@ -212,7 +187,6 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   if (x7Gate > Pmax) x7Gate = Pmax; // nonwindup
   if (x7Gate < Pmin) x7Gate = Pmin; // nonwindup
   double GV = BackLash.Output(x7Gate);
-  //printf ("wshygp predictor GV = %8.4f, x1Pmech = %8.4f, x7Gate=%8.4f \n",GV, x1Pmech, x7Gate);
   TempIn = CV - GV;
   if (TP < TS_THRESHOLD * t_inc) x6Valve = TempIn * KG;
   if (x6Valve > VELopen) x6Valve = VELopen;
@@ -223,13 +197,11 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   if (dx6Valve < 0 && x6Valve <= VELclose) dx6Valve = 0;
   // State 7
   // Note: non windup stuff handled above
-  //printf ("wshygp predictor x6Valve = %8.4f, \n",x6Valve);
   dx7Gate = x6Valve;
   if (dx7Gate > 0 && x7Gate >= Pmax) dx6Valve = 0;
   if (dx7Gate < 0 && x7Gate <= Pmin) dx6Valve = 0;
   // State 1
   double PGV = GainBlock.XtoY(GV);
-  //printf ("wshygp predictor PGV = %8.4f, \n",PGV);
   if (Bturb * Tturb < TS_THRESHOLD * t_inc) dx1Pmech = 0;
   else dx1Pmech = (PGV * (1 - Aturb / Bturb) - x1Pmech) / (Bturb * Tturb);
 
@@ -241,9 +213,6 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   x6Valve_1 = x6Valve + dx6Valve * t_inc;
   x7Gate_1 = x7Gate + dx7Gate * t_inc;
 
-  //printf("wshygp dx: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", dx1Pmech, dx2Td, dx3Int, dx4Der, dx5Pelec, dx6Valve, dx7Gate);
-  //printf("wshygp x: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pmech_1, x2Td_1, x3Int_1, x4Der_1, x5Pelec_1, x6Valve_1, x7Gate_1);
-
   // Note: you may want to cash the value PGV and keep it around
   GV = BackLash.Output(x7Gate);
   PGV = GainBlock.XtoY(GV);
@@ -252,8 +221,6 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   } else {
     Pmech = (PGV * Aturb / Bturb + x1Pmech) * Trate / GenMVABase;
   } 
-  
- // printf("wshygp Pmech = %f\n", Pmech);
 }
 
 /**
@@ -320,9 +287,6 @@ void gridpack::dynamic_simulation::WshygpModel::corrector(double t_inc, bool fla
   x5Pelec_1 = x5Pelec + (dx5Pelec + dx5Pelec_1) / 2.0 * t_inc;
   x6Valve_1 = x6Valve + (dx6Valve + dx6Valve_1) / 2.0 * t_inc;
   x7Gate_1 = x7Gate + (dx7Gate + dx7Gate_1) / 2.0 * t_inc;
- 
- // printf("wshygp dx: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", dx1Pmech, dx2Td, dx3Int, dx4Der, dx5Pelec, dx6Valve, dx7Gate);
-  //printf("wshygp x: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pmech_1, x2Td_1, x3Int_1, x4Der_1, x5Pelec_1, x6Valve_1, x7Gate_1);
 
   // Note: you may want to cash the value PGV and keep it around
   GV = BackLash.Output(x7Gate_1);
@@ -332,8 +296,6 @@ void gridpack::dynamic_simulation::WshygpModel::corrector(double t_inc, bool fla
   } else {
     Pmech = (PGV * Aturb / Bturb + x1Pmech) * Trate / GenMVABase;
   } 
-  
- // printf("wshygp Pmech = %f\n", Pmech);
 }
 
 /**
@@ -368,6 +330,6 @@ double gridpack::dynamic_simulation::WshygpModel::getMechanicalPower()
  * 
  */
 /*double gridpack::dynamic_simulation::WshygpModel::getRotorSpeedDeviation()
-{
+  {
   return w;
-}*/
+  }*/

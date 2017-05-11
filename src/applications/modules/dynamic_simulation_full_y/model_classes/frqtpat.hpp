@@ -36,11 +36,11 @@ public:
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
-		
-	/*
-	 * reset relay to initial status
-	 */
-	void ResetRelay(void);	
+      
+    /**
+     * reset relay to initial status
+     */
+    void ResetRelay(void);  
 
     /**
      * Assign to pointers to variables that need to be monitored
@@ -62,30 +62,29 @@ public:
      * exceeded)
      */
     void getTripStatus(int &itrip, int &itrip_prev);
-	
-	
+
+
   private:
-	
-	//parameters
-	int imins, ifreq_bus;
-	std::string sgenid;
-	double dfreq_low, dfreq_up, dpickuptime, dbreakertime;
-	
-		
-	// internal variables
-	// internal variables
-	gridpack::ComplexType pbus_volt_freq_cplx; // point to the bus voltage phasor
-	double dvol_freq;		// bus voltage freq where relay is monitoring
-	int icount_pickup_lowfreq;		// To count for Relay pickup time for lower frequency condition
-	int icount_pickup_upfreq;		// To count for Relay pickup time for upper frequency condition
-	int icount_breaker;		// To count for Breaker’s time delay
-	int iflag;				//  Flag=1: counting for the breaker’s delay;
-							//  Flag=0: counting for relay’s pick-up time. 
-							
-							
-	// output variables
-	int igen_trip;			//  generator_trip signal: if igen_trip == 1, take action to do load shedding.		
-	int igen_trip_prev;	
+   
+    //parameters
+    int imins, ifreq_bus;
+    std::string sgenid;
+    double dfreq_low, dfreq_up, dpickuptime, dbreakertime;
+
+
+    // internal variables
+    gridpack::ComplexType pbus_volt_freq_cplx; // point to the bus voltage phasor
+    double dvol_freq;    // bus voltage freq where relay is monitoring
+    int icount_pickup_lowfreq;    // To count for Relay pickup time for lower frequency condition
+    int icount_pickup_upfreq;     // To count for Relay pickup time for upper frequency condition
+    int icount_breaker;     // To count for Breaker’s time delay
+    int iflag;           //  Flag=1: counting for the breaker’s delay;
+    //  Flag=0: counting for relay’s pick-up time. 
+
+
+    // output variables
+    int igen_trip;       //  generator_trip signal: if igen_trip == 1, take action to do load shedding.      
+    int igen_trip_prev;  
 
 };
 }  // dynamic_simulation

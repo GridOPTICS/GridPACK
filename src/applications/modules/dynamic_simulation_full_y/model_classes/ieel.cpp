@@ -83,8 +83,6 @@ void gridpack::dynamic_simulation::IeelLoad::load(
   setDynLoadQ(p_ql);
   setDynLoadID(p_loadid);
   
-  printf("IeelLoad::load(): p_pl: %12.6f, p_ql: %12.6f \n", p_pl, p_ql);
-  
   if ( ibCMPL==1 ){  // if load from the composite load model
 	if (!data->getValue(LOAD_P1C, &a1))  		a1 = 0.0;
 	if (!data->getValue(LOAD_P2C, &a2))  		a2 = 0.0;
@@ -124,10 +122,6 @@ void gridpack::dynamic_simulation::IeelLoad::load(
 	if (!data->getValue(LOAD_N5, &n5, idx))  		n5 = 0.0;
 	if (!data->getValue(LOAD_N6, &n6, idx))  		n6 = 0.0;
   }
-    
-  printf("IeelLoad::load(): a1: %f, a2: %f, a3: %f, a4: %f, a5: %f, a6: %f, a7: %f, a8: %f, \n", a1, a2, a3, a4, a5, a6, a7, a8);
-  printf("IeelLoad::load(): n1: %f, n2: %f, n3: %f, n4: %f, n5: %f, n6: %f,  \n", n1, n2, n3, n4, n5, n6);
-  
 }
 
 /**
@@ -301,11 +295,9 @@ void gridpack::dynamic_simulation::IeelLoad::corrector(
 void gridpack::dynamic_simulation::IeelLoad::setVoltage(
     gridpack::ComplexType voltage)
 {
-  printf("IeelLoad::setVoltage, %12.6f + j %12.6f \n", real(voltage), imag(voltage));	
   presentMag = abs(voltage);
   presentAng = atan2(imag(voltage), real(voltage));  
   vt_complex = voltage;
-  
 }
 
 /**

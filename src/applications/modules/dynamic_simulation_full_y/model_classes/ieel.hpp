@@ -40,7 +40,6 @@ class IeelLoad : public BaseLoadModel
      * Load parameters from DataCollection object into load model
      * @param data collection of load parameters from input files
      * @param index of load on bus
-     * TODO: might want to move this functionality to BaseLoadModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx, double dloadP, double dloadQ, int ibCMPL);
@@ -90,16 +89,16 @@ class IeelLoad : public BaseLoadModel
      * @param flag initial step if true
      */
     void corrector(double t_inc, bool flag);
-	
-	/**
-	* Set voltage on each load
-	*/
-	void setVoltage(gridpack::ComplexType voltage);
-	
-/**
- * Set terminal voltage frequency on each load
- */
-	void setFreq(double dFreq);
+
+    /**
+     * Set voltage on each load
+     */
+    void setVoltage(gridpack::ComplexType voltage);
+
+    /**
+     * Set terminal voltage frequency on each load
+     */
+    void setFreq(double dFreq);
 
     /**
      * Write out load state
@@ -114,11 +113,11 @@ class IeelLoad : public BaseLoadModel
     //double p_sbase;
     double p_pl, p_ql;
     //int p_status;
-    
+
     // model definition parameters
     double a1, a2, a3, a4, a5, a6, a7, a8;
     double n1, n2, n3, n4, n5, n6; 
- 
+
     // Internal temporary parameters
     double P0; // initial load P value
     double Q0; // initial load Q value
@@ -129,12 +128,12 @@ class IeelLoad : public BaseLoadModel
     double vt_init;
     double Vsmin_pu; // constant P will be scaled down if voltage is less than Vsmin_pu
     double Vimin_pu; // constant I will be scaled down if voltage is less than Vimin_pu
- 
+
     std::string p_loadid;
     int p_bus_id;
-	
-	double presentMag, presentAng, presentFreq;  //presentFreq is p.u (1.0)
-	gridpack::ComplexType vt_complex;  // load terminal voltage (complex format, pu)
+
+    double presentMag, presentAng, presentFreq;  //presentFreq is p.u (1.0)
+    gridpack::ComplexType vt_complex;  // load terminal voltage (complex format, pu)
 
     friend class boost::serialization::access;
 

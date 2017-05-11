@@ -50,17 +50,13 @@ gridpack::dynamic_simulation::Esst4bModel::~Esst4bModel(void)
  * Load parameters from DataCollection object into exciter model
  * @param data collection of exciter parameters from input files
  * @param index of exciter on bus
- * TODO: might want to move this functionality to
- * Esst4bModel
  */
 void gridpack::dynamic_simulation::Esst4bModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
   if (!data->getValue(EXCITER_TR, &Tr, idx)) Tr = 0.0; // Tr
-  //if (!data->getValue(EXCITER_KPR, &Kpr, idx)) 
   Kpr = 0.0; // TBD: Kpr
-  //if (!data->getValue(EXCITER_KIR, &Kir, idx)) 
   Kir = 0.0; // TBD: Kir
   if (!data->getValue(EXCITER_VRMAX, &Vrmax, idx)) Vrmax = 0.0; // Vrmax
   if (!data->getValue(EXCITER_VRMIN, &Vrmin, idx)) Vrmin = 0.0; // Vrmin
@@ -106,6 +102,7 @@ double gridpack::dynamic_simulation::Esst4bModel::Sat(double x)
     //double B = log(SE2 / SE1)/(E2 - E1);
     //double A = SE1 / exp(B * E1);
     //return A * exp(B * x);
+    return 0.0;
 }
 
 double gridpack::dynamic_simulation::Esst4bModel::sqr(double x)
@@ -165,7 +162,6 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   presentAng = ang;
   // State 1
   double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd); // TBD: What's the init value of Ir and Ii?
-  printf("esst4b: Efd = %f\n", Efd);
   double Vm = Efd/ Vb;
   // Check limits here, but these would be 
   // initial state limit violations that are not possible!
@@ -204,8 +200,6 @@ void gridpack::dynamic_simulation::Esst4bModel::init(double mag, double ang, dou
   x2Vcomp = Vcomp;  // TBD: init value of Vcomp?
   // Vref
   Vref = Vcomp + TempIn;
-
-  printf("esst4b init:  %f\t%f\t%f\t%f\n", x1Vm, x2Vcomp, x3Va, x4Vr); 
 }
 
 /**
@@ -262,15 +256,10 @@ void gridpack::dynamic_simulation::Esst4bModel::predictor(double t_inc, bool fla
   x3Va_1 = x3Va + dx3Va * t_inc;
   x4Vr_1 = x4Vr + dx4Vr * t_inc;
 
-  printf("esst4b dx: %f\t%f\t%f\t%f\t\n", dx1Vm, dx2Vcomp, dx3Va, dx4Vr);
-  printf("esst4b x: %f\t%f\t%f\t%f\n", x1Vm_1, x2Vcomp_1, x3Va_1, x4Vr_1);
-
   double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd);
   //if (x1Vm > Voel) TempIn = Voel * Vb; // TBD: what is Voel?
   //else Efd = x1Vm_1 * Vb;
   Efd = x1Vm_1 * Vb; // TBD: temporailly
-
-  printf("esst4b Efd: %f\n", Efd);
 }
 
 /**
@@ -321,15 +310,10 @@ void gridpack::dynamic_simulation::Esst4bModel::corrector(double t_inc, bool fla
   x3Va_1 = x3Va + (dx3Va + dx3Va_1) / 2.0 * t_inc;
   x4Vr_1 = x4Vr + (dx4Vr + dx4Vr_1) / 2.0 * t_inc;
 
-  printf("esst4b dx: %f\t%f\t%f\t%f\t\n", dx1Vm_1, dx2Vcomp_1, dx3Va_1, dx4Vr_1);
-  printf("esst4b x: %f\t%f\t%f\t%f\n", x1Vm_1, x2Vcomp_1, x3Va_1, x4Vr_1);
-  
   double Vb = CalculateVb(Vterm, Theta, Ir, Ii, LadIfd);
   //if (x1Vm > Voel) TempIn = Voel * Vb; // TBD: what is Voel?
   //else Efd = x1Vm_1 * Vb;
   Efd = x1Vm_1 * Vb; // TBD: temporially
-
-  printf("esst4b Efd: %f\n", Efd);
 }
 
 /**

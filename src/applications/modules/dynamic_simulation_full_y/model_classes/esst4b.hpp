@@ -40,7 +40,6 @@ class Esst4bModel : public BaseExciterModel
      * Load parameters from DataCollection object into exciter model
      * @param data collection of exciter parameters from input files
      * @param index of exciter on bus
-     * TODO: might want to move this functionality to BaseExciterModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -124,8 +123,6 @@ class Esst4bModel : public BaseExciterModel
     void setOmega(double omega);
 
   private:
-
-    //double S10, S12; 
 
     // Exciter ESST4B parameters from dyr
     double Tr, Kpr, Kir, Vrmax, Vrmin, Ta, Kpm;

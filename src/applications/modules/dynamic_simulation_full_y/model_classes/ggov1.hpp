@@ -43,7 +43,6 @@ class Ggov1Model : public BaseGovernorModel
      * Load parameters from DataCollection object into governor model
      * @param data collection of governor parameters from input files
      * @param index of governor on bus
-     * TODO: might want to move this functionality to BaseGovernorModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -87,12 +86,6 @@ class Ggov1Model : public BaseGovernorModel
      * @return value of mechanical power
      */
     double getMechanicalPower();
-
-    /** 
-     * Get the value of the rotor speed deviation
-     * @return value of rotor speed deviation
-     */
-    //double getRotorSpeedDeviation();
 
   private:
 

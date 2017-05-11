@@ -40,7 +40,6 @@ class GenrouGenerator : public BaseGeneratorModel
      * Load parameters from DataCollection object into generator model
      * @param data collection of generator parameters from input files
      * @param index of generator on bus
-     * TODO: might want to move this functionality to BaseGeneratorModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);

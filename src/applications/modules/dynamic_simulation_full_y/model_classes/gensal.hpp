@@ -40,7 +40,6 @@ class GensalGenerator : public BaseGeneratorModel
      * Load parameters from DataCollection object into generator model
      * @param data collection of generator parameters from input files
      * @param index of generator on bus
-     * TODO: might want to move this functionality to BaseGeneratorModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -151,14 +150,6 @@ class GensalGenerator : public BaseGeneratorModel
             
     ////////////////////////////////////////////////////
 
-    /*gridpack::ComplexType p_pelect, p_volt;
-    gridpack::ComplexType p_mac_ang_s0, p_mac_spd_s0;
-    gridpack::ComplexType p_mac_ang_s1, p_mac_spd_s1;
-    gridpack::ComplexType p_dmac_ang_s0, p_dmac_spd_s0;
-    gridpack::ComplexType p_dmac_ang_s1, p_dmac_spd_s1;
-    gridpack::ComplexType p_eqprime, p_mech;
-    gridpack::ComplexType p_eprime_s0, p_eprime_s1;
-    gridpack::ComplexType p_INorton;*/
     std::string p_ckt;
     int p_bus_id;
 

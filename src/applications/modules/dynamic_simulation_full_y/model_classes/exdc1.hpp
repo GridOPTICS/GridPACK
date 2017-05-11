@@ -40,7 +40,6 @@ class Exdc1Model : public BaseExciterModel
      * Load parameters from DataCollection object into exciter model
      * @param data collection of exciter parameters from input files
      * @param index of exciter on bus
-     * TODO: might want to move this functionality to BaseExciterModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -134,8 +133,6 @@ class Exdc1Model : public BaseExciterModel
     double Vref;
 
     double Vterminal, w; 
-
-    //boost::shared_ptr<BaseGeneratorModel> p_generator;
 };
 }  // dynamic_simulation
 }  // gridpack

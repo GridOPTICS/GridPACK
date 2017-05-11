@@ -40,7 +40,6 @@ class MotorwLoad : public BaseLoadModel
      * Load parameters from DataCollection object into load model
      * @param data collection of load parameters from input files
      * @param index of load on bus
-     * TODO: might want to move this functionality to BaseLoadModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx, double dloadP, double dloadQ, int ibCMPL);
@@ -90,16 +89,16 @@ class MotorwLoad : public BaseLoadModel
      * @param flag initial step if true
      */
     void corrector(double t_inc, bool flag);
-	
-	/**
-	* Set voltage on each load
-	*/
-	void setVoltage(gridpack::ComplexType voltage);
-	
-	/**
- * Set terminal voltage frequency on each load
- */
-	void setFreq(double dFreq);
+
+    /**
+     * Set voltage on each load
+     */
+    void setVoltage(gridpack::ComplexType voltage);
+
+    /**
+     * Set terminal voltage frequency on each load
+     */
+    void setFreq(double dFreq);
 
     /**
      * Write out load state
@@ -129,7 +128,7 @@ class MotorwLoad : public BaseLoadModel
 
     // boundary variables
     double volt, freq, Id, Iq;
-    
+
     // state varialbes for predictor
     double epq0, epd0, eppq0, eppd0, slip0;
 
@@ -142,16 +141,16 @@ class MotorwLoad : public BaseLoadModel
     // derivatives of state variables for corrector
     double depq_dt, depd_dt, deppq_dt, deppd_dt, dslip_dt;
 
-    // oter varialbes
+    // other variables
     double w0, TL, Tm0, p, q, Pmotor, Qmotor, Qmotor_init, sysMVABase;
 
     gridpack::ComplexType p_INorton;
 
     std::string p_loadid;
     int p_bus_id;
-	
-	double presentMag, presentAng, presentFreq;  //presentFreq is p.u (1.0)
-	gridpack::ComplexType vt_complex;  // load terminal voltage (complex format, pu)
+
+    double presentMag, presentAng, presentFreq;  //presentFreq is p.u (1.0)
+    gridpack::ComplexType vt_complex;  // load terminal voltage (complex format, pu)
 
     friend class boost::serialization::access;
 
