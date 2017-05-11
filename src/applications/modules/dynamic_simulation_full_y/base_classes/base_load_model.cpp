@@ -194,26 +194,26 @@ bool gridpack::dynamic_simulation::BaseLoadModel::getWatch()
 
 void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadP(double pl)
 {
-	dyn_p = pl;
+  dyn_p = pl;
 }
 void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadQ(double ql)
 {
-	dyn_q = ql;
+  dyn_q = ql;
 }
 void gridpack::dynamic_simulation::BaseLoadModel::setDynLoadID(std::string load_id)
 {
-	dyn_load_id = load_id;
+  dyn_load_id = load_id;
 }
 
 double gridpack::dynamic_simulation::BaseLoadModel::getDynLoadP()
 {
-	return dyn_p;
+  return dyn_p;
 }
 double gridpack::dynamic_simulation::BaseLoadModel::getDynLoadQ()
 {
-	return dyn_q;
+  return dyn_q;
 }
 std::string gridpack::dynamic_simulation::BaseLoadModel::getDynLoadID()
 {
-	return dyn_load_id;
+  return dyn_load_id;
 }

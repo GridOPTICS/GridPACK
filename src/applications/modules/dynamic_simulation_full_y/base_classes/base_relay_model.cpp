@@ -23,7 +23,7 @@
  */
 gridpack::dynamic_simulation::BaseRelayModel::BaseRelayModel()
 {
-	boperationstatus = true;
+  boperationstatus = true;
 }
 
 /**
@@ -74,19 +74,18 @@ bool gridpack::dynamic_simulation::BaseRelayModel::updateRelay(
  */
 void gridpack::dynamic_simulation::BaseRelayModel::getTripStatus(int &itrip, int &itrip_prev)
 {
-
 }
 
 double gridpack::dynamic_simulation::BaseRelayModel::getRelayFracPar(void)
 {
-	return 1.0;
+  return 1.0;
 }
 
 bool  gridpack::dynamic_simulation::BaseRelayModel::getOperationStatus(void)
 {
-	return boperationstatus;
+  return boperationstatus;
 }
 void  gridpack::dynamic_simulation::BaseRelayModel::setOperationStatus( bool sta)
 {
-	boperationstatus = sta;
+  boperationstatus = sta;
 }

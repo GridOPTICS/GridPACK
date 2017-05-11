@@ -39,8 +39,6 @@ gridpack::dynamic_simulation::BaseExciterModel::~BaseExciterModel(void)
  * Load parameters from DataCollection object into exciter model
  * @param data collection of exciter parameters from input files
  * @param index of exciter on bus
- * TODO: might want to move this functionality to
- * BaseExciterModel
  */
 void gridpack::dynamic_simulation::BaseExciterModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
@@ -79,7 +77,6 @@ void gridpack::dynamic_simulation::BaseExciterModel::corrector(
 {
 }
 
-/**
 /**
  * Set the field voltage parameter inside the exciter
  * @param fldv value of the field voltage

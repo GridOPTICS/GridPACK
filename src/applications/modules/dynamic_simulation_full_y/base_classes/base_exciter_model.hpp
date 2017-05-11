@@ -39,7 +39,6 @@ class BaseExciterModel
      * Load parameters from DataCollection object into exciter model
      * @param data collection of exciter parameters from input files
      * @param index of exciter on bus
-     * TODO: might want to move this functionality to BaseExciterModel
      */
     virtual void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);

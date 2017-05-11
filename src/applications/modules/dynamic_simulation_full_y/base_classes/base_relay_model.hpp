@@ -64,14 +64,14 @@ class BaseRelayModel
      * @return current value of threshold
      */
     virtual void  getTripStatus(int &itrip, int &itrip_prev);
-	bool  getOperationStatus(void);
-	void  setOperationStatus( bool sta);
-	
-	virtual double getRelayFracPar(void);
+    bool  getOperationStatus(void);
+    void  setOperationStatus( bool sta);
+
+    virtual double getRelayFracPar(void);
 
   private:
-	 bool boperationstatus;  // true: relay  included in dynamic simulation, 
-							 // false: relay not included in dynamic simulation,
+    bool boperationstatus;  // true: relay  included in dynamic simulation, 
+                            // false: relay not included in dynamic simulation,
 
 };
 }  // dynamic_simulation

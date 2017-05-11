@@ -88,28 +88,28 @@ class BaseLoadModel
      * @param flag initial step if true
      */
     virtual void corrector(double t_inc, bool flag);
-	
-	/**
-	* post process for time step
-	* @param t_inc time step increment
-	* @param flag initial step if true
-	*/
-	virtual void dynamicload_post_process(double t_inc, bool flag);
-	
-	 /**
+   
+   /**
+   * post process for time step
+   * @param t_inc time step increment
+   * @param flag initial step if true
+   */
+   virtual void dynamicload_post_process(double t_inc, bool flag);
+   
+    /**
      * Set voltage on each generator
      */
     virtual void setVoltage(gridpack::ComplexType voltage);
-	
-	/**
+   
+   /**
      * get intialized reactive power of the dynamic load model
      */
     virtual double getInitReactivePower(void);
-	
-	/**
- * Set terminal voltage frequency on each load
- */
-	virtual void setFreq(double dFreq);
+
+    /**
+     * Set terminal voltage frequency on each load
+     */
+    virtual void setFreq(double dFreq);
 
     /**
      * Write output from loads to a string.
@@ -128,15 +128,15 @@ class BaseLoadModel
      * @param string buffer that contains output
      */
     virtual void write(const char* signal, char* string);
-	
-	void setDynLoadP(double pl);
-	void setDynLoadQ(double ql);
-	void setDynLoadID(std::string load_id);
-	
-	double getDynLoadP();
-	double getDynLoadQ();
-	std::string getDynLoadID();
-	
+   
+    void setDynLoadP(double pl);
+    void setDynLoadQ(double ql);
+    void setDynLoadID(std::string load_id);
+
+    double getDynLoadP();
+    double getDynLoadQ();
+    std::string getDynLoadID();
+
 
     /**
      * Set watch parameter
@@ -151,10 +151,10 @@ class BaseLoadModel
     bool getWatch();
 
   private:
-	
-	double dyn_p;   // initial value of the dynamic load model real power P
-	double dyn_q;	 // initial value of the dynamic load model real power Q
-	std::string dyn_load_id; // load ID
+   
+    double dyn_p;   // initial value of the dynamic load model real power P
+    double dyn_q;  // initial value of the dynamic load model real power Q
+    std::string dyn_load_id; // load ID
 
     bool p_watch;
 };

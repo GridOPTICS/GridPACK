@@ -42,7 +42,6 @@ class BaseGeneratorModel
      * Load parameters from DataCollection object into generator model
      * @param data collection of generator parameters from input files
      * @param index of generator on bus
-     * TODO: might want to move this functionality to BaseGeneratorModel
      */
     virtual void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -127,22 +126,22 @@ class BaseGeneratorModel
     void setGovernor(boost::shared_ptr<BaseGovernorModel> &p_governor);
 
     void setExciter(boost::shared_ptr<BaseExciterModel> &p_exciter);
-	
+
     void AddRelay(boost::shared_ptr<BaseRelayModel> &p_relay);  // renke add, add relay
     void ClearRelay();  // renke add, clear relay vector
 
     boost::shared_ptr<BaseGovernorModel> getGovernor();
 
     boost::shared_ptr<BaseExciterModel> getExciter();
-	
+
     boost::shared_ptr<BaseRelayModel> getRelay( int iRelay); //renke add
     void getRelayNumber( int &nrelay ); //renke add
 
     void setWatch(bool flag);
 
     bool getWatch();
-	bool getGenStatus(); //return the bolean indicate whether the gen is tripped by a relay
-	void SetGenServiceStatus (bool sta); // set the sta to be false if gen is tripped by a relay
+    bool getGenStatus(); //return the bolean indicate whether the gen is tripped by a relay
+    void SetGenServiceStatus (bool sta); // set the sta to be false if gen is tripped by a relay
 
   private:
 
@@ -151,7 +150,7 @@ class BaseGeneratorModel
     boost::shared_ptr<BaseGovernorModel> p_governor;
     boost::shared_ptr<BaseExciterModel> p_exciter;
     bool p_watch;
-	bool bStatus;
+    bool bStatus;
     std::vector< boost::shared_ptr<BaseRelayModel> > vp_relay;  //renke add, relay vector
 
 };

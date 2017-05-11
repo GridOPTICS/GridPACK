@@ -43,7 +43,6 @@ gridpack::dynamic_simulation::BaseGeneratorModel::~BaseGeneratorModel(void)
  * Load parameters from DataCollection object into generator model
  * @param data collection of generator parameters from input files
  * @param index of generator on bus
- * TODO: might want to move this functionality to
  * BaseGeneratorModel
  */
 void gridpack::dynamic_simulation::BaseGeneratorModel::load(
@@ -166,8 +165,7 @@ getAngle()
 }
 
 void
-gridpack::dynamic_simulation::BaseGeneratorModel::setGovernor(boost::shared_ptr<BaseGovernorModel>
-    &governor)
+gridpack::dynamic_simulation::BaseGeneratorModel::setGovernor(boost::shared_ptr<BaseGovernorModel> &governor)
 {
   p_governor = governor;
 }
@@ -179,15 +177,14 @@ gridpack::dynamic_simulation::BaseGeneratorModel::setExciter(boost::shared_ptr<B
   p_exciter = exciter;
 }
 
-void gridpack::dynamic_simulation::BaseGeneratorModel::AddRelay(boost::shared_ptr<BaseRelayModel> 
-&p_relay)  // renke add, add relay
+void gridpack::dynamic_simulation::BaseGeneratorModel::AddRelay(boost::shared_ptr<BaseRelayModel> &p_relay)  // renke add, add relay
 {
-	vp_relay.push_back(p_relay);
+  vp_relay.push_back(p_relay);
 }
 
 void gridpack::dynamic_simulation::BaseGeneratorModel::ClearRelay()  // renke add, clear relay vector
 {
-	vp_relay.clear();
+  vp_relay.clear();
 }
 
 void gridpack::dynamic_simulation::BaseGeneratorModel::setWatch(bool flag)
@@ -216,25 +213,26 @@ gridpack::dynamic_simulation::BaseGeneratorModel::getExciter()
 boost::shared_ptr<gridpack::dynamic_simulation::BaseRelayModel> 
 gridpack::dynamic_simulation::BaseGeneratorModel::getRelay( int iRelay)
 {
-	return vp_relay[iRelay];
+  return vp_relay[iRelay];
 }
 
 //renke add
 void gridpack::dynamic_simulation::BaseGeneratorModel::getRelayNumber( int &nrelay )
 {
-	if (vp_relay.empty()) {
-		nrelay = 0;
-	} else {
-		nrelay = vp_relay.size();
-	}	
+  if (vp_relay.empty()) {
+    nrelay = 0;
+  } else {
+    nrelay = vp_relay.size();
+  }	
 }
 
 bool gridpack::dynamic_simulation::BaseGeneratorModel::getGenStatus ()
 {
-	return bStatus;
+  return bStatus;
 }
+
 void gridpack::dynamic_simulation::BaseGeneratorModel::SetGenServiceStatus (bool sta)
 {
-	bStatus = sta;
+  bStatus = sta;
 }
 

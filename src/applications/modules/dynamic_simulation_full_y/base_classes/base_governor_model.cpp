@@ -39,8 +39,6 @@ gridpack::dynamic_simulation::BaseGovernorModel::~BaseGovernorModel(void)
  * Load parameters from DataCollection object into governor model
  * @param data collection of governor parameters from input files
  * @param index of governor on bus
- * TODO: might want to move this functionality to
- * BaseGovernorModel
  */
 void gridpack::dynamic_simulation::BaseGovernorModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
