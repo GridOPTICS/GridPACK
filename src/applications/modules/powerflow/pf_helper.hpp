@@ -83,7 +83,6 @@ struct PFSolverHelper
     p_factory->setMode(State);
     mapper::BusVectorMap<PFNetwork> vMap(p_network);
     Xold = vMap.mapToRealVector();
-    // Xold->print();
     X.reset(Xold->clone());
     Xdelta.reset(Xold->clone());
     Xdelta->zero();
@@ -113,10 +112,10 @@ struct PFSolverHelper
     Xdelta->add(*Xold);
     double snorm(Xdelta->norm2());
     if (Xdelta->processor_rank() == 0) {
-      std::cout << "PFSolverHelper::update(): solution residual: " << snorm << std::endl;
+      std::cout << "PFSolverHelper::update(): solution residual: "
+        << snorm << std::endl;
     }
 
-    // Xdelta->print();
     p_factory->setMode(RHS);
     mapper::BusVectorMap<PFNetwork> vMap(p_network);
     vMap.mapToBus(Xdelta);
@@ -144,11 +143,9 @@ struct PFSolverHelper
     // before this, so we may be able to count on the current solution
     // being on the netork when here.
 
-    // X.print();
     // update(Xcur);
     
     // Set to build Jacobian
-    printf("Got to operator J\n");
     p_factory->setMode(Jacobian);
     mapper::FullMatrixMap<PFNetwork> jMap(p_network);
     
@@ -176,7 +173,6 @@ struct PFSolverHelper
     // implementations, this is called before the Jacobian builder, so
     // we may only need to map the solution back on to the network here.
     
-    // X.print();
     update(Xcur);
     
     // set to build RHS vector
@@ -185,7 +181,6 @@ struct PFSolverHelper
     
     // build the RHS vector
     vMap.mapToRealVector(PQ);
-    printf("norm of PQ: %f\n",PQ.norm2());
   }
 };
 }

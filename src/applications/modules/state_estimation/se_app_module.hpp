@@ -27,7 +27,6 @@ namespace gridpack {
 namespace state_estimation {
 
 // Calling program for state estimation application
-// Calling program for state estimation application
 class SEAppModule
 {
   public:

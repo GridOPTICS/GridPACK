@@ -201,19 +201,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   int t_cmap = timer->createCategory("Powerflow: Create Mappers");
   timer->start(t_cmap);
   p_factory->setMode(YBus); 
-#if 0
-  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
-#endif
   timer->stop(t_cmap);
-  int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
-  timer->start(t_mmap);
-#if 0
-  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
-  p_busIO->header("\nY-matrix values\n");
-  Y->print();
-//  Y->save("Ybus.m");
-#endif
-  timer->stop(t_mmap);
 
   timer->start(t_fact);
   p_factory->setMode(S_Cal);
@@ -241,11 +229,11 @@ bool gridpack::powerflow::PFAppModule::solve()
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
 #endif
   timer->stop(t_vmap);
-//  PQ->print();
   timer->start(t_cmap);
   p_factory->setMode(Jacobian);
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(p_network);
   timer->stop(t_cmap);
+  int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
   timer->start(t_mmap);
 #ifdef USE_REAL_VALUES
   boost::shared_ptr<gridpack::math::RealMatrix> J = jMap.mapToRealMatrix();
@@ -253,8 +241,6 @@ bool gridpack::powerflow::PFAppModule::solve()
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
 #endif
   timer->stop(t_mmap);
-//  p_busIO->header("\nJacobian values\n");
-//  J->print();
 
   // Create X vector by cloning PQ
 #ifdef USE_REAL_VALUES
@@ -284,11 +270,6 @@ bool gridpack::powerflow::PFAppModule::solve()
   //p_busIO->header("\nCalling solver\n");
   int t_lsolv = timer->createCategory("Powerflow: Solve Linear Equation");
   timer->start(t_lsolv);
-//    char dbgfile[32];
-//    sprintf(dbgfile,"j0.bin");
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq0.bin");
-//    PQ->saveBinary(dbgfile);
   try {
     solver.solve(*PQ, *X);
   } catch (const gridpack::Exception e) {
@@ -326,8 +307,6 @@ bool gridpack::powerflow::PFAppModule::solve()
 #else
     vMap.mapToVector(PQ);
 #endif
-//    p_busIO->header("\nnew PQ vector\n");
-//    PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     p_factory->setMode(Jacobian);
@@ -341,10 +320,6 @@ bool gridpack::powerflow::PFAppModule::solve()
     // Create linear solver
     timer->start(t_lsolv);
     X->zero(); //might not need to do this
-//    sprintf(dbgfile,"j%d.bin",iter+1);
-//    J->saveBinary(dbgfile);
-//    sprintf(dbgfile,"pq%d.bin",iter+1);
-//    PQ->saveBinary(dbgfile);
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {

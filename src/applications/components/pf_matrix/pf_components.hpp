@@ -89,7 +89,8 @@ class PFBus
 
     /**
      * Return the size of the buffer used in data exchanges on the network.
-     * For this problem, the voltage magnitude and phase angle need to be exchanged
+     * For this problem, the voltage magnitude and phase angle need to be
+     * exchanged
      * @return size of buffer
      */
     int getXCBufSize(void);

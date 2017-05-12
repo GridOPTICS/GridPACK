@@ -30,11 +30,9 @@ enum SEMode{YBus,Jacobian_H, R_inv, Ez, Voltage};
 struct Measurement
 {
   char p_type[4];
-  //std::string p_type;
   int p_busid;
   int p_fbusid;
   int p_tbusid;
-  //std::string p_ckt;
   char p_ckt[3];
   double p_value;
   double p_deviation;
@@ -132,7 +130,8 @@ class SEBus
 
     /**
      * Return the size of the buffer used in data exchanges on the network.
-     * For this problem, the voltage magnitude and phase angle need to be exchanged
+     * For this problem, the voltage magnitude and phase angle need to be
+     * exchanged
      * @return size of buffer
      */
     int getXCBufSize(void);
@@ -345,7 +344,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
       & p_shunt_gs
       & p_shunt_bs
@@ -549,9 +547,10 @@ class SEBranch
     int matrixGetRowIndex(int idx);
 
     /**
-     * Get the column index corresponding to the columns contributed by this component
-     * @param icol index of column contributed by this component (e.g. if component
-     * contributes 3 columns then icol is between 0 and 2)
+     * Get the column index corresponding to the columns contributed by
+     * this component
+     * @param icol index of column contributed by this component
+     * (e.g. if component contributes 3 columns then icol is between 0 and 2)
      * @return matrix index of column icol
      */
     int matrixGetColIndex(int idx);
@@ -650,7 +649,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
       & p_reactance
       & p_resistance

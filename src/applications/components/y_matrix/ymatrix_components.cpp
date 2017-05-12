@@ -621,7 +621,6 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
     gridpack::ComplexType yij,aij,bij;
     yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
     bij = gridpack::ComplexType(0.0,p_charging[idx]);
-    //bij = 0.0;
     if (yij != zero) yij = -1.0/yij;
     if (p_xform[idx]) {
       // evaluate flow for transformer
@@ -671,11 +670,11 @@ void gridpack::ymatrix::YMBranch::getRvrsLineElements(const std::string tag,
     gridpack::ComplexType yij,aij,bij;
     yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
     bij = gridpack::ComplexType(0.0,p_charging[idx]);
-    //bij = 0.0;
     if (yij != zero) yij = -1.0/yij;
     if (p_xform[idx]) {
       // evaluate flow for transformer
-      aij = gridpack::ComplexType(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+      aij = gridpack::ComplexType(cos(p_phase_shift[idx]),
+          sin(p_phase_shift[idx]));
       aij = p_tap_ratio[idx]*aij;
       if (aij != zero) {
         if (p_switched[idx]) {
