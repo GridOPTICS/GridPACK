@@ -15,7 +15,7 @@
  */
 // -------------------------------------------------------------
 //
-#define USE_TIMESTAMP
+//#define USE_TIMESTAMP
 
 #include "gridpack/include/gridpack.hpp"
 #include "dsf_app_module.hpp"
