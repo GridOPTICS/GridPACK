@@ -1,0 +1,15 @@
+Adding a user to the web page (requires administrator priviledges)
+
+   1) Log into the webpage by going to https://www.gridpack.org/GridPACK and
+      log in with youer username and password.
+   2) Click on the Admin tab at the top of the page.
+   3) Click on the Users link on the left hand side bar (Administration). The
+      User link is in the Accounts block.
+   4) Follow the instructions for adding a new user. Permissions for each user
+      can be controlled view the permissions can be controlled by going to
+      the Permissions link and setting permissions there.
+
+Uploading files (requires administrator priviledges)
+
+   1) Got to https://www.gridpack.org home page and log in.
+   2) Click on upload file link in left hand tool bar.
