@@ -159,6 +159,7 @@ void gridpack::dynamic_simulation::DSFullApp::readGenerators(void)
   std::string filename = cursor->get("generatorParameters","");
   printf("p[%d] generatorParameters: %s\n",p_comm.rank(),filename.c_str());
   if (filename.size() > 0) parser.externalParse(filename.c_str());
+  printf("p[%d] finished Generator parameters\n",p_comm.rank());
 }
 
 /**
@@ -1212,6 +1213,9 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
   ok = ok && cursor->get("channelURI",&URI);
   ok = ok && cursor->get("username",&username);
   ok = ok && cursor->get("password",&passwd);
+  if (p_internal_watch_file_name) {
+    topic = p_gen_watch_file;
+  }
   printf("channeltopic %s \n", topic.c_str());
   printf("channelURI %s \n", URI.c_str());
   printf("username %s \n", username.c_str());
