@@ -396,53 +396,6 @@ class SerialBusIO {
       p_channel_buf.clear();
     }
   }
-
-  /**
-   * Send a message via GOSS to server
-   * @param topic specify topic targeted by message
-   * @param string text of message
-   */
-  void sendChannelMessage(std::string topic, std::string string)
-  {
-    if (topic != p_topic && GA_Pgroup_nodeid(p_GAgrp)==0) {
-      Connection *connection;
-      Session *session;
-      Destination *destination;
-      MessageProducer *producer;
-
-      std::string brokerURI = p_URI;
-
-      std::auto_ptr<ActiveMQConnectionFactory>
-        connectionFactory(new ActiveMQConnectionFactory(brokerURI)) ;
-      // Create a Connection
-      std::string User = p_username;
-      std::string Pass = p_passwd;
-      connection = connectionFactory->createConnection(User, Pass);
-      connection->start();
-
-      // Create a Session
-      session = connection->createSession(Session::AUTO_ACKNOWLEDGE);
-
-      // Create the destination (Topic or Queue)
-      destination = session->createTopic(topic);
-
-      // Create a MessageProducer from the Session to the Topic
-      producer = session->createProducer(destination);
-      producer->setDeliveryMode(DeliveryMode::NON_PERSISTENT);
-
-      std::auto_ptr<TextMessage>
-        message(p_session->createTextMessage(string));
-      producer->send(message.get());
-
-      if (connection) delete connection;
-      if (session) delete session;
-      if (destination) delete destination;
-      if (producer) delete producer;
-    } else if (GA_Pgroup_nodeid(p_GAgrp)==0) {
-      std::auto_ptr<TextMessage> message(p_session->createTextMessage(string));
-      p_producer->send(message.get());
-    }
-  }
 #endif
 
   protected:
