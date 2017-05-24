@@ -42,6 +42,7 @@
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/serial_io/goss_utils.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/timer/local_timer.hpp"
 #include "gridpack/expression/expression.hpp"
