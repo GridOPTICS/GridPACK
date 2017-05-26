@@ -31,6 +31,11 @@ Uploading files (requires administrator priviledges)
 
 Doxygen documentation
 
+   0) Check that new directories have been added to the Doxygen build. You will
+      need to edit the Doxygen.in file in the src directory. Look for the
+      INPUT flag and check that all new directories have been added. You can
+      find this flag easily by searching for one of the gridpack directories,
+      such as serial_io.
    1) You can only create Doxygen docs on a computer that has doxygen. You
       should get a notification that Doxygen was found when you configure
       GridPACK.
