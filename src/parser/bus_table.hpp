@@ -190,7 +190,7 @@ public:
         delete [] buf;
       }
       // Synchronize across all processors so data is in a consistent state
-      GA_Sync();
+      p_comm.sync();
       // Create hash table to match data with processors holding corresponding
       // buses
       gridpack::hash_distr::HashDistribution<NetworkType,table_t,table_t>
@@ -267,7 +267,7 @@ public:
     }
     NGA_Gather(p_GA_data, v, subscript, nsize);
     delete [] subscript;
-    GA_Sync();
+    p_comm.sync();
     for (i=0; i<nsize; i++) {
       values.push_back(v[i]);
     }
