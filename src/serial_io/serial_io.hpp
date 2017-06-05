@@ -231,6 +231,10 @@ class SerialBusIO {
   void closeChannel()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      // Send final message indicating that channel is being close
+      std::string buf = "Closing channel";
+      std::auto_ptr<TextMessage> message(p_session->createTextMessage(buf));
+      p_producer->send(message.get());
       if (p_connection) delete p_connection;
       if (p_session) delete p_session;
       if (p_destination) delete p_destination;
