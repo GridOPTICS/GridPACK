@@ -20,6 +20,7 @@
 #ifndef _global_store_hpp_
 #define _global_store_hpp_
 
+#include <iostream>
 #include <ga.h>
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/communicator.hpp"
@@ -140,6 +141,11 @@ public:
     for (i=0; i<nsize; i++) {
       ndata += p_end[i];
       p_end[i] = p_begin[i]+p_end[i];
+    }
+
+    if (ndata < 1) {
+      std::cout << "No data found for global store" << std::endl;
+      return;
     }
 
     // Create a GA to hold data
