@@ -34,6 +34,7 @@
 #include "gridpack/parallel/shuffler.hpp"
 #include "gridpack/parallel/task_manager.hpp"
 #include "gridpack/parallel/global_store.hpp"
+#include "gridpack/parallel/global_vector.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
