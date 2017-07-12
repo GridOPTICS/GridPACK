@@ -248,6 +248,24 @@ int main(int argc, char **argv)
   gridpack::bus_table::BusTable<TestNetwork> table(network);
   std::string file = "table.dat";
   table.readTable(file);
+  // Check headers
+  std::vector<std::string> headers;
+  table.getHeaders(headers);
+  if (headers.size() != 2 && me == 0) {
+    printf("\nNumber of headers found is incorrect: %d\n",headers.size());
+  } else if (me == 0) {
+    printf("\nNumber of headers is correct\n");
+  }
+  if (headers[0] != "1_2_3_4_5_6_7_8_9" && me == 0) {
+    printf("\nFirst header is incorrect: (%s)\n",headers[0].c_str());
+  } else if (me == 0) {
+    printf("\nFirst header is correct\n");
+  }
+  if (headers[1] != "1 2 3 4 5 6 7 8 9" && me == 0) {
+    printf("\nSecond header is incorrect: (%s)\n",headers[1].c_str());
+  } else if (me == 0) {
+    printf("\nSecond header is correct\n");
+  }
   std::vector<int> indices;
   std::vector<std::string> tags;
   std::vector<double> values;
@@ -267,8 +285,8 @@ int main(int argc, char **argv)
     }
   }
   if (ok && me == 0) {
-    printf("Table values are ok\n");
+    printf("\nTable values are ok\n");
   } else if (!ok) {
-    printf("Table values incorrect\n");
+    printf("\nTable values incorrect\n");
   }
 }
