@@ -1160,8 +1160,13 @@ class BasePTIParser : public BaseParser<_network>
       std::string ret;
       std::string line = file;
       int ntok1 = line.find('.',0);
-      if (ntok1 == std::string::npos) return
-        ret;
+      if (ntok1 == std::string::npos) return ret;
+      int nsav = ntok1;
+      while(ntok1 != std::string::npos) {
+        ntok1 = line.find('.',ntok1+1);
+        if (ntok1 != std::string::npos) nsav=ntok1;
+      }
+      ntok1 = nsav;
       ntok1++;
       int ntok2 = line.find(' ',ntok1);
       if (ntok2 == std::string::npos)

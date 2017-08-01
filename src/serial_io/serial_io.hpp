@@ -184,6 +184,10 @@ class SerialBusIO {
     if (!p_channel && GA_Pgroup_nodeid(p_GAgrp)==0) {
       printf("Opening Channel\n");
       std::string brokerURI = URI;
+      p_topic = topic;
+      p_URI = URI;
+      p_username = username;
+      p_passwd = passwd;
       //std::auto_ptr<ConnectionFactory> connectionFactory(
       //ConnectionFactory::createCMSConnectionFactory(brokerURI));
 
@@ -227,6 +231,10 @@ class SerialBusIO {
   void closeChannel()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      // Send final message indicating that channel is being close
+      std::string buf = "Closing channel";
+      std::auto_ptr<TextMessage> message(p_session->createTextMessage(buf));
+      p_producer->send(message.get());
       if (p_connection) delete p_connection;
       if (p_session) delete p_session;
       if (p_destination) delete p_destination;
@@ -555,6 +563,10 @@ class SerialBusIO {
     Destination *p_destination;
     MessageProducer *p_producer;
     std::string p_channel_buf;
+    std::string p_topic;
+    std::string p_URI;
+    std::string p_username;
+    std::string p_passwd;
 #endif
 };
 

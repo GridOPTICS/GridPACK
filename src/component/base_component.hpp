@@ -438,6 +438,18 @@ class BaseComponent
      */
     virtual bool getDataItem(void *data, const char *signal = NULL);
 
+    /**
+     * Set rank holding the component
+     * @param rank processor rank holding the component
+     */
+    void setRank(int rank);
+
+    /**
+     * Get rank holding the component
+     * @return processor rank holding the component
+     */
+    int getRank(void) const;
+
   protected:
     /**
      * A buffer that can be used for exchanging component data. This is
@@ -454,6 +466,11 @@ class BaseComponent
       * Current mode
       */
      int p_mode;
+
+    /**
+     * Rank holding the component. Useful for debugging
+     */
+    int p_rank;
 
   private:
 

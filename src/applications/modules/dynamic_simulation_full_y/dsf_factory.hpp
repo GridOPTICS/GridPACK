@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_factory_module.hpp
+ * @file   dsf_factory.hpp
  * @author Shuangshuang Jin 
  * @date   Feb 04, 2015
  * @last modified date   May 13, 2015
@@ -16,12 +16,12 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _dsf_factory_module_h_
-#define _dsf_factory_module_h_
+#ifndef _dsf_factory_h_
+#define _dsf_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/include/gridpack.hpp"
-#include "dsf_components_module.hpp"
+#include "dsf_components.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -45,6 +45,11 @@ class DSFullFactory
      * Create the admittance (Y-Bus) matrix
      */
     void setYBus(void);
+
+    /**
+     * Create the admittance (Y-Bus) matrix for Branch only
+     */
+    void setYBranch(void);
 
     /**
      * Get the updating factor for posfy11 stage ybus
@@ -88,11 +93,47 @@ class DSFullFactory
      * Update vectors in each integration time step (Corrector)
      */
     void corrector(double t_inc, bool flag);
+	
+	/**
+     * Update dynamic load internal relays action
+     */
+	void dynamicload_post_process(double t_inc, bool flag);
+	
+	/**
+     * load parameters for the extended buses from composite load model
+     */
+	void LoadExtendedCmplBus( );
+	
+	/**
+     * set voltage for the extended buses from composite load model
+     */
+	void setExtendedCmplBusVoltage( );
 
     /**
      * Set volt from volt_full
      */
     void setVolt(bool flag);
+	
+	/**
+    * update bus frequecy
+    */
+    void updateBusFreq(double delta_t);
+	
+   /**
+     * update bus relay status
+     */
+    bool updateBusRelay(bool flag,double delta_t);
+	
+	/**
+     * update branch relay status
+     */
+    bool updateBranchRelay(bool flag,double delta_t);
+	
+	/**
+     * update old bus voltage
+     */
+	void updateoldbusvoltage();
+	void printallbusvoltage();
 
     /**
      * Add constant impedance load admittance to diagonal elements of

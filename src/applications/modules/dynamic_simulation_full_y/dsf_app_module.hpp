@@ -19,13 +19,11 @@
 #define _dsf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "dsf_factory_module.hpp"
+#include "dsf_factory.hpp"
 
 
 namespace gridpack {
 namespace dynamic_simulation {
-
-enum {PTI23, PTI33};
 
     // Calling program for dynamic simulation application
 
@@ -60,7 +58,7 @@ class DSFullApp
      */
     void readNetwork(boost::shared_ptr<DSFullNetwork> &network,
         gridpack::utility::Configuration *config,
-        const char *otherfile = NULL, int filetype = PTI23);
+        const char *otherfile = NULL);
 
     /**
      * Assume that DSFullNetwork already exists and just cache an internal pointer
@@ -85,6 +83,11 @@ class DSFullApp
     void initialize();
 
     /**
+     * Reinitialize calculation from data collections
+     */
+    void reload();
+
+    /**
      * Execute the time integration portion of the application
      */
     void solve(gridpack::dynamic_simulation::DSFullBranch::Event fault);
@@ -104,8 +107,16 @@ class DSFullApp
 
     /**
      * Read in generators that should be monitored during simulation
+     * @param filename set filename from calling program instead of input
+     *        deck
      */
     void setGeneratorWatch();
+    void setGeneratorWatch(const char *filename);
+
+    /**
+     * Read in loads that should be monitored during simulation
+     */
+    void setLoadWatch();
 
     /**
      * Redirect output from standard out
@@ -144,6 +155,18 @@ class DSFullApp
      */
     void closeGeneratorWatchFile();
 
+    /**
+     * Open file (specified in input deck) to write load results to.
+     * Data from loads specified in input deck will be
+     * written to this file at specified time intervals
+     */
+    void openLoadWatchFile();
+
+    /**
+     * Close file contain generator watch results
+     */
+    void closeLoadWatchFile();
+
     std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> p_faults;
 
     // pointer to network
@@ -175,22 +198,42 @@ class DSFullApp
     // pointer to configuration module
     gridpack::utility::Configuration *p_config;
 
+    // file name for generator watch file
+    std::string p_gen_watch_file;
+
+    // flag indicating whether or not to use application supplied generator
+    // watch file name or name from input deck
+    bool p_internal_watch_file_name;
+
+    // flag indicating whether or not generators to be monitored have
+    // already been read in
+    bool p_generators_read_in;
 
     // Flag indicating that generators are to be monitored
     bool p_generatorWatch;
 
     // Frequency to write out generator watch results
-    int p_watchFrequency;
+    int p_generatorWatchFrequency;
 
     // bus indices of generators that are being monitored
     std::vector<int> p_gen_buses;
 
-    // tags of generators that are being monitored
-    std::vector<std::string> p_tags;
-
     // pointer to bus IO module that is used for generator results
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSFullNetwork> >
       p_generatorIO;
+
+    // Flag indicating that loads are to be monitored
+    bool p_loadWatch;
+
+    // Frequency to write out load watch results
+    int p_loadWatchFrequency;
+
+    // bus indices of loads that are being monitored
+    std::vector<int> p_load_buses;
+
+    // pointer to bus IO module that is used for load results
+    boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSFullNetwork> >
+      p_loadIO;
 
    // Keep track of whether or not systsem is secure
    int p_insecureAt;

@@ -142,9 +142,7 @@ main(int argc, char **argv)
     ds_app.readGenerators();
     //printf("ds_app.initialize:\n");
     ds_app.initialize();
-    ds_app.open("init_debug.values");
-    ds_app.write("debug_initial");
-    ds_app.close();
+    ds_app.setGeneratorWatch();
     //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
     //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
     //printf("ds_app.solve:\n");

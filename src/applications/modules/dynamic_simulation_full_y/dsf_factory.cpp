@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_factory_module.cpp
+ * @file   dsf_factory.cpp
  * @author Shuangshuang Jin 
- * @date   2016-07-14 13:50:07 d3g096
+ * @date   Feb 04, 2015
  * @last modified date   May 13, 2015
  * 
  * @brief  
@@ -18,7 +18,7 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "dsf_factory_module.hpp"
+#include "dsf_factory.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -88,6 +88,19 @@ void gridpack::dynamic_simulation::DSFullFactory::setYBus(void)
 }
 
 /**
+ * Create the admittance (Y-Bus) matrix for Branch only
+ */
+void gridpack::dynamic_simulation::DSFullFactory::setYBranch(void)
+{
+  int i;
+
+  // Invoke setYBus method on all branch objects
+  for (i=0; i<p_numBranch; i++) {
+    p_branches[i]->setYBus();
+  }
+}
+
+/**
  * Get the updating factor for posfy11 stage ybus
  */
 gridpack::ComplexType
@@ -105,8 +118,6 @@ gridpack::dynamic_simulation::DSFullFactory::setFactor(int sw2_2, int sw3_2)
       return ret;
     }
   }
-
-  return dummy;
 }
 
 /**
@@ -215,6 +226,18 @@ void gridpack::dynamic_simulation::DSFullFactory::corrector(double t_inc, bool f
 }
 
 /**
+ * Update dynamic load internal relays action
+ */
+void gridpack::dynamic_simulation::DSFullFactory::dynamicload_post_process(double t_inc, bool flag)
+{
+	int i;
+
+    for (i=0; i<p_numBus; i++) {
+      p_buses[i]->dynamicload_post_process(t_inc,flag);
+    }
+}
+
+/**
  * Set volt from volt_full
  */
 void gridpack::dynamic_simulation::DSFullFactory::setVolt(bool flag)
@@ -225,6 +248,76 @@ void gridpack::dynamic_simulation::DSFullFactory::setVolt(bool flag)
   for (i=0; i<p_numBus; i++) {
     p_buses[i]->setVolt(flag);
   }
+}
+
+/**
+ * update bus frequecy
+ */
+void gridpack::dynamic_simulation::DSFullFactory::updateBusFreq(double delta_t)
+{
+  int i;
+
+  // Invoke updateDSVect method on all bus objects
+  for (i=0; i<p_numBus; i++) {
+    p_buses[i]->updateFreq(delta_t);
+  }
+}
+
+bool gridpack::dynamic_simulation::DSFullFactory::updateBusRelay(bool flag,double delta_t)
+{
+	int i;
+	bool bflag;
+	
+	bflag = false;
+	
+	for (i=0; i<p_numBus; i++) {
+		bflag = bflag || p_buses[i]->updateRelay(flag,delta_t);
+	
+        }
+        return checkTrueSomewhere(bflag); 
+	//return bflag;
+	
+}
+
+bool gridpack::dynamic_simulation::DSFullFactory::updateBranchRelay(bool flag,double delta_t)
+{
+	int i;
+	bool bflag;
+	
+	bflag = false;
+	
+	for (i=0; i<p_numBranch; i++) {
+		bflag = bflag || p_branches[i]->updateRelay(flag,delta_t);
+	}
+	
+	return bflag;
+	
+}
+
+/**
+ * update old bus voltage, renke add
+ */
+void gridpack::dynamic_simulation::DSFullFactory::updateoldbusvoltage()
+{
+	int i;
+	
+	for (i=0; i<p_numBus; i++) {
+    p_buses[i]->updateoldbusvoltage();
+	
+    }
+}
+
+/**
+ * print all bus voltage, renke add
+ */
+void gridpack::dynamic_simulation::DSFullFactory::printallbusvoltage()
+{
+	int i;
+	
+	for (i=0; i<p_numBus; i++) {
+    p_buses[i]->printbusvoltage();
+	
+    }
 }
 
 /**
@@ -271,6 +364,34 @@ bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
   }
   //printf("max = %f, min = %f\n", maxAngle, minAngle);
   return secure;
+}
+
+/**
+ * load parameters for the extended buses from composite load model
+ */
+void gridpack::dynamic_simulation::DSFullFactory::setExtendedCmplBusVoltage()
+{
+	int i;
+
+  // Invoke updateDSVect method on all bus objects
+  for (i=0; i<p_numBus; i++) {
+    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_buses[i])->setExtendedCmplBusVoltage(p_network->getBusData(i));
+  }
+	
+}
+
+/**
+ * load parameters for the extended buses from composite load model
+ */
+void gridpack::dynamic_simulation::DSFullFactory::LoadExtendedCmplBus()
+{
+	int i;
+
+  // Invoke updateDSVect method on all bus objects
+  for (i=0; i<p_numBus; i++) {
+    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(p_buses[i])->LoadExtendedCmplBus(p_network->getBusData(i));
+  }
+	
 }
 
 #ifdef USE_FNCS

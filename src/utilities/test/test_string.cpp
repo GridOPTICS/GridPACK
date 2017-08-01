@@ -88,4 +88,30 @@ int main(int argc, char **argv)
   str = "\nTest string 5\t";
   util.trim(str);
   printf("expected: (Test String 5) found: (%s)\n",str.c_str());
+
+  // test char tokenizer
+  printf("\nTesting charTokenizer function\n");
+  str = "string1 :: string 2 :: \"string 3 4\" :: string 5::\'string 6\'";
+  tokens.clear();
+  tokens = util.charTokenizer(str,"::");
+  if (tokens.size() != 5) {
+    printf("Error: expected 5 tokens, got %d\n",static_cast<int>(tokens.size()));
+  } else {
+    printf("\nNumber of tokens from first string ok\n");
+  }
+  printf("\nListing tokens\n");
+  for (int i=0; i<tokens.size(); i++) {
+    if (i==0) {
+      printf("expected: (string1 ) found: (%s)\n",tokens[0].c_str());
+    } else if (i==1) {
+      printf("expected: ( string 2 ) found: (%s)\n",tokens[1].c_str());
+    } else if (i==2) {
+      printf("expected: ( \"string 3 4\" ) found: (%s)\n",tokens[2].c_str());
+    } else if (i==3) {
+      printf("expected: ( string 5) found: (%s)\n",tokens[3].c_str());
+    } else if (i==4) {
+      printf("expected: (\'string 6\') found: (%s)\n",tokens[4].c_str());
+    }
+  }
+
 }

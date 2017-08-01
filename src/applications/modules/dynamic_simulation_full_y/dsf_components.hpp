@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   dsf_components_module.hpp
+ * @file   dsf_components.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   May 13, 2015
  * 
@@ -15,8 +15,8 @@
  */
 // -------------------------------------------------------------
 
-#ifndef _dsf_components_module_h_
-#define _dsf_components_module_h_
+#ifndef _dsf_components_h_
+#define _dsf_components_h_
 
 //#define USE_FNCS
 /**
@@ -27,12 +27,17 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
-#include "dsf_generator_factory_module.hpp"
+#include "generator_factory.hpp"
+#include "relay_factory.hpp"
+#include "load_factory.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
 
-enum DSMode{YBUS, YL, PG, onFY, posFY, jxd, make_INorton_full};
+enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay};
+
+class DSFullBranch;
+class DSFullBus;
 
 class DSFullBus
   : public gridpack::ymatrix::YMBus
@@ -132,6 +137,11 @@ class DSFullBus
      * @param flag initial step if true
      */
     void corrector(double t_inc, bool flag);
+	
+	/**
+     * Update dynamic load internal relays action
+     */
+	void dynamicload_post_process(double t_inc, bool flag);
 
     /**
      * Get rotor angle of generators
@@ -142,6 +152,11 @@ class DSFullBus
      * Set volt from volt_full
      */
     void setVolt(bool flag);
+	
+	/**
+     * compute bus frequency and set it to dynamic load models
+     */
+	void updateFreq (double delta_t);
 
     /**
      * Get values of YBus matrix. These can then be used in subsequent
@@ -157,6 +172,16 @@ class DSFullBus
      *       bus that were read in when network was initialized
      */
     void load(const boost::shared_ptr<gridpack::component::DataCollection> &data);
+	
+ 	/**
+     * load parameters for the extended buses from composite load model
+     */
+	void LoadExtendedCmplBus(const boost::shared_ptr<gridpack::component::DataCollection> &data);
+	
+	/**
+     * set voltage for the extended buses from composite load model
+     */
+	void setExtendedCmplBusVoltage(const boost::shared_ptr<gridpack::component::DataCollection> &data);
 
     /**
      * Set the mode to control what matrices and vectors are built when using
@@ -176,6 +201,63 @@ class DSFullBus
      * @return: phase angle
      */
     double getPhase(void);
+	
+	/**
+     * Return the value of whether the bus is an extended bus due to compositeload
+	 * return true if this is an extended bus due to compositeload
+     */
+	int checkExtendedLoadBus(void);
+	
+	/**
+     * Set the value of the voltage magnitude on this bus
+     */
+    void setVoltage(double mag);
+
+    /**
+     * Set the value of the phase angle on this bus
+     */
+    void setPhase(double ang);
+	
+	/**
+     * Set the point of the related extended transformer branch of this bus, due to composite load model
+     */
+    void setCmplXfmrPt(gridpack::dynamic_simulation::DSFullBranch* p_CmplXfmr);
+	
+	/**
+     * Set the point of the related extended feeder branch of this bus, due to composite load model
+     */
+    void setCmplXfeederPt(gridpack::dynamic_simulation::DSFullBranch* p_CmplFeeder);
+	
+	/**
+     * Return the complex value of the voltage on this bus
+     * @return: complex value of the voltage
+     */
+    gridpack::ComplexType getComplexVoltage(void); //renke add
+	
+	/**
+     * compute the value of the voltage frequency on this bus
+     * @return: voltage frequency
+     */
+    void computeBusVolFrequency(double timestep); //renke add
+	
+	/**
+     * return the value of the voltage frequency on this bus
+     * @return: voltage frequency
+     */
+    double getBusVolFrequency(void); //renke add
+	
+	void printbusvoltage (void); //renke add
+	
+	
+	/**
+     * update the relay status associate with this bus
+     */
+    bool updateRelay(bool flag, double delta_t); //renke add
+	
+	/**
+     * update the old bus voltage with this bus
+     */
+    void updateoldbusvoltage (); //renke add
 
     /**
      * Return the number of generators on this bus
@@ -198,6 +280,11 @@ class DSFullBus
      * Set values of the IJaco on this bus (gen)
      */
     void setIJaco(void);
+	
+	void setBranchRelayFromBusStatus(bool sta);
+	void setBranchRelayToBusStatus(bool sta);
+	void setRelayTrippedbranch(gridpack::component::BaseBranchComponent* branch_ptr);
+	void clearRelayTrippedbranch();
 
     /**
      * Check to see if a fault event applies to this bus and set an internal
@@ -251,6 +338,26 @@ class DSFullBus
      * @param ql imaginary load
      */
     void getLoad(double *pl, double *ql);
+	
+	bool checkisolated();
+
+    /**
+     * Set value of real power on individual generators
+     * @param tag generator ID
+     * @param value new value of real power
+     * @param data data collection object associated with bus
+     */
+    void setGeneratorRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
+
+    /**
+     * Set value of real power on individual loads
+     * @param tag load ID
+     * @param value new value of real power
+     * @param data data collection object associated with bus
+     */
+    void setLoadRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
 
 #ifdef USE_FNCS
     /**
@@ -270,18 +377,28 @@ class DSFullBus
     double p_theta; // phase angle difference
     double p_ybusr, p_ybusi;
     double p_angle, p_voltage;
+	double p_busvolfreq, pbusvolfreq_old; //renke add, bus voltage frequency at current and previous timesteps
     bool p_load;
     double p_pl, p_ql;
+	double p_loadimpedancer, p_loadimpedancei;
     double p_sbase;
     bool p_isGen;
-    std::vector<double> p_pg, p_qg;
+    std::vector<double> p_pg, p_qg, p_negpg, p_negqg;
     std::vector<int> p_gstatus;
     std::vector<double> p_mva, p_r, p_dstr, p_dtr;
-    int p_ngen;
+    int p_ngen, p_negngen;
+    int p_ndyn_load, p_npowerflow_load;
     int p_type;
     gridpack::ComplexType p_permYmod;
     bool p_from_flag, p_to_flag;
+	bool p_branchrelay_from_flag, p_branchrelay_to_flag;
+	bool p_busrelaytripflag;
+	int p_bextendedloadbus; // whether it is an extended load bus with composite load model
+	                        // -1: normal bus
+							//  1: LOW_SIDE_BUS
+							//  2: LOAD_BUS
     std::vector<std::string> p_genid;
+    std::vector<std::string> p_loadid;
     std::vector<bool> p_watch;
 
     // DAE related variables
@@ -304,13 +421,32 @@ class DSFullBus
 
     std::vector<gridpack::ComplexType> p_INorton;
     gridpack::ComplexType p_volt_full;
+	gridpack::ComplexType p_volt_full_old; //renke add
+	double p_volt_full_old_real, p_volt_full_old_imag; //renke add
+	bool bcomputefreq; // renke add
 
     gridpack::component::BaseBranchComponent* p_branch;
+	gridpack::component::BaseBranchComponent* p_relaytrippedbranch; //renke add
 
-    //std::vector<boost::shared_ptr<gridpack::dynamic_simulation::DSFBaseGenerator> >
+    //std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseGenerator> >
       //p_generators;
-    std::vector<boost::shared_ptr<gridpack::dynamic_simulation::DSFBaseGeneratorModel> >
+    std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseGeneratorModel> >
       p_generators;
+	  
+    std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseRelayModel> >
+      p_loadrelays;   // renke add  
+
+    std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseLoadModel> >
+      p_loadmodels;
+	
+    std::vector<double> p_powerflowload_p;	
+	std::vector<double> p_powerflowload_q;	
+	
+	gridpack::dynamic_simulation::DSFullBranch* p_CmplXfmrBranch, *p_CmplFeederBranch;  // the point to the transformer and feeder branch due to the added composite load model
+	gridpack::dynamic_simulation::DSFullBus* p_CmplXfmrBus, *p_CmplFeederBus; // the point to the transformer and feeder bus due to the added composite load model
+	gridpack::ComplexType p_CmplXfmrBusVolt_cplx; // value of the initialized complex voltage at the transformer bus due to the added composite load model
+	double p_CmplXfmr_xxf, p_CmplXfmr_tap; // parameter of the extended transformer due to the added composite load model
+	double loadMVABase; // load MVA Base is the load MVA base if the bus is an extend load bus (LOW_SIDE_BUS or LOAD_BUS) due to composite load model 
 
     bool p_isolated;
 
@@ -437,6 +573,13 @@ class DSFullBranch
      */
     gridpack::ComplexType getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2);
     gridpack::ComplexType getUpdateFactor();
+	
+	/**
+     * Return the updating factor that will be applied to the ybus matrix at
+     * the branch relay trip phase
+     * @return: value of update factor
+     */
+	gridpack::ComplexType getBranchRelayTripUpdateFactor(); //renke add
 
     /**
      * Check to see if an event applies to this branch and set appropriate
@@ -445,6 +588,32 @@ class DSFullBranch
      * event in a dyanamic simulation
      */
     void setEvent(const Event &event);
+	
+	/**
+     * update branch current
+     */
+	void updateBranchCurrent(); //RENKE ADD
+	bool updateRelay(bool flag, double delta_t); //renke add
+	
+	/**
+     * Set parameters of the transformer branch due to composite load model
+     */
+	void SetCmplXfmrBranch(double dx, double dtap); //RENKE ADD
+	
+	/**
+     * Set parameters of the feeder branch due to composite load model
+     */
+	void SetCmplFeederBranch(double dr, double dx); //RENKE ADD
+	
+	/*
+	* print the content of the DSFullBranch
+	*/
+	void printDSFullBranch();
+	
+	/**
+     * check the type of the extended load branch type variable: p_bextendedloadbranch
+     */
+	int checkExtendedLoadBranchType(void);
 
   private:
     std::vector<double> p_reactance;
@@ -457,6 +626,8 @@ class DSFullBranch
     std::vector<double> p_shunt_admt_g2;
     std::vector<double> p_shunt_admt_b2;
     std::vector<bool> p_xform, p_shunt;
+	std::vector<int> p_newtripbranchcktidx;
+	
     int p_mode;
     double p_ybusr_frwd, p_ybusi_frwd;
     double p_ybusr_rvrs, p_ybusi_rvrs;
@@ -466,6 +637,19 @@ class DSFullBranch
     int p_elems;
     bool p_active;
     bool p_event;
+	bool p_branchrelaytripflag;
+	int  p_bextendedloadbranch; //whether this branch is added by composite load model
+								// -1: normal branch
+								//  1: transformer branch added by composite load model
+								//  2: feeder branch added by composite load model
+	
+	std::vector<boost::shared_ptr<gridpack::dynamic_simulation::BaseRelayModel> >
+      p_linerelays;   // renke add 
+	std::vector<int> p_relaybranchidx; //renke add 
+    std::vector<std::string> p_ckt; //renke_add
+	std::vector<gridpack::ComplexType> p_branchcurrent; //renke add
+	gridpack::ComplexType p_branchfrombusvolt; //renke add
+	gridpack::ComplexType p_branchtobusvolt; //renke add
 
     friend class boost::serialization::access;
 
@@ -499,7 +683,7 @@ typedef network::BaseNetwork<DSFullBus, DSFullBranch > DSFullNetwork;
 }     // dynamic_simulation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBus)
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBranch)
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBus);
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBranch);
 
 #endif

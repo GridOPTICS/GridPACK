@@ -62,11 +62,14 @@ if (GOSS_DIR)
 
   add_dependencies(test_goss test_goss_input)
 endif()
+set (goss_files
+     goss_utils.hpp)
 
 # -------------------------------------------------------------
 # installation
 # -------------------------------------------------------------
 install(FILES 
   serial_io.hpp
+  ${goss_files}
   DESTINATION include/gridpack/serial_io
 )

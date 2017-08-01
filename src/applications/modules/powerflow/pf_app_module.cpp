@@ -167,6 +167,19 @@ void gridpack::powerflow::PFAppModule::initialize()
 }
 
 /**
+ * Reinitialize calculation from data collections
+ */
+void gridpack::powerflow::PFAppModule::reload()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_load = timer->createCategory("Powerflow: Factory Load");
+  timer->start(t_load);
+  p_factory->load();
+  timer->stop(t_load);
+}
+
+/**
  * Execute the iterative solve portion of the application using a
  * hand-coded Newton-Raphson solver
  * @return false if an error was encountered in the solution

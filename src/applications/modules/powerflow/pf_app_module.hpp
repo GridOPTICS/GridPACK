@@ -100,6 +100,11 @@ class PFAppModule
     void initialize();
 
     /**
+     * Reinitialize calculation from data collections
+     */
+    void reload();
+
+    /**
      * Execute the iterative solve portion of the application using a hand-coded
      * Newton-Raphson solver
      * @return false if an error was caught in the solution algorithm
