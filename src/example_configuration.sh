@@ -58,33 +58,38 @@ common_flags="\
 
 if [ $host == "flophouse" ]; then
 
-    # RHEL 5 with GNU 4.8 compilers built from scratch
+    # RHEL 7 with GNU 4.8 compilers
+    # The following are installed as packages:
+    #   boost.x86_64                         1.53.0-26.el7
+    #   boost-openmpi.x86_64                 1.53.0-26.el7
+    #   (lots of other boost packages)
+    #   
 
-    prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
+    prefix="/net/flophouse/files0/perksoft/linux64"
     PATH="${prefix}/bin:${PATH}"
     export PATH
 
-    CC="$prefix/bin/gcc"
+    CC="/usr/bin/gcc"
     export CC
-    CXX="$prefix/bin/g++"
+    CXX="/usr/bin/g++"
     export CXX
-    CFLAGS="-pthread -Wall"
-    export CFLAGS
-    CXXFLAGS="-pthread -Wall"
-    export CXXFLAGS
+    # CFLAGS="-pthread -Wall"
+    # export CFLAGS
+    # CXXFLAGS="-pthread -Wall"
+    # export CXXFLAGS
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
     cmake -Wdev --debug-trycompile \
-        -D GA_DIR:STRING="$prefix/ga-5-4" \
+        -D GA_DIR:STRING="$prefix/ga-c++" \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
-        -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.7.2" \
+        -D BOOST_ROOT:STRING="/usr" \
+        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.7.6" \
         -D PETSC_ARCH:STRING='linux-gnu48-real-opt' \
-        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
-        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D USE_CPLEX:BOOL=ON \
+        -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
+        -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
+        -D MPIEXEC:STRING="/usr/lib64/openmpi/bin/mpiexec" \
+        -D USE_CPLEX:BOOL=OFF \
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
         -D USE_GLPK:BOOL=ON \
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
@@ -92,42 +97,6 @@ if [ $host == "flophouse" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
-elif [ $host == "flophouse44" ]; then
-
-    # RHEL 5 with stock GNU 4.4 compilers
-
-    prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
-    PATH="${prefix}/bin:${PATH}"
-    export PATH
-
-    CC="gcc44"
-    export CC
-    CXX="g++44"
-    export CXX
-    CFLAGS="-pthread -Wall"
-    export CFLAGS
-    CXXFLAGS="-pthread -Wall"
-    export CXXFLAGS
-
-    cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
-
-    cmake -Wdev --debug-trycompile \
-        -D GA_DIR:STRING="$prefix" \
-        -D USE_PROGRESS_RANKS:BOOL=OFF \
-        -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-linux2-g++44-opt' \
-        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
-        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D USE_CPLEX:BOOL=ON \
-        -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
-        -D USE_GLPK:BOOL=ON \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
-        $common_flags ..
-    
 elif [ $host == "pe10900" ]; then
 
     # Mac using GNU 4.8 and OpenMPI -- avoid using the system
