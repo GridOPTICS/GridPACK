@@ -73,10 +73,6 @@ if [ $host == "flophouse" ]; then
     export CC
     CXX="/usr/bin/g++"
     export CXX
-    # CFLAGS="-pthread -Wall"
-    # export CFLAGS
-    # CXXFLAGS="-pthread -Wall"
-    # export CXXFLAGS
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
