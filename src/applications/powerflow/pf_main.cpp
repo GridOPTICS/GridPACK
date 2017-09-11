@@ -7,9 +7,9 @@
 /**
  * @file   pf_main.cpp
  * @author Bruce Palmer
- * @date   2014-12-09 14:39:50 d3g096
- * 
- * @brief  
+ * @date   2016-07-14 14:23:07 d3g096
+ *
+ * @brief
  */
 // -------------------------------------------------------------
 
@@ -17,39 +17,56 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/include/gridpack.hpp"
-#include "pf_app.hpp"
+#include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 
-// Calling program for the powerflow applications
+// Calling program for the powerflow application
 
 int
 main(int argc, char **argv)
 {
-
   gridpack::parallel::Environment env(argc,argv);
-#if 0
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-  GA_Initialize();
-
-  int stack = 8000000, heap = 8000000;
-  MA_init(C_DBL, stack, heap);
-#endif
-
-  // Initialize Math libraries
   gridpack::math::Initialize();
 
-  gridpack::powerflow::PFApp app;
-  app.execute(argc, argv);
+  if (1) {
+    gridpack::utility::CoarseTimer *timer =
+      gridpack::utility::CoarseTimer::instance();
+    gridpack::parallel::Communicator world;
+
+    // read configuration file
+    gridpack::utility::Configuration *config =
+      gridpack::utility::Configuration::configuration();
+    if (argc >= 2 && argv[1] != NULL) {
+      char inputfile[256];
+      sprintf(inputfile,"%s",argv[1]);
+      config->open(inputfile,world);
+    } else {
+      config->open("input.xml",world);
+    }
+
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow");
+    bool useNonLinear = false;
+    useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+
+    // setup and run powerflow calculation
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+      pf_network(new gridpack::powerflow::PFNetwork(world));
+
+    gridpack::powerflow::PFAppModule pf_app;
+    pf_app.readNetwork(pf_network,config);
+    pf_app.initialize();
+    if (useNonLinear) {
+      pf_app.nl_solve();
+    } else {
+      pf_app.solve();
+    }
+    pf_app.write();
+    pf_app.saveData();
+    timer ->dump();
+  }
 
   // Terminate Math libraries
   gridpack::math::Finalize();
-
-  GA_Terminate();
-#if 0
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
-  return ierr;
-#else
   return 0;
-#endif
 }
+
