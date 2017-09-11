@@ -19,7 +19,7 @@
 #define _se_factory_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/factory/base_factory.hpp"
 #include "gridpack/applications/components/se_matrix/se_components.hpp"
 
 namespace gridpack {

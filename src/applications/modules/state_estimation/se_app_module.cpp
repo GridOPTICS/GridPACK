@@ -16,7 +16,15 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/gen_matrix_map.hpp"
+#include "gridpack/mapper/gen_vector_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/math/math.hpp"
 #include "se_app_module.hpp"
 
 // Calling program for state estimation application
