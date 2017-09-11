@@ -787,23 +787,33 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   closeGeneratorWatchFile();
   timer->stop(t_total);
 #else
+  printf("p[%d] (solve) Got to 1\n",p_network->communicator().rank());
   timer->start(t_total);
   int t_matset = timer->createCategory("Matrix Setup");
   timer->start(t_matset);
   p_factory->setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(p_network);
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 2\n",p_network->communicator().rank());
 
   int t_trans = timer->createCategory("Matrix Transpose");
+  printf("p[%d] (solve) Got to 2a\n",p_network->communicator().rank());
   // Construct matrix diagY_a using xd and ra extracted from gen data, 
   timer->start(t_matset);
+  printf("p[%d] (solve) Got to 2b\n",p_network->communicator().rank());
   p_factory->setMode(YA);
+  printf("p[%d] (solve) Got to 2c\n",p_network->communicator().rank());
   gridpack::mapper::FullMatrixMap<DSNetwork> yaMap(p_network);
+  printf("p[%d] (solve) Got to 2d\n",p_network->communicator().rank());
   boost::shared_ptr<gridpack::math::Matrix> diagY_a = yaMap.mapToMatrix();
+  printf("p[%d] (solve) Got to 2e\n",p_network->communicator().rank());
   // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
   gridpack::math::MatrixStorageType denseType = gridpack::math::Dense;
+  printf("p[%d] (solve) Got to 2f\n",p_network->communicator().rank());
   boost::shared_ptr<gridpack::math::Matrix> Y_a(gridpack::math::storageType(*diagY_a, denseType));
+  printf("p[%d] (solve) Got to 2g\n",p_network->communicator().rank());
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 3\n",p_network->communicator().rank());
 
   int t_matmul = timer->createCategory("Matrix Multiply");
   // Construct Y_c as a dense matrix
@@ -811,6 +821,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(YC);
   gridpack::mapper::FullMatrixMap<DSNetwork> cMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense = cMap.mapToMatrix(true);
+  printf("p[%d] (solve) Got to 4\n",p_network->communicator().rank());
 
   // Construct Y_b
   p_factory->setMode(YB);
@@ -822,6 +833,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(updateYbus);
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 5\n",p_network->communicator().rank());
 
   // Solve linear equations ybus * X = Y_c
   int t_solve = timer->createCategory("Solve Linear Equation");
@@ -839,6 +851,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   timer->stop(t_matmul);
   // Update prefy11: prefy11 = Y_a + prefy11
   prefy11->add(*Y_a);
+  printf("p[%d] (solve) Got to 6\n",p_network->communicator().rank());
 
   //-----------------------------------------------------------------------
   // Compute fy11
@@ -855,6 +868,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 7\n",p_network->communicator().rank());
 
   // Solve linear equations of fy11ybus * X = Y_c
   timer->start(t_solve);
@@ -868,6 +882,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   timer->stop(t_matmul);
   // Update fy11: fy11 = Y_a + fy11
   fy11->add(*Y_a);
+  printf("p[%d] (solve) Got to 8\n",p_network->communicator().rank());
 
   //-----------------------------------------------------------------------
   // Compute posfy11
@@ -881,12 +896,14 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(posFY);
   ybusMap.incrementMatrix(posfy11ybus);
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 9\n",p_network->communicator().rank());
     
   // Solve linear equations of posfy11ybus * X = Y_c
   timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver3(*posfy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> posfy11X(solver3.solve(*Y_cDense)); 
   timer->stop(t_solve);
+  printf("p[%d] (solve) Got to 10\n",p_network->communicator().rank());
   
   // Form reduced admittance matrix posfy11: posfy11 = Y_b * X
   timer->start(t_matmul);
@@ -894,6 +911,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   timer->stop(t_matmul);
   // Update posfy11: posfy11 = Y_a + posfy11
   posfy11->add(*Y_a);
+  printf("p[%d] (solve) Got to 11\n",p_network->communicator().rank());
 
   //-----------------------------------------------------------------------
   // Integration implementation (Modified Euler Method)
@@ -912,6 +930,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
   timer->stop(t_trans);
+  printf("p[%d] (solve) Got to 12\n",p_network->communicator().rank());
 
   // Simulation related variables
   int simu_k;
@@ -1001,6 +1020,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     }
     p_factory->setMode(Eprime0);
     Emap.mapToVector(eprime_s0);
+  printf("p[%d] (solve) Got to 13\n",p_network->communicator().rank());
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
     int t_trnsmul = timer->createCategory("Transpose Multiply");
@@ -1022,6 +1042,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     p_factory->predDSStep(h_sol1);
     p_factory->setMode(Eprime1);
     Emap.mapToVector(eprime_s1);
+  printf("p[%d] (solve) Got to 14\n",p_network->communicator().rank());
 
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     timer->start(t_trnsmul);
@@ -1040,6 +1061,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     p_factory->setMode(Current);
     Emap.mapToBus(curr);
     p_factory->corrDSStep(h_sol2);
+  printf("p[%d] (solve) Got to 15\n",p_network->communicator().rank());
 
     if (p_generatorWatch && I_Steps%p_watchFrequency == 0) {
       char tbuf[32];
@@ -1065,8 +1087,10 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     
     last_S_Steps = S_Steps;
   }
+  printf("p[%d] (solve) Got to 16\n",p_network->communicator().rank());
   closeGeneratorWatchFile();
   timer->stop(t_total);
+  printf("p[%d] (solve) Got to 17\n",p_network->communicator().rank());
 #endif
 }
 /**
