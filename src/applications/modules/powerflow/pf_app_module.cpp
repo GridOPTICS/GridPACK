@@ -15,9 +15,14 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/include/gridpack.hpp"
 #include "pf_app_module.hpp"
 #include "pf_factory_module.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
+#include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
 
 #define USE_REAL_VALUES
