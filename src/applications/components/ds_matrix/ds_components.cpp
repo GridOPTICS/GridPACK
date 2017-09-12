@@ -28,7 +28,7 @@
 /**
  *  Simple constructor
  */
-gridpack::dynamic_simulation::DSBus::DSBus(void)
+gridpack::dynamic_simulation_r::DSBus::DSBus(void)
 {
   p_shunt_gs = 0.0;
   p_shunt_bs = 0.0;
@@ -43,7 +43,7 @@ gridpack::dynamic_simulation::DSBus::DSBus(void)
 /**
  *  Simple destructor
  */
-gridpack::dynamic_simulation::DSBus::~DSBus(void)
+gridpack::dynamic_simulation_r::DSBus::~DSBus(void)
 {
 }
 
@@ -52,7 +52,7 @@ gridpack::dynamic_simulation::DSBus::~DSBus(void)
  *  @param isize, jsize: number of rows and columns of matrix block
  *  @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize) const
+bool gridpack::dynamic_simulation_r::DSBus::matrixDiagSize(int *isize, int *jsize) const
 {
   if (YMBus::isIsolated()) return false;
   if (p_mode == YBUS || p_mode == updateYbus || p_mode == onFY ||
@@ -95,7 +95,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagSize(int *isize, int *jsize)
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
+bool gridpack::dynamic_simulation_r::DSBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBUS) {
     return YMBus::matrixDiagValues(values);
@@ -109,7 +109,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
     }
   } else if (p_mode == posFY) {
     if (p_from_flag || p_to_flag) {
-      values[0] = dynamic_cast<gridpack::dynamic_simulation::DSBranch*>(p_branch)
+      values[0] = dynamic_cast<gridpack::dynamic_simulation_r::DSBranch*>(p_branch)
           ->getUpdateFactor();
       return true;
     } else {
@@ -201,7 +201,7 @@ bool gridpack::dynamic_simulation::DSBus::matrixDiagValues(ComplexType *values)
  * @param size: size of vector block
  * @return: false if component does not contribute to vector
  */
-bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
+bool gridpack::dynamic_simulation_r::DSBus::vectorSize(int *size) const
 {
   if (p_mode == updateYbus) {
     if (p_ngen > 0) {
@@ -233,7 +233,7 @@ bool gridpack::dynamic_simulation::DSBus::vectorSize(int *size) const
  * @return: false if network component does not contribute
  *        vector element
  */
-bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
+bool gridpack::dynamic_simulation_r::DSBus::vectorValues(ComplexType *values)
 {
   if (p_mode == updateYbus) {
     printf("returning Value on %d\n",getOriginalIndex());
@@ -287,7 +287,7 @@ bool gridpack::dynamic_simulation::DSBus::vectorValues(ComplexType *values)
   return false;
 }
 
-void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
+void gridpack::dynamic_simulation_r::DSBus::setValues(ComplexType *values)
 {
   int i;
   if (p_mode == updateYbus) {
@@ -302,7 +302,7 @@ void gridpack::dynamic_simulation::DSBus::setValues(ComplexType *values)
   }
 }
 
-void gridpack::dynamic_simulation::DSBus::setYBus(void)
+void gridpack::dynamic_simulation_r::DSBus::setYBus(void)
 {
   YMBus::setYBus();
   gridpack::ComplexType ret;
@@ -317,7 +317,7 @@ void gridpack::dynamic_simulation::DSBus::setYBus(void)
  * Get values of YBus matrix. These can then be used in subsequent
  * calculations
  */
-gridpack::ComplexType gridpack::dynamic_simulation::DSBus::getYBus(void)
+gridpack::ComplexType gridpack::dynamic_simulation_r::DSBus::getYBus(void)
 {
   return YMBus::getYBus();
 }
@@ -329,7 +329,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::DSBus::getYBus(void)
  * @param data: DataCollection object contain parameters relevant to this
  *       bus that were read in when network was initialized
  */
-void gridpack::dynamic_simulation::DSBus::load(
+void gridpack::dynamic_simulation_r::DSBus::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   YMBus::load(data);
@@ -409,7 +409,7 @@ void gridpack::dynamic_simulation::DSBus::load(
  * the mapper
  * @param mode: enumerated constant for different modes
  */
-void gridpack::dynamic_simulation::DSBus::setMode(int mode)
+void gridpack::dynamic_simulation_r::DSBus::setMode(int mode)
 {
   if (mode == YBUS) {
     YMBus::setMode(gridpack::ymatrix::YBus);
@@ -421,7 +421,7 @@ void gridpack::dynamic_simulation::DSBus::setMode(int mode)
  * Return the value of the voltage magnitude on this bus
  * @return: voltage magnitude
  */
-double gridpack::dynamic_simulation::DSBus::getVoltage(void)
+double gridpack::dynamic_simulation_r::DSBus::getVoltage(void)
 {
   return p_voltage;
 }
@@ -430,7 +430,7 @@ double gridpack::dynamic_simulation::DSBus::getVoltage(void)
  * Return the value of the phase angle on this bus
  * @return: phase angle
  */
-double gridpack::dynamic_simulation::DSBus::getPhase(void)
+double gridpack::dynamic_simulation_r::DSBus::getPhase(void)
 {
   return p_angle;
 }
@@ -439,7 +439,7 @@ double gridpack::dynamic_simulation::DSBus::getPhase(void)
  * Return whether or not a bus is isolated
  * @return true if bus is isolated
  */
-bool gridpack::dynamic_simulation::DSBus::isIsolated(void) const
+bool gridpack::dynamic_simulation_r::DSBus::isIsolated(void) const
 {
   return YMBus::isIsolated();
 }
@@ -448,18 +448,18 @@ bool gridpack::dynamic_simulation::DSBus::isIsolated(void) const
  * Return the number of generators on this bus
  * @return number of generators on bus
  */
-int gridpack::dynamic_simulation::DSBus::getNumGen(void)
+int gridpack::dynamic_simulation_r::DSBus::getNumGen(void)
 {
   return p_ngen;
 }
 
-void gridpack::dynamic_simulation::DSBus::setIFunc(void)
+void gridpack::dynamic_simulation_r::DSBus::setIFunc(void)
 {
   if (p_ngen > 0) {
   } 
 }
 
-void gridpack::dynamic_simulation::DSBus::setIJaco(void)
+void gridpack::dynamic_simulation_r::DSBus::setIJaco(void)
 {
 }
 
@@ -469,7 +469,7 @@ void gridpack::dynamic_simulation::DSBus::setIJaco(void)
  * @param from_idx index of "from" bus for fault event
  * @param to_idx index of "to" bus for fault event
  */
-void gridpack::dynamic_simulation::DSBus::setEvent(int from_idx, int to_idx,
+void gridpack::dynamic_simulation_r::DSBus::setEvent(int from_idx, int to_idx,
   gridpack::component::BaseBranchComponent* branch_ptr)
 {
   if (from_idx == getOriginalIndex()) {
@@ -492,7 +492,7 @@ void gridpack::dynamic_simulation::DSBus::setEvent(int from_idx, int to_idx,
 /**
  * Clear fault event from bus
  */
-void gridpack::dynamic_simulation::DSBus::clearEvent()
+void gridpack::dynamic_simulation_r::DSBus::clearEvent()
 {
   p_from_flag = false;
   p_to_flag = false;
@@ -507,7 +507,7 @@ void gridpack::dynamic_simulation::DSBus::clearEvent()
  * routine what about kind of information to write
  * @return true if bus is contributing string to output, false otherwise
  */
-bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
+bool gridpack::dynamic_simulation_r::DSBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
   if (signal == NULL) {
@@ -579,7 +579,7 @@ bool gridpack::dynamic_simulation::DSBus::serialWrite(char *string,
  * @param tag 2-character identifier of generator
  * @param flag set to true to monitor generator
  */
-void gridpack::dynamic_simulation::DSBus::setWatch(std::string tag, bool flag)
+void gridpack::dynamic_simulation_r::DSBus::setWatch(std::string tag, bool flag)
 {
   int i;
   for (i=0; i<p_genid.size(); i++) {
@@ -593,7 +593,7 @@ void gridpack::dynamic_simulation::DSBus::setWatch(std::string tag, bool flag)
 /**
  * Initialize dynamic simulation data structures
  */
-void gridpack::dynamic_simulation::DSBus::setDSParams()
+void gridpack::dynamic_simulation_r::DSBus::setDSParams()
 {
   if (p_ngen == 0) return;
   int i;
@@ -653,7 +653,7 @@ void gridpack::dynamic_simulation::DSBus::setDSParams()
  * @param t_inc time increment
  * @param flag false if step is not initial step
  */
-void gridpack::dynamic_simulation::DSBus::initDSStep(bool flag)
+void gridpack::dynamic_simulation_r::DSBus::initDSStep(bool flag)
 {
   if (p_ngen == 0) return;
   int i;
@@ -679,7 +679,7 @@ void gridpack::dynamic_simulation::DSBus::initDSStep(bool flag)
 /**
  * Evaluate predictor part of dynamic simulation step
  */
-void gridpack::dynamic_simulation::DSBus::predDSStep(double t_inc)
+void gridpack::dynamic_simulation_r::DSBus::predDSStep(double t_inc)
 {
   if (p_ngen == 0) return;
   int i;
@@ -723,7 +723,7 @@ void gridpack::dynamic_simulation::DSBus::predDSStep(double t_inc)
 /**
  * Evaluate corrector part of dynamic simulation step
  */
-void gridpack::dynamic_simulation::DSBus::corrDSStep(double t_inc)
+void gridpack::dynamic_simulation_r::DSBus::corrDSStep(double t_inc)
 {
   if (p_ngen == 0) return;
   int i;
@@ -782,7 +782,7 @@ void gridpack::dynamic_simulation::DSBus::corrDSStep(double t_inc)
 /**
  *  Simple constructor
  */
-gridpack::dynamic_simulation::DSBranch::DSBranch(void)
+gridpack::dynamic_simulation_r::DSBranch::DSBranch(void)
 {
   p_reactance.clear();
   p_resistance.clear();
@@ -806,7 +806,7 @@ gridpack::dynamic_simulation::DSBranch::DSBranch(void)
 /**
  *  Simple destructor
  */
-gridpack::dynamic_simulation::DSBranch::~DSBranch(void)
+gridpack::dynamic_simulation_r::DSBranch::~DSBranch(void)
 {
 }
 
@@ -816,7 +816,7 @@ gridpack::dynamic_simulation::DSBranch::~DSBranch(void)
  * @param isize, jsize: number of rows and columns of matrix block
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *jsize) const
+bool gridpack::dynamic_simulation_r::DSBranch::matrixForwardSize(int *isize, int *jsize) const
 {
   if (p_mode == YBUS || p_mode == updateYbus ||
       p_mode == onFY || p_mode == posFY) {
@@ -826,7 +826,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardSize(int *isize, int *
   }
   return false;
 }
-bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *jsize) const
+bool gridpack::dynamic_simulation_r::DSBranch::matrixReverseSize(int *isize, int *jsize) const
 {
   if (p_mode == YBUS || p_mode == updateYbus ||
       p_mode == onFY || p_mode == posFY) {
@@ -843,7 +843,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseSize(int *isize, int *
  * @param values: pointer to matrix block values
  * @return: false if network component does not contribute matrix element
  */
-bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *values)
+bool gridpack::dynamic_simulation_r::DSBranch::matrixForwardValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == updateYbus) {
     return YMBranch::matrixForwardValues(values);
@@ -859,7 +859,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixForwardValues(ComplexType *va
   }
   return false;
 }
-bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *values)
+bool gridpack::dynamic_simulation_r::DSBranch::matrixReverseValues(ComplexType *values)
 {
   if (p_mode == YBUS || p_mode == updateYbus) {
     return YMBranch::matrixReverseValues(values);
@@ -877,7 +877,7 @@ bool gridpack::dynamic_simulation::DSBranch::matrixReverseValues(ComplexType *va
 }
 
 // Calculate contributions to the admittance matrix from the branches
-void gridpack::dynamic_simulation::DSBranch::setYBus(void)
+void gridpack::dynamic_simulation_r::DSBranch::setYBus(void)
 {
   YMBranch::setYBus();
   gridpack::ComplexType ret;
@@ -889,10 +889,10 @@ void gridpack::dynamic_simulation::DSBranch::setYBus(void)
   p_ybusi_rvrs = imag(ret);  
   // Not really a contribution to the admittance matrix but might as well
   // calculate phase angle difference between buses at each end of branch
-  gridpack::dynamic_simulation::DSBus *bus1 =
-    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
-  gridpack::dynamic_simulation::DSBus *bus2 =
-    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus2().get());
+  gridpack::dynamic_simulation_r::DSBus *bus1 =
+    dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>(getBus1().get());
+  gridpack::dynamic_simulation_r::DSBus *bus2 =
+    dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>(getBus2().get());
 //  if (p_xform) {
 //    printf ("from %d-> to %d: p_phase_shift = %f, a = %f+%fi\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), p_phase_shift, real(a), imag(a) );
 //  }
@@ -912,7 +912,7 @@ void gridpack::dynamic_simulation::DSBranch::setYBus(void)
  * @param data: DataCollection object contain parameters relevant to this
  *       branch that were read in when network was initialized
  */
-void gridpack::dynamic_simulation::DSBranch::load(
+void gridpack::dynamic_simulation_r::DSBranch::load(
   const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
   YMBranch::load(data);
@@ -965,7 +965,7 @@ void gridpack::dynamic_simulation::DSBranch::load(
  * the mapper
  * @param mode: enumerated constant for different modes
  */
-void gridpack::dynamic_simulation::DSBranch::setMode(int mode)
+void gridpack::dynamic_simulation_r::DSBranch::setMode(int mode)
 {
   if (mode == YBUS) {
     YMBranch::setMode(gridpack::ymatrix::YBus);
@@ -977,7 +977,7 @@ void gridpack::dynamic_simulation::DSBranch::setMode(int mode)
  * Return the complex admittance of the branch
  * @return: complex addmittance of branch
  */
-gridpack::ComplexType gridpack::dynamic_simulation::DSBranch::getAdmittance(void)
+gridpack::ComplexType gridpack::dynamic_simulation_r::DSBranch::getAdmittance(void)
 {
   int i;
   gridpack::ComplexType ret(0.0,0.0);
@@ -1000,7 +1000,7 @@ gridpack::ComplexType gridpack::dynamic_simulation::DSBranch::getAdmittance(void
  * @return: contribution to Y matrix from branch
  */
 gridpack::ComplexType
-gridpack::dynamic_simulation::DSBranch::getTransformer(gridpack::dynamic_simulation::DSBus *bus)
+gridpack::dynamic_simulation_r::DSBranch::getTransformer(gridpack::dynamic_simulation_r::DSBus *bus)
 {
   int i;
   gridpack::ComplexType ret(0.0,0.0);
@@ -1031,7 +1031,7 @@ gridpack::dynamic_simulation::DSBranch::getTransformer(gridpack::dynamic_simulat
  * @return: contribution to Y matrix from shunts associated with branches
  */
 gridpack::ComplexType
-gridpack::dynamic_simulation::DSBranch::getShunt(gridpack::dynamic_simulation::DSBus *bus)
+gridpack::dynamic_simulation_r::DSBranch::getShunt(gridpack::dynamic_simulation_r::DSBus *bus)
 {
   double retr, reti;
   retr = 0.0;
@@ -1070,14 +1070,14 @@ gridpack::dynamic_simulation::DSBranch::getShunt(gridpack::dynamic_simulation::D
  * @return: value of update factor
  */
 gridpack::ComplexType 
-gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2)
+gridpack::dynamic_simulation_r::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, int sw3_2)
 { 
   double retr, reti;
   int i;
-  gridpack::dynamic_simulation::DSBus *bus1 =
-    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus1().get());
-  gridpack::dynamic_simulation::DSBus *bus2 =
-    dynamic_cast<gridpack::dynamic_simulation::DSBus*>(getBus2().get());
+  gridpack::dynamic_simulation_r::DSBus *bus1 =
+    dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>(getBus1().get());
+  gridpack::dynamic_simulation_r::DSBus *bus2 =
+    dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>(getBus2().get());
   if (bus1->getOriginalIndex() == sw2_2+1 && bus2->getOriginalIndex() == sw3_2+1) {
     for (i=0; i<p_elems; i++) {
       gridpack::ComplexType myValue(p_resistance[i], p_reactance[i]);
@@ -1094,7 +1094,7 @@ gridpack::dynamic_simulation::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, in
   return gridpack::ComplexType(0.0,0.0);
 }
 gridpack::ComplexType 
-gridpack::dynamic_simulation::DSBranch::getUpdateFactor()
+gridpack::dynamic_simulation_r::DSBranch::getUpdateFactor()
 { 
   int i;
   gridpack::ComplexType ret(0.0,0.0);
@@ -1112,7 +1112,7 @@ gridpack::dynamic_simulation::DSBranch::getUpdateFactor()
  * @param event a struct containing parameters that describe a fault event in
  * a dyanamic simulation
  */
-void gridpack::dynamic_simulation::DSBranch::setEvent(const Event &event)
+void gridpack::dynamic_simulation_r::DSBranch::setEvent(const Event &event)
 {
   int idx1 = getBus1OriginalIndex();
   int idx2 = getBus2OriginalIndex();
@@ -1123,9 +1123,9 @@ void gridpack::dynamic_simulation::DSBranch::setEvent(const Event &event)
     p_event = false;
   }
   if (p_event) {
-    dynamic_cast<gridpack::dynamic_simulation::DSBus*>
+    dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>
       (getBus1().get())->setEvent(idx1,idx2,this);
-    dynamic_cast<gridpack::dynamic_simulation::DSBus*>
+    dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>
       (getBus2().get())->setEvent(idx1,idx2,this);
   }
 }
