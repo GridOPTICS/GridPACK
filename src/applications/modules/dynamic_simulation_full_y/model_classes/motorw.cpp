@@ -712,8 +712,9 @@ void gridpack::dynamic_simulation::MotorwLoad::predictor(
 
   // Step-4: update outputs
   //Es = p * eppd + 1j * q * eppq ;  // p * eppd + j q * eppq
-  real(Es) = p*eppd;
-  imag(Es) = q*eppq;
+  //real(Es) = p*eppd;
+  //imag(Es) = q*eppq;
+  Es = gridpack::ComplexType(p*eppd,q*eppq);
   gridpack::ComplexType tmp2(rs, Lpp);
   //Id = real( ( vt - Es ) / (rs + 1j * Lpp) ) ;
   //Iq = imag( ( vt - Es ) / (rs + 1j * Lpp) ) ;
@@ -792,8 +793,9 @@ void gridpack::dynamic_simulation::MotorwLoad::corrector(
   //g Step-3: update outputs
   //Es = p * eppd + 1j * q * eppq ;  //g p * eppd + j q * eppq
   //gridpack::ComplexType Es(p*eppd, q*eppq);
-  real(Es) = p*eppd;
-  imag(Es) = q*eppq;
+  //real(Es) = p*eppd;
+  //imag(Es) = q*eppq;
+  Es = gridpack::ComplexType(p*eppd,q*eppq);
   gridpack::ComplexType tmp2(rs, Lpp);
   //Id = real( ( vt - Es ) / (rs + 1j * Lpp) ) ;
   //Iq = imag( ( vt - Es ) / (rs + 1j * Lpp) ) ;
