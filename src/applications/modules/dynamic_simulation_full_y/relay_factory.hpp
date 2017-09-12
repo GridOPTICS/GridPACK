@@ -18,7 +18,7 @@
 #define relay_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/utilities/string_utils.hpp"
 #include "base_relay_model.hpp"
 //#include "base_exciter_model.hpp"
 //#include "base_governor_model.hpp"
