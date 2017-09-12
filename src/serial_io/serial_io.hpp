@@ -394,8 +394,10 @@ class SerialBusIO {
   void dumpChannel()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      gridpack::utility::CoarseTimer *timer =
+        gridpack::utility::CoarseTimer::instance();
       std::auto_ptr<TextMessage> message(p_session->createTextMessage(p_channel_buf));
-      printf("Sending message of length %d\n",p_channel_buf.length());
+      printf("Sending GOSS message: %s of length %d at time %f \n",p_channel_buf.c_str(), p_channel_buf.length(), timer->currentTime());
       p_producer->send(message.get());
       p_channel_buf.clear();
     }
