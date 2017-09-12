@@ -18,6 +18,7 @@
 #define _base_exciter_model_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/component/base_component.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {

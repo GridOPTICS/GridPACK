@@ -18,6 +18,7 @@
 #define _base_generator_model_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/component/base_component.hpp"
 #include "base_governor_model.hpp"
 #include "base_exciter_model.hpp"
 #include "base_relay_model.hpp" //renke add
