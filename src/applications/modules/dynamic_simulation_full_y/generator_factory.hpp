@@ -18,10 +18,10 @@
 #define generator_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_generator_model.hpp"
 #include "base_exciter_model.hpp"
 #include "base_governor_model.hpp"
+#include "gridpack/utilities/string_utils.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
