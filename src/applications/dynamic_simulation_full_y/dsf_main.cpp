@@ -16,6 +16,7 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
+#include "gridpack/parser/dictionary.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"

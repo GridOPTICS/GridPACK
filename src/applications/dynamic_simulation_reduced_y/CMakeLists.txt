@@ -22,6 +22,8 @@ set(target_libraries
     gridpack_timer
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
+    gridpack_powerflow_module
+    gridpack_dynamic_simulation_module
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -34,8 +36,6 @@ if (GA_FOUND)
 endif()
 
 add_executable(ds.x
-   ds_app.cpp
-   ds_factory.cpp
    ds_main.cpp
 )
 
