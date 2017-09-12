@@ -19,7 +19,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/string_utils.hpp"
-#include "base_relay_model.hpp"
+#include "base_classes/base_relay_model.hpp"
 //#include "base_exciter_model.hpp"
 //#include "base_governor_model.hpp"
 
