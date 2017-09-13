@@ -114,6 +114,36 @@ install(FILES
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
+install(FILES 
+  base_classes/base_generator_model.hpp
+  base_classes/base_exciter_model.hpp
+  base_classes/base_governor_model.hpp
+  base_classes/base_relay_model.hpp
+  base_classes/base_load_model.hpp
+  DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/base_classes
+)
+
+install(FILES 
+  model_classes/classical.hpp
+  model_classes/DBIntClass.hpp
+  model_classes/exdc1.hpp
+  model_classes/GainBlockClass.hpp
+  model_classes/gensal.hpp
+  model_classes/wsieg1.hpp
+  model_classes/genrou.hpp
+  model_classes/esst4b.hpp
+  model_classes/esst1a.hpp
+  model_classes/wshygp.hpp
+  model_classes/ggov1.hpp
+  model_classes/lvshbl.hpp
+  model_classes/frqtpat.hpp
+  model_classes/distr1.hpp
+  model_classes/acmotor.hpp
+  model_classes/ieel.hpp
+  model_classes/motorw.hpp
+  DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
+)
+
 install(TARGETS 
   gridpack_dynamic_simulation_full_y_module
   DESTINATION lib
