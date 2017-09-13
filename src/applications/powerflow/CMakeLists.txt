@@ -43,7 +43,7 @@ add_executable(pf.x
 
 target_link_libraries(pf.x ${target_libraries})
 
-# Put files necessary to run powerflow.x in binary directory.
+# Put files necessary to run pf.x in binary directory.
 # gridpack.petscrc is temporary -- it will be incorporated into
 # input.xml
 
@@ -80,18 +80,6 @@ add_custom_target(pf.x.input
 add_dependencies(pf.x pf.x.input)
 
 # -------------------------------------------------------------
-# TEST: pf_network_test
-# -------------------------------------------------------------
-#add_executable(pf_network_test test/pf_network_test.cpp)
-#target_link_libraries(pf_network_test powerflow_app ${target_libraries})
-#gridpack_add_unit_test(pf_network_test pf_network_test)
-
-# -------------------------------------------------------------
-# run applications as tests
-# -------------------------------------------------------------
-gridpack_add_run_test("powerflow" pf.x input.xml)
-
-# -------------------------------------------------------------
 # install as a sample application
 # -------------------------------------------------------------
 
@@ -109,3 +97,25 @@ install(FILES
   DESTINATION doc/gridpack/example/powerflow
 )
 
+# -------------------------------------------------------------
+# Create simple test that runs powerflow code
+# -------------------------------------------------------------
+
+add_custom_target(pf_test_input
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+)
+
+add_dependencies (pf.x pf_test_input)
+
+gridpack_add_run_test("powerflow" pf.x "input.xml")

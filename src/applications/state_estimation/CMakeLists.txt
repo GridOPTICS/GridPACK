@@ -65,4 +65,4 @@ add_dependencies(stes.x stes.x.input)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-#gridpack_add_run_test("state_estimation" stes.x input.xml)
+gridpack_add_run_test("state_estimation" stes.x input.xml)

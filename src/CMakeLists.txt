@@ -289,7 +289,7 @@ endif()
 #  ****NOTE****
 #  For any subdirectory that contributes a LIBRARY to the
 #  GridPACK framework, modifications also need to be made to
-#  the src/lib/GridPACK/cmake.in file so that installs will
+#  the src/lib/GridPACK.cmake.in file so that installs will
 #  work correctly
 #
 # -------------------------------------------------------------
