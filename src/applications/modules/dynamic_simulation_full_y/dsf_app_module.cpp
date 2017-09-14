@@ -989,9 +989,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #ifdef MAP_PROFILE
   timer->configTimer(true);
 #endif
-  //timer->dump();
   timer->stop(t_solve);
-  timer->dump();
+  //timer->dump();
 }
 
 /**
