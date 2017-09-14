@@ -15,7 +15,6 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/include/gridpack.hpp"
 #include "ds_app.hpp"
 
 #define USE_NEW_CODE

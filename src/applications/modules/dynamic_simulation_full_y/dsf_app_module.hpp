@@ -19,6 +19,8 @@
 #define _dsf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
 #include "dsf_factory.hpp"
 
 

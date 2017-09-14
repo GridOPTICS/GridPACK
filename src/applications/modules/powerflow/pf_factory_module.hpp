@@ -19,14 +19,15 @@
 #define _pf_factory_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/network/base_network.hpp"
+#include "gridpack/factory/base_factory.hpp"
 #include "gridpack/applications/components/pf_matrix/pf_components.hpp"
 
 namespace gridpack {
 namespace powerflow {
 
 /// The type of network used in the powerflow application
-typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
+typedef gridpack::network::BaseNetwork<PFBus, PFBranch > PFNetwork;
 
 class PFFactoryModule
   : public gridpack::factory::BaseFactory<PFNetwork> {

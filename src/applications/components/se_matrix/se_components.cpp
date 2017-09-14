@@ -19,6 +19,7 @@
 #include <iostream>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/parser/dictionary.hpp"
 #include "se_components.hpp"
 
 //#define LARGE_MATRIX

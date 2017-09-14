@@ -5,9 +5,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_main.cpp
- * @author Shuangshuang Jin
- * @date   2014-12-09 14:24:22 d3g096
+ * @file   ds_test.cpp
+ * @author Bruce Palmer
+ * @date   2016-07-14 14:23:29 d3g096
  *
  * @brief
  */
@@ -16,32 +16,117 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
-#include "gridpack/include/gridpack.hpp"
-#include "ds_app.hpp"
+#include "gridpack/parser/dictionary.hpp"
+#include "gridpack/math/math.hpp"
+#include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
+#include "gridpack/applications/modules/dynamic_simulation/ds_app_module.hpp"
 
-// Calling program for the dynamis simulation applications
+/**
+ * Transfer data from power flow to dynamic simulation
+ * @param pf_network power flow network
+ * @param ds_network dynamic simulation network
+ */
+void transferPFtoDS(
+    boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network,
+    boost::shared_ptr<gridpack::dynamic_simulation_r::DSNetwork>
+    ds_network)
+{
+  int numBus = pf_network->numBuses();
+  int i;
+  gridpack::component::DataCollection *pfData;
+  gridpack::component::DataCollection *dsData;
+  double rval;
+  for (i=0; i<numBus; i++) {
+    pfData = pf_network->getBusData(i).get();
+    dsData = ds_network->getBusData(i).get();
+    pfData->getValue("BUS_PF_VMAG",&rval);
+    dsData->setValue(BUS_VOLTAGE_MAG,rval);
+    pfData->getValue("BUS_PF_VANG",&rval);
+    dsData->setValue(BUS_VOLTAGE_ANG,rval);
+    int ngen = 0;
+    if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
+      int j;
+      for (j=0; j<ngen; j++) {
+        pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
+        dsData->setValue(GENERATOR_PG,rval,j);
+        pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
+        dsData->setValue(GENERATOR_QG,rval,j);
+      }
+    }
+  }
+}
+
+// Test program for dynamic simulation module using reduced y-matrix
 
 int
 main(int argc, char **argv)
 {
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
-
-  // Intialize Math libraries
+  gridpack::parallel::Environment env(argc,argv);
   gridpack::math::Initialize();
 
-  gridpack::dynamic_simulation::DSApp app;
-  app.execute(argc, argv);
+  if (1) {
+    gridpack::parallel::Communicator world;
 
-  GA_Terminate();
+    // read configuration file
+    gridpack::utility::Configuration *config =
+      gridpack::utility::Configuration::configuration();
+    if (argc >= 2 && argv[1] != NULL) {
+      char inputfile[256];
+      sprintf(inputfile,"%s",argv[1]);
+      config->open(inputfile,world);
+    } else {
+      config->open("input.xml",world);
+    }
+
+    // create dynamic simulation network and app
+    boost::shared_ptr<gridpack::dynamic_simulation_r::DSNetwork>
+      ds_network(new gridpack::dynamic_simulation_r::DSNetwork(world));
+    gridpack::dynamic_simulation_r::DSAppModule ds_app;
+
+    // setup optional powerflow calculation to initialize dynamic simulation
+    gridpack::utility::Configuration::CursorPtr cursor;
+    cursor = config->getCursor("Configuration.Powerflow");
+    if (cursor) {
+      bool useNonLinear = false;
+      useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+
+      boost::shared_ptr<gridpack::powerflow::PFNetwork>
+        pf_network(new gridpack::powerflow::PFNetwork(world));
+
+      gridpack::powerflow::PFAppModule pf_app;
+      pf_app.readNetwork(pf_network, config);
+      pf_app.initialize();
+      if (useNonLinear) {
+        pf_app.nl_solve();
+      } else {
+        pf_app.solve();
+      }
+      pf_app.write();
+      pf_app.saveData();
+      pf_network->clone<gridpack::dynamic_simulation_r::DSBus,
+        gridpack::dynamic_simulation_r::DSBranch>(ds_network);
+      // transfer results from PF calculation to DS calculation
+      transferPFtoDS(pf_network, ds_network);
+      //             // set network for dynamic simulation
+      ds_app.setNetwork(ds_network, config);
+    } else {
+      // read in network
+      ds_app.readNetwork(ds_network,config);
+    }
+
+    ds_app.readGenerators();
+    cursor = config->getCursor("Configuration.Dynamic_simulation");
+    std::vector<gridpack::dynamic_simulation_r::DSBranch::Event> faults;
+    faults = ds_app.getFaults(cursor);
+    ds_app.initialize();
+    ds_app.setGeneratorWatch();
+    ds_app.solve(faults[0]);
+    ds_app.write();
+  }
 
   // Terminate Math libraries
   gridpack::math::Finalize();
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
+  return 0;
 }
 

@@ -18,7 +18,6 @@
 #define _classical_gen_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_generator_model.hpp"
 
 namespace gridpack {

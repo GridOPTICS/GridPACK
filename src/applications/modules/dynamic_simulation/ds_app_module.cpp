@@ -15,7 +15,11 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/math/math.hpp"
 #include "ds_app_module.hpp"
 
 // Calling program for dynamic simulation application
@@ -23,7 +27,7 @@
 /**
  * Basic constructor
  */
-gridpack::dynamic_simulation::DSAppModule::DSAppModule(void)
+gridpack::dynamic_simulation_r::DSAppModule::DSAppModule(void)
 {
   p_generatorWatch = false;
 }
@@ -31,7 +35,7 @@ gridpack::dynamic_simulation::DSAppModule::DSAppModule(void)
 /**
  * Basic destructor
  */
-gridpack::dynamic_simulation::DSAppModule::~DSAppModule(void)
+gridpack::dynamic_simulation_r::DSAppModule::~DSAppModule(void)
 {
 }
 
@@ -44,7 +48,7 @@ gridpack::dynamic_simulation::DSAppModule::~DSAppModule(void)
  * @param config pointer to open
  * configuration file
  */
-void gridpack::dynamic_simulation::DSAppModule::readNetwork(
+void gridpack::dynamic_simulation_r::DSAppModule::readNetwork(
     boost::shared_ptr<DSNetwork> &network,
     gridpack::utility::Configuration *config)
 {
@@ -98,21 +102,21 @@ void gridpack::dynamic_simulation::DSAppModule::readNetwork(
  * @param cursor pointer to open file contain fault or faults
  * @return a list of fault events
  */
-std::vector<gridpack::dynamic_simulation::DSBranch::Event>
-  gridpack::dynamic_simulation::DSAppModule::
+std::vector<gridpack::dynamic_simulation_r::DSBranch::Event>
+  gridpack::dynamic_simulation_r::DSAppModule::
   getFaults(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("faultEvents");
   gridpack::utility::Configuration::ChildCursors events;
-  std::vector<gridpack::dynamic_simulation::DSBranch::Event> ret;
+  std::vector<gridpack::dynamic_simulation_r::DSBranch::Event> ret;
   if (list) {
     list->children(events);
     int size = events.size();
     int idx;
     // Parse fault events
     for (idx=0; idx<size; idx++) {
-      gridpack::dynamic_simulation::DSBranch::Event event;
+      gridpack::dynamic_simulation_r::DSBranch::Event event;
       event.start = events[idx]->get("beginFault",0.0);
       event.end = events[idx]->get("endFault",0.0);
       std::string indices = events[idx]->get("faultBranch","0 0");
@@ -150,7 +154,7 @@ std::vector<gridpack::dynamic_simulation::DSBranch::Event>
  * Read generator parameters. These will come from a separate file (most
  * likely). The name of this file comes from the input configuration file.
  */
-void gridpack::dynamic_simulation::DSAppModule::readGenerators()
+void gridpack::dynamic_simulation_r::DSAppModule::readGenerators()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
@@ -159,7 +163,7 @@ void gridpack::dynamic_simulation::DSAppModule::readGenerators()
   if (filename.size() > 0) parser.externalParse(filename.c_str());
 }
 
-void gridpack::dynamic_simulation::DSAppModule::setNetwork(
+void gridpack::dynamic_simulation_r::DSAppModule::setNetwork(
     boost::shared_ptr<DSNetwork> &network,
     gridpack::utility::Configuration *config)
 {
@@ -195,7 +199,7 @@ void gridpack::dynamic_simulation::DSAppModule::setNetwork(
  * initialize
  * network components using data from data collection
  */
-void gridpack::dynamic_simulation::DSAppModule::initialize()
+void gridpack::dynamic_simulation_r::DSAppModule::initialize()
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -204,7 +208,7 @@ void gridpack::dynamic_simulation::DSAppModule::initialize()
   int t_config = timer->createCategory("Dynamic Simulation: Configure Network");
   timer->start(t_config);
   // create factory
-  p_factory.reset(new gridpack::dynamic_simulation::DSFactoryModule(p_network));
+  p_factory.reset(new gridpack::dynamic_simulation_r::DSFactoryModule(p_network));
   p_factory->load();
 
   // set network components using factory
@@ -222,8 +226,8 @@ void gridpack::dynamic_simulation::DSAppModule::initialize()
   timer->stop(t_total);
 }
 
-void gridpack::dynamic_simulation::DSAppModule::solve(
-    gridpack::dynamic_simulation::DSBranch::Event fault)
+void gridpack::dynamic_simulation_r::DSAppModule::solve(
+    gridpack::dynamic_simulation_r::DSBranch::Event fault)
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -787,23 +791,33 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   closeGeneratorWatchFile();
   timer->stop(t_total);
 #else
+  printf("p[%d] (solve) Got to 1\n",p_network->communicator().rank());
   timer->start(t_total);
   int t_matset = timer->createCategory("Matrix Setup");
   timer->start(t_matset);
   p_factory->setMode(YBUS);
   gridpack::mapper::FullMatrixMap<DSNetwork> ybusMap(p_network);
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 2\n",p_network->communicator().rank());
 
   int t_trans = timer->createCategory("Matrix Transpose");
+  printf("p[%d] (solve) Got to 2a\n",p_network->communicator().rank());
   // Construct matrix diagY_a using xd and ra extracted from gen data, 
   timer->start(t_matset);
+  printf("p[%d] (solve) Got to 2b\n",p_network->communicator().rank());
   p_factory->setMode(YA);
+  printf("p[%d] (solve) Got to 2c\n",p_network->communicator().rank());
   gridpack::mapper::FullMatrixMap<DSNetwork> yaMap(p_network);
+  printf("p[%d] (solve) Got to 2d\n",p_network->communicator().rank());
   boost::shared_ptr<gridpack::math::Matrix> diagY_a = yaMap.mapToMatrix();
+  printf("p[%d] (solve) Got to 2e\n",p_network->communicator().rank());
   // Convert diagY_a from sparse matrix to dense matrix Y_a so that SuperLU_DIST can solve
   gridpack::math::MatrixStorageType denseType = gridpack::math::Dense;
+  printf("p[%d] (solve) Got to 2f\n",p_network->communicator().rank());
   boost::shared_ptr<gridpack::math::Matrix> Y_a(gridpack::math::storageType(*diagY_a, denseType));
+  printf("p[%d] (solve) Got to 2g\n",p_network->communicator().rank());
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 3\n",p_network->communicator().rank());
 
   int t_matmul = timer->createCategory("Matrix Multiply");
   // Construct Y_c as a dense matrix
@@ -811,6 +825,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(YC);
   gridpack::mapper::FullMatrixMap<DSNetwork> cMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> Y_cDense = cMap.mapToMatrix(true);
+  printf("p[%d] (solve) Got to 4\n",p_network->communicator().rank());
 
   // Construct Y_b
   p_factory->setMode(YB);
@@ -822,6 +837,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(updateYbus);
   boost::shared_ptr<gridpack::math::Matrix> prefy11ybus = ybusMap.mapToMatrix();
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 5\n",p_network->communicator().rank());
 
   // Solve linear equations ybus * X = Y_c
   int t_solve = timer->createCategory("Solve Linear Equation");
@@ -839,6 +855,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   timer->stop(t_matmul);
   // Update prefy11: prefy11 = Y_a + prefy11
   prefy11->add(*Y_a);
+  printf("p[%d] (solve) Got to 6\n",p_network->communicator().rank());
 
   //-----------------------------------------------------------------------
   // Compute fy11
@@ -855,6 +872,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(onFY);
   ybusMap.overwriteMatrix(fy11ybus);
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 7\n",p_network->communicator().rank());
 
   // Solve linear equations of fy11ybus * X = Y_c
   timer->start(t_solve);
@@ -868,6 +886,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   timer->stop(t_matmul);
   // Update fy11: fy11 = Y_a + fy11
   fy11->add(*Y_a);
+  printf("p[%d] (solve) Got to 8\n",p_network->communicator().rank());
 
   //-----------------------------------------------------------------------
   // Compute posfy11
@@ -881,12 +900,14 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_factory->setMode(posFY);
   ybusMap.incrementMatrix(posfy11ybus);
   timer->stop(t_matset);
+  printf("p[%d] (solve) Got to 9\n",p_network->communicator().rank());
     
   // Solve linear equations of posfy11ybus * X = Y_c
   timer->start(t_solve);
   gridpack::math::LinearMatrixSolver solver3(*posfy11ybus);
   boost::shared_ptr<gridpack::math::Matrix> posfy11X(solver3.solve(*Y_cDense)); 
   timer->stop(t_solve);
+  printf("p[%d] (solve) Got to 10\n",p_network->communicator().rank());
   
   // Form reduced admittance matrix posfy11: posfy11 = Y_b * X
   timer->start(t_matmul);
@@ -894,6 +915,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   timer->stop(t_matmul);
   // Update posfy11: posfy11 = Y_a + posfy11
   posfy11->add(*Y_a);
+  printf("p[%d] (solve) Got to 11\n",p_network->communicator().rank());
 
   //-----------------------------------------------------------------------
   // Integration implementation (Modified Euler Method)
@@ -912,6 +934,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   boost::shared_ptr<gridpack::math::Matrix> trans_fy11(transpose(*fy11));
   boost::shared_ptr<gridpack::math::Matrix> trans_posfy11(transpose(*posfy11));
   timer->stop(t_trans);
+  printf("p[%d] (solve) Got to 12\n",p_network->communicator().rank());
 
   // Simulation related variables
   int simu_k;
@@ -1001,6 +1024,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     }
     p_factory->setMode(Eprime0);
     Emap.mapToVector(eprime_s0);
+  printf("p[%d] (solve) Got to 13\n",p_network->communicator().rank());
      
     // ---------- CALL i_simu_innerloop(k,S_Steps,flagF1): ----------
     int t_trnsmul = timer->createCategory("Transpose Multiply");
@@ -1022,6 +1046,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     p_factory->predDSStep(h_sol1);
     p_factory->setMode(Eprime1);
     Emap.mapToVector(eprime_s1);
+  printf("p[%d] (solve) Got to 14\n",p_network->communicator().rank());
 
     // ---------- CALL i_simu_innerloop2(k,S_Steps+1,flagF2): ----------
     timer->start(t_trnsmul);
@@ -1040,6 +1065,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     p_factory->setMode(Current);
     Emap.mapToBus(curr);
     p_factory->corrDSStep(h_sol2);
+  printf("p[%d] (solve) Got to 15\n",p_network->communicator().rank());
 
     if (p_generatorWatch && I_Steps%p_watchFrequency == 0) {
       char tbuf[32];
@@ -1065,15 +1091,17 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
     
     last_S_Steps = S_Steps;
   }
+  printf("p[%d] (solve) Got to 16\n",p_network->communicator().rank());
   closeGeneratorWatchFile();
   timer->stop(t_total);
+  printf("p[%d] (solve) Got to 17\n",p_network->communicator().rank());
 #endif
 }
 /**
  * Write out final results of dynamic simulation calculation to
  * standard output
  */
-void gridpack::dynamic_simulation::DSAppModule::write()
+void gridpack::dynamic_simulation_r::DSAppModule::write()
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -1094,7 +1122,7 @@ void gridpack::dynamic_simulation::DSAppModule::write()
 /**
  * Read in generators that should be monitored during simulation
  */
-void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
+void gridpack::dynamic_simulation_r::DSAppModule::setGeneratorWatch()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
@@ -1108,7 +1136,7 @@ void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
   int i, j, idx, id, len;
   int ncnt = generators.size();
   std::string generator, tag, clean_tag;
-  gridpack::dynamic_simulation::DSBus *bus;
+  gridpack::dynamic_simulation_r::DSBus *bus;
   if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
   for (i=0; i<ncnt; i++) {
     // Parse contents of "generator" field to get bus ID and generator tag
@@ -1119,7 +1147,7 @@ void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
     // Find local bus indices for generator
     std::vector<int> local_ids = p_network->getLocalBusIndices(id);
     for (j=0; j<local_ids.size(); j++) {
-      bus = dynamic_cast<gridpack::dynamic_simulation::DSBus*>
+      bus = dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>
         (p_network->getBus(local_ids[j]).get());
       bus->setWatch(clean_tag,true);
     }
@@ -1137,7 +1165,7 @@ void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
 /**
  * Close file contain generator watch results
  */
-void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
+void gridpack::dynamic_simulation_r::DSAppModule::openGeneratorWatchFile()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
@@ -1173,7 +1201,7 @@ void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
 /**
  * Close file contain generator watch results
  */
-void gridpack::dynamic_simulation::DSAppModule::closeGeneratorWatchFile()
+void gridpack::dynamic_simulation_r::DSAppModule::closeGeneratorWatchFile()
 {
   if (p_generatorWatch) {
 #ifndef USE_GOSS
@@ -1188,7 +1216,7 @@ void gridpack::dynamic_simulation::DSAppModule::closeGeneratorWatchFile()
  * Utility function to convert faults that are in event list into
  * internal data structure that can be used by code
  */
-void gridpack::dynamic_simulation::DSAppModule::setFaultEvents()
+void gridpack::dynamic_simulation_r::DSAppModule::setFaultEvents()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation.faultEvents");
@@ -1198,7 +1226,7 @@ void gridpack::dynamic_simulation::DSAppModule::setFaultEvents()
   int idx;
   // Parse fault events
   for (idx=0; idx<size; idx++) {
-    gridpack::dynamic_simulation::DSBranch::Event event;
+    gridpack::dynamic_simulation_r::DSBranch::Event event;
     event.start = events[idx]->get("beginFault",0.0);
     event.end = events[idx]->get("endFault",0.0);
     std::string indices = events[idx]->get("faultBranch","0 0");

@@ -20,7 +20,7 @@
 #include "ds_factory_module.hpp"
 
 namespace gridpack {
-namespace dynamic_simulation {
+namespace dynamic_simulation_r {
 
 // Dynamic simulation factory class implementations
 
@@ -37,14 +37,14 @@ DSFactoryModule::DSFactoryModule(DSFactoryModule::NetworkPtr network)
 /**
  * Basic destructor
  */
-gridpack::dynamic_simulation::DSFactoryModule::~DSFactoryModule()
+gridpack::dynamic_simulation_r::DSFactoryModule::~DSFactoryModule()
 {
 }
 
 /**
  * Create the admittance (Y-Bus) matrix
  */
-void gridpack::dynamic_simulation::DSFactoryModule::setYBus(void)
+void gridpack::dynamic_simulation_r::DSFactoryModule::setYBus(void)
 {
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
@@ -65,7 +65,7 @@ void gridpack::dynamic_simulation::DSFactoryModule::setYBus(void)
  * Get the updating factor for posfy11 stage ybus
  */
 gridpack::ComplexType
-gridpack::dynamic_simulation::DSFactoryModule::setFactor(int sw2_2, int sw3_2)
+gridpack::dynamic_simulation_r::DSFactoryModule::setFactor(int sw2_2, int sw3_2)
 {
   gridpack::ComplexType dummy(-999.0, -999.0);
 
@@ -87,8 +87,8 @@ gridpack::dynamic_simulation::DSFactoryModule::setFactor(int sw2_2, int sw3_2)
  * Apply an event to all branches in the system
  * @param event a struct describing a fault
  */
-void gridpack::dynamic_simulation::DSFactoryModule::setEvent(const
-    gridpack::dynamic_simulation::DSBranch::Event &event)
+void gridpack::dynamic_simulation_r::DSFactoryModule::setEvent(const
+    gridpack::dynamic_simulation_r::DSBranch::Event &event)
 {
   int numBus = p_network->numBuses();
   int numBranch = p_network->numBranches();
@@ -105,7 +105,7 @@ void gridpack::dynamic_simulation::DSFactoryModule::setEvent(const
  * Check network to see if there is a process with no generators
  * @return true if all processors have at least on generator
  */
-bool gridpack::dynamic_simulation::DSFactoryModule::checkGen(void)
+bool gridpack::dynamic_simulation_r::DSFactoryModule::checkGen(void)
 {
   int numBus = p_network->numBuses();
   int i, count;
@@ -128,7 +128,7 @@ bool gridpack::dynamic_simulation::DSFactoryModule::checkGen(void)
 /**
  * Initialize dynamic simulation data structures
  */
-void gridpack::dynamic_simulation::DSFactoryModule::setDSParams()
+void gridpack::dynamic_simulation_r::DSFactoryModule::setDSParams()
 {
   int numBus = p_network->numBuses();
   int i;
@@ -141,7 +141,7 @@ void gridpack::dynamic_simulation::DSFactoryModule::setDSParams()
  * Evaluate first part of a dynamic simulation step
  * @param flag false if step is not initial step
  */
-void gridpack::dynamic_simulation::DSFactoryModule::initDSStep(bool flag)
+void gridpack::dynamic_simulation_r::DSFactoryModule::initDSStep(bool flag)
 {
   int numBus = p_network->numBuses();
   int i;
@@ -154,7 +154,7 @@ void gridpack::dynamic_simulation::DSFactoryModule::initDSStep(bool flag)
  * Evaluate predictor part of dynamic simulation step
  * @param t_inc time increment
  */
-void gridpack::dynamic_simulation::DSFactoryModule::predDSStep(double t_inc)
+void gridpack::dynamic_simulation_r::DSFactoryModule::predDSStep(double t_inc)
 {
   int numBus = p_network->numBuses();
   int i;
@@ -167,7 +167,7 @@ void gridpack::dynamic_simulation::DSFactoryModule::predDSStep(double t_inc)
  * Evaluate corrector part of dynamic simulation step
  * @param t_inc time increment
  */
-void gridpack::dynamic_simulation::DSFactoryModule::corrDSStep(double t_inc)
+void gridpack::dynamic_simulation_r::DSFactoryModule::corrDSStep(double t_inc)
 {
   int numBus = p_network->numBuses();
   int i;

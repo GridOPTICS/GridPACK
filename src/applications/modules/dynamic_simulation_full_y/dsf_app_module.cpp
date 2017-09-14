@@ -17,7 +17,11 @@
 //
 #define USE_TIMESTAMP
 
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/math/math.hpp"
 #include "dsf_app_module.hpp"
 
 //#define MAP_PROFILE

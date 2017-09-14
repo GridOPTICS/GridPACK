@@ -18,7 +18,6 @@
 #define _exdc1_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_exciter_model.hpp"
 
 namespace gridpack {

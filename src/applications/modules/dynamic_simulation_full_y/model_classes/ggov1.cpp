@@ -16,12 +16,12 @@
 
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/parser/dictionary.hpp"
 #include "base_governor_model.hpp"
 #include "ggov1.hpp"
-#include "gridpack/math/math.hpp"
 
 #define TS_THRESHOLD 1
 

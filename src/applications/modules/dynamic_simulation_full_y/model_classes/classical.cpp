@@ -16,10 +16,11 @@
 
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_generator_model.hpp"
+#include "gridpack/parser/dictionary.hpp"
 #include "classical.hpp"
 
 /**
@@ -228,7 +229,8 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor(
   curr = p_eprime_s0;
   curr -= p_volt;
   curr = curr/(jay*p_dtr);
-  imag(curr) = -imag(curr);
+  //imag(curr) = -imag(curr);
+  curr = conj(curr);
   p_pelect = real(p_eprime_s0 * curr);
   // dmac_ang:
   //printf("classical gen  predictor p_mac_ang_s0 and p_mac_spd_s0: %12.9f, %12.9f \n",p_mac_ang_s0, p_mac_spd_s0);
@@ -281,7 +283,8 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector(
   curr = p_eprime_s1;
   curr -= p_volt;
   curr = curr/(jay*p_dtr);
-  imag(curr) = -imag(curr);
+  //imag(curr) = -imag(curr);
+  curr = conj(curr);
   p_pelect = real(p_eprime_s1 * curr);
   // dmac_ang:
   //printf("classical gen  corrector p_mac_ang_s1 and p_mac_spd_s1: %12.9f, %12.9f \n",p_mac_ang_s1, p_mac_spd_s1);

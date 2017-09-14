@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   ds_main.cpp
+ * @file   dsf_main.cpp
  * @author Shuangshuang Jin
  * @date   2016-07-14 14:23:30 d3g096
  *
@@ -16,6 +16,7 @@
 #include "mpi.h"
 #include <ga.h>
 #include <macdecls.h>
+#include "gridpack/parser/dictionary.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"

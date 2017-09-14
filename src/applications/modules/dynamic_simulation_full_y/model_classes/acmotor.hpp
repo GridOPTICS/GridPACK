@@ -18,7 +18,6 @@
 #define _acmotor_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_load_model.hpp"
 
 namespace gridpack {

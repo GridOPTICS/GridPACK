@@ -19,6 +19,8 @@
 #define _pf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/configuration/configuration.hpp"
 #include "pf_factory_module.hpp"
 
 namespace gridpack {

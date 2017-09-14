@@ -55,6 +55,7 @@ find_path(GA_INCLUDE_DIR ga++.h
   PATH_SUFFIXES include
   DOC "Directory where the GA header files are located"
 )
+message(STATUS "GA_INCLUDE_DIR: ${GA_INCLUDE_DIR}")
 
 find_library(GA_LIBRARY
   NAMES ga GA${GA_LIB_SUFFIX}
@@ -62,6 +63,7 @@ find_library(GA_LIBRARY
   PATH_SUFFIXES lib
   DOC "Directory where the GA library is located"
 )
+message(STATUS "GA_LIBRARY: ${GA_LIBRARY}")
 
 find_library(GA_CXX_LIBRARY
   NAMES ga++ GA${GA_LIB_SUFFIX}
@@ -69,6 +71,7 @@ find_library(GA_CXX_LIBRARY
   PATH_SUFFIXES lib
   DOC "Directory where the GA library is located"
 )
+message(STATUS "GA_CXX_LIBRARY: ${GA_CXX_LIBRARY}")
 
 find_library(ARMCI_LIBRARY
   NAMES armci GA${ARMCI_LIB_SUFFIX}
@@ -76,6 +79,7 @@ find_library(ARMCI_LIBRARY
   PATH_SUFFIXES lib
   DOC "Directory where the GA library is located"
 )
+message(STATUS "ARMCI_LIBRARY: ${ARMCI_LIBRARY}")
 
 # Get GA version
 if(NOT GA_VERSION_STRING AND GA_INCLUDE_DIR AND EXISTS "${GA_INCLUDE_DIR}/ga.h")
@@ -117,12 +121,12 @@ set(ga_test_src "
 #include <mpi.h>
 #include <ga++.h>
 
-int main()
+int main(int argc, char **argv)
 {
   // FIXME: Find a simple but sensible test for GA
 
   // Initialise MPI
-  MPI::Init();
+  MPI_Init(&argc, &argv);
 
   // Initialize GA
   GA_Initialize();
@@ -131,7 +135,7 @@ int main()
   GA_Terminate();
 
   // Finalize MPI
-  MPI::Finalize();
+  MPI_Finalize();
 
   return 0;
 }

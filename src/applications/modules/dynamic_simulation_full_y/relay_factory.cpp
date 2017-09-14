@@ -14,7 +14,6 @@
  * 
  */
 
-#include "gridpack/include/gridpack.hpp"
 #include "relay_factory.hpp"
 #include "lvshbl.hpp"
 #include "frqtpat.hpp"

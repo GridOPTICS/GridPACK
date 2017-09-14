@@ -18,7 +18,7 @@
 #include <iostream>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/parser/dictionary.hpp"
 #include "base_exciter_model.hpp"
 #include "esst1a.hpp"
 

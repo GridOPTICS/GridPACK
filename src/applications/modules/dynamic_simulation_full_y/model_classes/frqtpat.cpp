@@ -18,7 +18,7 @@
 #include <iostream>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/parser/dictionary.hpp"
 #include "base_relay_model.hpp"
 #include "frqtpat.hpp"
 

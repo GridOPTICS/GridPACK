@@ -18,7 +18,6 @@
 #define _gainblockclass_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
