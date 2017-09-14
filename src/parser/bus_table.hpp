@@ -261,6 +261,7 @@ public:
         p_order.push_back(order[i].order);
       }
     }
+    p_has_data = true;
     return true;
   }
 
