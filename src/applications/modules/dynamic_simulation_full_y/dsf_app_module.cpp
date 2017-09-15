@@ -15,7 +15,7 @@
  */
 // -------------------------------------------------------------
 //
-#define USE_TIMESTAMP
+//#define USE_TIMESTAMP
 
 #include "gridpack/include/gridpack.hpp"
 #include "dsf_app_module.hpp"
@@ -689,7 +689,6 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->configTimer(true);
 #endif
   timer->stop(t_solve);
-  //timer->dump();
 }
 
 /**
