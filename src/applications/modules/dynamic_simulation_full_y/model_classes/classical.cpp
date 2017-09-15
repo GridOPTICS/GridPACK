@@ -17,6 +17,7 @@
 #include <vector>
 #include <iostream>
 #include <stdio.h>
+#include <string.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_generator_model.hpp"
