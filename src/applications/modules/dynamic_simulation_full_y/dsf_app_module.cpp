@@ -173,7 +173,6 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
 {
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
-  p_factory->dumpData();
   p_factory->load();
 
   // set network components using factory
@@ -249,6 +248,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->stop(t_mode);
   timer->start(t_ybus);
   boost::shared_ptr<gridpack::math::Matrix> ybus_jxd = ybusMap.mapToMatrix();
+  timer->stop(t_ybus);
 
   // Add dynamic load impedance to system Y matrix:
   timer->start(t_mode);
@@ -381,7 +381,6 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
     timer->start(t_misc);
-    printf("Step %d\ttime %5.3f sec: \n", I_Steps+1, (I_Steps+1) * p_time_step);
     S_Steps = I_Steps;
 
     if (I_Steps < steps1) {
@@ -689,9 +688,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #ifdef MAP_PROFILE
   timer->configTimer(true);
 #endif
-  //timer->dump();
   timer->stop(t_solve);
-  timer->dump();
+  //timer->dump();
 }
 
 /**
