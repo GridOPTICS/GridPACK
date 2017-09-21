@@ -64,6 +64,22 @@
         <timeStep>   0.005</timeStep>
       </faultEvent>
     </faultEvents>
+    <generatorWatch>
+      <generator>
+        <busID> 60 </busID>
+        <generatorID> 1 </generatorID>
+      </generator>
+      <generator>
+        <busID> 67 </busID>
+        <generatorID> 1 </generatorID>
+      </generator>
+      <generator>
+         <busID> 79 </busID>
+         <generatorID> 1 </generatorID>
+      </generator>
+    </generatorWatch>
+    <generatorWatchFrequency> 2 </generatorWatchFrequency>
+    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
     <LinearSolver>
       <PETScOptions>
         <!-ksp_view>
