@@ -117,6 +117,13 @@ class ClassicalGenerator : public BaseGeneratorModel
      */
     double getAngle();
 
+    /**
+     * return a vector containing any generator values that are being
+     * watched
+     * @return vector of watched values
+     */
+    std::vector<double> getWatchValues();
+
   private:
 
     double p_sbase;
