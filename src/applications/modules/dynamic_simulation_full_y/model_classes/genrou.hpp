@@ -114,6 +114,13 @@ class GenrouGenerator : public BaseGeneratorModel
      */
     void write(const char* signal, char* string);
 
+    /**
+     * return a vector containing any generator values that are being
+     * watched
+     * @return vector of watched values
+     */
+    std::vector<double> getWatchValues();
+
   private:
 
     double p_sbase;

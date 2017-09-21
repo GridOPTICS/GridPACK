@@ -443,3 +443,18 @@ void gridpack::dynamic_simulation::GenrouGenerator::write(
           p_bus_id, p_ckt.c_str(), x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
   }
 }
+
+/**
+ * return a vector containing any generator values that are being
+ * watched
+ * @return vector of watched values
+ */
+std::vector<double> gridpack::dynamic_simulation::GenrouGenerator::getWatchValues()
+{
+  std::vector<double> ret;
+  if (getWatch()) {
+    ret.push_back(x1d_1+1.0);
+    ret.push_back(x2w_1);
+  }
+  return ret;
+}

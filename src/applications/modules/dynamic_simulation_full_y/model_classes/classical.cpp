@@ -396,3 +396,17 @@ double gridpack::dynamic_simulation::ClassicalGenerator::getAngle()
   return real(p_mac_ang_s1);
 }
   
+/**
+ * return a vector containing any generator values that are being
+ * watched
+ * @return vector of watched values
+ */
+std::vector<double> gridpack::dynamic_simulation::ClassicalGenerator::getWatchValues()
+{
+  std::vector<double> ret;
+  if (getWatch()) {
+    ret.push_back(real(p_mac_ang_s1));
+    ret.push_back(real(p_mac_spd_s1));
+  }
+  return ret;
+}

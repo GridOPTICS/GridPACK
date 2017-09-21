@@ -535,3 +535,17 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
   return false;
   }
 }
+
+/**
+ * return a vector containing any generator values that are being
+ * watched
+ * @return vector of watched values
+ */
+std::vector<double> gridpack::dynamic_simulation::GensalGenerator::getWatchValues()
+{
+  std::vector<double> ret;
+  if (getWatch()) {
+    ret.push_back(x1d_1);
+    ret.push_back(x2w_1+1.0);
+  }
+}
