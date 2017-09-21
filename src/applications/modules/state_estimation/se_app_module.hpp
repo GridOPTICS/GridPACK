@@ -17,10 +17,9 @@
 // -------------------------------------------------------------
 
 #ifndef _se_app_module_h_
-#define _se_app__moduleh_
+#define _se_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "se_factory_module.hpp"
 
 namespace gridpack {

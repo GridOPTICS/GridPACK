@@ -14,6 +14,7 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_state_estimation_module
     gridpack_components
     gridpack_partition
     gridpack_parallel
@@ -33,15 +34,13 @@ if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-add_executable(se.x
-   se_app.cpp
-   se_factory.cpp
+add_executable(stes.x
    se_main.cpp
 )
 
-target_link_libraries(se.x ${target_libraries})
+target_link_libraries(stes.x ${target_libraries})
 
-add_custom_target(se.x.input
+add_custom_target(stes.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
@@ -61,9 +60,9 @@ add_custom_target(se.x.input
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
 )
 
-add_dependencies(se.x se.x.input)
+add_dependencies(stes.x stes.x.input)
 
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-#gridpack_add_run_test("state_estimation" se.x input.xml)
+gridpack_add_run_test("state_estimation" stes.x input.xml)

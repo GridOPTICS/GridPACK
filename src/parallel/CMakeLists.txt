@@ -47,6 +47,7 @@ install(FILES
   random.hpp
   index_hash.hpp
   global_store.hpp
+  global_vector.hpp
   DESTINATION include/gridpack/parallel
 )
 
@@ -142,3 +143,13 @@ target_link_libraries(store_test gridpack_parallel
   ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
 
 gridpack_add_run_test(store_test store_test "")
+
+# -------------------------------------------------------------
+# TEST: vector_test
+# A simple program to test the global vector module
+# -------------------------------------------------------------
+add_executable(vector_test test/vector_test.cpp)
+target_link_libraries(vector_test gridpack_parallel 
+  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+
+gridpack_add_run_test(vector_test vector_test "")

@@ -110,6 +110,119 @@ protected:
 };
 
 // -------------------------------------------------------------
+//  class JuliaVarValueLister
+// -------------------------------------------------------------
+class JuliaVarValueLister
+  : public VariableVisitor
+{
+public:
+
+  /// Default constructor.
+  JuliaVarValueLister(const std::string& mname, std::ostream& o)
+    : VariableVisitor(),
+      p_model(mname),
+      p_stream(o)
+  {
+  }
+
+  /// Destructor
+  ~JuliaVarValueLister(void)
+  {
+  }
+
+  void visit(Variable& var)
+  {
+    BOOST_ASSERT(false);
+  }
+
+  void visit(RealVariable& var)
+  {
+    std::string s;
+    s = var.name();
+    s += ", ";
+    s += boost::str(boost::format("%8.4g") %var.initial());
+    this->p_stream << "setvalue(" << s << ")" << std::endl;
+  }
+    
+  void visit(IntegerVariable& var)
+  {
+    std::string s;
+    s = var.name();
+    s += ", ";
+    s += boost::str(boost::format("%8d") %var.initial());
+    this->p_stream << "setvalue(" << s << ")" << std::endl;
+  }
+
+  void visit(BinaryVariable& var)
+  {
+    std::string s;
+    s = var.name();
+    s += ", ";
+    s += boost::str(boost::format("%8d") %var.initial());
+    this->p_stream << "setvalue(" << s << ")" << std::endl;
+  }
+
+protected:
+
+  std::string p_model;
+  std::ostream& p_stream;
+
+};
+
+// -------------------------------------------------------------
+//  class JuliaVarPrintLister
+// -------------------------------------------------------------
+class JuliaVarPrintLister
+  : public VariableVisitor
+{
+public:
+
+  /// Default constructor.
+  JuliaVarPrintLister(const std::string& mname, std::ostream& o)
+    : VariableVisitor(),
+      p_model(mname),
+      p_stream(o)
+  {
+  }
+
+  /// Destructor
+  ~JuliaVarPrintLister(void)
+  {
+  }
+
+  void visit(Variable& var)
+  {
+    BOOST_ASSERT(false);
+  }
+
+  void visit(RealVariable& var)
+  {
+    std::string s;
+    s = var.name();
+    this->p_stream << "println(\""<<s<<" value: \",getvalue(" << s << "))" << std::endl;
+  }
+    
+  void visit(IntegerVariable& var)
+  {
+    std::string s;
+    s = var.name();
+    this->p_stream << "println(\""<<s<<" value: \",getvalue(" << s << "))" << std::endl;
+  }
+
+  void visit(BinaryVariable& var)
+  {
+    std::string s;
+    this->p_stream << "println(\""<<s<<" value: \",getvalue(" << s << "))" << std::endl;
+  }
+
+protected:
+
+  std::string p_model;
+  std::ostream& p_stream;
+
+};
+
+// -------------------------------------------------------------
 //  class JuliaConstraintRenderer
 // -------------------------------------------------------------
 class JuliaConstraintRenderer 
@@ -129,7 +242,7 @@ public:
 
   void visit(Constraint& e)
   {
-    p_out << "@constraint(" << p_model << ", ";
+    p_out << "@NLconstraint(" << p_model << ", ";
     ConstraintRenderer::visit(e);
     p_out << ")" << std::endl;
   }
@@ -139,7 +252,7 @@ public:
     ExpressionPtr lhs(e.lhs());
     ExpressionPtr rhs(e.rhs());
 
-    p_out << "@constraint(" << p_model << ", ";
+    p_out << "@NLconstraint(" << p_model << ", ";
     if (lhs->precedence() > e.precedence()) {
       p_group(lhs);
     } else {
@@ -227,12 +340,18 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   // out << "using GLPKMathProgInterface" << std::endl;
   // solver = "GLPKSolverLP()");
 
-  out << "using CPLEX" << std::endl;
-  solver = "CplexSolver()";
+  out << "using Ipopt" << std::endl;
+  solver = "IpoptSolver()";
 
   out << mname << " = Model(solver=" << solver << ")" << std::endl;
   { 
     JuliaVarLister v(mname, out);
+    BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+      i.second->accept(v);
+    }
+  }
+  { 
+    JuliaVarValueLister v(mname, out);
     BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
       i.second->accept(v);
     }
@@ -265,6 +384,14 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   out << "print(" << mname << ")" << std::endl;
   out << "status = solve(" << mname << ")" << std::endl;
   out << "println(\"Objective value: \", getobjectivevalue(" << mname << "))" << std::endl;
+
+  // Print values of optimized variables
+  { 
+    JuliaVarPrintLister v(mname, out);
+    BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+      i.second->accept(v);
+    }
+  }
 
 }
 

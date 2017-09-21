@@ -186,7 +186,7 @@ protected:
         boost::format f("%d: PETSc DAE Solver diverged after %d steps, reason : %d");
         std::string msg = 
           boost::str(f % this->processor_rank() % maxsteps % reason );
-        std::cerr << msg << std::cerr;
+        std::cerr << msg << std::endl;
         throw gridpack::Exception(msg);
       }
     

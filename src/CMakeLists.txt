@@ -124,6 +124,7 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
 find_package (PETSc COMPONENTS CXX REQUIRED)
+message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
@@ -288,7 +289,7 @@ endif()
 #  ****NOTE****
 #  For any subdirectory that contributes a LIBRARY to the
 #  GridPACK framework, modifications also need to be made to
-#  the src/lib/GridPACK/cmake.in file so that installs will
+#  the src/lib/GridPACK.cmake.in file so that installs will
 #  work correctly
 #
 # -------------------------------------------------------------
@@ -311,6 +312,7 @@ add_subdirectory(applications/contingency_analysis)
 add_subdirectory(applications/state_estimation)
 add_subdirectory(applications/examples/hello_world)
 add_subdirectory(applications/examples/resistor_grid)
+add_subdirectory(applications/examples/powerflow)
 add_subdirectory(applications/modules/powerflow)
 add_subdirectory(applications/modules/dynamic_simulation)
 add_subdirectory(applications/modules/dynamic_simulation_full_y)

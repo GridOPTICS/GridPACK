@@ -14,7 +14,6 @@
  * 
  */
 
-#include "gridpack/include/gridpack.hpp"
 #include "load_factory.hpp"
 #include "acmotor.hpp"
 #include "motorw.hpp"

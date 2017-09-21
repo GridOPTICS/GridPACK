@@ -2,7 +2,7 @@
 <Configuration>
   <Contingency_analysis>
     <contingencyList>contingencies.xml</contingencyList>
-    <groupSize>1</groupSize>
+    <groupSize>2</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
   </Contingency_analysis>

@@ -18,7 +18,6 @@
 #include <iostream>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_governor_model.hpp"
 
 /**

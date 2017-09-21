@@ -26,7 +26,7 @@
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {
-namespace dynamic_simulation {
+namespace dynamic_simulation_r {
 
 enum DSMode{YBUS, YA, YB, YC, updateYbus,
             DAE_init, onFY, posFY, Eprime0, Eprime1, Current};
@@ -426,7 +426,7 @@ typedef network::BaseNetwork<DSBus, DSBranch > DSNetwork;
 }     // dynamic_simulation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBus)
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSBranch)
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation_r::DSBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation_r::DSBranch)
 
 #endif

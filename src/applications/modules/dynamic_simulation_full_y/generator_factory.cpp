@@ -14,7 +14,6 @@
  * 
  */
 
-#include "gridpack/include/gridpack.hpp"
 #include "generator_factory.hpp"
 #include "classical.hpp"
 #include "gensal.hpp"

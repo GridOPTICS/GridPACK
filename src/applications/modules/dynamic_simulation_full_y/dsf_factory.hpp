@@ -20,7 +20,7 @@
 #define _dsf_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/factory/base_factory.hpp"
 #include "dsf_components.hpp"
 
 namespace gridpack {

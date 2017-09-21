@@ -89,20 +89,35 @@ public:
         ifound = 0;
       } else {
         std::string line;
+        // Check to see if any lines are comments
         if (std::getline(input,line)) {
           util.trim(line);
-          std::vector<std::string> split_line;
-          boost::split(split_line,line,boost::algorithm::is_any_of(" "),
-              boost::token_compress_on);
-          nval = split_line.size() - 2;
-          if (nval > 0) {
-            nline = 1;
-            while(std::getline(input,line)) {
-              nline++;
-            }
-          } else {
-            ifound = 0;
+          bool found = true;
+          while (line[0] == '#') {
+            // Line is a comment. Store as a string for use elsewhere after
+            // removing the comment character (#)
+            line[0] = ' ';
+            util.trim(line);
+            p_headers.push_back(line);
+            found = std::getline(input,line);
           }
+          if (found) {
+            util.trim(line);
+            std::vector<std::string> split_line;
+            boost::split(split_line,line,boost::algorithm::is_any_of(" "),
+                boost::token_compress_on);
+            nval = split_line.size() - 2;
+            if (nval > 0) {
+              nline = 1;
+              while(std::getline(input,line)) {
+                nline++;
+              }
+            } else {
+              ifound = 0;
+            }
+          }
+        } else {
+          ifound = 0;
         }
       }
       input.close();
@@ -133,7 +148,39 @@ public:
     
     // File has been found and data is present. Create a global array to hold
     // the data and reread the file, this time parsing all data.
+    // Also broadcast and header data that might be available.
     if (nval > 0 && nline > 0) {
+      // Distribute headers
+      int nheaders = 0;
+      if (me == 0) {
+        nheaders = p_headers.size();
+      }
+      MPI_Bcast(&nheaders,1,MPI_INT,0,mpi_comm);
+      int *hsize;
+      hsize = new int[nheaders];
+      int i;
+      if (me == 0) {
+        for (i=0; i<nheaders; i++) {
+          hsize[i] = p_headers[i].length();
+        }
+      }
+      MPI_Bcast(hsize,nheaders,MPI_INT,0,mpi_comm);
+      for (i=0; i<nheaders; i++) {
+        char *str;
+        str = new char[hsize[i]];
+        int j;
+        if (me == 0) {
+          for (j=0; j<hsize[i]; j++) {
+            str[j] = (p_headers[i])[j];
+          }
+        }
+        MPI_Bcast(str,hsize[i],MPI_CHAR,0,mpi_comm);
+        if (me != 0) {
+          p_headers.push_back(str);
+        }
+        delete [] str;
+      }
+      delete [] hsize;
       gridpack::utility::StringUtils util;
       // Create GA to hold all data
       p_GA_data = GA_Create_handle();
@@ -157,6 +204,11 @@ public:
         std::vector<std::string> split_line;
         std::string line;
         while(std::getline(input,line)) {
+          while (line[0] == '#') {
+            // Line is a comment. Store as a string for use elsewhere after
+            // removing the comment character (#)
+            std::getline(input,line);
+          }
           util.trim(line);
           boost::split(split_line,line,boost::algorithm::is_any_of(" "),
               boost::token_compress_on);
@@ -201,7 +253,6 @@ public:
       delete hash;
       p_local_idx.clear();
       p_tags.clear();
-      int i;
       for (i=0; i<bus_id.size(); i++) {
         p_local_idx.push_back(bus_id[i]);
         std::string tmp(order[i].tag);
@@ -210,6 +261,7 @@ public:
         p_order.push_back(order[i].order);
       }
     }
+    p_has_data = true;
     return true;
   }
 
@@ -273,6 +325,14 @@ public:
     }
   }
 
+  void getHeaders(std::vector<std::string> &headers) {
+    headers.clear();
+    int i;
+    for (i=0; i<p_headers.size(); i++) {
+      headers.push_back(p_headers[i]);
+    }
+  }
+
   /**
    * Return the number of columns in the table
    */
@@ -293,6 +353,7 @@ private:
   std::vector<int> p_local_idx;
   std::vector<std::string> p_tags;
   std::vector<int> p_order;
+  std::vector<std::string> p_headers;
 
   int p_GAgrp;
 };

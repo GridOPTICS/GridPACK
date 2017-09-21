@@ -146,7 +146,8 @@ void gridpack::unit_commitment::UCApp::execute(int argc, char** argv)
 
   gridpack::unit_commitment::UCApp::getLoadsAndReserves("loads.csv");
 
-  int me = MPI::COMM_WORLD.Get_rank();
+  int me;
+  MPI_Comm_rank(MPI_COMM_WORLD, &me);
 
     int p_nBuses = p_network->numBuses();
     int ngen;

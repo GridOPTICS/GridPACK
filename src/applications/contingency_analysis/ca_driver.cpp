@@ -251,6 +251,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     printf("Executing task %d on process %d\n",task_id,world.rank());
     sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
     pf_app.open(sbuf);
+    sprintf(sbuf,"\nRunning task on %d processes\n",task_comm.size());
+    pf_app.writeHeader(sbuf);
     pf_app.resetVoltages();
     pf_app.setContingency(events[task_id]);
     if (pf_app.solve()) {

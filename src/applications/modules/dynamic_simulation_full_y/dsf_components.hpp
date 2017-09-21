@@ -25,7 +25,7 @@
  */
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/network/base_network.hpp"
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 #include "generator_factory.hpp"
 #include "relay_factory.hpp"

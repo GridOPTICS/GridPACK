@@ -19,7 +19,10 @@
 #define _se_components_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/utilities/complex.hpp"
+#include "gridpack/component/base_component.hpp"
+#include "gridpack/component/data_collection.hpp"
+#include "gridpack/network/base_network.hpp"
 #include "gridpack/applications/components/y_matrix/ymatrix_components.hpp"
 
 namespace gridpack {

@@ -16,7 +16,7 @@
 # This is used to specify a time out for GridPACK unit tests. It's 5
 # seconds by default, but may need to be longer on some platforms.
 if (NOT GRIDPACK_TEST_TIMEOUT) 
-  set (GRIDPACK_TEST_TIMEOUT 5 
+  set (GRIDPACK_TEST_TIMEOUT 10
     CACHE STRING "Time out for GridPACK unit tests.")
 endif ()
 

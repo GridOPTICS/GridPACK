@@ -55,33 +55,3 @@ install(TARGETS
   gridpack_state_estimation_module
   DESTINATION lib
 )
-
-# -------------------------------------------------------------
-# Create simple test that runs state estimation code
-# -------------------------------------------------------------
-add_executable(se_test test/se_test.cpp)
-target_link_libraries (se_test gridpack_state_estimation_module ${target_libraries})
-
-add_custom_target(se_test_input
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/input.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE14.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE14_meas.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE14_meas.xml
-)
-
-add_dependencies (se_test se_test_input)
-
-add_test(se_test se_test)

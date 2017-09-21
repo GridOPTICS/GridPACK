@@ -19,11 +19,11 @@
 #define _ds_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
 #include "ds_factory_module.hpp"
 
 namespace gridpack {
-namespace dynamic_simulation {
+namespace dynamic_simulation_r {
 
     // Calling program for dynamic simulation application
 
@@ -76,7 +76,7 @@ class DSAppModule
     /**
      * Execute the time integration portion of the application
      */
-    void solve(gridpack::dynamic_simulation::DSBranch::Event fault);
+    void solve(gridpack::dynamic_simulation_r::DSBranch::Event fault);
 
     /**
      * Write out final results of dynamic simulation calculation to standard output
@@ -88,7 +88,7 @@ class DSAppModule
      * @param cursor pointer to open file contain fault or faults
      * @return a list of fault events
      */
-    std::vector<gridpack::dynamic_simulation::DSBranch::Event>
+    std::vector<gridpack::dynamic_simulation_r::DSBranch::Event>
       getFaults(gridpack::utility::Configuration::CursorPtr cursor);
 
     /**
@@ -116,7 +116,7 @@ class DSAppModule
      */
     void closeGeneratorWatchFile();
 
-    std::vector<gridpack::dynamic_simulation::DSBranch::Event> p_faults;
+    std::vector<gridpack::dynamic_simulation_r::DSBranch::Event> p_faults;
 
     // pointer to network
     boost::shared_ptr<DSNetwork> p_network;

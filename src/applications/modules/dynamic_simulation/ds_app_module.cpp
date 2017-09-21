@@ -15,7 +15,11 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/math/math.hpp"
 #include "ds_app_module.hpp"
 
 // Calling program for dynamic simulation application
@@ -23,7 +27,7 @@
 /**
  * Basic constructor
  */
-gridpack::dynamic_simulation::DSAppModule::DSAppModule(void)
+gridpack::dynamic_simulation_r::DSAppModule::DSAppModule(void)
 {
   p_generatorWatch = false;
 }
@@ -31,7 +35,7 @@ gridpack::dynamic_simulation::DSAppModule::DSAppModule(void)
 /**
  * Basic destructor
  */
-gridpack::dynamic_simulation::DSAppModule::~DSAppModule(void)
+gridpack::dynamic_simulation_r::DSAppModule::~DSAppModule(void)
 {
 }
 
@@ -44,7 +48,7 @@ gridpack::dynamic_simulation::DSAppModule::~DSAppModule(void)
  * @param config pointer to open
  * configuration file
  */
-void gridpack::dynamic_simulation::DSAppModule::readNetwork(
+void gridpack::dynamic_simulation_r::DSAppModule::readNetwork(
     boost::shared_ptr<DSNetwork> &network,
     gridpack::utility::Configuration *config)
 {
@@ -98,21 +102,21 @@ void gridpack::dynamic_simulation::DSAppModule::readNetwork(
  * @param cursor pointer to open file contain fault or faults
  * @return a list of fault events
  */
-std::vector<gridpack::dynamic_simulation::DSBranch::Event>
-  gridpack::dynamic_simulation::DSAppModule::
+std::vector<gridpack::dynamic_simulation_r::DSBranch::Event>
+  gridpack::dynamic_simulation_r::DSAppModule::
   getFaults(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("faultEvents");
   gridpack::utility::Configuration::ChildCursors events;
-  std::vector<gridpack::dynamic_simulation::DSBranch::Event> ret;
+  std::vector<gridpack::dynamic_simulation_r::DSBranch::Event> ret;
   if (list) {
     list->children(events);
     int size = events.size();
     int idx;
     // Parse fault events
     for (idx=0; idx<size; idx++) {
-      gridpack::dynamic_simulation::DSBranch::Event event;
+      gridpack::dynamic_simulation_r::DSBranch::Event event;
       event.start = events[idx]->get("beginFault",0.0);
       event.end = events[idx]->get("endFault",0.0);
       std::string indices = events[idx]->get("faultBranch","0 0");
@@ -150,7 +154,7 @@ std::vector<gridpack::dynamic_simulation::DSBranch::Event>
  * Read generator parameters. These will come from a separate file (most
  * likely). The name of this file comes from the input configuration file.
  */
-void gridpack::dynamic_simulation::DSAppModule::readGenerators()
+void gridpack::dynamic_simulation_r::DSAppModule::readGenerators()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
@@ -159,7 +163,7 @@ void gridpack::dynamic_simulation::DSAppModule::readGenerators()
   if (filename.size() > 0) parser.externalParse(filename.c_str());
 }
 
-void gridpack::dynamic_simulation::DSAppModule::setNetwork(
+void gridpack::dynamic_simulation_r::DSAppModule::setNetwork(
     boost::shared_ptr<DSNetwork> &network,
     gridpack::utility::Configuration *config)
 {
@@ -195,7 +199,7 @@ void gridpack::dynamic_simulation::DSAppModule::setNetwork(
  * initialize
  * network components using data from data collection
  */
-void gridpack::dynamic_simulation::DSAppModule::initialize()
+void gridpack::dynamic_simulation_r::DSAppModule::initialize()
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -204,7 +208,7 @@ void gridpack::dynamic_simulation::DSAppModule::initialize()
   int t_config = timer->createCategory("Dynamic Simulation: Configure Network");
   timer->start(t_config);
   // create factory
-  p_factory.reset(new gridpack::dynamic_simulation::DSFactoryModule(p_network));
+  p_factory.reset(new gridpack::dynamic_simulation_r::DSFactoryModule(p_network));
   p_factory->load();
 
   // set network components using factory
@@ -222,8 +226,8 @@ void gridpack::dynamic_simulation::DSAppModule::initialize()
   timer->stop(t_total);
 }
 
-void gridpack::dynamic_simulation::DSAppModule::solve(
-    gridpack::dynamic_simulation::DSBranch::Event fault)
+void gridpack::dynamic_simulation_r::DSAppModule::solve(
+    gridpack::dynamic_simulation_r::DSBranch::Event fault)
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -596,9 +600,11 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   p_S_Steps = 1; 
   last_S_Steps = -1;
 
-  p_generatorIO->header("t");
-  if (p_generatorWatch) p_generatorIO->write("watch_header");
-  p_generatorIO->header("\n");
+  if (p_generatorWatch) {
+    p_generatorIO->header("t");
+    p_generatorIO->write("watch_header");
+    p_generatorIO->header("\n");
+  }
   for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
     if (I_Steps < steps1) {
       p_S_Steps = I_Steps;
@@ -960,9 +966,11 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
   S_Steps = 1; 
   last_S_Steps = -1;
 
-  p_generatorIO->header("t");
-  if (p_generatorWatch) p_generatorIO->write("watch_header");
-  p_generatorIO->header("\n");
+  if (p_generatorWatch) {
+    p_generatorIO->header("t");
+    if (p_generatorWatch) p_generatorIO->write("watch_header");
+    p_generatorIO->header("\n");
+  }
   for (I_Steps = 0; I_Steps < simu_k+1; I_Steps++) {
     if (I_Steps < steps1) {
       S_Steps = I_Steps;
@@ -1073,7 +1081,7 @@ void gridpack::dynamic_simulation::DSAppModule::solve(
  * Write out final results of dynamic simulation calculation to
  * standard output
  */
-void gridpack::dynamic_simulation::DSAppModule::write()
+void gridpack::dynamic_simulation_r::DSAppModule::write()
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -1094,7 +1102,7 @@ void gridpack::dynamic_simulation::DSAppModule::write()
 /**
  * Read in generators that should be monitored during simulation
  */
-void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
+void gridpack::dynamic_simulation_r::DSAppModule::setGeneratorWatch()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
@@ -1108,7 +1116,7 @@ void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
   int i, j, idx, id, len;
   int ncnt = generators.size();
   std::string generator, tag, clean_tag;
-  gridpack::dynamic_simulation::DSBus *bus;
+  gridpack::dynamic_simulation_r::DSBus *bus;
   if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
   for (i=0; i<ncnt; i++) {
     // Parse contents of "generator" field to get bus ID and generator tag
@@ -1119,7 +1127,7 @@ void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
     // Find local bus indices for generator
     std::vector<int> local_ids = p_network->getLocalBusIndices(id);
     for (j=0; j<local_ids.size(); j++) {
-      bus = dynamic_cast<gridpack::dynamic_simulation::DSBus*>
+      bus = dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>
         (p_network->getBus(local_ids[j]).get());
       bus->setWatch(clean_tag,true);
     }
@@ -1137,7 +1145,7 @@ void gridpack::dynamic_simulation::DSAppModule::setGeneratorWatch()
 /**
  * Close file contain generator watch results
  */
-void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
+void gridpack::dynamic_simulation_r::DSAppModule::openGeneratorWatchFile()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
@@ -1173,7 +1181,7 @@ void gridpack::dynamic_simulation::DSAppModule::openGeneratorWatchFile()
 /**
  * Close file contain generator watch results
  */
-void gridpack::dynamic_simulation::DSAppModule::closeGeneratorWatchFile()
+void gridpack::dynamic_simulation_r::DSAppModule::closeGeneratorWatchFile()
 {
   if (p_generatorWatch) {
 #ifndef USE_GOSS
@@ -1188,7 +1196,7 @@ void gridpack::dynamic_simulation::DSAppModule::closeGeneratorWatchFile()
  * Utility function to convert faults that are in event list into
  * internal data structure that can be used by code
  */
-void gridpack::dynamic_simulation::DSAppModule::setFaultEvents()
+void gridpack::dynamic_simulation_r::DSAppModule::setFaultEvents()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation.faultEvents");
@@ -1198,7 +1206,7 @@ void gridpack::dynamic_simulation::DSAppModule::setFaultEvents()
   int idx;
   // Parse fault events
   for (idx=0; idx<size; idx++) {
-    gridpack::dynamic_simulation::DSBranch::Event event;
+    gridpack::dynamic_simulation_r::DSBranch::Event event;
     event.start = events[idx]->get("beginFault",0.0);
     event.end = events[idx]->get("endFault",0.0);
     std::string indices = events[idx]->get("faultBranch","0 0");
