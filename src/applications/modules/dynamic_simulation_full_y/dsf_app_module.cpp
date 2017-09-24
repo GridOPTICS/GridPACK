@@ -920,6 +920,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
     }
+    saveTimeStep();
     if ((!p_factory->securityCheck()) && p_insecureAt == -1)  
        p_insecureAt = I_Steps;
 /*    // Print to screen
@@ -963,7 +964,6 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 */    //exit(0);
     last_S_Steps = S_Steps;
     timer->stop(t_secure);
-    saveTimeStep();
   }
   
 #if 0
@@ -1361,11 +1361,9 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
     p_generatorIO.reset(new
         gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
           p_network));
-//    printf(" ----- get 1 -----\n");
     p_generatorIO->openChannel(topic.c_str(), URI.c_str(),
         username.c_str(),
         passwd.c_str());
-//    printf(" ----- get 2 -----\n");
   } else {
     p_busIO->header("Unable to open channel\n");
     p_generatorWatch = false;
