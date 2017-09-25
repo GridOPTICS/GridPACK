@@ -430,7 +430,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
   // Save initial time step
-  saveTimeStep();
+  //saveTimeStep();
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
   //for (I_Steps = 0; I_Steps < 200; I_Steps++) {
     //char step_str[128];
