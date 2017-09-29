@@ -447,14 +447,14 @@ void gridpack::dynamic_simulation::GenrouGenerator::write(
 /**
  * return a vector containing any generator values that are being
  * watched
- * @return vector of watched values
+ * @param vals vector of watched values
  */
-std::vector<double> gridpack::dynamic_simulation::GenrouGenerator::getWatchValues()
+void gridpack::dynamic_simulation::GenrouGenerator::getWatchValues(
+    std::vector<double> &vals)
 {
-  std::vector<double> ret;
+  vals.clear();
   if (getWatch()) {
-    ret.push_back(x1d_1+1.0);
-    ret.push_back(x2w_1);
+    vals.push_back(x1d_1+1.0);
+    vals.push_back(x2w_1);
   }
-  return ret;
 }

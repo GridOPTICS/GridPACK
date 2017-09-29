@@ -2083,7 +2083,8 @@ std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
   int i, j;
   for (i=0; i<p_genid.size(); i++) {
     if (p_generators[i]->getWatch()) {
-      std::vector<double> vals = p_generators[i]->getWatchValues();
+      std::vector<double> vals;
+      p_generators[i]->getWatchValues(vals);
       for (j=0; j<vals.size(); j++) ret.push_back(vals[j]);
     }
   }
