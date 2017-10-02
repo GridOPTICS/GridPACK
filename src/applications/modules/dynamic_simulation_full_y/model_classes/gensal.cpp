@@ -16,7 +16,8 @@
 
 #include <vector>
 #include <iostream>
-#include <stdio.h>
+#include <cstdio>
+#include <cstring>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
