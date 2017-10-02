@@ -115,6 +115,13 @@ class GensalGenerator : public BaseGeneratorModel
      */
     bool serialWrite(char* string, const int bufsize, const char* signal);
 
+    /**
+     * return a vector containing any generator values that are being
+     * watched
+     * @param vals vector of watched values
+     */
+    void getWatchValues(std::vector<double> &vals);
+
   private:
 
     double p_sbase;

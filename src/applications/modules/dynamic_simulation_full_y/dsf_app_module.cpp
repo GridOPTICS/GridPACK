@@ -183,7 +183,7 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
 {
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
-  p_factory->dumpData();
+  // p_factory->dumpData();
   p_factory->load();
 
   // set network components using factory
@@ -429,6 +429,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   if (p_generatorWatch) p_generatorIO->dumpChannel();
   if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
+  // Save initial time step
+  //saveTimeStep();
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
   //for (I_Steps = 0; I_Steps < 200; I_Steps++) {
     //char step_str[128];
@@ -580,7 +582,6 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     nbusMap.mapToBus(volt_full);
 	
 	//printf("after first volt sovle, after first volt map: \n");
-	//p_factory->printallbusvoltage();
 	
 	if ( I_Steps==0 ) {
 		//printf("enter the initial update oldbusvoltage, Timestep: %d \n", I_Steps);
@@ -918,6 +919,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
     }
+    saveTimeStep();
     if ((!p_factory->securityCheck()) && p_insecureAt == -1)  
        p_insecureAt = I_Steps;
 /*    // Print to screen
@@ -1075,20 +1077,33 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
     std::string generator, tag, clean_tag;
     gridpack::dynamic_simulation::DSFullBus *bus;
     if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+    p_watch_bus_ids.clear();
+    p_watch_gen_ids.clear();
+    p_gen_buses.clear();
+    p_gen_ids.clear();
     for (i=0; i<ncnt; i++) {
       // Parse contents of "generator" field to get bus ID and generator tag
       generators[i]->get("busID",&id);
       generators[i]->get("generatorID",&tag);
       gridpack::utility::StringUtils util;
       clean_tag = util.clean2Char(tag);
+      std::pair<int,std::string> list_item = std::pair<int,std::string>(id,clean_tag);
+      p_watch_list.insert(std::pair<std::pair<int,std::string>, int>(list_item,i));
+      p_watch_bus_ids.push_back(id);
+      p_watch_gen_ids.push_back(clean_tag);
       // Find local bus indices for generator
       std::vector<int> local_ids = p_network->getLocalBusIndices(id);
       for (j=0; j<local_ids.size(); j++) {
         bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
           (p_network->getBus(local_ids[j]).get());
-        printf("Set Watch True (%s) local: %d original: %d\n",clean_tag.c_str(),
-            i,id);
+//        printf("p[%d] Set Watch True (%s) local: %d original: %d active: %d\n",
+//            GA_Nodeid(),clean_tag.c_str(), local_ids[j],id,
+//            (int)p_network->getActiveBus(local_ids[j]));
         bus->setWatch(clean_tag,true);
+        if (p_network->getActiveBus(local_ids[j])) {
+          p_gen_buses.push_back(local_ids[j]);
+          p_gen_ids.push_back(clean_tag);
+        }
       }
       sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,clean_tag.c_str());
       p_busIO->header(buf);
@@ -1100,8 +1115,19 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
       p_busIO->header(buf);
     }
   }
-  //if (p_generators_read_in) openGeneratorWatchFile();
+
+  // If storing time series data, set up vector to hold results
   openGeneratorWatchFile();
+  if (p_save_time_series) {
+    p_time_series.clear();
+    printf("p_gen_buses: %d\n",(int)p_gen_buses.size());
+    for (i=0; i<p_gen_buses.size(); i++) {
+      std::vector<double> vec0;
+      p_time_series.push_back(vec0);
+      std::vector<double> vec1;
+      p_time_series.push_back(vec1);
+    }
+  }
 }
 
 void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *filename)
@@ -1152,6 +1178,119 @@ void gridpack::dynamic_simulation::DSFullApp::setLoadWatch()
     p_busIO->header(buf);
     openLoadWatchFile();
   }
+}
+
+/**
+ * Save watch series
+ * @param flag if true, save time series data
+ */
+void gridpack::dynamic_simulation::DSFullApp::saveTimeSeries(bool flag)
+{
+  p_save_time_series = flag;
+}
+
+/**
+ * Save time series data for watched generators
+ */
+void gridpack::dynamic_simulation::DSFullApp::saveTimeStep()
+{
+  if (!p_save_time_series) return;
+  int nbus = p_gen_buses.size();
+  int i, j;
+  int icnt = 0;
+  gridpack::dynamic_simulation::DSFullBus *bus;
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(p_gen_buses[i])) {
+      bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(p_gen_buses[i]).get());
+      std::vector<double> vals = bus->getWatchedValues();
+      for (j=0; j<vals.size(); j++) {
+        p_time_series[icnt].push_back(vals[j]);
+        icnt++;
+      }
+    }
+  }
+}
+
+/**
+ * Return global map of time series values
+ * @return map of time series indices (local to global)
+ */
+std::vector<int> gridpack::dynamic_simulation::DSFullApp::getTimeSeriesMap()
+{
+  std::vector<int> ret;
+  if (p_save_time_series) {
+    std::vector<int> orig_idx;
+    std::vector<std::string> tags;
+    int nbus = p_network->numBuses();
+    int i, j;
+    int icnt = 0;
+    gridpack::dynamic_simulation::DSFullBus *bus;
+    for (i=0; i<nbus; i++) {
+      if (p_network->getActiveBus(i)) {
+        bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+          (p_network->getBus(i).get());
+        std::vector<std::string> watched = bus->getWatchedGenerators();
+        for (j=0; j<watched.size(); j++) {
+          std::pair<int,std::string> gen
+            = std::pair<int,std::string>(bus->getOriginalIndex(),watched[j]);
+          std::map<std::pair<int,std::string>,int>::iterator it;
+          it = p_watch_list.find(gen);
+          if (it != p_watch_list.end()) {
+            ret.push_back(2*(it->second));
+            ret.push_back(2*(it->second)+1);
+          } else {
+            printf("Could not find generator %s on bus %d\n",
+                watched[j].c_str(),bus->getOriginalIndex());
+          }
+          icnt++;
+        }
+      }
+    }
+  }
+  return ret;
+}
+
+/**
+ * Return a list of original bus IDs and tags for all monitored
+ * generators
+ * @param bus_ids list of original bus indices for monitored generators
+ * @param gen_ids list of tags for monitored generators
+ */
+void gridpack::dynamic_simulation::DSFullApp::getListWatchedGenerators(
+    std::vector<int> &bus_ids, std::vector<std::string> &gen_ids)
+{
+  bus_ids.clear();
+  gen_ids.clear();
+  int nsize = p_watch_bus_ids.size();
+  int i;
+  for (i=0; i<nsize; i++) {
+    bus_ids.push_back(p_watch_bus_ids[i]);
+    gen_ids.push_back(p_watch_gen_ids[i]);
+  }
+}
+
+/**
+ * Return vector of time series data for watched generators
+ * @return vector of time series for generators on this
+ processor
+ */
+std::vector<std::vector<double> > gridpack::dynamic_simulation::DSFullApp::getGeneratorTimeSeries()
+{
+  std::vector<std::vector<double> > ret;
+  if (p_save_time_series) {
+    int ngen = p_time_series.size();
+    int i, j;
+    for (i=0; i<ngen; i++) {
+      std::vector<double> series;
+      int nsteps = (p_time_series[i]).size();
+      for (j=0; j<nsteps; j++) {
+        series.push_back((p_time_series[i])[j]);
+      }
+      ret.push_back(series);
+    }
+  }
+  return ret;
 }
 
 /**
@@ -1227,11 +1366,9 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
     p_generatorIO.reset(new
         gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
           p_network));
-//    printf(" ----- get 1 -----\n");
     p_generatorIO->openChannel(topic.c_str(), URI.c_str(),
         username.c_str(),
         passwd.c_str());
-//    printf(" ----- get 2 -----\n");
   } else {
     p_busIO->header("Unable to open channel\n");
     p_generatorWatch = false;

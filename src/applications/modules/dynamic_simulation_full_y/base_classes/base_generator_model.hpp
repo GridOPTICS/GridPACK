@@ -141,8 +141,23 @@ class BaseGeneratorModel
     void setWatch(bool flag);
 
     bool getWatch();
-	bool getGenStatus(); //return the bolean indicate whether the gen is tripped by a relay
-	void SetGenServiceStatus (bool sta); // set the sta to be false if gen is tripped by a relay
+
+    /**
+     * return the bolean indicating whether the gen is tripped by a relay
+     */
+    bool getGenStatus();
+
+    /**
+     * set the status to be false if gen is tripped by a relay
+     */
+    void SetGenServiceStatus (bool sta);
+
+    /**
+     * return a vector containing any generator values that are being
+     * watched
+     * @param vals vector of watched values
+     */
+    virtual void getWatchValues(std::vector<double> &vals);
 
   private:
 

@@ -138,6 +138,34 @@ class DSFullApp
      * Check if system is secure
      */
     int isSecure();
+
+    /**
+     * Save watch series
+     * @param flag if true, save time series data
+     */
+    void saveTimeSeries(bool flag);
+
+    /**
+     * Return global map of timer series values
+     * @return map of time series indices (local to global)
+     */
+    std::vector<int> getTimeSeriesMap();
+
+    /**
+     * Return vector of time series data for watched generators
+     * @return vector of time series for generators on this processor
+     */
+    std::vector<std::vector<double> > getGeneratorTimeSeries();
+
+    /**
+     * Return a list of original bus IDs and tags for all monitored
+     * generators
+     * @param bus_ids list of original bus indices for monitored generators
+     * @param gen_ids list of tags for monitored generators
+     */
+    void getListWatchedGenerators(std::vector<int> &bus_ids,
+        std::vector<std::string> &gen_ids);
+
   private:
     /**
      * Utility function to convert faults that are in event list into
@@ -168,6 +196,11 @@ class DSFullApp
      * Close file contain generator watch results
      */
     void closeLoadWatchFile();
+
+    /**
+     * Save time series data for watched generators
+     */
+    void saveTimeStep();
 
     std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> p_faults;
 
@@ -217,8 +250,17 @@ class DSFullApp
     // Frequency to write out generator watch results
     int p_generatorWatchFrequency;
 
-    // bus indices of generators that are being monitored
+    // local bus indices of generators that are being monitored
     std::vector<int> p_gen_buses;
+
+    // IDs of generators that are being monitored
+    std::vector<std::string> p_gen_ids;
+
+    // Global indices of buses that own monitored generators
+    std::vector<int> p_watch_bus_ids;
+
+    // Tags of generators that are being monitors
+    std::vector<std::string> p_watch_gen_ids;
 
     // pointer to bus IO module that is used for generator results
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSFullNetwork> >
@@ -240,6 +282,14 @@ class DSFullApp
    // Keep track of whether or not systsem is secure
    int p_insecureAt;
 
+   // Global list of all generators that are being watched
+   std::map<std::pair<int,std::string>, int> p_watch_list;
+
+   // Flag to save time series
+   bool p_save_time_series;
+
+   // Vector of times series from watched generators
+   std::vector<std::vector<double> > p_time_series;
 };
 
 } // dynamic simulation

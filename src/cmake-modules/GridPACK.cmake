@@ -69,7 +69,7 @@ function(gridpack_add_parallel_unit_test test_name test_target)
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
       )
   else() 
-    message(FATAL_ERROR "gridpack_add_parallel_unit_test: target arguement not target")
+    message(FATAL_ERROR "gridpack_add_parallel_unit_test: target argument not target")
   endif()
 endfunction(gridpack_add_parallel_unit_test)
 
@@ -91,7 +91,7 @@ function(gridpack_add_parallel_run_test test_name test_target test_input)
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
     )
   else()
-    message(FATAL_ERROR "gridpack_add_parallel_run_test: target arguement not target")
+    message(FATAL_ERROR "gridpack_add_parallel_run_test: target argument not target")
   endif()
 endfunction(gridpack_add_parallel_run_test)
 

@@ -359,6 +359,18 @@ class DSFullBus
     void setLoadRealPower(std::string tag, double value,
         gridpack::component::DataCollection *data);
 
+    /**
+     * Return a list of watched generators
+     * @return list of generator tags
+     */
+    std::vector<std::string> getWatchedGenerators();
+
+    /**
+     * Return a vector of watched values
+     * @return rotor angle and speed for all watched generators on bus
+     */
+    std::vector<double> getWatchedValues();
+
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.

@@ -302,7 +302,7 @@ public:
     values.clear();
     if (idx < 0 || idx >= p_nvals) {
       printf("Requested data is out of range of bus table (%d not in [0,%d])\n",
-          idx,p_nobjs-1);
+          idx,p_nvals-1);
     }
     //construct array of indices to retrieve data
     int nsize = p_local_idx.size();

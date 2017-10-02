@@ -2060,6 +2060,38 @@ void gridpack::dynamic_simulation::DSFullBus::setWatch(std::string tag, bool fla
 }
 
 /**
+ * Return a list of watched generators
+ * @return list of generator tags
+ */
+std::vector<std::string> gridpack::dynamic_simulation::DSFullBus::getWatchedGenerators()
+{
+  std::vector<std::string> ret;
+  int i;
+  for (i=0; i<p_genid.size(); i++) {
+    if (p_generators[i]->getWatch()) ret.push_back(p_genid[i]);
+  }
+  return ret;
+}
+
+/**
+ * Return a vector of watched values
+ * @return rotor angle and speed for all watched generators on bus
+ */
+std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
+{
+  std::vector<double> ret;
+  int i, j;
+  for (i=0; i<p_genid.size(); i++) {
+    if (p_generators[i]->getWatch()) {
+      std::vector<double> vals;
+      p_generators[i]->getWatchValues(vals);
+      for (j=0; j<vals.size(); j++) ret.push_back(vals[j]);
+    }
+  }
+  return ret;
+}
+
+/**
  *  Simple constructor
  */
 gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)
