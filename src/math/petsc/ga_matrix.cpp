@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2015-08-06 14:33:06 d3g096
+ * @date   2017-10-03 12:47:30 d3g096
  * 
  * @brief  
  * 
@@ -406,36 +406,6 @@ MatMatMult_DenseGA(Mat A, Mat B, MatReuse scall, PetscReal fill, Mat *C)
 }
 
 // -------------------------------------------------------------
-// MatTranspose_DenseGA
-// -------------------------------------------------------------
-static
-PetscErrorCode
-MatTranspose_DenseGA(Mat mat, MatReuse reuse, Mat *B)
-{
-  PetscErrorCode ierr = 0;
-  
-  MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)mat, &comm); CHKERRQ(ierr);
-
-  struct MatGACtx *ctx, *newctx;
-  ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
-
-  PetscInt lrows, grows, lcols, gcols;
-  ierr = MatGetSize(mat, &grows, &gcols); CHKERRQ(ierr);
-  ierr = MatGetLocalSize(mat, &lrows, &lcols); CHKERRQ(ierr);
-
-  ierr = PetscMalloc(sizeof(struct MatGACtx), &newctx); CHKERRQ(ierr);
-  newctx->gaGroup = ctx->gaGroup;
-  ierr = CreateMatGA(newctx->gaGroup, lcols, lrows, gcols, grows, &(newctx->ga)); CHKERRQ(ierr);
-  GA_Transpose(ctx->ga, newctx->ga);
-
-  ierr = MatCreateShell(comm, lcols, lrows, gcols, grows, newctx, B); CHKERRQ(ierr);
-  ierr = MatSetOperations_DenseGA(*B);
-
-  return ierr;
-}
-
-// -------------------------------------------------------------
 // MatView_DenseGA
 // -------------------------------------------------------------
 
@@ -474,7 +444,7 @@ MatDestroy_DenseGA(Mat A)
   ierr = MatShellGetContext(A, &ctx); CHKERRQ(ierr);
   GA_Pgroup_sync(ctx->gaGroup);
   GA_Destroy(ctx->ga);
-  // GA_Pgroup_destroy(ctx->gaGroup);
+  GA_Pgroup_destroy(ctx->gaGroup);
   ierr = PetscFree(ctx);
   return ierr;
 }
@@ -507,41 +477,32 @@ MPIComm2GApgroup(MPI_Comm comm, int *pGrpHandle)
 }
 
 // -------------------------------------------------------------
-// MatDuplicate_DenseGA
+// MatTranspose_DenseGA
 // -------------------------------------------------------------
 static
 PetscErrorCode
-MatDuplicate_DenseGA(Mat mat, MatDuplicateOption op, Mat *M)
+MatTranspose_DenseGA(Mat mat, MatReuse reuse, Mat *B)
 {
   PetscErrorCode ierr = 0;
-  struct MatGACtx *ctx, *newctx;
-  ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
-
+  
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)mat, &comm); CHKERRQ(ierr);
+
+  struct MatGACtx *ctx, *newctx;
+  ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
 
   PetscInt lrows, grows, lcols, gcols;
   ierr = MatGetSize(mat, &grows, &gcols); CHKERRQ(ierr);
   ierr = MatGetLocalSize(mat, &lrows, &lcols); CHKERRQ(ierr);
 
   ierr = PetscMalloc(sizeof(struct MatGACtx), &newctx); CHKERRQ(ierr);
-  newctx->gaGroup = ctx->gaGroup;
-  newctx->ga = GA_Duplicate(ctx->ga, "PETSc Dense Matrix");
+  ierr = MPIComm2GApgroup(comm, &(newctx->gaGroup));
 
-  ierr = MatCreateShell(comm, lrows, lcols, grows, gcols, newctx, M); CHKERRQ(ierr);
-  ierr = MatSetOperations_DenseGA(*M);
+  ierr = CreateMatGA(newctx->gaGroup, lcols, lrows, gcols, grows, &(newctx->ga)); CHKERRQ(ierr);
+  GA_Transpose(ctx->ga, newctx->ga);
 
-  PetscScalar z(0.0);
-  switch (op) {
-  case (MAT_COPY_VALUES):
-    GA_Copy(ctx->ga, newctx->ga);
-    break;
-  default:
-    GA_Fill(newctx->ga, &z);
-    break;
-  }
-
-  GA_Pgroup_sync(newctx->gaGroup);
+  ierr = MatCreateShell(comm, lcols, lrows, gcols, grows, newctx, B); CHKERRQ(ierr);
+  ierr = MatSetOperations_DenseGA(*B);
 
   return ierr;
 }
@@ -578,6 +539,47 @@ MatCreateDenseGA(MPI_Comm comm,
   ierr = CreateMatGA(ctx->gaGroup, lrows, lcols, grows, gcols, &(ctx->ga)); CHKERRQ(ierr);
   ierr = MatCreateShell(comm, lrows, lcols, grows, gcols, ctx, A); CHKERRQ(ierr);
   ierr = MatSetOperations_DenseGA(*A);
+
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// MatDuplicate_DenseGA
+// -------------------------------------------------------------
+static
+PetscErrorCode
+MatDuplicate_DenseGA(Mat mat, MatDuplicateOption op, Mat *M)
+{
+  PetscErrorCode ierr = 0;
+  struct MatGACtx *ctx, *newctx;
+  ierr = MatShellGetContext(mat, &ctx); CHKERRQ(ierr);
+
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)mat, &comm); CHKERRQ(ierr);
+
+  PetscInt lrows, grows, lcols, gcols;
+  ierr = MatGetSize(mat, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(mat, &lrows, &lcols); CHKERRQ(ierr);
+
+  ierr = PetscMalloc(sizeof(struct MatGACtx), &newctx); CHKERRQ(ierr);
+  ierr = MPIComm2GApgroup(comm, &(newctx->gaGroup));
+  
+  ierr = CreateMatGA(newctx->gaGroup, 
+                     lrows, lcols, grows, gcols, &(newctx->ga)); CHKERRQ(ierr);
+  ierr = MatCreateShell(comm, lrows, lcols, grows, gcols, newctx, M); CHKERRQ(ierr);
+  ierr = MatSetOperations_DenseGA(*M);
+
+  PetscScalar z(0.0);
+  switch (op) {
+  case (MAT_COPY_VALUES):
+    GA_Copy(ctx->ga, newctx->ga);
+    break;
+  default:
+    GA_Fill(newctx->ga, &z);
+    break;
+  }
+
+  GA_Pgroup_sync(newctx->gaGroup);
 
   return ierr;
 }
