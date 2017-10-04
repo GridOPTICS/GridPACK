@@ -36,6 +36,5 @@ main(int argc, char **argv)
   // Terminate Math libraries
   gridpack::math::Finalize();
 
-  GA_Terminate();
   return 0;
 }
