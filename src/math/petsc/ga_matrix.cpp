@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2017-10-03 12:47:30 d3g096
+ * @date   2017-10-13 14:14:33 d3g096
  * 
  * @brief  
  * 
@@ -14,6 +14,7 @@
  */
 
 
+#include <iostream>
 #include <vector>
 #include <boost/assert.hpp>
 
@@ -89,13 +90,13 @@ CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
 
   int nprocs = GA_Pgroup_nnodes(pgroup);
   int me = GA_Pgroup_nodeid(pgroup);
-  int tmapc[nprocs+1];
-  int mapc[nprocs+1];
+  std::vector<int> tmapc(nprocs+1);
+  std::vector<int> mapc(nprocs+1);
   int i;
 
   for (i = 0; i < nprocs+1; i++) tmapc[i] = 0;
   tmapc[me] = lrows;
-  GA_Pgroup_igop(pgroup, tmapc, nprocs+1, "+");
+  GA_Pgroup_igop(pgroup, &tmapc[0], nprocs+1, "+");
   mapc[0] = 0;
   for (i = 1; i < nprocs; i++) mapc[i] = mapc[i-1]+tmapc[i-1];
   mapc[nprocs] = 0;
@@ -105,7 +106,7 @@ CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
 
   *ga = GA_Create_handle();
   GA_Set_data(*ga, 2, dims, MT_PETSC_SCALAR);
-  GA_Set_irreg_distr(*ga, mapc, blocks);
+  GA_Set_irreg_distr(*ga, &mapc[0], blocks);
   GA_Set_pgroup(*ga, pgroup);
   if (!GA_Allocate(*ga)) {
     ierr = 1;
@@ -113,6 +114,231 @@ CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
   PetscScalar z(0.0);
   GA_Fill(*ga, &z);
   
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// MPIComm2GApgroup
+// -------------------------------------------------------------
+static
+PetscErrorCode
+MPIComm2GApgroup(MPI_Comm comm, int *pGrpHandle)
+{
+  PetscErrorCode ierr = 0;
+  int nproc;
+  int me, myGlobalRank;
+  int *proclist;
+  int p;
+
+  ierr = MPI_Comm_size(comm, &nproc); CHKERRQ(ierr);
+  ierr = MPI_Comm_rank(comm, &me); CHKERRQ(ierr);
+  myGlobalRank = GA_Nodeid();
+  ierr = PetscMalloc(nproc*sizeof(int), &proclist); CHKERRQ(ierr);
+  for (p = 0; p < nproc; ++p) {
+    proclist[p] = 0;
+  }
+  proclist[me] = myGlobalRank;
+  ierr = MPI_Allreduce(MPI_IN_PLACE, &proclist[0], nproc, MPI_INT, MPI_SUM, comm); CHKERRQ(ierr);
+  *pGrpHandle = GA_Pgroup_create(&proclist[0], nproc); 
+  ierr = PetscFree(proclist); CHKERRQ(ierr);
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// Mat2GA
+// This should only be called by MatMultbyGA(). It assumes the Mat is
+// dense and the GA has the same ownership distribution.
+// -------------------------------------------------------------
+static
+PetscErrorCode
+Mat2GA(const Mat& A, int Aga)
+{
+  PetscErrorCode ierr(0);
+  int me(GA_Nodeid());
+  int r, rmin, rmax;
+  int lo[2], hi[2], ld[2];
+  int i, j;
+  PetscInt grows, gcols, lrows, lcols;
+  PetscScalar *matdata;
+  ierr = MatGetSize(A, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetOwnershipRange(A, &rmin, &rmax); CHKERRQ(ierr);
+
+  NGA_Distribution(Aga, me, &lo[0], &hi[0]);
+  
+  std::vector<PetscInt> cidx(gcols);
+  for (j = 0; j < gcols; ++j) cidx[j] = j;
+  std::vector<PetscScalar> rdata(gcols);
+  PetscScalarGA *gadata;
+
+  for (r = rmin; r < rmax; ++r) {
+    ierr = MatGetValues(A, 1, &r, gcols, &cidx[0], &rdata[0]); CHKERRQ(ierr);
+    lo[0] = r; hi[0] = r;
+    lo[1] = 0; hi[1] = gcols - 1;
+    ld[0] = 1;
+    NGA_Access(Aga, &lo[0], &hi[0], &gadata, &ld[0]);
+    for (j = 0; j < gcols; ++j) gadata[j] = rdata[j];
+    NGA_Release_update(Aga, &lo[0], &hi[0]);
+  }
+  GA_Sync;
+  // GA_Print(Aga);
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// GA2Mat
+// This should only be called by MatMultbyGA(). It assumes the Mat is
+// dense and the GA has the same ownership distribution.
+// -------------------------------------------------------------
+static
+PetscErrorCode
+GA2Mat(const int Aga, Mat& A)
+{
+  PetscErrorCode ierr(0);
+  int me(GA_Nodeid());
+  int r, rmin, rmax;
+  int lo[2], hi[2], ld[2];
+  int i, j;
+  PetscInt grows, gcols, lrows, lcols;
+  PetscScalar *matdata;
+  ierr = MatGetSize(A, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetOwnershipRange(A, &rmin, &rmax); CHKERRQ(ierr);
+
+  NGA_Distribution(Aga, me, &lo[0], &hi[0]);
+  
+  std::vector<PetscInt> cidx(gcols);
+  for (j = 0; j < gcols; ++j) cidx[j] = j;
+  std::vector<PetscScalar> rdata(gcols);
+  PetscScalarGA *gadata;
+
+  for (r = rmin; r < rmax; ++r) {
+    lo[0] = r; hi[0] = r;
+    lo[1] = 0; hi[1] = gcols - 1;
+    ld[0] = 1;
+    NGA_Access(Aga, &lo[0], &hi[0], &gadata, &ld[0]);
+    for (j = 0; j < gcols; ++j) rdata[j] = gadata[j];
+    ierr = MatSetValues(A, 1, &r, gcols, &cidx[0], &rdata[0], INSERT_VALUES); CHKERRQ(ierr);
+    NGA_Release(Aga, &lo[0], &hi[0]);
+  }
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// MatMultbyGA
+// -------------------------------------------------------------
+PetscErrorCode
+MatMultbyGA(const Mat& A, const Mat& B, Mat& C)
+{
+  PetscErrorCode ierr(0);
+  MPI_Comm comm;
+  int lrows, grows, lcols, gcols;
+  int pgp, opgp;
+  int Aga, Bga, Cga;
+  int m, n, k;
+
+  ierr = PetscObjectGetComm((PetscObject)A, &comm); CHKERRQ(ierr);
+  opgp = GA_Pgroup_get_default();
+
+  ierr = MPIComm2GApgroup(comm, &pgp);
+  GA_Pgroup_set_default(pgp);
+
+  ierr = MatGetSize(A, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(A, &lrows, &lcols); CHKERRQ(ierr);
+  ierr = CreateMatGA(pgp, lrows, lcols, grows, gcols, &Aga); CHKERRQ(ierr);
+  ierr = Mat2GA(A, Aga); CHKERRQ(ierr);
+  m = grows;
+  k = gcols;
+
+  ierr = MatGetSize(B, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(B, &lrows, &lcols); CHKERRQ(ierr);
+  ierr = CreateMatGA(pgp, lrows, lcols, grows, gcols, &Bga); CHKERRQ(ierr);
+  ierr = Mat2GA(B, Bga); CHKERRQ(ierr);
+  n = gcols;
+
+  ierr = MatGetSize(C, &grows, &gcols); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(C, &lrows, &lcols); CHKERRQ(ierr);
+  ierr = CreateMatGA(pgp, lrows, lcols, grows, gcols, &Cga); CHKERRQ(ierr);
+
+  char no('n');
+  PetscScalarGA alpha(one), beta(0.0);
+
+#if defined(PETSC_USE_REAL_DOUBLE)
+#  if defined(PETSC_USE_COMPLEX)
+
+  GA_Zgemm(no, no, m, n, k, one, Aga, Bga, beta, Cga);
+
+#  else 
+
+  GA_Dgemm(no, no, m, n, k, one, Aga, Bga, beta, Cga);
+
+#  endif
+#else
+#  if defined(PETSC_USE_COMPLEX)
+#    error "no single precision complex"
+#  else
+
+  GA_Sgemm(no, no, m, n, k, one, Aga, Bga, beta, Cga);
+
+#  endif
+#endif
+
+  ierr = GA2Mat(Cga, C); CHKERRQ(ierr);
+
+  GA_Pgroup_sync(pgp);
+
+  GA_Destroy(Aga);
+  GA_Destroy(Bga);
+  GA_Destroy(Cga);
+  
+  GA_Pgroup_set_default(opgp);
+  GA_Pgroup_destroy(pgp);
+  
+  return ierr;
+}
+
+// -------------------------------------------------------------
+// MatMultbyGA_new
+// -------------------------------------------------------------
+PetscErrorCode
+MatMultbyGA_new(const Mat& A, const Mat& B, Mat& C)
+{
+  PetscErrorCode ierr(0);
+  MPI_Comm comm;
+  int nproc;
+  PetscInt grows_a, grows_b, grows_c;
+  PetscInt lrows_a, lrows_b, lrows_c;
+  PetscInt gcols_a, gcols_b, gcols_c;
+  PetscInt lcols_a, lcols_b, lcols_c;
+
+  ierr = MatGetSize(A, &grows_a, &gcols_a); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(A, &lrows_a, &lcols_a); CHKERRQ(ierr);
+
+  ierr = MatGetSize(B, &grows_b, &gcols_b); CHKERRQ(ierr);
+  ierr = MatGetLocalSize(B, &lrows_b, &lcols_b); CHKERRQ(ierr);
+
+  grows_c = grows_a;
+  lrows_c = lrows_a;
+  gcols_c = gcols_b;
+  lcols_c = lcols_b;
+
+  ierr = PetscObjectGetComm((PetscObject)A, &comm); CHKERRQ(ierr);
+  ierr = MPI_Comm_size(comm, &nproc); 
+
+  ierr = MatCreate(comm, &C); CHKERRQ(ierr);
+  ierr = MatSetSizes(C, lrows_c, lcols_c, grows_c, gcols_c); CHKERRQ(ierr);
+  if (nproc == 1) {
+    ierr = MatSetType(C, MATSEQDENSE); CHKERRQ(ierr);
+    ierr = MatSeqDenseSetPreallocation(C, PETSC_NULL); CHKERRQ(ierr);
+  } else {
+    ierr = MatSetType(C, MATDENSE); CHKERRQ(ierr);
+    ierr = MatMPIDenseSetPreallocation(C, PETSC_NULL); CHKERRQ(ierr);
+  }
+    
+  ierr = MatAssemblyBegin(C, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(C, MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatMultbyGA(A, B, C); CHKERRQ(ierr);
   return ierr;
 }
 
@@ -450,33 +676,6 @@ MatDestroy_DenseGA(Mat A)
 }
 
 // -------------------------------------------------------------
-// MPIComm2GApgroup
-// -------------------------------------------------------------
-static
-PetscErrorCode
-MPIComm2GApgroup(MPI_Comm comm, int *pGrpHandle)
-{
-  PetscErrorCode ierr = 0;
-  int nproc;
-  int me, myGlobalRank;
-  int *proclist;
-  int p;
-
-  ierr = MPI_Comm_size(comm, &nproc); CHKERRQ(ierr);
-  ierr = MPI_Comm_rank(comm, &me); CHKERRQ(ierr);
-  myGlobalRank = GA_Nodeid();
-  ierr = PetscMalloc(nproc*sizeof(int), &proclist); CHKERRQ(ierr);
-  for (p = 0; p < nproc; ++p) {
-    proclist[p] = 0;
-  }
-  proclist[me] = myGlobalRank;
-  ierr = MPI_Allreduce(MPI_IN_PLACE, &proclist[0], nproc, MPI_INT, MPI_SUM, comm); CHKERRQ(ierr);
-  *pGrpHandle = GA_Pgroup_create(&proclist[0], nproc); 
-  ierr = PetscFree(proclist); CHKERRQ(ierr);
-  return ierr;
-}
-
-// -------------------------------------------------------------
 // MatTranspose_DenseGA
 // -------------------------------------------------------------
 static
@@ -626,8 +825,6 @@ MatConvertGAToDense(Mat A, Mat *B)
   ierr = MatGetSize(A, &grows, &gcols); CHKERRQ(ierr);
   ierr = MatGetLocalSize(A, &lrows, &lcols); CHKERRQ(ierr);
 
-  ierr = MatCreateDense(comm, lrows, lcols, grows, gcols, NULL, B); CHKERRQ(ierr);
-  
   ierr = MatCreate(comm, B); CHKERRXX(ierr);
   ierr = MatSetSizes(*B, lrows, lcols, grows, gcols); CHKERRXX(ierr);
   if (nproc == 1) {
