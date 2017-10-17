@@ -14,6 +14,7 @@
  * 
  */
 
+#include <cmath>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "DBIntClass.hpp"
 
