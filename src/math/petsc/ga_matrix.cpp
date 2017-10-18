@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2017-10-13 14:14:33 d3g096
+ * @date   2017-10-17 09:24:15 d3g096
  * 
  * @brief  
  * 
@@ -104,13 +104,12 @@ CreateMatGA(int pgroup, int lrows, int lcols, int grows, int gcols, int *ga)
   int dims[2] = {grows, gcols};
   int blocks[2] = { nprocs, 1 };
 
-  *ga = GA_Create_handle();
-  GA_Set_data(*ga, 2, dims, MT_PETSC_SCALAR);
-  GA_Set_irreg_distr(*ga, &mapc[0], blocks);
-  GA_Set_pgroup(*ga, pgroup);
-  if (!GA_Allocate(*ga)) {
-    ierr = 1;
-  }
+
+  *ga = NGA_Create_irreg_config(MT_PETSC_SCALAR, 2, &dims[0],
+                                "PETSc Matrix in GA",
+                                &blocks[0], &mapc[0],
+                                pgroup);
+
   PetscScalar z(0.0);
   GA_Fill(*ga, &z);
   
@@ -179,7 +178,7 @@ Mat2GA(const Mat& A, int Aga)
     for (j = 0; j < gcols; ++j) gadata[j] = rdata[j];
     NGA_Release_update(Aga, &lo[0], &hi[0]);
   }
-  GA_Sync;
+  GA_Sync();
   // GA_Print(Aga);
   return ierr;
 }
