@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2017-10-17 09:24:15 d3g096
+ * @date   2017-10-19 07:07:04 d3g096
  * 
  * @brief  
  * 
@@ -30,6 +30,7 @@
 #if defined(PETSC_USE_COMPLEX)
 typedef DoubleComplex PetscScalarGA;
 #define MT_PETSC_SCALAR MT_C_DCPL
+
 #else 
 typedef double PetscScalarGA;
 #define MT_PETSC_SCALAR MT_C_DBL
@@ -175,7 +176,14 @@ Mat2GA(const Mat& A, int Aga)
     lo[1] = 0; hi[1] = gcols - 1;
     ld[0] = 1;
     NGA_Access(Aga, &lo[0], &hi[0], &gadata, &ld[0]);
-    for (j = 0; j < gcols; ++j) gadata[j] = rdata[j];
+    for (j = 0; j < gcols; ++j) {
+#if defined(PETSC_USE_COMPLEX)
+      gadata[j].real = rdata[j].real();
+      gadata[j].imag = rdata[j].imag();
+#else
+      gadata[j] = rdata[j];
+#endif
+    }
     NGA_Release_update(Aga, &lo[0], &hi[0]);
   }
   GA_Sync();
@@ -214,7 +222,14 @@ GA2Mat(const int Aga, Mat& A)
     lo[1] = 0; hi[1] = gcols - 1;
     ld[0] = 1;
     NGA_Access(Aga, &lo[0], &hi[0], &gadata, &ld[0]);
-    for (j = 0; j < gcols; ++j) rdata[j] = gadata[j];
+    for (j = 0; j < gcols; ++j) {
+#if defined(PETSC_USE_COMPLEX)
+      rdata[j].real(gadata[j].real);
+      rdata[j].imag(gadata[j].imag);
+#else
+      rdata[j] = gadata[j];
+#endif
+    }
     ierr = MatSetValues(A, 1, &r, gcols, &cidx[0], &rdata[0], INSERT_VALUES); CHKERRQ(ierr);
     NGA_Release(Aga, &lo[0], &hi[0]);
   }
@@ -261,14 +276,22 @@ MatMultbyGA(const Mat& A, const Mat& B, Mat& C)
   ierr = CreateMatGA(pgp, lrows, lcols, grows, gcols, &Cga); CHKERRQ(ierr);
 
   char no('n');
-  PetscScalarGA alpha(one), beta(0.0);
+  PetscScalarGA alpha, beta;
 
 #if defined(PETSC_USE_REAL_DOUBLE)
 #  if defined(PETSC_USE_COMPLEX)
 
+  alpha.real = 1.0;
+  alpha.imag = 0.0;
+  beta.real = 0.0;
+  beta.imag = 0.0;
+
   GA_Zgemm(no, no, m, n, k, one, Aga, Bga, beta, Cga);
 
 #  else 
+
+  alpha = 1.0;
+  beta = 0.0;
 
   GA_Dgemm(no, no, m, n, k, one, Aga, Bga, beta, Cga);
 
@@ -278,6 +301,9 @@ MatMultbyGA(const Mat& A, const Mat& B, Mat& C)
 #    error "no single precision complex"
 #  else
 
+  alpha = 1.0;
+  beta = 0.0;
+  
   GA_Sgemm(no, no, m, n, k, one, Aga, Bga, beta, Cga);
 
 #  endif
