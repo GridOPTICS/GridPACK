@@ -26,6 +26,25 @@ namespace contingency_analysis {
 
 enum ContingencyType{Generator, Branch};
 
+/* Defininition of contingency data structure (from powerflow module)
+struct Contingency
+{
+  int p_type;
+  std::string p_name;
+  // Line contingencies
+  std::vector<int> p_from;
+  std::vector<int> p_to;
+  std::vector<std::string> p_ckt;
+  // Status of line before contingency
+  std::vector<bool> p_saveLineStatus;
+  // Generator contingencies
+  std::vector<int> p_busid;
+  std::vector<std::string> p_genid;
+  // Status of generator before contingency
+  std::vector<bool> p_saveGenStatus;
+};
+*/
+
 // Calling program for contingency analysis application
 class CADriver
 {
