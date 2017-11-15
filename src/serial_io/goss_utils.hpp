@@ -176,7 +176,7 @@ class GOSSUtils {
    *              used to initialize the GOSSUtils object
    */
   void openGOSSChannel(gridpack::parallel::Communicator &comm,
-      std::string &topic)
+      std::string topic)
   {
     p_grp = comm.getGroup();
     if (!p_open && GA_Pgroup_nodeid(p_grp) == 0) {
@@ -193,7 +193,12 @@ class GOSSUtils {
       p_session = p_connection->createSession(Session::AUTO_ACKNOWLEDGE);
 
       // Create the destination (Topic or Queue)
-      p_destination = p_session->createTopic(topic);
+      std::string new_topic("topic/goss/gridpack/");
+      // Make sure there is no white space around topic
+      gridpack::utility::StringUtils utils;
+      utils.trim(topic);
+      new_topic.append(topic);
+      p_destination = p_session->createTopic(new_topic);
 
       // Create a MessageProducer from the Session to the Topic
       p_producer = p_session->createProducer(p_destination);
@@ -204,7 +209,7 @@ class GOSSUtils {
       char sbuf[128];
       gridpack::utility::CoarseTimer *timer =
         gridpack::utility::CoarseTimer::instance();
-      sprintf(sbuf,"Simulation started %f\n",timer->currentTime());
+      sprintf(sbuf,"_goss_channel_opened %f",timer->currentTime());
       std::auto_ptr<TextMessage>
         message(p_session->createTextMessage(sbuf));
       p_producer->send(message.get());
@@ -223,7 +228,7 @@ class GOSSUtils {
   {
     if (GA_Pgroup_nodeid(p_grp) == 0) {
       // Send final message indicating the channel is being closed
-      std::string buf = "Closing channel";
+      std::string buf = "_goss_channel_closed";
       std::auto_ptr<TextMessage> message(p_session->createTextMessage(buf));
       p_producer->send(message.get());
       if (p_connection) delete p_connection;
