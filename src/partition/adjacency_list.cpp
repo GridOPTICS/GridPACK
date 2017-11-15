@@ -126,12 +126,12 @@ AdjacencyList::ready(void)
   // Create a global array containing original indices of all nodes and indexed
   // by the global index of the node
   int i, p;
-  int dist[nprocs];
+  std::vector<int> dist(nprocs);
   for (p=0; p<nprocs; p++) {
     dist[p] = 0;
   }
   dist[me] = nnodes;
-  GA_Pgroup_igop(grp,dist,nprocs,plus);
+  GA_Pgroup_igop(grp,&dist[0],nprocs,plus);
   int *mapc = new int[nprocs+1];
   mapc[0] = 0;
   for (p=1; p<nprocs; p++) {
@@ -153,16 +153,16 @@ AdjacencyList::ready(void)
   lo = mapc[me];
   hi = mapc[me+1]-1;
   int size = hi - lo + 1;
-  int o_idx[size], g_idx[size];
+  std::vector<int> o_idx(size), g_idx(size);
   for (i=0; i<size; i++) o_idx[i] = p_original_nodes[i]; 
   for (i=0; i<size; i++) g_idx[i] = p_global_nodes[i]; 
   int **indices= new int*[size];
-  int *iptr = g_idx;
+  int *iptr = &g_idx[0];
   for (i=0; i<size; i++) {
     indices[i] = iptr;
     iptr++;
   }
-  if (size > 0) NGA_Scatter(g_nodes,o_idx,indices,size);
+  if (size > 0) NGA_Scatter(g_nodes,&o_idx[0],indices,size);
   GA_Pgroup_sync(grp);
   delete [] indices;
   delete [] mapc;
@@ -215,7 +215,7 @@ AdjacencyList::ready(void)
   int g_edges = GA_Create_handle();
   dims = 2*total_edges;
   NGA_Set_data(g_edges,1,&dims,C_INT);
-  NGA_Set_irreg_distr(g_edges,dist,&nprocs);
+  NGA_Set_irreg_distr(g_edges,&dist[0],&nprocs);
   NGA_Set_pgroup(g_edges, grp);
   if (!GA_Allocate(g_edges)) {
     char buf[256];
@@ -231,8 +231,8 @@ AdjacencyList::ready(void)
     dist[p] = 0;
   }
   dist[me] = nedges;
-  GA_Pgroup_igop(grp,dist, nprocs, plus);
-  int offset[nprocs];
+  GA_Pgroup_igop(grp,&dist[0], nprocs, plus);
+  std::vector<int> offset(nprocs);
   offset[0] = 0;
   for (p=1; p<nprocs; p++) {
     offset[p] = offset[p-1] + 2*dist[p-1];
@@ -240,14 +240,14 @@ AdjacencyList::ready(void)
   // Figure out where local data goes in GA and then copy it to GA
   lo = offset[me];
   hi = lo + 2*nedges - 1;
-  int edge_ids[2*nedges];
+  std::vector<int> edge_ids(2*nedges);
   for (i=0; i<nedges; i++) {
     edge_ids[2*i] = static_cast<int>(p_edges[i].global_conn.first);
     edge_ids[2*i+1] = static_cast<int>(p_edges[i].global_conn.second);
   }
   if (lo <= hi) {
     int ld = 1;
-    NGA_Put(g_edges,&lo,&hi,edge_ids,&ld);
+    NGA_Put(g_edges,&lo,&hi,&edge_ids[0],&ld);
   }
   GA_Pgroup_sync(grp);
 
