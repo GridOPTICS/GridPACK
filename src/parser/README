@@ -59,3 +59,6 @@ The modifications needed are described in order.
 
 4) Add the new parser class to the CMakeLists.txt file. This can be done by
    searching for one of the existing parser classes and following that format.
+
+If you add a new model to the .dyr parsing capability, feel free to contact us
+at gridpack.account@pnnl.gov and we will add it to the GridPACK distribution.
