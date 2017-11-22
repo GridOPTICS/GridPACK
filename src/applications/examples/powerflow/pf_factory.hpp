@@ -25,10 +25,8 @@
 namespace gridpack {
 namespace powerflow {
 
-/// The type of network used in the powerflow application
+// Define the type of network used in the powerflow application
 typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
-
-//enum PFMode{YBus, Jacobian};
 
 class PFFactory
   : public gridpack::factory::BaseFactory<PFNetwork> {
@@ -45,7 +43,7 @@ class PFFactory
     ~PFFactory();
 
     /**
-     * Create the admittance (Y-Bus) matrix
+     * Create the admittance (Y-Bus) matrix.
      */
     void setYBus(void);
 

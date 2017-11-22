@@ -1,0 +1,64 @@
+Adding new device models to the .dyr parsing capability.
+
+Adding a new device model to the .dyr parser requires modifications of
+the CMakeLists.txt, dictionary.hpp and the base_pti_parser.hpp file. It also
+requires the creation of a new parser class for the device (unless the device
+uses the same list of parameters as an existing device). Most of the changes are
+relatively simple, although the creation of a new parser class can be tedious.
+The modifications needed are described in order.
+
+1) Modify the dictionary.hpp file so that it contains any new parameters
+   associated with the new device. Reuse existing parameters as much as possible
+   and follow the existing naming convention (new generator parameters have names
+   beginning with GENERATOR_, new governors have names beginning with GOVERNOR_,
+   etc.)
+
+2) The base_pti_parser class needs to modified to include the new device.
+   To start with, the new device parser is added to the getDSExternal method. A
+   good way to go about this is to find an existing device in the same class as
+   the new device (generator, governor, exciter, relay, or load) and search for
+   that name (case insensitive) in the file. This will indicate where most of
+   the modifications need to be made. The modifications that are needed are
+     a) The new parser .hpp file needs to be included at the top of the
+        base_pti_parser.hpp file using a #include declaration.
+     b) The getDSExternal method needs to modified to include the new class.
+        Depending on what type of device it is, this will happen at one of four
+        places within this method. Use existing devices of the same type as the
+        new device (generator, governor, exciter, bus relay, branch relay, load)
+        to determine where these changes should be made.
+     c) One of the four functions onGenerator, onBus, onBranch or onLoad will
+        need to be modified to include the new device.
+     d) Any new parameters that are defined for this device need to added to the
+        corresponding device data struct. Look for the correct struct and add
+        new parameters to it (be sure to reuse old parameters if they are
+        already in the struct). The structs are
+
+          gen_params: generators, governors, exciters
+          bus_relay_params: relays on buses
+          branch_relay_params: relays on branches
+          load_params: loads
+
+        The parser classes are all templated so make sure that you use the
+        correct data struct when adding new classes to other parts of the
+        base_pti_parser.hpp file.
+
+3) Create a new parser class. The easiest way to do this is to copy one of the
+   existing parser classes to a new name and edit the file to correspond to the
+   new device. The naming convention is to use the new device name in lower case
+   as file name. The class name is formed from the device name with the first
+   letter capitalized, remaining letters lower case, and followed by "Parse".
+   The modifications that are needed are usually straightforward and the
+   existing files provide plenty of information on how to do this. For devices
+   with a lot of parameters, adding all the parsing commands can be a bit
+   tedious. The list of variables that need to be parsed in the .dyr file can
+   be found in the PSS/E documenation. The variables used in the parser methods
+   should also correspond to the variables in the parameter struct defined in the
+   base_pti_parser.hpp file that was used to create the parser class instance
+   and The character string names used for each variable need to match the names
+   in the dictionary.hpp file.
+
+4) Add the new parser class to the CMakeLists.txt file. This can be done by
+   searching for one of the existing parser classes and following that format.
+
+If you add a new model to the .dyr parsing capability, feel free to contact us
+at gridpack.account@pnnl.gov and we will add it to the GridPACK distribution.
