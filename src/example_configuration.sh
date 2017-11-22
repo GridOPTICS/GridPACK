@@ -208,6 +208,41 @@ elif [ $host == "olympus.local" ]; then
 	-D MPIEXEC:STRING='mpiexec' \
 	$common_flags ..
 
+elif [ $host == "tlaloc" ]; then
+
+    # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
+    # The following are installed as packages:
+    #   boost148.x86_64                         1.53.0-26.el7
+    #   boost148-openmpi.x86_64                 1.53.0-26.el7
+    #   (lots of other boost packages)
+    #   ga-openmpi.x86_64                       5.3b-13.el6
+    #   ga-openmpi-devel.x86_64  5.3b-13.el6
+    #   petsc-openmpi.x86_64                         3.7.7-1.el6
+    #   petsc-openmpi-devel.x86_64                   3.7.7-1.el6
+
+
+    CC="/usr/bin/gcc"
+    export CC
+    CXX="/usr/bin/g++"
+    export CXX
+    CPPFLAGS="-I/usr/include/openmpi-x86_64"
+    LDFLAGS="-L/usr/lib64/openmpi"
+
+    cmake -Wdev --debug-trycompile \
+        -D BOOST_INCLUDEDIR="/usr/include/boost148" \
+        -D USE_PROGRESS_RANKS:BOOL=OFF \
+        -D PETSC_DIR:STRING="/usr/lib64/openmpi/lib/petsc-3.7.7" \
+        -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
+        -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
+        -D MPIEXEC:STRING="/usr/lib64/openmpi/bin/mpiexec" \
+        -D USE_GLPK:BOOL=ON \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D CMAKE_INSTALL_PREFIX:PATH="/opt/gridpack" \
+        $common_flags ..
+
+    
+
 elif [ $host == "gridpackvm" ]; then
 
     prefix="$HOME/gridpack"
