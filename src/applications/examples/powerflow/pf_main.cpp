@@ -19,17 +19,19 @@
 #include "gridpack/include/gridpack.hpp"
 #include "pf_app.hpp"
 
-// Calling program for the powerflow applications
+// Calling program for the powerflow application
 
 int
 main(int argc, char **argv)
 {
-
+  // Initialize parallel environment. This will start up
+  // the underlying communication libraries
   gridpack::parallel::Environment env(argc,argv);
 
   // Initialize Math libraries
   gridpack::math::Initialize();
 
+  // Create the power flow application and execute it
   gridpack::powerflow::PFApp app;
   app.execute(argc, argv);
 
