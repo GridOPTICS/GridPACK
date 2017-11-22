@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2016-10-03 14:28:53 d3g096
+# Last Change: 2017-11-22 08:47:19 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -82,7 +82,6 @@ add_dependencies(pf.x pf.x.input)
 # -------------------------------------------------------------
 # install as a sample application
 # -------------------------------------------------------------
-
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
@@ -94,9 +93,11 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-  DESTINATION doc/gridpack/example/powerflow
+  DESTINATION share/gridpack/example/powerflow
 )
 
+install(TARGETS pf.x DESTINATION bin)
+  
 # -------------------------------------------------------------
 # Create simple test that runs powerflow code
 # -------------------------------------------------------------
@@ -119,3 +120,4 @@ add_custom_target(pf_test_input
 add_dependencies (pf.x pf_test_input)
 
 gridpack_add_run_test("powerflow" pf.x "input.xml")
+
