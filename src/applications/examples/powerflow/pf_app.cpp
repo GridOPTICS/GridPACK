@@ -101,17 +101,18 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
 
   // Echo network file name to standard out and create appropriate parser.
-  // Parse the file and change the phase shift sign, if necessary
-  printf("Filename: (%s)\n",filename.c_str());
+  // Parse the file and change the phase shift sign, if necessary. The
+  // rank() function on the communicator is used to determine the processor ID
+  if (world.rank() == 0) printf("Network filename: (%s)\n",filename.c_str());
   if (filetype == PTI23) {
-    printf("Using V23 parser\n");
+    if (world.rank() == 0) printf("Using V23 parser\n");
     gridpack::parser::PTI23_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
     if (phaseShiftSign == -1.0) {
       parser.changePhaseShiftSign();
     }
   } else if (filetype == PTI33) {
-    printf("Using V33 parser\n");
+    if (world.rank() == 0) printf("Using V33 parser\n");
     gridpack::parser::PTI33_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
     if (phaseShiftSign == -1.0) {
@@ -156,7 +157,11 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   // for this calculation
   network->initBusUpdate();
 
-  // Create components S vector
+  // Create components Y-matrix
+  factory.setYBus();
+
+  // Create components of S vector and print out first iteration count
+  // to standard output
   factory.setSBus();
   busIO.header("\nIteration 0\n");
 
@@ -209,11 +214,13 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
 
-    // Resolve equations (the solver can be reused since the number and location
-    // of non-zero elements is the same)
+    // Resolve equations (the solver can be reused since the number and
+    // location of non-zero elements is the same)
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
 
+    // Evaluate norm of residual and print out current iteration to standard
+    // out
     tol = PQ->normInfinity();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
