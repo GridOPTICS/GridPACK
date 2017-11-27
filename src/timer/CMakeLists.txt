@@ -18,12 +18,12 @@ add_library(gridpack_timer
   local_timer.cpp
 )
 
-target_link_libraries(gridpack_timer
-    gridpack_parallel
-    ${GA_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-)
+# target_link_libraries(gridpack_timer
+#     gridpack_parallel
+#     ${GA_LIBRARIES}
+#     ${Boost_LIBRARIES}
+#     ${MPI_CXX_LIBRARIES}
+# )
 
 set(target_libraries
     gridpack_timer

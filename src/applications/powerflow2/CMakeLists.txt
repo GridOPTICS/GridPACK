@@ -40,9 +40,9 @@ add_library(powerflow_app2
   pf_factory.cpp
 )
 
-target_link_libraries(powerflow_app2
-  ${target_libraries}
-)
+# target_link_libraries(powerflow_app2
+#   ${target_libraries}
+# )
 
 add_executable(powerflow2
   pf_app2.cpp
