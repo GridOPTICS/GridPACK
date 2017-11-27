@@ -43,7 +43,7 @@ add_library(gridpack_dynamic_simulation_module
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
-target_link_libraries(gridpack_dynamic_simulation_module ${target_libraries})
+#target_link_libraries(gridpack_dynamic_simulation_module ${target_libraries})
 
 # -------------------------------------------------------------
 # installation

@@ -127,7 +127,7 @@ endif()
 add_library(gridpack_math
   ${gridpack_math_sources}
 )
-target_link_libraries(gridpack_math ${target_libraries})
+# target_link_libraries(gridpack_math ${target_libraries})
 
 # -------------------------------------------------------------
 # a small test (not a unit test)

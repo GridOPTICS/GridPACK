@@ -24,9 +24,9 @@ set(target_libraries
   ${MPI_CXX_LIBRARIES}
 )
 
-target_link_libraries(gridpack_configuration
-  ${target_libraries}
-)
+# target_link_libraries(gridpack_configuration
+#   ${target_libraries}
+# )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(AFTER ${GA_INCLUDE_DIRS})
