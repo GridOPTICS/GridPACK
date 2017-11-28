@@ -140,6 +140,9 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   sprintf(ioBuf,"\nConvergence tolerance: %f\n",tolerance);
   busIO.header(ioBuf);
 
+  // Partition the network
+  network->partition();
+
   // Create factory and call the load method to initialize network components
   // from information in configuration file
   gridpack::powerflow::PFFactory factory(network);
@@ -174,7 +177,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
   boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
 
-  // Create X vector by cloning PQ
+  // Create X (solution) vector by cloning PQ
   boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
 
   // <latex> The LinearSolver object solves equations of the form
@@ -200,8 +203,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
 
   while (real(tol) > tolerance && iter < max_iteration) {
     // Push current values in X vector back into network components
-    // Need to implement setValues method in PFBus class in order for this to
-    // work
+    // This uses setValues method in PFBus class in order to work
     factory.setMode(RHS);
     vMap.mapToBus(X);
 
@@ -209,7 +211,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     // between branches)
     network->updateBuses();
 
-    // Create new versions of Jacobian and PQ vector
+    // Update Jacobian and PQ vector with new values
     vMap.mapToVector(PQ);
     factory.setMode(Jacobian);
     jMap.mapToMatrix(J);
@@ -227,7 +229,8 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     iter++;
   }
 
-  // Push final result back onto buses
+  // Push final result back onto buses so we get the right values printed out to
+  // output
   factory.setMode(RHS);
   vMap.mapToBus(X);
 
@@ -241,11 +244,13 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   branchIO.header("\n   Branch Power Flow\n");
   branchIO.header("\n        Bus 1       Bus 2   CKT         P"
                   "                    Q\n");
+  // Write branch values
   branchIO.write();
 
 
   // Write out headers and voltage values for all buses
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
+  // Write bus values values
   busIO.write();
 }
