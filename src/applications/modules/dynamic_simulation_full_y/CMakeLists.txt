@@ -76,8 +76,8 @@ add_library(gridpack_dynamic_simulation_full_y_module
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
-target_link_libraries(gridpack_dynamic_simulation_full_y_module
-                      ${target_libraries})
+# target_link_libraries(gridpack_dynamic_simulation_full_y_module
+#                       ${target_libraries})
    
 # -------------------------------------------------------------
 # installation

@@ -43,8 +43,12 @@ gridpack::powerflow::PFFactory::~PFFactory()
 {
 }
 
+// <latex> The $\overline{\overline{Y}}$-matrix relates the vector
+// of currents $\overline{I}$ to the voltages $\overline{V}$ via
+// $\overline{I} = \overline{\overline{Y}}\cdot\overline{V}$ </latex>.
+
 /**
- * Create the admittance (Y-Bus) matrix
+ * Create the admittance (Y-Bus) matrix.
  */
 void gridpack::powerflow::PFFactory::setYBus(void)
 {
