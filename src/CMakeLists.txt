@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2017-11-22 08:45:58 d3g096
+# Last Change: 2017-11-28 11:29:11 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -24,8 +24,9 @@ endif (POLICY CMP0026)
 
 project (GridPACK)
 
-#set (GridPACK_VERSION_MAJOR 1)
-#set (GridPACK_VERSION_MINOR 0)
+set (GridPACK_VERSION_MAJOR 3)
+set (GridPACK_VERSION_MINOR 1)
+set (GridPACK_VERSION_PATCH 0)
 
 # This is a C++ project exclusively
 enable_language(CXX)
@@ -337,3 +338,43 @@ add_subdirectory(timer)
 add_subdirectory(include)
 
 add_subdirectory(lib)
+
+
+# -------------------------------------------------------------
+# CPack configuration
+# -------------------------------------------------------------
+
+
+INCLUDE(InstallRequiredSystemLibraries)
+SET(CPACK_SET_DESTDIR "on")
+SET(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
+SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY 
+  "An open source toolkit for developing power grid simulation applications for high performance computing architectures")
+SET(CPACK_PACKAGE_DESCRIPTION "GridPACK(tm) is a software framework consisting of a set of modules designed to simplify the development of programs that model the power grid and run on parallel, high performance computing platforms. The modules are available as a library and consist of components for setting up and distributing power grid networks, support for modeling the behavior of individual buses and branches in the network, converting the network models to the corresponding algebraic equations, and parallel routines for manipulating and solving large algebraic systems. Additional modules support input and output as well as basic profiling and error management. ")
+SET(CPACK_PACKAGE_VENDOR "")
+SET(CPACK_PACKAGE_CONTACT "william.perkins@pnnl.gov")
+SET(CPACK_PACKAGE_VERSION_MAJOR "${GridPACK_VERSION_MAJOR}")
+SET(CPACK_PACKAGE_VERSION_MINOR "${GridPACK_VERSION_MINOR}")
+SET(CPACK_PACKAGE_VERSION_PATCH "${GridPACK_VERSION_PATCH}")
+SET(CPACK_PACKAGE_VERSION 
+  "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+SET(CPACK_PACKAGE_FILE_NAME 
+  "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
+SET(CPACK_SOURCE_PACKAGE_FILE_NAME 
+  "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
+SET(CPACK_PACKAGING_INSTALL_PREFIX "/")
+
+# Debian specific settings
+
+SET(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+SET(CPACK_DEBIAN_PACKAGE_SECTION "science")
+SET(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+SET(CPACK_DEBIAN_PACKAGE_DEPENDS 
+  "libga-dev (>=5.3) libpetsc3.6 (>= 3.6.2) libpetsc3.6.2-dev (>= 3.6.2)"
+  )
+
+# RPM specific settings
+
+SET(CPACK_RPM_PACKAGE_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+
+INCLUDE(CPack)
