@@ -252,8 +252,9 @@ elif [ $host == "gridpackvm" ]; then
     export CC CXX
 
     cmake -Wno-dev --debug-try-compile \
-	-D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
-	-D PETSC_ARCH:STRING="arch-ubuntu-real-opt" \
+	-D PETSC_DIR:STRING="/usr/lib/petscdir/3.6.2" \
+	-D PETSC_ARCH:STRING="x86_64-linux-gnu-real" \
+	-D PARMETIS_DIR:PATH="/usr" \
 	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
 	-D MPI_C_COMPILER:STRING="mpicc" \
