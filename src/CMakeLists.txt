@@ -373,7 +373,7 @@ set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
 set(CPACK_DEBIAN_PACKAGE_SECTION "science")
 set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 set(CPACK_DEBIAN_PACKAGE_DEPENDS 
-  "libga-dev (>=5.3) libpetsc3.6 (>= 3.6.2) libpetsc3.6.2-dev (>= 3.6.2)"
+  "libga-dev (>=5.3) libpetsc3.6.2-dev (>= 3.6.2) libparmetis-dev (>=4.0.3) libboost-mpi-dev (>=1.58.0) libboost-all-dev (>=1.58.0)"
   )
 
 # RPM specific settings
