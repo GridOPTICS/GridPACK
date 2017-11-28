@@ -21,7 +21,16 @@ set(target_libraries
 )
 
 if (GOSS_DIR)
+  add_library(gridpack_goss
+      goss_utils.cpp)
+
+  target_link_libraries(gridpack_goss
+    ${APR_LIBRARY}
+    ${GOSS_LIBRARY}
+  )
+
   set(target_libraries
+      gridpack_goss
       ${APR_LIBRARY}
       ${GOSS_LIBRARY}
       ${target_libraries})
@@ -72,4 +81,12 @@ install(FILES
   serial_io.hpp
   ${goss_files}
   DESTINATION include/gridpack/serial_io
+)
+
+# -------------------------------------------------------------
+# gridpack parallel library installation
+# -------------------------------------------------------------
+install(TARGETS 
+  gridpack_goss
+  DESTINATION lib
 )
