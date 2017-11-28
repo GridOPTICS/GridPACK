@@ -78,10 +78,15 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   cursor = config->getCursor("Configuration.Powerflow");
   std::string filename;
   int filetype = PTI23;
+<<<<<<< Updated upstream
   // If networkConfiguration field found in input, assume that file
   // is PSS/E version 23 format, otherwise if networkConfiguation_v33
   // field found in input, assume file is version 33 format. If neither
   // field is found, then no configuration file is specified so return
+=======
+  // Get network configuration file name and figure out what version the
+  // format is
+>>>>>>> Stashed changes
   if (!cursor->get("networkConfiguration",&filename)) {
     if (cursor->get("networkConfiguration_v33",&filename)) {
       filetype = PTI33;
@@ -95,6 +100,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   double tolerance = cursor->get("tolerance",1.0e-6);
   int max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
+<<<<<<< Updated upstream
   // Different files use different conventions for the phase shift sign.
   // Allow users to change sign to correspond to the convention used
   // in this application.
@@ -104,6 +110,14 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   // Parse the file and change the phase shift sign, if necessary. The
   // rank() function on the communicator is used to determine the processor ID
   if (world.rank() == 0) printf("Network filename: (%s)\n",filename.c_str());
+=======
+  // Phase shift sign. This is used to handle some variability in the input file
+  double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
+
+  // Choose between PSS/E version 23 and version 33 parsers (based on
+  // configuration file format specification in input deck)
+  printf("Filename: (%s)\n",filename.c_str());
+>>>>>>> Stashed changes
   if (filetype == PTI23) {
     if (world.rank() == 0) printf("Using V23 parser\n");
     gridpack::parser::PTI23_parser<PFNetwork> parser(network);
@@ -140,7 +154,11 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   sprintf(ioBuf,"\nConvergence tolerance: %f\n",tolerance);
   busIO.header(ioBuf);
 
+<<<<<<< Updated upstream
   // Partition the network
+=======
+  // partition the network
+>>>>>>> Stashed changes
   network->partition();
 
   // Create factory and call the load method to initialize network components
@@ -152,14 +170,19 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   // indices that are used in data exchanges and to manage IO
   factory.setComponents();
 
+<<<<<<< Updated upstream
   // Set up bus data exchange buffers. The data to be exchanged is defined
   // in the network component classes
+=======
+  // Set up bus data exchange buffers.
+>>>>>>> Stashed changes
   factory.setExchange();
 
   // Create bus data exchange. Data exchanges between branches are not needed
   // for this calculation
   network->initBusUpdate();
 
+<<<<<<< Updated upstream
   // Create components Y-matrix
   factory.setYBus();
 
@@ -169,6 +192,19 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   busIO.header("\nIteration 0\n");
 
   // Create PQ vector (the RHS vector)
+=======
+  // set YBus components
+  factory.setYBus();
+
+  factory.setMode(S_Cal);
+  gridpack::mapper::BusVectorMap<PFNetwork> vvMap(network);
+
+  // set Sbus parameters
+  factory.setSBus();
+  busIO.header("\nIteration 0\n");
+
+  // Set PQ (right hand side vector)
+>>>>>>> Stashed changes
   factory.setMode(RHS); 
   gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
   boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
@@ -221,8 +257,13 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
     X->zero(); //might not need to do this
     solver.solve(*PQ, *X);
 
+<<<<<<< Updated upstream
     // Evaluate norm of residual and print out current iteration to standard
     // out
+=======
+    // Find the largest absolute value of the elements in the right hand side
+    // vector. 
+>>>>>>> Stashed changes
     tol = PQ->normInfinity();
     sprintf(ioBuf,"\nIteration %d Tol: %12.6e\n",iter+1,real(tol));
     busIO.header(ioBuf);
@@ -235,11 +276,19 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   vMap.mapToBus(X);
 
   // Make sure that ghost buses have up-to-date values before printing out
+<<<<<<< Updated upstream
   // final results (evaluating power flow on branches requires correct values
   // of voltages on all buses)
   network->updateBuses();
 
   // Write out headers and power flow values for all branches
+=======
+  // results (some bus and  branch parameters are calculated one last time
+  // before writing them out)
+  network->updateBuses();
+
+  // Write header
+>>>>>>> Stashed changes
   gridpack::serial_io::SerialBranchIO<PFNetwork> branchIO(512,network);
   branchIO.header("\n   Branch Power Flow\n");
   branchIO.header("\n        Bus 1       Bus 2   CKT         P"
@@ -248,7 +297,11 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   branchIO.write();
 
 
+<<<<<<< Updated upstream
   // Write out headers and voltage values for all buses
+=======
+  // Write header
+>>>>>>> Stashed changes
   busIO.header("\n   Bus Voltages and Phase Angles\n");
   busIO.header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   // Write bus values values
