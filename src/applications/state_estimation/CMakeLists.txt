@@ -15,19 +15,20 @@
 
 set(target_libraries
     gridpack_state_estimation_module
+    gridpack_sematrix_components
+    gridpack_ymatrix_components
     gridpack_components
     gridpack_partition
-    gridpack_parallel
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_sematrix_components
-    gridpack_ymatrix_components
+    gridpack_parallel
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
+    ${PETSC_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
