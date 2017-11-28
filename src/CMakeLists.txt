@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2017-11-28 11:29:11 d3g096
+# Last Change: 2017-11-28 12:34:04 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -346,35 +346,38 @@ add_subdirectory(lib)
 
 
 INCLUDE(InstallRequiredSystemLibraries)
-SET(CPACK_SET_DESTDIR "on")
-SET(CPACK_PACKAGING_INSTALL_PREFIX "/tmp")
-SET(CPACK_PACKAGE_DESCRIPTION_SUMMARY 
+set(CPACK_set_DESTDIR "on")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY 
   "An open source toolkit for developing power grid simulation applications for high performance computing architectures")
-SET(CPACK_PACKAGE_DESCRIPTION "GridPACK(tm) is a software framework consisting of a set of modules designed to simplify the development of programs that model the power grid and run on parallel, high performance computing platforms. The modules are available as a library and consist of components for setting up and distributing power grid networks, support for modeling the behavior of individual buses and branches in the network, converting the network models to the corresponding algebraic equations, and parallel routines for manipulating and solving large algebraic systems. Additional modules support input and output as well as basic profiling and error management. ")
-SET(CPACK_PACKAGE_VENDOR "")
-SET(CPACK_PACKAGE_CONTACT "william.perkins@pnnl.gov")
-SET(CPACK_PACKAGE_VERSION_MAJOR "${GridPACK_VERSION_MAJOR}")
-SET(CPACK_PACKAGE_VERSION_MINOR "${GridPACK_VERSION_MINOR}")
-SET(CPACK_PACKAGE_VERSION_PATCH "${GridPACK_VERSION_PATCH}")
-SET(CPACK_PACKAGE_VERSION 
+set(CPACK_PACKAGE_DESCRIPTION "GridPACK(tm) is a software framework consisting of a set of modules designed to simplify the development of programs that model the power grid and run on parallel, high performance computing platforms. The modules are available as a library and consist of components for setting up and distributing power grid networks, support for modeling the behavior of individual buses and branches in the network, converting the network models to the corresponding algebraic equations, and parallel routines for manipulating and solving large algebraic systems. Additional modules support input and output as well as basic profiling and error management. ")
+set(CPACK_PACKAGE_VENDOR "")
+set(CPACK_PACKAGE_CONTACT "william.perkins@pnnl.gov")
+set(CPACK_PACKAGE_VERSION_MAJOR "${GridPACK_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${GridPACK_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${GridPACK_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION 
   "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
-SET(CPACK_PACKAGE_FILE_NAME 
+set(CPACK_PACKAGE_FILE_NAME 
   "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
-SET(CPACK_SOURCE_PACKAGE_FILE_NAME 
+set(CPACK_SOURCE_PACKAGE_FILE_NAME 
   "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
-SET(CPACK_PACKAGING_INSTALL_PREFIX "/")
+
+# set(CPACK_PACKAGING_INSTALL_PREFIX "")
+# set(CMAKE_INSTALL_PREFIX "/")
+set(CPACK_PACKAGE_INSTALL_DIRECTORY "/")
+set(CPACK_SET_DESTDIR FALSE)
 
 # Debian specific settings
 
-SET(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
-SET(CPACK_DEBIAN_PACKAGE_SECTION "science")
-SET(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
-SET(CPACK_DEBIAN_PACKAGE_DEPENDS 
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SECTION "science")
+set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_DEBIAN_PACKAGE_DEPENDS 
   "libga-dev (>=5.3) libpetsc3.6 (>= 3.6.2) libpetsc3.6.2-dev (>= 3.6.2)"
   )
 
 # RPM specific settings
 
-SET(CPACK_RPM_PACKAGE_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_RPM_PACKAGE_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
 
 INCLUDE(CPack)
