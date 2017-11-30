@@ -191,7 +191,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   X->zero(); //might not need to do this
   busIO.header("\nCalling solver\n");
   solver.solve(*PQ, *X);
-  // <latex> normInfinity evaluates the norm $N=\sum_{i}|X_i|$</latex>
+  // <latex> normInfinity evaluates the norm $N=\max_{i}|X_i|$</latex>
   // The Newton-Raphson algorithm evaluates incremental changes to the solution
   // vector. When the algorithm is done, the RHS vector is zero
   tol = PQ->normInfinity();
