@@ -27,9 +27,15 @@ set(target_libraries
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES}
-    ${GOSS_LIBRARY}
-    ${APR_LIBRARY})
+    ${PETSC_LIBRARIES})
+
+if (GOSS_DIR)
+  set(target_libraries
+      ${target_libraries}
+      gridpack_goss
+      ${GOSS_LIBRARY}
+      ${APR_LIBRARY})
+endif()
 
 set(ds_include_dirs
     ${CMAKE_CURRENT_SOURCE_DIR}

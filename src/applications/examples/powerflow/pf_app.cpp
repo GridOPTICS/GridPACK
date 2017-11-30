@@ -140,9 +140,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   sprintf(ioBuf,"\nConvergence tolerance: %f\n",tolerance);
   busIO.header(ioBuf);
 
-  // Partition the network
-  network->partition();
-
   // Create factory and call the load method to initialize network components
   // from information in configuration file
   gridpack::powerflow::PFFactory factory(network);

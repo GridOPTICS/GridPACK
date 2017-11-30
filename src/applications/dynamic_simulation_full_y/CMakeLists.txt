@@ -31,6 +31,14 @@ set(target_libraries
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
 
+if (GOSS_DIR)
+  set(target_libraries
+      ${target_libraries}
+      gridpack_goss
+      ${GOSS_LIBRARY}
+      ${APR_LIBRARY})
+endif()
+
 include_directories(BEFORE
  ${CMAKE_CURRENT_SOURCE_DIR}/../modules/dynamic_simulation_full_y/model_classes)
 include_directories(BEFORE
