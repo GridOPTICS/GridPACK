@@ -74,7 +74,7 @@ add_library(gridpack_optimum
   ${expression_src}
 )
 
-target_link_libraries(gridpack_optimum ${target_libraries})
+# target_link_libraries(gridpack_optimum ${target_libraries})
   
 # -------------------------------------------------------------
 # optimizer test suite

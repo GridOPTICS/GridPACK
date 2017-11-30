@@ -72,7 +72,7 @@ endif()
 add_library(gridpack_partition
   ${gridpack_partition_sources}
 )
-target_link_libraries(gridpack_partition ${target_libraries})
+# target_link_libraries(gridpack_partition ${target_libraries})
 
 
 # -------------------------------------------------------------

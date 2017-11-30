@@ -41,7 +41,7 @@ add_library(gridpack_powerflow_module
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
-target_link_libraries(gridpack_powerflow_module ${target_libraries})
+# target_link_libraries(gridpack_powerflow_module ${target_libraries})
 
 # -------------------------------------------------------------
 # installation
