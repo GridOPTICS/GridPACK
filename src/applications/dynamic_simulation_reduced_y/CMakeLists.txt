@@ -14,21 +14,30 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_dynamic_simulation_module
+    gridpack_powerflow_module
+    gridpack_dsmatrix_components
+    gridpack_ymatrix_components
+    gridpack_pfmatrix_components
     gridpack_components
     gridpack_partition
     gridpack_parallel
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_dsmatrix_components
-    gridpack_ymatrix_components
-    gridpack_powerflow_module
-    gridpack_dynamic_simulation_module
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    ${PETSC_LIBRARIES}
+    ${MPI_CXX_LIBRARIES})
+
+if (GOSS_DIR)
+  set(target_libraries
+      ${target_libraries}
+      gridpack_goss
+      ${GOSS_LIBRARY}
+      ${APR_LIBRARY})
+endif()
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)

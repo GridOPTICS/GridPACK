@@ -282,15 +282,20 @@ void run (const int &me, const int &nprocs, int argc, char **argv)
   ok = ok && cursor->get("channelURI",&URI);
   ok = ok && cursor->get("username",&username);
   ok = ok && cursor->get("password",&passwd);
+  // Initialize GOSS with channel topic
+  if (ok) {
+    std::vector<std::string> topics;
+    topics.push_back(topic);
+    gridpack::goss::GOSSUtils::instance()->initGOSS(topics,
+        URI.c_str(), username.c_str(), passwd.c_str());
+  }
   printf("channelTopic: (%s)\n",topic.c_str());
   printf("channelURI: (%s)\n",URI.c_str());
   printf("username: (%s)\n",username.c_str());
   printf("password: (%s)\n",passwd.c_str());
   if (ok) {
   printf("Got to 2\n");
-    busIO.openChannel(topic.c_str(), URI.c_str(),
-        username.c_str(),
-        passwd.c_str());
+    busIO.openChannel(topic.c_str());
   printf("Got to 3\n");
   } else {
     busIO.header("Unable to open channel\n");

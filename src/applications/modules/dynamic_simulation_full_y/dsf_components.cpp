@@ -7,7 +7,7 @@
 /**
  * @file   dsf_components.cpp
  * @author Shuangshuang Jin 
- * @date   2013-11-19 13:46:09 d3g096
+ * @date   2017-10-05 08:25:33 d3g096
  * @date   2014-03-06 15:22:00 d3m956
  * @last modified date   2015-05-13 12:01:00 d3m956
  * 
@@ -2083,7 +2083,8 @@ std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
   int i, j;
   for (i=0; i<p_genid.size(); i++) {
     if (p_generators[i]->getWatch()) {
-      std::vector<double> vals = p_generators[i]->getWatchValues();
+      std::vector<double> vals;
+      p_generators[i]->getWatchValues(vals);
       for (j=0; j<vals.size(); j++) ret.push_back(vals[j]);
     }
   }
@@ -2753,7 +2754,7 @@ void gridpack::dynamic_simulation::DSFullBranch::printDSFullBranch()
 		bus2->getOriginalIndex(), bus2->checkisolated(), branchelem);
 	for ( i=0; i<p_elems; i++ ){
 		printf("DSFullBranch::printDSFullBranch(), %d-th elem: cktid: %s, p_active: %d, p_reactance: %f, p_resistance: %f, p_phase_shift: %f, p_tap_ratio: %f, p_xform: %d, p_branch_status: %d, p_shunt: %d \n", 
-		  i, p_ckt[i].c_str(), p_active, p_reactance[i], p_resistance[i], p_phase_shift[i], p_tap_ratio[i], p_xform[i], p_branch_status[i], p_shunt[i]);
+                       i, p_ckt[i].c_str(), p_active, p_reactance[i], p_resistance[i], p_phase_shift[i], p_tap_ratio[i], static_cast<int>(p_xform[i]), p_branch_status[i], static_cast<int>(p_shunt[i]));
 	}	
 }
 

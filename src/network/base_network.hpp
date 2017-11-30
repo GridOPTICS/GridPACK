@@ -1381,7 +1381,7 @@ void resetGlobalIndices(bool flag)
   int nprocs = communicator().size();
   int me = communicator().rank();
 
-  int idx_buf[nprocs];
+  std::vector<int> idx_buf(nprocs);
   for (i=0; i<nprocs; i++) idx_buf[i] = 0;
 
   // Find out how many active buses exist on each processor
@@ -1391,7 +1391,7 @@ void resetGlobalIndices(bool flag)
     if (getActiveBus(i)) lcnt++;
   }
   idx_buf[me] = lcnt;
-  communicator().sum(idx_buf,nprocs);
+  communicator().sum(&idx_buf[0],nprocs);
   // Assign global index to active buses on each processor
   int offset = 0;
   for (i=0; i<me; i++) offset += idx_buf[i];
@@ -1468,7 +1468,7 @@ void resetGlobalIndices(bool flag)
   }
   for (i=0; i<nprocs; i++) idx_buf[i] = 0;
   idx_buf[me] = lcnt;
-  communicator().sum(idx_buf,nprocs);
+  communicator().sum(&idx_buf[0],nprocs);
   // Assign global index to active branches on each processor
   offset = 0;
   for (i=0; i<me; i++) offset += idx_buf[i];

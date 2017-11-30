@@ -579,7 +579,8 @@ BOOST_AUTO_TEST_CASE( GetRowLocal )
 
   int nrow(2);                  // rows per processor to extract
   int ncol(A->cols());
-  TestMatrixType::IdxType lo, hi, j, i, ridx[nrow];
+  TestMatrixType::IdxType lo, hi, j, i;
+  std::vector<TestMatrixType::IdxType> ridx(nrow);
   A->localRowRange(lo, hi);
 
   // get the first row on each processor; each processor can get a

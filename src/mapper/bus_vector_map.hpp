@@ -419,7 +419,7 @@ void contributions(void)
 void setBusIndexArrays(void)
 {
   // Exchange number of values contributed by each process
-  int nVals[p_nNodes];
+  std::vector<int> nVals(p_nNodes);
   int i, j, nsize;
   for (i=0; i<p_nNodes; i++) {
     nVals[i] = 0;
@@ -428,7 +428,7 @@ void setBusIndexArrays(void)
 
   char cplus[2];
   strcpy(cplus,"+");
-  GA_Pgroup_igop(p_GAgrp,nVals,p_nNodes,cplus);
+  GA_Pgroup_igop(p_GAgrp,&nVals[0],p_nNodes,cplus);
 
   //Evaluate starting index on each process;
   int offset = 0;

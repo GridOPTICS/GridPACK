@@ -20,7 +20,6 @@
 
 #ifdef USE_GOSS
 #include <boost/smart_ptr/shared_ptr.hpp>
-#include <ga.h>
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
@@ -55,57 +54,88 @@ namespace goss {
 // -------------------------------------------------------------
 
 class GOSSUtils {
+
   public:
+
+  /**
+   * Retrieve instance of the GOSSUtils object
+   * @return pointer to GOSSUtils object
+   */
+  static GOSSUtils *instance();
+
+  /**
+   * Initialize goss bus specifying all topics that will be used in this
+   * application. This must be called on the world communicator.
+   * @param topics list of topics that will be sent by the application
+   * @param URI channel URI
+   * @param username server username
+   * @param passwd server password
+   */
+  void initGOSS(std::vector<std::string> &topics, const char *URI,
+      const char* username, const char *passwd);
+
+  /**
+   * Open GOSS channel
+   * @param comm communicator for whatever module is opening the channel
+   * @param topic channel topic. This must be chosen from list of topics
+   *              used to initialize the GOSSUtils object
+   */
+  void openGOSSChannel(gridpack::parallel::Communicator &comm,
+      const std::string topic);
+
+  /**
+   * Close GOSS channel.
+   */
+  void closeGOSSChannel(gridpack::parallel::Communicator &comm);
+
+  /**
+   * Send a message over an open GOSS channel
+   * @param text message to be sent
+   */
+  void sendGOSSMessage(std::string &text);
+
+  /**
+   * Send a message over a GOSS channel
+   */
+  void sendChannelMessage(const char *topic, const char *URI,
+      const char *username, const char *passwd, const char *msg);
+
+  /**
+   * Shut down GOSS communication
+   */
+  void terminateGOSS();
+
+  protected:
 
   /**
    * Simple constructor
    */
-  GOSSUtils()
-  {
-  }
+  GOSSUtils();
 
   /**
    * Simple destructor
    */
-  ~GOSSUtils()
-  {
-  }
+  ~GOSSUtils();
+
+  private:
 
   /**
-   * Send a simple message over a GOSS channel
+   * Channel parameters
    */
-  void sendChannelMessage(const char *topic, const char *URI,
-      const char *username, const char *passwd, const char *msg)
-  {
-    Connection *connection;
-    Session *session;
-    Destination *destination;
-    MessageProducer *producer;
+  std::string p_URI;
+  std::string p_username;
+  std::string p_passwd;
 
-    std::string brokerURI = URI;
-    std::auto_ptr<ActiveMQConnectionFactory>
-      connectionFactory(new ActiveMQConnectionFactory(brokerURI)) ;
-    // Create a Connection
-    std::string User = username;
-    std::string Pass = passwd;
-    connection = connectionFactory->createConnection(User, Pass);
-    connection->start();
-    // Create a Session
-    session = connection->createSession(Session::AUTO_ACKNOWLEDGE);
-    // Create the destination (Topic or Queue)
-    destination = session->createTopic(topic);
-    // Create a MessageProducer from the Session to the Topic
-    producer = session->createProducer(destination);
-    producer->setDeliveryMode(DeliveryMode::NON_PERSISTENT);
-
-    std::auto_ptr<TextMessage> message(session->createTextMessage(msg));
-    producer->send(message.get());
-    // Clean up
-    delete connection;
-    delete session;
-    delete destination;
-    delete producer;
-  }
+  Connection *p_connection;
+  Session *p_session;
+  Destination *p_destination;
+  MessageProducer *p_producer;
+  bool p_open;
+  int p_grp;
+  /**
+   * Pointer to single instance of GOSSUtils object
+   */
+  static GOSSUtils *p_instance;
 };
 }
 }

@@ -158,13 +158,13 @@ public:
   void printStats() {
     int nprocs = GA_Pgroup_nnodes(p_grp);
     int me = GA_Pgroup_nodeid(p_grp);
-    int procs[nprocs];
+    std::vector<int> procs(nprocs);
     int i;
     for (i=0; i<nprocs; i++) procs[i] = 0;
     procs[GA_Pgroup_nodeid(p_grp)] = p_task_count;
     char plus[2];
     strcpy(plus,"+");
-    GA_Pgroup_igop(p_grp,procs,nprocs,plus);
+    GA_Pgroup_igop(p_grp,&(procs[0]),nprocs,plus);
     // print out number of tasks evaluated on each processor
     if (me == 0) {
       printf("\nNumber of tasks per processors\n");

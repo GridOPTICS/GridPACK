@@ -43,8 +43,12 @@ gridpack::powerflow::PFFactory::~PFFactory()
 {
 }
 
+// <latex> The $\overline{\overline{Y}}$-matrix relates the vector
+// of currents $\overline{I}$ to the voltages $\overline{V}$ via
+// $\overline{I} = \overline{\overline{Y}}\cdot\overline{V}$ </latex>.
+
 /**
- * Create the admittance (Y-Bus) matrix
+ * Create the admittance (Y-Bus) matrix.
  */
 void gridpack::powerflow::PFFactory::setYBus(void)
 {
@@ -54,12 +58,12 @@ void gridpack::powerflow::PFFactory::setYBus(void)
 
   // Invoke setYBus method on all branch objects
   for (i=0; i<numBranch; i++) {
-    dynamic_cast<PFBranch*>(p_network->getBranch(i).get())->setYBus();
+    p_network->getBranch(i).get()->setYBus();
   }
 
   // Invoke setYBus method on all bus objects
   for (i=0; i<numBus; i++) {
-    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setYBus();
+    p_network->getBus(i).get()->setYBus();
   }
 
 }

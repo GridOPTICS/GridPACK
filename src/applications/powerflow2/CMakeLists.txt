@@ -14,19 +14,20 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_pfmatrix_components
+    gridpack_ymatrix_components
     gridpack_components
     gridpack_partition
-    gridpack_parallel
     gridpack_math
     gridpack_configuration
     gridpack_timer
-    gridpack_pfmatrix_components
-    gridpack_ymatrix_components
+    gridpack_parallel
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
+    ${PETSC_LIBRARIES}
     ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+    )
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
@@ -40,9 +41,9 @@ add_library(powerflow_app2
   pf_factory.cpp
 )
 
-target_link_libraries(powerflow_app2
-  ${target_libraries}
-)
+# target_link_libraries(powerflow_app2
+#   ${target_libraries}
+# )
 
 add_executable(powerflow2
   pf_app2.cpp

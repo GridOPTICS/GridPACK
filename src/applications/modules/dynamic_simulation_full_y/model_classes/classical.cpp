@@ -16,8 +16,8 @@
 
 #include <vector>
 #include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "base_generator_model.hpp"
@@ -399,14 +399,14 @@ double gridpack::dynamic_simulation::ClassicalGenerator::getAngle()
 /**
  * return a vector containing any generator values that are being
  * watched
- * @return vector of watched values
+ * @param vals vector of watched values
  */
-std::vector<double> gridpack::dynamic_simulation::ClassicalGenerator::getWatchValues()
+void gridpack::dynamic_simulation::ClassicalGenerator::getWatchValues(
+    std::vector<double> &vals)
 {
-  std::vector<double> ret;
+  vals.clear();
   if (getWatch()) {
-    ret.push_back(real(p_mac_ang_s1));
-    ret.push_back(real(p_mac_spd_s1));
+    vals.push_back(real(p_mac_ang_s1));
+    vals.push_back(real(p_mac_spd_s1));
   }
-  return ret;
 }

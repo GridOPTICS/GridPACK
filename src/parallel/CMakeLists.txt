@@ -21,11 +21,11 @@ add_library(gridpack_parallel
   random.cpp
 )
 
-target_link_libraries(gridpack_parallel
-  ${Boost_LIBRARIES} 
-  ${GA_LIBRARIES} 
-  ${MPI_CXX_LIBRARIES}
-)
+# target_link_libraries(gridpack_parallel
+#   ${Boost_LIBRARIES} 
+#   ${GA_LIBRARIES} 
+#   ${MPI_CXX_LIBRARIES}
+# )
   
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)

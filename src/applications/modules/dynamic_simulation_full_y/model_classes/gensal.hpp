@@ -118,9 +118,9 @@ class GensalGenerator : public BaseGeneratorModel
     /**
      * return a vector containing any generator values that are being
      * watched
-     * @return vector of watched values
+     * @param vals vector of watched values
      */
-    std::vector<double> getWatchValues();
+    void getWatchValues(std::vector<double> &vals);
 
   private:
 

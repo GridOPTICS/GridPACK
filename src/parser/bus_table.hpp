@@ -302,23 +302,21 @@ public:
     values.clear();
     if (idx < 0 || idx >= p_nvals) {
       printf("Requested data is out of range of bus table (%d not in [0,%d])\n",
-          idx,p_nobjs-1);
+          idx,p_nvals-1);
     }
     //construct array of indices to retrieve data
     int nsize = p_local_idx.size();
-    double v[nsize];
-    int array[nsize];
-    int **subscript;
-    subscript = new int*[nsize];
-    int *ptr = array;
+    std::vector<double> v(nsize);
+    std::vector<int> array(nsize);
+    std::vector<int*> subscript(nsize);
+    int *ptr = &array[0];
     int i;
     for (i=0; i<nsize; i++) {
       array[i] = p_nvals*p_order[i] + idx;
       subscript[i] = ptr;
       ptr++;
     }
-    NGA_Gather(p_GA_data, v, subscript, nsize);
-    delete [] subscript;
+    NGA_Gather(p_GA_data, &v[0], &subscript[0], nsize);
     p_comm.sync();
     for (i=0; i<nsize; i++) {
       values.push_back(v[i]);

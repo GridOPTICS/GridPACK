@@ -873,8 +873,6 @@ void run (const int &me, const int &nprocs)
       im = network->getBus(i)->matrixGetRowIndex(0);
       nvals = network->getBus(i)->matrixNumValues();
       idx = network->getGlobalBusIndex(i);
-      int rows[nvals];
-      int cols[nvals];
       gridpack::ComplexType *values;
       values = new gridpack::ComplexType[nvals];
       icnt = 0;

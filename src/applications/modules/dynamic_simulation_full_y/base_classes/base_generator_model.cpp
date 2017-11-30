@@ -241,10 +241,10 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::SetGenServiceStatus (bool
 /**
  * return a vector containing any generator values that are being
  * watched
- * @return vector of watched values
+ * @param vals vector of watched values
  */
-std::vector<double> gridpack::dynamic_simulation::BaseGeneratorModel::getWatchValues()
+void gridpack::dynamic_simulation::BaseGeneratorModel::getWatchValues(
+    std::vector<double> &vals)
 {
-  std::vector<double> ret;
-  return ret;
+  vals.clear();
 }

@@ -24,7 +24,8 @@
 namespace gridpack {
 namespace powerflow {
 
-// Calling program for powerflow application
+// Calling program for powerflow application. This file has class definition
+// and methods. 
 
 class PFApp
 {

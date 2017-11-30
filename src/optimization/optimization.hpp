@@ -117,14 +117,14 @@ class NetworkOptimizer
       int me = GA_Pgroup_nodeid(grp);
       int loc_totalGen = totalGen;
 
-      int genArr[nprocs];
+      std::vector<int> genArr(nprocs);
 
       for (int p=0; p<nprocs; p++) {
         genArr[p] = 0;
       }
       genArr[me] = p_numUnits*p_numHorizons*5;
-      GA_Pgroup_igop(grp,genArr, nprocs, "+");
-      int offset[nprocs];
+      GA_Pgroup_igop(grp,&genArr[0], nprocs, "+");
+      std::vector<int> offset(nprocs);
       offset[0] = 0;
       for (int p=1; p<nprocs; p++) {
         offset[p]= offset[p-1] + genArr[p-1];
@@ -594,14 +594,14 @@ class NetworkOptimizer
       int loc_totalGen = totalGen;
 //      GA_Igop(&totalGen,1,"+");
 
-      int genArr[nprocs];
+      std::vector<int> genArr(nprocs);
 
       for (int p=0; p<nprocs; p++) {
         genArr[p] = 0;
       }
       genArr[me] = loc_totalGen;
-      GA_Pgroup_igop(grp,genArr, nprocs, "+");
-      int offset[nprocs];
+      GA_Pgroup_igop(grp,&genArr[0], nprocs, "+");
+      std::vector<int> offset(nprocs);
       offset[0] = 0;
       for (int p=1; p<nprocs; p++) {
         offset[p]= offset[p-1] + genArr[p-1];

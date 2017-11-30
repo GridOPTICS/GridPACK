@@ -16,8 +16,8 @@
 
 #include <vector>
 #include <iostream>
-#include <stdio.h>
-#include <string.h>
+#include <cstdio>
+#include <cstring>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -539,13 +539,14 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
 /**
  * return a vector containing any generator values that are being
  * watched
- * @return vector of watched values
+ * @param vals vector of watched values
  */
-std::vector<double> gridpack::dynamic_simulation::GensalGenerator::getWatchValues()
+void gridpack::dynamic_simulation::GensalGenerator::getWatchValues(
+    std::vector<double> &vals)
 {
-  std::vector<double> ret;
+  vals.clear();
   if (getWatch()) {
-    ret.push_back(x1d_1);
-    ret.push_back(x2w_1+1.0);
+    vals.push_back(x1d_1);
+    vals.push_back(x2w_1+1.0);
   }
 }
