@@ -86,7 +86,10 @@ void gridpack::goss::GOSSUtils::initGOSS(std::vector<std::string> &topics,
 
     // Create the destination (Topic or Queue)
     sprintf(topic,"topic/goss/gridpack/topic_list");
-    destination = session->createQueue(topic);
+    //destination = session->createQueue(topic);
+    printf("topic = %s\n", topic);
+    destination = session->createTopic(topic);
+
 
     // Create a MessageProducer from the Session to the Topic
     producer = session->createProducer(destination);
@@ -95,6 +98,7 @@ void gridpack::goss::GOSSUtils::initGOSS(std::vector<std::string> &topics,
     // Send topics
     std::auto_ptr<TextMessage> message_dat(
         session->createTextMessage(list));
+    printf("list: %s\n", list.c_str());
     producer->send(message_dat.get());
     // Close data connection
     // Send final message indicating that channel is being close
@@ -133,12 +137,14 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
     p_session = p_connection->createSession(Session::AUTO_ACKNOWLEDGE);
 
     // Create the destination (Topic or Queue)
-    std::string new_topic("topic/goss/gridpack/");
+    std::string new_topic("topic.goss.gridpack.");
+    //std::string new_topic("topic/goss/gridpack/");
     // Make sure there is no white space around topic
     gridpack::utility::StringUtils utils;
     utils.trim(topic);
     new_topic.append(topic);
-    p_destination = p_session->createQueue(new_topic);
+    printf("new topic = %s\n", new_topic.c_str());
+    p_destination = p_session->createTopic(new_topic);
 
     // Create a MessageProducer from the Session to the Topic
     p_producer = p_session->createProducer(p_destination);
@@ -219,7 +225,7 @@ void gridpack::goss::GOSSUtils::sendChannelMessage(const char *topic, const char
   // Create a Session
   session = connection->createSession(Session::AUTO_ACKNOWLEDGE);
   // Create the destination (Topic or Queue)
-  destination = session->createQueue(topic);
+  destination = session->createTopic(topic);
   // Create a MessageProducer from the Session to the Topic
   producer = session->createProducer(destination);
   producer->setDeliveryMode(DeliveryMode::NON_PERSISTENT);
@@ -258,7 +264,7 @@ void gridpack::goss::GOSSUtils::terminateGOSS()
 
     // Create the destination (Topic or Queue)
     sprintf(topic,"topic/goss/gridpack/close_goss");
-    destination = session->createQueue(topic);
+    destination = session->createTopic(topic);
 
     // Create a MessageProducer from the Session to the Topic
     producer = session->createProducer(destination);
