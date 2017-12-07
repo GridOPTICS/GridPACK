@@ -23,6 +23,8 @@
 # probably look better if you include math style comments at the top of the
 # routine instead of inside it.
 #
+###############################################################################
+#
 # Start parsing file. Assume that top of file is boiler plate and ignore
 # it until you hit the first preprocessor statement.
 #

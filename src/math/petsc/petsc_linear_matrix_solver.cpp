@@ -8,7 +8,7 @@
 /**
  * @file   linear_matrix_solver.cpp
  * @author William A. Perkins
- * @date   2015-03-20 06:59:05 d3g096
+ * @date   2017-12-05 10:16:00 d3g096
  * 
  * @brief  
  * 
@@ -37,7 +37,7 @@ LinearMatrixSolverT<T, I>::LinearMatrixSolverT(LinearMatrixSolverT<T, I>::Matrix
     utility::WrappedConfigurable(),
     utility::Uncopyable()
 {
-#ifdef PETSC_HAVE_SUPERLU
+#if defined(PETSC_HAVE_SUPERLU_DIST) || defined(PETSC_HAVE_MUMPS)
   p_impl.reset(new PetscLinearMatrixSolverImplementation<T, I>(A));
 #else
   p_impl.reset(new BasicLinearMatrixSolverImplementation<T, I>(A));

@@ -140,9 +140,6 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   sprintf(ioBuf,"\nConvergence tolerance: %f\n",tolerance);
   busIO.header(ioBuf);
 
-  // Partition the network
-  network->partition();
-
   // Create factory and call the load method to initialize network components
   // from information in configuration file
   gridpack::powerflow::PFFactory factory(network);
@@ -194,7 +191,7 @@ void gridpack::powerflow::PFApp::execute(int argc, char** argv)
   X->zero(); //might not need to do this
   busIO.header("\nCalling solver\n");
   solver.solve(*PQ, *X);
-  // <latex> normInfinity evaluates the norm $N=\sum_{i}|X_i|$</latex>
+  // <latex> normInfinity evaluates the norm $N=\max_{i}|X_i|$</latex>
   // The Newton-Raphson algorithm evaluates incremental changes to the solution
   // vector. When the algorithm is done, the RHS vector is zero
   tol = PQ->normInfinity();

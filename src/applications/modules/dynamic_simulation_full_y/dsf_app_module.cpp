@@ -1366,9 +1366,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
     p_generatorIO.reset(new
         gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
           p_network));
-    p_generatorIO->openChannel(topic.c_str(), URI.c_str(),
-        username.c_str(),
-        passwd.c_str());
+    p_generatorIO->openChannel(topic.c_str());
   } else {
     p_busIO->header("Unable to open channel\n");
     p_generatorWatch = false;
@@ -1422,9 +1420,7 @@ void gridpack::dynamic_simulation::DSFullApp::openLoadWatchFile()
     p_loadIO.reset(new
         gridpack::serial_io::SerialBusIO<DSFullNetwork>(512,
           p_network));
-    p_loadIO->openChannel(topic.c_str(), URI.c_str(),
-        username.c_str(),
-        passwd.c_str());
+    p_loadIO->openChannel(topic.c_str());
   } else {
     p_busIO->header("Unable to open channel\n");
     p_loadWatch = false;
