@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2016-10-03 14:28:53 d3g096
+# Last Change: 2017-12-07 08:01:16 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -48,22 +48,35 @@ target_link_libraries(pf.x ${target_libraries})
 # gridpack.petscrc is temporary -- it will be incorporated into
 # input.xml
 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  )
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/118.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/118.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/118.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/118.xml"
+  )
+
+
 add_custom_target(pf.x.input
  
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -71,10 +84,10 @@ add_custom_target(pf.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
 
 )
@@ -84,39 +97,21 @@ add_dependencies(pf.x pf.x.input)
 # install as a sample application
 # -------------------------------------------------------------
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
+# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
+#   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
-install(FILES 
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-  DESTINATION doc/gridpack/example/powerflow
-)
+# install(FILES 
+#   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+#   ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
+#   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
+#   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+#   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
+#   ${CMAKE_CURRENT_BINARY_DIR}/118.xml
+#   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+#   DESTINATION doc/gridpack/example/powerflow
+# )
 
 # -------------------------------------------------------------
 # Create simple test that runs powerflow code
 # -------------------------------------------------------------
-
-add_custom_target(pf_test_input
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-)
-
-add_dependencies (pf.x pf_test_input)
-
 gridpack_add_run_test("powerflow" pf.x "input.xml")

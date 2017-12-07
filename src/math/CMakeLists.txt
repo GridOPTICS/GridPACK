@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2017-12-06 15:17:45 d3g096
+# Last Change: 2017-12-06 15:46:15 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -91,25 +91,31 @@ if (PETSC_FOUND)
 
   set(target_libraries ${PETSC_LIBRARIES} ${target_libraries})
 
-    # PETSc-specific GridPACK configuration file(s) for test suites
-    # gridpack.petsrc is temporary.  It's used to set the PETSc options in the
-    # linear solver test.  It should not be necessary when a usable
-    # configuration system is available.
-    add_custom_target(math_test_input
+  add_custom_command(
+    OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml"
+    COMMAND ${CMAKE_COMMAND}
+    -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.xml"
+    -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml"
+    -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+    -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+    DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.xml"
+    )
+  # PETSc-specific GridPACK configuration file(s) for test suites
+  # gridpack.petsrc is temporary.  It's used to set the PETSc options in the
+  # linear solver test.  It should not be necessary when a usable
+  # configuration system is available.
+  add_custom_target(math_test_input
 
-      COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
-      ${CMAKE_CURRENT_BINARY_DIR}
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+    ${CMAKE_CURRENT_BINARY_DIR}
 
-      COMMAND ${CMAKE_COMMAND} -E copy 
-      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.xml
-      ${CMAKE_CURRENT_BINARY_DIR}
 
-      DEPENDS
-      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
-      ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.xml
-
-      )
+    DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+    ${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml
+    
+    )
 
 else()
 

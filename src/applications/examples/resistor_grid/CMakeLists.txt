@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-12-10 07:42:59 d3g096
+# Last Change: 2017-12-07 07:49:30 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -39,19 +39,25 @@ add_executable(resistor_grid.x
 
 target_link_libraries(resistor_grid.x ${target_libraries})
 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  )
+
 add_custom_target(resistor_grid.x.input
 
    COMMAND ${CMAKE_COMMAND} -E copy
    ${CMAKE_CURRENT_SOURCE_DIR}/small.raw
    ${CMAKE_CURRENT_BINARY_DIR} 
 
-   COMMAND ${CMAKE_COMMAND} -E copy
-   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-   ${CMAKE_CURRENT_BINARY_DIR} 
-
    DEPENDS
    ${CMAKE_CURRENT_SOURCE_DIR}/small.raw
-   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
 
 )
 add_dependencies(resistor_grid.x resistor_grid.x.input)
