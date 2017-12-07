@@ -1169,8 +1169,7 @@ void gridpack::dynamic_simulation_r::DSAppModule::openGeneratorWatchFile()
   if (ok) {
     p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(128,
           p_network));
-    p_generatorIO->openChannel(topic.c_str(), URI.c_str(), username.c_str(),
-        passwd.c_str());
+    p_generatorIO->openChannel(topic.c_str());
   } else {
     p_busIO->header("Unable to open channel\n");
     p_generatorWatch = false;

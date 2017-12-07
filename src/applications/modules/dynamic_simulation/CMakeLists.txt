@@ -26,9 +26,15 @@ set(target_libraries
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${GOSS_LIBRARY}
-    ${APR_LIBRARY})
+    ${MPI_CXX_LIBRARIES})
+
+if (GOSS_DIR)
+  set(target_libraries
+      ${target_libraries}
+      gridpack_goss
+      ${GOSS_LIBRARY}
+      ${APR_LIBRARY})
+endif()
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)

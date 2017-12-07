@@ -152,7 +152,7 @@ class BasePTIParser : public BaseParser<_network>
       // have been added to the system
       int nprocs = p_network->communicator().size();
       int me = p_network->communicator().rank();
-      int added_buses[nprocs];
+      std::vector<int> added_buses(nprocs);
       for (i=0; i<nprocs; i++) {
         added_buses[i] = 0;
       }
@@ -162,8 +162,8 @@ class BasePTIParser : public BaseParser<_network>
       for (i=0; i<numLoads; i++) {
         added_buses[me] += new_buses[i].size()-1;
       }
-      p_network->communicator().sum(added_buses,nprocs);
-      int offset[nprocs];
+      p_network->communicator().sum(&added_buses[0],nprocs);
+      std::vector<int> offset(nprocs);
       offset[0] = 0;
       for (i=1; i<nprocs; i++) {
         offset[i] = offset[i-1] + added_buses[i-1];
@@ -236,12 +236,12 @@ class BasePTIParser : public BaseParser<_network>
 
       // Add global indices to new local branches.
       int nbranch_new = p_network->numBranches();
-      int branch_buf[nprocs];
+      std::vector<int> branch_buf(nprocs);
       for (i=0; i<nprocs; i++) {
         branch_buf[i] = 0;
       }
       branch_buf[me] = nbranch_new-nbranch;
-      p_network->communicator().sum(branch_buf,nprocs);
+      p_network->communicator().sum(&branch_buf[0],nprocs);
       offset[0] = 0;
       for (i=1; i<nprocs; i++) {
         offset[i] = offset[i-1]+branch_buf[i-1];

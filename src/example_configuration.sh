@@ -187,7 +187,7 @@ elif [ $host == "WE32673" ]; then
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \

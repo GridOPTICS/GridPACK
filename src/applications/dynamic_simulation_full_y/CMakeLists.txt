@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-11-22 08:46:22 d3g096
+# Last Change: 2017-12-07 08:53:52 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -31,6 +31,14 @@ set(target_libraries
     ${GA_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
 
+if (GOSS_DIR)
+  set(target_libraries
+      ${target_libraries}
+      gridpack_goss
+      ${GOSS_LIBRARY}
+      ${APR_LIBRARY})
+endif()
+
 include_directories(BEFORE
  ${CMAKE_CURRENT_SOURCE_DIR}/../modules/dynamic_simulation_full_y/model_classes)
 include_directories(BEFORE
@@ -49,12 +57,19 @@ add_executable(dsf.x
 
 target_link_libraries(dsf.x ${target_libraries})
 
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  )
+
 add_custom_target(dsf.x.input
  
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_BINARY_DIR}
@@ -64,7 +79,7 @@ add_custom_target(dsf.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
 )
