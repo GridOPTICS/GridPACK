@@ -264,7 +264,6 @@ elif [ $host == "gridpackvm" ]; then
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
         -D BUILD_SHARED_LIBS:BOOL=OFF \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
 	$common_flags ..
 
 else
