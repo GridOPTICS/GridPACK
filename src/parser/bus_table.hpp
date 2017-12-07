@@ -79,6 +79,7 @@ public:
     int nval = 0;
     int nline = 0;
     gridpack::utility::StringUtils util;
+    p_headers.clear();
     if (me == 0) {
       // Cheesy hack to find out how many lines are in the file. Just open
       // the file and read all lines, then close it and open it again.
@@ -253,6 +254,7 @@ public:
       delete hash;
       p_local_idx.clear();
       p_tags.clear();
+      p_order.clear();
       for (i=0; i<bus_id.size(); i++) {
         p_local_idx.push_back(bus_id[i]);
         std::string tmp(order[i].tag);

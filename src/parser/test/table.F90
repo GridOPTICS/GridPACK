@@ -6,6 +6,8 @@ program main
   double precision rval(nval)
   stride = 3
   one = 1
+  write(6,'(a)') '# 1_2_3_4_5_6_7_8_9'
+  write(6,'(a)') '# 1 2 3 4 5 6 7 8 9'
   do i=1, maxdim
     if (mod(i,stride).eq.0) then
       do j = 1, nval
