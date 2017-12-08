@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-08 09:44:55 d3g096
+# Last Change: 2017-12-08 12:15:48 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -80,7 +80,7 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/ds_factory.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ds_factory.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ds_main.cpp
-  DESTINATION share/gridpack/example/dynamic_simplation_implicit
+  DESTINATION share/gridpack/example/dynamic_simulation_implicit
 )
 
 install(TARGETS ds_implicit.x DESTINATION bin)
