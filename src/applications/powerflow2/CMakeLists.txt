@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2016-10-03 14:30:59 d3g096
+# Last Change: 2017-12-08 08:31:53 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -105,5 +105,5 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-  DESTINATION doc/gridpack/example/powerflow2
+  DESTINATION share/gridpack/example/powerflow2
 )
