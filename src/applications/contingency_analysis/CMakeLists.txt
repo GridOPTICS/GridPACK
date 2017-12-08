@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-07 14:19:35 d3g096
+# Last Change: 2017-12-08 09:37:40 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -83,6 +83,7 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_main.cpp
   DESTINATION share/gridpack/example/contingency_analysis
 )
