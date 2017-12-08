@@ -7,7 +7,7 @@
 /**
  * @file   ca_main.cpp
  * @author Yousu Chen 
- * @date   2014-12-09 14:40:10 d3g096
+ * @date   2017-12-08 13:25:25 d3g096
  *
  * @brief
  */
@@ -17,7 +17,7 @@
 #include <ga.h>
 #include <macdecls.h>
 #include "gridpack/math/math.hpp"
-#include "gridpack/applications/contingency_analysis/ca_driver.hpp"
+#include "ca_driver.hpp"
 
 // Calling program for the contingency_analysis applications
 
