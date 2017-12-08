@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-07 07:59:01 d3g096
+# Last Change: 2017-12-07 14:19:35 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -70,6 +70,24 @@ add_custom_target(ca.x.input
   ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
 )
 add_dependencies(ca.x ca.x.input)
+
+# -------------------------------------------------------------
+# install as an example
+# -------------------------------------------------------------
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
+
+install(FILES 
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/ca_main.cpp
+  DESTINATION share/gridpack/example/contingency_analysis
+)
+
+install(TARGETS ca.x DESTINATION bin)
 
 # -------------------------------------------------------------
 # run application as test

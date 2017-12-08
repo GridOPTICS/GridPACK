@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-07 07:49:30 d3g096
+# Last Change: 2017-12-07 12:59:29 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -86,5 +86,5 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/rg_grid.F90
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${CMAKE_CURRENT_BINARY_DIR}/small.raw
-  DESTINATION doc/gridpack/example/resistor_grid
+  DESTINATION share/gridpack/example/resistor_grid
 )

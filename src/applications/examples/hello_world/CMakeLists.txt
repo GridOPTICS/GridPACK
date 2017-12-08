@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-12-10 07:41:44 d3g096
+# Last Change: 2017-12-07 12:58:51 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -71,6 +71,6 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/hw_factory.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/hw_main.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/10x10.raw
-  DESTINATION doc/gridpack/example/hello
+  DESTINATION share/gridpack/example/hello
 )
 
