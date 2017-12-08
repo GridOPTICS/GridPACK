@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-07 13:04:40 d3g096
+# Last Change: 2017-12-08 09:39:48 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -98,7 +98,7 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
   ${CMAKE_CURRENT_SOURCE_DIR}/dsf_main.cpp
-  DESTINATION share/gridpack/example/dynamic_simplation_full_y
+  DESTINATION share/gridpack/example/dynamic_simulation_full_y
 )
 
 install(TARGETS dsf.x DESTINATION bin)
