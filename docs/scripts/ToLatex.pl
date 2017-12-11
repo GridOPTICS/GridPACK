@@ -160,7 +160,11 @@ while (<STDIN>) {
         $line =~ s/\{/\\\{/g;
         $line =~ s/\}/\\\}/g;
       }
-     $line =~ s/\\\{0pt\\\}/\{0pt\}/g;
+      $line =~ s/\\\{0pt\\\}/\{0pt\}/g;
+      # Convert strings to red text
+      if (!($line =~ /\/\/.*\".*\"/) && $line =~ /(.*)(\".*\")(.*)/) {
+        $line = "$1\\textcolor\{red\}\{$2\}$3";
+      }
       print "$line\n";
     }
     if ($isDox) {
