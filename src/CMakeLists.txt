@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2017-01-10 08:40:14 d3g096
+# Last Change: 2017-12-05 13:22:23 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -163,6 +163,17 @@ endif()
 # This is probably redundant
 if (NOT PETSC_CLANGUAGE_Cxx)
   message (FATAL_ERROR "PETSc installation does not use C++ (--with-clanguage=c++)")
+endif()
+
+if (PETSC_HAVE_SUPERLU_DIST) 
+  set(GRIDPACK_MATSOLVER_PKG "superlu_dist")
+  message(STATUS "PETSc parallel LU linear solver will be from SuperLU_dist")
+elseif (PETSC_HAVE_MUMPS)
+  set(GRIDPACK_MATSOLVER_PKG "mumps")
+  message(STATUS "PETSc parallel LU linear solver will be from MUMPS")
+else()
+  set(GRIDPACK_MATSOLVER_PKG "petsc")
+  message(WARNING "Installed PETSc does not have a parallel direct solver, expect unit test failures")
 endif()
 
 # -------------------------------------------------------------
