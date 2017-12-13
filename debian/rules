@@ -3,7 +3,7 @@
 BUILDDIR = build_dir
 
 # secondly called by launchpad
-build:
+build-arch:
 	mkdir $(BUILDDIR);
 	cd $(BUILDDIR); \
 	cmake \
@@ -22,6 +22,13 @@ build:
 	-D CMAKE_INSTALL_PREFIX=../debian/tmp/usr ../src
 	make -C $(BUILDDIR)
 
+build: build-indep build-arch
+
+.PHONY: build build-arch build-indep clean
+
+build-indep:
+	# nothing to be done
+
 # thirdly called by launchpad
 binary: binary-indep binary-arch
 
@@ -31,12 +38,13 @@ binary-indep:
 binary-arch:
 	make -C $(BUILDDIR) install
 	mkdir debian/tmp/DEBIAN
-	dpkg-gencontrol -pgreet-the-world
+	dpkg-gencontrol -pgridpack-dev
 	dpkg --build debian/tmp ..
 
 # firstly called by launchpad
 clean:
 	rm -f build
+	rm -rf debian/tmp
 	rm -rf $(BUILDDIR)
 
 .PHONY: binary binary-arch binary-indep clean

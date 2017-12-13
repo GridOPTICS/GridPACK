@@ -9,9 +9,8 @@ Package: gridpack-dev
 Architecture: any
 Depends: libga-dev (>=5.3), libpetsc3.6.2-dev (>= 3.6.2), libparmetis-dev (>=4.0.3), 
   libboost-mpi-dev (>=1.58.0), libboost-all-dev (>=1.58.0)
-Summary: An open source toolkit for developing power grid simulation
-  applications for high performance computing architectures.
-Description: GridPACK(tm) is a software framework consisting of a set
+Description: An open source toolkit for developing power grid simulation applications for high performance computing architectures.
+  GridPACK(tm) is a software framework consisting of a set
   of modules designed to simplify the development of programs that model
   the power grid and run on parallel, high performance computing
   platforms. The modules are available as a library and consist of
