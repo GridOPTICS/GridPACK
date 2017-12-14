@@ -556,6 +556,45 @@ class PTI33_parser : public BasePTIParser<_network>
             atof(split_line[17].c_str()), ngen);
 
         // TODO: add variables Oi, Fi, WMOD, WPF
+        // There may be between 0 and 4 owner pairs. Determin the number
+        // of pairs by subtracting the 20 from the total number of entries in
+        // split_line
+        int owners = nstr-20;
+        if (owners%2 == 1) {
+          printf("Generator line not correctly written\n");
+        }
+        owners /= 2;
+        if (owners > 0) {
+          p_busData[l_idx]->addValue(GENERATOR_OWNER1,
+            atof(split_line[18].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_OFRAC1,
+            atof(split_line[18+owners].c_str()), ngen);
+        } else if (owners > 1) {
+          p_busData[l_idx]->addValue(GENERATOR_OWNER2,
+            atof(split_line[19].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_OFRAC2,
+            atof(split_line[19+owners].c_str()), ngen);
+        } else if (owners > 2) {
+          p_busData[l_idx]->addValue(GENERATOR_OWNER3,
+            atof(split_line[20].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_OFRAC3,
+            atof(split_line[20+owners].c_str()), ngen);
+        } else if (owners > 3) {
+          p_busData[l_idx]->addValue(GENERATOR_OWNER4,
+            atof(split_line[21].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_OFRAC4,
+            atof(split_line[21+owners].c_str()), ngen);
+        }
+
+        // Last two entries are WMOD and WPF
+        if (nstr-1 > 18) {
+          p_busData[l_idx]->addValue(GENERATOR_WMOD,
+            atoi(split_line[nstr-2].c_str()), ngen);
+        }
+        if (nstr > 19) {
+          p_busData[l_idx]->addValue(GENERATOR_WPF,
+            atof(split_line[nstr-1].c_str()), ngen);
+        }
 
         // Increment number of generators in data object
         if (ngen == 0) {

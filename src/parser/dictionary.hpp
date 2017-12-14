@@ -1860,6 +1860,76 @@
 #define GENERATOR_S12 "GENERATOR_S12"
 
 /**
+ * Generator owner 1
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_OWNER1 "GENERATOR_OWNER1"
+
+/**
+ * Generator owner 2
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_OWNER2 "GENERATOR_OWNER2"
+
+/**
+ * Generator owner 3
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_OWNER3 "GENERATOR_OWNER3"
+
+/**
+ * Generator owner 4
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_OWNER4 "GENERATOR_OWNER4"
+
+/**
+ * Generator owner 1 fraction
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_OFRAC1 "GENERATOR_OFRAC1"
+
+/**
+ * Generator owner 2 fraction
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_OFRAC2 "GENERATOR_OFRAC2"
+
+/**
+ * Generator owner 3 fraction
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_OFRAC3 "GENERATOR_OFRAC3"
+
+/**
+ * Generator owner 4 fraction
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_OFRAC4 "GENERATOR_OFRAC4"
+
+/**
+ * Generator wind mode (distinguish wind generators)
+ * type: integer
+ * indexed
+ */
+#define GENERATOR_WMOD "GENERATOR_WMOD"
+
+/**
+ * Wind generator power factor
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_WPF "GENERATOR_WPF"
+
+/**
  * Non-blank alphanumeric string to identify model being used for generator	
  * type: string
  * indexed
