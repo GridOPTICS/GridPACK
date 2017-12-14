@@ -13,12 +13,10 @@ build-arch:
 	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
 	-D MPI_C_COMPILER:STRING="mpicc" \
-	-D MPIEXEC:STRING="mpiexec" \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
-        -D BUILD_SHARED_LIBS:BOOL=OFF \
+        -D BUILD_SHARED_LIBS:BOOL=ON \
+	-D CMAKE_BUILD_TYPE:STRING="Release" \
 	-D CMAKE_INSTALL_PREFIX=../debian/tmp/usr ../src
 	make -C $(BUILDDIR)
 
@@ -36,7 +34,7 @@ binary-indep:
 	# nothing to be done
 
 binary-arch:
-	make -C $(BUILDDIR) install
+	make -C $(BUILDDIR) install/strip
 	mkdir debian/tmp/DEBIAN
 	dpkg-gencontrol -pgridpack-dev
 	dpkg --build debian/tmp ..
