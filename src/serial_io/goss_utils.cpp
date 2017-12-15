@@ -69,6 +69,7 @@ void gridpack::goss::GOSSUtils::initGOSS(std::vector<std::string> &topics,
   if (GA_Nodeid()==0) {
     char topic[128];
 
+#ifndef GOSS_DEBUG
     Connection *connection;
     Session *session;
     Destination *destination;
@@ -83,13 +84,14 @@ void gridpack::goss::GOSSUtils::initGOSS(std::vector<std::string> &topics,
 
     // Create a Session
     session = connection->createSession(Session::AUTO_ACKNOWLEDGE);
+#endif
 
     // Create the destination (Topic or Queue)
     sprintf(topic,"topic/goss/gridpack/topic_list");
     //destination = session->createQueue(topic);
     printf("topic = %s\n", topic);
+#ifndef GOSS_DEBUG
     destination = session->createTopic(topic);
-
 
     // Create a MessageProducer from the Session to the Topic
     producer = session->createProducer(destination);
@@ -98,11 +100,15 @@ void gridpack::goss::GOSSUtils::initGOSS(std::vector<std::string> &topics,
     // Send topics
     std::auto_ptr<TextMessage> message_dat(
         session->createTextMessage(list));
+#endif
     printf("list: %s\n", list.c_str());
+#ifndef GOSS_DEBUG
     producer->send(message_dat.get());
+#endif
     // Close data connection
     // Send final message indicating that channel is being close
     std::string buf = "Closing channel";
+#ifndef GOSS_DEBUG
     std::auto_ptr<TextMessage>
       end_message(session->createTextMessage(buf));
     producer->send(end_message.get());
@@ -110,6 +116,7 @@ void gridpack::goss::GOSSUtils::initGOSS(std::vector<std::string> &topics,
     if (session) delete session;
     if (destination) delete destination;
     if (producer) delete producer;
+#endif
   }
 }
 
@@ -126,6 +133,7 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
   if (!p_open && GA_Pgroup_nodeid(p_grp) == 0) {
     printf("Opening Channel\n");
 
+#ifndef GOSS_DEBUG
     std::auto_ptr<ActiveMQConnectionFactory> connectionFactory(new
         ActiveMQConnectionFactory(p_URI));
     // Create a Connection
@@ -135,6 +143,7 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
 
     // Create a Session
     p_session = p_connection->createSession(Session::AUTO_ACKNOWLEDGE);
+#endif
 
     // Create the destination (Topic or Queue)
     std::string new_topic("topic.goss.gridpack.");
@@ -144,13 +153,13 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
     utils.trim(topic);
     new_topic.append(topic);
     printf("new topic = %s\n", new_topic.c_str());
+#ifndef GOSS_DEBUG
     p_destination = p_session->createTopic(new_topic);
 
     // Create a MessageProducer from the Session to the Topic
     p_producer = p_session->createProducer(p_destination);
     p_producer->setDeliveryMode(DeliveryMode::NON_PERSISTENT);
 
-    p_open = true;
 
     char sbuf[128];
     gridpack::utility::CoarseTimer *timer =
@@ -159,6 +168,8 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
     std::auto_ptr<TextMessage>
       message(p_session->createTextMessage(sbuf));
     p_producer->send(message.get());
+#endif
+    p_open = true;
   } else {
     if (GA_Pgroup_nodeid(p_grp) == 0)
     {
@@ -174,6 +185,7 @@ void gridpack::goss::GOSSUtils::closeGOSSChannel(gridpack::parallel::Communicato
 {
   if (GA_Pgroup_nodeid(p_grp) == 0) {
     // Send final message indicating the channel is being closed
+#ifndef GOSS_DEBUG
     std::string buf = "_goss_channel_closed";
     std::auto_ptr<TextMessage> message(p_session->createTextMessage(buf));
     p_producer->send(message.get());
@@ -181,6 +193,7 @@ void gridpack::goss::GOSSUtils::closeGOSSChannel(gridpack::parallel::Communicato
     if (p_session) delete p_session;
     if (p_destination) delete p_destination;
     if (p_producer) delete p_producer;
+#endif
     p_open = false;
   }
 }
@@ -193,10 +206,15 @@ void gridpack::goss::GOSSUtils::sendGOSSMessage(std::string &text)
 {
   if (GA_Pgroup_nodeid(p_grp) == 0) {
     if (p_open) {
+#ifndef GOSS_DEBUG
       std::auto_ptr<TextMessage> message(
           p_session->createTextMessage(text));
       printf("Sending message of length %d\n",text.length());
       p_producer->send(message.get());
+#else
+      printf("Sending message of length %d\n",text.length());
+      printf("message %s\n",text.c_str());
+#endif
     } else {
       printf("No GOSS channel is open");
     }
@@ -209,6 +227,7 @@ void gridpack::goss::GOSSUtils::sendGOSSMessage(std::string &text)
 void gridpack::goss::GOSSUtils::sendChannelMessage(const char *topic, const char *URI,
     const char *username, const char *passwd, const char *msg)
 {
+#ifndef GOSS_DEBUG
   Connection *connection;
   Session *session;
   Destination *destination;
@@ -237,6 +256,7 @@ void gridpack::goss::GOSSUtils::sendChannelMessage(const char *topic, const char
   delete session;
   delete destination;
   delete producer;
+#endif
 }
 
 /**
@@ -247,6 +267,7 @@ void gridpack::goss::GOSSUtils::terminateGOSS()
   if (GA_Nodeid()==0) {
     char topic[128];
 
+#ifndef GOSS_DEBUG
     Connection *connection;
     Session *session;
     Destination *destination;
@@ -279,6 +300,7 @@ void gridpack::goss::GOSSUtils::terminateGOSS()
     if (session) delete session;
     if (destination) delete destination;
     if (producer) delete producer;
+#endif
   }
 }
 
@@ -288,10 +310,13 @@ void gridpack::goss::GOSSUtils::terminateGOSS()
 gridpack::goss::GOSSUtils::GOSSUtils()
 {
   p_open = false;
+#ifndef GOSS_DEBUG
   p_connection = NULL;
   p_session = NULL;
   p_destination = NULL;
   p_producer = NULL;
+  activemq::library::ActiveMQCPP::initializeLibrary();
+#endif
   p_grp = GA_Pgroup_get_world();
 }
 

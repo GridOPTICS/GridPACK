@@ -72,10 +72,6 @@ main(int argc, char **argv)
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-#ifdef USE_GOSS
-  activemq::library::ActiveMQCPP::initializeLibrary();
-#endif
-
   // Intialize Math libraries
   gridpack::math::Initialize();
 

@@ -18,12 +18,19 @@
 #ifndef _goss_utils_h_
 #define _goss_utils_h_
 
+//#define GOSS_DEBUG
+
+#ifdef GOSS_DEBUG
+#define USE_GOSS
+#endif
+
 #ifdef USE_GOSS
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/utilities/exception.hpp"
+#ifndef GOSS_DEBUG
 #include <activemq/library/ActiveMQCPP.h>
 #include <decaf/lang/Thread.h>
 #include <decaf/lang/Runnable.h>
@@ -45,6 +52,7 @@ using namespace decaf::util::concurrent;
 using namespace decaf::util;
 using namespace decaf::lang;
 using namespace cms;
+#endif
 
 namespace gridpack {
 namespace goss {
@@ -126,10 +134,12 @@ class GOSSUtils {
   std::string p_username;
   std::string p_passwd;
 
+#ifndef GOSS_DEBUG
   Connection *p_connection;
   Session *p_session;
   Destination *p_destination;
   MessageProducer *p_producer;
+#endif
   bool p_open;
   int p_grp;
   /**
