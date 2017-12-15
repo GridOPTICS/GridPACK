@@ -1,3 +1,9 @@
+gridpack (3.1.0ppa2) xenial; urgency=low
+
+  * Really update dependencies
+
+ -- William A. Perkins <william.perkins@pnnl.gov>  Fri, 15 Dec 2017 13:41:46 -0800
+
 gridpack (3.1.0ppa1) xenial; urgency=low
 
   * Update dependencies
