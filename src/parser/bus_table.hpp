@@ -40,7 +40,7 @@ namespace bus_table {
 
 typedef struct {
   int order;
-  char tag[2];
+  char tag[3];
 } table_t;
 
 // -------------------------------------------------------------
@@ -218,6 +218,7 @@ public:
           std::string tag = split_line[1];
           std::string new_tag = util.clean2Char(tag);
           strncpy(data.tag,new_tag.c_str(),2);
+          data.tag[2] = '\0';
           bus_id.push_back(atoi(split_line[0].c_str()));
           order.push_back(data);
           for (i=0; i<nval; i++) {
