@@ -17,7 +17,8 @@ build-arch:
         -D GLPK_ROOT_DIR:PATH="/usr" \
         -D BUILD_SHARED_LIBS:BOOL=ON \
 	-D CMAKE_BUILD_TYPE:STRING="Release" \
-	-D CMAKE_INSTALL_PREFIX=../debian/tmp/usr ../src
+	-D CMAKE_INSTALL_PREFIX:PATH="/usr" \
+	../src
 	make -C $(BUILDDIR)
 
 build: build-indep build-arch
@@ -34,7 +35,7 @@ binary-indep:
 	# nothing to be done
 
 binary-arch:
-	make -C $(BUILDDIR) install/strip
+	make -C $(BUILDDIR) install/strip  DESTDIR="../debian/tmp/"
 	mkdir debian/tmp/DEBIAN
 	dpkg-gencontrol -pgridpack-dev
 	dpkg --build debian/tmp ..
