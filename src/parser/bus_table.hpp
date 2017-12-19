@@ -40,7 +40,7 @@ namespace bus_table {
 
 typedef struct {
   int order;
-  char tag[2];
+  char tag[3];
 } table_t;
 
 // -------------------------------------------------------------
@@ -79,6 +79,7 @@ public:
     int nval = 0;
     int nline = 0;
     gridpack::utility::StringUtils util;
+    p_headers.clear();
     if (me == 0) {
       // Cheesy hack to find out how many lines are in the file. Just open
       // the file and read all lines, then close it and open it again.
@@ -217,6 +218,7 @@ public:
           std::string tag = split_line[1];
           std::string new_tag = util.clean2Char(tag);
           strncpy(data.tag,new_tag.c_str(),2);
+          data.tag[2] = '\0';
           bus_id.push_back(atoi(split_line[0].c_str()));
           order.push_back(data);
           for (i=0; i<nval; i++) {
@@ -253,6 +255,7 @@ public:
       delete hash;
       p_local_idx.clear();
       p_tags.clear();
+      p_order.clear();
       for (i=0; i<bus_id.size(); i++) {
         p_local_idx.push_back(bus_id[i]);
         std::string tmp(order[i].tag);

@@ -70,8 +70,6 @@ if (GOSS_DIR)
     )
 
   add_dependencies(test_goss test_goss_input)
-  set (goss_files
-    goss_utils.hpp)
 
   install(TARGETS 
     gridpack_goss
@@ -84,7 +82,7 @@ endif()
 # -------------------------------------------------------------
 install(FILES 
   serial_io.hpp
-  ${goss_files}
+  goss_utils.hpp
   DESTINATION include/gridpack/serial_io
 )
 
