@@ -734,6 +734,10 @@ class PTI33_parser : public BasePTIParser<_network>
             atoi(split_line[13].c_str()), nelems);
 
         // TODO: add variables LEN, Oi, Fi
+
+        // Add BRANCH_TAP with value 1.0
+        p_branchData[l_idx]->addValue(BRANCH_TAP,1.0,nelems);
+
         nelems++;
         p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
         std::getline(input, line);
