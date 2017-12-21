@@ -91,7 +91,7 @@ public:
       } else {
         std::string line;
         // Check to see if any lines are comments
-        if (std::getline(input,line)) {
+        if (!std::getline(input,line).eof()) {
           util.trim(line);
           bool found = true;
           while (line[0] == '#') {
@@ -100,7 +100,7 @@ public:
             line[0] = ' ';
             util.trim(line);
             p_headers.push_back(line);
-            found = std::getline(input,line);
+            found = !std::getline(input,line).eof();
           }
           if (found) {
             util.trim(line);
@@ -110,7 +110,7 @@ public:
             nval = split_line.size() - 2;
             if (nval > 0) {
               nline = 1;
-              while(std::getline(input,line)) {
+              while(!std::getline(input,line).eof()) {
                 nline++;
               }
             } else {
@@ -204,7 +204,7 @@ public:
         input.open(filename.c_str());
         std::vector<std::string> split_line;
         std::string line;
-        while(std::getline(input,line)) {
+        while(!std::getline(input,line).eof()) {
           while (line[0] == '#') {
             // Line is a comment. Store as a string for use elsewhere after
             // removing the comment character (#)
