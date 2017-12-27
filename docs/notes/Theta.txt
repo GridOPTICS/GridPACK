@@ -1,0 +1,116 @@
+Set environment with:
+
+module unload PrgEnv-intel
+module load PrgEnv-gnu
+module unload darshan
+
+Boost_1.61.0:
+
+Configure and build with the following script:
+
+cat << EOF > ~/user-config.jam
+using mpi : : <find-shared-library>mpich ; using gcc : : : <compileflags>-I${MPICH_DIR}/include <linkflags>-L${MPICH_DIR}/lib ;
+EOF
+sh ./bootstrap.sh \
+    --prefix="/home/bjpalmer/software/boost_1_61_0" \
+   --without-icu \
+   --with-toolset=gcc \
+   --without-libraries=python
+./b2 -a -d+2 link=static stage
+./b2 -a -d+2 link=static install
+rm -f ~/user-config.jam
+
+PETSc-3.8.3:
+
+Configure PETSc with
+
+python ./config/configure.py \
+   PETSC_ARCH=gnu-cxx-complex-test-opt \
+   --with-mpi=1 \
+   --with-batch \
+   --known-mpi-shared-libraries \
+   --with-cc=cc \
+   --with-fc=ftn \
+   --with-cxx=CC \
+   --with-c++-support=1 \
+   --with-c-support=0 \
+   --with-fortran=0 \
+   --with-scalar-type=complex \
+   --with-fortran-kernels=0 \
+   --download-superlu_dist \
+   --download-superlu \
+   --download-parmetis \
+   --download-metis \
+   --download-f2cblaslapack=1 \
+   --with-clanguage=c++ \
+   --with-x=0 \
+   --with-pic=1\
+   --with-mpirun=aprun \
+   --with-mpiexec=aprun \
+   --with-debugging=0 \
+   --with-clib-autodetect=0 \
+   --with-fortranlib-autodetect=0 \
+   --with-cxxlib-autodetect=0 \
+   LIBS=-lstdc++
+
+The "--with-batch" option causes the build to stop so it can pick up some
+information about the batch queue system that allows you to run tests. Just
+follow the instructions that are printed out from PETSc and you should be
+okay. If you are building someplace where you can launch jobs then it should
+be straightforward. After running the script above, you should see the file
+conftest-gnu-cxx-complex-test-opt in your build directory. The run the
+conftest-gnu-cxx-complex-test-opt script on 1 node by submitting
+it to the batch queue. The job will generate the file
+reconfigure-gnu-cxx-complex-test-opt.py. Run the python script in the PETSc
+directory and follow instructions to finish building PETSc.
+
+GA-5-6-2:
+
+Configure ga-5-6-2 with the following:
+
+./configure \
+  --with-mpi-pr \
+  --disable-f77 \
+  --enable-i4 \
+  --enable-cxx \
+  --enable-autodetect \
+  --enable-shared=no \
+  --enable-static=yes \
+  --prefix=/home/bjpalmer/software/ga-5-6-2/build_pr \
+  cross_compiling=yes CC=cc CXX=CC F77=ftn \
+  MPICC=cc MPICXX=CC MPIF77=ftn MPIF90=ftn
+
+After configuring, type "make; make install"
+
+GridPACK:
+
+Configure GridPACK with the following script (some of this stuff may be
+unnecessary or irrelevant, but the file seems to work and it would take too
+long to clean it up):
+
+export CFLAGS='-pthread -lrt -lstdc++'
+export CXXFLAGS='-pthread -lrt -lstdc++'
+
+cmake -Wdev \
+       -D BOOST_ROOT:STRING='/home/bjpalmer/software/boost_1_61_0' \
+       -D GA_DIR:STRING='/home/bjpalmer/software/ga-5-6-2/build_pr' \
+       -D CMAKE_INSTALL_PREFIX:PATH='/home/bjpalmer/gridpack/src/build/install' \
+       -D PETSC_DIR:STRING='/home/bjpalmer/software/petsc-3.8.3' \
+       -D PETSC_ARCH:STRING='gnu-cxx-complex-test-opt' \
+       -D PARMETIS_DIR:STRING= \
+         '/home/bjpalmer/software/petsc-3.8.3/gnu-cxx-complex-test-opt/lib' \
+       -D MPI_LIBRARY:STRING='/opt/cray/pe/mpt/7.6.3/gni/mpich-gnu/5.1/lib/libmpich.a' \
+       -D MPI_EXTRA_LIBRARY:STRING='/opt/cray/pe/mpt/7.6.3/gni/mpich-gnu/5.1/lib/libmpich.a' \
+       -D MPI_CXX_COMPILER:STRING='CC' \
+       -D MPI_C_COMPILER:STRING='cc' \
+       -D MPIEXEC:STRING='aprun' \
+       -D GA_EXTRA_LIBS:STRING='-pthread -lrt' \
+       -D ENABLE_CRAY_BUILD:BOOL=true \
+       -D CHECK_COMPILATION_ONLY:BOOL=true \
+       -D USE_PROGRESS_RANKS:BOOL=true \
+       -D CMAKE_BUILD_TYPE:STRING='RELWITHDEBINFO' \
+       -D CMAKE_VERBOSE_MAKEFILE:STRING=TRUE \
+       CFLAGS=-pthread CXXFLAGS=-pthread LIBS=-lrt \
+       ..
+
+Note that because the CMake FindMPI module totally fails on the Cray OS, it is necessary to specify MPI_LIBRARY and MPI_EXTRA_LIBRARY. To find out where these are located, type "CC -v", pipe the output to a file and then search for "mpich". Use the same library for both MPI_LIBRARY and MPI_EXTRA_LIBRARY. CMake doesn't like having MPI_EXTRA_LIBRARY not set.

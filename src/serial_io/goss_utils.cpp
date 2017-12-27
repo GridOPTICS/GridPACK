@@ -112,12 +112,25 @@ void gridpack::goss::GOSSUtils::initGOSS(std::vector<std::string> &topics,
     std::auto_ptr<TextMessage>
       end_message(session->createTextMessage(buf));
     producer->send(end_message.get());
+    std::string acknowledge_topic("topic.goss.gridpack.acknowledge");
+    std::auto_ptr<Destination> dest(session->createTopic(acknowledge_topic));
+    std::auto_ptr<MessageConsumer> consumer(session->createConsumer(dest.get()));
+    std::cout << "Waiting for messages..."<<std::endl;
+
+    std::auto_ptr<Message> message(consumer->receive());
+    const TextMessage *txtMsg = dynamic_cast<const TextMessage*>(message.get());
+    if (txtMsg->getText() != "success") {
+      std::cout << "Message failure: "<<txtMsg->getText()<<std::endl;
+    }
+
     if (connection) delete connection;
     if (session) delete session;
     if (destination) delete destination;
     if (producer) delete producer;
 #endif
   }
+  gridpack::parallel::Communicator world;
+  world.barrier();
 }
 
 /**
