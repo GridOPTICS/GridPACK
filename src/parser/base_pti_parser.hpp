@@ -1610,6 +1610,18 @@ class BasePTIParser : public BaseParser<_network>
       p_branchMap = branchMap;
     }
 
+    /**
+     * Remove comment from string (all text after a single '/' character)
+     */
+    void cleanComment(std::string &string)
+    {
+      int idx = string.find_first_of('/',0);
+      if (idx != std::string::npos) {
+        int len = string.length()-idx;
+        string.erase(idx,len);
+      }
+    }
+
 
     /* ************************************************************************
      **************************************************************************

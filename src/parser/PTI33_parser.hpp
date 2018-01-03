@@ -187,6 +187,7 @@ class PTI33_parser : public BasePTIParser<_network>
       }
       std::vector<std::string>  split_line;
 
+      this->cleanComment(line)
       boost::algorithm::split(split_line, line, boost::algorithm::is_any_of(","),
           boost::token_compress_on);
 
@@ -227,6 +228,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
         boost::shared_ptr<gridpack::component::DataCollection>
@@ -287,6 +289,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
 
@@ -391,6 +394,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
 
@@ -464,6 +468,7 @@ class PTI33_parser : public BasePTIParser<_network>
       std::getline(input, line); //this should be the first line of the block
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
 
@@ -559,39 +564,58 @@ class PTI33_parser : public BasePTIParser<_network>
         // There may be between 0 and 4 owner pairs. Determin the number
         // of pairs by subtracting the 20 from the total number of entries in
         // split_line
-        int owners = nstr-20;
+        int owners = nstr-18;
         if (owners%2 == 1) {
           printf("Generator line not correctly written\n");
         }
         owners /= 2;
-        if (owners > 0) {
+        if (owners > 4) owners = 4;
+        int ocnt = 0;
+        int pr_sum = 0.0;
+        bool not_done = true;
+        if (owners > 0 && not_done) {
           p_busData[l_idx]->addValue(GENERATOR_OWNER1,
             atof(split_line[18].c_str()), ngen);
           p_busData[l_idx]->addValue(GENERATOR_OFRAC1,
-            atof(split_line[18+owners].c_str()), ngen);
-        } else if (owners > 1) {
-          p_busData[l_idx]->addValue(GENERATOR_OWNER2,
             atof(split_line[19].c_str()), ngen);
-          p_busData[l_idx]->addValue(GENERATOR_OFRAC2,
-            atof(split_line[19+owners].c_str()), ngen);
-        } else if (owners > 2) {
-          p_busData[l_idx]->addValue(GENERATOR_OWNER3,
+          ocnt++;
+          pr_sum += atof(split_line[19].c_str());
+          if (fabs(pr_sum-1.0) < 1.0e-10) not_done = false;
+        }
+        if (owners > 1 && not_done) {
+          p_busData[l_idx]->addValue(GENERATOR_OWNER2,
             atof(split_line[20].c_str()), ngen);
-          p_busData[l_idx]->addValue(GENERATOR_OFRAC3,
-            atof(split_line[20+owners].c_str()), ngen);
-        } else if (owners > 3) {
-          p_busData[l_idx]->addValue(GENERATOR_OWNER4,
+          p_busData[l_idx]->addValue(GENERATOR_OFRAC2,
             atof(split_line[21].c_str()), ngen);
+          ocnt++;
+          pr_sum += atof(split_line[21].c_str());
+          if (fabs(pr_sum-1.0) < 1.0e-10) not_done = false;
+        }
+        if (owners > 2 && not_done) {
+          p_busData[l_idx]->addValue(GENERATOR_OWNER3,
+            atof(split_line[22].c_str()), ngen);
+          p_busData[l_idx]->addValue(GENERATOR_OFRAC3,
+            atof(split_line[23].c_str()), ngen);
+          ocnt++;
+          pr_sum += atof(split_line[23].c_str());
+          if (fabs(pr_sum-1.0) < 1.0e-10) not_done = false;
+        }
+        if (owners > 3 && not_done) {
+          p_busData[l_idx]->addValue(GENERATOR_OWNER4,
+            atof(split_line[24].c_str()), ngen);
           p_busData[l_idx]->addValue(GENERATOR_OFRAC4,
-            atof(split_line[21+owners].c_str()), ngen);
+            atof(split_line[25].c_str()), ngen);
+          ocnt++;
+          pr_sum += atof(split_line[25].c_str());
+          if (fabs(pr_sum-1.0) < 1.0e-10) not_done = false;
         }
 
         // Last two entries are WMOD and WPF
-        if (nstr-1 > 18) {
+        if (nstr-1 > 18+2*ocnt) {
           p_busData[l_idx]->addValue(GENERATOR_WMOD,
             atoi(split_line[nstr-2].c_str()), ngen);
         }
-        if (nstr > 19) {
+        if (nstr > 19+2*ocnt) {
           p_busData[l_idx]->addValue(GENERATOR_WPF,
             atof(split_line[nstr-1].c_str()), ngen);
         }
@@ -621,6 +645,7 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::pair<int, int> branch_pair;
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
 
@@ -775,6 +800,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
         int o_idx1, o_idx2;
@@ -788,6 +814,7 @@ class PTI33_parser : public BasePTIParser<_network>
             int o_idx3 = k;
             std::getline(input, line);
             std::vector<std::string>  split_line2;
+            this->cleanComment(line)
             boost::split(split_line2, line, boost::algorithm::is_any_of(","),
                 boost::token_compress_on);
             // Check to see if transformer is active
@@ -914,6 +941,7 @@ class PTI33_parser : public BasePTIParser<_network>
             p_branchData.push_back(data1);
             std::getline(input, line);
             std::vector<std::string> split_line3;
+            this->cleanComment(line)
             boost::split(split_line3, line, boost::algorithm::is_any_of(","),
                 boost::token_compress_on);
             double windv, ang, ratea, rateb, ratec;
@@ -949,6 +977,7 @@ class PTI33_parser : public BasePTIParser<_network>
             p_branchData.push_back(data2);
             std::getline(input, line);
             std::vector<std::string> split_line4;
+            this->cleanComment(line)
             boost::split(split_line4, line, boost::algorithm::is_any_of(","),
                 boost::token_compress_on);
             parse3WindXForm(split_line4, &windv, &ang, &ratea, &rateb, &ratec);
@@ -983,6 +1012,7 @@ class PTI33_parser : public BasePTIParser<_network>
             p_branchData.push_back(data3);
             std::getline(input, line);
             std::vector<std::string> split_line5;
+            this->cleanComment(line)
             boost::split(split_line5, line, boost::algorithm::is_any_of(","),
                 boost::token_compress_on);
             parse3WindXForm(split_line5, &windv, &ang, &ratea, &rateb, &ratec);
@@ -1020,16 +1050,19 @@ class PTI33_parser : public BasePTIParser<_network>
         } else {
           std::getline(input, line);
           std::vector<std::string>  split_line2;
+          this->cleanComment(line)
           boost::split(split_line2, line, boost::algorithm::is_any_of(","),
               boost::token_compress_on);
 
           std::getline(input, line);
           std::vector<std::string>  split_line3;
+          this->cleanComment(line)
           boost::split(split_line3, line, boost::algorithm::is_any_of(","),
               boost::token_compress_on);
 
           std::getline(input, line);
           std::vector<std::string>  split_line4;
+          this->cleanComment(line)
           boost::split(split_line4, line, boost::algorithm::is_any_of(","),
               boost::token_compress_on);
           // find branch corresponding to this transformer line. If it doesn't
@@ -1210,6 +1243,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_on);
 
@@ -1254,6 +1288,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
         std::getline(input, line);
       }
@@ -1267,6 +1302,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
         std::getline(input, line);
       }
@@ -1283,6 +1319,7 @@ class PTI33_parser : public BasePTIParser<_network>
       std::getline(input, line); //this should be the first line of the block
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
 
         /*
@@ -1472,6 +1509,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
+        this->cleanComment(line)
         boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_on);
 #if 0
         std::vector<gridpack::component::DataCollection>   imped_corr_instance;
