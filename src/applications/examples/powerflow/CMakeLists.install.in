@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2014-02-24 11:29:36 d3g096
+# Last Change: 2017-12-08 11:28:36 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.6.4)
@@ -46,11 +46,21 @@ add_custom_target(powerflow.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
 )
 add_dependencies(powerflow.x powerflow.input)

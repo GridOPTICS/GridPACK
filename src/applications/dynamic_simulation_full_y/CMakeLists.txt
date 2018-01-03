@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-06 15:50:42 d3g096
+# Last Change: 2017-12-08 09:39:48 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -85,6 +85,25 @@ add_custom_target(dsf.x.input
 )
 
 add_dependencies(dsf.x dsf.x.input)
+
+# -------------------------------------------------------------
+# install as an example
+# -------------------------------------------------------------
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
+
+install(FILES 
+  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/dsf_main.cpp
+  DESTINATION share/gridpack/example/dynamic_simulation_full_y
+)
+
+install(TARGETS dsf.x DESTINATION bin)
+  
+
 
 # -------------------------------------------------------------
 # run application as test

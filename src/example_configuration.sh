@@ -208,6 +208,41 @@ elif [ $host == "olympus.local" ]; then
 	-D MPIEXEC:STRING='mpiexec' \
 	$common_flags ..
 
+elif [ $host == "tlaloc" ]; then
+
+    # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
+    # Boost 1.55, GA 5.6.2, and PETSc 3.6.4 built by hand.  Available
+    # Boost, GA, and PETSc packages were either too old or installed
+    # in such a way as to be unrecognizable.
+
+    prefix="/file0/perksoft"
+    CC="/opt/rh/devtoolset-4/root/usr/bin/gcc"
+    CC="/usr/bin/gcc"
+    export CC
+    CXX="/opt/rh/devtoolset-4/root/usr/bin/g++"
+    CXX="/usr/bin/g++"
+    export CXX
+    CXXFLAGS="-I/usr/include/openmpi-x86_64"
+    LDFLAGS="-L/usr/lib64/openmpi"
+    export CXXFLAGS LDFLAGS
+
+    cmake -Wdev --debug-trycompile \
+          -D GA_DIR:PATH="${prefix}/ga-c++" \
+          -D BOOST_ROOT:PATH="${prefix}" \
+          -D USE_PROGRESS_RANKS:BOOL=OFF \
+          -D PETSC_DIR:PATH="${prefix}/petsc-3.6.4" \
+          -D PETSC_ARCH:STRING="linux-gnu44-real-opt" \
+          -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
+          -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
+          -D MPIEXEC:STRING="/usr/lib64/openmpi/bin/mpiexec" \
+          -D USE_GLPK:BOOL=OFF \
+          -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+          -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+          -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
+          $common_flags ..
+
+    
+
 elif [ $host == "gridpackvm" ]; then
 
     prefix="$HOME/gridpack"
@@ -229,7 +264,7 @@ elif [ $host == "gridpackvm" ]; then
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
         -D BUILD_SHARED_LIBS:BOOL=OFF \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
+        -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
 	$common_flags ..
 
 else

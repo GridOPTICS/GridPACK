@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-07 08:01:16 d3g096
+# Last Change: 2017-12-07 08:54:26 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -111,7 +111,10 @@ add_dependencies(pf.x pf.x.input)
 #   DESTINATION doc/gridpack/example/powerflow
 # )
 
+install(TARGETS pf.x DESTINATION bin)
+  
 # -------------------------------------------------------------
 # Create simple test that runs powerflow code
 # -------------------------------------------------------------
 gridpack_add_run_test("powerflow" pf.x "input.xml")
+

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-07 07:59:41 d3g096
+# Last Change: 2017-12-07 12:59:57 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -116,6 +116,6 @@ install(FILES
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}/118.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-  DESTINATION doc/gridpack/example/powerflow
+  DESTINATION share/gridpack/example/powerflow
 )
 

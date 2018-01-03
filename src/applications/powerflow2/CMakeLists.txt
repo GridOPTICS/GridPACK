@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2016-10-03 14:30:59 d3g096
+# Last Change: 2017-12-08 09:48:49 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -95,15 +95,15 @@ add_dependencies(powerflow2 powerflow2.x.input)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
-install(FILES 
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.hpp  
-  ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-  DESTINATION doc/gridpack/example/powerflow2
-)
+# install(FILES 
+#   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+#   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.cpp
+#   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.cpp
+#   ${CMAKE_CURRENT_SOURCE_DIR}/pf_app2.hpp  
+#   ${CMAKE_CURRENT_SOURCE_DIR}/pf_factory.hpp
+#   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+#   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+#   ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
+#   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+#   DESTINATION share/gridpack/example/powerflow2
+# )

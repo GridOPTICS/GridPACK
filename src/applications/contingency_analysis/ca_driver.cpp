@@ -7,7 +7,7 @@
 /**
  * @file   ca_driver.cpp
  * @author Bruce Palmer
- * @date   February 10, 2014
+ * @date   2017-12-08 13:12:46 d3g096
  *
  * @brief Driver for contingency analysis calculation that make use of the
  *        powerflow module to implement individual power flow simulations for
@@ -20,7 +20,7 @@
 
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
-#include "gridpack/applications/contingency_analysis/ca_driver.hpp"
+#include "ca_driver.hpp"
 
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently

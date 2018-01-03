@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2017-12-08 09:50:43 d3g096
+# Last Change: 2017-12-07 14:42:05 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.6.4)
@@ -22,7 +22,7 @@ endif()
 
 include("${GRIDPACK_DIR}/lib/GridPACK.cmake")
 
-project(PowerFlow)
+project(DynamicSimulation)
 
 enable_language(CXX)
 
@@ -32,36 +32,31 @@ add_definitions(${GRIDPACK_DEFINITIONS})
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS})
 
-add_executable(powerflow.x
-  pf_main.cpp
-  pf_app.cpp
-  pf_factory.cpp
+add_executable(ds.x
+   ds_main.cpp
 )
-target_link_libraries(powerflow.x ${GRIDPACK_LIBS})
 
-add_custom_target(powerflow.input
+target_link_libraries(ds.x ${GRIDPACK_LIBS})
+
+add_custom_target(ds.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
   ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
 )
-add_dependencies(powerflow.x powerflow.input)
+
+add_dependencies(ds.x ds.x.input)
 
