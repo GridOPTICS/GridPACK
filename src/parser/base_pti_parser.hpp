@@ -168,7 +168,7 @@ class BasePTIParser : public BaseParser<_network>
       for (i=1; i<nprocs; i++) {
         offset[i] = offset[i-1] + added_buses[i-1];
       }
-      // Assign new indices to the new buses
+      // Assign new original indices to the new buses
       int icnt = 0;
       int idx;
       std::vector<std::vector<int> > local_bus;
@@ -216,6 +216,9 @@ class BasePTIParser : public BaseParser<_network>
           icnt++;
         }
       }
+      // Completely reset global indices
+      p_network->resetGlobalIndices(true);
+#if 0
       // Assign global indices to new buses.
       icnt = 0;
       int lcnt = 0;
@@ -256,7 +259,7 @@ class BasePTIParser : public BaseParser<_network>
 
       // Reset remaining indices
       p_network->resetGlobalIndices(false);
-
+#endif
     }
 
     /**
