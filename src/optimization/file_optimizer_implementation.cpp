@@ -63,6 +63,15 @@ FileOptimizerImplementation::p_configure(utility::Configuration::CursorPtr props
 }
 
 // -------------------------------------------------------------
+// FileOptimizerImplementation::p_setFilename
+// -------------------------------------------------------------
+void
+FileOptimizerImplementation::p_setFilename(std::string file)
+{
+  p_outputName = file;
+}
+
+// -------------------------------------------------------------
 // FileOptimizerImplementation::p_temporaryFile
 // -------------------------------------------------------------
 std::string

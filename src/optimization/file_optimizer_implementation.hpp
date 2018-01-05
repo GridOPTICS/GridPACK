@@ -58,6 +58,9 @@ protected:
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
 
+  /// Specialized way to set file name
+  void p_setFilename(std::string file);
+
   /// Open a stream to a new temporary file
   virtual std::string p_temporaryFileName(void);
 

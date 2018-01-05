@@ -54,6 +54,9 @@ protected:
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
 
+  /// Specialized way to set file name
+  void p_setFilename(std::string file);
+
   /// Write an Julia file to the specified stream
   void p_write(const p_optimizeMethod& m, std::ostream& out);
 

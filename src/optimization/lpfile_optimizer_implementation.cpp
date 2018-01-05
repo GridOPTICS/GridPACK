@@ -312,6 +312,15 @@ LPFileOptimizerImplementation::p_configure(utility::Configuration::CursorPtr pro
 }
 
 // -------------------------------------------------------------
+// LPFileOptimizerImplementation::p_setFilename
+// -------------------------------------------------------------
+void LPFileOptimizerImplementation::p_setFilename(std::string file)
+{
+  FileOptimizerImplementation::p_setFilename(file);
+  p_outputName += ".lp";
+}
+
+// -------------------------------------------------------------
 // LPFileOptimizerImplementation::p_write
 // -------------------------------------------------------------
 void

@@ -50,6 +50,12 @@ public:
   virtual ~OptimizerInterface(void)
   {}
 
+  /// Set filename for output
+  virtual void setFilename(std::string file)
+  {
+    this->p_setFilename(file);
+  }
+
   /// Add a (local) variable to be optimized
   void addVariable(VariablePtr v)
   {
@@ -105,6 +111,9 @@ protected:
 
   /// Ways in which the objective can be optimized
   enum p_optimizeMethod { Maximize, Minimize };
+
+  /// Set file name for results (specialized)
+  virtual void p_setFilename(std::string file) = 0;
   
   /// Add a (local) variable to be optimized (specialized)
   virtual void p_addVariable(VariablePtr v) = 0;
@@ -254,6 +263,11 @@ protected:
   }
 
   void p_preconfigure(utility::Configuration::CursorPtr theprops);
+
+  void p_setFilename(std::string file)
+  {
+    p_impl->setFilename(file);
+  }
 
   /// Add a (local) variable to be optimized (specialized)
   void p_addVariable(VariablePtr v)

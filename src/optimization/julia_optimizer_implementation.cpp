@@ -314,10 +314,16 @@ JuliaOptimizerImplementation::p_configure(utility::Configuration::CursorPtr prop
 {
   FileOptimizerImplementation::p_configure(props);
   p_outputName += ".jl";
-
-  
 }
 
+// -------------------------------------------------------------
+// JuliaOptimizerImplementation::p_setFilename
+// -------------------------------------------------------------
+void JuliaOptimizerImplementation::p_setFilename(std::string file)
+{
+  FileOptimizerImplementation::p_setFilename(file);
+  p_outputName += ".jl";
+}
 
 // -------------------------------------------------------------
 // JuliaOptimizerImplementation::p_write

@@ -53,6 +53,9 @@ protected:
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props);
 
+  /// Specialized way to set file name
+  void p_setFilename(std::string file);
+ 
   /// Write an LP file to the specified stream
   virtual void p_write(const p_optimizeMethod& m, std::ostream& out);
 

@@ -24,6 +24,8 @@
 #include "gridpack/math/vector.hpp"
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/linear_solver.hpp"
+#include "gridpack/optimization/optimization.hpp"
+#include "gridpack/optimization/optimizer.hpp"
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/parallel/environment.hpp"
 #include "gridpack/parallel/ga_shuffler.hpp"
