@@ -1615,6 +1615,7 @@ class BasePTIParser : public BaseParser<_network>
 
     /**
      * Remove comment from string (all text after a single '/' character)
+     * @param string line of text to be cleaned
      */
     void cleanComment(std::string &string)
     {
@@ -1625,6 +1626,16 @@ class BasePTIParser : public BaseParser<_network>
       }
     }
 
+    /**
+     * Check to see if string is blank
+     * @return true if no non-blank characters are found
+     */
+    bool isBlank(std::string string)
+    {
+      int idx = string.find_first_not_of(' ',0);
+      if (idx != std::string::npos) return false;
+      return true;
+    }
 
     /* ************************************************************************
      **************************************************************************
