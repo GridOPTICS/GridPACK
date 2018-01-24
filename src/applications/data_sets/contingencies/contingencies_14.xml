@@ -9,8 +9,20 @@
         <contingencyLineNames> B1 </contingencyLineNames>
       </Contingency>
       <Contingency>
-        <contingencyType>Generator</contingencyType>
+        <contingencyType>Line</contingencyType>
         <contingencyName>CTG2</contingencyName>
+        <contingencyLineBuses> 13 14</contingencyLineBuses>
+        <contingencyLineNames> B2 </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>CTG3</contingencyName>
+        <contingencyLineBuses> 13 14</contingencyLineBuses>
+        <contingencyLineNames> B3 </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>CTG4</contingencyName>
         <contingencyBuses> 2  </contingencyBuses>
         <contingencyGenerators>1 </contingencyGenerators>
       </Contingency>

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Contingency_analysis>
-    <contingencyList>contingencies.xml</contingencyList>
+    <contingencyList>contingencies_14.xml</contingencyList>
     <groupSize>2</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
