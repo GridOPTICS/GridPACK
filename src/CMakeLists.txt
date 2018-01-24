@@ -286,6 +286,7 @@ endif()
 # -------------------------------------------------------------
 
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(GRIDPACK_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/applications/data_sets)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (ENABLE_CRAY_BUILD)

@@ -49,30 +49,50 @@ target_link_libraries(pf.x ${target_libraries})
 # input.xml
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
   )
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/118.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/118.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/118.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/118.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_118.xml"
+  )
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_polish.xml"
+  )
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_european.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_european.xml"
   )
 
 
 add_custom_target(pf.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -80,15 +100,27 @@ add_custom_target(pf.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+  ${GRIDPACK_DATA_DIR}/raw/118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-  ${CMAKE_CURRENT_BINARY_DIR}/118.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
+  ${GRIDPACK_DATA_DIR}/raw/118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml
+  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_european.xml
+  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
 
 )
 add_dependencies(pf.x pf.x.input)
@@ -96,20 +128,6 @@ add_dependencies(pf.x pf.x.input)
 # -------------------------------------------------------------
 # install as a sample application
 # -------------------------------------------------------------
-
-# configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
-#   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
-
-# install(FILES 
-#   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-#   ${CMAKE_CURRENT_SOURCE_DIR}/pf_main.cpp
-#   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-#   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-#   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
-#   ${CMAKE_CURRENT_BINARY_DIR}/118.xml
-#   ${CMAKE_CURRENT_SOURCE_DIR}/118.raw
-#   DESTINATION doc/gridpack/example/powerflow
-# )
 
 install(TARGETS pf.x DESTINATION bin)
   
