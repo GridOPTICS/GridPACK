@@ -100,7 +100,7 @@ add_custom_target(pf.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/118.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -116,7 +116,7 @@ add_custom_target(pf.x.input
   ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/gridpack.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
-  ${GRIDPACK_DATA_DIR}/raw/118.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
   ${CMAKE_CURRENT_BINARY_DIR}/input_polish.xml
   ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
   ${CMAKE_CURRENT_BINARY_DIR}/input_european.xml

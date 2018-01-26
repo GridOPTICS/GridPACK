@@ -6,9 +6,7 @@
   -->
 <Configuration>
   <Powerflow>
-    <networkConfiguration> 118.raw </networkConfiguration>
-    <networkUnpartitionedGraph>118_network.dot</networkUnpartitionedGraph>
-    <networkPartitionedGraph>118_partitioned_network.dot</networkPartitionedGraph>
+    <networkConfiguration> IEEE118.raw </networkConfiguration>
     <LinearSolver>
       <SolutionTolerance>1.0e-08</SolutionTolerance>
       <RelativeTolerance>1.0e-12</RelativeTolerance>
