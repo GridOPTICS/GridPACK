@@ -80,7 +80,7 @@ add_custom_target(stes.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
   ${GRIDPACK_DATA_DIR}/measurements/IEEE14_meas.xml
   ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
@@ -113,4 +113,4 @@ install(TARGETS stes.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("state_estimation" stes.x input.xml)
+gridpack_add_run_test("state_estimation" stes.x input_14.xml)
