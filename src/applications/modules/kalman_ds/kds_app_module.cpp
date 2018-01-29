@@ -15,8 +15,12 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/include/gridpack.hpp"
-#include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parallel/random.hpp"
+#include "gridpack/math/math.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/gen_slab_map.hpp"
 #include "kds_app_module.hpp"
 
 // Calling program for state estimation application
@@ -201,85 +205,120 @@ void gridpack::kalman_filter::KalmanApp::setTimeData(
 //  }
 }
 
+enum Parser {PTI23, PTI33};
+
 /**
- * Execute application
+ * Read in and partition the network. The input file is read
+ * directly from the state_estimation block in the configuration file
+ * so no external file names or parameters need to be passed to this
+ * routine
+ * @param network pointer to a KalmanNetwork object.  This should not
+ * have any buses or branches defined on it.
+ * @param config pointer to open configuration file
  */
-void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
+void gridpack::kalman_filter::KalmanApp::readNetwork(
+    boost::shared_ptr<KalmanNetwork> &network,
+    gridpack::utility::Configuration *config)
 {
-
-  gridpack::utility::CoarseTimer *timer =
-    gridpack::utility::CoarseTimer::instance();
-  int t_Total = timer->createCategory("App:Total");
-  int t_PF = timer->createCategory("PF: Total");
-  int t_KF = timer->createCategory("KF: Time Loop");
-  int t_In = timer->createCategory("KF: Input and Initialization");
-  timer->start(t_Total);
-  timer->start(t_PF);
-  
   gridpack::parallel::Communicator p_comm;
-  // Initialize Kalman filter calculation by first running a powerflow
-  // simulation
-  boost::shared_ptr<gridpack::powerflow::PFNetwork>
-    pf_network(new gridpack::powerflow::PFNetwork(p_comm));
+  p_network = network;
+  p_config = config;
+  p_comm = network->communicator();
 
-  // Read configuration file
-  gridpack::utility::Configuration *config
-    = gridpack::utility::Configuration::configuration();
-  if (argc >= 2 && argv[1] != NULL) {
-    char inputfile[256];
-    sprintf(inputfile,"%s",argv[1]);
-    config->open(inputfile,p_comm);
-  } else {
-    config->open("input.xml",p_comm);
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.Kalman_filter");
+  std::string filename;
+  int filetype = PTI23;
+  if (!cursor->get("networkConfiguration",&filename)) {
+    if (cursor->get("networkConfiguration_v33",&filename)) {
+      filetype = PTI33;
+    } else {
+      printf("No network configuration file specified\n");
+      return;
+    }
   }
 
-  // run powerflow calculation and save data to data collection objects
-  gridpack::powerflow::PFAppModule pf_app;
-  pf_app.readNetwork(pf_network,config);
-  pf_app.initialize();
-  pf_app.solve();
-  pf_app.write();
-  pf_app.saveData();
-  
-  // Copy data collection objects to new Kalman filter network
-  // Kalman filter network
-  boost::shared_ptr<gridpack::kalman_filter::KalmanNetwork>
-    network(new gridpack::kalman_filter::KalmanNetwork(p_comm));
-  pf_network->clone<gridpack::kalman_filter::KalmanBus,
-    gridpack::kalman_filter::KalmanBranch>(network);
+  // load input file
+  gridpack::parser::PTI23_parser<KalmanNetwork>
+    parser(p_network);
+  parser.parse(filename.c_str());
+  if (filetype == PTI23) {
+    gridpack::parser::PTI23_parser<KalmanNetwork> parser(network);
+    parser.parse(filename.c_str());
+  } else if (filetype == PTI33) {
+    gridpack::parser::PTI33_parser<KalmanNetwork> parser(network);
+    parser.parse(filename.c_str());
+  }
 
-  timer->stop(t_PF);
+  // partition network
+  p_network->partition();
+}
+
+/**
+ * Assume that KalmanNetwork already exists and just cache an internal
+ * pointer to it. This routine does not call the partition function.
+ * Also read in simulation parameters from configuration file
+ * @param network pointer to a complete KalmanNetwork object.
+ * @param config pointer to open configuration file
+ */
+void gridpack::kalman_filter::KalmanApp::setNetwork(
+    boost::shared_ptr<KalmanNetwork> &network,
+    gridpack::utility::Configuration *config)
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+
+  gridpack::parallel::Communicator p_comm;
+  p_network = network;
+  p_config = config;
+  p_comm = network->communicator();
+}
+
+/**
+ * Set up exchange buffers and other internal parameters and initialize
+ * network components using data from data collection
+ */
+void gridpack::kalman_filter::KalmanApp::initialize()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_In = timer->createCategory("KF: Input and Initialization");
+  
   timer->start(t_In);
 
   // Create serial IO object to export data from buses or branches
-  gridpack::serial_io::SerialBusIO<KalmanNetwork> busIO(512, network);
-  gridpack::serial_io::SerialBusIO<KalmanNetwork> deltaIO(32, network);
-  gridpack::serial_io::SerialBusIO<KalmanNetwork> omegaIO(32, network);
-  gridpack::serial_io::SerialBranchIO<KalmanNetwork> branchIO(512, network);
+  p_busIO.reset(new gridpack::serial_io::SerialBusIO<KalmanNetwork>(512,
+        p_network));
+  p_deltaIO.reset(new gridpack::serial_io::SerialBusIO<KalmanNetwork>(32,
+        p_network));
+  p_omegaIO.reset(new gridpack::serial_io::SerialBusIO<KalmanNetwork>(32,
+        p_network));
+  p_branchIO.reset(new gridpack::serial_io::SerialBranchIO<KalmanNetwork>(512,
+        p_network));
   char ioBuf[128];
   
   // Read in Dynamic simulation and Kalman filter related info
   gridpack::utility::Configuration::CursorPtr cursor, secursor;
-  cursor   = config->getCursor("Configuration.Dynamic_simulation");
-  secursor = config->getCursor("Configuration.Kalman_filter");
+  cursor   = p_config->getCursor("Configuration.Dynamic_simulation");
+  secursor = p_config->getCursor("Configuration.Kalman_filter");
 
   // Read in information of simulation time and timestep
-  double sim_time = cursor->get("simulationTime",0.0);
-  double time_step = cursor->get("timeStep",0.0);
-  int KnownFault = cursor->get("KnownFault",0); 
-  int TimeOffset = cursor->get("TimeOffset",0);
-  int CheckEqn = cursor->get("CheckEqn",0);
-  if (CheckEqn) {
-    sprintf(ioBuf,"\nOnly DAE equations, no EnKF analysis!\n"); busIO.header(ioBuf);
+  p_sim_time = cursor->get("simulationTime",0.0);
+  p_time_step = cursor->get("timeStep",0.0);
+  p_KnownFault = cursor->get("KnownFault",0); 
+  p_TimeOffset = cursor->get("TimeOffset",0);
+  p_CheckEqn = cursor->get("CheckEqn",0);
+  if (p_CheckEqn) {
+    sprintf(ioBuf,"\nOnly DAE equations, no EnKF analysis!\n"); p_busIO->header(ioBuf);
   } else {
-    sprintf(ioBuf,"\nStart EnKF analysis......\n"); busIO.header(ioBuf);
+    sprintf(ioBuf,"\nStart EnKF analysis......\n"); p_busIO->header(ioBuf);
   }
-  sprintf(ioBuf,"\nSimulation Time: %8.4f\n",sim_time); busIO.header(ioBuf);
-  sprintf(ioBuf,"\nTime Step: %8.4f\n",time_step); busIO.header(ioBuf);
-  sprintf(ioBuf,"\nTime Offset: %d\n",TimeOffset); busIO.header(ioBuf);
+  sprintf(ioBuf,"\nSimulation Time: %8.4f\n",p_sim_time); p_busIO->header(ioBuf);
+  sprintf(ioBuf,"\nTime Step: %8.4f\n",p_time_step); p_busIO->header(ioBuf);
+  sprintf(ioBuf,"\nTime Offset: %d\n",p_TimeOffset); p_busIO->header(ioBuf);
 
   // load input *.dyr file
-  gridpack::parser::PTI23_parser<KalmanNetwork> parser(network);
+  gridpack::parser::PTI23_parser<KalmanNetwork> parser(p_network);
   std::string filename = secursor->get("generatorParameters","");
   if (filename.size() > 0) {
     parser.externalParse(filename.c_str());
@@ -292,101 +331,114 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
   int idx;
   // Read in information about fault events and store them in internal data
   // structure
-  cursor = config->getCursor("Configuration.Dynamic_simulation.faultEvents");
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.faultEvents");
   gridpack::utility::Configuration::ChildCursors events;
   if (cursor) cursor->children(events);
   std::vector<gridpack::kalman_filter::KalmanBranch::Event>
-     faults = setFaultEvents(events);
+     p_faults = setFaultEvents(events);
   // Index that if the fault event is known
-  if (KnownFault) {
-  sprintf(ioBuf,"\nFault event is known\n"); busIO.header(ioBuf);
+  if (p_KnownFault) {
+  sprintf(ioBuf,"\nFault event is known\n"); p_busIO->header(ioBuf);
     for (idx=0; idx<events.size(); idx++) {
-      sprintf(ioBuf,"\nFault Events No.: %d\n",idx+1); busIO.header(ioBuf);
-      sprintf(ioBuf,"Begin Fault: %8.4f\n",faults[idx].start); busIO.header(ioBuf);
-      sprintf(ioBuf,"End Fault: %8.4f\n",faults[idx].end); busIO.header(ioBuf);
-      sprintf(ioBuf,"From Branch: %d  To Branch: %d\n",faults[idx].from_idx,faults[idx].to_idx); busIO.header(ioBuf);
-      sprintf(ioBuf,"Time Step: %8.4f\n",faults[idx].step); busIO.header(ioBuf);
+      sprintf(ioBuf,"\nFault Events No.: %d\n",idx+1);
+      p_busIO->header(ioBuf);
+      sprintf(ioBuf,"Begin Fault: %8.4f\n",p_faults[idx].start);
+      p_busIO->header(ioBuf);
+      sprintf(ioBuf,"End Fault: %8.4f\n",p_faults[idx].end);
+      p_busIO->header(ioBuf);
+      sprintf(ioBuf,"From Branch: %d  To Branch: %d\n",
+          p_faults[idx].from_idx,p_faults[idx].to_idx);
+      p_busIO->header(ioBuf);
+      sprintf(ioBuf,"Time Step: %8.4f\n",p_faults[idx].step);
+      p_busIO->header(ioBuf);
     }
   } else {
-  sprintf(ioBuf,"\nFault event is unknown\n"); busIO.header(ioBuf);
+  sprintf(ioBuf,"\nFault event is unknown\n"); p_busIO->header(ioBuf);
   }
   
-  // Convergence and iteration parameters
-  double tolerance = secursor->get("tolerance",1.0e-6);
-  int max_iteration = secursor->get("maxIteration",20);
-  sprintf(ioBuf,"\nTolerance: %16.8f\n",tolerance);
-  busIO.header(ioBuf);
-  sprintf(ioBuf,"Maximum Iterations: %d\n",max_iteration);
-  busIO.header(ioBuf);
-
   // Ensemble parameters
   int nsize = secursor->get("ensembleSize",20);
   double sigma = secursor->get("gaussianWidth",0.1);
   double noise = secursor->get("noiseScale",0.1);
   int iseed = secursor->get("randomSeed",11238);
   int maxstep = secursor->get("maxSteps",0);
-  double Rm1 = 1.0/(noise*noise);
-  double Rm1n, N_inv;
-  if (CheckEqn) {
+  p_Rm1 = 1.0/(noise*noise);
+  if (p_CheckEqn) {
     nsize = 1; sigma = 0.0; noise = 0.0;
   }
   if (nsize > 1) {
-    Rm1n= Rm1/static_cast<double>(nsize-1);
-    N_inv = 1.0/static_cast<double>(nsize-1);
+    p_Rm1n= p_Rm1/static_cast<double>(nsize-1);
+    p_N_inv = 1.0/static_cast<double>(nsize-1);
   } else {
-    Rm1n = 0.0;
-    N_inv = 0.0;
+    p_Rm1n = 0.0;
+    p_N_inv = 0.0;
   }
-  sprintf(ioBuf,"Ensemble Size: %d\n",nsize); busIO.header(ioBuf);
-  sprintf(ioBuf,"Gaussian Width: %16.8f\n",sigma); busIO.header(ioBuf);
-  sprintf(ioBuf,"Noise Scale: %16.8f\n",noise); busIO.header(ioBuf);
-  sprintf(ioBuf,"Random Number Seed: %d\n",iseed); busIO.header(ioBuf);
+  sprintf(ioBuf,"Ensemble Size: %d\n",nsize); p_busIO->header(ioBuf);
+  sprintf(ioBuf,"Gaussian Width: %16.8f\n",sigma); p_busIO->header(ioBuf);
+  sprintf(ioBuf,"Noise Scale: %16.8f\n",noise); p_busIO->header(ioBuf);
+  sprintf(ioBuf,"Random Number Seed: %d\n",iseed); p_busIO->header(ioBuf);
   
   // Initialize random number generator
   gridpack::random::Random random;
   random.seed(iseed);
  
   // create factory
-  gridpack::kalman_filter::KalmanFactory factory(network);
-  factory.load();
+  p_factory.reset(new gridpack::kalman_filter::KalmanFactory(p_network));
+  p_factory->load();
 
   // set network components using factory
-  factory.setComponents();
+  p_factory->setComponents();
 
   // Set up bus data exchange buffers. Need to decide what data needs to be exchanged
-  factory.setExchange();
+  p_factory->setExchange();
 
   printf("p[%d] Got to 1 nsize: %d\n",p_comm.rank(),nsize);
   // Set ensemble parameters
-  factory.setEnsembleSize(nsize);
-  factory.setGaussianWidth(sigma,noise);
+  p_factory->setEnsembleSize(nsize);
+  p_factory->setGaussianWidth(sigma,noise);
   printf("p[%d] Got to 2\n",p_comm.rank());
 
 
   // Get time series data
-  setTimeData(network, secursor);
+  setTimeData(p_network, secursor);
   sprintf(ioBuf,"Number of Time Steps: %d\n",p_nsteps);
-  busIO.header(ioBuf);
+  p_busIO->header(ioBuf);
   if (maxstep > 0 && maxstep < p_nsteps) {
     p_nsteps = maxstep;
     sprintf(ioBuf,"Maximum Steps: %d\n",p_nsteps);
-    busIO.header(ioBuf);
+    p_busIO->header(ioBuf);
   }
 
   // Create bus data exchange
-  network->initBusUpdate();
+  p_network->initBusUpdate();
 
   // set YBus components so that you can create Y matrix  
-  factory.setYBus();
+  p_factory->setYBus();
 
+  timer->stop(t_In);
+}
+
+/**
+ * Perform the Kalman Filter simulation
+ */
+void gridpack::kalman_filter::KalmanApp::solve()
+{
+
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_KF = timer->createCategory("KF: Time Loop");
+  int t_In = timer->createCategory("KF: Input and Initialization");
+
+
+  timer->start(t_In);
   printf("p[%d] Got to 3\n",p_comm.rank());
   // create ensembles
-  factory.createEnsemble();
+  p_factory->createEnsemble();
   printf("p[%d] Got to 4\n",p_comm.rank());
 
   // Create the Kalman ensemble X matrix
-  factory.setMode(EnsembleX);
-  gridpack::mapper::GenSlabMap<KalmanNetwork> xSlab(network);
+  p_factory->setMode(EnsembleX);
+  gridpack::mapper::GenSlabMap<KalmanNetwork> xSlab(p_network);
   printf("p[%d] Got to 5\n",p_comm.rank());
   boost::shared_ptr<gridpack::math::Matrix> X = xSlab.mapToMatrix();
   printf("p[%d] Got to 6\n",p_comm.rank());
@@ -394,19 +446,20 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
   //X->save("X.m");
 
   // Create initial Y matrix
-  factory.setMode(YBus);
-  gridpack::mapper::FullMatrixMap<KalmanNetwork> ybusMap(network);
-  factory.setMode(RefreshY);
+  p_factory->setMode(YBus);
+  gridpack::mapper::FullMatrixMap<KalmanNetwork> ybusMap(p_network);
+  p_factory->setMode(RefreshY);
   boost::shared_ptr<gridpack::math::Matrix> Y_init = ybusMap.mapToMatrix();
   //Y_init -> print();
   //Y_init->save("Y_init.m");
   // Use linear solution to get inverse of Y matrix
   gridpack::math::LinearMatrixSolver solver1(*Y_init);
-  secursor = config->getCursor("Configuration.Kalman_filter");
-  solver1.configure(secursor);
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Kalman_filter");
+  solver1.configure(cursor);
   // Create Y_c matrix
-  factory.setMode(YC);
-  gridpack::mapper::FullMatrixMap<KalmanNetwork> ycMap(network);
+  p_factory->setMode(YC);
+  gridpack::mapper::FullMatrixMap<KalmanNetwork> ycMap(p_network);
 
   // Create dense version of Y_c
   boost::shared_ptr<gridpack::math::Matrix> Y_c = ycMap.mapToMatrix(true);
@@ -420,19 +473,19 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
   //RecV_0 -> print();
   //RecV_0->save("RecV_0.m");
   // Get RecV_1(fault)
-  int sw2_2 = faults[0].from_idx - 1;
-  int sw3_2 = faults[0].to_idx - 1;
+  int sw2_2 = p_faults[0].from_idx - 1;
+  int sw3_2 = p_faults[0].to_idx - 1;
   boost::shared_ptr<gridpack::math::Matrix> Yd_1(Y_init->clone());
   //gridpack::ComplexType x(0.0, -1e7);
-  factory.setEvent(faults[0]);
-  factory.setMode(onFY);
+  p_factory->setEvent(p_faults[0]);
+  p_factory->setMode(onFY);
   ybusMap.overwriteMatrix(Yd_1); 
   gridpack::math::LinearMatrixSolver solver2(*Yd_1);
   boost::shared_ptr<gridpack::math::Matrix> RecV_1(solver2.solve(*Y_c));
   //RecV_1->save("RecV_1.m");
 /*  //Get RecV_2(post-fault)
   boost::shared_ptr<gridpack::math::Matrix> Yd_2(Y_init->clone());
-  factory.setMode(posFY);
+  p_factory->setMode(posFY);
   ybusMap.incrementMatrix(Yd_2);
 //  Yd_2->save("Yd_2.m");
   gridpack::math::LinearMatrixSolver solver3(*Yd_2);
@@ -441,38 +494,39 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
 //  RecV_2->save("RecV_2.m"); */
 
   // Set up io routines
-  deltaIO.open("delta.dat");
-  omegaIO.open("omega.dat");
+  p_deltaIO->open("delta.dat");
+  p_omegaIO->open("omega.dat");
 
   // Create eSlab mapper
-  factory.setMode(E_Ensemble1);
-  gridpack::mapper::GenSlabMap<KalmanNetwork> eSlab(network);
+  p_factory->setMode(E_Ensemble1);
+  gridpack::mapper::GenSlabMap<KalmanNetwork> eSlab(p_network);
 
   // Create hxSlab mapper
-  factory.setMode(HX);
-  gridpack::mapper::GenSlabMap<KalmanNetwork> hxSlab(network);
+  p_factory->setMode(HX);
+  gridpack::mapper::GenSlabMap<KalmanNetwork> hxSlab(p_network);
 
   // Create vSlab mapper
-  factory.setMode(V1);
-  gridpack::mapper::GenSlabMap<KalmanNetwork> vSlab(network);
+  p_factory->setMode(V1);
+  gridpack::mapper::GenSlabMap<KalmanNetwork> vSlab(p_network);
 
   // Create v3Slab mapper
-  factory.setMode(V3);
-  gridpack::mapper::GenSlabMap<KalmanNetwork> v3Slab(network);
+  p_factory->setMode(V3);
+  gridpack::mapper::GenSlabMap<KalmanNetwork> v3Slab(p_network);
 
   // Create measurement matrix for timestep = 0. You can use mapper for the
   // ensemble HX matrix
-  factory.setMode(Measurements);
-  factory.setCurrentTimeStep(TimeOffset+1);
+  p_factory->setMode(Measurements);
+  p_factory->setCurrentTimeStep(p_TimeOffset+1);
   boost::shared_ptr<gridpack::math::Matrix> D = hxSlab.mapToMatrix();
 
+  char ioBuf[128];
   sprintf(ioBuf,"%12.6f",static_cast<double>(0.0));
-  deltaIO.header(ioBuf);
-  deltaIO.write("delta");
-  deltaIO.header("\n");
-  omegaIO.header(ioBuf);
-  omegaIO.write("omega");
-  omegaIO.header("\n");
+  p_deltaIO->header(ioBuf);
+  p_deltaIO->write("delta");
+  p_deltaIO->header("\n");
+  p_omegaIO->header(ioBuf);
+  p_omegaIO->write("omega");
+  p_omegaIO->header("\n");
 
   timer->stop(t_In);
   timer->start(t_KF);
@@ -497,13 +551,13 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
   static double sw1[4];
   static double sw7[4];
   sw1[0] = 0.0;
-  sw1[1] = faults[0].start;
-  sw1[2] = faults[0].end;
-  sw1[3] = sim_time;
-  sw7[0] = time_step;
-  sw7[1] = faults[0].step;
-  sw7[2] = time_step;
-  sw7[3] = time_step;
+  sw1[1] = p_faults[0].start;
+  sw1[2] = p_faults[0].end;
+  sw1[3] = p_sim_time;
+  sw7[0] = p_time_step;
+  sw7[1] = p_faults[0].step;
+  sw7[2] = p_time_step;
+  sw7[3] = p_time_step;
   simu_k = 0;
   for (int i = 0; i < nswtch-1; i++) {
     t_step[i] = (int) (round((sw1[i+1] -sw1[i]) / sw7[i]));
@@ -516,8 +570,8 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
   steps2 = t_step[0] + t_step[1];
   steps1 = t_step[0];
   
-  sprintf(ioBuf,"Start Time Step of Fault: %d\n",steps1); busIO.header(ioBuf);
-  sprintf(ioBuf,"End Time Step of Fault: %d\n",steps2); busIO.header(ioBuf);
+  sprintf(ioBuf,"Start Time Step of Fault: %d\n",steps1); p_busIO->header(ioBuf);
+  sprintf(ioBuf,"End Time Step of Fault: %d\n",steps2); p_busIO->header(ioBuf);
    
 
   for (I_Steps = 2; I_Steps < simu_k; I_Steps++) { // Simulation Steps
@@ -543,7 +597,7 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
       flagF = 0;
     }
 
-    if (KnownFault) {
+    if (p_KnownFault) {
       if (flagF == 0) {
         RecV = RecV_0.get(); 
       } else if (flagF == 1) {
@@ -560,7 +614,7 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
     timer->stop(t_selectRecV);
     
     // Create E_ensemble 1 matrix
-    factory.setMode(E_Ensemble1);
+    p_factory->setMode(E_Ensemble1);
     boost::shared_ptr<gridpack::math::Matrix> E_ensmb1 = eSlab.mapToMatrix();
     //E_ensmb1 -> print();    
 
@@ -569,13 +623,13 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
     //v1 -> print();
     
     // Push elements of V1 back onto buses
-    factory.setMode(V1);
+    p_factory->setMode(V1);
     vSlab.mapToNetwork(v1);
 
     // Create elements of X2
-    factory.evaluateX2();
+    p_factory->evaluateX2();
 
-    if (KnownFault) {
+    if (p_KnownFault) {
       if (flagF == 0) {
         RecV = RecV_0.get();
       } else if (flagF == 1) {
@@ -590,34 +644,34 @@ void gridpack::kalman_filter::KalmanApp::execute(int argc, char** argv)
     }
 
     // Create E_ensemble 2 matrix
-    factory.setMode(E_Ensemble2);
+    p_factory->setMode(E_Ensemble2);
     boost::shared_ptr<gridpack::math::Matrix> E_ensmb2 = eSlab.mapToMatrix();
 
     // Create V2
     boost::shared_ptr<gridpack::math::Matrix> v2(multiply(*RecV, *E_ensmb2));
 
     // Push elements of V2 back onto buses
-    factory.setMode(V2);
+    p_factory->setMode(V2);
     vSlab.mapToNetwork(v2);
 
     // Create elements of X3
-    factory.evaluateX3();
+    p_factory->evaluateX3();
     
     timer->stop(t_onlyDAE);
     timer->start(t_EnKF);
     
-if (!(CheckEqn)) {
+if (!(p_CheckEqn)) {
     int t_A = timer->createCategory("KF: In-Loop EnKF A");
     timer->start(t_A);    
     // Create perturbation matrix for X3
-    factory.setMode(Perturbation);
+    p_factory->setMode(Perturbation);
     boost::shared_ptr<gridpack::math::Matrix> A = xSlab.mapToMatrix();
     timer->stop(t_A);
 
     int t_ensmb3 = timer->createCategory("KF: In-Loop EnKF E_ensmb3");
     timer->start(t_ensmb3);
     // Create E_ensemble 3 matrix
-    factory.setMode(E_Ensemble3);
+    p_factory->setMode(E_Ensemble3);
     boost::shared_ptr<gridpack::math::Matrix> E_ensmb3 = eSlab.mapToMatrix();
     timer->stop(t_ensmb3);
 
@@ -630,14 +684,14 @@ if (!(CheckEqn)) {
     timer->stop(t_V3m);
 
     // Push elements of V3 back onto buses
-    factory.setMode(V3);
+    p_factory->setMode(V3);
     v3Slab.mapToNetwork(v3);
     timer->stop(t_V3);
 
     // Create HX matrix
     int t_HX = timer->createCategory("KF: In-Loop EnKF HX");
     timer->start(t_HX);
-    factory.setMode(HX);
+    p_factory->setMode(HX);
     boost::shared_ptr<gridpack::math::Matrix> HX = hxSlab.mapToMatrix();
     timer->stop(t_HX);
 
@@ -655,7 +709,7 @@ if (!(CheckEqn)) {
     // Create HA matrix
     int t_setHA = timer->createCategory("KF: In-Loop EnKF setHA");
     timer->start(t_setHA);
-    factory.setMode(HA);
+    p_factory->setMode(HA);
     timer->stop(t_setHA);
     int t_HA = timer->createCategory("KF: In-Loop EnKF HA");
     timer->start(t_HA);
@@ -671,7 +725,7 @@ if (!(CheckEqn)) {
     timer->stop(t_HAtHA);
     int t_ScaleQ = timer->createCategory("KF: In-Loop EnKF ScaleQ");
     timer->start(t_ScaleQ);
-    Q->scale(Rm1n);
+    Q->scale(p_Rm1n);
     boost::shared_ptr<gridpack::math::Matrix> H1(Q->clone());
     gridpack::ComplexType z_one(1.0,0.0);
     Q->addDiagonal(z_one);
@@ -682,7 +736,7 @@ if (!(CheckEqn)) {
     timer->start(t_Z1);
     // Create Z1 matrix
     boost::shared_ptr<gridpack::math::Matrix> Z1(multiply(*HA_t,*Y));
-    Z1->scale(Rm1);
+    Z1->scale(p_Rm1);
     timer->stop(t_Z1);
 
     int t_W = timer->createCategory("KF: In-Loop EnKF Solve W"); 
@@ -692,8 +746,8 @@ if (!(CheckEqn)) {
       Q_sparse(gridpack::math::storageType(*Q,
             gridpack::math::Sparse));
     gridpack::math::LinearMatrixSolver solver2(*Q_sparse);
-    secursor = config->getCursor("Configuration.Kalman_filter");
-    solver2.configure(secursor);
+    cursor = p_config->getCursor("Configuration.Kalman_filter");
+    solver2.configure(cursor);
     boost::shared_ptr<gridpack::math::Matrix> W(solver2.solve(*Z1));
     timer->stop(t_W);
 
@@ -711,47 +765,46 @@ if (!(CheckEqn)) {
     timer->start(t_X_inc);
     // Evaluate X_inc
     boost::shared_ptr<gridpack::math::Matrix> X_inc(multiply(*A,*Z2));
-    X_inc->scale(N_inv);
+    X_inc->scale(p_N_inv);
     timer->stop(t_X_inc);
 
     // Push results back onto buses and update values of rotor angle and speed
-    factory.setMode(X_INC);
+    p_factory->setMode(X_INC);
     xSlab.mapToNetwork(X_inc);
     timer->stop(t_Update);
 } else {
-    factory.setMode(X_Update);
+    p_factory->setMode(X_Update);
     xSlab.mapToNetwork(X);
 }
-    factory.setCurrentTimeStep(TimeOffset+I_Steps);
+    p_factory->setCurrentTimeStep(p_TimeOffset+I_Steps);
     timer->stop(t_EnKF);
     timer->start(t_Output);
 
     char buf[128];
     sprintf(buf,"\n\n  Results for Timestep %d\n",I_Steps);
-    busIO.header(buf);
+    p_busIO->header(buf);
     sprintf(buf,"\n    Bus ID     Gen. ID         Delta             Omega\n\n");
-    busIO.header(buf);
-    busIO.write("xnew");
+    p_busIO->header(buf);
+    p_busIO->write("xnew");
     
     // Create measurement matrix for next timestep
-    factory.setMode(Measurements);
+    p_factory->setMode(Measurements);
     hxSlab.mapToMatrix(D);
 
     sprintf(ioBuf,"%12.6f",static_cast<double>(I_Steps-1)*p_delta_t);
-    deltaIO.header(ioBuf);
-    deltaIO.write("delta");
-    deltaIO.header("\n");
-    omegaIO.header(ioBuf);
-    omegaIO.write("omega");
-    omegaIO.header("\n");
+    p_deltaIO->header(ioBuf);
+    p_deltaIO->write("delta");
+    p_deltaIO->header("\n");
+    p_omegaIO->header(ioBuf);
+    p_omegaIO->write("omega");
+    p_omegaIO->header("\n");
     timer->stop(t_Output);
   }
-  deltaIO.close();
-  omegaIO.close();
-  sprintf(ioBuf,"\nEnd EnKF analysis......\n"); busIO.header(ioBuf);
+  p_deltaIO->close();
+  p_omegaIO->close();
+  sprintf(ioBuf,"\nEnd EnKF analysis......\n"); p_busIO->header(ioBuf);
   
   timer->stop(t_KF);
-  timer->stop(t_Total);
   timer->dump();
 }
 
@@ -798,7 +851,8 @@ std::vector<gridpack::kalman_filter::KalmanBranch::Event>
       event.to_idx = 0;
     }
     event.step = events[idx]->get("timeStep",0.0);
-    if (event.step != 0.0 && event.end != 0.0 && event.from_idx != event.to_idx) {
+    if (event.step != 0.0 && event.end != 0.0 &&
+        event.from_idx != event.to_idx) {
       faults.push_back(event);
     }
   }

@@ -560,9 +560,13 @@ void gridpack::kalman_filter::KalmanBus::load(
       data->getValue(GENERATOR_ZSOURCE, &zsource, i);
       double xd = imag(zsource);
       double pgen=0.0;
-      data->getValue("GENERATOR_PF_PGEN",&pgen,i);
+      if (!data->getValue("GENERATOR_PF_PGEN",&pgen,i)) {
+        data->getValue(GENERATOR_PG,&pgen,i);
+      }
       double qgen=0.0;
-      data->getValue("GENERATOR_PF_QGEN",&qgen,i);
+      if (!data->getValue("GENERATOR_PF_QGEN",&qgen,i)) {
+        data->getValue(GENERATOR_QG,&qgen,i);
+      }
       gridpack::ComplexType s = gridpack::ComplexType(pgen,qgen);
       gridpack::ComplexType ii = gridpack::ComplexType(0.0,1.0);
       gridpack::ComplexType vterm = p_v*(cos(p_a)+ii*sin(p_a));
