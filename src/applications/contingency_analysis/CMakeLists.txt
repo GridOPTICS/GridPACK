@@ -93,5 +93,5 @@ install(TARGETS ca.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("contingency_analysis" ca.x input.xml)
+gridpack_add_run_test("contingency_analysis" ca.x input_14.xml)
 

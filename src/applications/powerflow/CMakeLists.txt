@@ -134,5 +134,5 @@ install(TARGETS pf.x DESTINATION bin)
 # -------------------------------------------------------------
 # Create simple test that runs powerflow code
 # -------------------------------------------------------------
-gridpack_add_run_test("powerflow" pf.x "input.xml")
+gridpack_add_run_test("powerflow" pf.x "input_14.xml")
 
