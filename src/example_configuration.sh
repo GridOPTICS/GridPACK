@@ -13,7 +13,7 @@ if [ $? != 0 ]; then
 fi
 
 build="RelWithDebInfo"
-shared="OFF"
+shared="FALSE"
 for o in $*; do
     case $o in
         -d)
@@ -194,6 +194,40 @@ elif [ $host == "WE32673" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
+elif [ $host == "WE32673mp" ]; then
+
+    # Mac using CLang 3.8 compilers and OpenMPI via MacPorts
+    # The following MacPorts packages are installed:
+    #   clang-3.8 @3.8.1_9+analyzer
+    #   openmpi-clang38 @1.10.3_0+gcc6
+    #   boost @1.59.0_2+clang38+no_single+openmpi+python27
+    #   global-arrays @5.6.2_1+clang38+openmpi
+    #   petsc @3.7.4_1+accelerate+clang38+cxx+hwloc+openmpi+parmetis+superlu+superlu_dist
+
+    CC=/opt/local/bin/clang-mp-3.8
+    export CC
+    CXX=/opt/local/bin/clang++-mp-3.8
+    export CXX
+
+    prefix="/Users/d3g096/Projects/GridPACK"
+
+    cmake $options \
+        -D GA_DIR:STRING="/opt/local" \
+        -D BOOST_ROOT:STRING="/opt/local" \
+        -D PETSC_DIR:STRING="/opt/local/lib/petsc" \
+        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
+        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
+        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D USE_CPLEX:BOOL=OFF \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/opt/local" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        $common_flags ..
+
+        #-D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
+        #-D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
 elif [ $host == "olympus.local" ]; then
 
     prefix="/pic/projects/gridpack/software"
