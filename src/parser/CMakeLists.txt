@@ -60,7 +60,7 @@ add_custom_target(test_parser_input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
+  ${GridPACK_SOURCE_DIR}/applications/data_sets/raw/IEEE14.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -70,7 +70,7 @@ add_custom_target(test_parser_input
   DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/test/test.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/test/parser_data.raw
-  ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
+  ${GridPACK_SOURCE_DIR}/applications/data_sets/raw/IEEE14.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/test/table.dat
 )
 add_dependencies(parser_test test_parser_input)

@@ -45,29 +45,29 @@ target_link_libraries(ca.x ${target_libraries})
 # Put some sample input in the binary directory so ca.x can run
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input_14.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input_14.xml"
   )
 
 add_custom_target(ca.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
-  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
 )
 add_dependencies(ca.x ca.x.input)
 
@@ -79,9 +79,9 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_main.cpp
@@ -93,5 +93,5 @@ install(TARGETS ca.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("contingency_analysis" ca.x input.xml)
+gridpack_add_run_test("contingency_analysis" ca.x input_14.xml)
 

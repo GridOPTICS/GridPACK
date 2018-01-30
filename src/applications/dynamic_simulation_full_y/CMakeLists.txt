@@ -68,6 +68,16 @@ add_custom_command(
   DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
   )
 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/input_9b3g.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input_9b3g.xml"
+  )
+
 add_custom_target(dsf.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -78,10 +88,21 @@ add_custom_target(dsf.x.input
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.dyr
 )
 
 add_dependencies(dsf.x dsf.x.input)
@@ -97,6 +118,9 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.dyr
   ${CMAKE_CURRENT_SOURCE_DIR}/dsf_main.cpp
   DESTINATION share/gridpack/example/dynamic_simulation_full_y
 )
