@@ -75,10 +75,20 @@ add_custom_target(kds.x.input
   ${GRIDPACK_DATA_DIR}/dyr/IEEE145_classicGen.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_ang.csv
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_mag.csv
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE145.raw
   ${GRIDPACK_DATA_DIR}/dyr/IEEE145_classicGen.dyr
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_ang.csv
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_mag.csv
 )
 
 add_dependencies(kds.x kds.x.input)
