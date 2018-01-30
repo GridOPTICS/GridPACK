@@ -385,6 +385,8 @@ void gridpack::kalman_filter::KalmanApp::initialize()
   p_factory.reset(new gridpack::kalman_filter::KalmanFactory(p_network));
   p_factory->load();
 
+  p_factory->checkGenerators();
+
   // set network components using factory
   p_factory->setComponents();
 

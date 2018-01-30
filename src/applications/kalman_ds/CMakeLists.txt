@@ -101,10 +101,10 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input/kalman/input_145.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE145.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE145b_classicGen.dyr
-  DESTINATION share/gridpack/example/dynamic_simulation_full_y
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE145_classicGen.dyr
+  DESTINATION share/gridpack/example/kalman_ds
 )
 
 install(TARGETS kds.x DESTINATION bin)

@@ -184,13 +184,17 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
   // p_factory->dumpData();
+  printf("p[%d] Got to 1\n",p_network->communicator().rank());
   p_factory->load();
+  printf("p[%d] Got to 2\n",p_network->communicator().rank());
 
   // set network components using factory
   p_factory->setComponents();
+  printf("p[%d] Got to 3\n",p_network->communicator().rank());
   
   // set voltages for the extended buses from composite load model
   p_factory->setExtendedCmplBusVoltage();
+  printf("p[%d] Got to 4\n",p_network->communicator().rank());
   
   // load parameters for the extended buses from composite load model
   p_factory->LoadExtendedCmplBus();

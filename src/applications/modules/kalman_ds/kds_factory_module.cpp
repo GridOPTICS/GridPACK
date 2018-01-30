@@ -199,5 +199,44 @@ void gridpack::kalman_filter::KalmanFactory::evaluateX3(void)
   }
 }
 
+/**
+ * Test if each processor has at least one generator
+ */
+bool gridpack::kalman_filter::KalmanFactory::checkGenerators()
+{
+  int size = p_network->communicator().size();
+  int rank = p_network->communicator().rank();
+  std::vector<int> ngen(size);
+  int numBus = p_network->numBuses();
+  int i;
+  for (i=0; i<size; i++) ngen[i] = 0;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      ngen[rank] += (dynamic_cast<KalmanBus*>(p_network->getBus(i).get()))->
+        numGenerators();
+    }
+  }
+  p_network->communicator().sum(&ngen[0],size);
+  bool ok = true;
+  int tgen = 0;
+  for (i=0; i<size; i++) {
+    if (ngen[i] == 0) ok = false;
+    tgen += ngen[i];
+  }
+  if (rank == 0) {
+    printf ("Total number of generators: %d\n",tgen);
+    for (i=0; i<size; i++) {
+      if (i<10) {
+        printf("  Process[%1d]:   %6d Generators\n",i,ngen[i]);
+      } else if (i<100) {
+        printf("  Process[%2d]:  %6d Generators\n",i,ngen[i]);
+      } else {
+        printf("  Process[%2d]: %6d Generators\n",i,ngen[i]);
+      }
+    }
+  }
+  return ok;
+}
+
 } // namespace kalman_filter
 } // namespace gridpack
