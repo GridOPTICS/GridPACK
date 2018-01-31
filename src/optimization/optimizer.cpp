@@ -307,6 +307,11 @@ OptimizerImplementation::p_gatherProblem(void)
   for (std::vector<VariablePtr>::iterator v = p_variables.begin();
        v != p_variables.end(); ++v) {
     p_allVariables[(*v)->name()] = *v;
+    p_exportVariables[(*v)->name()] = *v;
+  }
+  for (std::vector<VariablePtr>::iterator v = p_aux_variables.begin();
+       v != p_aux_variables.end(); ++v) {
+    p_allVariables[(*v)->name()] = *v;
   }
 
   // subsitute variables in constraints and objective so they are unique

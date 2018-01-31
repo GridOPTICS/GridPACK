@@ -62,6 +62,14 @@ public:
     this->p_addVariable(v);
   }
 
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  void addAuxVariable(VariablePtr v)
+  {
+    this->p_addAuxVariable(v);
+  }
+
   /// Add a (local) constraint 
   void addConstraint(ConstraintPtr c)
   { 
@@ -118,6 +126,11 @@ protected:
   /// Add a (local) variable to be optimized (specialized)
   virtual void p_addVariable(VariablePtr v) = 0;
 
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  virtual void p_addAuxVariable(VariablePtr v) = 0;
+
   /// Add a (local) constraint (specialized)
   virtual void p_addConstraint(ConstraintPtr c) = 0;
 
@@ -164,6 +177,9 @@ protected:
   /// The (local) variables involved
   std::vector<VariablePtr> p_variables;
 
+  /// The auxiliary variables involved
+  std::vector<VariablePtr> p_aux_variables;
+
   /// The collection of (local) constraints involved
   std::vector<ConstraintPtr> p_constraints;
 
@@ -172,6 +188,12 @@ protected:
 
   /// Variables involved from all processes (unique instances)
   VarMap p_allVariables;
+
+  /// Auxiliary variables from all processes
+  VarMap p_exportVariables;
+
+  /// Auxiliary variables from all processes
+  VarMap p_auxVariables;
 
   /// Constraints involved from all processes 
   std::vector<ConstraintPtr> p_allConstraints;
@@ -192,6 +214,14 @@ protected:
   void p_addVariable(VariablePtr v)
   {
     p_variables.push_back(v);
+  }
+
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  virtual void p_addAuxVariable(VariablePtr v)
+  {
+    p_aux_variables.push_back(v);
   }
 
   /// Add a (local) constraint (specialized)
@@ -273,6 +303,14 @@ protected:
   void p_addVariable(VariablePtr v)
   {
     p_impl->addVariable(v);
+  }
+
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  void p_addAuxVariable(VariablePtr v)
+  {
+    p_impl->addAuxVariable(v);
   }
 
   /// Add a (local) constraint (specialized)
