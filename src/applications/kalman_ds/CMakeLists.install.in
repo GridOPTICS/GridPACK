@@ -41,21 +41,31 @@ target_link_libraries(kds.x ${GRIDPACK_LIBS})
 add_custom_target(kds.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/input/kalman/input_145.xml
+  ${GRIDPACK_DATA_DIR}/input/kalman/input_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_kds.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE145_classicGen.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14_classicGen.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_ang.csv
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_mag.csv
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${GRIDPACK_DATA_DIR}/input/kalman/input_145.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE145_classicGen.dyr
+  ${GRIDPACK_DATA_DIR}/input/kalman/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_kds.raw
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14_classicGen.dyr
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_ang.csv
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_mag.csv
 )
 
 add_dependencies(kds.x kds.x.input)
