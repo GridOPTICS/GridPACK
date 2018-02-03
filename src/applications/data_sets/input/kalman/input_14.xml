@@ -15,7 +15,7 @@
     </LinearSolver>
   </Powerflow>
   <Dynamic_simulation>
-    <simulationTime>10</simulationTime>
+    <simulationTime>3</simulationTime>
     <timeStep>0.01</timeStep>
     <!-- = 1 Fault Event is known; 
          = 0 Fault event is unknown, switch is skipped. 
