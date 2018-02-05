@@ -152,5 +152,6 @@ install(TARGETS kds.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
+set(TIMEOUT 40.0)
 gridpack_add_run_test("kalman_ds" kds.x input_14.xml)
 
