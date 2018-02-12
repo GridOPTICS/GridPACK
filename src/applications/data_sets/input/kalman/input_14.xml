@@ -1,0 +1,86 @@
+<?xml version="1.0" encod ing="utf-8"?>
+<Configuration>
+  <Powerflow>
+    <networkConfiguration> IEEE14_kds.raw </networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-6</tolerance>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Powerflow>
+  <Dynamic_simulation>
+    <simulationTime>3</simulationTime>
+    <timeStep>0.01</timeStep>
+    <!-- = 1 Fault Event is known; 
+         = 0 Fault event is unknown, switch is skipped. 
+    -->
+    <KnownFault> 1 </KnownFault>
+    <TimeOffset> 0 </TimeOffset> <!--skip initial measurement data -->
+    <CheckEqn>   0 </CheckEqn> <!-- only DAE equations no EnKF when = 1 -->
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 1 </beginFault>
+        <endFault>   1.1</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.01</timeStep>
+      </faultEvent>
+    </faultEvents>
+    <LinearMatrixSolver>
+      <!--
+        These options are used if SuperLU was built into PETSc
+      -->
+      <Ordering>nd</Ordering>
+      <Package>superlu_dist</Package>
+      <Iterations>1</Iterations>
+      <Fill>5</Fill>
+      <!--<PETScOptions>
+        These options are used for the LinearSolver if SuperLU is not available
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+      </PETScOptions>
+      -->
+    </LinearMatrixSolver>
+  </Dynamic_simulation>
+  <Kalman_filter>
+    <KalmanAngData>IEEE14_Kalman_input_ang.csv</KalmanAngData>
+    <KalmanMagData>IEEE14_Kalman_input_mag.csv</KalmanMagData>
+    <generatorParameters>IEEE14_classicGen.dyr</generatorParameters>
+    <tolerance>1.0e-6</tolerance>
+    <maxIteration>50</maxIteration>
+    <ensembleSize>21</ensembleSize>
+    <gaussianWidth>1e-2</gaussianWidth>
+    <noiseScale>1e-4</noiseScale>
+    <randomSeed>931316785</randomSeed>
+    <maxSteps>3000</maxSteps>
+    <!--
+    <LinearSolver>
+      <SolutionTolerance>1.0E-30</SolutionTolerance>
+      <RelativeTolerance>1.0E-6</RelativeTolerance>
+      <MaxIterations>10</MaxIterations>
+      <PETScOptions>
+        -ksp_monitor
+        -ksp_view
+        -ksp_divtol 1.0E06
+      </PETScOptions>
+    </LinearSolver>
+    -->    
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Kalman_filter>
+</Configuration>
