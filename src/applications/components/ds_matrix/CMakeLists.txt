@@ -27,14 +27,13 @@ include_directories(AFTER ${GA_INCLUDE_DIRS})
 add_library(gridpack_dsmatrix_components
   ds_components.cpp
 )
+
 target_link_libraries(gridpack_dsmatrix_components
-  ${target_lib}
+    gridpack_ymatrix_components
+    gridpack_components
+    gridpack_parallel
 )
 
-# -------------------------------------------------------------
-# component serialization tests
-# -------------------------------------------------------------
-target_link_libraries(gridpack_dsmatrix_components ${target_libraries})
 
 # -------------------------------------------------------------
 # installation

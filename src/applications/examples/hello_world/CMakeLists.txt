@@ -16,9 +16,10 @@
 set(target_libraries
     gridpack_components
     gridpack_partition
-    gridpack_parallel
     gridpack_math
+    gridpack_configuration
     gridpack_timer
+    gridpack_parallel
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}

@@ -28,10 +28,10 @@ add_library(gridpack_sematrix_components
   se_components.cpp
 )
 
-# -------------------------------------------------------------
-# component serialization tests
-# -------------------------------------------------------------
-target_link_libraries(gridpack_sematrix_components ${target_libraries})
+target_link_libraries(gridpack_sematrix_components
+    gridpack_ymatrix_components
+    gridpack_components
+    gridpack_parallel)
 
 # -------------------------------------------------------------
 # installation

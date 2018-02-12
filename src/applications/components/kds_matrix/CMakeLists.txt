@@ -27,10 +27,10 @@ add_library(gridpack_kdsmatrix_components
   kds_components.cpp
 )
 
-# -------------------------------------------------------------
-# component serialization tests
-# -------------------------------------------------------------
-target_link_libraries(gridpack_kdsmatrix_components ${target_libraries})
+target_link_libraries(gridpack_kdsmatrix_components
+    gridpack_ymatrix_components
+    gridpack_components
+    gridpack_parallel)
 
 # -------------------------------------------------------------
 # installation
