@@ -528,6 +528,28 @@ void gridpack::powerflow::PFBus::resetVoltage(void)
 }
 
 /**
+ * Set voltage limits on bus
+ * @param vmin lower value of voltage
+ * @param vmax upper value of voltage
+ */
+void gridpack::powerflow::PFBus::setVoltageLimits(double vmin, double vmax)
+{
+  p_vmin = vmin;
+  p_vmax = vmax;
+}
+
+/**
+ * Check voltage for violation
+ * @return false if there is a voltage violation
+ */
+bool gridpack::powerflow::PFBus::checkVoltageViolation()
+{
+  bool ret = true;
+  if (*p_vMag_ptr > p_vmax || *p_vMag_ptr < p_vmin) ret = false;
+  return ret;
+}
+
+/**
  * Return the value of the voltage magnitude on this bus
  * @return: voltage magnitude
  */
@@ -703,7 +725,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
     bool found = false;
-    if ((p_v >1.1) || (p_v <0.9) ) {
+    if ((p_v > p_vmax) || (p_v < p_vmin) ) {
       found = true;
       if (!isIsolated()) {
         sprintf(string, "     %6d      %12.6f         %12.6f\n",
@@ -800,12 +822,10 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     p_data->getValue(BUS_BASEKV,&basekv);
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
-    double vmax = 1.1;
-    double vmin = 0.9;
     if (!isIsolated()) {
-      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",p_v,angle,basekv,nzone,vmax,vmin);
+      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",p_v,angle,basekv,nzone,p_vmax,p_vmin);
     } else {
-      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",0.0,0.0,basekv,nzone,vmax,vmin);
+      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",0.0,0.0,basekv,nzone,p_vmax,p_vmin);
     }
     len = strlen(sbuf);
     if (slen+len<=bufsize) {

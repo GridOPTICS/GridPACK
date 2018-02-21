@@ -133,6 +133,19 @@ class PFBus
     void resetVoltage(void);
 
     /**
+     * Set voltage limits on bus
+     * @param vmin lower value of voltage
+     * @param vmax upper value of voltage
+     */
+    void setVoltageLimits(double vmin, double vmax);
+
+    /**
+     * Check voltage for violation
+     * @return false if there is a voltage violation
+     */
+    bool checkVoltageViolation(void);
+
+    /**
      * Return the value of the voltage magnitude on this bus
      * @return voltage magnitude
      */
@@ -351,6 +364,7 @@ class PFBus
     std::vector<std::string> p_lid;
     double p_sbase;
     double p_Pinj, p_Qinj;
+    double p_vmin, p_vmax;
     bool p_isPV, p_saveisPV;
     int p_ngen;
     int p_nload;
@@ -395,6 +409,7 @@ private:
       & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
+      & p_vmin & p_vmax
       & p_isPV
       & p_saveisPV
       & p_ngen & p_type & p_nload
