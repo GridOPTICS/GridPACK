@@ -42,29 +42,50 @@ add_executable(stes.x
 target_link_libraries(stes.x ${target_libraries})
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/se/input_14.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/input.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/se/input_14.xml"
+  )
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/se/input_118.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/se/input_118.xml"
   )
 
 add_custom_target(stes.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
+  ${GRIDPACK_DATA_DIR}/measurements/IEEE14_meas.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/measurements/IEEE118_meas.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
+  ${GRIDPACK_DATA_DIR}/measurements/IEEE14_meas.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+  ${GRIDPACK_DATA_DIR}/measurements/IEEE118_meas.xml
 )
 
 add_dependencies(stes.x stes.x.input)
@@ -77,9 +98,12 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_meas.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
+  ${GRIDPACK_DATA_DIR}/measurements/IEEE14_meas.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+  ${GRIDPACK_DATA_DIR}/measurements/IEEE118_meas.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/se_main.cpp
   DESTINATION share/gridpack/example/state_estimation
 )
@@ -89,4 +113,4 @@ install(TARGETS stes.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("state_estimation" stes.x input.xml)
+gridpack_add_run_test("state_estimation" stes.x input_14.xml)

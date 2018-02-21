@@ -42,21 +42,21 @@ target_link_libraries(ca.x ${GRIDPACK_LIBS})
 add_custom_target(ca.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${GRIDPACK_DATA_DIR}/input/ca/input_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies.xml
+  ${GRIDPACK_DATA_DIR}/input/ca/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
 )
 add_dependencies(ca.x ca.x.input)
 

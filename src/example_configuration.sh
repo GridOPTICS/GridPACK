@@ -194,6 +194,38 @@ elif [ $host == "WE32673" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
+elif [ $host == "WE32673mp" ]; then
+
+    # Mac using CLang 3.8 compilers and OpenMPI via MacPorts
+    # The following MacPorts packages are installed:
+    #   clang-3.8 @3.8.1_9+analyzer
+    #   openmpi-clang38 @1.10.3_0+gcc6
+    #   boost @1.59.0_2+clang38+no_single+openmpi+python27
+    #   global-arrays @5.6.2_1+clang38+openmpi
+    #   petsc @3.7.4_1+accelerate+clang38+cxx+hwloc+openmpi+parmetis+superlu+superlu_dist
+
+    CC=/opt/local/bin/clang-mp-3.8
+    export CC
+    CXX=/opt/local/bin/clang++-mp-3.8
+    export CXX
+
+    prefix="/Users/d3g096/Projects/GridPACK"
+
+    cmake $options \
+        -D GA_DIR:STRING="/opt/local" \
+        -D BOOST_ROOT:STRING="/opt/local" \
+        -D PETSC_DIR:STRING="/opt/local/lib/petsc" \
+        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
+        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
+        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D USE_CPLEX:BOOL=OFF \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/opt/local" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        $common_flags ..
+
 elif [ $host == "olympus.local" ]; then
 
     prefix="/pic/projects/gridpack/software"
@@ -226,7 +258,7 @@ elif [ $host == "tlaloc" ]; then
     LDFLAGS="-L/usr/lib64/openmpi"
     export CXXFLAGS LDFLAGS
 
-    cmake -Wdev --debug-trycompile \
+    cmake $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
           -D USE_PROGRESS_RANKS:BOOL=OFF \
@@ -251,9 +283,8 @@ elif [ $host == "gridpackvm" ]; then
     CXX=g++
     export CC CXX
 
-    cmake -Wno-dev --debug-try-compile \
-	-D PETSC_DIR:STRING="/usr/lib/petscdir/3.6.2" \
-	-D PETSC_ARCH:STRING="x86_64-linux-gnu-real" \
+    cmake $options \
+	-D PETSC_DIR:STRING="/usr/lib/petsc" \
 	-D PARMETIS_DIR:PATH="/usr" \
 	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
@@ -261,6 +292,31 @@ elif [ $host == "gridpackvm" ]; then
 	-D MPIEXEC:STRING="mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/usr" \
+        -D BUILD_SHARED_LIBS:BOOL=OFF \
+        -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
+	$common_flags ..
+
+elif [ $host == "debianvm" ]; then
+
+    prefix="$HOME/gridpack"
+
+    CC=gcc
+    CXX=g++
+    CFLAGS=-pthread
+    CXXFLAGS=-pthread
+    export CC CXX CFLAGS CXXFLAGS
+
+    cmake $options \
+	-D PETSC_DIR:STRING="/usr/lib/petsc" \
+	-D PARMETIS_DIR:PATH="/usr" \
+	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
+	-D MPI_CXX_COMPILER:STRING="mpicxx" \
+	-D MPI_C_COMPILER:STRING="mpicc" \
+	-D MPIEXEC:STRING="mpiexec" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=30 \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
         -D BUILD_SHARED_LIBS:BOOL=OFF \

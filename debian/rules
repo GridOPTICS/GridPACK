@@ -2,15 +2,19 @@
 
 BUILDDIR = build_dir
 
+CFLAGS += -pthread
+CXXFLAGS += -pthread
+export CFLAGS
+export CXXFLAGS
+
 # secondly called by launchpad
 build-arch:
 	mkdir $(BUILDDIR);
 	cd $(BUILDDIR); \
 	cmake \
-	-D PETSC_DIR:STRING="/usr/lib/petscdir/3.6.2" \
-	-D PETSC_ARCH:STRING="x86_64-linux-gnu-real" \
+	-D PETSC_DIR:STRING="/usr/lib/petsc" \
 	-D PARMETIS_DIR:PATH="/usr" \
-	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
+	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
 	-D MPI_C_COMPILER:STRING="mpicc" \
         -D USE_GLPK:BOOL=ON \

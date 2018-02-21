@@ -30,7 +30,10 @@ add_library(gridpack_pfmatrix_components
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
-target_link_libraries(gridpack_pfmatrix_components ${target_libraries})
+target_link_libraries(gridpack_pfmatrix_components
+    gridpack_ymatrix_components
+    gridpack_components
+    gridpack_parallel)
 
 # -------------------------------------------------------------
 # installation

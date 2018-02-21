@@ -26,6 +26,7 @@
 #include "ymatrix_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
+//#define PRINT_DEBUG
 //#define LARGE_MATRIX
 
 /**
@@ -74,6 +75,10 @@ bool gridpack::ymatrix::YMBus::matrixDiagValues(ComplexType *values)
   if (p_mode == YBus && !p_isolated) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     values[0] = ret;
+#ifdef PRINT_DEBUG
+    printf("%d %d %f %f\n",getOriginalIndex(),getOriginalIndex(),
+        p_ybusr,p_ybusi);
+#endif
     return true;
   } else {
     return false;
@@ -309,6 +314,10 @@ bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
     ok = ok && !bus2->isIsolated();
     if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+#ifdef PRINT_DEBUG
+      printf("%d %d %f %f\n",bus1->getOriginalIndex(),
+          bus2->getOriginalIndex(),p_ybusr_frwd,p_ybusi_frwd);
+#endif
       return true;
     } else {
       return false;
@@ -328,6 +337,10 @@ bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
     ok = ok && !bus2->isIsolated();
     if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
+#ifdef PRINT_DEBUG
+      printf("%d %d %f %f\n",bus1->getOriginalIndex(),
+          bus2->getOriginalIndex(),p_ybusr_rvrs,p_ybusi_rvrs);
+#endif
       return true;
     } else {
       return false;

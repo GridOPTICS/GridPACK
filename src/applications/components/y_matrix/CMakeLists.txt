@@ -29,7 +29,9 @@ add_library(gridpack_ymatrix_components
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
-target_link_libraries(gridpack_ymatrix_components ${target_libraries})
+target_link_libraries(gridpack_ymatrix_components
+    gridpack_components
+    gridpack_parallel)
 
 # -------------------------------------------------------------
 # installation
