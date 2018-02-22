@@ -261,11 +261,8 @@ class BasePTIParser : public BaseParser<_network>
       // Reset remaining indices
       p_network->resetGlobalIndices(false);
 #endif
-      printf("p[%d] Got to 1\n",p_network->communicator().rank());
       gridpack::factory::BaseFactory<_network> factory(p_network);
-      printf("p[%d] Got to 2\n",p_network->communicator().rank());
       factory.setComponents();
-      printf("p[%d] Got to 3\n",p_network->communicator().rank());
     }
 
     /**

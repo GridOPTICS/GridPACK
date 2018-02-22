@@ -1431,12 +1431,24 @@ void resetGlobalIndices(bool flag)
     }
   }
   hash_map.getValues(keys,values);
+  // create local hash table of key-value pairs (keys have been reordered);
+  std::map<int,int> lmap;
+  std::map<int,int>::iterator lit;
+  for (i=0; i<values.size(); i++) {
+    if (lmap.find(keys[i]) == lmap.end()) {
+      lmap.insert(std::pair<int,int>(keys[i],values[i]));
+    }
+  }
   // assign global indices to ghost buses
-  lcnt = 0;
   for (i=0; i<localBuses; i++) {
     if (!getActiveBus(i)) {
-      setGlobalBusIndex(i, values[lcnt]);
-      lcnt++;
+      lit = lmap.find(getOriginalBusIndex(i));
+      if (lit != lmap.end()) {
+        setGlobalBusIndex(i, lit->second);
+      } else {
+        printf("p[%d] No global index found for bus %d\n",
+            getOriginalBusIndex(i));
+      }
     }
   }
 
@@ -1455,8 +1467,19 @@ void resetGlobalIndices(bool flag)
   
   // Copy global indices to branch endpoints
   for (i=0; i<localBranches; i++) {
-    setGlobalBusIndex1(i,values[2*i]); 
-    setGlobalBusIndex2(i,values[2*i+1]); 
+    getOriginalBranchEndpoints(i, &idx1, &idx2);
+    lit = lmap.find(idx1);
+    if (lit != lmap.end()) {
+      setGlobalBusIndex1(i,lit->second); 
+    } else {
+      printf("p[%d] No global index found for bus1 %d\n",idx1);
+    }
+    lit = lmap.find(idx2);
+    if (lit != lmap.end()) {
+      setGlobalBusIndex2(i,lit->second); 
+    } else {
+      printf("p[%d] No global index found for bus2 %d\n",idx2);
+    }
   }
   for (i=0; i<nprocs; i++) idx_buf[i] = 0;
 
@@ -1509,12 +1532,19 @@ void resetGlobalIndices(bool flag)
     }
   }
   branch_map.getValues(key_pairs,values);
+  //  Create hash map of branch indices
+  std::map<std::pair<int,int>,int> lbmap;
+  std::map<std::pair<int,int>,int>::iterator lbit;
   // assign global indices to ghost branches
-  lcnt = 0;
   for (i=0; i<localBranches; i++) {
     if (!getActiveBranch(i)) {
-      setGlobalBranchIndex(i, values[lcnt]);
-      lcnt++;
+      getOriginalBranchEndpoints(i, &idx1, &idx2);
+      lbit = lbmap.find(std::pair<int,int>(idx1,idx2));
+      if (lbit != lbmap.end()) {
+        setGlobalBranchIndex(i, lbit->second);
+      } else {
+        printf("p[%d] Could not find branch pair (%d,%d)\n",me,idx1,idx2);
+      }
     }
   }
 }
