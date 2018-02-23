@@ -194,12 +194,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   pf_app.readNetwork(pf_network,config);
   // Finish initializing the network
   pf_app.initialize();
+  //  Set minimum and maximum voltage limits on all busses
+  pf_app.setVoltageLimits(Vmin, Vmax);
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
   pf_app.solve();
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
-  pf_app.ignoreVoltageViolations(Vmin,Vmax);
+  pf_app.ignoreVoltageViolations();
 
   // Read in contingency file name
   std::string contingencyfile;
@@ -289,7 +291,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // If power flow solution is successful, write out voltages and currents
       pf_app.write();
       // Check for violations
-      bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
+      bool ok = pf_app.checkVoltageViolations();
       ok = ok & pf_app.checkLineOverloadViolations();
       // Include results of violation checks in output
       if (ok) {

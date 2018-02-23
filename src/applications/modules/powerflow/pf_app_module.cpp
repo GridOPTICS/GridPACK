@@ -639,6 +639,16 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
 }
 
 /**
+ * Set voltage limits on all buses
+ * @param Vmin lower bound on voltages
+ * @param Vmax upper bound on voltages
+ */
+void gridpack::powerflow::PFAppModule::setVoltageLimits(double Vmin, double Vmax)
+{
+  p_factory->setVoltageLimits(Vmin, Vmax);
+}
+
+/**
  * Check to see if there are any voltage violations in the network
  * @param area area number. If this parameter is included, only check for
  * violations in this area
@@ -646,27 +656,23 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
  * @param maxV maximum voltage limit
  * @return true if no violations found
  */
-bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
-  double Vmin, double Vmax)
+bool gridpack::powerflow::PFAppModule::checkVoltageViolations()
 {
-  return p_factory->checkVoltageViolations(Vmin,Vmax);
+  return p_factory->checkVoltageViolations();
 }
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
- int area,    double Vmin, double Vmax)
+ int area)
 {
-  return p_factory->checkVoltageViolations(area, Vmin,Vmax);
+  return p_factory->checkVoltageViolations(area);
 }
 
 /**
  * Set "ignore" parameter on all buses with violations so that subsequent
  * checks are not counted as violations
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
  */
-void gridpack::powerflow::PFAppModule::ignoreVoltageViolations(double Vmin,
-    double Vmax)
+void gridpack::powerflow::PFAppModule::ignoreVoltageViolations()
 {
-  p_factory->ignoreVoltageViolations(Vmin,Vmax);
+  p_factory->ignoreVoltageViolations();
 }
 
 /**

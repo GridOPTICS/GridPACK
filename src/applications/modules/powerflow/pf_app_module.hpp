@@ -164,21 +164,26 @@ class PFAppModule
     bool unSetContingency(Contingency &event);
 
     /**
+     * Set voltage limits on all buses
+     * @param Vmin lower bound on voltages
+     * @param Vmax upper bound on voltages
+     */
+    void setVoltageLimits(double Vmin, double Vmax);
+
+    /**
      * Check to see if there are any voltage violations in the network
      * @param minV maximum voltage limit
      * @param maxV maximum voltage limit
      * @return true if no violations found
      */
-    bool checkVoltageViolations(double Vmin, double Vmax);
-    bool checkVoltageViolations(int area, double Vmin, double Vmax);
+    bool checkVoltageViolations();
+    bool checkVoltageViolations(int area);
 
     /**
      * Set "ignore" parameter on all buses with violations so that subsequent
      * checks are not counted as violations
-     * @param minV maximum voltage limit
-     * @param maxV maximum voltage limit
      */
-    void ignoreVoltageViolations(double Vmin, double Vmax);
+    void ignoreVoltageViolations();
 
     /**
      * Clear "ignore" parameter on all buses
