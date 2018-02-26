@@ -9,7 +9,7 @@
   <Powerflow>
     <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
     <maxIteration>50</maxIteration>
-    <tolerance>1.0e-6</tolerance>
+    <tolerance>1.0e-3</tolerance>
     <LinearSolver>
       <PETScOptions>
         -ksp_type richardson
