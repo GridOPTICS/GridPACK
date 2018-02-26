@@ -1535,6 +1535,12 @@ void resetGlobalIndices(bool flag)
   //  Create hash map of branch indices
   std::map<std::pair<int,int>,int> lbmap;
   std::map<std::pair<int,int>,int>::iterator lbit;
+  // create local hash table of key-value pairs
+  for (i=0; i<key_pairs.size(); i++) {
+    if (lbmap.find(key_pairs[i]) == lbmap.end()) {
+      lbmap.insert(std::pair<std::pair<int,int>,int>(key_pairs[i],values[i]));
+    }
+  }
   // assign global indices to ghost branches
   for (i=0; i<localBranches; i++) {
     if (!getActiveBranch(i)) {
