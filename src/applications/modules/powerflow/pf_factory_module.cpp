@@ -251,6 +251,7 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations()
   int numBus = p_network->numBuses();
   int i;
   bool bus_ok = true;
+  char buf[128];
   for (i=0; i<numBus; i++) {
     if (p_network->getActiveBus(i)) {
       gridpack::powerflow::PFBus *bus =

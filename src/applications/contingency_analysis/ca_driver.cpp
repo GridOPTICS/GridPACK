@@ -291,18 +291,31 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // If power flow solution is successful, write out voltages and currents
       pf_app.write();
       // Check for violations
-      bool ok = pf_app.checkVoltageViolations();
-      ok = ok & pf_app.checkLineOverloadViolations();
+      bool ok1 = pf_app.checkVoltageViolations();
+      bool ok2 = pf_app.checkLineOverloadViolations();
+      bool ok = ok1 & ok2;
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
             events[task_id].p_name.c_str());
-      } else {
-        sprintf(sbuf,"\nViolation for contingency %s\n",
+      } 
+      if (!ok1) {
+        sprintf(sbuf,"\nBus Violation for contingency %s\n",
             events[task_id].p_name.c_str());
       }
       pf_app.print(sbuf);
-    }
+      pf_app.writeCABus();
+      if (!ok2) {
+        sprintf(sbuf,"\nBranch Violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      }
+      pf_app.print(sbuf);
+      pf_app.writeCABranch();
+    } else {
+      sprintf(sbuf,"\nDivergent for contingency %s\n",
+          events[task_id].p_name.c_str());
+      pf_app.print(sbuf);
+    } 
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
     // Close output file for this contingency
