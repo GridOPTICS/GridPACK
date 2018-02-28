@@ -428,7 +428,7 @@ void gridpack::powerflow::PFBus::load(
         p_pt.push_back(pt);
         p_pb.push_back(pb);
         if (gstatus == 1) {
-//          p_v = vs; //reset initial PV voltage to set voltage
+          p_v = vs; //reset initial PV voltage to set voltage
           if (p_type == 2) p_isPV = true;
         }
         std::string id("-1");
@@ -717,10 +717,10 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     if (!isIsolated()) {
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v);
-    } else {
+    }/* else {
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
             getOriginalIndex(),0.0,0.0);
-    }
+    }*/
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
@@ -1552,6 +1552,8 @@ void gridpack::powerflow::PFBranch::load(
   for (idx = 0; idx<p_elems; idx++) {
     bool xform = true;
     xform = xform && data->getValue(BRANCH_X, &rvar, idx);
+    if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
+    if (rvar >-1.0e-5 && rvar <0.0) rvar =-1.0e-5;
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
@@ -1791,7 +1793,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
         slen += len;
         cptr += len;
       }
-      double rval = 180.0*p_phase_shift[i]/pi;
+      double rval = -180.0*p_phase_shift[i]/pi;
       idx = 0;
       if (p_branch_status[i]) idx = 1;
       sprintf(buf," %12.4f, %12.4f, %1d\n",p_tap_ratio[i],rval,idx);

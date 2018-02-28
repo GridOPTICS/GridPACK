@@ -456,6 +456,7 @@ void gridpack::powerflow::PFAppModule::write()
   p_branchIO->header("\n        Bus 1       Bus 2   CKT         P"
                   "                    Q\n");
   p_branchIO->write();
+  //p_branchIO->write("record");
 
 
   p_busIO->header("\n   Generator Power\n");
@@ -464,6 +465,7 @@ void gridpack::powerflow::PFAppModule::write()
   p_busIO->header("\n   Bus Voltages and Phase Angles\n");
   p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   p_busIO->write();
+  //p_busIO->write("record");
   timer->stop(t_write);
   timer->stop(t_total);
 }
@@ -482,6 +484,21 @@ void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
   timer->stop(t_total);
 }
 
+void gridpack::powerflow::PFAppModule::writeCABus()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_busIO->write("ca");
+//  p_busIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
 void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
 {
   gridpack::utility::CoarseTimer *timer =
@@ -492,6 +509,20 @@ void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
   timer->start(t_write);
   timer->start(t_total);
   p_branchIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
+void gridpack::powerflow::PFAppModule::writeCABranch()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_branchIO->write("flow");
   timer->stop(t_write);
   timer->stop(t_total);
 }
