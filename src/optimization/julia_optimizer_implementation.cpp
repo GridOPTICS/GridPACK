@@ -385,7 +385,9 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   out << ", ";
   {
     ConstraintRenderer r(out);
-    p_fullObjective->accept(r);
+    if (p_fullObjective) {
+      p_fullObjective->accept(r);
+    }
   }
   out << ")" << std::endl;
 

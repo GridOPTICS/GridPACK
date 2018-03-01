@@ -319,7 +319,9 @@ OptimizerImplementation::p_gatherProblem(void)
   VariableSubstituter vs(p_allVariables);
   std::for_each(p_allConstraints.begin(), p_allConstraints.end(),
                 boost::bind(&Constraint::accept, _1, boost::ref(vs)));
-  p_fullObjective->accept(vs);
+  if (p_fullObjective) {
+    p_fullObjective->accept(vs);
+  }
 
   // uniquely name all constraints in parallel
   if (nproc > 1) {
