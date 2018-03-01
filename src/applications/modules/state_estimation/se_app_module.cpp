@@ -132,7 +132,7 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   }
 
   // Convergence and iteration parameters
-  p_tolerance = secursor->get("tolerance",1.0e-6);
+  p_tolerance = secursor->get("tolerance",1.0e-3);
   p_max_iteration = secursor->get("maxIteration",20);
 
   // load input file
@@ -167,7 +167,7 @@ void gridpack::state_estimation::SEAppModule::setNetwork(
   secursor = p_config->getCursor("Configuration.State_estimation");
 
   // Convergence and iteration parameters
-  p_tolerance = secursor->get("tolerance",1.0e-6);
+  p_tolerance = secursor->get("tolerance",1.0e-3);
   p_max_iteration = secursor->get("maxIteration",20);
   char buf[128];
   sprintf(buf,"Tolerance: %12.4e\n",p_tolerance);
@@ -202,7 +202,7 @@ void gridpack::state_estimation::SEAppModule::readMeasurements(void)
   if (cursor) cursor->children(measurements);
   std::vector<gridpack::state_estimation::Measurement>
     meas = getMeasurements(measurements);
-
+/*
   if (p_comm.rank() == 0) {
     int idx;
     for (idx = 0; idx < meas.size(); idx++) {
@@ -222,7 +222,8 @@ void gridpack::state_estimation::SEAppModule::readMeasurements(void)
       }
       printf("\n");
     }
-  }   
+  }  
+*/ 
   // Add measurements to buses and branches
   p_factory->setMeasurements(meas);
 
@@ -262,8 +263,8 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   p_factory->setMode(YBus);
   gridpack::mapper::FullMatrixMap<SENetwork> ybusMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
-  p_branchIO->header("\nybus:\n");
-  ybus->print();
+//  p_branchIO->header("\nybus:\n");
+//  ybus->print();
 
   // Create mapper to push voltage data back onto buses
   p_factory->setMode(Voltage);
@@ -273,8 +274,8 @@ void gridpack::state_estimation::SEAppModule::solve(void)
   p_factory->setMode(Jacobian_H);
   gridpack::mapper::GenMatrixMap<SENetwork> HJacMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> HJac = HJacMap.mapToMatrix();
-  p_branchIO->header("\nHJac:\n");
-  HJac->print();
+//  p_branchIO->header("\nHJac:\n");
+//  HJac->print();
 
   gridpack::mapper::GenVectorMap<SENetwork> EzMap(p_network);
   boost::shared_ptr<gridpack::math::Vector> Ez = EzMap.mapToVector();
@@ -297,7 +298,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     p_factory->setMode(Jacobian_H);
 //    printf("Got to HJac\n");
     HJacMap.mapToMatrix(HJac);
-//  HJac->print();
+//    HJac->print();
 //  printf("Got to H'\n");
 
     // Form H'
@@ -313,7 +314,7 @@ void gridpack::state_estimation::SEAppModule::solve(void)
     // Form Gain matrix
     boost::shared_ptr<gridpack::math::Matrix> Gain1(multiply(*trans_HJac, *Rinv));
     boost::shared_ptr<gridpack::math::Matrix> Gain(multiply(*Gain1, *HJac));
-//  Gain->print();
+//    Gain->print();
 //  printf("Got to H'*Rinv\n");
 
     // Form right hand side vector
@@ -329,22 +330,23 @@ void gridpack::state_estimation::SEAppModule::solve(void)
 
 // create a linear solver
     gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = p_config->getCursor("Configuration.Powerflow");
+    cursor = p_config->getCursor("Configuration.State_estimation");
     gridpack::math::LinearSolver solver(*Gain);
     solver.configure(cursor);
     
     p_busIO->header("\n Print Gain matrix\n");
-    Gain->print();
+//    Gain->print();
+//    Gain->save("gain.txt");
 //  printf("Got to DeltaX\n");
 
     // Solve linear equation
     boost::shared_ptr<gridpack::math::Vector> X(RHS->clone()); 
 //    printf("Got to Solve\n");
     p_busIO->header("\n Print RHS vector\n");
-    RHS->print();
+//    RHS->print();
     X->zero(); //might not need to do this
     solver.solve(*RHS, *X);
-//  X->print();
+//    X->print();
 //  printf("Got to updateBus\n");
 //    boost::shared_ptr<gridpack::math::Vector> X(solver.solve(*RHS)); 
     tol = X->normInfinity();
@@ -389,12 +391,12 @@ void gridpack::state_estimation::SEAppModule::write(void)
 
   p_busIO->header("\n   Comparison of Bus Measurements and Estimations\n");
   p_busIO->header("\n   Type  Bus Number      Measurement          Estimate"
-                 "         Difference   Deviation\n");
+                 " Difference   Deviation\n");
   p_busIO->write("se");
 
   p_branchIO->header("\n   Comparison of Branch Measurements and Estimations\n");
-  p_branchIO->header("\n   Type      From        To  CKT      Measurement          Estimate"
-                 "         Difference   Deviation\n");
+  p_branchIO->header("\n   Type  From    To  CKT   Measurement      Estimate"
+                 " Difference   Deviation\n");
   p_branchIO->write("se");
 
   // Output 
