@@ -165,5 +165,6 @@ install(TARGETS ca.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
+set(TIMEOUT 40.0)
 gridpack_add_run_test("contingency_analysis" ca.x input_14.xml)
 
