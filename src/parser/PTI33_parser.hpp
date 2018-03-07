@@ -1370,151 +1370,160 @@ class PTI33_parser : public BasePTIParser<_network>
         p_busData[o_idx]->addValue(SHUNT_MODSW, atoi(split_line[1].c_str()));
 
         /*
+         * type: integer
+         * #define SHUNT_ADJM "SHUNT_ADJM"
+         */
+        p_busData[o_idx]->addValue(SHUNT_ADJM, atoi(split_line[2].c_str()));
+
+        /*
+         * type: integer
+         * #define SHUNT_SWCH_STAT "SHUNT_SWCH_STAT"
+         */
+        p_busData[o_idx]->addValue(SHUNT_SWCH_STAT, atoi(split_line[3].c_str()));
+
+        /*
          * type: real float
          * #define SHUNT_VSWHI "SHUNT_VSWHI"
          */
-        p_busData[o_idx]->addValue(SHUNT_VSWHI, atof(split_line[2].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_VSWHI, atof(split_line[4].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_VSWLO "SHUNT_VSWLO"
          */
-        p_busData[o_idx]->addValue(SHUNT_VSWLO, atof(split_line[3].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_VSWLO, atof(split_line[5].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_SWREM "SHUNT_SWREM"
          */
-        p_busData[o_idx]->addValue(SHUNT_SWREM, atoi(split_line[4].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_SWREM, atoi(split_line[6].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_RMPCT "SHUNT_RMPCT"
          */
-        //          p_busData[o_idx]->addValue(SHUNT_RMPCT, atof(split_line[4].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_RMPCT, atof(split_line[7].c_str()));
 
         /*
          * type: string
          * #define SHUNT_RMIDNT "SHUNT_RMIDNT"
          */
-        //          p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[5].c_str());
+        p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[8].c_str());
 
         /*
          * type: real float
          * #define SHUNT_BINIT "SHUNT_BINIT"
          */
-        p_busData[o_idx]->addValue(SHUNT_BINIT, atof(split_line[5].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_BINIT, atof(split_line[9].c_str()));
 
-        /*
-         * type: integer
-         * #define SHUNT_N1 "SHUNT_N1"
-         */
-        p_busData[o_idx]->addValue(SHUNT_N1, atoi(split_line[6].c_str()));
+        if (nval > 10)
+        p_busData[o_idx]->addValue(SHUNT_N1, atoi(split_line[10].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N2 "SHUNT_N2"
          */
-        if (8<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N2, atoi(split_line[8].c_str()));
+        if (nval > 12)
+          p_busData[o_idx]->addValue(SHUNT_N2, atoi(split_line[12].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N3 "SHUNT_N3"
          */
-        if (10<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N3, atoi(split_line[10].c_str()));
+        if (nval > 14)
+          p_busData[o_idx]->addValue(SHUNT_N3, atoi(split_line[14].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N4 "SHUNT_N4"
          */
-        if (12<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N4, atoi(split_line[12].c_str()));
+        if (nval > 16)
+          p_busData[o_idx]->addValue(SHUNT_N4, atoi(split_line[16].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N5 "SHUNT_N5"
          */
-        if (14<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N5, atoi(split_line[14].c_str()));
+        if (nval > 18)
+          p_busData[o_idx]->addValue(SHUNT_N5, atoi(split_line[18].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N6 "SHUNT_N6"
          */
-        if (16<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N6, atoi(split_line[16].c_str()));
+        if (nval > 20)
+          p_busData[o_idx]->addValue(SHUNT_N6, atoi(split_line[20].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N7 "SHUNT_N7"
          */
-        if (18<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N7, atoi(split_line[18].c_str()));
+        if (nval > 22) 
+          p_busData[o_idx]->addValue(SHUNT_N7, atoi(split_line[22].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N8 "SHUNT_N8"
          */
-        if (20<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N8, atoi(split_line[20].c_str()));
+        if (nval > 24) 
+          p_busData[o_idx]->addValue(SHUNT_N8, atoi(split_line[24].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B1 "SHUNT_B1"
          */
-        if (7<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B1, atof(split_line[7].c_str()));
+        if (nval > 11) 
+          p_busData[o_idx]->addValue(SHUNT_B1, atof(split_line[11].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B2 "SHUNT_B2"
          */
-        if (9<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B2, atof(split_line[9].c_str()));
+        if (nval > 13) 
+          p_busData[o_idx]->addValue(SHUNT_B2, atof(split_line[13].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B3 "SHUNT_B3"
          */
-        if (11<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B3, atof(split_line[11].c_str()));
+        if (nval > 15) 
+          p_busData[o_idx]->addValue(SHUNT_B3, atof(split_line[15].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B4 "SHUNT_B4"
          */
-        if (13<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B4, atof(split_line[13].c_str()));
+        if (nval > 17) 
+          p_busData[o_idx]->addValue(SHUNT_B4, atof(split_line[17].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B5 "SHUNT_B5"
          */
-        if (15<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B5, atof(split_line[15].c_str()));
+        if (nval > 19) 
+          p_busData[o_idx]->addValue(SHUNT_B5, atof(split_line[19].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B6 "SHUNT_B6"
          */
-        if (17<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B6, atof(split_line[17].c_str()));
+        if (nval > 21) 
+          p_busData[o_idx]->addValue(SHUNT_B6, atof(split_line[21].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B7 "SHUNT_B7"
          */
-        if (19<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B7, atof(split_line[19].c_str()));
+        if (nval > 23) 
+          p_busData[o_idx]->addValue(SHUNT_B7, atof(split_line[23].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B8 "SHUNT_B8"
          */
-        if (21<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B8, atof(split_line[21].c_str()));
+        if (nval > 25) 
+          p_busData[o_idx]->addValue(SHUNT_B8, atof(split_line[25].c_str()));
 
         std::getline(input, line);
       }

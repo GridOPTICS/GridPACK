@@ -3205,9 +3205,29 @@
 #define SHUNT_MODSW "SHUNT_MODSW"
 
 /**
+ * Adjustment method:
+ *   0 - steps and blocks are switched on in iput order, and off in reverse
+ *   order
+ *   1 - steps and blocks are switched on and off such that the next highest (or
+ *   lowest, as appropriate) total admittance is achieved.
+ *   SHUNT_ADJM = 0 by default
+ *   type: integer
+ */
+#define SHUNT_ADJM "SHUNT_ADJM"
+
+/**
+ * Initial switched shunt status of one for in-service and zero for
+ * out-of-service
+ * SHUNT_SWCH_STAT = 1 by default
+ * type: integer
+ */
+#define SHUNT_SWCH_STAT "SHUNT_SWCH_STAT"
+
+/**
  * When SHUNT_MODSW is 1 or 2, the controlled voltage upper limit; entered in pu.
  * When SHUNT_MODSW is 3, 4 or 5, the controlled reactive power range upper limit;
- * entered in pu of the total reactive power range of the controlled voltage controlling device.
+ * entered in pu of the total reactive power range of the controlled voltage
+ * controlling device.
  * SHUNT_VSWHI = 1.0 by default.
  * type: real float
  */
@@ -3216,8 +3236,8 @@
 /**
  * When SHUNT_MODSW is 1 or 2, the controlled voltage lower limit; entered in pu.
  * When SHUNT_MODSW is 3, 4 or 5, the controlled reactive power range lower limit;
- * entered in pu of the total reactive power range of the controlled voltage controlling
- * device. SHUNT_VSWLO = 1.0 by default
+ * entered in pu of the total reactive power range of the controlled voltage
+ * controlling device. SHUNT_VSWLO = 1.0 by default
  * type: real float
  */
 #define SHUNT_VSWLO "SHUNT_VSWLO"
@@ -3228,6 +3248,25 @@
  * type: integer
  */
 #define SHUNT_SWREM "SHUNT_SWREM"
+
+/**
+ * Percent of the total MVar required to hold the voltage at the bus controlled
+ * by bus SHUNT_BUSNUMBER that are contributed by this switched shunt;
+ * SHUNT_RMPCT must be positive.
+ * SHUNT_RMPCT = 100.0 by default
+ * type: float
+ */
+#define SHUNT_RMPCT "SHUNT_RMPCT"
+
+/**
+ * When SHUNT_MODSW is 4, the name of the VSC dc line where the converter bus is
+ * specified in SHUNT_SWREM.
+ * When SHUNT_MODSW is 6, the name of the FACTS device where the shunt element's
+ * reactive output is to be controlled.
+ * SHUNT_RMIDNT is blank by default
+ * type: string
+ */
+#define SHUNT_RMIDNT "SHUNT_RMIDNT"
 
 /**
  * Initial switched shunt admittance; entered in Mvar at unity voltage
