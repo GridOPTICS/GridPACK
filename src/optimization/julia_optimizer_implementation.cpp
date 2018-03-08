@@ -398,7 +398,7 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   // Print values of optimized variables
   { 
     JuliaVarPrintLister v(mname, out);
-    BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+    BOOST_FOREACH(VarMap::value_type& i, p_exportVariables) {
       i.second->accept(v);
     }
   }
