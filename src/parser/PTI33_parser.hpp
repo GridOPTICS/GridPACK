@@ -140,6 +140,8 @@ class PTI33_parser : public BasePTIParser<_network>
       p_branchData.clear();
       p_busMap.clear();
 
+      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
+
       int me(p_network->communicator().rank());
 
       std::ifstream            input;
@@ -160,7 +162,6 @@ class PTI33_parser : public BasePTIParser<_network>
       // Transmit CASE_SBASE to all processors
       double sval =  p_case_sbase;
       double rval;
-      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
       int nprocs = p_network->communicator().size();
       int ierr = MPI_Allreduce(&sval,&rval,1,MPI_DOUBLE,MPI_SUM,comm);
       p_case_sbase = rval;
@@ -206,6 +207,27 @@ class PTI33_parser : public BasePTIParser<_network>
         }
 #endif
         input.close();
+      }
+      // Distribute impedence correction tables to all processors (if necessary)
+      int stables = 0;
+      int ntables;
+      if (me == 0) {
+        stables =  p_imp_corr_table.size();
+        ierr = MPI_Allreduce(&stables, &ntables, 1, MPI_INT, MPI_SUM, comm);
+      }
+      if (ntables > 0) {
+        // distribute tables
+        if (me == 0) {
+          int idx;
+          for (idx=1; idx<nprocs; idx++) {
+            static_cast<boost::mpi::communicator>(
+                p_network->communicator()).send(idx,idx,p_imp_corr_table);
+          }
+        } else {
+          p_imp_corr_table.clear();
+          static_cast<boost::mpi::communicator>(
+              p_network->communicator()).recv(0,me,p_imp_corr_table);
+        }
       }
       p_timer->stop(t_case);
     }
