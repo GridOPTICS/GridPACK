@@ -213,8 +213,8 @@ class PTI33_parser : public BasePTIParser<_network>
       int ntables;
       if (me == 0) {
         stables =  p_imp_corr_table.size();
-        ierr = MPI_Allreduce(&stables, &ntables, 1, MPI_INT, MPI_SUM, comm);
       }
+      ierr = MPI_Allreduce(&stables, &ntables, 1, MPI_INT, MPI_SUM, comm);
       if (ntables > 0) {
         // distribute tables
         if (me == 0) {
