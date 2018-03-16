@@ -7,7 +7,7 @@
 /**
  * @file   serial_io.hpp
  * @author Bruce Palmer
- * @date   2016-07-14 14:49:01 d3g096
+ * @date   2018-03-16 07:20:51 d3g096
  * 
  * @brief  
  * 
@@ -68,7 +68,6 @@ class SerialBusIO {
     GA_Set_data(p_maskGA,one,&nbus,C_INT);
     GA_Set_pgroup(p_maskGA, p_GAgrp);
     GA_Allocate(p_maskGA);
-    p_useFile = false;
 #ifdef USE_GOSS
     p_goss = NULL;
     p_channel = false;
@@ -83,9 +82,7 @@ class SerialBusIO {
     NGA_Deregister_type(p_GA_type);
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
-    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_useFile && p_fout->is_open()) p_fout->close();
-    }
+    this->close();
   }
 
   /**
@@ -95,10 +92,9 @@ class SerialBusIO {
   void open(const char *filename)
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_useFile && p_fout->is_open()) p_fout->close();
-      if (!p_useFile) p_fout.reset(new std::ofstream);
+      this->close();
+      p_fout.reset(new std::ofstream);
       p_fout->open(filename);
-      p_useFile = true;
     }
   }
 
@@ -118,7 +114,6 @@ class SerialBusIO {
   void setStream(boost::shared_ptr<std::ofstream> stream)
   {
     p_fout = stream;
-    p_useFile = true;
   }
 
   /**
@@ -127,9 +122,11 @@ class SerialBusIO {
   void close()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_fout->is_open()) p_fout->close();
+      if (p_fout) {
+        if (p_fout->is_open()) p_fout->close();
+      }
     }
-    p_useFile = false;
+    p_fout.reset();
   }
 
   /**
@@ -139,7 +136,7 @@ class SerialBusIO {
    */
   void write(const char *signal = NULL)
   {
-    if (p_useFile) {
+    if (p_fout) {
       write(*p_fout, signal);
     } else {
       write(std::cout, signal);
@@ -191,7 +188,7 @@ class SerialBusIO {
    */
   void header(const char *str)
   {
-    if (p_useFile) {
+    if (p_fout) {
       header(*p_fout, str);
     } else {
       header(std::cout, str);
@@ -484,7 +481,6 @@ class SerialBusIO {
     int p_stringGA;
     int p_maskGA;
     int p_size;
-    bool p_useFile;
     boost::shared_ptr<std::ofstream> p_fout;
     int p_GAgrp;
 #ifdef USE_GOSS
@@ -522,7 +518,7 @@ class SerialBranchIO {
     GA_Set_data(p_maskGA,one,&nbranch,C_INT);
     GA_Set_pgroup(p_maskGA, p_GAgrp);
     GA_Allocate(p_maskGA);
-    p_useFile = false;
+    p_fout.reset();
   }
 
   /**
@@ -533,9 +529,7 @@ class SerialBranchIO {
     NGA_Deregister_type(p_GA_type);
     GA_Destroy(p_stringGA);
     GA_Destroy(p_maskGA);
-    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_useFile && p_fout->is_open()) p_fout->close();
-    }
+    this->close();
   }
 
   /**
@@ -545,10 +539,9 @@ class SerialBranchIO {
   void open(const char *filename)
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_useFile && p_fout->is_open()) p_fout->close();
-      if (!p_useFile) p_fout.reset(new std::ofstream);
+      this->close();
+      p_fout.reset(new std::ofstream);
       p_fout->open(filename);
-      p_useFile = true;
     }
   }
 
@@ -568,7 +561,6 @@ class SerialBranchIO {
   void setStream(boost::shared_ptr<std::ofstream> stream)
   {
     p_fout = stream;
-    p_useFile = true;
   }
 
   /**
@@ -577,8 +569,11 @@ class SerialBranchIO {
   void close()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      if (p_useFile && p_fout->is_open()) p_fout->close();
+      if (p_fout) {
+        if (p_fout->is_open()) p_fout->close();
+      }
     }
+    p_fout.reset();
   }
 
   /**
@@ -588,7 +583,7 @@ class SerialBranchIO {
    */
   void write(const char *signal = NULL)
   {
-    if (p_useFile) {
+    if (p_fout) {
       write(*p_fout, signal);
     } else {
       write(std::cout, signal);
@@ -603,7 +598,7 @@ class SerialBranchIO {
    */
   void header(const char *str)
   {
-    if (p_useFile) {
+    if (p_fout) {
       header(*p_fout, str);
     } else {
       header(std::cout, str);
@@ -862,7 +857,6 @@ class SerialBranchIO {
     int p_stringGA;
     int p_maskGA;
     int p_size;
-    bool p_useFile;
     boost::shared_ptr<std::ofstream> p_fout;
     int p_GAgrp;
 };
