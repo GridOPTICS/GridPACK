@@ -385,10 +385,6 @@ class PTI33_parser : public BasePTIParser<_network>
           p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(), nld);
         }
 
-        // LOAD_ID              "ID"                  integer
-        std::string tag = util.clean2Char(split_line[1]);
-        if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(),nld);
-
         // LOAD_STATUS              "ID"                  integer
         if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS,
             atoi(split_line[2].c_str()), nld);
@@ -837,7 +833,7 @@ class PTI33_parser : public BasePTIParser<_network>
         // TODO: add variables LEN, Oi, Fi
 
         // Add BRANCH_TAP with value 1.0
-        p_branchData[l_idx]->addValue(BRANCH_TAP,1.0,nelems);
+        p_branchData[l_idx]->addValue(BRANCH_TAP,0.0,nelems);
 
         nelems++;
         p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
@@ -1221,6 +1217,14 @@ class PTI33_parser : public BasePTIParser<_network>
               atof(split_line[8].c_str()),nelems);
 
           /*
+           * type: float
+           * BRANCH_B
+           */
+          p_branchData[l_idx]->addValue(BRANCH_B,
+              atof(split_line[8].c_str()),nelems);
+
+
+          /*
            * type: integer
            * BRANCH_STATUS
            */
@@ -1257,13 +1261,6 @@ class PTI33_parser : public BasePTIParser<_network>
             rval = rval*p_case_sbase/sbase2;
             p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
           }
-
-          /*
-           * type: float
-           * BRANCH_B
-           */
-          rval = 0.0;
-          p_branchData[l_idx]->addValue(BRANCH_B,rval,nelems);
 
           // Add parameters from line 3
           /*
