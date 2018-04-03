@@ -752,8 +752,11 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_angle = p_angle*pi/180.0; 
 
   p_shunt = true;
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
-  p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
+  bool ok = true;
+  ok = data->getValue(BUS_SHUNT_GL, &p_shunt_gs);
+  p_shunt = p_shunt && ok;
+  ok = data->getValue(BUS_SHUNT_BL, &p_shunt_bs);
+  p_shunt = p_shunt && ok;
   p_shunt_gs /= p_sbase;
   p_shunt_bs /= p_sbase; 
 
@@ -2343,18 +2346,19 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
   //printf ("-- component branch line relay:  -- nrelay = %d \n", nrelay);
 
   for (idx = 0; idx<p_elems; idx++) {
-    bool xform = true;
-    xform = xform && data->getValue(BRANCH_X, &rvar, idx);
+    data->getValue(BRANCH_X, &rvar, idx);
     p_reactance.push_back(rvar);
-    xform = xform && data->getValue(BRANCH_R, &rvar, idx);
+    data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_SHIFT, &rvar, idx);
+    rvar = 0.0;
+    data->getValue(BRANCH_SHIFT, &rvar, idx);
     rvar = -rvar*pi/180.0;
     p_phase_shift.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
+    rvar = 0.0;
+    data->getValue(BRANCH_TAP, &rvar, idx);
     p_tap_ratio.push_back(rvar);
     if (rvar != 0.0) {
-      p_xform.push_back(xform);
+      p_xform.push_back(true);
     } else {
       p_xform.push_back(false);
     }
