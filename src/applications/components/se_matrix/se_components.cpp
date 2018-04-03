@@ -270,7 +270,8 @@ void gridpack::state_estimation::SEBus::load(
 {
   YMBus::load(data);
 
-  bool ok = data->getValue(CASE_SBASE, &p_sbase);
+  p_sbase = 100.0;
+  data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
   p_v = p_voltage;
@@ -282,15 +283,20 @@ void gridpack::state_estimation::SEBus::load(
   if (itype == 3) {
     setReferenceBus(true);
   }
-
+  p_shunt_gs = 0.0;
+  p_shunt_bs = 0.0;
+  data->getValue(BUS_SHUNT_GL, &p_shunt_gs,0);
+  data->getValue(BUS_SHUNT_BL, &p_shunt_bs,0);
   // if BUS_TYPE = 2 then bus is a PV bus
   p_isPV = false;
   // if (itype == 2) p_isPV = true;
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
   p_load = true;
-  p_load = p_load && data->getValue(LOAD_PL, &p_pl);
-  p_load = p_load && data->getValue(LOAD_QL, &p_ql);
+  p_pl = 0.0;
+  p_ql = 0.0;
+  data->getValue(LOAD_PL, &p_pl);
+  data->getValue(LOAD_QL, &p_ql);
   bool lgen;
   int i, ngen, gstatus;
   double pg, qg, vs, qmin, qmax;
@@ -303,7 +309,7 @@ void gridpack::state_estimation::SEBus::load(
       lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
       lgen = lgen && data->getValue(GENERATOR_VS, &vs,i);
       lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
-      lgen = lgen && data->getValue(GENERATOR_QMAX, &qmin,i);
+      lgen = lgen && data->getValue(GENERATOR_QMIN, &qmin,i);
       lgen = lgen && data->getValue(GENERATOR_QMAX, &qmax,i);
       if (lgen) {
         p_pg.push_back(pg);
@@ -1115,6 +1121,20 @@ void gridpack::state_estimation::SEBus:: vectorGetElementValues(ComplexType *val
   }
 }
 
+
+/**
+ *  Get shunt gs and bs
+ */
+
+void gridpack::state_estimation::SEBus::getShuntGsBs(double *gs, double *bs) 
+{
+  *gs = p_shunt_gs/p_sbase; 
+  *bs = p_shunt_bs/p_sbase; 
+//  *gs = p_shunt_gs;
+//  *bs = p_shunt_bs;
+}
+
+
 /**
  *  Simple constructor
  */
@@ -1245,41 +1265,34 @@ void gridpack::state_estimation::SEBranch::load(
   ok1 = ok1 && !bus2->isIsolated();
   if (ok1) {
 
-  bool ok = true;
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
   int ivar;
   std::string svar;
   double pi = 4.0*atan(1.0);
   p_active = false;
-  ok = data->getValue(CASE_SBASE, &p_sbase);
+  p_sbase = 100.0;
+  data->getValue(CASE_SBASE, &p_sbase);
   int idx;
   for (idx = 0; idx<p_elems; idx++) {
-    bool xform = true;
-    xform = xform && data->getValue(BRANCH_X, &rvar, idx);
+    data->getValue(BRANCH_X, &rvar, idx);
     if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
     if (rvar >-1.0e-5 && rvar <0.0) rvar =-1.0e-5;
-/*    if (rvar >-5.0e-3 && rvar <0.0) {
-      printf("neg %d rvar = %f \n", idx, rvar) ;
-      rvar = -5.0e-3;
-    }
-    if (rvar <5.0e-3 && rvar >=0.0) {
-      printf("pos %d rvar = %f \n", idx, rvar) ;
-      rvar = 5.0e-3;
-    }
-*/
     p_reactance.push_back(rvar);
-    xform = xform && data->getValue(BRANCH_R, &rvar, idx);
+    data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_SHIFT, &rvar, idx);
+    rvar = 0.0; 
+    data->getValue(BRANCH_SHIFT, &rvar, idx);
     rvar = -rvar*pi/180.0; 
     p_phase_shift.push_back(rvar);
-    ok = ok && data->getValue(BRANCH_TAP, &rvar, idx);
+    rvar = 0.0;
+    data->getValue(BRANCH_TAP, &rvar, idx);
     p_tap_ratio.push_back(rvar); 
-    ok = ok && data->getValue(BRANCH_CKT, &svar, idx);
+    //ok = ok && data->getValue(BRANCH_CKT, &svar, idx);
+    data->getValue(BRANCH_CKT, &svar, idx);
     p_tag.push_back(svar);
     if (rvar != 0.0) {
-      p_xform.push_back(xform);
+      p_xform.push_back(true);
     } else {
       p_xform.push_back(false);
     }
@@ -1288,14 +1301,19 @@ void gridpack::state_estimation::SEBranch::load(
     p_branch_status.push_back(static_cast<bool>(ivar));
     if (ivar == 1) p_active = true;
     bool shunt = true;
+    rvar = 0.0;
     shunt = shunt && data->getValue(BRANCH_B, &rvar, idx);
     p_charging.push_back(rvar);
+    rvar = 0.0;
     shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G1, &rvar, idx);
     p_shunt_admt_g1.push_back(rvar);
+    rvar = 0.0;
     shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B1, &rvar, idx);
     p_shunt_admt_b1.push_back(rvar);
+    rvar = 0.0;
     shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_G2, &rvar, idx);
     p_shunt_admt_g2.push_back(rvar);
+    rvar = 0.0;
     shunt = shunt && data->getValue(BRANCH_SHUNT_ADMTTNC_B2, &rvar, idx);
     p_shunt_admt_b2.push_back(rvar);
     p_shunt.push_back(shunt);
@@ -1605,6 +1623,7 @@ void gridpack::state_estimation::SEBranch::configureSE(void)
   int i, j, im, jm, nsize;
   bool ok = !bus1->isIsolated();
   ok = ok && !bus2->isIsolated();
+  p_numElements = 0;
   if (ok) {
    for (i=0; i<nmeas; i++) {
     std::string type = p_meas[i].p_type;
@@ -1771,11 +1790,14 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
     double t,gij,bij,shifter; 
     std::string ckt, type;
 
-    
     v1 = bus1->getVoltage();
     v2 = bus2->getVoltage();
+    double gs1, bs1, gs2, bs2;
+    bus1->getShuntGsBs(&gs1,&bs1);
+    bus2->getShuntGsBs(&gs2,&bs2);
     theta = bus1->getPhase() - bus2->getPhase();  
     //    int ref = getRef(this);
+
     for (i=0; i<nmeas; i++) {
       im = matrixGetRowIndex(i);
       ckt = p_meas[i].p_ckt;
@@ -1808,14 +1830,14 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
               ncnt++;
               jm = bus1->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*cos(theta+shifter)
-                  +bij*sin(theta+shifter)) +2*gij*v1/(t*t),0.0);
+                  +bij*sin(theta+shifter)) +2*(gij+gs1)*v1/(t*t),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dPIJ/DVI
               jm = bus1->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-1.0/t*v2*(gij*cos(theta+shifter)
-                  +bij*sin(theta+shifter)) +2*gij*v1/(t*t),0.0);
+                  +bij*sin(theta+shifter)) +2*(gij+gs1)*v1/(t*t),0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
@@ -2028,14 +2050,14 @@ void gridpack::state_estimation::SEBranch::matrixGetValues(ComplexType *values, 
               ncnt++;
               jm = bus2->matrixGetColIndex(1);
               values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*cos(-theta-shifter)
-                    +bij*sin(-theta-shifter))+2*gij*v2,0.0);
+                    +bij*sin(-theta-shifter))+2*(gij+gs2)*v2,0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;
             } else {  // reference bus, only for dPIJ/DVJ
               jm = bus2->matrixGetColIndex(0);
               values[ncnt] = gridpack::ComplexType(-1.0/t*v1*(gij*cos(-theta-shifter)
-                    +bij*sin(-theta-shifter))+2*gij*v2,0.0);
+                    +bij*sin(-theta-shifter))+2*(gij+gs2)*v2,0.0);
               rows[ncnt] = im;
               cols[ncnt] = jm;
               ncnt++;

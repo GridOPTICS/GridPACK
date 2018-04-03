@@ -106,6 +106,9 @@ std::vector<gridpack::state_estimation::Measurement>
   return ret;
 }
 
+
+enum Parser{PTI23, PTI33};
+
 /**
  * Read in and partition the network. The input file is read
  * directly from the state_estimation block in the configuration file so no
@@ -126,9 +129,14 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   gridpack::utility::Configuration::CursorPtr cursor, secursor;
   secursor = config->getCursor("Configuration.State_estimation");
   std::string filename;
+  int filetype = PTI23;
   if (!secursor->get("networkConfiguration",&filename)) {
-     printf("No network configuration specified\n");
-     return;
+    if (secursor->get("networkConfiguration_v33",&filename)) {
+      filetype = PTI33;
+    } else {
+      printf("No network configuration file specified\n");
+      return;
+    }
   }
 
   // Convergence and iteration parameters
@@ -136,8 +144,23 @@ void gridpack::state_estimation::SEAppModule::readNetwork(
   p_max_iteration = secursor->get("maxIteration",20);
 
   // load input file
-  gridpack::parser::PTI23_parser<SENetwork> parser(p_network);
-  parser.parse(filename.c_str());
+  //gridpack::parser::PTI23_parser<SENetwork> parser(p_network);
+  //parser.parse(filename.c_str());
+  double phaseShiftSign = secursor->get("phaseShiftSign",1.0);
+
+  if (filetype == PTI23) {
+    gridpack::parser::PTI23_parser<SENetwork> parser(network);
+    parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
+  } else if (filetype == PTI33) {
+    gridpack::parser::PTI33_parser<SENetwork> parser(network);
+    parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
+  }
 
   // partition network
   p_network->partition();
