@@ -36,6 +36,7 @@ gridpack::dynamic_simulation::DSFullBus::DSFullBus(void)
   p_mode = YBUS;
   setReferenceBus(false);
   p_ngen = 0;
+  p_negngen = 0;
   p_from_flag = false;
   p_to_flag = false;
   p_branchrelay_from_flag = false; 
