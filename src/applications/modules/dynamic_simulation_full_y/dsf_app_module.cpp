@@ -58,6 +58,7 @@ gridpack::dynamic_simulation::DSFullApp::~DSFullApp(void)
 {
 }
 
+enum Format{PTI23, PTI33};
 /**
  * Read in and partition the dynamic simulation network. The input file is read
  * directly from the Dynamic_simulation block in the configuration file so no
@@ -80,11 +81,17 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   std::string filename;
+  int filetype = PTI23;
   if (otherfile == NULL) {
-    if (!cursor->get("networkConfiguration",&filename)) {
+    if (cursor->get("networkConfiguration",&filename)) {
+      filetype = PTI23;
+    } else if (cursor->get("networkConfiguration_v33",&filename)) {
+      filetype = PTI33;
+    } else {
       printf("No network configuration specified\n");
     }
   } else {
+    filetype = PTI23;
     filename = otherfile;
   }
 
@@ -98,11 +105,17 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   }
 
   // load input file
-  gridpack::parser::PTI23_parser<DSFullNetwork> parser(network);
-  parser.parse(filename.c_str());
+  if (filetype == PTI23) {
+    gridpack::parser::PTI23_parser<DSFullNetwork> parser(network);
+    if (filename.size() > 0) parser.parse(filename.c_str());
+  } else if (filetype == PTI33) {
+    gridpack::parser::PTI33_parser<DSFullNetwork> parser(network);
+    if (filename.size() > 0) parser.parse(filename.c_str());
+  } else {
+    printf("Unknown filetype\n");
+  }
   cursor = config->getCursor("Configuration.Dynamic_simulation");
   filename = cursor->get("generatorParameters","");
-  if (filename.size() > 0) parser.parse(filename.c_str());
 
   // partition network
   network->partition();
