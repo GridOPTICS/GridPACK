@@ -113,4 +113,34 @@ cmake -Wdev \
        CFLAGS=-pthread CXXFLAGS=-pthread LIBS=-lrt \
        ..
 
-Note that because the CMake FindMPI module totally fails on the Cray OS, it is necessary to specify MPI_LIBRARY and MPI_EXTRA_LIBRARY. To find out where these are located, type "CC -v", pipe the output to a file and then search for "mpich". Use the same library for both MPI_LIBRARY and MPI_EXTRA_LIBRARY. CMake doesn't like having MPI_EXTRA_LIBRARY not set.
+Note that because the CMake FindMPI module totally fails on the Cray OS, it
+is necessary to specify MPI_LIBRARY and MPI_EXTRA_LIBRARY. To find out where these
+are located, type "CC -v", pipe the output to a file and then search for "mpich".
+Use the same library for both MPI_LIBRARY and MPI_EXTRA_LIBRARY. CMake doesn't like
+having MPI_EXTRA_LIBRARY not set.
+
+You also need to edit the FindPETSc.cmake and FindPackageMultipass.cmake files
+in the cmake-jedbrown directory to get the GridPACK configuration to work. These
+files are directly downloaded from Jed Brown's GitHub repository so the don't
+pick up the CHECK_COMPILATION_ONLY flag, which is GridPACK specific. To get this
+test to work properly, edit FindPETSc.cmake and replace
+
+include(Check${PETSC_LANGUAGE_BINDINGS}SourceRuns)
+
+with
+
+include(Check${PETSC_LANGUAGE_BINDINGS}SourceCompiles)
+
+You also need to edit FindPackageMultipass.cmake and replace the lines
+
+include (Check${language}SourceRuns)
+check_c_source_runs ("${source}" ${testname})
+check_cxx_source_runs ("${source}" ${testname})
+
+with
+
+include (Check${language}SourceCompiles)
+check_c_source_compiles ("${source}" ${testname})
+check_cxx_source_compiles ("${source}" ${testname})
+
+Note that these lines do not occur consecutively in this file.
