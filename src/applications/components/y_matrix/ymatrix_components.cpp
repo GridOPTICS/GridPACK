@@ -315,10 +315,6 @@ bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
     ok = ok && !bus2->isIsolated();
     if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
-#ifdef PRINT_DEBUG
-      printf("%d %d %f %f\n",bus1->getOriginalIndex(),
-          bus2->getOriginalIndex(),p_ybusr_frwd,p_ybusi_frwd);
-#endif
       return true;
     } else {
       return false;
@@ -338,10 +334,6 @@ bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
     ok = ok && !bus2->isIsolated();
     if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
-#ifdef PRINT_DEBUG
-      printf("%d %d %f %f\n",bus1->getOriginalIndex(),
-          bus2->getOriginalIndex(),p_ybusr_rvrs,p_ybusi_rvrs);
-#endif
       return true;
     } else {
       return false;
@@ -464,7 +456,7 @@ void gridpack::ymatrix::YMBranch::load(
   for (idx = 0; idx<p_elems; idx++) {
     bool xform = true;
     xform = xform && data->getValue(BRANCH_X, &rvar, idx);
-    //if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
+//    if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
 //    if (rvar >-1.0e-5 && rvar >=0.0) rvar =-1.0e-5;
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);

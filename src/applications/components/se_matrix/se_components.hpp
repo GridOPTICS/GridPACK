@@ -33,11 +33,9 @@ enum SEMode{YBus,Jacobian_H, R_inv, Ez, Voltage};
 struct Measurement
 {
   char p_type[4];
-  //std::string p_type;
   int p_busid;
   int p_fbusid;
   int p_tbusid;
-  //std::string p_ckt;
   char p_ckt[3];
   double p_value;
   double p_deviation;
@@ -322,7 +320,7 @@ class SEBus
     double p_P0, p_Q0; //double p_sbusr, p_sbusi;
     double p_angle;   // initial bus angle read from parser
     double p_voltage; // initial bus voltage read from parser
-    // newly added priavate variables:
+    // newly added private variables:
     std::vector<double> p_pg, p_qg;
     std::vector<int> p_gstatus;
     std::vector<double> p_vs;
@@ -355,7 +353,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
       & p_shunt_gs
       & p_shunt_bs
@@ -511,7 +508,8 @@ class SEBranch
      * @param v1, v2: voltages at buses
      * @param theta: angle difference between two buses
      */
-    void getV1V2Theta(gridpack::state_estimation::SEBranch *branch, double *v1, double *v2, double *theta);
+    void getV1V2Theta(gridpack::state_estimation::SEBranch *branch,
+        double *v1, double *v2, double *theta);
 
     /**
      * Return contribution to constraints
@@ -660,7 +658,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
       & p_reactance
       & p_resistance

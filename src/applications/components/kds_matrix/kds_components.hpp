@@ -317,7 +317,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBus>(*this)
       & p_shunt_gs
       & p_shunt_bs
@@ -479,7 +478,6 @@ private:
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-//    ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
     ar  & boost::serialization::base_object<gridpack::ymatrix::YMBranch>(*this)
       & p_reactance
       & p_resistance

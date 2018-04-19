@@ -130,8 +130,6 @@ class YMBus
     int p_mode;
     bool p_isolated;
 
-    // p_v and p_a are initialized to p_voltage and p_angle respectively,
-    // but may be subject to change during the NR iterations
     double p_ybusr, p_ybusi;
 
 private:

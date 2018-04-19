@@ -293,7 +293,6 @@ void gridpack::dynamic_simulation_r::DSBus::setValues(ComplexType *values)
   if (p_mode == updateYbus) {
     if (p_ngen > 0) {
       p_permYmod = values[0];
-      //printf("p_permYmod = %f+%fi\n", getOriginalIndex(), real(p_permYmod), imag(p_permYmod));
     }
   } else if (p_mode == Current) {
     for (i=0; i<p_ngen; i++) {
@@ -755,27 +754,11 @@ void gridpack::dynamic_simulation_r::DSBus::corrDSStep(double t_inc)
     p_dmac_spd_s1[i] -= tmp;
     p_dmac_spd_s1[i] /= (2.0*p_h[i]);
     // p_mac_ang_s1 and p_mac_spd_s1
-#if 0
-    tmp = p_dmac_ang_s0[i];
-    tmp += p_dmac_ang_s1[i];
-    tmp *= 0.5;
-    p_mac_ang_s1[i] = p_mac_ang_s0[i];
-    p_mac_ang_s1[i] += t_inc*tmp;
-#else
     tmp = 0.5*(p_dmac_ang_s0[i]+p_dmac_ang_s1[i]);
     p_mac_ang_s1[i] = p_mac_ang_s0[i]+t_inc*tmp;
-#endif
 
-#if 0
-    tmp = p_dmac_spd_s0[i];
-    tmp += p_dmac_spd_s1[i];
-    tmp *= 0.5;
-    p_mac_ang_s1[i] = p_mac_ang_s0[i];
-    p_mac_ang_s1[i] += t_inc*tmp;
-#else
     tmp = 0.5*(p_dmac_spd_s0[i]+p_dmac_spd_s1[i]);
     p_mac_spd_s1[i] = p_mac_spd_s0[i]+t_inc*tmp;
-#endif
   }
 }
 
@@ -893,15 +876,9 @@ void gridpack::dynamic_simulation_r::DSBranch::setYBus(void)
     dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>(getBus1().get());
   gridpack::dynamic_simulation_r::DSBus *bus2 =
     dynamic_cast<gridpack::dynamic_simulation_r::DSBus*>(getBus2().get());
-//  if (p_xform) {
-//    printf ("from %d-> to %d: p_phase_shift = %f, a = %f+%fi\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), p_phase_shift, real(a), imag(a) );
-//  }
   //p_theta = bus1->getPhase() - bus2->getPhase();
   double pi = 4.0*atan(1.0);
   p_theta = (bus1->getPhase() - bus2->getPhase());
-  //printf("p_phase_shift: %12.6f\n",p_phase_shift);
-  //printf("p_theta: %12.6f\n",p_theta);
-  //printf("p_tap_ratio: %12.6f\n",p_tap_ratio);
  
 }
 
@@ -1050,7 +1027,9 @@ gridpack::dynamic_simulation_r::DSBranch::getShunt(gridpack::dynamic_simulation_
       if (bus == getBus1().get()) {
         tmpr += p_shunt_admt_g1[i];
         tmpi += p_shunt_admt_b1[i];
-      } else if (bus == getBus2().get()) {        tmpr += p_shunt_admt_g2[i];        tmpi += p_shunt_admt_b2[i];
+      } else if (bus == getBus2().get()) {
+        tmpr += p_shunt_admt_g2[i];
+        tmpi += p_shunt_admt_b2[i];
       } else {
         // TODO: Some kind of error
       }
@@ -1082,8 +1061,6 @@ gridpack::dynamic_simulation_r::DSBranch::getPosfy11YbusUpdateFactor(int sw2_2, 
     for (i=0; i<p_elems; i++) {
       gridpack::ComplexType myValue(p_resistance[i], p_reactance[i]);
       myValue = 1.0 / myValue;
-      //printf("myValue = %f+%fi\n", real(myValue), imag(myValue));
-      //printf("%f %f\n", p_resistance, p_reactance);
       retr = real(myValue);
       reti = imag(myValue);
       return gridpack::ComplexType(retr, reti);
