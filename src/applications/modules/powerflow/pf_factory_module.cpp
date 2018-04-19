@@ -99,14 +99,12 @@ void gridpack::powerflow::PFFactoryModule::setPQ(void)
  * @param genID
  * @param value
  */
-//void gridpack::powerflow::PFFactoryModule::updatePg(std::string &name, int busID, std::string genID, double value)
 void gridpack::powerflow::PFFactoryModule::updatePg(int busID, std::string genID, double value)
 {
   int numBus = p_network->numBuses();
   int i;
   int genIndex=0;
   for (i=0; i<numBus; i++) {
-//    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(name,busID, genID, value);
     dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(GENERATOR_PG,
         busID, genID, value);
   }
@@ -118,7 +116,6 @@ void gridpack::powerflow::PFFactoryModule::updateQg(int busID, std::string genID
   int i;
   int genIndex=0;
   for (i=0; i<numBus; i++) {
-//    dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(name,busID, genID, value);
     dynamic_cast<PFBus*>(p_network->getBus(i).get())->setParam(GENERATOR_QG,
         busID, genID, value);
   }

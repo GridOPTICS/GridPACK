@@ -149,7 +149,6 @@ bool gridpack::dynamic_simulation::DSFullFactory::checkGen(void)
       count += p_buses[i]->getNumGen();
     }
   }
-  //printf("p[%d] number of generators: %d\n",p_network->communicator().rank(),count);
   int iok = 0;
   if (count > 0) iok = 1;
   int ok;
@@ -263,23 +262,24 @@ void gridpack::dynamic_simulation::DSFullFactory::updateBusFreq(double delta_t)
   }
 }
 
-bool gridpack::dynamic_simulation::DSFullFactory::updateBusRelay(bool flag,double delta_t)
+bool gridpack::dynamic_simulation::DSFullFactory::updateBusRelay(bool flag,
+    double delta_t)
 {
-	int i;
-	bool bflag;
-	
-	bflag = false;
-	
-	for (i=0; i<p_numBus; i++) {
-		bflag = bflag || p_buses[i]->updateRelay(flag,delta_t);
-	
-        }
-        return checkTrueSomewhere(bflag); 
-	//return bflag;
-	
+  int i;
+  bool bflag;
+
+  bflag = false;
+
+  for (i=0; i<p_numBus; i++) {
+    bflag = bflag || p_buses[i]->updateRelay(flag,delta_t);
+
+  }
+  return checkTrueSomewhere(bflag); 
+
 }
 
-bool gridpack::dynamic_simulation::DSFullFactory::updateBranchRelay(bool flag,double delta_t)
+bool gridpack::dynamic_simulation::DSFullFactory::updateBranchRelay(bool flag,
+    double delta_t)
 {
 	int i;
 	bool bflag;
@@ -299,12 +299,12 @@ bool gridpack::dynamic_simulation::DSFullFactory::updateBranchRelay(bool flag,do
  */
 void gridpack::dynamic_simulation::DSFullFactory::updateoldbusvoltage()
 {
-	int i;
-	
-	for (i=0; i<p_numBus; i++) {
+  int i;
+
+  for (i=0; i<p_numBus; i++) {
     p_buses[i]->updateoldbusvoltage();
-	
-    }
+
+  }
 }
 
 /**
@@ -312,12 +312,12 @@ void gridpack::dynamic_simulation::DSFullFactory::updateoldbusvoltage()
  */
 void gridpack::dynamic_simulation::DSFullFactory::printallbusvoltage()
 {
-	int i;
-	
-	for (i=0; i<p_numBus; i++) {
+  int i;
+
+  for (i=0; i<p_numBus; i++) {
     p_buses[i]->printbusvoltage();
-	
-    }
+
+  }
 }
 
 /**
@@ -346,14 +346,11 @@ bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
     int nGen = p_buses[i]->getNumGen();
     if (nGen > 0) {
       angle = p_buses[i]->getAngle();
-      //printf("angle = %f\n", angle);
       if (angle > maxAngle) {
         maxAngle = angle;
-        //printf("   max = %f\n", maxAngle);
       }
       if (angle < minAngle) {
         minAngle = angle;
-        //printf("   min = %f\n", minAngle);
       }
       double pi = 4.0*atan(1.0);
       if ((maxAngle - minAngle) > 360 * pi / 180)
@@ -362,7 +359,6 @@ bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
         secure = true; 
     }
   }
-  //printf("max = %f, min = %f\n", maxAngle, minAngle);
   return secure;
 }
 

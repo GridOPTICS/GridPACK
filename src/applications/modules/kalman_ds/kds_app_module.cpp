@@ -196,13 +196,6 @@ void gridpack::kalman_filter::KalmanApp::setTimeData(
       (network->getBus(i).get());
     bus->setTimeSteps(delta_t_ang, nsteps_ang);
   }
-//  for (i=0; i<nbus; i++) {
-//    bus = dynamic_cast<gridpack::kalman_filter::KalmanBus*>
-//      (network->getBus(i).get());
-//    if (network->getActiveBus(i)) {
-//      bus->printT();
-//    }
-//  }
 }
 
 enum Parser {PTI23, PTI33};
@@ -437,16 +430,12 @@ void gridpack::kalman_filter::KalmanApp::solve()
   p_factory->setMode(EnsembleX);
   gridpack::mapper::GenSlabMap<KalmanNetwork> xSlab(p_network);
   boost::shared_ptr<gridpack::math::Matrix> X = xSlab.mapToMatrix();
-  //X -> print();
-  //X->save("X.m");
 
   // Create initial Y matrix
   p_factory->setMode(YBus);
   gridpack::mapper::FullMatrixMap<KalmanNetwork> ybusMap(p_network);
   p_factory->setMode(RefreshY);
   boost::shared_ptr<gridpack::math::Matrix> Y_init = ybusMap.mapToMatrix();
-  //Y_init -> print();
-  //Y_init->save("Y_init.m");
   // Use linear solution to get inverse of Y matrix
   gridpack::math::LinearMatrixSolver solver1(*Y_init);
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -458,35 +447,19 @@ void gridpack::kalman_filter::KalmanApp::solve()
 
   // Create dense version of Y_c
   boost::shared_ptr<gridpack::math::Matrix> Y_c = ycMap.mapToMatrix(true);
-  //Y_c -> print();
-  //Y_c->save("Y_c.m");
   // Evaluate RecV_0(pre-fault) matrix by solving Y_init*RecV_0 = Y_c.
 
   boost::shared_ptr<gridpack::math::Matrix> RecV_0(solver1.solve(*Y_c));
-//  boost::shared_ptr<gridpack::math::Matrix> RecV(solver1.solve(*Y_c));
   gridpack::math::Matrix *RecV;
-  //RecV_0 -> print();
-  //RecV_0->save("RecV_0.m");
   // Get RecV_1(fault)
   int sw2_2 = p_faults[0].from_idx - 1;
   int sw3_2 = p_faults[0].to_idx - 1;
   boost::shared_ptr<gridpack::math::Matrix> Yd_1(Y_init->clone());
-  //gridpack::ComplexType x(0.0, -1e7);
   p_factory->setEvent(p_faults[0]);
   p_factory->setMode(onFY);
   ybusMap.overwriteMatrix(Yd_1); 
   gridpack::math::LinearMatrixSolver solver2(*Yd_1);
   boost::shared_ptr<gridpack::math::Matrix> RecV_1(solver2.solve(*Y_c));
-  //RecV_1->save("RecV_1.m");
-/*  //Get RecV_2(post-fault)
-  boost::shared_ptr<gridpack::math::Matrix> Yd_2(Y_init->clone());
-  p_factory->setMode(posFY);
-  ybusMap.incrementMatrix(Yd_2);
-//  Yd_2->save("Yd_2.m");
-  gridpack::math::LinearMatrixSolver solver3(*Yd_2);
-  boost::shared_ptr<gridpack::math::Matrix> RecV_2(solver3.solve(*Y_c));
-//  RecV_2->print();
-//  RecV_2->save("RecV_2.m"); */
 
   // Set up io routines
   p_deltaIO->open("delta.dat");
@@ -611,11 +584,9 @@ void gridpack::kalman_filter::KalmanApp::solve()
     // Create E_ensemble 1 matrix
     p_factory->setMode(E_Ensemble1);
     boost::shared_ptr<gridpack::math::Matrix> E_ensmb1 = eSlab.mapToMatrix();
-    //E_ensmb1 -> print();    
 
     // Create V1
     boost::shared_ptr<gridpack::math::Matrix> v1(multiply(*RecV, *E_ensmb1));
-    //v1 -> print();
     
     // Push elements of V1 back onto buses
     p_factory->setMode(V1);
@@ -655,122 +626,122 @@ void gridpack::kalman_filter::KalmanApp::solve()
     timer->stop(t_onlyDAE);
     timer->start(t_EnKF);
     
-  if (!(p_CheckEqn)) {
-    int t_A = timer->createCategory("KF: In-Loop EnKF A");
-    timer->start(t_A);    
-    // Create perturbation matrix for X3
-    p_factory->setMode(Perturbation);
-    boost::shared_ptr<gridpack::math::Matrix> A = xSlab.mapToMatrix();
-    timer->stop(t_A);
+    if (!(p_CheckEqn)) {
+      int t_A = timer->createCategory("KF: In-Loop EnKF A");
+      timer->start(t_A);    
+      // Create perturbation matrix for X3
+      p_factory->setMode(Perturbation);
+      boost::shared_ptr<gridpack::math::Matrix> A = xSlab.mapToMatrix();
+      timer->stop(t_A);
 
-    int t_ensmb3 = timer->createCategory("KF: In-Loop EnKF E_ensmb3");
-    timer->start(t_ensmb3);
-    // Create E_ensemble 3 matrix
-    p_factory->setMode(E_Ensemble3);
-    boost::shared_ptr<gridpack::math::Matrix> E_ensmb3 = eSlab.mapToMatrix();
-    timer->stop(t_ensmb3);
+      int t_ensmb3 = timer->createCategory("KF: In-Loop EnKF E_ensmb3");
+      timer->start(t_ensmb3);
+      // Create E_ensemble 3 matrix
+      p_factory->setMode(E_Ensemble3);
+      boost::shared_ptr<gridpack::math::Matrix> E_ensmb3 = eSlab.mapToMatrix();
+      timer->stop(t_ensmb3);
 
-    int t_V3 = timer->createCategory("KF: In-Loop EnKF V3");
-    timer->start(t_V3);
-    int t_V3m = timer->createCategory("KF: In-Loop EnKF RecV*Ensmb3");
-    timer->start(t_V3m);
-    // Create V3
-    boost::shared_ptr<gridpack::math::Matrix> v3(multiply(*RecV, *E_ensmb3));
-    timer->stop(t_V3m);
+      int t_V3 = timer->createCategory("KF: In-Loop EnKF V3");
+      timer->start(t_V3);
+      int t_V3m = timer->createCategory("KF: In-Loop EnKF RecV*Ensmb3");
+      timer->start(t_V3m);
+      // Create V3
+      boost::shared_ptr<gridpack::math::Matrix> v3(multiply(*RecV, *E_ensmb3));
+      timer->stop(t_V3m);
 
-    // Push elements of V3 back onto buses
-    p_factory->setMode(V3);
-    v3Slab.mapToNetwork(v3);
-    timer->stop(t_V3);
+      // Push elements of V3 back onto buses
+      p_factory->setMode(V3);
+      v3Slab.mapToNetwork(v3);
+      timer->stop(t_V3);
 
-    // Create HX matrix
-    int t_HX = timer->createCategory("KF: In-Loop EnKF HX");
-    timer->start(t_HX);
-    p_factory->setMode(HX);
-    boost::shared_ptr<gridpack::math::Matrix> HX = hxSlab.mapToMatrix();
-    timer->stop(t_HX);
+      // Create HX matrix
+      int t_HX = timer->createCategory("KF: In-Loop EnKF HX");
+      timer->start(t_HX);
+      p_factory->setMode(HX);
+      boost::shared_ptr<gridpack::math::Matrix> HX = hxSlab.mapToMatrix();
+      timer->stop(t_HX);
 
-    // Create Y = D-HX
-    int t_Y = timer->createCategory("KF: In-Loop EnKF Y");
-    timer->start(t_Y);
-    boost::shared_ptr<gridpack::math::Matrix> Y(D->clone());
-    HX->scale(-1.0);
-    Y->add(*HX);
-    HX->scale(-1.0);
-    timer->stop(t_Y);
+      // Create Y = D-HX
+      int t_Y = timer->createCategory("KF: In-Loop EnKF Y");
+      timer->start(t_Y);
+      boost::shared_ptr<gridpack::math::Matrix> Y(D->clone());
+      HX->scale(-1.0);
+      Y->add(*HX);
+      HX->scale(-1.0);
+      timer->stop(t_Y);
 
-    int t_Q = timer->createCategory("KF: In-Loop EnKF Q");
-    timer->start(t_Q);
-    // Create HA matrix
-    int t_setHA = timer->createCategory("KF: In-Loop EnKF setHA");
-    timer->start(t_setHA);
-    p_factory->setMode(HA);
-    timer->stop(t_setHA);
-    int t_HA = timer->createCategory("KF: In-Loop EnKF HA");
-    timer->start(t_HA);
-    boost::shared_ptr<gridpack::math::Matrix> HA = hxSlab.mapToMatrix();
-    timer->stop(t_HA);
-    int t_HAt = timer->createCategory("KF: In-Loop EnKF HAt");
-    timer->start(t_HAt);
-    boost::shared_ptr<gridpack::math::Matrix> HA_t(transpose(*HA));
-    timer->stop(t_HAt);
-    int t_HAtHA = timer->createCategory("KF: In-Loop EnKF HAtHA");
-    timer->start(t_HAtHA);
-    boost::shared_ptr<gridpack::math::Matrix> Q(multiply(*HA_t,*HA));
-    timer->stop(t_HAtHA);
-    int t_ScaleQ = timer->createCategory("KF: In-Loop EnKF ScaleQ");
-    timer->start(t_ScaleQ);
-    Q->scale(p_Rm1n);
-    boost::shared_ptr<gridpack::math::Matrix> H1(Q->clone());
-    gridpack::ComplexType z_one(1.0,0.0);
-    Q->addDiagonal(z_one);
-    timer->stop(t_ScaleQ);
-    timer->stop(t_Q);
+      int t_Q = timer->createCategory("KF: In-Loop EnKF Q");
+      timer->start(t_Q);
+      // Create HA matrix
+      int t_setHA = timer->createCategory("KF: In-Loop EnKF setHA");
+      timer->start(t_setHA);
+      p_factory->setMode(HA);
+      timer->stop(t_setHA);
+      int t_HA = timer->createCategory("KF: In-Loop EnKF HA");
+      timer->start(t_HA);
+      boost::shared_ptr<gridpack::math::Matrix> HA = hxSlab.mapToMatrix();
+      timer->stop(t_HA);
+      int t_HAt = timer->createCategory("KF: In-Loop EnKF HAt");
+      timer->start(t_HAt);
+      boost::shared_ptr<gridpack::math::Matrix> HA_t(transpose(*HA));
+      timer->stop(t_HAt);
+      int t_HAtHA = timer->createCategory("KF: In-Loop EnKF HAtHA");
+      timer->start(t_HAtHA);
+      boost::shared_ptr<gridpack::math::Matrix> Q(multiply(*HA_t,*HA));
+      timer->stop(t_HAtHA);
+      int t_ScaleQ = timer->createCategory("KF: In-Loop EnKF ScaleQ");
+      timer->start(t_ScaleQ);
+      Q->scale(p_Rm1n);
+      boost::shared_ptr<gridpack::math::Matrix> H1(Q->clone());
+      gridpack::ComplexType z_one(1.0,0.0);
+      Q->addDiagonal(z_one);
+      timer->stop(t_ScaleQ);
+      timer->stop(t_Q);
 
-    int t_Z1 = timer->createCategory("KF: In-Loop EnKF Z1");
-    timer->start(t_Z1);
-    // Create Z1 matrix
-    boost::shared_ptr<gridpack::math::Matrix> Z1(multiply(*HA_t,*Y));
-    Z1->scale(p_Rm1);
-    timer->stop(t_Z1);
+      int t_Z1 = timer->createCategory("KF: In-Loop EnKF Z1");
+      timer->start(t_Z1);
+      // Create Z1 matrix
+      boost::shared_ptr<gridpack::math::Matrix> Z1(multiply(*HA_t,*Y));
+      Z1->scale(p_Rm1);
+      timer->stop(t_Z1);
 
-    int t_W = timer->createCategory("KF: In-Loop EnKF Solve W"); 
-    timer->start(t_W);
-    // Create W by solving Q*W = Z1
-    boost::shared_ptr<gridpack::math::Matrix>
-      Q_sparse(gridpack::math::storageType(*Q,
-            gridpack::math::Sparse));
-    gridpack::math::LinearMatrixSolver solver2(*Q_sparse);
-    cursor = p_config->getCursor("Configuration.Kalman_filter");
-    solver2.configure(cursor);
-    boost::shared_ptr<gridpack::math::Matrix> W(solver2.solve(*Z1));
-    timer->stop(t_W);
+      int t_W = timer->createCategory("KF: In-Loop EnKF Solve W"); 
+      timer->start(t_W);
+      // Create W by solving Q*W = Z1
+      boost::shared_ptr<gridpack::math::Matrix>
+        Q_sparse(gridpack::math::storageType(*Q,
+              gridpack::math::Sparse));
+      gridpack::math::LinearMatrixSolver solver2(*Q_sparse);
+      cursor = p_config->getCursor("Configuration.Kalman_filter");
+      solver2.configure(cursor);
+      boost::shared_ptr<gridpack::math::Matrix> W(solver2.solve(*Z1));
+      timer->stop(t_W);
 
-    int t_Z2 = timer->createCategory("KF: In-Loop EnKF Z2");
-    timer->start(t_Z2);
-    // Evaluate Z2 = Z1 - H1*W
-    boost::shared_ptr<gridpack::math::Matrix> Z2(multiply(*H1,*W));
-    Z2->scale(-1);
-    Z2->add(*Z1);
-    timer->stop(t_Z2);
+      int t_Z2 = timer->createCategory("KF: In-Loop EnKF Z2");
+      timer->start(t_Z2);
+      // Evaluate Z2 = Z1 - H1*W
+      boost::shared_ptr<gridpack::math::Matrix> Z2(multiply(*H1,*W));
+      Z2->scale(-1);
+      Z2->add(*Z1);
+      timer->stop(t_Z2);
 
-    int t_Update = timer->createCategory("KF: In-Loop EnKF X Update");
-    timer->start(t_Update);
-    int t_X_inc = timer->createCategory("KF: In-Loop EnKF X_inc");
-    timer->start(t_X_inc);
-    // Evaluate X_inc
-    boost::shared_ptr<gridpack::math::Matrix> X_inc(multiply(*A,*Z2));
-    X_inc->scale(p_N_inv);
-    timer->stop(t_X_inc);
+      int t_Update = timer->createCategory("KF: In-Loop EnKF X Update");
+      timer->start(t_Update);
+      int t_X_inc = timer->createCategory("KF: In-Loop EnKF X_inc");
+      timer->start(t_X_inc);
+      // Evaluate X_inc
+      boost::shared_ptr<gridpack::math::Matrix> X_inc(multiply(*A,*Z2));
+      X_inc->scale(p_N_inv);
+      timer->stop(t_X_inc);
 
-    // Push results back onto buses and update values of rotor angle and speed
-    p_factory->setMode(X_INC);
-    xSlab.mapToNetwork(X_inc);
-    timer->stop(t_Update);
-  } else {
-    p_factory->setMode(X_Update);
-    xSlab.mapToNetwork(X);
-  }
+      // Push results back onto buses and update values of rotor angle and speed
+      p_factory->setMode(X_INC);
+      xSlab.mapToNetwork(X_inc);
+      timer->stop(t_Update);
+    } else {
+      p_factory->setMode(X_Update);
+      xSlab.mapToNetwork(X);
+    }
     p_factory->setCurrentTimeStep(p_TimeOffset+I_Steps);
     timer->stop(t_EnKF);
     timer->start(t_Output);
