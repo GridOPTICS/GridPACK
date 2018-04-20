@@ -1,0 +1,88 @@
+# -*- mode: cmake -*-
+#
+#     Copyright (c) 2013 Battelle Memorial Institute
+#     Licensed under modified BSD License. A copy of this license can be
+#     found
+#     in the LICENSE file in the top level directory of this distribution.
+#
+# -------------------------------------------------------------
+# file: CMakeLists.txt
+# -------------------------------------------------------------
+# -------------------------------------------------------------
+# Created April 20, 2018 by Bruce Palmer
+# -------------------------------------------------------------
+
+cmake_minimum_required(VERSION 2.6.4)
+
+#
+#  TODO: Rename this file to CMakeLists.txt in your application directory
+#
+#  TODO: Add an appropriate default GridPACK installation directory here
+#
+if (NOT GRIDPACK_DIR)
+  set(GRIDPACK_DIR /likely/location/of/my/gridpack/installation
+      CACHE PATH "GridPACK installation directory")
+endif()
+
+include("${GRIDPACK_DIR}/lib/GridPACK.cmake")
+
+#
+#  TODO: Modify project name to reflect your project
+#
+project(MyProject)
+
+enable_language(CXX)
+
+gridpack_setup()
+
+add_definitions(${GRIDPACK_DEFINITIONS})
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(BEFORE ${GRIDPACK_INCLUDE_DIRS}) 
+
+#
+#  TODO: Modify executable name to reflect your project and list all .cpp file
+#        in this directory that are part of your application
+#
+add_executable(myapp.x
+  myapp_file1.cpp
+  myapp_file2.cpp
+  myapp_file3.cpp
+  myapp_file4.cpp
+)
+
+#
+# TODO: modify myapp.x to the application executable defined above. If any
+#       additional libraries outside the GridPACK framework are used by the
+#       application, you will need to include them here. See CMake documenation
+#       for ways to do this.
+#
+target_link_libraries(myapp.x ${GRIDPACK_LIBS})
+
+#
+# TODO: Add test input for you application that is automatically included in
+#       the build. Note that all input files must be part of the current
+#       source code directory. You must also modify myapp.input and myapp.x to
+#       reflect your application.
+# NOTE: If you do not want to include a test case as part of the build you
+#       can delete the remaining sections
+#
+add_custom_target(myapp.input
+ 
+#
+# TODO: Modify input.xml, MyNetwork.raw names to reflect your application. You
+#       can also increase or decrease the number of files in this section used
+#       by your application.
+#
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/MyNetwork.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/MyNetwork.raw
+)
+add_dependencies(myapp.x myapp.input)
