@@ -6,7 +6,10 @@
 #     in the LICENSE file in the top level directory of this distribution.
 #
 # -------------------------------------------------------------
-# file: CMakeLists.txt
+# file: CMakeLists.template.txt
+#   This is a template CMakeLists.txt file for user applications.
+#   It is designed for users that are writing their own
+#   applications and need to link to the GridPACK framework.
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created April 20, 2018 by Bruce Palmer
