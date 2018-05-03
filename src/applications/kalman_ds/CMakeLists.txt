@@ -65,6 +65,16 @@ add_custom_command(
   DEPENDS "${GRIDPACK_DATA_DIR}/input/kalman/input_145.xml"
   )
 
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/kalman/input_14.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/kalman/input_14.xml"
+  )
+
 add_custom_target(kds.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -83,12 +93,33 @@ add_custom_target(kds.x.input
   ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_mag.csv
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_kds.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14_classicGen.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_ang.csv
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_mag.csv
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS 
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE145.raw
   ${GRIDPACK_DATA_DIR}/dyr/IEEE145_classicGen.dyr
   ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_ang.csv
   ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_mag.csv
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_kds.raw
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14_classicGen.dyr
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_ang.csv
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_mag.csv
 )
 
 add_dependencies(kds.x kds.x.input)
@@ -101,10 +132,17 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input/kalman/input_145.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE145.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE145b_classicGen.dyr
-  DESTINATION share/gridpack/example/dynamic_simulation_full_y
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE145_classicGen.dyr
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_ang.csv
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE145_Kalman_input_mag.csv
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_kds.raw
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14_classicGen.dyr
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_ang.csv
+  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_mag.csv
+  DESTINATION share/gridpack/example/kalman_ds
 )
 
 install(TARGETS kds.x DESTINATION bin)
@@ -114,5 +152,6 @@ install(TARGETS kds.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("kalman_ds" kds.x input_145.xml)
+set(TIMEOUT 40.0)
+gridpack_add_run_test("kalman_ds" kds.x input_14.xml)
 

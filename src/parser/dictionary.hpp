@@ -3205,9 +3205,29 @@
 #define SHUNT_MODSW "SHUNT_MODSW"
 
 /**
+ * Adjustment method:
+ *   0 - steps and blocks are switched on in iput order, and off in reverse
+ *   order
+ *   1 - steps and blocks are switched on and off such that the next highest (or
+ *   lowest, as appropriate) total admittance is achieved.
+ *   SHUNT_ADJM = 0 by default
+ *   type: integer
+ */
+#define SHUNT_ADJM "SHUNT_ADJM"
+
+/**
+ * Initial switched shunt status of one for in-service and zero for
+ * out-of-service
+ * SHUNT_SWCH_STAT = 1 by default
+ * type: integer
+ */
+#define SHUNT_SWCH_STAT "SHUNT_SWCH_STAT"
+
+/**
  * When SHUNT_MODSW is 1 or 2, the controlled voltage upper limit; entered in pu.
  * When SHUNT_MODSW is 3, 4 or 5, the controlled reactive power range upper limit;
- * entered in pu of the total reactive power range of the controlled voltage controlling device.
+ * entered in pu of the total reactive power range of the controlled voltage
+ * controlling device.
  * SHUNT_VSWHI = 1.0 by default.
  * type: real float
  */
@@ -3216,8 +3236,8 @@
 /**
  * When SHUNT_MODSW is 1 or 2, the controlled voltage lower limit; entered in pu.
  * When SHUNT_MODSW is 3, 4 or 5, the controlled reactive power range lower limit;
- * entered in pu of the total reactive power range of the controlled voltage controlling
- * device. SHUNT_VSWLO = 1.0 by default
+ * entered in pu of the total reactive power range of the controlled voltage
+ * controlling device. SHUNT_VSWLO = 1.0 by default
  * type: real float
  */
 #define SHUNT_VSWLO "SHUNT_VSWLO"
@@ -3228,6 +3248,25 @@
  * type: integer
  */
 #define SHUNT_SWREM "SHUNT_SWREM"
+
+/**
+ * Percent of the total MVar required to hold the voltage at the bus controlled
+ * by bus SHUNT_BUSNUMBER that are contributed by this switched shunt;
+ * SHUNT_RMPCT must be positive.
+ * SHUNT_RMPCT = 100.0 by default
+ * type: float
+ */
+#define SHUNT_RMPCT "SHUNT_RMPCT"
+
+/**
+ * When SHUNT_MODSW is 4, the name of the VSC dc line where the converter bus is
+ * specified in SHUNT_SWREM.
+ * When SHUNT_MODSW is 6, the name of the FACTS device where the shunt element's
+ * reactive output is to be controlled.
+ * SHUNT_RMIDNT is blank by default
+ * type: string
+ */
+#define SHUNT_RMIDNT "SHUNT_RMIDNT"
 
 /**
  * Initial switched shunt admittance; entered in Mvar at unity voltage
@@ -3277,31 +3316,37 @@
  * Either off-nominal turns ratio in pu or phase shift angle in degrees
  * type: real float
  */
-#define XFMR_CORR_TABLE_Ti "XFMR_CORR_TABLE_Ti"
+#define XFMR_CORR_TABLE_T1  "XFMR_CORR_TABLE_T1"
+#define XFMR_CORR_TABLE_T2  "XFMR_CORR_TABLE_T2"
+#define XFMR_CORR_TABLE_T3  "XFMR_CORR_TABLE_T3"
+#define XFMR_CORR_TABLE_T4  "XFMR_CORR_TABLE_T4"
+#define XFMR_CORR_TABLE_T5  "XFMR_CORR_TABLE_T5"
+#define XFMR_CORR_TABLE_T6  "XFMR_CORR_TABLE_T6"
+#define XFMR_CORR_TABLE_T7  "XFMR_CORR_TABLE_T7"
+#define XFMR_CORR_TABLE_T8  "XFMR_CORR_TABLE_T8"
+#define XFMR_CORR_TABLE_T9  "XFMR_CORR_TABLE_T9"
+#define XFMR_CORR_TABLE_T10 "XFMR_CORR_TABLE_T10"
+#define XFMR_CORR_TABLE_T11 "XFMR_CORR_TABLE_T11"
 
 /**
  * Scaling factor by which transformer nominal impedance is to be multiplied to obtain
  * the actual transformer impedance for the corresponding "Ti"
  * type: real float
  */
-#define XFMR_CORR_TABLE_Fi "XFMR_CORR_TABLE_Fi"
+#define XFMR_CORR_TABLE_F1  "XFMR_CORR_TABLE_F1"
+#define XFMR_CORR_TABLE_F2  "XFMR_CORR_TABLE_F2"
+#define XFMR_CORR_TABLE_F3  "XFMR_CORR_TABLE_F3"
+#define XFMR_CORR_TABLE_F4  "XFMR_CORR_TABLE_F4"
+#define XFMR_CORR_TABLE_F5  "XFMR_CORR_TABLE_F5"
+#define XFMR_CORR_TABLE_F6  "XFMR_CORR_TABLE_F6"
+#define XFMR_CORR_TABLE_F7  "XFMR_CORR_TABLE_F7"
+#define XFMR_CORR_TABLE_F8  "XFMR_CORR_TABLE_F8"
+#define XFMR_CORR_TABLE_F9  "XFMR_CORR_TABLE_F9"
+#define XFMR_CORR_TABLE_F10 "XFMR_CORR_TABLE_F10"
+#define XFMR_CORR_TABLE_T11 "XFMR_CORR_TABLE_T11"
 
 
 // MULTISECTION LINE GROUPING 
-/**
- * “From bus” number of multisection line
- * type: integer
- */
-#define MULTI_SEC_LINE_FROMBUS "MULTI_SEC_LINE_FROMBUS"
-
-/**
- * “To bus” number. It is entered as a negative number or with a minus sign before the
- * first character of the extended bus name to designate it as the metered end; otherwise,
- * MULTI_SEC_LINE_FROMBUS is assumed to be the metered end
- * type: integer
- */
-#define MULTI_SEC_LINE_TOBUS "MULTI_SEC_LINE_TOBUS"
-
 /**
  * Two-character upper case alphanumeric multisection line grouping identifier.
  * type: string
@@ -3309,11 +3354,27 @@
 #define MULTI_SEC_LINE_ID "MULTI_SEC_LINE_ID"
 
 /**
+ * Metered end flag
+ * <= 1 to designate from bus as the metered end
+ * >= 2 to designate to bus as metered end
+ * type: integer
+ */
+#define MULTI_SEC_LINE_MET "MULTI_SEC_LINE_MET"
+
+/**
  * Bus numbers of the "dummy buses" connected by the branches that comprise this multisection
  * line grouping. No defaults allowed.
  * type: integer
  */
-#define MULTI_SEC_LINE_DUMi "MULTI_SEC_LINE_DUMi"
+#define MULTI_SEC_LINE_DUM1 "MULTI_SEC_LINE_DUM1"
+#define MULTI_SEC_LINE_DUM2 "MULTI_SEC_LINE_DUM2"
+#define MULTI_SEC_LINE_DUM3 "MULTI_SEC_LINE_DUM3"
+#define MULTI_SEC_LINE_DUM4 "MULTI_SEC_LINE_DUM4"
+#define MULTI_SEC_LINE_DUM5 "MULTI_SEC_LINE_DUM5"
+#define MULTI_SEC_LINE_DUM6 "MULTI_SEC_LINE_DUM6"
+#define MULTI_SEC_LINE_DUM7 "MULTI_SEC_LINE_DUM7"
+#define MULTI_SEC_LINE_DUM8 "MULTI_SEC_LINE_DUM8"
+#define MULTI_SEC_LINE_DUM9 "MULTI_SEC_LINE_DUM9"
 
 
 // ZONE DATA

@@ -456,6 +456,7 @@ void gridpack::powerflow::PFAppModule::write()
   p_branchIO->header("\n        Bus 1       Bus 2   CKT         P"
                   "                    Q\n");
   p_branchIO->write();
+  //p_branchIO->write("record");
 
 
   p_busIO->header("\n   Generator Power\n");
@@ -464,6 +465,7 @@ void gridpack::powerflow::PFAppModule::write()
   p_busIO->header("\n   Bus Voltages and Phase Angles\n");
   p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   p_busIO->write();
+  //p_busIO->write("record");
   timer->stop(t_write);
   timer->stop(t_total);
 }
@@ -482,6 +484,21 @@ void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
   timer->stop(t_total);
 }
 
+void gridpack::powerflow::PFAppModule::writeCABus()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_busIO->write("ca");
+//  p_busIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
 void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
 {
   gridpack::utility::CoarseTimer *timer =
@@ -492,6 +509,20 @@ void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
   timer->start(t_write);
   timer->start(t_total);
   p_branchIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
+void gridpack::powerflow::PFAppModule::writeCABranch()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  timer->start(t_total);
+  p_branchIO->write("flow");
   timer->stop(t_write);
   timer->stop(t_total);
 }
@@ -639,6 +670,16 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
 }
 
 /**
+ * Set voltage limits on all buses
+ * @param Vmin lower bound on voltages
+ * @param Vmax upper bound on voltages
+ */
+void gridpack::powerflow::PFAppModule::setVoltageLimits(double Vmin, double Vmax)
+{
+  p_factory->setVoltageLimits(Vmin, Vmax);
+}
+
+/**
  * Check to see if there are any voltage violations in the network
  * @param area area number. If this parameter is included, only check for
  * violations in this area
@@ -646,27 +687,23 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
  * @param maxV maximum voltage limit
  * @return true if no violations found
  */
-bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
-  double Vmin, double Vmax)
+bool gridpack::powerflow::PFAppModule::checkVoltageViolations()
 {
-  return p_factory->checkVoltageViolations(Vmin,Vmax);
+  return p_factory->checkVoltageViolations();
 }
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
- int area,    double Vmin, double Vmax)
+ int area)
 {
-  return p_factory->checkVoltageViolations(area, Vmin,Vmax);
+  return p_factory->checkVoltageViolations(area);
 }
 
 /**
  * Set "ignore" parameter on all buses with violations so that subsequent
  * checks are not counted as violations
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
  */
-void gridpack::powerflow::PFAppModule::ignoreVoltageViolations(double Vmin,
-    double Vmax)
+void gridpack::powerflow::PFAppModule::ignoreVoltageViolations()
 {
-  p_factory->ignoreVoltageViolations(Vmin,Vmax);
+  p_factory->ignoreVoltageViolations();
 }
 
 /**

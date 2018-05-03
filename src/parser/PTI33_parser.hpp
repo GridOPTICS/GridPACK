@@ -89,6 +89,38 @@ class PTI33_parser : public BasePTIParser<_network>
       p_timer->configTimer(true);
     }
 
+    /**
+     * Return values of impedence correction table corresponding to tableID
+     * @param tableID ID of correction table
+     * @param turns Either turns ration or phase shift
+     * @param scale scaling factor for transformer nominal impedence
+     */
+    void getImpedenceTable(int tableID, std::vector<double> &turns,
+        std::vector<double> &scale)
+    {
+      turns.clear();
+      scale.clear();
+      if (p_imp_corr_table.find(tableID) != p_imp_corr_table.end()) {
+        boost::shared_ptr<gridpack::component::DataCollection> data =
+          p_imp_corr_table.find(tableID)->second;
+        int i;
+        char buf[32];
+        for (i=0; i<11; i++) {
+          sprintf(buf,"XFMR_CORR_TABLE_T%d",i+1);
+          double tval, sval;
+          bool ok = data->getValue(buf,&tval);
+          sprintf(buf,"XFMR_CORR_TABLE_F%d",i+1);
+          ok = ok && data->getValue(buf,&sval);
+          if (ok) {
+            turns.push_back(tval);
+            scale.push_back(sval);
+          } else {
+            break;
+          }
+        }
+      }
+    }
+
   protected:
     /*
      * A case is the collection of all data associated with a PTI33 file.
@@ -107,6 +139,8 @@ class PTI33_parser : public BasePTIParser<_network>
       p_busData.clear();
       p_branchData.clear();
       p_busMap.clear();
+
+      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
 
       int me(p_network->communicator().rank());
 
@@ -128,7 +162,6 @@ class PTI33_parser : public BasePTIParser<_network>
       // Transmit CASE_SBASE to all processors
       double sval =  p_case_sbase;
       double rval;
-      MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
       int nprocs = p_network->communicator().size();
       int ierr = MPI_Allreduce(&sval,&rval,1,MPI_DOUBLE,MPI_SUM,comm);
       p_case_sbase = rval;
@@ -147,17 +180,18 @@ class PTI33_parser : public BasePTIParser<_network>
         find_generators(input);
         find_branches(input);
         find_transformer(input);
-#if 0
         find_area(input);
         find_2term(input);
+        find_vsc_line(input);
         find_imped_corr(input);
         find_multi_term(input);
         find_multi_section(input);
         find_zone(input);
         find_interarea(input);
         find_owner(input);
-        //find_line(input);
-#endif
+        find_facts(input);
+        find_switched_shunt(input);
+
 #if 0
         // debug
         int i;
@@ -174,6 +208,29 @@ class PTI33_parser : public BasePTIParser<_network>
 #endif
         input.close();
       }
+      // Distribute impedence correction tables to all processors (if necessary)
+      int stables = 0;
+      int ntables;
+      if (me == 0) {
+        stables =  p_imp_corr_table.size();
+      }
+      ierr = MPI_Allreduce(&stables, &ntables, 1, MPI_INT, MPI_SUM, comm);
+#if 0
+      if (ntables > 0) {
+        // distribute tables
+        if (me == 0) {
+          int idx;
+          for (idx=1; idx<nprocs; idx++) {
+            static_cast<boost::mpi::communicator>(
+                p_network->communicator()).send(idx,idx,p_imp_corr_table);
+          }
+        } else {
+          p_imp_corr_table.clear();
+          static_cast<boost::mpi::communicator>(
+              p_network->communicator()).recv(0,me,p_imp_corr_table);
+        }
+      }
+#endif
       p_timer->stop(t_case);
     }
 
@@ -327,10 +384,6 @@ class PTI33_parser : public BasePTIParser<_network>
           // LOAD_ID              "ID"                  integer
           p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(), nld);
         }
-
-        // LOAD_ID              "ID"                  integer
-        std::string tag = util.clean2Char(split_line[1]);
-        if (nstr > 1) p_busData[l_idx]->addValue(LOAD_ID, tag.c_str(),nld);
 
         // LOAD_STATUS              "ID"                  integer
         if (nstr > 2) p_busData[l_idx]->addValue(LOAD_STATUS,
@@ -780,7 +833,7 @@ class PTI33_parser : public BasePTIParser<_network>
         // TODO: add variables LEN, Oi, Fi
 
         // Add BRANCH_TAP with value 1.0
-        p_branchData[l_idx]->addValue(BRANCH_TAP,1.0,nelems);
+        p_branchData[l_idx]->addValue(BRANCH_TAP,0.0,nelems);
 
         nelems++;
         p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
@@ -1164,6 +1217,14 @@ class PTI33_parser : public BasePTIParser<_network>
               atof(split_line[8].c_str()),nelems);
 
           /*
+           * type: float
+           * BRANCH_B
+           */
+          p_branchData[l_idx]->addValue(BRANCH_B,
+              atof(split_line[8].c_str()),nelems);
+
+
+          /*
            * type: integer
            * BRANCH_STATUS
            */
@@ -1200,13 +1261,6 @@ class PTI33_parser : public BasePTIParser<_network>
             rval = rval*p_case_sbase/sbase2;
             p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
           }
-
-          /*
-           * type: float
-           * BRANCH_B
-           */
-          rval = 0.0;
-          p_branchData[l_idx]->addValue(BRANCH_B,rval,nelems);
 
           // Add parameters from line 3
           /*
@@ -1253,7 +1307,6 @@ class PTI33_parser : public BasePTIParser<_network>
       }
     }
 
-#if 0
     void find_area(std::ifstream & input)
     {
       std::string          line;
@@ -1308,12 +1361,28 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_off);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_off);
+        int l_idx, o_idx;
+        o_idx = atoi(split_line[1].c_str());
+#ifdef OLD_MAP
+        std::map<int, int>::iterator it;
+#else
+        boost::unordered_map<int, int>::iterator it;
+#endif
+        it = p_busMap.find(o_idx);
+        if (it != p_busMap.end()) {
+          l_idx = it->second;
+        } else {
+          std::getline(input, line);
+          continue;
+        }
+
         std::getline(input, line);
       }
     }
 
-    void find_line(std::ifstream & input)
+    void find_vsc_line(std::ifstream & input)
     {
       std::string          line;
 
@@ -1322,7 +1391,9 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_off);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_off);
+
         std::getline(input, line);
       }
     }
@@ -1331,7 +1402,7 @@ class PTI33_parser : public BasePTIParser<_network>
     /*
 
      */
-    void find_shunt(std::ifstream & input)
+    void find_switched_shunt(std::ifstream & input)
     {
       std::string          line;
 
@@ -1339,7 +1410,8 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_off);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_off);
 
         /*
          * type: integer
@@ -1370,151 +1442,160 @@ class PTI33_parser : public BasePTIParser<_network>
         p_busData[o_idx]->addValue(SHUNT_MODSW, atoi(split_line[1].c_str()));
 
         /*
+         * type: integer
+         * #define SHUNT_ADJM "SHUNT_ADJM"
+         */
+        p_busData[o_idx]->addValue(SHUNT_ADJM, atoi(split_line[2].c_str()));
+
+        /*
+         * type: integer
+         * #define SHUNT_SWCH_STAT "SHUNT_SWCH_STAT"
+         */
+        p_busData[o_idx]->addValue(SHUNT_SWCH_STAT, atoi(split_line[3].c_str()));
+
+        /*
          * type: real float
          * #define SHUNT_VSWHI "SHUNT_VSWHI"
          */
-        p_busData[o_idx]->addValue(SHUNT_VSWHI, atof(split_line[2].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_VSWHI, atof(split_line[4].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_VSWLO "SHUNT_VSWLO"
          */
-        p_busData[o_idx]->addValue(SHUNT_VSWLO, atof(split_line[3].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_VSWLO, atof(split_line[5].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_SWREM "SHUNT_SWREM"
          */
-        p_busData[o_idx]->addValue(SHUNT_SWREM, atoi(split_line[4].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_SWREM, atoi(split_line[6].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_RMPCT "SHUNT_RMPCT"
          */
-        //          p_busData[o_idx]->addValue(SHUNT_RMPCT, atof(split_line[4].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_RMPCT, atof(split_line[7].c_str()));
 
         /*
          * type: string
          * #define SHUNT_RMIDNT "SHUNT_RMIDNT"
          */
-        //          p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[5].c_str());
+        p_busData[o_idx]->addValue(SHUNT_RMIDNT, split_line[8].c_str());
 
         /*
          * type: real float
          * #define SHUNT_BINIT "SHUNT_BINIT"
          */
-        p_busData[o_idx]->addValue(SHUNT_BINIT, atof(split_line[5].c_str()));
+        p_busData[o_idx]->addValue(SHUNT_BINIT, atof(split_line[9].c_str()));
 
-        /*
-         * type: integer
-         * #define SHUNT_N1 "SHUNT_N1"
-         */
-        p_busData[o_idx]->addValue(SHUNT_N1, atoi(split_line[6].c_str()));
+        if (nval > 10)
+        p_busData[o_idx]->addValue(SHUNT_N1, atoi(split_line[10].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N2 "SHUNT_N2"
          */
-        if (8<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N2, atoi(split_line[8].c_str()));
+        if (nval > 12)
+          p_busData[o_idx]->addValue(SHUNT_N2, atoi(split_line[12].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N3 "SHUNT_N3"
          */
-        if (10<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N3, atoi(split_line[10].c_str()));
+        if (nval > 14)
+          p_busData[o_idx]->addValue(SHUNT_N3, atoi(split_line[14].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N4 "SHUNT_N4"
          */
-        if (12<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N4, atoi(split_line[12].c_str()));
+        if (nval > 16)
+          p_busData[o_idx]->addValue(SHUNT_N4, atoi(split_line[16].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N5 "SHUNT_N5"
          */
-        if (14<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N5, atoi(split_line[14].c_str()));
+        if (nval > 18)
+          p_busData[o_idx]->addValue(SHUNT_N5, atoi(split_line[18].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N6 "SHUNT_N6"
          */
-        if (16<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N6, atoi(split_line[16].c_str()));
+        if (nval > 20)
+          p_busData[o_idx]->addValue(SHUNT_N6, atoi(split_line[20].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N7 "SHUNT_N7"
          */
-        if (18<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N7, atoi(split_line[18].c_str()));
+        if (nval > 22) 
+          p_busData[o_idx]->addValue(SHUNT_N7, atoi(split_line[22].c_str()));
 
         /*
          * type: integer
          * #define SHUNT_N8 "SHUNT_N8"
          */
-        if (20<nval) 
-          p_busData[o_idx]->addValue(SHUNT_N8, atoi(split_line[20].c_str()));
+        if (nval > 24) 
+          p_busData[o_idx]->addValue(SHUNT_N8, atoi(split_line[24].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B1 "SHUNT_B1"
          */
-        if (7<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B1, atof(split_line[7].c_str()));
+        if (nval > 11) 
+          p_busData[o_idx]->addValue(SHUNT_B1, atof(split_line[11].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B2 "SHUNT_B2"
          */
-        if (9<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B2, atof(split_line[9].c_str()));
+        if (nval > 13) 
+          p_busData[o_idx]->addValue(SHUNT_B2, atof(split_line[13].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B3 "SHUNT_B3"
          */
-        if (11<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B3, atof(split_line[11].c_str()));
+        if (nval > 15) 
+          p_busData[o_idx]->addValue(SHUNT_B3, atof(split_line[15].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B4 "SHUNT_B4"
          */
-        if (13<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B4, atof(split_line[13].c_str()));
+        if (nval > 17) 
+          p_busData[o_idx]->addValue(SHUNT_B4, atof(split_line[17].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B5 "SHUNT_B5"
          */
-        if (15<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B5, atof(split_line[15].c_str()));
+        if (nval > 19) 
+          p_busData[o_idx]->addValue(SHUNT_B5, atof(split_line[19].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B6 "SHUNT_B6"
          */
-        if (17<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B6, atof(split_line[17].c_str()));
+        if (nval > 21) 
+          p_busData[o_idx]->addValue(SHUNT_B6, atof(split_line[21].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B7 "SHUNT_B7"
          */
-        if (19<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B7, atof(split_line[19].c_str()));
+        if (nval > 23) 
+          p_busData[o_idx]->addValue(SHUNT_B7, atof(split_line[23].c_str()));
 
         /*
          * type: real float
          * #define SHUNT_B8 "SHUNT_B8"
          */
-        if (21<nval) 
-          p_busData[o_idx]->addValue(SHUNT_B8, atof(split_line[21].c_str()));
+        if (nval > 25) 
+          p_busData[o_idx]->addValue(SHUNT_B8, atof(split_line[25].c_str()));
 
         std::getline(input, line);
       }
@@ -1529,84 +1610,43 @@ class PTI33_parser : public BasePTIParser<_network>
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_off);
-#if 0
-        std::vector<gridpack::component::DataCollection>   imped_corr_instance;
-        gridpack::component::DataCollection          data;
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_off);
+        int nval = split_line.size();
+        int entries = nval-1;
+        entries =  entries - entries%2;
+        entries = entries/2;
+        if (entries == 0) continue;
+        boost::shared_ptr<gridpack::component::DataCollection>
+          data(new gridpack::component::DataCollection);
 
         /*
          * type: integer
          * #define XFMR_CORR_TABLE_NUMBER "XFMR_CORR_TABLE_NUMBER"
          */
-        data.addValue(XFMR_CORR_TABLE_NUMBER, atoi(split_line[0].c_str()));
-        imped_corr_instance.push_back(data);
+        int tableid = atoi(split_line[0].c_str());
+        data->addValue(XFMR_CORR_TABLE_NUMBER, tableid);
 
-        /*
-         * type: real float
-         * #define XFMR_CORR_TABLE_Ti "XFMR_CORR_TABLE_Ti"
-         */
-        data.addValue(XFMR_CORR_TABLE_Ti, atoi(split_line[0].c_str()));
-        imped_corr_instance.push_back(data);
+        int i;
+        char buf[32];
+        for (i=0; i<entries; i++) {
+          /*
+           * type: real float
+           * #define XFMR_CORR_TABLE_Ti "XFMR_CORR_TABLE_Ti"
+           */
+          sprintf(buf,"XFMR_CORR_TABLE_T%d",i+1);
+          data->addValue(buf, atof(split_line[1+2*i].c_str()));
 
-        /*
-         * type: real float
-         * #define XFMR_CORR_TABLE_Fi "XFMR_CORR_TABLE_Fi"
-         */
-        data.addValue(XFMR_CORR_TABLE_Fi, atoi(split_line[0].c_str()));
-        imped_corr_instance.push_back(data);
+          /*
+           * type: real float
+           * #define XFMR_CORR_TABLE_Fi "XFMR_CORR_TABLE_Fi"
+           */
+          sprintf(buf,"XFMR_CORR_TABLE_F%d",i+1);
+          data->addValue(buf, atof(split_line[2+2*i].c_str()));
+        }
 
-        imped_corr_set.push_back(imped_corr_instance);
-#endif
-        std::getline(input, line);
-      }
-    }
-
-    void find_multi_section(std::ifstream & input)
-    {
-      std::string          line;
-
-      std::getline(input, line); //this should be the first line of the block
-
-      while(test_end(line)) {
-#if 0
-        std::vector<std::string>  split_line;
-        boost::split(split_line, line, boost::algorithm::is_any_of(","), boost::token_compress_off);
-        std::vector<gridpack::component::DataCollection>   multi_section_instance;
-        gridpack::component::DataCollection          data;
-
-        /*
-         * type: integer
-         * #define MULTI_SEC_LINE_FROMBUS "MULTI_SEC_LINE_FROMBUS"
-
-         */
-        data.addValue(MULTI_SEC_LINE_FROMBUS, atoi(split_line[0].c_str()));
-        multi_section_instance.push_back(data);
-
-        /*
-         * type: integer
-         * #define MULTI_SEC_LINE_TOBUS "MULTI_SEC_LINE_TOBUS"
-
-         */
-        data.addValue(MULTI_SEC_LINE_TOBUS, atoi(split_line[0].c_str()));
-        multi_section_instance.push_back(data);
-
-        /*
-         * type: string
-         * #define MULTI_SEC_LINE_ID "MULTI_SEC_LINE_ID"
-
-         */
-        data.addValue(MULTI_SEC_LINE_ID, split_line[0].c_str());
-        multi_section_instance.push_back(data);
-
-        /*
-         * type: integer
-         * #define MULTI_SEC_LINE_DUMi "MULTI_SEC_LINE_DUMi"
-         */
-        data.addValue(MULTI_SEC_LINE_DUMi, atoi(split_line[0].c_str()));
-        multi_section_instance.push_back(data);
-
-        multi_section.push_back(multi_section_instance);
-#endif
+        p_imp_corr_table.insert(std::pair<int,
+            boost::shared_ptr<gridpack::component::DataCollection> >(tableid,data));
         std::getline(input, line);
       }
     }
@@ -1622,6 +1662,81 @@ class PTI33_parser : public BasePTIParser<_network>
         std::getline(input, line);
       }
     }
+
+    void find_multi_section(std::ifstream & input)
+    {
+      std::string          line;
+
+      std::getline(input, line); //this should be the first line of the block
+
+      while(test_end(line)) {
+        std::vector<std::string>  split_line;
+        this->cleanComment(line);
+        boost::split(split_line, line, boost::algorithm::is_any_of(","),
+            boost::token_compress_off);
+        int o_idx1, o_idx2;
+        o_idx1 = getBusIndex(split_line[0]);
+        o_idx2 = getBusIndex(split_line[1]);
+
+        // find branch corresponding to this line.
+        int l_idx = 0;
+        std::pair<int,int> branch_pair = std::pair<int,int>(o_idx1, o_idx2);
+#ifdef OLD_MAP
+        std::map<std::pair<int, int>, int>::iterator it;
+#else
+        boost::unordered_map<std::pair<int, int>, int>::iterator it;
+#endif
+        it = p_branchMap.find(branch_pair);
+        int nelems;
+        bool found = false;
+        if (it != p_branchMap.end()) {
+          l_idx = it->second;
+          found = true;
+        } else {
+          // Check to see if from and to buses have been switched
+          std::pair<int, int> new_branch_pair;
+          new_branch_pair = std::pair<int,int>(o_idx2, o_idx1);
+          it = p_branchMap.find(new_branch_pair);
+          if (it != p_branchMap.end()) {
+            l_idx = it->second;
+            found = true;
+          }
+        }
+        nelems = split_line.size() - 3;
+
+        if (!found || nelems <= 0) continue;
+
+        // Clean up 2 character tag
+        gridpack::utility::StringUtils util;
+        std::string tag = util.clean2Char(split_line[2]);
+        if (tag.length() != 2 || tag[0] != '&') {
+          tag = "&1";
+        }
+
+        /*
+         * type: string
+         * #define MULTI_SEC_LINE_ID "MULTI_SEC_LINE_ID"
+         */
+        p_branchData[l_idx]->addValue(MULTI_SEC_LINE_ID, tag.c_str());
+
+        /*
+         * type: integer
+         * #define MULTI_SEC_LINE_MET "MULTI_SEC_LINE_MET"
+         */
+        p_branchData[l_idx]->addValue(MULTI_SEC_LINE_MET, atoi(split_line[3].c_str()));
+
+
+        int i;
+        char buf[32];
+        for (i=0; i<9; i++) {
+          sprintf(buf,"MULTI_SEC_LINE_DUM%d",i+1);
+          p_branchData[l_idx]->addValue(buf,atoi(split_line[i+4].c_str()));
+        }
+
+        std::getline(input, line);
+      }
+    }
+
     /*
      * ZONE_I          "I"                       integer
      * ZONE_NAME       "NAME"                    string
@@ -1714,7 +1829,16 @@ class PTI33_parser : public BasePTIParser<_network>
         std::getline(input, line);
       }
     }
-#endif
+
+    void find_facts(std::ifstream & input)
+    {
+      std::string          line;
+      std::getline(input, line); //this should be the first line of the block
+
+      while(test_end(line)) {
+        std::getline(input, line);
+      }
+    }
 
     // Distribute data uniformly on processors
     void brdcst_data(void)
@@ -2032,6 +2156,9 @@ class PTI33_parser : public BasePTIParser<_network>
     std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_busData;
     // Vector of branch data objects
     std::vector<boost::shared_ptr<gridpack::component::DataCollection> > p_branchData;
+    // Vector of Impedence correction tables
+    std::map<int,boost::shared_ptr<gridpack::component::DataCollection> >
+      p_imp_corr_table;
     // Map of PTI indices to index in p_busData
 #ifdef OLD_MAP
     std::map<int,int> p_busMap;

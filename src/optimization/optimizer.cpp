@@ -307,6 +307,11 @@ OptimizerImplementation::p_gatherProblem(void)
   for (std::vector<VariablePtr>::iterator v = p_variables.begin();
        v != p_variables.end(); ++v) {
     p_allVariables[(*v)->name()] = *v;
+    p_exportVariables[(*v)->name()] = *v;
+  }
+  for (std::vector<VariablePtr>::iterator v = p_aux_variables.begin();
+       v != p_aux_variables.end(); ++v) {
+    p_allVariables[(*v)->name()] = *v;
   }
 
   // subsitute variables in constraints and objective so they are unique
@@ -314,7 +319,9 @@ OptimizerImplementation::p_gatherProblem(void)
   VariableSubstituter vs(p_allVariables);
   std::for_each(p_allConstraints.begin(), p_allConstraints.end(),
                 boost::bind(&Constraint::accept, _1, boost::ref(vs)));
-  p_fullObjective->accept(vs);
+  if (p_fullObjective) {
+    p_fullObjective->accept(vs);
+  }
 
   // uniquely name all constraints in parallel
   if (nproc > 1) {

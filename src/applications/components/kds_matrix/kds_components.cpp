@@ -1039,6 +1039,15 @@ void gridpack::kalman_filter::KalmanBus::evaluateX3()
 }
 
 /**
+ * The number of generators on this bus
+ * @return number of generators
+ */
+int gridpack::kalman_filter::KalmanBus::numGenerators()
+{
+  return p_ngen;
+}
+
+/**
  *  Simple constructor
  */
 gridpack::kalman_filter::KalmanBranch::KalmanBranch(void)

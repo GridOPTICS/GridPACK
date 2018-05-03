@@ -350,15 +350,17 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   solver = "IpoptSolver()";
 
   out << mname << " = Model(solver=" << solver << ")" << std::endl;
+  // List all variables
   { 
     JuliaVarLister v(mname, out);
-    BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+    BOOST_FOREACH(VarMap::value_type& i, p_exportVariables) {
       i.second->accept(v);
     }
   }
+  // List initial value of all variables
   { 
     JuliaVarValueLister v(mname, out);
-    BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+    BOOST_FOREACH(VarMap::value_type& i, p_exportVariables) {
       i.second->accept(v);
     }
   }
@@ -383,7 +385,9 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   out << ", ";
   {
     ConstraintRenderer r(out);
-    p_fullObjective->accept(r);
+    if (p_fullObjective) {
+      p_fullObjective->accept(r);
+    }
   }
   out << ")" << std::endl;
 
@@ -394,7 +398,7 @@ JuliaOptimizerImplementation::p_write(const p_optimizeMethod& m, std::ostream& o
   // Print values of optimized variables
   { 
     JuliaVarPrintLister v(mname, out);
-    BOOST_FOREACH(VarMap::value_type& i, p_allVariables) {
+    BOOST_FOREACH(VarMap::value_type& i, p_exportVariables) {
       i.second->accept(v);
     }
   }

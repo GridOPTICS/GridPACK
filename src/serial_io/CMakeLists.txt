@@ -37,7 +37,7 @@ if (GOSS_DIR)
 endif()
 
 set(target_libraries 
-  gridpack_components gridpack_parallel gridpack_math
+  gridpack_components gridpack_parallel
   gridpack_configuration
   ${target_libraries} 
 )

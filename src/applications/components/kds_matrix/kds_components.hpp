@@ -227,6 +227,12 @@ class KalmanBus
      */
     void evaluateX3();
 
+    /**
+     * The number of generators on this bus
+     * @return number of generators
+     */
+    int numGenerators();
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;

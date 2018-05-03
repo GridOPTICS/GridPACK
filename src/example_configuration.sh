@@ -260,7 +260,7 @@ elif [ $host == "tlaloc" ]; then
     LDFLAGS="-L/usr/lib64/openmpi"
     export CXXFLAGS LDFLAGS
 
-    cmake -Wdev --debug-trycompile \
+    cmake $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
           -D USE_PROGRESS_RANKS:BOOL=OFF \
@@ -285,9 +285,8 @@ elif [ $host == "gridpackvm" ]; then
     CXX=g++
     export CC CXX
 
-    cmake -Wno-dev --debug-try-compile \
-	-D PETSC_DIR:STRING="/usr/lib/petscdir/3.6.2" \
-	-D PETSC_ARCH:STRING="x86_64-linux-gnu-real" \
+    cmake $options \
+	-D PETSC_DIR:STRING="/usr/lib/petsc" \
 	-D PARMETIS_DIR:PATH="/usr" \
 	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
@@ -295,6 +294,31 @@ elif [ $host == "gridpackvm" ]; then
 	-D MPIEXEC:STRING="mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/usr" \
+        -D BUILD_SHARED_LIBS:BOOL=OFF \
+        -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
+	$common_flags ..
+
+elif [ $host == "debianvm" ]; then
+
+    prefix="$HOME/gridpack"
+
+    CC=gcc
+    CXX=g++
+    CFLAGS=-pthread
+    CXXFLAGS=-pthread
+    export CC CXX CFLAGS CXXFLAGS
+
+    cmake $options \
+	-D PETSC_DIR:STRING="/usr/lib/petsc" \
+	-D PARMETIS_DIR:PATH="/usr" \
+	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
+	-D MPI_CXX_COMPILER:STRING="mpicxx" \
+	-D MPI_C_COMPILER:STRING="mpicc" \
+	-D MPIEXEC:STRING="mpiexec" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=30 \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
         -D BUILD_SHARED_LIBS:BOOL=OFF \

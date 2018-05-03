@@ -31,6 +31,7 @@
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/parser/base_parser.hpp"
 #include "gridpack/parser/hash_distr.hpp"
+#include "gridpack/factory/base_factory.hpp"
 #include "parser_classes/gencls.hpp"
 #include "parser_classes/gensal.hpp"
 #include "parser_classes/genrou.hpp"
@@ -260,6 +261,8 @@ class BasePTIParser : public BaseParser<_network>
       // Reset remaining indices
       p_network->resetGlobalIndices(false);
 #endif
+      gridpack::factory::BaseFactory<_network> factory(p_network);
+      factory.setComponents();
     }
 
     /**

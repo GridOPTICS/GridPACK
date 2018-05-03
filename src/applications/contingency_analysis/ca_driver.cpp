@@ -194,12 +194,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   pf_app.readNetwork(pf_network,config);
   // Finish initializing the network
   pf_app.initialize();
+  //  Set minimum and maximum voltage limits on all busses
+  pf_app.setVoltageLimits(Vmin, Vmax);
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
   pf_app.solve();
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
-  pf_app.ignoreVoltageViolations(Vmin,Vmax);
+  pf_app.ignoreVoltageViolations();
 
   // Read in contingency file name
   std::string contingencyfile;
@@ -289,18 +291,31 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // If power flow solution is successful, write out voltages and currents
       pf_app.write();
       // Check for violations
-      bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
-      ok = ok & pf_app.checkLineOverloadViolations();
+      bool ok1 = pf_app.checkVoltageViolations();
+      bool ok2 = pf_app.checkLineOverloadViolations();
+      bool ok = ok1 & ok2;
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
             events[task_id].p_name.c_str());
-      } else {
-        sprintf(sbuf,"\nViolation for contingency %s\n",
+      } 
+      if (!ok1) {
+        sprintf(sbuf,"\nBus Violation for contingency %s\n",
             events[task_id].p_name.c_str());
       }
       pf_app.print(sbuf);
-    }
+      pf_app.writeCABus();
+      if (!ok2) {
+        sprintf(sbuf,"\nBranch Violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      }
+      pf_app.print(sbuf);
+      pf_app.writeCABranch();
+    } else {
+      sprintf(sbuf,"\nDivergent for contingency %s\n",
+          events[task_id].p_name.c_str());
+      pf_app.print(sbuf);
+    } 
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
     // Close output file for this contingency

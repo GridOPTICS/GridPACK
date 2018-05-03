@@ -94,6 +94,11 @@ class KalmanFactory
      */
     void evaluateX3(void);
 
+    /**
+     * Test if each processor has at least one generator
+     */
+    bool checkGenerators();
+
   private:
 
     NetworkPtr p_network;

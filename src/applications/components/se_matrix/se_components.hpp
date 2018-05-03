@@ -299,6 +299,13 @@ class SEBus
      * @param data data collection object into which new values are inserted
      */
     void saveData(boost::shared_ptr<gridpack::component::DataCollection> data);
+ 
+    /**
+     * Get shunt_gs and shunt_bs
+     *
+     */
+    void getShuntGsBs(double *gs, double *bs);
+
 
   private:
     double p_shunt_gs;
