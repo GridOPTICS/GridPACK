@@ -6,7 +6,8 @@ module unload darshan
 
 Boost_1.61.0:
 
-Configure and build with the following script:
+At one point, it seemed like you could configure and build boost with the
+following script:
 
 cat << EOF > ~/user-config.jam
 using mpi : : <find-shared-library>mpich ; using gcc : : : <compileflags>-I${MPICH_DIR}/include <linkflags>-L${MPICH_DIR}/lib ;
@@ -20,8 +21,17 @@ sh ./bootstrap.sh \
 ./b2 -a -d+2 link=static install
 rm -f ~/user-config.jam
 
+This does not appear to function anymore. However, the boost module does seem to work,
+so loading the current version of boost/gnu and using the value of BOOST_ROOT that
+shows up when you type
+
+module show boost/gnu/1.64.0
+
+in the GridPACK cmake configure line will allow you to configure and build GridPACK.
+
 PETSc-3.8.3:
 
+Lower version of PETSc don't seem to work, so use PETSc-3.8.3 (or higher).
 Configure PETSc with
 
 python ./config/configure.py \
@@ -57,16 +67,16 @@ The "--with-batch" option causes the build to stop so it can pick up some
 information about the batch queue system that allows you to run tests. Just
 follow the instructions that are printed out from PETSc and you should be
 okay. If you are building someplace where you can launch jobs then it should
-be straightforward. After running the script above, you should see the file
-conftest-gnu-cxx-complex-test-opt in your build directory. The run the
+be straightforward. After running the script above, you will see the file
+conftest-gnu-cxx-complex-test-opt in your build directory. Then run the
 conftest-gnu-cxx-complex-test-opt script on 1 node by submitting
 it to the batch queue. The job will generate the file
-reconfigure-gnu-cxx-complex-test-opt.py. Run the python script in the PETSc
+reconfigure-gnu-cxx-complex-test-opt.py. Run this script in the PETSc
 directory and follow instructions to finish building PETSc.
 
-GA-5-6-2:
+GA-5-6-4:
 
-Configure ga-5-6-2 with the following:
+Configure ga-5-6-4 to run with the progress ranks runtime with the following:
 
 ./configure \
   --with-mpi-pr \
@@ -76,7 +86,7 @@ Configure ga-5-6-2 with the following:
   --enable-autodetect \
   --enable-shared=no \
   --enable-static=yes \
-  --prefix=/home/bjpalmer/software/ga-5-6-2/build_pr \
+  --prefix=/home/bjpalmer/software/ga-5-6-4/build_pr \
   cross_compiling=yes CC=cc CXX=CC F77=ftn \
   MPICC=cc MPICXX=CC MPIF77=ftn MPIF90=ftn
 
@@ -84,12 +94,11 @@ After configuring, type "make; make install"
 
 GridPACK:
 
-Configure GridPACK with the following script (some of this stuff may be
-unnecessary or irrelevant, but the file seems to work and it would take too
-long to clean it up):
-
-export CFLAGS='-pthread -lrt -lstdc++'
-export CXXFLAGS='-pthread -lrt -lstdc++'
+This build assumes that you are building GridPACK in a separate directory under
+the source directory. If you are building somewhere else, you will need to adjust
+the script accordingly. Configure GridPACK with the following script (some of this
+stuff may be unnecessary or irrelevant, but the file seems to work and it would
+take too long to clean it up):
 
 cmake -Wdev \
        -D BOOST_ROOT:STRING='/home/bjpalmer/software/boost_1_61_0' \
@@ -104,24 +113,24 @@ cmake -Wdev \
        -D MPI_CXX_COMPILER:STRING='CC' \
        -D MPI_C_COMPILER:STRING='cc' \
        -D MPIEXEC:STRING='aprun' \
-       -D GA_EXTRA_LIBS:STRING='-pthread -lrt' \
+       -D GA_EXTRA_LIBS:STRING='-pthread' \
        -D ENABLE_CRAY_BUILD:BOOL=true \
        -D CHECK_COMPILATION_ONLY:BOOL=true \
        -D USE_PROGRESS_RANKS:BOOL=true \
        -D CMAKE_BUILD_TYPE:STRING='RELWITHDEBINFO' \
        -D CMAKE_VERBOSE_MAKEFILE:STRING=TRUE \
-       CFLAGS=-pthread CXXFLAGS=-pthread LIBS=-lrt \
+       CFLAGS=-pthread CXXFLAGS=-pthread \
        ..
 
-Note that because the CMake FindMPI module totally fails on the Cray OS, it
-is necessary to specify MPI_LIBRARY and MPI_EXTRA_LIBRARY. To find out where these
+Because the CMake FindMPI module totally fails on the Cray OS, it is necessary to
+specify MPI_LIBRARY and MPI_EXTRA_LIBRARY explicitly. To find out where these
 are located, type "CC -v", pipe the output to a file and then search for "mpich".
 Use the same library for both MPI_LIBRARY and MPI_EXTRA_LIBRARY. CMake doesn't like
 having MPI_EXTRA_LIBRARY not set.
 
 You also need to edit the FindPETSc.cmake and FindPackageMultipass.cmake files
 in the cmake-jedbrown directory to get the GridPACK configuration to work. These
-files are directly downloaded from Jed Brown's GitHub repository so the don't
+files are directly downloaded from Jed Brown's GitHub repository so they don't
 pick up the CHECK_COMPILATION_ONLY flag, which is GridPACK specific. To get this
 test to work properly, edit FindPETSc.cmake and replace
 
