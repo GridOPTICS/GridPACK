@@ -10,7 +10,7 @@
 /**
  * @file   value_transfer.hpp
  * @author William A. Perkins
- * @date   2015-05-07 11:09:35 d3g096
+ * @date   2016-07-14 13:18:45 d3g096
  * 
  * @brief  
  * 
@@ -143,14 +143,14 @@ inline unsigned int
 ValueTransfer<RealType, ComplexType>::p_computeToSize(void) const
 {
   return p_fromSize/TWO;
-};
+}
 
 template <>
 inline unsigned int
 ValueTransfer<ComplexType, RealType>::p_computeToSize(void) const
 {
   return p_fromSize*TWO;
-};
+}
 
 // -------------------------------------------------------------
 // ValueTransfer<>::p_setup
@@ -171,7 +171,7 @@ ValueTransfer<RealType, RealType>::p_setup()
   if (!p_to) {
     p_to.reset(p_from, null_deleter());
   }
-};
+}
 
 template <>
 inline void  
@@ -180,7 +180,7 @@ ValueTransfer<ComplexType, ComplexType>::p_setup()
   if (!p_to) {
     p_to.reset(p_from, null_deleter());
   }
-};
+}
 
 
 // -------------------------------------------------------------
@@ -203,7 +203,7 @@ ValueTransfer<RealType, ComplexType>::p_copy(void)
   for (fidx = 0; fidx < p_fromSize; fidx += TWO, ++tidx) {
     p_to.get()[tidx] = ComplexType(p_from[fidx], p_from[fidx+1]);
   }
-};
+}
 
 template <>
 inline void

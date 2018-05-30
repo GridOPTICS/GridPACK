@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.hpp
  * @author Bruce Palmer
- * @date   2014-03-05 14:50:50 d3g096
+ * @date   2016-07-14 13:27:00 d3g096
  * 
  * @brief  
  * 
@@ -131,6 +131,19 @@ class PFBus
      * Reset voltage and phase angle to initial values
      */
     void resetVoltage(void);
+
+    /**
+     * Set voltage limits on bus
+     * @param vmin lower value of voltage
+     * @param vmax upper value of voltage
+     */
+    void setVoltageLimits(double vmin, double vmax);
+
+    /**
+     * Check voltage for violation
+     * @return false if there is a voltage violation
+     */
+    bool checkVoltageViolation(void);
 
     /**
      * Return the value of the voltage magnitude on this bus
@@ -304,6 +317,24 @@ class PFBus
      */
     std::vector<double> getGeneratorParticipation();
 
+    /**
+     * Set value of real power on individual generators
+     * @param tag generator ID
+     * @param value new value of real power
+     * @param data data collection object associated with bus
+     */
+    void setGeneratorRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
+
+    /**
+     * Set value of real power on individual loads
+     * @param tag load ID
+     * @param value new value of real power
+     * @param data data collection object associated with bus
+     */
+    void setLoadRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -328,11 +359,15 @@ class PFBus
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
     std::vector<double> p_pb;
-    double p_pl, p_ql;
+    std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
+    std::vector<int> p_lstatus;
+    std::vector<std::string> p_lid;
     double p_sbase;
     double p_Pinj, p_Qinj;
+    double p_vmin, p_vmax;
     bool p_isPV, p_saveisPV;
     int p_ngen;
+    int p_nload;
     int p_type;
     int p_area;
 
@@ -370,12 +405,14 @@ private:
       & p_gstatus
       & p_vs & p_gid
       & p_pt & p_pb
-      & p_pl & p_ql
+      & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
+      & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
+      & p_vmin & p_vmax
       & p_isPV
       & p_saveisPV
-      & p_ngen & p_type
+      & p_ngen & p_type & p_nload
       & p_area;
   }  
 
@@ -596,8 +633,8 @@ private:
 }     // powerflow
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::powerflow::PFBranch)
 
 
 #endif

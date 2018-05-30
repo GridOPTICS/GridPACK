@@ -1,0 +1,82 @@
+Adding a user to the web page (requires administrator priviledges)
+
+   1) Log into the webpage by going to https://www.gridpack.org/GridPACK and
+      log in with youer username and password.
+   2) Click on the Admin tab at the top of the page.
+   3) Click on the Users link on the left hand side bar (Administration). The
+      User link is in the Accounts block.
+   4) Follow the instructions for adding a new user. Permissions for each user
+      can be controlled view the permissions can be controlled by going to
+      the Permissions link and setting permissions there.
+
+Uploading files (requires administrator priviledges)
+
+   1) Got to https://www.gridpack.org home page and log in.
+   2) Click on upload file link in left hand tool bar.
+   3) An upload dialog should appear. Use the Browse tab to find the file that
+      you want to upload and upload it to the webpage.
+   4) Got to the GridPACK home page and click on the "Special Pages" link on the
+      left hand side. Under this page there is a section "Media reports and
+      uploads". Click on the "File list" link to get a complete list of all
+      downloads. The file you downloaded should be listed on this page. If you
+      want to remove the download, click on your file and this will take you
+      to a page that allows you to download it.
+   5) To create a link to the downloaded file add in the webpage, add the
+      following text
+
+      [[Media:My_download_file.ext| name of document link]]
+
+      in the web document. The "Media" keyword applies to any downloaded
+      document.
+
+Doxygen documentation
+
+   0) Check that new directories have been added to the Doxygen build. You will
+      need to edit the Doxygen.in file in the src directory. Look for the
+      INPUT flag and check that all new directories have been added. You can
+      find this flag easily by searching for one of the gridpack directories,
+      such as serial_io.
+   1) You can only create Doxygen docs on a computer that has doxygen. You
+      should get a notification that Doxygen was found when you configure
+      GridPACK.
+   2) Go to the build directory and type "make doc". This should generate the
+      Doxygen documentation, which will be located in the directory
+      $GRIDPACK/docs/doc. The web pages are in the directory html.
+   3) Copy this doc directory to a Windows platform. You can use WinSCP to move
+      entire directories.
+   4) Go to the share directory \\whsprod20e\gridpack_api and then go to the
+      htmlroot folder. You may need to get a direct link to this site from
+      the sys admins. This corresponds to the internet address
+      http://gridpack_api.labworks.org/index.html.
+   5) Remove the contents of the oldVersion folder and then copy the "search"
+      directory and all individual files in htmlroot into the oldVersion folder.
+   6) Copy the contents the contents of doc/html from the Doxygen directory that
+      you copied to Windows to the htmlroot folder. The new Doxygen files should
+      now show up when you link to them from the gridpack.org webpage.
+
+Release
+   1) Got to https://github.com/GridOPTICS/GridPACK
+   2) Got to the "releases tab" (near the top of the page) and click on it
+   3) Click on the "Draft a new release" button on the upper right of the page
+   4) Provide a name for the release in the box labeled "Tag version"
+   5) Click on the pull-down menu with "Target:master" and select the release
+      branch you want to use.
+   6) Fill in the box labeled "Release title". You should use something like
+      "GridPACK vX.X Release"
+   7) Add release notes in the block labeled "Describe this release"
+   8) Click on the button labeled "Publish release"
+   9) Download the tar.gz file from the Github release page and copy it to a
+      Linux box. Untar the release. Copy all the $GRIDPACK/cmake-jedbrown files
+      from a working build to the $GRIDPACK/cmake-jedbrown directory in the
+      release
+   10) Tar and gzip the release directory with the cmake-jedbrown files. At this
+       point it would be advisable to verify that GridPACK builds if you untar
+       this file. Move the tarball to a Windows workstation.
+   11) Got the Github web site and got to the new release website. Click the
+       "Edit" button.
+   12) Click on the link that says "Attach binaries by dropping them here or
+       selecting them." This shoud bring up a file browser. Select your tarball
+       and upload it.
+   13) Click "Update release" button. The tarball should now appear in the
+       Downloads section.
+   14) 

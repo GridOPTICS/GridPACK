@@ -14,19 +14,19 @@ common_flags="\
 
 if [ $host == "flophouse" ]; then
 
-    prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
+    prefix="/net/flophouse/files0/perksoft/linux64"
     PATH="${prefix}/bin:${PATH}"
     export PATH
 
-    CC="$prefix/bin/gcc"
+    CC="/usr/bin/gcc"
     export CC
-    CXX="$prefix/bin/g++"
+    CXX="/usr/bin/g++"
     export CXX
     CFLAGS="-pthread"
     export CFLAGS
     CXXFLAGS="-pthread"
     export CXXFLAGS
-    FC="$prefix/bin/gfortran"
+    FC="/usr/bin/gfortran"
     export FC
     FCFLAGS="-pthread"
     export FCFLAGS
@@ -34,6 +34,9 @@ if [ $host == "flophouse" ]; then
     cmake -Wdev --debug-trycompile \
         -D CMAKE_Fortran_FLAGS:STRING="-pthread" \
         -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
+        -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
+        -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
+        -D MPI_Fortran_COMPILER:STRING="/usr/lib64/openmpi/bin/mpif90" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
     
@@ -73,8 +76,8 @@ elif [ "$host" == "gridpackvm" ]; then
     
     prefix="/home/gridpack/gridpack"
     cmake $options \
-        -D GRIDPACK_DIR:PATH="$prefix/gridpack" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D GRIDPACK_DIR:PATH="$prefix" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
         $common_flags \
         ..
     

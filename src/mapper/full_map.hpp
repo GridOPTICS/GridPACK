@@ -26,6 +26,7 @@
 #include <gridpack/component/base_component.hpp>
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/math/matrix.hpp>
+#include <gridpack/utilities/exception.hpp>
 
 #define DBG_CHECK
 
@@ -453,7 +454,10 @@ void createIndexGA(int * handle, int size)
   GA_Set_data(*handle, one, &size, C_INT);
   GA_Set_pgroup(*handle,p_GAgrp);
   if (!GA_Allocate(*handle)) {
-    // TODO: some kind of error
+    char buf[256];
+    sprintf(buf,"FullMatrixMap::createIndexGA: Unable to allocate distributed array\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   GA_Zero(*handle);
 }
@@ -828,7 +832,10 @@ void setupOffsetArrays()
   GA_Set_irreg_distr(gaOffsetI, mapc, &p_nNodes);
   GA_Set_pgroup(gaOffsetI,p_GAgrp);
   if (!GA_Allocate(gaOffsetI)) {
-    // TODO: some kind of error
+    char buf[256];
+    sprintf(buf,"FullMatrixMap::setupOffsetArrays: Unable to allocate distributed array for row offsets\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   GA_Zero(gaOffsetI);
 
@@ -837,7 +844,10 @@ void setupOffsetArrays()
   GA_Set_irreg_distr(gaOffsetJ, mapc, &p_nNodes);
   GA_Set_pgroup(gaOffsetJ,p_GAgrp);
   if (!GA_Allocate(gaOffsetJ)) {
-    // TODO: some kind of error
+    char buf[256];
+    sprintf(buf,"FullMatrixMap::setupOffsetArrays: Unable to allocate distributed array for column offsets\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   GA_Zero(gaOffsetJ);
 
@@ -894,7 +904,10 @@ void setBusOffsets(void)
     }
   }
   if (icnt != p_busContribution) {
-    // TODO: some kind of error
+    char buf[256];
+    sprintf(buf,"FullMatrixMap::setBusOffsets: Contribution from buses doesn't match\n");
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
 
   // Gather matrix offsets
@@ -1066,9 +1079,11 @@ void setBranchOffsets(void)
     }
   }
   if (icnt != p_branchContribution) {
-    printf("p[%d] Mismatch in loadBranchData icnt: %d branchContribution: %d\n",
+    char buf[256];
+    sprintf(buf,"p[%d] Mismatch in loadBranchData icnt: %d branchContribution: %d\n",
         p_me,icnt,p_branchContribution);
-    // TODO: some kind of error
+    printf(buf);
+    throw gridpack::Exception(buf);
   }
   if (p_timer) p_timer->stop(t_idx);
 

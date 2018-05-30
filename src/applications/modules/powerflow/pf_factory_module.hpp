@@ -19,14 +19,15 @@
 #define _pf_factory_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/network/base_network.hpp"
+#include "gridpack/factory/base_factory.hpp"
 #include "gridpack/applications/components/pf_matrix/pf_components.hpp"
 
 namespace gridpack {
 namespace powerflow {
 
 /// The type of network used in the powerflow application
-typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
+typedef gridpack::network::BaseNetwork<PFBus, PFBranch > PFNetwork;
 
 class PFFactoryModule
   : public gridpack::factory::BaseFactory<PFNetwork> {
@@ -86,22 +87,25 @@ class PFFactoryModule
     void clearLoneBus();
 
     /**
+     * Set voltage limits on all buses
+     * @param Vmin lower bound on voltages
+     * @param Vmax upper bound on voltages
+     */
+    void setVoltageLimits(double Vmin, double Vmax);
+
+    /**
      * Check to see if there are any voltage violations in the network
-     * @param minV maximum voltage limit
-     * @param maxV maximum voltage limit
      * @param area only check for voltage violations in this area
      * @return true if no violations found
      */
-    bool checkVoltageViolations(double Vmin, double Vmax);
-    bool checkVoltageViolations(int area, double Vmin, double Vmax);
+    bool checkVoltageViolations();
+    bool checkVoltageViolations(int area);
 
     /**
      * Set "ignore" parameter on all buses with violations so that subsequent
      * checks are not counted as violations
-     * @param minV maximum voltage limit
-     * @param maxV maximum voltage limit
      */
-    void ignoreVoltageViolations(double Vmin, double Vmax);
+    void ignoreVoltageViolations();
 
     /**
      * Clear "ignore" parameter on all buses

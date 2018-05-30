@@ -8,7 +8,7 @@
 /**
  * @file   configurable.h
  * @author William A. Perkins
- * @date   2014-12-09 09:43:11 d3g096
+ * @date   2016-12-08 14:06:45 d3g096
  * 
  * @brief  
  * 
@@ -189,6 +189,7 @@ public:
   /// Initialize this instance using the specified configuration property tree
   void configure(utility::Configuration::CursorPtr theprops)
   {
+    this->p_preconfigure(theprops);
     p_configurable->configure(theprops);
   }
 
@@ -211,6 +212,12 @@ protected:
   void p_setConfigurable(Configurable *c)
   {
     p_configurable = c;
+  }
+
+  /// Do something before configuring the configurable
+  virtual void p_preconfigure(utility::Configuration::CursorPtr theprops)
+  {
+    // do nothing
   }
 
 };

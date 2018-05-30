@@ -31,7 +31,7 @@ class TestBus
   }
 };
 
-BOOST_CLASS_EXPORT(TestBus);
+BOOST_CLASS_EXPORT(TestBus)
 
 class TestBranch
   : public gridpack::component::BaseBranchComponent {
@@ -44,7 +44,7 @@ class TestBranch
   }
 };
 
-BOOST_CLASS_EXPORT(TestBranch);
+BOOST_CLASS_EXPORT(TestBranch)
 
 void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
 {

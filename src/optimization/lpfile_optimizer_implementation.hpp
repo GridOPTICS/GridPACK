@@ -10,7 +10,7 @@
 /**
  * @file   lpfile_optimizer_implementation.hpp
  * @author William A. Perkins
- * @date   2015-10-13 13:11:36 d3g096
+ * @date   2016-12-08 14:33:44 d3g096
  * 
  * @brief  
  * 
@@ -24,7 +24,7 @@
 
 #include <iosfwd>
 #include <string>
-#include "optimizer.hpp"
+#include "file_optimizer_implementation.hpp"
 
 namespace gridpack {
 namespace optimization {
@@ -35,13 +35,13 @@ namespace optimization {
 //  class LPFileOptimizerImplementation
 // -------------------------------------------------------------
 class LPFileOptimizerImplementation 
-  : public OptimizerImplementation
+  : public FileOptimizerImplementation
 {
 public:
 
   /// Default constructor.
   LPFileOptimizerImplementation(const parallel::Communicator& comm)
-    : OptimizerImplementation(comm)
+    : FileOptimizerImplementation(comm)
   {}
 
   /// Destructor
@@ -50,15 +50,15 @@ public:
 
 protected:
 
-  /// Open a stream to a new temporary file
-  std::string p_temporaryFileName(void);
+  /// Specialized way to configure from property tree
+  void p_configure(utility::Configuration::CursorPtr props);
 
+  /// Specialized way to set file name
+  void p_setFilename(std::string file);
+ 
   /// Write an LP file to the specified stream
   virtual void p_write(const p_optimizeMethod& m, std::ostream& out);
 
-  /// Do the problem (specialized)
-  void p_solve(const p_optimizeMethod& m);
-  
 };
 
 

@@ -42,7 +42,7 @@ class TestBus
   std::vector<int*> p_vec;
 };
 
-BOOST_CLASS_EXPORT(TestBus);
+BOOST_CLASS_EXPORT(TestBus)
 
 class TestBranch
   : public gridpack::component::BaseBranchComponent {
@@ -58,7 +58,7 @@ class TestBranch
   std::vector<double*> p_vec;
 };
 
-BOOST_CLASS_EXPORT(TestBranch);
+BOOST_CLASS_EXPORT(TestBranch)
 
 void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
 {

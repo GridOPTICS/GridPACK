@@ -10,7 +10,7 @@
 /**
  * @file   optimizer.hpp
  * @author William A. Perkins
- * @date   2015-11-23 11:18:59 d3g096
+ * @date   2017-03-22 07:53:39 d3g096
  * 
  * @brief  
  * 
@@ -22,12 +22,14 @@
 #define _optimizer_hpp_
 
 #include <vector>
+#include <map>
 #include <boost/scoped_ptr.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/utilities/exception.hpp>
 #include <gridpack/configuration/configurable.hpp>
 #include <gridpack/parallel/distributed.hpp>
-#include <gridpack/optimization/expression.hpp>
+#include <gridpack/expression/expression.hpp>
+#include <gridpack/expression/functions.hpp>
 
 namespace gridpack {
 namespace optimization {
@@ -48,10 +50,24 @@ public:
   virtual ~OptimizerInterface(void)
   {}
 
+  /// Set filename for output
+  virtual void setFilename(std::string file)
+  {
+    this->p_setFilename(file);
+  }
+
   /// Add a (local) variable to be optimized
   void addVariable(VariablePtr v)
   {
     this->p_addVariable(v);
+  }
+
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  void addAuxVariable(VariablePtr v)
+  {
+    this->p_addAuxVariable(v);
   }
 
   /// Add a (local) constraint 
@@ -75,16 +91,16 @@ public:
     this->p_createGlobalConstraint(name, cons);
   }
 
-  /// Add to the LHS of a global constraint
+  /// Add to the LHS of a global constraint, maybe
   void addToGlobalConstraint(const std::string& name, ExpressionPtr expr)
   {
-    this->p_addToGlobalConstraint(name, expr);
+    if (expr) this->p_addToGlobalConstraint(name, expr);
   }
 
-  /// Add to the local part of the global objective function (added to other parts)
+  /// Add to the local part of the global objective function, maybe
   void addToObjective(ExpressionPtr expr)
   {
-    this->p_addToObjective(expr);
+    if (expr) this->p_addToObjective(expr);
   }
 
   /// Maximize the objective
@@ -103,9 +119,17 @@ protected:
 
   /// Ways in which the objective can be optimized
   enum p_optimizeMethod { Maximize, Minimize };
+
+  /// Set file name for results (specialized)
+  virtual void p_setFilename(std::string file) = 0;
   
   /// Add a (local) variable to be optimized (specialized)
   virtual void p_addVariable(VariablePtr v) = 0;
+
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  virtual void p_addAuxVariable(VariablePtr v) = 0;
 
   /// Add a (local) constraint (specialized)
   virtual void p_addConstraint(ConstraintPtr c) = 0;
@@ -153,6 +177,9 @@ protected:
   /// The (local) variables involved
   std::vector<VariablePtr> p_variables;
 
+  /// The auxiliary variables involved
+  std::vector<VariablePtr> p_aux_variables;
+
   /// The collection of (local) constraints involved
   std::vector<ConstraintPtr> p_constraints;
 
@@ -161,6 +188,12 @@ protected:
 
   /// Variables involved from all processes (unique instances)
   VarMap p_allVariables;
+
+  /// Auxiliary variables from all processes
+  VarMap p_exportVariables;
+
+  /// Auxiliary variables from all processes
+  VarMap p_auxVariables;
 
   /// Constraints involved from all processes 
   std::vector<ConstraintPtr> p_allConstraints;
@@ -181,6 +214,14 @@ protected:
   void p_addVariable(VariablePtr v)
   {
     p_variables.push_back(v);
+  }
+
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  virtual void p_addAuxVariable(VariablePtr v)
+  {
+    p_aux_variables.push_back(v);
   }
 
   /// Add a (local) constraint (specialized)
@@ -205,13 +246,6 @@ protected:
       p_objective = p_objective + expr;
     } else {
       p_objective = expr;
-    }
-  }
-
-  /// Specialized way to configure from property tree
-  void p_configure(utility::Configuration::CursorPtr props)
-  {
-    if (props) {
     }
   }
 
@@ -257,12 +291,26 @@ protected:
     p_setDistributed(p_impl.get());
     p_setConfigurable(p_impl.get());
   }
-  
+
+  void p_preconfigure(utility::Configuration::CursorPtr theprops);
+
+  void p_setFilename(std::string file)
+  {
+    p_impl->setFilename(file);
+  }
 
   /// Add a (local) variable to be optimized (specialized)
   void p_addVariable(VariablePtr v)
   {
     p_impl->addVariable(v);
+  }
+
+  /// Add a (local) auxiliary variable. This is used for
+  /// parallel applications to create ghost copies of variables
+  /// defined on other processors
+  void p_addAuxVariable(VariablePtr v)
+  {
+    p_impl->addAuxVariable(v);
   }
 
   /// Add a (local) constraint (specialized)

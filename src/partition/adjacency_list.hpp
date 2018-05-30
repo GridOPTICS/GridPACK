@@ -92,7 +92,7 @@ public:
   {
     p_Edge tmp;
     tmp.index = edge_index;
-    tmp.original_conn = std::make_pair<Index, Index>(node_index_1, node_index_2);
+    tmp.original_conn = std::make_pair(node_index_1, node_index_2);
     p_edges.push_back(tmp);
   }
 

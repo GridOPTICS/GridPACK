@@ -8,7 +8,7 @@
 /**
  * @file   math.cpp
  * @author William A. Perkins
- * @date   2014-12-09 11:05:20 d3g096
+ * @date   2016-06-16 12:26:01 d3g096
  * 
  * @brief  
  * 
@@ -19,6 +19,7 @@
 #include <petscsys.h>
 #if USE_PROGRESS_RANKS
 #include "ga-mpi.h"
+extern "C" int GA_Initialized();
 #endif
 #include "gridpack/math/math.hpp"
 #include "gridpack/math/petsc/petsc_exception.hpp"
@@ -37,7 +38,13 @@ Initialize(void)
   PetscErrorCode ierr(0);
   PetscBool flg;
 #if USE_PROGRESS_RANKS
-  gridpack::parallel::Communicator comm;
+  if (!GA_Initialized()) {
+    char buf[256];
+    sprintf(buf,"GA library using progress ranks not initialized before calling"
+        " gridpack::math::Initialize().");
+    printf("%s\n",buf);
+    throw gridpack::Exception(buf);
+  }
   MPI_Comm world = GA_MPI_Comm();
   PETSC_COMM_WORLD = world;
 #endif
@@ -58,8 +65,15 @@ Initialize(void)
 #else
     ierr = PetscInitializeNoArguments(); CHKERRXX(ierr);
 #endif
-    PetscOptionsHasName(NULL,"-log_summary",&flg);
+    PetscOptionsHasName(
+#if PETSC_VERSION_GE(3,7,0)
+                                    NULL,
+#endif
+                                    NULL, "-log_summary", &flg);
     ierr = PetscOptionsInsertFile(PETSC_COMM_WORLD,
+#if PETSC_VERSION_GE(3,7,0)
+                                    NULL,
+#endif
                                   "gridpack.petscrc",
                                   PETSC_FALSE); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {

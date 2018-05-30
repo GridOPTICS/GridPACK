@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_wrapper.cpp
  * @author William A. Perkins
- * @date   2015-05-22 10:33:37 d3g096
+ * @date   2016-06-16 13:18:38 d3g096
  * 
  * @brief  
  * 
@@ -475,7 +475,11 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
     case PETSC_VIEWER_DEFAULT:
       ierr = MatGetSize(mat, &grow, &gcol); CHKERRXX(ierr);
       ierr = MatGetLocalSize(mat, &lrow, &lcol); CHKERRXX(ierr);
+#if PETSC_VERSION_LT(3,7,0)
       ierr = PetscViewerASCIISynchronizedAllow(viewer, PETSC_TRUE); CHKERRXX(ierr);
+#else
+      ierr = PetscViewerASCIIPushSynchronized(viewer); CHKERRXX(ierr);
+#endif
       ierr = PetscViewerASCIIPrintf(viewer,             
                                     "# Matrix distribution\n"); CHKERRXX(ierr);
       ierr = PetscViewerASCIIPrintf(viewer,             
@@ -490,6 +494,9 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
                                     "# ---- -------- --------\n");  CHKERRXX(ierr);
       ierr = PetscViewerASCIIPrintf(viewer, "# %4d %8d %8d\n", 
                                     nproc, grow, gcol);  CHKERRXX(ierr);
+#if PETSC_VERSION_GE(3,7,0)
+      ierr = PetscViewerASCIIPopSynchronized(viewer); CHKERRXX(ierr);
+#endif
     default:
       break;
     }

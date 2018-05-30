@@ -7,7 +7,7 @@
 /**
  * @file   parmetis_graph_wrapper.cpp
  * @author William A. Perkins
- * @date   2014-02-13 09:28:27 d3g096
+ * @date   2016-07-15 09:05:44 d3g096
  * 
  * @brief  Implementation of the ParMETISGraphWrapper class
  * 
@@ -72,7 +72,7 @@ void
 ParMETISGraphWrapper::p_initialize_gbl(const int& gblnodes, const int& locnodes,
                                        const int& gbledges, const int& locedges)
 {
-  int maxdim(two);
+  const int maxdim(two);
   int dims[maxdim], lo[maxdim], hi[maxdim], ld[maxdim];
   int tmp[maxdim];
   int sum;
@@ -278,14 +278,14 @@ ParMETISGraphWrapper::get_csr_local(std::vector<idx_t>& vtxdist,
                                 // extract adjacency index
 
   int maxdim(two);
-  int lo[maxdim], hi[maxdim], ld[maxdim];
+  std::vector<int> lo(maxdim), hi(maxdim), ld(maxdim);
   ld[0] = 1;
   ld[1] = 1;
 
   std::vector<int> tmp(localnodes+1);
   lo[0] = vtxdist[me];
   hi[0] = vtxdist[me+1];
-  p_xadj_gbl->get(lo, hi, &tmp[0], ld);
+  p_xadj_gbl->get(&lo[0], &hi[0], &tmp[0], &ld[0]);
 
   xadj.clear();
   xadj.reserve(tmp.size());
@@ -298,7 +298,7 @@ ParMETISGraphWrapper::get_csr_local(std::vector<idx_t>& vtxdist,
   hi[0] = tmp.back() - 1;
   int nidxsize(hi[0] - lo[0] + 1);
   std::vector<int> nidx(nidxsize);
-  p_adjncy_gbl->get(lo, hi, &nidx[0], ld);
+  p_adjncy_gbl->get(&lo[0], &hi[0], &nidx[0], &ld[0]);
 
   {  
     std::vector<int*> junkidx(nidx.size());

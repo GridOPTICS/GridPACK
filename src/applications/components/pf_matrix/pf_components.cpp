@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2014-02-13 07:35:47 d3g096
+ * @date   2016-07-14 13:49:14 d3g096
  * 
  * @brief  
  * 
@@ -41,14 +41,20 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_theta = 0.0;
   p_angle = 0.0;
   p_voltage = 0.0;
-  p_pl = 0.0;
+  /*p_pl = 0.0;
   p_ql = 0.0;
+  p_ip = 0.0;
+  p_iq = 0.0;
+  p_yp = 0.0;
+  p_yq = 0.0;*/
   p_sbase = 0.0;
   p_mode = YBus;
   setReferenceBus(false);
   p_ngen = 0;
   p_data = NULL;
   p_ignore = false;
+  p_vMag_ptr = NULL;
+  p_vAng_ptr = NULL;
 }
 
 /**
@@ -246,19 +252,26 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       P += p;
       Q += q;
     }
-
+    double pl =0.0;
+    double ql =0.0;
+    for (i=0; i<p_lstatus.size(); i++) {
+      if (p_lstatus[i] == 1) {
+        pl += p_pl[i];
+        ql += p_ql[i];
+      }
+    }
 //    printf("Gen %d: Q = %f, p_QL = %f, Q+p_Q0 = %f, QMAX = %f \n", getOriginalIndex(),-Q,p_ql,-Q+p_ql, qmax);  
-    if (-Q+p_ql+p_shunt_bs > qmax ) { 
-      printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+p_ql+p_shunt_bs, qmax);  
-      p_ql = p_ql+qmax;
+    if (-Q+ql+p_shunt_bs > qmax ) { 
+      printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmax);  
+      ql = ql+qmax;
       p_isPV = 0;
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus[i] = 0;
       }
       return true;
-    } else if (-Q+p_ql+p_shunt_bs < qmin) {
-      printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+p_ql+p_shunt_bs, qmin);  
-      p_ql = p_ql+qmin;
+    } else if (-Q+ql+p_shunt_bs < qmin) {
+      printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmin);  
+      ql = ql+qmin;
       p_isPV = 0;
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus[i] = 0;
@@ -348,6 +361,21 @@ void gridpack::powerflow::PFBus::load(
   p_data = data.get();
   YMBus::load(data);
 
+  // This routine may be called more than once, so clear all vectors
+  p_pg.clear();
+  p_qg.clear();
+  p_pFac.clear();
+  p_gstatus.clear();
+  p_qmin.clear();
+  p_qmax.clear();
+  p_gid.clear();
+  p_pt.clear();
+  p_pb.clear();
+  p_pl.clear();
+  p_ql.clear();
+  p_lstatus.clear();
+  p_lid.clear();
+
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
   data->getValue(BUS_VOLTAGE_ANG, &p_angle);
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
@@ -365,9 +393,7 @@ void gridpack::powerflow::PFBus::load(
   p_isPV = false;
 
   // added p_pg,p_qg,p_pl,p_ql,p_sbase;
-  p_load = true;
-  p_load = p_load && data->getValue(LOAD_PL, &p_pl,0);
-  p_load = p_load && data->getValue(LOAD_QL, &p_ql,0);
+
   bool lgen;
   int i, gstatus;
   double pg, qg, vs,qmax,qmin;
@@ -391,9 +417,13 @@ void gridpack::powerflow::PFBus::load(
         p_pg.push_back(pg);
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
+        if (gstatus == 0) {
+          qmax = 0.0;
+          qmin = 0.0;
+        }
+        p_pFac.push_back(qmax);
         p_qmax.push_back(qmax);
         qtot += qmax;
-        p_pFac.push_back(qmax);
         p_qmin.push_back(qmin);
         p_pt.push_back(pt);
         p_pb.push_back(pb);
@@ -416,6 +446,39 @@ void gridpack::powerflow::PFBus::load(
     }
   }
   p_saveisPV = p_isPV;
+
+// Add load
+  int lstatus;
+  double pl,ql,ip,iq,yp,yq;
+  p_load = true;
+  p_load = p_load && data->getValue(LOAD_PL, &pl,0);
+  p_load = p_load && data->getValue(LOAD_QL, &ql,0);
+  p_load = p_load && data->getValue(LOAD_IP, &ip,0);
+  p_load = p_load && data->getValue(LOAD_IQ, &iq,0);
+  p_load = p_load && data->getValue(LOAD_YP, &yp,0);
+  p_load = p_load && data->getValue(LOAD_YQ, &yq,0);
+  int nld = 0;
+  p_nload = 0;
+  if (data->getValue(LOAD_NUMBER, &nld)) {
+    for (i=0; i<nld; i++) {
+      p_load = true;
+      p_load = p_load && data->getValue(LOAD_PL, &pl,i);
+      p_load = p_load && data->getValue(LOAD_QL, &ql,i);
+      p_load = p_load && data->getValue(LOAD_STATUS, &lstatus,i);
+      if (p_load) {
+        p_pl.push_back(pl);
+        p_ql.push_back(ql);
+        p_lstatus.push_back(lstatus);
+        std::string id("-1");
+        data->getValue(LOAD_ID,&id,i);
+        p_lid.push_back(id);
+        p_nload++;
+      }
+    }
+  }
+  // If this is being called a second time, then update pointers
+  if (p_vMag_ptr) *p_vMag_ptr = p_v;
+  if (p_vAng_ptr) *p_vAng_ptr = p_a;
 }
 
 /**
@@ -462,6 +525,28 @@ void gridpack::powerflow::PFBus::resetVoltage(void)
   p_a = p_angle;
   *p_vMag_ptr = p_v;
   *p_vAng_ptr = p_a;
+}
+
+/**
+ * Set voltage limits on bus
+ * @param vmin lower value of voltage
+ * @param vmax upper value of voltage
+ */
+void gridpack::powerflow::PFBus::setVoltageLimits(double vmin, double vmax)
+{
+  p_vmin = vmin;
+  p_vmax = vmax;
+}
+
+/**
+ * Check voltage for violation
+ * @return false if there is a voltage violation
+ */
+bool gridpack::powerflow::PFBus::checkVoltageViolation()
+{
+  bool ret = true;
+  if (*p_vMag_ptr > p_vmax || *p_vMag_ptr < p_vmin) ret = false;
+  return ret;
 }
 
 /**
@@ -561,9 +646,11 @@ void gridpack::powerflow::PFBus::resetIsPV()
 void gridpack::powerflow::PFBus::setSBus(void)
 {
   int i;
-  double pg, qg;
+  double pg, qg, pl, ql;
   pg = 0.0;
   qg = 0.0;
+  pl = 0.0;
+  ql = 0.0;
   bool usegen = false;
   for (i=0; i<p_gstatus.size(); i++) {
     if (p_gstatus[i] == 1) {
@@ -572,12 +659,21 @@ void gridpack::powerflow::PFBus::setSBus(void)
       usegen = true;
     }
   }
+  //printf ("size of load = %d \n", p_lstatus.size());
+  for (i=0; i<p_lstatus.size(); i++) {
+    //printf ("p_lstatus = %d \n", p_lstatus[i]);
+    if (p_lstatus[i] == 1) {
+      pl += p_pl[i];
+      ql += p_ql[i];
+      //printf ("%d: pl = %f \n", i,pl);
+    }
+  }
   if (p_gstatus.size() > 0 && usegen) {
-    gridpack::ComplexType sBus((pg - p_pl) / p_sbase, (qg - p_ql) / p_sbase);
+    gridpack::ComplexType sBus((pg - pl) / p_sbase, (qg - ql) / p_sbase);
     p_P0 = real(sBus);
     p_Q0 = imag(sBus);
   } else {
-    gridpack::ComplexType sBus((- p_pl) / p_sbase, (- p_ql) / p_sbase);
+    gridpack::ComplexType sBus((- pl) / p_sbase, (- ql) / p_sbase);
     p_P0 = real(sBus);
     p_Q0 = imag(sBus);
   } 
@@ -621,10 +717,25 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     if (!isIsolated()) {
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v);
-    } else {
+    }/* else {
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
             getOriginalIndex(),0.0,0.0);
+    }*/
+  } else if (!strcmp(signal,"ca")) {
+    double pi = 4.0*atan(1.0);
+    double angle = p_a*180.0/pi;
+    bool found = false;
+    if ((p_v > p_vmax) || (p_v < p_vmin) ) {
+      found = true;
+      if (!isIsolated()) {
+        sprintf(string, "     %6d      %12.6f         %12.6f\n",
+            getOriginalIndex(),angle,p_v);
+      } else {
+        sprintf(string, "     %6d      %12.6f         %12.6f\n",
+            getOriginalIndex(),0.0,0.0);
+      }
     }
+    return found;
   } else if (!strcmp(signal,"pq")) {
     gridpack::ComplexType v[2];
     vectorValues(v);
@@ -643,8 +754,16 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     char sbuf[128];
     char *cptr = string;
     int slen = 0;
+    int nld = p_nload;
+    int i;
+    double pl =0.0;
+    double ql =0.0;
+    for (i=0; i<nld; i++) {
+      if (p_lstatus[i]) pl += p_pl[i];
+      if (p_lstatus[i]) ql += p_ql[i];
+    }
     sprintf(sbuf,"%8d, %4d, %16.8f, %16.8f,",getOriginalIndex(),p_type,
-            p_pl/p_sbase,p_ql/p_sbase);
+           pl/p_sbase,ql/p_sbase);
     int len = strlen(sbuf);
     if (len<=bufsize) {
       sprintf(cptr,"%s",sbuf);
@@ -656,7 +775,6 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     double qmin = 0.0;
     double qmax = 0.0;
     int ngen = p_ngen;
-    int i;
     for (i=0; i<ngen; i++) {
       if (p_gstatus[i]) pgen += p_pg[i];
       if (p_gstatus[i]) qgen += p_qg[i];
@@ -704,18 +822,70 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     p_data->getValue(BUS_BASEKV,&basekv);
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
-    double vmax = 1.1;
-    double vmin = 0.9;
     if (!isIsolated()) {
-      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",p_v,angle,basekv,nzone,vmax,vmin);
+      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",p_v,angle,basekv,nzone,p_vmax,p_vmin);
     } else {
-      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",0.0,0.0,basekv,nzone,vmax,vmin);
+      sprintf(sbuf," %16.8f, %16.8f, %16.8f, %8d, %4.2f, %4.2f\n",0.0,0.0,basekv,nzone,p_vmax,p_vmin);
     }
     len = strlen(sbuf);
     if (slen+len<=bufsize) {
       sprintf(cptr,"%s",sbuf);
       slen += len;
       cptr += len;
+    }
+  } else if (!strcmp(signal,"power")) {
+    char sbuf[128];
+    char *cptr = string;
+    int i, len, slen = 0;
+    int ngen=p_pFac.size();
+    // Evalate p_Pinj and p_Qinj if bus is reference bus. This is skipped when
+    // evaluating matrix elements.
+#ifndef LARGE_MATRIX
+    if (getReferenceBus() || isIsolated()) {
+      std::vector<boost::shared_ptr<BaseComponent> > branches;
+      getNeighborBranches(branches);
+      int size = branches.size();
+      double P, Q, p, q;
+      P = 0.0;
+      Q = 0.0;
+      for (i=0; i<size; i++) {
+        gridpack::powerflow::PFBranch *branch
+          = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
+        branch->getPQ(this, &p, &q);
+        P += p;
+        Q += q;
+      }
+      // Also add bus i's own Pi, Qi
+      P += p_v*p_v*p_ybusr;
+      Q += p_v*p_v*(-p_ybusi);
+      p_Pinj = P;
+      p_Qinj = Q;
+    }
+#endif
+    double pl =0.0;
+    double ql =0.0;
+    for (i=0; i<p_pl.size(); i++) {
+      if (p_lstatus[i] == 1) {
+        pl += p_pl[i];
+        ql += p_ql[i];
+      }
+    }
+    for (i=0; i<ngen; i++) {
+      double pval = p_pFac[i]*(p_Pinj+pl/p_sbase);
+      double qval = p_pFac[i]*(p_Qinj+ql/p_sbase);
+      sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
+            getOriginalIndex(),p_gid[i].c_str(),pval,qval);
+      len = strlen(sbuf);
+      if (slen+len<=bufsize) {
+        sprintf(cptr,"%s",sbuf);
+        slen += len;
+        cptr += len;
+      }
+    }
+    if (slen>0) {
+      return true;
+    } else {
+      return false;
     }
   }
   return true;
@@ -754,6 +924,9 @@ void gridpack::powerflow::PFBus::saveData(
   if (!data->setValue("BUS_PF_VANG",rval)) {
     data->addValue("BUS_PF_VANG",rval);
   }
+  if (!data->setValue("BUS_TYPE",p_type)) {
+    data->addValue("BUS_TYPE",p_type);
+  }
   int ngen=p_pFac.size();
   // Evalate p_Pinj and p_Qinj if bus is reference bus. This is skipped when
   // evaluating matrix elements.
@@ -779,12 +952,20 @@ void gridpack::powerflow::PFBus::saveData(
     p_Qinj = Q;
   }
 #endif
+  double pl=0.0;
+  double ql=0.0;
+  for (i=0; i<p_pl.size(); i++) {
+    if (p_lstatus[i] == 1) {
+      pl += p_pl[i];
+      ql += p_ql[i];
+    }
+  }
   for (i=0; i<ngen; i++) {
-    rval = p_pFac[i]*p_Pinj+p_pl/p_sbase;
+    rval = p_pFac[i]*(p_Pinj+pl/p_sbase);
     if (!data->setValue("GENERATOR_PF_PGEN",rval,i)) {
       data->addValue("GENERATOR_PF_PGEN",rval,i);
     }
-    rval = p_pFac[i]*p_Qinj+p_ql/p_sbase;
+    rval = p_pFac[i]*(p_Qinj+ql/p_sbase);
     if (!data->setValue("GENERATOR_PF_QGEN",rval,i)) {
       data->addValue("GENERATOR_PF_QGEN",rval,i);
     }
@@ -1063,6 +1244,58 @@ std::vector<double> gridpack::powerflow::PFBus::getGeneratorParticipation()
 }
 
 /**
+ * Set value of real power on individual generators
+ * @param tag generator ID
+ * @param value new value of real power
+ * @param data data collection object associated with bus
+ */
+void gridpack::powerflow::PFBus::setGeneratorRealPower(
+    std::string tag, double value, gridpack::component::DataCollection *data)
+{
+  int i, idx;
+  idx = -1;
+  for (i=0; i<p_ngen; i++) {
+    if (p_gid[i] == tag) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx != -1) {
+    if (!data->setValue(GENERATOR_PG,value,idx)) {
+      data->addValue(GENERATOR_PG,value,idx);
+    }
+  } else {
+    printf("No generator found for tag: (%s)\n",tag.c_str());
+  }
+}
+
+/**
+ * Set value of real power on individual generators
+ * @param tag generator ID
+ * @param value new value of real power
+ * @param data data collection object associated with bus
+ */
+void gridpack::powerflow::PFBus::setLoadRealPower(
+    std::string tag, double value, gridpack::component::DataCollection *data)
+{
+  int i, idx;
+  idx = -1;
+  for (i=0; i<p_nload; i++) {
+    if (p_lid[i] == tag) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx != -1) {
+    if (!data->setValue(LOAD_PL,value,idx)) {
+      data->addValue(LOAD_PL,value,idx);
+    }
+  } else {
+    printf("No load found for tag: (%s)\n",tag.c_str());
+  }
+}
+
+/**
  *  Simple constructor
  */
 gridpack::powerflow::PFBranch::PFBranch(void)
@@ -1202,7 +1435,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(ComplexType *values)
     double rvals[4];
     int nvals = forwardJacobianValues(rvals);
     for (int i=0; i<nvals; i++) values[i] = rvals[i];
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1217,7 +1450,7 @@ bool gridpack::powerflow::PFBranch::matrixForwardValues(RealType *values)
 {
   if (p_mode == Jacobian) {
     int nvals = forwardJacobianValues(values);
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1232,7 +1465,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(ComplexType *values)
     double rvals[4];
     int nvals = reverseJacobianValues(rvals);
     for (int i=0; i<nvals; i++) values[i] = rvals[i];
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1247,7 +1480,7 @@ bool gridpack::powerflow::PFBranch::matrixReverseValues(RealType *values)
 {
   if (p_mode == Jacobian) {
     int nvals = reverseJacobianValues(values);
-    if (nvals = 0) {
+    if (nvals == 0) {
       return false;
     } else {
       return true;
@@ -1289,6 +1522,25 @@ void gridpack::powerflow::PFBranch::load(
 {
   YMBranch::load(data);
 
+  // This routine may be called more than once so clear all vectors
+  p_reactance.clear();
+  p_resistance.clear();
+  p_tap_ratio.clear();
+  p_phase_shift.clear();
+  p_charging.clear();
+  p_shunt_admt_g1.clear();
+  p_shunt_admt_b1.clear();
+  p_shunt_admt_g2.clear();
+  p_shunt_admt_b2.clear();
+  p_xform.clear();
+  p_shunt.clear();
+  p_rateA.clear();
+  p_rateB.clear();
+  p_rateC.clear();
+  p_branch_status.clear();
+  p_ckt.clear();
+  p_ignore.clear();
+
   bool ok = true;
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
@@ -1300,6 +1552,8 @@ void gridpack::powerflow::PFBranch::load(
   for (idx = 0; idx<p_elems; idx++) {
     bool xform = true;
     xform = xform && data->getValue(BRANCH_X, &rvar, idx);
+    if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
+    if (rvar >-1.0e-5 && rvar <0.0) rvar =-1.0e-5;
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
@@ -1385,6 +1639,7 @@ void gridpack::powerflow::PFBranch::getJacobian(gridpack::powerflow::PFBus *bus,
     ybusi = p_ybusi_rvrs;
   } else {
     // TODO: Some kind of error
+    return;
   }
   values[0] = v*(ybusr*sn - ybusi*cs);
   values[1] = -v*(ybusr*cs + ybusi*sn);
@@ -1420,6 +1675,7 @@ void gridpack::powerflow::PFBranch::getPQ(gridpack::powerflow::PFBus *bus, doubl
     ybusi = p_ybusi_rvrs;
   } else {
     // TODO: Some kind of error
+    return;
   }
   *p = v1*v2*(ybusr*cs+ybusi*sn);
   *q = v1*v2*(ybusr*sn-ybusi*cs);
@@ -1477,8 +1733,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       double q = imag(s);
       if (!p_branch_status[i]) p = 0.0;
       if (!p_branch_status[i]) q = 0.0;
-      if (bus1->isIsolated() | bus2->isIsolated()) p=0.0;
-      if (bus1->isIsolated() | bus2->isIsolated()) q=0.0;
+      if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
+      if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
       sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
           getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),p,q);
       ilen += strlen(buf);
@@ -1498,8 +1754,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       double q = imag(s);
       if (!p_branch_status[i]) p = 0.0;
       if (!p_branch_status[i]) q = 0.0;
-      if (bus1->isIsolated() | bus2->isIsolated()) p=0.0;
-      if (bus1->isIsolated() | bus2->isIsolated()) q=0.0;
+      if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
+      if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
       double S = sqrt(p*p+q*q);
       if (S > p_rateA[i] && p_rateA[i] != 0.0){
         sprintf(buf, "     %6d      %6d        %s  %12.6f         %12.6f     %8.2f     %8.2f%s\n",
@@ -1537,7 +1793,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
         slen += len;
         cptr += len;
       }
-      double rval = 180.0*p_phase_shift[i]/pi;
+      double rval = -180.0*p_phase_shift[i]/pi;
       idx = 0;
       if (p_branch_status[i]) idx = 1;
       sprintf(buf," %12.4f, %12.4f, %1d\n",p_tap_ratio[i],rval,idx);

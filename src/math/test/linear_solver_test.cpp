@@ -8,7 +8,7 @@
 /**
  * @file   linear_solver_test.cpp
  * @author William A. Perkins
- * @date   2015-08-18 13:47:32 d3g096
+ * @date   2016-12-16 09:30:03 d3g096
  * 
  * @brief  
  * 
@@ -19,20 +19,10 @@
 #include <iostream>
 #include <boost/scoped_ptr.hpp>
 #include <boost/format.hpp>
-
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#include <boost/test/included/unit_test.hpp>
-
-#include "gridpack/parallel/parallel.hpp"
-#include "gridpack/utilities/exception.hpp"
-#include "math.hpp"
 #include "linear_solver.hpp"
 #include "linear_matrix_solver.hpp"
 
-/// The configuration used for these tests
-static gridpack::utility::Configuration::CursorPtr test_config;
-
+#include "test_main.cpp"
 
 BOOST_AUTO_TEST_SUITE(LinearSolverTest)
 
@@ -371,33 +361,4 @@ BOOST_AUTO_TEST_CASE ( VersteegMatrixInverse )
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// -------------------------------------------------------------
-// init_function
-// -------------------------------------------------------------
-bool init_function()
-{
-  return true;
-}
 
-// -------------------------------------------------------------
-//  Main Program
-// -------------------------------------------------------------
-int
-main(int argc, char **argv)
-{
-  gridpack::parallel::Environment env(argc, argv);
-  gridpack::parallel::Communicator world;
-
-  boost::scoped_ptr<gridpack::utility::Configuration> 
-    config(gridpack::utility::Configuration::configuration());
-  
-  config->enableLogging();
-  config->open("gridpack.xml", world);
-
-  test_config = config->getCursor("GridPACK.MathTests");
-
-  gridpack::math::Initialize();
-  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  gridpack::math::Finalize();
-  return result;
-}

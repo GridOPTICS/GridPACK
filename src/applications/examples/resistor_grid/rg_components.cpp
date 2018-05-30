@@ -18,14 +18,7 @@
 #include <vector>
 #include <iostream>
 
-#include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/utilities/complex.hpp"
-#include "gridpack/component/base_component.hpp"
-#include "gridpack/component/data_collection.hpp"
 #include "rg_components.hpp"
-#include "gridpack/parser/dictionary.hpp"
-
-//#define LARGE_MATRIX
 
 /**
  *  Simple constructor
@@ -33,7 +26,7 @@
 gridpack::resistor_grid::RGBus::RGBus(void)
 {
   p_lead = false;
-  p_voltage = 0.0;
+  p_v = 0.0;
 }
 
 /**
@@ -58,7 +51,7 @@ void gridpack::resistor_grid::RGBus::load(const
    data->getValue(BUS_TYPE,&type);
    if (type == 2) {
      p_lead = true;
-     data->getValue(BUS_BASEKV,&p_voltage);
+     data->getValue(BUS_BASEKV,&p_v);
    }
 }
 
@@ -77,7 +70,7 @@ bool gridpack::resistor_grid::RGBus::isLead() const
  */
 double gridpack::resistor_grid::RGBus::voltage() const
 {
-  return p_voltage;
+  return *p_voltage;
 }
 
 /**
@@ -115,7 +108,7 @@ bool gridpack::resistor_grid::RGBus::matrixDiagValues(ComplexType *values)
     for (i=0; i<size; i++) {
       gridpack::resistor_grid::RGBranch *branch
         = dynamic_cast<gridpack::resistor_grid::RGBranch*>(branches[i].get());
-      ret += branch->resistance();
+      ret += 1.0/branch->resistance();
     }
     values[0] = ret;
     return true;
@@ -162,9 +155,9 @@ bool gridpack::resistor_grid::RGBus::vectorValues(ComplexType *values)
       gridpack::resistor_grid::RGBus *bus2
         = dynamic_cast<gridpack::resistor_grid::RGBus*>(branch->getBus2().get());
       if (bus1 != this && bus1->isLead()) {
-        ret += branch->resistance()*bus1->voltage();
+        ret += bus1->voltage()/branch->resistance();
       } else if (bus2 != this && bus2->isLead()) {
-        ret += branch->resistance()*bus2->voltage();
+        ret += bus2->voltage()/branch->resistance();
       }
     }
     values[0] = ret;
@@ -182,7 +175,7 @@ bool gridpack::resistor_grid::RGBus::vectorValues(ComplexType *values)
 void gridpack::resistor_grid::RGBus::setValues(gridpack::ComplexType *values)
 {
   if (!p_lead) {
-    p_voltage = real(values[0]);
+    *p_voltage = real(values[0]);
   }
 }
 
@@ -197,8 +190,31 @@ void gridpack::resistor_grid::RGBus::setValues(gridpack::ComplexType *values)
 bool gridpack::resistor_grid::RGBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
-  sprintf(string,"Voltage on bus %d: %12.6f\n",getOriginalIndex(),p_voltage);
+  if (p_lead) {
+    sprintf(string,"Voltage on bus %d: %12.6f (lead)\n",
+        getOriginalIndex(),*p_voltage);
+  } else {
+    sprintf(string,"Voltage on bus %d: %12.6f\n",
+        getOriginalIndex(),*p_voltage);
+  }
   return true;
+}
+
+/**
+ * Return size of pointer needed for exchange buffer on buses
+ */
+int gridpack::resistor_grid::RGBus::getXCBufSize()
+{
+  return sizeof(double);
+}
+
+/**
+ * Assign buffer to internal pointer in bus
+ */
+void gridpack::resistor_grid::RGBus::setXCBuf(void *buf)
+{
+  p_voltage = static_cast<double*>(buf);
+  *p_voltage = p_v;
 }
 
 /**
@@ -288,7 +304,7 @@ bool gridpack::resistor_grid::RGBranch::matrixForwardValues(ComplexType *values)
   gridpack::resistor_grid::RGBus *bus2
     = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
   if (!bus1->isLead() && !bus2->isLead()) {
-    values[0] = -p_resistance;
+    values[0] = -1.0/p_resistance;
     return true;
   } else {
     return false;
@@ -302,7 +318,7 @@ bool gridpack::resistor_grid::RGBranch::matrixReverseValues(ComplexType *values)
   gridpack::resistor_grid::RGBus *bus2
     = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
   if (!bus1->isLead() && !bus2->isLead()) {
-    values[0] = -p_resistance;
+    values[0] = -1.0/p_resistance;
     return true;
   } else {
     return false;
@@ -327,7 +343,7 @@ bool gridpack::resistor_grid::RGBranch::serialWrite(char *string, const int
     = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
   double v1 = bus1->voltage();
   double v2 = bus2->voltage();
-  double icur = (v1 - v2)*p_resistance;
+  double icur = (v1 - v2)/p_resistance;
   sprintf(string,"Current on line from bus %d to %d is: %12.6f\n",
       bus1->getOriginalIndex(),bus2->getOriginalIndex(),icur);
   return true;

@@ -7,7 +7,7 @@
 /**
  * @file   ds_components.hpp
  * @author Shrirang Abhyankar
- * @date   2015-01-23 14:30:43 d3g096
+ * @date   2016-07-14 14:17:34 d3g096
  * 
  * @brief  
  * Network component defitions
@@ -128,7 +128,7 @@ class DSBus
   /**
     Set the shift value provided by TS
   */
-  void setTSshift(int);
+  void setTSshift(double);
 
   /**
      Set buffer size for exchange
@@ -332,8 +332,8 @@ typedef network::BaseNetwork<DSBus, DSBranch > DSNetwork;
 }     // dsimplicit
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::dsimplicit::DSBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::dsimplicit::DSBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::dsimplicit::DSBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::dsimplicit::DSBranch)
 
 
 #endif

@@ -686,6 +686,12 @@ INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/component \
                          @CMAKE_CURRENT_SOURCE_DIR@/serial_io \
                          @CMAKE_CURRENT_SOURCE_DIR@/configuration \
                          @CMAKE_CURRENT_SOURCE_DIR@/timer \
+                         @CMAKE_CURRENT_SOURCE_DIR@/applications/modules/powerflow \
+                         @CMAKE_CURRENT_SOURCE_DIR@/applications/modules/state_estimation \
+                         @CMAKE_CURRENT_SOURCE_DIR@/applications/modules/dynamic_simulation \
+                         @CMAKE_CURRENT_SOURCE_DIR@/applications/components/y_matrix \
+                         @CMAKE_CURRENT_SOURCE_DIR@/applications/components/pf_matrix \
+                         @CMAKE_CURRENT_SOURCE_DIR@/applications/components/se_matrix \
                          @CMAKE_CURRENT_SOURCE_DIR@/utilities
 
 # This tag can be used to specify the character encoding of the source files

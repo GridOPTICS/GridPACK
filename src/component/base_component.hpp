@@ -7,7 +7,7 @@
 /**
  * @file   base_component.hpp
  * @author Bruce Palmer
- * @date   2013-10-07 11:05:08 d3g096
+ * @date   2016-07-14 13:50:54 d3g096
  * 
  * @brief  
  * 
@@ -341,7 +341,7 @@ class GenMatVecInterface {
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar;
+    // yar;
   }
 
 
@@ -438,6 +438,18 @@ class BaseComponent
      */
     virtual bool getDataItem(void *data, const char *signal = NULL);
 
+    /**
+     * Set rank holding the component
+     * @param rank processor rank holding the component
+     */
+    void setRank(int rank);
+
+    /**
+     * Get rank holding the component
+     * @return processor rank holding the component
+     */
+    int getRank(void) const;
+
   protected:
     /**
      * A buffer that can be used for exchanging component data. This is
@@ -454,6 +466,11 @@ class BaseComponent
       * Current mode
       */
      int p_mode;
+
+    /**
+     * Rank holding the component. Useful for debugging
+     */
+    int p_rank;
 
   private:
 
@@ -481,7 +498,7 @@ class BaseComponent
        >> p_mode;
   }
 
-  BOOST_SERIALIZATION_SPLIT_MEMBER();
+  BOOST_SERIALIZATION_SPLIT_MEMBER()
 
 };
 
@@ -730,10 +747,10 @@ class BaseBranchComponent
 }    // component
 }    // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::component::MatVecInterface);
-BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseComponent);
-BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBusComponent);
-BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBranchComponent);
+BOOST_CLASS_EXPORT_KEY(gridpack::component::MatVecInterface)
+BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseComponent)
+BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBusComponent)
+BOOST_CLASS_EXPORT_KEY(gridpack::component::BaseBranchComponent)
 
 
 #endif

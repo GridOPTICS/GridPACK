@@ -7,13 +7,15 @@
 /**
  * @file   ymatrix_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @date   2016-07-14 13:27:00 d3g096
  * 
  * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
+
+#define USE_ACOPF
 
 #ifndef _ymatrix_components_h_
 #define _ymatrix_components_h_
@@ -66,6 +68,13 @@ class YMBus
     void setYBus(void);
 
     /**
+     * Modify diagonal values of matrix.
+     * @param rval real part of diagonal matrix element
+     * @param ival imaginary part of diagonal matrix element
+     */
+    void setYBusDiag(double rval, double ival);
+
+    /**
      * Get values of YBus matrix. These can then be used in subsequent
      * calculations
      */
@@ -105,6 +114,14 @@ class YMBus
      * @param bl shunt BL value
      */
     void getShuntValues(double *bl, double *gl) const;
+
+    /**
+     * Set internal parameters inside the Y-bus component
+     * @param name character string describing component to be modified
+     * @param value of parameter to be modified
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string name, double value, int idx);
 
   private:
     double p_shunt_gs;
@@ -220,6 +237,15 @@ class YMBranch
         gridpack::ComplexType *Yii, gridpack::ComplexType *Yij);
 
     /**
+     * Return contributions to Y-matrix from a specific transmission element at to end
+     * @param tag character string for transmission element
+     * @param Yii contribution from "from" bus
+     * @param Yij contribution from line element
+     */
+    void getRvrsLineElements(const std::string tag,
+        gridpack::ComplexType *Yii, gridpack::ComplexType *Yij);
+
+    /**
      * Return status of all transmission elements
      * @return vector containing status of transmission elements
      */
@@ -253,6 +279,34 @@ class YMBranch
      */
     double getSusceptance(std::string tag);
 
+    /**
+     * Set internal parameters inside the Y-branch component
+     * @param name character string describing component to be modified
+     * @param value of parameter to be modified
+     * @param idx index (if necessary) of variable to be modified
+     */
+    void setParam(std::string name, double value, int idx);
+
+#ifdef USE_ACOPF
+    /**
+     * Return components from individual transmission elements
+     * @param yffr list of real parts of Yff
+     * @param yffr list of imaginary parts of Yff
+     * @param yttr list of real parts of Ytt
+     * @param yttr list of imaginary parts of Ytt
+     * @param yftr list of real parts of Yft
+     * @param yftr list of imaginary parts of Yft
+     * @param ytfr list of real parts of Ytf
+     * @param ytfr list of imaginary parts of Ytf
+     * @param switched flag on whether line is switched or not
+     */
+    void getYElements(std::vector<double> &yffr, std::vector<double> &yffi,
+                      std::vector<double> &yttr, std::vector<double> &ytti,
+                      std::vector<double> &yftr, std::vector<double> &yfti,
+                      std::vector<double> &ytfr, std::vector<double> &ytfi,
+                      std::vector<bool> &switched);
+#endif
+
   private:
     std::vector<double> p_reactance;
     std::vector<double> p_resistance;
@@ -273,6 +327,12 @@ class YMBranch
     int p_elems;
     bool p_isolated;
     bool p_active;
+#ifdef USE_ACOPF
+    std::vector<double> p_yffr, p_yffi;
+    std::vector<double> p_yttr, p_ytti;
+    std::vector<double> p_yftr, p_yfti;
+    std::vector<double> p_ytfr, p_ytfi;
+#endif
 
 private:
 
@@ -283,6 +343,12 @@ private:
   void serialize(Archive & ar, const unsigned int version)
   {
     ar & boost::serialization::base_object<gridpack::component::BaseBranchComponent>(*this)
+#ifdef USE_ACOPF
+      & p_yffr & p_yffi
+      & p_yttr & p_ytti
+      & p_yftr & p_yfti
+      & p_ytfr & p_ytfi
+#endif
       & p_reactance
       & p_resistance
       & p_tap_ratio
@@ -310,8 +376,8 @@ private:
 }     // ymatrix
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::ymatrix::YMBranch)
 
 
 #endif

@@ -13,10 +13,7 @@
  */
 // -------------------------------------------------------------
 
-#include "mpi.h"
-#include <ga.h>
-#include <macdecls.h>
-#include "gridpack/math/math.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "rg_app.hpp"
 
 // Calling program for the resistor_grid applications
@@ -24,12 +21,15 @@
 int
 main(int argc, char **argv)
 {
+  gridpack::parallel::Environment env(argc, argv);
+#if 0
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
 
   GA_Initialize();
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
+#endif
 
   // Initialize Math libraries
   gridpack::math::Initialize();
@@ -37,11 +37,13 @@ main(int argc, char **argv)
   gridpack::resistor_grid::RGApp app;
   app.execute(argc, argv);
 
-  GA_Terminate();
-
   // Terminate Math libraries
   gridpack::math::Finalize();
+#if 0
+  GA_Terminate();
+
   // Clean up MPI libraries
   ierr = MPI_Finalize();
-  return ierr;
+#endif
+  return 0;
 }

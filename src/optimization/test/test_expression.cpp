@@ -19,8 +19,8 @@
 #include "gridpack/optimization/optimization.hpp"
 #include <ilcplex/ilocplex.h>
 #include <stdlib.h>
-#include "gridpack/optimization/variable.hpp"
-#include "gridpack/optimization/expression.hpp"
+#include "gridpack/expression/variable.hpp"
+#include "gridpack/expression/expression.hpp"
 #include "gridpack/optimization/optimizer.hpp"
 #include <boost/smart_ptr/shared_ptr.hpp>
 
@@ -987,6 +987,7 @@ printf("run to here-\n");
   env.end();
 }
 
+int
 main (int argc, char **argv) {
 
   // Initialize MPI libraries

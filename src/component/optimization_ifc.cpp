@@ -48,16 +48,29 @@ std::vector<boost::shared_ptr<gridpack::optimization::Variable> >
 }
 
 /**
+ * Return a vector of auxiliary variables associated with this interface.
+ * These are variables that are used in expressions but may not be
+ * defined by this network
+ * @return list of variables
+ */
+std::vector<boost::shared_ptr<gridpack::optimization::Variable> >
+          OptimizationInterface::getAuxVariables()
+{
+  std::vector<boost::shared_ptr<gridpack::optimization::Variable> > ret;
+  return ret;
+}
+
+/**
  * Return contribution from bus to a global constraint
  * @param tag string that can be parsed by bus to determine which constraint
  * contribution is being requested
  * @return contribution to global constraint. If no contribution, return null
  * pointer
  */
-std::vector<boost::shared_ptr<gridpack::optimization::Expression> >
+boost::shared_ptr<gridpack::optimization::Expression>
   OptimizationInterface::getGlobalConstraint(const char* tag)
 {
-  std::vector<boost::shared_ptr<gridpack::optimization::Expression> >ret;
+  boost::shared_ptr<gridpack::optimization::Expression> ret;
   return ret;
 }
 

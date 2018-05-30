@@ -19,6 +19,8 @@
 #define _pf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/configuration/configuration.hpp"
 #include "pf_factory_module.hpp"
 
 namespace gridpack {
@@ -100,6 +102,11 @@ class PFAppModule
     void initialize();
 
     /**
+     * Reinitialize calculation from data collections
+     */
+    void reload();
+
+    /**
      * Execute the iterative solve portion of the application using a hand-coded
      * Newton-Raphson solver
      * @return false if an error was caught in the solution algorithm
@@ -121,6 +128,9 @@ class PFAppModule
     void write();
     void writeBus(const char* signal);
     void writeBranch(const char* signal);
+    void writeCABus();
+    void writeCABranch();
+    void writeHeader(const char *msg);
 
     /**
      * Redirect output from standard out
@@ -156,21 +166,26 @@ class PFAppModule
     bool unSetContingency(Contingency &event);
 
     /**
+     * Set voltage limits on all buses
+     * @param Vmin lower bound on voltages
+     * @param Vmax upper bound on voltages
+     */
+    void setVoltageLimits(double Vmin, double Vmax);
+
+    /**
      * Check to see if there are any voltage violations in the network
      * @param minV maximum voltage limit
      * @param maxV maximum voltage limit
      * @return true if no violations found
      */
-    bool checkVoltageViolations(double Vmin, double Vmax);
-    bool checkVoltageViolations(int area, double Vmin, double Vmax);
+    bool checkVoltageViolations();
+    bool checkVoltageViolations(int area);
 
     /**
      * Set "ignore" parameter on all buses with violations so that subsequent
      * checks are not counted as violations
-     * @param minV maximum voltage limit
-     * @param maxV maximum voltage limit
      */
-    void ignoreVoltageViolations(double Vmin, double Vmax);
+    void ignoreVoltageViolations();
 
     /**
      * Clear "ignore" parameter on all buses

@@ -10,20 +10,32 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2015-10-12 13:09:44 d3g096
+# Last Change: 2017-12-07 08:53:35 d3g096
 # -------------------------------------------------------------
 
-cmake_minimum_required (VERSION 2.6.4)
+# 
+cmake_minimum_required (VERSION 2.8.8)
+
+# This allows the use of LOCATION(target)
+if (POLICY CMP0026)
+  cmake_policy(SET CMP0026 OLD)
+endif (POLICY CMP0026)
+
+
 project (GridPACK)
 
-#set (GridPACK_VERSION_MAJOR 1)
-#set (GridPACK_VERSION_MINOR 0)
+set (GridPACK_VERSION_MAJOR 3)
+set (GridPACK_VERSION_MINOR 1)
+set (GridPACK_VERSION_PATCH 0)
 
 # This is a C++ project exclusively
 enable_language(CXX)
 
 # where to look for special .cmake files
-list (APPEND CMAKE_MODULE_PATH "${GridPACK_SOURCE_DIR}/cmake-modules")
+list (APPEND CMAKE_MODULE_PATH 
+    "${GridPACK_SOURCE_DIR}/cmake-modules"
+    "${GridPACK_SOURCE_DIR}/../cmake-jedbrown"
+)
 include(GridPACK)
 
 # turn testing on
@@ -41,10 +53,12 @@ if (GOSS_DIR)
   add_definitions (-DUSE_GOSS=1) 
   include_directories(AFTER ${GOSS_DIR}/include/activemq-cpp-3.8.4)
   set (GOSS_LIBRARY "${GOSS_DIR}/lib/libactivemq-cpp.a")
+  message(STATUS "Set GOSS library at ${GOSS_LIBRARY}")
 endif()
 if (APR_DIR)
   include_directories(AFTER ${APR_DIR}/include/apr-1)
   set (APR_LIBRARY "${APR_DIR}/lib/libapr-1.a")
+  message(STATUS "Set APR library at ${APR_LIBRARY}")
 endif()
 
 # suppress any checks to see if test codes run. Only check for compilation.
@@ -66,7 +80,7 @@ option(USE_GLPK
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
-include_directories(AFTER ${MPI_INCLUDE_PATH})
+include_directories(AFTER ${MPI_CXX_INCLUDE_PATH})
 
 if (ENABLE_CRAY_BUILD)
   set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
@@ -99,7 +113,7 @@ message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 # MPI. How can I check that?
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
-set(Boost_USE_STATIC_LIBS ON)
+# set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.49 COMPONENTS mpi serialization random filesystem system REQUIRED)
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
@@ -111,11 +125,14 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
 find_package (PETSc COMPONENTS CXX REQUIRED)
+message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
 elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
 else()
   message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
 endif()
@@ -147,6 +164,17 @@ endif()
 # This is probably redundant
 if (NOT PETSC_CLANGUAGE_Cxx)
   message (FATAL_ERROR "PETSc installation does not use C++ (--with-clanguage=c++)")
+endif()
+
+if (PETSC_HAVE_SUPERLU_DIST) 
+  set(GRIDPACK_MATSOLVER_PKG "superlu_dist")
+  message(STATUS "PETSc parallel LU linear solver will be from SuperLU_dist")
+elseif (PETSC_HAVE_MUMPS)
+  set(GRIDPACK_MATSOLVER_PKG "mumps")
+  message(STATUS "PETSc parallel LU linear solver will be from MUMPS")
+else()
+  set(GRIDPACK_MATSOLVER_PKG "petsc")
+  message(WARNING "Installed PETSc does not have a parallel direct solver, expect unit test failures")
 endif()
 
 # -------------------------------------------------------------
@@ -224,18 +252,41 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # -------------------------------------------------------------
-# Options for all Programs/Libraries
+# Compiler specific options
 # -------------------------------------------------------------
 
-# remove annoying warnings produced by the GNU compiler about the use
-# of string constants, which are used a lot in GridPACK
+# FIXME: remove annoying warnings (these warnings probably identify
+# real problems, but there are so many of them they obscure errors
+# that are causing identifiable problems
+
 if (CMAKE_COMPILER_IS_GNUCXX) 
-    add_definitions(
-        -Wno-write-strings
+  add_definitions(
+    -pedantic
+    -Wno-write-strings
+    -Wno-long-long 
+    -Wno-sign-compare 
+    -Wno-unused-variable
+    -Wno-unused-but-set-variable
+    -Wno-maybe-uninitialized
     )
 endif()
 
+# using regular Clang or AppleClang
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_definitions(
+    -Wno-c++11-extensions
+    -Wno-c++11-compat-deprecated-writable-strings
+    -Wno-format-security
+    -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
+    )
+endif()
+
+# -------------------------------------------------------------
+# Options for all Programs/Libraries
+# -------------------------------------------------------------
+
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(GRIDPACK_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/applications/data_sets)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (ENABLE_CRAY_BUILD)
@@ -246,7 +297,23 @@ if (ENABLE_CRAY_BUILD)
 endif()
 
 # -------------------------------------------------------------
+# Installation
+# -------------------------------------------------------------
+install(FILES
+  ${GRIDPACK_SRC_DIR}/../README.md
+  LICENSE
+  DESTINATION share/gridpack
+)
+
+# -------------------------------------------------------------
 # Subdirectories
+#
+#  ****NOTE****
+#  For any subdirectory that contributes a LIBRARY to the
+#  GridPACK framework, modifications also need to be made to
+#  the src/lib/GridPACK.cmake.in file so that installs will
+#  work correctly
+#
 # -------------------------------------------------------------
 add_subdirectory(utilities)
 add_subdirectory(parallel)
@@ -254,28 +321,78 @@ add_subdirectory(configuration)
 add_subdirectory(math)
 add_subdirectory(component)
 add_subdirectory(partition)
-add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(mapper)
+add_subdirectory(expression)
 add_subdirectory(optimization)
 add_subdirectory(applications/powerflow)
 add_subdirectory(applications/powerflow2)
-add_subdirectory(applications/dynamic_simulation)
+add_subdirectory(applications/dynamic_simulation_reduced_y)
+add_subdirectory(applications/dynamic_simulation_full_y)
 add_subdirectory(applications/dynamic_simulation_implicit)
 add_subdirectory(applications/contingency_analysis)
 add_subdirectory(applications/state_estimation)
+add_subdirectory(applications/kalman_ds)
 add_subdirectory(applications/examples/hello_world)
 add_subdirectory(applications/examples/resistor_grid)
+add_subdirectory(applications/examples/powerflow)
 add_subdirectory(applications/modules/powerflow)
 add_subdirectory(applications/modules/dynamic_simulation)
+add_subdirectory(applications/modules/dynamic_simulation_full_y)
 add_subdirectory(applications/modules/state_estimation)
-add_subdirectory(applications/components/y_matrix)
-add_subdirectory(applications/components/pf_matrix)
+add_subdirectory(applications/modules/kalman_ds)
+add_subdirectory(applications/components/kds_matrix)
 add_subdirectory(applications/components/ds_matrix)
 add_subdirectory(applications/components/se_matrix)
+add_subdirectory(applications/components/pf_matrix)
+add_subdirectory(applications/components/y_matrix)
+add_subdirectory(network)
 add_subdirectory(parser)
 add_subdirectory(serial_io)
 add_subdirectory(timer)
 add_subdirectory(include)
 
 add_subdirectory(lib)
+
+
+# -------------------------------------------------------------
+# CPack configuration
+# -------------------------------------------------------------
+
+
+INCLUDE(InstallRequiredSystemLibraries)
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY 
+  "An open source toolkit for developing power grid simulation applications for high performance computing architectures")
+set(CPACK_PACKAGE_DESCRIPTION "GridPACK(tm) is a software framework consisting of a set of modules designed to simplify the development of programs that model the power grid and run on parallel, high performance computing platforms. The modules are available as a library and consist of components for setting up and distributing power grid networks, support for modeling the behavior of individual buses and branches in the network, converting the network models to the corresponding algebraic equations, and parallel routines for manipulating and solving large algebraic systems. Additional modules support input and output as well as basic profiling and error management. ")
+set(CPACK_PACKAGE_VENDOR "")
+set(CPACK_PACKAGE_CONTACT "william.perkins@pnnl.gov")
+set(CPACK_PACKAGE_VERSION_MAJOR "${GridPACK_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${GridPACK_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${GridPACK_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION 
+  "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_PACKAGE_FILE_NAME 
+  "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME 
+  "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
+
+# set(CPACK_PACKAGING_INSTALL_PREFIX "")
+# set(CMAKE_INSTALL_PREFIX "/")
+#set(CPACK_PACKAGE_INSTALL_DIRECTORY "/")
+#set(CPACK_SET_DESTDIR FALSE)
+set(CPACK_SET_DESTDIR true)
+
+# Debian specific settings
+
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SECTION "science")
+set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+  "libga-dev (>=5.3), libpetsc3.6.2-dev (>= 3.6.2), libparmetis-dev (>=4.0.3), libboost-mpi-dev (>=1.58.0), libboost-all-dev (>=1.58.0)"
+  )
+
+# RPM specific settings
+
+set(CPACK_RPM_PACKAGE_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+
+INCLUDE(CPack)

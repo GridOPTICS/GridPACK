@@ -16,14 +16,6 @@
 // -------------------------------------------------------------
 
 #include <iostream>
-#include "gridpack/math/matrix.hpp"
-#include "gridpack/math/vector.hpp"
-#include "gridpack/math/linear_solver.hpp"
-#include "gridpack/parser/PTI23_parser.hpp"
-#include "gridpack/configuration/configuration.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/serial_io/serial_io.hpp"
 #include "rg_app.hpp"
 #include "rg_factory.hpp"
 
@@ -75,8 +67,11 @@ void gridpack::resistor_grid::RGApp::execute(int argc, char** argv)
   gridpack::resistor_grid::RGFactory factory(network);
   factory.load();
 
-  // set network components using factory
+  // set network components using factory and set up exchange of voltages
+  // between different buses
   factory.setComponents();
+  factory.setExchange();
+  network->initBusUpdate();
 
   // create mapper to generate voltage matrix
   gridpack::mapper::FullMatrixMap<RGNetwork> vMap(network);
@@ -93,17 +88,19 @@ void gridpack::resistor_grid::RGApp::execute(int argc, char** argv)
   gridpack::math::LinearSolver solver(*V);
   solver.configure(cursor);
   solver.solve(*R, *X);
-
+  
   // push solution back on to buses
   rMap.mapToBus(X);
 
-  // Create serial IO object to export data from buses
+  // exchange voltages so that all buses have correct values. This guarantees
+  // that current calculations on each branch are correct.
+  network->updateBuses();
+
+  // Create serial IO objects to export data
   gridpack::serial_io::SerialBusIO<RGNetwork> busIO(128,network);
   char ioBuf[128];
-
   busIO.header("\nVoltages on buses\n\n");
   busIO.write();
-
 
   gridpack::serial_io::SerialBranchIO<RGNetwork> branchIO(128,network);
   branchIO.header("\nCurrent on branches\n\n");

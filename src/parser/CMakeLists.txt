@@ -33,6 +33,7 @@ set(target_libraries
     gridpack_timer
     ${target_libraries})
 
+include_directories(AFTER parser_classes)
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 if (GA_FOUND)
@@ -59,13 +60,18 @@ add_custom_target(test_parser_input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
+  ${GridPACK_SOURCE_DIR}/applications/data_sets/raw/IEEE14.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/table.dat
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/test/test.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/test/parser_data.raw
-  ${GridPACK_SOURCE_DIR}/applications/powerflow/IEEE14.raw
+  ${GridPACK_SOURCE_DIR}/applications/data_sets/raw/IEEE14.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/table.dat
 )
 add_dependencies(parser_test test_parser_input)
 #add_dependencies(PTI23_test test_parser_input)
@@ -81,6 +87,12 @@ target_link_libraries(hash_distr_test ${target_libraries})
 gridpack_add_unit_test(hash_distr_test hash_distr_test)
 
 # -------------------------------------------------------------
+# TEST: bus_table_test
+# -------------------------------------------------------------
+add_executable(bus_table_test test/bus_table_test.cpp)
+target_link_libraries(bus_table_test ${target_libraries})
+
+# -------------------------------------------------------------
 # installation
 # -------------------------------------------------------------
 install(FILES 
@@ -91,5 +103,25 @@ install(FILES
   hash_distr.hpp
   base_parser.hpp
   base_pti_parser.hpp
+  bus_table.hpp
   DESTINATION include/gridpack/parser
+)
+install(FILES 
+  parser_classes/gencls.hpp
+  parser_classes/gensal.hpp
+  parser_classes/genrou.hpp
+  parser_classes/wsieg1.hpp
+  parser_classes/exdc1.hpp
+  parser_classes/esst1a.hpp
+  parser_classes/esst4b.hpp
+  parser_classes/ggov1.hpp
+  parser_classes/wshygp.hpp
+  parser_classes/lvshbl.hpp
+  parser_classes/frqtpat.hpp
+  parser_classes/distr1.hpp
+  parser_classes/cim6bl.hpp
+  parser_classes/acmtblu1.hpp
+  parser_classes/ieelbl.hpp
+  parser_classes/cmldblu1.hpp
+  DESTINATION include/gridpack/parser/parser_classes
 )

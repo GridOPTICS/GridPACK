@@ -7,7 +7,7 @@
 /**
  * @file   rg_components.hpp
  * @author Bruce Palmer
- * @date   2013-10-24 14:30:43 d3g096
+ * @date   2016-07-14 14:22:49 d3g096
  * 
  * @brief  
  * 
@@ -19,9 +19,7 @@
 #define _rg_components_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/component/base_component.hpp"
-#include "gridpack/component/data_collection.hpp"
-#include "gridpack/network/base_network.hpp"
+#include "gridpack/include/gridpack.hpp"
 
 namespace gridpack {
 namespace resistor_grid {
@@ -110,9 +108,20 @@ class RGBus
      */
     bool serialWrite(char *string, const int bufsize, const char *signal = NULL);
 
+    /**
+     * Return size of pointer needed for exchange buffer on buses
+     */
+    int getXCBufSize();
+
+    /**
+     * Assign buffer to internal pointer in bus
+     */
+    void setXCBuf(void *buf);
+
   private:
     bool p_lead;
-    double p_voltage;
+    double *p_voltage;
+    double p_v;
 
   friend class boost::serialization::access;
 
@@ -120,7 +129,7 @@ class RGBus
   void serialize(Archive & ar, const unsigned int version)
   {
     ar & boost::serialization::base_object<gridpack::component::BaseBusComponent>(*this)
-      & p_lead & p_voltage;
+      & p_lead & p_v;
   }  
 
 };
@@ -203,8 +212,8 @@ typedef network::BaseNetwork<RGBus, RGBranch > RGNetwork;
 }     // resistor_grid
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::resistor_grid::RGBranch)
 
 
 #endif

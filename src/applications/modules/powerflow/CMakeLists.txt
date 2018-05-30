@@ -15,7 +15,6 @@
 
 set(target_libraries
     gridpack_components
-    gridpack_factory
     gridpack_partition
     gridpack_parallel
     gridpack_math
@@ -42,7 +41,7 @@ add_library(gridpack_powerflow_module
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
-target_link_libraries(gridpack_powerflow_module ${target_libraries})
+# target_link_libraries(gridpack_powerflow_module ${target_libraries})
 
 # -------------------------------------------------------------
 # installation
@@ -57,28 +56,3 @@ install(TARGETS
   gridpack_powerflow_module
   DESTINATION lib
 )
-
-# -------------------------------------------------------------
-# Create simple test that runs powerflow code
-# -------------------------------------------------------------
-add_executable(pf_test test/pf_test.cpp)
-target_link_libraries (pf_test gridpack_powerflow_module ${target_libraries})
-
-add_custom_target(pf_test_input
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/input.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE14.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/test/IEEE14.raw
-)
-
-add_dependencies (pf_test pf_test_input)
-
-gridpack_add_run_test(pf_test pf_test "input.xml")

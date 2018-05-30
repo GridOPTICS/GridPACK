@@ -680,6 +680,7 @@ void run_unit_commitment() {
   env.end();
 }
 
+int
 main (int argc, char **argv) {
 
   // Initialize MPI libraries

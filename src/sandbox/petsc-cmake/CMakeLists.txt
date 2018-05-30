@@ -3,7 +3,8 @@
 cmake_minimum_required (VERSION 2.6.4)
 project (PETScTest)
 
-list (APPEND CMAKE_MODULE_PATH "${PETScTest_SOURCE_DIR}/cmake-modules")
+list (APPEND CMAKE_MODULE_PATH 
+  "${PETScTest_SOURCE_DIR}/../../../cmake-jedbrown")
 
 # This is a C++ project exclusively
 enable_language(CXX)
@@ -19,12 +20,18 @@ message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
 
 # This is here for cmake version 2.6 
-if (NOT MPI_CXX_LIBRARIES)
- set(MPI_CXX_LIBRARIES 
-   ${MPI_LIBRARY} 
-   ${MPI_EXTRA_LIBRARY}
- )
+if (NOT MPI_LIBRARY OR NOT MPI_EXTRA_LIBRARY)
+# Punt if MPI_LIBRARY or MPI_EXTRA_LIBRARY not found
+  set(MPI_CXX_LIBRARIES "")
+else()
+  if (NOT MPI_CXX_LIBRARIES)
+   set(MPI_CXX_LIBRARIES 
+     ${MPI_LIBRARY} 
+     ${MPI_EXTRA_LIBRARY}
+   )
+  endif()
 endif()
+message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 
 # -------------------------------------------------------------
 # Boost
@@ -33,7 +40,7 @@ endif()
 # PETSc. How can I check that?
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
-find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
+find_package(Boost 1.52 COMPONENTS mpi serialization REQUIRED)
 
 # -------------------------------------------------------------
 # PETSc
@@ -42,13 +49,18 @@ find_package(Boost 1.52 COMPONENTS mpi REQUIRED)
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
-find_package (PETSc COMPONENTS CXX REQUIRED)
+find_package (PETSc COMPONENTS REQUIRED)
+include_directories(AFTER ${MPI_INCLUDE_PATH})
 
-if (NOT EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
+elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScConfig.cmake")
+elseif (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+  include("${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf/PETScBuildInternal.cmake")
+else()
   message(FATAL_ERROR "PETSc found, but CMake configuration for PETSc installation not found?")
 endif()
-
-include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
 
 # checks 
 
@@ -93,4 +105,5 @@ set_tests_properties(greetings
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
 )
+
 

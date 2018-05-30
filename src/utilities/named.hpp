@@ -8,7 +8,7 @@
 /**
  * @file   named.h
  * @author William A. Perkins
- * @date   2015-10-01 09:07:48 d3g096
+ * @date   2017-02-10 07:31:37 d3g096
  * 
  * @brief  
  * 
@@ -31,12 +31,8 @@
 
 #include <string>
 
-// Forward declaration required for serialization
-namespace boost {
-namespace serialization {
-class access;
-} // namespace serialization
-} // namespace boost
+#include <boost/serialization/string.hpp>
+#include <boost/serialization/export.hpp>
 
 namespace gridpack {
 namespace utility {
@@ -71,7 +67,7 @@ public:
   virtual ~Named(void) {}
 
   /// Get this instance's name
-  std::string name(void) const
+  virtual std::string name(void) const
   {
     return p_name;
   }
@@ -100,5 +96,7 @@ private:
 
 } // namespace utility
 } // namespace gridpack
+
+BOOST_CLASS_EXPORT_KEY(gridpack::utility::Named)
 
 #endif

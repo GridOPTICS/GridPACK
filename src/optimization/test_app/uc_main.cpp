@@ -7,7 +7,7 @@
 /**
  * @file   uc_main.cpp
  * @author Bruce Palmer
- * @date   January 27, 2014
+ * @date   2016-07-14 14:02:40 d3g096
  * 
  * @brief  
  */
@@ -21,6 +21,7 @@
 
 // Calling program for the unit commitment optimization applications
 
+int
 main(int argc, char **argv)
 {
   // Initialize MPI libraries

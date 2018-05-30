@@ -10,10 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-03-17 08:13:41 d3g096
+# Last Change: 2016-10-03 14:34:24 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_ymatrix_components
+    gridpack_components
     gridpack_parallel
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -26,10 +28,12 @@ add_library(gridpack_dsmatrix_components
   ds_components.cpp
 )
 
-# -------------------------------------------------------------
-# component serialization tests
-# -------------------------------------------------------------
-target_link_libraries(gridpack_dsmatrix_components ${target_libraries})
+target_link_libraries(gridpack_dsmatrix_components
+    gridpack_ymatrix_components
+    gridpack_components
+    gridpack_parallel
+)
+
 
 # -------------------------------------------------------------
 # installation

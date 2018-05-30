@@ -12,16 +12,6 @@
 # Created 
 # Last Change:
 # -------------------------------------------------------------
-set(target_libraries
-  gridpack_components
-  gridpack_factory
-  gridpack_partition
-  gridpack_math
-  gridpack_timer
-  gridpack_expression
-  gridpack_parallel
-  gridpack_configuration
-)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -34,34 +24,41 @@ if (GA_FOUND)
 endif()
 
 set(expression_src 
-  variable.cpp
-  expression.cpp
   optimizer.cpp
+  file_optimizer_implementation.cpp
   lpfile_optimizer_implementation.cpp
+  julia_optimizer_implementation.cpp
 )
+
+set(optimizer_libraries)
 
 if (USE_CPLEX)
   list(APPEND expression_src cplex_optimizer_implementation.cpp)
   add_definitions(-DHAVE_CPLEX)
   include_directories(AFTER ${CPLEX_INCLUDE_DIRS})
-  list(APPEND target_libraries ${CPLEX_LIBRARIES})
-elseif(USE_GLPK)
+  list(APPEND optimizer_libraries ${CPLEX_LIBRARIES})
+endif()
+if (USE_GLPK)
   list(APPEND expression_src glpk_optimizer_implementation.cpp)
   add_definitions(-DHAVE_GLPK)
   include_directories(BEFORE ${GLPK_INCLUDE_DIR})
-  list(APPEND target_libraries ${GLPK_LIBRARY})
-elseif(USE_GUROBI)
+  list(APPEND optimizer_libraries ${GLPK_LIBRARY})
+endif()
+if (USE_GUROBI)
   include_directories(AFTER ${GUROBI_INCLUDE_DIRS})
-  list(APPEND target_libraries ${GUROBI_LIBRARIES})
-else()
-  message(WARNING "Optimization library not specified")
+  list(APPEND optimizer_libraries ${GUROBI_LIBRARIES})
 endif()
 
-add_library(gridpack_expression
-  ${expression_src}
-)
 
-list(APPEND target_libraries
+set(target_libraries
+  gridpack_components
+  gridpack_partition
+  gridpack_math
+  gridpack_timer
+  gridpack_expression
+  gridpack_parallel
+  gridpack_configuration
+  ${optimizer_libraries}
   ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
@@ -70,29 +67,57 @@ list(APPEND target_libraries
 )
 
 # -------------------------------------------------------------
-# variable test suite
+# optimizer library
 # -------------------------------------------------------------
-add_executable(variable_test test/variable_test.cpp)
-target_link_libraries(variable_test ${target_libraries})
 
-gridpack_add_unit_test("optimization_variables" variable_test)
+add_library(gridpack_optimum
+  ${expression_src}
+)
 
-
-# -------------------------------------------------------------
-# expression test suite
-# -------------------------------------------------------------
-add_executable(expression_test test/expression_test.cpp)
-target_link_libraries(expression_test ${target_libraries})
-
-gridpack_add_unit_test("optimization_expressions" variable_test)
-
+# target_link_libraries(gridpack_optimum ${target_libraries})
+  
 # -------------------------------------------------------------
 # optimizer test suite
 # -------------------------------------------------------------
 add_executable(optimizer_test test/optimizer_test.cpp)
-target_link_libraries(optimizer_test ${target_libraries})
+target_link_libraries(optimizer_test   
+  gridpack_optimum 
+  ${target_libraries}
+)
 
 gridpack_add_unit_test("optimizer" optimizer_test)
+
+# Decide which of the available optimizers to use for the unit tests,
+# if any. Try to run the optimization if an optimizer is
+# available. Avoid test failure if an appropriate optimizer is not
+# avaliable.  There are two tests (1) Flow and (2) UC. The latter is
+# quadratic and so requires CPLEX.
+
+if (USE_CPLEX) 
+  set(FlowTestOptimizer CPLEX)
+  set(UCTestOptimizer CPLEX)
+  set(FlowTestRun "true")
+  set(UCTestRun "true")
+elseif(USE_GLPK)
+  set(FlowTestOptimizer GLPK)
+  set(UCTestOptimizer GLPK)
+  set(FlowTestRun "true")
+  set(UCTestRun "false")
+else()
+  set(FlowTestOptimizer Julia)
+  set(UCTestOptimizer LPFile)
+  set(FlowTestRun "false")
+  set(UCTestRun "false")
+endif()
+
+configure_file(
+  ${CMAKE_CURRENT_SOURCE_DIR}/test/gridpack.xml.in
+  ${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml @ONLY)
+
+unset(FlowTestOptimizer)
+unset(UCTestOptimizer)
+unset(FlowTestRun)
+unset(UCTestRun)
 
 # -------------------------------------------------------------
 # TEST: 
@@ -107,7 +132,10 @@ if(USE_CPLEX)
  add_executable(test_expression 
    test/test_expression.cpp
  )
- target_link_libraries(test_expression ${target_libraries})
+ target_link_libraries(test_expression 
+   gridpack_optimum
+   ${target_libraries}
+ )
 endif()
 
 
@@ -117,7 +145,10 @@ endif()
    test_app/uc_main.cpp
  )
 
- target_link_libraries(uc.x ${target_libraries})
+ target_link_libraries(uc.x 
+   gridpack_optimum
+   ${target_libraries}
+ )
 
  add_custom_target(uc.x.input
 
@@ -158,7 +189,10 @@ if(USE_GUROBI)
    test_gurobi/uc_main.cpp
  )
 
- target_link_libraries(uc_gurobi.x ${target_libraries})
+ target_link_libraries(uc_gurobi.x 
+   gridpack_expression
+   ${target_libraries}
+ )
 
  add_custom_target(uc_gurobi.x.input
 
@@ -191,13 +225,12 @@ endif()
 # installation
 # -------------------------------------------------------------
 install(FILES 
-  variable.hpp  
-  expression.hpp
   optimization.hpp
+  optimizer.hpp
   DESTINATION include/gridpack/optimization
 )
 
 install(TARGETS 
-  gridpack_expression
+  gridpack_optimum
   DESTINATION lib
 )

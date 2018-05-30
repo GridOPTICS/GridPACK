@@ -29,6 +29,7 @@
 #include <ga.h>
 #include <boost/unordered_map.hpp>
 #include "gridpack/parallel/index_hash.hpp"
+#include "gridpack/utilities/exception.hpp"
 
 namespace gridpack {
 namespace hash_distr {
@@ -119,10 +120,12 @@ public:
     int me = GA_Pgroup_nodeid(p_GAgrp);
     int nprocs = GA_Pgroup_nnodes(p_GAgrp);
     if (vsize != ksize) {
-      //TODO: some kind of error
-      printf("p[%d] (distributeBusValues) ERROR: length of keys and values"
-          " arrays don't match ksize: %d vsize: %d\n",me,ksize,vsize);
-      return;
+      char buf[256];
+      sprintf(buf,"p[%d] HashDistribution::distributeBusValues ERROR: length of"
+          " keys and values arrays don't match ksize: %d vsize: %d\n",
+          me,ksize,vsize);
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     
     // Construct mapc array for irregular distribution
@@ -172,7 +175,11 @@ public:
 //    GA_Set_irreg_distr(g_vals,mapc,&nprocs);
     GA_Set_pgroup(g_vals,p_GAgrp);
     if (!GA_Allocate(g_vals)) {
-      //TODO: some kind of error
+      char buf[256];
+      sprintf(buf,"HashDistribution::distributeBusValues: Unable to allocate"
+          " distributed array for storing values");
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
     GA_Pgroup_sync(p_GAgrp);
@@ -517,10 +524,12 @@ public:
     int me = GA_Pgroup_nodeid(p_GAgrp);
     int nprocs = GA_Pgroup_nnodes(p_GAgrp);
     if (vsize != ksize) {
-      //TODO: some kind of error
-      printf("p[%d] (distributeBusValues) ERROR: length of keys and values"
-          " arrays don't match ksize: %d vsize: %d\n",me,ksize,vsize);
-      return;
+      char buf[256];
+      sprintf(buf,"p[%d] HashDistribution::distributeBusValues ERROR: length"
+          " of keys and values arrays don't match ksize: %d vsize: %d\n",
+          me,ksize,vsize);
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     
     // Construct mapc array for irregular distribution
@@ -575,7 +584,11 @@ public:
 //    GA_Set_irreg_distr(g_vals,mapc,&nprocs);
     GA_Set_pgroup(g_vals,p_GAgrp);
     if (!GA_Allocate(g_vals)) {
-      //TODO: some kind of error
+      char buf[256];
+      sprintf(buf,"HashDistribution::distributeBusValues: Unable to allocate"
+          " distributed array for storing values");
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
     GA_Pgroup_sync(p_GAgrp);
@@ -707,6 +720,7 @@ public:
     // processor
     int srcNum[nprocs];
     int ierr;
+    int k;
     int one = 1;
     MPI_Comm comm = static_cast<MPI_Comm>(p_network->communicator());
     ierr = MPI_Alltoall(destNum,one,MPI_INT,srcNum,one,MPI_INT,comm);
@@ -757,7 +771,7 @@ public:
 
     // Allocate buffer to receive data from other processors
     char *recvBuf;
-    recvBuf = new char[nvalues*(sizeof(_bus_data_type)+sizeof(int))];
+    recvBuf = new char[nvalues*(sizeof(_bus_data_type)*nvals+sizeof(int))];
     
     // Transmit data and clean up buffers that are no longer needed
     ierr = MPI_Alltoallv(sendBuf, destNum, destOffset, MPI_BYTE, recvBuf,
@@ -976,10 +990,12 @@ public:
     int me = GA_Pgroup_nodeid(p_GAgrp);
     int nprocs = GA_Pgroup_nnodes(p_GAgrp);
     if (vsize != ksize) {
-      //TODO: some kind of error
-      printf("p[%d] (distributeBranchValues) ERROR: length of keys and values"
-          " arrays don't match ksize: %d vsize: %d\n",me,ksize,vsize);
-      return;
+      char buf[256];
+      sprintf(buf,"p[%d] HashDistribution::distributeBranchValues ERROR: length"
+          " of keys and values arrays don't match ksize: %d vsize: %d\n",
+          me,ksize,vsize);
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     
     // Construct mapc array for irregular distribution
@@ -1030,7 +1046,11 @@ public:
 //    GA_Set_irreg_distr(g_vals,mapc,&nprocs);
     GA_Set_pgroup(g_vals,p_GAgrp);
     if (!GA_Allocate(g_vals)) {
-      //TODO: some kind of error
+      char buf[256];
+      sprintf(buf,"HashDistribution::distributeBranchValues: Unable to allocate"
+          " distributed array for storing values");
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
     GA_Pgroup_sync(p_GAgrp);
@@ -1391,10 +1411,12 @@ public:
     int me = GA_Pgroup_nodeid(p_GAgrp);
     int nprocs = GA_Pgroup_nnodes(p_GAgrp);
     if (vsize != ksize) {
-      //TODO: some kind of error
-      printf("p[%d] (distributeBranchValues) ERROR: length of keys and values"
-          " arrays don't match ksize: %d vsize: %d\n",me,ksize,vsize);
-      return;
+      char buf[256];
+      sprintf(buf,"p[%d] HashDistribution::distributeBranchValues ERROR: length"
+          " of keys and values arrays don't match ksize: %d vsize: %d\n",
+          me,ksize,vsize);
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     
     // Construct mapc array for irregular distribution
@@ -1450,7 +1472,11 @@ public:
 //    GA_Set_irreg_distr(g_vals,mapc,&nprocs);
     GA_Set_pgroup(g_vals,p_GAgrp);
     if (!GA_Allocate(g_vals)) {
-      //TODO: some kind of error
+      char buf[256];
+      sprintf(buf,"HashDistribution::distributeBranchValues: Unable to allocate"
+          " distributed array for storing values");
+      printf("%s",buf);
+      throw gridpack::Exception(buf);
     }
     if (lo <= hi) NGA_Put(g_vals, &lo, &hi, list, &one);
     GA_Pgroup_sync(p_GAgrp);
@@ -1635,7 +1661,7 @@ public:
 
     // Allocate buffer to receive data from other processors
     char *recvBuf;
-    recvBuf = new char[nvalues*(sizeof(_branch_data_type)+2*sizeof(int))];
+    recvBuf = new char[nvalues*(sizeof(_branch_data_type)*nvals+2*sizeof(int))];
     
     // Transmit data and clean up buffers that are no longer needed
     ierr = MPI_Alltoallv(sendBuf, destNum, destOffset, MPI_BYTE, recvBuf,

@@ -18,12 +18,7 @@
 #include <vector>
 #include <iostream>
 
-#include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/utilities/complex.hpp"
 #include "hw_components.hpp"
-#include "gridpack/parser/dictionary.hpp"
-
-//#define LARGE_MATRIX
 
 /**
  *  Simple constructor

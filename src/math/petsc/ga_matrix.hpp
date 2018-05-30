@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.h
  * @author William A. Perkins
- * @date   2015-08-06 13:42:26 d3g096
+ * @date   2017-10-06 13:26:43 d3g096
  * 
  * @brief  
  * 
@@ -55,6 +55,15 @@ MatConvertToDenseGA(Mat A, Mat *B);
 extern
 PetscErrorCode
 MatConvertGAToDense(Mat A, Mat *B);
+
+
+extern
+PetscErrorCode
+MatMultbyGA(const Mat& A, const Mat& B, Mat& C);
+
+extern
+PetscErrorCode
+MatMultbyGA_new(const Mat& A, const Mat& B, Mat& C);
 
 
 #endif

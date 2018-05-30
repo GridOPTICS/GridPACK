@@ -7,7 +7,7 @@
 /**
  * @file   uc_components.hpp
  * @author 
- * @date   
+ * @date   2016-07-14 14:02:40 d3g096
  * 
  * @brief  
  * 
@@ -143,8 +143,8 @@ typedef network::BaseNetwork<UCBus, UCBranch > UCNetwork;
 }     // unit_commitment
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::unit_commitment::UCBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::unit_commitment::UCBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::unit_commitment::UCBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::unit_commitment::UCBranch)
 
 
 #endif

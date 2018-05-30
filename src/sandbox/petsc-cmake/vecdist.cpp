@@ -69,8 +69,10 @@ main(int argc, char **argv)
   int lo, hi;
   ierr = VecGetOwnershipRange(x1, &lo, &hi); CHKERRQ(ierr);
 
+  PetscScalar xi;
   for (int i = lo; i < hi; ++i) {
-    ierr = VecSetValue(x1, i, i, INSERT_VALUES); CHKERRQ(ierr);
+    xi = i;
+    ierr = VecSetValue(x1, i, xi, INSERT_VALUES); CHKERRQ(ierr);
   }
   ierr = VecAssemblyBegin(x1); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(x1); CHKERRQ(ierr);
@@ -80,7 +82,8 @@ main(int argc, char **argv)
   ierr = VecCreate(PETSC_COMM_WORLD, &x2); CHKERRQ(ierr);
   ierr = VecSetSizes(x2, PETSC_DECIDE, gsize); CHKERRQ(ierr);
   ierr = VecSetFromOptions(x2); CHKERRQ(ierr);
-  ierr = VecSet(x2, -99); CHKERRQ(ierr);
+  xi = -99.0;
+  ierr = VecSet(x2, xi); CHKERRQ(ierr);
 
   ierr = Vec2Vec(x1, x2); CHKERRQ(ierr);
 

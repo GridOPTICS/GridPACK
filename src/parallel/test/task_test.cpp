@@ -28,6 +28,7 @@
 #include <ga.h>
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/parallel/task_manager.hpp"
+#include "gridpack/timer/local_timer.hpp"
 
 // -------------------------------------------------------------
 //  Main Program
@@ -77,6 +78,20 @@ main(int argc, char **argv)
         printf("Evaluating task %d on processor %d (global id %d) in sub-communicator of size %d\n",
             itask,lcomm.rank(),me,lcomm.size());
       }
+    }
+    // Check performance of task manager. Create a very large number of tasks.
+    ntasks = 1000000*nprocs;
+    tskmgr.set(ntasks);
+    gridpack::utility::LocalTimer timer(world);
+    double start = timer.currentTime();
+    while(tskmgr.nextTask(&itask)) {
+      // Do nothing
+    }
+    double elapsed = timer.currentTime()-start;
+    world.sum(&elapsed,1);
+    elapsed /= static_cast<double>(ntasks);
+    if (me == 0) {
+      printf("\nOverhead per task is %e seconds\n",elapsed);
     }
   }
 
