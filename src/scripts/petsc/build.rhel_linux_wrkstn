@@ -1,0 +1,28 @@
+#
+#  This script has been used to build PETSc on a RHEL 7 Linux workstation.
+#  It should be run in the top level PETSc directory. All PETSc libraries and
+#  include files will appear in a directory below the top level directory with
+#  a name given by the PETSC_ARCH variable (below). Users can substitute their
+#  own name for PETSC_ARCH.
+#
+./configure \
+  PETSC_ARCH=arch-linux2-complex-opt \
+  --with-prefix=./ \
+  --with-mpi=1 \
+  --with-c++-support=1 \
+  --with-c-support=0 \
+  --with-fortran=0 \
+  --with-scalar-type=complex \
+  --with-fortran-kernels=generic \
+  --download-superlu_dist \
+  --download-superlu \
+  --download-parmetis \
+  --download-metis \
+  --download-suitesparse \
+  --download-f2cblaslapack=1 \
+  --with-clanguage=c++ \
+  --with-shared-libraries=0 \
+  --with-x=0 \
+  --with-mpirun=mpirun \
+  --with-mpiexec=mpiexec \
+  --with-debugging=1
