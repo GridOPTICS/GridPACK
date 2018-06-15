@@ -368,7 +368,7 @@ class SerialBusIO {
       std::vector<int> indexbuf(nwrites);
       iptr = &indexbuf[0];
       std::vector<int> ones(nwrites);
-      char *strbuf;
+      char *strbuf = NULL;
       if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
       ptr = strbuf;
       int ncnt = 0;
