@@ -171,13 +171,16 @@ bool Configuration::initialize(gridpack::parallel::Communicator tcomm) {
    MPI_Comm comm = static_cast<gridpack::parallel::Communicator>(tcomm);
 	return initialize_internal(comm);
 }
+// This function is only called on processors for rank != 0. MPI_Bcast calls in
+// this routine are matched in calling routine by MPI_Bcast calls on rank 0.
+// Very confusing coding.
 bool Configuration::initialize_internal(MPI_Comm comm) {
 	int rank;
 	MPI_Comm_rank(comm,&rank);
 	int n ;
 	MPI_Bcast(&n, 1, MPI_INT, 0, comm);
    if (n == 0) return false;
-	assert(n > 0 && n < (1<<20)); // sanity check
+	assert(n > 0 && n < (1<<30)); // sanity check that n is not too large (1<<n = 2^n)
 	char * buffer = new char[n+1];
 	MPI_Bcast(buffer, n, MPI_CHAR, 0, comm);
 	std::string input(buffer,buffer+n);
