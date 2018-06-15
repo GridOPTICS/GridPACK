@@ -832,7 +832,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
         // TODO: add variables LEN, Oi, Fi
 
-        // Add BRANCH_TAP with value 1.0
+        // Add BRANCH_TAP with value 0.0
         p_branchData[l_idx]->addValue(BRANCH_TAP,0.0,nelems);
 
         nelems++;
