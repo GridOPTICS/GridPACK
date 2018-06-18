@@ -1,0 +1,11 @@
+#
+# This script has been used to build GA on a Linux cluster using an Infiniband
+# interconnect with OpenMPI 1.8.3 and GNU 4.9.2 compilers. This script builds
+# the progress ranks implementation of GA, which is suitable for large scale
+# parallel calculations. Be sure and modify the argument of the --prefix option
+# to reflect the top level directory of the GA distribution, which is where this
+# script should be run. This script has been used with GA 5.6 and 5.7. It should
+# also work with 5.4 and 5.5 but has not been tested with them.
+#
+../configure --enable-i4 --enable-cxx --with-mpi-pr --without-blas \
+   --disable-f77 --prefix=/pic/projects/gridpack/software_new/ga-5-6/build_pr
