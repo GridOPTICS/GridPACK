@@ -82,6 +82,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
       filetype = GOSS;
     } else {
       printf("No network configuration file specified\n");
+      timer->stop(t_total);
       return;
     }
   }
@@ -280,6 +281,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   } catch (const gridpack::Exception e) {
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
+    timer->stop(t_total);
     return false;
   }
   timer->stop(t_lsolv);
@@ -330,6 +332,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     } catch (const gridpack::Exception e) {
       p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
+      timer->stop(t_total);
       return false;
     }
     timer->stop(t_lsolv);
@@ -451,7 +454,6 @@ void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
   timer->start(t_total);
   int t_write = timer->createCategory("Powerflow: Write Results");
   timer->start(t_write);
-  timer->start(t_total);
   p_busIO->write(signal);
   timer->stop(t_write);
   timer->stop(t_total);
@@ -465,7 +467,6 @@ void gridpack::powerflow::PFAppModule::writeCABus()
   timer->start(t_total);
   int t_write = timer->createCategory("Contingency: Write Results");
   timer->start(t_write);
-  timer->start(t_total);
   p_busIO->write("ca");
   timer->stop(t_write);
   timer->stop(t_total);
@@ -479,7 +480,6 @@ void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
   timer->start(t_total);
   int t_write = timer->createCategory("Powerflow: Write Results");
   timer->start(t_write);
-  timer->start(t_total);
   p_branchIO->write(signal);
   timer->stop(t_write);
   timer->stop(t_total);
@@ -493,7 +493,6 @@ void gridpack::powerflow::PFAppModule::writeCABranch()
   timer->start(t_total);
   int t_write = timer->createCategory("Contingency: Write Results");
   timer->start(t_write);
-  timer->start(t_total);
   p_branchIO->write("flow");
   timer->stop(t_write);
   timer->stop(t_total);

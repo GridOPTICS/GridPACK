@@ -685,6 +685,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     if (!isIsolated()) {
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v);
+    } else {
+      return false;
     }
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
