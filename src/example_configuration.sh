@@ -76,7 +76,7 @@ if [ $host == "flophouse" ]; then
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
-    cmake -Wdev --debug-trycompile \
+    cmake3 -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix/ga-c++" \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
         -D BOOST_ROOT:STRING="/usr" \
