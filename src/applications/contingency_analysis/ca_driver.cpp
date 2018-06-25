@@ -194,7 +194,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   pf_app.readNetwork(pf_network,config);
   // Finish initializing the network
   pf_app.initialize();
-  //  Set minimum and maximum voltage limits on all busses
+  //  Set minimum and maximum voltage limits on all buses
   pf_app.setVoltageLimits(Vmin, Vmax);
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
@@ -208,6 +208,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   if (!cursor->get("contingencyList",&contingencyfile)) {
     contingencyfile = "contingencies.xml";
   }
+  if (world.rank() == 0) printf("Contingency List: %s\n",contingencyfile.c_str());
   // Open contingency file
   bool ok = config->open(contingencyfile,world);
 
@@ -272,12 +273,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         sprintf(sbuf," Line: (from) %d (to) %d (line) \'%s\'\n",
             events[task_id].p_from[j],events[task_id].p_to[j],
             events[task_id].p_ckt[j].c_str());
+        printf("p[%d] Line: (from) %d (to) %d (line) \'%s\'\n",
+            pf_network->communicator().rank(),
+            events[task_id].p_from[j],events[task_id].p_to[j],
+            events[task_id].p_ckt[j].c_str());
       }
     } else if (events[task_id].p_type == Generator) {
       int nbus = events[task_id].p_busid.size();
       int j;
       for (j=0; j<nbus; j++) {
         sprintf(sbuf," Generator: (bus) %d (generator ID) \'%s\'\n",
+            events[task_id].p_busid[j],events[task_id].p_genid[j].c_str());
+        printf("p[%d] Generator: (bus) %d (generator ID) \'%s\'\n",
+            pf_network->communicator().rank(),
             events[task_id].p_busid[j],events[task_id].p_genid[j].c_str());
       }
     }
