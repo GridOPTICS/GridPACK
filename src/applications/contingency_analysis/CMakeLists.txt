@@ -74,15 +74,15 @@ add_custom_command(
   DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input.polish.xml"
   )
 
-#add_custom_command(
-#  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
-#  COMMAND ${CMAKE_COMMAND}
-#  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input.euro.xml"
-#  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
-#  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-#  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-#  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input.euro.xml"
-#  )
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input.euro.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input.euro.xml"
+  )
 
 add_custom_target(ca.x.input
  
@@ -110,13 +110,13 @@ add_custom_target(ca.x.input
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
-#  COMMAND ${CMAKE_COMMAND} -E copy 
-#  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-#  ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
 
-#  COMMAND ${CMAKE_COMMAND} -E copy 
-#  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
-#  ${CMAKE_CURRENT_BINARY_DIR}
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
@@ -128,9 +128,9 @@ add_custom_target(ca.x.input
   ${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml
   ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
-#  ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
-#  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-#  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
+  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
 )
 add_dependencies(ca.x ca.x.input)
 
@@ -151,9 +151,9 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml
   ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
-#  ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
-#  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-#  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
+  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
+  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_driver.hpp
   ${CMAKE_CURRENT_SOURCE_DIR}/ca_main.cpp

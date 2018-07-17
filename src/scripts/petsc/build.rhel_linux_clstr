@@ -9,25 +9,16 @@
 #
 python ./config/configure.py \
   PETSC_ARCH=linux-openmpi-gnu-cxx-complex-opt \
-  --with-mpi=1 \
-  --with-cc=mpicc \
-  --with-fc=mpif90 \
-  --with-cxx=mpicxx \
-  --with-c++-support=1 \
-  --with-c-support=0 \
-  --with-c-language=C++\
-  --with-fortran=0 \
   --with-scalar-type=complex \
   --with-fortran-kernels=generic \
   --download-superlu_dist \
   --download-superlu \
   --download-parmetis \
   --download-metis \
-  --download-f2cblaslapack=1 \
   --download-suitesparse \
+  --download-fblaslapack \
   --with-clanguage=c++ \
   --with-shared-libraries=0 \
   --with-x=0 \
-  --with-mpirun=mpirun \
   --with-mpiexec=mpiexec \
   --with-debugging=0
