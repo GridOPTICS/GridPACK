@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2017-12-05 12:37:15 d3g096
+ * @date   2018-07-17 10:06:51 d3g096
  * 
  * @brief  
  * 
@@ -162,26 +162,26 @@ protected:
                         MATSOLVERPETSC
 #endif
                         );
-    } else {
-      mstr = MATSOLVERSUPERLU_DIST;
-    }
-    boost::to_lower(mstr);
+      boost::to_lower(mstr);
 
-    n = p_nSupportedSolverPackages;
-    found = false;
-    for (size_t i = 0; i < n; ++i) {
-      if (mstr == p_supportedSolverPackage[i]) {
-        p_solverPackage = p_supportedSolverPackage[i];
-        found = true;
-        break;
+      n = p_nSupportedSolverPackages;
+      found = false;
+      for (size_t i = 0; i < n; ++i) {
+        if (mstr == p_supportedSolverPackage[i]) {
+          p_solverPackage = p_supportedSolverPackage[i];
+          found = true;
+          break;
+        }
       }
-    }
 
-    if (!found) {
-      std::string msg = 
-        boost::str(boost::format("%s PETSc PETSc configuration: unrecognized \"Package\": \"%s\"") %
-                   this->configurationKey() % mstr);
-      throw Exception(msg);
+      if (!found) {
+        std::string msg = 
+          boost::str(boost::format("%s PETSc PETSc configuration: unrecognized \"Package\": \"%s\"") %
+                     this->configurationKey() % mstr);
+        throw Exception(msg);
+      }
+      p_fill = props->get("Fill", p_fill);
+      p_pivot = props->get("Pivot", p_pivot);
     }
 
     // FIXME: I cannot make this test work. Not sure why. It would be
@@ -203,10 +203,6 @@ protected:
     //   throw Exception(msg);
     // }
   
-    if (props) {
-      p_fill = props->get("Fill", p_fill);
-      p_pivot = props->get("Pivot", p_pivot);
-    }
     if (p_fill <= 0) {
       std::string msg = 
         boost::str(boost::format("%s PETSc configuration: bad \"Fill\": %d") %
