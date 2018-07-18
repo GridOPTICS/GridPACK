@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2016-12-12 15:01:05 d3g096
+# Last Change: 2018-07-18 06:33:24 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -122,7 +122,7 @@ function(gridpack_setup)
   )
 
   find_library(GRIDPACK_KALMAN_DS_MODULE_LIBRARY
-    NAMES gridpack_kalmanf_module
+    NAMES gridpack_kalmands_module
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
@@ -135,7 +135,7 @@ function(gridpack_setup)
     ${GRIDPACK_POWERFLOW_MODULE_LIBRARY}
     ${GRIDPACK_DYNAMIC_SIMULATION_MODULE_LIBRARY}
     ${GRIDPACK_DYNAMIC_SIMULATION_FULL_MODULE_LIBRARY}
-    ${GRIDPACK_DYNAMIC_KALMAN_DS_MODULE_LIBRARY}
+    ${GRIDPACK_KALMAN_DS_MODULE_LIBRARY}
     ${GRIDPACK_STATE_ESTIMATION_MODULE_LIBRARY}
     ${GRIDPACK_YMATRIX_COMPONENTS_LIBRARY}
     ${GRIDPACK_PFMATRIX_COMPONENTS_LIBRARY}

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2017-11-14 14:16:25 d3g096
+# Last Change: 2018-07-18 06:36:35 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.6.4)
@@ -41,31 +41,57 @@ target_link_libraries(kds.x ${GRIDPACK_LIBS})
 add_custom_target(kds.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/input/kalman/input_14.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_kds.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_kds.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE14_classicGen.dyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_classicGen.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy
-  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_ang.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_Kalman_input_ang.csv
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy
-  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_mag.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_Kalman_input_mag.csv
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_145.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145_classicGen.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145_Kalman_input_ang.csv
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145_Kalman_input_mag.csv
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${GRIDPACK_DATA_DIR}/input/kalman/input_14.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_kds.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE14_classicGen.dyr
-  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_ang.csv
-  ${GRIDPACK_DATA_DIR}/kalman/IEEE14_Kalman_input_mag.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_14.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_kds.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_classicGen.dyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_Kalman_input_ang.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_Kalman_input_mag.csv
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_145.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145_classicGen.dyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145_Kalman_input_ang.csv
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE145_Kalman_input_mag.csv
 )
 
 add_dependencies(kds.x kds.x.input)
