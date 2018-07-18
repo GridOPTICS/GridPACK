@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2017-11-14 14:16:25 d3g096
+# Last Change: 2018-07-17 14:07:40 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.6.4)
@@ -41,21 +41,69 @@ target_link_libraries(dsf.x ${GRIDPACK_LIBS})
 add_custom_target(dsf.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/input/ds/input_145.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_9b3g.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_145.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_300_cmpld.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/300bus_v23_no0imp_pslf.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/300bus_detail_model_cmpld_combine.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_3000.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/bus3000_gen_no0imp_v23_pslf.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/classical_model_3000bus.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${GRIDPACK_DATA_DIR}/input/ds/input_145.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_9b3g.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/9b3g.dyr
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_145.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_300_cmpld.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/300bus_v23_no0imp_pslf.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/300bus_detail_model_cmpld_combine.dyr
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_3000.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/bus3000_gen_no0imp_v23_pslf.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/classical_model_3000bus.dyr
 )
 
 add_dependencies(dsf.x dsf.x.input)
