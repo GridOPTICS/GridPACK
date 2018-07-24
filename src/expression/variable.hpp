@@ -102,6 +102,19 @@ public:
     this->p_accept(visitor);
   }
 
+  /// Set internal no init flag. This turn off variable declaration
+  /// statement in Julia code generator.
+  void setNoInit(bool flag)
+  {
+    p_no_init = flag;
+  }
+
+  /// return state of no init flag
+  bool getNoInit()
+  {
+    return p_no_init;
+  }
+
 protected:
 
   static int p_nextID;
@@ -118,6 +131,11 @@ private:
   
   friend class boost::serialization::access;
   
+  /// If set to true, do not export a variable declaration statement
+  /// (at least when exporting Julia code). This can be used to
+  /// to create variables that are set in an auxiliary file.
+  bool p_no_init;
+
   template<class Archive> 
   void serialize(Archive &ar, const unsigned int)
   {

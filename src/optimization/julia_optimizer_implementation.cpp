@@ -65,6 +65,7 @@ public:
 
   void visit(RealVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     s = var.name();
     if (var.bounded()) {
@@ -82,6 +83,7 @@ public:
     
   void visit(IntegerVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     s = var.name();
     if (var.bounded()) {
@@ -99,6 +101,7 @@ public:
 
   void visit(BinaryVariable& var)
   {
+    if (var.getNoInit()) return;
     this->p_stream << "@variable(" << p_model << ", " << var.name() << ", Bin)" << std::endl;
   }
 
@@ -137,6 +140,7 @@ public:
 
   void visit(RealVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     s = var.name();
     s += ", ";
@@ -146,6 +150,7 @@ public:
     
   void visit(IntegerVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     s = var.name();
     s += ", ";
@@ -155,6 +160,7 @@ public:
 
   void visit(BinaryVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     s = var.name();
     s += ", ";
@@ -197,6 +203,7 @@ public:
 
   void visit(RealVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     s = var.name();
     this->p_stream << "println(\""<<s<<" value: \",getvalue(" << s << "))" << std::endl;
@@ -204,6 +211,7 @@ public:
     
   void visit(IntegerVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     s = var.name();
     this->p_stream << "println(\""<<s<<" value: \",getvalue(" << s << "))" << std::endl;
@@ -211,6 +219,7 @@ public:
 
   void visit(BinaryVariable& var)
   {
+    if (var.getNoInit()) return;
     std::string s;
     this->p_stream << "println(\""<<s<<" value: \",getvalue(" << s << "))" << std::endl;
   }
