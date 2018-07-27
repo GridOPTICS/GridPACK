@@ -165,6 +165,7 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
     gridpack::utility::StringUtils utils;
     utils.trim(topic);
     new_topic.append(topic);
+    p_current_topic = topic;
     printf("new topic = %s\n", new_topic.c_str());
 #ifndef GOSS_DEBUG
     p_destination = p_session->createTopic(new_topic);
@@ -174,12 +175,15 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
     p_producer->setDeliveryMode(DeliveryMode::NON_PERSISTENT);
 
 
-    char sbuf[128];
+    char sbuf[256];
     gridpack::utility::CoarseTimer *timer =
       gridpack::utility::CoarseTimer::instance();
     sprintf(sbuf,"_goss_channel_opened %f",timer->currentTime());
     std::auto_ptr<TextMessage>
       message(p_session->createTextMessage(sbuf));
+    sprintf(sbuf,"_goss_channel_opened topic: %s %f",topic.c_str(),
+        timer->currentTime());
+    printf("%s",sbuf);
     p_producer->send(message.get());
 #endif
     p_open = true;
@@ -202,6 +206,12 @@ void gridpack::goss::GOSSUtils::closeGOSSChannel(gridpack::parallel::Communicato
     std::string buf = "_goss_channel_closed";
     std::auto_ptr<TextMessage> message(p_session->createTextMessage(buf));
     p_producer->send(message.get());
+    gridpack::utility::CoarseTimer *timer =
+      gridpack::utility::CoarseTimer::instance();
+    char sbuf[256];
+    sprintf(sbuf,"_goss_channel_closed topic: %s %f",p_current_topic.c_str(),
+        timer->currentTime());
+    printf("%s",sbuf);
     if (p_connection) delete p_connection;
     if (p_session) delete p_session;
     if (p_destination) delete p_destination;
