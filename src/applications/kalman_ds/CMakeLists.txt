@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-08 09:39:48 d3g096
+# Last Change: 2018-07-17 13:41:33 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -131,6 +131,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
 install(FILES 
+  ${CMAKE_CURRENT_SOURCE_DIR}/kds_main.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE145.raw

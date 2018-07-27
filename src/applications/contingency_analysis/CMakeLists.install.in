@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 28, 2014 by William A. Perkins
-# Last Change: 2017-12-07 14:29:01 d3g096
+# Last Change: 2018-07-17 14:36:29 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required(VERSION 2.6.4)
@@ -42,21 +42,69 @@ target_link_libraries(ca.x ${GRIDPACK_LIBS})
 add_custom_target(ca.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/input/ca/input_14.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_14.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_118.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE118.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_118.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.polish.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/Polish_model_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_polish.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.euro.xml
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/EuropeanOpenModel_v23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_euro.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
-  ${GRIDPACK_DATA_DIR}/input/ca/input_14.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_14.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE14_ca.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_14.xml
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/input_118.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE118.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_118.xml
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.polish.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/Polish_model_v23.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_polish.xml
+
+  ${CMAKE_CURRENT_SOURCE_DIR}/input.euro.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/EuropeanOpenModel_v23.raw
+  ${CMAKE_CURRENT_SOURCE_DIR}/contingencies_euro.xml
 )
 add_dependencies(ca.x ca.x.input)
 
