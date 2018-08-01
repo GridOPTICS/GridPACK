@@ -212,6 +212,20 @@ void gridpack::goss::GOSSUtils::closeGOSSChannel(gridpack::parallel::Communicato
     sprintf(sbuf,"_goss_channel_closed topic: %s %f",p_current_topic.c_str(),
         timer->currentTime());
     printf("%s",sbuf);
+    std::string acknowledge_topic("topic.goss.gridpack.");
+    acknowledge_topic.append(p_current_topic);
+    acknowledge_topic.append(".acknowledge");
+    printf("_goss_channel_ack: %s\n",acknowledge_topic.c_str());
+    std::auto_ptr<Destination> dest(p_session->createTopic(acknowledge_topic));
+    std::auto_ptr<MessageConsumer> consumer(p_session->createConsumer(dest.get()));
+    std::cout << "Waiting for messages..."<<std::endl;
+
+    std::auto_ptr<Message> next_message(consumer->receive());
+    const TextMessage *txtMsg = dynamic_cast<const TextMessage*>(next_message.get());
+    if (txtMsg->getText() != "success") {
+      std::cout << "Message failure: "<<txtMsg->getText()<<std::endl;
+    }
+
     if (p_connection) delete p_connection;
     if (p_session) delete p_session;
     if (p_destination) delete p_destination;
