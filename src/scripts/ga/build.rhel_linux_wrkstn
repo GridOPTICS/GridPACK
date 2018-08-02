@@ -1,0 +1,10 @@
+#
+# This script has been used to build GA on a Linux workstation running RHEL 7.
+# This script builds two-sided implementation of GA, which is suitable for small
+# parallel jobs up to about 8-16 processors. Be sure and modify the argument of
+# the --prefix option to reflect the top level directory of the GA
+# distribution, which is where this script should be run. This script has been used
+# with GA 5.5 but should work with other distributions above 5.4.
+#
+./configure --enable-i4 --enable-cxx --with-mpi-ts --disable-f77 \
+      --prefix=/home/d3g293/software_gnu/ga-5-5

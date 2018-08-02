@@ -7,7 +7,7 @@
 /**
  * @file   KalmanDS_components.cpp
  * @author Da Meng and Yousu Chen
- * @date   1/06/2015
+ * @date   2018-07-17 11:36:24 d3g096
  * 
  * @brief  
  * 
@@ -708,6 +708,7 @@ void gridpack::kalman_filter::KalmanBus::clearEvent()
 bool gridpack::kalman_filter::KalmanBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
+  char tmp[128];
   if (!strcmp(signal,"xnew")) {
     if (p_ngen == 0) return false;
     double pi = 4.0*atan(1.0);
@@ -715,7 +716,6 @@ bool gridpack::kalman_filter::KalmanBus::serialWrite(char *string,
     char *ptr = string;
     int slen = 0;
     for (i=0; i<p_ngen; i++) {
-      char tmp[128];
       double delta = 0.0;
       double omega = 0.0;
       for (k=0; k<p_nEnsemble; k++) {
@@ -739,7 +739,6 @@ bool gridpack::kalman_filter::KalmanBus::serialWrite(char *string,
     char *ptr = string;
     int slen = 0;
     for (i=0; i<p_ngen; i++) {
-      char tmp[128];
       double delta = 0.0;
       for (k=0; k<p_nEnsemble; k++) {
         delta += (p_delta1[i])[k];
@@ -759,7 +758,6 @@ bool gridpack::kalman_filter::KalmanBus::serialWrite(char *string,
     char *ptr = string;
     int slen = 0;
     for (i=0; i<p_ngen; i++) {
-      char tmp[128];
       double omega = 0.0;
       for (k=0; k<p_nEnsemble; k++) {
         omega += (p_omega1[i])[k];

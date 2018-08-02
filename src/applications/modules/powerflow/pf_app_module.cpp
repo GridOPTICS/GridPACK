@@ -148,6 +148,7 @@ void gridpack::powerflow::PFAppModule::initialize()
   int t_load = timer->createCategory("Powerflow: Factory Load");
   timer->start(t_load);
   p_factory->load();
+  // p_factory->dumpData();
   timer->stop(t_load);
 
   // set network components using factory
@@ -213,10 +214,11 @@ bool gridpack::powerflow::PFAppModule::solve()
   int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
   timer->start(t_mmap);
 #if 0
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
   p_busIO->header("\nY-matrix values\n");
-  Y->print();
-//  Y->save("Ybus.m");
+//  Y->print();
+  Y->save("Ybus.m");
 #endif
   timer->stop(t_mmap);
 
@@ -295,10 +297,14 @@ bool gridpack::powerflow::PFAppModule::solve()
 //    sprintf(dbgfile,"pq0.bin");
 //    PQ->saveBinary(dbgfile);
   try {
+    printf("p[%d] call first solve\n",p_network->communicator().rank());
     solver.solve(*PQ, *X);
+    printf("p[%d] completed first solve\n",p_network->communicator().rank());
   } catch (const gridpack::Exception e) {
+    printf("p[%d] hit exception\n",p_network->communicator().rank());
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
+    timer->stop(t_total);
     return false;
   }
   timer->stop(t_lsolv);
@@ -351,10 +357,14 @@ bool gridpack::powerflow::PFAppModule::solve()
 //    sprintf(dbgfile,"pq%d.bin",iter+1);
 //    PQ->saveBinary(dbgfile);
     try {
+    printf("p[%d] call solve\n",p_network->communicator().rank());
       solver.solve(*PQ, *X);
+    printf("p[%d] completed solve\n",p_network->communicator().rank());
     } catch (const gridpack::Exception e) {
+    printf("p[%d] hit exception\n",p_network->communicator().rank());
       p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
+      timer->stop(t_total);
       return false;
     }
     timer->stop(t_lsolv);
@@ -492,7 +502,6 @@ void gridpack::powerflow::PFAppModule::writeCABus()
   timer->start(t_total);
   int t_write = timer->createCategory("Contingency: Write Results");
   timer->start(t_write);
-  timer->start(t_total);
   p_busIO->write("ca");
 //  p_busIO->write(signal);
   timer->stop(t_write);
@@ -521,7 +530,6 @@ void gridpack::powerflow::PFAppModule::writeCABranch()
   timer->start(t_total);
   int t_write = timer->createCategory("Contingency: Write Results");
   timer->start(t_write);
-  timer->start(t_total);
   p_branchIO->write("flow");
   timer->stop(t_write);
   timer->stop(t_total);

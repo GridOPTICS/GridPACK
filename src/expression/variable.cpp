@@ -59,7 +59,8 @@ int Variable::p_nextID(0);
 Variable::Variable()
     : utility::Named(),
       utility::Uncopyable(),
-      p_id(p_nextID++)
+      p_id(p_nextID++),
+      p_no_init(false)
 {
   Named::name(boost::str(boost::format("V%d") % p_id));
 }

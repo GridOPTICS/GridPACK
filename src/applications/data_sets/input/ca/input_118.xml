@@ -7,7 +7,7 @@
     <minVoltage>0.9</minVoltage>
   </Contingency_analysis>
   <Powerflow>
-    <networkConfiguration> 118.raw </networkConfiguration>
+    <networkConfiguration> IEEE118.raw </networkConfiguration>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-3</tolerance>
     <LinearSolver>

@@ -304,7 +304,8 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
     p_v -= real(values[1]);
   }
 #endif
-  *p_vAng_ptr = p_a;
+  double pi = 4.0*atan(1.0);
+  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
 }
 
@@ -320,7 +321,8 @@ void gridpack::powerflow::PFBus::setValues(gridpack::RealType *values)
     p_v -= values[1];
   }
 #endif
-  *p_vAng_ptr = p_a;
+  double pi = 4.0*atan(1.0);
+  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
 }
 
@@ -344,7 +346,8 @@ void gridpack::powerflow::PFBus::setXCBuf(void *buf)
   // Note: we are assuming that the load function has been called BEFORE
   // the factory setExchange method, so p_a and p_v are set with their initial
   // values.
-  *p_vAng_ptr = p_a;
+  double pi = 4.0*atan(1.0);
+  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
 }
 
@@ -478,7 +481,10 @@ void gridpack::powerflow::PFBus::load(
   }
   // If this is being called a second time, then update pointers
   if (p_vMag_ptr) *p_vMag_ptr = p_v;
-  if (p_vAng_ptr) *p_vAng_ptr = p_a;
+  if (p_vAng_ptr) {
+    double pi = 4.0*atan(1.0);
+    *p_vAng_ptr = fmod(p_a,pi);
+  }
 }
 
 /**
@@ -524,7 +530,8 @@ void gridpack::powerflow::PFBus::resetVoltage(void)
   p_v = p_voltage;
   p_a = p_angle;
   *p_vMag_ptr = p_v;
-  *p_vAng_ptr = p_a;
+  double pi = 4.0*atan(1.0);
+  *p_vAng_ptr = fmod(p_a,pi);
 }
 
 /**
@@ -717,10 +724,13 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     if (!isIsolated()) {
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
             getOriginalIndex(),angle,p_v);
-    }/* else {
+    } else {
+      return false;
+      /*
       sprintf(string, "     %6d      %12.6f         %12.6f\n",
-            getOriginalIndex(),0.0,0.0);
-    }*/
+      getOriginalIndex(),0.0,0.0);
+      */
+    }
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
