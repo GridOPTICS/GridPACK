@@ -133,6 +133,7 @@ class GOSSUtils {
   std::string p_URI;
   std::string p_username;
   std::string p_passwd;
+  std::string p_current_topic;
 
 #ifndef GOSS_DEBUG
   Connection *p_connection;

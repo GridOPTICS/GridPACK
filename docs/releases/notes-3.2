@@ -1,0 +1,39 @@
+Notes for Release 3.2
+
+The GridPACK applications directory was significantly restructured to eliminate
+duplicate codes. The power grid applications now serve as test codes for the
+corresponding application modules. There are no separate test codes for the
+application modules. The online user manual has also been restructured to
+reflect the changes in directory structure. More test problems have been
+included with the existing applications so that users have a ready-made set of
+test calculations reflecting a range of problem sizes. These are automatically
+installed in the application directories when GridPACK is built. GridPACK still
+runs only small test cases if the test suite is run.
+
+The PTI33 parser for parsing PSS/E version 33 formatted files has been updated
+to include more v33 parameters. It has also been verified against simulations
+based on the v23 formatted input. The v33 parser has also been updated so that
+it handles composite loads correctly. A command is available that can be used to
+decompose a composite load into extra buses and branches used in dynamic
+simulation.
+
+The dynamic simulation module has been modified to handle composite loads
+correctly.
+
+The Kalman filter dynamic state estimation module has been added to the GridPACK
+applications directory. This module is still poorly scaling and slows down
+significantly for large problem sizes. However, it is available for users that
+are interested in trying it out.
+
+A new directory called "scripts" has been added to the source directory. This
+contains build scripts that have been used to build the third-party libraries
+used in GridPACK on different platforms. These scripts can serve as a starting
+point for builds on users systems.
+
+A new build using Personal Package Archives (PPA) has been added to the
+GridPACK build. This build can be used on Ubuntu systems to create a working
+copy of the entire GridPACK framework (including third-party library
+dependencies) with just a few commands.
+
+In addition to the above changes, minor bug fixes and performance improvements
+have been added to the GridPACK framework.
