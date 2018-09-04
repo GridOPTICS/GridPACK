@@ -7,6 +7,16 @@ CXXFLAGS += -pthread
 export CFLAGS
 export CXXFLAGS
 
+# Global Arrays needs different libraries depending on the OS release
+distname := $(system lsb_release -cs)
+ifeq ($(distname), "xenial")
+GA_LIBS = -lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
+else ifeq ($(distname), "stretch")
+GA_LIBS = -lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
+else ifeq ($(distname), "bionic")
+GA_LIBS = -lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
+endif
+
 # secondly called by launchpad
 build-arch:
 	mkdir $(BUILDDIR);
