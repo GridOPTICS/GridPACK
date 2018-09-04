@@ -14,7 +14,7 @@ build-arch:
 	cmake \
 	-D PETSC_DIR:STRING="/usr/lib/petsc" \
 	-D PARMETIS_DIR:PATH="/usr" \
-	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
+	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
 	-D MPI_C_COMPILER:STRING="mpicc" \
         -D USE_GLPK:BOOL=ON \
