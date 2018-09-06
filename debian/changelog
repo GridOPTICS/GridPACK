@@ -1,3 +1,21 @@
+gridpack (3.2.0ppa2) xenial; urgency=medium
+
+  * Use code base with fixed installation
+
+ -- GridPACK <gridpack@gridpackvm>  Tue, 04 Sep 2018 07:18:50 -0700
+
+gridpack (3.2.0ppa1) xenial; urgency=low
+
+  * Fix Debian recipe for Ubuntu
+
+ -- GridPACK <gridpack@gridpackvm>  Fri, 31 Aug 2018 13:21:27 -0700
+
+gridpack (3.2.0ppa0) xenial; urgency=low
+
+  * Update package to 3.2 GridPACK release code
+
+ -- GridPACK <gridpack@gridpackvm>  Fri, 31 Aug 2018 12:48:07 -0700
+
 gridpack (3.1.0ppa3) xenial; urgency=low
 
   * Fix GRIDPACK_DIR in GridPACK.cmake
