@@ -254,15 +254,6 @@ elif [ $host == "tlaloc" ]; then
     # in such a way as to be unrecognizable.
 
     prefix="/file0/perksoft"
-    CC="/opt/rh/devtoolset-4/root/usr/bin/gcc"
-    CC="/usr/bin/gcc"
-    export CC
-    CXX="/opt/rh/devtoolset-4/root/usr/bin/g++"
-    CXX="/usr/bin/g++"
-    export CXX
-    CXXFLAGS="-I/usr/include/openmpi-x86_64"
-    LDFLAGS="-L/usr/lib64/openmpi"
-    export CXXFLAGS LDFLAGS
 
     cmake $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
@@ -270,9 +261,9 @@ elif [ $host == "tlaloc" ]; then
           -D USE_PROGRESS_RANKS:BOOL=OFF \
           -D PETSC_DIR:PATH="${prefix}/petsc-3.6.4" \
           -D PETSC_ARCH:STRING="linux-gnu44-real-opt" \
-          -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
-          -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
-          -D MPIEXEC:STRING="/usr/lib64/openmpi/bin/mpiexec" \
+          -D MPI_CXX_COMPILER:STRING="mpicxx" \
+          -D MPI_C_COMPILER:STRING="mpicc" \
+          -D MPIEXEC:STRING="mpiexec" \
           -D USE_GLPK:BOOL=OFF \
           -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
