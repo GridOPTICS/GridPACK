@@ -163,17 +163,23 @@ elif [ $host == "pe10900intel" ]; then
 
 elif [ $host == "WE32673" ]; then
 
-    # Mac using CLang 3.8 compilers and OpenMPI via MacPorts
+    # Mac using CLang 6.0 compilers and MPICH via MacPorts
     # The following MacPorts packages are installed:
-    #   clang-3.8 @3.8.1_9+analyzer
-    #   openmpi-clang38 @1.10.3_0+gcc6
-    #   boost @1.59.0_2+clang38+no_single+openmpi+python27
-    # Global Arrays 5.6.2 built by hand
-    # PETSc 3.7.5 w/ ParMETIS, etc. 
+    #   clang-6.0 @6.0.1_0+analyzer+libstdcxx
+    #   mpich-clang60 @3.2.1_4+gcc7
+    #   boost @1.66.0_3+clang60+mpich+no_single+no_static+python27
+    #   glpk @4.65_0
+    #   doxygen @1.8.13_2+qt4+wizard
+    # Global Arrays 5.7 built by hand
+    # PETSc 3.8.4 w/ ParMETIS, SuperLU, etc., built by hand
+    # Need to make sure the compiler set and MPI are selected, i.e.
+    #   sudo port select clang mp-clang-6.0
+    #   sudo port select mpi mpich-clang60-fortran
+    # Cannot use PETSc < 3.8.0
 
-    CC=/opt/local/bin/clang-mp-3.8
+    CC=/opt/local/bin/clang
     export CC
-    CXX=/opt/local/bin/clang++-mp-3.8
+    CXX=/opt/local/bin/clang++
     export CXX
 
     prefix="/Users/d3g096/Projects/GridPACK"
@@ -181,12 +187,12 @@ elif [ $host == "WE32673" ]; then
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="/opt/local" \
-        -D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
+        -D PETSC_DIR:PATH="$prefix/petsc-3.8.4" \
         -D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \

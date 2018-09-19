@@ -3,6 +3,7 @@ Set environment with:
 module unload PrgEnv-intel
 module load PrgEnv-gnu
 module unload darshan
+module show boost/gnu/1.64.0
 
 Boost_1.61.0:
 
@@ -31,20 +32,16 @@ in the GridPACK cmake configure line will allow you to configure and build GridP
 
 PETSc-3.8.3:
 
-Lower version of PETSc don't seem to work, so use PETSc-3.8.3 (or higher).
+Lower versions of PETSc don't seem to work, so use PETSc-3.8.3 (or higher).
 Configure PETSc with
 
 python ./config/configure.py \
    PETSC_ARCH=gnu-cxx-complex-test-opt \
-   --with-mpi=1 \
    --with-batch \
    --known-mpi-shared-libraries \
    --with-cc=cc \
    --with-fc=ftn \
    --with-cxx=CC \
-   --with-c++-support=1 \
-   --with-c-support=0 \
-   --with-fortran=0 \
    --with-scalar-type=complex \
    --with-fortran-kernels=0 \
    --download-superlu_dist \
@@ -55,7 +52,6 @@ python ./config/configure.py \
    --with-clanguage=c++ \
    --with-x=0 \
    --with-pic=1\
-   --with-mpirun=aprun \
    --with-mpiexec=aprun \
    --with-debugging=0 \
    --with-clib-autodetect=0 \
@@ -70,9 +66,19 @@ okay. If you are building someplace where you can launch jobs then it should
 be straightforward. After running the script above, you will see the file
 conftest-gnu-cxx-complex-test-opt in your build directory. Then run the
 conftest-gnu-cxx-complex-test-opt script on 1 node by submitting
-it to the batch queue. The job will generate the file
-reconfigure-gnu-cxx-complex-test-opt.py. Run this script in the PETSc
-directory and follow instructions to finish building PETSc.
+it to the batch queue. The script should look like
+
+#!/bin/bash
+#COBALT -t 30
+#COBALT -n 1
+#COBALT -q debug-flat-quad
+#COBALT -A CSC249ADSE22
+
+aprun -n 1 -N 1 ./conftest-gnu-cxx-complex-test-opt
+
+The job will generate the file reconfigure-gnu-cxx-complex-test-opt.py. Run
+this script in the PETSc directory and follow instructions to finish building
+PETSc.
 
 GA-5-6-4:
 
