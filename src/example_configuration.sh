@@ -77,14 +77,14 @@ if [ $host == "flophouse" ]; then
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
     cmake -Wdev --debug-trycompile \
-        -D GA_DIR:STRING="$prefix/ga-c++" \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
+        -D GA_DIR:PATH="$prefix/gridpack" \
         -D BOOST_ROOT:STRING="/usr" \
         -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.7.6" \
         -D PETSC_ARCH:STRING='linux-gnu48-real-opt' \
-        -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
-        -D MPIEXEC:STRING="/usr/lib64/openmpi/bin/mpiexec" \
+        -D MPI_CXX_COMPILER:STRING="mpicxx" \
+        -D MPI_C_COMPILER:STRING="mpicc" \
+        -D MPIEXEC:STRING="mpiexec" \
         -D USE_CPLEX:BOOL=OFF \
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
         -D USE_GLPK:BOOL=ON \
