@@ -34,7 +34,9 @@ list(APPEND target_libraries
   ${MPI_CXX_LIBRARIES}
 )
 
-# target_link_libraries(gridpack_expression ${target_libraries})
+target_link_libraries(gridpack_expression 
+  gridpack_parallel
+)
 
 
 # -------------------------------------------------------------
