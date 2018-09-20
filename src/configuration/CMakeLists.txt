@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2016-10-03 13:57:19 d3g096
+# Last Change: 2018-09-19 12:22:06 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
@@ -24,9 +24,9 @@ set(target_libraries
   ${MPI_CXX_LIBRARIES}
 )
 
-# target_link_libraries(gridpack_configuration
-#   ${target_libraries}
-# )
+target_link_libraries(gridpack_configuration
+  gridpack_parallel
+)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(AFTER ${GA_INCLUDE_DIRS})

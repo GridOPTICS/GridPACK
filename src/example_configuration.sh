@@ -74,6 +74,12 @@ if [ $host == "flophouse" ]; then
     CXX="/usr/bin/g++"
     export CXX
 
+    if [ "$shared"x = "ON"x ]; then
+        parch="linux-gnu48-real-opt-shared"
+    else
+        parch="linux-gnu48-real-opt"
+    fi
+
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
     cmake -Wdev --debug-trycompile \
@@ -81,7 +87,7 @@ if [ $host == "flophouse" ]; then
         -D GA_DIR:PATH="$prefix/gridpack" \
         -D BOOST_ROOT:STRING="/usr" \
         -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.7.6" \
-        -D PETSC_ARCH:STRING='linux-gnu48-real-opt' \
+        -D PETSC_ARCH:STRING="$parch" \
         -D MPI_CXX_COMPILER:STRING="mpicxx" \
         -D MPI_C_COMPILER:STRING="mpicc" \
         -D MPIEXEC:STRING="mpiexec" \
@@ -188,12 +194,12 @@ elif [ $host == "WE32673" ]; then
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="/opt/local" \
         -D PETSC_DIR:PATH="$prefix/petsc-3.8.4" \
-        -D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
+        -D PETSC_ARCH:STRING="arch-macosx-clang-real-opt" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
