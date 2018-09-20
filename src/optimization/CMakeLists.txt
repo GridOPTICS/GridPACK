@@ -74,13 +74,15 @@ add_library(gridpack_optimum
   ${expression_src}
 )
 
-target_link_libraries(gridpack_optimum 
-  gridpack_components
-  gridpack_partition
-  gridpack_expression
-  gridpack_math
-  ${optimizer_libraries}
-)
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_optimum 
+    gridpack_components
+    gridpack_partition
+    gridpack_expression
+    gridpack_math
+    ${optimizer_libraries}
+    )
+endif()
   
 # -------------------------------------------------------------
 # optimizer test suite

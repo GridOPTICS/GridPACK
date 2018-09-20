@@ -46,11 +46,12 @@ add_library(gridpack_dynamic_simulation_module
   ds_factory_module.cpp
 )
 
-target_link_libraries(gridpack_dynamic_simulation_module
-  gridpack_dsmatrix_components
-  gridpack_powerflow_module
-)
-
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_dynamic_simulation_module
+    gridpack_dsmatrix_components
+    gridpack_powerflow_module
+    )
+endif()
 
 # -------------------------------------------------------------
 # component serialization tests

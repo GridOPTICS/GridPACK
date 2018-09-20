@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-19 14:55:55 d3g096
+# Last Change: 2018-09-20 11:28:46 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -36,12 +36,16 @@ endif()
 add_library(gridpack_powerflow_module
   pf_app_module.cpp
   pf_factory_module.cpp
-)
-target_link_libraries(gridpack_powerflow_module
-  gridpack_pfmatrix_components
-  gridpack_partition
-  gridpack_math
-)
+  )
+
+
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_powerflow_module
+    gridpack_pfmatrix_components
+    gridpack_partition
+    gridpack_math
+    )
+endif()
 
 
 # -------------------------------------------------------------

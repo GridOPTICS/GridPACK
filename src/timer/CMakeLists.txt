@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-19 12:18:43 d3g096
+# Last Change: 2018-09-20 11:18:01 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_timer
@@ -18,9 +18,11 @@ add_library(gridpack_timer
   local_timer.cpp
 )
 
-target_link_libraries(gridpack_timer
-  gridpack_parallel
-)
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_timer
+    gridpack_parallel
+    )
+endif()
 
 set(target_libraries
     gridpack_timer

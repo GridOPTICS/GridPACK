@@ -37,11 +37,14 @@ add_library(gridpack_state_estimation_module
   se_factory_module.cpp
 )
 
-target_link_libraries(gridpack_state_estimation_module
-  gridpack_sematrix_components
-  gridpack_partition
-  gridpack_math
-)
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_state_estimation_module
+    gridpack_sematrix_components
+    gridpack_partition
+    gridpack_math
+    )
+endif()
+
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
