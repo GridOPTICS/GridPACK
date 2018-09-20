@@ -74,17 +74,24 @@ if [ $host == "flophouse" ]; then
     CXX="/usr/bin/g++"
     export CXX
 
+    if [ "$shared"x = "ON"x ]; then
+        parch="linux-gnu48-real-opt-shared"
+    else
+        parch="linux-gnu48-real-opt"
+    fi
+
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
     cmake3 -Wdev --debug-trycompile \
         -D GA_DIR:STRING="$prefix/ga-c++" \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
+        -D GA_DIR:PATH="$prefix/gridpack" \
         -D BOOST_ROOT:STRING="/usr" \
         -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.7.6" \
-        -D PETSC_ARCH:STRING='linux-gnu48-real-opt' \
-        -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
-        -D MPIEXEC:STRING="/usr/lib64/openmpi/bin/mpiexec" \
+        -D PETSC_ARCH:STRING="$parch" \
+        -D MPI_CXX_COMPILER:STRING="mpicxx" \
+        -D MPI_C_COMPILER:STRING="mpicc" \
+        -D MPIEXEC:STRING="mpiexec" \
         -D USE_CPLEX:BOOL=OFF \
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
         -D USE_GLPK:BOOL=ON \
@@ -188,12 +195,12 @@ elif [ $host == "WE32673" ]; then
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="/opt/local" \
         -D PETSC_DIR:PATH="$prefix/petsc-3.8.4" \
-        -D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
+        -D PETSC_ARCH:STRING="arch-macosx-clang-real-opt" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
@@ -256,15 +263,6 @@ elif [ $host == "tlaloc" ]; then
     # in such a way as to be unrecognizable.
 
     prefix="/file0/perksoft"
-    CC="/opt/rh/devtoolset-4/root/usr/bin/gcc"
-    CC="/usr/bin/gcc"
-    export CC
-    CXX="/opt/rh/devtoolset-4/root/usr/bin/g++"
-    CXX="/usr/bin/g++"
-    export CXX
-    CXXFLAGS="-I/usr/include/openmpi-x86_64"
-    LDFLAGS="-L/usr/lib64/openmpi"
-    export CXXFLAGS LDFLAGS
 
     cmake $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
@@ -272,9 +270,9 @@ elif [ $host == "tlaloc" ]; then
           -D USE_PROGRESS_RANKS:BOOL=OFF \
           -D PETSC_DIR:PATH="${prefix}/petsc-3.6.4" \
           -D PETSC_ARCH:STRING="linux-gnu44-real-opt" \
-          -D MPI_CXX_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicxx" \
-          -D MPI_C_COMPILER:STRING="/usr/lib64/openmpi/bin/mpicc" \
-          -D MPIEXEC:STRING="/usr/lib64/openmpi/bin/mpiexec" \
+          -D MPI_CXX_COMPILER:STRING="mpicxx" \
+          -D MPI_C_COMPILER:STRING="mpicc" \
+          -D MPIEXEC:STRING="mpiexec" \
           -D USE_GLPK:BOOL=OFF \
           -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \

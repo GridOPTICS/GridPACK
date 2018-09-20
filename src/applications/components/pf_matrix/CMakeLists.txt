@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2016-10-03 14:25:37 d3g096
+# Last Change: 2018-09-20 11:25:03 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -30,10 +30,11 @@ add_library(gridpack_pfmatrix_components
 # -------------------------------------------------------------
 # component serialization tests
 # -------------------------------------------------------------
-target_link_libraries(gridpack_pfmatrix_components
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_pfmatrix_components
     gridpack_ymatrix_components
-    gridpack_components
-    gridpack_parallel)
+    )
+endif()
 
 # -------------------------------------------------------------
 # installation

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-08 09:48:49 d3g096
+# Last Change: 2018-09-19 14:59:48 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -41,9 +41,11 @@ add_library(powerflow_app2
   pf_factory.cpp
 )
 
-# target_link_libraries(powerflow_app2
-#   ${target_libraries}
-# )
+target_link_libraries(powerflow_app2
+  gridpack_pfmatrix_components
+  gridpack_partition
+  gridpack_math
+)
 
 add_executable(powerflow2
   pf_app2.cpp

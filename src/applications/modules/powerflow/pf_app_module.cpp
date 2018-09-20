@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2015-05-06 12:51:38 d3g096
+ * @date   2018-06-20 11:07:20 d3g096
  * 
  * @brief  
  * 
@@ -301,7 +301,10 @@ bool gridpack::powerflow::PFAppModule::solve()
     solver.solve(*PQ, *X);
     printf("p[%d] completed first solve\n",p_network->communicator().rank());
   } catch (const gridpack::Exception e) {
-    printf("p[%d] hit exception\n",p_network->communicator().rank());
+    std::string w(e.what());
+    printf("p[%d] hit exception: %s\n",
+           p_network->communicator().rank(),
+           w.c_str());
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
     timer->stop(t_total);
@@ -361,7 +364,10 @@ bool gridpack::powerflow::PFAppModule::solve()
       solver.solve(*PQ, *X);
     printf("p[%d] completed solve\n",p_network->communicator().rank());
     } catch (const gridpack::Exception e) {
-    printf("p[%d] hit exception\n",p_network->communicator().rank());
+      std::string w(e.what());
+      printf("p[%d] hit exception: %s\n",
+             p_network->communicator().rank(),
+             w.c_str());
       p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
       timer->stop(t_total);
