@@ -245,11 +245,75 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
 
+
   // Set up task manager on the world communicator. The number of tasks is
   // equal to the number of contingencies
   gridpack::parallel::TaskManager taskmgr(world);
   int ntasks = events.size();
   taskmgr.set(ntasks);
+
+  // Create StatBlock object and add bus IDs to it
+  int nbus = pf_network->totalBuses();
+  gridpack::analysis::StatBlock vmag_stats(world,nbus,ntasks+1);
+  gridpack::analysis::StatBlock vang_stats(world,nbus,ntasks+1);
+  // Get bus voltage information
+  std::vector<std::string> v_vals = pf_app.writeBusString("vr_str");
+  int nsize = v_vals.size();
+  gridpack::utility::StringUtils util;
+  std::vector<int> bus_ids;
+  std::vector<std::string> bus_tags;
+  std::vector<double> vmag;
+  std::vector<double> vang;
+  std::vector<int> mask;
+  int i, j;
+  for (i=0; i<nsize; i++) {
+    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+    bus_ids.push_back(atoi(tokens[0].c_str()));
+    bus_tags.push_back("1 ");
+    vang.push_back(atof(tokens[1].c_str()));
+    vmag.push_back(atof(tokens[2].c_str()));
+    mask.push_back(1);
+  }
+  if (world.rank() == 0) {
+    vmag_stats.addRowLabels(bus_ids, bus_tags);
+    vang_stats.addRowLabels(bus_ids, bus_tags);
+    vmag_stats.addColumnValues(0,vmag,mask);
+    vang_stats.addColumnValues(0,vang,mask);
+  }
+  // Get generator power information
+  v_vals.clear();
+  bus_ids.clear();
+  bus_tags.clear();
+  mask.clear();
+  std::vector<double> pgen;
+  std::vector<double> qgen;
+  v_vals = pf_app.writeBusString("power");
+  nsize = v_vals.size();
+  for (i=0; i<nsize; i++) {
+    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+    if (tokens.size()%4 != 0) {
+      printf("Incorrect generator listing\n");
+      continue;
+    }
+    int ngen = tokens.size()/4;
+    for (j=0; j<ngen; j++) {
+      bus_ids.push_back(atoi(tokens[j*4].c_str()));
+      bus_tags.push_back(tokens[j*4+1]);
+      pgen.push_back(atof(tokens[j*4+2].c_str()));
+      qgen.push_back(atof(tokens[j*4+3].c_str()));
+      mask.push_back(1);
+    }
+  }
+  nsize = pgen.size();
+  gridpack::analysis::StatBlock pgen_stats(world,nsize,ntasks+1);
+  gridpack::analysis::StatBlock qgen_stats(world,nsize,ntasks+1);
+  if (world.rank() == 0) {
+    pgen_stats.addRowLabels(bus_ids, bus_tags);
+    qgen_stats.addRowLabels(bus_ids, bus_tags);
+    pgen_stats.addColumnValues(0,pgen,mask);
+    qgen_stats.addColumnValues(0,qgen,mask);
+  }
+
 
   // Evaluate contingencies using the task manager
   int task_id;
@@ -319,10 +383,41 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       pf_app.print(sbuf);
       pf_app.writeCABranch();
+      vmag.clear();
+      vang.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("vr_str");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        vang.push_back(atof(tokens[1].c_str()));
+        vmag.push_back(atof(tokens[2].c_str()));
+        mask.push_back(1);
+      }
+      if (task_comm.rank() == 0) {
+        vmag_stats.addColumnValues(task_id+1,vmag,mask);
+        vang_stats.addColumnValues(task_id+1,vang,mask);
+      }
     } else {
       sprintf(sbuf,"\nDivergent for contingency %s\n",
           events[task_id].p_name.c_str());
       pf_app.print(sbuf);
+      vmag.clear();
+      vang.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("vr_str");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        vmag.push_back(0.0);
+        vang.push_back(0.0);
+        mask.push_back(0);
+      }
+      if (task_comm.rank() == 0) {
+        vmag_stats.addColumnValues(task_id+1,vmag,mask);
+        vang_stats.addColumnValues(task_id+1,vang,mask);
+      }
     } 
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
@@ -333,6 +428,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // per processor
   taskmgr.printStats();
 
+  // Print out statistics on contingencies
+  vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
+  vang_stats.writeMeanAndRMS("vang.txt",1,false);
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
