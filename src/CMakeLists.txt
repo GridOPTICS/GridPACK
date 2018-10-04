@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2017-12-07 08:53:35 d3g096
+# Last Change: 2018-09-20 12:40:55 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -74,6 +74,9 @@ option(USE_GUROBI
 
 option(USE_GLPK
   "Use GNU linear programming kit optimization software library." OFF)
+
+option(BUILD_SHARED_LIBS
+  "Attempt to build all libraries as shared" OFF)
 
 # -------------------------------------------------------------
 # MPI compiler
@@ -284,6 +287,15 @@ endif()
 # -------------------------------------------------------------
 # Options for all Programs/Libraries
 # -------------------------------------------------------------
+
+set(GRIDPACK_LIB_LINK_LIBRARIES OFF
+  CACHE BOOL "Do we need library link libraries?")
+
+if (BUILD_SHARED_LIBS)
+  if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    set(GRIDPACK_LIB_LINK_LIBRARIES ON)
+  endif()
+endif()
 
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
 set(GRIDPACK_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/applications/data_sets)

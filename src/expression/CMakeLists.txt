@@ -34,8 +34,11 @@ list(APPEND target_libraries
   ${MPI_CXX_LIBRARIES}
 )
 
-# target_link_libraries(gridpack_expression ${target_libraries})
-
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_expression 
+    gridpack_parallel
+    )
+endif()
 
 # -------------------------------------------------------------
 # variable test suite
