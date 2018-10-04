@@ -137,7 +137,7 @@ void stb::addRowLabels(std::vector<int> indices, std::vector<std::string> tags)
   int hi = p_nrows-1;
   int one = 1;
   NGA_Put(p_tags,&lo,&hi,&tagvec[0],&one);
-  }
+}
 
 /**
  * Write out file containing mean value and RMS deviation for values in
@@ -198,10 +198,11 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
               avg2 += val_buf[idx]*val_buf[idx];
             }
           }
-          avg /= ((double)ncnt);
-          if (ncnt > 1) {
-            avg2 /= ((double)(ncnt-1));
+          if (ncnt > 0) {
+            avg /= ((double)ncnt);
+            avg2 /= ((double)ncnt);
           } else {
+            avg = 0.0;
             avg2 = 0.0;
           }
           avg2 = avg2-avg*avg;
@@ -224,4 +225,5 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
     free(val_buf);
     free(mask_buf);
   }
+  GA_Pgroup_sync(p_GAgrp);
 }

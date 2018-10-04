@@ -305,6 +305,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
   nsize = pgen.size();
+  world.sum(&nsize,1);
   gridpack::analysis::StatBlock pgen_stats(world,nsize,ntasks+1);
   gridpack::analysis::StatBlock qgen_stats(world,nsize,ntasks+1);
   if (world.rank() == 0) {
@@ -399,6 +400,29 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         vmag_stats.addColumnValues(task_id+1,vmag,mask);
         vang_stats.addColumnValues(task_id+1,vang,mask);
       }
+      pgen.clear();
+      qgen.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("power");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%4 != 0) {
+          printf("Incorrect generator listing\n");
+          continue;
+        }
+        int ngen = tokens.size()/4;
+        for (j=0; j<ngen; j++) {
+          pgen.push_back(atof(tokens[j*4+2].c_str()));
+          qgen.push_back(atof(tokens[j*4+3].c_str()));
+          mask.push_back(1);
+        }
+      }
+      if (task_comm.rank() == 0) {
+        pgen_stats.addColumnValues(task_id+1,pgen,mask);
+        qgen_stats.addColumnValues(task_id+1,qgen,mask);
+      }
     } else {
       sprintf(sbuf,"\nDivergent for contingency %s\n",
           events[task_id].p_name.c_str());
@@ -418,6 +442,29 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         vmag_stats.addColumnValues(task_id+1,vmag,mask);
         vang_stats.addColumnValues(task_id+1,vang,mask);
       }
+      pgen.clear();
+      qgen.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("power");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%4 != 0) {
+          printf("Incorrect generator listing\n");
+          continue;
+        }
+        int ngen = tokens.size()/4;
+        for (j=0; j<ngen; j++) {
+          pgen.push_back(0.0);
+          qgen.push_back(0.0);
+          mask.push_back(0);
+        }
+      }
+      if (task_comm.rank() == 0) {
+        pgen_stats.addColumnValues(task_id+1,pgen,mask);
+        qgen_stats.addColumnValues(task_id+1,qgen,mask);
+      }
     } 
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
@@ -431,6 +478,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Print out statistics on contingencies
   vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
   vang_stats.writeMeanAndRMS("vang.txt",1,false);
+  pgen_stats.writeMeanAndRMS("pgen.txt",1,false);
+  qgen_stats.writeMeanAndRMS("qgen.txt",1,false);
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
