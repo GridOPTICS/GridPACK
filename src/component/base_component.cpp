@@ -782,6 +782,17 @@ void BaseBranchComponent::clearBuses(void)
   p_bus2.reset();
 }
 
+
+/**
+ * Set global index for branch
+ * @param idx global index of branch
+ */
+void BaseBranchComponent::setGlobalIndex(int idx)
+{
+  p_globalIndex = idx;
+}
+
+
 /**
  * Set original index for bus 1
  * @param idx original index for bus 1 (assigned from input * file)
@@ -852,6 +863,14 @@ int BaseBranchComponent::getBus1GlobalIndex(void) const
 int BaseBranchComponent::getBus2GlobalIndex(void) const
 {
   return p_globalBus2Index;
+}
+
+/**
+ * Get global index for branch
+ */
+int BaseBranchComponent::getGlobalIndex(void) const
+{
+  return p_globalIndex;
 }
 
 }  // component
