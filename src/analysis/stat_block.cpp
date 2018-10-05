@@ -46,6 +46,7 @@ stb::StatBlock(const parallel::Communicator &comm, int nrows, int ncols)
   p_me = comm.rank();
   p_comm = static_cast<MPI_Comm>(comm);
   p_GAgrp = comm.getGroup();
+  p_branch_flag = false;
 
   // Create data and mask arrays
   dims[0] = nrows;
@@ -99,6 +100,7 @@ void stb::addColumnValues(int idx, std::vector<double> vals, std::vector<int> ma
     NGA_Put(p_data,lo,hi,&vals[0],&ld);
     NGA_Put(p_mask,lo,hi,&mask[0],&ld);
   } else {
+    printf("IDX: %d NCOLS: %d\n",idx,p_ncols);
     // TODO: Some kind of error
   }
 }
@@ -113,14 +115,17 @@ void stb::addRowLabels(std::vector<int> indices, std::vector<std::string> tags)
   std::vector<stb::index_set> tagvec;
   gridpack::utility::StringUtils util;
   if (indices.size() != p_nrows) {
+    printf("NROWS: %d indices.size: %d\n",p_nrows,(int)indices.size());
     // TODO: Some kind of error
   }
   if (p_nrows != tags.size()) {
     // TODO: Some kind of error
+    printf("NROWS: %d tags.size: %d\n",p_nrows,(int)tags.size());
   }
   int i;
   for (i=0; i<indices.size(); i++) {
     stb::index_set tag;
+    tag.gidx = i+1;
     tag.idx1 = indices[i];
     std::string ctk;
     if (tags[i].size() > 1) {
@@ -140,11 +145,76 @@ void stb::addRowLabels(std::vector<int> indices, std::vector<std::string> tags)
 }
 
 /**
- * Write out file containing mean value and RMS deviation for values in
- table
+ * Add two branch indices and device tag that can be used to label rows
+ * @param idx1 vector of index 1
+ * @param idx2 vector of index 2
+ * @param tags  vector of character tags
+ */
+void stb::addRowLabels(std::vector<int> idx1, std::vector<int> idx2,
+    std::vector<std::string> tags)
+{
+  p_branch_flag = true;
+  std::vector<stb::index_set> tagvec;
+  gridpack::utility::StringUtils util;
+  if (idx1.size() != p_nrows) {
+    printf("NROWS: %d idx1.size: %d\n",p_nrows,(int)idx1.size());
+    // TODO: Some kind of error
+  }
+  if (idx2.size() != p_nrows) {
+    printf("NROWS: %d idx2.size: %d\n",p_nrows,(int)idx2.size());
+    // TODO: Some kind of error
+  }
+  if (p_nrows != tags.size()) {
+    printf("NROWS: %d tags.size: %d\n",p_nrows,(int)tags.size());
+    // TODO: Some kind of error
+  }
+  int i;
+  for (i=0; i<idx1.size(); i++) {
+    stb::index_set tag;
+    tag.gidx = i+1;
+    tag.idx1 = idx1[i];
+    tag.idx2 = idx2[i];
+    std::string ctk;
+    if (tags[i].size() > 1) {
+      ctk = tags[i].substr(0,2);
+    } else {
+      ctk = tags[i];
+    }
+    util.clean2Char(ctk);
+    strncpy(tag.tag,ctk.c_str(),2);
+    tag.tag[3] = '\0';
+    tagvec.push_back(tag);
+  }
+  if (p_nrows != tags.size()) {
+    // TODO: Some kind of error
+  }
+  for (i=0; i<idx1.size(); i++) {
+    stb::index_set tag;
+    tag.gidx = i+1;
+    tag.idx1 = idx1[i];
+    tag.idx2 = idx2[i];
+    std::string ctk;
+    if (tags[i].size() > 1) {
+      ctk = tags[i].substr(0,2);
+    } else {
+      ctk = tags[i];
+    }
+    util.clean2Char(ctk);
+    strncpy(tag.tag,ctk.c_str(),2);
+    tag.tag[3] = '\0';
+    tagvec.push_back(tag);
+  }
+  int lo = 0;
+  int hi = p_nrows-1;
+  int one = 1;
+  NGA_Put(p_tags,&lo,&hi,&tagvec[0],&one);
+}
+
+/**
+ * Write out file containing mean value and RMS deviation for values in table
  * @param filename name of file containing results
  * @param mval only include values with this mask value
- *             * @param flag if false, do not include tag ids in output
+ * @param flag if false, do not include tag ids in output
  */
 void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
 {
@@ -212,10 +282,21 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
             avg2 = 0.0;
           }
           if (flag) {
-            sprintf(sbuf,"%8i %s %16.8f %16.8f",idx_buf[i].idx1,
-                idx_buf[i].tag,avg,avg2);
+            if (p_branch_flag) {
+              sprintf(sbuf,"%8d %8d %8d %s %16.8f %16.8f",idx_buf[i].gidx,
+                  idx_buf[i].idx1, idx_buf[i].idx2, idx_buf[i].tag, avg, avg2);
+            } else {
+              sprintf(sbuf,"%8d %8d %s %16.8f %16.8f",idx_buf[i].gidx,
+                  idx_buf[i].idx1, idx_buf[i].tag, avg, avg2);
+            }
           } else {
-            sprintf(sbuf,"%8i %16.8f %16.8f",idx_buf[i].idx1,avg,avg2);
+            if (p_branch_flag) {
+              sprintf(sbuf,"%8d %8d %8d %16.8f %16.8f",idx_buf[i].gidx,
+                  idx_buf[i].idx1, idx_buf[i].idx2, avg, avg2);
+            } else {
+              sprintf(sbuf,"%8d %8d %16.8f %16.8f",idx_buf[i].gidx,
+                  idx_buf[i].idx1, avg, avg2);
+            }
           }
           fout << sbuf << std::endl;
         }
