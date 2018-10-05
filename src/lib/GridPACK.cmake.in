@@ -36,6 +36,11 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_ANALYSIS_LIBRARY
+    NAMES gridpack_analysis
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   find_library(GRIDPACK_CONFIGURATION_LIBRARY
     NAMES gridpack_configuration
     HINTS ${GRIDPACK_LIB_DIR}

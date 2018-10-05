@@ -183,7 +183,7 @@ void gridpack::goss::GOSSUtils::openGOSSChannel(gridpack::parallel::Communicator
       message(p_session->createTextMessage(sbuf));
     sprintf(sbuf,"_goss_channel_opened topic: %s %f",topic.c_str(),
         timer->currentTime());
-    printf("%s",sbuf);
+    printf("%s\n",sbuf);
     p_producer->send(message.get());
 #endif
     p_open = true;
@@ -211,7 +211,7 @@ void gridpack::goss::GOSSUtils::closeGOSSChannel(gridpack::parallel::Communicato
     char sbuf[256];
     sprintf(sbuf,"_goss_channel_closed topic: %s %f",p_current_topic.c_str(),
         timer->currentTime());
-    printf("%s",sbuf);
+    printf("%s\n",sbuf);
     std::string acknowledge_topic("topic.goss.gridpack.");
     acknowledge_topic.append(p_current_topic);
     acknowledge_topic.append(".acknowledge");

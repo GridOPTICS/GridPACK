@@ -731,6 +731,16 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       getOriginalIndex(),0.0,0.0);
       */
     }
+  } else if (!strcmp(signal,"vr_str")) {
+    double pi = 4.0*atan(1.0);
+    double angle = p_a*180.0/pi;
+    if (!isIsolated()) {
+      sprintf(string, "     %6d      %12.6f         %12.6f\n",
+            getOriginalIndex(),angle,p_v);
+    } else {
+      sprintf(string, "     %6d      %12.6f         %12.6f\n",
+      getOriginalIndex(),0.0,0.0);
+    }
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;

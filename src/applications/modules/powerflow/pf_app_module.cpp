@@ -541,6 +541,38 @@ void gridpack::powerflow::PFAppModule::writeCABranch()
   timer->stop(t_total);
 }
 
+std::vector<std::string> gridpack::powerflow::PFAppModule::writeBusString(
+    const char *signal)
+{
+  std::vector<std::string> ret;
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  ret = p_busIO->writeStrings(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+  return ret;
+}
+
+std::vector<std::string> gridpack::powerflow::PFAppModule::writeBranchString(
+    const char *signal)
+{
+  std::vector<std::string> ret;
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  ret = p_branchIO->writeStrings(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+  return ret;
+}
+
 void gridpack::powerflow::PFAppModule::writeHeader(const char *msg)
 {
   p_busIO->header(msg);
