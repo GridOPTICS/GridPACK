@@ -10,14 +10,21 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:17:34 d3g096
+# Last Change: 2018-10-09 09:59:20 d3g096
 # -------------------------------------------------------------
 add_library(gridpack_analysis
   stat_block.cpp
 )
 
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_analysis
+    gridpack_parallel
+    )
+endif()
+
 set(target_libraries
-    gridpack_analysis
+  gridpack_analysis
+  gridpack_parallel
     ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
