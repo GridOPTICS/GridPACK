@@ -133,6 +133,8 @@ class BaseFactory {
         gridpack::component::BaseBusComponent *bus2 =
           dynamic_cast<gridpack::component::BaseBusComponent*>
           (p_network->getBranch(i)->getBus2().get());
+        p_network->getBranch(i)->setGlobalIndex(
+            p_network->getGlobalBranchIndex(i));
         p_network->getBranch(i)->setBus1OriginalIndex(
             bus1->getOriginalIndex());
         p_network->getBranch(i)->setBus2OriginalIndex(
