@@ -131,6 +131,8 @@ class PFAppModule
     void writeCABus();
     void writeCABranch();
     void writeHeader(const char *msg);
+    std::vector<std::string> writeBusString(const char *signal = NULL);
+    std::vector<std::string> writeBranchString(const char *signal = NULL);
 
     /**
      * Redirect output from standard out

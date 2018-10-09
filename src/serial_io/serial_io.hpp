@@ -332,6 +332,120 @@ class SerialBusIO {
   }
 #endif
 
+  /**
+   * Write output from buses to a vector of strings
+   * @param signal an optional character string used to control contents of
+   *                output
+   * @return vector of strings containing output strings
+   */
+  std::vector<std::string> writeStrings(const char *signal = NULL)
+  {
+    int nBus = p_network->numBuses();
+    char *string;
+    int nwrites = 0;
+    int i;
+    int one = 1;
+    std::vector<std::string> ret;
+    string = (char*)malloc(p_size*sizeof(char));
+
+    // Count up total strings being written from this processor
+    for (i=0; i<nBus; i++) {
+      if (p_network->getActiveBus(i) &&
+          p_network->getBus(i)->serialWrite(string,p_size,signal)) {
+        nwrites++;
+      }
+    }
+    free(string);
+
+    // Set up buffers to scatter strings to global buffer
+    int *iptr;
+    char *ptr;
+    GA_Zero(p_maskGA);
+    if (nwrites > 0) {
+      std::vector<int*> index(nwrites);
+      std::vector<int> indexbuf(nwrites);
+      iptr = &indexbuf[0];
+      std::vector<int> ones(nwrites);
+      char *strbuf = NULL;
+      if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
+      ptr = strbuf;
+      int ncnt = 0;
+      for (i=0; i<nBus; i++) {
+        if (ncnt >= nwrites) break;
+        if (p_network->getActiveBus(i) &&
+            p_network->getBus(i)->serialWrite(ptr,p_size,signal)) {
+          index[ncnt] = iptr;
+          *(index[ncnt]) = p_network->getGlobalBusIndex(i);
+          ones[ncnt] = 1;
+          ncnt++;
+          ptr += p_size;
+          iptr++;
+        }
+      }
+
+      // Scatter data to global buffer and set mask array
+      if (ncnt > 0) {
+        NGA_Scatter(p_stringGA,strbuf,&index[0],nwrites);
+        NGA_Scatter(p_maskGA,&ones[0],&index[0],nwrites);
+      }
+      if (nwrites*p_size > 0) delete [] strbuf;
+    }
+    GA_Pgroup_sync(p_GAgrp);
+
+    // String data is now stored on global array. Process 0 now retrieves data
+    // from each successive processor and writes it to standard out  
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      int nprocs = GA_Pgroup_nnodes(p_GAgrp);
+      int lo, hi;
+      for (i=0; i<nprocs; i++) {
+        NGA_Distribution(p_maskGA, i, &lo, &hi);
+        int ld = hi - lo + 1;
+        // Figure out how many strings are coming from process i
+        std::vector<int> imask(ld);
+        NGA_Get(p_maskGA,&lo,&hi,&imask[0],&one);
+        int j;
+        nwrites = 0;
+        for (j=0; j<ld; j++) {
+          if (imask[j] == 1) {
+            nwrites++;
+          }
+        }
+        // Create buffers to retrieve strings from process i
+        if (nwrites > 0) {
+          char *iobuf;
+          if (p_size*nwrites > 0) iobuf = new char[p_size*nwrites];
+          std::vector<int*> index(nwrites);
+          std::vector<int> indexbuf(nwrites);
+          iptr = &indexbuf[0];
+          nwrites = 0;
+          for (j=0; j<ld; j++) {
+            if (imask[j] == 1) {
+              index[nwrites] = iptr;
+              *(index[nwrites]) = j + lo;
+              nwrites++;
+              iptr++;
+            }
+          }
+          NGA_Gather(p_stringGA,iobuf,&index[0],nwrites);
+          ptr = iobuf;
+          nwrites = 0;
+          for (j=0; j<ld; j++) {
+            if (imask[j] == 1) {
+              std::string tmp = ptr;
+              ret.push_back(tmp);
+              ptr += p_size;
+              nwrites++;
+            }
+          }
+          if (p_size*nwrites > 0) delete [] iobuf;
+        }
+      }
+    }
+    GA_Pgroup_sync(p_GAgrp);
+    return ret;
+  }
+
+
   protected:
 
   /**
@@ -347,7 +461,6 @@ class SerialBusIO {
     int nwrites = 0;
     int i;
     int one = 1;
-    GA_Zero(p_maskGA);
     string = (char*)malloc(p_size*sizeof(char));
 
     // Count up total strings being written from this processor
@@ -726,6 +839,117 @@ class SerialBranchIO {
     }
     GA_Pgroup_sync(p_GAgrp);
   }
+
+  /**
+   * Write output from branches to a vector of strings
+   * @param signal an optional character string used to control contents of
+   *                output
+   * @return a vector of strings contain output from branches
+   */
+  std::vector<std::string> writeStrings(const char *signal = NULL)
+  {
+    int nBranch = p_network->numBranches();
+    char *string;
+    string = new char[p_size];
+    int nwrites = 0;
+    int i;
+    int one = 1;
+    std::vector<std::string> ret;
+
+    // Count up total strings being written from this processor
+    for (i=0; i<nBranch; i++) {
+      if (p_network->getActiveBranch(i) &&
+          p_network->getBranch(i)->serialWrite(string,p_size,signal)) nwrites++;
+    }
+    delete [] string;
+
+    // Set up buffers to scatter strings to global buffer
+    int *iptr;
+    char *ptr;
+    GA_Zero(p_maskGA);
+    if (nwrites > 0) {
+      std::vector<int*> index(nwrites);
+      std::vector<int> indexbuf(nwrites);
+      iptr = &indexbuf[0];
+      std::vector<int> ones(nwrites);
+      char *strbuf;
+      if (nwrites*p_size > 0) strbuf = new char[nwrites*p_size];
+      ptr = strbuf;
+      int ncnt = 0;
+      for (i=0; i<nBranch; i++) {
+        if (ncnt >= nwrites) break;
+        if (p_network->getActiveBranch(i) &&
+            p_network->getBranch(i)->serialWrite(ptr,p_size,signal)) {
+          index[ncnt] = iptr;
+          *(index[ncnt]) = p_network->getGlobalBranchIndex(i);
+          ones[ncnt] = 1;
+          ncnt++;
+          ptr += p_size;
+          iptr++;
+        }
+      }
+
+      // Scatter data to global buffer and set mask array
+      if (ncnt > 0) {
+        NGA_Scatter(p_stringGA,strbuf,&index[0],nwrites);
+        NGA_Scatter(p_maskGA,&ones[0],&index[0],nwrites);
+      }
+      if (nwrites*p_size > 0) delete [] strbuf;
+    }
+    GA_Pgroup_sync(p_GAgrp);
+
+    // String data is now stored on global array. Process 0 now retrieves data
+    // from each successive processor and writes it to standard out  
+    if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
+      int nprocs = GA_Pgroup_nnodes(p_GAgrp);
+      int lo, hi;
+      for (i=0; i<nprocs; i++) {
+        NGA_Distribution(p_maskGA, i, &lo, &hi);
+        int ld = hi - lo + 1;
+        // Figure out how many strings are coming from process i
+        std::vector<int> imask(ld);
+        NGA_Get(p_maskGA,&lo,&hi,&imask[0],&one);
+        int j;
+        nwrites = 0;
+        for (j=0; j<ld; j++) {
+          if (imask[j] == 1) {
+            nwrites++;
+          }
+        }
+        // Create buffers to retrieve strings from process i
+        if (nwrites > 0) {
+          char *iobuf;
+          if (p_size*nwrites > 0) iobuf = new char[p_size*nwrites];
+          std::vector<int*> index(nwrites);
+          std::vector<int> indexbuf(nwrites);
+          iptr = &indexbuf[0];
+          nwrites = 0;
+          for (j=0; j<ld; j++) {
+            if (imask[j] == 1) {
+              index[nwrites] = iptr;
+              *(index[nwrites]) = j + lo;
+              nwrites++;
+              iptr++;
+            }
+          }
+          NGA_Gather(p_stringGA,iobuf,&index[0],nwrites);
+          ptr = iobuf;
+          nwrites = 0;
+          for (j=0; j<ld; j++) {
+            if (imask[j] == 1) {
+              std::string tmp = ptr;
+              ret.push_back(tmp);
+              ptr += p_size;
+              nwrites++;
+            }
+          }
+          if (p_size*nwrites > 0) delete [] iobuf;
+        }
+      }
+    }
+    GA_Pgroup_sync(p_GAgrp);
+    return ret;
+  }
   protected:
 
   /**
@@ -742,7 +966,6 @@ class SerialBranchIO {
     int nwrites = 0;
     int i;
     int one = 1;
-    GA_Zero(p_maskGA);
 
     // Count up total strings being written from this processor
     for (i=0; i<nBranch; i++) {

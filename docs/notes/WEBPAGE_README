@@ -48,11 +48,11 @@ Doxygen documentation
       htmlroot folder. You may need to get a direct link to this site from
       the sys admins. This corresponds to the internet address
       http://gridpack_api.labworks.org/index.html.
-   5) Remove the contents of the oldVersion folder and then copy the "search"
+   5) Delete the contents of the oldVersion folder and then move the "search"
       directory and all individual files in htmlroot into the oldVersion folder.
-   6) Copy the contents the contents of doc/html from the Doxygen directory that
-      you copied to Windows to the htmlroot folder. The new Doxygen files should
-      now show up when you link to them from the gridpack.org webpage.
+   6) Copy the contents of doc/html from the Doxygen directory that you copied
+      to Windows to the htmlroot folder. The new Doxygen files should now show
+      up when you link to them from the gridpack.org webpage.
 
 Release
    1) Go to https://github.com/GridOPTICS/GridPACK
@@ -79,3 +79,8 @@ Release
        and upload it.
    13) Click "Update release" button. The tarball should now appear in the
        Downloads section.
+   14) Go to the gridpack.org webpage and select the Downloads link. Click on
+       the Edit button and add the link for the new GridPACK tarball. This can
+       constructed using the same pattern for previous versions.
+   15) Go to the GridPACK release notes page. Edit this page to add notes for
+       the current release.

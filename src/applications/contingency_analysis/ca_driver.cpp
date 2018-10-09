@@ -245,11 +245,114 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
   }
 
+
   // Set up task manager on the world communicator. The number of tasks is
   // equal to the number of contingencies
   gridpack::parallel::TaskManager taskmgr(world);
   int ntasks = events.size();
   taskmgr.set(ntasks);
+
+  // Create StatBlock object and add bus IDs to it
+  int nbus = pf_network->totalBuses();
+  gridpack::analysis::StatBlock vmag_stats(world,nbus,ntasks+1);
+  gridpack::analysis::StatBlock vang_stats(world,nbus,ntasks+1);
+  // Get bus voltage information
+  std::vector<std::string> v_vals = pf_app.writeBusString("vr_str");
+  int nsize = v_vals.size();
+  gridpack::utility::StringUtils util;
+  std::vector<int> ids;
+  std::vector<std::string> tags;
+  std::vector<double> vmag;
+  std::vector<double> vang;
+  std::vector<int> mask;
+  int i, j;
+  for (i=0; i<nsize; i++) {
+    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+    ids.push_back(atoi(tokens[0].c_str()));
+    tags.push_back("1 ");
+    vang.push_back(atof(tokens[1].c_str()));
+    vmag.push_back(atof(tokens[2].c_str()));
+    mask.push_back(1);
+  }
+  if (world.rank() == 0) {
+    vmag_stats.addRowLabels(ids, tags);
+    vang_stats.addRowLabels(ids, tags);
+    vmag_stats.addColumnValues(0,vmag,mask);
+    vang_stats.addColumnValues(0,vang,mask);
+  }
+  // Get generator power information
+  v_vals.clear();
+  ids.clear();
+  tags.clear();
+  mask.clear();
+  std::vector<double> pgen;
+  std::vector<double> qgen;
+  v_vals = pf_app.writeBusString("power");
+  nsize = v_vals.size();
+  printf("POWER: V_VALS.SIZE: %d\n",nsize);
+  for (i=0; i<nsize; i++) {
+    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+    if (tokens.size()%4 != 0) {
+      printf("Incorrect generator listing\n");
+      continue;
+    }
+    int ngen = tokens.size()/4;
+    for (j=0; j<ngen; j++) {
+      ids.push_back(atoi(tokens[j*4].c_str()));
+      tags.push_back(tokens[j*4+1]);
+      pgen.push_back(atof(tokens[j*4+2].c_str()));
+      qgen.push_back(atof(tokens[j*4+3].c_str()));
+      mask.push_back(1);
+    }
+  }
+  nsize = pgen.size();
+  world.max(&nsize,1);
+  gridpack::analysis::StatBlock pgen_stats(world,nsize,ntasks+1);
+  gridpack::analysis::StatBlock qgen_stats(world,nsize,ntasks+1);
+  if (world.rank() == 0) {
+    pgen_stats.addRowLabels(ids, tags);
+    qgen_stats.addRowLabels(ids, tags);
+    pgen_stats.addColumnValues(0,pgen,mask);
+    qgen_stats.addColumnValues(0,qgen,mask);
+  }
+
+  v_vals.clear();
+  ids.clear();
+  tags.clear();
+  mask.clear();
+  std::vector<int> id1;
+  std::vector<int> id2;
+  std::vector<double> pflow;
+  std::vector<double> qflow;
+  v_vals = pf_app.writeBranchString();
+  nsize = v_vals.size();
+  for (i=0; i<nsize; i++) {
+    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+    if (tokens.size()%5 != 0) {
+      printf("Incorrect branch power flow listing\n");
+      continue;
+    }
+    int nline = tokens.size()/5;
+    for (j=0; j<nline; j++) {
+      id1.push_back(atoi(tokens[j*5].c_str()));
+      id2.push_back(atoi(tokens[j*5+1].c_str()));
+      tags.push_back(tokens[j*5+2]);
+      pflow.push_back(atof(tokens[j*5+3].c_str()));
+      qflow.push_back(atof(tokens[j*5+4].c_str()));
+      mask.push_back(1);
+    }
+  }
+  nsize = pflow.size();
+  world.max(&nsize,1);
+  gridpack::analysis::StatBlock pflow_stats(world,nsize,ntasks+1);
+  gridpack::analysis::StatBlock qflow_stats(world,nsize,ntasks+1);
+  if (world.rank() == 0) {
+    pflow_stats.addRowLabels(id1, id2, tags);
+    qflow_stats.addRowLabels(id1, id2, tags);
+    pflow_stats.addColumnValues(0,pflow,mask);
+    qflow_stats.addColumnValues(0,qflow,mask);
+  }
+
 
   // Evaluate contingencies using the task manager
   int task_id;
@@ -319,10 +422,133 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       pf_app.print(sbuf);
       pf_app.writeCABranch();
+      vmag.clear();
+      vang.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("vr_str");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        vang.push_back(atof(tokens[1].c_str()));
+        vmag.push_back(atof(tokens[2].c_str()));
+        mask.push_back(1);
+      }
+      if (task_comm.rank() == 0) {
+        vmag_stats.addColumnValues(task_id+1,vmag,mask);
+        vang_stats.addColumnValues(task_id+1,vang,mask);
+      }
+      pgen.clear();
+      qgen.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("power");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%4 != 0) {
+          printf("Incorrect generator listing\n");
+          continue;
+        }
+        int ngen = tokens.size()/4;
+        for (j=0; j<ngen; j++) {
+          pgen.push_back(atof(tokens[j*4+2].c_str()));
+          qgen.push_back(atof(tokens[j*4+3].c_str()));
+          mask.push_back(1);
+        }
+      }
+      if (task_comm.rank() == 0) {
+        pgen_stats.addColumnValues(task_id+1,pgen,mask);
+        qgen_stats.addColumnValues(task_id+1,qgen,mask);
+      }
+      pflow.clear();
+      qflow.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBranchString();
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%5 != 0) {
+          printf("Incorrect branch power flow listing\n");
+          continue;
+        }
+        int nline = tokens.size()/5;
+        for (j=0; j<nline; j++) {
+          pflow.push_back(atof(tokens[j*5+3].c_str()));
+          qflow.push_back(atof(tokens[j*5+4].c_str()));
+          mask.push_back(1);
+        }
+      }
+      if (task_comm.rank() == 0) {
+        pflow_stats.addColumnValues(task_id+1,pflow,mask);
+        qflow_stats.addColumnValues(task_id+1,qflow,mask);
+      }
     } else {
       sprintf(sbuf,"\nDivergent for contingency %s\n",
           events[task_id].p_name.c_str());
       pf_app.print(sbuf);
+      vmag.clear();
+      vang.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("vr_str");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        vmag.push_back(0.0);
+        vang.push_back(0.0);
+        mask.push_back(0);
+      }
+      if (task_comm.rank() == 0) {
+        vmag_stats.addColumnValues(task_id+1,vmag,mask);
+        vang_stats.addColumnValues(task_id+1,vang,mask);
+      }
+      pgen.clear();
+      qgen.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBusString("power");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%4 != 0) {
+          printf("Incorrect generator listing\n");
+          continue;
+        }
+        int ngen = tokens.size()/4;
+        for (j=0; j<ngen; j++) {
+          pgen.push_back(0.0);
+          qgen.push_back(0.0);
+          mask.push_back(0);
+        }
+      }
+      if (task_comm.rank() == 0) {
+        pgen_stats.addColumnValues(task_id+1,pgen,mask);
+        qgen_stats.addColumnValues(task_id+1,qgen,mask);
+      }
+      pflow.clear();
+      qflow.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = pf_app.writeBranchString();
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%5 != 0) {
+          printf("Incorrect branch power flow listing\n");
+          continue;
+        }
+        int nline = tokens.size()/5;
+        for (j=0; j<nline; j++) {
+          pflow.push_back(0.0);
+          qflow.push_back(0.0);
+          mask.push_back(0);
+        }
+      }
+      if (task_comm.rank() == 0) {
+        pflow_stats.addColumnValues(task_id+1,pflow,mask);
+        qflow_stats.addColumnValues(task_id+1,qflow,mask);
+      }
     } 
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
@@ -333,6 +559,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // per processor
   taskmgr.printStats();
 
+  // Print out statistics on contingencies
+  vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
+  vang_stats.writeMeanAndRMS("vang.txt",1,false);
+  pgen_stats.writeMeanAndRMS("pgen.txt",1);
+  qgen_stats.writeMeanAndRMS("qgen.txt",1);
+  pflow_stats.writeMeanAndRMS("pflow.txt",1);
+  qflow_stats.writeMeanAndRMS("qflow.txt",1);
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define

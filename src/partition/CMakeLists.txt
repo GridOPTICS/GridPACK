@@ -9,15 +9,15 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:29:15 d3g096
+# Last Change: 2018-09-27 12:08:57 d3g096
 # -------------------------------------------------------------
 
 
 set(gridpack_partition_sources)
 
 set(target_libraries 
-  gridpack_parallel 
   gridpack_timer
+  gridpack_parallel 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
@@ -74,6 +74,7 @@ add_library(gridpack_partition
 )
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_partition 
+    gridpack_timer
     gridpack_parallel
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY}  
     )

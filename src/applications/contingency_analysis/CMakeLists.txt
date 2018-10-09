@@ -23,6 +23,7 @@ set(target_libraries
     gridpack_configuration
     gridpack_timer
     gridpack_parallel
+    gridpack_analysis
     ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -165,6 +166,6 @@ install(TARGETS ca.x DESTINATION bin)
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-set(TIMEOUT 40.0)
+set(TIMEOUT 120.0)
 gridpack_add_run_test("contingency_analysis" ca.x input_14.xml)
 

@@ -664,6 +664,12 @@ class BaseBranchComponent
     void clearBuses(void);
 
     /**
+     * Set global index for branch
+     * @param idx global index of branch
+     */
+    void setGlobalIndex(int idx);
+
+    /**
      * Set original index for bus 1
      * @param idx original index for bus 1 (assigned from input file)
      */
@@ -711,6 +717,11 @@ class BaseBranchComponent
      */
     int getBus2GlobalIndex(void) const;
 
+    /**
+     * Get global index for branch
+     */
+    int getGlobalIndex(void) const;
+
   private:
     /**
      *  Pointers to buses at either end of branch
@@ -727,6 +738,7 @@ class BaseBranchComponent
     /**
      *  Global indices for bus 1 and bus 2
      */
+    int p_globalIndex;
     int p_globalBus1Index;
     int p_globalBus2Index;
 
