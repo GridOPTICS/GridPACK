@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2016-12-16 09:34:06 d3g096
+ * @date   2018-09-27 14:38:32 d3g096
  * 
  * @brief  
  * 
@@ -124,10 +124,11 @@ public:
     double t0(0.0), t(t0);
     solver.initialize(t0, 0.001, *x);
 
-    for (int i = 1; t < p_maxtime; ++i) {
+    for (int i = 1; t <= p_maxtime; ++i) {
       t = t0 + p_outstep*i;
-      solver.solve(t, p_maxsteps);
-      std::cout << "Time = " << t << std::endl;
+      int mxstep(p_maxsteps);
+      solver.solve(t, mxstep);
+      std::cout << "Time = " << t << ", Steps = " << mxstep << std::endl;
       x->print();
     }
   }
