@@ -75,18 +75,20 @@ if [ $host == "flophouse" ]; then
     export CXX
 
     if [ "$shared"x = "ON"x ]; then
-        parch="linux-gnu48-real-opt-shared"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel7-gnu48-real-opt-shared"
     else
-        parch="linux-gnu48-real-opt"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel7-gnu48-real-opt"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
-    cmake -Wdev --debug-trycompile \
+    cmake3 -Wdev --debug-trycompile \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
         -D GA_DIR:PATH="$prefix/gridpack" \
         -D BOOST_ROOT:STRING="/usr" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.7.6" \
+        -D PETSC_DIR:STRING="$pdir" \
         -D PETSC_ARCH:STRING="$parch" \
         -D MPI_CXX_COMPILER:STRING="mpicxx" \
         -D MPI_C_COMPILER:STRING="mpicc" \
