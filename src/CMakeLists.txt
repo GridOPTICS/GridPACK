@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2018-10-19 11:09:51 d3g096
+# Last Change: 2018-10-19 13:05:37 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -140,9 +140,33 @@ message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 # Find the Boost library. It needs to use the same compiler as
 # MPI. How can I check that?
 # -------------------------------------------------------------
-message(STATUS "Checking Boost ...")
-# set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.49 COMPONENTS mpi serialization random filesystem system REQUIRED)
+
+option(BOOST_BUILD_PYTHON "Include Boost::Python in the Boost build" OFF)
+
+# These are the Boost libraries required here
+  
+set(BOOST_BUILD_LIBS "")
+list(APPEND BOOST_BUILD_LIBS mpi serialization random filesystem system)
+
+if(BUILD_BOOST)
+
+  if(BOOST_BUILD_PYTHON)
+    list(APPEND BOOST_BUILD_LIBS python)
+  endif()
+
+  include(BuildBoostExternalProject)
+  BuildBoostExternalProject("${BOOST_BUILD_LIBS}")
+  add_dependencies(external_build external_boost)
+else(BUILD_BOOST)
+  message(STATUS "Checking Boost ...")
+  find_package(Boost 1.53
+    COMPONENTS ${BOOST_BUILD_LIBS}
+    REQUIRED
+    )
+endif(BUILD_BOOST)
+message(STATUS "Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
+message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
+
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------

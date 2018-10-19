@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 10:15:07 d3g096
+# Last Change: 2018-10-19 13:42:49 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -104,7 +104,7 @@ gridpack_add_run_test(task_test task_test "")
 # -------------------------------------------------------------
 add_executable(mpi_test test/mpi_test.cpp)
 target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-
+add_dependencies(mpi_test external_build)
 gridpack_add_unit_test(mpi_test mpi_test)
 
 # -------------------------------------------------------------

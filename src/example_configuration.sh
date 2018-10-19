@@ -4,9 +4,9 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [-s] [-G} [name]"
+usage="$0 [-d|-r] [-s] [-G} [-B] [name]"
 
-set -- `getopt rdsG $*`
+set -- `getopt rdsGB $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
@@ -15,6 +15,7 @@ fi
 build="RelWithDebInfo"
 shared="FALSE"
 buildGA="FALSE"
+buildBoost="FALSE"
 for o in $*; do
     case $o in
         -d)
@@ -30,6 +31,9 @@ for o in $*; do
             shift
             ;;
         -G) buildGA="ON"
+            shift
+            ;;
+        -B) buildBoost="ON"
             shift
             ;;
         --)
@@ -56,6 +60,7 @@ options="-Wdev --debug-trycompile"
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
         -D BUILD_GA:BOOL=$buildGA \
+        -D BUILD_BOOST:BOOL=$buildBoost \
         -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
