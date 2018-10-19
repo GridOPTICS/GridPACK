@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2018-10-19 09:35:12 d3g096
+# Last Change: 2018-10-19 12:26:10 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -66,7 +66,7 @@ function(BuildGAExternalProject)
   set(GA_FOUND TRUE)
 
   ExternalProject_Get_Property(external_global_arrays INSTALL_DIR)
-  set(GA_DIR ${INSTALL_DIR})
+  set(GA_DIR ${INSTALL_DIR} PARENT_SCOPE)
   message(STATUS "GA_DIR=${GA_DIR}")
 
   set(GA_FOUND TRUE PARENT_SCOPE)
