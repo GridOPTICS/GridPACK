@@ -4,9 +4,9 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [-s] [name]"
+usage="$0 [-d|-r] [-s] [-G} [name]"
 
-set -- `getopt rds $*`
+set -- `getopt rdsG $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
@@ -14,6 +14,7 @@ fi
 
 build="RelWithDebInfo"
 shared="FALSE"
+buildGA="FALSE"
 for o in $*; do
     case $o in
         -d)
@@ -26,6 +27,9 @@ for o in $*; do
             ;;
         -s)
             shared="ON"
+            shift
+            ;;
+        -G) buildGA="ON"
             shift
             ;;
         --)
@@ -51,6 +55,7 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
+        -D BUILD_GA:BOOL=$buildGA \
         -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
@@ -265,7 +270,7 @@ elif [ $host == "tlaloc" ]; then
 
     prefix="/file0/perksoft"
 
-    cmake $options \
+    cmake3 $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
           -D USE_PROGRESS_RANKS:BOOL=OFF \

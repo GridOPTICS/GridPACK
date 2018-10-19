@@ -74,6 +74,8 @@ add_library(gridpack_optimum
   ${expression_src}
 )
 
+add_dependencies(gridpack_optimum external_build)
+
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_optimum 
     gridpack_components

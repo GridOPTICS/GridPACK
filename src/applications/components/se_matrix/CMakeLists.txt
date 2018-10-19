@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:25:37 d3g096
+# Last Change: 2018-10-19 09:42:35 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -28,11 +28,9 @@ add_library(gridpack_sematrix_components
   se_components.cpp
 )
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_sematrix_components
-    gridpack_ymatrix_components
-    )
-endif()
+target_link_libraries(gridpack_sematrix_components
+  gridpack_ymatrix_components
+  )
 
 # -------------------------------------------------------------
 # installation

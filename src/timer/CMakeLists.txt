@@ -10,13 +10,15 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:18:01 d3g096
+# Last Change: 2018-10-19 09:37:19 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_timer
   coarse_timer.cpp
   local_timer.cpp
 )
+
+add_dependencies(gridpack_timer external_build)
 
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_timer

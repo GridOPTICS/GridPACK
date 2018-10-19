@@ -10,11 +10,13 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-09 09:59:20 d3g096
+# Last Change: 2018-10-19 09:37:03 d3g096
 # -------------------------------------------------------------
 add_library(gridpack_analysis
   stat_block.cpp
 )
+
+add_dependencies(gridpack_analysis external_build)
 
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_analysis

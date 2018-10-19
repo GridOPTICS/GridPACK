@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2018-09-20 12:40:55 d3g096
+# Last Change: 2018-10-19 11:09:51 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -77,6 +77,31 @@ option(USE_GLPK
 
 option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
+
+# -------------------------------------------------------------
+# External project settings, generally
+# -------------------------------------------------------------
+
+# A set of common places to put the external projects (if used)
+
+set(DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Downloads)
+set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
+set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libs)
+if(BUILD_SHARED_LIBS)
+  set(LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+  set(LIB_TYPE SHARED)
+else()
+  set(LIB_SUFFIX ${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(LIB_TYPE STATIC)
+endif()
+
+# make a bogus target so that all libraries depend on; external
+# projects are added as dependencies to this target so external
+# libraries are (hopefully) built before any GridPACK code
+
+add_custom_target(external_build
+  COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/external_build.stamp
+  )
 
 # -------------------------------------------------------------
 # MPI compiler
@@ -197,11 +222,21 @@ find_package(ParMETIS REQUIRED)
 
 # -------------------------------------------------------------
 # GlobalArrays
-# 
-# Only versions > 5.2 have been used
+# Build or Find
 # -------------------------------------------------------------
-message(STATUS "Checking GA ...")
-find_package(GA REQUIRED)
+option(BUILD_GA "Download and build Global Arrays" OFF)
+option(GA_INFINIBAND "Try to configure GA for an Infiniband cluster" OFF)
+
+if(BUILD_GA)
+  include(BuildGAExternalProject)
+  BuildGAExternalProject()
+  add_dependencies(external_build external_global_arrays)
+else(BUILD_GA)
+  message(STATUS "Checking GA ...")
+  find_package(GA REQUIRED)
+endif(BUILD_GA)
+message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
+message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")
 
 # -------------------------------------------------------------
 #  Add optimization libraries, if requested

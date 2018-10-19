@@ -10,12 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:19:36 d3g096
+# Last Change: 2018-10-19 09:40:13 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
   configuration.cpp
 )
+
+add_dependencies(gridpack_configuration external_build)
 
 set(target_libraries 
   gridpack_parallel

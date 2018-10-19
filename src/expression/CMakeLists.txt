@@ -27,6 +27,7 @@ set(expression_src
 add_library(gridpack_expression
   ${expression_src}
 )
+add_dependencies(gridpack_expression external_build)
 
 list(APPEND target_libraries
   ${GA_LIBRARIES}
