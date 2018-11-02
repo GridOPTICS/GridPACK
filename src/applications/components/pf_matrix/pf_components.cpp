@@ -390,6 +390,11 @@ void gridpack::powerflow::PFBus::load(
   if (p_type == 3) {
     setReferenceBus(true);
   }
+  if (isIsolated()) {
+    p_original_isolated = true;
+  } else {
+    p_original_isolated = false;
+  }
   data->getValue(BUS_AREA, &p_area);
 
   // if BUS_TYPE = 2, and gstatus is 1, then bus is a PV bus
@@ -734,13 +739,10 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
   } else if (!strcmp(signal,"vr_str")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
-    if (!isIsolated()) {
-      sprintf(string, "     %6d      %12.6f         %12.6f\n",
-            getOriginalIndex(),angle,p_v);
-    } else {
-      sprintf(string, "     %6d      %12.6f         %12.6f\n",
-      getOriginalIndex(),0.0,0.0);
-    }
+    int use_vmag = 1;
+    if (p_isPV || p_original_isolated) use_vmag = 0;
+    sprintf(string, "     %6d      %12.6f         %12.6f       %d\n",
+        getOriginalIndex(),angle,p_v,use_vmag);
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
@@ -1742,7 +1744,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
   if (ok) {
 
 
-  if (signal == NULL) {
+  if (signal == NULL || !strcmp(signal,"flow_str")) {
+    bool rating = !strcmp(signal,"flow_str");
     gridpack::ComplexType s;
     std::vector<std::string> tags = getLineTags();
     int i;
@@ -1755,8 +1758,14 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       if (!p_branch_status[i]) q = 0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
-      sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
-          getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),p,q);
+      if (rating) {
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f\n",
+            getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),p,q,
+            p_rateA[i]);
+      } else {
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
+            getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),p,q);
+      }
       ilen += strlen(buf);
       if (ilen<bufsize) sprintf(string,"%s",buf);
       string += strlen(buf);
