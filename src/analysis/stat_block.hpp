@@ -80,18 +80,51 @@ public:
       std::vector<std::string> tags);
 
   /**
+   * Add the minimum allowed value per row
+   * @param max vector containing minimum value for each row
+   */
+  void addRowMinValue(std::vector<double> min);
+
+  /**
+   * Add the maximum allowed value per row
+   * @param max vector containing maximum value for each row
+   */
+  void addRowMaxValue(std::vector<double> max);
+
+  /**
    * Write out file containing mean value and RMS deviation for values in table
    * @param filename name of file containing results
    * @param mval only include values with this mask value
    * @param flag if false, do not include tag ids in output
    */
   void writeMeanAndRMS(std::string filename, int mval=1, bool flag = true);
+
+  /**
+   * Write out file containing Min an Max values in table for each row
+   * @param filename name of file containing results
+   * @param mval only include values with this mask value or greater
+   * @param flag if false, do not include tag ids in output
+   */
+  void writeMinAndMax(std::string filename, int mval=1, bool flag = true);
+
+  /**
+   * Write out file containing number of mask entries at each row that
+   * correspond to a given value
+   * @param filename name of file containing results
+   * @param mval count number of times this mask value occurs
+   * @param flag if false, do not include tag ids in output
+   */
+  void writeMaskValueCount(std::string filename, int mval, bool flag = true);
 private:
 
   int p_data;
   int p_mask;
   int p_type;
   int p_tags;
+  int p_bounds;
+
+  bool p_max_bound;
+  bool p_min_bound;
   bool p_branch_flag;
    
   int p_nrows;

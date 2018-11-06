@@ -232,8 +232,8 @@ private:
   // flag to track if data has been uploaded
   bool p_uploaded;
 };
+} // namespace parallel
 } // namespace gridpack
-} // namespace utility
 
 #endif
 
