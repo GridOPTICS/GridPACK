@@ -1745,7 +1745,8 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
 
 
   if (signal == NULL || !strcmp(signal,"flow_str")) {
-    bool rating = !strcmp(signal,"flow_str");
+    bool rating = false;
+    if (signal != NULL) rating = !strcmp(signal,"flow_str");
     gridpack::ComplexType s;
     std::vector<std::string> tags = getLineTags();
     int i;
