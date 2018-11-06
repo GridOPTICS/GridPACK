@@ -488,3 +488,85 @@ void stb::writeMinAndMax(std::string filename, int mval, bool flag)
   }
   GA_Pgroup_sync(p_GAgrp);
 }
+
+/**
+ * Write out file containing number of mask entries at each row that
+ * correspond to a given value
+ * @param filename name of file containing results
+ * @param mval count number of times this mask value occurs
+ * @param flag if false, do not include tag ids in output
+ */
+void stb::writeMaskValueCount(std::string filename, int mval, bool flag)
+{
+  GA_Pgroup_sync(p_GAgrp);
+  if (p_me == 0) {
+    int iblock, i, j; 
+    int nblock = p_nrows/BLOCKSIZE+1;
+    std::ofstream fout;
+    fout.open(filename.c_str());
+    // Buffers to hold blocks of data
+    int blocksize;
+    int boundsize;
+    if (BLOCKSIZE > p_nrows) {
+      blocksize = p_nrows*p_ncols;
+    } else {
+      blocksize = BLOCKSIZE*p_ncols;
+    }
+    int *mask_buf = (int*)malloc(blocksize*sizeof(int));
+    index_set *idx_buf = (index_set*)malloc(p_nrows*sizeof(index_set));
+    int jlo = 0;
+    int jhi = p_ncols-1;
+    int lo[2];
+    int hi[2];
+    int ld = p_ncols;
+    char sbuf[256];
+    int one = 1;
+    int two = 2;
+    // write output in blocks
+    for (iblock=0; iblock<nblock; iblock++) {
+      int ilo = iblock*BLOCKSIZE;
+      int ihi = (iblock+1)*BLOCKSIZE-1;
+      if (ihi >= p_nrows) ihi = p_nrows-1;
+      if (ilo<p_nrows) {
+        lo[0] = ilo; 
+        hi[0] = ihi; 
+        lo[1] = jlo; 
+        hi[1] = jhi; 
+        NGA_Get(p_mask,lo,hi,mask_buf,&ld);
+        NGA_Get(p_tags,&ilo,&ihi,idx_buf,&one);
+        int nrows = ihi-ilo+1;
+        int idx;
+        for (i=0; i<nrows; i++) {
+          idx = i*p_ncols;
+          int icnt = 0;
+          for (j=0; j<p_ncols; j++) {
+            idx = i*p_ncols+j;
+            if (mask_buf[idx] == mval) icnt++;
+          }
+          if (flag) {
+            if (p_branch_flag) {
+              sprintf(sbuf,"%8d %8d %8d %s %8d", idx_buf[i].gidx,
+                  idx_buf[i].idx1, idx_buf[i].idx2, idx_buf[i].tag, icnt);
+            } else {
+              sprintf(sbuf,"%8d %8d %s %8d", idx_buf[i].gidx,
+                  idx_buf[i].idx1, idx_buf[i].tag, icnt);
+            }
+          } else {
+            if (p_branch_flag) {
+              sprintf(sbuf,"%8d %8d %8d %8d", idx_buf[i].gidx,
+                  idx_buf[i].idx1, idx_buf[i].idx2, icnt);
+            } else {
+              sprintf(sbuf,"%8d %8d %8d", idx_buf[i].gidx,
+                  idx_buf[i].idx1, icnt);
+            }
+          }
+          fout << sbuf << std::endl;
+        }
+      }
+    }
+    fout.close();
+    free(mask_buf);
+    free(idx_buf);
+  }
+  GA_Pgroup_sync(p_GAgrp);
+}

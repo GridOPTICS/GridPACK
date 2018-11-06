@@ -106,6 +106,15 @@ public:
    * @param flag if false, do not include tag ids in output
    */
   void writeMinAndMax(std::string filename, int mval=1, bool flag = true);
+
+  /**
+   * Write out file containing number of mask entries at each row that
+   * correspond to a given value
+   * @param filename name of file containing results
+   * @param mval count number of times this mask value occurs
+   * @param flag if false, do not include tag ids in output
+   */
+  void writeMaskValueCount(std::string filename, int mval, bool flag = true);
 private:
 
   int p_data;

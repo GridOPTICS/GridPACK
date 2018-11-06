@@ -1761,18 +1761,20 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
       gridpack::ComplexType s = getComplexPower(tags[i]);
       double perf = 0.0;
+      int viol = 0;
       if (p_rateA[i] > 0.0) {
         perf = abs(s)/p_rateA[i];
+        if (perf > 1.0) viol = 1;
         perf = perf*perf;
       }
       if (rating) {
-        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f %12.6f\n",
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f %12.6f %1d\n",
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-            p,q,perf,p_rateA[i]);
+            p,q,perf,p_rateA[i],viol);
       } else {
         sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f\n",
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
-            p,q,perf);
+            p,q);
       }
       ilen += strlen(buf);
       if (ilen<bufsize) sprintf(string,"%s",buf);

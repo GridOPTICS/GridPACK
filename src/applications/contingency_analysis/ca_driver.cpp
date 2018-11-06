@@ -374,21 +374,25 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // base case
   for (i=0; i<nsize; i++) {
     std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-    if (tokens.size()%7 != 0) {
+    if (tokens.size()%8 != 0) {
       printf("Incorrect branch power flow listing\n");
       continue;
     }
-    int nline = tokens.size()/7;
+    int nline = tokens.size()/8;
     for (j=0; j<nline; j++) {
-      id1.push_back(atoi(tokens[j*7].c_str()));
-      id2.push_back(atoi(tokens[j*7+1].c_str()));
-      tags.push_back(tokens[j*7+2]);
-      pflow.push_back(atof(tokens[j*7+3].c_str()));
-      qflow.push_back(atof(tokens[j*7+4].c_str()));
-      perf.push_back(atof(tokens[j*7+5].c_str()));
-      pmin.push_back(-atof(tokens[j*7+6].c_str()));
-      pmax.push_back(atof(tokens[j*7+6].c_str()));
-      mask.push_back(1);
+      id1.push_back(atoi(tokens[j*8].c_str()));
+      id2.push_back(atoi(tokens[j*8+1].c_str()));
+      tags.push_back(tokens[j*8+2]);
+      pflow.push_back(atof(tokens[j*8+3].c_str()));
+      qflow.push_back(atof(tokens[j*8+4].c_str()));
+      perf.push_back(atof(tokens[j*8+5].c_str()));
+      pmin.push_back(-atof(tokens[j*8+6].c_str()));
+      pmax.push_back(atof(tokens[j*8+6].c_str()));
+      if (atoi(tokens[j*8+7].c_str()) == 0) {
+        mask.push_back(1);
+      } else {
+        mask.push_back(2);
+      }
     }
   }
   nsize = pflow.size();
@@ -548,16 +552,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       nsize = v_vals.size();
       for (i=0; i<nsize; i++) {
         std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%7 != 0) {
+        if (tokens.size()%8 != 0) {
           printf("Incorrect branch power flow listing\n");
           continue;
         }
-        int nline = tokens.size()/7;
+        int nline = tokens.size()/8;
         for (j=0; j<nline; j++) {
-          pflow.push_back(atof(tokens[j*7+3].c_str()));
-          qflow.push_back(atof(tokens[j*7+4].c_str()));
-          perf.push_back(atof(tokens[j*7+5].c_str()));
-          mask.push_back(1);
+          pflow.push_back(atof(tokens[j*8+3].c_str()));
+          qflow.push_back(atof(tokens[j*8+4].c_str()));
+          perf.push_back(atof(tokens[j*8+5].c_str()));
+          if (atoi(tokens[j*8+7].c_str()) == 0) {
+            mask.push_back(1);
+          } else {
+            mask.push_back(2);
+          }
         }
       }
       if (task_comm.rank() == 0) {
@@ -626,11 +634,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       nsize = v_vals.size();
       for (i=0; i<nsize; i++) {
         std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%7 != 0) {
+        if (tokens.size()%8 != 0) {
           printf("Incorrect branch power flow listing\n");
           continue;
         }
-        int nline = tokens.size()/7;
+        int nline = tokens.size()/8;
         for (j=0; j<nline; j++) {
           pflow.push_back(0.0);
           qflow.push_back(0.0);
@@ -701,6 +709,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   qgen_stats.writeMinAndMax("qgen_mm.txt",1);
   pflow_stats.writeMeanAndRMS("pflow.txt",1);
   pflow_stats.writeMinAndMax("pflow_mm.txt",1);
+  pflow_stats.writeMaskValueCount("line_flt_cnt.txt",2);
   qflow_stats.writeMeanAndRMS("qflow.txt",1);
   qflow_stats.writeMinAndMax("qflow_mm.txt",1);
   perf_stats.writeMinAndMax("perf_mm.txt",1);
