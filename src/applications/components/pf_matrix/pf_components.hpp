@@ -370,6 +370,7 @@ class PFBus
     int p_nload;
     int p_type;
     int p_area;
+    bool p_original_isolated;
 
     /**
      * Variables that are exchanged between buses
