@@ -305,6 +305,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     mask.push_back(1);
   }
   int nmags = vmag.size();
+  world.max(&nmags,1);
+  world.max(&nbus,1);
   // Create StatBlock objects for voltage magnitude and angles and add
   // bus IDs to it
   gridpack::analysis::StatBlock vmag_stats(world,nmags,ntasks+1);
@@ -326,7 +328,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   std::vector<double> qgen;
   v_vals = pf_app.writeBusString("power");
   nsize = v_vals.size();
-  printf("POWER: V_VALS.SIZE: %d\n",nsize);
   // Find bus IDs and tags for generators and eveluate Pg and Qg for base case
   for (i=0; i<nsize; i++) {
     std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
@@ -653,9 +654,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   taskmgr.printStats();
 
   // Gather stats on successful contingency calculations
-  ca_success.addElements(contingency_idx, contingency_success);
+  if (task_comm.rank() == 0) {
+    ca_success.addElements(contingency_idx, contingency_success);
+    ca_violation.addElements(contingency_idx, contingency_violation);
+  }
   ca_success.upload();
-  ca_violation.addElements(contingency_idx, contingency_violation);
   ca_violation.upload();
   // Write out stats on successful calculations
   if (world.rank() == 0) {
