@@ -713,6 +713,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   qflow_stats.writeMeanAndRMS("qflow.txt",1);
   qflow_stats.writeMinAndMax("qflow_mm.txt",1);
   perf_stats.writeMinAndMax("perf_mm.txt",1);
+  perf_stats.sumColumnValues("perf_sum.txt",1);
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define

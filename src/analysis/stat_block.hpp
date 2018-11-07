@@ -115,6 +115,14 @@ public:
    * @param flag if false, do not include tag ids in output
    */
   void writeMaskValueCount(std::string filename, int mval, bool flag = true);
+
+  /**
+   * Sum up the values in the columns and print the result as a function
+   * of column index
+   * @param filename name of file containing results
+   * @param mval only include values with this mask value or greater
+   */
+  void sumColumnValues(std::string filename, int mval=1);
 private:
 
   int p_data;

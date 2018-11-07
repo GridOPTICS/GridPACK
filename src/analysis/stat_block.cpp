@@ -436,11 +436,19 @@ void stb::writeMinAndMax(std::string filename, int mval, bool flag)
           double base = val_buf[idx];
           double min = val_buf[idx];
           double max = val_buf[idx];
+          int jmin = 0;
+          int jmax = 0;
           for (j=0; j<p_ncols; j++) {
             idx = i*p_ncols+j;
             if (mask_buf[idx] >= mval) {
-              if (val_buf[idx] > max) max = val_buf[idx];
-              if (val_buf[idx] < min) min = val_buf[idx];
+              if (val_buf[idx] > max) {
+                max = val_buf[idx];
+                jmax = j;
+              }
+              if (val_buf[idx] < min) {
+                min = val_buf[idx];
+                jmin = j;
+              }
             }
           }
           if (flag) {
@@ -476,6 +484,9 @@ void stb::writeMinAndMax(std::string filename, int mval, bool flag)
             idx = i*2+1;
             sprintf(ptr," %16.8e",minmax[idx]);
           }
+          len = strlen(sbuf);
+          ptr = sbuf+len;
+          sprintf(ptr," %8d %8d",jmin,jmax);
           fout << sbuf << std::endl;
         }
       }
@@ -567,6 +578,74 @@ void stb::writeMaskValueCount(std::string filename, int mval, bool flag)
     fout.close();
     free(mask_buf);
     free(idx_buf);
+  }
+  GA_Pgroup_sync(p_GAgrp);
+}
+
+/**
+ * Sum up the values in the columns and print the result as a function
+ * of column index
+ * @param filename name of file containing results
+ * @param mval only include values with this mask value or
+ greater
+ */
+void stb::sumColumnValues(std::string filename, int mval)
+{
+  GA_Pgroup_sync(p_GAgrp);
+  if (p_me == 0) {
+    int jblock, i, j; 
+    int nblock = p_ncols/BLOCKSIZE+1;
+    std::ofstream fout;
+    fout.open(filename.c_str());
+    // Buffers to hold blocks of data
+    int blocksize;
+    if (BLOCKSIZE > p_ncols) {
+      blocksize = p_nrows*p_ncols;
+    } else {
+      blocksize = BLOCKSIZE*p_nrows;
+    }
+    double *val_buf = (double*)malloc(blocksize*sizeof(double));
+    int *mask_buf = (int*)malloc(blocksize*sizeof(int));
+    int ilo = 0;
+    int ihi = p_nrows-1;
+    int lo[2];
+    int hi[2];
+    int ld;
+    char sbuf[256];
+    int one = 1;
+    // write output in blocks
+    for (jblock=0; jblock<nblock; jblock++) {
+      int jlo = jblock*BLOCKSIZE;
+      int jhi = (jblock+1)*BLOCKSIZE-1;
+      if (jhi >= p_ncols) jhi = p_ncols-1;
+      if (jlo<p_ncols) {
+        lo[0] = ilo; 
+        hi[0] = ihi; 
+        lo[1] = jlo; 
+        hi[1] = jhi; 
+        ld = jhi-jlo+1;
+        NGA_Get(p_data,lo,hi,val_buf,&ld);
+        NGA_Get(p_mask,lo,hi,mask_buf,&ld);
+        int ncols = jhi-jlo+1;
+        int idx;
+        for (j=0; j<ncols; j++) {
+          double sum = 0.0;
+          for (i=0; i<p_nrows; i++) {
+            idx = i*ld+j;
+            if (mask_buf[idx] >= mval) {
+              sum += val_buf[idx];
+            }
+          }
+          double sum_avg=0.0;
+          if (p_nrows > 0) sum_avg = sum/(static_cast<double>(p_nrows));
+          sprintf(sbuf,"%8d %16.8e %16.8e",j+jlo,sum,sum_avg);
+          fout << sbuf << std::endl;
+        }
+      }
+    }
+    fout.close();
+    free(val_buf);
+    free(mask_buf);
   }
   GA_Pgroup_sync(p_GAgrp);
 }
