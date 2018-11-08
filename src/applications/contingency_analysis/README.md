@@ -1,6 +1,13 @@
 The contingency analysis calculation produces a number of files summarize the
-results of the entire set of individual contingency simulations. These files are
-described below.
+results of the entire set of individual contingency simulations. Only results
+for contingencies that ran to completion are included. Calculations that failed
+either because of a numerical instability or because the calculations failed to
+converge are not included in the results. The output files are described below.
+
+**success.txt**: This file summarizes that results of each contingency and
+reports 1) whether the contingency calculation successfully ran to completion
+and 2) whether a violation was found. If a violation is found, the calculation
+reports on whether it was a on a bus, on a branch, or both.
 
 **vmag.txt**: This file contains the average value of the voltage magnitude for
 non-PV buses. It also contains the RMS fluctuations of the voltage magnitude
@@ -184,3 +191,15 @@ column 2: sum of performance index over all lines
 
 column 3: average value of performance index over all lines
 
+**line\_flt\_cnt.txt**: This file contains the total number of faults found on
+each line for all contingencies.
+
+column 1: row index
+
+column 2: bus ID for "from" bus
+
+column 3: bus ID for "to" bus
+
+column 4: 2 character line ID
+
+column 5: total number of contingencies that result in a fault on this line
