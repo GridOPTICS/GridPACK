@@ -743,6 +743,11 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     if (p_isPV || p_original_isolated) use_vmag = 0;
     sprintf(string, "     %6d      %12.6f         %12.6f       %d\n",
         getOriginalIndex(),angle,p_v,use_vmag);
+  } else if (!strcmp(signal,"vfail_str")) {
+    int use_vmag = 1;
+    if (p_isPV || p_original_isolated) use_vmag = 0;
+    sprintf(string, "     %6d      %12.6f         %12.6f       %d\n",
+        getOriginalIndex(),0.0,0.0,use_vmag);
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
@@ -897,6 +902,26 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       double qval = p_pFac[i]*(p_Qinj+ql/p_sbase);
       sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
             getOriginalIndex(),p_gid[i].c_str(),pval,qval);
+      len = strlen(sbuf);
+      if (slen+len<=bufsize) {
+        sprintf(cptr,"%s",sbuf);
+        slen += len;
+        cptr += len;
+      }
+    }
+    if (slen>0) {
+      return true;
+    } else {
+      return false;
+    }
+  } else if (!strcmp(signal,"pfail_str")) {
+    char sbuf[128];
+    char *cptr = string;
+    int i, len, slen = 0;
+    int ngen=p_pFac.size();
+    for (i=0; i<ngen; i++) {
+      sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
+            getOriginalIndex(),p_gid[i].c_str(),0.0,0.0);
       len = strlen(sbuf);
       if (slen+len<=bufsize) {
         sprintf(cptr,"%s",sbuf);
@@ -1780,6 +1805,19 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       if (ilen<bufsize) sprintf(string,"%s",buf);
       string += strlen(buf);
     } 
+    return true;
+  } else if (!strcmp(signal,"fail_str")) {
+    std::vector<std::string> tags = getLineTags();
+    int i;
+    int ilen = 0;
+    for (i=0; i<p_elems; i++) {
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f %12.6f %1d\n",
+            getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
+            0.0,0.0,0.0,0.0,0);
+      ilen += strlen(buf);
+      if (ilen<bufsize) sprintf(string,"%s",buf);
+      string += strlen(buf);
+    }
     return true;
   } else if (!strcmp(signal,"flow")) {
     gridpack::ComplexType s;
