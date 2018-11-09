@@ -775,6 +775,19 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
   return p_factory->checkLineOverloadViolations(area);
 }
+/**
+ * Check to see if there are any Q limit violations in the network
+ * @param area only check for violations in specified area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkQlimViolations()
+{
+  return p_factory->checkQlimViolations();
+}
+bool gridpack::powerflow::PFAppModule::checkQlimViolations(int area)
+{
+  return p_factory->checkQlimViolations(area);
+}
 
 /**
  * Reset voltages to values in network configuration file

@@ -176,8 +176,7 @@ class PFAppModule
 
     /**
      * Check to see if there are any voltage violations in the network
-     * @param minV maximum voltage limit
-     * @param maxV maximum voltage limit
+     * @param area only check for violations in specified area
      * @return true if no violations found
      */
     bool checkVoltageViolations();
@@ -197,6 +196,7 @@ class PFAppModule
     /**
      * Check to see if there are any line overload violations in
      * the network
+     * @param area only check for violations in specified area
      * @return true if no violations found
      */
     bool checkLineOverloadViolations();
@@ -212,6 +212,14 @@ class PFAppModule
      * Clear "ignore" parameter on all lines
      */
     void clearLineOverloadViolations();
+
+    /**
+     * Check to see if there are any Q limit violations in the network
+     * @param area only check for violations in specified area
+     * @return true if no violations found
+     */
+    bool checkQlimViolations();
+    bool checkQlimViolations(int area);
 
     /**
      * Reset voltages to values in network configuration file
