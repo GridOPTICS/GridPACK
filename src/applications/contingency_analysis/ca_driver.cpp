@@ -282,6 +282,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Get bus voltage information for base case
   int i, j;
 #ifdef USE_STATBLOCK
+  int t_store = timer->createCategory("Store Statistics");
+  timer->start(t_store);
   std::vector<std::string> v_vals = pf_app.writeBusString("vr_str");
   int nsize = v_vals.size();
   std::vector<int> mag_ids;
@@ -431,6 +433,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     pflow_stats.addRowMaxValue(pmax);
     qflow_stats.addRowMaxValue(pmax);
   }
+  timer->stop(t_store);
 #endif
 
 
@@ -526,12 +529,13 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // extract numerical values. Store these values in vectors and then
       // add them to StatBlock objects
 #ifdef USE_STATBLOCK
+      timer->start(t_store);
       vmag.clear();
       vang.clear();
       mask.clear();
       mag_mask.clear();
       v_vals.clear();
-      v_vals = pf_app.writeBusString("vfail_str");
+      v_vals = pf_app.writeBusString("vr_str");
       nsize = v_vals.size();
       for (i=0; i<nsize; i++) {
         std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
@@ -610,6 +614,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         qflow_stats.addColumnValues(task_id+1,qflow,mask);
         perf_stats.addColumnValues(task_id+1,perf,mask);
       }
+      timer->stop(t_store);
 #endif
     } else {
 #ifdef USE_SUCCESS
@@ -622,6 +627,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       // Add dummy values to StatBlock object. Mask value is set to 0 for all
       // network elements to indicate calculation failure
 #ifdef USE_STATBLOCK
+      timer->start(t_store);
       vmag.clear();
       vang.clear();
       mask.clear();
@@ -702,6 +708,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         qflow_stats.addColumnValues(task_id+1,qflow,mask);
         perf_stats.addColumnValues(task_id+1,perf,mask);
       }
+      timer->stop(t_store);
 #endif
     } 
     // Return network to its original base case state
@@ -754,6 +761,8 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   // Print out statistics on contingencies
 #ifdef USE_STATBLOCK
+  int t_stats = timer->createCategory("Write Statistics");
+  timer->start(t_stats);
   vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
   vmag_stats.writeMinAndMax("vmag_mm.txt",1,false);
   vang_stats.writeMeanAndRMS("vang.txt",1,false);
@@ -769,6 +778,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   qflow_stats.writeMinAndMax("qflow_mm.txt",1);
   perf_stats.writeMinAndMax("perf_mm.txt",1);
   perf_stats.sumColumnValues("perf_sum.txt",1);
+  timer->stop(t_stats);
 #endif
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing

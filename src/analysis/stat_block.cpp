@@ -297,7 +297,7 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
       int ilo = iblock*BLOCKSIZE;
       int ihi = (iblock+1)*BLOCKSIZE-1;
       if (ihi >= p_nrows) ihi = p_nrows-1;
-      if (ilo<p_nrows) {
+      if (ilo<=ihi) {
         lo[0] = ilo; 
         hi[0] = ihi; 
         lo[1] = jlo; 
@@ -329,14 +329,18 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
           }
           if (ncnt > 0) {
             avg /= ((double)ncnt);
-            avg2 /= ((double)ncnt);
-            diff2 /= ((double)ncnt);
           } else {
             avg = 0.0;
             avg2 = 0.0;
             diff2 = 0.0;
           }
-          avg2 = avg2-avg*avg;
+          if (ncnt > 1) {
+            avg2 = (avg2-((double)ncnt)*avg*avg)/((double)(ncnt-1));
+            diff2 /= ((double)(ncnt-1));
+          } else {
+            avg2 = 0.0;
+            diff2 = 0.0;
+          }
           if (avg2 > 0.0) {
             avg2 = sqrt(avg2);
           } else {
@@ -418,7 +422,7 @@ void stb::writeMinAndMax(std::string filename, int mval, bool flag)
       int ilo = iblock*BLOCKSIZE;
       int ihi = (iblock+1)*BLOCKSIZE-1;
       if (ihi >= p_nrows) ihi = p_nrows-1;
-      if (ilo<p_nrows) {
+      if (ilo<=ihi) {
         lo[0] = ilo; 
         hi[0] = ihi; 
         lo[1] = jlo; 
@@ -538,7 +542,7 @@ void stb::writeMaskValueCount(std::string filename, int mval, bool flag)
       int ilo = iblock*BLOCKSIZE;
       int ihi = (iblock+1)*BLOCKSIZE-1;
       if (ihi >= p_nrows) ihi = p_nrows-1;
-      if (ilo<p_nrows) {
+      if (ilo<=ihi) {
         lo[0] = ilo; 
         hi[0] = ihi; 
         lo[1] = jlo; 
@@ -618,7 +622,7 @@ void stb::sumColumnValues(std::string filename, int mval)
       int jlo = jblock*BLOCKSIZE;
       int jhi = (jblock+1)*BLOCKSIZE-1;
       if (jhi >= p_ncols) jhi = p_ncols-1;
-      if (jlo<p_ncols) {
+      if (jlo<=jhi) {
         lo[0] = ilo; 
         hi[0] = ihi; 
         lo[1] = jlo; 
