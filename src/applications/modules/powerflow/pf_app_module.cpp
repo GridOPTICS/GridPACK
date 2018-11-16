@@ -297,9 +297,7 @@ bool gridpack::powerflow::PFAppModule::solve()
 //    sprintf(dbgfile,"pq0.bin");
 //    PQ->saveBinary(dbgfile);
   try {
-    printf("p[%d] call first solve\n",p_network->communicator().rank());
     solver.solve(*PQ, *X);
-    printf("p[%d] completed first solve\n",p_network->communicator().rank());
   } catch (const gridpack::Exception e) {
     std::string w(e.what());
     printf("p[%d] hit exception: %s\n",
@@ -360,9 +358,7 @@ bool gridpack::powerflow::PFAppModule::solve()
 //    sprintf(dbgfile,"pq%d.bin",iter+1);
 //    PQ->saveBinary(dbgfile);
     try {
-    printf("p[%d] call solve\n",p_network->communicator().rank());
       solver.solve(*PQ, *X);
-    printf("p[%d] completed solve\n",p_network->communicator().rank());
     } catch (const gridpack::Exception e) {
       std::string w(e.what());
       printf("p[%d] hit exception: %s\n",
@@ -774,6 +770,19 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
 bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
   return p_factory->checkLineOverloadViolations(area);
+}
+/**
+ * Check to see if there are any Q limit violations in the network
+ * @param area only check for violations in specified area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkQlimViolations()
+{
+  return p_factory->checkQlimViolations();
+}
+bool gridpack::powerflow::PFAppModule::checkQlimViolations(int area)
+{
+  return p_factory->checkQlimViolations(area);
 }
 
 /**

@@ -228,13 +228,15 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
 {
   //    printf("p_isPV = %d Gen %d exceeds the QMAX limit %f \n", p_isPV, getOriginalIndex(),(p_Qinj-p_Q0)*p_sbase);
   if (p_isPV) {
-    double qmax, qmin;
+    double qmax, qmin, ppl;
     qmax = 0.0;
     qmin = 0.0;
+    ppl = 0.0;
     for (int i=0; i<p_gstatus.size(); i++) {
       if (p_gstatus[i] == 1) {
         qmax += p_qmax[i];
         qmin += p_qmin[i];
+        ppl  += p_pg[i];
       }
     }
 //    printf(" PV Check: Gen %d =, p_ql = %f, QMAX = %f\n", getOriginalIndex(),p_ql, qmax);
@@ -265,6 +267,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmax);  
       ql = ql+qmax;
       p_isPV = 0;
+      pl += ppl;
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus[i] = 0;
       }
@@ -273,6 +276,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmin);  
       ql = ql+qmin;
       p_isPV = 0;
+      pl += ppl;
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus[i] = 0;
       }
@@ -389,6 +393,11 @@ void gridpack::powerflow::PFBus::load(
   data->getValue(BUS_TYPE, &p_type);
   if (p_type == 3) {
     setReferenceBus(true);
+  }
+  if (isIsolated()) {
+    p_original_isolated = true;
+  } else {
+    p_original_isolated = false;
   }
   data->getValue(BUS_AREA, &p_area);
 
@@ -734,13 +743,15 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
   } else if (!strcmp(signal,"vr_str")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
-    if (!isIsolated()) {
-      sprintf(string, "     %6d      %12.6f         %12.6f\n",
-            getOriginalIndex(),angle,p_v);
-    } else {
-      sprintf(string, "     %6d      %12.6f         %12.6f\n",
-      getOriginalIndex(),0.0,0.0);
-    }
+    int use_vmag = 1;
+    if (p_isPV || p_original_isolated) use_vmag = 0;
+    sprintf(string, "     %6d      %12.6f         %12.6f       %d\n",
+        getOriginalIndex(),angle,p_v,use_vmag);
+  } else if (!strcmp(signal,"vfail_str")) {
+    int use_vmag = 1;
+    if (p_isPV || p_original_isolated) use_vmag = 0;
+    sprintf(string, "     %6d      %12.6f         %12.6f       %d\n",
+        getOriginalIndex(),0.0,0.0,use_vmag);
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
@@ -895,6 +906,26 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       double qval = p_pFac[i]*(p_Qinj+ql/p_sbase);
       sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
             getOriginalIndex(),p_gid[i].c_str(),pval,qval);
+      len = strlen(sbuf);
+      if (slen+len<=bufsize) {
+        sprintf(cptr,"%s",sbuf);
+        slen += len;
+        cptr += len;
+      }
+    }
+    if (slen>0) {
+      return true;
+    } else {
+      return false;
+    }
+  } else if (!strcmp(signal,"pfail_str")) {
+    char sbuf[128];
+    char *cptr = string;
+    int i, len, slen = 0;
+    int ngen=p_pFac.size();
+    for (i=0; i<ngen; i++) {
+      sprintf(sbuf, "     %6d      %s   %12.6f      %12.6f\n",
+            getOriginalIndex(),p_gid[i].c_str(),0.0,0.0);
       len = strlen(sbuf);
       if (slen+len<=bufsize) {
         sprintf(cptr,"%s",sbuf);
@@ -1742,7 +1773,9 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
   if (ok) {
 
 
-  if (signal == NULL) {
+  if (signal == NULL || !strcmp(signal,"flow_str")) {
+    bool rating = false;
+    if (signal != NULL) rating = !strcmp(signal,"flow_str");
     gridpack::ComplexType s;
     std::vector<std::string> tags = getLineTags();
     int i;
@@ -1755,12 +1788,40 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       if (!p_branch_status[i]) q = 0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
-      sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
-          getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),p,q);
+      gridpack::ComplexType s = getComplexPower(tags[i]);
+      double perf = 0.0;
+      int viol = 0;
+      if (p_rateA[i] > 0.0) {
+        perf = abs(s)/p_rateA[i];
+        if (perf > 1.0) viol = 1;
+        perf = perf*perf;
+      }
+      if (rating) {
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f %12.6f %1d\n",
+            getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
+            p,q,perf,p_rateA[i],viol);
+      } else {
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f\n",
+            getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
+            p,q);
+      }
       ilen += strlen(buf);
       if (ilen<bufsize) sprintf(string,"%s",buf);
       string += strlen(buf);
     } 
+    return true;
+  } else if (!strcmp(signal,"fail_str")) {
+    std::vector<std::string> tags = getLineTags();
+    int i;
+    int ilen = 0;
+    for (i=0; i<p_elems; i++) {
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f %12.6f %1d\n",
+            getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
+            0.0,0.0,0.0,0.0,0);
+      ilen += strlen(buf);
+      if (ilen<bufsize) sprintf(string,"%s",buf);
+      string += strlen(buf);
+    }
     return true;
   } else if (!strcmp(signal,"flow")) {
     gridpack::ComplexType s;

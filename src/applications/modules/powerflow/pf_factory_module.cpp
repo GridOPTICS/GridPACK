@@ -463,6 +463,49 @@ void gridpack::powerflow::PFFactoryModule::clearLineOverloadViolations()
 }
 
 /**
+ * Check to see if there are any voltage violations in the network
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkQlimViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      if (!bus->chkQlim()) bus_ok = false;
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @param area only check for voltage violations in this area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkQlimViolations(int area)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      if (bus->getArea() == area) {
+        if (!bus->chkQlim()) bus_ok = false;
+      }
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
  * Reinitialize voltages
  */
 void gridpack::powerflow::PFFactoryModule::resetVoltages()
