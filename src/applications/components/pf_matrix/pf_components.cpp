@@ -228,13 +228,15 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
 {
   //    printf("p_isPV = %d Gen %d exceeds the QMAX limit %f \n", p_isPV, getOriginalIndex(),(p_Qinj-p_Q0)*p_sbase);
   if (p_isPV) {
-    double qmax, qmin;
+    double qmax, qmin, ppl;
     qmax = 0.0;
     qmin = 0.0;
+    ppl = 0.0;
     for (int i=0; i<p_gstatus.size(); i++) {
       if (p_gstatus[i] == 1) {
         qmax += p_qmax[i];
         qmin += p_qmin[i];
+        ppl  += p_pg[i];
       }
     }
 //    printf(" PV Check: Gen %d =, p_ql = %f, QMAX = %f\n", getOriginalIndex(),p_ql, qmax);
@@ -265,6 +267,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmax);  
       ql = ql+qmax;
       p_isPV = 0;
+      pl += ppl;
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus[i] = 0;
       }
@@ -273,6 +276,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmin);  
       ql = ql+qmin;
       p_isPV = 0;
+      pl += ppl;
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus[i] = 0;
       }
