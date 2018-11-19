@@ -669,6 +669,7 @@ bool gridpack::powerflow::PFAppModule::setContingency(
 bool gridpack::powerflow::PFAppModule::unSetContingency(
     gridpack::powerflow::Contingency &event)
 {
+  p_factory->clearLoneBus();
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();
@@ -707,7 +708,6 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
   } else {
     ret = false;
   }
-  p_factory->clearLoneBus();
   return ret;
 }
 

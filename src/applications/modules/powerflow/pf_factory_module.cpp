@@ -171,6 +171,7 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
       sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
       p_saveIsolatedStatus.push_back(bus->isIsolated());
       bus->setIsolated(true);
+      printf("%s",buf);
       if (stream != NULL) *stream << buf;
     }
     if (!ok) bus_ok = false;
@@ -215,6 +216,7 @@ void gridpack::powerflow::PFFactoryModule::clearLoneBus()
       }
     }
     if (!ok) {
+      printf("\nLone bus %d reset\n",bus->getOriginalIndex());
       bus->setIsolated(p_saveIsolatedStatus[ncount]);
       ncount++;
     }
