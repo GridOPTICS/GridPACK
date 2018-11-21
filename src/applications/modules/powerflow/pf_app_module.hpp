@@ -222,6 +222,12 @@ class PFAppModule
     bool checkQlimViolations(int area);
 
     /**
+     * Clear changes that were made for Q limit violations and reset
+     * system to its original state
+     */
+    void clearQlimViolations();
+
+    /**
      * Reset voltages to values in network configuration file
      */
     void resetVoltages();

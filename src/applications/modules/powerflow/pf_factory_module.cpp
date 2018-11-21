@@ -508,6 +508,25 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations(int area)
 }
 
 /**
+ * Clear changes that were made for Q limit violations and reset
+ * system to its original state
+ */
+void gridpack::powerflow::PFFactoryModule::clearQlimViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->clearQlim();
+    }
+  }
+}
+
+/**
  * Reinitialize voltages
  */
 void gridpack::powerflow::PFFactoryModule::resetVoltages()

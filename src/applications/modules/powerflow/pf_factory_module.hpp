@@ -110,6 +110,12 @@ class PFFactoryModule
     bool checkQlimViolations(int area);
 
     /**
+     * Clear changes that were made for Q limit violations and reset
+     * system to its original state
+     */
+    void clearQlimViolations();
+
+    /**
      * Set "ignore" parameter on all buses with violations so that subsequent
      * checks are not counted as violations
      */

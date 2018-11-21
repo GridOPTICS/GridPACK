@@ -786,6 +786,15 @@ bool gridpack::powerflow::PFAppModule::checkQlimViolations(int area)
 }
 
 /**
+ * Clear changes that were made for Q limit violations and reset
+ * system to its original state
+ */
+void gridpack::powerflow::PFAppModule::clearQlimViolations()
+{
+  p_factory->clearQlimViolations();
+}
+
+/**
  * Reset voltages to values in network configuration file
  */
 void gridpack::powerflow::PFAppModule::resetVoltages()

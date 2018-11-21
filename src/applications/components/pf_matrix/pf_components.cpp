@@ -266,18 +266,24 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     if (-Q+ql+p_shunt_bs > qmax ) { 
       printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmax);  
       ql = ql+qmax;
+      p_save2isPV = p_isPV;
       p_isPV = 0;
       pl += ppl;
+      p_gstatus.clear();
       for (int i=0; i<p_gstatus.size(); i++) {
+        p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
       }
       return true;
     } else if (-Q+ql+p_shunt_bs < qmin) {
       printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmin);  
       ql = ql+qmin;
+      p_save2isPV = p_isPV;
       p_isPV = 0;
       pl += ppl;
+      p_gstatus.clear();
       for (int i=0; i<p_gstatus.size(); i++) {
+        p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
       }
       return true;
@@ -290,6 +296,22 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
   }
   return false;
 }
+
+/**
+ * Clear changes that were made for Q limit violations and reset
+ * bus to its original state
+ */
+void gridpack::powerflow::PFBus::clearQlim()
+{
+  int size = p_gstatus_save.size();
+  p_gstatus.clear();
+  int i;
+  for (i=0; i<size; i++) {
+    p_gstatus.push_back(p_gstatus_save[i]);
+  }
+  p_isPV = p_save2isPV;
+}
+
 
 /**
  * Set the internal values of the voltage magnitude and phase angle. Need this
