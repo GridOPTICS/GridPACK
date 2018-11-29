@@ -1828,7 +1828,7 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
             p,q,perf,p_rateA[i],viol);
       } else {
-        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f %12.6f\n",
+        sprintf(buf, "     %6d      %6d     %s   %12.6f         %12.6f\n",
             getBus1OriginalIndex(),getBus2OriginalIndex(),tags[i].c_str(),
             p,q);
       }
