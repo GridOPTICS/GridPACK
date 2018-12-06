@@ -54,6 +54,16 @@ in this data.
 stored values all represent the phase angle at each bus. PV buses are included
 in this data.
 
+**pq\_changed\_cnt.txt** This file is only created if the checkQLimit flag is
+set to "true" in the input file. It counts the number of times a PV bused is
+changed to a PQ bus during the simulation.
+
+column 1: row index
+
+column 2: bus ID
+
+column 3: number of contingencies where PV bus changed to PQ bus
+
 **pgen.txt**: This file contains the average value of the real power for each
 generator in the system. It also contains the RMS deviations of the real power
 fluctuations with respect to the average and also with respect to the base case.

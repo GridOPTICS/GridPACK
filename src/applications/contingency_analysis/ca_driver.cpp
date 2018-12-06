@@ -787,7 +787,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   timer->start(t_stats);
   vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
   vmag_stats.writeMinAndMax("vmag_mm.txt",1,false);
-  if (check_Qlim) vmag_stats.writeMaskValueCount("pq_change_cnt.txt",2);
+  if (check_Qlim) vmag_stats.writeMaskValueCount("pq_change_cnt.txt",2,false);
   vang_stats.writeMeanAndRMS("vang.txt",1,false);
   vang_stats.writeMinAndMax("vang_mm.txt",1,false);
   pgen_stats.writeMeanAndRMS("pgen.txt",1);
