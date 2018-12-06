@@ -44,7 +44,7 @@ column 7: deviation of maximum value from base case
 
 column 8: contingency index of minimum value
 
-column 8: contingency index of maximum value
+column 9: contingency index of maximum value
 
 **vang.txt**: This file has the same structure as vmag.txt, except that the
 stored values all represent the phase angle at each bus. PV buses are included

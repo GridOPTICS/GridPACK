@@ -766,14 +766,17 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;
     int use_vmag = 1;
-    if (p_isPV || p_original_isolated) use_vmag = 0;
-    sprintf(string, "%6d %20.12e %20.12e %d\n",
-        getOriginalIndex(),angle,p_v,use_vmag);
+    if (p_saveisPV || p_original_isolated) use_vmag = 0;
+    int changed = 0;
+    if (p_isPV != p_saveisPV) changed = 1;
+    sprintf(string, "%6d %20.12e %20.12e %d %d\n",
+        getOriginalIndex(),angle,p_v,use_vmag,changed);
   } else if (!strcmp(signal,"vfail_str")) {
     int use_vmag = 1;
-    if (p_isPV || p_original_isolated) use_vmag = 0;
-    sprintf(string, "%6d %20.12e %20.12e %d\n",
-        getOriginalIndex(),0.0,0.0,use_vmag);
+    if (p_saveisPV || p_original_isolated) use_vmag = 0;
+    int changed = 0;
+    sprintf(string, "%6d %20.12e %20.12e %d %d\n",
+        getOriginalIndex(),0.0,0.0,use_vmag,changed);
   } else if (!strcmp(signal,"ca")) {
     double pi = 4.0*atan(1.0);
     double angle = p_a*180.0/pi;

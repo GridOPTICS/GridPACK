@@ -199,6 +199,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   if (!cursor->get("maxVoltage",&Vmax)) {
     Vmax = 1.1;
   }
+  // Check for Q limit violations
+  bool check_Qlim;
+  if (!cursor->get("checkQLimit",&check_Qlim)) {
+    check_Qlim = false;
+  }
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations
@@ -225,6 +230,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
   pf_app.solve();
+  // Check for Qlimit violations
+  if (check_Qlim && !pf_app.checkQlimViolations()) {
+    pf_app.solve();
+  }
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   pf_app.ignoreVoltageViolations();
@@ -304,7 +313,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       mag_ids.push_back(atoi(tokens[0].c_str()));
       mag_tags.push_back("1 ");
       vmag.push_back(atof(tokens[2].c_str()));
-      mag_mask.push_back(1);
+      if (atoi(tokens[4].c_str()) != 0) {
+        mag_mask.push_back(2);
+      } else {
+        mag_mask.push_back(1);
+      }
     }
     ids.push_back(atoi(tokens[0].c_str()));
     tags.push_back("1 ");
@@ -435,6 +448,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   timer->stop(t_store);
 #endif
+  if (check_Qlim) pf_app.clearQlimViolations();
 
 
   // Evaluate contingencies using the task manager
@@ -488,6 +502,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 #ifdef USE_SUCCESS
       contingency_success.push_back(true);
 #endif
+      if (check_Qlim && !pf_app.checkQlimViolations()) {
+        pf_app.solve();
+      }
       // If power flow solution is successful, write out voltages and currents
       if (print_calcs) pf_app.write();
       // Check for violations
@@ -542,7 +559,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         int not_isolated = atoi(tokens[3].c_str());
         if (not_isolated == 1) {
           vmag.push_back(atof(tokens[2].c_str()));
-          mag_mask.push_back(1);
+          if (atoi(tokens[4].c_str()) != 0) {
+            mag_mask.push_back(2);
+          } else {
+            mag_mask.push_back(1);
+          }
         }
         vang.push_back(atof(tokens[1].c_str()));
         mask.push_back(1);
@@ -616,6 +637,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       }
       timer->stop(t_store);
 #endif
+      if (check_Qlim) pf_app.clearQlimViolations();
     } else {
 #ifdef USE_SUCCESS
       contingency_success.push_back(false);
@@ -765,6 +787,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   timer->start(t_stats);
   vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
   vmag_stats.writeMinAndMax("vmag_mm.txt",1,false);
+  if (check_Qlim) vmag_stats.writeMaskValueCount("pq_change_cnt.txt",2);
   vang_stats.writeMeanAndRMS("vang.txt",1,false);
   vang_stats.writeMinAndMax("vang_mm.txt",1,false);
   pgen_stats.writeMeanAndRMS("pgen.txt",1);
