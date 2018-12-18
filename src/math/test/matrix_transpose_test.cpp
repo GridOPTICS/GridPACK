@@ -6,9 +6,9 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   matrix_test.cpp
+ * @file   matrix_transpose_test.cpp
  * @author William A. Perkins
- * @date   2018-12-10 13:42:57 d3g096
+ * @date   2018-12-14 11:51:36 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -30,7 +30,7 @@
 
 #include "test_main.cpp"
 
-static const int local_size(15);
+static const int local_rows(5), local_cols(4);
 static const double delta(0.0001);
 
 #ifdef TEST_REAL
@@ -82,12 +82,17 @@ static const std::string print_prefix =
 // -------------------------------------------------------------
 static TestMatrixType *
 make_test_matrix(const gridpack::parallel::Communicator& comm,
-                 int& global_size)
+                 int& global_rows, int& global_cols)
 {
-  boost::mpi::all_reduce(comm, local_size, global_size, std::plus<int>());
+  int myrows(local_rows);
+  if (comm.rank() == 0) {       // create an imbalance)
+    --myrows;
+  }
+  boost::mpi::all_reduce(comm, local_rows, global_rows, std::plus<int>());
+  boost::mpi::all_reduce(comm, local_cols, global_cols, std::plus<int>());
 
   TestMatrixType *A =
-    new TestMatrixType(comm, local_size, local_size, the_storage_type);
+    new TestMatrixType(comm, local_rows, local_cols, the_storage_type);
   return A;
 }
 
@@ -110,26 +115,38 @@ BOOST_AUTO_TEST_SUITE(MatrixTransposeTest)
 BOOST_AUTO_TEST_CASE( TransposeRandom )
 {
   BOOST_TEST_MESSAGE("Transpose");
-  int global_size;
+  int global_rows, global_cols;
   gridpack::parallel::Communicator world;
   boost::scoped_ptr<TestMatrixType> 
-    A(make_test_matrix(world, global_size));
+    A(make_test_matrix(world, global_rows, global_cols));
 
-  int bandwidth(9);
-  int halfbw(std::max((bandwidth - 1)/2, 0));
-
+  boost::random::uniform_real_distribution<> jdist(0, global_cols - 1);
+  
   int lo, hi;
   A->localRowRange(lo, hi);
- 
+
+#ifdef TEST_DENSE
+  // fill the entire matrix
   for (int i = lo; i < hi; ++i) {
-    int jmin(std::max(i-halfbw, 0)), jmax(std::min(i+halfbw,global_size-1));
-    for (int j = jmin; j <= jmax; ++j) {
+    for (int j = 0; j < global_cols; ++j) {
       TestType x(random_test_value());
       A->setElement(i, j, x);
     }
   }
+#else
+  // fill approximately 25% of the matrix
+  int nentry(global_cols/4 + 1); 
+  for (int i = lo; i < hi; ++i) {
+    for (int e = 0; e < nentry; ++e) {
+      TestType x(random_test_value());
+      int j(jdist(rng));
+      A->setElement(i, j, x);
+    }
+  }
+#endif
   A->ready();
   A->print();
+  A->save("A.m");
 
   boost::scoped_ptr<TestMatrixType> 
     Aloc(A->localClone());
@@ -137,20 +154,29 @@ BOOST_AUTO_TEST_CASE( TransposeRandom )
   boost::scoped_ptr<TestMatrixType> B(gridpack::math::transpose(*A));
 
   B->print();
+  B->save("B.m");
+
+  // check every element of the transpose
+  
   B->localRowRange(lo, hi);
   for (int i = lo; i < hi; ++i) {
-    int jmin(std::max(i-1, 0)), jmax(std::min(i+1,global_size-1));
-    for (int j = jmin; j <= jmax; ++j) {
+    for (int j = 0; j < global_rows; ++j) {
       TestType x, y;
       Aloc->getElement(j, i, x);
       B->getElement(i, j, y);
       TEST_VALUE_CLOSE(x, y, delta);
     }
   }
+
+  // see if the transpose is reversible
+  
+  boost::scoped_ptr<TestMatrixType> C(gridpack::math::transpose(*B));
+  boost::scoped_ptr<TestMatrixType> D(A->clone());
+  D->scale(-1.0);
+  boost::scoped_ptr<TestMatrixType> E(gridpack::math::add(*D, *C));
+
+  BOOST_CHECK_CLOSE(E->norm2(), 0.0, delta);
 }
-
-
-
 
 BOOST_AUTO_TEST_SUITE_END()
 
