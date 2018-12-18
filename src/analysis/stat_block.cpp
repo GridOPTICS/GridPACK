@@ -40,6 +40,7 @@ stb::StatBlock(const parallel::Communicator &comm, int nrows, int ncols)
   int one = 1;
   int two = 2;
   int dims[2];
+  int chunk[2];
   p_min_bound = false;
   p_max_bound = false;
   p_nrows = nrows; 
@@ -53,14 +54,18 @@ stb::StatBlock(const parallel::Communicator &comm, int nrows, int ncols)
   // Create data and mask arrays
   dims[0] = nrows;
   dims[1] = ncols;
+  chunk[0] = nrows;
+  chunk[1] = -1;
 
   p_data = GA_Create_handle();
   GA_Set_data(p_data,two,dims,C_DBL);
+  GA_Set_chunk(p_data,chunk);
   GA_Set_pgroup(p_data,p_GAgrp);
   GA_Allocate(p_data);
 
   p_mask = GA_Create_handle();
   GA_Set_data(p_mask,two,dims,C_INT);
+  GA_Set_chunk(p_mask,chunk);
   GA_Set_pgroup(p_mask,p_GAgrp);
   GA_Allocate(p_mask);
 
