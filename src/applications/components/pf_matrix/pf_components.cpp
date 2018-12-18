@@ -55,6 +55,7 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_ignore = false;
   p_vMag_ptr = NULL;
   p_vAng_ptr = NULL;
+  p_PV_ptr = NULL;
 }
 
 /**
@@ -267,33 +268,38 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmax);  
       ql = ql+qmax;
       p_save2isPV = p_isPV;
-      p_isPV = 0;
+      p_isPV = false;
       pl += ppl;
       p_gstatus.clear();
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
       }
+      if (p_PV_ptr) *p_PV_ptr = p_isPV;
       return true;
     } else if (-Q+ql+p_shunt_bs < qmin) {
       printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmin);  
       ql = ql+qmin;
       p_save2isPV = p_isPV;
-      p_isPV = 0;
+      p_isPV = false;
       pl += ppl;
       p_gstatus.clear();
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
       }
+      if (p_PV_ptr) *p_PV_ptr = p_isPV;
       return true;
     } else {
+      if (p_PV_ptr) *p_PV_ptr = p_isPV;
       return false;
     }
   } else {
     //printf(" PQ Check: bus: %d, p_ql = %f\n", getOriginalIndex(),p_ql);
+    if (p_PV_ptr) *p_PV_ptr = p_isPV;
     return false;
   }
+  if (p_PV_ptr) *p_PV_ptr = p_isPV;
   return false;
 }
 
@@ -310,6 +316,7 @@ void gridpack::powerflow::PFBus::clearQlim()
     p_gstatus.push_back(p_gstatus_save[i]);
   }
   p_isPV = p_save2isPV;
+  if (p_PV_ptr) *p_PV_ptr = p_isPV;
 }
 
 
@@ -359,7 +366,7 @@ void gridpack::powerflow::PFBus::setValues(gridpack::RealType *values)
  */
 int gridpack::powerflow::PFBus::getXCBufSize(void)
 {
-  return 2*sizeof(double);
+  return (2*sizeof(double)+sizeof(bool));
 }
 
 /**
@@ -369,12 +376,16 @@ void gridpack::powerflow::PFBus::setXCBuf(void *buf)
 {
   p_vAng_ptr = static_cast<double*>(buf);
   p_vMag_ptr = p_vAng_ptr+1;
+  void *ptr = static_cast<void*>(p_vMag_ptr+1);
+  p_PV_ptr = static_cast<bool*>(ptr);
   // Note: we are assuming that the load function has been called BEFORE
   // the factory setExchange method, so p_a and p_v are set with their initial
   // values.
   double pi = 4.0*atan(1.0);
   *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
+  *p_PV_ptr = p_isPV;
+  
 }
 
 /**
@@ -394,9 +405,13 @@ void gridpack::powerflow::PFBus::load(
   p_pg.clear();
   p_qg.clear();
   p_pFac.clear();
+  p_pFac_orig.clear();
   p_gstatus.clear();
+  p_gstatus_save.clear();
   p_qmin.clear();
   p_qmax.clear();
+  p_qmin_orig.clear();
+  p_qmax_orig.clear();
   p_gid.clear();
   p_pt.clear();
   p_pb.clear();
@@ -459,6 +474,9 @@ void gridpack::powerflow::PFBus::load(
         p_qmax.push_back(qmax);
         qtot += qmax;
         p_qmin.push_back(qmin);
+        p_pFac_orig.push_back(qmax);
+        p_qmax_orig.push_back(qmax);
+        p_qmin_orig.push_back(qmin);
         p_pt.push_back(pt);
         p_pb.push_back(pb);
         if (gstatus == 1) {
@@ -653,6 +671,15 @@ void gridpack::powerflow::PFBus::setGenStatus(std::string gen_id, bool status)
   for (i=0; i<gsize; i++) {
     if (gen_id == p_gid[i]) {
       p_gstatus[i] = status;
+      if (status == 0) {
+        p_pFac[i] = 0.0;
+        p_qmax[i] = 0.0;
+        p_qmin[i] = 0.0;
+      } else {
+        p_pFac[i] = p_pFac_orig[i];
+        p_qmax[i] = p_qmax_orig[i];
+        p_qmin[i] = p_qmin_orig[i];
+      }
       return;
     }
   }
@@ -666,6 +693,7 @@ void gridpack::powerflow::PFBus::setIsPV(int status)
 {
   p_saveisPV = p_isPV;
   p_isPV = status;
+  if (p_PV_ptr) *p_PV_ptr = status;
   p_v = p_voltage;
 }
 
@@ -675,6 +703,7 @@ void gridpack::powerflow::PFBus::setIsPV(int status)
 void gridpack::powerflow::PFBus::resetIsPV()
 {
   p_isPV = p_saveisPV;
+  if (p_PV_ptr) *p_PV_ptr = p_saveisPV;
 }
 
 /**
@@ -1233,6 +1262,15 @@ int gridpack::powerflow::PFBus::diagonalJacobianValues(double *rvals)
     return 0;
   }
 }
+
+/**
+ * Push p_isPV values from exchange buffer to p_isPV variable
+ */
+void gridpack::powerflow::PFBus::pushIsPV()
+{
+  if (p_PV_ptr) p_isPV = *p_PV_ptr;
+}
+
 
 /**
  * Evaluate RHS values for powerflow equation and return result as

@@ -481,6 +481,15 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations()
       if (!bus->chkQlim()) bus_ok = false;
     }
   }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
   return checkTrue(bus_ok);
 }
 
@@ -504,6 +513,15 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations(int area)
       }
     }
   }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
   return checkTrue(bus_ok);
 }
 
@@ -522,6 +540,15 @@ void gridpack::powerflow::PFFactoryModule::clearQlimViolations()
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
       bus->clearQlim();
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
     }
   }
 }
