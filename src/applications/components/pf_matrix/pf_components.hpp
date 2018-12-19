@@ -318,6 +318,11 @@ class PFBus
     int rhsValues(double *rvals);
 
     /**
+     * Push p_isPV values from exchange buffer to p_isPV variable
+     */
+    void pushIsPV();
+
+    /**
      * Get vector containing generator participation
      * @return vector of generator participation factors
      */
@@ -362,6 +367,7 @@ class PFBus
     std::vector<int> p_gstatus;
     std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
+    std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig;
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
@@ -373,6 +379,7 @@ class PFBus
     double p_Pinj, p_Qinj;
     double p_vmin, p_vmax;
     bool p_isPV, p_saveisPV, p_save2isPV;
+    bool *p_PV_ptr;
     int p_ngen;
     int p_nload;
     int p_type;
@@ -409,7 +416,8 @@ private:
       & p_ybusr & p_ybusi
       & p_P0 & p_Q0
       & p_angle & p_voltage
-      & p_pg & p_qg & p_pFac
+      & p_pg & p_qg & p_pFac & p_qmin & p_qmax
+      & p_qmin_orig & p_qmax_orig & p_pFac_orig
       & p_gstatus
       & p_vs & p_gid
       & p_pt & p_pb
