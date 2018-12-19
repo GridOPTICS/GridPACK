@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-08-14 09:13:54 d3g096
+ * @date   2018-12-19 10:35:37 d3g096
  * 
  * @brief  
  * 
@@ -135,10 +135,18 @@ public:
     Mat mtmp;
     PETScMatrixImplementation *result;
     try {
-      PetscInt grow(global_rows > 0 ? global_rows*elementSize : PETSC_DETERMINE);
-      PetscInt gcol(global_cols > 0 ? global_cols*elementSize : PETSC_DETERMINE);
-      PetscInt lrow(local_rows > 0 ? local_rows*elementSize : PETSC_DECIDE);
-      PetscInt lcol(local_cols > 0 ? local_cols*elementSize : PETSC_DECIDE);
+      PetscInt grow(global_rows > 0 ? global_rows : PETSC_DETERMINE);
+      PetscInt gcol(global_cols > 0 ? global_cols : PETSC_DETERMINE);
+      PetscInt lrow(local_rows > 0 ? local_rows : PETSC_DECIDE);
+      PetscInt lcol(local_cols > 0 ? local_cols : PETSC_DECIDE);
+
+      ierr = PetscSplitOwnership(comm, &lrow, &grow); CHKERRXX(ierr);
+      ierr = PetscSplitOwnership(comm, &lcol, &gcol); CHKERRXX(ierr);
+
+      grow *= elementSize;
+      lrow *= elementSize;
+      gcol *= elementSize;
+      lcol *= elementSize;
 
       ierr = MatCreate(comm, &mtmp); CHKERRXX(ierr);
       ierr = MatSetSizes(mtmp, lrow, lcol, grow, gcol); CHKERRXX(ierr);
