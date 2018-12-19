@@ -8,7 +8,7 @@
 /**
  * @file   matrix_transpose_test.cpp
  * @author William A. Perkins
- * @date   2018-12-14 11:51:36 d3g096
+ * @date   2018-12-18 09:31:40 d3g096
  * 
  * @brief  Unit tests for Matrix
  * 
@@ -30,7 +30,7 @@
 
 #include "test_main.cpp"
 
-static const int local_rows(5), local_cols(4);
+static const int local_rows(5), local_cols(6);
 static const double delta(0.0001);
 
 #ifdef TEST_REAL
@@ -85,14 +85,16 @@ make_test_matrix(const gridpack::parallel::Communicator& comm,
                  int& global_rows, int& global_cols)
 {
   int myrows(local_rows);
+  int mycols(local_cols);
   if (comm.rank() == 0) {       // create an imbalance)
     --myrows;
+    --mycols;
   }
-  boost::mpi::all_reduce(comm, local_rows, global_rows, std::plus<int>());
-  boost::mpi::all_reduce(comm, local_cols, global_cols, std::plus<int>());
+  boost::mpi::all_reduce(comm, myrows, global_rows, std::plus<int>());
+  boost::mpi::all_reduce(comm, mycols, global_cols, std::plus<int>());
 
   TestMatrixType *A =
-    new TestMatrixType(comm, local_rows, local_cols, the_storage_type);
+    new TestMatrixType(comm, myrows, mycols, the_storage_type);
   return A;
 }
 
@@ -168,12 +170,13 @@ BOOST_AUTO_TEST_CASE( TransposeRandom )
     }
   }
 
-  // see if the transpose is reversible
+  // see if the transpose is reversible (transpose of transpose needs
+  // to be distributed the same as A
   
-  boost::scoped_ptr<TestMatrixType> C(gridpack::math::transpose(*B));
-  boost::scoped_ptr<TestMatrixType> D(A->clone());
-  D->scale(-1.0);
-  boost::scoped_ptr<TestMatrixType> E(gridpack::math::add(*D, *C));
+  boost::scoped_ptr<TestMatrixType> C(A->clone());
+  gridpack::math::transpose(*B, *C);
+  C->scale(-1.0);
+  boost::scoped_ptr<TestMatrixType> E(gridpack::math::add(*A, *C));
 
   BOOST_CHECK_CLOSE(E->norm2(), 0.0, delta);
 }
