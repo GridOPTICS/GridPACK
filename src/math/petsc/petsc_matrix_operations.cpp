@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2018-12-19 07:37:50 d3g096
+ * @date   2018-12-20 08:58:26 d3g096
  * 
  * @brief  
  * 
@@ -94,29 +94,29 @@ transpose(const MatrixT<T, I>& A)
     // Doing this is harder with sparse matrix, so let's just handle
     // the dense case (for which we have a actual problem.
 
-    if (!PETScMatrixImplementation<T, I>::useLibrary &&
-        A.storageType() == Dense) {
+    // if (!PETScMatrixImplementation<T, I>::useLibrary &&
+    //     A.storageType() == Dense) {
       
-      PetscInt N;
-      PetscInt n;
+    //   PetscInt N;
+    //   PetscInt n;
       
-      N = A.cols();
-      n = PETSC_DECIDE;
-      ierr = PetscSplitOwnership(A.communicator(), &n, &N);
-      I trows(n);
+    //   N = A.cols();
+    //   n = PETSC_DECIDE;
+    //   ierr = PetscSplitOwnership(A.communicator(), &n, &N);
+    //   I trows(n);
       
-      N = A.rows();
-      n = PETSC_DECIDE;
-      ierr = PetscSplitOwnership(A.communicator(), &n, &N);
-      I tcols(n);
+    //   N = A.rows();
+    //   n = PETSC_DECIDE;
+    //   ierr = PetscSplitOwnership(A.communicator(), &n, &N);
+    //   I tcols(n);
 
-      result = new MatrixT<T, I>(A.communicator(), trows, tcols, A.storageType());
+    //   result = new MatrixT<T, I>(A.communicator(), trows, tcols, A.storageType());
 
-      transpose(A, *result);
+    //   transpose(A, *result);
 
-      return result;
+    //   return result;
 
-    } else {
+    // } else {
 
       Mat pAtrans;
       ierr = MatTranspose(*pA, MAT_INITIAL_MATRIX, &pAtrans); CHKERRXX(ierr);
@@ -124,7 +124,7 @@ transpose(const MatrixT<T, I>& A)
       PETScMatrixImplementation<T, I> *result_impl = 
         new PETScMatrixImplementation<T, I>(pAtrans, true);
       result = new MatrixT<T, I>(result_impl);
-    }
+    // }
   
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
