@@ -54,7 +54,7 @@ stb::StatBlock(const parallel::Communicator &comm, int nrows, int ncols)
   // Create data and mask arrays
   dims[0] = nrows;
   dims[1] = ncols;
-  chunk[0] = nrows;
+  chunk[0] = -1;
   chunk[1] = -1;
 
   p_data = GA_Create_handle();
