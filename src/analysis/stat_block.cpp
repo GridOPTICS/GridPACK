@@ -40,6 +40,7 @@ stb::StatBlock(const parallel::Communicator &comm, int nrows, int ncols)
   int one = 1;
   int two = 2;
   int dims[2];
+  int chunk[2];
   p_min_bound = false;
   p_max_bound = false;
   p_nrows = nrows; 
@@ -53,14 +54,18 @@ stb::StatBlock(const parallel::Communicator &comm, int nrows, int ncols)
   // Create data and mask arrays
   dims[0] = nrows;
   dims[1] = ncols;
+  chunk[0] = -1;
+  chunk[1] = -1;
 
   p_data = GA_Create_handle();
   GA_Set_data(p_data,two,dims,C_DBL);
+  GA_Set_chunk(p_data,chunk);
   GA_Set_pgroup(p_data,p_GAgrp);
   GA_Allocate(p_data);
 
   p_mask = GA_Create_handle();
   GA_Set_data(p_mask,two,dims,C_INT);
+  GA_Set_chunk(p_mask,chunk);
   GA_Set_pgroup(p_mask,p_GAgrp);
   GA_Allocate(p_mask);
 
@@ -270,11 +275,27 @@ void stb::addRowMaxValue(std::vector<double> max)
 void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
 {
   GA_Pgroup_sync(p_GAgrp);
-  if (p_me == 0) {
-    int iblock, i, j; 
-    int nblock = p_nrows/BLOCKSIZE+1;
-    std::ofstream fout;
-    fout.open(filename.c_str());
+  int zero = 0;
+  int one = 1;
+  int two = 2;
+  int g_cnt = GA_Create_handle();
+  NGA_Set_data(g_cnt,one,&one,C_INT);
+  NGA_Allocate(g_cnt);
+  GA_Zero(g_cnt);
+  int nblock = p_nrows/BLOCKSIZE+1;
+  int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+  int dims[2];
+  int g_buf = GA_Create_handle();
+  dims[0] = p_nrows;
+  dims[1] = 3;
+  NGA_Set_data(g_buf,two,dims,C_DBL);
+  NGA_Allocate(g_buf);
+  std::vector<double> vavg, vavg2, vdiff2;
+  int lo[2];
+  int hi[2];
+  int ld;
+  int i, j; 
+  while (itask < nblock) {
     // Buffers to hold blocks of data
     int blocksize;
     if (BLOCKSIZE > p_nrows) {
@@ -284,96 +305,144 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
     }
     double *val_buf = (double*)malloc(blocksize*sizeof(double));
     int *mask_buf = (int*)malloc(blocksize*sizeof(int));
-    index_set *idx_buf = (index_set*)malloc(p_nrows*sizeof(index_set));
     int jlo = 0;
     int jhi = p_ncols-1;
-    int lo[2];
-    int hi[2];
-    int ld = p_ncols;
-    char sbuf[128];
-    int one = 1;
+
     // write output in blocks
-    for (iblock=0; iblock<nblock; iblock++) {
-      int ilo = iblock*BLOCKSIZE;
-      int ihi = (iblock+1)*BLOCKSIZE-1;
-      if (ihi >= p_nrows) ihi = p_nrows-1;
-      if (ilo<p_nrows) {
-        lo[0] = ilo; 
-        hi[0] = ihi; 
-        lo[1] = jlo; 
-        hi[1] = jhi; 
-        NGA_Get(p_data,lo,hi,val_buf,&ld);
-        NGA_Get(p_mask,lo,hi,mask_buf,&ld);
-        NGA_Get(p_tags,&ilo,&ihi,idx_buf,&one);
-        int nrows = ihi-ilo+1;
-        int idx;
-        for (i=0; i<nrows; i++) {
-          idx = i*p_ncols;
-          double base = val_buf[idx];
-          double avg = 0.0;
-          double avg2 = 0.0;
-          double diff;
-          double diff2 = 0.0;
-          int ncnt = 0;
-          for (j=0; j<p_ncols; j++) {
-            idx = i*p_ncols+j;
-            if (mask_buf[idx] >= mval) {
-              ncnt++;
-              avg += val_buf[idx];
-              avg2 += val_buf[idx]*val_buf[idx];
-              if (j>0) {
-                diff = val_buf[idx] - base;
-                diff2 += diff*diff;
-              }
+    int ilo = itask*BLOCKSIZE;
+    int ihi = (itask+1)*BLOCKSIZE-1;
+    if (ihi >= p_nrows) ihi = p_nrows-1;
+    if (ilo<=ihi) {
+      lo[0] = ilo; 
+      hi[0] = ihi; 
+      lo[1] = jlo; 
+      hi[1] = jhi; 
+      ld = p_ncols;
+      NGA_Get(p_data,lo,hi,val_buf,&ld);
+      NGA_Get(p_mask,lo,hi,mask_buf,&ld);
+      int nrows = ihi-ilo+1;
+      int idx;
+      vavg.clear();
+      vavg2.clear();
+      vdiff2.clear();
+      for (i=0; i<nrows; i++) {
+        idx = i*p_ncols;
+        double base = val_buf[idx];
+        double avg = 0.0;
+        double avg2 = 0.0;
+        double diff;
+        double diff2 = 0.0;
+        int ncnt = 0;
+        for (j=0; j<p_ncols; j++) {
+          idx = i*p_ncols+j;
+          if (mask_buf[idx] >= mval) {
+            ncnt++;
+            avg += val_buf[idx];
+            avg2 += val_buf[idx]*val_buf[idx];
+            if (j>0) {
+              diff = val_buf[idx] - base;
+              diff2 += diff*diff;
             }
           }
-          if (ncnt > 0) {
-            avg /= ((double)ncnt);
-            avg2 /= ((double)ncnt);
-            diff2 /= ((double)ncnt);
-          } else {
-            avg = 0.0;
-            avg2 = 0.0;
-            diff2 = 0.0;
-          }
-          avg2 = avg2-avg*avg;
-          if (avg2 > 0.0) {
-            avg2 = sqrt(avg2);
-          } else {
-            avg2 = 0.0;
-          }
-          if (diff2 > 0.0) {
-            diff2 = sqrt(diff2);
-          } else {
-            diff2 = 0.0;
-          }
-          if (flag) {
-            if (p_branch_flag) {
-              sprintf(sbuf,"%8d %8d %8d %s %16.8e %16.8e %16.8e",idx_buf[i].gidx,
-                  idx_buf[i].idx1, idx_buf[i].idx2, idx_buf[i].tag, avg, avg2,
-                  diff2);
-            } else {
-              sprintf(sbuf,"%8d %8d %s %16.8e %16.8e %16.8e",idx_buf[i].gidx,
-                  idx_buf[i].idx1, idx_buf[i].tag, avg, avg2, diff2);
-            }
-          } else {
-            if (p_branch_flag) {
-              sprintf(sbuf,"%8d %8d %8d %16.8e %16.8e %16.8e",idx_buf[i].gidx,
-                  idx_buf[i].idx1, idx_buf[i].idx2, avg, avg2, diff2);
-            } else {
-              sprintf(sbuf,"%8d %8d %16.8e %16.8e %16.8e",idx_buf[i].gidx,
-                  idx_buf[i].idx1, avg, avg2, diff2);
-            }
-          }
-          fout << sbuf << std::endl;
+        }
+        if (ncnt > 0) {
+          avg /= ((double)ncnt);
+        } else {
+          avg = 0.0;
+          avg2 = 0.0;
+          diff2 = 0.0;
+        }
+        if (ncnt > 1) {
+          avg2 = (avg2-((double)ncnt)*avg*avg)/((double)(ncnt-1));
+          diff2 /= ((double)(ncnt-1));
+        } else {
+          avg2 = 0.0;
+          diff2 = 0.0;
+        }
+        if (avg2 > 0.0) {
+          avg2 = sqrt(avg2);
+        } else {
+          avg2 = 0.0;
+        }
+        if (diff2 > 0.0) {
+          diff2 = sqrt(diff2);
+        } else {
+          diff2 = 0.0;
+        }
+        vavg.push_back(avg);
+        vavg2.push_back(avg2);
+        vdiff2.push_back(diff2);
+
+      }
+      // push all results to g_buf
+      lo[0] = ilo;
+      hi[0] = ihi;
+      lo[1] = 0;
+      hi[1] = 0;
+      ld = 1;
+      NGA_Put(g_buf,lo,hi,&vavg[0],&ld);
+      lo[1] = 1;
+      hi[1] = 1;
+      NGA_Put(g_buf,lo,hi,&vavg2[0],&ld);
+      lo[1] = 2;
+      hi[1] = 2;
+      NGA_Put(g_buf,lo,hi,&vdiff2[0],&ld);
+    }
+    free(val_buf);
+    free(mask_buf);
+    itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+  }
+  GA_Pgroup_sync(p_GAgrp);
+  // Get data from g_buf and write it to external file
+  if (p_me == 0) {
+    int ilo = 0;
+    int ihi = p_nrows-1;
+    char sbuf[128];
+    index_set *idx_buf = (index_set*)malloc(p_nrows*sizeof(index_set));
+    NGA_Get(p_tags,&ilo,&ihi,idx_buf,&one);
+    lo[0] = ilo;
+    hi[0] = ihi;
+    lo[1] = 0;
+    hi[1] = 0;
+    ld = 1;
+    vavg.resize(p_nrows);
+    vavg2.resize(p_nrows);
+    vdiff2.resize(p_nrows);
+    NGA_Get(g_buf,lo,hi,&vavg[0],&one);
+    lo[1] = 1;
+    hi[1] = 1;
+    NGA_Get(g_buf,lo,hi,&vavg2[0],&one);
+    lo[1] = 2;
+    hi[1] = 2;
+    NGA_Get(g_buf,lo,hi,&vdiff2[0],&one);
+    std::ofstream fout;
+    fout.open(filename.c_str());
+    for (i=0; i<p_nrows; i++) {
+      if (flag) {
+        if (p_branch_flag) {
+          sprintf(sbuf,"%8d %8d %8d %s %16.8e %16.8e %16.8e",idx_buf[i].gidx,
+              idx_buf[i].idx1, idx_buf[i].idx2, idx_buf[i].tag, vavg[i], vavg2[i],
+              vdiff2[i]);
+        } else {
+          sprintf(sbuf,"%8d %8d %s %16.8e %16.8e %16.8e",idx_buf[i].gidx,
+              idx_buf[i].idx1, idx_buf[i].tag, vavg[i], vavg2[i], vdiff2[i]);
+        }
+      } else {
+        if (p_branch_flag) {
+          sprintf(sbuf,"%8d %8d %8d %16.8e %16.8e %16.8e",idx_buf[i].gidx,
+              idx_buf[i].idx1, idx_buf[i].idx2, vavg[i], vavg2[i], vdiff2[i]);
+        } else {
+          sprintf(sbuf,"%8d %8d %16.8e %16.8e %16.8e",idx_buf[i].gidx,
+              idx_buf[i].idx1, vavg[i], vavg2[i], vdiff2[i]);
         }
       }
+      fout << sbuf << std::endl;
     }
     fout.close();
-    free(val_buf);
     free(idx_buf);
-    free(mask_buf);
   }
+  GA_Destroy(g_cnt);
+  GA_Destroy(g_buf);
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -386,106 +455,194 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
 void stb::writeMinAndMax(std::string filename, int mval, bool flag)
 {
   GA_Pgroup_sync(p_GAgrp);
-  if (p_me == 0) {
-    int iblock, i, j; 
-    int nblock = p_nrows/BLOCKSIZE+1;
-    std::ofstream fout;
-    fout.open(filename.c_str());
+  int zero = 0;
+  int one = 1;
+  int two = 2;
+  int g_cnt = GA_Create_handle();
+  NGA_Set_data(g_cnt,one,&one,C_INT);
+  NGA_Allocate(g_cnt);
+  GA_Zero(g_cnt);
+  int nblock = p_nrows/BLOCKSIZE+1;
+  int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+  int dims[2];
+  int g_buf = GA_Create_handle();
+  dims[0] = p_nrows;
+  dims[1] = 5;
+  NGA_Set_data(g_buf,two,dims,C_DBL);
+  NGA_Allocate(g_buf);
+  std::vector<double> vbase, vmin, vmax;
+  std::vector<double> idxmin, idxmax;
+  int lo[2];
+  int hi[2];
+  int ld;
+  int i, j; 
+  while (itask < nblock) {
     // Buffers to hold blocks of data
     int blocksize;
-    int boundsize;
     if (BLOCKSIZE > p_nrows) {
       blocksize = p_nrows*p_ncols;
-      boundsize = p_nrows*2;
     } else {
       blocksize = BLOCKSIZE*p_ncols;
-      boundsize = BLOCKSIZE*2;
     }
     double *val_buf = (double*)malloc(blocksize*sizeof(double));
     int *mask_buf = (int*)malloc(blocksize*sizeof(int));
-    index_set *idx_buf = (index_set*)malloc(p_nrows*sizeof(index_set));
-    double *minmax = (double*)malloc(boundsize*sizeof(double));
     int jlo = 0;
     int jhi = p_ncols-1;
-    int lo[2];
-    int hi[2];
-    int ld = p_ncols;
-    char sbuf[256];
-    int one = 1;
-    int two = 2;
+
     // write output in blocks
-    for (iblock=0; iblock<nblock; iblock++) {
-      int ilo = iblock*BLOCKSIZE;
-      int ihi = (iblock+1)*BLOCKSIZE-1;
-      if (ihi >= p_nrows) ihi = p_nrows-1;
-      if (ilo<p_nrows) {
-        lo[0] = ilo; 
-        hi[0] = ihi; 
-        lo[1] = jlo; 
-        hi[1] = jhi; 
-        NGA_Get(p_data,lo,hi,val_buf,&ld);
-        NGA_Get(p_mask,lo,hi,mask_buf,&ld);
-        NGA_Get(p_tags,&ilo,&ihi,idx_buf,&one);
-        lo[1] = 0;
-        hi[1] = 1;
-        NGA_Get(p_bounds,lo,hi,minmax,&two);
-        int nrows = ihi-ilo+1;
-        int idx;
-        for (i=0; i<nrows; i++) {
-          idx = i*p_ncols;
-          double base = val_buf[idx];
-          double min = val_buf[idx];
-          double max = val_buf[idx];
-          for (j=0; j<p_ncols; j++) {
-            idx = i*p_ncols+j;
-            if (mask_buf[idx] >= mval) {
-              if (val_buf[idx] > max) max = val_buf[idx];
-              if (val_buf[idx] < min) min = val_buf[idx];
+    int ilo = itask*BLOCKSIZE;
+    int ihi = (itask+1)*BLOCKSIZE-1;
+    if (ihi >= p_nrows) ihi = p_nrows-1;
+    if (ilo<=ihi) {
+      lo[0] = ilo; 
+      hi[0] = ihi; 
+      lo[1] = jlo; 
+      hi[1] = jhi; 
+      ld = p_ncols;
+      NGA_Get(p_data,lo,hi,val_buf,&ld);
+      NGA_Get(p_mask,lo,hi,mask_buf,&ld);
+      int nrows = ihi-ilo+1;
+      int idx;
+      vbase.clear();
+      vmin.clear();
+      vmax.clear();
+      idxmin.clear();
+      idxmax.clear();
+      for (i=0; i<nrows; i++) {
+        idx = i*p_ncols;
+        double base = val_buf[idx];
+        double min = val_buf[idx];
+        double max = val_buf[idx];
+        int jmin = 0;
+        int jmax = 0;
+        for (j=0; j<p_ncols; j++) {
+          idx = i*p_ncols+j;
+          if (mask_buf[idx] >= mval) {
+            if (val_buf[idx] > max) {
+              max = val_buf[idx];
+              jmax = j;
+            }
+            if (val_buf[idx] < min) {
+              min = val_buf[idx];
+              jmin = j;
             }
           }
-          if (flag) {
-            if (p_branch_flag) {
-              sprintf(sbuf,"%8d %8d %8d %s %16.8e %16.8e %16.8e %16.8e %16.8e",
-                  idx_buf[i].gidx, idx_buf[i].idx1, idx_buf[i].idx2,
-                  idx_buf[i].tag, base, min, max, min-base, max-base);
-            } else {
-              sprintf(sbuf,"%8d %8d %s %16.8e %16.8e %16.8e %16.8e %16.8e",
-                  idx_buf[i].gidx, idx_buf[i].idx1, idx_buf[i].tag,
-                  base, min, max, min-base, max-base);
-            }
-          } else {
-            if (p_branch_flag) {
-              sprintf(sbuf,"%8d %8d %8d %16.8e %16.8e %16.8e %16.8e %16.8e",
-                  idx_buf[i].gidx, idx_buf[i].idx1, idx_buf[i].idx2,
-                  base, min, max, min-base, max-base);
-            } else {
-              sprintf(sbuf,"%8d %8d %16.8e %16.8e %16.8e %16.8e %16.8e",
-                  idx_buf[i].gidx, idx_buf[i].idx1,
-                  base, min, max, min-base, max-base);
-            }
-          }
-          int len = strlen(sbuf);
-          char *ptr = sbuf+len;
-          if (p_min_bound) {
-            idx = i*2;
-            sprintf(ptr," %16.8e",minmax[idx]);
-          }
-          len = strlen(sbuf);
-          ptr = sbuf+len;
-          if (p_max_bound) {
-            idx = i*2+1;
-            sprintf(ptr," %16.8e",minmax[idx]);
-          }
-          fout << sbuf << std::endl;
         }
+        vbase.push_back(base);
+        vmin.push_back(min);
+        vmax.push_back(max);
+        idxmin.push_back(static_cast<double>(jmin));
+        idxmax.push_back(static_cast<double>(jmax));
       }
+      // push all results to g_buf
+      lo[0] = ilo;
+      hi[0] = ihi;
+      lo[1] = 0;
+      hi[1] = 0;
+      ld = 1;
+      NGA_Put(g_buf,lo,hi,&vbase[0],&ld);
+      lo[1] = 1;
+      hi[1] = 1;
+      NGA_Put(g_buf,lo,hi,&vmin[0],&ld);
+      lo[1] = 2;
+      hi[1] = 2;
+      NGA_Put(g_buf,lo,hi,&vmax[0],&ld);
+      lo[1] = 3;
+      hi[1] = 3;
+      NGA_Put(g_buf,lo,hi,&idxmin[0],&ld);
+      lo[1] = 4;
+      hi[1] = 4;
+      NGA_Put(g_buf,lo,hi,&idxmax[0],&ld);
     }
-    fout.close();
     free(val_buf);
     free(mask_buf);
-    free(idx_buf);
-    free(minmax);
+    itask = NGA_Read_inc(g_cnt,&zero,(long)one);
   }
+  GA_Pgroup_sync(p_GAgrp);
+  // Get data from g_buf and write it to external file
+  if (p_me == 0) {
+    int ilo = 0;
+    int ihi = p_nrows-1;
+    char sbuf[256];
+    index_set *idx_buf = (index_set*)malloc(p_nrows*sizeof(index_set));
+    double *minmax = (double*)malloc(2*p_nrows*sizeof(double));
+    NGA_Get(p_tags,&ilo,&ihi,idx_buf,&one);
+    lo[0] = ilo;
+    hi[0] = ihi;
+    lo[1] = 0;
+    hi[1] = 0;
+    ld = 1;
+    vbase.resize(p_nrows);
+    vmin.resize(p_nrows);
+    vmax.resize(p_nrows);
+    idxmin.resize(p_nrows);
+    idxmax.resize(p_nrows);
+    NGA_Get(g_buf,lo,hi,&vbase[0],&one);
+    lo[1] = 1;
+    hi[1] = 1;
+    NGA_Get(g_buf,lo,hi,&vmin[0],&one);
+    lo[1] = 2;
+    hi[1] = 2;
+    NGA_Get(g_buf,lo,hi,&vmax[0],&one);
+    lo[1] = 3;
+    hi[1] = 3;
+    NGA_Get(g_buf,lo,hi,&idxmin[0],&one);
+    lo[1] = 4;
+    hi[1] = 4;
+    NGA_Get(g_buf,lo,hi,&idxmax[0],&one);
+    lo[1] = 0;
+    hi[1] = 1;
+    NGA_Get(p_bounds,lo,hi,minmax,&two);
+    std::ofstream fout;
+    fout.open(filename.c_str());
+    int idx;
+    for (i=0; i<p_nrows; i++) {
+      if (flag) {
+        if (p_branch_flag) {
+          sprintf(sbuf,"%8d %8d %8d %s %16.8e %16.8e %16.8e %16.8e %16.8e",
+              idx_buf[i].gidx, idx_buf[i].idx1, idx_buf[i].idx2,
+              idx_buf[i].tag, vbase[i], vmin[i], vmax[i],
+              vmin[i]-vbase[i], vmax[i]-vbase[i]);
+        } else {
+          sprintf(sbuf,"%8d %8d %s %16.8e %16.8e %16.8e %16.8e %16.8e",
+              idx_buf[i].gidx, idx_buf[i].idx1, idx_buf[i].tag,
+              vbase[i], vmin[i], vmax[i], vmin[i]-vbase[i], vmax[i]-vbase[i]);
+        }
+      } else {
+        if (p_branch_flag) {
+          sprintf(sbuf,"%8d %8d %8d %16.8e %16.8e %16.8e %16.8e %16.8e",
+              idx_buf[i].gidx, idx_buf[i].idx1, idx_buf[i].idx2,
+              vbase[i], vmin[i], vmax[i], vmin[i]-vbase[i], vmax[i]-vbase[i]);
+        } else {
+          sprintf(sbuf,"%8d %8d %16.8e %16.8e %16.8e %16.8e %16.8e",
+              idx_buf[i].gidx, idx_buf[i].idx1,
+              vbase[i], vmin[i], vmax[i], vmin[i]-vbase[i], vmax[i]-vbase[i]);
+        }
+      }
+      int len = strlen(sbuf);
+      char *ptr = sbuf+len;
+      if (p_min_bound) {
+        idx = i*2;
+        sprintf(ptr," %16.8e",minmax[idx]);
+      }
+      len = strlen(sbuf);
+      ptr = sbuf+len;
+      if (p_max_bound) {
+        idx = i*2+1;
+        sprintf(ptr," %16.8e",minmax[idx]);
+      }
+      len = strlen(sbuf);
+      ptr = sbuf+len;
+      sprintf(ptr," %8d %8d",static_cast<int>(idxmin[i]),
+          static_cast<int>(idxmax[i]));
+      fout << sbuf << std::endl;
+    }
+    fout.close();
+    free(minmax);
+    free(idx_buf);
+  }
+  GA_Destroy(g_cnt);
+  GA_Destroy(g_buf);
   GA_Pgroup_sync(p_GAgrp);
 }
 
@@ -499,74 +656,204 @@ void stb::writeMinAndMax(std::string filename, int mval, bool flag)
 void stb::writeMaskValueCount(std::string filename, int mval, bool flag)
 {
   GA_Pgroup_sync(p_GAgrp);
-  if (p_me == 0) {
-    int iblock, i, j; 
-    int nblock = p_nrows/BLOCKSIZE+1;
-    std::ofstream fout;
-    fout.open(filename.c_str());
+  int zero = 0;
+  int one = 1;
+  int two = 2;
+  int g_cnt = GA_Create_handle();
+  NGA_Set_data(g_cnt,one,&one,C_INT);
+  NGA_Allocate(g_cnt);
+  GA_Zero(g_cnt);
+  int nblock = p_nrows/BLOCKSIZE+1;
+  int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+  int g_buf = GA_Create_handle();
+  NGA_Set_data(g_buf,one,&p_nrows,C_INT);
+  NGA_Allocate(g_buf);
+  std::vector<int> vcnt;
+  int lo[2];
+  int hi[2];
+  int ld;
+  int i, j; 
+  while (itask < nblock) {
     // Buffers to hold blocks of data
     int blocksize;
-    int boundsize;
     if (BLOCKSIZE > p_nrows) {
       blocksize = p_nrows*p_ncols;
     } else {
       blocksize = BLOCKSIZE*p_ncols;
     }
     int *mask_buf = (int*)malloc(blocksize*sizeof(int));
-    index_set *idx_buf = (index_set*)malloc(p_nrows*sizeof(index_set));
     int jlo = 0;
     int jhi = p_ncols-1;
-    int lo[2];
-    int hi[2];
-    int ld = p_ncols;
-    char sbuf[256];
-    int one = 1;
-    int two = 2;
+
     // write output in blocks
-    for (iblock=0; iblock<nblock; iblock++) {
-      int ilo = iblock*BLOCKSIZE;
-      int ihi = (iblock+1)*BLOCKSIZE-1;
-      if (ihi >= p_nrows) ihi = p_nrows-1;
-      if (ilo<p_nrows) {
-        lo[0] = ilo; 
-        hi[0] = ihi; 
-        lo[1] = jlo; 
-        hi[1] = jhi; 
-        NGA_Get(p_mask,lo,hi,mask_buf,&ld);
-        NGA_Get(p_tags,&ilo,&ihi,idx_buf,&one);
-        int nrows = ihi-ilo+1;
-        int idx;
-        for (i=0; i<nrows; i++) {
-          idx = i*p_ncols;
-          int icnt = 0;
-          for (j=0; j<p_ncols; j++) {
-            idx = i*p_ncols+j;
-            if (mask_buf[idx] == mval) icnt++;
-          }
-          if (flag) {
-            if (p_branch_flag) {
-              sprintf(sbuf,"%8d %8d %8d %s %8d", idx_buf[i].gidx,
-                  idx_buf[i].idx1, idx_buf[i].idx2, idx_buf[i].tag, icnt);
-            } else {
-              sprintf(sbuf,"%8d %8d %s %8d", idx_buf[i].gidx,
-                  idx_buf[i].idx1, idx_buf[i].tag, icnt);
-            }
-          } else {
-            if (p_branch_flag) {
-              sprintf(sbuf,"%8d %8d %8d %8d", idx_buf[i].gidx,
-                  idx_buf[i].idx1, idx_buf[i].idx2, icnt);
-            } else {
-              sprintf(sbuf,"%8d %8d %8d", idx_buf[i].gidx,
-                  idx_buf[i].idx1, icnt);
-            }
-          }
-          fout << sbuf << std::endl;
+    int ilo = itask*BLOCKSIZE;
+    int ihi = (itask+1)*BLOCKSIZE-1;
+    if (ihi >= p_nrows) ihi = p_nrows-1;
+    if (ilo<=ihi) {
+      lo[0] = ilo; 
+      hi[0] = ihi; 
+      lo[1] = jlo; 
+      hi[1] = jhi; 
+      ld = p_ncols;
+      NGA_Get(p_mask,lo,hi,mask_buf,&ld);
+      int nrows = ihi-ilo+1;
+      int idx;
+      vcnt.clear();
+      for (i=0; i<nrows; i++) {
+        idx = i*p_ncols;
+        int icnt = 0;
+        for (j=0; j<p_ncols; j++) {
+          idx = i*p_ncols+j;
+          if (mask_buf[idx] == mval) icnt++;
+        }
+        vcnt.push_back(icnt);
+      }
+      // push all results to g_buf
+      lo[0] = ilo;
+      hi[0] = ihi;
+      ld = 1;
+      NGA_Put(g_buf,lo,hi,&vcnt[0],&ld);
+    }
+    free(mask_buf);
+    itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+  }
+  GA_Pgroup_sync(p_GAgrp);
+  // Get data from g_buf and write it to external file
+  if (p_me == 0) {
+    int ilo = 0;
+    int ihi = p_nrows-1;
+    char sbuf[128];
+    index_set *idx_buf = (index_set*)malloc(p_nrows*sizeof(index_set));
+    NGA_Get(p_tags,&ilo,&ihi,idx_buf,&one);
+    lo[0] = ilo;
+    hi[0] = ihi;
+    ld = 1;
+    vcnt.resize(p_nrows);
+    NGA_Get(g_buf,lo,hi,&vcnt[0],&one);
+    std::ofstream fout;
+    fout.open(filename.c_str());
+    for (i=0; i<p_nrows; i++) {
+      if (flag) {
+        if (p_branch_flag) {
+          sprintf(sbuf,"%8d %8d %8d %s %8d", idx_buf[i].gidx,
+              idx_buf[i].idx1, idx_buf[i].idx2, idx_buf[i].tag, vcnt[i]);
+        } else {
+          sprintf(sbuf,"%8d %8d %s %8d", idx_buf[i].gidx,
+              idx_buf[i].idx1, idx_buf[i].tag, vcnt[i]);
+        }
+      } else {
+        if (p_branch_flag) {
+          sprintf(sbuf,"%8d %8d %8d %8d", idx_buf[i].gidx,
+              idx_buf[i].idx1, idx_buf[i].idx2, vcnt[i]);
+        } else {
+          sprintf(sbuf,"%8d %8d %8d", idx_buf[i].gidx,
+              idx_buf[i].idx1, vcnt[i]);
         }
       }
+      fout << sbuf << std::endl;
     }
     fout.close();
-    free(mask_buf);
     free(idx_buf);
   }
+  GA_Destroy(g_cnt);
+  GA_Destroy(g_buf);
+  GA_Pgroup_sync(p_GAgrp);
+}
+
+/**
+ * Sum up the values in the columns and print the result as a function
+ * of column index
+ * @param filename name of file containing results
+ * @param mval only include values with this mask value or
+ greater
+ */
+void stb::sumColumnValues(std::string filename, int mval)
+{
+  GA_Pgroup_sync(p_GAgrp);
+  int zero = 0;
+  int one = 1;
+  int two = 2;
+  int g_cnt = GA_Create_handle();
+  NGA_Set_data(g_cnt,one,&one,C_INT);
+  NGA_Allocate(g_cnt);
+  GA_Zero(g_cnt);
+  int nblock = p_ncols/BLOCKSIZE+1;
+  int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+  int g_buf = GA_Create_handle();
+  NGA_Set_data(g_buf,one,&p_ncols,C_DBL);
+  NGA_Allocate(g_buf);
+  std::vector<double> vsum;
+  int lo[2];
+  int hi[2];
+  int ld;
+  int i, j; 
+  while (itask < nblock) {
+    // Buffers to hold blocks of data
+    int blocksize;
+    if (BLOCKSIZE > p_ncols) {
+      blocksize = p_nrows*p_ncols;
+    } else {
+      blocksize = BLOCKSIZE*p_nrows;
+    }
+    double *val_buf = (double*)malloc(blocksize*sizeof(double));
+    int *mask_buf = (int*)malloc(blocksize*sizeof(int));
+    int ilo = 0;
+    int ihi = p_nrows-1;
+
+    // write output in blocks
+    int jlo = itask*BLOCKSIZE;
+    int jhi = (itask+1)*BLOCKSIZE-1;
+    if (jhi >= p_ncols) jhi = p_ncols-1;
+    if (jlo<=jhi) {
+      lo[0] = ilo; 
+      hi[0] = ihi; 
+      lo[1] = jlo; 
+      hi[1] = jhi; 
+      ld = jhi-jlo+1;
+      NGA_Get(p_data,lo,hi,val_buf,&ld);
+      NGA_Get(p_mask,lo,hi,mask_buf,&ld);
+      int ncols = jhi-jlo+1;
+      int idx;
+      for (j=0; j<ncols; j++) {
+        double sum = 0.0;
+        for (i=0; i<p_nrows; i++) {
+          idx = i*ld+j;
+          if (mask_buf[idx] >= mval) {
+            sum += val_buf[idx];
+          }
+        }
+        vsum.push_back(sum);
+      }
+      // push all results to g_buf
+      lo[0] = jlo;
+      hi[0] = jhi;
+      ld = 1;
+      NGA_Put(g_buf,lo,hi,&vsum[0],&ld);
+    }
+    free(mask_buf);
+    free(val_buf);
+    itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+  }
+  GA_Pgroup_sync(p_GAgrp);
+  // Get data from g_buf and write it to external file
+  if (p_me == 0) {
+    int ilo = 0;
+    int ihi = p_ncols-1;
+    char sbuf[128];
+    ld = 1;
+    vsum.resize(p_ncols);
+    NGA_Get(g_buf,&ilo,&ihi,&vsum[0],&one);
+    std::ofstream fout;
+    fout.open(filename.c_str());
+    for (i=0; i<p_ncols; i++) {
+      double sum_avg=0.0;
+      if (p_nrows > 0) sum_avg = vsum[i]/(static_cast<double>(p_nrows));
+      sprintf(sbuf,"%8d %16.8e %16.8e",i+ilo,vsum[i],sum_avg);
+      fout << sbuf << std::endl;
+    }
+    fout.close();
+  }
+  GA_Destroy(g_cnt);
+  GA_Destroy(g_buf);
   GA_Pgroup_sync(p_GAgrp);
 }

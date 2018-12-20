@@ -102,6 +102,20 @@ class PFFactoryModule
     bool checkVoltageViolations(int area);
 
     /**
+     * Check to see if there are any Q limit violations in the network
+     * @param area only check for Q limit violations in this area
+     * @return true if no violations found
+     */
+    bool checkQlimViolations();
+    bool checkQlimViolations(int area);
+
+    /**
+     * Clear changes that were made for Q limit violations and reset
+     * system to its original state
+     */
+    void clearQlimViolations();
+
+    /**
      * Set "ignore" parameter on all buses with violations so that subsequent
      * checks are not counted as violations
      */

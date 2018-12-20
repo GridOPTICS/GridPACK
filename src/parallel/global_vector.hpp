@@ -189,7 +189,7 @@ public:
     for (i=0; i<idx.size(); i++) {
       if (idx[i] < 0 || idx[i] >= p_numElems) {
         char buf[256];
-        sprintf(buf,"GlobalVector::getVector Requested vector index %d out of range on process %d\n",
+        sprintf(buf,"GlobalVector::getData Requested vector index %d out of range on process %d\n",
             idx[i],p_me);
         printf("%s",buf);
         throw gridpack::Exception(buf);
