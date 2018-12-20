@@ -106,7 +106,7 @@ if [ $host == "flophouse" ]; then
         -D USE_CPLEX:BOOL=OFF \
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
         -D USE_GLPK:BOOL=ON \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..

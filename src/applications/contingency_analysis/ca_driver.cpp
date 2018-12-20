@@ -22,6 +22,8 @@
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "ca_driver.hpp"
 
+#define USE_SUCCESS
+#define USE_STATBLOCK
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
 
@@ -197,14 +199,21 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   if (!cursor->get("maxVoltage",&Vmax)) {
     Vmax = 1.1;
   }
+  // Check for Q limit violations
+  bool check_Qlim;
+  if (!cursor->get("checkQLimit",&check_Qlim)) {
+    check_Qlim = false;
+  }
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations
+#ifdef USE_SUCCESS
   std::vector<int> contingency_idx;
   std::vector<bool> contingency_success;
   gridpack::parallel::GlobalVector<bool> ca_success(world);
   std::vector<int> contingency_violation;
   gridpack::parallel::GlobalVector<int> ca_violation(world);
+#endif
 
   // Create powerflow applications on each task communicator
   boost::shared_ptr<gridpack::powerflow::PFNetwork>
@@ -221,6 +230,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
   pf_app.solve();
+  // Check for Qlimit violations
+  if (check_Qlim && !pf_app.checkQlimViolations()) {
+    pf_app.solve();
+  }
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   pf_app.ignoreVoltageViolations();
@@ -276,6 +289,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
 
   int nbus = pf_network->totalBuses();
   // Get bus voltage information for base case
+  int i, j;
+#ifdef USE_STATBLOCK
+  int t_store = timer->createCategory("Store Statistics");
+  timer->start(t_store);
   std::vector<std::string> v_vals = pf_app.writeBusString("vr_str");
   int nsize = v_vals.size();
   std::vector<int> mag_ids;
@@ -287,7 +304,6 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   std::vector<double> vang;
   std::vector<int> mag_mask;
   std::vector<int> mask;
-  int i, j;
   // Find bus IDs and create a dummy tag label and get voltage magnitude
   // and angle for base case
   for (i=0; i<nsize; i++) {
@@ -297,7 +313,11 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       mag_ids.push_back(atoi(tokens[0].c_str()));
       mag_tags.push_back("1 ");
       vmag.push_back(atof(tokens[2].c_str()));
-      mag_mask.push_back(1);
+      if (atoi(tokens[4].c_str()) != 0) {
+        mag_mask.push_back(2);
+      } else {
+        mag_mask.push_back(1);
+      }
     }
     ids.push_back(atoi(tokens[0].c_str()));
     tags.push_back("1 ");
@@ -307,19 +327,25 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   int nmags = vmag.size();
   world.max(&nmags,1);
   world.max(&nbus,1);
+#endif
   // Create StatBlock objects for voltage magnitude and angles and add
   // bus IDs to it
+#ifdef USE_STATBLOCK
   gridpack::analysis::StatBlock vmag_stats(world,nmags,ntasks+1);
   gridpack::analysis::StatBlock vang_stats(world,nbus,ntasks+1);
+#endif
   // Add bus IDs and tags to StatBlock objects as well as base case values of
   // voltage magnitude and angle
+#ifdef USE_STATBLOCK
   if (world.rank() == 0) {
     vmag_stats.addRowLabels(mag_ids, mag_tags);
     vang_stats.addRowLabels(ids, tags);
     vmag_stats.addColumnValues(0,vmag,mag_mask);
     vang_stats.addColumnValues(0,vang,mask);
   }
+#endif
   // Get generator power information
+#ifdef USE_STATBLOCK
   v_vals.clear();
   ids.clear();
   tags.clear();
@@ -346,8 +372,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   nsize = pgen.size();
   world.max(&nsize,1);
+#endif
   // Create StatBlock objects for Pg and Qg and add labels as well as values for
   // base case
+#ifdef USE_STATBLOCK
   gridpack::analysis::StatBlock pgen_stats(world,nsize,ntasks+1);
   gridpack::analysis::StatBlock qgen_stats(world,nsize,ntasks+1);
   if (world.rank() == 0) {
@@ -356,8 +384,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     pgen_stats.addColumnValues(0,pgen,mask);
     qgen_stats.addColumnValues(0,qgen,mask);
   }
+#endif
 
   // Find flow parameters for all branch lines
+#ifdef USE_STATBLOCK
   v_vals.clear();
   ids.clear();
   tags.clear();
@@ -397,8 +427,10 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   }
   nsize = pflow.size();
   world.max(&nsize,1);
+#endif
   // Create StatBlock objects for flow parameters and add labels and base case
   // values
+#ifdef USE_STATBLOCK
   gridpack::analysis::StatBlock pflow_stats(world,nsize,ntasks+1);
   gridpack::analysis::StatBlock qflow_stats(world,nsize,ntasks+1);
   gridpack::analysis::StatBlock perf_stats(world,nsize,ntasks+1);
@@ -414,6 +446,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     pflow_stats.addRowMaxValue(pmax);
     qflow_stats.addRowMaxValue(pmax);
   }
+  timer->stop(t_store);
+#endif
+  if (check_Qlim) pf_app.clearQlimViolations();
 
 
   // Evaluate contingencies using the task manager
@@ -460,20 +495,29 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     // Set contingency
     pf_app.setContingency(events[task_id]);
     // Solve power flow equations for this system
+#ifdef USE_SUCCESS
     contingency_idx.push_back(task_id);
+#endif
     if (pf_app.solve()) {
+#ifdef USE_SUCCESS
       contingency_success.push_back(true);
+#endif
+      if (check_Qlim && !pf_app.checkQlimViolations()) {
+        pf_app.solve();
+      }
       // If power flow solution is successful, write out voltages and currents
       if (print_calcs) pf_app.write();
       // Check for violations
       bool ok1 = pf_app.checkVoltageViolations();
       bool ok2 = pf_app.checkLineOverloadViolations();
-      bool ok = ok1 & ok2;
+      bool ok = ok1 && ok2;
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
             events[task_id].p_name.c_str());
+#ifdef USE_SUCCESS
         contingency_violation.push_back(1);
+#endif
       } 
       if (!ok1) {
         sprintf(sbuf,"\nBus Violation for contingency %s\n",
@@ -486,6 +530,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
             events[task_id].p_name.c_str());
       }
 
+#ifdef USE_SUCCESS
       if (!ok1 && !ok2) {
         contingency_violation.push_back(4);
       } else if (!ok1) {
@@ -493,12 +538,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
       } else if (!ok2) {
         contingency_violation.push_back(3);
       }
+#endif
         
       if (print_calcs) pf_app.print(sbuf);
       if (print_calcs) pf_app.writeCABranch();
       // Get strings of data from power flow calculation and parse them to
       // extract numerical values. Store these values in vectors and then
       // add them to StatBlock objects
+#ifdef USE_STATBLOCK
+      timer->start(t_store);
       vmag.clear();
       vang.clear();
       mask.clear();
@@ -511,15 +559,23 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         int not_isolated = atoi(tokens[3].c_str());
         if (not_isolated == 1) {
           vmag.push_back(atof(tokens[2].c_str()));
-          mag_mask.push_back(1);
+          if (atoi(tokens[4].c_str()) != 0) {
+            mag_mask.push_back(2);
+          } else {
+            mag_mask.push_back(1);
+          }
         }
         vang.push_back(atof(tokens[1].c_str()));
         mask.push_back(1);
       }
+#endif
+#ifdef USE_STATBLOCK
       if (task_comm.rank() == 0) {
         vmag_stats.addColumnValues(task_id+1,vmag,mag_mask);
         vang_stats.addColumnValues(task_id+1,vang,mask);
       }
+#endif
+#ifdef USE_STATBLOCK
       pgen.clear();
       qgen.clear();
       mask.clear();
@@ -539,10 +595,14 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           mask.push_back(1);
         }
       }
+#endif
+#ifdef USE_STATBLOCK
       if (task_comm.rank() == 0) {
         pgen_stats.addColumnValues(task_id+1,pgen,mask);
         qgen_stats.addColumnValues(task_id+1,qgen,mask);
       }
+#endif
+#ifdef USE_STATBLOCK
       pflow.clear();
       qflow.clear();
       perf.clear();
@@ -568,25 +628,34 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           }
         }
       }
+#endif
+#ifdef USE_STATBLOCK
       if (task_comm.rank() == 0) {
         pflow_stats.addColumnValues(task_id+1,pflow,mask);
         qflow_stats.addColumnValues(task_id+1,qflow,mask);
         perf_stats.addColumnValues(task_id+1,perf,mask);
       }
+      timer->stop(t_store);
+#endif
+      if (check_Qlim) pf_app.clearQlimViolations();
     } else {
+#ifdef USE_SUCCESS
       contingency_success.push_back(false);
       contingency_violation.push_back(0);
+#endif
       sprintf(sbuf,"\nDivergent for contingency %s\n",
           events[task_id].p_name.c_str());
       if (print_calcs) pf_app.print(sbuf);
       // Add dummy values to StatBlock object. Mask value is set to 0 for all
       // network elements to indicate calculation failure
+#ifdef USE_STATBLOCK
+      timer->start(t_store);
       vmag.clear();
       vang.clear();
       mask.clear();
       mag_mask.clear();
       v_vals.clear();
-      v_vals = pf_app.writeBusString("vr_str");
+      v_vals = pf_app.writeBusString("vfail_str");
       nsize = v_vals.size();
       for (i=0; i<nsize; i++) {
         std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
@@ -598,15 +667,19 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
         vang.push_back(0.0);
         mask.push_back(0);
       }
+#endif
+#ifdef USE_STATBLOCK
       if (task_comm.rank() == 0) {
         vmag_stats.addColumnValues(task_id+1,vmag,mag_mask);
         vang_stats.addColumnValues(task_id+1,vang,mask);
       }
+#endif
+#ifdef USE_STATBLOCK
       pgen.clear();
       qgen.clear();
       mask.clear();
       v_vals.clear();
-      v_vals = pf_app.writeBusString("power");
+      v_vals = pf_app.writeBusString("pfail_str");
       nsize = v_vals.size();
       for (i=0; i<nsize; i++) {
         std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
@@ -621,16 +694,20 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           mask.push_back(0);
         }
       }
+#endif
+#ifdef USE_STATBLOCK
       if (task_comm.rank() == 0) {
         pgen_stats.addColumnValues(task_id+1,pgen,mask);
         qgen_stats.addColumnValues(task_id+1,qgen,mask);
       }
+#endif
+#ifdef USE_STATBLOCK
       pflow.clear();
       qflow.clear();
       perf.clear();
       mask.clear();
       v_vals.clear();
-      v_vals = pf_app.writeBranchString("flow_str");
+      v_vals = pf_app.writeBranchString("fail_str");
       nsize = v_vals.size();
       for (i=0; i<nsize; i++) {
         std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
@@ -646,11 +723,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
           mask.push_back(0);
         }
       }
+#endif
+#ifdef USE_STATBLOCK
       if (task_comm.rank() == 0) {
         pflow_stats.addColumnValues(task_id+1,pflow,mask);
         qflow_stats.addColumnValues(task_id+1,qflow,mask);
         perf_stats.addColumnValues(task_id+1,perf,mask);
       }
+      timer->stop(t_store);
+#endif
     } 
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
@@ -662,6 +743,7 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   taskmgr.printStats();
 
   // Gather stats on successful contingency calculations
+#ifdef USE_SUCCESS
   if (task_comm.rank() == 0) {
     ca_success.addElements(contingency_idx, contingency_success);
     ca_violation.addElements(contingency_idx, contingency_violation);
@@ -697,10 +779,15 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
     }
     fout.close();
   }
+#endif
 
   // Print out statistics on contingencies
+#ifdef USE_STATBLOCK
+  int t_stats = timer->createCategory("Write Statistics");
+  timer->start(t_stats);
   vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
   vmag_stats.writeMinAndMax("vmag_mm.txt",1,false);
+  if (check_Qlim) vmag_stats.writeMaskValueCount("pq_change_cnt.txt",2,false);
   vang_stats.writeMeanAndRMS("vang.txt",1,false);
   vang_stats.writeMinAndMax("vang_mm.txt",1,false);
   pgen_stats.writeMeanAndRMS("pgen.txt",1);
@@ -713,6 +800,9 @@ void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
   qflow_stats.writeMeanAndRMS("qflow.txt",1);
   qflow_stats.writeMinAndMax("qflow_mm.txt",1);
   perf_stats.writeMinAndMax("perf_mm.txt",1);
+  perf_stats.sumColumnValues("perf_sum.txt",1);
+  timer->stop(t_stats);
+#endif
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define

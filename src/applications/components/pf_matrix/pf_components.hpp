@@ -242,6 +242,12 @@ class PFBus
     bool chkQlim(void);
 
     /**
+     * Clear changes that were made for Q limit violations and reset
+     * bus to its original state
+     */
+    void clearQlim();
+
+    /**
      * Save state variables inside the component to a DataCollection object.
      * This can be used as a way of moving data in a way that is useful for
      * creating output or for copying state data from one network to another.
@@ -312,6 +318,11 @@ class PFBus
     int rhsValues(double *rvals);
 
     /**
+     * Push p_isPV values from exchange buffer to p_isPV variable
+     */
+    void pushIsPV();
+
+    /**
      * Get vector containing generator participation
      * @return vector of generator participation factors
      */
@@ -354,7 +365,9 @@ class PFBus
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg, p_pFac;
     std::vector<int> p_gstatus;
+    std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
+    std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig;
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
@@ -365,7 +378,8 @@ class PFBus
     double p_sbase;
     double p_Pinj, p_Qinj;
     double p_vmin, p_vmax;
-    bool p_isPV, p_saveisPV;
+    bool p_isPV, p_saveisPV, p_save2isPV;
+    bool *p_PV_ptr;
     int p_ngen;
     int p_nload;
     int p_type;
@@ -402,7 +416,8 @@ private:
       & p_ybusr & p_ybusi
       & p_P0 & p_Q0
       & p_angle & p_voltage
-      & p_pg & p_qg & p_pFac
+      & p_pg & p_qg & p_pFac & p_qmin & p_qmax
+      & p_qmin_orig & p_qmax_orig & p_pFac_orig
       & p_gstatus
       & p_vs & p_gid
       & p_pt & p_pb

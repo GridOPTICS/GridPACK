@@ -171,6 +171,7 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
       sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
       p_saveIsolatedStatus.push_back(bus->isIsolated());
       bus->setIsolated(true);
+      printf("%s",buf);
       if (stream != NULL) *stream << buf;
     }
     if (!ok) bus_ok = false;
@@ -215,6 +216,7 @@ void gridpack::powerflow::PFFactoryModule::clearLoneBus()
       }
     }
     if (!ok) {
+      printf("\nLone bus %d reset\n",bus->getOriginalIndex());
       bus->setIsolated(p_saveIsolatedStatus[ncount]);
       ncount++;
     }
@@ -458,6 +460,95 @@ void gridpack::powerflow::PFFactoryModule::clearLineOverloadViolations()
       for (int k = 0; k<nlines; k++) {
         branch->setIgnore(tags[k],false);
       }
+    }
+  }
+}
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkQlimViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      if (!bus->chkQlim()) bus_ok = false;
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @param area only check for voltage violations in this area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkQlimViolations(int area)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      if (bus->getArea() == area) {
+        if (!bus->chkQlim()) bus_ok = false;
+      }
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
+ * Clear changes that were made for Q limit violations and reset
+ * system to its original state
+ */
+void gridpack::powerflow::PFFactoryModule::clearQlimViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->clearQlim();
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
     }
   }
 }
