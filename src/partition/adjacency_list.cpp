@@ -146,7 +146,7 @@ AdjacencyList::ready(void)
     char buf[256];
     sprintf(buf,"AdjacencyList::ready: Unable to allocate distributed array"
         " for bus indices\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   int lo, hi;
@@ -221,7 +221,7 @@ AdjacencyList::ready(void)
     char buf[256];
     sprintf(buf,"AdjacencyList::ready: Unable to allocate distributed array"
         " for branch indices\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
 

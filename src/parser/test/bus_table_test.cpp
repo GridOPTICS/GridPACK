@@ -252,7 +252,7 @@ int main(int argc, char **argv)
   std::vector<std::string> headers;
   table.getHeaders(headers);
   if (headers.size() != 2 && me == 0) {
-    printf("\nNumber of headers found is incorrect: %d\n",headers.size());
+    printf("\nNumber of headers found is incorrect: %d\n",static_cast<int>(headers.size()));
   } else if (me == 0) {
     printf("\nNumber of headers is correct\n");
   }

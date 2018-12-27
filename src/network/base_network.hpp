@@ -1446,7 +1446,7 @@ void resetGlobalIndices(bool flag)
       if (lit != lmap.end()) {
         setGlobalBusIndex(i, lit->second);
       } else {
-        printf("p[%d] No global index found for bus %d\n",
+        printf("No global index found for bus %d\n",
             getOriginalBusIndex(i));
       }
     }
@@ -1472,13 +1472,13 @@ void resetGlobalIndices(bool flag)
     if (lit != lmap.end()) {
       setGlobalBusIndex1(i,lit->second); 
     } else {
-      printf("p[%d] No global index found for bus1 %d\n",idx1);
+      printf("No global index found for bus1 %d\n",idx1);
     }
     lit = lmap.find(idx2);
     if (lit != lmap.end()) {
       setGlobalBusIndex2(i,lit->second); 
     } else {
-      printf("p[%d] No global index found for bus2 %d\n",idx2);
+      printf("No global index found for bus2 %d\n",idx2);
     }
   }
   for (i=0; i<nprocs; i++) idx_buf[i] = 0;
@@ -1549,7 +1549,7 @@ void resetGlobalIndices(bool flag)
       if (lbit != lbmap.end()) {
         setGlobalBranchIndex(i, lbit->second);
       } else {
-        printf("p[%d] Could not find branch pair (%d,%d)\n",me,idx1,idx2);
+        printf("Could not find branch pair (%d,%d)\n",me,idx1,idx2);
       }
     }
   }
