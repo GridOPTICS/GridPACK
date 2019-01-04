@@ -96,7 +96,7 @@ if [ $host == "flophouse" ]; then
 
     cmake3 -Wdev --debug-trycompile \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
-        -D GA_DIR:PATH="$prefix/gridpack" \
+        -D GA_DIR:PATH="$prefix/ga-c++" \
         -D BOOST_ROOT:STRING="/usr" \
         -D PETSC_DIR:STRING="$pdir" \
         -D PETSC_ARCH:STRING="$parch" \
