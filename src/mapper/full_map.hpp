@@ -456,7 +456,7 @@ void createIndexGA(int * handle, int size)
   if (!GA_Allocate(*handle)) {
     char buf[256];
     sprintf(buf,"FullMatrixMap::createIndexGA: Unable to allocate distributed array\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(*handle);
@@ -834,7 +834,7 @@ void setupOffsetArrays()
   if (!GA_Allocate(gaOffsetI)) {
     char buf[256];
     sprintf(buf,"FullMatrixMap::setupOffsetArrays: Unable to allocate distributed array for row offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(gaOffsetI);
@@ -846,7 +846,7 @@ void setupOffsetArrays()
   if (!GA_Allocate(gaOffsetJ)) {
     char buf[256];
     sprintf(buf,"FullMatrixMap::setupOffsetArrays: Unable to allocate distributed array for column offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(gaOffsetJ);
@@ -906,7 +906,7 @@ void setBusOffsets(void)
   if (icnt != p_busContribution) {
     char buf[256];
     sprintf(buf,"FullMatrixMap::setBusOffsets: Contribution from buses doesn't match\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
 
@@ -1082,7 +1082,7 @@ void setBranchOffsets(void)
     char buf[256];
     sprintf(buf,"p[%d] Mismatch in loadBranchData icnt: %d branchContribution: %d\n",
         p_me,icnt,p_branchContribution);
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   if (p_timer) p_timer->stop(t_idx);

@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2018-10-19 09:39:28 d3g096
+# Last Change: 2018-12-20 10:19:36 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -232,6 +232,39 @@ target_link_libraries(real_dense_matrix_test gridpack_math ${target_libraries})
 gridpack_add_unit_test(real_dense_matrix real_dense_matrix_test)
 
 # -------------------------------------------------------------
+# matrix transpose test
+# -------------------------------------------------------------
+
+add_executable(complex_sparse_transpose_test test/matrix_transpose_test.cpp)
+target_link_libraries(complex_sparse_transpose_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_sparse_matrix_transpose complex_sparse_transpose_test)
+
+add_executable(real_sparse_transpose_test test/matrix_transpose_test.cpp)
+set_target_properties(real_sparse_transpose_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_REAL=YES"
+  )
+target_link_libraries(real_sparse_transpose_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_sparse_matrix_transpose real_sparse_transpose_test)
+
+add_executable(complex_dense_transpose_test test/matrix_transpose_test.cpp)
+set_target_properties(complex_dense_transpose_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_DENSE=YES"
+  )
+target_link_libraries(complex_dense_transpose_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(complex_dense_matrix_transpose complex_dense_transpose_test)
+
+add_executable(real_dense_transpose_test test/matrix_transpose_test.cpp)
+set_target_properties(real_dense_transpose_test
+  PROPERTIES
+  COMPILE_DEFINITIONS "TEST_DENSE=YES;TEST_REAL=YES"
+  )
+target_link_libraries(real_dense_transpose_test gridpack_math ${target_libraries})
+gridpack_add_unit_test(real_dense_matrix_transpose real_dense_transpose_test)
+
+
+# -------------------------------------------------------------
 # linear solver test suite
 # -------------------------------------------------------------
 add_executable(real_linear_solver_test test/linear_solver_test.cpp)
@@ -290,6 +323,7 @@ gridpack_add_unit_test(real_dae_solver real_dae_solver_test)
 if (PETSC_FOUND)
   add_dependencies(real_dae_solver_test math_test_input)
 endif()
+
 
 # -------------------------------------------------------------
 # Test GA-based Dense Matrix

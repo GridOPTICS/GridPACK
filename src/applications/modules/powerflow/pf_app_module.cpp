@@ -669,6 +669,7 @@ bool gridpack::powerflow::PFAppModule::setContingency(
 bool gridpack::powerflow::PFAppModule::unSetContingency(
     gridpack::powerflow::Contingency &event)
 {
+  p_factory->clearLoneBus();
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();
@@ -707,7 +708,6 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
   } else {
     ret = false;
   }
-  p_factory->clearLoneBus();
   return ret;
 }
 
@@ -783,6 +783,15 @@ bool gridpack::powerflow::PFAppModule::checkQlimViolations()
 bool gridpack::powerflow::PFAppModule::checkQlimViolations(int area)
 {
   return p_factory->checkQlimViolations(area);
+}
+
+/**
+ * Clear changes that were made for Q limit violations and reset
+ * system to its original state
+ */
+void gridpack::powerflow::PFAppModule::clearQlimViolations()
+{
+  p_factory->clearQlimViolations();
 }
 
 /**

@@ -183,7 +183,7 @@ class BaseFactory {
       if (!GA_Allocate(g_bus)) {
         char buf[256];
         sprintf(buf,"BaseFactory::setComponents: Unable to allocate distributed array for indices");
-        printf(buf);
+        printf("%s",buf);
         throw gridpack::Exception(buf);
       }
       GA_Zero(g_bus);

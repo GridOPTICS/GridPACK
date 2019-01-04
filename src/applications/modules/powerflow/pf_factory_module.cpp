@@ -171,6 +171,7 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
       sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
       p_saveIsolatedStatus.push_back(bus->isIsolated());
       bus->setIsolated(true);
+      printf("%s",buf);
       if (stream != NULL) *stream << buf;
     }
     if (!ok) bus_ok = false;
@@ -215,6 +216,7 @@ void gridpack::powerflow::PFFactoryModule::clearLoneBus()
       }
     }
     if (!ok) {
+      printf("\nLone bus %d reset\n",bus->getOriginalIndex());
       bus->setIsolated(p_saveIsolatedStatus[ncount]);
       ncount++;
     }
@@ -479,6 +481,15 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations()
       if (!bus->chkQlim()) bus_ok = false;
     }
   }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
   return checkTrue(bus_ok);
 }
 
@@ -502,7 +513,44 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations(int area)
       }
     }
   }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
   return checkTrue(bus_ok);
+}
+
+/**
+ * Clear changes that were made for Q limit violations and reset
+ * system to its original state
+ */
+void gridpack::powerflow::PFFactoryModule::clearQlimViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->clearQlim();
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
 }
 
 /**

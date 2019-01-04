@@ -403,7 +403,7 @@ void setOffsets(void)
   if (!GA_Allocate(g_bus_row_offsets)) {
     char buf[256];
     sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for bus row offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(g_bus_row_offsets);
@@ -415,7 +415,7 @@ void setOffsets(void)
   if (!GA_Allocate(g_bus_column_offsets)) {
     char buf[256];
     sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for bus column offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(g_bus_column_offsets);
@@ -427,7 +427,7 @@ void setOffsets(void)
   if (!GA_Allocate(g_branch_row_offsets)) {
     char buf[256];
     sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for branch row offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(g_branch_row_offsets);
@@ -439,7 +439,7 @@ void setOffsets(void)
   if (!GA_Allocate(g_branch_column_offsets)) {
     char buf[256];
     sprintf(buf,"GenMatrixMap::setOffsets: Unable to allocate distributed array for branch column offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(g_branch_column_offsets);
