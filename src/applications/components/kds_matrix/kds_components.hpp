@@ -260,7 +260,7 @@ class KalmanBus
     int p_numElements;
 
     /**
-     * Additional generator paramters
+     * Additional generator parameters
      */
     int p_ngen;
     std::vector<double> p_omega_0;

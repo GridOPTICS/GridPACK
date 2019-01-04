@@ -189,7 +189,7 @@ bool gridpack::kalman_filter::KalmanBus::matrixDiagValues(ComplexType *values)
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
         double ra = p_r[i] * p_sbase / p_mva[i];
-        double xd;
+        double xd = 0.0;
         if (p_dstr[i] == 0) {
           xd = p_dtr[i] * p_sbase / p_mva[i];
         }
@@ -208,7 +208,7 @@ bool gridpack::kalman_filter::KalmanBus::matrixDiagValues(ComplexType *values)
       gridpack::ComplexType permYmod = 0.0;
       for (int ip = 0; ip < p_ngen; ip++) {
         double ra = p_r[ip] * p_sbase / p_mva[ip];
-        double xd;
+        double xd=0.0;
         if (p_dstr[ip] == 0) {
           xd = p_dtr[ip] * p_sbase / p_mva[ip];
         }
@@ -513,9 +513,12 @@ void gridpack::kalman_filter::KalmanBus::load(
 {
   YMBus::load(data);
 
+  p_sbase = 100.0;
   bool ok = data->getValue(CASE_SBASE, &p_sbase);
-  data->getValue("BUS_PF_VANG", &p_angle);
-  data->getValue("BUS_PF_VMAG", &p_voltage); 
+  if (!data->getValue("BUS_PF_VANG", &p_angle))
+    data->getValue("BUS_VOLTAGE_ANG",&p_angle);
+  if (!data->getValue("BUS_PF_VMAG", &p_voltage))
+    data->getValue("BUS_VOLTAGE_MAG", &p_voltage); 
 //  data->getValue(BUS_VOLTAGE_ANG, &p_angle);
 //  data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
   p_v = p_voltage;
