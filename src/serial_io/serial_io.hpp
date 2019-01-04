@@ -212,7 +212,7 @@ class SerialBusIO {
       sprintf(buf,"SerialBusIO::gatherData: data_type size inconsistent"
           " with allocated size: data: %ld allocated: %d\n",
           sizeof(_data_type),p_size);
-      printf(buf);
+      printf("%s",buf);
       throw gridpack::Exception(buf);
     }
     _data_type data;
@@ -733,9 +733,9 @@ class SerialBranchIO {
     if (sizeof(_data_type) > p_size) {
       char buf[256];
       sprintf(buf,"SerialBranchIO::gatherData: data_type size inconsistent"
-          " with allocated size: data: %d allocated: %ld\n",
+          " with allocated size: data: %ld allocated: %d\n",
           sizeof(_data_type),p_size);
-      printf(buf);
+      printf("%s",buf);
       throw gridpack::Exception(buf);
     }
     _data_type data;
