@@ -67,7 +67,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
   if (!data->getValue(GENERATOR_PG, &p_pg,idx)) p_pg = 0.0;
   if (!data->getValue(GENERATOR_QG, &p_qg,idx)) p_qg = 0.0;
   if (!data->getValue(GENERATOR_STAT, &p_status,idx)) p_status = 0;
-  //printf("load p_pg = %f, p_qg = %f\n", p_pg, p_qg);
   p_pg *= p_sbase;
   p_qg *= p_sbase;
 
@@ -83,13 +82,9 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
   if (!data->getValue(GENERATOR_TDOP, &Tdop, idx)) Tdop=0.0; // Tdop
   if (!data->getValue(GENERATOR_TDOPP, &Tdopp, idx)) Tdopp=0.0; // Tdopp
   if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tdopp=0.0; // Tqopp
-  //if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.0; // S10
-  //if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.0; // S12
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
   if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 TBD: check parser
-  //printf("load S10 = %f, S12 = %f\n", S10, S12);
   if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
-  //if (!data->getValue(GENERATOR_XQPP, &Xqp, idx)) Xqpp=0.0; // Xqpp // SJin: no GENERATOR_XQPP yet
   if (!data->getValue(GENERATOR_XDPP, &Xqp, idx)) Xqpp=0.0; // Xqpp // SJin: use Xdpp for compile
 }
 
@@ -105,8 +100,6 @@ double gridpack::dynamic_simulation::GenrouGenerator::Sat(double x)
     double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
     double B = S10 / ((1.0 - A) * (1.0 - A));
     double result = B * (x - A) * (x - A) / x;
-    //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
-    //printf("Sat result = %f\n", result); 
     return result; // Scaled Quadratic with 1.7.1 equations
 }
 
@@ -118,20 +111,16 @@ double gridpack::dynamic_simulation::GenrouGenerator::Sat(double x)
 void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
     double ang, double ts)
 {
-  //printf("Step0 gen%d mag = %f\n", p_bus_id, mag);
   Vterm = mag;
   presentMag = mag;
   Theta = ang;
   presentAng = ang;
   double P = p_pg / MVABase;
   double Q = p_qg / MVABase;
-  //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
-  //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
-  //printf("Ir = %f, Ii = %f\n", Ir, Ii);
   x2w = 0;
   x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
   Id = Ir * sin(x1d) - Ii * cos(x1d); // convert values to the dq axis
@@ -147,16 +136,12 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   x3Eqp = x4Psidp + Id * (Xdp - Xl);
   x6Edp = Iq * (Xq - Xqp); 
   x5Psiqp = x6Edp + Iq * (Xqp - Xl);
-  //printf("Xdpp = %f, Xq = %f, Iq = %f\n", Xdpp, Xq, Iq);
   Efd = x3Eqp * (1 + Sat(x3Eqp)) + Id * (Xd - Xdp);
-  //printf("x3Eqp = %f, Id = %f, Xd = %f, Xdp = %f\n", x3Eqp, Id, Xd, Xdp);
   LadIfd = Efd;
   Pmech = Psidpp * Iq - Psiqpp * Id;
 
   printf("genrou init: %f\t%f\t%f\t%f\t%f\t%f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
   printf("gensal init: Efd = %f, Pmech = %f\n", Efd, Pmech);
-  //Efdinit = Efd;
-  //Pmechinit = Pmech;
 
   p_exciter = getExciter();
   p_exciter->setFieldVoltage(Efd);
@@ -185,19 +170,10 @@ gridpack::ComplexType gridpack::dynamic_simulation::GenrouGenerator::INorton()
  */
 gridpack::ComplexType gridpack::dynamic_simulation::GenrouGenerator::NortonImpedence()
 {
-  /*double ra = Ra * p_sbase / MVABase;
-  double xd = Xdpp * p_sbase / MVABase;
-  B = -xd / (ra + xd);
-  G = ra / (ra + xd);
-  gridpack::ComplexType Y_a(B, G);
-  return Y_a;*/
   double ra = Ra * p_sbase / MVABase;
   double xd = Xdpp * p_sbase / MVABase;
-  //printf("Ra = %f, Xdpp = %f\n", Ra, Xdpp);
-  //printf("ra = %f, xd = %f, p_sbase = %f, MVABase = %f\n", ra, xd, p_sbase, MVABase);
   B = -xd / (ra * ra + xd * xd);
   G = ra / (ra * ra + xd * xd);
-  //printf("B = %f, G = %f\n", B, G);
   gridpack::ComplexType Y_a(G, B);
   return Y_a;
 }
@@ -220,7 +196,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   // Admittance
   B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
   G = Ra / (Ra * Ra + Xdpp * Xdpp);
-  //printf("Xdpp = %f, Ra = %f, B = %f, G = %f\n", Xdpp, Ra, B, G);
   // Setup
   double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
   double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
@@ -232,7 +207,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   double Viterm = Vterm * sin(Theta);
   double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
   double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
-  //printf("x2w = %f, Vd = %f, Vq = %f, Vrterm = %f, Viterm = %f, Vdterm = %f, Vqterm = %f, Theta = %f\n", x2w, Vd, Vq, Vrterm, Viterm, Vdterm, Vqterm, Theta);
   //DQ Axis
   Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
   Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
@@ -245,7 +219,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
   IiNorton = - Idnorton * cos(x1d) + Iqnorton * sin(x1d);
   IrNorton = IrNorton * MVABase / p_sbase; 
   IiNorton = IiNorton * MVABase / p_sbase; 
-  //gridpack::ComplexType INorton(IrNorton, IiNorton);
   p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
 } 
 
@@ -286,7 +259,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
                * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
   LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
   dx1d = x2w * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
-  //printf("H = %f, Pmech = %f, D = %f, x2w = %f, Telec = %f\n", H, Pmech, D, x2w, Telec);
   dx2w = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec); //TBD: call Governor for Pmech (Done)
   dx3Eqp = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
   dx4Psidp = (-x4Psidp - (Xdp - Xl) * Id + x3Eqp) / Tdopp;
@@ -378,7 +350,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
                * (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1);
   LadIfd = x3Eqp_1 * (1 + Sat(x3Eqp_1)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
   dx1d_1 = x2w_1 * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
-  //printf("H = %f, Pmech = %f, D = %f, x2w_1 = %f, Telec = %f\n", H, Pmech, D, x2w_1, Telec);
   dx2w_1 = 1 / (2 * H) * ((Pmech - D * x2w_1) / (1 + x2w_1) - Telec); //TBD: call Governor for Pmech (Done)
   dx3Eqp_1 = (Efd - LadIfd) / Tdop; //TBD: call Exciter for Efd and LadIfd (Done)
   dx4Psidp_1 = (-x4Psidp_1 - (Xdp - Xl) * Id + x3Eqp_1) / Tdopp;
@@ -403,9 +374,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
   p_governor->setRotorSpeedDeviation(x2w);
   p_governor->corrector(t_inc, flag);
 
-  //if (p_bus_id == 1)
-    //printf("\t%d          %12.6f   %12.6f   %12.6f   %12.6f   %12.6f	%12.6f\n",    
-     //     p_bus_id, x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
 }
 
 /**
@@ -436,9 +404,6 @@ void gridpack::dynamic_simulation::GenrouGenerator::write(
     const char* signal, char *string)
 {
   if (!strcmp(signal,"standard")) {
-    //sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
-    //    p_bus_id,p_ckt.c_str(),real(p_mac_ang_s1),real(p_mac_spd_s1),real(p_mech),
-    //    real(p_pelect));
     sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f	%12.6f\n",
           p_bus_id, p_ckt.c_str(), x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
   }

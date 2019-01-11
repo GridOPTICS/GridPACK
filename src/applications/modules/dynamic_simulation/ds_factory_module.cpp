@@ -115,7 +115,6 @@ bool gridpack::dynamic_simulation_r::DSFactoryModule::checkGen(void)
       count += dynamic_cast<DSBus*>(p_network->getBus(i).get())->getNumGen();
     }
   }
-  printf("p[%d] number of generators: %d\n",p_network->communicator().rank(),count);
   int iok = 0;
   if (count > 0) iok = 1;
   int ok;

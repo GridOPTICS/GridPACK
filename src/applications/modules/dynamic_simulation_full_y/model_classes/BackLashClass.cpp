@@ -40,7 +40,6 @@ void gridpack::dynamic_simulation::BackLashClass::Initialize(double theDb2, doub
 {
   Db2 = theDb2;
   LastOutput = InitOutput;
-  //printf("BackLash: Db2 = %f, LastOutput = %f\n", Db2, InitOutput);
 }
 
 /**

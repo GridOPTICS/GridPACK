@@ -73,75 +73,40 @@ void gridpack::dynamic_simulation::Ggov1Model::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
-  //if (!data->getValue(GOVERNOR_RSELECT, &Rselect, idx)) 
   Rselect = 0.0;
-  //if (!data->getValue(GOVERNOR_FLAG, &Flag, idx)) 
   Flag = 0.0;
-  //if (!data->getValue(GOVERNOR_R, &R, idx)) 
   R = 0.0; 
-  //if (!data->getValue(GOVERNOR_TPELEC, &Tpelec, idx)) 
   Tpelec = 0.0;
-  //if (!data->getValue(GOVERNOR_MAXERR, &MaxErr, idx)) 
   MaxErr = 0.0;
-  //if (!data->getValue(GOVERNOR_MINERR, &MinErr, idx)) 
   MinErr = 0.0;
-  //if (!data->getValue(GOVERNOR_KPGOV, &Kpgov, idx)) 
   Kpgov = 0.0;
-  //if (!data->getValue(GOVERNOR_KIGOV, &Kigov, idx)) 
   Kigov = 0.0;
-  //if (!data->getValue(GOVERNOR_KDGOV, &Kdgov, idx)) 
   Kdgov = 0.0;
-  //if (!data->getValue(GOVERNOR_TDGOV, &Tdgov, idx)) 
   Tdgov = 0.0;
-  //if (!data->getValue(GOVERNOR_VMAX, &Vmax, idx)) 
   Vmax = 0.0;
-  //if (!data->getValue(GOVERNOR_VMIN, &Vmin, idx)) 
   Vmin = 0.0;
-  //if (!data->getValue(GOVERNOR_TACT, &Tact, idx)) 
   Tact = 0.0;
-  //if (!data->getValue(GOVERNOR_KTURB, &Kturb, idx)) 
   Kturb = 0.0;
-  //if (!data->getValue(GOVERNOR_WFNL, &Wfnl, idx)) 
   Wfnl = 0.0;
-  //if (!data->getValue(GOVERNOR_TB, &Tb, idx)) 
   Tb = 0.0; 
-  //if (!data->getValue(GOVERNOR_TC, &Tc, idx)) 
   Tc = 0.0; 
-  //if (!data->getValue(GOVERNOR_TENG, &Teng, idx)) 
   Teng = 0.0; 
-  //if (!data->getValue(GOVERNOR_TFLOAD, &Tfload, idx)) 
   Tfload = 0.0;
-  //if (!data->getValue(GOVERNOR_KPLOAD, &Kpload, idx)) 
   Kpload = 0.0;
-  //if (!data->getValue(GOVERNOR_KILOAD, &Kiload, idx)) 
   Kiload = 0.0;
-  //if (!data->getValue(GOVERNOR_LDREF, &Ldref, idx)) 
   Ldref = 0.0;
-  //if (!data->getValue(GOVERNOR_DM, &Dm, idx)) 
   Dm = 0.0;
-  //if (!data->getValue(GOVERNOR_ROPEN, &Ropen, idx)) 
   Ropen = 0.0;
-  //if (!data->getValue(GOVERNOR_RCLOSE, &Rclose, idx)) 
   Rclose = 0.0;
-  //if (!data->getValue(GOVERNOR_KIMW, &Kimw, idx)) 
   Kimw = 0.0;
-  //if (!data->getValue(GOVERNOR_ASET, &Aset, idx)) 
   Aset = 0.0;
-  //if (!data->getValue(GOVERNOR_KA, &Ka, idx)) 
   Ka = 0.0; 
-  //if (!data->getValue(GOVERNOR_TA, &Ta, idx)) 
   Ta = 0.0; 
-  //if (!data->getValue(GOVERNOR_TRATE, &Trate, idx)) 
   Trate = 0.0; 
-  //if (!data->getValue(GOVERNOR_DB, &Db, idx)) 
   Db = 0.0;
-  //if (!data->getValue(GOVERNOR_TSA, &Tsa, idx)) 
   Tsa = 0.0; 
-  //if (!data->getValue(GOVERNOR_TSB, &Tsb, idx)) 
   Tsb = 0.0; 
-  //if (!data->getValue(GOVERNOR_RUP, &Rup, idx)) 
   Rup = 0.0;
-  //if (!data->getValue(GOVERNOR_RDOWN, &Rdown, idx)) 
   Rdown = 0.0;
 
   if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
@@ -492,8 +457,6 @@ void gridpack::dynamic_simulation::Ggov1Model::corrector(double t_inc, bool flag
   } else {
     Pmech = LeadLagOut * Trate / GenMVABase;
   } 
-  
-  printf("ggov1 Pmech = %f\n", Pmech);
 }
 
 /**

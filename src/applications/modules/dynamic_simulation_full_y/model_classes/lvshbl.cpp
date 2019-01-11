@@ -64,7 +64,6 @@ void gridpack::dynamic_simulation::LvshblRelay::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
-	//if (!data->getValue(RELAY_IBUS, &UEL, idx)) UEL = 0.0; // 
 	if (!data->getValue(RELAY_LID, &slid,           idx)) slid = ""; // TBD: LID
 	if (!data->getValue(RELAY_JBUS,&jbus_relay_load,idx)) jbus_relay_load = 0; // TBD: JBUS
 	if (!data->getValue(RELAY_V1, &dloadshed_volt1, idx)) dloadshed_volt1 = 0.0; // TBD: v1
@@ -120,7 +119,6 @@ bool gridpack::dynamic_simulation::LvshblRelay::setMonitorVariables(std::vector<
  */
 bool gridpack::dynamic_simulation::LvshblRelay::updateRelay(double delta_t)
 {
-	///printf("\n***** Relay %d updateRelay:\n", ibus_relay_load);
 	iload_shed_prev = iload_shed;
 	
 	// first update the voltage magnitude

@@ -166,7 +166,7 @@ class BaseGeneratorModel
     boost::shared_ptr<BaseGovernorModel> p_governor;
     boost::shared_ptr<BaseExciterModel> p_exciter;
     bool p_watch;
-	bool bStatus;
+    bool bStatus;
     std::vector< boost::shared_ptr<BaseRelayModel> > vp_relay;  //renke add, relay vector
 
 };

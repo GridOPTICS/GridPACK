@@ -287,7 +287,6 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
     gridpack::ComplexType zs = a + (b * zr / c);
     cur[k] = Vs0/zs;
     Pe[k] = real( Vs0 * conj(cur[k]) ) * MVABase;  // MW
-	//printf("    MotorwLoad::init(), Pe[%d]: %12.6f, Sl[%d]: %12.6f, \n", k, Pe[k], k, sl[k]);
   }
 
   // find specific slip for initial power (Pint)
@@ -376,8 +375,6 @@ void gridpack::dynamic_simulation::MotorwLoad::init(double mag,
   A2*B4*C1*D3 + A2*B4*C3*D1 + A3*B1*C2*D4 - A3*B1*C4*D2 - A3*B2*C1*D4 +
   A3*B2*C4*D1 + A3*B4*C1*D2 - A3*B4*C2*D1 - A4*B1*C2*D3 + A4*B1*C3*D2 +
   A4*B2*C1*D3 - A4*B2*C3*D1 - A4*B3*C1*D2 + A4*B3*C2*D1) ;
-
-  //             s = [epq, epd, eppq, eppd, slip] ;
 
   Id = ( (Vd0 - p * eppd) * rs + (Vq0 - q * eppq) * Lpp ) / (rs*rs + Lpp*Lpp) ;
   Iq = ( (Vq0 - q * eppq) * rs - (Vd0 - p * eppd) * Lpp ) / (rs*rs + Lpp*Lpp) ;

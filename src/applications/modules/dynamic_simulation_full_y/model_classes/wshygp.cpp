@@ -213,7 +213,6 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   if (x7Gate > Pmax) x7Gate = Pmax; // nonwindup
   if (x7Gate < Pmin) x7Gate = Pmin; // nonwindup
   double GV = BackLash.Output(x7Gate);
-  //printf ("wshygp predictor GV = %8.4f, x1Pmech = %8.4f, x7Gate=%8.4f \n",GV, x1Pmech, x7Gate);
   TempIn = CV - GV;
   if (TP < TS_THRESHOLD * t_inc) x6Valve = TempIn * KG;
   if (x6Valve > VELopen) x6Valve = VELopen;
@@ -224,13 +223,11 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   if (dx6Valve < 0 && x6Valve <= VELclose) dx6Valve = 0;
   // State 7
   // Note: non windup stuff handled above
-  //printf ("wshygp predictor x6Valve = %8.4f, \n",x6Valve);
   dx7Gate = x6Valve;
   if (dx7Gate > 0 && x7Gate >= Pmax) dx6Valve = 0;
   if (dx7Gate < 0 && x7Gate <= Pmin) dx6Valve = 0;
   // State 1
   double PGV = GainBlock.XtoY(GV);
-  //printf ("wshygp predictor PGV = %8.4f, \n",PGV);
   if (Bturb * Tturb < TS_THRESHOLD * t_inc) dx1Pmech = 0;
   else dx1Pmech = (PGV * (1 - Aturb / Bturb) - x1Pmech) / (Bturb * Tturb);
 
@@ -242,9 +239,6 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   x6Valve_1 = x6Valve + dx6Valve * t_inc;
   x7Gate_1 = x7Gate + dx7Gate * t_inc;
 
-  //printf("wshygp dx: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", dx1Pmech, dx2Td, dx3Int, dx4Der, dx5Pelec, dx6Valve, dx7Gate);
-  //printf("wshygp x: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pmech_1, x2Td_1, x3Int_1, x4Der_1, x5Pelec_1, x6Valve_1, x7Gate_1);
-
   // Note: you may want to cash the value PGV and keep it around
   GV = BackLash.Output(x7Gate);
   PGV = GainBlock.XtoY(GV);
@@ -253,8 +247,6 @@ void gridpack::dynamic_simulation::WshygpModel::predictor(double t_inc, bool fla
   } else {
     Pmech = (PGV * Aturb / Bturb + x1Pmech) * Trate / GenMVABase;
   } 
-  
- // printf("wshygp Pmech = %f\n", Pmech);
 }
 
 /**
@@ -322,9 +314,6 @@ void gridpack::dynamic_simulation::WshygpModel::corrector(double t_inc, bool fla
   x6Valve_1 = x6Valve + (dx6Valve + dx6Valve_1) / 2.0 * t_inc;
   x7Gate_1 = x7Gate + (dx7Gate + dx7Gate_1) / 2.0 * t_inc;
  
- // printf("wshygp dx: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", dx1Pmech, dx2Td, dx3Int, dx4Der, dx5Pelec, dx6Valve, dx7Gate);
-  //printf("wshygp x: %f\t%f\t%f\t%f\t%f\t%f\t%f\n", x1Pmech_1, x2Td_1, x3Int_1, x4Der_1, x5Pelec_1, x6Valve_1, x7Gate_1);
-
   // Note: you may want to cash the value PGV and keep it around
   GV = BackLash.Output(x7Gate_1);
   PGV = GainBlock.XtoY(GV);
@@ -334,7 +323,6 @@ void gridpack::dynamic_simulation::WshygpModel::corrector(double t_inc, bool fla
     Pmech = (PGV * Aturb / Bturb + x1Pmech) * Trate / GenMVABase;
   } 
   
- // printf("wshygp Pmech = %f\n", Pmech);
 }
 
 /**

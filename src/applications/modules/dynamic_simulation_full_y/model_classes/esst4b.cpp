@@ -59,36 +59,22 @@ void gridpack::dynamic_simulation::Esst4bModel::load(
     data, int idx)
 {
   if (!data->getValue(EXCITER_TR, &Tr, idx)) Tr = 0.0; // Tr
-  //if (!data->getValue(EXCITER_KPR, &Kpr, idx)) 
   Kpr = 0.0; // TBD: Kpr
-  //if (!data->getValue(EXCITER_KIR, &Kir, idx)) 
   Kir = 0.0; // TBD: Kir
   if (!data->getValue(EXCITER_VRMAX, &Vrmax, idx)) Vrmax = 0.0; // Vrmax
   if (!data->getValue(EXCITER_VRMIN, &Vrmin, idx)) Vrmin = 0.0; // Vrmin
   if (!data->getValue(EXCITER_TA, &Ta, idx)) Ta = 0.0; // Ta
-  //if (!data->getValue(EXCITER_KPM, &Kpm, idx)) 
   Kpm = 0.0; // TBD: Kpm
-  //if (!data->getValue(EXCITER_KIM, &Kim, idx)) 
   Kim = 0.0; // TBD: Kim
-  //if (!data->getValue(EXCITER_VMMAX, &Vmmax, idx)) 
   Vmmax = 0.0; // TBD: Vmmax
-  //if (!data->getValue(EXCITER_VMMIN, &Vmmin, idx)) 
   Vmmin = 0.0; // TBD: Vmmin
-  //if (!data->getValue(EXCITER_KG, &Kg, idx)) 
   Kg = 0.0; // TBD: Kg
-  //if (!data->getValue(EXCITER_KP, &Kp, idx)) 
   Kp = 0.0; // TBD: Kp
-  //if (!data->getValue(EXCITER_KI, &KI, idx)) 
   KI = 0.0; // TBD: KI
-  //if (!data->getValue(EXCITER_VBMAX, &Vbmax, idx)) 
   Vbmax = 0.0; // TBD: Vbmax
-  //if (!data->getValue(EXCITER_KC, &Kc, idx)) 
   Kc = 0.0; // TBD: Kc
-  //if (!data->getValue(EXCITER_XL, &Xl, idx)) 
   Xl = 0.0; // TBD: Xl
-  //if (!data->getValue(EXCITER_KPANG, &Kpang, idx)) 
   Kpang = 0.0; // TBD: Kpang
-  //if (!data->getValue(EXCITER_VGMAX, &Vgmax, idx)) 
   Vgmax = 0.0; // TBD: Vgmax
 }
 

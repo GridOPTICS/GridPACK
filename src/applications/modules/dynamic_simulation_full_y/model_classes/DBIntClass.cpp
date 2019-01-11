@@ -44,8 +44,6 @@ void gridpack::dynamic_simulation::DBIntClass::Initialize(double theDb1, double 
   Db1 = abs(theDb1); // Negatives not allowed
   Eps = abs(theEps);
   if (Eps > Db1) Eps = Db1; // Don't allow it to be larger
-  //printf("theDb1 = %f, theEps = %f, theInit = %f\n", theDb1, theEps, theInit);
-  //printf("Db1 = %f, Eps = %f, InitialValue = %f\n", Db1, Eps, InitialValue);
 }
 
 /**

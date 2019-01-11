@@ -69,16 +69,12 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
   if (!data->getValue(EXCITER_KE, &KE, idx)) KE = 0.0; // KE
   if (!data->getValue(EXCITER_TE, &TE, idx)) TE = 0.0; // TE
   if (!data->getValue(EXCITER_KF, &KF, idx)) KF = 0.0; // KF
-  //if (!data->getValue(EXCITER_TF1, &TF1, idx)) TF1 = 0.0; // TF1
   if (!data->getValue(EXCITER_TF1, &TF, idx)) TF = 0.0; // TF
-  //printf("load TF = %f\n", TF);
   if (!data->getValue(EXCITER_SWITCH, &SWITCH, idx)) SWITCH = 0.0; // SWITCH
   if (!data->getValue(EXCITER_E1, &E1, idx)) E1 = 0.0; // E1
   if (!data->getValue(EXCITER_SE1, &SE1, idx)) SE1 = 0.0; // SE1
   if (!data->getValue(EXCITER_E2, &E2, idx)) E2 = 0.0; // E2
   if (!data->getValue(EXCITER_SE2, &SE2, idx)) SE2 = 0.0; // SE2
-  //if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.0; // S10
-  //if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.0; // S12
 }
 
 /**
@@ -87,12 +83,6 @@ void gridpack::dynamic_simulation::Exdc1Model::load(
  *    */
 double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
 {
-    /*double a_ = S12 / S10 - 1.0 / 1.2;
-    double b_ = (-2 * S12 / S10 + 2);
-    double c_ = S12 / S10 - 1.2;
-    double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
-    double B = S10 / ((1.0 - A) * (1.0 - A));
-    return B * ( x - A) * (x - A);*/
     double B = log(SE2 / SE1)/(E2 - E1);
     double A = SE1 / exp(B * E1);
     return A * exp(B * x);
@@ -106,7 +96,6 @@ double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
  */
 void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, double ts)
 {
-  ///printf("exdc1: Efd = %f\n", Efd);
   x1 = Efd;
   x4 = Efd * (KE + Sat(Efd));
   if (TB > (TS_THRESHOLD * ts)) 
@@ -114,15 +103,12 @@ void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, doub
   else
     x3 = x4 / KA;
   x2 = mag; // SJin: mag is Vterminal 
-  //printf("KF = %f, TF = %f, x1 = %f, ts = %f\n", KF, TF, x1, ts);
   if (TF > (TS_THRESHOLD * ts)) 
     x5 = x1 * (KF / TF); // SJin: x1 is Ve
   else
     x5 = 0.0;
   //x5 = 0.0; // Diao: force x5 to 0.0 for now
   Vref = mag + x4 / KA;
-  //printf("Vref = %f\n", Vref);
-  ///printf("exdc1 init:  %f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5); 
 }
 
 /**
@@ -139,11 +125,8 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
     x4 = x4_1;
     x5 = x5_1;
   }
-  //printf("...........%f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5);
-  //printf(".........Vterminal = %f\n", Vterminal);
   double Feedback;
   // State 2
-  //printf("TR = %f\n", TR);
   if (TR > TS_THRESHOLD * t_inc) dx2 = (Vterminal - x2) / TR; // SJin: x2 is Vsens
   else x2 = Vterminal; // propogate state immediately
   // State 5
@@ -154,20 +137,16 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
     x5 = 0;
     Feedback = 0;
   }
-  //printf("TF = %f, t_inc = %f, x5 = %f, dx5 = %f\n", TF, t_inc, x5, dx5);
   // State 3
   double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
   double LeadLagIN = Vref - x2 + Vstab - Feedback;
-  //printf("Vref = %f, TB = %f, TC = %f\n", Vref, TB, TC); 
   double LeadLagOUT;
-  //printf("LeadLagIN = %f, TC = %f, TB = %f, x3 = %f\n", LeadLagIN, TC, TB, x3);
   if (TB > (TS_THRESHOLD * t_inc)) {
     dx3 = (LeadLagIN * (1 - TC / TB) - x3) / TB;
     LeadLagOUT = LeadLagIN * TC / TB + x3;
   } else 
     LeadLagOUT = LeadLagIN;
   // State 4
-  //printf("x4 = %f, Vrmax = %f, Vrmin = %f, TA = %f, LeadLagOUT = %f, KA = %f\n", x4, Vrmax, Vrmin, TA, LeadLagOUT, KA);
   if (x4 > Vrmax) x4 = Vrmax;
   if (x4 < Vrmin) x4 = Vrmin;
   if (TA > (TS_THRESHOLD * t_inc)) 
@@ -186,15 +165,7 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
   x3_1 = x3 + dx3 * t_inc;
   x4_1 = x4 + dx4 * t_inc;
   x5_1 = x5 + dx5 * t_inc;
-  //printf("x2 = %f, dx2 = %f, x2_1 = %f\n", x2, dx2, x2_1);
-  //printf("x5 = %f, dx5 = %f, x5_1 = %f\n", x5, dx5, x5_1);
-
-  ///printf("exdc1 dx: %f\t%f\t%f\t%f\t%f\t\n", dx1, dx2, dx3, dx4, dx5);
-  ///printf("exdc1 x: %f\t%f\t%f\t%f\t%f\n", x1_1, x2_1, x3_1, x4_1, x5_1);
-
   Efd = x1_1 * (1 + w);
-
-  ///printf("exdc1 Efd: %f\n", Efd);
 }
 
 /**
@@ -206,7 +177,6 @@ void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag
 {
   double Feedback;
   // State 2
-  //printf("TR = %f, Vterminal = %f, x2_1 = %f\n", TR, Vterminal, x2_1);
   if (TR > TS_THRESHOLD * t_inc) dx2_1 = (Vterminal - x2_1) / TR; // SJin: x2 is Vsens
   else x2_1 = Vterminal; // propogate state immediately
   // State 5
@@ -221,7 +191,6 @@ void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag
   double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
   double LeadLagIN = Vref - x2_1 + Vstab - Feedback;  
   double LeadLagOUT;
-  //printf("LeadLagIN = %f, TC = %f, TB = %f, x3 = %f\n", LeadLagIN, TC, TB, x3);
   if (TB > (TS_THRESHOLD * t_inc)) {
     dx3_1 = (LeadLagIN * (1 - TC / TB) - x3_1) / TB;
     LeadLagOUT = LeadLagIN * TC / TB + x3_1;
@@ -247,12 +216,7 @@ void gridpack::dynamic_simulation::Exdc1Model::corrector(double t_inc, bool flag
   x4_1 = x4 + (dx4 + dx4_1) / 2.0 * t_inc;
   x5_1 = x5 + (dx5 + dx5_1) / 2.0 * t_inc;
 
-  ///printf("exdc1 dx: %f\t%f\t%f\t%f\t%f\t\n", dx1_1, dx2_1, dx3_1, dx4_1, dx5_1);
-  ///printf("exdc1 x: %f\t%f\t%f\t%f\t%f\n", x1_1, x2_1, x3_1, x4_1, x5_1);
-  
   Efd = x1_1 * (1 + w);
-
-  ///printf("exdc1 Efd: %f\n", Efd);
 }
 
 /**

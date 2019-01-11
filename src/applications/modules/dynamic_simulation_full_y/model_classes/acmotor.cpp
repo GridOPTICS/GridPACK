@@ -165,11 +165,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
 {
   p_sbase = 100.0;
 
-  //check with Qiuhua to see whether pl and ql are loaded correctly, is there a percentage?? renke??
   data->getValue(BUS_NUMBER,&p_bus_id);
   data->getValue(LOAD_ID,&p_loadid,idx);
-  //if (!data->getValue(LOAD_PL, &p_pl, idx)) p_pl = 0.0;
-  //if (!data->getValue(LOAD_QL, &p_ql, idx)) p_ql = 0.0;
   
   // set the information of dynamic load P, Q, id at the base class level too.
   p_pl = dloadP;
@@ -231,10 +228,10 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
   if (!data->getValue(LOAD_UVTR2, &Uvtr2, idx))  Uvtr2 	= 0.9;
   if (!data->getValue(LOAD_TTR2, &Ttr2 , idx))  Ttr2 	= 5.0;
  
- printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
-    printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
-    printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
-    printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
+  printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
+  printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
+  printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
+  printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
   
   
   // set the information of dynamic load P, Q, id at the base class level too.
@@ -284,10 +281,10 @@ void gridpack::dynamic_simulation::AcmotorLoad::load(
   if (!data->getValue(LOAD_UVTR2, &Uvtr2, idx))  Uvtr2 	= 0.9;
   if (!data->getValue(LOAD_TTR2, &Ttr2 , idx))  Ttr2 	= 5.0;
  
- printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
-    printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
-    printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
-    printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
+  printf("Tstall %f, Trst  %f, Tv %f, Tf %f, CompLF %f, CompPF %f, Vstall %f, Rstall %f, Xstall %f, LFadj %f \n", Tstall, Trst, Tv, Tf, CompLF, CompPF, Vstall, Rstall, Xstall, LFadj);
+  printf("Kp1 %f, Np1 %f, Kq1 %f, Nq1 %f, Kp2 %f, Np2 %f, Kq2 %f, Nq2 %f \n", Kp1, Np1, Kq1, Nq1, Kp2, Np2, Kq2, Nq2); 
+  printf ("Vbrk %f, Frst %f, Vrst %f, CmpKpf %f, CmpKqf %f, Vc1off %f, Vc2off %f \n", Vbrk, Frst, Vrst, CmpKpf, CmpKqf, Vc1off, Vc2off);
+  printf ("Vc1on  %f, Vc2on %f, Tth %f, Th1t %f, Th2t %f, Fuvr %f, Uvtr1 %f, Ttr1 %f, Uvtr2 %f, Ttr2 %f \n", Vc1on, Vc2on, Tth, Th1t, Th2t, Fuvr, Uvtr1, Ttr1, Uvtr2, Ttr2);
   
 }
 
@@ -322,15 +319,11 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
 
   equivY_sysMVA = equivY * MVABase / systemMVABase;
   
-  //printf("AcmotorLoad::init: equivY_sysMVA: %12.6f + j %12.6f \n", real(equivY_sysMVA), imag(equivY_sysMVA));
-
   // initial P and Q in motor MVA base
 
   Pinit_pu = Pinit / MVABase;
   Qinit_pu = Pinit_pu * tan(acos(CompPF));
   
-  //printf("AcmotorLoad::init: Pinit_pu: %12.6f, Qinit_pu: %12.6f \n", Pinit_pu, Qinit_pu);
-
   gridpack::ComplexType tmp(Pinit_pu, -Qinit_pu);
   equivYpq_motorBase = tmp / vt / vt; 
 
@@ -348,15 +341,11 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   Vstall = Vstall * (1.0 + LFadj * (CompLF - 1.0));
   Vbrk = Vbrk * (1.0 + LFadj * (CompLF -1.0));
   
-  //printf("AcmotorLoad::init: Vstall: %12.6f, Vbrk: %12.6f \n", Vstall, Vbrk);
-
   // calculate P0 and Q0 for the algebraic P/Q curve
 
   P0 = Pinit_pu - Kp1 * pow(volt - Vbrk, Np1);
   Q0 =  Qinit_pu - Kq1 * pow(volt- Vbrk, Nq1);
   
-  //printf("AcmotorLoad::init: P0: %12.6f, Q0: %12.6f \n", P0, Q0);
-
   double v = 0.4;
   while (v <= Vbrk) {
     double pst = Gstall * v * v; //renke??
@@ -708,73 +697,74 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
    
   // calculate the AC motor power 
   printf("AcmotorLoad::dynamicload_post_process, P0: %12.6f, Q0: %12.6f \n", P0, Q0);
-   if ( statusA == 1 ) {// MotorA running
-       
-           if (vt >=  Vbrk) {
+  if ( statusA == 1 ) {// MotorA running
 
-                PA = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));
-                QA = ( Q0 +  Kq1*pow(vt -  Vbrk, Nq1) )*(1.0 +  CmpKqf*(freq - 1.0));
-		   }
-           else if (vt <  Vbrk && vt >  Vstallbrk) {
+    if (vt >=  Vbrk) {
 
-                PA = ( P0 +  Kp2*pow(Vbrk- vt, Np2) )*(1.0 +  CmpKpf*(freq - 1.0));
-                QA = ( Q0 +  Kq2*pow(Vbrk -vt, Nq2) )*(1.0 +  CmpKqf*(freq - 1.0));
-		   }
-           else  {
-
-                PA =  Gstall*vt*vt;
-                QA = - Bstall*vt*vt; // motor oriented--draw power from system as positive 
-           }
-   } else {// MotorA stalled
-        
-            PA =  Gstall*vt*vt;
-            QA = - Bstall*vt*vt;   // motor oriented--draw power from system as positive 
-        
-   } // end of if ( statusA == 1 ) {// MotorA running
-    
-    if ( Frst > 0.0  ) { // power is calcuated only when Frst > 0.0
-        if ( statusB == 1) { // MotorB running
-
-               if (vt >  Vbrk) {
-
-                    PB = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));
-                    QB = ( Q0 +  Kq1*pow(vt -  Vbrk, Nq1) )*(1.0 +  CmpKqf*(freq - 1.0));
-			   }
-               else if (vt <  Vbrk && vt >  Vstallbrk) {
-
-                    PB = ( P0 +  Kp2*pow(Vbrk- vt, Np2) )*(1.0 +  CmpKpf*(freq - 1.0));
-                    QB = ( Q0 +  Kq2*pow(Vbrk- vt, Nq2) )*(1.0 +  CmpKqf*(freq - 1.0));
-			   }
-               else  {
-
-                    PB =  Gstall*vt*vt;
-                    QB = - Bstall*vt*vt; // motor oriented--draw power from system as positive 
-               }
-		} else {// MotorA stalled
-
-              PB =  Gstall*vt*vt;
-              QB = - Bstall*vt*vt; // motor oriented--draw power from system as positive 
-
-		}
+      PA = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));
+      QA = ( Q0 +  Kq1*pow(vt -  Vbrk, Nq1) )*(1.0 +  CmpKqf*(freq - 1.0));
     }
-  
-    // MOTOR A part -- non-restartable
-    // MOTOR B part -- restartable
-     Pmotor =  PA*(1.0- Frst)* FthA +  PB*  Frst* FthB;
-     Qmotor =  QA*(1.0- Frst)* FthA +  QB*  Frst* FthB;
-  
-    // consider the UR relay and contractor
-     Pmotor =  Kuv* Kcon* Pmotor;
-     Qmotor =  Kuv* Kcon* Qmotor;
-	 
-	 gridpack::ComplexType tmpcplx(Pmotor, -Qmotor);
-	 equivYpq_motorBase = tmpcplx/vt/vt;
-     
-    //equivYpq_motorBase = ( Pmotor - i* Qmotor)/vt/vt;
+    else if (vt <  Vbrk && vt >  Vstallbrk) {
 
-    printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, \n",
-          p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA, temperatureB, presentMag, presentFreq,
-                  statusA, statusB, Pmotor, Qmotor, FthA, FthB);
+      PA = ( P0 +  Kp2*pow(Vbrk- vt, Np2) )*(1.0 +  CmpKpf*(freq - 1.0));
+      QA = ( Q0 +  Kq2*pow(Vbrk -vt, Nq2) )*(1.0 +  CmpKqf*(freq - 1.0));
+    }
+    else  {
+
+      PA =  Gstall*vt*vt;
+      QA = - Bstall*vt*vt; // motor oriented--draw power from system as positive 
+    }
+  } else {// MotorA stalled
+
+    PA =  Gstall*vt*vt;
+    QA = - Bstall*vt*vt;   // motor oriented--draw power from system as positive 
+
+  } // end of if ( statusA == 1 ) {// MotorA running
+
+  if ( Frst > 0.0  ) { // power is calcuated only when Frst > 0.0
+    if ( statusB == 1) { // MotorB running
+
+      if (vt >  Vbrk) {
+
+        PB = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));
+        QB = ( Q0 +  Kq1*pow(vt -  Vbrk, Nq1) )*(1.0 +  CmpKqf*(freq - 1.0));
+      }
+      else if (vt <  Vbrk && vt >  Vstallbrk) {
+
+        PB = ( P0 +  Kp2*pow(Vbrk- vt, Np2) )*(1.0 +  CmpKpf*(freq - 1.0));
+        QB = ( Q0 +  Kq2*pow(Vbrk- vt, Nq2) )*(1.0 +  CmpKqf*(freq - 1.0));
+      }
+      else  {
+
+        PB =  Gstall*vt*vt;
+        QB = - Bstall*vt*vt; // motor oriented--draw power from system as positive 
+      }
+    } else {// MotorA stalled
+
+      PB =  Gstall*vt*vt;
+      QB = - Bstall*vt*vt; // motor oriented--draw power from system as positive 
+
+    }
+  }
+
+  // MOTOR A part -- non-restartable
+  // MOTOR B part -- restartable
+  Pmotor =  PA*(1.0- Frst)* FthA +  PB*  Frst* FthB;
+  Qmotor =  QA*(1.0- Frst)* FthA +  QB*  Frst* FthB;
+
+  // consider the UR relay and contractor
+  Pmotor =  Kuv* Kcon* Pmotor;
+  Qmotor =  Kuv* Kcon* Qmotor;
+
+  gridpack::ComplexType tmpcplx(Pmotor, -Qmotor);
+  equivYpq_motorBase = tmpcplx/vt/vt;
+
+  //equivYpq_motorBase = ( Pmotor - i* Qmotor)/vt/vt;
+
+  printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, \n",
+      p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA,
+      temperatureB, presentMag, presentFreq, statusA, statusB, Pmotor, Qmotor,
+      FthA, FthB);
 
 }
 
@@ -825,11 +815,9 @@ bool gridpack::dynamic_simulation::AcmotorLoad::serialWrite(
     char* string, const int bufsize, const char *signal)
 {
     if (!strcmp(signal,"standard")) {
-    //sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
-    //    p_bus_id,p_ckt.c_str(),real(p_mac_ang_s1),real(p_mac_spd_s1),real(p_mech),
-    //    real(p_pelect));
     sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f\n",
-          p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA, temperatureB);
+          p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA,
+          temperatureB);
     return true;
   } else if (!strcmp(signal,"init_debug")) {
     sprintf(string," %8d  %2s Something\n",p_bus_id,p_loadid.c_str());
@@ -840,21 +828,10 @@ bool gridpack::dynamic_simulation::AcmotorLoad::serialWrite(
   } else if (!strcmp(signal,"load_watch")) {
     if (getWatch()) {
       char buf[128];
-//    sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
       sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, \n",
           p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA, temperatureB, presentMag, presentFreq, 
 		  statusA, statusB, Pmotor, Qmotor, FthA, FthB);
       return true;
-/*      if (strlen(buf) <= bufsize) {
-        sprintf(string,"%s",buf);
-        return true; 
-      } else {
-        printf ("size watch problem at gensal serialWrite() \n");
-        return false;
-      }
-    } else {
-        return false;
-*/
     }
   } else if (!strcmp(signal,"debug_initial")) {
   return false;

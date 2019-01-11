@@ -94,54 +94,21 @@ void gridpack::dynamic_simulation::ClassicalGenerator::init(double mag,
   gridpack::ComplexType v(0.0, vi);
   v = eterm * exp(v);
   p_volt = v;
-  //printf("\n\n**************************\n");
-  //printf("volt= %f\n", p_volt);
   double pelect = p_pg;
-  //printf("pelect = %f\n", pelect);
   double qelect = p_qg;
-  //printf("qelect = %f\n", qelect);
   double currr = sqrt(pelect * pelect + qelect * qelect) / eterm;
   double phi = atan2(qelect, pelect);
   double curri = ang - phi;
-  //printf("currr = %f, phi = %f, curri = %f\n", currr, phi, curri);
   gridpack::ComplexType curr(0.0, curri);
   curr = currr * exp(curr);
-  //printf("curr: (%f, %f)\n", real(curr), imag(curr));
   gridpack::ComplexType jay(0.0, 1.0);
-  //printf("v: (%f, %f)\n", real(v), imag(v));
-  //gridpack::ComplexType temp = v + jay * (p_dtr * p_mva) * curr;
   gridpack::ComplexType temp = v + jay * p_dtr * curr;
-  //printf("dtr = %f, mva = %f\n", p_dtr, p_mva);
-  //printf("eprime_s0: (%f, %f)\n", real(temp), imag(temp));
   p_eprime_s0 = temp;
-  //printf("eprime_s0 = %f\n", p_eprime_s0);
-  // mac_ang_s0
   temp = atan2(imag(p_eprime_s0), real(p_eprime_s0));
   p_mac_ang_s0 = temp;
-  //printf("mac_ang_s0 = %f\n", p_mac_ang_s0);
-  // mac_spd_s0
   p_mac_spd_s0 = gridpack::ComplexType(1.0,0.0);
-  //printf("mac_spd_s0 = %f\n", p_mac_spd_s0);
-  // eqprime
   p_eqprime = gridpack::ComplexType(abs(p_eprime_s0),0.0);
-  //printf("eqprime = %f\n", p_eqprime);
-  // pmech
   p_pmech = gridpack::ComplexType(abs(p_pelect),0.0);
-  //printf("mech = %f\n", p_pmech);
-  //printf("mva = %f\n", p_mva);
-  //printf("d0 = %f\n", p_d0);
-  //printf("h = %f\n", p_h);
-  //printf("dtr = %f\n", p_dtr);
-  //printf("%f\t%f\t%f\t%f\t%f\t%f\n",  
-  //real(p_mac_ang_s0) * 180 / p_PI, 
-  //real(p_mac_spd_s0) * 60, 
-  ///printf("%f\t%f\t%f\t%f\n",  
-  ///real(p_mac_ang_s0), 
-  ///real(p_mac_spd_s0), 
-  ///real(p_pmech), 
-  ///real(p_pelect),
-  ///real(p_mac_ang_s0) * 180 / p_PI, 
-  ///real(p_mac_spd_s0) * 60);
   // Initialize other variables 
   p_mac_ang_s1 = gridpack::ComplexType(0.0,0.0);
   p_mac_spd_s1 = gridpack::ComplexType(0.0,0.0);
@@ -174,7 +141,6 @@ gridpack::ComplexType gridpack::dynamic_simulation::ClassicalGenerator::NortonIm
   if (p_dstr == 0.0) {
     xd = p_dtr * p_sbase / p_mva;
   }
-  //printf("classical generator model :: NortonImpedence() p_r = %f, ra = %f, xd = %f, p_dstr = %f, p_dtr = %f \n", p_r, ra, xd, p_dstr, p_dtr);
   gridpack::ComplexType Y_a(ra, xd);
   Y_a = 1.0 / Y_a;
   return Y_a;
@@ -195,14 +161,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor_currentInjectio
   gridpack::ComplexType jay(0.0, 1.0);
   // Calculate INorton_full
   p_INorton = p_eprime_s0 / (p_dtr * jay);
- 
-  /*double Idnorton = real(p_INorton);
-  double Iqnorton = imag(p_INorton); 
-  IrNorton = + Idnorton * sin(real(p_mac_ang_s0)) + Iqnorton * cos(real(p_mac_ang_s0));
-  IiNorton = - Idnorton * cos(real(p_mac_ang_s0)) + Iqnorton * sin(real(p_mac_ang_s0));
-  IrNorton = IrNorton * p_mva / p_sbase; 
-  IiNorton = IiNorton * p_mva / p_sbase; 
-  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);*/
 }
 
 /**
@@ -224,27 +182,20 @@ void gridpack::dynamic_simulation::ClassicalGenerator::predictor(
   }
   // Evaluate updated values of machine parameters for integration
   jay = gridpack::ComplexType(0.0,1.0);
-  //p_INorton = gridpack::ComplexType(0.0,0.0);
 
   // terminal curr: curr = (eprime - volt) / GEN_dtr) -----------
   curr = p_eprime_s0;
   curr -= p_volt;
   curr = curr/(jay*p_dtr);
-  //imag(curr) = -imag(curr);
   curr = conj(curr);
   p_pelect = real(p_eprime_s0 * curr);
   // dmac_ang:
-  //printf("classical gen  predictor p_mac_ang_s0 and p_mac_spd_s0: %12.9f, %12.9f \n",p_mac_ang_s0, p_mac_spd_s0);
   p_dmac_ang_s0 = (p_mac_spd_s0 - 1.0) * basrad;
   // dmac_spd:
-  //p_dmac_spd_s0 = (p_pmech - p_pelect - p_d0 *
-  //    (p_mac_spd_s0 - 1.0)) / (2.0 * p_h);
   p_dmac_spd_s0 = ((p_pmech - p_d0 * (p_mac_spd_s0 - 1.0)) / p_mac_spd_s0 - p_pelect) / (2.0 * p_h);
-  //printf("classical gen  predictor dang and dspd: %12.9f, %12.9f \n",p_dmac_ang_s0, p_dmac_spd_s0);
   p_mac_ang_s1 = p_mac_ang_s0 + p_dmac_ang_s0 * t_inc;
   p_mac_spd_s1 = p_mac_spd_s0 + p_dmac_spd_s0 * t_inc;
 
-  //printf("classical gen  predictor p_mac_ang_s1 and p_mac_spd_s1: %12.9f, %12.9f \n",p_mac_ang_s1, p_mac_spd_s1);
   p_eprime_s1 = exp(p_mac_ang_s1 * jay) * p_eqprime;
 }
 
@@ -256,14 +207,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector_currentInjectio
 {
   gridpack::ComplexType jay(0.0, 1.0);
   p_INorton = p_eprime_s1 / (p_dtr * jay);
-
-  /*double Idnorton = real(p_INorton);
-  double Iqnorton = imag(p_INorton); 
-  IrNorton = + Idnorton * sin(real(p_mac_ang_s1)) + Iqnorton * cos(real(p_mac_ang_s1));
-  IiNorton = - Idnorton * cos(real(p_mac_ang_s1)) + Iqnorton * sin(real(p_mac_ang_s1));
-  IrNorton = IrNorton * p_mva / p_sbase; 
-  IiNorton = IiNorton * p_mva / p_sbase; 
-  p_INorton = gridpack::ComplexType(IrNorton, IiNorton);*/
 }
 
 /**
@@ -284,45 +227,19 @@ void gridpack::dynamic_simulation::ClassicalGenerator::corrector(
   curr = p_eprime_s1;
   curr -= p_volt;
   curr = curr/(jay*p_dtr);
-  //imag(curr) = -imag(curr);
   curr = conj(curr);
   p_pelect = real(p_eprime_s1 * curr);
   // dmac_ang:
-  //printf("classical gen  corrector p_mac_ang_s1 and p_mac_spd_s1: %12.9f, %12.9f \n",p_mac_ang_s1, p_mac_spd_s1);
   p_dmac_ang_s1 = (p_mac_spd_s1 - 1.0) * basrad;
   // dmac_spd:
-  //p_dmac_spd_s1 = (p_pmech - p_pelect - p_d0 *
-  //    (p_mac_spd_s1 - 1.0)) / (2.0 * p_h);
   p_dmac_spd_s1 = ((p_pmech - p_d0 * (p_mac_spd_s1 - 1.0)) / p_mac_spd_s1 - p_pelect) / (2.0 * p_h);
 
-  //printf("classical gen corrector  dang and dspd: %12.9f, %12.9f \n",p_dmac_ang_s1, p_dmac_spd_s1);
-  
   p_mac_ang_s1 = p_mac_ang_s0 + (p_dmac_ang_s0 + p_dmac_ang_s1)
     / 2.0 * t_inc;
   p_mac_spd_s1 = p_mac_spd_s0 + (p_dmac_spd_s0 +
       p_dmac_spd_s1) / 2.0 * t_inc;
 
-  //printf("classical gen corrector p_mac_ang_s1 and p_mac_spd_s1: %12.9f, %12.9f \n",p_mac_ang_s1, p_mac_spd_s1);
   p_eprime_s1 = exp(p_mac_ang_s1 * jay) * p_eqprime;
-  // Calculate INorton_full
-  //p_INorton = p_eprime_s1 / (p_dtr * jay);
-#if 0
-  //if (p_bus_id == 1) // the first generator of 3g9b system 
-  ///if (p_bus_id == 4) // the first generator of 179 system 
-  //if (p_bus_id == 5969) // a generator of bpa system 
-  	//printf("\t%8d            %12.6f    %12.6f\n",
-    //    p_bus_id,
-    //    real(p_mac_ang_s1),
-    //    real(p_mac_spd_s1));
-  //if (p_bus_id == 35) // a generator of 179/bpa system 
-  ////if (p_bus_id == 84839) // the last generator of wecc system 
-    ///printf("\t%8d            %12.6f    %12.6f\n",
-       /// p_bus_id,
-        //real(p_mac_ang_s1) * 180 / p_PI,
-        //real(p_mac_spd_s1) * 60);
-        ///real(p_mac_ang_s1),
-        ///real(p_mac_spd_s1));
-#endif
 }
 
 /**
@@ -332,7 +249,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::setVoltage(
     gridpack::ComplexType voltage)
 {
   p_volt = voltage;
-  //printf("ClassicalGenerator::setVoltage, %12.6f + j %12.6f \n", real(voltage), imag(voltage));	
 }
 
 /**
@@ -384,7 +300,6 @@ serialWrite(char *string, const int bufsize, const char *signal)
     sprintf(string,"PG: %f QG: %f\n",p_pg,p_qg);
     ret = true;
   }
-//    printf("(CG::serialWrite) Got to 6\n");
   return ret;
 }
 

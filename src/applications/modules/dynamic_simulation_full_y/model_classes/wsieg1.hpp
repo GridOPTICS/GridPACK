@@ -87,12 +87,6 @@ class Wsieg1Model : public BaseGovernorModel
      */
     double getMechanicalPower();
 
-    /** 
-     * Get the value of the rotor speed deviation
-     * @return value of rotor speed deviation
-     */
-    //double getRotorSpeedDeviation();
-
   private:
 
     // Governor WSIEG1 Parameters read from dyr

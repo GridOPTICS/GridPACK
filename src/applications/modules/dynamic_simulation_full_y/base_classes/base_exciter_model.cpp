@@ -79,7 +79,6 @@ void gridpack::dynamic_simulation::BaseExciterModel::corrector(
 }
 
 /**
-/**
  * Set the field voltage parameter inside the exciter
  * @param fldv value of the field voltage
  */

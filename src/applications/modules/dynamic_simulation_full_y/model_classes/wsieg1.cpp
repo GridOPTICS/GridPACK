@@ -62,8 +62,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
-  //if (!data->getValue(GOVERNOR_JBUS, &JBUS, idx)) JBUS = 0.0; // JBUS 
-  //if (!data->getValue(GOVERNOR_M, &M, idx)) M = 0.0; // M
   if (!data->getValue(GOVERNOR_K, &K, idx)) K = 0.0; // K
   if (!data->getValue(GOVERNOR_T1, &T1, idx)) T1 = 0.0; // T1
   if (!data->getValue(GOVERNOR_T2, &T2, idx)) T2 = 0.0; // T2
@@ -87,16 +85,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
   if (!data->getValue(GOVERNOR_DB1, &Db1, idx)) Db1 = 0.0; // Db1
   if (!data->getValue(GOVERNOR_ERR, &Err, idx)) Err = 0.0; // Err
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
-  /*if (!data->getValue(GOVERNOR_GV1, &Gv1, idx)) Gv1 = 0.0; // Gv1
-  if (!data->getValue(GOVERNOR_PGV1, &PGv1, idx)) PGv1 = 0.0; // PGv1
-  if (!data->getValue(GOVERNOR_GV2, &Gv2, idx)) Gv2 = 0.0; // Gv2
-  if (!data->getValue(GOVERNOR_PGV2, &PGv2, idx)) PGv2 = 0.0; // PGv2
-  if (!data->getValue(GOVERNOR_GV3, &Gv3, idx)) Gv3 = 0.0; // Gv3
-  if (!data->getValue(GOVERNOR_PGV3, &PGv3, idx)) PGv3 = 0.0; // PGv3
-  if (!data->getValue(GOVERNOR_GV4, &Gv4, idx)) Gv4 = 0.0; // Gv4
-  if (!data->getValue(GOVERNOR_PGV4, &PGv4, idx)) PGv4 = 0.0; // PGv4
-  if (!data->getValue(GOVERNOR_GV5, &Gv5, idx)) Gv5 = 0.0; // Gv5
-  if (!data->getValue(GOVERNOR_PGV5, &PGv5, idx)) PGv5 = 0.0; // PGv5*/
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 }
 
@@ -108,7 +96,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::load(
  */
 void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, double ts)
 {
-  ///printf("wsieg1: Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);
   double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
     PGV = Pmech1 / (K1 + K3 + K5 + K7);
@@ -128,7 +115,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   x4Turb2 = PGV;
   x3Turb1 = PGV;
   double GV = GainBlock.YtoX(PGV); // TBD: check GainBlock?
-  //printf("GV = %f\n", GV);
   x2GovOut = GV;
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (GV > Pmax) Pmax = GV;
@@ -146,8 +132,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   if (Iblock == 3 && Pmax == 0) Pmax = GV;
   if (T1 > 4 * ts) x1LL = GV * (1 - T2 / T1);
   else x1LL = GV;
-  //printf("T1 = %f, T2 = %f, ts = %f\n", T1, T2, ts);
-  ///printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
 }
 
 /**
@@ -166,7 +150,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
     x6Turb4 = x6Turb4_1;
   }
   // State 1
-  //printf("w = %f\n", w);
   double TempIn1 = K * w;//DBInt.Output(w);
   double TempOut;
   if (T1 > 4 * t_inc) {
@@ -174,7 +157,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
     TempOut = TempIn1 * (T2 / T1) + x1LL;
   } else 
     TempOut = TempIn1;
-  //printf("T1 = %f, T2 = %f, x1LL = %f, K = %f, TempIn1 = %f\n", T1, T2, x1LL, K, TempIn1);
   // State 2
   // enforce non-windup limits
   double TempIn2;
@@ -186,7 +168,6 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
   if (TempIn2 > Uo) TempIn2 = Uo;
   else if (TempIn2 < Uc) TempIn2 = Uc;
   dx2GovOut = TempIn2;
-  //printf("TempIn1 = %f, TempOut = %f, w = %f, TempIn2 = %f\n", TempIn1, TempOut, w, TempIn2);
   // enforce non-windup limits
   if (dx2GovOut > 0 && x2GovOut >= Pmax) dx2GovOut = 0;
   else if (dx2GovOut <0 && x2GovOut <= Pmin) dx2GovOut = 0;
@@ -223,13 +204,8 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
   x5Turb3_1 = x5Turb3 + dx5Turb3 * t_inc;
   x6Turb4_1 = x6Turb4 + dx6Turb4 * t_inc;
 
-  ///printf("wsieg1 dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4);
-  ///printf("wsieg1 x: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1);
-
   Pmech1 = x3Turb1_1 * K1 + x4Turb2_1 * K3 + x5Turb3_1 * K5 + x6Turb4_1 * K7;
   Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;
-  
-  ///printf("wsieg1 Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);
 }
 
 /**
@@ -294,13 +270,9 @@ void gridpack::dynamic_simulation::Wsieg1Model::corrector(double t_inc, bool fla
   x5Turb3_1 = x5Turb3 + (dx5Turb3 + dx5Turb3_1) / 2.0 * t_inc;
   x6Turb4_1 = x6Turb4 + (dx6Turb4 + dx6Turb4_1) / 2.0 * t_inc;
  
-  ///printf("wsieg1 dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1LL_1, dx2GovOut_1, dx3Turb1_1, dx4Turb2_1, dx5Turb3_1, dx6Turb4_1);
-  ///printf("wsieg1 x: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1);
-
   Pmech1 = x3Turb1_1 * K1 + x4Turb2_1 * K3 + x5Turb3_1 * K5 + x6Turb4_1 * K7;
   Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;
 
-  ///printf("wsieg1 Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);
 }
 
 /**
@@ -330,12 +302,3 @@ double gridpack::dynamic_simulation::Wsieg1Model::getMechanicalPower()
 {
   return Pmech1; 
 }
-
-/** 
- * Get the value of the rotor speed deviation
- * 
- */
-/*double gridpack::dynamic_simulation::Wsieg1Model::getRotorSpeedDeviation()
-{
-  return w;
-}*/

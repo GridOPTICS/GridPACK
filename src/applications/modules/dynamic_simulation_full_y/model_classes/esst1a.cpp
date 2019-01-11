@@ -79,7 +79,6 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
   if (!data->getValue(EXCITER_TF, &Tf, idx)) Tf = 0.0; // Tf
   if (!data->getValue(EXCITER_KLR, &Klr, idx)) Klr = 0.0; // TBD: Klr
   if (!data->getValue(EXCITER_ILR, &Ilr, idx)) Ilr = 0.0; // TBD: Ilr
-  //if (!data->getValue(EXCITER_TA1, &Ta1, idx)) Ta1 = 0.0; // Ta1
 }
 
 /**
@@ -123,10 +122,6 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
 
   Vterm = mag;
   presentMag = mag;
-  //Theta = ang;
-  //presentAng = ang;
-//  printf("esst1a: Efd = %f\n", Efd);
-  //State 1
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (Efd > (Vterm * Vrmax - Kc * LadIfd)) Vrmax = (Efd + Kc * LadIfd) / Vterm;
     if (Efd < (Vterm * Vrmin)) Vrmax = Efd / Vterm;
@@ -152,13 +147,10 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
     if (TempLL > Vimax) Vimax = TempLL;
     if (TempLL < Vimin) Vimin = TempLL;
   }
-  //printf ("Esst1a ini() Vcomp = %f \n", Vcomp);
   x2Vcomp = Vcomp;
   //State 5
   x5Deriv = 0;
   Vref = Vcomp + TempLL;
-
-  //printf("esst1a init:  %f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv); 
 }
 
 /**
@@ -168,7 +160,6 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
  */
 void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool flag)
 {
-  //printf ("esst1a predictor Vterm=%f, Vcomp=%f, LadIfd=%f\n", Vterm, Vcomp, LadIfd);
   if (!flag) {
     x1Va = x1Va_1;
     x2Vcomp = x2Vcomp_1;
@@ -239,9 +230,6 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
   x4LL2_1 = x4LL2 + dx4LL2 * t_inc;
   x5Deriv_1 = x5Deriv + dx5Deriv * t_inc;
 
-  //printf("esst1a dx: %f\t%f\t%f\t%f\t%f\n", dx1Va, dx2Vcomp, dx3LL1, dx4LL2, dx5Deriv);
-//  printf("esst1a x: %f\t%f\t%f\t%f\t%f\n", x1Va_1, x2Vcomp_1, x3LL1_1, x4LL2_1, x5Deriv_1);
-
   double Temp = Klr * (LadIfd - Ilr);
   if (Temp < 0) Temp = 0;
   Temp = x1Va - Temp;
@@ -249,8 +237,6 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
   if (Temp > (Vterm * Vrmax - Kc * LadIfd)) Temp = Vterm * Vrmax - Kc * LadIfd;
   if (Temp < (Vterm * Vrmin)) Temp = Vterm * Vrmin;
   Efd = Temp;
-
-  //printf("esst1a Efd: %f\n", Efd);
 }
 
 /**
@@ -322,9 +308,6 @@ void gridpack::dynamic_simulation::Esst1aModel::corrector(double t_inc, bool fla
   x3LL1_1 = x3LL1 + (dx3LL1 + dx3LL1_1) / 2.0 * t_inc;
   x4LL2_1 = x4LL2 + (dx4LL2 + dx4LL2_1) / 2.0 * t_inc;
   x5Deriv_1 = x5Deriv + (dx5Deriv + dx5Deriv_1) / 2.0 * t_inc;
-
-  //printf("esst1a dx: %f\t%f\t%f\t%f\t%f\n", dx1Va_1, dx2Vcomp_1, dx3LL1_1, dx4LL2_1, dx5Deriv_1);
-//  printf("esst1a x: %f\t%f\t%f\t%f\t%f\n", x1Va_1, x2Vcomp_1, x3LL1_1, x4LL2_1, x5Deriv_1);
   
   double Temp = Klr * (LadIfd - Ilr);
   if (Temp < 0) Temp = 0;
@@ -333,8 +316,6 @@ void gridpack::dynamic_simulation::Esst1aModel::corrector(double t_inc, bool fla
   if (Temp > (Vterm * Vrmax - Kc * LadIfd)) Temp = Vterm * Vrmax - Kc * LadIfd;
   if (Temp < (Vterm * Vrmin)) Temp = Vterm * Vrmin;
   Efd = Temp;
-
-  //printf("esst1a Efd: %f\n", Efd);
 }
 
 /**

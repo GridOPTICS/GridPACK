@@ -165,22 +165,15 @@ bool gridpack::dynamic_simulation::Distr1Relay::updateRelay(double delta_t)
 	
 	iline_trip_prev = iline_trip;
 	
-	//printRelayVoltCurr();
-	
 	if( iflag == 0 ) {
 		dzone2_dis = abs( c_volt/c_curr - c_zone2center );
 		dzone1_dis = abs( c_volt/c_curr - c_zone1center );
 		
-		//printf("Distr1 update: dzone1_dis = %8.4f, zone1 radio: %8.4f \n", dzone1_dis, dzone1_reach/2.0);
-		//printf("Distr1 update: dzone2_dis = %8.4f, zone2 radio: %8.4f \n", dzone2_dis, dzone2_reach/2.0);
-		
 		if ( dzone2_dis < (dzone2_reach/2.0) ) {
 			icount_zone2t++;
-			//printf( "icount_zone2t: %d \n", icount_zone2t);
 			
 			if ( dzone1_dis < (dzone1_reach/2.0) ) {
 				icount_zone1t++;
-				//printf( "icount_zone1t: %d \n", icount_zone1t);
 			}else {
 				icount_zone1t = 0;
 			}
@@ -192,10 +185,7 @@ bool gridpack::dynamic_simulation::Distr1Relay::updateRelay(double delta_t)
 	
 	if ( icount_zone1t*delta_t > dzone1_time/60 || icount_zone2t*delta_t > dzone2_time/60 ) {
 		iflag = 1;
-		//printf("delta_t: %8.4f \n", delta_t);
-		//printf( "iflag: %d \n", iflag);
 		icount_breaker++;
-		//printf( "icount_breaker: %d \n", icount_breaker);
 		if ( icount_breaker*delta_t > dsebtime/60.0) {
 			iline_trip = 1;
 			iflag = 0;

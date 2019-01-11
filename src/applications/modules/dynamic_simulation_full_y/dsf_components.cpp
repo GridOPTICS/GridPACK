@@ -98,21 +98,15 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagSize(int *isize, int *js
 bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *values)
 {
   if (p_mode == YBUS) {
-    //bool status = YMBus::matrixDiagValues(values);
-    //if (status) printf("idx: %d Real: %f Imag: %f\n",getOriginalIndex(),
-    // real(values[0]), imag(values[0]));
-    //return status;
     return YMBus::matrixDiagValues(values);	
   } else if (p_mode == YL) {
     printf("DSFullBus::matrixDiagValues, bus %d: p_pl = %f, p_ql = %f, p_voltage = %f\n", getOriginalIndex(), p_pl, p_ql, p_voltage);
-    //printf("p_ybusr = %f, p_ybusi = %f\n", p_ybusr, p_ybusi);
     p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
     p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
     p_loadimpedancer = p_pl/(p_voltage*p_voltage);
     p_loadimpedancei = (-p_ql)/(p_voltage*p_voltage);
     /* TBD: p_ybusr = p_ybusr+(-p_pg)/(p_voltage*p_voltage);
     p_ybusi = p_ybusi+p_qg/(p_voltage*p_voltage);*/
-    //printf(".. p_ybusr = %f, p_ybusi = %f\n", p_ybusr, p_ybusi);
     gridpack::ComplexType ret(p_ybusr, p_ybusi);
     values[0] = ret;
     return true;
@@ -134,7 +128,6 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
          }
       }
     } else {
-      //printf("!!!!!!!%f, %f\n", p_ybusr, p_ybusi);
       gridpack::ComplexType u(p_ybusr, p_ybusi);
       values[0] = u;
     }
@@ -150,34 +143,17 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
   } else if (p_mode == jxd) {
     if (p_ngen > 0) {
       for (int i = 0; i < p_ngen; i++) {
-#if 0
-        double ra = p_r[i] * p_sbase / p_mva[i];
-        double xd;
-        if (p_dstr[i] == 0) {
-          xd = p_dtr[i] * p_sbase / p_mva[i];
-        }
-        gridpack::ComplexType Y_a(ra, xd);
-        Y_a = 1.0 / Y_a;
-#else
-        //printf("Bus %d here 1\n", getOriginalIndex());
         gridpack::ComplexType Y_a
           = p_generators[i]->NortonImpedence();
-        //printf("here 2 real(Y_a): %f imag(Y_a): %f\n",real(Y_a),imag(Y_a));
-#endif
         p_ybusr = p_ybusr + real(Y_a);
         p_ybusi = p_ybusi + imag(Y_a);
         gridpack::ComplexType ret(p_ybusr, p_ybusi);
-        //printf("here 3 p_ybusr: %f p_ybusi: %f\n",p_ybusr,p_ybusi);
         values[0] = ret;
       }
-      //return true;
     } else {
       gridpack::ComplexType u(p_ybusr, p_ybusi);
       values[0] = u;
-      //return true;
     }
-    //printf("idx: %d Real: %f Imag: %f\n",getOriginalIndex(),
-      //real(values[0]), imag(values[0]));
     return true;
   } else if (p_mode == onFY) {
     if (p_from_flag) {
@@ -243,6 +219,7 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
       return false;
     }	  
   }	 	   
+  return false;
 }
 
 /**
@@ -263,6 +240,7 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorSize(int *size) const
   } else {
     return false;
   }
+  return false;
 }
 
 /**
@@ -278,17 +256,12 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
       values[0] = 0;
       if (p_ngen > 0) {
         for (int i = 0; i < p_ngen; i++) {
-#if 0
-          values[0] += p_INorton[i];
-#else     
 	      if(p_generators[i]->getGenStatus()){ //renke add, if generator is not tripped by gen relay
 			 values[0] += p_generators[i]->INorton(); 
 			 
 			 ComplexType tmp = p_generators[i]->INorton();
-			// printf("DSFullBus::vectorValues, bus %d, generator Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
 		  } 
          
-#endif
         } // generator for loop
       }  // if p_ngen>0
 	  
@@ -297,10 +270,7 @@ bool gridpack::dynamic_simulation::DSFullBus::vectorValues(ComplexType *values)
 		  values[0] += p_loadmodels[i]->INorton(); 
 		  
 		  ComplexType tmp = p_loadmodels[i]->INorton();
-		  //printf("DSFullBus::vectorValues, bus %d, dynamic load Inorton: %12.6f + j %12.6f \n", getOriginalIndex(),real(tmp), imag(tmp));
 	  }
-	  
-      //printf("bus id = %d, values[0] = %f, %f\n", getOriginalIndex(), real(values[0]), imag(values[0])); 
       return true;
     } else {
       return false;
@@ -340,58 +310,7 @@ void gridpack::dynamic_simulation::DSFullBus::initDSVect(double ts)
 {
   if (p_ngen > 0) {
     for (int i = 0; i < p_ngen; i++) {
-#if 0
-      // mva
-      p_mva[i] = p_sbase / p_mva[i];
-      // d0
-      p_d0[i] = p_d0[i] / p_mva[i];
-      // h
-      p_h[i] = p_h[i] / p_mva[i];
-      // dtr
-      p_dtr[i] = p_dtr[i] * p_mva[i];
-      // pelect
-      p_pelect.push_back(p_pg[i]);
-      // volt
-      double eterm = p_voltage;
-      double vi = p_angle;
-      gridpack::ComplexType v(0.0, vi);
-      v = eterm * exp(v);
-      p_volt.push_back(v);
-      // eprime_s0
-      double pelect = p_pg[i];
-      double qelect = p_qg[i];
-      double currr = sqrt(pelect * pelect + qelect * qelect) / eterm;
-      double phi = atan2(qelect, pelect);
-      double pi = 4.0*atan(1.0);
-      double curri = p_angle - phi;
-      gridpack::ComplexType curr(0.0, curri);
-      curr = currr * exp(curr);
-      gridpack::ComplexType jay(0.0, 1.0);
-      gridpack::ComplexType temp = v + jay * (p_dtr[i] * p_mva[i]) * curr;
-      p_eprime_s0.push_back(temp);
-      // mac_ang_s0
-      temp = atan2(imag(p_eprime_s0[i]), real(p_eprime_s0[i]));
-      p_mac_ang_s0.push_back(temp);
-      // mac_spd_s0
-      p_mac_spd_s0.push_back(1.0);
-      // eqprime
-      p_eqprime.push_back(abs(p_eprime_s0[i]));
-      // pmech
-      p_pmech.push_back(abs(p_pelect[i]));
-      //printf("%f+%f\n", real(p_pmech[i]), imag(p_pmech[i]));
-      // Allocate and initialize other vectors 
-      p_mac_ang_s1.push_back(0.0);
-      p_mac_spd_s1.push_back(0.0);
-      p_dmac_ang_s0.push_back(0.0);
-      p_dmac_spd_s0.push_back(0.0);
-      p_dmac_ang_s1.push_back(0.0);
-      p_dmac_spd_s1.push_back(0.0);
-      p_eprime_s1.push_back(0.0);
-      p_INorton.push_back(0.0);
-#else
-//      printf("\ngen %d i = %d,  ngen = %d:***********\n", getOriginalIndex(),i,p_ngen);
       p_generators[i]->init(p_voltage,p_angle, ts);
-#endif
     }
   } 
   
@@ -411,17 +330,11 @@ void gridpack::dynamic_simulation::DSFullBus::predictor_currentInjection(bool fl
   if (p_ngen == 0 && p_ndyn_load == 0) return;
   int i;
   for (i = 0; i < p_ngen; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue;
-	//}
     p_generators[i]->predictor_currentInjection(flag);
   }
   
   //dynamic loads
-  //printf("DSFullBus::predictor_currentInjection, bus %d, p_ndyn_load: %d", getOriginalIndex(), p_ndyn_load);
   for (i = 0; i < p_ndyn_load; i++) {
-
-	//printf("DSFullBus::predictor_currentInjection, bus %d, entering dynamic load computation loop", getOriginalIndex());
     p_loadmodels[i]->predictor_currentInjection(flag);
   }
   
@@ -435,77 +348,15 @@ void gridpack::dynamic_simulation::DSFullBus::predictor_currentInjection(bool fl
 void gridpack::dynamic_simulation::DSFullBus::predictor(double t_inc, bool flag)
 {
   if (p_ngen == 0 && p_ndyn_load == 0) return;
-#if 0
-  gridpack::ComplexType jay, curr, pelect;
-  double sysFreq = 60.0;
-  double pi = 4.0*atan(1.0);
-  const double basrad = 2.0*pi*sysFreq;
-  int i;
-  // Reset values of machine parameters after first time step
-  if (!flag) {
-    for (i = 0; i < p_ngen; i++) {
-      p_mac_ang_s0[i] = p_mac_ang_s1[i];
-      p_mac_spd_s0[i] = p_mac_spd_s1[i];
-      p_eprime_s0[i] = p_eprime_s1[i];
-    }
-  }
-  // Evaluate updated values of machine parameters for integration
-  jay = gridpack::ComplexType(0.0,1.0);
-  p_INorton.clear();
-  for (i = 0; i < p_ngen; i++) {
-    // --------- CALL mac_em11(k,S_Steps) to calculate
-    // terminal curr: curr = (eprime - volt) / GEN_dtr) -----------
-    // curr:
-    //printf("eprime_s0 = %f + %fi\n", real(p_eprime_s0[i]), imag(p_eprime_s0[i]));
-    curr = p_eprime_s0[i];
-    curr -= p_volt[i];
-    curr = curr/(jay*p_dtr[i]);
-    //printf("curr = %f + %fi\n", real(curr), imag(curr));
-
-    // CALL mac_em2(k, S_Steps):
-    // pelect:
-    imag(curr) = -imag(curr);
-    pelect = real(p_eprime_s0[i] * curr);
-    //printf("pelect = %f\n", pelect);
-    // dmac_ang:
-    p_dmac_ang_s0[i] = (p_mac_spd_s0[i] - 1.0) * basrad;
-    //printf("dmac_ang_s0 = %f\n", p_dmac_ang_s0[i]);
-    // dmac_spd:
-    p_dmac_spd_s0[i] = (p_pmech[i] - pelect - p_d0[i] * (p_mac_spd_s0[i] - 1.0)) 
-                        / (2.0 * p_h[i]);
-    //printf("dmac_spd_s0 = %f\n", p_dmac_spd_s0[i]);
-
-    p_mac_ang_s1[i] = p_mac_ang_s0[i] + p_dmac_ang_s0[i] * t_inc;
-    p_mac_spd_s1[i] = p_mac_spd_s0[i] + p_dmac_spd_s0[i] * t_inc;
-    //printf("mac_ang_s1 = %f\n", p_mac_ang_s1[i]);
-    //printf("mac_spd_s1 = %f\n", p_mac_spd_s1[i]);
-
-    // CALL mac_em1(k, S_Steps+1):
-    p_eprime_s1[i] = exp(p_mac_ang_s1[i] * jay) * p_eqprime[i];
-    //printf("eprime_s1 = %f + %fi\n", real(p_eprime_s1[i]), imag(p_eprime_s1[i]));
-
-    // Calculate INorton_full
-    p_INorton[i] = p_eprime_s1[i] / (p_dtr[i] * jay);
-    //printf("INorton= %f + %fi\n", real(p_INorton[i]), imag(p_INorton[i]));
-  }  
-#else
   int i;
   for (i = 0; i < p_ngen; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue;
-	//}
     p_generators[i]->predictor(t_inc,flag);
   }
-  
-    //dynamic loads
+
+  //dynamic loads
   for (i = 0; i < p_ndyn_load; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue;
-	//}
     p_loadmodels[i]->predictor(t_inc,flag);
   }
-  
-#endif
 }
 
 /**
@@ -517,17 +368,11 @@ void gridpack::dynamic_simulation::DSFullBus::corrector_currentInjection(bool fl
   if (p_ngen == 0 && p_ndyn_load == 0) return;
   int i;
   for (i = 0; i < p_ngen; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue
-	//}  
     p_generators[i]->corrector_currentInjection(flag);
   }
   
   //dynamic loads
   for (i = 0; i < p_ndyn_load; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue;
-	//}
     p_loadmodels[i]->corrector_currentInjection(flag);
   }
 }
@@ -540,74 +385,15 @@ void gridpack::dynamic_simulation::DSFullBus::corrector_currentInjection(bool fl
 void gridpack::dynamic_simulation::DSFullBus::corrector(double t_inc, bool flag)
 {
   if (p_ngen == 0 && p_ndyn_load == 0) return;
-#if 0
-  gridpack::ComplexType jay, curr, pelect;
-  double sysFreq = 60.0;
-  double pi = 4.0*atan(1.0);
-  const double basrad = 2.0*pi*sysFreq;
-  int i;
-  // Evaluate updated values of machine parameters for integration
-  jay = gridpack::ComplexType(0.0,1.0);
-  p_INorton.clear();
-  for (i = 0; i < p_ngen; i++) {
-    // --------- CALL mac_em11(k,S_Steps) to calculate
-    // terminal curr: curr = (eprime - volt) / GEN_dtr) -----------
-    // curr:
-    curr = p_eprime_s1[i];
-    curr -= p_volt[i];
-    //printf("\np_volt= %f + %fi\n", real(p_volt[i]), imag(p_volt[i]));
-    curr = curr/(jay*p_dtr[i]);
-    //printf("\ncurr = %f + %fi\n", real(curr), imag(curr));
-
-    // CALL mac_em2(k, S_Steps+1):
-    // pelect:
-    imag(curr) = -imag(curr);
-    pelect = real(p_eprime_s1[i] * curr);
-    //printf("pelect = %f\n", pelect);
-    // dmac_ang:
-    p_dmac_ang_s1[i] = (p_mac_spd_s1[i] - 1.0) * basrad;
-    //printf("dmac_ang_s0 = %f\n", p_dmac_ang_s0[i]);
-    // dmac_spd:
-    p_dmac_spd_s1[i] = (p_pmech[i] - pelect - p_d0[i] * (p_mac_spd_s1[i] - 1.0)) 
-                        / (2.0 * p_h[i]);
-    //printf("dmac_spd_s0 = %f\n", p_dmac_spd_s0[i]);
-
-    p_mac_ang_s1[i] = p_mac_ang_s0[i] + (p_dmac_ang_s0[i] + p_dmac_ang_s1[i]) / 2.0 * t_inc;
-    p_mac_spd_s1[i] = p_mac_spd_s0[i] + (p_dmac_spd_s0[i] + p_dmac_spd_s1[i]) / 2.0 * t_inc;
-    //printf("mac_ang_s1 = %f\n", p_mac_ang_s1[i]);
-
-    // CALL mac_em1(k, S_Steps+1):
-    p_eprime_s1[i] = exp(p_mac_ang_s1[i] * jay) * p_eqprime[i];
-    //printf("eprime_s1 = %f + %fi\n", real(p_eprime_s1[i]), imag(p_eprime_s1[i]));
-
-    // Calculate INorton_full
-    p_INorton[i] = p_eprime_s1[i] / (p_dtr[i] * jay);
-    //printf("INorton= %f + %fi\n", real(p_INorton[i]), imag(p_INorton[i]));
-    
-    if (!flag) { 
-      printf("%f %f\n", real(p_mac_ang_s0[i]), real(p_mac_spd_s0[i]));
-    } else { 
-      printf("%f %f\n", real(p_mac_ang_s1[i]), real(p_mac_spd_s1[i]));
-    }
-  }  
-#else
   int i;
   for (i = 0; i < p_ngen; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue;
-	//}
     p_generators[i]->corrector(t_inc,flag);
   }
   
   //dynamic loads
   for (i = 0; i < p_ndyn_load; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue;
-	//}
     p_loadmodels[i]->corrector(t_inc,flag);
   }
-  
-#endif
 }
 
 /**
@@ -615,13 +401,10 @@ void gridpack::dynamic_simulation::DSFullBus::corrector(double t_inc, bool flag)
  */
 void gridpack::dynamic_simulation::DSFullBus::dynamicload_post_process(double t_inc, bool flag)
 {
-	int i;
-	
-	//dynamic loads
+  int i;
+
+  //dynamic loads
   for (i = 0; i < p_ndyn_load; i++) {
-	//if (!p_generators[i]->getGenStatus()) {
-	//	continue;
-	//}
     p_loadmodels[i]->dynamicload_post_process(t_inc,flag);
   }
   
@@ -647,22 +430,10 @@ void gridpack::dynamic_simulation::DSFullBus::setVolt(bool flag)
 {
   if (p_ngen > 0) {
     for (int i = 0; i < p_ngen; i++) {
-#if 0
-      p_volt[i] = p_volt_full;
-      //printf("p_volt = %f + %fi\n", real(p_volt[i]), imag(p_volt[i]));
-#else
-//	  if (flag) {
-//		  if (getOriginalIndex() == 5969){
-//			  p_volt_full = gridpack::ComplexType(1.5,0.0);
-//			  printf("p_volt_full of bus 5969 = %f + %fi\n", real(p_volt_full), imag(p_volt_full));
-//		  }
-//	  }
       p_generators[i]->setVoltage(p_volt_full);
       if (flag) {
-        //if (getOriginalIndex() == 6433) printf("bus id = %d: values[0] = %f, %f, mag = %f\n", getOriginalIndex(), p_volt_full, abs(p_volt_full)); // bpa 
-        //if (getOriginalIndex() == 6) printf("bus id = %d: values[0] = %f, %f, mag = %f\n", getOriginalIndex(), p_volt_full, abs(p_volt_full)); // 179
+        //TODO:???
       }
-#endif
     }
   }
   
@@ -769,13 +540,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
     p_isolated = true;
   }
 
-  //p_load = true;
-  //p_load = p_load && data->getValue(LOAD_PL, &p_pl);
-  //p_load = p_load && data->getValue(LOAD_QL, &p_ql);
-
-  //p_pl /= p_sbase;
-  //p_ql /= p_sbase;
-
   bool lgen;
   int i, gstatus;
   int nrelay, irelay, relaycnt; //renke add
@@ -801,15 +565,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
          */ 
       data->getValue(GENERATOR_PG, &pg, i);
       data->getValue(GENERATOR_QG, &qg, i);
-      //    printf("bus %d: pg[%d] = %f, qg = %f\n", idx, i, pg,qg);
-      /*if (stat == 1 && pg < 0) {
-        p_pg_flag[i] = -1;
-        } else {
-        p_pg_flag[i] = 1;
-        }
-        */
       std::string model;
-      //if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1) 
       // TBD: if (data->getValue(GENERATOR_MODEL, &model, i)
       //            && stat == 1 && GENERATOR_PG >= 0) 
       data->getValue(GENERATOR_MODEL, &model, i); 
@@ -823,11 +579,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         data->getValue(HAS_EXCITER, &has_ex, i);
         data->getValue(HAS_GOVERNOR, &has_gov, i);
         if (generator) {
-          //boost::shared_ptr<BaseGeneratorModel> tmp;
-          //tmp.reset(generator);
-          //boost::shared_ptr<BaseGenerator> basegen;
-          //basegen.reset(new BaseGenerator);
-          //basegen->setGeneratorModel(tmp);
           boost::shared_ptr<BaseGeneratorModel> basegen;
           basegen.reset(generator);
           p_generators.push_back(basegen);
@@ -835,7 +586,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           p_genid.push_back(genid);
           if (has_ex) {
             if (data->getValue(EXCITER_MODEL, &model, i)) {
-              //std::cout << "exciter: " << model << std::endl;
               BaseExciterModel *exciter
                 = genFactory.createExciterModel(model);
               boost::shared_ptr<BaseExciterModel> ex;
@@ -845,7 +595,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           }
           if (has_gov) {
             if (data->getValue(GOVERNOR_MODEL, &model, i)) {
-              //std::cout << "governor: " << model << std::endl;
               BaseGovernorModel *governor
                 = genFactory.createGovernorModel(model);
               boost::shared_ptr<BaseGovernorModel> gov;
@@ -858,7 +607,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           // get the number of relay associate with the generator, Renke add
           nrelay = 0;
           data->getValue(RELAY_NUMBER, &nrelay);
-          //printf ("-- component generator  -- nrelay = %d \n", nrelay);
           p_generators[icnt]->ClearRelay();
           relaycnt = 0;
           if (nrelay>0) {
@@ -892,35 +640,20 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         p_negpg.push_back(pg);
         p_negqg.push_back(qg);
         p_negngen++;
-        // Evaluate correction to Y-bus
-        /*  p_pl = p_pl - pg;
-            p_ql = p_ql - qg;
-            double tempPL = p_pl * p_sbase;
-            double tempQL = p_ql * p_sbase;
-            data->setValue(LOAD_PL, tempPL);
-            data->setValue(LOAD_QL, tempQL);*/
       }
       //      p_ngen = tempNg;
-      //      data->setValue(GENERATOR_NUMBER, tempNg);
     }
   }
   int ngen_chk = p_ngen;
   p_ngen = p_generators.size();
-  //if (p_ngen != ngen_chk)
-  //  printf("Warning: inconsistent # of gens at bus %d, pf %d, dyr %d \n",
-  //    idx, ngen_chk, p_ngen); 
-  //printf("Warning: inconsistent # of gens at bus %d, pf %d, dyr %d \n",
-  //  idx, ngen_chk, p_ngen); 
 
   // add load relay (LVSHBL) assoicate with the bus, renke add
   std::string model;
   nrelay = 0;
   data->getValue(RELAY_NUMBER, &nrelay);
-  //printf ("-- component load  -- nrelay = %d \n", nrelay);
   p_loadrelays.clear();
   if (nrelay>0) {
     for (irelay=0 ; irelay<=nrelay ; irelay++) {
-      //data->getValue(RELAY_GENID, &relay_genid, irelay);
       if (data->getValue(RELAY_MODEL, &model, irelay)) {
         if (model == "LVSHBL") {
           BaseRelayModel *relaymodel
@@ -1184,33 +917,6 @@ void gridpack::dynamic_simulation::DSFullBus::LoadExtendedCmplBus(
   p_powerflowload_q.clear();
   p_loadid.clear();
   printf("DSFullBus::LoadExtendedCmplBus():  entering processing load model \n");
-  
-  /*
-  if (data->getValue(LOAD_NUMBER, &p_npowerflow_load)) {
-    std::string loadid;
-    int icnt = 0;
-    printf("bus %d has %d power flow loads \n", idx, p_npowerflow_load);
-    for (i=0; i<p_npowerflow_load; i++) { 
-      data->getValue(LOAD_PL, &pl, i);
-      data->getValue(LOAD_QL, &ql, i);
-	  data->getValue(LOAD_ID, &loadid, i);
-	  p_powerflowload_p.push_back(pl);
-	  p_powerflowload_q.push_back(ql);
-	  p_loadid.push_back(loadid);  
-
-      printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
-      std::string model;
-    }
-  }
-  
-  //sum all the power flow load P and Q at this bus together
-  p_pl = 0.0;
-  p_ql = 0.0;
-  for (i=0; i<p_npowerflow_load; i++){
-	  p_pl+=p_powerflowload_p[i];
-	  p_ql+=p_powerflowload_q[i];
-  }
-  */
   
   data->getValue(LOAD_PL, &p_pl);
   data->getValue(LOAD_QL, &p_ql);
@@ -1626,13 +1332,9 @@ void gridpack::dynamic_simulation::DSFullBus::computeBusVolFrequency( double tim
 	double dstatex, dstatex1, ddx1, ddx2, dva_old, dva;
 	
 	dstatex = pbusvolfreq_old/dFREQ_SYS - 1.0;
-	//dva_old = atan2(imag(p_volt_full_old), real(p_volt_full_old));
 	dva_old = atan2(p_volt_full_old_imag, p_volt_full_old_real);
 	dva = atan2(imag(p_volt_full), real(p_volt_full));
 
-        //printf ("pbusvolfreq_old, %8.4f,%8.4f, %8.4f,  %8.4f, %8.4f, %8.4f, %8.4f, %8.4f\n",
-        //pbusvolfreq_old, p_busvolfreq, dva_old, dva, p_volt_full_old_real, p_volt_full_old_imag, real(p_volt_full),imag(p_volt_full)); 
-      	
 	//process angle changing around +180 and -180 degrees
 	if ( (dva_old>170.0/180.0*pi) && (dva<0.0))  {
 		dva += 2.0*pi;
@@ -1679,7 +1381,6 @@ void gridpack::dynamic_simulation::DSFullBus::updateoldbusvoltage (void) //renke
 
 void gridpack::dynamic_simulation::DSFullBus::printbusvoltage () //renke add
 {
-	//printf ("busvolt_old: %8.4f + j%8.4f,  busvolt: %8.4f + j%8.4f,\n", real(p_volt_full_old), imag(p_volt_full_old), real(p_volt_full),imag(p_volt_full) );
 	printf ("busvolt_old: %8.4f + j%8.4f,  busvolt: %8.4f + j%8.4f,\n", p_volt_full_old_real, p_volt_full_old_imag, real(p_volt_full),imag(p_volt_full) );
 }
 
@@ -1952,7 +1653,6 @@ void gridpack::dynamic_simulation::DSFullBus::addLoadAdmittance()
 {
   p_ybusr = p_ybusr+p_pl/(p_voltage*p_voltage);
   p_ybusi = p_ybusi+(-p_ql)/(p_voltage*p_voltage);
-  //printf("idx: %d %f %f\n", getOriginalIndex(), p_ybusr, p_ybusi);
 }
 
 /**
@@ -2011,17 +1711,6 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorRealPower(
 void gridpack::dynamic_simulation::DSFullBus::setLoadRealPower(
     std::string tag, double value, gridpack::component::DataCollection *data)
 {
-  /*
-  int i, idx;
-  idx = -1;
-  for (i=0; i<p_nload; i++) {
-    if (p_loadid[i] == tag) {
-      idx = i;
-      break;
-    }
-  }
-  p_pl[idx] = value;
-  */
   data->setValue(LOAD_PL,value);
   data->setValue(LOAD_PL,value,0);
 }
@@ -2161,17 +1850,8 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseSize(int *isize, i
  */
 bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType *values)
 {
-  if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == jxd || p_mode == YDYNLOAD) {
-	  
-	//bool bstatus = YMBranch::matrixForwardValues(values);
-	//gridpack::dynamic_simulation::DSFullBus *bus1 =
-    //dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
-    //gridpack::dynamic_simulation::DSFullBus *bus2 =
-    //dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
-	//if (bstatus) printf("DSFullBranch::matrixForwardValues(), Ybranch from Bus %d to Bus %d, %12.6f +j* %12.6f, \n", bus1->getOriginalIndex(), 
-	//   bus2->getOriginalIndex(), real(values[0]), imag(values[0]));
-	//return bstatus;  
-	
+  if (p_mode == YBUS || p_mode == YL || p_mode == PG ||
+      p_mode == jxd || p_mode == YDYNLOAD) {
     return YMBranch::matrixForwardValues(values);
   } else if (p_mode == posFY) {
     if (p_event) {
@@ -2193,30 +1873,12 @@ bool gridpack::dynamic_simulation::DSFullBranch::matrixForwardValues(ComplexType
   }else {
     return false;
   }
-  /* if (p_mode == relay) {
- * loop through all relays and check:
- * if setrelaystatus == true
-   update p_ybusr_frwd;
-   update  p_ybusi_frwd;
-   else 
-     return false;
-  */
-
 }
 
 bool gridpack::dynamic_simulation::DSFullBranch::matrixReverseValues(ComplexType *values)
 {
-  if (p_mode == YBUS || p_mode == YL || p_mode == PG || p_mode == jxd || p_mode == YDYNLOAD) {
-	
-	// bool bstatus = YMBranch::matrixReverseValues(values);
-	// gridpack::dynamic_simulation::DSFullBus *bus1 =
-    // dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
-    // gridpack::dynamic_simulation::DSFullBus *bus2 =
-    // dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
-	// if (bstatus) printf("DSFullBranch::matrixReverseValues(), Ybranch from Bus %d to Bus %d, %12.6f +j* %12.6f, \n", bus1->getOriginalIndex(), 
-	//    bus2->getOriginalIndex(), real(values[0]), imag(values[0]));
-	// return bstatus;  
-	  
+  if (p_mode == YBUS || p_mode == YL || p_mode == PG ||
+      p_mode == jxd || p_mode == YDYNLOAD) {
     return YMBranch::matrixReverseValues(values);
   } else if (p_mode == posFY) {
     if (p_event) {
@@ -2256,16 +1918,8 @@ void gridpack::dynamic_simulation::DSFullBranch::setYBus(void)
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
   gridpack::dynamic_simulation::DSFullBus *bus2 =
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
-//  if (p_xform) {
-//    printf ("from %d-> to %d: p_phase_shift = %f, a = %f+%fi\n", bus1->getOriginalIndex(), bus2->getOriginalIndex(), p_phase_shift, real(a), imag(a) );
-//  }
-  //p_theta = bus1->getPhase() - bus2->getPhase();
   double pi = 4.0*atan(1.0);
   p_theta = (bus1->getPhase() - bus2->getPhase());
-  //printf("p_phase_shift: %12.6f\n",p_phase_shift);
-  //printf("p_theta: %12.6f\n",p_theta);
-  //printf("p_tap_ratio: %12.6f\n",p_tap_ratio);
- 
 }
 
 /**
@@ -2299,24 +1953,13 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
 
   printf("entering DSFullBranch::load() \n");
 
-  /*
-  gridpack::dynamic_simulation::DSFullBus *bus1 =
-  dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus1().get());
-  printf("DSFullBranch::load() get bus 1 number\n");	
-  gridpack::dynamic_simulation::DSFullBus *bus2 =
-  dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
-  printf("DSFullBranch::load() get bus 2 number\n");		
-
-  printf("DSFullBranch::load(), Bus No.: %d to Bus No.: %d \n",
-          bus1->getOriginalIndex(), bus2->getOriginalIndex());
-  */
-
   //read line type, check this line is added by composite load model
   std::string snewbratype;
 
   if (data->getValue(NEW_BRANCH_TYPE, &snewbratype)){
     if ( snewbratype=="TRANSFORMER" || snewbratype=="FEEDER" ) {
-      printf("This branch is a extended bus by composite load models, type: %s \n", snewbratype.c_str());
+      printf("This branch is a extended bus by composite load models, type: %s \n",
+          snewbratype.c_str());
       if ( snewbratype=="TRANSFORMER" )
       {
         p_bextendedloadbranch = 1; 
@@ -2344,7 +1987,6 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
 
   nrelay = 0;
   data->getValue(RELAY_NUMBER, &nrelay); //renke add, get number of relays with this branch
-  //printf ("-- component branch line relay:  -- nrelay = %d \n", nrelay);
 
   for (idx = 0; idx<p_elems; idx++) {
     data->getValue(BRANCH_X, &rvar, idx);
@@ -2383,17 +2025,12 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
     //renke add, get line relays associated with this branch object
     if (data->getValue(BRANCH_CKT, &sckt, idx)) {
       p_ckt.push_back(sckt);
-      //printf("branch %d element, ckt %s \n", idx, sckt.c_str());
     }
 
     if (nrelay>0) {
       for (irelay=0 ; irelay<nrelay ; irelay++) {
         data->getValue(RELAY_ID, &srelay_lineckt, irelay);
         data->getValue(RELAY_MODEL, &smodel, irelay);
-        //printf("branch relay irelay: %d, model: %s \n",
-        //         irelay, smodel.c_str());
-        //printf("branch relay irelay: %d, ckt: %s \n",
-        //         irelay, srelay_lineckt.c_str());
         if (srelay_lineckt == sckt && smodel == "DISTR1") {
           printf("find a distr1 relay with ckt %s \n", sckt.c_str());
           p_relaybranchidx.push_back(idx);
@@ -2428,9 +2065,6 @@ void gridpack::dynamic_simulation::DSFullBranch::updateBranchCurrent() //renke a
 	p_branchfrombusvolt = bus1->getComplexVoltage();
 	p_branchtobusvolt = bus2->getComplexVoltage();
 	
-	//printf ("Branch volts bus1, %8.4f+%8.4fj,  bus 2, %8.4f+%8.4fj,\n", real(p_branchfrombusvolt), 
-	//		imag(p_branchfrombusvolt), real(p_branchtobusvolt),imag(p_branchtobusvolt) );
-	
 	if (!p_branchcurrent.empty()){
 		p_branchcurrent.clear();
 	}
@@ -2441,8 +2075,6 @@ void gridpack::dynamic_simulation::DSFullBranch::updateBranchCurrent() //renke a
 		c_Z = gridpack::ComplexType(dbranchR, dbranchX);
 		c_branchcurr = (p_branchfrombusvolt - p_branchtobusvolt)/c_Z;
 		p_branchcurrent.push_back(c_branchcurr);
-		//printf ("Branch %d element current, %8.4f+%8.4fj \n", real(p_branchcurrent[i]), 
-		//	imag(p_branchcurrent[i]), i );
 	}
 	
 }
@@ -2490,12 +2122,8 @@ bool gridpack::dynamic_simulation::DSFullBranch::updateRelay(bool flag, double d
 			p_linerelays[irelay]->setMonitorVariables(vrelayvalue);
 			p_linerelays[irelay]->updateRelay(delta_t);
 			p_linerelays[irelay]->getTripStatus( itrip, itrip_prev );
-			/*
-			printf(" from bus volt = %8.4f + j*%8.4f ; branch current = %3.6f + j*%3.6f\n", 
-				real(p_branchfrombusvolt), imag(p_branchfrombusvolt), 
-				real(p_branchcurrent[ibranch]), imag(p_branchcurrent[ibranch]));
-			*/
-			printf(" DSFullBranch::updateRelay DISTR1 itrip = %d, itrip_prev = %d \n", itrip, itrip_prev);
+			printf(" DSFullBranch::updateRelay DISTR1 itrip = %d, itrip_prev = %d \n",
+             itrip, itrip_prev);
 			if ( itrip==1 && itrip_prev==0 && p_linerelays[irelay]->getOperationStatus()) {
 				bbranchflag = true;
 				p_linerelays[irelay]->setOperationStatus(false);
@@ -2503,14 +2131,14 @@ bool gridpack::dynamic_simulation::DSFullBranch::updateRelay(bool flag, double d
 				bus1->setBranchRelayFromBusStatus(true);
 				bus2->setBranchRelayToBusStatus(true);
 				
-				// add more code handling the branch related Y matrix?? Shuangshuang tbd
-				printf(" DSFullBranch::updateRelay DISTR1 trip!!!  \n");
-                                p_branch_status[ibranch] = 0;
-								p_newtripbranchcktidx.push_back(ibranch);
-								bus1->setRelayTrippedbranch(this);
-								bus2->setRelayTrippedbranch(this);
-								
-                                //setLineStatus(p_ckt[ibranch], false);
+            // add more code handling the branch related Y matrix?? Shuangshuang tbd
+            printf(" DSFullBranch::updateRelay DISTR1 trip!!!  \n");
+            p_branch_status[ibranch] = 0;
+            p_newtripbranchcktidx.push_back(ibranch);
+            bus1->setRelayTrippedbranch(this);
+            bus2->setRelayTrippedbranch(this);
+
+            //setLineStatus(p_ckt[ibranch], false);
 			}
 		}
 	}
@@ -2609,7 +2237,9 @@ gridpack::dynamic_simulation::DSFullBranch::getShunt(gridpack::dynamic_simulatio
       if (bus == getBus1().get()) {
         tmpr += p_shunt_admt_g1[i];
         tmpi += p_shunt_admt_b1[i];
-      } else if (bus == getBus2().get()) {        tmpr += p_shunt_admt_g2[i];        tmpi += p_shunt_admt_b2[i];
+      } else if (bus == getBus2().get()) {
+        tmpr += p_shunt_admt_g2[i];
+        tmpi += p_shunt_admt_b2[i];
       } else {
         // TODO: Some kind of error
       }
@@ -2637,8 +2267,6 @@ gridpack::dynamic_simulation::DSFullBranch::getPosfy11YbusUpdateFactor(int sw2_2
       gridpack::ComplexType myValue(p_resistance[i], p_reactance[i]);
 	  // tbd, have not consider the transformer ratio and line shunt capacitance
       myValue = 1.0 / myValue;
-      //printf("myValue = %f+%fi\n", real(myValue), imag(myValue));
-      //printf("%f %f\n", p_resistance, p_reactance);
       retr = real(myValue);
       reti = imag(myValue);
       return gridpack::ComplexType(retr, reti);
@@ -2755,12 +2383,15 @@ void gridpack::dynamic_simulation::DSFullBranch::printDSFullBranch()
     dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>(getBus2().get());
 	
 	branchelem = p_reactance.size();
-	printf("DSFullBranch::printDSFullBranch(), Branch from Bus %d (isolated: %d) to Bus %d (isolated: %d), branchelem: %d \n", bus1->getOriginalIndex(), bus1->checkisolated(), 
-		bus2->getOriginalIndex(), bus2->checkisolated(), branchelem);
-	for ( i=0; i<p_elems; i++ ){
-		printf("DSFullBranch::printDSFullBranch(), %d-th elem: cktid: %s, p_active: %d, p_reactance: %f, p_resistance: %f, p_phase_shift: %f, p_tap_ratio: %f, p_xform: %d, p_branch_status: %d, p_shunt: %d \n", 
-                       i, p_ckt[i].c_str(), p_active, p_reactance[i], p_resistance[i], p_phase_shift[i], p_tap_ratio[i], static_cast<int>(p_xform[i]), p_branch_status[i], static_cast<int>(p_shunt[i]));
-	}	
+   printf("DSFullBranch::printDSFullBranch(), Branch from Bus %d (isolated: %d) to Bus %d (isolated: %d), branchelem: %d \n",
+       bus1->getOriginalIndex(), bus1->checkisolated(), 
+       bus2->getOriginalIndex(), bus2->checkisolated(), branchelem);
+   for ( i=0; i<p_elems; i++ ){
+     printf("DSFullBranch::printDSFullBranch(), %d-th elem: cktid: %s, p_active: %d, p_reactance: %f, p_resistance: %f, p_phase_shift: %f, p_tap_ratio: %f, p_xform: %d, p_branch_status: %d, p_shunt: %d \n",
+         i, p_ckt[i].c_str(), p_active, p_reactance[i], p_resistance[i],
+         p_phase_shift[i], p_tap_ratio[i], static_cast<int>(p_xform[i]),
+         p_branch_status[i], static_cast<int>(p_shunt[i]));
+   }
 }
 
 /**

@@ -437,16 +437,13 @@ void gridpack::kalman_filter::KalmanApp::solve()
   p_factory->setMode(EnsembleX);
   gridpack::mapper::GenSlabMap<KalmanNetwork> xSlab(p_network);
   boost::shared_ptr<gridpack::math::Matrix> X = xSlab.mapToMatrix();
-  //X -> print();
-  //X->save("X.m");
 
   // Create initial Y matrix
   p_factory->setMode(YBus);
   gridpack::mapper::FullMatrixMap<KalmanNetwork> ybusMap(p_network);
   p_factory->setMode(RefreshY);
   boost::shared_ptr<gridpack::math::Matrix> Y_init = ybusMap.mapToMatrix();
-  //Y_init -> print();
-  //Y_init->save("Y_init.m");
+
   // Use linear solution to get inverse of Y matrix
   gridpack::math::LinearMatrixSolver solver1(*Y_init);
   gridpack::utility::Configuration::CursorPtr cursor;
@@ -458,35 +455,19 @@ void gridpack::kalman_filter::KalmanApp::solve()
 
   // Create dense version of Y_c
   boost::shared_ptr<gridpack::math::Matrix> Y_c = ycMap.mapToMatrix(true);
-  //Y_c -> print();
-  //Y_c->save("Y_c.m");
   // Evaluate RecV_0(pre-fault) matrix by solving Y_init*RecV_0 = Y_c.
 
   boost::shared_ptr<gridpack::math::Matrix> RecV_0(solver1.solve(*Y_c));
-//  boost::shared_ptr<gridpack::math::Matrix> RecV(solver1.solve(*Y_c));
   gridpack::math::Matrix *RecV;
-  //RecV_0 -> print();
-  //RecV_0->save("RecV_0.m");
   // Get RecV_1(fault)
   int sw2_2 = p_faults[0].from_idx - 1;
   int sw3_2 = p_faults[0].to_idx - 1;
   boost::shared_ptr<gridpack::math::Matrix> Yd_1(Y_init->clone());
-  //gridpack::ComplexType x(0.0, -1e7);
   p_factory->setEvent(p_faults[0]);
   p_factory->setMode(onFY);
   ybusMap.overwriteMatrix(Yd_1); 
   gridpack::math::LinearMatrixSolver solver2(*Yd_1);
   boost::shared_ptr<gridpack::math::Matrix> RecV_1(solver2.solve(*Y_c));
-  //RecV_1->save("RecV_1.m");
-/*  //Get RecV_2(post-fault)
-  boost::shared_ptr<gridpack::math::Matrix> Yd_2(Y_init->clone());
-  p_factory->setMode(posFY);
-  ybusMap.incrementMatrix(Yd_2);
-//  Yd_2->save("Yd_2.m");
-  gridpack::math::LinearMatrixSolver solver3(*Yd_2);
-  boost::shared_ptr<gridpack::math::Matrix> RecV_2(solver3.solve(*Y_c));
-//  RecV_2->print();
-//  RecV_2->save("RecV_2.m"); */
 
   // Set up io routines
   p_deltaIO->open("delta.dat");
@@ -611,11 +592,9 @@ void gridpack::kalman_filter::KalmanApp::solve()
     // Create E_ensemble 1 matrix
     p_factory->setMode(E_Ensemble1);
     boost::shared_ptr<gridpack::math::Matrix> E_ensmb1 = eSlab.mapToMatrix();
-    //E_ensmb1 -> print();    
 
     // Create V1
     boost::shared_ptr<gridpack::math::Matrix> v1(multiply(*RecV, *E_ensmb1));
-    //v1 -> print();
     
     // Push elements of V1 back onto buses
     p_factory->setMode(V1);
