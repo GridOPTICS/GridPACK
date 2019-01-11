@@ -267,12 +267,7 @@ void gridpack::kalman_filter::KalmanBus::slabSize(int *rows,
     *rows = 2;
     *cols = p_nEnsemble;
   } else if (p_mode == V1 || p_mode == V2) {
-//    if (p_ngen>0) {
-      *rows = 1;
-//      *rows = p_ngen;
-//    } else {
-//      *rows = 0;
-//    }
+    *rows = 1;
     *cols = p_nEnsemble;
   } else if (p_mode == E_Ensemble1 || p_mode == E_Ensemble2 ||
       p_mode == E_Ensemble3) {
@@ -519,8 +514,6 @@ void gridpack::kalman_filter::KalmanBus::load(
     data->getValue("BUS_VOLTAGE_ANG",&p_angle);
   if (!data->getValue("BUS_PF_VMAG", &p_voltage))
     data->getValue("BUS_VOLTAGE_MAG", &p_voltage); 
-//  data->getValue(BUS_VOLTAGE_ANG, &p_angle);
-//  data->getValue(BUS_VOLTAGE_MAG, &p_voltage); 
   p_v = p_voltage;
   double pi = 4.0*atan(1.0);
   p_angle = p_angle*pi/180.0;
@@ -593,8 +586,6 @@ void gridpack::kalman_filter::KalmanBus::load(
         p_delta_n.push_back(delta);
         p_Dm.push_back(dm);
         p_Pm.push_back(pm);
-//        p_pg.push_back(pg);
-//        p_qg.push_back(qg);
         p_pg.push_back(pgen);
         p_qg.push_back(qgen);
         p_hmach.push_back(hmach);
@@ -919,15 +910,10 @@ void gridpack::kalman_filter::KalmanBus::evaluateX2()
         p_omega2[i] = new double[p_nEnsemble];
       }
     }
-//    printf("p[%d] bus[%d] (X2) Got to 1\n",GA_Nodeid(),getOriginalIndex());
     double pi = 4.0*atan(1.0);
     double vmag, vang;
     // Evaluate time derivatives of delta1, omega1
     for (i=0; i<p_ngen; i++) {
-//        printf("Pm: %f Dm: %f Emag: %f Xd: %f Hm: %f\n",
-//            p_Pm[i],p_Dm[i],p_Ebase[i],p_dtr[i],p_hmach[i]);
-//        printf("omega1: ");
-//      printf("X1_dt:");
       for (k=0; k<p_nEnsemble; k++) {
         if (p_dtr[i] == 0.0 || p_hmach[i] == 0.0) {
           printf("Zero value found for Xd: %f or Hmach: %f\n",
@@ -935,32 +921,21 @@ void gridpack::kalman_filter::KalmanBus::evaluateX2()
         }
         vmag = abs((p_V1[i])[k]);
         vang = arg((p_V1[i])[k]);
-//        printf("vmag,vang (%f, %f)\n",vmag,vang);
         (p_delta1_dt[i])[k] = 120.0*pi*((p_omega1[i])[k]-1.0);
         (p_omega1_dt[i])[k] = (p_Pm[i]-p_Dm[i]*((p_omega1[i])[k]
               - 1.0) - p_Ebase[i]*vmag*sin((p_delta1[i])[k]-vang)/p_dtr[i])
           /(2.0*p_hmach[i]);
-//        printf("p_1_dt (%f,%f)\n",(p_delta1_dt[i])[k],(p_omega1_dt[i])[k]);
       }
-//      printf("\n");
     }
-//    printf("p[%d] bus[%d] (X2) Got to 2\n",GA_Nodeid(),getOriginalIndex());
     // Evaluate delta2, omega2
     for (i=0; i<p_ngen; i++) {
-//        printf("delta2: ");
       for (k=0; k<p_nEnsemble; k++) {
         (p_delta2[i])[k] = (p_delta1[i])[k] + (p_delta1_dt[i])[k]*p_delta_t;
-//        printf("p_1_d (%f,%f)\n",(p_delta1[i])[k],(p_delta2[i])[k]);
       }
-//      printf("\n");
-//        printf("omega2: ");
       for (k=0; k<p_nEnsemble; k++) {
         (p_omega2[i])[k] = (p_omega1[i])[k] + (p_omega1_dt[i])[k]*p_delta_t;
-//        printf("p_1_o (%f,%f)\n",(p_omega1[i])[k],(p_omega2[i])[k]);
       }
-//      printf("\n");
     }
-//    printf("p[%d] bus[%d] (X2) Got to 3\n",GA_Nodeid(),getOriginalIndex());
   }
 }
 
@@ -1000,7 +975,6 @@ void gridpack::kalman_filter::KalmanBus::evaluateX3()
     double vmag, vang;
     // Evaluate time derivatives of delta3, omega3
     for (i=0; i<p_ngen; i++) {
-//      printf("X2_dt:");
       for (k=0; k<p_nEnsemble; k++) {
         if (p_dtr[i] == 0.0 || p_hmach[i] == 0.0) {
           printf("Zero value found for Xd: %f or Hmach: %f\n",
@@ -1012,9 +986,7 @@ void gridpack::kalman_filter::KalmanBus::evaluateX3()
         (p_omega2_dt[i])[k] = (p_Pm[i]-p_Dm[i]*((p_omega2[i])[k]
               - 1.0) - p_Ebase[i]*vmag*sin((p_delta2[i])[k]-vang)/p_dtr[i])
           /(2.0*p_hmach[i]);
-//        printf("p_2_dt (%f,%f)\n",(p_delta2_dt[i])[k],(p_omega2_dt[i])[k]);
       }
-//      printf("\n");
     }
     // Evaluate delta3, omega3
     double ddelta_dt, domega_dt;
@@ -1262,8 +1234,6 @@ gridpack::kalman_filter::KalmanBranch::getPosfy11YbusUpdateFactor(int sw2_2, int
     for (i=0; i<p_elems; i++) {
       gridpack::ComplexType myValue(p_resistance[i], p_reactance[i]);
       myValue = 1.0 / myValue;
-      //printf("myValue = %f+%fi\n", real(myValue), imag(myValue));
-      //printf("%f %f\n", p_resistance, p_reactance);
       retr = real(myValue);
       reti = imag(myValue);
       return gridpack::ComplexType(retr, reti);

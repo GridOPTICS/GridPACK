@@ -42,7 +42,6 @@ void transferPFtoDS(
     dsData = ds_network->getBusData(i).get();
     pfData->getValue("BUS_PF_VMAG",&rval);
     dsData->setValue(BUS_VOLTAGE_MAG,rval);
-    ///printf("Step0 bus%d mag = %f\n", i+1, rval);
     pfData->getValue("BUS_PF_VANG",&rval);
     dsData->setValue(BUS_VOLTAGE_ANG,rval);
     int ngen = 0;
@@ -51,10 +50,8 @@ void transferPFtoDS(
       for (j=0; j<ngen; j++) {
         pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
         dsData->setValue(GENERATOR_PG,rval,j);
-        //printf("save PGEN: %f\n", rval);
         pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
         dsData->setValue(GENERATOR_QG,rval,j);
-        //printf("save QGEN: %f\n", rval);
       }
     }
   }
@@ -128,23 +125,16 @@ main(int argc, char **argv)
     transferPFtoDS(pf_network, ds_network); 
 
     // read in faults from input file
-    //gridpack::utility::Configuration::CursorPtr cursor;
     cursor = config->getCursor("Configuration.Dynamic_simulation");
     std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> faults;
     faults = ds_app.getFaults(cursor);
 
     // run dynamic simulation
     ds_app.setNetwork(ds_network, config);
-    //ds_app.readNetwork(ds_network,config);
     ds_app.readGenerators();
-    //printf("ds_app.initialize:\n");
     ds_app.initialize();
     ds_app.setGeneratorWatch();
-    //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
-    //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
-    //printf("ds_app.solve:\n");
     ds_app.solve(faults[0]);
-    //ds_app.write();
     timer->stop(t_total);
     timer->dump();
   }

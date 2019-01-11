@@ -464,8 +464,6 @@ void gridpack::ymatrix::YMBranch::load(
   for (idx = 0; idx<p_elems; idx++) {
     bool xform = true;
     xform = xform && data->getValue(BRANCH_X, &rvar, idx);
-    //if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
-//    if (rvar >-1.0e-5 && rvar >=0.0) rvar =-1.0e-5;
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
@@ -635,7 +633,6 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
     gridpack::ComplexType yij,aij,bij;
     yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
     bij = gridpack::ComplexType(0.0,p_charging[idx]);
-    //bij = 0.0;
     if (yij != zero) yij = -1.0/yij;
     if (p_xform[idx]) {
       // evaluate flow for transformer
@@ -685,7 +682,6 @@ void gridpack::ymatrix::YMBranch::getRvrsLineElements(const std::string tag,
     gridpack::ComplexType yij,aij,bij;
     yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
     bij = gridpack::ComplexType(0.0,p_charging[idx]);
-    //bij = 0.0;
     if (yij != zero) yij = -1.0/yij;
     if (p_xform[idx]) {
       // evaluate flow for transformer
