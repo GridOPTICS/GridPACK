@@ -14,7 +14,7 @@
 # -------------------------------------------------------------
 
 # 
-cmake_minimum_required (VERSION 2.8.8)
+cmake_minimum_required (VERSION 3.3.0)
 
 # This allows the use of LOCATION(target)
 if (POLICY CMP0026)
@@ -25,7 +25,7 @@ endif (POLICY CMP0026)
 project (GridPACK)
 
 set (GridPACK_VERSION_MAJOR 3)
-set (GridPACK_VERSION_MINOR 1)
+set (GridPACK_VERSION_MINOR 3)
 set (GridPACK_VERSION_PATCH 0)
 
 # This is a C++ project exclusively
