@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2018-08-20 09:48:47 d3g096
+# Last Change: 2018-09-20 14:27:44 d3g096
 # -------------------------------------------------------------
 
 cmake_minimum_required (VERSION 2.6.4)
@@ -44,7 +44,7 @@ endif()
 # MPI. How can I check that?
 # -------------------------------------------------------------
 message(STATUS "Checking Boost ...")
-# set(Boost_USE_STATIC_LIBS ON)
+#set(Boost_USE_STATIC_LIBS ON)
 find_package(Boost 1.49 COMPONENTS mpi serialization random system REQUIRED)
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 

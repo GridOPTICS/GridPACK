@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2017-12-08 09:40:58 d3g096
+# Last Change: 2019-01-04 08:39:22 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -82,16 +82,16 @@ add_dependencies(ds.x ds.x.input)
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
-install(FILES 
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
-  ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
-  ${CMAKE_CURRENT_SOURCE_DIR}/ds_main.cpp
-  DESTINATION share/gridpack/example/dynamic_simulation_reduced_y
-)
+# install(FILES 
+#   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+#   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
+#   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145bus_v23_PSLF.raw
+#   ${CMAKE_CURRENT_SOURCE_DIR}/IEEE_145b_classical_model.dyr
+#   ${CMAKE_CURRENT_SOURCE_DIR}/ds_main.cpp
+#   DESTINATION share/gridpack/example/dynamic_simulation_reduced_y
+# )
 
-install(TARGETS ds.x DESTINATION bin)
+# install(TARGETS ds.x DESTINATION bin)
   
 
 # -------------------------------------------------------------

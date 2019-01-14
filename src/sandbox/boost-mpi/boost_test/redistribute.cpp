@@ -2,7 +2,7 @@
 /**
  * @file   redistribute.cpp
  * @author William A. Perkins
- * @date   2013-06-25 10:22:05 d3g096
+ * @date   2015-12-18 08:01:49 d3g096
  * 
  * @brief  Explore ways to redistribute vectors over processors
  * 

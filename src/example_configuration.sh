@@ -13,7 +13,7 @@ if [ $? != 0 ]; then
 fi
 
 build="RelWithDebInfo"
-shared="OFF"
+shared="FALSE"
 for o in $*; do
     case $o in
         -d)
@@ -86,7 +86,7 @@ if [ $host == "flophouse" ]; then
 
     cmake3 -Wdev --debug-trycompile \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
-        -D GA_DIR:PATH="$prefix/gridpack" \
+        -D GA_DIR:PATH="$prefix/ga-c++" \
         -D BOOST_ROOT:STRING="/usr" \
         -D PETSC_DIR:STRING="$pdir" \
         -D PETSC_ARCH:STRING="$parch" \
@@ -240,6 +240,8 @@ elif [ $host == "WE32673mp" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
+        #-D PETSC_DIR:STRING="$prefix/petsc-3.7.5" \
+        #-D PETSC_ARCH:STRING="arch-macosx-clang-complex-opt" \
 elif [ $host == "olympus.local" ]; then
 
     prefix="/pic/projects/gridpack/software"
