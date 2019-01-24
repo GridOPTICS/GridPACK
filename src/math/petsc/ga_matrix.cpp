@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2017-10-19 07:07:04 d3g096
+ * @date   2019-01-24 14:52:26 d3g096
  * 
  * @brief  
  * 
@@ -383,8 +383,8 @@ Vec2GA(Vec x, int pgroup, int *ga, bool trans = false)
   PetscInt vlo, vhi;
   ierr = VecGetOwnershipRange(x, &vlo, &vhi); CHKERRQ(ierr);
   
-  PetscScalar *v;
-  ierr = VecGetArray(x, &v); CHKERRQ(ierr);
+  const PetscScalar *v;
+  ierr = VecGetArrayRead(x, &v); CHKERRQ(ierr);
 
   int lo[2] = {0,0}, hi[2] = {0,0}, ld[2] = {1,1};
   if (!trans) {
@@ -396,9 +396,9 @@ Vec2GA(Vec x, int pgroup, int *ga, bool trans = false)
     lo[1] = vlo; 
     hi[1] = vhi-1;
   }
-  NGA_Put(*ga, lo, hi, v, ld);
+  NGA_Put(*ga, lo, hi, (void *)v, ld);
   // GA_Print(*ga);
-  ierr = VecRestoreArray(x, &v); CHKERRQ(ierr);
+  ierr = VecRestoreArrayRead(x, &v); CHKERRQ(ierr);
 
   GA_Pgroup_sync(pgroup);
   return ierr;
