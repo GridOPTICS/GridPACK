@@ -800,7 +800,6 @@ void gridpack::kalman_filter::KalmanApp::solve()
   sprintf(ioBuf,"\nEnd EnKF analysis......\n"); p_busIO->header(ioBuf);
   
   timer->stop(t_KF);
-  timer->dump();
 }
 
 
