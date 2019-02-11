@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2018-07-17 10:06:51 d3g096
+ * @date   2019-02-11 06:48:08 d3g096
  * 
  * @brief  
  * 
@@ -72,8 +72,8 @@ public:
     try  {
       PetscBool ok;
       ierr = PetscInitialized(&ok);
-      if (ok) {
-        // ierr = MatDestroy(&p_Fmat);
+      if (ok && p_factored) {
+        ierr = MatDestroy(&p_Fmat);
       }
     } catch (...) {
       // just eat it
