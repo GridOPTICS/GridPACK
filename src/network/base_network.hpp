@@ -1451,43 +1451,8 @@ void resetGlobalIndices(bool flag)
     }
   }
 
-  // set up list of branch endpoint buses that need to be queried to get
-  // their global bus indices
-  keys.clear();
-  values.clear();
   int localBranches = p_branches.size();
   int idx1, idx2;
-  for (i=0; i<localBranches; i++) {
-    getOriginalBranchEndpoints(i, &idx1, &idx2);
-    keys.push_back(idx1);
-    keys.push_back(idx2);
-  }
-  hash_map.getValues(keys,values);
-
-  // Store key-value pairs in local hash map
-  lmap.clear();
-  for (i=0; i<values.size(); i++) {
-    if (lmap.find(keys[i]) == lmap.end()) {
-      lmap.insert(std::pair<int,int>(keys[i],values[i]));
-    }
-  }
-  
-  // Copy global indices to branch endpoints
-  for (i=0; i<localBranches; i++) {
-    getOriginalBranchEndpoints(i, &idx1, &idx2);
-    lit = lmap.find(idx1);
-    if (lit != lmap.end()) {
-      setGlobalBusIndex1(i,lit->second); 
-    } else {
-      printf("p[%d] No global index found for bus1 %d\n",me,idx1);
-    }
-    lit = lmap.find(idx2);
-    if (lit != lmap.end()) {
-      setGlobalBusIndex2(i,lit->second); 
-    } else {
-      printf("p[%d] No global index found for bus2 %d\n",me,idx2);
-    }
-  }
   for (i=0; i<nprocs; i++) idx_buf[i] = 0;
 
   // Add global indices to branches. Find out how many active branches
