@@ -1412,7 +1412,6 @@ void resetGlobalIndices(bool flag)
   std::vector<std::pair<int,int> > pairs;
   for (i=0; i<localBuses; i++) {
     if (getActiveBus(i)) {
-      lcnt++;
       pairs.push_back(std::pair<int,int>(getOriginalBusIndex(i),
             getGlobalBusIndex(i)));
     }
@@ -1464,6 +1463,14 @@ void resetGlobalIndices(bool flag)
     keys.push_back(idx2);
   }
   hash_map.getValues(keys,values);
+
+  // Store key-value pairs in local hash map
+  lmap.clear();
+  for (i=0; i<values.size(); i++) {
+    if (lmap.find(keys[i]) == lmap.end()) {
+      lmap.insert(std::pair<int,int>(keys[i],values[i]));
+    }
+  }
   
   // Copy global indices to branch endpoints
   for (i=0; i<localBranches; i++) {
