@@ -32,7 +32,7 @@ main(int argc, char **argv)
   MA_init(C_DBL, stack, heap);
 
   // Initialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   gridpack::dsimplicit::DSApp app;
   app.execute(argc, argv);

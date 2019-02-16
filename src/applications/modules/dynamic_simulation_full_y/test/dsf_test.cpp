@@ -93,7 +93,7 @@ main(int argc, char **argv)
 #endif
 
   // Intialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   if (1) {
     gridpack::utility::CoarseTimer *timer =

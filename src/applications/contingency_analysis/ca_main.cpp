@@ -32,7 +32,7 @@ main(int argc, char **argv)
   MA_init(C_DBL, stack, heap);
 
   // Intialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   gridpack::contingency_analysis::CADriver driver;
   driver.execute(argc, argv);

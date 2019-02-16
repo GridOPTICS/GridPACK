@@ -31,8 +31,7 @@ namespace math {
 // Initialize
 // -------------------------------------------------------------
 /// Does whatever is necessary to start up the PETSc library
-void
-Initialize(void)
+void Initialize(int *argcp,char ***argvp)
 {
   if (Initialized()) return;
   PetscErrorCode ierr(0);
@@ -41,7 +40,7 @@ Initialize(void)
   if (!GA_Initialized()) {
     char buf[256];
     sprintf(buf,"GA library using progress ranks not initialized before calling"
-        " gridpack::math::Initialize().");
+        " gridpack::math::Initialize(&argc,&argv).");
     printf("%s\n",buf);
     throw gridpack::Exception(buf);
   }
@@ -49,33 +48,7 @@ Initialize(void)
   PETSC_COMM_WORLD = world;
 #endif
   try {
-// Turn this on to enable PETSc logging.
-#if 0
-    int argc = 2;
-    char **args;
-    args = new char*[2];
-    args[0] = new char[32];
-    args[1] = new char[32];
-    sprintf(args[0],"powerflow.x");
-    sprintf(args[1],"-log_summary");
-    ierr = PetscInitialize(&argc,&args,NULL,NULL); CHKERRXX(ierr);
-    delete [] args[1];
-    delete [] args[0];
-    delete [] args;
-#else
-    ierr = PetscInitializeNoArguments(); CHKERRXX(ierr);
-#endif
-    PetscOptionsHasName(
-#if PETSC_VERSION_GE(3,7,0)
-                                    NULL,
-#endif
-                                    NULL, "-log_summary", &flg);
-    ierr = PetscOptionsInsertFile(PETSC_COMM_WORLD,
-#if PETSC_VERSION_GE(3,7,0)
-                                    NULL,
-#endif
-                                  "gridpack.petscrc",
-                                  PETSC_FALSE); CHKERRXX(ierr);
+  ierr = PetscInitialize(argcp,argvp,NULL,NULL); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
   }

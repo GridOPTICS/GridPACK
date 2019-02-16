@@ -73,7 +73,7 @@ main(int argc, char **argv)
   MA_init(C_DBL, stack, heap);
 
   // Intialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   if (1) {
     gridpack::utility::CoarseTimer *timer =

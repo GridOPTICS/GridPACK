@@ -29,7 +29,7 @@ main(int argc, char **argv)
   gridpack::parallel::Environment env(argc,argv);
 
   // Initialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   // Create the power flow application and execute it
   gridpack::powerflow::PFApp app;

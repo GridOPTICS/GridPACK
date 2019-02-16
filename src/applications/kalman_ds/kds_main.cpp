@@ -33,7 +33,7 @@ int main(int argc, char **argv)
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   {
     gridpack::utility::CoarseTimer *timer =
