@@ -126,13 +126,6 @@ protected:
 
       // set the 
       ierr = SNESSetOptionsPrefix(p_snes, option_prefix.c_str()); CHKERRXX(ierr);
-      KSP ksp;
-      ierr = SNESGetKSP(p_snes, &ksp); CHKERRXX(ierr);
-      ierr = KSPSetOptionsPrefix(ksp, option_prefix.c_str()); CHKERRXX(ierr);
-    
-      PC pc;
-      ierr = KSPGetPC(ksp, &pc); CHKERRXX(ierr);
-      ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
 
       ierr = SNESMonitorSet(p_snes, MonitorNorms, PETSC_NULL, PETSC_NULL); CHKERRXX(ierr);
 

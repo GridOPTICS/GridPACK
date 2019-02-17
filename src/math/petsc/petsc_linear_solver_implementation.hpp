@@ -94,9 +94,6 @@ protected:
         ierr = KSPSetInitialGuessNonzero(p_KSP,PETSC_FALSE); CHKERRXX(ierr); 
       }
       ierr = KSPSetOptionsPrefix(p_KSP, option_prefix.c_str()); CHKERRXX(ierr);
-      PC pc;
-      ierr = KSPGetPC(p_KSP, &pc); CHKERRXX(ierr);
-      ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
 
       ierr = KSPSetTolerances(p_KSP, 
                               LinearSolverImplementation<T, I>::p_relativeTolerance, 
