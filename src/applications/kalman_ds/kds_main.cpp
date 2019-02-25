@@ -33,7 +33,7 @@ int main(int argc, char **argv)
   int stack = 200000, heap = 200000;
   MA_init(C_DBL, stack, heap);
 
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   {
     gridpack::utility::CoarseTimer *timer =
@@ -69,6 +69,7 @@ int main(int argc, char **argv)
     pf_app.solve();
     pf_app.write();
     pf_app.saveData();
+    timer->stop(t_PF);
 
     boost::shared_ptr<gridpack::kalman_filter::KalmanNetwork>
       kds_network(new gridpack::kalman_filter::KalmanNetwork(comm));
@@ -78,6 +79,8 @@ int main(int argc, char **argv)
     kds_app.setNetwork(kds_network, config);
     kds_app.initialize();
     kds_app.solve();
+    timer->stop(t_Total);
+    timer->dump();
   }
 
   GA_Terminate();

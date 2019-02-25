@@ -37,7 +37,7 @@ main(int argc, char **argv)
   gridpack::parallel::Communicator world;
   gridpack::parallel::Communicator self = world.split(world.rank());
 
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   boost::scoped_ptr<gridpack::utility::Configuration> 
     config(gridpack::utility::Configuration::configuration());

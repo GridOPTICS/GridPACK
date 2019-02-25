@@ -1126,7 +1126,7 @@ main (int argc, char **argv) {
   MA_init(C_DBL, stack, heap);
 
   // Initialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
   gridpack::parallel::Communicator comm;
   MPI_Comm world = static_cast<MPI_Comm>(comm);
 

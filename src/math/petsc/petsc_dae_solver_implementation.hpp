@@ -96,19 +96,6 @@ protected:
       ierr = TSCreate(this->communicator(), &p_ts); CHKERRXX(ierr);
       ierr = TSSetOptionsPrefix(p_ts, option_prefix.c_str()); CHKERRXX(ierr);
 
-      SNES snes;
-      ierr = TSGetSNES(p_ts, &snes); CHKERRXX(ierr);
-      ierr = SNESSetOptionsPrefix(snes, option_prefix.c_str()); CHKERRXX(ierr);
-
-      KSP ksp;
-      ierr = SNESGetKSP(snes, &ksp); CHKERRXX(ierr);
-      ierr = KSPSetOptionsPrefix(ksp, option_prefix.c_str()); CHKERRXX(ierr);
-    
-      PC pc;
-      ierr = KSPGetPC(ksp, &pc); CHKERRXX(ierr);
-      ierr = PCSetOptionsPrefix(pc, option_prefix.c_str()); CHKERRXX(ierr);
-
-
       p_petsc_J = PETScMatrix(this->p_J);
       ierr = TSSetIFunction(p_ts, NULL, FormIFunction, this); CHKERRXX(ierr);
       ierr = TSSetIJacobian(p_ts, *p_petsc_J, *p_petsc_J, FormIJacobian, this); CHKERRXX(ierr);

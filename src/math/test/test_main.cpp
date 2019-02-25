@@ -56,7 +56,7 @@ main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   // In the GridPACK setup, CTest determines unit test success or
   // failure by a phrase produced by Boost::test. When run in

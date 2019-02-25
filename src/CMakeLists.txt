@@ -14,7 +14,7 @@
 # -------------------------------------------------------------
 
 # 
-cmake_minimum_required (VERSION 2.8.8)
+cmake_minimum_required (VERSION 3.3.0)
 
 # This allows the use of LOCATION(target)
 if (POLICY CMP0026)

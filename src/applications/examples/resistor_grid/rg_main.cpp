@@ -32,7 +32,7 @@ main(int argc, char **argv)
 #endif
 
   // Initialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   gridpack::resistor_grid::RGApp app;
   app.execute(argc, argv);

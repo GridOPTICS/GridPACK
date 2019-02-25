@@ -353,7 +353,7 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc, argv);
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   gridpack::powerflow::PFApp2 app;
   app.execute(argc, argv);

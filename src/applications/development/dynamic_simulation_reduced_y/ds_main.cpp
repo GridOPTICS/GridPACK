@@ -63,7 +63,7 @@ int
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc,argv);
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   if (1) {
     gridpack::parallel::Communicator world;
