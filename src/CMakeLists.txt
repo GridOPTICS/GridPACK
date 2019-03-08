@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2018-10-19 13:05:37 d3g096
+# Last Change: 2019-03-08 14:19:31 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -25,7 +25,7 @@ endif (POLICY CMP0026)
 project (GridPACK)
 
 set (GridPACK_VERSION_MAJOR 3)
-set (GridPACK_VERSION_MINOR 1)
+set (GridPACK_VERSION_MINOR 3)
 set (GridPACK_VERSION_PATCH 0)
 
 # This is a C++ project exclusively
