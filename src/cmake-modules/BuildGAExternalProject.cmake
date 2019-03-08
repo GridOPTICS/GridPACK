@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2018-10-19 12:26:10 d3g096
+# Last Change: 2019-03-08 12:57:01 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -13,6 +13,7 @@
 # library.  The following variables are set to mimic find_package(GA):
 #
 #  GA_FOUND        - system has GA
+#  GA_DIR          - root directory of GA installation
 #  GA_INCLUDE_DIRS - include directories for GA
 #  GA_LIBRARIES    - libraries for GA
 # -------------------------------------------------------------
@@ -63,20 +64,23 @@ function(BuildGAExternalProject)
     INSTALL_DIR ${BIN_DIR}/ga
     )
 
-  set(GA_FOUND TRUE)
-
   ExternalProject_Get_Property(external_global_arrays INSTALL_DIR)
-  set(GA_DIR ${INSTALL_DIR} PARENT_SCOPE)
+
+  set(GA_DIR ${BIN_DIR}/ga PARENT_SCOPE)
+  set(GA_DIR "${INSTALL_DIR}" PARENT_SCOPE)
+  message(STATUS "${INSTALL_DIR}")
   message(STATUS "GA_DIR=${GA_DIR}")
+
+  set(GA_DIR "${INSTALL_DIR}" PARENT_SCOPE)
 
   set(GA_FOUND TRUE PARENT_SCOPE)
 
-  set(GA_INCLUDE_DIRS ${GA_DIR}/include PARENT_SCOPE)
+  set(GA_INCLUDE_DIRS ${INSTALL_DIR}/include PARENT_SCOPE)
 
   set(GA_LIBRARIES
-    ${GA_DIR}/lib/libga++${LIB_SUFFIX}
-    ${GA_DIR}/lib/libga${LIB_SUFFIX}
-    ${GA_DIR}/lib/libarmci${LIB_SUFFIX}
+    ${INSTALL_DIR}/lib/libga++${LIB_SUFFIX}
+    ${INSTALL_DIR}/lib/libga${LIB_SUFFIX}
+    ${INSTALL_DIR}/lib/libarmci${LIB_SUFFIX}
     ${GA_LIBS} PARENT_SCOPE)
   
   # make sure there is a slash at the end of the path
