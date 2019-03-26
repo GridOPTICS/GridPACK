@@ -1,7 +1,7 @@
 namespace gridpack{
 namespace component{
 
-class DAEDeviceInterface {
+class DAEBaseInterface {
   public:
 
     /**
@@ -65,18 +65,18 @@ class DAEDeviceInterface {
     void getJacobian(std::vector<double> &values);
 };
 
-class DAEBusInterface: DAEDeviceInterface {
+class DAEBusInterface: DAEBaseInterface {
   public:
 
     /**
      * Constructor
      */
-    DAEBaseInterface(void);
+    DAEBusInterface(void);
 
     /**
      * Destructor
      */
-    ~DAEBaseInterface(void);
+    ~DAEBusInterface(void);
 
     /**
      * functions for time dependent values
@@ -126,74 +126,23 @@ class DAEBusInterface: DAEDeviceInterface {
      * Get Jacobian block for algebraic values. Assume column or row major form
      * (TBD)
      */
-    bool getJacobian(std::vector<double> &values);
+    void getJacobian(std::vector<double> &values);
 
     /**
      * Do we need to have something on the branches to account for off-diagonal
      * elements in the Jacobian?
      */
 
-};
-
-/**
- * This class is currently assuming that there are potentially some variables
- * to the DAE solver that are contributed directly by the bus. If this is not
- * true, then this class could be simplified considerably.
- */
-
-class DAEBusInterface : DAEDeviceInterface {
-  public:
-
     /**
-     * Add another DAEDeviceInterface object to internal list of devices
+     * Add a new device to the bus
      */
-    void addDevice(boost::shared_ptr<DAEDeviceInterface> device);
-
-    /**
-     * Return total number of time dependent variables on all devices.
-     */
-    int totalTimeDependentVariables();
-
-    /**
-     * get the current values in the device list in the values vector
-     */
-    void totalCurrentValues(std::vector<double> &values);
-
-    /**
-     * set values in the device list using the values vector
-     */
-    void setTotalCurrentValues(std::vector<double> &values)
-
-    /**
-     * append the current time derivatives in the device list to the values
-     * vector
-     */
-    void totalCurrentTimeDerivatives(std::vector<double> &values); 
-
-    /**
-     * return total number of algebraic variables
-     */
-    int totalAlgebraicVariables();
-
-    /**
-     * get algebraic variables in the device list
-     */
-    void getTotalAlgebraicValues(std::values<double> &values);
-
-    /**
-     * set algebraic variables in the device list
-     */
-    void setTotalAlgebraicValues(std::values<double> &values);
-
-    /*
-     * Get Jacobian block for algebraic values. Assume column or row major form
-     * (TBD)
-     */
-    bool getTotalJacobian(std::vector<double> &values);
+    void addDevice(boost::shared_ptr<DAEBaseInterface> device);
 
   private:
 
-    std::vector<boost::shared_ptr<DAEDeviceInterface> p_devices;
+    std::vector<boost::shared_ptr<DAEBaseInterface> p_devices;
 };
+
+
 } // component
 } // gridpack
