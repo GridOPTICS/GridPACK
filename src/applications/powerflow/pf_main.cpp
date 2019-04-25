@@ -59,6 +59,7 @@ main(int argc, char **argv)
       pf_app.nl_solve();
     } else {
       pf_app.solve();
+      //pf_app.write();
     }
     pf_app.write();
     pf_app.saveData();

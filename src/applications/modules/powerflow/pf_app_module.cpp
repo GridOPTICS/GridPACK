@@ -87,6 +87,7 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);
+  p_qlim = cursor->get("qlim",0);
   p_max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
   // Phase shift sign
@@ -197,6 +198,15 @@ bool gridpack::powerflow::PFAppModule::solve()
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
+  gridpack::ComplexType tol = 2.0*p_tolerance;
+  int iter = 0;
+  bool repeat = true;
+  int int_repeat = 0;
+  while (repeat) {
+    iter = 0;
+    tol = 2.0*p_tolerance;
+    int_repeat ++;
+    printf (" repeat time = %d \n", int_repeat);
 
   // set YBus components so that you can create Y matrix
   int t_fact = timer->createCategory("Powerflow: Factory Operations");
@@ -207,6 +217,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   int t_cmap = timer->createCategory("Powerflow: Create Mappers");
   timer->start(t_cmap);
   p_factory->setMode(YBus); 
+
 #if 0
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
 #endif
@@ -283,9 +294,6 @@ bool gridpack::powerflow::PFAppModule::solve()
   solver.configure(cursor);
   timer->stop(t_csolv);
 
-  gridpack::ComplexType tol = 2.0*p_tolerance;
-  int iter = 0;
-
   // First iteration
   X->zero(); //might not need to do this
   //p_busIO->header("\nCalling solver\n");
@@ -305,7 +313,7 @@ bool gridpack::powerflow::PFAppModule::solve()
            w.c_str());
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
-    timer->stop(t_total);
+
     return false;
   }
   timer->stop(t_lsolv);
@@ -328,6 +336,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     // Exchange data between ghost buses (I don't think we need to exchange data
     // between branches)
     timer->start(t_updt);
+  //  p_factory->checkQlimViolations();
     p_network->updateBuses();
     timer->stop(t_updt);
 
@@ -338,8 +347,8 @@ bool gridpack::powerflow::PFAppModule::solve()
 #else
     vMap.mapToVector(PQ);
 #endif
-//    p_busIO->header("\nnew PQ vector\n");
-//    PQ->print();
+ //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
+ //   PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     p_factory->setMode(Jacobian);
@@ -378,7 +387,15 @@ bool gridpack::powerflow::PFAppModule::solve()
   }
 
   if (iter >= p_max_iteration) ret = false;
-
+  if (p_qlim == 0) {
+    repeat = false;
+  } else {
+    if (p_factory->checkQlimViolations()) {
+     repeat =false;
+    } else {
+     printf ("There are Qlim violations at iter =%d\n", iter);
+    }
+  }
   // Push final result back onto buses
   timer->start(t_bmap);
   p_factory->setMode(RHS);
@@ -390,8 +407,10 @@ bool gridpack::powerflow::PFAppModule::solve()
   timer->start(t_updt);
   p_network->updateBuses();
   timer->stop(t_updt);
-  timer->stop(t_total);
+  }
+    timer->stop(t_total);
   return ret;
+
 }
 /**
  * Execute the iterative solve portion of the application using a library
