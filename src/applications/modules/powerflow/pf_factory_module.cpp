@@ -476,7 +476,7 @@ bool gridpack::powerflow::PFFactoryModule::checkQlimViolations()
       gridpack::powerflow::PFBus *bus =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
-      if (!bus->chkQlim()) bus_ok = false;
+      if (bus->chkQlim()) bus_ok = false;
     }
   }
   p_network->updateBuses();

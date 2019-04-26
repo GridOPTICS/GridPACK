@@ -41,6 +41,12 @@ gridpack::powerflow::PFBus::PFBus(void)
   p_theta = 0.0;
   p_angle = 0.0;
   p_voltage = 0.0;
+  /*p_pl = 0.0;
+  p_ql = 0.0;
+  p_ip = 0.0;
+  p_iq = 0.0;
+  p_yp = 0.0;
+  p_yq = 0.0;*/
   p_sbase = 0.0;
   p_mode = YBus;
   setReferenceBus(false);
@@ -238,15 +244,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     int size = branches.size();
     int i;
     double P, Q, p, q;
-    P = 0.0;
-    Q = 0.0;
-    for (i=0; i<size; i++) {
-      gridpack::powerflow::PFBranch *branch
-        = dynamic_cast<gridpack::powerflow::PFBranch*>(branches[i].get());
-      branch->getPQ(this, &p, &q);
-      P += p;
-      Q += q;
-    }
+    int ngen=p_pFac.size();
     double pl =0.0;
     double ql =0.0;
     for (i=0; i<p_lstatus.size(); i++) {
@@ -255,40 +253,62 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
         ql += p_ql[i];
       }
     }
-    if (-Q+ql+p_shunt_bs > qmax ) { 
-      printf("Gen %d exceeds the QMAX limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmax);  
-      ql = ql+qmax;
+    p_save2isPV = p_isPV;
+    double pval = p_Pinj*p_sbase+pl;
+    double qval = p_Qinj*p_sbase+ql;
+
+//  If qval exceeds the total generator Q capacity, perform PV->PQ
+//
+    if (qval > qmax ) {
+      printf("\nWarning: Gen(s) at bus %d exceeds the QMAX %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmax);  
+      ql = ql-qmax;
       p_save2isPV = p_isPV;
       p_isPV = false;
-      pl += ppl;
-      p_gstatus.clear();
+      *p_PV_ptr = false;
+      pl -= ppl;
+    //p_gstatus.clear();
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
+        p_qg[i] = p_qmax[i];
+      }
+      for (i=0; i<p_lstatus.size(); i++) {
+        if (p_lstatus[i] == 1) {
+          p_pl[i] = pl;
+          p_ql[i] = ql;
+        }
       }
       if (p_PV_ptr) *p_PV_ptr = p_isPV;
       return true;
-    } else if (-Q+ql+p_shunt_bs < qmin) {
-      printf("Gen %d exceeds the QMIN limit %f vs %f\n", getOriginalIndex(),-Q+ql+p_shunt_bs, qmin);  
-      ql = ql+qmin;
+    } else if (qval < qmin) {
+      printf("\nWarning: Gen(s) at bus %d exceeds the QMIN %8.3f vs %8.3f, converted to PQ bus\n", getOriginalIndex(),qval, qmin);  
+      ql = ql-qmin;
       p_save2isPV = p_isPV;
       p_isPV = false;
-      pl += ppl;
-      p_gstatus.clear();
+      pl -= ppl;
+    //  p_gstatus.clear();
       for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
+        p_qg[i] = p_qmin[i];
       }
+      for (i=0; i<p_lstatus.size(); i++) {
+        if (p_lstatus[i] == 1) {
+          p_pl[i] = pl;
+          p_ql[i] = ql;
+        }
+      }
+
       if (p_PV_ptr) *p_PV_ptr = p_isPV;
       return true;
     } else {
-      if (p_PV_ptr) *p_PV_ptr = p_isPV;
-      return false;
+       if (p_PV_ptr) *p_PV_ptr = p_isPV;
+       return false;
     }
   } else {
     if (p_PV_ptr) *p_PV_ptr = p_isPV;
     return false;
-  }
+  } 
   if (p_PV_ptr) *p_PV_ptr = p_isPV;
   return false;
 }
@@ -734,6 +754,27 @@ void gridpack::powerflow::PFBus::setSBus(void)
 }
 
 /**
+ ** Update pg of specified bus element based on their genID
+ ** @param busID
+ ** @param genID
+ ** @param value
+ **/
+/*
+void gridpack::powerflow::PFBus::updatePg(int busID, std::string genID, double value)
+{
+  if (getOriginalIndex() == busID) {
+    if (p_ngen > 0) {
+      for (int i = 0; i < p_ngen; i++) {
+        if (p_gid[i] == genID) {
+          p_pg[i] += value;
+        }
+      }
+    }
+  }
+}
+*/
+
+/**
  * Write output from buses to standard out
  * @param string (output) string with information to be printed out
  * @param bufsize size of string buffer in bytes
@@ -752,6 +793,10 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
             getOriginalIndex(),angle,p_v);
     } else {
       return false;
+      /*
+      sprintf(string, "     %6d      %12.6f         %12.6f\n",
+      getOriginalIndex(),0.0,0.0);
+      */
     }
   } else if (!strcmp(signal,"vr_str")) {
     double pi = 4.0*atan(1.0);
@@ -1081,15 +1126,24 @@ void gridpack::powerflow::PFBus::setParam(std::string name, int busID,
 void gridpack::powerflow::PFBus::setParam(int busID, 
     std::string genID, double value) 
 {
-  if (getOriginalIndex() == busID) {
-    if (p_ngen > 0) {
-      for (int i = 0; i < p_ngen; i++) {
-        if (p_gid[i] == genID) {
-          p_pg[i] += value;
-        }
-      }
-    }
-  }
+//  if (name == GENERATOR_PG) {
+   if (getOriginalIndex() == busID) {
+     if (p_ngen > 0) {
+       for (int i = 0; i < p_ngen; i++) {
+         if (p_gid[i] == genID) {
+           p_pg[i] += value;
+         }
+       }
+     }
+   }
+   // if (idx >= 0 && idx<p_pg.size()) {
+   //   p_pg[idx] = value;
+   // }
+//  } else if (name == GENERATOR_QG) {
+   // if (idx >= 0 && idx<p_qg.size()) {
+   //   p_qg[idx] = value;
+   // }
+//  }
 }
 
 /**
@@ -1809,7 +1863,6 @@ bool gridpack::powerflow::PFBranch::serialWrite(char *string, const int bufsize,
       if (!p_branch_status[i]) q = 0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) p=0.0;
       if (bus1->isIsolated() || bus2->isIsolated()) q=0.0;
-      gridpack::ComplexType s = getComplexPower(tags[i]);
       double perf = 0.0;
       int viol = 0;
       if (p_rateA[i] > 0.0) {
