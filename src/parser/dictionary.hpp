@@ -2994,6 +2994,78 @@
  */
 #define BRANCH_STATUS "BRANCH_STATUS"
 
+/**
+ * Flag to indicate what end of the branch is metered
+ * <=1: From bus is metered
+ * >=2: To bus is metered
+ * type: integer
+ * indexed
+ */
+#define BRANCH_METER "BRANCH_METER"
+
+/**
+ * Parameter describing length of line
+ * type: real float
+ * indexed
+ */
+#define BRANCH_LENGTH "BRANCH_LENGTH"
+
+/**
+ * Branch owner number 1 (out of up to four)
+ * type: integer
+ * indexed
+ */
+#define BRANCH_O1 "BRANCH_O1"
+
+/**
+ * Fraction owned by owner 1
+ * type: real float
+ * indexed
+ */
+#define BRANCH_F1 "BRANCH_F1"
+
+/**
+ * Branch owner number 2 (out of up to four)
+ * type: integer
+ * indexed
+ */
+#define BRANCH_O2 "BRANCH_O2"
+
+/**
+ * Fraction owned by owner 2
+ * type: real float
+ * indexed
+ */
+#define BRANCH_F2 "BRANCH_F2"
+
+/**
+ * Branch owner number 3 (out of up to four)
+ * type: integer
+ * indexed
+ */
+#define BRANCH_O3 "BRANCH_O3"
+
+/**
+ * Fraction owned by owner 3
+ * type: real float
+ * indexed
+ */
+#define BRANCH_F3 "BRANCH_F3"
+
+/**
+ * Branch owner number 4 (out of up to four)
+ * type: integer
+ * indexed
+ */
+#define BRANCH_O4 "BRANCH_O4"
+
+/**
+ * Fraction owned by owner 4
+ * type: real float
+ * indexed
+ */
+#define BRANCH_F4 "BRANCH_F4"
+
 
 // TRANSFORMER DATA 
 /**
@@ -3025,6 +3097,27 @@
  * indexed
  */
 #define TRANSFORMER_CONTROL "TRANSFORMER_CONTROL"
+
+/**
+ * Winding data I/O code (units for winding values)
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_CW "TRANSFORMER_CW"
+
+/**
+ * Impedence data I/O code (units for winding impedence values)
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_CZ "TRANSFORMER_CZ"
+
+/**
+ * Magnetizing admittance I/O code (units for mag1 mag2 values)
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_CM "TRANSFORMER_CM"
 
 /**
  * Upper and lower limits of turns ratio or phase shift
@@ -3059,12 +3152,21 @@
 //  These transformer variables are not getting parsed for the V23 file format
 
 /**
+ * The winding one phase shift angle in degrees
+ * Default value: 0.0
+ * Type: real float
+ * indexed
+ */
+#define TRANSFORMER_ANG1 "TRANSFORMER_ANG1"
+
+/**
  * The winding data I/O code which defines the units in which TRANSFORMER_WINDV1, and TRANSFORMER _WINDV2
  *  are specified 
  * 1: off-nominal turns ratio in pu of winding bus base voltage
  * 2: winding voltage in kV.
  * Default value: 1
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_CW "TRANSFORMER_CW"
 
@@ -3074,6 +3176,7 @@
  * 2: for resistance and reactance in pu on a specified base MVA and winding bus base voltage
  * Default value: 1
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_CZ "TRANSFORMER_CZ"
 
@@ -3085,6 +3188,7 @@
  *    nominal voltage
  * Default value: 1
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_CM "TRANSFORMER_CM"
 
@@ -3092,6 +3196,7 @@
  * The magnetizing conductance, in pu on system base quantities when TRANSFORMER_CM is 1; 
  * TRANSFORMER_MAG1 is the no load loss in watts when TRANSFORMER_CM is 2
  * type: real float
+ * indexed
  */
 #define TRANSFORMER_MAG1 "TRANSFORMER_MAG1"
 
@@ -3100,6 +3205,7 @@
  * TRANSFORMER_MAG2 is the exciting current in pu on winding one to two base MVA (SBASE1-2)
  * and nominal voltage (NOMV1) when TRANSFORMER_CM is 2
  * type: real float
+ * indexed
  */
 #define TRANSFORMER_MAG2 "TRANSFORMER_MAG2"
 
@@ -3107,12 +3213,14 @@
  * The nonmetered end code of either 1 (for the winding one bus) or 2 (for the winding two bus).
  * Default value: 2
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_NMETR "TRANSFORMER_NMETR"
 
 /**
  * An alphanumeric identifier assigned to the transformer
  * type: string
+ * indexed
  */
 #define TRANSFORMER_NAME "TRANSFORMER_NAME"
 
@@ -3120,12 +3228,14 @@
  * The initial transformer status, where 1 designates in-service and 0 designates out-of-service.
  * Default value: 1
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_STATUS "TRANSFORMER_STATUS"
 
 /**
  * Transformer owner number
  * type: integer
+ * indexed
  */
 #define TRANSFORMER_OWNER "TRANSFORMER_OWNER"
 
@@ -3134,6 +3244,7 @@
  * windings are connected. 
  * Default value: 0.0
  * type: real float
+ * indexed
  */
 #define TRANSFORMER_R1_2 "TRANSFORMER_R1_2"
 
@@ -3141,15 +3252,23 @@
  * The measured reactance of the transformer between the buses to which its first and second
  * windings are connected.
  * type: real float
+ * indexed
  */
 #define TRANSFORMER_X1_2 "TRANSFORMER_X1_2"
 
 /**
  * The winding one to two base MVA of the transformer
+ * indexed
  * type: real float
  */
 #define TRANSFORMER_SBASE1_2 "TRANSFORMER_SBASE1_2"
 
+/**
+ * Transformer control mode for winding 1 tap or phase shift
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_CODE1 "TRANSFORMER_CODE1"
 
 // AREA DATA
 /**
