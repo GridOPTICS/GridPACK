@@ -70,7 +70,7 @@ class DAEBaseInterface {
         std::vector<_Data_type> &values);
     void getForwardJacobian(std::vector<int> &idx, std::vector<int> &jdx,
         std::vector<_Data_type> &values);
-    void getForwardJacobian(std::vector<int> &idx, std::vector<int> &jdx,
+    void getReverseJacobian(std::vector<int> &idx, std::vector<int> &jdx,
         std::vector<_Data_type> &values);
 };
 } // component

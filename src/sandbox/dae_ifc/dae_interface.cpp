@@ -90,7 +90,7 @@ void gridpack::component::DAEBaseInterface::getForwardJacobian(
   jdx.clear();
   values.clear();
 }
-void gridpack::component::DAEBaseInterface::getForwardJacobian(
+void gridpack::component::DAEBaseInterface::getReverseJacobian(
     std::vector<int> &idx, std::vector<int> &jdx,
     std::vector<_Data_type> &values)
 {
