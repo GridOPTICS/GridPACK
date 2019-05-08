@@ -830,10 +830,53 @@ class PTI33_parser : public BasePTIParser<_network>
         if (nstr > 13) p_branchData[l_idx]->addValue(BRANCH_STATUS,
             atoi(split_line[13].c_str()), nelems);
 
-        // TODO: add variables LEN, Oi, Fi
+        // BRANCH_METER         "MET"                  integer
+        if (nstr > 14) p_branchData[l_idx]->addValue(BRANCH_METER,
+            atoi(split_line[14].c_str()), nelems);
+
+        // BRANCH_LENGTH        "LEN"                        float
+        if (nstr > 15) p_branchData[l_idx]->addValue(BRANCH_LENGTH,
+            atof(split_line[15].c_str()), nelems);
+
+        // BRANCH_O1        "O1"                       integer
+        if (nstr > 16) p_branchData[l_idx]->addValue(BRANCH_O1,
+            atoi(split_line[16].c_str()), nelems);
+
+        // BRANCH_F1        "F1"                             float
+        if (nstr > 17) p_branchData[l_idx]->addValue(BRANCH_F1,
+            atoi(split_line[17].c_str()), nelems);
+
+        // BRANCH_O2        "O2"                       integer
+        if (nstr > 18) p_branchData[l_idx]->addValue(BRANCH_O2,
+            atoi(split_line[18].c_str()), nelems);
+
+        // BRANCH_F2        "F2"                             float
+        if (nstr > 19) p_branchData[l_idx]->addValue(BRANCH_F2,
+            atoi(split_line[19].c_str()), nelems);
+
+        // BRANCH_O3        "O3"                       integer
+        if (nstr > 20) p_branchData[l_idx]->addValue(BRANCH_O3,
+            atoi(split_line[20].c_str()), nelems);
+
+        // BRANCH_F3        "F3"                             float
+        if (nstr > 21) p_branchData[l_idx]->addValue(BRANCH_F3,
+            atoi(split_line[21].c_str()), nelems);
+
+        // BRANCH_O4        "O4"                       integer
+        if (nstr > 22) p_branchData[l_idx]->addValue(BRANCH_O4,
+            atoi(split_line[22].c_str()), nelems);
+
+        // BRANCH_F4        "F4"                             float
+        if (nstr > 23) p_branchData[l_idx]->addValue(BRANCH_F4,
+            atoi(split_line[23].c_str()), nelems);
+
+        // TODO: add variables MET, LEN, Oi, Fi
 
         // Add BRANCH_TAP with value 0.0
         p_branchData[l_idx]->addValue(BRANCH_TAP,0.0,nelems);
+
+        // Add BRANCH_SHIFT with value 0.0
+        p_branchData[l_idx]->addValue(BRANCH_SHIFT,0.0,nelems);
 
         nelems++;
         p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
@@ -1120,6 +1163,7 @@ class PTI33_parser : public BasePTIParser<_network>
             continue;
           }
         } else {
+          int ntoken = split_line.size();
           std::getline(input, line);
           std::vector<std::string>  split_line2;
           this->cleanComment(line);
@@ -1203,6 +1247,27 @@ class PTI33_parser : public BasePTIParser<_network>
 
           // Add remaining parameters from line 1
           /*
+           * type: integer
+           * TRANSFORMER_CW
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CW,
+              atoi(split_line[4].c_str()),nelems);
+
+          /*
+           * type: integer
+           * TRANSFORMER_CZ
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CZ,
+              atoi(split_line[5].c_str()),nelems);
+
+          /*
+           * type: integer
+           * TRANSFORMER_CM
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CM,
+              atoi(split_line[6].c_str()),nelems);
+
+          /*
            * type: float
            * TRANSFORMER_MAG1
            */
@@ -1223,13 +1288,69 @@ class PTI33_parser : public BasePTIParser<_network>
           p_branchData[l_idx]->addValue(BRANCH_B,
               atof(split_line[8].c_str()),nelems);
 
-
           /*
            * type: integer
            * BRANCH_STATUS
            */
           p_branchData[l_idx]->addValue(BRANCH_STATUS,
               atoi(split_line[11].c_str()),nelems);
+
+          /*
+           * type: integer
+           * BRANCH_O1
+           */
+          if (ntoken > 12) p_branchData[l_idx]->addValue(BRANCH_O1,
+              atoi(split_line[12].c_str()), nelems);
+
+          /*
+           * type: float
+           * BRANCH_F1
+           */
+          if (ntoken > 13) p_branchData[l_idx]->addValue(BRANCH_F1,
+              atoi(split_line[13].c_str()), nelems);
+
+          /*
+           * type: integer
+           * BRANCH_O2
+           */
+          if (ntoken > 14) p_branchData[l_idx]->addValue(BRANCH_O2,
+              atoi(split_line[14].c_str()), nelems);
+
+          /*
+           * type: float
+           * BRANCH_F2
+           */
+          if (ntoken > 15) p_branchData[l_idx]->addValue(BRANCH_F2,
+              atoi(split_line[15].c_str()), nelems);
+
+          /*
+           * type: integer
+           * BRANCH_O3
+           */
+          if (ntoken > 16) p_branchData[l_idx]->addValue(BRANCH_O3,
+              atoi(split_line[16].c_str()), nelems);
+
+          /*
+           * type: float
+           * BRANCH_F3
+           */
+          if (ntoken > 17) p_branchData[l_idx]->addValue(BRANCH_F3,
+              atoi(split_line[17].c_str()), nelems);
+
+          /*
+           * type: integer
+           * BRANCH_O4
+           */
+          if (ntoken > 18) p_branchData[l_idx]->addValue(BRANCH_O4,
+              atoi(split_line[18].c_str()), nelems);
+
+          /*
+           * type: float
+           * BRANCH_F4
+           */
+          if (ntoken > 19) p_branchData[l_idx]->addValue(BRANCH_F4,
+              atoi(split_line[19].c_str()), nelems);
+
 
           // Add parameters from line 2
           /*
@@ -1278,6 +1399,8 @@ class PTI33_parser : public BasePTIParser<_network>
            */
           p_branchData[l_idx]->addValue(BRANCH_SHIFT,
               atof(split_line3[2].c_str()),nelems);
+          p_branchData[l_idx]->addValue(TRANSFORMER_ANG1,
+              atof(split_line3[2].c_str()),nelems);
 
           /*
            * type: float
@@ -1299,6 +1422,41 @@ class PTI33_parser : public BasePTIParser<_network>
            */
           p_branchData[l_idx]->addValue(BRANCH_RATING_C,
               atof(split_line3[5].c_str()),nelems);
+
+          /*
+           * type: integer
+           * TRANSFORMER_CODE1
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CODE1,
+              atoi(split_line3[6].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_RMA
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_RMA,
+              atoi(split_line3[8].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_RMI
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_RMI,
+              atoi(split_line3[9].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_VMA
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_VMA,
+              atoi(split_line3[10].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_VMI
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_VMI,
+              atoi(split_line3[11].c_str()),nelems);
 
           nelems++;
           p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);

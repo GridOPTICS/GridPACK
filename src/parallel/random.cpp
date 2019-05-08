@@ -34,25 +34,30 @@ namespace random {
 /**
  * Default constructor
  */
-Random::Random()
+Random::Random() : p_generator(42), p_uni_dist(0,1), p_uni(p_generator, p_uni_dist)
 {
   p_iset = 0;
   p_gset = 0.0;
+#if 0
   p_rand_max_i = 1.0/static_cast<double>(RAND_MAX);
+#endif
 }
 
 /**
  * Initialize random number generator with a seed
  * @param seed random number generator initialization
  */
-Random::Random(int seed)
+Random::Random(int seed) : p_generator(42), p_uni_dist(0,1), p_uni(p_generator, p_uni_dist)
 {
   p_iset = 0;
   p_gset = 0.0;
-  p_rand_max_i = 1.0/static_cast<double>(RAND_MAX);
   if (seed < 0) seed = -seed;
   seed += GA_Nodeid();
+  p_generator.seed(static_cast<unsigned int>(seed));
+#if 0
+  p_rand_max_i = 1.0/static_cast<double>(RAND_MAX);
   srand(static_cast<unsigned int>(seed));
+#endif
 }
 
 /**
@@ -70,7 +75,7 @@ void Random::Random::seed(int seed)
 {
   if (seed < 0) seed = -seed;
   seed += GA_Nodeid();
-  srand(static_cast<unsigned int>(seed));
+  p_generator.seed(static_cast<unsigned int>(seed));
 }
 
 /**
@@ -78,7 +83,10 @@ void Random::Random::seed(int seed)
  */
 double Random::Random::drand(void)
 {
+  return p_uni();
+#if 0
   return rand()*p_rand_max_i;
+#endif
 }
 
 /**
@@ -91,8 +99,8 @@ double Random::Random::grand(void)
     double r = 2.0;
     double x, y;
     while (r >= 1.0) {
-      x = 2.0*p_rand_max_i*rand() - 1.0;
-      y = 2.0*p_rand_max_i*rand() - 1.0;
+      x = 2.0*drand() - 1.0;
+      y = 2.0*drand() - 1.0;
       r = x*x + y*y;
     }
     double logr = sqrt(-2.0*log(r)/r);

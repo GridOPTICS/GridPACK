@@ -248,6 +248,9 @@ class PFAppModule
     // convergence tolerance
     double p_tolerance;
 
+    // qlim enforce flag
+    int p_qlim;
+
     // pointer to bus IO module
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<PFNetwork> > p_busIO;
 
