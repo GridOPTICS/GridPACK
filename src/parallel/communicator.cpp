@@ -9,7 +9,7 @@
 /**
  * @file   communicator.cpp
  * @author William A. Perkins
- * @date   2017-02-09 10:16:21 d3g096
+ * @date   2019-05-08 12:26:16 d3g096
  * 
  * @brief  
  * 
@@ -35,12 +35,12 @@ public:
 
   /// Default constructor.
   CommunicatorPrivate(void)
-    : p_handle(GA_Pgroup_get_world())
+    : p_handle(GA_Pgroup_get_world()), p_created(false)
   { }
 
   /// Construct on the processes in the specified communicators
   CommunicatorPrivate(const boost::mpi::communicator& comm)
-    : p_handle()
+    : p_handle(), p_created(true)
   {
     int me(comm.rank()), nprocs(comm.size());
     int gaWrld = GA_Pgroup_get_world();
@@ -56,8 +56,8 @@ public:
 
   /// Destructor
   ~CommunicatorPrivate(void)
-  { 
-    if (p_handle != GA_Pgroup_get_world()){
+  {
+    if (p_created) {
       GA_Pgroup_destroy(p_handle);
     }
   }
@@ -73,6 +73,8 @@ private:
   /// The GA process group handle
   int p_handle;
   
+  /// Was the GA process group created for this instance
+  const bool p_created;
 };
 
 

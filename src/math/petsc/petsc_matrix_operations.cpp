@@ -8,7 +8,7 @@
 /**
  * @file   petsc_matrix_operations.cpp
  * @author William A. Perkins
- * @date   2018-12-20 08:58:26 d3g096
+ * @date   2019-05-08 14:26:13 d3g096
  * 
  * @brief  
  * 
@@ -122,7 +122,7 @@ transpose(const MatrixT<T, I>& A)
       ierr = MatTranspose(*pA, MAT_INITIAL_MATRIX, &pAtrans); CHKERRXX(ierr);
       
       PETScMatrixImplementation<T, I> *result_impl = 
-        new PETScMatrixImplementation<T, I>(pAtrans, true);
+        new PETScMatrixImplementation<T, I>(pAtrans, false, true);
       result = new MatrixT<T, I>(result_impl);
     // }
   
@@ -438,7 +438,7 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     ierr = MatMultbyGA_new(*Amat, *Bmat, Cmat);
 
     PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(Cmat, false);
+      new PETScMatrixImplementation<T, I>(Cmat, false, true);
     result = new MatrixT<T, I>(result_impl);
   } else {
     const Mat *Amat(PETScMatrix(A));
@@ -452,7 +452,7 @@ multiply(const MatrixT<T, I>& A, const MatrixT<T, I>& B)
     }
 
     PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(Cmat, false);
+      new PETScMatrixImplementation<T, I>(Cmat, false, true);
     result = new MatrixT<T, I>(result_impl);
   }
   return result;
@@ -552,7 +552,7 @@ storageType(const MatrixT<T, I>& A, const MatrixStorageType& new_type)
     }
 
     PETScMatrixImplementation<T, I> *result_impl = 
-      new PETScMatrixImplementation<T, I>(B, true);
+      new PETScMatrixImplementation<T, I>(B, true, true);
     result = new MatrixT<T, I>(result_impl);
     ierr = MatDestroy(&B); CHKERRXX(ierr);
     

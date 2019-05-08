@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_wrapper.cpp
  * @author William A. Perkins
- * @date   2016-06-16 13:18:38 d3g096
+ * @date   2019-05-08 13:58:31 d3g096
  * 
  * @brief  
  * 
@@ -58,7 +58,7 @@ PetscMatrixWrapper::PetscMatrixWrapper(const parallel::Communicator& comm,
                                        const PetscInt& local_rows, const PetscInt& local_cols,
                                        const bool& dense)
   : ImplementationVisitable(),
-    p_matrix(), p_matrixWrapped(false)
+    p_matrix(), p_matrixWrapped(false), p_destroyWrapped(true)
 {
   p_build_matrix(comm, local_rows, local_cols);
   if (dense) {
@@ -72,7 +72,7 @@ PetscMatrixWrapper::PetscMatrixWrapper(const parallel::Communicator& comm,
                                        const PetscInt& local_rows, const PetscInt& local_cols,
                                        const PetscInt& max_nonzero_per_row)
   : ImplementationVisitable(),
-    p_matrix(), p_matrixWrapped(false)
+    p_matrix(), p_matrixWrapped(false), p_destroyWrapped(true)
 {
   p_build_matrix(comm, local_rows, local_cols);
   p_set_sparse_matrix(max_nonzero_per_row);
@@ -82,15 +82,16 @@ PetscMatrixWrapper::PetscMatrixWrapper(const parallel::Communicator& comm,
                                        const PetscInt& local_rows, const PetscInt& local_cols,
                                        const PetscInt *nonzeros_by_row)
   : ImplementationVisitable(),
-    p_matrix(), p_matrixWrapped(false)
+    p_matrix(), p_matrixWrapped(false), p_destroyWrapped(true)
 {
   p_build_matrix(comm, local_rows, local_cols);
   p_set_sparse_matrix(nonzeros_by_row);
 }
 
-PetscMatrixWrapper::PetscMatrixWrapper(Mat& m, const bool& copyMat)
+PetscMatrixWrapper::PetscMatrixWrapper(Mat& m, const bool& copyMat, const bool& destroyMat)
   : ImplementationVisitable(),
-    p_matrix(), p_matrixWrapped(false)
+    p_matrix(), p_matrixWrapped(false),
+    p_destroyWrapped(p_matrixWrapped ? destroyMat : true)
 {
   PetscErrorCode ierr;
   try {
@@ -111,7 +112,7 @@ PetscMatrixWrapper::PetscMatrixWrapper(Mat& m, const bool& copyMat)
 PetscMatrixWrapper::~PetscMatrixWrapper(void)
 {
   PetscErrorCode ierr(0);
-  if (!p_matrixWrapped) {
+  if (!p_matrixWrapped || (p_matrixWrapped && p_destroyWrapped)) {
     try  {
       PetscBool ok;
       ierr = PetscInitialized(&ok); CHKERRXX(ierr);
