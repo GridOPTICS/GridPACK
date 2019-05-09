@@ -111,6 +111,35 @@ if [ $host == "flophouse" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
+elif [ $host == "briareus" ]; then
+
+    # Using GNU 4.9 and OpenMPI modules
+
+    prefix="/files0/gridpack.gnu"
+    PATH="${prefix}/bin:${PATH}"
+    export PATH
+
+    CC="/share/apps/gcc/4.9.2/bin/gcc"
+    export CC
+    CXX="/share/apps/gcc/4.9.2/bin/g++"
+    export CXX
+
+    cmake -Wdev --debug-trycompile \
+        -D USE_PROGRESS_RANKS:BOOL=OFF \
+        -D GA_DIR:PATH="$prefix" \
+        -D BOOST_ROOT:STRING="$prefix" \
+        -D PETSC_DIR:STRING="/files0/petsc-3.7.5" \
+        -D PETSC_ARCH:STRING="gridpack-gnu-openmpi-real" \
+        -D MPI_CXX_COMPILER:STRING="mpicxx" \
+        -D MPI_C_COMPILER:STRING="mpicc" \
+        -D MPIEXEC:STRING="mpiexec" \
+        -D USE_CPLEX:BOOL=OFF \
+        -D USE_GLPK:BOOL=OFF \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
+        $common_flags ..
+
 elif [ $host == "pe10900" ]; then
 
     # Mac using GNU 4.8 and OpenMPI -- avoid using the system
@@ -285,7 +314,7 @@ elif [ $host == "tlaloc" ]; then
           -D MPI_C_COMPILER:STRING="mpicc" \
           -D MPIEXEC:STRING="mpiexec" \
           -D USE_GLPK:BOOL=OFF \
-          -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+          -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
           -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
           $common_flags ..
