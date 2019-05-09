@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_wrapper.cpp
  * @author William A. Perkins
- * @date   2019-05-08 13:58:31 d3g096
+ * @date   2019-05-09 06:10:26 d3g096
  * 
  * @brief  
  * 
@@ -21,6 +21,7 @@
 // Last Change: 2013-05-03 12:23:12 d3g096
 // -------------------------------------------------------------
 
+#include "mpi.h"
 #include "petsc/petsc_exception.hpp"
 #include "petsc_matrix_wrapper.hpp"
 #include "implementation_visitor.hpp"
@@ -38,7 +39,8 @@ namespace math {
 parallel::Communicator
 PetscMatrixWrapper::getCommunicator(const Mat& m)
 {
-  MPI_Comm comm(PetscObjectComm((PetscObject)m));
+  MPI_Comm comm;
+  PetscObjectGetComm((PetscObject)m, &comm);
   parallel::Communicator result(comm);
   return result;
 }

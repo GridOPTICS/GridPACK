@@ -9,13 +9,15 @@
 /**
  * @file   communicator.cpp
  * @author William A. Perkins
- * @date   2019-05-08 12:26:16 d3g096
+ * @date   2019-05-09 07:01:05 d3g096
  * 
  * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
+
+#include <iostream>
 
 #if USE_PROGRESS_RANKS
 #include <ga-mpi.h>
@@ -33,10 +35,16 @@ namespace parallel {
 class CommunicatorPrivate {
 public:
 
+  /// How many things were created?
+  static int created;
+  /// How many things were destroyed?
+  static int destroyed;
+
   /// Default constructor.
   CommunicatorPrivate(void)
     : p_handle(GA_Pgroup_get_world()), p_created(false)
-  { }
+  {
+  }
 
   /// Construct on the processes in the specified communicators
   CommunicatorPrivate(const boost::mpi::communicator& comm)
@@ -52,6 +60,7 @@ public:
     p_handle = GA_Pgroup_create(&gaDest[0],nprocs);
     // GA_Pgroup_sync(p_handle);
     GA_Pgroup_set_default(defGrp);
+    created++;
   }
 
   /// Destructor
@@ -59,6 +68,7 @@ public:
   {
     if (p_created) {
       GA_Pgroup_destroy(p_handle);
+      destroyed--;
     }
   }
 
@@ -77,10 +87,27 @@ private:
   const bool p_created;
 };
 
+int CommunicatorPrivate::created(0);
+int CommunicatorPrivate::destroyed(0);
 
 // -------------------------------------------------------------
 //  class Communicator
 // -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// Communicator::report
+//
+// Just used to make sure Communicator creation and destruction does
+// not leak memory.
+// -------------------------------------------------------------
+void
+Communicator::report(void)
+{
+  std::cout << "CommunicatorPrivate instances created:   " << CommunicatorPrivate::created
+            << std::endl
+            << "CommunicatorPrivate instances destroyed: " << CommunicatorPrivate::destroyed
+            << std::endl;
+}
 
 // -------------------------------------------------------------
 // Communicator:: constructors / destructor
