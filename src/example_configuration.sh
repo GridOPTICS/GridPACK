@@ -265,7 +265,7 @@ elif [ $host == "tlaloc" ]; then
 
     prefix="/file0/perksoft"
 
-    cmake $options \
+    cmake3 $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
           -D USE_PROGRESS_RANKS:BOOL=OFF \
@@ -275,7 +275,7 @@ elif [ $host == "tlaloc" ]; then
           -D MPI_C_COMPILER:STRING="mpicc" \
           -D MPIEXEC:STRING="mpiexec" \
           -D USE_GLPK:BOOL=OFF \
-          -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+          -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
           -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
           $common_flags ..
