@@ -128,7 +128,8 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr); 
+      ierr = TSSetTime(p_ts, t0);CHKERRXX(ierr);
+      ierr = TSSetTimeStep(p_ts, deltat0); CHKERRXX(ierr); 
       Vec *xvec(PETScVector(x0));
       ierr = TSSetSolution(p_ts, *xvec);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -143,7 +144,8 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      ierr = TSSetDuration(p_ts, maxsteps, maxtime); CHKERRXX(ierr);
+      ierr = TSSetMaxTime(p_ts,maxtime);CHKERRXX(ierr);
+      ierr = TSSetMaxSteps(p_ts,maxsteps);CHKERRXX(ierr);
       ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr); 
       ierr = TSSolve(p_ts, PETSC_NULL);
       // std::cout << this->processor_rank() << ": "
@@ -155,7 +157,7 @@ protected:
       ierr = TSGetConvergedReason(p_ts, &reason); CHKERRXX(ierr);
 
       PetscInt nstep;
-      ierr = TSGetTimeStepNumber(p_ts,&nstep);CHKERRXX(ierr);
+      ierr = TSGetStepNumber(p_ts,&nstep);CHKERRXX(ierr);
       maxsteps = nstep;
 
       if (reason >= 0) {

@@ -597,8 +597,9 @@ matrixLoadBinary(const parallel::Communicator& comm, const char* filename)
                                  filename,
                                  FILE_MODE_READ,
                                  &viewer); CHKERRXX(ierr);
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+    ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
     ierr = MatLoad(mat, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerPopFormat(viewer);CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
 
     PETScMatrixImplementation<T, I> *result_impl = 

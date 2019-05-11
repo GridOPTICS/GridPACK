@@ -98,13 +98,13 @@ protected:
   MatOrderingType p_orderingType;
 
   /// List of supported solver packages
-  static MatSolverPackage p_supportedSolverPackage[];
+  static MatSolverType p_supportedSolverPackage[];
 
   /// Number of supported solver packages
   static int p_nSupportedSolverPackages;
 
   /// PETSC solver package for factorization
-  MatSolverPackage p_solverPackage;
+  MatSolverType p_solverPackage;
 
   /// PETSc factorization method to use
   MatFactorType p_factorType;
@@ -297,7 +297,7 @@ PetscLinearMatrixSolverImplementation<T, I>::p_nSupportedOrderingTypes =
   sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
 
 template <typename T, typename I>
-MatSolverPackage
+MatSolverType
 PetscLinearMatrixSolverImplementation<T, I>::p_supportedSolverPackage[] = {
   MATSOLVERSUPERLU_DIST,
   MATSOLVERSUPERLU,
@@ -308,7 +308,7 @@ PetscLinearMatrixSolverImplementation<T, I>::p_supportedSolverPackage[] = {
 template <typename T, typename I>
 int
 PetscLinearMatrixSolverImplementation<T, I>::p_nSupportedSolverPackages = 
-  sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
+  sizeof(p_supportedSolverPackage)/sizeof(MatSolverType);
 
 } // namespace math
 } // namespace gridpack

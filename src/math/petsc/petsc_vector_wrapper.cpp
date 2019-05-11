@@ -362,8 +362,9 @@ petsc_print_vector(const Vec vec, const char* filename, PetscViewerFormat format
     } else {
       ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
     }
-    ierr = PetscViewerSetFormat(viewer, format); ; CHKERRXX(ierr);
+    ierr = PetscViewerPushFormat(viewer, format);CHKERRXX(ierr);
     ierr = VecView(vec, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerPopFormat(viewer);CHKERRXX(ierr);
     if (filename != NULL) {
       ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
     }

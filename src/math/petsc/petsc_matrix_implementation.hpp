@@ -534,7 +534,7 @@ protected:
       // ierr = PetscViewerDestroy(&v); CHKERRXX(ierr);
 
       Mat *sub;
-      ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
+      ierr = MatCreateSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
       
       std::vector<PetscScalar> cval(ncol);
       for (PetscInt j = 0; j < ncol; ++j) {
@@ -692,7 +692,7 @@ protected:
     ierr = ISCreateStride(this->communicator(), p_mwrap->rows(), 0, 1, &irow); CHKERRXX(ierr);
     ierr = ISCreateStride(this->communicator(), p_mwrap->cols(), 0, 1, &icol); CHKERRXX(ierr);
     
-    ierr = MatGetSubMatrices(*Aorig, 1, &irow, &icol, MAT_INITIAL_MATRIX, &Aloc); CHKERRXX(ierr);
+    ierr = MatCreateSubMatrices(*Aorig, 1, &irow, &icol, MAT_INITIAL_MATRIX, &Aloc); CHKERRXX(ierr);
 
     // MatType mt;
     // ierr = MatGetType(*Aloc, &mt); CHKERRXX(ierr);

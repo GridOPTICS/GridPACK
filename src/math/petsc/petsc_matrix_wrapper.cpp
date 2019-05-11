@@ -472,7 +472,7 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
     } else {
       ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
     }
-    ierr = PetscViewerSetFormat(viewer, format);
+    ierr = PetscViewerPushFormat(viewer, format);CHKERRXX(ierr);
     PetscInt grow, gcol, lrow, lcol;
     switch (format) {
     case PETSC_VIEWER_DEFAULT:
@@ -504,6 +504,7 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
       break;
     }
     ierr = MatView(mat, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerPopFormat(viewer);CHKERRXX(ierr);
     if (filename != NULL) {
       ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
     } else {
@@ -548,8 +549,9 @@ PetscMatrixWrapper::loadBinary(const char* filename)
                                  filename,
                                  FILE_MODE_READ,
                                  &viewer); CHKERRXX(ierr);
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+    ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
     ierr = MatLoad(p_matrix, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerPopFormat(viewer);CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -570,8 +572,9 @@ PetscMatrixWrapper::saveBinary(const char* filename) const
                                  filename,
                                  FILE_MODE_WRITE,
                                  &viewer); CHKERRXX(ierr);
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+    ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
     ierr = MatView(p_matrix, viewer); CHKERRXX(ierr);
+    ierr = PetscViewerPopFormat(viewer);CHKERRXX(ierr);
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
