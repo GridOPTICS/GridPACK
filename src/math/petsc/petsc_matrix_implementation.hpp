@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2018-12-19 10:35:37 d3g096
+ * @date   2019-05-08 14:31:20 d3g096
  * 
  * @brief  
  * 
@@ -111,9 +111,9 @@ public:
   }
 
   /// Make a new instance from an existing PETSc matrix
-  PETScMatrixImplementation(Mat& m, const bool& copyMat = true)
+  PETScMatrixImplementation(Mat& m, const bool& copyMat = true, const bool& destroyMat = false)
     : MatrixImplementation<T, I>(PetscMatrixWrapper::getCommunicator(m)),
-      p_mwrap(new PetscMatrixWrapper(m, copyMat))
+      p_mwrap(new PetscMatrixWrapper(m, copyMat, destroyMat))
   {
   }
 
@@ -514,9 +514,6 @@ protected:
       ierr = ISSetPermutation(irowperm); CHKERRXX(ierr);
       ierr = ISInvertPermutation(irowperm, PETSC_DECIDE, &irowinvert); CHKERRXX(ierr);
       ierr = ISDestroy(&irowperm); CHKERRXX(ierr);
-
-      ierr = ISCreateGeneral(comm, nrow, &ridx[0], 
-                             PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
 
       ierr = ISCreateStride(comm, ncol, 0, 1, &icol); CHKERRXX(ierr);
       
