@@ -246,6 +246,10 @@ class PTI23_parser : public BasePTIParser<_network>
         p_busData.push_back(data);
         p_busMap.insert(std::pair<int,int>(o_idx,index));
 
+        // Add case parameters to data set
+        data->addValue(CASE_SBASE, p_case_sbase);
+        data->addValue(CASE_ID, p_case_id);
+
         // BUS_NAME             "NAME"                 string
         if (nstr > 9) data->addValue(BUS_NAME, split_line[9].c_str());
 
@@ -262,7 +266,6 @@ class PTI23_parser : public BasePTIParser<_network>
         // BUS_SHUNT_BL              "BL"                  float
         if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
         if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()),0);
-        data->addValue(SHUNT_NUMBER,1);
         data->addValue(SHUNT_BUSNUMBER,o_idx);
 
         // BUS_ZONE            "ZONE"                integer
@@ -882,7 +885,7 @@ class PTI23_parser : public BasePTIParser<_network>
 
         /*
          * type: integer
-         * #define SHUNT_BUSNUMBER "SHUNT_BUSNUMBER"
+         * #define SWSHUNT_BUSNUMBER "SWSHUNT_BUSNUMBER"
          */
         int l_idx, o_idx;
         l_idx = atoi(split_line[0].c_str());
@@ -896,7 +899,7 @@ class PTI23_parser : public BasePTIParser<_network>
         }
         int nval = split_line.size();
 
-        p_busData[o_idx]->addValue(SHUNT_BUSNUMBER, atoi(split_line[0].c_str()));
+        p_busData[o_idx]->addValue(SWSHUNT_BUSNUMBER, atoi(split_line[0].c_str()));
 
         /*
          * type: integer
