@@ -170,7 +170,7 @@ class BaseExport
           std::vector<text_line> lines;
           int nlines = hi-lo+1;
           lines.resize(nlines);
-          NGA_Get(g_txt,&lo,&hi,&lines[0],&one);
+          if (nlines > 0) NGA_Get(g_txt,&lo,&hi,&lines[0],&one);
           for (i=0; i<nlines; i++) {
             fout << lines[i].text << std::endl;
           }

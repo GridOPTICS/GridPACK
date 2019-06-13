@@ -103,7 +103,7 @@ class ExportGen33
             sprintf(ptr," %f,",rval);
             ptr += strlen(ptr);
             ival = 0;
-            data->getValue(GENERATOR_BUSNUMBER,&ival,j);
+            data->getValue(GENERATOR_IREG,&ival,j);
             sprintf(ptr,"%d,",ival);
             ptr += strlen(ptr);
             rval = 100.0;

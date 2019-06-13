@@ -64,6 +64,7 @@ class ExportLoad33
       int i, j;
       char buf[MAX_STRING_SIZE];
       std::vector<text_line> text_data;
+      double pl, ql;
       for (i=0; i<nbus; i++) {
         if (p_network->getActiveBus(i)) {
           data = p_network->getBusData(i).get();
@@ -98,13 +99,14 @@ class ExportLoad33
             sprintf(ptr," %d,",ival);
             ptr += strlen(ptr);
             rval = 0.0;
-            data->getValue(LOAD_PL,&rval,j);
-            sprintf(ptr," %f,",rval);
+            data->getValue(LOAD_PL,&pl,j);
+            sprintf(ptr," %f,",pl);
             ptr += strlen(ptr);
             rval = 0.0;
-            data->getValue(LOAD_QL,&rval,j);
-            sprintf(ptr," %f,",rval);
+            data->getValue(LOAD_QL,&ql,j);
+            sprintf(ptr," %f,",ql);
             ptr += strlen(ptr);
+            if (pl == 0.0 && ql == 0.0) continue;
             rval = 0.0;
             data->getValue(LOAD_IP,&rval,j);
             sprintf(ptr," %f,",rval);

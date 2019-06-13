@@ -230,6 +230,7 @@ class PTI23_parser : public BasePTIParser<_network>
       std::getline(input, line);
       std::getline(input, line);
       std::getline(input, line);
+      double pl,ql,bl,gl;
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -260,13 +261,26 @@ class PTI23_parser : public BasePTIParser<_network>
         if (nstr > 1) data->addValue(BUS_TYPE, atoi(split_line[1].c_str()));
 
         // BUS_SHUNT_GL              "GL"                  float
-        if (nstr > 4) data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
-        if (nstr > 4) data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()),0);
+        gl = 0.0;
+        if (nstr > 4) {
+          gl = atof(split_line[4].c_str());
+        }
 
         // BUS_SHUNT_BL              "BL"                  float
-        if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
-        if (nstr > 5) data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()),0);
-        data->addValue(SHUNT_BUSNUMBER,o_idx);
+        bl = 0.0;
+        if (nstr > 5) {
+          bl = atof(split_line[5].c_str());
+        }
+        if (gl != 0.0 || bl != 0.0) {
+          data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()));
+          data->addValue(BUS_SHUNT_GL, atof(split_line[4].c_str()),0);
+          data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()));
+          data->addValue(BUS_SHUNT_BL, atof(split_line[5].c_str()),0);
+          data->addValue(SHUNT_BUSNUMBER,o_idx);
+          int ival = 1;
+          data->addValue(SHUNT_NUMBER,ival);
+          data->addValue(SHUNT_ID, "1 ", 0);
+        }
 
         // BUS_ZONE            "ZONE"                integer
         if (nstr > 11) data->addValue(BUS_ZONE, atoi(split_line[11].c_str()));
@@ -284,18 +298,28 @@ class PTI23_parser : public BasePTIParser<_network>
         if (nstr > 6) data->addValue(BUS_OWNER, atoi(split_line[6].c_str()));
 
         // LOAD_PL                "PL"                  float
-        if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()));
-        if (nstr > 2) data->addValue(LOAD_PL, atof(split_line[2].c_str()),0);
-        std::string tmp(" 1");
-        if (nstr > 2) data->addValue(LOAD_ID,tmp.c_str(),0);
+        pl = 0.0;
+        if (nstr > 2) {
+          pl = atof(split_line[2].c_str());
+        }
 
         // LOAD_QL                "QL"                  float
-        if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()));
-        if (nstr > 3) data->addValue(LOAD_QL, atof(split_line[3].c_str()),0);
-        int ival = 1;
-        data->addValue(LOAD_NUMBER,ival);
-        data->addValue(LOAD_STATUS,ival,0);
-        data->addValue(LOAD_BUSNUMBER,o_idx);
+        ql = 0.0;
+        if (nstr > 3) {
+          ql = atof(split_line[3].c_str());
+        }
+        if (pl != 0.0 || ql != 0.0) {
+          data->addValue(LOAD_PL, atof(split_line[2].c_str()));
+          data->addValue(LOAD_PL, atof(split_line[2].c_str()),0);
+          std::string tmp(" 1");
+          data->addValue(LOAD_ID,tmp.c_str(),0);
+          data->addValue(LOAD_QL, atof(split_line[3].c_str()));
+          data->addValue(LOAD_QL, atof(split_line[3].c_str()),0);
+          int ival = 1;
+          data->addValue(LOAD_NUMBER,ival);
+          data->addValue(LOAD_STATUS,ival,0);
+          data->addValue(LOAD_BUSNUMBER,o_idx);
+        }
 
         index++;
         std::getline(input, line);

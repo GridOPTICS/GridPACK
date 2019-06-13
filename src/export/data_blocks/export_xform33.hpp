@@ -114,99 +114,67 @@ class ExportXform33
               data->getValue(TRANSFORMER_MAG2,&rval,j);
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
-
-              // No default for this value
-              data->getValue(BRANCH_RATING_A,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(BRANCH_RATING_B,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(BRANCH_RATING_C,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(BRANCH_SHUNT_ADMTTNC_G1,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(BRANCH_SHUNT_ADMTTNC_B1,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(BRANCH_SHUNT_ADMTTNC_G2,&rval,j);
-              sprintf(ptr," %f,",rval);
-              ptr += strlen(ptr);
-              rval = 0.0;
-              data->getValue(BRANCH_SHUNT_ADMTTNC_B2,&rval,j);
-              sprintf(ptr," %f,",rval);
+              ival = 2;
+              data->getValue(TRANSFORMER_NMETR,&ival,j);
+              sprintf(ptr," %d,",ival);
               ptr += strlen(ptr);
               ival = 1;
+              sprintf(ptr," \'            \',");
+              ptr += strlen(ptr);
               data->getValue(BRANCH_STATUS,&ival,j);
-              sprintf(ptr,"%d,",ival);
+              sprintf(ptr," %d,",ival);
               ptr += strlen(ptr);
               ival = 1;
-              data->getValue(BRANCH_METER,&ival,j);
-              sprintf(ptr,"%d,",ival);
-              ptr += strlen(ptr);
+              data->getValue(BRANCH_O1,&ival,j);
               rval = 0.0;
-              data->getValue(BRANCH_LENGTH,&rval,j);
-              sprintf(ptr," %f",rval);
+              data->getValue(BRANCH_F1,&rval,j);
+              sprintf(ptr," %d, %f,",ival,rval);
               ptr += strlen(ptr);
-              bool endline = false;
-              if (data->getValue(BRANCH_O1,&ival,j) &&
-                  data->getValue(BRANCH_F1,&rval,j)) {
-                sprintf(ptr,", %d, %f",ival,rval);
-                ptr += strlen(ptr);
-              } else {
-                sprintf(ptr,"\n");
-                ptr += strlen(ptr);
-                endline = true;
-              }
-              if (data->getValue(BRANCH_O2,&ival,j) &&
-                  data->getValue(BRANCH_F2,&rval,j)) {
-                sprintf(ptr,", %d, %f",ival,rval);
-                ptr += strlen(ptr);
-              } else if (!endline) {
-                sprintf(ptr,"\n");
-                ptr += strlen(ptr);
-                endline = true;
-              }
-              if (data->getValue(BRANCH_O3,&ival,j) &&
-                  data->getValue(BRANCH_F3,&rval,j)) {
-                sprintf(ptr,", %d, %f",ival,rval);
-                ptr += strlen(ptr);
-              } else if (!endline) {
-                sprintf(ptr,"\n");
-                ptr += strlen(ptr);
-                endline = true;
-              }
+              ival = 0;
+              data->getValue(BRANCH_O2,&ival,j);
+              rval = 0.0;
+              data->getValue(BRANCH_F2,&rval,j);
+              sprintf(ptr," %d, %f,",ival,rval);
+              ptr += strlen(ptr);
+              ival = 0;
+              data->getValue(BRANCH_O3,&ival,j);
+              rval = 0.0;
+              data->getValue(BRANCH_F3,&rval,j);
+              sprintf(ptr," %d, %f,",ival,rval);
+              ptr += strlen(ptr);
+              ival = 0;
+              data->getValue(BRANCH_O4,&ival,j);
+              rval = 0.0;
+              data->getValue(BRANCH_F4,&rval,j);
+              sprintf(ptr," %d, %f,",ival,rval);
+              ptr += strlen(ptr);
               // VECGRP just defaults to 12 blanks
-              if (data->getValue(BRANCH_O4,&ival,j) &&
-                  data->getValue(BRANCH_F4,&rval,j)) {
-                sprintf(ptr,", %d, %f, '            '\n",ival,rval);
-                ptr += strlen(ptr);
-              } else if (!endline) {
-                sprintf(ptr,"\n");
-                ptr += strlen(ptr);
-                endline = true;
-              }
+              sprintf(ptr,"\'            \'\n");
+              ptr += strlen(ptr);
+
               // Second line
               rval = 0.0;
-              data->getValue(TRANSFORMER_R1_2,&rval,j);
+              if (!data->getValue(TRANSFORMER_R1_2,&rval,j)) {
+                data->getValue(BRANCH_R,&rval,j);
+              }
               sprintf(ptr,"%f,",rval);
               ptr += strlen(ptr);
-              data->getValue(TRANSFORMER_X1_2,&rval,j);
+              if (!data->getValue(TRANSFORMER_X1_2,&rval,j)) {
+                data->getValue(BRANCH_X,&rval,j);
+              }
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
-              data->getValue(TRANSFORMER_SBASE1_2,&rval,j);
+              if (!data->getValue(TRANSFORMER_SBASE1_2,&rval,j)) {
+                data->getValue(CASE_SBASE,&rval);
+              }
               sprintf(ptr," %f,\n",rval);
               ptr += strlen(ptr);
+
               // Third line
               rval = 1.0;
-              data->getValue(TRANSFORMER_WINDV1,&rval,j);
+              if (!data->getValue(TRANSFORMER_WINDV1,&rval,j)) {
+                data->getValue(BRANCH_TAP,&rval,j);
+              } 
               sprintf(ptr,"%f,",rval);
               ptr += strlen(ptr);
               rval = 0.0;
@@ -237,19 +205,19 @@ class ExportXform33
               data->getValue(TRANSFORMER_CONT1,&ival,j);
               sprintf(ptr," %d,",ival);
               ptr += strlen(ptr);
-              rval = 0.0;
+              rval = 1.1;
               data->getValue(TRANSFORMER_RMA,&rval,j);
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
-              rval = 0.0;
+              rval = 0.9;
               data->getValue(TRANSFORMER_RMI,&rval,j);
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
-              rval = 0.0;
+              rval = 1.1;
               data->getValue(TRANSFORMER_VMA,&rval,j);
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
-              rval = 0.0;
+              rval = 0.9;
               data->getValue(TRANSFORMER_VMI,&rval,j);
               sprintf(ptr," %f,",rval);
               ptr += strlen(ptr);
@@ -273,6 +241,7 @@ class ExportXform33
               data->getValue(TRANSFORMER_CNXA,&rval,j);
               sprintf(ptr," %f\n",rval);
               ptr += strlen(ptr);
+
               // Fourth line
               rval = 1.0;
               data->getValue(TRANSFORMER_WINDV2,&rval,j);
@@ -280,7 +249,7 @@ class ExportXform33
               ptr += strlen(ptr);
               rval = 0.0;
               data->getValue(TRANSFORMER_NOMV1,&rval,j);
-              sprintf(ptr," %f\n",rval);
+              sprintf(ptr," %f",rval);
               ptr += strlen(ptr);
               // Finish up
               text_line text;
