@@ -280,15 +280,20 @@ void stb::writeMeanAndRMS(std::string filename, int mval, bool flag)
   int two = 2;
   int g_cnt = GA_Create_handle();
   NGA_Set_data(g_cnt,one,&one,C_INT);
+  GA_Set_pgroup(g_cnt,p_GAgrp);
   NGA_Allocate(g_cnt);
   GA_Zero(g_cnt);
-  int nblock = p_nrows/BLOCKSIZE+1;
+  int nblock = p_nrows/BLOCKSIZE;
+  while (p_nrows > nblock*BLOCKSIZE) {
+    nblock++;
+  }
   int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
   int dims[2];
   int g_buf = GA_Create_handle();
   dims[0] = p_nrows;
   dims[1] = 3;
   NGA_Set_data(g_buf,two,dims,C_DBL);
+  GA_Set_pgroup(g_buf,p_GAgrp);
   NGA_Allocate(g_buf);
   std::vector<double> vavg, vavg2, vdiff2;
   int lo[2];
@@ -460,15 +465,20 @@ void stb::writeMinAndMax(std::string filename, int mval, bool flag)
   int two = 2;
   int g_cnt = GA_Create_handle();
   NGA_Set_data(g_cnt,one,&one,C_INT);
+  NGA_Set_pgroup(g_cnt,p_GAgrp);
   NGA_Allocate(g_cnt);
   GA_Zero(g_cnt);
-  int nblock = p_nrows/BLOCKSIZE+1;
+  int nblock = p_nrows/BLOCKSIZE;
+  while (p_nrows > nblock*BLOCKSIZE) {
+    nblock++;
+  }
   int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
   int dims[2];
   int g_buf = GA_Create_handle();
   dims[0] = p_nrows;
   dims[1] = 5;
   NGA_Set_data(g_buf,two,dims,C_DBL);
+  NGA_Set_pgroup(g_buf,p_GAgrp);
   NGA_Allocate(g_buf);
   std::vector<double> vbase, vmin, vmax;
   std::vector<double> idxmin, idxmax;
@@ -556,7 +566,7 @@ void stb::writeMinAndMax(std::string filename, int mval, bool flag)
     }
     free(val_buf);
     free(mask_buf);
-    itask = NGA_Read_inc(g_cnt,&zero,(long)one);
+    itask = NGA_Read_inc(g_cnt,&zero,static_cast<long>(one));
   }
   GA_Pgroup_sync(p_GAgrp);
   // Get data from g_buf and write it to external file
@@ -661,12 +671,17 @@ void stb::writeMaskValueCount(std::string filename, int mval, bool flag)
   int two = 2;
   int g_cnt = GA_Create_handle();
   NGA_Set_data(g_cnt,one,&one,C_INT);
+  NGA_Set_pgroup(g_cnt,p_GAgrp);
   NGA_Allocate(g_cnt);
   GA_Zero(g_cnt);
-  int nblock = p_nrows/BLOCKSIZE+1;
+  int nblock = p_nrows/BLOCKSIZE;
+  while (p_nrows > nblock*BLOCKSIZE) {
+    nblock++;
+  }
   int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
   int g_buf = GA_Create_handle();
   NGA_Set_data(g_buf,one,&p_nrows,C_INT);
+  NGA_Set_pgroup(g_buf,p_GAgrp);
   NGA_Allocate(g_buf);
   std::vector<int> vcnt;
   int lo[2];
@@ -775,12 +790,17 @@ void stb::sumColumnValues(std::string filename, int mval)
   int two = 2;
   int g_cnt = GA_Create_handle();
   NGA_Set_data(g_cnt,one,&one,C_INT);
+  NGA_Set_pgroup(g_cnt, p_GAgrp);
   NGA_Allocate(g_cnt);
   GA_Zero(g_cnt);
-  int nblock = p_ncols/BLOCKSIZE+1;
+  int nblock = p_ncols/BLOCKSIZE;
+  while (p_ncols > nblock*BLOCKSIZE) {
+    nblock++;
+  }
   int itask = NGA_Read_inc(g_cnt,&zero,(long)one);
   int g_buf = GA_Create_handle();
   NGA_Set_data(g_buf,one,&p_ncols,C_DBL);
+  NGA_Set_pgroup(g_buf, p_GAgrp);
   NGA_Allocate(g_buf);
   std::vector<double> vsum;
   int lo[2];
@@ -814,6 +834,7 @@ void stb::sumColumnValues(std::string filename, int mval)
       NGA_Get(p_mask,lo,hi,mask_buf,&ld);
       int ncols = jhi-jlo+1;
       int idx;
+      vsum.clear();
       for (j=0; j<ncols; j++) {
         double sum = 0.0;
         for (i=0; i<p_nrows; i++) {

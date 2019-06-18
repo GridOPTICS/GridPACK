@@ -46,6 +46,7 @@
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
+#include "gridpack/export/PSSE33Export.hpp"
 #ifdef USE_GOSS
 #include "gridpack/serial_io/goss_utils.hpp"
 #endif
