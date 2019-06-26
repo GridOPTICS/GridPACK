@@ -19,6 +19,7 @@ set(target_libraries
     gridpack_ymatrix_components
     gridpack_components
     gridpack_partition
+    gridpack_appenvironment
     gridpack_math
     gridpack_configuration
     gridpack_timer
