@@ -124,8 +124,8 @@ public:
     if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
     tag = clean_tag.substr(ntok1,ntok2-ntok1);
     if (tag.length() == 1) {
-      clean_tag = " ";
-      clean_tag.append(tag);
+      clean_tag = tag;
+      clean_tag.append(" ");
     } else {
       clean_tag = tag;
     }

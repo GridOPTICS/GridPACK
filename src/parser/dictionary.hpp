@@ -125,7 +125,7 @@
 // Shunt data
 
 /**
- * Number of shunts on bus
+ * Number of fixed shunts on the bus
  * type: integer
  */
 #define SHUNT_NUMBER "SHUNT_NUMBER"
@@ -249,6 +249,27 @@
  * indexed
  */
 #define LOAD_YQ "LOAD_YQ"
+
+/**
+ * Owner to which load is assigned
+ * type: integer
+ * indexed
+ */
+#define LOAD_OWNER "LOAD_OWNER"
+
+/**
+ * Load scaling flag
+ * type: integer
+ * indexed
+ */
+#define LOAD_SCALE "LOAD_SCALE"
+
+/**
+ * Interruptible load flag
+ * type: integer
+ * indexed
+ */
+#define LOAD_INTRPT "LOAD_INTRPT"
 
 /**
  * Alphanumeric string describing load model
@@ -3099,27 +3120,6 @@
 #define TRANSFORMER_CONTROL "TRANSFORMER_CONTROL"
 
 /**
- * Winding data I/O code (units for winding values)
- * type: integer
- * indexed
- */
-#define TRANSFORMER_CW "TRANSFORMER_CW"
-
-/**
- * Impedence data I/O code (units for winding impedence values)
- * type: integer
- * indexed
- */
-#define TRANSFORMER_CZ "TRANSFORMER_CZ"
-
-/**
- * Magnetizing admittance I/O code (units for mag1 mag2 values)
- * type: integer
- * indexed
- */
-#define TRANSFORMER_CM "TRANSFORMER_CM"
-
-/**
  * Upper and lower limits of turns ratio or phase shift
  * type: float
  * indexed
@@ -3134,6 +3134,35 @@
  */
 #define TRANSFORMER_VMA "TRANSFORMER_VMA"
 #define TRANSFORMER_VMI "TRANSFORMER_VMI"
+
+/**
+ * Number of available tap positions
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_NTP "TRANSFORMER_NTP"
+
+/**
+ * Number of a transformer impedence table
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_TAB "TRANSFORMER_TAB"
+
+/**
+ * Load drop compensation impedance for voltage controlling transformers
+ * type: float
+ * indexed
+ */
+#define TRANSFORMER_CR "TRANSFORMER_CR"
+#define TRANSFORMER_CX "TRANSFORMER_CX"
+
+/**
+ * Winding connection angle in degrees
+ * type: float
+ * indexed
+ */
+#define TRANSFORMER_CNXA "TRANSFORMER_CNXA"
 
 /**
  * Turns ratio increment
@@ -3160,8 +3189,9 @@
 #define TRANSFORMER_ANG1 "TRANSFORMER_ANG1"
 
 /**
- * The winding data I/O code which defines the units in which TRANSFORMER_WINDV1, and TRANSFORMER _WINDV2
- *  are specified 
+ * The winding data I/O code which defines the units in which
+ * TRANSFORMER_WINDV1, and TRANSFORMER _WINDV2
+ * are specified 
  * 1: off-nominal turns ratio in pu of winding bus base voltage
  * 2: winding voltage in kV.
  * Default value: 1
@@ -3249,7 +3279,8 @@
 #define TRANSFORMER_R1_2 "TRANSFORMER_R1_2"
 
 /**
- * The measured reactance of the transformer between the buses to which its first and second
+ * The measured reactance of the transformer between the buses to which its
+ * first and second
  * windings are connected.
  * type: real float
  * indexed
@@ -3264,11 +3295,74 @@
 #define TRANSFORMER_SBASE1_2 "TRANSFORMER_SBASE1_2"
 
 /**
+ * Winding 1 and 2. Depends on CW
+ * Default value: 1.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_WINDV1 "TRANSFORMER_WINDV1"
+#define TRANSFORMER_WINDV2 "TRANSFORMER_WINDV2"
+
+/**
+ * Nominal winding 1 and 2 voltage base.
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_NOMV1 "TRANSFORMER_NOMV1"
+#define TRANSFORMER_NOMV2 "TRANSFORMER_NOMV2"
+
+
+/**
  * Transformer control mode for winding 1 tap or phase shift
+ * Default value: 0
  * type: integer
  * indexed
  */
 #define TRANSFORMER_CODE1 "TRANSFORMER_CODE1"
+
+/**
+ * Bus number of the bus for which voltage is to be controlled by the
+ * transformer turns ratio adjustment option
+ * Default value: 0
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_CONT1 "TRANSFORMER_CONT1"
+
+/**
+ * Number of tap positions available
+ * Default value: 33
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_NTP1 "TRANSFORMER_NTP1"
+
+/**
+ * The number of a transformer impedance correction table
+ * Default value: 0
+ * type: integer
+ * indexed
+ */
+#define TRANSFORMER_TAB1 "TRANSFORMER_TAB1"
+
+/**
+ * Real and imaginary load drop compensation impedence for
+ * voltage controlling transformers
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_CR1 "TRANSFORMER_CR1"
+#define TRANSFORMER_CX1 "TRANSFORMER_CX1"
+
+/**
+ * Winding connection angle in degrees
+ * Default value: 0.0
+ * type: real float
+ * indexed
+ */
+#define TRANSFORMER_CNXA1 "TRANSFORMER_CNXA1"
 
 // AREA DATA
 /**
@@ -3308,7 +3402,14 @@
  * Bus number to which the shunt is connected
  * type: integer
  */
+#define SWSHUNT_BUSNUMBER "SWSHUNT_BUSNUMBER"
+
+/**
+ * Bus number to which fixed shunt is connected
+ * type: integer
+ */
 #define SHUNT_BUSNUMBER "SHUNT_BUSNUMBER"
+
 
 /**
  * Control mode:
@@ -3370,7 +3471,7 @@
 
 /**
  * Percent of the total MVar required to hold the voltage at the bus controlled
- * by bus SHUNT_BUSNUMBER that are contributed by this switched shunt;
+ * by bus SWSHUNT_BUSNUMBER that are contributed by this switched shunt;
  * SHUNT_RMPCT must be positive.
  * SHUNT_RMPCT = 100.0 by default
  * type: float
