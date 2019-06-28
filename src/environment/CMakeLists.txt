@@ -13,13 +13,13 @@
 # Last Change: 2018-09-20 11:17:39 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_appenvironment 
-  app_environment.cpp
+add_library(gridpack_environment 
+  environment.cpp
 )
 
 # For some reason this is necessary for Mac OS X, but messes things up on Linux
 if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_appenvironment gridpack_math
+  target_link_libraries(gridpack_environment gridpack_math
     ${Boost_LIBRARIES} 
     ${GA_LIBRARIES} 
     ${MPI_CXX_LIBRARIES}
@@ -35,14 +35,14 @@ endif()
 # gridpack header installation
 # -------------------------------------------------------------
 install(FILES
-  app_environment.hpp
-  DESTINATION include/gridpack/app_environment
+  environment.hpp
+  DESTINATION include/gridpack/environment
 )
 
 # -------------------------------------------------------------
-# gridpack app_environment library installation
+# gridpack environment library installation
 # -------------------------------------------------------------
 install(TARGETS 
-  gridpack_appenvironment
+  gridpack_environment
   DESTINATION lib
 )

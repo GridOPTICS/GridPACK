@@ -23,7 +23,8 @@ const char* help = "GridPACK power flow application";
 
 int main(int argc, char **argv)
 {
-  gridpack::app_environment::App_Environment env(argc,argv,help,"input_14.xml");
+  // Initialize libraries (parallel and math)
+  gridpack::Environment env(argc,argv,help,"input_14.xml");
 
   if (1) {
     gridpack::utility::CoarseTimer *timer =

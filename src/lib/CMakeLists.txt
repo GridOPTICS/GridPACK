@@ -56,7 +56,7 @@ set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/vector.cpp)
 
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/parallel/distributed.cpp)
 
-set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/app_environment/app_environment.cpp)
+set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/environment/environment.cpp)
 
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/adjacency_list.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/graph_partitioner.cpp)
@@ -77,7 +77,7 @@ set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/math)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/math/petsc)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/network)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/parallel)
-set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/app_environment)
+set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/environment)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/parser)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/partition)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/serial_io)

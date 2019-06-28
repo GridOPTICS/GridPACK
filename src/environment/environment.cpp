@@ -7,7 +7,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 /**
- * @file   app_environment.cpp
+ * @file   environment.cpp
  * @author Shrirang Abhyankar
  * @date   2019-06-25 12:45:58 d3g096
  * 
@@ -17,21 +17,20 @@
  */
 // -------------------------------------------------------------
 
-#include "app_environment.hpp"
+#include "environment.hpp"
 #include "gridpack/parallel/environment.hpp"
 #include "gridpack/math/math.hpp"
 
 namespace gridpack {
-namespace app_environment {
 
 // -------------------------------------------------------------
-//  class Application Environment
+//  class Environment
 // -------------------------------------------------------------
 
 // -------------------------------------------------------------
-// Application Environment:: constructors / destructor
+// Environment:: constructors / destructor
 // -------------------------------------------------------------
-  App_Environment::App_Environment(int& argc, char **argv,const char* help,const char* config_filein) : parenv(argc,argv),clparser(argc,argv)
+  Environment::Environment(int& argc, char **argv,const char* help,const char* config_filein) : parenv(argc,argv),clparser(argc,argv)
 {
   // Check if help (-h or -help) is given at command line
   if(clparser.cmdOptionExists("-h") || clparser.cmdOptionExists("-help")) {
@@ -46,7 +45,7 @@ namespace app_environment {
   gridpack::math::Initialize(&argc,&argv);
 }
 
-App_Environment::~App_Environment(void)
+Environment::~Environment(void)
 {
   int ierr;
   // Finalize math libraries
@@ -55,7 +54,5 @@ App_Environment::~App_Environment(void)
   // GA and MPI will be finalized by Environment class
 }
 
-
-} // namespace app_environment
 } // namespace gridpack
 

@@ -329,7 +329,7 @@ install(FILES
 # -------------------------------------------------------------
 add_subdirectory(utilities)
 add_subdirectory(parallel)
-add_subdirectory(app_environment)
+add_subdirectory(environment)
 add_subdirectory(configuration)
 add_subdirectory(math)
 add_subdirectory(component)

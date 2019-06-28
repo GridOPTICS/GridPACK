@@ -24,7 +24,6 @@
 #include "gridpack/parallel/environment.hpp"
 
 namespace gridpack {
-namespace app_environment {
 
 class CommandLineParser {
 public:
@@ -53,9 +52,9 @@ private:
 };
 
 // -------------------------------------------------------------
-//  class App_Environment
+//  class Environment
 // -------------------------------------------------------------
-  class App_Environment
+  class Environment
 {
 public:
 
@@ -70,12 +69,12 @@ public:
    * 
    * @return 
    */
-  App_Environment(int& argc, char **argv,
+  Environment(int& argc, char **argv,
               const char* help,
 	      const char* config_file);
 
   /// Destructor
-  ~App_Environment(void);
+  ~Environment(void);
 private:
   // Command line parser
   CommandLineParser clparser;
@@ -87,9 +86,6 @@ private:
   char config_file[100];
 };
 
-
-
-} // namespace app_environment
 } // namespace gridpack
 
 #endif
