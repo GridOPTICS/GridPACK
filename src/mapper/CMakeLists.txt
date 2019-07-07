@@ -73,6 +73,7 @@ gridpack_add_run_test("mapper" test_mapper "")
 # installation
 # -------------------------------------------------------------
 install(FILES 
+  base_matrix_map.hpp
   bus_vector_map.hpp
   full_map.hpp
   gen_matrix_map.hpp

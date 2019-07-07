@@ -92,7 +92,7 @@ class BaseFactory {
         branch_idx = p_network->getGlobalBranchIndex(i); 
         bus1_idx = p_network->getGlobalBusIndex(idx1); 
         bus2_idx = p_network->getGlobalBusIndex(idx2); 
-        p_network->getBranch(i)->setMatVecIndices(bus1_idx, bus2_idx); 
+        p_network->getBranch(i)->baseSetMatVecIndices(bus1_idx, bus2_idx); 
         if (p_network->getActiveBranch(i)) numActiveBranch++;
       }
 
@@ -111,7 +111,7 @@ class BaseFactory {
         }
         int bus_idx;
         bus_idx = p_network->getGlobalBusIndex(i); 
-        p_network->getBus(i)->setMatVecIndex(bus_idx);
+        p_network->getBus(i)->baseSetMatVecIndex(bus_idx);
         if (p_network->getActiveBus(i)) numActiveBus++;
       }
       
@@ -218,7 +218,7 @@ class BaseFactory {
       NGA_Gather(g_bus,ibus_val,ibus_idx,p_numBuses);
       // Assign the MatVecIndex for the bus and clean up arrays
       for (i=0; i<p_numBuses; i++) {
-        p_network->getBus(i)->setMatVecIndex(ibus_val[i]);
+        p_network->getBus(i)->baseSetMatVecIndex(ibus_val[i]);
         delete ibus_idx[i];
       }
       delete [] ibus_idx;
@@ -229,9 +229,9 @@ class BaseFactory {
 
       // Finish by assigning MatVecIndices for the branches
       for (i=0; i<p_numBranches; i++) {
-        p_network->getBranch(i)->getBus1()->getMatVecIndex(&idx1);
-        p_network->getBranch(i)->getBus2()->getMatVecIndex(&idx2);
-        p_network->getBranch(i)->setMatVecIndices(idx1,idx2);
+        p_network->getBranch(i)->getBus1()->baseGetMatVecIndex(&idx1);
+        p_network->getBranch(i)->getBus2()->baseGetMatVecIndex(&idx2);
+        p_network->getBranch(i)->baseSetMatVecIndices(idx1,idx2);
       }
       
       // Set internal maps

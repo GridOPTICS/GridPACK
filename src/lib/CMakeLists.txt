@@ -25,6 +25,7 @@ set(GRIDPACK_TP_LIBS)
 # -------------------------------------------------------------
 # source files
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/component/base_component.cpp)
+set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/component/base_matrix_ifc.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/component/data_collection.cpp)
 
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/configuration/configuration.cpp)

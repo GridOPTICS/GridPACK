@@ -17,9 +17,9 @@
 #include "gridpack/mapper/gen_vector_map.hpp"
 #include "gridpack/mapper/gen_slab_map.hpp"
 
-#define XDIM 100
-#define YDIM 100
-#define NSLAB 20
+#define XDIM 8
+#define YDIM 8
+#define NSLAB 2
 
 class TestBus
   : public gridpack::component::BaseBusComponent {
@@ -71,7 +71,7 @@ class TestBus
   bool vectorValues(gridpack::ComplexType *values) {
     if (!getReferenceBus()) {
       int idx;
-      getMatVecIndex(&idx);
+      baseGetMatVecIndex(&idx);
       *values = (double)idx;
       return true;
     } else {
@@ -82,7 +82,7 @@ class TestBus
   bool vectorValues(gridpack::RealType *values) {
     if (!getReferenceBus()) {
       int idx;
-      getMatVecIndex(&idx);
+      baseGetMatVecIndex(&idx);
       *values = (double)idx;
       return true;
     } else {
@@ -116,7 +116,7 @@ class TestBus
 
   void matrixSetRowIndex(int irow, int idx) {
     int midx;
-    getMatVecIndex(&midx);
+    baseGetMatVecIndex(&midx);
     p_row_idx = idx;
   }
 
@@ -709,9 +709,9 @@ void run (const int &me, const int &nprocs)
   double rv;
   for (i=0; i<nbus; i++) {
     if (network->getActiveBus(i)) {
-      if (network->getBus(i)->matrixDiagSize(&isize,&jsize)
+      if (network->getBus(i)->baseMatrixDiagSize(&isize,&jsize)
           && isize > 0 && jsize > 0) {
-        network->getBus(i)->getMatVecIndex(&idx);
+        network->getBus(i)->baseGetMatVecIndex(&idx);
         idx--;
         M->getElement(idx,idx,v);
         rv = real(v);
@@ -728,15 +728,15 @@ void run (const int &me, const int &nprocs)
   rlo = XDIM*YDIM;
   for (i=0; i<nbus; i++) {
     if (network->getActiveBus(i)) {
-      network->getBus(i)->getMatVecIndex(&idx);
+      network->getBus(i)->baseGetMatVecIndex(&idx);
       if (rhi<idx) rhi = idx;
       if (rlo>idx) rlo = idx;
     }
   }
   for (i=0; i<nbranch; i++) {
-    if (network->getBranch(i)->matrixForwardSize(&isize,&jsize)
+    if (network->getBranch(i)->baseMatrixForwardSize(&isize,&jsize)
         && isize > 0 && jsize > 0) {
-      network->getBranch(i)->getMatVecIndices(&idx,&jdx);
+      network->getBranch(i)->baseGetMatVecIndices(&idx,&jdx);
       idx--;
       jdx--;
       if (idx >= rlo-1 && idx <= rhi-1) {
@@ -779,7 +779,7 @@ void run (const int &me, const int &nprocs)
   for (i=0; i<nbus; i++) {
     if (network->getActiveBus(i)) {
       if (network->getBus(i)->vectorSize(&isize)) {
-        network->getBus(i)->getMatVecIndex(&idx);
+        network->getBus(i)->baseGetMatVecIndex(&idx);
         idx--;
         V->getElement(idx,v);
         rv = real(v);
@@ -804,7 +804,7 @@ void run (const int &me, const int &nprocs)
   for (i=0; i<nbus; i++) {
     if (network->getActiveBus(i)) {
       if (network->getBus(i)->vectorSize(&isize)) {
-        network->getBus(i)->getMatVecIndex(&idx);
+        network->getBus(i)->baseGetMatVecIndex(&idx);
         idx--;
         rV->getElement(idx,rv);
         if (rv != (double)(idx+1)) {
@@ -843,7 +843,7 @@ void run (const int &me, const int &nprocs)
   for (i=0; i<nbus; i++) {
     if (network->getActiveBus(i)) {
       if (network->getBus(i)->vectorSize(&isize)) {
-        network->getBus(i)->getMatVecIndex(&idx);
+        network->getBus(i)->baseGetMatVecIndex(&idx);
         rv = network->getBus(i)->getValue();
         if (rv != (double)(2*idx)) {
           printf("p[%d] Bus error i: %d v: %f expected: %f\n",me,idx,rv,(double)(2*idx));

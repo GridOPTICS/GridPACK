@@ -22,6 +22,7 @@
 #include "gridpack/parallel/parallel.hpp"
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/component/base_component.hpp>
+#include <gridpack/component/matvec_ifc.hpp>
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/utilities/exception.hpp>
 #include <gridpack/math/vector.hpp>

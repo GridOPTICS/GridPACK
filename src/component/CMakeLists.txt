@@ -25,6 +25,8 @@ if (GA_FOUND)
 endif()
 
 add_library(gridpack_components
+  base_matrix_ifc.cpp
+  matvec_ifc.cpp
   base_component.cpp
   data_collection.cpp
   optimization_ifc.cpp
@@ -41,6 +43,8 @@ gridpack_add_unit_test(component_serialization component_serialization_test)
 # installation
 # -------------------------------------------------------------
 install(FILES 
+  base_matrix_ifc.hpp
+  matvec_ifc.hpp
   base_component.hpp  
   data_collection.hpp
   optimization_ifc.hpp

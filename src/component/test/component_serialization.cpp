@@ -162,7 +162,8 @@ public:
   explicit BogusBus(const int& id)
     : gridpack::component::BaseBusComponent(), p_name("BogusBus#")
   {
-    this->setMatVecIndex(id);
+    printf("set index : %d\n",id);
+    this->baseSetMatVecIndex(id);
     p_name += boost::lexical_cast<std::string>(id);
   }
 
@@ -213,7 +214,8 @@ public:
   explicit BogusBranch(const int& id)
     : gridpack::component::BaseBranchComponent(), p_name("BogusBranch#")
   {
-    this->setMatVecIndices(id, 0);
+    printf("set indices : %d 0\n",id);
+    this->baseSetMatVecIndices(id, 0);
     p_name += boost::lexical_cast<std::string>(id);
   }
 
@@ -329,8 +331,9 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
   BOOST_REQUIRE(bogusin != NULL);
   BOOST_REQUIRE(bogusout != NULL);
   
-  bogusin->getMatVecIndex(&inid);
-  bogusout->getMatVecIndex(&outid);
+  bogusin->baseGetMatVecIndex(&inid);
+  bogusout->baseGetMatVecIndex(&outid);
+    printf("get index : %d %d\n",inid,outid);
   
   BOOST_CHECK_EQUAL(inid, the_id);
   BOOST_CHECK_EQUAL(inid, outid);
@@ -348,8 +351,9 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
   BOOST_REQUIRE(brogusin != NULL);
   BOOST_REQUIRE(brogusout != NULL);
   
-  brogusin->getMatVecIndices(&inid, &junk);
-  brogusout->getMatVecIndices(&outid, &junk);
+  brogusin->baseGetMatVecIndices(&inid, &junk);
+  brogusout->baseGetMatVecIndices(&outid, &junk);
+    printf("get indices : %d %d %d\n",inid,outid,junk);
   
   BOOST_CHECK_EQUAL(inid, the_id);
   BOOST_CHECK_EQUAL(inid, outid);
@@ -385,8 +389,8 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
 //   BOOST_REQUIRE(bogusin != NULL);
 //   BOOST_REQUIRE(bogusout != NULL);
   
-//   bogusin->getMatVecIndex(&inid);
-//   bogusout->getMatVecIndex(&outid);
+//   bogusin->baseGetMatVecIndex(&inid);
+//   bogusout->baseGetMatVecIndex(&outid);
   
 //   BOOST_CHECK_EQUAL(inid, world.rank());
 //   BOOST_CHECK_EQUAL(inid, outid);
@@ -411,8 +415,8 @@ BOOST_AUTO_TEST_CASE ( Component_bin )
 //   BOOST_REQUIRE(brogusin != NULL);
 //   BOOST_REQUIRE(brogusout != NULL);
   
-//   brogusin->getMatVecIndices(&inid, &junk);
-//   brogusout->getMatVecIndices(&outid, &junk);
+//   brogusin->baseGetMatVecIndices(&inid, &junk);
+//   brogusout->baseGetMatVecIndices(&outid, &junk);
   
 //   BOOST_CHECK_EQUAL(inid, world.rank());
 //   BOOST_CHECK_EQUAL(inid, outid);
