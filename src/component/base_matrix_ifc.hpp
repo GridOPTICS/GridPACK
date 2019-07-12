@@ -7,7 +7,7 @@
 /**
  * @file   base_component.hpp
  * @author Bruce Palmer
- * @date   2016-07-14 13:50:54 d3g096
+ * @date   2019-07-12 11:24:20 d3g096
  * 
  * @brief  
  * 
@@ -183,7 +183,7 @@ class BaseMatrixInterface : public MatVecInterface {
   template<class Archive>
   void serialize(Archive & ar, const unsigned int version)
   {
-    ar & p_ival
+    ar & boost::serialization::base_object<MatVecInterface>(*this)& p_ival
        & p_idx
        & p_jdx
        & p_mode;

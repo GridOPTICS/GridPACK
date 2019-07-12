@@ -7,7 +7,7 @@
 /**
  * @file   base_component.hpp
  * @author Bruce Palmer
- * @date   2016-07-14 13:50:54 d3g096
+ * @date   2019-07-12 11:16:04 d3g096
  * 
  * @brief  
  * 
@@ -169,7 +169,7 @@ class BaseComponent : public BaseMatrixInterface, public GenMatVecInterface {
   {
     // p_XCBuf and p_XCBufSize are managed somewhere else; they will
     // have to be initialized
-    ar << boost::serialization::base_object<MatVecInterface>(*this)
+    ar << boost::serialization::base_object<BaseMatrixInterface>(*this)
        << boost::serialization::base_object<GenMatVecInterface>(*this)
        << p_XCBufSize
        << p_mode;
@@ -179,7 +179,7 @@ class BaseComponent : public BaseMatrixInterface, public GenMatVecInterface {
   template<class Archive>
   void load(Archive & ar, const unsigned int version)
   {
-    ar >> boost::serialization::base_object<MatVecInterface>(*this)
+    ar >> boost::serialization::base_object<BaseMatrixInterface>(*this)
        >> boost::serialization::base_object<GenMatVecInterface>(*this)
        >> p_XCBufSize
        >> p_mode;
