@@ -79,7 +79,7 @@ if [ $host == "flophouse" ]; then
         parch="rhel7-gnu48-real-opt-shared"
     else
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel7-gnu48-real-opt"
+        parch="rhel7-gnu48-complex-opt"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
@@ -294,7 +294,7 @@ elif [ $host == "tlaloc" ]; then
 
     prefix="/file0/perksoft"
 
-    cmake $options \
+    cmake3 $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
           -D USE_PROGRESS_RANKS:BOOL=OFF \
@@ -304,7 +304,7 @@ elif [ $host == "tlaloc" ]; then
           -D MPI_C_COMPILER:STRING="mpicc" \
           -D MPIEXEC:STRING="mpiexec" \
           -D USE_GLPK:BOOL=OFF \
-          -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+          -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
           -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
           $common_flags ..
