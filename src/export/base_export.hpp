@@ -66,7 +66,7 @@ class BaseExport
      */
     void writeDataBlock(std::ofstream &fout, std::vector<text_line> &text_data)
     {
-      // Loop through all test_line data structures and find highest value of
+      // Loop through all text_line data structures and find highest value of
       // global index
       int i;
       int nsize = text_data.size();
