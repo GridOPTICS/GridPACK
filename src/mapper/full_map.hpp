@@ -163,7 +163,10 @@ bool check(void)
   p_base_mapper->baseCheck();
 }
 
+private:
+
 boost::shared_ptr<gridpack::mapper::BaseMatrixMap<_network> > p_base_mapper;
+
 };
 
 } /* namespace mapper */
