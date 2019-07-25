@@ -365,6 +365,7 @@ add_subdirectory(parser)
 add_subdirectory(export)
 add_subdirectory(serial_io)
 add_subdirectory(timer)
+add_subdirectory(stream)
 add_subdirectory(include)
 
 add_subdirectory(lib)
