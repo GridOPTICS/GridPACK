@@ -27,6 +27,7 @@
 
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
+#include "gridpack/stream/input_stream.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/parser/base_parser.hpp"
@@ -144,16 +145,15 @@ class PTI33_parser : public BasePTIParser<_network>
 
       int me(p_network->communicator().rank());
 
-      std::ifstream            input;
       if (me == 0) {
-        input.open(fileName.c_str());
-        if (!input.is_open()) {
+        p_istream.openFile(fileName.c_str());
+        if (!p_istream.isOpen()) {
           char buf[512];
           sprintf(buf,"Failed to open network configuration file: %s\n\n",
               fileName.c_str());
           throw gridpack::Exception(buf);
         }
-        find_case(input);
+        find_case();
       } else {
         p_case_sbase = 0.0;
         p_case_id = 0;
@@ -174,23 +174,23 @@ class PTI33_parser : public BasePTIParser<_network>
       this->setCaseSBase(p_case_sbase);
 
       if (me == 0) {
-        find_buses(input);
-        find_loads(input);
-        find_fixed_shunts(input);
-        find_generators(input);
-        find_branches(input);
-        find_transformer(input);
-        find_area(input);
-        find_2term(input);
-        find_vsc_line(input);
-        find_imped_corr(input);
-        find_multi_term(input);
-        find_multi_section(input);
-        find_zone(input);
-        find_interarea(input);
-        find_owner(input);
-        find_facts(input);
-        find_switched_shunt(input);
+        find_buses();
+        find_loads();
+        find_fixed_shunts();
+        find_generators();
+        find_branches();
+        find_transformer();
+        find_area();
+        find_2term();
+        find_vsc_line();
+        find_imped_corr();
+        find_multi_term();
+        find_multi_section();
+        find_zone();
+        find_interarea();
+        find_owner();
+        find_facts();
+        find_switched_shunt();
 
 #if 0
         // debug
@@ -206,7 +206,7 @@ class PTI33_parser : public BasePTIParser<_network>
           p_branchData[i]->dump();
         }
 #endif
-        input.close();
+        p_istream.close();
       }
       // Distribute impedence correction tables to all processors (if necessary)
       int stables = 0;
@@ -234,13 +234,13 @@ class PTI33_parser : public BasePTIParser<_network>
       p_timer->stop(t_case);
     }
 
-    void find_case(std::ifstream & input)
+    void find_case()
     {
       std::string                                        line;
 
-      std::getline(input, line);
+      p_istream.nextLine(line);
       while (check_comment(line)) {
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
       std::vector<std::string>  split_line;
 
@@ -274,14 +274,14 @@ class PTI33_parser : public BasePTIParser<_network>
 
     }
 
-    void find_buses(std::ifstream & input)
+    void find_buses()
     {
       std::string          line;
       int                  index = 0;
       int                  o_idx;
-      std::getline(input, line);
-      std::getline(input, line);
-      std::getline(input, line);
+      p_istream.nextLine(line);
+      p_istream.nextLine(line);
+      p_istream.nextLine(line);
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -339,14 +339,14 @@ class PTI33_parser : public BasePTIParser<_network>
 
         // TODO: Need to add EVHI, EVLO
         index++;
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_loads(std::ifstream & input)
+    void find_loads()
     {
       std::string          line;
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -358,7 +358,7 @@ class PTI33_parser : public BasePTIParser<_network>
         int l_idx, o_idx;
         o_idx = getBusIndex(split_line[0]);
         if (o_idx < 0) {
-          getline(input, line);
+          p_istream.nextLine(line);
           continue;
         }
 #ifdef OLD_MAP
@@ -370,7 +370,7 @@ class PTI33_parser : public BasePTIParser<_network>
         if (it != p_busMap.end()) {
           l_idx = it->second;
         } else {
-          std::getline(input, line);
+          p_istream.nextLine(line);
           continue;
         }
         int nstr = split_line.size();
@@ -440,14 +440,14 @@ class PTI33_parser : public BasePTIParser<_network>
           p_busData[l_idx]->setValue(LOAD_NUMBER,nld);
         }
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_fixed_shunts(std::ifstream & input)
+    void find_fixed_shunts()
     {
       std::string          line;
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -467,7 +467,7 @@ class PTI33_parser : public BasePTIParser<_network>
         if (it != p_busMap.end()) {
           l_idx = it->second;
         } else {
-          std::getline(input, line);
+          p_istream.nextLine(line);
           continue;
         }
         int nstr = split_line.size();
@@ -515,14 +515,14 @@ class PTI33_parser : public BasePTIParser<_network>
           p_busData[l_idx]->setValue(SHUNT_NUMBER,nshnt);
         }
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_generators(std::ifstream & input)
+    void find_generators()
     {
       std::string          line;
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
@@ -542,7 +542,7 @@ class PTI33_parser : public BasePTIParser<_network>
         if (it != p_busMap.end()) {
           l_idx = it->second;
         } else {
-          std::getline(input, line);
+          p_istream.nextLine(line);
           continue;
         }
 
@@ -705,17 +705,17 @@ class PTI33_parser : public BasePTIParser<_network>
           p_busData[l_idx]->setValue(GENERATOR_NUMBER,ngen);
         }
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_branches(std::ifstream & input)
+    void find_branches()
     {
       std::string line;
       int  o_idx1, o_idx2;
       int index = 0;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       int nelems;
       while(test_end(line)) {
@@ -884,7 +884,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
         nelems++;
         p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
@@ -904,11 +904,11 @@ class PTI33_parser : public BasePTIParser<_network>
     // This code is NOT handling these elements correctly. Need to bring
     // it in line with find_branch routine and the definitions in the
     // ex_pti_file
-    void find_transformer(std::ifstream & input)
+    void find_transformer()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       std::pair<int, int>   branch_pair;
 
@@ -931,7 +931,7 @@ class PTI33_parser : public BasePTIParser<_network>
         if (k != 0) {
           if (wind3X) {
             int o_idx3 = k;
-            std::getline(input, line);
+            p_istream.nextLine(line);
             std::vector<std::string>  split_line2;
             this->cleanComment(line);
             boost::split(split_line2, line, boost::algorithm::is_any_of(","),
@@ -940,10 +940,10 @@ class PTI33_parser : public BasePTIParser<_network>
             int stat;
             stat = atoi(split_line[11].c_str());
             if (split_line2.size() < 4 || stat == 0) {
-              std::getline(input, line);
-              std::getline(input, line);
-              std::getline(input, line);
-              std::getline(input, line);
+              p_istream.nextLine(line);
+              p_istream.nextLine(line);
+              p_istream.nextLine(line);
+              p_istream.nextLine(line);
               continue;
             }
             // Get internal indices corresponding to buses 1,2,3
@@ -1058,7 +1058,7 @@ class PTI33_parser : public BasePTIParser<_network>
             boost::shared_ptr<gridpack::component::DataCollection>
               data1(new gridpack::component::DataCollection);
             p_branchData.push_back(data1);
-            std::getline(input, line);
+            p_istream.nextLine(line);
             std::vector<std::string> split_line3;
             this->cleanComment(line);
             boost::split(split_line3, line, boost::algorithm::is_any_of(","),
@@ -1094,7 +1094,7 @@ class PTI33_parser : public BasePTIParser<_network>
             boost::shared_ptr<gridpack::component::DataCollection>
               data2(new gridpack::component::DataCollection);
             p_branchData.push_back(data2);
-            std::getline(input, line);
+            p_istream.nextLine(line);
             std::vector<std::string> split_line4;
             this->cleanComment(line);
             boost::split(split_line4, line, boost::algorithm::is_any_of(","),
@@ -1129,7 +1129,7 @@ class PTI33_parser : public BasePTIParser<_network>
             boost::shared_ptr<gridpack::component::DataCollection>
               data3(new gridpack::component::DataCollection);
             p_branchData.push_back(data3);
-            std::getline(input, line);
+            p_istream.nextLine(line);
             std::vector<std::string> split_line5;
             this->cleanComment(line);
             boost::split(split_line5, line, boost::algorithm::is_any_of(","),
@@ -1160,27 +1160,27 @@ class PTI33_parser : public BasePTIParser<_network>
             }
           } else {
             // Skip 3-winding transformers (for now)
-            std::getline(input, line);
-            std::getline(input, line);
-            std::getline(input, line);
-            std::getline(input, line);
+            p_istream.nextLine(line);
+            p_istream.nextLine(line);
+            p_istream.nextLine(line);
+            p_istream.nextLine(line);
             continue;
           }
         } else {
           int ntoken = split_line.size();
-          std::getline(input, line);
+          p_istream.nextLine(line);
           std::vector<std::string>  split_line2;
           this->cleanComment(line);
           boost::split(split_line2, line, boost::algorithm::is_any_of(","),
               boost::token_compress_off);
 
-          std::getline(input, line);
+          p_istream.nextLine(line);
           std::vector<std::string>  split_line3;
           this->cleanComment(line);
           boost::split(split_line3, line, boost::algorithm::is_any_of(","),
               boost::token_compress_off);
 
-          std::getline(input, line);
+          p_istream.nextLine(line);
           std::vector<std::string>  split_line4;
           this->cleanComment(line);
           boost::split(split_line4, line, boost::algorithm::is_any_of(","),
@@ -1505,15 +1505,15 @@ class PTI33_parser : public BasePTIParser<_network>
           nelems++;
           p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
         }
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_area(std::ifstream & input)
+    void find_area()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -1533,7 +1533,7 @@ class PTI33_parser : public BasePTIParser<_network>
         if (it != p_busMap.end()) {
           l_idx = it->second;
         } else {
-          std::getline(input, line);
+          p_istream.nextLine(line);
           continue;
         }
         p_busData[l_idx]->addValue(AREAINTG_ISW, atoi(split_line[1].c_str()));
@@ -1550,15 +1550,15 @@ class PTI33_parser : public BasePTIParser<_network>
         // AREAINTG_NAME         "ARNAM"                string
         p_busData[l_idx]->addValue(AREAINTG_NAME, split_line[4].c_str());
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_2term(std::ifstream & input)
+    void find_2term()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -1576,19 +1576,19 @@ class PTI33_parser : public BasePTIParser<_network>
         if (it != p_busMap.end()) {
           l_idx = it->second;
         } else {
-          std::getline(input, line);
+          p_istream.nextLine(line);
           continue;
         }
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_vsc_line(std::ifstream & input)
+    void find_vsc_line()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -1596,7 +1596,7 @@ class PTI33_parser : public BasePTIParser<_network>
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_off);
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
@@ -1604,11 +1604,11 @@ class PTI33_parser : public BasePTIParser<_network>
     /*
 
      */
-    void find_switched_shunt(std::ifstream & input)
+    void find_switched_shunt()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
@@ -1630,7 +1630,7 @@ class PTI33_parser : public BasePTIParser<_network>
         if (it != p_busMap.end()) {
           o_idx = it->second;
         } else {
-          std::getline(input, line);
+          p_istream.nextLine(line);
           continue;
         }
         int nval = split_line.size();
@@ -1799,15 +1799,15 @@ class PTI33_parser : public BasePTIParser<_network>
         if (nval > 25) 
           p_busData[o_idx]->addValue(SHUNT_B8, atof(split_line[25].c_str()));
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_imped_corr(std::ifstream & input)
+    void find_imped_corr()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -1849,27 +1849,27 @@ class PTI33_parser : public BasePTIParser<_network>
 
         p_imp_corr_table.insert(std::pair<int,
             boost::shared_ptr<gridpack::component::DataCollection> >(tableid,data));
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_multi_term(std::ifstream & input)
+    void find_multi_term()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         // TODO: parse something here
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_multi_section(std::ifstream & input)
+    void find_multi_section()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
         std::vector<std::string>  split_line;
@@ -1935,7 +1935,7 @@ class PTI33_parser : public BasePTIParser<_network>
           p_branchData[l_idx]->addValue(buf,atoi(split_line[i+4].c_str()));
         }
 
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
@@ -1943,22 +1943,22 @@ class PTI33_parser : public BasePTIParser<_network>
      * ZONE_I          "I"                       integer
      * ZONE_NAME       "NAME"                    string
      */
-    void find_zone(std::ifstream & input)
+    void find_zone()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
       while(test_end(line)) {
         // TODO: parse something here
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_interarea(std::ifstream & input)
+    void find_interarea()
     {
       std::string          line;
 
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
 #if 0
@@ -1997,7 +1997,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
         inter_area.push_back(inter_area_instance);
 #endif
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
@@ -2008,10 +2008,10 @@ class PTI33_parser : public BasePTIParser<_network>
      * type: integer
      * #define OWNER_NAME "OWNER_NAME"
      */
-    void find_owner(std::ifstream & input)
+    void find_owner()
     {
       std::string          line;
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
 #if 0
@@ -2028,17 +2028,17 @@ class PTI33_parser : public BasePTIParser<_network>
 
         owner.push_back(owner_instance);
 #endif
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
-    void find_facts(std::ifstream & input)
+    void find_facts()
     {
       std::string          line;
-      std::getline(input, line); //this should be the first line of the block
+      p_istream.nextLine(line); //this should be the first line of the block
 
       while(test_end(line)) {
-        std::getline(input, line);
+        p_istream.nextLine(line);
       }
     }
 
@@ -2375,6 +2375,9 @@ class PTI33_parser : public BasePTIParser<_network>
 #else
     boost::unordered_map<std::pair<int, int>, int> p_branchMap;
 #endif
+
+    // Input stream object that obtains next line
+    gridpack::stream::InputStream p_istream;
 
     // Global variables that apply to whole network
     int p_case_id;
