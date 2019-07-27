@@ -191,6 +191,182 @@ class BaseMatrixInterface : public MatVecInterface {
 
 
 };
-}
-}
+
+// -------------------------------------------------------------
+//  class BaseGenMatVecInterface:
+//    A general interface for defining matrices generated from
+//    the network that do not follow the mapping of buses to
+//    diagonal blocks and branches to off-diagonal blocks
+// -------------------------------------------------------------
+
+class BaseGenMatVecInterface : public GenMatVecInterface {
+  public:
+
+    enum MapMode{STANDARD};
+
+    /**
+     * Constructor
+     */
+    BaseGenMatVecInterface(void);
+
+    /**
+     * Destructor
+     */
+    virtual ~BaseGenMatVecInterface(void);
+
+    /**
+     * Return number of rows in matrix from component
+     * @return number of rows from component
+     */
+    virtual int baseMatrixNumRows() const;
+
+    /**
+     * Return number of columns in matrix from component
+     * @return number of columnsows from component
+     */
+    virtual int baseMatrixNumCols() const;
+
+    /**
+     * Set row indices corresponding to the rows contributed by this
+     * component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @param idx matrix index of row irow
+     */
+    virtual void baseMatrixSetRowIndex(int irow, int idx);
+
+    /**
+     * Set column indices corresponding to the columns contributed by this
+     * component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @param idx matrix index of column icol
+     */
+    virtual void baseMatrixSetColIndex(int icol, int idx);
+
+    /**
+     * Get the row indices corresponding to the rows contributed by this component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @return matrix index of row irow
+     */
+    virtual int baseMatrixGetRowIndex(int irow);
+
+    /**
+     * Get the column indices corresponding to the columns contributed by this component
+     * @param icol index of column contributed by this component (e.g. if component
+     * contributes 3 columns then icol is between 0 and 2)
+     * @return matrix index of column icol
+     */
+    virtual int baseMatrixGetColIndex(int icol);
+
+    /**
+     * Return the number of matrix values contributed by this component
+     * @return number of matrix values
+     */
+    virtual int baseMatrixNumValues() const;
+
+    /**
+     * Get a list of matrix values contributed by this component and their
+     * matrix indices
+     * @param values list of matrix element values
+     * @param rows row indices for the matrix elements
+     * @param cols column indices for the matrix elements
+     */
+    virtual void baseMatrixGetValues(ComplexType *values, int *rows, int*cols);
+    virtual void baseMatrixGetValues(RealType *values, int *rows, int*cols);
+
+    /**
+     * Return number of elements in vector from component
+     * @return number of elements contributed from component
+     */
+    virtual int baseVectorNumElements() const;
+
+    /**
+     * Set indices corresponding to the elements contributed by this
+     * component
+     * @param ielem index of element contributed by this component (e.g. if component
+     * contributes 3 elements then ielem is between 0 and 2)
+     * @param idx vector index of element ielem
+     */
+    virtual void baseVectorSetElementIndex(int ielem, int idx);
+
+    /**
+     * Get list of element indices from component
+     * @param idx list of indices that component maps onto
+     */
+    virtual void baseVectorGetElementIndices(int *idx);
+
+    /**
+     * Get a list of vector values contributed by this component and their
+     * indices
+     * @param values list of vector element values
+     * @param idx indices for the vector elements
+     */
+    virtual void baseVectorGetElementValues(ComplexType *values, int *idx);
+    virtual void baseVectorGetElementValues(RealType *values, int *idx);
+
+    /**
+     * Transfer vector values to component
+     * @param values list of vector element values
+     */
+    virtual void baseVectorSetElementValues(ComplexType *values);
+    virtual void baseVectorSetElementValues(RealType *values);
+
+    /**
+     * Return number of rows and columns in matrix from component
+     * Number of columns must be the same for all components
+     * @return size of block contributed by component
+     */
+    virtual void baseSlabSize(int *rows, int *cols) const;
+
+    /**
+     * Set indices corresponding to the rows contributed by this
+     * component
+     * @param irow index of row contributed by this component (e.g. if component
+     * contributes 3 rows then irow is between 0 and 2)
+     * @param idx row index of row irow
+     */
+    virtual void baseSlabSetRowIndex(int irow, int idx);
+
+    /**
+     * Get list of row indices from component
+     * @param idx list of row indices that component maps onto
+     */
+    virtual void baseSlabGetRowIndices(int *idx);
+
+    /**
+     * Get a list of row values contributed by this component and their
+     * indices
+     * @param values list of values for rows
+     * @param idx indices for the matrix rows
+     */
+    virtual void baseSlabGetValues(std::vector<ComplexType*> &values, int *idx);
+    virtual void baseSlabGetValues(std::vector<RealType*> &values, int *idx);
+
+    /**
+     * Transfer slab values to component
+     * @param values list of slab values
+     */
+    virtual void baseSlabSetValues(ComplexType **values);
+    virtual void baseSlabSetValues(RealType **values);
+
+  private:
+
+    int p_mode;
+
+    friend class boost::serialization::access;
+
+    template<class Archive>
+    void serialize(Archive & ar, const unsigned int version)
+    {
+      ar & boost::serialization::base_object<GenMatVecInterface>(*this)& p_mode;
+    }
+
+
+};
+
+}    // component
+}    // gridpack
+
 #endif

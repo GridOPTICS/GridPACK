@@ -4,7 +4,7 @@
  *     in the LICENSE file in the top level directory of this distribution.
  */
 /* *****************************************************************************
- * gen_vector_map.hpp
+ * base_gen_vector_map.hpp
  * gridpack
  * Bruce Palmer
  * July 23, 2014
@@ -14,16 +14,16 @@
  * File contents
  **************************************************************************** */
 
-#ifndef GENVECTORMAP_HPP_
-#define GENVECTORMAP_HPP_
+#ifndef BASEGENVECTORMAP_HPP_
+#define BASEGENVECTORMAP_HPP_
 
 #include <boost/smart_ptr/shared_ptr.hpp>
 #include <ga.h>
 #include "gridpack/parallel/parallel.hpp"
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/component/base_component.hpp>
+#include <gridpack/component/base_matrix_ifc.hpp>
 #include <gridpack/component/matvec_ifc.hpp>
-#include <gridpack/mapper/base_gen_vector_map.hpp>
 #include <gridpack/network/base_network.hpp>
 #include <gridpack/math/vector.hpp>
 #include <gridpack/utilities/exception.hpp>
@@ -34,7 +34,7 @@ namespace gridpack {
 namespace mapper {
 
 template <class _network>
-class GenVectorMap {
+class BaseGenVectorMap {
   public: 
 /**
  * Initialize mapper for the given network and the current mode. Create global
@@ -42,7 +42,7 @@ class GenVectorMap {
  * network component objects
  * @param network network that will generate vector
  */
-GenVectorMap(boost::shared_ptr<_network> network)
+BaseGenVectorMap(boost::shared_ptr<_network> network)
   : p_network(network)
 {
   p_Offsets = NULL;
@@ -65,7 +65,7 @@ GenVectorMap(boost::shared_ptr<_network> network)
   GA_Pgroup_sync(p_GAgrp);
 }
 
-~GenVectorMap()
+~BaseGenVectorMap()
 {
   if (p_Offsets != NULL) delete [] p_Offsets;
   GA_Pgroup_sync(p_GAgrp);
@@ -133,7 +133,7 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 /**
  * Push data from vector onto buses and branches. Vector must
  * be created with the mapToVector method using the same
- * GenVectorMap
+ * BaseGenVectorMap
  * @param vector vector containing data to be pushed to network
  */
 void mapToNetwork(const gridpack::math::Vector &vector)
@@ -144,23 +144,23 @@ void mapToNetwork(const gridpack::math::Vector &vector)
   // get values from buses
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      nvals = p_network->getBus(i)->vectorNumElements();
-      p_network->getBus(i)->vectorGetElementIndices(idx);
+      nvals = p_network->getBus(i)->baseVectorNumElements();
+      p_network->getBus(i)->baseVectorGetElementIndices(idx);
       for (j=0; j<nvals; j++) {
         vector.getElement(idx[j],values[j]);
       }
-      p_network->getBus(i)->vectorSetElementValues(values);
+      p_network->getBus(i)->baseVectorSetElementValues(values);
     }
   }
   // get values from branches
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
-      nvals = p_network->getBranch(i)->vectorNumElements();
-      p_network->getBranch(i)->vectorGetElementIndices(idx);
+      nvals = p_network->getBranch(i)->baseVectorNumElements();
+      p_network->getBranch(i)->baseVectorGetElementIndices(idx);
       for (j=0; j<nvals; j++) {
         vector.getElement(idx[j],values[j]);
       }
-      p_network->getBranch(i)->vectorSetElementValues(values);
+      p_network->getBranch(i)->baseVectorSetElementValues(values);
     }
   }
   delete [] values;
@@ -171,7 +171,7 @@ void mapToNetwork(const gridpack::math::Vector &vector)
 /**
  * Push data from vector onto buses and branches. Vector must
  * be created with the mapToVector method using the same
- * GenVectorMap
+ * BaseGenVectorMap
  * @param vector vector containing data to be pushed to network
  */
 void mapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
@@ -208,7 +208,7 @@ void getDimensions(void)
   p_maxValues = 0;
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      nval = p_network->getBus(i)->vectorNumElements();
+      nval = p_network->getBus(i)->baseVectorNumElements();
       if (p_maxValues < nval) p_maxValues = nval;
       nRows += nval;
     }
@@ -216,7 +216,7 @@ void getDimensions(void)
   // Get number of rows and columns contributed by each branch
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
-      nval = p_network->getBranch(i)->vectorNumElements();
+      nval = p_network->getBranch(i)->baseVectorNumElements();
       if (p_maxValues < nval) p_maxValues = nval;
       nRows += nval;
     }
@@ -267,7 +267,7 @@ void setOffsets(void)
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
       i_bus_offsets[i] = icnt;
-      icnt += p_network->getBus(i)->vectorNumElements();
+      icnt += p_network->getBus(i)->baseVectorNumElements();
       std::vector<int> nghbrs = p_network->getConnectedBranches(i);
       nsize = nghbrs.size();
       for (j=0; j<nsize; j++) {
@@ -280,12 +280,12 @@ void setOffsets(void)
           p_network->getBranchEndpoints(jdx,&jdx1,&jdx2);
           if (jdx1 == i) {
             i_branch_offsets[jdx] = icnt;
-            icnt += p_network->getBranch(jdx)->vectorNumElements();
+            icnt += p_network->getBranch(jdx)->baseVectorNumElements();
           }
         } else {
           if (p_network->getActiveBranch(jdx)) {
             i_branch_offsets[jdx] = icnt;
-            icnt += p_network->getBranch(jdx)->vectorNumElements();
+            icnt += p_network->getBranch(jdx)->baseVectorNumElements();
           }
         }
       }
@@ -360,7 +360,7 @@ void setOffsets(void)
   GA_Set_pgroup(g_bus_offsets, p_GAgrp);
   if (!GA_Allocate(g_bus_offsets)) {
     char buf[256];
-    sprintf(buf,"GenVectorMap::setOffsets: Unable to allocate distributed array for bus offsets\n");
+    sprintf(buf,"BaseGenVectorMap::setOffsets: Unable to allocate distributed array for bus offsets\n");
     printf("%s",buf);
     throw gridpack::Exception(buf);
   }
@@ -372,7 +372,7 @@ void setOffsets(void)
   GA_Set_pgroup(g_branch_offsets, p_GAgrp);
   if (!GA_Allocate(g_branch_offsets)) {
     char buf[256];
-    sprintf(buf,"GenVectorMap::setOffsets: Unable to allocate distributed array for branch offsets\n");
+    sprintf(buf,"BaseGenVectorMap::setOffsets: Unable to allocate distributed array for branch offsets\n");
     printf("%s",buf);
     throw gridpack::Exception(buf);
   }
@@ -425,22 +425,22 @@ void setIndices(void)
   // Offsets are now available. Set indices in all network components
   int offset, nrows, ncols, idx;
   for (i=0; i<p_nBuses; i++) {
-    nrows = p_network->getBus(i)->vectorNumElements();
+    nrows = p_network->getBus(i)->baseVectorNumElements();
     if (nrows > 0) {
       offset = i_bus_value_buf[i];
       for (j=0; j<nrows; j++) {
         idx = offset+j;
-        p_network->getBus(i)->vectorSetElementIndex(j,idx);
+        p_network->getBus(i)->baseVectorSetElementIndex(j,idx);
       }
     }
   }
   for (i=0; i<p_nBranches; i++) {
-    nrows = p_network->getBranch(i)->vectorNumElements();
+    nrows = p_network->getBranch(i)->baseVectorNumElements();
     if (nrows > 0) {
       offset = i_branch_value_buf[i];
       for (j=0; j<nrows; j++) {
         idx = offset+j;
-        p_network->getBranch(i)->vectorSetElementIndex(j,idx);
+        p_network->getBranch(i)->baseVectorSetElementIndex(j,idx);
       }
     }
   }
@@ -470,8 +470,8 @@ void loadBusData(gridpack::math::Vector &vector, bool flag)
   int *idx = new int[p_maxValues];
   for (i=0; i<p_nBuses; i++) {
     if (p_network->getActiveBus(i)) {
-      nvals = p_network->getBus(i)->vectorNumElements();
-      p_network->getBus(i)->vectorGetElementValues(values, idx);
+      nvals = p_network->getBus(i)->baseVectorNumElements();
+      p_network->getBus(i)->baseVectorGetElementValues(values, idx);
       for (j=0; j<nvals; j++) {
         if (flag) {
           vector.addElement(idx[j],values[j]);
@@ -497,8 +497,8 @@ void loadBranchData(gridpack::math::Vector &vector, bool flag)
   int *idx = new int[p_maxValues];
   for (i=0; i<p_nBranches; i++) {
     if (p_network->getActiveBranch(i)) {
-      nvals = p_network->getBranch(i)->vectorNumElements();
-      p_network->getBranch(i)->vectorGetElementValues(values,idx);
+      nvals = p_network->getBranch(i)->baseVectorNumElements();
+      p_network->getBranch(i)->baseVectorGetElementValues(values,idx);
       for (j=0; j<nvals; j++) {
         if (idx[j] >= p_minIndex && idx[j] <= p_maxIndex) {
           if (flag) {
@@ -547,4 +547,4 @@ gridpack::utility::CoarseTimer *p_timer;
 } /* namespace mapper */
 } /* namespace gridpack */
 
-#endif //GENVECTORMAP_HPP_
+#endif //BASEGENVECTORMAP_HPP_

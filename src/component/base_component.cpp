@@ -18,7 +18,7 @@
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/base_matrix_ifc.hpp"
 
-// Base implementation of the MatVecInterface. These functions should be
+// Base implementation of component class. These functions should be
 // overwritten in actual components
 
 namespace gridpack {

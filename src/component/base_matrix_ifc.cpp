@@ -312,7 +312,6 @@ void BaseMatrixInterface::baseSetMatVecIndices(int idx, int jdx)
 {
   p_idx = idx;
   p_jdx = jdx;
-  printf(" set matvec indices: %d %d\n",p_idx,p_jdx);
 }
 
 /**
@@ -325,7 +324,6 @@ void BaseMatrixInterface::baseGetMatVecIndices(int *idx, int *jdx) const
 {
   *idx = p_idx;
   *jdx = p_jdx;
-  printf(" get matvec indices: %d %d\n",*idx,*jdx);
 }
 
 /**
@@ -335,6 +333,381 @@ void BaseMatrixInterface::baseGetMatVecIndices(int *idx, int *jdx) const
 void BaseMatrixInterface::baseSetMode(int mode)
 {
   p_mode = mode;
+}
+
+// base implementation for the generalized matrix-vector interface
+
+/**
+ * Constructor
+ */
+BaseGenMatVecInterface::BaseGenMatVecInterface(void)
+{
+  p_mode = STANDARD;
+}
+
+/**
+ * Destructor
+ */
+BaseGenMatVecInterface::~BaseGenMatVecInterface(void)
+{
+}
+
+/**
+ * Return number of rows in matrix from component
+ * @return number of rows from component
+ */
+int BaseGenMatVecInterface::baseMatrixNumRows() const
+{
+  int ret = 0;
+  switch (p_mode) {
+    case STANDARD:
+      ret = matrixNumRows();
+      break;
+    default:
+      break;
+  }
+  return ret;
+}
+
+/**
+ * Return number of columns in matrix from component
+ * @return number of columnsows from component
+ */
+int BaseGenMatVecInterface::baseMatrixNumCols() const
+{
+  int ret = 0;
+  switch (p_mode) {
+    case STANDARD:
+      ret = matrixNumCols();
+      break;
+    default:
+      break;
+  }
+  return ret;
+}
+
+/**
+ * Set row indices corresponding to the rows contributed by this
+ * component
+ * @param irow index of row contributed by this component (e.g. if component
+ * contributes 3 rows then irow is between 0 and 2)
+ * @param idx matrix index of row irow
+ */
+void BaseGenMatVecInterface::baseMatrixSetRowIndex(int irow, int idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      matrixSetRowIndex(irow,idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Set column indices corresponding to the columns contributed by this
+ * component
+ * @param icol index of column contributed by this component (e.g. if component
+ * contributes 3 columns then icol is between 0 and 2)
+ * @param idx matrix index of column icol
+ */
+void BaseGenMatVecInterface::baseMatrixSetColIndex(int icol, int idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      matrixSetColIndex(icol,idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Get the row indices corresponding to the rows contributed by this component
+ * @param irow index of row contributed by this component (e.g. if component
+ * contributes 3 rows then irow is between 0 and 2)
+ * @return matrix index of row irow
+ */
+int BaseGenMatVecInterface::baseMatrixGetRowIndex(int irow)
+{
+  int ret = -1;
+  switch (p_mode) {
+    case STANDARD:
+      ret = matrixGetRowIndex(irow);
+      break;
+    default:
+      break;
+  }
+  return ret;
+}
+
+/**
+ * Get the column indices corresponding to the columns contributed by this component
+ * @param icol index of column contributed by this component (e.g. if component
+ * contributes 3 columns then icol is between 0 and 2)
+ * @return matrix index of column icol
+ */
+int BaseGenMatVecInterface::baseMatrixGetColIndex(int icol)
+{
+  int ret = -1;
+  switch (p_mode) {
+    case STANDARD:
+      ret = matrixGetColIndex(icol);
+      break;
+    default:
+      break;
+  }
+  return ret;
+}
+
+/**
+ * Return the number of matrix values contributed by this component
+ * @return number of matrix values
+ */
+int BaseGenMatVecInterface::baseMatrixNumValues() const
+{
+  int ret = 0;
+  switch (p_mode) {
+    case STANDARD:
+      ret = matrixNumValues();
+      break;
+    default:
+      break;
+  }
+  return ret;
+}
+
+/**
+ * Get a list of matrix values contributed by this component and their
+ * matrix indices
+ * @param values list of matrix element values
+ * @param rows row indices for the matrix elements
+ * @param cols column indices for the matrix elements
+ */
+void BaseGenMatVecInterface::baseMatrixGetValues(ComplexType *values, int *rows, int*cols)
+{
+  switch (p_mode) {
+    case STANDARD:
+      matrixGetValues(values, rows, cols);
+      break;
+    default:
+      break;
+  }
+}
+void BaseGenMatVecInterface::baseMatrixGetValues(RealType *values, int *rows, int*cols)
+{
+  switch (p_mode) {
+    case STANDARD:
+      matrixGetValues(values, rows, cols);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Return number of elements in vector from component
+ * @return number of elements contributed from component
+ */
+int BaseGenMatVecInterface::baseVectorNumElements() const
+{
+  int ret = 0;
+  switch (p_mode) {
+    case STANDARD:
+      vectorNumElements();
+      break;
+    default:
+      break;
+  }
+  return ret;
+}
+
+/**
+ * Set indices corresponding to the elements contributed by this
+ * component
+ * @param ielem index of element contributed by this component
+ * (e.g. if component contributes 3 elements then ielem is between
+ * 0 and 2)
+ * @param idx vector index of element ielem
+ */
+void BaseGenMatVecInterface::baseVectorSetElementIndex(int ielem, int idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      vectorSetElementIndex(ielem, idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Get list of element indices from component
+ * @param idx list of indices that component maps onto
+ */
+void BaseGenMatVecInterface::baseVectorGetElementIndices(int *idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      vectorGetElementIndices(idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Get a list of vector values contributed by this component and their
+ * indices
+ * @param values list of vector element values
+ * @param idx indices for the vector elements
+ */
+void BaseGenMatVecInterface::baseVectorGetElementValues(ComplexType *values, int *idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      vectorGetElementValues(values,idx);
+      break;
+    default:
+      break;
+  }
+}
+void BaseGenMatVecInterface::baseVectorGetElementValues(RealType *values, int *idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      vectorGetElementValues(values,idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Transfer vector values to component
+ * @param values list of vector element values
+ */
+void BaseGenMatVecInterface::baseVectorSetElementValues(ComplexType *values)
+{
+  switch (p_mode) {
+    case STANDARD:
+      vectorSetElementValues(values);
+      break;
+    default:
+      break;
+  }
+}
+void BaseGenMatVecInterface::baseVectorSetElementValues(RealType *values)
+{
+  switch (p_mode) {
+    case STANDARD:
+      vectorSetElementValues(values);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Return number of rows and columns in matrix from component
+ * Number of columns must be the same for all components
+ * @return size of block contributed by component
+ */
+void BaseGenMatVecInterface::baseSlabSize(int *rows, int *cols) const
+{
+  switch (p_mode) {
+    case STANDARD:
+      slabSize(rows,cols);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Set indices corresponding to the rows contributed by this component
+ * @param irow index of row contributed by this component (e.g. if component
+ * contributes 3 rows then irow is between 0 and 2)
+ * @param idx row index of row irow
+ */
+void BaseGenMatVecInterface::baseSlabSetRowIndex(int irow, int idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      slabSetRowIndex(irow,idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Get list of row indices from component
+ * @param idx list of row indices that component maps onto
+ */
+void BaseGenMatVecInterface::baseSlabGetRowIndices(int *idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      slabGetRowIndices(idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Get a list of row values contributed by this component and their
+ * indices
+ * @param values list of values for rows
+ * @param idx indices for the matrix rows
+ */
+void BaseGenMatVecInterface::baseSlabGetValues(std::vector<ComplexType*> &values,
+    int *idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      slabGetValues(values, idx);
+      break;
+    default:
+      break;
+  }
+}
+void BaseGenMatVecInterface::baseSlabGetValues(std::vector<RealType*> &values,
+    int *idx)
+{
+  switch (p_mode) {
+    case STANDARD:
+      slabGetValues(values, idx);
+      break;
+    default:
+      break;
+  }
+}
+
+/**
+ * Transfer slab values to component
+ * @param values list of slab values
+ */
+void BaseGenMatVecInterface::baseSlabSetValues(ComplexType **values)
+{
+  switch (p_mode) {
+    case STANDARD:
+      slabSetValues(values);
+      break;
+    default:
+      break;
+  }
+}
+void BaseGenMatVecInterface::baseSlabSetValues(RealType **values)
+{
+  switch (p_mode) {
+    case STANDARD:
+      slabSetValues(values);
+      break;
+    default:
+      break;
+  }
 }
 
 }   // component

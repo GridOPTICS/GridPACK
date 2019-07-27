@@ -40,7 +40,7 @@ namespace component{
 //  This class implements some basic functions that can be
 //  expected from any component on the network.
 // -------------------------------------------------------------
-class BaseComponent : public BaseMatrixInterface, public GenMatVecInterface {
+class BaseComponent : public BaseMatrixInterface, public BaseGenMatVecInterface {
   public:
     /**
      * Simple constructor
