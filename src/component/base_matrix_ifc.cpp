@@ -514,7 +514,7 @@ int BaseGenMatVecInterface::baseVectorNumElements() const
   int ret = 0;
   switch (p_mode) {
     case STANDARD:
-      vectorNumElements();
+      ret = vectorNumElements();
       break;
     default:
       break;

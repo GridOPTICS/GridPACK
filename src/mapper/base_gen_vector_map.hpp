@@ -72,10 +72,26 @@ BaseGenVectorMap(boost::shared_ptr<_network> network)
 }
 
 /**
+ * Set the mode in all bus and branch classes so that the correct interface
+ * function is called
+ * @param mode enumerated parameter describing what interface should be used 
+ */
+void setMode(int mode)
+{
+  int i;
+  for (i=0; i<p_nBuses; i++) {
+    p_network->getBus(i)->baseSetMode(mode);
+  }
+  for (i=0; i<p_nBranches; i++) {
+    p_network->getBranch(i)->baseSetMode(mode);
+  }
+}
+
+/**
  * Generate vector from current component state on network
  * @return return a pointer to new vector
  */
-boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
+boost::shared_ptr<gridpack::math::Vector> baseMapToVector(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxIndex-p_minIndex+1;
@@ -111,7 +127,7 @@ gridpack::math::Vector* intMapToVector(void)
  * Reset existing vector from current component state on network
  * @param vector existing vector (should be generated from same mapper)
  */
-void mapToVector(gridpack::math::Vector &vector)
+void baseMapToVector(gridpack::math::Vector &vector)
 {
   int t_set, t_bus, t_branch;
   vector.zero();
@@ -125,9 +141,9 @@ void mapToVector(gridpack::math::Vector &vector)
  * Reset existing vector from current component state on network
  * @param vector existing vector (should be generated from same mapper)
  */
-void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
+void baseMapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
-  mapToVector(*vector);
+  baseMapToVector(*vector);
 }
 
 /**
@@ -136,7 +152,7 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
  * BaseGenVectorMap
  * @param vector vector containing data to be pushed to network
  */
-void mapToNetwork(const gridpack::math::Vector &vector)
+void baseMapToNetwork(const gridpack::math::Vector &vector)
 {
   int i, j, nvals;
   ComplexType *values = new ComplexType[p_maxValues];
@@ -174,9 +190,9 @@ void mapToNetwork(const gridpack::math::Vector &vector)
  * BaseGenVectorMap
  * @param vector vector containing data to be pushed to network
  */
-void mapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
+void baseMapToNetwork(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
-  mapToNetwork(*vector);
+  baseMapToNetwork(*vector);
 }
 
 private:
