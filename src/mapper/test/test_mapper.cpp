@@ -205,7 +205,7 @@ class TestBus
     values[1] = p_vec2;
   }
 
-  void slabSize(int *isize, int *jsize)
+  void slabSize(int *isize, int *jsize) const
   {
     *isize = 2;
     *jsize = NSLAB;
@@ -409,7 +409,7 @@ class TestBranch
     values[0] = p_vec_val;
   }
 
-  void slabSize(int *isize, int *jsize)
+  void slabSize(int *isize, int *jsize) const
   {
     *isize = 1;
     *jsize = NSLAB;

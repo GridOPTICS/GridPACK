@@ -59,7 +59,7 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        matrix element
      */
-    virtual bool baseMatrixDiagSize(int *isize, int *jsize) const;
+    bool baseMatrixDiagSize(int *isize, int *jsize) const;
 
     /**
      * Return the values for a diagonal matrix block. The values are
@@ -68,8 +68,8 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        matrix element
      */
-    virtual bool baseMatrixDiagValues(ComplexType *values);
-    virtual bool baseMatrixDiagValues(RealType *values);
+    bool baseMatrixDiagValues(ComplexType *values);
+    bool baseMatrixDiagValues(RealType *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
@@ -79,7 +79,7 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        matrix element
      */
-    virtual bool baseMatrixForwardSize(int *isize, int *jsize) const;
+    bool baseMatrixForwardSize(int *isize, int *jsize) const;
 
     /**
      * Return the values for an off-diagonl matrix block. The values are
@@ -88,8 +88,8 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        matrix element
      */
-    virtual bool baseMatrixForwardValues(ComplexType *values);
-    virtual bool baseMatrixForwardValues(RealType *values);
+    bool baseMatrixForwardValues(ComplexType *values);
+    bool baseMatrixForwardValues(RealType *values);
 
     /**
      * Return size of off-diagonal matrix block contributed by component. The
@@ -99,7 +99,7 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        matrix element
      */
-    virtual bool baseMatrixReverseSize(int *isize, int *jsize) const;
+    bool baseMatrixReverseSize(int *isize, int *jsize) const;
 
     /**
      * Return the values for an off-diagonl matrix block. The values are
@@ -108,8 +108,8 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        matrix element
      */
-    virtual bool baseMatrixReverseValues(ComplexType *values);
-    virtual bool baseMatrixReverseValues(RealType *values);
+    bool baseMatrixReverseValues(ComplexType *values);
+    bool baseMatrixReverseValues(RealType *values);
 
     /**
      * Return size of vector block contributed by component
@@ -117,7 +117,7 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        vector element
      */
-    virtual bool baseVectorSize(int *isize) const;
+    bool baseVectorSize(int *isize) const;
 
     /**
      * Return the values of the vector block
@@ -125,16 +125,16 @@ class BaseMatrixInterface : public MatVecInterface {
      * @return false if network component does not contribute
      *        vector element
      */
-    virtual bool baseVectorValues(ComplexType *values);
-    virtual bool baseVectorValues(RealType *values);
+    bool baseVectorValues(ComplexType *values);
+    bool baseVectorValues(RealType *values);
 
     /**
      * Set values in the bus or branch component based on values in a vector or
      * matrix
      * @param values values in vector or matrix
      */
-    virtual void baseSetValues(ComplexType *values);
-    virtual void baseSetValues(RealType *values);
+    void baseSetValues(ComplexType *values);
+    void baseSetValues(RealType *values);
 
     /**
      * Set the matrix index for diagonal matrix components or vector component,
@@ -218,13 +218,13 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * Return number of rows in matrix from component
      * @return number of rows from component
      */
-    virtual int baseMatrixNumRows() const;
+    int baseMatrixNumRows() const;
 
     /**
      * Return number of columns in matrix from component
      * @return number of columnsows from component
      */
-    virtual int baseMatrixNumCols() const;
+    int baseMatrixNumCols() const;
 
     /**
      * Set row indices corresponding to the rows contributed by this
@@ -233,7 +233,7 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * contributes 3 rows then irow is between 0 and 2)
      * @param idx matrix index of row irow
      */
-    virtual void baseMatrixSetRowIndex(int irow, int idx);
+    void baseMatrixSetRowIndex(int irow, int idx);
 
     /**
      * Set column indices corresponding to the columns contributed by this
@@ -242,7 +242,7 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * contributes 3 columns then icol is between 0 and 2)
      * @param idx matrix index of column icol
      */
-    virtual void baseMatrixSetColIndex(int icol, int idx);
+    void baseMatrixSetColIndex(int icol, int idx);
 
     /**
      * Get the row indices corresponding to the rows contributed by this component
@@ -250,7 +250,7 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * contributes 3 rows then irow is between 0 and 2)
      * @return matrix index of row irow
      */
-    virtual int baseMatrixGetRowIndex(int irow);
+    int baseMatrixGetRowIndex(int irow);
 
     /**
      * Get the column indices corresponding to the columns contributed by this component
@@ -258,13 +258,13 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * contributes 3 columns then icol is between 0 and 2)
      * @return matrix index of column icol
      */
-    virtual int baseMatrixGetColIndex(int icol);
+    int baseMatrixGetColIndex(int icol);
 
     /**
      * Return the number of matrix values contributed by this component
      * @return number of matrix values
      */
-    virtual int baseMatrixNumValues() const;
+    int baseMatrixNumValues() const;
 
     /**
      * Get a list of matrix values contributed by this component and their
@@ -273,14 +273,14 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * @param rows row indices for the matrix elements
      * @param cols column indices for the matrix elements
      */
-    virtual void baseMatrixGetValues(ComplexType *values, int *rows, int*cols);
-    virtual void baseMatrixGetValues(RealType *values, int *rows, int*cols);
+    void baseMatrixGetValues(ComplexType *values, int *rows, int*cols);
+    void baseMatrixGetValues(RealType *values, int *rows, int*cols);
 
     /**
      * Return number of elements in vector from component
      * @return number of elements contributed from component
      */
-    virtual int baseVectorNumElements() const;
+    int baseVectorNumElements() const;
 
     /**
      * Set indices corresponding to the elements contributed by this
@@ -289,13 +289,13 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * contributes 3 elements then ielem is between 0 and 2)
      * @param idx vector index of element ielem
      */
-    virtual void baseVectorSetElementIndex(int ielem, int idx);
+    void baseVectorSetElementIndex(int ielem, int idx);
 
     /**
      * Get list of element indices from component
      * @param idx list of indices that component maps onto
      */
-    virtual void baseVectorGetElementIndices(int *idx);
+    void baseVectorGetElementIndices(int *idx);
 
     /**
      * Get a list of vector values contributed by this component and their
@@ -303,22 +303,22 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * @param values list of vector element values
      * @param idx indices for the vector elements
      */
-    virtual void baseVectorGetElementValues(ComplexType *values, int *idx);
-    virtual void baseVectorGetElementValues(RealType *values, int *idx);
+    void baseVectorGetElementValues(ComplexType *values, int *idx);
+    void baseVectorGetElementValues(RealType *values, int *idx);
 
     /**
      * Transfer vector values to component
      * @param values list of vector element values
      */
-    virtual void baseVectorSetElementValues(ComplexType *values);
-    virtual void baseVectorSetElementValues(RealType *values);
+    void baseVectorSetElementValues(ComplexType *values);
+    void baseVectorSetElementValues(RealType *values);
 
     /**
      * Return number of rows and columns in matrix from component
      * Number of columns must be the same for all components
      * @return size of block contributed by component
      */
-    virtual void baseSlabSize(int *rows, int *cols) const;
+    void baseSlabSize(int *rows, int *cols) const;
 
     /**
      * Set indices corresponding to the rows contributed by this
@@ -327,13 +327,13 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * contributes 3 rows then irow is between 0 and 2)
      * @param idx row index of row irow
      */
-    virtual void baseSlabSetRowIndex(int irow, int idx);
+    void baseSlabSetRowIndex(int irow, int idx);
 
     /**
      * Get list of row indices from component
      * @param idx list of row indices that component maps onto
      */
-    virtual void baseSlabGetRowIndices(int *idx);
+    void baseSlabGetRowIndices(int *idx);
 
     /**
      * Get a list of row values contributed by this component and their
@@ -341,15 +341,15 @@ class BaseGenMatVecInterface : public GenMatVecInterface {
      * @param values list of values for rows
      * @param idx indices for the matrix rows
      */
-    virtual void baseSlabGetValues(std::vector<ComplexType*> &values, int *idx);
-    virtual void baseSlabGetValues(std::vector<RealType*> &values, int *idx);
+    void baseSlabGetValues(std::vector<ComplexType*> &values, int *idx);
+    void baseSlabGetValues(std::vector<RealType*> &values, int *idx);
 
     /**
      * Transfer slab values to component
      * @param values list of slab values
      */
-    virtual void baseSlabSetValues(ComplexType **values);
-    virtual void baseSlabSetValues(RealType **values);
+    void baseSlabSetValues(ComplexType **values);
+    void baseSlabSetValues(RealType **values);
 
   private:
 
