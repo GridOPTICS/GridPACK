@@ -108,6 +108,8 @@ class PSSE33Export
       ExportSwShnt33<_network> swshnt(p_network);
       swshnt.writeSwShntBlock(fout);
       if (me == 0) {
+        // Write closing 'Q'
+        fout << "Q" << std::endl;
         fout.close();
       }
     }

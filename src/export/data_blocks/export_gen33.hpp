@@ -83,11 +83,15 @@ class ExportGen33
             sprintf(ptr," \'%s\',",sval.c_str());
             ptr += strlen(ptr);
             rval = 0.0;
-            data->getValue(GENERATOR_PG,&rval,j);
+            if (data->getValue(GENERATOR_PG,&rval,j)) {
+              data->getValue("GENERATOR_PF_PG",&rval,j);
+            }
             sprintf(ptr," %f,",rval);
             ptr += strlen(ptr);
             rval = 0.0;
-            data->getValue(GENERATOR_QG,&rval,j);
+            if (data->getValue(GENERATOR_QG,&rval,j)) {
+              data->getValue("GENERATOR_PF_QG",&rval,j);
+            }
             sprintf(ptr," %f,",rval);
             ptr += strlen(ptr);
             rval = 9999.0;

@@ -85,7 +85,11 @@ class ExportBus33
           sprintf(ptr,"%d,",ival);
           ptr += strlen(ptr);
           data->getValue(BUS_NAME,&sval);
-          sprintf(ptr," %s,",sval.c_str());
+          if (sval[0] == '\'') {
+            sprintf(ptr," %s,",sval.c_str());
+          } else {
+            sprintf(ptr," \'%s\',",sval.c_str());
+          }
           ptr += strlen(ptr);
           rval = 0.0;
           data->getValue(BUS_BASEKV,&rval);
