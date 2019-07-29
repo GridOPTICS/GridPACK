@@ -6,7 +6,7 @@
 /**
  * @file   ga_matrix.c
  * @author William A. Perkins
- * @date   2019-01-08 09:17:37 d3g096
+ * @date   2019-07-29 12:16:09 d3g096
  * 
  * @brief  
  * 
@@ -753,12 +753,12 @@ MatCreateDenseGA(MPI_Comm comm,
 
   if (lrows == PETSC_DECIDE || lrows == PETSC_DETERMINE ||
       grows == PETSC_DECIDE || grows == PETSC_DETERMINE) {
-    ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRXX(ierr);
+    ierr = PetscSplitOwnership(comm, &lrows, &grows); CHKERRQ(ierr);
   }
 
   if (lcols == PETSC_DECIDE || lcols == PETSC_DETERMINE ||
       gcols == PETSC_DECIDE || gcols == PETSC_DETERMINE) {
-    ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRXX(ierr);
+    ierr = PetscSplitOwnership(comm, &lcols, &gcols); CHKERRQ(ierr);
   }
   
   ierr = CreateMatGA(ctx->gaGroup, lrows, lcols, grows, gcols, &(ctx->ga)); CHKERRQ(ierr);
@@ -824,8 +824,8 @@ MatConvertToDenseGA(Mat A, Mat *B)
   ierr = MatGetSize(A, &grows, &gcols); CHKERRQ(ierr);
   ierr = MatGetLocalSize(A, &lrows, &lcols); CHKERRQ(ierr);
 
-  ierr = MatCreateDenseGA(comm, lrows, lcols, grows, gcols, B); CHKERRXX(ierr);
-  ierr = MatCopy(A, *B, SAME_NONZERO_PATTERN); CHKERRXX(ierr);
+  ierr = MatCreateDenseGA(comm, lrows, lcols, grows, gcols, B); CHKERRQ(ierr);
+  ierr = MatCopy(A, *B, SAME_NONZERO_PATTERN); CHKERRQ(ierr);
 
   
   return ierr;
@@ -851,14 +851,14 @@ MatConvertGAToDense(Mat A, Mat *B)
   ierr = MatGetSize(A, &grows, &gcols); CHKERRQ(ierr);
   ierr = MatGetLocalSize(A, &lrows, &lcols); CHKERRQ(ierr);
 
-  ierr = MatCreate(comm, B); CHKERRXX(ierr);
-  ierr = MatSetSizes(*B, lrows, lcols, grows, gcols); CHKERRXX(ierr);
+  ierr = MatCreate(comm, B); CHKERRQ(ierr);
+  ierr = MatSetSizes(*B, lrows, lcols, grows, gcols); CHKERRQ(ierr);
   if (nproc == 1) {
-    ierr = MatSetType(*B, MATSEQDENSE); CHKERRXX(ierr);
-    ierr = MatSeqDenseSetPreallocation(*B, PETSC_NULL); CHKERRXX(ierr);
+    ierr = MatSetType(*B, MATSEQDENSE); CHKERRQ(ierr);
+    ierr = MatSeqDenseSetPreallocation(*B, PETSC_NULL); CHKERRQ(ierr);
   } else {
-    ierr = MatSetType(*B, MATDENSE); CHKERRXX(ierr);
-    ierr = MatMPIDenseSetPreallocation(*B, PETSC_NULL); CHKERRXX(ierr);
+    ierr = MatSetType(*B, MATDENSE); CHKERRQ(ierr);
+    ierr = MatMPIDenseSetPreallocation(*B, PETSC_NULL); CHKERRQ(ierr);
   }
   ierr = MatGetOwnershipRange(*B, &lo, &hi); CHKERRQ(ierr);
 
