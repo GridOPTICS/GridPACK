@@ -37,7 +37,7 @@ namespace gridpack {
 namespace mapper {
 
 template <class _network>
-class GenMatrixMap {
+class GenMatrixMap : BaseGenMatrixMap<_network> {
   public: 
 /**
  * Initialize mapper for the given network and the current mode. Create global
@@ -46,9 +46,9 @@ class GenMatrixMap {
  * @param network network that will generate matrix
  */
 GenMatrixMap(boost::shared_ptr<_network> network)
+  : BaseGenMatrixMap<_network>::BaseGenMatrixMap(network)
 {
-  p_base_mapper.reset(new BaseGenMatrixMap<_network>(network));
-  p_base_mapper->setMode(gridpack::component::BaseGenMatVecInterface::STANDARD);
+  this->setMode(gridpack::component::BaseGenMatVecInterface::STANDARD);
 }
 
 ~GenMatrixMap()
@@ -61,7 +61,7 @@ GenMatrixMap(boost::shared_ptr<_network> network)
  */
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
-  return p_base_mapper->baseMapToMatrix();
+  return this->baseMapToMatrix();
 }
 
 /**
@@ -70,7 +70,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
  */
 void mapToMatrix(gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseMapToMatrix(matrix);
+  this->baseMapToMatrix(matrix);
 }
 
 /**
@@ -79,7 +79,7 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
  */
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseMapToMatrix(matrix);
+  this->baseMapToMatrix(matrix);
 }
 
 /**
@@ -89,7 +89,7 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void overwriteMatrix(gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseOverwriteMatrix(matrix);
+  this->baseOverwriteMatrix(matrix);
 }
 
 /**
@@ -99,7 +99,7 @@ void overwriteMatrix(gridpack::math::Matrix &matrix)
  */
 void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseOverwriteMatrix(matrix);
+  this->baseOverwriteMatrix(matrix);
 }
 
 /**
@@ -109,7 +109,7 @@ void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void incrementMatrix(gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseIncrementMatrix(matrix);
+  this->baseIncrementMatrix(matrix);
 }
 
 /**
@@ -119,13 +119,10 @@ void incrementMatrix(gridpack::math::Matrix &matrix)
  */
 void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseIncrementMatrix(matrix);
+  this->baseIncrementMatrix(matrix);
 }
 
 private:
-
-boost::shared_ptr<gridpack::mapper::BaseGenMatrixMap<_network> > p_base_mapper;
-
 
 };
 

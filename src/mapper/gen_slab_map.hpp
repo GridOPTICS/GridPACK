@@ -34,7 +34,7 @@ namespace gridpack {
 namespace mapper {
 
 template <class _network>
-class GenSlabMap {
+class GenSlabMap : BaseGenSlabMap<_network> {
   public: 
 /**
  * Initialize mapper for the given network and the current mode. Create global
@@ -43,9 +43,9 @@ class GenSlabMap {
  * @param network network that will generate vector
  */
 GenSlabMap(boost::shared_ptr<_network> network)
+  : BaseGenSlabMap<_network>::BaseGenSlabMap(network)
 {
-  p_base_mapper.reset(new BaseGenSlabMap<_network>(network));
-  p_base_mapper->setMode(gridpack::component::BaseGenMatVecInterface::STANDARD);
+  this->setMode(gridpack::component::BaseGenMatVecInterface::STANDARD);
 }
 
 ~GenSlabMap()
@@ -58,7 +58,7 @@ GenSlabMap(boost::shared_ptr<_network> network)
  */
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
 {
-  return p_base_mapper->baseMapToMatrix();
+  return this->baseMapToMatrix();
 }
 
 /**
@@ -67,7 +67,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
  */
 void mapToMatrix(gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseMapToMatrix(matrix);
+  this->baseMapToMatrix(matrix);
 }
 
 /**
@@ -76,7 +76,7 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
  */
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseMapToMatrix(matrix);
+  this->baseMapToMatrix(matrix);
 }
 
 /**
@@ -86,7 +86,7 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void mapToNetwork(const gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseMapToNetwork(matrix);
+  this->baseMapToNetwork(matrix);
 }
 
 /**
@@ -96,12 +96,10 @@ void mapToNetwork(const gridpack::math::Matrix &matrix)
  */
 void mapToNetwork(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseMapToNetwork(matrix);
+  this->baseMapToNetwork(matrix);
 }
 
 private:
-
-boost::shared_ptr<gridpack::mapper::BaseGenSlabMap<_network> > p_base_mapper;
 
 };
 

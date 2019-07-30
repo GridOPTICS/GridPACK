@@ -8,6 +8,8 @@
  * so that applications only have to access this one file
  */
 #include "gridpack/parallel/communicator.hpp"
+#include "gridpack/component/matvec_ifc.hpp"
+#include "gridpack/component/base_matrix_ifc.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/component/optimization_ifc.hpp"
@@ -16,6 +18,11 @@
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "gridpack/network/base_network.hpp"
+#include "gridpack/mapper/base_matrix_map.hpp"
+#include "gridpack/mapper/base_vector_map.hpp"
+#include "gridpack/mapper/base_gen_matrix_map.hpp"
+#include "gridpack/mapper/base_gen_vector_map.hpp"
+#include "gridpack/mapper/base_gen_slab_map.hpp"
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/mapper/gen_matrix_map.hpp"

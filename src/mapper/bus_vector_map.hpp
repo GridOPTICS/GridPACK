@@ -33,7 +33,7 @@ namespace gridpack {
 namespace mapper {
 
 template <class _network>
-class BusVectorMap {
+class BusVectorMap : BaseVectorMap<_network> {
   public: 
 /**
  * Initialize mapper for the given network and the current mode. Create global
@@ -42,9 +42,9 @@ class BusVectorMap {
  * @param network network that will generate vector
  */
 BusVectorMap(boost::shared_ptr<_network> network)
+  : BaseVectorMap<_network>::BaseVectorMap(network)
 {
-  p_base_mapper.reset(new BaseVectorMap<_network>(network));
-  p_base_mapper->setMode(gridpack::component::BaseMatrixInterface::STANDARD);
+  this->setMode(gridpack::component::BaseMatrixInterface::STANDARD);
 }
 
 ~BusVectorMap()
@@ -57,7 +57,7 @@ BusVectorMap(boost::shared_ptr<_network> network)
  */
 boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
 {
-  return p_base_mapper->baseMapToVector();
+  return this->baseMapToVector();
 }
 
 /**
@@ -66,7 +66,7 @@ boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
  */
 boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
 {
-  return p_base_mapper->baseMapToRealVector();
+  return this->baseMapToRealVector();
 }
 
 /**
@@ -76,7 +76,7 @@ boost::shared_ptr<gridpack::math::RealVector> mapToRealVector(void)
  */
 void mapToVector(gridpack::math::Vector &vector)
 {
-  p_base_mapper->baseMapToVector(vector);
+  this->baseMapToVector(vector);
 }
 
 /**
@@ -86,7 +86,7 @@ void mapToVector(gridpack::math::Vector &vector)
  */
 void mapToRealVector(gridpack::math::RealVector &vector)
 {
-  p_base_mapper->baseMapToRealVector(vector);
+  this->baseMapToRealVector(vector);
 }
 
 /**
@@ -96,7 +96,7 @@ void mapToRealVector(gridpack::math::RealVector &vector)
  */
 void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
-  p_base_mapper->baseMapToVector(*vector);
+  this->baseMapToVector(*vector);
 }
 
 /**
@@ -106,7 +106,7 @@ void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
  */
 void mapToRealVector(boost::shared_ptr<gridpack::math::RealVector> &vector)
 {
-  p_base_mapper->baseMapToRealVector(*vector);
+  this->baseMapToRealVector(*vector);
 }
 
 /**
@@ -116,7 +116,7 @@ void mapToRealVector(boost::shared_ptr<gridpack::math::RealVector> &vector)
  */
 void mapToBus(const gridpack::math::Vector &vector)
 {
-  p_base_mapper->baseMapToBus(vector);
+  this->baseMapToBus(vector);
 }
 
 /**
@@ -126,7 +126,7 @@ void mapToBus(const gridpack::math::Vector &vector)
  */
 void mapToBus(const gridpack::math::RealVector &vector)
 {
-  p_base_mapper->baseMapToBus(vector);
+  this->baseMapToBus(vector);
 }
 
 /**
@@ -136,17 +136,15 @@ void mapToBus(const gridpack::math::RealVector &vector)
  */
 void mapToBus(boost::shared_ptr<gridpack::math::Vector> &vector)
 {
-  p_base_mapper->baseMapToBus(*vector);
+  this->baseMapToBus(*vector);
 }
 
 void mapToBus(boost::shared_ptr<gridpack::math::RealVector> &vector)
 {
-  p_base_mapper->baseMapToBus(*vector);
+  this->baseMapToBus(*vector);
 }
 
 private:
-
-boost::shared_ptr<gridpack::mapper::BaseVectorMap<_network> > p_base_mapper;
 
 };
 

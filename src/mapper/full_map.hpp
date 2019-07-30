@@ -37,7 +37,7 @@ namespace gridpack {
 namespace mapper {
 
 template <class _network>
-class FullMatrixMap {
+class FullMatrixMap : BaseMatrixMap<_network> {
   public: 
 /**
  * Initialize mapper for the given network and the current mode. Create global
@@ -45,10 +45,10 @@ class FullMatrixMap {
  * network component objects
  * @param network network that will generate matrix
  */
-FullMatrixMap(boost::shared_ptr<_network> network)
+FullMatrixMap(boost::shared_ptr<_network> network) 
+  : BaseMatrixMap<_network>::BaseMatrixMap(network)
 {
-  p_base_mapper.reset(new BaseMatrixMap<_network>(network));
-  p_base_mapper->setMode(gridpack::component::BaseMatrixInterface::STANDARD);
+  this->setMode(gridpack::component::BaseMatrixInterface::STANDARD);
 }
 
 ~FullMatrixMap()
@@ -62,7 +62,7 @@ FullMatrixMap(boost::shared_ptr<_network> network)
  */
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
 {
-  return p_base_mapper->baseMapToMatrix(isDense);
+  return this->baseMapToMatrix(isDense);
 }
 
 /**
@@ -72,7 +72,7 @@ boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(bool isDense = false)
  */
 boost::shared_ptr<gridpack::math::RealMatrix> mapToRealMatrix(bool isDense = false)
 {
-  return p_base_mapper->baseMapToRealMatrix(isDense);
+  return this->baseMapToRealMatrix(isDense);
 }
 
 /**
@@ -81,7 +81,7 @@ boost::shared_ptr<gridpack::math::RealMatrix> mapToRealMatrix(bool isDense = fal
  */
 void mapToMatrix(gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseMapToMatrix(matrix);
+  this->baseMapToMatrix(matrix);
 }
 
 /**
@@ -90,7 +90,7 @@ void mapToMatrix(gridpack::math::Matrix &matrix)
  */
 void mapToRealMatrix(gridpack::math::RealMatrix &matrix)
 {
-  p_base_mapper->baseMapToRealMatrix(matrix);
+  this->baseMapToRealMatrix(matrix);
 }
 
 /**
@@ -99,7 +99,7 @@ void mapToRealMatrix(gridpack::math::RealMatrix &matrix)
  */
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseMapToMatrix(*matrix);
+  this->baseMapToMatrix(*matrix);
 }
 
 /**
@@ -108,7 +108,7 @@ void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void mapToRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
 {
-  p_base_mapper->baseMapToRealMatrix(*matrix);
+  this->baseMapToRealMatrix(*matrix);
 }
 
 /**
@@ -118,7 +118,7 @@ void mapToRealMatrix(boost::shared_ptr<gridpack::math::RealMatrix> &matrix)
  */
 void overwriteMatrix(gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseOverwriteMatrix(matrix);
+  this->baseOverwriteMatrix(matrix);
 }
 
 /**
@@ -128,7 +128,7 @@ void overwriteMatrix(gridpack::math::Matrix &matrix)
  */
 void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseOverwriteMatrix(*matrix);
+  this->baseOverwriteMatrix(*matrix);
 }
 
 /**
@@ -138,7 +138,7 @@ void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
  */
 void incrementMatrix(gridpack::math::Matrix &matrix)
 {
-  p_base_mapper->baseIncrementMatrix(matrix);
+  this->baseIncrementMatrix(matrix);
 }
 
 /**
@@ -148,7 +148,7 @@ void incrementMatrix(gridpack::math::Matrix &matrix)
  */
 void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 {
-  p_base_mapper->baseIncrementMatrix(*matrix);
+  this->baseIncrementMatrix(*matrix);
 }
 
 /**
@@ -160,12 +160,10 @@ void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> &matrix)
 
 bool check(void)
 {
-  p_base_mapper->baseCheck();
+  this->baseCheck();
 }
 
 private:
-
-boost::shared_ptr<gridpack::mapper::BaseMatrixMap<_network> > p_base_mapper;
 
 };
 
