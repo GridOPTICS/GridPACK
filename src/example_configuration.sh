@@ -89,7 +89,7 @@ if [ $host == "flophouse" ]; then
         parch="rhel7-gnu48-real-opt-shared"
     else
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel7-gnu48-real-opt"
+        parch="rhel7-gnu48-complex-opt"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"

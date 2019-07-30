@@ -299,6 +299,10 @@ class PTI33_parser : public BasePTIParser<_network>
         p_busData.push_back(data);
         p_busMap.insert(std::pair<int,int>(o_idx,index));
 
+        // Add case parameters to data set
+        data->addValue(CASE_SBASE, p_case_sbase);
+        data->addValue(CASE_ID, p_case_id);
+
         // BUS_NAME             "NAME"                 string
         std::string bus_name = split_line[1];
 
@@ -1282,18 +1286,18 @@ class PTI33_parser : public BasePTIParser<_network>
               atof(split_line[8].c_str()),nelems);
 
           /*
-           * type: float
-           * BRANCH_B
-           */
-          p_branchData[l_idx]->addValue(BRANCH_B,
-              atof(split_line[8].c_str()),nelems);
-
-          /*
            * type: integer
            * BRANCH_STATUS
            */
           p_branchData[l_idx]->addValue(BRANCH_STATUS,
               atoi(split_line[11].c_str()),nelems);
+
+          /**
+           * type: integer
+           * TRANSFORMER_NMETR
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_NMETR,
+              atoi(split_line[9].c_str()),nelems);
 
           /*
            * type: integer
@@ -1358,6 +1362,7 @@ class PTI33_parser : public BasePTIParser<_network>
            * SBASE2
            */
           double sbase2 = atof(split_line2[2].c_str());
+          p_branchData[l_idx]->addValue(TRANSFORMER_SBASE1_2,sbase2,nelems);
 
           /*
            * type: float
@@ -1370,6 +1375,7 @@ class PTI33_parser : public BasePTIParser<_network>
             rval = rval*p_case_sbase/sbase2;
             p_branchData[l_idx]->addValue(BRANCH_R,rval,nelems);
           }
+          p_branchData[l_idx]->addValue(TRANSFORMER_R1_2,rval,nelems);
 
           /*
            * type: float
@@ -1382,6 +1388,7 @@ class PTI33_parser : public BasePTIParser<_network>
             rval = rval*p_case_sbase/sbase2;
             p_branchData[l_idx]->addValue(BRANCH_X,rval,nelems);
           }
+          p_branchData[l_idx]->addValue(TRANSFORMER_X1_2,rval,nelems);
 
           // Add parameters from line 3
           /*
@@ -1392,6 +1399,8 @@ class PTI33_parser : public BasePTIParser<_network>
           double windv2 = atof(split_line4[0].c_str());
           double tap = windv1/windv2;
           p_branchData[l_idx]->addValue(BRANCH_TAP,tap,nelems);
+          p_branchData[l_idx]->addValue(TRANSFORMER_WINDV1,windv1,nelems);
+          p_branchData[l_idx]->addValue(TRANSFORMER_WINDV1,windv2,nelems);
 
           /*
            * type: float
@@ -1435,28 +1444,63 @@ class PTI33_parser : public BasePTIParser<_network>
            * TRANSFORMER_RMA
            */
           p_branchData[l_idx]->addValue(TRANSFORMER_RMA,
-              atoi(split_line3[8].c_str()),nelems);
+              atof(split_line3[8].c_str()),nelems);
 
           /*
            * type: float
            * TRANSFORMER_RMI
            */
           p_branchData[l_idx]->addValue(TRANSFORMER_RMI,
-              atoi(split_line3[9].c_str()),nelems);
+              atof(split_line3[9].c_str()),nelems);
 
           /*
            * type: float
            * TRANSFORMER_VMA
            */
           p_branchData[l_idx]->addValue(TRANSFORMER_VMA,
-              atoi(split_line3[10].c_str()),nelems);
+              atof(split_line3[10].c_str()),nelems);
 
           /*
            * type: float
            * TRANSFORMER_VMI
            */
           p_branchData[l_idx]->addValue(TRANSFORMER_VMI,
-              atoi(split_line3[11].c_str()),nelems);
+              atof(split_line3[11].c_str()),nelems);
+
+          /*
+           * type: integer
+           * TRANSFORMER_NPT
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_NTP,
+              atoi(split_line3[12].c_str()),nelems);
+
+          /*
+           * type: integer
+           * TRANSFORMER_TAB
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_TAB,
+              atoi(split_line3[13].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_CR
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CR,
+              atof(split_line3[14].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_CI
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CX,
+              atof(split_line3[15].c_str()),nelems);
+
+          /*
+           * type: float
+           * TRANSFORMER_CNXA
+           */
+          p_branchData[l_idx]->addValue(TRANSFORMER_CNXA,
+              atof(split_line3[16].c_str()),nelems);
 
           nelems++;
           p_branchData[l_idx]->setValue(BRANCH_NUM_ELEMENTS,nelems);
@@ -1573,7 +1617,7 @@ class PTI33_parser : public BasePTIParser<_network>
 
         /*
          * type: integer
-         * #define SHUNT_BUSNUMBER "SHUNT_BUSNUMBER"
+         * #define SWSHUNT_BUSNUMBER "SWSHUNT_BUSNUMBER"
          */
         int l_idx, o_idx;
         l_idx = atoi(split_line[0].c_str());
@@ -1591,7 +1635,7 @@ class PTI33_parser : public BasePTIParser<_network>
         }
         int nval = split_line.size();
 
-        p_busData[o_idx]->addValue(SHUNT_BUSNUMBER, atoi(split_line[0].c_str()));
+        p_busData[o_idx]->addValue(SWSHUNT_BUSNUMBER, atoi(split_line[0].c_str()));
 
         /*
          * type: integer

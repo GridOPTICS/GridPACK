@@ -119,6 +119,10 @@ add_custom_target(ca.x.input
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+  ${CMAKE_CURRENT_BINARY_DIR}
+
   DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
@@ -132,6 +136,7 @@ add_custom_target(ca.x.input
   ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
   ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
+  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
 )
 add_dependencies(ca.x ca.x.input)
 
