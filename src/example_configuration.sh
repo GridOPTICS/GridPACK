@@ -79,7 +79,7 @@ if [ $host == "flophouse" ]; then
         parch="rhel7-gnu48-real-opt-shared"
     else
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel7-gnu48-complex-opt"
+        parch="rhel7-gnu48-real-opt"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
@@ -298,8 +298,8 @@ elif [ $host == "tlaloc" ]; then
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
           -D USE_PROGRESS_RANKS:BOOL=OFF \
-          -D PETSC_DIR:PATH="${prefix}/petsc-3.6.4" \
-          -D PETSC_ARCH:STRING="linux-gnu44-real-opt" \
+          -D PETSC_DIR:PATH="/net/flophouse/files0/perksoft/petsc-3.8.4" \
+          -D PETSC_ARCH:STRING="rhel6-gnu48-complex-opt-c" \
           -D MPI_CXX_COMPILER:STRING="mpicxx" \
           -D MPI_C_COMPILER:STRING="mpicc" \
           -D MPIEXEC:STRING="mpiexec" \
