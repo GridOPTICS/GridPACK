@@ -3,3 +3,6 @@
 	url = https://github.com/wperkins/cmake-modules.git
 	branch = master
 
+[submodule "src/ga"]
+	path = src/ga
+	url = https://github.com/GlobalArrays/ga.git
