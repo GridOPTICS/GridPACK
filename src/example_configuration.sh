@@ -4,13 +4,14 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [-s] [-G} [-B] [name]"
+usage="$0 [-d|-r] [-s] [-G] [-B] [name]"
 
-set -- `getopt rdsGB $*`
+options=`getopt rdsGB $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
 fi
+set -- "$options"
 
 build="RelWithDebInfo"
 shared="FALSE"
