@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-03-08 12:57:01 d3g096
+# Last Change: 2019-08-02 12:45:23 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -40,10 +40,9 @@ function(BuildGAExternalProject)
 
   include(ExternalProject)
   ExternalProject_Add(external_global_arrays
-    URL https://github.com/GlobalArrays/ga/releases/download/v5.7/ga-5.7.tar.gz
-    URL_HASH MD5=bb9a441a6b4fbb8b52b58c2d3f4cd07f
-    DOWNLOAD_DIR ${DOWNLOAD_DIR}
-    CONFIGURE_COMMAND sh ./configure 
+    GIT_SUBMODULES src/ga
+    SOURCE_DIR ${PROJECT_SOURCE_DIR}/ga
+    CONFIGURE_COMMAND autoreconf -ivf && sh ./configure 
     --prefix=${BIN_DIR}/ga 
     --enable-cxx 
     --disable-f77 
