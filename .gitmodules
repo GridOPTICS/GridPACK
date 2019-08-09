@@ -5,4 +5,5 @@
 
 [submodule "src/ga"]
 	path = src/ga
-	url = https://github.com/GlobalArrays/ga.git
+	url = https://github.com/wperkins/ga.git
+        branch = for-gridpack
