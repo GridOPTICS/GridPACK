@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-08-02 12:45:23 d3g096
+# Last Change: 2019-08-07 14:51:01 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -26,41 +26,36 @@ function(BuildGAExternalProject)
   set(GA_LIBS "")
 
   if(BUILD_SHARED_LIBS)
-    list(APPEND GA_OPTS --enable-shared=yes --enable-static=no)
+    list(APPEND GA_OPTS
+      -D BUILD_SHARED_LIBS:BOOL=YES
+      -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=YES
+      )
   else()
-    list(APPEND GA_OPTS --enable-shared=no --enable-static=yes)
+    list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=NO )
   endif()
 
-  if(GA_INFINIBAND) 
-    list(APPEND GA_OPTS "--with-openib")
-    set(GA_LIBS  "LIBS=-libverbs")
-  else()
-    list(APPEND GA_OPTS "--with-mpi-ts")
+  if (USE_PROGRES_RANKS)
+    list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_PROGRESS_RANK)
+  else ()
+    list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_2SIDED)
   endif()
 
   include(ExternalProject)
   ExternalProject_Add(external_global_arrays
-    GIT_SUBMODULES src/ga
+    PREFIX ${BUILD_DIR}/ga
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/ga
-    CONFIGURE_COMMAND autoreconf -ivf && sh ./configure 
-    --prefix=${BIN_DIR}/ga 
-    --enable-cxx 
-    --disable-f77 
-    --enable-i4 
-    --with-mpi 
-    --without-blas 
-    --without-lapack 
-    --without-scalapack 
+    INSTALL_DIR ${BIN_DIR}/ga
+    CMAKE_ARGS -D ENABLE_BLAS:BOOL=NO
+    -D ENABLE_FORTRAN:BOOL=NO
+    -D ENABLE_CXX:BOOL=YES
+    -D MPI_CXX_COMPILER:STRING=${MPI_CXX_COMPILER}
+    -D MPI_C_COMPILER:STRING=${MPI_C_COMPILER}
     ${GA_OPTS}
-    CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER}
-    MPICC=${MPI_C_COMPILER} MPICXX=${MPI_CXX_COMPILER}
-    ${GA_LIBS}
-    BUILD_IN_SOURCE 1
+    ${DEFAULT_CMAKE_FLAGS}
+    -D CMAKE_INSTALL_PREFIX=${BIN_DIR}/ga
+    BUILD_IN_SOURCE 0
     BUILD_COMMAND make 
     INSTALL_COMMAND make install  
-    PREFIX ${BUILD_DIR}/ga
-    CMAKE_ARGS -DCMAKE_INSTALL_PREFIX=${BIN_DIR}/ga ${DEFAULT_CMAKE_FLAGS}
-    INSTALL_DIR ${BIN_DIR}/ga
     )
 
   ExternalProject_Get_Property(external_global_arrays INSTALL_DIR)
