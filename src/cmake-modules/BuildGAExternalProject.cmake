@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-08-07 14:51:01 d3g096
+# Last Change: 2019-08-09 07:55:17 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -88,10 +88,11 @@ function(BuildGAExternalProject)
     DESTINATION lib
     FILES_MATCHING PATTERN "*"
     )
-  install(
-    DIRECTORY ${BIN_DIR}/ga/bin/
-    DESTINATION bin
-    FILES_MATCHING PATTERN "*"
-    )
+  # There does not appear to be anything (useful) installed by GA in .../bin
+  # install(
+  #   DIRECTORY ${BIN_DIR}/ga/bin/
+  #   DESTINATION bin
+  #   FILES_MATCHING PATTERN "*"
+  #   )
 
 endfunction(BuildGAExternalProject)
