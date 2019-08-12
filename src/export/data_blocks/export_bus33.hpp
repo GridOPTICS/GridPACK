@@ -132,7 +132,7 @@ class ExportBus33
           sprintf(ptr," %f,",rval);
           ptr += strlen(ptr);
           // Just write default values for emergency max and min limits
-          sprintf(ptr," 1.1, 0.9");
+          sprintf(ptr," 1.1, 0.9\n");
           text_line text;
           strcpy(text.text,buf);
           text.global_idx = p_network->getGlobalBusIndex(i);

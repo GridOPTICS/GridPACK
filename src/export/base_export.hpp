@@ -172,7 +172,7 @@ class BaseExport
           lines.resize(nlines);
           if (nlines > 0) NGA_Get(g_txt,&lo,&hi,&lines[0],&one);
           for (i=0; i<nlines; i++) {
-            fout << lines[i].text << std::endl;
+            fout << lines[i].text;
           }
         }
       }

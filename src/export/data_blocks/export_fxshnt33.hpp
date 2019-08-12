@@ -91,7 +91,7 @@ class ExportFxShnt33
             ptr += strlen(ptr);
             rval = 0.0;
             data->getValue(BUS_SHUNT_BL,&rval,j);
-            sprintf(ptr," %f,",rval);
+            sprintf(ptr," %f\n",rval);
             text_line text;
             strcpy(text.text,buf);
             text.global_idx = p_network->getGlobalBusIndex(i);
