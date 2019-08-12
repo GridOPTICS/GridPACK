@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2018-09-20 12:40:55 d3g096
+# Last Change: 2019-07-30 12:48:21 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -127,7 +127,7 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
-find_package (PETSc COMPONENTS CXX REQUIRED)
+find_package (PETSc REQUIRED)
 message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
@@ -165,8 +165,8 @@ else()
 endif()
 
 # This is probably redundant
-if (NOT PETSC_CLANGUAGE_Cxx)
-  message (FATAL_ERROR "PETSc installation does not use C++ (--with-clanguage=c++)")
+if (PETSC_CLANGUAGE_Cxx)
+  message (STATUS "PETSc installation uses C++ (--with-clanguage=c++) -- we can work with that.")
 endif()
 
 if (PETSC_HAVE_SUPERLU_DIST) 

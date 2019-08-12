@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2016-12-16 09:38:07 d3g096
+ * @date   2019-08-01 08:51:08 d3g096
  * 
  * @brief  
  * 
@@ -23,6 +23,7 @@
 #include "math.hpp"
 #include "gridpack/parallel/parallel.hpp"
 #include "petsc/ga_matrix.hpp"
+#include "petsc/petsc_exception.hpp"
 
 #include "test_main.cpp"
 
@@ -36,16 +37,16 @@ fill_pattern(Mat A, InsertMode addv)
   PetscScalar x(0.0);
   PetscInt lo, hi;
 
-  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
+  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRQ(ierr);
   for (int i = lo; i < hi; ++i) {
     for (int j = lo; j < hi; ++j) {
-      ierr = MatSetValues(A, 1, &i, 1, &j, &x, addv);  CHKERRXX(ierr);
+      ierr = MatSetValues(A, 1, &i, 1, &j, &x, addv);  CHKERRQ(ierr);
       x += 1.0;
     }
   }
 
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRQ(ierr);
   return ierr;
 }  
 
