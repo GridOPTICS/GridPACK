@@ -165,6 +165,7 @@ class ExportLine33
                 sprintf(ptr,", %d, %f",ival,rval);
                 ptr += strlen(ptr);
               }
+              sprintf(ptr,"\n");
               text_line text;
               strcpy(text.text,buf);
               text.global_idx = p_network->getGlobalBranchIndex(i);
