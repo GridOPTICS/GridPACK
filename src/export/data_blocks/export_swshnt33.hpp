@@ -125,6 +125,7 @@ class ExportSwShnt33
               ptr += strlen(ptr);
               icnt++;
             }
+            sprintf(ptr,"\n");
             text_line text;
             strcpy(text.text,buf);
             text.global_idx = p_network->getGlobalBusIndex(i);

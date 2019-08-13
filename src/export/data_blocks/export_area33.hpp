@@ -88,7 +88,7 @@ class ExportArea33
             ptr += strlen(ptr);
             sval = "            ";
             data->getValue(AREAINTG_NAME,&sval);
-            sprintf(ptr,"%s",sval.c_str());
+            sprintf(ptr,"%s\n",sval.c_str());
             text_line text;
             strcpy(text.text,buf);
             text.global_idx = p_network->getGlobalBusIndex(i);

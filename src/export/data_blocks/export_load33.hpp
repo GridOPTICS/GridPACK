@@ -129,7 +129,7 @@ class ExportLoad33
             }
             sprintf(ptr," %d,",ival);
             ptr += strlen(ptr);
-            sprintf(ptr," 1, 0");
+            sprintf(ptr," 1, 0\n");
             text_line text;
             strcpy(text.text,buf);
             text.global_idx = p_network->getGlobalBusIndex(i);

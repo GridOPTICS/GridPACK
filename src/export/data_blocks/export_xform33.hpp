@@ -251,6 +251,7 @@ class ExportXform33
               data->getValue(TRANSFORMER_NOMV1,&rval,j);
               sprintf(ptr," %f",rval);
               ptr += strlen(ptr);
+              sprintf(ptr,"\n");
               // Finish up
               text_line text;
               strcpy(text.text,buf);
