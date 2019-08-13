@@ -8,7 +8,7 @@
 /**
  * @file   petsc_exception.cpp
  * @author William A. Perkins
- * @date   2019-08-01 08:45:05 d3g096
+ * @date   2019-08-13 08:56:30 d3g096
  * 
  * @brief  Implementation of PETScException
  * 
@@ -64,7 +64,7 @@ PETScException::PETScException(const PETSC_EXCEPTION_TYPE& e)
   std::ostringstream msg;
 
   msg << "PETSc error: " 
-#if PETSC_VERSION_LT(3,5,0)
+#ifdef GRIDPACK_USES_PETSC_EXCEPTION
       << e.msg()
 #else
       << e.what()
@@ -78,7 +78,7 @@ PETScException::PETScException(const PetscErrorCode& ierr, const PETSC_EXCEPTION
 {
   std::ostringstream msg;
   msg << "PETSc error (" << petsc_err_ << "): " 
-#if PETSC_VERSION_LT(3,5,0)
+#if GRIDPACK_USES_PETSC_EXCEPTION
       << e.msg()
 #else
       << e.what()
