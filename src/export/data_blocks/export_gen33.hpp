@@ -71,10 +71,11 @@ class ExportGen33
           int ival;
           std::string sval;
           gridpack::ComplexType zval;
-          char *ptr = buf;
+          char *ptr;
           int ngen = 0;
           data->getValue(GENERATOR_NUMBER,&ngen);
           for (j=0; j<ngen; j++) {
+            ptr = buf;
             ival = p_network->getOriginalBusIndex(i);
             data->getValue(GENERATOR_BUSNUMBER,&ival,j);
             sprintf(ptr,"%d,",ival);

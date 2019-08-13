@@ -70,8 +70,9 @@ class ExportArea33
           double rval;
           int ival;
           std::string sval;
-          char *ptr = buf;
+          char *ptr;
           if (data->getValue(AREAINTG_NUMBER,&ival)) {
+            ptr = buf;
             sprintf(ptr,"%d,",ival);
             ptr += strlen(ptr);
             ival = p_network->getOriginalBusIndex(i);

@@ -71,10 +71,11 @@ class ExportLoad33
           double rval;
           int ival;
           std::string sval;
-          char *ptr = buf;
+          char *ptr;
           int nload = 0;
           data->getValue(LOAD_NUMBER,&nload);
           for (j=0; j<nload; j++) {
+            ptr = buf;
             ival = p_network->getOriginalBusIndex(i);
             data->getValue(LOAD_BUSNUMBER,&ival,j);
             sprintf(ptr,"%d,",ival);
