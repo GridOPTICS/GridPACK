@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-08-09 07:55:17 d3g096
+# Last Change: 2019-08-09 14:27:06 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -26,10 +26,7 @@ function(BuildGAExternalProject)
   set(GA_LIBS "")
 
   if(BUILD_SHARED_LIBS)
-    list(APPEND GA_OPTS
-      -D BUILD_SHARED_LIBS:BOOL=YES
-      -D CMAKE_POSITION_INDEPENDENT_CODE:BOOL=YES
-      )
+    list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=YES )
   else()
     list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=NO )
   endif()
@@ -37,7 +34,7 @@ function(BuildGAExternalProject)
   if (USE_PROGRES_RANKS)
     list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_PROGRESS_RANK)
   else ()
-    list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_2SIDED)
+    list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_TS)
   endif()
 
   include(ExternalProject)
@@ -45,8 +42,11 @@ function(BuildGAExternalProject)
     PREFIX ${BUILD_DIR}/ga
     SOURCE_DIR ${PROJECT_SOURCE_DIR}/ga
     INSTALL_DIR ${BIN_DIR}/ga
-    CMAKE_ARGS -D ENABLE_BLAS:BOOL=NO
+    CMAKE_ARGS
+    -D CMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+    -D ENABLE_BLAS:BOOL=NO
     -D ENABLE_FORTRAN:BOOL=NO
+    -D ENABLE_I8:BOOL=NO 
     -D ENABLE_CXX:BOOL=YES
     -D MPI_CXX_COMPILER:STRING=${MPI_CXX_COMPILER}
     -D MPI_C_COMPILER:STRING=${MPI_C_COMPILER}
