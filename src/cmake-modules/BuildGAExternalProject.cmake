@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-08-09 14:27:06 d3g096
+# Last Change: 2019-08-15 09:07:04 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -24,9 +24,11 @@ function(BuildGAExternalProject)
 
   set(GA_OPTS "")
   set(GA_LIBS "")
+  set(LIBWORD "STATIC")
 
   if(BUILD_SHARED_LIBS)
     list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=YES )
+    set(LIBWORD "SHARED")
   else()
     list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=NO )
   endif()
@@ -71,11 +73,21 @@ function(BuildGAExternalProject)
 
   set(GA_INCLUDE_DIRS ${INSTALL_DIR}/include PARENT_SCOPE)
 
-  set(GA_LIBRARIES
-    ${INSTALL_DIR}/lib/libga++${LIB_SUFFIX}
-    ${INSTALL_DIR}/lib/libga${LIB_SUFFIX}
-    ${INSTALL_DIR}/lib/libarmci${LIB_SUFFIX}
-    ${GA_LIBS} PARENT_SCOPE)
+  foreach(l comex armci ga ga++)
+    add_library(${l} ${LIBWORD} IMPORTED)
+    set_target_properties(${l} PROPERTIES
+      IMPORTED_LOCATION ${INSTALL_DIR}/lib/lib${l}${LIB_SUFFIX}
+      )
+    add_dependencies(${l} external_global_arrays)
+  endforeach()
+
+  set(GA_LIBRARIES ga++ ga armci comex ${GA_LIBS} PARENT_SCOPE)
+
+  # set(GA_LIBRARIES
+  #   ${INSTALL_DIR}/lib/libga++${LIB_SUFFIX}
+  #   ${INSTALL_DIR}/lib/libga${LIB_SUFFIX}
+  #   ${INSTALL_DIR}/lib/libarmci${LIB_SUFFIX}
+  #   ${GA_LIBS} PARENT_SCOPE)
   
   # make sure there is a slash at the end of the path
   install(
@@ -94,5 +106,6 @@ function(BuildGAExternalProject)
   #   DESTINATION bin
   #   FILES_MATCHING PATTERN "*"
   #   )
+
 
 endfunction(BuildGAExternalProject)
