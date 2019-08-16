@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-08-16 08:21:53 d3g096
+# Last Change: 2019-08-16 11:47:19 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -399,6 +399,18 @@ endif()
 # -------------------------------------------------------------
 # Installation
 # -------------------------------------------------------------
+
+# When built as shared libraries, and installed in non-system dirs
+set(MACOSX_RPATH 1)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
 install(FILES
   ${GRIDPACK_SRC_DIR}/../README.md
   LICENSE

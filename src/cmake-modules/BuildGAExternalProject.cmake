@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-08-15 14:33:28 d3g096
+# Last Change: 2019-08-16 11:48:54 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -48,6 +48,9 @@ function(BuildGAExternalProject)
     -D ENABLE_CXX:BOOL=YES
     -D MPI_CXX_COMPILER:STRING=${MPI_CXX_COMPILER}
     -D MPI_C_COMPILER:STRING=${MPI_C_COMPILER}
+    -D MACOSX_RPATH:BOOL=YES
+    -D CMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=TRUE
+    -D CMAKE_INSTALL_RPATH:STRING="${CMAKE_INSTALL_PREFIX}/lib"
     ${GA_OPTS}
     ${DEFAULT_CMAKE_FLAGS}
     -D CMAKE_INSTALL_PREFIX=${BIN_DIR}/ga
