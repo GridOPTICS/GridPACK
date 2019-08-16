@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-08-16 07:01:55 d3g096
+# Last Change: 2019-08-16 08:21:53 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -379,17 +379,17 @@ endif()
 # directories from external packages.
 
 if(GRIDPACK_TEST_LDPATH)
-  string(JOIN ":" tmp ${GRIDPACK_TEST_LDPATH})
+  string(REPLACE ";" ":" tmp "${GRIDPACK_TEST_LDPATH}")
   set(GRIDPACK_TEST_LDPATH "${tmp}")
   if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-    if($ENV{DYLD_LIBRARY_PATH})
-      string(JOIN ":" tmp "${GRIDPACK_TEST_LDPATH}" "$ENV{DYLD_LIBRARY_PATH}")
+    if(ENV{DYLD_LIBRARY_PATH})
+      set(GRIDPACK_TEST_LDPATH "${GRIDPACK_TEST_LDPATH}:$ENV{DYLD_LIBRARY_PATH}")
     endif()
     set(ENV{DYLD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
     message(STATUS "DYLD_LIBRARY_PATH: $ENV{DYLD_LIBRARY_PATH}")
   elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    if($ENV{LD_LIBRARY_PATH})
-      string(JOIN ":" tmp "${GRIDPACK_TEST_LDPATH}" "$ENV{LD_LIBRARY_PATH}")
+    if(ENV{LD_LIBRARY_PATH})
+      set(GRIDPACK_TEST_LDPATH "${GRIDPACK_TEST_LDPATH}:$ENV{LD_LIBRARY_PATH}")
     endif()
     set(ENV{LD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
     message(STATUS "LD_LIBRARY_PATH: $ENV{LD_LIBRARY_PATH}")
