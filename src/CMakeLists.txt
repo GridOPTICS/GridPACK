@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-08-16 11:47:19 d3g096
+# Last Change: 2019-08-16 12:58:52 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -401,7 +401,7 @@ endif()
 # -------------------------------------------------------------
 
 # When built as shared libraries, and installed in non-system dirs
-set(MACOSX_RPATH 1)
+set(CMAKE_MACOSX_RPATH 1)
 set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
 SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
