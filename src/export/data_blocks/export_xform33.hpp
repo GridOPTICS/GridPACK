@@ -72,11 +72,12 @@ class ExportXform33
           int idx1, idx2;
           std::string sval;
           DoubleComplex zval;
-          char *ptr = buf;
+          char *ptr;
           int nline = 0;
           double tap_ratio;
           data->getValue(BRANCH_NUM_ELEMENTS,&nline);
           for (j=0; j<nline; j++) {
+            ptr = buf;
             data->getValue(BRANCH_TAP,&tap_ratio,j);
             if (tap_ratio != 0.0 && tap_ratio != 1.0) {
               // Note that three winding buses have already been converted to

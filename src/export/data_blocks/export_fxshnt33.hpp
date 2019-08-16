@@ -70,10 +70,11 @@ class ExportFxShnt33
           double rval;
           int ival;
           std::string sval;
-          char *ptr = buf;
+          char *ptr;
           int nshnt = 0;
           data->getValue(SHUNT_NUMBER,&nshnt);
           for (j=0; j<nshnt; j++) {
+            ptr = buf;
             ival = p_network->getOriginalBusIndex(i);
             data->getValue(SHUNT_BUSNUMBER,&ival,j);
             sprintf(ptr,"%d,",ival);

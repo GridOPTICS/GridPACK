@@ -108,7 +108,7 @@ class ExportSwShnt33
             ptr += strlen(ptr);
             rval = 0.0;
             data->getValue(SHUNT_BINIT,&rval);
-            sprintf(ptr,"%f,",rval);
+            sprintf(ptr,"%f",rval);
             ptr += strlen(ptr);
             int icnt = 0;
             while (icnt<9) {
@@ -116,13 +116,11 @@ class ExportSwShnt33
               sprintf(ni,"SHUNT_N%d",icnt+1);
               sprintf(bi,"SHUNT_B%d",icnt+1);
               if (data->getValue(ni,&ival) && data->getValue(bi,&rval)) {
-                sprintf(ptr,"%d,%f",ival,&rval);
+                sprintf(ptr,",%d,%f",ival,rval);
                 ptr += strlen(ptr);
               } else {
                 break;
               }
-              if (icnt < 8) sprintf(ptr,",");
-              ptr += strlen(ptr);
               icnt++;
             }
             sprintf(ptr,"\n");
