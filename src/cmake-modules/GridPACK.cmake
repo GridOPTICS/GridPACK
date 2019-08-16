@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 10, 2013 by William A. Perkins
-# Last Change: 2018-09-06 11:38:00 d3g096
+# Last Change: 2019-08-16 07:01:00 d3g096
 # -------------------------------------------------------------
 
 # This is used to specify a time out for GridPACK unit tests. It's 5
@@ -20,6 +20,22 @@ if (NOT GRIDPACK_TEST_TIMEOUT)
     CACHE STRING "Time out for GridPACK unit tests.")
 endif ()
 
+# Use a macro to set each test's environment
+macro(set_tests_ldpath)
+  if(GRIDPACK_TEST_LDPATH)
+    foreach(t IN LISTS ${ARGV})
+      if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+        set_tests_properties(l PROPERTIES
+          ENVIRONMENT DYLD_LIBRARY_PATH "${GRIDPACK_TEST_LDPATH}"
+          )
+      elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        set_tests_properties(l PROPERTIES
+          ENVIRONMENT LD_LIBRARY_PATH "${GRIDPACK_TEST_LDPATH}"
+          )
+      endif()
+    endforeach()
+  endif()
+endmacro()
 
 # -------------------------------------------------------------
 # gridpack_add_serial_unit_test
@@ -35,7 +51,8 @@ function(gridpack_add_serial_unit_test test_name test_program)
     PASS_REGULAR_EXPRESSION "No errors detected"
     FAIL_REGULAR_EXPRESSION "failure detected"
     TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
-  )
+    )
+  set_tests_ldpath("${the_test_name}")
 endfunction(gridpack_add_serial_unit_test)
 
 # -------------------------------------------------------------
@@ -51,7 +68,8 @@ function(gridpack_add_serial_run_test test_name test_program test_input)
   set_tests_properties("${the_test_name}"
     PROPERTIES 
     TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
-  )
+    )
+  set_tests_ldpath("${the_test_name}")
 endfunction(gridpack_add_serial_run_test)
 
 # -------------------------------------------------------------
@@ -69,6 +87,7 @@ function(gridpack_add_parallel_unit_test test_name test_target)
       FAIL_REGULAR_EXPRESSION "failure detected"
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
       )
+    set_tests_ldpath("${the_test_name}")
   else() 
     message(FATAL_ERROR "gridpack_add_parallel_unit_test: target argument not target")
   endif()
@@ -90,7 +109,8 @@ function(gridpack_add_parallel_run_test test_name test_target test_input)
     set_tests_properties("${the_test_name}"
       PROPERTIES 
       TIMEOUT ${GRIDPACK_TEST_TIMEOUT}
-    )
+      )
+    set_tests_ldpath("${the_test_name}")
   else()
     message(FATAL_ERROR "gridpack_add_parallel_run_test: target argument not target")
   endif()

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-08-15 09:58:23 d3g096
+# Last Change: 2019-08-16 07:01:55 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -87,6 +87,7 @@ option(BUILD_SHARED_LIBS
 set(DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Downloads)
 set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libs)
+set(GRIDPACK_TEST_LDPATH "")
 if(BUILD_SHARED_LIBS)
   set(LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
   set(LIB_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
@@ -159,6 +160,8 @@ if(BUILD_BOOST)
   include(BuildBoostExternalProject)
   BuildBoostExternalProject("${BOOST_BUILD_LIBS}")
   add_dependencies(external_build external_boost)
+  # FIXME: Build type (probably only important for Windoze)
+  list(APPEND GRIDPACK_TEST_LDPATH ${Boost_LIBRARY_DIR_DEBUG} ${Boost_LIBRARY_DIR_RELEASE} )
 else(BUILD_BOOST)
   message(STATUS "Checking Boost ...")
   find_package(Boost 1.53
@@ -257,6 +260,7 @@ if(BUILD_GA)
   include(BuildGAExternalProject)
   BuildGAExternalProject()
   add_dependencies(external_build external_global_arrays)
+  list(APPEND GRIDPACK_TEST_LDPATH ${GA_DIR}/lib)
 else(BUILD_GA)
   message(STATUS "Checking GA ...")
   find_package(GA REQUIRED)
@@ -366,6 +370,29 @@ if (ENABLE_CRAY_BUILD)
   if (NOT ${MPI_LIBRARY} OR NOT ${MPI_EXTRA_LIBRARY})
     set(MPI_LIBRARY "")
     set(MPI_EXTRA_LIBRARY "")
+  endif()
+endif()
+
+# If external packages are built as shared libraries, the library
+# search path needs to be set so unit tests can find them when run.
+# Try setting the LIBRARY_PATH environment variable to include the
+# directories from external packages.
+
+if(GRIDPACK_TEST_LDPATH)
+  string(JOIN ":" tmp ${GRIDPACK_TEST_LDPATH})
+  set(GRIDPACK_TEST_LDPATH "${tmp}")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    if($ENV{DYLD_LIBRARY_PATH})
+      string(JOIN ":" tmp "${GRIDPACK_TEST_LDPATH}" "$ENV{DYLD_LIBRARY_PATH}")
+    endif()
+    set(ENV{DYLD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
+    message(STATUS "DYLD_LIBRARY_PATH: $ENV{DYLD_LIBRARY_PATH}")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if($ENV{LD_LIBRARY_PATH})
+      string(JOIN ":" tmp "${GRIDPACK_TEST_LDPATH}" "$ENV{LD_LIBRARY_PATH}")
+    endif()
+    set(ENV{LD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
+    message(STATUS "LD_LIBRARY_PATH: $ENV{LD_LIBRARY_PATH}")
   endif()
 endif()
 
