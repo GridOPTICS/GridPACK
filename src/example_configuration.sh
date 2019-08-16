@@ -209,13 +209,20 @@ elif [ $host == "tlaloc" ]; then
     # in such a way as to be unrecognizable.
 
     prefix="/file0/perksoft"
+    if [ "$shared"x = "ON"x ]; then
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel6-complex-c-shared"
+    else
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel6-complex-c-static"
+    fi
 
     cmake3 $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
           -D USE_PROGRESS_RANKS:BOOL=OFF \
-          -D PETSC_DIR:PATH="/net/flophouse/files0/perksoft/petsc-3.8.4" \
-          -D PETSC_ARCH:STRING="rhel6-gnu48-complex-opt-c" \
+          -D PETSC_DIR:PATH="$pdir" \
+          -D PETSC_ARCH:STRING="$parch" \
           -D MPI_CXX_COMPILER:STRING="mpicxx" \
           -D MPI_C_COMPILER:STRING="mpicc" \
           -D MPIEXEC:STRING="mpiexec" \
