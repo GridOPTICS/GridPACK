@@ -166,7 +166,7 @@ elif [ $host == "WE32673" ]; then
 
     if [ "$shared"x = "ON"x ]; then
         pdir="$prefix/petsc-3.8.4"
-        parch="arch-macosx-clang-real-opt"
+        parch="arch-macosx-clang-real-shared-c"
     else
         pdir="$prefix/petsc-3.8.4"
         parch="arch-macosx-clang-real-opt"

@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-08-15 09:07:04 d3g096
+# Last Change: 2019-08-15 14:33:28 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -24,19 +24,15 @@ function(BuildGAExternalProject)
 
   set(GA_OPTS "")
   set(GA_LIBS "")
-  set(LIBWORD "STATIC")
 
   if(BUILD_SHARED_LIBS)
     list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=YES )
-    set(LIBWORD "SHARED")
   else()
     list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=NO )
   endif()
 
   if (USE_PROGRES_RANKS)
     list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_PROGRESS_RANK)
-  else ()
-    list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_TS)
   endif()
 
   include(ExternalProject)
@@ -73,15 +69,18 @@ function(BuildGAExternalProject)
 
   set(GA_INCLUDE_DIRS ${INSTALL_DIR}/include PARENT_SCOPE)
 
+  set(GA_LIBRARIES "")
   foreach(l comex armci ga ga++)
-    add_library(${l} ${LIBWORD} IMPORTED)
+    set(lname ${INSTALL_DIR}/lib/${LIB_PREFIX}${l}${LIB_SUFFIX})
+    add_library(${l} ${LIB_TYPE} IMPORTED)
     set_target_properties(${l} PROPERTIES
-      IMPORTED_LOCATION ${INSTALL_DIR}/lib/lib${l}${LIB_SUFFIX}
+      IMPORTED_LOCATION ${lname}
       )
     add_dependencies(${l} external_global_arrays)
+     set(GA_LIBRARIES ${lname} ${GA_LIBRARIES})
   endforeach()
 
-  set(GA_LIBRARIES ga++ ga armci comex ${GA_LIBS} PARENT_SCOPE)
+  set(GA_LIBRARIES ${GA_LIBRARIES} ${GA_LIBS} PARENT_SCOPE)
 
   # set(GA_LIBRARIES
   #   ${INSTALL_DIR}/lib/libga++${LIB_SUFFIX}

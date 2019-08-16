@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-08-07 09:25:51 d3g096
+# Last Change: 2019-08-15 09:58:23 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -89,9 +89,11 @@ set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
 set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libs)
 if(BUILD_SHARED_LIBS)
   set(LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+  set(LIB_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
   set(LIB_TYPE SHARED)
 else()
   set(LIB_SUFFIX ${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(LIB_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
   set(LIB_TYPE STATIC)
 endif()
 
