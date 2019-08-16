@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 09:40:33 d3g096
+# Last Change: 2019-08-16 13:46:26 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -29,6 +29,7 @@ add_library(gridpack_components
   data_collection.cpp
   optimization_ifc.cpp
   )
+gridpack_set_library_version(gridpack_components)
 add_dependencies(gridpack_components external_build)
 
 

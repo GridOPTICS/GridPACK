@@ -36,7 +36,7 @@ add_library(gridpack_state_estimation_module
   se_app_module.cpp
   se_factory_module.cpp
 )
-
+gridpack_set_library_version(gridpack_state_estimation_module)
 target_link_libraries(gridpack_state_estimation_module
   gridpack_sematrix_components
   gridpack_partition

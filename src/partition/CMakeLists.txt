@@ -9,7 +9,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2019-08-07 08:53:23 d3g096
+# Last Change: 2019-08-16 13:47:51 d3g096
 # -------------------------------------------------------------
 
 
@@ -73,6 +73,7 @@ add_library(gridpack_partition
   ${gridpack_partition_sources}
 )
 
+gridpack_set_library_version(gridpack_partition)
 add_dependencies(gridpack_partition external_build)
 
 target_link_libraries(gridpack_partition 

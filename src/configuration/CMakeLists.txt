@@ -10,12 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 09:40:13 d3g096
+# Last Change: 2019-08-16 13:46:40 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
   configuration.cpp
 )
+
+gridpack_set_library_version(gridpack_configuration)
 
 add_dependencies(gridpack_configuration external_build)
 

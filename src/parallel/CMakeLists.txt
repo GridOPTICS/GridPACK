@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-08-16 08:49:19 d3g096
+# Last Change: 2019-08-16 13:41:44 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -19,9 +19,9 @@ add_library(gridpack_parallel
   distributed.cpp
   index_hash.cpp
   random.cpp
-)
-
+  )
 add_dependencies(gridpack_parallel external_build)
+gridpack_set_library_version(gridpack_parallel)
 
 # For some reason this is necessary for Mac OS X, but messes things up on Linux
 if (GRIDPACK_LIB_LINK_LIBRARIES)

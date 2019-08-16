@@ -46,6 +46,8 @@ add_library(gridpack_dynamic_simulation_module
   ds_factory_module.cpp
 )
 
+gridpack_set_library_version(gridpack_dynamic_simulation_module)
+
 target_link_libraries(gridpack_dynamic_simulation_module
   gridpack_dsmatrix_components
   gridpack_powerflow_module

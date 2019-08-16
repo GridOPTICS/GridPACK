@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 09:42:24 d3g096
+# Last Change: 2019-08-16 13:44:16 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -27,6 +27,8 @@ add_library(gridpack_ymatrix_components
   )
 
 target_link_libraries(gridpack_ymatrix_components gridpack_components)
+
+gridpack_set_library_version(gridpack_ymatrix_components)
 
 # -------------------------------------------------------------
 # shared library dependencies

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 10:21:33 d3g096
+# Last Change: 2019-08-16 13:45:58 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -37,6 +37,8 @@ add_library(gridpack_kalmands_module
   kds_app_module.cpp
   kds_factory_module.cpp
 )
+
+gridpack_set_library_version(gridpack_kalmands_module)
 
 target_link_libraries(gridpack_kalmands_module
   gridpack_kdsmatrix_components

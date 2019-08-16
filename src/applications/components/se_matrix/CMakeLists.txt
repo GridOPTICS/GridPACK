@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 09:42:35 d3g096
+# Last Change: 2019-08-16 13:43:57 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -27,6 +27,8 @@ include_directories(AFTER ${GA_INCLUDE_DIRS})
 add_library(gridpack_sematrix_components
   se_components.cpp
 )
+
+gridpack_set_library_version(gridpack_sematrix_components)
 
 target_link_libraries(gridpack_sematrix_components
   gridpack_ymatrix_components

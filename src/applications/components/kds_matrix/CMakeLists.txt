@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 09:43:02 d3g096
+# Last Change: 2019-08-16 13:43:21 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -26,6 +26,8 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 add_library(gridpack_kdsmatrix_components
   kds_components.cpp
 )
+
+gridpack_set_library_version(gridpack_kdsmatrix_components)
 
 target_link_libraries(gridpack_kdsmatrix_components
   gridpack_ymatrix_components
