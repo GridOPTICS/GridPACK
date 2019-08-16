@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-10-19 13:42:49 d3g096
+# Last Change: 2019-08-16 08:49:19 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -79,6 +79,7 @@ if (NOT USE_PROGRESS_RANKS)
     PROPERTIES 
     PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
     )
+  set_tests_ldpath(greetings_serial)
 endif()
 
 add_test(greetings_parallel 
@@ -87,6 +88,7 @@ set_tests_properties(greetings_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
 )
+set_tests_ldpath(greetings_parallel)
 
 # -------------------------------------------------------------
 # TEST: task_test
