@@ -3501,7 +3501,7 @@ The \texttt{\textbf{Variable}}, \texttt{\textbf{Expression}} and \texttt{\textbf
 
 This code fragment defines the function \texttt{\textbf{f}}. Note that the last line is not an assignment in the conventional sense; \texttt{\textbf{f}} does not represent the value computed from the current values of \texttt{\textbf{a}}, \texttt{\textbf{x}}, and \texttt{\textbf{b}} but rather the operation of multiplying \texttt{\textbf{x}} by the constant value \texttt{\textbf{a}} and then adding the constant value \texttt{\textbf{b}} to the result.
 
-The functions in the optimization interface are all expressed in terms of the \texttt{\textbf{Expression}} and Variable classes. Apart from simple constructors and destructors, there are only three functions in this interface. The first of these returns a list of all variables associated with a particular bus or branch.
+The functions in the optimization interface are all expressed in terms of the \texttt{\textbf{Expression}} and \texttt{\textbf{Variable}} classes. Apart from simple constructors and destructors, there are only three functions in this interface. The first of these returns a list of all variables associated with a particular bus or branch.
 
 \textcolor{red}{\texttt{\textbf{std::vector$\boldsymbol{\mathrm{<}}$boost::shared\_ptr$\boldsymbol{\mathrm{<}}$Variable$\boldsymbol{\mathrm{>}}$ $\boldsymbol{\mathrm{>}}$ getVariables()}}}
 
@@ -3596,7 +3596,7 @@ Variables can be used to create expressions. Expressions can consist of a single
 
 \textcolor{red}{\texttt{\textbf{x.reset(new RealVariable(0.0,-10.0,10.0));}}}
 
-\textcolor{red}{\texttt{\textbf{ExpPtr x2 = x$\boldsymbol{\mathrm{\wedge}}$2;}}}
+\textcolor{red}{\texttt{\textbf{ExpPtr x2 = x$\boldsymbol{\mathrm{^\wedge}}$2;}}}
 
 \textcolor{red}{\texttt{\textbf{ExpPtr p = a+b*x+c*x2;}}}
 
@@ -3612,7 +3612,7 @@ The exponentiation operation in the \texttt{\textbf{Expression}} class does not 
 
 Expressions can also be used in the functions
 
-\textcolor{red}{\texttt{\textbf{    ExpPtr$\boldsymbol{\mathrm{\wedge}}$int}}}
+\textcolor{red}{\texttt{\textbf{    ExpPtr$\boldsymbol{\mathrm{^{\wedge}}}$int}}}
 
 \textcolor{red}{\texttt{\textbf{    sin(ExpPtr)}}}
 
@@ -3779,77 +3779,47 @@ Again, this may be useful in contingency calculations where multiple calculation
 
 The state estimation module can be used to set up and run a state estimation calculation. It does not have the extra functions that the power flow module contains for supporting contingency analysis, so the interface is a bit smaller. In addition to a standard network configuration file, the state estimation calculation needs a second file consisting of measurements. This file has the format
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$Measurements$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Type$\boldsymbol{\mathrm{>}}$VM$\boldsymbol{\mathrm{<}}$/Type$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Bus$\boldsymbol{\mathrm{>}}$1$\boldsymbol{\mathrm{<}}$/Bus$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Value$\boldsymbol{\mathrm{>}}$1.0600$\boldsymbol{\mathrm{<}}$/Value$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Deviation$\boldsymbol{\mathrm{>}}$0.0050$\boldsymbol{\mathrm{<}}$/Deviation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Type$\boldsymbol{\mathrm{>}}$PIJ$\boldsymbol{\mathrm{<}}$/Type$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$FromBus$\boldsymbol{\mathrm{>}}$1$\boldsymbol{\mathrm{<}}$/FromBus$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$ToBus$\boldsymbol{\mathrm{>}}$2$\boldsymbol{\mathrm{<}}$/ToBus$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$CKT$\boldsymbol{\mathrm{>}}$BL$\boldsymbol{\mathrm{<}}$/CKT$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Value$\boldsymbol{\mathrm{>}}$1.5688$\boldsymbol{\mathrm{<}}$/Value$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Deviation$\boldsymbol{\mathrm{>}}$0.0100$\boldsymbol{\mathrm{<}}$/Deviation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Type$\boldsymbol{\mathrm{>}}$QIJ$\boldsymbol{\mathrm{<}}$/Type$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$FromBus$\boldsymbol{\mathrm{>}}$1$\boldsymbol{\mathrm{<}}$/FromBus$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$ToBus$\boldsymbol{\mathrm{>}}$2$\boldsymbol{\mathrm{<}}$/ToBus$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$CKT$\boldsymbol{\mathrm{>}}$BL$\boldsymbol{\mathrm{<}}$/CKT$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Values$\boldsymbol{\mathrm{>}}$-0.2040$\boldsymbol{\mathrm{<}}$/Value$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Deviation$\boldsymbol{\mathrm{>}}$0.0100$\boldsymbol{\mathrm{<}}$/Deviation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Type$\boldsymbol{\mathrm{>}}$PI$\boldsymbol{\mathrm{<}}$/Type$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Bus$\boldsymbol{\mathrm{>}}$1$\boldsymbol{\mathrm{<}}$/Bus$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Value$\boldsymbol{\mathrm{>}}$2.3240$\boldsymbol{\mathrm{<}}$/Value$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Deviation$\boldsymbol{\mathrm{>}}$0.0100$\boldsymbol{\mathrm{<}}$/Deviation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Type$\boldsymbol{\mathrm{>}}$QI$\boldsymbol{\mathrm{<}}$/Type$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Bus$\boldsymbol{\mathrm{>}}$1$\boldsymbol{\mathrm{<}}$/Bus$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Value$\boldsymbol{\mathrm{>}}$-0.1690$\boldsymbol{\mathrm{<}}$/Value$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Deviation$\boldsymbol{\mathrm{>}}$0.0100$\boldsymbol{\mathrm{<}}$/Deviation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Measurement$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$/Measurements$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    <Measurements>
+      <Measurement>
+        <Type>VM</Type>
+        <Bus>1</Bus>
+        <Value>1.0600</Value>
+        <Deviation>0.0050</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>PIJ</Type>
+        <FromBus>1</FromBus>
+        <ToBus>2</ToBus>
+        <CKT>BL</CKT>
+        <Value>1.5688</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>QIJ</Type>
+        <FromBus>1</FromBus>
+        <ToBus>2</ToBus>
+        <CKT>BL</CKT>
+        <Values>-0.2040</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>PI</Type>
+        <Bus>1</Bus>
+        <Value>2.3240</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>QI</Type>
+        <Bus>1</Bus>
+        <Value>-0.1690</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+    </Measurements>
+\end{Verbatim}
+}
 
 for the five types of measurements \texttt{\textbf{VM}}, \texttt{\textbf{PIJ}}, \texttt{\textbf{QIJ}}, \texttt{\textbf{PI}}, and \texttt{\textbf{PJ}}. Measurements can appear on any element of the network and multiple measurements are allowed on each element. The state estimation module does not have any error checking ability to determine if there are sufficient measurements to guarantee solvability, if not enough measurements are available then the calculation will simply crash or fail to converge.
 The state estimation module is represented by the \texttt{\textbf{SEAppModule}} class which is in the \texttt{\textbf{gridpack::state\_estimation}} namespace. The \texttt{\textbf{gridpack.hpp}} file contains a definition for the state estimation network \texttt{\textbf{SENetwork}}. After instantiating an \texttt{\textbf{SEAppModule}} object and a shared pointer to an \texttt{\textbf{SENetwork}}, the state estimation calculation can read in an external network configuration file using the command
@@ -3936,82 +3906,49 @@ Dynamic Loads:
 
 The full Y-matrix implementation of dynamic simulation is represented by the \texttt{\textbf{DSFullApp}} class and the \texttt{\textbf{DSFullNetwork}}, both of which reside in the \texttt{\textbf{gridpack::dynamic\_simulation}} namespace.
 The dynamic simulation module uses an input deck of the form
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$?xml version="1.0" encoding="utf-8"?$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$Configuration$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Dynamic\_simulation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$networkConfiguration$\boldsymbol{\mathrm{>}}$IEEE\_145.raw$\boldsymbol{\mathrm{<}}$/networkConfiguration$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$generatorParameters$\boldsymbol{\mathrm{>}}$IEEE\_145.dyr$\boldsymbol{\mathrm{<}}$/generatorParameters$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$simulationTime$\boldsymbol{\mathrm{>}}$30$\boldsymbol{\mathrm{<}}$/simulationTime$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$timeStep$\boldsymbol{\mathrm{>}}$0.005$\boldsymbol{\mathrm{<}}$/timeStep$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$faultEvents$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$faultEvent$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$beginFault$\boldsymbol{\mathrm{>}}$ 2.00$\boldsymbol{\mathrm{<}}$/beginFault$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$endFault$\boldsymbol{\mathrm{>}}$   2.05$\boldsymbol{\mathrm{<}}$/endFault$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$faultBranch$\boldsymbol{\mathrm{>}}$6 7$\boldsymbol{\mathrm{<}}$/faultBranch$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$timeStep$\boldsymbol{\mathrm{>}}$   0.005$\boldsymbol{\mathrm{<}}$/timeStep$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/faultEvent$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/faultEvents$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$generatorWatch$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$generator$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{       $\boldsymbol{\mathrm{<}}$busID$\boldsymbol{\mathrm{>}}$ 60 $\boldsymbol{\mathrm{<}}$/busID$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{       $\boldsymbol{\mathrm{<}}$generatorID$\boldsymbol{\mathrm{>}}$ 1 $\boldsymbol{\mathrm{<}}$/generatorID$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/generator$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$generator$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{       $\boldsymbol{\mathrm{<}}$busID$\boldsymbol{\mathrm{>}}$ 112 $\boldsymbol{\mathrm{<}}$/busID$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{       $\boldsymbol{\mathrm{<}}$generatorID$\boldsymbol{\mathrm{>}}$ 1 $\boldsymbol{\mathrm{<}}$/generatorID$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/generator$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/generatorWatch$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$generatorWatchFrequency$\boldsymbol{\mathrm{>}}$ 1 $\boldsymbol{\mathrm{<}}$/generatorWatchFrequency$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$generatorWatchFileName$\boldsymbol{\mathrm{>}}$gen\_watch.csv$\boldsymbol{\mathrm{<}}$/generatorWatchFileName$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$LinearMatrixSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_atol 1.0e-18}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_rtol 1.0e-10}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_monitor}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_max\_it 200}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_view}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/LinearMatrixSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Dynamic\_simulation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$/Configuration$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Dynamic_simulation>
+    <networkConfiguration>IEEE_145.raw</networkConfiguration>
+    <generatorParameters>IEEE_145.dyr</generatorParameters>
+    <simulationTime>30</simulationTime>
+    <timeStep>0.005</timeStep>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 2.00</beginFault>
+        <endFault>   2.05</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+    </faultEvents>
+    <generatorWatch>
+      <generator>
+       <busID> 60 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+      <generator>
+       <busID> 112 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+    </generatorWatch>
+    <generatorWatchFrequency> 1 </generatorWatchFrequency>
+    <generatorWatchFileName>gen_watch.csv</generatorWatchFileName>
+    <LinearMatrixSolver>
+      <PETScOptions>
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+      </PETScOptions>
+    </LinearMatrixSolver>
+  </Dynamic_simulation>
+</Configuration>
+\end{Verbatim}
+}
 
 The input for dynamic simulation module is contained in the \texttt{\textbf{Dynamic\_simulation}} block. Two features are important, the blocks describing faults and the blocks describing monitored generators. Faults are described in the \texttt{\textbf{faultEvent}}s block. The code currently only handles faults on branches. Inside the \texttt{\textbf{faultEvents}} block are individual faults, described by a \texttt{\textbf{faultEvent}} block. Multiple \texttt{\textbf{faultEvent}} blocks can be contained within the \texttt{\textbf{faultEvents }}block. As will be described below, it is possible for the faults to be listed in a separate file. This can be convenient for describing a task-based calculation that may contain a lot of faults. The parameters describing the fault include the time (in seconds) that the fault is initiated, the time that it is terminated, the timestep used while integrating the fault and the indices of the two buses at either end of the fault branch.
 
@@ -4123,81 +4060,57 @@ All entries on the same lines are separated by commas. The first row contains th
 
 The input file for the Kalman filter module used both for a dynamic simulation as well as input that is unique to the Kalman filter module. The dynamic simulation parameters that are used include
 
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Dynamic\_simulation$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$simulationTime$\boldsymbol{\mathrm{>}}$3$\boldsymbol{\mathrm{<}}$/simulationTime$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$timeStep$\boldsymbol{\mathrm{>}}$0.01$\boldsymbol{\mathrm{<}}$/timeStep$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$!-- = 1 Fault Event is known; }}}
-
-\textcolor{red}{\texttt{\textbf{         = 0 Fault event is unknown, switch is skipped. }}}
-
-\textcolor{red}{\texttt{\textbf{    --$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$KnownFault$\boldsymbol{\mathrm{>}}$ 1 $\boldsymbol{\mathrm{<}}$/KnownFault$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$TimeOffset$\boldsymbol{\mathrm{>}}$ 0 $\boldsymbol{\mathrm{<}}$/TimeOffset$\boldsymbol{\mathrm{>}}$ $\boldsymbol{\mathrm{<}}$!--skip initial measurement data --$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$faultEvents$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$faultEvent$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$beginFault$\boldsymbol{\mathrm{>}}$ 1 $\boldsymbol{\mathrm{<}}$/beginFault$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$endFault$\boldsymbol{\mathrm{>}}$   1.1$\boldsymbol{\mathrm{<}}$/endFault$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$faultBranch$\boldsymbol{\mathrm{>}}$6 7$\boldsymbol{\mathrm{<}}$/faultBranch$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$timeStep$\boldsymbol{\mathrm{>}}$   0.01$\boldsymbol{\mathrm{<}}$/timeStep$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/faultEvent$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/faultEvents$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Dynamic\_simulation$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  <Dynamic_simulation>
+    <simulationTime>3</simulationTime>
+    <timeStep>0.01</timeStep>
+    <!-- = 1 Fault Event is known; 
+         = 0 Fault event is unknown, switch is skipped. 
+    -->
+    <KnownFault> 1 </KnownFault>
+    <TimeOffset> 0 </TimeOffset> <!--skip initial measurement data -->
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 1 </beginFault>
+        <endFault>   1.1</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.01</timeStep>
+      </faultEvent>
+    </faultEvents>
+  </Dynamic_simulation>
+\end{Verbatim}
+}
 
 The fault used in the simulation is specified using the same \texttt{\textbf{faultEvents}} block as for dynamic simulation. If the Kalman filter simulation is not being initialized from another calculation, the \texttt{\textbf{networkConfiguration}} field can also be added. The KnowFault and TimeOffset parameters are unique to the Kalman filter application and control whether the fault is considered to be a know event and whether all the time series data should be used in the analysis.
 
 The Kalman filter block consists of the fields
 
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Kalman\_filter$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$KalmanAngData$\boldsymbol{\mathrm{>}}$IEEE14\_Kalman\_input\_ang.csv$\boldsymbol{\mathrm{<}}$/KalmanAngData$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$KalmanMagData$\boldsymbol{\mathrm{>}}$IEEE14\_Kalman\_input\_mag.csv$\boldsymbol{\mathrm{<}}$/KalmanMagData$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$generatorParameters$\boldsymbol{\mathrm{>}}$IEEE14\_classicGen.dyr$\boldsymbol{\mathrm{<}}$/generatorParameters$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$ensembleSize$\boldsymbol{\mathrm{>}}$21$\boldsymbol{\mathrm{<}}$/ensembleSize$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$gaussianWidth$\boldsymbol{\mathrm{>}}$1e-2$\boldsymbol{\mathrm{<}}$/gaussianWidth$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$noiseScale$\boldsymbol{\mathrm{>}}$1e-4$\boldsymbol{\mathrm{<}}$/noiseScale$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$randomSeed$\boldsymbol{\mathrm{>}}$931316785$\boldsymbol{\mathrm{<}}$/randomSeed$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$maxSteps$\boldsymbol{\mathrm{>}}$3000$\boldsymbol{\mathrm{<}}$/maxSteps$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$LinearSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_view}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_type richardson}}}
-
-\textcolor{red}{\texttt{\textbf{        -pc\_type lu}}}
-
-\textcolor{red}{\texttt{\textbf{        -pc\_factor\_mat\_solver\_package superlu\_dist}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_max\_it 1}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/LinearSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Kalman\_filter$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  <Kalman_filter<
+    <KalmanAngData>IEEE14_Kalman_input_ang.csv</KalmanAngData>
+    <KalmanMagData>IEEE14_Kalman_input_mag.csv</KalmanMagData>
+    <generatorParameters>IEEE14_classicGen.dyr</generatorParameters>
+    <ensembleSize>21</ensembleSize>
+    <gaussianWidth>1e-2</gaussianWidth>
+    <noiseScale>1e-4</noiseScale>
+    <randomSeed>931316785</randomSeed>
+    <maxSteps>3000</maxSteps>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Kalman_filter>
+\end{Verbatim}
+}
 
 The \texttt{\textbf{KalmanAngData}} and \texttt{\textbf{KalmanMagData}} fields specify the locations of the files containing the time series data for the voltage magnitude and phase angle. The .dyr file containing the generator parameters (classical generators only) is specified in the \texttt{\textbf{generatorParameters}} field. Additional Kalman filter parameters include
 
@@ -4251,131 +4164,94 @@ The ``Hello world'' program is a famous example problem from C programming. Many
 
 We start by implementing the \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}} methods in the \texttt{\textbf{BaseComponent}} class for the bus and branch classes of our ``Hello world'' application. The bus and branch classes for this application are called \texttt{\textbf{HWBus}} and \texttt{\textbf{HWBranch}} and have the header file
 
-\textcolor{red}{\texttt{\textbf{\#ifndef \_hw\_components\_h\_}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#ifndef _hw_components_h_
+#define _hw_components_h_
 
-\textcolor{red}{\texttt{\textbf{\#define \_hw\_components\_h\_}}}
+#include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/include/gridpack.hpp"
 
-\textcolor{red}{\texttt{\textbf{}}}
+namespace gridpack {
+namespace hello_world {
+class HWBus
+  : public gridpack::component::BaseBusComponent {
 
-\textcolor{red}{\texttt{\textbf{\#include "boost/smart\_ptr/shared\_ptr.hpp"}}}
+  public:
 
-\textcolor{red}{\texttt{\textbf{\#include "gridpack/include/gridpack.hpp"}}}
+    HWBus();  // Constructor
+    ~HWBus()  // Destructor
 
-\textcolor{red}{\texttt{\textbf{}}}
+    void load(const boost:shared_ptr
+              <gridpack::component::DataCollection> &data);
 
-\textcolor{red}{\texttt{\textbf{namespace gridpack $\boldsymbol{\mathrm{\{}}$}}}
+    bool serialWrite(char *string, const int bufsize,
+                     const char *signal = NULL);
 
-\textcolor{red}{\texttt{\textbf{namespace hello\_world $\boldsymbol{\mathrm{\{}}$}}}
+  private:
 
-\textcolor{red}{\texttt{\textbf{}}}
+    int p_original_idx;
 
-\textcolor{red}{\texttt{\textbf{class HWBus}}}
+    friend class boost::serialization::access;
+    template<class Archive> void serialize(Archive &ar,
+      const unsigned int version)
+    {
+      ar & boost::serialization::base_object
+         <gridpack::component::BaseBusComponent>(*this)
+         & p_original_idx;
+    }
+};
 
-\textcolor{red}{\texttt{\textbf{  : public gridpack::component::BaseBusComponent $\boldsymbol{\mathrm{\{}}$}}}
+class HWBranch
+  : public gridpack::component::BaseBranchComponent {
 
-\textcolor{red}{\texttt{\textbf{  public:}}}
+  public:
 
-\textcolor{red}{\texttt{\textbf{    HWBus();  // Constructor}}}
+    HWBranch();   //Constructor
+    ~HWBranch();  //Destructor
 
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\sim}}$HWBus()  // Destructor}}}
+    void load(const boost::shared_ptr
+          <gridpack::component::DataCollection> &data);
 
-\textcolor{red}{\texttt{\textbf{    void load(const boost:shared\_ptr}}}
+    bool serialWrite(char *string, const int bufsize,
+                     const char *signal = NULL);
 
-\textcolor{red}{\texttt{\textbf{              $\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data);}}}
+  private:
 
-\textcolor{red}{\texttt{\textbf{    bool serialWrite(char *string, const int bufsize,}}}
+    int p_original_idx1;
+    int p_original_idx2;
 
-\textcolor{red}{\texttt{\textbf{                     const char *signal = NULL);}}}
+    friend class boost::serialization::access;
+    template<class Archive> void serialize(Archive & ar,
+      const unsigned int version)
+    {
+      ar & boost::serialization::base_object
+         <gridpack::component::BaseBranchComponent>(*this)
+         & p_original_idx1
+         & p_original_idx2;
+    }
+};
 
-\textcolor{red}{\texttt{\textbf{  private:}}}
+typedef network::BaseNetwork<HWBus, HWBranch > HWNetwork;
 
-\textcolor{red}{\texttt{\textbf{    int p\_original\_idx;}}}
-
-\textcolor{red}{\texttt{\textbf{    friend class boost::serialization::access;}}}
-
-\textcolor{red}{\texttt{\textbf{    template$\boldsymbol{\mathrm{<}}$class Archive$\boldsymbol{\mathrm{>}}$ void serialize(Archive \&ar,}}}
-
-\textcolor{red}{\texttt{\textbf{      const unsigned int version)}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      ar \& boost::serialization::base\_object}}}
-
-\textcolor{red}{\texttt{\textbf{         $\boldsymbol{\mathrm{<}}$gridpack::component::BaseBusComponent$\boldsymbol{\mathrm{>}}$(*this)}}}
-
-\textcolor{red}{\texttt{\textbf{         \& p\_original\_idx;}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$;}}}
-
-\textcolor{red}{\texttt{\textbf{class HWBranch}}}
-
-\textcolor{red}{\texttt{\textbf{  : public gridpack::component::BaseBranchComponent $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  public:}}}
-
-\textcolor{red}{\texttt{\textbf{    HWBranch();   //Constructor}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\sim}}$HWBranch();  //Destructor}}}
-
-\textcolor{red}{\texttt{\textbf{    void load(const boost::shared\_ptr}}}
-
-\textcolor{red}{\texttt{\textbf{              $\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data);}}}
-
-\textcolor{red}{\texttt{\textbf{    bool serialWrite(char *string, const int bufsize,}}}
-
-\textcolor{red}{\texttt{\textbf{                     const char *signal = NULL);}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  private:}}}
-
-\textcolor{red}{\texttt{\textbf{    int p\_original\_idx1;}}}
-
-\textcolor{red}{\texttt{\textbf{    int p\_original\_idx2;}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  friend class boost::serialization::access;}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  template$\boldsymbol{\mathrm{<}}$class Archive$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  void serialize(Archive \& ar, const unsigned int version)}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    ar \& boost::serialization::base\_object}}}
-
-\textcolor{red}{\texttt{\textbf{       $\boldsymbol{\mathrm{<}}$gridpack::component::BaseBranchComponent$\boldsymbol{\mathrm{>}}$(*this)}}}
-
-\textcolor{red}{\texttt{\textbf{       \& p\_original\_idx1}}}
-
-\textcolor{red}{\texttt{\textbf{       \& p\_original\_idx2;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$;}}}
-
-\textcolor{red}{\texttt{\textbf{typedef network::BaseNetwork$\boldsymbol{\mathrm{<}}$HWBus, HWBranch $\boldsymbol{\mathrm{>}}$ HWNetwork;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$     // hello\_world}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$     // gridpack}}}
-
-\textcolor{red}{\texttt{\textbf{\#endif}}}
+}     // hello_world
+}     // gridpack
+#endif
+\end{Verbatim}
+}
 
 The \texttt{\textbf{HWBus}} class has one private member, \texttt{\textbf{p\_original\_idx}}, which is the index of the bus in the network configuration file. Similarly, the \texttt{\textbf{HWBranch}} class has two private members, \texttt{\textbf{p\_original\_idx1}} and \texttt{\textbf{p\_original\_idx2}}, representing the buses at the ``from'' and ``to'' ends of the branch. The name of the file containing this code is \texttt{\textbf{hw\_components.hpp}}. The first two lines of the file are the standard preprocessor protection flags that guarantee that any declarations in this file only appear in another file a single time. The next two lines include the Boost smart pointer header file and the header files from the GridPACK framework. The next two lines declare that all functions and classes in the file are in the \texttt{\textbf{gridpack::hello\_world}} namespace. The use of namespaces is up to the user and other choices are possible. The declaration of the \texttt{\textbf{HWBus}} class inherits from the \texttt{\textbf{BaseBusComponent}} class so all functions in the \texttt{\textbf{BaseBusComponent}} class are available to \texttt{\textbf{HWBus}}. \texttt{\textbf{BaseBusComponent}} also provides some virtual functions, along with their default implementations, that can be overwritten in \texttt{\textbf{HWBus}}. Two of these are the \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}} functions. Only these functions are used in the ``Hello world'' application, the remaining functions in the bases classes are represented by the default implementations. Inside \texttt{\textbf{HWBus}} are declarations for the constructor, destructor, \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}} functions. These will be implemented in the \texttt{\textbf{hw\_components.cpp}} file.
 
 The final component in \texttt{\textbf{HWBus}} is the implementation of the serialize method. This method is used when copying the class from one processor to another and allows the program to move all the data associated with a particular instance of \texttt{\textbf{HWBus}} to another processor. The friend declaration means that \texttt{\textbf{HWBus}} has access to protected methods and data in \texttt{\textbf{boost::serialization::access}} and the templated serialization function is used to declare all internal data members that need to be transferred with the \texttt{\textbf{HWBus}} instance if it is moved from on processor to another. These elements include whatever base class \texttt{\textbf{HWBus}} may be derived from, which is represented by the element
 
-\textcolor{red}{\texttt{\textbf{boost::serialization::base\_object$\boldsymbol{\mathrm{<}}$gridpack::component}}}
-
-\textcolor{red}{\texttt{\textbf{     ::BaseBusComponent$\boldsymbol{\mathrm{>}}$(*this)}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+boost::serialization::base_object<gridpack::component
+     ::BaseBusComponent>(*this)
+\end{Verbatim}
+}
 
 The remaining data element is \texttt{\textbf{p\_original\_idx}}. The variable \texttt{\textbf{ar}} of type \texttt{\textbf{Archive}} is appended to using the operator \texttt{\textbf{\&}}. In this case the data appended to \texttt{\textbf{ar}} is any serialized data coming from the base class and the variable \texttt{\textbf{p\_original\_idx}}. The serialization function is recursive, so including the base class is enough to guarantee that any variables beneath that are also included in the serialization.
 
@@ -4384,314 +4260,252 @@ The bottom of the file contains a typedef declaration for a network using HWBus 
 
 The \texttt{\textbf{hw\_components.cpp}} file contains the actual implementation of the functions declared in \texttt{\textbf{hw\_components.hpp}}. The declarations for STL vectors and iostreams and the \texttt{\textbf{hw\_components.hpp}} file are included at the top of the file so that all functions in the class are defined. For \texttt{\textbf{HWBus}}, the constructor and destructor are trivial and are given by
 
-\textcolor{red}{\texttt{\textbf{gridpack::hello\_world::HWBus::HWBus()}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    gridpack::hello_world::HWBus::HWBus()}}}
+    {
+      p_original_idx = 0;
+    }
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  p\_original\_idx = 0;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{gridpack::hello\_world::HWBus::$\boldsymbol{\mathrm{\sim}}$HWBus()}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+    gridpack::hello\_world::HWBus::~HWBus()
+    {
+    }
+\end{Verbatim}
+}
 
 The \texttt{\textbf{load}} function is more interesting and is designed to transfer data that was read in from the network configuration file to the internal parameters of the bus. In this case, there is only one internal parameter, so \texttt{\textbf{load }}is fairly simple. The bus ID is stored in the variable \texttt{\textbf{BUS\_NUMBER}}, so the load implemention is
 
-\textcolor{red}{\texttt{\textbf{void gridpack::hello\_world::HWBus::load(const}}}
-
-\textcolor{red}{\texttt{\textbf{     boost::shared\_ptr$\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{   data-$\boldsymbol{\mathrm{>}}$getValue(BUS\_NUMBER,\&p\_original\_idx);}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    void gridpack::hello_world::HWBus::load(const
+         boost::shared_ptr<gridpack::component::DataCollection> &data)
+    {
+       data->getValue(BUS\_NUMBER,\&p\_original\_idx);}}}
+    }
+\end{Verbatim}
+}
 
 All the parameters associated with the bus that came from the network configuration file are stored in the \texttt{\textbf{data DataCollection}} object, so the \texttt{\textbf{getValue}} statement is used to get the value from \texttt{\textbf{data}} and assign it to \texttt{\textbf{p\_original\_index}}. A completely listing of all variables that might be found in a \texttt{\textbf{DataCollection}} object can be found in the dictionary.hpp file located in the \texttt{\textbf{src/parser}} directory.
 The \texttt{\textbf{serialWrite}} function returns a string with a message from the bus if called by some other program (in this case an instance of \texttt{\textbf{SerialBusIO}}). For ``Hello world'', the bus reports back the bus index using the function
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::hello\_world::HWBus::serialWrite(char *string,}}}
-
-\textcolor{red}{\texttt{\textbf{        const int bufsize, const char *signal)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  sprintf(string,"Hello world from bus \%d{\textbackslash}n",p\_original\_idx);}}}
-
-\textcolor{red}{\texttt{\textbf{  return true;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+     bool gridpack::hello_world::HWBus::serialWrite(char *string,
+             const int bufsize, const char *signal)
+     {
+       sprintf(string,"Hello world from bus %d\n",p_original_idx);
+       return true;
+     }
+\end{Verbatim}
+}
 
 For this case, both the incoming variables \texttt{\textbf{bufsize}} and \texttt{\textbf{signal}} are ignored since ``Hello world'' only has one type of output and it is guaranteed to fit in the buffer, but both variables could be used in more complicated implementations. The \texttt{\textbf{bufsize}} variable can be used to make sure that the string does not exceed an internal buffer size and \texttt{\textbf{signal}} can by used to produce different outputs depending on what the actual contents of signal are. For the \texttt{\textbf{serialWrite}} implementations described for this application, guaranteeing that the strings fit inside the buffer  is straightforward, since all strings are the same size. For real applications, this may not be the case. For example, when printing out generator properties, the strings from buses can vary in size because the number of generators on a bus can vary.
 The implementations of the functions in \texttt{\textbf{HWBranch}} are similar. The constructor and destructor are
 
-\textcolor{red}{\texttt{\textbf{gridpack::hello\_world::HWBranch::HWBranch(void)}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    gridpack::hello_world::HWBranch::HWBranch(void)}}}
+    {
+      p_original_idx1 = 0;
+      p_original_idx2 = 0;
+    }
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  p\_original\_idx1 = 0;}}}
-
-\textcolor{red}{\texttt{\textbf{  p\_original\_idx2 = 0;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{gridpack::hello\_world::HWBranch::$\boldsymbol{\mathrm{\sim}}$HWBranch(void)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+    gridpack::hello_world::HWBranch::~HWBranch(void)
+    {
+    }
+\end{Verbatim}
+}
 
 The \texttt{\textbf{load}} function is given by
 
-\textcolor{red}{\texttt{\textbf{void gridpack::hello\_world::HWBranch::load(}}}
-
-\textcolor{red}{\texttt{\textbf{    const boost::shared\_ptr$\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  data-$\boldsymbol{\mathrm{>}}$getValue(BRANCH\_FROMBUS,\&p\_original\_idx1);}}}
-
-\textcolor{red}{\texttt{\textbf{  data-$\boldsymbol{\mathrm{>}}$getValue(BRANCH\_TOBUS,\&p\_original\_idx2);}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    void gridpack::hello_world::HWBranch::load(
+        const boost::shared_ptr<gridpack::component::DataCollection> &data)
+    {
+      data->getValue(BRANCH_FROMBUS,&p_original_idx1);
+      data->getValue(BRANCH_TOBUS,&p_original_idx2);
+    }
+\end{Verbatim}
+}
 
 This is similar to the implementation of the load function for \texttt{\textbf{HWBus}}, except that the internal data members are mapped to the values of the \texttt{\textbf{BRANCH\_FROMBUS}} and \texttt{\textbf{BRANCH\_TOBUS}} elements of the data collection object. The serialWrite function is
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::hello\_world::HWBranch::serialWrite(char *string,}}}
-
-\textcolor{red}{\texttt{\textbf{    const int bufsize, const char *signal)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  sprintf(string,}}}
-
-\textcolor{red}{\texttt{\textbf{      "Hello world from the branch connecting bus \%d to bus \%d{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{      p\_original\_idx1, p\_original\_idx2);}}}
-
-\textcolor{red}{\texttt{\textbf{  return true;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+     bool gridpack::hello_world::HWBranch::serialWrite(char *string,
+         const int bufsize, const char *signal)
+     {
+       sprintf(string,
+           "Hello world from the branch connecting bus %d to bus %d\n",
+           p_original_idx1, p_original_idx2);
+       return true;
+     }
+\end{Verbatim}
+}
 
 Every branch prints out a string describing the branch in terms of the bus IDs at each end of the branch. Again, the incoming bufsize and signal variables are ignored in this case and it is assumed that the buffer size assigned to the \texttt{\textbf{SerialBranchIO}} object when it is instantiated is sufficiently large to guarantee that all strings from every branch will fit. 
 
 The implementation of the factory class for the ``Hello world'' application is straightforward, since the class only needs the functionality in the BaseFactory class. The complete class is given by
 
-\textcolor{red}{\texttt{\textbf{\#ifndef \_hw\_factory\_h\_}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#ifndef _hw_factory_h\_
+#define _hw_factory_h_
 
-\textcolor{red}{\texttt{\textbf{\#define \_hw\_factory\_h\_}}}
+#include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "hw_components.hpp"
 
-\textcolor{red}{\texttt{\textbf{}}}
+namespace gridpack {
+namespace hello_world {
 
-\textcolor{red}{\texttt{\textbf{\#include "boost/smart\_ptr/shared\_ptr.hpp"}}}
+class HWFactory
+  : public gridpack::factory::BaseFactory<HWNetwork> {
 
-\textcolor{red}{\texttt{\textbf{\#include "gridpack/include/gridpack.hpp"}}}
+  public:
 
-\textcolor{red}{\texttt{\textbf{\#include "hw\_components.hpp"}}}
+    HWFactory(boost::shared_ptr<HWNetwork> network)
+      : gridpack::factory::BaseFactory<HWNetwork>(network) {}
 
-\textcolor{red}{\texttt{\textbf{}}}
+    ~HWFactory() {}
 
-\textcolor{red}{\texttt{\textbf{namespace gridpack $\boldsymbol{\mathrm{\{}}$}}}
+};
+} // hello_world
+} // gridpack
 
-\textcolor{red}{\texttt{\textbf{namespace hello\_world $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{class HWFactory}}}
-
-\textcolor{red}{\texttt{\textbf{  : public gridpack::factory::BaseFactory$\boldsymbol{\mathrm{<}}$HWNetwork$\boldsymbol{\mathrm{>}}$ $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  public:}}}
-
-\textcolor{red}{\texttt{\textbf{    HWFactory(boost::shared\_ptr$\boldsymbol{\mathrm{<}}$HWNetwork$\boldsymbol{\mathrm{>}}$ network)}}}
-
-\textcolor{red}{\texttt{\textbf{      : gridpack::factory::BaseFactory$\boldsymbol{\mathrm{<}}$HWNetwork$\boldsymbol{\mathrm{>}}$(network)}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\sim}}$HWFactory() $\boldsymbol{\mathrm{\{}}$$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$ // hello\_world}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$ // gridpack}}}
-
-\textcolor{red}{\texttt{\textbf{\#endif}}}
+#endif
+\end{Verbatim}
+}
 
 This class is defined in the \texttt{\textbf{hw\_factory.hpp}} file. Because the class is so simple, the complete class declaration is given in \texttt{\textbf{hw\_factory.hpp}} and there is no corresponding \texttt{\textbf{.cpp}} file. In addition to including the \texttt{\textbf{gridpack.hpp}} header, this file also includes \texttt{\textbf{hw\_components.hpp}}, so it has the definitions of \texttt{\textbf{HWNetwork}}. The \texttt{\textbf{HWFactory}} constructor is used to initialize the underlying \texttt{\textbf{BaseFactory}} object with the network that is passed in through the argument list. That is the only functionality that is defined in this class.
 
 The application class that is built on top of the component and factory classes consists of the class
 
-\textcolor{red}{\texttt{\textbf{\#ifndef \_hw\_app\_h\_}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    #ifndef _hw_app_h_
+    #define _hw_app_h_
 
-\textcolor{red}{\texttt{\textbf{\#define \_hw\_app\_h\_}}}
+    namespace gridpack {
+    namespace hello_world {
 
-\textcolor{red}{\texttt{\textbf{}}}
+    class HWApp
+    {
+      public:
 
-\textcolor{red}{\texttt{\textbf{namespace gridpack $\boldsymbol{\mathrm{\{}}$}}}
+        HWApp(void);
+        ~HWApp(void);
+        void execute(int argc, char** argv);
 
-\textcolor{red}{\texttt{\textbf{namespace hello\_world $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{class HWApp}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  public:}}}
-
-\textcolor{red}{\texttt{\textbf{    HWApp(void);}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\sim}}$HWApp(void);}}}
-
-\textcolor{red}{\texttt{\textbf{    void execute(int argc, char** argv);}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$;}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$ // hello\_world}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$ // gridpack}}}
-
-\textcolor{red}{\texttt{\textbf{\#endif}}}
+    };
+    } // hello_world
+    } // gridpack
+    #endif
+\end{Verbatim}
+}
 
 This class is declared in \texttt{\textbf{hw\_app.hpp}}. Apart from the constructor and destructor, there is only the function execute, which is used to actually run the program. This takes the standard \texttt{\textbf{argc}} and \texttt{\textbf{argv}} variables as arguments, which could be passed in from the top level calling program.
 
 The implementation of these functions are relatively simple, most of the complexity for this program is in defining the bus and branch classes. The implementations are defined in the file hw\_app.cpp
 
-\textcolor{red}{\texttt{\textbf{\#include $\boldsymbol{\mathrm{<}}$iostream$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#include <iostream>
+#include "boost/smart_ptr/shared_ptr.hpp"
 
-\textcolor{red}{\texttt{\textbf{\#include "boost/smart\_ptr/shared\_ptr.hpp"}}}
+#include "gridpack/include/gridpack.hpp"
+#include "hw_app.hpp"
+#include "hw_factory.hpp"
 
-\textcolor{red}{\texttt{\textbf{\#include "gridpack/include/gridpack.hpp"}}}
+gridpack::hello_world::HWApp::HWApp(void)
+{
+}
 
-\textcolor{red}{\texttt{\textbf{\#include "hw\_app.hpp"}}}
+gridpack::hello_world::HWApp::~HWApp(void)
+{
+}
 
-\textcolor{red}{\texttt{\textbf{\#include "hw\_factory.hpp"}}}
+void gridpack::hello_world::HWApp::execute(int argc, char** argv)
+{
+  gridpack::parallel::Communicator world;
+  boost::shared_ptr<HWNetwork> network(new HWNetwork(world));
 
-\textcolor{red}{\texttt{\textbf{}}}
+  std::string filename = "10x10.raw";
 
-\textcolor{red}{\texttt{\textbf{gridpack::hello\_world::HWApp::HWApp(void)}}}
+  gridpack::parser::PTI23_parser<HWNetwork> parser(network);
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
+  parser.parse(filename.c_str());
+  gridpack::hello_world::HWFactory factory(network);
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+  factory.load();
 
-\textcolor{red}{\texttt{\textbf{}}}
+  gridpack::serial_io::SerialBusIO<HWNetwork> busIO(128,network);
+  busIO.header("\nMessage from buses\n");
+  busIO.write();
 
-\textcolor{red}{\texttt{\textbf{gridpack::hello\_world::HWApp::$\boldsymbol{\mathrm{\sim}}$HWApp(void)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{void gridpack::hello\_world::HWApp::execute(int argc, char** argv)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parallel::Communicator world;}}}
-
-\textcolor{red}{\texttt{\textbf{  boost::shared\_ptr$\boldsymbol{\mathrm{<}}$HWNetwork$\boldsymbol{\mathrm{>}}$ network(new HWNetwork(world));}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  std::string filename = "10x10.raw";}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parser::PTI23\_parser$\boldsymbol{\mathrm{<}}$HWNetwork$\boldsymbol{\mathrm{>}}$ parser(network);}}}
-
-\textcolor{red}{\texttt{\textbf{  parser.parse(filename.c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::hello\_world::HWFactory factory(network);}}}
-
-\textcolor{red}{\texttt{\textbf{  factory.load();}}}
-
-\textcolor{red}{\texttt{\textbf{  }}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::serial\_io::SerialBusIO$\boldsymbol{\mathrm{<}}$HWNetwork$\boldsymbol{\mathrm{>}}$ busIO(128,network);}}}
-
-\textcolor{red}{\texttt{\textbf{  busIO.header("{\textbackslash}nMessage from buses{\textbackslash}n");}}}
-
-\textcolor{red}{\texttt{\textbf{  busIO.write();}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::serial\_io::SerialBranchIO$\boldsymbol{\mathrm{<}}$HWNetwork$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    branchIO(128,network);}}}
-
-\textcolor{red}{\texttt{\textbf{  branchIO.header("{\textbackslash}nMessage from branches{\textbackslash}n");}}}
-
-\textcolor{red}{\texttt{\textbf{  branchIO.write();}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+  gridpack::serial_io::SerialBranchIO<HWNetwork>
+    branchIO(128,network);
+  branchIO.header("\nMessage from branches\n");
+  branchIO.write();}}}
+}
+\end{Verbatim}
+}
 
 The top of the file contains the \texttt{\textbf{gridpack.hpp}} header as well as the application headers. The constructor and destructors for the \texttt{\textbf{HWApp}} class are the standard defaults, so only the \texttt{\textbf{execute}} function has any significant behavior. This function starts by defining a communicator on the set of all processors and using that to instantiate and instance of an \texttt{\textbf{HWNetwork}}. At this point the network exists, but it contains no buses or branches. The next step is to read in a network configuration file with the name \texttt{\textbf{10x10.raw}}. This file is written using the standard PSS/E version 23 format. For this simple application, it is assumed that the file is available in the directory in which the program is being run (this file is included in the \texttt{\textbf{hello\_world}} directory as part of the GridPACK distribution). The program creates an instance of a \texttt{\textbf{PTI23\_parser}} and uses this to parse the configuration file. The program now has a copy of the full network stored internally, but the buses and nodes are not distributed in a way that is convenient for computation. Calling the partition method on the network redistributes all buses and branches so that each process has a relatively connected chunk of the network.
 
 The next step is to create an \texttt{\textbf{HWFactory}} instance and use this to call the base class \texttt{\textbf{load}} method. This method in turn calls the \texttt{\textbf{load}} method on all the individual buses and branches and transfers data from the data collection objects to the internal parameters of the buses and branches. The data collection objects were initialized with data collected from the \texttt{\textbf{10x10.raw}} file when the \texttt{\textbf{parse}} function was called. The remaining lines create \texttt{\textbf{SerialBusIO}} and \texttt{\textbf{SerialBranchIO}} objects that are used to print out the messages from individual bus and branch objects. The \texttt{\textbf{busIO}} object is used to print out a header (``Message from buses'') and then a message from each bus identifying itself by the bus ID defined in the PSS/E file. Similarly, the \texttt{\textbf{branchIO}} obect writes out a header and then a message from each branch identifying itself by the IDs of the buses at either end.
 The final part of the ``Hello world'' application is the main calling program, located in the file hw\_main.cpp. This program consists of the lines
 
-\textcolor{red}{\texttt{\textbf{\#include "gridpack/include/gridpack.hpp"}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#include "gridpack/include/gridpack.hpp"
+#include "hw_app.hpp"
 
-\textcolor{red}{\texttt{\textbf{\#include "hw\_app.hpp"}}}
+int main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc, argv);
 
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{int main(int argc, char **argv)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parallel::Environment env(argc, argv);}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::hello\_world::HWApp app;}}}
-
-\textcolor{red}{\texttt{\textbf{  app.execute(argc, argv);}}}
-
-\textcolor{red}{\texttt{\textbf{  return 0;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+  gridpack::hello_world::HWApp app;
+  app.execute(argc, argv);
+  return 0;
+}
+\end{Verbatim}
+}
 
 The program consists of a line creating a parallel environment, a line instantiating an \texttt{\textbf{HWApp}}, and a line calling the execute method on the application. The constructor for the parallel environment initializes the underlying parallel communication libraries. The destructor is called at the end of main and terminates all communication libraries so that the program exits cleanly. The \texttt{\textbf{HWApp}} instance runs the application when \texttt{\textbf{execute}} is called. A portion of the output looks like
 
-\textcolor{red}{\texttt{\textbf{Message from buses}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from bus 1}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from bus 2}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from bus 3}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from bus 4}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from bus 5}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from bus 6}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from bus 7}}}
-
-\textcolor{red}{\texttt{\textbf{     :}}}
-
-\textcolor{red}{\texttt{\textbf{Message from branches}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from the branch connecting bus 1 to bus 2}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from the branch connecting bus 2 to bus 3}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from the branch connecting bus 3 to bus 4}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from the branch connecting bus 4 to bus 5}}}
-
-\textcolor{red}{\texttt{\textbf{Hello world from the branch connecting bus 5 to bus 6}}}
-
-\textcolor{red}{\texttt{\textbf{    :}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Message from buses
+Hello world from bus 1
+Hello world from bus 2
+Hello world from bus 3
+Hello world from bus 4
+Hello world from bus 5
+Hello world from bus 6
+Hello world from bus 7
+     :
+Message from branches
+Hello world from the branch connecting bus 1 to bus 2
+Hello world from the branch connecting bus 2 to bus 3
+Hello world from the branch connecting bus 3 to bus 4
+Hello world from the branch connecting bus 4 to bus 5
+Hello world from the branch connecting bus 5 to bus 6
+    :
+\end{Verbatim}
+}
 
 Note that this output would be the same, regardless of the number of processors that are used to run the code. This is in spite of the fact that the distribution of buses and branches may be different for different numbers of processors.
 
@@ -4729,61 +4543,54 @@ With this background, we can talk about the implementation of the resistor grid 
 
 Much of the basic structure of the classes has already been discussed in the previous example of ``Hello world'', so we will limit ourselves to discussing new features. The source code for this example can be found in the \texttt{\textbf{resistor\_grid}} directory. The \texttt{\textbf{RGBus}} class inherits from the \texttt{\textbf{BaseBusComponent}} class and implements the following functions (in addition to the constructor and destructor)
 
-\textcolor{red}{\texttt{\textbf{void load(const boost::shared\_ptr}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data);}}}
-
-\textcolor{red}{\texttt{\textbf{bool isLead() const;}}}
-
-\textcolor{red}{\texttt{\textbf{double voltage() const;}}}
-
-\textcolor{red}{\texttt{\textbf{bool matrixDiagSize(int *isize, int *jsize) const;}}}
-
-\textcolor{red}{\texttt{\textbf{bool matrixDiagValues(ComplexType *values);}}}
-
-\textcolor{red}{\texttt{\textbf{bool vectorSize(int *isize) const;}}}
-
-\textcolor{red}{\texttt{\textbf{bool vectorValues(ComplexType *values);}}}
-
-\textcolor{red}{\texttt{\textbf{void setValues(gridpack::ComplexType *values);}}}
-
-\textcolor{red}{\texttt{\textbf{int getXCBufSize();}}}
-
-\textcolor{red}{\texttt{\textbf{void setXCBuf();}}}
-
-\textcolor{red}{\texttt{\textbf{bool serialWrite(char *string, const int bufsize,}}}
-
-\textcolor{red}{\texttt{\textbf{  const char *signal = NULL);}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void load(const boost::shared_ptr
+  <gridpack::component::DataCollection> &data);
+bool isLead() const;
+double voltage() const;
+bool matrixDiagSize(int *isize, int *jsize) const;
+bool matrixDiagValues(ComplexType *values);
+bool vectorSize(int *isize) const;
+bool vectorValues(ComplexType *values);
+void setValues(gridpack::ComplexType *values);
+int getXCBufSize();
+void setXCBuf();
+bool serialWrite(char *string, const int bufsize,
+  const char *signal = NULL);
+\end{Verbatim}
+}
 
 In addition, the \texttt{\textbf{RGBus}} class has three private members
 
-\textcolor{red}{\texttt{\textbf{bool p\_lead;}}}
-
-\textcolor{red}{\texttt{\textbf{double *p\_voltage;}}}
-
-\textcolor{red}{\texttt{\textbf{double p\_v;}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool p_lead;
+double *p_voltage;
+double p_v;
+\end{Verbatim}
+}
 
 The variable \texttt{\textbf{p\_lead}} keeps track of whether a bus has a fixed voltage applied to it. In order to correctly calculate the currents, it is necessary to exchange voltages at the end of the calculation. The voltages at each bus are stored in an exchange buffer that can be accessed by the pointer \texttt{\textbf{p\_voltage}}. The voltages in the external PSS/E file are read in before the exchange buffer is allocated, so to make sure there is a variable to store the value, the variable \texttt{\textbf{p\_v}} is also included as a private member. In addition to implementing \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}}, the \texttt{\textbf{RGBus}} class implements several functions in the \texttt{\textbf{MatVecInterface}}, as well as two functions that are unique to this class.
 
 Similarly, the \texttt{\textbf{RGBranch}} class implements the functions
 
-\textcolor{red}{\texttt{\textbf{void load(const boost::shared\_ptr}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data);}}}
-
-\textcolor{red}{\texttt{\textbf{double resistance(void) const;}}}
-
-\textcolor{red}{\texttt{\textbf{bool matrixForwardSize(int *isize, int *jsize) const;}}}
-
-\textcolor{red}{\texttt{\textbf{bool matrixReverseSize(int *isize, int *jsize) const;}}}
-
-\textcolor{red}{\texttt{\textbf{bool matrixForwardValues(ComplexType *values);}}}
-
-\textcolor{red}{\texttt{\textbf{bool matrixReverseValues(ComplexType *values);}}}
-
-\textcolor{red}{\texttt{\textbf{bool serialWrite(char *string, const int bufsize,}}}
-
-\textcolor{red}{\texttt{\textbf{  const char *signal = NULL);}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void load(const boost::shared_ptr
+  <gridpack::component::DataCollection> &data);
+double resistance(void) const;
+bool matrixForwardSize(int *isize, int *jsize) const;
+bool matrixReverseSize(int *isize, int *jsize) const;
+bool matrixForwardValues(ComplexType *values);
+bool matrixReverseValues(ComplexType *values);
+bool serialWrite(char *string, const int bufsize,
+  const char *signal = NULL);
+\end{Verbatim}
+}
 
 and has the private member
 
@@ -4791,588 +4598,417 @@ and has the private member
 
 The \texttt{\textbf{RGBus}} load method has the implementation
 
-\textcolor{red}{\texttt{\textbf{void gridpack::resistor\_grid::RGBus::load(const}}}
-
-\textcolor{red}{\texttt{\textbf{         boost::shared\_ptr$\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{   int type;}}}
-
-\textcolor{red}{\texttt{\textbf{   data-$\boldsymbol{\mathrm{>}}$getValue(BUS\_TYPE,\&type);}}}
-
-\textcolor{red}{\texttt{\textbf{   if (type == 2) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{     p\_lead = true;}}}
-
-\textcolor{red}{\texttt{\textbf{     data-$\boldsymbol{\mathrm{>}}$getValue(BUS\_BASEKV,\&p\_v);}}}
-
-\textcolor{red}{\texttt{\textbf{   $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGBus::load(const
+         boost::shared_ptr<gridpack::component::DataCollection> &data)
+{
+   int type;
+   data->getValue(BUS_TYPE,&type);
+   if (type == 2) {
+     p_lead = true;
+     data->getValue(BUS_BASEKV,&p_v);
+   }
+}
+\end{Verbatim}
+}
 
 The PSS/E file that is used to run this application has been configured so that the bus type parameter is set to 2 if the bus has a fixed voltage and the value of the voltage is stored in the \texttt{\textbf{BUS\_BASEKV}} variable. The private member \texttt{\textbf{p\_lead}} is initialized to false in the \texttt{\textbf{RGBus}} constructor and \texttt{\textbf{p\_v}} is initialized to zero. In the \texttt{\textbf{load}} method, the bus type is assigned from the \texttt{\textbf{BUS\_TYPE}} variable in the data collection. If it is 2, the bus has a fixed value of the potential and \texttt{\textbf{p\_lead}} is set to true. The value of \texttt{\textbf{p\_v}} is assigned to whatever is stored in the \texttt{\textbf{BUS\_BASEKV}} variable when the bus type is 2. The contents of \texttt{\textbf{p\_v}} will eventually be mapped to \texttt{\textbf{p\_voltage}}, once the exchange buffers are allocated.
 
 The \texttt{\textbf{load}} function for \texttt{\textbf{RGBranch}} simply assigns the data collection variable \texttt{\textbf{BRANCH\_R}} to the private member \texttt{\textbf{p\_resistance}}.
 
-\textcolor{red}{\texttt{\textbf{void gridpack::resistor\_grid::RGBranch::load(}}}
-
-\textcolor{red}{\texttt{\textbf{    const boost::shared\_ptr}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$gridpack::component::DataCollection$\boldsymbol{\mathrm{>}}$ \&data)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  data-$\boldsymbol{\mathrm{>}}$getValue(BRANCH\_R,\&p\_resistance,0);}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGBranch::load(
+    const boost::shared_ptr
+    <gridpack::component::DataCollection> &data)
+{
+  data->getValue(BRANCH_R,&p_resistance,0);
+}
+\end{Verbatim}
+}
 
 Once the bus and branch private members have been set using the load methods, the values can be recovered by other objects using the accessors \texttt{\textbf{isLead}}, \texttt{\textbf{voltage}}, and \texttt{\textbf{resistance}}. These functions are used in the math interface implementations to calculate values of the matrix elements and right hand side vectors and have the relatively simple forms
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBus::isLead() const}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::isLead() const
+{
+  return p_lead;
+}
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
+double gridpack::resistor_grid::RGBus::voltage() const
+{
+  return *p_voltage;
+}
 
-\textcolor{red}{\texttt{\textbf{  return p\_lead;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{double gridpack::resistor\_grid::RGBus::voltage() const}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  return *p\_voltage;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{double gridpack::resistor\_grid::RGBranch::resistance(void) const}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  return p\_resistance;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+double gridpack::resistor_grid::RGBranch::resistance(void) const
+{
+  return p_resistance;
+}
+\end{Verbatim}
+}
 
 Note that the \texttt{\textbf{voltage}} function is returning the contents of \texttt{\textbf{p\_voltage}}, which will contain up-to-date values of the voltage once the calculation begins.
 
 The diagonal matrix block routines in the bus class have the implementations
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBus::matrixDiagSize(int *isize,}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::matrixDiagSize(int *isize,
+   int *jsize) const
+{
+  if (!p_lead) {
+    *isize = 1;
+    *jsize = 1;
+    return true;
+  } else {
+    return false;
+  }
+}
 
-\textcolor{red}{\texttt{\textbf{   int *jsize) const}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!p\_lead) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{   *isize = 1;}}}
-
-\textcolor{red}{\texttt{\textbf{   *jsize = 1;}}}
-
-\textcolor{red}{\texttt{\textbf{   return true;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    return false;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBus::matrixDiagValues(}}}
-
-\textcolor{red}{\texttt{\textbf{   ComplexType *values)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!p\_lead) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    gridpack::ComplexType ret(0.0,0.0);}}}
-
-\textcolor{red}{\texttt{\textbf{    std::vector$\boldsymbol{\mathrm{<}}$boost::shared\_ptr$\boldsymbol{\mathrm{<}}$BaseComponent$\boldsymbol{\mathrm{>}}$ $\boldsymbol{\mathrm{>}}$ branches;}}}
-
-\textcolor{red}{\texttt{\textbf{    getNeighborBranches(branches);}}}
-
-\textcolor{red}{\texttt{\textbf{    int size = branches.size();}}}
-
-\textcolor{red}{\texttt{\textbf{    int i;}}}
-
-\textcolor{red}{\texttt{\textbf{    for (i=0; i$\boldsymbol{\mathrm{<}}$size; i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      gridpack::resistor\_grid::RGBranch *branch}}}
-
-\textcolor{red}{\texttt{\textbf{        = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBranch*$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          (branches[i].get());}}}
-
-\textcolor{red}{\texttt{\textbf{      ret += 1.0/branch-$\boldsymbol{\mathrm{>}}$resistance();}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    values[0] = ret;}}}
-
-\textcolor{red}{\texttt{\textbf{    return true;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    return false;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+bool gridpack::resistor_grid::RGBus::matrixDiagValues(
+   ComplexType *values)
+{
+  if (!p_lead) {
+    gridpack::ComplexType ret(0.0,0.0);
+    std::vector<shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    int i;
+    for (i=0; i<size; i++) {
+      gridpack::resistor_grid::RGBranch *branch
+        = dynamic_cast<gridpack::resistor_grid::RGBranch*>
+          (branches[i].get());
+      ret += 1.0/branch->resistance();
+    }
+    values[0] = ret;
+    return true;
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
 
 The \texttt{\textbf{matrixDiagSize}} routine returns a single element in the \texttt{\textbf{values}} array if the bus is not a lead with a fixed voltage, otherwise it returns false and there are no values in the \texttt{\textbf{values}} array. The \texttt{\textbf{matrixDiagValues}} function sets the first element of the \texttt{\textbf{values}} array equal to the sum of the reciprocal of the resistances on all the attached branches, if the bus is not a lead. To calculate this quantity, it starts by calling the \texttt{\textbf{getNeighborBranches}} function to get a list of pointers to attached branches. These pointers are all of type \texttt{\textbf{BaseComponent}}, so they need to be cast to pointers of type \texttt{\textbf{RGBranch}} before functions like \texttt{\textbf{resistance}} can be called on them. This is done by first calling the \texttt{\textbf{get}} function on the \texttt{\textbf{shared\_ptr}} to the \texttt{\textbf{BaseComponent}} object to get a bare pointer to the neighboring branch and then doing a dynamic cast to a pointer of type \texttt{\textbf{RGBranch}}. The resistance method can now by called on the \texttt{\textbf{RGBranch}} pointer to get the resistance of the branch and use it to calculate the contribution to the diagonal matrix element. This value is assigned to \texttt{\textbf{values[0]}}. If the bus is a lead, then no values are calculated and the function returns false. It is also worth noting that this function will only be called on buses that are local to the process, so each bus that evaluates a diagonal matrix element will have a complete set of branches attached to it. This is not the case for ghost buses. These have only one branch attached to them, no matter how many branches are attached to it in the original network.
 
 The off-diagonal elements are calculated by the branch components in the functions \texttt{\textbf{matrixForwardSize}}, \texttt{\textbf{matrixReverseSize}}, \texttt{\textbf{matrixForwardValues}}, and \texttt{\textbf{matrixReverseValues}}. The matrix $\overline{\overline{C}}$ for the resistor grid problem is completely symmetric, so in this case, the forward and reverse calculations are identical. For realistic power problems, this is not generally true, and the forward and reverse functions will have different implementations. The forward functions are described below, the implementation of the reverse functions is identical. The branch forward size and value functions are
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBranch::matrixForwardSize(}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBranch::matrixForwardSize(
+   int *isize, int *jsize) const
+{
+  gridpack::resistor_grid::RGBus *bus1
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus1().get());
+  gridpack::resistor_grid::RGBus *bus2
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
+  if (!bus1->isLead() && !bus2->isLead()) {
+    *isize = 1;
+    *jsize = 1;
+    return true;
+  } else { 
+    return false;
+  }
+}
 
-\textcolor{red}{\texttt{\textbf{   int *isize, int *jsize) const}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGBus *bus1}}}
-
-\textcolor{red}{\texttt{\textbf{    = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$(getBus1().get());}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGBus *bus2}}}
-
-\textcolor{red}{\texttt{\textbf{    = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$(getBus2().get());}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!bus1-$\boldsymbol{\mathrm{>}}$isLead() \&\& !bus2-$\boldsymbol{\mathrm{>}}$isLead()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    *isize = 1;}}}
-
-\textcolor{red}{\texttt{\textbf{    *jsize = 1;}}}
-
-\textcolor{red}{\texttt{\textbf{    return true;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$ }}}
-
-\textcolor{red}{\texttt{\textbf{    return false;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBranch::matrixForwardValues(}}}
-
-\textcolor{red}{\texttt{\textbf{   ComplexType *values)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGBus *bus1}}}
-
-\textcolor{red}{\texttt{\textbf{    = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$(getBus1().get());}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGBus *bus2}}}
-
-\textcolor{red}{\texttt{\textbf{    = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$(getBus2().get());}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!bus1-$\boldsymbol{\mathrm{>}}$isLead() \&\& !bus2-$\boldsymbol{\mathrm{>}}$isLead()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    values[0] = -1.0/p\_resistance;}}}
-
-\textcolor{red}{\texttt{\textbf{    return true;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    return false;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+bool gridpack::resistor_grid::RGBranch::matrixForwardValues(
+   ComplexType *values)
+{
+  gridpack::resistor_grid::RGBus *bus1
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus1().get());
+  gridpack::resistor_grid::RGBus *bus2
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
+  if (!bus1->isLead() && !bus2->isLead()) {
+    values[0] = -1.0/p_resistance;
+    return true;
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
 
 Before these functions can calculate return values, they must first determine if one of the buses at either end of the branch is a lead bus. To do this, the functions need to get pointers to the ``from'' and ``to'' buses at either end of the branch. They can do this through the \texttt{\textbf{getBus1}} and \texttt{\textbf{getBus2}} calls in the \texttt{\textbf{BaseBranchComponent}} class which return pointers of type \texttt{\textbf{BaseComponent}}. These pointers can then be converted to \texttt{\textbf{RGBus}} pointers by a dynamic cast. The \texttt{\textbf{isLead}} functions can be called to find out if either bus is a lead bus. If neither bus is a lead bus, the size of the off-diagonal block is returned as a 1x1 matrix and the off-diagonal matrix element is calculated and returned in \texttt{\textbf{values[0]}}. Otherwise both functions return false to indicate that there is no contribution to the matrix from this branch.
 
 In addition to calculating values of the matrix $\overline{\overline{C}}$, it is also necessary to set up the right hand side vector. This is done via the functions \texttt{\textbf{vectorSize}} and \texttt{\textbf{vectorValues}} defined on the buses. Only buses that are not lead buses contribute to the right hand side vector. On the other hand, the only non-zero values in the right hand side vector come from lead buses that are attached to non-lead buses. The \texttt{\textbf{vectorSize}} function has the implementation
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBus::vectorSize(int *isize) const}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!p\_lead) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    *isize = 1;}}}
-
-\textcolor{red}{\texttt{\textbf{    return true;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    return false;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::vectorSize(int *isize) const
+{
+  if (!p_lead) {
+    *isize = 1;
+    return true;
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
 
 If a bus is not a lead bus, it contributes a single value, otherwise it does not and the function returns false. The \texttt{\textbf{vectorValues}} function is a bit more complicated. It has the form
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBus::vectorValues(ComplexType *values)}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::vectorValues(ComplexType *values)
+{
+  if (!p_lead) {
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    int i;
+    gridpack::ComplexType ret(0.0,0.0);
+    for (i=0; i<size; i++) {
+      gridpack::resistor_grid::RGBranch *branch
+        = dynamic_cast<gridpack::resistor_grid::RGBranch*>
+          (branches[i].get());
+      gridpack::resistor_grid::RGBus *bus1
+        = dynamic_cast<gridpack::resistor_grid::RGBus*>
+          (branch->getBus1().get());
+      gridpack::resistor_grid::RGBus *bus2
+        = dynamic_cast<gridpack::resistor_grid::RGBus*>
+          (branch->getBus2().get());
+      if (bus1 != this && bus1->isLead()) {
+        ret += bus1->voltage()/branch->resistance();
+      } else if (bus2 != this && bus2->isLead()) {
+        ret += bus2->voltage()/branch->resistance();
+      }
+    }
+    values[0] = ret;
+    return true;
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!p\_lead) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    std::vector$\boldsymbol{\mathrm{<}}$boost::shared\_ptr$\boldsymbol{\mathrm{<}}$BaseComponent$\boldsymbol{\mathrm{>}}$ $\boldsymbol{\mathrm{>}}$ branches;}}}
-
-\textcolor{red}{\texttt{\textbf{    getNeighborBranches(branches);}}}
-
-\textcolor{red}{\texttt{\textbf{    int size = branches.size();}}}
-
-\textcolor{red}{\texttt{\textbf{    int i;}}}
-
-\textcolor{red}{\texttt{\textbf{    gridpack::ComplexType ret(0.0,0.0);}}}
-
-\textcolor{red}{\texttt{\textbf{    for (i=0; i$\boldsymbol{\mathrm{<}}$size; i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      gridpack::resistor\_grid::RGBranch *branch}}}
-
-\textcolor{red}{\texttt{\textbf{        = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBranch*$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          (branches[i].get());}}}
-
-\textcolor{red}{\texttt{\textbf{      gridpack::resistor\_grid::RGBus *bus1}}}
-
-\textcolor{red}{\texttt{\textbf{        = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          (branch-$\boldsymbol{\mathrm{>}}$getBus1().get());}}}
-
-\textcolor{red}{\texttt{\textbf{      gridpack::resistor\_grid::RGBus *bus2}}}
-
-\textcolor{red}{\texttt{\textbf{        = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          (branch-$\boldsymbol{\mathrm{>}}$getBus2().get());}}}
-
-\textcolor{red}{\texttt{\textbf{      if (bus1 != this \&\& bus1-$\boldsymbol{\mathrm{>}}$isLead()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        ret += bus1-$\boldsymbol{\mathrm{>}}$voltage()/branch-$\boldsymbol{\mathrm{>}}$resistance();}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$ else if (bus2 != this \&\& bus2-$\boldsymbol{\mathrm{>}}$isLead()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        ret += bus2-$\boldsymbol{\mathrm{>}}$voltage()/branch-$\boldsymbol{\mathrm{>}}$resistance();}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    values[0] = ret;}}}
-
-\textcolor{red}{\texttt{\textbf{    return true;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    return false;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
 
 The \texttt{\textbf{vectorValues}} function starts by getting a list of branches that are attached to the calling bus and then looping over the list. Pointers to each of the branches, as well as the buses at each end of the branch are obtained using the \texttt{\textbf{getBus1}} and \texttt{\textbf{getBus2}} functions. It is still necessary to determine which end of the branch is opposite the calling bus and this can be done by checking the conditions \texttt{\textbf{bus1 != this}} and \texttt{\textbf{bus2 != this}}. One of these will be true for the bus opposite the calling bus. If this bus is also a lead bus, then a contribution is added to the right hand side vector element. The contribution can be calculated by getting the value of the fixed voltage from the lead bus and dividing it by the resistance of the branch. These values can be obtained by calling the bus \texttt{\textbf{voltage}} function and the branch \texttt{\textbf{resistance}} function. The *\texttt{\textbf{p\_voltage}} value of the calling bus is not used. If the calling bus is a lead bus, then the function returns false.
 
 The last function related to vectors that is implemented in the \texttt{\textbf{MatVecInterface}} is the \texttt{\textbf{setValues}} function
 
-\textcolor{red}{\texttt{\textbf{void gridpack::resistor\_grid::RGBus::setValues(}}}
-
-\textcolor{red}{\texttt{\textbf{   gridpack::ComplexType *values)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!p\_lead) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    p\_voltage = real(values[0]);}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGBus::setValues(
+   gridpack::ComplexType *values)
+{
+  if (!p_lead) { 
+    p_voltage = real(values[0]);
+  }
+}
+\end{Verbatim}
+}
 
 Once the voltages have been calculated by solving Kirkoff's equations, it is necessary to have some way of pushing these back on the buses so they can be written to output. The results of the linear solver are returned in the \texttt{\textbf{values}} array. The number of values in this array corresponds to the number of values contributed to the right hand side vector (in this case 1 if the bus is not a lead). Thus, the value is assigned to the internal \texttt{\textbf{p\_voltage}} variable if the bus is not a lead bus. This function will be called by all buses as part of the \texttt{\textbf{mapToBus}} function in the \texttt{\textbf{BusVectorMap}}.
 In order to correctly calculate the current on all branches for export to standard out, it is necessary to have up-to-date values of the voltage on all buses, including ghost buses. This requires a data exchange at the end of the calculation. To enable this exchange, the \texttt{\textbf{getXCBufSize}} \texttt{\textbf{and setXCBuf}} functions must be implemented in the \texttt{\textbf{RGBus}} class. These functions have the form
-\textcolor{red}{\texttt{\textbf{int gridpack::resistor\_grid::RGBus::getXCBufSize()}}}
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int gridpack::resistor_grid::RGBus::getXCBufSize()
+{
+  return sizeof(double);
+}
 
-\textcolor{red}{\texttt{\textbf{  return sizeof(double);}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{void gridpack::resistor\_grid::RGBus::setXCBuf(void *buf)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  p\_voltage = static\_cast$\boldsymbol{\mathrm{<}}$double*$\boldsymbol{\mathrm{>}}$(buf);}}}
-
-\textcolor{red}{\texttt{\textbf{  *p\_voltage = p\_v;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+void gridpack::resistor_grid::RGBus::setXCBuf(void *buf)
+{
+  p_voltage = static_cast<double*>(buf);
+  *p_voltage = p_v;
+}
+\end{Verbatim}
+}
 
 The only variable that needs to be exchanged is the value of the potential, so \texttt{\textbf{getXCBufSize}} returns the number of bytes in a single double precision variable. The \texttt{\textbf{setXCBuf}} function assigns the buffer pointed to by the variable \texttt{\textbf{buf}} to the internal data member \texttt{\textbf{p\_voltage}}. At the same time, it initializes the contents of \texttt{\textbf{p\_voltage}} to the variable \texttt{\textbf{p\_v}}, which contains the voltage read in from the external PSS/E file.
 The \texttt{\textbf{serialWrite}} functions on the buses and branches are used to write the voltages and currents on all buses and branches to standard output. The \texttt{\textbf{serialWrite}} function on the buses has the form
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBus::serialWrite(char *string,}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::serialWrite(char *string,
+    const int bufsize, const char *signal)
+{
+  if (p_lead) {
+    sprintf(string,"Voltage on bus %d: %12.6f (lead)\n",
+        getOriginalIndex(),*p_voltage);
 
-\textcolor{red}{\texttt{\textbf{    const int bufsize, const char *signal)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (p\_lead) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    sprintf(string,"Voltage on bus \%d: \%12.6f (lead){\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{        getOriginalIndex(),*p\_voltage);}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    sprintf(string,"Voltage on bus \%d: \%12.6f{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{        getOriginalIndex(),*p\_voltage);}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  return true;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+  } else {
+    sprintf(string,"Voltage on bus \%d: \%12.6f\n",
+        getOriginalIndex(),*p_voltage);
+  }
+  return true;
+}
+\end{Verbatim}
+}
 
 All buses return a string so the function always returns true. The printout consists of the bus index, obtained with the \texttt{\textbf{getOriginalIndex}} function, and the value of the voltage on the bus. Lead buses are marked in the output, indicating that the voltage is the same as that specified in the input file, the remaining voltages are calculated by solving Kirkoff's equations. For branches, the serialWrite function is used to calculate and print the current flowing across each branch
 
-\textcolor{red}{\texttt{\textbf{bool gridpack::resistor\_grid::RGBranch::serialWrite(char *string, const int}}}
-
-\textcolor{red}{\texttt{\textbf{    bufsize,  const char *signal)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGBus *bus1}}}
-
-\textcolor{red}{\texttt{\textbf{    = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$(getBus1().get());}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGBus *bus2}}}
-
-\textcolor{red}{\texttt{\textbf{    = dynamic\_cast$\boldsymbol{\mathrm{<}}$gridpack::resistor\_grid::RGBus*$\boldsymbol{\mathrm{>}}$(getBus2().get());}}}
-
-\textcolor{red}{\texttt{\textbf{  double v1 = bus1-$\boldsymbol{\mathrm{>}}$voltage();}}}
-
-\textcolor{red}{\texttt{\textbf{  double v2 = bus2-$\boldsymbol{\mathrm{>}}$voltage();}}}
-
-\textcolor{red}{\texttt{\textbf{  double icur = (v1 - v2)/p\_resistance;}}}
-
-\textcolor{red}{\texttt{\textbf{  sprintf(string,"Current on line from bus \%d to \%d is: \%12.6f{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{      bus1-$\boldsymbol{\mathrm{>}}$getOriginalIndex(),bus2-$\boldsymbol{\mathrm{>}}$getOriginalIndex(),icur);}}}
-
-\textcolor{red}{\texttt{\textbf{  return true;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBranch::serialWrite(char *string,
+    const int bufsize,  const char *signal)
+{
+  gridpack::resistor_grid::RGBus *bus1
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus1().get());
+  gridpack::resistor_grid::RGBus *bus2
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
+  double v1 = bus1->voltage();
+  double v2 = bus2->voltage();
+  double icur = (v1 - v2)/p_resistance;
+  sprintf(string,"Current on line from bus %d to %d is: %12.6f\n",
+      bus1->getOriginalIndex(),bus2->getOriginalIndex(),icur);
+  return true;
+}
+\end{Verbatim}
+}
 
 All branches report the current flowing through them, so this function also returns true for all branches. To calculate the current, it is necessary to get the value of the voltages at both ends of the branch using methods already described and then calculate the current by dividing the difference in voltages by the resistance of the branch. The print line prints the current and uniquely identifies each branch by including the IDs of the buses at either end.
 
 The factory class for resistor grid application only uses functionality in the BaseFactory class and has the simple form
 
-\textcolor{red}{\texttt{\textbf{class RGFactory}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+class RGFactory
+  : public gridpack::factory::BaseFactory<RGNetwork> {
+  public:
+    RGFactory(boost::shared_ptr<RGNetwork> network)
+      : gridpack::factory::BaseFactory<RGNetwork>(network) {}
 
-\textcolor{red}{\texttt{\textbf{  : public gridpack::factory::BaseFactory$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$ $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  public:}}}
-
-\textcolor{red}{\texttt{\textbf{    RGFactory(boost::shared\_ptr$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$ network)}}}
-
-\textcolor{red}{\texttt{\textbf{      : gridpack::factory::BaseFactory$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$(network)}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\sim}}$RGFactory() $\boldsymbol{\mathrm{\{}}$$\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$;}}}
+    ~RGFactory() {}
+};
+\end{Verbatim}
+}
 
 Again, the \texttt{\textbf{BaseFactory}} class from which \texttt{\textbf{RGFactory}} inherits is initialized by passing the network argument through the constructor. The declaration for this class is in the file \texttt{\textbf{rg\_factory.hpp}}. There is no corresponding \texttt{\textbf{.cpp}} file.
 
 The \texttt{\textbf{RGApp}} class declaration is also simple and consists of the functions
 
-\textcolor{red}{\texttt{\textbf{class RGApp}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+class RGApp
+{
+  public:
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  public:}}}
-
-\textcolor{red}{\texttt{\textbf{    RGApp(void);}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\sim}}$RGApp(void);}}}
-
-\textcolor{red}{\texttt{\textbf{    void execute(int argc, char** argv);}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$;}}}
+    RGApp(void);
+    ~RGApp(void);
+    void execute(int argc, char** argv);
+};
+\end{Verbatim}
+}
 
 Again, arguments from the top level main program can be passed through to the execute function, which is responsible for implementing the actual resistor grid calculation. The \texttt{\textbf{RGApp}} class declaration is contained in the \texttt{\textbf{rg\_app.hpp}} file. The implementation is contained in the \texttt{\textbf{rg\_app.cpp}} file. The only complicated function in the implementation is execute, which consists of
 
-\textcolor{red}{\texttt{\textbf{void gridpack::resistor\_grid::RGApp::execute(int argc, char** argv)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  // read configuration file}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parallel::Communicator world;}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::Configuration *config =}}}
-
-\textcolor{red}{\texttt{\textbf{    gridpack::utility::Configuration::configuration();}}}
-
-\textcolor{red}{\texttt{\textbf{  config-$\boldsymbol{\mathrm{>}}$open("input.xml",world);}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::Configuration::CursorPtr cursor;}}}
-
-\textcolor{red}{\texttt{\textbf{  cursor = config-$\boldsymbol{\mathrm{>}}$getCursor("Configuration.ResistorGrid");}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // create network and read in external PTI file}}}
-
-\textcolor{red}{\texttt{\textbf{  // with network configuration}}}
-
-\textcolor{red}{\texttt{\textbf{  boost::shared\_ptr$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$ network(new RGNetwork(world));}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parser::PTI23\_parser$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$ parser(network);}}}
-
-\textcolor{red}{\texttt{\textbf{  std::string filename;}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!cursor-$\boldsymbol{\mathrm{>}}$get("networkConfiguration",\&filename)) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    filename = "small.raw";}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  parser.parse(filename.c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // partition network}}}
-
-\textcolor{red}{\texttt{\textbf{  network-$\boldsymbol{\mathrm{>}}$partition();}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // create factory and load parameters from input}}}
-
-\textcolor{red}{\texttt{\textbf{  // file to network components}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGFactory factory(network);}}}
-
-\textcolor{red}{\texttt{\textbf{  factory.load();}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // set network components using factory and set up exchange}}}
-
-\textcolor{red}{\texttt{\textbf{  // of voltages between buses}}}
-
-\textcolor{red}{\texttt{\textbf{  factory.setComponents();}}}
-
-\textcolor{red}{\texttt{\textbf{  factory.setExchange();}}}
-
-\textcolor{red}{\texttt{\textbf{  network-$\boldsymbol{\mathrm{>}}$initBusUpdate();}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // create mapper to generate voltage matrix}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::mapper::FullMatrixMap$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$ vMap(network);}}}
-
-\textcolor{red}{\texttt{\textbf{  boost::shared\_ptr$\boldsymbol{\mathrm{<}}$gridpack::math::Matrix$\boldsymbol{\mathrm{>}}$ V = vMap.mapToMatrix();}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // create mapper to generate RHS vector}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::mapper::BusVectorMap$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$ rMap(network);}}}
-
-\textcolor{red}{\texttt{\textbf{  boost::shared\_ptr$\boldsymbol{\mathrm{<}}$gridpack::math::Vector$\boldsymbol{\mathrm{>}}$ R = rMap.mapToVector();}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // create solution vector by cloning R}}}
-
-\textcolor{red}{\texttt{\textbf{  boost::shared\_ptr$\boldsymbol{\mathrm{<}}$gridpack::math::Vector$\boldsymbol{\mathrm{>}}$ X(R-$\boldsymbol{\mathrm{>}}$clone());}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // create linear solver and solve equations}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::math::LinearSolver solver(*V);}}}
-
-\textcolor{red}{\texttt{\textbf{  solver.configure(cursor);}}}
-
-\textcolor{red}{\texttt{\textbf{  solver.solve(*R, *X);}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // push solution back on to buses}}}
-
-\textcolor{red}{\texttt{\textbf{  rMap.mapToBus(X);}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // exchange voltages so that all buses have correct values. This}}}
-
-\textcolor{red}{\texttt{\textbf{  // guarantees that current calculations on each branch are correct}}}
-
-\textcolor{red}{\texttt{\textbf{  network-$\boldsymbol{\mathrm{>}}$updateBuses();}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  // create serial IO objects to export data}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::serial\_io::SerialBusIO$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$ busIO(128,network);}}}
-
-\textcolor{red}{\texttt{\textbf{  char ioBuf[128];}}}
-
-\textcolor{red}{\texttt{\textbf{  busIO.header("{\textbackslash}nVoltages on buses{\textbackslash}n{\textbackslash}n");}}}
-
-\textcolor{red}{\texttt{\textbf{  busIO.write();}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::serial\_io::SerialBranchIO$\boldsymbol{\mathrm{<}}$RGNetwork$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    branchIO(128,network);}}}
-
-\textcolor{red}{\texttt{\textbf{  branchIO.header("{\textbackslash}nCurrent on branches{\textbackslash}n{\textbackslash}n");}}}
-
-\textcolor{red}{\texttt{\textbf{  branchIO.write();}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGApp::execute(int argc, char** argv)
+{
+  // read configuration file
+  gridpack::parallel::Communicator world;
+  gridpack::utility::Configuration *config =
+    gridpack::utility::Configuration::configuration();
+  config->open("input.xml",world);
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.ResistorGrid");
+
+
+  // create network and read in external PTI file
+  // with network configuration
+  boost::shared_ptr<RGNetwork> network(new RGNetwork(world));
+  gridpack::parser::PTI23_parser<RGNetwor> parser(network);
+  std::string filename;
+  if (!cursor->get("networkConfiguration",&filename)) {
+    filename = "small.raw";
+  }
+  parser.parse(filename.c_str());
+
+
+  // partition network
+  network->partition();
+
+  // create factory and load parameters from input
+  // file to network components
+  gridpack::resistor_grid::RGFactory factory(network);
+  factory.load();
+
+  // set network components using factory and set up exchange
+  // of voltages between buses
+  factory.setComponents();
+  factory.setExchange();
+  network->initBusUpdate();
+
+  // create mapper to generate voltage matrix
+  gridpack::mapper::FullMatrixMap<RGNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> V = vMap.mapToMatrix();
+
+  // create mapper to generate RHS vector
+  gridpack::mapper::BusVectorMap<RGNetwork> rMap(network);
+  boost::shared_ptr<gridpack::math::Vector> R = rMap.mapToVector();
+
+  // create solution vector by cloning R
+  boost::shared_ptr<gridpack::math::Vector> X(R->clone());
+
+  // create linear solver and solve equations
+  gridpack::math::LinearSolver solver(*V);
+  solver.configure(cursor);
+  solver.solve(*R, *X);
+
+  // push solution back on to buses
+  rMap.mapToBus(X);
+
+  // exchange voltages so that all buses have correct values. This
+  // guarantees that current calculations on each branch are correct
+  network->updateBuses();
+
+  // create serial IO objects to export data
+  gridpack::serial_io::SerialBusIO<RGNetwork> busIO(128,network);
+  char ioBuf[128];
+  busIO.header("\nVoltages on buses\n\n");
+  busIO.write();
+
+  gridpack::serial_io::SerialBranchIO<RGNetwork>
+    branchIO(128,network);
+  branchIO.header("\nCurrent on branches\n\n");
+  branchIO.write();
+}
+\end{Verbatim}
+}
 
 The beginning of the resistor grid application is more complicated than ``Hello world'' in that it uses an input file to control the properties of the linear solver that is used to solve current equations. To read in the input file, the application starts by creating a communicator on the set of all processors. Only one configuration object is available to the application and the \texttt{\textbf{execute}} function gets a pointer to this instance by calling the static function \texttt{\textbf{Configuration::configuration()}}. This pointer can then be used to read in the input file, ``\texttt{\textbf{input.xml}}'', across all processes in the communicator \texttt{\textbf{world}} using the \texttt{\textbf{open}} method. All processors now have access to the contents of \texttt{\textbf{input.xml}}. The input file contains two pieces of information, the name of the PSS/E formatted resistor grid configuration file and the parameters for the linear solver. The input file has the form
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$?xml version="1.0" encoding="utf-8"?$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$Configuration$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$ResistorGrid$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$networkConfiguration$\boldsymbol{\mathrm{>}}$ small.raw $\boldsymbol{\mathrm{<}}$/networkConfiguration$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$LinearSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_view}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_type richardson}}}
-
-\textcolor{red}{\texttt{\textbf{        -pc\_type lu}}}
-
-\textcolor{red}{\texttt{\textbf{        -pc\_factor\_mat\_solver\_package superlu\_dist}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_max\_it 1}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/LinearSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/ResistorGrid$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$/Configuration$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ResistorGrid>
+    <networkConfiguration> small.raw </networkConfiguration>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </ResistorGrid>
+</Configuration>
+\end{Verbatim}
+}
 
 The resistor grid file name can be obtained by getting a cursor pointer that is pointed at the \texttt{\textbf{ResistorGrid}} block in the input file by using the \texttt{\textbf{getCursor}} function and then using the \texttt{\textbf{get}} function to retrieve the actual file name located in the \texttt{\textbf{networkConfiguration }}field. If no file is specified in the input deck, the file name defaults to ``\texttt{\textbf{small.raw}}''. At the same time, an \texttt{\textbf{RGNetwork}} object is instantiated and used to initialize on instance of \texttt{\textbf{PTI23\_parser}}. This can then read in the resistor grid configuration file using the parse function.
 
@@ -5390,67 +5026,50 @@ The only remaining step is to write the results to standard output. The voltages
 
 The main calling program is relatively simple and consists of the code
 
-\textcolor{red}{\texttt{\textbf{int main(int argc, char **argv)}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parallel::Environment env(argc, argv);}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::math::Initialize();}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::resistor\_grid::RGApp app;}}}
-
-\textcolor{red}{\texttt{\textbf{  app.execute(argc, argv);}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::math::Finalize();}}}
-
-\textcolor{red}{\texttt{\textbf{  return 0;}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc, argv);
+  gridpack::math::Initialize();
+  gridpack::resistor_grid::RGApp app;
+  app.execute(argc, argv);
+  gridpack::math::Finalize();
+  return 0;
+}
+\end{Verbatim}
+}
 
 The parallel computing environment is set up by creating an instance of \texttt{\textbf{Environment}}. The computing environment is also cleaned up at the end of the calculation when the destructor for this object is called. The math libraries are initialized by a call to the static \texttt{\textbf{Initialize}} method and cleaned up at the end of the calculation by a call to \texttt{\textbf{Finalize}}. The only remaining calls are to create an instance of an \texttt{\textbf{RGApp}} and call its \texttt{\textbf{execute}} method.
 
 A portion of the output from the resistor grid calculation is the following
 
-\textcolor{red}{\texttt{\textbf{GridPACK math module configured on 8 processors}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+GridPACK math module configured on 8 processors
+    :
+Voltages on buses
 
-\textcolor{red}{\texttt{\textbf{    :}}}
+Voltage on bus 1:     1.000000 (lead)
+Voltage on bus 2:     0.667958
+Voltage on bus 3:     0.467469
+Voltage on bus 4:     0.329598
+Voltage on bus 5:     0.227289
+Voltage on bus 6:     0.148733
+Voltage on bus 7:     0.088491
+    :
+Current on branches
 
-\textcolor{red}{\texttt{\textbf{Voltages on buses}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{Voltage on bus 1:     1.000000 (lead)}}}
-
-\textcolor{red}{\texttt{\textbf{Voltage on bus 2:     0.667958}}}
-
-\textcolor{red}{\texttt{\textbf{Voltage on bus 3:     0.467469}}}
-
-\textcolor{red}{\texttt{\textbf{Voltage on bus 4:     0.329598}}}
-
-\textcolor{red}{\texttt{\textbf{Voltage on bus 5:     0.227289}}}
-
-\textcolor{red}{\texttt{\textbf{Voltage on bus 6:     0.148733}}}
-
-\textcolor{red}{\texttt{\textbf{Voltage on bus 7:     0.088491}}}
-
-\textcolor{red}{\texttt{\textbf{    :}}}
-
-\textcolor{red}{\texttt{\textbf{Current on branches}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{Current on line from bus 1 to 2 is:    20.000000}}}
-
-\textcolor{red}{\texttt{\textbf{Current on line from bus 2 to 3 is:     4.009776}}}
-
-\textcolor{red}{\texttt{\textbf{Current on line from bus 3 to 4 is:     2.757436}}}
-
-\textcolor{red}{\texttt{\textbf{Current on line from bus 4 to 5 is:     2.046167}}}
-
-\textcolor{red}{\texttt{\textbf{Current on line from bus 5 to 6 is:     4.545785}}}
-
-\textcolor{red}{\texttt{\textbf{    :}}}
+Current on line from bus 1 to 2 is:    20.000000
+Current on line from bus 2 to 3 is:     4.009776
+Current on line from bus 3 to 4 is:     2.757436
+Current on line from bus 4 to 5 is:     2.046167
+Current on line from bus 5 to 6 is:     4.545785
+    :
+\end{Verbatim}
+}
 
 The first line is written by the call to the math library \texttt{\textbf{Initialize}} function and reports on the number of processors being used in the calculation. This information is useful in keeping track of the performance characteristics of different calculations. Some information from the solvers is usually printed after this. At the end of the calculation, the values of the voltages on the buses are printed out and then the current on each of the branches. The buses with externally applied voltages are also identified in the output.
 
@@ -5460,193 +5079,120 @@ An example contingency application has been included in the contingency analysis
 
 The function for reading in the contingencies and converting them to a list of Contingency data structures has the form
 
-\textcolor{red}{\texttt{\textbf{std::vector$\boldsymbol{\mathrm{<}}$gridpack::powerflow::Contingency$\boldsymbol{\mathrm{>}}$ getContingencies(}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<gridpack::powerflow::Contingency$\boldsymbol{\mathrm{>}}$ getContingencies(
 
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::Configuration::ChildCursors contingencies)}}}
+  gridpack::utility::Configuration::ChildCursors contingencies)
+\end{Verbatim}
+}
 
 The \texttt{\textbf{Contingency}} data structures are defined in as part of the power flow module and exist in the \texttt{\textbf{gridpack::powerflow}} namespace. The list of cursors represented by the contingencies variable is obtained by the calling program before calling this function. The function itself is
 
-\textcolor{red}{\texttt{\textbf{  std::vector$\boldsymbol{\mathrm{<}}$gridpack::powerflow::Contingency$\boldsymbol{\mathrm{>}}$ ret;}}}
-
-\textcolor{red}{\texttt{\textbf{  int size = contingencies.size();}}}
-
-\textcolor{red}{\texttt{\textbf{  int i, idx;}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::StringUtils utils;}}}
-
-\textcolor{red}{\texttt{\textbf{  for (idx = 0; idx $\boldsymbol{\mathrm{<}}$ size; idx++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    std::string ca\_type;}}}
-
-\textcolor{red}{\texttt{\textbf{    contingencies[idx]-$\boldsymbol{\mathrm{>}}$get("contingencyType",\&ca\_type);}}}
-
-\textcolor{red}{\texttt{\textbf{    std::string ca\_name;}}}
-
-\textcolor{red}{\texttt{\textbf{    contingencies[idx]-$\boldsymbol{\mathrm{>}}$get("contingencyName",\&ca\_name);}}}
-
-\textcolor{red}{\texttt{\textbf{    if (ca\_type == "Line") $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      std::string buses;}}}
-
-\textcolor{red}{\texttt{\textbf{      contingencies[idx]-$\boldsymbol{\mathrm{>}}$get("contingencyLineBuses",\&buses);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::string names;}}}
-
-\textcolor{red}{\texttt{\textbf{      contingencies[idx]-$\boldsymbol{\mathrm{>}}$get("contingencyLineNames",\&names);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::vector$\boldsymbol{\mathrm{<}}$std::string$\boldsymbol{\mathrm{>}}$ string\_vec = }}}
-
-\textcolor{red}{\texttt{\textbf{          utils.blankTokenizer(buses);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::vector$\boldsymbol{\mathrm{<}}$int$\boldsymbol{\mathrm{>}}$ bus\_ids;}}}
-
-\textcolor{red}{\texttt{\textbf{      for (i=0; i$\boldsymbol{\mathrm{<}}$string\_vec.size(); i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        bus\_ids.push\_back(atoi(string\_vec[i].c\_str()));}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      string\_vec.clear();}}}
-
-\textcolor{red}{\texttt{\textbf{      string\_vec = utils.blankTokenizer(names);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::vector$\boldsymbol{\mathrm{<}}$std::string$\boldsymbol{\mathrm{>}}$ line\_names;}}}
-
-\textcolor{red}{\texttt{\textbf{      for (i=0; i$\boldsymbol{\mathrm{<}}$string\_vec.size(); i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        line\_names.push\_back(utils.clean2Char(string\_vec[i]));}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      if (bus\_ids.size() == 2*line\_names.size()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        gridpack::powerflow::Contingency contingency;}}}
-
-\textcolor{red}{\texttt{\textbf{        contingency.p\_name = ca\_name;}}}
-
-\textcolor{red}{\texttt{\textbf{        contingency.p\_type = Branch;}}}
-
-\textcolor{red}{\texttt{\textbf{        int i;}}}
-
-\textcolor{red}{\texttt{\textbf{        for (i = 0; i $\boldsymbol{\mathrm{<}}$ line\_names.size(); i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          contingency.p\_from.push\_back(bus\_ids[2*i]);}}}
-
-\textcolor{red}{\texttt{\textbf{          contingency.p\_to.push\_back(bus\_ids[2*i+1]);}}}
-
-\textcolor{red}{\texttt{\textbf{          contingency.p\_ckt.push\_back(line\_names[i]);}}}
-
-\textcolor{red}{\texttt{\textbf{          contingency.p\_saveLineStatus.push\_back(true);}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        ret.push\_back(contingency);}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$ else if (ca\_type == "Generator") $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      std::string buses;}}}
-
-\textcolor{red}{\texttt{\textbf{      contingencies[idx]-$\boldsymbol{\mathrm{>}}$get("contingencyBuses",\&buses);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::string gens;}}}
-
-\textcolor{red}{\texttt{\textbf{      contingencies[idx]-$\boldsymbol{\mathrm{>}}$get("contingencyGenerators",\&gens);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::vector$\boldsymbol{\mathrm{<}}$std::string$\boldsymbol{\mathrm{>}}$ string\_vec =}}}
-
-\textcolor{red}{\texttt{\textbf{          utils.blankTokenizer(buses);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::vector$\boldsymbol{\mathrm{<}}$int$\boldsymbol{\mathrm{>}}$ bus\_ids;}}}
-
-\textcolor{red}{\texttt{\textbf{      for (i=0; i$\boldsymbol{\mathrm{<}}$string\_vec.size(); i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        bus\_ids.push\_back(atoi(string\_vec[i].c\_str()));}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      string\_vec.clear();}}}
-
-\textcolor{red}{\texttt{\textbf{      string\_vec = utils.blankTokenizer(gens);}}}
-
-\textcolor{red}{\texttt{\textbf{      std::vector$\boldsymbol{\mathrm{<}}$std::string$\boldsymbol{\mathrm{>}}$ gen\_ids;}}}
-
-\textcolor{red}{\texttt{\textbf{      for (i=0; i$\boldsymbol{\mathrm{<}}$string\_vec.size(); i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        gen\_ids.push\_back(utils.clean2Char(string\_vec[i]));}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      if (bus\_ids.size() == gen\_ids.size()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        gridpack::powerflow::Contingency contingency;}}}
-
-\textcolor{red}{\texttt{\textbf{        contingency.p\_name = ca\_name;}}}
-
-\textcolor{red}{\texttt{\textbf{        contingency.p\_type = Generator;}}}
-
-\textcolor{red}{\texttt{\textbf{        int i;}}}
-
-\textcolor{red}{\texttt{\textbf{        for (i = 0; i $\boldsymbol{\mathrm{<}}$ bus\_ids.size(); i++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          contingency.p\_busid.push\_back(bus\_ids[i]);}}}
-
-\textcolor{red}{\texttt{\textbf{          contingency.p\_genid.push\_back(gen\_ids[i]);}}}
-
-\textcolor{red}{\texttt{\textbf{          contingency.p\_saveGenStatus.push\_back(true);}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        ret.push\_back(contingency);}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  return ret;}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  std::vector<gridpack::powerflow::Contingency> ret;
+  int size = contingencies.size();
+  int i, idx;
+  gridpack::utility::StringUtils utils;
+  for (idx = 0; idx < size; idx++) {
+    std::string ca_type;
+    contingencies[idx]->get("contingencyType",&ca_type);
+    std::string ca_name;
+    contingencies[idx]->get("contingencyName",&ca_name);
+    if (ca_type == "Line") {
+      std::string buses;
+      contingencies[idx]->get("contingencyLineBuses",&buses);
+      std::string names;
+      contingencies[idx]->get("contingencyLineNames",&names);
+      std::vector<std::string> string_vec = 
+          utils.blankTokenizer(buses);
+      std::vector<int> bus_ids;
+      for (i=0; i<string_vec.size(); i++) {
+        bus_ids.push_back(atoi(string_vec[i].c_str()));
+      }
+      string_vec.clear();
+      string_vec = utils.blankTokenizer(names);
+      std::vector<std::string> line_names;
+      for (i=0; i<string_vec.size(); i++) {
+        line_names.push_back(utils.clean2Char(string_vec[i]));
+      }
+      if (bus_ids.size() == 2*line_names.size()) {
+        gridpack::powerflow::Contingency contingency;
+        contingency.p_name = ca_name;
+        contingency.p_type = Branch;
+        int i;
+        for (i = 0; i < line_names.size(); i++) {
+          contingency.p_from.push_back(bus_ids[2*i]);
+          contingency.p_to.push_back(bus_ids[2*i+1]);
+          contingency.p_ckt.push_back(line_names[i]);
+          contingency.p_saveLineStatus.push_back(true);
+        }
+        ret.push_back(contingency);
+      }
+    }se if (ca_type == "Generator") {
+      std::string buses;
+      contingencies[idx]->get("contingencyBuses",&buses);
+      std::string gens;
+      contingencies[idx]->get("contingencyGenerators",&gens);
+      std::vector<std::string> string_vec =
+          utils.blankTokenizer(buses);
+      std::vector<int> bus_ids;
+      for (i=0; i<string_vec.size(); i++) {
+        bus_ids.push_back(atoi(string_vec[i].c_str()));
+      }
+      string_vec.clear();
+      string_vec = utils.blankTokenizer(gens);
+      std::vector<std::string> gen_ids;
+      for (i=0; i<string_vec.size(); i++) {
+        gen_ids.push_back(utils.clean2Char(string_vec[i]));
+      }
+      if (bus_ids.size() == gen_ids.size()) {
+        gridpack::powerflow::Contingency contingency;
+        contingency.p_name = ca_name;
+        contingency.p_type = Generator;
+        int i;
+        for (i = 0; i < bus_ids.size(); i++) {
+          contingency.p_busid.push_back(bus_ids[i]);
+          contingency.p_genid.push_back(gen_ids[i]);
+          contingency.p_saveGenStatus.push_back(true);
+        }
+        ret.push_back(contingency);
+      }
+    }
+  }
+  return ret;
+\end{Verbatim}
+}
 
 This function is designed to parse input of the form
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$?xml version="1.0" encoding="utf-8"?$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$ContingencyList$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Contingency\_analysis$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$Contingencies$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$Contingency$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyType$\boldsymbol{\mathrm{>}}$Line$\boldsymbol{\mathrm{<}}$/contingencyType$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyName$\boldsymbol{\mathrm{>}}$CTG1$\boldsymbol{\mathrm{<}}$/contingencyName$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyLineBuses$\boldsymbol{\mathrm{>}}$ 13 14$\boldsymbol{\mathrm{<}}$/contingencyLineBuses$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyLineNames$\boldsymbol{\mathrm{>}}$ B1 $\boldsymbol{\mathrm{<}}$/contingencyLineNames$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/Contingency$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$Contingency$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyType$\boldsymbol{\mathrm{>}}$Generator$\boldsymbol{\mathrm{<}}$/contingencyType$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyName$\boldsymbol{\mathrm{>}}$CTG2$\boldsymbol{\mathrm{<}}$/contingencyName$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyBuses$\boldsymbol{\mathrm{>}}$ 2  $\boldsymbol{\mathrm{<}}$/contingencyBuses$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{<}}$contingencyGenerators$\boldsymbol{\mathrm{>}}$1 $\boldsymbol{\mathrm{<}}$/contingencyGenerators$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/Contingency$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/Contingencies$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Contingency\_analysis$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$/ContingencyList$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<ContingencyList>
+  <Contingency\_analysis>
+    <Contingencies>
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>CTG1</contingencyName>
+        <contingencyLineBuses> 13 14</contingencyLineBuses>
+        <contingencyLineNames> B1 </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>CTG2</contingencyName>
+        <contingencyBuses> 2  </contingencyBuses>
+        <contingencyGenerators>1 </contingencyGenerators>
+      </Contingency>
+    </Contingencies>
+  </Contingency\_analysis>
+</ContingencyList>
+\end{Verbatim}
+}
 
 The \texttt{\textbf{contingencies}} list in the argument consists of a vector of \texttt{\textbf{Configuration}} module cursors, each of which is pointing to one of the \texttt{\textbf{Contingency}} blocks in this input.
 
@@ -5658,313 +5204,228 @@ After all cursor in contingencies have been processed, the \texttt{\textbf{getCo
 
 The execute function starts with the code block
 
-\textcolor{red}{\texttt{\textbf{void gridpack::contingency\_analysis::CADriver::execute(int argc, char** argv)}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
+{
+  gridpack::parallel::Communicator world;
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Total Application");
+  timer->start(t_total);
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parallel::Communicator world;}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::CoarseTimer *timer =}}}
-
-\textcolor{red}{\texttt{\textbf{    gridpack::utility::CoarseTimer::instance();}}}
-
-\textcolor{red}{\texttt{\textbf{  int t\_total = timer-$\boldsymbol{\mathrm{>}}$createCategory("Total Application");}}}
-
-\textcolor{red}{\texttt{\textbf{  timer-$\boldsymbol{\mathrm{>}}$start(t\_total);}}}
-
-\textcolor{red}{\texttt{\textbf{}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::Configuration *config}}}
-
-\textcolor{red}{\texttt{\textbf{    = gridpack::utility::Configuration::configuration();}}}
-
-\textcolor{red}{\texttt{\textbf{  if (argc $\boldsymbol{\mathrm{>}}$= 2 \&\& argv[1] != NULL) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    char inputfile[256];}}}
-
-\textcolor{red}{\texttt{\textbf{    sprintf(inputfile,"\%s",argv[1]);}}}
-
-\textcolor{red}{\texttt{\textbf{    config-$\boldsymbol{\mathrm{>}}$open(inputfile,world);}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    config-$\boldsymbol{\mathrm{>}}$open("input.xml",world);}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
+  gridpack::utility::Configuration *config
+    = gridpack::utility::Configuration::configuration();
+  if (argc >= 2 && argv[1] != NULL) {
+    char inputfile[256];
+    sprintf(inputfile,"%s",argv[1]);
+    config->open(inputfile,world);
+  } else {
+    config->open("input.xml",world);
+  }
+}
+\end{Verbatim}
+}
 
 The user can pass in the name of the input file when they invoke the contingency analysis application, and this is transmitted via the variables \texttt{\textbf{argc}} and \texttt{\textbf{argv}} in the argument list. If an argument is detected, then the code will try and open a file using the argument as the filename, otherwise it will assume the input file is called ``\texttt{\textbf{input.xml}}''. Once the input file is open, all processors have access to its contents. This section also creates a timing category for the calculation and starts the timer. The call to \texttt{\textbf{CoarseTime::instance}} returns the timer object and the \texttt{\textbf{createCategory}} call creates a timer category with the name ``\texttt{\textbf{Total Application}}''. It also returns a handle to this category. The \texttt{\textbf{start}} call begins the timer. The timer can be started and stopped multiple times for the same category.
 
 The next few lines are used to parse the input file and determine the size of the communicators that should be used to run individual tasks.
 
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::Configuration::CursorPtr cursor;}}}
-
-\textcolor{red}{\texttt{\textbf{  cursor = config-$\boldsymbol{\mathrm{>}}$getCursor("Configuration.Contingency\_analysis");}}}
-
-\textcolor{red}{\texttt{\textbf{  int grp\_size;}}}
-
-\textcolor{red}{\texttt{\textbf{  double Vmin, Vmax;}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!cursor-$\boldsymbol{\mathrm{>}}$get("groupSize",\&grp\_size)) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    grp\_size = 1;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!cursor-$\boldsymbol{\mathrm{>}}$get("minVoltage",\&Vmin)) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    Vmin = 0.9;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!cursor-$\boldsymbol{\mathrm{>}}$get("maxVoltage",\&Vmax)) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    Vmax = 1.1;}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::parallel::Communicator task\_comm = world.divide(grp\_size);}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.Contingency_analysis");
+  int grp_size;
+  double Vmin, Vmax;
+  if (!cursor->get("groupSize",&grp_size)) {
+    grp_size = 1;
+  }
+  if (!cursor->get("minVoltage",&Vmin)) {
+    Vmin = 0.9;
+  }
+  if (!cursor->get("maxVoltage",&Vmax)) {
+    Vmax = 1.1;
+  }
+  gridpack::parallel::Communicator task_comm = world.divide(grp_size);
+\end{Verbatim}
+}
 
 A \texttt{\textbf{CursorPtr}} is defined and set to point to the contents of the \texttt{\textbf{Contingency\_analysis}} block in the input file using the \texttt{\textbf{getCursor}} function. This block contains parameters defining some of the properties of the simulation. The \texttt{\textbf{groupSize}} parameter sets the size of the communicator on which individual power flow calculations are run. PThe power flow is not very scalable in GridPACK and it is usually fastest to run it on one processor so the default value is 1. The \texttt{\textbf{minVoltage}} and \texttt{\textbf{maxVoltage}} parameters are the limits, in p.u., for acceptable voltage variations on individual buses. Once the group size has been set, the world communicator is divided into sub communicators using the divide function. This guarantees that each subcommunicator contains at most the number of processes specified using \texttt{\textbf{groupSize}} (one subcommunicator may contain less than this number). Each process is now part of the world communicator and one subcommunicator.
 
 The next block of code creates a power flow application on each task communicator and initializes it.
 
-\textcolor{red}{\texttt{\textbf{  boost::shared\_ptr$\boldsymbol{\mathrm{<}}$gridpack::powerflow::PFNetwork$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    pf\_network(new gridpack::powerflow::PFNetwork(task\_comm));}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::powerflow::PFAppModule pf\_app;}}}
-
-\textcolor{red}{\texttt{\textbf{  pf\_app.readNetwork(pf\_network,config);}}}
-
-\textcolor{red}{\texttt{\textbf{  pf\_app.initialize();}}}
-
-\textcolor{red}{\texttt{\textbf{  pf\_app.solve();}}}
-
-\textcolor{red}{\texttt{\textbf{  pf\_app.ignoreVoltageViolations(Vmin,Vmax);}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network(new gridpack::powerflow::PFNetwork(task_comm));
+  gridpack::powerflow::PFAppModule pf_app;
+  pf_app.readNetwork(pf_network,config);
+  pf_app.initialize();
+  pf_app.solve();
+  pf_app.ignoreVoltageViolations(Vmin,Vmax);
+\end{Verbatim}
+}
 
 The first line creates a power flow network on the task communicator. The second line creates a power flow application. The \texttt{\textbf{readNetwork}} function assigns the powerflow network (which currently has nothing in it) to the power flow application, along with the pointer to the configuration module. The input file is expected to have a \texttt{\textbf{Powerflow}} block that contains parameters for the  power flow application. These include the location of the network configuration file and the type of solver that is to be used. An example of a complete input file is
 
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$?xml version="1.0" encoding="utf-8"?$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$Configuration$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Contingency\_analysis$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$contingencyList$\boldsymbol{\mathrm{>}}$contingencies.xml$\boldsymbol{\mathrm{<}}$/contingencyList$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$groupSize$\boldsymbol{\mathrm{>}}$2$\boldsymbol{\mathrm{<}}$/groupSize$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$maxVoltage$\boldsymbol{\mathrm{>}}$1.1$\boldsymbol{\mathrm{<}}$/maxVoltage$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$minVoltage$\boldsymbol{\mathrm{>}}$0.9$\boldsymbol{\mathrm{<}}$/minVoltage$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Contingency\_analysis$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$Powerflow$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$networkConfiguration$\boldsymbol{\mathrm{>}}$ IEEE14\_ca.raw $\boldsymbol{\mathrm{<}}$/networkConfiguration$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$maxIteration$\boldsymbol{\mathrm{>}}$50$\boldsymbol{\mathrm{<}}$/maxIteration$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$tolerance$\boldsymbol{\mathrm{>}}$1.0e-6$\boldsymbol{\mathrm{<}}$/tolerance$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$LinearSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_type richardson}}}
-
-\textcolor{red}{\texttt{\textbf{        -pc\_type lu}}}
-
-\textcolor{red}{\texttt{\textbf{        -pc\_factor\_mat\_solver\_package superlu\_dist}}}
-
-\textcolor{red}{\texttt{\textbf{        -ksp\_max\_it 1}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{<}}$/PETScOptions$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{<}}$/LinearSolver$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{<}}$/Powerflow$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{$\boldsymbol{\mathrm{<}}$/Configuration$\boldsymbol{\mathrm{>}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Contingency\_analysis>
+    <contingencyList>contingencies.xml</contingencyList>
+    <groupSize>2</groupSize>
+    <maxVoltage>1.1</maxVoltage>
+    <minVoltage>0.9</minVoltage>
+  </Contingency\_analysis>
+  <Powerflow>
+    <networkConfiguration> IEEE14\_ca.raw </networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-6</tolerance>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp\_type richardson
+        -pc\_type lu
+        -pc\_factor\_mat\_solver\_package superlu\_dist
+        -ksp\_max\_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Powerflow>
+</Configuration>
+\end{Verbatim}
+}
 
 Note that it has two blocks, \texttt{\textbf{Contingency\_analysis}} and \texttt{\textbf{Powerflow}}. The parameters describing the contingency calculation and the location of the contingencies are located in the first block and the power flow parameters are located in the second block. The \texttt{\textbf{readNetwork}} function will read in the network configuration file and partition the network. The \texttt{\textbf{initialize}} function is used to initialize the network components from the \texttt{\textbf{DataCollection}} objects and assign exchange buffers. The call to \texttt{\textbf{solve}} is used to obtain a power solution to the base problem with no contingencies. Since all tasks have the same data at this point, the network solution is duplicated across all subcommunicators. The final call to \texttt{\textbf{ignoreVoltageViolations}} sets a parameter in each network component that violates the voltage bounds for base case. These components will be ignored in any subsequent checks for voltage violations.
 
 The next step is to read in the contingencies and convert these to a list of contingency data structs.
 
-\textcolor{red}{\texttt{\textbf{  std::string contingencyfile;}}}
-
-\textcolor{red}{\texttt{\textbf{  if (!cursor-$\boldsymbol{\mathrm{>}}$get("contingencyList",\&contingencyfile)) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    contingencyfile = "contingencies.xml";}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  bool ok = config-$\boldsymbol{\mathrm{>}}$open(contingencyfile,world);}}}
-
-\textcolor{red}{\texttt{\textbf{  cursor = config-$\boldsymbol{\mathrm{>}}$getCursor(}}}
-
-\textcolor{red}{\texttt{\textbf{      "ContingencyList.Contingency\_analysis.Contingencies");}}}
-
-\textcolor{red}{\texttt{\textbf{  gridpack::utility::Configuration::ChildCursors contingencies;}}}
-
-\textcolor{red}{\texttt{\textbf{  if (cursor) cursor-$\boldsymbol{\mathrm{>}}$children(contingencies);}}}
-
-\textcolor{red}{\texttt{\textbf{  std::vector$\boldsymbol{\mathrm{<}}$gridpack::powerflow::Contingency$\boldsymbol{\mathrm{>}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    events = getContingencies(contingencies);}}}
-
-\textcolor{red}{\texttt{\textbf{  if (world.rank() == 0) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    int idx;}}}
-
-\textcolor{red}{\texttt{\textbf{    for (idx = 0; idx $\boldsymbol{\mathrm{<}}$ events.size(); idx++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      printf("Name: \%s{\textbackslash}n",events[idx].p\_name.c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{      if (events[idx].p\_type == Branch) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        int nlines = events[idx].p\_from.size();}}}
-
-\textcolor{red}{\texttt{\textbf{        int j;}}}
-
-\textcolor{red}{\texttt{\textbf{        for (j=0; j$\boldsymbol{\mathrm{<}}$nlines; j++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          printf(" Line: (from) \%d (to) \%d (line) {\textbackslash}'\%s{\textbackslash}'{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{              events[idx].p\_from[j],events[idx].p\_to[j],}}}
-
-\textcolor{red}{\texttt{\textbf{              events[idx].p\_ckt[j].c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$ else if (events[idx].p\_type == Generator) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        int nbus = events[idx].p\_busid.size();}}}
-
-\textcolor{red}{\texttt{\textbf{        int j;}}}
-
-\textcolor{red}{\texttt{\textbf{        for (j=0; j$\boldsymbol{\mathrm{<}}$nbus; j++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{          printf(" Generator: (bus) \%d (generator ID) {\textbackslash}'\%s{\textbackslash}'{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{              events[idx].p\_busid[j],events[idx].p\_genid[j].c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{        $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  std::string contingencyfile;
+  if (!cursor->get("contingencyList",&contingencyfile)) {
+    contingencyfile = "contingencies.xml";
+  }
+  bool ok = config->open(contingencyfile,world);
+  cursor = config->getCursor(
+      "ContingencyList.Contingency_analysis.Contingencies");
+  gridpack::utility::Configuration::ChildCursors contingencies;
+  if (cursor) cursor->children(contingencies);
+  std::vector<gridpack::powerflow::Contingency>
+    events = getContingencies(contingencies);
+  if (world.rank() == 0) {
+    int idx;
+    for (idx = 0; idx < events.size(); idx++) {
+      printf("Name: %s\n",events[idx].p_name.c_str());
+      if (events[idx].p_type == Branch) {
+        int nlines = events[idx].p_from.size();
+        int j;
+        for (j=0; j<nlines; j++) {
+          printf(" Line: (from) %d (to) %d (line) \'%s\'\n",
+              events[idx].p_from[j],events[idx].p_to[j],
+              events[idx].p_ckt[j].c_str());
+        }
+      } else if (events[idx].p_type == Generator) {
+        int nbus = events[idx].p_busid.size();
+        int j;
+        for (j=0; j<nbus; j++) {
+          printf(" Generator: (bus) %d (generator ID) \'%s\'\n",
+              events[idx].p_busid[j],events[idx].p_genid[j].c_str());
+        }
+      }
+    }
+  }
+\end{Verbatim}
+}
 
 The location of the contingency file is contained in the \texttt{\textbf{contingencyList}} field in the input file. If this field is not present, the code defaults to the file name \texttt{\textbf{contingencies.xml}}. The contintency file is then opened using the \texttt{\textbf{open}} function in the \texttt{\textbf{Configuration}} module and a cursor is set to the \texttt{\textbf{Contingencies}} block within this file. The \texttt{\textbf{Configuration}} \texttt{\textbf{children}} function returns a list of cursor pointers that point to each of the individual \texttt{\textbf{Contingency}} blocks. The \texttt{\textbf{getContingencies}} function described above parses each of these blocks and returns a vector of contingency data structs. The contingency list is replicated on all processors. Process 0 is used to provide a listing of the contingencies to standard output by looping over the \texttt{\textbf{events}} vector returned by the \texttt{\textbf{getContingencies}} function.
 
 Once the contingencies have be determined, the code next sets up a task manager on the world communicator and sets the number of tasks equal to the number of contingencies.
 
-\textcolor{red}{\texttt{\textbf{  gridpack::parallel::TaskManager taskmgr(world);}}}
-
-\textcolor{red}{\texttt{\textbf{  int ntasks = events.size();}}}
-
-\textcolor{red}{\texttt{\textbf{  taskmgr.set(ntasks);}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::parallel::TaskManager taskmgr(world);
+  int ntasks = events.size();
+  taskmgr.set(ntasks);
+\end{Verbatim}
+}
 
 The task loop is created by defining a task\_id variable and a character string buffer that is used inside the loop to create messages. The task manager then begins iterating over different tasks.
 
-\textcolor{red}{\texttt{\textbf{  int task\_id;}}}
-
-\textcolor{red}{\texttt{\textbf{  char sbuf[128];}}}
-
-\textcolor{red}{\texttt{\textbf{  while (taskmgr.nextTask(task\_comm, \&task\_id)) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    printf("Executing task \%d on process \%d{\textbackslash}n",task\_id,world.rank());}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  int task_id;
+  char sbuf[128];
+  while (taskmgr.nextTask(task_comm, &task_id)) {
+    printf("Executing task %d on process %d\n",task_id,world.rank());
+\end{Verbatim}
+}
 
 The call to \texttt{\textbf{nextTask}} takes the task communicator as one of its arguments so the value of \texttt{\textbf{task\_id}} that is returned is the same for all processors on the communicator. This guarantees that each of the processors in this copy of the power flow applicatin is working on the same contingency. If the \texttt{\textbf{nextTask}} function returns false, the tasks have been completed and the code exits from the \texttt{\textbf{while}} loop. At the start of the task, the code prints out a statement to standard out describing which tasks are being executed by each processor.
 
 The next few lines in the task loop are used to open a file so that the output from each task is directed to a separate file. This can be used later to examine individual tasks.
 
-\textcolor{red}{\texttt{\textbf{    sprintf(sbuf,"\%s.out",events[task\_id].p\_name.c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{    pf\_app.open(sbuf);}}}
-
-\textcolor{red}{\texttt{\textbf{    sprintf(sbuf,"{\textbackslash}nRunning task on \%d processes{\textbackslash}n",task\_comm.size());}}}
-
-\textcolor{red}{\texttt{\textbf{    pf\_app.writeHeader(sbuf);}}}
-
-\textcolor{red}{\texttt{\textbf{    if (events[task\_id].p\_type == Branch) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      int nlines = events[task\_id].p\_from.size();}}}
-
-\textcolor{red}{\texttt{\textbf{      int j;}}}
-
-\textcolor{red}{\texttt{\textbf{      for (j=0; j$\boldsymbol{\mathrm{<}}$nlines; j++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        sprintf(sbuf," Line: (from) \%d (to) \%d (line) {\textbackslash}'\%s{\textbackslash}'{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{            events[task\_id].p\_from[j],events[task\_id].p\_to[j],}}}
-
-\textcolor{red}{\texttt{\textbf{            events[task\_id].p\_ckt[j].c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$ else if (events[task\_id].p\_type == Generator) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      int nbus = events[task\_id].p\_busid.size();}}}
-
-\textcolor{red}{\texttt{\textbf{      int j;}}}
-
-\textcolor{red}{\texttt{\textbf{      for (j=0; j$\boldsymbol{\mathrm{<}}$nbus; j++) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        sprintf(sbuf," Generator: (bus) \%d (generator ID) {\textbackslash}'\%s{\textbackslash}'{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{        events[task\_id].p\_busid[j],}}}
-
-\textcolor{red}{\texttt{\textbf{        events[task\_id].p\_genid[j].c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    pf\_app.writeHeader(sbuf);}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
+    pf_app.open(sbuf);
+    sprintf(sbuf,"\nRunning task on %d processes\n",task_comm.size());
+    pf_app.writeHeader(sbuf);
+    if (events[task_id].p_type == Branch) {
+      int nlines = events[task_id].p_from.size();
+      int j;
+      for (j=0; j<nlines; j++) {
+        sprintf(sbuf," Line: (from) %d (to) %d (line) \'%s\'\n",
+            events[task_id].p_from[j],events[task_id].p_to[j],
+            events[task_id].p_ckt[j].c_str());
+      }
+    } else if (events[task_id].p_type == Generator) {
+      int nbus = events[task_id].p_busid.size();
+      int j;
+      for (j=0; j<nbus; j++) {
+        sprintf(sbuf," Generator: (bus) %d (generator ID) \'\%s\'\n",
+        events[task_id].p_busid[j],
+        events[task_id].p_genid[j].c_str());
+      }
+    }
+    pf_app.writeHeader(sbuf);
+\end{Verbatim}
+}
 
 The first line is used to create a name for the output file using the contingency name. The output from the power flow calculation is then redirected to this file using the power flow \texttt{\textbf{open}} function. Next, some information about this particular contingency is written to the file using some calls to the writeHeader method. This includes the number of processors used to calculate the contingency and the details of the contingency itself.
 
 The remaining lines in the while loop are used to solve the power flow equations.
 
-\textcolor{red}{\texttt{\textbf{    pf\_app.resetVoltages();}}}
-
-\textcolor{red}{\texttt{\textbf{    pf\_app.setContingency(events[task\_id]);}}}
-
-\textcolor{red}{\texttt{\textbf{    if (pf\_app.solve()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      pf\_app.write();}}}
-
-\textcolor{red}{\texttt{\textbf{      bool ok = pf\_app.checkVoltageViolations(Vmin,Vmax);}}}
-
-\textcolor{red}{\texttt{\textbf{      ok = ok \& pf\_app.checkLineOverloadViolations();}}}
-
-\textcolor{red}{\texttt{\textbf{      if (ok) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        sprintf(sbuf,"{\textbackslash}nNo violation for contingency \%s{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{            events[task\_id].p\_name.c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$ else $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{        sprintf(sbuf,"{\textbackslash}nViolation for contingency \%s{\textbackslash}n",}}}
-
-\textcolor{red}{\texttt{\textbf{            events[task\_id].p\_name.c\_str());}}}
-
-\textcolor{red}{\texttt{\textbf{      $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{      pf\_app.print(sbuf);}}}
-
-\textcolor{red}{\texttt{\textbf{    $\boldsymbol{\mathrm{\}}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    pf\_app.unSetContingency(events[task\_id]);}}}
-
-\textcolor{red}{\texttt{\textbf{    pf\_app.close();}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    pf_app.resetVoltages();
+    pf_app.setContingency(events[task_id]);
+    if (pf_app.solve()) {
+      pf_app.write();
+      bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
+      ok = ok && pf_app.checkLineOverloadViolations();
+      if (ok) {
+        sprintf(sbuf,"\nNo violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else {
+        sprintf(sbuf,"\nViolation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      }
+      pf_app.print(sbuf);
+    }
+    pf_app.unSetContingency(events[task_id]);
+    pf_app.close();
+  }
+\end{Verbatim}
+}
 
 Before doing the calculation, all voltages are returned to the original values defined in the network configuration file using \texttt{\textbf{resetVoltages}}. The contingency parameters are set to the values specified by the \texttt{\textbf{task\_id}} element in the \texttt{\textbf{events}} list using the \texttt{\textbf{setContingency}} method.
 
@@ -5972,15 +5433,16 @@ The system is then solved using the power flow \texttt{\textbf{solve}} function.
 
 At this point, the contingency application is essentially complete. The remaining lines of code
 
-\textcolor{red}{\texttt{\textbf{  taskmgr.printStats();}}}
-
-\textcolor{red}{\texttt{\textbf{  timer-$\boldsymbol{\mathrm{>}}$stop(t\_total);}}}
-
-\textcolor{red}{\texttt{\textbf{  if (events.size()*grp\_size $\boldsymbol{\mathrm{>}}$= world.size()) $\boldsymbol{\mathrm{\{}}$}}}
-
-\textcolor{red}{\texttt{\textbf{    timer-$\boldsymbol{\mathrm{>}}$dump();}}}
-
-\textcolor{red}{\texttt{\textbf{  $\boldsymbol{\mathrm{\}}}$}}}
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  taskmgr.printStats();
+  timer->stop(t_total);
+  if (events.size()*grp_size >= world.size()) {
+    timer->dump();
+  }
+\end{Verbatim}
+}
 
 are used to print out a list of how many tasks were evaluated on each processor and to stop the timing of the ``\texttt{\textbf{Total Application}}'' category. The timer \texttt{\textbf{dump}} method will print statistics on the amount of time spent in the total application as well as reporting timings inside the power flow application. The check on the \texttt{\textbf{dump}} call is to verify that all processors have participated in at least one power flow calculation.
 
