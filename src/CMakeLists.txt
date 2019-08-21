@@ -61,6 +61,14 @@ if (APR_DIR)
   message(STATUS "Set APR library at ${APR_LIBRARY}")
 endif()
 
+# add HELICS directory
+option (HELICS_INSTALL_DIR "Point to directory with installed HELICS files" OFF)
+if (HELICS_INSTALL_DIR)
+  add_definitions(-DUSE_HELICS=1)
+  include_directories(AFTER ${HELICS_INSTALL_DIR}/include)
+  set (HELICS_LIBRARY "${HELICS_INSTALL_DIR}/lib64/libhelics-static.a")
+endif()
+
 # suppress any checks to see if test codes run. Only check for compilation.
 # use for cross-compilation situations
 option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
@@ -75,6 +83,8 @@ option(USE_GUROBI
 option(USE_GLPK
   "Use GNU linear programming kit optimization software library." OFF)
 
+# BUILD_SHARED_LIBS is a CMake option and is understood by the CMake build
+# system, independently of declaring it here
 option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
 

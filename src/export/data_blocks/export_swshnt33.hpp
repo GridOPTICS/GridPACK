@@ -102,9 +102,9 @@ class ExportSwShnt33
             data->getValue(SHUNT_RMPCT,&rval);
             sprintf(ptr,"%f,",rval);
             ptr += strlen(ptr);
-            sval = "   "; 
+            sval = "\'            \'"; 
             data->getValue(SHUNT_RMIDNT,&sval);
-            sprintf(ptr,"\'%s\',",sval.c_str());
+            sprintf(ptr,"%s,",sval.c_str());
             ptr += strlen(ptr);
             rval = 0.0;
             data->getValue(SHUNT_BINIT,&rval);
