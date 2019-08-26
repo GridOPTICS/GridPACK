@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 11, 2013 by William A. Perkins
-# Last Change: 2013-06-11 15:00:23 d3g096
+# Last Change: 2018-10-19 13:44:01 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries 
@@ -39,3 +39,4 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 # -------------------------------------------------------------
 add_executable(test_string test/test_string.cpp)
 target_link_libraries(test_string ${target_libraries})
+add_dependencies(test_string external_build)

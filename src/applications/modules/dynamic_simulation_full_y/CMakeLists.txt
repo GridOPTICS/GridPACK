@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:27:34 d3g096
+# Last Change: 2019-08-16 13:45:12 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -79,12 +79,12 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/motorw.cpp
 )
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_dynamic_simulation_full_y_module
-    gridpack_dsmatrix_components
-    gridpack_powerflow_module
-    )
-endif()
+gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
+
+target_link_libraries(gridpack_dynamic_simulation_full_y_module
+  gridpack_dsmatrix_components
+  gridpack_powerflow_module
+  )
 
 # -------------------------------------------------------------
 # component serialization tests

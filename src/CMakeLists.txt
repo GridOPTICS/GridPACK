@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-07-30 12:48:21 d3g096
+# Last Change: 2019-08-16 12:58:52 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -25,7 +25,7 @@ endif (POLICY CMP0026)
 project (GridPACK)
 
 set (GridPACK_VERSION_MAJOR 3)
-set (GridPACK_VERSION_MINOR 1)
+set (GridPACK_VERSION_MINOR 3)
 set (GridPACK_VERSION_PATCH 0)
 
 # This is a C++ project exclusively
@@ -89,6 +89,34 @@ option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
 
 # -------------------------------------------------------------
+# External project settings, generally
+# -------------------------------------------------------------
+
+# A set of common places to put the external projects (if used)
+
+set(DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Downloads)
+set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
+set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libs)
+set(GRIDPACK_TEST_LDPATH "")
+if(BUILD_SHARED_LIBS)
+  set(LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+  set(LIB_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
+  set(LIB_TYPE SHARED)
+else()
+  set(LIB_SUFFIX ${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(LIB_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
+  set(LIB_TYPE STATIC)
+endif()
+
+# make a bogus target so that all libraries depend on; external
+# projects are added as dependencies to this target so external
+# libraries are (hopefully) built before any GridPACK code
+
+add_custom_target(external_build
+  COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/external_build.stamp
+  )
+
+# -------------------------------------------------------------
 # MPI compiler
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
@@ -125,9 +153,35 @@ message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 # Find the Boost library. It needs to use the same compiler as
 # MPI. How can I check that?
 # -------------------------------------------------------------
-message(STATUS "Checking Boost ...")
-# set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.49 COMPONENTS mpi serialization random filesystem system REQUIRED)
+
+option(BOOST_BUILD_PYTHON "Include Boost::Python in the Boost build" OFF)
+
+# These are the Boost libraries required here
+  
+set(BOOST_BUILD_LIBS "")
+list(APPEND BOOST_BUILD_LIBS mpi serialization random filesystem system)
+
+if(BUILD_BOOST)
+
+  if(BOOST_BUILD_PYTHON)
+    list(APPEND BOOST_BUILD_LIBS python)
+  endif()
+
+  include(BuildBoostExternalProject)
+  BuildBoostExternalProject("${BOOST_BUILD_LIBS}")
+  add_dependencies(external_build external_boost)
+  # FIXME: Build type (probably only important for Windoze)
+  list(APPEND GRIDPACK_TEST_LDPATH ${Boost_LIBRARY_DIR_DEBUG} ${Boost_LIBRARY_DIR_RELEASE} )
+else(BUILD_BOOST)
+  message(STATUS "Checking Boost ...")
+  find_package(Boost 1.53
+    COMPONENTS ${BOOST_BUILD_LIBS}
+    REQUIRED
+    )
+endif(BUILD_BOOST)
+message(STATUS "Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
+message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
+
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
@@ -207,11 +261,22 @@ find_package(ParMETIS REQUIRED)
 
 # -------------------------------------------------------------
 # GlobalArrays
-# 
-# Only versions > 5.2 have been used
+# Build or Find
 # -------------------------------------------------------------
-message(STATUS "Checking GA ...")
-find_package(GA REQUIRED)
+option(BUILD_GA "Download and build Global Arrays" OFF)
+option(GA_INFINIBAND "Try to configure GA for an Infiniband cluster" OFF)
+
+if(BUILD_GA)
+  include(BuildGAExternalProject)
+  BuildGAExternalProject()
+  add_dependencies(external_build external_global_arrays)
+  list(APPEND GRIDPACK_TEST_LDPATH ${GA_DIR}/lib)
+else(BUILD_GA)
+  message(STATUS "Checking GA ...")
+  find_package(GA REQUIRED)
+endif(BUILD_GA)
+message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
+message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")
 
 # -------------------------------------------------------------
 #  Add optimization libraries, if requested
@@ -318,9 +383,44 @@ if (ENABLE_CRAY_BUILD)
   endif()
 endif()
 
+# If external packages are built as shared libraries, the library
+# search path needs to be set so unit tests can find them when run.
+# Try setting the LIBRARY_PATH environment variable to include the
+# directories from external packages.
+
+if(GRIDPACK_TEST_LDPATH)
+  string(REPLACE ";" ":" tmp "${GRIDPACK_TEST_LDPATH}")
+  set(GRIDPACK_TEST_LDPATH "${tmp}")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    if(ENV{DYLD_LIBRARY_PATH})
+      set(GRIDPACK_TEST_LDPATH "${GRIDPACK_TEST_LDPATH}:$ENV{DYLD_LIBRARY_PATH}")
+    endif()
+    set(ENV{DYLD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
+    message(STATUS "DYLD_LIBRARY_PATH: $ENV{DYLD_LIBRARY_PATH}")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if(ENV{LD_LIBRARY_PATH})
+      set(GRIDPACK_TEST_LDPATH "${GRIDPACK_TEST_LDPATH}:$ENV{LD_LIBRARY_PATH}")
+    endif()
+    set(ENV{LD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
+    message(STATUS "LD_LIBRARY_PATH: $ENV{LD_LIBRARY_PATH}")
+  endif()
+endif()
+
 # -------------------------------------------------------------
 # Installation
 # -------------------------------------------------------------
+
+# When built as shared libraries, and installed in non-system dirs
+set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
 install(FILES
   ${GRIDPACK_SRC_DIR}/../README.md
   LICENSE

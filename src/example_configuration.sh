@@ -4,16 +4,19 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [-s] [name]"
+usage="$0 [-d|-r] [-s] [-G] [-B] [name]"
 
-set -- `getopt rds $*`
+options=`getopt rdsGB $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
 fi
+set -- "$options"
 
 build="RelWithDebInfo"
 shared="FALSE"
+buildGA="FALSE"
+buildBoost="FALSE"
 for o in $*; do
     case $o in
         -d)
@@ -26,6 +29,12 @@ for o in $*; do
             ;;
         -s)
             shared="ON"
+            shift
+            ;;
+        -G) buildGA="ON"
+            shift
+            ;;
+        -B) buildBoost="ON"
             shift
             ;;
         --)
@@ -51,6 +60,8 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
+        -D BUILD_GA:BOOL=$buildGA \
+        -D BUILD_BOOST:BOOL=$buildBoost \
         -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
@@ -158,11 +169,18 @@ elif [ $host == "WE32673" ]; then
 
     prefix="/Users/d3g096/Projects/GridPACK"
 
+    if [ "$shared"x = "ON"x ]; then
+        pdir="$prefix/petsc-3.8.4"
+        parch="arch-macosx-clang-real-shared-c"
+    else
+        pdir="$prefix/petsc-3.8.4"
+        parch="arch-macosx-clang-real-opt"
+    fi
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="/opt/local" \
-        -D PETSC_DIR:PATH="$prefix/petsc-3.8.4" \
-        -D PETSC_ARCH:STRING="arch-macosx-clang-real-shared-c" \
+        -D PETSC_DIR:PATH="$pdir" \
+        -D PETSC_ARCH:STRING="$parch" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
@@ -200,16 +218,10 @@ elif [ $host == "tlaloc" ]; then
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
         parch="rhel6-complex-c-shared"
     else
-        pdir="/net/flophouse/files0/perksoft/petsc-3.4.5"
-        # pdir="/net/flophouse/files0/perksoft/petsc-3.4.2"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.5.4"
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel6-real-c-static"
-        #parch="rhel6-real-c++-static"
         parch="rhel6-complex-c-static"
-        # parch="rhel6-complex-c++-static"
     fi
-    
+
     cmake3 $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
