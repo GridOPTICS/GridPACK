@@ -193,52 +193,14 @@ For applications developed outside the GridPACK distribution, the build process 
  9
 10 project(MyProject)
 11
-\end{Verbatim}
-}
-
-%\[11\] 
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 12 enable_language(CXX)
 13
-\end{Verbatim}
-}
-
-%\[13\] 
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 14 gridpack_setup()
 15
-\end{Verbatim}
-}
-%\[15\] 
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 16 add_definitions(\${GRIDPACK_DEFINITIONS})
-\end{Verbatim}
-}
-
-%\texttt{\textbf{16 add\_definitions(\$$\boldsymbol{\mathrm{\{}}$GRIDPACK\_DEFINITIONS$\boldsymbol{\mathrm{\}}}$)}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 17 include_directories(BEFORE \${CMAKE_CURRENT_SOURCE_DIR})
 18 include_directories(BEFORE \${GRIDPACK_INCLUDE_DIRS})
 19
-\end{Verbatim}
-}
-%\[19\] 
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 20 add_executable(myapp.x
 21   myapp_main.cpp
 22   mayapp_driver.cpp
@@ -253,24 +215,10 @@ For applications developed outside the GridPACK distribution, the build process 
 31   \${CMAKE_CURRENT_SOURCE_DIR}/input.xml
 32   \${CMAKE_CURRENT_BINARY_DIR}
 33 
-\end{Verbatim}
-}
-%\[33\] 
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 34   COMMAND \${CMAKE_COMMAND} -E copy 
 35   \${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
 36   \${CMAKE_CURRENT_BINARY_DIR}
 37 
-\end{Verbatim}
-}
-
-%\[37\] 
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 38   DEPENDS 
 39   \${CMAKE_CURRENT_SOURCE_DIR}/input.xml
 40   \${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
@@ -417,11 +365,6 @@ Two functions are available that return the number of buses or branches that are
 \color{red}
 \begin{Verbatim}[fontseries=b]
 int numBuses()
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 
 int numBranches()
 \end{Verbatim}
@@ -433,11 +376,6 @@ There are also functions that will return the total number of buses or branches 
 \color{red}
 \begin{Verbatim}[fontseries=b]
 int totalBuses()
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 
 int totalBranches()
 \end{Verbatim}
@@ -460,11 +398,6 @@ Ghost buses and branches are distinguished from locally owned buses and branches
 \color{red}
 \begin{Verbatim}[fontseries=b]
 bool getActiveBus(int idx)
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 
 bool getActiveBranch(int idx)
 \end{Verbatim}
@@ -488,26 +421,11 @@ It is frequently necessary to gain access to the objects associated with each bu
 \color{red}
 \begin{Verbatim}[fontseries=b]
 boost::shared_ptr<Bus> getBus(int idx)
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 
 boost::shared_ptr<Branch> getBranch(int idx)
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 
 boost::shared_ptr<DataCollection> getBusData(int idx)
 
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 boost::shared_ptr<DataCollection> getBranchData(int idx)
 \end{Verbatim}
 }
@@ -519,6 +437,7 @@ The following functions can be useful for handling input that is directed at cer
 \color{red}
 \begin{Verbatim}[fontseries=b]
 std::vector<int> getLocalBusIndices(int idx)
+
 std::vector<int> getLocalBranchIndices(int idx1, int idx2)
 \end{Verbatim}
 }
@@ -540,11 +459,6 @@ Finally, two sets of functions are required in order to set up and execute data 
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void initBusUpdate()
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 
 void initBranchUpdate()
 \end{Verbatim}
@@ -558,11 +472,6 @@ After the updates have been initialized, it is possible to execute a data exchan
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void updateBuses()
-\end{Verbatim}
-}
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 
 void updateBranches()
 \end{Verbatim}
@@ -669,7 +578,6 @@ void addElement(const int &i, const int &j,
 
 void addElements(const int &n, const int *i, const int *j,
                  const ComplexType *x)
-
 \end{Verbatim}
 }
 
@@ -718,6 +626,7 @@ Two functions that can be used to write the contents of a matrix, either to stan
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void print (const char *filename=NULL) const
+
 void save(const char *filename) const
 \end{Verbatim}
 }
@@ -843,7 +752,9 @@ The parameter \texttt{\textbf{local\_length}} is the number of contiguous elemen
 \color{red}
 \begin{Verbatim}[fontseries=b]
 int size(void) const
+
 int localSize(void) const
+
 void localIndexRange(int &lo, int &hi) const
 \end{Verbatim}
 }
@@ -856,14 +767,22 @@ Vector elements can be set and accessed using the functions
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void setElement(const int &i, const ComplexType &x)
+
 void setElementRange(const int& lo, const int &hi, ComplexType *x)
+
 void setElements(const int &n, const int *i, const ComplexType *x)
+
 void addElement(const int &i, const ComplexType &x)
+
 void addElements(const int& n, const int *i, const ComplexType *x)
+
 void getElement(const int& i, ComplexType& x) const
+
 void getElements(const int& n, const int *i, ComplexType *x) const
+
 void getElementRange(const int& lo, const int& hi,
                      ComplexType *x) const
+
 void ready(void)
 \end{Verbatim}
 }
@@ -874,7 +793,9 @@ These functions all operate in a similar way to the corresponding matrix operati
 \color{red}
 \begin{Verbatim}[fontseries=b]
 Vector *clone(void) const
+
 void print(const char* filename = NULL) const
+
 void save(const char *filename) const
 \end{Verbatim}
 }
@@ -887,17 +808,26 @@ Additional operations that can be performed on the entire vector include
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void zero(void)
-void equate(const Vector &x)
-void fill(const ComplexType& v)
-ComplexType norm1(void) const
-ComplexType norm2(void) const
-ComplexType normInfinity(void) const
-void scale(const ComplexType& x)
-void add(const ComplexType& x)
-void add(const Vector& x, const ComplexType& scale = 1.0)
-void elementMultiply(const Vector& x)
-void elementDivide(const Vector& x)
 
+void equate(const Vector &x)
+
+void fill(const ComplexType& v)
+
+ComplexType norm1(void) const
+
+ComplexType norm2(void) const
+
+ComplexType normInfinity(void) const
+
+void scale(const ComplexType& x)
+
+void add(const ComplexType& x)
+
+void add(const Vector& x, const ComplexType& scale = 1.0)
+
+void elementMultiply(const Vector& x)
+
+void elementDivide(const Vector& x)
 \end{Verbatim}
 }
 
@@ -909,10 +839,15 @@ The following methods modify the values of the vector elements using some functi
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void abs(void)
+
 void real(void)
+
 void imaginary(void)
+
 void conjugate(void)
+
 void exp(void)
+
 void reciprocal(void)
 \end{Verbatim}
 }
@@ -951,16 +886,16 @@ void configure(utility::Configuration::Cursor *props)
 The \texttt{\textbf{Configuration}} module is described in more detail below. This function can be used to pass information from the input file to the solver to alter its properties. For the PETSc library, the solver algorithm can be controlled using PETSc's runtime options database. Different options can be passed to PETSc by including a block in the input deck (there is more documentation on input decks in the section on the \texttt{\textbf{Configuration}} module). An example of this type of input is
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
 <LinearSolver>
-\;\;<PETScOptions>
-\;\;\;\;-ksp_view
-\;\;\;\;-ksp_type richardson
-\;\;\;\;-pc_type lu
-\;\;\;\;-pc_factor_mat_solver_package superlu_dist
-\;\;\;\;-ksp_max_it 1
-\;\;</PETScOptions>
+  <PETScOptions>
+    -ksp_view
+    -ksp_type richardson
+    -pc_type lu
+    -pc_factor_mat_solver_package superlu_dist
+    -ksp_max_it 1
+  </PETScOptions>
 </LinearSolver>
 \end{Verbatim}
 }
@@ -970,7 +905,7 @@ The \texttt{\textbf{LinearSolver}} block is where different solver parameters ar
 Some solvers that are available in PETSc only run serially and will fail if run on more than one processor. However, for the problem size ranges frequently encountered in power grid analysis, the serial solvers may be the fastest options. Other parts of the code may be more scalable so it is desirable to run them in parallel. GridPACK has options that allow users to run the code in parallel while using a serial solver, without the need to modify any application source code. This can be done by including the options
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
 <ForceSerial>true</ForceSerial>
 <InitialGuessZero>true</InitialGuessZero>
@@ -1115,19 +1050,12 @@ The functions that are used to create diagonal matrix blocks are
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual bool matrixDiagSize(int *isize, int *jsize) const
-\end{Verbatim}
-}
-%\textcolor{red}{\texttt{\textbf{}}}
 
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 virtual bool matrixDiagValues(ComplexType *values)
+
 virtual bool matrixDiagValues(RealType *values)
 \end{Verbatim}
 }
-
-%\textcolor{red}{\texttt{\textbf{}}}
 
 These functions are virtual functions and are expected to be overwritten by application-specific bus and branch classes. Depending on whether the application should create real or complex matrices, either the real or complex versions of \texttt{\textbf{matrixDiagValues}} can be implemented. The default behavior is to return 0 for \texttt{\textbf{isize}} and \texttt{\textbf{jsize}} for \texttt{\textbf{matrixDiagSize}} and to return false for all functions. These functions will not build a matrix unless overwritten by the application. Not all functions need to be overwritten by a given bus or branch class. Generally, only a subset of functions may be needed by an application.
 
@@ -1141,32 +1069,11 @@ The functions that are used to return values for off-diagonal matrix elements ar
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual bool matrixForwardSize(int *isize, int *jsize) const
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 virtual bool matrixForwardValues(ComplexType *values)
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 virtual bool matrixReverseSize(int *isize, int *jsize) const
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 virtual bool matrixReverseValues(ComplexType *values)
 \end{Verbatim}
 }
@@ -1179,14 +1086,7 @@ The final set of functions in the \texttt{\textbf{MatVecInterface}} that are of 
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual bool vectorSize(int *isize) const
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 virtual bool vectorValues(ComplexType *values)
 \end{Verbatim}
 }
@@ -1334,14 +1234,7 @@ Many power grid problems require the specification of a special bus as a referen
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void setReferenceBus(bool status)
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 bool getReferenceBus() const
 \end{Verbatim}
 }
@@ -1365,14 +1258,7 @@ The \texttt{\textbf{BaseBranchComponent}} class is similar to the \texttt{\textb
 \color{red}
 \begin{Verbatim}[fontseries=b]
 boost::shared_ptr<BaseComponent> getBus1() const
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 boost::shared_ptr<BaseComponent> getBus2() const
 \end{Verbatim}
 }
@@ -1385,14 +1271,7 @@ Two other functions in the \texttt{\textbf{BaseBranchComponent}} class that are 
 \color{red}
 \begin{Verbatim}[fontseries=b]
 int getBus1OriginalIndex() const
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 int getBus2OriginalIndex() const
 \end{Verbatim}
 }
@@ -1602,14 +1481,7 @@ The \texttt{\textbf{BaseFactory}} class supplies some basic functions that can b
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual void setComponents()
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 virtual void setExchange()
 \end{Verbatim}
 }
@@ -1644,6 +1516,7 @@ Some utility functions in the \texttt{\textbf{BaseFactory}} class that are occas
 \color{red}
 \begin{Verbatim}[fontseries=b]
 bool checkTrue(bool flag)
+
 bool checkTrueSomewhere(bool flag)
 \end{Verbatim}
 }
@@ -1702,14 +1575,7 @@ This function creates a new matrix and returns a pointer to it. If a matrix alre
 \begin{Verbatim}[fontseries=b]
 void mapToMatrix(
    boost::shared_ptr<gridpack::math::Matrix> &matrix)
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 void mapToMatrix(gridpack::math::Matrix &matrix)
 \end{Verbatim}
 }
@@ -1722,8 +1588,11 @@ Additional operations that can be used on existing matrices include
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+
 void overwriteMatrix(gridpack::math::Matrix &matrix)
+
 void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+
 void incrementMatrix(gridpack::math::Matrix &matrix)
 \end{Verbatim}
 }
@@ -1755,14 +1624,7 @@ The functions for overwriting the values of an existing vector are
 \begin{Verbatim}[fontseries=b]
 void mapToVector(
     boost::shared_ptr<gridpack::math::Vector> &vector)
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 void mapToVector(gridpack::math::Vector &vector)
 \end{Verbatim}
 }
@@ -1788,6 +1650,7 @@ Currently, GridPACK only supports two file formats. Files based on the PSS/E PTI
 \color{red}
 \begin{Verbatim}[fontseries=b]
 PTI23_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+
 PTI33_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
 \end{Verbatim}
 }
@@ -1826,42 +1689,6 @@ The use of a macro provides compile time error checking on the name. The goal of
 \section{Serial IO Module}
 
 The serial IO module is designed to provide a simple mechanism for writing information from selected buses and/or branches to standard output or a file using a consistent ordering scheme. Individual buses and/or branches implement a write method that will write bus/branch information to a single string. This information usually consists of bus or branch identifiers plus some parameters that are desired in the output. The serial IO module then gathers this information, moves it to the head node, and writes it out in a consistent order. An example of this type of output is shown in Figure~\ref{fig:fig-8}.
-
-%Figuring out how to treat text output in a figure environment so the captions and labels work. We could capture the output as a graphic too, if you wish.  I cloned the output example and put it into the figure float, then commented out the original, just in case we need it later. Figures float and their position will adjust depending on the page and surrounding text. 
-
-%\textcolor{red}{\texttt{\textbf{   Bus Voltages and Phase Angles}}}
-
-%\textcolor{red}{\texttt{\textbf{}}}
-
-%\textcolor{red}{\texttt{\textbf{   Bus Number      Phase Angle      Voltage Magnitude}}}
-
-%\textcolor{red}{\texttt{\textbf{          1          0.000000             1.060000}}}
-
-%\textcolor{red}{\texttt{\textbf{          2         -4.982589             1.045000}}}
-
-%\textcolor{red}{\texttt{\textbf{          3        -12.725100             1.010000}}}
-
-%\textcolor{red}{\texttt{\textbf{          4        -10.312901             1.017671}}}
-
-%\textcolor{red}{\texttt{\textbf{          5         -8.773854             1.019514}}}
-
-%\textcolor{red}{\texttt{\textbf{          6        -14.220946             1.070000}}}
-
-%\textcolor{red}{\texttt{\textbf{          7        -13.359627             1.061520}}}
-
-%\textcolor{red}{\texttt{\textbf{          8        -13.359627             1.090000}}}
-
-%\textcolor{red}{\texttt{\textbf{          9        -14.938521             1.055932}}}
-
-%\textcolor{red}{\texttt{\textbf{         10        -15.097288             1.050985}}}
-
-%\textcolor{red}{\texttt{\textbf{         11        -14.790622             1.056907}}}
-
-%\textcolor{red}{\texttt{\textbf{         12        -15.075585             1.055189}}}
-
-%\textcolor{red}{\texttt{\textbf{         13        -15.156276             1.050382}}}
-
-%\textcolor{red}{\texttt{\textbf{         14        -16.033645             1.035530}}}
 
 \begin{figure}
   \centering
@@ -2012,14 +1839,7 @@ and the header and write methods are
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void header(const char *string) const
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 void write(const char *signal = NULL)
 \end{Verbatim}
 }
@@ -2030,8 +1850,11 @@ These have exactly the same behavior as in the \texttt{\textbf{SerialBusIO}} cla
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void open(const char *filename)
+
 void close(void)
+
 boost::shared_ptr<std::ofstream> getStream()
+
 void setStream(boost::shared_ptr<std::ofstream> stream)
 \end{Verbatim}
 }
@@ -2126,6 +1949,7 @@ The first argument has type\texttt{\textbf{ Configuration::KeyType}} which is a 
 \color{red}
 \begin{Verbatim}[fontseries=b]
  int get(const KeyType &, int default_value) const ;
+
  bool get(const KeyType &, int *) const;
 \end{Verbatim}
 }
@@ -2911,14 +2735,7 @@ Task managers use the \texttt{\textbf{gridpack::parallel}} namespace. Task manag
 \color{red}
 \begin{Verbatim}[fontseries=b]
 TaskManager(void)
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 TaskManager(Communicator comm)
 \end{Verbatim}
 }
@@ -2940,14 +2757,7 @@ Once the task manager has been created, task IDs can be retrieved from the task 
 \color{red}
 \begin{Verbatim}[fontseries=b]
 bool nextTask(int *next)
-\end{Verbatim}
-}
 
-%\textcolor{red}{\texttt{\textbf{}}}
-
-{
-\color{red}
-\begin{Verbatim}[fontseries=b]
 bool nextTask(Communicator &comm, int *next)
 \end{Verbatim}
 }
@@ -3028,6 +2838,7 @@ Time increments can be accumulated to this category using the functions
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void start(const int idx)
+
 void stop(const int idx)
 \end{Verbatim}
 }
@@ -3045,8 +2856,8 @@ void dump(void) const
 The results for each category are printed to standard out. An example of a portion of the output from \texttt{\textbf{dump}} for a power flow code is shown below.
 
 {
-\bfseries
-\begin{Verbatim}[commandchars=\\\{\}]
+\color{red}
+\begin{Verbatim}[fontseries=b]
     Timing statistics for: Total Application
         Average time:               14.7864
         Maximum time:               14.7864
@@ -3082,6 +2893,7 @@ For each category, the dump command prints out the average time spent in that ca
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void dumpProfile(const int idx) const
+
 void dumpProfile(const std::string title)
 \end{Verbatim}
 }
@@ -3121,8 +2933,7 @@ This function requires a stream pointer that signifies which file the data is wr
 
 \section{Exceptions}
 
-The math module has been implemented so that failures throw exceptions. These can be caught by other parts of code and managed so that code does something more graceful than simply crash when an error is encountered. For example, a calculation that fails because the solver throws an exception might try to run again using a different solver. In a contingency analysis calculation, a contingency that fails because the solver did not converge can be marked as a failed calculation and the code can proceed to the next contingency. This allows the code to evaluate all contingencies even if some do not converge.
-A solver exception can be handled using the following construct
+The math module has been implemented so that failures throw exceptions. These can be caught by other parts of code and managed so that code does something more graceful than simply crash when an error is encountered. For example, a calculation that fails because the solver throws an exception might try to run again using a different solver. In a contingency analysis calculation, a contingency that fails because the solver did not converge can be marked as a failed calculation and the code can proceed to the next contingency. This allows the code to evaluate all contingencies even if some do not converge. A solver exception can be handled using the following construct
 
 {
 \color{red}
@@ -3145,6 +2956,7 @@ Exceptions can also be added to error conditions that are detected in user writt
 \color{red}
 \begin{Verbatim}[fontseries=b]
 Exception(const std::string msg)
+
 Exception(const char* msg)
 \end{Verbatim}
 }
@@ -3266,6 +3078,7 @@ which can be used to remove white space at the beginning and end of a string. Th
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void toUpper(std::string &str)
+
 void toLower(std::string &str)
 \end{Verbatim}
 }
@@ -3533,7 +3346,9 @@ Accessing the data in the table can be accomplished using the following three fu
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void getLocalIndices(std::vector<int> &indices)
+
 void getTags(std::vector<std::string> &tags)
+
 void getValues(int idx, std::vector<double> &values)
 \end{Verbatim}
 }
@@ -3638,6 +3453,7 @@ Some additional information can be added to the \texttt{\textbf{StatBlock}} obje
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void addRowMinValue(std::vector<double> min)
+
 void addRowMaxValue(std::vector<double> max)
 \end{Verbatim}
 }
@@ -3835,6 +3651,7 @@ Unlike the \texttt{\textbf{MatVecInterface}} class, there is no definitive way t
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual int matrixNumRows(void)
+
 virtual int matrixNumCols(void)
 \end{Verbatim}
 }
@@ -3846,8 +3663,11 @@ Unlike the original matrix-vector interface, the user has to assign the row and 
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual void matrixSetRowIndex(int irow, int idx)
+
 virtual void matrixSetColIndex(int icol, int idx)
+
 virtual int matrixGetRowIndex(int irow)
+
 virtual int matrixGetColIndex(int icol)
 \end{Verbatim}
 }
@@ -3904,6 +3724,7 @@ The functions that are used to actually evaluate matrix elements are
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual int matrixNumValues(void) const
+
 virtual void matrixGetValues(ComplexType *values,
                              int *rows, int *cols)
 \end{Verbatim}
@@ -3930,13 +3751,15 @@ The column index is associated with the phase angle variable on the remote bus \
 \end{Verbatim}
 }
 
-This function is called with the argument 0 since the dependent variables are always ordered as phase angle (0) followed by voltage magnitude \eqref{GrindEQ__1_}. The full list of Jacobian matrix elements can be obtained by looping over all measurements. For each bus measurement, there are contributions from the dependent variables on each connected bus plus two contributions from the calling bus. Similarly, for each branch measurement there are approximately four contributions coming from the independent variables associated with the buses at each end of the branch. A simple counter variable can be used to make sure that the matrix element value and the corresponding row and column indices stored in the same location of the \texttt{\textbf{values}}, \texttt{\textbf{rows }}and \texttt{\textbf{cols}} arrays that are returned by the \texttt{\textbf{getMatrixValues}} function.
+This function is called with the argument 0 since the dependent variables are
+always ordered as phase angle (0) followed by voltage magnitude (1). The full list of Jacobian matrix elements can be obtained by looping over all measurements. For each bus measurement, there are contributions from the dependent variables on each connected bus plus two contributions from the calling bus. Similarly, for each branch measurement there are approximately four contributions coming from the independent variables associated with the buses at each end of the branch. A simple counter variable can be used to make sure that the matrix element value and the corresponding row and column indices stored in the same location of the \texttt{\textbf{values}}, \texttt{\textbf{rows }}and \texttt{\textbf{cols}} arrays that are returned by the \texttt{\textbf{getMatrixValues}} function.
 The \texttt{\textbf{GenMatVecInterface}} also includes functions for setting up vectors. These work in a very similar way to the generalized matrix functions, so they will only be described briefly. The two functions
 
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
 virtual void vectorSetElementIndex(int ielem, int idx)
+
 virtual void vectorGetElementIndices(int *idx)
 \end{Verbatim}
 }
@@ -3987,11 +3810,17 @@ and the methods
 \color{red}
 \begin{Verbatim}[fontseries=b]
 boost::shared_ptr<gridpack::math::Matrix> mapToMatrix(void)
+
 void mapToMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+
 void mapToMatrix(gridpack::math::Matrix &matrix)
+
 void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+
 void overwriteMatrix(gridpack::math::Matrix &matrix)
+
 void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+
 void incrementMatrix(gridpack::math::Matrix &matrix)
 \end{Verbatim}
 }
@@ -4011,7 +3840,9 @@ and supports the methods
 \color{red}
 \begin{Verbatim}[fontseries=b]
 boost::shared_ptr<gridpack::math::Vector> mapToVector(void)
+
 void mapToVector(boost::shared_ptr<gridpack::math::Vector> &vector)
+
 void mapToVector(gridpack::math::Vector &vector)
 \end{Verbatim}
 }
@@ -4122,6 +3953,7 @@ The \texttt{\textbf{Variable}} class is used to define different types of variab
 \color{red}
 \begin{Verbatim}[fontseries=b]
 RealVariable(double val)
+
 RealVariable(double val, double vmin, double vmax)
 \end{Verbatim}
 }
@@ -4162,7 +3994,9 @@ All variables have an implicit upper and lower bound, even if this is not explic
 \color{red}
 \begin{Verbatim}[fontseries=b]
 double initial() const
+
 double lowerBound() const
+
 double upperBound() const
 \end{Verbatim}
 }
@@ -4173,6 +4007,7 @@ The \texttt{\textbf{IntegerVariable}} class is similar to the \texttt{\textbf{Re
 \color{red}
 \begin{Verbatim}[fontseries=b]
 IntegerVariable(int val)
+
 IntegerVariable(int val, int vmin, int vmax)
 \end{Verbatim}
 }
@@ -4183,9 +4018,13 @@ The behavior of this class is similar to that of \texttt{\textbf{RealVariable}},
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void name(const std::string name)
+
 std::string name() const
+
 int initial() const
+
 int lowerBound() const
+
 int upperBound() const
 \end{Verbatim}
 }
@@ -4205,9 +4044,13 @@ The \texttt{\textbf{BinaryVariable}} class inherits from the \texttt{\textbf{Int
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void name(const std::string name)
+
 std::string name() const
+
 int initial() const
+
 int lowerBound() const
+
 int upperBound() const
 \end{Verbatim}
 }
@@ -4258,6 +4101,7 @@ More complicated expressions can be built up from these simple operations. A con
 \color{red}
 \begin{Verbatim}[fontseries=b]
 ExpPtr var(new RealConstant(double));
+
 ExpPtr var(new IntegerConstant(int));
 \end{Verbatim}
 }
@@ -4321,6 +4165,7 @@ The power flow application is now ready to be used. To solve the current configu
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void solve()
+
 void nl_solve()
 \end{Verbatim}
 }
@@ -4332,7 +4177,9 @@ Output from the power flow solution can be written to an output file or standard
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void write()
+
 void writeBus(const char* signal)
+
 void writeBranch(const char* signal)
 \end{Verbatim}
 }
@@ -4356,6 +4203,7 @@ The location of output can be controlled using the commands
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void open(const char* filename)
+
 void close()
 \end{Verbatim}
 }
@@ -4405,6 +4253,7 @@ Two calls
 \color{red}
 \begin{Verbatim}[fontseries=b]
 bool setContingency(Contingency &event)
+
 bool unsetContingency(Contingency &event)
 \end{Verbatim}
 }
@@ -4417,6 +4266,7 @@ The remaining calls in \texttt{\textbf{PFAppModule}} can be used to determine th
 \color{red}
 \begin{Verbatim}[fontseries=b]
 bool checkVoltageViolations(double Vmin, double Vmax)
+
 bool checkVoltageViolations(int area, double Vmin, double Vmax)
 \end{Verbatim}
 }
@@ -4445,6 +4295,7 @@ Line overload violations can be checked by calling one of the functions
 \color{red}
 \begin{Verbatim}[fontseries=b]
 bool checkLineOverloadViolations()
+
 bool checkLineOverloadViolations(int area)
 \end{Verbatim}
 }
@@ -4483,7 +4334,7 @@ Again, this may be useful in contingency calculations where multiple calculation
 The state estimation module can be used to set up and run a state estimation calculation. It does not have the extra functions that the power flow module contains for supporting contingency analysis, so the interface is a bit smaller. In addition to a standard network configuration file, the state estimation calculation needs a second file consisting of measurements. This file has the format
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
     <Measurements>
       <Measurement>
@@ -4659,7 +4510,7 @@ Dynamic Loads:
 The full Y-matrix implementation of dynamic simulation is represented by the \texttt{\textbf{DSFullApp}} class and the \texttt{\textbf{DSFullNetwork}}, both of which reside in the \texttt{\textbf{gridpack::dynamic\_simulation}} namespace.
 The dynamic simulation module uses an input deck of the form
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
@@ -4801,6 +4652,7 @@ Some additional functions can be used to control where output generated during t
 \color{red}
 \begin{Verbatim}[fontseries=b]
 void open(const char* filename)
+
 void close()
 \end{Verbatim}
 }
@@ -4878,7 +4730,7 @@ All entries on the same lines are separated by commas. The first row contains th
 The input file for the Kalman filter module used both for a dynamic simulation as well as input that is unique to the Kalman filter module. The dynamic simulation parameters that are used include
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
   <Dynamic_simulation>
     <simulationTime>3</simulationTime>
@@ -4905,7 +4757,7 @@ The fault used in the simulation is specified using the same \texttt{\textbf{fau
 The Kalman filter block consists of the fields
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
   <Kalman_filter<
     <KalmanAngData>IEEE14_Kalman_input_ang.csv</KalmanAngData>
@@ -4984,7 +4836,7 @@ void solve()
 
 The values of the rotor speed and rotor angle for all generators will be written to the files \texttt{\textbf{omega.dat}} and \texttt{\textbf{delta.dat}} after this simulation is run.
 
-\section{GridPACK Examples}
+\chapter{GridPACK Examples}
 
 This section will expand on the discussion of the power flow application and provide additional examples of how GridPACK can be used to develop applications. Two of these are simple applications that have been provided in GridPACK that illustrate how the code works, without necessarily getting involved in the details that would be needed to implement a realistic power grid model. The third example is an in-depth discussion of a simplified version of the contingency analysis application. This provides a good illustration of how to create multi-task simulations and also an example of how to use modules. A more complicated version of contingency analysis is available in the application area. The main difference between the two is that the contingency analysis simulation in the application area performs much more analysis on the results of the individual contingencies.
 
@@ -5830,7 +5682,7 @@ void gridpack::resistor_grid::RGApp::execute(int argc, char** argv)
 The beginning of the resistor grid application is more complicated than ``Hello world'' in that it uses an input file to control the properties of the linear solver that is used to solve current equations. To read in the input file, the application starts by creating a communicator on the set of all processors. Only one configuration object is available to the application and the \texttt{\textbf{execute}} function gets a pointer to this instance by calling the static function \texttt{\textbf{Configuration::configuration()}}. This pointer can then be used to read in the input file, ``\texttt{\textbf{input.xml}}'', across all processes in the communicator \texttt{\textbf{world}} using the \texttt{\textbf{open}} method. All processors now have access to the contents of \texttt{\textbf{input.xml}}. The input file contains two pieces of information, the name of the PSS/E formatted resistor grid configuration file and the parameters for the linear solver. The input file has the form
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
@@ -6010,7 +5862,7 @@ The \texttt{\textbf{Contingency}} data structures are defined in as part of the 
 This function is designed to parse input of the form
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
 <?xml version="1.0" encoding="utf-8"?>
 <ContingencyList>
@@ -6112,7 +5964,7 @@ The next block of code creates a power flow application on each task communicato
 The first line creates a power flow network on the task communicator. The second line creates a power flow application. The \texttt{\textbf{readNetwork}} function assigns the powerflow network (which currently has nothing in it) to the power flow application, along with the pointer to the configuration module. The input file is expected to have a \texttt{\textbf{Powerflow}} block that contains parameters for the  power flow application. These include the location of the network configuration file and the type of solver that is to be used. An example of a complete input file is
 
 {
-\color{red}
+\color{blue}
 \begin{Verbatim}[fontseries=b]
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
@@ -6286,7 +6138,7 @@ At this point, the contingency application is essentially complete. The remainin
 
 are used to print out a list of how many tasks were evaluated on each processor and to stop the timing of the ``\texttt{\textbf{Total Application}}'' category. The timer \texttt{\textbf{dump}} method will print statistics on the amount of time spent in the total application as well as reporting timings inside the power flow application. The check on the \texttt{\textbf{dump}} call is to verify that all processors have participated in at least one power flow calculation.
 
-\section{Fortran 2003 Interface}
+\chapter{Fortran 2003 Interface}
 
 GridPACK has developed a Fortran interface that can be used to access most of the functionality in the framework modules. The Fortran interface makes extensive use of the object-oriented features in Fortran, so a compiler that supports the Fortran 2003 standard must be used if creating Fortran applications. The Fortran compiler must also support the iso\_c\_binding module, but this will usually be available if the compiler supports Fortran 2003. Most recent compilers support Fortran 2003. A working power flow application written entirely in Fortran has been included in the current release and demonstrates how to use the Fortran interface. The Fortran implementation is very similar to the C++ interface and most of the C++ documentation applies to the corresponding Fortran functionality. The remainder of this section will highlight the important differences between the C++ and Fortran interfaces.
 
