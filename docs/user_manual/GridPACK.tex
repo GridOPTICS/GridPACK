@@ -5220,11 +5220,13 @@ Where $V_{\alpha }$ and $V_{\beta }$ are the voltage potentials on nodes $\alpha
 The unknowns in this system are the potentials $V_{\alpha }$. Kirkoff's law applies to any node that does not have an applied value of the potential. The nodes that do have a fixed potential appear as part of the right hand side vector. Assuming that any node with a non-fixed value of the potential is attached to at most one fixed node, then the $\alpha $th element of the right hand side vector is
 \[\frac{V^{\boldsymbol{0}}_{\boldsymbol{\beta }}}{R_{\alpha \beta }}\] 
 where $V^{\boldsymbol{0}}_{\boldsymbol{\beta }}$ is the value of the fixed potential on node $\beta $ and $\alpha $ is attached to $\beta $. If $\alpha $ is not attached to $\beta $, then the element is zero. The voltages can be evaluated by solving the matrix equation
-\[\overline{\overline{C}}\bullet \overline{V}={\overline{I}}_0\] 
+\[\overline{\overline{C}}\cdot \overline{V}={\overline{I}}_0\] 
 The voltage vector and right hand side have already been discussed. The matrix elements have the form
-\[ \begin{array}{c}
-C_{\alpha \alpha }=\sum_{\beta \in \left\{\alpha \right\}}{\frac{1}{R_{\alpha \beta }}\ \ \ \ \ \ \ \ \ \ \ } \\ 
-C_{\alpha \beta }=-\frac{1}{R_{\alpha \beta }}\ \mathrm{if}\ \alpha \neq \beta  \end{array}
+\[
+C_{\alpha \alpha }=\sum_{\beta \in \left\{\alpha \right\}}{\frac{1}{R_{\alpha \beta }}}
+\]
+\[
+C_{\alpha \beta }=-\frac{1}{R_{\alpha \beta }}\ \mathrm{\;\;\;\;\;if}\ \alpha \neq \beta
 \] 
 With this background, we can talk about the implementation of the resistor grid application.
 
