@@ -1,0 +1,51 @@
+\chapter{GridPACK Framework Components}
+
+This section will describe the GridPACK components and the functionality they support. The four major GridPACK components are networks, bus and branch components, the mappers and the math module. The math module is relatively self-contained and can be used as a conventional library, but the other three are tightly coupled and need to be used together to do anything useful. A schematic that illustrates the relationship between these components is shown in Figure~\ref{fig:fig-1}.
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=6in, height=3.81in, keepaspectratio=true]{Fig1-Relationship-Grid-components}
+  \caption{Relationship between major GridPACK components.}
+  \label{fig:fig-1}
+\end{figure}
+
+%\noindent \includegraphics*[width=6in, height=3.81in, keepaspectratio=true]{Fig1-Relationship-Grid-components}
+
+%\noindent \includegraphics*[width=6.50in, height=3.81in, keepaspectratio=false, trim=0.00in 0.53in 0.00in 0.53in]{Fig1-Relationship-Grid-components}  original converted figure from GrindEQ
+
+%\textcolor{red}{\texttt{\textbf{Figure 1.}} Relationship between major GridPACK components.}
+
+A full description of a power grid network requires specification of both the network topology and the physical properties of the bus and branch components. The combination of the models and the network generate algebraic equations that can be solved to get desired system properties. GridPACK supplies numerous modules to simplify the process of specifying the model and solving it. These include power grid components that describe the physics of the different network models or analyses, grid component factories that initialize the grid components, mappers that convert the current state of the grid components into matrices and vectors, solvers that supply the preconditioner and solver functionality necessary to implement solution algorithms, input and output modules that allow developers to import and export data, and other utility modules that support standard code develop operations like timing, event logging, and error handling.
+
+Many of these modules are constructed using libraries developed elsewhere so as to minimize framework development time. However, by wrapping them in interfaces geared towards power grid applications these libraries can be made easier to use by power grid engineers. The interfaces also make it possible in the future to exchange libraries for new or improved implementations of specific functionality without requiring application developers to rewrite their codes. This can significantly reduce the cost of introducing new technology into the framework. The software layers in the GridPACK framework are shown schematically in  Figure~\ref{fig:fig-2}.
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=6in, height=4.05in, keepaspectratio=true]{Fig2-Grid-framework-schematic}
+  \caption{A schematic diagram of the GridPACK framework software data stack. Green represents components supplied by the framework and blue represents code that is developed by the user.}
+  \label{fig:fig-2}
+\end{figure}
+
+%\noindent \includegraphics*[width=6in, height=4.05in, keepaspectratio=true]{Fig2-Grid-framework-schematic}
+
+%\noindent       \includegraphics*[width=6.01in, height=4.05in, keepaspectratio=false, trim=0.00in 0.39in 0.49in 0.44in]{image67}
+
+%\textcolor{red}{\texttt{\textbf{Figure 2.}} A schematic diagram of the GridPACK framework software data stack. Green represents components supplied by the framework and blue represents code that is developed by the user.}
+
+Core framework components are described below. Before discussing the components themselves, some of the coding conventions and libraries used in GridPACK will be described.
+
+\section{Preliminaries} The GridPACK software uses a few coding conventions to help improve memory management and to minimize run-time errors. The first of these is to employ namespaces for all GridPACK modules. The entire GridPACK framework uses the \textbf{gridpack} namespace, individual modules within GridPACK are further delimited by their own namespaces. For example, the BaseNetwork class discussed in the next section resides in the \textbf{gridpack::network} namespace and other modules have similar delineations. The example applications included in the source code also have their own namespaces, but this is not a requirement for developing GridPACK-based applications.
+
+To help with memory management, many GridPACK functions return boost shared pointers instead of conventional C++ pointers. These can be converted to a conventional pointer using the \texttt{\textbf{get()}} command. We also recommend that the type of pointers be converted using a \texttt{\textbf{dynamic\_cast}} instead of conventional C-style cast.
+Application files should include the \texttt{\textbf{gridpack.hpp}} header file. This can be done by adding the line
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    #include "gridpack/include/gridpack.hpp"
+\end{Verbatim}
+}
+
+at the top of the application .hpp and/or .cpp files. This file contains definitions of all the GridPACK modules and their associated functions.
+
+Matrices and vectors in GridPACK were originally complex but now either complex or real matrices can be created using the library. Inside the GridPACK implementation, the underlying distributed matrices are either complex or real, but the framework adds a layer that supports both types of objects, even if the underlying math library does not. However, computations on complex matrices will perform better if the underlying math library is configured to use complex matrices directly. This should be kept in mind when choosing the math library to build GridPACK on. The underlying PETSc library can be configured to support either real or complex matrices. Complex numbers are represented in GridPACK as having type \texttt{\textbf{ComplexType}}. The real and imaginary parts of a complex number \texttt{\textbf{x}} can be obtained using the functions \texttt{\textbf{real(x)}} and \texttt{\textbf{imag(x)}}.

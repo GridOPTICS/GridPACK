@@ -1,0 +1,181 @@
+\section{Data Interface}
+
+The main route for incorporating information about buses and branches into GridPACK applications is the \texttt{\textbf{DataCollection}} class. Each bus and branch (including ghost buses and ghost branches) has an associated \texttt{\textbf{DataCollection}} object that contains all the parameters associated with that object. The \texttt{\textbf{DataCollection}} class works in conjunction with the \texttt{\textbf{dictionary.hpp}} header file, which defines a unified vocabulary for labeling power grid parameters that are used in applications. The goal of using the dictionary is to create a unified vocabulary for power grid parameters within GridPACK that is independent of the source of the parameters.
+
+The \texttt{\textbf{DataCollection}} class is a simple container that can be used to store key-value pairs and resides in the \texttt{\textbf{gridpack::component}} namespace. When the network is created using a standard parser to read a network configuration file (see more on parsers below), each bus and branch created in the network has an associated \texttt{\textbf{DataCollection}} object. This object, in turn, contains all parameters from the configuration file that are associated with that particular bus or branch. The possible key values in the \texttt{\textbf{DataCollection}} object are defined in \texttt{\textbf{dictionary.hpp}} and represent parameters found in power grid applications. Parameters associated with a given key can be retrieved from the \texttt{\textbf{DataCollection}} object using some simple accessors.
+
+Data can be stored in two ways inside the \texttt{\textbf{DataCollection}} object. The first method assumes that there is only a single instance of the key-value pair, the second assumes there are multiple instances. This second case can occur, for example, if there are multiple generators on a bus. Generators are characterized by a collection of parameters and each generator has its own set of parameters. The generator parameters can be indexed so that they can be matched with a specific generator.
+
+When a network is created by parsing an external configuration file, for example a PSS/E format .raw file, the network topology and component objects are created and distributed over processors. All network components are in an initial state that is determined by the constructor for that object. This is usually very simple, since at the moment when the object is created, there is very little information available about how to initialize it. Along with the component object, a \texttt{\textbf{DataCollection}} object is also created. The \texttt{\textbf{DataCollection }}object stores all the parameters from the network configuration file using a key-value scheme. The situation is illustrated schematically in Figure~\ref{fig:fig-6}.
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=6.00in, height=4.24in, keepaspectratio=true]{Fig6-objects-network}
+  \caption{Schematic diagram representing relationship between the \textbf{DataCollection} objects (green) and the network components (purple). The arrows represent the transfer of data from the data collections to the network components during the \textbf{load} operation.}
+  \label{fig:fig-6}
+\end{figure}
+
+%\noindent \includegraphics*[width=6.00in, height=4.24in, keepaspectratio=false, trim=0.00in 0.07in 0.00in 0.19in]{image73}
+
+%\textcolor{red}{\texttt{\textbf{Figure 6.}} Schematic diagram representing relationship between the \textbf{DataCollection} objects (green) and the network components (purple). The arrows represent the transfer of data from the data collections to the network components during the \textbf{load} operation.}
+
+Each bus and branch in the figure has an associated \texttt{\textbf{DataCollection}} and network component (bus or branch class) object associated with it. After the network is created, the \texttt{\textbf{DataCollection}} objects are filled with key-value pairs while network components are in an uninitialized state. The information can be transferred from the \texttt{\textbf{DataCollection}} objects to the network components by implementing the network component \texttt{\textbf{load}} function. The load function has a pointer to the associated \texttt{\textbf{DataCollection}} object passed when it is called, so that the contents of the data collection can be accessed using the functions described below.
+
+Assuming that a parameter only appears once in the data collection, the contents of a \texttt{\textbf{DataCollection}} object can be accessed using the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool getValue(const char *name, int *value)
+bool getValue(const char *name, long *value)
+bool getValue(const char *name, bool *value)
+bool getValue(const char *name, std::string *value)
+bool getValue(const char *name, float *value)
+bool getValue(const char *name, double *value)
+bool getValue(const char *name, ComplexType *value)
+\end{Verbatim}
+}
+
+These functions return true if a variable of the correct type is stored in the \texttt{\textbf{DataCollection}} object with the key ``\texttt{\textbf{name}}'', otherwise it returns false. For example, there is only one parameter \texttt{\textbf{BUS\_VOLTAGE\_MAG}} for each bus, so this value can be obtained using the \texttt{\textbf{double}} variant of \texttt{\textbf{getValue}}.
+All \texttt{\textbf{getValue}} functions (including the functions below) leave the value of the variable unchanged if the corresponding name is not found in the data collection. This can be used to implement default values using the following construct
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+double var;
+var = 1.0;
+getValue("SOME_VARIABLE_NAME",&var);
+\end{Verbatim}
+}
+
+If the variable is not found in the data collection, the default value is 1. The returned bool value can also be used to implement defaults or take alternative actions if the value is not found.
+
+If the variable is stored multiple times in the \texttt{\textbf{DataCollection}}, then it can be accessed with the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool getValue(const char *name, int *value, const int idx)
+bool getValue(const char *name, long *value, const int idx)
+bool getValue(const char *name, bool *value, const int idx)
+bool getValue(const char *name, std::string *value, const int idx)
+bool getValue(const char *name, float *value, const int idx)
+bool getValue(const char *name, double *value, const int idx)
+bool getValue(const char *name, ComplexType *value, const int idx)
+\end{Verbatim}
+}
+
+where \texttt{\textbf{idx}} is an index that identifies a particular instance of the key. In this case, the key is essentially a combination of the character string \texttt{\textbf{name}} and the index. An example is the parameter describing the generator active power output, \texttt{\textbf{GENERATOR\_PG}}. Because there can be more than one generator on the bus, it is necessary to include an additional index to indicate which generator values are required. Internally, the key then becomes the combination \texttt{\textbf{GENERATOR\_PG:idx}}. The index values are 0-based, so the first value has index 0, the second value has index 1 and so on up to N-1, where N is the total number of values. Note that because the combination of name and index is actually stored internally as a key, it is not necessary that all values of the index between 0 and N-1 be stored in the data collection. If some generators are missing some parameters, that is allowed. It is up to the application to account for these missing values.
+
+The data collection is generally filled with values after the parser is called to create the network. The nomenclature for these values can be found in the \texttt{\textbf{dictionary.hpp}} file located under \texttt{\textbf{src/parser}} under the main GridPACK directory. Users are encouraged to look at this file to find out what parameters might be available to their applications. Note that different parameters may be available depending on the source file that was used to create that calculation. The PSS/E version 23 and version 33 files currently supported in GridPACK have significant differences and values that are present in the version 33 files are often not available from a version 23 file.
+
+The aim of using the dictionary is to separate GridPACK applications from data sources so that applications can easily switch between different file formats without having to rewrite code within the application itself. The dictionary provides a common internal nomenclature for power grid parameters. Parsers for different file formats need to map the input data from those formats to the dictionary, but once this is done, all GridPACK applications should, in principle, be able to use any source of data.
+The \texttt{\textbf{dictionary.hpp}} file itself has a very simple structure and consists of parameter definitions and some supporting documentation. Some examples of entries to the \texttt{\textbf{dictionary.hpp}} file are given below.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+/**
+ * Bus voltage magnitude, in p.u.
+ * type: real float
+ */
+#define BUS_VOLTAGE_MAG "BUS_VOLTAGE_MAG"
+
+/**
+ * Bus voltage phase angle, in degrees
+ * type: real float
+ */
+#define BUS_VOLTAGE_ANG "BUS_VOLTAGE_ANG"
+
+/**
+ * Number of generators on a bus
+ * type: integer
+ */
+#define GENERATOR_NUMBER "GENERATOR_NUMBER"
+
+/**
+ * Non-blank alphanumeric machine identifier, used to distinguish
+ * among multiple machines connected to the same bus  
+ * type: string
+ * indexed
+ */
+#define GENERATOR_ID "GENERATOR_ID"
+
+/**
+ * Generator active power output, entered in MW 
+ * type: real float
+ * indexed
+ */
+#define GENERATOR_PG "GENERATOR_PG"
+\end{Verbatim}
+}
+
+The names of these parameters follow the pattern that the first part of the name describes the type of network object that the parameter is associated with and the remainder of the name is descriptive of the particular parameter associated with that object. The second part of the name is frequently derived from the corresponding nomenclature used in PSS/E format files.
+
+The \texttt{\textbf{\#define}} statements that assign each character string to a C preprocessor symbol are used as a debugging tool. The \texttt{\textbf{getValue}} calls should use the preprocessor string instead of including the quotes. If a string has been mistyped or misspelled, the compiler will throw an error. The difference between using
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+getValue("BUS_VOLTAGE_MAG",&val);
+\end{Verbatim}
+}
+
+and
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+getValue(BUS_VOLTAGE_MAG,&val);
+\end{Verbatim}
+}
+
+is that the second construct will throw an error if \texttt{\textbf{BUS\_VOLTAGE\_MAG}} was misspelled or not included in the dictionary.
+
+The dictionary entries also contain some descriptive information about the parameter itself. The two most important pieces of information are the type of data the string represents and whether or not the parameter is indexed. The type should be used to match the type of variable with the corresponding parameter and the indexed keyword can be used to determine if an index needs to be included when accessing the data. For indexed quantities, there should be a parameter that indicates how many times the value appears in the data collections. In the snippet above, the generator parameters are indexed, while the bus variables are not. The \texttt{\textbf{GENERATOR\_NUMBER}} parameter is also not indexed and indicates how many generators are associated with the bus, as well as the number of times an indexed value associated with generators can appear in the data collection.
+
+The \texttt{\textbf{DataCollection}} objects can also be used to transfer data between different networks. This is important for chaining different types of calculations together. For example, a powerflow or state estimation calculation might be used to initialize a dynamic simulation and the \texttt{\textbf{DataCollection}} object can be used as a mechanism for transferring data between the two different networks. Because of this, the functions for adding more data to the \texttt{\textbf{DataCollection}} and the functions for overwriting the values of existing data are useful. New key value pairs can be added to a data collection object using the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void addValue(const char *name, int value)
+void addValue(const char *name, long value)
+void addValue(const char *name, bool value)
+void addValue(const char *name, char *value)
+void addValue(const char *name, float value)
+void addValue(const char *name, double value)
+void addValue(const char *name, ComplexType value)
+
+void addValue(const char *name, int value, const int idx)
+void addValue(const char *name, long value, const int idx)
+void addValue(const char *name, bool value, const int idx)
+void addValue(const char *name, char *value, const int idx)
+void addValue(const char *name, float value, const int idx)
+void addValue(const char *name, double value, const int idx)
+void addValue(const char *name, ComplexType value, const int idx)
+\end{Verbatim}
+}
+
+Existing values can be overwritten with the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool setValue(const char *name, int value)
+bool setValue(const char *name, long value)
+bool setValue(const char *name, bool value)
+bool setValue(const char *name, char *value)
+bool setValue(const char *name, float value)
+bool setValue(const char *name, double value)
+bool setValue(const char *name, ComplexType value)
+
+bool setValue(const char *name, int value, const int idx)
+bool setValue(const char *name, long value, const int idx)
+bool setValue(const char *name, bool value, const int idx)
+bool setValue(const char *name, char *value, const int idx)
+bool setValue(const char *name, float value, const int idx)
+bool setValue(const char *name, double value, const int idx)
+bool setValue(const char *name, ComplexType value, const int idx)
+\end{Verbatim}
+}

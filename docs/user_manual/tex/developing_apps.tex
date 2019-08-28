@@ -1,0 +1,558 @@
+\chapter{Developing Applications}
+
+The previous section outlined most of the basic modules in the GridPACK framework. In this section, we provide an overview of how to use these modules to create actual applications by discussing the development of a power flow simulation application in detail. Actual examples of a power flow application can be found by looking at an example code located under the top-level GridPACK directory in src/applications/examples/powerflow. Users can also look at the power flow module located in the 
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+src/applications/modules/powerflow 
+\end{Verbatim}
+}
+
+directory. The main difference between the power flow example code and the power flow module is that the module breaks up the power flow calculation into more separate function calls and the module also has options for using a non-linear solver. The power flow bus and branch classes are located in the directory src/applications/components/pf\_matrix.
+
+A schematic of a power flow code based on GridPACK is shown in Figure 9. For different power grid problems, the details of the code will be different, but most of these motifs will appear at some point or other. The main differences will probably be in feedback loops as results from one part of the calculation are fed back into other parts. For example, an iterative solver will need to update the current values of the network components, which can then be used to generate new matrices and vectors that are fed back into the next iteration of the solver. The diagram in Figure~\ref{fig:fig-9} is not complete, but gives an overall view of code structure and data movement.
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=6.50in, height=3.45in, keepaspectratio=false, trim=0.00in 0.68in 0.00in 0.75in]{Fig9}
+  \caption{Schematic of program flow for a power flow simulation. The yellow ovals are distributed data objects, the green blocks are GridPACK framework components and the blue blocks are application specific code. External files are red.}
+  \label{fig:fig-9}
+\end{figure}
+
+%\noindent \includegraphics*[width=6.50in, height=3.45in, keepaspectratio=false, trim=0.00in 0.68in 0.00in 0.75in]{image78}
+
+%\textcolor{red}{\texttt{\textbf{Figure 9.}} Schematic of program flow for a power flow simulation. The yellow ovals are distributed data objects, the green blocks are GridPACK framework components and the blue blocks are application specific code. External files are red.}
+
+As shown in the figure, application developers will need to focus on writing two or three sets of modules. The first is the network components. These are the descriptions of the physics and/or measurements that are associated with buses and branches in the power grid network. The network factory is a module that initializes the grid components on the network after the network is originally created by the import module. The power flow problem is simple enough that it can use a non-linear solver directly from the math module but even a straightforward solution such as this requires the developer to overwrite some functions in the factory that are used in the non-linear solver iterations.
+
+Most of the work involved in creating a new application is centered on creating the bus and branch classes. This discussion will describe in some detail the routines that need to be written in order to develop a working power flow simulation. Additional application modules for dynamic simulation and contingency analysis have also been included in the distribution and users are encouraged to look at these modules for additional coding examples on how to use GridPACK. The discussion below is designed to illustrate how to build an application and for brevity has left out some code compared to the working implementation. The source code contains more comment lines as well as some additional diagnostics that may not appear here. However, the overall design is the same and readers who have a good understanding of the following text should have no difficulty understanding the power flow source code.
+
+For the power flow calculation, the buses and branches will be represented by the classes \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}}. \texttt{\textbf{PFBus}} inherits from the \texttt{\textbf{BaseBusComponent}} class, so it automatically inherits the \texttt{\textbf{BaseComponent}} and \texttt{\textbf{MatVecInterface}} classes as well. The first thing that must be done in creating the \texttt{\textbf{PFBus}} component is to overwrite the load function in the \texttt{\textbf{BaseComponent}} class. The original function is just a placeholder that performs no action. The \texttt{\textbf{load}} function should take parameters from the \texttt{\textbf{DataCollection}} object associated with each bus and use them to initialize the bus component itself. For the \texttt{\textbf{PFBus}} component, a simplified \texttt{\textbf{load}} function is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::powerflow::PFBus::load(
+    const boost::shared_ptr<gridpack::component
+    ::DataCollection> &data)
+{
+  data->getValue(CASE_SBASE, &p_sbase);
+  data->getValue(BUS_VOLTAGE_ANG, &p_angle);
+  data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
+  p_v = p_voltage;
+  double pi = 4.0*atan\eqref{GrindEQ__1_0_}; p_angle = p_angle*pi/180.0;
+  p_a = p_angle;
+  int itype; data->getValue(BUS_TYPE, &itype);
+  if (itype == 3) {
+    setReferenceBus(true);
+  }
+  bool lgen;
+  int i, ngen, gstatus;
+  double pg, qg;
+  if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+    for (i=0; i<ngen; i++) {
+      lgen = true;
+      lgen = lgen && data->getValue(GENERATOR_PG, &pg,i);
+      lgen = lgen && data->getValue(GENERATOR_QG, &qg,i);
+      lgen = lgen && data->getValue(GENERATOR_STAT, &gstatus,i);
+      if (lgen) {
+        p_pg.push_back(pg);
+        p_qg.push_back(qg);
+        p_gstatus.push_back(gstatus);
+      }
+    }
+  }
+}
+\end{Verbatim}
+}
+
+This version of the \texttt{\textbf{load}} function has left off additional properties, such as shunts and loads and some transmission parameters, but it serves to illustrate how \texttt{\textbf{load}} is suppose to work. The \texttt{\textbf{load}} method in the base factory class will run over all buses, get the \texttt{\textbf{DataCollection}} object associated with each bus and then call the \texttt{\textbf{PFBus::load}} method using the \texttt{\textbf{DataCollection}} object as the argument. The parameters \texttt{\textbf{p\_sbase}}, \texttt{\textbf{p\_angle}}, \texttt{\textbf{p\_voltage}} are private members of \texttt{\textbf{PFBus}}. The variables corresponding to the keys \texttt{\textbf{CASE\_SBASE}}, \texttt{\textbf{BUS\_VOLTAGE\_ANG}}, \texttt{\textbf{BUS\_VOLTAGE\_MAG}} were stored in the \texttt{\textbf{DataCollection}} object when the network configuration file was parsed. They are retrieved from this object using the \texttt{\textbf{getValue}} functions and assigned to \texttt{\textbf{p\_sbase}}, \texttt{\textbf{p\_angle}}, \texttt{\textbf{p\_voltage}}. Additional internal variables are also assigned in a similar manner. The value of the \texttt{\textbf{BUS\_TYPE}} variable can be used to determine whether the bus is a reference bus. As mentioned previously, the \texttt{\textbf{CASE\_SBASE}} etc. are just preprocessor symbols that are defined in the \texttt{\textbf{dictionary.hpp}} file, which must be included in the file defining the \texttt{\textbf{load}} function. The \texttt{\textbf{dictionary.hpp}} file can be found in the \texttt{\textbf{src/parser}} directory of the GridPACK distribution.
+
+The variables referring to generators have a different behavior than the other variables. A bus can have multiple generators and these are stored in the \texttt{\textbf{DataCollection}} object with an index. The total number of generators on the bus is also stored in the \texttt{\textbf{DataCollection}} object with the key \texttt{\textbf{GENERATOR\_NUMBER}}. First the number of generators is retrieved and then a loop is set up so that all the generator variables can be accessed. The generator parameters are stored in local private arrays. The loop shows how the return value of the \texttt{\textbf{getValue}} function can be used to verify that all three parameters for a generator were found. If they aren't found, then the generator is incomplete and the generator is not added to the local data. The boolean return value can also be used to determine if the bus has other properties and to set internal flags and parameters accordingly. The load function for the \texttt{\textbf{PFBranch}} is constructed in a similar way, except that the focus is on extracting branch related parameters from the \texttt{\textbf{DataCollection}} object.
+
+Both the \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} classes contain an application-specific function called \texttt{\textbf{setYBus}} that is used to set up values in the Y-matrix. There is also a function in the powerflow factory class that runs over all buses and branches and calls this function. The \texttt{\textbf{setYBus}} function in \texttt{\textbf{PFBus}} is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::powerflow::PFBus::setYBus(void)
+{
+  gridpack::ComplexType ret(0.0,0.0);
+  std::vector<boost::shared_ptr<BaseComponent> > branches;
+  getNeighborBranches(branches);
+  int size = branches.size();
+  int i;
+  for (i=0; i<size; i++) {
+    gridpack::powerflow::PFBranch *branch
+      = dynamic_cast<gridpack::powerflow::PFBranch*>
+        (branches[i].get());
+    ret -= branch->getAdmittance();
+    ret -= branch->getTransformer(this);
+    ret += branch->getShunt(this);
+  }
+  if (p_shunt) {
+    gridpack::ComplexType shunt(p_shunt_gs,p_shunt_bs);
+    ret += shunt;
+  }
+  p_ybusr = real(ret);
+  p_ybusi = imag(ret);
+}
+\end{Verbatim}
+}
+
+This function evaluates the contributions to the Y-Matrix associated with buses. The real and imaginary parts of this number are stored in the internal variables \texttt{\textbf{p\_ybusr}} and \texttt{\textbf{p\_ybusi}}. The subroutine first creates the local variable \texttt{\textbf{ret}} and then gets a list of pointers to neighboring branches from the \texttt{\textbf{BaseBusComponent}} function \texttt{\textbf{getNeighborBranches}}. The function then loops over each of the branches and uses the dynamic cast function in C++ to convert the \texttt{\textbf{BaseComponent}} pointer to a \texttt{\textbf{PFBranch}} pointer. Note that the cast is necessary since the \texttt{\textbf{getNeighborBranches}} function only returns a list of \texttt{\textbf{BaseComponent}} object pointers. The \texttt{\textbf{BaseComponent}} class does not contain application-specific functions such as \texttt{\textbf{getAdmittance}}. The \texttt{\textbf{getAdmittance}}, \texttt{\textbf{getTransformer}} and \texttt{\textbf{getShunt}} methods return the contributions from transmission elements, transformers, and shunts associated with the branch. These are accumulated into the \texttt{\textbf{ret}} variable.
+
+The reason that the \texttt{\textbf{getAdmittance}} variable has no argument while both \texttt{\textbf{getTransformer}} and \texttt{\textbf{getShunt}} take the pointer ``\texttt{\textbf{this}}'' as an argument is that the admittance contribution from simple transmission elements is symmetric with respect to whether or not the calling bus is the ``from'' or ``to'' buses while the transformer and shunt contributions are not. This can be seen by examining the \texttt{\textbf{getTransformer}} function.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+gridpack::ComplexType
+  gridpack::powerflow::PFBranch::getTransformer(
+    gridpack::powerflow::PFBus *bus)
+{
+  gridpack::ComplexType ret(p_resistance,p_reactance);
+  if (p_xform) {
+    ret = -1.0/ret;
+    gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
+    a = p_tap_ratio*a;
+    if (bus == getBus1().get()) {
+      ret = ret/(conj(a)*a);
+    } else if (bus == getBus2().get()) {
+      // ret is unchanged
+    }
+  } else {
+    ret = gridpack::ComplexType(0.0,0.0);
+  }
+  return ret;
+}
+\end{Verbatim}
+}
+
+The variables \texttt{\textbf{p\_resistance}}, \texttt{\textbf{p\_reactance}}, \texttt{\textbf{p\_phase\_shift}}, and \texttt{\textbf{p\_tap\_ratio}} are all internal variables that are set based on the variables read in from using the \texttt{\textbf{load}} method or are set in other initialization steps. The boolean variable \texttt{\textbf{p\_xform}} variable is set to true in the \texttt{\textbf{PFBranch::load}} method if transformer-related variables are detected in the \texttt{\textbf{DataCollection}} objects associated with the branch, otherwise it is false.
+
+The \texttt{\textbf{PFBranch}} version of the \texttt{\textbf{setYBus}} function is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::powerflow::PFBranch::setYBus(void)
+{
+  gridpack::ComplexType ret(p_resistance,p_reactance);
+  ret = -1.0/ret;
+  gridpack::ComplexType a(cos(p_phase_shift),sin(p_phase_shift));
+  a = p_tap_ratio*a;
+  if (p_xform) {
+    p_ybusr_frwd = real(ret/conj(a));
+    p_ybusi_frwd = imag(ret/conj(a));
+    p_ybusr_rvrs = real(ret/a);
+    p_ybusi_rvrs = imag(ret/a);
+  } else {
+    p_ybusr_frwd = real(ret);
+    p_ybusi_frwd = imag(ret);
+    p_ybusr_rvrs = real(ret);
+    p_ybusi_rvrs = imag(ret);
+  }
+  gridpack::powerflow::PFBus *bus1 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+  gridpack::powerflow::PFBus *bus2 =
+    dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+  p_theta = (bus1->getPhase() - bus2->getPhase());
+}
+\end{Verbatim}
+}
+
+Note that the branch version of the \texttt{\textbf{setYBus}} function calculates different values for the Y-matrix contribution depending on whether the first index in the Y-matrix element corresponds to bus 1 (the forward direction) or bus 2 (the reverse direction). These are stored in the separate variables \texttt{\textbf{p\_ybusr\_frwd}} and \texttt{\textbf{p\_ybusi\_frwd}} for the forward directions and \texttt{\textbf{p\_ybusr\_rvrs}} and \texttt{\textbf{p\_ybusi\_rvrs}} for the reverse direction. This routine also calculates the variable \texttt{\textbf{p\_theta}} which is equal to the difference in the phase angle variable associated with the two buses at either end of the branch. This last variable provides an example of calculating a branch parameter based on the values of parameters located on the terminal buses.
+
+The \texttt{\textbf{setYBus}} functions described above are used in the power flow components to set some basic parameters. These are eventually incorporated into the Jacobian matrix and PQ vector that constitute the matrix and right hand side vector of the power flow equations. To build the matrix, it is necessary to implement the matrix size and matrix values functions in the \texttt{\textbf{MatVecInterface}}. The functions for setting up the matrix are discussed in detail in the following, the vector functions are simpler but follow the same pattern. The mode used for setting up the Jacobian matrix is ``\texttt{\textbf{Jacobian}}''. The corresponding \texttt{\textbf{matrixDiagSize}} routine is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::powerflow::PFBus::matrixDiagSize(int *isize,
+     int *jsize) const
+{
+  if (p_mode == Jacobian) {
+    *isize = 2;
+    *jsize = 2;
+    return true;
+  } else if (p_mode == YBus) {
+    *isize = 1;
+    *jsize = 1;
+    return true;
+  }
+}
+\end{Verbatim}
+}
+
+This function handles two modes, stored in the internal variable \texttt{\textbf{p\_mode}}. If the mode equals \texttt{\textbf{Jacobian}}, then the function returns a contribution to a 2$\mathrm{\times}$2 matrix. In the case that the mode is ``\texttt{\textbf{YBus}}'' the function would return a contribution to a 1$\mathrm{\times}$1 matrix. (The Jacobian is treated as a real matrix where the real and complex parts of the problem are treated as separate variables, the Y-matrix is handle as a regular complex matrix). The corresponding code for returning the diagonal values is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::powerflow::PFBus::matrixDiagValues(ComplexType *values)
+{
+  if (p_mode == YBus) {
+    gridpack::ComplexType ret(p_ybusr,p_ybusi);
+    values[0] = ret;
+    return true;
+  } else if (p_mode == Jacobian) {
+    if (!getReferenceBus()) {
+      values[0] = -p_Qinj - p_ybusi * p_v *p_v;
+      values[1] = p_Pinj - p_ybusr * p_v *p_v;
+      values[2] = p_Pinj / p_v + p_ybusr * p_v;
+      values[3] = p_Qinj / p_v - p_ybusi * p_v;
+      if (p_isPV) {
+        values[1] = 0.0;
+        values[2] = 0.0;
+        values[3] = 1.0;
+      }
+      return true;
+    } else {
+      values[0] = 1.0;
+      values[1] = 0.0;
+      values[2] = 0.0;
+      values[3] = 1.0;
+      return true;
+    }
+  }
+}
+\end{Verbatim}
+}
+
+In this implementation, the return values are of type \texttt{\textbf{ComplexType}}, even if they are real. For real values, the complex part is set to zero. If the mode is ``\texttt{\textbf{YBus}}'', the function returns a single complex value. If the mode is ``\texttt{\textbf{Jacobian}}'', the function checks first to see if the bus is a reference bus or not. If the bus is not a reference bus, then the function returns a 2$\mathrm{\times}$2 block corresponding to the contributions to the Jacobian matrix coming from a bus element. If the bus is a reference bus, the function returns a 2$\mathrm{\times}$2 identity matrix. This is a result of the fact that the variables associated with a reference bus are fixed. In fact, the variables contributed by the reference bus could be eliminated from the matrix entirely by returning false if the mode is ``\texttt{\textbf{Jacobian}}'' and the bus is a reference bus for both the matrix size and matrix values routines. This would also require some adjustments to the off-diagonal routines as well. There is an additional condition for the case where the bus is a ``PV'' bus. In this case one of the independent variables is eliminated by setting the off-diagonal elements of the block to zero and the second diagonal element equal to 1. The values are returned in column-major order, so \texttt{\textbf{values[0]}} corresponds to the (0,0) location in the 2$\mathrm{\times}$2 block, \texttt{\textbf{values[1]}} is the (1,0) location, \texttt{\textbf{values[2]}} is the (0,1) location and \texttt{\textbf{values[3]}} is the (1,1) location.
+
+The \texttt{\textbf{matrixForwardSize}} and \texttt{\textbf{matrixForwardValues}} routines, as well as the corresponding Reverse routines, are implemented in the \texttt{\textbf{PFBranch}} class. These functions determine the off-diagonal blocks of the Jacobian and Y-matrix. The \texttt{\textbf{matrixForwardSize}} routine is given by
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::powerflow::PFBranch::matrixForwardSize(int *isize,
+     int *jsize) const
+{
+  if (p_mode == Jacobian) {
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+    gridpack::powerflow::PFBus *bus2
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+    bool ok = !bus1->getReferenceBus();
+    ok = ok && !bus2->getReferenceBus();
+    if (ok) {
+      *isize = 2;
+      *jsize = 2;
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == YBus) {
+    *isize = 1;
+    *jsize = 1;
+    return true;
+  }
+}
+\end{Verbatim}
+}
+
+If the mode is ``\texttt{\textbf{YBus}}'', the size function returns a 1$\mathrm{\times}$1 block for the off-diagonal matrix block. For the Jacobian, this function first checks to see if either end of the branch is a reference bus by evaluating the Boolean variable ``ok''. If neither end is the reference bus then the function returns a 2$\mathrm{\times}$2 block, if one end is the reference bus then the function returns false. The false value indicates that this branch does not contribute to the matrix. For this system, the \texttt{\textbf{matrixReverseSize}} function is the same. For applications that return a non-square block, the reverse function will transpose the block dimensions relative to the forward direction.
+
+The \texttt{\textbf{matrixForwardValues}} function is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::powerflow::PFBranch::matrixForwardValues(
+   ComplexType *values)
+{
+  if (p_mode == Jacobian) {
+    gridpack::powerflow::PFBus *bus1
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus1().get());
+    gridpack::powerflow::PFBus *bus2
+      = dynamic_cast<gridpack::powerflow::PFBus*>(getBus2().get());
+    bool ok = !bus1->getReferenceBus();
+    ok = ok && !bus2->getReferenceBus();
+    if (ok) {
+      double cs = cos(p_theta);
+      double sn = sin(p_theta);
+      values[0] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+      values[1] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+      values[2] = (p_ybusr_frwd*cs + p_ybusi_frwd*sn);
+      values[3] = (p_ybusr_frwd*sn - p_ybusi_frwd*cs);
+      values[0] *= ((bus1->getVoltage())*(bus2->getVoltage()));
+      values[1] *= -((bus1->getVoltage())*(bus2->getVoltage()));
+      values[2] *= bus1->getVoltage();
+      values[3] *= bus1->getVoltage();
+      bool bus1PV = bus1->isPV();
+      bool bus2PV = bus2->isPV();
+      if (bus1PV & bus2PV) {
+        values[1] = 0.0;
+        values[2] = 0.0;
+        values[3] = 0.0;
+      } else if (bus1PV) {
+        values[1] = 0.0;
+        values[3] = 0.0;
+      } else if (bus2PV) {
+        values[2] = 0.0;
+        values[3] = 0.0;
+      }
+      return true;
+    } else {
+      return false;
+    }
+  } else if (p_mode == YBus) {
+    values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+    return true;
+  }
+}
+\end{Verbatim}
+}
+
+For the ``\texttt{\textbf{YBus}}'' mode, the function simply returns the complex contribution to the Y-matrix. For the ``\texttt{\textbf{Jacobian}}'' mode, the function first determines if either end of the branch is connected to the reference bus. If it is, then the function returns false and there is no contribution to the Jacobian. If neither end of the branch is the reference bus then the function evaluates the 4 elements of the 2$\mathrm{\times}$2 contribution to the Jacobian coming from the branch. To do this, the branch needs to get the current values of the voltages on the buses at either end by using the \texttt{\textbf{getVoltage}} accessor functions that have been defined in the \texttt{\textbf{PFBus}} class. Finally, if one end or the other of the branch is a PV bus, then some variables need to be eliminated from the equations. This can be done by setting appropriate values in the 2$\mathrm{\times}$2 block equal to zero.
+
+The \texttt{\textbf{matrixReverseValues}} function is similar to the \texttt{\textbf{matrixForwardValues}} functions with a few key differences. 1) the variables \texttt{\textbf{p\_ybusr\_rvrs}} and \texttt{\textbf{p\_ybusi\_rvrs}} are used instead of \texttt{\textbf{p\_ybusr\_frwd}} and \texttt{\textbf{p\_ybusi\_frwd}} 2) instead of using \texttt{\textbf{cos(p\_theta)}} and \texttt{\textbf{sin(p\_theta)}} the function uses \texttt{\textbf{cos(-p\_theta)}} and \texttt{\textbf{sin(-p\_theta)}} since \texttt{\textbf{p\_theta}} is defined as difference in phase angle on bus 1 minus the difference in phase angle on bus 2 and 3) the values that are set to zero in the conditions for PV buses are transposed. The PV conditions are the same as the forward case if both bus 1 and bus 2 are PV buses, if only bus 1 is a PV bus then \texttt{\textbf{values[2]}} and \texttt{\textbf{values[3]}} are zero and if only bus2 is a PV bus then \texttt{\textbf{values[1]}} and \texttt{\textbf{values[3]}} are zero.
+
+The functions for setting up vectors are similar to the corresponding matrix functions, although they are a bit simpler. The vector part of the \texttt{\textbf{MatVecInterface}} contains one function that does not have a counterpart in the set of matrix functions and that is the \texttt{\textbf{setValues}} function. This function can be used to push values in a vector object back into the buses that were used to generate the vector. For the Newton-Raphson method used to solve the power flow equations, it is necessary, at each iteration, to push the current solution back into the buses so they can be used to evaluate new Jacobian and right hand side vectors. The solution vector contains the current increments to the voltage and phase angle. These are written back to the buses using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::powerflow::PFBus::setValues(
+    gridpack::ComplexType *values)
+{
+  p_a -= real(values[0]);
+  p_v -= real(values[1]);
+  *p_vAng_ptr = p_a;
+  *p_vMag_ptr = p_v;
+}
+\end{Verbatim}
+}
+
+This function is paired with a mapper that is used to create a vector with the same pattern of contributions. If for example, the matrix equation \texttt{\textbf{Ax = b}} is being solved, then the mapper used to create the right hand side vector \texttt{\textbf{b}} should be used to push results back onto the buses using the \texttt{\textbf{mapToBus}} method. The \texttt{\textbf{setValues}} method above takes the contributions from the solution vector and uses then to decrement the internal variables \texttt{\textbf{p\_a}} (voltage angle) and \texttt{\textbf{p\_v}} (voltage magnitude). The new values of \texttt{\textbf{p\_a}} and \texttt{\textbf{p\_v}} are then assigned to the buffers \texttt{\textbf{p\_vAng\_ptr}} and \texttt{\textbf{p\_vMag\_ptr}} so that they can be exchanged with other buses. This is discussed below.
+
+The two routines that need to be created in the \texttt{\textbf{PFBus}} class to copy data to ghost buses are both simple. There is no need to create corresponding routines in the \texttt{\textbf{PFBranch}} class since branches do not exchange data in the power flow calculation. Two values need to be exchanged between buses, the current voltage angle and the current voltage magnitude. This requires a buffer that is the size of two doubles so the \texttt{\textbf{getXCBufSize}} function is written as
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int gridpack::powerflow::PFBus::getXCBufSize(void)
+{
+  return 2*sizeof(double);
+}
+\end{Verbatim}
+}
+
+The \texttt{\textbf{setXCBuf}} assigns the buffer created in the base factory \texttt{\textbf{setExchange}} function to internal variables used within the \texttt{\textbf{PFBus}} component. It has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::powerflow::PFBus::setXCBuf(void *buf)
+{
+  p_vAng_ptr = static_cast<double*>(buf);
+  p_vMag_ptr = p_vAng_ptr+1;
+  *p_vAng_ptr = p_a;
+  *p_vMag_ptr = p_v;
+}
+\end{Verbatim}
+}
+
+The buffer created in the \texttt{\textbf{setExchange}} routine is split between the two internal pointers \texttt{\textbf{p\_vAng\_ptr}} and \texttt{\textbf{p\_vMag\_ptr}}. These are then initialized to the current values of \texttt{\textbf{p\_a}} and \texttt{\textbf{p\_v}}. Whenever the \texttt{\textbf{updateBuses}} routine is called, the buffers on the ghost buses are refreshed with the current values of the variables from the processes that own the corresponding buses. Note that both the \texttt{\textbf{getXCBufSize}} and the \texttt{\textbf{setXCBuf}} routines are only called during the \texttt{\textbf{setExchange}} routine. They are not called during the actual bus updates.
+
+One final function in the \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} class that is worth taking a brief look at is the set mode function. This function is used to set the internal \texttt{\textbf{p\_mode}} variable that is defined in both classes. The \texttt{\textbf{PFMode}} enumeration, which contains both the ``\texttt{\textbf{YBus}}'' and ``\texttt{\textbf{Jacobian}}'' modes, is defined within the gridpack::powerflow namespace. The \texttt{\textbf{setMode}} function for both buses and branches has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::powerflow::PFBus::setMode(int mode)
+{
+  p_mode = mode;
+}
+\end{Verbatim}
+}
+
+This function is triggered on all buses and branches if the \texttt{\textbf{setMode}} method in the factory class is called.
+Once the \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} classes have been defined, it is possible to define a \texttt{\textbf{PFNetwork}} using a \texttt{\textbf{typdef}} statement. This can be done using the line
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+typedef network::BaseNetwork<PFBus, PFBranch > PFNetwork;
+\end{Verbatim}
+}
+
+in the header file declaring the \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} classes. This type can then be used in other powerflow files that need to create objects from templated classes.
+
+The discussion above summarizes many of the important functions in the \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} classes. Additional functions are included in these classes that are not discussed here, but the basic principles involved in implementing the remaining functions have been covered. 
+
+The first part of creating a new application is writing the network component classes. The second part is implementing the application-specific factory. For the power flow application, this is the \texttt{\textbf{PFFactory}} class, which inherits from the \texttt{\textbf{BaseFactory}} class. Most of the important functionality in \texttt{\textbf{PFFactory}} is derived from the \texttt{\textbf{BaseFactory}} class and is used without modification, but several application-specific functions have been added to \texttt{\textbf{PFFactory}} that are used to set internal parameters in the network components. As an example, consider the \texttt{\textbf{setYBus}} function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::powerflow::PFFactory::setYBus(void)
+{
+  int numBus = p_network->numBuses();
+  int numBranch = p_network->numBranches();
+  int i;
+  for (i=0; i<numBus; i++) {
+    p_network->getBus(i).get()->setYBus();
+  }
+  for (i=0; i<numBranch; i++) {
+    p_network->getBranch(i).get()->setYBus();
+  }
+}
+\end{Verbatim}
+}
+
+This function loops over all buses and branches and invokes the \texttt{\textbf{setYBus}} method in the individual \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} objects. The first two lines in the factory \texttt{\textbf{setYBus}} method get the total number of buses and branches on the process. A loop over all buses on the process is initiated and a pointer to the bus object is obtained via the \texttt{\textbf{getBus}} bus method in the \texttt{\textbf{BaseNetwork}} class. This pointer is returned as a pointer of type \texttt{\textbf{PFBus}}, so it is not necessary to do a dynamic cast on it and the \texttt{\textbf{setYBus}} method, which is not part of the base class, can be invoked. The same set of steps is then repeated for the branches. The factory can be used to create other methods that invoke functions on buses and/or branches. 
+
+Most of these functions follow the same general form as the \texttt{\textbf{setYBus}} method just described.
+The last part of building an application is creating the top level application driver that actually instantiates all the objects used in the calculation and controls the program flow. Running the code is broken up into two parts. The first is creating a main program and the second is creating the application driver. The main routine is primarily responsible for initializing the communication libraries and creating the application object, the application object then controls the application itself. The main program for the powerflow application is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc,argv);
+  gridpack::math::Initialize();
+
+  gridpack::powerflow::PFApp app;
+  app.execute();
+
+  gridpack::math::Finalize();
+}
+\end{Verbatim}
+}
+
+The first line in this program creates a variable of type \texttt{\textbf{Environment}} that initializes the MPI and GA communication libraries (the initialization happens in the constructor, so all that is necessary is to create the variable). The second line initializes the math library, which, in turn, calls the initialization routines of whatever library the math module is built on. The code then instantiates a power flow application object and calls the execute method for this object. The remainder of the power flow application is contained in the \texttt{\textbf{PFApp::execute}} method. Finally, when the application has finished running, the main program cleans up the communication and math libraries. The communication libraries are handled when the \texttt{\textbf{env}} variable goes out of scope and calls the \texttt{\textbf{Environment}} destructor. The main reason for breaking the code up in this way instead of including the execute function as part of \texttt{\textbf{main}} is to force the invocation of all the destructors in the GridPACK objects used to implement the application. Otherwise, these destructors get called after the communication libraries have been finalized and the program will fail to exit cleanly.
+
+The top level control of the application is embedded in the power flow \texttt{\textbf{execute}} method. The \texttt{\textbf{execute}} method starts off with the code
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::parallel::Communicator world;
+  boost::shared_ptr<PFNetwork> network(new PFNetwork(world));
+
+  gridpack::utility::Configuration *config
+      = gridpack::utility::Configuration::configuration();
+  config->open("input.xml",world);
+  gridpack::utility::Configuration::Cursor *cursor;
+  cursor = config->getCursor("Configuration.Powerflow");
+  std::string filename;
+  if (!cursor->get("networkConfiguration", &filename)) {
+    printf("No network configuration specified\n");
+    return;
+  }
+  gridpack::parser::PTI23_parser<PFNetwork> parser(network);
+  parser.parse(filename.c_str());
+  
+  network->partition();
+\end{Verbatim}
+}
+
+The first two lines create a communicator for this application and use it to instantiate a \texttt{\textbf{PFNetwork}} object (note that this is really a \texttt{\textbf{BaseNetwork}} template class that is instantiated using the \texttt{\textbf{PFBus}} and \texttt{\textbf{PFBranch}} classes as template arguments). The network object exists but has no buses or branches associated with it. The next few lines get an instance of the configuration object and use this to open the \texttt{\textbf{input.xml}} file. This filename has been hardwired into this implementation but it could be passed in as a runtime argument, if desired. The code then creates a \texttt{\textbf{Cursor}} object and initializes this to point into the \texttt{\textbf{Configuration.Powerflow}} block of the \texttt{\textbf{input.xml}} file. The cursor can then be used to get the contents of the \texttt{\textbf{networkConfiguration}} block in \texttt{\textbf{input.xml}}, which corresponds to the name of the network configuration file containing the power grid network. This file is assumed to use the PSS/E version 23 format. After getting the file name, the code creates a \texttt{\textbf{PTI23\_parser}} object and passes in the current network object as an argument. When the parse method is called, the parser reads in the file specified in \texttt{\textbf{filename}} and uses that to add buses and branches to the network object. At this point, the network has all the bus and branches from the configuration file, but no ghost buses or branches exist and buses and branches are not distributed in an optimal way. Calling the partition method on the network then distributes the buses and branches and adds appropriate ghost buses and branches.
+
+The next set of calls initialize the network components and prepare the network for computation.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::powerflow::PFFactory factory(network);
+  factory.load();
+
+  factory.setComponents();
+  factory.setExchange();
+  
+  network->initBusUpdate();
+
+  factory.setYBus();
+\end{Verbatim}
+}
+
+The first call creates a \texttt{\textbf{PFFactory}} object and instantiates it with a reference to the current network. \texttt{\textbf{PFFactory}} is defined as an instance of the \texttt{\textbf{BaseFactory}} class using a \texttt{\textbf{PFNetwork}} as the template argument. The next line calls the \texttt{\textbf{BaseFactory load}} method which invokes the component \texttt{\textbf{load}} method on all buses and branches. These use data from the \texttt{\textbf{DataCollection}} objects to initialize the corresponding bus and branch objects. Note that when the partition function creates the ghost bus and branch objects, it copies the associated \texttt{\textbf{DataCollection}} objects to these ghosts so the parameters from the network configuration file are available to instantiate all objects in the network. There is no need to do a data exchange at this point in the code in order to get current values on the ghost objects.
+
+The next two calls are also implemented as \texttt{\textbf{BaseFactory}} methods. The \texttt{\textbf{setComponents}} method sets up pointers in the network components that point to neighboring branches and buses (in the case of buses) and terminal buses (in the case of branches). It is also responsible for setting up internal indices that are used by the mapper functions to create matrices and vectors. The \texttt{\textbf{setExchange}} method sets up the buffers that are used to exchange data between locally owned buses and branches and their corresponding ghost images on other processors. The call to \texttt{\textbf{initBusUpdate}} creates internal data structures that are used to exchange bus data between processors and the final factory call to \texttt{\textbf{setYBus}} evaluates the Y-matrix contributions from all network components. The network is fully initialized at this point and ready for computation.
+
+The next calls create the Y-matrix and the matrices used in the Newton-Raphson iteration loop.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  factory.setMode(YBus);
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
+
+  factory.setSBus();
+  factory.setMode(RHS);
+  gridpack::mapper::BusVectorMap<PFNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Vector> PQ = vMap.mapToVector();
+
+  factory.setMode(Jacobian);
+  gridpack::mapper::FullMatrixMap<PFNetwork> jMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> J = jMap.mapToMatrix();
+  boost::shared_ptr<gridpack::math::Vector> X(PQ->clone());
+\end{Verbatim}
+}
+
+The first call sets the internal p\_mode variable in all network components to ``\texttt{\textbf{YBus}}''. The second call constructs a \texttt{\textbf{FullMatrixMap}} object \texttt{\textbf{mMap}} and the third call uses the \texttt{\textbf{mapToMatrix}} method to generate a Y-matrix based on the ``\texttt{\textbf{YBus}}'' mode. The factory then calls the \texttt{\textbf{setSBus}} method that sets some additional network component parameters (again, by looping over all buses and invoking a \texttt{\textbf{setSBus}} method on each bus). The next three lines set the mode to ``\texttt{\textbf{RHS}}'', create a \texttt{\textbf{BusVectorMap}} object and create the right hand side vector in the powerflow equations using the \texttt{\textbf{mapToVector}} method. This builds the vector based on the ``\texttt{\textbf{RHS}}'' mode. The next three lines create the Jacobian using the same pattern as for the Y-matrix. The mode gets set to ``\texttt{\textbf{Jacobian}}'', another \texttt{\textbf{FullMatrixMap}} object is created and this is used to create the Jacobian using the \texttt{\textbf{mapToMatrix}} method. Two separate mappers are used to create the Y-matrix and the Jacobian. This is required unless there is some reason to believe that the ``\texttt{\textbf{YBus}}'' and ``\texttt{\textbf{Jacobian}}'' modes generate matrices with the same dimensions and \textit{exactly} the same fill pattern. This is not generally the case, so different mappers should be created for each matrix in the problem. The last line creates a new vector by cloning the PQ vector. The X vector has the same dimension and data layout as PQ so it could be used with the \texttt{\textbf{vMap}} object.
+
+Once the vectors and matrices for the problem have been created and set to their initial values, it is possible to start the Newton-Raphson iterations. The code to set up the first Newton-Raphson iteration is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  double tolerance = 1.0e-6;
+  int max_iteration = 100;
+  ComplexType tol;
+
+  gridpack::math::LinearSolver solver(*J);
+  solver.configure(cursor);
+
+  int iter = 0;
+
+  X->zero(); 
+  solver.solve(*PQ, *X);
+  tol = PQ->normInfinity();
+\end{Verbatim}
+}
+
+The first three lines define some parameters used in the Newton-Raphson loop. The tolerance and maximum number of iterations are hardwired in this example but could be made configurable via the input deck using the \texttt{\textbf{Configuration}} class. The next line creates a linear solver based on the current value of the Jacobian, \texttt{\textbf{J}}. The call to the configure method allows configuration parameters in the input file to be passed directly to the newly created solver. The iteration counter is set to zero and the value of \texttt{\textbf{X}} is also set to zero. The linear solver is called with \texttt{\textbf{PQ}} as the right hand side vector and \texttt{\textbf{X}} as the solution. An initial value of the tolerance is set by evaluating the infinity norm of \texttt{\textbf{PQ}}. The calculation can now enter the Newton-Raphson iteration loop
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  while (real(tol) > tolerance && iter < max_iteration) {
+    factory.setMode(RHS);
+    vMap.mapToBus(X);
+    network->updateBuses();
+
+    vMap.mapToVector(PQ);
+    factory.setMode(Jacobian);
+    jMap.mapToMatrix(J);
+
+    X->zero();
+    solver.solve(*PQ, *X);
+    tol = PQ->normInfinity();
+    iter++;
+  }
+\end{Verbatim}
+}
+
+This code starts by pushing the values of the solution vector back on to the buses using the same mapper that was used to create \texttt{\textbf{PQ}}. The network then calls the \texttt{\textbf{updateBus}} routine so that the ghost buses have new values of the voltage angle and magnitude parameters from the solution vector. New values of the Jacobian and right hand side vector are created based on the solution values from the previous iteration. Note that since \texttt{\textbf{J}} and \texttt{\textbf{PQ}} already exist, the mappers are just overwriting the old values instead of creating new data objects. The linear solver is already pointing to the Jacobian matrix so it automatically uses the new Jacobian values when calculating the solution vector \texttt{\textbf{X}}. If the norm of the new \texttt{\textbf{PQ}} vector is still larger than the tolerance, the loop goes through another iteration. This continues until the tolerance condition is satisfied or the number of iterations reaches the value of \texttt{\textbf{max\_iteration}}.
+
+If the Newton-Raphson loop converges, then the calculation is essentially done. The last part of the calculation is to write out the results. This can be accomplished using the code
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::serial_io::SerialBusIO<PFNetwork> busIO(128,network);
+  busIO.header("\n   Bus Voltages and Phase Angles\n");
+  busIO.header("\n   Bus Number      Phase Angle");
+  busIO.header("      Voltage Magnitude\n");
+  busIO.write();
+\end{Verbatim}
+}
+
+The first line creates a serial bus IO object that assumes that no line of output will exceed more than 128 characters. The next three lines write out the header for the output data and the last line writes a listing of data from all buses. The data from each bus is generated by the \texttt{\textbf{serialWrite}} method defined in the \texttt{\textbf{PFBus}} class. A similar set of calls can be used to write out data from the branches. This completes the execute method and the overview of the power flow application.

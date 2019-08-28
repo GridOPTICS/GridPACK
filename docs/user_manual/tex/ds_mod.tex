@@ -1,0 +1,257 @@
+\section{Dynamic Simulation Module using Full Y-Matrix}
+
+GridPACK supplies a dynamic simulation module that integrates the equations of motion using an algorithm based on inversion of the full Y-matrix. This module has been designed to enable the addition of generator models that extend beyond the classical generator. It also supports exciters, governors, relays and dynamic loads. Models that are currently available include
+Generators:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  GENCLS
+  GENSAL
+  GENROU
+\end{Verbatim}
+}
+
+Exciters:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  EXDC1
+  ESST1A
+\end{Verbatim}
+}
+
+Governors:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  WSIEG1
+  WSHYGP
+\end{Verbatim}
+}
+
+Relays:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  LVSHBL
+  FRQTPAT
+  DISTR1
+\end{Verbatim}
+}
+
+Dynamic Loads:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  ACMTBLU1
+  IEEL
+  MOTORW
+  CIM6BL
+\end{Verbatim}
+}
+
+The full Y-matrix implementation of dynamic simulation is represented by the \texttt{\textbf{DSFullApp}} class and the \texttt{\textbf{DSFullNetwork}}, both of which reside in the \texttt{\textbf{gridpack::dynamic\_simulation}} namespace.
+The dynamic simulation module uses an input deck of the form
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Dynamic_simulation>
+    <networkConfiguration>IEEE_145.raw</networkConfiguration>
+    <generatorParameters>IEEE_145.dyr</generatorParameters>
+    <simulationTime>30</simulationTime>
+    <timeStep>0.005</timeStep>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 2.00</beginFault>
+        <endFault>   2.05</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+    </faultEvents>
+    <generatorWatch>
+      <generator>
+       <busID> 60 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+      <generator>
+       <busID> 112 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+    </generatorWatch>
+    <generatorWatchFrequency> 1 </generatorWatchFrequency>
+    <generatorWatchFileName>gen_watch.csv</generatorWatchFileName>
+    <LinearMatrixSolver>
+      <PETScOptions>
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+      </PETScOptions>
+    </LinearMatrixSolver>
+  </Dynamic_simulation>
+</Configuration>
+\end{Verbatim}
+}
+
+The input for dynamic simulation module is contained in the \texttt{\textbf{Dynamic\_simulation}} block. Two features are important, the blocks describing faults and the blocks describing monitored generators. Faults are described in the \texttt{\textbf{faultEvent}}s block. The code currently only handles faults on branches. Inside the \texttt{\textbf{faultEvents}} block are individual faults, described by a \texttt{\textbf{faultEvent}} block. Multiple \texttt{\textbf{faultEvent}} blocks can be contained within the \texttt{\textbf{faultEvents }}block. As will be described below, it is possible for the faults to be listed in a separate file. This can be convenient for describing a task-based calculation that may contain a lot of faults. The parameters describing the fault include the time (in seconds) that the fault is initiated, the time that it is terminated, the timestep used while integrating the fault and the indices of the two buses at either end of the fault branch.
+
+When running a dynamic simulation, it is generally desirable to monitor the behavior of a few generators in the system and this can be done by setting generator watch parameters. The \texttt{\textbf{generatorWatch}} block specifies which generators are to be monitored. Each generator is described within a \texttt{\textbf{generator}} block that contains the index of the bus that the generator is located on and the character string ID of the generator. The results of monitoring the generator are written to the file listed in the \texttt{\textbf{generatorWatchFileName}} field and the frequency for storing generator parameters in this file is set in the \texttt{\textbf{generatorWatchFrequency}} field. This parameter describes the time step interval for writing results (an integer), not the actual time interval.
+
+Before using the dynamic simulation module, a network needs to be instantiated outside the \texttt{\textbf{DSFullApp}} and then passed into the module. If the module itself is going to read and partition a network, then it should use the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void readNetwork(boost::shared_ptr<DSFullNetwork> &network,
+  gridpack::utility::Configuration *config,
+  const char *otherfile = NULL)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{Configuration}} object should already be pointing to an input deck with a \texttt{\textbf{Dynamic\_simulation}} block that specifies the network configuration file. The optional \texttt{\textbf{otherfile}} argument in \texttt{\textbf{readNetwork}} can be used to overwrite the \texttt{\textbf{networkConfiguration}} field in the input deck with a different filename. This capability has proven useful in some contingency applications where multiple PSS/E files need to be read.
+
+Alternatively, a distributed network may already exist (it may have been cloned from another calculation). In that case, the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void setNetwork(boost::shared_ptr<DSFullNetwork> &network,
+  gridpack::utility::Configuration *config)
+\end{Verbatim}
+}
+
+can be used to assign an internal pointer to the network. Again, the \texttt{\textbf{Configuration}} object should already be pointing to an input file.
+
+Additional generator parameters can be assigned to the generators by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void readGenerators()
+\end{Verbatim}
+}
+
+This function opens the file specified in the \texttt{\textbf{generatorParameters}} field in the input file and reads the additional generator parameters. The file is assumed to correspond to the PSS/E .dyr format. The devices listed at the start of this section can be included in this file.
+
+After setting up the network and reading in generator parameters, the module can be initialized by calling
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void initialize()
+\end{Verbatim}
+}
+
+This sets up internal parameters and initializes the network so that it is ready for calculations.
+
+A list of faults can be generated from the input file by calling
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<gridpack::dynamic_simulation::DSFullBranch::Event>
+  getFaults(gridpack::utility::Configuration::CursorPtr cursor)
+\end{Verbatim}
+}
+
+If the cursor variable is pointed at a \texttt{\textbf{Dynamic\_simulation}} block inside the input file (as in the example input block above) then this function will return a list of faults from the input deck. However, it is also possible that the cursor could be pointed to the contents of another file. As long as it is pointed to a block containing a \texttt{\textbf{faultEvents}} block, this function will return a list of faults. This allows users to declare a large list of faults in a separate file and then access the list by including the external file name as a parameter in the input deck of their application.
+
+The monitoring of generators specified in the input deck can be set up by calling
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void setGeneratorWatch()
+\end{Verbatim}
+}
+
+This will guarantee that all generators specified in the input deck are monitored and that the results are written out to the specified file. If this function is not called, the generator watch parameters in the input file are ignored.
+Simulations can be run using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void solve(gridpack::dynamic_simulation::DSFullBranch::Event fault)
+\end{Verbatim}
+}
+
+Some additional results can be written at the end of the simulation using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void write(const char *signal)
+\end{Verbatim}
+}
+
+The signal parameter can be used to control which results are written out. This function currently does not support any output. All output results are controlled using the generator watch parameters.
+
+Some additional functions can be used to control where output generated during the course of a simulation is directed. The following two functions can be used to direct output from the \texttt{\textbf{write}} function to a file
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void open(const char* filename)
+
+void close()
+\end{Verbatim}
+}
+
+The function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void print(const char* buf)
+\end{Verbatim}
+}
+
+can be used to print out a string to standard out. If the \texttt{\textbf{open}} function has been used to open a file, then the output is directed to the file. This function is equivalent to the \texttt{\textbf{header}} convenience function in the serial IO classes.
+Additional functions can be used to stored data from the generator watch variables. These can be used to save the time series data from a simulation in a collection of vectors. The application can then use these series in whatever way it wants. There are four functions that enable this capility. The first is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void saveTimeSeries(bool flag)
+\end{Verbatim}
+}
+
+This function must be called with the argument set to ``true'' in order for the time series data to be saved. Otherwise it is only written to output and no data is saved between time steps. The second function can be called after the solve function has been called and the simulation is completed. It returns a vector of time series
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<strd::vector<double> > getGeneratorTimeSeries()
+\end{Verbatim}
+}
+
+This function returns a vector containing the time series data for all the watched generators located \textit{on this processor} (generators on buses owned by neighboring processors are not included).
+
+To find out which variables are actually in the list returned by \texttt{\textbf{getGeneratorTimeSeries}} requires the remaining two functions. The function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getListWatchedGenerators(std::vector<int> &bus_ids,
+    std::vector<std::string> &gen_ids)
+\end{Verbatim}
+}
+
+returns a list of the bus IDs and 2-character generator tags for all monitored generators. In particular, it assigns and ordering to these generators that is used by function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<int> getTimeSeriesMap()
+\end{Verbatim}
+}
+
+This function returns a map between the elements in the list of time series returned by \texttt{\textbf{getGeneratorTimeSeries}} and the generators that those time series correspond to. For example suppose the time series list has four elements in it that happen to correspond to two generators on processor. There are a total of six monitored generators in the system. The vectors returned by \texttt{\textbf{getListWatchedGenerators}} have length six, the vector returned by \texttt{\textbf{getTimeSeriesMap}} has length four. The value in the map vector for the corresponding element in the time series vector points to the location of the bus index and generator tag for that time series variable in the lists returned by \texttt{\textbf{getListWatchedGenerators}}. This still leaves it up to the user to identify the actual variable being watched within the generator. In this example there are four variables that are watched but only two generators. Currently, the generator watch capability only watches the rotor speed and rotor angle of each generator. The first time series is the speed and the second time series is the angle.

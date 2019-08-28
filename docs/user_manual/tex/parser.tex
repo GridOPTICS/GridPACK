@@ -1,0 +1,45 @@
+\section{Parser Module}
+
+The parser modules are designed to read an external network file, set up the network topology and assign any parameter fields in the file to simple fields. The parsers do not partition the network, they are only responsible for reading in the network and distributing the different network elements in a way that guarantees that not too much data ends up on any one processor. The parsers are also not responsible for determining if the input is compatible with the analysis being performed. This can be handled, if desired, by building checks into the network factory. The parsers are only responsible for determining if they can read the file.
+
+Currently, GridPACK only supports two file formats. Files based on the PSS/E PTI version 23 and version 33 formats can be read in using the classes \texttt{\textbf{PTI23\_parser}} and \texttt{\textbf{PTI33\_parser}}. Both parsers can also read PSS/E formatted .dyr files that are used to read in extra parameters used in dynamic simulation. The parsers are templated classes that again use the network type as a template argument. Both \texttt{\textbf{PTI23\_parser}} and \texttt{\textbf{PTI33\_parser}} are located in the \texttt{\textbf{gridpack::parser}} namespace. These classes have only a few important functions. The first are the constructors
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+PTI23_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+
+PTI33_parser<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+\end{Verbatim}
+}
+
+The remaining functions are common to both parsers. To read a PSS/E PTI file containing a network configuration and generate a network, the parser calls the method
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void parse(const std::string &filename)
+\end{Verbatim}
+}
+
+where filename refers to the location of the network configuration file. To use this parser, the network object with the appropriate bus and branch classes is instantiated and then passed to the constructor of the \texttt{\textbf{PTI23\_parser }}or\texttt{\textbf{ PTI33\_parser }}object. The parse method is then invoked with the name of the network configuration file passed in as an argument and the network is filled out with buses and branches. The parameters in the network configuration file are stored as key-value pairs in the \texttt{\textbf{DataCollection}} object associated with each bus and branch. Once the network partition method has been called, the network is fully distributed and ghost buses and branches have been created. Other operations operations can then be performed. A variant on parse is the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void externalParse(const std::string &filename)
+\end{Verbatim}
+}
+
+This command can be used to parse .dyr files containing dynamic simulation parameters. The difference between this function and \texttt{\textbf{parse}} is that \texttt{\textbf{externalParse}} assumes that the network already exists and that the parameters that are read in will be added to it. This command should therefore only be called after a network has been created using \texttt{\textbf{parse}}.
+
+Another key part of the parsing capability is the \texttt{\textbf{dictionary.hpp}} file, which is designed to provide a common nomenclature for parameters associated with power grid components. This file is located in the \texttt{\textbf{src/parser}} directory under the main GridPACK directory. The definitions in the \texttt{\textbf{dictionary.hpp}} are used to extract parameters from the \texttt{\textbf{DataCollection}} objects created by the parser. For example, the parameter describing the resistance of a transmission element is given the common name \texttt{\textbf{BRANCH\_R}}. This string is defined as a macro in the \texttt{\textbf{dictionary.hpp}} file as
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#define BRANCH_R "BRANCH_R"
+\end{Verbatim}
+}
+
+The use of a macro provides compile time error checking on the name. The goal of using the dictionary is that all parsers will eventually store the branch resistance parameter in the \texttt{\textbf{DataCollection}} object using this common name. Applications can then switch easily between different network configuration file formats by simply exchanging parsers, which will all store corresponding parameters using a common naming convention that can used within the code to access data.

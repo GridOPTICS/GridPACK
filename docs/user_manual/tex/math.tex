@@ -1,0 +1,524 @@
+\section{Math Module}
+
+The math module provides support in GridPACK for distributed matrices and vectors, linear solvers, non-linear solvers, and preconditioners. Once created, matrices can be treated as opaque objects and manipulated using a high level syntax that is comparable to writing Matlab code. The distributed matrix and vector data structures themselves are based on external solver libraries and represent relatively lightweight wrappers on multipurpose HPC codes. The current math module is built on the PETSc library but other libraries, such as Hypre and Trilinos could potentially be used instead.
+
+The main functionality associated with the math module is the ability to instantiate new matrices and vectors, add individual matrix and vector elements (and their values) to the matrix/vector objects, invoke the assemble operation on the object, perform basic algebraic operations, such as matrix-vector multiply, and solve systems of algebraic equations. The assemble operation is designed to give the library a chance to set up internal data structures and repartition the matrix elements, etc. in a way that will optimize subsequent calculations. Inclusion of this operation follows the syntax of most solver libraries when they construct a matrix or vector. 
+
+In addition to basic matrix operations, the math module contains linear and non-linear solvers and preconditioners. The module provides a simple interface on top of the PETSc libraries that will allow users access to this functionality without having to be familiar with the libraries themselves. This should make it possible to construct solver routines that are comparable in complexity to Matlab scripts. The use of a wrapper instead of having users directly access the libraries will also make it simpler to switch the underlying library in an application. All that will be required is that developers link to an implementation of the math module interface that is built on a different library. There will not be a need to rewrite any application code. This has the advantage that if a different library is used for the math module in one application, it instantly becomes available for other applications.
+
+The functionality in the math component is distributed between the classes \texttt{\textbf{Matrix}} , \texttt{\textbf{RealMatrix}}, \texttt{\textbf{Vector}}, \texttt{\textbf{RealVector}}, \texttt{\textbf{LinearSolver}}, 
+
+\texttt{\textbf{RealLinearSolver}}, \texttt{\textbf{NonLinearSolver}}, and \texttt{\textbf{RealNonlinearSolver}}
+
+%\texttt{\textbf{Vector, RealVector}}, LinearSolver, \texttt{\textbf{ RealLinearSolver, NonlinearSolver}} and \texttt{\textbf{RealNonlinearSolver}}. 
+
+Each of these classes is in the \texttt{\textbf{gridpack::math}} namespace and is described below. Like the \texttt{\textbf{BaseNetwork}} class, there are a lot of functions in \texttt{\textbf{Matrix}} and \texttt{\textbf{Vector}} that do not need to be used by users. Most of the functions related to matrix/vector instantiation and creation are used inside the mapper classes described below, which eliminates the need for users to deal with them directly. However, users may be interested in creating functions not covered by existing library methods and in this case access to these functions is useful.
+
+An additional note on the math module class names is in order. Originally, GridPACK only supported complex objects and used the names \texttt{\textbf{Vector}}, \texttt{\textbf{Matrix}}, etc. More recently, the capability for supporting real objects was added and hence the new names \texttt{\textbf{RealVector}}, etc. The original names continued to be used for complex objects to maintain backwards compatibility. Complex objects can also be accessed using the names \texttt{\textbf{ComplexVector}}, \texttt{\textbf{ComplexMatrix}}, etc., which are mapped to the original complex objects.
+
+\subsection{Matrices}
+
+The \texttt{\textbf{Matrix and RealMatrix}} classes are designed to create distributed matrices. \texttt{\textbf{Matrix}} is used for complex matrices and \texttt{\textbf{RealMatrix}} is used for real matrices. The matrix classes support two types of matrix, \texttt{\textbf{Dense}} and \texttt{\textbf{Sparse}}. In most cases users will want to use the sparse matrix but some applications require dense matrices. The \texttt{\textbf{Matrix}} and \texttt{\textbf{RealMatrix}} classes are nearly identical in functionality, so in the following we will only outline operations on the \texttt{\textbf{Matrix}} class. In most cases, the \texttt{\textbf{RealMatrix}} class contains the same operations. The only point to note is that for any operations that involve multiple matrices or a matrix and a vector, all matrix and vector objects must be either all complex or all real. In the future, we plan on adding some operations that will allow users to convert between types.
+
+The matrix constructor is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Matrix(const parallel::Communicator &comm,
+           const int &local_rows,
+           const int &cols,
+           const StorageType &storage_type=Sparse)
+\end{Verbatim}
+}
+
+The communicator object \texttt{\textbf{comm}} specifies the set of processors that the matrix is defined on, the \texttt{\textbf{local\_rows}} parameter corresponds to the number of rows contributed to the matrix by the processor, the \texttt{\textbf{cols}} parameter indicates what the second dimension of the matrix is and the \texttt{\textbf{storage\_type}} parameter determines whether the matrix is sparse or dense. If the total dimension of the matrix is M$\mathrm{\times}$N, then the sum of the \texttt{\textbf{local\_rows}} parameters over all processors must equal M and the \texttt{\textbf{cols}} parameter is equal to~N. 
+
+The matrix destructor is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+~Matrix()
+\end{Verbatim}
+}
+
+Once a matrix has been created some inquiry functions can be used to probe the matrix size and distribution. The following functions return information about the matrix.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int rows() const
+
+int localRows() const
+
+void localRowRange(int &lo, int &hi) const
+
+int cols()
+\end{Verbatim}
+}
+
+The function \texttt{\textbf{rows}} will return the total number of rows in the matrix, \texttt{\textbf{localRows}} returns the number of rows associated with the calling processor, \texttt{\textbf{localRowRange}} returns the \texttt{\textbf{lo}} and \texttt{\textbf{hi}} index of the rows associated with the calling processor and \texttt{\textbf{cols}} returns the number of columns in the matrix. Note that matrices are partitioned into row blocks on each processor.
+
+Additional functions can be used to add matrix elements to the matrix, either one at a time or in blocks. The following two calls can be used to reset existing elements or insert new ones.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void setElement(const int &i, const int &j,
+                const ComplexType &x)
+
+void setElements(const int &n, const int *i, const int *j,
+                 const ComplexType *x)
+\end{Verbatim}
+}
+
+For real matrices, all variables of type \texttt{\textbf{ComplexType}} should be switched to type \texttt{\textbf{double}}. The first function will set the matrix element at the index location \texttt{\textbf{(i,j)}} to the value \texttt{\textbf{x}}. If the matrix element already exists, this function overwrites the value, if the element is not already part of the matrix, it gets added with the value \texttt{\textbf{x}}. Note that both \texttt{\textbf{i}} and \texttt{\textbf{j}} are zero-based indices. For the current PETSc based implementation of the math module, it is not required that the index \texttt{\textbf{i}} lie between the values of \texttt{\textbf{lo}} and \texttt{\textbf{hi}} obtained with \texttt{\textbf{localRowRange}} function, but for performance reasons it is desirable. Other implementations may require that \texttt{\textbf{i}} lie in this range. The second function can be used to add a collection of elements all at once. The variable \texttt{\textbf{n}} is the number of elements to be added, the arrays \texttt{\textbf{i}} and \texttt{\textbf{j}} contain the row and column indices of the matrix elements and the array \texttt{\textbf{x}} contains their values. Again, it is preferable that all values in \texttt{\textbf{i}} lie within the range \texttt{\textbf{[lo,hi]}}.
+
+Two functions that are similar to the set element functions above are the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void addElement(const int &i, const int &j,
+                const ComplexType &x)
+
+void addElements(const int &n, const int *i, const int *j,
+                 const ComplexType *x)
+\end{Verbatim}
+}
+
+These differ from the set element functions only in that instead of overwriting the new values into the matrix, these functions will add the new values to whatever is already there. If no value is present in the matrix at that location the function inserts it.
+
+In addition to setting or adding new elements, it is possible to retrieve matrix values using the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getElement(const int &i, const int &j,
+                ComplexType &x) const
+
+void getElements(const int &n, const int *i, const int *j,
+                 ComplexType *x) const
+\end{Verbatim}
+}
+
+These functions can only access elements that are local to the processor. This means that the index \texttt{\textbf{i}} must lie in the range \texttt{\textbf{[lo,hi]}} returned by the function \texttt{\textbf{localRowRange}}.
+
+Finally, before a matrix can be used in computations, it must be assembled and internal data structures must be set up. This can be accomplished by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void ready()
+\end{Verbatim}
+}
+
+After this function has been invoked, the matrix is read for use and can be used in computations. In general, the procedure for building a matrix is 1) create the matrix object 2) determine local parameters such as \texttt{\textbf{lo}} and \texttt{\textbf{hi}} 3) set or add matrix elements and 4) assemble the matrix using the \texttt{\textbf{ready}} function. For most applications, users can avoid these operations by building matrices and vectors using the mapper functionality described below.
+
+Some additional functions have been included in the matrix class that can be useful for creating matrices or writing out their values (e.g. for debugging purposes). It is often useful to create a copy of a matrix. This can be done using the clone method
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Matrix* clone() const
+\end{Verbatim}
+}
+
+The new matrix is an exact replica of the matrix that invokes this function.
+
+Two functions that can be used to write the contents of a matrix, either to standard output or to a file are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void print (const char *filename=NULL) const
+
+void save(const char *filename) const
+\end{Verbatim}
+}
+
+The first function will write the contents of the matrix to standard output if no filename is specified, otherwise it writes to the specified file, the second function will write a file in MatLAB format. These functions can be used for debugging or to create matrices that can be fed into other programs.
+
+Once a matrix has been created, a variety of methods can be applied to it. Most of these are applied after the \texttt{\textbf{ready}} call has been made by the matrix, but some operations can be used to actually build a matrix. These functions are listed below.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void equate(const Matrix &A)
+\end{Verbatim}
+}
+
+This function sets the calling matrix equal to matrix \texttt{\textbf{A}}.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void scale(const ComplexType &x)
+\end{Verbatim}
+}
+
+Multiply all matrix elements by the value \texttt{\textbf{x}} (use a value of type \texttt{\textbf{double}} for a real matrix).
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void multiplyDiagonal(const Vector &x)
+\end{Verbatim}
+}
+
+Multiply all elements on the diagonal of the calling matrix by the corresponding element of the vector \texttt{\textbf{x}}. The \texttt{\textbf{Vector}} class is described below.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void addDiagonal(const Vector &x)
+\end{Verbatim}
+}
+
+Add elements of the vector x to the diagonal elements of the calling matrix.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void add(const Matrix &A)
+\end{Verbatim}
+}
+
+Add the matrix \texttt{\textbf{A}} to the calling matrix. The two matrices must have the same number of rows and columns, but otherwise there are no restrictions on the data layout or the number and location of the non-zero entries.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void identity()
+\end{Verbatim}
+}
+
+Create an identity matrix. This function assumes that the calling matrix has been created but no matrix elements have been assigned to it.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void zero()
+\end{Verbatim}
+}
+
+Set all non-zero entries to zero.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void conjugate(void)
+\end{Verbatim}
+}
+
+Set all entries to their complex conjugate value. This function only applies to complex matrices.
+The following functions create a new matrix or vector.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Matrix *multiply(const Matrix &A, const Matrix& B)
+\end{Verbatim}
+}
+
+Multiply matrix \texttt{\textbf{A}} times matrix \texttt{\textbf{B}} to create a new matrix.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Vector *multiply(const Matrix &A, const Vector &x)
+\end{Verbatim}
+}
+
+Multiply matrix \texttt{\textbf{A}} times vector \texttt{\textbf{x}} to get a new vector.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Matrix *transpose(const Matrix &A)
+\end{Verbatim}
+}
+
+Take the transpose of matrix \texttt{\textbf{A}}.
+
+\subsection{Vectors}
+
+The vector class operates in much the same way as the matrix class. As above, most functions apply to both the \texttt{\textbf{Vector}} and \texttt{\textbf{RealVector}} class so only the \texttt{\textbf{Vector}} operations are described here. The vector constructor is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Vector(const parallel::Communicator& comm, const int& local_length)
+\end{Verbatim}
+}
+
+The parameter \texttt{\textbf{local\_length}} is the number of contiguous elements in the vector that are held on the calling processor. The sum of \texttt{\textbf{local\_length}} over all processors must equal the total length of the vector. The functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int size(void) const
+
+int localSize(void) const
+
+void localIndexRange(int &lo, int &hi) const
+\end{Verbatim}
+}
+
+can by used to get the global size of the vector or the size of the vector segment held locally on the calling processor. The \texttt{\textbf{localIndexRange}} function can be used to find the indices of the vector elements that are held locally.
+
+Vector elements can be set and accessed using the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void setElement(const int &i, const ComplexType &x)
+
+void setElementRange(const int& lo, const int &hi, ComplexType *x)
+
+void setElements(const int &n, const int *i, const ComplexType *x)
+
+void addElement(const int &i, const ComplexType &x)
+
+void addElements(const int& n, const int *i, const ComplexType *x)
+
+void getElement(const int& i, ComplexType& x) const
+
+void getElements(const int& n, const int *i, ComplexType *x) const
+
+void getElementRange(const int& lo, const int& hi,
+                     ComplexType *x) const
+
+void ready(void)
+\end{Verbatim}
+}
+
+These functions all operate in a similar way to the corresponding matrix operations. The \texttt{\textbf{setElementRange}} function, etc. are similar to the \texttt{\textbf{setElements}} function except that instead of specifying individual element indices in a separate vector, the low and high indices of the segment to which the values are assigned is specified (this assumes that the values in the array \texttt{\textbf{x}} represent a contiguous segment of the vector).  Again, for real vectors, all values of type \texttt{\textbf{ComplexType}} should be replaced by values of type double. The utility functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Vector *clone(void) const
+
+void print(const char* filename = NULL) const
+
+void save(const char *filename) const
+\end{Verbatim}
+}
+
+also have similar behaviors to their matrix counterparts.
+
+Additional operations that can be performed on the entire vector include
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void zero(void)
+
+void equate(const Vector &x)
+
+void fill(const ComplexType& v)
+
+ComplexType norm1(void) const
+
+ComplexType norm2(void) const
+
+ComplexType normInfinity(void) const
+
+void scale(const ComplexType& x)
+
+void add(const ComplexType& x)
+
+void add(const Vector& x, const ComplexType& scale = 1.0)
+
+void elementMultiply(const Vector& x)
+
+void elementDivide(const Vector& x)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{zero}} function sets all vector elements to zero, the \texttt{\textbf{equate}} function copies all values of the vector \texttt{\textbf{x}} to the corresponding elements of the calling vector, \texttt{\textbf{fill}} sets all elements to the value \texttt{\textbf{v}}, \texttt{\textbf{norm1}} returns the L${}_{1}$ norm of the vector, \texttt{\textbf{norm2}} returns the L${}_{2}$ norm and \texttt{\textbf{normInfinity}} returns the L${}_{\mathrm{\infty }}$ norm. The \texttt{\textbf{scale}} function can be used to multiply all vector elements by the value \texttt{\textbf{x}}, the first \texttt{\textbf{add}} function can be used to add the constant \texttt{\textbf{x}} to all vector elements and the second \texttt{\textbf{add}} function can be used to add the vector \texttt{\textbf{x}} to the calling vector after first multiplying it by the value \texttt{\textbf{scale}}. The final two functions multiply or divide each element of the calling vector by the value in the vector \texttt{\textbf{x}}.
+
+The following methods modify the values of the vector elements using some function of the element value.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void abs(void)
+
+void real(void)
+
+void imaginary(void)
+
+void conjugate(void)
+
+void exp(void)
+
+void reciprocal(void)
+\end{Verbatim}
+}
+
+The function \texttt{\textbf{abs}} replaces each element with its complex norm (absolute value), \texttt{\textbf{real}} and \texttt{\textbf{imaginary}} replace the elements with their real or imaginary values, \texttt{\textbf{conjugate}} replaces the vector elements with their conjugate values, \texttt{\textbf{exp}} replaces each vector element with the exponential of its original value and \texttt{\textbf{reciprocal}} replaces each element by its reciprocal. The \texttt{\textbf{real}}, \texttt{\textbf{imaginary}} and \texttt{\textbf{conjugate}} functions only apply to complex vectors.
+
+\subsection{Linear Solvers}
+
+The math module also contains solvers. The \texttt{\textbf{LinearSolver}} class contains a constructor
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+LinearSolver(const Matrix &A)
+\end{Verbatim}
+}
+
+that creates an instance of the solver. The matrix \texttt{\textbf{A}} defines the set of linear equations \texttt{\textbf{Ax=b}} that must be solved. If matrix \texttt{\textbf{A}} is a \texttt{\textbf{RealMatrix}} then the corresponding class and its constructor is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+RealLinearSolver(const RealMatrix &A)
+\end{Verbatim}
+}
+
+The properties of the solver can be modified by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void configure(utility::Configuration::Cursor *props)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{Configuration}} module is described in more detail below. This function can be used to pass information from the input file to the solver to alter its properties. For the PETSc library, the solver algorithm can be controlled using PETSc's runtime options database. Different options can be passed to PETSc by including a block in the input deck (there is more documentation on input decks in the section on the \texttt{\textbf{Configuration}} module). An example of this type of input is
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+<LinearSolver>
+  <PETScOptions>
+    -ksp_view
+    -ksp_type richardson
+    -pc_type lu
+    -pc_factor_mat_solver_package superlu_dist
+    -ksp_max_it 1
+  </PETScOptions>
+</LinearSolver>
+\end{Verbatim}
+}
+
+The \texttt{\textbf{LinearSolver}} block is where different solver parameters are defined and the \texttt{\textbf{PETScOptions}} block is where a string can be passed to the runtime options database. Additional parameters that can be passed to the solver include \texttt{\textbf{SolutionTolerance}}, \texttt{\textbf{MaxIterations}} and \texttt{\textbf{FunctionTolerance}}. 
+
+Some solvers that are available in PETSc only run serially and will fail if run on more than one processor. However, for the problem size ranges frequently encountered in power grid analysis, the serial solvers may be the fastest options. Other parts of the code may be more scalable so it is desirable to run them in parallel. GridPACK has options that allow users to run the code in parallel while using a serial solver, without the need to modify any application source code. This can be done by including the options
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+<ForceSerial>true</ForceSerial>
+<InitialGuessZero>true</InitialGuessZero>
+<SerialMatrixConstant>true</SerialMatrixConstant>
+\end{Verbatim}
+}
+
+in the LinearSolver block. The first option can be used to replicate the linear solver across all processors in the system and then distribute the answer to processors. The second option eliminates the need for obtaining an initial guess for the solution from all processors and provides additional performance gains. The final option can be used if the matrix does not change between function calls. Only new versions of the RHS vector need to be replicated on each processor after the first call. This can also result in performance gains.
+
+After configuring the solver, it can be used to solve the set of linear equations by calling the method
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void solve(const Vector &b, Vector &x) const
+\end{Verbatim}
+}
+
+This function returns the solution \texttt{\textbf{x}} based on the right hand side vector \texttt{\textbf{b}}.
+
+\subsection{Non-linear Solvers}
+
+The math module also supports non-linear solvers for systems of the type \texttt{\textbf{A(x)$\boldsymbol{\mathrm{\bullet}}$x = b(x)}} but the interface is more complicated than for the linear solvers. In order for the non-linear solver to work, two functions must be defined by the user. The first evaluates the Jacobian of the system for a given trial state \texttt{\textbf{x}} of the system and the second computes the right hand side vector for a given trial state \texttt{\textbf{x}}. The two functions are of type \texttt{\textbf{JacobianBuilder}} and \texttt{\textbf{FunctionBuilder}}. The \texttt{\textbf{JacobianBuilder}} function is a function with arguments
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    (const math::Vector &vec, math::Matrix &jacobian)
+\end{Verbatim}
+}
+
+and \texttt{\textbf{FunctionBuilder}} is a function with arguments
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    (const math::Vector &xCurrent, math::Vector &newRHS)
+\end{Verbatim}
+}
+
+These functions need to be added to the system somewhere. They can then be assigned to objects of type \texttt{\textbf{JacobianBuilder}} and \texttt{\textbf{FunctionBuilder}} and passed to the constructor of the non-linear solver. There are a number of ways to do this. In the following discussion, we will adopt the method used in the non-linear solver version of the power flow code that is distributed with GridPACK.
+
+The first step is to define a struct that can be used to implement the functions needed by the non-linear solver (the actual implementation contains additional declarations and code, but the important features of this helper class are outlined here)
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+struct SolverHelper : private utility::Uncopyable
+{
+  //Constructor
+  SolverHelper(// Arguments to initialize helper //)
+  {
+     // Initialize non-linear calculation
+  }
+      :
+  boost::shared_ptr<math::Matrix> matrix; // Jacobian matrix
+  boost::shared_ptr<math::Vector> X; // Current state
+      :
+  void operator() (const math::Vector &xCurrent, math::vector &newRHS)  {
+     // Evaluate RHS vector from current state xCurrent
+  }
+  void operator() (const math::Vector &xCurrent,
+                   math::Matrix &Jacobian)
+  {
+      // Evaluate Jacobian from current state xCurrent
+  }
+}
+\end{Verbatim}
+}
+
+The important functions for this discussion are the overloaded \texttt{\textbf{operator()}} functions. In the application code, this helper struct can be initialized and used to create two functions of type \texttt{\textbf{JacobianBuilder}} and \texttt{\textbf{FunctionBuilder}} using the syntax
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+SolverHelper helper(//Arguments to initialize helper //);
+math::JacobianBuilder jbuild = boost::ref(helper);
+math::FunctionBuilder fbuild = boost::ref(helper);
+\end{Verbatim}
+}
+
+At this point \texttt{\textbf{jbuild}} and \texttt{\textbf{fbuild}} are pointing to the overloaded functions in \texttt{\textbf{helper}} that have the appropriate arguments for a function of type \texttt{\textbf{JacobianBuilder}} and type \texttt{\textbf{FunctionBuilder}}. The \texttt{\textbf{boost::ref}} command provides a reference to the appropriate function in \texttt{\textbf{helper}} instead of making a copy, this preserves any state that might be present in \texttt{\textbf{helper}} between invocations of the functions \texttt{\textbf{jbuild}} and \texttt{\textbf{fbuild}} by the solver.
+
+For the power flow application using a non-linear solver, the creation of the solver is a two-step process. First, a pointer to a non-linear solver interface is created and then a particular solver instance is assigned to this interface. The power flow application can point to a hand-coded Newton-Raphson solver or a wrapper to the PETSc library of solvers. The code for this is the following
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+boost::scoped_ptr<math::NonlinearSolverInterface> solver;
+if (useNewton) {
+  math::NewtonRaphsonSolver *tmpsolver =
+    new math::NewtonRaphsonSolver(*(helper.matrix), jbuild, fbuild);
+  solver.reset(tmpsolver);
+} else {
+  solver.reset(new math::NonlinearSolver(*(helper.matrix), jbuild, fbuild));
+}
+\end{Verbatim}
+}
+
+If you are only interested in using the \texttt{\textbf{NonlinearSolver}}, then it is possible to dispense with the \texttt{\textbf{NonlinearSolverInterface}} and just use the \texttt{\textbf{NonlinearSolver}} directly. The remaining call to invoke the solver is just
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  solver->solver(*helper.X);
+\end{Verbatim}
+}
+
+Additional calls are likely to be added to these to allow user-specified parameters from the input deck to be sent to the solver. In the case of the \texttt{\textbf{NonlinearSolver}}, these can be used to specify which PETSc solver should be used. More details on how to use the non-linear solvers can be found by looking at the powerflow module in the GridPACK source code.

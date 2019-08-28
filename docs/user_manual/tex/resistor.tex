@@ -1,0 +1,571 @@
+\section{Resistor Grid Application}
+
+The resistor grid is a more complicated example that illustrates how GridPACK can be used to set up equations describing a physical system and then solve the system using a linear solver. The physical system is a rectangular grid with resistors connecting all the nodes. Two nodes are chosen to be set at fixed potentials, these then drive currents through the rest of the network resulting in different currents on the individual branches and different voltages on the different buses (nodes). The system is illustrated schematically in Figure~\ref{fig:fig-14}.
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=5in, keepaspectratio=true]{Fig14}
+  \caption{A schematic diagram of a simple resistor grid network. The buses (nodes) in blue are set at fixed external voltages, the remaining bus voltages and branch currents are calculated by the application.}
+  \label{fig:fig-14}
+\end{figure}
+
+
+%\noindent              \includegraphics*[width=5.00in, height=3.75in, keepaspectratio=false]{image83}
+
+%\textcolor{red}{\texttt{\textbf{Figure 14}}. A schematic diagram of a simple resistor grid network. The buses (nodes) in blue are set at fixed external voltages, the remaining bus voltages and branch currents are calculated by the application.}
+
+The topology and choice of nodes held at fixed potential is determined by the network configuration file, as are the values of the resistance on each of the branches. The system is described by a set of coupled equations representing the application of Kirkoff's law to each of the nodes that is not held at a fixed potential. Kirkoff's law is expressed by the equations\[\sum_{\beta \in \left\{\alpha \right\}}{i_{\alpha \beta }=0}\] 
+where $i_{\alpha \beta }$ is the current flowing between nodes $\alpha $ and $\beta $ and $\left\{\alpha \right\}$ is the set of nodes connected directly to $\alpha $. This current can be found from Ohm's law
+\[i_{\alpha \beta }=\frac{V_{\alpha }-V_{\beta }}{R_{\alpha \beta }}\] 
+Where $V_{\alpha }$ and $V_{\beta }$ are the voltage potentials on nodes $\alpha $ and $\beta $ and $R_{\alpha \beta }$ is the resistance on the branch connecting nodes $\alpha $ and $\beta $. Plugging the expression for the current back into Kirkoff's law gives the equation
+\[\sum_{\beta \in \left\{\alpha \right\}}{\frac{V_{\alpha }-V_{\beta }}{R_{\alpha \beta }}=V_{\alpha }\sum_{\beta \in \left\{\alpha \right\}}{\frac{1}{R_{\alpha \beta }}}-\sum_{\beta \in \left\{\alpha \right\}}{\frac{V_{\beta }}{R_{\alpha \beta }}}=0}\] 
+The unknowns in this system are the potentials $V_{\alpha }$. Kirkoff's law applies to any node that does not have an applied value of the potential. The nodes that do have a fixed potential appear as part of the right hand side vector. Assuming that any node with a non-fixed value of the potential is attached to at most one fixed node, then the $\alpha $th element of the right hand side vector is
+\[\frac{V^{\boldsymbol{0}}_{\boldsymbol{\beta }}}{R_{\alpha \beta }}\] 
+where $V^{\boldsymbol{0}}_{\boldsymbol{\beta }}$ is the value of the fixed potential on node $\beta $ and $\alpha $ is attached to $\beta $. If $\alpha $ is not attached to $\beta $, then the element is zero. The voltages can be evaluated by solving the matrix equation
+\[\overline{\overline{C}}\cdot \overline{V}={\overline{I}}_0\] 
+The voltage vector and right hand side have already been discussed. The matrix elements have the form
+\[
+C_{\alpha \alpha }=\sum_{\beta \in \left\{\alpha \right\}}{\frac{1}{R_{\alpha \beta }}}
+\]
+\[
+C_{\alpha \beta }=-\frac{1}{R_{\alpha \beta }}\ \mathrm{\;\;\;\;\;if}\ \alpha \neq \beta
+\] 
+With this background, we can talk about the implementation of the resistor grid application.
+
+Much of the basic structure of the classes has already been discussed in the previous example of ``Hello world'', so we will limit ourselves to discussing new features. The source code for this example can be found in the \texttt{\textbf{resistor\_grid}} directory. The \texttt{\textbf{RGBus}} class inherits from the \texttt{\textbf{BaseBusComponent}} class and implements the following functions (in addition to the constructor and destructor)
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void load(const boost::shared_ptr
+  <gridpack::component::DataCollection> &data);
+bool isLead() const;
+double voltage() const;
+bool matrixDiagSize(int *isize, int *jsize) const;
+bool matrixDiagValues(ComplexType *values);
+bool vectorSize(int *isize) const;
+bool vectorValues(ComplexType *values);
+void setValues(gridpack::ComplexType *values);
+int getXCBufSize();
+void setXCBuf();
+bool serialWrite(char *string, const int bufsize,
+  const char *signal = NULL);
+\end{Verbatim}
+}
+
+In addition, the \texttt{\textbf{RGBus}} class has three private members
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool p_lead;
+double *p_voltage;
+double p_v;
+\end{Verbatim}
+}
+
+The variable \texttt{\textbf{p\_lead}} keeps track of whether a bus has a fixed voltage applied to it. In order to correctly calculate the currents, it is necessary to exchange voltages at the end of the calculation. The voltages at each bus are stored in an exchange buffer that can be accessed by the pointer \texttt{\textbf{p\_voltage}}. The voltages in the external PSS/E file are read in before the exchange buffer is allocated, so to make sure there is a variable to store the value, the variable \texttt{\textbf{p\_v}} is also included as a private member. In addition to implementing \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}}, the \texttt{\textbf{RGBus}} class implements several functions in the \texttt{\textbf{MatVecInterface}}, as well as two functions that are unique to this class.
+
+Similarly, the \texttt{\textbf{RGBranch}} class implements the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void load(const boost::shared_ptr
+  <gridpack::component::DataCollection> &data);
+double resistance(void) const;
+bool matrixForwardSize(int *isize, int *jsize) const;
+bool matrixReverseSize(int *isize, int *jsize) const;
+bool matrixForwardValues(ComplexType *values);
+bool matrixReverseValues(ComplexType *values);
+bool serialWrite(char *string, const int bufsize,
+  const char *signal = NULL);
+\end{Verbatim}
+}
+
+and has the private member
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+double p_resistance;
+\end{Verbatim}
+}
+
+The \texttt{\textbf{RGBus}} load method has the implementation
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGBus::load(const
+         boost::shared_ptr<gridpack::component::DataCollection> &data)
+{
+   int type;
+   data->getValue(BUS_TYPE,&type);
+   if (type == 2) {
+     p_lead = true;
+     data->getValue(BUS_BASEKV,&p_v);
+   }
+}
+\end{Verbatim}
+}
+
+The PSS/E file that is used to run this application has been configured so that the bus type parameter is set to 2 if the bus has a fixed voltage and the value of the voltage is stored in the \texttt{\textbf{BUS\_BASEKV}} variable. The private member \texttt{\textbf{p\_lead}} is initialized to false in the \texttt{\textbf{RGBus}} constructor and \texttt{\textbf{p\_v}} is initialized to zero. In the \texttt{\textbf{load}} method, the bus type is assigned from the \texttt{\textbf{BUS\_TYPE}} variable in the data collection. If it is 2, the bus has a fixed value of the potential and \texttt{\textbf{p\_lead}} is set to true. The value of \texttt{\textbf{p\_v}} is assigned to whatever is stored in the \texttt{\textbf{BUS\_BASEKV}} variable when the bus type is 2. The contents of \texttt{\textbf{p\_v}} will eventually be mapped to \texttt{\textbf{p\_voltage}}, once the exchange buffers are allocated.
+
+The \texttt{\textbf{load}} function for \texttt{\textbf{RGBranch}} simply assigns the data collection variable \texttt{\textbf{BRANCH\_R}} to the private member \texttt{\textbf{p\_resistance}}.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGBranch::load(
+    const boost::shared_ptr
+    <gridpack::component::DataCollection> &data)
+{
+  data->getValue(BRANCH_R,&p_resistance,0);
+}
+\end{Verbatim}
+}
+
+Once the bus and branch private members have been set using the load methods, the values can be recovered by other objects using the accessors \texttt{\textbf{isLead}}, \texttt{\textbf{voltage}}, and \texttt{\textbf{resistance}}. These functions are used in the math interface implementations to calculate values of the matrix elements and right hand side vectors and have the relatively simple forms
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::isLead() const
+{
+  return p_lead;
+}
+
+double gridpack::resistor_grid::RGBus::voltage() const
+{
+  return *p_voltage;
+}
+
+double gridpack::resistor_grid::RGBranch::resistance(void) const
+{
+  return p_resistance;
+}
+\end{Verbatim}
+}
+
+Note that the \texttt{\textbf{voltage}} function is returning the contents of \texttt{\textbf{p\_voltage}}, which will contain up-to-date values of the voltage once the calculation begins.
+
+The diagonal matrix block routines in the bus class have the implementations
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::matrixDiagSize(int *isize,
+   int *jsize) const
+{
+  if (!p_lead) {
+    *isize = 1;
+    *jsize = 1;
+    return true;
+  } else {
+    return false;
+  }
+}
+
+bool gridpack::resistor_grid::RGBus::matrixDiagValues(
+   ComplexType *values)
+{
+  if (!p_lead) {
+    gridpack::ComplexType ret(0.0,0.0);
+    std::vector<shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    int i;
+    for (i=0; i<size; i++) {
+      gridpack::resistor_grid::RGBranch *branch
+        = dynamic_cast<gridpack::resistor_grid::RGBranch*>
+          (branches[i].get());
+      ret += 1.0/branch->resistance();
+    }
+    values[0] = ret;
+    return true;
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
+
+The \texttt{\textbf{matrixDiagSize}} routine returns a single element in the \texttt{\textbf{values}} array if the bus is not a lead with a fixed voltage, otherwise it returns false and there are no values in the \texttt{\textbf{values}} array. The \texttt{\textbf{matrixDiagValues}} function sets the first element of the \texttt{\textbf{values}} array equal to the sum of the reciprocal of the resistances on all the attached branches, if the bus is not a lead. To calculate this quantity, it starts by calling the \texttt{\textbf{getNeighborBranches}} function to get a list of pointers to attached branches. These pointers are all of type \texttt{\textbf{BaseComponent}}, so they need to be cast to pointers of type \texttt{\textbf{RGBranch}} before functions like \texttt{\textbf{resistance}} can be called on them. This is done by first calling the \texttt{\textbf{get}} function on the \texttt{\textbf{shared\_ptr}} to the \texttt{\textbf{BaseComponent}} object to get a bare pointer to the neighboring branch and then doing a dynamic cast to a pointer of type \texttt{\textbf{RGBranch}}. The resistance method can now by called on the \texttt{\textbf{RGBranch}} pointer to get the resistance of the branch and use it to calculate the contribution to the diagonal matrix element. This value is assigned to \texttt{\textbf{values[0]}}. If the bus is a lead, then no values are calculated and the function returns false. It is also worth noting that this function will only be called on buses that are local to the process, so each bus that evaluates a diagonal matrix element will have a complete set of branches attached to it. This is not the case for ghost buses. These have only one branch attached to them, no matter how many branches are attached to it in the original network.
+
+The off-diagonal elements are calculated by the branch components in the functions \texttt{\textbf{matrixForwardSize}}, \texttt{\textbf{matrixReverseSize}}, \texttt{\textbf{matrixForwardValues}}, and \texttt{\textbf{matrixReverseValues}}. The matrix $\overline{\overline{C}}$ for the resistor grid problem is completely symmetric, so in this case, the forward and reverse calculations are identical. For realistic power problems, this is not generally true, and the forward and reverse functions will have different implementations. The forward functions are described below, the implementation of the reverse functions is identical. The branch forward size and value functions are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBranch::matrixForwardSize(
+   int *isize, int *jsize) const
+{
+  gridpack::resistor_grid::RGBus *bus1
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus1().get());
+  gridpack::resistor_grid::RGBus *bus2
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
+  if (!bus1->isLead() && !bus2->isLead()) {
+    *isize = 1;
+    *jsize = 1;
+    return true;
+  } else { 
+    return false;
+  }
+}
+
+bool gridpack::resistor_grid::RGBranch::matrixForwardValues(
+   ComplexType *values)
+{
+  gridpack::resistor_grid::RGBus *bus1
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus1().get());
+  gridpack::resistor_grid::RGBus *bus2
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
+  if (!bus1->isLead() && !bus2->isLead()) {
+    values[0] = -1.0/p_resistance;
+    return true;
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
+
+Before these functions can calculate return values, they must first determine if one of the buses at either end of the branch is a lead bus. To do this, the functions need to get pointers to the ``from'' and ``to'' buses at either end of the branch. They can do this through the \texttt{\textbf{getBus1}} and \texttt{\textbf{getBus2}} calls in the \texttt{\textbf{BaseBranchComponent}} class which return pointers of type \texttt{\textbf{BaseComponent}}. These pointers can then be converted to \texttt{\textbf{RGBus}} pointers by a dynamic cast. The \texttt{\textbf{isLead}} functions can be called to find out if either bus is a lead bus. If neither bus is a lead bus, the size of the off-diagonal block is returned as a 1x1 matrix and the off-diagonal matrix element is calculated and returned in \texttt{\textbf{values[0]}}. Otherwise both functions return false to indicate that there is no contribution to the matrix from this branch.
+
+In addition to calculating values of the matrix $\overline{\overline{C}}$, it is also necessary to set up the right hand side vector. This is done via the functions \texttt{\textbf{vectorSize}} and \texttt{\textbf{vectorValues}} defined on the buses. Only buses that are not lead buses contribute to the right hand side vector. On the other hand, the only non-zero values in the right hand side vector come from lead buses that are attached to non-lead buses. The \texttt{\textbf{vectorSize}} function has the implementation
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::vectorSize(int *isize) const
+{
+  if (!p_lead) {
+    *isize = 1;
+    return true;
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
+
+If a bus is not a lead bus, it contributes a single value, otherwise it does not and the function returns false. The \texttt{\textbf{vectorValues}} function is a bit more complicated. It has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::vectorValues(ComplexType *values)
+{
+  if (!p_lead) {
+    std::vector<boost::shared_ptr<BaseComponent> > branches;
+    getNeighborBranches(branches);
+    int size = branches.size();
+    int i;
+    gridpack::ComplexType ret(0.0,0.0);
+    for (i=0; i<size; i++) {
+      gridpack::resistor_grid::RGBranch *branch
+        = dynamic_cast<gridpack::resistor_grid::RGBranch*>
+          (branches[i].get());
+      gridpack::resistor_grid::RGBus *bus1
+        = dynamic_cast<gridpack::resistor_grid::RGBus*>
+          (branch->getBus1().get());
+      gridpack::resistor_grid::RGBus *bus2
+        = dynamic_cast<gridpack::resistor_grid::RGBus*>
+          (branch->getBus2().get());
+      if (bus1 != this && bus1->isLead()) {
+        ret += bus1->voltage()/branch->resistance();
+      } else if (bus2 != this && bus2->isLead()) {
+        ret += bus2->voltage()/branch->resistance();
+      }
+    }
+    values[0] = ret;
+    return true;
+
+  } else {
+    return false;
+  }
+}
+\end{Verbatim}
+}
+
+The \texttt{\textbf{vectorValues}} function starts by getting a list of branches that are attached to the calling bus and then looping over the list. Pointers to each of the branches, as well as the buses at each end of the branch are obtained using the \texttt{\textbf{getBus1}} and \texttt{\textbf{getBus2}} functions. It is still necessary to determine which end of the branch is opposite the calling bus and this can be done by checking the conditions \texttt{\textbf{bus1 != this}} and \texttt{\textbf{bus2 != this}}. One of these will be true for the bus opposite the calling bus. If this bus is also a lead bus, then a contribution is added to the right hand side vector element. The contribution can be calculated by getting the value of the fixed voltage from the lead bus and dividing it by the resistance of the branch. These values can be obtained by calling the bus \texttt{\textbf{voltage}} function and the branch \texttt{\textbf{resistance}} function. The *\texttt{\textbf{p\_voltage}} value of the calling bus is not used. If the calling bus is a lead bus, then the function returns false.
+
+The last function related to vectors that is implemented in the \texttt{\textbf{MatVecInterface}} is the \texttt{\textbf{setValues}} function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGBus::setValues(
+   gridpack::ComplexType *values)
+{
+  if (!p_lead) { 
+    p_voltage = real(values[0]);
+  }
+}
+\end{Verbatim}
+}
+
+Once the voltages have been calculated by solving Kirkoff's equations, it is necessary to have some way of pushing these back on the buses so they can be written to output. The results of the linear solver are returned in the \texttt{\textbf{values}} array. The number of values in this array corresponds to the number of values contributed to the right hand side vector (in this case 1 if the bus is not a lead). Thus, the value is assigned to the internal \texttt{\textbf{p\_voltage}} variable if the bus is not a lead bus. This function will be called by all buses as part of the \texttt{\textbf{mapToBus}} function in the \texttt{\textbf{BusVectorMap}}.
+In order to correctly calculate the current on all branches for export to standard out, it is necessary to have up-to-date values of the voltage on all buses, including ghost buses. This requires a data exchange at the end of the calculation. To enable this exchange, the \texttt{\textbf{getXCBufSize}} \texttt{\textbf{and setXCBuf}} functions must be implemented in the \texttt{\textbf{RGBus}} class. These functions have the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int gridpack::resistor_grid::RGBus::getXCBufSize()
+{
+  return sizeof(double);
+}
+
+void gridpack::resistor_grid::RGBus::setXCBuf(void *buf)
+{
+  p_voltage = static_cast<double*>(buf);
+  *p_voltage = p_v;
+}
+\end{Verbatim}
+}
+
+The only variable that needs to be exchanged is the value of the potential, so \texttt{\textbf{getXCBufSize}} returns the number of bytes in a single double precision variable. The \texttt{\textbf{setXCBuf}} function assigns the buffer pointed to by the variable \texttt{\textbf{buf}} to the internal data member \texttt{\textbf{p\_voltage}}. At the same time, it initializes the contents of \texttt{\textbf{p\_voltage}} to the variable \texttt{\textbf{p\_v}}, which contains the voltage read in from the external PSS/E file.
+The \texttt{\textbf{serialWrite}} functions on the buses and branches are used to write the voltages and currents on all buses and branches to standard output. The \texttt{\textbf{serialWrite}} function on the buses has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBus::serialWrite(char *string,
+    const int bufsize, const char *signal)
+{
+  if (p_lead) {
+    sprintf(string,"Voltage on bus %d: %12.6f (lead)\n",
+        getOriginalIndex(),*p_voltage);
+
+  } else {
+    sprintf(string,"Voltage on bus \%d: \%12.6f\n",
+        getOriginalIndex(),*p_voltage);
+  }
+  return true;
+}
+\end{Verbatim}
+}
+
+All buses return a string so the function always returns true. The printout consists of the bus index, obtained with the \texttt{\textbf{getOriginalIndex}} function, and the value of the voltage on the bus. Lead buses are marked in the output, indicating that the voltage is the same as that specified in the input file, the remaining voltages are calculated by solving Kirkoff's equations. For branches, the serialWrite function is used to calculate and print the current flowing across each branch
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool gridpack::resistor_grid::RGBranch::serialWrite(char *string,
+    const int bufsize,  const char *signal)
+{
+  gridpack::resistor_grid::RGBus *bus1
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus1().get());
+  gridpack::resistor_grid::RGBus *bus2
+    = dynamic_cast<gridpack::resistor_grid::RGBus*>(getBus2().get());
+  double v1 = bus1->voltage();
+  double v2 = bus2->voltage();
+  double icur = (v1 - v2)/p_resistance;
+  sprintf(string,"Current on line from bus %d to %d is: %12.6f\n",
+      bus1->getOriginalIndex(),bus2->getOriginalIndex(),icur);
+  return true;
+}
+\end{Verbatim}
+}
+
+All branches report the current flowing through them, so this function also returns true for all branches. To calculate the current, it is necessary to get the value of the voltages at both ends of the branch using methods already described and then calculate the current by dividing the difference in voltages by the resistance of the branch. The print line prints the current and uniquely identifies each branch by including the IDs of the buses at either end.
+
+The factory class for resistor grid application only uses functionality in the BaseFactory class and has the simple form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+class RGFactory
+  : public gridpack::factory::BaseFactory<RGNetwork> {
+  public:
+    RGFactory(boost::shared_ptr<RGNetwork> network)
+      : gridpack::factory::BaseFactory<RGNetwork>(network) {}
+
+    ~RGFactory() {}
+};
+\end{Verbatim}
+}
+
+Again, the \texttt{\textbf{BaseFactory}} class from which \texttt{\textbf{RGFactory}} inherits is initialized by passing the network argument through the constructor. The declaration for this class is in the file \texttt{\textbf{rg\_factory.hpp}}. There is no corresponding \texttt{\textbf{.cpp}} file.
+
+The \texttt{\textbf{RGApp}} class declaration is also simple and consists of the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+class RGApp
+{
+  public:
+
+    RGApp(void);
+    ~RGApp(void);
+    void execute(int argc, char** argv);
+};
+\end{Verbatim}
+}
+
+Again, arguments from the top level main program can be passed through to the execute function, which is responsible for implementing the actual resistor grid calculation. The \texttt{\textbf{RGApp}} class declaration is contained in the \texttt{\textbf{rg\_app.hpp}} file. The implementation is contained in the \texttt{\textbf{rg\_app.cpp}} file. The only complicated function in the implementation is execute, which consists of
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::resistor_grid::RGApp::execute(int argc, char** argv)
+{
+  // read configuration file
+  gridpack::parallel::Communicator world;
+  gridpack::utility::Configuration *config =
+    gridpack::utility::Configuration::configuration();
+  config->open("input.xml",world);
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.ResistorGrid");
+
+
+  // create network and read in external PTI file
+  // with network configuration
+  boost::shared_ptr<RGNetwork> network(new RGNetwork(world));
+  gridpack::parser::PTI23_parser<RGNetwor> parser(network);
+  std::string filename;
+  if (!cursor->get("networkConfiguration",&filename)) {
+    filename = "small.raw";
+  }
+  parser.parse(filename.c_str());
+
+
+  // partition network
+  network->partition();
+
+  // create factory and load parameters from input
+  // file to network components
+  gridpack::resistor_grid::RGFactory factory(network);
+  factory.load();
+
+  // set network components using factory and set up exchange
+  // of voltages between buses
+  factory.setComponents();
+  factory.setExchange();
+  network->initBusUpdate();
+
+  // create mapper to generate voltage matrix
+  gridpack::mapper::FullMatrixMap<RGNetwork> vMap(network);
+  boost::shared_ptr<gridpack::math::Matrix> V = vMap.mapToMatrix();
+
+  // create mapper to generate RHS vector
+  gridpack::mapper::BusVectorMap<RGNetwork> rMap(network);
+  boost::shared_ptr<gridpack::math::Vector> R = rMap.mapToVector();
+
+  // create solution vector by cloning R
+  boost::shared_ptr<gridpack::math::Vector> X(R->clone());
+
+  // create linear solver and solve equations
+  gridpack::math::LinearSolver solver(*V);
+  solver.configure(cursor);
+  solver.solve(*R, *X);
+
+  // push solution back on to buses
+  rMap.mapToBus(X);
+
+  // exchange voltages so that all buses have correct values. This
+  // guarantees that current calculations on each branch are correct
+  network->updateBuses();
+
+  // create serial IO objects to export data
+  gridpack::serial_io::SerialBusIO<RGNetwork> busIO(128,network);
+  char ioBuf[128];
+  busIO.header("\nVoltages on buses\n\n");
+  busIO.write();
+
+  gridpack::serial_io::SerialBranchIO<RGNetwork>
+    branchIO(128,network);
+  branchIO.header("\nCurrent on branches\n\n");
+  branchIO.write();
+}
+\end{Verbatim}
+}
+
+The beginning of the resistor grid application is more complicated than ``Hello world'' in that it uses an input file to control the properties of the linear solver that is used to solve current equations. To read in the input file, the application starts by creating a communicator on the set of all processors. Only one configuration object is available to the application and the \texttt{\textbf{execute}} function gets a pointer to this instance by calling the static function \texttt{\textbf{Configuration::configuration()}}. This pointer can then be used to read in the input file, ``\texttt{\textbf{input.xml}}'', across all processes in the communicator \texttt{\textbf{world}} using the \texttt{\textbf{open}} method. All processors now have access to the contents of \texttt{\textbf{input.xml}}. The input file contains two pieces of information, the name of the PSS/E formatted resistor grid configuration file and the parameters for the linear solver. The input file has the form
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <ResistorGrid>
+    <networkConfiguration> small.raw </networkConfiguration>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </ResistorGrid>
+</Configuration>
+\end{Verbatim}
+}
+
+The resistor grid file name can be obtained by getting a cursor pointer that is pointed at the \texttt{\textbf{ResistorGrid}} block in the input file by using the \texttt{\textbf{getCursor}} function and then using the \texttt{\textbf{get}} function to retrieve the actual file name located in the \texttt{\textbf{networkConfiguration }}field. If no file is specified in the input deck, the file name defaults to ``\texttt{\textbf{small.raw}}''. At the same time, an \texttt{\textbf{RGNetwork}} object is instantiated and used to initialize on instance of \texttt{\textbf{PTI23\_parser}}. This can then read in the resistor grid configuration file using the parse function.
+
+At this point, all buses and branches have been created, but they may not be distributed in a way that supports computation. The network \texttt{\textbf{partition}} function is called to redistribute the network so that each process has maximal connections between components located on the process and minimal connections to components located on other processes. The ghost buses and branches are also added by the \texttt{\textbf{partition}} function.
+
+After partitioning, an \texttt{\textbf{RGFactory}} object is created and the base class \texttt{\textbf{load}} method is called to initialize the internal data elements on each bus and branch in the network. This function initializes both locally held components as well as ghost components, so there is no need for a data exchange to guarantee that all components are up to date. The factory also calls the base class \texttt{\textbf{setComponents}} method, which determines several types of internal indices that are used to set up calculations. The buffers needed to exchange data at the end of the calculation are set up by a call to the factory \texttt{\textbf{setExchange}} method. Additional internal data structures needed for the data exchange between buses are created by calling the network \texttt{\textbf{initBusUpdate}} method. No data exchanges are needed between branch components.
+
+The next step in the algorithm is to create the matrix $\overline{\overline{C}}$, the right hand side vector and a vector to contain the solution. Two separate mappers are needed, one for the matrix $\overline{\overline{C}}$ and the other for the right hand side vector. For the matrix, the code creates an instance of a \texttt{\textbf{FullMatrixMap}} that is initialized with the resistor grid network. The \texttt{\textbf{mapToMatrix}} function is called to create the matrix \texttt{\textbf{V}}. The right hand side vector is created by creating instance of a \texttt{\textbf{BusVectorMap}} and using the \texttt{\textbf{mapToVector}} function to create the vector \texttt{\textbf{R}}. The solution vector \texttt{\textbf{X}} does not need to be initialized to any particular value, it just needs to be the same size as \texttt{\textbf{R}} so it is created by having \texttt{\textbf{R}} call the \texttt{\textbf{clone}} method in the \texttt{\textbf{Vector}} class and using the result to initialize \texttt{\textbf{X}} in the \texttt{\textbf{Vector}} class constructor.
+
+Once \texttt{\textbf{V}}, \texttt{\textbf{R}}, and \texttt{\textbf{X}} are available, the equations can be solved using a linear solver. The linear solver is created by initializing an instance of \texttt{\textbf{LinearSolver}} with the matrix \texttt{\textbf{V}}. The solver class \texttt{\textbf{configure}} method can be used to transfer solver parameters in the \texttt{\textbf{LinearSolver }}block in \texttt{\textbf{input.xml}} to the solver. The \texttt{\textbf{cursor}} pointer  that is taken as an argument to \texttt{\textbf{configure}} is already pointing to the \texttt{\textbf{ResistorGrid}} block in the input file, so \texttt{\textbf{configure}} will pick up any parameters in a \texttt{\textbf{LinearSolver}} block within the \texttt{\textbf{ResistorGrid}} block. After configuring the solver, the solution vector can be obtained by calling the \texttt{\textbf{solve}} method and the resulting voltages are pushed back to buses using the \texttt{\textbf{mapToBus}} method in the \texttt{\textbf{BusVectorMap}} class.
+
+After calling \texttt{\textbf{mapToBus}}, all locally held buses have correct values of the voltage, but ghost buses still have their initial values. To correct the voltages on ghost buses, it is necessary to call the network \texttt{\textbf{updateBuses}} function. The buffers \texttt{\textbf{p\_voltage}} now contain correct values of the voltage on all buses.
+
+The only remaining step is to write the results to standard output. The voltages are written by creating an instance of \texttt{\textbf{SerialBusIO}}. The maximum buffer size is set to 128 characters, which is enough to hold any lines of output coming from the buses. A header labeling the bus output is written to standard out using the \texttt{\textbf{header}} method and then bus voltages are written by calling \texttt{\textbf{write}}. Similarly, output from the branches can be written by creating an instance of \texttt{\textbf{SerialBranchIO}}, writing a header using the \texttt{\textbf{header }}method and then calling \texttt{\textbf{write}}. Since only one type of output comes from the branches and buses, no character string is passed in as arguments to the \texttt{\textbf{write}} functions. The \texttt{\textbf{execute}} function has now completed all tasks associated with solving the resistor grid problem and passes control back to the main calling program.
+
+The main calling program is relatively simple and consists of the code
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc, argv);
+  gridpack::math::Initialize();
+  gridpack::resistor_grid::RGApp app;
+  app.execute(argc, argv);
+  gridpack::math::Finalize();
+  return 0;
+}
+\end{Verbatim}
+}
+
+The parallel computing environment is set up by creating an instance of \texttt{\textbf{Environment}}. The computing environment is also cleaned up at the end of the calculation when the destructor for this object is called. The math libraries are initialized by a call to the static \texttt{\textbf{Initialize}} method and cleaned up at the end of the calculation by a call to \texttt{\textbf{Finalize}}. The only remaining calls are to create an instance of an \texttt{\textbf{RGApp}} and call its \texttt{\textbf{execute}} method.
+
+A portion of the output from the resistor grid calculation is the following
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+GridPACK math module configured on 8 processors
+    :
+Voltages on buses
+
+Voltage on bus 1:     1.000000 (lead)
+Voltage on bus 2:     0.667958
+Voltage on bus 3:     0.467469
+Voltage on bus 4:     0.329598
+Voltage on bus 5:     0.227289
+Voltage on bus 6:     0.148733
+Voltage on bus 7:     0.088491
+    :
+Current on branches
+
+Current on line from bus 1 to 2 is:    20.000000
+Current on line from bus 2 to 3 is:     4.009776
+Current on line from bus 3 to 4 is:     2.757436
+Current on line from bus 4 to 5 is:     2.046167
+Current on line from bus 5 to 6 is:     4.545785
+    :
+\end{Verbatim}
+}
+
+The first line is written by the call to the math library \texttt{\textbf{Initialize}} function and reports on the number of processors being used in the calculation. This information is useful in keeping track of the performance characteristics of different calculations. Some information from the solvers is usually printed after this. At the end of the calculation, the values of the voltages on the buses are printed out and then the current on each of the branches. The buses with externally applied voltages are also identified in the output.
+

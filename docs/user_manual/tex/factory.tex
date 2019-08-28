@@ -1,0 +1,60 @@
+\section{Factories}
+
+The network component factory is an application-dependent piece of software that is designed to manage interactions between the network and the network component objects. Most operations in the factory run over all buses and all branches and invoke some operation on each component. An example is the ``\texttt{\textbf{load}}'' operation. After the network is read in from an external file, it consists of a topology and a set of simple data collection objects containing key-value pairs associated with each bus and branch. The \texttt{\textbf{load}} operation then runs over all buses and branches and instantiates the appropriate objects by invoking a local \texttt{\textbf{load}} method that takes the values from the data collection object and uses it to instantiate the bus or branch. The application network factory is derived from a base network factory class that contains some additional routines that set up indices, assign neighbors to individual buses and branches and assign buffers. The neighbors are originally only known to the network, so a separate operation is needed to push this information down into the bus and branch components. The network component factory may also execute other routines that contribute to setting up the network and creating a well-defined state.
+
+Factories can be derived from the \texttt{\textbf{BaseFactory}} class, which is a templated class that is based on the network type. It resides in the \texttt{\textbf{gridpack::factory}} namespace. The constructor for a \texttt{\textbf{BaseFactory}} object has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+BaseFactory<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{BaseFactory}} class supplies some basic functions that can be used to help instantiate the components in a network. Other methods can be added for particular applications by inheriting from the \texttt{\textbf{BaseFactory}} class. The two most important functions in \texttt{\textbf{BaseFactory}} are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void setComponents()
+
+virtual void setExchange()
+\end{Verbatim}
+}
+
+The \texttt{\textbf{setComponents}} method pushes topology information available from the network into the individual buses and branches using methods in the base component classes. This operation ensures that operations such as \texttt{\textbf{getNeighborBuses}}, etc. work correctly. The topology information is originally only available in the network and it requires additional operations to imbed it in individual buses and branches. Being able to access this information directly from the buses and branches can simplify application programming substantially.
+
+The \texttt{\textbf{setExchange}} function allocates buffers and sets up pointers in the components so that exchange of data between buses and branches can occur and ghost buses and branches can receive updated values of the exchanged parameters. This function loops over the \texttt{\textbf{getXCBusSize}} and \texttt{\textbf{setXCBuf}} commands defined in the network component classes and guarantees that buffers are properly allocated and exposed to the network components.
+
+Two other functions are defined in the \texttt{\textbf{BaseFactory}} class as convenience functions. The first is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void load()
+\end{Verbatim}
+}
+
+This function loops over all buses and branches and invokes the individual bus and branch \texttt{\textbf{load}} methods. This moves information from the \texttt{\textbf{DataCollection}} objects that are instantiated when the network is created from a network configuration file to the bus and branch objects themselves. The second convenience function is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void setMode(int mode)
+\end{Verbatim}
+}
+
+This function loops over all buses and branches in the network and invokes each bus and branch \texttt{\textbf{setMode}} method. It can be used to set the behavior of the entire network in single function call.
+
+Some utility functions in the \texttt{\textbf{BaseFactory}} class that are occasionally useful are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool checkTrue(bool flag)
+
+bool checkTrueSomewhere(bool flag)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{checkTrue}} function returns true if the variable \texttt{\textbf{flag}} is true on all processors, otherwise it returns false. This function can be used to check if a condition has been violated somewhere in the network. The \texttt{\textbf{checkTrueSomewhere}} function returns true if \texttt{\textbf{flag}} is true on at least one processor. This function can be used to check if a condition is true anywhere in the system.

@@ -1,0 +1,135 @@
+\section{Timers}
+
+Profiling applications is an important part of characterizing performance, identifying bottlenecks and proposing remedies. Profiling in a parallel context is also extremely tricky. Unbalanced applications can lead to incorrect conclusions about performance when load imbalance in one part of the application appears as poor performance in another part of the application. This occurs because the part of the application that appears slow has a global operation that acts as an accumulation point for load imbalance. Nevertheless, the first step in analyzing performance is to be able to time different parts of the code. GridPACK provides a timer functionality that can help users do this. These modules are designed to do relatively coarse-grained profiling, they should not be used to time the inside of computationally intensive loops.
+
+GridPACK contains two different types of timers. The first is a global timer that can be used anywhere in the code and accumulates all results back to the same place for eventual display. Users can get a copy of this timer from any point in the calculation. The second timer is created locally and is designed to only time portions of the code. The second class of timers was created to support task based parallelism where there was an interest in profiling individual tasks instead of getting timing results averaged over all tasks. Both timers can be found in the \texttt{\textbf{gridpack::utility}} namespace.
+
+The \texttt{\textbf{CoarseTimer}} class represents a timer that is globally accessible from any point in the code. A pointer to this timer can be obtained by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+static CoarseTimer *instance()
+\end{Verbatim}
+}
+
+A category within the timer corresponds to a set of things that are to be timed. A new category in the timer can be created using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int createCategory(const std::string title)
+\end{Verbatim}
+}
+
+This command creates a category that is labeled by the name in the string \texttt{\textbf{title}}. The function returns an integer handle that can be used in subsequent timing calls. For example, suppose that all calls to \texttt{\textbf{function1}} within a code need to be timed. The first step is to get an instance of the timer and create the category ``\texttt{\textbf{Function1}}''
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+gridpack::utility::CoarseTimer *timer =
+  gridpack::utilitity::CoarseTimer::instance();
+int t_func1 = timer->createCategory("Function1");
+\end{Verbatim}
+}
+
+This code gets a copy of the timer and returns an integer handle \texttt{\textbf{t\_func1}} corresponding to this category. If the category has already been created, then \texttt{\textbf{createCategory}} returns a handle to the existing category, otherwise it adds the new category to the timer.
+
+Time increments can be accumulated to this category using the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void start(const int idx)
+
+void stop(const int idx)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{start}} command begins the timer for the category represented by the handle \texttt{\textbf{idx}} and \texttt{\textbf{stop}} turns the timer off and accumulates the increment.
+At the end of the program, the timing results for all categories can be printed out using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void dump(void) const
+\end{Verbatim}
+}
+
+The results for each category are printed to standard out. An example of a portion of the output from \texttt{\textbf{dump}} for a power flow code is shown below.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    Timing statistics for: Total Application
+        Average time:               14.7864
+        Maximum time:               14.7864
+        Minimum time:               14.7863
+        RMS deviation:               0.0000
+    Timing statistics for: PTI Parser
+        Average time:                0.1553
+        Maximum time:                1.2420
+        Minimum time:                0.0000
+        RMS deviation:               0.4391
+    Timing statistics for: Partition
+        Average time:                2.8026
+        Maximum time:                2.9668
+        Minimum time:                1.7142
+        RMS deviation:               0.4398
+    Timing statistics for: Factory
+        Average time:                1.2424
+        Maximum time:                1.2540
+        Minimum time:                1.2336
+        RMS deviation:               0.0056
+    Timing statistics for: Bus Update
+        Average time:                0.0019
+        Maximum time:                0.0025
+        Minimum time:                0.0016
+        RMS deviation:               0.0003
+\end{Verbatim}
+}
+
+
+For each category, the dump command prints out the average time spent in that category across all processors, the minimum and maximum times spent on a single processor and the RMS standard deviation from the mean across all processors. It is also possible to get more detailed output from a single category. The commands
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void dumpProfile(const int idx) const
+
+void dumpProfile(const std::string title)
+\end{Verbatim}
+}
+
+can both be used to print out how much time was spent in a single category across all processors. The first command identifies the category through its integer handle, the second via its name.
+
+Some other timer commands also can be useful. The function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+double currentTime()
+\end{Verbatim}
+}
+
+returns the current time in seconds (if you want to do timing on your own). If you want control profiling in different sections of the code the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void configureTimer(bool flag)
+\end{Verbatim}
+}
+
+can be used to turn timing off (\texttt{\textbf{flag = false}}) or on (\texttt{\textbf{flag = true}}). This can be used to restrict timing to a particular section of code and can be used for debugging and performance tuning.
+
+In addition to the \texttt{\textbf{CoarseTimer}} class, there is a second class of timers called \texttt{\textbf{LocalTimer}}. \texttt{\textbf{LocalTimer}} supports the same functionality as \texttt{\textbf{CoarseTimer}} but differs from the \texttt{\textbf{CoarseTimer}} class in that \texttt{\textbf{LocalTimer}} has a conventional constructor. When an instance of a local timer goes out of scope, the information associated with it is destroyed. Apart from this, all functionality in \texttt{\textbf{LocalTimer}} is the same as \texttt{\textbf{CoarseTimer}}. The \texttt{\textbf{LocalTimer}} class was created to profile individual tasks in applications such as contingency analysis. Each contingency can be profiled separately and the results printed to a separate file. The only functions that are different from the \texttt{\textbf{CoarseTimer}} functions are the functions that print out results. The \texttt{\textbf{dumpProfile}} functions are not currently supported and the \texttt{\textbf{dump}} command has been modified to
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void dump(boost::shared_ptr<ofstream> stream) const
+\end{Verbatim}
+}
+
+This function requires a stream pointer that signifies which file the data is written to.

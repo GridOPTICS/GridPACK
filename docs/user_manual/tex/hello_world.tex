@@ -1,0 +1,350 @@
+\section{``Hello World''}
+
+The ``Hello world'' program is a famous example problem from C programming. Many other packages have adopted the spirit of this program, if not the specifics, to describe the simplest non-trivial program that can be written using the package. In this section, a program that prints out a message from each of the buses and branches on a small grid is described. This application requires the user to define branch and bus classes, create a network class and implement a top level application. The source code for this example can be found in the \texttt{\textbf{hello\_world}} directory.
+
+We start by implementing the \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}} methods in the \texttt{\textbf{BaseComponent}} class for the bus and branch classes of our ``Hello world'' application. The bus and branch classes for this application are called \texttt{\textbf{HWBus}} and \texttt{\textbf{HWBranch}} and have the header file
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#ifndef _hw_components_h_
+#define _hw_components_h_
+
+#include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/include/gridpack.hpp"
+
+namespace gridpack {
+namespace hello_world {
+class HWBus
+  : public gridpack::component::BaseBusComponent {
+
+  public:
+
+    HWBus();  // Constructor
+    ~HWBus()  // Destructor
+
+    void load(const boost:shared_ptr
+              <gridpack::component::DataCollection> &data);
+
+    bool serialWrite(char *string, const int bufsize,
+                     const char *signal = NULL);
+
+  private:
+
+    int p_original_idx;
+
+    friend class boost::serialization::access;
+    template<class Archive> void serialize(Archive &ar,
+      const unsigned int version)
+    {
+      ar & boost::serialization::base_object
+         <gridpack::component::BaseBusComponent>(*this)
+         & p_original_idx;
+    }
+};
+
+class HWBranch
+  : public gridpack::component::BaseBranchComponent {
+
+  public:
+
+    HWBranch();   //Constructor
+    ~HWBranch();  //Destructor
+
+    void load(const boost::shared_ptr
+          <gridpack::component::DataCollection> &data);
+
+    bool serialWrite(char *string, const int bufsize,
+                     const char *signal = NULL);
+
+  private:
+
+    int p_original_idx1;
+    int p_original_idx2;
+
+    friend class boost::serialization::access;
+    template<class Archive> void serialize(Archive & ar,
+      const unsigned int version)
+    {
+      ar & boost::serialization::base_object
+         <gridpack::component::BaseBranchComponent>(*this)
+         & p_original_idx1
+         & p_original_idx2;
+    }
+};
+
+typedef network::BaseNetwork<HWBus, HWBranch > HWNetwork;
+
+}     // hello_world
+}     // gridpack
+#endif
+\end{Verbatim}
+}
+
+The \texttt{\textbf{HWBus}} class has one private member, \texttt{\textbf{p\_original\_idx}}, which is the index of the bus in the network configuration file. Similarly, the \texttt{\textbf{HWBranch}} class has two private members, \texttt{\textbf{p\_original\_idx1}} and \texttt{\textbf{p\_original\_idx2}}, representing the buses at the ``from'' and ``to'' ends of the branch. The name of the file containing this code is \texttt{\textbf{hw\_components.hpp}}. The first two lines of the file are the standard preprocessor protection flags that guarantee that any declarations in this file only appear in another file a single time. The next two lines include the Boost smart pointer header file and the header files from the GridPACK framework. The next two lines declare that all functions and classes in the file are in the \texttt{\textbf{gridpack::hello\_world}} namespace. The use of namespaces is up to the user and other choices are possible. The declaration of the \texttt{\textbf{HWBus}} class inherits from the \texttt{\textbf{BaseBusComponent}} class so all functions in the \texttt{\textbf{BaseBusComponent}} class are available to \texttt{\textbf{HWBus}}. \texttt{\textbf{BaseBusComponent}} also provides some virtual functions, along with their default implementations, that can be overwritten in \texttt{\textbf{HWBus}}. Two of these are the \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}} functions. Only these functions are used in the ``Hello world'' application, the remaining functions in the bases classes are represented by the default implementations. Inside \texttt{\textbf{HWBus}} are declarations for the constructor, destructor, \texttt{\textbf{load}} and \texttt{\textbf{serialWrite}} functions. These will be implemented in the \texttt{\textbf{hw\_components.cpp}} file.
+
+The final component in \texttt{\textbf{HWBus}} is the implementation of the serialize method. This method is used when copying the class from one processor to another and allows the program to move all the data associated with a particular instance of \texttt{\textbf{HWBus}} to another processor. The friend declaration means that \texttt{\textbf{HWBus}} has access to protected methods and data in \texttt{\textbf{boost::serialization::access}} and the templated serialization function is used to declare all internal data members that need to be transferred with the \texttt{\textbf{HWBus}} instance if it is moved from on processor to another. These elements include whatever base class \texttt{\textbf{HWBus}} may be derived from, which is represented by the element
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+boost::serialization::base_object<gridpack::component
+     ::BaseBusComponent>(*this)
+\end{Verbatim}
+}
+
+The remaining data element is \texttt{\textbf{p\_original\_idx}}. The variable \texttt{\textbf{ar}} of type \texttt{\textbf{Archive}} is appended to using the operator \texttt{\textbf{\&}}. In this case the data appended to \texttt{\textbf{ar}} is any serialized data coming from the base class and the variable \texttt{\textbf{p\_original\_idx}}. The serialization function is recursive, so including the base class is enough to guarantee that any variables beneath that are also included in the serialization.
+
+The declaration for \texttt{\textbf{HWBranch}} is very similar. The only major difference is that there are two private variables representing the buses at either end of the branch and these must both be included in the \texttt{\textbf{serialize}} function.
+The bottom of the file contains a typedef declaration for a network using HWBus and HWBranch for it bus and branch classes. This is a convenience and makes it easier to define other functions and classes in the application.
+
+The \texttt{\textbf{hw\_components.cpp}} file contains the actual implementation of the functions declared in \texttt{\textbf{hw\_components.hpp}}. The declarations for STL vectors and iostreams and the \texttt{\textbf{hw\_components.hpp}} file are included at the top of the file so that all functions in the class are defined. For \texttt{\textbf{HWBus}}, the constructor and destructor are trivial and are given by
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    gridpack::hello_world::HWBus::HWBus()}}}
+    {
+      p_original_idx = 0;
+    }
+
+    gridpack::hello\_world::HWBus::~HWBus()
+    {
+    }
+\end{Verbatim}
+}
+
+The \texttt{\textbf{load}} function is more interesting and is designed to transfer data that was read in from the network configuration file to the internal parameters of the bus. In this case, there is only one internal parameter, so \texttt{\textbf{load }}is fairly simple. The bus ID is stored in the variable \texttt{\textbf{BUS\_NUMBER}}, so the load implemention is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    void gridpack::hello_world::HWBus::load(const
+         boost::shared_ptr<gridpack::component::DataCollection> &data)
+    {
+       data->getValue(BUS\_NUMBER,\&p\_original\_idx);}}}
+    }
+\end{Verbatim}
+}
+
+All the parameters associated with the bus that came from the network configuration file are stored in the \texttt{\textbf{data DataCollection}} object, so the \texttt{\textbf{getValue}} statement is used to get the value from \texttt{\textbf{data}} and assign it to \texttt{\textbf{p\_original\_index}}. A completely listing of all variables that might be found in a \texttt{\textbf{DataCollection}} object can be found in the dictionary.hpp file located in the \texttt{\textbf{src/parser}} directory.
+The \texttt{\textbf{serialWrite}} function returns a string with a message from the bus if called by some other program (in this case an instance of \texttt{\textbf{SerialBusIO}}). For ``Hello world'', the bus reports back the bus index using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+     bool gridpack::hello_world::HWBus::serialWrite(char *string,
+             const int bufsize, const char *signal)
+     {
+       sprintf(string,"Hello world from bus %d\n",p_original_idx);
+       return true;
+     }
+\end{Verbatim}
+}
+
+For this case, both the incoming variables \texttt{\textbf{bufsize}} and \texttt{\textbf{signal}} are ignored since ``Hello world'' only has one type of output and it is guaranteed to fit in the buffer, but both variables could be used in more complicated implementations. The \texttt{\textbf{bufsize}} variable can be used to make sure that the string does not exceed an internal buffer size and \texttt{\textbf{signal}} can by used to produce different outputs depending on what the actual contents of signal are. For the \texttt{\textbf{serialWrite}} implementations described for this application, guaranteeing that the strings fit inside the buffer  is straightforward, since all strings are the same size. For real applications, this may not be the case. For example, when printing out generator properties, the strings from buses can vary in size because the number of generators on a bus can vary.
+The implementations of the functions in \texttt{\textbf{HWBranch}} are similar. The constructor and destructor are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    gridpack::hello_world::HWBranch::HWBranch(void)}}}
+    {
+      p_original_idx1 = 0;
+      p_original_idx2 = 0;
+    }
+
+    gridpack::hello_world::HWBranch::~HWBranch(void)
+    {
+    }
+\end{Verbatim}
+}
+
+The \texttt{\textbf{load}} function is given by
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    void gridpack::hello_world::HWBranch::load(
+        const boost::shared_ptr<gridpack::component::DataCollection> &data)
+    {
+      data->getValue(BRANCH_FROMBUS,&p_original_idx1);
+      data->getValue(BRANCH_TOBUS,&p_original_idx2);
+    }
+\end{Verbatim}
+}
+
+This is similar to the implementation of the load function for \texttt{\textbf{HWBus}}, except that the internal data members are mapped to the values of the \texttt{\textbf{BRANCH\_FROMBUS}} and \texttt{\textbf{BRANCH\_TOBUS}} elements of the data collection object. The serialWrite function is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+     bool gridpack::hello_world::HWBranch::serialWrite(char *string,
+         const int bufsize, const char *signal)
+     {
+       sprintf(string,
+           "Hello world from the branch connecting bus %d to bus %d\n",
+           p_original_idx1, p_original_idx2);
+       return true;
+     }
+\end{Verbatim}
+}
+
+Every branch prints out a string describing the branch in terms of the bus IDs at each end of the branch. Again, the incoming bufsize and signal variables are ignored in this case and it is assumed that the buffer size assigned to the \texttt{\textbf{SerialBranchIO}} object when it is instantiated is sufficiently large to guarantee that all strings from every branch will fit. 
+
+The implementation of the factory class for the ``Hello world'' application is straightforward, since the class only needs the functionality in the BaseFactory class. The complete class is given by
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#ifndef _hw_factory_h\_
+#define _hw_factory_h_
+
+#include "boost/smart_ptr/shared_ptr.hpp"
+#include "gridpack/include/gridpack.hpp"
+#include "hw_components.hpp"
+
+namespace gridpack {
+namespace hello_world {
+
+class HWFactory
+  : public gridpack::factory::BaseFactory<HWNetwork> {
+
+  public:
+
+    HWFactory(boost::shared_ptr<HWNetwork> network)
+      : gridpack::factory::BaseFactory<HWNetwork>(network) {}
+
+    ~HWFactory() {}
+
+};
+} // hello_world
+} // gridpack
+
+#endif
+\end{Verbatim}
+}
+
+This class is defined in the \texttt{\textbf{hw\_factory.hpp}} file. Because the class is so simple, the complete class declaration is given in \texttt{\textbf{hw\_factory.hpp}} and there is no corresponding \texttt{\textbf{.cpp}} file. In addition to including the \texttt{\textbf{gridpack.hpp}} header, this file also includes \texttt{\textbf{hw\_components.hpp}}, so it has the definitions of \texttt{\textbf{HWNetwork}}. The \texttt{\textbf{HWFactory}} constructor is used to initialize the underlying \texttt{\textbf{BaseFactory}} object with the network that is passed in through the argument list. That is the only functionality that is defined in this class.
+
+The application class that is built on top of the component and factory classes consists of the class
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    #ifndef _hw_app_h_
+    #define _hw_app_h_
+
+    namespace gridpack {
+    namespace hello_world {
+
+    class HWApp
+    {
+      public:
+
+        HWApp(void);
+        ~HWApp(void);
+        void execute(int argc, char** argv);
+
+    };
+    } // hello_world
+    } // gridpack
+    #endif
+\end{Verbatim}
+}
+
+This class is declared in \texttt{\textbf{hw\_app.hpp}}. Apart from the constructor and destructor, there is only the function execute, which is used to actually run the program. This takes the standard \texttt{\textbf{argc}} and \texttt{\textbf{argv}} variables as arguments, which could be passed in from the top level calling program.
+
+The implementation of these functions are relatively simple, most of the complexity for this program is in defining the bus and branch classes. The implementations are defined in the file hw\_app.cpp
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#include <iostream>
+#include "boost/smart_ptr/shared_ptr.hpp"
+
+#include "gridpack/include/gridpack.hpp"
+#include "hw_app.hpp"
+#include "hw_factory.hpp"
+
+gridpack::hello_world::HWApp::HWApp(void)
+{
+}
+
+gridpack::hello_world::HWApp::~HWApp(void)
+{
+}
+
+void gridpack::hello_world::HWApp::execute(int argc, char** argv)
+{
+  gridpack::parallel::Communicator world;
+  boost::shared_ptr<HWNetwork> network(new HWNetwork(world));
+
+  std::string filename = "10x10.raw";
+
+  gridpack::parser::PTI23_parser<HWNetwork> parser(network);
+
+  parser.parse(filename.c_str());
+  gridpack::hello_world::HWFactory factory(network);
+
+  factory.load();
+
+  gridpack::serial_io::SerialBusIO<HWNetwork> busIO(128,network);
+  busIO.header("\nMessage from buses\n");
+  busIO.write();
+
+  gridpack::serial_io::SerialBranchIO<HWNetwork>
+    branchIO(128,network);
+  branchIO.header("\nMessage from branches\n");
+  branchIO.write();}}}
+}
+\end{Verbatim}
+}
+
+The top of the file contains the \texttt{\textbf{gridpack.hpp}} header as well as the application headers. The constructor and destructors for the \texttt{\textbf{HWApp}} class are the standard defaults, so only the \texttt{\textbf{execute}} function has any significant behavior. This function starts by defining a communicator on the set of all processors and using that to instantiate and instance of an \texttt{\textbf{HWNetwork}}. At this point the network exists, but it contains no buses or branches. The next step is to read in a network configuration file with the name \texttt{\textbf{10x10.raw}}. This file is written using the standard PSS/E version 23 format. For this simple application, it is assumed that the file is available in the directory in which the program is being run (this file is included in the \texttt{\textbf{hello\_world}} directory as part of the GridPACK distribution). The program creates an instance of a \texttt{\textbf{PTI23\_parser}} and uses this to parse the configuration file. The program now has a copy of the full network stored internally, but the buses and nodes are not distributed in a way that is convenient for computation. Calling the partition method on the network redistributes all buses and branches so that each process has a relatively connected chunk of the network.
+
+The next step is to create an \texttt{\textbf{HWFactory}} instance and use this to call the base class \texttt{\textbf{load}} method. This method in turn calls the \texttt{\textbf{load}} method on all the individual buses and branches and transfers data from the data collection objects to the internal parameters of the buses and branches. The data collection objects were initialized with data collected from the \texttt{\textbf{10x10.raw}} file when the \texttt{\textbf{parse}} function was called. The remaining lines create \texttt{\textbf{SerialBusIO}} and \texttt{\textbf{SerialBranchIO}} objects that are used to print out the messages from individual bus and branch objects. The \texttt{\textbf{busIO}} object is used to print out a header (``Message from buses'') and then a message from each bus identifying itself by the bus ID defined in the PSS/E file. Similarly, the \texttt{\textbf{branchIO}} obect writes out a header and then a message from each branch identifying itself by the IDs of the buses at either end.
+The final part of the ``Hello world'' application is the main calling program, located in the file hw\_main.cpp. This program consists of the lines
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+#include "gridpack/include/gridpack.hpp"
+#include "hw_app.hpp"
+
+int main(int argc, char **argv)
+{
+  gridpack::parallel::Environment env(argc, argv);
+
+  gridpack::hello_world::HWApp app;
+  app.execute(argc, argv);
+  return 0;
+}
+\end{Verbatim}
+}
+
+The program consists of a line creating a parallel environment, a line instantiating an \texttt{\textbf{HWApp}}, and a line calling the execute method on the application. The constructor for the parallel environment initializes the underlying parallel communication libraries. The destructor is called at the end of main and terminates all communication libraries so that the program exits cleanly. The \texttt{\textbf{HWApp}} instance runs the application when \texttt{\textbf{execute}} is called. A portion of the output looks like
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Message from buses
+Hello world from bus 1
+Hello world from bus 2
+Hello world from bus 3
+Hello world from bus 4
+Hello world from bus 5
+Hello world from bus 6
+Hello world from bus 7
+     :
+Message from branches
+Hello world from the branch connecting bus 1 to bus 2
+Hello world from the branch connecting bus 2 to bus 3
+Hello world from the branch connecting bus 3 to bus 4
+Hello world from the branch connecting bus 4 to bus 5
+Hello world from the branch connecting bus 5 to bus 6
+    :
+\end{Verbatim}
+}
+
+Note that this output would be the same, regardless of the number of processors that are used to run the code. This is in spite of the fact that the distribution of buses and branches may be different for different numbers of processors.

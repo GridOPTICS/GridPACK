@@ -1,0 +1,116 @@
+\section{Mapper Module}
+
+The mappers are a collection of generic capabilities that can be used to generate a matrices or vectors from the network components. This is done by running over all the network components and invoking methods in the matrix-vector interface. The mapper is basically a transformation that converts a set of network components into a matrix or vector based on the behavior of their matrix-vector interfaces. It has no explicit dependencies on either the network components or the type of analyses being performed so this capability is applicable across a wide range of problems. At present there are three types of mapper, the standard mapper described here that is implemented on top of the \texttt{\textbf{MatVecInterface}}, a more generalized mapper that utilizes the \texttt{\textbf{GenMatVecInterface}} and a mapper for generating matrices resembling ``fat'' vectors. These are dense matrices that are basically a collection of column vectors. The generalized mapper and its corresponding interface are described in a later section below, along with the mapper for generating fat vectors. The mapper discussed in this section is used for problems where both dependent and independent variables are associated with buses, which is the case for problems such as power flow calculations and dynamic simulation. Other problems, such as state estimation, have variables associated with both buses and branches and require the more general interface.
+
+The basic matrix-vector interface contains functions that provide two pieces of information about each network component. The first is the size of the matrix block that is contributed by the component and the second is the values in that block. Using this information, the mapper can calculate the dimensions of the matrix and where individual elements in the matrix are located. The construction of a matrix by the mapper is illustrated in  Figure~\ref{fig:fig-7} for a small network. Figure~\ref{fig:fig-7}(a) shows a hypothetical network. The contributions from each network component are shown in  Figure~\ref{fig:fig-7}(b). Note that some buses and branches do not contribute to the matrix. This could occur in real systems because the transmission line corresponding to the branch has failed or because a bus represents the reference bus. In addition, it is possible that buses and branches can contribute different size blocks to the matrix. The mapping of the individual contributions from the network in Figure 7(b) to initial matrix locations is shown in  Figure~\ref{fig:fig-7}(c). This is followed by elimination of gaps in the matrix in Figure~\ref{fig:fig-7}(d).
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=6.50in, height=2.3in, keepaspectratio=true, trim=0.00in 0.39in 0.00in 0.82in]{Fig7a}
+    \includegraphics*[width=6.50in, height=2.3in, keepaspectratio=true, trim=0.00in 0.38in 0.00in 0.85in]{Fig7b}
+    \includegraphics*[width=6.50in, height=1.6in, keepaspectratio=true, trim=0.00in 1.49in 0.00in 0.83in]{Fig7c}
+    \includegraphics*[width=6.50in, height=1.8in, keepaspectratio=true, trim=0.00in 1.79in 0.00in 0.85in]{Fig7d}
+  \caption{A schematic diagram of the matrix map function. The bus numbers in (a) and (b) map to approximate row and column locations in (c). (a) a small network (b) matrix blocks associated with branches and buses. Not that not all blocks are the same size and not all buses and branches contribute (c) initial construction of matrix based on network indices (d) final matrix after eliminating gaps.}
+  \label{fig:fig-7}
+\end{figure}
+
+%\noindent \includegraphics*[width=6.50in, height=3.67in, keepaspectratio=false, trim=0.00in 0.39in 0.00in 0.82in]{image74}
+
+%\noindent \includegraphics*[width=6.50in, height=3.65in, keepaspectratio=false, trim=0.00in 0.38in 0.00in 0.85in]{image75}
+
+%\noindent \includegraphics*[width=6.50in, height=2.55in, keepaspectratio=false, trim=0.00in 1.49in 0.00in 0.83in]{image76}
+
+%\noindent \includegraphics*[width=6.50in, height=2.23in, keepaspectratio=false, trim=0.00in 1.79in 0.00in 0.85in]{image77}
+
+%\textcolor{red}{\texttt{\textbf{Figure 7.}} A schematic diagram of the matrix map function. The bus numbers in (a) and (b) map to approximate row and column locations in (c). (a) a small network (b) matrix blocks associated with branches and buses. Not that not all blocks are the same size and not all buses and branches contribute (c) initial construction of matrix based on network indices (d) final matrix after eliminating gaps}
+
+The most complex part of generating matrices and vectors is implementing the functions in the \texttt{\textbf{MatVecInterface.}} Once this has been done, actually creating matrices and vectors using the mappers is quite simple. The \texttt{\textbf{MatVecInterface}} is associated with two mappers, one that creates matrices from buses and branches and a second that can create vectors from buses. Both mappers are templated objects based on the type of network being used and use the \texttt{\textbf{gridpack::mapper}} namespace. The \texttt{\textbf{FullMatrixMap}} object runs over both buses and branches to set up a matrix. The constructor is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+FullMatrixMap<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+\end{Verbatim}
+}
+
+The network is passed in to the object via the constructor. The constructor sets up a number of internal data structures based on what mode has been set in the network components. For example, for a power flow application where it might be necessary to create both a Y-matrix and a Jacobian matrix, it would be necessary to create two mappers. If the first mapper is created while the mode is set to construct the Y-matrix, then it will be necessary to instantiate a second mapper to create the Jacobian for a power flow calculation. Before instantiating the second matrix, the mode should be set to Jacobian.
+Once the mapper has been created, a matrix can be generated using the call
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+boost::shared_ptr<gridpack::math::Matrix> mapToMatrix()
+\end{Verbatim}
+}
+
+This function creates a new matrix and returns a pointer to it. If a matrix already exists and it is only necessary to update the values, then the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void mapToMatrix(
+   boost::shared_ptr<gridpack::math::Matrix> &matrix)
+
+void mapToMatrix(gridpack::math::Matrix &matrix)
+\end{Verbatim}
+}
+
+can be used. These functions use the existing matrix data structures and overwrite the values of individual elements. For these to work, it is necessary to use the same mapper that was used to create the original matrix and to have the same mode set in the network components.
+
+Additional operations that can be used on existing matrices include
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void overwriteMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+
+void overwriteMatrix(gridpack::math::Matrix &matrix)
+
+void incrementMatrix(boost::shared_ptr<gridpack::math::Matrix> matrix)
+
+void incrementMatrix(gridpack::math::Matrix &matrix)
+\end{Verbatim}
+}
+
+These operations are designed to support making small changes in an existing matrix instead of reconstructing the full matrix from scratch. This can happen in contingency calculations or simulations of faults where a single grid element goes out or changes value. Instead of rebuilding the entire matrix, it is possible to modify only a small portion if it. To use these functions, it is necessary to define at least two modes in the network components. The first mode is used to build the original matrix, the second is used to make changes. All \texttt{\textbf{MatVecInterface}} functions that return true using the second mode (the one making changes) must return true for the first mode (used to build the original matrix). Furthermore, all block sizes for the second mode must match the block sizes in the first mode. The \texttt{\textbf{overwriteMatrix}} functions replace the values in the matrix with the values returned by the \texttt{\textbf{MatVecInterface}} functions, the \texttt{\textbf{incrementMatrix}} functions add these values to whatever is already in the matrix.
+
+The vector mapper works in an entirely analogous way to the matrix mapper. The constructor for the \texttt{\textbf{BusVectorMap}} class is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+BusVectorMap<MyNetwork>(boost::shared_ptr<MyNetwork> network)
+\end{Verbatim}
+}
+
+and the function for building a new vector is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+boost::share_ptr<gridpack::math::Vector> mapToVector()
+\end{Verbatim}
+}
+
+The functions for overwriting the values of an existing vector are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void mapToVector(
+    boost::shared_ptr<gridpack::math::Vector> &vector)
+
+void mapToVector(gridpack::math::Vector &vector)
+\end{Verbatim}
+}
+
+The vector map can also be used to write values back to buses using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void mapToBus(const gridpack::math::Vector &vector)
+\end{Verbatim}
+}
+
+This function will copy values from the vector into the bus using the \texttt{\textbf{setValues}} function in the \texttt{\textbf{MatVecInterface}}.
