@@ -2,14 +2,18 @@
 
 The subject of communicators has already been mentioned in the context of the constructor for the \texttt{\textbf{BaseNetwork}} class. This section will describe communicators in more detail and will show how the GridPACK communicators can be used to partition a large calculation into separate pieces that all run concurrently. A communicator can crudely be though of as a communication link between a group of processors. Whenever a process needs to communicate with another process it needs to specify the communicator over which that communication will occur. When a parallel job is started, it creates a ``world'' communicator to which all processes implicitly belong. Any process can communicate with any other process via the world communicator. Other communicators can be created by an application and it is possible for a process to belong to multiple communicators. The concept of communicators is particularly important for restricting the scope of ``global'' operations. These are operations that require every process in the communicator to participate. Failure of a process to participate in the operation usually results in the calculation stalling because multiple processors are waiting for a communication from a process that is not part of the global operation. A program can remain in this state indefinitely. Many of the module functions in GridPACK represent global operations and contain embedded calls that act collectively on a communicator. In order for two separate calculations to proceed concurrently, they must be run on disjoint sets of processors using separate communicators.
 
-The use of communicators to create multiple concurrent parallel tasks within an application is usually straightforward to implement but it is frequently much more confusing to understand. A diagram of a set of 16 processes that are divided into 4 groups each containing 4 processes is shown schematically in Figure~\ref{fig:fig-10}. In this example, each subgroup could potentially execute a separate parallel task within the larger parallel calculation.
+The use of communicators to create multiple concurrent parallel tasks within an
+application is usually straightforward to implement but it is frequently much
+more confusing to understand. A diagram of a set of 16 processes that are
+divided into 4 groups each containing 4 processes is shown schematically in
+Figure~\ref{fig:communicator}. In this example, each subgroup could potentially execute a separate parallel task within the larger parallel calculation.
 
 
 \begin{figure}
   \centering
-    \includegraphics*[width=6.32in, height=3.82in, keepaspectratio=false, trim=0.01in 0.81in 0.17in 0.24in]{Fig10}
+    \includegraphics*[width=6.32in, height=3.82in, keepaspectratio=false, trim=0.01in 0.81in 0.17in 0.24in]{figures/Communicator}
   \caption{Schematic diagram illustrating the use of multiple communicators.}
-  \label{fig:fig-10}
+  \label{fig:communicator}
 \end{figure}
 %\noindent \includegraphics*[width=6.32in, height=3.82in, keepaspectratio=false, trim=0.01in 0.81in 0.17in 0.24in]{image79}
 
@@ -84,14 +88,16 @@ Communicator divide(int nsize) const
 
 Each sub-communicator returned by this function contains at most \texttt{\textbf{nsize}} processes. The function will try and create as many communicators of size \texttt{\textbf{nsize}} as possible. For example, if the calling communicator contains 10 processes and \texttt{\textbf{nsize}} is set to 4, then this function will create 3 sub-communicators, two of which contain 4 processors and one containing 2 processors.
 
-An example of how communicators can be used to create multiple levels of parallelism is illustrated in Figure 11. The example has 8 tasks that can be evaluated independently. The first row in Figure~\ref{fig:fig-11} shows four processors. Two of the 8 tasks are run on each processor so if each task has been parallelized then it needs to run on a communicator with only 1 processor in it. The second row shows the same calculation running on 8 processors. In this case, each processor only has 1 task associated with it but each task is still running on a single processor. If the tasks have not been parallelized, then this is as far as you can go. However, if the tasks \textit{have} been parallelized, then you can move on to the configuration shown in the third line using 16 processors. In this case, the system has been divided into 8 groups, each containing two processors. Each group has its own separate subcommunicator and each task can be run in parallel on two processors. This gives additional speed-up over what can be achieved by simply distributing tasks to separate processors.
+An example of how communicators can be used to create multiple levels of
+parallelism is illustrated in Figure 11. The example has 8 tasks that can be
+evaluated independently. The first row in Figure~\ref{fig:multi-level} shows four processors. Two of the 8 tasks are run on each processor so if each task has been parallelized then it needs to run on a communicator with only 1 processor in it. The second row shows the same calculation running on 8 processors. In this case, each processor only has 1 task associated with it but each task is still running on a single processor. If the tasks have not been parallelized, then this is as far as you can go. However, if the tasks \textit{have} been parallelized, then you can move on to the configuration shown in the third line using 16 processors. In this case, the system has been divided into 8 groups, each containing two processors. Each group has its own separate subcommunicator and each task can be run in parallel on two processors. This gives additional speed-up over what can be achieved by simply distributing tasks to separate processors.
 
 
 \begin{figure}
   \centering
-    \includegraphics*[width=5.52in, height=2.95in, keepaspectratio=true]{Fig11}
+    \includegraphics*[width=5.52in, height=2.95in, keepaspectratio=true]{figures/Mult-parallel}
   \caption{ Schematic diagram of 8 tasks evaluated using multiple levels of parallelism. The first row represents 8 tasks on 4 processors, the second row is 8 tasks on 8 processors and the third row is 8 tasks running on 16 processors.}
-  \label{fig:fig-11}
+  \label{fig:multi-level}
 \end{figure}
 
 %\noindent             \includegraphics*[width=5.52in, height=2.95in, keepaspectratio=false, trim=0.52in 1.16in 0.46in 0.77in]{image80}

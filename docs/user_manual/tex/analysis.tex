@@ -2,13 +2,15 @@
 
 Calculations such as contingency analysis can generate enormous amounts of data that can be further analyzed to discover instabilities or weak points in the system. The StatBlock class described in this section is designed to provide users with a mechanism for storing all this information in a distributed way and then allow them to perform some basic analysis routines on the resulting data array. The basic idea is that each contingency calculation produces a vector of results and this vector can be stored in a large array where one axis is an index that labels the contingency and the other index labels the elements of the vector. Each contingency must produce a vector of the same length. The vector may contain values such as the voltage magnitude on each bus, the real or reactive power generation on each generator, the power flow on each transmission line, or some similar quantity. The assumption is that each element in the vector represents a property of some device on either a bus or a branch and this device can be uniquely identified by a collection of indices that identify the bus or branch and a second two character ID that identifies the device within the bus or branch.
 
-For \textit{N} contingencies, the contingency index runs between 0 and \textit{N}, with 0 representing a base case in which no contingency is present. A schematic figure of the data layout is shown in Figure~\ref{fig:fig-13}.
+For \textit{N} contingencies, the contingency index runs between 0 and
+\textit{N}, with 0 representing a base case in which no contingency is present.
+A schematic figure of the data layout is shown in Figure~\ref{fig:analysis}.
 
 \begin{figure}
   \centering
-    \includegraphics*[width=4.81in, height=3.65in, keepaspectratio=true]{Fig13}
+    \includegraphics*[width=4.81in, height=3.65in, keepaspectratio=true]{figures/Analysis}
   \caption{Schematic diagram of \textbf{StatBlock} data layout. The entire array can be distributed over multiple processors. Data for an entire contingency is added in a single operation.}
-  \label{fig:fig-13}
+  \label{fig:analysis}
 \end{figure}
 
 %\noindent                     \includegraphics*[width=4.81in, height=3.65in, keepaspectratio=false, trim=1.59in 1.45in 1.10in 0.53in]{image82}

@@ -12,31 +12,40 @@ The network module is designed to represent the power grid and has four major fu
 \item  The network contains the partitioner. The partitioner is embedded in the network module but it is a substantial computational technology in its own right. Partitioning is a key part of parallel application development. It represents the act of dividing up the problem so that each processor is left with approximately equal amounts of work. At the same time, the partition is chosen so that communication between processors (a major source of computational inefficiency in HPC programs) is minimized. 
 \end{enumerate}
 
-A network is illustrated schematically in Figure~\ref{fig:fig-3}. Each bus and branch has an associated bus or branch object. The buses and branches are derived from base classes that specify certain functions that must be implemented by the application developer so that the network can interact with other GridPACK modules. In addition, the application can have functionality outside the base class that is unique to the particular application.
+A network is illustrated schematically in Figure~\ref{fig:network}. Each bus and branch has an associated bus or branch object. The buses and branches are derived from base classes that specify certain functions that must be implemented by the application developer so that the network can interact with other GridPACK modules. In addition, the application can have functionality outside the base class that is unique to the particular application.
 
 \begin{figure}
   \centering
-    \includegraphics*[width=5.52in, height=3.88in, keepaspectratio=true]{Fig3-Grid-network}
+    \includegraphics*[width=5.52in, height=3.88in,
+keepaspectratio=true]{figures/Grid-network}
   \caption{Schematic representation of a GridPACK network. The squares are branch objects and the circles are bus objects. Framework-specified interfaces are green and user supplied functionality is blue.}
-  \label{fig:fig-3}
+  \label{fig:network}
 \end{figure}
-
-%\noindent     \includegraphics*[width=5.52in, height=3.88in, keepaspectratio=false, trim=0.52in 0.48in 0.46in 0.52in]{image68}
-%\textcolor{red}{\texttt{\textbf{Figure 3}}. Schematic representation of a GridPACK network. The squares are branch objects and the circles are bus objects. Framework-specified interfaces are green and user supplied functionality is blue.}
 
 A major use of the partitioner is to rearrange the network in a form that is useful for computation immediately after it is read in from an external file. Typically, the information in the external file is not organized in a way that is necessarily optimal for computation, so the partitioner must redistribute data such that each processor contains at most a few large connected subsets of the network. The partitioner is also responsible for adding the ghost buses and branches to the system.
 
 Ghost buses and branches in a parallel program represent images of buses and branches that are owned by other processes. In order to carry out operations on buses and branches it is frequently necessary to gain access to data associated with attached buses and branches. The most efficient way to do this is to create copies of the buses and branches from other processors that are connected to locally owned objects. All local network components then have a complete set of attached neighbors. The ghost objects are updated collectively with current information from their home processors at points in the computation. Updating all ghosts at once is almost always more efficient than accessing data from one remote bus or branch at a time.
 
-The use of the partitioner to distribute the network between different processors and create ghost nodes and branches is illustrated in Figure~\ref{fig:fig-4}. Figure~\ref{fig:fig-4}(a) shows a simple network and Figure~\ref{fig:fig-4}(b) and Figure~\ref{fig:fig-4}(c) show the result of distributing the network between two processors. Figure~\ref{fig:fig-4}(a) shows a connected network that has been partitioned between two processors such that each processor owns roughly equally sized connected pieces. Figure~\ref{fig:fig-4}(b) and Figure~\ref{fig:fig-4}(c) show the pieces of the network on each processor after the ghost buses and branches have been added. Note that the ghost buses and branches represent connections that are split by the partition in  Figure~\ref{fig:fig-4}(a).
+The use of the partitioner to distribute the network between different
+processors and create ghost nodes and branches is illustrated in
+Figure~\ref{fig:partition}. Figure~\ref{fig:partition}(a) shows a simple network
+and Figure~\ref{fig:partition}(b) and Figure~\ref{fig:partition}(c) show the
+result of distributing the network between two processors.
+Figure~\ref{fig:partition}(a) shows a connected network that has been
+partitioned between two processors such that each processor owns roughly equally
+sized connected pieces. Figure~\ref{fig:partition}(b) and
+Figure~\ref{fig:partition}(c) show the pieces of the network on each processor
+after the ghost buses and branches have been added. Note that the ghost buses
+and branches represent connections that are split by the partition in
+Figure~\ref{fig:partition}(a).
 
 \begin{figure}
   \centering
-    \includegraphics*[width=3.5in, keepaspectratio=true, trim=0.00in 0.30in 0.00in 0.40in]{Fig4a}
-    \includegraphics*[width=4in, height=3.55in, keepaspectratio=true]{Fig4b}
-    \includegraphics*[width=4in, height=3.55in, keepaspectratio=true]{Fig4c}
+    \includegraphics*[width=3.5in, keepaspectratio=true, trim=0.00in 0.30in 0.00in 0.40in]{figures/PartitionFull}
+    \includegraphics*[width=4in, height=3.55in, keepaspectratio=true]{figures/Partition0}
+    \includegraphics*[width=4in, height=3.55in, keepaspectratio=true]{figures/Partition1}
   \caption{ A (a) simple network, (b) partition of network on processor 0, and (c) partition of network on processor 1. Open circles indicate ghost buses and dotted lines indicate ghost branches.}
-  \label{fig:fig-4}
+  \label{fig:partition}
 \end{figure}
 
 %\noindent \includegraphics*[width=6.50in, height=3.55in, keepaspectratio=false, trim=0.00in 0.45in 0.00in 0.87in]{image69}

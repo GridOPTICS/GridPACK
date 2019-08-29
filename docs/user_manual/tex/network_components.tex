@@ -2,13 +2,19 @@
 
 Network component is a generic term for objects representing buses and branches. These objects determine the behavior of the system and the type of analyses being done. Branch components can represent transmission lines and transformers while bus components could model loads, generators, or something else. Both kinds of components could represent measurements (e.g. for a state estimation analysis). 
 
-Network components cover a fairly broad range of behaviors and there is little that can be said about them outside the context of a specific problem. Each component inherits from a matrix-vector interface, which enables the framework to generate matrices and vectors from the network in a relatively straightforward way. In addition, buses inherit from a base bus interface and branches inherit from a base branch interface. The relationship between these interfaces is shown in Figure~\ref{fig:fig-5}.
+Network components cover a fairly broad range of behaviors and there is little
+that can be said about them outside the context of a specific problem. Each
+component inherits from a matrix-vector interface, which enables the framework
+to generate matrices and vectors from the network in a relatively
+straightforward way. In addition, buses inherit from a base bus interface and
+branches inherit from a base branch interface. The relationship between these
+interfaces is shown in Figure~\ref{fig:components}.
 
 \begin{figure}
   \centering
-  \includegraphics*[width=6in, height=3.58in, keepaspectratio=true]{Fig5-heirarchy}
+  \includegraphics*[width=6in, height=3.58in, keepaspectratio=true]{figures/Component-hierarchy}
   \caption{Schematic diagram showing the interface hierarchy for network components.}
-  \label{fig:fig-5}
+  \label{fig:components}
 \end{figure}
 
 %\noindent \underbar{\includegraphics*[width=6.50in, height=3.58in, keepaspectratio=false, trim=0.00in 0.44in 0.00in 0.85in]{image72}}

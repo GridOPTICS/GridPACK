@@ -6,13 +6,23 @@ The \texttt{\textbf{DataCollection}} class is a simple container that can be use
 
 Data can be stored in two ways inside the \texttt{\textbf{DataCollection}} object. The first method assumes that there is only a single instance of the key-value pair, the second assumes there are multiple instances. This second case can occur, for example, if there are multiple generators on a bus. Generators are characterized by a collection of parameters and each generator has its own set of parameters. The generator parameters can be indexed so that they can be matched with a specific generator.
 
-When a network is created by parsing an external configuration file, for example a PSS/E format .raw file, the network topology and component objects are created and distributed over processors. All network components are in an initial state that is determined by the constructor for that object. This is usually very simple, since at the moment when the object is created, there is very little information available about how to initialize it. Along with the component object, a \texttt{\textbf{DataCollection}} object is also created. The \texttt{\textbf{DataCollection }}object stores all the parameters from the network configuration file using a key-value scheme. The situation is illustrated schematically in Figure~\ref{fig:fig-6}.
+When a network is created by parsing an external configuration file, for example
+a PSS/E format .raw file, the network topology and component objects are created
+and distributed over processors. All network components are in an initial state
+that is determined by the constructor for that object. This is usually very
+simple, since at the moment when the object is created, there is very little
+information available about how to initialize it. Along with the component
+object, a \texttt{\textbf{DataCollection}} object is also created. The
+\texttt{\textbf{DataCollection }}object stores all the parameters from the
+network configuration file using a key-value scheme. The situation is
+illustrated schematically in Figure~\ref{fig:data-schematic}.
 
 \begin{figure}
   \centering
-    \includegraphics*[width=6.00in, height=4.24in, keepaspectratio=true]{Fig6-objects-network}
+    \includegraphics*[width=6.00in, height=4.24in,
+keepaspectratio=true]{figures/Network-objects}
   \caption{Schematic diagram representing relationship between the \textbf{DataCollection} objects (green) and the network components (purple). The arrows represent the transfer of data from the data collections to the network components during the \textbf{load} operation.}
-  \label{fig:fig-6}
+  \label{fig:data-schematic}
 \end{figure}
 
 %\noindent \includegraphics*[width=6.00in, height=4.24in, keepaspectratio=false, trim=0.00in 0.07in 0.00in 0.19in]{image73}

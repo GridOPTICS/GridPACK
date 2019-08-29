@@ -1,12 +1,19 @@
 \section{Resistor Grid Application}
 
-The resistor grid is a more complicated example that illustrates how GridPACK can be used to set up equations describing a physical system and then solve the system using a linear solver. The physical system is a rectangular grid with resistors connecting all the nodes. Two nodes are chosen to be set at fixed potentials, these then drive currents through the rest of the network resulting in different currents on the individual branches and different voltages on the different buses (nodes). The system is illustrated schematically in Figure~\ref{fig:fig-14}.
+The resistor grid is a more complicated example that illustrates how GridPACK
+can be used to set up equations describing a physical system and then solve the
+system using a linear solver. The physical system is a rectangular grid with
+resistors connecting all the nodes. Two nodes are chosen to be set at fixed
+potentials, these then drive currents through the rest of the network resulting
+in different currents on the individual branches and different voltages on the
+different buses (nodes). The system is illustrated schematically in
+Figure~\ref{fig:resistor}.
 
 \begin{figure}
   \centering
-    \includegraphics*[width=5in, keepaspectratio=true]{Fig14}
+    \includegraphics*[width=5in, keepaspectratio=true]{figures/Resistor}
   \caption{A schematic diagram of a simple resistor grid network. The buses (nodes) in blue are set at fixed external voltages, the remaining bus voltages and branch currents are calculated by the application.}
-  \label{fig:fig-14}
+  \label{fig:resistor}
 \end{figure}
 
 

@@ -11,13 +11,21 @@ src/applications/modules/powerflow
 
 directory. The main difference between the power flow example code and the power flow module is that the module breaks up the power flow calculation into more separate function calls and the module also has options for using a non-linear solver. The power flow bus and branch classes are located in the directory src/applications/components/pf\_matrix.
 
-A schematic of a power flow code based on GridPACK is shown in Figure 9. For different power grid problems, the details of the code will be different, but most of these motifs will appear at some point or other. The main differences will probably be in feedback loops as results from one part of the calculation are fed back into other parts. For example, an iterative solver will need to update the current values of the network components, which can then be used to generate new matrices and vectors that are fed back into the next iteration of the solver. The diagram in Figure~\ref{fig:fig-9} is not complete, but gives an overall view of code structure and data movement.
+A schematic of a power flow code based on GridPACK is shown in
+Figure~\ref{fig:pf-schematic}. For
+different power grid problems, the details of the code will be different, but
+most of these motifs will appear at some point or other. The main differences
+will probably be in feedback loops as results from one part of the calculation
+are fed back into other parts. For example, an iterative solver will need to
+update the current values of the network components, which can then be used to
+generate new matrices and vectors that are fed back into the next iteration of
+the solver. The diagram in Figure~\ref{fig:pf-schematic} is not complete, but gives an overall view of code structure and data movement.
 
 \begin{figure}
   \centering
-    \includegraphics*[width=6.50in, height=3.45in, keepaspectratio=false, trim=0.00in 0.68in 0.00in 0.75in]{Fig9}
+    \includegraphics*[width=6.50in, height=3.45in, keepaspectratio=false, trim=0.00in 0.68in 0.00in 0.75in]{figures/PF-schematic}
   \caption{Schematic of program flow for a power flow simulation. The yellow ovals are distributed data objects, the green blocks are GridPACK framework components and the blue blocks are application specific code. External files are red.}
-  \label{fig:fig-9}
+  \label{fig:pf-schematic}
 \end{figure}
 
 %\noindent \includegraphics*[width=6.50in, height=3.45in, keepaspectratio=false, trim=0.00in 0.68in 0.00in 0.75in]{image78}

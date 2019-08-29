@@ -22,13 +22,25 @@ void addVector(const int idx, const std::vector<data_type> &vec)
 \end{Verbatim}
 }
 
-This command assumes that the user has some way of uniquely identifying each contributed vector by an index \texttt{\textbf{idx}}. The indices do not have to be complete, i.e. not all indices in some interval [0,{\dots},N-1] need to be added to the storage object, although large gaps between contributed indices are potentially wasteful. The length of the vectors can differ for different indices and there are also no restrictions on which processor contributes which index, so contributions can be made in any order from any processor. The only restriction on indices is that they are not used more than once, i.e. \texttt{\textbf{addVector}} is not call more than once on any processor for a given index. This behavior maps fairly well to contingency calculations where the index represents the index of a particular contingency. The data layout in the GlobalStore object is illustrated schematically in Figure~\ref{fig:fig-12}.
+This command assumes that the user has some way of uniquely identifying each
+contributed vector by an index \texttt{\textbf{idx}}. The indices do not have to
+be complete, i.e. not all indices in some interval [0,{\dots},N-1] need to be
+added to the storage object, although large gaps between contributed indices are
+potentially wasteful. The length of the vectors can differ for different indices
+and there are also no restrictions on which processor contributes which index,
+so contributions can be made in any order from any processor. The only
+restriction on indices is that they are not used more than once, i.e.
+\texttt{\textbf{addVector}} is not call more than once on any processor for a
+given index. This behavior maps fairly well to contingency calculations where
+the index represents the index of a particular contingency. The data layout in
+the GlobalStore object is illustrated schematically in
+Figure~\ref{fig:global-store}.
 
 \begin{figure}
   \centering
-    \includegraphics*[width=6.5in, height=3.72in, keepaspectratio=true]{Fig12}
+    \includegraphics*[width=6.5in, height=3.72in, keepaspectratio=true]{figures/Global-store}
   \caption{Schematic diagram of data storage in a GlobalStore object. Vectors can have any length and some indices can be missing data.}
-  \label{fig:fig-12}
+  \label{fig:global-store}
 \end{figure}
 
 %\noindent \includegraphics*[width=6.50in, height=3.72in, keepaspectratio=false, trim=0.00in 0.72in 0.00in 0.44in]{image81}
