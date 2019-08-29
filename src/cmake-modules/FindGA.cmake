@@ -1,3 +1,4 @@
+# -*- mode: cmake -*-
 # GridPACK Note:  This file is base on that found 18June2013 here:
 # https://github.com/OP2/OP2-Common/blob/master/cmake/modules/FindParMETIS.cmake
 #
@@ -50,32 +51,60 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #=============================================================================
 
+# GA reqires MPI
+find_package(MPI QUIET REQUIRED)
+
+# Stupid RHEL puts GA headers in with the MPI headers
+
 find_path(GA_INCLUDE_DIR ga++.h
-  HINTS ${GA_INCLUDE_DIR} ENV GA_INCLUDE_DIR ${GA_DIR} ENV GA_DIR
-  PATH_SUFFIXES include
+  HINTS ${GA_INCLUDE_DIR} ${GA_DIR} ${MPI_CXX_INCLUDE_PATH}
+  ENV GA_INCLUDE_DIR 
+  ENV MPI_INCLUDE_DIR
+  ENV GA_DIR
+  PATH_SUFFIXES include ""
   DOC "Directory where the GA header files are located"
 )
+message(STATUS "GA_INCLUDE_DIR: ${GA_INCLUDE_DIR}")
+
+# This is a hack for stupid RHEL rpms to look for the GA libraries in
+# amongst the MPI libraries
+
+if(MPI_CXX_LIBRARIES)
+  list(GET MPI_CXX_LIBRARIES 0 lib1)
+  get_filename_component(MPI_LIB_DIR_MAYBE ${lib1} DIRECTORY)
+elseif(MPI_LIBRARY)
+  get_filename_component(MPI_LIB_DIR_MAYBE ${MPI_LIBRARY} DIRECTORY)
+endif()
+
+# message(STATUS "MPI_LIB_DIR_MAYBE: ${MPI_LIB_DIR_MAYBE}")
 
 find_library(GA_LIBRARY
   NAMES ga GA${GA_LIB_SUFFIX}
-  HINTS ${GA_LIB_DIR} ENV GA_LIB_DIR ${GA_DIR} ENV GA_DIR
-  PATH_SUFFIXES lib
+  HINTS ${GA_DIR} ${MPI_LIB_DIR_MAYBE}
+  ENV GA_LIB_DIR ENV GA_DIR 
+  ENV MPI_LIB
+  PATH_SUFFIXES lib ""
   DOC "Directory where the GA library is located"
 )
+message(STATUS "GA_LIBRARY: ${GA_LIBRARY}")
 
 find_library(GA_CXX_LIBRARY
   NAMES ga++ GA${GA_LIB_SUFFIX}
-  HINTS ${GA_LIB_DIR} ENV GA_LIB_DIR ${GA_DIR} ENV GA_DIR
+  HINTS ${GA_LIB_DIR} ${GA_DIR} ${MPI_LIB_DIR_MAYBE}
+  ENV GA_LIB_DIR ENV GA_DIR
   PATH_SUFFIXES lib
   DOC "Directory where the GA library is located"
 )
+message(STATUS "GA_CXX_LIBRARY: ${GA_CXX_LIBRARY}")
 
 find_library(ARMCI_LIBRARY
   NAMES armci GA${ARMCI_LIB_SUFFIX}
-  HINTS ${GA_LIB_DIR} ENV GA_LIB_DIR ${GA_DIR} ENV GA_DIR
+  HINTS ${GA_LIB_DIR} ${GA_DIR} ${MPI_LIB_DIR_MAYBE}
+  ENV GA_LIB_DIR ENV GA_DIR
   PATH_SUFFIXES lib
   DOC "Directory where the GA library is located"
 )
+message(STATUS "ARMCI_LIBRARY: ${ARMCI_LIBRARY}")
 
 # Get GA version
 if(NOT GA_VERSION_STRING AND GA_INCLUDE_DIR AND EXISTS "${GA_INCLUDE_DIR}/ga.h")
@@ -96,12 +125,9 @@ endif()
 # Try compiling and running test program
 if (GA_INCLUDE_DIR AND GA_LIBRARY AND ARMCI_LIBRARY)
 
-  # Test requires MPI
-  find_package(MPI QUIET REQUIRED)
-
   # Set flags for building test program
   set(CMAKE_REQUIRED_INCLUDES ${GA_INCLUDE_DIR} ${MPI_INCLUDE_PATH})
-  if (NOT MPI_LIBRARY OR NOT MPI_EXTRA_LIBRARY)
+  if (NOT MPI_LIBRARY)
     set(CMAKE_REQUIRED_LIBRARIES 
       ${GA_CXX_LIBRARY} ${GA_LIBRARY} ${ARMCI_LIBRARY} ${GA_EXTRA_LIBS}
     )
@@ -117,12 +143,12 @@ set(ga_test_src "
 #include <mpi.h>
 #include <ga++.h>
 
-int main()
+int main(int argc, char **argv)
 {
   // FIXME: Find a simple but sensible test for GA
 
   // Initialise MPI
-  MPI::Init();
+  MPI_Init(&argc, &argv);
 
   // Initialize GA
   GA_Initialize();
@@ -131,7 +157,7 @@ int main()
   GA_Terminate();
 
   // Finalize MPI
-  MPI::Finalize();
+  MPI_Finalize();
 
   return 0;
 }

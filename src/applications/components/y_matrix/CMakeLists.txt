@@ -10,10 +10,11 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-05 08:19:31 d3g096
+# Last Change: 2019-08-16 13:44:16 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_components
     gridpack_parallel
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -23,12 +24,20 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_library(gridpack_ymatrix_components
   ymatrix_components.cpp
-)
+  )
+
+target_link_libraries(gridpack_ymatrix_components gridpack_components)
+
+gridpack_set_library_version(gridpack_ymatrix_components)
 
 # -------------------------------------------------------------
-# component serialization tests
+# shared library dependencies
 # -------------------------------------------------------------
-target_link_libraries(gridpack_ymatrix_components ${target_libraries})
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_ymatrix_components
+    gridpack_components
+    )
+endif()
 
 # -------------------------------------------------------------
 # installation

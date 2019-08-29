@@ -9,7 +9,7 @@
 /**
  * @file   optimizer.cpp
  * @author William A. Perkins
- * @date   2015-11-23 11:58:28 d3g096
+ * @date   2016-12-13 12:01:01 d3g096
  * 
  * @brief  
  * 
@@ -36,11 +36,12 @@
 #include "optimizer.hpp"
 #if defined(HAVE_CPLEX)
 #include "cplex_optimizer_implementation.hpp"
-#elif defined(HAVE_GLPK)
-#include "glpk_optimizer_implementation.hpp"
-#else
-#include "lpfile_optimizer_implementation.hpp"
 #endif
+#if defined(HAVE_GLPK)
+#include "glpk_optimizer_implementation.hpp"
+#endif
+#include "lpfile_optimizer_implementation.hpp"
+#include "julia_optimizer_implementation.hpp"
 
 namespace gridpack {
 namespace optimization {
@@ -188,11 +189,13 @@ OptimizerImplementation::p_gatherGlobalConstraints(const ConstraintMap& tmpgloba
   for (c = tmpglobal.begin(); c != tmpglobal.end(); ++c) {
     std::string name(c->first);
     ConstraintPtr cons(c->second);
-    ConstraintMap::iterator gc(p_allGlobalConstraints.find(name));
-    if (gc != p_allGlobalConstraints.end()) {
-      gc->second->addToLHS(cons->lhs());
-    } else {
-      p_allGlobalConstraints[name] = cons;
+    if (cons->lhs()) {
+      ConstraintMap::iterator gc(p_allGlobalConstraints.find(name));
+      if (gc != p_allGlobalConstraints.end()) {
+        gc->second->addToLHS(cons->lhs());
+      } else {
+        p_allGlobalConstraints[name] = cons;
+      }
     }
   }
 }
@@ -304,6 +307,11 @@ OptimizerImplementation::p_gatherProblem(void)
   for (std::vector<VariablePtr>::iterator v = p_variables.begin();
        v != p_variables.end(); ++v) {
     p_allVariables[(*v)->name()] = *v;
+    p_exportVariables[(*v)->name()] = *v;
+  }
+  for (std::vector<VariablePtr>::iterator v = p_aux_variables.begin();
+       v != p_aux_variables.end(); ++v) {
+    p_allVariables[(*v)->name()] = *v;
   }
 
   // subsitute variables in constraints and objective so they are unique
@@ -311,7 +319,9 @@ OptimizerImplementation::p_gatherProblem(void)
   VariableSubstituter vs(p_allVariables);
   std::for_each(p_allConstraints.begin(), p_allConstraints.end(),
                 boost::bind(&Constraint::accept, _1, boost::ref(vs)));
-  p_fullObjective->accept(vs);
+  if (p_fullObjective) {
+    p_fullObjective->accept(vs);
+  }
 
   // uniquely name all constraints in parallel
   if (nproc > 1) {
@@ -335,19 +345,54 @@ Optimizer::Optimizer(const parallel::Communicator& comm)
     utility::WrappedConfigurable(),
     p_impl()
 {
-  p_setImpl(
-#if defined(HAVE_CPLEX)
-            new CPlexOptimizerImplementation(comm)
-#elif defined(HAVE_GLPK)
-            new GLPKOptimizerImplementation(comm)
-#else
-            new LPFileOptimizerImplementation(comm)
-#endif
-            );
+  p_setImpl(new LPFileOptimizerImplementation(comm));
 }
 
 Optimizer::~Optimizer(void)
 {
+}
+
+// -------------------------------------------------------------
+// Optimizer::p_preconfigure
+// -------------------------------------------------------------
+void
+Optimizer::p_preconfigure(utility::Configuration::CursorPtr theprops)
+{
+  parallel::Communicator comm(p_impl->communicator());
+  std::string key(p_impl->configurationKey());
+  utility::Configuration::CursorPtr p = theprops->getCursor(key);
+  std::string solver;
+  solver = p->get("Solver", solver);
+
+  if (!solver.empty()) {
+    p_setImpl(NULL);
+    if (solver == "GLPK") {
+#if defined(HAVE_GLPK)
+      p_setImpl(new GLPKOptimizerImplementation(comm));
+#else
+      throw gridpack::Exception("GLPK Optimizer not supported"); 
+#endif
+    } 
+    if (solver == "CPLEX") {
+#if defined(HAVE_CPLEX)
+      p_setImpl(new CPlexOptimizerImplementation(comm));
+#else
+      throw gridpack::Exception("CPLEX Optimizer not supported"); 
+#endif
+    } 
+    if (solver == "Julia") {
+      p_setImpl(new JuliaOptimizerImplementation(comm));
+    }
+    if (solver == "LPFile") {
+      p_setImpl(new LPFileOptimizerImplementation(comm));
+    }
+    if (!p_impl) {
+      std::string s("Unknown ptimizer solver type \"");
+      s += solver;
+      s += "\"";
+      throw gridpack::Exception(s); 
+    }
+  }
 }
 
 } // namespace optimization

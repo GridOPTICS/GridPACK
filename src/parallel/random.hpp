@@ -23,6 +23,16 @@
 #define _random_hpp_
 
 #include <cstdlib>
+#include <boost/random/linear_congruential.hpp>
+#include <boost/random/uniform_int.hpp>
+#include <boost/random/mersenne_twister.hpp>
+#include <boost/random/uniform_real.hpp>
+#include <boost/random/variate_generator.hpp>
+#include <boost/generator_iterator.hpp>
+
+
+typedef boost::mt19937 base_generator_type;
+//typedef boost::minstd_rand base_generator_type;
 
 namespace gridpack {
 namespace random {
@@ -71,11 +81,15 @@ private:
   int p_iset;
   double p_gset;
   double p_rand_max_i;
+
+  base_generator_type p_generator;
+  boost::uniform_real<> p_uni_dist;
+  boost::variate_generator<base_generator_type&, boost::uniform_real<> > p_uni;
 };
 
 
-} // namespace gridpack
 } // namespace random
+} // namespace gridpack
 
 #endif
 

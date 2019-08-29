@@ -8,7 +8,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 28, 2015 by William A. Perkins
-// Last Change: 2015-05-22 10:34:08 d3g096
+// Last Change: 2019-05-08 13:53:18 d3g096
 // -------------------------------------------------------------
 
 
@@ -53,7 +53,8 @@ public:
                      const PetscInt *nonzeros_by_row);
 
   /// Constructor that wraps an existing Mat instance
-  PetscMatrixWrapper(Mat& m, const bool& copymat = true);
+  PetscMatrixWrapper(Mat& m, const bool& copymat = true,
+                     const bool& destroymat = false);
 
   /// Destructor
   ~PetscMatrixWrapper(void);
@@ -122,6 +123,9 @@ protected:
 
   /// Was @c p_matrix created or just wrapped
   bool p_matrixWrapped;
+
+  /// Destroy wrapped @c p_matrix even if it's wrapped
+  bool p_destroyWrapped;
 
   /// Build the generic PETSc matrix instance
   void p_build_matrix(const parallel::Communicator& comm,

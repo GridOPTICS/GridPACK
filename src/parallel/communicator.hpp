@@ -8,7 +8,7 @@
 /**
  * @file   communicator.hpp
  * @author William A. Perkins
- * @date   2015-08-11 14:23:12 d3g096
+ * @date   2019-05-09 07:01:08 d3g096
  * 
  * @brief  
  * 
@@ -165,6 +165,9 @@ public:
   void min(double *x, int nvals) const;
   void min(int *x, int nvals) const;
   void min(long *x, int nvals) const;
+
+  /// Generate a report about Communicator construction/destruction
+  static void report(void);
 
 protected:
   

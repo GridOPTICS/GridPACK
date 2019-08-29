@@ -10,12 +10,30 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-10 08:23:04 d3g096
+# Last Change: 2019-08-16 13:46:40 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
   configuration.cpp
 )
+
+gridpack_set_library_version(gridpack_configuration)
+
+add_dependencies(gridpack_configuration external_build)
+
+set(target_libraries 
+  gridpack_parallel
+  ${GA_LIBRARIES}
+  ${Boost_LIBRARIES} 
+  ${MPI_CXX_LIBRARIES}
+  )
+
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_configuration
+    gridpack_parallel
+    )
+endif()
+
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(AFTER ${GA_INCLUDE_DIRS})
@@ -35,9 +53,8 @@ add_custom_target(configuration_test_input
 add_executable(configuration_test test/configuration_test.cpp)
 target_link_libraries(configuration_test 
   gridpack_configuration
-  gridpack_parallel
-  ${GA_LIBRARIES}
-  ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+  ${target_libraries}
+)
 gridpack_add_unit_test(configuration_test configuration_test)
 
 add_dependencies(configuration_test configuration_test_input)

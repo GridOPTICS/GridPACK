@@ -26,8 +26,8 @@
 #include "boost/smart_ptr/weak_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
 #include "gridpack/component/data_collection.hpp"
-#include "gridpack/optimization/variable.hpp"
-#include "gridpack/optimization/expression.hpp"
+#include "gridpack/expression/variable.hpp"
+#include "gridpack/expression/expression.hpp"
 
 #include <boost/serialization/export.hpp>
 
@@ -54,11 +54,20 @@ class OptimizationInterface {
     virtual ~OptimizationInterface(void);
 
     /**
-     * Return a vector of optimization variables associated witht this interface
+     * Return a vector of optimization variables associated with this interface
      * @return list of variables
      */
     virtual std::vector<boost::shared_ptr<gridpack::optimization::Variable> >
       getVariables();
+
+    /**
+     * Return a vector of auxiliary variables associated with this interface.
+     * These are variables that are used in expressions but may not be
+     * defined by this network
+     * @return list of variables
+     */
+    virtual std::vector<boost::shared_ptr<gridpack::optimization::Variable> >
+      getAuxVariables();
 
     /**
      * Return contribution from bus to a global constraint
@@ -67,7 +76,7 @@ class OptimizationInterface {
      * @return contribution to global constraint. If no contribution, return
      * null pointer
      */
-    virtual std::vector<boost::shared_ptr<gridpack::optimization::Expression> >
+    virtual boost::shared_ptr<gridpack::optimization::Expression> 
       getGlobalConstraint(const char* tag);
 
     /**

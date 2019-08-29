@@ -10,14 +10,23 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2016-07-15 08:13:04 d3g096
+# Last Change: 2019-08-16 12:58:52 d3g096
 # -------------------------------------------------------------
 
-cmake_minimum_required (VERSION 2.6.4)
+# 
+cmake_minimum_required (VERSION 3.3.0)
+
+# This allows the use of LOCATION(target)
+if (POLICY CMP0026)
+  cmake_policy(SET CMP0026 OLD)
+endif (POLICY CMP0026)
+
+
 project (GridPACK)
 
-#set (GridPACK_VERSION_MAJOR 1)
-#set (GridPACK_VERSION_MINOR 0)
+set (GridPACK_VERSION_MAJOR 3)
+set (GridPACK_VERSION_MINOR 3)
+set (GridPACK_VERSION_PATCH 0)
 
 # This is a C++ project exclusively
 enable_language(CXX)
@@ -52,6 +61,14 @@ if (APR_DIR)
   message(STATUS "Set APR library at ${APR_LIBRARY}")
 endif()
 
+# add HELICS directory
+option (HELICS_INSTALL_DIR "Point to directory with installed HELICS files" OFF)
+if (HELICS_INSTALL_DIR)
+  add_definitions(-DUSE_HELICS=1)
+  include_directories(AFTER ${HELICS_INSTALL_DIR}/include)
+  set (HELICS_LIBRARY "${HELICS_INSTALL_DIR}/lib64/libhelics-static.a")
+endif()
+
 # suppress any checks to see if test codes run. Only check for compilation.
 # use for cross-compilation situations
 option (CHECK_COMPILATION_ONLY "Check compilation only" OFF)
@@ -66,12 +83,45 @@ option(USE_GUROBI
 option(USE_GLPK
   "Use GNU linear programming kit optimization software library." OFF)
 
+# BUILD_SHARED_LIBS is a CMake option and is understood by the CMake build
+# system, independently of declaring it here
+option(BUILD_SHARED_LIBS
+  "Attempt to build all libraries as shared" OFF)
+
+# -------------------------------------------------------------
+# External project settings, generally
+# -------------------------------------------------------------
+
+# A set of common places to put the external projects (if used)
+
+set(DOWNLOAD_DIR ${CMAKE_CURRENT_SOURCE_DIR}/Downloads)
+set(BUILD_DIR ${CMAKE_CURRENT_BINARY_DIR}/build)
+set(BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}/libs)
+set(GRIDPACK_TEST_LDPATH "")
+if(BUILD_SHARED_LIBS)
+  set(LIB_SUFFIX ${CMAKE_SHARED_LIBRARY_SUFFIX})
+  set(LIB_PREFIX ${CMAKE_SHARED_LIBRARY_PREFIX})
+  set(LIB_TYPE SHARED)
+else()
+  set(LIB_SUFFIX ${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(LIB_PREFIX ${CMAKE_STATIC_LIBRARY_PREFIX})
+  set(LIB_TYPE STATIC)
+endif()
+
+# make a bogus target so that all libraries depend on; external
+# projects are added as dependencies to this target so external
+# libraries are (hopefully) built before any GridPACK code
+
+add_custom_target(external_build
+  COMMAND ${CMAKE_COMMAND} -E touch ${CMAKE_CURRENT_BINARY_DIR}/external_build.stamp
+  )
+
 # -------------------------------------------------------------
 # MPI compiler
 # -------------------------------------------------------------
 message(STATUS "Checking MPI ...")
 find_package (MPI REQUIRED)
-include_directories(AFTER ${MPI_INCLUDE_PATH})
+include_directories(AFTER ${MPI_CXX_INCLUDE_PATH})
 
 if (ENABLE_CRAY_BUILD)
   set (CMAKE_FIND_LIBRARY_SUFFIXES ".a")
@@ -103,9 +153,35 @@ message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 # Find the Boost library. It needs to use the same compiler as
 # MPI. How can I check that?
 # -------------------------------------------------------------
-message(STATUS "Checking Boost ...")
-set(Boost_USE_STATIC_LIBS ON)
-find_package(Boost 1.49 COMPONENTS mpi serialization random filesystem system REQUIRED)
+
+option(BOOST_BUILD_PYTHON "Include Boost::Python in the Boost build" OFF)
+
+# These are the Boost libraries required here
+  
+set(BOOST_BUILD_LIBS "")
+list(APPEND BOOST_BUILD_LIBS mpi serialization random filesystem system)
+
+if(BUILD_BOOST)
+
+  if(BOOST_BUILD_PYTHON)
+    list(APPEND BOOST_BUILD_LIBS python)
+  endif()
+
+  include(BuildBoostExternalProject)
+  BuildBoostExternalProject("${BOOST_BUILD_LIBS}")
+  add_dependencies(external_build external_boost)
+  # FIXME: Build type (probably only important for Windoze)
+  list(APPEND GRIDPACK_TEST_LDPATH ${Boost_LIBRARY_DIR_DEBUG} ${Boost_LIBRARY_DIR_RELEASE} )
+else(BUILD_BOOST)
+  message(STATUS "Checking Boost ...")
+  find_package(Boost 1.53
+    COMPONENTS ${BOOST_BUILD_LIBS}
+    REQUIRED
+    )
+endif(BUILD_BOOST)
+message(STATUS "Boost_INCLUDE_DIRS=${Boost_INCLUDE_DIRS}")
+message(STATUS "Boost_LIBRARIES=${Boost_LIBRARIES}")
+
 include_directories(AFTER ${Boost_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
@@ -115,7 +191,8 @@ include_directories(AFTER ${Boost_INCLUDE_DIRS})
 # compiled with C++ complex support.
 # -------------------------------------------------------------
 message(STATUS "Checking PETSc ...")
-find_package (PETSc COMPONENTS CXX REQUIRED)
+find_package (PETSc REQUIRED)
+message(STATUS "Using PETSc version ${PETSC_VERSION}")
 
 if (EXISTS "${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
   include("${PETSC_DIR}/${PETSC_ARCH}/conf/PETScConfig.cmake")
@@ -152,8 +229,19 @@ else()
 endif()
 
 # This is probably redundant
-if (NOT PETSC_CLANGUAGE_Cxx)
-  message (FATAL_ERROR "PETSc installation does not use C++ (--with-clanguage=c++)")
+if (PETSC_CLANGUAGE_Cxx)
+  message (STATUS "PETSc installation uses C++ (--with-clanguage=c++) -- we can work with that.")
+endif()
+
+if (PETSC_HAVE_SUPERLU_DIST) 
+  set(GRIDPACK_MATSOLVER_PKG "superlu_dist")
+  message(STATUS "PETSc parallel LU linear solver will be from SuperLU_dist")
+elseif (PETSC_HAVE_MUMPS)
+  set(GRIDPACK_MATSOLVER_PKG "mumps")
+  message(STATUS "PETSc parallel LU linear solver will be from MUMPS")
+else()
+  set(GRIDPACK_MATSOLVER_PKG "petsc")
+  message(WARNING "Installed PETSc does not have a parallel direct solver, expect unit test failures")
 endif()
 
 # -------------------------------------------------------------
@@ -173,11 +261,22 @@ find_package(ParMETIS REQUIRED)
 
 # -------------------------------------------------------------
 # GlobalArrays
-# 
-# Only versions > 5.2 have been used
+# Build or Find
 # -------------------------------------------------------------
-message(STATUS "Checking GA ...")
-find_package(GA REQUIRED)
+option(BUILD_GA "Download and build Global Arrays" OFF)
+option(GA_INFINIBAND "Try to configure GA for an Infiniband cluster" OFF)
+
+if(BUILD_GA)
+  include(BuildGAExternalProject)
+  BuildGAExternalProject()
+  add_dependencies(external_build external_global_arrays)
+  list(APPEND GRIDPACK_TEST_LDPATH ${GA_DIR}/lib)
+else(BUILD_GA)
+  message(STATUS "Checking GA ...")
+  find_package(GA REQUIRED)
+endif(BUILD_GA)
+message(STATUS "GA_INCLUDE_DIRS=${GA_INCLUDE_DIRS}")
+message(STATUS "GA_LIBRARIES=${GA_LIBRARIES}")
 
 # -------------------------------------------------------------
 #  Add optimization libraries, if requested
@@ -231,24 +330,50 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # -------------------------------------------------------------
-# Options for all Programs/Libraries
+# Compiler specific options
 # -------------------------------------------------------------
 
-# remove annoying warnings produced by the GNU compiler about the use
-# of string constants, which are used a lot in GridPACK
+# FIXME: remove annoying warnings (these warnings probably identify
+# real problems, but there are so many of them they obscure errors
+# that are causing identifiable problems
+
 if (CMAKE_COMPILER_IS_GNUCXX) 
-    add_definitions(
-      -pedantic
-      -Wno-write-strings
-      -Wno-long-long 
-      -Wno-sign-compare 
-      -Wno-unused-variable
-      -Wno-unused-but-set-variable
-      -Wno-maybe-uninitialized
+  add_definitions(
+    -pedantic
+    -Wno-write-strings
+    -Wno-long-long 
+    -Wno-sign-compare 
+    -Wno-unused-variable
+    -Wno-unused-but-set-variable
+    -Wno-maybe-uninitialized
     )
 endif()
 
+# using regular Clang or AppleClang
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_definitions(
+    -Wno-c++11-extensions
+    -Wno-c++11-compat-deprecated-writable-strings
+    -Wno-format-security
+    -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
+    )
+endif()
+
+# -------------------------------------------------------------
+# Options for all Programs/Libraries
+# -------------------------------------------------------------
+
+set(GRIDPACK_LIB_LINK_LIBRARIES OFF
+  CACHE BOOL "Do we need library link libraries?")
+
+if (BUILD_SHARED_LIBS)
+  if (CMAKE_SYSTEM_NAME MATCHES "Darwin")
+    set(GRIDPACK_LIB_LINK_LIBRARIES ON)
+  endif()
+endif()
+
 set(GRIDPACK_SRC_DIR ${CMAKE_CURRENT_SOURCE_DIR})
+set(GRIDPACK_DATA_DIR ${CMAKE_CURRENT_SOURCE_DIR}/applications/data_sets)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (ENABLE_CRAY_BUILD)
@@ -258,39 +383,141 @@ if (ENABLE_CRAY_BUILD)
   endif()
 endif()
 
+# If external packages are built as shared libraries, the library
+# search path needs to be set so unit tests can find them when run.
+# Try setting the LIBRARY_PATH environment variable to include the
+# directories from external packages.
+
+if(GRIDPACK_TEST_LDPATH)
+  string(REPLACE ";" ":" tmp "${GRIDPACK_TEST_LDPATH}")
+  set(GRIDPACK_TEST_LDPATH "${tmp}")
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    if(ENV{DYLD_LIBRARY_PATH})
+      set(GRIDPACK_TEST_LDPATH "${GRIDPACK_TEST_LDPATH}:$ENV{DYLD_LIBRARY_PATH}")
+    endif()
+    set(ENV{DYLD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
+    message(STATUS "DYLD_LIBRARY_PATH: $ENV{DYLD_LIBRARY_PATH}")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    if(ENV{LD_LIBRARY_PATH})
+      set(GRIDPACK_TEST_LDPATH "${GRIDPACK_TEST_LDPATH}:$ENV{LD_LIBRARY_PATH}")
+    endif()
+    set(ENV{LD_LIBRARY_PATH} "${GRIDPACK_TEST_LDPATH}")
+    message(STATUS "LD_LIBRARY_PATH: $ENV{LD_LIBRARY_PATH}")
+  endif()
+endif()
+
+# -------------------------------------------------------------
+# Installation
+# -------------------------------------------------------------
+
+# When built as shared libraries, and installed in non-system dirs
+set(CMAKE_MACOSX_RPATH 1)
+set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+IF("${isSystemDir}" STREQUAL "-1")
+   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+ENDIF("${isSystemDir}" STREQUAL "-1")
+
+install(FILES
+  ${GRIDPACK_SRC_DIR}/../README.md
+  LICENSE
+  DESTINATION share/gridpack
+)
+
 # -------------------------------------------------------------
 # Subdirectories
+#
+#  ****NOTE****
+#  For any subdirectory that contributes a LIBRARY to the
+#  GridPACK framework, modifications also need to be made to
+#  the src/lib/GridPACK.cmake.in file so that installs will
+#  work correctly
+#
 # -------------------------------------------------------------
 add_subdirectory(utilities)
 add_subdirectory(parallel)
 add_subdirectory(configuration)
 add_subdirectory(math)
 add_subdirectory(component)
+add_subdirectory(analysis)
 add_subdirectory(partition)
-add_subdirectory(network)
 add_subdirectory(factory)
 add_subdirectory(mapper)
+add_subdirectory(expression)
 add_subdirectory(optimization)
 add_subdirectory(applications/powerflow)
-add_subdirectory(applications/powerflow2)
-add_subdirectory(applications/dynamic_simulation_reduced_y)
 add_subdirectory(applications/dynamic_simulation_full_y)
-add_subdirectory(applications/dynamic_simulation_implicit)
 add_subdirectory(applications/contingency_analysis)
 add_subdirectory(applications/state_estimation)
+add_subdirectory(applications/kalman_ds)
+add_subdirectory(applications/development/powerflow2)
+add_subdirectory(applications/development/dynamic_simulation_reduced_y)
+add_subdirectory(applications/development/dynamic_simulation_implicit)
 add_subdirectory(applications/examples/hello_world)
 add_subdirectory(applications/examples/resistor_grid)
+add_subdirectory(applications/examples/powerflow)
+add_subdirectory(applications/examples/contingency_analysis)
 add_subdirectory(applications/modules/powerflow)
 add_subdirectory(applications/modules/dynamic_simulation)
 add_subdirectory(applications/modules/dynamic_simulation_full_y)
 add_subdirectory(applications/modules/state_estimation)
+add_subdirectory(applications/modules/kalman_ds)
+add_subdirectory(applications/components/kds_matrix)
 add_subdirectory(applications/components/ds_matrix)
 add_subdirectory(applications/components/se_matrix)
 add_subdirectory(applications/components/pf_matrix)
 add_subdirectory(applications/components/y_matrix)
+add_subdirectory(network)
 add_subdirectory(parser)
+add_subdirectory(export)
 add_subdirectory(serial_io)
 add_subdirectory(timer)
 add_subdirectory(include)
 
 add_subdirectory(lib)
+
+
+# -------------------------------------------------------------
+# CPack configuration
+# -------------------------------------------------------------
+
+
+INCLUDE(InstallRequiredSystemLibraries)
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY 
+  "An open source toolkit for developing power grid simulation applications for high performance computing architectures")
+set(CPACK_PACKAGE_DESCRIPTION "GridPACK(tm) is a software framework consisting of a set of modules designed to simplify the development of programs that model the power grid and run on parallel, high performance computing platforms. The modules are available as a library and consist of components for setting up and distributing power grid networks, support for modeling the behavior of individual buses and branches in the network, converting the network models to the corresponding algebraic equations, and parallel routines for manipulating and solving large algebraic systems. Additional modules support input and output as well as basic profiling and error management. ")
+set(CPACK_PACKAGE_VENDOR "")
+set(CPACK_PACKAGE_CONTACT "william.perkins@pnnl.gov")
+set(CPACK_PACKAGE_VERSION_MAJOR "${GridPACK_VERSION_MAJOR}")
+set(CPACK_PACKAGE_VERSION_MINOR "${GridPACK_VERSION_MINOR}")
+set(CPACK_PACKAGE_VERSION_PATCH "${GridPACK_VERSION_PATCH}")
+set(CPACK_PACKAGE_VERSION 
+  "${CPACK_PACKAGE_VERSION_MAJOR}.${CPACK_PACKAGE_VERSION_MINOR}.${CPACK_PACKAGE_VERSION_PATCH}")
+set(CPACK_PACKAGE_FILE_NAME 
+  "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
+set(CPACK_SOURCE_PACKAGE_FILE_NAME 
+  "${CMAKE_PROJECT_NAME}_${CPACK_PACKAGE_VERSION}")
+
+# set(CPACK_PACKAGING_INSTALL_PREFIX "")
+# set(CMAKE_INSTALL_PREFIX "/")
+#set(CPACK_PACKAGE_INSTALL_DIRECTORY "/")
+#set(CPACK_SET_DESTDIR FALSE)
+set(CPACK_SET_DESTDIR true)
+
+# Debian specific settings
+
+set(CPACK_DEBIAN_PACKAGE_PRIORITY "optional")
+set(CPACK_DEBIAN_PACKAGE_SECTION "science")
+set(CPACK_DEBIAN_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+set(CPACK_DEBIAN_PACKAGE_DEPENDS 
+  "libga-dev (>=5.3), libpetsc3.6.2-dev (>= 3.6.2), libparmetis-dev (>=4.0.3), libboost-mpi-dev (>=1.58.0), libboost-all-dev (>=1.58.0)"
+  )
+
+# RPM specific settings
+
+set(CPACK_RPM_PACKAGE_ARCHITECTURE ${CMAKE_SYSTEM_PROCESSOR})
+
+INCLUDE(CPack)

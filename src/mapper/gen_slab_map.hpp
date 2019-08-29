@@ -102,7 +102,7 @@ gridpack::math::Matrix* intMapToMatrix(void)
 {
   gridpack::parallel::Communicator comm = p_network->communicator();
   int blockSize = p_maxIndex-p_minIndex+1;
-#if 0
+#if 1
   gridpack::math::Matrix*
     Ret(new gridpack::math::Matrix(comm, blockSize,p_nColumns,
                                    gridpack::math::Dense));
@@ -481,7 +481,7 @@ void setOffsets(void)
   if (!GA_Allocate(g_bus_offsets)) {
     char buf[256];
     sprintf(buf,"GenSlabMap::setOffsets: Unable to allocate distributed array for bus offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(g_bus_offsets);
@@ -493,7 +493,7 @@ void setOffsets(void)
   if (!GA_Allocate(g_branch_offsets)) {
     char buf[256];
     sprintf(buf,"GenSlabMap::setOffsets: Unable to allocate distributed array for branch offsets\n");
-    printf(buf);
+    printf("%s",buf);
     throw gridpack::Exception(buf);
   }
   GA_Zero(g_branch_offsets);

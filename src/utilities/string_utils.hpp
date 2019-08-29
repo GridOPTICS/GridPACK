@@ -46,6 +46,20 @@ public:
    */
   void trim(std::string &str)
   {
+    // replace tabs and/or carriage returns with blank space
+    int ntok;
+    ntok = str.find('\n',0);
+    while (ntok != std::string::npos) {
+      str[ntok] = ' ';
+      ntok++;
+      ntok = str.find('\n',ntok);
+    }
+    ntok = str.find('\t',0);
+    while (ntok != std::string::npos) {
+      str[ntok] = ' ';
+      ntok++;
+      ntok = str.find('\t',ntok);
+    }
     boost::trim(str);
   };
 
@@ -110,8 +124,8 @@ public:
     if (ntok2 == std::string::npos) ntok2 = clean_tag.length();
     tag = clean_tag.substr(ntok1,ntok2-ntok1);
     if (tag.length() == 1) {
-      clean_tag = " ";
-      clean_tag.append(tag);
+      clean_tag = tag;
+      clean_tag.append(" ");
     } else {
       clean_tag = tag;
     }
@@ -166,46 +180,77 @@ public:
    */
   std::vector<std::string> blankTokenizer(std::string &str)
   {
-    int slen = str.length();
+    // Replace any tabs with blank spaces
+    std::string strcpy = str;
+    int slen = strcpy.length();
+    int i;
+    for (i=0; i<slen; i++) {
+      if (strcpy[i] == '\t') strcpy[i] = ' ';
+    }
     int ntok1, ntok2;
     std::vector<std::string> ret;
-    ntok1 = str.find_first_not_of(' ',0);
-    if (str[ntok1] == '\'') {
-      ntok2 = str.find('\'',ntok1+1);
+    ntok1 = strcpy.find_first_not_of(' ',0);
+    if (strcpy[ntok1] == '\'') {
+      ntok2 = strcpy.find('\'',ntok1+1);
       ntok2++;
-    } else if (str[ntok1] == '\"') {
-      ntok2 = str.find('\"',ntok1+1);
+    } else if (strcpy[ntok1] == '\"') {
+      ntok2 = strcpy.find('\"',ntok1+1);
       ntok2++;
     } else if (ntok1 != std::string::npos) {
-      ntok2 = str.find(' ',ntok1);
+      ntok2 = strcpy.find(' ',ntok1);
       if (ntok2 == std::string::npos) ntok2 = slen;
     } else {
       return ret;
     }
-    ret.push_back(str.substr(ntok1,ntok2-ntok1));
+    ret.push_back(strcpy.substr(ntok1,ntok2-ntok1));
     while (ntok2 < slen-1 && ntok1 != std::string::npos) {
-      ntok1 = str.find_first_not_of(' ',ntok2);
-      if (str[ntok1] == '\'') {
-        ntok2 = str.find('\'',ntok1+1);
+      ntok1 = strcpy.find_first_not_of(' ',ntok2);
+      if (strcpy[ntok1] == '\'') {
+        ntok2 = strcpy.find('\'',ntok1+1);
         if (ntok2 != std::string::npos) {
           ntok2++;
         } else {
           ntok2 = slen;
         }
-      } else if (str[ntok1] == '\"') {
-        ntok2 = str.find('\"',ntok1+1);
+      } else if (strcpy[ntok1] == '\"') {
+        ntok2 = strcpy.find('\"',ntok1+1);
         if (ntok2 != std::string::npos) {
           ntok2++;
         } else {
           ntok2 = slen;
         }
       } else if (ntok1 != std::string::npos) {
-        ntok2 = str.find(' ',ntok1);
+        ntok2 = strcpy.find(' ',ntok1);
         if (ntok2 == std::string::npos) ntok2 = slen;
       } 
       if (ntok2 != std::string::npos) {
-        ret.push_back(str.substr(ntok1,ntok2-ntok1));
+        ret.push_back(strcpy.substr(ntok1,ntok2-ntok1));
       }
+    }
+    return ret;
+  }
+
+  /**
+   * Tokenize a string on a user specified character string and return a
+   * vector of strings. This function does not pay attention to quotes
+   * @param str input string
+   * @param sep separator string
+   * @return vector containing individual tokens
+   */
+  std::vector<std::string> charTokenizer(std::string &str, const char *sep)
+  {
+    int slen = str.length();
+    int ntok1, ntok2;
+    std::vector<std::string> ret;
+    ntok1 = str.find_first_not_of(sep,0);
+    ntok2 = str.find(sep,ntok1);
+    if (ntok2 == std::string::npos) ntok2 = slen;
+    if (ntok1<=ntok2) ret.push_back(str.substr(ntok1,ntok2-ntok1));
+    while (ntok2 < slen-1 && ntok1 != std::string::npos) {
+      ntok1 = str.find_first_not_of(sep,ntok2);
+      ntok2 = str.find(sep,ntok1);
+      if (ntok2 == std::string::npos) ntok2 = slen;
+      if (ntok1<=ntok2) ret.push_back(str.substr(ntok1,ntok2-ntok1));
     }
     return ret;
   }

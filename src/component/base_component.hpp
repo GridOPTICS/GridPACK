@@ -438,6 +438,18 @@ class BaseComponent
      */
     virtual bool getDataItem(void *data, const char *signal = NULL);
 
+    /**
+     * Set rank holding the component
+     * @param rank processor rank holding the component
+     */
+    void setRank(int rank);
+
+    /**
+     * Get rank holding the component
+     * @return processor rank holding the component
+     */
+    int getRank(void) const;
+
   protected:
     /**
      * A buffer that can be used for exchanging component data. This is
@@ -454,6 +466,11 @@ class BaseComponent
       * Current mode
       */
      int p_mode;
+
+    /**
+     * Rank holding the component. Useful for debugging
+     */
+    int p_rank;
 
   private:
 
@@ -647,6 +664,12 @@ class BaseBranchComponent
     void clearBuses(void);
 
     /**
+     * Set global index for branch
+     * @param idx global index of branch
+     */
+    void setGlobalIndex(int idx);
+
+    /**
      * Set original index for bus 1
      * @param idx original index for bus 1 (assigned from input file)
      */
@@ -694,6 +717,11 @@ class BaseBranchComponent
      */
     int getBus2GlobalIndex(void) const;
 
+    /**
+     * Get global index for branch
+     */
+    int getGlobalIndex(void) const;
+
   private:
     /**
      *  Pointers to buses at either end of branch
@@ -710,6 +738,7 @@ class BaseBranchComponent
     /**
      *  Global indices for bus 1 and bus 2
      */
+    int p_globalIndex;
     int p_globalBus1Index;
     int p_globalBus2Index;
 

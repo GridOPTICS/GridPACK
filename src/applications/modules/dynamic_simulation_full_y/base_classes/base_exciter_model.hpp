@@ -18,28 +18,28 @@
 #define _base_exciter_model_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/component/base_component.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
-class DSFBaseExciterModel
+class BaseExciterModel
 {
   public:
     /**
      * Basic constructor
      */
-    DSFBaseExciterModel();
+    BaseExciterModel();
 
     /**
      * Basic destructor
      */
-    virtual ~DSFBaseExciterModel();
+    virtual ~BaseExciterModel();
 
     /**
      * Load parameters from DataCollection object into exciter model
      * @param data collection of exciter parameters from input files
      * @param index of exciter on bus
-     * TODO: might want to move this functionality to DSFBaseExciterModel
+     * TODO: might want to move this functionality to BaseExciterModel
      */
     virtual void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -101,6 +101,12 @@ class DSFBaseExciterModel
      * @return value of field current
      */
     virtual void setOmega(double omega);
+
+    /**
+     * Set the value of the Vcomp
+     * @return value of teh Vcomp
+     */
+    virtual void setVcomp(double vtmp);
 
   private:
     

@@ -17,7 +17,7 @@
 
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/parser/dictionary.hpp"
 #include "pf_factory_module.hpp"
 
 
@@ -171,6 +171,7 @@ bool gridpack::powerflow::PFFactoryModule::checkLoneBus(std::ofstream *stream)
       sprintf(buf,"\nLone bus %d found\n",bus->getOriginalIndex());
       p_saveIsolatedStatus.push_back(bus->isIsolated());
       bus->setIsolated(true);
+      printf("%s",buf);
       if (stream != NULL) *stream << buf;
     }
     if (!ok) bus_ok = false;
@@ -215,6 +216,7 @@ void gridpack::powerflow::PFFactoryModule::clearLoneBus()
       }
     }
     if (!ok) {
+      printf("\nLone bus %d reset\n",bus->getOriginalIndex());
       bus->setIsolated(p_saveIsolatedStatus[ncount]);
       ncount++;
     }
@@ -222,26 +224,43 @@ void gridpack::powerflow::PFFactoryModule::clearLoneBus()
 }
 
 /**
- * Check to see if there are any voltage violations in the network
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
- * @return true if no violations found
+ * Set voltage limits on all buses
+ * @param Vmin lower bound on voltages
+ * @param Vmax upper bound on voltages
  */
-bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
-    double Vmin, double Vmax)
+void gridpack::powerflow::PFFactoryModule::setVoltageLimits(double Vmin,
+    double Vmax)
 {
   int numBus = p_network->numBuses();
   int i;
   bool bus_ok = true;
   for (i=0; i<numBus; i++) {
+    gridpack::powerflow::PFBus *bus =
+      dynamic_cast<gridpack::powerflow::PFBus*>(p_network->getBus(i).get());
+    bus->setVoltageLimits(Vmin,Vmax);
+  }
+}
+
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @param minV maximum voltage limit
+ * @param maxV maximum voltage limit
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  char buf[128];
+  for (i=0; i<numBus; i++) {
     if (p_network->getActiveBus(i)) {
       gridpack::powerflow::PFBus *bus =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
-      //bus->setVoltageLimits(Vmin, Vmax);
       if (!bus->getIgnore()) {
-        double V = bus->getVoltage();
-        if (V < Vmin || V > Vmax) bus_ok = false;
+        if (!bus->checkVoltageViolation()) bus_ok = false;
       }
     }
   }
@@ -250,13 +269,11 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
 
 /**
  * Check to see if there are any voltage violations in the network
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
  * @param area only check for voltage violations in this area
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
-    int area, double Vmin, double Vmax)
+    int area)
 {
   int numBus = p_network->numBuses();
   int i;
@@ -267,8 +284,7 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
       if (!bus->getIgnore() && bus->getArea() == area) {
-        double V = bus->getVoltage();
-        if (V < Vmin || V > Vmax) bus_ok = false;
+        if (!bus->checkVoltageViolation()) bus_ok = false;
       }
     }
   }
@@ -278,11 +294,8 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
 /**
  * Set "ignore" parameter on all buses with violations so that subsequent
  * checks are not counted as violations
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
  */
-void gridpack::powerflow::PFFactoryModule::ignoreVoltageViolations(double Vmin,
-    double Vmax)
+void gridpack::powerflow::PFFactoryModule::ignoreVoltageViolations()
 {
   int numBus = p_network->numBuses();
   int i;
@@ -291,8 +304,7 @@ void gridpack::powerflow::PFFactoryModule::ignoreVoltageViolations(double Vmin,
       gridpack::powerflow::PFBus *bus =
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
-      double V = bus->getVoltage();
-      if (V < Vmin || V > Vmax) bus->setIgnore(true);
+      if (bus->checkVoltageViolation()) bus->setIgnore(true);
     }
   }
 }
@@ -448,6 +460,95 @@ void gridpack::powerflow::PFFactoryModule::clearLineOverloadViolations()
       for (int k = 0; k<nlines; k++) {
         branch->setIgnore(tags[k],false);
       }
+    }
+  }
+}
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkQlimViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      if (bus->chkQlim()) bus_ok = false;
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
+ * Check to see if there are any voltage violations in the network
+ * @param area only check for voltage violations in this area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkQlimViolations(int area)
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      if (bus->getArea() == area) {
+        if (!bus->chkQlim()) bus_ok = false;
+      }
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
+    }
+  }
+  return checkTrue(bus_ok);
+}
+
+/**
+ * Clear changes that were made for Q limit violations and reset
+ * system to its original state
+ */
+void gridpack::powerflow::PFFactoryModule::clearQlimViolations()
+{
+  int numBus = p_network->numBuses();
+  int i;
+  bool bus_ok = true;
+  for (i=0; i<numBus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->clearQlim();
+    }
+  }
+  p_network->updateBuses();
+  for (i=0; i<numBus; i++) {
+    if (!p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus =
+        dynamic_cast<gridpack::powerflow::PFBus*>
+        (p_network->getBus(i).get());
+      bus->pushIsPV();
     }
   }
 }

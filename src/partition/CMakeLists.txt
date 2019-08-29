@@ -9,15 +9,15 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2014-02-26 07:54:54 d3g096
+# Last Change: 2019-08-16 13:47:51 d3g096
 # -------------------------------------------------------------
 
 
 set(gridpack_partition_sources)
 
 set(target_libraries 
-  gridpack_parallel 
   gridpack_timer
+  gridpack_parallel 
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
   ${MPI_CXX_LIBRARIES}
@@ -72,6 +72,16 @@ endif()
 add_library(gridpack_partition
   ${gridpack_partition_sources}
 )
+
+gridpack_set_library_version(gridpack_partition)
+add_dependencies(gridpack_partition external_build)
+
+target_link_libraries(gridpack_partition 
+  gridpack_timer
+  gridpack_parallel
+  ${PARMETIS_LIBRARY} ${METIS_LIBRARY}  
+  )
+
 
 # -------------------------------------------------------------
 # partition test suite

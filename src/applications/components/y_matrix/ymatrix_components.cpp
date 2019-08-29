@@ -17,6 +17,7 @@
 
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/utilities/complex.hpp"
@@ -25,6 +26,7 @@
 #include "ymatrix_components.hpp"
 #include "gridpack/parser/dictionary.hpp"
 
+//#define PRINT_DEBUG
 //#define LARGE_MATRIX
 
 /**
@@ -73,6 +75,10 @@ bool gridpack::ymatrix::YMBus::matrixDiagValues(ComplexType *values)
   if (p_mode == YBus && !p_isolated) {
     gridpack::ComplexType ret(p_ybusr,p_ybusi);
     values[0] = ret;
+#ifdef PRINT_DEBUG
+    printf("%d %d %f %f\n",getOriginalIndex(),getOriginalIndex(),
+        p_ybusr,p_ybusi);
+#endif
     return true;
   } else {
     return false;
@@ -106,6 +112,21 @@ void gridpack::ymatrix::YMBus::setYBus(void)
   p_ybusi = imag(ret);
 }
 
+/**
+ * Modify diagonal values of matrix.
+ * @param rval real part of diagonal matrix element
+ * @param ival imaginary part of diagonal matrix element
+ */
+void gridpack::ymatrix::YMBus::setYBusDiag(double rval, double ival)
+{
+  p_ybusr = rval;
+  p_ybusi = ival;
+}
+
+/**
+ * Get values of YBus matrix. These can then be used in subsequent
+ * calculations
+ */
 gridpack::ComplexType gridpack::ymatrix::YMBus::getYBus(void)
 {
   gridpack::ComplexType ret(p_ybusr,p_ybusi);
@@ -129,6 +150,7 @@ void gridpack::ymatrix::YMBus::load(
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_GL, &p_shunt_gs,0);
   p_shunt = p_shunt && data->getValue(BUS_SHUNT_BL, &p_shunt_bs,0);
   bool binit = data->getValue(SHUNT_BINIT, &shunt_binit);
+  if (binit) p_shunt = true;
 
   p_shunt_gs /= sbase;
   p_shunt_bs /= sbase;
@@ -186,6 +208,20 @@ void gridpack::ymatrix::YMBus::getShuntValues(double *bl,
 {
   *bl = p_shunt_bs;
   *gl = p_shunt_gs;
+}
+
+/**
+ * Set internal parameters inside the Y-bus component
+ * @param name character string describing component to be modified
+ * @param value of parameter to be modified
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::ymatrix::YMBus::setParam(std::string name, double value,
+    int idx)
+{
+  if (name==BUS_SHUNT_BL) {
+    p_shunt_bs = value;
+  }
 }
 
 /**
@@ -279,6 +315,10 @@ bool gridpack::ymatrix::YMBranch::matrixForwardValues(ComplexType *values)
     ok = ok && !bus2->isIsolated();
     if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_frwd,p_ybusi_frwd);
+#ifdef PRINT_DEBUG
+      printf("%d %d %f %f\n",bus1->getOriginalIndex(),
+          bus2->getOriginalIndex(),p_ybusr_frwd,p_ybusi_frwd);
+#endif
       return true;
     } else {
       return false;
@@ -298,6 +338,10 @@ bool gridpack::ymatrix::YMBranch::matrixReverseValues(ComplexType *values)
     ok = ok && !bus2->isIsolated();
     if (p_active && ok) {
       values[0] = gridpack::ComplexType(p_ybusr_rvrs,p_ybusi_rvrs);
+#ifdef PRINT_DEBUG
+      printf("%d %d %f %f\n",bus1->getOriginalIndex(),
+          bus2->getOriginalIndex(),p_ybusr_rvrs,p_ybusi_rvrs);
+#endif
       return true;
     } else {
       return false;
@@ -314,11 +358,21 @@ void gridpack::ymatrix::YMBranch::setYBus(void)
   p_ybusi_frwd = 0.0;
   p_ybusr_rvrs = 0.0;
   p_ybusi_rvrs = 0.0;
+#ifdef USE_ACOPF
+  p_yffr.clear();
+  p_yffi.clear();
+  p_yttr.clear();
+  p_ytti.clear();
+  p_yftr.clear();
+  p_yfti.clear();
+  p_ytfr.clear();
+  p_ytfi.clear();
+#endif
   for (i=0; i<p_elems; i++) {
     gridpack::ComplexType ret(p_resistance[i],p_reactance[i]);
     ret = -1.0/ret;
     gridpack::ComplexType a(cos(p_phase_shift[i]),sin(p_phase_shift[i]));
-    a = p_tap_ratio[i]*a;
+    if (p_xform[i]) a = p_tap_ratio[i]*a;
     if (p_switched[i]) a = conj(a);
     if (p_branch_status[i]) {
       if (p_xform[i]) {
@@ -332,6 +386,23 @@ void gridpack::ymatrix::YMBranch::setYBus(void)
         p_ybusr_rvrs += real(ret);
         p_ybusi_rvrs += imag(ret);
       }
+#ifdef USE_ACOPF
+      gridpack::ComplexType j(0.0,1.0);
+      ret = -ret;
+      gridpack::ComplexType yff,ytt,yft,ytf;
+      ytt = ret + 0.5*p_charging[i]*j;
+      yff = ytt/(a*conj(a));
+      yft = -ret/conj(a);
+      ytf = -ret/a;
+      p_yffr.push_back(real(yff));
+      p_yffi.push_back(imag(yff));
+      p_yttr.push_back(real(ytt));
+      p_ytti.push_back(imag(ytt));
+      p_yftr.push_back(real(yft));
+      p_yfti.push_back(imag(yft));
+      p_ytfr.push_back(real(ytf));
+      p_ytfi.push_back(imag(ytf));
+#endif
     }
   }
 }
@@ -366,6 +437,21 @@ gridpack::ComplexType gridpack::ymatrix::YMBranch::getReverseYBus(void)
 void gridpack::ymatrix::YMBranch::load(
     const boost::shared_ptr<gridpack::component::DataCollection> &data)
 {
+  // This routine may be called more than once so clear all vectors
+  p_reactance.clear();
+  p_resistance.clear();
+  p_tap_ratio.clear();
+  p_phase_shift.clear();
+  p_charging.clear();
+  p_shunt_admt_g1.clear();
+  p_shunt_admt_b1.clear();
+  p_shunt_admt_g2.clear();
+  p_shunt_admt_b2.clear();
+  p_xform.clear();
+  p_shunt.clear();
+  p_branch_status.clear();
+  p_switched.clear();
+  p_tag.clear();
   bool ok = true;
   data->getValue(BRANCH_NUM_ELEMENTS, &p_elems);
   double rvar;
@@ -378,6 +464,8 @@ void gridpack::ymatrix::YMBranch::load(
   for (idx = 0; idx<p_elems; idx++) {
     bool xform = true;
     xform = xform && data->getValue(BRANCH_X, &rvar, idx);
+    //if (rvar <1.0e-5 && rvar >=0.0) rvar = 1.0e-5;
+//    if (rvar >-1.0e-5 && rvar >=0.0) rvar =-1.0e-5;
     p_reactance.push_back(rvar);
     xform = xform && data->getValue(BRANCH_R, &rvar, idx);
     p_resistance.push_back(rvar);
@@ -572,6 +660,56 @@ void gridpack::ymatrix::YMBranch::getLineElements(const std::string tag,
 }
 
 /**
+ * Return contributions to Y-matrix from a specific transmission element
+ * @param tag character string for transmission element
+ * @param Yii contribution from "from" bus
+ * @param Yij contribution from line element
+ */
+void gridpack::ymatrix::YMBranch::getRvrsLineElements(const std::string tag,
+   gridpack::ComplexType *Yii, gridpack::ComplexType *Yij)// , gridpack::ComplexType *yii)
+{
+  gridpack::ComplexType zero = gridpack::ComplexType(0.0,0.0);
+  gridpack::ComplexType flow = zero;
+  *Yii = zero;
+  *Yij = zero;
+  int i, idx;
+  idx = -1;
+  // find line element corresponding to tag
+  for (i=0; i<p_elems; i++) {
+    if (tag == p_tag[i]) {
+      idx = i;
+      break;
+    }
+  }
+  if (idx >= 0) {
+    gridpack::ComplexType yij,aij,bij;
+    yij = gridpack::ComplexType(p_resistance[idx],p_reactance[idx]);
+    bij = gridpack::ComplexType(0.0,p_charging[idx]);
+    //bij = 0.0;
+    if (yij != zero) yij = -1.0/yij;
+    if (p_xform[idx]) {
+      // evaluate flow for transformer
+      aij = gridpack::ComplexType(cos(p_phase_shift[idx]),sin(p_phase_shift[idx]));
+      aij = p_tap_ratio[idx]*aij;
+      if (aij != zero) {
+        if (p_switched[idx]) {
+          *Yij = yij/conj(aij);
+          *Yii = -(yij-0.5*bij);
+          *Yii = (*Yii)/(aij*conj(aij));
+        } else {
+          *Yij = yij/aij;
+          *Yii = -(yij-0.5*bij);
+        }
+      }
+    } else {
+      // evaluate flow for regular line
+      *Yij = yij;
+      *Yii = -((*Yij)-0.5*bij);
+    }
+  }
+}
+
+/**
  * Return status of all transmission elements
  * @return vector containing status of transmission elements
  */
@@ -625,3 +763,54 @@ double gridpack::ymatrix::YMBranch::getSusceptance(std::string tag)
   }
   return 0.0;
 }
+
+/**
+ * Set internal parameters inside the Y-branch component
+ * @param name character string describing component to be modified
+ * @param value of parameter to be modified
+ * @param idx index (if necessary) of variable to be modified
+ */
+void gridpack::ymatrix::YMBranch::setParam(std::string name, double value,
+    int idx)
+{
+  if (name==BRANCH_X) {
+    p_reactance[idx] = value;
+  } else if (name==BRANCH_R) {
+    p_resistance[idx] = value;
+  } else if (name==BRANCH_TAP) {
+    p_tap_ratio[idx] = value;
+  } else if (name==BRANCH_SHIFT) {
+    p_phase_shift[idx] = value;
+  }
+}
+
+#ifdef USE_ACOPF
+/**
+ * Return components from individual transmission elements
+ * @param yffr list of real parts of Yff
+ * @param yffr list of imaginary parts of Yff
+ * @param yttr list of real parts of Ytt
+ * @param yttr list of imaginary parts of Ytt
+ * @param yftr list of real parts of Yft
+ * @param yftr list of imaginary parts of Yft
+ * @param ytfr list of real parts of Ytf
+ * @param ytfr list of imaginary parts of Ytf
+ * @param switched flag on whether line is switched or not
+ */
+void gridpack::ymatrix::YMBranch::getYElements(
+    std::vector<double> &yffr, std::vector<double> &yffi,
+    std::vector<double> &yttr, std::vector<double> &ytti,
+    std::vector<double> &yftr, std::vector<double> &yfti,
+    std::vector<double> &ytfr, std::vector<double> &ytfi,
+    std::vector<bool> &switched) {
+  yffr = p_yffr;
+  yffi = p_yffi;
+  yttr = p_yttr;
+  ytti = p_ytti;
+  yftr = p_yftr;
+  yfti = p_yfti;
+  ytfr = p_ytfr;
+  ytfi = p_ytfi;
+  switched = p_switched;
+}
+#endif

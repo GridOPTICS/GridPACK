@@ -1,0 +1,130 @@
+
+Set environment with:
+
+module unload PrgEnv-intel
+module load PrgEnv-gnu
+module load cmake
+module load git
+
+Boost_1.55.0:
+
+Configure and build with the following script:
+
+cat << EOF > ~/user-config.jam
+using mpi : : <find-shared-library>mpich ; using gcc : : : <compileflags>-I${MPICH_DIR}/ include <linkflags>-L${MPICH_DIR}/lib ;
+EOF
+sh ./bootstrap.sh \
+   --prefix=$HOME/software_grid/boost_1_55_0 \
+   --without-icu \
+   --with-toolset=gcc \
+   --without-libraries=python
+./b2 -a -d+2 link=static stage
+./b2 -a -d+2 link=static install
+rm -f ~/user-config.jam
+
+PETSc-3.5.2:
+
+PETSc is tricky. The PETSC distribution still has a function that makes calls
+the dynamic loading library. It isn't actually used anywhere but the function
+is still present and causes problems with the build when GridPACK tries to
+link. Configure PETSc with
+
+python ./config/configure.py \
+  PETSC_ARCH=edison-gnu-cxx-complex-opt \
+  --with-prefix=./ \
+  --with-mpi=1 \
+  --with-batch \
+  --known-mpi-shared-libraries \
+  --with-cc=cc \
+  --with-fc=ftn \
+  --with-cxx=CC \
+  --with-c++-support=1 \
+  --with-c-support=0 \
+  --with-c-language=C++\
+  --with-fortran=0 \
+  --with-scalar-type=complex \
+  --with-fortran-kernels=generic \
+  --download-superlu_dist \
+  --download-superlu \
+  --download-parmetis \
+  --download-metis \
+  --download-f2cblaslapack=1 \
+  --with-clanguage=c++ \
+  --with-shared-libraries=0 \
+  --with-x=0 \
+  --with-mpirun=aprun \
+  --with-mpiexec=aprun \
+  --with-debugging=0
+
+The "--with-batch" option causes the build to stop so it can pick up some
+information about the batch queue system that allows you to run tests. Just
+follow the instructions that are printed out from PETSc and you should be
+okay. If you are building someplace where you can launch jobs then it should
+be straightforward (you can't run jobs from the home file system at NERSC, so
+you need to do your build in $SCRATCH or someplace equivalent). After running
+the script above, you should see the file conftest-gnu-cxx-complex-shared-opt
+in your build directory. Before running this file as a script by submitting it
+as a batch job, cd into the PETSC_ARCH/include directory and edit the file
+petscconf.h. Comment out the definitions of the following variables:
+
+PETSC_USE_SOCKET_VIEWER
+PETSC_HAVE_DLFCN_H
+PETSC_HAVE_DLSYM
+PETSC_HAVE_DLERROR
+PETSC_HAVE_DLCLOSE
+PETSC_HAVE_DLOPEN
+
+The run the conftest-gnu-cxx-complex-shared-opt script on 1 node by submitting
+it to the batch queue. The job will generate the file
+reconfigure-gnu-cxx-complex-shared-opt.py. Run the python script in the PETSc
+directory to finish building PETSc.
+
+GA-5-4:
+
+Configure ga-5-4 with the following:
+
+./configure \
+  --enable-cxx \
+  --disable-f77 \
+  --with-mpi-pr \
+  --enable-autodetect \
+  --with-blas \
+  --with-lapack \
+  --with-scalapack \
+  --enable-i4 \
+  --enable-shared=no \
+  --enable-static=yes \
+  --prefix=/global/u2/b/bjpalmer/software_grid/ga-5-4 \
+  MPICC=cc MPICXX=CC MPIF77=ftn MPIEXEX=false
+
+
+(specifying the BLAS libraries explicitly runs into issues with the GridPACK
+CMake configuration). After configuring, type "make; make install"
+
+GridPACK:
+
+Configure GridPACK with the following script:
+
+rm -rf CMake*
+
+setenv CRAYPE_LINK_TYPE dynamic
+
+cmake -Wdev \
+      -DCMAKE_TOOLCHAIN_FILE:STRING=/global/u2/b/bjpalmer/gridpack/src/build/ToolChain.c
+make \
+      -D BOOST_ROOT:STRING='/global/u2/b/bjpalmer/software_grid/boost_1_55_0' \
+      -D PETSC_DIR:STRING='/global/u2/b/bjpalmer/software_grid/petsc-3.5.2' \
+      -D PETSC_ARCH:STRING='edison-gnu-cxx-complex-opt' \
+      -D GA_DIR:STRING='/global/u2/b/bjpalmer/software_grid/ga-5-4' \
+      -D PARMETIS_DIR:STRING= \
+        '/global/u2/b/bjpalmer/software_grid/petsc-3.5.2/edison-gnu-cxx-complex-opt/lib' \
+      -D CMAKE_INSTALL_PREFIX:PATH='/global/u2/b/bjpalmer/gridpack/src/gridpack-install' \
+      -D MPI_CXX_COMPILER:STRING='CC' \
+      -D MPI_C_COMPILER:STRING='cc' \
+      -D MPIEXEC:STRING='aprun' \
+      -D CHECK_COMPILATION_ONLY:BOOL=false \
+      -D ENABLE_CRAY_BUILD:BOOL=true \
+      -D USE_PROGRESS_RANKS:BOOL=true \
+      -D CMAKE_BUILD_TYPE:STRING='RELWITHDEBINFO' \
+      -D CMAKE_VERBOSE_MAKEFILE:STRING=TRUE \
+      ..

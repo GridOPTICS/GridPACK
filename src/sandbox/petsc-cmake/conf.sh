@@ -32,6 +32,26 @@ if [ $host == "flophouse" ]; then
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
         ..
     
+elif [ $host == "WE32673" ]; then
+
+    # Mac using Clang (system default) with OpenMPI and PETSc using
+    # MacPorts (do not set PETSC_ARCH)
+
+    CC=/usr/bin/clang
+    export CC
+    CXX=/usr/bin/clang++
+    export CXX
+
+    cmake -Wno-dev \
+        -D Boost_DIR:STRING='/opt/local' \
+        -D PETSC_DIR:STRING="/opt/local/lib/petsc" \
+        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
+        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
+        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
+        -D CMAKE_BUILD_TYPE:STRING="Debug" \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
+        ..
+
 elif [ $host == "pe10900" ]; then
 
     # Mac using GNU 4.8 and OpenMPI -- avoid using the system

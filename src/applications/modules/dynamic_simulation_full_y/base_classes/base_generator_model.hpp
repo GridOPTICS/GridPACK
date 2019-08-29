@@ -18,30 +18,31 @@
 #define _base_generator_model_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
+#include "gridpack/component/base_component.hpp"
 #include "base_governor_model.hpp"
 #include "base_exciter_model.hpp"
+#include "base_relay_model.hpp" //renke add
 
 namespace gridpack {
 namespace dynamic_simulation {
-class DSFBaseGeneratorModel
+class BaseGeneratorModel
 {
   public:
     /**
      * Basic constructor
      */
-    DSFBaseGeneratorModel();
+    BaseGeneratorModel();
 
     /**
      * Basic destructor
      */
-    virtual ~DSFBaseGeneratorModel();
+    virtual ~BaseGeneratorModel();
 
     /**
      * Load parameters from DataCollection object into generator model
      * @param data collection of generator parameters from input files
      * @param index of generator on bus
-     * TODO: might want to move this functionality to DSFBaseGeneratorModel
+     * TODO: might want to move this functionality to BaseGeneratorModel
      */
     virtual void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -123,25 +124,50 @@ class DSFBaseGeneratorModel
      */
     virtual void write(const char* signal, char* string);
 
-    void setGovernor(boost::shared_ptr<DSFBaseGovernorModel> &p_governor);
+    void setGovernor(boost::shared_ptr<BaseGovernorModel> &p_governor);
 
-    void setExciter(boost::shared_ptr<DSFBaseExciterModel> &p_exciter);
+    void setExciter(boost::shared_ptr<BaseExciterModel> &p_exciter);
+	
+    void AddRelay(boost::shared_ptr<BaseRelayModel> &p_relay);  // renke add, add relay
+    void ClearRelay();  // renke add, clear relay vector
 
-    boost::shared_ptr<DSFBaseGovernorModel> getGovernor();
+    boost::shared_ptr<BaseGovernorModel> getGovernor();
 
-    boost::shared_ptr<DSFBaseExciterModel> getExciter();
+    boost::shared_ptr<BaseExciterModel> getExciter();
+	
+    boost::shared_ptr<BaseRelayModel> getRelay( int iRelay); //renke add
+    void getRelayNumber( int &nrelay ); //renke add
 
     void setWatch(bool flag);
 
     bool getWatch();
 
+    /**
+     * return the bolean indicating whether the gen is tripped by a relay
+     */
+    bool getGenStatus();
+
+    /**
+     * set the status to be false if gen is tripped by a relay
+     */
+    void SetGenServiceStatus (bool sta);
+
+    /**
+     * return a vector containing any generator values that are being
+     * watched
+     * @param vals vector of watched values
+     */
+    virtual void getWatchValues(std::vector<double> &vals);
+
   private:
 
     bool p_hasExciter;
     bool p_hasGovernor;
-    boost::shared_ptr<DSFBaseGovernorModel> p_governor;
-    boost::shared_ptr<DSFBaseExciterModel> p_exciter;
+    boost::shared_ptr<BaseGovernorModel> p_governor;
+    boost::shared_ptr<BaseExciterModel> p_exciter;
     bool p_watch;
+	bool bStatus;
+    std::vector< boost::shared_ptr<BaseRelayModel> > vp_relay;  //renke add, relay vector
 
 };
 }  // dynamic_simulation

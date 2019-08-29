@@ -1,0 +1,16 @@
+#
+# This script has been used to build Boost 1.62 on a Linux cluster using
+# InteMPI and Intel compilers. The cluster is using an Infiniband
+# interconnect. Users should modify the argument of the --prefix option to
+# point to the top level Boost directory where this script should be run.
+#
+echo "using mpi : mpicxx ;" > ~/user-config.jam
+sh ./bootstrap.sh \
+    --prefix="/pic/projects/gridpack/software_intel/boost_1_62_0" \
+    --without-icu \
+    --with-toolset=intel-linux \
+    --without-libraries=python
+./b2 -a -d+2 link=static stage
+./b2 -a -d+2 link=static install
+rm ~/user-config.jam
+

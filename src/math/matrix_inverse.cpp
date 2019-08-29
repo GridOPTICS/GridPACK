@@ -37,7 +37,7 @@ main(int argc, char **argv)
 {
   parallel::Environment env(argc, argv);
   parallel::Communicator world;
-  math::Initialize();
+  math::Initialize(&argc,&argv);
 
   std::string cinput("input.xml");
   if (argc > 1) {

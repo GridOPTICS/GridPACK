@@ -8,7 +8,7 @@
 /**
  * @file   petsc_exception.cpp
  * @author William A. Perkins
- * @date   2014-09-12 13:40:09 d3g096
+ * @date   2019-08-13 08:56:30 d3g096
  * 
  * @brief  Implementation of PETScException
  * 
@@ -21,6 +21,24 @@
 
 namespace gridpack {
 namespace math {
+
+// -------------------------------------------------------------
+// throw_petsc_exception
+//
+// This needs to throw the exception #define'd by
+// PETSC_EXCEPTION_TYPE, not PETScException to be compatible with the
+// way CHRERRXX (when defined by PETSc) is used.
+// -------------------------------------------------------------
+void
+throw_petsc_exception(int line, const char *file, int ierr)
+{
+  std::ostringstream msg;
+  const char *buf;
+  PetscErrorMessage(ierr, &buf, PETSC_NULL);
+  msg << file << ": " << line << ": "
+      << "PETSc Error (" << ierr << "): " << buf;
+  throw PETSC_EXCEPTION_TYPE(msg.str());
+}
 
 // -------------------------------------------------------------
 //  class PETScException
@@ -46,7 +64,7 @@ PETScException::PETScException(const PETSC_EXCEPTION_TYPE& e)
   std::ostringstream msg;
 
   msg << "PETSc error: " 
-#if PETSC_VERSION_LT(3,5,0)
+#ifdef GRIDPACK_USES_PETSC_EXCEPTION
       << e.msg()
 #else
       << e.what()
@@ -60,7 +78,7 @@ PETScException::PETScException(const PetscErrorCode& ierr, const PETSC_EXCEPTION
 {
   std::ostringstream msg;
   msg << "PETSc error (" << petsc_err_ << "): " 
-#if PETSC_VERSION_LT(3,5,0)
+#if GRIDPACK_USES_PETSC_EXCEPTION
       << e.msg()
 #else
       << e.what()

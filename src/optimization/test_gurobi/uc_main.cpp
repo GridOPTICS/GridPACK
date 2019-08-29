@@ -26,7 +26,7 @@ main(int argc, char **argv)
   // Initialize MPI libraries
   int ierr = MPI_Init(&argc, &argv);
   // Initialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
 
   GA_Initialize();
   int stack = 200000, heap = 200000;

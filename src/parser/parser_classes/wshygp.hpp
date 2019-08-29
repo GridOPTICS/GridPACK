@@ -8,7 +8,7 @@
  *      Author: Bruce Palmer
  */
 #ifndef WSHYGP_HPP
-#define WSIHYGPHPP
+#define WSHYGP_HPP
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "gridpack/utilities/string_utils.hpp"

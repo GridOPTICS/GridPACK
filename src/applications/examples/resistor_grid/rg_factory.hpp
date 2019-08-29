@@ -18,8 +18,6 @@
 #ifndef _rg_factory_h_
 #define _rg_factory_h_
 
-#include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/factory/base_factory.hpp"
 #include "rg_components.hpp"
 
 namespace gridpack {
@@ -37,17 +35,12 @@ class RGFactory
     RGFactory(boost::shared_ptr<RGNetwork> network)
       : gridpack::factory::BaseFactory<RGNetwork>(network)
     {
-      p_network = network;
     }
 
     /**
      * Basic destructor
      */
     ~RGFactory() {}
-
-  private:
-
-    NetworkPtr p_network;
 };
 
 } // resistor_grid

@@ -6,7 +6,7 @@
 /**
  * @file   configuration_test.cpp
  * @author William A. Perkins
- * @date   2014-02-10 08:21:44 d3g096
+ * @date   2017-01-10 07:59:05 d3g096
  * 
  * @brief  A test of Configurable and Configuration
  * 
@@ -120,5 +120,17 @@ main(int argc, char **argv)
   config->enableLogging();
   config->open("configuration_test.xml", world);
 
-  return ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  int lresult = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
+  lresult = (lresult == boost::exit_success ? 0 : 1);
+
+  int gresult;
+  boost::mpi::all_reduce(world, lresult, gresult, std::plus<int>());
+  if (world.rank() == 0) {
+    if (gresult == 0) {
+      std::cout << "No errors detected" << std::endl;
+    } else {
+      std::cout << "failure detected" << std::endl;
+    }
+  }
+  return gresult;
 }

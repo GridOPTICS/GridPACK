@@ -19,7 +19,9 @@
 #define _dsf_app_module_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "dsf_factory_module.hpp"
+#include "gridpack/configuration/configuration.hpp"
+#include "gridpack/serial_io/serial_io.hpp"
+#include "dsf_factory.hpp"
 
 
 namespace gridpack {
@@ -83,6 +85,11 @@ class DSFullApp
     void initialize();
 
     /**
+     * Reinitialize calculation from data collections
+     */
+    void reload();
+
+    /**
      * Execute the time integration portion of the application
      */
     void solve(gridpack::dynamic_simulation::DSFullBranch::Event fault);
@@ -102,8 +109,16 @@ class DSFullApp
 
     /**
      * Read in generators that should be monitored during simulation
+     * @param filename set filename from calling program instead of input
+     *        deck
      */
     void setGeneratorWatch();
+    void setGeneratorWatch(const char *filename);
+
+    /**
+     * Read in loads that should be monitored during simulation
+     */
+    void setLoadWatch();
 
     /**
      * Redirect output from standard out
@@ -123,6 +138,34 @@ class DSFullApp
      * Check if system is secure
      */
     int isSecure();
+
+    /**
+     * Save watch series
+     * @param flag if true, save time series data
+     */
+    void saveTimeSeries(bool flag);
+
+    /**
+     * Return global map of timer series values
+     * @return map of time series indices (local to global)
+     */
+    std::vector<int> getTimeSeriesMap();
+
+    /**
+     * Return vector of time series data for watched generators
+     * @return vector of time series for generators on this processor
+     */
+    std::vector<std::vector<double> > getGeneratorTimeSeries();
+
+    /**
+     * Return a list of original bus IDs and tags for all monitored
+     * generators
+     * @param bus_ids list of original bus indices for monitored generators
+     * @param gen_ids list of tags for monitored generators
+     */
+    void getListWatchedGenerators(std::vector<int> &bus_ids,
+        std::vector<std::string> &gen_ids);
+
   private:
     /**
      * Utility function to convert faults that are in event list into
@@ -141,6 +184,23 @@ class DSFullApp
      * Close file contain generator watch results
      */
     void closeGeneratorWatchFile();
+
+    /**
+     * Open file (specified in input deck) to write load results to.
+     * Data from loads specified in input deck will be
+     * written to this file at specified time intervals
+     */
+    void openLoadWatchFile();
+
+    /**
+     * Close file contain generator watch results
+     */
+    void closeLoadWatchFile();
+
+    /**
+     * Save time series data for watched generators
+     */
+    void saveTimeStep();
 
     std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> p_faults;
 
@@ -173,26 +233,63 @@ class DSFullApp
     // pointer to configuration module
     gridpack::utility::Configuration *p_config;
 
+    // file name for generator watch file
+    std::string p_gen_watch_file;
+
+    // flag indicating whether or not to use application supplied generator
+    // watch file name or name from input deck
+    bool p_internal_watch_file_name;
+
+    // flag indicating whether or not generators to be monitored have
+    // already been read in
+    bool p_generators_read_in;
 
     // Flag indicating that generators are to be monitored
     bool p_generatorWatch;
 
     // Frequency to write out generator watch results
-    int p_watchFrequency;
+    int p_generatorWatchFrequency;
 
-    // bus indices of generators that are being monitored
+    // local bus indices of generators that are being monitored
     std::vector<int> p_gen_buses;
 
-    // tags of generators that are being monitored
-    std::vector<std::string> p_tags;
+    // IDs of generators that are being monitored
+    std::vector<std::string> p_gen_ids;
+
+    // Global indices of buses that own monitored generators
+    std::vector<int> p_watch_bus_ids;
+
+    // Tags of generators that are being monitors
+    std::vector<std::string> p_watch_gen_ids;
 
     // pointer to bus IO module that is used for generator results
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSFullNetwork> >
       p_generatorIO;
 
+    // Flag indicating that loads are to be monitored
+    bool p_loadWatch;
+
+    // Frequency to write out load watch results
+    int p_loadWatchFrequency;
+
+    // bus indices of loads that are being monitored
+    std::vector<int> p_load_buses;
+
+    // pointer to bus IO module that is used for load results
+    boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSFullNetwork> >
+      p_loadIO;
+
    // Keep track of whether or not systsem is secure
    int p_insecureAt;
 
+   // Global list of all generators that are being watched
+   std::map<std::pair<int,std::string>, int> p_watch_list;
+
+   // Flag to save time series
+   bool p_save_time_series;
+
+   // Vector of times series from watched generators
+   std::vector<std::vector<double> > p_time_series;
 };
 
 } // dynamic simulation

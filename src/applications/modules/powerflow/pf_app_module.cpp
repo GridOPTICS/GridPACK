@@ -7,7 +7,7 @@
 /**
  * @file   pf_app.cpp
  * @author Bruce Palmer
- * @date   2015-05-06 12:51:38 d3g096
+ * @date   2018-06-20 11:07:20 d3g096
  * 
  * @brief  
  * 
@@ -15,9 +15,14 @@
  */
 // -------------------------------------------------------------
 
-#include "gridpack/include/gridpack.hpp"
 #include "pf_app_module.hpp"
 #include "pf_factory_module.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/parser/PTI23_parser.hpp"
+#include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/parser/GOSS_parser.hpp"
+#include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
 
 #define USE_REAL_VALUES
@@ -82,17 +87,26 @@ void gridpack::powerflow::PFAppModule::readNetwork(
   }
   // Convergence and iteration parameters
   p_tolerance = cursor->get("tolerance",1.0e-6);
+  p_qlim = cursor->get("qlim",0);
   p_max_iteration = cursor->get("maxIteration",50);
   ComplexType tol;
+  // Phase shift sign
+  double phaseShiftSign = cursor->get("phaseShiftSign",1.0);
 
   int t_pti = timer->createCategory("Powerflow: Network Parser");
   timer->start(t_pti);
   if (filetype == PTI23) {
     gridpack::parser::PTI23_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
   } else if (filetype == PTI33) {
     gridpack::parser::PTI33_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
+    if (phaseShiftSign == -1.0) {
+      parser.changePhaseShiftSign();
+    }
   } else if (filetype == GOSS) {
     gridpack::parser::GOSS_parser<PFNetwork> parser(network);
     parser.parse(filename.c_str());
@@ -135,6 +149,7 @@ void gridpack::powerflow::PFAppModule::initialize()
   int t_load = timer->createCategory("Powerflow: Factory Load");
   timer->start(t_load);
   p_factory->load();
+  // p_factory->dumpData();
   timer->stop(t_load);
 
   // set network components using factory
@@ -159,6 +174,19 @@ void gridpack::powerflow::PFAppModule::initialize()
 }
 
 /**
+ * Reinitialize calculation from data collections
+ */
+void gridpack::powerflow::PFAppModule::reload()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_load = timer->createCategory("Powerflow: Factory Load");
+  timer->start(t_load);
+  p_factory->load();
+  timer->stop(t_load);
+}
+
+/**
  * Execute the iterative solve portion of the application using a
  * hand-coded Newton-Raphson solver
  * @return false if an error was encountered in the solution
@@ -170,6 +198,15 @@ bool gridpack::powerflow::PFAppModule::solve()
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
+  gridpack::ComplexType tol = 2.0*p_tolerance;
+  int iter = 0;
+  bool repeat = true;
+  int int_repeat = 0;
+  while (repeat) {
+    iter = 0;
+    tol = 2.0*p_tolerance;
+    int_repeat ++;
+    printf (" repeat time = %d \n", int_repeat);
 
   // set YBus components so that you can create Y matrix
   int t_fact = timer->createCategory("Powerflow: Factory Operations");
@@ -180,6 +217,7 @@ bool gridpack::powerflow::PFAppModule::solve()
   int t_cmap = timer->createCategory("Powerflow: Create Mappers");
   timer->start(t_cmap);
   p_factory->setMode(YBus); 
+
 #if 0
   gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
 #endif
@@ -187,10 +225,11 @@ bool gridpack::powerflow::PFAppModule::solve()
   int t_mmap = timer->createCategory("Powerflow: Map to Matrix");
   timer->start(t_mmap);
 #if 0
+  gridpack::mapper::FullMatrixMap<PFNetwork> mMap(p_network);
   boost::shared_ptr<gridpack::math::Matrix> Y = mMap.mapToMatrix();
   p_busIO->header("\nY-matrix values\n");
-  Y->print();
-//  Y->save("Ybus.m");
+//  Y->print();
+  Y->save("Ybus.m");
 #endif
   timer->stop(t_mmap);
 
@@ -255,9 +294,6 @@ bool gridpack::powerflow::PFAppModule::solve()
   solver.configure(cursor);
   timer->stop(t_csolv);
 
-  gridpack::ComplexType tol = 2.0*p_tolerance;
-  int iter = 0;
-
   // First iteration
   X->zero(); //might not need to do this
   //p_busIO->header("\nCalling solver\n");
@@ -271,8 +307,13 @@ bool gridpack::powerflow::PFAppModule::solve()
   try {
     solver.solve(*PQ, *X);
   } catch (const gridpack::Exception e) {
+    std::string w(e.what());
+    printf("p[%d] hit exception: %s\n",
+           p_network->communicator().rank(),
+           w.c_str());
     p_busIO->header("Solver failure\n\n");
     timer->stop(t_lsolv);
+
     return false;
   }
   timer->stop(t_lsolv);
@@ -295,6 +336,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     // Exchange data between ghost buses (I don't think we need to exchange data
     // between branches)
     timer->start(t_updt);
+  //  p_factory->checkQlimViolations();
     p_network->updateBuses();
     timer->stop(t_updt);
 
@@ -305,8 +347,8 @@ bool gridpack::powerflow::PFAppModule::solve()
 #else
     vMap.mapToVector(PQ);
 #endif
-//    p_busIO->header("\nnew PQ vector\n");
-//    PQ->print();
+ //   p_busIO->header("\nnew PQ vector at iter %d\n",iter);
+ //   PQ->print();
     timer->stop(t_vmap);
     timer->start(t_mmap);
     p_factory->setMode(Jacobian);
@@ -327,8 +369,13 @@ bool gridpack::powerflow::PFAppModule::solve()
     try {
       solver.solve(*PQ, *X);
     } catch (const gridpack::Exception e) {
+      std::string w(e.what());
+      printf("p[%d] hit exception: %s\n",
+             p_network->communicator().rank(),
+             w.c_str());
       p_busIO->header("Solver failure\n\n");
       timer->stop(t_lsolv);
+      timer->stop(t_total);
       return false;
     }
     timer->stop(t_lsolv);
@@ -340,7 +387,15 @@ bool gridpack::powerflow::PFAppModule::solve()
   }
 
   if (iter >= p_max_iteration) ret = false;
-
+  if (p_qlim == 0) {
+    repeat = false;
+  } else {
+    if (p_factory->checkQlimViolations()) {
+     repeat =false;
+    } else {
+     printf ("There are Qlim violations at iter =%d\n", iter);
+    }
+  }
   // Push final result back onto buses
   timer->start(t_bmap);
   p_factory->setMode(RHS);
@@ -352,8 +407,10 @@ bool gridpack::powerflow::PFAppModule::solve()
   timer->start(t_updt);
   p_network->updateBuses();
   timer->stop(t_updt);
-  timer->stop(t_total);
+  }
+    timer->stop(t_total);
   return ret;
+
 }
 /**
  * Execute the iterative solve portion of the application using a library
@@ -430,11 +487,16 @@ void gridpack::powerflow::PFAppModule::write()
   p_branchIO->header("\n        Bus 1       Bus 2   CKT         P"
                   "                    Q\n");
   p_branchIO->write();
+  //p_branchIO->write("record");
 
 
+  p_busIO->header("\n   Generator Power\n");
+  p_busIO->header("\n   Bus Number  GenID        Pgen              Qgen\n");
+  p_busIO->write("power");
   p_busIO->header("\n   Bus Voltages and Phase Angles\n");
   p_busIO->header("\n   Bus Number      Phase Angle      Voltage Magnitude\n");
   p_busIO->write();
+  //p_busIO->write("record");
   timer->stop(t_write);
   timer->stop(t_total);
 }
@@ -453,6 +515,20 @@ void gridpack::powerflow::PFAppModule::writeBus(const char *signal)
   timer->stop(t_total);
 }
 
+void gridpack::powerflow::PFAppModule::writeCABus()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  p_busIO->write("ca");
+//  p_busIO->write(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
 void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
 {
   gridpack::utility::CoarseTimer *timer =
@@ -465,6 +541,56 @@ void gridpack::powerflow::PFAppModule::writeBranch(const char *signal)
   p_branchIO->write(signal);
   timer->stop(t_write);
   timer->stop(t_total);
+}
+
+void gridpack::powerflow::PFAppModule::writeCABranch()
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  p_branchIO->write("flow");
+  timer->stop(t_write);
+  timer->stop(t_total);
+}
+
+std::vector<std::string> gridpack::powerflow::PFAppModule::writeBusString(
+    const char *signal)
+{
+  std::vector<std::string> ret;
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  ret = p_busIO->writeStrings(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+  return ret;
+}
+
+std::vector<std::string> gridpack::powerflow::PFAppModule::writeBranchString(
+    const char *signal)
+{
+  std::vector<std::string> ret;
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Contingency: Total Application");
+  timer->start(t_total);
+  int t_write = timer->createCategory("Contingency: Write Results");
+  timer->start(t_write);
+  ret = p_branchIO->writeStrings(signal);
+  timer->stop(t_write);
+  timer->stop(t_total);
+  return ret;
+}
+
+void gridpack::powerflow::PFAppModule::writeHeader(const char *msg)
+{
+  p_busIO->header(msg);
 }
 
 /**
@@ -562,6 +688,7 @@ bool gridpack::powerflow::PFAppModule::setContingency(
 bool gridpack::powerflow::PFAppModule::unSetContingency(
     gridpack::powerflow::Contingency &event)
 {
+  p_factory->clearLoneBus();
   bool ret = true;
   if (event.p_type == Generator) {
     int ngen = event.p_busid.size();
@@ -600,8 +727,17 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
   } else {
     ret = false;
   }
-  p_factory->clearLoneBus();
   return ret;
+}
+
+/**
+ * Set voltage limits on all buses
+ * @param Vmin lower bound on voltages
+ * @param Vmax upper bound on voltages
+ */
+void gridpack::powerflow::PFAppModule::setVoltageLimits(double Vmin, double Vmax)
+{
+  p_factory->setVoltageLimits(Vmin, Vmax);
 }
 
 /**
@@ -612,27 +748,23 @@ bool gridpack::powerflow::PFAppModule::unSetContingency(
  * @param maxV maximum voltage limit
  * @return true if no violations found
  */
-bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
-  double Vmin, double Vmax)
+bool gridpack::powerflow::PFAppModule::checkVoltageViolations()
 {
-  return p_factory->checkVoltageViolations(Vmin,Vmax);
+  return p_factory->checkVoltageViolations();
 }
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations(
- int area,    double Vmin, double Vmax)
+ int area)
 {
-  return p_factory->checkVoltageViolations(area, Vmin,Vmax);
+  return p_factory->checkVoltageViolations(area);
 }
 
 /**
  * Set "ignore" parameter on all buses with violations so that subsequent
  * checks are not counted as violations
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
  */
-void gridpack::powerflow::PFAppModule::ignoreVoltageViolations(double Vmin,
-    double Vmax)
+void gridpack::powerflow::PFAppModule::ignoreVoltageViolations()
 {
-  p_factory->ignoreVoltageViolations(Vmin,Vmax);
+  p_factory->ignoreVoltageViolations();
 }
 
 /**
@@ -657,6 +789,28 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
 bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
   return p_factory->checkLineOverloadViolations(area);
+}
+/**
+ * Check to see if there are any Q limit violations in the network
+ * @param area only check for violations in specified area
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFAppModule::checkQlimViolations()
+{
+  return p_factory->checkQlimViolations();
+}
+bool gridpack::powerflow::PFAppModule::checkQlimViolations(int area)
+{
+  return p_factory->checkQlimViolations(area);
+}
+
+/**
+ * Clear changes that were made for Q limit violations and reset
+ * system to its original state
+ */
+void gridpack::powerflow::PFAppModule::clearQlimViolations()
+{
+  p_factory->clearQlimViolations();
 }
 
 /**

@@ -6,6 +6,7 @@
 
 #include "mpi.h"
 #include <math.h>
+#include <stdio.h>
 #include "gridpack/parallel/communicator.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 

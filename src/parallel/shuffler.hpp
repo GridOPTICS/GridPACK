@@ -130,7 +130,8 @@ public:
       // Don't send messages of zero size. Exchange sizes with all processors
       // first
       //printf("p[%d] Got to 1\n",me);
-      int srcsizes[nprocs], tsizes[nprocs];
+      std::vector<int> srcsizes(nprocs);
+      std::vector<int> tsizes(nprocs);
       for (int i = 0; i<nprocs; i++) {
         if (src == me) {
           srcsizes[i] = tosend[i].size();
@@ -139,7 +140,7 @@ public:
         }
       }
       int ierr;
-      ierr = MPI_Allreduce(srcsizes,tsizes,nprocs,MPI_INT,MPI_SUM,
+      ierr = MPI_Allreduce(&srcsizes[0],&tsizes[0],nprocs,MPI_INT,MPI_SUM,
                            static_cast<MPI_Comm>(comm));
       if (ierr != 0) {
         // FIXME: throw

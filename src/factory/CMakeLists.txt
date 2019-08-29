@@ -10,12 +10,21 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:01:55 d3g096
+# Last Change: 2016-12-05 08:11:45 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_factory
-  base_factory.cpp
-)
+#add_library(gridpack_factory
+#  base_factory.cpp
+#)
+
+# target_link_libraries(gridpack_factory 
+#   gridpack_components 
+#   gridpack_parallel 
+#   gridpack_timer
+#   ${GA_LIBRARIES} 
+#   ${Boost_LIBRARIES} 
+#   ${MPI_CXX_LIBRARIES}
+# )
 
 include_directories(AFTER ${GA_INCLUDE_DIRS})
 
@@ -57,7 +66,7 @@ install(FILES
   DESTINATION include/gridpack/factory
 )
 
-install(TARGETS 
-  gridpack_factory
-  DESTINATION lib
-)
+#install(TARGETS 
+#  gridpack_factory
+#  DESTINATION lib
+#)

@@ -133,6 +133,19 @@ class PFBus
     void resetVoltage(void);
 
     /**
+     * Set voltage limits on bus
+     * @param vmin lower value of voltage
+     * @param vmax upper value of voltage
+     */
+    void setVoltageLimits(double vmin, double vmax);
+
+    /**
+     * Check voltage for violation
+     * @return false if there is a voltage violation
+     */
+    bool checkVoltageViolation(void);
+
+    /**
      * Return the value of the voltage magnitude on this bus
      * @return voltage magnitude
      */
@@ -229,6 +242,12 @@ class PFBus
     bool chkQlim(void);
 
     /**
+     * Clear changes that were made for Q limit violations and reset
+     * bus to its original state
+     */
+    void clearQlim();
+
+    /**
      * Save state variables inside the component to a DataCollection object.
      * This can be used as a way of moving data in a way that is useful for
      * creating output or for copying state data from one network to another.
@@ -299,10 +318,33 @@ class PFBus
     int rhsValues(double *rvals);
 
     /**
+     * Push p_isPV values from exchange buffer to p_isPV variable
+     */
+    void pushIsPV();
+
+    /**
      * Get vector containing generator participation
      * @return vector of generator participation factors
      */
     std::vector<double> getGeneratorParticipation();
+
+    /**
+     * Set value of real power on individual generators
+     * @param tag generator ID
+     * @param value new value of real power
+     * @param data data collection object associated with bus
+     */
+    void setGeneratorRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
+
+    /**
+     * Set value of real power on individual loads
+     * @param tag load ID
+     * @param value new value of real power
+     * @param data data collection object associated with bus
+     */
+    void setLoadRealPower(std::string tag, double value,
+        gridpack::component::DataCollection *data);
 
   private:
     double p_shunt_gs;
@@ -323,18 +365,26 @@ class PFBus
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg, p_pFac;
     std::vector<int> p_gstatus;
+    std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
+    std::vector<double> p_qmax_orig, p_qmin_orig, p_pFac_orig;
     std::vector<double> p_vs;
     std::vector<std::string> p_gid;
     std::vector<double> p_pt;
     std::vector<double> p_pb;
-    double p_pl, p_ql;
+    std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
+    std::vector<int> p_lstatus;
+    std::vector<std::string> p_lid;
     double p_sbase;
     double p_Pinj, p_Qinj;
-    bool p_isPV, p_saveisPV;
+    double p_vmin, p_vmax;
+    bool p_isPV, p_saveisPV, p_save2isPV;
+    bool *p_PV_ptr;
     int p_ngen;
+    int p_nload;
     int p_type;
     int p_area;
+    bool p_original_isolated;
 
     /**
      * Variables that are exchanged between buses
@@ -366,16 +416,19 @@ private:
       & p_ybusr & p_ybusi
       & p_P0 & p_Q0
       & p_angle & p_voltage
-      & p_pg & p_qg & p_pFac
+      & p_pg & p_qg & p_pFac & p_qmin & p_qmax
+      & p_qmin_orig & p_qmax_orig & p_pFac_orig
       & p_gstatus
       & p_vs & p_gid
       & p_pt & p_pb
-      & p_pl & p_ql
+      & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
+      & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
+      & p_vmin & p_vmax
       & p_isPV
       & p_saveisPV
-      & p_ngen & p_type
+      & p_ngen & p_type & p_nload
       & p_area;
   }  
 

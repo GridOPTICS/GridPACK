@@ -5,7 +5,7 @@
  */
 // -----------------------------------------------------------
 /**
- * @file   base_governor_model.hpp
+ * @file   base_governor_model.cpp
  * @author Bruce Palmer
  * @Last modified:   May 18, 2015
  * 
@@ -18,20 +18,19 @@
 #include <iostream>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_governor_model.hpp"
 
 /**
  *  Basic constructor
  */
-gridpack::dynamic_simulation::DSFBaseGovernorModel::DSFBaseGovernorModel(void)
+gridpack::dynamic_simulation::BaseGovernorModel::BaseGovernorModel(void)
 {
 }
 
 /**
  *  Basic destructor
  */
-gridpack::dynamic_simulation::DSFBaseGovernorModel::~DSFBaseGovernorModel(void)
+gridpack::dynamic_simulation::BaseGovernorModel::~BaseGovernorModel(void)
 {
 }
 
@@ -40,9 +39,9 @@ gridpack::dynamic_simulation::DSFBaseGovernorModel::~DSFBaseGovernorModel(void)
  * @param data collection of governor parameters from input files
  * @param index of governor on bus
  * TODO: might want to move this functionality to
- * DSFBaseGovernorModel
+ * BaseGovernorModel
  */
-void gridpack::dynamic_simulation::DSFBaseGovernorModel::load(
+void gridpack::dynamic_simulation::BaseGovernorModel::load(
     boost::shared_ptr<gridpack::component::DataCollection>
     data, int idx)
 {
@@ -54,7 +53,7 @@ void gridpack::dynamic_simulation::DSFBaseGovernorModel::load(
  * @param ang voltage angle
  * @param ts time step 
  */
-void gridpack::dynamic_simulation::DSFBaseGovernorModel::init(
+void gridpack::dynamic_simulation::BaseGovernorModel::init(
     double mag, double ang, double ts)
 {
 }
@@ -64,7 +63,7 @@ void gridpack::dynamic_simulation::DSFBaseGovernorModel::init(
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::DSFBaseGovernorModel::predictor(
+void gridpack::dynamic_simulation::BaseGovernorModel::predictor(
     double t_inc, bool flag)
 {
 }
@@ -74,7 +73,7 @@ void gridpack::dynamic_simulation::DSFBaseGovernorModel::predictor(
  * @param t_inc time step increment
  * @param flag initial step if true
  */
-void gridpack::dynamic_simulation::DSFBaseGovernorModel::corrector(
+void gridpack::dynamic_simulation::BaseGovernorModel::corrector(
     double t_inc, bool flag)
 {
 }
@@ -83,7 +82,7 @@ void gridpack::dynamic_simulation::DSFBaseGovernorModel::corrector(
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power
  */
-void gridpack::dynamic_simulation::DSFBaseGovernorModel::
+void gridpack::dynamic_simulation::BaseGovernorModel::
 setMechanicalPower(double pmech)
 {
 }
@@ -92,7 +91,7 @@ setMechanicalPower(double pmech)
  * Set the rotor speed deviation inside the governor
  * @param delta_o value of the rotor speed deviation
  */
-void gridpack::dynamic_simulation::DSFBaseGovernorModel::
+void gridpack::dynamic_simulation::BaseGovernorModel::
 setRotorSpeedDeviation(double delta_o)
 {
 }
@@ -101,7 +100,7 @@ setRotorSpeedDeviation(double delta_o)
  * Get the value of the mechanical power
  * @return value of mechanical power
  */
-double gridpack::dynamic_simulation::DSFBaseGovernorModel::
+double gridpack::dynamic_simulation::BaseGovernorModel::
 getMechanicalPower()
 {
   return 0.0;
@@ -111,7 +110,7 @@ getMechanicalPower()
  * Get the value of the rotor speed deviation
  * 
  */
-double gridpack::dynamic_simulation::DSFBaseGovernorModel::
+double gridpack::dynamic_simulation::BaseGovernorModel::
 getRotorSpeedDeviation()
 {
   return 0.0;

@@ -18,29 +18,28 @@
 #define _classical_gen_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/include/gridpack.hpp"
 #include "base_generator_model.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
-class DSFClassicalGenerator : public DSFBaseGeneratorModel
+class ClassicalGenerator : public BaseGeneratorModel
 {
   public:
     /**
      * Basic constructor
      */
-    DSFClassicalGenerator();
+    ClassicalGenerator();
 
     /**
      * Basic destructor
      */
-    virtual ~DSFClassicalGenerator();
+    virtual ~ClassicalGenerator();
 
     /**
      * Load parameters from DataCollection object into generator model
      * @param data collection of generator parameters from input files
      * @param index of generator on bus
-     * TODO: might want to move this functionality to DSFBaseGeneratorModel
+     * TODO: might want to move this functionality to BaseGeneratorModel
      */
     void load(boost::shared_ptr<gridpack::component::DataCollection>
         data, int idx);
@@ -117,6 +116,13 @@ class DSFClassicalGenerator : public DSFBaseGeneratorModel
      * Get the roter angle
      */
     double getAngle();
+
+    /**
+     * return a vector containing any generator values that are being
+     * watched
+     * @param vals vector of watched values
+     */
+    void getWatchValues(std::vector<double> &vals);
 
   private:
 

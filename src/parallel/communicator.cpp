@@ -9,13 +9,15 @@
 /**
  * @file   communicator.cpp
  * @author William A. Perkins
- * @date   2015-05-22 09:47:03 d3g096
+ * @date   2019-05-09 07:01:05 d3g096
  * 
  * @brief  
  * 
  * 
  */
 // -------------------------------------------------------------
+
+#include <iostream>
 
 #if USE_PROGRESS_RANKS
 #include <ga-mpi.h>
@@ -33,14 +35,20 @@ namespace parallel {
 class CommunicatorPrivate {
 public:
 
+  /// How many things were created?
+  static int created;
+  /// How many things were destroyed?
+  static int destroyed;
+
   /// Default constructor.
   CommunicatorPrivate(void)
-    : p_handle(GA_Pgroup_get_world())
-  { }
+    : p_handle(GA_Pgroup_get_world()), p_created(false)
+  {
+  }
 
   /// Construct on the processes in the specified communicators
   CommunicatorPrivate(const boost::mpi::communicator& comm)
-    : p_handle()
+    : p_handle(), p_created(true)
   {
     int me(comm.rank()), nprocs(comm.size());
     int gaWrld = GA_Pgroup_get_world();
@@ -50,15 +58,17 @@ public:
     gaSrc[me] = GA_Nodeid();
     boost::mpi::all_reduce(comm, &gaSrc[0], nprocs, &gaDest[0], std::plus<int>());
     p_handle = GA_Pgroup_create(&gaDest[0],nprocs);
-    GA_Pgroup_sync(p_handle);
+    // GA_Pgroup_sync(p_handle);
     GA_Pgroup_set_default(defGrp);
+    created++;
   }
 
   /// Destructor
   ~CommunicatorPrivate(void)
-  { 
-    if (p_handle != GA_Pgroup_get_world()){
+  {
+    if (p_created) {
       GA_Pgroup_destroy(p_handle);
+      destroyed--;
     }
   }
 
@@ -73,12 +83,31 @@ private:
   /// The GA process group handle
   int p_handle;
   
+  /// Was the GA process group created for this instance
+  const bool p_created;
 };
 
+int CommunicatorPrivate::created(0);
+int CommunicatorPrivate::destroyed(0);
 
 // -------------------------------------------------------------
 //  class Communicator
 // -------------------------------------------------------------
+
+// -------------------------------------------------------------
+// Communicator::report
+//
+// Just used to make sure Communicator creation and destruction does
+// not leak memory.
+// -------------------------------------------------------------
+void
+Communicator::report(void)
+{
+  std::cout << "CommunicatorPrivate instances created:   " << CommunicatorPrivate::created
+            << std::endl
+            << "CommunicatorPrivate instances destroyed: " << CommunicatorPrivate::destroyed
+            << std::endl;
+}
 
 // -------------------------------------------------------------
 // Communicator:: constructors / destructor

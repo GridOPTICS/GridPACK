@@ -1,0 +1,37 @@
+Adding new models to the Dynamic Simulation module
+
+The dynamic simulation module is designed to be easily extendible so that new
+models can be added with relatively little work. To add a new device requires
+the user to
+
+1) Identify the interface that corresponds to the device. The interfaces are
+   defined in the files located in the base_classes directory. The available
+   interfaces include base_generator_model, base_governor_model, 
+   base_exciter_model, base_relay_model, and base_load_model. The new device
+   model should inherit from one of these classes. The virtual functions in
+   class should be overwritten in the device impelementation. Examples of how
+   to do this are available in the existing implementations in the model_classes
+   directory.
+
+2) The model needs to be added to the appropriate factory.
+   Generators: add new generator class to the createGeneratorModel method in
+               the generator_factory.cpp file
+   Governors: add new governor class to the createGovernorModel method in
+              the generator_factory.cpp file
+   Exciters: add new exciter class to the createExciterModel method in the
+             generator_factory.cpp file
+   Relays: add new relay class to the createRelayModel method in the
+           relay_factory.cpp file
+   Loads: add new load model to the createLoadModel method in the
+          load_factory.cpp file
+
+3) Unfortunately, the parser for .dyr files is not complete so not all device
+   models are being parsed. If you need parameters for a new device, you can
+   contact the developers at gridpack.account@pnnl.gov and we will try and
+   get a parser to you as soon as possible. If you are more ambitious, you can
+   try adding the new parser yourself. See the README documentation in the
+   src/parser directory for information on how to do this.
+
+If you add a new device and would like to include it in the repository, feel
+free to contact us at the above address and we will help you add it to the
+existing suite of GridPACK models.

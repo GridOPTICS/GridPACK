@@ -19,7 +19,7 @@
 #define _hw_factory_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include "gridpack/factory/base_factory.hpp"
+#include "gridpack/include/gridpack.hpp"
 #include "hw_components.hpp"
 
 namespace gridpack {
@@ -37,17 +37,12 @@ class HWFactory
     HWFactory(boost::shared_ptr<HWNetwork> network)
       : gridpack::factory::BaseFactory<HWNetwork>(network)
     {
-      p_network = network;
     }
 
     /**
      * Basic destructor
      */
     ~HWFactory() {}
-
-  private:
-
-    NetworkPtr p_network;
 };
 
 } // hello_world

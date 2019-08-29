@@ -8,7 +8,7 @@
 /**
  * @file   vector_construction_test.cpp
  * @author William A. Perkins
- * @date   2015-08-12 12:39:22 d3g096
+ * @date   2016-12-16 09:29:07 d3g096
  * 
  * @brief  Unit tests for gridpack::math::Vector
  * 
@@ -19,14 +19,9 @@
 #include <iostream>
 #include <iterator>
 #include <boost/scoped_ptr.hpp>
-#include "gridpack/utilities/exception.hpp"
-#include "gridpack/parallel/parallel.hpp"
-#include "math.hpp"
 #include "vector.hpp"
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#include <boost/test/included/unit_test.hpp>
+#include "test_main.cpp"
 
 static const int local_size(5);
 static const double delta(0.0001);
@@ -618,23 +613,3 @@ BOOST_AUTO_TEST_CASE( load_save )
 BOOST_AUTO_TEST_SUITE_END()
 
 
-// -------------------------------------------------------------
-// init_function
-// -------------------------------------------------------------
-bool init_function()
-{
-  return true;
-}
-
-// -------------------------------------------------------------
-//  Main Program
-// -------------------------------------------------------------
-int
-main(int argc, char **argv)
-{
-  gridpack::parallel::Environment env(argc, argv);
-  gridpack::math::Initialize();
-  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  gridpack::math::Finalize();
-  return result;
-}

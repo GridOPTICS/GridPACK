@@ -10,7 +10,7 @@
 /**
  * @file   petsc_ga_matrix.cpp
  * @author William A. Perkins
- * @date   2015-05-20 14:49:22 d3g096
+ * @date   2019-08-01 08:51:08 d3g096
  * 
  * @brief  
  * 
@@ -23,10 +23,9 @@
 #include "math.hpp"
 #include "gridpack/parallel/parallel.hpp"
 #include "petsc/ga_matrix.hpp"
+#include "petsc/petsc_exception.hpp"
 
-#define BOOST_TEST_NO_MAIN
-#define BOOST_TEST_ALTERNATIVE_INIT_API
-#include <boost/test/included/unit_test.hpp>
+#include "test_main.cpp"
 
 static const PetscInt local_size(5);
 
@@ -38,16 +37,16 @@ fill_pattern(Mat A, InsertMode addv)
   PetscScalar x(0.0);
   PetscInt lo, hi;
 
-  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRXX(ierr);
+  ierr = MatGetOwnershipRange(A, &lo, &hi);  CHKERRQ(ierr);
   for (int i = lo; i < hi; ++i) {
     for (int j = lo; j < hi; ++j) {
-      ierr = MatSetValues(A, 1, &i, 1, &j, &x, addv);  CHKERRXX(ierr);
+      ierr = MatSetValues(A, 1, &i, 1, &j, &x, addv);  CHKERRQ(ierr);
       x += 1.0;
     }
   }
 
-  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
-  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRXX(ierr);
+  ierr = MatAssemblyBegin(A, MAT_FINAL_ASSEMBLY);  CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(A, MAT_FINAL_ASSEMBLY);  CHKERRQ(ierr);
   return ierr;
 }  
 
@@ -354,25 +353,6 @@ BOOST_AUTO_TEST_CASE(Transpose)
 
 BOOST_AUTO_TEST_SUITE_END()
 
-// -------------------------------------------------------------
-// init_function
-// -------------------------------------------------------------
-bool init_function()
-{
-  return true;
-}
 
-// -------------------------------------------------------------
-//  Main Program
-// -------------------------------------------------------------
-int
-main(int argc, char **argv)
-{
-  gridpack::parallel::Environment env(argc, argv);
-  gridpack::parallel::Communicator world;
-  gridpack::math::Initialize();
-  int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
-  gridpack::math::Finalize();
-  return result;
-}
+
 

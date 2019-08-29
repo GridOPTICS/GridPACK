@@ -873,8 +873,6 @@ void run (const int &me, const int &nprocs)
       im = network->getBus(i)->matrixGetRowIndex(0);
       nvals = network->getBus(i)->matrixNumValues();
       idx = network->getGlobalBusIndex(i);
-      int rows[nvals];
-      int cols[nvals];
       gridpack::ComplexType *values;
       values = new gridpack::ComplexType[nvals];
       icnt = 0;
@@ -1128,7 +1126,7 @@ main (int argc, char **argv) {
   MA_init(C_DBL, stack, heap);
 
   // Initialize Math libraries
-  gridpack::math::Initialize();
+  gridpack::math::Initialize(&argc,&argv);
   gridpack::parallel::Communicator comm;
   MPI_Comm world = static_cast<MPI_Comm>(comm);
 

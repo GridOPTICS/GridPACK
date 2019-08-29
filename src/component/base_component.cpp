@@ -432,7 +432,7 @@ void GenMatVecInterface::slabSetValues(RealType **values)
  * Simple constructor
  */
 BaseComponent::BaseComponent(void)
-  : p_XCBuf(NULL), p_XCBufSize(0), p_mode(0)
+  : p_XCBuf(NULL), p_XCBufSize(0), p_mode(0), p_rank(-1)
 {
 }
 
@@ -546,6 +546,25 @@ void BaseComponent::saveData(
   // This is a no-op that can be overridden by the user to store internal state
   // variables in the data collection object
 }
+
+/**
+ * Set rank holding the component
+ * @param rank processor rank holding the component
+ */
+void BaseComponent::setRank(int rank)
+{
+  p_rank = rank;
+}
+
+/**
+ * Get rank holding the component
+ * @return processor rank holding the component
+ */
+int BaseComponent::getRank(void) const
+{
+  return p_rank;
+}
+
 
 // Base implementation for a bus object. Provides a mechanism for the bus to
 // provide a list of the branches that are directly connected to it as well as a
@@ -763,6 +782,17 @@ void BaseBranchComponent::clearBuses(void)
   p_bus2.reset();
 }
 
+
+/**
+ * Set global index for branch
+ * @param idx global index of branch
+ */
+void BaseBranchComponent::setGlobalIndex(int idx)
+{
+  p_globalIndex = idx;
+}
+
+
 /**
  * Set original index for bus 1
  * @param idx original index for bus 1 (assigned from input * file)
@@ -833,6 +863,14 @@ int BaseBranchComponent::getBus1GlobalIndex(void) const
 int BaseBranchComponent::getBus2GlobalIndex(void) const
 {
   return p_globalBus2Index;
+}
+
+/**
+ * Get global index for branch
+ */
+int BaseBranchComponent::getGlobalIndex(void) const
+{
+  return p_globalIndex;
 }
 
 }  // component

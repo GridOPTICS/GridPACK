@@ -88,8 +88,8 @@ main(int argc, char **argv)
         if (vec[j].ival == j+ichk &&
             vec[j].dval == static_cast<double>(j+ichk+1)) ok = true;
         if (!ok && j==0) {
-          printf("p[%d] Mistake found at (vec[%d])[%d]. Expected ival: %d dval: %f"
-              " Actual ival: %d dval: %f\n",me,i,j,j+ichk,vec[j].ival,
+          printf("p[%d] Mistake found at (vec[%d])[%d]. Expected ival: %d dval: %d"
+              " Actual ival: %f dval: %f\n",me,i,j,j+ichk,vec[j].ival,
               static_cast<double>(j+ichk+1),vec[j].dval);
           chk = 0;
         }

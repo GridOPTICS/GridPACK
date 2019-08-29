@@ -4,15 +4,19 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [name]"
+usage="$0 [-d|-r] [-s] [-G] [-B] [name]"
 
-set -- `getopt d $*`
+options=`getopt rdsGB $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
 fi
+set -- "$options"
 
 build="RelWithDebInfo"
+shared="FALSE"
+buildGA="FALSE"
+buildBoost="FALSE"
 for o in $*; do
     case $o in
         -d)
@@ -21,6 +25,16 @@ for o in $*; do
             ;;
         -r)
             build="Release"
+            shift
+            ;;
+        -s)
+            shared="ON"
+            shift
+            ;;
+        -G) buildGA="ON"
+            shift
+            ;;
+        -B) buildBoost="ON"
             shift
             ;;
         --)
@@ -46,145 +60,137 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
+        -D BUILD_GA:BOOL=$buildGA \
+        -D BUILD_BOOST:BOOL=$buildBoost \
+        -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
 "
 
 if [ $host == "flophouse" ]; then
 
-    # RHEL 5 with GNU 4.8 compilers built from scratch
+    # RHEL 7 with GNU 4.8 compilers
+    # The following are installed as packages:
+    #   boost.x86_64                         1.53.0-26.el7
+    #   boost-openmpi.x86_64                 1.53.0-26.el7
+    #   (lots of other boost packages)
+    #   
 
-    prefix="/net/flophouse/files0/perksoft/linux64/openmpi48"
+    prefix="/net/flophouse/files0/perksoft/linux64"
     PATH="${prefix}/bin:${PATH}"
     export PATH
 
-    CC="$prefix/bin/gcc"
+    CC="/usr/bin/gcc"
     export CC
-    CXX="$prefix/bin/g++"
+    CXX="/usr/bin/g++"
     export CXX
-    CFLAGS="-pthread -Wall"
-    export CFLAGS
-    CXXFLAGS="-pthread -Wall"
-    export CXXFLAGS
+
+    if [ "$shared"x = "ON"x ]; then
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel7-gnu48-real-opt-shared"
+    else
+        # pdir="/net/flophouse/files0/perksoft/petsc-3.4.5"
+        # parch="rhel7-real-c++-static"
+        # parch="rhel7-real-c-static"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel7-gnu48-real-opt"
+        parch="rhel7-gnu48-complex-opt"
+        parch="rhel7-gnu48-complex-opt-c"
+    fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
 
-    cmake -Wdev --debug-trycompile \
-        -D GA_DIR:STRING="$prefix/ga-5-4" \
+    cmake3 -Wdev --debug-trycompile \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
-        -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.7.2" \
-        -D PETSC_ARCH:STRING='linux-gnu48-real-opt' \
-        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
-        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D USE_CPLEX:BOOL=ON \
+        -D GA_DIR:PATH="$prefix/ga-c++" \
+        -D BOOST_ROOT:STRING="/usr" \
+        -D PETSC_DIR:STRING="$pdir" \
+        -D PETSC_ARCH:STRING="$parch" \
+        -D MPI_CXX_COMPILER:STRING="mpicxx" \
+        -D MPI_C_COMPILER:STRING="mpicc" \
+        -D MPIEXEC:STRING="mpiexec" \
+        -D USE_CPLEX:BOOL=OFF \
         -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D USE_GLPK:BOOL=ON \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
-elif [ $host == "flophouse44" ]; then
+elif [ $host == "briareus" ]; then
 
-    # RHEL 5 with stock GNU 4.4 compilers
+    # Using GNU 4.9 and OpenMPI modules
 
-    prefix="/net/flophouse/files0/perksoft/linux64/openmpi44"
+    prefix="/files0/gridpack.gnu"
     PATH="${prefix}/bin:${PATH}"
     export PATH
 
-    CC="gcc44"
+    CC="/share/apps/gcc/4.9.2/bin/gcc"
     export CC
-    CXX="g++44"
+    CXX="/share/apps/gcc/4.9.2/bin/g++"
     export CXX
-    CFLAGS="-pthread -Wall"
-    export CFLAGS
-    CXXFLAGS="-pthread -Wall"
-    export CXXFLAGS
 
     cmake -Wdev --debug-trycompile \
-        -D GA_DIR:STRING="$prefix" \
         -D USE_PROGRESS_RANKS:BOOL=OFF \
+        -D GA_DIR:PATH="$prefix" \
         -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="/net/flophouse/files0/perksoft/petsc-3.4.3" \
-        -D PETSC_ARCH:STRING='arch-linux2-g++44-opt' \
-        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
-        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="4" \
+        -D PETSC_DIR:STRING="/files0/petsc-3.7.5" \
+        -D PETSC_ARCH:STRING="gridpack-gnu-openmpi-real" \
+        -D MPI_CXX_COMPILER:STRING="mpicxx" \
+        -D MPI_C_COMPILER:STRING="mpicc" \
+        -D MPIEXEC:STRING="mpiexec" \
+        -D USE_CPLEX:BOOL=OFF \
+        -D USE_GLPK:BOOL=OFF \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D USE_GLPK:BOOL=ON \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix" \
         $common_flags ..
-    
-elif [ $host == "pe10900" ]; then
 
-    # Mac using GNU 4.8 and OpenMPI -- avoid using the system
-    # compilers and MPI wrappers -- using MacPorts
+elif [ $host == "WE32673" ]; then
 
-    CC=/opt/local/bin/gcc
+    # Mac using CLang 6.0 compilers and MPICH via MacPorts
+    # The following MacPorts packages are installed:
+    #   clang-6.0 @6.0.1_0+analyzer+libstdcxx
+    #   mpich-clang60 @3.2.1_4+gcc7
+    #   boost @1.66.0_3+clang60+mpich+no_single+no_static+python27
+    #   glpk @4.65_0
+    #   doxygen @1.8.13_2+qt4+wizard
+    # Global Arrays 5.7 built by hand
+    # PETSc 3.8.4 w/ ParMETIS, SuperLU, etc., built by hand
+    # Need to make sure the compiler set and MPI are selected, i.e.
+    #   sudo port select clang mp-clang-6.0
+    #   sudo port select mpi mpich-clang60-fortran
+    # Cannot use PETSc < 3.8.0
+
+    CC=/opt/local/bin/clang
     export CC
-    CXX=/opt/local/bin/g++
+    CXX=/opt/local/bin/clang++
     export CXX
 
-    prefix="/net/flophouse/files0/perksoft/macosx"
-    cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261/"
+    prefix="/Users/d3g096/Projects/GridPACK"
 
+    if [ "$shared"x = "ON"x ]; then
+        pdir="$prefix/petsc-3.8.4"
+        parch="arch-macosx-clang-real-shared-c"
+    else
+        pdir="$prefix/petsc-3.8.4"
+        parch="arch-macosx-clang-real-opt"
+    fi
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
-        -D GA_EXTRA_LIBS:STRING="-lblas" \
-        -D BOOST_ROOT:STRING='/opt/local' \
-        -D PETSC_DIR:STRING="$prefix/../petsc-3.7.2" \
-        -D PETSC_ARCH:STRING='arch-macosx-complex-opt' \
+        -D BOOST_ROOT:STRING="/opt/local" \
+        -D PETSC_DIR:PATH="$pdir" \
+        -D PETSC_ARCH:STRING="$parch" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D USE_CPLEX:BOOL=ON \
-        -D CPLEX_ROOT_DIR:PATH="$cplexroot" \
-        -D USE_GLPK:BOOL=OFF \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
+        -D USE_CPLEX:BOOL=OFF \
+        -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
-
-elif [ $host == "pe10900intel" ]; then
-
-    # CMake really, really likes to use the wrong compiler. This
-    # system uses MacPorts to supply a GNU 4.8 compiler. In order to
-    # get GridPACK to build with the Intel compilers, the MacPorts
-    # compilers need to be avoided. Do this as root:
-    # 
-    # port select gcc none
-
-    prefix="/opt/intel/openmpi"
-    PATH="$prefix/bin:$PATH" 
-    RPATH="$prefix/lib:/opt/intel/lib"
-    DYLD_LIBRARY_PATH="$RPATH"
-
-    CC=icc
-    CXX=icpc
-    CFLAGS="-static-intel"
-    CXXFLAGS="-static-intel"
-
-    export PATH CC CXX CFLAGS CXXFLAGS RPATH DYLD_LIBRARY_PATH
-
-    cmake -Wdev --debug-trycompile \
-        -D GA_DIR:STRING="$prefix" \
-        -D BOOST_ROOT:STRING="$prefix" \
-        -D PETSC_DIR:STRING="$prefix/petsc-3.6.0" \
-        -D PETSC_ARCH:STRING="arch-macosx-complex-opt" \
-        -D MPI_CXX_COMPILER:STRING="$prefix/bin/mpicxx" \
-        -D MPI_C_COMPILER:STRING="$prefix/bin/mpicc" \
-        -D MPIEXEC:STRING="$prefix/bin/mpiexec" \
-        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
-        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D USE_GLPK:BOOL=OFF \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
-        -D CMAKE_BUILD_TYPE:STRING=RelWithDebInfo \
-        -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
-        ..
-
 
 elif [ $host == "olympus.local" ]; then
 
@@ -199,6 +205,7 @@ elif [ $host == "olympus.local" ]; then
 	-D MPI_C_COMPILER:STRING='mpicc' \
 	-D MPIEXEC:STRING='mpiexec' \
 	$common_flags ..
+
 
 elif [ $host == "constance" ]; then
 
@@ -222,24 +229,82 @@ elif [ $host == "constance" ]; then
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
 	$common_flags ..
 
+elif [ $host == "tlaloc" ]; then
+
+    # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
+    # Boost 1.55, GA 5.6.2, and PETSc 3.6.4 built by hand.  Available
+    # Boost, GA, and PETSc packages were either too old or installed
+    # in such a way as to be unrecognizable.
+
+    prefix="/file0/perksoft"
+    if [ "$shared"x = "ON"x ]; then
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel6-complex-c-shared"
+    else
+        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        parch="rhel6-complex-c-static"
+    fi
+
+    cmake3 $options \
+          -D GA_DIR:PATH="${prefix}/ga-c++" \
+          -D BOOST_ROOT:PATH="${prefix}" \
+          -D USE_PROGRESS_RANKS:BOOL=OFF \
+          -D PETSC_DIR:PATH="$pdir" \
+          -D PETSC_ARCH:STRING="$parch" \
+          -D MPI_CXX_COMPILER:STRING="mpicxx" \
+          -D MPI_C_COMPILER:STRING="mpicc" \
+          -D MPIEXEC:STRING="mpiexec" \
+          -D USE_GLPK:BOOL=OFF \
+          -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+          -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+          -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
+          $common_flags ..
+
 elif [ $host == "gridpackvm" ]; then
 
     prefix="$HOME/gridpack"
-    root="/opt/ibm/ILOG/CPLEX_Studio1261/"
-    cmake -Wno-dev --debug-try-compile \
-	-D PETSC_DIR:STRING="$prefix/petsc-3.6.2" \
-	-D PETSC_ARCH:STRING="arch-linux-real-opt" \
-	-D GA_DIR:STRING="$prefix" \
+
+    CC=gcc
+    CXX=g++
+    export CC CXX
+
+    cmake $options \
+	-D PETSC_DIR:STRING="/usr/lib/petsc" \
+	-D PARMETIS_DIR:PATH="/usr" \
+	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
 	-D MPI_CXX_COMPILER:STRING="mpicxx" \
 	-D MPI_C_COMPILER:STRING="mpicc" \
 	-D MPIEXEC:STRING="mpiexec" \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
-        -D USE_GLPK:BOOL=OFF \
-        -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D USE_CPLEX:BOOL=ON \
-        -D CPLEX_ROOT_DIR:PATH="$root" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/usr" \
+        -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
+	$common_flags ..
+
+elif [ $host == "debianvm" ]; then
+
+    prefix="$HOME/gridpack"
+
+    CC=gcc
+    CXX=g++
+    CFLAGS=-pthread
+    CXXFLAGS=-pthread
+    export CC CXX CFLAGS CXXFLAGS
+
+    cmake $options \
+	-D PETSC_DIR:STRING="/usr/lib/petsc" \
+	-D PARMETIS_DIR:PATH="/usr" \
+	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
+	-D MPI_CXX_COMPILER:STRING="mpicxx" \
+	-D MPI_C_COMPILER:STRING="mpicc" \
+	-D MPIEXEC:STRING="mpiexec" \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=30 \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/usr" \
+        -D BUILD_SHARED_LIBS:BOOL=OFF \
+        -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
 	$common_flags ..
 
 else

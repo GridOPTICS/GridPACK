@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2015-08-14 09:13:54 d3g096
+ * @date   2019-05-08 14:31:20 d3g096
  * 
  * @brief  
  * 
@@ -111,9 +111,9 @@ public:
   }
 
   /// Make a new instance from an existing PETSc matrix
-  PETScMatrixImplementation(Mat& m, const bool& copyMat = true)
+  PETScMatrixImplementation(Mat& m, const bool& copyMat = true, const bool& destroyMat = false)
     : MatrixImplementation<T, I>(PetscMatrixWrapper::getCommunicator(m)),
-      p_mwrap(new PetscMatrixWrapper(m, copyMat))
+      p_mwrap(new PetscMatrixWrapper(m, copyMat, destroyMat))
   {
   }
 
@@ -135,10 +135,18 @@ public:
     Mat mtmp;
     PETScMatrixImplementation *result;
     try {
-      PetscInt grow(global_rows > 0 ? global_rows*elementSize : PETSC_DETERMINE);
-      PetscInt gcol(global_cols > 0 ? global_cols*elementSize : PETSC_DETERMINE);
-      PetscInt lrow(local_rows > 0 ? local_rows*elementSize : PETSC_DECIDE);
-      PetscInt lcol(local_cols > 0 ? local_cols*elementSize : PETSC_DECIDE);
+      PetscInt grow(global_rows > 0 ? global_rows : PETSC_DETERMINE);
+      PetscInt gcol(global_cols > 0 ? global_cols : PETSC_DETERMINE);
+      PetscInt lrow(local_rows > 0 ? local_rows : PETSC_DECIDE);
+      PetscInt lcol(local_cols > 0 ? local_cols : PETSC_DECIDE);
+
+      ierr = PetscSplitOwnership(comm, &lrow, &grow); CHKERRXX(ierr);
+      ierr = PetscSplitOwnership(comm, &lcol, &gcol); CHKERRXX(ierr);
+
+      grow *= elementSize;
+      lrow *= elementSize;
+      gcol *= elementSize;
+      lcol *= elementSize;
 
       ierr = MatCreate(comm, &mtmp); CHKERRXX(ierr);
       ierr = MatSetSizes(mtmp, lrow, lcol, grow, gcol); CHKERRXX(ierr);
@@ -506,9 +514,6 @@ protected:
       ierr = ISSetPermutation(irowperm); CHKERRXX(ierr);
       ierr = ISInvertPermutation(irowperm, PETSC_DECIDE, &irowinvert); CHKERRXX(ierr);
       ierr = ISDestroy(&irowperm); CHKERRXX(ierr);
-
-      ierr = ISCreateGeneral(comm, nrow, &ridx[0], 
-                             PETSC_COPY_VALUES, &irow); CHKERRXX(ierr);
 
       ierr = ISCreateStride(comm, ncol, 0, 1, &icol); CHKERRXX(ierr);
       

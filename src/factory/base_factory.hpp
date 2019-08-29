@@ -133,6 +133,8 @@ class BaseFactory {
         gridpack::component::BaseBusComponent *bus2 =
           dynamic_cast<gridpack::component::BaseBusComponent*>
           (p_network->getBranch(i)->getBus2().get());
+        p_network->getBranch(i)->setGlobalIndex(
+            p_network->getGlobalBranchIndex(i));
         p_network->getBranch(i)->setBus1OriginalIndex(
             bus1->getOriginalIndex());
         p_network->getBranch(i)->setBus2OriginalIndex(
@@ -181,7 +183,7 @@ class BaseFactory {
       if (!GA_Allocate(g_bus)) {
         char buf[256];
         sprintf(buf,"BaseFactory::setComponents: Unable to allocate distributed array for indices");
-        printf(buf);
+        printf("%s",buf);
         throw gridpack::Exception(buf);
       }
       GA_Zero(g_bus);
@@ -255,11 +257,13 @@ class BaseFactory {
       timer->start(t_nbus);
       timer->stop(t_nbus);
       int i;
+      int rank = p_network->communicator().rank();
 
       // Invoke load method on all bus objects
       int t_load1 = timer->createCategory("Factory:load:bus");
       timer->start(t_load1);
       for (i=0; i<p_numBuses; i++) {
+        p_network->getBus(i)->setRank(rank);
         p_network->getBus(i)->load(p_network->getBusData(i));
         if (p_network->getBus(i)->getReferenceBus())
           p_network->setReferenceBus(i);
@@ -270,6 +274,7 @@ class BaseFactory {
       int t_load2 = timer->createCategory("Factory:load:branch");
       timer->start(t_load2);
       for (i=0; i<p_numBranches; i++) {
+        p_network->getBranch(i)->setRank(rank);
         p_network->getBranch(i)->load(p_network->getBranchData(i));
       }
       timer->stop(t_load2);
@@ -414,6 +419,31 @@ class BaseFactory {
       strcpy(cplus,"+");
       GA_Pgroup_igop(grp,&iok,1,cplus);
       if (iok == nprocs) {
+        return true;
+      } else {
+        return false;
+      }
+    }
+
+    /**
+     * A convenience function that checks to see if something is true on at
+     * least one processor
+     * @param flag boolean flag on each processor
+     * @return true if flag is true on at least one processor, false otherwise
+     */
+    bool checkTrueSomewhere(bool flag) {
+      int iok;
+      if (flag) {
+        iok = 1;
+      } else {
+        iok = 0;
+      }
+      int grp = p_network->communicator().getGroup();
+      int nprocs = GA_Pgroup_nnodes(grp);
+      char cplus[2];
+      strcpy(cplus,"+");
+      GA_Pgroup_igop(grp,&iok,1,cplus);
+      if (iok > 0) {
         return true;
       } else {
         return false;

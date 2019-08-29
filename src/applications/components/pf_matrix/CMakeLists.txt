@@ -10,10 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-02-05 08:19:31 d3g096
+# Last Change: 2019-08-16 13:43:39 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_ymatrix_components
+    gridpack_components
     gridpack_parallel
     ${Boost_LIBRARIES}
     ${GA_LIBRARIES}
@@ -25,10 +27,11 @@ add_library(gridpack_pfmatrix_components
   pf_components.cpp
 )
 
-# -------------------------------------------------------------
-# component serialization tests
-# -------------------------------------------------------------
-target_link_libraries(gridpack_pfmatrix_components ${target_libraries})
+gridpack_set_library_version(gridpack_pfmatrix_components)
+
+target_link_libraries(gridpack_pfmatrix_components
+  gridpack_ymatrix_components
+  )
 
 # -------------------------------------------------------------
 # installation

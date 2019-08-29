@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2015-06-24 08:39:45 d3g096
+ * @date   2019-02-11 06:48:08 d3g096
  * 
  * @brief  
  * 
@@ -23,6 +23,7 @@
 
 #include <boost/algorithm/string.hpp>
 #include <boost/format.hpp>
+#include <petscconf.h>
 #include <petscmat.h>
 #include "linear_matrix_solver_implementation.hpp"
 #include "petsc_configurable.hpp"
@@ -51,7 +52,13 @@ public:
       PETScConfigurable(this->communicator()),
       p_factored(false),
       p_orderingType(MATORDERINGND),
+#if defined(PETSC_HAVE_SUPERLU_DIST)
       p_solverPackage(MATSOLVERSUPERLU_DIST),
+#elif defined(PETSC_HAVE_MUMPS)
+      p_solverPackage(MATSOLVERMUMPS),
+#else
+      p_solverPackage(MATSOLVERPETSC),
+#endif    
       p_factorType(MAT_FACTOR_LU),
       p_fill(5), p_pivot(false)
   {
@@ -65,8 +72,8 @@ public:
     try  {
       PetscBool ok;
       ierr = PetscInitialized(&ok);
-      if (ok) {
-        // ierr = MatDestroy(&p_Fmat);
+      if (ok && p_factored) {
+        ierr = MatDestroy(&p_Fmat);
       }
     } catch (...) {
       // just eat it
@@ -146,27 +153,35 @@ protected:
     }
 
     if (props) {
-      mstr = props->get("Package", MATSOLVERSUPERLU_DIST);
-    } else {
-      mstr = MATSOLVERSUPERLU_DIST;
-    }
-    boost::to_lower(mstr);
+      mstr = props->get("Package", 
+#if defined(PETSC_HAVE_SUPERLU_DIST)
+                        MATSOLVERSUPERLU_DIST
+#elif defined(PETSC_HAVE_MUMPS)
+                        MATSOLVERMUMPS
+#else
+                        MATSOLVERPETSC
+#endif
+                        );
+      boost::to_lower(mstr);
 
-    n = p_nSupportedSolverPackages;
-    found = false;
-    for (size_t i = 0; i < n; ++i) {
-      if (mstr == p_supportedSolverPackage[i]) {
-        p_solverPackage = p_supportedSolverPackage[i];
-        found = true;
-        break;
+      n = p_nSupportedSolverPackages;
+      found = false;
+      for (size_t i = 0; i < n; ++i) {
+        if (mstr == p_supportedSolverPackage[i]) {
+          p_solverPackage = p_supportedSolverPackage[i];
+          found = true;
+          break;
+        }
       }
-    }
 
-    if (!found) {
-      std::string msg = 
-        boost::str(boost::format("%s PETSc PETSc configuration: unrecognized \"Package\": \"%s\"") %
-                   this->configurationKey() % mstr);
-      throw Exception(msg);
+      if (!found) {
+        std::string msg = 
+          boost::str(boost::format("%s PETSc PETSc configuration: unrecognized \"Package\": \"%s\"") %
+                     this->configurationKey() % mstr);
+        throw Exception(msg);
+      }
+      p_fill = props->get("Fill", p_fill);
+      p_pivot = props->get("Pivot", p_pivot);
     }
 
     // FIXME: I cannot make this test work. Not sure why. It would be
@@ -188,10 +203,6 @@ protected:
     //   throw Exception(msg);
     // }
   
-    if (props) {
-      p_fill = props->get("Fill", p_fill);
-      p_pivot = props->get("Pivot", p_pivot);
-    }
     if (p_fill <= 0) {
       std::string msg = 
         boost::str(boost::format("%s PETSc configuration: bad \"Fill\": %d") %
