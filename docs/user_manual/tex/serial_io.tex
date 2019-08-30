@@ -202,4 +202,14 @@ std::vector<std::string> writeStrings(const char *signal = NULL)
 \end{Verbatim}
 }
 
-If the output describes the properties of something like generators or individual transmission lines, each string may describe multiple devices. Note that this vector is only produced on one processor (corresponding to rank 0 on whatever communicator the network is using). Other processors will have a zero length vector. The contents of each string can then be parsed to extract other parameters (see section of String Utilities for some useful tools for doing this). The powerflow output described above can be parsed to get the voltage magnitude and phase angle on each bus. This information can then be stored in a vector that can be saved to the \texttt{\textbf{GlobalStore}} or \texttt{\textbf{StatBlock}} data structures described below.
+If the output describes the properties of something like generators or
+individual transmission lines, each string may describe multiple devices. Note
+that this vector is only produced on one processor (corresponding to rank 0 on
+whatever communicator the network is using). Other processors will have a zero
+length vector. The contents of each string can then be parsed to extract other
+parameters (see section of String Utilities for some useful tools for doing
+this). The powerflow output described above can be parsed to get the voltage
+magnitude and phase angle on each bus. This information can then be stored in a
+vector that can be saved to the \texttt{\textbf{GlobalStore}} or
+\texttt{\textbf{StatBlock}} data structures described described in sections
+\ref{global_store} and \ref{analysis}.

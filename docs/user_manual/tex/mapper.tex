@@ -1,6 +1,19 @@
-\section{Mapper Module}
+\section{Mapper Module}\label{mapper}
 
-The mappers are a collection of generic capabilities that can be used to generate a matrices or vectors from the network components. This is done by running over all the network components and invoking methods in the matrix-vector interface. The mapper is basically a transformation that converts a set of network components into a matrix or vector based on the behavior of their matrix-vector interfaces. It has no explicit dependencies on either the network components or the type of analyses being performed so this capability is applicable across a wide range of problems. At present there are three types of mapper, the standard mapper described here that is implemented on top of the \texttt{\textbf{MatVecInterface}}, a more generalized mapper that utilizes the \texttt{\textbf{GenMatVecInterface}} and a mapper for generating matrices resembling ``fat'' vectors. These are dense matrices that are basically a collection of column vectors. The generalized mapper and its corresponding interface are described in a later section below, along with the mapper for generating fat vectors. The mapper discussed in this section is used for problems where both dependent and independent variables are associated with buses, which is the case for problems such as power flow calculations and dynamic simulation. Other problems, such as state estimation, have variables associated with both buses and branches and require the more general interface.
+The mappers are a collection of generic capabilities that can be used to
+generate a matrices or vectors from the network components. This is done by
+running over all the network components and invoking methods in the
+matrix-vector interface. The mapper is basically a transformation that converts
+a set of network components into a matrix or vector based on the behavior of
+their matrix-vector interfaces. It has no explicit dependencies on either the
+network components or the type of analyses being performed so this capability is
+applicable across a wide range of problems. At present there are three types of
+mapper, the standard mapper described here that is implemented on top of the
+\texttt{\textbf{MatVecInterface}}, a more generalized mapper that utilizes the
+\texttt{\textbf{GenMatVecInterface}} and a mapper for generating matrices
+resembling ``fat'' vectors. These are dense matrices that are basically a
+collection of column vectors. The generalized mapper and its corresponding
+interface are described in section~\ref{gen_matvec}, along with the mapper for generating fat vectors. The mapper discussed in this section is used for problems where both dependent and independent variables are associated with buses, which is the case for problems such as power flow calculations and dynamic simulation. Other problems, such as state estimation, have variables associated with both buses and branches and require the more general interface.
 
 The basic matrix-vector interface contains functions that provide two pieces of
 information about each network component. The first is the size of the matrix
@@ -23,7 +36,7 @@ matrix in Figure~\ref{fig:mapper}(d).
   \centering
     \includegraphics*[width=6.50in, height=2.3in, keepaspectratio=true, trim=0.00in 0.39in 0.00in 0.82in]{figures/Mapper-a}
     \includegraphics*[width=6.50in, height=2.3in, keepaspectratio=true, trim=0.00in 0.38in 0.00in 0.85in]{figures/Mapper-b}
-    \includegraphics*[width=6.50in, height=1.6in, keepaspectratio=true, trim=0.00in 1.49in 0.00in 0.83in]{figures/Mapper-c}
+    \includegraphics*[width=6.50in, height=1.8in, keepaspectratio=true, trim=0.00in 1.79in 0.00in 0.83in]{figures/Mapper-c}
     \includegraphics*[width=6.50in, height=1.8in, keepaspectratio=true, trim=0.00in 1.79in 0.00in 0.85in]{figures/Mapper-d}
   \caption{A schematic diagram of the matrix map function. The bus numbers in (a) and (b) map to approximate row and column locations in (c). (a) a small network (b) matrix blocks associated with branches and buses. Not that not all blocks are the same size and not all buses and branches contribute (c) initial construction of matrix based on network indices (d) final matrix after eliminating gaps.}
   \label{fig:mapper}

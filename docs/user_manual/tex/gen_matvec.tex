@@ -1,4 +1,4 @@
-\chapter{Generalized Matrix-Vector Interface}
+\chapter{Generalized Matrix-Vector Interface}\label{gen_matvec}
 
 The matrix-vector interface described earlier is suitable for problems where the independent and dependent variables are both associated with buses. However, it does not work for systems where some variables are associated with branches. This can occur in optimization problems such as state estimation, where measurements are made on both buses and branches. Every measurement contributes an equation to the state-estimation optimization, which results in dependent variables associated with branches. To handle these types of problems, a more general approach to creating matrices and vectors is required. This is implemented via the \texttt{\textbf{GenMatVecInterface}} class. As illustrated in Figure 5, the \texttt{\textbf{BaseComponent}} class directly inherits from this interface, along with the \texttt{\textbf{MatVecInterface}}. 
 

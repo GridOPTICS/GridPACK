@@ -69,7 +69,9 @@ BaseNetwork(const parallel::Communicator &comm)
 \end{Verbatim}
 }
 
-The \texttt{\textbf{Communicator}} object is used to define the set of processors over which the network is distributed. Communicators are discussed in more detail below. The network constructor creates an empty shell that does not contain any information about an actual network. The remainder of the network must be built up by adding buses and branches to it. Typically, buses and branches are added by passing the network to a parser (see import module) which will create an initial version of the network. The constructor is paired with a corresponding destructor
+The \texttt{\textbf{Communicator}} object is used to define the set of
+processors over which the network is distributed. Communicators are discussed in
+more detail in section~\ref{communicator}. The network constructor creates an empty shell that does not contain any information about an actual network. The remainder of the network must be built up by adding buses and branches to it. Typically, buses and branches are added by passing the network to a parser (see import module) which will create an initial version of the network. The constructor is paired with a corresponding destructor
 
 {
 \color{red}
@@ -173,7 +175,13 @@ void partition()
 }
 
 The partition function distributes the buses and branches across processors such that the connectivity to branches and buses on other processors is minimized. It is also responsible for adding ghost buses and branches to the network. This function should be called after the network is read in but before any other operations, such as setting up exchange buffers or creating neighbor lists, have been performed.
-Finally, two sets of functions are required in order to set up and execute data exchanges between buses and branches in a distributed network. These exchanges are used to move data from active components to ghost components residing on other processors. Before these functions can be called, the buffers in individual network components must be allocated. See the documentation below on network components and the network factory for more information on how to do this. Once the buffers are in place, bus and branch exchanges can be set up and executed with just a few calls. The functions
+Finally, two sets of functions are required in order to set up and execute data
+exchanges between buses and branches in a distributed network. These exchanges
+are used to move data from active components to ghost components residing on
+other processors. Before these functions can be called, the buffers in
+individual network components must be allocated. See the documentation on
+network components in section~\ref{network_components} and the network factory
+in section~\ref{factory} for more information on how to do this. Once the buffers are in place, bus and branch exchanges can be set up and executed with just a few calls. The functions
 
 {
 \color{red}

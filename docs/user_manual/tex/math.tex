@@ -12,7 +12,12 @@ The functionality in the math component is distributed between the classes \text
 
 %\texttt{\textbf{Vector, RealVector}}, LinearSolver, \texttt{\textbf{ RealLinearSolver, NonlinearSolver}} and \texttt{\textbf{RealNonlinearSolver}}. 
 
-Each of these classes is in the \texttt{\textbf{gridpack::math}} namespace and is described below. Like the \texttt{\textbf{BaseNetwork}} class, there are a lot of functions in \texttt{\textbf{Matrix}} and \texttt{\textbf{Vector}} that do not need to be used by users. Most of the functions related to matrix/vector instantiation and creation are used inside the mapper classes described below, which eliminates the need for users to deal with them directly. However, users may be interested in creating functions not covered by existing library methods and in this case access to these functions is useful.
+Each of these classes is in the \texttt{\textbf{gridpack::math}} namespace and
+is described below. Like the \texttt{\textbf{BaseNetwork}} class, there are a
+lot of functions in \texttt{\textbf{Matrix}} and \texttt{\textbf{Vector}} that
+do not need to be used by users. Most of the functions related to matrix/vector
+instantiation and creation are used inside the mapper classes described in
+section~\ref{mapper}, which eliminates the need for users to deal with them directly. However, users may be interested in creating functions not covered by existing library methods and in this case access to these functions is useful.
 
 An additional note on the math module class names is in order. Originally, GridPACK only supported complex objects and used the names \texttt{\textbf{Vector}}, \texttt{\textbf{Matrix}}, etc. More recently, the capability for supporting real objects was added and hence the new names \texttt{\textbf{RealVector}}, etc. The original names continued to be used for complex objects to maintain backwards compatibility. Complex objects can also be accessed using the names \texttt{\textbf{ComplexVector}}, \texttt{\textbf{ComplexMatrix}}, etc., which are mapped to the original complex objects.
 
@@ -114,7 +119,13 @@ void ready()
 \end{Verbatim}
 }
 
-After this function has been invoked, the matrix is read for use and can be used in computations. In general, the procedure for building a matrix is 1) create the matrix object 2) determine local parameters such as \texttt{\textbf{lo}} and \texttt{\textbf{hi}} 3) set or add matrix elements and 4) assemble the matrix using the \texttt{\textbf{ready}} function. For most applications, users can avoid these operations by building matrices and vectors using the mapper functionality described below.
+After this function has been invoked, the matrix is read for use and can be used
+in computations. In general, the procedure for building a matrix is 1) create
+the matrix object 2) determine local parameters such as \texttt{\textbf{lo}} and
+\texttt{\textbf{hi}} 3) set or add matrix elements and 4) assemble the matrix
+using the \texttt{\textbf{ready}} function. For most applications, users can
+avoid these operations by building matrices and vectors using the mapper
+functionality described in section~\ref{mapper} and chapter~\ref{gen_matvec}.
 
 Some additional functions have been included in the matrix class that can be useful for creating matrices or writing out their values (e.g. for debugging purposes). It is often useful to create a copy of a matrix. This can be done using the clone method
 
@@ -167,7 +178,9 @@ void multiplyDiagonal(const Vector &x)
 \end{Verbatim}
 }
 
-Multiply all elements on the diagonal of the calling matrix by the corresponding element of the vector \texttt{\textbf{x}}. The \texttt{\textbf{Vector}} class is described below.
+Multiply all elements on the diagonal of the calling matrix by the corresponding
+element of the vector \texttt{\textbf{x}}. The \texttt{\textbf{Vector}} class is
+described in section~\ref{vectors}.
 
 {
 \color{red}
@@ -242,7 +255,7 @@ Matrix *transpose(const Matrix &A)
 
 Take the transpose of matrix \texttt{\textbf{A}}.
 
-\subsection{Vectors}
+\subsection{Vectors}\label{vectors}
 
 The vector class operates in much the same way as the matrix class. As above, most functions apply to both the \texttt{\textbf{Vector}} and \texttt{\textbf{RealVector}} class so only the \texttt{\textbf{Vector}} operations are described here. The vector constructor is
 
@@ -390,7 +403,8 @@ void configure(utility::Configuration::Cursor *props)
 \end{Verbatim}
 }
 
-The \texttt{\textbf{Configuration}} module is described in more detail below. This function can be used to pass information from the input file to the solver to alter its properties. For the PETSc library, the solver algorithm can be controlled using PETSc's runtime options database. Different options can be passed to PETSc by including a block in the input deck (there is more documentation on input decks in the section on the \texttt{\textbf{Configuration}} module). An example of this type of input is
+The \texttt{\textbf{Configuration}} module is described in more detail
+section~\ref{configuration}. This function can be used to pass information from the input file to the solver to alter its properties. For the PETSc library, the solver algorithm can be controlled using PETSc's runtime options database. Different options can be passed to PETSc by including a block in the input deck (there is more documentation on input decks in the section on the \texttt{\textbf{Configuration}} module). An example of this type of input is
 
 {
 \color{blue}

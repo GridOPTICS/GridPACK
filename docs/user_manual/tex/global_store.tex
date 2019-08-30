@@ -1,4 +1,4 @@
-\section{Global Store}
+\section{Global Store}\label{global_store}
 
 The \texttt{\textbf{GlobalStore}} class was created to make large amounts of data globally accessible to any processor when replicating the data would be inefficient in terms of the amount of memory required. The premise of the \texttt{\textbf{GlobalStore}} class is that processors generate vectors of data and this data is added to a \texttt{\textbf{GlobalStore}} object. After all processors have completed adding data, the data is ``uploaded'' to the \texttt{\textbf{GlobalStore}} object so that it is visible to all processors in the system. Prior to the upload operation, the data is held locally on the processor that generated it. The original motivation for creating this class was to save system state variables that represent the results of individual simulations in a contingency analysis context. These variables could then be used to initialize additional calculations.
 
