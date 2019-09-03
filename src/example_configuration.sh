@@ -86,16 +86,17 @@ if [ $host == "flophouse" ]; then
     export CXX
 
     if [ "$shared"x = "ON"x ]; then
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel7-gnu48-real-opt-shared"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel7-real-c-shared"
     else
-        # pdir="/net/flophouse/files0/perksoft/petsc-3.4.5"
-        # parch="rhel7-real-c++-static"
-        # parch="rhel7-real-c-static"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
         parch="rhel7-gnu48-real-opt"
-        parch="rhel7-gnu48-complex-opt"
-        parch="rhel7-gnu48-complex-opt-c"
+        # parch="rhel7-gnu48-complex-opt"
+        # parch="rhel7-gnu48-complex-opt-c"
+        parch="rhel7-real-c-static"
+        parch="rhel7-complex-c-static"
+        # parch="rhel7-real-c-static-debug"
+        # pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
@@ -217,9 +218,14 @@ elif [ $host == "tlaloc" ]; then
     if [ "$shared"x = "ON"x ]; then
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
         parch="rhel6-complex-c-shared"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel6-complex-c-shared"
     else
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
         parch="rhel6-complex-c-static"
+        parch="rhel6-real-c-static"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel6-real-c-static"
     fi
 
     cmake3 $options \
