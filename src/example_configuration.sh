@@ -207,6 +207,29 @@ elif [ $host == "olympus.local" ]; then
 	-D MPIEXEC:STRING='mpiexec' \
 	$common_flags ..
 
+
+elif [ $host == "constance" ]; then
+
+    CC=`which gcc`
+    CXX=`which g++`
+    CFLAGS="-pthread"
+    CXXFLAGS="-pthread"
+
+    export CC CXX CFLAGS CXXFLAGS
+
+    prefix="/people/d3g096/gridpack"
+    cmake $options \
+        -D GA_DIR:STRING="$prefix/ga-5-4" \
+	-D GA_EXTRA_LIBS:STRING="-libverbs" \
+	-D BOOST_ROOT:STRING="$prefix" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.7.3" \
+	-D PETSC_ARCH:STRING='constance-gnu48-complex-opt' \
+	-D MPI_CXX_COMPILER:STRING=`which mpicxx` \
+	-D MPI_C_COMPILER:STRING=`which mpicc` \
+	-D MPIEXEC:STRING=`which mpiexec` \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+	$common_flags ..
+
 elif [ $host == "tlaloc" ]; then
 
     # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
@@ -242,8 +265,6 @@ elif [ $host == "tlaloc" ]; then
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
           -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
           $common_flags ..
-
-    
 
 elif [ $host == "gridpackvm" ]; then
 
