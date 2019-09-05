@@ -1,0 +1,80 @@
+\chapter{Configuring and Building GridPACK}
+
+\textbf{A note about CMake}: The command for invoking CMake in this manual and the documentation in https://gridpack.org is usually of the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+       cmake [OPTIONS] ..
+\end{Verbatim}
+}
+
+This particular form assumes that the build directory is below the directory that contains the top-level \texttt{\textbf{CMakeLists.txt}} file for the build. For GridPACK, this is located in the \texttt{\textbf{src}} directory. If your build directory for GridPACK is below \texttt{\textbf{src}} and you invoke CMake from this directory, the ``\texttt{\textbf{..}}'' at the end of the \texttt{\textbf{cmake}} command is pointing to \texttt{\textbf{src}}. You could also use the absolute path to the \texttt{\textbf{src}} directory instead of ``\texttt{\textbf{..}}'' and this would work no matter where you locate the build directory.
+
+Building GridPACK requires several external libraries that must be built prior trying to configure and build GridPACK itself. On some systems, these libraries may already be available but in many cases, users will need to build them by hand. An exception is MPI, which is usually available on parallel platforms, although users interested in running parallel jobs on a multi-core workstation may still need to build it themselves. In any case, the best way to guarantee that all libraries are compatible with each other is to build them all using a consistent environment and set of compilers. There is extensive documentation on how to build GridPACK and the libraries on which it depends on the website located at https://gridpack.org. We refer to the information on the website for most of the details on how to build GridPACK and will only discuss some general properties of the configure procedure in this document.
+
+Example scripts for building the libraries used by GridPACK on different systems can be found under \texttt{\textbf{\$GRIDPACK/src/scripts}}. In most cases these need to be modified slightly before they will work on your system, but the changes are usually small and self-evident. The scripts contain some additional documentation at the top to help you with these modifications. Find a script for a platform that is similar to your system and use this as the starting point for your build.
+
+GridPACK uses the CMake build system to create a set of make files that can then be used to compile the entire GridPACK framework. Most of the effort in building GridPACK is focused on getting the configure process to work, once configure has been successfully completed, compilation is usually straightforward. Builds of GridPACK should be done in their own directory and this also makes it possible to have multiple builds that use different configuration parameters associated with the same source tree. Typically, the build directories are under \texttt{\textbf{\$GRIDPACK/src}} directory but they can be put anywhere the user chooses. The user then needs to run CMake from the build directory to configure GridPACK and then \texttt{\textbf{make}} and \texttt{\textbf{make install}} to compile and install the GridPACK libraries. After running \texttt{\textbf{make}}, all applications in the GridPACK source tree are also available for use. The application executables will be located in the build directory and not in the source tree. 
+
+GridPACK currently makes use of five different libraries. MPI and Global Arrays are used for communication, Boost provides several C++ extensions used throughout GridPACK, Parmetis is used to partition networks over multiple processors and PETSc provides parallel solvers and algebraic functionality. Except for MPI, which is usually available through compiler wrappers such as \texttt{\textbf{mpicc}} and \texttt{\textbf{mpicxx}}, the locations of the remaining libraries need to be specified in the CMake configure command.
+
+Because the cmake command takes a large number of arguments, it is usually a good idea to put the entire command in a script. The script can then be edited as needed. Make sure that the script is executable by running the \texttt{\textbf{chmod +x}} command on it. A typical CMake configure script is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+rm -rf CMake*
+
+cmake -Wdev \
+      -D BOOST_ROOT:STRING='\$HOME/software_new/boost_1_55_0' \
+      -D PETSC_DIR:STRING='\$HOME/software_new/petsc-3.6.0' \
+      -D PETSC_ARCH:STRING='linux-openmpi-gnu-cxx' \
+      -D PARMETIS_DIR:STRING= \
+        '\$HOME/software_new/petsc-3.6.0/linux-openmpi-gnu-cxx/lib' \
+      -D GA_DIR:STRING='\$HOME/software_new/ga-5-4-ib' \
+      -D USE_PROGRESS_RANKS:BOOL=FALSE \
+      -D GA_EXTRA_LIBS='-lrt -libverbs' \
+      -D MPI_CXX_COMPILER:STRING='mpicxx' \
+      -D MPI_C_COMPILER:STRING='mpicc' \
+      -D MPIEXEC:STRING='mpiexec' \
+      -D CMAKE_INSTALL_PREFIX:PATH='\$GRIDPACK/src/build/install' \
+      -D CMAKE_BUILD_TYPE:STRING='RELWITHDEBINFO' \
+      -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+      -D CMAKE_VERBOSE_MAKEFILE:STRING=TRUE \
+      ..
+\end{Verbatim}
+}
+
+The first line removes any configuration files that may be left over from a previous configuration attempt. Removing these files is generally a good idea since parameters from a previous unsuccessful attempt may bleed over into the current configuration and either spoil the configuration itself or lead to problems when you try to compile the code. 
+
+The Boost, PETSc, Parmetis and Global Array library locations are specified by the \texttt{\textbf{BOOST\_ROOT}}, \texttt{\textbf{PETSC\_DIR}}, \texttt{\textbf{PARMETIS\_DIR}} and \texttt{\textbf{GA\_DIR}} variables. The \texttt{\textbf{PETSC\_ARCH}} variable specifies the particular build within PETSc that you want GridPACK to use. It is usually possible when configuring and building PETSc to have it download and build Parmetis as well. This was done in the example above and thus the Parmetis libraries are located within the PETSc source tree in the directory corresponding to the architecture specified in \texttt{\textbf{PETSC\_ARCH}}.
+
+The Global Arrays library can be built using a number of different runtimes. The default runtime uses MPI two-sided communication. While it is very easy to use, this runtime does not scale well beyond a dozen or so processors. Users interested on running on large numbers of cores should look at configuring Global Arrays with other runtimes. A high performing GA runtime that is available on most platforms is called progress ranks. This runtime has a peculiarity in that it reserves one MPI process per SMP node to manage communication. Thus, if you request a total of 20 MPI processes on 4 nodes with 5 processes running on each node only 4 MPI process per node will actually be available to the application for a total of 16. In order to notify GridPACK that you are using this runtime, you need to set the parameter \texttt{\textbf{USE\_PROGRESS\_RANKS}} to true. In the example above, we are not using progress ranks so we set \texttt{\textbf{USE\_PROGRESS\_RANKS}} to false.
+
+The \texttt{\textbf{GA\_EXTRA\_LIBS}} parameter can be used to include extra libraries in the link step that are not picked up as part of the configuration process. In this example, GA is configured to run on an Infiniband network so it is necessary to explicitly include \texttt{\textbf{libibverbs}} and \texttt{\textbf{librt}}. For most of the MPI-based runtimes, this variable is not needed.
+The MPI wrappers for the C and C++ compilers can be specified by setting \texttt{\textbf{MPI\_C\_COMPILER}} and \texttt{\textbf{MPI\_CXX\_COMPILER}} and the MPI launch command can be specified using \texttt{\textbf{MPIEXEC}}. The \texttt{\textbf{CMAKE\_INSTALL\_PREFIX}} specifies the location of the installed build of GridPACK. This location should be used when linking external applications to GridPACK. The \texttt{\textbf{CMAKE\_BUILD\_TYPE}} can be used to control the level of debugging symbols in the library. \texttt{\textbf{MPIEXEC\_NUM\_PROCS}} should be set to a small number and controls the number of processors that will be used if running the parallel tests in the GridPACK test suite. Many of the application tests are small (9 or 14 buses) and will fail if you try and run on a large number of cores. Finally, \texttt{\textbf{CMAKE\_VERBOSE\_MAKEFILE}} controls the level of information generated during the compilation. It is mainly of interest for people doing development in GridPACK and most other users can safely set it to false.
+
+A new feature in the build is to use shared libraries instead of static builds. This may be of interest to users that are interested in wrapping GridPACK applications with python. A shared library version of GridPACK can be created by configuring GridPACK against versions of Boost, GA, and PETSc that are built as shared libraries. It appears that just configuring against shared libraries is enough to trigger a share library build in CMake, but users can add the line
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    -D BUILD_SHARED_LIBS:BOOL=TRUE \
+\end{Verbatim}
+}
+
+to their configuration invocation to make sure.
+
+The final argument of the cmake command is the location of the top level \texttt{\textbf{CMakeLists.txt}} file in the source tree. For GridPACK, this file is located in the \texttt{\textbf{\$GRIDPACK/src}} directory. The above example assumes that the build directory is located directly under \texttt{\textbf{\$GRIDPACK/src}} so the \texttt{\textbf{..}} at the end of the configure script is pointing to the directory containing the \texttt{\textbf{CMakeLists.txt}} file.
+
+Once the GridPACK framework has been built, applications and framework tests can be run using standard MPI scripts for running jobs. A typical invocation to run a code \texttt{\textbf{code.x}} on some number of processors is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    mpirun -n 2 code.x
+\end{Verbatim}
+}
+
+In this case the code will run on 2 processors. Different platforms may use different scripts to run the parallel job. Consult your local system documentation for details. Applications may also have additional arguments that are processed inside the application itself. Most GridPACK applications will take an argument representing the input file for the application.

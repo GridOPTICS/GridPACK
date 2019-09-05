@@ -1,0 +1,150 @@
+\section{Communicators}\label{communicator}
+
+The subject of communicators has already been mentioned in the context of the constructor for the \texttt{\textbf{BaseNetwork}} class. This section will describe communicators in more detail and will show how the GridPACK communicators can be used to partition a large calculation into separate pieces that all run concurrently. A communicator can crudely be though of as a communication link between a group of processors. Whenever a process needs to communicate with another process it needs to specify the communicator over which that communication will occur. When a parallel job is started, it creates a ``world'' communicator to which all processes implicitly belong. Any process can communicate with any other process via the world communicator. Other communicators can be created by an application and it is possible for a process to belong to multiple communicators. The concept of communicators is particularly important for restricting the scope of ``global'' operations. These are operations that require every process in the communicator to participate. Failure of a process to participate in the operation usually results in the calculation stalling because multiple processors are waiting for a communication from a process that is not part of the global operation. A program can remain in this state indefinitely. Many of the module functions in GridPACK represent global operations and contain embedded calls that act collectively on a communicator. In order for two separate calculations to proceed concurrently, they must be run on disjoint sets of processors using separate communicators.
+
+The use of communicators to create multiple concurrent parallel tasks within an
+application is usually straightforward to implement but it is frequently much
+more confusing to understand. A diagram of a set of 16 processes that are
+divided into 4 groups each containing 4 processes is shown schematically in
+Figure~\ref{fig:communicator}. In this example, each subgroup could potentially execute a separate parallel task within the larger parallel calculation.
+
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=6.32in, height=3.82in, keepaspectratio=false, trim=0.01in 0.81in 0.17in 0.24in]{figures/Communicator}
+  \caption{Schematic diagram illustrating the use of multiple communicators.}
+  \label{fig:communicator}
+\end{figure}
+%\noindent \includegraphics*[width=6.32in, height=3.82in, keepaspectratio=false, trim=0.01in 0.81in 0.17in 0.24in]{image79}
+
+%\textcolor{red}{\texttt{\textbf{Figure 10.}} Schematic diagram illustrating the use of multiple communicators}
+
+Global operations on the world communicator involve all 16 processes, global operations on one of the task communicators just involve the 4 processes in the group used to define the task communicator. If a network object is created on one of the task communicators, then a global operation such as the bus update only occurs between the 4 processes in the task communicator. The network object is, in a certain sense, ``invisible'' to the processes outside that communicator. If a network is created on a sub-communicator, then all objects derived from the network, such as factories, parsers, serial IO objects, etc. are also associated with the same sub-communicator.
+
+The communicator supports some basic operations that are commonly used in parallel programming. GridPACK has been designed to minimize the amount of explicit communication that must be handled by application developers, but it is occasionally useful to have access to standard communication protocols in applications. In particular, it is useful to be able to divide a given communicator into a set of non-overlapping sub-communicators. The basic operations supported by the GridPACK communicator class are described below.
+
+The GridPACK \texttt{\textbf{Communicator}} class is in the \texttt{\textbf{gridpack::parallel}} namespace. The constructor for this class creates a copy of the world communicator. The constructor has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Communicator(void)
+\end{Verbatim}
+}
+
+and takes no arguments. Two basic functions associated with communicators are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int size(void) const
+\end{Verbatim}
+}
+
+and
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int rank(void) const
+\end{Verbatim}
+}
+
+The first function returns the number of processors in the communicator and the second returns the index of the processor within the communicator. If the communicator contains N processes, then the rank will be an integer ranging from 0 to N-1. The process corresponding to rank 0 is often referred to as the head process or head node for the communicator. Note that if a process belongs to more than one communicator, its rank may differ depending on which communicator is being referred to. Information on size and rank is used extensively when explicitly programming in parallel. GridPACK has tried to abstract much of this programming so that developers do not need to pay attention to it, but it is still occasionally useful to be able to access these numbers. For example, the header function in the SerialIO classes is essentially equivalent to the following code fragment
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Communicator comm;
+char buf[128];
+sprint(buf,"My message\n");
+if (comm.rank() == 0) {
+  printf("%s",buf);
+}
+\end{Verbatim}
+}
+
+This code creates some output. If the condition was not there, the code would print out the message from all N processors in the world communicator and N copies of ``My message'' would appear in the output. The condition restricting the print statement to process 0 guarantees that the message appears only once.
+
+A more important use of communicators is to divide up the world communicator into separate communicators that can be used to run independent parallel calculations. This is known as multi-level parallelism. Two functions can be used to split up an existing communicator into sub-communicators. The first is \texttt{\textbf{split}}
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Communicator split(int color) const
+\end{Verbatim}
+}
+
+This function divides the calling communicator into sub-communicators based on the \texttt{\textbf{color}} variable. All processors with the same value of the \texttt{\textbf{color}} variable end up in the same communicator. Thus, if 16 processors on the world communicator are divided up such that processes 0-3 are color 0, processes 4-7 are color 1, processes 8-11 are color 2 and processes 12-15 are color 3, then split will generate 4 sub-communicators from the world communicator such that 0-3 are on one communicator, 4-7 are on another communicator and so on. Note that this function divides the communicator completely into complementary pieces with all processes in the old communicator ending up in a new communicator and no process ending up in more than one new communicator.
+
+A second function that can be used to decompose a communicator into sub-communicators is \texttt{\textbf{divide}}. This function has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Communicator divide(int nsize) const
+\end{Verbatim}
+}
+
+Each sub-communicator returned by this function contains at most \texttt{\textbf{nsize}} processes. The function will try and create as many communicators of size \texttt{\textbf{nsize}} as possible. For example, if the calling communicator contains 10 processes and \texttt{\textbf{nsize}} is set to 4, then this function will create 3 sub-communicators, two of which contain 4 processors and one containing 2 processors.
+
+An example of how communicators can be used to create multiple levels of
+parallelism is illustrated in Figure 11. The example has 8 tasks that can be
+evaluated independently. The first row in Figure~\ref{fig:multi-level} shows four processors. Two of the 8 tasks are run on each processor so if each task has been parallelized then it needs to run on a communicator with only 1 processor in it. The second row shows the same calculation running on 8 processors. In this case, each processor only has 1 task associated with it but each task is still running on a single processor. If the tasks have not been parallelized, then this is as far as you can go. However, if the tasks \textit{have} been parallelized, then you can move on to the configuration shown in the third line using 16 processors. In this case, the system has been divided into 8 groups, each containing two processors. Each group has its own separate subcommunicator and each task can be run in parallel on two processors. This gives additional speed-up over what can be achieved by simply distributing tasks to separate processors.
+
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=5.52in, height=2.95in, keepaspectratio=true]{figures/Mult-parallel}
+  \caption{ Schematic diagram of 8 tasks evaluated using multiple levels of parallelism. The first row represents 8 tasks on 4 processors, the second row is 8 tasks on 8 processors and the third row is 8 tasks running on 16 processors.}
+  \label{fig:multi-level}
+\end{figure}
+
+%\noindent             \includegraphics*[width=5.52in, height=2.95in, keepaspectratio=false, trim=0.52in 1.16in 0.46in 0.77in]{image80}
+
+%\textcolor{red}{\texttt{\textbf{Figure 11}}. Schematic diagram of 8 tasks evaluated using multiple levels of parallelism. The first row represents 8 tasks on 4 processors, the second row is 8 tasks on 8 processors and the third row is 8 tasks running on 16 processors.}
+
+Additional functions are available for communicators that support basic parallel computing tasks. The objective of GridPACK is to abstract most aspects of parallel computing so that users do not need to deal with them directly, but there are some tasks, particularly those associated with collecting and organizing data, that are not difficult to program but are difficult to generalize. Some support for simple parallel operations is useful in these cases. The following operations can be used to sum data across all processors
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void sum(float *x, int nvals) const
+void sum(double *x, int nvals) const
+void sum(int *x, int nvals) const
+void sum(long *x, int nvals) const
+void sum(ComplexType *x, int nvals) const
+\end{Verbatim}
+}
+
+The array \texttt{\textbf{x}} holds the values to be summed and \texttt{\textbf{nvals}} is the number of values in \texttt{\textbf{x}}. This operation can be used to compute the total of some quantity after partial sums have been calculated on each processor. It can also be used to collect an array of values across a collection of processors by having each processor compute a portion of an array and then using the sum operation to create a complete copy of the array on all processors.
+
+Maximum and minimum values can be calculated using the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void max(float *x, int nvals) const
+void max(double *x, int nvals) const
+void max(int *x, int nvals) const
+void max(long *x, int nvals) const
+
+void min(float *x, int nvals) const
+void min(double *x, int nvals) const
+void min(int *x, int nvals) const
+void min(long *x, int nvals) const
+\end{Verbatim}
+}
+
+Again, a global maximum or minimum can be calculated by first computing the local maximum or minim on each processor and then evaluating it across processors. 
+
+One other common parallel construct that may be useful in some contexts is the barrier or synchronization function. In GridPACK, this is available as the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void sync() const
+\end{Verbatim}
+}
+
+The \texttt{\textbf{sync}} function does not allow any processor in the communicator to proceed beyond this call until all processors in the communicator have reached the call. This is used in some parallel programming situations to guarantee a consistent state across all processors.  In general, there should be relatively little need for this call in GridPACK. See, however, the comment below at the end of the section on \texttt{\textbf{GlobalStore}}.

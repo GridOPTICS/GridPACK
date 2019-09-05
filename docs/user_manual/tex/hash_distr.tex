@@ -1,0 +1,63 @@
+\section{Hash Distribution Module}
+
+The hash distribution functionality provides a simple mechanism for quickly distributing data associated with individual buses and branches to the processors that own those buses and branches. This situation can come up in several contexts, particularly when network data is distributed across multiple files. For example, the information on measurements in the state estimation calculation is contained in a file that is distinct from the file that holds the network configuration. The program starts by reading in the network configuration and partitioning it. The program next reads in the measurements, but there is no simple map between the measurements, each of which is associated with either a branch or a bus, and the distributed network. Even if the measurements are read in before the network is distributed, there is still no simple map between measurements and their corresponding buses and branches, since some components may have no measurements associated with them and other components may have multiple measurements. Moving this data to the right processor and providing a simple way of mapping it to the correct bus or branch on that processor is a non-trivial task.
+
+The \texttt{\textbf{HashDistribution}} module is a templated class that assumes that the data that is to be sent to the buses and branches are held in user-defined structs. It is contained in the \texttt{\textbf{gridpack::hash\_distr}} namespace. The structs used for branches can be different from the structs used for buses. If we designate the bus and branch structs by the names \texttt{\textbf{BusData }}and \texttt{\textbf{BranchData}} then the constructor for the \texttt{\textbf{HashDistribution}} class has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+HashDistribution<MyNetwork, BusData, BranchData>
+        (const boost::shared_ptr<MyNetwork> network)
+\end{Verbatim}
+}
+
+Both the \texttt{\textbf{BusData}} and \texttt{\textbf{BranchData}} structs must be specified when creating a new \texttt{\textbf{HashDistribution}} object, even if only bus or branch data is actually being used. If you are just using bus data you can simply repeat the \texttt{\textbf{BusData}} type in the branch slot without causing any problems. Similarly, you can also use \texttt{\textbf{BranchData}} in both slots if you are only interested in moving data to branches.
+
+The following command can be used to move bus data to the processors that actually hold the corresponding buses
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void distributeBusValues(std::vector<int> &keys,
+                         std::vector<BusData> &values)
+\end{Verbatim}
+}
+
+The integer array ``\texttt{\textbf{keys}}'' holds the original indices of the buses that the data in the vector ``\texttt{\textbf{values}}'' is supposed to map to. The \texttt{\textbf{keys}} and \texttt{\textbf{values}} vectors should be the same and the data in the \texttt{\textbf{values}} array at index \textit{n} should be mapped to the bus indicated by the original index stored at the same location in the \texttt{\textbf{keys}} array. This function is collective and must be called on all processors. The amount of data on each processor does not need to be the same and some processors, or even most of them, can have no data (it is still necessary to call the \texttt{\textbf{distributeBusValues}} function across all processors even if some processors contain no data). It also possible that the same original index can appear multiple times in the keys array, i.e., multiple pieces of data can map to the same bus. On output, the values array contains all the data objects that map to buses on that processor and the keys array contains the \textit{local} indices of the bus. This will include data that maps to ghost buses so a piece of data may map to more than one processor in a distributed system.
+
+An analogous command can be used to distribute data to branches. It has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void distributeBranchValues(std::vector<std::pair<int,int> > &keys,
+                            std::vector<int> &branch_ids,
+                            std::vector<BranchData> &values)
+\end{Verbatim}
+}
+
+Branches are uniquely identified by the buses at each end of the branch, so the \texttt{\textbf{keys}} array in this case is a vector consisting of index pairs representing the original indices of these buses. The \texttt{\textbf{values}} array contains the data to be distributed to the branches and the \texttt{\textbf{branch\_ids}} array contains the \textit{local} index of the branch on output. Unlike the command to distribute bus values, the \texttt{\textbf{keys}} array cannot be reused to store the destination index of the data. Similar to buses, multiple data items can be mapped to the same branch.
+
+The distribute values methods each have a generalization that allows users to distribute a vector of values to individual buses and branches. These functions have the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void distributeBusValues(std::vector<int> &keys,
+                         std::vector<BusData*> &values, int nvals)
+\end{Verbatim}
+}
+
+and
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void distributeBranchValues(std::vector<std::pair<int,int> > &keys,
+                            std::vector<int> &branch_ids,
+                            std::vector<BranchValues*>, int nvals)
+\end{Verbatim}
+}
+
+Instead of moving a single value struct for each bus or branch, these functions move a vector of structs. Each struct must be the same size and contain nvals elements. These functions are useful for assigning a time series of data to buses and branches.

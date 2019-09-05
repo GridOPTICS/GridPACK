@@ -1,0 +1,76 @@
+\section{Bus Tables}
+
+The bus table module was created to allow applications to update the properties of buses over multiple scenarios. This module is designed to read files of the form
+
+{
+\color{red}
+\bfseries
+\begin{Verbatim}[commandchars=\\\{\}]
+     11002 BL   0.0011 0.0009 0.0018 0.0023
+     11003 BL   0.2232 0.2113 0.2202 0.2317
+     11005 BL   0.1188 0.1076 0.1211 0.1197
+     11008 BL   0.0053 0.0045 0.0067 0.0072
+\end{Verbatim}
+}
+
+The first column is a bus ID, the second column is a one- or two-character tag identifying some device on the bus (e.g. a generator) and the remaining columns are properties of the bus for different scenarios. The columns are delimited by white space. If there are \textit{N} columns of properties for the buses then the total number of columns in the file is \textit{N}+2, where the extra two columns represent the bus indices and the device tags. The columns containing data are indexed from 0 to \textit{N}-1. If the properties apply to the bus as a whole and not some device on the bus, then the tags can be ignored but some arbitrary one- or two-character string still needs to be included in the file for the second column. The scenarios themselves can represent different times, different parameter sets, different loads etc. The properties are assumed to be double precision values. Integer values can be used as properties by storing them as double precision values and then casting them back to integers inside the application. Not all buses need to be included in the table and in many cases, where a device is not present on a bus, it is undesirable to require that each bus be represented.
+
+The \texttt{\textbf{BusTable}} module is a templated class that takes the network type as a parameter.  It is located in the \texttt{\textbf{gridpack::bus\_table}} namespace. The constructor has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+BusTable<MyNetwork>(const boost::shared_ptr<MyNetwork> network)
+\end{Verbatim}
+}
+
+An external file with the format described above can be read in using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool readTable(std::string filename)
+\end{Verbatim}
+}
+
+where \texttt{\textbf{filename}} points to the appropriate file. This function will ingest the file and store the contents in a distributed form that can be readily access by the application. This function is collective and must be called by all processes over which the network is defined.
+
+Accessing the data in the table can be accomplished using the following three functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getLocalIndices(std::vector<int> &indices)
+
+void getTags(std::vector<std::string> &tags)
+
+void getValues(int idx, std::vector<double> &values)
+\end{Verbatim}
+}
+
+The first function returns a list of the local bus indices to which the data applies, the second function returns a list of the corresponding device tags and the third function returns the values from column \texttt{\textbf{idx}} in the table.
+After calling the functions, the data can be applied to the appropriate buses using a loop of the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+MyBus *bus;
+For (i=0; i<indices.size(); i++) {
+  bus = network->getBus(indices[i]).get();
+  bus->setProperty(tags[i], values[i]);
+}
+\end{Verbatim}
+}
+
+where \texttt{\textbf{setProperty}} is a user-defined function in the \texttt{\textbf{MyBus}} class that does something useful with the data. This example assumes that the \texttt{\textbf{getLocalIndices}} and \texttt{\textbf{getTags}} functions have already been called outside the loop.
+
+The number of columns of properties can be accessed using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int getNumColumns()
+\end{Verbatim}
+}
+
+This function is provided as a method for accessing the total number of scenarios directly from the bus table input, instead of having to include it as a separate parameter.

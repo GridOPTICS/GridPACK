@@ -1,0 +1,61 @@
+\chapter{Building GridPACK Applications}
+
+GridPACK comes with several applications that are included in the main distribution. These currently include power flow, contingency analysis, dynamic simulation, state estimation and Kalman filter applications as well as some non-power grid examples that illustrate features of the framework. These applications are automatically built whenever the full GridPACK distribution is built. 
+
+For applications developed outside the GridPACK distribution, the build process is fairly simple, provided you are using CMake (you will need to have CMake installed on your system to build GridPACK so using CMake for your application build should be a straightforward extension). For a CMake build, you need to create a CMakeLists.txt file in the same directory that includes your application files. A template for the CMakeLists.txt file is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+ 1 cmake_minimum_required(VERSION 2.6.4)
+ 2
+ 3 if (NOT GRIDPACK_DIR)
+ 4   set(GRIDPACK_DIR /HOME/gridpack-install
+ 5       CACHE PATH "GridPACK installation directory")
+ 6 endif()
+ 7
+ 8 include("\${GRIDPACK_DIR}/lib/GridPACK.cmake")
+ 9
+10 project(MyProject)
+11
+12 enable_language(CXX)
+13
+14 gridpack_setup()
+15
+16 add_definitions(\${GRIDPACK_DEFINITIONS})
+17 include_directories(BEFORE \${CMAKE_CURRENT_SOURCE_DIR})
+18 include_directories(BEFORE \${GRIDPACK_INCLUDE_DIRS})
+19
+20 add_executable(myapp.x
+21   myapp_main.cpp
+22   mayapp_driver.cpp
+23   myapp_file1.cpp
+24   myapp_file2.cpp
+25 )
+26 target_link_libraries(myapp.x \${GRIDPACK_LIBS})
+27 
+28 add_custom_target(myapp.input
+29 
+30   COMMAND \${CMAKE_COMMAND} -E copy 
+31   \${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+32   \${CMAKE_CURRENT_BINARY_DIR}
+33 
+34   COMMAND \${CMAKE_COMMAND} -E copy 
+35   \${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
+36   \${CMAKE_CURRENT_BINARY_DIR}
+37 
+38   DEPENDS 
+39   \${CMAKE_CURRENT_SOURCE_DIR}/input.xml
+40   \${CMAKE_CURRENT_SOURCE_DIR}/myapp_test.raw
+41 )
+42 add_dependencies(myapp.x myapp.input)
+\end{Verbatim}
+}
+
+Lines 1-6 check to see if the CMake installation is recent enough and also make sure that the \texttt{\textbf{GRIDPACK\_DIR}} variable has been defined in the configuration step. If it hasn't, then the CMake will try and use a default value and look for a build in\texttt{\textbf{ \$HOME/gridpack-install}}. However, this is unlikely to be successful, so it is better to define \texttt{\textbf{GRIDPACK\_DIR}} when configuring your application. Line 8 picks up a file that is used by the application build to link to libraries and header files in the GridPACK build and line 10 can be used to assign a name to your application. Lines 12-18 can be included as is, if all application files are in the same directory as the CMakeLists.txt file. If other directories contain source and header files, then they can be included using the directives in lines 17 and 18.
+
+Lines 20-25 define the name of the executable and all the source code files that are used in the application. The \texttt{\textbf{add\_executable}} command on line 26 adds the executable \texttt{\textbf{myapp.x}} to the build. The arguments to this command consist of the name of the executable followed by the executable source files. There can be an arbitrary number of source files associated with any one executable. Note that the source files just consist of the user application source files, the framework files are handled automatically. If some of the files are located in subdirectories, then the path relative to the directory where the CMakeLists.txt file is located should be included.
+
+The remaining lines 28-42 are optional and can be used to automatically copy files from the application source file directory to the build directory. These could include example input files or external configuration files that are called by the code to set internal parameters. The \texttt{\textbf{add\_custom\_target}} command on line 28 defines a list of files and what should be done with them. In this example, the two files \texttt{\textbf{input.xml}} and \texttt{\textbf{myapp\_test.raw}} are the files to be copied. The \texttt{\textbf{COMMAND}} line specifies the action (copy) and the next two lines specify the location of the file to be copied and its destination. The \texttt{\textbf{DEPENDS}} keyword (line 38) indicates that any time the \texttt{\textbf{input.xml}} or \texttt{\textbf{myapp\_test.raw}} files are modified, they should be recopied to the build directory if make is invoked and the \texttt{\textbf{add\_dependencies}} command (line 42) binds the custom target to the build of the executable.
+
+A template file for \texttt{\textbf{CMakeLists.txt}} can be found in the \texttt{\textbf{src}} directory under \texttt{\textbf{CMakeLists.template.txt}}. Users should copy this file to their application directory, modify the name to \texttt{\textbf{CMakeLists.txt}} and add their own source files and test input.

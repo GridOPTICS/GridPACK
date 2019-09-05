@@ -1,0 +1,127 @@
+\section{Kalman Filter}
+
+GridPACK includes a Kalman filter module that can be used for dynamic state estimation. The Kalman filter relies heavily on parallel matrix multiplies that are not currently very high performing, so users will probably find this module too slow for large grids. However, we include it for users interested in exploring the use of Kalman filters in smaller applications. We hope to improve performance in future releases.
+
+The current implementation of the Kalman filter only supports classical generators. These are described in a PSS/E .dyr formatted file. The network itself can be described using a standard PSS/E .raw file. In addition to the .raw and .dyr files, users need to supply times series data for the voltage magnitude and voltage phase angle on all buses. These are stored as .csv files. The format for both the voltage magnitude and phase angle files is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+t-3001,  Bus-1,  Bus-2,{\dots}
+0.0,    -0.001, -0.135,{\dots}
+0.1,    -0.001, -0.135,{\dots}
+0.2,    -0.001, -0.135,{\dots}
+ :
+\end{Verbatim}
+}
+
+All entries on the same lines are separated by commas. The first row contains the name of all columns. The first column is time and has a name of the form \texttt{\textbf{t-xxx,}} where \texttt{\textbf{xxx}} is an integer representing the number of time steps in the file. The number of rows in the file corresponds to \texttt{\textbf{xxx+1}} (the extra row is the first line with the column names). The number of columns is equal to the number of buses in the file plus one (the extra column contains the times). After the first column, the remaining names are all of the form \texttt{\textbf{Bus-xxx}}, where \texttt{\textbf{xxx}} is an integer representing the bus ID. The remaining rows contain the time of the measurement and the value for the measurement on each of the buses.
+
+The input file for the Kalman filter module used both for a dynamic simulation as well as input that is unique to the Kalman filter module. The dynamic simulation parameters that are used include
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+  <Dynamic_simulation>
+    <simulationTime>3</simulationTime>
+    <timeStep>0.01</timeStep>
+    <!-- = 1 Fault Event is known; 
+         = 0 Fault event is unknown, switch is skipped. 
+    -->
+    <KnownFault> 1 </KnownFault>
+    <TimeOffset> 0 </TimeOffset> <!--skip initial measurement data -->
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 1 </beginFault>
+        <endFault>   1.1</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.01</timeStep>
+      </faultEvent>
+    </faultEvents>
+  </Dynamic_simulation>
+\end{Verbatim}
+}
+
+The fault used in the simulation is specified using the same \texttt{\textbf{faultEvents}} block as for dynamic simulation. If the Kalman filter simulation is not being initialized from another calculation, the \texttt{\textbf{networkConfiguration}} field can also be added. The KnowFault and TimeOffset parameters are unique to the Kalman filter application and control whether the fault is considered to be a know event and whether all the time series data should be used in the analysis.
+
+The Kalman filter block consists of the fields
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+  <Kalman_filter<
+    <KalmanAngData>IEEE14_Kalman_input_ang.csv</KalmanAngData>
+    <KalmanMagData>IEEE14_Kalman_input_mag.csv</KalmanMagData>
+    <generatorParameters>IEEE14_classicGen.dyr</generatorParameters>
+    <ensembleSize>21</ensembleSize>
+    <gaussianWidth>1e-2</gaussianWidth>
+    <noiseScale>1e-4</noiseScale>
+    <randomSeed>931316785</randomSeed>
+    <maxSteps>3000</maxSteps>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_view
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Kalman_filter>
+\end{Verbatim}
+}
+
+The \texttt{\textbf{KalmanAngData}} and \texttt{\textbf{KalmanMagData}} fields specify the locations of the files containing the time series data for the voltage magnitude and phase angle. The .dyr file containing the generator parameters (classical generators only) is specified in the \texttt{\textbf{generatorParameters}} field. Additional Kalman filter parameters include
+
+\begin{enumerate}
+\item  \texttt{\textbf{ensembleSize}}: The number of random ensembles generated for the Kalman filter calculation.
+
+\item  \texttt{\textbf{gaussianWidth}}: 
+
+\item  \texttt{\textbf{noiseScale}}:
+
+\item  \texttt{\textbf{randomSeed}}: This is an arbitrary integer used to seed the GridPACK random number generator.
+
+\item  \texttt{\textbf{maxSteps}}: this parameter can be used to control the number of steps simulated. If the number of steps is smaller than the number of steps in the time series data files, then only the number of steps set by \texttt{\textbf{maxSteps}} will be simulated.
+\end{enumerate}
+
+The Kalman filter also needs to make use of linear solvers and the type of solver and its parameters can be specified in this block as well.
+
+The Kalman filter module is represented by the \texttt{\textbf{KalmanApp}} class and the \texttt{\textbf{KalmanNetwork}}, both of which are in the \texttt{\textbf{gridpack::kalman\_filter}} namespace. At present there are only a few functions in this class, more will probably be added as we develop this module further. Apart from the constructor and destructor, the \texttt{\textbf{KalmanApp}} class has a method for reading in a network from a PSS/E formatted file and partitioning it among processors
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void readNetwork(boost::shared_ptr<KalmanNetwork> &network,
+    gridpack::utility::Configuration *config)
+\end{Verbatim}
+}
+
+If the network already exists, then it can be applied to an existing KalmanApp object using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void readNetwork(boost::shared_ptr<KalmanNetwork> &network,
+    gridpack::utility::Configuration *config)
+\end{Verbatim}
+}
+
+The application can be initialized by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void initialize()
+\end{Verbatim}
+}
+
+This function will read in the files containing the time series data for the voltage magnitude and phase angles and will set update configure the calculation based on the parameters in the input file. The simulation is run and output generated using
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void solve()
+\end{Verbatim}
+}
+
+The values of the rotor speed and rotor angle for all generators will be written to the files \texttt{\textbf{omega.dat}} and \texttt{\textbf{delta.dat}} after this simulation is run.

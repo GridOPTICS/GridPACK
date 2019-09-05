@@ -1,0 +1,86 @@
+\section{String Utilities}
+
+At some point, users may want to develop their own parsers for reading in information in external files. The \texttt{\textbf{StringUtils}} class is contained in the \texttt{\textbf{gridpack::utility}} namespace and is designed to provide some useful string manipulation routines that can be used to parse individual lines of a file. Other capabilities are available in standard C routines such as \texttt{\textbf{strcmp}} and the Boost libraries also have many useful routines. The \texttt{\textbf{StringUtils}} class is just a convenient container for different string manipulation methods; it has no internal state.
+
+Some basic routines for modifying strings so that they can be compared with other strings are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void trim(std::string &str)
+\end{Verbatim}
+}
+
+which can be used to remove white space at the beginning and end of a string. This function will also convert all tabs and carriage returns to white space before trimming the white space at the ends of the string. The functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void toUpper(std::string &str)
+
+void toLower(std::string &str)
+\end{Verbatim}
+}
+
+can be used to convert all characters in the string to either upper or lower case.
+
+Many devices in power grid applications are characterized by a one or two character alphanumeric string. It is useful to get these strings into a standard form so that they can be compared with other strings. The function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::string clean2Char(std::string &str)
+\end{Verbatim}
+}
+
+returns a two character string that is right justified. It will also remove any quotes that may or may not be around the original string. The strings C1, `C1', ``C1'' and ``  C1'' will all return a string containing the two characters C1. A single character string will return a two character string with a blank as the first character.
+
+The function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std:: string trimQuotes(std::string &string)
+\end{Verbatim}
+}
+
+can be used to remove either single or double quotation marks from around a string and remove any remaining white space at the beginning and end of the string.
+
+Finally, the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<std::string> blankTokenizer(std::string &str)
+\end{Verbatim}
+}
+
+will take a string in which individual elements are delimited by blank spaces and return a vector in which each element is a separate string (token). This function treats anything inside the original string that may be delimited by quotes as a single token, even if there are additional blank spaces between the quotes. Thus, the string
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+1 5 "ATLANTA 001" 0.00056 1.02
+\end{Verbatim}
+}
+
+is broken up into a vector containing the strings
+
+%Need to tweak this more - put the numbers in tt font and bold like Atlanta
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+1
+
+5
+
+"ATLANTA 001"
+
+0.00056
+
+1.02
+\end{Verbatim}
+}
+
+Both single and double quotes can be used as delimiters for internal strings.

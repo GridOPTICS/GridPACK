@@ -1,0 +1,72 @@
+\section{Global Store}\label{global_store}
+
+The \texttt{\textbf{GlobalStore}} class was created to make large amounts of data globally accessible to any processor when replicating the data would be inefficient in terms of the amount of memory required. The premise of the \texttt{\textbf{GlobalStore}} class is that processors generate vectors of data and this data is added to a \texttt{\textbf{GlobalStore}} object. After all processors have completed adding data, the data is ``uploaded'' to the \texttt{\textbf{GlobalStore}} object so that it is visible to all processors in the system. Prior to the upload operation, the data is held locally on the processor that generated it. The original motivation for creating this class was to save system state variables that represent the results of individual simulations in a contingency analysis context. These variables could then be used to initialize additional calculations.
+
+The module \texttt{\textbf{GlobalStore}} is a templated class that is located in the \texttt{\textbf{gridpack::parallel}} namespace. The \texttt{\textbf{GlobalStore}} constructor is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+GlobalStore<data_type>(const gridpack::parallel::Communicator &comm)
+\end{Verbatim}
+}
+
+The constructor takes a communicator as an argument so data in the \texttt{\textbf{GlobalStore}} object will only be visible to processors in the communicator. It also takes the template argument \texttt{\textbf{data\_type}} that can be any fixed-sized data type. This includes standard data types such as \texttt{\textbf{int}}, \texttt{\textbf{float}}, \texttt{\textbf{double}}, etc. but could also represent user-defined structs.
+
+Data can be added to the \texttt{\textbf{GlobalStore}} object using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void addVector(const int idx, const std::vector<data_type> &vec)
+\end{Verbatim}
+}
+
+This command assumes that the user has some way of uniquely identifying each
+contributed vector by an index \texttt{\textbf{idx}}. The indices do not have to
+be complete, i.e. not all indices in some interval [0,{\dots},N-1] need to be
+added to the storage object, although large gaps between contributed indices are
+potentially wasteful. The length of the vectors can differ for different indices
+and there are also no restrictions on which processor contributes which index,
+so contributions can be made in any order from any processor. The only
+restriction on indices is that they are not used more than once, i.e.
+\texttt{\textbf{addVector}} is not call more than once on any processor for a
+given index. This behavior maps fairly well to contingency calculations where
+the index represents the index of a particular contingency. The data layout in
+the GlobalStore object is illustrated schematically in
+Figure~\ref{fig:global-store}.
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=6.5in, height=3.72in, keepaspectratio=true]{figures/Global-store}
+  \caption{Schematic diagram of data storage in a GlobalStore object. Vectors can have any length and some indices can be missing data.}
+  \label{fig:global-store}
+\end{figure}
+
+%\noindent \includegraphics*[width=6.50in, height=3.72in, keepaspectratio=false, trim=0.00in 0.72in 0.00in 0.44in]{image81}
+
+%\textcolor{red}{\texttt{\textbf{Figure 12}}. Schematic diagram of data storage in a GlobalStore object. Vectors can have any length and some indices can be missing data.}
+
+Once the processors have completed adding vectors to the storage object, the data is still only stored locally. To make it globally accessible, it is necessary to move it from local buffers to a globally accessible data structure. This is accomplished by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void upload()
+\end{Verbatim}
+}
+
+This function takes no arguments. After calling \texttt{\textbf{upload}}, it is no longer possible to continue adding data to the storage object using the \texttt{\textbf{addVector}} function.
+
+Once data has been uploaded to the storage object, any processor can retrieve the data associated with a particular index using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getVector(const int idx, std::vector<data_type> &vec)
+\end{Verbatim}
+}
+
+This function retrieves the data corresponding to index \texttt{\textbf{idx}} from global storage and stores it in a local vector. The \texttt{\textbf{getVector}} function can be called an arbitrary number of times after the data has been uploaded. If no data is found, the return vector will have length zero.
+
+One note about using the \texttt{\textbf{getVector}} function is worth mentioning. The implementation of the \texttt{\textbf{GlobalStore}} class uses some Global Array calls that can potentially interfere with MPI calls in a subsequent function call, resulting in the code hanging. If this occurs, it is usually possible to prevent the hang by calling \texttt{\textbf{Communicator::sync}} on the communicator that was used to define the \texttt{\textbf{GlobalStore}} object. This should be done after completing all \texttt{\textbf{getVector}} calls but before making calls to other parallel functions.
