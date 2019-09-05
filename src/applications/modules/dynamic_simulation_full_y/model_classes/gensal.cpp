@@ -39,7 +39,8 @@ gridpack::dynamic_simulation::GensalGenerator::GensalGenerator(void)
     dx2w_1 = 0;
     dx3Eqp_1 = 0;
     dx4Psidp_1 = 0;
-    dx5Psiqpp_1 = 0;;
+    dx5Psiqpp_1 = 0;
+	Vstab = 0.0;
 }
 
 /**
@@ -84,13 +85,15 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
   if (!data->getValue(GENERATOR_XL, &Xl, idx)) Xl=0.0; // Xl
   if (!data->getValue(GENERATOR_TDOP, &Tdop, idx)) Tdop=0.0; // Tdop
   if (!data->getValue(GENERATOR_TDOPP, &Tdopp, idx)) Tdopp=0.0; // Tdopp
-  if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tdopp=0.0; // Tqopp
+  if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tqopp=0.0; // Tqopp
   //if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.0; // S10
   //if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.0; // S12
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
   if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 TBD: check parser
   //printf("load S10 = %f, S12 = %f\n", S10, S12);
   //if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
+  
+  printf("gensal parameters: %12.6f, %12.6f,%12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f  \n", H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Tdop, Tdopp, Tqopp, S10, S12);
 }
 
 /**
@@ -99,14 +102,28 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
  */
 double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 {
-    double a_ = S12 / S10 - 1.0 / 1.2;
-    double b_ = -2 * S12 / S10 + 2;
-    double c_ = S12 / S10 - 1.2;
-    double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
-    double B = S10 / ((1.0 - A) * (1.0 - A));
-    double result = B * (x - A) * (x - A) / x;
+    //double a_ = S12 / S10 - 1.0 / 1.2;
+    //double b_ = -2 * S12 / S10 + 2;
+    //double c_ = S12 / S10 - 1.2;
+    //double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
+    //double B = S10 / ((1.0 - A) * (1.0 - A));
+    //double result = B * (x - A) * (x - A) / x;
     //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
     //printf("Sat result = %f\n", result); 
+	
+	double a_ = S12 / S10 - 1.0;
+    double b_ = -2 * S12 / S10 + 2.4;
+    double c_ = S12 / S10 - 1.44;
+    double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
+    double B = S10 / ((1.0 - A) * (1.0 - A));
+	
+	double tmp = x-A;
+	//double tmpin = tmp;
+	if (tmp<0.0) {
+		tmp = 0.0;
+	}
+    double result = B * tmp * tmp;
+	
     return result; // Scaled Quadratic with 1.7.1 equations
 }
 
@@ -125,7 +142,7 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
   presentAng = ang;
   double P = p_pg / MVABase;
   double Q = p_qg / MVABase;
-  //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
+  printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
   //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
@@ -155,22 +172,33 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
   Efdinit = Efd;
   Pmechinit = Pmech;
 
-  p_exciter = getExciter();
-  p_exciter->setVterminal(Vterm); 
+  if (p_hasExciter){
+	p_exciter = getExciter();
+	p_exciter->setVterminal(Vterm); 
 //  printf ("gensal init Vterm = %f \n", Vterm);
 //  printf ("gensal init setVcomp abs(Vterm) = %f \n", abs(Vterm));
 //  printf ("gensal init mag = %f \n", mag);
 //  p_exciter->setVcomp(abs(Vterm)); //TBD Need to updated later to calculate Vcomp 
-  p_exciter->setVcomp(mag); 
+	p_exciter->setVcomp(mag); 
 //  printf("esst1a Vcomp= %f\n", gridpack::dynamic_simulation::Esst1aModel::p_exciter->Vcomp);
-  p_exciter->setFieldVoltage(Efd);
-  p_exciter->setFieldCurrent(LadIfd);
-  p_exciter->init(mag, ang, ts);
+	p_exciter->setFieldVoltage(Efd);
+	p_exciter->setFieldCurrent(LadIfd);
+	p_exciter->init(mag, ang, ts);
+  }
 
-  p_governor = getGovernor();
-  p_governor->setMechanicalPower(Pmech);
-  p_governor->setRotorSpeedDeviation(x2w_0); // set Speed Deviation w for wsieg1 
-  p_governor->init(mag, ang, ts);
+  if (p_hasGovernor) {
+	p_governor = getGovernor();
+	p_governor->setMechanicalPower(Pmech);
+	p_governor->setRotorSpeedDeviation(x2w_0); // set Speed Deviation w for wsieg1 
+	p_governor->init(mag, ang, ts);
+  }
+  
+    if (p_hasPss) {
+	p_pss = getPss();
+	p_pss->setOmega(x2w_0);
+	
+	p_pss->init(mag, ang, ts);
+	}
 
   // Initialize other variables 
   /*p_mac_ang_s1 = gridpack::ComplexType(0.0,0.0);
@@ -281,15 +309,22 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
 {
   ///printf("\n***** GEN %d Predicator:\n", p_bus_id);
   if (getGenStatus()){
-  p_exciter = getExciter();
-  Efd = p_exciter->getFieldVoltage();
- // if (p_bus_id == 8022) Efd = Efdinit;  //use this one when relay is added
- // Efd = Efdinit;
+	    
+  if (p_hasExciter){	  
+		p_exciter = getExciter();
+		Efd = p_exciter->getFieldVoltage();
+		// if (p_bus_id == 8022) Efd = Efdinit;  //use this one when relay is added
+  }else{
+		Efd = Efdinit;
+  }
 
-  p_governor = getGovernor();
-  Pmech = p_governor->getMechanicalPower();
-  // if (p_bus_id == 8022) Pmech = Pmechinit;
-  //Pmech = Pmechinit;
+  if (p_hasGovernor){
+	p_governor = getGovernor();
+	Pmech = p_governor->getMechanicalPower();
+	// if (p_bus_id == 8022) Pmech = Pmechinit;
+  }else{
+	Pmech = Pmechinit;
+  }
  
 //  printf("predictor: Efd = %f, Pmech = %f\n", Efd, Pmech); 
 
@@ -325,16 +360,33 @@ void gridpack::dynamic_simulation::GensalGenerator::predictor(
   //printf("gensal pbusid%d, dx: %f\t%f\t%f\t%f\t%f\n", p_bus_id, dx1d_0, dx2w_0, dx3Eqp_0, dx4Psidp_0, dx5Psiqpp_0);
   ///printf("gensal x: %f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1);
   //printf ("gensal predictor presentMag=%f\n", presentMag);
-  p_exciter->setVterminal(presentMag);
-  p_exciter->setVcomp(presentMag); //TBD update to Vcomp 
-//  p_exciter->setFieldVoltage(Efd);
-  p_exciter->setFieldCurrent(LadIfd);
+  if (p_hasPss) {
+	p_pss = getPss();
+	p_pss->setOmega(x2w_1);
+	p_pss->predictor(t_inc, flag);
+	Vstab = p_pss->getVstab();
+	}else{
+		Vstab = 0.0;
+	}
+  
+  if (p_hasExciter){
+	  
+	if (p_hasPss) { 
+		p_exciter->setVstab(Vstab);
+	}
+	p_exciter->setVterminal(presentMag);
+	p_exciter->setVcomp(presentMag); //TBD update to Vcomp 
+	//  p_exciter->setFieldVoltage(Efd);
+	p_exciter->setFieldCurrent(LadIfd);
 
   
-  p_exciter->predictor(t_inc, flag);
+	p_exciter->predictor(t_inc, flag);
+  }
 
-  p_governor->setRotorSpeedDeviation(x2w_0);
-  p_governor->predictor(t_inc, flag);
+  if (p_hasGovernor){
+	p_governor->setRotorSpeedDeviation(x2w_0);
+	p_governor->predictor(t_inc, flag);
+  }
 //  printf("predictor gensal: Efd = %f, Pmech = %f\n", Efd, Pmech); 
   }else {
 	x1d_0 = 0.0;
@@ -407,16 +459,22 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
 {
   ///printf("\n***** GEN %d Corrector:\n", p_bus_id);
   if (getGenStatus()){
-  p_exciter = getExciter();
-  Efd = p_exciter->getFieldVoltage(); 
-  //if (p_bus_id == 8022) Efd = Efdinit;  //use this one when relay is added
-  //Efd = Efdinit;
+  
+  if (p_hasExciter){	  
+		p_exciter = getExciter();
+		Efd = p_exciter->getFieldVoltage();
+		// if (p_bus_id == 8022) Efd = Efdinit;  //use this one when relay is added
+  }else{
+		Efd = Efdinit;
+  }
 
-  p_governor = getGovernor();
-  Pmech = p_governor->getMechanicalPower();
-  //if (p_bus_id == 8022) Pmech = Pmechinit;
-
-  //Pmech = Pmechinit; 
+  if (p_hasGovernor){
+	p_governor = getGovernor();
+	Pmech = p_governor->getMechanicalPower();
+	// if (p_bus_id == 8022) Pmech = Pmechinit;
+  }else{
+	Pmech = Pmechinit;
+  }
 
 // printf("Corrector: Efd = %f, Pmech = %f\n", Efd, Pmech); 
 
@@ -446,14 +504,31 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
   
  // p_exciter->setOmega(x2w_1);
  //
+   if (p_hasPss) {
+	p_pss = getPss();
+	p_pss->setOmega(x2w_1);
+	p_pss->corrector(t_inc, flag);
+	Vstab = p_pss->getVstab();
+	}else{
+		Vstab = 0.0;
+	}	  
+	
+ if (p_hasExciter){
+	 if (p_hasPss) { 
+		p_exciter->setVstab(Vstab);
+	}
+	
   p_exciter->setVterminal(presentMag);
   p_exciter->setVcomp(presentMag); 
 //  p_exciter->setFieldVoltage(Efd);
   p_exciter->setFieldCurrent(LadIfd);
   p_exciter->corrector(t_inc, flag);
+ }
  
+ if (p_hasGovernor){
   p_governor->setRotorSpeedDeviation(x2w_0);
   p_governor->corrector(t_inc, flag);
+ }
 
   //if (p_bus_id == 1)
     //printf("\t%d          %12.6f   %12.6f   %12.6f   %12.6f   %12.6f\n",    
@@ -471,6 +546,16 @@ void gridpack::dynamic_simulation::GensalGenerator::corrector(
     x5Psiqpp_1 = 0.0;
   
   }
+}
+
+void gridpack::dynamic_simulation::GensalGenerator::setWideAreaFreqforPSS(double freq)
+{
+	p_wideareafreq = freq;
+	if (p_hasPss){
+		printf("-----!renke debug: GensalGenerator::setWideAreaFreqforPSS: %12.6f \n", freq);
+		p_pss = getPss();
+		p_pss->setWideAreaFreqforPSS(freq);	
+	}
 }
 
 /**
@@ -517,8 +602,8 @@ bool gridpack::dynamic_simulation::GensalGenerator::serialWrite(
     if (getWatch()) {
       char buf[128];
 //    sprintf(buf,", %f, %f",real(p_mac_ang_s1),real(p_mac_spd_s1));
-      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,",
-          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm);
+      sprintf(string,",%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,",
+          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1+1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1, Vterm, Efd, LadIfd);
       return true;
 /*      if (strlen(buf) <= bufsize) {
         sprintf(string,"%s",buf);

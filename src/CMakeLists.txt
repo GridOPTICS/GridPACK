@@ -66,7 +66,7 @@ option (HELICS_INSTALL_DIR "Point to directory with installed HELICS files" OFF)
 if (HELICS_INSTALL_DIR)
   add_definitions(-DUSE_HELICS=1)
   include_directories(AFTER ${HELICS_INSTALL_DIR}/include)
-  set (HELICS_LIBRARY "${HELICS_INSTALL_DIR}/lib64/libhelics-static.a")
+  set (HELICS_LIBRARY "${HELICS_INSTALL_DIR}/lib/libhelics-static.a")
 endif()
 
 # suppress any checks to see if test codes run. Only check for compilation.
