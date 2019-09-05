@@ -1951,6 +1951,13 @@
 #define GENERATOR_WPF "GENERATOR_WPF"
 
 /**
+ * Non-blank alphanumeric string to identify model being used for pss	
+ * type: string
+ * indexed
+ */
+#define PSSSIM_MODEL "PSSSIM_MODEL"
+
+/**
  * Non-blank alphanumeric string to identify model being used for generator	
  * type: string
  * indexed
@@ -4049,5 +4056,125 @@
  * indexed
  */
 #define RELAY_BLRO2 "RELAY_BLRO2"
+
+// PSSSIM DATA
+/**
+ * Flag to indicate that PSSSIM is present
+ * type: boolean
+ * indexed
+ */
+#define HAS_PSS "HAS_PSS"
+
+/**
+ * Exciter model
+ * type: string
+ * indexed
+ */
+#define PSS_MODEL "PSS_MODEL"
+
+/**
+ * PSSSIM inputtype
+ * type: integer
+ * indexed
+ */
+#define PSSSIM_INPUTTYPE "PSSSIM_INPUTTYPE"
+
+/**
+ * PSSSIM bus1 
+ * type: ineger
+ * indexed
+ */
+#define PSSSIM_BUS1 "PSSSIM_BUS1"
+
+/**
+ * PSSSIM bus2 
+ * type: ineger
+ * indexed
+ */
+#define PSSSIM_BUS2 "PSSSIM_BUS2"
+
+/**
+ * PSSSIM bus3 
+ * type: ineger
+ * indexed
+ */
+#define PSSSIM_BUS3 "PSSSIM_BUS3"
+
+/**
+ * PSSSIM bus4 
+ * type: ineger
+ * indexed
+ */
+#define PSSSIM_BUS4 "PSSSIM_BUS4"
+
+/**
+ * PSSSIM bus5 
+ * type: ineger
+ * indexed
+ */
+#define PSSSIM_BUS5 "PSSSIM_BUS5"
+
+/**
+ * PSSSIM bus6 
+ * type: ineger
+ * indexed
+ */
+#define PSSSIM_BUS6 "PSSSIM_BUS6"
+
+/**
+ * PSSSIM gainK 
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_GAINK "PSSSIM_GAINK"
+
+/**
+ * PSSSIM TW 
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_TW "PSSSIM_TW"
+
+/**
+ * PSSSIM T1
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_T1 "PSSSIM_T1"
+
+/**
+ * PSSSIM T2
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_T2 "PSSSIM_T2"
+
+/**
+ * PSSSIM T3
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_T3 "PSSSIM_T3"
+
+/**
+ * PSSSIM T4
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_T4 "PSSSIM_T4"
+
+/**
+ * PSSSIM MAXOUT
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_MAXOUT "PSSSIM_MAXOUT"
+
+/**
+ * PSSSIM MINOUT
+ * type: real float
+ * indexed
+ */
+#define PSSSIM_MINOUT "PSSSIM_MINOUT"
 
 #endif /* DICTIONARY_HPP_ */

@@ -247,6 +247,7 @@ elif [ $host == "gridpackvm" ]; then
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
         -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
+	-D HELICS_INSTALL_DIR:PATH="/home/huan495/HELICS/install-test" \
 	$common_flags ..
 
 elif [ $host == "debianvm" ]; then

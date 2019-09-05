@@ -48,6 +48,7 @@
 #include "parser_classes/acmtblu1.hpp"
 #include "parser_classes/ieelbl.hpp"
 #include "parser_classes/cmldblu1.hpp"
+#include "parser_classes/psssim.hpp"
 
 namespace gridpack {
 namespace parser {
@@ -484,6 +485,22 @@ class BasePTIParser : public BaseParser<_network>
       double aturb;
       double bturb;
       double tturb;
+      // PSSSIM parameters
+      int psssim_inputtype;
+      int psssim_bus1;
+      int psssim_bus2;
+      int psssim_bus3;
+      int psssim_bus4;
+      int psssim_bus5;
+      int psssim_bus6;
+      double psssim_gaink;
+      double psssim_tw;
+      double psssim_t1;
+      double psssim_t2;
+      double psssim_t3;
+      double psssim_t4;
+      double psssim_maxout;
+      double psssim_minout;
     };
 
     // Data structure to hold relay parameters on buses
@@ -837,6 +854,9 @@ class BasePTIParser : public BaseParser<_network>
           } else if (!strcmp(gen_data[i].model,"WSHYGP")) {
             WshygpParser<gen_params> parser;
             parser.extract(gen_data[i], data, g_id);
+          } else if (!strcmp(gen_data[i].model,"PSSSIM")) {
+            PsssimParser<gen_params> parser;
+            parser.extract(gen_data[i], data, g_id);
           }
         }
       }
@@ -1125,7 +1145,7 @@ class BasePTIParser : public BaseParser<_network>
       if (device == "GENCLS" || device == "GENSAL" || device == "GENROU" ||
           device == "WSIEG1" || device == "EXDC1" || device == "EXDC2" ||
           device == "ESST1A" || device == "ESST4B" || device == "GGOV1" ||
-          device == "WSHYGP") {
+          device == "WSHYGP" || device == "PSSSIM") {
         ret = true;
       }
       return ret;
@@ -1286,6 +1306,9 @@ class BasePTIParser : public BaseParser<_network>
               parser.parse(split_line, data, g_id);
             } else if (sval == "WSHYGP") {
               WshygpParser<gen_params> parser;
+              parser.parse(split_line, data, g_id);
+            } else if (sval == "PSSSIM") {
+              PsssimParser<gen_params> parser;
               parser.parse(split_line, data, g_id);
             }
           }
@@ -1463,6 +1486,9 @@ class BasePTIParser : public BaseParser<_network>
             parser.store(split_line,data);
           } else if (sval == "WSHYGP") {
             WshygpParser<gen_params> parser;
+            parser.store(split_line,data);
+          } else if (sval == "PSSSIM") {
+            PsssimParser<gen_params> parser;
             parser.store(split_line,data);
           }
           gen_vector->push_back(data);
