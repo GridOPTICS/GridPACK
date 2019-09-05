@@ -23,6 +23,13 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
 #include "dsf_app_module.hpp"
+#include <iostream>
+
+#ifdef USE_HELICS
+//#include "helics/ValueFederates.hpp"
+//#include <helics/shared_api_library/ValueFederate.h>
+#include <helics/helics.hpp>
+#endif
 
 //#define MAP_PROFILE
 
@@ -448,6 +455,64 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   // Save initial time step
   //saveTimeStep();
+ 
+	std::cout << "HELICS Version: " << helics::versionString << std::endl;
+ 
+#ifdef USE_XHELICS
+
+   helics_federate_info 		fedinfo; /* an information object used to pass information to a federate*/
+  const char*    					fedinitstring="--federates=1"; /* tell the core to expect only 1 federate*/
+   helics_federate 			vfed; /* object representing the actual federate*/
+   helics_publication 		pub_freq; /* an object representing a publication*/
+   helics_time 				currenttime = 0.0; /* the current time of the simulation*/
+   helics_error  			err =  helicsErrorInitialize();/* the result code from a call to the helics Library*/
+  /** create an info structure to define some parameters used in federate creation*/
+  fedinfo =  helicsCreateFederateInfo();
+
+  /** set the core type to use
+  can be "test", "ipc", "udp", "tcp", "zmq", "mpi"
+  not all are available on all platforms
+  and should be set to match the broker and receiver
+  zmq is the default*/
+   helicsFederateInfoSetCoreTypeFromString(fedinfo,"zmq",&err);
+   helicsFederateInfoSetCoreInitString(fedinfo,fedinitstring,&err);
+  /** set the period of the federate to 1.0 get the period using the getPropertyIndex function with a string
+  if could also be set directly using the enumeration helics_property_time_period*/
+   helicsFederateInfoSetTimeProperty(fedinfo,helicsGetPropertyIndex("period"), 1.0,&err);
+
+  /** create the value federate using the informational structure*/
+  vfed =  helicsCreateValueFederate("gridpack",fedinfo,&err);
+
+  /** free the federateInfo structure when no longer needed*/
+   helicsFederateInfoFree(fedinfo);
+  if (err.error_code !=  helics_ok) /*check to make sure the federate was created*/
+  {
+	  printf("HELICS failed to create value federate:%s\n",err.message);
+      //return (-2);
+  }
+  /** register a publication interface on vFed, with a global Name of "hello"
+  of a type "string", with no units*/
+  pub_freq =  helicsFederateRegisterPublication(vfed, "delta_freq",  helics_data_type_double, "",&err);
+  if (err.error_code !=  helics_ok) /*check to make sure the publication was created*/
+  {
+	  printf("HELICS failed to Federate Register Publication:%s\n",err.message);
+      //return (-3);
+  }
+  /** transition the federate to execution mode
+  * the helicsFederateEnterInitializationMode is not necessary if there is nothing to do in the initialization mode
+  */
+   helicsFederateEnterInitializingMode(vfed,&err);
+  if (err.error_code !=  helics_ok)
+  {
+      printf( "HELICS failed to enter initialization mode:%s\n",err.message);
+  }
+   helicsFederateEnterExecutingMode(vfed,&err);
+  if (err.error_code !=  helics_ok)
+  {
+      printf("HELICS failed to enter initialization mode:%s\n",err.message);
+  }
+
+#endif
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
   //for (I_Steps = 0; I_Steps < 200; I_Steps++) {
     //char step_str[128];
@@ -610,6 +675,18 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     timer->start(t_volt);
     p_factory->setVolt(false);
 	p_factory->updateBusFreq(h_sol1);
+	
+	double wideareafreq = 0.0;
+	wideareafreq = p_factory->grabWideAreaFreq();
+	printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: %12.6f ", wideareafreq);
+	
+#ifdef USE_XHELICS
+	 helicsPublicationPublishDouble(pub_freq, wideareafreq, &err);
+#endif
+	
+	
+	p_factory->setWideAreaFreqforPSS(wideareafreq);
+	
     timer->stop(t_volt);
 	
 	//printf("before update relay, after first volt solv: \n");
@@ -1010,6 +1087,17 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   timer->stop(t_solve);
   //timer->dump();
+  
+#ifdef USE_XHELICS
+   /** finalize the federate*/
+   helicsFederateFinalize(vfed,&err);
+  /** free the memory allocated to the federate*/
+   helicsFederateFree(vfed);
+  /** close the helics library*/
+   helicsCloseLibrary();
+#endif
+ 
+  
 }
 
 /**

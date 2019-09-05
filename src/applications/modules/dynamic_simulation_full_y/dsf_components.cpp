@@ -610,6 +610,19 @@ void gridpack::dynamic_simulation::DSFullBus::corrector(double t_inc, bool flag)
 #endif
 }
 
+void gridpack::dynamic_simulation::DSFullBus::setWideAreaFreqforPSS(double freq){
+	
+  int i;
+  for (i = 0; i < p_ngen; i++) {
+	//if (!p_generators[i]->getGenStatus()) {
+	//	continue;
+	//}
+    p_generators[i]->setWideAreaFreqforPSS(freq);
+  }
+	
+}
+
+
 /**
  * Update dynamic load internal relays action
  */
@@ -678,6 +691,8 @@ void gridpack::dynamic_simulation::DSFullBus::updateFreq (double delta_t){
 	int i;
 	double dbusvoltfreq;
 	if ( bcomputefreq == true ) {
+		
+		printf ("------------!!!renke debug DSFullBus::updateFreq bus: %d updates frequency!!!\n", getOriginalIndex());
 		computeBusVolFrequency(delta_t);
 	    dbusvoltfreq = getBusVolFrequency();
 		
@@ -782,7 +797,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   std::string relay_genid; //renke add
   double pg, qg, mva, r, dstr, dtr;
   double h, d0;
-  bool has_ex, has_gov;
+  bool has_ex, has_gov, has_pss;
   GeneratorFactory genFactory;
   RelayFactory relayFactory;
   LoadFactory loadFactory;
@@ -820,8 +835,10 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           = genFactory.createGeneratorModel(model);
         has_ex = false;
         has_gov = false;
+		has_pss = false;
         data->getValue(HAS_EXCITER, &has_ex, i);
         data->getValue(HAS_GOVERNOR, &has_gov, i);
+		data->getValue(HAS_PSS, &has_pss, i);
         if (generator) {
           //boost::shared_ptr<BaseGeneratorModel> tmp;
           //tmp.reset(generator);
@@ -836,6 +853,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           if (has_ex) {
             if (data->getValue(EXCITER_MODEL, &model, i)) {
               //std::cout << "exciter: " << model << std::endl;
+			  //p_generators[icnt]->p_hasExciter = true;
               BaseExciterModel *exciter
                 = genFactory.createExciterModel(model);
               boost::shared_ptr<BaseExciterModel> ex;
@@ -846,11 +864,23 @@ void gridpack::dynamic_simulation::DSFullBus::load(
           if (has_gov) {
             if (data->getValue(GOVERNOR_MODEL, &model, i)) {
               //std::cout << "governor: " << model << std::endl;
+			  //p_generators[icnt]->p_hasGovernor = true;
               BaseGovernorModel *governor
                 = genFactory.createGovernorModel(model);
               boost::shared_ptr<BaseGovernorModel> gov;
               gov.reset(governor);
               p_generators[icnt]->setGovernor(gov);
+            }
+          }
+		  if (has_pss) {
+			printf("---------renkedebug: bus %d: has pss", idx);
+            if (data->getValue(PSS_MODEL, &model, i)) {
+			  //p_generators[icnt]->p_hasPss = true;
+              BasePssModel *pssmodel
+                = genFactory.createPssModel(model);
+              boost::shared_ptr<BasePssModel> pss;
+              pss.reset(pssmodel);
+              p_generators[icnt]->setPss(pss);
             }
           }
 
@@ -887,6 +917,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
         p_generators[icnt]->load(data,i);
         if (has_gov) p_generators[icnt]->getGovernor()->load(data,i);
         if (has_ex) p_generators[icnt]->getExciter()->load(data,i);	
+		if (has_pss) p_generators[icnt]->getPss()->load(data,i);	
         icnt++;
       } else if (stat == 1 && pg < 0) {
         p_negpg.push_back(pg);
@@ -1036,6 +1067,13 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   printf(" Bus %d have remaining static loads for Y-bus: p_pl: %f pu, p_ql: %f pu, \n",
       idx, p_pl, p_ql);
+
+  //if (getOriginalIndex() == 34 || getOriginalIndex() == 30){ //renke hardcoded
+  if (idx == 34 || idx == 30){ //renke hardcoded
+	  bcomputefreq = true;
+	  printf("--------------------!!renke debug DSFullBus::load(), Bus No.: %d set bcomputefreq as true \n", getOriginalIndex());
+  }
+	  
 
 }
 
@@ -1662,6 +1700,15 @@ double gridpack::dynamic_simulation::DSFullBus::getBusVolFrequency(void) //renke
 {
 	
 	return p_busvolfreq;
+}
+
+/**
+ * set the value for the bcomputefreq
+ * @return: void
+ */
+void gridpack::dynamic_simulation::DSFullBus::setBusVolFrequencyFlag(bool flag) //renke add
+{
+	 bcomputefreq = flag;
 }
 
 /**

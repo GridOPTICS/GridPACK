@@ -119,6 +119,9 @@ class DSFullFactory
     */
     void updateBusFreq(double delta_t);
 	
+	double grabWideAreaFreq() ;  //renke hard coded
+	void setWideAreaFreqforPSS(double freq); //renke hard coded
+	
    /**
      * update bus relay status
      */

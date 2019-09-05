@@ -140,3 +140,11 @@ void gridpack::dynamic_simulation::BaseExciterModel::setOmega(double omega)
 void gridpack::dynamic_simulation::BaseExciterModel::setVcomp(double Vcomp)
 {
 }
+
+void gridpack::dynamic_simulation::BaseExciterModel::setVstab(double Vstab)
+{
+}
+
+void gridpack::dynamic_simulation::BaseExciterModel::setWideAreaFreqforPSS(double freq)
+{
+}	
