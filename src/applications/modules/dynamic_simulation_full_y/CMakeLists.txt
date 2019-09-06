@@ -40,7 +40,7 @@ endif()
 if (HELICS_DIR)
   set(target_libraries
       ${target_libraries}
-      ${HELICS_LIBRARY}
+      ${HELICS_LIBRARY})
 endif()
 
 set(ds_include_dirs
