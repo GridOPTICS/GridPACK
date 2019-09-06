@@ -37,12 +37,6 @@ if (GOSS_DIR)
       ${APR_LIBRARY})
 endif()
 
-if (HELICS_DIR)
-  set(target_libraries
-      ${target_libraries}
-      ${HELICS_LIBRARY})
-endif()
-
 set(ds_include_dirs
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/base_classes
