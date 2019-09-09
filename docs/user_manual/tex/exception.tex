@@ -1,0 +1,63 @@
+\section{Exceptions}
+
+The math module has been implemented so that failures throw exceptions. These can be caught by other parts of code and managed so that code does something more graceful than simply crash when an error is encountered. For example, a calculation that fails because the solver throws an exception might try to run again using a different solver. In a contingency analysis calculation, a contingency that fails because the solver did not converge can be marked as a failed calculation and the code can proceed to the next contingency. This allows the code to evaluate all contingencies even if some do not converge. A solver exception can be handled using the following construct
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    LinearSolver solver(*A);
+    // User code...
+    try {
+      solver.solve(*B,*X);
+    } catch (const gridpack::Exception e) {
+      // Do something to manage exception
+    }
+\end{Verbatim}
+}
+
+If the solve command fails, it throws a \texttt{\textbf{gridpack::Exception}} that can then be managed by the code. This could consist of simply exiting cleanly or the code could try and take corrective action by using a different algorithm.
+
+Exceptions can also be added to error conditions that are detected in user written code so that the error can be picked up in some other part of the application and managed there. Exceptions have two constructors that can be used in applications
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Exception(const std::string msg)
+
+Exception(const char* msg)
+\end{Verbatim}
+}
+
+where \texttt{\textbf{msg}} is a text string describing the error that was encountered. This message can be read later using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+const char* what()
+\end{Verbatim}
+}
+
+Exceptions are usually created in user code using the following syntax
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    if (...some_condition_is_violated...) {
+      throw gridpack::Exception("Describe error condition");
+    }
+\end{Verbatim}
+}
+
+The error message can be printed out to standard out (or standard error) by catching the exception and calling \texttt{\textbf{what}}
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    try {
+       // Some action
+    } catch (const gridpack::Exception e) {
+      std::cout << e.what() << std::endl;
+      // After printing error take some action
+    }
+\end{Verbatim}
+}

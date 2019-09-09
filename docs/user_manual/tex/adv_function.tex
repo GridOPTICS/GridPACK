@@ -1,0 +1,16 @@
+\chapter{Advanced Functionality}
+
+The core operations supported by GridPACK have been described above and these can be used in to create many different kinds of power grid applications. This section will describe features that are more advanced but can be extremely useful in certain cases. Additional capabilities of the GridPACK framework include
+\begin{enumerate}
+\item  Communicators and task managers that can be used to create multiple levels of parallelism and implement dynamic load balancing schemes
+
+\item  A generalized matrix-vector interface to handle applications where the dependent and independent variables are associated with both buses and branches. The \texttt{\textbf{MatVecInterface}} described above can only be used for systems where the dependent and independent variables are associated solely with buses
+
+\item  A ``slab'' matrix-vector interface for creating matrices based on multiple values on each of the network components. This can be used for algorithms such as Kalman filter
+
+\item  Profiling and error handling capabilities
+
+\item  A hashed data distribution capability that can be used to direct network data to the processors that own the corresponding network components
+\end{enumerate}
+
+This functionality is described in more detail in the following sections.

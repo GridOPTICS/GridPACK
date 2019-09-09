@@ -1,0 +1,372 @@
+\section{Contingency Analysis}
+
+An example contingency application has been included in the contingency analysis directory. This contingency analysis is simpler than the one available under the \texttt{\textbf{applications}} directory and provides a relatively compact demonstration of some of the advanced features of GridPACK. This application is built entirely around the power flow module, so it has no network component classes of its own. The main functionality is located in the \texttt{\textbf{CADriver}} class that consists of two methods (other than the constructor and destructor). One function is used to read in a list of contingencies and convert them to a corresponding \texttt{\textbf{Contingency}} data structure and the other function executes the contingency analysis calculation. These two functions will be discussed in detail.
+
+The function for reading in the contingencies and converting them to a list of Contingency data structures has the form
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<gridpack::powerflow::Contingency> getContingencies(
+
+  gridpack::utility::Configuration::ChildCursors contingencies)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{Contingency}} data structures are defined in as part of the power flow module and exist in the \texttt{\textbf{gridpack::powerflow}} namespace. The list of cursors represented by the contingencies variable is obtained by the calling program before calling this function. The function itself is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  std::vector<gridpack::powerflow::Contingency> ret;
+  int size = contingencies.size();
+  int i, idx;
+  gridpack::utility::StringUtils utils;
+  for (idx = 0; idx < size; idx++) {
+    std::string ca_type;
+    contingencies[idx]->get("contingencyType",&ca_type);
+    std::string ca_name;
+    contingencies[idx]->get("contingencyName",&ca_name);
+    if (ca_type == "Line") {
+      std::string buses;
+      contingencies[idx]->get("contingencyLineBuses",&buses);
+      std::string names;
+      contingencies[idx]->get("contingencyLineNames",&names);
+      std::vector<std::string> string_vec = 
+          utils.blankTokenizer(buses);
+      std::vector<int> bus_ids;
+      for (i=0; i<string_vec.size(); i++) {
+        bus_ids.push_back(atoi(string_vec[i].c_str()));
+      }
+      string_vec.clear();
+      string_vec = utils.blankTokenizer(names);
+      std::vector<std::string> line_names;
+      for (i=0; i<string_vec.size(); i++) {
+        line_names.push_back(utils.clean2Char(string_vec[i]));
+      }
+      if (bus_ids.size() == 2*line_names.size()) {
+        gridpack::powerflow::Contingency contingency;
+        contingency.p_name = ca_name;
+        contingency.p_type = Branch;
+        int i;
+        for (i = 0; i < line_names.size(); i++) {
+          contingency.p_from.push_back(bus_ids[2*i]);
+          contingency.p_to.push_back(bus_ids[2*i+1]);
+          contingency.p_ckt.push_back(line_names[i]);
+          contingency.p_saveLineStatus.push_back(true);
+        }
+        ret.push_back(contingency);
+      }
+    }se if (ca_type == "Generator") {
+      std::string buses;
+      contingencies[idx]->get("contingencyBuses",&buses);
+      std::string gens;
+      contingencies[idx]->get("contingencyGenerators",&gens);
+      std::vector<std::string> string_vec =
+          utils.blankTokenizer(buses);
+      std::vector<int> bus_ids;
+      for (i=0; i<string_vec.size(); i++) {
+        bus_ids.push_back(atoi(string_vec[i].c_str()));
+      }
+      string_vec.clear();
+      string_vec = utils.blankTokenizer(gens);
+      std::vector<std::string> gen_ids;
+      for (i=0; i<string_vec.size(); i++) {
+        gen_ids.push_back(utils.clean2Char(string_vec[i]));
+      }
+      if (bus_ids.size() == gen_ids.size()) {
+        gridpack::powerflow::Contingency contingency;
+        contingency.p_name = ca_name;
+        contingency.p_type = Generator;
+        int i;
+        for (i = 0; i < bus_ids.size(); i++) {
+          contingency.p_busid.push_back(bus_ids[i]);
+          contingency.p_genid.push_back(gen_ids[i]);
+          contingency.p_saveGenStatus.push_back(true);
+        }
+        ret.push_back(contingency);
+      }
+    }
+  }
+  return ret;
+\end{Verbatim}
+}
+
+This function is designed to parse input of the form
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<ContingencyList>
+  <Contingency\_analysis>
+    <Contingencies>
+      <Contingency>
+        <contingencyType>Line</contingencyType>
+        <contingencyName>CTG1</contingencyName>
+        <contingencyLineBuses> 13 14</contingencyLineBuses>
+        <contingencyLineNames> B1 </contingencyLineNames>
+      </Contingency>
+      <Contingency>
+        <contingencyType>Generator</contingencyType>
+        <contingencyName>CTG2</contingencyName>
+        <contingencyBuses> 2  </contingencyBuses>
+        <contingencyGenerators>1 </contingencyGenerators>
+      </Contingency>
+    </Contingencies>
+  </Contingency\_analysis>
+</ContingencyList>
+\end{Verbatim}
+}
+
+The \texttt{\textbf{contingencies}} list in the argument consists of a vector of \texttt{\textbf{Configuration}} module cursors, each of which is pointing to one of the \texttt{\textbf{Contingency}} blocks in this input.
+
+The first few lines are used to create the return list, determine the number of contingencies in the \texttt{\textbf{ChildCursors}} list and create a \texttt{\textbf{StringUtils}} object that can be used to parse the input. The function then loops over all cursors in the \texttt{\textbf{contingencies}} list. All contingencies should contain the \texttt{\textbf{contingencyType}} and \texttt{\textbf{contingencyName}} field, so these values are obtained using the get function from the \texttt{\textbf{Configuration}} module. The type can be either ``\texttt{\textbf{Line}}'' or ``\texttt{\textbf{Generator}}''. Based on the type, the function bifurcates into two branches. The ``\texttt{\textbf{Line}}'' branch looks for the strings corresponding to \texttt{\textbf{contingencyLineBuses}} and \texttt{\textbf{contingencyLineNames}} and assigns these to the string variables \texttt{\textbf{buses}} and \texttt{\textbf{names}}. More than one transmission element may be involved in the contingency. The \texttt{\textbf{StringUtils}} \texttt{\textbf{blankTokenizer}} function is used to parse the \texttt{\textbf{buses}} string into a list of strings that can then be converted to a list of integers. These represent the original indices of the buses at each end of the branch. The \texttt{\textbf{names}} string is also converted to a list representing the character tag identifying the individual transmission element between the two buses. This is then reformatted to a consistent 2-character format using the \texttt{\textbf{StringUtils}} \texttt{\textbf{clean2Char}} function. The string vector \texttt{\textbf{string\_vec}} is used to hold the results from \texttt{\textbf{blankTokenizer}}, and the final list of integers and character tags are stored in the variables \texttt{\textbf{bus\_ids}} and \texttt{\textbf{line\_names}}. Each transmission element is characterized by two buses and a character tag, so the number of bus IDs should be twice the number of tags. If this condition is met, then the contingency is assumed to be well formed and a \texttt{\textbf{Contingency}} struct is created for it. After copying the data stored in the variables \texttt{\textbf{ca\_type}}, \texttt{\textbf{ca\_name}}, bus\_ids and \texttt{\textbf{line\_names}}, this contingency is added to the return variable \texttt{\textbf{ret}}.
+
+The ``\texttt{\textbf{Generator}}'' branch is similar to the ``Line'' branch. The strings in the \texttt{\textbf{contingencyBuses}} and \texttt{\textbf{contingencyGenerators}} fields are copied into the string variables \texttt{\textbf{buses}} and \texttt{\textbf{gens}}. These are then converted into a list of bus IDs and generator tags using the blankTokenizer function and stored in the list bus\_ids and gen\_ids. A generator is characterized by the original index of the bus that it is associated with and the 2-character generator tag so the size of the \texttt{\textbf{bus\_ids}} and \texttt{\textbf{gen\_ids}} vectors must be equal. If this condition is met, then a \texttt{\textbf{Contingency}} struct is created, the contingency data is copied to it and the struct is added to the return variable \texttt{\textbf{ret}}.
+
+After all cursor in contingencies have been processed, the \texttt{\textbf{getContingencies}} function returns a list of \texttt{\textbf{Contingency}} structs representing all the contingencies in the original XML input file.
+
+The execute function starts with the code block
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void gridpack::contingency_analysis::CADriver::execute(int argc, char** argv)
+{
+  gridpack::parallel::Communicator world;
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+  int t_total = timer->createCategory("Total Application");
+  timer->start(t_total);
+
+  gridpack::utility::Configuration *config
+    = gridpack::utility::Configuration::configuration();
+  if (argc >= 2 && argv[1] != NULL) {
+    char inputfile[256];
+    sprintf(inputfile,"%s",argv[1]);
+    config->open(inputfile,world);
+  } else {
+    config->open("input.xml",world);
+  }
+}
+\end{Verbatim}
+}
+
+The user can pass in the name of the input file when they invoke the contingency analysis application, and this is transmitted via the variables \texttt{\textbf{argc}} and \texttt{\textbf{argv}} in the argument list. If an argument is detected, then the code will try and open a file using the argument as the filename, otherwise it will assume the input file is called ``\texttt{\textbf{input.xml}}''. Once the input file is open, all processors have access to its contents. This section also creates a timing category for the calculation and starts the timer. The call to \texttt{\textbf{CoarseTime::instance}} returns the timer object and the \texttt{\textbf{createCategory}} call creates a timer category with the name ``\texttt{\textbf{Total Application}}''. It also returns a handle to this category. The \texttt{\textbf{start}} call begins the timer. The timer can be started and stopped multiple times for the same category.
+
+The next few lines are used to parse the input file and determine the size of the communicators that should be used to run individual tasks.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config->getCursor("Configuration.Contingency_analysis");
+  int grp_size;
+  double Vmin, Vmax;
+  if (!cursor->get("groupSize",&grp_size)) {
+    grp_size = 1;
+  }
+  if (!cursor->get("minVoltage",&Vmin)) {
+    Vmin = 0.9;
+  }
+  if (!cursor->get("maxVoltage",&Vmax)) {
+    Vmax = 1.1;
+  }
+  gridpack::parallel::Communicator task_comm = world.divide(grp_size);
+\end{Verbatim}
+}
+
+A \texttt{\textbf{CursorPtr}} is defined and set to point to the contents of the \texttt{\textbf{Contingency\_analysis}} block in the input file using the \texttt{\textbf{getCursor}} function. This block contains parameters defining some of the properties of the simulation. The \texttt{\textbf{groupSize}} parameter sets the size of the communicator on which individual power flow calculations are run. PThe power flow is not very scalable in GridPACK and it is usually fastest to run it on one processor so the default value is 1. The \texttt{\textbf{minVoltage}} and \texttt{\textbf{maxVoltage}} parameters are the limits, in p.u., for acceptable voltage variations on individual buses. Once the group size has been set, the world communicator is divided into sub communicators using the divide function. This guarantees that each subcommunicator contains at most the number of processes specified using \texttt{\textbf{groupSize}} (one subcommunicator may contain less than this number). Each process is now part of the world communicator and one subcommunicator.
+
+The next block of code creates a power flow application on each task communicator and initializes it.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  boost::shared_ptr<gridpack::powerflow::PFNetwork>
+    pf_network(new gridpack::powerflow::PFNetwork(task_comm));
+  gridpack::powerflow::PFAppModule pf_app;
+  pf_app.readNetwork(pf_network,config);
+  pf_app.initialize();
+  pf_app.solve();
+  pf_app.ignoreVoltageViolations(Vmin,Vmax);
+\end{Verbatim}
+}
+
+The first line creates a power flow network on the task communicator. The second line creates a power flow application. The \texttt{\textbf{readNetwork}} function assigns the powerflow network (which currently has nothing in it) to the power flow application, along with the pointer to the configuration module. The input file is expected to have a \texttt{\textbf{Powerflow}} block that contains parameters for the  power flow application. These include the location of the network configuration file and the type of solver that is to be used. An example of a complete input file is
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <Contingency\_analysis>
+    <contingencyList>contingencies.xml</contingencyList>
+    <groupSize>2</groupSize>
+    <maxVoltage>1.1</maxVoltage>
+    <minVoltage>0.9</minVoltage>
+  </Contingency\_analysis>
+  <Powerflow>
+    <networkConfiguration> IEEE14\_ca.raw </networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-6</tolerance>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp\_type richardson
+        -pc\_type lu
+        -pc\_factor\_mat\_solver\_package superlu\_dist
+        -ksp\_max\_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Powerflow>
+</Configuration>
+\end{Verbatim}
+}
+
+Note that it has two blocks, \texttt{\textbf{Contingency\_analysis}} and \texttt{\textbf{Powerflow}}. The parameters describing the contingency calculation and the location of the contingencies are located in the first block and the power flow parameters are located in the second block. The \texttt{\textbf{readNetwork}} function will read in the network configuration file and partition the network. The \texttt{\textbf{initialize}} function is used to initialize the network components from the \texttt{\textbf{DataCollection}} objects and assign exchange buffers. The call to \texttt{\textbf{solve}} is used to obtain a power solution to the base problem with no contingencies. Since all tasks have the same data at this point, the network solution is duplicated across all subcommunicators. The final call to \texttt{\textbf{ignoreVoltageViolations}} sets a parameter in each network component that violates the voltage bounds for base case. These components will be ignored in any subsequent checks for voltage violations.
+
+The next step is to read in the contingencies and convert these to a list of contingency data structs.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  std::string contingencyfile;
+  if (!cursor->get("contingencyList",&contingencyfile)) {
+    contingencyfile = "contingencies.xml";
+  }
+  bool ok = config->open(contingencyfile,world);
+  cursor = config->getCursor(
+      "ContingencyList.Contingency_analysis.Contingencies");
+  gridpack::utility::Configuration::ChildCursors contingencies;
+  if (cursor) cursor->children(contingencies);
+  std::vector<gridpack::powerflow::Contingency>
+    events = getContingencies(contingencies);
+  if (world.rank() == 0) {
+    int idx;
+    for (idx = 0; idx < events.size(); idx++) {
+      printf("Name: %s\n",events[idx].p_name.c_str());
+      if (events[idx].p_type == Branch) {
+        int nlines = events[idx].p_from.size();
+        int j;
+        for (j=0; j<nlines; j++) {
+          printf(" Line: (from) %d (to) %d (line) \'%s\'\n",
+              events[idx].p_from[j],events[idx].p_to[j],
+              events[idx].p_ckt[j].c_str());
+        }
+      } else if (events[idx].p_type == Generator) {
+        int nbus = events[idx].p_busid.size();
+        int j;
+        for (j=0; j<nbus; j++) {
+          printf(" Generator: (bus) %d (generator ID) \'%s\'\n",
+              events[idx].p_busid[j],events[idx].p_genid[j].c_str());
+        }
+      }
+    }
+  }
+\end{Verbatim}
+}
+
+The location of the contingency file is contained in the \texttt{\textbf{contingencyList}} field in the input file. If this field is not present, the code defaults to the file name \texttt{\textbf{contingencies.xml}}. The contintency file is then opened using the \texttt{\textbf{open}} function in the \texttt{\textbf{Configuration}} module and a cursor is set to the \texttt{\textbf{Contingencies}} block within this file. The \texttt{\textbf{Configuration}} \texttt{\textbf{children}} function returns a list of cursor pointers that point to each of the individual \texttt{\textbf{Contingency}} blocks. The \texttt{\textbf{getContingencies}} function described above parses each of these blocks and returns a vector of contingency data structs. The contingency list is replicated on all processors. Process 0 is used to provide a listing of the contingencies to standard output by looping over the \texttt{\textbf{events}} vector returned by the \texttt{\textbf{getContingencies}} function.
+
+Once the contingencies have be determined, the code next sets up a task manager on the world communicator and sets the number of tasks equal to the number of contingencies.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::parallel::TaskManager taskmgr(world);
+  int ntasks = events.size();
+  taskmgr.set(ntasks);
+\end{Verbatim}
+}
+
+The task loop is created by defining a task\_id variable and a character string buffer that is used inside the loop to create messages. The task manager then begins iterating over different tasks.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  int task_id;
+  char sbuf[128];
+  while (taskmgr.nextTask(task_comm, &task_id)) {
+    printf("Executing task %d on process %d\n",task_id,world.rank());
+\end{Verbatim}
+}
+
+The call to \texttt{\textbf{nextTask}} takes the task communicator as one of its arguments so the value of \texttt{\textbf{task\_id}} that is returned is the same for all processors on the communicator. This guarantees that each of the processors in this copy of the power flow applicatin is working on the same contingency. If the \texttt{\textbf{nextTask}} function returns false, the tasks have been completed and the code exits from the \texttt{\textbf{while}} loop. At the start of the task, the code prints out a statement to standard out describing which tasks are being executed by each processor.
+
+The next few lines in the task loop are used to open a file so that the output from each task is directed to a separate file. This can be used later to examine individual tasks.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
+    pf_app.open(sbuf);
+    sprintf(sbuf,"\nRunning task on %d processes\n",task_comm.size());
+    pf_app.writeHeader(sbuf);
+    if (events[task_id].p_type == Branch) {
+      int nlines = events[task_id].p_from.size();
+      int j;
+      for (j=0; j<nlines; j++) {
+        sprintf(sbuf," Line: (from) %d (to) %d (line) \'%s\'\n",
+            events[task_id].p_from[j],events[task_id].p_to[j],
+            events[task_id].p_ckt[j].c_str());
+      }
+    } else if (events[task_id].p_type == Generator) {
+      int nbus = events[task_id].p_busid.size();
+      int j;
+      for (j=0; j<nbus; j++) {
+        sprintf(sbuf," Generator: (bus) %d (generator ID) \'\%s\'\n",
+        events[task_id].p_busid[j],
+        events[task_id].p_genid[j].c_str());
+      }
+    }
+    pf_app.writeHeader(sbuf);
+\end{Verbatim}
+}
+
+The first line is used to create a name for the output file using the contingency name. The output from the power flow calculation is then redirected to this file using the power flow \texttt{\textbf{open}} function. Next, some information about this particular contingency is written to the file using some calls to the writeHeader method. This includes the number of processors used to calculate the contingency and the details of the contingency itself.
+
+The remaining lines in the while loop are used to solve the power flow equations.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    pf_app.resetVoltages();
+    pf_app.setContingency(events[task_id]);
+    if (pf_app.solve()) {
+      pf_app.write();
+      bool ok = pf_app.checkVoltageViolations(Vmin,Vmax);
+      ok = ok && pf_app.checkLineOverloadViolations();
+      if (ok) {
+        sprintf(sbuf,"\nNo violation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      } else {
+        sprintf(sbuf,"\nViolation for contingency %s\n",
+            events[task_id].p_name.c_str());
+      }
+      pf_app.print(sbuf);
+    }
+    pf_app.unSetContingency(events[task_id]);
+    pf_app.close();
+  }
+\end{Verbatim}
+}
+
+Before doing the calculation, all voltages are returned to the original values defined in the network configuration file using \texttt{\textbf{resetVoltages}}. The contingency parameters are set to the values specified by the \texttt{\textbf{task\_id}} element in the \texttt{\textbf{events}} list using the \texttt{\textbf{setContingency}} method.
+
+The system is then solved using the power flow \texttt{\textbf{solve}} function. If the solution succeeds, the calculation writes out the voltages and branch power flow values to the outpuf file. The calculation also checks for voltage violations and line overload violations. The results of these checks are written to the output file for each power flow calculation. After this is complete, the powerflow calculation returns all contingency related parameters to their original values using \texttt{\textbf{unSetContingency}} and closes the output file. This is repeated until all contingencies in the event list have been evaluated.
+
+At this point, the contingency application is essentially complete. The remaining lines of code
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  taskmgr.printStats();
+  timer->stop(t_total);
+  if (events.size()*grp_size >= world.size()) {
+    timer->dump();
+  }
+\end{Verbatim}
+}
+
+are used to print out a list of how many tasks were evaluated on each processor and to stop the timing of the ``\texttt{\textbf{Total Application}}'' category. The timer \texttt{\textbf{dump}} method will print statistics on the amount of time spent in the total application as well as reporting timings inside the power flow application. The check on the \texttt{\textbf{dump}} call is to verify that all processors have participated in at least one power flow calculation.

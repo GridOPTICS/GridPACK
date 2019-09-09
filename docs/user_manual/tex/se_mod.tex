@@ -1,0 +1,120 @@
+\section{State Estimation Module}
+
+The state estimation module can be used to set up and run a state estimation calculation. It does not have the extra functions that the power flow module contains for supporting contingency analysis, so the interface is a bit smaller. In addition to a standard network configuration file, the state estimation calculation needs a second file consisting of measurements. This file has the format
+
+{
+\color{blue}
+\begin{Verbatim}[fontseries=b]
+    <Measurements>
+      <Measurement>
+        <Type>VM</Type>
+        <Bus>1</Bus>
+        <Value>1.0600</Value>
+        <Deviation>0.0050</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>PIJ</Type>
+        <FromBus>1</FromBus>
+        <ToBus>2</ToBus>
+        <CKT>BL</CKT>
+        <Value>1.5688</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>QIJ</Type>
+        <FromBus>1</FromBus>
+        <ToBus>2</ToBus>
+        <CKT>BL</CKT>
+        <Values>-0.2040</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>PI</Type>
+        <Bus>1</Bus>
+        <Value>2.3240</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+      <Measurement>
+        <Type>QI</Type>
+        <Bus>1</Bus>
+        <Value>-0.1690</Value>
+        <Deviation>0.0100</Deviation>
+      </Measurement>
+    </Measurements>
+\end{Verbatim}
+}
+
+for the five types of measurements \texttt{\textbf{VM}}, \texttt{\textbf{PIJ}}, \texttt{\textbf{QIJ}}, \texttt{\textbf{PI}}, and \texttt{\textbf{PJ}}. Measurements can appear on any element of the network and multiple measurements are allowed on each element. The state estimation module does not have any error checking ability to determine if there are sufficient measurements to guarantee solvability, if not enough measurements are available then the calculation will simply crash or fail to converge.
+The state estimation module is represented by the \texttt{\textbf{SEAppModule}} class which is in the \texttt{\textbf{gridpack::state\_estimation}} namespace. The \texttt{\textbf{gridpack.hpp}} file contains a definition for the state estimation network \texttt{\textbf{SENetwork}}. After instantiating an \texttt{\textbf{SEAppModule}} object and a shared pointer to an \texttt{\textbf{SENetwork}}, the state estimation calculation can read in an external network configuration file using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void readNetwork(boost::shared_ptr<SENetwork> &network,
+    gridpack::utility::Configuration *config)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{Configuration}} object should already be pointing at an open file containing a \texttt{\textbf{State\_estimation}} block. Inside the \texttt{\textbf{State\_estimation}} block there should be a \texttt{\textbf{networkConfiguration}} field containing the name of the network configuration file. The file name is parsed directly inside the \texttt{\textbf{readNetwork}} method and does not need to be handled by the user.
+Alternatively, the \texttt{\textbf{SENetwork}} object may have already been cloned from an existing network and therefore there is no need to read in the configuration from an external file and partition it across processors. In this case, the \texttt{\textbf{SEAppModule}} can be assigned the network using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void setNetwork(boost::shared_ptr<SENetwork> &network,
+    gridpack::utility::Configuration *config)
+\end{Verbatim}
+}
+
+This function just assigns the existing network to an internal pointer, as well as a pointer to the input file. It is much more efficient than reading in the network configuration file, if the network already exists. This can occur when different types of calculations are being chained together.
+
+Once a network is in place and has been properly distributed, the measurements can be read in by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void readMeasurements()
+\end{Verbatim}
+}
+
+The name of the measurement file is in the input deck and a pointer to this file has already been internally cached in the \texttt{\textbf{SEAppModule}} when the network was assigned. The measurement file name is stored in the \texttt{\textbf{measurementList}} field within the \texttt{\textbf{State\_estimation}} block.
+
+The network object can be initialized and the exchange buffers set up by calling the
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void initialize()
+\end{Verbatim}
+}
+
+method followed by
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void solve()
+\end{Verbatim}
+}
+
+to obtain the solution to the system. Results can be written out to standard out using the method
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void write()
+\end{Verbatim}
+}
+
+This function will write out the voltage magnitude and phase angle for each bus and the real and imaginary parts of the reactive power for each branch. In addition, it will print out a comparison of the calculated value and the original measured value for all measurements.
+
+Finally, the results of the state estimation calculation can be saved to the \texttt{\textbf{DataCollection}} object assigned to the buses by calling the 
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void saveData()
+\end{Verbatim}
+}
+
+method. The voltage magnitude and phase angle are stored as the variables \texttt{\textbf{BUS\_SE\_VMAG}} and \texttt{\textbf{BUS\_SE\_VANG}} and the generator parameters are stored as the indexed variables \texttt{\textbf{GENERATOR\_SE\_PGEN[i]}} and \texttt{\textbf{GENERATOR\_SE\_QGEN[i]}}, where \texttt{\textbf{i}} runs over the set of generators on the bus.

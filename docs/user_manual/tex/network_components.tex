@@ -1,0 +1,266 @@
+\section{Network Components}\label{network_components}
+
+Network component is a generic term for objects representing buses and branches. These objects determine the behavior of the system and the type of analyses being done. Branch components can represent transmission lines and transformers while bus components could model loads, generators, or something else. Both kinds of components could represent measurements (e.g. for a state estimation analysis). 
+
+Network components cover a fairly broad range of behaviors and there is little
+that can be said about them outside the context of a specific problem. Each
+component inherits from a matrix-vector interface, which enables the framework
+to generate matrices and vectors from the network in a relatively
+straightforward way. In addition, buses inherit from a base bus interface and
+branches inherit from a base branch interface. The relationship between these
+interfaces is shown in Figure~\ref{fig:components}.
+
+\begin{figure}
+  \centering
+  \includegraphics*[width=6in, height=3.58in, keepaspectratio=true]{figures/Component-hierarchy}
+  \caption{Schematic diagram showing the interface hierarchy for network components.}
+  \label{fig:components}
+\end{figure}
+
+%\noindent \underbar{\includegraphics*[width=6.50in, height=3.58in, keepaspectratio=false, trim=0.00in 0.44in 0.00in 0.85in]{image72}}
+
+%\textcolor{red}{\texttt{\textbf{Figure 5.}} Schematic diagram showing the interface hierarchy for network components.}
+
+These base interfaces provide mechanisms for accessing the neighbors of a bus or branch and allow developers to specify what data is transferred in ghost exchanges. They do not define any physical properties of the bus or branch, it is up to application developers to do this.
+
+Of these interfaces, the matrix-vector interfaces are the most important. The \texttt{\textbf{MatVecInterface}} is used for most calculations that directly model the physics of the power grid and described problems where the dependent and independent variables are associated with buses. 
+
+The \texttt{\textbf{GenMatVecInterface}} is used for problems where variables are also associated with branches, such as state estimation or Kalman filter calculations. This section will describe the \texttt{\textbf{MatVecInterface}}, the \texttt{\textbf{GenMatVecInterface}} is described in more detail later in this document. The \texttt{\textbf{MatVecInterface}} is designed to answer the question of what block of data is contributed by a bus or branch to a matrix or vector and what the dimensions of the block are. For example, in constructing the Y-matrix for a power flow problem using a real-valued formulation, the grid components representing buses contribute a 2$\mathrm{\times}$2 block to the diagonal of the matrix. Similarly, the grid components representing branches contribute a 2$\mathrm{\times}$2 block to the off-diagonal elements. (Note that if the Y-matrix is expressed as a complex matrix, then the blocks are of size 1$\mathrm{\times}$1.) The location of these blocks in the matrix is determined by the location of the corresponding buses and branches in the network, but the indexing calculations required to determine how this location maps to a location in the matrix can be made completely transparent to the user via the mapper module. 
+
+Because the matrix-vector interface focuses on small blocks, it is relatively easy for power grid engineers to write the corresponding methods. The full matrices and vectors can then be generated from the network using simple calls to the mapper interface (see the discussion below on the mapper module). All of the base network component classes reside in the \texttt{\textbf{gridpack::component}} namespace.
+
+The primary function of the \texttt{\textbf{MatVecInterface}} class is to enable developers to build the matrices and vectors used in the solution algorithms for the network. It eliminates a large number of tedious and error-prone index calculations that would otherwise need to be performed in order to determine where in a matrix a particular data element should be placed. The \texttt{\textbf{MatVecInterface}} includes basic constructors and destructors. The first set of non-trivial operations are implemented on buses and set the values of diagonal blocks in the matrix. Additional functions are implemented on branches and set values for off-diagonal elements. Vectors can be created by calling functions defined on buses. These functions are described in detail below.
+
+The functions that are used to create diagonal matrix blocks are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual bool matrixDiagSize(int *isize, int *jsize) const
+
+virtual bool matrixDiagValues(ComplexType *values)
+
+virtual bool matrixDiagValues(RealType *values)
+\end{Verbatim}
+}
+
+These functions are virtual functions and are expected to be overwritten by application-specific bus and branch classes. Depending on whether the application should create real or complex matrices, either the real or complex versions of \texttt{\textbf{matrixDiagValues}} can be implemented. The default behavior is to return 0 for \texttt{\textbf{isize}} and \texttt{\textbf{jsize}} for \texttt{\textbf{matrixDiagSize}} and to return false for all functions. These functions will not build a matrix unless overwritten by the application. Not all functions need to be overwritten by a given bus or branch class. Generally, only a subset of functions may be needed by an application.
+
+The \texttt{\textbf{matrixDiagSize}} function returns the size of the matrix block that is contributed by the bus to a matrix. If a single number is contributed by the bus, the \texttt{\textbf{matrixDiagSize}} function returns 1 for both \texttt{\textbf{isize}} and \texttt{\textbf{jsize}}. Similarly, for a 2$\mathrm{\times}$2 block then both \texttt{\textbf{isize}} and \texttt{\textbf{jsize}} are set to 2. The return value is true if the bus contributes to the matrix, otherwise it is false. Returning false can occur, for example, if the bus is the reference bus in a power flow calculation. For a more complicated calculation, such as a dynamic simulation with multiple generators on some buses, the size of the matrix blocks can differ from bus to bus. Note that the values returned by \texttt{\textbf{matrixDiagSize}} refer only to the particular bus on which the function is invoked. It does not say anything about other buses in the system.
+
+The \texttt{\textbf{matrixDiagValues}} function returns the actual values for the matrix block associated with the bus for which the function is invoked. The values are returned as a linear array with values returned in column-major order. For a 2$\mathrm{\times}$2 block, this means the first value is at the (0,0) position, the second value is at the (1,0) position, the third value is at the (0,1) position and the fourth value is at the (1,1) position. This function also returns true if the bus contributes to the matrix and false otherwise. This may seem redundant, since the \texttt{\textbf{matrixDiagSize}} function has already returned this information but it turns out there are certain applications where it is desirable for the \texttt{\textbf{matrixDiagSize}} function to return true and the \texttt{\textbf{matrixDiagValues}} function to return false. The buffer \texttt{\textbf{values}} is supplied by the calling program and is expected to be big enough, based on the dimensions returned by the \texttt{\textbf{matrixDiagSize}} function, to contain all returned values.
+
+The functions that are used to return values for off-diagonal matrix elements are listed below. These are usually only implemented for branches.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual bool matrixForwardSize(int *isize, int *jsize) const
+
+virtual bool matrixForwardValues(ComplexType *values)
+
+virtual bool matrixReverseSize(int *isize, int *jsize) const
+
+virtual bool matrixReverseValues(ComplexType *values)
+\end{Verbatim}
+}
+
+Only the complex versions of these functions are listed but equivalent functions for real matrices are available. These functions work in a similar way to the functions for creating blocks along the diagonal, except that they split off-diagonal matrix calculations into forward elements and reverse elements. The initial approximate location of an off-diagonal matrix element in a matrix is based in some internal indices assigned to the buses at either end of the branch. Suppose that these indices are \texttt{\textbf{i}}, corresponding to the ``from'' bus and \texttt{\textbf{j}}, corresponding to the ``to'' bus. The ``forward'' functions assume that the request is for the \texttt{\textbf{ij}} element while the ``reverse'' functions assume that the request is for the \texttt{\textbf{ji}} element. Another way of looking at this is the following: as discussed below, branches contain pointers to two buses. The first is the ``from'' bus and the second is the ``to'' bus. The forward functions assume that the ``from'' bus corresponds to the first index of the element, the reverse functions assume that the ``from'' bus corresponds to the second index of the element. Note that if a bus does not contribute to a matrix, then the branches that are connected to the bus should also not contribute to the matrix.
+
+The final set of functions in the \texttt{\textbf{MatVecInterface}} that are of interest to application developers are designed to set up vectors. These are usually implemented only for buses. These functions are analogous to the functions for creating matrix elements
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual bool vectorSize(int *isize) const
+
+virtual bool vectorValues(ComplexType *values)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{vectorSize}} function returns the number of elements contributed to the vector by a bus and the \texttt{\textbf{vectorValues}} returns the corresponding values. The \texttt{\textbf{vectorValues}} function expects the buffer values to be allocated by the calling program. In addition to functions that can be used to specify a vector, there is an additional function that can be used to push values from a vector back onto a bus. This function is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void setValues(ComplexType *values)
+\end{Verbatim}
+}
+
+The buffer contains values from the vector corresponding to internal variables in the bus and this function can be used to set the bus variables. The \texttt{\textbf{setValues}} function could be used to assign bus variables so that they can be used to recalculate matrices and vectors for an iterative loop in a non-linear solver or so that the results of a calculation can be exported to an output file. Real versions of the \texttt{\textbf{vectorValues}} and \texttt{\textbf{setValues}} functions are available for real vectors.
+
+The \texttt{\textbf{BaseComponent}} class contains additional functions that contribute to the base properties of a bus or branch. Again, most of the functions in this class are virtual and are expected to be overwritten by actual implementations. However, not all of them need to be overwritten by a particular bus or branch class. Many of these functions are used in conjunction with the \texttt{\textbf{BaseFactory}} class, which defines methods that run over all buses and branches in the network and invokes the functions defined below.
+
+The \texttt{\textbf{load}} function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void load(const boost::shared_ptr<DataCollection> &data)
+\end{Verbatim}
+}
+
+is used to instantiate components based on data in the network configuration file that is used to create the network. It is used in conjunction with the \texttt{\textbf{DataCollection}} object, which is described in more detail below. Networks are generally created by first instantiating a network parser. The parser is used to read in an external network file and create the network topology. The next step is to invoke the partition function on the network to get all network elements properly distributed between processors. At this point, the network, including ghost buses and branches, is complete and each bus and branch has a \texttt{\textbf{DataCollection}} object containing all the data in the network configuration file that pertains to that particular bus or branch. The data in the \texttt{\textbf{DataCollection}} object is stored as simple key-value pairs. This data is used to initialize the corresponding bus or branch by invoking the load function on all buses and branches in the system. The bus and branch classes must implement the \texttt{\textbf{load}} function to extract the correct parameters from the \texttt{\textbf{DataCollection}} object and use them to assign internal component parameters.
+
+Only one type of bus and one type of branch is associated with each network but many different types of equations can be generated by the network. To allow developers to embed many different behaviors into a single network and to control at what points in the simulation those behaviors can be manifested, the concept of modes is used. The function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void setMode(int mode)
+\end{Verbatim}
+}
+
+can be used to set an internal variable in the component that tells it how to behave. The variable ``\texttt{\textbf{mode}}'' usually corresponds to an enumerated constant that is part of the application definition. For example, in a power flow calculation it might be necessary to calculate both the Y-matrix and the equations for the power flow solution containing the Jacobian matrix and the right-hand side vector. To control which matrix gets created, two modes are defined: ``\texttt{\textbf{YBus}}'' and ``\texttt{\textbf{Jacobian}}''. Inside the matrix functions in the \texttt{\textbf{MatVecInterface}}, there is a condition
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    if (p_mode == YBus) {
+      // Return values for Y-matrix calculation
+    } else if (p_mode == Jacobian) {
+      // Return values for power flow calculation
+    }
+\end{Verbatim}
+}
+
+The variable ``\texttt{\textbf{p\_mode}}'' is an internal variable in the bus or branch that is set using the \texttt{\textbf{setMode}} function.
+
+The function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual bool serialWrite(char *string, const int bufsize,
+                         const char *signal = NULL)
+\end{Verbatim}
+}
+
+is used in the serial IO modules described below to write out properties of buses or branches to standard output. The character buffer ``\texttt{\textbf{string}}'' contains a formatted line of text representing the properties of the bus or branch that is written to standard output, the variable ``\texttt{\textbf{bufsize}}'' gives the number of characters that ``\texttt{\textbf{string}}'' can hold, and the variable ``\texttt{\textbf{signal}}'' can be used to control what data is written out. The return value is true if the bus or branch is writing out data and false otherwise. For example, if the application is writing out the properties of all buses with generators, then the signal ``\texttt{\textbf{generator}}'' might be passed to this subroutine. If a bus has generators, then a string is copied into the buffer ``\texttt{\textbf{string}}'' and the function returns true, otherwise it returns false. The buffer ``\texttt{\textbf{string}}'' is allocated by the calling program. The variable ``bufsize'' is provided so that the bus or branch can determine if it is overwriting the buffer. Returning to the generator example, if this call returns a separate line for each generator, then it is possible that a bus with too many generators might exceed the buffer size. This could be detected by the implementation if the buffer size is known. More information on how this function is used can be found in the discussion of the serial IO modules.
+
+The \texttt{\textbf{BaseComponent}} class also contains two functions that must be implemented if buses and/or branches need to exchange data with other processors. Data that must be exchanged needs to be placed in buffers that have been allocated by the network. The bus and branch objects specify how large the buffers need to be by implementing the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual int getXCBufSize()
+\end{Verbatim}
+}
+
+This function must return the same value for all buses and all branches in the same bus or branch classes. Buses can return a different value than branches. For example, in a power flow calculation, it is necessary that ghost buses get new values of the phase angle and voltage magnitude increments. These are both real numbers so the \texttt{\textbf{getXCBusSize}} routine needs to return the value \texttt{\textbf{2*sizeof(double)}}. Note that all buses must return this value even if the bus is a reference bus and does not participate in the calculation.
+
+This function is queried by the network and used to allocate a buffer of the appropriate size. The network then informs the bus and branch objects where the location of the buffer is by invoking the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+virtual void setXCBuf(void *buf)
+\end{Verbatim}
+}
+
+The bus or branch can use this function to set internal pointers to this buffer that can be used to assign values to the buffer (which is done before a ghost exchange) or to collect values from the buffer (which is done after a ghost exchange). Continuing with the powerflow example, the bus implemention of the \texttt{\textbf{setXCBuf}} function would look like
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+    setXCBuf(void *buf)
+    {
+      p_Ang_ptr = static_cast<double*>(buf);
+      p_Mag_ptr = p_Ang_ptr+1;
+    }
+\end{Verbatim}
+}
+
+The pointers \texttt{\textbf{p\_Ang\_ptr}} and \texttt{\textbf{p\_Mag\_ptr}} of type \texttt{\textbf{double}} are internal variables of the bus implementation and can be used elsewhere in the bus whenever the voltage angle and voltage magnitude variables are needed. After a network update operation, ghost buses will contain values for these variables that were calculated on the home processor that owns the corresponding bus.
+
+The \texttt{\textbf{BaseBusComponent}} and \texttt{\textbf{BaseBranchComponent}} classes contain a few additional functions that are specific to whether or not a component is a bus or a branch. The \texttt{\textbf{BaseBusComponent}} class contains functions that can be used to identify attached buses or branches, determine if the bus is a reference bus, and recover the original indices of the bus. Other functions are included in the \texttt{\textbf{BaseBusClass}} but these are not usually required by application developers and are used primarily to implement other GridPACK functions.
+
+To get a list of pointers to all branches connected to a bus, the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getNeighborBranches(
+   std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const
+\end{Verbatim}
+}
+
+can be called. This provides a list of pointers to all branches that have the calling bus as one of its endpoints. This function can be used inside a bus method to loop over attached branches, which is a common motif in matrix calculations. For example, to evaluate the contribution to a diagonal element of the Y-matrix coming from transmission lines, it is necessary to perform the sum\[Y_{ii}=-\sum_{j\neq i}{Y_{ij}}\] 
+where the \textit{Y${}_{ij}$ }are the contribution due to transmission lines from the branch connecting i and j. The code inside a bus component that evaluates this sum can be written as
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<boost::shared_ptr<BaseComponent> > branches;
+getNeighborBranches(branches);
+ComplexType y_diag(0.0,0.0);
+for (int i=0; i<branches.size(); i++) {
+  YBranch *branch = dynamic_cast<YBranch*>(branches[i].get());
+  y_diag += branch->getYContribution();
+}
+\end{Verbatim}
+}
+
+The function \texttt{\textbf{getYContribution}} evaluates the quantity \textit{Y${}_{ij}$ }using parameters that are local to the branch. The return value is then accumulated into the bus variable \texttt{\textbf{y\_diag}}, which is eventually returned through the \texttt{\textbf{matrixDiagValues}} function. The \texttt{\textbf{dynamic\_cast}} is necessary to convert the pointer from a \texttt{\textbf{BaseComponent}} object to the application class \texttt{\textbf{YBranch}}. The \texttt{\textbf{BaseComponent}} class has no knowledge of the \texttt{\textbf{getYContribution}} function, this is only implemented in the class \texttt{\textbf{YBranch}}.
+
+A function that is similar to \texttt{\textbf{getNeighborBranches}} is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getNeighborBuses(
+   std::vector<boost::shared_ptr<BaseComponent> > &nghbrs) const
+\end{Verbatim}
+}
+
+which can be used to get a list of the buses that are connected to the calling bus via a single branch.
+
+Many power grid problems require the specification of a special bus as a reference bus. This designation can be handled by the two functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void setReferenceBus(bool status)
+
+bool getReferenceBus() const
+\end{Verbatim}
+}
+
+The first function can be used (if called with the argument true) to designate a bus as the reference bus and the second function can be called to inquire whether a bus is the reference bus. A reference bus is usually set when the network configuration file is read in and does not need to be set explicitly by the application.
+
+Finally, it is often useful for exporting results if the original index of the bus is available. This can be recovered using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int getOriginalIndex() const
+\end{Verbatim}
+}
+
+The functions in the \texttt{\textbf{BaseBusComponent}} class only work correctly after a call to the base factory method \texttt{\textbf{setComponents}}, which is described below. Other functions in the \texttt{\textbf{BaseBusComponent}} class are needed within the framework but are not usually required by application developers.
+
+The \texttt{\textbf{BaseBranchComponent}} class is similar to the \texttt{\textbf{BaseBusComponent}} class and provides basic information about branches and the buses at either end of the branch. To retrieve pointers to the buses at the ends of the branch, the following two functions are available
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+boost::shared_ptr<BaseComponent> getBus1() const
+
+boost::shared_ptr<BaseComponent> getBus2() const
+\end{Verbatim}
+}
+
+The \texttt{\textbf{getBus1}} function returns a pointer to the ``from'' bus, the \texttt{\textbf{getBus2}} function returns a pointer to the ``to'' bus.
+
+Two other functions in the \texttt{\textbf{BaseBranchComponent}} class that are useful for writing output are
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int getBus1OriginalIndex() const
+
+int getBus2OriginalIndex() const
+\end{Verbatim}
+}
+
+These functions get the original index of ``from'' and ``to'' buses. Unlike buses, the branches are not characterized by a single index. Similar to the functions in the \texttt{\textbf{BaseBusComponent}} class, the functions in the \texttt{\textbf{BaseBranchComponent}} class will not work correctly until the \texttt{\textbf{setComponents}} method has been called in the base factory class.
