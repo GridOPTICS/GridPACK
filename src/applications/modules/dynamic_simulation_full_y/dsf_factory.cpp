@@ -273,7 +273,7 @@ void gridpack::dynamic_simulation::DSFullFactory::setWideAreaFreqforPSS(double f
   }
 }
 
-double gridpack::dynamic_simulation::DSFullFactory::grabWideAreaFreq( )  //renke hardcoded
+std::vector<double> gridpack::dynamic_simulation::DSFullFactory::grabWideAreaFreq( )  //renke hardcoded
 {
   int i;
 
@@ -297,9 +297,15 @@ double gridpack::dynamic_simulation::DSFullFactory::grabWideAreaFreq( )  //renke
   
   freqdiff = freq1 - freq2;
   
-  printf("-----------!!renke debug DSFullFactory::grabWideAreaFreq( ): %12.6f,  %12.6f,  %12.6f \n", freq1, freq2, freqdiff);
+  printf("-----------!!renke debug DSFullFactory::grabWideAreaFreq( ): bus 30: %12.6f,  bus 34: %12.6f,  diff 34-30: %12.6f \n", freq2, freq1, freqdiff);
   
-  return freqdiff;
+  std::vector <double> vbusfreq;
+  vbusfreq.push_back(freq2);
+  vbusfreq.push_back(freq1);
+  vbusfreq.push_back(freqdiff);
+  
+  //return freqdiff;
+  return vbusfreq;
 }
 
 bool gridpack::dynamic_simulation::DSFullFactory::updateBusRelay(bool flag,double delta_t)

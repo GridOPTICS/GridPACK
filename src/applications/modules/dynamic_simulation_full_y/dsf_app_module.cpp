@@ -25,6 +25,7 @@
 #include "dsf_app_module.hpp"
 #include <iostream>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -464,7 +465,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #ifdef USE_HELICS
 	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
 	cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
-	string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus.json";
+	string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
     helics::ValueFederate fed(configFile);
 	helics::Publication pub;
 	helics::Input sub;
@@ -491,14 +492,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     }
          
 	//let helics broker know you are ready to start simulation 
-	fed.enterExecutingMode();
-
-	//vfed =  helicsCreateValueFederate("gridpack",fedinfo,&err);
-	//helicsFederateInfoSetTimeProperty(fedinfo,helicsGetPropertyIndex("period"), 1.0,&err);
-	//helicsFederateInfoSetCoreTypeFromString(fedinfo,"zmq",&err);
-	//helicsFederateInfoSetTimeProperty(fedinfo,helicsGetPropertyIndex("period"), 1.0,&err);
-	//pub_freq =  helicsFederateRegisterPublication(vfed, "delta_freq",  helics_data_type_double, "",&err);
-	
+	fed.enterExecutingMode();	
 
 #endif  //end if of HELICS
 
@@ -666,21 +660,59 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     p_factory->setVolt(false);
 	p_factory->updateBusFreq(h_sol1);
 	
-	double wideareafreq = 0.0;
-	wideareafreq = p_factory->grabWideAreaFreq();
-	printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: %12.6f ", wideareafreq);
 	
+	std::vector <double> vwideareafreqs;
+	vwideareafreqs = p_factory->grabWideAreaFreq();
+	printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: bus 30: %12.6f, bus 30: %12.6f, delta_freq bus34-bus30: %12.6f \n", 
+			vwideareafreqs[0], vwideareafreqs[1], vwideareafreqs[2]);
+	int tmp = vwideareafreqs.size();
+	double widearea_deltafreq = vwideareafreqs[tmp-1];
+
 #ifdef USE_HELICS
-	 //helicsPublicationPublishDouble(pub_freq, wideareafreq, &err);
 	 
-	 pub.publish(wideareafreq);
+	 //pub.publish(widearea_deltafreq);
+	 for(int i = 0; i < pubCount; i++) {
+            pub = fed.getPublication(i);
+            string pubInfo = pub.getInfo();
+			//std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
+			pub.publish(vwideareafreqs[i]);
+            // do stuff to tie pub to GridPACK object property
+          }
+
 	 helics_requestTime =       double (I_Steps*h_sol1);
-	 fed.requestTime(helics_requestTime);
+	 printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
+	 double helics_grantime;
+	 helics_grantime = fed.requestTime(helics_requestTime);
+	 printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
+	 
+	 double subvalue = 0.0;
+	 
+	 for(int i = 0; i < subCount; i++) {
+        sub = fed.getInput(i);
+		printf("-------------!!!helics debug entering  sub loop\n"); 
+		//if(sub.isUpdated()) {
+            //auto value = sub.getValue();
+			subvalue = fed.getDouble(sub);
+			printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
+                             //update GridPACK object property with value
+        //}
+
+	 }
+	 
+	//printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
+	 
+	p_factory->setWideAreaFreqforPSS(subvalue);
+
+	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	 
+#else	 
+	 
+	p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
 	 
 #endif
 	
 	
-	p_factory->setWideAreaFreqforPSS(wideareafreq);
+	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
 	
     timer->stop(t_volt);
 	
