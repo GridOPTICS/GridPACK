@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_wrapper.cpp
  * @author William A. Perkins
- * @date   2019-05-09 06:10:26 d3g096
+ * @date   2019-09-13 12:53:47 d3g096
  * 
  * @brief  
  * 
@@ -472,7 +472,12 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
     } else {
       ierr = PetscViewerASCIIGetStdout(comm, &viewer); CHKERRXX(ierr);
     }
+#if PETSC_VERSION_GE(3,7,0)
+    ierr = PetscViewerPushFormat(viewer, format);
+#else
     ierr = PetscViewerSetFormat(viewer, format);
+#endif
+    CHKERRXX(ierr);
     PetscInt grow, gcol, lrow, lcol;
     switch (format) {
     case PETSC_VIEWER_DEFAULT:
@@ -504,6 +509,10 @@ petsc_print_matrix(const Mat mat, const char* filename, PetscViewerFormat format
       break;
     }
     ierr = MatView(mat, viewer); CHKERRXX(ierr);
+#if PETSC_VERSION_GE(3,7,0)
+    ierr = PetscViewerPopFormat(viewer); CHKERRXX(ierr);
+#endif
+    
     if (filename != NULL) {
       ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
     } else {
@@ -548,8 +557,16 @@ PetscMatrixWrapper::loadBinary(const char* filename)
                                  filename,
                                  FILE_MODE_READ,
                                  &viewer); CHKERRXX(ierr);
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+#if PETSC_VERSION_GE(3,7,0)
+    ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_NATIVE);
+#else
+    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE);
+#endif
+    CHKERRXX(ierr);    
     ierr = MatLoad(p_matrix, viewer); CHKERRXX(ierr);
+#if PETSC_VERSION_GE(3,7,0)
+    ierr = PetscViewerPopFormat(viewer); CHKERRXX(ierr);
+#endif
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
@@ -570,8 +587,16 @@ PetscMatrixWrapper::saveBinary(const char* filename) const
                                  filename,
                                  FILE_MODE_WRITE,
                                  &viewer); CHKERRXX(ierr);
-    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); CHKERRXX(ierr);
+#if PETSC_VERSION_GE(3,7,0)
+    ierr = PetscViewerPushFormat(viewer, PETSC_VIEWER_NATIVE);
+#else
+    ierr = PetscViewerSetFormat(viewer, PETSC_VIEWER_NATIVE); 
+#endif
+    CHKERRXX(ierr);
     ierr = MatView(p_matrix, viewer); CHKERRXX(ierr);
+#if PETSC_VERSION_GE(3,7,0)
+    ierr = PetscViewerPopFormat(viewer); CHKERRXX(ierr);
+#endif
     ierr = PetscViewerDestroy(&viewer); CHKERRXX(ierr);
   } catch (const PETSC_EXCEPTION_TYPE& e) {
     throw PETScException(ierr, e);
