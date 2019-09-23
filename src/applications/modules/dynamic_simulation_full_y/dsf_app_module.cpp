@@ -230,6 +230,11 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
     p_busIO->header("Missing generators on at least one processor\n");
     return;
   }
+
+#ifdef USE_HELICS
+// if use HELICS, we need to store the generator states delta and speed
+  saveTimeSeries(true);
+#endif  
 }
 
 /**
@@ -1114,8 +1119,35 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   timer->stop(t_solve);
   //timer->dump();
-  
+    
 #ifdef USE_HELICS
+
+	// if use HELICS, grab all the state values of the generator
+	//---------------grab all the states-------------------------
+	std::vector<std::vector<double> > all_series;
+	all_series = getGeneratorTimeSeries();
+	std::vector<int> gen_idx = getTimeSeriesMap();
+	
+	int nseriessize = all_series.size();
+	int oneserielen = all_series[0].size();
+	int itmp, jtmp;
+	std::string strtmp;
+	
+	//-------------testing and output the collecte state time series
+	printf ("\n--------------------!!!!output generate states start here--------------------\n");
+	for (itmp = 0; itmp<nseriessize; itmp++){
+		oneserielen = all_series[itmp].size();
+		for(jtmp = 0; jtmp<oneserielen; jtmp++){
+			printf (" %12.6f,  ", all_series[itmp][jtmp]);
+		}
+		printf ("\n");
+	}
+	printf ("\n--------------------!!!!output generate states end here--------------------\n");
+	
+	//----------Dexin, please add codes to publish all the states values here
+	//-----  the values helics need to publish is the following vector:
+	// std::vector<double> = all_series[nseriessize-1];
+	
 
 	fed.finalize();
 	
