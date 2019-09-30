@@ -301,6 +301,7 @@ class BasePTIParser : public BaseParser<_network>
     void setNetwork(boost::shared_ptr<_network> network)
     {
       p_network = network;
+      p_network_data = network->getNetworkData();
       BaseParser<_network>::setNetwork(network);
     }
 
@@ -1655,6 +1656,10 @@ class BasePTIParser : public BaseParser<_network>
     // Map of PTI index pair to index in p_branchData
     std::map<std::pair<int, int>, int> *p_branchMap;
 
+    /**
+     * Data collection object associated with network as a whole
+     */
+    boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
 }; /* end of PTI base parser */
 
 } /* namespace parser */

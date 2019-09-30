@@ -141,6 +141,7 @@ class BaseParser
     void setNetwork(boost::shared_ptr<_network> network)
     {
       p_network = network;
+      p_network_data = network->getNetworkData();
     }
 
     /**
@@ -172,6 +173,10 @@ class BaseParser
     double                   p_case_sbase;
     gridpack::utility::CoarseTimer *p_timer;
     bool                     p_configExists;
+    /**
+     * Data collection object associated with network as a whole
+     */
+    boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
 }; /* end of GOSS_parser */
 
 } /* namespace parser */
