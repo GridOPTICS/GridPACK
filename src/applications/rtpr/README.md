@@ -2,18 +2,20 @@ Assume a multi-area system that contains tie-lines between different areas. The
 tie-lines are specified by the user and are part of the input data for the
 calculation. The application does not determine which lines are tie-lines.
 
-#Step 1
+Step 1
+======
 Run base case power flow calculation. Assume there are no violations. If
 violations occur, disable checking on any elements where there are violations.
 This will hold for all subsequent calculations
 
-#Step 2
+Step 2
+======
 Run N-1 contingency for the entire system and determine which contingencies cause
 a failure. The list of contingencies will be used to construct the calculations
-in step 3. Questions:
-- Are we paying any attention to area. For example, d
+in step 3.
 
-#Step 3
+Step 3
+======
 Scale power generation or load to eleminate the violation for each contingency
 that is in violation.
 - The contingency represents loss of a line and there is a line violation
@@ -23,7 +25,8 @@ that is in violation.
   somewhere else in the system. If the voltage is too high, scale generation
   downward until the violation disappears. If the voltage is too low, scale load
   downward until violation disappears.(?)
-- The contingency represents loss of a generator and there is ???
+- The contingency represents loss of a generator and there is a violation of
+  some type and we do what???
 
 The generations and load are scaled from between 0 and 100\% of their original
 values. Start by an initial scaling of 10\% of all values for each violation to
@@ -42,9 +45,11 @@ Questions
 - What do we do if there are multiple violations for a single contingency? How
   do we determine what to scale?
 
-#Step 4
+Step 4
+======
 We look at each of the tie-lines and scale the generation at one end and the
 load at the other until there is a violation. Then we do what??
 
-#Step 5
+Step 5
+======
 We do something with dynamic simulation.
