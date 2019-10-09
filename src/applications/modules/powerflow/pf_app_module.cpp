@@ -21,6 +21,7 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
+#include "gridpack/export/PSSE33Export.hpp"
 #include "gridpack/parser/GOSS_parser.hpp"
 #include "gridpack/math/math.hpp"
 #include "pf_helper.hpp"
@@ -617,6 +618,16 @@ void gridpack::powerflow::PFAppModule::close()
 void gridpack::powerflow::PFAppModule::print(const char *buf)
 {
   p_busIO->header(buf);
+}
+
+/**
+ * Export final configuration to PSS/E formatted file
+ * @param filename name of file to store network configuration
+ */
+void gridpack::powerflow::PFAppModule::exportPSSE33(std::string &filename)
+{
+  gridpack::expnet::PSSE33Export<PFNetwork> exprt(p_network);
+  exprt.writeFile(filename);
 }
 
 /**

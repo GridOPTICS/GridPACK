@@ -79,7 +79,9 @@ class ExportLine33
           for (j=0; j<nline; j++) {
             ptr = buf;
             data->getValue(BRANCH_TAP,&tap_ratio,j);
-            if (tap_ratio == 0.0 || tap_ratio == 1.0) {
+            bool is_xform = data->getValue(TRANSFORMER_WINDV1,&rval,j);
+            is_xform = is_xform && data->getValue(TRANSFORMER_WINDV2,&rval,j);
+            if (!is_xform && (tap_ratio == 0.0 || tap_ratio == 1.0)) {
               data->getValue(BRANCH_FROMBUS,&idx1);
               data->getValue(BRANCH_TOBUS,&idx2);
               ival = 1;
