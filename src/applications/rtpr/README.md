@@ -20,13 +20,14 @@ Scale power generation or load to eleminate the violation for each contingency
 that is in violation.
 - The contingency represents loss of a line and there is a line violation
   somewhere else in the system. Scale generation downward until violation
-  disappears.
+  disappears. Meanwhile, we need to either scale other generators in another
+  region up, or scale load down to keep power balanced.
 - The continency represents loss of a line and there is a voltage violation
   somewhere else in the system. If the voltage is too high, scale generation
   downward until the violation disappears. If the voltage is too low, scale load
   downward until violation disappears.(?)
 - The contingency represents loss of a generator and there is a violation of
-  some type and we do what???
+  some type and we do what??? Same for line contingency.
 
 The generations and load are scaled from between 0 and 100\% of their original
 values. Start by an initial scaling of 10\% of all values for each violation to
@@ -42,14 +43,23 @@ Questions
   in the same area, should we restrict the scaling to just elements in those
   areas? Should we restrict the scaling to a single area, even if the
   contingency and the violation are in different areas?
+  *Yousu*: I think we can pre-define the areas where the adjustable generators
+  are located. We can start with the tie-line violations only.
 - What do we do if there are multiple violations for a single contingency? How
   do we determine what to scale?
+  *Yousu*: The scale will be based on the difference between the generator
+  capacity (Pmax or Pmin) and the current generation (Pg). We can scale with a
+  weight of Pmax\_i-Pg\_i or uniformly adjust Pg.
 
 Step 4
 ======
 We look at each of the tie-lines and scale the generation at one end and the
 load at the other until there is a violation. Then we do what??
 
+*Yousu*: Record the current power flow, especially the changes of
+generators/loads. Load shedding is the last step to do.
 Step 5
 ======
 We do something with dynamic simulation.
+
+*Yousu*: For the saved case, run DSA to check their transient stability.
