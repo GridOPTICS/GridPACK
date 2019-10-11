@@ -1,3 +1,24 @@
+Real-time path rating fundamental algorithm
+=====
+The goal of this application is to determine the real-time line rating for the tie-lines
+for an area. The real-time line rating is determined through steady-state and dynamic analysis and will yield a maximum MVA flow on the tie-lines without causing any steady-state security
+(line flow violations, voltage violations) or dynamic-security (generartor instability) violations. Before, we include 
+all sorts of possible variations and violations, let us look at this simple reference version that ONLY considers one tie-line between areas A and B. The only violation considered is the MVA flow violation on tie-line. Here are the steps. (Assume the tie-line is provided by the user)
+
+1. Run base case (assume there is no tie-line flow violation)
+2. Run N-1 steady-state contingency analysis removing elements from area A only.
+3. Check tie-line flow for each contingency. <b> Note:</b> RATE_B (short-term) line rating which
+is typically higher than RATE_A (long-term) rating for the line should be used for
+checking violation. The short-term rating allows the line to be loaded higher for shorter period of time.
+4. If no violation in step 3, then increase generation in area A and load in area B by 5\%. Go to step 1.
+5. Else, there is a tie-line flow violation for some contingency. Mark the generation in area A, load in area B, and the tie line flow for that contingency as the steady-state real-time path rating. If there are multiple contingencies that cause tie-line flows to go over, then mark the one that has the smallest tie-line flow as the steady-state real-time path rating.
+6. With the generation, load, and tie-line flow from 5, run the N-1 dynamics simulation.
+7. If instability for any contingency, reduce the generation in area A, load in area B by 5% and re-run the
+   the N-1 dynamics simulation.
+8. If no instability, then we are done. Mark the tie-line flow as the real-time path rating.
+Other violations and complex strategies can be incorporated once this basic algorithm is working.
+
+
 Assume a multi-area system that contains tie-lines between different areas. The
 tie-lines are specified by the user and are part of the input data for the
 calculation. The application does not determine which lines are tie-lines.
@@ -11,17 +32,22 @@ This will hold for all subsequent calculations
 Step 2
 ======
 Run N-1 contingency for the entire system and determine which contingencies cause
-a failure. The list of contingencies will be used to construct the calculations
+a violation.
+The list of contingencies will be used to construct the calculations
 in step 3.
+
+<b> Note:</b> RATE_B (short-term) line rating which
+is typically higher than RATE_A (long-term) rating for the line should be used for
+checking violation. The short-term rating allows the line to be loaded higher for shorter period of time.
 
 Step 3
 ======
-Scale power generation or load to eleminate the violation for each contingency
+If violation exists, scale power generation or load to eleminate the violation for each contingency
 that is in violation.
 - The contingency represents loss of a line and there is a line violation
   somewhere else in the system. Scale generation downward until violation
-  disappears. Meanwhile, we need to either scale other generators in another
-  region up, or scale load down to keep power balanced.
+  disappears. We may also need to either scale generators and/or loads in the other region up or down to 
+  keep power balanced.
 - The continency represents loss of a line and there is a voltage violation
   somewhere else in the system. If the voltage is too high, scale generation
   downward until the violation disappears. If the voltage is too low, scale load
