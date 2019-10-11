@@ -84,6 +84,7 @@ load at the other until there is a violation. Then we do what??
 
 *Yousu*: Record the current power flow, especially the changes of
 generators/loads. Load shedding is the last step to do.
+
 Step 5
 ======
 We do something with dynamic simulation.
