@@ -331,20 +331,37 @@ class PFBus
     /**
      * Set value of real power on individual generators
      * @param tag generator ID
-     * @param value new value of real power
+     * @param value new value of generator real power
      * @param data data collection object associated with bus
      */
     void setGeneratorRealPower(std::string tag, double value,
         gridpack::component::DataCollection *data);
 
     /**
+     * Scale value of real power on all generators
+     * @param value scale factor for real power
+     */
+    void scaleGeneratorRealPower(double value);
+
+    /**
      * Set value of real power on individual loads
      * @param tag load ID
-     * @param value new value of real power
+     * @param value new value of load real power
      * @param data data collection object associated with bus
      */
     void setLoadRealPower(std::string tag, double value,
         gridpack::component::DataCollection *data);
+
+    /**
+     * Scale value of real power on loads
+     * @param value scale factor for real power
+     */
+    void scaleLoadRealPower(double value);
+
+    /**
+     * Reset real power for generators and load back to original values
+     */
+    void resetRealPower();
 
   private:
     double p_shunt_gs;
@@ -364,6 +381,7 @@ class PFBus
     double p_voltage; // initial bus voltage read from parser
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg, p_pFac;
+    std::vector<double> p_savePg;
     std::vector<int> p_gstatus;
     std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
@@ -373,6 +391,7 @@ class PFBus
     std::vector<double> p_pt;
     std::vector<double> p_pb;
     std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
+    std::vector<double> p_savePl;
     std::vector<int> p_lstatus;
     std::vector<std::string> p_lid;
     double p_sbase;

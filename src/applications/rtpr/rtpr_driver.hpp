@@ -68,6 +68,38 @@ class RTPRDriver
         gridpack::utility::Configuration::ChildCursors contingencies);
 
     /**
+     * Create a list of all N-1 generator contingencies for a given area
+     * @param network power grid network on which contingencies are defined
+     * @param area index of area that will generate contingencies
+     * @return vector of contingencies
+     */
+    std::vector<gridpack::powerflow::Contingency> createGeneratorContingencies(
+        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area);
+
+    /**
+     * Create a list of all N-1 branch contingencies for a given area
+     * @param network power grid network on which contingencies are defined
+     * @param area index of area that will generate contingencies
+     * @return vector of contingencies
+     */
+    std::vector<gridpack::powerflow::Contingency> createBranchContingencies(
+        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area);
+
+    /**
+     * Scale generation in a specified area
+     * @param scale value to scale real power generation
+     * @param area index of area
+     */
+    void scaleAreaGeneration(double scale, int area);
+
+    /**
+     * Scale loads in a specified area
+     * @param scale value to scale real power load
+     * @param area index of area
+     */
+    void scaleAreaLoads(double scale, int area);
+
+    /**
      * Execute application
      * @param argc number of arguments
      * @param argv list of character strings
@@ -75,6 +107,8 @@ class RTPRDriver
     void execute(int argc, char** argv);
 
     private:
+
+    boost::shared_ptr<gridpack::powerflow::PFNetwork> p_pf_network;
 };
 
 } // rtpr

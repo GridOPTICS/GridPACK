@@ -474,6 +474,7 @@ void gridpack::powerflow::PFBus::load(
       ok =  data->getValue(GENERATOR_PMIN,&pb,i);
       if (lgen) {
         p_pg.push_back(pg);
+        p_savePg.push_back(pg);
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
         if (gstatus == 0) {
@@ -529,6 +530,7 @@ void gridpack::powerflow::PFBus::load(
       p_load = p_load && data->getValue(LOAD_STATUS, &lstatus,i);
       if (p_load) {
         p_pl.push_back(pl);
+        p_savePl.push_back(pl);
         p_ql.push_back(ql);
         p_lstatus.push_back(lstatus);
         std::string id("-1");
@@ -1396,6 +1398,18 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
 }
 
 /**
+ * Scale value of real power on all generators
+ * @param value scale factor for real power
+ */
+void gridpack::powerflow::PFBus::scaleGeneratorRealPower(double value)
+{
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    p_pg[i] = value*p_pg[i];
+  }
+}
+
+/**
  * Set value of real power on individual generators
  * @param tag generator ID
  * @param value new value of real power
@@ -1418,6 +1432,32 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
     }
   } else {
     printf("No load found for tag: (%s)\n",tag.c_str());
+  }
+}
+
+/**
+ * Scale value of real power on loads
+ * @param value scale factor for real power
+ */
+void gridpack::powerflow::PFBus::scaleLoadRealPower(double value)
+{
+  int i;
+  for (i=0; i<p_nload; i++) {
+    p_pl[i] = value*p_pl[i];
+  }
+}
+
+/**
+ * Reset real power for generators and load back to original values
+ */
+void gridpack::powerflow::PFBus::resetRealPower()
+{
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    p_pg[i] = p_savePg[i];
+  }
+  for (i=0; i<p_nload; i++) {
+    p_pl[i] = p_savePl[i];
   }
 }
 

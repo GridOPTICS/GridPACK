@@ -23,7 +23,7 @@
 #include "rtpr_driver.hpp"
 
 #define USE_SUCCESS
-#define USE_STATBLOCK
+//#define USE_STATBLOCK
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
 
@@ -142,6 +142,265 @@ std::vector<gridpack::powerflow::Contingency>
 }
 
 /**
+ * Dummy struct to get around some problems with vectors of characters
+ */
+struct char2 {
+  char str[3];
+};
+
+/**
+ * Create a list of all N-1 generator contingencies for a given area
+ * @param network power grid network on which contingencies are defined 
+ * @param area index of area that will generate contingencies
+ * @return vector of contingencies
+ */
+std::vector<gridpack::powerflow::Contingency> 
+  gridpack::rtpr::RTPRDriver::createGeneratorContingencies(
+  boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area)
+{
+  std::vector<gridpack::powerflow::Contingency> ret;
+  gridpack::utility::StringUtils util;
+  int nbus = network->numBuses();
+  int i,j,iarea;
+  std::vector<int> bus_ids;
+  std::vector<char2> tags;
+  char2 buf;
+  // Loop over all buses
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      // Get data collection object
+      gridpack::component::DataCollection *data
+        = network->getBusData(i).get();
+      int ngen=0; 
+      data->getValue(BUS_AREA, &iarea);
+      if (iarea == area) {
+        if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+          for (j=0; j<ngen; j++) {
+            // Check generator status
+            int status = 0;
+            data->getValue(GENERATOR_STAT, &status, j);
+            if (status != 0) {
+              // Generator is active in base case. Add a contingency
+              bus_ids.push_back(network->getOriginalBusIndex(i));
+              std::string tag, clean_tag;
+              data->getValue(GENERATOR_ID,&tag,j);
+              clean_tag = util.clean2Char(tag);
+              strncpy(buf.str,clean_tag.c_str(),2);
+              buf.str[2] = '\0';
+              tags.push_back(buf);
+            }
+          }
+        }
+      }
+    }
+  }
+  // Have a list of local faults. Find out total number of faults.
+  int nflt = bus_ids.size();
+  int nproc = network->communicator().size();
+  int me = network->communicator().rank();
+  std::vector<int> sizes(nproc);
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = nflt;
+  network->communicator().sum(&sizes[0], nproc);
+  // create global list containing buses and generator tags
+  nflt = 0;
+  for (i=0; i<nproc; i++) nflt += sizes[i];
+  int g_bus = GA_Create_handle();
+  int one = 1;
+  NGA_Set_data(g_bus,one,&nflt,C_INT);
+  NGA_Allocate(g_bus);
+  int g_ids = GA_Create_handle();
+  int idType = NGA_Register_type(sizeof(char2));
+  NGA_Set_data(g_ids,1,&nflt,idType);
+  NGA_Allocate(g_ids);
+  int lo, hi;
+  lo = 0; 
+  for (i=0; i<me; i++) lo += sizes[i];
+  hi = lo + sizes[me] - 1;
+  // Create a complete list on all processes
+  NGA_Put(g_bus,&lo,&hi,&bus_ids[0],&one);
+  NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
+  network->communicator().sync();
+  bus_ids.resize(nflt);
+  tags.resize(nflt);
+  lo = 0;
+  hi = nflt-1;
+  NGA_Get(g_bus,&lo,&hi,&bus_ids[0],&one);
+  NGA_Get(g_ids,&lo,&hi,&tags[0],&one);
+  GA_Destroy(g_bus);
+  GA_Destroy(g_ids);
+  NGA_Deregister_type(idType);
+  // create a list of contingencies
+  char sbuf[128];
+  for (i=0; i<nflt; i++) {
+    gridpack::powerflow::Contingency fault;
+    fault.p_type = Generator;
+    fault.p_busid.push_back(bus_ids[i]);
+    std::string tag = tags[i].str;
+    fault.p_genid.push_back(util.clean2Char(tag));
+    fault.p_saveGenStatus.push_back(true);
+    sprintf(sbuf,"GenCTG%d",i+1);
+    fault.p_name = sbuf;
+    ret.push_back(fault);
+    if (GA_Nodeid() == 0) {
+      printf("bus: %d tag: (%s) name: (%s)\n",fault.p_busid[0],
+          fault.p_genid[0].c_str(),fault.p_name.c_str());
+    }
+  }
+  return ret;
+}
+
+  /**
+   * Create a list of all N-1 branch contingencies for a given area
+   * @param network power grid network on which contingencies are defined 
+   * @param area index of area that will generate contingencies
+   * @return vector of contingencies
+   */
+std::vector<gridpack::powerflow::Contingency>
+  gridpack::rtpr::RTPRDriver::createBranchContingencies(
+  boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area)
+{
+  std::vector<gridpack::powerflow::Contingency> ret;
+  gridpack::utility::StringUtils util;
+  int nbranch = network->numBranches();
+  int i,j,idx1,idx2,i1,i2,area1,area2;
+  std::vector<int> bus_from;
+  std::vector<int> bus_to;
+  std::vector<char2> tags;
+  char2 buf;
+  // Loop over all branches
+  for (i=0; i<nbranch; i++) {
+    if (network->getActiveBranch(i)) {
+      // Get data collection object
+      gridpack::component::DataCollection *data
+        = network->getBranchData(i).get();
+      int nline=0; 
+      network->getBranchEndpoints(i,&i1,&i2);
+      network->getBusData(i1)->getValue(BUS_AREA,&area1);
+      network->getBusData(i2)->getValue(BUS_AREA,&area2);
+      if (area == area1 && area == area2) {
+        if (data->getValue(BRANCH_NUM_ELEMENTS, &nline)) {
+          for (j=0; j<nline; j++) {
+            // Check generator status
+            int status = 0;
+            data->getValue(BRANCH_STATUS, &status, j);
+            if (status != 0) {
+              // Generator is active in base case. Add a contingency
+              network->getOriginalBranchEndpoints(i,&idx1,&idx2);
+              bus_from.push_back(idx1);
+              bus_to.push_back(idx2);
+              std::string tag, clean_tag;
+              data->getValue(BRANCH_CKT,&tag,j);
+              clean_tag = util.clean2Char(tag);
+              strncpy(buf.str,clean_tag.c_str(),2);
+              buf.str[2] = '\0';
+              tags.push_back(buf);
+            }
+          }
+        }
+      }
+    }
+  }
+  // Have a list of local faults. Find out total number of faults.
+  int nflt = bus_from.size();
+  int nproc = network->communicator().size();
+  int me = network->communicator().rank();
+  std::vector<int> sizes(nproc);
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = nflt;
+  network->communicator().sum(&sizes[0], nproc);
+  // create global list containing buses and generator tags
+  nflt = 0;
+  for (i=0; i<nproc; i++) nflt += sizes[i];
+  int g_from = GA_Create_handle();
+  int one = 1;
+  NGA_Set_data(g_from,one,&nflt,C_INT);
+  NGA_Allocate(g_from);
+  int g_to = GA_Create_handle();
+  NGA_Set_data(g_to,one,&nflt,C_INT);
+  NGA_Allocate(g_to);
+  int g_ids = GA_Create_handle();
+  int idType = NGA_Register_type(sizeof(char2));
+  NGA_Set_data(g_ids,1,&nflt,idType);
+  NGA_Allocate(g_ids);
+  int lo, hi;
+  lo = 0; 
+  for (i=0; i<me; i++) lo += sizes[i];
+  hi = lo + sizes[me] - 1;
+  // Create a complete list on all processes
+  NGA_Put(g_from,&lo,&hi,&bus_from[0],&one);
+  NGA_Put(g_to,&lo,&hi,&bus_to[0],&one);
+  NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
+  network->communicator().sync();
+  bus_from.resize(nflt);
+  bus_to.resize(nflt);
+  tags.resize(nflt);
+  lo = 0;
+  hi = nflt-1;
+  NGA_Get(g_from,&lo,&hi,&bus_from[0],&one);
+  NGA_Get(g_to,&lo,&hi,&bus_to[0],&one);
+  NGA_Get(g_ids,&lo,&hi,&tags[0],&one);
+  GA_Destroy(g_from);
+  GA_Destroy(g_to);
+  GA_Destroy(g_ids);
+  NGA_Deregister_type(idType);
+  // create a list of contingencies
+  char sbuf[128];
+  for (i=0; i<nflt; i++) {
+    gridpack::powerflow::Contingency fault;
+    fault.p_type = Branch;
+    fault.p_from.push_back(bus_from[i]);
+    fault.p_to.push_back(bus_to[i]);
+    std::string tag = tags[i].str;
+    fault.p_ckt.push_back(util.clean2Char(tag));
+    fault.p_saveLineStatus.push_back(true);
+    sprintf(sbuf,"LineCTG%d",i+1);
+    fault.p_name = sbuf;
+    ret.push_back(fault);
+    if (GA_Nodeid() == 0) {
+      printf("from: %d to: %d tag: (%s) name: (%s)\n",fault.p_from[0],
+          fault.p_to[0],
+          fault.p_ckt[0].c_str(),fault.p_name.c_str());
+    }
+  }
+  return ret;
+}
+
+/**
+ * Scale generation in a specified area
+ * @param scale value to scale real power generation
+ * @param area index of area
+ */
+void gridpack::rtpr::RTPRDriver::scaleAreaGeneration(double scale, int area)
+{
+  int nbus = p_pf_network->numBuses(); 
+  int i;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_pf_network->getBus(i).get();
+    if (bus->getArea() == area) {
+      bus->scaleGeneratorRealPower(scale);
+    }
+  }
+}
+
+/**
+ * Scale loads in a specified area
+ * @param scale value to scale real power load
+ * @param area index of area
+ */
+void gridpack::rtpr::RTPRDriver::scaleAreaLoads(double scale, int area)
+{
+  int nbus = p_pf_network->numBuses(); 
+  int i;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_pf_network->getBus(i).get();
+    if (bus->getArea() == area) {
+      bus->scaleLoadRealPower(scale);
+    }
+  }
+}
+
+/**
  * Execute application. argc and argv are standard runtime parameters
  */
 void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
@@ -172,7 +431,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   // one task communicator, even though the world communicator is broken up into
   // many task communicators
   gridpack::utility::Configuration::CursorPtr cursor;
-  cursor = config->getCursor("Configuration.Contingency_analysis");
+  cursor = config->getCursor("Configuration.RealTimePathRating");
   int grp_size;
   double Vmin, Vmax;
   // Check to find out if files should be printed for individual power flow
@@ -193,6 +452,35 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (!cursor->get("groupSize",&grp_size)) {
     grp_size = 1;
   }
+  int srcArea, dstArea;
+  if (!cursor->get("sourceArea", &srcArea)) {
+    srcArea = 1;
+  }
+  if (!cursor->get("destinationArea", &dstArea)) {
+    dstArea = 1;
+  }
+  bool calcGenCntngcy;
+  if (!cursor->get("calculateGeneratorContingencies",&tmp_bool)) {
+    calcGenCntngcy = false;
+  } else {
+    util.toLower(tmp_bool);
+    if (tmp_bool == "false") {
+      calcGenCntngcy = false;
+    } else {
+      calcGenCntngcy = true;
+    }
+  }
+  bool calcLineCntngcy;
+  if (!cursor->get("calculateLineContingencies",&tmp_bool)) {
+    calcLineCntngcy = false;
+  } else {
+    util.toLower(tmp_bool);
+    if (tmp_bool == "false") {
+      calcLineCntngcy = false;
+    } else {
+      calcLineCntngcy = true;
+    }
+  }
   if (!cursor->get("minVoltage",&Vmin)) {
     Vmin = 0.9;
   }
@@ -207,17 +495,16 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations
-#ifdef USE_SUCCESS
   std::vector<int> contingency_idx;
   std::vector<bool> contingency_success;
   gridpack::parallel::GlobalVector<bool> ca_success(world);
   std::vector<int> contingency_violation;
   gridpack::parallel::GlobalVector<int> ca_violation(world);
-#endif
 
   // Create powerflow applications on each task communicator
   boost::shared_ptr<gridpack::powerflow::PFNetwork>
     pf_network(new gridpack::powerflow::PFNetwork(task_comm));
+  p_pf_network = pf_network;
   gridpack::powerflow::PFAppModule pf_app;
   // Read in the network from an external file and partition it over the
   // processors in the task communicator. This will read in power flow
@@ -243,18 +530,41 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (!cursor->get("contingencyList",&contingencyfile)) {
     contingencyfile = "contingencies.xml";
   }
-  if (world.rank() == 0) printf("Contingency List: %s\n",contingencyfile.c_str());
-  // Open contingency file
-  bool ok = config->open(contingencyfile,world);
+  std::vector<gridpack::powerflow::Contingency> events;
+  if (world.rank() == 0 && !calcGenCntngcy && !calcLineCntngcy) {
+    printf("Contingency List: %s\n",contingencyfile.c_str());
+    // Open contingency file
+    bool ok = config->open(contingencyfile,world);
 
-  // Get a list of contingencies. Set cursor so that it points to the
-  // Contingencies block in the contingency file
-  cursor = config->getCursor(
-      "ContingencyList.Contingency_analysis.Contingencies");
-  gridpack::utility::Configuration::ChildCursors contingencies;
-  if (cursor) cursor->children(contingencies);
-  std::vector<gridpack::powerflow::Contingency>
+    // Get a list of contingencies. Set cursor so that it points to the
+    // Contingencies block in the contingency file
+    cursor = config->getCursor(
+        "ContingencyList.RealTimePathRating.Contingencies");
+    gridpack::utility::Configuration::ChildCursors contingencies;
+    if (cursor) cursor->children(contingencies);
     events = getContingencies(contingencies);
+  } else {
+    std::vector<gridpack::powerflow::Contingency> genContingencies;
+    if (calcGenCntngcy) {
+      if (world.rank()==0) 
+        printf("Calculating generator contingencies automatically\n");
+      genContingencies = 
+        createGeneratorContingencies(pf_network, srcArea);
+    }
+    std::vector<gridpack::powerflow::Contingency> branchContingencies;
+    if (calcLineCntngcy) {
+      if (world.rank()==0) 
+        printf("Calculating line contingencies automatically\n");
+      branchContingencies =
+        createBranchContingencies(pf_network, srcArea);
+    }
+    events = genContingencies;
+    int nsize = branchContingencies.size();
+    int ic;
+    for (ic = 0; ic<nsize; ic++) {
+      events.push_back(branchContingencies[ic]);
+    }
+  }
   // Contingencies are now available. Print out a list of contingencies from
   // process 0 (the list is replicated on all processors)
   if (world.rank() == 0) {
@@ -807,7 +1117,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
   // all timing variables)
-  if (contingencies.size()*grp_size >= world.size()) {
+  if (events.size()*grp_size >= world.size()) {
     timer->dump();
   }
 }

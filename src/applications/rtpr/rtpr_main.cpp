@@ -34,7 +34,7 @@ main(int argc, char **argv)
   // Intialize Math libraries
   gridpack::math::Initialize(&argc,&argv);
 
-  gridpack::contingency_analysis::RTPRDriver driver;
+  gridpack::rtpr::RTPRDriver driver;
   driver.execute(argc, argv);
 
   GA_Terminate();

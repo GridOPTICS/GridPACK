@@ -48,41 +48,41 @@ target_link_libraries(rtpr.x ${target_libraries})
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input_14.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input_14.xml"
   -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input_14.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input_14.xml"
   )
 
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input_118.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input_118.xml"
   -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input_118.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input_118.xml"
   )
 
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input.polish.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input.polish.xml"
   -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input.polish.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input.polish.xml"
   )
 
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ca/input.euro.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input.euro.xml"
   -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ca/input.euro.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input.euro.xml"
   )
 
 add_custom_target(rtpr.x.input
