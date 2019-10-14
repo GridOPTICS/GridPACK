@@ -16,13 +16,14 @@
 
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
 #include "base_exciter_model.hpp"
 #include "esst1a.hpp"
 
-#define TS_THRESHOLD 4
+#define TS_THRESHOLD 1
 
 /**
  *  Basic constructor
@@ -80,6 +81,8 @@ void gridpack::dynamic_simulation::Esst1aModel::load(
   if (!data->getValue(EXCITER_KLR, &Klr, idx)) Klr = 0.0; // TBD: Klr
   if (!data->getValue(EXCITER_ILR, &Ilr, idx)) Ilr = 0.0; // TBD: Ilr
   //if (!data->getValue(EXCITER_TA1, &Ta1, idx)) Ta1 = 0.0; // Ta1
+
+  printf("UEL=%f,VOS=%f,Tr=%f,Vimax=%f,Vimin=%f,Tc=%f,Tb=%f,Tc1=%f,Tb1=%f,Ka=%f,Ta=%f,Vamax=%f,Vamin=%f,Vrmax=%f,Vrmin=%f,Kc=%f,Kf=%f,Tf=%f,Klr=%f,Ilr=%f\n",UEL,VOS,Tr,Vimax,Vimin,Tc,Tb,Tc1,Tb1,Ka,Ta,Vamax,Vamin,Vrmax,Vrmin,Kc,Kf,Tf,Klr,Ilr);
 }
 
 /**
@@ -142,23 +145,26 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   x1Va = Va;
   //State 4
   double TempLL = Va / Ka;
-  if (Tb1 < TS_THRESHOLD * ts) x4LL2 = 0;
+  if (Tb1 == 0) x4LL2 = TempLL;
+  else if (Tb1 < TS_THRESHOLD * ts) x4LL2 = 0;
   else x4LL2 = TempLL * (1 - Tc1 / Tb1);
   //State 3
-  if (Tb < TS_THRESHOLD * ts) x3LL1 = 0;
-  else  x3LL1 = TempLL * (1 - Tc / Tb);
+  if (Tb == 0) x3LL1 = TempLL;
+  else if (Tb < TS_THRESHOLD * ts) x3LL1 = 0;
+  else x3LL1 = TempLL * (1 - Tc / Tb);
   //State 2
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (TempLL > Vimax) Vimax = TempLL;
     if (TempLL < Vimin) Vimin = TempLL;
   }
-  //printf ("Esst1a ini() Vcomp = %f \n", Vcomp);
+  printf ("Esst1a ini() Vcomp = %f, TempLL = %f \n", Vcomp, TempLL);
   x2Vcomp = Vcomp;
   //State 5
   x5Deriv = 0;
   Vref = Vcomp + TempLL;
 
   //printf("esst1a init:  %f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv); 
+  printf("esst1a init:  %f\t%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv, Vref);
 }
 
 /**

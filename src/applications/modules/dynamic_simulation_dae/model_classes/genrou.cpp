@@ -7,7 +7,7 @@
 /**
  * @file   genrou.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   09/20/19
+ * @Last modified:   10/13/19
  *  
  * @brief  
  *
@@ -70,7 +70,6 @@ GenrouGen::GenrouGen(void)
   Vd = 0.0;
   Vq = 0.0;
 
-  //p_hasExciter = false;
 }
 
 GenrouGen::~GenrouGen(void)
@@ -110,13 +109,22 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GENERATOR_XDPP, &Xqpp, idx)) Xqpp=0.0; // Xqpp // SJin: no GENERATOR_XQPP in dictionary.hpp, read XDPP instead (Xqpp = Xdpp)
   if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
 
-  //printf("H=%f,D=%f,Ra=%f,Xd=%f,Xq=%f,Xdp=%f,Xdpp=%f,Xl=%f,Tdop=%f,Tdopp=%f,Tqopp=%f,S10=%f,S12=%f,Xqp=%f,Xqpp=%f,Tqop=%f\n", H,D,Ra,Xd,Xq,Xdp,Xdpp,Xl,Tdop,Tdopp,Tqopp,S10,S12,Xqp,Xqpp,Tqop);
+  //printf("before: H=%f,D=%f,Ra=%f,Xd=%f,Xq=%f,Xdp=%f,Xdpp=%f,Xl=%f,Tdop=%f,Tdopp=%f,Tqopp=%f,S10=%f,S12=%f,Xqp=%f,Xqpp=%f,Tqop=%f\n", H,D,Ra,Xd,Xq,Xdp,Xdpp,Xl,Tdop,Tdopp,Tqopp,S10,S12,Xqp,Xqpp,Tqop);
 
+  /*printf("mbase=%f,sbase=%f\n",mbase,sbase);
   // Convert generator parameters from machine base to MVA base
-  /*p_H *= mbase/sbase;
-  p_D *= mbase/sbase;
-  p_Xdp /= mbase/sbase;*/
+  H *= mbase/sbase;
+  D *= mbase/sbase;
+  Xdp /= mbase/sbase;
 
+  Xd /= mbase/sbase;
+  Xq /= mbase/sbase;
+  Xdpp /= mbase/sbase;
+  Xl /= mbase/sbase;
+  Xqp /= mbase/sbase;
+  Xqpp /= mbase/sbase;*/
+
+  //printf("after: H=%f,D=%f,Ra=%f,Xd=%f,Xq=%f,Xdp=%f,Xdpp=%f,Xl=%f,Tdop=%f,Tdopp=%f,Tqopp=%f,S10=%f,S12=%f,Xqp=%f,Xqpp=%f,Tqop=%f\n", H,D,Ra,Xd,Xq,Xdp,Xdpp,Xl,Tdop,Tdopp,Tqopp,S10,S12,Xqp,Xqpp,Tqop);
 }
 
 /**
@@ -167,20 +175,26 @@ void GenrouGen::init(gridpack::ComplexType* values)
   double mag = Vm;
   double ang = atan2(VQ, VD); // SJin: ang = arctang(VQ/VD); ?
   Vterm = mag; 
-  presentMag = mag;
+  //presentMag = mag;
   Theta = ang;
-  presentAng = ang;
+  //presentAng = ang;
   double P, Q; // Generator real and reactive power
-  P = pg / sbase;
-  Q = qg / sbase;
+  //P = pg / sbase; 
+  //Q = qg / sbase;
+  P = pg / mbase;
+  Q = qg / mbase;
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
+  //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
   //printf("Vterm=%f, Theta=%f, Vrterm=%f, Viterm=%f\n", Vterm, Theta, Vrterm, Viterm);
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
+  //printf("P=%f,Vrterm=%f,Q=%f,Viterm=%f,Vterm=%f\n",P,Vrterm,Q,Viterm,Vterm);
+  //printf("Ir = %f, Ii = %f\n", Ir, Ii);
   x2w = 0;
   x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
   Id = Ir * sin(x1d) - Ii * cos(x1d); // convert values to the dq axis
+  //printf("Ir = %f, Ii=%f, Iq = %f, Xq=%f,Xqp=%f\n", Ir, Ii, Iq,Xq,Xqp);
   Iq = Ir * cos(x1d) + Ii * sin(x1d); // convert values to the dq axis
   double Vr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
   double Vi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
@@ -196,7 +210,8 @@ void GenrouGen::init(gridpack::ComplexType* values)
   x6Edp = Iq * (Xq - Xqp);
   x5Psiqp = x6Edp + Iq * (Xqp - Xl);
   //Efd = x3Eqp * (1 + Sat(x3Eqp)) + Id * (Xd - Xdp); 
-  Efd = x3Eqp + Id * (Xd - Xdp); 
+  //Efd = x3Eqp + Id * (Xd - Xdp);
+  Efd = x3Eqp * (1 + Sat(x3Eqp)) + Id * (Xd - Xdp);
   LadIfd = Efd;
   Pmech = Psidpp * Iq - Psiqpp * Id;
 
@@ -208,19 +223,31 @@ void GenrouGen::init(gridpack::ComplexType* values)
   values[5] = x6Edp;
 
   //printf("VD=%f, VQ=%f, Vm=%f, mag=%f, ang=%f, Pmw=%f, Qmvar=%f, Ir=%f, Ii=%f, Id=%f, Iq=%f, I=%f\n", VD, VQ, Vm, mag, ang, pg, qg, Ir, Ii, Id, Iq, sqrt(Id*Id+Iq*Iq));
-  //printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
-  //printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+  printf("\nx1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+  printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
+  printf("VD = %f, VQ=%f\n", VD, VQ);
   
   // Initialize exciters
   p_hasExciter = getphasExciter();
   if (p_hasExciter) {
     p_exciter = getExciter();
+    //printf("Vterm = %f ..........\n", Vterm);
+    p_exciter->setVterminal(Vterm);
+    p_exciter->setVcomp(mag);
     p_exciter->setFieldVoltage(Efd);
-    p_exciter->setTimestep(0.0); // SJin: to be read from input file
+    p_exciter->setFieldCurrent(LadIfd);
+    p_exciter->setTimestep(0.01); // SJin: to be read from input file
     p_exciter->setTimeincrement(0.01); // SJin: to be read from input file
     p_exciter->init(values);
   }
-
+    
+  p_hasGovernor = getphasGovernor();
+  if (p_hasGovernor) {
+    p_governor = getGovernor();
+    p_governor->setMechanicalPower(Pmech);
+    p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
+    p_governor->init(values); 
+  }
 }
 
 /**
@@ -326,6 +353,11 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
       p_exciter = getExciter();
       Efd = p_exciter->getFieldVoltage(); // Efd are called from Exciter
     }
+    
+    if (p_hasGovernor) {
+      p_governor = getGovernor();
+      Pmech = p_governor->getMechanicalPower();
+    }
 
     // Generator equations
     //values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
@@ -368,8 +400,14 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     
     if (p_hasExciter) {
       p_exciter->setOmega(x2w);
-      p_exciter->setVterminal(presentMag);
-      //p_exciter->vectorVector(values);
+      //p_exciter->setVterminal(presentMag);
+      //p_exciter->setVcomp(presentMag);
+      //p_exciter->vectorValues(values);
+    }
+      
+    if (p_hasGovernor) {
+      p_governor->setRotorSpeedDeviation(x2w);
+      //p_governor->vectorValues(values);
     }
   }
   

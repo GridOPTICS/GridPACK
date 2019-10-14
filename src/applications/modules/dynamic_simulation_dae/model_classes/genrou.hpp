@@ -160,6 +160,8 @@ class GenrouGen: public BaseGenModel
 
     bool p_hasExciter;
     boost::shared_ptr<BaseExcModel> p_exciter;
+    bool p_hasGovernor;
+    boost::shared_ptr<BaseGovModel> p_governor;
 
     double B, G, Vrterm, Viterm;
     double Vd, Vq;

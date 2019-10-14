@@ -386,7 +386,6 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   
   // Initialize vectors for integration 
   p_factory->initDSVect(p_time_step);
-  //exit(0);
 
   gridpack::mapper::BusVectorMap<DSFullNetwork> ngenMap(p_network);
   // Map to create vector volt

@@ -20,7 +20,8 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
-#include "base_exc_model.hpp" //SJin add
+#include "base_exc_model.hpp" //SJin added
+#include "base_gov_model.hpp" //SJin added
 
 class BaseGenModel : public gridpack::component::BaseComponent
 {
@@ -149,11 +150,18 @@ to be overwritten by the implementation */
 
   /***************************************/
 
+  // SJin: add new methods for exciter and governor
   void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
 
   boost::shared_ptr<BaseExcModel> getExciter();
   
   bool getphasExciter();
+
+  void setGovernor(boost::shared_ptr<BaseGovModel> &p_governor);
+
+  boost::shared_ptr<BaseGovModel> getGovernor();
+  
+  bool getphasGovernor();
 
  protected:
   double        pg; /**< Generator active power output */
@@ -166,6 +174,7 @@ to be overwritten by the implementation */
   bool          p_hasExciter;
   bool          p_hasGovernor;
   boost::shared_ptr<BaseExcModel> p_exciter; //SJin: new pointer to exciter
+  boost::shared_ptr<BaseGovModel> p_governor; //SJin: new pointer to governor
 };
 
 #endif

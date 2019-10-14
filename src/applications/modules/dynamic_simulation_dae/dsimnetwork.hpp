@@ -22,8 +22,9 @@
 #include <gridpack/include/gridpack.hpp>
 #include <gridpack/utilities/complex.hpp>
 #include <constants.hpp>
-#include <base_gen_model.hpp>
-#include <base_exc_model.hpp>
+#include <base_classes/base_gen_model.hpp>
+#include <base_classes/base_exc_model.hpp>
+#include <base_classes/base_gov_model.hpp>
 
   class DSimBus: public gridpack::component::BaseBusComponent {
   public:
@@ -173,6 +174,12 @@
 
     BaseGenModel **p_gen;    // Generator model
     int           *p_neqsgen; // Number of requations for each generator
+
+    // SJin: add exciter and governor variables 
+    int           *p_neqsexc; // Number of requations for each exciter 
+    int           *p_neqsgov; // Number of requations for each governor 
+    bool has_ex; 
+    bool has_gv;
 
     friend class boost::serialization::access;
     

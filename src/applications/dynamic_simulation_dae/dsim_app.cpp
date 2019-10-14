@@ -55,6 +55,8 @@ int main(int argc, char **argv)
   // Initialize
   dsim->initialize(); 
 
+  printf("start solving:\n");
+
   // Solve
   dsim->solve();
 

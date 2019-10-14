@@ -82,7 +82,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
   if (!data->getValue(GENERATOR_XL, &Xl, idx)) Xl=0.0; // Xl
   if (!data->getValue(GENERATOR_TDOP, &Tdop, idx)) Tdop=0.0; // Tdop
   if (!data->getValue(GENERATOR_TDOPP, &Tdopp, idx)) Tdopp=0.0; // Tdopp
-  if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tdopp=0.0; // Tqopp
+  if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tqopp=0.0; // Tqopp
   //if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.0; // S10
   //if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.0; // S12
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
@@ -90,7 +90,9 @@ void gridpack::dynamic_simulation::GenrouGenerator::load(
   //printf("load S10 = %f, S12 = %f\n", S10, S12);
   if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
   //if (!data->getValue(GENERATOR_XQPP, &Xqp, idx)) Xqpp=0.0; // Xqpp // SJin: no GENERATOR_XQPP yet
-  if (!data->getValue(GENERATOR_XDPP, &Xqp, idx)) Xqpp=0.0; // Xqpp // SJin: use Xdpp for compile
+  if (!data->getValue(GENERATOR_XDPP, &Xqpp, idx)) Xqpp=0.0; // Xqpp // SJin: use Xdpp for compile
+    if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
+      //printf("H=%f,D=%f,Ra=%f,Xd=%f,Xq=%f,Xdp=%f,Xdpp=%f,Xl=%f,Tdop=%f,Tdopp=%f,Tqopp=%f,S10=%f,S12=%f,Xqp=%f,Xqpp=%f,Tqop=%f\n", H,D,Ra,Xd,Xq,Xdp,Xdpp,Xl,Tdop,Tdopp,Tqopp,S10,S12,Xqp,Xqpp,Tqop);
 }
 
 /**
@@ -129,8 +131,10 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
+  //printf("*****Vterm=%f, Theta=%f, Vrterm=%f, Viterm=%f\n", Vterm, Theta, Vrterm, Viterm);
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
+  //printf("P=%f,Vrterm=%f,Q=%f,Viterm=%f,Vterm=%f\n",P,Vrterm,Q,Viterm,Vterm);
   //printf("Ir = %f, Ii = %f\n", Ir, Ii);
   x2w = 0;
   x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
@@ -139,12 +143,13 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   double Vr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
   double Vi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
   // SJin: in pdf, its Vrint and Viint for Vd and Vq calculation?
-  double Vd = Vr * sin(x1d) - Vi * sin(x1d); // convert to dq reference
-  double Vq = Vr * cos(x1d) + Vi * cos(x1d); // convert to dq reference
+  double Vd = Vr * sin(x1d) - Vi * cos(x1d); // convert to dq reference
+  double Vq = Vr * cos(x1d) + Vi * sin(x1d); // convert to dq reference
   double Psiqpp = -Vd / (1 + x2w);
   double Psidpp = + Vq / (1 + x2w);
   x4Psidp = Psidpp - Id * (Xdpp - Xl);
   x3Eqp = x4Psidp + Id * (Xdp - Xl);
+  //printf("=====Ir = %f, Ii=%f, Iq = %f, Xq=%f,Xqp=%f\n", Ir, Ii, Iq,Xq,Xqp);
   x6Edp = Iq * (Xq - Xqp); 
   x5Psiqp = x6Edp + Iq * (Xqp - Xl);
   //printf("Xdpp = %f, Xq = %f, Iq = %f\n", Xdpp, Xq, Iq);
@@ -153,13 +158,19 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   LadIfd = Efd;
   Pmech = Psidpp * Iq - Psiqpp * Id;
 
-  printf("genrou init: %f\t%f\t%f\t%f\t%f\t%f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
-  printf("gensal init: Efd = %f, Pmech = %f\n", Efd, Pmech);
+  //printf("genrou init: %f\t%f\t%f\t%f\t%f\t%f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+  //printf("gensal init: Efd = %f, Pmech = %f\n", Efd, Pmech);
   //Efdinit = Efd;
   //Pmechinit = Pmech;
+  printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+  printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
+  
 
   p_exciter = getExciter();
+  p_exciter->setVterminal(Vterm);
+  p_exciter->setVcomp(mag);
   p_exciter->setFieldVoltage(Efd);
+  p_exciter->setFieldCurrent(LadIfd);
   p_exciter->init(mag, ang, ts);
 
   p_governor = getGovernor();

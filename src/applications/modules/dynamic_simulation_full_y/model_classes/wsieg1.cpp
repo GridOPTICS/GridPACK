@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -147,7 +148,7 @@ void gridpack::dynamic_simulation::Wsieg1Model::init(double mag, double ang, dou
   if (T1 > 4 * ts) x1LL = GV * (1 - T2 / T1);
   else x1LL = GV;
   //printf("T1 = %f, T2 = %f, ts = %f\n", T1, T2, ts);
-  ///printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
+  printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
 }
 
 /**

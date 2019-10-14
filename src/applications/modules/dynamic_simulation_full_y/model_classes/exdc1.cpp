@@ -16,6 +16,7 @@
 
 #include <vector>
 #include <iostream>
+#include <stdio.h>
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
@@ -106,23 +107,24 @@ double gridpack::dynamic_simulation::Exdc1Model::Sat(double x)
  */
 void gridpack::dynamic_simulation::Exdc1Model::init(double mag, double ang, double ts)
 {
-  ///printf("exdc1: Efd = %f\n", Efd);
+  //printf("exdc1: Efd = %f, mag=%f\n", Efd,mag);
   x1 = Efd;
-  x4 = Efd * (KE + Sat(Efd));
+  //x4 = Efd * (KE + Sat(Efd));
+  x4 = Efd*KE; // SJin: remove Sat function temporarily
   if (TB > (TS_THRESHOLD * ts)) 
     x3 = (x4 / KA) * (1 - TC / TB); // SJin: x4 is Vr 
   else
     x3 = x4 / KA;
   x2 = mag; // SJin: mag is Vterminal 
   //printf("KF = %f, TF = %f, x1 = %f, ts = %f\n", KF, TF, x1, ts);
-  if (TF > (TS_THRESHOLD * ts)) 
-    x5 = x1 * (KF / TF); // SJin: x1 is Ve
-  else
+  //if (TF > (TS_THRESHOLD * ts)) 
+  //  x5 = x1 * (KF / TF); // SJin: x1 is Ve
+  //else
     x5 = 0.0;
   //x5 = 0.0; // Diao: force x5 to 0.0 for now
   Vref = mag + x4 / KA;
   //printf("Vref = %f\n", Vref);
-  ///printf("exdc1 init:  %f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5); 
+  printf("exdc1 init:  %f\t%f\t%f\t%f\t%f%f\n", x1, x2, x3, x4, x5, Vref); 
 }
 
 /**

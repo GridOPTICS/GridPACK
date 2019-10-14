@@ -43,10 +43,15 @@ add_library(gridpack_dynamic_simulation_dae_module
   dsimnetwork.cpp
   base_classes/base_gen_model.cpp
   base_classes/base_exc_model.cpp
+  base_classes/base_gov_model.cpp
   model_classes/classical_gen_model.cpp
   model_classes/genrou.cpp
   model_classes/esst1a.cpp
   model_classes/exdc1.cpp
+  model_classes/wsieg1.cpp
+  model_classes/GainBlockClass.cpp
+  model_classes/BackLashClass.cpp
+  model_classes/DBIntClass.cpp
 )
 
 if (GRIDPACK_LIB_LINK_LIBRARIES)

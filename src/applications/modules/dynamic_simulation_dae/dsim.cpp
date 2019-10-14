@@ -112,7 +112,7 @@ void DSim::initialize()
   p_VecMapper->mapToVector(p_X);
   
   p_network->updateBuses();
-  //  p_X->print();
+  p_X->print();
 }
 
 /**

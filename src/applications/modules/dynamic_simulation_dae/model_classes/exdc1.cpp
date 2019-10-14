@@ -7,7 +7,7 @@
 /**
  * @file   exdc1.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   08/23/19
+ * @Last modified:   10/13/19
  *  
  * @brief  
  *
@@ -110,10 +110,11 @@ double Exdc1Exc::Sat(double x)
  */
 void Exdc1Exc::init(gridpack::ComplexType* values) 
 {
-  double Vm = sqrt(VD*VD + VQ*VQ); // SJin: voltage VD and VQ come from base_exc_model.hpp
-  double mag = Vm;
+  //double Vm = sqrt(VD*VD + VQ*VQ); // SJin: voltage VD and VQ come from base_exc_model.hpp
+  //double mag = Vm;
+  double mag = Vterminal;
 
-  ///printf("exdc1: Efd = %f\n", Efd);
+  //printf("exdc1: Efd = %f, mag=%f\n", Efd,mag);
   x1 = Efd;
   //x4 = Efd * (KE + Sat(Efd));
   x4 = Efd*KE; // SJin: remove Sat function temporarily
@@ -123,13 +124,13 @@ void Exdc1Exc::init(gridpack::ComplexType* values)
     x3 = x4 / KA;
   x2 = mag; // SJin: mag is Vterminal 
   //printf("KF = %f, TF = %f, x1 = %f, ts = %f\n", KF, TF, x1, ts);
-  if (TF > (TS_THRESHOLD * ts)) 
-    x5 = x1 * (KF / TF); // SJin: x1 is Ve
-  else
+  //if (TF > (TS_THRESHOLD * ts)) 
+    //x5 = x1 * (KF / TF); // SJin: x1 is Ve
+  //else
     x5 = 0.0; // ignore this state
   Vref = mag + x4 / KA;
   //printf("Vref = %f\n", Vref);
-  printf("exdc1 init:  %f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5); 
+  printf("exdc1 init:  %f\t%f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5, Vref); 
   values[0] = x1;
   values[1] = x2;
   values[2] = x3;

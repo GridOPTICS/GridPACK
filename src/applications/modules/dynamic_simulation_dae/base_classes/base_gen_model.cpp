@@ -148,3 +148,22 @@ bool BaseGenModel::getphasExciter()
     return p_hasExciter;
 }
 
+//SJin: add setGovernor method
+void BaseGenModel::setGovernor(boost::shared_ptr<BaseGovModel> &governor)
+{ 
+  p_governor = governor;
+}
+
+//SJin: add getGovernor method
+boost::shared_ptr<BaseGovModel> BaseGenModel::getGovernor()
+{
+  p_hasGovernor = true;
+  return p_governor;
+}
+
+//SJin: add getphasGovernor method
+bool BaseGenModel::getphasGovernor()
+{
+    return p_hasGovernor;
+}
+

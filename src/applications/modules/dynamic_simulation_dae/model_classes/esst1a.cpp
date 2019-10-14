@@ -7,7 +7,7 @@
 /**
  * @file   esst1a.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   09/20/19
+ * @Last modified:   10/13/19
  *  
  * @brief  
  *
@@ -91,7 +91,7 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(EXCITER_ILR, &Ilr, idx)) Ilr = 0.0; // TBD: Ilr
   //if (!data->getValue(EXCITER_TA1, &Ta1, idx)) Ta1 = 0.0; // Ta1
 
-  printf("UEL=%f,VOS=%f,Tr=%f,Vimax=%f,Vimin=%f,Tc=%f,Tb=%f,Tc1=%f,Tb1=%f,Ka=%f,Ta=%f,Vamax=%f,Vamin=%f,Vrmax=%f,Vrmin=%f,Kc=%f,Kf=%f,Tf=%f,Klr=%f,Ilr=%f\n",UEL,VOS,Tr,Vimax,Vimin,Tc,Tb,Tc1,Tb1,Ka,Ta,Vamax,Vamin,Vrmax,Vrmin,Kc,Kf,Tf,Klr,Ilr);
+  //printf("UEL=%f,VOS=%f,Tr=%f,Vimax=%f,Vimin=%f,Tc=%f,Tb=%f,Tc1=%f,Tb1=%f,Ka=%f,Ta=%f,Vamax=%f,Vamin=%f,Vrmax=%f,Vrmin=%f,Kc=%f,Kf=%f,Tf=%f,Klr=%f,Ilr=%f\n",UEL,VOS,Tr,Vimax,Vimin,Tc,Tb,Tc1,Tb1,Ka,Ta,Vamax,Vamin,Vrmax,Vrmin,Kc,Kf,Tf,Klr,Ilr);
 
   // Convert exciter parameters from machine base to MVA base
   /*p_H *= mbase/sbase;
@@ -115,8 +115,11 @@ double Esst1aExc::Sat(double x)
  */
 void Esst1aExc::init(gridpack::ComplexType* values) 
 {
-  double Vm = sqrt(VD*VD + VQ*VQ); // SJin: voltage VD and VQ come from base_exc_model.hpp
-  double mag = Vm;
+  //double Vm = sqrt(VD*VD + VQ*VQ); // SJin: voltage VD and VQ come from base_exc_model.hpp
+  //double mag = Vm;
+   //printf("esst1a: Efd = %f, Vm=%f\n", Efd,Vm);
+  double mag = Vterm;
+  printf("esst1a: Efd = %f, mag=%f\n", Efd,mag);
 
   // Parameter cleanup
   // Just to make the code simpler below we will do the following cleanup 
@@ -127,11 +130,11 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   // Following is needed to avoid an algebraic loop in the model
   if (Kf != 0 && Ta < TS_THRESHOLD * ts) Ta = TS_THRESHOLD * ts;
 
-  Vterm = mag;
-  presentMag = mag;
+  //Vterm = mag;
+  //presentMag = mag;
   //Theta = ang;
   //presentAng = ang;
-  printf("esst1a init: Efd = %f\n", Efd);
+  //printf("esst1a init: Efd = %f\n", Efd);
   //State 1
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (Efd > (Vterm * Vrmax - Kc * LadIfd)) Vrmax = (Efd + Kc * LadIfd) / Vterm;
@@ -148,17 +151,13 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   x1Va = Va;
   //State 4
   double TempLL = Va / Ka;
-  if (Tb1 < TS_THRESHOLD * ts) {
-    x4LL2 = 0;
-  } else { // SJin: Need to check what's the equation when Tb == 0?
-    if (Tb1 == 0) 
-      x4LL2 = TempLL;
-    else
-      x4LL2 = TempLL * (1 - Tc1 / Tb1);
-  }
+  if (Tb1 == 0) x4LL2 = TempLL;
+  else if (Tb1 < TS_THRESHOLD * ts) x4LL2 = 0;
+  else x4LL2 = TempLL * (1 - Tc1 / Tb1);
   //State 3
-  if (Tb < TS_THRESHOLD * ts) x3LL1 = 0;
-  else  x3LL1 = TempLL * (1 - Tc / Tb);
+  if (Tb == 0) x3LL1 = TempLL;
+  else if (Tb < TS_THRESHOLD * ts) x3LL1 = 0;
+  else x3LL1 = TempLL * (1 - Tc / Tb);
   //State 2
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (TempLL > Vimax) Vimax = TempLL;
@@ -170,7 +169,7 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   x5Deriv = 0;
   Vref = Vcomp + TempLL;
 
-  printf("esst1a init:  %f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv);
+  printf("esst1a init:  %f\t%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv, Vref);
   values[0] = x1Va;
   values[1] = x2Vcomp;
   values[2] = x3LL1;
@@ -275,21 +274,21 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     // State 5
     double TempIn;
     if (Kf > 0) {
-    TempIn = Klr * (LadIfd - Ilr);
-    if (TempIn < 0) TempIn = 0;
-    // Note: if Ta = 0, then we would have an algebriac loop here which
-    // could cause numerical troubles. Thus we enforce Ta > 0 if (Kf > 0 and Tf > 0)
-    TempIn = x1Va - TempIn;
-    //if ("VOS at Output") TempIn = TempIn + Vstab; // TBD: "VOS at Output"???
-    // Ignore Over and Under Excitation Limit for now
-    double UseTf;
-    if (Tf > TS_THRESHOLD * t_inc) UseTf = Tf;
-    else UseTf = TS_THRESHOLD * t_inc;
-    values[x5_idx] = (TempIn * (-Kf / UseTf) - x5Deriv) / UseTf - dx5Deriv;
-    TempIn = TempIn * Kf / UseTf + x5Deriv; // Input into summation block
+      TempIn = Klr * (LadIfd - Ilr);
+      if (TempIn < 0) TempIn = 0;
+      // Note: if Ta = 0, then we would have an algebriac loop here which
+      // could cause numerical troubles. Thus we enforce Ta > 0 if (Kf > 0 and Tf > 0)
+      TempIn = x1Va - TempIn;
+      //if ("VOS at Output") TempIn = TempIn + Vstab; // TBD: "VOS at Output"???
+      // Ignore Over and Under Excitation Limit for now
+      double UseTf;
+      if (Tf > TS_THRESHOLD * t_inc) UseTf = Tf;
+      else UseTf = TS_THRESHOLD * t_inc;
+      values[x5_idx] = (TempIn * (-Kf / UseTf) - x5Deriv) / UseTf - dx5Deriv;
+      TempIn = TempIn * Kf / UseTf + x5Deriv; // Input into summation block
     } else {
-    values[x5_idx] = - dx5Deriv;
-    TempIn = 0; // Input into summation block;
+      values[x5_idx] = - dx5Deriv;
+      TempIn = 0; // Input into summation block;
     }
     // State 3
     TempIn = - x2Vcomp - TempIn + Vref;
@@ -298,27 +297,27 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     if (TempIn < Vimin) TempIn = Vimin;
     // Ignore Under Excitation Limit
     if (Tb < TS_THRESHOLD * t_inc) {
-    values[x3_idx] = - dx3LL1;
-    TempIn = TempIn; // output of first lead lag - just pass input
+      values[x3_idx] = - dx3LL1;
+      TempIn = TempIn; // output of first lead lag - just pass input
     } else {
-    values[x3_idx] = (TempIn * (1 - Tc / Tb) - x3LL1)/Tb - dx3LL1;
-    TempIn = TempIn * Tc / Tb + x3LL1; // output of first lead lag
+      values[x3_idx] = (TempIn * (1 - Tc / Tb) - x3LL1)/Tb - dx3LL1;
+      TempIn = TempIn * Tc / Tb + x3LL1; // output of first lead lag
     }
     // State 4
     if (Tb1 < TS_THRESHOLD * t_inc) {
     //    printf ("entering Tb < 4h\n");
-    values[x4_idx] = - dx4LL2;
-    TempIn = TempIn; // output of second lead lag - just pass input
+      values[x4_idx] = - dx4LL2;
+      TempIn = TempIn; // output of second lead lag - just pass input
     } else {
-    values[x4_idx] = (TempIn * (1 - Tc1 / Tb1) - x4LL2)/Tb1 - dx4LL2;
-    TempIn = TempIn * Tc1 / Tb1 + x4LL2; // output of second lead lag
+      values[x4_idx] = (TempIn * (1 - Tc1 / Tb1) - x4LL2)/Tb1 - dx4LL2;
+      TempIn = TempIn * Tc1 / Tb1 + x4LL2; // output of second lead lag
     }
     // State 1
     if (Ta < TS_THRESHOLD * t_inc) x1Va = Ka * TempIn;
     if (x1Va > Vamax) x1Va = Vamax; 
     if (x1Va < Vamin) x1Va = Vamin; 
     if (Ta < TS_THRESHOLD * t_inc) values[x1_idx] = - dx1Va;
-    else dx1Va = (Ka * TempIn - x1Va) / Ta;
+    else values[x1_idx] = (Ka * TempIn - x1Va) / Ta - dx1Va;
     if (dx1Va > 0 && x1Va >= Vamax) values[x1_idx] = - dx1Va;
     if (dx1Va < 0 && x1Va <= Vamin) values[x1_idx] = - dx1Va;  
      

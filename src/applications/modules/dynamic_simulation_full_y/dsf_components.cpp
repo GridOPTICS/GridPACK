@@ -389,12 +389,11 @@ void gridpack::dynamic_simulation::DSFullBus::initDSVect(double ts)
       p_eprime_s1.push_back(0.0);
       p_INorton.push_back(0.0);
 #else
-//      printf("\ngen %d i = %d,  ngen = %d:***********\n", getOriginalIndex(),i,p_ngen);
+      printf("\ngen %d i = %d,  ngen = %d:***********\n", getOriginalIndex(),i,p_ngen);
       p_generators[i]->init(p_voltage,p_angle, ts);
 #endif
     }
-  } 
-  
+  }
   //dynamic loads
   for (int i = 0; i < p_ndyn_load; i++) {
       p_loadmodels[i]->init(p_voltage,p_angle, ts);
