@@ -744,8 +744,6 @@ void gridpack::powerflow::PFAppModule::setVoltageLimits(double Vmin, double Vmax
  * Check to see if there are any voltage violations in the network
  * @param area area number. If this parameter is included, only check for
  * violations in this area
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations()
@@ -777,9 +775,13 @@ void gridpack::powerflow::PFAppModule::clearVoltageViolations()
 
 /**
  * Check to see if there are any line overload violations in the
- * network
+ * network The last call checks for overloads on specific lines.
  * @param area area number. If this parameter is included, only check for
  * violations in this area
+ * @param bus1 original index of "from" bus for branch
+ * @param bus2 original index of "to" bus for branch
+ * @param tags line IDs for individual lines
+ * @param violations true if violation detected on branch, false otherwise
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
@@ -790,6 +792,13 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
   return p_factory->checkLineOverloadViolations(area);
 }
+bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(
+    std::vector<int> &bus1, std::vector<int> &bus2,
+    std::vector<std::string> &tags, std::vector<bool> &violations)
+{
+  return p_factory->checkLineOverloadViolations(bus1,bus2,tags,violations);
+}
+
 /**
  * Check to see if there are any Q limit violations in the network
  * @param area only check for violations in specified area
@@ -819,4 +828,36 @@ void gridpack::powerflow::PFAppModule::clearQlimViolations()
 void gridpack::powerflow::PFAppModule::resetVoltages()
 {
   p_factory->resetVoltages();
+}
+
+/**
+ * Scale generator real power
+ * @param scale factor to scale real power generation
+ * @param area index of area for scaling generation
+ * @param zone index of zone for scaling generation
+ */
+void gridpack::powerflow::PFAppModule::scaleGeneratorRealPower(
+    double scale, int area, int zone)
+{
+  p_factory->scaleGeneratorRealPower(scale,area,zone);
+}
+
+/**
+ * Scale load real power
+ * @param scale factor to scale load real power
+ * @param area index of area for scaling load
+ * @param zone index of zone for scaling load
+ */
+void gridpack::powerflow::PFAppModule::scaleLoadRealPower(
+    double scale, int area, int zone)
+{
+  p_factory->scaleLoadRealPower(scale,area,zone);
+}
+
+/**
+ * Reset real power of loads and generators to original values
+ */
+void gridpack::powerflow::PFAppModule::resetRealPower()
+{
+  p_factory->resetRealPower();
 }

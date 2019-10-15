@@ -298,8 +298,15 @@ class PFBus
 
     /**
      * Get area parameter for bus
+     * @return bus area index
      */
     int getArea();
+
+    /**
+     * Get zone parameter for bus
+     * @return bus zone index
+     */
+    int getZone();
 
     /**
      * Evaluate diagonal block of Jacobian for power flow calculation and return
@@ -403,6 +410,7 @@ class PFBus
     int p_nload;
     int p_type;
     int p_area;
+    int p_zone;
     bool p_original_isolated;
 
     /**

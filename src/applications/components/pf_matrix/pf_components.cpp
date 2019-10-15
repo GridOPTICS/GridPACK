@@ -446,7 +446,10 @@ void gridpack::powerflow::PFBus::load(
   } else {
     p_original_isolated = false;
   }
+  p_area = 1;
   data->getValue(BUS_AREA, &p_area);
+  p_zone = 1;
+  data->getValue(BUS_ZONE, &p_zone);
 
   // if BUS_TYPE = 2, and gstatus is 1, then bus is a PV bus
   p_isPV = false;
@@ -1217,10 +1220,20 @@ bool gridpack::powerflow::PFBus::getIgnore()
 
 /**
  * Get area parameter for bus
+ * @return bus area index
  */
 int gridpack::powerflow::PFBus::getArea()
 {
   return p_area;
+}
+
+/**
+ * Get zone parameter for bus
+ * @return bus zone index
+ */
+int gridpack::powerflow::PFBus::getZone()
+{
+  return p_zone;
 }
 
 /**

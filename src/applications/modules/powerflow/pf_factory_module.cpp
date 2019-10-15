@@ -410,7 +410,69 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(int area)
 }
 
 /**
- * Set "ignore" paramter on all lines with violations so that subsequent
+ * Check to see if there are any line overload violations on
+ * specific lines.
+ * @param bus1 original index of "from" bus for branch
+ * @param bus2 original index of "to" bus for branch
+ * @param tags line IDs for individual lines
+ * @param violations false if violation detected on branch, true otherwise
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(
+    std::vector<int> &bus1, std::vector<int> &bus2,
+    std::vector<std::string> &tags, std::vector<bool> &violations)
+{
+  bool branch_ok = true;
+  int nbranch = bus1.size();
+  if (nbranch != bus2.size() || nbranch != tags.size()) {
+    printf("checkLineOverloadViolations: number of entries"
+        " in bus1 and bus2 or bus1 and tags not equal\n");
+    return false;
+  }
+  int i;
+  violations.clear();
+  std::vector<int> failure;
+  failure.resize(nbranch);
+  for (i=0; i<nbranch; i++) {
+    failure[i] = 0;
+    std::vector<int> indices = p_network->getLocalBranchIndices(bus1[i],bus2[i]);
+    int j;
+    for (j=0; j<indices.size(); j++) {
+      gridpack::powerflow::PFBranch *branch = p_network->getBranch(indices[j]).get();
+      // Loop over all lines in the branch and choose the smallest rating value
+      int nlines;
+      p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      std::vector<std::string> alltags = branch->getLineTags();
+      double rateA;
+      for (int k = 0; k<nlines; k++) {
+        if (tags[i] == alltags[k] && !branch->getIgnore(tags[k])) {
+          if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
+            if (rateA > 0.0) {
+              gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+              double pq = abs(s);
+              if (pq > rateA) {
+                failure[i] = 1;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  int nproc = p_network->communicator().size();
+  p_network->communicator().sum(&failure[0],nproc);
+  for (i=0; i<nproc; i++) {
+    if (failure[i] == 0) {
+      violations.push_back(true);
+    } else {
+      violations.push_back(false);
+      branch_ok = false;
+    }
+  }
+}
+
+/**
+ * Set "ignore" parameter on all lines with violations so that subsequent
  * checks are not counted as violations
  */
 void gridpack::powerflow::PFFactoryModule::ignoreLineOverloadViolations()
@@ -567,6 +629,56 @@ void gridpack::powerflow::PFFactoryModule::resetVoltages()
         (p_network->getBus(i).get());
       bus->resetVoltage();
     }
+  }
+}
+
+/**
+ * Scale generator real power
+ * @param scale factor to scale real power generation
+ * @param area index of area for scaling generation
+ * @param zone index of zone for scaling generation
+ */
+void gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
+    double scale, int area, int zone)
+{
+  int nbus = p_network->numBuses();
+  int i;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (bus->getArea() == area && bus->getZone() == zone) {
+      bus->scaleGeneratorRealPower(scale);
+    }
+  }
+}
+
+/**
+ * Scale load real power
+ * @param scale factor to scale load real power
+ * @param area index of area for scaling load
+ * @param zone index of zone for scaling load
+ */
+void gridpack::powerflow::PFFactoryModule::scaleLoadRealPower(
+    double scale, int area, int zone)
+{
+  int nbus = p_network->numBuses();
+  int i;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (bus->getArea() == area && bus->getZone() == zone) {
+      bus->scaleLoadRealPower(scale);
+    }
+  }
+}
+
+/**
+ * Reset real power of loads and generators to original values
+ */
+void gridpack::powerflow::PFFactoryModule::resetRealPower()
+{
+  int nbus = p_network->numBuses();
+  int i;
+  for (i=0; i<nbus; i++) {
+    p_network->getBus(i)->resetRealPower();
   }
 }
 
