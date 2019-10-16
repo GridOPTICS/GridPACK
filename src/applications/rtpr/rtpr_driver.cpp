@@ -23,7 +23,6 @@
 #include "rtpr_driver.hpp"
 
 #define USE_SUCCESS
-//#define USE_STATBLOCK
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
 
@@ -48,7 +47,7 @@ gridpack::rtpr::RTPRDriver::~RTPRDriver(void)
  */
 std::vector<gridpack::powerflow::Contingency>
   gridpack::rtpr::RTPRDriver::getContingencies(
-      gridpack::utility::Configuration::ChildCursors contingencies)
+      gridpack::utility::Configuration::ChildCursors &contingencies)
 {
   // The contingencies ChildCursors argument is a vector of configuration
   // pointers. Each element in the vector is pointing at a seperate Contingency
@@ -367,6 +366,41 @@ std::vector<gridpack::powerflow::Contingency>
 }
 
 /**
+ * Get list of tie lines
+ * @param cursor pointer to tie lines in input deck
+ * @return vector of contingencies
+ */
+std::vector<gridpack::rtpr::TieLine>
+  gridpack::rtpr::RTPRDriver::getTieLines(
+      gridpack::utility::Configuration::ChildCursors &tielines)
+{
+  // The ChildCursors argument is a vector of configuration
+  // pointers. Each element in the vector is pointing at a seperate tieLine
+  // block within the TieLines block in the input file.
+  std::vector<gridpack::rtpr::TieLine> ret;
+  int size = tielines.size();
+  int i, idx;
+  // Create string utilities object to help parse file
+  gridpack::utility::StringUtils utils;
+  // Loop over all child cursors
+  for (idx = 0; idx < size; idx++) {
+    std::string branchIDs;
+    tielines[idx]->get("Branch",&branchIDs);
+    std::vector<std::string> from_to = utils.blankTokenizer(branchIDs);
+    gridpack::rtpr::TieLine tieline;
+    tieline.from = atoi(from_to[0].c_str());
+    tieline.to = atoi(from_to[1].c_str());
+    std::string tag;
+    tielines[idx]->get("Branch",&tag);
+    std::string clean_tag = utils.clean2Char(tag);
+    strncpy(tieline.tag,clean_tag.c_str(),2);
+    tieline.tag[2] = '\0';
+    ret.push_back(tieline);
+  }
+  return ret;
+}
+
+/**
  * Scale generation in a specified area
  * @param scale value to scale real power generation
  * @param area index of area
@@ -405,6 +439,7 @@ void gridpack::rtpr::RTPRDriver::scaleAreaLoads(double scale, int area)
  */
 void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
 {
+  int i, j;
   // Create world communicator for entire simulation
   gridpack::parallel::Communicator world;
 
@@ -492,12 +527,38 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (!cursor->get("checkQLimit",&check_Qlim)) {
     check_Qlim = false;
   }
+  // Check for tie lines Set cursor so that it points to the
+  // TieLines block in the input file
+  cursor = config->getCursor(
+      "ContingencyList.RealTimePathRating.tieLines");
+  gridpack::utility::Configuration::ChildCursors
+    tielines;
+  if (cursor) cursor->children(tielines);
+  std::vector<gridpack::rtpr::TieLine>  ties = getTieLines(tielines);
+  int tsize = ties.size();
+  std::vector<int> from_bus, to_bus;
+  std::vector<std::string> tags;
+  std::vector<bool> violations;
+  from_bus.resize(tsize);
+  to_bus.resize(tsize);
+  tags.resize(tsize);
+  for (i=0; i<tsize; i++) {
+    from_bus[i] = ties[i].from;
+    to_bus[i] = ties[i].to;
+    tags[i] = ties[i].tag;
+  }
   gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
   // Keep track of failed calculations
   std::vector<int> contingency_idx;
   std::vector<bool> contingency_success;
+  // Keep track of which calculations completed successfully
   gridpack::parallel::GlobalVector<bool> ca_success(world);
+  // Keep track of violation status for completed calculations
+  // 1: no violations
+  // 2: voltage violation
+  // 3: line overload violation
+  // 4: both voltage violation and line overload violation
   std::vector<int> contingency_violation;
   gridpack::parallel::GlobalVector<int> ca_violation(world);
 
@@ -525,25 +586,35 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   // buses to ignore voltage violations on them.
   pf_app.ignoreVoltageViolations();
 
-  // Read in contingency file name
-  std::string contingencyfile;
-  if (!cursor->get("contingencyList",&contingencyfile)) {
-    contingencyfile = "contingencies.xml";
-  }
   std::vector<gridpack::powerflow::Contingency> events;
-  if (world.rank() == 0 && !calcGenCntngcy && !calcLineCntngcy) {
-    printf("Contingency List: %s\n",contingencyfile.c_str());
+  printf("p[%d] Got to 1\n",world.rank());
+  if (!calcGenCntngcy && !calcLineCntngcy) {
+    // Read in contingency file name
+  printf("p[%d] Got to 2\n",world.rank());
+    std::string contingencyfile;
+    cursor = config->getCursor(
+        "ContingencyList.RealTimePathRating");
+    if (!cursor->get("contingencyList",&contingencyfile)) {
+      contingencyfile = "contingencies.xml";
+    }
+  printf("p[%d] Got to 3\n",world.rank());
+    if (world.rank() == 0) {
+      printf("Contingency File: %s\n",contingencyfile.c_str());
+    }
     // Open contingency file
     bool ok = config->open(contingencyfile,world);
+  printf("p[%d] Got to 4\n",world.rank());
 
     // Get a list of contingencies. Set cursor so that it points to the
     // Contingencies block in the contingency file
     cursor = config->getCursor(
         "ContingencyList.RealTimePathRating.Contingencies");
     gridpack::utility::Configuration::ChildCursors contingencies;
+  printf("p[%d] Got to 5\n",world.rank());
     if (cursor) cursor->children(contingencies);
     events = getContingencies(contingencies);
   } else {
+  printf("p[%d] Got to 6\n",world.rank());
     std::vector<gridpack::powerflow::Contingency> genContingencies;
     if (calcGenCntngcy) {
       if (world.rank()==0) 
@@ -551,6 +622,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       genContingencies = 
         createGeneratorContingencies(pf_network, srcArea);
     }
+  printf("p[%d] Got to 7\n",world.rank());
     std::vector<gridpack::powerflow::Contingency> branchContingencies;
     if (calcLineCntngcy) {
       if (world.rank()==0) 
@@ -564,6 +636,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     for (ic = 0; ic<nsize; ic++) {
       events.push_back(branchContingencies[ic]);
     }
+  printf("p[%d] Got to 8\n",world.rank());
   }
   // Contingencies are now available. Print out a list of contingencies from
   // process 0 (the list is replicated on all processors)
@@ -599,165 +672,6 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
 
   int nbus = pf_network->totalBuses();
   // Get bus voltage information for base case
-  int i, j;
-#ifdef USE_STATBLOCK
-  int t_store = timer->createCategory("Store Statistics");
-  timer->start(t_store);
-  std::vector<std::string> v_vals = pf_app.writeBusString("vr_str");
-  int nsize = v_vals.size();
-  std::vector<int> mag_ids;
-  std::vector<int> ids;
-  std::vector<int> branch_ids;
-  std::vector<std::string> mag_tags;
-  std::vector<std::string> tags;
-  std::vector<double> vmag;
-  std::vector<double> vang;
-  std::vector<int> mag_mask;
-  std::vector<int> mask;
-  // Find bus IDs and create a dummy tag label and get voltage magnitude
-  // and angle for base case
-  for (i=0; i<nsize; i++) {
-    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-    int not_isolated = atoi(tokens[3].c_str());
-    if (not_isolated == 1) {
-      mag_ids.push_back(atoi(tokens[0].c_str()));
-      mag_tags.push_back("1 ");
-      vmag.push_back(atof(tokens[2].c_str()));
-      if (atoi(tokens[4].c_str()) != 0) {
-        mag_mask.push_back(2);
-      } else {
-        mag_mask.push_back(1);
-      }
-    }
-    ids.push_back(atoi(tokens[0].c_str()));
-    tags.push_back("1 ");
-    vang.push_back(atof(tokens[1].c_str()));
-    mask.push_back(1);
-  }
-  int nmags = vmag.size();
-  world.max(&nmags,1);
-  world.max(&nbus,1);
-#endif
-  // Create StatBlock objects for voltage magnitude and angles and add
-  // bus IDs to it
-#ifdef USE_STATBLOCK
-  gridpack::analysis::StatBlock vmag_stats(world,nmags,ntasks+1);
-  gridpack::analysis::StatBlock vang_stats(world,nbus,ntasks+1);
-#endif
-  // Add bus IDs and tags to StatBlock objects as well as base case values of
-  // voltage magnitude and angle
-#ifdef USE_STATBLOCK
-  if (world.rank() == 0) {
-    vmag_stats.addRowLabels(mag_ids, mag_tags);
-    vang_stats.addRowLabels(ids, tags);
-    vmag_stats.addColumnValues(0,vmag,mag_mask);
-    vang_stats.addColumnValues(0,vang,mask);
-  }
-#endif
-  // Get generator power information
-#ifdef USE_STATBLOCK
-  v_vals.clear();
-  ids.clear();
-  tags.clear();
-  mask.clear();
-  std::vector<double> pgen;
-  std::vector<double> qgen;
-  v_vals = pf_app.writeBusString("power");
-  nsize = v_vals.size();
-  // Find bus IDs and tags for generators and eveluate Pg and Qg for base case
-  for (i=0; i<nsize; i++) {
-    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-    if (tokens.size()%4 != 0) {
-      printf("Incorrect generator listing\n");
-      continue;
-    }
-    int ngen = tokens.size()/4;
-    for (j=0; j<ngen; j++) {
-      ids.push_back(atoi(tokens[j*4].c_str()));
-      tags.push_back(tokens[j*4+1]);
-      pgen.push_back(atof(tokens[j*4+2].c_str()));
-      qgen.push_back(atof(tokens[j*4+3].c_str()));
-      mask.push_back(1);
-    }
-  }
-  nsize = pgen.size();
-  world.max(&nsize,1);
-#endif
-  // Create StatBlock objects for Pg and Qg and add labels as well as values for
-  // base case
-#ifdef USE_STATBLOCK
-  gridpack::analysis::StatBlock pgen_stats(world,nsize,ntasks+1);
-  gridpack::analysis::StatBlock qgen_stats(world,nsize,ntasks+1);
-  if (world.rank() == 0) {
-    pgen_stats.addRowLabels(ids, tags);
-    qgen_stats.addRowLabels(ids, tags);
-    pgen_stats.addColumnValues(0,pgen,mask);
-    qgen_stats.addColumnValues(0,qgen,mask);
-  }
-#endif
-
-  // Find flow parameters for all branch lines
-#ifdef USE_STATBLOCK
-  v_vals.clear();
-  ids.clear();
-  tags.clear();
-  mask.clear();
-  std::vector<int> id1;
-  std::vector<int> id2;
-  std::vector<double> pmin, pmax;
-  std::vector<double> pflow;
-  std::vector<double> qflow;
-  std::vector<double> perf;
-  v_vals = pf_app.writeBranchString("flow_str");
-  nsize = v_vals.size();
-  // Parse branch line endpoints as well as line IDs and values of P and Q for
-  // base case
-  for (i=0; i<nsize; i++) {
-    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-    if (tokens.size()%8 != 0) {
-      printf("Incorrect branch power flow listing\n");
-      continue;
-    }
-    int nline = tokens.size()/8;
-    for (j=0; j<nline; j++) {
-      id1.push_back(atoi(tokens[j*8].c_str()));
-      id2.push_back(atoi(tokens[j*8+1].c_str()));
-      tags.push_back(tokens[j*8+2]);
-      pflow.push_back(atof(tokens[j*8+3].c_str()));
-      qflow.push_back(atof(tokens[j*8+4].c_str()));
-      perf.push_back(atof(tokens[j*8+5].c_str()));
-      pmin.push_back(-atof(tokens[j*8+6].c_str()));
-      pmax.push_back(atof(tokens[j*8+6].c_str()));
-      if (atoi(tokens[j*8+7].c_str()) == 0) {
-        mask.push_back(1);
-      } else {
-        mask.push_back(2);
-      }
-    }
-  }
-  nsize = pflow.size();
-  world.max(&nsize,1);
-#endif
-  // Create StatBlock objects for flow parameters and add labels and base case
-  // values
-#ifdef USE_STATBLOCK
-  gridpack::analysis::StatBlock pflow_stats(world,nsize,ntasks+1);
-  gridpack::analysis::StatBlock qflow_stats(world,nsize,ntasks+1);
-  gridpack::analysis::StatBlock perf_stats(world,nsize,ntasks+1);
-  if (world.rank() == 0) {
-    pflow_stats.addRowLabels(id1, id2, tags);
-    qflow_stats.addRowLabels(id1, id2, tags);
-    perf_stats.addRowLabels(id1, id2, tags);
-    pflow_stats.addColumnValues(0,pflow,mask);
-    qflow_stats.addColumnValues(0,qflow,mask);
-    perf_stats.addColumnValues(0,perf,mask);
-    pflow_stats.addRowMinValue(pmin);
-    qflow_stats.addRowMinValue(pmin);
-    pflow_stats.addRowMaxValue(pmax);
-    qflow_stats.addRowMaxValue(pmax);
-  }
-  timer->stop(t_store);
-#endif
   if (check_Qlim) pf_app.clearQlimViolations();
 
 
@@ -852,101 +766,6 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
         
       if (print_calcs) pf_app.print(sbuf);
       if (print_calcs) pf_app.writeCABranch();
-      // Get strings of data from power flow calculation and parse them to
-      // extract numerical values. Store these values in vectors and then
-      // add them to StatBlock objects
-#ifdef USE_STATBLOCK
-      timer->start(t_store);
-      vmag.clear();
-      vang.clear();
-      mask.clear();
-      mag_mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("vr_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        int not_isolated = atoi(tokens[3].c_str());
-        if (not_isolated == 1) {
-          vmag.push_back(atof(tokens[2].c_str()));
-          if (atoi(tokens[4].c_str()) != 0) {
-            mag_mask.push_back(2);
-          } else {
-            mag_mask.push_back(1);
-          }
-        }
-        vang.push_back(atof(tokens[1].c_str()));
-        mask.push_back(1);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        vmag_stats.addColumnValues(task_id+1,vmag,mag_mask);
-        vang_stats.addColumnValues(task_id+1,vang,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pgen.clear();
-      qgen.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("power");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%4 != 0) {
-          printf("Incorrect generator listing\n");
-          continue;
-        }
-        int ngen = tokens.size()/4;
-        for (j=0; j<ngen; j++) {
-          pgen.push_back(atof(tokens[j*4+2].c_str()));
-          qgen.push_back(atof(tokens[j*4+3].c_str()));
-          mask.push_back(1);
-        }
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pgen_stats.addColumnValues(task_id+1,pgen,mask);
-        qgen_stats.addColumnValues(task_id+1,qgen,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pflow.clear();
-      qflow.clear();
-      perf.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBranchString("flow_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%8 != 0) {
-          printf("Incorrect branch power flow listing\n");
-          continue;
-        }
-        int nline = tokens.size()/8;
-        for (j=0; j<nline; j++) {
-          pflow.push_back(atof(tokens[j*8+3].c_str()));
-          qflow.push_back(atof(tokens[j*8+4].c_str()));
-          perf.push_back(atof(tokens[j*8+5].c_str()));
-          if (atoi(tokens[j*8+7].c_str()) == 0) {
-            mask.push_back(1);
-          } else {
-            mask.push_back(2);
-          }
-        }
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pflow_stats.addColumnValues(task_id+1,pflow,mask);
-        qflow_stats.addColumnValues(task_id+1,qflow,mask);
-        perf_stats.addColumnValues(task_id+1,perf,mask);
-      }
-      timer->stop(t_store);
-#endif
       if (check_Qlim) pf_app.clearQlimViolations();
     } else {
 #ifdef USE_SUCCESS
@@ -956,92 +775,6 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       sprintf(sbuf,"\nDivergent for contingency %s\n",
           events[task_id].p_name.c_str());
       if (print_calcs) pf_app.print(sbuf);
-      // Add dummy values to StatBlock object. Mask value is set to 0 for all
-      // network elements to indicate calculation failure
-#ifdef USE_STATBLOCK
-      timer->start(t_store);
-      vmag.clear();
-      vang.clear();
-      mask.clear();
-      mag_mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("vfail_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        int not_isolated = atoi(tokens[3].c_str());
-        if (not_isolated == 1) {
-          vmag.push_back(0.0);
-          mag_mask.push_back(0);
-        }
-        vang.push_back(0.0);
-        mask.push_back(0);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        vmag_stats.addColumnValues(task_id+1,vmag,mag_mask);
-        vang_stats.addColumnValues(task_id+1,vang,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pgen.clear();
-      qgen.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBusString("pfail_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%4 != 0) {
-          printf("Incorrect generator listing\n");
-          continue;
-        }
-        int ngen = tokens.size()/4;
-        for (j=0; j<ngen; j++) {
-          pgen.push_back(0.0);
-          qgen.push_back(0.0);
-          mask.push_back(0);
-        }
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pgen_stats.addColumnValues(task_id+1,pgen,mask);
-        qgen_stats.addColumnValues(task_id+1,qgen,mask);
-      }
-#endif
-#ifdef USE_STATBLOCK
-      pflow.clear();
-      qflow.clear();
-      perf.clear();
-      mask.clear();
-      v_vals.clear();
-      v_vals = pf_app.writeBranchString("fail_str");
-      nsize = v_vals.size();
-      for (i=0; i<nsize; i++) {
-        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
-        if (tokens.size()%8 != 0) {
-          printf("Incorrect branch power flow listing\n");
-          continue;
-        }
-        int nline = tokens.size()/8;
-        for (j=0; j<nline; j++) {
-          pflow.push_back(0.0);
-          qflow.push_back(0.0);
-          perf.push_back(0.0);
-          mask.push_back(0);
-        }
-      }
-#endif
-#ifdef USE_STATBLOCK
-      if (task_comm.rank() == 0) {
-        pflow_stats.addColumnValues(task_id+1,pflow,mask);
-        qflow_stats.addColumnValues(task_id+1,qflow,mask);
-        perf_stats.addColumnValues(task_id+1,perf,mask);
-      }
-      timer->stop(t_store);
-#endif
     } 
     // Return network to its original base case state
     pf_app.unSetContingency(events[task_id]);
@@ -1091,28 +824,6 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   }
 #endif
 
-  // Print out statistics on contingencies
-#ifdef USE_STATBLOCK
-  int t_stats = timer->createCategory("Write Statistics");
-  timer->start(t_stats);
-  vmag_stats.writeMeanAndRMS("vmag.txt",1,false);
-  vmag_stats.writeMinAndMax("vmag_mm.txt",1,false);
-  if (check_Qlim) vmag_stats.writeMaskValueCount("pq_change_cnt.txt",2,false);
-  vang_stats.writeMeanAndRMS("vang.txt",1,false);
-  vang_stats.writeMinAndMax("vang_mm.txt",1,false);
-  pgen_stats.writeMeanAndRMS("pgen.txt",1);
-  pgen_stats.writeMinAndMax("pgen_mm.txt",1);
-  qgen_stats.writeMeanAndRMS("qgen.txt",1);
-  qgen_stats.writeMinAndMax("qgen_mm.txt",1);
-  pflow_stats.writeMeanAndRMS("pflow.txt",1);
-  pflow_stats.writeMinAndMax("pflow_mm.txt",1);
-  pflow_stats.writeMaskValueCount("line_flt_cnt.txt",2);
-  qflow_stats.writeMeanAndRMS("qflow.txt",1);
-  qflow_stats.writeMinAndMax("qflow_mm.txt",1);
-  perf_stats.writeMinAndMax("perf_mm.txt",1);
-  perf_stats.sumColumnValues("perf_sum.txt",1);
-  timer->stop(t_stats);
-#endif
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define

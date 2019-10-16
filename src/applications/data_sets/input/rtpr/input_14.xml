@@ -10,6 +10,18 @@
     <groupSize>2</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
+    <tieLines>
+      <tieLine>
+        <Branch> 2 5 </Branch>
+        <Tag> BL </Tag>
+      </tieLine>
+    </tieLines>
+    <tieLines>
+      <tieLine>
+        <Branch> 9 14 </Branch>
+        <Tag> BL </Tag>
+      </tieLine>
+    </tieLines>
   </RealTimePathRating>
   <Powerflow>
     <networkConfiguration> IEEE14_ca.raw </networkConfiguration>

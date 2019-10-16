@@ -45,6 +45,12 @@ struct Contingency
 };
 */
 
+struct TieLine {
+  int from;
+  int to;
+  char tag[3];
+};
+
 // Calling program for real-time path rating application
 class RTPRDriver
 {
@@ -65,7 +71,7 @@ class RTPRDriver
      * @return vector of contingencies
      */
     std::vector<gridpack::powerflow::Contingency> getContingencies(
-        gridpack::utility::Configuration::ChildCursors contingencies);
+        gridpack::utility::Configuration::ChildCursors &contingencies);
 
     /**
      * Create a list of all N-1 generator contingencies for a given area
@@ -84,6 +90,14 @@ class RTPRDriver
      */
     std::vector<gridpack::powerflow::Contingency> createBranchContingencies(
         boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area);
+
+    /**
+     * Get list of tie lines
+     * @param cursor pointer to tie lines in input deck
+     * @return vector of contingencies
+     */
+    std::vector<gridpack::rtpr::TieLine> getTieLines(
+          gridpack::utility::Configuration::ChildCursors &tielines);
 
     /**
      * Scale generation in a specified area
