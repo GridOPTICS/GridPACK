@@ -74,22 +74,28 @@ class RTPRDriver
         gridpack::utility::Configuration::ChildCursors &contingencies);
 
     /**
-     * Create a list of all N-1 generator contingencies for a given area
+     * Create a list of all N-1 generator contingencies for a given area and
+     * zone
      * @param network power grid network on which contingencies are defined
      * @param area index of area that will generate contingencies
+     * @param zone index of zone that will generate contingencies
      * @return vector of contingencies
      */
     std::vector<gridpack::powerflow::Contingency> createGeneratorContingencies(
-        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area);
+        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area,
+        int zone);
 
     /**
-     * Create a list of all N-1 branch contingencies for a given area
+     * Create a list of all N-1 branch contingencies for a given area and
+     * zone
      * @param network power grid network on which contingencies are defined
      * @param area index of area that will generate contingencies
+     * @param zone index of zone that will generate contingencies
      * @return vector of contingencies
      */
     std::vector<gridpack::powerflow::Contingency> createBranchContingencies(
-        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area);
+        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area,
+        int zone);
 
     /**
      * Get list of tie lines
@@ -98,20 +104,6 @@ class RTPRDriver
      */
     std::vector<gridpack::rtpr::TieLine> getTieLines(
           gridpack::utility::Configuration::ChildCursors &tielines);
-
-    /**
-     * Scale generation in a specified area
-     * @param scale value to scale real power generation
-     * @param area index of area
-     */
-    void scaleAreaGeneration(double scale, int area);
-
-    /**
-     * Scale loads in a specified area
-     * @param scale value to scale real power load
-     * @param area index of area
-     */
-    void scaleAreaLoads(double scale, int area);
 
     /**
      * Execute application

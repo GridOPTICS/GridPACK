@@ -240,7 +240,8 @@ class PFAppModule
     void resetVoltages();
 
     /**
-     * Scale generator real power
+     * Scale generator real power. If zone less than 1 then scale all
+     * generators in the area.
      * @param scale factor to scale real power generation
      * @param area index of area for scaling generation
      * @param zone index of zone for scaling generation
@@ -248,7 +249,8 @@ class PFAppModule
     void scaleGeneratorRealPower(double scale, int area, int zone);
 
     /**
-     * Scale load real power
+     * Scale load real power. If zone less than 1 then scale all
+     * loads in the area.
      * @param scale factor to scale load real power
      * @param area index of area for scaling load
      * @param zone index of zone for scaling load

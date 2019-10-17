@@ -633,7 +633,8 @@ void gridpack::powerflow::PFFactoryModule::resetVoltages()
 }
 
 /**
- * Scale generator real power
+ * Scale generator real power. If zone less than 1 then scale all
+ * generators in the area.
  * @param scale factor to scale real power generation
  * @param area index of area for scaling generation
  * @param zone index of zone for scaling generation
@@ -642,17 +643,23 @@ void gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
     double scale, int area, int zone)
 {
   int nbus = p_network->numBuses();
-  int i;
+  int i, izone;
   for (i=0; i<nbus; i++) {
     gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
-    if (bus->getArea() == area && bus->getZone() == zone) {
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
       bus->scaleGeneratorRealPower(scale);
     }
   }
 }
 
 /**
- * Scale load real power
+ * Scale load real power. If zone less than 1 then scale all
+ * loads in the area.
  * @param scale factor to scale load real power
  * @param area index of area for scaling load
  * @param zone index of zone for scaling load
@@ -661,10 +668,15 @@ void gridpack::powerflow::PFFactoryModule::scaleLoadRealPower(
     double scale, int area, int zone)
 {
   int nbus = p_network->numBuses();
-  int i;
+  int i, izone;
   for (i=0; i<nbus; i++) {
     gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
-    if (bus->getArea() == area && bus->getZone() == zone) {
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
       bus->scaleLoadRealPower(scale);
     }
   }
