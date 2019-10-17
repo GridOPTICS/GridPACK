@@ -421,9 +421,6 @@ std::vector<gridpack::rtpr::TieLine>
 void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
 {
   int i, j;
-  // Create world communicator for entire simulation
-  gridpack::parallel::Communicator world;
-
   // Get timer instance for timing entire calculation
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -437,9 +434,9 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (argc >= 2 && argv[1] != NULL) {
     char inputfile[256];
     sprintf(inputfile,"%s",argv[1]);
-    config->open(inputfile,world);
+    config->open(inputfile,p_world);
   } else {
-    config->open("input.xml",world);
+    config->open("input.xml",p_world);
   }
 
   // Get size of group (communicator) that individual contingency calculations
@@ -449,38 +446,34 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config->getCursor("Configuration.RealTimePathRating");
   int grp_size;
-  double Vmin, Vmax;
   // Check to find out if files should be printed for individual power flow
   // calculations
-  bool print_calcs;
   std::string tmp_bool;
   gridpack::utility::StringUtils util;
   if (!cursor->get("printCalcFiles",&tmp_bool)) {
-    print_calcs = true;
+    p_print_calcs = true;
   } else {
     util.toLower(tmp_bool);
     if (tmp_bool == "false") {
-      print_calcs = false;
+      p_print_calcs = false;
     } else {
-      print_calcs = true;
+      p_print_calcs = true;
     }
   }
   if (!cursor->get("groupSize",&grp_size)) {
     grp_size = 1;
   }
-  int srcArea, dstArea;
-  if (!cursor->get("sourceArea", &srcArea)) {
-    srcArea = 1;
+  if (!cursor->get("sourceArea", &p_srcArea)) {
+    p_srcArea = 1;
   }
-  if (!cursor->get("destinationArea", &dstArea)) {
-    dstArea = 1;
+  if (!cursor->get("destinationArea", &p_dstArea)) {
+    p_dstArea = 1;
   }
-  int srcZone, dstZone;
-  if (!cursor->get("sourceZone",&srcZone)) {
-    srcZone = 0;
+  if (!cursor->get("sourceZone",&p_srcZone)) {
+    p_srcZone = 0;
   }
-  if (!cursor->get("destinationZone",&dstZone)) {
-    dstZone = 0;
+  if (!cursor->get("destinationZone",&p_dstZone)) {
+    p_dstZone = 0;
   }
   bool calcGenCntngcy;
   if (!cursor->get("calculateGeneratorContingencies",&tmp_bool)) {
@@ -493,7 +486,6 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       calcGenCntngcy = true;
     }
   }
-  printf("p[%d] calcGenCntngcy: %d\n",world.rank(),(int)calcGenCntngcy);
   bool calcLineCntngcy;
   if (!cursor->get("calculateLineContingencies",&tmp_bool)) {
     calcLineCntngcy = false;
@@ -505,17 +497,15 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       calcLineCntngcy = true;
     }
   }
-  printf("p[%d] calcLineCntngcy: %d\n",world.rank(),(int)calcLineCntngcy);
-  if (!cursor->get("minVoltage",&Vmin)) {
-    Vmin = 0.9;
+  if (!cursor->get("minVoltage",&p_Vmin)) {
+    p_Vmin = 0.9;
   }
-  if (!cursor->get("maxVoltage",&Vmax)) {
-    Vmax = 1.1;
+  if (!cursor->get("maxVoltage",&p_Vmax)) {
+    p_Vmax = 1.1;
   }
   // Check for Q limit violations
-  bool check_Qlim;
-  if (!cursor->get("checkQLimit",&check_Qlim)) {
-    check_Qlim = false;
+  if (!cursor->get("checkQLimit",&p_check_Qlim)) {
+    p_check_Qlim = false;
   }
   // Check for tie lines Set cursor so that it points to the
   // TieLines block in the input file
@@ -525,58 +515,27 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     tielines;
   if (cursor) cursor->children(tielines);
   std::vector<gridpack::rtpr::TieLine>  ties = getTieLines(tielines);
-  int tsize = ties.size();
-  std::vector<int> from_bus, to_bus;
-  std::vector<std::string> tags;
-  std::vector<bool> violations;
-  from_bus.resize(tsize);
-  to_bus.resize(tsize);
-  tags.resize(tsize);
-  for (i=0; i<tsize; i++) {
-    from_bus[i] = ties[i].from;
-    to_bus[i] = ties[i].to;
-    tags[i] = ties[i].tag;
+  int p_numTies = ties.size();
+  p_from_bus.resize(p_numTies);
+  p_to_bus.resize(p_numTies);
+  p_tags.resize(p_numTies);
+  for (i=0; i<p_numTies; i++) {
+    p_from_bus[i] = ties[i].from;
+    p_to_bus[i] = ties[i].to;
+    p_tags[i] = ties[i].tag;
   }
-  gridpack::parallel::Communicator task_comm = world.divide(grp_size);
 
-  // Keep track of failed calculations
-  std::vector<int> contingency_idx;
-  std::vector<bool> contingency_success;
-  // Keep track of which calculations completed successfully
-  gridpack::parallel::GlobalVector<bool> ca_success(world);
-  // Keep track of violation status for completed calculations
-  // 1: no violations
-  // 2: voltage violation
-  // 3: line overload violation
-  // 4: both voltage violation and line overload violation
-  std::vector<int> contingency_violation;
-  gridpack::parallel::GlobalVector<int> ca_violation(world);
-
+  // Create task communicators from world communicator
+  p_task_comm = p_world.divide(grp_size);
   // Create powerflow applications on each task communicator
-  boost::shared_ptr<gridpack::powerflow::PFNetwork>
-    pf_network(new gridpack::powerflow::PFNetwork(task_comm));
-  p_pf_network = pf_network;
-  gridpack::powerflow::PFAppModule pf_app;
+  p_pf_network.reset(new gridpack::powerflow::PFNetwork(p_task_comm));
   // Read in the network from an external file and partition it over the
   // processors in the task communicator. This will read in power flow
   // parameters from the Powerflow block in the input
-  pf_app.readNetwork(pf_network,config);
+  p_pf_app.readNetwork(p_pf_network,config);
   // Finish initializing the network
-  pf_app.initialize();
-  //  Set minimum and maximum voltage limits on all buses
-  pf_app.setVoltageLimits(Vmin, Vmax);
-  // Solve the base power flow calculation. This calculation is replicated on
-  // all task communicators
-  pf_app.solve();
-  // Check for Qlimit violations
-  if (check_Qlim && !pf_app.checkQlimViolations()) {
-    pf_app.solve();
-  }
-  // Some buses may violate the voltage limits in the base problem. Flag these
-  // buses to ignore voltage violations on them.
-  pf_app.ignoreVoltageViolations();
+  p_pf_app.initialize();
 
-  std::vector<gridpack::powerflow::Contingency> events;
   if (!calcGenCntngcy && !calcLineCntngcy) {
     // Read in contingency file name
     std::string contingencyfile;
@@ -585,11 +544,11 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     if (!cursor->get("contingencyList",&contingencyfile)) {
       contingencyfile = "contingencies.xml";
     }
-    if (world.rank() == 0) {
+    if (p_world.rank() == 0) {
       printf("Contingency File: %s\n",contingencyfile.c_str());
     }
     // Open contingency file
-    bool ok = config->open(contingencyfile,world);
+    bool ok = config->open(contingencyfile,p_world);
 
     // Get a list of contingencies. Set cursor so that it points to the
     // Contingencies block in the contingency file
@@ -597,80 +556,123 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
         "ContingencyList.RealTimePathRating.Contingencies");
     gridpack::utility::Configuration::ChildCursors contingencies;
     if (cursor) cursor->children(contingencies);
-    events = getContingencies(contingencies);
+    p_events = getContingencies(contingencies);
   } else {
     std::vector<gridpack::powerflow::Contingency> genContingencies;
     if (calcGenCntngcy) {
-      if (world.rank()==0) {
+      if (p_world.rank()==0) {
         printf("Calculating generator contingencies automatically"
-            " for area %d",srcArea);
-        if (srcZone > 0) {
-          printf(" and zone %d\n",srcZone);
+            " for area %d",p_srcArea);
+        if (p_srcZone > 0) {
+          printf(" and zone %d\n",p_srcZone);
         } else {
           printf("\n");
         }
       }
       genContingencies = 
-        createGeneratorContingencies(pf_network, srcArea, srcZone);
+        createGeneratorContingencies(p_pf_network, p_srcArea, p_srcZone);
     }
     std::vector<gridpack::powerflow::Contingency> branchContingencies;
     if (calcLineCntngcy) {
-      if (world.rank()==0) {
+      if (p_world.rank()==0) {
         printf("Calculating line contingencies automatically"
-            " for area %d",srcArea);
-        if (srcZone > 0) {
-          printf(" and zone %d\n",srcZone);
+            " for area %d",p_srcArea);
+        if (p_srcZone > 0) {
+          printf(" and zone %d\n",p_srcZone);
         } else {
           printf("\n");
         }
       }
       branchContingencies =
-        createBranchContingencies(pf_network, srcArea, srcZone);
+        createBranchContingencies(p_pf_network, p_srcArea, p_srcZone);
     }
-    events = genContingencies;
+    p_events = genContingencies;
     int nsize = branchContingencies.size();
     int ic;
     for (ic = 0; ic<nsize; ic++) {
-      events.push_back(branchContingencies[ic]);
+      p_events.push_back(branchContingencies[ic]);
     }
   }
   // Contingencies are now available. Print out a list of contingencies from
   // process 0 (the list is replicated on all processors)
-  if (world.rank() == 0) {
+  if (p_world.rank() == 0) {
     int idx;
-    for (idx = 0; idx < events.size(); idx++) {
-      printf("Name: %s\n",events[idx].p_name.c_str());
-      if (events[idx].p_type == Branch) {
-        int nlines = events[idx].p_from.size();
+    for (idx = 0; idx < p_events.size(); idx++) {
+      printf("Name: %s\n",p_events[idx].p_name.c_str());
+      if (p_events[idx].p_type == Branch) {
+        int nlines = p_events[idx].p_from.size();
         int j;
         for (j=0; j<nlines; j++) {
           printf(" Line: (from) %d (to) %d (line) \'%s\'\n",
-              events[idx].p_from[j],events[idx].p_to[j],
-              events[idx].p_ckt[j].c_str());
+              p_events[idx].p_from[j],p_events[idx].p_to[j],
+              p_events[idx].p_ckt[j].c_str());
         }
-      } else if (events[idx].p_type == Generator) {
-        int nbus = events[idx].p_busid.size();
+      } else if (p_events[idx].p_type == Generator) {
+        int nbus = p_events[idx].p_busid.size();
         int j;
         for (j=0; j<nbus; j++) {
           printf(" Generator: (bus) %d (generator ID) \'%s\'\n",
-              events[idx].p_busid[j],events[idx].p_genid[j].c_str());
+              p_events[idx].p_busid[j],p_events[idx].p_genid[j].c_str());
         }
       }
     }
-    if (events.size() == 0) {
+    if (p_events.size() == 0) {
       printf("***** No contingencies found *****\n");
     }
   }
 
+  runContingencies();
+
+  timer->stop(t_total);
+  // If all processors executed at least one task, then print out timing
+  // statistics (this printout does not work if some processors do not define
+  // all timing variables)
+  if (p_events.size()*grp_size >= p_world.size()) {
+    timer->dump();
+  }
+}
+
+/**
+ * Run complete set of contingencies
+ * @return true if no tie line violations found
+ */
+bool gridpack::rtpr::RTPRDriver::runContingencies()
+{
+  bool ret = true;
+  // Keep track of failed calculations
+  std::vector<int> contingency_idx;
+  std::vector<bool> contingency_success;
+  // Keep track of which calculations completed successfully
+  gridpack::parallel::GlobalVector<bool> ca_success(p_world);
+  // Keep track of violation status for completed calculations
+  // 1: no violations
+  // 2: voltage violation
+  // 3: line overload violation
+  // 4: both voltage violation and line overload violation
+  std::vector<int> contingency_violation;
+  gridpack::parallel::GlobalVector<int> ca_violation(p_world);
+
+  //  Set minimum and maximum voltage limits on all buses
+  p_pf_app.setVoltageLimits(p_Vmin, p_Vmax);
+  // Solve the base power flow calculation. This calculation is replicated on
+  // all task communicators
+  p_pf_app.solve();
+  // Check for Qlimit violations
+  if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
+    p_pf_app.solve();
+  }
+  // Some buses may violate the voltage limits in the base problem. Flag these
+  // buses to ignore voltage violations on them.
+  p_pf_app.ignoreVoltageViolations();
+
   // Set up task manager on the world communicator. The number of tasks is
   // equal to the number of contingencies
-  gridpack::parallel::TaskManager taskmgr(world);
-  int ntasks = events.size();
+  gridpack::parallel::TaskManager taskmgr(p_world);
+  int ntasks = p_events.size();
   taskmgr.set(ntasks);
 
-  int nbus = pf_network->totalBuses();
   // Get bus voltage information for base case
-  if (check_Qlim) pf_app.clearQlimViolations();
+  if (p_check_Qlim) p_pf_app.clearQlimViolations();
 
 
   // Evaluate contingencies using the task manager
@@ -678,78 +680,78 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   char sbuf[128];
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
-  while (taskmgr.nextTask(task_comm, &task_id)) {
-    printf("Executing task %d on process %d\n",task_id,world.rank());
-    sprintf(sbuf,"%s.out",events[task_id].p_name.c_str());
+  while (taskmgr.nextTask(p_task_comm, &task_id)) {
+    printf("Executing task %d on process %d\n",task_id,p_world.rank());
+    sprintf(sbuf,"%s.out",p_events[task_id].p_name.c_str());
     // Open a new file, based on the contingency name, to store results from
     // this particular contingency calculation
-    if (print_calcs) pf_app.open(sbuf);
+    if (p_print_calcs) p_pf_app.open(sbuf);
     // Write out information to the top of the output file providing some
     // information on the contingency
-    sprintf(sbuf,"\nRunning task on %d processes\n",task_comm.size());
-    if (print_calcs) pf_app.writeHeader(sbuf);
-    if (events[task_id].p_type == Branch) {
-      int nlines = events[task_id].p_from.size();
+    sprintf(sbuf,"\nRunning task on %d processes\n",p_task_comm.size());
+    if (p_print_calcs) p_pf_app.writeHeader(sbuf);
+    if (p_events[task_id].p_type == Branch) {
+      int nlines = p_events[task_id].p_from.size();
       int j;
       for (j=0; j<nlines; j++) {
         sprintf(sbuf," Line: (from) %d (to) %d (line) \'%s\'\n",
-            events[task_id].p_from[j],events[task_id].p_to[j],
-            events[task_id].p_ckt[j].c_str());
+            p_events[task_id].p_from[j],p_events[task_id].p_to[j],
+            p_events[task_id].p_ckt[j].c_str());
         printf("p[%d] Line: (from) %d (to) %d (line) \'%s\'\n",
-            pf_network->communicator().rank(),
-            events[task_id].p_from[j],events[task_id].p_to[j],
-            events[task_id].p_ckt[j].c_str());
+            p_pf_network->communicator().rank(),
+            p_events[task_id].p_from[j],p_events[task_id].p_to[j],
+            p_events[task_id].p_ckt[j].c_str());
       }
-    } else if (events[task_id].p_type == Generator) {
-      int nbus = events[task_id].p_busid.size();
+    } else if (p_events[task_id].p_type == Generator) {
+      int nbus = p_events[task_id].p_busid.size();
       int j;
       for (j=0; j<nbus; j++) {
         sprintf(sbuf," Generator: (bus) %d (generator ID) \'%s\'\n",
-            events[task_id].p_busid[j],events[task_id].p_genid[j].c_str());
+            p_events[task_id].p_busid[j],p_events[task_id].p_genid[j].c_str());
         printf("p[%d] Generator: (bus) %d (generator ID) \'%s\'\n",
-            pf_network->communicator().rank(),
-            events[task_id].p_busid[j],events[task_id].p_genid[j].c_str());
+            p_pf_network->communicator().rank(),
+            p_events[task_id].p_busid[j],p_events[task_id].p_genid[j].c_str());
       }
     }
-    if (print_calcs) pf_app.writeHeader(sbuf);
+    if (p_print_calcs) p_pf_app.writeHeader(sbuf);
     // Reset all voltages back to their original values
-    pf_app.resetVoltages();
+    p_pf_app.resetVoltages();
     // Set contingency
-    pf_app.setContingency(events[task_id]);
+    p_pf_app.setContingency(p_events[task_id]);
     // Solve power flow equations for this system
 #ifdef USE_SUCCESS
     contingency_idx.push_back(task_id);
 #endif
-    if (pf_app.solve()) {
+    if (p_pf_app.solve()) {
 #ifdef USE_SUCCESS
       contingency_success.push_back(true);
 #endif
-      if (check_Qlim && !pf_app.checkQlimViolations()) {
-        pf_app.solve();
+      if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
+        p_pf_app.solve();
       }
       // If power flow solution is successful, write out voltages and currents
-      if (print_calcs) pf_app.write();
+      if (p_print_calcs) p_pf_app.write();
       // Check for violations
-      bool ok1 = pf_app.checkVoltageViolations();
-      bool ok2 = pf_app.checkLineOverloadViolations();
+      bool ok1 = p_pf_app.checkVoltageViolations();
+      bool ok2 = p_pf_app.checkLineOverloadViolations();
       bool ok = ok1 && ok2;
       // Include results of violation checks in output
       if (ok) {
         sprintf(sbuf,"\nNo violation for contingency %s\n",
-            events[task_id].p_name.c_str());
+            p_events[task_id].p_name.c_str());
 #ifdef USE_SUCCESS
         contingency_violation.push_back(1);
 #endif
       } 
       if (!ok1) {
         sprintf(sbuf,"\nBus Violation for contingency %s\n",
-            events[task_id].p_name.c_str());
+            p_events[task_id].p_name.c_str());
       }
-      if (print_calcs) pf_app.print(sbuf);
-      if (print_calcs) pf_app.writeCABus();
+      if (p_print_calcs) p_pf_app.print(sbuf);
+      if (p_print_calcs) p_pf_app.writeCABus();
       if (!ok2) {
         sprintf(sbuf,"\nBranch Violation for contingency %s\n",
-            events[task_id].p_name.c_str());
+            p_events[task_id].p_name.c_str());
       }
 
 #ifdef USE_SUCCESS
@@ -762,22 +764,22 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       }
 #endif
         
-      if (print_calcs) pf_app.print(sbuf);
-      if (print_calcs) pf_app.writeCABranch();
-      if (check_Qlim) pf_app.clearQlimViolations();
+      if (p_print_calcs) p_pf_app.print(sbuf);
+      if (p_print_calcs) p_pf_app.writeCABranch();
+      if (p_check_Qlim) p_pf_app.clearQlimViolations();
     } else {
 #ifdef USE_SUCCESS
       contingency_success.push_back(false);
       contingency_violation.push_back(0);
 #endif
       sprintf(sbuf,"\nDivergent for contingency %s\n",
-          events[task_id].p_name.c_str());
-      if (print_calcs) pf_app.print(sbuf);
+          p_events[task_id].p_name.c_str());
+      if (p_print_calcs) p_pf_app.print(sbuf);
     } 
     // Return network to its original base case state
-    pf_app.unSetContingency(events[task_id]);
+    p_pf_app.unSetContingency(p_events[task_id]);
     // Close output file for this contingency
-    if (print_calcs) pf_app.close();
+    if (p_print_calcs) p_pf_app.close();
   }
   // Print statistics from task manager describing the number of tasks performed
   // per processor
@@ -785,14 +787,14 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
 
   // Gather stats on successful contingency calculations
 #ifdef USE_SUCCESS
-  if (task_comm.rank() == 0) {
+  if (p_task_comm.rank() == 0) {
     ca_success.addElements(contingency_idx, contingency_success);
     ca_violation.addElements(contingency_idx, contingency_violation);
   }
   ca_success.upload();
   ca_violation.upload();
   // Write out stats on successful calculations
-  if (world.rank() == 0) {
+  if (p_world.rank() == 0) {
     contingency_idx.clear();
     contingency_success.clear();
     contingency_violation.clear();
@@ -821,13 +823,5 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     fout.close();
   }
 #endif
-
-  timer->stop(t_total);
-  // If all processors executed at least one task, then print out timing
-  // statistics (this printout does not work if some processors do not define
-  // all timing variables)
-  if (events.size()*grp_size >= world.size()) {
-    timer->dump();
-  }
+  return ret;
 }
-

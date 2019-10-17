@@ -112,9 +112,37 @@ class RTPRDriver
      */
     void execute(int argc, char** argv);
 
+    /**
+     * Run complete set of contingencies
+     * @return true if no tie line violations found
+     */
+    bool runContingencies();
+
     private:
 
     boost::shared_ptr<gridpack::powerflow::PFNetwork> p_pf_network;
+
+    gridpack::powerflow::PFAppModule p_pf_app;
+
+    std::vector<gridpack::powerflow::Contingency> p_events;
+
+    int p_srcArea, p_dstArea, p_srcZone, p_dstZone;
+
+    double p_Vmin, p_Vmax;
+
+    bool p_check_Qlim, p_print_calcs;
+
+    std::vector<int> p_from_bus, p_to_bus;
+
+    std::vector<std::string> p_tags;
+
+    std::vector<bool> p_violations;
+
+    gridpack::parallel::Communicator p_world;
+    gridpack::parallel::Communicator p_task_comm;
+
+    int p_numTies;
+
 };
 
 } // rtpr
