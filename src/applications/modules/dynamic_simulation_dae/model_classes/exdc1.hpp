@@ -190,6 +190,7 @@ class Exdc1Exc: public BaseExcModel
 
     bool flag2, flag3, flag4, flag5; //flags for residual function conditions
     double A, B; // Sat function variables
+
 };
 
 #endif

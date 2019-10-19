@@ -7,7 +7,7 @@
 /**
  * @file   wsieg1.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   10/02/19
+ * @Last modified:   10/19/19
  *  
  * @brief  
  *
@@ -54,8 +54,8 @@ Wsieg1Gov::Wsieg1Gov(void)
   T7 = 0.0;
   K7 = 0.0;
   K8 = 0.0;
-  SecondGenExists = false;
-  OptionToModifyLimitsForInitialStateLimitViolation = false;
+  SecondGenExists = true;
+  OptionToModifyLimitsForInitialStateLimitViolation = true;
 }
 
 Wsieg1Gov::~Wsieg1Gov(void)
@@ -133,7 +133,7 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
   x4Turb2 = PGV;
   x3Turb1 = PGV;
   double GV = GainBlock.YtoX(PGV); // TBD: check GainBlock?
-  //printf("GV = %f\n", GV);
+  //printf("PGV=%f, GV = %f\n", PGV, GV);
   x2GovOut = GV;
   if (OptionToModifyLimitsForInitialStateLimitViolation) {
     if (GV > Pmax) Pmax = GV;
@@ -152,7 +152,7 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
   if (T1 > 4 * ts) x1LL = GV * (1 - T2 / T1);
   else x1LL = GV;
   //printf("T1 = %f, T2 = %f, ts = %f\n", T1, T2, ts);
-  printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
+  //printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
   values[0] = x1LL;
   values[1] = x2GovOut;
   values[2] = x3Turb1;
@@ -244,67 +244,90 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
     values[x5_idx] = 0.0;
     values[x6_idx] = 0.0;
   } else if(p_mode == RESIDUAL_EVAL) {
+    //printf("\n wsieg1: what's the initial values for the first iteration?\n");
+    //printf("%f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
     // Governor equations
     //printf("...........%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
 
     // State 1
     //printf("w = %f\n", w);
-    double TempIn1 = K * w;//DBInt.Output(w);
+    //double TempIn = K * w;//DBInt.Output(w);
+    double TempIn = K * DBInt.Output(w);
     double TempOut;
-    if (T1 > 4 * t_inc) {
-        values[x1_idx] = (TempIn1 * ( 1 - T2 / T1) - x1LL) / T1 - dx1LL;
-        TempOut = TempIn1 * (T2 / T1) + x1LL;
+    if (T1 > TS_THRESHOLD * t_inc) {
+        values[x1_idx] = (TempIn * ( 1 - T2 / T1) - x1LL) / T1 - dx1LL;
+        TempOut = TempIn * (T2 / T1) + x1LL;
     } else 
-        TempOut = TempIn1;
-    //printf("T1 = %f, T2 = %f, x1LL = %f, K = %f, TempIn1 = %f\n", T1, T2, x1LL, K, TempIn1);
+        TempOut = TempIn;
+    //printf("T1 = %f, T2 = %f, x1LL = %f, K = %f, TempIn = %f, TempOut=%f\n", T1, T2, x1LL, K, TempIn, TempOut);
     // State 2
     // enforce non-windup limits
-    double TempIn2;
     if (x2GovOut > Pmax) x2GovOut = Pmax;
     else if (x2GovOut < Pmin) x2GovOut = Pmin;
     double GV = BackLash.Output(x2GovOut);
-    if (T3 < 4 * t_inc) TempIn2 = (+ Pref - TempOut - GV) / (4 * t_inc);
-    else TempIn2  = (+ Pref - TempOut - GV) / T3;
-    if (TempIn2 > Uo) TempIn2 = Uo;
-    else if (TempIn2 < Uc) TempIn2 = Uc;
-    values[x2_idx] = TempIn2 - dx2GovOut;
-    //printf("TempIn1 = %f, TempOut = %f, w = %f, TempIn2 = %f\n", TempIn1, TempOut, w, TempIn2);
+    //printf("x2GovOut=%f,GV=%f\n",x2GovOut,GV);
+    if (T3 < TS_THRESHOLD * t_inc) {
+       TempIn = (+ Pref - TempOut - GV) / (TS_THRESHOLD * t_inc);
+       //printf("TempIn 111\n");
+    } else {
+       TempIn  = (+ Pref - TempOut - GV) / T3;
+       //printf("TempIn 222: Pref=%f, TempOut=%f, T3=%f, GV=%f, TempIn=%f\n",Pref,TempOut,T3,GV,TempIn);
+    }
+    if (TempIn > Uo) {
+       TempIn = Uo;
+       //printf("TempIn 333\n");
+    } else if (TempIn < Uc) {
+       TempIn = Uc;
+       //printf("TempIn 444\n");
+    }
+    //printf("TempIn=%f,Uc=%f,Uo=%f,dx2GovOut=%f\n",TempIn,Uc,Uo,dx2GovOut);
+    values[x2_idx] = TempIn - dx2GovOut;
+    //printf("TempIn = %f, TempOut = %f, w = %f\n", TempIn, TempOut, w);
     // enforce non-windup limits
     if (dx2GovOut > 0 && x2GovOut >= Pmax) values[x2_idx] = - dx2GovOut;
     else if (dx2GovOut <0 && x2GovOut <= Pmin) values[x2_idx] = - dx2GovOut;
     // State 3
     double PGV = GainBlock.XtoY(GV);
-    if (T4 < 4 * t_inc) {
+    if (T4 < TS_THRESHOLD * t_inc) {
         x3Turb1 = PGV;
         values[x3_idx] = - dx3Turb1;
     } else
         values[x3_idx] = (PGV - x3Turb1) / T4 - dx3Turb1;
     // State 4
-    if (T5 < 4 * t_inc) {
+    if (T5 < TS_THRESHOLD * t_inc) {
         x4Turb2 = x3Turb1;
         values[x4_idx] = - dx4Turb2;
-    } else
+    } else {
         values[x4_idx] = (x3Turb1 - x4Turb2) / T5 - dx4Turb2;
+    }
     // State 5
-    if (T6 < 4 * t_inc) {
+    if (T6 < TS_THRESHOLD * t_inc) {
         x5Turb3 = x4Turb2;
         values[x5_idx] = - dx5Turb3;
-    } else
+    } else {
         values[x5_idx] = (x4Turb2 - x5Turb3) / T6 - dx5Turb3;
+    }
     // State 6
-    if (T7 < 4 * t_inc) {
+    if (T7 < TS_THRESHOLD * t_inc) {
         x6Turb4 = x5Turb3;
         values[x6_idx] = - dx6Turb4;
-    } else
+    } else {
         values[x6_idx] = (x5Turb3 - x6Turb4) / T7 - dx6Turb4;
+    }
 
-    ///printf("wsieg1 dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4);
-    ///printf("wsieg1 x: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1);
-  
     Pmech1 = x3Turb1 * K1 + x4Turb2 * K3 + x5Turb3 * K5 + x6Turb4 * K7;
     Pmech2 = x3Turb1 * K2 + x4Turb2 * K4 + x5Turb3 * K6 + x6Turb4 * K8;
     
     ///printf("wsieg1 Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);      
+    /*values[x1_idx] = 31;
+    values[x2_idx] = 32;
+    values[x3_idx] = 33;
+    values[x4_idx] = 34;
+    values[x5_idx] = 35;
+    values[x6_idx] = 36;*/
+
+    //printf("wsieg1: %f\t%f\t%f\t%f\t%f\t%f\n", real(values[x1_idx]),real(values[x2_idx]),real(values[x3_idx]),real(values[x4_idx]),real(values[x5_idx]),real(values[x6_idx]));
+
   }
   
   return true;
@@ -382,7 +405,7 @@ void Wsieg1Gov::setMechanicalPower(double pmech)
 {
   Pmech1 = pmech;
   Pmech2 = pmech;
-  printf("Pmech1 in WSIEG1 = %f\n", pmech);
+  //printf("Pmech1 in WSIEG1 = %f\n", pmech);
 }
 
 /**
@@ -392,6 +415,7 @@ void Wsieg1Gov::setMechanicalPower(double pmech)
 void Wsieg1Gov::setRotorSpeedDeviation(double delta_o)
 {
   w = delta_o;
+  //printf("w is set to be %f in wsieg1 by genrou\n", w);
 }
 
 /** 
@@ -422,6 +446,8 @@ void Wsieg1Gov::setVcomp(double Vcomp)
  */
 /*void Wsieg1Gov::setTimestep(double timestep)
 {
+  ts = timestep;
+  t_inc = timestep;
 }*/
 
 /**

@@ -288,6 +288,9 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     x5Psiqp = x5Psiqp_1;
     x6Edp = x6Edp_1; 
   }  
+   printf("\n Genrou: what's the initial values for the first iteration?\n");
+   printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+
     
   double pi = 4.0*atan(1.0);
   double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
@@ -296,6 +299,9 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
   double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl))
                * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
   LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
+  //printf("Psiqpp=%f,Psidpp=%f,Telec=%f,TempD=%f,LadIfd=%f\n",Psiqpp,Psidpp,Telec,TempD,LadIfd);
+  //printf("Id=%f, Iq=%f\n", Id, Iq);
+
   dx1d = x2w * 2 * pi * 60; // 60 represents the nominal frequency of 60 Hz
   //printf("H = %f, Pmech = %f, D = %f, x2w = %f, Telec = %f\n", H, Pmech, D, x2w, Telec);
   dx2w = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec); //TBD: call Governor for Pmech (Done)
@@ -312,7 +318,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
   x4Psidp_1 = x4Psidp + dx4Psidp * t_inc;
   x5Psiqp_1 = x5Psiqp + dx5Psiqp * t_inc;
   x6Edp_1 = x6Edp + dx6Edp * t_inc;
-  printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, x6Edp);
+  printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, dx6Edp);
   printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
   
   p_exciter->setOmega(x2w_1);
@@ -404,8 +410,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
   x4Psidp_1 = x4Psidp + (dx4Psidp + dx4Psidp_1) / 2.0 * t_inc;
   x5Psiqp_1 = x5Psiqp + (dx5Psiqp + dx5Psiqp_1) / 2.0 * t_inc;
   x6Edp_1 = x6Edp + (dx6Edp + dx6Edp_1) / 2.0 * t_inc;
-  printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d_1, dx2w_1, dx3Eqp_1, dx4Psidp_1, dx5Psiqp_1, dx6Edp);
-  printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp);
+  //printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d_1, dx2w_1, dx3Eqp_1, dx4Psidp_1, dx5Psiqp_1, dx6Edp);
+  //printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp);
   
   p_exciter->setOmega(x2w_1);
   p_exciter->setVterminal(presentMag);

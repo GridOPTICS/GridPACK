@@ -196,6 +196,7 @@ class Esst1aExc: public BaseExcModel
     bool OptionToModifyLimitsForInitialStateLimitViolation;
 
     //bool flag2, flag3, flag4, flag5; //flags for residual function conditions
+    
 };
 
 #endif

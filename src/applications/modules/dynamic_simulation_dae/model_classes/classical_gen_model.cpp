@@ -141,6 +141,7 @@ bool ClassicalGen::vectorValues(gridpack::ComplexType *values)
     // Generator equations
     values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
     values[dw_idx]    = (p_Pm - VD*p_Ep*sin(p_delta)/p_Xdp + VQ*p_Ep*cos(p_delta)/p_Xdp - p_D*p_dw)/(2*p_H) - p_dwdot;
+    //printf("classical: %f\t%f\n", real(values[delta_idx]),real(values[dw_idx]));
   }
   
   return true;

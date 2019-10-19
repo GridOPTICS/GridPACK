@@ -166,6 +166,9 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
     x5Turb3 = x5Turb3_1;
     x6Turb4 = x6Turb4_1;
   }
+  printf("\n wsieg1: what's the initial values for the first iteration?\n");
+  printf("%f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
+
   // State 1
   //printf("w = %f\n", w);
   double TempIn1 = K * w;//DBInt.Output(w);
@@ -224,8 +227,8 @@ void gridpack::dynamic_simulation::Wsieg1Model::predictor(double t_inc, bool fla
   x5Turb3_1 = x5Turb3 + dx5Turb3 * t_inc;
   x6Turb4_1 = x6Turb4 + dx6Turb4 * t_inc;
 
-  ///printf("wsieg1 dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4);
-  ///printf("wsieg1 x: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1);
+  printf("wsieg1 dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4);
+  printf("wsieg1 x: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1);
 
   Pmech1 = x3Turb1_1 * K1 + x4Turb2_1 * K3 + x5Turb3_1 * K5 + x6Turb4_1 * K7;
   Pmech2 = x3Turb1_1 * K2 + x4Turb2_1 * K4 + x5Turb3_1 * K6 + x6Turb4_1 * K8;

@@ -181,7 +181,8 @@ void gridpack::dynamic_simulation::Exdc1Model::predictor(double t_inc, bool flag
   if (dx4 > 0 && x4 >= Vrmax) dx4 = 0;
   if (dx4 < 0 && x4 <= Vrmin) dx4 = 0;
   // State 1
-  dx1 = x4 - x1 * (KE + Sat(x1));
+  //dx1 = x4 - x1 * (KE + Sat(x1));
+  dx1 = x4 - x1 * KE;
 
   x1_1 = x1 + dx1 * t_inc;
   x2_1 = x2 + dx2 * t_inc;

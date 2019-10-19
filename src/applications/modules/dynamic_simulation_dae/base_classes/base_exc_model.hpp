@@ -7,7 +7,7 @@
 /**
  * @file   base_exc_model.hpp
  * @author Shuangshuang Jin 
- * @Last modified:   08/23/19
+ * @Last modified:   10/15/19
  * 
  * @brief  
  * 
@@ -200,7 +200,7 @@ to be overwritten by the implementation */
      * Set the value of the time increment 
      * @return value of the time increment
      */
-    virtual void setTimeincrement(double timeincrement);
+    //virtual void setTimeincrement(double timeincrement);
  
 protected:
   //double        pg; /**< Generator active power output */
@@ -214,7 +214,7 @@ protected:
   //double        VD, VQ;
   double        VD, VQ;
   int           status; /**< Machine status */
-  double        shift; // shift (multiplier) used in the Jacobian calculation.
+  double        shift; // shift (multiplier) used in the Jacobian calculation.i
   double        ts, t_inc;
 };
 

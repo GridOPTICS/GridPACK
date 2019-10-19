@@ -7,7 +7,7 @@
 /**
  * @file   base_exc_model.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   08/23/19
+ * @Last modified:   10/15/19
  *  
  * @brief  
  *
@@ -207,15 +207,16 @@ void BaseExcModel::setVcomp(double Vcomp)
 void BaseExcModel::setTimestep(double timestep)
 {
     ts = timestep;
+    t_inc = timestep;
 }
 
 /**
  * Set the value of the time increment 
  * @return value of the time increment
  */
-void BaseExcModel::setTimeincrement(double timeincrement)
-{
-    t_inc = timeincrement;
-}
+//void BaseExcModel::setTimeincrement(double timeincrement)
+//{
+//    t_inc = timeincrement;
+//}
 
  

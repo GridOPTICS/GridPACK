@@ -191,15 +191,16 @@ void BaseGovModel::setVcomp(double Vcomp)
 void BaseGovModel::setTimestep(double timestep)
 {
     ts = timestep;
+    t_inc = timestep;
 }
 
 /**
  * Set the value of the time increment 
  * @return value of the time increment
  */
-void BaseGovModel::setTimeincrement(double timeincrement)
-{
-    t_inc = timeincrement;
-}
+//void BaseGovModel::setTimeincrement(double timeincrement)
+//{
+//    t_inc = timeincrement;
+//}
 
  

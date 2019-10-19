@@ -7,7 +7,7 @@
 /**
  * @file   genrou.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   10/13/19
+ * @Last modified:   10/19/19
  *  
  * @brief  
  *
@@ -111,9 +111,9 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
 
   //printf("before: H=%f,D=%f,Ra=%f,Xd=%f,Xq=%f,Xdp=%f,Xdpp=%f,Xl=%f,Tdop=%f,Tdopp=%f,Tqopp=%f,S10=%f,S12=%f,Xqp=%f,Xqpp=%f,Tqop=%f\n", H,D,Ra,Xd,Xq,Xdp,Xdpp,Xl,Tdop,Tdopp,Tqopp,S10,S12,Xqp,Xqpp,Tqop);
 
-  /*printf("mbase=%f,sbase=%f\n",mbase,sbase);
+  printf("mbase=%f,sbase=%f\n",mbase,sbase);
   // Convert generator parameters from machine base to MVA base
-  H *= mbase/sbase;
+  /*H *= mbase/sbase;
   D *= mbase/sbase;
   Xdp /= mbase/sbase;
 
@@ -189,6 +189,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
   //printf("Vterm=%f, Theta=%f, Vrterm=%f, Viterm=%f\n", Vterm, Theta, Vrterm, Viterm);
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
+  //printf("111 Ir = %f, Ii = %f\n", Ir, Ii);
   //printf("P=%f,Vrterm=%f,Q=%f,Viterm=%f,Vterm=%f\n",P,Vrterm,Q,Viterm,Vterm);
   //printf("Ir = %f, Ii = %f\n", Ir, Ii);
   x2w = 0;
@@ -223,22 +224,19 @@ void GenrouGen::init(gridpack::ComplexType* values)
   values[5] = x6Edp;
 
   //printf("VD=%f, VQ=%f, Vm=%f, mag=%f, ang=%f, Pmw=%f, Qmvar=%f, Ir=%f, Ii=%f, Id=%f, Iq=%f, I=%f\n", VD, VQ, Vm, mag, ang, pg, qg, Ir, Ii, Id, Iq, sqrt(Id*Id+Iq*Iq));
-  printf("\nx1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
-  printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
-  printf("VD = %f, VQ=%f\n", VD, VQ);
+  //printf("\ngenrou init: x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+  //printf("genrou init: Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
+  //printf("VD = %f, VQ=%f\n", VD, VQ);
   
   // Initialize exciters
   p_hasExciter = getphasExciter();
   if (p_hasExciter) {
     p_exciter = getExciter();
-    //printf("Vterm = %f ..........\n", Vterm);
     p_exciter->setVterminal(Vterm);
     p_exciter->setVcomp(mag);
     p_exciter->setFieldVoltage(Efd);
     p_exciter->setFieldCurrent(LadIfd);
     p_exciter->setTimestep(0.01); // SJin: to be read from input file
-    p_exciter->setTimeincrement(0.01); // SJin: to be read from input file
-    p_exciter->init(values);
   }
     
   p_hasGovernor = getphasGovernor();
@@ -246,7 +244,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
     p_governor = getGovernor();
     p_governor->setMechanicalPower(Pmech);
     p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
-    p_governor->init(values); 
+    p_governor->setTimestep(0.01); // SJin: to be read from input file
   }
 }
 
@@ -349,9 +347,16 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     values[x5Psiqp_idx] = 0.0;
     values[x6Edp_idx] = 0.0;
   } else if(p_mode == RESIDUAL_EVAL) {
+    //printf("\n======================\n");
+    //printf("\n Genrou: what's the initial values for the first iteration?\n");
+    //printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+    //printf("...........%f\t%f\t%f\t%f\t%f\t%f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+    //printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
+    //printf("VD = %f, VQ=%f\n\n", VD, VQ);
     if (p_hasExciter) {
       p_exciter = getExciter();
       Efd = p_exciter->getFieldVoltage(); // Efd are called from Exciter
+      //printf("\nEfd from exciter: %f\n", Efd);
     }
     
     if (p_hasGovernor) {
@@ -365,27 +370,12 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl);
     double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
   
-    /*// Calculate current Id and Iq
-    printf("before: Id=%f, Iq=%f, I=%f\n", Id, Iq, sqrt(Id*Id+Iq*Iq));
-    double B, G;
-    B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
-    G = Ra / (Ra * Ra + Xdpp * Xdpp);
-    double Vd = -Psiqpp * (1 + x2w);
-    double Vq = +Psidpp * (1 + x2w);
-    double Vrterm = Vterm * cos(Theta);
-    double Viterm = Vterm * sin(Theta);
-    double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
-    double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
-    Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
-    Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
-    printf("after: Id=%f, Iq=%f, I=%f\n", Id, Iq, sqrt(Id*Id+Iq*Iq));*/
-    //printf("VD=%f, VQ=%f, Id=%f, Iq=%f\n", VD, VQ, Id, Iq);
-    //printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp); 
-    
     double Telec = Psidpp * Iq - Psiqpp * Id;
     double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
-    //LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
-    LadIfd = x3Eqp + (Xd - Xdp) * (Id + TempD); // update Ifd later
+    LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
+    //LadIfd = x3Eqp + (Xd - Xdp) * (Id + TempD); // update Ifd later
+   //printf("Psiqpp=%f,Psidpp=%f,Telec=%f,TempD=%f,LadIfd=%f\n",Psiqpp,Psidpp,Telec,TempD,LadIfd); 
+   //printf("Id=%f, Iq=%f\n", Id, Iq);
 
     // RESIDUAL_EVAL for state 1 to 6
     values[x1d_idx] = x2w * OMEGA_S - dx1d;
@@ -396,21 +386,43 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     values[x5Psiqp_idx] = (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp) / Tqopp - dx5Psiqp;
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp);
     values[x6Edp_idx] = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dx6Edp; 
-    //printf("values[0]=%f\nvalues[1]=%f\nvalues[2]=%f\nvalues[3]=%f\nvalues[4]=%f\nvalues[5]=%f\n", values[x1d_idx],values[x2w_idx],values[x3Eqp_idx],values[x4Psidp_idx],values[x5Psiqp_idx],values[x6Edp_idx]);
+
+    /*values[x1d_idx]=11;
+    values[x2w_idx]=12;
+    values[x3Eqp_idx]=13;
+    values[x4Psidp_idx]=14;
+    values[x5Psiqp_idx]=15;
+    values[x6Edp_idx]=16;*/
+    //printf("genrou: %f\t%f\t%f\t%f\t%f\t%f\n", real(values[x1d_idx]),real(values[x2w_idx]),real(values[x3Eqp_idx]),real(values[x4Psidp_idx]),real(values[x5Psiqp_idx]),real(values[x6Edp_idx]));
+    //printf("genrou idx: %d %d %d %d %d %d\n",x1d_idx,x2w_idx,x3Eqp_idx,x4Psidp_idx,x5Psiqp_idx,x6Edp_idx);
     
     if (p_hasExciter) {
       p_exciter->setOmega(x2w);
-      //p_exciter->setVterminal(presentMag);
-      //p_exciter->setVcomp(presentMag);
-      //p_exciter->vectorValues(values);
+      p_exciter->setFieldCurrent(LadIfd);
     }
       
     if (p_hasGovernor) {
       p_governor->setRotorSpeedDeviation(x2w);
-      //p_governor->vectorValues(values);
     }
   }
   
+  /*// Initialize exciters
+  p_hasExciter = getphasExciter();
+  if (p_hasExciter) {
+    p_exciter = getExciter();
+    p_exciter->setVterminal(Vterm);
+    p_exciter->setVcomp(mag);
+    p_exciter->setFieldVoltage(Efd);
+    p_exciter->setFieldCurrent(LadIfd);
+    p_exciter->setTimestep(0.01); // SJin: to be read from input file
+  }
+    
+  p_hasGovernor = getphasGovernor();
+  if (p_hasGovernor) {
+    p_governor = getGovernor();
+    p_governor->setMechanicalPower(Pmech);
+    p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
+  }*/
   return true;
 }
 
@@ -490,6 +502,7 @@ void GenrouGen::getCurrent(double *IGD, double *IGQ)
   //p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
   *IGD = Ir; // SJin: To be confirmed
   *IGQ = Ii; // SJin: To be confirmed
+  ///printf("222 Ir = %f, Ii = %f\n", Ir, Ii);
   //printf("...B = %f, G = %f, Vrterm = %f, Viterm = %f\n", B, G, Vrterm, Viterm);
 }
 

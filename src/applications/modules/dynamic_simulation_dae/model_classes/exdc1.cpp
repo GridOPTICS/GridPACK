@@ -7,7 +7,7 @@
 /**
  * @file   exdc1.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   10/13/19
+ * @Last modified:   10/18/19
  *  
  * @brief  
  *
@@ -124,9 +124,9 @@ void Exdc1Exc::init(gridpack::ComplexType* values)
     x3 = x4 / KA;
   x2 = mag; // SJin: mag is Vterminal 
   //printf("KF = %f, TF = %f, x1 = %f, ts = %f\n", KF, TF, x1, ts);
-  //if (TF > (TS_THRESHOLD * ts)) 
-    //x5 = x1 * (KF / TF); // SJin: x1 is Ve
-  //else
+  if (TF > (TS_THRESHOLD * ts)) 
+    x5 = x1 * (KF / TF); // SJin: x1 is Ve
+  else
     x5 = 0.0; // ignore this state
   Vref = mag + x4 / KA;
   //printf("Vref = %f\n", Vref);
@@ -226,10 +226,11 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
     bool flag5 = false;
     double Feedback;
     // State 2
+    printf("=========\n");
     //printf("TR = %f\n", TR);
     if (TR > TS_THRESHOLD * t_inc) { 
       flag2 = true;
-      values[x2_idx] = (Vterminal - x2) / TR - dx2; // SJin: x2 is Vsens 
+      values[x2_idx] = (Vterminal - x2) / TR - dx2; // SJin: x2 is Vsens
     } else x2 = Vterminal; // propogate state immediately
     // State 5
     if (TF > TS_THRESHOLD * t_inc) {
@@ -271,10 +272,13 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
       values[x4_idx] = -dx4;
     }
     // State 1
-    values[x1_idx] = x4 - x1 * (KE + Sat(x1)) - dx1;
+    //values[x1_idx] = x4 - x1 * (KE + Sat(x1)) - dx1;
+    values[x1_idx] = x4 - x1 * KE - dx1;
       
     // Update Efd
     Efd = x1 * (1 + w);
+
+    printf("exdc1: %f\t%f\t%f\t%f\t%f\n", real(values[x1_idx]),real(values[x2_idx]),real(values[x3_idx]),real(values[x4_idx]),real(values[x5_idx]));
 
   }
   
@@ -515,7 +519,7 @@ bool Exdc1Exc::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Complex
 void Exdc1Exc::setFieldVoltage(double fldv)
 {
   Efd = fldv;
-  printf("Efd in EXDC1 = %f\n", Efd);
+  //printf("Efd in EXDC1 = %f\n", Efd);
 }
 
 /**
@@ -573,6 +577,8 @@ void Exdc1Exc::setVcomp(double Vcomp)
  */
 /*void Exdc1Exc::setTimestep(double timestep)
 {
+  ts = timestep;
+  t_inc = timestep;
 }*/
 
 /**

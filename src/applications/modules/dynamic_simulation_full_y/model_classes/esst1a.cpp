@@ -182,6 +182,8 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
     x4LL2 = x4LL2_1;
     x5Deriv = x5Deriv_1;
   }
+  printf("\n esst1a: what's the initial values for the first iteration?\n");
+  printf(" %f\t%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv, Vref);
   // State 2
   if (Tr < TS_THRESHOLD * t_inc) {
     x2Vcomp = Vcomp; // Must propogate input value instantaneously
@@ -235,7 +237,9 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
   if (x1Va > Vamax) x1Va = Vamax; 
   if (x1Va < Vamin) x1Va = Vamin; 
   if (Ta < TS_THRESHOLD * t_inc) dx1Va = 0;
-  else dx1Va = (Ka * TempIn - x1Va) / Ta;
+  else {
+     dx1Va = (Ka * TempIn - x1Va) / Ta;
+  }
   if (dx1Va > 0 && x1Va >= Vamax) dx1Va = 0;
   if (dx1Va < 0 && x1Va <= Vamin) dx1Va = 0;
 
@@ -245,8 +249,8 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
   x4LL2_1 = x4LL2 + dx4LL2 * t_inc;
   x5Deriv_1 = x5Deriv + dx5Deriv * t_inc;
 
-  //printf("esst1a dx: %f\t%f\t%f\t%f\t%f\n", dx1Va, dx2Vcomp, dx3LL1, dx4LL2, dx5Deriv);
-//  printf("esst1a x: %f\t%f\t%f\t%f\t%f\n", x1Va_1, x2Vcomp_1, x3LL1_1, x4LL2_1, x5Deriv_1);
+  printf("esst1a dx: %f\t%f\t%f\t%f\t%f\n", dx1Va, dx2Vcomp, dx3LL1, dx4LL2, dx5Deriv);
+  printf("esst1a x: %f\t%f\t%f\t%f\t%f\n", x1Va_1, x2Vcomp_1, x3LL1_1, x4LL2_1, x5Deriv_1);
 
   double Temp = Klr * (LadIfd - Ilr);
   if (Temp < 0) Temp = 0;

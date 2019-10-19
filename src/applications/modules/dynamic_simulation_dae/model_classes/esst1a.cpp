@@ -7,7 +7,7 @@
 /**
  * @file   esst1a.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   10/13/19
+ * @Last modified:   10/18/19
  *  
  * @brief  
  *
@@ -52,6 +52,7 @@ Esst1aExc::Esst1aExc(void)
   Tf = 0.0;
   Klr = 0.0;
   Ilr = 0.0;    
+  OptionToModifyLimitsForInitialStateLimitViolation = true;
 }
 
 Esst1aExc::~Esst1aExc(void)
@@ -119,7 +120,7 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   //double mag = Vm;
    //printf("esst1a: Efd = %f, Vm=%f\n", Efd,Vm);
   double mag = Vterm;
-  printf("esst1a: Efd = %f, mag=%f\n", Efd,mag);
+  //printf("esst1a: Efd = %f, mag=%f\n", Efd,mag);
 
   // Parameter cleanup
   // Just to make the code simpler below we will do the following cleanup 
@@ -140,6 +141,7 @@ void Esst1aExc::init(gridpack::ComplexType* values)
     if (Efd > (Vterm * Vrmax - Kc * LadIfd)) Vrmax = (Efd + Kc * LadIfd) / Vterm;
     if (Efd < (Vterm * Vrmin)) Vrmax = Efd / Vterm;
   }
+  //printf("/////Efd=%f,Kc=%f,LadIfd=%f,Vterm=%f, Vrmax=%f\n",Efd,Kc,LadIfd,Vterm,Vrmax);
   double Va;
   if (LadIfd > Ilr) Va = Efd + Klr * (LadIfd - Ilr);
   else Va = Efd;
@@ -169,7 +171,7 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   x5Deriv = 0;
   Vref = Vcomp + TempLL;
 
-  printf("esst1a init:  %f\t%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv, Vref);
+  //printf("esst1a init:  %f\t%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv, Vref);
   values[0] = x1Va;
   values[1] = x2Vcomp;
   values[2] = x3LL1;
@@ -256,20 +258,22 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     values[x4_idx] = 0.0;
     values[x5_idx] = 0.0;
   } else if(p_mode == RESIDUAL_EVAL) {
+    //printf("\n esst1a: what's the initial values for the first iteration?\n");
+    //printf("essti1 in values: %f\t%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv, Vref);
     // Exciter equations
-    //printf("...........%f\t%f\t%f\t%f\t%f\n", x1, x2, x3, x4, x5);
+    //printf("...........%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv);
     //printf(".........Vterminal = %f\n", Vterminal);
     /*bool flag2 = false; // set flags for residual function condisition to be used for Jacobian matrix calculation 
     bool flag3 = false;
     bool flag4 = false;
     bool flag5 = false;*/
-      
+    //printf("HIHIHI from esst1a\n"); 
     // State 2
     if (Tr < TS_THRESHOLD * t_inc) {
-    x2Vcomp = Vcomp; // Must propogate input value instantaneously
-    values[x2_idx] = - dx2Vcomp;
+      x2Vcomp = Vcomp; // Must propogate input value instantaneously
+      values[x2_idx] = - dx2Vcomp;
     } else {
-    values[x2_idx] = 1 / Tr * (Vcomp - x2Vcomp) - dx2Vcomp;
+      values[x2_idx] = 1 / Tr * (Vcomp - x2Vcomp) - dx2Vcomp;
     }
     // State 5
     double TempIn;
@@ -291,6 +295,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
       TempIn = 0; // Input into summation block;
     }
     // State 3
+    //printf("x2Vcomp=%f,TempIn=%f,Vref=%f\n",x2Vcomp,TempIn,Vref);
     TempIn = - x2Vcomp - TempIn + Vref;
     //if ("VOS at Input") TempIn = TempIn + Vstab; // TBD: "VOS at Input"???
     if (TempIn > Vimax) TempIn = Vimax;
@@ -299,9 +304,11 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     if (Tb < TS_THRESHOLD * t_inc) {
       values[x3_idx] = - dx3LL1;
       TempIn = TempIn; // output of first lead lag - just pass input
+      //printf("TempIn 3333.1\n");
     } else {
       values[x3_idx] = (TempIn * (1 - Tc / Tb) - x3LL1)/Tb - dx3LL1;
       TempIn = TempIn * Tc / Tb + x3LL1; // output of first lead lag
+      //printf("TempIn 3333.2\n");
     }
     // State 4
     if (Tb1 < TS_THRESHOLD * t_inc) {
@@ -317,19 +324,34 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     if (x1Va > Vamax) x1Va = Vamax; 
     if (x1Va < Vamin) x1Va = Vamin; 
     if (Ta < TS_THRESHOLD * t_inc) values[x1_idx] = - dx1Va;
-    else values[x1_idx] = (Ka * TempIn - x1Va) / Ta - dx1Va;
+    else {
+       values[x1_idx] = (Ka * TempIn - x1Va) / Ta - dx1Va;
+    }
     if (dx1Va > 0 && x1Va >= Vamax) values[x1_idx] = - dx1Va;
-    if (dx1Va < 0 && x1Va <= Vamin) values[x1_idx] = - dx1Va;  
+    if (dx1Va < 0 && x1Va <= Vamin) values[x1_idx] = - dx1Va; 
      
     // Update Efd
     double Temp = Klr * (LadIfd - Ilr);
     if (Temp < 0) Temp = 0;
     Temp = x1Va - Temp;
     // Ignore Over and Under Excitation Limit for now
-    if (Temp > (Vterm * Vrmax - Kc * LadIfd)) Temp = Vterm * Vrmax - Kc * LadIfd;
-    if (Temp < (Vterm * Vrmin)) Temp = Vterm * Vrmin;
-    Efd = Temp;    
+    if (Temp > (Vterm * Vrmax - Kc * LadIfd)) {
+       Temp = Vterm * Vrmax - Kc * LadIfd;
+    }
+    if (Temp < (Vterm * Vrmin)) {
+       Temp = Vterm * Vrmin;
+    }
+    Efd = Temp;
+    //printf("x1Va = %f, Temp=%f\n", x1Va, Temp);
 
+    /*values[x1_idx] = 21;
+    values[x2_idx] = 22;
+    values[x3_idx] = 23;
+    values[x4_idx] = 24;
+    values[x5_idx] = 25;*/
+
+    //printf("esst1a: %f\t%f\t%f\t%f\t%f\n", real(values[x1_idx]),real(values[x2_idx]),real(values[x3_idx]),real(values[x4_idx]),real(values[x5_idx]));
+    //printf("esst1aidx: %d %d %d %d %d\n",x1_idx,x2_idx,x3_idx,x4_idx,x5_idx);
   }
   
   return true;
@@ -403,7 +425,7 @@ bool Esst1aExc::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
 void Esst1aExc::setFieldVoltage(double fldv)
 {
   Efd = fldv;
-  printf("Efd in Esst1a = %f\n", Efd);
+  //printf("Efd in Esst1a = %f\n", Efd);
 }
 
 /**
@@ -453,15 +475,18 @@ void Esst1aExc::setOmega(double omega)
 void Esst1aExc::setVcomp(double vtmp)
 {
   Vcomp = vtmp;
+  //printf("Vcomp has been set to %f\n", Vcomp);
 }
    
 /**
  * Set the value of the time step
  * @return value of the time step
  */
-//void Esst1aExc::setTimestep(double timestep)
-//{
-//}
+/*void Esst1aExc::setTimestep(double timestep)
+{
+  ts = timestep;
+  t_inc = timestep;
+}*/
 
 /**
  * Set the value of the time increment 

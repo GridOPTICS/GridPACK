@@ -188,7 +188,7 @@ to be overwritten by the implementation */
      * Set the value of the time increment 
      * @return value of the time increment
      */
-    virtual void setTimeincrement(double timeincrement);
+    //virtual void setTimeincrement(double timeincrement);
  
 protected:
   //double        pg; /**< Generator active power output */
