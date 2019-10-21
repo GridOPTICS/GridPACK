@@ -4,8 +4,8 @@
     <printCalcFiles> true </printCalcFiles>
     <sourceArea> 1 </sourceArea>
     <destinationArea> 1 </destinationArea>
-    <calculateGeneratorContingecies>true</calculateGeneratorContingencies>
-    <calculateLineContingecies>true</calculateLineContingencies>
+    <calculateGeneratorContingencies>true</calculateGeneratorContingencies>
+    <calculateLineContingencies>true</calculateLineContingencies>
     <contingencyList>contingencies_14.xml</contingencyList>
     <groupSize>2</groupSize>
     <maxVoltage>1.1</maxVoltage>
