@@ -61,14 +61,18 @@ if (APR_DIR)
   message(STATUS "Set APR library at ${APR_LIBRARY}")
 endif()
 
-# check to see if rt library exists. If so, add -lrt to GA_EXTRA_LIBS
-find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
-if (NOT LIBRT EQUAL LIBRT-NOTFOUND)
-  if (GA_EXTRA_LIBS)
-    set (GA_EXTRA_LIBS "${GA_EXTRA_LIBS} -lrt")
-  else()
-    set (GA_EXTRA_LIBS "-lrt")
+if(NOT APPLE)	
+  # check to see if rt library exists. If so, add -lrt to GA_EXTRA_LIBS
+  find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
+  if (NOT LIBRT EQUAL LIBRT-NOTFOUND)
+    if (GA_EXTRA_LIBS)
+      set (GA_EXTRA_LIBS "${GA_EXTRA_LIBS} -lrt")
+    else()
+      set (GA_EXTRA_LIBS "-lrt")
+    endif()
   endif()
+else()
+  set (GA_EXTRA_LIBS "")
 endif()
 
 # add HELICS directory
