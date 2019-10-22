@@ -80,7 +80,7 @@ install(FILES
 install(FILES 
   base_classes/base_gen_model.hpp
   base_classes/base_exc_model.hpp
-  base_classes/base_generator_model.hpp
+  base_classes/base_gov_model.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_dae/base_classes
 )
 
