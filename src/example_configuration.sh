@@ -253,7 +253,7 @@ elif [ $host == "gridpackvm" ]; then
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
-        -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$HOME/gridpack/gridpack_install" \
 	$common_flags ..
 
 elif [ $host == "debianvm" ]; then
