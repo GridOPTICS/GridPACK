@@ -191,10 +191,6 @@ bool Esst1aExc::serialWrite(char *string, const int bufsize,const char *signal)
 {
 }
 
-double Esst1aExc::getAngle(void)
-{
-}
-
 /**
  * Write out exciter state
  * @param signal character string used to determine behavior
@@ -355,15 +351,6 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
   }
   
   return true;
-}
-
-/**
- * Return the exciter current injection (in rectangular form) 
- * @param [output] IGD - real part of the exciter current // SJin: match to Ir
- * @param [output] IGQ - imaginary part of the exciter current // SJin: match to Ii 
-*/
-void Esst1aExc::getCurrent(double *IGD, double *IGQ)
-{
 }
 
 /**

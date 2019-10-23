@@ -75,10 +75,6 @@ bool BaseExcModel::serialWrite(char *string, const int bufsize,
 {
 }
 
-double BaseExcModel::getAngle()
-{
-}
-
 /**
  *  Set the number of variables for this exciter model
  *  @param [output] number of variables for this model
@@ -116,16 +112,6 @@ void BaseExcModel::setValues(gridpack::ComplexType *values)
 bool BaseExcModel::vectorValues(gridpack::ComplexType *values)
 {
   return false;
-}
-
-/**
- * Return the exciter current injection (in rectangular form) 
- * @param [output] IGD - real part of the exciter current
- * @param [output] IGQ - imaginary part of the exciter current
-*/
-void BaseExcModel::getCurrent(double *IGD, double *IGQ)
-{
-  *IGD = *IGQ = 0.0;
 }
 
 /**
