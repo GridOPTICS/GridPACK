@@ -3,7 +3,9 @@
   <RealTimePathRating>
     <printCalcFiles> true </printCalcFiles>
     <sourceArea> 1 </sourceArea>
+    <sourceZone> 1 </sourceZone>
     <destinationArea> 1 </destinationArea>
+    <destinationZone> 2 </destinationZone>
     <calculateGeneratorContingencies>true</calculateGeneratorContingencies>
     <calculateLineContingencies>true</calculateLineContingencies>
     <contingencyList>contingencies_14.xml</contingencyList>
@@ -15,8 +17,6 @@
         <Branch> 2 5 </Branch>
         <Tag> BL </Tag>
       </tieLine>
-    </tieLines>
-    <tieLines>
       <tieLine>
         <Branch> 9 14 </Branch>
         <Tag> BL </Tag>

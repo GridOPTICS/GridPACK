@@ -177,6 +177,12 @@ class PFBus
     std::vector<std::string> getGenerators();
 
     /**
+     * Get list of load IDs
+     * @return vector of load IDs
+     */
+    std::vector<std::string> getLoads();
+
+    /**
      * Return whether or not the bus is a PV bus (V held fixed in powerflow
      * equations)
      * @return true if bus is PV bus
@@ -346,9 +352,10 @@ class PFBus
 
     /**
      * Scale value of real power on all generators
+     * @param character ID for generator
      * @param value scale factor for real power
      */
-    void scaleGeneratorRealPower(double value);
+    void scaleGeneratorRealPower(std::string tag, double value);
 
     /**
      * Set value of real power on individual loads
@@ -361,14 +368,26 @@ class PFBus
 
     /**
      * Scale value of real power on loads
+     * @param character ID for load
      * @param value scale factor for real power
      */
-    void scaleLoadRealPower(double value);
+    void scaleLoadRealPower(std::string tag, double value);
 
     /**
      * Reset real power for generators and load back to original values
      */
     void resetRealPower();
+
+    /**
+     * Get available margin for generator
+     * @param tag character ID for generator
+     * @param current initial generation
+     * @param slack amount generation can be reduced
+     * @param excess amount generation can be increased
+     */
+    void getGeneratorMargins(std::vector<std::string> &tag,
+        std::vector<double> &current, std::vector<double> &slack,
+        std::vector<double> &excess);
 
   private:
     double p_shunt_gs;

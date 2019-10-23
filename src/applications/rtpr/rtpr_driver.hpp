@@ -74,22 +74,28 @@ class RTPRDriver
         gridpack::utility::Configuration::ChildCursors &contingencies);
 
     /**
-     * Create a list of all N-1 generator contingencies for a given area
+     * Create a list of all N-1 generator contingencies for a given area and
+     * zone
      * @param network power grid network on which contingencies are defined
      * @param area index of area that will generate contingencies
+     * @param zone index of zone that will generate contingencies
      * @return vector of contingencies
      */
     std::vector<gridpack::powerflow::Contingency> createGeneratorContingencies(
-        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area);
+        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area,
+        int zone);
 
     /**
-     * Create a list of all N-1 branch contingencies for a given area
+     * Create a list of all N-1 branch contingencies for a given area and
+     * zone
      * @param network power grid network on which contingencies are defined
      * @param area index of area that will generate contingencies
+     * @param zone index of zone that will generate contingencies
      * @return vector of contingencies
      */
     std::vector<gridpack::powerflow::Contingency> createBranchContingencies(
-        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area);
+        boost::shared_ptr<gridpack::powerflow::PFNetwork> network, int area,
+        int zone);
 
     /**
      * Get list of tie lines
@@ -100,29 +106,43 @@ class RTPRDriver
           gridpack::utility::Configuration::ChildCursors &tielines);
 
     /**
-     * Scale generation in a specified area
-     * @param scale value to scale real power generation
-     * @param area index of area
-     */
-    void scaleAreaGeneration(double scale, int area);
-
-    /**
-     * Scale loads in a specified area
-     * @param scale value to scale real power load
-     * @param area index of area
-     */
-    void scaleAreaLoads(double scale, int area);
-
-    /**
      * Execute application
      * @param argc number of arguments
      * @param argv list of character strings
      */
     void execute(int argc, char** argv);
 
+    /**
+     * Run complete set of contingencies
+     * @return true if no tie line violations found
+     */
+    bool runContingencies();
+
     private:
 
     boost::shared_ptr<gridpack::powerflow::PFNetwork> p_pf_network;
+
+    gridpack::powerflow::PFAppModule p_pf_app;
+
+    std::vector<gridpack::powerflow::Contingency> p_events;
+
+    int p_srcArea, p_dstArea, p_srcZone, p_dstZone;
+
+    double p_Vmin, p_Vmax;
+
+    bool p_check_Qlim, p_print_calcs;
+
+    std::vector<int> p_from_bus, p_to_bus;
+
+    std::vector<std::string> p_tags;
+
+    std::vector<bool> p_violations;
+
+    gridpack::parallel::Communicator p_world;
+    gridpack::parallel::Communicator p_task_comm;
+
+    int p_numTies;
+
 };
 
 } // rtpr
