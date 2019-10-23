@@ -675,6 +675,15 @@ std::vector<std::string> gridpack::powerflow::PFBus::getGenerators()
 }
 
 /**
+ * Get list of load IDs
+ * @return vector of generator IDs
+ */
+std::vector<std::string> gridpack::powerflow::PFBus::getLoads()
+{
+  return p_lid;
+}
+
+/**
  * Set generator status
  * @param gen_id generator ID
  * @param status generator status
@@ -1412,13 +1421,24 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
 
 /**
  * Scale value of real power on all generators
+ * @param character ID for generator
  * @param value scale factor for real power
  */
-void gridpack::powerflow::PFBus::scaleGeneratorRealPower(double value)
+void gridpack::powerflow::PFBus::scaleGeneratorRealPower(std::string tag,
+    double value)
 {
   int i;
   for (i=0; i<p_ngen; i++) {
-    p_pg[i] = value*p_pg[i];
+    if (p_gid[i] == tag) {
+      if (value > 1.0) {
+        double excess = p_pt[i]-p_pg[i];
+        p_pg[i] += (value-1.0)*excess;
+      } else {
+        double slack = p_pg[i]-p_pb[i];
+        p_pg[i] -= (1.0-value)*slack;
+      }
+      break;
+    }
   }
 }
 
@@ -1450,13 +1470,17 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
 
 /**
  * Scale value of real power on loads
+ * @param character ID for load
  * @param value scale factor for real power
  */
-void gridpack::powerflow::PFBus::scaleLoadRealPower(double value)
+void gridpack::powerflow::PFBus::scaleLoadRealPower(std::string tag, double value)
 {
   int i;
   for (i=0; i<p_nload; i++) {
-    p_pl[i] = value*p_pl[i];
+    if (p_lid[i] == tag) {
+      p_pl[i] = value*p_pl[i];
+      break;
+    }
   }
 }
 
@@ -1471,6 +1495,30 @@ void gridpack::powerflow::PFBus::resetRealPower()
   }
   for (i=0; i<p_nload; i++) {
     p_pl[i] = p_savePl[i];
+  }
+}
+
+/**
+ * Get available margin for generator
+ * @param tag character ID for generator
+ * @param current initial generation
+ * @param slack amount generation can be reduced
+ * @param excess amount generation can be increased
+ */
+void gridpack::powerflow::PFBus::getGeneratorMargins(
+    std::vector<std::string> &tag, std::vector<double> &current,
+    std::vector<double> &slack, std::vector<double> &excess)
+{
+  tag.clear();
+  current.clear();
+  slack.clear();
+  excess.clear();
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    tag.push_back(p_gid[i]);
+    current.push_back(p_pg[i]);
+    slack.push_back(p_pg[i]-p_pb[i]);
+    excess.push_back(p_pt[i]-p_pg[i]);
   }
 }
 
