@@ -167,6 +167,8 @@ std::vector<gridpack::powerflow::Contingency>
   std::vector<int> bus_ids;
   std::vector<char2> tags;
   char2 buf;
+  int nproc = network->communicator().size();
+  int me = network->communicator().rank();
   // Loop over all buses
   for (i=0; i<nbus; i++) {
     if (network->getActiveBus(i)) {
@@ -203,8 +205,6 @@ std::vector<gridpack::powerflow::Contingency>
   }
   // Have a list of local faults. Find out total number of faults.
   int nflt = bus_ids.size();
-  int nproc = network->communicator().size();
-  int me = network->communicator().rank();
   std::vector<int> sizes(nproc);
   for (i=0; i<nproc; i++) sizes[i] = 0;
   sizes[me] = nflt;
@@ -228,8 +228,8 @@ std::vector<gridpack::powerflow::Contingency>
   for (i=0; i<me; i++) lo += sizes[i];
   hi = lo + sizes[me] - 1;
   // Create a complete list on all processes
-  NGA_Put(g_bus,&lo,&hi,&bus_ids[0],&one);
-  NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
+  if (lo <= hi) NGA_Put(g_bus,&lo,&hi,&bus_ids[0],&one);
+  if (lo <= hi) NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
   network->communicator().sync();
   bus_ids.resize(nflt);
   tags.resize(nflt);
@@ -347,9 +347,9 @@ std::vector<gridpack::powerflow::Contingency>
   for (i=0; i<me; i++) lo += sizes[i];
   hi = lo + sizes[me] - 1;
   // Create a complete list on all processes
-  NGA_Put(g_from,&lo,&hi,&bus_from[0],&one);
-  NGA_Put(g_to,&lo,&hi,&bus_to[0],&one);
-  NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
+  if (lo <= hi) NGA_Put(g_from,&lo,&hi,&bus_from[0],&one);
+  if (lo <= hi) NGA_Put(g_to,&lo,&hi,&bus_to[0],&one);
+  if (lo <= hi) NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
   network->communicator().sync();
   bus_from.resize(nflt);
   bus_to.resize(nflt);
@@ -621,7 +621,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     }
   }
 
-  runContingencies();
+  bool checkTie = runContingencies();
 
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
