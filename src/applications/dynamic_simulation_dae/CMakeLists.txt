@@ -68,10 +68,10 @@ add_custom_command(
   )
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_9b3g.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
   DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_9b3g.xml"
@@ -159,7 +159,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
   ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
   ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
   ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml
