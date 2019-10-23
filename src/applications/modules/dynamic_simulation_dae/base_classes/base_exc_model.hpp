@@ -54,8 +54,6 @@ public:
   virtual bool serialWrite(char *string, const int bufsize,
 			   const char *signal);
   
-  virtual double getAngle();
-  
   /**
    * Write out exciter state
    * @param signal character string used to determine behavior
@@ -77,13 +75,6 @@ public:
    * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
    */
   void setTSshift(double inshift) {shift = inshift;}
-  
-  /**
-   * Return the exciter current injection (in rectangular form) 
-   * @param [output] IGD - real part of the exciter current
-   * @param [output] IGQ - imaginary part of the exciter current
-   */
-  virtual void getCurrent(double *IGD, double *IGQ);
   
   /**
    * Return the matrix entries
@@ -148,70 +139,55 @@ to be overwritten by the implementation */
 
   /***************************************/
 
-    /**
-     * Set the field voltage parameter inside the exciter
-     * @param fldv value of the field voltage
-     */
-    virtual void setFieldVoltage(double fldv);
+  /**
+   * Set the field voltage parameter inside the exciter
+   * @param fldv value of the field voltage
+   */
+  virtual void setFieldVoltage(double fldv);
 
-    /**
-     * Set the field current parameter inside the exciter
-     * @param fldc value of the field current
-     */
-    virtual void setFieldCurrent(double fldc);
+  /**
+   * Set the field current parameter inside the exciter
+   * @param fldc value of the field current
+   */
+  virtual void setFieldCurrent(double fldc);
 
-    /** 
-     * Get the value of the field voltage parameter
-     * @return value of field voltage
-     */
-    virtual double getFieldVoltage();
+  /** 
+   * Get the value of the field voltage parameter
+   * @return value of field voltage
+   */
+  virtual double getFieldVoltage();
 
-    /** 
-     * Get the value of the field current parameter
-     * @return value of field current
-     */
-    virtual double getFieldCurrent();
+  /** 
+   * Get the value of the field current parameter
+   * @return value of field current
+   */
+  virtual double getFieldCurrent();
+  
+  /**
+   * Set the value of the Vterminal
+   * @return value of field current
+   */
+  virtual void setVterminal(double mag);
+  
+  /**
+   * Set the value of the Vcomp
+   * @return value of the Vcomp
+   */
+  virtual void setVcomp(double vtmp);
 
-    /**
-     * Set the value of the Vterminal
-     * @return value of field current
-     */
-    virtual void setVterminal(double mag);
-
-    /** 
-     * Set the value of the Omega 
-     * @return value of field current
-     */
-    virtual void setOmega(double omega);
-
-    /**
-     * Set the value of the Vcomp
-     * @return value of the Vcomp
-     */
-    virtual void setVcomp(double vtmp);
-
-    /**
-     * Set the value of the time step
-     * @return value of the time step
-     */
-    virtual void setTimestep(double timestep);
+  /**
+   * Set the value of the time step
+   * @return value of the time step
+   */
+  virtual void setTimestep(double timestep);
  
-    /**
-     * Set the value of the time increment 
-     * @return value of the time increment
-     */
-    //virtual void setTimeincrement(double timeincrement);
- 
+  /**
+   * Set the value of the time increment 
+   * @return value of the time increment
+   */
+  //virtual void setTimeincrement(double timeincrement);
+  
 protected:
-  //double        pg; /**< Generator active power output */
-  //double        qg; /**< Generator reactive power output */
-  //double        mbase; /**< MVA base of the machine */
-  //int           status; /**< Machine status */
-  //double        sbase;  /** The system MVA base */
-  //double        shift; // shift (multiplier) used in the Jacobian calculation.
-  //bool          hasExciter;
-  //bool          hasGovernor;
-  //double        VD, VQ;
   double        VD, VQ;
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i

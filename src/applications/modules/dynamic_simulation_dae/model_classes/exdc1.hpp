@@ -66,8 +66,6 @@ class Exdc1Exc: public BaseExcModel
     bool serialWrite(char *string, const int bufsize,
         const char *signal);
 
-    double getAngle();
-
     /**
      * Write out exciter state
      * @param signal character string used to determine behavior
@@ -95,13 +93,6 @@ class Exdc1Exc: public BaseExcModel
      *        vector element
      */
     bool vectorValues(gridpack::ComplexType *values);
-
-    /**
-     * Return the exciter current injection (in rectangular form) 
-     * @param [output] IGD - real part of the exciter current
-     * @param [output] IGQ - imaginary part of the exciter current
-     */
-    void getCurrent(double *IGD, double *IGQ);
 
     /**
      * Return the matrix entries
@@ -143,12 +134,6 @@ class Exdc1Exc: public BaseExcModel
      */
     virtual void setVterminal(double mag);
 
-    /** 
-     * Set the value of the Omega 
-     * @return value of field current
-     */
-    virtual void setOmega(double omega);
-
     /**
      * Set the value of the Vcomp
      * @return value of teh Vcomp
@@ -186,7 +171,7 @@ class Exdc1Exc: public BaseExcModel
 
     double Vref;
 
-    double Vterminal, w;
+    double Vterminal;
 
     bool flag2, flag3, flag4, flag5; //flags for residual function conditions
     double A, B; // Sat function variables

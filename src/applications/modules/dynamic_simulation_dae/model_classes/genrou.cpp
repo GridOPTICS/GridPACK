@@ -397,7 +397,6 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     //printf("genrou idx: %d %d %d %d %d %d\n",x1d_idx,x2w_idx,x3Eqp_idx,x4Psidp_idx,x5Psiqp_idx,x6Edp_idx);
     
     if (p_hasExciter) {
-      p_exciter->setOmega(x2w);
       p_exciter->setFieldCurrent(LadIfd);
     }
       

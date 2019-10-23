@@ -185,14 +185,6 @@ void BaseExcModel::setVterminal(double mag)
 }
 
 /** 
- * Set the value of the omega
- * @return value of field current
- */
-void BaseExcModel::setOmega(double omega)
-{
-}
-
-/** 
  * Set the value of VComp
  * @return value of Vcomp
  */

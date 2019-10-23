@@ -558,15 +558,6 @@ void Exdc1Exc::setVterminal(double mag)
   Vterminal = mag;
 }
 
-/** 
- * Set the value of the omega
- * @return value of field current
- */
-void Exdc1Exc::setOmega(double omega)
-{
-  w = omega;
-}
-
 void Exdc1Exc::setVcomp(double Vcomp)
 {
 }

@@ -464,14 +464,6 @@ void Esst1aExc::setVterminal(double mag)
   Vterm = mag;
 }
 
-/** 
- * Set the value of the omega
- * @return value of field current
- */
-void Esst1aExc::setOmega(double omega)
-{
-}
-
 void Esst1aExc::setVcomp(double vtmp)
 {
   Vcomp = vtmp;
