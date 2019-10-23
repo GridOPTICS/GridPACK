@@ -272,7 +272,8 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
     values[x1_idx] = x4 - x1 * KE - dx1;
       
     // Update Efd
-    Efd = x1 * (1 + w);
+    //    Efd = x1 * (1 + w);  Note: This expression is used by PowerWorld, PSSE does not have the w multiplier
+    Efd = x1;
 
     printf("exdc1: %f\t%f\t%f\t%f\t%f\n", real(values[x1_idx]),real(values[x2_idx]),real(values[x3_idx]),real(values[x4_idx]),real(values[x5_idx]));
 
