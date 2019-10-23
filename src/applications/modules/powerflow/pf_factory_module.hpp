@@ -163,8 +163,10 @@ class PFFactoryModule
      * @param scale factor to scale real power generation
      * @param area index of area for scaling generation
      * @param zone index of zone for scaling generation
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
      */
-    void scaleGeneratorRealPower(double scale, int area, int zone);
+    bool scaleGeneratorRealPower(double scale, int area, int zone);
 
     /**
      * Scale load real power. If zone less than 1 then scale all
@@ -172,6 +174,8 @@ class PFFactoryModule
      * @param scale factor to scale load real power
      * @param area index of area for scaling load
      * @param zone index of zone for scaling load
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
      */
     void scaleLoadRealPower(double scale, int area, int zone);
 

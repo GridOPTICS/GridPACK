@@ -638,12 +638,25 @@ void gridpack::powerflow::PFFactoryModule::resetVoltages()
  * @param scale factor to scale real power generation
  * @param area index of area for scaling generation
  * @param zone index of zone for scaling generation
+ * @return false if there is not enough capacity to change generation
+ *         by requested amount
  */
-void gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
+bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
     double scale, int area, int zone)
 {
+  bool ret = true;
   int nbus = p_network->numBuses();
   int i, izone;
+  double capacity = 0.0;
+  double total = 0.0;
+  double delta;
+  if (scale > 1.0) {
+    delta = scale - 1.0;
+  } else {
+    delta = 1.0-scale;
+  }
+  std::vector<std::string> tags;
+  std::vector<double> slack, current, excess;
   for (i=0; i<nbus; i++) {
     gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
     if (zone > 0) {
@@ -652,9 +665,63 @@ void gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
       izone = zone;
     }
     if (bus->getArea() == area && zone == izone) {
-      bus->scaleGeneratorRealPower(scale);
+      bus->getGeneratorMargins(tags,current,slack,excess);
+      int j, nsize;
+      nsize = tags.size();
+      if (scale > 1.0) {
+        for (j=0; j<nsize; j++) {
+          capacity += excess[j];
+          total += current[j];
+        }
+      } else {
+        for (j=0; j<nsize; j++) {
+          capacity += slack[j];
+          total += current[j];
+        }
+      }
     }
   }
+  p_network->communicator().sum(&capacity,1);
+  p_network->communicator().sum(&total,1);
+  double change = delta*total;
+  double frac = 0.0;
+  if (scale > 1.0) {
+    if (change > capacity && total > 0.0) {
+      frac = (capacity+total)/total;
+      ret = false;
+    } else if (total > 0.0) {
+      frac = (change+total)/total;
+    } else {
+      frac = 1.0;
+      ret = false;
+    }
+  } else {
+    if (change > capacity && total > 0.0) {
+      frac = (total-capacity)/total;
+      ret = false;
+    } else if (total > 0.0) {
+      frac = (total-change)/total;
+    } else {
+      frac = 1.0;
+      ret = false;
+    }
+  }
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags = bus->getGenerators();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->scaleGeneratorRealPower(tags[j], frac);
+      }
+    }
+  }
+  return ret;
 }
 
 /**
@@ -677,7 +744,11 @@ void gridpack::powerflow::PFFactoryModule::scaleLoadRealPower(
       izone = zone;
     }
     if (bus->getArea() == area && zone == izone) {
-      bus->scaleLoadRealPower(scale);
+      std::vector<std::string> tags = bus->getLoads();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->scaleLoadRealPower(tags[i],scale);
+      }
     }
   }
 }

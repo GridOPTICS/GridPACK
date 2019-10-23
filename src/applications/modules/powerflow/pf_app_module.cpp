@@ -836,11 +836,13 @@ void gridpack::powerflow::PFAppModule::resetVoltages()
  * @param scale factor to scale real power generation
  * @param area index of area for scaling generation
  * @param zone index of zone for scaling generation
+ * @return false if there is not enough capacity to change generation
+ *         by requested amount
  */
-void gridpack::powerflow::PFAppModule::scaleGeneratorRealPower(
+bool gridpack::powerflow::PFAppModule::scaleGeneratorRealPower(
     double scale, int area, int zone)
 {
-  p_factory->scaleGeneratorRealPower(scale,area,zone);
+  return p_factory->scaleGeneratorRealPower(scale,area,zone);
 }
 
 /**
