@@ -189,6 +189,7 @@ void Esst1aExc::init(gridpack::ComplexType* values)
  */
 bool Esst1aExc::serialWrite(char *string, const int bufsize,const char *signal)
 {
+  return false;
 }
 
 /**

@@ -258,6 +258,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
  */
 bool GenrouGen::serialWrite(char *string, const int bufsize,const char *signal)
 {
+  return false;
 }
 
 double GenrouGen::getAngle(void)
