@@ -140,10 +140,10 @@ to be overwritten by the implementation */
   /***************************************/
 
   /**
-   * Set the field voltage parameter inside the exciter
+   * Set the initial field voltage (at t = tstart) for the exciter
    * @param fldv value of the field voltage
    */
-  virtual void setFieldVoltage(double fldv);
+  virtual void setInitialFieldVoltage(double fldv);
 
   /**
    * Set the field current parameter inside the exciter
@@ -164,18 +164,6 @@ to be overwritten by the implementation */
   virtual double getFieldCurrent();
   
   /**
-   * Set the value of the Vterminal
-   * @return value of field current
-   */
-  virtual void setVterminal(double mag);
-  
-  /**
-   * Set the value of the Vcomp
-   * @return value of the Vcomp
-   */
-  virtual void setVcomp(double vtmp);
-
-  /**
    * Set the value of the time step
    * @return value of the time step
    */
@@ -189,7 +177,7 @@ to be overwritten by the implementation */
   
 protected:
   double        VD, VQ;
-  int           status; /**< Machine status */
+  int           status; /**< Exciter status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
   double        ts, t_inc;
 };

@@ -129,10 +129,10 @@ bool BaseExcModel::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Com
 }
 
 /**
- * Set the field voltage parameter inside the exciter
+ * Set the initial field voltage (at t = tstart) parameter for the exciter
  * @param fldv value of the field voltage
  */
-void BaseExcModel::setFieldVoltage(double fldv)
+void BaseExcModel::setInitialFieldVoltage(double fldv)
 {
 }
 
@@ -160,22 +160,6 @@ double BaseExcModel::getFieldVoltage()
 double BaseExcModel::getFieldCurrent()
 {
   return 0.0;
-}
-
-/** 
- * Set the value of the Vterminal
- * @return value of field current
- */
-void BaseExcModel::setVterminal(double mag)
-{
-}
-
-/** 
- * Set the value of VComp
- * @return value of Vcomp
- */
-void BaseExcModel::setVcomp(double Vcomp)
-{
 }
 
 /**

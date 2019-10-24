@@ -501,10 +501,10 @@ bool Exdc1Exc::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Complex
 }
 
 /**
- * Set the field voltage parameter inside the exciter
+ * Set the initial field voltage (at t = tstart) for the exciter
  * @param fldv value of the field voltage
  */
-void Exdc1Exc::setFieldVoltage(double fldv)
+void Exdc1Exc::setInitialFieldVoltage(double fldv)
 {
   Efd = fldv;
   //printf("Efd in EXDC1 = %f\n", Efd);
@@ -537,20 +537,7 @@ double Exdc1Exc::getFieldCurrent()
   return 0.0;
 }
 
-/** 
- * Set the value of the Vterminal
- * @return value of field current
- */
-void Exdc1Exc::setVterminal(double mag)
-{
-  Vterminal = mag;
-}
-
-void Exdc1Exc::setVcomp(double Vcomp)
-{
-}
-   
-/**
+   /**
  * Set the value of the time step
  * @return value of the time step
  */

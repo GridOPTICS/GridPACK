@@ -97,11 +97,6 @@ class GenrouGen: public BaseGenModel
     bool vectorValues(gridpack::ComplexType *values);
 
     /**
-     * Calculate current Norton injections
-     */
-    void currentNortonInjection();
-
-    /**
      * Return the generator current injection (in rectangular form) 
      * @param [output] IGD - real part of the generator current
      * @param [output] IGQ - imaginary part of the generator current

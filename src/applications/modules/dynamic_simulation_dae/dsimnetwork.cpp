@@ -464,6 +464,7 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
 	// SJin: add exciter and governor vector values
 	if (has_ex) {
   	  fgen += p_neqsgen[i];
+	  p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
     	  p_gen[i]->getExciter()->init(fgen);
   	}	
 	if (has_gv) {
@@ -471,7 +472,6 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
  	  else fgen += p_neqsgen[i];
 	  p_gen[i]->getGovernor()->init(fgen);
   	}	
-	
       }
     }	  
   } else if(p_mode == RESIDUAL_EVAL || p_mode == FAULT_EVAL) { /* Values go in F */
@@ -564,6 +564,7 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
 	// SJin: add exciter and governor vector values
 	if (has_ex) {
 	  p_gen[i]->getExciter()->setMode(p_mode);
+	  p_gen[i]->getExciter()->setVoltage(p_VDQptr[0],p_VDQptr[1]);
 	  p_gen[i]->getExciter()->vectorValues(fgen);
           fgen += p_neqsexc[i];
           //printf("gen+exc:\n");

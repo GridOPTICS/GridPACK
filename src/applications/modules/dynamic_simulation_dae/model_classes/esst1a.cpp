@@ -246,6 +246,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
   int x3_idx = 2;
   int x4_idx = 3;
   int x5_idx = 4;
+  double Ec;
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     //values[delta_idx] = values[dw_idx] = 0.0;
@@ -255,19 +256,10 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     values[x4_idx] = 0.0;
     values[x5_idx] = 0.0;
   } else if(p_mode == RESIDUAL_EVAL) {
-    //printf("\n esst1a: what's the initial values for the first iteration?\n");
-    //printf("essti1 in values: %f\t%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv, Vref);
-    // Exciter equations
-    //printf("...........%f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv);
-    //printf(".........Vterminal = %f\n", Vterminal);
-    /*bool flag2 = false; // set flags for residual function condisition to be used for Jacobian matrix calculation 
-    bool flag3 = false;
-    bool flag4 = false;
-    bool flag5 = false;*/
-    //printf("HIHIHI from esst1a\n"); 
+    Ec = sqrt(VD*VD + VQ*VQ);
     // State 2
     if (Tr < TS_THRESHOLD * t_inc) {
-      x2Vcomp = Vcomp; // Must propogate input value instantaneously
+      x2Vcomp = Ec; // Must propogate input value instantaneously
       values[x2_idx] = - dx2Vcomp;
     } else {
       values[x2_idx] = 1 / Tr * (Vcomp - x2Vcomp) - dx2Vcomp;
@@ -407,10 +399,10 @@ bool Esst1aExc::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
 }
 
 /**
- * Set the field voltage parameter inside the exciter
+ * Set the initial field voltage (at t = tstart) for the exciter
  * @param fldv value of the field voltage
  */
-void Esst1aExc::setFieldVoltage(double fldv)
+void Esst1aExc::setInitialFieldVoltage(double fldv)
 {
   Efd = fldv;
   //printf("Efd in Esst1a = %f\n", Efd);
@@ -443,21 +435,6 @@ double Esst1aExc::getFieldCurrent()
   return 0.0;
 }
 
-/** 
- * Set the value of the Vterminal
- * @return value of field current
- */
-void Esst1aExc::setVterminal(double mag)
-{
-  Vterm = mag;
-}
-
-void Esst1aExc::setVcomp(double vtmp)
-{
-  Vcomp = vtmp;
-  //printf("Vcomp has been set to %f\n", Vcomp);
-}
-   
 /**
  * Set the value of the time step
  * @return value of the time step

@@ -45,9 +45,9 @@ class DSim
   /**
    *
    */
-  int rank() {p_comm.rank(); };
+  int rank() {return p_comm.rank(); };
 
-  int size() {p_comm.size(); };
+  int size() {return p_comm.size(); };
 
   void setconfigurationfile(const char*);
 

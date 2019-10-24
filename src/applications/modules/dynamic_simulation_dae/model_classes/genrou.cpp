@@ -150,37 +150,10 @@ double GenrouGen::Sat(double x)
  */
 void GenrouGen::init(gridpack::ComplexType* values) 
 {
-  /*double IGD,IGQ; // Machine currents in cartesian coordinates
-  double Pg, Qg;  // Generator real and reactive power
-  double delta,dw=0.0;  // Initial machine speed deviation
-  double Vm;
-
-  Pg = pg/sbase;
-  Qg = qg/sbase;
-
-  Vm = sqrt(VD*VD + VQ*VQ); // SJin: Where does voltage VD and VG first come from?
-
-  IGD = (VD*Pg + VQ*Qg)/(Vm*Vm);
-  IGQ = (VQ*Pg - VD*Qg)/(Vm*Vm);
-  
-  delta = atan2(VQ + p_Xdp*IGD,VD-p_Xdp*IGQ);
-
-  p_Ep = sqrt(pow((VD - p_Xdp*IGQ),2) + pow((VQ + p_Xdp*IGD),2));
-  p_Pm = Pg;
-	
-  values[0] = delta;
-  values[1] = dw;*/
-
   double Vm = sqrt(VD*VD + VQ*VQ); // SJin: voltage VD and VQ come from base_gen_model.hpp
-  double mag = Vm;
   double ang = atan2(VQ, VD); // SJin: ang = arctang(VQ/VD); ?
-  Vterm = mag; 
-  //presentMag = mag;
   Theta = ang;
-  //presentAng = ang;
   double P, Q; // Generator real and reactive power
-  //P = pg / sbase; 
-  //Q = qg / sbase;
   P = pg / mbase;
   Q = qg / mbase;
   double Vrterm = Vterm * cos(Theta);
@@ -232,9 +205,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
   p_hasExciter = getphasExciter();
   if (p_hasExciter) {
     p_exciter = getExciter();
-    p_exciter->setVterminal(Vterm);
-    p_exciter->setVcomp(mag);
-    p_exciter->setFieldVoltage(Efd);
+    p_exciter->setInitialFieldVoltage(Efd);
     p_exciter->setFieldCurrent(LadIfd);
     p_exciter->setTimestep(0.01); // SJin: to be read from input file
   }
@@ -366,8 +337,6 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     }
 
     // Generator equations
-    //values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
-    //values[dw_idx]    = (p_Pm - VD*p_Ep*sin(p_delta)/p_Xdp + VQ*p_Ep*cos(p_delta)/p_Xdp - p_D*p_dw)/(2*p_H) - p_dwdot;
     double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl);
     double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
   
@@ -388,15 +357,6 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp);
     values[x6Edp_idx] = (-x6Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dx6Edp; 
 
-    /*values[x1d_idx]=11;
-    values[x2w_idx]=12;
-    values[x3Eqp_idx]=13;
-    values[x4Psidp_idx]=14;
-    values[x5Psiqp_idx]=15;
-    values[x6Edp_idx]=16;*/
-    //printf("genrou: %f\t%f\t%f\t%f\t%f\t%f\n", real(values[x1d_idx]),real(values[x2w_idx]),real(values[x3Eqp_idx]),real(values[x4Psidp_idx]),real(values[x5Psiqp_idx]),real(values[x6Edp_idx]));
-    //printf("genrou idx: %d %d %d %d %d %d\n",x1d_idx,x2w_idx,x3Eqp_idx,x4Psidp_idx,x5Psiqp_idx,x6Edp_idx);
-    
     if (p_hasExciter) {
       p_exciter->setFieldCurrent(LadIfd);
     }
@@ -406,59 +366,7 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     }
   }
   
-  /*// Initialize exciters
-  p_hasExciter = getphasExciter();
-  if (p_hasExciter) {
-    p_exciter = getExciter();
-    p_exciter->setVterminal(Vterm);
-    p_exciter->setVcomp(mag);
-    p_exciter->setFieldVoltage(Efd);
-    p_exciter->setFieldCurrent(LadIfd);
-    p_exciter->setTimestep(0.01); // SJin: to be read from input file
-  }
-    
-  p_hasGovernor = getphasGovernor();
-  if (p_hasGovernor) {
-    p_governor = getGovernor();
-    p_governor->setMechanicalPower(Pmech);
-    p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
-  }*/
   return true;
-}
-
-/**
- * Calculate current Norton injections
- */
-void GenrouGen::currentNortonInjection()
-{
-/*  // Calculate INorton
-  // Admittance
-  double B, G;
-  B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
-  G = Ra / (Ra * Ra + Xdpp * Xdpp);
-  // Setup
-  double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
-  double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
-  double Vd = -Psiqpp * (1 + x2w);
-  double Vq = +Psidpp * (1 + x2w);
-  double Vrterm = Vterm * cos(Theta);
-  double Viterm = Vterm * sin(Theta);
-  double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
-  double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
-  // DQ Axis
-  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
-  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
-  double Idnorton = Vd * G - Vq * B;
-  double Iqnorton = Vd * B + Vq * G;
-  // Generator current injections in the network
-  Ir = + Id * sin(x1d) + Iq * cos(x1d);
-  Ii = - Id * cos(x1d) + Iq * sin(x1d);
-  IrNorton = + Idnorton * sin(x1d) + Iqnorton * cos(x1d);
-  IiNorton = - Idnorton * cos(x1d) + Iqnorton * sin(x1d); 
-  IrNorton = IrNorton * mbase / sbase; 
-  IiNorton = IiNorton * mbase / sbase; 
-  printf("Id=%f, Iq=%f, Ir=%f, Ii=%f, IrNorton=%f, IiNorton=%f\n", Id, Iq, Ir, Ii, IrNorton, IiNorton);
-  INorton = gridpack::ComplexType(IrNorton, IiNorton);*/
 }
 
 /**

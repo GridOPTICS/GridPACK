@@ -105,10 +105,10 @@ class Esst1aExc: public BaseExcModel
     bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
     /**
-     * Set the field voltage parameter inside the exciter
+     * Set the initial field voltage (at t = tstart) for the exciter
      * @param fldv value of the field voltage
      */
-    virtual void setFieldVoltage(double fldv);
+    virtual void setInitialFieldVoltage(double fldv);
 
     /**
      * Set the field current parameter inside the exciter
@@ -127,18 +127,6 @@ class Esst1aExc: public BaseExcModel
      * @return value of field current
      */
     virtual double getFieldCurrent();
-
-    /**
-     * Set the value of the Vterminal
-     * @return value of field current
-     */
-    virtual void setVterminal(double mag);
-
-    /**
-     * Set the value of the Vcomp
-     * @return value of teh Vcomp
-     */
-    virtual void setVcomp(double vtmp);
 
     /**
      * Set the value of the time step
