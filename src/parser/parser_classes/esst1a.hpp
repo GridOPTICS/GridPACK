@@ -176,6 +176,13 @@ template <class _data_struct> class Esst1aParser
         data->setValue(EXCITER_KF, data_struct.ex_kf, g_id);
       }
 
+      // EXCITER_TF
+      if (!data->getValue(EXCITER_TF,&rval,g_id)) {
+        data->addValue(EXCITER_TF, data_struct.ex_tf, g_id);
+      } else {
+        data->setValue(EXCITER_TF, data_struct.ex_tf, g_id);
+      }
+
       // EXCITER_KLR
       if (!data->getValue(EXCITER_KLR,&rval,g_id)) {
         data->addValue(EXCITER_KLR, data_struct.klr, g_id);
@@ -188,13 +195,6 @@ template <class _data_struct> class Esst1aParser
         data->addValue(EXCITER_ILR, data_struct.ilr, g_id);
       } else {
         data->setValue(EXCITER_ILR, data_struct.ilr, g_id);
-      }
-
-      // EXCITER_TF
-      if (!data->getValue(EXCITER_TF,&rval,g_id)) {
-        data->addValue(EXCITER_TF, data_struct.ex_tf, g_id);
-      } else {
-        data->setValue(EXCITER_TF, data_struct.ex_tf, g_id);
       }
     }
 
@@ -385,11 +385,11 @@ template <class _data_struct> class Esst1aParser
 
       // EXCITER_VRMIN
       if (nstr > 17) {
-        if (!data->getValue(EXCITER_VRMAX,&rval,g_id)) {
-          data->addValue(EXCITER_VRMAX,
+        if (!data->getValue(EXCITER_VRMIN,&rval,g_id)) {
+          data->addValue(EXCITER_VRMIN,
               atof(split_line[17].c_str()), g_id);
         } else {
-          data->setValue(EXCITER_VRMAX,
+          data->setValue(EXCITER_VRMIN,
               atof(split_line[17].c_str()), g_id);
         }
       } 
