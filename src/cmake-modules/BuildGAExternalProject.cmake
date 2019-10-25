@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-08-16 12:58:48 d3g096
+# Last Change: 2019-10-25 12:24:00 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -27,6 +27,14 @@ function(BuildGAExternalProject)
 
   if(BUILD_SHARED_LIBS)
     list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=YES )
+    list(APPEND GA_OPTS -D CMAKE_SKIP_BUILD_RPATH=${CMAKE_SKIP_BUILD_RPATH})
+    if (NOT ${CMAKE_SKIP_BUILD_RPATH})
+      list(APPEND GA_OPTS
+        -D CMAKE_MACOSX_RPATH=${CMAKE_MACOSX_RPATH}
+        -D CMAKE_INSTALL_RPATH=${CMAKE_INSTALL_RPATH}
+        -D CMAKE_BUILD_WITH_INSTALL_RPATH=${CMAKE_BUILD_WITH_INSTALL_RPATH}
+        )
+    endif()
   else()
     list(APPEND GA_OPTS -D BUILD_SHARED_LIBS:BOOL=NO )
   endif()
@@ -34,6 +42,7 @@ function(BuildGAExternalProject)
   if (USE_PROGRES_RANKS)
     list(APPEND GA_OPTS -D GA_RUNTIME:STRING=MPI_PROGRESS_RANK)
   endif()
+
 
   include(ExternalProject)
   ExternalProject_Add(external_global_arrays
@@ -48,9 +57,6 @@ function(BuildGAExternalProject)
     -D ENABLE_CXX:BOOL=YES
     -D MPI_CXX_COMPILER:STRING=${MPI_CXX_COMPILER}
     -D MPI_C_COMPILER:STRING=${MPI_C_COMPILER}
-    -D CMAKE_MACOSX_RPATH:BOOL=YES
-    -D CMAKE_BUILD_WITH_INSTALL_RPATH:BOOL=TRUE
-    -D CMAKE_INSTALL_RPATH:STRING="${CMAKE_INSTALL_PREFIX}/lib"
     ${GA_OPTS}
     ${DEFAULT_CMAKE_FLAGS}
     -D CMAKE_INSTALL_PREFIX=${BIN_DIR}/ga
