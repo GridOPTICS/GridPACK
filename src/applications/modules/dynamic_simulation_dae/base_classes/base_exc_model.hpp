@@ -164,22 +164,15 @@ to be overwritten by the implementation */
   virtual double getFieldCurrent();
   
   /**
-   * Set the value of the time step
-   * @return value of the time step
+   * Set initial time step
    */
-  virtual void setTimestep(double timestep);
+  void setInitialTimeStep(double timestep);
  
-  /**
-   * Set the value of the time increment 
-   * @return value of the time increment
-   */
-  //virtual void setTimeincrement(double timeincrement);
-  
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
-  double        ts, t_inc;
+  double        dt0;
 };
 
 #endif

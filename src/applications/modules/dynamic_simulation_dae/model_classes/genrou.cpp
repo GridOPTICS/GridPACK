@@ -64,8 +64,6 @@ GenrouGen::GenrouGen(void)
 
   B = 0.0;
   G = 0.0;
-  Vrterm = 0.0;
-  Viterm = 0.0;
 
   Vd = 0.0;
   Vq = 0.0;
@@ -151,27 +149,24 @@ double GenrouGen::Sat(double x)
 void GenrouGen::init(gridpack::ComplexType* values) 
 {
   double Vm = sqrt(VD*VD + VQ*VQ); // SJin: voltage VD and VQ come from base_gen_model.hpp
-  double ang = atan2(VQ, VD); // SJin: ang = arctang(VQ/VD); ?
-  Theta = ang;
+  double Theta = atan2(VQ, VD); // SJin: ang = arctang(VQ/VD); ?
   double P, Q; // Generator real and reactive power
   P = pg / mbase;
   Q = qg / mbase;
-  double Vrterm = Vterm * cos(Theta);
-  double Viterm = Vterm * sin(Theta);
-  //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
-  //printf("Vterm=%f, Theta=%f, Vrterm=%f, Viterm=%f\n", Vterm, Theta, Vrterm, Viterm);
-  Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
-  Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
+  //printf("Vm = %f, Theta = %f, P = %f, Q = %f\n", Vm, Theta, P, Q);
+  //printf("Vm=%f, Theta=%f, VD=%f, VQ=%f\n", Vm, Theta, VD, VQ);
+  Ir = (P * VD + Q * VQ) / (Vm * Vm);
+  Ii = (P * VQ - Q * VD) / (Vm * Vm);
   //printf("111 Ir = %f, Ii = %f\n", Ir, Ii);
-  //printf("P=%f,Vrterm=%f,Q=%f,Viterm=%f,Vterm=%f\n",P,Vrterm,Q,Viterm,Vterm);
+  //printf("P=%f,VD=%f,Q=%f,VQ=%f,Vm=%f\n",P,VD,Q,VQ,Vm);
   //printf("Ir = %f, Ii = %f\n", Ir, Ii);
   x2w = 0;
-  x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
+  x1d = atan2(VQ + Ir * Xq + Ii * Ra, VD + Ir * Ra - Ii * Xq);
   Id = Ir * sin(x1d) - Ii * cos(x1d); // convert values to the dq axis
   //printf("Ir = %f, Ii=%f, Iq = %f, Xq=%f,Xqp=%f\n", Ir, Ii, Iq,Xq,Xqp);
   Iq = Ir * cos(x1d) + Ii * sin(x1d); // convert values to the dq axis
-  double Vr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
-  double Vi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
+  double Vr = VD + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
+  double Vi = VQ + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
   //double Vd = Vr * sin(x1d) - Vi * sin(x1d); // convert to dq reference
   //double Vq = Vr * cos(x1d) + Vi * cos(x1d); // convert to dq reference
   Vd = Vr * sin(x1d) - Vi * cos(x1d); // convert to dq reference
@@ -207,7 +202,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
     p_exciter->setFieldCurrent(LadIfd);
-    p_exciter->setTimestep(0.01); // SJin: to be read from input file
+    p_exciter->setInitialTimeStep(0.01); // SJin: to be read from input file
   }
     
   p_hasGovernor = getphasGovernor();
@@ -262,13 +257,6 @@ bool GenrouGen::vectorSize(int *nvar) const
 */
 void GenrouGen::setValues(gridpack::ComplexType *values)
 {
-  /*if(p_mode == XVECTOBUS) {
-    p_delta = real(values[0]);
-    p_dw    = real(values[1]);
-  } else if(p_mode == XDOTVECTOBUS) {
-    p_deltadot = real(values[0]);
-    p_dwdot    = real(values[1]);
-  }*/
   if(p_mode == XVECTOBUS) {
     x1d = real(values[0]);
     x2w = real(values[1]);
@@ -283,6 +271,14 @@ void GenrouGen::setValues(gridpack::ComplexType *values)
     dx4Psidp = real(values[3]);
     dx5Psiqp = real(values[4]);
     dx6Edp = real(values[5]);
+  } else if(p_mode == XVECPRETOBUS) {
+    /* This state is only called once before fault on/off condition */
+    x1dprev = real(values[0]);
+    x2wprev = real(values[1]);
+    x3Eqpprev = real(values[2]);
+    x4Psidpprev = real(values[3]);
+    x5Psiqpprev = real(values[4]);
+    x6Edpprev = real(values[5]);
   }
 }
 
@@ -312,12 +308,12 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     //values[delta_idx] = values[dw_idx] = 0.0;
-    values[x1d_idx] = 0.0;
-    values[x2w_idx] = 0.0;
-    values[x3Eqp_idx] = 0.0;
-    values[x4Psidp_idx] = 0.0;
-    values[x5Psiqp_idx] = 0.0;
-    values[x6Edp_idx] = 0.0;
+    values[x1d_idx] = x1d - x1dprev;
+    values[x2w_idx] = x2w - x2wprev;
+    values[x3Eqp_idx] = x3Eqp - x3Eqpprev;
+    values[x4Psidp_idx] = x4Psidp - x4Psidpprev;
+    values[x5Psiqp_idx] = x5Psiqp - x5Psiqpprev;
+    values[x6Edp_idx] = x6Edp - x6Edpprev;
   } else if(p_mode == RESIDUAL_EVAL) {
     //printf("\n======================\n");
     //printf("\n Genrou: what's the initial values for the first iteration?\n");
@@ -376,42 +372,31 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
 */
 void GenrouGen::getCurrent(double *IGD, double *IGQ)
 {
-  // Generator current injections in the network
-  //*IGD += (-VQ + p_Ep*sin(p_delta))/p_Xdp;  // TBD: match to Ir
-  //*IGQ += ( VD - p_Ep*cos(p_delta))/p_Xdp;  // TBD: match to Ii
-
-  //// Calculate INorton_full
+  double Vm = VD*VD + VQ*VQ;
   // Admittance
   B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
   G = Ra / (Ra * Ra + Xdpp * Xdpp);
+
   // Setup
   double Psiqpp = - x6Edp * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp * (Xqp - Xqpp) / (Xqp - Xl); 
   double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
   Vd = -Psiqpp * (1 + x2w);
   Vq = +Psidpp * (1 + x2w);
-  //Vterm = presentMag;
-  //Theta = presentAng;
-  Vrterm = Vterm * cos(Theta);
-  Viterm = Vterm * sin(Theta);
-  double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
-  double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
-  // DQ Axis
+
+  double Vdterm = VD * sin(x1d) - VQ * cos(x1d);
+  double Vqterm = VD * cos(x1d) + VQ * sin(x1d);
+
+  // dq Axis
   Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
   Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
-  //double Idnorton = Vd * G - Vq * B;
-  //double Iqnorton = Vd * B + Vq * G;
+
   // Generator current injections in the network
   Ir = + Id * sin(x1d) + Iq * cos(x1d);
   Ii = - Id * cos(x1d) + Iq * sin(x1d);
-  //IrNorton = + Idnorton * sin(x1d) + Iqnorton * cos(x1d);
-  //IiNorton = - Idnorton * cos(x1d) + Iqnorton * sin(x1d); 
-  //IrNorton = IrNorton * MVABase / p_sbase; 
-  //IiNorton = IiNorton * MVABase / p_sbase; 
-  //p_INorton = gridpack::ComplexType(IrNorton, IiNorton);
+
   *IGD = Ir; // SJin: To be confirmed
   *IGQ = Ii; // SJin: To be confirmed
-  ///printf("222 Ir = %f, Ii = %f\n", Ir, Ii);
-  //printf("...B = %f, G = %f, Vrterm = %f, Viterm = %f\n", B, G, Vrterm, Viterm);
+
 }
 
 /**
@@ -447,7 +432,7 @@ bool GenrouGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
     idx++;
     *nval = idx;
   } else if(p_mode == DIG_DV) { // SJin: Jacobian matrix block Jgy 
-    //printf("B = %f, G = %f, Vrterm = %f, Viterm = %f, x1d = %f, sin(x1d) = %f, cos(x1d) = %f\n", B, G, Vrterm, Viterm, x1d, sin(x1d), cos(x1d));
+    //printf("B = %f, G = %f, VD = %f, VQ = %f, x1d = %f, sin(x1d) = %f, cos(x1d) = %f\n", B, G, VD, VQ, x1d, sin(x1d), cos(x1d));
     // These are the partial derivatives of the generator currents (see getCurrent function) w.r.t to the voltage variables VD and VQ    
     /*row[idx] = 0; col[idx] = 0;
     values[idx] = sin(x1d)*(B*((Vd*sin(Theta)*cos(x1d))/sqrt(Vd*Vd+Vq*Vq) - (Vd*cos(Theta)*sin(x1d))/sqrt(Vd*Vd+Vq*Vq) + 1) - G*((Vd*cos(Theta)*cos(x1d))/sqrt(Vd*Vd+Vq*Vq) + (Vd*sin(Theta)*sin(x1d))/sqrt(Vd*Vd+Vq*Vq))) - cos(x1d)*(B*((Vd*cos(Theta)*cos(x1d))/sqrt(Vd*Vd+Vq*Vq) + (Vd*sin(Theta)*sin(x1d))/sqrt(Vd*Vd+Vq*Vq)) + G*((Vd*sin(Theta)*cos(x1d))/sqrt(Vd*Vd+Vq*Vq) - (Vd*cos(Theta)*sin(x1d))/sqrt(Vd*Vd+Vq*Vq) + 1));
@@ -512,7 +497,7 @@ bool GenrouGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
   } else if(p_mode == DIG_DX) { // SJin: Jacobian matrix block Jgx (CORRECT! Output is consistent with Finite difference Jacobian)
     // These are the partial derivatives of the generator currents (see getCurrent) w.r.t generator variables
     row[idx] = 0; col[idx] = 0;
-    values[idx] = cos(x1d)*(B*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))) - sin(x1d)*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d))) - cos(x1d)*(B*(Viterm*cos(x1d) - Vrterm*sin(x1d)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d))) + sin(x1d)*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))); 
+    values[idx] = cos(x1d)*(B*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))) - sin(x1d)*(B*(VD*cos(x1d) + VQ*sin(x1d)) + G*(VQ*cos(x1d) - VD*sin(x1d))) - cos(x1d)*(B*(VQ*cos(x1d) - VD*sin(x1d)) - G*(VD*cos(x1d) + VQ*sin(x1d))) + sin(x1d)*(B*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))); 
     idx++;
     row[idx] = 0; col[idx] = 1;
     values[idx] = sin(x1d)*(B*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp)) + G*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))) + cos(x1d)*(B*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl)) - G*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))); 
@@ -531,7 +516,7 @@ bool GenrouGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
     idx++;
 
     row[idx] = 1; col[idx] = 0;
-    values[idx] = sin(x1d)*(B*(Viterm*cos(x1d) - Vrterm*sin(x1d)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d))) - cos(x1d)*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d))) + cos(x1d)*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))) - sin(x1d)*(B*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))); 
+    values[idx] = sin(x1d)*(B*(VQ*cos(x1d) - VD*sin(x1d)) - G*(VD*cos(x1d) + VQ*sin(x1d))) - cos(x1d)*(B*(VD*cos(x1d) + VQ*sin(x1d)) + G*(VQ*cos(x1d) - VD*sin(x1d))) + cos(x1d)*(B*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))) - sin(x1d)*(B*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))); 
     idx++;
     row[idx] = 1; col[idx] = 1;
     values[idx] = cos(x1d)*(B*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp)) + G*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))) - sin(x1d)*(B*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl)) - G*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))); 
@@ -560,26 +545,26 @@ bool GenrouGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
     idx++;
 
     row[idx] = 1; col[idx] = 0;
-    values[idx] = (((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d))) - ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(B*(Viterm*cos(x1d) - Vrterm*sin(x1d)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d))))/(2*H);
+    values[idx] = (((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(B*(VD*cos(x1d) + VQ*sin(x1d)) + G*(VQ*cos(x1d) - VD*sin(x1d))) - ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(B*(VQ*cos(x1d) - VD*sin(x1d)) - G*(VD*cos(x1d) + VQ*sin(x1d))))/(2*H);
     idx++;
     row[idx] = 1; col[idx] = 1; // row3 col3 for gen1
     values[idx] = -shift -((Pmech - D*x2w)/pow(x2w + 1, 2) + ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(B*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp)) + G*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))) - ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(B*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl)) - G*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))) + D/(x2w + 1))/(2*H);
     idx++;
     row[idx] = 1; col[idx] = 2;
-    values[idx] = -(((B*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)))*(Xdpp - Xl))/(Xdp - Xl) - (B*(Xdpp - Xl)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xdp - Xl) + (G*(Xdpp - Xl)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xdp - Xl))/(2*H);
+    values[idx] = -(((B*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)))*(Xdpp - Xl))/(Xdp - Xl) - (B*(Xdpp - Xl)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xdp - Xl) + (G*(Xdpp - Xl)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xdp - Xl))/(2*H);
     idx++;
     row[idx] = 1; col[idx] = 3;
-    values[idx] = -(((B*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)))*(Xdp - Xdpp))/(Xdp - Xl) - (B*(Xdp - Xdpp)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xdp - Xl) + (G*(Xdp - Xdpp)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xdp - Xl))/(2*H);
+    values[idx] = -(((B*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)) - G*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)))*(Xdp - Xdpp))/(Xdp - Xl) - (B*(Xdp - Xdpp)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xdp - Xl) + (G*(Xdp - Xdpp)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xdp - Xl))/(2*H);
     idx++;
     row[idx] = 1; col[idx] = 4;
-    values[idx] = (((B*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)))*(Xqp - Xqpp))/(Xl - Xqp) + (B*(Xqp - Xqpp)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xl - Xqp) + (G*(Xqp - Xqpp)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xl - Xqp))/(2*H);
+    values[idx] = (((B*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)))*(Xqp - Xqpp))/(Xl - Xqp) + (B*(Xqp - Xqpp)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xl - Xqp) + (G*(Xqp - Xqpp)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xl - Xqp))/(2*H);
     idx++;
     row[idx] = 1; col[idx] = 5;
-    values[idx] = -(((B*(Vrterm*cos(x1d) + Viterm*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)))*(Xl - Xqpp))/(Xl - Xqp) + (B*(Xl - Xqpp)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xl - Xqp) + (G*(Xl - Xqpp)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xl - Xqp))/(2*H);
+    values[idx] = -(((B*(VD*cos(x1d) + VQ*sin(x1d) - ((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1)) + G*(VQ*cos(x1d) - VD*sin(x1d) + ((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1)))*(Xl - Xqpp))/(Xl - Xqp) + (B*(Xl - Xqpp)*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))*(x2w + 1))/(Xl - Xqp) + (G*(Xl - Xqpp)*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))*(x2w + 1))/(Xl - Xqp))/(2*H);
     idx++;
 
     row[idx] = 2; col[idx] = 0;
-    values[idx] = ((Xd - Xdp)*(G*(Vrterm*cos(x1d) + Viterm*sin(x1d)) - B*(Viterm*cos(x1d) - Vrterm*sin(x1d)) + ((Xdp - Xdpp)*(B*(Viterm*cos(x1d) - Vrterm*sin(x1d)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d))))/(Xdp - Xl)))/Tdop;
+    values[idx] = ((Xd - Xdp)*(G*(VD*cos(x1d) + VQ*sin(x1d)) - B*(VQ*cos(x1d) - VD*sin(x1d)) + ((Xdp - Xdpp)*(B*(VQ*cos(x1d) - VD*sin(x1d)) - G*(VD*cos(x1d) + VQ*sin(x1d))))/(Xdp - Xl)))/Tdop;
     idx++;
     row[idx] = 2; col[idx] = 1;
     values[idx] = -((Xd - Xdp)*(G*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp)) - B*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl)) + ((Xdp - Xdpp)*(B*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl)) - G*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))))/(Xdp - Xl)))/Tdop;
@@ -598,7 +583,7 @@ bool GenrouGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
     idx++;
 
     row[idx] = 3; col[idx] = 0;
-    values[idx] = -((Xdp - Xl)*(B*(Viterm*cos(x1d) - Vrterm*sin(x1d)) - G*(Vrterm*cos(x1d) + Viterm*sin(x1d))))/Tdopp;
+    values[idx] = -((Xdp - Xl)*(B*(VQ*cos(x1d) - VD*sin(x1d)) - G*(VD*cos(x1d) + VQ*sin(x1d))))/Tdopp;
     idx++;
     row[idx] = 3; col[idx] = 1;
     values[idx] = ((Xdp - Xl)*(B*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl)) - G*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp))))/Tdopp;
@@ -617,7 +602,7 @@ bool GenrouGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
     idx++;
 
     row[idx] = 4; col[idx] = 0;
-    values[idx] = ((Xl - Xqp)*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d))))/Tqopp;
+    values[idx] = ((Xl - Xqp)*(B*(VD*cos(x1d) + VQ*sin(x1d)) + G*(VQ*cos(x1d) - VD*sin(x1d))))/Tqopp;
     idx++;
     row[idx] = 4; col[idx] = 1;
     values[idx] = -((Xl - Xqp)*(B*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp)) + G*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))))/Tqopp;
@@ -636,7 +621,7 @@ bool GenrouGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
     idx++;
 
     row[idx] = 5; col[idx] = 0;
-    values[idx] = -((Xq - Xqp)*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d)) + ((Xqp - Xqpp)*(B*(Vrterm*cos(x1d) + Viterm*sin(x1d)) + G*(Viterm*cos(x1d) - Vrterm*sin(x1d))))/(Xl - Xqp)))/Tqop;
+    values[idx] = -((Xq - Xqp)*(B*(VD*cos(x1d) + VQ*sin(x1d)) + G*(VQ*cos(x1d) - VD*sin(x1d)) + ((Xqp - Xqpp)*(B*(VD*cos(x1d) + VQ*sin(x1d)) + G*(VQ*cos(x1d) - VD*sin(x1d))))/(Xl - Xqp)))/Tqop;
     idx++;
     row[idx] = 5; col[idx] = 1;
     values[idx] = ((Xq - Xqp)*(B*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp)) + G*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl)) + ((Xqp - Xqpp)*(B*((x6Edp*(Xl - Xqpp))/(Xl - Xqp) - (x5Psiqp*(Xqp - Xqpp))/(Xl - Xqp)) + G*((x4Psidp*(Xdp - Xdpp))/(Xdp - Xl) + (x3Eqp*(Xdpp - Xl))/(Xdp - Xl))))/(Xl - Xqp)))/Tqop;

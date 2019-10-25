@@ -644,7 +644,7 @@ void DSimBus::setValues(gridpack::ComplexType *values)
 
   if(p_isolated) return;
 
-  mode = p_mode == XVECTOBUS ? XVECTOBUS : XDOTVECTOBUS;
+  mode = p_mode;
 
   if(p_mode == XVECTOBUS) { // Push values from X vector back on the bus
     *p_VDQptr = real(values[0]);

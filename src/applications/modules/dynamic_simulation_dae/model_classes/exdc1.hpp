@@ -128,19 +128,6 @@ class Exdc1Exc: public BaseExcModel
      */
     virtual double getFieldCurrent();
 
-    /**
-     * Set the value of the time step
-     * @return value of the time step
-     */
-    //virtual void setTimestep(double timestep);
- 
-    /**
-     * Set the value of the time increment 
-     * @return value of the time increment
-     */
-    //virtual void setTimeincrement(double timeincrement);
-
-
   private:
     // Exciter EXDC1 parameters from dyr
     double TR, KA, TA, TB, TC, Vrmax, Vrmin;

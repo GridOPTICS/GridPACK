@@ -163,13 +163,11 @@ double BaseExcModel::getFieldCurrent()
 }
 
 /**
- * Set the value of the time step
- * @return value of the time step
+ * Set initial time step
  */
-void BaseExcModel::setTimestep(double timestep)
+void BaseExcModel::setInitialTimeStep(double timestep)
 {
-    ts = timestep;
-    t_inc = timestep;
+    dt0 = timestep;
 }
 
 /**

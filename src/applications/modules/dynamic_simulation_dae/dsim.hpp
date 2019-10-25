@@ -103,8 +103,8 @@ class DSim
     p_factory->setMode(RESIDUAL_EVAL);
     p_VecMapper->mapToVector(F);
     F.ready();
-    printf("F.print():\n");
-    F.print();
+    //    printf("F.print():\n");
+    //    F.print();
     //exit(0);
   }
 
@@ -122,7 +122,7 @@ class DSim
     p_factory->setMode(FAULT_EVAL);
     p_VecMapper->mapToVector(F);
     F.ready();
-    //F.print();
+    //    F.print();
   }
 
   // Build the Jacobian for the nonlinear solver at tfaulton or tfaultoff

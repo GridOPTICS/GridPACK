@@ -2,7 +2,7 @@
 <Configuration>
   <Dynamic_simulation>
     <networkConfiguration> 9b3g.raw </networkConfiguration>
-    <generatorParameters> 9b3g.dyr</generatorParameters>
+    <generatorParameters> inputDeck/case9mod1_detailed_ESST1A.dyr </generatorParameters>
 <!--    <networkConfiguration> IEEE_145bus_v23_PSLF.raw </networkConfiguration>
     <generatorParameters>IEEE_145b_classical_model.dyr</generatorParameters>
 -->

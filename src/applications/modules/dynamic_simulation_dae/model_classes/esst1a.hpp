@@ -44,16 +44,10 @@ class Esst1aExc: public BaseExcModel
         data, int idx);
 
     /**
-     * Saturation function
-     * @ param x
-     */
-    double Sat(double x); 
-
-    /**
      * Initialize exciter model before calculation
      * @param [output] values - array where initialized exciter variables should be set
      */
-  void init(gridpack::ComplexType *values);
+    void init(gridpack::ComplexType *values);
 
     /**
      * Write output from exciters to a string.
@@ -128,48 +122,49 @@ class Esst1aExc: public BaseExcModel
      */
     virtual double getFieldCurrent();
 
-    /**
-     * Set the value of the time step
-     * @return value of the time step
-     */
-    //virtual void setTimestep(double timestep);
- 
-    /**
-     * Set the value of the time increment 
-     * @return value of the time increment
-     */
-    //virtual void setTimeincrement(double timeincrement);
-
-
   private:
 
     // Exciter esst1a parameters from dyr
-    double UEL, VOS, Tr, Vimax, Vimin, Tc, Tb;
+    int    UEL,VOS;
+    double Tr, Vimax, Vimin, Tc, Tb;
     double Tc1, Tb1, Ka, Ta, Vamax, Vamin;
     double Vrmax, Vrmin, Kc, Kf, Tf, Klr, Ilr;
-    double Ta1;
     
     // ESST1A state variables
-    double x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv;       
-    double dx1Va, dx2Vcomp, dx3LL1, dx4LL2, dx5Deriv;    
-   
+    double Vmeas; // Measured voltage by transducer
+    double xLL1; // State variable for first lead-lag block
+    double xLL2; // State variable for second lead-lag block
+    double Va;   // Voltage regulator output
+    double xf;   // Feedback block state variable
+    double x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv;
+
+    // ESST1A derivatives
+    double dVmeas, dxLL1, dxLL2, dVa, dxf;    
+
+    // ESST1A previous step solution
+    double Vmeasprev,xLL1prev,xLL2prev,Vaprev,xfprev;
+
     // ESST1A inputs
+    double Ec; // Terminal voltage
+    double Vothsg; // Voltage signal from stabilizer
+    double Vuel; // Under excitation limiter voltage
+    double Voel; // Over excitation limiter voltage
     double Vcomp, Vterm, Vstab;
 
     // Field Voltage Output
     double Efd;
 
-    // Field Current Output
+    // Field Current Input
     double LadIfd;
 
+    // Voltage regulator reference
     double Vref;
 
-    double presentMag, presentAng;
-    
-    bool OptionToModifyLimitsForInitialStateLimitViolation;
-
     //bool flag2, flag3, flag4, flag5; //flags for residual function conditions
-    
+
+    // Flag to denote whether each equation is algebraic or differential.
+    // iseq_diff[i] = 1 if equation is differential, 0 otherwise.
+    int iseq_diff[5];
 };
 
 #endif

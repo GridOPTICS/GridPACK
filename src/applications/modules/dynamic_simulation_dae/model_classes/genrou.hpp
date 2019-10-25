@@ -120,20 +120,6 @@ class GenrouGen: public BaseGenModel
     //void setphasExciter(bool info);
 
   private:
-    /*// Machine parameters
-    double p_Rs; // Machine stator resistance
-    double p_Xdp;  // Machine transient reactance
-    double p_H;      // Machine Inertia constant
-    double p_D;      // Machine damping coefficient
-
-    // Internal constants
-    double p_Pm;  // Mechanical power input
-    double p_Ep;  // Internal emf
-
-    // Generator variables and their derivatives
-    double p_delta,p_dw;
-    double p_deltadot,p_dwdot;*/
-
     // Machine parameters
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
     double Tdop, Tdopp, Tqopp, S10, S12, Tqop;
@@ -144,24 +130,21 @@ class GenrouGen: public BaseGenModel
     double Pmech; // Mechanical power
   
     // Generator variables and their derivatives
-    double Vterm, Theta; // Terminal voltage magnitude and angle
     double Ir, Ii; // Terminal current
     double x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp; 
     double dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, dx6Edp;
     double Id, Iq; // Generator current on d and q axis
 
-    double IrNorton, IiNorton;
-    gridpack::ComplexType INorton;
+    // previous step values of the variables
+    double x1dprev, x2wprev, x3Eqpprev, x4Psidpprev, x5Psiqpprev, x6Edpprev; 
 
     bool p_hasExciter;
     boost::shared_ptr<BaseExcModel> p_exciter;
     bool p_hasGovernor;
     boost::shared_ptr<BaseGovModel> p_governor;
 
-    double B, G, Vrterm, Viterm;
+    double B, G;
     double Vd, Vq;
-    
-    double presentMag, presentAng;
 };
 
 #endif

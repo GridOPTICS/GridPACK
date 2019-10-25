@@ -118,13 +118,13 @@ void Exdc1Exc::init(gridpack::ComplexType* values)
   x1 = Efd;
   //x4 = Efd * (KE + Sat(Efd));
   x4 = Efd*KE; // SJin: remove Sat function temporarily
-  if (TB > (TS_THRESHOLD * ts)) // get ts from setTimestep() call 
+  if (TB > (TS_THRESHOLD * dt0)) // get ts from setTimestep() call 
     x3 = (x4 / KA) * (1 - TC / TB); // SJin: x4 is Vr 
   else
     x3 = x4 / KA;
   x2 = mag; // SJin: mag is Vterminal 
   //printf("KF = %f, TF = %f, x1 = %f, ts = %f\n", KF, TF, x1, ts);
-  if (TF > (TS_THRESHOLD * ts)) 
+  if (TF > (TS_THRESHOLD * dt0)) 
     x5 = x1 * (KF / TF); // SJin: x1 is Ve
   else
     x5 = 0.0; // ignore this state
@@ -224,12 +224,12 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
     // State 2
     printf("=========\n");
     //printf("TR = %f\n", TR);
-    if (TR > TS_THRESHOLD * t_inc) { 
+    if (TR > TS_THRESHOLD * dt0) { 
       flag2 = true;
       values[x2_idx] = (Vterminal - x2) / TR - dx2; // SJin: x2 is Vsens
     } else x2 = Vterminal; // propogate state immediately
     // State 5
-    if (TF > TS_THRESHOLD * t_inc) {
+    if (TF > TS_THRESHOLD * dt0) {
       flag5 = true;
       values[x5_idx] = (x1 * KF / TF - x5) / TF - dx5;
       Feedback = x1 * KF / TF - x5;
@@ -237,14 +237,14 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
       x5 = 0;
       Feedback = 0;
     }
-    //printf("TF = %f, t_inc = %f, x5 = %f, dx5 = %f\n", TF, t_inc, x5, dx5);
+    //printf("TF = %f, dt0 = %f, x5 = %f, dx5 = %f\n", TF, dt0, x5, dx5);
     // State 3
     double Vstab = 0.0; // SJin: Output from PSS, set to 0.0 for now.
     double LeadLagIN = Vref - x2 + Vstab - Feedback;
     //printf("Vref = %f, TB = %f, TC = %f\n", Vref, TB, TC); 
     double LeadLagOUT;
     //printf("LeadLagIN = %f, TC = %f, TB = %f, x3 = %f\n", LeadLagIN, TC, TB, x3);
-    if (TB > (TS_THRESHOLD * t_inc)) {
+    if (TB > (TS_THRESHOLD * dt0)) {
       flag3 = true;
       values[x3_idx] = (LeadLagIN * (1 - TC / TB) - x3) / TB - dx3;
       LeadLagOUT = LeadLagIN * TC / TB + x3;
@@ -254,7 +254,7 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
     //printf("x4 = %f, Vrmax = %f, Vrmin = %f, TA = %f, LeadLagOUT = %f, KA = %f\n", x4, Vrmax, Vrmin, TA, LeadLagOUT, KA);
     if (x4 > Vrmax) x4 = Vrmax;
     if (x4 < Vrmin) x4 = Vrmin;
-    if (TA > (TS_THRESHOLD * t_inc)) { 
+    if (TA > (TS_THRESHOLD * dt0)) { 
       flag4 = true;
       values[x4_idx] = (LeadLagOUT * KA - x4) / TA - dx4;
     } else {
@@ -536,22 +536,4 @@ double Exdc1Exc::getFieldCurrent()
 {
   return 0.0;
 }
-
-   /**
- * Set the value of the time step
- * @return value of the time step
- */
-/*void Exdc1Exc::setTimestep(double timestep)
-{
-  ts = timestep;
-  t_inc = timestep;
-}*/
-
-/**
- * Set the value of the time increment 
- * @return value of the time increment
- */
-/*void Exdc1Exc::setTimeincrement(double timeincrement)
-{
-}*/
 
