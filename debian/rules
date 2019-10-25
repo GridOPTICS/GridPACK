@@ -28,6 +28,7 @@ override_dh_auto_configure:
 	-DPETSC_DIR:STRING="/usr/lib/petsc" \
 	-DPARMETIS_DIR:PATH="/usr" \
 	-DBUILD_GA:BOOL=ON \
+	-DGRIDPACK_ENABLE_TESTS:BOOL=OFF \
 	-DMPI_CXX_COMPILER:STRING="mpicxx" \
 	-DMPI_C_COMPILER:STRING="mpicc" \
         -DUSE_GLPK:BOOL=ON \
