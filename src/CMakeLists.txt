@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-08-16 12:58:52 d3g096
+# Last Change: 2019-10-25 12:14:44 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -37,9 +37,6 @@ list (APPEND CMAKE_MODULE_PATH
     "${GridPACK_SOURCE_DIR}/../cmake-jedbrown"
 )
 include(GridPACK)
-
-# turn testing on
-enable_testing()
 
 # add user configuration options
 option (USE_PROGRESS_RANKS "Enable progress ranks in GridPACK" OFF)
@@ -87,6 +84,13 @@ option(USE_GLPK
 # system, independently of declaring it here
 option(BUILD_SHARED_LIBS
   "Attempt to build all libraries as shared" OFF)
+
+
+# turn testing on/off
+option(GRIDPACK_ENABLE_TESTS "Enable build of unit tests" ON)
+if (GRIDPACK_ENABLE_TESTS)
+  enable_testing()
+endif()
 
 # -------------------------------------------------------------
 # External project settings, generally
@@ -146,6 +150,56 @@ message(STATUS "MPI_CXX_LIBRARIES: ${MPI_CXX_LIBRARIES}")
 # set(CMAKE_CXX_COMPILER ${MPI_CXX_COMPILER})
 # set(CMAKE_CXX_COMPILE_FLAGS ${CMAKE_CXX_COMPILE_FLAGS} ${MPI_COMPILE_FLAGS})
 # set(CMAKE_CXX_LINK_FLAGS ${CMAKE_CXX_LINK_FLAGS} ${MPI_LINK_FLAGS})
+
+# -------------------------------------------------------------
+# Compiler specific options
+# -------------------------------------------------------------
+
+# FIXME: remove annoying warnings (these warnings probably identify
+# real problems, but there are so many of them they obscure errors
+# that are causing identifiable problems
+
+if (CMAKE_COMPILER_IS_GNUCXX) 
+  add_definitions(
+    -pedantic
+    -Wno-write-strings
+    -Wno-long-long 
+    -Wno-sign-compare 
+    -Wno-unused-variable
+    -Wno-unused-but-set-variable
+    -Wno-maybe-uninitialized
+    )
+endif()
+
+# using regular Clang or AppleClang
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+  add_definitions(
+    -Wno-c++11-extensions
+    -Wno-c++11-compat-deprecated-writable-strings
+    -Wno-format-security
+    -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
+    )
+endif()
+
+
+# When built as shared libraries, and installed in non-system dirs, deal with RPATH
+if(BUILD_SHARED_LIBS)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
+    set(CMAKE_MACOSX_RPATH 1)
+  endif()
+  list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES ${CMAKE_INSTALL_PREFIX}/lib isSystemDir)
+  if("${isSystemDir}" STREQUAL "-1")
+    set(CMAKE_INSTALL_RPATH ${CMAKE_INSTALL_PREFIX}/lib)
+    set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+  else()
+    set(CMAKE_SKIP_BUILD_RPATH  TRUE)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH FALSE)
+  endif()
+endif()
+
 
 # -------------------------------------------------------------
 # Boost
@@ -330,36 +384,6 @@ if(DOXYGEN_FOUND)
 endif(DOXYGEN_FOUND)
 
 # -------------------------------------------------------------
-# Compiler specific options
-# -------------------------------------------------------------
-
-# FIXME: remove annoying warnings (these warnings probably identify
-# real problems, but there are so many of them they obscure errors
-# that are causing identifiable problems
-
-if (CMAKE_COMPILER_IS_GNUCXX) 
-  add_definitions(
-    -pedantic
-    -Wno-write-strings
-    -Wno-long-long 
-    -Wno-sign-compare 
-    -Wno-unused-variable
-    -Wno-unused-but-set-variable
-    -Wno-maybe-uninitialized
-    )
-endif()
-
-# using regular Clang or AppleClang
-if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-  add_definitions(
-    -Wno-c++11-extensions
-    -Wno-c++11-compat-deprecated-writable-strings
-    -Wno-format-security
-    -DGRIDPACK_AVOID_APPLECLANG_MPI_PROBLEMS=1
-    )
-endif()
-
-# -------------------------------------------------------------
 # Options for all Programs/Libraries
 # -------------------------------------------------------------
 
@@ -409,17 +433,6 @@ endif()
 # -------------------------------------------------------------
 # Installation
 # -------------------------------------------------------------
-
-# When built as shared libraries, and installed in non-system dirs
-set(CMAKE_MACOSX_RPATH 1)
-set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
-SET(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
-LIST(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
-IF("${isSystemDir}" STREQUAL "-1")
-   SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
-ENDIF("${isSystemDir}" STREQUAL "-1")
 
 install(FILES
   ${GRIDPACK_SRC_DIR}/../README.md
