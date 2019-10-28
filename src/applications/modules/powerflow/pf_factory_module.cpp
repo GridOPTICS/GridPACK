@@ -650,6 +650,7 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
   double capacity = 0.0;
   double total = 0.0;
   double delta;
+  printf("area: %d zone: %d\n",area,zone);
   if (scale > 1.0) {
     delta = scale - 1.0;
   } else {
@@ -657,6 +658,7 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
   }
   std::vector<std::string> tags;
   std::vector<double> slack, current, excess;
+  std::vector<bool> status;
   for (i=0; i<nbus; i++) {
     gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
     if (zone > 0) {
@@ -664,23 +666,30 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
     } else {
       izone = zone;
     }
+    printf("bus area: %d bus zone: %d\n",bus->getArea(),izone);
     if (bus->getArea() == area && zone == izone) {
-      bus->getGeneratorMargins(tags,current,slack,excess);
+      bus->getGeneratorMargins(tags,current,slack,excess,status);
       int j, nsize;
       nsize = tags.size();
       if (scale > 1.0) {
         for (j=0; j<nsize; j++) {
-          capacity += excess[j];
-          total += current[j];
+          if (status[j]) {
+      printf("excess[%d]: %f current[%d]: %f\n",j,excess[j],j,current[j]);
+            capacity += excess[j];
+            total += current[j];
+          }
         }
       } else {
         for (j=0; j<nsize; j++) {
-          capacity += slack[j];
-          total += current[j];
+          if (status[j]) {
+            capacity += slack[j];
+            total += current[j];
+          }
         }
       }
     }
   }
+      printf("capacity: %f total: %f\n",capacity,total);
   p_network->communicator().sum(&capacity,1);
   p_network->communicator().sum(&total,1);
   double change = delta*total;
@@ -688,6 +697,7 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
   if (scale > 1.0) {
     if (change > capacity && total > 0.0) {
       frac = (capacity+total)/total;
+      printf("Capacity is maxed out frac: %f\n",frac);
       ret = false;
     } else if (total > 0.0) {
       frac = (change+total)/total;
@@ -747,7 +757,7 @@ void gridpack::powerflow::PFFactoryModule::scaleLoadRealPower(
       std::vector<std::string> tags = bus->getLoads();
       int j;
       for (j=0; j<tags.size(); j++) {
-        bus->scaleLoadRealPower(tags[i],scale);
+        bus->scaleLoadRealPower(tags[j],scale);
       }
     }
   }

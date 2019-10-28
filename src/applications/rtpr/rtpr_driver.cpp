@@ -623,6 +623,67 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
 
   bool checkTie = runContingencies();
 
+  double rating = 1.0;
+  if (checkTie) {
+    // Tie lines are secure for all contingencies. Increase loads and generation
+    while (checkTie && rating >= 0.0) {
+      rating += 0.05;
+  printf("Rating: %f\n",rating);
+      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
+        printf("p[%d] Immediately bail on +0.05\n",p_world.rank());
+        rating -= 0.05;
+        p_pf_app.resetRealPower();
+        break;
+      }
+      checkTie = runContingencies();
+      if (!checkTie) rating -= 0.05;
+      p_pf_app.resetRealPower();
+    }
+    // Refine estimate of rating
+    while (checkTie && rating >= 0.0) {
+      rating += 0.01;
+  printf("Rating: %f\n",rating);
+      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
+        printf("p[%d] Immediately bail on +0.01\n",p_world.rank());
+        rating -= 0.01;
+        p_pf_app.resetRealPower();
+        break;
+      }
+      checkTie = runContingencies();
+      if (!checkTie) rating -= 0.01;
+      p_pf_app.resetRealPower();
+    }
+  } else {
+    // Tie lines are inssecure for some contingencies. Decrease loads and generation
+    while (checkTie && rating <= 2.0) {
+      rating -= 0.05;
+      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
+        rating += 0.05;
+        p_pf_app.resetRealPower();
+        break;
+      }
+      checkTie = runContingencies();
+      if (!checkTie) rating += 0.05;
+      p_pf_app.resetRealPower();
+    }
+    // Refine estimate of rating
+    while (checkTie && rating <= 2.0) {
+      rating -= 0.01;
+      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
+        rating += 0.01;
+        p_pf_app.resetRealPower();
+        break;
+      }
+      checkTie = runContingencies();
+      if (!checkTie) rating += 0.01;
+      p_pf_app.resetRealPower();
+    }
+  }
+  printf("Final Rating: %f\n",rating);
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
@@ -641,6 +702,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   bool ret = true;
   // Keep track of failed calculations
   std::vector<int> contingency_idx;
+  std::vector<bool> violations;
   std::vector<bool> contingency_success;
   // Keep track of which calculations completed successfully
   gridpack::parallel::GlobalVector<bool> ca_success(p_world);
@@ -664,6 +726,10 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   p_pf_app.ignoreVoltageViolations();
+
+  // Check for tie line violations
+  ret = ret && p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus,
+      p_tags, violations);
 
   // Set up task manager on the world communicator. The number of tasks is
   // equal to the number of contingencies
@@ -731,6 +797,8 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
       }
       // If power flow solution is successful, write out voltages and currents
       if (p_print_calcs) p_pf_app.write();
+      ret = ret && p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus, p_tags,
+          violations);
       // Check for violations
       bool ok1 = p_pf_app.checkVoltageViolations();
       bool ok2 = p_pf_app.checkLineOverloadViolations();
@@ -823,5 +891,19 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
     fout.close();
   }
 #endif
+  // Check to see if ret is true on all processors
+  int ok;
+  if (ret) {
+    ok = 1;
+  } else {
+    ok = 0;
+  }
+  p_world.sum(&ok,1);
+  if (ok == p_world.size()) {
+    ret = true;
+  } else {
+    ret = false;
+  }
+  printf("p[%d] Completed contingency analysis on all processors\n",p_world.rank());
   return ret;
 }

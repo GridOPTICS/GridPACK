@@ -384,10 +384,11 @@ class PFBus
      * @param current initial generation
      * @param slack amount generation can be reduced
      * @param excess amount generation can be increased
+     * @param status current status of generator
      */
     void getGeneratorMargins(std::vector<std::string> &tag,
         std::vector<double> &current, std::vector<double> &slack,
-        std::vector<double> &excess);
+        std::vector<double> &excess,std::vector<bool> &status);
 
   private:
     double p_shunt_gs;

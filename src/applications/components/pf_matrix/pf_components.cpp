@@ -1429,7 +1429,7 @@ void gridpack::powerflow::PFBus::scaleGeneratorRealPower(std::string tag,
 {
   int i;
   for (i=0; i<p_ngen; i++) {
-    if (p_gid[i] == tag) {
+    if (p_gid[i] == tag && p_gstatus[i]) {
       if (value > 1.0) {
         double excess = p_pt[i]-p_pg[i];
         p_pg[i] += (value-1.0)*excess;
@@ -1504,21 +1504,25 @@ void gridpack::powerflow::PFBus::resetRealPower()
  * @param current initial generation
  * @param slack amount generation can be reduced
  * @param excess amount generation can be increased
+ * @param status current status of generator
  */
 void gridpack::powerflow::PFBus::getGeneratorMargins(
     std::vector<std::string> &tag, std::vector<double> &current,
-    std::vector<double> &slack, std::vector<double> &excess)
+    std::vector<double> &slack, std::vector<double> &excess,
+    std::vector<bool> &status)
 {
   tag.clear();
   current.clear();
   slack.clear();
   excess.clear();
+  status.clear();
   int i;
   for (i=0; i<p_ngen; i++) {
     tag.push_back(p_gid[i]);
     current.push_back(p_pg[i]);
     slack.push_back(p_pg[i]-p_pb[i]);
     excess.push_back(p_pt[i]-p_pg[i]);
+    status.push_back(p_gstatus[i]);
   }
 }
 
