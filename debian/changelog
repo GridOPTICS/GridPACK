@@ -1,8 +1,14 @@
+gridpack (3.3.0ppa3) xenial; urgency=medium
+
+  * Bump version because I screwed the upload
+
+ -- William A. Perkins <william.perkins@pnnl.gov>  Mon, 28 Oct 2019 07:28:06 -0700
+
 gridpack (3.3.0ppa2) xenial; urgency=medium
 
   * Fix problem with build depends
 
- -- GridPACK <gridpack@gridpackvm>  Mon, 28 Oct 2019 06:50:57 -0700
+ -- William A. Perkins <william.perkins@pnnl.gov>  Mon, 28 Oct 2019 06:50:57 -0700
 
 gridpack (3.3.0ppa1) xenial; urgency=medium
 
