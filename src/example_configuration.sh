@@ -86,11 +86,17 @@ if [ $host == "flophouse" ]; then
     export CXX
 
     if [ "$shared"x = "ON"x ]; then
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel7-gnu48-real-opt-shared"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel7-real-c-shared"
     else
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
         parch="rhel7-gnu48-real-opt"
+        # parch="rhel7-gnu48-complex-opt"
+        # parch="rhel7-gnu48-complex-opt-c"
+        parch="rhel7-real-c-static"
+        parch="rhel7-complex-c-static"
+        # parch="rhel7-real-c-static-debug"
+        # pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
@@ -201,6 +207,29 @@ elif [ $host == "olympus.local" ]; then
 	-D MPIEXEC:STRING='mpiexec' \
 	$common_flags ..
 
+
+elif [ $host == "constance" ]; then
+
+    CC=`which gcc`
+    CXX=`which g++`
+    CFLAGS="-pthread"
+    CXXFLAGS="-pthread"
+
+    export CC CXX CFLAGS CXXFLAGS
+
+    prefix="/people/d3g096/gridpack"
+    cmake $options \
+        -D GA_DIR:STRING="$prefix/ga-5-4" \
+	-D GA_EXTRA_LIBS:STRING="-libverbs" \
+	-D BOOST_ROOT:STRING="$prefix" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.7.3" \
+	-D PETSC_ARCH:STRING='constance-gnu48-complex-opt' \
+	-D MPI_CXX_COMPILER:STRING=`which mpicxx` \
+	-D MPI_C_COMPILER:STRING=`which mpicc` \
+	-D MPIEXEC:STRING=`which mpiexec` \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+	$common_flags ..
+
 elif [ $host == "tlaloc" ]; then
 
     # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
@@ -212,9 +241,14 @@ elif [ $host == "tlaloc" ]; then
     if [ "$shared"x = "ON"x ]; then
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
         parch="rhel6-complex-c-shared"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel6-complex-c-shared"
     else
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
         parch="rhel6-complex-c-static"
+        parch="rhel6-real-c-static"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel6-real-c-static"
     fi
 
     cmake3 $options \
@@ -231,8 +265,6 @@ elif [ $host == "tlaloc" ]; then
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
           -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
           $common_flags ..
-
-    
 
 elif [ $host == "gridpackvm" ]; then
 

@@ -1,0 +1,123 @@
+\section{Configuration Module }\label{configuration}
+
+The configuration module is designed to provide a central mechanism for directing information from the input file to the components making up a given application. For example, information about convergence thresholds and maximum numbers of iterations might need to be picked up by the solver module from an external configuration file. The configuration module is designed to read files using a simple XML format that supports a hierarchical input. This can be used to control which input gets directed to individual objects in the application, even if the object is a framework component and cannot be modified by the application developer.
+
+The \texttt{\textbf{Configuration}} class is in the namespace \texttt{\textbf{gridpack::utility}}. This class follows the C++ singleton pattern and does not have a public constructor. The static method \texttt{\textbf{configuration()}} returns a pointer to the shared instance of this class and guaratantees that the same instance is used by all modules in an application. The shared instance can be initialized with data from an external file using the code
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+gridpack::utility::Configuration * c = 
+  gridpack::utility::Configuration::configuration() ; 
+c->open(input_file, MPI_COMM_WORLD);
+\end{Verbatim}
+}
+
+The input file uses XML syntax. The single top-level element must be named ``Configuration'' but other elements may have module- and application-specific names. Refer elsewhere in this document for details.  For illustration purposes, an example configuration file might look like: 
+
+{
+\color{blue}
+\bfseries
+\begin{Verbatim}[commandchars=\\\{\}]
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <PowerFlow>
+    <networkConfiguration> IEEE118.raw </networkConfiguration>
+  </PowerFlow>
+  <DynamicSimulation>
+    <StartTime> 0.0 </StartTime>
+    <EndTime> 0.1 </EndTime>
+    <TimeStep> 0.001 </TimeStep>
+    <Faults>
+      <Fault>
+        <StartFault> 0.03 </StartFault>
+        <EndFault> 0.06 </EndFault>
+        <Branch> 3 7 </Branch>
+      </Fault>
+      <Fault>
+        <StartFault> 0.07 </StartFault>
+        <EndFault> 0.06=8 </EndFault>
+        <Branch> 4 8 </Branch>
+      </Fault>
+    </Faults>
+  </DynamicSimulation>
+</Configuration>
+\end{Verbatim}
+}
+
+A value in this configuration file is accessed with a call to the overloaded method \texttt{\textbf{get()}}. The following line will return the value of the input file corresponding to the XML field \texttt{\textbf{``networkConfiguration''}}
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::string s = 
+    c->get("Configuration.PowerFlow.networkConfiguration",  
+    "IEEE.raw");
+\end{Verbatim}
+}
+
+The first argument has type\texttt{\textbf{ Configuration::KeyType}} which is a \texttt{\textbf{typedef}} of \texttt{\textbf{std::string}}. Values are selected by hierarchically named ``keys'' using ``.'' as a separator. In the example input file, ``PowerFlow'' is a block under ``Configuration'' and ``networkConfiguration'' is, in turn, a block under ``PowerFlow''. The second argument in \texttt{\textbf{get}} is a default value that is used if the field corresponding to the key can't be found. There are overloaded versions of \texttt{\textbf{get()}} for accessing standard C++ data types: \texttt{\textbf{bool}}, \texttt{\textbf{int}}, \texttt{\textbf{long}}, \texttt{\textbf{float}}, \texttt{\textbf{double}}, \texttt{\textbf{ComplexType}} and \texttt{\textbf{std::string}}. For each type there are two variants. For integers these look like 
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+ int get(const KeyType &, int default_value) const ;
+
+ bool get(const KeyType &, int *) const;
+\end{Verbatim}
+}
+
+The first variant takes a key name and a default value and returns either the value in the configuration file or the default value when none is specified. In the second variant, a Boolean value is returned indicating whether or not the value was in the configuration file and the second argument points to an object that is updated with the configuration value when it is present.  For strings, the second argument is passed by reference.  
+
+The method \texttt{\textbf{getCursor(KeyType)}} returns a pointer to an internal element in the hierarchy. This ``cursor'' supports the same \texttt{\textbf{get()}} methods as above but the names are now relative to the name of the  cursor. Thus, we might modify the previous example to:
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Configuration::CursorPtr p = 
+c->getCursor("Configuration.PowerFlow");
+
+std::string s = p->get("networkConfiguration", 
+"IEEE14.raw");
+\end{Verbatim}
+}
+
+An additional use of such cursors is to access lists of values. The method 
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+typedef std::vector<CursorPtr> ChildCursors;
+
+void children(ChildCursors &);
+\end{Verbatim}
+}
+
+can be used to get a vector of all the elements that are children in the name hierarchy of some element. These children need not have unique names, as illustrated by the children of the ``Faults'' element shown above. In this example, each of the children is a cursor that can be used to access ``StartFault'', ``EndFault'', and ``Branch'' parameters for each of the ``Fault'' blocks. Again, returning to the sample input above, the following code will return a list of faults
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Configuration::CursorPtr p = 
+c->getCursor("Configuration.DynamicSimulation.Faults");
+ChildCursors faults;
+p->children(faults);
+\end{Verbatim}
+}
+
+The cursor p is set so that is is pointing at the Faults block in the input. The children function then picks up all XML blocks on one level and returns a list of cursor pointers to those blocks. The individual data elements in \texttt{\textbf{faults}} can be accessed using the following loop
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int nfaults = faults.size()
+for (int i=0; i<nfaults; i++) {
+  double start = faults[i]->get("StartFault", 0.0);
+  double end = faults[i]->get("EndFault", 0.0);
+  std::string indices = faults[i]->get("Branch", "-1 -1");
+  // Do something with these parameters
+}
+\end{Verbatim}
+}
+
+Note that this method does not have any way of distinguishing between different blocks below \texttt{\textbf{Faults}} and if two types of blocks where listed within the \texttt{\textbf{Faults}} block, the \texttt{\textbf{children}} method would pick up both of them.

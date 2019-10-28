@@ -1,0 +1,192 @@
+\section{Power Flow}
+
+The power flow module consists of a collection of function calls that can be used to set up and run power flow calculations. Additional routines are designed to support different types of contingency analysis. The power flow application class is \texttt{\textbf{PFAppModule}} and belongs to the \texttt{\textbf{gridpack::powerflow}} namespace. The constructor and destructor for this class are simple and only create the basis power flow object. In particular, the power flow network must be created outside the power flow object and then assigned to the object when the network configuration file is read in. This can be done with the call
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void readNetwork(boost::shared_ptr<PFNetwork> &network,
+      Configuration *config)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{Configuation}} object should already be pointing to an open file containing a \texttt{\textbf{Powerflow}} block. This block contains a \texttt{\textbf{networkConfiguration}} field that has the name of the PSS/E format file containing the network information. The network configuration file is read directly from the input deck by the \texttt{\textbf{readNetwork }}method. The \texttt{\textbf{PFNetwork}} is defined in the the \texttt{\textbf{gridpack.hpp}} header file. The configuration module is usually opened in the main calling program and a pointer to the file can be passed through to power flow module. The \texttt{\textbf{readNetwork}} routine also partitions the network.
+
+Once the network has been read in, the internal indices and exchange buffers can be set up by calling
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void initialize()
+\end{Verbatim}
+}
+
+The power flow application is now ready to be used. To solve the current configuration, the calls
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void solve()
+
+void nl_solve()
+\end{Verbatim}
+}
+
+can be used. The first call solves the system uses a hand coded Newton-Raphson iteration loop to solve the system, the second call uses a non-linear solver to solve the power flow equations. Both solvers can be controlled through solver options in the input file. The type of linear solver used in the solve routine is controlled by the parameters in the \texttt{\textbf{LinearSolver}} block, the non-linear solver is controlled by the properties in the \texttt{\textbf{NonlinearSolver}} block
+Output from the power flow solution can be written to an output file or standard out using one of the commands
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void write()
+
+void writeBus(const char* signal)
+
+void writeBranch(const char* signal)
+\end{Verbatim}
+}
+
+The first command writes out the real and imaginary parts of the complex power for the branches and the voltage magnitude and phase angle for the buses. The second command only writes out bus properties. If no argument is given, the command writes out the voltage magnitude and phase angle for every bus. For buses, the argument ``\texttt{\textbf{pq}}'' writes out the real and imaginary parts of the complex voltage and ``\texttt{\textbf{record}}'' writes out the type of bus, the total active and reactive constant power loads, and the total active and reactive generator power outputs. For branches, ``\texttt{\textbf{flow}}'' writes out the real and imaginary parts of the complex power and ``\texttt{\textbf{record}}'' writes out the values of the resistance, reactance, charging and A, B, C ratings for each line element.
+
+Additional information can be written to standard out or a file using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void print(const char* buf)
+\end{Verbatim}
+}
+
+which writes out the contents of the character array \texttt{\textbf{buf}}. This command can be called from all processors, but only one processor actually writes out data.
+
+The location of output can be controlled using the commands
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void open(const char* filename)
+
+void close()
+\end{Verbatim}
+}
+
+If the write commands or \texttt{\textbf{print}} are used without calling \texttt{\textbf{open}}, then all output is directed to standard out. If \texttt{\textbf{open}} is called, then the output is directed to the file specified in filename until the \texttt{\textbf{close}} command is called, after which all output is again directed towards standard out.
+
+If the results of the power flow calculation are needed by another calculation, then the voltage magnitude and phase angle of the bus and the real and imaginary parts of the complex power for each generator can be stored in the \texttt{\textbf{DataCollection}} objects on each bus using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void saveData()
+\end{Verbatim}
+}
+
+If the network is then copied to a new type of network, this information is carried over to the new network. The voltage magnitude and phase angle is stored in the \texttt{\textbf{DataCollection}} variables \texttt{\textbf{BUS\_PF\_VMAG}} and \texttt{\textbf{BUS\_PF\_VANG}} and the generator parameters are stored in the indexed variables \texttt{\textbf{GENERATOR\_PF\_PGEN[i]}} and \texttt{\textbf{GENERATOR\_PF\_QGEN[i]}}, where the index \texttt{\textbf{i}} runs over all generators on the bus.
+
+The remaining methods in the PFAppModule class support different kinds of contingency applications. Contingencies are defined using the data structure
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+struct Contingency
+{
+  int p_type;
+  std::string p_name;
+  // Line contingencies
+  std::vector<int> p_from;
+  std::vector<int> p_to;
+  std::vector<std::string> p_ckt;
+  // Status of line before contingency
+  std::vector<bool> p_saveLineStatus;
+  // Generator contingencies
+  std::vector<int> p_busid;
+  std::vector<std::string> p_genid;
+  // Status of generator before contingency
+  std::vector<bool> p_saveGenStatus;
+};
+\end{Verbatim}
+}
+
+The variable \texttt{\textbf{p\_type}} corresponds to an enumerated type that can have the values \texttt{\textbf{Generator}} and \texttt{\textbf{Branch}}. The variables \texttt{\textbf{p\_saveLinesStatus}} and \texttt{\textbf{p\_saveGenStatus}} are used internally and do not have to be set by the user. The remaining variables are used to describe the lines and generators that may fail during a contingency event. These variables are all vectors, since a single contingency could theoretically represent the failure of multiple elements. For failures of type \texttt{\textbf{Branch}}, the variables \texttt{\textbf{p\_from}} and \texttt{\textbf{p\_to}} are the original indices of the ``from'' and ``to'' bus that identify a branch and the variable \texttt{\textbf{p\_ckt}} is the 2 character identifier of the individual transmission element. For failures of type \texttt{\textbf{Generator}}, \texttt{\textbf{p\_busid}} is the original index of the bus and \texttt{\textbf{p\_genid}} is the 2 character identifier of the generator that fails. An example of how to use this functionality is given in the contingency analysis application that can be found under \texttt{\textbf{src/applications/contingency\_analysis}}. This is also a good example of how to use modules.
+
+Two calls
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool setContingency(Contingency &event)
+
+bool unsetContingency(Contingency &event)
+\end{Verbatim}
+}
+
+can be used to set or unset a contingency. The call \texttt{\textbf{unsetContingency}} should only be called after calling \texttt{\textbf{setContingency}} and it should use the same \texttt{\textbf{event}} argument. After calling the \texttt{\textbf{unsetContingency}} method, the network should have the same configuration as before calling the \texttt{\textbf{setContingency}} method.
+
+The remaining calls in \texttt{\textbf{PFAppModule}} can be used to determine the status of a network after solving a configuration with a contingency. The functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool checkVoltageViolations(double Vmin, double Vmax)
+
+bool checkVoltageViolations(int area, double Vmin, double Vmax)
+\end{Verbatim}
+}
+
+can be used to check for a voltage violation anywhere in the system where \texttt{\textbf{Vmin}} and \texttt{\textbf{Vmax}} are the minimum and maximum allowable voltage excursions (per unit). The second function only checks for violations on buses with the specified value of \texttt{\textbf{area}}. These functions are true if there are no voltage violations and return false if a violation is found on one or more buses. It frequently turns out that many networks have voltage violations even in the absence of any contingencies and it is often desirable to ignore these violations. This can be accomplished using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void ignoreVoltageViolations(double Vmin, double Vmax)
+\end{Verbatim}
+}
+
+If this function is called after solving the power flow system in the absence of any contingencies, then buses that contain violations will be ignored in subsequent checks of violations. These settings can be undone by calling
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void clearVoltageViolations()
+\end{Verbatim}
+}
+
+Line overload violations can be checked by calling one of the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool checkLineOverloadViolations()
+
+bool checkLineOverloadViolations(int area)
+\end{Verbatim}
+}
+
+The limits on the line are contained in parameters read in from the network configuration file so these functions have no arguments describing the line limits. The second function will only check for violations on lines with the specified value of \texttt{\textbf{area}}. Like voltage violations, branches that display line overload violations that are present even without contingencies can be ignored in the checks by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void ignoreLineOverloadViolations()
+\end{Verbatim}
+}
+
+after running a calculation on the system without contingencies. These settings can be cleared using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void clearLineOverloadViolations()
+\end{Verbatim}
+}
+
+Finally, the internal voltage variables that are used as the solution variables in the power flow calculation can be reset to their original values (specified in the network configuration file) by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void resetVoltages()
+\end{Verbatim}
+}
+
+Again, this may be useful in contingency calculations where multiple calculations are run on the same network and it is desirable that they all start with the same initial condition.

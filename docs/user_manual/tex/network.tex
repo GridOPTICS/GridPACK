@@ -1,0 +1,220 @@
+\section{Network Module}
+
+The network module is designed to represent the power grid and has four major functions:
+
+\begin{enumerate}
+\item  The network is a container for the grid topology. The connectivity of the network is maintained by the network object and can be made available through requests to the network. The network also maintains the ``ghost'' status of buses and branches and determines whether a bus or branch is owned by a particular processor or represents a ghost image of a bus or branch owned by a neighboring processor.
+
+\item  The network topology can be decorated with bus and branch objects that describe the properties of the particular physical system under investigation. Bus and branch objects are written by the application developer and incorporate the grid model and the analyses that need to be performed on it. Different applications will use different bus and branch implementations.
+
+\item  The network module is responsible for supplying update operations that can be used to fill in the value of ghost cell fields with current data from other processors. The updates of ghost buses and ghost branches have been split into separate operations to give users flexibility in optimizing performance by minimizing the amount of data that needs to be communicated in the code. Many applications do not require exchanges of branch data.
+
+\item  The network contains the partitioner. The partitioner is embedded in the network module but it is a substantial computational technology in its own right. Partitioning is a key part of parallel application development. It represents the act of dividing up the problem so that each processor is left with approximately equal amounts of work. At the same time, the partition is chosen so that communication between processors (a major source of computational inefficiency in HPC programs) is minimized. 
+\end{enumerate}
+
+A network is illustrated schematically in Figure~\ref{fig:network}. Each bus and branch has an associated bus or branch object. The buses and branches are derived from base classes that specify certain functions that must be implemented by the application developer so that the network can interact with other GridPACK modules. In addition, the application can have functionality outside the base class that is unique to the particular application.
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=5.52in, height=3.88in,
+keepaspectratio=true]{figures/Grid-network}
+  \caption{Schematic representation of a GridPACK network. The squares are branch objects and the circles are bus objects. Framework-specified interfaces are green and user supplied functionality is blue.}
+  \label{fig:network}
+\end{figure}
+
+A major use of the partitioner is to rearrange the network in a form that is useful for computation immediately after it is read in from an external file. Typically, the information in the external file is not organized in a way that is necessarily optimal for computation, so the partitioner must redistribute data such that each processor contains at most a few large connected subsets of the network. The partitioner is also responsible for adding the ghost buses and branches to the system.
+
+Ghost buses and branches in a parallel program represent images of buses and branches that are owned by other processes. In order to carry out operations on buses and branches it is frequently necessary to gain access to data associated with attached buses and branches. The most efficient way to do this is to create copies of the buses and branches from other processors that are connected to locally owned objects. All local network components then have a complete set of attached neighbors. The ghost objects are updated collectively with current information from their home processors at points in the computation. Updating all ghosts at once is almost always more efficient than accessing data from one remote bus or branch at a time.
+
+The use of the partitioner to distribute the network between different
+processors and create ghost nodes and branches is illustrated in
+Figure~\ref{fig:partition}. Figure~\ref{fig:partition}(a) shows a simple network
+and Figure~\ref{fig:partition}(b) and Figure~\ref{fig:partition}(c) show the
+result of distributing the network between two processors.
+Figure~\ref{fig:partition}(a) shows a connected network that has been
+partitioned between two processors such that each processor owns roughly equally
+sized connected pieces. Figure~\ref{fig:partition}(b) and
+Figure~\ref{fig:partition}(c) show the pieces of the network on each processor
+after the ghost buses and branches have been added. Note that the ghost buses
+and branches represent connections that are split by the partition in
+Figure~\ref{fig:partition}(a).
+
+\begin{figure}
+  \centering
+    \includegraphics*[width=3.5in, keepaspectratio=true, trim=0.00in 0.30in 0.00in 0.40in]{figures/PartitionFull}
+    \includegraphics*[width=4in, height=3.55in, keepaspectratio=true]{figures/Partition0}
+    \includegraphics*[width=4in, height=3.55in, keepaspectratio=true]{figures/Partition1}
+  \caption{ A (a) simple network, (b) partition of network on processor 0, and (c) partition of network on processor 1. Open circles indicate ghost buses and dotted lines indicate ghost branches.}
+  \label{fig:partition}
+\end{figure}
+
+%\noindent \includegraphics*[width=6.50in, height=3.55in, keepaspectratio=false, trim=0.00in 0.45in 0.00in 0.87in]{image69}
+
+%\noindent \includegraphics*[width=6.50in, height=3.54in, keepaspectratio=false, trim=0.00in 0.41in 0.00in 0.93in]{image70}
+
+%\noindent \includegraphics*[width=6.50in, height=3.24in, keepaspectratio=false, trim=0.00in 0.69in 0.00in 0.95in]{image71}
+
+%\textcolor{red}{\texttt{\textbf{Figure 4.}} (a) a simple network (b) partition of network on processor 0 (b) partition of network on processor 1. Open circles indicate ghost buses and dotted lines indicate ghost branches.}
+
+Networks can be created using the templated base class \texttt{\textbf{BaseNetwork$\boldsymbol{\mathrm{<}}$class Bus, class Branch$\boldsymbol{\mathrm{>}}$}}, where \texttt{\textbf{Bus}} and \texttt{\textbf{Branch}} are application-specific classes describing the properties of buses and branches in the network. The \texttt{\textbf{BaseNetwork}} class is defined within the \texttt{\textbf{gridpack::network}} namespace. In addition to the \texttt{\textbf{Bus}} and \texttt{\textbf{Branch}} classes, each bus and branch has an associated \texttt{\textbf{DataCollection}} object, which is described in more detail in the data interface section. The \texttt{\textbf{DataCollection}} object is a collection of key-value pairs that acts as an intermediary between data that is read in from external configuration files and the bus and branch classes that define the network.
+
+The \texttt{\textbf{BaseNetwork}} class contains a large number of methods, but only a relatively small number will be of interest to most application developers. Users that are interested in building networks from scratch instead of using one of the GridPACK parser modules can read the section on advanced network functionality that describes methods used primarily within other GridPACK modules to implement higher level capabilities. This section will focus on calls that are likely to be used by application developers.
+
+The constructor for the network class is the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+BaseNetwork(const parallel::Communicator &comm)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{Communicator}} object is used to define the set of
+processors over which the network is distributed. Communicators are discussed in
+more detail in section~\ref{communicator}. The network constructor creates an empty shell that does not contain any information about an actual network. The remainder of the network must be built up by adding buses and branches to it. Typically, buses and branches are added by passing the network to a parser (see import module) which will create an initial version of the network. The constructor is paired with a corresponding destructor
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+~BaseNetwork()
+\end{Verbatim}
+}
+
+that is called when the network object passes out of scope or is explicitly deleted by the user.
+Two functions are available that return the number of buses or branches that are available on a process. This number includes both buses and branches that are held locally as well as any ghosts that may be located on the process.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int numBuses()
+
+int numBranches()
+\end{Verbatim}
+}
+
+There are also functions that will return the total number of buses or branches in the network. These numbers ignore ghost buses and ghost branches.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int totalBuses()
+
+int totalBranches()
+\end{Verbatim}
+}
+
+Buses and branches in the network can be identified using a local index that runs from 0 to the number of buses or branches on the process minus 1 (0-based indexing). For some calculations, it is necessary to identify one bus in the network as a reference bus. This bus is usually set when the network is created using an import parser. It can subsequently be identified using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int getReferenceBus()
+\end{Verbatim}
+}
+
+If the reference bus is located on this processor (either as a local bus or a ghost) then this function returns the local index of the bus, otherwise it returns -1.
+
+Ghost buses and branches are distinguished from locally owned buses and branches based on whether or not they are ``active''. The two functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool getActiveBus(int idx)
+
+bool getActiveBranch(int idx)
+\end{Verbatim}
+}
+
+provide the active status of a bus or branch on a process. The index \texttt{\textbf{idx}} is a local index for the bus or branch.
+Buses and branches are characterized by a number of different indices. One is the local index, already discussed above, but there are several others. Most of these are used internally by other parts of the framework but one index is of interest to application developers. This is the ``original'' bus index. When the network is described in the input file, the buses are labeled with a (usually) positive integer. There or no requirements that these integers be consecutive, only that each bus has its own unique index. The value of this index can be recovered using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+int getOriginalBusIndex(int idx)
+\end{Verbatim}
+}
+
+The variable \texttt{\textbf{idx}} is the local index of the bus. Branches are usually described in terms of the original bus indices for the two buses at each end of the branch, so there is no corresponding function for branches. Instead, the procedure is to get the local indices of the two buses at each end of the branch and then get the corresponding original indices of the buses. This information is usually used for output.
+
+It is frequently necessary to gain access to the objects associated with each bus or branch. The following four methods can be used to access these objects
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+boost::shared_ptr<Bus> getBus(int idx)
+
+boost::shared_ptr<Branch> getBranch(int idx)
+
+boost::shared_ptr<DataCollection> getBusData(int idx)
+
+boost::shared_ptr<DataCollection> getBranchData(int idx)
+\end{Verbatim}
+}
+
+The first two methods can be used to get Boost shared pointers to individual bus or branch objects indexed by local indices \texttt{\textbf{idx}}. The second two functions return pointers to the \texttt{\textbf{DataCollection }}objects associated with each bus or branch. These \texttt{\textbf{DataCollection}} objects can be used to initialize the bus and branch objects at the start of a calculation but they are also useful when converting a network of one type to a network of another type. This often happens when different computations are chained together.
+The following functions can be useful for handling input that is directed at certain network components
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<int> getLocalBusIndices(int idx)
+
+std::vector<int> getLocalBranchIndices(int idx1, int idx2)
+\end{Verbatim}
+}
+
+These functions return a list of local indices that correspond to either the original bus index \texttt{\textbf{idx }}for a bus, or the pair of indices \texttt{\textbf{idx1}}, \texttt{\textbf{idx2}} for a branch. The reason that a list is returned instead of a single index is that in the case of ghost buses and branches, more than one copy of a network component may exist on a process. If no copies of a network component exist on a process then the returned vector has zero length. These functions can be used for applications such as contingency analysis, where modifications are made to a single network component and the modifications are specified in terms of the original bus indices. These functions can be used to find the local index of the component, if it exists. 
+The network partitioner can be accessed via the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void partition()
+\end{Verbatim}
+}
+
+The partition function distributes the buses and branches across processors such that the connectivity to branches and buses on other processors is minimized. It is also responsible for adding ghost buses and branches to the network. This function should be called after the network is read in but before any other operations, such as setting up exchange buffers or creating neighbor lists, have been performed.
+Finally, two sets of functions are required in order to set up and execute data
+exchanges between buses and branches in a distributed network. These exchanges
+are used to move data from active components to ghost components residing on
+other processors. Before these functions can be called, the buffers in
+individual network components must be allocated. See the documentation on
+network components in section~\ref{network_components} and the network factory
+in section~\ref{factory} for more information on how to do this. Once the buffers are in place, bus and branch exchanges can be set up and executed with just a few calls. The functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void initBusUpdate()
+
+void initBranchUpdate()
+\end{Verbatim}
+}
+
+are used to initialize the data structures inside the network object that manage data exchanges. Exchanges between buses and branches are handled separately, since not all applications will require exchanges between both sets of objects. The initialization routines are relatively complex and allocate several large internal data structures, so they should not be called if there is no need to exchange data as part of the algorithm.
+
+After the updates have been initialized, it is possible to execute a data exchange at any point in the code by calling the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void updateBuses()
+
+void updateBranches()
+\end{Verbatim}
+}
+
+These functions will cause data on ghost buses and branches to be updated with current values from active buses and branches located on other processors.
+One additional network function that can be useful in certain circumstances is the capability for recovering the communicator on which the network is defined
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+const Communicator& communicator() const
+\end{Verbatim}
+}
+
+This function can be used in implementing algorithms based on multilevel parallelism. Recovering the communicator is also needed for converting applications to modules that can be used to create higher level workflows that combine multiple different types of applications. This is discussed in more detail below.
+
+The \texttt{\textbf{BaseNetwork}} methods described in this section are only a subset of the total functionality available but they represent most of the methods that a typical developer would use. The remaining functions are primarily used to implement other parts of the GridPACK framework but are generally not required by people writing applications. More information on how the functions described above are used in practice can be found in the section on GridPACK factories.

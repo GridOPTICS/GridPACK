@@ -1,0 +1,69 @@
+\section{Task Manager}
+
+The task manager functionality is designed to parcel out tasks on a first come, first serve basis to processes in a parallel application. Each processor can request a task ID from the task manager and based on the value it receives, it will execute a block of work corresponding to the ID. The task manager guarantees that all IDs are sent out once and only once. The unique feature of the task manager is that if the tasks take unequal amounts of time, then processes with longer tasks will make fewer requests to the task manager than processes that have relatively short tasks. This leads to an automatic dynamic load balancing of the application that can substantially improve performance. The task manager also supports multi-level parallelism and can be used in conjunction with the sub-communicators described above to implement parallel tasks within a parallel application. An example of the use of communicators and task managers to create a code that uses multiple levels of parallelism can be found in the contingency analysis application that is part of the GridPACK distribution.
+
+Task managers use the \texttt{\textbf{gridpack::parallel}} namespace. Task managers can be created either on the world communicator or on a subcommunicator. Two constructors are available.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+TaskManager(void)
+
+TaskManager(Communicator comm)
+\end{Verbatim}
+}
+
+The first constructor must be called on all processors in the system and creates a task manager on the world communicator, the second is called on all processors within the communicator \texttt{\textbf{comm}}. Once the task manager has been created, the number of tasks must be set. This can be done with the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void set(int ntask)
+\end{Verbatim}
+}
+
+where the variable \texttt{\textbf{ntask}} corresponds to the total number of tasks to be performed. This call is collective on all processes in the communicator and each process must use the same value of \texttt{\textbf{ntask}}. The task IDs returned by the task manager will range from 0 to \texttt{\textbf{ntask}}-1.
+
+Once the task manager has been created, task IDs can be retrieved from the task manager using one of the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool nextTask(int *next)
+
+bool nextTask(Communicator &comm, int *next)
+\end{Verbatim}
+}
+
+The first function is called on a single processor and returns the task ID in the variable \texttt{\textbf{next}}. The second is called on the communicator \texttt{\textbf{comm}} by all processors in \texttt{\textbf{comm}} and returns the same task ID on all processors (note that if all processors in \texttt{\textbf{comm}} called the first \texttt{\textbf{nextTask}} function, each processor in \texttt{\textbf{comm}} would end up with a different task ID). The communicator argument in the second \texttt{\textbf{nextTask}} call should be a subcommunicator relative to the communicator that was used to create the task manager. Both functions return true if the task manager has not run out of tasks, otherwise they return false and the value of \texttt{\textbf{next}} is set to -1.
+
+The task manager also has a function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void printStats(void)
+\end{Verbatim}
+}
+
+that can be used to print out information to standard out about how many tasks were assigned to each process.
+
+A simple code fragment shows how communicators and task managers can be combined to create an application exhibiting multi-level parallelism.
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+  gridpack::parallel::Communicator world
+  int grp_size = 4;
+  gridpack::parallel::Communicator task_comm = world.divide(grp_size);
+  App app(task_comm);
+  gridpack::parallel::TaskManager taskmgr;
+  taskmgr.set(ntasks);
+  int task_id;
+  while(taskmgr.nextTask(task_comm, &task_id) {
+    app.execute(task_data[task_id]);
+  }
+\end{Verbatim}
+}
+
+This code divides the world communicator into sub-communicators containing at most 4 processes. An application is created on each task communicator and a task manager is created on the world group. The task manager is set to execute \texttt{\textbf{ntasks}} tasks and a while loop is created to execute each task. Each call to \texttt{\textbf{nextTask}} returns the same value of \texttt{\textbf{task\_id}} to the processors in \texttt{\textbf{task\_comm}}. This ID is used to index into an array \texttt{\textbf{task\_data}} of data structures that contain the input data necessary to execute the task. The size of \texttt{\textbf{task\_data}} corresponds to the value of \texttt{\textbf{ntasks}}. When the task manager runs out of tasks, the loop terminates. Note that this structure does not guarantee that tasks are mapped to processors in any fixed order. There is no guarantee that task 0 is executed on process 0 or that some process will execute a given number of tasks. If one task takes significantly longer than other tasks then it is likely that other processors will pick up work from the processors executing the longer task. This balances the workload if each process is involved in multiple tasks. Once the workload drops to 1 task per process, this advantage is lost.
