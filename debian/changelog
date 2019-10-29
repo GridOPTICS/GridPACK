@@ -1,3 +1,9 @@
+gridpack (3.3.0ppa5) bionic; urgency=medium
+
+  * Add another (weird) build dependency so the package will build on bionic.
+
+ -- William A. Perkins <william.perkins@pnnl.gov>  Tue, 29 Oct 2019 10:10:06 -0700
+
 gridpack (3.3.0ppa4) bionic; urgency=medium
 
   * Bump version for bionic
