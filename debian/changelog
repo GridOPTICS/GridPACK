@@ -1,3 +1,9 @@
+gridpack (3.3.0ppa6) xenial; urgency=medium
+
+  * Correctly specify built GA libraries in GridPACK.cmake
+
+ -- William A. Perkins <william.perkins@pnnl.gov>  Tue, 29 Oct 2019 14:33:30 -0700
+
 gridpack (3.3.0ppa5) bionic; urgency=medium
 
   * Add another (weird) build dependency so the package will build on bionic.
