@@ -406,12 +406,133 @@ std::vector<gridpack::rtpr::TieLine>
     tieline.from = atoi(from_to[0].c_str());
     tieline.to = atoi(from_to[1].c_str());
     std::string tag;
-    tielines[idx]->get("Branch",&tag);
+    tielines[idx]->get("Tag",&tag);
     std::string clean_tag = utils.clean2Char(tag);
     strncpy(tieline.tag,clean_tag.c_str(),2);
     tieline.tag[2] = '\0';
     ret.push_back(tieline);
   }
+  return ret;
+}
+
+/**
+ * Automatically create list of tie lines between area1,zone1 and
+ * area2,zone2
+ * @param area1 index of source area
+ * @param zone1 index of source zone
+ * @param area2 index of destination area
+ * @param zone2 index of destination zone
+ * @param tielines list of tie lines between area1,zone1 and area2,zone2
+ */
+std::vector<gridpack::rtpr::TieLine> 
+  gridpack::rtpr::RTPRDriver::getTieLines(int area1, int zone1,
+    int area2, int zone2)
+{
+  std::vector<gridpack::rtpr::TieLine> ret;
+  // Loop through all branches and find the ones that connect area1,zone1 with
+  // area2,zone2
+  int nbranch = p_pf_network->numBranches();
+  int i, j, idx1, idx2;
+  int iarea1, iarea2, izone1, izone2, tzone1, tzone2;
+  bool found;
+  for (i=0; i<nbranch; i++) {
+    if (p_pf_network->getActiveBranch(i)) {
+      gridpack::powerflow::PFBranch *branch = p_pf_network->getBranch(i).get();
+      p_pf_network->getBranchEndpoints(i,&idx1,&idx2);
+      gridpack::powerflow::PFBus *bus1 = p_pf_network->getBus(idx1).get();
+      gridpack::powerflow::PFBus *bus2 = p_pf_network->getBus(idx2).get();
+      iarea1 = bus1->getArea();
+      iarea2 = bus2->getArea();
+      izone1 = bus1->getZone();
+      izone2 = bus2->getZone();
+      // Check bus1 corresponds to area1,zone1, bus 2 corresponds to area2/zone2
+      found = false;
+      if (zone1 > 0) {
+        tzone1 = izone1;
+      } else {
+        tzone1 = zone1;
+      }
+      if (zone2 > 0) {
+        tzone2 = izone2;
+      } else {
+        tzone2 = zone2;
+      }
+      if (iarea1 == area1 && tzone1 == zone1 &&
+          iarea2 == area2 && tzone2 == zone2) {
+        found = true;
+        int from, to;
+        p_pf_network->getOriginalBranchEndpoints(i,&from,&to);
+        std::vector<std::string> tags = branch->getLineIDs();
+        for (j=0; j<tags.size(); j++) {
+          gridpack::rtpr::TieLine tieline;
+          tieline.from = from;
+          tieline.to = to;
+          strncpy(tieline.tag,tags[j].c_str(),2);
+          tieline.tag[2] = '\0';
+          ret.push_back(tieline);
+        }
+      }
+      // Check bus2 corresponds to area1,zone1, bus 1 corresponds to area2/zone2
+      if (!found) {
+        if (zone1 > 0) {
+          tzone2 = izone1;
+        } else {
+          tzone2 = zone1;
+        }
+        if (zone2 > 0) {
+          tzone1 = izone2;
+        } else {
+          tzone1 = zone2;
+        }
+        if (iarea2 == area1 && tzone1 == zone1 &&
+            iarea1 == area2 && tzone2 == zone2) {
+          int from, to;
+          p_pf_network->getOriginalBranchEndpoints(i,&from,&to);
+          std::vector<std::string> tags = branch->getLineIDs();
+          for (j=0; j<tags.size(); j++) {
+            gridpack::rtpr::TieLine tieline;
+            tieline.from = from;
+            tieline.to = to;
+            strncpy(tieline.tag,tags[j].c_str(),2);
+            tieline.tag[2] = '\0';
+            ret.push_back(tieline);
+          }
+        }
+      }
+    }
+  }
+  // Have a list of local tie lines. Find out total number of tie lines.
+  int ntie = ret.size();
+  int nproc = p_pf_network->communicator().size();
+  int me = p_pf_network->communicator().rank();
+  std::vector<int> sizes(nproc);
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = ntie;
+  p_pf_network->communicator().sum(&sizes[0], nproc);
+  // create global list of tie lines
+  ntie = 0;
+  for (i=0; i<nproc; i++) ntie += sizes[i];
+  if (ntie == 0) {
+    return ret;
+  }
+  int g_tie = GA_Create_handle();
+  int one = 1;
+  int itype = NGA_Register_type(sizeof(gridpack::rtpr::TieLine));
+  NGA_Set_data(g_tie,one,&ntie,itype);
+  NGA_Allocate(g_tie);
+  int lo, hi;
+  lo = 0; 
+  for (i=0; i<me; i++) lo += sizes[i];
+  hi = lo + sizes[me] - 1;
+  // Create a complete list on all processes
+  if (lo <= hi) NGA_Put(g_tie,&lo,&hi,&ret[0],&one);
+  p_pf_network->communicator().sync();
+  ret.resize(ntie);
+  lo = 0;
+  hi = ntie-1;
+  NGA_Get(g_tie,&lo,&hi,&ret[0],&one);
+  GA_Destroy(g_tie);
+  NGA_Deregister_type(itype);
   return ret;
 }
 
@@ -497,6 +618,17 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       calcLineCntngcy = true;
     }
   }
+  bool calcTieLines;
+  if (!cursor->get("calculateTieLines",&tmp_bool)) {
+    calcTieLines = false;
+  } else {
+    util.toLower(tmp_bool);
+    if (tmp_bool == "false") {
+      calcTieLines = false;
+    } else {
+      calcTieLines = true;
+    }
+  }
   if (!cursor->get("minVoltage",&p_Vmin)) {
     p_Vmin = 0.9;
   }
@@ -506,23 +638,6 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   // Check for Q limit violations
   if (!cursor->get("checkQLimit",&p_check_Qlim)) {
     p_check_Qlim = false;
-  }
-  // Check for tie lines Set cursor so that it points to the
-  // TieLines block in the input file
-  cursor = config->getCursor(
-      "Configuration.RealTimePathRating.tieLines");
-  gridpack::utility::Configuration::ChildCursors
-    tielines;
-  if (cursor) cursor->children(tielines);
-  std::vector<gridpack::rtpr::TieLine>  ties = getTieLines(tielines);
-  int p_numTies = ties.size();
-  p_from_bus.resize(p_numTies);
-  p_to_bus.resize(p_numTies);
-  p_tags.resize(p_numTies);
-  for (i=0; i<p_numTies; i++) {
-    p_from_bus[i] = ties[i].from;
-    p_to_bus[i] = ties[i].to;
-    p_tags[i] = ties[i].tag;
   }
 
   // Create task communicators from world communicator
@@ -593,8 +708,38 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_events.push_back(branchContingencies[ic]);
     }
   }
-  // Contingencies are now available. Print out a list of contingencies from
-  // process 0 (the list is replicated on all processors)
+  // Check for tie lines Set cursor so that it points to the
+  // TieLines block in the input file
+  std::vector<gridpack::rtpr::TieLine>  ties;
+  if (!calcTieLines) {
+    cursor = config->getCursor(
+        "Configuration.RealTimePathRating.tieLines");
+    gridpack::utility::Configuration::ChildCursors
+      tielines;
+    if (cursor) cursor->children(tielines);
+    ties = getTieLines(tielines);
+  } else {
+    ties = getTieLines(p_srcArea,p_srcZone,p_dstArea,p_dstZone);
+  }
+  int p_numTies = ties.size();
+  p_from_bus.resize(p_numTies);
+  p_to_bus.resize(p_numTies);
+  p_tags.resize(p_numTies);
+  for (i=0; i<p_numTies; i++) {
+    p_from_bus[i] = ties[i].from;
+    p_to_bus[i] = ties[i].to;
+    p_tags[i] = ties[i].tag;
+  }
+  // Print out list of tie lines
+  if (p_world.rank() == 0) {
+    printf("List of Tie Lines\n");
+    for (i=0; i<p_numTies; i++) {
+      printf("From bus: %8d To bus: %8d Line ID: %s\n",p_from_bus[i],
+          p_to_bus[i],p_tags[i].c_str());
+    }
+  }
+  // Print out a list of contingencies from process 0
+  // (the list is replicated on all processors)
   if (p_world.rank() == 0) {
     int idx;
     for (idx = 0; idx < p_events.size(); idx++) {
@@ -622,16 +767,13 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   }
 
   bool checkTie = runContingencies();
-
   double rating = 1.0;
   if (checkTie) {
     // Tie lines are secure for all contingencies. Increase loads and generation
-    while (checkTie && rating >= 0.0) {
+    while (checkTie && rating) {
       rating += 0.05;
-  printf("Rating: %f\n",rating);
       p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
       if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
-        printf("p[%d] Immediately bail on +0.05\n",p_world.rank());
         rating -= 0.05;
         p_pf_app.resetRealPower();
         break;
@@ -641,12 +783,10 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_pf_app.resetRealPower();
     }
     // Refine estimate of rating
-    while (checkTie && rating >= 0.0) {
+    while (checkTie && rating) {
       rating += 0.01;
-  printf("Rating: %f\n",rating);
       p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
       if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
-        printf("p[%d] Immediately bail on +0.01\n",p_world.rank());
         rating -= 0.01;
         p_pf_app.resetRealPower();
         break;
@@ -656,8 +796,8 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_pf_app.resetRealPower();
     }
   } else {
-    // Tie lines are inssecure for some contingencies. Decrease loads and generation
-    while (checkTie && rating <= 2.0) {
+    // Tie lines are insecure for some contingencies. Decrease loads and generation
+    while (!checkTie && rating >= 0.0) {
       rating -= 0.05;
       p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
       if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
@@ -666,11 +806,11 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
         break;
       }
       checkTie = runContingencies();
-      if (!checkTie) rating += 0.05;
+      if (checkTie) rating += 0.05;
       p_pf_app.resetRealPower();
     }
     // Refine estimate of rating
-    while (checkTie && rating <= 2.0) {
+    while (!checkTie && rating >= 0.0) {
       rating -= 0.01;
       p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
       if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
@@ -679,11 +819,12 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
         break;
       }
       checkTie = runContingencies();
-      if (!checkTie) rating += 0.01;
       p_pf_app.resetRealPower();
     }
   }
-  printf("Final Rating: %f\n",rating);
+  if (p_world.rank() == 0) {
+    printf("Final Rating: %f\n",rating);
+  }
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
@@ -700,6 +841,8 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
 bool gridpack::rtpr::RTPRDriver::runContingencies()
 {
   bool ret = true;
+  bool chkLines;
+  bool chkSolve;
   // Keep track of failed calculations
   std::vector<int> contingency_idx;
   std::vector<bool> violations;
@@ -718,18 +861,20 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   p_pf_app.setVoltageLimits(p_Vmin, p_Vmax);
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
-  p_pf_app.solve();
+  chkSolve = p_pf_app.solve();
   // Check for Qlimit violations
   if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
-    p_pf_app.solve();
+    chkSolve = p_pf_app.solve();
   }
+  if (!chkSolve) printf("Failed solution on continency 0\n");
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   p_pf_app.ignoreVoltageViolations();
 
   // Check for tie line violations
-  ret = ret && p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus,
+  chkLines = p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus,
       p_tags, violations);
+  ret = ret && chkLines;
 
   // Set up task manager on the world communicator. The number of tasks is
   // equal to the number of contingencies
@@ -739,7 +884,6 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
 
   // Get bus voltage information for base case
   if (p_check_Qlim) p_pf_app.clearQlimViolations();
-
 
   // Evaluate contingencies using the task manager
   int task_id;
@@ -789,16 +933,19 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
     contingency_idx.push_back(task_id);
 #endif
     if (p_pf_app.solve()) {
+      chkSolve = true;
 #ifdef USE_SUCCESS
       contingency_success.push_back(true);
 #endif
       if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
-        p_pf_app.solve();
+        chkSolve = p_pf_app.solve();
       }
+      if (!chkSolve) printf("Failed solution on continency %d\n",task_id+1);
       // If power flow solution is successful, write out voltages and currents
       if (p_print_calcs) p_pf_app.write();
-      ret = ret && p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus, p_tags,
+      chkLines = p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus, p_tags,
           violations);
+      ret = ret && chkLines;
       // Check for violations
       bool ok1 = p_pf_app.checkVoltageViolations();
       bool ok2 = p_pf_app.checkLineOverloadViolations();
@@ -836,6 +983,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
       if (p_print_calcs) p_pf_app.writeCABranch();
       if (p_check_Qlim) p_pf_app.clearQlimViolations();
     } else {
+      if (!chkSolve) printf("Failed solution on continency %d\n",task_id+1);
 #ifdef USE_SUCCESS
       contingency_success.push_back(false);
       contingency_violation.push_back(0);
@@ -904,6 +1052,5 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   } else {
     ret = false;
   }
-  printf("p[%d] Completed contingency analysis on all processors\n",p_world.rank());
   return ret;
 }

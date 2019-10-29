@@ -441,12 +441,13 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(
       gridpack::powerflow::PFBranch *branch = p_network->getBranch(indices[j]).get();
       // Loop over all lines in the branch and choose the smallest rating value
       int nlines;
-      p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      p_network->getBranchData(indices[j])->getValue(BRANCH_NUM_ELEMENTS,&nlines);
       std::vector<std::string> alltags = branch->getLineTags();
       double rateA;
       for (int k = 0; k<nlines; k++) {
         if (tags[i] == alltags[k] && !branch->getIgnore(tags[k])) {
-          if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
+          if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_A,
+                &rateA,k)) {
             if (rateA > 0.0) {
               gridpack::ComplexType s = branch->getComplexPower(tags[k]);
               double pq = abs(s);
@@ -459,9 +460,8 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(
       }
     }
   }
-  int nproc = p_network->communicator().size();
-  p_network->communicator().sum(&failure[0],nproc);
-  for (i=0; i<nproc; i++) {
+  p_network->communicator().sum(&failure[0],nbranch);
+  for (i=0; i<nbranch; i++) {
     if (failure[i] == 0) {
       violations.push_back(true);
     } else {
@@ -469,6 +469,7 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(
       branch_ok = false;
     }
   }
+  return branch_ok;
 }
 
 /**
@@ -666,7 +667,6 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
     } else {
       izone = zone;
     }
-    printf("bus area: %d bus zone: %d\n",bus->getArea(),izone);
     if (bus->getArea() == area && zone == izone) {
       bus->getGeneratorMargins(tags,current,slack,excess,status);
       int j, nsize;
@@ -674,7 +674,6 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
       if (scale > 1.0) {
         for (j=0; j<nsize; j++) {
           if (status[j]) {
-      printf("excess[%d]: %f current[%d]: %f\n",j,excess[j],j,current[j]);
             capacity += excess[j];
             total += current[j];
           }
@@ -689,7 +688,6 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
       }
     }
   }
-      printf("capacity: %f total: %f\n",capacity,total);
   p_network->communicator().sum(&capacity,1);
   p_network->communicator().sum(&total,1);
   double change = delta*total;
@@ -697,7 +695,6 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
   if (scale > 1.0) {
     if (change > capacity && total > 0.0) {
       frac = (capacity+total)/total;
-      printf("Capacity is maxed out frac: %f\n",frac);
       ret = false;
     } else if (total > 0.0) {
       frac = (change+total)/total;

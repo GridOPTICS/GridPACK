@@ -267,7 +267,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       *p_PV_ptr = false;
       pl -= ppl;
     //p_gstatus.clear();
-      for (int i=0; i<p_gstatus.size(); i++) {
+      for (i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
         p_qg[i] = p_qmax[i];
@@ -287,7 +287,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       p_isPV = false;
       pl -= ppl;
     //  p_gstatus.clear();
-      for (int i=0; i<p_gstatus.size(); i++) {
+      for (i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
         p_qg[i] = p_qmin[i];
@@ -1432,6 +1432,10 @@ void gridpack::powerflow::PFBus::scaleGeneratorRealPower(std::string tag,
     if (p_gid[i] == tag && p_gstatus[i]) {
       if (value > 1.0) {
         double excess = p_pt[i]-p_pg[i];
+        if (excess < 0.0) {
+          printf("bus: %d generator: %s excess (pt): %f (pg): %f\n",
+              getOriginalIndex(),tag.c_str(),p_pt[i],p_pg[i]);
+        }
         p_pg[i] += (value-1.0)*excess;
       } else {
         double slack = p_pg[i]-p_pb[i];
@@ -1477,7 +1481,7 @@ void gridpack::powerflow::PFBus::scaleLoadRealPower(std::string tag, double valu
 {
   int i;
   for (i=0; i<p_nload; i++) {
-    if (p_lid[i] == tag) {
+    if (p_lid[i] == tag && p_lstatus[i]) {
       p_pl[i] = value*p_pl[i];
       break;
     }
@@ -2158,6 +2162,15 @@ double gridpack::powerflow::PFBranch::getBranchRatingC(std::string tag)
     }
   }
   return ret;
+}
+
+/**
+ * Get list of line IDs
+ * @return list of line identifiers
+ */
+std::vector<std::string> gridpack::powerflow::PFBranch::getLineIDs()
+{
+  return p_ckt;
 }
 
 /**

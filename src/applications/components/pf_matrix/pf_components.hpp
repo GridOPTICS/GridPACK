@@ -611,6 +611,12 @@ class PFBranch
     double getBranchRatingC(std::string tag);
 
     /**
+     * Get list of line IDs
+     * @return list of line identifiers
+     */
+    std::vector<std::string> getLineIDs();
+
+    /**
      * Set parameter to ignore voltage violations
      * @param tag identifier of line element
      * @param flag value of ignore parameter

@@ -106,6 +106,18 @@ class RTPRDriver
           gridpack::utility::Configuration::ChildCursors &tielines);
 
     /**
+     * Automatically create list of tie lines between area1,zone1 and
+     * area2,zone2
+     * @param area1 index of source area
+     * @param zone1 index of source zone
+     * @param area2 index of destination area
+     * @param zone2 index of destination zone
+     * @param tielines list of tie lines between area1,zone1 and area2,zone2
+     */
+    std::vector<gridpack::rtpr::TieLine> getTieLines(int area1, int zone1,
+        int area2, int zone2);
+
+    /**
      * Execute application
      * @param argc number of arguments
      * @param argv list of character strings
