@@ -3,7 +3,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 12, 2018 by William A. Perkins
-# Last Change: 2019-10-25 12:24:00 d3g096
+# Last Change: 2019-10-29 13:23:08 d3g096
 # -------------------------------------------------------------
 
 # -------------------------------------------------------------
@@ -16,6 +16,8 @@
 #  GA_DIR          - root directory of GA installation
 #  GA_INCLUDE_DIRS - include directories for GA
 #  GA_LIBRARIES    - libraries for GA
+#  GA_INSTALLED_INCLUDE_DIRS - where the GA headers end up after make install
+#  GA_INSTALLED_LIBS - where the GA libraries end up after make install
 # -------------------------------------------------------------
 function(BuildGAExternalProject)
   # FIXME: allow options for GA communication options: ts, pr, openib?
@@ -77,8 +79,10 @@ function(BuildGAExternalProject)
   set(GA_FOUND TRUE PARENT_SCOPE)
 
   set(GA_INCLUDE_DIRS ${INSTALL_DIR}/include PARENT_SCOPE)
+  set(GA_INSTALLED_INCLUDE_DIRS ${CMAKE_INSTALL_PREFIX}/include PARENT_SCOPE)
 
   set(GA_LIBRARIES "")
+  set(GA_INSTALLED_LIBRARIES "")
   foreach(l comex armci ga ga++)
     set(lname ${INSTALL_DIR}/lib/${LIB_PREFIX}${l}${LIB_SUFFIX})
     add_library(${l} ${LIB_TYPE} IMPORTED)
@@ -86,11 +90,16 @@ function(BuildGAExternalProject)
       IMPORTED_LOCATION ${lname}
       )
     add_dependencies(${l} external_global_arrays)
-     set(GA_LIBRARIES ${lname} ${GA_LIBRARIES})
+    set(GA_LIBRARIES ${lname} ${GA_LIBRARIES})
+
+    set(lname ${CMAKE_INSTALL_PREFIX}/lib/${LIB_PREFIX}${l}${LIB_SUFFIX})
+    set(GA_INSTALLED_LIBRARIES ${lname} ${GA_INSTALLED_LIBRARIES})
+    
   endforeach()
 
   set(GA_LIBRARIES ${GA_LIBRARIES} ${GA_LIBS} PARENT_SCOPE)
-
+  set(GA_INSTALLED_LIBRARIES ${GA_INSTALLED_LIBRARIES} ${GA_LIBS} PARENT_SCOPE)
+  
   # set(GA_LIBRARIES
   #   ${INSTALL_DIR}/lib/libga++${LIB_SUFFIX}
   #   ${INSTALL_DIR}/lib/libga${LIB_SUFFIX}
