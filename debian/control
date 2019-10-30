@@ -14,6 +14,9 @@ Package: gridpack-dev
 Architecture: any
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Conflicts: libarmci-mpi-dev, libga-dev (>= 5.3), libglobalarrays-dev (>= 5.3)
+Recommends: cmake (>= 3.3), make (>= 4.0), g++ (>= 4:5.2), libopenmpi-dev (>= 1.10),
+  petsc-dev (>= 3.6.2), libparmetis-dev (>=4.0.3), libmetis-dev (>= 5.1),
+  libboost-mpi-dev (>=1.58.0), libboost-all-dev (>=1.58.0), libglpk-dev (>= 4.57)
 Description: Open source power grid simulation toolkit for HPC platforms
   GridPACK(tm) is a software framework consisting of a set
   of modules designed to simplify the development of programs that model
