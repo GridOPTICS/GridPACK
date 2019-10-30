@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2019-01-04 08:13:54 d3g096
+# Last Change: 2019-10-29 13:08:56 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -180,10 +180,10 @@ function(gridpack_setup)
 
   if (GRIDPACK_HAVE_GA)
     list(APPEND gp_include
-      @GA_INCLUDE_DIRS@
+      @GRIDPACK_GA_INCLUDE_DIRS@
     )
     list(APPEND gp_libs
-      @GA_LIBRARIES@
+      @GRIDPACK_GA_LIBRARIES@
     )
   endif()
 
