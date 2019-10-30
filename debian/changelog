@@ -1,3 +1,9 @@
+gridpack (3.3.0ppa9) bionic; urgency=medium
+
+  * Bump version for bionic
+
+ -- William A. Perkins <william.perkins@pnnl.gov>  Wed, 30 Oct 2019 13:05:13 -0700
+
 gridpack (3.3.0ppa8) xenial; urgency=medium
 
   * Add recommended packages 
