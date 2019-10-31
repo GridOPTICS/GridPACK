@@ -130,7 +130,7 @@ main(int argc, char **argv)
     // read in faults from input file
     //gridpack::utility::Configuration::CursorPtr cursor;
     cursor = config->getCursor("Configuration.Dynamic_simulation");
-    std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> faults;
+    std::vector<gridpack::dynamic_simulation::Event> faults;
     faults = ds_app.getFaults(cursor);
 
     // run dynamic simulation

@@ -125,7 +125,7 @@ gridpack::dynamic_simulation::DSFullFactory::setFactor(int sw2_2, int sw3_2)
  * @param event a struct describing a fault
  */
 void gridpack::dynamic_simulation::DSFullFactory::setEvent(const
-    gridpack::dynamic_simulation::DSFullBranch::Event &event)
+    gridpack::dynamic_simulation::Event &event)
 {
   int i;
   for (i=0; i<p_numBus; i++) {

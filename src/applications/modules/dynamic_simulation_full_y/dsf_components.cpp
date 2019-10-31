@@ -2690,7 +2690,8 @@ gridpack::dynamic_simulation::DSFullBranch::getBranchRelayTripUpdateFactor()
  * @param event a struct containing parameters that describe a fault event in
  * a dyanamic simulation
  */
-void gridpack::dynamic_simulation::DSFullBranch::setEvent(const Event &event)
+void gridpack::dynamic_simulation::DSFullBranch::setEvent(
+    const gridpack::dynamic_simulation::Event &event)
 {
   int idx1 = getBus1OriginalIndex();
   int idx2 = getBus2OriginalIndex();

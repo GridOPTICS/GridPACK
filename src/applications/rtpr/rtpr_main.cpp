@@ -34,13 +34,15 @@ main(int argc, char **argv)
   // Intialize Math libraries
   gridpack::math::Initialize(&argc,&argv);
 
-  gridpack::rtpr::RTPRDriver driver;
-  driver.execute(argc, argv);
-
-  GA_Terminate();
+  {
+    gridpack::rtpr::RTPRDriver driver;
+    driver.execute(argc, argv);
+  }
 
   // Terminate Math libraries
   gridpack::math::Finalize();
+
+  GA_Terminate();
   // Clean up MPI libraries
   ierr = MPI_Finalize();
   //return ierr;

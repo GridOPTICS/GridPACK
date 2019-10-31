@@ -92,7 +92,7 @@ class DSFullApp
     /**
      * Execute the time integration portion of the application
      */
-    void solve(gridpack::dynamic_simulation::DSFullBranch::Event fault);
+    void solve(gridpack::dynamic_simulation::Event fault);
 
     /**
      * Write out final results of dynamic simulation calculation to standard output
@@ -104,7 +104,7 @@ class DSFullApp
      * @param cursor pointer to open file contain fault or faults
      * @return a list of fault events
      */
-    std::vector<gridpack::dynamic_simulation::DSFullBranch::Event>
+    std::vector<gridpack::dynamic_simulation::Event>
       getFaults(gridpack::utility::Configuration::CursorPtr cursor);
 
     /**
@@ -202,7 +202,7 @@ class DSFullApp
      */
     void saveTimeStep();
 
-    std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> p_faults;
+    std::vector<gridpack::dynamic_simulation::Event> p_faults;
 
     // pointer to network
     boost::shared_ptr<DSFullNetwork> p_network;

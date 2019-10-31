@@ -234,7 +234,7 @@ void gridpack::dynamic_simulation::DSFullApp::reload()
  * Execute the time integration portion of the application
  */
 void gridpack::dynamic_simulation::DSFullApp::solve(
-    gridpack::dynamic_simulation::DSFullBranch::Event fault)
+    gridpack::dynamic_simulation::Event fault)
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -1026,21 +1026,21 @@ void gridpack::dynamic_simulation::DSFullApp::write(const char* signal)
  * @param cursor pointer to open file contain fault or faults
  * @return a list of fault events
  */
-std::vector<gridpack::dynamic_simulation::DSFullBranch::Event>
+std::vector<gridpack::dynamic_simulation::Event>
 gridpack::dynamic_simulation::DSFullApp::
 getFaults(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("faultEvents");
   gridpack::utility::Configuration::ChildCursors events;
-  std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> ret;
+  std::vector<gridpack::dynamic_simulation::Event> ret;
   if (list) {
     list->children(events);
     int size = events.size();
     int idx;
     // Parse fault events
     for (idx=0; idx<size; idx++) {
-      gridpack::dynamic_simulation::DSFullBranch::Event event;
+      gridpack::dynamic_simulation::Event event;
       event.start = events[idx]->get("beginFault",0.0);
       event.end = events[idx]->get("endFault",0.0);
       std::string indices = events[idx]->get("faultBranch","0 0");
@@ -1061,6 +1061,8 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
           event.from_idx = 0;
           event.to_idx = 0;
         }
+        event.isGenerator = false;
+        event.isLine = true;
       } else {
         event.from_idx = 0;
         event.to_idx = 0;

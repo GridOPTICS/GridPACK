@@ -639,6 +639,10 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (!cursor->get("checkQLimit",&p_check_Qlim)) {
     p_check_Qlim = false;
   }
+  // TODO: Set these values from input deck
+  double start = 1.0;
+  double end = 10.0;
+  double tstep = 0.005;
 
   // Create task communicators from world communicator
   p_task_comm = p_world.divide(grp_size);
@@ -707,6 +711,31 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     for (ic = 0; ic<nsize; ic++) {
       p_events.push_back(branchContingencies[ic]);
     }
+  }
+  // copy power flow continencies to dynamic simulation events
+  p_eventsDS.clear();
+  for (i=0; i<p_events.size(); i++) {
+    gridpack::dynamic_simulation::Event event;
+    if (p_events[i].p_type == gridpack::powerflow::Generator) {
+      event.from_idx = p_events[i].p_busid[0];
+      event.to_idx = p_events[i].p_busid[0];
+      event.bus_idx = p_events[i].p_busid[0];
+      strncpy(event.tag,p_events[i].p_genid[0].c_str(),2);
+      event.tag[2] = '\0';
+      event.isGenerator = true;
+      event.isLine = false;
+    } else {
+      event.from_idx = p_events[i].p_from[0];
+      event.to_idx = p_events[i].p_to[0];
+      strncpy(event.tag,p_events[i].p_ckt[0].c_str(),2);
+      event.tag[2] = '\0';
+      event.isGenerator = false;
+      event.isLine = true;
+    }
+    event.start = start;
+    event.end = end;
+    event.step = tstep;
+    p_eventsDS.push_back(event);
   }
   // Check for tie lines Set cursor so that it points to the
   // TieLines block in the input file
@@ -825,6 +854,18 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (p_world.rank() == 0) {
     printf("Final Rating: %f\n",rating);
   }
+  // Power flow estimate of path rating is complete. Now check to see if the
+  // rating is stable using dynamic simulation. Start by cloning the dynamic
+  // simulation network from the power flow network
+  p_ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(p_world));
+  p_pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
+    gridpack::dynamic_simulation::DSFullBranch>(p_ds_network);
+  p_ds_app.setNetwork(p_ds_network, config);
+  p_ds_app.readGenerators();
+  p_ds_app.initialize();
+
+  runDSContingencies();
+
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
   // statistics (this printout does not work if some processors do not define
@@ -1051,6 +1092,32 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
     ret = true;
   } else {
     ret = false;
+  }
+  return ret;
+}
+
+/**
+ * Run dynamic simulations over full set of contingencies
+ * @return true if no violations found on complete set of contingencies
+ */
+bool gridpack::rtpr::RTPRDriver::runDSContingencies()
+{
+  bool ret = true;
+  // Set up task manager on the world communicator. The number of tasks is
+  // equal to the number of contingencies
+  gridpack::parallel::TaskManager taskmgr(p_world);
+  int ntasks = p_eventsDS.size();
+  taskmgr.set(ntasks);
+
+  // Evaluate contingencies using the task manager
+  int task_id;
+  // nextTask returns the same task_id on all processors in task_comm. When the
+  // calculation runs out of task, nextTask will return false.
+  while (taskmgr.nextTask(p_task_comm, &task_id)) {
+    printf("Executing dynamic simulation task %d on process %d\n",
+        task_id,p_world.rank());
+    p_ds_app.solve(p_eventsDS[task_id]);
+  
   }
   return ret;
 }

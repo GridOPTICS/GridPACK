@@ -130,13 +130,24 @@ class RTPRDriver
      */
     bool runContingencies();
 
+    /**
+     * Run dynamic simulations over full set of contingencies
+     * @return true if no violations found on complete set of contingencies
+     */
+    bool runDSContingencies();
+
     private:
 
     boost::shared_ptr<gridpack::powerflow::PFNetwork> p_pf_network;
 
+    boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+      p_ds_network;
+
     gridpack::powerflow::PFAppModule p_pf_app;
+    gridpack::dynamic_simulation::DSFullApp p_ds_app;
 
     std::vector<gridpack::powerflow::Contingency> p_events;
+    std::vector<gridpack::dynamic_simulation::Event> p_eventsDS;
 
     int p_srcArea, p_dstArea, p_srcZone, p_dstZone;
 

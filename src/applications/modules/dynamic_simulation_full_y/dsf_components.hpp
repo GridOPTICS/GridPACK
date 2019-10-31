@@ -36,6 +36,18 @@ namespace dynamic_simulation {
 
 enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay};
 
+// Small utility structure to encapsulate information about fault events
+struct Event{
+  double start,end; // start and end times of fault
+  double step;      // time increment of fault (not used?)
+  char tag[3];      // 2-character identifier of line or generator
+  bool isGenerator; // fault is a generator failure
+  int bus_idx;      // index of bus hosting generator
+  bool isLine;      // fault is a line failure
+  int from_idx;     // "from" bus of line
+  int to_idx;       // "to" bus of line
+};
+
 class DSFullBranch;
 class DSFullBus;
 
@@ -500,12 +512,6 @@ class DSFullBus
 class DSFullBranch
   : public gridpack::ymatrix::YMBranch {
   public:
-    // Small utility structure to encapsulate information about fault events
-    struct Event{
-      double start,end;
-      int from_idx, to_idx;
-      double step;
-    };
 
     /**
      *  Simple constructor

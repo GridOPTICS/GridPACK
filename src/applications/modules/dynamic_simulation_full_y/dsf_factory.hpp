@@ -60,7 +60,7 @@ class DSFullFactory
      * Apply an event to all branches in the system
      * @param event a struct describing a fault
      */
-    void setEvent(const DSFullBranch::Event &event);
+    void setEvent(const Event &event);
 
     /**
      * Check network to see if there is a process with no generators

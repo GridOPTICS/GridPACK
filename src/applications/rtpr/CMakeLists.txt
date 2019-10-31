@@ -14,6 +14,7 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_dynamic_simulation_full_y_module
     gridpack_powerflow_module
     gridpack_pfmatrix_components
     gridpack_ymatrix_components
@@ -92,6 +93,10 @@ add_custom_target(rtpr.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}
 
@@ -126,6 +131,7 @@ add_custom_target(rtpr.x.input
   DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
@@ -150,6 +156,7 @@ install(FILES
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
   ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
   ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
