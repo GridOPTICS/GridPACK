@@ -14,7 +14,9 @@ checking violation. The short-term rating allows the line to be loaded higher fo
 5. Else, there is a tie-line flow violation for some contingency. Mark the generation in area A, load in area B, and the tie line flow for that contingency as the steady-state real-time path rating. If there are multiple contingencies that cause tie-line flows to go over, then mark the one that has the smallest tie-line flow as the steady-state real-time path rating.
 6. With the generation, load, and tie-line flow from 5, run the N-1 dynamics simulation.
 7. If instability for any contingency, reduce the generation in area A, load in area B by 5% and re-run the
-   the N-1 dynamics simulation.
+   the N-1 dynamics simulation. The condition for instability is as follows: 
+   
+   If any generator frequency, 60*(1+ dw), is less than 59 Hz for 0.5 sec and the rate of change of frequency is always negative (i.e., the frequency is dropping), then we consider the system as unstable.
 8. If no instability, then we are done. Mark the tie-line flow as the real-time path rating.
 Other violations and complex strategies can be incorporated once this basic algorithm is working.
 
