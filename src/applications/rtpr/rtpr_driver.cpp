@@ -857,7 +857,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   // Power flow estimate of path rating is complete. Now check to see if the
   // rating is stable using dynamic simulation. Start by cloning the dynamic
   // simulation network from the power flow network
-  p_ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(p_world));
+  p_ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(p_task_comm));
   p_pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     gridpack::dynamic_simulation::DSFullBranch>(p_ds_network);
   p_ds_app.setNetwork(p_ds_network, config);
@@ -1116,7 +1116,12 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
     printf("Executing dynamic simulation task %d on process %d\n",
         task_id,p_world.rank());
-    p_ds_app.solve(p_eventsDS[task_id]);
+    try {
+      p_ds_app.solve(p_eventsDS[task_id]);
+    } catch (const gridpack::Exception e) {
+      printf("Failed to execute DS task %d on process %d\n",
+        task_id,p_world.rank());
+    }
   
   }
   return ret;
