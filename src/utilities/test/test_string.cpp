@@ -48,21 +48,21 @@ int main(int argc, char **argv)
     } else if (i==1) {
       printf("expected: (token2) found: (%s)\n",tokens[1].c_str());
     } else if (i==2) {
-      printf("expected: ( quoted token3 ) found: (%s)\n",tokens[2].c_str());
+      printf("expected: (\" quoted token3 \") found: (%s)\n",tokens[2].c_str());
     } else if (i==3) {
       printf("expected: (token4) found: (%s)\n",tokens[3].c_str());
     } else if (i==4) {
-      printf("expected: ( quoted token5) found: (%s)\n",tokens[4].c_str());
+      printf("expected: (\' quoted token5\') found: (%s)\n",tokens[4].c_str());
     }
   }
   std::string tag;
   printf("\nTesting clean2Char function\n");
   str = "1";
   tag = util.clean2Char(str);
-  printf("expected: ( 1) found: (%s)\n",tag.c_str());
+  printf("expected: (1 ) found: (%s)\n",tag.c_str());
   str = " 2 ";
   tag = util.clean2Char(str);
-  printf("expected: ( 2) found: (%s)\n",tag.c_str());
+  printf("expected: (2 ) found: (%s)\n",tag.c_str());
   str = " BL ";
   tag = util.clean2Char(str);
   printf("expected: (BL) found: (%s)\n",tag.c_str());
@@ -114,4 +114,36 @@ int main(int argc, char **argv)
     }
   }
 
+  // test getBool function
+  printf("\nTesting getBool function\n");
+  if (util.getBool(" True ")) {
+    printf("getBool is correct for string \" True \"\n");
+  }
+  if (util.getBool(" Yes ")) {
+    printf("getBool is correct for string \" Yes \"\n");
+  }
+  if (util.getBool("T")) {
+    printf("getBool is correct for string \"T\"\n");
+  }
+  if (util.getBool("y")) {
+    printf("getBool is correct for string \"y\"\n");
+  }
+  if (util.getBool("1 ")) {
+    printf("getBool is correct for string \"1 \"\n");
+  }
+  if (!util.getBool("False ")) {
+    printf("getBool is correct for string \"False \"\n");
+  }
+  if (!util.getBool("no ")) {
+    printf("getBool is correct for string \"no \"\n");
+  }
+  if (!util.getBool(" F ")) {
+    printf("getBool is correct for string \" F \"\n");
+  }
+  if (!util.getBool(" N ")) {
+    printf("getBool is correct for string \" N \"\n");
+  }
+  if (!util.getBool("0")) {
+    printf("getBool is correct for string \"0\"\n");
+  }
 }

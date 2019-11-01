@@ -254,6 +254,43 @@ public:
     }
     return ret;
   }
+
+  /**
+   * Convert a string into a bool value. This function will take a variety of
+   * strings can generate the corresponding bool. Acceptable values for "true"
+   * are "true", "yes", "t", "y", "1". Acceptable values for "false" are
+   * "false", "no", "f", "n", "0".
+   */
+  bool getBool(const char* str) {
+    std::string strcpy = str;
+    trim(strcpy);
+    toLower(strcpy);
+    if (strcpy == "true") {
+      return true;
+    } else if (strcpy == "yes") {
+      return true;
+    } else if (strcpy == "t") {
+      return true;
+    } else if (strcpy == "y") {
+      return true;
+    } else if (strcpy == "1") {
+      return true;
+    } else if (strcpy == "false") {
+      return false;
+    } else if (strcpy == "no") {
+      return false;
+    } else if (strcpy == "f") {
+      return false;
+    } else if (strcpy == "n") {
+      return false;
+    } else if (strcpy == "0") {
+      return false;
+    }
+  }
+  bool getBool(std::string str) {
+    getBool(str.c_str());
+  }
+
 };
 
 } // namespace utility
