@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2015-05-06 09:18:13 d3g096
+# Last Change: 2019-10-29 13:19:21 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -94,6 +94,14 @@ if (PETSC_FOUND)
 endif()
 
 # add_library(gridpack ${SOURCES})
+
+if (BUILD_GA)
+  set(GRIDPACK_GA_INCLUDE_DIRS ${GA_INSTALLED_INCLUDE_DIRS})
+  set(GRIDPACK_GA_LIBRARIES ${GA_INSTALLED_LIBRARIES})
+else ()
+  set(GRIDPACK_GA_INCLUDE_DIRS ${GA_INCLUDE_DIRS})
+  set(GRIDPACK_GA_LIBRARIES ${GA_LIBRARIES})
+endif ()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GridPACK.cmake.in 
   ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake @ONLY)
