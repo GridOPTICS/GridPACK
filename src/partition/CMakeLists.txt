@@ -9,7 +9,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created June 17, 2013 by William A. Perkins
-# Last Change: 2018-09-27 12:08:57 d3g096
+# Last Change: 2019-08-16 13:47:51 d3g096
 # -------------------------------------------------------------
 
 
@@ -72,13 +72,15 @@ endif()
 add_library(gridpack_partition
   ${gridpack_partition_sources}
 )
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_partition 
-    gridpack_timer
-    gridpack_parallel
-    ${PARMETIS_LIBRARY} ${METIS_LIBRARY}  
-    )
-endif()
+
+gridpack_set_library_version(gridpack_partition)
+add_dependencies(gridpack_partition external_build)
+
+target_link_libraries(gridpack_partition 
+  gridpack_timer
+  gridpack_parallel
+  ${PARMETIS_LIBRARY} ${METIS_LIBRARY}  
+  )
 
 
 # -------------------------------------------------------------

@@ -21,3 +21,22 @@ top-most directory of your clone to get the submodule code:
 
         git submodule update --init
 
+
+## Building Global Arrays ##
+
+[Global Arrays](https://hpc.pnl.gov//globalarrays/) is one of the
+[libraries required](https://www.gridpack.org/wiki/index.php/How_to_Build_GridPACK#Prerequisite_Software)
+to build and use GridPACK.  On some platforms this is available as a
+system package, on others it is not.
+[Global Arrays](https://hpc.pnl.gov//globalarrays/) can be built with
+GridPACK if needed by adding 
+
+        -D BUILD_GA:BOOL=ON
+
+to the GridPACK [CMake](https://cmake.org/) configuration (more
+details on GridPACK build is
+[here](https://www.gridpack.org/wiki/index.php/How_to_Build_GridPACK)).
+This will cause the configuration to build a GridPACK-specific
+[Global Arrays](https://hpc.pnl.gov//globalarrays/) library along with
+GridPACK.  
+
