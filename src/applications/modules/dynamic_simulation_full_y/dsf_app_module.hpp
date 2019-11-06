@@ -111,9 +111,14 @@ class DSFullApp
      * Read in generators that should be monitored during simulation
      * @param filename set filename from calling program instead of input
      *        deck
+     * @param buses IDs of buses containing generators
+     * @param tags generator IDs for watched generators
+     * @param writeFile true if external file is to be written
      */
     void setGeneratorWatch();
     void setGeneratorWatch(const char *filename);
+    void setGeneratorWatch(std::vector<int> &buses, std::vector<std::string> &tags,
+        bool writeFile = true);
 
     /**
      * Read in loads that should be monitored during simulation
@@ -140,7 +145,7 @@ class DSFullApp
     int isSecure();
 
     /**
-     * Save watch series
+     * Save watch series to an internal data vector
      * @param flag if true, save time series data
      */
     void saveTimeSeries(bool flag);
@@ -165,6 +170,11 @@ class DSFullApp
      */
     void getListWatchedGenerators(std::vector<int> &bus_ids,
         std::vector<std::string> &gen_ids);
+
+    /**
+     * @return true if no frequency violations occured on monitored generators
+     */
+    bool frequencyOK();
 
   private:
     /**
@@ -201,6 +211,14 @@ class DSFullApp
      * Save time series data for watched generators
      */
     void saveTimeStep();
+
+    /**
+     * Check to see if frequency variations on monitored generators are okay
+     * @param start time at which to start monitoring
+     * @param time current value of time
+     * @return true if all watched generators are within acceptable bounds
+     */
+    bool checkFrequency(double start, double time);
 
     std::vector<gridpack::dynamic_simulation::Event> p_faults;
 
@@ -261,6 +279,13 @@ class DSFullApp
 
     // Tags of generators that are being monitors
     std::vector<std::string> p_watch_gen_ids;
+
+    // Monitor generators for instability instead of writing results to
+    // file
+    bool p_monitorGenerators;
+
+    // Frequency deviations for simulation are okay
+    bool p_frequencyOK;
 
     // pointer to bus IO module that is used for generator results
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSFullNetwork> >

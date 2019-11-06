@@ -118,6 +118,21 @@ class RTPRDriver
         int area2, int zone2);
 
     /**
+     * Create a list of generator for a given area and zone. These
+     * generators will be monitored to see if they exceed operating
+     * specifications.
+     * @param network power grid used for DS simulation
+     * @param area index of area that will generate contingencies
+     * @param zone index of zone that will generate contingencies
+     * @param buses list of bus IDs that contain generators
+     * @param tags list of generator IDs
+     */
+    void  findWatchedGenerators(
+        boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> network,
+        int area, int zone, std::vector<int> &buses,
+        std::vector<std::string> &tags);
+
+    /**
      * Execute application
      * @param argc number of arguments
      * @param argv list of character strings

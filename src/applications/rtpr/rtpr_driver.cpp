@@ -537,6 +537,100 @@ std::vector<gridpack::rtpr::TieLine>
 }
 
 /**
+ * Create a list of generator for a given area and zone. These
+ * generators will be monitored to see if they exceed operating
+ * specifications.
+ * @param network power grid used for DS simulation
+ * @param area index of area that will generate contingencies
+ * @param zone index of zone that will generate contingencies
+ * @param buses list of bus IDs that contain generators
+ * @param tags list of generator IDs
+ */
+void  gridpack::rtpr::RTPRDriver::findWatchedGenerators(
+  boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork> network, int area,
+  int zone, std::vector<int> &buses, std::vector<std::string> &tags)
+{
+  gridpack::utility::StringUtils util;
+  int nbus = network->numBuses();
+  int i,j,iarea, izone;
+  std::vector<int> bus_ids;
+  std::vector<char2> ctags;
+  char2 buf;
+  int nproc = network->communicator().size();
+  int me = network->communicator().rank();
+  // Loop over all buses
+  for (i=0; i<nbus; i++) {
+    if (network->getActiveBus(i)) {
+      // Get data collection object
+      gridpack::component::DataCollection *data
+        = network->getBusData(i).get();
+      int ngen=0; 
+      data->getValue(BUS_AREA, &iarea);
+      if (zone > 0) {
+        data->getValue(BUS_ZONE, &izone);
+      } else {
+        izone = zone;
+      }
+      if (iarea == area && izone == zone) {
+        if (data->getValue(GENERATOR_NUMBER, &ngen)) {
+          for (j=0; j<ngen; j++) {
+            // Check generator status
+            int status = 0;
+            data->getValue(GENERATOR_STAT, &status, j);
+            if (status != 0) {
+              // Generator is active in base case. Add a contingency
+              bus_ids.push_back(network->getOriginalBusIndex(i));
+              std::string tag, clean_tag;
+              data->getValue(GENERATOR_ID,&tag,j);
+              clean_tag = util.clean2Char(tag);
+              strncpy(buf.str,clean_tag.c_str(),2);
+              buf.str[2] = '\0';
+              ctags.push_back(buf);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  // Have a list of local faults. Find out total number of faults.
+  int ngen = bus_ids.size();
+  std::vector<int> sizes(nproc);
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = ngen;
+  network->communicator().sum(&sizes[0], nproc);
+  ngen = 0;
+  for (i=0; i<nproc; i++) ngen += sizes[i];
+  if (ngen == 0) {
+    return;
+  }
+  // create a list of indices for local data values
+  int offset = 0;
+  for (i=0; i<me; i++) offset += sizes[i];
+  std::vector<int> idx;
+  for (i=0; i < bus_ids.size(); i++) idx.push_back(offset+i);
+  // upload all values to a global vector
+  gridpack::parallel::GlobalVector<int> busIDs(network->communicator());
+  gridpack::parallel::GlobalVector<char2> genIDs(network->communicator());
+  busIDs.addElements(idx,bus_ids);
+  genIDs.addElements(idx,ctags);
+  busIDs.upload();
+  genIDs.upload();
+  busIDs.getAllData(bus_ids);
+  genIDs.getAllData(ctags);
+
+  ngen = bus_ids.size();
+  buses.clear();
+  tags.clear();
+  for (i=0; i<ngen; i++) {
+    buses.push_back(bus_ids[i]);
+    tags.push_back(ctags[i].str);
+              printf("bus_id: %d ctags: (%s)\n",buses[buses.size()-1],
+                  tags[tags.size()-1].c_str());
+  }
+}
+
+/**
  * Execute application. argc and argv are standard runtime parameters
  */
 void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
@@ -640,7 +734,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     p_check_Qlim = false;
   }
   // TODO: Set these values from input deck
-  double start = 1.0;
+  double start = 0.1;
   double end = 10.0;
   double tstep = 0.005;
 
@@ -860,9 +954,23 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(p_task_comm));
   p_pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     gridpack::dynamic_simulation::DSFullBranch>(p_ds_network);
+
+  // find the generators that will be monitored
+  std::vector<int> busIDs;
+  std::vector<std::string> genIDs;
+  findWatchedGenerators(p_ds_network,p_srcArea,p_srcZone,busIDs,genIDs);
+  if (p_world.rank() == 0) {
+    printf("Generators being monitored in dynamic simulations\n");
+    for (i=0; i<busIDs.size(); i++) {
+      printf("    Host bus: %8d   Generator ID: %s\n",
+          busIDs[i],genIDs[i].c_str());
+    }
+  }
+  // initialize dynamic simulation
   p_ds_app.setNetwork(p_ds_network, config);
   p_ds_app.readGenerators();
   p_ds_app.initialize();
+  p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
   runDSContingencies();
 
@@ -1122,7 +1230,15 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
       printf("Failed to execute DS task %d on process %d\n",
         task_id,p_world.rank());
     }
+    ret = ret && p_ds_app.frequencyOK();
   
+  }
+  int iret = static_cast<int>(ret);
+  p_world.sum(&iret,1);
+  if (iret == p_world.size()) {
+    ret = true;
+  } else {
+    ret = false;
   }
   return ret;
 }

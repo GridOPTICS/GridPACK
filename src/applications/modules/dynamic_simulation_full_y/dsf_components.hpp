@@ -383,6 +383,14 @@ class DSFullBus
      */
     std::vector<double> getWatchedValues();
 
+    /**
+     * Check generators for frequency violations
+     * @param start time at which monitoring begins
+     * @param time current time
+     * @return true if no violation has occured
+     */
+    bool checkFrequency(double start, double time);
+
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.
@@ -473,6 +481,13 @@ class DSFullBus
 	double loadMVABase; // load MVA Base is the load MVA base if the bus is an extend load bus (LOW_SIDE_BUS or LOAD_BUS) due to composite load model 
 
     bool p_isolated;
+
+    // variables for monitoring the frequency of generators to find out
+    // if any are going out of bounds
+    std::vector<double> p_previousFrequency;
+    std::vector<double> p_intervalStart;
+    std::vector<bool> p_startedMonitoring;
+
 
     friend class boost::serialization::access;
 

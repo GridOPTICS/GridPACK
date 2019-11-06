@@ -37,6 +37,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_generatorWatch = false;
   p_loadWatch = false;
   p_generators_read_in = false;
+  p_monitorGenerators = false;
 }
 
 /**
@@ -49,6 +50,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_generatorWatch = false;
   p_loadWatch = false;
   p_generators_read_in = false;
+  p_monitorGenerators = false;
 }
 
 /**
@@ -197,17 +199,13 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
   // p_factory->dumpData();
-  printf("p[%d] Got to 1\n",p_network->communicator().rank());
   p_factory->load();
-  printf("p[%d] Got to 2\n",p_network->communicator().rank());
 
   // set network components using factory
   p_factory->setComponents();
-  printf("p[%d] Got to 3\n",p_network->communicator().rank());
   
   // set voltages for the extended buses from composite load model
   p_factory->setExtendedCmplBusVoltage();
-  printf("p[%d] Got to 4\n",p_network->communicator().rank());
   
   // load parameters for the extended buses from composite load model
   p_factory->LoadExtendedCmplBus();
@@ -446,6 +444,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   if (p_generatorWatch) p_generatorIO->dumpChannel();
   if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
+  p_frequencyOK = true;
   // Save initial time step
   //saveTimeStep();
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
@@ -980,6 +979,11 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 */    //exit(0);
     last_S_Steps = S_Steps;
     timer->stop(t_secure);
+    if (p_monitorGenerators) {
+      double presentTime = static_cast<double>(I_Steps)*p_time_step;
+      p_frequencyOK = p_frequencyOK && checkFrequency(0.5,presentTime);
+      if (!p_frequencyOK) I_Steps = simu_k;
+    }
   }
   
 #if 0
@@ -1081,52 +1085,89 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
  */
 void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
 {
-//  if (!p_generators_read_in) {
-    gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-    if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
-      p_generatorWatchFrequency = 1;
-    }
-    char buf[128];
-    cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
-    gridpack::utility::Configuration::ChildCursors generators;
-    if (cursor) cursor->children(generators);
-    int i, j, idx, id, len;
-    int ncnt = generators.size();
-    std::string generator, tag, clean_tag;
-    gridpack::dynamic_simulation::DSFullBus *bus;
-    if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
-    p_watch_bus_ids.clear();
-    p_watch_gen_ids.clear();
-    p_gen_buses.clear();
-    p_gen_ids.clear();
-    for (i=0; i<ncnt; i++) {
-      // Parse contents of "generator" field to get bus ID and generator tag
-      generators[i]->get("busID",&id);
-      generators[i]->get("generatorID",&tag);
-      gridpack::utility::StringUtils util;
-      clean_tag = util.clean2Char(tag);
-      std::pair<int,std::string> list_item = std::pair<int,std::string>(id,clean_tag);
-      p_watch_list.insert(std::pair<std::pair<int,std::string>, int>(list_item,i));
-      p_watch_bus_ids.push_back(id);
-      p_watch_gen_ids.push_back(clean_tag);
-      // Find local bus indices for generator
-      std::vector<int> local_ids = p_network->getLocalBusIndices(id);
-      for (j=0; j<local_ids.size(); j++) {
-        bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
-          (p_network->getBus(local_ids[j]).get());
-//        printf("p[%d] Set Watch True (%s) local: %d original: %d active: %d\n",
-//            GA_Nodeid(),clean_tag.c_str(), local_ids[j],id,
-//            (int)p_network->getActiveBus(local_ids[j]));
-        bus->setWatch(clean_tag,true);
-        if (p_network->getActiveBus(local_ids[j])) {
-          p_gen_buses.push_back(local_ids[j]);
-          p_gen_ids.push_back(clean_tag);
-        }
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
+    p_generatorWatchFrequency = 1;
+  }
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
+  gridpack::utility::Configuration::ChildCursors generators;
+  if (cursor) cursor->children(generators);
+  int i, j, idx, id, len;
+  int ncnt = generators.size();
+  std::string generator, tag, clean_tag;
+  gridpack::dynamic_simulation::DSFullBus *bus;
+  if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+  std::vector<int> buses;
+  std::vector<std::string> tags;
+  for (i=0; i<ncnt; i++) {
+    // Parse contents of "generator" field to get bus ID and generator tag
+    generators[i]->get("busID",&id);
+    generators[i]->get("generatorID",&tag);
+    gridpack::utility::StringUtils util;
+    clean_tag = util.clean2Char(tag);
+    buses.push_back(id);
+    tags.push_back(clean_tag);
+  }
+  setGeneratorWatch(buses,tags,true);
+}
+
+/**
+ * Read in generators that should be monitored during simulation
+ * @param filename set filename from calling program instead of input
+ *        deck
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *filename)
+{
+  p_gen_watch_file = filename;
+  p_internal_watch_file_name = true;
+  setGeneratorWatch();
+}
+
+/**
+ * Read in generators that should be monitored during simulation
+ * @param buses IDs of buses containing generators
+ * @param tags generator IDs for watched generators
+ * @param writeFile true if external file is to be written
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
+    std::vector<int> &buses, std::vector<std::string> &tags, bool writeFile)
+{
+  int ncnt = buses.size();
+  if (ncnt != tags.size()) {
+    printf("setGeneratorWatch: size mismatch between buses: and tags: vectors\n",
+        (int)buses.size(),(int)tags.size());
+    // TODO: some kind of error
+  }
+  std::string generator, tag;
+  char buf[128];
+  gridpack::dynamic_simulation::DSFullBus *bus;
+  p_watch_bus_ids.clear();
+  p_watch_gen_ids.clear();
+  p_gen_buses.clear();
+  p_gen_ids.clear();
+  int i, j, id;
+  for (i=0; i<ncnt; i++) {
+    id = buses[i];
+    tag = tags[i];
+    std::pair<int,std::string> list_item = std::pair<int,std::string>(id,tag);
+    p_watch_list.insert(std::pair<std::pair<int,std::string>, int>(list_item,i));
+    p_watch_bus_ids.push_back(id);
+    p_watch_gen_ids.push_back(tag);
+    // Find local bus indices for generator. If generator is not on this
+    // processor then local_ids will have zero length.
+    std::vector<int> local_ids = p_network->getLocalBusIndices(id);
+    for (j=0; j<local_ids.size(); j++) {
+      bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(local_ids[j]).get());
+      bus->setWatch(tag,true);
+      if (p_network->getActiveBus(local_ids[j])) {
+        p_gen_buses.push_back(local_ids[j]);
+        p_gen_ids.push_back(tag);
       }
-      sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,clean_tag.c_str());
-      p_busIO->header(buf);
-  //  }
+    }
+    sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,tag.c_str());
+    p_busIO->header(buf);
     if (ncnt > 0) {
       p_generators_read_in = true;
       p_generatorWatch = true;
@@ -1136,7 +1177,13 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
   }
 
   // If storing time series data, set up vector to hold results
-  openGeneratorWatchFile();
+  if (writeFile) {
+    openGeneratorWatchFile();
+    p_monitorGenerators = false;
+  } else {
+    p_generatorWatch = false;
+    p_monitorGenerators = true;
+  }
   if (p_save_time_series) {
     p_time_series.clear();
     printf("p_gen_buses: %d\n",(int)p_gen_buses.size());
@@ -1149,11 +1196,32 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
   }
 }
 
-void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *filename)
+/**
+ * Check to see if frequency variations on monitored generators are okay
+ * @param start time at which to start monitoring
+ * @param time current value of time
+ * @return true if all watched generators are within acceptable bounds
+ */
+bool gridpack::dynamic_simulation::DSFullApp::checkFrequency(
+    double start, double time)
 {
-  p_gen_watch_file = filename;
-  p_internal_watch_file_name = true;
-  setGeneratorWatch();
+  int nbus = p_network->numBuses();
+  int i;
+  bool ret = true;
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      ret = ret && p_network->getBus(i)->checkFrequency(start,time);
+    }
+  }
+  return p_factory->checkTrue(ret);
+}
+
+/**
+ * @return true if no frequency violations occured on monitored generators
+ */
+bool gridpack::dynamic_simulation::DSFullApp::frequencyOK()
+{
+  return p_frequencyOK;
 }
 
 /**
@@ -1200,7 +1268,7 @@ void gridpack::dynamic_simulation::DSFullApp::setLoadWatch()
 }
 
 /**
- * Save watch series
+ * Save watch series to an internal data vector
  * @param flag if true, save time series data
  */
 void gridpack::dynamic_simulation::DSFullApp::saveTimeSeries(bool flag)

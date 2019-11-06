@@ -793,6 +793,12 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   if (data->getValue(GENERATOR_NUMBER, &p_ngen)) {
     std::string genid;
     int icnt = 0;
+    // set up arrays to monitor frequency
+    for (i=0; i<p_ngen; i++) {
+      p_previousFrequency.push_back(0.0);
+      p_intervalStart.push_back(0.0);
+      p_startedMonitoring.push_back(false);
+    }
     for (i=0; i<p_ngen; i++) { 
       int stat;
       data->getValue(GENERATOR_STAT, &stat, i);
@@ -2090,6 +2096,48 @@ std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
       std::vector<double> vals;
       p_generators[i]->getWatchValues(vals);
       for (j=0; j<vals.size(); j++) ret.push_back(vals[j]);
+    }
+  }
+  return ret;
+}
+
+/**
+ * Check generators for frequency violations
+ * @param start time at which monitoring begins
+ * @param time current time
+ * @return true if no violation has occured
+ */
+bool gridpack::dynamic_simulation::DSFullBus::checkFrequency(
+    double start, double time)
+{
+  bool ret = true;
+  // don't check anthing until current time exceeds start. This is to exclude
+  // prefault period of simulation
+  if (time >= start) {
+    int i;
+    for (i=0; i<p_genid.size(); i++) {
+      if (p_generators[i]->getWatch()) {
+        std::vector<double> vals;
+        p_generators[i]->getWatchValues(vals);
+        double freq = 60.0*vals[1];
+        if (!p_startedMonitoring[i]) {
+          if (freq < 59.0) {
+            p_startedMonitoring[i] = true;
+            p_intervalStart[i] = time;
+            p_previousFrequency[i] = freq;
+          }
+        } else {
+          if (freq - p_previousFrequency[i] < 0.0 && freq < 59.0) {
+            if (time - p_intervalStart[i] >= 0.5) {
+              ret = false;
+            } else {
+              p_previousFrequency[i] = freq;
+            }
+          } else {
+            p_startedMonitoring[i] = false;
+          }
+        }
+      }
     }
   }
   return ret;
