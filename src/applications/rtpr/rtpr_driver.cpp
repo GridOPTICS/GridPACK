@@ -913,7 +913,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
         rating -= 0.01;
         if (p_world.rank() == 0) {
           printf("Real power generation for power flow"
-              "is capacity-limited for Rating: %f\n",
+              " is capacity-limited for Rating: %f\n",
               rating);
         }
         p_pf_app.resetRealPower();
@@ -945,7 +945,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
         rating += 0.01;
         if (p_world.rank() == 0) {
           printf("Real power generation for power flow"
-              "is capacity-limited for Rating: %f\n",
+              " is capacity-limited for Rating: %f\n",
               rating);
         }
         p_pf_app.resetRealPower();
@@ -994,7 +994,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       rating += 0.01;
       if (p_world.rank() == 0) {
         printf("Real power generation for dynamic simulation"
-            "is capacity-limited for Rating: %f\n",
+            " is capacity-limited for Rating: %f\n",
             rating);
       }
       p_ds_app.resetRealPower();
