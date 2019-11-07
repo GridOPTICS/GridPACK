@@ -911,6 +911,11 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
       if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
         rating -= 0.01;
+        if (p_world.rank() == 0) {
+          printf("Real power generation for power flow"
+              "is capacity-limited for Rating: %f\n",
+              rating);
+        }
         p_pf_app.resetRealPower();
         break;
       }
@@ -938,6 +943,11 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
       if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
         rating += 0.01;
+        if (p_world.rank() == 0) {
+          printf("Real power generation for power flow"
+              "is capacity-limited for Rating: %f\n",
+              rating);
+        }
         p_pf_app.resetRealPower();
         break;
       }
@@ -982,6 +992,11 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
     if (!p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
       rating += 0.01;
+      if (p_world.rank() == 0) {
+        printf("Real power generation for dynamic simulation"
+            "is capacity-limited for Rating: %f\n",
+            rating);
+      }
       p_ds_app.resetRealPower();
       break;
     }
