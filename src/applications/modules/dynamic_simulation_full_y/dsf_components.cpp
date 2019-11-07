@@ -749,6 +749,10 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
   //printf("p_voltage at bus %d: %f\n", getOriginalIndex(), p_voltage);
 
+  p_area = 1;
+  data->getValue(BUS_AREA, &p_area);
+  p_zone = 1;
+  data->getValue(BUS_ZONE, &p_zone);
   double pi = 4.0*atan(1.0);
   p_angle = p_angle*pi/180.0; 
 
@@ -796,8 +800,10 @@ void gridpack::dynamic_simulation::DSFullBus::load(
     // set up arrays to monitor frequency
     for (i=0; i<p_ngen; i++) {
       p_previousFrequency.push_back(0.0);
-      p_intervalStart.push_back(0.0);
-      p_startedMonitoring.push_back(false);
+      p_upIntervalStart.push_back(0.0);
+      p_upStartedMonitoring.push_back(false);
+      p_downIntervalStart.push_back(0.0);
+      p_downStartedMonitoring.push_back(false);
     }
     for (i=0; i<p_ngen; i++) { 
       int stat;
@@ -821,6 +827,12 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       data->getValue(GENERATOR_MODEL, &model, i); 
       if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0) {
         p_pg.push_back(pg);
+        p_savePg.push_back(pg);
+        double pmin, pmax;
+        data->getValue(GENERATOR_PMIN,&pmin,i);
+        data->getValue(GENERATOR_PMAX,&pmax,i);
+        p_gpmin.push_back(pmin);
+        p_gpmax.push_back(pmax);
         //std::cout << "generator: " << model << std::endl;
         BaseGeneratorModel *generator
           = genFactory.createGeneratorModel(model);
@@ -956,6 +968,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       data->getValue(LOAD_QL, &ql, i);
       data->getValue(LOAD_ID, &loadid, i);
       p_powerflowload_p.push_back(pl);
+      p_powerflowload_p_save.push_back(pl);
       p_powerflowload_q.push_back(ql);
       p_loadid.push_back(loadid);  
 
@@ -2120,27 +2133,164 @@ bool gridpack::dynamic_simulation::DSFullBus::checkFrequency(
         std::vector<double> vals;
         p_generators[i]->getWatchValues(vals);
         double freq = 60.0*vals[1];
-        if (!p_startedMonitoring[i]) {
+        // check for upward drift
+        if (!p_upStartedMonitoring[i]) {
+          if (freq > 61.0) {
+            p_upStartedMonitoring[i] = true;
+            p_upIntervalStart[i] = time;
+          }
+        } else {
+          if (freq - p_previousFrequency[i] > 0.0 && freq > 61.0) {
+            if (time - p_upIntervalStart[i] >= 0.5) {
+              ret = false;
+            }
+          } else {
+            p_upStartedMonitoring[i] = false;
+          }
+        }
+        // check for downward drift
+        if (!p_downStartedMonitoring[i]) {
           if (freq < 59.0) {
-            p_startedMonitoring[i] = true;
-            p_intervalStart[i] = time;
-            p_previousFrequency[i] = freq;
+            p_downStartedMonitoring[i] = true;
+            p_downIntervalStart[i] = time;
           }
         } else {
           if (freq - p_previousFrequency[i] < 0.0 && freq < 59.0) {
-            if (time - p_intervalStart[i] >= 0.5) {
+            if (time - p_downIntervalStart[i] >= 0.5) {
               ret = false;
-            } else {
-              p_previousFrequency[i] = freq;
             }
           } else {
-            p_startedMonitoring[i] = false;
+            p_downStartedMonitoring[i] = false;
           }
         }
+        p_previousFrequency[i] = freq;
       }
     }
   }
   return ret;
+}
+
+/**
+ * Scale value of real power on all generators
+ * @param character ID for generator
+ * @param value scale factor for real power
+ */
+void gridpack::dynamic_simulation::DSFullBus::scaleGeneratorRealPower(
+    std::string tag, double value)
+{
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    if (p_genid[i] == tag) {
+      if (value > 1.0) {
+        double excess = p_gpmax[i]-p_pg[i];
+        if (excess < 0.0) {
+          printf("bus: %d generator: %s excess (pt): %f (pg): %f\n",
+              getOriginalIndex(),tag.c_str(),p_gpmax[i],p_pg[i]);
+        }
+        p_pg[i] += (value-1.0)*excess;
+      } else {
+        double slack = p_pg[i]-p_gpmin[i];
+        p_pg[i] -= (1.0-value)*slack;
+      }
+      break;
+    }
+  }
+}
+
+/**
+ * Scale value of real power on loads
+ * @param character ID for load
+ * @param value scale factor for real power
+ */
+void gridpack::dynamic_simulation::DSFullBus::scaleLoadRealPower(
+    std::string tag, double value)
+{
+  int i;
+  for (i=0; i<p_npowerflow_load; i++) {
+    if (p_loadid[i] == tag) {
+      p_powerflowload_p[i] = value*p_powerflowload_p[i];
+      break;
+    }
+  }
+}
+
+/**
+ * Reset real power for generators and load back to original
+ values
+ */
+void gridpack::dynamic_simulation::DSFullBus::resetRealPower()
+{
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    p_pg[i] = p_savePg[i];
+  }
+  for (i=0; i<p_npowerflow_load; i++) {
+    p_powerflowload_p[i] = p_powerflowload_p_save[i];
+  }
+}
+
+/**
+ * Get available margin for generator
+ * @param tag character ID for generator
+ * @param current initial generation
+ * @param slack amount generation can be reduced
+ * @param excess amount generation can be increased
+ * @param status current status of generator
+ */
+void gridpack::dynamic_simulation::DSFullBus::getGeneratorMargins(
+    std::vector<std::string> &tag,
+    std::vector<double> &current, std::vector<double> &slack,
+    std::vector<double> &excess,std::vector<bool> &status)
+{
+  tag.clear();
+  current.clear();
+  slack.clear();
+  excess.clear();
+  status.clear();
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    tag.push_back(p_genid[i]);
+    current.push_back(p_pg[i]);
+    slack.push_back(p_pg[i]-p_gpmin[i]);
+    excess.push_back(p_gpmax[i]-p_pg[i]);
+    status.push_back(true);
+  }
+}
+
+/**
+ * Get list of generator IDs
+ * @return vector of generator IDs
+ */
+std::vector<std::string> gridpack::dynamic_simulation::DSFullBus::getGenerators()
+{
+  return p_genid;
+}
+
+/**
+ * Get list of load IDs
+ * @return vector of generator IDs
+ */
+std::vector<std::string> gridpack::dynamic_simulation::DSFullBus::getLoads()
+{
+  return p_loadid;
+}
+
+/**
+ * Get area parameter for bus
+ * @return bus area index
+ */
+int gridpack::dynamic_simulation::DSFullBus::getArea()
+{
+  return p_area;
+}
+
+/**
+ * Get zone parameter for bus
+ * @return bus zone index
+ */
+int gridpack::dynamic_simulation::DSFullBus::getZone()
+{
+  return p_zone;
 }
 
 /**

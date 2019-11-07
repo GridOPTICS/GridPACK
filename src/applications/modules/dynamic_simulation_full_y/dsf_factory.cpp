@@ -367,6 +367,150 @@ bool gridpack::dynamic_simulation::DSFullFactory::securityCheck()
 }
 
 /**
+ * Scale generator real power. If zone less than 1 then scale all
+ * generators in the area
+ * @param scale factor to scale real power generation
+ * @param area index of area for scaling generation
+ * @param zone index of zone for scaling generation
+ * @return false if there is not enough capacity to change generation
+ *         by requested amount
+ */
+bool gridpack::dynamic_simulation::DSFullFactory::scaleGeneratorRealPower(
+    double scale, int area, int zone)
+{
+  bool ret = true;
+  int nbus = p_network->numBuses();
+  int i, izone;
+  double capacity = 0.0;
+  double total = 0.0;
+  double delta;
+  printf("area: %d zone: %d\n",area,zone);
+  if (scale > 1.0) {
+    delta = scale - 1.0;
+  } else {
+    delta = 1.0-scale;
+  }
+  std::vector<std::string> tags;
+  std::vector<double> slack, current, excess;
+  std::vector<bool> status;
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+      if (zone > 0) {
+        izone = bus->getZone();
+      } else {
+        izone = zone;
+      }
+      if (bus->getArea() == area && zone == izone) {
+        bus->getGeneratorMargins(tags,current,slack,excess,status);
+        int j, nsize;
+        nsize = tags.size();
+        if (scale > 1.0) {
+          for (j=0; j<nsize; j++) {
+            if (status[j]) {
+              capacity += excess[j];
+              total += current[j];
+            }
+          }
+        } else {
+          for (j=0; j<nsize; j++) {
+            if (status[j]) {
+              capacity += slack[j];
+              total += current[j];
+            }
+          }
+        }
+      }
+    }
+  }
+  p_network->communicator().sum(&capacity,1);
+  p_network->communicator().sum(&total,1);
+  double change = delta*total;
+  double frac = 0.0;
+  if (scale > 1.0) {
+    if (change > capacity && total > 0.0) {
+      frac = (capacity+total)/total;
+      ret = false;
+    } else if (total > 0.0) {
+      frac = (change+total)/total;
+    } else {
+      frac = 1.0;
+      ret = false;
+    }
+  } else {
+    if (change > capacity && total > 0.0) {
+      frac = (total-capacity)/total;
+      ret = false;
+    } else if (total > 0.0) {
+      frac = (total-change)/total;
+    } else {
+      frac = 1.0;
+      ret = false;
+    }
+  }
+  for (i=0; i<nbus; i++) {
+    gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags = bus->getGenerators();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->scaleGeneratorRealPower(tags[j], frac);
+      }
+    }
+  }
+  return ret;
+}
+
+/**
+ * Scale load real power. If zone less than 1 then scale all
+ * loads in the area
+ * @param scale factor to scale load real power
+ * @param area index of area for scaling load
+ * @param zone index of zone for scaling load
+ * @return false if there is not enough capacity to change generation
+ *         by requested amount
+ */
+void gridpack::dynamic_simulation::DSFullFactory::scaleLoadRealPower(
+    double scale, int area, int zone)
+{
+  int nbus = p_network->numBuses();
+  int i, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+    if (zone > 0) { 
+      izone = bus->getZone();
+    } else { 
+      izone = zone;
+    } 
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags = bus->getLoads();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->scaleLoadRealPower(tags[j],scale);
+      }
+    }
+  }
+}
+
+/**
+ * Reset real power of loads and generators to original values
+ */
+void gridpack::dynamic_simulation::DSFullFactory::resetRealPower()
+{
+  int nbus = p_network->numBuses();
+  int i;
+  for (i=0; i<nbus; i++) {
+    p_network->getBus(i)->resetRealPower();
+  }
+}
+
+
+/**
  * load parameters for the extended buses from composite load model
  */
 void gridpack::dynamic_simulation::DSFullFactory::setExtendedCmplBusVoltage()

@@ -661,28 +661,30 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
   std::vector<double> slack, current, excess;
   std::vector<bool> status;
   for (i=0; i<nbus; i++) {
-    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
-    if (zone > 0) {
-      izone = bus->getZone();
-    } else {
-      izone = zone;
-    }
-    if (bus->getArea() == area && zone == izone) {
-      bus->getGeneratorMargins(tags,current,slack,excess,status);
-      int j, nsize;
-      nsize = tags.size();
-      if (scale > 1.0) {
-        for (j=0; j<nsize; j++) {
-          if (status[j]) {
-            capacity += excess[j];
-            total += current[j];
-          }
-        }
+    if (p_network->getActiveBus(i)) {
+      gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+      if (zone > 0) {
+        izone = bus->getZone();
       } else {
-        for (j=0; j<nsize; j++) {
-          if (status[j]) {
-            capacity += slack[j];
-            total += current[j];
+        izone = zone;
+      }
+      if (bus->getArea() == area && zone == izone) {
+        bus->getGeneratorMargins(tags,current,slack,excess,status);
+        int j, nsize;
+        nsize = tags.size();
+        if (scale > 1.0) {
+          for (j=0; j<nsize; j++) {
+            if (status[j]) {
+              capacity += excess[j];
+              total += current[j];
+            }
+          }
+        } else {
+          for (j=0; j<nsize; j++) {
+            if (status[j]) {
+              capacity += slack[j];
+              total += current[j];
+            }
           }
         }
       }

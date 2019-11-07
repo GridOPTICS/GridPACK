@@ -1225,6 +1225,42 @@ bool gridpack::dynamic_simulation::DSFullApp::frequencyOK()
 }
 
 /**
+ * Scale generator real power. If zone less than 1 then scale all
+ * generators in the area.
+ * @param scale factor to scale real power generation
+ * @param area index of area for scaling generation
+ * @param zone index of zone for scaling generation
+ * @return false if there is not enough capacity to change generation
+ *         by requested amount
+ */
+bool gridpack::dynamic_simulation::DSFullApp::scaleGeneratorRealPower(
+    double scale, int area, int zone)
+{
+  return p_factory->scaleGeneratorRealPower(scale,area,zone);
+}
+
+/**
+ * Scale load real power. If zone less than 1 then scale all
+ * loads in the area.
+ * @param scale factor to scale load real power
+ * @param area index of area for scaling load
+ * @param zone index of zone for scaling load
+ */
+void gridpack::dynamic_simulation::DSFullApp::scaleLoadRealPower(
+    double scale, int area, int zone)
+{
+  return p_factory->scaleLoadRealPower(scale,area,zone);
+}
+
+/**
+ * Reset real power of loads and generators to original values
+ */
+void gridpack::dynamic_simulation::DSFullApp::resetRealPower()
+{
+  return p_factory->resetRealPower();
+}
+
+/**
  * Read in loads that should be monitored during simulation
  */
 void gridpack::dynamic_simulation::DSFullApp::setLoadWatch()

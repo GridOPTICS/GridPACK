@@ -946,7 +946,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     }
   }
   if (p_world.rank() == 0) {
-    printf("Final Rating: %f\n",rating);
+    printf("Final Power Flow Rating: %f\n",rating);
   }
   // Power flow estimate of path rating is complete. Now check to see if the
   // rating is stable using dynamic simulation. Start by cloning the dynamic
@@ -972,7 +972,26 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_ds_app.initialize();
   p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
-  runDSContingencies();
+  p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+  p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+  checkTie = runDSContingencies();
+
+  // Current rating is an upper bound. Only check lower values.
+  while (!checkTie && rating >= 0.0) {
+    rating -= 0.01;
+    p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+    if (!p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
+      rating += 0.01;
+      p_ds_app.resetRealPower();
+      break;
+    }
+    checkTie = runContingencies();
+    p_ds_app.resetRealPower();
+  }
+
+  if (p_world.rank() == 0) {
+    printf("Final Dynamic Simulation Rating: %f\n",rating);
+  }
 
   timer->stop(t_total);
   // If all processors executed at least one task, then print out timing
