@@ -57,33 +57,13 @@ add_custom_command(
   )
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_tamu500.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input_118.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_118.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input_tamu500.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_tamu500.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input_118.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input.polish.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input.polish.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input.euro.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input.euro.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input_tamu500.xml"
   )
 
 add_custom_target(rtpr.x.input
@@ -101,48 +81,19 @@ add_custom_target(rtpr.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+  ${GRIDPACK_DATA_DIR}/raw/TAMU_500_rmsmallgen_v23.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy
-  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+  ${GRIDPACK_DATA_DIR}/dyr/tamu_500bus_detail.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
   ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
   ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
   ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/README.md
+  ${CMAKE_CURRENT_BINARY_DIR}/input_tamu500.xml
+  ${GRIDPACK_DATA_DIR}/raw/TAMU_500_rmsmallgen_v23.raw
 )
 add_dependencies(rtpr.x rtpr.x.input)
 
@@ -152,26 +103,20 @@ add_dependencies(rtpr.x rtpr.x.input)
 #configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 #  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt @ONLY)
 
-install(FILES 
-  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input.polish.xml
-  ${GRIDPACK_DATA_DIR}/raw/Polish_model_v23.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_polish.xml
-  ${CMAKE_CURRENT_BINARY_DIR}/input.euro.xml
-  ${GRIDPACK_DATA_DIR}/raw/EuropeanOpenModel_v23.raw
-  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_euro.xml
-  ${CMAKE_CURRENT_SOURCE_DIR}/rtpr_driver.cpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/rtpr_driver.hpp
-  ${CMAKE_CURRENT_SOURCE_DIR}/rtpr_main.cpp
-  DESTINATION share/gridpack/example/contingency_analysis
-)
+#install(FILES 
+#  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
+#  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
+#  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+#  ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
+#  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
+#  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
+#  ${GRIDPACK_DATA_DIR}/raw/IEEE118.raw
+#  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_118.xml
+#  ${CMAKE_CURRENT_SOURCE_DIR}/rtpr_driver.cpp
+#  ${CMAKE_CURRENT_SOURCE_DIR}/rtpr_driver.hpp
+#  ${CMAKE_CURRENT_SOURCE_DIR}/rtpr_main.cpp
+#  DESTINATION share/gridpack/example/rtpr
+#)
 
 install(TARGETS rtpr.x DESTINATION bin)
 
