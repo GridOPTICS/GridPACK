@@ -46,7 +46,9 @@ std:: string trimQuotes(std::string &string)
 
 can be used to remove either single or double quotation marks from around a string and remove any remaining white space at the beginning and end of the string.
 
-Finally, the function
+Tokenizers can be used to break up a long string into individual elements. This
+is useful for comma or blank delimitted strings representing a sequence of
+values. The function
 
 {
 \color{red}
@@ -66,8 +68,6 @@ will take a string in which individual elements are delimited by blank spaces an
 
 is broken up into a vector containing the strings
 
-%Need to tweak this more - put the numbers in tt font and bold like Atlanta
-
 {
 \color{red}
 \begin{Verbatim}[fontseries=b]
@@ -84,3 +84,57 @@ is broken up into a vector containing the strings
 }
 
 Both single and double quotes can be used as delimiters for internal strings.
+
+The function
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+std::vector<std::string> charTokenizer(std::string &str, const char *sep)
+\end{Verbatim}
+}
+
+will break up a string using the character string \texttt{\textbf{sep}} as a delimiter.
+Thus, the string
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+1, 5, "ATLANTA 001", 0.00056, 1.02
+\end{Verbatim}
+}
+
+would be broken up into a vector containing the strings
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+1
+
+ 5
+
+ "ATLANTA 001"
+
+ 0.00056
+
+ 1.02
+\end{Verbatim}
+}
+Note the presence of the leading white space in the last four tokens. This may
+need to be removed using the \texttt{\textbf{trim}} function before using these
+strings in any comparisons.
+
+Finally, the functions
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+bool getBool(std::string &str)
+bool getBool(str)
+\end{Verbatim}
+}
+
+can be used to convert a string to a bool value. These functions
+will convert the strings ``True'', ``Yes'', ``T'', ``Y'' and ``1'' to
+the bool value ``true'' and the strings ``False'', ``No'', ``F'', ``N'' and
+``0'' to the bool value ``false''. Both functions are case insensitive and will
+treat the strings ``TRUE'', ``True'' and ``true'', etc. as equivalent.
