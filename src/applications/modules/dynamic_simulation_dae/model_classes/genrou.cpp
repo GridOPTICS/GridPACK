@@ -90,6 +90,7 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   data->getValue(GENERATOR_INERTIA_CONSTANT_H,&p_H,idx);
   data->getValue(GENERATOR_DAMPING_COEFFICIENT_0,&p_D,idx);*/
 
+  data->getValue(BUS_NUMBER, &bid);
   if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &H, idx)) H = 0.0; // H
   if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &D, idx)) D = 0.0; // D
   if (!data->getValue(GENERATOR_RESISTANCE, &Ra, idx)) Ra=0.0; // Ra
@@ -192,7 +193,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
   values[5] = x6Edp;
 
   //printf("VD=%f, VQ=%f, Vm=%f, mag=%f, ang=%f, Pmw=%f, Qmvar=%f, Ir=%f, Ii=%f, Id=%f, Iq=%f, I=%f\n", VD, VQ, Vm, mag, ang, pg, qg, Ir, Ii, Id, Iq, sqrt(Id*Id+Iq*Iq));
-  //printf("\ngenrou init: x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+  printf("\ngenrou init: x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
   //printf("genrou init: Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
   //printf("VD = %f, VQ=%f\n", VD, VQ);
   
@@ -238,6 +239,11 @@ double GenrouGen::getAngle(void)
  */
 void GenrouGen::write(const char* signal, char* string)
 {
+  /*if (!strcmp(signal,"standard")) {
+       sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f	%12.6f\n",
+          p_bus_id, p_ckt.c_str(), x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
+  }*/
+  //printf("...........bid=%d: %f\t%f\t%f\t%f\t%f\t%f\n", bid, x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
 }
 
 /**
@@ -318,7 +324,7 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     //printf("\n======================\n");
     //printf("\n Genrou: what's the initial values for the first iteration?\n");
     //printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
-    //printf("...........%f\t%f\t%f\t%f\t%f\t%f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+    //if (bid==1) printf("bus id=%d:\t%f\t%f\t%f\t%f\t%f\t%f\n", bid, x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
     //printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
     //printf("VD = %f, VQ=%f\n\n", VD, VQ);
     if (p_hasExciter) {

@@ -166,7 +166,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
   
 
-  p_exciter = getExciter();
+  /*p_exciter = getExciter();
   p_exciter->setVterminal(Vterm);
   p_exciter->setVcomp(mag);
   p_exciter->setFieldVoltage(Efd);
@@ -176,7 +176,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::init(double mag,
   p_governor = getGovernor();
   p_governor->setMechanicalPower(Pmech);
   p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
-  p_governor->init(mag, ang, ts);
+  p_governor->init(mag, ang, ts);*/
 
 }
 
@@ -268,7 +268,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor_currentInjection(b
 void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     double t_inc, bool flag)
 {
-  printf("\n***** GEN %d Predicator:\n", p_bus_id);
+  /*printf("\n***** GEN %d Predicator:\n", p_bus_id);
 
   p_exciter = getExciter();
   Efd = p_exciter->getFieldVoltage();
@@ -278,7 +278,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
   Pmech = p_governor->getMechanicalPower();
   //Pmech = Pmechinit;
  
-  printf("Efd = %f, Pmech = %f\n", Efd, Pmech); 
+  printf("Efd = %f, Pmech = %f\n", Efd, Pmech);*/ 
 
   if (!flag) {
     x1d = x1d_1;
@@ -288,8 +288,8 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
     x5Psiqp = x5Psiqp_1;
     x6Edp = x6Edp_1; 
   }  
-   printf("\n Genrou: what's the initial values for the first iteration?\n");
-   printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
+   //printf("\n Genrou: what's the initial values for the first iteration?\n");
+   //printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
 
     
   double pi = 4.0*atan(1.0);
@@ -318,7 +318,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
   x4Psidp_1 = x4Psidp + dx4Psidp * t_inc;
   x5Psiqp_1 = x5Psiqp + dx5Psiqp * t_inc;
   x6Edp_1 = x6Edp + dx6Edp * t_inc;
-  printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, dx6Edp);
+  /*printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, dx6Edp);
   printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp_1);
   
   p_exciter->setOmega(x2w_1);
@@ -326,7 +326,7 @@ void gridpack::dynamic_simulation::GenrouGenerator::predictor(
   p_exciter->predictor(t_inc, flag);
 
   p_governor->setRotorSpeedDeviation(x2w);
-  p_governor->predictor(t_inc, flag);
+  p_governor->predictor(t_inc, flag);*/
 }
 
 /**
@@ -375,17 +375,17 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector_currentInjection(b
 void gridpack::dynamic_simulation::GenrouGenerator::corrector(
     double t_inc, bool flag)
 {
-  printf("\n***** GEN %d Corrector:\n", p_bus_id);
+  //printf("\n***** GEN %d Corrector:\n", p_bus_id);
 
-  p_exciter = getExciter();
+  /*p_exciter = getExciter();
   Efd = p_exciter->getFieldVoltage(); 
   //Efd = Efdinit;
 
   p_governor = getGovernor();
-  Pmech = p_governor->getMechanicalPower();
+  Pmech = p_governor->getMechanicalPower();*/
   //Pmech = Pmechinit; 
 
-  printf("Efd = %f, Pmech = %f\n", Efd, Pmech); 
+  //printf("Efd = %f, Pmech = %f\n", Efd, Pmech); 
 
   double pi = 4.0*atan(1.0);
   double Psiqpp = - x6Edp_1 * (Xqpp - Xl) / (Xqp - Xl) - x5Psiqp_1 * (Xqp - Xqpp) / (Xqp - Xl); 
@@ -413,12 +413,12 @@ void gridpack::dynamic_simulation::GenrouGenerator::corrector(
   //printf("genrou dx: %f\t%f\t%f\t%f\t%f\t%f\n", dx1d_1, dx2w_1, dx3Eqp_1, dx4Psidp_1, dx5Psiqp_1, dx6Edp);
   //printf("genrou x: %f\t%f\t%f\t%f\t%f\t%f\n", x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqp_1, x6Edp);
   
-  p_exciter->setOmega(x2w_1);
+  /*p_exciter->setOmega(x2w_1);
   p_exciter->setVterminal(presentMag);
   p_exciter->corrector(t_inc, flag);
  
   p_governor->setRotorSpeedDeviation(x2w);
-  p_governor->corrector(t_inc, flag);
+  p_governor->corrector(t_inc, flag);*/
 
   //if (p_bus_id == 1)
     //printf("\t%d          %12.6f   %12.6f   %12.6f   %12.6f   %12.6f	%12.6f\n",    

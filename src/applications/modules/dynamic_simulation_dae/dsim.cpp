@@ -138,8 +138,11 @@ void DSim::solve()
   p_configcursor->get("Gfault",&Gfault);
   p_configcursor->get("Bfault",&Bfault);
 
+  double timestep = 0.01;
+  p_configcursor->get("timeStep",&timestep);
+
   // Pre-fault time-stepping
-  p_daesolver->initialize(0,0.01,*p_X);
+  p_daesolver->initialize(0,timestep,*p_X);
   p_daesolver->solve(faultontime,maxsteps);
   if(!rank()) printf("DSim:Finished pre-fault simulation\n");
 
@@ -153,7 +156,7 @@ void DSim::solve()
 
   // Fault-on time-stepping
   maxsteps = 10000;
-  p_daesolver->initialize(faultontime,0.01,*p_X);
+  p_daesolver->initialize(faultontime,timestep,*p_X);
   p_daesolver->solve(faultofftime,maxsteps);
   if(!rank()) printf("DSim:Finished fault-on simulation\n");
 
@@ -167,7 +170,7 @@ void DSim::solve()
 
   // Post-fault time-stepping
   maxsteps = 10000;
-  p_daesolver->initialize(faultofftime,0.01,*p_X);
+  p_daesolver->initialize(faultofftime,timestep,*p_X);
   p_daesolver->solve(tmax,maxsteps);
   if(!rank()) printf("DSim:Finished post-fault simulation\n");
 }
