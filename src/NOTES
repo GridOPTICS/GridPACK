@@ -1,59 +1,60 @@
 Proposed directory structure inside the source directory.
 
-/core
-  /network
-    base_network
-    shuffler
-    ga_shuffler
-    /partition
-  /mappers   
-  /math
-    complex
-  /math_interfaces
-  /factory
+/framework_src
+  /core
+    /network
+      base_network
+      shuffler
+      ga_shuffler
+      /partition
+    /mappers   
+    /math
+      complex
+    /math_interfaces
+    /factory
 
-/parallel_utilities
-  environment
-  communicator
-  distributed
-  parallel
-  printit
-  task_manager
+  /parallel_utilities
+    environment
+    communicator
+    distributed
+    parallel
+    printit
+    task_manager
 
-/parallel_data_utilities
-  global_vector
-  global_store
-  index_hash
-  hash_distr
+  /parallel_data_utilities
+    global_vector
+    global_store
+    index_hash
+    hash_distr
 
-/IO
-  /parsers
-    PTI23_parser
-    PTI33_parser
-    bus_table
-    cmd_line
-    /parser_classes
-  /configuration
-  /serial_io
-  /export
-  /goss
+  /IO
+    /parsers
+      PTI23_parser
+      PTI33_parser
+      bus_table
+      cmd_line
+      /parser_classes
+    /configuration
+    /serial_io
+    /export
+    /goss
 
-/utilities
-  random
-  timer
-  exception
-  indexed
-  named
-  sanity_interface
-  uncopyable
-  string_utils
-  doxygen_dummy
+  /utilities
+    random
+    timer
+    exception
+    indexed
+    named
+    sanity_interface
+    uncopyable
+    string_utils
+    doxygen_dummy
 
-/analysis
+  /analysis
 
-/components
-  base_component
-  data_collection
+  /components
+    base_component
+    data_collection
 
 /application_components
   /y_matrix
