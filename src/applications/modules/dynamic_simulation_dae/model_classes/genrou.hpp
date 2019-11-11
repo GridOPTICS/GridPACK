@@ -145,6 +145,8 @@ class GenrouGen: public BaseGenModel
 
     double B, G;
     double Vd, Vq;
+
+    int bid;
 };
 
 #endif

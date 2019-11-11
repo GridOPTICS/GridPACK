@@ -162,9 +162,10 @@ class Wsieg1Gov: public BaseGovModel
 
     // WSIEG1 state variables
     double x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4;
-    double x1LL_1, x2GovOut_1, x3Turb1_1, x4Turb2_1, x5Turb3_1, x6Turb4_1;
     double dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4;
-    double dx1LL_1, dx2GovOut_1, dx3Turb1_1, dx4Turb2_1, dx5Turb3_1, dx6Turb4_1;
+
+    // WSIEG1 previous step solution
+    double x1LLprev, x2GovOutprev, x3Turb1prev, x4Turb2prev, x5Turb3prev, x6Turb4prev;
 
     // Outputs: Mechnical Power Gen1 and Gen 2
     double Pmech1, Pmech2;
@@ -180,7 +181,10 @@ class Wsieg1Gov: public BaseGovModel
 
     //bool flag2, flag3, flag4, flag5; //flags for residual function conditions
     //double A, B; // Sat function variables
-    
+
+    int iseq_diff[5];   
+
+    int bid; 
 };
 
 #endif

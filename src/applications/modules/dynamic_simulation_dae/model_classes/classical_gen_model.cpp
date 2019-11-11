@@ -31,6 +31,7 @@ void ClassicalGen::load(const boost::shared_ptr<gridpack::component::DataCollect
   BaseGenModel::load(data,idx); // load parameters in base generator model
 
   // load parameters for the model type
+  data->getValue(BUS_NUMBER, &bid);
   data->getValue(GENERATOR_RESISTANCE,&p_Rs,idx);
   data->getValue(GENERATOR_TRANSIENT_REACTANCE,&p_Xdp,idx);
   data->getValue(GENERATOR_INERTIA_CONSTANT_H,&p_H,idx);
@@ -122,7 +123,10 @@ void ClassicalGen::setValues(gridpack::ComplexType *values)
   } else if(p_mode == XDOTVECTOBUS) {
     p_deltadot = real(values[0]);
     p_dwdot    = real(values[1]);
-  }
+  } else if(p_mode == XVECPRETOBUS) {
+    p_deltaprev = real(values[0]);
+    p_dwprev = real(values[1]);
+  } 
 }
 
 /**
@@ -136,8 +140,11 @@ bool ClassicalGen::vectorValues(gridpack::ComplexType *values)
   int delta_idx = 0, dw_idx = 1;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    values[delta_idx] = values[dw_idx] = 0.0;
+    //values[delta_idx] = values[dw_idx] = 0.0;
+    values[delta_idx] = p_delta - p_deltaprev; 
+    values[dw_idx] = p_dw - p_dwprev;
   } else if(p_mode == RESIDUAL_EVAL) {
+    if (bid==1) printf("bus id=%d:\t%f\t%f\n", bid, p_delta, p_dw);
     // Generator equations
     values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
     values[dw_idx]    = (p_Pm - VD*p_Ep*sin(p_delta)/p_Xdp + VQ*p_Ep*cos(p_delta)/p_Xdp - p_D*p_dw)/(2*p_H) - p_dwdot;

@@ -70,6 +70,7 @@ Wsieg1Gov::~Wsieg1Gov(void)
  */
 void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx)
 {
+  data->getValue(BUS_NUMBER, &bid);
   BaseGovModel::load(data,idx); // load parameters in base governor model
   
   // load parameters for the model type
@@ -217,7 +218,14 @@ void Wsieg1Gov::setValues(gridpack::ComplexType *values)
     dx4Turb2 = real(values[3]);
     dx5Turb3 = real(values[4]);
     dx6Turb4 = real(values[5]);
-  }
+  } else if (p_mode == XVECTOBUS) {
+    x1LLprev = real(values[0]);
+    x2GovOutprev = real(values[1]);
+    x3Turb1prev = real(values[2]);
+    x4Turb2prev = real(values[3]);
+    x5Turb3prev = real(values[4]);
+    x6Turb4prev = real(values[5]);
+   }
 }
 
 /**
@@ -237,15 +245,15 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
   // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     //values[delta_idx] = values[dw_idx] = 0.0;
-    values[x1_idx] = 0.0;
-    values[x2_idx] = 0.0;
-    values[x3_idx] = 0.0;
-    values[x4_idx] = 0.0;
-    values[x5_idx] = 0.0;
-    values[x6_idx] = 0.0;
+    values[x1_idx] = x1LL - x1LLprev; 
+    values[x2_idx] = x2GovOut - x2GovOutprev;
+    values[x3_idx] = x3Turb1 - x3Turb1prev;
+    values[x4_idx] = x4Turb2 - x4Turb2prev;
+    values[x5_idx] = x5Turb3 - x5Turb3prev;
+    values[x6_idx] = x6Turb4 - x6Turb4prev;
   } else if(p_mode == RESIDUAL_EVAL) {
     //printf("\n wsieg1: what's the initial values for the first iteration?\n");
-    //printf("%f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
+    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
     // Governor equations
     //printf("...........%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
 

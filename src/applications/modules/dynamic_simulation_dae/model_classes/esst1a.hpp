@@ -165,6 +165,8 @@ class Esst1aExc: public BaseExcModel
     // Flag to denote whether each equation is algebraic or differential.
     // iseq_diff[i] = 1 if equation is differential, 0 otherwise.
     int iseq_diff[5];
+
+    int bid;
 };
 
 #endif

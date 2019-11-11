@@ -121,6 +121,11 @@ class ClassicalGen: public BaseGenModel
     // Generator variables and their derivatives
     double p_delta,p_dw;
     double p_deltadot,p_dwdot;
+
+    // Previous step values of the variables
+    double p_deltaprev, p_dwprev;
+
+    int bid;
 };
 
 #endif
