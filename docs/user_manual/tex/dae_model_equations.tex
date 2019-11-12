@@ -1,0 +1,174 @@
+\documentclass[12pt]{article}
+
+\usepackage{listings}
+\lstset{
+    language = C++, % language is C++                                                                                     
+    frame=tb, % draw a frame at the top and bottom of the code block                                                      
+    tabsize=4, % tab space width                                                                                          
+    showstringspaces=false, % don't mark spaces in strings                                                                
+  %  numbers=left, % display line numbers on the left                                                                     
+    commentstyle=\color{red}, % comment color                                                                             
+    keywordstyle=\color{blue}, % keyword color                                                                            
+    stringstyle=\color{red} % string color                                                                                
+}
+\usepackage{xcolor}
+\usepackage[toc,page]{appendix}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{verbatim}
+\usepackage{url}
+
+\newcommand{\dw}{\Delta\omega}
+\newcommand{\Xdp}{X{'}_d}
+\newcommand{\Ep}{E^{'}}
+\newcommand{\Vref}{V_{REF}}
+
+\begin{document}
+
+% --------------------------------------------------------------                                                          
+%                         Start here                                                                                      
+% --------------------------------------------------------------                                                          
+
+\title{Dynamics Models implemented in GridPACK}
+
+\maketitle
+
+\section{Introduction}
+This document describes the variables, equations, inputs, and outputs for the different generator, exciter, and turbine governor models implemented in GridPACK.
+The document assumes the bus voltage is expressed in cartesian form, i.e. $\bar{V} = V_R + iV_I$, where
+$V_R$ and $V_I$ are the real and imaginary components of the complex bus voltage $V$.
+
+\section{Generator models}
+The inputs and outputs for the generator models are given below. These inputs/outputs representing
+the coupling with the bus and the generator controls such as exciters, turbine-governors.
+\subsection{Inputs}
+\begin{enumerate}
+  \item $P_M$: Mechanical power input
+\end{enumerate}
+
+\subsection{Outputs}
+\begin{enumerate}
+  \item Generator current real and imaginary components, $I_{GR}$ and $I_{GI}$, respectively.
+  \item $\delta$ : Rotor angle
+  \item $\dw$ : Speed deviation
+  \item Field current $I_{FD}$
+\end{enumerate}
+
+\subsection{GENCLS\cite{GENCLS}}
+Note: In the GridPACK implementation, the speed effects mimicing governor reaction is ignored.
+
+\subsubsection{Variables}
+\begin{enumerate}
+  \item $\delta$: Machine angle
+  \item $\dw$: Machine speed deviation (per unit)
+\end{enumerate}
+
+\subsubsection{Equations}
+\begin{align}
+\dfrac{1}{\omega_s}\dfrac{d\delta}{dt} &= \dw \\
+2H\dfrac{d\dw}{dt} &= P_M - \dfrac{V_R\Ep\sin(\delta) + V_I\Ep\cos(\delta)}{\Xdp} - D\dw
+\end{align}
+
+\subsubsection{Outputs}
+\begin{enumerate}
+	\item Generator currents:
+\begin{align}
+  I_{GR} &= \dfrac{\Ep\sin(\delta) - V_I}{\Xdp} \\
+  I_{GI} &= \dfrac{-\Ep\cos(\delta) + V_R}{\Xdp}
+\end{align}
+\end{enumerate}
+
+\subsection{GENROU}
+
+\subsection{GENSAL}
+
+\section{Exciter models}
+Over/under excitation limiters and stabilizers are not implemented in GridPACK. As a result, any inputs from these devices are not considered in the exciter models.
+
+\subsection{Inputs}
+\begin{enumerate}
+  \item $E_c$: Terminal voltage magnitude = $\sqrt{V^{2}_R + V^{2}_I}$
+  \item $\Vref$: Reference voltage
+  \item $I_{LR}$: Field current limiter parameter
+\end{enumerate}
+
+\subsection{Outputs}
+\begin{enumerate}
+  \item $E_{FD}$: Field voltage
+\end{enumerate}
+
+\subsection{EXDC1}
+
+\subsection{ESST1A \cite{ESST1A}}
+
+\subsubsection{Variables}
+\begin{enumerate}
+  \item $V_{meas}$: Measured terminal voltage
+  \item $x_{LL1}$: First lead lag block state variable
+  \item $x_{LL2}$: Second lead lag block state variable
+  \item $V_A$: Gain voltage
+  \item $x_F$: Feedback loop state variable
+\end{enumerate}
+
+\subsubsection{Equations}
+\begin{flalign}
+  &\begin{cases}
+    T_R\dfrac{dV_{meas}}{dt} = Ec - V_{meas},&\text{if}~~T_R > 0 \\
+    0 = Ec - V_{meas},&\text{if}~~T_R = 0
+  \end{cases}& \\
+  &\begin{cases}
+    T_b\dfrac{dx_{LL1}}{dt} = (1 - \dfrac{T_c}{T_b})V_{in} - x_{LL1},&\text{if}~~T_b > 0 \\
+    0 = V_{in} - x_{LL1},&\text{if}~~T_b = 0
+  \end{cases}& \\
+  &\begin{cases}
+    T_{b1}\dfrac{dx_{LL2}}{dt} = (1 - \dfrac{T_{c1}}{T_{b1}})y_{LL1} - x_{LL2},&\text{if}~~T_{b1} > 0 \\
+    0 = y_{LL1} - x_{LL2},&\text{if}~~T_{b1} = 0
+  \end{cases}& \\
+  &\begin{cases}
+    T_{A}\dfrac{dV_{A}}{dt} = y_{LL2} -K_AV_A,&\text{if}~~T_{A} > 0,\quad V_{AMIN} \le V_A \le V_{AMAX} \\
+    0 = y_{LL2} - V_{A},&\text{if}~~T_{A} = 0,\quad V_{AMIN} \le V_A \le V_{AMAX}
+  \end{cases}& \\
+  &T_F\dfrac{dx_F}{dt} = \dfrac{K_Fu_{FB}}{T_F} - x_F&
+\end{flalign}
+Here, the intermediate variables used in the calculations are as follows:
+\begin{align*}
+  &V_{in} = \min(\max(\Vref - V_{meas} - V_F,V_{IMIN}),V_{IMAX})& \\
+  &\begin{cases}
+    y_{LL1} = x_{LL1} + \dfrac{T_c}{T_b}V_{in},&\text{if}~~T_{b} > 0 \\
+    y_{LL1} = x_{LL1},&\text{if}~~T_{b} = 0
+  \end{cases}& \\
+  &\begin{cases}
+    y_{LL2} = x_{LL2} + \dfrac{T_{c1}}{T_{b1}}y_{LL1},&\text{if}~~T_{b1} > 0 \\
+    y_{LL2} = x_{LL2},&\text{if}~~T_{b1} = 0 \\
+  \end{cases}& \\
+  &u_{FB}  = V_A - \min(K_{LR}(I_{FD} - I_{LR}),0)& \\
+  &V_F     = x_F + \dfrac{K_FT_F}{u_{FB}}&   
+\end{align*}
+
+\subsection{Outputs}
+\begin{enumerate}
+  \item $E_{FD} = \min(\max(u_{FB},V_TV_{RMIN}),V_TV_{RMAX} - K_CI_{FD})$
+\end{enumerate}
+
+\section{Turbine governor models}
+
+\subsection{WSIEG1}
+
+\begin{thebibliography}{20}
+
+\bibitem{GENCLS}
+  PowerWorld,
+  \textit{GENCLS model block diagram}
+  available at \url{https://www.powerworld.com/WebHelp/Content/TransientModels_HTML/Machine\%20Mode\%20GENCLS.htm}
+
+
+\bibitem{ESST1A}
+  PowerWorld,
+  \textit{ESST1A model block diagram}
+  available at \url{https://www.powerworld.com/WebHelp/Content/TransientModels_HTML/Exciter\%20ESST1A\%20and\%20ESST1A_GE.htm},
+
+\end{thebibliography}
+
+\end{document}
