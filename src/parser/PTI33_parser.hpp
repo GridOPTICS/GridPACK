@@ -53,6 +53,7 @@ class PTI33_parser : public BasePTIParser<_network>
       : p_network(network), p_maxBusIndex(-1)
     {
       this->setNetwork(network);
+      p_network_data = network->getNetworkData();
     }
 
     /**
@@ -231,6 +232,8 @@ class PTI33_parser : public BasePTIParser<_network>
         }
       }
 #endif
+      p_network->broadcastNetworkData(0);
+      p_network_data = p_network->getNetworkData();
       p_timer->stop(t_case);
     }
 
@@ -254,6 +257,8 @@ class PTI33_parser : public BasePTIParser<_network>
       // CASE_SBASE          "SBASE"                float
       p_case_sbase = atof(split_line[1].c_str());
 
+      p_network_data->addValue(CASE_SBASE, p_case_sbase);
+      p_network_data->addValue(CASE_ID, p_case_id);
       /*  These do not appear in the dictionary
       // REVISION_ID
       if (split_line.size() > 2)
@@ -1400,7 +1405,7 @@ class PTI33_parser : public BasePTIParser<_network>
           double tap = windv1/windv2;
           p_branchData[l_idx]->addValue(BRANCH_TAP,tap,nelems);
           p_branchData[l_idx]->addValue(TRANSFORMER_WINDV1,windv1,nelems);
-          p_branchData[l_idx]->addValue(TRANSFORMER_WINDV1,windv2,nelems);
+          p_branchData[l_idx]->addValue(TRANSFORMER_WINDV2,windv2,nelems);
 
           /*
            * type: float
@@ -1515,43 +1520,32 @@ class PTI33_parser : public BasePTIParser<_network>
 
       std::getline(input, line); //this should be the first line of the block
 
+      int ncnt = 0;
       while(test_end(line)) {
         std::vector<std::string>  split_line;
         this->cleanComment(line);
         boost::split(split_line, line, boost::algorithm::is_any_of(","),
             boost::token_compress_off);
 
-        // AREAINTG_ISW           "ISW"                  integer
-        int l_idx, o_idx;
-        o_idx = atoi(split_line[1].c_str());
-#ifdef OLD_MAP
-        std::map<int, int>::iterator it;
-#else
-        boost::unordered_map<int, int>::iterator it;
-#endif
-        it = p_busMap.find(o_idx);
-        if (it != p_busMap.end()) {
-          l_idx = it->second;
-        } else {
-          std::getline(input, line);
-          continue;
-        }
-        p_busData[l_idx]->addValue(AREAINTG_ISW, atoi(split_line[1].c_str()));
+        // AREAINTG_ISW             "I"                    integer
+        p_network_data->addValue(AREAINTG_ISW, atoi(split_line[1].c_str()),ncnt);
 
         // AREAINTG_NUMBER             "I"                    integer
-        p_busData[l_idx]->addValue(AREAINTG_NUMBER, atoi(split_line[0].c_str()));
+        p_network_data->addValue(AREAINTG_NUMBER, atoi(split_line[0].c_str()),ncnt);
 
         // AREAINTG_PDES          "PDES"                 float
-        p_busData[l_idx]->addValue(AREAINTG_PDES, atof(split_line[2].c_str()));
+        p_network_data->addValue(AREAINTG_PDES, atof(split_line[2].c_str()),ncnt);
 
         // AREAINTG_PTOL          "PTOL"                 float
-        p_busData[l_idx]->addValue(AREAINTG_PTOL, atof(split_line[3].c_str()));
+        p_network_data->addValue(AREAINTG_PTOL, atof(split_line[3].c_str()),ncnt);
 
         // AREAINTG_NAME         "ARNAM"                string
-        p_busData[l_idx]->addValue(AREAINTG_NAME, split_line[4].c_str());
+        p_network_data->addValue(AREAINTG_NAME, split_line[4].c_str(),ncnt);
+        ncnt++;
 
         std::getline(input, line);
       }
+      p_network_data->addValue(AREA_TOTAL,ncnt);
     }
 
     void find_2term(std::ifstream & input)
@@ -2381,6 +2375,11 @@ class PTI33_parser : public BasePTIParser<_network>
     int p_maxBusIndex;
     double p_case_sbase;
     gridpack::utility::CoarseTimer *p_timer;
+
+    /**
+     * Data collection object associated with network as a whole
+     */
+    boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
 };
 
 } /* namespace parser */

@@ -3366,32 +3366,43 @@
 
 // AREA DATA
 /**
+ * Total number of area fields
+ * type: integer
+ */
+#define AREA_TOTAL "AREA_TOTAL"
+
+/**
  * Area number
  * type: integer
+ * indexed
  */
 #define AREAINTG_NUMBER "AREAINTG_NUMBER"
 
 /**
  * Bus number of the area slack bus
  * type: integer
+ * indexed
  */
 #define AREAINTG_ISW "AREAINTG_ISW"
 
 /**
  * Desired net interchange leaving the area (export); entered in MW
  * type: real float
+ * indexed
  */
 #define AREAINTG_PDES "AREAINTG_PDES"
 
 /**
  * Interchange tolerance bandwidth; entered in MW
  * type: real float
+ * indexed
  */
 #define AREAINTG_PTOL "AREAINTG_PTOL"
 
 /**
  * Area name
  * type: string
+ * indexed
  */
 #define AREAINTG_NAME "AREAINTG_NAME"
 

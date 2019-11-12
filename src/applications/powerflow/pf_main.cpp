@@ -47,6 +47,9 @@ main(int argc, char **argv)
     cursor = config->getCursor("Configuration.Powerflow");
     bool useNonLinear = false;
     useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+    bool exportPSSE = false;
+    std::string filename;
+    exportPSSE = cursor->get("exportPSSE_v33",&filename);
 
     // setup and run powerflow calculation
     boost::shared_ptr<gridpack::powerflow::PFNetwork>
@@ -63,6 +66,9 @@ main(int argc, char **argv)
     }
     pf_app.write();
     pf_app.saveData();
+    if (exportPSSE) {
+      pf_app.exportPSSE33(filename);
+    }
     timer ->dump();
   }
 
