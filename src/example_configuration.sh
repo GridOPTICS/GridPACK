@@ -158,11 +158,25 @@ elif [ $host == "WE32673" ]; then
 
     prefix="/Users/d3g096/Projects/GridPACK"
 
+    if [ "$shared"x = "ON"x ]; then
+        pdir="$prefix/petsc-3.8.4" 
+        parch="arch-macosx-clang-real-shared-c" 
+    else
+        pdir="$prefix/petsc-3.7.5"
+        parch="arch-macosx-clang-real-opt"
+        #pdir="$prefix/petsc-3.8.4" 
+        #parch="arch-macosx-clang-real-opt-c"
+        #pdir="$prefix/petsc-3.9.4" 
+        #parch="macosx-real-cpp-static"
+        # pdir="$prefix/petsc-3.11.3"
+        # parch="macosx-complex-c-static"
+    fi
+    
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="/opt/local" \
-        -D PETSC_DIR:PATH="$prefix/petsc-3.8.4" \
-        -D PETSC_ARCH:STRING="arch-macosx-clang-real-shared-c" \
+        -D PETSC_DIR:PATH="$pdir" \
+        -D PETSC_ARCH:STRING="$parch" \
         -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
         -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
         -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
