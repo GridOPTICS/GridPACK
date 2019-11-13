@@ -283,6 +283,9 @@ std::vector<double> gridpack::dynamic_simulation::DSFullFactory::grabWideAreaFre
   freq2 = 60.0;
   freqdiff = 0.0;
   int busnumtmp;
+  
+  // the following code grabs specific bus frequency
+  /*
   for (i=0; i<p_numBus; i++) {
 	  
     busnumtmp = p_buses[i]->getOriginalIndex();
@@ -294,10 +297,11 @@ std::vector<double> gridpack::dynamic_simulation::DSFullFactory::grabWideAreaFre
 	}
 	
   }
+  */
   
   freqdiff = freq1 - freq2;
   
-  printf("-----------!!renke debug DSFullFactory::grabWideAreaFreq( ): bus 30: %12.6f,  bus 34: %12.6f,  diff 34-30: %12.6f \n", freq2, freq1, freqdiff);
+  //printf("-----------!!renke debug DSFullFactory::grabWideAreaFreq( ): bus 30: %12.6f,  bus 34: %12.6f,  diff 34-30: %12.6f \n", freq2, freq1, freqdiff);
   
   std::vector <double> vbusfreq;
   vbusfreq.push_back(freq2);

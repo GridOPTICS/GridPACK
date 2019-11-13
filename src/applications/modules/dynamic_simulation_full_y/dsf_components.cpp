@@ -692,7 +692,7 @@ void gridpack::dynamic_simulation::DSFullBus::updateFreq (double delta_t){
 	double dbusvoltfreq;
 	if ( bcomputefreq == true ) {
 		
-		printf ("------------!!!renke debug DSFullBus::updateFreq bus: %d updates frequency!!!\n", getOriginalIndex());
+		//printf ("------------!!!renke debug DSFullBus::updateFreq bus: %d updates frequency!!!\n", getOriginalIndex());
 		computeBusVolFrequency(delta_t);
 	    dbusvoltfreq = getBusVolFrequency();
 		
@@ -873,7 +873,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
             }
           }
 		  if (has_pss) {
-			printf("---------renkedebug: bus %d: has pss", idx);
+			//printf("---------renkedebug: bus %d: has pss", idx);
             if (data->getValue(PSS_MODEL, &model, i)) {
 			  //p_generators[icnt]->p_hasPss = true;
               BasePssModel *pssmodel
@@ -1067,12 +1067,13 @@ void gridpack::dynamic_simulation::DSFullBus::load(
 
   printf(" Bus %d have remaining static loads for Y-bus: p_pl: %f pu, p_ql: %f pu, \n",
       idx, p_pl, p_ql);
-
+   
+   // renke, this is the special code to determine which bus frequency need to be updated for wide area control
   //if (getOriginalIndex() == 34 || getOriginalIndex() == 30){ //renke hardcoded
-  if (idx == 34 || idx == 30){ //renke hardcoded
-	  bcomputefreq = true;
-	  printf("--------------------!!renke debug DSFullBus::load(), Bus No.: %d set bcomputefreq as true \n", getOriginalIndex());
-  }
+  //if (idx == 34 || idx == 30){ //renke hardcoded
+	//	bcomputefreq = true;
+	//  printf("--------------------!!renke debug DSFullBus::load(), Bus No.: %d set bcomputefreq as true \n", getOriginalIndex());
+  //}
 	  
 
 }

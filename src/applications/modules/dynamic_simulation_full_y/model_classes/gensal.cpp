@@ -93,7 +93,7 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
   //printf("load S10 = %f, S12 = %f\n", S10, S12);
   //if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
   
-  printf("gensal parameters: %12.6f, %12.6f,%12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f  \n", H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Tdop, Tdopp, Tqopp, S10, S12);
+  // printf("gensal parameters: %12.6f, %12.6f,%12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f  \n", H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Tdop, Tdopp, Tqopp, S10, S12);
 }
 
 /**
@@ -102,15 +102,17 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
  */
 double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 {
-    //double a_ = S12 / S10 - 1.0 / 1.2;
-    //double b_ = -2 * S12 / S10 + 2;
-    //double c_ = S12 / S10 - 1.2;
-    //double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
-    //double B = S10 / ((1.0 - A) * (1.0 - A));
-    //double result = B * (x - A) * (x - A) / x;
+    double a_ = S12 / S10 - 1.0 / 1.2;
+    double b_ = -2 * S12 / S10 + 2;
+    double c_ = S12 / S10 - 1.2;
+    double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
+    double B = S10 / ((1.0 - A) * (1.0 - A));
+    double result = B * (x - A) * (x - A) / x;
     //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
     //printf("Sat result = %f\n", result); 
 	
+	// the following is another method for saturation computation, add by renke
+	/*
 	double a_ = S12 / S10 - 1.0;
     double b_ = -2 * S12 / S10 + 2.4;
     double c_ = S12 / S10 - 1.44;
@@ -123,6 +125,7 @@ double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 		tmp = 0.0;
 	}
     double result = B * tmp * tmp;
+	*/
 	
     return result; // Scaled Quadratic with 1.7.1 equations
 }
@@ -142,7 +145,7 @@ void gridpack::dynamic_simulation::GensalGenerator::init(double mag,
   presentAng = ang;
   double P = p_pg / MVABase;
   double Q = p_qg / MVABase;
-  printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
+  //printf("p_pg = %f, p_qg = %f, MVABase = %f\n", p_pg, p_qg, MVABase);
   //printf("Vterm = %f, Theta = %f, P = %f, Q = %f\n", Vterm, Theta, P, Q);
   double Vrterm = Vterm * cos(Theta);
   double Viterm = Vterm * sin(Theta);
@@ -552,7 +555,7 @@ void gridpack::dynamic_simulation::GensalGenerator::setWideAreaFreqforPSS(double
 {
 	p_wideareafreq = freq;
 	if (p_hasPss){
-		printf("-----!renke debug: GensalGenerator::setWideAreaFreqforPSS: %12.6f \n", freq);
+		//printf("-----!renke debug: GensalGenerator::setWideAreaFreqforPSS: %12.6f \n", freq);
 		p_pss = getPss();
 		p_pss->setWideAreaFreqforPSS(freq);	
 	}
