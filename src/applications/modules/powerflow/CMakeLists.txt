@@ -17,6 +17,7 @@ set(target_libraries
     gridpack_components
     gridpack_partition
     gridpack_parallel
+    gridpack_stream
     gridpack_math
     gridpack_configuration
     gridpack_timer

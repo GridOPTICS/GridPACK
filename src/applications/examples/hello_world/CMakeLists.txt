@@ -15,6 +15,7 @@
 
 set(target_libraries
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_math
     gridpack_configuration

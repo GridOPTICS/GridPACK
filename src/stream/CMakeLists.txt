@@ -9,56 +9,46 @@
 # file: CMakeLists.txt
 # -------------------------------------------------------------
 # -------------------------------------------------------------
-# Created January 19, 2015 by William A. Perkins, Bruce Palmer
+# Created May  6, 2013 by William A. Perkins
+# Last Change: 2018-09-20 11:18:01 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries
-    gridpack_components
-    gridpack_stream
-    gridpack_partition
-    gridpack_parallel
-    gridpack_math
-    gridpack_configuration
-    gridpack_timer
-    gridpack_sematrix_components
-    gridpack_ymatrix_components
-    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
-    ${Boost_LIBRARIES}
-    ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+add_library(gridpack_stream
+  input_stream.cpp
+)
 
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (GA_FOUND)
-  include_directories(AFTER ${GA_INCLUDE_DIRS})
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_stream)
 endif()
 
-add_library(gridpack_state_estimation_module
-  se_app_module.cpp
-  se_factory_module.cpp
+set(target_libraries
+    gridpack_stream
+    ${GA_LIBRARIES}
+    ${Boost_LIBRARIES}
+    ${MPI_CXX_LIBRARIES}
 )
-gridpack_set_library_version(gridpack_state_estimation_module)
-target_link_libraries(gridpack_state_estimation_module
-  gridpack_sematrix_components
-  gridpack_partition
-  gridpack_math
-  )
+
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(AFTER ${GA_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
-# component serialization tests
+# TEST: test_timer
 # -------------------------------------------------------------
-#target_link_libraries(gridpack_state_estimation_module ${target_libraries})
+
+#add_executable(test_timer test/test_timer.cpp)
+#target_link_libraries(test_timer ${target_libraries})
+
+#gridpack_add_unit_test(timer_test test_timer)
 
 # -------------------------------------------------------------
 # installation
 # -------------------------------------------------------------
 install(FILES 
-  se_app_module.hpp
-  se_factory_module.hpp
-  DESTINATION include/gridpack/applications/modules/state_estimation
+  input_stream.hpp
+  DESTINATION include/gridpack/stream
 )
 
 install(TARGETS 
-  gridpack_state_estimation_module
+  gridpack_stream
   DESTINATION lib
 )

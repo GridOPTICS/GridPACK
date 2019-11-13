@@ -18,6 +18,7 @@ set(target_libraries
     gridpack_ymatrix_components
     gridpack_powerflow_module
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_parallel
     gridpack_math
