@@ -11,6 +11,7 @@
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/component/data_collection.hpp"
 #include "gridpack/component/optimization_ifc.hpp"
+#include "gridpack/stream/input_stream.hpp"
 #include "gridpack/analysis/stat_block.hpp"
 #include "gridpack/configuration/configurable.hpp"
 #include "gridpack/configuration/configuration.hpp"

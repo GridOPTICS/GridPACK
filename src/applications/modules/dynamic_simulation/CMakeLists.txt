@@ -17,6 +17,7 @@ set(target_libraries
     gridpack_ymatrix_components
     gridpack_powerflow_module
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_parallel
     gridpack_math
@@ -46,12 +47,12 @@ add_library(gridpack_dynamic_simulation_module
   ds_factory_module.cpp
 )
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_dynamic_simulation_module
-    gridpack_dsmatrix_components
-    gridpack_powerflow_module
-    )
-endif()
+gridpack_set_library_version(gridpack_dynamic_simulation_module)
+
+target_link_libraries(gridpack_dynamic_simulation_module
+  gridpack_dsmatrix_components
+  gridpack_powerflow_module
+  )
 
 # -------------------------------------------------------------
 # component serialization tests

@@ -1,0 +1,85 @@
+\section{Global Vector}\label{global_vector}
+
+The \texttt{\textbf{GlobalVector}} class was created to allow data to be stored
+in a linear array that is accessible from any processor. Each processor can
+upload a list of elements and their locations to the
+\texttt{\textbf{GlobalVector}}. All processors can then access any portion of
+the vector. Processors generate elements and assign an index to each element.
+Generally, the elements in each processor will represent
+a contiguous block in the global vector, but other patterns are possible. After
+uploading, a processor can copy any portion of the global vector, or the whole vector,
+back to a local vector. This functionality is primarily used for constructing a
+data set that is accessible to the entire system using contributions from
+individual processors.
+
+The module \texttt{\textbf{GlobalVector}} is a templated class that is located
+in the \texttt{\textbf{gridpack::parallel}} namespace. The
+\texttt{\textbf{GlobalVector}} constructor is
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+GlobalVector<data_type>(const gridpack::parallel::Communicator &comm)
+\end{Verbatim}
+}
+
+The constructor takes a communicator as an argument so data in the
+\texttt{\textbf{GlobalVector}} object will only be visible to processors in the
+communicator. Similar to the \texttt{\textbf{GlobalStore}} class,
+\texttt{\textbf{GlobalVector}} also takes a template argument \texttt{\textbf{data\_type}} that can be any fixed-sized data type. This includes standard data types such as \texttt{\textbf{int}}, \texttt{\textbf{float}}, \texttt{\textbf{double}}, etc. but could also represent user-defined structs.
+
+Data can be added to the \texttt{\textbf{GlobalVector}} object using the command
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void addElements(std::vector<int> &idx,
+                 const std::vector<data_type> &vec)
+\end{Verbatim}
+}
+
+The vector \texttt{\textbf{idx}} contains the index locations of each of the
+elements in the vector \texttt{\textbf{vec}}.  The indices do not have to
+be complete, i.e. not all indices in some interval [0,{\dots},N-1] need to be
+added to the storage object, although the data in those locations will be
+undefined and it is up to the application to avoid accessing those locations.
+The length of the vectors can differ for different
+processors and there are also no restrictions on which processor contributes which
+set of indices, so contributions can be made in any order from any processor. The only
+restriction on indices is that they are not used more than once.
+
+Once the processors have completed adding elements to the storage object, the data is still only stored locally. To make it globally accessible, it is necessary to move it from local buffers to a globally accessible data structure. This is accomplished by calling the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void upload()
+\end{Verbatim}
+}
+
+This function takes no arguments. After calling \texttt{\textbf{upload}}, it is
+no longer possible to continue adding data to the storage object using the
+\texttt{\textbf{addElement}} function.
+
+After calling upload, any processor can retrieve data using the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getData(const std::vector<int> &idx,
+             std::vector<data_type> &vec)
+\end{Verbatim}
+}
+
+This function retrieves the data corresponding to indices in
+\texttt{\textbf{idx}} from global storage and stores it in a local vector. The
+\texttt{\textbf{getData}} function can be called an arbitrary number of times after the data has been uploaded.
+
+Similar to the \texttt{\textbf{GlobalStore}} class, it is worth noting that
+the implementation of the \texttt{\textbf{GlobalVector}} class uses some Global
+Array calls that can potentially interfere with MPI calls in a subsequent
+function call, resulting in the code hanging. If this occurs, it is usually
+possible to prevent the hang by calling \texttt{\textbf{Communicator::sync}} on
+the communicator that was used to define the \texttt{\textbf{GlobalVector}}
+object. This should be done after completing all \texttt{\textbf{getData}} calls
+but before making calls to other parallel functions.

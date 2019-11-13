@@ -10,13 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-19 14:59:48 d3g096
+# Last Change: 2019-08-16 13:51:41 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
     gridpack_pfmatrix_components
     gridpack_ymatrix_components
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_math
     gridpack_configuration
@@ -46,6 +47,8 @@ target_link_libraries(powerflow_app2
   gridpack_partition
   gridpack_math
 )
+
+gridpack_set_library_version(powerflow_app2)
 
 add_executable(powerflow2
   pf_app2.cpp

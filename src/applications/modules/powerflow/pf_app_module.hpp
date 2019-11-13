@@ -152,6 +152,12 @@ class PFAppModule
      * Save results of powerflow calculation to data collection objects
      */
     void saveData();
+
+    /**
+     * Export final configuration to PSS/E formatted file
+     * @param filename name of file to store network configuration
+     */
+    void exportPSSE33(std::string &filename);
     
     /**
      * Set a contingency

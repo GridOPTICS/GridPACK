@@ -18,6 +18,7 @@ set(target_libraries
     gridpack_sematrix_components
     gridpack_ymatrix_components
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_math
     gridpack_configuration

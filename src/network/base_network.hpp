@@ -307,6 +307,7 @@ explicit BaseNetwork(const parallel::Communicator& comm)
   p_external_branch = false;
   p_allocatedBus = false;
   p_allocatedBranch = false;
+  p_network_data.reset(new gridpack::component::DataCollection);
 }
 
 /**
@@ -2432,7 +2433,27 @@ std::vector<int> getLocalBranchIndices(int idx1, int idx2) {
   return ret;
 }
 
+/**
+ * Return a boost pointer to the DataCollection object containing
+ * parameters that describe the network as a whole
+ * @return a pointer to network-level data collection object
+ */
 
+boost::shared_ptr<gridpack::component::DataCollection> getNetworkData()
+{
+  return p_network_data;
+}
+
+/**
+ * Broadcast network data object from one processor to remaining processors on
+ * network communicator
+ * @param rank of processor that acts as root for broadcast
+ */
+void broadcastNetworkData(int idx)
+{
+  boost::mpi::communicator comm = this->communicator().getCommunicator();
+  boost::mpi::broadcast(comm, p_network_data, idx);
+}
 protected:
 
 /**
@@ -2522,6 +2543,11 @@ private:
    */
   std::multimap<int,int> p_busMap;
   std::multimap<std::pair<int,int>,int> p_branchMap;
+
+  /**
+   * Data collection object associated with network as a whole
+   */
+  boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
 };
 }  //namespace network
 }  //namespace gridpack

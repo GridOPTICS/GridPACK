@@ -4,16 +4,19 @@
 # -------------------------------------------------------------
 # handle command line options
 # -------------------------------------------------------------
-usage="$0 [-d|-r] [-s] [name]"
+usage="$0 [-d|-r] [-s] [-G] [-B] [name]"
 
-set -- `getopt rds $*`
+options=`getopt rdsGB $*`
 if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
 fi
+set -- "$options"
 
 build="RelWithDebInfo"
 shared="FALSE"
+buildGA="FALSE"
+buildBoost="FALSE"
 for o in $*; do
     case $o in
         -d)
@@ -26,6 +29,12 @@ for o in $*; do
             ;;
         -s)
             shared="ON"
+            shift
+            ;;
+        -G) buildGA="ON"
+            shift
+            ;;
+        -B) buildBoost="ON"
             shift
             ;;
         --)
@@ -51,6 +60,8 @@ options="-Wdev --debug-trycompile"
 
 # useful build types: Debug, Release, RelWithDebInfo
 common_flags="\
+        -D BUILD_GA:BOOL=$buildGA \
+        -D BUILD_BOOST:BOOL=$buildBoost \
         -D BUILD_SHARED_LIBS:BOOL=$shared \
         -D CMAKE_BUILD_TYPE:STRING=$build \
         -D CMAKE_VERBOSE_MAKEFILE:BOOL=TRUE \
@@ -75,16 +86,17 @@ if [ $host == "flophouse" ]; then
     export CXX
 
     if [ "$shared"x = "ON"x ]; then
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel7-gnu48-real-opt-shared"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel7-real-c-shared"
     else
-        # pdir="/net/flophouse/files0/perksoft/petsc-3.4.5"
-        # parch="rhel7-real-c++-static"
-        # parch="rhel7-real-c-static"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
         parch="rhel7-gnu48-real-opt"
-        parch="rhel7-gnu48-complex-opt"
-        parch="rhel7-gnu48-complex-opt-c"
+        # parch="rhel7-gnu48-complex-opt"
+        # parch="rhel7-gnu48-complex-opt-c"
+        parch="rhel7-real-c-static"
+        parch="rhel7-complex-c-static"
+        # parch="rhel7-real-c-static-debug"
+        # pdir="/net/flophouse/files0/perksoft/petsc-3.10.3"
     fi
 
     cplexroot="/opt/ibm/ILOG/CPLEX_Studio1261"
@@ -162,7 +174,7 @@ elif [ $host == "WE32673" ]; then
         pdir="$prefix/petsc-3.8.4" 
         parch="arch-macosx-clang-real-shared-c" 
     else
-        pdir="$prefix/petsc-3.7.5"
+        pdir="$prefix/petsc-3.8.4"
         parch="arch-macosx-clang-real-opt"
         #pdir="$prefix/petsc-3.8.4" 
         #parch="arch-macosx-clang-real-opt-c"
@@ -171,7 +183,6 @@ elif [ $host == "WE32673" ]; then
         # pdir="$prefix/petsc-3.11.3"
         # parch="macosx-complex-c-static"
     fi
-    
     cmake $options \
         -D GA_DIR:STRING="$prefix" \
         -D BOOST_ROOT:STRING="/opt/local" \
@@ -202,6 +213,29 @@ elif [ $host == "olympus.local" ]; then
 	-D MPIEXEC:STRING='mpiexec' \
 	$common_flags ..
 
+
+elif [ $host == "constance" ]; then
+
+    CC=`which gcc`
+    CXX=`which g++`
+    CFLAGS="-pthread"
+    CXXFLAGS="-pthread"
+
+    export CC CXX CFLAGS CXXFLAGS
+
+    prefix="/people/d3g096/gridpack"
+    cmake $options \
+        -D GA_DIR:STRING="$prefix/ga-5-4" \
+	-D GA_EXTRA_LIBS:STRING="-libverbs" \
+	-D BOOST_ROOT:STRING="$prefix" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.7.3" \
+	-D PETSC_ARCH:STRING='constance-gnu48-complex-opt' \
+	-D MPI_CXX_COMPILER:STRING=`which mpicxx` \
+	-D MPI_C_COMPILER:STRING=`which mpicc` \
+	-D MPIEXEC:STRING=`which mpiexec` \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+	$common_flags ..
+
 elif [ $host == "tlaloc" ]; then
 
     # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
@@ -213,17 +247,16 @@ elif [ $host == "tlaloc" ]; then
     if [ "$shared"x = "ON"x ]; then
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
         parch="rhel6-complex-c-shared"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel6-complex-c-shared"
     else
-        pdir="/net/flophouse/files0/perksoft/petsc-3.4.5"
-        # pdir="/net/flophouse/files0/perksoft/petsc-3.4.2"
-        pdir="/net/flophouse/files0/perksoft/petsc-3.5.4"
         pdir="/net/flophouse/files0/perksoft/petsc-3.8.4"
-        parch="rhel6-real-c-static"
-        #parch="rhel6-real-c++-static"
         parch="rhel6-complex-c-static"
-        # parch="rhel6-complex-c++-static"
+        parch="rhel6-real-c-static"
+        pdir="/net/flophouse/files0/perksoft/petsc-3.9.4"
+        parch="rhel6-real-c-static"
     fi
-    
+
     cmake3 $options \
           -D GA_DIR:PATH="${prefix}/ga-c++" \
           -D BOOST_ROOT:PATH="${prefix}" \
@@ -238,8 +271,6 @@ elif [ $host == "tlaloc" ]; then
           -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
           -D CMAKE_INSTALL_PREFIX:PATH="${prefix}/gridpack" \
           $common_flags ..
-
-    
 
 elif [ $host == "gridpackvm" ]; then
 
@@ -260,7 +291,7 @@ elif [ $host == "gridpackvm" ]; then
         -D GRIDPACK_TEST_TIMEOUT:STRING=20 \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/usr" \
-        -D CMAKE_INSTALL_PREFIX:PATH="/usr" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$HOME/gridpack/gridpack_install" \
 	$common_flags ..
 
 elif [ $host == "debianvm" ]; then

@@ -10,44 +10,45 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:42:40 d3g096
+# Last Change: 2018-09-20 11:18:01 d3g096
 # -------------------------------------------------------------
-add_library(gridpack_analysis
-  stat_block.cpp
+
+add_library(gridpack_stream
+  input_stream.cpp
 )
 
-add_dependencies(gridpack_analysis external_build)
-gridpack_set_library_version(gridpack_analysis)
-
 if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_analysis
-    gridpack_parallel
-    )
+  target_link_libraries(gridpack_stream)
 endif()
 
 set(target_libraries
-  gridpack_analysis
-  gridpack_parallel
+    gridpack_stream
     ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
-    ${MPI_CXX_LIBRARIES})
+    ${MPI_CXX_LIBRARIES}
+)
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-if (GA_FOUND)
-    include_directories(AFTER ${GA_INCLUDE_DIRS})
-endif()
+include_directories(AFTER ${GA_INCLUDE_DIRS})
+
+# -------------------------------------------------------------
+# TEST: test_timer
+# -------------------------------------------------------------
+
+#add_executable(test_timer test/test_timer.cpp)
+#target_link_libraries(test_timer ${target_libraries})
+
+#gridpack_add_unit_test(timer_test test_timer)
 
 # -------------------------------------------------------------
 # installation
 # -------------------------------------------------------------
 install(FILES 
-  stat_block.hpp  
-  DESTINATION include/gridpack/analysis
+  input_stream.hpp
+  DESTINATION include/gridpack/stream
 )
 
 install(TARGETS 
-  gridpack_analysis
+  gridpack_stream
   DESTINATION lib
 )
-
-

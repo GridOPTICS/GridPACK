@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:17:39 d3g096
+# Last Change: 2019-08-16 13:41:44 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_parallel 
@@ -19,8 +19,9 @@ add_library(gridpack_parallel
   distributed.cpp
   index_hash.cpp
   random.cpp
-)
-
+  )
+add_dependencies(gridpack_parallel external_build)
+gridpack_set_library_version(gridpack_parallel)
 
 # For some reason this is necessary for Mac OS X, but messes things up on Linux
 if (GRIDPACK_LIB_LINK_LIBRARIES)
@@ -30,7 +31,7 @@ if (GRIDPACK_LIB_LINK_LIBRARIES)
     ${MPI_CXX_LIBRARIES}
     )
 endif()
-  
+
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
@@ -78,6 +79,7 @@ if (NOT USE_PROGRESS_RANKS)
     PROPERTIES 
     PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
     )
+  set_tests_ldpath(greetings_serial)
 endif()
 
 add_test(greetings_parallel 
@@ -86,6 +88,7 @@ set_tests_properties(greetings_parallel
   PROPERTIES 
   PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
 )
+set_tests_ldpath(greetings_parallel)
 
 # -------------------------------------------------------------
 # TEST: task_test
@@ -102,8 +105,8 @@ gridpack_add_run_test(task_test task_test "")
 # A simple MPI test using boost::test
 # -------------------------------------------------------------
 add_executable(mpi_test test/mpi_test.cpp)
-target_link_libraries(mpi_test ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
-
+target_link_libraries(mpi_test ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+add_dependencies(mpi_test external_build)
 gridpack_add_unit_test(mpi_test mpi_test)
 
 # -------------------------------------------------------------
