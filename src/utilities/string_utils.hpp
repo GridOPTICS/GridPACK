@@ -8,7 +8,7 @@
 /**
  * @file   string_utils.hpp
  * @author Bruce Palmer
- * @date   May 12, 2015
+ * @date   2019-11-14 07:01:04 d3g096
  * 
  * @brief  
  * A small utility class that contains various methods for manipulating STL
@@ -286,9 +286,10 @@ public:
     } else if (strcpy == "0") {
       return false;
     }
+    return false;
   }
   bool getBool(std::string str) {
-    getBool(str.c_str());
+    return getBool(str.c_str());
   }
 
 };
