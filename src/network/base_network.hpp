@@ -1368,6 +1368,8 @@ template <class _new_bus, class _new_branch> void clone(
     j = getGlobalBusIndex(jdx);
     new_network->setGlobalBusIndex2(i,j);
   }
+  // Copy network data collection
+  *(new_network->getNetworkData()) = *p_network_data;
 }
 
 /**
