@@ -8,7 +8,7 @@
 /**
  * @file   stat_block.cpp
  * @author Bruce Palmer
- * @date   2018-09-11
+ * @date   2019-11-14 07:11:55 d3g096
  * 
  * @brief  
  * This is a utility that is designed to allow users to create a large
@@ -151,7 +151,7 @@ void stb::addRowLabels(std::vector<int> indices, std::vector<std::string> tags)
     }
     util.clean2Char(ctk);
     strncpy(tag.tag,ctk.c_str(),2);
-    tag.tag[3] = '\0';
+    tag.tag[2] = '\0';
     tagvec.push_back(tag);
   }
   int lo = 0;
@@ -198,7 +198,7 @@ void stb::addRowLabels(std::vector<int> idx1, std::vector<int> idx2,
     }
     util.clean2Char(ctk);
     strncpy(tag.tag,ctk.c_str(),2);
-    tag.tag[3] = '\0';
+    tag.tag[2] = '\0';
     tagvec.push_back(tag);
   }
   if (p_nrows != tags.size()) {
@@ -217,7 +217,7 @@ void stb::addRowLabels(std::vector<int> idx1, std::vector<int> idx2,
     }
     util.clean2Char(ctk);
     strncpy(tag.tag,ctk.c_str(),2);
-    tag.tag[3] = '\0';
+    tag.tag[2] = '\0';
     tagvec.push_back(tag);
   }
   int lo = 0;
