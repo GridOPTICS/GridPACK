@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2016-06-16 13:03:07 d3g096
+ * @date   2019-11-20 15:16:34 d3g096
  * 
  * @brief  
  * 
@@ -49,14 +49,15 @@ public:
   typedef typename DAESolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
   typedef typename DAESolverImplementation<T, I>::StepFunction StepFunction;
-
+  typedef typename DAESolverImplementation<T, I>::EventManagerPtr EventManagerPtr;
 
   /// Default constructor.
   PETScDAESolverImplementation(const parallel::Communicator& comm, 
                                const int local_size,
                                JacobianBuilder& jbuilder,
-                               FunctionBuilder& fbuilder)
-    : DAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder),
+                               FunctionBuilder& fbuilder,
+                               EventManagerPtr eman)
+    : DAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder, eman),
       PETScConfigurable(this->communicator()),
       p_ts(),
       p_petsc_J(NULL)
@@ -102,6 +103,9 @@ protected:
       ierr = TSSetApplicationContext(p_ts, this); CHKERRXX(ierr);
       ierr = TSSetPreStep(p_ts, PreTimeStep); CHKERRXX(ierr);
       ierr = TSSetPostStep(p_ts, PostTimeStep); CHKERRXX(ierr);
+
+      if (this->p_eventManager) {
+      }
 
       ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
       // ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr);
@@ -310,7 +314,46 @@ protected:
     return ierr;
   }
 
+  /// Routine called every step if an event manager is specified
+  static PetscErrorCode
+  EventHandler(TS ts, PetscReal t, Vec U, PetscScalar fvalue[], void* ctx)
+  {
+    PetscErrorCode ierr(0);
+    void *dummy;
+    ierr = TSGetApplicationContext(ts, &dummy); CHKERRXX(ierr);
 
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    boost::scoped_ptr<VectorType>
+      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+
+    T *evalues = 
+      solver->p_eventManager->values(t, state);
+    for (int i = 0; i < solver->p_eventManager->size(); ++i) {
+      fvalue[i] = evalues[i];
+    }
+  }
+
+  /// Routine called if events are triggered
+  static PetscErrorCode
+  PostEventHandler(TS ts, PetscInt nevents_zero, PetscInt events_zero[],
+                   PetscReal t, Vec U, PetscBool forwardsolve, void* ctx)
+  {
+    PetscErrorCode ierr(0);
+    void *dummy;
+    ierr = TSGetApplicationContext(ts, &dummy); CHKERRXX(ierr);
+
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    boost::scoped_ptr<VectorType>
+      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+
+    solver->p_eventManager->handle(nevents_zero, events_zero, t, state);
+  }
 };
 
 

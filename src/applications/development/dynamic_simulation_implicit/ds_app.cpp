@@ -7,7 +7,7 @@
 /**
  * @file   ds_app.cpp
  * @author Shrirang Abhyankar
- * @date   2015-05-07 10:01:29 d3g096
+ * @date   2019-11-20 14:57:01 d3g096
  * 
  * @brief  
  * Example for testing PETSc's implicit solvers
@@ -285,8 +285,9 @@ void gridpack::dsimplicit::DSApp::execute(int argc, char** argv)
 
   gridpack::math::DAESolver::JacobianBuilder daejbuilder = boost::ref(dsprob);
   gridpack::math::DAESolver::FunctionBuilder daefbuilder = boost::ref(dsprob);
+  gridpack::math::DAESolver::EventManagerPtr eman;
 
-  gridpack::math::DAESolver daesolver(world, lsize, daejbuilder, daefbuilder);
+  gridpack::math::DAESolver daesolver(world, lsize, daejbuilder, daefbuilder, eman);
 
   // Get simulation time length
   double tmax;

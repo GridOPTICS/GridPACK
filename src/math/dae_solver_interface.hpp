@@ -10,7 +10,7 @@
 /**
  * @file   dae_solver_interface.hpp
  * @author William A. Perkins
- * @date   2015-05-07 13:16:29 d3g096
+ * @date   2019-11-20 14:41:58 d3g096
  * 
  * @brief  
  * 
@@ -23,8 +23,10 @@
 
 #include <gridpack/math/vector.hpp>
 #include <gridpack/math/matrix.hpp>
+#include <gridpack/utilities/uncopyable.hpp>
 
 #include <gridpack/math/dae_solver_functions.hpp>
+#include <gridpack/math/dae_event.hpp>
 
 namespace gridpack {
 namespace math {
@@ -42,6 +44,9 @@ public:
   typedef typename DAEBuilder<T, I>::Jacobian JacobianBuilder;
   typedef typename DAEBuilder<T, I>::Function FunctionBuilder;
   typedef typename DAEBuilder<T, I>::StepFunction StepFunction;
+  typedef typename gridpack::math::DAEEventManagerT<T, I> EventManager;
+  typedef typename boost::shared_ptr<EventManager> EventManagerPtr;
+  typedef typename EventManager::Event Event;
 
   /// Default constructor.
   DAESolverInterface(void)

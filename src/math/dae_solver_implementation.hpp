@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-05-07 13:17:12 d3g096
+ * @date   2019-11-20 14:46:34 d3g096
  * 
  * @brief  
  * 
@@ -46,18 +46,20 @@ public:
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
   typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
-  
+  typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
   /// Default constructor.
   DAESolverImplementation(const parallel::Communicator& comm, 
                           const int local_size,
                           JacobianBuilder& jbuilder,
-                          FunctionBuilder& fbuilder)
+                          FunctionBuilder& fbuilder,
+                          EventManagerPtr eman)
     : parallel::Distributed(comm),
       utility::Configurable("DAESolver"),
       utility::Uncopyable(),
       p_J(comm, local_size, local_size),
-      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder)
+      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
+      p_eventManager(eman)
   {
     
   }
@@ -84,6 +86,9 @@ protected:
 
   /// An optional function to call after each time step
   StepFunction p_postStepFunc;
+
+  /// An optional event manager
+  EventManagerPtr p_eventManager;
 
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)

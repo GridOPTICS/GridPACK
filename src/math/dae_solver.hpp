@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2015-05-07 13:15:37 d3g096
+ * @date   2019-11-20 14:51:40 d3g096
  * 
  * @brief  
  * 
@@ -47,6 +47,7 @@ public:
   typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
   typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
   typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
+  typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
 
 
   /// Default constructor.
@@ -63,7 +64,8 @@ public:
   DAESolverT(const parallel::Communicator& comm, 
              const int local_size,
              JacobianBuilder& jbuilder,
-             FunctionBuilder& fbuilder);
+             FunctionBuilder& fbuilder,
+             EventManagerPtr eman);
 
   /// Destructor
   ~DAESolverT(void)
