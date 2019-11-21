@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.cpp
  * @author William A. Perkins
- * @date   2019-11-20 14:52:04 d3g096
+ * @date   2019-11-21 07:41:15 d3g096
  * 
  * @brief  
  * 
@@ -45,6 +45,7 @@ DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm,
 }
 
 
+
 template 
 DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm, 
                                     const int local_size,
@@ -58,6 +59,32 @@ DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm,
                                  DAESolverT<RealType>::JacobianBuilder& jbuilder,
                                  DAESolverT<RealType>::FunctionBuilder& fbuilder,
                                  DAESolverT<RealType>::EventManagerPtr eman);
+
+template <typename T, typename I>
+DAESolverT<T, I>::DAESolverT(const parallel::Communicator& comm, 
+                             const int local_size,
+                             DAESolverT<T, I>::JacobianBuilder& jbuilder,
+                             DAESolverT<T, I>::FunctionBuilder& fbuilder)
+  : parallel::WrappedDistributed(),
+    utility::WrappedConfigurable(),
+    utility::Uncopyable(),
+    p_impl()
+{
+  p_setImpl(new PETScDAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder,
+                                                   DAESolverT<T, I>::EventManagerPtr()));
+}
+
+template 
+DAESolverT<ComplexType>::DAESolverT(const parallel::Communicator& comm, 
+                                    const int local_size,
+                                    DAESolverT<ComplexType>::JacobianBuilder& jbuilder,
+                                    DAESolverT<ComplexType>::FunctionBuilder& fbuilder);
+
+template 
+DAESolverT<RealType>::DAESolverT(const parallel::Communicator& comm, 
+                                 const int local_size,
+                                 DAESolverT<RealType>::JacobianBuilder& jbuilder,
+                                 DAESolverT<RealType>::FunctionBuilder& fbuilder);
 
 } // namespace math
 } // namespace gridpack

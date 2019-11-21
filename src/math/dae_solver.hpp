@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2019-11-20 14:51:40 d3g096
+ * @date   2019-11-21 07:35:19 d3g096
  * 
  * @brief  
  * 
@@ -67,6 +67,22 @@ public:
              FunctionBuilder& fbuilder,
              EventManagerPtr eman);
 
+  /// Constructor used if no events are necessary
+  /** 
+   * 
+   * 
+   * @param comm parallel environment for this instance
+   * @param local_size size of problem owned by this process (rows in Jacobian, elements in solution Vector)
+   * @param jbuilder function/functor to build Jacobian
+   * @param fbuilder function/functor to build function
+   * 
+   * @return 
+   */
+  DAESolverT(const parallel::Communicator& comm, 
+             const int local_size,
+             JacobianBuilder& jbuilder,
+             FunctionBuilder& fbuilder);
+  
   /// Destructor
   ~DAESolverT(void)
   {}
