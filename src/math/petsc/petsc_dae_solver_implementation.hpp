@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-11-20 15:16:34 d3g096
+ * @date   2019-11-26 11:49:05 d3g096
  * 
  * @brief  
  * 
@@ -44,12 +44,12 @@ class PETScDAESolverImplementation
 {
 public:
 
-  typedef typename DAESolverImplementation<T, I>::VectorType VectorType;
-  typedef typename DAESolverImplementation<T, I>::MatrixType MatrixType;
-  typedef typename DAESolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
-  typedef typename DAESolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverImplementation<T, I>::StepFunction StepFunction;
-  typedef typename DAESolverImplementation<T, I>::EventManagerPtr EventManagerPtr;
+  using typename DAESolverImplementation<T, I>::VectorType;
+  using typename DAESolverImplementation<T, I>::MatrixType;
+  using typename DAESolverImplementation<T, I>::JacobianBuilder;
+  using typename DAESolverImplementation<T, I>::FunctionBuilder;
+  using typename DAESolverImplementation<T, I>::StepFunction;
+  using typename DAESolverImplementation<T, I>::EventManagerPtr;
 
   /// Default constructor.
   PETScDAESolverImplementation(const parallel::Communicator& comm, 
@@ -105,6 +105,20 @@ protected:
       ierr = TSSetPostStep(p_ts, PostTimeStep); CHKERRXX(ierr);
 
       if (this->p_eventManager) {
+        int ne(this->p_eventManager->size());
+        boost::scoped_array<PetscInt> pdir(new PetscInt[ne]);
+        boost::scoped_array<PetscBool> pterm(new PetscBool[ne]);
+        const DAEEventDirection *gdir(this->p_eventManager->directions());
+        const bool *gterm(this->p_eventManager->terminateFlags());
+        
+        for (int i = 0; i < ne; ++i) {
+          pdir[i] = gdir[i];
+          pterm[i] = (gterm[i] ? PETSC_TRUE : PETSC_FALSE);
+        }
+        
+        ierr = TSSetEventHandler(p_ts, ne, &(pdir[0]), &(pterm[0]),
+                                 &EventHandler, &PostEventHandler,
+                                 NULL);
       }
 
       ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
@@ -326,14 +340,16 @@ protected:
     PETScDAESolverImplementation *solver =
       (PETScDAESolverImplementation *)dummy;
 
+    
+
     boost::scoped_ptr<VectorType>
       state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
 
-    T *evalues = 
-      solver->p_eventManager->values(t, state);
+    const T *evalues = solver->p_eventManager->values(t, *state);
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
       fvalue[i] = evalues[i];
     }
+    return ierr;
   }
 
   /// Routine called if events are triggered
@@ -352,7 +368,8 @@ protected:
     boost::scoped_ptr<VectorType>
       state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
 
-    solver->p_eventManager->handle(nevents_zero, events_zero, t, state);
+    solver->p_eventManager->handle(nevents_zero, events_zero, t, *state);
+    return ierr;
   }
 };
 

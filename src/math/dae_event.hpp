@@ -9,7 +9,7 @@
 /**
  * @file   dae_event.hpp
  * @author Perkins
- * @date   2019-11-20 14:43:16 d3g096
+ * @date   2019-11-26 11:46:25 d3g096
  * 
  * @brief  Encapsulate an "Event" that would affect a time integration problem
  * 
@@ -77,7 +77,8 @@ public:
       p_stateIndex(0),
       p_size(nevent), 
       p_dir(p_size, CrossZeroEither), // filled by children
-      p_current(p_size, -9999.0) // filled by children, just make sure it's not zero initially
+      p_term(p_size, false),          // filled by children, but all false initially
+      p_current(p_size, -9999.0)      // filled by children, not zero initially
   {
   }
 
@@ -98,19 +99,25 @@ public:
   }
 
   /// get the directions of this event
-  DAEEventDirection const *dirs(void) const
+  const std::vector<DAEEventDirection>& dirs(void) const
   {
-    return &p_dir[0];
+    return p_dir;
+  }
+
+  /// get the termination flags for this instance
+  const std::vector<bool>& termFlags(void) const
+  {
+    return p_term;
   }
 
   /// get the current values
-  T const *values(void) const
+  const std::vector<T>& values(void) const
   {
-    return &p_current[0];
+    return p_current;
   }
 
   /// update and return event values, given the state
-  T const *values(const double& t, T *state)
+  const std::vector<T>& values(const double& t, T *state)
   {
     this->p_update(t, state);
     return this->values();
@@ -132,6 +139,9 @@ protected:
 
   /// The direction which event value passes zero
   std::vector<DAEEventDirection> p_dir;
+
+  /// A flag indicating which event values terminate the solver
+  std::vector<bool> p_term;
 
   /// Current event values
   std::vector<T> p_current;
@@ -163,18 +173,23 @@ protected:
 // -------------------------------------------------------------
 template <typename T, typename I = int>
 class DAEEventManagerT
-  : private utility::Uncopyable
+  : public parallel::Distributed,
+    private utility::Uncopyable
 {
 public:
 
-  /// Default constructor.
-  DAEEventManagerT(void);
-
-  /// Destructor
-  virtual ~DAEEventManagerT(void);
-
   typedef DAEEventT< T, I > Event; 
   typedef boost::shared_ptr< Event > EventPtr;
+
+  /// Default constructor.
+  DAEEventManagerT(void)
+    : utility::Uncopyable(),
+      p_events(), p_size(), p_dirs(), p_terms()
+  {}
+
+  /// Destructor
+  virtual ~DAEEventManagerT(void)
+  {}
 
   /// Add an event
   void add(EventPtr e)
@@ -194,6 +209,7 @@ public:
     p_events.push_back(rec);
     p_size = -1;
     p_dirs.reset();
+    p_terms.reset();
     p_values.reset();
     p_trigger.reset();
   }
@@ -205,7 +221,7 @@ public:
     if (p_size >= 0) {
       n = p_size;
     } else {
-      BOOST_FOREACH(p_EventInfo rec, p_events) {
+      BOOST_FOREACH(const p_EventInfo rec, p_events) {
         n += rec.nval;
       }
       p_size = n;
@@ -223,33 +239,53 @@ public:
     }
 
     n = 0;
-    BOOST_FOREACH(p_EventInfo rec, p_events) {
-      const DAEEventDirection *d((rec.event)->dirs());
-      int pn(rec.nval);
-      for (int i = 0; i < pn; ++i) {
-        p_dirs[n++] = d[i];
+    BOOST_FOREACH(const p_EventInfo rec, p_events) {
+      const std::vector<DAEEventDirection> edirs((rec.event)->dirs());
+      BOOST_FOREACH(const DAEEventDirection d, edirs) {
+        p_dirs[n++] = d;
       }
     }
     return p_dirs.get();
   }
 
+  bool const *
+  terminateFlags(void) const
+  {
+    int n;
+    if (!p_terms) {
+      n = this->size();
+      p_terms.reset(new bool[n]);
+    }
+
+    n = 0;
+    BOOST_FOREACH(const p_EventInfo rec, p_events) {
+      const std::vector<bool>& eterm((rec.event)->termFlags());
+      BOOST_FOREACH(const bool t, eterm) {
+        p_terms[n++] = t;
+      }
+    }
+    return p_terms.get();
+  }
+
+
   /// Update and get the current event values
   T const *
   values(const double t, VectorT<T, I>& state)
   {
-    int n(this->size());
+    int n;
     if (!p_values) {
+      n = this->size();
       p_values.reset(new T[n]);
     }
 
     T *lstate = state.getLocalElements();
 
     n = 0;
-    BOOST_FOREACH(p_EventInfo rec, p_events) {
+    BOOST_FOREACH(const p_EventInfo rec, p_events) {
       int lidx(rec.solidx);
-      const T *v((rec.event)->update(t, &lstate[lidx]));
-      for (int i = 0; i < rec.nvalue; ++i) {
-        p_values[n++] = v[i];
+      const std::vector<T>& evals((rec.event)->values(t, &lstate[lidx]));
+      BOOST_FOREACH(const T v, evals) {
+        p_values[n++] = v;
       }
     }
 
@@ -305,11 +341,14 @@ protected:
   /// An array of all event directions
   mutable boost::scoped_array<DAEEventDirection> p_dirs;
 
+  /// An array of all termination flags
+  mutable boost::scoped_array<bool> p_terms;
+
   /// An array of all event values
   mutable boost::scoped_array<T> p_values;
 
   /// An array of trigger flags
-  mutable boost::scoped_array<T> p_trigger;
+  mutable boost::scoped_array<bool> p_trigger;
 };
 
 

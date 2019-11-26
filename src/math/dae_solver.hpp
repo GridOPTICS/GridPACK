@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2019-11-21 07:35:19 d3g096
+ * @date   2019-11-26 09:10:30 d3g096
  * 
  * @brief  
  * 
@@ -42,12 +42,14 @@ class DAESolverT
 {
 public:
 
-  typedef typename DAESolverInterface<T, I>::VectorType VectorType;
-  typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
-  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
-  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
-  typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
+  using typename DAESolverInterface<T, I>::VectorType;
+  using typename DAESolverInterface<T, I>::MatrixType;
+  using typename DAESolverInterface<T, I>::JacobianBuilder;
+  using typename DAESolverInterface<T, I>::FunctionBuilder;
+  using typename DAESolverInterface<T, I>::StepFunction;
+  using typename DAESolverInterface<T, I>::EventManagerPtr;
+  using typename DAESolverInterface<T, I>::Event;
+  using typename DAESolverInterface<T, I>::EventPtr;
 
 
   /// Default constructor.

@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-11-20 14:46:34 d3g096
+ * @date   2019-11-26 11:24:22 d3g096
  * 
  * @brief  
  * 
@@ -41,12 +41,12 @@ class DAESolverImplementation
 {
 public:
 
-  typedef typename DAESolverInterface<T, I>::VectorType VectorType;
-  typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
-  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
-  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
-  typedef typename DAESolverInterface<T, I>::EventManagerPtr EventManagerPtr;
+  using typename DAESolverInterface<T, I>::VectorType;
+  using typename DAESolverInterface<T, I>::MatrixType;
+  using typename DAESolverInterface<T, I>::JacobianBuilder;
+  using typename DAESolverInterface<T, I>::FunctionBuilder;
+  using typename DAESolverInterface<T, I>::StepFunction;
+  using typename DAESolverInterface<T, I>::EventManagerPtr;
 
   /// Default constructor.
   DAESolverImplementation(const parallel::Communicator& comm, 

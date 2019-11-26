@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:47:29 d3g096
+# Last Change: 2019-11-26 08:31:14 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -324,6 +324,10 @@ gridpack_add_unit_test(real_dae_solver real_dae_solver_test)
 if (PETSC_FOUND)
   add_dependencies(real_dae_solver_test math_test_input)
 endif()
+
+# A simple serial example utilizing DAE events
+add_executable(bouncing_ball_test test/bouncing_ball_test.cpp)
+target_link_libraries(bouncing_ball_test gridpack_math ${target_libraries})
 
 
 # -------------------------------------------------------------

@@ -10,7 +10,7 @@
 /**
  * @file   dae_solver_interface.hpp
  * @author William A. Perkins
- * @date   2019-11-20 14:41:58 d3g096
+ * @date   2019-11-26 08:46:56 d3g096
  * 
  * @brief  
  * 
@@ -47,6 +47,7 @@ public:
   typedef typename gridpack::math::DAEEventManagerT<T, I> EventManager;
   typedef typename boost::shared_ptr<EventManager> EventManagerPtr;
   typedef typename EventManager::Event Event;
+  typedef typename boost::shared_ptr<Event> EventPtr;
 
   /// Default constructor.
   DAESolverInterface(void)
