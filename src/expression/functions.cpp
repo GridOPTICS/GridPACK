@@ -9,7 +9,7 @@
 /**
  * @file   functions.cpp
  * @author William A. Perkins
- * @date   2017-03-22 09:09:12 d3g096
+ * @date   2019-12-03 07:22:06 d3g096
  * 
  * @brief  
  * 
@@ -37,7 +37,7 @@
 #include <boost/archive/binary_oarchive.hpp>
 #include <boost/archive/binary_iarchive.hpp>
 
-BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Function);
+BOOST_CLASS_EXPORT_IMPLEMENT(gridpack::optimization::Function)
 
 namespace gridpack {
 namespace optimization {

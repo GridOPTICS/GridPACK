@@ -7,7 +7,7 @@
 /**
  * @file   kds_components.hpp
  * @author Da Meng and Yousu Chen
- * @date   1/06/2015
+ * @date   2019-12-03 07:24:03 d3g096
  * 
  * @brief  
  * 
@@ -515,8 +515,8 @@ private:
 }     // kalman_filter
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::kalman_filter::KalmanBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::kalman_filter::KalmanBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::kalman_filter::KalmanBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::kalman_filter::KalmanBranch)
 
 
 #endif
