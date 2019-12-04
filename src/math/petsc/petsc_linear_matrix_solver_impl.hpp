@@ -10,7 +10,7 @@
 /**
  * @file   petsc_linear_matrx_solver_impl.hpp
  * @author William A. Perkins
- * @date   2019-02-11 06:48:08 d3g096
+ * @date   2019-12-03 08:18:32 d3g096
  * 
  * @brief  
  * 
@@ -82,6 +82,15 @@ public:
 
 protected:
 
+  /// Choose a matrix solver type based on PETSc version
+  typedef 
+#if PETSC_VERSION_LT(3,9,0)
+  MatSolverPackage
+#else
+  MatSolverType
+#endif
+  ThePetscMatSolverType;
+
   /// The underlying PETSc factored coefficient matrix
   mutable Mat p_Fmat;
 
@@ -98,13 +107,13 @@ protected:
   MatOrderingType p_orderingType;
 
   /// List of supported solver packages
-  static MatSolverPackage p_supportedSolverPackage[];
+  static ThePetscMatSolverType p_supportedSolverPackage[];
 
   /// Number of supported solver packages
   static int p_nSupportedSolverPackages;
 
   /// PETSC solver package for factorization
-  MatSolverPackage p_solverPackage;
+  ThePetscMatSolverType p_solverPackage;
 
   /// PETSc factorization method to use
   MatFactorType p_factorType;
@@ -297,7 +306,7 @@ PetscLinearMatrixSolverImplementation<T, I>::p_nSupportedOrderingTypes =
   sizeof(p_supportedOrderingType)/sizeof(MatOrderingType);
 
 template <typename T, typename I>
-MatSolverPackage
+typename PetscLinearMatrixSolverImplementation<T, I>::ThePetscMatSolverType
 PetscLinearMatrixSolverImplementation<T, I>::p_supportedSolverPackage[] = {
   MATSOLVERSUPERLU_DIST,
   MATSOLVERSUPERLU,
@@ -308,7 +317,7 @@ PetscLinearMatrixSolverImplementation<T, I>::p_supportedSolverPackage[] = {
 template <typename T, typename I>
 int
 PetscLinearMatrixSolverImplementation<T, I>::p_nSupportedSolverPackages = 
-  sizeof(p_supportedSolverPackage)/sizeof(MatSolverPackage);
+  sizeof(p_supportedSolverPackage)/sizeof(PetscLinearMatrixSolverImplementation<T, I>::ThePetscMatSolverType);
 
 } // namespace math
 } // namespace gridpack

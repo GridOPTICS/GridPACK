@@ -6,7 +6,7 @@
 /**
  * @file   component_serialization.cpp
  * @author William A. Perkins
- * @date   2017-02-10 07:23:40 d3g096
+ * @date   2019-12-03 07:21:04 d3g096
  * 
  * @brief  Serialization tests for various network component classes
  * 
@@ -457,5 +457,5 @@ template<> struct is_mpi_datatype<std::string> : public mpl::true_ { };
 }
 #endif
 
-BOOST_CLASS_EXPORT_IMPLEMENT(BogusBus);
-BOOST_CLASS_EXPORT_IMPLEMENT(BogusBranch);
+BOOST_CLASS_EXPORT_IMPLEMENT(BogusBus)
+BOOST_CLASS_EXPORT_IMPLEMENT(BogusBranch)

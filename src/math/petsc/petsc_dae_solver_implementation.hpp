@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-02 14:05:07 d3g096
+ * @date   2019-12-04 07:38:55 d3g096
  * 
  * @brief  
  * 
@@ -150,7 +150,12 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr); 
+#if PETSC_VERSION_LT(3,8,0)
+      ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr);
+#else
+      ierr = TSSetTime(p_ts, t0); CHKERRXX(ierr);
+      ierr = TSSetTimeStep(p_ts, deltat0); CHKERRXX(ierr);
+#endif
       Vec *xvec(PETScVector(x0));
       ierr = TSSetSolution(p_ts, *xvec);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -165,7 +170,13 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
+#if PETSC_VERSION_LT(3,8,0)
       ierr = TSSetDuration(p_ts, maxsteps, maxtime); CHKERRXX(ierr);
+#else
+      ierr = TSSetMaxSteps(p_ts, maxsteps); CHKERRXX(ierr);
+      ierr = TSSetMaxTime(p_ts, maxtime); CHKERRXX(ierr);
+#endif
+      
       ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr); 
       ierr = TSSolve(p_ts, PETSC_NULL);
       // std::cout << this->processor_rank() << ": "
@@ -177,7 +188,11 @@ protected:
       ierr = TSGetConvergedReason(p_ts, &reason); CHKERRXX(ierr);
 
       PetscInt nstep;
+#if PETSC_VERSION_LT(3,8,0)
       ierr = TSGetTimeStepNumber(p_ts,&nstep);CHKERRXX(ierr);
+#else
+      ierr = TSGetStepNumber(p_ts,&nstep);CHKERRXX(ierr);
+#endif
       maxsteps = nstep;
 
       if (reason >= 0) {

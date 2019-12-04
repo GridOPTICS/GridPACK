@@ -7,7 +7,7 @@
 /**
  * @file   pf_components.cpp
  * @author Bruce Palmer
- * @date   2016-07-14 13:49:14 d3g096
+ * @date   2019-12-03 07:45:40 d3g096
  * 
  * @brief  
  * 
@@ -242,12 +242,11 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
     std::vector<boost::shared_ptr<BaseComponent> > branches;
     getNeighborBranches(branches);
     int size = branches.size();
-    int i;
     double P, Q, p, q;
     int ngen=p_pFac.size();
     double pl =0.0;
     double ql =0.0;
-    for (i=0; i<p_lstatus.size(); i++) {
+    for (int i=0; i<p_lstatus.size(); i++) {
       if (p_lstatus[i] == 1) {
         pl += p_pl[i];
         ql += p_ql[i];
@@ -272,7 +271,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
         p_gstatus[i] = 0;
         p_qg[i] = p_qmax[i];
       }
-      for (i=0; i<p_lstatus.size(); i++) {
+      for (int i=0; i<p_lstatus.size(); i++) {
         if (p_lstatus[i] == 1) {
           p_pl[i] = pl;
           p_ql[i] = ql;
@@ -292,7 +291,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
         p_gstatus[i] = 0;
         p_qg[i] = p_qmin[i];
       }
-      for (i=0; i<p_lstatus.size(); i++) {
+      for (int i=0; i<p_lstatus.size(); i++) {
         if (p_lstatus[i] == 1) {
           p_pl[i] = pl;
           p_ql[i] = ql;
