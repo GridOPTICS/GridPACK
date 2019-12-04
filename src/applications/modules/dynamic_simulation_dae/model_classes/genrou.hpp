@@ -138,11 +138,6 @@ class GenrouGen: public BaseGenModel
     // previous step values of the variables
     double x1dprev, x2wprev, x3Eqpprev, x4Psidpprev, x5Psiqpprev, x6Edpprev; 
 
-    bool p_hasExciter;
-    boost::shared_ptr<BaseExcModel> p_exciter;
-    bool p_hasGovernor;
-    boost::shared_ptr<BaseGovModel> p_governor;
-
     double B, G;
     double Vd, Vq;
 
