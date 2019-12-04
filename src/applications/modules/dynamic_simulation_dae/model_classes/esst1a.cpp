@@ -241,7 +241,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     values[4] = xf - xfprev;
 
   } else if(p_mode == RESIDUAL_EVAL) {
-    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\n", Vmeas, xLL1, xLL2, Va, xf);    
+    //    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\n", Vmeas, xLL1, xLL2, Va, xf);    
 
     // State 1 Vmeas
     if(iseq_diff[0]) values[0] = (-Vmeas + Ec)/Tr - dVmeas;
