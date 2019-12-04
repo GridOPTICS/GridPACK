@@ -35,8 +35,6 @@ GensalGen::GensalGen(void)
   H = 0.0; // Machine inertia constant
   D = 0.0; // Machine damping coefficient
   Pmech = 0.0; // Mechanical power
-  Id = 0.0; // Generator current on d axis
-  Iq = 0.0; // Generator current on q axis
   Xd = 0.0;
   Xq = 0.0;
   Xdp = 0.0; // Machine transient reactance
@@ -51,9 +49,6 @@ GensalGen::GensalGen(void)
 
   B = 0.0;
   G = 0.0;
-
-  Vd = 0.0;
-  Vq = 0.0;
 
   p_hasExciter = false;
   p_hasGovernor = false;
@@ -132,6 +127,10 @@ void GensalGen::init(gridpack::ComplexType* values)
   double P, Q; // Generator real and reactive power
   double Vrterm = VD;
   double Viterm = VQ;
+  double Ir,Ii,Id,Iq;
+  double Eppr,Eppi,Vd,Vq,Vdterm,Vqterm;
+  double Psid,Psiq,Psidpp,Telec;
+
 
   // Admittance
   B = -Xdpp / (Ra * Ra + Xdpp * Xdpp);
@@ -144,20 +143,25 @@ void GensalGen::init(gridpack::ComplexType* values)
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
   x2w = 0;
   x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
-  Id = Ir * sin(x1d) - Ii * cos(x1d); // convert values to the dq axis
-  Iq = Ir * cos(x1d) + Ii * sin(x1d); // convert values to the dq axis
-  //  double Vr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
-  //  double Vi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
-  //  double Vd = Vr * sin(x1d) - Vi * cos(x1d); // convert to dq reference
-  double Vq = Vrterm * cos(x1d) + Viterm * sin(x1d); // convert to dq reference
+
+  Eppr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
+  Eppi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
+  Vd = Eppr * sin(x1d) - Eppi * cos(x1d); // convert to dq reference
+  Vq = Eppr * cos(x1d) + Eppi * sin(x1d); // convert to dq reference
+  Vdterm = VD*sin(x1d) - VQ*cos(x1d);
+  Vqterm = VD*cos(x1d) + VQ*sin(x1d);
+  Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+  Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
+
   x5Psiqp = (Xdpp - Xq) * Iq;
 
-  double Psiq = x5Psiqp - Iq*Xdpp;
-  double Psid = Vq + Ra * Iq;
-  double Psidpp = Psid + Id * Xdpp;
+  Psiq = x5Psiqp - Iq*Xdpp;
+  Psidpp = Vq;
+  Psid = Psidpp - Id*Xdpp;
+  Telec = Psid* Iq - Psiq * Id;
 
   x4Psidp = Psidpp - Id * (Xdpp - Xl);
-  x3Eqp = x4Psidp + Id * (Xdp - Xl);
+  x3Eqp   = x4Psidp + Id * (Xdp - Xl);
 
   Efd = x3Eqp * (1 + Sat(x3Eqp)) + Id * (Xd - Xdp); 
   LadIfd = Efd;
@@ -258,12 +262,15 @@ void GensalGen::setValues(gridpack::ComplexType *values)
  */
 bool GensalGen::vectorValues(gridpack::ComplexType *values)
 {
-  double Vterm = sqrt(VD*VD + VQ*VQ);
   int x1d_idx = 0;
   int x2w_idx = 1;
   int x3Eqp_idx = 2;
   int x4Psidp_idx = 3;
   int x5Psiqp_idx = 4;
+  double Vd,Vq,Vdterm,Vqterm;
+  double Id,Iq;
+  double Psid,Psiq,Psidpp,Psiqpp;
+  double Telec,TempD;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     values[x1d_idx] = x1d - x1dprev;
@@ -283,12 +290,19 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     }
 
     // Generator equations
-    double pi = 4.0*atan(1.0);
-    double Psiq = x5Psiqp - Iq * Xdpp;
-    double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
-    double Psid  = Psidpp - Id * Xdpp;
-    double Telec = Psid * Iq - Psiq * Id;
-    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
+    Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
+    Psiqpp = x5Psiqp; 
+    Vd = -Psiqpp * (1 + x2w);
+    Vq = +Psidpp * (1 + x2w);
+    Vdterm = VD*sin(x1d) - VQ*cos(x1d);
+    Vqterm = VD*cos(x1d) + VQ*sin(x1d);
+    Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+    Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
+
+    Psiq = x5Psiqp - Iq * Xdpp;
+    Psid  = Psidpp - Id * Xdpp;
+    Telec = Psid * Iq - Psiq * Id;
+    TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
     LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD);
 
     // RESIDUAL_EVAL for state 1 to 5
@@ -310,17 +324,15 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
 */
 void GensalGen::getCurrent(double *IGD, double *IGQ)
 {
-  double Vrterm = VD;
-  double Viterm = VQ;
-
-  // Setup
   double Psiqpp = x5Psiqp; 
   double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
   double Vd = -Psiqpp * (1 + x2w);
   double Vq = +Psidpp * (1 + x2w);
+  double Vdterm = VD*sin(x1d) - VQ*cos(x1d);
+  double Vqterm = VD*cos(x1d) + VQ*sin(x1d);
+  double Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+  double Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
 
-  Id = Vd * G - Vq * B;
-  Iq = Vd * B + Vq * G;
   // Generator current injections in the network
   *IGD =   Id * sin(x1d) + Iq * cos(x1d);
   *IGQ =  -Id * cos(x1d) + Iq * sin(x1d);

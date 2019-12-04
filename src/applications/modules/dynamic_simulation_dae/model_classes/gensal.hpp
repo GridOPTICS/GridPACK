@@ -123,21 +123,13 @@ class GensalGen: public BaseGenModel
     // Machine parameters
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl;
     double Tdop, Tdopp, Tqopp, S10, S12, Tqop;
+    double Xqp, Xqpp;
 
     // Internal constants
     double Efd; // Field voltage
     double LadIfd; // Field current
     double Pmech; // Mechanical power
-  
-    // Generator variables and their derivatives
-    double Vterm, Theta; // Terminal voltage magnitude and angle
-    double Ir, Ii; // Terminal current
-    double Id, Iq; // Generator current on d and q axis
-
     double B, G;
-    double Vd, Vq;
-    
-    double Psiqpp, Xqp, Xqpp;
 
     // Variables and their derivatives
     double x1d, x2w, x3Eqp, x4Psidp, x5Psiqp; 
