@@ -132,10 +132,10 @@ class GensalGen: public BaseGenModel
     double B, G;
 
     // Variables and their derivatives
-    double x1d, x2w, x3Eqp, x4Psidp, x5Psiqp; 
-    double dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp;
+    double delta, dw, Eqp, Psidp, Psiqpp; 
+    double ddelta, ddw, dEqp, dPsidp, dPsiqpp;
     // previous step values of the variables
-    double x1dprev, x2wprev, x3Eqpprev, x4Psidpprev, x5Psiqpprev; 
+    double deltaprev, dwprev, Eqpprev, Psidpprev, Psiqppprev; 
 
 };
 
