@@ -21,16 +21,16 @@
 
 GensalGen::GensalGen(void)
 {
-  x1d = 0.0; // Rotor angle
-  x2w = 0.0; // Rotor speed
-  x3Eqp = 0.0; // Transient Q axis Eq 
-  x4Psidp = 0.0; // Transient D axis flux
-  x5Psiqp = 0.0; // Transient Q axis flux
-  dx1d = 0.0;
-  dx2w = 0.0;
-  dx3Eqp = 0.0;
-  dx4Psidp = 0.0;
-  dx5Psiqp = 0.0;
+  delta = 0.0; // Rotor angle
+  dw = 0.0; // Rotor speed
+  Eqp = 0.0; // Transient Q axis Eq 
+  Psidp = 0.0; // Transient D axis flux
+  Psiqpp = 0.0; // Transient Q axis flux
+  ddelta = 0.0;
+  ddw = 0.0;
+  dEqp = 0.0;
+  dPsidp = 0.0;
+  dPsiqpp = 0.0;
   Ra = 0.0; // Machine stator resistance
   H = 0.0; // Machine inertia constant
   D = 0.0; // Machine damping coefficient
@@ -141,37 +141,37 @@ void GensalGen::init(gridpack::ComplexType* values)
 
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
-  x2w = 0;
-  x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
+  dw = 0;
+  delta = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
 
   Eppr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
   Eppi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
-  Vd = Eppr * sin(x1d) - Eppi * cos(x1d); // convert to dq reference
-  Vq = Eppr * cos(x1d) + Eppi * sin(x1d); // convert to dq reference
-  Vdterm = VD*sin(x1d) - VQ*cos(x1d);
-  Vqterm = VD*cos(x1d) + VQ*sin(x1d);
+  Vd = Eppr * sin(delta) - Eppi * cos(delta); // convert to dq reference
+  Vq = Eppr * cos(delta) + Eppi * sin(delta); // convert to dq reference
+  Vdterm = VD*sin(delta) - VQ*cos(delta);
+  Vqterm = VD*cos(delta) + VQ*sin(delta);
   Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
   Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
 
-  x5Psiqp = (Xdpp - Xq) * Iq;
+  Psiqpp = (Xdpp - Xq) * Iq;
 
-  Psiq = x5Psiqp - Iq*Xdpp;
+  Psiq = Psiqpp - Iq*Xdpp;
   Psidpp = Vq;
   Psid = Psidpp - Id*Xdpp;
   Telec = Psid* Iq - Psiq * Id;
 
-  x4Psidp = Psidpp - Id * (Xdpp - Xl);
-  x3Eqp   = x4Psidp + Id * (Xdp - Xl);
+  Psidp = Psidpp - Id * (Xdpp - Xl);
+  Eqp   = Psidp + Id * (Xdp - Xl);
 
-  Efd = x3Eqp * (1 + Sat(x3Eqp)) + Id * (Xd - Xdp); 
+  Efd = Eqp * (1 + Sat(Eqp)) + Id * (Xd - Xdp); 
   LadIfd = Efd;
   Pmech = Psid * Iq - Psiq * Id;
 
-  values[0] = x1d;
-  values[1] = x2w;
-  values[2] = x3Eqp;
-  values[3] = x4Psidp;
-  values[4] = x5Psiqp;
+  values[0] = delta;
+  values[1] = dw;
+  values[2] = Eqp;
+  values[3] = Psidp;
+  values[4] = Psiqpp;
   
   // Initialize exciters
   p_hasExciter = getphasExciter();
@@ -186,7 +186,7 @@ void GensalGen::init(gridpack::ComplexType* values)
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setMechanicalPower(Pmech);
-    p_governor->setRotorSpeedDeviation(x2w);
+    p_governor->setRotorSpeedDeviation(dw);
     p_governor->setTimestep(0.01); // Should be read from input file instead 
   }
 
@@ -234,23 +234,23 @@ bool GensalGen::vectorSize(int *nvar) const
 void GensalGen::setValues(gridpack::ComplexType *values)
 {
   if(p_mode == XVECTOBUS) {
-    x1d = real(values[0]);
-    x2w = real(values[1]);
-    x3Eqp = real(values[2]);
-    x4Psidp = real(values[3]);
-    x5Psiqp = real(values[4]);
+    delta = real(values[0]);
+    dw = real(values[1]);
+    Eqp = real(values[2]);
+    Psidp = real(values[3]);
+    Psiqpp = real(values[4]);
   } else if(p_mode == XDOTVECTOBUS) {
-    dx1d = real(values[0]);
-    dx2w = real(values[1]);
-    dx3Eqp = real(values[2]);
-    dx4Psidp = real(values[3]);
-    dx5Psiqp = real(values[4]);
+    ddelta = real(values[0]);
+    ddw = real(values[1]);
+    dEqp = real(values[2]);
+    dPsidp = real(values[3]);
+    dPsiqpp = real(values[4]);
   } else if(p_mode == XVECPRETOBUS) {
-    x1dprev = real(values[0]);
-    x2wprev = real(values[1]);
-    x3Eqpprev = real(values[2]);
-    x4Psidpprev = real(values[3]);
-    x5Psiqpprev = real(values[4]);
+    deltaprev = real(values[0]);
+    dwprev = real(values[1]);
+    Eqpprev = real(values[2]);
+    Psidpprev = real(values[3]);
+    Psiqppprev = real(values[4]);
   }    
 }
 
@@ -262,22 +262,22 @@ void GensalGen::setValues(gridpack::ComplexType *values)
  */
 bool GensalGen::vectorValues(gridpack::ComplexType *values)
 {
-  int x1d_idx = 0;
-  int x2w_idx = 1;
-  int x3Eqp_idx = 2;
-  int x4Psidp_idx = 3;
-  int x5Psiqp_idx = 4;
+  int delta_idx = 0;
+  int dw_idx = 1;
+  int Eqp_idx = 2;
+  int Psidp_idx = 3;
+  int Psiqpp_idx = 4;
   double Vd,Vq,Vdterm,Vqterm;
   double Id,Iq;
-  double Psid,Psiq,Psidpp,Psiqpp;
+  double Psid,Psiq,Psidpp;
   double Telec,TempD;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    values[x1d_idx] = x1d - x1dprev;
-    values[x2w_idx] = x2w - x2wprev;
-    values[x3Eqp_idx] = x3Eqp - x3Eqpprev;
-    values[x4Psidp_idx] = x4Psidp - x4Psidpprev;
-    values[x5Psiqp_idx] = x5Psiqp - x5Psiqpprev;
+    values[delta_idx] = delta - deltaprev;
+    values[dw_idx] = dw - dwprev;
+    values[Eqp_idx] = Eqp - Eqpprev;
+    values[Psidp_idx] = Psidp - Psidpprev;
+    values[Psiqpp_idx] = Psiqpp - Psiqppprev;
   } else if(p_mode == RESIDUAL_EVAL) {
     if (p_hasExciter) {
       p_exciter = getExciter();
@@ -290,27 +290,26 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     }
 
     // Generator equations
-    Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
-    Psiqpp = x5Psiqp; 
-    Vd = -Psiqpp * (1 + x2w);
-    Vq = +Psidpp * (1 + x2w);
-    Vdterm = VD*sin(x1d) - VQ*cos(x1d);
-    Vqterm = VD*cos(x1d) + VQ*sin(x1d);
+    Psidpp = + Eqp * (Xdpp - Xl) / (Xdp - Xl) + Psidp * (Xdp - Xdpp) / (Xdp - Xl);
+    Vd = -Psiqpp * (1 + dw);
+    Vq = +Psidpp * (1 + dw);
+    Vdterm = VD*sin(delta) - VQ*cos(delta);
+    Vqterm = VD*cos(delta) + VQ*sin(delta);
     Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
     Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
 
-    Psiq = x5Psiqp - Iq * Xdpp;
+    Psiq = Psiqpp - Iq * Xdpp;
     Psid  = Psidpp - Id * Xdpp;
     Telec = Psid * Iq - Psiq * Id;
-    TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
-    LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD);
+    TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
+    LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
 
     // RESIDUAL_EVAL for state 1 to 5
-    values[x1d_idx] = x2w * OMEGA_S - dx1d;
-    values[x2w_idx] = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec) - dx2w; 
-    values[x3Eqp_idx] = (Efd - LadIfd) / Tdop - dx3Eqp; 
-    values[x4Psidp_idx] = (-x4Psidp - (Xdp - Xl) * Id + x3Eqp) / Tdopp - dx4Psidp;
-    values[x5Psiqp_idx] = (-x5Psiqp - (Xq - Xdpp) * Iq ) / Tqopp - dx5Psiqp;
+    values[delta_idx] = dw * OMEGA_S - ddelta;
+    values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; 
+    values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp; 
+    values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
+    values[Psiqpp_idx] = (-Psiqpp - (Xq - Xdpp) * Iq ) / Tqopp - dPsiqpp;
 
   }
   
@@ -324,18 +323,17 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
 */
 void GensalGen::getCurrent(double *IGD, double *IGQ)
 {
-  double Psiqpp = x5Psiqp; 
-  double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
-  double Vd = -Psiqpp * (1 + x2w);
-  double Vq = +Psidpp * (1 + x2w);
-  double Vdterm = VD*sin(x1d) - VQ*cos(x1d);
-  double Vqterm = VD*cos(x1d) + VQ*sin(x1d);
+  double Psidpp = + Eqp * (Xdpp - Xl) / (Xdp - Xl) + Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
+  double Vd = -Psiqpp * (1 + dw);
+  double Vq = +Psidpp * (1 + dw);
+  double Vdterm = VD*sin(delta) - VQ*cos(delta);
+  double Vqterm = VD*cos(delta) + VQ*sin(delta);
   double Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
   double Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
 
   // Generator current injections in the network
-  *IGD =   Id * sin(x1d) + Iq * cos(x1d);
-  *IGQ =  -Id * cos(x1d) + Iq * sin(x1d);
+  *IGD =   Id * sin(delta) + Iq * cos(delta);
+  *IGQ =  -Id * cos(delta) + Iq * sin(delta);
 }
 
 /**
