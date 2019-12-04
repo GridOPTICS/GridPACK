@@ -132,18 +132,19 @@ class GensalGen: public BaseGenModel
     // Generator variables and their derivatives
     double Vterm, Theta; // Terminal voltage magnitude and angle
     double Ir, Ii; // Terminal current
-    double x1d, x2w, x3Eqp, x4Psidp, x5Psiqp; 
-    double dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp;
     double Id, Iq; // Generator current on d and q axis
 
     double B, G;
     double Vd, Vq;
     
-    double Psiqpp, Xqp, x6Esp, Xqpp;
-    double x1d_1, x2w_1, x3Eqp_1, x4Psidp_1, x5Psiqpp_1; // Zakaria 
-    int p_bus_id; //Zakaria
-    double p_pg, p_qg; //Zakaria
-    std::string p_ckt; //Zakaria
+    double Psiqpp, Xqp, Xqpp;
+
+    // Variables and their derivatives
+    double x1d, x2w, x3Eqp, x4Psidp, x5Psiqp; 
+    double dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp;
+    // previous step values of the variables
+    double x1dprev, x2wprev, x3Eqpprev, x4Psidpprev, x5Psiqpprev; 
+
 };
 
 #endif
