@@ -46,6 +46,7 @@ add_library(gridpack_dynamic_simulation_dae_module
   base_classes/base_gov_model.cpp
   model_classes/classical_gen_model.cpp
   model_classes/genrou.cpp
+  model_classes/gensal.cpp
   model_classes/esst1a.cpp
   model_classes/exdc1.cpp
   model_classes/wsieg1.cpp
@@ -87,6 +88,7 @@ install(FILES
 install(FILES 
   model_classes/classical_gen_model.hpp
   model_classes/genrou.hpp
+  model_classes/gensal.hpp
   model_classes/exdc1.hpp
   model_classes/esst1a.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_dae/model_classes
