@@ -156,6 +156,33 @@ Here, the intermediate variables used in the calculations are as follows:
 
 \subsection{WSIEG1}
 
+\appendices
+
+\section{Commonly used first-order blocks}
+
+\subsection{Lead-lag block}
+
+\subsubsection{Transfer function}
+\begin{equation}
+\dfrac{Y(s)}{U(s)} = \dfrac{1+ sT_1}{1+sT_2}
+\end{equation}
+
+\subsubsection{DAE equivalent}
+
+\begin{flalign}
+&\begin{cases}
+    T_1\dfrac{dx}{dt} = (1 - \dfrac{T_2}{T_1})u(t) - x(t),&\text{if}~~T_1 > 0 \\
+    0 = u(t) - x(t),&\text{if}~~T_1 = 0
+  \end{cases}& \\
+  &\begin{cases}
+    y(t) = x(t) + \dfrac{T_2}{T_1}u(t),&\text{if}~~T_{1} > 0 \\
+    y(t) = x(t),&\text{if}~~T_{1} = 0
+  \end{cases}&
+\end{flalign}
+
+
+
+
 \begin{thebibliography}{20}
 
 \bibitem{GENCLS}
