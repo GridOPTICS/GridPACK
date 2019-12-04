@@ -146,20 +146,22 @@ void GensalGen::init(gridpack::ComplexType* values)
   x1d = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
   Id = Ir * sin(x1d) - Ii * cos(x1d); // convert values to the dq axis
   Iq = Ir * cos(x1d) + Ii * sin(x1d); // convert values to the dq axis
-  double Vr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
-  double Vi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
-  double Vd = Vr * sin(x1d) - Vi * cos(x1d); // convert to dq reference
-  double Vq = Vr * cos(x1d) + Vi * sin(x1d); // convert to dq reference
-  double Psiqpp = -Vd / (1 + x2w);
-  double Psidpp = +Vq / (1 + x2w);
+  //  double Vr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
+  //  double Vi = Viterm + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
+  //  double Vd = Vr * sin(x1d) - Vi * cos(x1d); // convert to dq reference
+  double Vq = Vrterm * cos(x1d) + Viterm * sin(x1d); // convert to dq reference
+  x5Psiqp = (Xdpp - Xq) * Iq;
 
-  //printf("Psiqpp=%f\n", Psiqpp);
+  double Psiq = x5Psiqp - Iq*Xdpp;
+  double Psid = Vq + Ra * Iq;
+  double Psidpp = Psid + Id * Xdpp;
+
   x4Psidp = Psidpp - Id * (Xdpp - Xl);
   x3Eqp = x4Psidp + Id * (Xdp - Xl);
-  x5Psiqp = (Xdpp - Xq) * Iq;
-  Efd = x3Eqp + Id * (Xd - Xdp); 
+
+  Efd = x3Eqp * (1 + Sat(x3Eqp)) + Id * (Xd - Xdp); 
   LadIfd = Efd;
-  Pmech = Psidpp * Iq - Psiqpp * Id;
+  Pmech = Psid * Iq - Psiq * Id;
 
   values[0] = x1d;
   values[1] = x2w;
@@ -172,9 +174,16 @@ void GensalGen::init(gridpack::ComplexType* values)
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
-    //p_exciter->setTimestep(0.0); // SJin: to be read from input file
-    //p_exciter->setTimeincrement(0.01); // SJin: to be read from input file
-    p_exciter->init(values);
+    p_exciter->setFieldCurrent(Efd);
+    p_exciter->setInitialTimeStep(0.01);
+  }
+
+  p_hasGovernor = getphasGovernor();
+  if (p_hasGovernor) {
+    p_governor = getGovernor();
+    p_governor->setMechanicalPower(Pmech);
+    p_governor->setRotorSpeedDeviation(x2w);
+    p_governor->setTimestep(0.01); // Should be read from input file instead 
   }
 
 }
@@ -191,6 +200,7 @@ void GensalGen::init(gridpack::ComplexType* values)
 
 double GensalGen::getAngle(void)
 {
+  return 0;
 }
 
 /**
@@ -231,7 +241,13 @@ void GensalGen::setValues(gridpack::ComplexType *values)
     dx3Eqp = real(values[2]);
     dx4Psidp = real(values[3]);
     dx5Psiqp = real(values[4]);
-  }
+  } else if(p_mode == XVECPRETOBUS) {
+    x1dprev = real(values[0]);
+    x2wprev = real(values[1]);
+    x3Eqpprev = real(values[2]);
+    x4Psidpprev = real(values[3]);
+    x5Psiqpprev = real(values[4]);
+  }    
 }
 
 /**
@@ -250,37 +266,37 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
   int x5Psiqp_idx = 4;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    values[x1d_idx] = 0.0;
-    values[x2w_idx] = 0.0;
-    values[x3Eqp_idx] = 0.0;
-    values[x4Psidp_idx] = 0.0;
-    values[x5Psiqp_idx] = 0.0;
+    values[x1d_idx] = x1d - x1dprev;
+    values[x2w_idx] = x2w - x2wprev;
+    values[x3Eqp_idx] = x3Eqp - x3Eqpprev;
+    values[x4Psidp_idx] = x4Psidp - x4Psidpprev;
+    values[x5Psiqp_idx] = x5Psiqp - x5Psiqpprev;
   } else if(p_mode == RESIDUAL_EVAL) {
     if (p_hasExciter) {
       p_exciter = getExciter();
-      Efd = p_exciter->getFieldVoltage(); // Efd are called from Exciter
+      Efd = p_exciter->getFieldVoltage(); // Efd obtained from exciter
     }
-    //    if (p_hasGovernor) {
-    //      p_governor = getGovernor();
-    //      Pmech = p_governor->getMechanicalPower();
-    //    }
+    
+    if (p_hasGovernor) {
+      p_governor = getGovernor();
+      Pmech = p_governor->getMechanicalPower();
+    }
 
     // Generator equations
+    double pi = 4.0*atan(1.0);
+    double Psiq = x5Psiqp - Iq * Xdpp;
     double Psidpp = + x3Eqp * (Xdpp - Xl) / (Xdp - Xl) + x4Psidp * (Xdp - Xdpp) / (Xdp - Xl);
-  
-    double Telec = Psidpp * Iq - Psiqpp * Id;
+    double Psid  = Psidpp - Id * Xdpp;
+    double Telec = Psid * Iq - Psiq * Id;
     double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-x4Psidp - (Xdp - Xl) * Id + x3Eqp);
-    //LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD); // update Ifd later
-    LadIfd = x3Eqp + (Xd - Xdp) * (Id + TempD); // update Ifd later
+    LadIfd = x3Eqp * (1 + Sat(x3Eqp)) + (Xd - Xdp) * (Id + TempD);
 
-    // CHECK EQUATIONS !!!! 
     // RESIDUAL_EVAL for state 1 to 5
     values[x1d_idx] = x2w * OMEGA_S - dx1d;
-    values[x2w_idx] = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec) - dx2w; // Pmech can be called from Governor
-    //printf("Efd = %f, LadIfd = %f\n", Efd, LadIfd);
+    values[x2w_idx] = 1 / (2 * H) * ((Pmech - D * x2w) / (1 + x2w) - Telec) - dx2w; 
     values[x3Eqp_idx] = (Efd - LadIfd) / Tdop - dx3Eqp; 
-    values[x4Psidp_idx] = (-x4Psidp - (Xdp - Xl) * Id + x3Eqp) / Tdopp; //Zakaria: I removed (-dx4Psidp) from the end of the equation;
-    values[x5Psiqp_idx] = (-x5Psiqp - (Xq - Xdpp) * Iq ) / Tqopp;//Zakaria: I change this equation: (-x5Psiqp + (Xqp - Xl) * Iq + x6Edp) / Tqopp - dx5Psiqp, with a one similiar to that of genrou.cpp in the dynamic full application since x6Edp is not defined here.
+    values[x4Psidp_idx] = (-x4Psidp - (Xdp - Xl) * Id + x3Eqp) / Tdopp - dx4Psidp;
+    values[x5Psiqp_idx] = (-x5Psiqp - (Xq - Xdpp) * Iq ) / Tqopp - dx5Psiqp;
 
   }
   
@@ -303,17 +319,11 @@ void GensalGen::getCurrent(double *IGD, double *IGQ)
   double Vd = -Psiqpp * (1 + x2w);
   double Vq = +Psidpp * (1 + x2w);
 
-  double Vdterm = Vrterm * sin(x1d) - Viterm * cos(x1d);
-  double Vqterm = Vrterm * cos(x1d) + Viterm * sin(x1d);
-  // DQ Axis
-  Id = (Vd - Vdterm) * G - (Vq - Vqterm) * B;
-  Iq = (Vd - Vdterm) * B + (Vq - Vqterm) * G;
+  Id = Vd * G - Vq * B;
+  Iq = Vd * B + Vq * G;
   // Generator current injections in the network
-  Ir = + Id * sin(x1d) + Iq * cos(x1d);
-  Ii = - Id * cos(x1d) + Iq * sin(x1d);
-
-  *IGD = Ir;
-  *IGQ = Ii;
+  *IGD =   Id * sin(x1d) + Iq * cos(x1d);
+  *IGQ =  -Id * cos(x1d) + Iq * sin(x1d);
 }
 
 /**
