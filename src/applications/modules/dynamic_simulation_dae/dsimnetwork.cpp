@@ -25,6 +25,7 @@
 #include <constants.hpp>
 #include <model_classes/classical_gen_model.hpp>
 #include <model_classes/genrou.hpp>
+#include <model_classes/gensal.hpp>
 #include <model_classes/exdc1.hpp>
 #include <model_classes/esst1a.hpp>
 #include <model_classes/wsieg1.hpp>
@@ -188,13 +189,16 @@ void DSimBus::load(const
 	ClassicalGen *clgen;
 	clgen = new ClassicalGen;
 	p_gen[i] = clgen;
-      } else if (type == "GENROU") { // SJin: newly added GENROU geneator model object
+      } else if (type == "GENROU") {
         GenrouGen *grgen;
         grgen = new GenrouGen;
         p_gen[i] = grgen;
+      } else if (type == "GENSAL") {
+	GensalGen *gsgen;
+	gsgen = new GensalGen;
+	p_gen[i] = gsgen;
       }
 
-      // SJin: add exciters if there's any
       has_ex = false;
       data->getValue(HAS_EXCITER, &has_ex, i);
       if (has_ex) {
