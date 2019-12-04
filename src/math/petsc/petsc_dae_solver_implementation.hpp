@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-04 07:38:55 d3g096
+ * @date   2019-12-04 10:36:07 d3g096
  * 
  * @brief  
  * 
@@ -99,6 +99,7 @@ protected:
     PetscErrorCode ierr(0);
     try {
       ierr = TSCreate(this->communicator(), &p_ts); CHKERRXX(ierr);
+
       ierr = TSSetOptionsPrefix(p_ts, option_prefix.c_str()); CHKERRXX(ierr);
 
       p_petsc_J = PETScMatrix(this->p_J);
@@ -127,6 +128,15 @@ protected:
 
       ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
       // ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr);
+
+      TSAdapt adapt;
+
+      ierr = TSGetAdapt(p_ts, &adapt); CHKERRXX(ierr);
+      if (this->p_doAdaptive) {
+        ierr = TSAdaptSetType(adapt, TSADAPTBASIC); CHKERRXX(ierr);
+      } else {
+        ierr = TSAdaptSetType(adapt, TSADAPTNONE); CHKERRXX(ierr);
+      }
 
       ierr = TSSetFromOptions(p_ts); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -366,9 +376,8 @@ protected:
 
     const T *evalues = solver->p_eventManager->values(t, *state);
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
-      solver->p_eventv[i] = evalues[i];
+      fvalue[i] = evalues[i];
     }
-    fvalue = &(solver->p_eventv[0]);
     return ierr;
   }
 

@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-11-26 11:24:22 d3g096
+ * @date   2019-12-04 09:59:18 d3g096
  * 
  * @brief  
  * 
@@ -59,7 +59,8 @@ public:
       utility::Uncopyable(),
       p_J(comm, local_size, local_size),
       p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
-      p_eventManager(eman)
+      p_eventManager(eman),
+      p_doAdaptive(false)
   {
     
   }
@@ -90,9 +91,16 @@ protected:
   /// An optional event manager
   EventManagerPtr p_eventManager;
 
+  /// Is the time stepper adaptive?
+  bool p_doAdaptive;
+
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
-  {}
+  {
+    if (props) {
+      p_doAdaptive = props->get("Adaptive", p_doAdaptive);
+    }
+  }
 
   /// Set a function to call before each time step (specialized)
   void p_preStep(StepFunction& f)

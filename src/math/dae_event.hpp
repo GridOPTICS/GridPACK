@@ -9,7 +9,7 @@
 /**
  * @file   dae_event.hpp
  * @author Perkins
- * @date   2019-11-26 14:29:16 d3g096
+ * @date   2019-12-04 08:15:58 d3g096
  * 
  * @brief  Encapsulate an "Event" that would affect a time integration problem
  * 
@@ -305,7 +305,7 @@ public:
       p_trigger[i] = false;
     }
     for (int e = 0; e < nevent; ++e) {
-      p_trigger[e] = true;
+      p_trigger[eventidx[e]] = true;
     }
 
     T *lstate = state.getLocalElements();

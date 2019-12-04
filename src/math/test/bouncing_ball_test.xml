@@ -1,10 +1,11 @@
 <BouncingBall>
   <DAESolver>
+    <Adaptive>true</Adaptive>
     <PETScOptions>
       -ts_monitor
+      -ts_exact_final_time matchstep
       -ts_type rosw
-      -ts_max_time 30.0
-      -ts_adapt_dt_min 0.0
+      -ts_adapt_dt_min 1.0e-06
       -ts_adapt_dt_max 0.5
     </PETScOptions>
   </DAESolver>

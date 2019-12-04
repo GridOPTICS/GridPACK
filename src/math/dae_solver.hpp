@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2019-11-26 09:10:30 d3g096
+ * @date   2019-12-04 09:54:32 d3g096
  * 
  * @brief  
  * 
@@ -115,8 +115,8 @@ public:
    * @param maxtime time at which solution is to end (in); actual time
    * at which solution ended (out)
    *
-   * @param maxsteps maximum number of time steps to perform (in);
-   * actual number of time steps performed
+   * @param maxsteps maximum @em cumulative number of time steps to perform (in);
+   * actual number of time steps performed (out)
    *
    * @param solution system solution at @c maxtime (out)
    */

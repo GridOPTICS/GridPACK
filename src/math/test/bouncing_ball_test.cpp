@@ -8,7 +8,7 @@
 /**
  * @file   bouncing_ball_test.cpp
  * @author Perkins
- * @date   2019-12-04 07:17:32 d3g096
+ * @date   2019-12-04 10:07:11 d3g096
  * 
  * @brief  DAESolver test based on PETSc TS example 40. 
  * 
@@ -50,8 +50,8 @@ public:
       gpu::Uncopyable(),
       p_tmax(30.0),
       p_tstep(0.1),
-      p_h0(1.0),
-      p_v0(0.0)
+      p_h0(0.0),
+      p_v0(20.0)
   {}
 
   /// Destructor
@@ -119,11 +119,14 @@ public:
     solver.initialize(t0, p_tstep, *x);
 
     
-    for (int i = 1; t <= p_tmax; ++i) {
+    for (int i = 1; t <= (p_tmax - 0.5*p_tstep); ++i) {
       t = t0 + p_tstep*i;
-      int mxstep(1000);
-      solver.solve(t, mxstep);
-      std::cout << "Time = " << t << ", Steps = " << mxstep << std::endl;
+      int mxstep(10000);
+      double tout(t);
+      solver.solve(tout, mxstep);
+      std::cout << "Time requested = " << t << ", "
+                << "actual time = " << tout << ", "
+                << "Steps = " << mxstep << std::endl;
       x->print();
     }
     
@@ -196,13 +199,14 @@ public:
     void p_handle(const bool *triggered, const double& t, TestType *state)
     {
       if (triggered[0]) {
-        std::cout << "p_handle, bounce: t = " << t
-                  << ", state[0] = " << state[0]
-                  << ", state[1] = " << state[1]
+        p_numBounce++;
+        std::cout << "p_handle, bounce #" << p_numBounce << ": "
+                  << "t = " << t << ", "
+                  << "state[0] = " << state[0] << ", "
+                  << "state[1] = " << state[1]
                   << std::endl;
         state[0] = 0.0;
         state[1] = -0.9*state[1];
-        p_numBounce++;
       }
     }
   };
@@ -229,9 +233,9 @@ main(int argc, char **argv)
   gpp::Communicator self = world.self();
   boost::scoped_ptr<gpu::Configuration> 
     config(gpu::Configuration::configuration());
+  config->open("bouncing_ball_test.xml", self);
   gpu::Configuration::CursorPtr cursor =
     config->getCursor("BouncingBall");
-  config->open("bouncing_ball_test.xml", self);
   BouncingBallProblem<double> problem(self);
   problem.solve(cursor);
 
