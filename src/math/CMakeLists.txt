@@ -7,7 +7,7 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2019-11-26 08:31:14 d3g096
+# Last Change: 2019-12-02 13:50:42 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
@@ -110,11 +110,14 @@ if (PETSC_FOUND)
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
     ${CMAKE_CURRENT_BINARY_DIR}
 
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/bouncing_ball_test.xml
+    ${CMAKE_CURRENT_BINARY_DIR}
 
     DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/bouncing_ball_test.xml
     ${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml
-    
     )
 
 else()

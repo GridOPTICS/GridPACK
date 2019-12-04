@@ -9,7 +9,7 @@
 /**
  * @file   dae_event.hpp
  * @author Perkins
- * @date   2019-11-26 11:46:25 d3g096
+ * @date   2019-11-26 14:29:16 d3g096
  * 
  * @brief  Encapsulate an "Event" that would affect a time integration problem
  * 
@@ -173,8 +173,7 @@ protected:
 // -------------------------------------------------------------
 template <typename T, typename I = int>
 class DAEEventManagerT
-  : public parallel::Distributed,
-    private utility::Uncopyable
+  : private utility::Uncopyable
 {
 public:
 
@@ -206,6 +205,7 @@ public:
     rec.event = e;
     rec.nval = e->size();
     rec.evidx = nextidx;
+    rec.solidx = e->stateIndex();
     p_events.push_back(rec);
     p_size = -1;
     p_dirs.reset();

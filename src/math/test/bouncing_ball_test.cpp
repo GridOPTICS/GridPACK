@@ -8,7 +8,7 @@
 /**
  * @file   bouncing_ball_test.cpp
  * @author Perkins
- * @date   2019-11-26 10:00:45 d3g096
+ * @date   2019-12-04 07:17:32 d3g096
  * 
  * @brief  DAESolver test based on PETSc TS example 40. 
  * 
@@ -20,6 +20,7 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include <gridpack/math/math.hpp>
 #include <gridpack/math/dae_solver.hpp>
 
 namespace gp = gridpack;
@@ -46,7 +47,11 @@ public:
   /// Default constructor.
   BouncingBallProblem(const gpp::Communicator& comm)
     : gpp::Distributed(comm),
-      gpu::Uncopyable()
+      gpu::Uncopyable(),
+      p_tmax(30.0),
+      p_tstep(0.1),
+      p_h0(1.0),
+      p_v0(0.0)
   {}
 
   /// Destructor
@@ -65,6 +70,13 @@ public:
                    const VectorType& X, const VectorType& Xdot, 
                    const double& shift, MatrixType& J)
   {
+    int lo, hi;
+    X.localIndexRange(lo, hi);
+    J.setElement(lo+0, lo+0, shift);
+    J.setElement(lo+0, lo+1, -1.0);
+    J.setElement(lo+1, lo+0, 0.0);
+    J.setElement(lo+1, lo+1, shift);
+    J.ready();
     
   }
   
@@ -73,6 +85,14 @@ public:
                    const VectorType& X, const VectorType& Xdot, 
                    VectorType& F)
   {
+    int lo, hi;
+    X.localIndexRange(lo, hi);
+    std::vector<TestType> x(this->p_size), xdot(this->p_size);
+    X.getElementRange(lo, hi, &x[0]);
+    Xdot.getElementRange(lo, hi, &xdot[0]);
+    F.setElement(lo+0, xdot[0] - x[1]);
+    F.setElement(lo+1, xdot[1] + 9.8);
+    F.ready();
   }
   
   /// solve the problem
@@ -80,11 +100,34 @@ public:
   {
     typename SolverType::JacobianBuilder jbuilder = boost::ref(*this);
     typename SolverType::FunctionBuilder fbuilder = boost::ref(*this);
-    typename SolverType::EventManagerPtr eman;
-    typename SolverType::EventPtr bevent(new BounceEvent());
+    typename SolverType::EventManagerPtr eman(new typename SolverType::EventManager());
+    eman->add(this->events());
+
     SolverType solver(this->communicator(), p_size, jbuilder, fbuilder, eman);
     solver.configure(conf);
-    eman->add(bevent);
+
+    boost::scoped_ptr<VectorType> x(new VectorType(this->communicator(), this->p_size));
+    int lo, hi;
+    x->localIndexRange(lo, hi);
+
+    x->setElement(lo+0, p_h0);
+    x->setElement(lo+1, p_v0);
+    x->ready();
+    x->print();
+
+    double t0(0.0), t(t0);
+    solver.initialize(t0, p_tstep, *x);
+
+    
+    for (int i = 1; t <= p_tmax; ++i) {
+      t = t0 + p_tstep*i;
+      int mxstep(1000);
+      solver.solve(t, mxstep);
+      std::cout << "Time = " << t << ", Steps = " << mxstep << std::endl;
+      x->print();
+    }
+    
+    
   }
 
 protected:
@@ -100,6 +143,9 @@ protected:
 
   /// Initial height of ball
   double p_h0;
+
+  /// Initiall ball velocity
+  double p_v0;
 
 public:
   
@@ -138,6 +184,10 @@ public:
     /// update and return event values, given the state (specialized)
     void p_update(const double& t, TestType *state)
     {
+      std::cout << "p_update: t = " << t
+                << ", state[0] = " << state[0]
+                << ", state[1] = " << state[1]
+                << std::endl;
       this->p_current[0] = state[0];
       this->p_current[1] = p_maxBounce - p_numBounce;
     }
@@ -146,6 +196,10 @@ public:
     void p_handle(const bool *triggered, const double& t, TestType *state)
     {
       if (triggered[0]) {
+        std::cout << "p_handle, bounce: t = " << t
+                  << ", state[0] = " << state[0]
+                  << ", state[1] = " << state[1]
+                  << std::endl;
         state[0] = 0.0;
         state[1] = -0.9*state[1];
         p_numBounce++;
@@ -170,6 +224,7 @@ main(int argc, char **argv)
     std::cerr << "This program is serial" << std::endl;
     exit(3);
   }
+  gridpack::math::Initialize(&argc,&argv);
   
   gpp::Communicator self = world.self();
   boost::scoped_ptr<gpu::Configuration> 
@@ -179,6 +234,8 @@ main(int argc, char **argv)
   config->open("bouncing_ball_test.xml", self);
   BouncingBallProblem<double> problem(self);
   problem.solve(cursor);
+
+  gridpack::math::Finalize();
   
   return 0;
 }

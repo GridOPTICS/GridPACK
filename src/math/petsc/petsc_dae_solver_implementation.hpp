@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-11-26 11:49:05 d3g096
+ * @date   2019-12-02 14:05:07 d3g096
  * 
  * @brief  
  * 
@@ -60,9 +60,10 @@ public:
     : DAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder, eman),
       PETScConfigurable(this->communicator()),
       p_ts(),
-      p_petsc_J(NULL)
+      p_petsc_J(NULL),
+      p_eventv()
   {
-    
+    if (eman) p_eventv.resize(eman->size());
   }
 
   /// Destructor
@@ -88,6 +89,9 @@ protected:
 
   /// The Jacobian matrix
   Mat *p_petsc_J;
+
+  /// An array to store event values
+  std::vector<PetscScalar> p_eventv;
 
   /// Do what is necessary to build this instance
   void p_build(const std::string& option_prefix)
@@ -347,8 +351,9 @@ protected:
 
     const T *evalues = solver->p_eventManager->values(t, *state);
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
-      fvalue[i] = evalues[i];
+      solver->p_eventv[i] = evalues[i];
     }
+    fvalue = &(solver->p_eventv[0]);
     return ierr;
   }
 
