@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2019-12-04 06:41:16 d3g096
+ * @date   2019-12-04 12:40:57 d3g096
  * 
  * @brief  
  * 
@@ -372,8 +372,7 @@ BOOST_AUTO_TEST_CASE( Rober )
 
   std::auto_ptr<Problem> p(new RoberProblem());
 
-  // FIXME
-  // p->solve(world, test_config);
+  p->solve(world, test_config);
 }
 
 BOOST_AUTO_TEST_CASE( Orego )

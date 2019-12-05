@@ -9,7 +9,7 @@
 /**
  * @file   dae_event.hpp
  * @author Perkins
- * @date   2019-12-04 08:15:58 d3g096
+ * @date   2019-12-05 08:03:43 d3g096
  * 
  * @brief  Encapsulate an "Event" that would affect a time integration problem
  * 
@@ -183,7 +183,7 @@ public:
   /// Default constructor.
   DAEEventManagerT(void)
     : utility::Uncopyable(),
-      p_events(), p_size(), p_dirs(), p_terms()
+      p_events(), p_size(), p_dirs(), p_terms(), p_trigger(), p_terminated()
   {}
 
   /// Destructor
@@ -308,12 +308,16 @@ public:
       p_trigger[eventidx[e]] = true;
     }
 
+    const bool *term = this->terminateFlags();
+
     T *lstate = state.getLocalElements();
 
     BOOST_FOREACH(p_EventInfo rec, p_events) {
       for (int i = 0; i < rec.nval; ++i) {
-        if (p_trigger[rec.evidx + i]) {
+        int idx(rec.evidx + i);
+        if (p_trigger[idx]) {
           rec.event->handle(&p_trigger[rec.evidx], t, &lstate[rec.evidx]);
+          if (term[idx]) { p_terminated = true; }
           break;
         }
       }
@@ -321,6 +325,20 @@ public:
     state.releaseLocalElements(lstate);
     return;
   }
+
+  /// Has a termination event occurred
+  bool terminated(void) const
+  {
+    return p_terminated;
+  }
+
+  /// (Re)Set the termination event flag
+  void terminated(const bool& flag)
+  {
+    p_terminated = flag;
+  }
+
+  
   
 protected:
 
@@ -349,6 +367,9 @@ protected:
 
   /// An array of trigger flags
   mutable boost::scoped_array<bool> p_trigger;
+
+  /// A flag to indicate the solver has been terminated due to an event
+  bool p_terminated;
 };
 
 

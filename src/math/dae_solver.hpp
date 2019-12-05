@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver.hpp
  * @author William A. Perkins
- * @date   2019-12-04 09:54:32 d3g096
+ * @date   2019-12-05 07:52:33 d3g096
  * 
  * @brief  
  * 
@@ -164,6 +164,18 @@ protected:
   void p_postStep(StepFunction& f)
   {
     p_impl->postStep(f);
+  }
+
+  /// Has the solver been terminated by an event (specialized)
+  bool p_terminated(void) const
+  {
+    return p_impl->terminated();
+  }
+
+  /// Reset solver if it has been terminated by an event, maybe (specialized)
+  void p_terminated(const bool& flag)
+  {
+    p_impl->terminated(flag);
   }
 };
 

@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-04 09:59:18 d3g096
+ * @date   2019-12-05 07:55:21 d3g096
  * 
  * @brief  
  * 
@@ -60,7 +60,7 @@ public:
       p_J(comm, local_size, local_size),
       p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
       p_eventManager(eman),
-      p_doAdaptive(false)
+      p_doAdaptive(true)
   {
     
   }
@@ -114,6 +114,23 @@ protected:
     p_postStepFunc = f;
   }
 
+  /// Has the solver been terminated by an event (specialized)
+  bool p_terminated(void) const
+  {
+    bool result(false);
+    if (p_eventManager) {
+      result = p_eventManager->terminated();
+    }
+    return result;
+  }
+
+  /// Reset solver if it has been terminated by an event, maybe (specialized)
+  void p_terminated(const bool& flag)
+  {
+    if (p_eventManager) {
+      p_eventManager->terminated(flag);
+    }
+  }
 };
 
 

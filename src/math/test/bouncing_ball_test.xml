@@ -2,7 +2,6 @@
   <DAESolver>
     <Adaptive>true</Adaptive>
     <PETScOptions>
-      -ts_monitor
       -ts_exact_final_time matchstep
       -ts_type rosw
       -ts_adapt_dt_min 1.0e-06

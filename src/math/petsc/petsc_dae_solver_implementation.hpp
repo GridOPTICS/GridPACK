@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-04 10:36:07 d3g096
+ * @date   2019-12-04 14:23:21 d3g096
  * 
  * @brief  
  * 
@@ -210,12 +210,19 @@ protected:
         PetscReal tlast;
         ierr = TSGetSolveTime(p_ts,&tlast);CHKERRXX(ierr);
         maxtime = tlast;
-      
-        std::cout << this->processor_rank() << ": "
-                  << "PETSc DAE Solver converged after " << maxsteps << " steps, "
-                  << "actual time = " << maxtime
-                  << std::endl;
 
+        if (reason == TS_CONVERGED_EVENT) {
+          std::cout << this->processor_rank() << ": "
+                    << "A DAE solver termination event occurred after "
+                    << maxsteps << " steps, "
+                    << "actual time = " << maxtime
+                    << std::endl;
+        } else {
+          std::cout << this->processor_rank() << ": "
+                    << "PETSc DAE Solver converged after " << maxsteps << " steps, "
+                    << "actual time = " << maxtime
+                    << std::endl;
+        }
       } else {
         boost::format f("%d: PETSc DAE Solver diverged after %d steps, reason : %d");
         std::string msg = 

@@ -10,7 +10,7 @@
 /**
  * @file   dae_solver_interface.hpp
  * @author William A. Perkins
- * @date   2019-11-26 08:46:56 d3g096
+ * @date   2019-12-05 07:51:14 d3g096
  * 
  * @brief  
  * 
@@ -106,6 +106,18 @@ public:
     this->p_postStep(f);
   }
 
+  /// Has the solver been terminated by an event
+  bool terminated(void) const
+  {
+    return this->p_terminated();
+  }
+
+  /// Reset solver if it has been terminated by an event, maybe
+  void terminated(const bool& flag)
+  {
+    this->p_terminated(flag);
+  }
+
 protected:
 
   /// Initialize the system (specialized)
@@ -123,6 +135,11 @@ protected:
   /// Set a function to call after each time step (specialized)
   virtual void p_postStep(StepFunction& f) = 0;
 
+  /// Has the solver been terminated by an event (specialized)
+  virtual bool p_terminated(void) const = 0;
+
+  /// Reset solver if it has been terminated by an event, maybe (specialized)
+  virtual void p_terminated(const bool& flag) = 0;
 };
 
 

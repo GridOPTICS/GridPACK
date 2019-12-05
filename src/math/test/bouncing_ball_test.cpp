@@ -8,7 +8,7 @@
 /**
  * @file   bouncing_ball_test.cpp
  * @author Perkins
- * @date   2019-12-04 10:07:11 d3g096
+ * @date   2019-12-05 08:12:52 d3g096
  * 
  * @brief  DAESolver test based on PETSc TS example 40. 
  * 
@@ -124,10 +124,11 @@ public:
       int mxstep(10000);
       double tout(t);
       solver.solve(tout, mxstep);
-      std::cout << "Time requested = " << t << ", "
-                << "actual time = " << tout << ", "
-                << "Steps = " << mxstep << std::endl;
-      x->print();
+      // std::cout << "Time requested = " << t << ", "
+      //           << "actual time = " << tout << ", "
+      //           << "Steps = " << mxstep << std::endl;
+      // x->print();
+      if (solver.terminated()) break;
     }
     
     
@@ -187,10 +188,10 @@ public:
     /// update and return event values, given the state (specialized)
     void p_update(const double& t, TestType *state)
     {
-      std::cout << "p_update: t = " << t
-                << ", state[0] = " << state[0]
-                << ", state[1] = " << state[1]
-                << std::endl;
+      // std::cout << "p_update: t = " << t
+      //           << ", state[0] = " << state[0]
+      //           << ", state[1] = " << state[1]
+      //           << std::endl;
       this->p_current[0] = state[0];
       this->p_current[1] = p_maxBounce - p_numBounce;
     }
@@ -200,13 +201,19 @@ public:
     {
       if (triggered[0]) {
         p_numBounce++;
-        std::cout << "p_handle, bounce #" << p_numBounce << ": "
-                  << "t = " << t << ", "
-                  << "state[0] = " << state[0] << ", "
-                  << "state[1] = " << state[1]
-                  << std::endl;
+        // std::cout << "p_handle, bounce #" << p_numBounce << ": "
+        //           << "t = " << t << ", "
+        //           << "state[0] = " << state[0] << ", "
+        //           << "state[1] = " << state[1]
+        //           << std::endl;
         state[0] = 0.0;
         state[1] = -0.9*state[1];
+        std::cout << "Bounce #" << p_numBounce
+                  << " at t = " << t << std::endl;
+      }
+      if (triggered[1]) {
+        std::cout << "Maximum number of bounces reached at t = "
+                  << t << std::endl;
       }
     }
   };
