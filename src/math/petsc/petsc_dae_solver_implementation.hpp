@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-05 09:51:35 d3g096
+ * @date   2019-12-05 10:01:29 d3g096
  * 
  * @brief  
  * 
@@ -138,10 +138,16 @@ protected:
           pdir[i] = gdir[i];
           pterm[i] = (gterm[i] ? PETSC_TRUE : PETSC_FALSE);
         }
-        
+
+#if PETSC_VERSION_LT(3,7,0)
+        ierr = TSSetEventMonitor(p_ts, ne, &(pdir[0]), &(pterm[0]),
+                                 &EventHandler, &PostEventHandler,
+                                 NULL);
+#else
         ierr = TSSetEventHandler(p_ts, ne, &(pdir[0]), &(pterm[0]),
                                  &EventHandler, &PostEventHandler,
                                  NULL);
+#endif
       }
 
       ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
