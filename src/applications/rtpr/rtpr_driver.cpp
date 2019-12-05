@@ -678,12 +678,18 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (!cursor->get("groupSize",&grp_size)) {
     grp_size = 1;
   }
-  if (!cursor->get("sourceArea", &p_srcArea)) {
-    p_srcArea = 1;
+  bool foundArea = true;
+  bool found;
+  found = cursor->get("sourceArea", &p_srcArea);
+  if (!found) {
+    p_srcArea = 0;
   }
-  if (!cursor->get("destinationArea", &p_dstArea)) {
-    p_dstArea = 1;
+  foundArea = found && foundArea;
+  found = cursor->get("destinationArea", &p_dstArea);
+  if (!found) {
+    p_dstArea = 0;
   }
+  foundArea = found && foundArea;
   if (!cursor->get("sourceZone",&p_srcZone)) {
     p_srcZone = 0;
   }
@@ -841,6 +847,11 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       tielines;
     if (cursor) cursor->children(tielines);
     ties = getTieLines(tielines);
+    // no tie lines found in file but areas (at least) were specified
+    // so try calculating tie lines
+    if (ties.size() == 0 && foundArea) {
+      ties = getTieLines(p_srcArea,p_srcZone,p_dstArea,p_dstZone);
+    }
   } else {
     ties = getTieLines(p_srcArea,p_srcZone,p_dstArea,p_dstZone);
   }
