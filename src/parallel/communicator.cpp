@@ -9,7 +9,7 @@
 /**
  * @file   communicator.cpp
  * @author William A. Perkins
- * @date   2019-05-09 07:01:05 d3g096
+ * @date   2019-12-05 08:34:28 d3g096
  * 
  * @brief  
  * 
@@ -18,6 +18,7 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include <functional>
 
 #if USE_PROGRESS_RANKS
 #include <ga-mpi.h>
@@ -378,6 +379,20 @@ void Communicator::min(long *x, int nvals) const
   char cmin[4];
   strcpy(cmin,"min");
   GA_Lgop(x,nvals,cmin);
+}
+
+bool Communicator::any(const bool& lflag) const
+{
+  bool result(false);
+  boost::mpi::all_reduce(p_comm, lflag, result, std::logical_or<bool>());
+  return result;
+}
+
+bool Communicator::all(const bool& lflag) const
+{
+  bool result(false);
+  boost::mpi::all_reduce(p_comm, lflag, result, std::logical_and<bool>());
+  return result;
 }
 
 } // namespace parallel
