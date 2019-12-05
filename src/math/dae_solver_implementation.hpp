@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-05 07:55:21 d3g096
+ * @date   2019-12-05 09:15:09 d3g096
  * 
  * @brief  
  * 
@@ -115,12 +115,21 @@ protected:
   }
 
   /// Has the solver been terminated by an event (specialized)
+  /** 
+   * The event manager records terminating events. Library-specific
+   * implementations should probably query the underlying solver
+   * library.
+   * 
+   * 
+   * @return true if an event has terminated further solution
+   */
   bool p_terminated(void) const
   {
     bool result(false);
     if (p_eventManager) {
-      result = p_eventManager->terminated();
+      result = (this->communicator()).any(p_eventManager->terminated());
     }
+    
     return result;
   }
 

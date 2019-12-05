@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2019-12-04 14:23:21 d3g096
+ * @date   2019-12-05 09:51:35 d3g096
  * 
  * @brief  
  * 
@@ -30,6 +30,7 @@
 #include "petsc_vector_extractor.hpp"
 #include "petsc_matrix_extractor.hpp"
 #include "petsc_configurable.hpp"
+#include "complex_operators.hpp"
 
 namespace gridpack {
 namespace math {
@@ -61,7 +62,8 @@ public:
       PETScConfigurable(this->communicator()),
       p_ts(),
       p_petsc_J(NULL),
-      p_eventv()
+      p_eventv(),
+      p_termFlag(false)
   {
     if (eman) p_eventv.resize(eman->size());
   }
@@ -93,6 +95,22 @@ protected:
   /// An array to store event values
   std::vector<PetscScalar> p_eventv;
 
+  /// Has an event terminated integration?
+  bool p_termFlag;
+
+  /// Has the solver been terminated by an event (specialized)
+  bool p_terminated(void) const
+  {
+    return this->p_termFlag;
+  }
+
+  /// Reset solver if it has been terminated by an event, maybe (specialized)
+  void p_terminated(const bool& flag)
+  {
+    p_termFlag = flag;
+    DAESolverImplementation<T, I>::p_terminated(flag);
+  }
+  
   /// Do what is necessary to build this instance
   void p_build(const std::string& option_prefix)
   {
@@ -212,6 +230,12 @@ protected:
         maxtime = tlast;
 
         if (reason == TS_CONVERGED_EVENT) {
+
+          // Note: the PETSc reason is already reduced across all
+          // ranks. There's no need to do it a gain.
+          
+          this->p_termFlag = true;
+
           std::cout << this->processor_rank() << ": "
                     << "A DAE solver termination event occurred after "
                     << maxsteps << " steps, "
@@ -381,9 +405,16 @@ protected:
     boost::scoped_ptr<VectorType>
       state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
 
+    // This gets a little tricky.  If PETSc is built w/ complex,
+    // fvalue will be complex, and evalues, whether real or complex,
+    // can be assigned directly.  If T is complex and PetscScalar is
+    // real, then equate<> will return the real part of T.  This is
+    // what PETSc does internally to check a complex event value. So,
+    // this *should* work for PETSc.
+
     const T *evalues = solver->p_eventManager->values(t, *state);
     for (int i = 0; i < solver->p_eventManager->size(); ++i) {
-      fvalue[i] = evalues[i];
+      fvalue[i] = equate<PetscScalar, T>(evalues[i]);
     }
     return ierr;
   }
