@@ -166,6 +166,8 @@ class RTPRDriver
 
     int p_srcArea, p_dstArea, p_srcZone, p_dstZone;
 
+    double p_rating;
+
     double p_Vmin, p_Vmax;
 
     bool p_check_Qlim, p_print_calcs;

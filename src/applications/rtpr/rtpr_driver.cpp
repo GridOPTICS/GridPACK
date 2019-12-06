@@ -537,7 +537,7 @@ std::vector<gridpack::rtpr::TieLine>
 }
 
 /**
- * Create a list of generator for a given area and zone. These
+ * Create a list of generators for a given area and zone. These
  * generators will be monitored to see if they exceed operating
  * specifications.
  * @param network power grid used for DS simulation
@@ -900,64 +900,64 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     }
   }
 
+  p_rating = 1.0;
   bool checkTie = runContingencies();
-  double rating = 1.0;
   if (checkTie) {
     // Tie lines are secure for all contingencies. Increase loads and generation
-    while (checkTie && rating) {
-      rating += 0.05;
-      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
-        rating -= 0.05;
+    while (checkTie) {
+      p_rating += 0.05;
+      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+        p_rating -= 0.05;
         p_pf_app.resetRealPower();
         break;
       }
       checkTie = runContingencies();
-      if (!checkTie) rating -= 0.05;
+      if (!checkTie) p_rating -= 0.05;
       p_pf_app.resetRealPower();
     }
     // Refine estimate of rating
-    while (checkTie && rating) {
-      rating += 0.01;
-      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
-        rating -= 0.01;
+    while (checkTie) {
+      p_rating += 0.01;
+      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+        p_rating -= 0.01;
         if (p_world.rank() == 0) {
           printf("Real power generation for power flow"
               " is capacity-limited for Rating: %f\n",
-              rating);
+              p_rating);
         }
         p_pf_app.resetRealPower();
         break;
       }
       checkTie = runContingencies();
-      if (!checkTie) rating -= 0.01;
+      if (!checkTie) p_rating -= 0.01;
       p_pf_app.resetRealPower();
     }
   } else {
     // Tie lines are insecure for some contingencies. Decrease loads and generation
-    while (!checkTie && rating >= 0.0) {
-      rating -= 0.05;
-      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
-        rating += 0.05;
+    while (!checkTie && p_rating >= 0.0) {
+      p_rating -= 0.05;
+      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+        p_rating += 0.05;
         p_pf_app.resetRealPower();
         break;
       }
       checkTie = runContingencies();
-      if (checkTie) rating += 0.05;
+      if (checkTie) p_rating += 0.05;
       p_pf_app.resetRealPower();
     }
     // Refine estimate of rating
-    while (!checkTie && rating >= 0.0) {
-      rating -= 0.01;
-      p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
-        rating += 0.01;
+    while (!checkTie && p_rating >= 0.0) {
+      p_rating -= 0.01;
+      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
+      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+        p_rating += 0.01;
         if (p_world.rank() == 0) {
           printf("Real power generation for power flow"
               " is capacity-limited for Rating: %f\n",
-              rating);
+              p_rating);
         }
         p_pf_app.resetRealPower();
         break;
@@ -967,7 +967,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     }
   }
   if (p_world.rank() == 0) {
-    printf("Final Power Flow Rating: %f\n",rating);
+    printf("Final Power Flow Rating: %f\n",p_rating);
   }
   // Power flow estimate of path rating is complete. Now check to see if the
   // rating is stable using dynamic simulation. Start by cloning the dynamic
@@ -993,30 +993,30 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_ds_app.initialize();
   p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
-  p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-  p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+  p_ds_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
+  p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
   checkTie = runDSContingencies();
 
   // Current rating is an upper bound. Only check lower values.
-  while (!checkTie && rating >= 0.0) {
-    rating -= 0.01;
-    p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-    if (!p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone)) {
-      rating += 0.01;
+  while (!checkTie && p_rating >= 0.0) {
+    p_rating -= 0.01;
+    p_ds_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
+    if (!p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+      p_rating += 0.01;
       if (p_world.rank() == 0) {
         printf("Real power generation for dynamic simulation"
             " is capacity-limited for Rating: %f\n",
-            rating);
+            p_rating);
       }
       p_ds_app.resetRealPower();
       break;
     }
-    checkTie = runContingencies();
+    checkTie = runDSContingencies();
     p_ds_app.resetRealPower();
   }
 
   if (p_world.rank() == 0) {
-    printf("Final Dynamic Simulation Rating: %f\n",rating);
+    printf("Final Dynamic Simulation Rating: %f\n",p_rating);
   }
 
   timer->stop(t_total);
@@ -1055,12 +1055,17 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   p_pf_app.setVoltageLimits(p_Vmin, p_Vmax);
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
+  char sbuf[128];
+  sprintf(sbuf,"base_%f.out",p_rating);
+  if (p_print_calcs) p_pf_app.open(sbuf);
+  sprintf(sbuf,"\nRunning base case on %d processes\n",p_task_comm.size());
+  if (p_print_calcs) p_pf_app.writeHeader(sbuf);
   chkSolve = p_pf_app.solve();
   // Check for Qlimit violations
   if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
     chkSolve = p_pf_app.solve();
   }
-  if (!chkSolve) printf("Failed solution on continency 0\n");
+  if (!chkSolve) printf("Failed solution on base case\n");
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   p_pf_app.ignoreVoltageViolations();
@@ -1069,11 +1074,18 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   chkLines = p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus,
       p_tags, violations);
   ret = ret && chkLines;
+  if (!chkLines) printf("Line overload on base case\n");
+  // Write out voltages and currents
+  if (p_print_calcs) p_pf_app.write();
+  if (p_print_calcs) p_pf_app.close();
 
   // Set up task manager on the world communicator. The number of tasks is
   // equal to the number of contingencies
   gridpack::parallel::TaskManager taskmgr(p_world);
   int ntasks = p_events.size();
+  if (ntasks == 0) {
+    return chkSolve;
+  }
   taskmgr.set(ntasks);
 
   // Get bus voltage information for base case
@@ -1081,7 +1093,6 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
 
   // Evaluate contingencies using the task manager
   int task_id;
-  char sbuf[128];
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
