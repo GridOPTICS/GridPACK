@@ -625,8 +625,6 @@ void  gridpack::rtpr::RTPRDriver::findWatchedGenerators(
   for (i=0; i<ngen; i++) {
     buses.push_back(bus_ids[i]);
     tags.push_back(ctags[i].str);
-              printf("bus_id: %d ctags: (%s)\n",buses[buses.size()-1],
-                  tags[tags.size()-1].c_str());
   }
 }
 
@@ -917,6 +915,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_pf_app.resetRealPower();
     }
     // Refine estimate of rating
+    checkTie = true;
     while (checkTie) {
       p_rating += 0.01;
       p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
@@ -940,6 +939,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_rating -= 0.05;
       p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
       if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+        printf("Rating capacity exceeded: %d\n",p_rating);
         p_rating += 0.05;
         p_pf_app.resetRealPower();
         break;
@@ -949,6 +949,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
       p_pf_app.resetRealPower();
     }
     // Refine estimate of rating
+    checkTie = false;
     while (!checkTie && p_rating >= 0.0) {
       p_rating -= 0.01;
       p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
@@ -996,6 +997,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_ds_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
   p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
   checkTie = runDSContingencies();
+  p_ds_app.resetRealPower();
 
   // Current rating is an upper bound. Only check lower values.
   while (!checkTie && p_rating >= 0.0) {
