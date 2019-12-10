@@ -311,7 +311,7 @@ class PTI23_parser : public BasePTIParser<_network>
         if (pl != 0.0 || ql != 0.0) {
           data->addValue(LOAD_PL, atof(split_line[2].c_str()));
           data->addValue(LOAD_PL, atof(split_line[2].c_str()),0);
-          std::string tmp(" 1");
+          std::string tmp("1 ");
           data->addValue(LOAD_ID,tmp.c_str(),0);
           data->addValue(LOAD_QL, atof(split_line[3].c_str()));
           data->addValue(LOAD_QL, atof(split_line[3].c_str()),0);
