@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2016-07-14 14:07:46 d3g096
+ * @date   2019-12-10 09:31:33 d3g096
  * 
  * @brief  
  * 
@@ -126,8 +126,8 @@ private:
       & p_originalBusIndex
       & p_globalBusIndex
       & p_branchNeighbors
-      & *p_bus
-      & *p_data
+      & p_bus
+      & p_data
       & p_refFlag;
   }
 
@@ -239,8 +239,8 @@ private:
       & p_globalBusIndex2
       & p_localBusIndex1
       & p_localBusIndex2
-      & *p_branch
-      & *p_data;
+      & p_branch
+      & p_data;
   }
 
 };

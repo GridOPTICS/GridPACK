@@ -89,7 +89,7 @@ bool gridpack::stream::InputStream::nextLine(std::string &line)
   bool ret = false;
   if (p_isOpen) {
     if (p_srcFile) {
-      ret = std::getline(p_fout, line);
+      ret = std::getline(p_fout, line).good();
     } else {
 #ifdef USE_GOSS
 #endif

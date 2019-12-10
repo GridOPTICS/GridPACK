@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  3, 2013 by William A. Perkins
-# Last Change: 2019-10-25 12:14:44 d3g096
+# Last Change: 2019-11-14 06:49:07 d3g096
 # -------------------------------------------------------------
 
 # 
@@ -60,11 +60,11 @@ endif()
 
 # check to see if rt library exists. If so, add -lrt to GA_EXTRA_LIBS
 find_library(LIBRT rt PATHS /lib /usr/lib /usr/local/lib)
-if (NOT LIBRT EQUAL LIBRT-NOTFOUND)
+if (LIBRT)
   if (GA_EXTRA_LIBS)
-    set (GA_EXTRA_LIBS "${GA_EXTRA_LIBS} -lrt")
+    set (GA_EXTRA_LIBS "${GA_EXTRA_LIBS} ${LIBRT}")
   else()
-    set (GA_EXTRA_LIBS "-lrt")
+    set (GA_EXTRA_LIBS ${LIBRT})
   endif()
 endif()
 
