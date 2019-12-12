@@ -1177,6 +1177,7 @@ void partition(void)
       if (b->p_activeBranch) active_branches += 1;
     }
   }
+  setMap();
 
   std::cout << me << ": "
     << "I have " 
@@ -1370,6 +1371,8 @@ template <class _new_bus, class _new_branch> void clone(
   }
   // Copy network data collection
   *(new_network->getNetworkData()) = *p_network_data;
+  // Set internal maps
+  new_network->setMap();
 }
 
 /**
