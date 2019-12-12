@@ -37,6 +37,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_generatorWatch = false;
   p_loadWatch = false;
   p_generators_read_in = false;
+  p_save_time_series = false;
 }
 
 /**
@@ -49,6 +50,7 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_generatorWatch = false;
   p_loadWatch = false;
   p_generators_read_in = false;
+  p_save_time_series = false;
 }
 
 /**
