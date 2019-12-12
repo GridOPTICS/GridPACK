@@ -722,8 +722,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_powerflowload_p.clear();
   p_powerflowload_q.clear();
 
-  printf("DSFullBus::load(), Bus No.: %d \n", getOriginalIndex());
-
   std::string snewbustype; //renke add
 
   p_sbase = 100.0;
@@ -744,9 +742,12 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       return; 
     }	  
   }
-
-  data->getValue(BUS_VOLTAGE_ANG, &p_angle);
-  data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
+  if (!data->getValue("BUS_PF_VANG", &p_angle)) {
+    data->getValue(BUS_VOLTAGE_ANG, &p_angle);
+  }
+  if (!data->getValue("BUS_PF_VMAG", &p_voltage)) {
+    data->getValue(BUS_VOLTAGE_MAG, &p_voltage);
+  }
   //printf("p_voltage at bus %d: %f\n", getOriginalIndex(), p_voltage);
 
   double pi = 4.0*atan(1.0);
@@ -812,7 +813,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       //if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1) 
       // TBD: if (data->getValue(GENERATOR_MODEL, &model, i)
       //            && stat == 1 && GENERATOR_PG >= 0) 
-      data->getValue(GENERATOR_MODEL, &model, i); 
+      data->getValue(GENERATOR_MODEL, &model, i);
       if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0) {
         p_pg.push_back(pg);
         //std::cout << "generator: " << model << std::endl;
