@@ -215,31 +215,21 @@ std::vector<gridpack::powerflow::Contingency>
   if (nflt == 0) {
     return ret;
   }
-  int g_bus = GA_Create_handle();
-  int one = 1;
-  NGA_Set_data(g_bus,one,&nflt,C_INT);
-  NGA_Allocate(g_bus);
-  int g_ids = GA_Create_handle();
-  int idType = NGA_Register_type(sizeof(char2));
-  NGA_Set_data(g_ids,1,&nflt,idType);
-  NGA_Allocate(g_ids);
-  int lo, hi;
-  lo = 0; 
-  for (i=0; i<me; i++) lo += sizes[i];
-  hi = lo + sizes[me] - 1;
-  // Create a complete list on all processes
-  if (lo <= hi) NGA_Put(g_bus,&lo,&hi,&bus_ids[0],&one);
-  if (lo <= hi) NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
-  network->communicator().sync();
-  bus_ids.resize(nflt);
-  tags.resize(nflt);
-  lo = 0;
-  hi = nflt-1;
-  NGA_Get(g_bus,&lo,&hi,&bus_ids[0],&one);
-  NGA_Get(g_ids,&lo,&hi,&tags[0],&one);
-  GA_Destroy(g_bus);
-  GA_Destroy(g_ids);
-  NGA_Deregister_type(idType);
+  int offset = 0;
+  for (i=0; i<me; i++) offset += sizes[i];
+
+  std::vector<int> idx;
+  for (i=0; i < bus_ids.size(); i++) idx.push_back(offset+i);
+  // upload all values to a global vector
+  gridpack::parallel::GlobalVector<int> busIDs(network->communicator());
+  gridpack::parallel::GlobalVector<char2> genIDs(network->communicator());
+  busIDs.addElements(idx,bus_ids);
+  genIDs.addElements(idx,tags);
+  busIDs.upload();
+  genIDs.upload();
+  busIDs.getAllData(bus_ids);
+  genIDs.getAllData(tags);
+
   // create a list of contingencies
   char sbuf[128];
   for (i=0; i<nflt; i++) {
@@ -331,38 +321,24 @@ std::vector<gridpack::powerflow::Contingency>
   if (nflt == 0) {
     return ret;
   }
-  int g_from = GA_Create_handle();
-  int one = 1;
-  NGA_Set_data(g_from,one,&nflt,C_INT);
-  NGA_Allocate(g_from);
-  int g_to = GA_Create_handle();
-  NGA_Set_data(g_to,one,&nflt,C_INT);
-  NGA_Allocate(g_to);
-  int g_ids = GA_Create_handle();
-  int idType = NGA_Register_type(sizeof(char2));
-  NGA_Set_data(g_ids,1,&nflt,idType);
-  NGA_Allocate(g_ids);
-  int lo, hi;
-  lo = 0; 
-  for (i=0; i<me; i++) lo += sizes[i];
-  hi = lo + sizes[me] - 1;
-  // Create a complete list on all processes
-  if (lo <= hi) NGA_Put(g_from,&lo,&hi,&bus_from[0],&one);
-  if (lo <= hi) NGA_Put(g_to,&lo,&hi,&bus_to[0],&one);
-  if (lo <= hi) NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
-  network->communicator().sync();
-  bus_from.resize(nflt);
-  bus_to.resize(nflt);
-  tags.resize(nflt);
-  lo = 0;
-  hi = nflt-1;
-  NGA_Get(g_from,&lo,&hi,&bus_from[0],&one);
-  NGA_Get(g_to,&lo,&hi,&bus_to[0],&one);
-  NGA_Get(g_ids,&lo,&hi,&tags[0],&one);
-  GA_Destroy(g_from);
-  GA_Destroy(g_to);
-  GA_Destroy(g_ids);
-  NGA_Deregister_type(idType);
+  int offset = 0;
+  for (i=0; i<me; i++) offset += sizes[i];
+
+  std::vector<int> idx;
+  for (i=0; i < bus_from.size(); i++) idx.push_back(offset+i);
+  // upload all values to a global vector
+  gridpack::parallel::GlobalVector<int> bus1(network->communicator());
+  gridpack::parallel::GlobalVector<int> bus2(network->communicator());
+  gridpack::parallel::GlobalVector<char2> lineIDs(network->communicator());
+  bus1.addElements(idx,bus_from);
+  bus2.addElements(idx,bus_to);
+  lineIDs.addElements(idx,tags);
+  bus1.upload();
+  bus2.upload();
+  lineIDs.upload();
+  bus1.getAllData(bus_from);
+  bus2.getAllData(bus_to);
+  lineIDs.getAllData(tags);
   // create a list of contingencies
   char sbuf[128];
   for (i=0; i<nflt; i++) {
@@ -515,24 +491,17 @@ std::vector<gridpack::rtpr::TieLine>
   if (ntie == 0) {
     return ret;
   }
-  int g_tie = GA_Create_handle();
-  int one = 1;
-  int itype = NGA_Register_type(sizeof(gridpack::rtpr::TieLine));
-  NGA_Set_data(g_tie,one,&ntie,itype);
-  NGA_Allocate(g_tie);
-  int lo, hi;
-  lo = 0; 
-  for (i=0; i<me; i++) lo += sizes[i];
-  hi = lo + sizes[me] - 1;
-  // Create a complete list on all processes
-  if (lo <= hi) NGA_Put(g_tie,&lo,&hi,&ret[0],&one);
-  p_pf_network->communicator().sync();
-  ret.resize(ntie);
-  lo = 0;
-  hi = ntie-1;
-  NGA_Get(g_tie,&lo,&hi,&ret[0],&one);
-  GA_Destroy(g_tie);
-  NGA_Deregister_type(itype);
+  int offset = 0;
+  for (i=0; i<me; i++) offset += sizes[i];
+
+  std::vector<int> idx;
+  for (i=0; i < ntie; i++) idx.push_back(offset+i);
+  // upload all values to a global vector
+  gridpack::parallel::GlobalVector<gridpack::rtpr::TieLine>
+    tielines(p_pf_network->communicator());
+  tielines.addElements(idx,ret);
+  tielines.upload();
+  tielines.getAllData(ret);
   return ret;
 }
 
