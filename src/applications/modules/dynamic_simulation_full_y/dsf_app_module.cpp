@@ -305,7 +305,6 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->start(t_mode);
   p_factory->setMode(YDYNLOAD);
   timer->stop(t_mode);
-  timer->start(t_ybus);
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
   //branchIO.header("\n=== ybus_jxd after added dynamic load impedance': =============\n");
   //printf("\n=== ybus_dynload after added dynamic load impedance': =============\n");
