@@ -145,8 +145,9 @@ ParMETISGraphPartitionerImpl::p_partition(void)
                                 &options[0],
                                 &edgecut, &part[0],
                                 &comm);
-  if (status != 0) {
+  if (status != METIS_OK) {
     // FIXME: throw an exception
+    printf("EXCEPTION Found in ParMETIS_V3_PartKway function: %d\n",status);
   }
 
   // "part" contains the destination processors; transfer this to the
