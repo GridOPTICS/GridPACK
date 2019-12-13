@@ -19,13 +19,12 @@
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 
-// Calling program for the powerflow application
+const char* help = "GridPACK power flow application";
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc,argv);
-  gridpack::math::Initialize(&argc,&argv);
+  // Initialize libraries (parallel and math)
+  gridpack::Environment env(argc,argv,help,"input_14.xml");
 
   if (1) {
     gridpack::utility::CoarseTimer *timer =
@@ -72,8 +71,6 @@ main(int argc, char **argv)
     timer ->dump();
   }
 
-  // Terminate Math libraries
-  gridpack::math::Finalize();
   return 0;
 }
 
