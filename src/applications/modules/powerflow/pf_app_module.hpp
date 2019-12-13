@@ -181,7 +181,7 @@ class PFAppModule
     void setVoltageLimits(double Vmin, double Vmax);
 
     /**
-     * Check to see if there are any voltage violations in the network
+     * Check to see if there are any voltage violations in the network.
      * @param area only check for violations in specified area
      * @return true if no violations found
      */
@@ -201,12 +201,19 @@ class PFAppModule
 
     /**
      * Check to see if there are any line overload violations in
-     * the network
+     * the network. The last call checks for overloads on specific lines.
      * @param area only check for violations in specified area
+     * @param bus1 original index of "from" bus for branch
+     * @param bus2 original index of "to" bus for branch
+     * @param tags line IDs for individual lines
+     * @param violations true if violation detected on branch, false otherwise
      * @return true if no violations found
      */
     bool checkLineOverloadViolations();
     bool checkLineOverloadViolations(int area);
+    bool checkLineOverloadViolations(std::vector<int> &bus1,
+        std::vector<int> &bus2, std::vector<std::string> &tags,
+        std::vector<bool> &violations);
 
     /**
      * Set "ignore" paramter on all lines with violations so that subsequent
@@ -237,6 +244,32 @@ class PFAppModule
      * Reset voltages to values in network configuration file
      */
     void resetVoltages();
+
+    /**
+     * Scale generator real power. If zone less than 1 then scale all
+     * generators in the area.
+     * @param scale factor to scale real power generation
+     * @param area index of area for scaling generation
+     * @param zone index of zone for scaling generation
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
+     */
+    bool scaleGeneratorRealPower(double scale, int area, int zone);
+
+    /**
+     * Scale load real power. If zone less than 1 then scale all
+     * loads in the area.
+     * @param scale factor to scale load real power
+     * @param area index of area for scaling load
+     * @param zone index of zone for scaling load
+     */
+    void scaleLoadRealPower(double scale, int area, int zone);
+
+    /**
+     * Reset real power of loads and generators to original values
+     */
+    void resetRealPower();
+
   private:
 
     // pointer to network

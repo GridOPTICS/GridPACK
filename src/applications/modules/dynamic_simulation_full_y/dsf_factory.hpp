@@ -60,7 +60,7 @@ class DSFullFactory
      * Apply an event to all branches in the system
      * @param event a struct describing a fault
      */
-    void setEvent(const DSFullBranch::Event &event);
+    void setEvent(const Event &event);
 
     /**
      * Check network to see if there is a process with no generators
@@ -142,6 +142,33 @@ class DSFullFactory
     void addLoadAdmittance();
 
     bool securityCheck();
+
+    /**
+     * Scale generator real power. If zone less than 1 then scale all
+     * generators in the area
+     * @param scale factor to scale real power generation
+     * @param area index of area for scaling generation
+     * @param zone index of zone for scaling generation
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
+     */
+    bool scaleGeneratorRealPower(double scale, int area, int zone);
+
+    /**
+     * Scale load real power. If zone less than 1 then scale all
+     * loads in the area
+     * @param scale factor to scale load real power
+     * @param area index of area for scaling load
+     * @param zone index of zone for scaling load
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
+     */
+    void scaleLoadRealPower(double scale, int area, int zone);
+
+    /**
+     * Reset real power of loads and generators to original values
+     */
+    void resetRealPower();
 
 #ifdef USE_FNCS
     /**
