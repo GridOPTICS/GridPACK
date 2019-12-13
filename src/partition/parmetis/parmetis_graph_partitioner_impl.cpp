@@ -6,7 +6,7 @@
 /**
  * @file   parmetis_graph_partitioner_impl.cpp
  * @author William A. Perkins
- * @date   2014-12-09 11:08:05 d3g096
+ * @date   2019-12-13 10:11:42 d3g096
  * 
  * @brief  
  * 
@@ -145,8 +145,11 @@ ParMETISGraphPartitionerImpl::p_partition(void)
                                 &options[0],
                                 &edgecut, &part[0],
                                 &comm);
-  if (status != 0) {
+  if (status != METIS_OK) {
     // FIXME: throw an exception
+    std::cerr << "Warning: ParMETIS_V3_PartKway returned an error code: "
+              << status
+              << std::endl;
   }
 
   // "part" contains the destination processors; transfer this to the
