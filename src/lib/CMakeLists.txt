@@ -65,6 +65,7 @@ set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/parmetis/parmetis_graph_pa
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/parmetis/parmetis_graph_wrapper.cpp)
 
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/timer/coarse_timer.cpp)
+set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/stream/input_stream.cpp)
 
 # header directories
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/component)
@@ -79,6 +80,7 @@ set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/parser)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/partition)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/serial_io)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/timer)
+set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/stream)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/utilities)
 #include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${HEADERS})

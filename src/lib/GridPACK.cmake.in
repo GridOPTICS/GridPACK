@@ -66,6 +66,11 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_STREAM_LIBRARY
+    NAMES gridpack_stream
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   find_library(GRIDPACK_EXPRESSION_LIBRARY
     NAMES gridpack_expression
     HINTS ${GRIDPACK_LIB_DIR}

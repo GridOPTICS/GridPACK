@@ -266,7 +266,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       *p_PV_ptr = false;
       pl -= ppl;
     //p_gstatus.clear();
-      for (i=0; i<p_gstatus.size(); i++) {
+      for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
         p_qg[i] = p_qmax[i];
@@ -286,7 +286,7 @@ bool gridpack::powerflow::PFBus::chkQlim(void)
       p_isPV = false;
       pl -= ppl;
     //  p_gstatus.clear();
-      for (i=0; i<p_gstatus.size(); i++) {
+      for (int i=0; i<p_gstatus.size(); i++) {
         p_gstatus_save.push_back(p_gstatus[i]);
         p_gstatus[i] = 0;
         p_qg[i] = p_qmin[i];
