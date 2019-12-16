@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:45:58 d3g096
+# Last Change: 2019-12-16 13:04:00 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -45,6 +45,7 @@ target_link_libraries(gridpack_kalmands_module
   gridpack_kdsmatrix_components
   gridpack_partition
   gridpack_math
+  gridpack_stream
   )
 
 # -------------------------------------------------------------
