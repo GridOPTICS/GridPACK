@@ -17,6 +17,7 @@
  */
 // -------------------------------------------------------------
 
+#include <stdio.h>
 #include "environment.hpp"
 #include "gridpack/parallel/environment.hpp"
 #include "gridpack/math/math.hpp"
