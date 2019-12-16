@@ -10,48 +10,39 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:18:01 d3g096
+# Last Change: 2018-09-20 11:17:39 d3g096
 # -------------------------------------------------------------
 
-add_library(gridpack_stream
-  input_stream.cpp
+add_library(gridpack_environment 
+  environment.cpp
 )
 
-gridpack_set_library_version(gridpack_stream)
-add_dependencies(gridpack_stream external_build)
-
+# For some reason this is necessary for Mac OS X, but messes things up on Linux
 if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_stream)
+  target_link_libraries(gridpack_environment gridpack_math
+    ${Boost_LIBRARIES} 
+    ${GA_LIBRARIES} 
+    ${MPI_CXX_LIBRARIES}
+    )
+endif()
+  
+include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
+if (GA_FOUND)
+  include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-set(target_libraries
-    gridpack_stream
-    ${GA_LIBRARIES}
-    ${Boost_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
+# -------------------------------------------------------------
+# gridpack header installation
+# -------------------------------------------------------------
+install(FILES
+  environment.hpp
+  DESTINATION include/gridpack/environment
 )
 
-include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
-include_directories(AFTER ${GA_INCLUDE_DIRS})
-
 # -------------------------------------------------------------
-# TEST: test_timer
+# gridpack environment library installation
 # -------------------------------------------------------------
-
-#add_executable(test_timer test/test_timer.cpp)
-#target_link_libraries(test_timer ${target_libraries})
-
-#gridpack_add_unit_test(timer_test test_timer)
-
-# -------------------------------------------------------------
-# installation
-# -------------------------------------------------------------
-install(FILES 
-  input_stream.hpp
-  DESTINATION include/gridpack/stream
-)
-
 install(TARGETS 
-  gridpack_stream
+  gridpack_environment
   DESTINATION lib
 )

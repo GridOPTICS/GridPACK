@@ -61,8 +61,18 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_ENVIRONMENT_LIBRARY
+    NAMES gridpack_environment
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   find_library(GRIDPACK_TIMER_LIBRARY
     NAMES gridpack_timer
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_STREAM_LIBRARY
+    NAMES gridpack_stream
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
@@ -157,6 +167,7 @@ function(gridpack_setup)
     ${GRIDPACK_TIMER_LIBRARY}
     ${GRIDPACK_ANALYSIS_LIBRARY}
     ${GRIDPACK_PARALLEL_LIBRARY}
+    ${GRIDPACK_ENVIRONMENT_LIBRARY}
   )
 
   if (GRIDPACK_HAVE_PARMETIS)   

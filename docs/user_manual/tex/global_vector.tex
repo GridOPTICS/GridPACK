@@ -75,6 +75,19 @@ This function retrieves the data corresponding to indices in
 \texttt{\textbf{idx}} from global storage and stores it in a local vector. The
 \texttt{\textbf{getData}} function can be called an arbitrary number of times after the data has been uploaded.
 
+If all the data in the global vector is needed, then it can be recovered using
+the function
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+void getAllData(std::vector<data_type> &vec)
+\end{Verbatim}
+}
+
+The return vector contains all values stored in the global vector. The number of
+elements can be found by checking the size of \texttt{\textbf{vec}}.
+
 Similar to the \texttt{\textbf{GlobalStore}} class, it is worth noting that
 the implementation of the \texttt{\textbf{GlobalVector}} class uses some Global
 Array calls that can potentially interfere with MPI calls in a subsequent

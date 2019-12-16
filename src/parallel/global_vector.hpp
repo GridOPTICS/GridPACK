@@ -213,6 +213,21 @@ public:
     delete [] dbuf;
   };
 
+  /**
+   * Get all data from global vector
+   * @param vec vector of returned values
+   */
+  void getAllData(std::vector<_data_type> &vec)
+  {
+    vec.clear();
+    vec.resize(p_numElems);
+    int lo, hi;
+    int one = 1;
+    lo = 0;
+    hi = p_numElems-1;
+    NGA_Get(p_GA,&lo,&hi,&vec[0],&one);
+  }
+
 private:
   // locally stored data before sending it to distributed array
   std::vector<_data_type> p_data;
