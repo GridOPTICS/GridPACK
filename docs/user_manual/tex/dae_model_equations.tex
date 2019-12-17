@@ -207,6 +207,67 @@ Here, the intermediate variables used in the calculations are as follows:
 \section{Turbine governor models}
 
 \subsection{WSIEG1}
+This is a simplified representation of WSIEG1 that ignores the two intentional deadbands and the piecewise linear governor characteristic.
+
+\subsection{Inputs}
+\begin{enumerate}
+  \item $P_{ref}$: Reference power signal
+  \item $\dw$: Machine per unit speed deviation
+\end{enumerate}
+
+\subsubsection{Variables}
+\begin{enumerate}
+  \item $x_{LL}$: Lead-lag output
+  \item $x_{GV}$: Governor output
+  \item $x_{T1}$: First turbine integrator output
+  \item $x_{T2}$: Second turbine integrator output
+  \item $x_{T3}$: Third turbine integrator output
+  \item $x_{T4}$: Fourth turbine integrator output
+\end{enumerate}
+
+\subsubsection{Equations}
+\begin{flalign}
+  &\begin{cases}
+    T_1\dfrac{dx_{LL}}{dt} = (1 - \dfrac{T_2}{T_1})K\dw - x_{LL},&\text{if}~~T_1 > 0 \& T_2 > 0\\
+    0 = K\dw - x_{LL},&\text{if}~~T_1 = T_2 = 0
+  \end{cases}& \\
+  &\begin{cases}
+  \dfrac{dx_{GV}}{dt} = u_{GV},&\text{if}~~P_{MIN} \le x_{GV} \le P_{MAX} \\
+  0 = P_{MAX} - x_{GV},&\text{if}~~P_{MAX} \le x_{GV}~\&~0 \le  \dfrac{dx_{GV}}{dt} \\
+  0 = P_{MIN} - x_{GV},&\text{if}~~x_{GV} \le P_{MAX}~\&~\dfrac{dx_{GV}}{dt} \le 0
+  \end{cases}& \\
+  &\begin{cases}
+  T_4\dfrac{x_{T1}}{dt} = P_{GV} - x_{T1},&\text{if}~~T_4 > 0 \\
+  0 = P_{GV} - x_{T1},&\text{if}~~T_4 = 0
+  \end{cases}& \\
+  &\begin{cases}
+  T_5\dfrac{x_{T2}}{dt} = x_{T1} - x_{T2},&\text{if}~~T_5 > 0 \\
+  0 = x_{T1} - x_{T2},&\text{if}~~T_5 = 0
+  \end{cases}& \\
+  &\begin{cases}
+  T_6\dfrac{x_{T3}}{dt} = x_{T2} - x_{T3},&\text{if}~~T_6 > 0 \\
+  0 = x_{T2} - x_{T3},&\text{if}~~T_6 = 0
+  \end{cases}& \\
+  &\begin{cases}
+  T_7\dfrac{x_{T4}}{dt} = x_{T3} - x_{T4},&\text{if}~~T_7 > 0 \\
+  0 = x_{T3} - x_{T4},&\text{if}~~T_7 = 0
+  \end{cases}& 
+ \end{flalign}
+ Here, the intermediate variables used in the calculations are as follows:
+\begin{align*}
+ &\begin{cases}
+    y_{LL} = x_{LL} + \dfrac{T_2}{T_1}K\dw,&\text{if}~~T_1 > 0 \& T_2 >  \\
+    y_{LL} = x_{LL},&\text{if}~~T_1 = T_2 = 0
+  \end{cases}& \\
+&u_{GV} = \max(\min(\dfrac{1}{T_3}\left(P_{ref} - x_{GV} - y_{LL}\right),U_o),U_c)&
+P_{GV} = x_{GV}
+\end{align*}
+
+\subsection{Outputs}
+\begin{enumerate}
+  \item $PMECH_{HP} = K_1x_{T1} + K_3x_{T2} + K_5x_{T3} + K_7x_{T4}$
+  \item $PMECH_{LP} = K_2x_{T1} + K_4x_{T2} + K_6x_{T3} + K_8x_{T4}$
+\end{enumerate}
 
 \appendices
 
