@@ -186,6 +186,7 @@ void GensalGen::init(gridpack::ComplexType* values)
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setInitialMechanicalPower(Pmech);
+    p_governor->setRotorSpeedDeviation(dw);
     p_governor->setInitialTimestep(0.01); // Should be read from input file instead 
   }
 
@@ -277,6 +278,11 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     values[Eqp_idx] = Eqp - Eqpprev;
     values[Psidp_idx] = Psidp - Psidpprev;
     values[Psiqpp_idx] = Psiqpp - Psiqppprev;
+
+    if (p_hasGovernor) {
+      p_governor->setRotorSpeedDeviation(dw);
+    }
+
   } else if(p_mode == RESIDUAL_EVAL) {
     if (p_hasExciter) {
       p_exciter = getExciter();

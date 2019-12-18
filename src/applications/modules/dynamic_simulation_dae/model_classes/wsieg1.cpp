@@ -34,6 +34,12 @@ Wsieg1Gov::Wsieg1Gov(void)
   dxT2 = 0.0;
   dxT3 = 0.0;
   dxT4 = 0.0;
+  xLLprev = 0.0;
+  xGVprev = 0.0;
+  xT1prev = 0.0;
+  xT2prev = 0.0;
+  xT3prev = 0.0;
+  xT4prev = 0.0;
   K = 0.0;
   T1 = 0.0;
   T2 = 0.0;
@@ -100,7 +106,7 @@ void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection
 
   //Set flags for differential or algebraic equations
   iseq_diff[0] = (T1 == 0 && T2 == 0)?0:1;
-  iseq_diff[1] = 0;
+  iseq_diff[1] = 1;
   iseq_diff[2] = (T4 == 0)?0:1;
   iseq_diff[3] = (T5 == 0)?0:1;
   iseq_diff[4] = (T6 == 0)?0:1;
@@ -142,8 +148,8 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
   if (Iblock == 2 && Pmax == 0) Pmax = PGV;
   if (Iblock == 3 && Pmin == 0) Pmin = PGV;
   if (Iblock == 3 && Pmax == 0) Pmax = PGV;
-  if (iseq_diff[0]) xLL = PGV * (1 - T2 / T1);
-  else xLL = PGV;
+  if (iseq_diff[0]) xLL = K*dw * (1 - T2 / T1);
+  else xLL = K*dw;
 
   values[0] = xLL;
   values[1] = xGV;
@@ -206,7 +212,7 @@ void Wsieg1Gov::setValues(gridpack::ComplexType *values)
     dxT2 = real(values[3]);
     dxT3 = real(values[4]);
     dxT4 = real(values[5]);
-  } else if (p_mode == XVECTOBUS) {
+  } else if (p_mode == XVECPRETOBUS) {
     xLLprev = real(values[0]);
     xGVprev = real(values[1]);
     xT1prev = real(values[2]);
@@ -233,44 +239,56 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
   double yLL;
   // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    values[x1_idx] = xLL - xLLprev; 
+    if(iseq_diff[x1_idx]) values[x1_idx] = xLL - xLLprev; 
+    else values[x1_idx] = -xLL + K*dw;
+    yLL = xLL;
+
     values[x2_idx] = xGV - xGVprev;
-    values[x3_idx] = xT1 - xT1prev;
-    values[x4_idx] = xT2 - xT2prev;
-    values[x5_idx] = xT3 - xT3prev;
-    values[x6_idx] = xT4 - xT4prev;
+
+    if(iseq_diff[x3_idx]) values[x3_idx] = xT1 - xT1prev;
+    else values[x3_idx] = xGV - xT1;
+      
+    if(iseq_diff[x4_idx]) values[x4_idx] = xT2 - xT2prev;
+    else values[x4_idx] = xT1 - xT2;
+
+    if(iseq_diff[x5_idx]) values[x5_idx] = xT3 - xT3prev;
+    else values[x5_idx] = xT2 - xT3;
+
+    if(iseq_diff[x6_idx]) values[x6_idx] = xT4 - xT4prev;
+    else values[x6_idx] = xT3 - xT4;
+
   } else if(p_mode == RESIDUAL_EVAL) {
     //printf("\n wsieg1: what's the initial values for the first iteration?\n");
-    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\t%f\n", xLL, xGV, xT1, xT2, xT3, xT4);
+    //    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\t%f\n", xLL, xGV, xT1, xT2, xT3, xT4);
     // Governor equations
 
     // State 1 xLL
-    if(iseq_diff[0]) {
-      values[0] = (-xLL + (1 - T2/T1)*K*dw)/T1 - dxLL;
-      yLL = xLL + T1/T1*K*dw;
+    if(iseq_diff[x1_idx]) {
+      values[x1_idx] = (-xLL + (1 - T2/T1)*K*dw)/T1 - dxLL;
+      yLL = xLL + T2/T1*K*dw;
     } else {
-      values[0] = -xLL + K*dw;
+      values[x1_idx] = -xLL + K*dw;
       yLL = xLL;
     }
 
     // State 2 xGV
-    values[1] = Pref - xGV - yLL -dxGV;
+    values[x2_idx] = Pref - xGV - yLL -dxGV;
 
     // State 3 xT1
-    if(iseq_diff[2]) values[2] = (xGV - xT1)/T4 - dxT1;
-    else values[2] = xGV - xT1;
+    if(iseq_diff[x3_idx]) values[x3_idx] = (xGV - xT1)/T4 - dxT1;
+    else values[x3_idx] = xGV - xT1;
 
     // State 4 xT2
-    if(iseq_diff[3]) values[3] = (xT1 - xT2)/T5 - dxT2;
-    else values[3] = xT1 - xT2;
+    if(iseq_diff[x4_idx]) values[x4_idx] = (xT1 - xT2)/T5 - dxT2;
+    else values[x4_idx] = xT1 - xT2;
 
     // State 5 xT3
-    if(iseq_diff[3]) values[4] = (xT2 - xT3)/T6 - dxT3;
-    else values[3] = xT2 - xT3;
+    if(iseq_diff[x5_idx]) values[x5_idx] = (xT2 - xT3)/T6 - dxT3;
+    else values[x5_idx] = xT2 - xT3;
 
     // State 6 xT4
-    if(iseq_diff[4]) values[5] = (xT3 - xT4)/T7 - dxT4;
-    else values[4] = xT3 - xT4;
+    if(iseq_diff[x6_idx]) values[x6_idx] = (xT3 - xT4)/T7 - dxT4;
+    else values[x6_idx] = xT3 - xT4;
         
   }
   
@@ -289,46 +307,8 @@ bool Wsieg1Gov::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
 {
   int idx = 0;
   if(p_mode == FAULT_EVAL) { // SJin: put values 1 along diagonals, 0 along off diagonals
-  // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the diagonal matrix entries to 1.0 and all other entries to 0. The residual function values are already set to 0.0 in the vector values function. This results in the equation 1*dx = 0.0 such that dx = 0.0 and hence x does not get changed.
-    row[idx] = 0; col[idx] = 0;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 1; col[idx] = 1;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 2; col[idx] = 2;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 3; col[idx] = 3;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 4; col[idx] = 4;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 5; col[idx] = 5;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 6; col[idx] = 6;
-    values[idx] = 1.0;
-    idx++;
-    *nval = idx;
-  } /*else if(p_mode == DIG_DV) { // SJin: Jacobian matrix block Jgy
-    // These are the partial derivatives of the governor currents (see getCurrent function) w.r.t to the voltage variables VD and VQ
 
-    *nval = idx;
-  } else if(p_mode == DFG_DV) {  // SJin: Jacobian matrix block Jfyi
-    // These are the partial derivatives of the governor equations w.r.t variables VD and VQ  
-
-    *nval = idx;
-  } else if(p_mode == DIG_DX) { // SJin: Jacobian matrix block Jgx
-    // These are the partial derivatives of the governor currents (see getCurrent) w.r.t governor variables
-
-    *nval = idx;
-  } else { // SJin: Jacobin matrix block Jfxi
-    // Partials of governor equations w.r.t governor variables
- 
-    *nval = idx;
-  }*/
+  }
   return true;
 }
 
