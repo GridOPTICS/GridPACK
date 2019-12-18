@@ -694,6 +694,7 @@ void DSimBus::setValues(gridpack::ComplexType *values)
 bool DSimBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
+  return false;
 }
 
 /**

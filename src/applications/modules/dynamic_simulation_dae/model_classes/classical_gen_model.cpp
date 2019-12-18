@@ -85,10 +85,12 @@ void ClassicalGen::init(gridpack::ComplexType* values)
  */
 bool ClassicalGen::serialWrite(char *string, const int bufsize,const char *signal)
 {
+  return false;
 }
 
 double ClassicalGen::getAngle(void)
 {
+  return p_delta;
 }
 
 /**

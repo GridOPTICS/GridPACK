@@ -73,10 +73,7 @@ void BaseGovModel::init(gridpack::ComplexType *values)
 bool BaseGovModel::serialWrite(char *string, const int bufsize,
 			       const char *signal)
 {
-}
-
-double BaseGovModel::getAngle()
-{
+  return false;
 }
 
 /**
@@ -119,16 +116,6 @@ bool BaseGovModel::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the governor current injection (in rectangular form) 
- * @param [output] IGD - real part of the governor current
- * @param [output] IGQ - imaginary part of the governor current
-*/
-void BaseGovModel::getCurrent(double *IGD, double *IGQ)
-{
-  *IGD = *IGQ = 0.0;
-}
-
-/**
  * Return the matrix entries
  * @param [output] nval - number of values set
  * @param [output] row - row indices for matrix entries
@@ -146,15 +133,15 @@ bool BaseGovModel::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Com
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power
  */
-void BaseGovModel::setMechanicalPower(double pmech)
+void BaseGovModel::setInitialMechanicalPower(double pmech)
 {
 }
 
 /**
  * Set the rotor speed deviation parameter inside the governor
- * @param delta_o value of the rotor speed deviation
+ * @param dw value of the rotor speed deviation
  */
-void BaseGovModel::setRotorSpeedDeviation(double delta_o)
+void BaseGovModel::setRotorSpeedDeviation(double dw)
 {
 }
 
@@ -163,15 +150,6 @@ void BaseGovModel::setRotorSpeedDeviation(double delta_o)
  * @return value of the mechanical power
  */
 double BaseGovModel::getMechanicalPower()
-{
-  return 0.0;
-}
-
-/** 
- * Get the value of the rotor speed deviation parameter
- * @return value of the rotor speed deviation
- */
-double BaseGovModel::getRotorSpeedDeviation()
 {
   return 0.0;
 }
@@ -188,10 +166,9 @@ void BaseGovModel::setVcomp(double Vcomp)
  * Set the value of the time step
  * @return value of the time step
  */
-void BaseGovModel::setTimestep(double timestep)
+void BaseGovModel::setInitialTimestep(double timestep)
 {
-    ts = timestep;
-    t_inc = timestep;
+    dt0 = timestep;
 }
 
 /**

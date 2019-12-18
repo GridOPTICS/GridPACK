@@ -185,9 +185,8 @@ void GensalGen::init(gridpack::ComplexType* values)
   p_hasGovernor = getphasGovernor();
   if (p_hasGovernor) {
     p_governor = getGovernor();
-    p_governor->setMechanicalPower(Pmech);
-    p_governor->setRotorSpeedDeviation(dw);
-    p_governor->setTimestep(0.01); // Should be read from input file instead 
+    p_governor->setInitialMechanicalPower(Pmech);
+    p_governor->setInitialTimestep(0.01); // Should be read from input file instead 
   }
 
 }
@@ -204,7 +203,7 @@ void GensalGen::init(gridpack::ComplexType* values)
 
 double GensalGen::getAngle(void)
 {
-  return 0;
+  return delta;
 }
 
 /**
@@ -311,6 +310,14 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
     values[Psiqpp_idx] = (-Psiqpp - (Xq - Xdpp) * Iq ) / Tqopp - dPsiqpp;
 
+  }
+
+  if (p_hasExciter) {
+    p_exciter->setFieldCurrent(LadIfd);
+  }
+      
+  if (p_hasGovernor) {
+    p_governor->setRotorSpeedDeviation(dw);
   }
   
   return true;
