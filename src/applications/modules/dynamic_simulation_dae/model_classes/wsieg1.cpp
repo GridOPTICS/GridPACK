@@ -22,18 +22,18 @@
 
 Wsieg1Gov::Wsieg1Gov(void)
 {
-  x1LL = 0.0; 
-  x2GovOut = 0.0; 
-  x3Turb1 = 0.0; 
-  x4Turb2 = 0.0; 
-  x5Turb3 = 0.0; 
-  x6Turb4 = 0.0;
-  dx1LL = 0.0;
-  dx2GovOut = 0.0;
-  dx3Turb1 = 0.0;
-  dx4Turb2 = 0.0;
-  dx5Turb3 = 0.0;
-  dx6Turb4 = 0.0;
+  xLL = 0.0; 
+  xGV = 0.0; 
+  xT1 = 0.0; 
+  xT2 = 0.0; 
+  xT3 = 0.0; 
+  xT4 = 0.0;
+  dxLL = 0.0;
+  dxGV = 0.0;
+  dxT1 = 0.0;
+  dxT2 = 0.0;
+  dxT3 = 0.0;
+  dxT4 = 0.0;
   K = 0.0;
   T1 = 0.0;
   T2 = 0.0;
@@ -55,7 +55,6 @@ Wsieg1Gov::Wsieg1Gov(void)
   K7 = 0.0;
   K8 = 0.0;
   SecondGenExists = true;
-  OptionToModifyLimitsForInitialStateLimitViolation = true;
 }
 
 Wsieg1Gov::~Wsieg1Gov(void)
@@ -99,13 +98,13 @@ void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GOVERNOR_DB2, &Db2, idx)) Db2 = 0.0; // Db2
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
-  //printf("K=%f,T1=%f,T2=%f,T3=%f,Uo=%f,Uc=%f,Pmax=%f,Pmin=%f,T4=%f,K1=%f,K2=%f,T5=%f,K3=%f,K4=%f,T6=%f,K5=%f,K6=%f,T7=%f,K7=%f,K8=%f,Db1=%f,Err=%f,Db2=%f,Iblock=%f\n", K, T1, T2, T3, Uo, Uc, Pmax, Pmin, T4, K1, K2, T5, K3, K4, T6, K5, K6, T7, K7, K8, Db1, Err, Db2, Iblock);
-
-  // Convert governor parameters from machine base to MVA base
-  /*p_H *= mbase/sbase;
-  p_D *= mbase/sbase;
-  p_Xdp /= mbase/sbase;*/
-
+  //Set flags for differential or algebraic equations
+  iseq_diff[0] = (T1 == 0 && T2 == 0)?0:1;
+  iseq_diff[1] = 0;
+  iseq_diff[2] = (T4 == 0)?0:1;
+  iseq_diff[3] = (T5 == 0)?0:1;
+  iseq_diff[4] = (T6 == 0)?0:1;
+  iseq_diff[5] = (T7 == 0)?0:1;
 }
 
 /**
@@ -122,6 +121,7 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
     PGV = Pmech2 / (K2 + K4 + K6 + K8);
   else 
     PGV = 0;
+  
   if (SecondGenExists && (Pmech2 != 0) && (K2 + K4 + K6 + K8 > 0) && (PGV != 0)) {
     double temp = Pmech2 / PGV * (K2 + K4 + K6 + K8);
     K2 = temp * K2;
@@ -129,37 +129,28 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
     K6 = temp * K6;
     K8 = temp * K8;
   }
-  x6Turb4 = PGV;
-  x5Turb3 = PGV;
-  x4Turb2 = PGV;
-  x3Turb1 = PGV;
-  double GV = GainBlock.YtoX(PGV); // TBD: check GainBlock?
-  //printf("PGV=%f, GV = %f\n", PGV, GV);
-  x2GovOut = GV;
-  if (OptionToModifyLimitsForInitialStateLimitViolation) {
-    if (GV > Pmax) Pmax = GV;
-    if (GV < Pmin) Pmin = GV;
-  }
-  Pref = GV;
-  // Initialize the Backlash
-  BackLash.Initialize(Db2, GV);
-  // Initialize the Intentional Deadband
-  DBInt.Initialize(Db1, Err, w); // TBD: has w been set at gensal init step? yes
+  xT4 = PGV;
+  xT3 = PGV;
+  xT2 = PGV;
+  xT1 = PGV;
+  xGV = PGV;
+
+  Pref = PGV;
+
   // Note: (GV > Pmax) or (GV < Pmin) is an initial state violation
-  if (Iblock == 1 && Pmin == 0) Pmin = GV;
-  if (Iblock == 2 && Pmax == 0) Pmax = GV;
-  if (Iblock == 3 && Pmin == 0) Pmin = GV;
-  if (Iblock == 3 && Pmax == 0) Pmax = GV;
-  if (T1 > 4 * ts) x1LL = GV * (1 - T2 / T1);
-  else x1LL = GV;
-  //printf("T1 = %f, T2 = %f, ts = %f\n", T1, T2, ts);
-  //printf("wsieg1 init: %f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
-  values[0] = x1LL;
-  values[1] = x2GovOut;
-  values[2] = x3Turb1;
-  values[3] = x4Turb2;
-  values[4] = x5Turb3;
-  values[5] = x6Turb4;
+  if (Iblock == 1 && Pmin == 0) Pmin = PGV;
+  if (Iblock == 2 && Pmax == 0) Pmax = PGV;
+  if (Iblock == 3 && Pmin == 0) Pmin = PGV;
+  if (Iblock == 3 && Pmax == 0) Pmax = PGV;
+  if (iseq_diff[0]) xLL = PGV * (1 - T2 / T1);
+  else xLL = PGV;
+
+  values[0] = xLL;
+  values[1] = xGV;
+  values[2] = xT1;
+  values[3] = xT2;
+  values[4] = xT3;
+  values[5] = xT4;
 }
 
 /**
@@ -172,10 +163,7 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
  */
 bool Wsieg1Gov::serialWrite(char *string, const int bufsize,const char *signal)
 {
-}
-
-double Wsieg1Gov::getAngle(void)
-{
+  return false;
 }
 
 /**
@@ -205,26 +193,26 @@ bool Wsieg1Gov::vectorSize(int *nvar) const
 void Wsieg1Gov::setValues(gridpack::ComplexType *values)
 {
   if(p_mode == XVECTOBUS) {
-    x1LL = real(values[0]);
-    x2GovOut = real(values[1]);
-    x3Turb1 = real(values[2]);
-    x4Turb2 = real(values[3]);
-    x5Turb3 = real(values[4]);
-    x6Turb4 = real(values[5]);
+    xLL = real(values[0]);
+    xGV = real(values[1]);
+    xT1 = real(values[2]);
+    xT2 = real(values[3]);
+    xT3 = real(values[4]);
+    xT4 = real(values[5]);
   } else if(p_mode == XDOTVECTOBUS) {
-    dx1LL = real(values[0]);
-    dx2GovOut = real(values[1]);
-    dx3Turb1 = real(values[2]);
-    dx4Turb2 = real(values[3]);
-    dx5Turb3 = real(values[4]);
-    dx6Turb4 = real(values[5]);
+    dxLL = real(values[0]);
+    dxGV = real(values[1]);
+    dxT1 = real(values[2]);
+    dxT2 = real(values[3]);
+    dxT3 = real(values[4]);
+    dxT4 = real(values[5]);
   } else if (p_mode == XVECTOBUS) {
-    x1LLprev = real(values[0]);
-    x2GovOutprev = real(values[1]);
-    x3Turb1prev = real(values[2]);
-    x4Turb2prev = real(values[3]);
-    x5Turb3prev = real(values[4]);
-    x6Turb4prev = real(values[5]);
+    xLLprev = real(values[0]);
+    xGVprev = real(values[1]);
+    xT1prev = real(values[2]);
+    xT2prev = real(values[3]);
+    xT3prev = real(values[4]);
+    xT4prev = real(values[5]);
    }
 }
 
@@ -242,112 +230,51 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
   int x4_idx = 3;
   int x5_idx = 4;
   int x6_idx = 5;
+  double yLL;
   // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    //values[delta_idx] = values[dw_idx] = 0.0;
-    values[x1_idx] = x1LL - x1LLprev; 
-    values[x2_idx] = x2GovOut - x2GovOutprev;
-    values[x3_idx] = x3Turb1 - x3Turb1prev;
-    values[x4_idx] = x4Turb2 - x4Turb2prev;
-    values[x5_idx] = x5Turb3 - x5Turb3prev;
-    values[x6_idx] = x6Turb4 - x6Turb4prev;
+    values[x1_idx] = xLL - xLLprev; 
+    values[x2_idx] = xGV - xGVprev;
+    values[x3_idx] = xT1 - xT1prev;
+    values[x4_idx] = xT2 - xT2prev;
+    values[x5_idx] = xT3 - xT3prev;
+    values[x6_idx] = xT4 - xT4prev;
   } else if(p_mode == RESIDUAL_EVAL) {
     //printf("\n wsieg1: what's the initial values for the first iteration?\n");
-    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
+    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\t%f\n", xLL, xGV, xT1, xT2, xT3, xT4);
     // Governor equations
-    //printf("...........%f\t%f\t%f\t%f\t%f\n", x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4);
 
-    // State 1
-    //printf("w = %f\n", w);
-    //double TempIn = K * w;//DBInt.Output(w);
-    double TempIn = K * DBInt.Output(w);
-    double TempOut;
-    if (T1 > TS_THRESHOLD * t_inc) {
-        values[x1_idx] = (TempIn * ( 1 - T2 / T1) - x1LL) / T1 - dx1LL;
-        TempOut = TempIn * (T2 / T1) + x1LL;
-    } else 
-        TempOut = TempIn;
-    //printf("T1 = %f, T2 = %f, x1LL = %f, K = %f, TempIn = %f, TempOut=%f\n", T1, T2, x1LL, K, TempIn, TempOut);
-    // State 2
-    // enforce non-windup limits
-    if (x2GovOut > Pmax) x2GovOut = Pmax;
-    else if (x2GovOut < Pmin) x2GovOut = Pmin;
-    double GV = BackLash.Output(x2GovOut);
-    //printf("x2GovOut=%f,GV=%f\n",x2GovOut,GV);
-    if (T3 < TS_THRESHOLD * t_inc) {
-       TempIn = (+ Pref - TempOut - GV) / (TS_THRESHOLD * t_inc);
-       //printf("TempIn 111\n");
+    // State 1 xLL
+    if(iseq_diff[0]) {
+      values[0] = (-xLL + (1 - T2/T1)*K*dw)/T1 - dxLL;
+      yLL = xLL + T1/T1*K*dw;
     } else {
-       TempIn  = (+ Pref - TempOut - GV) / T3;
-       //printf("TempIn 222: Pref=%f, TempOut=%f, T3=%f, GV=%f, TempIn=%f\n",Pref,TempOut,T3,GV,TempIn);
-    }
-    if (TempIn > Uo) {
-       TempIn = Uo;
-       //printf("TempIn 333\n");
-    } else if (TempIn < Uc) {
-       TempIn = Uc;
-       //printf("TempIn 444\n");
-    }
-    //printf("TempIn=%f,Uc=%f,Uo=%f,dx2GovOut=%f\n",TempIn,Uc,Uo,dx2GovOut);
-    values[x2_idx] = TempIn - dx2GovOut;
-    //printf("TempIn = %f, TempOut = %f, w = %f\n", TempIn, TempOut, w);
-    // enforce non-windup limits
-    if (dx2GovOut > 0 && x2GovOut >= Pmax) values[x2_idx] = - dx2GovOut;
-    else if (dx2GovOut <0 && x2GovOut <= Pmin) values[x2_idx] = - dx2GovOut;
-    // State 3
-    double PGV = GainBlock.XtoY(GV);
-    if (T4 < TS_THRESHOLD * t_inc) {
-        x3Turb1 = PGV;
-        values[x3_idx] = - dx3Turb1;
-    } else
-        values[x3_idx] = (PGV - x3Turb1) / T4 - dx3Turb1;
-    // State 4
-    if (T5 < TS_THRESHOLD * t_inc) {
-        x4Turb2 = x3Turb1;
-        values[x4_idx] = - dx4Turb2;
-    } else {
-        values[x4_idx] = (x3Turb1 - x4Turb2) / T5 - dx4Turb2;
-    }
-    // State 5
-    if (T6 < TS_THRESHOLD * t_inc) {
-        x5Turb3 = x4Turb2;
-        values[x5_idx] = - dx5Turb3;
-    } else {
-        values[x5_idx] = (x4Turb2 - x5Turb3) / T6 - dx5Turb3;
-    }
-    // State 6
-    if (T7 < TS_THRESHOLD * t_inc) {
-        x6Turb4 = x5Turb3;
-        values[x6_idx] = - dx6Turb4;
-    } else {
-        values[x6_idx] = (x5Turb3 - x6Turb4) / T7 - dx6Turb4;
+      values[0] = -xLL + K*dw;
+      yLL = xLL;
     }
 
-    Pmech1 = x3Turb1 * K1 + x4Turb2 * K3 + x5Turb3 * K5 + x6Turb4 * K7;
-    Pmech2 = x3Turb1 * K2 + x4Turb2 * K4 + x5Turb3 * K6 + x6Turb4 * K8;
-    
-    ///printf("wsieg1 Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);      
-    /*values[x1_idx] = 31;
-    values[x2_idx] = 32;
-    values[x3_idx] = 33;
-    values[x4_idx] = 34;
-    values[x5_idx] = 35;
-    values[x6_idx] = 36;*/
+    // State 2 xGV
+    values[1] = Pref - xGV - yLL -dxGV;
 
-    //printf("wsieg1: %f\t%f\t%f\t%f\t%f\t%f\n", real(values[x1_idx]),real(values[x2_idx]),real(values[x3_idx]),real(values[x4_idx]),real(values[x5_idx]),real(values[x6_idx]));
+    // State 3 xT1
+    if(iseq_diff[2]) values[2] = (xGV - xT1)/T4 - dxT1;
+    else values[2] = xGV - xT1;
 
+    // State 4 xT2
+    if(iseq_diff[3]) values[3] = (xT1 - xT2)/T5 - dxT2;
+    else values[3] = xT1 - xT2;
+
+    // State 5 xT3
+    if(iseq_diff[3]) values[4] = (xT2 - xT3)/T6 - dxT3;
+    else values[3] = xT2 - xT3;
+
+    // State 6 xT4
+    if(iseq_diff[4]) values[5] = (xT3 - xT4)/T7 - dxT4;
+    else values[4] = xT3 - xT4;
+        
   }
   
   return true;
-}
-
-/**
- * Return the governor current injection (in rectangular form) 
- * @param [output] IGD - real part of the governor current // SJin: match to Ir
- * @param [output] IGQ - imaginary part of the governor current // SJin: match to Ii 
-*/
-void Wsieg1Gov::getCurrent(double *IGD, double *IGQ)
-{
 }
 
 /**
@@ -409,21 +336,20 @@ bool Wsieg1Gov::matrixDiagEntries(int *nval,int *row, int *col, gridpack::Comple
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power 
  */
-void Wsieg1Gov::setMechanicalPower(double pmech)
+void Wsieg1Gov::setInitialMechanicalPower(double Pmech0)
 {
-  Pmech1 = pmech;
-  Pmech2 = pmech;
+  Pmech1 = Pmech0;
+  Pmech2 = Pmech0;
   //printf("Pmech1 in WSIEG1 = %f\n", pmech);
 }
 
 /**
- * Set the rotor speed deviation parameter inside the governor
- * @param delta_o value of the rotor speed deviation 
+ * Set the rotor speed deviation inside the governor
+ * @param w0 value of the rotor speed deviation 
  */
-void Wsieg1Gov::setRotorSpeedDeviation(double delta_o)
+void Wsieg1Gov::setRotorSpeedDeviation(double dwin)
 {
-  w = delta_o;
-  //printf("w is set to be %f in wsieg1 by genrou\n", w);
+  dw = dwin;
 }
 
 /** 
@@ -432,37 +358,12 @@ void Wsieg1Gov::setRotorSpeedDeviation(double delta_o)
  */
 double Wsieg1Gov::getMechanicalPower()
 {
-  return Pmech1;
-}
+  Pmech1 = xT1 * K1 + xT2 * K3 + xT3 * K5 + xT4 * K7;
+  Pmech2 = xT1 * K2 + xT2 * K4 + xT3 * K6 + xT4 * K8;
 
-/** 
- * Get the value of the rotor speed deviation parameter
- * @return value of the rotor speed deviation 
- */
-double Wsieg1Gov::getRotorSpeedDeviation()
-{
-  return w;
+  return Pmech1;
 }
 
 void Wsieg1Gov::setVcomp(double Vcomp)
 {
 }
-   
-/**
- * Set the value of the time step
- * @return value of the time step
- */
-/*void Wsieg1Gov::setTimestep(double timestep)
-{
-  ts = timestep;
-  t_inc = timestep;
-}*/
-
-/**
- * Set the value of the time increment 
- * @return value of the time increment
- */
-/*void Wsieg1Gov::setTimeincrement(double timeincrement)
-{
-}*/
-

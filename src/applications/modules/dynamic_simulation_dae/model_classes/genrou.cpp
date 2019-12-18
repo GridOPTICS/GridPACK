@@ -209,9 +209,8 @@ void GenrouGen::init(gridpack::ComplexType* values)
   p_hasGovernor = getphasGovernor();
   if (p_hasGovernor) {
     p_governor = getGovernor();
-    p_governor->setMechanicalPower(Pmech);
-    p_governor->setRotorSpeedDeviation(x2w); // set Speed Deviation w for wsieg1 
-    p_governor->setTimestep(0.01); // SJin: to be read from input file
+    p_governor->setInitialMechanicalPower(Pmech);
+    p_governor->setInitialTimestep(0.01); // SJin: to be read from input file
   }
 }
 
@@ -230,6 +229,7 @@ bool GenrouGen::serialWrite(char *string, const int bufsize,const char *signal)
 
 double GenrouGen::getAngle(void)
 {
+  return x1d;
 }
 
 /**

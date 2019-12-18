@@ -8,7 +8,7 @@
  * @file   wsieg1.hpp
  * @author Shuangshuang Jin 
  * @Last modified:   10/02/19
- * 
+ * @Last modified:   12/16/19 *Shri
  * @brief  
  * 
  * 
@@ -19,9 +19,6 @@
 
 #include <base_gov_model.hpp>
 #include <gridpack/include/gridpack.hpp>
-#include "GainBlockClass.hpp"
-#include "BackLashClass.hpp"
-#include "DBIntClass.hpp"
 
 class Wsieg1Gov: public BaseGovModel
 {
@@ -49,7 +46,7 @@ class Wsieg1Gov: public BaseGovModel
      * Initialize governor model before calculation
      * @param [output] values - array where initialized governor variables should be set
      */
-  void init(gridpack::ComplexType *values);
+    void init(gridpack::ComplexType *values);
 
     /**
      * Write output from governors to a string.
@@ -61,8 +58,6 @@ class Wsieg1Gov: public BaseGovModel
      */
     bool serialWrite(char *string, const int bufsize,
         const char *signal);
-
-    double getAngle();
 
     /**
      * Write out governor state
@@ -93,13 +88,6 @@ class Wsieg1Gov: public BaseGovModel
     bool vectorValues(gridpack::ComplexType *values);
 
     /**
-     * Return the governor current injection (in rectangular form) 
-     * @param [output] IGD - real part of the governor current
-     * @param [output] IGQ - imaginary part of the governor current
-     */
-    void getCurrent(double *IGD, double *IGQ);
-
-    /**
      * Return the matrix entries
      * @param [output] nval - number of values set
      * @param [output] row - row indices for matrix entries
@@ -110,16 +98,16 @@ class Wsieg1Gov: public BaseGovModel
     bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
     /**
-     * Set the mechanical power parameter inside the governor
+     * Set the mechanical power during initialization inside the governor
      * @param pmech value of the mechanical power 
      */
-    virtual void setMechanicalPower(double pmech);
+    virtual void setInitialMechanicalPower(double pmech);
 
     /**
-     * Set the rotor speed deviation parameter inside the governor
-     * @param delta_o value of the rotor speed deviation 
+     * Set the rotor speed deviation inside the governor
+     * @param dw value of the rotor speed deviation 
      */
-    virtual void setRotorSpeedDeviation(double delta_o);
+    virtual void setRotorSpeedDeviation(double dw);
 
     /** 
      * Get the value of the mechanical power parameter
@@ -127,64 +115,47 @@ class Wsieg1Gov: public BaseGovModel
      */
     virtual double getMechanicalPower();
 
-    /** 
-     * Get the value of the rotor speed deviation parameter
-     * @return value of the rotor speed deviation 
-     */
-    virtual double getRotorSpeedDeviation();
-
     /**
      * Set the value of the Vcomp
      * @return value of teh Vcomp
      */
     virtual void setVcomp(double vtmp);
 
-    /**
-     * Set the value of the time step
-     * @return value of the time step
-     */
-    //virtual void setTimestep(double timestep);
- 
-    /**
-     * Set the value of the time increment 
-     * @return value of the time increment
-     */
-    //virtual void setTimeincrement(double timeincrement);
-
-
   private:
-    // Governor WSIEG1 Parameters read from dyr
-    double K, T1, T2, T3, Uo, Uc, Pmax, Pmin;
-    double T4, K1, K2, T5, K3, K4, T6, K5, K6, T7, K7, K8;
-    double Db1, Err, Db2;
-    //double Gv1, PGv1, Gv2, PGv2, Gv3, PGv3, Gv4, PGv4, Gv5, PGv5;
-    double Iblock;
 
-    // WSIEG1 state variables
-    double x1LL, x2GovOut, x3Turb1, x4Turb2, x5Turb3, x6Turb4;
-    double dx1LL, dx2GovOut, dx3Turb1, dx4Turb2, dx5Turb3, dx6Turb4;
+  // Governor WSIEG1 Parameters read from dyr
+  double K, T1, T2, T3, Uo, Uc, Pmax, Pmin;
+  double T4, K1, K2, T5, K3, K4, T6, K5, K6, T7, K7, K8;
+  double Db1, Err, Db2;
+  double Gv1, PGv1, Gv2, PGv2, Gv3, PGv3, Gv4, PGv4, Gv5, PGv5;
+  double Iblock;
+  
+  // WSIEG1 state variables
+  double xLL; // Lead-lag block state
+  double xGV; // Governor output
+  double xT1; // First turbine integrator output
+  double xT2; // Second turbine integrator output
+  double xT3; // Third turbine integrator output
+  double xT4; // Fourth turbine integrator output
 
-    // WSIEG1 previous step solution
-    double x1LLprev, x2GovOutprev, x3Turb1prev, x4Turb2prev, x5Turb3prev, x6Turb4prev;
+  // WSIEG1 state-variable derivatives
+  double dxLL, dxGV, dxT1, dxT2, dxT3, dxT4;
 
-    // Outputs: Mechnical Power Gen1 and Gen 2
-    double Pmech1, Pmech2;
+  // WSIEG1 previous step solution
+  double xLLprev, xGVprev, xT1prev, xT2prev, xT3prev, xT4prev;
 
-    bool SecondGenExists, OptionToModifyLimitsForInitialStateLimitViolation;
+  // Outputs: Mechnical Power Gen1 and Gen 2
+  double Pmech1, Pmech2;
 
-    GainBlockClass GainBlock;
-    BackLashClass BackLash;
-    DBIntClass DBInt;
+  bool SecondGenExists;
 
-    double Pref;
-    double w;
+  // Inputs
+  double Pref;
+  double dw;
 
-    //bool flag2, flag3, flag4, flag5; //flags for residual function conditions
-    //double A, B; // Sat function variables
+  int iseq_diff[6];   
 
-    int iseq_diff[5];   
-
-    int bid; 
+  int bid; 
 };
 
 #endif

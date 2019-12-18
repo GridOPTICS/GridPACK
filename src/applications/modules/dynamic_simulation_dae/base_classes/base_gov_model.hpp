@@ -54,19 +54,12 @@ public:
   virtual bool serialWrite(char *string, const int bufsize,
 			   const char *signal);
   
-  virtual double getAngle();
-  
   /**
    * Write out governor state
    * @param signal character string used to determine behavior
    * @param string buffer that contains output
    */
   virtual void write(const char* signal, char* string);
-  
-  /**
-   * return the bolean indicating whether the governor is ON or OFF
-   */
-  bool getGovStatus() {return status;}
   
   /**
    * Set bus voltage
@@ -77,13 +70,6 @@ public:
    * Set TSshift: This parameter is passed by PETSc and is to be used in the Jacobian calculation only.
    */
   void setTSshift(double inshift) {shift = inshift;}
-  
-  /**
-   * Return the governor current injection (in rectangular form) 
-   * @param [output] IGD - real part of the governor current
-   * @param [output] IGQ - imaginary part of the governor current
-   */
-  virtual void getCurrent(double *IGD, double *IGQ);
   
   /**
    * Return the matrix entries
@@ -148,61 +134,47 @@ to be overwritten by the implementation */
 
   /***************************************/
 
-    /**
-     * Set the mechanical power parameter inside the governor
-     * @param pmech value of the mechanical power 
-     */
-    virtual void setMechanicalPower(double pmech);
+  /**
+   * Set the mechanical power parameter inside the governor
+   * @param pmech value of the mechanical power 
+   */
+  virtual void setInitialMechanicalPower(double pmech);
 
-    /**
-     * Set the rotor speed deviation parameter inside the governor
-     * @param delta_o value of the rotor speed deviation 
-     */
-    virtual void setRotorSpeedDeviation(double delta_o);
-
-    /** 
-     * Get the value of the mechanical power parameter
-     * @return value of the mechanical power 
-     */
-    virtual double getMechanicalPower();
-
-    /** 
-     * Get the value of the rotor speed deviation parameter
-     * @return value of the rotor speed deviation 
-     */
-    virtual double getRotorSpeedDeviation();
-
-    /**
-     * Set the value of the Vcomp
-     * @return value of the Vcomp
-     */
-    virtual void setVcomp(double vtmp);
-
-    /**
-     * Set the value of the time step
-     * @return value of the time step
-     */
-    virtual void setTimestep(double timestep);
- 
-    /**
-     * Set the value of the time increment 
-     * @return value of the time increment
-     */
-    //virtual void setTimeincrement(double timeincrement);
- 
+  /**
+   * Set the rotor speed deviation parameter inside the governor
+   * @param rotor speed deviation 
+   */
+  virtual void setRotorSpeedDeviation(double w);
+  
+  /** 
+   * Get the value of the mechanical power parameter
+   * @return value of the mechanical power 
+   */
+  virtual double getMechanicalPower();
+  
+  /**
+   * Set the value of the Vcomp
+   * @return value of the Vcomp
+   */
+  virtual void setVcomp(double vtmp);
+  
+  /**
+   * Set the value of the time step
+   * @return value of the time step
+   */
+  virtual void setInitialTimestep(double timestep);
+  
+  /**
+   * Set the value of the time increment 
+   * @return value of the time increment
+   */
+  //virtual void setTimeincrement(double timeincrement);
+  
 protected:
-  //double        pg; /**< Generator active power output */
-  //double        qg; /**< Generator reactive power output */
-  //double        mbase; /**< MVA base of the machine */
-  //int           status; /**< Machine status */
-  //double        sbase;  /** The system MVA base */
-  //double        shift; // shift (multiplier) used in the Jacobian calculation.
-  //bool          hasGovernor;
-  //double        VD, VQ;
   double        VD, VQ;
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
-  double        ts, t_inc;
+  double        dt0;
 };
 
 #endif
