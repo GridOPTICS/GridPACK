@@ -210,6 +210,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setInitialMechanicalPower(Pmech);
+    p_governor->setRotorSpeedDeviation(x2w);
     p_governor->setInitialTimestep(0.01); // SJin: to be read from input file
   }
 }
@@ -296,15 +297,6 @@ void GenrouGen::setValues(gridpack::ComplexType *values)
  */
 bool GenrouGen::vectorValues(gridpack::ComplexType *values)
 {
-  /*int delta_idx = 0, dw_idx = 1;
-  if(p_mode == FAULT_EVAL) {
-    values[delta_idx] = values[dw_idx] = 0.0;
-  } else if(p_mode == RESIDUAL_EVAL) {
-    // Generator equations
-    values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
-    values[dw_idx]    = (p_Pm - VD*p_Ep*sin(p_delta)/p_Xdp + VQ*p_Ep*cos(p_delta)/p_Xdp - p_D*p_dw)/(2*p_H) - p_dwdot;
-  }
-  int delta_idx = 0, dw_idx = 1;*/
   int x1d_idx = 0;
   int x2w_idx = 1;
   int x3Eqp_idx = 2;
@@ -313,20 +305,18 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
   int x6Edp_idx = 5;
   // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
-    //values[delta_idx] = values[dw_idx] = 0.0;
     values[x1d_idx] = x1d - x1dprev;
     values[x2w_idx] = x2w - x2wprev;
     values[x3Eqp_idx] = x3Eqp - x3Eqpprev;
     values[x4Psidp_idx] = x4Psidp - x4Psidpprev;
     values[x5Psiqp_idx] = x5Psiqp - x5Psiqpprev;
     values[x6Edp_idx] = x6Edp - x6Edpprev;
+
+    if (p_hasGovernor) {
+      p_governor->setRotorSpeedDeviation(x2w);
+    }
   } else if(p_mode == RESIDUAL_EVAL) {
-    //printf("\n======================\n");
-    //printf("\n Genrou: what's the initial values for the first iteration?\n");
-    //printf("x1d = %f, x2w = %f, x3Eqp = %f, x4Psidp = %f, x5Psiqp = %f, x6Edp = %f\n", x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
-    //if (bid==1) printf("bus id=%d:\t%f\t%f\t%f\t%f\t%f\t%f\n", bid, x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp);
-    //printf("Efd = %f, LadIfd = %f, Pmech = %f\n", Efd, LadIfd, Pmech);
-    //printf("VD = %f, VQ=%f\n\n", VD, VQ);
+
     if (p_hasExciter) {
       p_exciter = getExciter();
       Efd = p_exciter->getFieldVoltage(); // Efd are called from Exciter
