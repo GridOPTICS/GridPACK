@@ -140,7 +140,8 @@ double GenrouGen::Sat(double x)
     double result = B * (x - A) * (x - A) / x;
     //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
     //printf("Sat result = %f\n", result); 
-    return result; // Scaled Quadratic with 1.7.1 equations
+    //    return result; // Scaled Quadratic with 1.7.1 equations
+    return 0.0;
 }
 
 /**
