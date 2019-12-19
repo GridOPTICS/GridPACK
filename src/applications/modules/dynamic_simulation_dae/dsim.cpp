@@ -148,7 +148,7 @@ void DSim::solve()
 
   // Set fault
   printf("Applying a fault on bus %d at t = %3.2f\n",faultbus,faultontime);
-  p_factory->setfault(faultbus,-Gfault,-Bfault);
+  p_factory->setfault(faultbus,Gfault,-Bfault);
   p_factory->setMode(XVECPRETOBUS);
   p_VecMapper->mapToBus(*p_X);
   // Solve algebraic fault-on equations
@@ -162,7 +162,7 @@ void DSim::solve()
 
   // Remove fault
   printf("Removing fault on bus %d at t = %3.2f\n",faultbus,faultontime);
-  p_factory->setfault(faultbus,Gfault,Bfault);
+  p_factory->setfault(faultbus,-Gfault,Bfault);
   p_factory->setMode(XVECPRETOBUS);
   p_VecMapper->mapToBus(*p_X);
   // Solve algebraic fault-on equations

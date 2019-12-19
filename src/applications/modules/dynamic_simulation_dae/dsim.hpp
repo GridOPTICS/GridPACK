@@ -103,9 +103,10 @@ class DSim
     p_factory->setMode(RESIDUAL_EVAL);
     p_VecMapper->mapToVector(F);
     F.ready();
-    //    printf("F.print():\n");
-        //F.print();
-    //exit(0);
+    /*    printf("F.print():\n");
+    F.print();
+    exit(0);
+    */
   }
 
   // Build the residual for the nonlinear solver at tfaulton and tfaultoff
