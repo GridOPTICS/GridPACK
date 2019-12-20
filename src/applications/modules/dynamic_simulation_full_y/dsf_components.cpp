@@ -2230,6 +2230,8 @@ void gridpack::dynamic_simulation::DSFullBus::resetRealPower()
   }
 }
 
+
+
 /**
  * Get available margin for generator
  * @param tag character ID for generator
@@ -2241,7 +2243,7 @@ void gridpack::dynamic_simulation::DSFullBus::resetRealPower()
 void gridpack::dynamic_simulation::DSFullBus::getGeneratorMargins(
     std::vector<std::string> &tag,
     std::vector<double> &current, std::vector<double> &slack,
-    std::vector<double> &excess,std::vector<bool> &status)
+    std::vector<double> &excess,std::vector<int> &status)
 {
   tag.clear();
   current.clear();
@@ -2254,9 +2256,32 @@ void gridpack::dynamic_simulation::DSFullBus::getGeneratorMargins(
     current.push_back(p_pg[i]);
     slack.push_back(p_pg[i]-p_gpmin[i]);
     excess.push_back(p_gpmax[i]-p_pg[i]);
-    status.push_back(true);
+    status.push_back(1);
   }
 }
+
+/**
+ * Get current value of loads
+ * @param tag character ID for load
+ * @param current initial value of load
+ * @param status current status of load
+ */
+void gridpack::dynamic_simulation::DSFullBus::getRealPowerLoads(
+    std::vector<std::string> &tag, std::vector<double> &current,
+    std::vector<int> &status)
+{
+  tag.clear();
+  current.clear();
+  status.clear();
+  int nloads = p_powerflowload_p.size();
+  int i;
+  for (i=0; i<nloads; i++) {
+    tag.push_back(p_loadid[i]);
+    current.push_back(p_powerflowload_p[i]);
+    status.push_back(1);
+  }
+}
+
 
 /**
  * Get list of generator IDs

@@ -133,6 +133,18 @@ class RTPRDriver
         std::vector<std::string> &tags);
 
     /**
+     * Scale loads by rating parameter and adjust generation to match the change
+     * in load
+     * @param scale scale factor on loads
+     * @param flag signal system that should be scaled
+     *             0: powerflow
+     *             1: dynamic simulation
+     * @return true if generator capacity is sufficent to match change in load,
+     *         false otherwise
+     */
+    bool adjustRating(double rating, int flag);
+
+    /**
      * Execute application
      * @param argc number of arguments
      * @param argv list of character strings

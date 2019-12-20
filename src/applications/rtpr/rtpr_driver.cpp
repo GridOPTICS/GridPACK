@@ -58,6 +58,7 @@ std::vector<gridpack::powerflow::Contingency>
   // Create string utilities object to help parse file
   gridpack::utility::StringUtils utils;
   // Loop over all child cursors
+  printf("p[%d] Reading contingencies size: %d\n",p_world.rank(),size);
   for (idx = 0; idx < size; idx++) {
     std::string ca_type;
     contingencies[idx]->get("contingencyType",&ca_type);
@@ -66,6 +67,7 @@ std::vector<gridpack::powerflow::Contingency>
     std::string ca_name;
     contingencies[idx]->get("contingencyName",&ca_name);
     if (ca_type == "Line") {
+      printf("p[%d] Found line contingency\n",p_world.rank());
       std::string buses;
       contingencies[idx]->get("contingencyLineBuses",&buses);
       std::string names;
@@ -102,6 +104,7 @@ std::vector<gridpack::powerflow::Contingency>
         ret.push_back(contingency);
       }
     } else if (ca_type == "Generator") {
+      printf("p[%d] Found generator contingency\n",p_world.rank());
       std::string buses;
       contingencies[idx]->get("contingencyBuses",&buses);
       std::string gens;
@@ -629,6 +632,96 @@ void  gridpack::rtpr::RTPRDriver::findWatchedGenerators(
 }
 
 /**
+ * Scale loads by rating parameter and adjust generation to match the change
+ * in load
+ * @param scale scale factor on loads
+ * @param flag signal system that should be scaled
+ *             0: powerflow
+ *             1: dynamic simulation
+ * @return true if generator capacity is sufficent to match change in load,
+ *         false otherwise
+ */
+bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
+{
+  bool ret = true;
+  if (flag == 0) {
+    double ltotal = p_pf_app.getTotalLoad(p_dstArea,p_dstZone);
+    double gtotal, pmin, pmax;
+    p_pf_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
+    double extra;
+    if (rating > 1.0) {
+      extra = (rating-1.0)*ltotal;
+      if (extra <= pmax-gtotal) {
+        // Sufficient capacity exists to meet adjustment
+        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal+extra)/gtotal;
+        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+      } else {
+        extra = pmax-gtotal;
+        rating = (ltotal+extra)/ltotal;
+        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal+extra)/gtotal;
+        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        ret = false;
+      }
+    } else {
+      extra = (1.0-rating)*ltotal;
+      if (extra >= gtotal-pmin) {
+        // Sufficient capacity exists to meet adjustment
+        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal-extra)/gtotal;
+        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+      } else {
+        extra = gtotal-pmin;
+        rating = (ltotal-extra)/ltotal;
+        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal-extra)/gtotal;
+        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        ret = false;
+      }
+    }
+  } else {
+    double ltotal = p_ds_app.getTotalLoad(p_dstArea,p_dstZone);
+    double gtotal, pmin, pmax;
+    p_ds_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
+    double extra;
+    if (rating > 1.0) {
+      extra = (rating-1.0)*ltotal;
+      if (extra <= pmax-gtotal) {
+        // Sufficient capacity exists to meet adjustment
+        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal+extra)/gtotal;
+        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+      } else {
+        extra = pmax-gtotal;
+        rating = (ltotal+extra)/ltotal;
+        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal+extra)/gtotal;
+        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        ret = false;
+      }
+    } else {
+      extra = (1.0-rating)*ltotal;
+      if (extra >= gtotal-pmin) {
+        // Sufficient capacity exists to meet adjustment
+        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal-extra)/gtotal;
+        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+      } else {
+        extra = gtotal-pmin;
+        rating = (ltotal-extra)/ltotal;
+        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        rating = (gtotal-extra)/gtotal;
+        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        ret = false;
+      }
+    }
+  }
+  return ret;
+}
+
+
+/**
  * Execute application. argc and argv are standard runtime parameters
  */
 void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
@@ -771,6 +864,10 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     // Contingencies block in the contingency file
     cursor = config->getCursor(
         "ContingencyList.RealTimePathRating.Contingencies");
+    if (!cursor) {
+      cursor = config->getCursor(
+          "ContingencyList.Contingency_analysis.Contingencies");
+    }
     gridpack::utility::Configuration::ChildCursors contingencies;
     if (cursor) cursor->children(contingencies);
     p_events = getContingencies(contingencies);
@@ -904,8 +1001,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     // Tie lines are secure for all contingencies. Increase loads and generation
     while (checkTie) {
       p_rating += 0.05;
-      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+      if (!adjustRating(p_rating,0)) {
         p_rating -= 0.05;
         p_pf_app.resetRealPower();
         break;
@@ -918,8 +1014,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     checkTie = true;
     while (checkTie) {
       p_rating += 0.01;
-      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+      if (!adjustRating(p_rating,0)) {
         p_rating -= 0.01;
         if (p_world.rank() == 0) {
           printf("Real power generation for power flow"
@@ -937,8 +1032,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     // Tie lines are insecure for some contingencies. Decrease loads and generation
     while (!checkTie && p_rating >= 0.0) {
       p_rating -= 0.05;
-      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+      if (!adjustRating(p_rating,0)) {
         printf("Rating capacity exceeded: %d\n",p_rating);
         p_rating += 0.05;
         p_pf_app.resetRealPower();
@@ -952,8 +1046,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     checkTie = false;
     while (!checkTie && p_rating >= 0.0) {
       p_rating -= 0.01;
-      p_pf_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
-      if (!p_pf_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+      if (!adjustRating(p_rating,0)) {
         p_rating += 0.01;
         if (p_world.rank() == 0) {
           printf("Real power generation for power flow"
@@ -1002,8 +1095,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   // Current rating is an upper bound. Only check lower values.
   while (!checkTie && p_rating >= 0.0) {
     p_rating -= 0.01;
-    p_ds_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
-    if (!p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone)) {
+    if (!adjustRating(p_rating,1)) {
       p_rating += 0.01;
       if (p_world.rank() == 0) {
         printf("Real power generation for dynamic simulation"
@@ -1058,7 +1150,8 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   // Solve the base power flow calculation. This calculation is replicated on
   // all task communicators
   char sbuf[128];
-  sprintf(sbuf,"base_%f.out",p_rating);
+  sprintf(sbuf,"base_%f.out",fabs(p_rating)); // absolute function to get rid of
+                                              // possible minus sign for zero
   if (p_print_calcs) p_pf_app.open(sbuf);
   sprintf(sbuf,"\nRunning base case on %d processes\n",p_task_comm.size());
   if (p_print_calcs) p_pf_app.writeHeader(sbuf);

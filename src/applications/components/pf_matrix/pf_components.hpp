@@ -382,13 +382,22 @@ class PFBus
      * Get available margin for generator
      * @param tag character ID for generator
      * @param current initial generation
-     * @param slack amount generation can be reduced
-     * @param excess amount generation can be increased
+     * @param pmin minimum allowable generation
+     * @param pmax maximum allowable generation
      * @param status current status of generator
      */
     void getGeneratorMargins(std::vector<std::string> &tag,
-        std::vector<double> &current, std::vector<double> &slack,
-        std::vector<double> &excess,std::vector<bool> &status);
+        std::vector<double> &current, std::vector<double> &pmin,
+        std::vector<double> &pmax, std::vector<int> &status);
+
+    /**
+     * Get current value of loads
+     * @param tag character ID for load
+     * @param current initial value of load
+     * @param status current status of load
+     */
+    void getRealPowerLoads(std::vector<std::string> &tag,
+        std::vector<double> &current, std::vector<int> &status);
 
   private:
     double p_shunt_gs;

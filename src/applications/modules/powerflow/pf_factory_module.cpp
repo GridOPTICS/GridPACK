@@ -658,8 +658,8 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
     delta = 1.0-scale;
   }
   std::vector<std::string> tags;
-  std::vector<double> slack, current, excess;
-  std::vector<bool> status;
+  std::vector<double> pmin, current, pmax;
+  std::vector<int> status;
   for (i=0; i<nbus; i++) {
     if (p_network->getActiveBus(i)) {
       gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
@@ -669,20 +669,20 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
         izone = zone;
       }
       if (bus->getArea() == area && zone == izone) {
-        bus->getGeneratorMargins(tags,current,slack,excess,status);
+        bus->getGeneratorMargins(tags,current,pmin,pmax,status);
         int j, nsize;
         nsize = tags.size();
         if (scale > 1.0) {
           for (j=0; j<nsize; j++) {
-            if (status[j]) {
-              capacity += excess[j];
+            if (static_cast<bool>(status[j])) {
+              capacity += pmax[j]-current[j];
               total += current[j];
             }
           }
         } else {
           for (j=0; j<nsize; j++) {
-            if (status[j]) {
-              capacity += slack[j];
+            if (static_cast<bool>(status[j])) {
+              capacity += current[j]-pmin[j];
               total += current[j];
             }
           }
@@ -757,6 +757,84 @@ void gridpack::powerflow::PFFactoryModule::scaleLoadRealPower(
       int j;
       for (j=0; j<tags.size(); j++) {
         bus->scaleLoadRealPower(tags[j],scale);
+      }
+    }
+  }
+}
+
+/**
+ * Return the total real power load for all loads in the zone. If zone
+ * less than 1, then return the total load for the area
+ * @param area index of area
+ * @param zone index of zone
+ * @return total load
+ */
+double gridpack::powerflow::PFFactoryModule::getTotalLoad(int area, int zone)
+{
+  double ret = 0.0;
+  int nbus = p_network->numBuses();
+  int i, j, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags;
+      std::vector<double> current;
+      std::vector<int> status;
+      bus->getRealPowerLoads(tags,current,status);
+      for (j=0; j<current.size(); j++) {
+        if (static_cast<bool>(status[j])) {
+          ret += current[j];
+        }
+      }
+    }
+  }
+  p_network->communicator().sum(&ret,1);
+  return ret;
+}
+
+/**
+ * Return the current real power generation and the maximum and minimum total
+ * power generation for all generators in the zone. If zone is less than 1
+ * then return values for all generators in the area
+ * @param area index of area
+ * @param zone index of zone
+ * @param total total real power generation
+ * @param pmin minimum allowable real power generation
+ * @param pmax maximum available real power generation
+ */
+void gridpack::powerflow::PFFactoryModule::getGeneratorMargins(int area, int zone,
+    double *total, double *pmin, double *pmax)
+{
+  *total = 0.0;
+  *pmin = 0.0;
+  *pmax = 0.0;
+  int nbus = p_network->numBuses();
+  int i, j, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags;
+      std::vector<double> tcurrent;
+      std::vector<double> tpmin;
+      std::vector<double> tpmax;
+      std::vector<int> status;
+      bus->getGeneratorMargins(tags,tcurrent,tpmin,tpmax,status);
+      for (j=0; j<tcurrent.size(); j++) {
+        if (static_cast<bool>(status[j])) {
+          *total += tcurrent[j];
+          *pmin += tpmin[j];
+          *pmax += tpmax[j];
+        }
       }
     }
   }

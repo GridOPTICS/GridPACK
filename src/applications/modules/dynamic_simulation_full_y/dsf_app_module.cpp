@@ -1255,6 +1255,35 @@ void gridpack::dynamic_simulation::DSFullApp::scaleLoadRealPower(
 }
 
 /**
+ * Return the total real power load for all loads in the zone. If zone
+ * less than 1, then return the total load for the area
+ * @param area index of area
+ * @param zone index of zone
+ * @return total load
+ */
+double gridpack::dynamic_simulation::DSFullApp::getTotalLoad(int area,
+    int zone)
+{
+  return p_factory->getTotalLoad(area,zone);
+}
+
+/**
+ * Return the current real power generation and the maximum and minimum total
+ * power generation for all generators in the zone. If zone is less than 1
+ * then return values for all generators in the area
+ * @param area index of area
+ * @param zone index of zone
+ * @param total total real power generation
+ * @param pmin minimum allowable real power generation
+ * @param pmax maximum available real power generation
+ */
+void gridpack::dynamic_simulation::DSFullApp::getGeneratorMargins(int area,
+    int zone, double *total, double *pmin, double *pmax)
+{
+  p_factory->getGeneratorMargins(area,zone,total,pmin,pmax);
+}
+
+/**
  * Reset real power of loads and generators to original values
  */
 void gridpack::dynamic_simulation::DSFullApp::resetRealPower()

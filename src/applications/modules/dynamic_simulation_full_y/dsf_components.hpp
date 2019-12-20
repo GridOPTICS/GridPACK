@@ -421,7 +421,16 @@ class DSFullBus
      */
     void getGeneratorMargins(std::vector<std::string> &tag,
         std::vector<double> &current, std::vector<double> &slack,
-        std::vector<double> &excess,std::vector<bool> &status);
+        std::vector<double> &excess,std::vector<int> &status);
+
+    /**
+     * Get current value of loads
+     * @param tag character ID for load
+     * @param current initial value of load
+     * @param status current status of load
+     */
+    void getRealPowerLoads(std::vector<std::string> &tag,
+        std::vector<double> &current, std::vector<int> &status);
 
     /**
      * Get list of generator IDs
