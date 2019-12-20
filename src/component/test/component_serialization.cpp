@@ -1,3 +1,4 @@
+
 /*
  *     Copyright (c) 2013 Battelle Memorial Institute
  *     Licensed under modified BSD License. A copy of this license can be found
@@ -36,6 +37,7 @@ typedef boost::archive::binary_oarchive outarchive;
 
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "data_collection.hpp"
 #include "base_component.hpp"
 
@@ -439,7 +441,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   return result;
 }

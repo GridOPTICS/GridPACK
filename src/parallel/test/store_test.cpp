@@ -24,6 +24,7 @@
 #include <ga.h>
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/parallel/global_store.hpp"
+#include "gridpack/environment/environment.hpp"
 
 #define MAX_VEC  1000
 
@@ -40,7 +41,7 @@ typedef struct {int ival;
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   // Create an artificial scope so that all objects call their destructors
   // before GA_Terminate is called
   if (1) {

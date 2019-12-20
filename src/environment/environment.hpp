@@ -21,7 +21,9 @@
 #ifndef _app_environment_hpp_
 #define _app_environment_hpp_
 
-#include "gridpack/parallel/environment.hpp"
+#include <boost/mpi.hpp>
+#include "gridpack/utilities/uncopyable.hpp"
+
 
 namespace gridpack {
 
@@ -54,7 +56,7 @@ private:
 // -------------------------------------------------------------
 //  class Environment
 // -------------------------------------------------------------
-  class Environment
+  class Environment : private utility::Uncopyable
 {
 public:
 
@@ -69,21 +71,37 @@ public:
    * 
    * @return 
    */
-  Environment(int& argc, char **argv,
+  Environment(int argc, char **argv,
               const char* help,
 	      const char* config_file);
 
+  Environment(int argc, char **argv,
+              const char* help,
+	      const char* config_file,
+	      const long int& ma_stack,
+              const long int& ma_heap);
+
+  Environment(int argc, char **argv);
+
+
   /// Destructor
   ~Environment(void);
+
+protected:
+  boost::mpi::environment p_boostEnv;
+
 private:
   // Command line parser
   CommandLineParser clparser;
 
-  // environment for initializing the parallel libraries
-  gridpack::parallel::Environment parenv;
+  // Stack and heap for GA
+  long int pma_stack;
+  long int pma_heap;
 
   // Configuration file
   char config_file[100];
+
+  void PrintHelp(char **argv,const char* help,const char* config_file);
 };
 
 } // namespace gridpack

@@ -23,12 +23,15 @@ add_dependencies(gridpack_timer external_build)
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_timer
     gridpack_parallel
+    gridpack_environment
     )
 endif()
 
 set(target_libraries
     gridpack_timer
     gridpack_parallel
+    gridpack_math
+    gridpack_environment
     ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES}

@@ -21,27 +21,10 @@
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
-#if 0
-  // Initialize MPI libraries
-  int ierr = MPI_Init(&argc, &argv);
-
-  GA_Initialize();
-  int stack = 200000, heap = 200000;
-  MA_init(C_DBL, stack, heap);
-#endif
+  gridpack::Environment env(argc, argv);
 
   gridpack::hello_world::HWApp app;
   app.execute(argc, argv);
 
-#if 0
-  GA_Terminate();
-
-  // Terminate Math libraries
-  gridpack::math::Finalize();
-  // Clean up MPI libraries
-  ierr = MPI_Finalize();
-  return ierr;
-#endif
   return 0;
 }

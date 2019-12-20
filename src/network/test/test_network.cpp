@@ -748,7 +748,7 @@ bool init_function(void)
 
 int main (int argc, char **argv) {
 
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
 
   int me = world.rank();

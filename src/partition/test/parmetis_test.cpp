@@ -25,6 +25,7 @@
 #include "simple_adjacency.hpp"
 #include "parmetis/parmetis_graph_wrapper.hpp"
 #include "gridpack/parallel/printit.hpp"
+#include "gridpack/environment/environment.hpp"
 
 
 BOOST_AUTO_TEST_SUITE( ParMETISTest )
@@ -75,7 +76,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   return result;
 }

@@ -14,6 +14,8 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+  gridpack_math
+  gridpack_environment
   gridpack_timer
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 

@@ -17,6 +17,7 @@
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
+#include "gridpack/environment/environment.hpp"
 
 #define XDIM 100
 #define YDIM 100
@@ -288,7 +289,7 @@ bool init_function(void)
 
 int main (int argc, char **argv) {
 
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
 
   int me = world.rank();

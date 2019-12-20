@@ -53,6 +53,7 @@ endif()
 set(target_libraries
   gridpack_components
   gridpack_partition
+  gridpack_environment
   gridpack_math
   gridpack_timer
   gridpack_expression
