@@ -92,7 +92,7 @@ class DSFullApp
     /**
      * Execute the time integration portion of the application
      */
-    void solve(gridpack::dynamic_simulation::DSFullBranch::Event fault);
+    void solve(gridpack::dynamic_simulation::Event fault);
 
     /**
      * Write out final results of dynamic simulation calculation to standard output
@@ -104,16 +104,21 @@ class DSFullApp
      * @param cursor pointer to open file contain fault or faults
      * @return a list of fault events
      */
-    std::vector<gridpack::dynamic_simulation::DSFullBranch::Event>
+    std::vector<gridpack::dynamic_simulation::Event>
       getFaults(gridpack::utility::Configuration::CursorPtr cursor);
 
     /**
      * Read in generators that should be monitored during simulation
      * @param filename set filename from calling program instead of input
      *        deck
+     * @param buses IDs of buses containing generators
+     * @param tags generator IDs for watched generators
+     * @param writeFile true if external file is to be written
      */
     void setGeneratorWatch();
     void setGeneratorWatch(const char *filename);
+    void setGeneratorWatch(std::vector<int> &buses, std::vector<std::string> &tags,
+        bool writeFile = true);
 
     /**
      * Read in loads that should be monitored during simulation
@@ -140,7 +145,7 @@ class DSFullApp
     int isSecure();
 
     /**
-     * Save watch series
+     * Save watch series to an internal data vector
      * @param flag if true, save time series data
      */
     void saveTimeSeries(bool flag);
@@ -165,6 +170,58 @@ class DSFullApp
      */
     void getListWatchedGenerators(std::vector<int> &bus_ids,
         std::vector<std::string> &gen_ids);
+
+    /**
+     * @return true if no frequency violations occured on monitored generators
+     */
+    bool frequencyOK();
+
+    /**
+     * Scale generator real power. If zone less than 1 then scale all
+     * generators in the area.
+     * @param scale factor to scale real power generation
+     * @param area index of area for scaling generation
+     * @param zone index of zone for scaling generation
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
+     */
+    bool scaleGeneratorRealPower(double scale, int area, int zone);
+
+    /**
+     * Scale load real power. If zone less than 1 then scale all
+     * loads in the area.
+     * @param scale factor to scale load real power
+     * @param area index of area for scaling load
+     * @param zone index of zone for scaling load
+     */
+    void scaleLoadRealPower(double scale, int area, int zone);
+
+    /**
+     * Return the total real power load for all loads in the zone. If zone
+     * less than 1, then return the total load for the area
+     * @param area index of area
+     * @param zone index of zone
+     * @return total load
+     */
+    double getTotalLoad(int area, int zone);
+
+    /**
+     * Return the current real power generation and the maximum and minimum total
+     * power generation for all generators in the zone. If zone is less than 1
+     * then return values for all generators in the area
+     * @param area index of area
+     * @param zone index of zone
+     * @param total total real power generation
+     * @param pmin minimum allowable real power generation
+     * @param pmax maximum available real power generation
+     */
+    void getGeneratorMargins(int area, int zone, double *total, double *pmin,
+        double *pmax);
+
+    /**
+     * Reset real power of loads and generators to original values
+     */
+    void resetRealPower();
 
   private:
     /**
@@ -202,7 +259,15 @@ class DSFullApp
      */
     void saveTimeStep();
 
-    std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> p_faults;
+    /**
+     * Check to see if frequency variations on monitored generators are okay
+     * @param start time at which to start monitoring
+     * @param time current value of time
+     * @return true if all watched generators are within acceptable bounds
+     */
+    bool checkFrequency(double start, double time);
+
+    std::vector<gridpack::dynamic_simulation::Event> p_faults;
 
     // pointer to network
     boost::shared_ptr<DSFullNetwork> p_network;
@@ -261,6 +326,13 @@ class DSFullApp
 
     // Tags of generators that are being monitors
     std::vector<std::string> p_watch_gen_ids;
+
+    // Monitor generators for instability instead of writing results to
+    // file
+    bool p_monitorGenerators;
+
+    // Frequency deviations for simulation are okay
+    bool p_frequencyOK;
 
     // pointer to bus IO module that is used for generator results
     boost::shared_ptr<gridpack::serial_io::SerialBusIO<DSFullNetwork> >

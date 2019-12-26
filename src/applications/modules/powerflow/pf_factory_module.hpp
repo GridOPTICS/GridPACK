@@ -127,15 +127,22 @@ class PFFactoryModule
     void clearVoltageViolations();
 
     /**
-     * Check to see if there are any line overload violations in the network
+     * Check to see if there are any line overload violations in
+     * the network. The last call checks for overloads on specific lines.
      * @param area only check for voltage violations in this area
+     * @param bus1 original index of "from" bus for branch
+     * @param bus2 original index of "to" bus for branch
+     * @param tags line IDs for individual lines
+     * @param violations true if violation detected on branch, false otherwise
      * @return true if no violations found
      */
     bool checkLineOverloadViolations();
     bool checkLineOverloadViolations(int area);
+    bool checkLineOverloadViolations(std::vector<int> &bus1, std::vector<int> &bus2,
+        std::vector<std::string> &tags, std::vector<bool> &violations);
 
     /**
-     * Set "ignore" paramter on all lines with violations so that subsequent
+     * Set "ignore" parameter on all lines with violations so that subsequent
      * checks are not counted as violations
      */
     void ignoreLineOverloadViolations();
@@ -149,6 +156,55 @@ class PFFactoryModule
      * Reinitialize voltages
      */
     void resetVoltages();
+
+    /**
+     * Scale generator real power. If zone less than 1 then scale all
+     * generators in the area
+     * @param scale factor to scale real power generation
+     * @param area index of area for scaling generation
+     * @param zone index of zone for scaling generation
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
+     */
+    bool scaleGeneratorRealPower(double scale, int area, int zone);
+
+    /**
+     * Scale load real power. If zone less than 1 then scale all
+     * loads in the area
+     * @param scale factor to scale load real power
+     * @param area index of area for scaling load
+     * @param zone index of zone for scaling load
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
+     */
+    void scaleLoadRealPower(double scale, int area, int zone);
+
+    /**
+     * Return the total real power load for all loads in the zone. If zone
+     * less than 1, then return the total load for the area
+     * @param area index of area
+     * @param zone index of zone
+     * @return total load
+     */
+    double getTotalLoad(int area, int zone);
+
+    /**
+     * Return the current real power generation and the maximum and minimum total
+     * power generation for all generators in the zone. If zone is less than 1
+     * then return values for all generators in the area
+     * @param area index of area
+     * @param zone index of zone
+     * @param total total real power generation
+     * @param pmin minimum allowable real power generation
+     * @param pmax maximum available real power generation
+     */
+    void getGeneratorMargins(int area, int zone, double *total, double *pmin,
+        double *pmax);
+
+    /**
+     * Reset real power of loads and generators to original values
+     */
+    void resetRealPower();
   private:
 
     NetworkPtr p_network;

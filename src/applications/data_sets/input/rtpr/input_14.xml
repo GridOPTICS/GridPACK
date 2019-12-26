@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <RealTimePathRating>
+    <printCalcFiles> true </printCalcFiles>
+    <sourceArea> 1 </sourceArea>
+    <sourceZone> 1 </sourceZone>
+    <destinationArea> 1 </destinationArea>
+    <destinationZone> 2 </destinationZone>
+    <calculateGeneratorContingencies>true</calculateGeneratorContingencies>
+    <calculateLineContingencies>true</calculateLineContingencies>
+    <contingencyList>contingencies_14.xml</contingencyList>
+    <groupSize>1</groupSize>
+    <maxVoltage>1.1</maxVoltage>
+    <minVoltage>0.9</minVoltage>
+    <tieLines>
+      <tieLine>
+        <Branch> 2 5 </Branch>
+        <Tag> BL </Tag>
+      </tieLine>
+      <tieLine>
+        <Branch> 9 14 </Branch>
+        <Tag> BL </Tag>
+      </tieLine>
+    </tieLines>
+  </RealTimePathRating>
+  <Powerflow>
+    <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-3</tolerance>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Powerflow>
+  <Dynamic_simulation>
+    <generatorParameters>IEEE14.dyr</generatorParameters>
+    <simulationTime>1.0</simulationTime>
+    <timeStep>0.01</timeStep>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 0.03</beginFault>
+        <endFault>   0.06</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.01</timeStep>
+      </faultEvent>
+    </faultEvents>
+    <generatorWatch>
+      <generator>
+       <busID> 1 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+    </generatorWatch>
+    <generatorWatchFrequency> 1 </generatorWatchFrequency>
+    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
+    <LinearMatrixSolver>
+      <!--
+                   These options are used if SuperLU was built into PETSc 
+      -->
+      <Ordering>nd</Ordering>
+      <Package>superlu_dist</Package>
+      <Iterations>1</Iterations>
+      <Fill>5</Fill>
+      <!--<PETScOptions>
+                   These options are used for the LinearSolver if SuperLU is not available
+        -ksp_atol 1.0e-18
+        -ksp_rtol 1.0e-10
+        -ksp_monitor
+        -ksp_max_it 200
+        -ksp_view
+      </PETScOptions>
+      -->
+    </LinearMatrixSolver>
+  </Dynamic_simulation>
+</Configuration>

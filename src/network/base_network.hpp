@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2016-07-14 14:07:46 d3g096
+ * @date   2019-12-10 09:31:33 d3g096
  * 
  * @brief  
  * 
@@ -126,8 +126,8 @@ private:
       & p_originalBusIndex
       & p_globalBusIndex
       & p_branchNeighbors
-      & *p_bus
-      & *p_data
+      & p_bus
+      & p_data
       & p_refFlag;
   }
 
@@ -239,8 +239,8 @@ private:
       & p_globalBusIndex2
       & p_localBusIndex1
       & p_localBusIndex2
-      & *p_branch
-      & *p_data;
+      & p_branch
+      & p_data;
   }
 
 };
@@ -1177,6 +1177,7 @@ void partition(void)
       if (b->p_activeBranch) active_branches += 1;
     }
   }
+  setMap();
 
   std::cout << me << ": "
     << "I have " 
@@ -1368,6 +1369,10 @@ template <class _new_bus, class _new_branch> void clone(
     j = getGlobalBusIndex(jdx);
     new_network->setGlobalBusIndex2(i,j);
   }
+  // Copy network data collection
+  *(new_network->getNetworkData()) = *p_network_data;
+  // Set internal maps
+  new_network->setMap();
 }
 
 /**

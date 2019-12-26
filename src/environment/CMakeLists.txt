@@ -10,59 +10,39 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-12-16 13:04:00 d3g096
+# Last Change: 2018-09-20 11:17:39 d3g096
 # -------------------------------------------------------------
 
-set(target_libraries
-    gridpack_components
-    gridpack_stream
-    gridpack_partition
-    gridpack_parallel
-    gridpack_math
-    gridpack_configuration
-    gridpack_timer
-    gridpack_kdsmatrix_components
-    gridpack_ymatrix_components
-    ${PARMETIS_LIBRARY} ${METIS_LIBRARY} 
-    ${Boost_LIBRARIES}
-    ${GA_LIBRARIES}
-    ${MPI_CXX_LIBRARIES}
-    ${PETSC_LIBRARIES})
+add_library(gridpack_environment 
+  environment.cpp
+)
 
+# For some reason this is necessary for Mac OS X, but messes things up on Linux
+if (GRIDPACK_LIB_LINK_LIBRARIES)
+  target_link_libraries(gridpack_environment gridpack_math
+    ${Boost_LIBRARIES} 
+    ${GA_LIBRARIES} 
+    ${MPI_CXX_LIBRARIES}
+    )
+endif()
+  
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
   include_directories(AFTER ${GA_INCLUDE_DIRS})
 endif()
 
-add_library(gridpack_kalmands_module
-  kds_app_module.cpp
-  kds_factory_module.cpp
+# -------------------------------------------------------------
+# gridpack header installation
+# -------------------------------------------------------------
+install(FILES
+  environment.hpp
+  DESTINATION include/gridpack/environment
 )
 
-gridpack_set_library_version(gridpack_kalmands_module)
-
-target_link_libraries(gridpack_kalmands_module
-  gridpack_kdsmatrix_components
-  gridpack_partition
-  gridpack_math
-  gridpack_stream
-  )
-
 # -------------------------------------------------------------
-# component serialization tests
+# gridpack environment library installation
 # -------------------------------------------------------------
-# target_link_libraries(gridpack_kalmands_module ${target_libraries})
-
-# -------------------------------------------------------------
-# installation
-# -------------------------------------------------------------
-install(FILES 
-  kds_app_module.hpp
-  kds_factory_module.hpp
-  DESTINATION include/gridpack/applications/modules/kalman_ds
-)
-
 install(TARGETS 
-  gridpack_kalmands_module
+  gridpack_environment
   DESTINATION lib
 )

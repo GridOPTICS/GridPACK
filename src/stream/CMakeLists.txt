@@ -17,6 +17,9 @@ add_library(gridpack_stream
   input_stream.cpp
 )
 
+gridpack_set_library_version(gridpack_stream)
+add_dependencies(gridpack_stream external_build)
+
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_stream)
 endif()
