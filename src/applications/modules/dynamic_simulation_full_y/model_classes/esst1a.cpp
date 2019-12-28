@@ -157,8 +157,9 @@ void gridpack::dynamic_simulation::Esst1aModel::init(double mag, double ang, dou
   //State 5
   x5Deriv = 0;
   Vref = Vcomp + TempLL;
+  Vstab = 0.0;
 
-  //printf("esst1a init:  %f\t%f\t%f\t%f\t%f\n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv); 
+  //printf("test: esst1a init:  %12.6f,  %12.6f,  %12.6f,  %12.6f,  %12.6f \n", x1Va, x2Vcomp, x3LL1, x4LL2, x5Deriv); 
 }
 
 /**
@@ -186,13 +187,15 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
   // State 5
   double TempIn;
   if (Kf > 0) {
-    TempIn = Klr * (LadIfd - Ilr);
-    if (TempIn < 0) TempIn = 0;
+    //TempIn = Klr * (LadIfd - Ilr);
+    //if (TempIn < 0) TempIn = 0;
     // Note: if Ta = 0, then we would have an algebriac loop here which
     // could cause numerical troubles. Thus we enforce Ta > 0 if (Kf > 0 and Tf > 0)
-    TempIn = x1Va - TempIn;
+    //TempIn = x1Va - TempIn;
     //if ("VOS at Output") TempIn = TempIn + Vstab; // TBD: "VOS at Output"???
     // Ignore Over and Under Excitation Limit for now
+	TempIn = x1Va;
+	
     double UseTf;
     if (Tf > TS_THRESHOLD * t_inc) UseTf = Tf;
     else UseTf = TS_THRESHOLD * t_inc;
@@ -204,6 +207,7 @@ void gridpack::dynamic_simulation::Esst1aModel::predictor(double t_inc, bool fla
   }
   // State 3
   TempIn = - x2Vcomp - TempIn + Vref;
+  TempIn = TempIn + Vstab;
   //if ("VOS at Input") TempIn = TempIn + Vstab; // TBD: "VOS at Input"???
   if (TempIn > Vimax) TempIn = Vimax;
   if (TempIn < Vimin) TempIn = Vimin;
@@ -270,13 +274,15 @@ void gridpack::dynamic_simulation::Esst1aModel::corrector(double t_inc, bool fla
   // State 5
   double TempIn;
   if (Kf > 0) {
-    TempIn = Klr * (LadIfd - Ilr);
-    if (TempIn < 0) TempIn = 0;
+    //TempIn = Klr * (LadIfd - Ilr);
+    //if (TempIn < 0) TempIn = 0;
     // Note: if Ta = 0, then we would have an algebriac loop here which
     // could cause numerical troubles. Thus we enforce Ta > 0 if (Kf > 0 and Tf > 0)
-    TempIn = x1Va_1 - TempIn;
+    //TempIn = x1Va_1 - TempIn;
     //if ("VOS at Output") TempIn = TempIn + Vstab; // TBD: "VOS at Output"???
     // Ignore Over and Under Excitation Limit for now
+	
+	TempIn = x1Va_1;
     double UseTf;
     if (Tf > TS_THRESHOLD * t_inc) UseTf = Tf;
     else UseTf = TS_THRESHOLD * t_inc;
@@ -288,6 +294,7 @@ void gridpack::dynamic_simulation::Esst1aModel::corrector(double t_inc, bool fla
   }
   // State 3
   TempIn = - x2Vcomp_1 - TempIn + Vref;
+  TempIn = TempIn + Vstab;
   //if ("VOS at Input") TempIn = TempIn + Vstab; // TBD: "VOS at Input"???
   if (TempIn > Vimax) TempIn = Vimax;
   if (TempIn < Vimin) TempIn = Vimin;
@@ -399,5 +406,10 @@ void gridpack::dynamic_simulation::Esst1aModel::setOmega(double omega)
 void gridpack::dynamic_simulation::Esst1aModel::setVcomp(double vtmp)
 {
   Vcomp = vtmp;
+}
+
+void gridpack::dynamic_simulation::Esst1aModel::setVstab(double vtmp)
+{
+  Vstab = vtmp;
 }
 

@@ -123,5 +123,6 @@ install(FILES
   parser_classes/acmtblu1.hpp
   parser_classes/ieelbl.hpp
   parser_classes/cmldblu1.hpp
+  parser_classes/psssim.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )

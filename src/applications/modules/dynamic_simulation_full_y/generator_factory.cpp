@@ -22,6 +22,7 @@
 #include "exdc1.hpp"
 #include "esst1a.hpp"
 #include "wshygp.hpp"
+#include "psssim.hpp"
 
 /**
  *  Basic constructor
@@ -125,6 +126,32 @@ gridpack::dynamic_simulation::GeneratorFactory::createGovernorModel(
     tmp =  new gridpack::dynamic_simulation::WshygpModel;
     ret =
       dynamic_cast<gridpack::dynamic_simulation::BaseGovernorModel*>(tmp);
+  } else {
+    ret = NULL;
+  }
+  return ret;
+
+}
+
+/**
+ * Create a PSS model
+ * @param model string containing model type
+ * @return pointer to model. If string does not correspond to a PSS
+ * model, then return NULL pointer
+ */
+gridpack::dynamic_simulation::BasePssModel*
+gridpack::dynamic_simulation::GeneratorFactory::createPssModel(
+    std::string model)
+{
+  std::string type = p_util.trimQuotes(model);
+  p_util.toUpper(type);
+
+  gridpack::dynamic_simulation::BasePssModel* ret;
+  if (type == "PSSSIM") {
+    gridpack::dynamic_simulation::PsssimModel *tmp;
+    tmp =  new gridpack::dynamic_simulation::PsssimModel;
+    ret =
+      dynamic_cast<gridpack::dynamic_simulation::BasePssModel*>(tmp);
   } else {
     ret = NULL;
   }

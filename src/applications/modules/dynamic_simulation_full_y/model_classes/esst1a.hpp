@@ -115,6 +115,8 @@ class Esst1aModel : public BaseExciterModel
      * @return value of the Vcomp
      */
     void setVcomp(double vtmp);
+	
+	void setVstab(double vstab);
 
   private:
 

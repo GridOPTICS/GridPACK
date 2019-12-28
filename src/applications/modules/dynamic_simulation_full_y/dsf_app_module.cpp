@@ -23,6 +23,17 @@
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
 #include "dsf_app_module.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+#ifdef USE_HELICS
+//#include "helics/ValueFederates.hpp"
+//#include <helics/shared_api_library/ValueFederate.h>
+#include <helics/helics.hpp>
+#endif
 
 //#define MAP_PROFILE
 
@@ -449,6 +460,44 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   p_frequencyOK = true;
   // Save initial time step
   //saveTimeStep();
+ 
+	
+ 
+#ifdef USE_HELICS
+	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
+	cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
+	string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
+    helics::ValueFederate fed(configFile);
+	helics::Publication pub;
+	helics::Input sub;
+	double helics_requestTime = 0.0;
+	
+	//to get publication definitions
+    int pubCount = fed.getPublicationCount();
+	
+	printf("-------------helics test: num of pub: %d \n", pubCount);
+    for(int i = 0; i < pubCount; i++) {
+        pub = fed.getPublication(i);
+        string pubInfo = pub.getInfo();
+        // do stuff to tie pub to GridPACK object property
+    }
+    
+	//to get subscription definitions
+    int subCount = fed.getInputCount();
+	printf("-------------helics test: num of sub: %d \n", subCount);
+	
+    for(int i = 0; i < subCount; i++) {
+        sub = fed.getInput(i);
+        string subInfo = sub.getInfo();
+        // do stuff to tie pub to GridPACK object property
+    }
+         
+	//let helics broker know you are ready to start simulation 
+	fed.enterExecutingMode();	
+
+#endif  //end if of HELICS
+
+
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
   //for (I_Steps = 0; I_Steps < 200; I_Steps++) {
     //char step_str[128];
@@ -611,6 +660,58 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     timer->start(t_volt);
     p_factory->setVolt(false);
 	p_factory->updateBusFreq(h_sol1);
+	
+	
+	std::vector <double> vwideareafreqs;
+	vwideareafreqs = p_factory->grabWideAreaFreq();
+	//printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: bus 30: %12.6f, bus 30: %12.6f, delta_freq bus34-bus30: %12.6f \n", 
+	//		vwideareafreqs[0], vwideareafreqs[1], vwideareafreqs[2]);
+	int tmp = vwideareafreqs.size();
+	double widearea_deltafreq = vwideareafreqs[tmp-1];
+
+#ifdef USE_HELICS
+	 
+	 //pub.publish(widearea_deltafreq);
+	 for(int i = 0; i < pubCount; i++) {
+            pub = fed.getPublication(i);
+            string pubInfo = pub.getInfo();
+			//std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
+			pub.publish(vwideareafreqs[i]);
+            // do stuff to tie pub to GridPACK object property
+          }
+
+	 helics_requestTime =       double (I_Steps*h_sol1);
+	 //printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
+	 double helics_grantime;
+	 helics_grantime = fed.requestTime(helics_requestTime);
+	 //printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
+	 
+	 double subvalue = 0.0;
+	 
+	 for(int i = 0; i < subCount; i++) {
+        sub = fed.getInput(i);
+		//printf("-------------!!!helics debug entering  sub loop\n"); 
+		//if(sub.isUpdated()) {
+            //auto value = sub.getValue();
+			subvalue = fed.getDouble(sub);
+			//printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
+                             //update GridPACK object property with value
+        //}
+
+	 }
+	 
+	//printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
+	 
+	p_factory->setWideAreaFreqforPSS(subvalue);
+
+	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	 
+#else	 
+	 
+	p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	 
+#endif
+		
     timer->stop(t_volt);
 	
 	//printf("before update relay, after first volt solv: \n");
@@ -1016,6 +1117,14 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   timer->stop(t_solve);
   //timer->dump();
+  
+#ifdef USE_HELICS
+
+	fed.finalize();
+	
+#endif
+ 
+  
 }
 
 /**
