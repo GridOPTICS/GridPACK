@@ -92,20 +92,19 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GENERATOR_XDPP, &Xqpp, idx)) Xqpp=0.0; // Xqpp // SJin: no GENERATOR_XQPP in dictionary.hpp, read XDPP instead (Xqpp = Xdpp)
   if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
 
-#if 0 // Code inactive for now
   // Convert generator parameters from machine base to MVA base
-  H *= mbase/sbase;
-  D *= mbase/sbase;
-  Xdp /= mbase/sbase;
+  double mult = mbase/sbase;
+  H *= mult;
+  D *= mult;
 
-  Xd /= mbase/sbase;
-  Xq /= mbase/sbase;
-  Xdpp /= mbase/sbase;
-  Xl /= mbase/sbase;
-  Xqp /= mbase/sbase;
-  Xqpp /= mbase/sbase;
+  Xdp /= mult;
+  Xd /= mult;
+  Xq /= mult;
+  Xdpp /= mult;
+  Xl /= mult;
+  Xqp /= mult;
+  Xqpp /= mult;
 
-#endif
   B = -Xdpp/(Ra*Ra + Xdpp*Xdpp);
   G = Ra/(Ra*Ra + Xdpp*Xdpp);
 }
