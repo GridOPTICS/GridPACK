@@ -110,8 +110,8 @@ double GensalGen::Sat(double x)
     double b_ = -2 * S12 / S10 + 2;
     double c_ = S12 / S10 - 1.2;
     double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
-    double B = S10 / ((1.0 - A) * (1.0 - A));
-    double result = B * (x - A) * (x - A) / x;
+    double B_ = S10 / ((1.0 - A) * (1.0 - A));
+    double result = B_ * (x - A) * (x - A) / x;
     //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
     //printf("Sat result = %f\n", result); 
     return result; // Scaled Quadratic with 1.7.1 equations
@@ -141,7 +141,7 @@ void GensalGen::init(gridpack::ComplexType* values)
 
   Ir = (P * Vrterm + Q * Viterm) / (Vterm * Vterm);
   Ii = (P * Viterm - Q * Vrterm) / (Vterm * Vterm);
-  dw = 0;
+  dw = 0.0;
   delta = atan2(Viterm + Ir * Xq + Ii * Ra, Vrterm + Ir * Ra - Ii * Xq);
 
   Eppr = Vrterm + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
