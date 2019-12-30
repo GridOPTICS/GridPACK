@@ -558,9 +558,9 @@ bool DSimBus::vectorValues(gridpack::ComplexType *values)
       if(p_gen[i]->getGenStatus()) {
 	p_gen[i]->setMode(p_mode);
 	p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
-	p_gen[i]->getCurrent(&IGD,&IGQ);
 	p_gen[i]->vectorValues(fgen);
         fgen += p_neqsgen[i];
+	p_gen[i]->getCurrent(&IGD,&IGQ);
         //printf("gen:\n");
         //for (int j=2; j<p_neqsgen[i]+2;j++)
         //  printf("values[%d]=%f\n",j,values[j]);

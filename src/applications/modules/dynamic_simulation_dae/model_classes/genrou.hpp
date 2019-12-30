@@ -130,16 +130,14 @@ class GenrouGen: public BaseGenModel
     double Pmech; // Mechanical power
   
     // Generator variables and their derivatives
-    double Ir, Ii; // Terminal current
-    double x1d, x2w, x3Eqp, x4Psidp, x5Psiqp, x6Edp; 
-    double dx1d, dx2w, dx3Eqp, dx4Psidp, dx5Psiqp, dx6Edp;
+    double delta, dw, Eqp, Psidp, Psiqp, Edp; 
+    double ddelta, ddw, dEqp, dPsidp, dPsiqp, dEdp;
     double Id, Iq; // Generator current on d and q axis
 
     // previous step values of the variables
-    double x1dprev, x2wprev, x3Eqpprev, x4Psidpprev, x5Psiqpprev, x6Edpprev; 
+    double deltaprev, dwprev, Eqpprev, Psidpprev, Psiqpprev, Edpprev; 
 
     double B, G;
-    double Vd, Vq;
 
     int bid;
 };
