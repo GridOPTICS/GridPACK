@@ -5,7 +5,7 @@
  */
 // -------------------------------------------------------------
 /**
- * @file   base_exciter_model.hpp
+ * @file   base_pss_model.hpp
  * @author Bruce Palmer
  * @Last modified:   May 18, 2015
  * 
@@ -14,26 +14,26 @@
  * 
  */
 
-#ifndef _base_exciter_model_h_
-#define _base_exciter_model_h_
+#ifndef _base_pss_model_h_
+#define _base_pss_model_h_
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 
 namespace gridpack {
 namespace dynamic_simulation {
-class BaseExciterModel
+class BasePssModel
 {
   public:
     /**
      * Basic constructor
      */
-    BaseExciterModel();
+    BasePssModel();
 
     /**
      * Basic destructor
      */
-    virtual ~BaseExciterModel();
+    virtual ~BasePssModel();
 
     /**
      * Load parameters from DataCollection object into exciter model
@@ -66,51 +66,12 @@ class BaseExciterModel
      */
     virtual void corrector(double t_inc, bool flag);
 
-    /**
-     * Set the field voltage parameter inside the exciter
-     * @param fldv value of the field voltage
-     */
-    virtual void setFieldVoltage(double fldv);
+    virtual double getVstab();
 
-    /**
-     * Set the field current parameter inside the exciter
-     * @param fldc value of the field current
-     */
-    virtual void setFieldCurrent(double fldc);
-
-    /** 
-     * Get the value of the field voltage parameter
-     * @return value of field voltage
-     */
-    virtual double getFieldVoltage();
-
-    /** 
-     * Get the value of the field current parameter
-     * @return value of field current
-     */
-    virtual double getFieldCurrent();
-
-    /**
-     * Set the value of the Vterminal
-     * @return value of field current
-     */
-    virtual void setVterminal(double mag);
-
-    /** 
-     * Set the value of the Omega 
-     * @return value of field current
-     */
     virtual void setOmega(double omega);
-
-    /**
-     * Set the value of the Vcomp
-     * @return value of teh Vcomp
-     */
-    virtual void setVcomp(double vtmp);
-	
-	virtual void setVstab(double Vstab);
-	
+	virtual double getBusFreq(int busnum);
 	virtual void setWideAreaFreqforPSS(double freq);	
+
 
   private:
     

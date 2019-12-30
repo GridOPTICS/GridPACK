@@ -258,7 +258,11 @@ class DSFullBus
      */
     double getBusVolFrequency(void); //renke add
 	
+	void setBusVolFrequencyFlag(bool flag); //renke add
+	
 	void printbusvoltage (void); //renke add
+	
+	void setWideAreaFreqforPSS(double freq); //renke hard coded;
 	
 	
 	/**

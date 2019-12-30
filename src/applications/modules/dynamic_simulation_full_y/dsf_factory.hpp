@@ -22,6 +22,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "dsf_components.hpp"
+#include <vector>
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -118,6 +119,9 @@ class DSFullFactory
     * update bus frequecy
     */
     void updateBusFreq(double delta_t);
+	
+	std::vector<double> grabWideAreaFreq() ;  //renke hard coded
+	void setWideAreaFreqforPSS(double freq); //renke hard coded
 	
    /**
      * update bus relay status
