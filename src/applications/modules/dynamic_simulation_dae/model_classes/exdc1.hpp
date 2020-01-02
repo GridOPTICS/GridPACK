@@ -6,8 +6,8 @@
 // -------------------------------------------------------------
 /**
  * @file   exdc1.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   08/06/19
+ * @author Shrirang Abhyankar 
+ * @Last modified:   01/02/20
  * 
  * @brief  
  * 
@@ -20,6 +20,7 @@
 #include <base_exc_model.hpp>
 #include <gridpack/include/gridpack.hpp>
 
+// This model is also termed as 'ESDC1A' in PSSE
 
 class Exdc1Exc: public BaseExcModel
 {
@@ -44,16 +45,10 @@ class Exdc1Exc: public BaseExcModel
         data, int idx);
 
     /**
-     * Saturation function
-     * @ param x
-     */
-    double Sat(double x); 
-
-    /**
      * Initialize exciter model before calculation
      * @param [output] values - array where initialized exciter variables should be set
      */
-  void init(gridpack::ComplexType *values);
+    void init(gridpack::ComplexType *values);
 
     /**
      * Write output from exciters to a string.
@@ -110,47 +105,51 @@ class Exdc1Exc: public BaseExcModel
      */
     virtual void setInitialFieldVoltage(double fldv);
 
-    /**
-     * Set the field current parameter inside the exciter
-     * @param fldc value of the field current
-     */
-    virtual void setFieldCurrent(double fldc);
-
     /** 
      * Get the value of the field voltage parameter
      * @return value of field voltage
      */
     virtual double getFieldVoltage();
 
-    /** 
-     * Get the value of the field current parameter
-     * @return value of field current
-     */
-    virtual double getFieldCurrent();
-
   private:
-    // Exciter EXDC1 parameters from dyr
-    double TR, KA, TA, TB, TC, Vrmax, Vrmin;
-    double KE, TE, KF, TF, SWITCH; // TF?
+
+    // Exciter exdc1 parameters from dyr
+    double TR, VRmax, VRmin, TC, TB;
+    double KA, TA, KE, TE;
+    double Vrmax, Vrmin, KF, TF;
+    int    SWITCH;
+    
+    // EXDC1 state variables
+    double Vmeas; // Measured voltage by transducer
+    double xLL;   // Lead-lag block state variable
+    double VR;    //   Voltage regulator output
+    double Efd;   // Exciter output
+    double xf;   // Feedback block state variable
+
+    // EXDC1 derivatives
+    double dVmeas, dxLL, dVR, dEfd, dxf;    
+
+    // EXDC1 previous step solution
+    double Vmeasprev,xLLprev,VRprev,Efdprev,xfprev;
+
+    // Saturation function points
     double E1, SE1, E2, SE2;
 
-    // EXDC1 state variables
-    double x1, x2, x3, x4, x5;
-    double dx1, dx2, dx3, dx4, dx5;
+    // EXDC1 inputs
+    double Ec; // Terminal voltage
+    double Vothsg; // Voltage signal from stabilizer
+    double Vuel; // Under excitation limiter voltage
+    double Voel; // Over excitation limiter voltage
+    double Vcomp, Vterm, Vstab;
 
-    // Field Voltage Output
-    double Efd;
-
-    // Field Current Output
-    double LadIfd;
-
+    // Voltage regulator reference
     double Vref;
 
-    double Vterminal;
+    // Flag to denote whether each equation is algebraic or differential.
+    // iseq_diff[i] = 1 if equation is differential, 0 otherwise.
+    int iseq_diff[5];
 
-    bool flag2, flag3, flag4, flag5; //flags for residual function conditions
-    double A, B; // Sat function variables
-
+    int bid;
 };
 
 #endif
