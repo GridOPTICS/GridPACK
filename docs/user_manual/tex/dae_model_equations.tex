@@ -179,10 +179,10 @@ Over/under excitation limiters and stabilizers are not implemented in GridPACK. 
     0 = y_{LL1} - x_{LL2},&\text{if}~~T_{b1} = 0
   \end{cases}& \\
   &\begin{cases}
-    T_{A}\dfrac{dV_{A}}{dt} = y_{LL2} -K_AV_A,&\text{if}~~T_{A} > 0,\quad V_{AMIN} \le V_A \le V_{AMAX} \\
+    T_{A}\dfrac{dV_{A}}{dt} = K_Ay_{LL2} -V_A,&\text{if}~~T_{A} > 0,\quad V_{AMIN} \le V_A \le V_{AMAX} \\
     0 = y_{LL2} - V_{A},&\text{if}~~T_{A} = 0,\quad V_{AMIN} \le V_A \le V_{AMAX}
   \end{cases}& \\
-  &T_F\dfrac{dx_F}{dt} = \dfrac{K_Fu_{FB}}{T_F} - x_F&
+  &T_F\dfrac{dx_F}{dt} = -\dfrac{K_F}{T_F}u_{FB} - x_F&
 \end{flalign}
 Here, the intermediate variables used in the calculations are as follows:
 \begin{align*}
@@ -196,7 +196,7 @@ Here, the intermediate variables used in the calculations are as follows:
     y_{LL2} = x_{LL2},&\text{if}~~T_{b1} = 0 \\
   \end{cases}& \\
   &u_{FB}  = V_A - \min(K_{LR}(I_{FD} - I_{LR}),0)& \\
-  &V_F     = x_F + \dfrac{K_FT_F}{u_{FB}}&   
+  &V_F     = x_F + \dfrac{K_F}{T_F}u_{FB}&   
 \end{align*}
 
 \subsection{Outputs}
