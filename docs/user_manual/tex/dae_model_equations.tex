@@ -151,7 +151,50 @@ Over/under excitation limiters and stabilizers are not implemented in GridPACK. 
   \item $E_{FD}$: Field voltage
 \end{enumerate}
 
-\subsection{EXDC1}
+\subsection{EXDC1 or ESDC1A \cite{PSSE}}
+
+\subsubsection{Variables}
+\begin{enumerate}
+  \item $V_{meas}$: Measured terminal voltage
+  \item $x_{LL}$: Lead lag block state variable
+  \item $V_{R}$: Regulator output
+  \item $E_{fd}$: Exciter output
+  \item $x_F$: Rate feedback integrator state
+\end{enumerate}
+
+\subsubsection{Equations}
+\begin{flalign}
+  &\begin{cases}
+    T_R\dfrac{dV_{meas}}{dt} = Ec - V_{meas},&\text{if}~~T_R > 0 \\
+    0 = Ec - V_{meas},&\text{if}~~T_R = 0
+  \end{cases}& \\
+  &\begin{cases}
+    T_b\dfrac{dx_{LL}}{dt} = (1 - \dfrac{T_c}{T_b})V_{in} - x_{LL},&\text{if}~~T_b > 0 \\
+    0 = V_{in} - x_{LL},&\text{if}~~T_b = 0
+  \end{cases}& \\
+  &\begin{cases}
+    T_{A}\dfrac{dV_{R}}{dt} = K_Ay_{LL} -V_R,&\text{if}~~T_{A} > 0,\quad V_{RMIN} \le V_R \le V_{MAX} \\
+    0 = y_{LL2} - V_{R},&\text{if}~~T_{A} = 0,\quad V_{RMIN} \le V_R \le V_{RMAX}
+  \end{cases}& \\
+  &T_E\dfrac{dE_{fd}}{dt} = V_R - V_{FE}& \\
+  &T_F\dfrac{dx_F}{dt} = -\dfrac{K_F}{T_F}E_{fd} - x_F&
+\end{flalign}
+Here, the intermediate variables used in the calculations are as follows:
+\begin{align*}
+  &V_{in} = \Vref - V_{meas} - V_F& \\
+  &\begin{cases}
+    y_{LL} = x_{LL} + \dfrac{T_c}{T_b}V_{in},&\text{if}~~T_{b} > 0 \\
+    y_{LL} = x_{LL},&\text{if}~~T_{b} = 0
+  \end{cases}& \\
+  &V_{FE}  = K_EE_{fd} + E_{fd}S_E(E_{fd})& \\
+  &V_F     = x_F + \dfrac{K_F}{T_F}E_{fd}&   
+\end{align*}
+$S_E(E_{fd})$ is a quadratic saturation function of the form $S_E = B(E_{fd} - A)^2$. The input data provides two operating points for $E_{fd}, S_E(E_{fd})$ from which the constants $A$ and $B$ are calculated.
+
+\subsection{Outputs}
+\begin{enumerate}
+  \item $E_{FD} = \max(0,E_{fd})$
+\end{enumerate}
 
 \subsection{ESST1A \cite{ESST1A}}
 
@@ -284,17 +327,14 @@ P_{GV} = x_{GV}
 
 \begin{flalign}
 &\begin{cases}
-    T_1\dfrac{dx}{dt} = (1 - \dfrac{T_2}{T_1})u(t) - x(t),&\text{if}~~T_1 > 0 \\
-    0 = u(t) - x(t),&\text{if}~~T_1 = 0
+    T_2\dfrac{dx}{dt} = (1 - \dfrac{T_1}{T_2})u(t) - x(t),&\text{if}~~T_2 > 0 \\
+    0 = u(t) - x(t),&\text{if}~~T_2 = 0
   \end{cases}& \\
   &\begin{cases}
-    y(t) = x(t) + \dfrac{T_2}{T_1}u(t),&\text{if}~~T_{1} > 0 \\
-    y(t) = x(t),&\text{if}~~T_{1} = 0
+    y(t) = x(t) + \dfrac{T_1}{T_2}u(t),&\text{if}~~T_{2} > 0 \\
+    y(t) = x(t),&\text{if}~~T_{2} = 0
   \end{cases}&
 \end{flalign}
-
-
-
 
 \begin{thebibliography}{20}
 
