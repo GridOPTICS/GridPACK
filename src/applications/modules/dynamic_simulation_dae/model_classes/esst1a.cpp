@@ -116,7 +116,7 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   Ec = sqrt(VD*VD + VQ*VQ);
   Vfd = Klr*(LadIfd - Ilr); 
   Vmeas    = Ec;
-  xf       = Kf/Tf*Efd;
+  xf       = -Kf/Tf*Efd;
   Va       = Efd + Vfd;
   yLL2     = Va/Ka;
   yLL1     = yLL2;
