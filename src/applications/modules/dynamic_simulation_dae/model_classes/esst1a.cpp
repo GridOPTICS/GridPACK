@@ -91,8 +91,8 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
 
   // Set flags for differential or algebraic equations
   iseq_diff[0] = (Tr == 0)?0:1;
-  iseq_diff[1] = (Tb == 0 && Tc == 0)?0:1;
-  iseq_diff[2] = (Tb1 == 0 && Tc1 == 0)?0:1;
+  iseq_diff[1] = (Tb == 0 || Tc == 0)?0:1;
+  iseq_diff[2] = (Tb1 == 0 || Tc1 == 0)?0:1;
   iseq_diff[3] = (Ta == 0)?0:1;
   iseq_diff[4] = 1; // Tf is always > 0
 
@@ -116,9 +116,9 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   Ec = sqrt(VD*VD + VQ*VQ);
   Vfd = Klr*(LadIfd - Ilr); 
   Vmeas    = Ec;
-  xf       = -Kf/Tf*Efd;
+  xf       = Kf/Tf*Efd;
   Va       = Efd + Vfd;
-  yLL2     = Va*Ka;
+  yLL2     = Va/Ka;
   yLL1     = yLL2;
   if(iseq_diff[2]) xLL2    = (1 - Tc1/Tb1)*yLL2;
   else xLL2 = yLL2;
@@ -184,7 +184,7 @@ void Esst1aExc::setValues(gridpack::ComplexType *values)
     dxLL2 = real(values[2]);
     dVa   = real(values[3]);
     dxf   = real(values[4]);
-  } else if(p_mode == XVECTOBUS) {
+  } else if(p_mode == XVECPRETOBUS) {
     Vmeasprev = real(values[0]);
     xLL1prev = real(values[1]);
     xLL2prev = real(values[2]);
@@ -208,6 +208,8 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
   int x5_idx = 4;
   double Ec,yLL1,yLL2,Vf;
   Ec = sqrt(VD*VD + VQ*VQ);
+  
+  Efd = Esst1aExc::getFieldVoltage();
   // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     // State 1 Vmeas
@@ -235,7 +237,7 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
 
     // State 4 Va
     if(iseq_diff[3]) values[3] = Va - Vaprev;
-    else values[3] = -Ka*Va + yLL2;
+    else values[3] = -Va + Ka*yLL2;
 
     // State 5 xf
     values[4] = xf - xfprev;
@@ -267,8 +269,8 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     }
 
     // State 4 Va
-    if(iseq_diff[3]) values[3] = (-Ka*Va + yLL2)/Ta - dVa;
-    else values[3] = -Ka*Va + yLL2;
+    if(iseq_diff[3]) values[3] = (-Va + Ka*yLL2)/Ta - dVa;
+    else values[3] = -Va + Ka*yLL2;
 
     // State 5 xf
     values[4] = (-xf - Kf/Tf*Efd)/Tf - dxf;

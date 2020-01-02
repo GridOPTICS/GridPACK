@@ -105,7 +105,7 @@ void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GOVERNOR_IBLOCK, &Iblock, idx)) Iblock = 0.0; // Iblock
 
   //Set flags for differential or algebraic equations
-  iseq_diff[0] = (T1 == 0 && T2 == 0)?0:1;
+  iseq_diff[0] = (T1 == 0 || T2 == 0)?0:1;
   iseq_diff[1] = 1;
   iseq_diff[2] = (T4 == 0)?0:1;
   iseq_diff[3] = (T5 == 0)?0:1;
