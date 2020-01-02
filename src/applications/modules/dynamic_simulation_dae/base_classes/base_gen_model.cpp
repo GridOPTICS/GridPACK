@@ -1,5 +1,5 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
-#include <base_gen_model.hpp>
+#include "base_gen_model.hpp"
 #include <gridpack/include/gridpack.hpp>
 
 BaseGenModel::BaseGenModel(void)

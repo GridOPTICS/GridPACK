@@ -6,8 +6,9 @@
 // -------------------------------------------------------------
 /**
  * @file   base_exc_model.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   10/15/19
+ * @author Shuangshuang Jin
+`* @author Shrirang Abhyankar 
+ * @Last modified:   01/02/20 - Shri
  * 
  * @brief  
  * 
@@ -167,12 +168,13 @@ to be overwritten by the implementation */
    * Set initial time step
    */
   void setInitialTimeStep(double timestep);
- 
+
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
   double        dt0;
+
 };
 
 #endif

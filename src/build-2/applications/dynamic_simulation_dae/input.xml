@@ -1,16 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <Dynamic_simulation>
-    <networkConfiguration> case9.raw </networkConfiguration>
-    <generatorParameters> inputDeck/case9mod1_GENROU.dyr </generatorParameters>
+    <networkConfiguration> renke_files/case9.raw </networkConfiguration>
+    <generatorParameters> renke_files/case9mod1_detailed_ESST1A_relaxlimits.dyr </generatorParameters>
 <!--    <networkConfiguration> IEEE_145bus_v23_PSLF.raw </networkConfiguration>
     <generatorParameters>IEEE_145b_classical_model.dyr</generatorParameters>
 -->
-    <simulationTime>5.0</simulationTime>
+    <simulationTime>10.0</simulationTime>
     <timeStep>0.01</timeStep>
     <faultbus>1</faultbus>
-    <faultontime>0.1</faultofftime>
-    <faultofftime>0.15</faultofftime>
+    <faultontime>1</faultofftime>
+    <faultofftime>1.05</faultofftime>
     <Gfault>0.0</Gfault>
     <Bfault>99999</Bfault>
     <DAESolver>
