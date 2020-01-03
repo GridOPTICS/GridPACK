@@ -208,6 +208,7 @@ void DSimBus::load(const
           if (type == "EXDC1") { // SJin: newly added EXDC1 exciter model object 
             Exdc1Exc *e1Exc;
             e1Exc = new Exdc1Exc;
+	    e1Exc->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseExcModel> ex;
             ex.reset(e1Exc);
             p_gen[i]->setExciter(ex);
@@ -215,6 +216,7 @@ void DSimBus::load(const
           } else if (type == "ESST1A") { // SJin: newly added EXDC1 exciter model object 
             Esst1aExc *e1Exc;
             e1Exc = new Esst1aExc;
+	    e1Exc->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseExcModel> ex;
             ex.reset(e1Exc);
             p_gen[i]->setExciter(ex);

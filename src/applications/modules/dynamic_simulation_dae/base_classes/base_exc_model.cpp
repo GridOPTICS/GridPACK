@@ -74,6 +74,7 @@ void BaseExcModel::init(gridpack::ComplexType *values)
 bool BaseExcModel::serialWrite(char *string, const int bufsize,
 			       const char *signal)
 {
+  return false;
 }
 
 /**
@@ -137,28 +138,11 @@ void BaseExcModel::setInitialFieldVoltage(double fldv)
 {
 }
 
-/**
- * Set the field current parameter inside the exciter
- * @param fldc value of the field current
- */
-void BaseExcModel::setFieldCurrent(double fldc)
-{
-}
-
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage
  */
 double BaseExcModel::getFieldVoltage()
-{
-  return 0.0;
-}
-
-/** 
- * Get the value of the field current parameter
- * @return value of field current
- */
-double BaseExcModel::getFieldCurrent()
 {
   return 0.0;
 }
@@ -170,6 +154,17 @@ void BaseExcModel::setInitialTimeStep(double timestep)
 {
     dt0 = timestep;
 }
+
+void BaseExcModel::setGenerator(BaseGenModel *generator)
+{
+  p_gen = generator;
+}
+
+BaseGenModel* BaseExcModel::getGenerator()
+{
+  return p_gen;
+}
+
 
 /**
  * Set the value of the time increment 

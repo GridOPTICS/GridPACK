@@ -113,12 +113,7 @@ class GenrouGen: public BaseGenModel
      */
     bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
-    //void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
-
-    //boost::shared_ptr<BaseExcModel> getExciter();
-    
-    //void setphasExciter(bool info);
-
+    double getFieldCurrent();
   private:
     // Machine parameters
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;

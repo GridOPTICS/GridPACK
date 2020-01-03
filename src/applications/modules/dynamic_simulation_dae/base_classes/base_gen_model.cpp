@@ -59,10 +59,12 @@ void BaseGenModel::init(gridpack::ComplexType *values)
 bool BaseGenModel::serialWrite(char *string, const int bufsize,
 			       const char *signal)
 {
+  return false;
 }
 
 double BaseGenModel::getAngle()
 {
+  return 0.0;
 }
 
 /**
@@ -114,6 +116,14 @@ void BaseGenModel::getCurrent(double *IGD, double *IGQ)
   *IGD = *IGQ = 0.0;
 }
 
+/**
+ * Get the field current
+ * @param 
+ */
+double BaseGenModel::getFieldCurrent()
+{
+  return 0.0;
+}
 
 /**
  * Return the matrix entries

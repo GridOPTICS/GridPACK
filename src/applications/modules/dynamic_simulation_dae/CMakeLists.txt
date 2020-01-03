@@ -91,6 +91,7 @@ install(FILES
   model_classes/gensal.hpp
   model_classes/exdc1.hpp
   model_classes/esst1a.hpp
+  model_classes/wsieg1.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_dae/model_classes
 )
 

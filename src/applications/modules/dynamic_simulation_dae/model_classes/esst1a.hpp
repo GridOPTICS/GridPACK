@@ -6,8 +6,9 @@
 // -------------------------------------------------------------
 /**
  * @file   esst1a.hpp
- * @author Shuangshuang Jin 
- * @Last modified:   09/20/19
+ * @author Shuangshuang Jin
+ * @author Shrirang Abhyankar
+ * @Last modified:   01/02/20
  * 
  * @brief  
  * 
@@ -104,23 +105,11 @@ class Esst1aExc: public BaseExcModel
      */
     virtual void setInitialFieldVoltage(double fldv);
 
-    /**
-     * Set the field current parameter inside the exciter
-     * @param fldc value of the field current
-     */
-    virtual void setFieldCurrent(double fldc);
-
     /** 
      * Get the value of the field voltage parameter
      * @return value of field voltage
      */
     virtual double getFieldVoltage();
-
-    /** 
-     * Get the value of the field current parameter
-     * @return value of field current
-     */
-    virtual double getFieldCurrent();
 
   private:
 

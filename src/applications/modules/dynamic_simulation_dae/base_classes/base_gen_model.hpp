@@ -20,8 +20,10 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
-#include "base_exc_model.hpp" //SJin added
-#include "base_gov_model.hpp" //SJin added
+#include <base_exc_model.hpp>
+#include <base_gov_model.hpp>
+
+class BaseExcModel; // Forward declaration for BaseExcModel
 
 class BaseGenModel : public gridpack::component::BaseComponent
 {
@@ -147,6 +149,12 @@ to be overwritten by the implementation */
    * @param values values in vector or matrix
    */
   void setValues(gridpack::ComplexType *values);
+
+  /**
+   * Set the field current parameter inside the exciter
+   * @param fldc value of the field current
+   */
+  virtual double getFieldCurrent(void);
 
   /***************************************/
 

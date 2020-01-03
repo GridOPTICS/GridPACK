@@ -109,8 +109,10 @@ void Esst1aExc::init(gridpack::ComplexType* values)
   double Ec = sqrt(VD*VD + VQ*VQ);
   double yLL2,yLL1;
   double Vf=0.0,Vfd;
+  BaseGenModel *gen=getGenerator();
+  double LadIfd = gen->getFieldCurrent();
 
-  // Field voltage (Efd), Field current (LadIfd), and bus voltage (VD,VQ) are already set
+  // Field voltage (Efd) and bus voltage (VD,VQ) are already set 
   // Need to set the initial values for all the state variables
 
   Ec = sqrt(VD*VD + VQ*VQ);
@@ -342,29 +344,13 @@ void Esst1aExc::setInitialFieldVoltage(double fldv)
   //printf("Efd in Esst1a = %f\n", Efd);
 }
 
-/**
- * Set the field current parameter inside the exciter
- * @param fldc value of the field current
- */
-void Esst1aExc::setFieldCurrent(double fldc)
-{
-  LadIfd = fldc;
-}
-
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage
  */
 double Esst1aExc::getFieldVoltage()
 {
+  BaseGenModel* gen = getGenerator();
+  LadIfd = gen->getFieldCurrent();
   return Va - Klr*(LadIfd - Ilr); // should be actually max(0,Klr*(LadIfd - Ilr));
-}
-
-/** 
- * Get the value of the field current parameter
- * @return value of field current
- */
-double Esst1aExc::getFieldCurrent()
-{
-  return 0.0;
 }

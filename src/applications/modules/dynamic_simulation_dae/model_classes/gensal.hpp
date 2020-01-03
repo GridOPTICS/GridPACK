@@ -98,11 +98,6 @@ class GensalGen: public BaseGenModel
     bool vectorValues(gridpack::ComplexType *values);
 
     /**
-     * Calculate current Norton injections
-     */
-    void currentNortonInjection();
-
-    /**
      * Return the generator current injection (in rectangular form) 
      * @param [output] IGD - real part of the generator current
      * @param [output] IGQ - imaginary part of the generator current
@@ -119,6 +114,7 @@ class GensalGen: public BaseGenModel
      */
     bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
+    double getFieldCurrent();
   private:
     // Machine parameters
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl;

@@ -178,7 +178,7 @@ void GensalGen::init(gridpack::ComplexType* values)
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
-    p_exciter->setFieldCurrent(Efd);
+    //    p_exciter->setFieldCurrent(Efd);
     p_exciter->setInitialTimeStep(0.01);
   }
 
@@ -319,7 +319,7 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
   }
 
   if (p_hasExciter) {
-    p_exciter->setFieldCurrent(LadIfd);
+    //    p_exciter->setFieldCurrent(LadIfd);
   }
       
   if (p_hasGovernor) {
@@ -347,6 +347,24 @@ void GensalGen::getCurrent(double *IGD, double *IGQ)
   // Generator current injections in the network
   *IGD =   Id * sin(delta) + Iq * cos(delta);
   *IGQ =  -Id * cos(delta) + Iq * sin(delta);
+}
+
+double GensalGen::getFieldCurrent()
+{
+  double Psidpp = + Eqp * (Xdpp - Xl) / (Xdp - Xl) + Psidp * (Xdp - Xdpp) / (Xdp - Xl); 
+  double Vd = -Psiqpp * (1 + dw);
+  double Vq = +Psidpp * (1 + dw);
+  double Vdterm = VD*sin(delta) - VQ*cos(delta);
+  double Vqterm = VD*cos(delta) + VQ*sin(delta);
+  double Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+  double Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
+  double Psiq = Psiqpp - Iq * Xdpp;
+  double Psid  = Psidpp - Id * Xdpp;
+  double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
+  double LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
+
+  return LadIfd;
+
 }
 
 /**

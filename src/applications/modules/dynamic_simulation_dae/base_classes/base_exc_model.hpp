@@ -21,6 +21,9 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
+#include <base_gen_model.hpp>
+
+class BaseGenModel; // Forward declaration for BaseGenModel
 
 class BaseExcModel : public gridpack::component::BaseComponent
 {
@@ -146,34 +149,28 @@ to be overwritten by the implementation */
    */
   virtual void setInitialFieldVoltage(double fldv);
 
-  /**
-   * Set the field current parameter inside the exciter
-   * @param fldc value of the field current
-   */
-  virtual void setFieldCurrent(double fldc);
-
   /** 
    * Get the value of the field voltage parameter
    * @return value of field voltage
    */
   virtual double getFieldVoltage();
 
-  /** 
-   * Get the value of the field current parameter
-   * @return value of field current
-   */
-  virtual double getFieldCurrent();
-  
   /**
    * Set initial time step
    */
   void setInitialTimeStep(double timestep);
+
+  void setGenerator(BaseGenModel* generator);
+
+  BaseGenModel* getGenerator();
 
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
   double        dt0;
+
+  BaseGenModel* p_gen;
 
 };
 

@@ -178,7 +178,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
-    p_exciter->setFieldCurrent(LadIfd);
+    //    p_exciter->setFieldCurrent(LadIfd);
     p_exciter->setInitialTimeStep(0.01); // SJin: to be read from input file
   }
     
@@ -348,7 +348,7 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dEdp; 
 
     if (p_hasExciter) {
-      p_exciter->setFieldCurrent(LadIfd);
+      //      p_exciter->setFieldCurrent(LadIfd);
     }
       
     if (p_hasGovernor) {
@@ -384,6 +384,29 @@ void GenrouGen::getCurrent(double *IGD, double *IGQ)
   *IGD = + Id * sin(delta) + Iq * cos(delta);
   *IGQ = - Id * cos(delta) + Iq * sin(delta);
 
+}
+
+double GenrouGen::getFieldCurrent()
+{
+    double Vdterm = VD * sin(delta) - VQ * cos(delta);
+    double Vqterm = VD * cos(delta) + VQ * sin(delta);
+
+    double tempd1,tempd2,tempq1,tempq2;
+    tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+    tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+    tempq1 = (Xdpp - Xl)/(Xqp - Xl);
+    tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
+
+    // dq Axis currents
+    Id = (tempd1*Eqp + tempd2*Psidp - Vqterm)/Xdpp;
+    Iq = (tempq1*Edp - tempq2*Psiqp - Vdterm)/-Xdpp;
+
+    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
+
+    // Field current 
+    double LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
+
+    return LadIfd;
 }
 
 /**
