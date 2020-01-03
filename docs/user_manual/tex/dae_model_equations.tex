@@ -238,7 +238,7 @@ Here, the intermediate variables used in the calculations are as follows:
     y_{LL2} = x_{LL2} + \dfrac{T_{c1}}{T_{b1}}y_{LL1},&\text{if}~~T_{b1} > 0 \\
     y_{LL2} = x_{LL2},&\text{if}~~T_{b1} = 0 \\
   \end{cases}& \\
-  &u_{FB}  = V_A - \min(K_{LR}(I_{FD} - I_{LR}),0)& \\
+  &u_{FB}  = V_A - \max(K_{LR}(I_{FD} - I_{LR}),0)& \\
   &V_F     = x_F + \dfrac{K_F}{T_F}u_{FB}&   
 \end{align*}
 
