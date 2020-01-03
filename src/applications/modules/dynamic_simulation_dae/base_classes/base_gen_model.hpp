@@ -24,6 +24,7 @@
 #include <base_gov_model.hpp>
 
 class BaseExcModel; // Forward declaration for BaseExcModel
+class BaseGovModel; // Forward declaration for BaseGovModel
 
 class BaseGenModel : public gridpack::component::BaseComponent
 {
@@ -156,9 +157,15 @@ to be overwritten by the implementation */
    */
   virtual double getFieldCurrent(void);
 
+  /**
+   * Return the rotor speed deviation
+   * @param rotor speed deviation 
+   */
+  virtual double getRotorSpeedDeviation();
+
   /***************************************/
 
-  // SJin: add new methods for exciter and governor
+
   void setExciter(boost::shared_ptr<BaseExcModel> &p_exciter);
 
   boost::shared_ptr<BaseExcModel> getExciter();

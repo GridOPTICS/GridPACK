@@ -114,7 +114,11 @@ class GensalGen: public BaseGenModel
      */
     bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
+    /* Return the field current */ 
     double getFieldCurrent();
+
+    /* Return rotor speed deviation */ 
+    double getRotorSpeedDeviation();
   private:
     // Machine parameters
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl;

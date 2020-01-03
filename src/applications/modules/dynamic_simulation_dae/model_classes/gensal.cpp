@@ -184,7 +184,6 @@ void GensalGen::init(gridpack::ComplexType* values)
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setInitialMechanicalPower(Pmech);
-    p_governor->setRotorSpeedDeviation(dw);
   }
 
 }
@@ -276,10 +275,6 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
     values[Psidp_idx] = Psidp - Psidpprev;
     values[Psiqpp_idx] = Psiqpp - Psiqppprev;
 
-    if (p_hasGovernor) {
-      p_governor->setRotorSpeedDeviation(dw);
-    }
-
   } else if(p_mode == RESIDUAL_EVAL) {
     if (p_hasExciter) {
       p_exciter = getExciter();
@@ -315,10 +310,6 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
 
   }
 
-  if (p_hasGovernor) {
-    p_governor->setRotorSpeedDeviation(dw);
-  }
-  
   return true;
 }
 
@@ -340,6 +331,11 @@ void GensalGen::getCurrent(double *IGD, double *IGQ)
   // Generator current injections in the network
   *IGD =   Id * sin(delta) + Iq * cos(delta);
   *IGQ =  -Id * cos(delta) + Iq * sin(delta);
+}
+
+double GensalGen::getRotorSpeedDeviation()
+{
+  return dw;
 }
 
 double GensalGen::getFieldCurrent()

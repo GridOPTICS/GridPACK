@@ -7,7 +7,7 @@
     <generatorParameters>IEEE_145b_classical_model.dyr</generatorParameters>
 -->
     <simulationTime>10.0</simulationTime>
-    <timeStep>0.001</timeStep>
+    <timeStep>0.01</timeStep>
     <faultbus>1</faultbus>
     <faultontime>1</faultofftime>
     <faultofftime>1.05</faultofftime>

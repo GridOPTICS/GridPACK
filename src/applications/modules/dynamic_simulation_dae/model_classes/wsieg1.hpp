@@ -103,12 +103,6 @@ class Wsieg1Gov: public BaseGovModel
      */
     virtual void setInitialMechanicalPower(double pmech);
 
-    /**
-     * Set the rotor speed deviation inside the governor
-     * @param dw value of the rotor speed deviation 
-     */
-    virtual void setRotorSpeedDeviation(double dw);
-
     /** 
      * Get the value of the mechanical power parameter
      * @return value of the mechanical power 
@@ -151,7 +145,6 @@ class Wsieg1Gov: public BaseGovModel
 
   // Inputs
   double Pref;
-  double dw;
 
   int iseq_diff[6];   
 

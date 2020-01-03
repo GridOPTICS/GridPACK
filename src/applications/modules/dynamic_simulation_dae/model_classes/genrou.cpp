@@ -185,7 +185,6 @@ void GenrouGen::init(gridpack::ComplexType* values)
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setInitialMechanicalPower(Pmech);
-    p_governor->setRotorSpeedDeviation(dw);
   }
 }
 
@@ -286,9 +285,6 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     values[Psiqp_idx] = Psiqp - Psiqpprev;
     values[Edp_idx] = Edp - Edpprev;
 
-    if (p_hasGovernor) {
-      p_governor->setRotorSpeedDeviation(dw);
-    }
   } else if(p_mode == RESIDUAL_EVAL) {
 
     if (p_hasExciter) {
@@ -344,9 +340,6 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (Psiqp + (Xqp - Xl) * Iq + Edp);
     values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dEdp; 
 
-    if (p_hasGovernor) {
-      p_governor->setRotorSpeedDeviation(dw);
-    }
   }
   
   return true;
@@ -377,6 +370,11 @@ void GenrouGen::getCurrent(double *IGD, double *IGQ)
   *IGD = + Id * sin(delta) + Iq * cos(delta);
   *IGQ = - Id * cos(delta) + Iq * sin(delta);
 
+}
+
+double GenrouGen::getRotorSpeedDeviation()
+{
+  return dw;
 }
 
 double GenrouGen::getFieldCurrent()

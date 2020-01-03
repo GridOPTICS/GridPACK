@@ -126,6 +126,16 @@ double BaseGenModel::getFieldCurrent()
 }
 
 /**
+ * Return the rotor speed deviation
+ * @param 
+ */
+double BaseGenModel::getRotorSpeedDeviation()
+{
+  return 0.0;
+}
+
+
+/**
  * Return the matrix entries
  * @param [output] nval - number of values set
  * @param [output] row - row indices for matrix entries

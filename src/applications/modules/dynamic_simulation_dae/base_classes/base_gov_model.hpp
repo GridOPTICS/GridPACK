@@ -7,7 +7,8 @@
 /**
  * @file   base_gov_model.hpp
  * @author Shuangshuang Jin 
- * @Last modified:   10/02/19
+ * @author Shrirang Abhyankar
+ * @Last modified:   01/02/20
  * 
  * @brief  
  * 
@@ -20,6 +21,9 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/component/base_component.hpp"
 #include <constants.hpp>
+#include <base_gen_model.hpp>
+
+class BaseGenModel; // Forward declaration for BaseGenModel
 
 class BaseGovModel : public gridpack::component::BaseComponent
 {
@@ -140,12 +144,6 @@ to be overwritten by the implementation */
    */
   virtual void setInitialMechanicalPower(double pmech);
 
-  /**
-   * Set the rotor speed deviation parameter inside the governor
-   * @param rotor speed deviation 
-   */
-  virtual void setRotorSpeedDeviation(double w);
-  
   /** 
    * Get the value of the mechanical power parameter
    * @return value of the mechanical power 
@@ -158,10 +156,15 @@ to be overwritten by the implementation */
    */
   virtual void setVcomp(double vtmp);
   
+  void setGenerator(BaseGenModel* generator);
+
+  BaseGenModel* getGenerator(void);
 protected:
   double        VD, VQ;
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
+
+  BaseGenModel *p_gen;
 };
 
 #endif

@@ -6,8 +6,9 @@
 // -------------------------------------------------------------
 /**
  * @file   wsieg1.cpp
- * @author Shuangshuang Jin 
- * @Last modified:   10/19/19
+ * @author Shuangshuang Jin
+ * @author Shrirang Abhyankar
+ * @Last modified:   01/02/20
  *  
  * @brief  
  *
@@ -119,6 +120,8 @@ void Wsieg1Gov::load(const boost::shared_ptr<gridpack::component::DataCollection
  */
 void Wsieg1Gov::init(gridpack::ComplexType* values) 
 {
+  BaseGenModel* gen=getGenerator();
+  double dw = gen->getRotorSpeedDeviation();
   ///printf("wsieg1: Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);
   double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
@@ -237,6 +240,9 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
   int x5_idx = 4;
   int x6_idx = 5;
   double yLL;
+  BaseGenModel* gen=getGenerator();
+  double dw = gen->getRotorSpeedDeviation();
+
   // On fault (p_mode == FAULT_EVAL flag), the governor variables are held constant. This is done by setting the vector values of residual function to 0.0.
   if(p_mode == FAULT_EVAL) {
     if(iseq_diff[x1_idx]) values[x1_idx] = xLL - xLLprev; 
@@ -321,15 +327,6 @@ void Wsieg1Gov::setInitialMechanicalPower(double Pmech0)
   Pmech1 = Pmech0;
   Pmech2 = Pmech0;
   //printf("Pmech1 in WSIEG1 = %f\n", pmech);
-}
-
-/**
- * Set the rotor speed deviation inside the governor
- * @param w0 value of the rotor speed deviation 
- */
-void Wsieg1Gov::setRotorSpeedDeviation(double dwin)
-{
-  dw = dwin;
 }
 
 /** 

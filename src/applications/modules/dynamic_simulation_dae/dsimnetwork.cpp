@@ -235,6 +235,7 @@ void DSimBus::load(const
           if (type == "WSIEG1") { // SJin: newly added WSIEG1 governor model object 
             Wsieg1Gov *w1Gov;
             w1Gov = new Wsieg1Gov;
+	    w1Gov->setGenerator(p_gen[i]);
             boost::shared_ptr<BaseGovModel> gv;
             gv.reset(w1Gov);
             p_gen[i]->setGovernor(gv);

@@ -113,7 +113,11 @@ class GenrouGen: public BaseGenModel
      */
     bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
+    /* return field current */
     double getFieldCurrent();
+
+    /* return rotor speed deviation */
+    double getRotorSpeedDeviation();
   private:
     // Machine parameters
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;

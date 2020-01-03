@@ -137,14 +137,6 @@ void BaseGovModel::setInitialMechanicalPower(double pmech)
 {
 }
 
-/**
- * Set the rotor speed deviation parameter inside the governor
- * @param dw value of the rotor speed deviation
- */
-void BaseGovModel::setRotorSpeedDeviation(double dw)
-{
-}
-
 /** 
  * Get the value of the mechanical power parameter
  * @return value of the mechanical power
@@ -162,5 +154,13 @@ void BaseGovModel::setVcomp(double Vcomp)
 {
 }
 
+void BaseGovModel::setGenerator(BaseGenModel *generator)
+{
+  p_gen = generator;
+}
 
+BaseGenModel* BaseGovModel::getGenerator(void)
+{
+  return p_gen;
+}
  
