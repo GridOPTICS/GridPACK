@@ -158,23 +158,10 @@ to be overwritten by the implementation */
    */
   virtual void setVcomp(double vtmp);
   
-  /**
-   * Set the value of the time step
-   * @return value of the time step
-   */
-  virtual void setInitialTimestep(double timestep);
-  
-  /**
-   * Set the value of the time increment 
-   * @return value of the time increment
-   */
-  //virtual void setTimeincrement(double timeincrement);
-  
 protected:
   double        VD, VQ;
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
-  double        dt0;
 };
 
 #endif

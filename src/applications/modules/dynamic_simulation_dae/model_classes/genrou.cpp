@@ -186,7 +186,6 @@ void GenrouGen::init(gridpack::ComplexType* values)
     p_governor = getGovernor();
     p_governor->setInitialMechanicalPower(Pmech);
     p_governor->setRotorSpeedDeviation(dw);
-    p_governor->setInitialTimestep(0.01); // SJin: to be read from input file
   }
 }
 
