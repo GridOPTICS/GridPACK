@@ -178,7 +178,6 @@ void GenrouGen::init(gridpack::ComplexType* values)
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
-    p_exciter->setInitialTimeStep(0.01); // SJin: to be read from input file
   }
     
   // Initialize governor mechanical power and speed deviation

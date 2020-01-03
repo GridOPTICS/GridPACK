@@ -147,14 +147,6 @@ double BaseExcModel::getFieldVoltage()
   return 0.0;
 }
 
-/**
- * Set initial time step
- */
-void BaseExcModel::setInitialTimeStep(double timestep)
-{
-    dt0 = timestep;
-}
-
 void BaseExcModel::setGenerator(BaseGenModel *generator)
 {
   p_gen = generator;

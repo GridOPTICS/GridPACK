@@ -155,11 +155,6 @@ to be overwritten by the implementation */
    */
   virtual double getFieldVoltage();
 
-  /**
-   * Set initial time step
-   */
-  void setInitialTimeStep(double timestep);
-
   void setGenerator(BaseGenModel* generator);
 
   BaseGenModel* getGenerator();
@@ -168,9 +163,7 @@ protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
-  double        dt0;
-
-  BaseGenModel* p_gen;
+  BaseGenModel* p_gen; // Generator model
 
 };
 

@@ -178,7 +178,6 @@ void GensalGen::init(gridpack::ComplexType* values)
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
-    p_exciter->setInitialTimeStep(0.01);
   }
 
   p_hasGovernor = getphasGovernor();
