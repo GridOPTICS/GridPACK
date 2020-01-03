@@ -178,7 +178,6 @@ void GensalGen::init(gridpack::ComplexType* values)
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
-    //    p_exciter->setFieldCurrent(Efd);
     p_exciter->setInitialTimeStep(0.01);
   }
 
@@ -318,10 +317,6 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
 
   }
 
-  if (p_hasExciter) {
-    //    p_exciter->setFieldCurrent(LadIfd);
-  }
-      
   if (p_hasGovernor) {
     p_governor->setRotorSpeedDeviation(dw);
   }

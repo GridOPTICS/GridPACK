@@ -178,7 +178,6 @@ void GenrouGen::init(gridpack::ComplexType* values)
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
-    //    p_exciter->setFieldCurrent(LadIfd);
     p_exciter->setInitialTimeStep(0.01); // SJin: to be read from input file
   }
     
@@ -347,10 +346,6 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (Psiqp + (Xqp - Xl) * Iq + Edp);
     values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dEdp; 
 
-    if (p_hasExciter) {
-      //      p_exciter->setFieldCurrent(LadIfd);
-    }
-      
     if (p_hasGovernor) {
       p_governor->setRotorSpeedDeviation(dw);
     }
