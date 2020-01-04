@@ -85,8 +85,8 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GENERATOR_TDOP, &Tdop, idx)) Tdop=0.0; // Tdop
   if (!data->getValue(GENERATOR_TDOPP, &Tdopp, idx)) Tdopp=0.0; // Tdopp
   if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tqopp=0.0; // Tqopp
-  if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
-  if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 TBD: check parser
+  if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.067; // S10 TBD: check parser
+  if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.579; // S12 TBD: check parser
   if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
   if (!data->getValue(GENERATOR_XDPP, &Xqpp, idx)) Xqpp=0.0; // Xqpp // SJin: no GENERATOR_XQPP in dictionary.hpp, read XDPP instead (Xqpp = Xdpp)
   if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
@@ -106,22 +106,29 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
 
   B = -Xdpp/(Ra*Ra + Xdpp*Xdpp);
   G = Ra/(Ra*Ra + Xdpp*Xdpp);
+
+  // Saturation constants
+  double temp = sqrt(S10/(1.2*S12));
+  sat_A = (1.0 - temp*1.2)/(1-temp);
+  sat_B = S10/((1.0 - sat_A)*(1.0 - sat_A));
 }
 
 /**
  * Saturation function
  * @ param x
  */
-double GenrouGen::Sat(double x)
+/** Note: The saturation function is currently disabled as it needs a slightly
+    complicated process for initialization. This process involves solving a set
+    of nonlinear equations simultaneously to initialize the generator variables.
+    This initialization is not implemented, hence the saturation function is disabled.
+**/
+double GenrouGen::Sat(double Psidpp,double Psiqpp)
 {
-    double a_ = S12 / S10 - 1.0 / 1.2;
-    double b_ = -2 * S12 / S10 + 2;
-    double c_ = S12 / S10 - 1.2;
-    double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
-    double B_ = S10 / ((1.0 - A) * (1.0 - A));
-    double result = B_ * (x - A) * (x - A) / x;
-    //  return result; // Scaled Quadratic with 1.7.1 equations
-    return 0.0;
+  double Psipp = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
+  double result = sat_B * (Psipp - sat_A) * (Psipp - sat_A) /Psipp;
+  if(Psipp < sat_A) result = 0.0;
+  //  return result;
+  return 0.0; // disabled the saturation effect
 }
 
 /**
@@ -162,6 +169,7 @@ void GenrouGen::init(gridpack::ComplexType* values)
 
   Psidpp = Vq;
   Psiqpp = -Vd;
+  double Psipp = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
 
   Psid = Psidpp - Id*Xdpp;
   Psiq = Psiqpp - Iq*Xdpp;
@@ -169,10 +177,10 @@ void GenrouGen::init(gridpack::ComplexType* values)
   Psidp = Psidpp - (Xdpp - Xl)*Id;
   Eqp   = Psidp  + (Xdp - Xl)*Id;
 
-  Edp = (Xq - Xqp)*Iq;
+  Edp = (Xq - Xqp)*Iq - (Xq - Xl)/(Xd - Xl)*Psiqpp*Sat(Psidpp,Psiqpp)/Psipp;
   Psiqp = Edp + (Xqp - Xl)*Iq;
 
-  Efd = Eqp + (Xd - Xdp)*Id;
+  Efd = Eqp + (Xd - Xdp)*Id  + Psidpp*Sat(Psidpp,Psiqpp)/Psipp;;
 
   LadIfd = Efd;
   Pmech = P;
@@ -322,6 +330,7 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
 
     double Psidpp =  tempd1*Eqp + tempd2*Psidp;
     double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
+    double Psipp  = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
 
     double Vd = -Psiqpp*(1 + dw);
     double Vq =  Psidpp*(1 + dw);
@@ -334,8 +343,7 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     double Telec = Psidpp*Iq - Psiqpp*Id;
 
     // Field current
-    double temp = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl))*(Eqp - Psidp - (Xdp - Xl)*Id);
-    double LadIfd = Eqp + (Xd - Xdp)*(Id + temp);
+    double LadIfd = getFieldCurrent();
 
     // RESIDUAL_EVAL for state 1 to 6
     // Machine rotor angle
@@ -356,7 +364,7 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
 
     // D-axis transient EMF
     double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (-Psiqp + (Xqp - Xl) * Iq + Edp);
-    values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dEdp; 
+    values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)  + (Xq - Xl)/(Xd - Xl)*Psiqpp*Sat(Psidpp,Psiqpp)/Psipp) / Tqop - dEdp; 
 
   }
   
@@ -415,6 +423,7 @@ double GenrouGen::getFieldCurrent()
   
   double Psidpp =  tempd1*Eqp + tempd2*Psidp;
   double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
+  double Psipp  = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
   
   double Vd = -Psiqpp*(1 + dw);
   double Vq =  Psidpp*(1 + dw);
@@ -425,7 +434,7 @@ double GenrouGen::getFieldCurrent()
 
   // Field current
   double temp = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl))*(Eqp - Psidp - (Xdp - Xl)*Id);
-  double LadIfd = Eqp + (Xd - Xdp)*(Id + temp);
+  double LadIfd = Eqp + (Xd - Xdp)*(Id + temp) +  Psidpp*Sat(Psidpp,Psiqpp)/Psipp;
 
   return LadIfd;
 

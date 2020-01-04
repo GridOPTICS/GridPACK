@@ -44,12 +44,6 @@ class GenrouGen: public BaseGenModel
         data, int idx);
 
     /**
-     * Saturation function
-     * @ param x
-     */
-    double Sat(double x); 
-
-    /**
      * Initialize generator model before calculation
      * @param [output] values - array where initialized generator variables should be set
      */
@@ -138,7 +132,16 @@ class GenrouGen: public BaseGenModel
 
     double B, G;
 
+
+    double sat_A, sat_B; // Saturation constant
     int bid;
+
+    /**
+     * Saturation function
+     * @ param x
+     */
+    double Sat(double psidpp,double psiqpp); 
+
 };
 
 #endif
