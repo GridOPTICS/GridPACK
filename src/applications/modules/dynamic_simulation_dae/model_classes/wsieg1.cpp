@@ -278,7 +278,7 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
     }
 
     // State 2 xGV
-    values[x2_idx] = Pref - xGV - yLL -dxGV;
+    values[x2_idx] = fmin(fmax(Uc,(Pref - xGV - yLL)/T3),Uo) -dxGV;
 
     // State 3 xT1
     if(iseq_diff[x3_idx]) values[x3_idx] = (xGV - xT1)/T4 - dxT1;
