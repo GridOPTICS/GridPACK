@@ -82,6 +82,64 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 
 \subsection{GENROU}
 
+\begin{enumerate}
+	\item $E_{fd}$: Exciter field voltage
+	\item $P_{mech}$: Turbine-governor mechanical power
+\end{enumerate}
+
+\subsubsection{Variables}
+\begin{enumerate}
+  \item ${\delta}$: Rotor Angle
+  \item ${\dw}$: Rotor Speed 
+  \item $E^{'}_q$: Transient q-axis EMF
+  \item $E^{'}_d$: Transient d-axis EMF
+  \item $\psi^{'}_d$: Transient D axis flux
+  \item $\psi^{'}_q$: Transient Q axis flux 
+\end{enumerate}
+
+\subsubsection{Equations}
+\begin{flalign}
+&\frac{1}{\omega_s}\frac{d{\delta}}{dt}={\Delta\omega}&\\
+&\frac{1}{2H}\frac{d{\Delta\omega}}{dt} = \frac{P_{mech}-D*{\Delta\omega}}{1+{\Delta\omega}}-T_{elec}&\\
+&T^{'}_{do}\frac{dE^{'}_q}{dt}= E_{fd} - L_{ad}I_{fd}&\\
+\nonumber  &T^{'}_{qo}\frac{dE^{'}_d}{dt}= (X_q - X^{'}_q)\left( I_q -\frac{X^{'}_q - X^{''}_q}{(X^{'}_q - X_l)^2}(E^{'}_d +(X^{'}_q - X_l)I_q - \psi^{'}_q)\right) -&\\ &\qquad E^{'}_d + \frac{X_q - X_l}{X_d - X_l}\psi^{''}_q\frac{Sat(\sqrt{\psi^{''}_d + \psi^{''2}_q})}{\sqrt{\psi^{''}_d + \psi^{''2}_q}}
+&\\
+&T^{''}_{do}\frac{d\psi^{'}_d}{dt} = E^{'}_q   - \psi^{'}_d  - (X^{'}_{d}-X_{l})I_d&\\
+&{T^{''}_{qo}}\frac{d\psi^{'}_q}{dt} = E^{'}_d - \psi^{'}_q  + (X^{'}_q-X_{l})I_q&
+\end{flalign}
+
+\subsubsection{Outputs}
+\begin{enumerate}
+	\item Generator currents
+\begin{align}
+  &I_{GR} = I_d \sin ({\delta}) + I_q \cos ({\delta})&\\
+  &I_{GI} = -I_d \cos ({\delta}) + I_q \sin ({\delta})&
+\end{align}
+	\item Field current
+\begin{flalign*}
+L_{ad}I_{fd} = &E^{'}_q + (X_d-X^{'}_{d})\left(I_d + \dfrac{X^{'}_d - X^{"}_d}{(X^{'}_d-X_{l})^2}\left(E^{'}_q - \psi^{'}_d - (X^{'}_d - X_l)I_d\right)\right) + \\ 
+&\psi^{''}_d\frac{Sat(\sqrt{\psi^{''}_d + \psi^{''2}_q})}{\sqrt{\psi^{''}_d + \psi^{''2}_q}}
+ %L_{ad}I_{fd} = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left[ \dfrac{X_d - X^{"}_d}{X_d-X_{l}^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right]
+ % L_{ad}I_{fd}=E^{'}_q+(X_d-X_{d})*(I_d+T_{empD})&\\
+\end{flalign*}
+\end{enumerate}
+
+The intermediate variables used in the above calculations are as follows:
+\begin{align*}
+  &B = \dfrac{-X^{''}_d}{R^2_a + X^{''2}_d}&\\
+ &G = \dfrac{R_a}{R^2_a+X^{''2}_d}&\\
+ &\psi^{"}_{d}=\dfrac{(X^{''}_d-X_l)}{(X^{'}_d-X_l)}E^{'}_q + \dfrac{(X^{'}_d-X^{''}_d)}{(X^{'}_d-X_l)}\psi^{'}_d&\\
+ &\psi^{"}_{q}=-\dfrac{(X^{''}_q-X_l)}{(X^{'}_q-X_l)}E^{'}_d - \dfrac{(X^{'}_q-X^{''}_q)}{(X^{'}_q-X_l)}\psi^{'}_q&\\
+  &V_d=-\psi^{''}_{q}(1+{\Delta\omega})&\\
+  &V_q=\psi^{''}_{d}(1+{\dw})&\\
+  &V_{dterm} = V_R\sin({\delta})+V_I\cos({\delta})&\\
+  &V_{qterm} = V_R\cos({\delta})+V_I\sin({\delta})&\\
+  &I_d = (V_d-V_{dterm})G-(V_q-V_{qterm})B&\\
+  &I_q = (V_d-V_{dterm})B+(V_q-V_{qterm})G& \\
+   &T_{elec}=\psi^{''}_{d}I_q-\psi^{''}_{q}I_d&
+  \end{align*}
+
+
 \subsection{GENSAL}
 
 \subsubsection{Inputs}
@@ -103,7 +161,7 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 \begin{flalign}
 &\frac{1}{\omega_s}\frac{d{\delta}}{dt}={\Delta\omega}&\\
 &\frac{1}{2H}\frac{d{\Delta\omega}}{dt} = \frac{P_{mech}-D*{\Delta\omega}}{1+{\Delta\omega}}-T_{elec}&\\
-&T_{dop}\frac{dE^{'}_q}{dt}= E_{fd} - L_{ad}I_{fd}&\\
+&T^{'}_{do}\frac{dE^{'}_q}{dt}= E_{fd} - L_{ad}I_{fd}&\\
 &T^{''}_{do}\frac{d\psi^{'}_d}{dt} = -\psi^{'}_d-(X_{d}'-X_{l})I_d+E^{'}_q&\\
 &{T^{''}_{qo}}\frac{d\psi^{''}_q}{dt} = -\psi^{''}_q-(X_q-X^{''}_{q})I_q&
 \end{flalign}
@@ -117,7 +175,7 @@ Note: In the GridPACK implementation, the speed effects mimicing governor reacti
 \end{align}
 	\item Field current
 \begin{equation}
- L_{ad}I_{fd} = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left[ \dfrac{X_d - X^{"}_d}{X_d-X_{l}^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right]
+ L_{ad}I_{fd} = E^{'}_q + f_{sat}(E^{'}_q) +(X_d-X^{'}_{d})\left( \dfrac{X_d - X^{"}_d}{(X_d-X_{l})^2}\left(E^{'}_q - \psi^{'}_d - I_d(X^{'}_d - X_l)\right) + I_d\right)
  % L_{ad}I_{fd}=E^{'}_q+(X_d-X_{d})*(I_d+T_{empD})&\\
 \end{equation}
 \end{enumerate}
