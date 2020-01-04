@@ -350,7 +350,16 @@ void Esst1aExc::setInitialFieldVoltage(double fldv)
  */
 double Esst1aExc::getFieldVoltage()
 {
+  double VT = sqrt(VD*VD + VQ*VQ);
+  double Vmin = VT*Vrmin;
+  double Vmax;
+  double fdv;
   BaseGenModel* gen = getGenerator();
   LadIfd = gen->getFieldCurrent();
-  return Va - Klr*(LadIfd - Ilr); // should be actually max(0,Klr*(LadIfd - Ilr));
+  Vmax = VT*Vrmax - Kc*LadIfd;
+  
+  Efd = Va - fmax(0,Klr*(LadIfd - Ilr)); // should be actually max(0,Klr*(LadIfd - Ilr));
+  fdv = fmin(fmax(Efd,Vmin),Vmax);
+
+  return fdv;
 }
