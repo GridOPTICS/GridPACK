@@ -7,8 +7,7 @@
 /**
  * @file   genrou.cpp
  * @author Shuangshuang Jin 
- *
-   @author Shrirang Abhyankar
+ * @author Shrirang Abhyankar
  * @Last modified:   12/30/19
  *  
  * @brief  
@@ -121,8 +120,8 @@ double GenrouGen::Sat(double x)
     double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
     double B_ = S10 / ((1.0 - A) * (1.0 - A));
     double result = B_ * (x - A) * (x - A) / x;
-    return result; // Scaled Quadratic with 1.7.1 equations
-
+    //  return result; // Scaled Quadratic with 1.7.1 equations
+    return 0.0;
 }
 
 /**
@@ -136,6 +135,9 @@ void GenrouGen::init(gridpack::ComplexType* values)
   double Ir,Ii;
   double P, Q; // Generator real and reactive power
   double Vd,Vq;
+  double Psid,Psiq,Psidpp,Psiqpp;
+  double Eppr,Eppi,Vdterm,Vqterm;
+
   P = pg / mbase;
   Q = qg / mbase;
 
@@ -147,25 +149,35 @@ void GenrouGen::init(gridpack::ComplexType* values)
   delta = atan2(VQ + Ir * Xq + Ii * Ra, VD + Ir * Ra - Ii * Xq);
   dw = 0.0;
 
-  theta = PI/2.0 - delta; // Rotor angle lags quadrature axis by 90 deg.
+  theta = delta - PI/2.0; // Rotor angle lags quadrature axis by 90 deg.
 
-  // Generator currents in dq axis reference frame
-  Id = Ir * cos(theta) - Ii * sin(theta); // convert values to the dq axis
-  Iq = Ir * sin(theta) + Ii * cos(theta); // convert values to the dq axis
+  Eppr = VD + Ra * Ir - Xdpp * Ii; // internal voltage on network reference
+  Eppi = VQ + Ra * Ii + Xdpp * Ir; // internal voltage on network reference
+  Vd = Eppr * cos(theta) + Eppi * sin(theta); // convert to dq reference
+  Vq = Eppr *-sin(theta) + Eppi * cos(theta); // convert to dq reference
+  Vdterm = VD*cos(theta) + VQ*sin(theta);
+  Vqterm = VD*-sin(theta) + VQ*cos(theta);
+  Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+  Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
 
-  Vd = VD * cos(theta) - VQ * sin(theta); // convert to dq reference
-  Vq = VD * sin(theta) + VQ * cos(theta); // convert to dq reference
+  Psidpp = Vq;
+  Psiqpp = -Vd;
 
-  Eqp = Vq + Xdp*Id;
-  Edp = Vd - Xqp*Iq;
+  Psid = Psidpp - Id*Xdpp;
+  Psiq = Psiqpp - Iq*Xdpp;
 
-  Psidp =  Eqp - Id * (Xdp - Xl);
-  Psiqp = -Edp - Iq * (Xqp - Xl);
+  Psidp = Psidpp - (Xdpp - Xl)*Id;
+  Eqp   = Psidp  + (Xdp - Xl)*Id;
 
-  Efd = Eqp * (1 + Sat(Eqp)) + Id * (Xd - Xdp);
+  Edp = (Xq - Xqp)*Iq;
+  Psiqp = Edp + (Xqp - Xl)*Iq;
+
+  Efd = Eqp + (Xd - Xdp)*Id;
+
   LadIfd = Efd;
   Pmech = P;
 
+  double Telec = Psidpp*Iq - Psiqpp*Id;
   values[0] = delta;
   values[1] = dw;
   values[2] = Eqp;
@@ -298,9 +310,9 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     }
 
     // Generator equations
-
-    double Vdterm = VD * sin(delta) - VQ * cos(delta);
-    double Vqterm = VD * cos(delta) + VQ * sin(delta);
+    double theta = delta - PI/2.0;
+    double Vdterm = VD * cos(theta) + VQ * sin(theta);
+    double Vqterm = VD *-sin(theta) + VQ * cos(theta);
 
     double tempd1,tempd2,tempq1,tempq2;
     tempd1 = (Xdpp - Xl)/(Xdp - Xl);
@@ -308,17 +320,22 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     tempq1 = (Xdpp - Xl)/(Xqp - Xl);
     tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
 
+    double Psidpp =  tempd1*Eqp + tempd2*Psidp;
+    double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
+
+    double Vd = -Psiqpp*(1 + dw);
+    double Vq =  Psidpp*(1 + dw);
+
     // dq Axis currents
-    Id = (tempd1*Eqp + tempd2*Psidp - Vqterm)/Xdpp;
-    Iq = (tempq1*Edp - tempq2*Psiqp - Vdterm)/-Xdpp;
+    Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+    Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
 
     // Electrical torque
-    double Telec = tempd1*Eqp*Iq + tempd2*Psidp*Iq + tempq1*Edp*Id - tempq2*Psiqp*Id; 
+    double Telec = Psidpp*Iq - Psiqpp*Id;
 
-    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
-
-    // Field current 
-    LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
+    // Field current
+    double temp = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl))*(Eqp - Psidp - (Xdp - Xl)*Id);
+    double LadIfd = Eqp + (Xd - Xdp)*(Id + temp);
 
     // RESIDUAL_EVAL for state 1 to 6
     // Machine rotor angle
@@ -326,6 +343,7 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
 
     // Speed
     values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; // Pmech can be called from Governor
+    //    values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) - Telec) - ddw; // Ignoring speed effects
 
     // Q-axis transient EMF
     values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp; 
@@ -334,10 +352,10 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
     values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
     
     // Q-axis transient flux
-    values[Psiqp_idx] = (-Psiqp - (Xqp - Xl) * Iq - Edp) / Tqopp - dPsiqp;
+    values[Psiqp_idx] = (-Psiqp + (Xqp - Xl) * Iq + Edp) / Tqopp - dPsiqp;
 
     // D-axis transient EMF
-    double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (Psiqp + (Xqp - Xl) * Iq + Edp);
+    double TempQ = (Xqp - Xqpp) / ((Xqp - Xl) * (Xqp - Xl)) * (-Psiqp + (Xqp - Xl) * Iq + Edp);
     values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)) / Tqop - dEdp; 
 
   }
@@ -352,23 +370,29 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
 */
 void GenrouGen::getCurrent(double *IGD, double *IGQ)
 {
-  double Vm = VD*VD + VQ*VQ;
+    double theta = delta - PI/2.0;
+    double Vdterm = VD * cos(theta) + VQ * sin(theta);
+    double Vqterm = VD *-sin(theta) + VQ * cos(theta);
 
-  double Vdterm = VD * sin(delta) - VQ * cos(delta);
-  double Vqterm = VD * cos(delta) + VQ * sin(delta);
+    double tempd1,tempd2,tempq1,tempq2;
+    tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+    tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+    tempq1 = (Xdpp - Xl)/(Xqp - Xl);
+    tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
 
-  double tempd1,tempd2,tempq1,tempq2;
-  tempd1 = (Xdpp - Xl)/(Xdp - Xl);
-  tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
-  tempq1 = (Xdpp - Xl)/(Xqp - Xl);
-  tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
-  // dq Axis currents
-  Id = (tempd1*Eqp + tempd2*Psidp - Vqterm)/Xdpp;
-  Iq = (tempq1*Edp - tempq2*Psiqp - Vdterm)/-Xdpp;
+    double Psidpp =  tempd1*Eqp + tempd2*Psidp;
+    double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
 
-  // Generator current injections in the network
-  *IGD = + Id * sin(delta) + Iq * cos(delta);
-  *IGQ = - Id * cos(delta) + Iq * sin(delta);
+    double Vd = -Psiqpp*(1 + dw);
+    double Vq =  Psidpp*(1 + dw);
+
+    // dq Axis currents
+    Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+    Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
+
+    // Generator current injections in the network
+    *IGD = + Id * cos(theta) - Iq * sin(theta);
+    *IGQ =   Id * sin(theta) + Iq * cos(theta);
 
 }
 
@@ -379,25 +403,33 @@ double GenrouGen::getRotorSpeedDeviation()
 
 double GenrouGen::getFieldCurrent()
 {
-    double Vdterm = VD * sin(delta) - VQ * cos(delta);
-    double Vqterm = VD * cos(delta) + VQ * sin(delta);
+  double theta = delta - PI/2.0;
+  double Vdterm = VD * cos(theta) + VQ * sin(theta);
+  double Vqterm = VD *-sin(theta) + VQ * cos(theta);
+  
+  double tempd1,tempd2,tempq1,tempq2;
+  tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+  tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+  tempq1 = (Xdpp - Xl)/(Xqp - Xl);
+  tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
+  
+  double Psidpp =  tempd1*Eqp + tempd2*Psidp;
+  double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
+  
+  double Vd = -Psiqpp*(1 + dw);
+  double Vq =  Psidpp*(1 + dw);
 
-    double tempd1,tempd2,tempq1,tempq2;
-    tempd1 = (Xdpp - Xl)/(Xdp - Xl);
-    tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
-    tempq1 = (Xdpp - Xl)/(Xqp - Xl);
-    tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
+  // dq Axis currents
+  Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+  Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
 
-    // dq Axis currents
-    Id = (tempd1*Eqp + tempd2*Psidp - Vqterm)/Xdpp;
-    Iq = (tempq1*Edp - tempq2*Psiqp - Vdterm)/-Xdpp;
+  // Field current
+  double temp = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl))*(Eqp - Psidp - (Xdp - Xl)*Id);
+  double LadIfd = Eqp + (Xd - Xdp)*(Id + temp);
 
-    double TempD = (Xdp - Xdpp) / ((Xdp - Xl) * (Xdp - Xl)) * (-Psidp - (Xdp - Xl) * Id + Eqp);
+  return LadIfd;
 
-    // Field current 
-    double LadIfd = Eqp * (1 + Sat(Eqp)) + (Xd - Xdp) * (Id + TempD);
 
-    return LadIfd;
 }
 
 /**
