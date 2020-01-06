@@ -1002,6 +1002,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     while (checkTie) {
       p_rating += 0.05;
       if (!adjustRating(p_rating,0)) {
+        printf("Rating capacity exceeded: %f\n",p_rating);
         p_rating -= 0.05;
         p_pf_app.resetRealPower();
         break;
@@ -1033,7 +1034,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     while (!checkTie && p_rating >= 0.0) {
       p_rating -= 0.05;
       if (!adjustRating(p_rating,0)) {
-        printf("Rating capacity exceeded: %d\n",p_rating);
+        printf("Rating capacity exceeded: %f\n",p_rating);
         p_rating += 0.05;
         p_pf_app.resetRealPower();
         break;
