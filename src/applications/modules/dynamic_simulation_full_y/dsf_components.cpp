@@ -2284,26 +2284,26 @@ void gridpack::dynamic_simulation::DSFullBus::resetRealPower()
  * Get available margin for generator
  * @param tag character ID for generator
  * @param current initial generation
- * @param slack amount generation can be reduced
- * @param excess amount generation can be increased
+ * @param pmin minimum allowable generation
+ * @param pmax maximum available generation
  * @param status current status of generator
  */
 void gridpack::dynamic_simulation::DSFullBus::getGeneratorMargins(
     std::vector<std::string> &tag,
-    std::vector<double> &current, std::vector<double> &slack,
-    std::vector<double> &excess,std::vector<int> &status)
+    std::vector<double> &current, std::vector<double> &pmin,
+    std::vector<double> &pmax,std::vector<int> &status)
 {
   tag.clear();
   current.clear();
-  slack.clear();
-  excess.clear();
+  pmin.clear();
+  pmax.clear();
   status.clear();
   int i;
   for (i=0; i<p_ngen; i++) {
     tag.push_back(p_genid[i]);
     current.push_back(p_pg[i]);
-    slack.push_back(p_pg[i]-p_gpmin[i]);
-    excess.push_back(p_gpmax[i]-p_pg[i]);
+    pmin.push_back(p_gpmin[i]);
+    pmax.push_back(p_gpmax[i]);
     status.push_back(1);
   }
 }
