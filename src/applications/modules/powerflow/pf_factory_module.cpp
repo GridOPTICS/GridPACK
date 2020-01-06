@@ -674,14 +674,14 @@ bool gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
         nsize = tags.size();
         if (scale > 1.0) {
           for (j=0; j<nsize; j++) {
-            if (static_cast<bool>(status[j])) {
+            if (status[j] != 0) {
               capacity += pmax[j]-current[j];
               total += current[j];
             }
           }
         } else {
           for (j=0; j<nsize; j++) {
-            if (static_cast<bool>(status[j])) {
+            if (status[j] != 0) {
               capacity += current[j]-pmin[j];
               total += current[j];
             }
@@ -830,7 +830,7 @@ void gridpack::powerflow::PFFactoryModule::getGeneratorMargins(int area, int zon
       std::vector<int> status;
       bus->getGeneratorMargins(tags,tcurrent,tpmin,tpmax,status);
       for (j=0; j<tcurrent.size(); j++) {
-        if (static_cast<bool>(status[j])) {
+        if (status[j] != 0) {
           *total += tcurrent[j];
           *pmin += tpmin[j];
           *pmax += tpmax[j];
