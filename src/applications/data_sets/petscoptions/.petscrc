@@ -1,0 +1,51 @@
+# These are the options to tune the solver for the implicit dynamics simulation application
+# To see the full range of options available with PETSc, run the application with -h
+# ./dsim.x -h
+# All the options prefixed with "-dsim_" are used for time-stepping and the nonlinear solver
+# associated with the time-stepper.
+# Any options that do not have the prefix are either general options OR those for the nonlinear
+# solver used for handling disturbances.
+# For disabling any options use a preceding #, i.e., comment them out.
+
+# Numerical integration scheme
+-dsim_ts_type cn # Implicit trapezoidal
+
+# Time-step adaptivity
+-dsim_ts_adapt_type none # Turned off (Use -dsim_ts_adapt_type basic to turn on adaptivity)
+
+# Tolerances for step adaptivity (only used when step adaptivity is on)
+-dsim_ts_atol 1e-2
+-dsim_ts_rtol 1e-2
+
+# Min. and max. steps (only used when step adaptivity is on)
+-dsim_ts_adapt_dt_max 0.08
+-dsim_ts_adapt_dt_min 0.01
+
+# End last time at the given final time 
+-dsim_ts_exact_final_time MATCHSTEP
+
+# Show progress of time-stepper
+-dsim_ts_monitor
+
+# Show progress of nonlinear solver during each step
+-dsim_snes_monitor
+
+# Use LU factorization as the linear solver
+-dsim_pc_type lu
+
+# Use SuperLU_Dist package for doing the linear solve (Note: PETSc must be configured with --download-superlu_dist --download-metis --download-parmetis)
+-dsim_pc_factor_mat_solver_package superlu_dist
+
+# Use finite-difference Jacobian
+-dsim_snes_fd
+
+# Save the output at each time-step
+-dsim_ts_save_trajectory
+
+# Options for the nonlinear solver used for FAULT ON/OFF
+-snes_fd
+-snes_pc_type lu
+-snes_pc_factor_mat_solver_package superlu_dist
+
+
+

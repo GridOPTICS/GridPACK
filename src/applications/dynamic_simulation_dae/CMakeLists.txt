@@ -56,94 +56,34 @@ add_executable(dsim.x
 
 target_link_libraries(dsim.x ${target_libraries})
 
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_145.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_145.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_145.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_145.xml"
-  )
-
 add_custom_command(
   OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_dsim.xml"
   -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_9b3g.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_300_cmpld.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_300_cmpld.xml"
-  )
-
-add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_3000.xml"
-  COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/ds/input_3000.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_3000.xml"
-  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_3000.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/ds/input_dsim.xml"
   )
 
 add_custom_target(dsim.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
+  ${GRIDPACK_DATA_DIR}/raw/case9.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/300bus_v23_no0imp_pslf.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/300bus_detail_model_cmpld_combine.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/bus3000_gen_no0imp_v23_pslf.raw
-  ${CMAKE_CURRENT_BINARY_DIR}
-
-  COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/dyr/classical_model_3000bus.dyr
+  ${GRIDPACK_DATA_DIR}/petscoptions/.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS 
-  ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_9b3g.xml
-  ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
-  ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml
-  ${GRIDPACK_DATA_DIR}/raw/300bus_v23_no0imp_pslf.raw
-  ${GRIDPACK_DATA_DIR}/dyr/300bus_detail_model_cmpld_combine.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_3000.xml
-  ${GRIDPACK_DATA_DIR}/raw/bus3000_gen_no0imp_v23_pslf.raw
-  ${GRIDPACK_DATA_DIR}/dyr/classical_model_3000bus.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input.xml
+  ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
 )
 
 add_dependencies(dsim.x dsim.x.input)
@@ -156,28 +96,18 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.install.in
 
 install(FILES 
   ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/input_145.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE_145bus_v23_PSLF.raw
-  ${GRIDPACK_DATA_DIR}/dyr/IEEE_145b_classical_model.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input.xml
-  ${GRIDPACK_DATA_DIR}/raw/9b3g.raw
-  ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_300_cmpld.xml
-  ${GRIDPACK_DATA_DIR}/raw/300bus_v23_no0imp_pslf.raw
-  ${GRIDPACK_DATA_DIR}/dyr/300bus_detail_model_cmpld_combine.dyr
-  ${CMAKE_CURRENT_BINARY_DIR}/input_3000.xml
-  ${GRIDPACK_DATA_DIR}/raw/bus3000_gen_no0imp_v23_pslf.raw
-  ${GRIDPACK_DATA_DIR}/dyr/classical_model_3000bus.dyr
+  ${GRIDPACK_DATA_DIR}/raw/case9.raw
+  ${GRIDPACK_DATA_DIR}/dyr/case9_GENROU_ESST1A_WSIEG1.dyr
+  ${GRIDPACK_DATA_DIR}/petscoptions/.petscrc
   ${CMAKE_CURRENT_SOURCE_DIR}/dsim_app.cpp
-  DESTINATION share/gridpack/example/dynamic_simulation_full_y
+  DESTINATION share/gridpack/example/dynamic_simulation_dae
 )
 
 install(TARGETS dsim.x DESTINATION bin)
-  
-
 
 # -------------------------------------------------------------
 # run application as test
 # -------------------------------------------------------------
-gridpack_add_run_test("dynamic_simulation_dae" dsim.x input_145.xml)
+gridpack_add_run_test("dynamic_simulation_dae" dsim.x input.xml)
 
