@@ -644,24 +644,39 @@ void  gridpack::rtpr::RTPRDriver::findWatchedGenerators(
 bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
 {
   bool ret = true;
+  int idx;
   if (flag == 0) {
     double ltotal = p_pf_app.getTotalLoad(p_dstArea,p_dstZone);
     double gtotal, pmin, pmax;
     p_pf_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
-    double extra;
+    double extra, g_rating;
+    char file[128];
+    sprintf(file,"pf_diagnostic_%f.dat",rating);
+    if (rating > 1.0) {
+      extra = (rating-1.0)*ltotal;
+      g_rating = (gtotal+extra)/gtotal;
+    } else {
+      extra = gtotal-pmin;
+      g_rating = (gtotal-extra)/gtotal;
+    }
+    p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
+        g_rating,rating,file);
     if (rating > 1.0) {
       extra = (rating-1.0)*ltotal;
       if (extra <= pmax-gtotal) {
         // Sufficient capacity exists to meet adjustment
+        printf("p[%d] rating: %f Ltotal: %f\n",p_world.rank(),rating,ltotal);
         p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal+extra)/gtotal;
-        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        g_rating = (gtotal+extra)/gtotal;
+        printf("p[%d] rating: %f g_rating: %f Gtotal: %f\n",
+            p_world.rank(),rating,g_rating,gtotal);
+        p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
       } else {
         extra = pmax-gtotal;
         rating = (ltotal+extra)/ltotal;
         p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal+extra)/gtotal;
-        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        g_rating = (gtotal+extra)/gtotal;
+        p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
         ret = false;
       }
     } else {
@@ -669,14 +684,14 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       if (extra >= gtotal-pmin) {
         // Sufficient capacity exists to meet adjustment
         p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal-extra)/gtotal;
-        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        g_rating = (gtotal-extra)/gtotal;
+        p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
       } else {
         extra = gtotal-pmin;
         rating = (ltotal-extra)/ltotal;
         p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal-extra)/gtotal;
-        p_pf_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        g_rating = (gtotal-extra)/gtotal;
+        p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
         ret = false;
       }
     }
@@ -717,6 +732,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       }
     }
   }
+  printf("p[%d] Returning from adjustRating\n",p_world.rank());
   return ret;
 }
 

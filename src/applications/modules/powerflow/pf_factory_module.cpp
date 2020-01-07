@@ -852,5 +852,50 @@ void gridpack::powerflow::PFFactoryModule::resetRealPower()
   }
 }
 
+/**
+ * Set parameters for real time path rating diagnostics
+ * @param src_area generation area
+ * @param src_zone generation zone
+ * @param load_area load area
+ * @param load_zone load zone
+ * @param gen_scale scale factor for generation
+ * @param load_scale scale factor for loads
+ */
+void gridpack::powerflow::PFFactoryModule::setRTPRParams(
+    int src_area, int src_zone, int load_area,
+    int load_zone, double gen_scale, double load_scale)
+{
+  int nbus = p_network->numBuses();
+  int i, j, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    int tarea = bus->getArea();
+    int tzone = bus->getZone();
+    if (src_zone > 0) {
+      izone = tzone;
+    } else {
+      izone = src_zone;
+    }
+    bus->setScale(1.0);
+    if (tarea == src_area && src_zone == izone) {
+      bus->setSource(true);
+      bus->setScale(gen_scale);
+    } else {
+      bus->setSource(false);
+    }
+    if (load_zone > 0) {
+      izone = tzone;
+    } else {
+      izone = load_zone;
+    }
+    if (tarea == load_area && load_zone == izone) {
+      bus->setSink(true);
+      bus->setScale(load_scale);
+    } else {
+      bus->setSink(false);
+    }
+  }
+}
+
 } // namespace powerflow
 } // namespace gridpack

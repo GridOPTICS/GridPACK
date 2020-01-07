@@ -205,6 +205,18 @@ class PFFactoryModule
      * Reset real power of loads and generators to original values
      */
     void resetRealPower();
+
+    /**
+     * Set parameters for real time path rating diagnostics
+     * @param src_area generation area
+     * @param src_zone generation zone
+     * @param load_area load area
+     * @param load_zone load zone
+     * @param gen_scale scale factor for generation
+     * @param load_scale scale factor for loads
+     */
+    void setRTPRParams(int src_area, int src_zone, int load_area,
+            int load_zone, double gen_scale, double load_scale);
   private:
 
     NetworkPtr p_network;

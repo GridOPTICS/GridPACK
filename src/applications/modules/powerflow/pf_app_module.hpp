@@ -292,6 +292,19 @@ class PFAppModule
      */
     void resetRealPower();
 
+    /**
+     * Write real time path rating diagnostics
+     * @param src_area generation area
+     * @param src_zone generation zone
+     * @param load_area load area
+     * @param load_zone load zone
+     * @param gen_scale scale factor for generation
+     * @param load_scale scale factor for loads
+     * @param file name of file containing diagnostics
+     */
+    void writeRTPRDiagnostics(int src_area, int src_zone, int load_area,
+        int load_zone, double gen_scale, double load_scale, const char *file);
+
   private:
 
     // pointer to network

@@ -1017,6 +1017,66 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     } else {
       return false;
     }
+  } else if (!strcmp(signal,"src_gen")) {
+    if (p_source) {
+      char sbuf[128];
+      char *cptr = string;
+      int i, len, slen = 0;
+      std::string status;
+      for (i=0; i<p_ngen; i++) {
+        if (p_gstatus[i]) {
+          status = "  active";
+        } else {
+          status = "inactive";
+        }
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
+              p_gid[i].c_str(),status.c_str(),p_area,p_zone,p_pg[i],
+              p_rtpr_scale*p_pg[i]);
+        len = strlen(sbuf);
+        if (slen+len <= bufsize) {
+          sprintf(cptr,"%s",sbuf);
+          slen += len;
+          cptr += len;
+        }
+      }
+      if (slen>0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  } else if (!strcmp(signal,"sink_load")) {
+    if (p_sink) {
+      char sbuf[128];
+      char *cptr = string;
+      int i, len, slen = 0;
+      std::string status;
+      for (i=0; i<p_nload; i++) {
+        if (p_lstatus[i]) {
+          status = "  active";
+        } else {
+          status = "inactive";
+        }
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
+              p_lid[i].c_str(),status.c_str(),p_area,p_zone,p_pl[i],
+              p_rtpr_scale*p_pl[i]);
+        len = strlen(sbuf);
+        if (slen+len <= bufsize) {
+          sprintf(cptr,"%s",sbuf);
+          slen += len;
+          cptr += len;
+        }
+      }
+      if (slen>0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
   return true;
 }
@@ -1548,6 +1608,33 @@ void gridpack::powerflow::PFBus::getRealPowerLoads(
     current.push_back(p_pl[i]);
     status.push_back(p_lstatus[i]);
   }
+}
+
+/**
+ * Label bus as a source for real time path rating
+ * @param flag identify bus as source
+ */
+void gridpack::powerflow::PFBus::setSource(bool flag)
+{
+  p_source = flag;
+}
+
+/**
+ * Label bus as a sink for real time path rating
+ * @param flag identify bus as sink
+ */
+void gridpack::powerflow::PFBus::setSink(bool flag)
+{
+  p_sink = flag;
+}
+
+/**
+ * Store scale factor
+ * @param scale factor for scaling generation or loads
+ */
+void gridpack::powerflow::PFBus::setScale(double scale)
+{
+  p_rtpr_scale = scale;
 }
 
 /**

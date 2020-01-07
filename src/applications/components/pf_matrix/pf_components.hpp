@@ -399,6 +399,24 @@ class PFBus
     void getRealPowerLoads(std::vector<std::string> &tag,
         std::vector<double> &current, std::vector<int> &status);
 
+    /**
+     * Label bus as a source for real time path rating
+     * @param flag identify bus as source
+     */
+    void setSource(bool flag);
+
+    /**
+     * Label bus as a sink for real time path rating
+     * @param flag identify bus as sink
+     */
+    void setSink(bool flag);
+
+    /**
+     * Store scale factor
+     * @param scale factor for scaling generation or loads
+     */
+    void setScale(double scale);
+
   private:
     double p_shunt_gs;
     double p_shunt_bs;
@@ -440,6 +458,9 @@ class PFBus
     int p_type;
     int p_area;
     int p_zone;
+    bool p_source;
+    bool p_sink;
+    double p_rtpr_scale;
     bool p_original_isolated;
 
     /**
@@ -485,7 +506,9 @@ private:
       & p_isPV
       & p_saveisPV
       & p_ngen & p_type & p_nload
-      & p_area;
+      & p_area & p_zone
+      & p_source & p_sink
+      & p_rtpr_scale;
   }  
 
 };
