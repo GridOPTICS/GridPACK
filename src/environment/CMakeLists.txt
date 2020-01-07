@@ -10,21 +10,14 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:17:39 d3g096
+# Last Change: 2020-01-07 08:51:33 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_environment 
   environment.cpp
 )
 
-# For some reason this is necessary for Mac OS X, but messes things up on Linux
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_environment gridpack_math
-    ${Boost_LIBRARIES} 
-    ${GA_LIBRARIES} 
-    ${MPI_CXX_LIBRARIES}
-    )
-endif()
+target_link_libraries(gridpack_environment gridpack_math)
   
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 if (GA_FOUND)
