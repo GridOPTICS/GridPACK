@@ -2004,26 +2004,16 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
       char *cptr = string;
       int i, len, slen = 0;
       std::string status; 
-      double scaled_val;
       for (i=0; i<p_ngen; i++) {
         if (p_gstatus[i]) {
           status = "  active";
         } else { 
           status = "inactive";
         }
-        if (p_rtpr_scale > 0.0) {
-          if (p_pg[i] < p_gpmax[i]) {
-            scaled_val = p_pg[i]+p_rtpr_scale*(p_gpmax[i]-p_pg[i]);
-          } else {
-            scaled_val = p_pg[i];
-          }
-        } else {
-          scaled_val = p_pg[i]+p_rtpr_scale*(p_pg[i]-p_gpmin[i]);
-        }
         sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
             getOriginalIndex(),
-            p_genid[i].c_str(),status.c_str(),p_area,p_zone,p_pg[i],
-            scaled_val,p_gpmin[i],p_gpmax[i]);
+            p_genid[i].c_str(),status.c_str(),p_area,p_zone,p_savePg[i],
+            p_pg[i],p_gpmin[i],p_gpmax[i]);
         len = strlen(sbuf);
         if (slen+len <= bufsize) {
           sprintf(cptr,"%s",sbuf);
@@ -2052,8 +2042,8 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
           status = "inactive";
         }
         sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
-            p_loadid[i].c_str(),status.c_str(),p_area,p_zone,p_powerflowload_p[i],
-            p_rtpr_scale*p_powerflowload_p[i]);
+            p_loadid[i].c_str(),status.c_str(),p_area,p_zone,p_powerflowload_p_save[i],
+            p_powerflowload_p[i]);
         len = strlen(sbuf);
         if (slen+len <= bufsize) {
           sprintf(cptr,"%s",sbuf);
@@ -2376,7 +2366,7 @@ void gridpack::dynamic_simulation::DSFullBus::getGeneratorMargins(
   int i;
   for (i=0; i<p_ngen; i++) {
     tag.push_back(p_genid[i]);
-    current.push_back(p_pg[i]);
+    current.push_back(p_savePg[i]);
     pmin.push_back(p_gpmin[i]);
     pmax.push_back(p_gpmax[i]);
     status.push_back(1);
@@ -2400,7 +2390,7 @@ void gridpack::dynamic_simulation::DSFullBus::getRealPowerLoads(
   int i;
   for (i=0; i<nloads; i++) {
     tag.push_back(p_loadid[i]);
-    current.push_back(p_powerflowload_p[i]);
+    current.push_back(p_powerflowload_p_save[i]);
     status.push_back(1);
   }
 }

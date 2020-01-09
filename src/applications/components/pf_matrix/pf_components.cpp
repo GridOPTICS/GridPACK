@@ -1023,27 +1023,16 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       char *cptr = string;
       int i, len, slen = 0;
       std::string status;
-      double scaled_val;
       for (i=0; i<p_ngen; i++) {
         if (p_gstatus[i]) {
           status = "  active";
         } else {
           status = "inactive";
         }
-        if (p_rtpr_scale > 0.0) {
-          if (p_pg[i] < p_pt[i]) {
-            scaled_val = p_pg[i]+p_rtpr_scale*(p_pt[i]-p_pg[i]);
-          } else {
-            scaled_val = p_pg[i];
-          }
-        } else {
-          scaled_val = p_pg[i]+p_rtpr_scale*(p_pg[i]-p_pb[i]);
-
-        }
         sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
               getOriginalIndex(),
-              p_gid[i].c_str(),status.c_str(),p_area,p_zone,p_pg[i],
-              scaled_val,p_pb[i],p_pt[i]);
+              p_gid[i].c_str(),status.c_str(),p_area,p_zone,p_savePg[i],
+              p_pg[i],p_pb[i],p_pt[i]);
         len = strlen(sbuf);
         if (slen+len <= bufsize) {
           sprintf(cptr,"%s",sbuf);
@@ -1072,8 +1061,8 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
           status = "inactive";
         }
         sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
-              p_lid[i].c_str(),status.c_str(),p_area,p_zone,p_pl[i],
-              p_rtpr_scale*p_pl[i]);
+              p_lid[i].c_str(),status.c_str(),p_area,p_zone,p_savePl[i],
+              p_pl[i]);
         len = strlen(sbuf);
         if (slen+len <= bufsize) {
           sprintf(cptr,"%s",sbuf);
@@ -1594,7 +1583,7 @@ void gridpack::powerflow::PFBus::getGeneratorMargins(
   int i;
   for (i=0; i<p_ngen; i++) {
     tag.push_back(p_gid[i]);
-    current.push_back(p_pg[i]);
+    current.push_back(p_savePg[i]);
     pmin.push_back(p_pb[i]);
     pmax.push_back(p_pt[i]);
     status.push_back(p_gstatus[i]);
@@ -1617,7 +1606,7 @@ void gridpack::powerflow::PFBus::getRealPowerLoads(
   int i;
   for (i=0; i<p_nload; i++) {
     tag.push_back(p_lid[i]);
-    current.push_back(p_pl[i]);
+    current.push_back(p_savePl[i]);
     status.push_back(p_lstatus[i]);
   }
 }

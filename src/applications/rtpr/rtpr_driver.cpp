@@ -618,25 +618,6 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
     double gtotal, pmin, pmax;
     p_pf_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
     double extra, g_rating;
-    char file[128];
-    sprintf(file,"pf_diagnostic_%f.dat",rating);
-    if (rating > 1.0) {
-      extra = (rating-1.0)*ltotal;
-      if (pmax > gtotal) {
-        g_rating = extra/(pmax-gtotal);
-      } else {
-        g_rating = 0.0;
-      }
-    } else {
-      extra = (1.0-rating)*ltotal;
-      if (gtotal > pmin) {
-        g_rating = -extra/(gtotal-pmin);
-      } else {
-        g_rating = 0.0;
-      }
-    }
-    p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
-        g_rating,rating,file);
     if (rating > 1.0) {
       extra = (rating-1.0)*ltotal;
       if (extra <= pmax-gtotal) {
@@ -684,30 +665,15 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
         ret = false;
       }
     }
+    char file[128];
+    sprintf(file,"pf_diagnostic_%f.dat",rating);
+    p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
+        g_rating,rating,file);
   } else {
     double ltotal = p_ds_app.getTotalLoad(p_dstArea,p_dstZone);
     double gtotal, pmin, pmax;
     p_ds_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
     double extra, g_rating;
-    char file[128];
-    sprintf(file,"ds_diagnostic_%f.dat",rating);
-    if (rating > 1.0) {
-      extra = (rating-1.0)*ltotal;
-      if (pmax > gtotal) {
-        g_rating = extra/(pmax-gtotal);
-      } else {
-        g_rating = 0.0;
-      }
-    } else {
-      extra = (1.0-rating)*ltotal;
-      if (gtotal > pmin) {
-        g_rating = -extra/(gtotal-pmin);
-      } else {
-        g_rating = 0.0;
-      }
-    }
-    p_ds_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
-        g_rating,rating,file);
     if (rating > 1.0) {
       extra = (rating-1.0)*ltotal;
       if (extra <= pmax-gtotal) {
@@ -718,7 +684,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
         } else {
           g_rating = 0.0;
         }
-        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        p_ds_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
       } else {
         extra = pmax-gtotal;
         rating = (ltotal+extra)/ltotal;
@@ -728,7 +694,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
         } else {
           g_rating = 0.0;
         }
-        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        p_ds_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
         ret = false;
       }
     } else {
@@ -741,7 +707,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
         } else {
           g_rating = 0.0;
         }
-        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        p_ds_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
       } else {
         extra = gtotal-pmin;
         rating = (ltotal-extra)/ltotal;
@@ -751,10 +717,14 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
         } else {
           g_rating = 0.0;
         }
-        p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
+        p_ds_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
         ret = false;
       }
     }
+    char file[128];
+    sprintf(file,"ds_diagnostic_%f.dat",rating);
+    p_ds_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
+        g_rating,rating,file);
   }
   return ret;
 }
@@ -1148,6 +1118,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     p_ds_app.resetRealPower();
   }
   // Refine estimate of rating
+  checkTie = false;
   while (!checkTie && p_rating >= 0.0) {
     p_rating -= 0.01;
     if (!adjustRating(p_rating,1)) {

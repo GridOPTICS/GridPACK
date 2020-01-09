@@ -1725,9 +1725,15 @@ void gridpack::dynamic_simulation::DSFullApp::writeRTPRDiagnostics(
   p_factory->setRTPRParams(src_area,src_zone,load_area,load_zone,
       gen_scale,load_scale);
   p_busIO->open(file);
-  double gtotal, ltotal, pmin, pmax;
+  double gtotal, ltotal, pmin, pmax, scaled;
   p_factory->getGeneratorMargins(src_area, src_zone,&gtotal,&pmin,&pmax);
   ltotal = p_factory->getTotalLoad(load_area,load_zone);
+  if (gen_scale > 0.0) {
+    scaled = gtotal + gen_scale*(pmax-gtotal);
+  } else {
+    scaled = gtotal + gen_scale*(gtotal-pmin);
+  }
+
   char sbuf[128];
   sprintf(sbuf,"Total Generation:         %16.4f\n",gtotal);
   p_busIO->header(sbuf);
@@ -1737,7 +1743,7 @@ void gridpack::dynamic_simulation::DSFullApp::writeRTPRDiagnostics(
   p_busIO->header(sbuf);
   sprintf(sbuf,"  Generator Scale Factor: %16.4f\n",gen_scale);
   p_busIO->header(sbuf);
-  sprintf(sbuf,"  Scaled Generation:      %16.4f\n",gen_scale*gtotal);
+  sprintf(sbuf,"  Scaled Generation:      %16.4f\n",scaled);
   p_busIO->header(sbuf);
   p_busIO->header("\nIndividual Scaled Generators\n");
   sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
