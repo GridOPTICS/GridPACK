@@ -734,8 +734,6 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_generators.clear();
   p_loadrelays.clear();
   p_loadmodels.clear();
-  p_powerflowload_p.clear();
-  p_powerflowload_q.clear();
 
   std::string snewbustype; //renke add
 
@@ -844,6 +842,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
       if (data->getValue(GENERATOR_MODEL, &model, i) && stat == 1 && pg >= 0) {
         p_pg.push_back(pg);
         p_savePg.push_back(pg);
+        p_gstatus.push_back(1);
         double pmin, pmax;
         data->getValue(GENERATOR_PMIN,&pmin,i);
         data->getValue(GENERATOR_PMAX,&pmax,i);
@@ -989,20 +988,25 @@ void gridpack::dynamic_simulation::DSFullBus::load(
   p_powerflowload_p.clear();
   p_powerflowload_q.clear();
   p_loadid.clear();
+  p_powerflowload_status.clear();
   totaldynReactivepower = 0.0;
   printf("DSFullBus::load():  entering processing load model \n");
   if (data->getValue(LOAD_NUMBER, &p_npowerflow_load)) {
     std::string loadid;
     int icnt = 0;
     printf("bus %d has %d power flow loads \n", idx, p_npowerflow_load);
+    int istat;
     for (i=0; i<p_npowerflow_load; i++) { 
       data->getValue(LOAD_PL, &pl, i);
       data->getValue(LOAD_QL, &ql, i);
       data->getValue(LOAD_ID, &loadid, i);
+      istat = 1;
+      data->getValue(LOAD_STATUS, &istat, i);
       p_powerflowload_p.push_back(pl);
       p_powerflowload_p_save.push_back(pl);
       p_powerflowload_q.push_back(ql);
       p_loadid.push_back(loadid);  
+      p_powerflowload_status.push_back(istat);
 
       printf("%d th power flow load at bus %d: %f + j%f\n", i, idx, pl, ql);	  
       std::string model;
@@ -1943,7 +1947,7 @@ bool gridpack::dynamic_simulation::DSFullBus::checkisolated()
 bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
     const int bufsize, const char *signal)
 {
-  if (p_ngen == 0 && p_ndyn_load == 0) return false;
+  if (p_ngen == 0 && p_ndyn_load == 0 && p_npowerflow_load == 0) return false;
   int i;
   char buf[128];
   char *ptr = string;
@@ -1994,6 +1998,66 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
       }
     }
     if (len > 0) return true;
+  } else if (!strcmp(signal,"src_gen")) {
+    if (p_source) {
+      char sbuf[128];
+      char *cptr = string;
+      int i, len, slen = 0;
+      std::string status; 
+      for (i=0; i<p_ngen; i++) {
+        if (p_gstatus[i]) {
+          status = "  active";
+        } else { 
+          status = "inactive";
+        }
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
+            p_genid[i].c_str(),status.c_str(),p_area,p_zone,p_pg[i],
+            p_rtpr_scale*p_pg[i]);
+        len = strlen(sbuf);
+        if (slen+len <= bufsize) {
+          sprintf(cptr,"%s",sbuf);
+          slen += len;
+          cptr += len;
+        }
+      }
+      if (slen>0) {
+        return true;
+      } else { 
+        return false;
+      }
+    } else {
+      return false;
+    }
+  } else if (!strcmp(signal,"sink_load")) {
+    if (p_sink) {
+      char sbuf[128];
+      char *cptr = string;
+      int i, len, slen = 0;
+      std::string status;
+      for (i=0; i<p_npowerflow_load; i++) {
+        if (p_powerflowload_status[i]) {
+          status = "  active";
+        } else {
+          status = "inactive";
+        }
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
+            p_loadid[i].c_str(),status.c_str(),p_area,p_zone,p_powerflowload_p[i],
+            p_rtpr_scale*p_powerflowload_p[i]);
+        len = strlen(sbuf);
+        if (slen+len <= bufsize) {
+          sprintf(cptr,"%s",sbuf);
+          slen += len;
+          cptr += len;
+        }
+      }
+      if (slen>0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   } else if (strlen(signal) > 0) {
     int i;
     char buf[128];
@@ -2330,6 +2394,32 @@ void gridpack::dynamic_simulation::DSFullBus::getRealPowerLoads(
   }
 }
 
+/**
+ * Label bus as a source for real time path rating
+ * @param flag identify bus as source
+ */
+void gridpack::dynamic_simulation::DSFullBus::setSource(bool flag)
+{
+  p_source = flag;
+}
+
+/**
+ * Label bus as a sink for real time path rating
+ * @param flag identify bus as sink
+ */
+void gridpack::dynamic_simulation::DSFullBus::setSink(bool flag)
+{
+  p_sink = flag;
+}
+
+/**
+ * Store scale factor
+ * @param scale factor for scaling generation or loads
+ */
+void gridpack::dynamic_simulation::DSFullBus::setScale(double scale)
+{
+  p_rtpr_scale = scale;
+}
 
 /**
  * Get list of generator IDs

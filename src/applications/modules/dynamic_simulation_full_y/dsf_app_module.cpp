@@ -1250,6 +1250,11 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
         (int)buses.size(),(int)tags.size());
     // TODO: some kind of error
   }
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
+    p_generatorWatchFrequency = 1;
+  }
   std::string generator, tag;
   char buf[128];
   gridpack::dynamic_simulation::DSFullBus *bus;
@@ -1703,4 +1708,52 @@ void gridpack::dynamic_simulation::DSFullApp::closeLoadWatchFile()
     p_loadIO->closeChannel();
 #endif
   }
+}
+
+/**
+ * Write real time path rating diagnostics
+ * @param src_area generation area
+ * @param src_zone generation zone
+ * @param load_area load area
+ * @param load_zone load zone
+ * @param gen_scale scale factor for generation
+ * @param load_scale scale factor for loads
+ * @param file name of file containing diagnostics
+ */
+void gridpack::dynamic_simulation::DSFullApp::writeRTPRDiagnostics(
+    int src_area, int src_zone, int load_area,
+    int load_zone, double gen_scale, double load_scale, const char *file)
+{
+  p_factory->setRTPRParams(src_area,src_zone,load_area,load_zone,
+      gen_scale,load_scale);
+  p_busIO->open(file);
+  double gtotal, ltotal, pmin, pmax;
+  p_factory->getGeneratorMargins(src_area, src_zone,&gtotal,&pmin,&pmax);
+  ltotal = p_factory->getTotalLoad(load_area,load_zone);
+  char sbuf[128];
+  sprintf(sbuf,"Total Generation:         %16.4f\n",gtotal);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Minimum Generation:     %16.4f\n",pmin);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Maximum Generation:     %16.4f\n",pmax);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Generator Scale Factor: %16.4f\n",gen_scale);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Scaled Generation:      %16.4f\n",gen_scale*gtotal);
+  p_busIO->header(sbuf);
+  p_busIO->header("\nIndividual Scaled Generators\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power\n\n");
+  p_busIO->header(sbuf);
+  p_busIO->write("src_gen");
+  sprintf(sbuf,"\nTotal Load:               %16.4f\n",ltotal);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Load Scale Factor:      %16.4f\n",load_scale);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Scaled Load:            %16.4f\n",load_scale*ltotal);
+  p_busIO->header(sbuf);
+  p_busIO->header("\nIndividual Scaled Loads\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power\n\n");
+  p_busIO->header(sbuf);
+  p_busIO->write("sink_load");
+  p_busIO->close();
 }

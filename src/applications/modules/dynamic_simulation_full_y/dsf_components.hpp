@@ -460,6 +460,25 @@ class DSFullBus
      */
     int getZone();
 
+    /**
+     * Label bus as a source for real time path rating
+     * @param flag identify bus as source
+     */
+    void setSource(bool flag);
+
+    /**
+     * Label bus as a sink for real time path rating
+     * @param flag identify bus as sink
+     */
+    void setSink(bool flag);
+
+    /**
+     * Store scale factor
+     * @param scale factor for scaling generation or
+     loads
+     */
+    void setScale(double scale);
+
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.
@@ -486,6 +505,9 @@ class DSFullBus
     bool p_isGen;
     int p_area;
     int p_zone;
+    bool p_source;
+    bool p_sink;
+    double p_rtpr_scale;
     std::vector<double> p_pg, p_qg, p_savePg, p_negpg, p_negqg;
     std::vector<double> p_mva, p_r, p_dstr, p_dtr, p_gpmin, p_gpmax;
     int p_ngen, p_negngen;
@@ -501,6 +523,7 @@ class DSFullBus
 							//  2: LOAD_BUS
     std::vector<std::string> p_genid;
     std::vector<std::string> p_loadid;
+    std::vector<int> p_gstatus;
     std::vector<bool> p_watch;
 
     // DAE related variables
@@ -544,6 +567,7 @@ class DSFullBus
     std::vector<double> p_powerflowload_p;	
     std::vector<double> p_powerflowload_p_save;	
 	std::vector<double> p_powerflowload_q;	
+   std::vector<int> p_powerflowload_status;
 	
 	gridpack::dynamic_simulation::DSFullBranch* p_CmplXfmrBranch, *p_CmplFeederBranch;  // the point to the transformer and feeder branch due to the added composite load model
 	gridpack::dynamic_simulation::DSFullBus* p_CmplXfmrBus, *p_CmplFeederBus; // the point to the transformer and feeder bus due to the added composite load model
@@ -581,6 +605,8 @@ class DSFullBus
           & p_sbase
           & p_isGen
           & p_area & p_zone
+          & p_source & p_sink
+          & p_rtpr_scale
           & p_pg & p_qg & p_savePg
           & p_mva & p_r & p_dstr & p_dtr & p_gpmin & p_gpmax
           & p_ngen & p_type & p_permYmod
