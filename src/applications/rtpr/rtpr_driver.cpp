@@ -218,31 +218,20 @@ std::vector<gridpack::powerflow::Contingency>
   if (nflt == 0) {
     return ret;
   }
-  int g_bus = GA_Create_handle();
-  int one = 1;
-  NGA_Set_data(g_bus,one,&nflt,C_INT);
-  NGA_Allocate(g_bus);
-  int g_ids = GA_Create_handle();
-  int idType = NGA_Register_type(sizeof(char2));
-  NGA_Set_data(g_ids,1,&nflt,idType);
-  NGA_Allocate(g_ids);
-  int lo, hi;
-  lo = 0; 
-  for (i=0; i<me; i++) lo += sizes[i];
-  hi = lo + sizes[me] - 1;
-  // Create a complete list on all processes
-  if (lo <= hi) NGA_Put(g_bus,&lo,&hi,&bus_ids[0],&one);
-  if (lo <= hi) NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
-  network->communicator().sync();
-  bus_ids.resize(nflt);
-  tags.resize(nflt);
-  lo = 0;
-  hi = nflt-1;
-  NGA_Get(g_bus,&lo,&hi,&bus_ids[0],&one);
-  NGA_Get(g_ids,&lo,&hi,&tags[0],&one);
-  GA_Destroy(g_bus);
-  GA_Destroy(g_ids);
-  NGA_Deregister_type(idType);
+  // create a list of indices for local data values
+  int offset = 0;
+  for (i=0; i<me; i++) offset += sizes[i];
+  std::vector<int> idx;
+  for (i=0; i < bus_ids.size(); i++) idx.push_back(offset+i);
+  // upload all values to a global vector
+  gridpack::parallel::GlobalVector<int> busIDs(network->communicator());
+  gridpack::parallel::GlobalVector<char2> genIDs(network->communicator());
+  busIDs.addElements(idx,bus_ids);
+  genIDs.addElements(idx,tags);
+  busIDs.upload();
+  genIDs.upload();
+  busIDs.getAllData(bus_ids);
+  genIDs.getAllData(tags);
   // create a list of contingencies
   char sbuf[128];
   for (i=0; i<nflt; i++) {
@@ -334,38 +323,24 @@ std::vector<gridpack::powerflow::Contingency>
   if (nflt == 0) {
     return ret;
   }
-  int g_from = GA_Create_handle();
-  int one = 1;
-  NGA_Set_data(g_from,one,&nflt,C_INT);
-  NGA_Allocate(g_from);
-  int g_to = GA_Create_handle();
-  NGA_Set_data(g_to,one,&nflt,C_INT);
-  NGA_Allocate(g_to);
-  int g_ids = GA_Create_handle();
-  int idType = NGA_Register_type(sizeof(char2));
-  NGA_Set_data(g_ids,1,&nflt,idType);
-  NGA_Allocate(g_ids);
-  int lo, hi;
-  lo = 0; 
-  for (i=0; i<me; i++) lo += sizes[i];
-  hi = lo + sizes[me] - 1;
-  // Create a complete list on all processes
-  if (lo <= hi) NGA_Put(g_from,&lo,&hi,&bus_from[0],&one);
-  if (lo <= hi) NGA_Put(g_to,&lo,&hi,&bus_to[0],&one);
-  if (lo <= hi) NGA_Put(g_ids,&lo,&hi,&tags[0],&one);
-  network->communicator().sync();
-  bus_from.resize(nflt);
-  bus_to.resize(nflt);
-  tags.resize(nflt);
-  lo = 0;
-  hi = nflt-1;
-  NGA_Get(g_from,&lo,&hi,&bus_from[0],&one);
-  NGA_Get(g_to,&lo,&hi,&bus_to[0],&one);
-  NGA_Get(g_ids,&lo,&hi,&tags[0],&one);
-  GA_Destroy(g_from);
-  GA_Destroy(g_to);
-  GA_Destroy(g_ids);
-  NGA_Deregister_type(idType);
+  // create a list of indices for local data values
+  int offset = 0;
+  for (i=0; i<me; i++) offset += sizes[i];
+  std::vector<int> idx;
+  for (i=0; i < bus_from.size(); i++) idx.push_back(offset+i);
+  // upload all values to a global vector
+  gridpack::parallel::GlobalVector<int> fromIDs(network->communicator());
+  gridpack::parallel::GlobalVector<int> toIDs(network->communicator());
+  gridpack::parallel::GlobalVector<char2> branchIDs(network->communicator());
+  fromIDs.addElements(idx,bus_from);
+  toIDs.addElements(idx,bus_to);
+  branchIDs.addElements(idx,tags);
+  fromIDs.upload();
+  toIDs.upload();
+  branchIDs.upload();
+  fromIDs.getAllData(bus_from);
+  toIDs.getAllData(bus_to);
+  branchIDs.getAllData(tags);
   // create a list of contingencies
   char sbuf[128];
   for (i=0; i<nflt; i++) {
@@ -518,24 +493,17 @@ std::vector<gridpack::rtpr::TieLine>
   if (ntie == 0) {
     return ret;
   }
-  int g_tie = GA_Create_handle();
-  int one = 1;
-  int itype = NGA_Register_type(sizeof(gridpack::rtpr::TieLine));
-  NGA_Set_data(g_tie,one,&ntie,itype);
-  NGA_Allocate(g_tie);
-  int lo, hi;
-  lo = 0; 
-  for (i=0; i<me; i++) lo += sizes[i];
-  hi = lo + sizes[me] - 1;
-  // Create a complete list on all processes
-  if (lo <= hi) NGA_Put(g_tie,&lo,&hi,&ret[0],&one);
-  p_pf_network->communicator().sync();
-  ret.resize(ntie);
-  lo = 0;
-  hi = ntie-1;
-  NGA_Get(g_tie,&lo,&hi,&ret[0],&one);
-  GA_Destroy(g_tie);
-  NGA_Deregister_type(itype);
+  // create a list of indices for local data values
+  int offset = 0;
+  for (i=0; i<me; i++) offset += sizes[i];
+  std::vector<int> idx;
+  for (i=0; i < ret.size(); i++) idx.push_back(offset+i);
+  // upload all values to a global vector
+  gridpack::parallel::GlobalVector<gridpack::rtpr::TieLine>
+    tieLines(p_pf_network->communicator());
+  tieLines.addElements(idx,ret);
+  tieLines.upload();
+  tieLines.getAllData(ret);
   return ret;
 }
 
@@ -656,7 +624,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       extra = (rating-1.0)*ltotal;
       g_rating = (gtotal+extra)/gtotal;
     } else {
-      extra = gtotal-pmin;
+      extra = (1.0-rating)*ltotal;
       g_rating = (gtotal-extra)/gtotal;
     }
     p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
@@ -665,11 +633,8 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       extra = (rating-1.0)*ltotal;
       if (extra <= pmax-gtotal) {
         // Sufficient capacity exists to meet adjustment
-        printf("p[%d] rating: %f Ltotal: %f\n",p_world.rank(),rating,ltotal);
         p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
         g_rating = (gtotal+extra)/gtotal;
-        printf("p[%d] rating: %f g_rating: %f Gtotal: %f\n",
-            p_world.rank(),rating,g_rating,gtotal);
         p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
       } else {
         extra = pmax-gtotal;
@@ -681,7 +646,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       }
     } else {
       extra = (1.0-rating)*ltotal;
-      if (extra >= gtotal-pmin) {
+      if (extra <= gtotal-pmin) {
         // Sufficient capacity exists to meet adjustment
         p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
         g_rating = (gtotal-extra)/gtotal;
@@ -699,40 +664,50 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
     double ltotal = p_ds_app.getTotalLoad(p_dstArea,p_dstZone);
     double gtotal, pmin, pmax;
     p_ds_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
-    double extra;
+    double extra, g_rating;
+    char file[128];
+    sprintf(file,"ds_diagnostic_%f.dat",rating);
+    if (rating > 1.0) {
+      extra = (rating-1.0)*ltotal;
+      g_rating = (gtotal+extra)/gtotal;
+    } else {
+      extra = (1.0-rating)*ltotal;
+      g_rating = (gtotal-extra)/gtotal;
+    }
+    p_ds_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
+        g_rating,rating,file);
     if (rating > 1.0) {
       extra = (rating-1.0)*ltotal;
       if (extra <= pmax-gtotal) {
         // Sufficient capacity exists to meet adjustment
         p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal+extra)/gtotal;
+        g_rating = (gtotal+extra)/gtotal;
         p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
       } else {
         extra = pmax-gtotal;
         rating = (ltotal+extra)/ltotal;
         p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal+extra)/gtotal;
+        g_rating = (gtotal+extra)/gtotal;
         p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
         ret = false;
       }
     } else {
       extra = (1.0-rating)*ltotal;
-      if (extra >= gtotal-pmin) {
+      if (extra <= gtotal-pmin) {
         // Sufficient capacity exists to meet adjustment
         p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal-extra)/gtotal;
+        g_rating = (gtotal-extra)/gtotal;
         p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
       } else {
         extra = gtotal-pmin;
         rating = (ltotal-extra)/ltotal;
         p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
-        rating = (gtotal-extra)/gtotal;
+        g_rating = (gtotal-extra)/gtotal;
         p_ds_app.scaleGeneratorRealPower(rating,p_srcArea,p_srcZone);
         ret = false;
       }
     }
   }
-  printf("p[%d] Returning from adjustRating\n",p_world.rank());
   return ret;
 }
 
@@ -1018,7 +993,9 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     while (checkTie) {
       p_rating += 0.05;
       if (!adjustRating(p_rating,0)) {
-        printf("Rating capacity exceeded: %f\n",p_rating);
+        if (p_world.rank() == 0) {
+          printf("Rating capacity exceeded: %f\n",p_rating);
+        }
         p_rating -= 0.05;
         p_pf_app.resetRealPower();
         break;
@@ -1050,7 +1027,9 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     while (!checkTie && p_rating >= 0.0) {
       p_rating -= 0.05;
       if (!adjustRating(p_rating,0)) {
-        printf("Rating capacity exceeded: %f\n",p_rating);
+        if (p_world.rank() == 0) {
+          printf("Rating capacity exceeded: %f\n",p_rating);
+        }
         p_rating += 0.05;
         p_pf_app.resetRealPower();
         break;
@@ -1086,6 +1065,10 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(p_task_comm));
   p_pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
     gridpack::dynamic_simulation::DSFullBranch>(p_ds_network);
+  // initialize dynamic simulation
+  p_ds_app.setNetwork(p_ds_network, config);
+  p_ds_app.readGenerators();
+  p_ds_app.initialize();
 
   // find the generators that will be monitored
   std::vector<int> busIDs;
@@ -1098,10 +1081,6 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
           busIDs[i],genIDs[i].c_str());
     }
   }
-  // initialize dynamic simulation
-  p_ds_app.setNetwork(p_ds_network, config);
-  p_ds_app.readGenerators();
-  p_ds_app.initialize();
   p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
   p_ds_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
@@ -1110,6 +1089,17 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_ds_app.resetRealPower();
 
   // Current rating is an upper bound. Only check lower values.
+  while (!checkTie && p_rating >= 0.0) {
+    p_rating -= 0.05;
+    if (!adjustRating(p_rating,1)) {
+      p_rating += 0.05;
+      p_ds_app.resetRealPower();
+      break;
+    }
+    checkTie = runDSContingencies();
+    p_ds_app.resetRealPower();
+  }
+  // Refine estimate of rating
   while (!checkTie && p_rating >= 0.0) {
     p_rating -= 0.01;
     if (!adjustRating(p_rating,1)) {
