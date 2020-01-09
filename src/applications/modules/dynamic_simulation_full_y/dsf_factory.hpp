@@ -153,10 +153,8 @@ class DSFullFactory
      * @param scale factor to scale real power generation
      * @param area index of area for scaling generation
      * @param zone index of zone for scaling generation
-     * @return false if there is not enough capacity to change generation
-     *         by requested amount
      */
-    bool scaleGeneratorRealPower(double scale, int area, int zone);
+    void scaleGeneratorRealPower(double scale, int area, int zone);
 
     /**
      * Scale load real power. If zone less than 1 then scale all

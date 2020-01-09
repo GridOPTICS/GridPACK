@@ -1023,15 +1023,27 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
       char *cptr = string;
       int i, len, slen = 0;
       std::string status;
+      double scaled_val;
       for (i=0; i<p_ngen; i++) {
         if (p_gstatus[i]) {
           status = "  active";
         } else {
           status = "inactive";
         }
-        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
+        if (p_rtpr_scale > 0.0) {
+          if (p_pg[i] < p_pt[i]) {
+            scaled_val = p_pg[i]+p_rtpr_scale*(p_pt[i]-p_pg[i]);
+          } else {
+            scaled_val = p_pg[i];
+          }
+        } else {
+          scaled_val = p_pg[i]-p_rtpr_scale*(p_pg[i]-p_pb[i]);
+
+        }
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
+              getOriginalIndex(),
               p_gid[i].c_str(),status.c_str(),p_area,p_zone,p_pg[i],
-              p_rtpr_scale*p_pg[i]);
+              scaled_val,p_pb[i],p_pt[i]);
         len = strlen(sbuf);
         if (slen+len <= bufsize) {
           sprintf(cptr,"%s",sbuf);
@@ -1489,16 +1501,16 @@ void gridpack::powerflow::PFBus::scaleGeneratorRealPower(std::string tag,
   int i;
   for (i=0; i<p_ngen; i++) {
     if (p_gid[i] == tag && p_gstatus[i]) {
-      if (value > 1.0) {
+      if (value > 0.0) {
         double excess = p_pt[i]-p_pg[i];
         if (excess < 0.0) {
           printf("bus: %d generator: %s excess (pt): %f (pg): %f\n",
               getOriginalIndex(),tag.c_str(),p_pt[i],p_pg[i]);
         }
-        p_pg[i] += (value-1.0)*excess;
+        p_pg[i] += value*excess;
       } else {
         double slack = p_pg[i]-p_pb[i];
-        p_pg[i] -= (1.0-value)*slack;
+        p_pg[i] += value*slack;
       }
       break;
     }

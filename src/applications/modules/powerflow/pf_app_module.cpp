@@ -847,13 +847,11 @@ void gridpack::powerflow::PFAppModule::resetVoltages()
  * @param scale factor to scale real power generation
  * @param area index of area for scaling generation
  * @param zone index of zone for scaling generation
- * @return false if there is not enough capacity to change generation
- *         by requested amount
  */
-bool gridpack::powerflow::PFAppModule::scaleGeneratorRealPower(
+void gridpack::powerflow::PFAppModule::scaleGeneratorRealPower(
     double scale, int area, int zone)
 {
-  return p_factory->scaleGeneratorRealPower(scale,area,zone);
+  p_factory->scaleGeneratorRealPower(scale,area,zone);
 }
 
 /**
@@ -937,7 +935,8 @@ void gridpack::powerflow::PFAppModule::writeRTPRDiagnostics(
   sprintf(sbuf,"  Scaled Generation:      %16.4f\n",gen_scale*gtotal);
   p_busIO->header(sbuf);
   p_busIO->header("\nIndividual Scaled Generators\n");
-  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power\n\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
+      "           Pmin           Pmax\n\n");
   p_busIO->header(sbuf);
   p_busIO->write("src_gen");
   sprintf(sbuf,"\nTotal Load:               %16.4f\n",ltotal);
