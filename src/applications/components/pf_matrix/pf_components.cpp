@@ -1037,7 +1037,7 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
             scaled_val = p_pg[i];
           }
         } else {
-          scaled_val = p_pg[i]-p_rtpr_scale*(p_pg[i]-p_pb[i]);
+          scaled_val = p_pg[i]+p_rtpr_scale*(p_pg[i]-p_pb[i]);
 
         }
         sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",

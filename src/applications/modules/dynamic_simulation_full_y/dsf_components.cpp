@@ -2018,7 +2018,7 @@ bool gridpack::dynamic_simulation::DSFullBus::serialWrite(char *string,
             scaled_val = p_pg[i];
           }
         } else {
-          scaled_val = p_pg[i]-p_rtpr_scale*(p_pg[i]-p_gpmin[i]);
+          scaled_val = p_pg[i]+p_rtpr_scale*(p_pg[i]-p_gpmin[i]);
         }
         sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
             getOriginalIndex(),
