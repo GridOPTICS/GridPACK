@@ -199,6 +199,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
+  p_factory->clearViolations();
   gridpack::ComplexType tol = 2.0*p_tolerance;
   int iter = 0;
   bool repeat = true;
@@ -424,6 +425,7 @@ bool gridpack::powerflow::PFAppModule::nl_solve()
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
+  p_factory->clearViolations();
 
   int t_fact = timer->createCategory("Powerflow: Factory Operations");
   timer->start(t_fact);
@@ -686,6 +688,11 @@ bool gridpack::powerflow::PFAppModule::setContingency(
     }
   } else {
     ret = false;
+  }
+  if (ret) {
+    p_contingency_name = event.p_name;
+  } else {
+    p_contingency_name.clear();
   }
   p_factory->checkLoneBus();
   return ret;
@@ -955,4 +962,32 @@ void gridpack::powerflow::PFAppModule::writeRTPRDiagnostics(
   p_busIO->header(sbuf);
   p_busIO->write("sink_load");
   p_busIO->close();
+}
+
+/**
+ * Get strings documenting contingency failures. Strings are *not* terminated
+ * with a carriage return
+ */
+std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailures()
+{
+  std::vector<std::string> ret;
+  std::vector<gridpack::powerflow::PFFactoryModule::Violation> violations;
+  violations = p_factory->getViolations();
+  int nsize = violations.size();
+  int i;
+  char sbuf[128];
+  for (i=0; i<nsize; i++) {
+    std::string string;
+    if (violations[i].bus_violation) {
+      sprintf(sbuf,"     Bus voltage violation on bus %d",violations[i].bus1);
+      string = sbuf;
+    } else if (violations[i].line_violation) {
+      sprintf(sbuf,"     Branch overload violation on branch [%d,%d]",
+          violations[i].bus1,violations[i].bus2);
+      string = sbuf;
+    }
+    printf("DEBUG VIOLATION: (%s)\n",string.c_str());
+    ret.push_back(string);
+  }
+  return ret;
 }

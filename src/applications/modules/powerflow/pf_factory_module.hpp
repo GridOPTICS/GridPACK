@@ -33,6 +33,15 @@ class PFFactoryModule
   : public gridpack::factory::BaseFactory<PFNetwork> {
   public:
     /**
+     * Struct for storing information on violations in contingency calculations
+     */
+    struct Violation {
+      bool line_violation; /* branch overload violation */
+      bool bus_violation;  /* bus voltage violation */
+      int bus1;  /* bus ID for voltage violations or from bus for branch violations */
+      int bus2;  /* to bus ID for branch violations */
+    };
+    /**
      * Basic constructor
      * @param network: network associated with factory
      */
@@ -215,10 +224,23 @@ class PFFactoryModule
      */
     void setRTPRParams(int src_area, int src_zone, int load_area,
             int load_zone, double gen_scale, double load_scale);
+
+    /**
+     * Return vector describing all violations
+     * @return violation vector
+     */
+    std::vector<Violation> getViolations();
+
+    /**
+     * Clear violation vector
+     */
+    void clearViolations();
   private:
 
     NetworkPtr p_network;
     std::vector<bool> p_saveIsolatedStatus;
+
+    std::vector<Violation> p_violations;
 };
 
 } // powerflow

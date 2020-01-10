@@ -303,6 +303,12 @@ class PFAppModule
     void writeRTPRDiagnostics(int src_area, int src_zone, int load_area,
         int load_zone, double gen_scale, double load_scale, const char *file);
 
+    /**
+     * Get strings documenting contingency failures. Strings are *not*
+     * terminated with a carriage return
+     */
+    std::vector<std::string> getContingencyFailures();
+
   private:
 
     // pointer to network
@@ -331,6 +337,9 @@ class PFAppModule
 
     // pointer to configuration module
     gridpack::utility::Configuration *p_config;
+
+    // string containing current contingency name
+    std::string p_contingency_name;
 };
 
 } // powerflow

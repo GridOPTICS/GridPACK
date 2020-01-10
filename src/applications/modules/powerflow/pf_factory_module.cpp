@@ -18,6 +18,7 @@
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
+#include "gridpack/parallel/global_vector.hpp"
 #include "pf_factory_module.hpp"
 
 
@@ -284,7 +285,16 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
       if (!bus->getIgnore() && bus->getArea() == area) {
-        if (!bus->checkVoltageViolation()) bus_ok = false;
+        if (!bus->checkVoltageViolation()) {
+          bus_ok = false;
+          gridpack::powerflow::PFFactoryModule::Violation violation;
+          int idx = bus->getOriginalIndex();
+          violation.bus_violation = true;
+          violation.line_violation = false;
+          violation.bus1 = idx;
+          violation.bus2 = -1;
+          p_violations.push_back(violation);
+        }
       }
     }
   }
@@ -353,7 +363,15 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
             if (rateA > 0.0) {
               gridpack::ComplexType s = branch->getComplexPower(tags[k]);
               double pq = abs(s);
-              if (pq > rateA) branch_ok = false;
+              if (pq > rateA) {
+                branch_ok = false;
+                gridpack::powerflow::PFFactoryModule::Violation violation;
+                violation.bus_violation = false;
+                violation.line_violation = true;
+                violation.bus1 = branch->getBus1OriginalIndex();
+                violation.bus2 = branch->getBus2OriginalIndex();
+                p_violations.push_back(violation);
+              }
             }
           }
         }
@@ -824,6 +842,46 @@ void gridpack::powerflow::PFFactoryModule::setRTPRParams(
       bus->setSink(false);
     }
   }
+}
+
+/**
+ * Return vector describing all violations
+ * @return violation vector
+ */
+std::vector<gridpack::powerflow::PFFactoryModule::Violation>
+gridpack::powerflow::PFFactoryModule::getViolations()
+{
+  std::vector<gridpack::powerflow::PFFactoryModule::Violation> ret;
+  gridpack::parallel::GlobalVector<gridpack::powerflow::PFFactoryModule::Violation>
+    sumVec(p_network->communicator());
+  int nproc = p_network->communicator().size();
+  int me = p_network->communicator().rank();
+  std::vector<int> sizes(nproc);
+  int i;
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = p_violations.size();
+
+  p_network->communicator().sum(&sizes[0],nproc);
+  int offset = 0;
+  for (i=1; i<me; i++) offset += sizes[i];
+  int total = 0;
+  for (i=0; i<nproc; i++) total += sizes[i];
+  if (total == 0) return ret;
+  std::vector<int> idx;
+  int last = offset+sizes[me];
+  for (i=offset; i<last; i++) idx.push_back(i);
+  sumVec.addElements(idx,p_violations);
+  sumVec.upload();
+  sumVec.getAllData(ret);
+  return ret;
+}
+
+/**
+ * Clear violation vector
+ */
+void gridpack::powerflow::PFFactoryModule::clearViolations()
+{
+  p_violations.clear();
 }
 
 } // namespace powerflow
