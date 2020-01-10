@@ -1190,9 +1190,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   p_pf_app.ignoreVoltageViolations();
-  printf("p[%d] Got to 1\n",p_world.rank());
   std::vector<std::string> violationDesc = p_pf_app.getContingencyFailures();
-  printf("p[%d] Got to 2\n",p_world.rank());
 
   // Check for tie line violations
   chkLines = p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus,
@@ -1222,21 +1220,15 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
     int nsize = violationDesc.size();
     if (task_id == 0 && nsize>0) {
-      printf("p[%d] Got to 3 nsize: %d\n",p_world.rank(),nsize);
       sprintf(sbuf,"baseCTG_%f.desc",p_rating);
-      printf("p[%d] Got to 3a\n",p_world.rank());
       if (p_task_comm.rank() == 0) {
         int i;
-      printf("p[%d] Got to 3b\n",p_world.rank());
         std::ofstream fout;
         fout.open(sbuf);
-      printf("p[%d] Got to 3c\n",p_world.rank());
         for (i=0; i<nsize; i++) {
           fout << violationDesc[i] << std::endl;
         }
-      printf("p[%d] Got to 3d\n",p_world.rank());
         fout.close();
-        printf("p[%d] Got to 4\n",p_world.rank());
       }
     }
     printf("Executing task %d on process %d\n",task_id,p_world.rank());
@@ -1327,13 +1319,10 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
       }
 #endif
 
-      printf("p[%d] Got to 5 task: %d\n",p_world.rank(),task_id);
       violationDesc = p_pf_app.getContingencyFailures();
-      printf("p[%d] Got to 6 task: %d\n",p_world.rank(),task_id);
       nsize = violationDesc.size();
       if (nsize>0) {
         sprintf(sbuf,"%s_%f.desc",p_events[task_id].p_name.c_str(),p_rating);
-      printf("p[%d] Got to 7 task: %d\n",p_world.rank(),task_id);
         if (p_task_comm.rank() == 0) {
           int i;
           std::ofstream fout;
@@ -1343,7 +1332,6 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
           }
           fout.close();
         }
-      printf("p[%d] Got to 8 task: %d\n",p_world.rank(),task_id);
       }
       if (p_print_calcs) p_pf_app.print(sbuf);
       if (p_print_calcs) p_pf_app.writeCABranch();

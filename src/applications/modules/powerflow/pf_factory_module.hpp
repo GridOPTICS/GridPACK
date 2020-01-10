@@ -40,6 +40,7 @@ class PFFactoryModule
       bool bus_violation;  /* bus voltage violation */
       int bus1;  /* bus ID for voltage violations or from bus for branch violations */
       int bus2;  /* to bus ID for branch violations */
+      char tag[3]; /* 2 character identifier */
     };
     /**
      * Basic constructor

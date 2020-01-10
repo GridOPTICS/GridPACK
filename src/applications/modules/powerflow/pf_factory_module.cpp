@@ -370,6 +370,8 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
                 violation.line_violation = true;
                 violation.bus1 = branch->getBus1OriginalIndex();
                 violation.bus2 = branch->getBus2OriginalIndex();
+                strncpy(violation.tag,tags[k].c_str(),2);
+                violation.tag[2] = '\0';
                 p_violations.push_back(violation);
               }
             }

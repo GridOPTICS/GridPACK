@@ -982,8 +982,8 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
       sprintf(sbuf,"     Bus voltage violation on bus %d",violations[i].bus1);
       string = sbuf;
     } else if (violations[i].line_violation) {
-      sprintf(sbuf,"     Branch overload violation on branch [%d,%d]",
-          violations[i].bus1,violations[i].bus2);
+      sprintf(sbuf,"     Branch overload violation on branch [%d,%d] for line %s",
+          violations[i].bus1,violations[i].bus2,violations[i].tag);
       string = sbuf;
     }
     printf("DEBUG VIOLATION: (%s)\n",string.c_str());
