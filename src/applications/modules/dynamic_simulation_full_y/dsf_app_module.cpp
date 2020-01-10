@@ -22,6 +22,7 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
+#include "gridpack/parallel/global_vector.hpp"
 #include "dsf_app_module.hpp"
 #include <iostream>
 #include <string>
@@ -1324,9 +1325,15 @@ bool gridpack::dynamic_simulation::DSFullApp::checkFrequency(
   int nbus = p_network->numBuses();
   int i;
   bool ret = true;
+  bool ok = true;
+  p_violations.clear();
   for (i=0; i<nbus; i++) {
     if (p_network->getActiveBus(i)) {
-      ret = ret && p_network->getBus(i)->checkFrequency(start,time);
+      ok = p_network->getBus(i)->checkFrequency(start,time);
+      if (!ok) {
+        p_violations.push_back(p_network->getBus(i)->getOriginalIndex());
+      }
+      ret = ret && ok;
     }
   }
   return p_factory->checkTrue(ret);
@@ -1761,4 +1768,35 @@ void gridpack::dynamic_simulation::DSFullApp::writeRTPRDiagnostics(
   p_busIO->header(sbuf);
   p_busIO->write("sink_load");
   p_busIO->close();
+}
+
+/**
+ * Get a list of buses that had frequency violations
+ * @return a list of buses that had frequency failures
+ */
+std::vector<int> gridpack::dynamic_simulation::DSFullApp::getFrequencyFailures()
+{
+  std::vector<int> ret;
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  gridpack::parallel::GlobalVector<int> sumVec(comm);
+  int nproc = comm.size();
+  int me = comm.rank();
+  std::vector<int> sizes(nproc);
+  int i;
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = p_violations.size();
+  comm.sum(&sizes[0],nproc);
+
+  int offset = 0;
+  for (i=1; i<me; i++) offset += sizes[i];
+  int total = 0;
+  for (i=0; i<nproc; i++) total += sizes[i];
+  if (total == 0) return ret;
+  std::vector<int> idx;
+  int last = offset+sizes[me];
+  for (i=offset; i<last; i++) idx.push_back(i);
+  sumVec.addElements(idx,p_violations);
+  sumVec.upload();
+  sumVec.getAllData(ret);
+  return ret;
 }

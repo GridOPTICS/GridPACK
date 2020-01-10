@@ -22,6 +22,8 @@
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "rtpr_driver.hpp"
 
+#define RTPR_DEBUG
+
 //#define USE_SUCCESS
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
@@ -1190,7 +1192,9 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   // Some buses may violate the voltage limits in the base problem. Flag these
   // buses to ignore voltage violations on them.
   p_pf_app.ignoreVoltageViolations();
+#ifdef RTPR_DEBUG
   std::vector<std::string> violationDesc = p_pf_app.getContingencyFailures();
+#endif
 
   // Check for tie line violations
   chkLines = p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus,
@@ -1218,6 +1222,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
+#ifdef RTPR_DEBUG
     int nsize = violationDesc.size();
     if (task_id == 0 && nsize>0) {
       sprintf(sbuf,"baseCTG_%f.desc",p_rating);
@@ -1231,6 +1236,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
         fout.close();
       }
     }
+#endif
     printf("Executing task %d on process %d\n",task_id,p_world.rank());
     sprintf(sbuf,"%s.out",p_events[task_id].p_name.c_str());
     // Open a new file, based on the contingency name, to store results from
@@ -1319,6 +1325,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
       }
 #endif
 
+#ifdef RTPR_DEBUG
       violationDesc = p_pf_app.getContingencyFailures();
       nsize = violationDesc.size();
       if (nsize>0) {
@@ -1333,6 +1340,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
           fout.close();
         }
       }
+#endif
       if (p_print_calcs) p_pf_app.print(sbuf);
       if (p_print_calcs) p_pf_app.writeCABranch();
       if (p_check_Qlim) p_pf_app.clearQlimViolations();
@@ -1435,7 +1443,28 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
       printf("Failed to execute DS task %d on process %d\n",
         task_id,p_world.rank());
     }
+#ifdef RTPR_DEBUG
+    if (!p_ds_app.frequencyOK()) {
+      ret = false;
+      std::vector<int> violations = p_ds_app.getFrequencyFailures();
+      int nsize = violations.size();
+      char sbuf[128];
+      if (nsize>0) {
+        sprintf(sbuf,"DS_%s_%f.desc",p_events[task_id].p_name.c_str(),p_rating);
+        if (p_task_comm.rank() == 0) {
+          int i;
+          std::ofstream fout;
+          fout.open(sbuf);
+          for (i=0; i<nsize; i++) {
+            fout << "Frequency violation on bus "<<violations[i] << std::endl;
+          }
+          fout.close();
+        }
+      }
+    }
+#else
     ret = ret && p_ds_app.frequencyOK();
+#endif
   
   }
   int iret = static_cast<int>(ret);

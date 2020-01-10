@@ -32,6 +32,7 @@ namespace dynamic_simulation {
 class DSFullApp
 {
   public:
+
     /**
      * Basic constructor
      */
@@ -234,6 +235,12 @@ class DSFullApp
     void writeRTPRDiagnostics(int src_area, int src_zone, int load_area,
         int load_zone, double gen_scale, double load_scale, const char *file);
 
+    /**
+     * Get a list of buses that had frequency violations
+     * @return a list of buses that had frequency failures
+     */
+    std::vector<int> getFrequencyFailures();
+
   private:
     /**
      * Utility function to convert faults that are in event list into
@@ -373,6 +380,9 @@ class DSFullApp
 
    // Vector of times series from watched generators
    std::vector<std::vector<double> > p_time_series;
+
+   // Record bus ID where frequency violation occured
+   std::vector<int> p_violations;
 };
 
 } // dynamic simulation
