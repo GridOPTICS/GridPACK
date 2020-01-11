@@ -67,17 +67,14 @@ public:
    * @param argc        number of program command line arguments
    * @param argv        command line arguments
    * @param help        help string to be displayed for the application
-   * @param config_file name of the config file
    * 
    * @return 
    */
   Environment(int argc, char **argv,
-              const char* help,
-	      const char* config_file);
+              const char* help);
 
   Environment(int argc, char **argv,
               const char* help,
-	      const char* config_file,
 	      const long int& ma_stack,
               const long int& ma_heap);
 
@@ -98,10 +95,7 @@ private:
   long int pma_stack;
   long int pma_heap;
 
-  // Configuration file
-  char config_file[100];
-
-  void PrintHelp(char **argv,const char* help,const char* config_file);
+  void PrintHelp(char **argv,const char* help);
 };
 
 } // namespace gridpack

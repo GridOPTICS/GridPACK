@@ -24,17 +24,13 @@
 
 namespace gridpack {
 
-void Environment::PrintHelp(char** argv,const char* help,const char* config_filein)
+void Environment::PrintHelp(char** argv,const char* help)
 
 {
   // Check if help (-h or -help) is given at command line
   if(clparser.cmdOptionExists("-h") || clparser.cmdOptionExists("-help")) {
     printf("Application Name:\n\t %s\n",argv[0]);
     if(help) printf("Description:\n\t %s\n",help);
-    if(config_filein) {
-      std::strcpy(config_file,config_filein);
-      printf("Configuration file:\n\t%s\n",config_file);
-    }
     exit(1);
   }
 }
@@ -52,9 +48,9 @@ Environment::Environment(int argc, char **argv):p_boostEnv(argc,argv),clparser(a
   gridpack::math::Initialize(&argc,&argv);
 }
 
-Environment::Environment(int argc, char **argv,const char* help,const char* config_filein): p_boostEnv(argc,argv),clparser(argc,argv)
+Environment::Environment(int argc, char **argv,const char* help): p_boostEnv(argc,argv),clparser(argc,argv)
 {
-  PrintHelp(argv,help,config_file);
+  PrintHelp(argv,help);
   pma_stack = 200000;
   pma_heap  = 200000;
 
@@ -62,17 +58,16 @@ Environment::Environment(int argc, char **argv,const char* help,const char* conf
   MA_init(C_DBL,pma_stack,pma_heap);
   gridpack::math::Initialize(&argc,&argv);
 }
-
-  Environment::Environment(int argc, char **argv,const char* help,const char* config_filein,const long int& ma_stack,const long int& ma_heap): p_boostEnv(argc,argv),clparser(argc,argv)
+  
+Environment::Environment(int argc, char **argv,const char* help,const long int& ma_stack,const long int& ma_heap): p_boostEnv(argc,argv),clparser(argc,argv)
 {
-  PrintHelp(argv,help,config_file);
+  PrintHelp(argv,help);
 
   GA_Initialize();
   MA_init(C_DBL,ma_stack,ma_heap);
   gridpack::math::Initialize(&argc,&argv);
 
 }
-
 
 Environment::~Environment(void)
 {
