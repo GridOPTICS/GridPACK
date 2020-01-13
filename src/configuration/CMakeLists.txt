@@ -22,6 +22,8 @@ gridpack_set_library_version(gridpack_configuration)
 add_dependencies(gridpack_configuration external_build)
 
 set(target_libraries 
+  gridpack_math
+  gridpack_environment
   gridpack_parallel
   ${GA_LIBRARIES}
   ${Boost_LIBRARIES} 
@@ -31,6 +33,7 @@ set(target_libraries
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_configuration
     gridpack_parallel
+    gridpack_environment
     )
 endif()
 

@@ -28,6 +28,8 @@
 #include "shuffler.hpp"
 #include "ga_shuffler.hpp"
 
+#include "gridpack/environment/environment.hpp"
+
 // -------------------------------------------------------------
 // struct Tester
 // -------------------------------------------------------------
@@ -255,7 +257,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   return ::boost::unit_test::unit_test_main( &init_function, argc, argv );
 }
 

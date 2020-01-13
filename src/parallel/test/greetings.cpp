@@ -27,6 +27,7 @@
 #include <iostream>
 #include <ga.h>
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/environment/environment.hpp"
 
 // -------------------------------------------------------------
 //  Main Program
@@ -34,7 +35,7 @@
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
 
   // Limit scope so that program exits cleanly
   if (1) {

@@ -23,6 +23,7 @@
 #include <boost/assert.hpp>
 
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/utilities/exception.hpp"
 #include "math.hpp"
 #include "linear_matrix_solver.hpp"
@@ -33,11 +34,9 @@
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
   gridpack::parallel::Communicator self = world.split(world.rank());
-
-  gridpack::math::Initialize(&argc,&argv);
 
   boost::scoped_ptr<gridpack::utility::Configuration> 
     config(gridpack::utility::Configuration::configuration());
@@ -143,7 +142,5 @@ main(int argc, char **argv)
   Xorig.reset();
   X.reset();
 
-  gridpack::math::Finalize();
-  
   return 0;
 }

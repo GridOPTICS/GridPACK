@@ -29,6 +29,7 @@
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/parallel/task_manager.hpp"
 #include "gridpack/timer/local_timer.hpp"
+#include "gridpack/environment/environment.hpp"
 
 // -------------------------------------------------------------
 //  Main Program
@@ -36,7 +37,7 @@
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   GA_Initialize();
   // Create an artificial scope so that all objects call their destructors
   // before GA_Terminate is called

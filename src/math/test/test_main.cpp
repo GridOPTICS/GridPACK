@@ -23,6 +23,7 @@
 
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "math.hpp"
 
@@ -54,9 +55,8 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
-  gridpack::math::Initialize(&argc,&argv);
 
   // In the GridPACK setup, CTest determines unit test success or
   // failure by a phrase produced by Boost::test. When run in
@@ -67,7 +67,6 @@ main(int argc, char **argv)
   int lresult = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   lresult = (lresult == boost::exit_success ? 0 : 1);
   int gresult;
-  gridpack::math::Finalize();
 
   boost::mpi::all_reduce(world, lresult, gresult, std::plus<int>());
   if (world.rank() == 0) {

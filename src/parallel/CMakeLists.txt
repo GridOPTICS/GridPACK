@@ -13,8 +13,17 @@
 # Last Change: 2019-08-16 13:41:44 d3g096
 # -------------------------------------------------------------
 
+set(target_libraries
+   gridpack_parallel
+   gridpack_math
+   gridpack_timer
+   gridpack_environment
+   ${Boost_LIBRARIES} 
+   ${GA_LIBRARIES} 
+   ${MPI_CXX_LIBRARIES}
+)
+	
 add_library(gridpack_parallel 
-  environment.cpp
   communicator.cpp
   distributed.cpp
   index_hash.cpp
@@ -25,11 +34,7 @@ gridpack_set_library_version(gridpack_parallel)
 
 # For some reason this is necessary for Mac OS X, but messes things up on Linux
 if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_parallel
-    ${Boost_LIBRARIES} 
-    ${GA_LIBRARIES} 
-    ${MPI_CXX_LIBRARIES}
-    )
+  target_link_libraries(${target_libraries})
 endif()
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -41,7 +46,6 @@ endif()
 # gridpack header installation
 # -------------------------------------------------------------
 install(FILES
-  environment.hpp
   communicator.hpp
   parallel.hpp
   distributed.hpp
@@ -70,11 +74,10 @@ install(TARGETS
 # A simple MPI program (that does not use boost::test)
 # -------------------------------------------------------------
 add_executable(greetings test/greetings.cpp)
-target_link_libraries(greetings gridpack_parallel 
-  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(greetings ${target_libraries})
 
 if (NOT USE_PROGRESS_RANKS)
-  add_test(greetings_serial greetings)
+  add_test(greetings_serial greetings)	
   set_tests_properties(greetings_serial
     PROPERTIES 
     PASS_REGULAR_EXPRESSION "I am process 0 of [1-9].*$"
@@ -95,8 +98,7 @@ set_tests_ldpath(greetings_parallel)
 # A simple program to test the task manager
 # -------------------------------------------------------------
 add_executable(task_test test/task_test.cpp ../timer/local_timer.cpp)
-target_link_libraries(task_test gridpack_parallel 
-  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(task_test ${target_libraries})
 
 gridpack_add_run_test(task_test task_test "")
 
@@ -113,11 +115,7 @@ gridpack_add_unit_test(mpi_test mpi_test)
 # TEST: shuffle_test
 # -------------------------------------------------------------
 add_executable(shuffle_test test/shuffle_test.cpp)
-target_link_libraries(shuffle_test 
-  gridpack_parallel 
-  ${GA_LIBRARIES} 
-  ${Boost_LIBRARIES} 
-  ${MPI_CXX_LIBRARIES}
+target_link_libraries(shuffle_test ${target_libraries}
 )
 gridpack_add_unit_test(shuffle shuffle_test)
 
@@ -126,8 +124,7 @@ gridpack_add_unit_test(shuffle shuffle_test)
 # A simple program to test the task manager
 # -------------------------------------------------------------
 add_executable(hash_test test/hash_test.cpp)
-target_link_libraries(hash_test gridpack_parallel 
-  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES} gridpack_timer)
+target_link_libraries(hash_test ${target_libraries})
 
 gridpack_add_unit_test(hash_test hash_test)
 
@@ -136,8 +133,7 @@ gridpack_add_unit_test(hash_test hash_test)
 # A simple program to test the random number generator
 # -------------------------------------------------------------
 add_executable(random_test test/random_test.cpp)
-target_link_libraries(random_test gridpack_parallel 
-  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(random_test ${target_libraries})
 
 gridpack_add_run_test(random_test random_test "")
 
@@ -146,8 +142,7 @@ gridpack_add_run_test(random_test random_test "")
 # A simple program to test the global store module
 # -------------------------------------------------------------
 add_executable(store_test test/store_test.cpp)
-target_link_libraries(store_test gridpack_parallel 
-  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(store_test ${target_libraries})
 
 gridpack_add_run_test(store_test store_test "")
 
@@ -156,7 +151,6 @@ gridpack_add_run_test(store_test store_test "")
 # A simple program to test the global vector module
 # -------------------------------------------------------------
 add_executable(vector_test test/vector_test.cpp)
-target_link_libraries(vector_test gridpack_parallel 
-  ${GA_LIBRARIES} ${Boost_LIBRARIES} ${MPI_CXX_LIBRARIES})
+target_link_libraries(vector_test ${target_libraries})
 
 gridpack_add_run_test(vector_test vector_test "")

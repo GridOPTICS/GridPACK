@@ -37,6 +37,7 @@
 #include "gridpack/parallel/ga_shuffler.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/utilities/exception.hpp"
+#include "gridpack/environment/environment.hpp"
 
 namespace gridpack {
 namespace network {

@@ -1,3 +1,4 @@
+
 /*
  *     Copyright (c) 2013 Battelle Memorial Institute
  *     Licensed under modified BSD License. A copy of this license can be found
@@ -24,7 +25,7 @@ const char* help = "GridPACK power flow application";
 int main(int argc, char **argv)
 {
   // Initialize libraries (parallel and math)
-  gridpack::Environment env(argc,argv,help,"input_14.xml");
+  gridpack::Environment env(argc,argv,help);
 
   if (1) {
     gridpack::utility::CoarseTimer *timer =
