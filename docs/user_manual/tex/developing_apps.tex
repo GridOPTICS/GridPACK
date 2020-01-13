@@ -424,17 +424,21 @@ The last part of building an application is creating the top level application d
 main(int argc, char **argv)
 {
   gridpack::parallel::Environment env(argc,argv);
-  gridpack::math::Initialize();
 
   gridpack::powerflow::PFApp app;
   app.execute();
 
-  gridpack::math::Finalize();
 }
 \end{Verbatim}
 }
 
-The first line in this program creates a variable of type \texttt{\textbf{Environment}} that initializes the MPI and GA communication libraries (the initialization happens in the constructor, so all that is necessary is to create the variable). The second line initializes the math library, which, in turn, calls the initialization routines of whatever library the math module is built on. The code then instantiates a power flow application object and calls the execute method for this object. The remainder of the power flow application is contained in the \texttt{\textbf{PFApp::execute}} method. Finally, when the application has finished running, the main program cleans up the communication and math libraries. The communication libraries are handled when the \texttt{\textbf{env}} variable goes out of scope and calls the \texttt{\textbf{Environment}} destructor. The main reason for breaking the code up in this way instead of including the execute function as part of \texttt{\textbf{main}} is to force the invocation of all the destructors in the GridPACK objects used to implement the application. Otherwise, these destructors get called after the communication libraries have been finalized and the program will fail to exit cleanly.
+The first line in this program creates a variable of type
+\texttt{\textbf{Environment}} that initializes the MPI and GA communication
+libraries as well as the math initialization routine (the initialization
+happens in the constructor, so all that is necessary is to create the variable).
+More can be found out about the \texttt{\textbf{Environment}} class in
+Section~\ref{environment}.
+The code then instantiates a power flow application object and calls the execute method for this object. The remainder of the power flow application is contained in the \texttt{\textbf{PFApp::execute}} method. Finally, when the application has finished running, the main program cleans up the communication and math libraries. The communication libraries are handled when the \texttt{\textbf{env}} variable goes out of scope and calls the \texttt{\textbf{Environment}} destructor. The main reason for breaking the code up in this way instead of including the execute function as part of \texttt{\textbf{main}} is to force the invocation of all the destructors in the GridPACK objects used to implement the application. Otherwise, these destructors get called after the communication libraries have been finalized and the program will fail to exit cleanly.
 
 The top level control of the application is embedded in the power flow \texttt{\textbf{execute}} method. The \texttt{\textbf{execute}} method starts off with the code
 
