@@ -181,6 +181,10 @@ class RTPRDriver
     double p_rating;
 
     double p_Vmin, p_Vmax;
+    
+    bool p_monitorGenerators;
+
+    double p_maximumFrequency;
 
     bool p_check_Qlim, p_print_calcs;
 

@@ -157,7 +157,7 @@ class DSFullFactory
     void scaleGeneratorRealPower(double scale, int area, int zone);
 
     /**
-     * Scale load real power. If zone less than 1 then scale all
+     * Scale load power. If zone less than 1 then scale all
      * loads in the area
      * @param scale factor to scale load real power
      * @param area index of area for scaling load
@@ -165,7 +165,7 @@ class DSFullFactory
      * @return false if there is not enough capacity to change generation
      *         by requested amount
      */
-    void scaleLoadRealPower(double scale, int area, int zone);
+    void scaleLoadPower(double scale, int area, int zone);
 
     /**
      * Return the total real power load for all loads in the zone. If zone
@@ -174,7 +174,7 @@ class DSFullFactory
      * @param zone index of zone
      * @return total load
      */
-    double getTotalLoad(int area, int zone);
+    double getTotalLoadRealPower(int area, int zone);
 
     /**
      * Return the current real power generation and the maximum and minimum total
@@ -190,9 +190,9 @@ class DSFullFactory
         double *pmax);
 
     /**
-     * Reset real power of loads and generators to original values
+     * Reset power of loads and generators to original values
      */
-    void resetRealPower();
+    void resetPower();
 
     /**
      * Set parameters for real time path rating diagnostics

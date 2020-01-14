@@ -616,7 +616,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
   bool ret = true;
   int idx;
   if (flag == 0) {
-    double ltotal = p_pf_app.getTotalLoad(p_dstArea,p_dstZone);
+    double ltotal = p_pf_app.getTotalLoadRealPower(p_dstArea,p_dstZone);
     double gtotal, pmin, pmax;
     p_pf_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
     double extra, g_rating;
@@ -624,7 +624,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       extra = (rating-1.0)*ltotal;
       if (extra <= pmax-gtotal) {
         // Sufficient capacity exists to meet adjustment
-        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (pmax > gtotal) {
           g_rating = extra/(pmax-gtotal);
         } else {
@@ -634,7 +634,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       } else {
         extra = pmax-gtotal;
         rating = (ltotal+extra)/ltotal;
-        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (pmax > gtotal) {
           g_rating = extra/(pmax-gtotal);
         } else {
@@ -647,7 +647,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       extra = (1.0-rating)*ltotal;
       if (extra <= gtotal-pmin) {
         // Sufficient capacity exists to meet adjustment
-        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (gtotal > pmin) {
           g_rating = -extra/(gtotal-pmin);
         } else {
@@ -657,7 +657,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       } else {
         extra = gtotal-pmin;
         rating = (ltotal-extra)/ltotal;
-        p_pf_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (gtotal > pmin) {
           g_rating = -extra/(gtotal-pmin);
         } else {
@@ -672,7 +672,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
     p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
         g_rating,rating,file);
   } else {
-    double ltotal = p_ds_app.getTotalLoad(p_dstArea,p_dstZone);
+    double ltotal = p_ds_app.getTotalLoadRealPower(p_dstArea,p_dstZone);
     double gtotal, pmin, pmax;
     p_ds_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
     double extra, g_rating;
@@ -680,7 +680,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       extra = (rating-1.0)*ltotal;
       if (extra <= pmax-gtotal) {
         // Sufficient capacity exists to meet adjustment
-        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_ds_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (pmax > gtotal) {
           g_rating = extra/(pmax-gtotal);
         } else {
@@ -690,7 +690,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       } else {
         extra = pmax-gtotal;
         rating = (ltotal+extra)/ltotal;
-        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_ds_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (pmax > gtotal) {
           g_rating = extra/(pmax-gtotal);
         } else {
@@ -703,7 +703,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       extra = (1.0-rating)*ltotal;
       if (extra <= gtotal-pmin) {
         // Sufficient capacity exists to meet adjustment
-        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_ds_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (gtotal > pmin) {
           g_rating = -extra/(gtotal-pmin);
         } else {
@@ -713,7 +713,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
       } else {
         extra = gtotal-pmin;
         rating = (ltotal-extra)/ltotal;
-        p_ds_app.scaleLoadRealPower(rating,p_dstArea,p_dstZone);
+        p_ds_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
         if (gtotal > pmin) {
           g_rating = -extra/(gtotal-pmin);
         } else {
@@ -841,6 +841,11 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (!cursor->get("checkQLimit",&p_check_Qlim)) {
     p_check_Qlim = false;
   }
+
+  // Monitor generators for frequency violations
+  p_monitorGenerators = cursor->get("monitorGenerators",true);
+  p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
+
   // TODO: Set these values from input deck
   double start = 0.1;
   double end = 10.0;
@@ -1017,12 +1022,12 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
           printf("Rating capacity exceeded: %f\n",p_rating);
         }
         p_rating -= 0.05;
-        p_pf_app.resetRealPower();
+        p_pf_app.resetPower();
         break;
       }
       checkTie = runContingencies();
       if (!checkTie) p_rating -= 0.05;
-      p_pf_app.resetRealPower();
+      p_pf_app.resetPower();
     }
     // Refine estimate of rating
     checkTie = true;
@@ -1035,12 +1040,12 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
               " is capacity-limited for Rating: %f\n",
               p_rating);
         }
-        p_pf_app.resetRealPower();
+        p_pf_app.resetPower();
         break;
       }
       checkTie = runContingencies();
       if (!checkTie) p_rating -= 0.01;
-      p_pf_app.resetRealPower();
+      p_pf_app.resetPower();
     }
   } else {
     // Tie lines are insecure for some contingencies. Decrease loads and generation
@@ -1051,12 +1056,12 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
           printf("Rating capacity exceeded: %f\n",p_rating);
         }
         p_rating += 0.05;
-        p_pf_app.resetRealPower();
+        p_pf_app.resetPower();
         break;
       }
       checkTie = runContingencies();
       if (checkTie) p_rating += 0.05;
-      p_pf_app.resetRealPower();
+      p_pf_app.resetPower();
     }
     // Refine estimate of rating
     checkTie = false;
@@ -1069,76 +1074,80 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
               " is capacity-limited for Rating: %f\n",
               p_rating);
         }
-        p_pf_app.resetRealPower();
+        p_pf_app.resetPower();
         break;
       }
       checkTie = runContingencies();
-      p_pf_app.resetRealPower();
+      p_pf_app.resetPower();
     }
   }
   if (p_world.rank() == 0) {
     printf("Final Power Flow Rating: %f\n",p_rating);
   }
-  // Power flow estimate of path rating is complete. Now check to see if the
-  // rating is stable using dynamic simulation. Start by cloning the dynamic
-  // simulation network from the power flow network
-  p_ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(p_task_comm));
-  p_pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
-    gridpack::dynamic_simulation::DSFullBranch>(p_ds_network);
-  // initialize dynamic simulation
-  p_ds_app.setNetwork(p_ds_network, config);
-  p_ds_app.readGenerators();
-  p_ds_app.initialize();
 
-  // find the generators that will be monitored
-  std::vector<int> busIDs;
-  std::vector<std::string> genIDs;
-  findWatchedGenerators(p_ds_network,p_srcArea,p_srcZone,busIDs,genIDs);
-  if (p_world.rank() == 0) {
-    printf("Generators being monitored in dynamic simulations\n");
-    for (i=0; i<busIDs.size(); i++) {
-      printf("    Host bus: %8d   Generator ID: %s\n",
-          busIDs[i],genIDs[i].c_str());
-    }
-  }
-  p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
+  if (p_monitorGenerators) {
+    // Power flow estimate of path rating is complete. Now check to see if the
+    // rating is stable using dynamic simulation. Start by cloning the dynamic
+    // simulation network from the power flow network
+    p_ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(p_task_comm));
+    p_pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
+      gridpack::dynamic_simulation::DSFullBranch>(p_ds_network);
+    // initialize dynamic simulation
+    p_ds_app.setNetwork(p_ds_network, config);
+    p_ds_app.readGenerators();
+    p_ds_app.initialize();
+    p_ds_app.setFrequencyMonitoring(p_monitorGenerators, p_maximumFrequency);
 
-  p_ds_app.scaleLoadRealPower(p_rating,p_dstArea,p_dstZone);
-  p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
-  checkTie = runDSContingencies();
-  p_ds_app.resetRealPower();
-
-  // Current rating is an upper bound. Only check lower values.
-  while (!checkTie && p_rating >= 0.0) {
-    p_rating -= 0.05;
-    if (!adjustRating(p_rating,1)) {
-      p_rating += 0.05;
-      p_ds_app.resetRealPower();
-      break;
-    }
-    checkTie = runDSContingencies();
-    p_ds_app.resetRealPower();
-  }
-  // Refine estimate of rating
-  checkTie = false;
-  while (!checkTie && p_rating >= 0.0) {
-    p_rating -= 0.01;
-    if (!adjustRating(p_rating,1)) {
-      p_rating += 0.01;
-      if (p_world.rank() == 0) {
-        printf("Real power generation for dynamic simulation"
-            " is capacity-limited for Rating: %f\n",
-            p_rating);
+    // find the generators that will be monitored
+    std::vector<int> busIDs;
+    std::vector<std::string> genIDs;
+    findWatchedGenerators(p_ds_network,p_srcArea,p_srcZone,busIDs,genIDs);
+    if (p_world.rank() == 0) {
+      printf("Generators being monitored in dynamic simulations\n");
+      for (i=0; i<busIDs.size(); i++) {
+        printf("    Host bus: %8d   Generator ID: %s\n",
+            busIDs[i],genIDs[i].c_str());
       }
-      p_ds_app.resetRealPower();
-      break;
     }
-    checkTie = runDSContingencies();
-    p_ds_app.resetRealPower();
-  }
+    p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
-  if (p_world.rank() == 0) {
-    printf("Final Dynamic Simulation Rating: %f\n",p_rating);
+    p_ds_app.scaleLoadPower(p_rating,p_dstArea,p_dstZone);
+    p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
+    checkTie = runDSContingencies();
+    p_ds_app.resetPower();
+
+    // Current rating is an upper bound. Only check lower values.
+    while (!checkTie && p_rating >= 0.0) {
+      p_rating -= 0.05;
+      if (!adjustRating(p_rating,1)) {
+        p_rating += 0.05;
+        p_ds_app.resetPower();
+        break;
+      }
+      checkTie = runDSContingencies();
+      p_ds_app.resetPower();
+    }
+    // Refine estimate of rating
+    checkTie = false;
+    while (!checkTie && p_rating >= 0.0) {
+      p_rating -= 0.01;
+      if (!adjustRating(p_rating,1)) {
+        p_rating += 0.01;
+        if (p_world.rank() == 0) {
+          printf("Real power generation for dynamic simulation"
+              " is capacity-limited for Rating: %f\n",
+              p_rating);
+        }
+        p_ds_app.resetPower();
+        break;
+      }
+      checkTie = runDSContingencies();
+      p_ds_app.resetPower();
+    }
+
+    if (p_world.rank() == 0) {
+      printf("Final Dynamic Simulation Rating: %f\n",p_rating);
+    }
   }
 
   timer->stop(t_total);
