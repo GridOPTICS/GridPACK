@@ -11,6 +11,9 @@
     <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
+    <checkQLimit>true</checkQLimit>
+    <monitorGenerators> true </monitorGenerators>
+    <frequencyMaximum> 61.8 </frequencyMaximum>
   </RealTimePathRating>
   <Powerflow>
     <networkConfiguration> TAMU_500_rmsmallgen_v23.raw </networkConfiguration>

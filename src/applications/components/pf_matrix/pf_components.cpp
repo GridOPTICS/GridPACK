@@ -534,6 +534,7 @@ void gridpack::powerflow::PFBus::load(
         p_pl.push_back(pl);
         p_savePl.push_back(pl);
         p_ql.push_back(ql);
+        p_saveQl.push_back(ql);
         p_lstatus.push_back(lstatus);
         std::string id("-1");
         data->getValue(LOAD_ID,&id,i);
@@ -1060,9 +1061,10 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
         } else {
           status = "inactive";
         }
-        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
+              getOriginalIndex(),
               p_lid[i].c_str(),status.c_str(),p_area,p_zone,p_savePl[i],
-              p_pl[i]);
+              p_pl[i],p_saveQl[i],p_ql[i]);
         len = strlen(sbuf);
         if (slen+len <= bufsize) {
           sprintf(cptr,"%s",sbuf);
@@ -1533,25 +1535,26 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
 }
 
 /**
- * Scale value of real power on loads
+ * Scale value of real and reactive power on loads
  * @param character ID for load
  * @param value scale factor for real power
  */
-void gridpack::powerflow::PFBus::scaleLoadRealPower(std::string tag, double value)
+void gridpack::powerflow::PFBus::scaleLoadPower(std::string tag, double value)
 {
   int i;
   for (i=0; i<p_nload; i++) {
     if (p_lid[i] == tag && p_lstatus[i]) {
       p_pl[i] = value*p_pl[i];
+      p_ql[i] = value*p_ql[i];
       break;
     }
   }
 }
 
 /**
- * Reset real power for generators and load back to original values
+ * Reset power for generators and loads back to original values
  */
-void gridpack::powerflow::PFBus::resetRealPower()
+void gridpack::powerflow::PFBus::resetPower()
 {
   int i;
   for (i=0; i<p_ngen; i++) {
@@ -1559,6 +1562,7 @@ void gridpack::powerflow::PFBus::resetRealPower()
   }
   for (i=0; i<p_nload; i++) {
     p_pl[i] = p_savePl[i];
+    p_ql[i] = p_saveQl[i];
   }
 }
 
@@ -1593,20 +1597,23 @@ void gridpack::powerflow::PFBus::getGeneratorMargins(
 /**
  * Get current value of loads
  * @param tag character ID for load
- * @param current initial value of load
+ * @param pl initial value of load real power
+ * @param ql initial value of load reactive power
  * @param status current status of load
  */
-void gridpack::powerflow::PFBus::getRealPowerLoads(
-    std::vector<std::string> &tag, std::vector<double> &current,
-    std::vector<int> &status)
+void gridpack::powerflow::PFBus::getLoadPower(
+    std::vector<std::string> &tag, std::vector<double> &pl,
+    std::vector<double> &ql, std::vector<int> &status)
 {
   tag.clear();
-  current.clear();
+  pl.clear();
+  ql.clear();
   status.clear();
   int i;
   for (i=0; i<p_nload; i++) {
     tag.push_back(p_lid[i]);
-    current.push_back(p_savePl[i]);
+    pl.push_back(p_savePl[i]);
+    ql.push_back(p_saveQl[i]);
     status.push_back(p_lstatus[i]);
   }
 }
