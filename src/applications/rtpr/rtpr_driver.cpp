@@ -24,7 +24,7 @@
 
 #define RTPR_DEBUG
 
-#define USE_SUCCESS
+//#define USE_SUCCESS
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
 
