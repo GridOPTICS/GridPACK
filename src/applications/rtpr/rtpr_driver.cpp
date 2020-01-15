@@ -24,7 +24,7 @@
 
 #define RTPR_DEBUG
 
-//#define USE_SUCCESS
+#define USE_SUCCESS
 // Sets up multiple communicators so that individual contingency calculations
 // can be run concurrently
 
@@ -1382,18 +1382,21 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   ca_violation.upload();
   // Write out stats on successful calculations
   if (p_world.rank() == 0) {
+    char sbuf[128];
     contingency_idx.clear();
     contingency_success.clear();
     contingency_violation.clear();
+    int i;
     for (i=0; i<ntasks; i++) contingency_idx.push_back(i);
     ca_success.getData(contingency_idx, contingency_success);
     contingency_success.clear();
     ca_violation.getData(contingency_idx, contingency_violation);
     std::ofstream fout;
-    fout.open("success.txt");
+    sprintf(sbuf,"success_%f.dat",p_rating);
+    fout.open(sbuf);
     for (i=0; i<ntasks; i++) {
       if (contingency_success[i]) {
-        fout << "contingency: " << i+1 << " success: true";
+        fout << "contingency: " << p_events[i].p_name << " success: true";
         if (contingency_violation[i] == 1) {
           fout << " violation: none" << std::endl;
         } else if (contingency_violation[i] == 2) {
@@ -1404,7 +1407,8 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
           fout << " violation: bus and branch" << std::endl;
         }
       } else {
-        fout << "contingency: " << i+1 << " success: false" << std::endl;
+        fout << "contingency: " << p_events[i].p_name
+          << " success: false" << std::endl;
       }
     }
     fout.close();
