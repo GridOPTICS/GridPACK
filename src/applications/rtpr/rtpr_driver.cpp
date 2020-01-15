@@ -847,9 +847,23 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
 
   // TODO: Set these values from input deck
-  double start = 0.1;
-  double end = 10.0;
+  double start;
+  if (!cursor->get("contingencyDSStart",&start)) {
+    start = 1.0;
+  }
+  double end;
+  if (!cursor->get("contingencyDSEnd",&end)) {
+    end = 1.03;
+  }
   double tstep = 0.005;
+  if (!cursor->get("contingencyDSTimeStep",&tstep)) {
+    tstep = 0.005;
+  }
+  if (p_world.rank() == 0) {
+    printf("Start time for dynamic simulation contingencies: %f\n",start);
+    printf("End time for dynamic simulation contingencies:   %f\n",end);
+    printf("Time step for dynamic simulation contingencies:  %f\n",tstep);
+  }
 
   // Create task communicators from world communicator
   p_task_comm = p_world.divide(grp_size);
