@@ -15,6 +15,9 @@
     <checkQLimit>true</checkQLimit>
     <monitorGenerators> true </monitorGenerators>
     <frequencyMaximum> 61.8 </frequencyMaximum>
+    <contingencyDSStart> 1.0 </contingencyDSStart>
+    <contingencyDSEnd> 1.015 </contingencyDSEnd>
+    <contingencyDSTimeStep> 0.005 </contingencyDSTimeStep>
     <!--
     <tieLines>
       <tieLine>
