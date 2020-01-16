@@ -20,7 +20,7 @@
 #define _parallel_hpp_
 
 #include <boost/mpi.hpp>
-#include <gridpack/parallel/environment.hpp>
+#include <gridpack/environment/environment.hpp>
 #include <gridpack/parallel/communicator.hpp>
 
 #endif
