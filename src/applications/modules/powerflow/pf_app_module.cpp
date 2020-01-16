@@ -992,3 +992,12 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
   }
   return ret;
 }
+
+/**
+ * User rate B parameter for line overload violations
+ * @param flag if true, use RATEB parameter
+ */
+void gridpack::powerflow::PFAppModule::useRateB(bool flag)
+{
+  p_factory->useRateB(flag);
+}

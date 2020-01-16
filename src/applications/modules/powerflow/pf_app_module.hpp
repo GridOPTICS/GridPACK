@@ -309,6 +309,12 @@ class PFAppModule
      */
     std::vector<std::string> getContingencyFailures();
 
+    /**
+     * User rate B parameter for line overload violations
+     * @param flag if true, use RATEB parameter
+     */
+    void useRateB(bool flag);
+
   private:
 
     // pointer to network

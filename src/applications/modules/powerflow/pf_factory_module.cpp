@@ -35,6 +35,7 @@ PFFactoryModule::PFFactoryModule(PFFactoryModule::NetworkPtr network)
   : gridpack::factory::BaseFactory<PFNetwork>(network)
 {
   p_network = network;
+  p_rateB = false;
 }
 
 /**
@@ -356,14 +357,28 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
       int nlines;
       p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
       std::vector<std::string> tags = branch->getLineTags();
-      double rateA;
+      double rate;
       for (int k = 0; k<nlines; k++) {
         if (!branch->getIgnore(tags[k])) {
-          if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
-            if (rateA > 0.0) {
+          bool foundRating=false;
+          if (p_rateB) {
+            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_B,&rate,k)) {
+              foundRating = true;
+            } else {
+              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+                foundRating = true;
+              }
+            }
+          } else {
+            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+              foundRating = true;
+            }
+          }
+          if (foundRating) {
+            if (rate > 0.0) {
               gridpack::ComplexType s = branch->getComplexPower(tags[k]);
               double pq = abs(s);
-              if (pq > rateA) {
+              if (pq > rate) {
                 branch_ok = false;
                 gridpack::powerflow::PFFactoryModule::Violation violation;
                 violation.bus_violation = false;
@@ -411,14 +426,28 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(int area)
         int nlines;
         p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
         std::vector<std::string> tags = branch->getLineTags();
-        double rateA;
+        double rate;
         for (int k = 0; k<nlines; k++) {
           if (!branch->getIgnore(tags[k])) {
-            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
-              if (rateA > 0.0) {
+            bool foundRating=false;
+            if (p_rateB) {
+              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_B,&rate,k)) {
+                foundRating = true;
+              } else {
+                if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+                  foundRating = true;
+                }
+              }
+            } else {
+              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+                foundRating = true;
+              }
+            }
+            if (foundRating) {
+              if (rate > 0.0) {
                 gridpack::ComplexType s = branch->getComplexPower(tags[k]);
                 double pq = abs(s);
-                if (pq > rateA) branch_ok = false;
+                if (pq > rate) branch_ok = false;
               }
             }
           }
@@ -463,15 +492,32 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(
       int nlines;
       p_network->getBranchData(indices[j])->getValue(BRANCH_NUM_ELEMENTS,&nlines);
       std::vector<std::string> alltags = branch->getLineTags();
-      double rateA;
+      double rate;
       for (int k = 0; k<nlines; k++) {
         if (tags[i] == alltags[k] && !branch->getIgnore(tags[k])) {
+          bool foundRating=false;
+          if (p_rateB) {
+            if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_B,
+                  &rate,k)) {
+              foundRating = true;
+            } else {
+              if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_A,
+                    &rate,k)) {
+                foundRating = true;
+              }
+            }
+          } else {
+            if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_A,
+                  &rate,k)) {
+              foundRating = true;
+            }
+          }
           if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_A,
-                &rateA,k)) {
-            if (rateA > 0.0) {
+                &rate,k)) {
+            if (rate > 0.0) {
               gridpack::ComplexType s = branch->getComplexPower(tags[k]);
               double pq = abs(s);
-              if (pq > rateA) {
+              if (pq > rate) {
                 failure[i] = 1;
               }
             }
@@ -885,6 +931,19 @@ gridpack::powerflow::PFFactoryModule::getViolations()
 void gridpack::powerflow::PFFactoryModule::clearViolations()
 {
   p_violations.clear();
+}
+
+/**
+ * User rate B parameter for line overload violations
+ * @param flag if true, use RATEB parameter
+ */
+void gridpack::powerflow::PFFactoryModule::useRateB(bool flag)
+{
+  if (flag) {
+    p_rateB = true;
+  } else {
+    p_rateB = false;
+  }
 }
 
 } // namespace powerflow

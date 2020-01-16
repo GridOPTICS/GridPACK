@@ -847,6 +847,12 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_monitorGenerators = cursor->get("monitorGenerators",true);
   p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
 
+  // Use branch rating B parameter
+  p_useRateB = cursor->get("useBranchRatingB",false);
+  if (p_useRateB && p_world.rank() == 0) {
+    printf("Using Branch Rating B parameter for checking line overloads\n");
+  }
+
   // TODO: Set these values from input deck
   double start;
   if (!cursor->get("contingencyDSStart",&start)) {
@@ -856,7 +862,7 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   if (!cursor->get("contingencyDSEnd",&end)) {
     end = 1.03;
   }
-  double tstep = 0.005;
+  double tstep;
   if (!cursor->get("contingencyDSTimeStep",&tstep)) {
     tstep = 0.005;
   }
@@ -1220,6 +1226,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   std::vector<std::string> violationDesc = p_pf_app.getContingencyFailures();
 #endif
 
+  p_pf_app.useRateB(p_useRateB);
   // Check for tie line violations
   chkLines = p_pf_app.checkLineOverloadViolations(p_from_bus, p_to_bus,
       p_tags, violations);
