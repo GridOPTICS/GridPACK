@@ -48,13 +48,13 @@ target_link_libraries(rtpr.x ${target_libraries})
 # Put some sample input in the binary directory so rtpr.x can run
 
 add_custom_command(
-  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14_classic.xml"
   COMMAND ${CMAKE_COMMAND}
-  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input_14.xml"
-  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/rtpr/input_14_classic.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14_classic.xml"
   -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
   -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input_14.xml"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/rtpr/input_14_classic.xml"
   )
 
 add_custom_command(
@@ -70,7 +70,7 @@ add_custom_command(
 add_custom_target(rtpr.x.input
  
   COMMAND ${CMAKE_COMMAND} -E copy 
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca_mod_rate6.raw
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
@@ -90,8 +90,8 @@ add_custom_target(rtpr.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   DEPENDS
-  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
-  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+  ${CMAKE_CURRENT_BINARY_DIR}/input_14_classic.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca_mod_rate6.raw
   ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
   ${CMAKE_CURRENT_BINARY_DIR}/input_tamu500.xml
   ${GRIDPACK_DATA_DIR}/raw/TAMU_500_rmsmallgen_v23.raw
@@ -106,8 +106,8 @@ add_dependencies(rtpr.x rtpr.x.input)
 
 #install(FILES 
 #  ${CMAKE_CURRENT_BINARY_DIR}/CMakeLists.txt
-#  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
-#  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca.raw
+#  ${CMAKE_CURRENT_BINARY_DIR}/input_14_classic.xml
+#  ${GRIDPACK_DATA_DIR}/raw/IEEE14_ca_mod_rate6.raw
 #  ${GRIDPACK_DATA_DIR}/dyr/IEEE14.dyr
 #  ${GRIDPACK_DATA_DIR}/contingencies/contingencies_14.xml
 #  ${CMAKE_CURRENT_BINARY_DIR}/input_118.xml
@@ -125,5 +125,5 @@ install(TARGETS rtpr.x DESTINATION bin)
 # run application as test
 # -------------------------------------------------------------
 set(TIMEOUT 120.0)
-gridpack_add_run_test("real_time_path_rating" rtpr.x input_14.xml)
+gridpack_add_run_test("real_time_path_rating" rtpr.x input_14_classic.xml)
 

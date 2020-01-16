@@ -23,6 +23,7 @@
 #include "rtpr_driver.hpp"
 
 #define RTPR_DEBUG
+#define USE_STATBLOCK
 
 //#define USE_SUCCESS
 // Sets up multiple communicators so that individual contingency calculations
@@ -847,9 +848,23 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
   p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
 
   // TODO: Set these values from input deck
-  double start = 0.1;
-  double end = 10.0;
+  double start;
+  if (!cursor->get("contingencyDSStart",&start)) {
+    start = 1.0;
+  }
+  double end;
+  if (!cursor->get("contingencyDSEnd",&end)) {
+    end = 1.03;
+  }
   double tstep = 0.005;
+  if (!cursor->get("contingencyDSTimeStep",&tstep)) {
+    tstep = 0.005;
+  }
+  if (p_world.rank() == 0) {
+    printf("Start time for dynamic simulation contingencies: %f\n",start);
+    printf("End time for dynamic simulation contingencies:   %f\n",end);
+    printf("Time step for dynamic simulation contingencies:  %f\n",tstep);
+  }
 
   // Create task communicators from world communicator
   p_task_comm = p_world.divide(grp_size);
@@ -1222,6 +1237,47 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
     return chkSolve;
   }
   taskmgr.set(ntasks);
+#ifdef USE_STATBLOCK
+  gridpack::utility::StringUtils util;
+  std::vector<std::string> v_vals = p_pf_app.writeBranchString("flow_str");
+  int nsize = v_vals.size();
+  std::vector<int> ids;
+  std::vector<std::string> tags;
+  std::vector<int> mask;
+  std::vector<int> id1;
+  std::vector<int> id2;
+  std::vector<double> pmin, pmax;
+  std::vector<double> pflow;
+  int i,j;
+  for (i=0; i<nsize; i++) {
+    std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+    if (tokens.size()%8 != 0) {
+      printf("Incorrect branch power flow listing\n");
+      continue;
+    }
+    int nline = tokens.size()/8;
+    for (j=0; j<nline; j++) {
+      id1.push_back(atoi(tokens[j*8].c_str()));
+      id2.push_back(atoi(tokens[j*8+1].c_str()));
+      tags.push_back(tokens[j*8+2]);
+      pflow.push_back(atof(tokens[j*8+3].c_str()));
+      pmin.push_back(-atof(tokens[j*8+6].c_str()));
+      pmax.push_back(atof(tokens[j*8+6].c_str()));
+      if (atoi(tokens[j*8+7].c_str()) == 0) {
+        mask.push_back(1);
+      } else {
+        mask.push_back(2);
+      }
+    }
+  }
+  gridpack::analysis::StatBlock pflow_stats(p_world,nsize,ntasks+1);
+  if (p_world.rank() == 0) {
+    pflow_stats.addRowLabels(id1, id2, tags);
+    pflow_stats.addColumnValues(0,pflow,mask);
+    pflow_stats.addRowMinValue(pmin);
+    pflow_stats.addRowMaxValue(pmax);
+  }
+#endif
 
   // Get bus voltage information for base case
   if (p_check_Qlim) p_pf_app.clearQlimViolations();
@@ -1333,6 +1389,32 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
         contingency_violation.push_back(3);
       }
 #endif
+#ifdef USE_STATBLOCK
+      pflow.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = p_pf_app.writeBranchString("flow_str");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%8 != 0) {
+          printf("Incorrect branch power flow listing\n");
+          continue;
+        }
+        int nline = tokens.size()/8;
+        for (j=0; j<nline; j++) {
+          pflow.push_back(atof(tokens[j*8+3].c_str()));
+          if (atoi(tokens[j*8+7].c_str()) == 0) {
+            mask.push_back(1);
+          } else {
+            mask.push_back(2);
+          }
+        }
+      }
+      if (p_task_comm.rank() == 0) {
+        pflow_stats.addColumnValues(task_id+1,pflow,mask);
+      }
+#endif
 
 #ifdef RTPR_DEBUG
       violationDesc = p_pf_app.getContingencyFailures();
@@ -1362,6 +1444,28 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
       sprintf(sbuf,"\nDivergent for contingency %s\n",
           p_events[task_id].p_name.c_str());
       if (p_print_calcs) p_pf_app.print(sbuf);
+#ifdef USE_STATBLOCK
+      pflow.clear();
+      mask.clear();
+      v_vals.clear();
+      v_vals = p_pf_app.writeBranchString("fail_str");
+      nsize = v_vals.size();
+      for (i=0; i<nsize; i++) {
+        std::vector<std::string> tokens = util.blankTokenizer(v_vals[i]);
+        if (tokens.size()%8 != 0) {
+          printf("Incorrect branch power flow listing\n");
+          continue;
+        }
+        int nline = tokens.size()/8;
+        for (j=0; j<nline; j++) {
+          pflow.push_back(0.0);
+          mask.push_back(0);
+        }
+      }
+      if (p_task_comm.rank() == 0) {
+        pflow_stats.addColumnValues(task_id+1,pflow,mask);
+      }
+#endif
     } 
     // Return network to its original base case state
     p_pf_app.unSetContingency(p_events[task_id]);
@@ -1382,18 +1486,21 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
   ca_violation.upload();
   // Write out stats on successful calculations
   if (p_world.rank() == 0) {
+    char sbuf[128];
     contingency_idx.clear();
     contingency_success.clear();
     contingency_violation.clear();
+    int i;
     for (i=0; i<ntasks; i++) contingency_idx.push_back(i);
     ca_success.getData(contingency_idx, contingency_success);
     contingency_success.clear();
     ca_violation.getData(contingency_idx, contingency_violation);
     std::ofstream fout;
-    fout.open("success.txt");
+    sprintf(sbuf,"success_%f.dat",p_rating);
+    fout.open(sbuf);
     for (i=0; i<ntasks; i++) {
       if (contingency_success[i]) {
-        fout << "contingency: " << i+1 << " success: true";
+        fout << "contingency: " << p_events[i].p_name << " success: true";
         if (contingency_violation[i] == 1) {
           fout << " violation: none" << std::endl;
         } else if (contingency_violation[i] == 2) {
@@ -1404,11 +1511,16 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
           fout << " violation: bus and branch" << std::endl;
         }
       } else {
-        fout << "contingency: " << i+1 << " success: false" << std::endl;
+        fout << "contingency: " << p_events[i].p_name
+          << " success: false" << std::endl;
       }
     }
     fout.close();
   }
+#endif
+#ifdef USE_STATBLOCK
+  sprintf(sbuf,"line_flt_cnt_%f.txt",p_rating);
+  pflow_stats.writeMaskValueCount(sbuf,2);
 #endif
   // Check to see if ret is true on all processors
   int ok;
