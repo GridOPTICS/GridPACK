@@ -9,6 +9,7 @@
     <calculateGeneratorContingencies>true</calculateGeneratorContingencies>
     <calculateLineContingencies>true</calculateLineContingencies>
     <contingencyList>contingencies_14.xml</contingencyList>
+    <useBranchRatingB>false</useBranchRatingB>
     <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>

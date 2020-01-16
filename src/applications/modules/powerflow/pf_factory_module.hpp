@@ -236,12 +236,21 @@ class PFFactoryModule
      * Clear violation vector
      */
     void clearViolations();
+
+    /**
+     * User rate B parameter for line overload violations
+     * @param flag if true, use RATEB parameter
+     */
+    void useRateB(bool flag);
+
   private:
 
     NetworkPtr p_network;
     std::vector<bool> p_saveIsolatedStatus;
 
     std::vector<Violation> p_violations;
+
+    bool p_rateB;
 };
 
 } // powerflow

@@ -199,6 +199,8 @@ class RTPRDriver
 
     int p_numTies;
 
+    bool p_useRateB;
+
 };
 
 } // rtpr
