@@ -64,16 +64,17 @@ that are both located in the source area or zone are associated with a fault.
 contingency) and the complete set of contingencies is run at a given value of
 the rating parameter, starting with a rating of 1.0. For both the base case and
 each contingency, the tie lines are checked to see if there is an overflow
-violation. If there is a violation for any contingency or the base case, then
-the rating parameter is decreased until there are no violations. If there is no
-violation initially, then the rating parameter is increased until there is a
-violation on the tie-lines. The final value of the rating parameter is the power
-flow rating for the system. The calculation proceeds by changing the path rating
-in units of 0.05 (5\%). When a limit is found, the calculation reverts to the
-previous value of the rating and start changing in increments of 0.01 (1\%).
-The use of two different increments is designed to speed up the calculation for
-final values of the rating parameter that are significantly different from the
-starting value of 1.0.
+violation. The overflow violation can be based on the Rating A or Rating B
+parameter. The default for the RTPR calculation is Rating B. If there is a
+violation for any contingency or the base case, then the rating parameter is
+decreased until there are no violations. If there is no violation initially, then
+the rating parameter is increased until there is a violation on the tie-lines.
+The final value of the rating parameter is the power flow rating for the system.
+The calculation proceeds by changing the path rating in units of 0.05 (5\%). When
+a limit is found, the calculation reverts to the previous value of the rating and
+start changing in increments of 0.01 (1\%). The use of two different increments
+is designed to speed up the calculation for final values of the rating parameter
+that are significantly different from the starting value of 1.0.
 
 7. After the power flow rating is completed, the system is then checked using
 dynamical simulation. The dynamic simulation rating is assumed to be more
