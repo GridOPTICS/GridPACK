@@ -11,7 +11,7 @@
     <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
-    <checkQLimit>true</checkQLimit>
+    <checkQLimit>false</checkQLimit>
     <monitorGenerators> true </monitorGenerators>
     <frequencyMaximum> 61.8 </frequencyMaximum>
     <contingencyDSStart> 1.0 </contingencyDSStart>
