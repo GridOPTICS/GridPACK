@@ -35,15 +35,15 @@ absolute increase or decrease in the power consumption in the destination
 region. The change in power consumption is matched by a corresponding change in
 the power generation in the source region. The change in power generation is
 evaluated by the following algorithm:
-  1. Calculate the total real power generation in the source region for the active
+   1. Calculate the total real power generation in the source region for the active
 generators for the unperturbed system.
-  2. Calculate that margin for the generators in the source region. If the rating
+   2. Calculate that margin for the generators in the source region. If the rating
 parameter is greater than 1, then calculate the total real power generation
 based on the maximum allowable generation. If the rating parameter is less than
 1, then calculate the minimum power generation based in the minimum allowable
 generation for each generator. The difference between this number and the original power
 generation is the margin.
-  3. If the change in load is greater than the available margin then stop the
+   3. If the change in load is greater than the available margin then stop the
 path rating calculation and calculate the value of the rating parameter based on
 the available margin. If the change in load is less than the margin, then
 calculate the fraction of the margin that will match the change in load and then
