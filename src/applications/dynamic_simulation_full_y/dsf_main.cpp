@@ -20,6 +20,7 @@
 #include "gridpack/math/math.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "gridpack/applications/modules/dynamic_simulation_full_y/dsf_app_module.hpp"
+#include <vector>
 
 /**
  * Transfer data from power flow to dynamic simulation
@@ -143,7 +144,23 @@ main(int argc, char **argv)
     //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
     //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
     //printf("ds_app.solve:\n");
-    ds_app.solve(faults[0]);
+    //ds_app.solve(faults[0]);
+	
+	ds_app.solve_pre_initialize(faults[0]);
+	
+	std::vector<gridpack::dynamic_simulation::Event> action_list;
+	action_list.clear();
+	
+	/*
+	for (ds_app.Simu_Current_Step = 0; ds_app.Simu_Current_Step < ds_app.simu_total_steps - 1; ds_app.Simu_Current_Step++){
+		ds_app.execute_one_simu_step(action_list);
+	}
+	*/
+	
+	while(!ds_app.isDynSimuDone()){
+		ds_app.execute_one_simu_step(action_list);
+	}
+
     //ds_app.write();
     timer->stop(t_total);
     timer->dump();

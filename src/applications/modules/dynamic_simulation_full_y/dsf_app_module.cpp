@@ -19,9 +19,9 @@
 
 #include "gridpack/parser/PTI23_parser.hpp"
 #include "gridpack/parser/PTI33_parser.hpp"
-#include "gridpack/mapper/full_map.hpp"
-#include "gridpack/mapper/bus_vector_map.hpp"
-#include "gridpack/math/math.hpp"
+//#include "gridpack/mapper/full_map.hpp"
+//#include "gridpack/mapper/bus_vector_map.hpp"
+//#include "gridpack/math/math.hpp"
 #include "gridpack/parallel/global_vector.hpp"
 #include "dsf_app_module.hpp"
 #include <iostream>
@@ -51,6 +51,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_generators_read_in = false;
   p_save_time_series = false;
   p_monitorGenerators = false;
+  p_bDynSimuDone = false;
+  Simu_Current_Step = 0;
 }
 
 /**
@@ -66,6 +68,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communica
   p_generators_read_in = false;
   p_save_time_series = false;
   p_monitorGenerators = false;
+  p_bDynSimuDone = false;
+  Simu_Current_Step = 0;
 }
 
 /**
@@ -251,8 +255,9 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
-  int t_solve = timer->createCategory("DS Solve: Total");
-  int t_misc = timer->createCategory("DS Solve: Miscellaneous");
+
+  t_solve = timer->createCategory("DS Solve: Total");
+  t_misc = timer->createCategory("DS Solve: Miscellaneous");
 #ifdef MAP_PROFILE
   timer->configTimer(false);
 #endif
@@ -264,14 +269,15 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
   timer->stop(t_misc);
 
-  int t_mode = timer->createCategory("DS Solve: Set Mode");
+  t_mode = timer->createCategory("DS Solve: Set Mode");
   timer->start(t_mode);
   p_factory->setMode(YBUS);
   timer->stop(t_mode);
-  int t_ybus = timer->createCategory("DS Solve: Make YBus");
+  t_ybus = timer->createCategory("DS Solve: Make YBus");
   timer->start(t_ybus);
-  gridpack::mapper::FullMatrixMap<DSFullNetwork> ybusMap(p_network);
-  boost::shared_ptr<gridpack::math::Matrix> orgYbus = ybusMap.mapToMatrix();
+  
+  ybusMap_sptr.reset(new gridpack::mapper::FullMatrixMap<DSFullNetwork> (p_network));
+  orgYbus = ybusMap_sptr->mapToMatrix();
   
   //printf("\n=== org ybus: ============\n");
   //orgYbus->print();
@@ -283,7 +289,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   // Form constant impedance load admittance yl for all buses and add it to
   // system Y matrix: ybus = ybus + yl
   p_factory->setMode(YL);
-  boost::shared_ptr<gridpack::math::Matrix> ybusyl = ybusMap.mapToMatrix();
+  ybusyl = ybusMap_sptr->mapToMatrix();
   timer->stop(t_ybus);
   //branchIO.header("\n=== ybus after added yl: ============\n");
   //printf("\n=== ybus after added yl: ============\n");
@@ -292,7 +298,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   //exit(0);
 
   p_factory->setMode(PG);
-  boost::shared_ptr<gridpack::math::Matrix> ybuspg = ybusMap.mapToMatrix();
+  ybuspg = ybusMap_sptr->mapToMatrix();
   //printf("\n=== ybus after added pg: ============\n");
   //ybuspg->print();
   //exit(0);
@@ -305,7 +311,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   p_factory->setMode(jxd);
   timer->stop(t_mode);
   timer->start(t_ybus);
-  boost::shared_ptr<gridpack::math::Matrix> ybus_jxd = ybusMap.mapToMatrix();
+  ybus_jxd = ybusMap_sptr->mapToMatrix();
   //branchIO.header("\n=== ybusyl after added j*Xd': =============\n");
   //printf("\n=== ybusyl after added j*Xd': =============\n");
   //ybus_jxd->print();
@@ -316,20 +322,16 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->start(t_mode);
   p_factory->setMode(YDYNLOAD);
   timer->stop(t_mode);
-  boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
+  ybus = ybusMap_sptr->mapToMatrix();
   //branchIO.header("\n=== ybus_jxd after added dynamic load impedance': =============\n");
   //printf("\n=== ybus_dynload after added dynamic load impedance': =============\n");
   //ybus->print();
   //ybus->save("ybus_GridPACK_dynload.m");
   
   //exit(0);
- 
-  // Get fault information from fautlts Event from input.xml
-  int sw2_2 = fault.from_idx - 1;
-  int sw3_2 = fault.to_idx - 1;
 
   // Compute ybus_fy for fault on stage
-  boost::shared_ptr<gridpack::math::Matrix> ybus_fy(ybus->clone());
+  ybus_fy.reset(ybus->clone());
   timer->stop(t_ybus);
   timer->start(t_misc);
   p_factory->setEvent(fault);
@@ -338,20 +340,20 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   p_factory->setMode(onFY);
   timer->stop(t_mode);
   timer->start(t_ybus);
-  ybusMap.overwriteMatrix(ybus_fy);
+  ybusMap_sptr->overwriteMatrix(ybus_fy);
   //branchIO.header("\n=== ybus_fy: ============\n");
   //printf("\n=== ybus_fy: ============\n");
   //ybus_fy->print();
   //ybus_fy->save("ybus_fy_GridPACK_jxd.m");
 
   // Compute ybus_posfy for fault clear stage
-  boost::shared_ptr<gridpack::math::Matrix> ybus_posfy(ybus->clone());
+  ybus_posfy.reset(ybus->clone());
   timer->stop(t_ybus);
   timer->start(t_mode);
   p_factory->setMode(posFY);
   timer->stop(t_mode);
   timer->start(t_ybus);
-  ybusMap.incrementMatrix(ybus_posfy);
+  ybusMap_sptr->incrementMatrix(ybus_posfy);
   //branchIO.header("\n=== ybus_posfy: ============\n");
   //printf("\n=== ybus_posfy: ============\n");
   //ybus_posfy->print();
@@ -359,22 +361,16 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->stop(t_ybus);
 
   // Simulation related variables
-  int t_init = timer->createCategory("DS Solve: Initialization");
+  t_init = timer->createCategory("DS Solve: Initialization");
   timer->start(t_init);
-  int simu_k;
+  
   int t_step[20];
   double t_width[20];
-  int S_Steps;
-  int last_S_Steps;
-  int steps3, steps2, steps1;
-  double h_sol1, h_sol2;
-  int flagP, flagC;
-  int I_Steps;
 
-  const double sysFreq = 60.0;
-  double pi = 4.0*atan(1.0);
-  const double basrad = 2.0 * pi * sysFreq;
-  gridpack::ComplexType jay(0.0, 1.0);
+  //const double sysFreq = 60.0;
+  //double pi = 4.0*atan(1.0);
+  //const double basrad = 2.0 * pi * sysFreq;
+  //gridpack::ComplexType jay(0.0, 1.0);
 
   // switch info is set up here
   int nswtch = 4;
@@ -388,31 +384,36 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   sw7[1] = fault.step;
   sw7[2] = p_time_step;
   sw7[3] = p_time_step;
-  simu_k = 0;
+  simu_total_steps = 0;
   for (int i = 0; i < nswtch-1; i++) {
     t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);
     t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i];
-    simu_k += t_step[i];
+    simu_total_steps += t_step[i];
   }
-  simu_k++;
+  simu_total_steps++;
   
   // Initialize vectors for integration 
   p_factory->initDSVect(p_time_step);
   //exit(0);
 
-  gridpack::mapper::BusVectorMap<DSFullNetwork> ngenMap(p_network);
+  ngenMap_sptr.reset(new gridpack::mapper::BusVectorMap<DSFullNetwork> (p_network));
+  
   // Map to create vector volt
-  boost::shared_ptr<gridpack::math::Vector> volt = ngenMap.mapToVector();
+  volt = ngenMap_sptr->mapToVector();
   //p_busIO->header("\n=== volt: ===\n");
   //volt->print();
 
-  gridpack::math::LinearSolver solver(*ybus);
-  solver.configure(cursor);
-  gridpack::math::LinearSolver solver_fy(*ybus_fy);
-  solver_fy.configure(cursor);
+  solver_sptr.reset(new gridpack::math::LinearSolver (*ybus));
+  solver_sptr->configure(cursor);
+  
+  //gridpack::math::LinearSolver solver_fy(*ybus_fy);
+  solver_fy_sptr.reset(new gridpack::math::LinearSolver (*ybus_fy));
+  solver_fy_sptr->configure(cursor);
+  
   //gridpack::math::LinearSolver solver_posfy(*ybus_posfy);
-  gridpack::math::LinearSolver solver_posfy(*ybus);
-  solver_posfy.configure(cursor);
+  //gridpack::math::LinearSolver solver_posfy(*ybus); 
+  solver_posfy_sptr.reset(new gridpack::math::LinearSolver (*ybus));
+  solver_posfy_sptr->configure(cursor);
 
   steps3 = t_step[0] + t_step[1] + t_step[2] - 1;
   steps2 = t_step[0] + t_step[1] - 1;
@@ -424,16 +425,15 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   S_Steps = 1;
   last_S_Steps = -1;
 
-  bool flag = true, flag_corrector = true;
-
   p_insecureAt = -1;
 
   p_factory->setMode(make_INorton_full);
-  gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap(p_network);
-  boost::shared_ptr<gridpack::math::Vector> INorton_full = nbusMap.mapToVector();
-  boost::shared_ptr<gridpack::math::Vector> INorton_full_chk = nbusMap.mapToVector();
-  double max_INorton_full = 0.0;
-  boost::shared_ptr<gridpack::math::Vector> volt_full(INorton_full->clone());
+  //gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap(p_network);
+  nbusMap_sptr.reset(new gridpack::mapper::BusVectorMap<DSFullNetwork>(p_network));
+  INorton_full = nbusMap_sptr->mapToVector();
+  INorton_full_chk = nbusMap_sptr->mapToVector();
+  max_INorton_full = 0.0;
+  volt_full.reset(INorton_full->clone());
 
   timer->stop(t_init);
 #ifdef USE_TIMESTAMP
@@ -499,40 +499,40 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif  //end if of HELICS
 
 
-  for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
-  //for (I_Steps = 0; I_Steps < 200; I_Steps++) {
+  for (Simu_Current_Step = 0; Simu_Current_Step < simu_total_steps - 1; Simu_Current_Step++) {
+  //for (Simu_Current_Step = 0; Simu_Current_Step < 200; Simu_Current_Step++) {
     //char step_str[128];
-    //sprintf(step_str,"\nIter %d\n", I_Steps);
+    //sprintf(step_str,"\nIter %d\n", Simu_Current_Step);
     //p_busIO->header(step_str);
     timer->start(t_misc);
-    printf("Step %d\ttime %5.3f sec: \n", I_Steps+1, (I_Steps+1) * p_time_step);
-    //printf("\n===================Step %d\ttime %5.3f sec:================\n", I_Steps+1, (I_Steps+1) * p_time_step);
+    printf("Step %d\ttime %5.3f sec: \n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
+    //printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
     ///char step_str[128];
-    ///sprintf(step_str, "\n===================Step %d\ttime %5.3f sec:================\n", I_Steps+1, (I_Steps+1) * p_time_step);
+    ///sprintf(step_str, "\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
      ///p_busIO->header(step_str);
-    S_Steps = I_Steps;
+    S_Steps = Simu_Current_Step;
 
-    if (I_Steps < steps1) {
+    if (Simu_Current_Step < steps1) {
       flagP = 0;
       flagC = 0;
-    } else if (I_Steps == steps1) {
+    } else if (Simu_Current_Step == steps1) {
       flagP = 0;
       //flagC = 1;
       flagC = 0;
-    } else if ((I_Steps > steps1) && (I_Steps < steps2)) {
+    } else if ((Simu_Current_Step > steps1) && (Simu_Current_Step < steps2)) {
       flagP = 1;
       flagC = 1;
-    } else if (I_Steps == steps2) {
+    } else if (Simu_Current_Step == steps2) {
       flagP = 1;
       //flagC = 2;
       flagC = 1;
-    } else if (I_Steps > steps2) {
+    } else if (Simu_Current_Step > steps2) {
       flagP = 2;
       flagC = 2;
     }
     timer->stop(t_misc);
     
-    if (I_Steps !=0 && last_S_Steps != S_Steps) {
+    if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
       p_factory->predictor_currentInjection(false);
     } else {
       p_factory->predictor_currentInjection(true);
@@ -541,12 +541,12 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #ifdef MAP_PROFILE
   timer->configTimer(true);
 #endif
-    int t_mIf = timer->createCategory("DS Solve: Modified Euler Predictor: Make INorton");
+    t_mIf = timer->createCategory("DS Solve: Modified Euler Predictor: Make INorton");
     timer->start(t_mIf);
 	p_factory->setMode(make_INorton_full);
-    nbusMap.mapToVector(INorton_full);
+    nbusMap_sptr->mapToVector(INorton_full);
     ///gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap(p_network);
-    ///boost::shared_ptr<gridpack::math::Vector> INorton_full = nbusMap.mapToVector();
+    ///boost::shared_ptr<gridpack::math::Vector> INorton_full = nbusMap_sptr->mapToVector();
     //p_busIO->header("\n=== [Predictor] INorton_full: ===\n");
     //printf("renke test \n=== [Predictor] INorton_full: ===\n");
     //INorton_full->print();
@@ -557,7 +557,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
  
     // ---------- CALL ssnetwork_cal_volt(S_Steps+1, flagF2) 
     // to calculate terminal volt: ----------
-    int t_psolve = timer->createCategory("DS Solve: Modified Euler Predictor: Linear Solver");
+    t_psolve = timer->createCategory("DS Solve: Modified Euler Predictor: Linear Solver");
     timer->start(t_psolve);
     //boost::shared_ptr<gridpack::math::Vector> volt_full(INorton_full->clone());
     volt_full->zero();
@@ -568,11 +568,11 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			volt_full->zero();
 			
 			if (flagP == 0) {
-				solver.solve(*INorton_full, *volt_full);
+				solver_sptr->solve(*INorton_full, *volt_full);
 			} else if (flagP == 1) {
-				solver_fy.solve(*INorton_full, *volt_full);
+				solver_fy_sptr->solve(*INorton_full, *volt_full);
 			} else if (flagP == 2) {
-				solver_posfy.solve(*INorton_full, *volt_full);
+				solver_posfy_sptr->solve(*INorton_full, *volt_full);
 			}
 			
 
@@ -583,10 +583,10 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			printf("2: itr test:----predictor_INorton_full_chk:\n");
 			INorton_full_chk->print();
 
-			nbusMap.mapToBus(volt_full);
+			nbusMap_sptr->mapToBus(volt_full);
 			p_factory->setVolt(false);
 			
-			if (I_Steps !=0 && last_S_Steps != S_Steps) {
+			if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
 				p_factory->predictor_currentInjection(false);
 			} else {
 				p_factory->predictor_currentInjection(true);
@@ -601,7 +601,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			INorton_full_chk->print();
 # endif			
 			p_factory->setMode(make_INorton_full);
-			nbusMap.mapToVector(INorton_full);
+			nbusMap_sptr->mapToVector(INorton_full);
 			
 			printf("5: itr test:----predictor_INorton_full:\n");
 			INorton_full->print();
@@ -623,11 +623,11 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     }
 #else
     if (flagP == 0) {
-      solver.solve(*INorton_full, *volt_full);
+      solver_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 1) {
-      solver_fy.solve(*INorton_full, *volt_full);
+      solver_fy_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 2) {
-      solver_posfy.solve(*INorton_full, *volt_full);
+      solver_posfy_sptr->solve(*INorton_full, *volt_full);
     }
 #endif
     timer->stop(t_psolve);
@@ -637,27 +637,27 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
     //p_busIO->header("\n=== [Predictor] volt_full: ===\n");
     //volt_full->print();
-    //if (I_Steps==4){
+    //if (Simu_Current_Step==4){
     //	 exit(0);
    //	}
 
-    int t_vmap= timer->createCategory("DS Solve: Map Volt to Bus");
+    t_vmap= timer->createCategory("DS Solve: Map Volt to Bus");
     timer->start(t_vmap);
 	
 	//printf("after first volt sovle, before first volt map: \n");
 	//p_factory->printallbusvoltage();
 	
-    nbusMap.mapToBus(volt_full);
+    nbusMap_sptr->mapToBus(volt_full);
 	
 	//printf("after first volt sovle, after first volt map: \n");
 	
-	if ( I_Steps==0 ) {
-		//printf("enter the initial update oldbusvoltage, Timestep: %d \n", I_Steps);
+	if ( Simu_Current_Step==0 ) {
+		//printf("enter the initial update oldbusvoltage, Timestep: %d \n", Simu_Current_Step);
 		p_factory->updateoldbusvoltage(); //renke add, first timestep, copy volt_full to volt_full_old
 	}
     timer->stop(t_vmap);
 
-    int t_volt= timer->createCategory("DS Solve: Set Volt");
+    t_volt= timer->createCategory("DS Solve: Set Volt");
     timer->start(t_volt);
     p_factory->setVolt(false);
 	p_factory->updateBusFreq(h_sol1);
@@ -681,7 +681,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
             // do stuff to tie pub to GridPACK object property
           }
 
-	 helics_requestTime =       double (I_Steps*h_sol1);
+	 helics_requestTime =       double (Simu_Current_Step*h_sol1);
 	 //printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
 	 double helics_grantime;
 	 helics_grantime = fed.requestTime(helics_requestTime);
@@ -718,7 +718,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	//printf("before update relay, after first volt solv: \n");
 	//p_factory->printallbusvoltage();
     //renke add, compute bus freq if necessary
-    //printf("Timestep, %d \n", I_Steps);
+    //printf("Timestep, %d \n", Simu_Current_Step);
     bool flagBus = p_factory->updateBusRelay(false, h_sol1);
     bool flagBranch = p_factory->updateBranchRelay(false, h_sol1);
 	
@@ -732,49 +732,49 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
         //please update the bus contribution to the Y bus matrix here. //Shuangshuang tbd
 	if (flagP == 0) { 
              p_factory->setMode(bus_relay);
-             ybusMap.overwriteMatrix(ybus);
+             ybusMap_sptr->overwriteMatrix(ybus);
         } else if (flagP == 1) {
              p_factory->setMode(bus_relay);
-             ybusMap.overwriteMatrix(ybus_fy);
+             ybusMap_sptr->overwriteMatrix(ybus_fy);
 	     printf("DSFull_APP::Solve: bus relay trip during fault, ybus_fy changed:\n");
 	     ybus_fy->print();
 	     char sybus[100];
-             sprintf(sybus, "ybus_fy_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_fy_%d_relay.m",Simu_Current_Step );
 			 
 	     ybus_fy->save(sybus);
 	 
 	     printf("DSFull_APP::Solve: bus relay trip during fault, ybus changed too:\n");
              p_factory->setMode(bus_relay);
-             ybusMap.overwriteMatrix(ybus);
+             ybusMap_sptr->overwriteMatrix(ybus);
 	     ybus->print();
-             sprintf(sybus, "ybus_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
 
 	     ybus->save(sybus);
         
              printf("DSFull_APP::Solve: bus relay trip during fault, ybus_posfy changed too:\n");
              p_factory->setMode(bus_relay);
-             ybusMap.overwriteMatrix(ybus_posfy);
+             ybusMap_sptr->overwriteMatrix(ybus_posfy);
              ybus_posfy->print();
-             sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
 
              ybus_posfy->save(sybus);
 
 			 
         } else if (flagP == 2) {
              p_factory->setMode(bus_relay);
-             ybusMap.overwriteMatrix(ybus);
+             ybusMap_sptr->overwriteMatrix(ybus);
              printf("DSFull_APP::Solve: bus relay trip after fault, ybus changed:\n");
 	     ybus->print();
 	     char sybus[100];
-             sprintf(sybus, "ybus_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
 
 	     ybus->save(sybus);
 
              printf("DSFull_APP::Solve: bus relay trip after fault, ybus_posfy changed too:\n");
              p_factory->setMode(bus_relay);
-             ybusMap.overwriteMatrix(ybus_posfy);
+             ybusMap_sptr->overwriteMatrix(ybus_posfy);
              ybus_posfy->print();
-             sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
 
              ybus_posfy->save(sybus);
 
@@ -789,49 +789,49 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
         //please update the bus contribution to the Y bus matrix here. //Shuangshuang tbd
 	if (flagP == 0) { 
              p_factory->setMode(branch_relay);
-             ybusMap.incrementMatrix(ybus);
+             ybusMap_sptr->incrementMatrix(ybus);
         } else if (flagP == 1) {
              p_factory->setMode(branch_relay);
-             ybusMap.incrementMatrix(ybus_fy);
+             ybusMap_sptr->incrementMatrix(ybus_fy);
 	     printf("DSFull_APP::Solve: branch relay trip during fault, ybus_fy changed:\n");
 	     ybus_fy->print();
 	     char sybus[100];
-             sprintf(sybus, "ybus_fy_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_fy_%d_relay.m",Simu_Current_Step );
 			 
 	     ybus_fy->save(sybus);
 
              printf("DSFull_APP::Solve: branch relay trip during fault, ybus changed too:\n");
              p_factory->setMode(branch_relay);
-             ybusMap.incrementMatrix(ybus);
+             ybusMap_sptr->incrementMatrix(ybus);
              ybus->print();
-             sprintf(sybus, "ybus_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
 
              ybus->save(sybus);
 
 			 
 	     printf("DSFull_APP::Solve: branch relay trip during fault, ybus_posfy changed too:\n");
              p_factory->setMode(branch_relay);
-             ybusMap.incrementMatrix(ybus_posfy);
+             ybusMap_sptr->incrementMatrix(ybus_posfy);
 	     ybus_posfy->print();
-             sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
 
 	     ybus_posfy->save(sybus);
 			 
         } else if (flagP == 2) {
              printf("DSFull_APP::Solve: branch relay trip during fault, ybus changed too:\n");
              p_factory->setMode(branch_relay);
-             ybusMap.incrementMatrix(ybus);
+             ybusMap_sptr->incrementMatrix(ybus);
              ybus->print();
              char sybus[100];
-             sprintf(sybus, "ybus_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
 
              ybus->save(sybus);
 
              printf("DSFull_APP::Solve: branch relay trip during fault, ybus_posfy changed too:\n");
              p_factory->setMode(branch_relay);
-             ybusMap.incrementMatrix(ybus_posfy);
+             ybusMap_sptr->incrementMatrix(ybus_posfy);
              ybus_posfy->print();
-             sprintf(sybus, "ybus_posfy_%d_relay.m",I_Steps );
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
 
              ybus_posfy->save(sybus);
 
@@ -848,27 +848,27 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->configTimer(false);
 #endif
 
-    int t_predictor = timer->createCategory("DS Solve: Modified Euler Predictor");
+    t_predictor = timer->createCategory("DS Solve: Modified Euler Predictor");
     //printf("Test: predictor begins: \n");
     timer->start(t_predictor);
-    if (I_Steps !=0 && last_S_Steps != S_Steps) {
+    if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
       p_factory->predictor(h_sol1, false);
     } else { 
       p_factory->predictor(h_sol1, true);
     }
     timer->stop(t_predictor);
 
-    if (I_Steps !=0 && last_S_Steps != S_Steps) {
+    if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
       p_factory->corrector_currentInjection(false);
     } else {
       p_factory->corrector_currentInjection(true);
     }
 
-    //INorton_full = nbusMap.mapToVector();
+    //INorton_full = nbusMap_sptr->mapToVector();
     int t_cmIf = timer->createCategory("DS Solve: Modified Euler Corrector: Make INorton");
     timer->start(t_cmIf);
     p_factory->setMode(make_INorton_full);
-    nbusMap.mapToVector(INorton_full);
+    nbusMap_sptr->mapToVector(INorton_full);
     //p_busIO->header("\n=== [Corrector] INorton_full: ===\n");
     //printf("\nrelaytest=== [Corrector] INorton_full: ===\n");
     //INorton_full->print();
@@ -876,7 +876,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 
     // ---------- CALL ssnetwork_cal_volt(S_Steps+1, flagF2)
     // to calculate terminal volt: ----------
-    int t_csolve = timer->createCategory("DS Solve: Modified Euler Corrector: Linear Solver");
+    t_csolve = timer->createCategory("DS Solve: Modified Euler Corrector: Linear Solver");
     timer->start(t_csolve);
     volt_full->zero();
 
@@ -887,16 +887,16 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			volt_full->zero();
 			
 			if (flagP == 0) {
-				solver.solve(*INorton_full, *volt_full);
+				solver_sptr->solve(*INorton_full, *volt_full);
 			} else if (flagP == 1) {
-				solver_fy.solve(*INorton_full, *volt_full);
+				solver_fy_sptr->solve(*INorton_full, *volt_full);
 			} else if (flagP == 2) {
-				solver_posfy.solve(*INorton_full, *volt_full);
+				solver_posfy_sptr->solve(*INorton_full, *volt_full);
 			}
-			nbusMap.mapToBus(volt_full);
+			nbusMap_sptr->mapToBus(volt_full);
 			p_factory->setVolt(false);
 			
-			if (I_Steps !=0 && last_S_Steps != S_Steps) {
+			if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
 				p_factory->corrector_currentInjection(false);
 			} else {
 				p_factory->corrector_currentInjection(true);
@@ -907,7 +907,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 			INorton_full_chk->print();
 			
 			p_factory->setMode(make_INorton_full);
-			nbusMap.mapToVector(INorton_full);
+			nbusMap_sptr->mapToVector(INorton_full);
 			
 			printf("itr test:----corrector_INorton_full:\n");
 			INorton_full->print();
@@ -928,11 +928,11 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     }
 #else
     if (flagP == 0) {
-      solver.solve(*INorton_full, *volt_full);
+      solver_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 1) {
-      solver_fy.solve(*INorton_full, *volt_full);
+      solver_fy_sptr->solve(*INorton_full, *volt_full);
     } else if (flagP == 2) {
-      solver_posfy.solve(*INorton_full, *volt_full);
+      solver_posfy_sptr->solve(*INorton_full, *volt_full);
     }
 #endif
 
@@ -946,7 +946,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	//printf("after second solve, before second map: \n");
 	//p_factory->printallbusvoltage();
 	
-    nbusMap.mapToBus(volt_full);
+    nbusMap_sptr->mapToBus(volt_full);
 	
 	//printf("after second solve, after second map: \n");
 	//p_factory->printallbusvoltage();
@@ -958,7 +958,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 	p_factory->updateBusFreq(h_sol1);
     timer->stop(t_volt);
 
-    int t_corrector = timer->createCategory("DS Solve: Modified Euler Corrector");
+    t_corrector = timer->createCategory("DS Solve: Modified Euler Corrector");
     timer->start(t_corrector);
     //printf("Test: corrector begins: \n");
     if (last_S_Steps != S_Steps) {
@@ -968,38 +968,38 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     }
     timer->stop(t_corrector);
 
-    //if (I_Steps == simu_k - 1) 
+    //if (Simu_Current_Step == simu_total_steps - 1) 
       //p_busIO->write();
 
-    if (I_Steps == steps1) {
-      solver_fy.solve(*INorton_full, *volt_full);
-//      printf("\n===================Step %d\ttime %5.3f sec:================\n", I_Steps+1, (I_Steps+1) * p_time_step);
+    if (Simu_Current_Step == steps1) {
+      solver_fy_sptr->solve(*INorton_full, *volt_full);
+//      printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
 //      printf("\n=== [Corrector] volt_full: ===\n");
 //      volt_full->print();
-      nbusMap.mapToBus(volt_full);
+      nbusMap_sptr->mapToBus(volt_full);
       p_factory->setVolt(false);
 	  p_factory->updateBusFreq(h_sol1);
-    } else if (I_Steps == steps2) {
-      solver_posfy.solve(*INorton_full, *volt_full);
-//      printf("\n===================Step %d\ttime %5.3f sec:================\n", I_Steps+1, (I_Steps+1) * p_time_step);
+    } else if (Simu_Current_Step == steps2) {
+      solver_posfy_sptr->solve(*INorton_full, *volt_full);
+//      printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
 //      printf("\n=== [Corrector] volt_full: ===\n");
 //      volt_full->print();
-      nbusMap.mapToBus(volt_full);
+      nbusMap_sptr->mapToBus(volt_full);
       p_factory->setVolt(true);
 	  p_factory->updateBusFreq(h_sol1);
     }
-    if (I_Steps == 1) {
+    if (Simu_Current_Step == 1) {
 //      printf("\n Dynamic Step 1 [Corrector] volt_full: ===\n");
 //      volt_full->print();
 //      printf("\n Dynamic Step 1 [Corrector] Norton_full: ===\n");
 //      INorton_full->print();
     }
-    int t_secure = timer->createCategory("DS Solve: Check Security");
+    t_secure = timer->createCategory("DS Solve: Check Security");
     timer->start(t_secure);
-    if (p_generatorWatch && I_Steps%p_generatorWatchFrequency == 0) {
+    if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) {
       char tbuf[32];
 #ifdef USE_TIMESTAMP
-      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(I_Steps)*p_time_step,
+      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
           timer->currentTime());
       if (p_generatorWatch) p_generatorIO->header(tbuf);
       if (p_generatorWatch) p_generatorIO->write("watch");
@@ -1012,7 +1012,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 //      if (p_generatorWatch) p_generatorIO->write("watch");
 //      if (p_generatorWatch) p_generatorIO->header("\n");
 #else
-      sprintf(tbuf,"%8.4f",static_cast<double>(I_Steps)*p_time_step);
+      sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
       if (p_generatorWatch) p_generatorIO->header(tbuf);
       if (p_generatorWatch) p_generatorIO->write("watch");
       if (p_generatorWatch) p_generatorIO->header("\n");
@@ -1021,16 +1021,16 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       if (p_generatorWatch) p_generatorIO->dumpChannel();
 #endif
     }
-    if (p_loadWatch && I_Steps%p_loadWatchFrequency == 0) {
+    if (p_loadWatch && Simu_Current_Step%p_loadWatchFrequency == 0) {
       char tbuf[32];
 #ifdef USE_TIMESTAMP
-      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(I_Steps)*p_time_step,
+      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
           timer->currentTime());
       if (p_loadWatch) p_loadIO->header(tbuf);
       if (p_loadWatch) p_loadIO->write("load_watch");
       if (p_loadWatch) p_loadIO->header("\n");
 #else
-      sprintf(tbuf,"%8.4f",static_cast<double>(I_Steps)*p_time_step);
+      sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
       if (p_loadWatch) p_loadIO->header(tbuf);
       if (p_loadWatch) p_loadIO->write("load_watch");
       if (p_loadWatch) p_loadIO->header("\n");
@@ -1041,7 +1041,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     }
     saveTimeStep();
     if ((!p_factory->securityCheck()) && p_insecureAt == -1)  
-       p_insecureAt = I_Steps;
+       p_insecureAt = Simu_Current_Step;
 /*    // Print to screen
     if (last_S_Steps != S_Steps) {
       //sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps);
@@ -1054,18 +1054,18 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       //sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps);
       //p_busIO->header(ioBuf);
     }
-    if (I_Steps == simu_k) {
+    if (Simu_Current_Step == simu_total_steps) {
       printf("\n==============S_Steps = %d==============\n", S_Steps);
       mac_ang_s1->print();
       mac_spd_s1->print();
       p_factory->setMode(init_mac_ang);
-      ngenMap.mapToBus(mac_ang_s1);
+      ngenMap_sptr->mapToBus(mac_ang_s1);
       p_factory->setMode(init_mac_spd);
-      ngenMap.mapToBus(mac_spd_s1);
+      ngenMap_sptr->mapToBus(mac_spd_s1);
       p_factory->setMode(init_pmech);
-      ngenMap.mapToBus(pmech);
+      ngenMap_sptr->mapToBus(pmech);
       p_factory->setMode(init_pelect);
-      ngenMap.mapToBus(pelect);
+      ngenMap_sptr->mapToBus(pelect);
       sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps+1);
       p_busIO->header(ioBuf);
       sprintf(ioBuf, "\n         Bus ID     Generator ID"
@@ -1084,9 +1084,9 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     last_S_Steps = S_Steps;
     timer->stop(t_secure);
     if (p_monitorGenerators) {
-      double presentTime = static_cast<double>(I_Steps)*p_time_step;
+      double presentTime = static_cast<double>(Simu_Current_Step)*p_time_step;
       p_frequencyOK = p_frequencyOK && checkFrequency(0.5,presentTime);
-      if (!p_frequencyOK) I_Steps = simu_k;
+      if (!p_frequencyOK) Simu_Current_Step = simu_total_steps;
     }
   }
   
@@ -1800,3 +1800,832 @@ std::vector<int> gridpack::dynamic_simulation::DSFullApp::getFrequencyFailures()
   sumVec.getAllData(ret);
   return ret;
 }
+
+/**
+ * initialization before the time step integration starts 
+ */
+void gridpack::dynamic_simulation::DSFullApp::solve_pre_initialize(
+    gridpack::dynamic_simulation::Event fault)
+{
+  gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+
+  t_solve = timer->createCategory("DS Solve: Total");
+  t_misc = timer->createCategory("DS Solve: Miscellaneous");
+#ifdef MAP_PROFILE
+  timer->configTimer(false);
+#endif
+  timer->start(t_solve);
+  timer->start(t_misc);
+
+  // Get cursor for setting solver options
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  timer->stop(t_misc);
+
+  t_mode = timer->createCategory("DS Solve: Set Mode");
+  timer->start(t_mode);
+  p_factory->setMode(YBUS);
+  timer->stop(t_mode);
+  t_ybus = timer->createCategory("DS Solve: Make YBus");
+  timer->start(t_ybus);
+  
+  ybusMap_sptr.reset(new gridpack::mapper::FullMatrixMap<DSFullNetwork> (p_network));
+  orgYbus = ybusMap_sptr->mapToMatrix();
+  
+  //printf("\n=== org ybus: ============\n");
+  //orgYbus->print();
+  //orgYbus->save("ybus_GridPACK_org.m");
+  //exit(0);
+
+  //p_factory->addLoadAdmittance();
+
+  // Form constant impedance load admittance yl for all buses and add it to
+  // system Y matrix: ybus = ybus + yl
+  p_factory->setMode(YL);
+  ybusyl = ybusMap_sptr->mapToMatrix();
+  timer->stop(t_ybus);
+  //branchIO.header("\n=== ybus after added yl: ============\n");
+  //printf("\n=== ybus after added yl: ============\n");
+  //ybusyl->print();
+  //ybusyl->save("ybus_GridPACK_yl.m");
+  //exit(0);
+
+  p_factory->setMode(PG);
+  ybuspg = ybusMap_sptr->mapToMatrix();
+  //printf("\n=== ybus after added pg: ============\n");
+  //ybuspg->print();
+  //exit(0);
+
+  //printf("# of buses in the network: %d\n", p_network->totalBuses());
+
+  // Add j*Xd' to system Y matrix:
+  // Extract appropriate xdprime and xdpprime from machine data
+  timer->start(t_mode);
+  p_factory->setMode(jxd);
+  timer->stop(t_mode);
+  timer->start(t_ybus);
+  ybus_jxd = ybusMap_sptr->mapToMatrix();
+  //branchIO.header("\n=== ybusyl after added j*Xd': =============\n");
+  //printf("\n=== ybusyl after added j*Xd': =============\n");
+  //ybus_jxd->print();
+  //ybus_jxd->save("ybus_GridPACK_jxd.m");
+  
+  
+  // Add dynamic load impedance to system Y matrix:
+  timer->start(t_mode);
+  p_factory->setMode(YDYNLOAD);
+  timer->stop(t_mode);
+  ybus = ybusMap_sptr->mapToMatrix();
+  //branchIO.header("\n=== ybus_jxd after added dynamic load impedance': =============\n");
+  //printf("\n=== ybus_dynload after added dynamic load impedance': =============\n");
+  //ybus->print();
+  //ybus->save("ybus_GridPACK_dynload.m");
+  
+  //exit(0);
+
+  // Compute ybus_fy for fault on stage
+  ybus_fy.reset(ybus->clone());
+  timer->stop(t_ybus);
+  timer->start(t_misc);
+  p_factory->setEvent(fault);
+  timer->stop(t_misc);
+  timer->start(t_mode);
+  p_factory->setMode(onFY);
+  timer->stop(t_mode);
+  timer->start(t_ybus);
+  ybusMap_sptr->overwriteMatrix(ybus_fy);
+  //branchIO.header("\n=== ybus_fy: ============\n");
+  //printf("\n=== ybus_fy: ============\n");
+  //ybus_fy->print();
+  //ybus_fy->save("ybus_fy_GridPACK_jxd.m");
+
+  // Compute ybus_posfy for fault clear stage
+  ybus_posfy.reset(ybus->clone());
+  timer->stop(t_ybus);
+  timer->start(t_mode);
+  p_factory->setMode(posFY);
+  timer->stop(t_mode);
+  timer->start(t_ybus);
+  ybusMap_sptr->incrementMatrix(ybus_posfy);
+  //branchIO.header("\n=== ybus_posfy: ============\n");
+  //printf("\n=== ybus_posfy: ============\n");
+  //ybus_posfy->print();
+  //ybus_posfy->save("ybus_posfy_GridPACK_jxd.m");
+  timer->stop(t_ybus);
+
+  // Simulation related variables
+  t_init = timer->createCategory("DS Solve: Initialization");
+  timer->start(t_init);
+  
+  int t_step[20];
+  double t_width[20];
+
+  //const double sysFreq = 60.0;
+  //double pi = 4.0*atan(1.0);
+  //const double basrad = 2.0 * pi * sysFreq;
+  //gridpack::ComplexType jay(0.0, 1.0);
+
+  // switch info is set up here
+  int nswtch = 4;
+  static double sw1[4];
+  static double sw7[4];
+  sw1[0] = 0.0;
+  sw1[1] = fault.start;
+  sw1[2] = fault.end;
+  sw1[3] = p_sim_time;
+  sw7[0] = p_time_step;
+  sw7[1] = fault.step;
+  sw7[2] = p_time_step;
+  sw7[3] = p_time_step;
+  simu_total_steps = 0;
+  for (int i = 0; i < nswtch-1; i++) {
+    t_step[i] = (int) ((sw1[i+1] -sw1[i]) / sw7[i]);
+    t_width[i] = (sw1[i+1] - sw1[i]) / t_step[i];
+    simu_total_steps += t_step[i];
+  }
+  simu_total_steps++;
+  
+  // Initialize vectors for integration 
+  p_factory->initDSVect(p_time_step);
+  //exit(0);
+
+  ngenMap_sptr.reset(new gridpack::mapper::BusVectorMap<DSFullNetwork> (p_network));
+  
+  // Map to create vector volt
+  volt = ngenMap_sptr->mapToVector();
+  //p_busIO->header("\n=== volt: ===\n");
+  //volt->print();
+
+  solver_sptr.reset(new gridpack::math::LinearSolver (*ybus));
+  solver_sptr->configure(cursor);
+  
+  //gridpack::math::LinearSolver solver_fy(*ybus_fy);
+  solver_fy_sptr.reset(new gridpack::math::LinearSolver (*ybus_fy));
+  solver_fy_sptr->configure(cursor);
+  
+  //gridpack::math::LinearSolver solver_posfy(*ybus_posfy);
+  //gridpack::math::LinearSolver solver_posfy(*ybus); 
+  solver_posfy_sptr.reset(new gridpack::math::LinearSolver (*ybus));
+  solver_posfy_sptr->configure(cursor);
+
+  steps3 = t_step[0] + t_step[1] + t_step[2] - 1;
+  steps2 = t_step[0] + t_step[1] - 1;
+  steps1 = t_step[0] - 1;
+  h_sol1 = t_width[0];
+  h_sol2 = h_sol1;
+  flagP = 0;
+  flagC = 0;
+  S_Steps = 1;
+  last_S_Steps = -1;
+
+  p_insecureAt = -1;
+
+  p_factory->setMode(make_INorton_full);
+  //gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap(p_network);
+  nbusMap_sptr.reset(new gridpack::mapper::BusVectorMap<DSFullNetwork>(p_network));
+  INorton_full = nbusMap_sptr->mapToVector();
+  INorton_full_chk = nbusMap_sptr->mapToVector();
+  max_INorton_full = 0.0;
+  volt_full.reset(INorton_full->clone());
+
+  timer->stop(t_init);
+#ifdef USE_TIMESTAMP
+  if (p_generatorWatch) p_generatorIO->header("t, t_stamp");//bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
+//#  if (p_generatorWatch) p_generatorIO->header("t, t_stamp,bus_id,ckt,x1d_1,x2w_1,x3Eqp_1,x4Psidp_1,x5Psiqpp_1");
+  if (p_generatorWatch) p_generatorIO->write("watch_header");
+  if (p_generatorWatch) p_generatorIO->header("\n");
+
+  if (p_loadWatch) p_loadIO->header("t, t_stamp");
+  if (p_loadWatch) p_loadIO->write("load_watch_header");
+  if (p_loadWatch) p_loadIO->header("\n");
+#else
+  if (p_generatorWatch) p_generatorIO->header("t");
+  if (p_generatorWatch) p_generatorIO->write("watch_header");
+  if (p_generatorWatch) p_generatorIO->header("\n");
+
+  if (p_loadWatch) p_loadIO->header("t");
+  if (p_loadWatch) p_loadIO->write("load_watch_header");
+  if (p_loadWatch) p_loadIO->header("\n");
+#endif
+#ifdef USE_GOSS
+  if (p_generatorWatch) p_generatorIO->dumpChannel();
+  if (p_loadWatch) p_loadIO->dumpChannel();
+#endif
+  p_frequencyOK = true;
+  // Save initial time step
+  //saveTimeStep();
+	
+  Simu_Current_Step = 0;
+  p_bDynSimuDone = false;
+  
+  printf (" In function solve_pre_initialize end, simu_total_steps: %d \n", simu_total_steps);
+  
+}
+
+/**
+ * Execute only one simulation time step 
+ */
+void gridpack::dynamic_simulation::DSFullApp::execute_one_simu_step(
+    std::vector<gridpack::dynamic_simulation::Event> action_list){
+	
+    gridpack::utility::CoarseTimer *timer =
+    gridpack::utility::CoarseTimer::instance();
+	
+  //for (Simu_Current_Step = 0; Simu_Current_Step < simu_total_steps - 1; Simu_Current_Step++) {
+  //for (Simu_Current_Step = 0; Simu_Current_Step < 200; Simu_Current_Step++) {
+    //char step_str[128];
+    //sprintf(step_str,"\nIter %d\n", Simu_Current_Step);
+    //p_busIO->header(step_str);
+    timer->start(t_misc);
+    printf("Step %d\ttime %5.3f sec: \n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
+    //printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
+    ///char step_str[128];
+    ///sprintf(step_str, "\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
+     ///p_busIO->header(step_str);
+    S_Steps = Simu_Current_Step;
+
+    if (Simu_Current_Step < steps1) {
+      flagP = 0;
+      flagC = 0;
+    } else if (Simu_Current_Step == steps1) {
+      flagP = 0;
+      //flagC = 1;
+      flagC = 0;
+    } else if ((Simu_Current_Step > steps1) && (Simu_Current_Step < steps2)) {
+      flagP = 1;
+      flagC = 1;
+    } else if (Simu_Current_Step == steps2) {
+      flagP = 1;
+      //flagC = 2;
+      flagC = 1;
+    } else if (Simu_Current_Step > steps2) {
+      flagP = 2;
+      flagC = 2;
+    }
+    timer->stop(t_misc);
+    
+    if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
+      p_factory->predictor_currentInjection(false);
+    } else {
+      p_factory->predictor_currentInjection(true);
+    }
+
+#ifdef MAP_PROFILE
+  timer->configTimer(true);
+#endif
+    t_mIf = timer->createCategory("DS Solve: Modified Euler Predictor: Make INorton");
+    timer->start(t_mIf);
+	p_factory->setMode(make_INorton_full);
+    nbusMap_sptr->mapToVector(INorton_full);
+    ///gridpack::mapper::BusVectorMap<DSFullNetwork> nbusMap(p_network);
+    ///boost::shared_ptr<gridpack::math::Vector> INorton_full = nbusMap_sptr->mapToVector();
+    //p_busIO->header("\n=== [Predictor] INorton_full: ===\n");
+    //printf("renke test \n=== [Predictor] INorton_full: ===\n");
+    //INorton_full->print();
+    timer->stop(t_mIf);
+#ifdef MAP_PROFILE
+  timer->configTimer(false);
+#endif
+ 
+    // ---------- CALL ssnetwork_cal_volt(S_Steps+1, flagF2) 
+    // to calculate terminal volt: ----------
+    t_psolve = timer->createCategory("DS Solve: Modified Euler Predictor: Linear Solver");
+    timer->start(t_psolve);
+    //boost::shared_ptr<gridpack::math::Vector> volt_full(INorton_full->clone());
+    volt_full->zero();
+#if 0
+    bool flag_chk = true;
+    while (flag_chk == true ) {
+		
+			volt_full->zero();
+			
+			if (flagP == 0) {
+				solver_sptr->solve(*INorton_full, *volt_full);
+			} else if (flagP == 1) {
+				solver_fy_sptr->solve(*INorton_full, *volt_full);
+			} else if (flagP == 2) {
+				solver_posfy_sptr->solve(*INorton_full, *volt_full);
+			}
+			
+
+			printf("1: itr test:----previous predictor_INorton_full:\n");
+			INorton_full->print();
+
+			INorton_full_chk->equate(*INorton_full);
+			printf("2: itr test:----predictor_INorton_full_chk:\n");
+			INorton_full_chk->print();
+
+			nbusMap_sptr->mapToBus(volt_full);
+			p_factory->setVolt(false);
+			
+			if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
+				p_factory->predictor_currentInjection(false);
+			} else {
+				p_factory->predictor_currentInjection(true);
+			}
+			
+# if 0	
+			printf("3: itr test:----previous predictor_INorton_full:\n");
+			INorton_full->print();
+
+			INorton_full_chk->equate(*INorton_full);
+			printf("4: itr test:----predictor_INorton_full_chk:\n");
+			INorton_full_chk->print();
+# endif			
+			p_factory->setMode(make_INorton_full);
+			nbusMap_sptr->mapToVector(INorton_full);
+			
+			printf("5: itr test:----predictor_INorton_full:\n");
+			INorton_full->print();
+			
+			//multiply(*ybus_fy, *volt_full, *INorton_full_chk);
+			INorton_full_chk->add(*INorton_full, -1.0);
+			max_INorton_full=abs(INorton_full_chk->normInfinity());
+			
+			if (max_INorton_full <1.0e-8) {
+				flag_chk = false;
+			} else {
+				
+				printf("max_INorton_full = %8.4f \n", max_INorton_full);
+				//printf("-----INorton_full : \n");
+				//INorton_full->print();
+				//printf("-----INorton_full_chk - INorton_full : \n");
+				//INorton_full_chk->print();
+			}
+    }
+#else
+    if (flagP == 0) {
+      solver_sptr->solve(*INorton_full, *volt_full);
+    } else if (flagP == 1) {
+      solver_fy_sptr->solve(*INorton_full, *volt_full);
+    } else if (flagP == 2) {
+      solver_posfy_sptr->solve(*INorton_full, *volt_full);
+    }
+#endif
+    timer->stop(t_psolve);
+
+#ifdef MAP_PROFILE
+  timer->configTimer(true);
+#endif
+    //p_busIO->header("\n=== [Predictor] volt_full: ===\n");
+    //volt_full->print();
+    //if (Simu_Current_Step==4){
+    //	 exit(0);
+   //	}
+
+    t_vmap= timer->createCategory("DS Solve: Map Volt to Bus");
+    timer->start(t_vmap);
+	
+	//printf("after first volt sovle, before first volt map: \n");
+	//p_factory->printallbusvoltage();
+	
+    nbusMap_sptr->mapToBus(volt_full);
+	
+	//printf("after first volt sovle, after first volt map: \n");
+	
+	if ( Simu_Current_Step==0 ) {
+		//printf("enter the initial update oldbusvoltage, Timestep: %d \n", Simu_Current_Step);
+		p_factory->updateoldbusvoltage(); //renke add, first timestep, copy volt_full to volt_full_old
+	}
+    timer->stop(t_vmap);
+
+    t_volt= timer->createCategory("DS Solve: Set Volt");
+    timer->start(t_volt);
+    p_factory->setVolt(false);
+	p_factory->updateBusFreq(h_sol1);
+	
+	
+	std::vector <double> vwideareafreqs;
+	vwideareafreqs = p_factory->grabWideAreaFreq();
+	//printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: bus 30: %12.6f, bus 30: %12.6f, delta_freq bus34-bus30: %12.6f \n", 
+	//		vwideareafreqs[0], vwideareafreqs[1], vwideareafreqs[2]);
+	int tmp = vwideareafreqs.size();
+	double widearea_deltafreq = vwideareafreqs[tmp-1];
+
+	p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	 		
+    timer->stop(t_volt);
+	
+	//printf("before update relay, after first volt solv: \n");
+	//p_factory->printallbusvoltage();
+    //renke add, compute bus freq if necessary
+    //printf("Timestep, %d \n", Simu_Current_Step);
+    bool flagBus = p_factory->updateBusRelay(false, h_sol1);
+    bool flagBranch = p_factory->updateBranchRelay(false, h_sol1);
+	
+	// update dynamic load internal relay functions here
+	p_factory->dynamicload_post_process(h_sol1, false);
+    
+	// if bus relay trips, modify the corresponding Ymatrix, renke modified
+    if (flagBus) {
+        printf("DSFull_APP::Solve: updatebusrelay return trigger siganl: TURE!!! \n");
+		
+        //please update the bus contribution to the Y bus matrix here. //Shuangshuang tbd
+	if (flagP == 0) { 
+             p_factory->setMode(bus_relay);
+             ybusMap_sptr->overwriteMatrix(ybus);
+        } else if (flagP == 1) {
+             p_factory->setMode(bus_relay);
+             ybusMap_sptr->overwriteMatrix(ybus_fy);
+	     printf("DSFull_APP::Solve: bus relay trip during fault, ybus_fy changed:\n");
+	     ybus_fy->print();
+	     char sybus[100];
+             sprintf(sybus, "ybus_fy_%d_relay.m",Simu_Current_Step );
+			 
+	     ybus_fy->save(sybus);
+	 
+	     printf("DSFull_APP::Solve: bus relay trip during fault, ybus changed too:\n");
+             p_factory->setMode(bus_relay);
+             ybusMap_sptr->overwriteMatrix(ybus);
+	     ybus->print();
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
+
+	     ybus->save(sybus);
+        
+             printf("DSFull_APP::Solve: bus relay trip during fault, ybus_posfy changed too:\n");
+             p_factory->setMode(bus_relay);
+             ybusMap_sptr->overwriteMatrix(ybus_posfy);
+             ybus_posfy->print();
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
+
+             ybus_posfy->save(sybus);
+
+			 
+        } else if (flagP == 2) {
+             p_factory->setMode(bus_relay);
+             ybusMap_sptr->overwriteMatrix(ybus);
+             printf("DSFull_APP::Solve: bus relay trip after fault, ybus changed:\n");
+	     ybus->print();
+	     char sybus[100];
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
+
+	     ybus->save(sybus);
+
+             printf("DSFull_APP::Solve: bus relay trip after fault, ybus_posfy changed too:\n");
+             p_factory->setMode(bus_relay);
+             ybusMap_sptr->overwriteMatrix(ybus_posfy);
+             ybus_posfy->print();
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
+
+             ybus_posfy->save(sybus);
+
+        }
+    }
+	
+	// if branch relay trips, modify the corresponding Ymatrix, renke modified
+	if (flagBranch) {
+        
+        printf("DSFull_APP::Solve: updatebranchrelay return trigger siganl: TURE!!! \n");
+
+        //please update the bus contribution to the Y bus matrix here. //Shuangshuang tbd
+	if (flagP == 0) { 
+             p_factory->setMode(branch_relay);
+             ybusMap_sptr->incrementMatrix(ybus);
+        } else if (flagP == 1) {
+             p_factory->setMode(branch_relay);
+             ybusMap_sptr->incrementMatrix(ybus_fy);
+	     printf("DSFull_APP::Solve: branch relay trip during fault, ybus_fy changed:\n");
+	     ybus_fy->print();
+	     char sybus[100];
+             sprintf(sybus, "ybus_fy_%d_relay.m",Simu_Current_Step );
+			 
+	     ybus_fy->save(sybus);
+
+             printf("DSFull_APP::Solve: branch relay trip during fault, ybus changed too:\n");
+             p_factory->setMode(branch_relay);
+             ybusMap_sptr->incrementMatrix(ybus);
+             ybus->print();
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
+
+             ybus->save(sybus);
+
+			 
+	     printf("DSFull_APP::Solve: branch relay trip during fault, ybus_posfy changed too:\n");
+             p_factory->setMode(branch_relay);
+             ybusMap_sptr->incrementMatrix(ybus_posfy);
+	     ybus_posfy->print();
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
+
+	     ybus_posfy->save(sybus);
+			 
+        } else if (flagP == 2) {
+             printf("DSFull_APP::Solve: branch relay trip during fault, ybus changed too:\n");
+             p_factory->setMode(branch_relay);
+             ybusMap_sptr->incrementMatrix(ybus);
+             ybus->print();
+             char sybus[100];
+             sprintf(sybus, "ybus_%d_relay.m",Simu_Current_Step );
+
+             ybus->save(sybus);
+
+             printf("DSFull_APP::Solve: branch relay trip during fault, ybus_posfy changed too:\n");
+             p_factory->setMode(branch_relay);
+             ybusMap_sptr->incrementMatrix(ybus_posfy);
+             ybus_posfy->print();
+             sprintf(sybus, "ybus_posfy_%d_relay.m",Simu_Current_Step );
+
+             ybus_posfy->save(sybus);
+
+        }
+    }
+	
+    //renke add, update old busvoltage first
+    p_factory->updateoldbusvoltage(); //renke add
+	
+	//printf("after updateoldbus voltage: \n");
+	//p_factory->printallbusvoltage();
+	
+#ifdef MAP_PROFILE
+  timer->configTimer(false);
+#endif
+
+    t_predictor = timer->createCategory("DS Solve: Modified Euler Predictor");
+    //printf("Test: predictor begins: \n");
+    timer->start(t_predictor);
+    if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
+      p_factory->predictor(h_sol1, false);
+    } else { 
+      p_factory->predictor(h_sol1, true);
+    }
+    timer->stop(t_predictor);
+
+    if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
+      p_factory->corrector_currentInjection(false);
+    } else {
+      p_factory->corrector_currentInjection(true);
+    }
+
+    //INorton_full = nbusMap_sptr->mapToVector();
+    t_cmIf = timer->createCategory("DS Solve: Modified Euler Corrector: Make INorton");
+    timer->start(t_cmIf);
+    p_factory->setMode(make_INorton_full);
+    nbusMap_sptr->mapToVector(INorton_full);
+    //p_busIO->header("\n=== [Corrector] INorton_full: ===\n");
+    //printf("\nrelaytest=== [Corrector] INorton_full: ===\n");
+    //INorton_full->print();
+    timer->stop(t_cmIf);
+
+    // ---------- CALL ssnetwork_cal_volt(S_Steps+1, flagF2)
+    // to calculate terminal volt: ----------
+    t_csolve = timer->createCategory("DS Solve: Modified Euler Corrector: Linear Solver");
+    timer->start(t_csolve);
+    volt_full->zero();
+
+#if 0
+    flag_chk = true;
+    while (flag_chk == true ) {
+		
+			volt_full->zero();
+			
+			if (flagP == 0) {
+				solver_sptr->solve(*INorton_full, *volt_full);
+			} else if (flagP == 1) {
+				solver_fy_sptr->solve(*INorton_full, *volt_full);
+			} else if (flagP == 2) {
+				solver_posfy_sptr->solve(*INorton_full, *volt_full);
+			}
+			nbusMap_sptr->mapToBus(volt_full);
+			p_factory->setVolt(false);
+			
+			if (Simu_Current_Step !=0 && last_S_Steps != S_Steps) {
+				p_factory->corrector_currentInjection(false);
+			} else {
+				p_factory->corrector_currentInjection(true);
+			}
+			
+			INorton_full_chk->equate(*INorton_full);
+			printf("itr test:----corrector_INorton_full_chk:\n");
+			INorton_full_chk->print();
+			
+			p_factory->setMode(make_INorton_full);
+			nbusMap_sptr->mapToVector(INorton_full);
+			
+			printf("itr test:----corrector_INorton_full:\n");
+			INorton_full->print();
+			
+			//multiply(*ybus_fy, *volt_full, *INorton_full_chk);
+			INorton_full_chk->add(*INorton_full, -1.0);
+			max_INorton_full=abs(INorton_full_chk->normInfinity());
+			
+			if (max_INorton_full <1.0e-8) {
+				flag_chk = false;
+			} else {
+				printf("max_INorton_full = %8.4f \n", max_INorton_full);
+				//printf("-----INorton_full : \n");
+				//INorton_full->print();
+				//printf("-----INorton_full_chk - INorton_full : \n");
+				//INorton_full_chk->print();
+			}
+    }
+#else
+    if (flagP == 0) {
+      solver_sptr->solve(*INorton_full, *volt_full);
+    } else if (flagP == 1) {
+      solver_fy_sptr->solve(*INorton_full, *volt_full);
+    } else if (flagP == 2) {
+      solver_posfy_sptr->solve(*INorton_full, *volt_full);
+    }
+#endif
+
+    timer->stop(t_csolve);
+
+    //p_busIO->header("\n=== [Corrector] volt_full: ===\n");
+    //printf("relaytest \n=== [Corrector] volt_full: ===\n");
+    //volt_full->print();
+    timer->start(t_vmap);
+	
+	//printf("after second solve, before second map: \n");
+	//p_factory->printallbusvoltage();
+	
+    nbusMap_sptr->mapToBus(volt_full);
+	
+	//printf("after second solve, after second map: \n");
+	//p_factory->printallbusvoltage();
+	
+    timer->stop(t_vmap);
+
+    timer->start(t_volt);
+    p_factory->setVolt(false);
+	p_factory->updateBusFreq(h_sol1);
+    timer->stop(t_volt);
+
+    t_corrector = timer->createCategory("DS Solve: Modified Euler Corrector");
+    timer->start(t_corrector);
+    //printf("Test: corrector begins: \n");
+    if (last_S_Steps != S_Steps) {
+      p_factory->corrector(h_sol2, false);
+    } else {
+      p_factory->corrector(h_sol2, true);
+    }
+    timer->stop(t_corrector);
+
+    //if (Simu_Current_Step == simu_total_steps - 1) 
+      //p_busIO->write();
+
+    if (Simu_Current_Step == steps1) {
+      solver_fy_sptr->solve(*INorton_full, *volt_full);
+//      printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
+//      printf("\n=== [Corrector] volt_full: ===\n");
+//      volt_full->print();
+      nbusMap_sptr->mapToBus(volt_full);
+      p_factory->setVolt(false);
+	  p_factory->updateBusFreq(h_sol1);
+    } else if (Simu_Current_Step == steps2) {
+      solver_posfy_sptr->solve(*INorton_full, *volt_full);
+//      printf("\n===================Step %d\ttime %5.3f sec:================\n", Simu_Current_Step+1, (Simu_Current_Step+1) * p_time_step);
+//      printf("\n=== [Corrector] volt_full: ===\n");
+//      volt_full->print();
+      nbusMap_sptr->mapToBus(volt_full);
+      p_factory->setVolt(true);
+	  p_factory->updateBusFreq(h_sol1);
+    }
+    if (Simu_Current_Step == 1) {
+//      printf("\n Dynamic Step 1 [Corrector] volt_full: ===\n");
+//      volt_full->print();
+//      printf("\n Dynamic Step 1 [Corrector] Norton_full: ===\n");
+//      INorton_full->print();
+    }
+    t_secure = timer->createCategory("DS Solve: Check Security");
+    timer->start(t_secure);
+    if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) {
+      char tbuf[32];
+#ifdef USE_TIMESTAMP
+      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
+          timer->currentTime());
+      if (p_generatorWatch) p_generatorIO->header(tbuf);
+      if (p_generatorWatch) p_generatorIO->write("watch");
+      if (p_generatorWatch) p_generatorIO->header("\n");
+
+//      if (p_generatorWatch) p_generatorIO->write("watch");
+
+//      sprintf(tbuf,"%8.4f, %20.4f",mac_ang_s0, mac_spd_s0);
+//      if (p_generatorWatch) p_generatorIO->header(tbuf);
+//      if (p_generatorWatch) p_generatorIO->write("watch");
+//      if (p_generatorWatch) p_generatorIO->header("\n");
+#else
+      sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
+      if (p_generatorWatch) p_generatorIO->header(tbuf);
+      if (p_generatorWatch) p_generatorIO->write("watch");
+      if (p_generatorWatch) p_generatorIO->header("\n");
+#endif
+#ifdef USE_GOSS
+      if (p_generatorWatch) p_generatorIO->dumpChannel();
+#endif
+    }
+    if (p_loadWatch && Simu_Current_Step%p_loadWatchFrequency == 0) {
+      char tbuf[32];
+#ifdef USE_TIMESTAMP
+      sprintf(tbuf,"%8.4f, %20.4f",static_cast<double>(Simu_Current_Step)*p_time_step,
+          timer->currentTime());
+      if (p_loadWatch) p_loadIO->header(tbuf);
+      if (p_loadWatch) p_loadIO->write("load_watch");
+      if (p_loadWatch) p_loadIO->header("\n");
+#else
+      sprintf(tbuf,"%8.4f",static_cast<double>(Simu_Current_Step)*p_time_step);
+      if (p_loadWatch) p_loadIO->header(tbuf);
+      if (p_loadWatch) p_loadIO->write("load_watch");
+      if (p_loadWatch) p_loadIO->header("\n");
+#endif
+#ifdef USE_GOSS
+      if (p_loadWatch) p_loadIO->dumpChannel();
+#endif
+    }
+    saveTimeStep();
+    if ((!p_factory->securityCheck()) && p_insecureAt == -1)  
+       p_insecureAt = Simu_Current_Step;
+/*    // Print to screen
+    if (last_S_Steps != S_Steps) {
+      //sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps);
+      //p_busIO->header(ioBuf);
+      printf("\n==============S_Steps = %d==============\n", S_Steps);
+      mac_ang_s0->print();
+      mac_spd_s0->print();
+      //pmech->print();
+      //pelect->print();
+      //sprintf(ioBuf, "========================End of S_Steps = %d=========================\n\n", S_Steps);
+      //p_busIO->header(ioBuf);
+    }
+    if (Simu_Current_Step == simu_total_steps) {
+      printf("\n==============S_Steps = %d==============\n", S_Steps);
+      mac_ang_s1->print();
+      mac_spd_s1->print();
+      p_factory->setMode(init_mac_ang);
+      ngenMap_sptr->mapToBus(mac_ang_s1);
+      p_factory->setMode(init_mac_spd);
+      ngenMap_sptr->mapToBus(mac_spd_s1);
+      p_factory->setMode(init_pmech);
+      ngenMap_sptr->mapToBus(pmech);
+      p_factory->setMode(init_pelect);
+      ngenMap_sptr->mapToBus(pelect);
+      sprintf(ioBuf, "\n========================S_Steps = %d=========================\n", S_Steps+1);
+      p_busIO->header(ioBuf);
+      sprintf(ioBuf, "\n         Bus ID     Generator ID"
+          "    mac_ang         mac_spd         mech            elect\n\n");
+      p_busIO->header(ioBuf);
+      mac_ang_s1->print();
+      mac_spd_s1->print();
+      pmech->print();
+      pelect->print();
+      p_busIO->write();
+      sprintf(ioBuf, "\n========================End of S_Steps = %d=========================\n\n", S_Steps+1);
+      p_busIO->header(ioBuf);
+    } // End of Print to screen
+
+*/    //exit(0);
+    last_S_Steps = S_Steps;
+    timer->stop(t_secure);
+    if (p_monitorGenerators) {
+      double presentTime = static_cast<double>(Simu_Current_Step)*p_time_step;
+      p_frequencyOK = p_frequencyOK && checkFrequency(0.5,presentTime);
+      if (!p_frequencyOK) Simu_Current_Step = simu_total_steps;
+    }
+  //} // main for loop ends here
+  
+  Simu_Current_Step++;
+  
+  if (Simu_Current_Step >= simu_total_steps - 1){
+	  p_bDynSimuDone = true;
+  }
+	  
+  
+#if 0
+  printf("\n=== ybus after simu: ============\n");
+  ybus->print();
+  ybus->save("ybus_aftersimu.m");
+  
+  printf("\n=== ybus_fy after simu:============\n");
+  ybus_fy->print();
+  ybus_fy->save("ybus_fy_aftersimu.m");
+  
+  printf("\n=== ybus_posfy after simu: ============\n");
+  ybus_posfy->print();
+  ybus_posfy->save("ybus_posfy_aftersimu.m");
+  
+#endif
+
+  //char msg[128];
+  //if (p_insecureAt == -1) sprintf(msg, "\nThe system is secure!\n");
+  //else sprintf(msg, "\nThe system is insecure from step %d!\n", p_insecureAt);
+  char secureBuf[128];
+  if (p_insecureAt == -1) sprintf(secureBuf,"\nThe system is secure!\n");
+  else sprintf(secureBuf,"\nThe system is insecure from step %d!\n", p_insecureAt);
+  p_busIO->header(secureBuf);
+
+#ifdef MAP_PROFILE
+  timer->configTimer(true);
+#endif
+  timer->stop(t_solve);
+  //timer->dump(); 
+  
+}
+
+/**
+ * Check whether the dynamic simulation is done
+ */
+bool gridpack::dynamic_simulation::DSFullApp::isDynSimuDone( ){
+	
+	return p_bDynSimuDone;
+
+}
+

@@ -22,6 +22,9 @@
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "dsf_factory.hpp"
+#include "gridpack/mapper/full_map.hpp"
+#include "gridpack/mapper/bus_vector_map.hpp"
+#include "gridpack/math/math.hpp"
 
 
 namespace gridpack {
@@ -94,6 +97,21 @@ class DSFullApp
      * Execute the time integration portion of the application
      */
     void solve(gridpack::dynamic_simulation::Event fault);
+	
+	/**
+     * initialization before the time step integration starts 
+     */
+    void solve_pre_initialize(gridpack::dynamic_simulation::Event fault);
+	
+	/**
+     * Execute only one simulation time step 
+     */
+    void execute_one_simu_step(std::vector<gridpack::dynamic_simulation::Event> action_list);
+	
+	/**
+     * Check whether the dynamic simulation is done
+     */
+    bool isDynSimuDone();
 
     /**
      * Write out final results of dynamic simulation calculation to standard output
@@ -383,6 +401,62 @@ class DSFullApp
 
    // Record bus ID where frequency violation occured
    std::vector<int> p_violations;
+   
+   // below are all variables originally defined the solve function, now define them as class private members
+   boost::shared_ptr < gridpack::mapper::FullMatrixMap<DSFullNetwork> > ybusMap_sptr;  
+   boost::shared_ptr<gridpack::math::Matrix> orgYbus;  
+   boost::shared_ptr<gridpack::math::Matrix> ybusyl;  
+   boost::shared_ptr<gridpack::math::Matrix> ybuspg;
+   boost::shared_ptr<gridpack::math::Matrix> ybus_jxd;
+   boost::shared_ptr<gridpack::math::Matrix> ybus;
+   boost::shared_ptr<gridpack::math::Matrix> ybus_fy;
+   boost::shared_ptr<gridpack::math::Matrix> ybus_posfy;
+   
+   boost::shared_ptr < gridpack::mapper::BusVectorMap<DSFullNetwork> > ngenMap_sptr; 
+   boost::shared_ptr<gridpack::math::Vector> volt;
+   
+   boost::shared_ptr < gridpack::mapper::BusVectorMap<DSFullNetwork> > nbusMap_sptr;
+   boost::shared_ptr<gridpack::math::Vector> INorton_full;
+   boost::shared_ptr<gridpack::math::Vector> INorton_full_chk;
+   boost::shared_ptr<gridpack::math::Vector> volt_full;
+   double max_INorton_full;
+   
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_sptr;
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_fy_sptr;
+   boost::shared_ptr<gridpack::math::LinearSolver> solver_posfy_sptr;
+   
+   int simu_total_steps;
+   int S_Steps;
+   int last_S_Steps;
+   int steps3, steps2, steps1;
+   double h_sol1, h_sol2;
+   int flagP, flagC;
+   int Simu_Current_Step;
+   bool p_bDynSimuDone;
+   
+   const double sysFreq = 60.0;
+   double pi = 4.0*atan(1.0);
+   const double basrad = 2.0 * pi * sysFreq;
+   //gridpack::ComplexType jay(0.0, 1.0);
+   
+   //timer for record the excution time for each main modules
+   //gridpack::utility::CoarseTimer *timer;
+   int t_solve;
+   int t_misc;
+   int t_mode;
+   int t_ybus;
+   int t_init;
+   int t_mIf;
+   int t_psolve;
+   int t_vmap;
+   int t_volt;
+   int t_predictor;
+   int t_csolve;
+   int t_corrector;
+   int t_secure;
+   int t_cmIf;
+   
+   
 };
 
 } // dynamic simulation
