@@ -101,12 +101,12 @@ class DSFullApp
 	/**
      * initialization before the time step integration starts 
      */
-    void solve_pre_initialize(gridpack::dynamic_simulation::Event fault);
+    void solvePreInitialize(gridpack::dynamic_simulation::Event fault);
 	
 	/**
      * Execute only one simulation time step 
      */
-    void execute_one_simu_step(std::vector<gridpack::dynamic_simulation::Event> action_list);
+    void executeOneSimuStep(std::vector<gridpack::dynamic_simulation::Event> action_list);
 	
 	/**
      * Check whether the dynamic simulation is done

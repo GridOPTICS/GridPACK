@@ -1804,7 +1804,7 @@ std::vector<int> gridpack::dynamic_simulation::DSFullApp::getFrequencyFailures()
 /**
  * initialization before the time step integration starts 
  */
-void gridpack::dynamic_simulation::DSFullApp::solve_pre_initialize(
+void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
     gridpack::dynamic_simulation::Event fault)
 {
   gridpack::utility::CoarseTimer *timer =
@@ -2019,14 +2019,14 @@ void gridpack::dynamic_simulation::DSFullApp::solve_pre_initialize(
   Simu_Current_Step = 0;
   p_bDynSimuDone = false;
   
-  printf (" In function solve_pre_initialize end, simu_total_steps: %d \n", simu_total_steps);
+  printf (" In function solvePreInitialize end, simu_total_steps: %d \n", simu_total_steps);
   
 }
 
 /**
  * Execute only one simulation time step 
  */
-void gridpack::dynamic_simulation::DSFullApp::execute_one_simu_step(
+void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep(
     std::vector<gridpack::dynamic_simulation::Event> action_list){
 	
     gridpack::utility::CoarseTimer *timer =

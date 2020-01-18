@@ -150,7 +150,7 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu(){
     //printf("ds_app_sptr->solve:\n");
     //ds_app_sptr->solve(faults[0]);
 	
-	ds_app_sptr->solve_pre_initialize(faults[0]);
+	ds_app_sptr->solvePreInitialize(faults[0]);
 	
 	
 }
@@ -172,7 +172,7 @@ void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(int
 void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(
     std::vector<gridpack::dynamic_simulation::Event> action_list){
 		
-	ds_app_sptr->execute_one_simu_step(action_list);
+	ds_app_sptr->executeOneSimuStep(action_list);
 	
 }
 

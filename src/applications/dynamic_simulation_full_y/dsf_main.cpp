@@ -146,7 +146,7 @@ main(int argc, char **argv)
     //printf("ds_app.solve:\n");
     //ds_app.solve(faults[0]);
 	
-	ds_app.solve_pre_initialize(faults[0]);
+	ds_app.solvePreInitialize(faults[0]);
 	
 	std::vector<gridpack::dynamic_simulation::Event> action_list;
 	action_list.clear();
@@ -158,7 +158,7 @@ main(int argc, char **argv)
 	*/
 	
 	while(!ds_app.isDynSimuDone()){
-		ds_app.execute_one_simu_step(action_list);
+		ds_app.executeOneSimuStep(action_list);
 	}
 
     //ds_app.write();
