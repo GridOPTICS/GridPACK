@@ -14,6 +14,7 @@
 # -------------------------------------------------------------
 
 set(target_libraries
+    gridpack_hadrec_module
     gridpack_dynamic_simulation_full_y_module
     gridpack_powerflow_module
     gridpack_pfmatrix_components
