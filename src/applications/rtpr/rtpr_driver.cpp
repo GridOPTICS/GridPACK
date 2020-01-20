@@ -713,8 +713,8 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
     // Need to rerun power flow calculation to initialize dynamic simulation
     p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
     p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
-    p_ds_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
-    p_ds_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
+//    p_ds_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
+//    p_ds_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
     char file[128];
     sprintf(file,"ds_diagnostic_%f.dat",rating);
     p_ds_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
@@ -1123,9 +1123,9 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     }
     p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
-    p_ds_app.scaleLoadPower(p_rating,p_dstArea,p_dstZone);
+//    p_ds_app.scaleLoadPower(p_rating,p_dstArea,p_dstZone);
+//    p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
     adjustRating(p_rating,1);
-    p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
     checkTie = runDSContingencies();
     p_pf_app.resetPower();
     p_ds_app.resetPower();
@@ -1307,7 +1307,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
     }
 #endif
     printf("Executing task %d on process %d\n",task_id,p_world.rank());
-    sprintf(sbuf,"%s.out",p_events[task_id].p_name.c_str());
+    sprintf(sbuf,"%s_%f.out",p_events[task_id].p_name.c_str(),fabs(p_rating));
     // Open a new file, based on the contingency name, to store results from
     // this particular contingency calculation
     if (p_print_calcs) p_pf_app.open(sbuf);
@@ -1591,6 +1591,7 @@ void gridpack::rtpr::RTPRDriver::transferPFtoDS(
       int j;
       for (j=0; j<ngen; j++) {
         dsData->setValue(LOAD_PL,pl[j],j);
+        dsData->setValue(LOAD_QL,ql[j],j);
       }
     }
   }
