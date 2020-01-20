@@ -29,6 +29,9 @@ gridpack::dynamic_simulation::BaseGeneratorModel::BaseGeneratorModel(void)
   p_hasExciter = false;
   p_hasGovernor = false;
   p_hasPss = false;
+  p_exciter = NULL;
+  p_governor = NULL;
+  p_pss = NULL;
   bStatus = true;
   p_wideareafreq = 0.0;
 }

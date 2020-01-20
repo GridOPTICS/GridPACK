@@ -2312,9 +2312,11 @@ bool gridpack::dynamic_simulation::DSFullBus::checkFrequency(double limit)
  * Scale value of real power on all generators
  * @param character ID for generator
  * @param value scale factor for real power
+ * @param data data collection object for bus holding generators
  */
 void gridpack::dynamic_simulation::DSFullBus::scaleGeneratorRealPower(
-    std::string tag, double value)
+    std::string tag, double value,
+    boost::shared_ptr<gridpack::component::DataCollection> data)
 {
   int i;
   for (i=0; i<p_ngen; i++) {
@@ -2330,6 +2332,7 @@ void gridpack::dynamic_simulation::DSFullBus::scaleGeneratorRealPower(
         double slack = p_pg[i]-p_gpmin[i];
         p_pg[i] += value*slack;
       }
+      data->setValue(GENERATOR_PG,p_pg[i],i);
       break;
     }
   }
@@ -2354,14 +2357,16 @@ void gridpack::dynamic_simulation::DSFullBus::scaleLoadPower(
 }
 
 /**
- * Reset real power for generators and loads back to original
- values
+ * Reset real power for generators and loads back to original values
+ * @param data data collection object for bus
  */
-void gridpack::dynamic_simulation::DSFullBus::resetPower()
+void gridpack::dynamic_simulation::DSFullBus::resetPower(
+    boost::shared_ptr<gridpack::component::DataCollection> data)
 {
   int i;
   for (i=0; i<p_ngen; i++) {
     p_pg[i] = p_savePg[i];
+    data->setValue(GENERATOR_PG,p_pg[i],i);
   }
   for (i=0; i<p_npowerflow_load; i++) {
     p_powerflowload_p[i] = p_powerflowload_p_save[i];
@@ -2707,7 +2712,8 @@ void gridpack::dynamic_simulation::DSFullBranch::load(
 
   if (data->getValue(NEW_BRANCH_TYPE, &snewbratype)){
     if ( snewbratype=="TRANSFORMER" || snewbratype=="FEEDER" ) {
-      printf("This branch is a extended bus by composite load models, type: %s \n", snewbratype.c_str());
+      printf("This branch is a extended bus by composite load models, type: %s \n",
+          snewbratype.c_str());
       if ( snewbratype=="TRANSFORMER" )
       {
         p_bextendedloadbranch = 1; 
