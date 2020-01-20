@@ -429,6 +429,8 @@ void gridpack::dynamic_simulation::DSFullFactory::scaleGeneratorRealPower(
   int i, izone;
   for (i=0; i<nbus; i++) {
     gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+    boost::shared_ptr<gridpack::component::DataCollection> data
+      = p_network->getBusData(i);
     if (zone > 0) {
       izone = bus->getZone();
     } else {
@@ -438,7 +440,7 @@ void gridpack::dynamic_simulation::DSFullFactory::scaleGeneratorRealPower(
       std::vector<std::string> tags = bus->getGenerators();
       int j;
       for (j=0; j<tags.size(); j++) {
-        bus->scaleGeneratorRealPower(tags[j], scale);
+        bus->scaleGeneratorRealPower(tags[j], scale, data);
       }
     }
   }
@@ -563,7 +565,9 @@ void gridpack::dynamic_simulation::DSFullFactory::resetPower()
   int nbus = p_network->numBuses();
   int i;
   for (i=0; i<nbus; i++) {
-    p_network->getBus(i)->resetPower();
+    boost::shared_ptr<gridpack::component::DataCollection> data
+      = p_network->getBusData(i);
+    p_network->getBus(i)->resetPower(data);
   }
 }
 

@@ -406,8 +406,10 @@ class DSFullBus
      * Scale value of real power on all generators
      * @param character ID for generator
      * @param value scale factor for real power
+     * @param data data collection object for bus holding generators
      */
-    void scaleGeneratorRealPower(std::string tag, double value);
+    void scaleGeneratorRealPower(std::string tag, double value,
+        boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Scale value of real power on loads
@@ -418,8 +420,9 @@ class DSFullBus
 
     /**
      * Reset power for generators and loads back to original values
+     * @param data data collection object for bus
      */
-    void resetPower();
+    void resetPower(boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Get available margin for generator

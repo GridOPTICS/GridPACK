@@ -163,6 +163,16 @@ class RTPRDriver
      */
     bool runDSContingencies();
 
+    /**
+     * Transfer data from power flow to dynamic simulation
+     * @param pf_network power flow network
+     * @param ds_network dynamic simulation network
+     */
+    void transferPFtoDS(
+        boost::shared_ptr<gridpack::powerflow::PFNetwork> pf_network,
+        boost::shared_ptr<gridpack::dynamic_simulation::DSFullNetwork>
+        ds_network);
+
     private:
 
     boost::shared_ptr<gridpack::powerflow::PFNetwork> p_pf_network;
