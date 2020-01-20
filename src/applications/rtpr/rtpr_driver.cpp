@@ -1566,14 +1566,29 @@ void gridpack::rtpr::RTPRDriver::transferPFtoDS(
     int ngen = 0;
     if (pfData->getValue(GENERATOR_NUMBER, &ngen)) {
       int j;
-      for (j=0;
-          j<ngen; j++) {
+      for (j=0; j<ngen; j++) {
         pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
         dsData->setValue(GENERATOR_PG,rval,j);
         //printf("save PGEN: %f\n", rval);
         pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
         dsData->setValue(GENERATOR_QG,rval,j);
         //printf("save QGEN: %f\n", rval);
+      }
+    }
+    int nld = 0;
+    if (pfData->getValue(LOAD_NUMBER, &ngen)) {
+      std::vector<double> pl, ql;
+      std::vector<int> status;
+      std::vector<std::string> tags;
+      pf_network->getBus(i)->getLoadPower(tags,pl,ql,status);
+      if (tags.size() != ngen) {
+        printf("Mismatch in loads on bus %d\n",
+            pf_network->getBus(i)->getOriginalIndex());
+        continue;
+      }
+      int j;
+      for (j=0; j<ngen; j++) {
+        dsData->setValue(LOAD_PL,pl[j],j);
       }
     }
   }
