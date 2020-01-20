@@ -1124,8 +1124,10 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
     p_ds_app.scaleLoadPower(p_rating,p_dstArea,p_dstZone);
+    adjustRating(p_rating,1);
     p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
     checkTie = runDSContingencies();
+    p_pf_app.resetPower();
     p_ds_app.resetPower();
 
     // Current rating is an upper bound. Only check lower values.
@@ -1612,6 +1614,10 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   int task_id;
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
+  char file[128];
+  sprintf(file,"pf2_diagnostic_%f.dat",p_rating);
+  p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
+      p_rating,p_rating,file);
   bool chkSolve = p_pf_app.solve();
   p_pf_app.useRateB(p_useRateB);
   // Check for Qlimit violations
@@ -1621,7 +1627,6 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   transferPFtoDS(p_pf_network,p_ds_network);
   p_ds_app.reload();
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
-    // Print out results of power flow calculation
 #ifdef RTPR_DEBUG
     if (task_id == 0) {
       char sbuf[128];
@@ -1634,6 +1639,7 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
       p_pf_app.close();
     }
 #endif
+    // Print out results of power flow calculation
     printf("Executing dynamic simulation task %d on process %d\n",
         task_id,p_world.rank());
     // Initialize dynamic simulation by first running powerflow calculation
