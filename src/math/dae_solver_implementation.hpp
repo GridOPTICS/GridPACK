@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2015-05-07 13:17:12 d3g096
+ * @date   2019-12-05 09:15:09 d3g096
  * 
  * @brief  
  * 
@@ -41,23 +41,26 @@ class DAESolverImplementation
 {
 public:
 
-  typedef typename DAESolverInterface<T, I>::VectorType VectorType;
-  typedef typename DAESolverInterface<T, I>::MatrixType MatrixType;
-  typedef typename DAESolverInterface<T, I>::JacobianBuilder JacobianBuilder;
-  typedef typename DAESolverInterface<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverInterface<T, I>::StepFunction StepFunction;
-  
+  using typename DAESolverInterface<T, I>::VectorType;
+  using typename DAESolverInterface<T, I>::MatrixType;
+  using typename DAESolverInterface<T, I>::JacobianBuilder;
+  using typename DAESolverInterface<T, I>::FunctionBuilder;
+  using typename DAESolverInterface<T, I>::StepFunction;
+  using typename DAESolverInterface<T, I>::EventManagerPtr;
 
   /// Default constructor.
   DAESolverImplementation(const parallel::Communicator& comm, 
                           const int local_size,
                           JacobianBuilder& jbuilder,
-                          FunctionBuilder& fbuilder)
+                          FunctionBuilder& fbuilder,
+                          EventManagerPtr eman)
     : parallel::Distributed(comm),
       utility::Configurable("DAESolver"),
       utility::Uncopyable(),
       p_J(comm, local_size, local_size),
-      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder)
+      p_Fbuilder(fbuilder), p_Jbuilder(jbuilder),
+      p_eventManager(eman),
+      p_doAdaptive(true)
   {
     
   }
@@ -85,9 +88,19 @@ protected:
   /// An optional function to call after each time step
   StepFunction p_postStepFunc;
 
+  /// An optional event manager
+  EventManagerPtr p_eventManager;
+
+  /// Is the time stepper adaptive?
+  bool p_doAdaptive;
+
   /// Specialized way to configure from property tree
   void p_configure(utility::Configuration::CursorPtr props)
-  {}
+  {
+    if (props) {
+      p_doAdaptive = props->get("Adaptive", p_doAdaptive);
+    }
+  }
 
   /// Set a function to call before each time step (specialized)
   void p_preStep(StepFunction& f)
@@ -101,6 +114,32 @@ protected:
     p_postStepFunc = f;
   }
 
+  /// Has the solver been terminated by an event (specialized)
+  /** 
+   * The event manager records terminating events. Library-specific
+   * implementations should probably query the underlying solver
+   * library.
+   * 
+   * 
+   * @return true if an event has terminated further solution
+   */
+  bool p_terminated(void) const
+  {
+    bool result(false);
+    if (p_eventManager) {
+      result = (this->communicator()).any(p_eventManager->terminated());
+    }
+    
+    return result;
+  }
+
+  /// Reset solver if it has been terminated by an event, maybe (specialized)
+  void p_terminated(const bool& flag)
+  {
+    if (p_eventManager) {
+      p_eventManager->terminated(flag);
+    }
+  }
 };
 
 

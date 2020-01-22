@@ -25,6 +25,7 @@
 
 #include "gridpack/component/base_component.hpp"
 #include "base_network.hpp"
+#include "gridpack/environment/environment.hpp"
 
 // -------------------------------------------------------------
 //  class BogusBus
@@ -443,7 +444,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   return result;
 }

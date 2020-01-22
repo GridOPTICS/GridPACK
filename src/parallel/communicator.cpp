@@ -9,7 +9,7 @@
 /**
  * @file   communicator.cpp
  * @author William A. Perkins
- * @date   2019-05-09 07:01:05 d3g096
+ * @date   2019-12-05 08:34:28 d3g096
  * 
  * @brief  
  * 
@@ -18,6 +18,7 @@
 // -------------------------------------------------------------
 
 #include <iostream>
+#include <functional>
 
 #if USE_PROGRESS_RANKS
 #include <ga-mpi.h>
@@ -322,28 +323,28 @@ void Communicator::max(float *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
-  GA_Fgop(x,nvals,cmax);
+  GA_Pgroup_fgop(p_private->handle(),x,nvals,cmax);
 }
 
 void Communicator::max(double *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
-  GA_Dgop(x,nvals,cmax);
+  GA_Pgroup_dgop(p_private->handle(),x,nvals,cmax);
 }
 
 void Communicator::max(int *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
-  GA_Igop(x,nvals,cmax);
+  GA_Pgroup_igop(p_private->handle(),x,nvals,cmax);
 }
 
 void Communicator::max(long *x, int nvals) const
 {
   char cmax[4];
   strcpy(cmax,"max");
-  GA_Lgop(x,nvals,cmax);
+  GA_Pgroup_lgop(p_private->handle(),x,nvals,cmax);
 }
 
 /**
@@ -356,28 +357,42 @@ void Communicator::min(float *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");
-  GA_Fgop(x,nvals,cmin);
+  GA_Pgroup_fgop(p_private->handle(),x,nvals,cmin);
 }
 
 void Communicator::min(double *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");
-  GA_Dgop(x,nvals,cmin);
+  GA_Pgroup_dgop(p_private->handle(),x,nvals,cmin);
 }
 
 void Communicator::min(int *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");
-  GA_Igop(x,nvals,cmin);
+  GA_Pgroup_igop(p_private->handle(),x,nvals,cmin);
 }
 
 void Communicator::min(long *x, int nvals) const
 {
   char cmin[4];
   strcpy(cmin,"min");
-  GA_Lgop(x,nvals,cmin);
+  GA_Pgroup_lgop(p_private->handle(),x,nvals,cmin);
+}
+
+bool Communicator::any(const bool& lflag) const
+{
+  bool result(false);
+  boost::mpi::all_reduce(p_comm, lflag, result, std::logical_or<bool>());
+  return result;
+}
+
+bool Communicator::all(const bool& lflag) const
+{
+  bool result(false);
+  boost::mpi::all_reduce(p_comm, lflag, result, std::logical_and<bool>());
+  return result;
 }
 
 } // namespace parallel

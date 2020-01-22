@@ -1,3 +1,4 @@
+
 /*
  *     Copyright (c) 2013 Battelle Memorial Institute
  *     Licensed under modified BSD License. A copy of this license can be found
@@ -6,7 +7,7 @@
 /**
  * @file   component_serialization.cpp
  * @author William A. Perkins
- * @date   2017-02-10 07:23:40 d3g096
+ * @date   2019-12-03 07:21:04 d3g096
  * 
  * @brief  Serialization tests for various network component classes
  * 
@@ -36,6 +37,7 @@ typedef boost::archive::binary_oarchive outarchive;
 
 #include "gridpack/utilities/exception.hpp"
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "data_collection.hpp"
 #include "base_component.hpp"
 
@@ -439,7 +441,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   int result = ::boost::unit_test::unit_test_main( &init_function, argc, argv );
   return result;
 }
@@ -457,5 +459,5 @@ template<> struct is_mpi_datatype<std::string> : public mpl::true_ { };
 }
 #endif
 
-BOOST_CLASS_EXPORT_IMPLEMENT(BogusBus);
-BOOST_CLASS_EXPORT_IMPLEMENT(BogusBranch);
+BOOST_CLASS_EXPORT_IMPLEMENT(BogusBus)
+BOOST_CLASS_EXPORT_IMPLEMENT(BogusBranch)

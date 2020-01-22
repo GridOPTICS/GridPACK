@@ -7,7 +7,7 @@
 /**
  * @file   base_network.hpp
  * @author Bruce Palmer, William Perkins
- * @date   2016-07-14 14:07:46 d3g096
+ * @date   2019-12-10 09:31:33 d3g096
  * 
  * @brief  
  * 
@@ -37,6 +37,7 @@
 #include "gridpack/parallel/ga_shuffler.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/utilities/exception.hpp"
+#include "gridpack/environment/environment.hpp"
 
 namespace gridpack {
 namespace network {
@@ -126,8 +127,8 @@ private:
       & p_originalBusIndex
       & p_globalBusIndex
       & p_branchNeighbors
-      & *p_bus
-      & *p_data
+      & p_bus
+      & p_data
       & p_refFlag;
   }
 
@@ -239,8 +240,8 @@ private:
       & p_globalBusIndex2
       & p_localBusIndex1
       & p_localBusIndex2
-      & *p_branch
-      & *p_data;
+      & p_branch
+      & p_data;
   }
 
 };
@@ -307,6 +308,7 @@ explicit BaseNetwork(const parallel::Communicator& comm)
   p_external_branch = false;
   p_allocatedBus = false;
   p_allocatedBranch = false;
+  p_network_data.reset(new gridpack::component::DataCollection);
 }
 
 /**
@@ -1176,6 +1178,7 @@ void partition(void)
       if (b->p_activeBranch) active_branches += 1;
     }
   }
+  setMap();
 
   std::cout << me << ": "
     << "I have " 
@@ -1367,6 +1370,10 @@ template <class _new_bus, class _new_branch> void clone(
     j = getGlobalBusIndex(jdx);
     new_network->setGlobalBusIndex2(i,j);
   }
+  // Copy network data collection
+  *(new_network->getNetworkData()) = *p_network_data;
+  // Set internal maps
+  new_network->setMap();
 }
 
 /**
@@ -2432,7 +2439,27 @@ std::vector<int> getLocalBranchIndices(int idx1, int idx2) {
   return ret;
 }
 
+/**
+ * Return a boost pointer to the DataCollection object containing
+ * parameters that describe the network as a whole
+ * @return a pointer to network-level data collection object
+ */
 
+boost::shared_ptr<gridpack::component::DataCollection> getNetworkData()
+{
+  return p_network_data;
+}
+
+/**
+ * Broadcast network data object from one processor to remaining processors on
+ * network communicator
+ * @param rank of processor that acts as root for broadcast
+ */
+void broadcastNetworkData(int idx)
+{
+  boost::mpi::communicator comm = this->communicator().getCommunicator();
+  boost::mpi::broadcast(comm, p_network_data, idx);
+}
 protected:
 
 /**
@@ -2522,6 +2549,11 @@ private:
    */
   std::multimap<int,int> p_busMap;
   std::multimap<std::pair<int,int>,int> p_branchMap;
+
+  /**
+   * Data collection object associated with network as a whole
+   */
+  boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
 };
 }  //namespace network
 }  //namespace gridpack

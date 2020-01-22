@@ -8,7 +8,7 @@
 /**
  * @file   communicator.hpp
  * @author William A. Perkins
- * @date   2019-05-09 07:01:08 d3g096
+ * @date   2019-12-05 08:27:10 d3g096
  * 
  * @brief  
  * 
@@ -165,6 +165,12 @@ public:
   void min(double *x, int nvals) const;
   void min(int *x, int nvals) const;
   void min(long *x, int nvals) const;
+
+  /// Is the flag true on rank
+  bool any(const bool& lflag) const;
+
+  /// Is the flag true on all ranks
+  bool all(const bool& lflag) const;
 
   /// Generate a report about Communicator construction/destruction
   static void report(void);

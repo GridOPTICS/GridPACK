@@ -8,6 +8,7 @@
 #include <vector>
 #include <macdecls.h>
 #include "gridpack/utilities/complex.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/configuration/configuration.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/component/base_component.hpp"
@@ -323,7 +324,7 @@ void run (const int &me, const int &nprocs, int argc, char **argv)
 int
 main (int argc, char **argv) 
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
   int me(world.rank());
   int nprocs(world.size());

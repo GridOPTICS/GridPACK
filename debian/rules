@@ -6,58 +6,33 @@ CFLAGS += -pthread
 CXXFLAGS += -pthread
 export CFLAGS
 export CXXFLAGS
+# export DH_VERBOSE = 1
 
+# Not needed if building and installing GA w/ GridPACK
+#
 # Global Arrays needs different libraries depending on the OS release
-distname := $(system lsb_release -cs)
-ifeq ($(distname), "xenial")
-GA_LIBS = -lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
-else ifeq ($(distname), "stretch")
-GA_LIBS = -lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
-else ifeq ($(distname), "bionic")
-GA_LIBS = -lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
-endif
+# distname := $(system lsb_release -cs)
+# ifeq ($(distname), "xenial")
+# GA_LIBS = -lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
+# else ifeq ($(distname), "stretch")
+# GA_LIBS = -lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
+# else ifeq ($(distname), "bionic")
+# GA_LIBS = -lscalapack-openmpi -lblacs-openmpi -llapack -lblas -lgfortran
+# endif
 
-# secondly called by launchpad
-build-arch:
-	mkdir $(BUILDDIR);
-	cd $(BUILDDIR); \
-	cmake \
-	-D PETSC_DIR:STRING="/usr/lib/petsc" \
-	-D PARMETIS_DIR:PATH="/usr" \
-	-D GA_EXTRA_LIBS:STRING="-lscalapack-openmpi -lblacsCinit-openmpi -lblacs-openmpi -llapack -lblas -lgfortran" \
-	-D MPI_CXX_COMPILER:STRING="mpicxx" \
-	-D MPI_C_COMPILER:STRING="mpicc" \
-        -D USE_GLPK:BOOL=ON \
-        -D GLPK_ROOT_DIR:PATH="/usr" \
-        -D BUILD_SHARED_LIBS:BOOL=ON \
-	-D CMAKE_BUILD_TYPE:STRING="Release" \
-	-D CMAKE_INSTALL_PREFIX:PATH="/usr" \
-	../src
-	make -C $(BUILDDIR)
+%:
+	dh $@ --build-system=cmake --sourcedirectory=src
 
-build: build-indep build-arch
+override_dh_auto_configure:
+	dh_auto_configure -- \
+	-DPETSC_DIR:STRING="/usr/lib/petsc" \
+	-DPARMETIS_DIR:PATH="/usr" \
+	-DBUILD_GA:BOOL=ON \
+	-DGRIDPACK_ENABLE_TESTS:BOOL=OFF \
+	-DMPI_CXX_COMPILER:STRING="mpicxx" \
+	-DMPI_C_COMPILER:STRING="mpicc" \
+        -DUSE_GLPK:BOOL=ON \
+        -DGLPK_ROOT_DIR:PATH="/usr" \
+        -DBUILD_SHARED_LIBS:BOOL=ON
 
-.PHONY: build build-arch build-indep clean
 
-build-indep:
-	# nothing to be done
-
-# thirdly called by launchpad
-binary: binary-indep binary-arch
-
-binary-indep:
-	# nothing to be done
-
-binary-arch:
-	make -C $(BUILDDIR) install/strip  DESTDIR="../debian/tmp/"
-	mkdir debian/tmp/DEBIAN
-	dpkg-gencontrol -pgridpack-dev
-	dpkg --build debian/tmp ..
-
-# firstly called by launchpad
-clean:
-	rm -f build
-	rm -rf debian/tmp
-	rm -rf $(BUILDDIR)
-
-.PHONY: binary binary-arch binary-indep clean

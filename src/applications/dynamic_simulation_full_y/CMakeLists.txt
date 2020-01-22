@@ -20,6 +20,7 @@ set(target_libraries
     gridpack_dsmatrix_components
     gridpack_ymatrix_components
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_math
     gridpack_configuration
@@ -37,6 +38,15 @@ if (GOSS_DIR)
       gridpack_goss
       ${GOSS_LIBRARY}
       ${APR_LIBRARY})
+endif()
+
+if (HELICS_INSTALL_DIR)
+  set(target_libraries
+      ${target_libraries}
+      ${JSON_LIBRARY}
+      ${ZEROMQ_LIBRARY}
+      ${SODIUM_LIBRARY}
+      ${HELICS_LIBRARY})
 endif()
 
 include_directories(BEFORE

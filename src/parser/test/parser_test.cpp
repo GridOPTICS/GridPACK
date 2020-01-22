@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <ga.h>
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/parallel/communicator.hpp"
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/network/base_network.hpp"
@@ -62,7 +63,7 @@ struct branch_data {int idx1; int idx2;};
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   GA_Initialize();
   // Create an artificial scope so that all objects call their destructors
   // before GA_Terminate is called

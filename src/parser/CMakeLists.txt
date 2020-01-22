@@ -27,6 +27,8 @@ if (PARMETIS_FOUND)
 endif()
 
 set(target_libraries
+    gridpack_math
+    gridpack_environment
     gridpack_partition
     gridpack_components
     gridpack_parallel
@@ -123,5 +125,6 @@ install(FILES
   parser_classes/acmtblu1.hpp
   parser_classes/ieelbl.hpp
   parser_classes/cmldblu1.hpp
+  parser_classes/psssim.hpp
   DESTINATION include/gridpack/parser/parser_classes
 )

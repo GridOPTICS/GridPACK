@@ -7,11 +7,12 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2018-12-10 13:38:08 d3g096
+# Last Change: 2020-01-22 08:39:27 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
   gridpack_configuration 
+  gridpack_environment
   gridpack_parallel 
   gridpack_timer
   ${GA_LIBRARIES}
@@ -110,11 +111,14 @@ if (PETSC_FOUND)
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
     ${CMAKE_CURRENT_BINARY_DIR}
 
+    COMMAND ${CMAKE_COMMAND} -E copy 
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/bouncing_ball_test.xml
+    ${CMAKE_CURRENT_BINARY_DIR}
 
     DEPENDS
     ${CMAKE_CURRENT_SOURCE_DIR}/petsc/gridpack.petscrc
+    ${CMAKE_CURRENT_SOURCE_DIR}/test/bouncing_ball_test.xml
     ${CMAKE_CURRENT_BINARY_DIR}/gridpack.xml
-    
     )
 
 else()
@@ -130,13 +134,15 @@ add_library(gridpack_math
   ${gridpack_math_sources}
   )
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_math 
-    gridpack_configuration
-    gridpack_timer
-    ${PETSC_LIBRARIES}
-    )
-endif()
+gridpack_set_library_version(gridpack_math)
+add_dependencies(gridpack_math external_build)
+
+target_link_libraries(gridpack_math 
+  gridpack_configuration
+  gridpack_timer
+  ${PETSC_LIBRARIES}
+  ${Boost_LIBRARIES}
+  )
 
 # -------------------------------------------------------------
 # a small test (not a unit test)
@@ -321,6 +327,10 @@ gridpack_add_unit_test(real_dae_solver real_dae_solver_test)
 if (PETSC_FOUND)
   add_dependencies(real_dae_solver_test math_test_input)
 endif()
+
+# A simple serial example utilizing DAE events
+add_executable(bouncing_ball_test test/bouncing_ball_test.cpp)
+target_link_libraries(bouncing_ball_test gridpack_math ${target_libraries})
 
 
 # -------------------------------------------------------------

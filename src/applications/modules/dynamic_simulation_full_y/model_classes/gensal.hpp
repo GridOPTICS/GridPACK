@@ -106,6 +106,8 @@ class GensalGenerator : public BaseGeneratorModel
      * @return value of field voltage
      */
     double getFieldVoltage();
+	
+	void setWideAreaFreqforPSS(double freq);
 
     /**
      * Write out generator state
@@ -140,7 +142,7 @@ class GensalGenerator : public BaseGeneratorModel
     double dx1d_1, dx2w_1, dx3Eqp_1, dx4Psidp_1, dx5Psiqpp_1;
     double Id, Iq;
     
-    double Efd, LadIfd, Pmech;
+    double Efd, LadIfd, Pmech, Vstab;
     
     double B, G;
 
@@ -150,7 +152,7 @@ class GensalGenerator : public BaseGeneratorModel
 
     boost::shared_ptr<BaseGovernorModel> p_governor;
     boost::shared_ptr<BaseExciterModel> p_exciter;
-
+	boost::shared_ptr<BasePssModel> p_pss;
     double presentMag, presentAng;
 
     double Efdinit, Pmechinit;

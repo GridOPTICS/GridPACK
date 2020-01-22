@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:27:34 d3g096
+# Last Change: 2019-08-16 13:45:12 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -18,6 +18,7 @@ set(target_libraries
     gridpack_ymatrix_components
     gridpack_powerflow_module
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_parallel
     gridpack_math
@@ -62,6 +63,7 @@ add_library(gridpack_dynamic_simulation_full_y_module
   relay_factory.cpp
   base_classes/base_generator_model.cpp
   base_classes/base_exciter_model.cpp
+  base_classes/base_pss_model.cpp
   base_classes/base_governor_model.cpp
   base_classes/base_relay_model.cpp
   base_classes/base_load_model.cpp
@@ -83,14 +85,15 @@ add_library(gridpack_dynamic_simulation_full_y_module
   model_classes/acmotor.cpp
   model_classes/ieel.cpp
   model_classes/motorw.cpp
+  model_classes/psssim.cpp
 )
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_dynamic_simulation_full_y_module
-    gridpack_dsmatrix_components
-    gridpack_powerflow_module
-    )
-endif()
+gridpack_set_library_version(gridpack_dynamic_simulation_full_y_module)
+
+target_link_libraries(gridpack_dynamic_simulation_full_y_module
+  gridpack_dsmatrix_components
+  gridpack_powerflow_module
+  )
 
 # -------------------------------------------------------------
 # component serialization tests
@@ -110,6 +113,7 @@ install(FILES
   load_factory.hpp
   base_classes/base_generator_model.hpp
   base_classes/base_exciter_model.hpp
+  base_classes/base_pss_model.hpp
   base_classes/base_governor_model.hpp
   base_classes/base_relay_model.hpp
   base_classes/base_load_model.hpp
@@ -130,12 +134,14 @@ install(FILES
   model_classes/acmotor.hpp
   model_classes/ieel.hpp
   model_classes/motorw.hpp
+  model_classes/psssim.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y
 )
 
 install(FILES 
   base_classes/base_generator_model.hpp
   base_classes/base_exciter_model.hpp
+  base_classes/base_pss_model.hpp
   base_classes/base_governor_model.hpp
   base_classes/base_relay_model.hpp
   base_classes/base_load_model.hpp
@@ -160,6 +166,7 @@ install(FILES
   model_classes/acmotor.hpp
   model_classes/ieel.hpp
   model_classes/motorw.hpp
+  model_classes/psssim.hpp
   DESTINATION include/gridpack/applications/modules/dynamic_simulation_full_y/model_classes
 )
 

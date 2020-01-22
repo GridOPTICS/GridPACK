@@ -1,3 +1,4 @@
+
 /*
  *     Copyright (c) 2013 Battelle Memorial Institute
  *     Licensed under modified BSD License. A copy of this license can be found
@@ -19,13 +20,12 @@
 #include "gridpack/include/gridpack.hpp"
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 
-// Calling program for the powerflow application
+const char* help = "GridPACK power flow application";
 
-int
-main(int argc, char **argv)
+int main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc,argv);
-  gridpack::math::Initialize(&argc,&argv);
+  // Initialize libraries (parallel and math)
+  gridpack::Environment env(argc,argv,help);
 
   if (1) {
     gridpack::utility::CoarseTimer *timer =
@@ -47,6 +47,9 @@ main(int argc, char **argv)
     cursor = config->getCursor("Configuration.Powerflow");
     bool useNonLinear = false;
     useNonLinear = cursor->get("UseNonLinear", useNonLinear);
+    bool exportPSSE = false;
+    std::string filename;
+    exportPSSE = cursor->get("exportPSSE_v33",&filename);
 
     // setup and run powerflow calculation
     boost::shared_ptr<gridpack::powerflow::PFNetwork>
@@ -63,11 +66,12 @@ main(int argc, char **argv)
     }
     pf_app.write();
     pf_app.saveData();
+    if (exportPSSE) {
+      pf_app.exportPSSE33(filename);
+    }
     timer ->dump();
   }
 
-  // Terminate Math libraries
-  gridpack::math::Finalize();
   return 0;
 }
 

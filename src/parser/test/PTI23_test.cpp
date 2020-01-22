@@ -21,6 +21,7 @@
 #include <gridpack/parser/PTI23_parser.hpp>
 #include <gridpack/configuration/configuration.hpp>
 #include <gridpack/timer/coarse_timer.hpp>
+#include <gridpack/environment/environment.hpp>
 
 #include "mpi.h"
 #include <macdecls.h>
@@ -86,7 +87,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
   int me = world.rank();
   if (me == 0) {

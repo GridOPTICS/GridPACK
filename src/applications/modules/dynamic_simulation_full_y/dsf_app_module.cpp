@@ -22,7 +22,19 @@
 #include "gridpack/mapper/full_map.hpp"
 #include "gridpack/mapper/bus_vector_map.hpp"
 #include "gridpack/math/math.hpp"
+#include "gridpack/parallel/global_vector.hpp"
 #include "dsf_app_module.hpp"
+#include <iostream>
+#include <string>
+#include <vector>
+
+using namespace std;
+
+#ifdef USE_HELICS
+//#include "helics/ValueFederates.hpp"
+//#include <helics/shared_api_library/ValueFederate.h>
+#include <helics/helics.hpp>
+#endif
 
 //#define MAP_PROFILE
 
@@ -37,6 +49,8 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
   p_generatorWatch = false;
   p_loadWatch = false;
   p_generators_read_in = false;
+  p_save_time_series = false;
+  p_monitorGenerators = false;
 }
 
 /**
@@ -46,9 +60,12 @@ gridpack::dynamic_simulation::DSFullApp::DSFullApp(void)
 gridpack::dynamic_simulation::DSFullApp::DSFullApp(gridpack::parallel::Communicator comm)
   : p_comm(comm)
 {
+  p_internal_watch_file_name = false; 
   p_generatorWatch = false;
   p_loadWatch = false;
   p_generators_read_in = false;
+  p_save_time_series = false;
+  p_monitorGenerators = false;
 }
 
 /**
@@ -103,6 +120,10 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
   if (p_time_step == 0.0) {
     // TODO: some kind of error
   }
+
+  // Monitor generators for frequency violations
+  p_monitorGenerators = cursor->get("monitorGenerators",false);
+  p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
 
   // load input file
   if (filetype == PTI23) {
@@ -197,17 +218,13 @@ void gridpack::dynamic_simulation::DSFullApp::initialize()
   // create factory
   p_factory.reset(new gridpack::dynamic_simulation::DSFullFactory(p_network));
   // p_factory->dumpData();
-  printf("p[%d] Got to 1\n",p_network->communicator().rank());
   p_factory->load();
-  printf("p[%d] Got to 2\n",p_network->communicator().rank());
 
   // set network components using factory
   p_factory->setComponents();
-  printf("p[%d] Got to 3\n",p_network->communicator().rank());
   
   // set voltages for the extended buses from composite load model
   p_factory->setExtendedCmplBusVoltage();
-  printf("p[%d] Got to 4\n",p_network->communicator().rank());
   
   // load parameters for the extended buses from composite load model
   p_factory->LoadExtendedCmplBus();
@@ -234,7 +251,7 @@ void gridpack::dynamic_simulation::DSFullApp::reload()
  * Execute the time integration portion of the application
  */
 void gridpack::dynamic_simulation::DSFullApp::solve(
-    gridpack::dynamic_simulation::DSFullBranch::Event fault)
+    gridpack::dynamic_simulation::Event fault)
 {
   gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -303,7 +320,6 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   timer->start(t_mode);
   p_factory->setMode(YDYNLOAD);
   timer->stop(t_mode);
-  timer->start(t_ybus);
   boost::shared_ptr<gridpack::math::Matrix> ybus = ybusMap.mapToMatrix();
   //branchIO.header("\n=== ybus_jxd after added dynamic load impedance': =============\n");
   //printf("\n=== ybus_dynload after added dynamic load impedance': =============\n");
@@ -445,8 +461,47 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   if (p_generatorWatch) p_generatorIO->dumpChannel();
   if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
+  p_frequencyOK = true;
   // Save initial time step
   //saveTimeStep();
+ 
+	
+ 
+#ifdef USE_HELICS
+	//std::cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << std::endl;
+	cout << "-------------!!!helics test: HELICS Version: " << helics::versionString << endl;
+	string configFile = "/home/huan495/gridpack-dev/src/build/applications/dynamic_simulation_full_y/testcase/helics_39bus_3.json";
+    helics::ValueFederate fed(configFile);
+	helics::Publication pub;
+	helics::Input sub;
+	double helics_requestTime = 0.0;
+	
+	//to get publication definitions
+    int pubCount = fed.getPublicationCount();
+	
+	printf("-------------helics test: num of pub: %d \n", pubCount);
+    for(int i = 0; i < pubCount; i++) {
+        pub = fed.getPublication(i);
+        string pubInfo = pub.getInfo();
+        // do stuff to tie pub to GridPACK object property
+    }
+    
+	//to get subscription definitions
+    int subCount = fed.getInputCount();
+	printf("-------------helics test: num of sub: %d \n", subCount);
+	
+    for(int i = 0; i < subCount; i++) {
+        sub = fed.getInput(i);
+        string subInfo = sub.getInfo();
+        // do stuff to tie pub to GridPACK object property
+    }
+         
+	//let helics broker know you are ready to start simulation 
+	fed.enterExecutingMode();	
+
+#endif  //end if of HELICS
+
+
   for (I_Steps = 0; I_Steps < simu_k - 1; I_Steps++) {
   //for (I_Steps = 0; I_Steps < 200; I_Steps++) {
     //char step_str[128];
@@ -609,6 +664,58 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     timer->start(t_volt);
     p_factory->setVolt(false);
 	p_factory->updateBusFreq(h_sol1);
+	
+	
+	std::vector <double> vwideareafreqs;
+	vwideareafreqs = p_factory->grabWideAreaFreq();
+	//printf("-----!!renke debug dsf_app_module.cpp: grabWideAreaFreq: bus 30: %12.6f, bus 30: %12.6f, delta_freq bus34-bus30: %12.6f \n", 
+	//		vwideareafreqs[0], vwideareafreqs[1], vwideareafreqs[2]);
+	int tmp = vwideareafreqs.size();
+	double widearea_deltafreq = vwideareafreqs[tmp-1];
+
+#ifdef USE_HELICS
+	 
+	 //pub.publish(widearea_deltafreq);
+	 for(int i = 0; i < pubCount; i++) {
+            pub = fed.getPublication(i);
+            string pubInfo = pub.getInfo();
+			//std::cout << "-------------!!!helics test: HELICS pub info: " << pubInfo << std::endl;
+			pub.publish(vwideareafreqs[i]);
+            // do stuff to tie pub to GridPACK object property
+          }
+
+	 helics_requestTime =       double (I_Steps*h_sol1);
+	 //printf("-------------!!!Helics request time: %12.6f \n", helics_requestTime); 
+	 double helics_grantime;
+	 helics_grantime = fed.requestTime(helics_requestTime);
+	 //printf("-------------!!!Helics grant time: %12.6f \n", helics_grantime); 
+	 
+	 double subvalue = 0.0;
+	 
+	 for(int i = 0; i < subCount; i++) {
+        sub = fed.getInput(i);
+		//printf("-------------!!!helics debug entering  sub loop\n"); 
+		//if(sub.isUpdated()) {
+            //auto value = sub.getValue();
+			subvalue = fed.getDouble(sub);
+			//printf("-------------!!!Helics sub value: %12.6f \n", subvalue);
+                             //update GridPACK object property with value
+        //}
+
+	 }
+	 
+	//printf("-------------!!!Outside Helics def sub value: %12.6f \n", subvalue);
+	 
+	p_factory->setWideAreaFreqforPSS(subvalue);
+
+	//p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	 
+#else	 
+	 
+	p_factory->setWideAreaFreqforPSS(widearea_deltafreq);
+	 
+#endif
+		
     timer->stop(t_volt);
 	
 	//printf("before update relay, after first volt solv: \n");
@@ -979,6 +1086,10 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 */    //exit(0);
     last_S_Steps = S_Steps;
     timer->stop(t_secure);
+    if (p_monitorGenerators) {
+      p_frequencyOK = p_frequencyOK && checkFrequency(p_maximumFrequency);
+      if (!p_frequencyOK) I_Steps = simu_k;
+    }
   }
   
 #if 0
@@ -1009,6 +1120,14 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
 #endif
   timer->stop(t_solve);
   //timer->dump();
+  
+#ifdef USE_HELICS
+
+	fed.finalize();
+	
+#endif
+ 
+  
 }
 
 /**
@@ -1025,21 +1144,21 @@ void gridpack::dynamic_simulation::DSFullApp::write(const char* signal)
  * @param cursor pointer to open file contain fault or faults
  * @return a list of fault events
  */
-std::vector<gridpack::dynamic_simulation::DSFullBranch::Event>
+std::vector<gridpack::dynamic_simulation::Event>
 gridpack::dynamic_simulation::DSFullApp::
 getFaults(gridpack::utility::Configuration::CursorPtr cursor)
 {
   gridpack::utility::Configuration::CursorPtr list;
   list = cursor->getCursor("faultEvents");
   gridpack::utility::Configuration::ChildCursors events;
-  std::vector<gridpack::dynamic_simulation::DSFullBranch::Event> ret;
+  std::vector<gridpack::dynamic_simulation::Event> ret;
   if (list) {
     list->children(events);
     int size = events.size();
     int idx;
     // Parse fault events
     for (idx=0; idx<size; idx++) {
-      gridpack::dynamic_simulation::DSFullBranch::Event event;
+      gridpack::dynamic_simulation::Event event;
       event.start = events[idx]->get("beginFault",0.0);
       event.end = events[idx]->get("endFault",0.0);
       std::string indices = events[idx]->get("faultBranch","0 0");
@@ -1060,6 +1179,8 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
           event.from_idx = 0;
           event.to_idx = 0;
         }
+        event.isGenerator = false;
+        event.isLine = true;
       } else {
         event.from_idx = 0;
         event.to_idx = 0;
@@ -1078,52 +1199,94 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
  */
 void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
 {
-//  if (!p_generators_read_in) {
-    gridpack::utility::Configuration::CursorPtr cursor;
-    cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-    if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
-      p_generatorWatchFrequency = 1;
-    }
-    char buf[128];
-    cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
-    gridpack::utility::Configuration::ChildCursors generators;
-    if (cursor) cursor->children(generators);
-    int i, j, idx, id, len;
-    int ncnt = generators.size();
-    std::string generator, tag, clean_tag;
-    gridpack::dynamic_simulation::DSFullBus *bus;
-    if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
-    p_watch_bus_ids.clear();
-    p_watch_gen_ids.clear();
-    p_gen_buses.clear();
-    p_gen_ids.clear();
-    for (i=0; i<ncnt; i++) {
-      // Parse contents of "generator" field to get bus ID and generator tag
-      generators[i]->get("busID",&id);
-      generators[i]->get("generatorID",&tag);
-      gridpack::utility::StringUtils util;
-      clean_tag = util.clean2Char(tag);
-      std::pair<int,std::string> list_item = std::pair<int,std::string>(id,clean_tag);
-      p_watch_list.insert(std::pair<std::pair<int,std::string>, int>(list_item,i));
-      p_watch_bus_ids.push_back(id);
-      p_watch_gen_ids.push_back(clean_tag);
-      // Find local bus indices for generator
-      std::vector<int> local_ids = p_network->getLocalBusIndices(id);
-      for (j=0; j<local_ids.size(); j++) {
-        bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
-          (p_network->getBus(local_ids[j]).get());
-//        printf("p[%d] Set Watch True (%s) local: %d original: %d active: %d\n",
-//            GA_Nodeid(),clean_tag.c_str(), local_ids[j],id,
-//            (int)p_network->getActiveBus(local_ids[j]));
-        bus->setWatch(clean_tag,true);
-        if (p_network->getActiveBus(local_ids[j])) {
-          p_gen_buses.push_back(local_ids[j]);
-          p_gen_ids.push_back(clean_tag);
-        }
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
+    p_generatorWatchFrequency = 1;
+  }
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation.generatorWatch");
+  gridpack::utility::Configuration::ChildCursors generators;
+  if (cursor) cursor->children(generators);
+  int i, j, idx, id, len;
+  int ncnt = generators.size();
+  std::string generator, tag, clean_tag;
+  gridpack::dynamic_simulation::DSFullBus *bus;
+  if (ncnt > 0) p_busIO->header("Monitoring generators:\n");
+  std::vector<int> buses;
+  std::vector<std::string> tags;
+  for (i=0; i<ncnt; i++) {
+    // Parse contents of "generator" field to get bus ID and generator tag
+    generators[i]->get("busID",&id);
+    generators[i]->get("generatorID",&tag);
+    gridpack::utility::StringUtils util;
+    clean_tag = util.clean2Char(tag);
+    buses.push_back(id);
+    tags.push_back(clean_tag);
+  }
+  setGeneratorWatch(buses,tags,true);
+}
+
+/**
+ * Read in generators that should be monitored during simulation
+ * @param filename set filename from calling program instead of input
+ *        deck
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *filename)
+{
+  p_gen_watch_file = filename;
+  p_internal_watch_file_name = true;
+  setGeneratorWatch();
+}
+
+/**
+ * Read in generators that should be monitored during simulation
+ * @param buses IDs of buses containing generators
+ * @param tags generator IDs for watched generators
+ * @param writeFile true if external file is to be written
+ */
+void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(
+    std::vector<int> &buses, std::vector<std::string> &tags, bool writeFile)
+{
+  int ncnt = buses.size();
+  if (ncnt != tags.size()) {
+    printf("setGeneratorWatch: size mismatch between buses: and tags: vectors\n",
+        (int)buses.size(),(int)tags.size());
+    // TODO: some kind of error
+  }
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = p_config->getCursor("Configuration.Dynamic_simulation");
+  if (!cursor->get("generatorWatchFrequency",&p_generatorWatchFrequency)) {
+    p_generatorWatchFrequency = 1;
+  }
+  std::string generator, tag;
+  char buf[128];
+  gridpack::dynamic_simulation::DSFullBus *bus;
+  p_watch_bus_ids.clear();
+  p_watch_gen_ids.clear();
+  p_gen_buses.clear();
+  p_gen_ids.clear();
+  int i, j, id;
+  for (i=0; i<ncnt; i++) {
+    id = buses[i];
+    tag = tags[i];
+    std::pair<int,std::string> list_item = std::pair<int,std::string>(id,tag);
+    p_watch_list.insert(std::pair<std::pair<int,std::string>, int>(list_item,i));
+    p_watch_bus_ids.push_back(id);
+    p_watch_gen_ids.push_back(tag);
+    // Find local bus indices for generator. If generator is not on this
+    // processor then local_ids will have zero length.
+    std::vector<int> local_ids = p_network->getLocalBusIndices(id);
+    for (j=0; j<local_ids.size(); j++) {
+      bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(local_ids[j]).get());
+      bus->setWatch(tag,true);
+      if (p_network->getActiveBus(local_ids[j])) {
+        p_gen_buses.push_back(local_ids[j]);
+        p_gen_ids.push_back(tag);
       }
-      sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,clean_tag.c_str());
-      p_busIO->header(buf);
-  //  }
+    }
+    sprintf(buf,"  Bus: %8d Generator ID: %2s\n",id,tag.c_str());
+    p_busIO->header(buf);
     if (ncnt > 0) {
       p_generators_read_in = true;
       p_generatorWatch = true;
@@ -1133,7 +1296,13 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
   }
 
   // If storing time series data, set up vector to hold results
-  openGeneratorWatchFile();
+  if (writeFile) {
+    openGeneratorWatchFile();
+    p_monitorGenerators = false;
+  } else {
+    p_generatorWatch = false;
+    p_monitorGenerators = true;
+  }
   if (p_save_time_series) {
     p_time_series.clear();
     printf("p_gen_buses: %d\n",(int)p_gen_buses.size());
@@ -1146,11 +1315,137 @@ void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch()
   }
 }
 
-void gridpack::dynamic_simulation::DSFullApp::setGeneratorWatch(const char *filename)
+/**
+ * Check to see if frequency variations on monitored generators are okay
+ * @param start time at which to start monitoring
+ * @param time current value of time
+ * @return true if all watched generators are within acceptable bounds
+ */
+bool gridpack::dynamic_simulation::DSFullApp::checkFrequency(
+    double start, double time)
 {
-  p_gen_watch_file = filename;
-  p_internal_watch_file_name = true;
-  setGeneratorWatch();
+  int nbus = p_network->numBuses();
+  int i;
+  bool ret = true;
+  bool ok = true;
+  p_violations.clear();
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      ok = p_network->getBus(i)->checkFrequency(start,time);
+      if (!ok) {
+        p_violations.push_back(p_network->getBus(i)->getOriginalIndex());
+      }
+      ret = ret && ok;
+    }
+  }
+  return p_factory->checkTrue(ret);
+}
+
+/**
+ * Set parameters for monitoring frequency
+ * @param flag true if frequency monitoring is turned on
+ * @param maxFreq maximum allowable frequency deviation
+ */
+void gridpack::dynamic_simulation::DSFullApp::setFrequencyMonitoring(
+    bool flag, double maxFreq)
+{
+  p_monitorGenerators = flag;
+  p_maximumFrequency = maxFreq;
+}
+
+/**
+ * Check to see if frequency variations on monitored generators are okay
+ * @param limit maximum upper limit on frequency deviation
+ * @return true if all watched generators are within acceptable bounds
+ */
+bool gridpack::dynamic_simulation::DSFullApp::checkFrequency(double limit)
+{
+  int nbus = p_network->numBuses();
+  int i;
+  bool ret = true;
+  bool ok = true;
+  p_violations.clear();
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      ok = p_network->getBus(i)->checkFrequency(limit);
+      if (!ok) {
+        p_violations.push_back(p_network->getBus(i)->getOriginalIndex());
+      }
+      ret = ret && ok;
+    }
+  }
+  return p_factory->checkTrue(ret);
+}
+
+/**
+ * @return true if no frequency violations occured on monitored generators
+ */
+bool gridpack::dynamic_simulation::DSFullApp::frequencyOK()
+{
+  return p_frequencyOK;
+}
+
+/**
+ * Scale generator real power. If zone less than 1 then scale all
+ * generators in the area.
+ * @param scale factor to scale real power generation
+ * @param area index of area for scaling generation
+ * @param zone index of zone for scaling generation
+ */
+void gridpack::dynamic_simulation::DSFullApp::scaleGeneratorRealPower(
+    double scale, int area, int zone)
+{
+  p_factory->scaleGeneratorRealPower(scale,area,zone);
+}
+
+/**
+ * Scale load power. If zone less than 1 then scale all
+ * loads in the area.
+ * @param scale factor to scale load real power
+ * @param area index of area for scaling load
+ * @param zone index of zone for scaling load
+ */
+void gridpack::dynamic_simulation::DSFullApp::scaleLoadPower(
+    double scale, int area, int zone)
+{
+  return p_factory->scaleLoadPower(scale,area,zone);
+}
+
+/**
+ * Return the total real power load for all loads in the zone. If zone
+ * less than 1, then return the total load for the area
+ * @param area index of area
+ * @param zone index of zone
+ * @return total load
+ */
+double gridpack::dynamic_simulation::DSFullApp::getTotalLoadRealPower(int area,
+    int zone)
+{
+  return p_factory->getTotalLoadRealPower(area,zone);
+}
+
+/**
+ * Return the current real power generation and the maximum and minimum total
+ * power generation for all generators in the zone. If zone is less than 1
+ * then return values for all generators in the area
+ * @param area index of area
+ * @param zone index of zone
+ * @param total total real power generation
+ * @param pmin minimum allowable real power generation
+ * @param pmax maximum available real power generation
+ */
+void gridpack::dynamic_simulation::DSFullApp::getGeneratorMargins(int area,
+    int zone, double *total, double *pmin, double *pmax)
+{
+  p_factory->getGeneratorMargins(area,zone,total,pmin,pmax);
+}
+
+/**
+ * Reset power of loads and generators to original values
+ */
+void gridpack::dynamic_simulation::DSFullApp::resetPower()
+{
+  return p_factory->resetPower();
 }
 
 /**
@@ -1197,7 +1492,7 @@ void gridpack::dynamic_simulation::DSFullApp::setLoadWatch()
 }
 
 /**
- * Save watch series
+ * Save watch series to an internal data vector
  * @param flag if true, save time series data
  */
 void gridpack::dynamic_simulation::DSFullApp::saveTimeSeries(bool flag)
@@ -1456,4 +1751,91 @@ void gridpack::dynamic_simulation::DSFullApp::closeLoadWatchFile()
     p_loadIO->closeChannel();
 #endif
   }
+}
+
+/**
+ * Write real time path rating diagnostics
+ * @param src_area generation area
+ * @param src_zone generation zone
+ * @param load_area load area
+ * @param load_zone load zone
+ * @param gen_scale scale factor for generation
+ * @param load_scale scale factor for loads
+ * @param file name of file containing diagnostics
+ */
+void gridpack::dynamic_simulation::DSFullApp::writeRTPRDiagnostics(
+    int src_area, int src_zone, int load_area,
+    int load_zone, double gen_scale, double load_scale, const char *file)
+{
+  p_factory->setRTPRParams(src_area,src_zone,load_area,load_zone,
+      gen_scale,load_scale);
+  p_busIO->open(file);
+  double gtotal, ltotal, pmin, pmax, scaled;
+  p_factory->getGeneratorMargins(src_area, src_zone,&gtotal,&pmin,&pmax);
+  ltotal = p_factory->getTotalLoadRealPower(load_area,load_zone);
+  if (gen_scale > 0.0) {
+    scaled = gtotal + gen_scale*(pmax-gtotal);
+  } else {
+    scaled = gtotal + gen_scale*(gtotal-pmin);
+  }
+
+  char sbuf[128];
+  sprintf(sbuf,"Total Generation:         %16.4f\n",gtotal);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Minimum Generation:     %16.4f\n",pmin);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Maximum Generation:     %16.4f\n",pmax);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Generator Scale Factor: %16.4f\n",gen_scale);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Scaled Generation:      %16.4f\n",scaled);
+  p_busIO->header(sbuf);
+  p_busIO->header("\nIndividual Scaled Generators\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
+      "           Pmin           Pmax\n\n");
+  p_busIO->header(sbuf);
+  p_busIO->write("src_gen");
+  sprintf(sbuf,"\nTotal Load:               %16.4f\n",ltotal);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Load Scale Factor:      %16.4f\n",load_scale);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Scaled Load:            %16.4f\n",load_scale*ltotal);
+  p_busIO->header(sbuf);
+  p_busIO->header("\nIndividual Scaled Loads\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
+      " Reactive Power   Scaled Power\n\n");
+  p_busIO->header(sbuf);
+  p_busIO->write("sink_load");
+  p_busIO->close();
+}
+
+/**
+ * Get a list of buses that had frequency violations
+ * @return a list of buses that had frequency failures
+ */
+std::vector<int> gridpack::dynamic_simulation::DSFullApp::getFrequencyFailures()
+{
+  std::vector<int> ret;
+  gridpack::parallel::Communicator comm = p_network->communicator();
+  gridpack::parallel::GlobalVector<int> sumVec(comm);
+  int nproc = comm.size();
+  int me = comm.rank();
+  std::vector<int> sizes(nproc);
+  int i;
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = p_violations.size();
+  comm.sum(&sizes[0],nproc);
+
+  int offset = 0;
+  for (i=1; i<me; i++) offset += sizes[i];
+  int total = 0;
+  for (i=0; i<nproc; i++) total += sizes[i];
+  if (total == 0) return ret;
+  std::vector<int> idx;
+  int last = offset+sizes[me];
+  for (i=offset; i<last; i++) idx.push_back(i);
+  sumVec.addElements(idx,p_violations);
+  sumVec.upload();
+  sumVec.getAllData(ret);
+  return ret;
 }

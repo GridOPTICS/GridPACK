@@ -9,7 +9,7 @@
 /**
  * @file   vector_implementation.h
  * @author William A. Perkins
- * @date   2015-08-14 12:18:33 d3g096
+ * @date   2019-11-20 10:01:00 d3g096
  * 
  * @brief  
  * 
@@ -27,6 +27,7 @@
 #include <gridpack/parallel/distributed.hpp>
 #include <gridpack/utilities/uncopyable.hpp>
 #include <gridpack/utilities/complex.hpp>
+#include <gridpack/utilities/exception.hpp>
 #include <gridpack/math/vector_interface.hpp>
 #include <gridpack/math/complex_operators.hpp>
 
@@ -81,6 +82,9 @@ protected:
   /// A place to store indexes for set/get element range
   mutable std::vector<IdxType> p_rangeIdx;
 
+  /// A place to store local elements, if necessary
+  boost::scoped_array<TheType> p_localElements;
+
   /// Make ::p_rangeIdx
   void p_buildRangeIdx(void) const
   {
@@ -119,6 +123,47 @@ protected:
     p_buildRangeIdx();
     IdxType n(hi - lo);
     this->p_getElements(n, &p_rangeIdx[lo], x);
+  }
+
+  /// Get an array of local elements (specialized)
+  /** 
+   * A very generic implementation. 
+   * 
+   * 
+   * @return 
+   */
+  TheType *p_getLocalElements(void)
+  {
+    IdxType n(this->localSize());
+    IdxType lo, hi;
+    this->localIndexRange(lo, hi);
+
+    if (!p_localElements) {
+      p_localElements.reset(new TheType[n]);
+    }
+    this->getElementRange(lo, hi, p_localElements.get());
+    return p_localElements.get();
+  }
+
+  /// release the local elements array produced by getLocalElements() (specialized)
+  void p_releaseLocalElements(TheType *array)
+  {
+    // some things that should not happen
+    
+    if (!p_localElements) {
+      throw gridpack::Exception("VectorImplementation: "
+                                "releaseLocalElements called w/o getLocalElements");
+    }
+    if (array != p_localElements.get()) {
+      throw gridpack::Exception("VectorImplementation: "
+                                "releaseLocalElements array does not match getLocalElements");
+    }
+
+    IdxType lo, hi;
+    this->localIndexRange(lo, hi);
+    this->setElementRange(lo, hi, p_localElements.get());
+    // may want to keep this around if operation is done alot
+    p_localElements.reset();
   }
 
   /// Replace all elements with their real part (specialized)

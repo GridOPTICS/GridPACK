@@ -9,7 +9,7 @@
 /**
  * @file   petsc_matrix_implementation.h
  * @author William A. Perkins
- * @date   2019-05-08 14:31:20 d3g096
+ * @date   2019-12-03 08:14:08 d3g096
  * 
  * @brief  
  * 
@@ -534,8 +534,12 @@ protected:
       // ierr = PetscViewerDestroy(&v); CHKERRXX(ierr);
 
       Mat *sub;
+#if PETSC_VERSION_LT(3,8,0)
       ierr = MatGetSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
+#else
+      ierr = MatCreateSubMatrices(*mat, 1, &irow, &icol, MAT_INITIAL_MATRIX, &sub); CHKERRXX(ierr);
       
+#endif
       std::vector<PetscScalar> cval(ncol);
       for (PetscInt j = 0; j < ncol; ++j) {
         cidx[j] = j;
@@ -566,8 +570,12 @@ protected:
       ierr = ISDestroy(&irow); CHKERRXX(ierr);
       ierr = ISDestroy(&icol); CHKERRXX(ierr);
 
+#if PETSC_VERSION_LT(3,8,0)
       ierr = MatDestroyMatrices(1, &sub); CHKERRXX(ierr);
-
+#else
+      ierr = MatDestroySubMatrices(1, &sub); CHKERRXX(ierr);
+#endif
+      
     } catch (const PETSC_EXCEPTION_TYPE& e) {
       throw PETScException(ierr, e);
     }
@@ -692,8 +700,12 @@ protected:
     ierr = ISCreateStride(this->communicator(), p_mwrap->rows(), 0, 1, &irow); CHKERRXX(ierr);
     ierr = ISCreateStride(this->communicator(), p_mwrap->cols(), 0, 1, &icol); CHKERRXX(ierr);
     
+#if PETSC_VERSION_LT(3,8,0)
     ierr = MatGetSubMatrices(*Aorig, 1, &irow, &icol, MAT_INITIAL_MATRIX, &Aloc); CHKERRXX(ierr);
-
+#else
+    ierr = MatCreateSubMatrices(*Aorig, 1, &irow, &icol, MAT_INITIAL_MATRIX, &Aloc); CHKERRXX(ierr);
+#endif
+    
     // MatType mt;
     // ierr = MatGetType(*Aloc, &mt); CHKERRXX(ierr);
     // std::cout << "Extracted matrix type: " << mt << std::endl;
@@ -704,7 +716,11 @@ protected:
     ierr = ISDestroy(&irow); CHKERRXX(ierr);
     ierr = ISDestroy(&icol); CHKERRXX(ierr);
     
+#if PETSC_VERSION_LT(3,8,0)
     ierr = MatDestroyMatrices(1, &Aloc); CHKERRXX(ierr);
+#else
+    ierr = MatDestroySubMatrices(1, &Aloc); CHKERRXX(ierr);
+#endif
     
   
     return result;

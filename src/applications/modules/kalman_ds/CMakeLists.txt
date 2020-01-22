@@ -10,11 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:28:01 d3g096
+# Last Change: 2019-12-16 13:04:00 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_parallel
     gridpack_math
@@ -38,13 +39,14 @@ add_library(gridpack_kalmands_module
   kds_factory_module.cpp
 )
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_kalmands_module
-    gridpack_kdsmatrix_components
-    gridpack_partition
-    gridpack_math
-    )
-endif()
+gridpack_set_library_version(gridpack_kalmands_module)
+
+target_link_libraries(gridpack_kalmands_module
+  gridpack_kdsmatrix_components
+  gridpack_partition
+  gridpack_math
+  gridpack_stream
+  )
 
 # -------------------------------------------------------------
 # component serialization tests

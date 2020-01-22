@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created October 17, 2013 by Bruce Palmer
-# Last Change: 2015-05-06 09:18:13 d3g096
+# Last Change: 2019-10-29 13:19:21 d3g096
 # -------------------------------------------------------------
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
@@ -56,6 +56,8 @@ set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/math/petsc/vector.cpp)
 
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/parallel/distributed.cpp)
 
+set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/environment/environment.cpp)
+
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/adjacency_list.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/graph_partitioner.cpp)
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/graph_partitioner_implementation.cpp)
@@ -65,6 +67,7 @@ set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/parmetis/parmetis_graph_pa
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/partition/parmetis/parmetis_graph_wrapper.cpp)
 
 set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/timer/coarse_timer.cpp)
+set (SOURCES ${SOURCES} ${GRIDPACK_SRC_DIR}/stream/input_stream.cpp)
 
 # header directories
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/component)
@@ -75,10 +78,12 @@ set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/math)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/math/petsc)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/network)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/parallel)
+set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/environment)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/parser)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/partition)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/serial_io)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/timer)
+set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/stream)
 set(HEADERS ${HEADERS} ${GRIDPACK_SRC_DIR}/utilities)
 #include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(${HEADERS})
@@ -94,6 +99,14 @@ if (PETSC_FOUND)
 endif()
 
 # add_library(gridpack ${SOURCES})
+
+if (BUILD_GA)
+  set(GRIDPACK_GA_INCLUDE_DIRS ${GA_INSTALLED_INCLUDE_DIRS})
+  set(GRIDPACK_GA_LIBRARIES ${GA_INSTALLED_LIBRARIES})
+else ()
+  set(GRIDPACK_GA_INCLUDE_DIRS ${GA_INCLUDE_DIRS})
+  set(GRIDPACK_GA_LIBRARIES ${GA_LIBRARIES})
+endif ()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/GridPACK.cmake.in 
   ${CMAKE_CURRENT_BINARY_DIR}/GridPACK.cmake @ONLY)

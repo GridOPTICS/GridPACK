@@ -9,7 +9,7 @@
 /**
  * @file   dae_solver_test.cpp
  * @author William A. Perkins
- * @date   2018-09-27 14:38:32 d3g096
+ * @date   2019-12-04 12:40:57 d3g096
  * 
  * @brief  
  * 
@@ -110,8 +110,9 @@ public:
     TheSolverType::JacobianBuilder jbuilder = boost::ref(*this);
     TheSolverType::FunctionBuilder fbuilder = boost::ref(*this);
     TheSolverType::StepFunction sfunc;
+    TheSolverType::EventManagerPtr eman;
     
-    TheSolverType solver(comm, p_size, jbuilder, fbuilder);
+    TheSolverType solver(comm, p_size, jbuilder, fbuilder, eman);
     solver.configure(conf);
 
     sfunc = &reportPreTime;
@@ -371,7 +372,7 @@ BOOST_AUTO_TEST_CASE( Rober )
 
   std::auto_ptr<Problem> p(new RoberProblem());
 
-  // p->solve(world, test_config);
+  p->solve(world, test_config);
 }
 
 BOOST_AUTO_TEST_CASE( Orego )

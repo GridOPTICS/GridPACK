@@ -10,14 +10,20 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 11:19:36 d3g096
+# Last Change: 2019-08-16 13:46:40 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_configuration
   configuration.cpp
 )
 
+gridpack_set_library_version(gridpack_configuration)
+
+add_dependencies(gridpack_configuration external_build)
+
 set(target_libraries 
+  gridpack_math
+  gridpack_environment
   gridpack_parallel
   ${GA_LIBRARIES}
   ${Boost_LIBRARIES} 
@@ -27,6 +33,7 @@ set(target_libraries
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_configuration
     gridpack_parallel
+    gridpack_environment
     )
 endif()
 

@@ -36,6 +36,18 @@ namespace dynamic_simulation {
 
 enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_relay, branch_relay};
 
+// Small utility structure to encapsulate information about fault events
+struct Event{
+  double start,end; // start and end times of fault
+  double step;      // time increment of fault (not used?)
+  char tag[3];      // 2-character identifier of line or generator
+  bool isGenerator; // fault is a generator failure
+  int bus_idx;      // index of bus hosting generator
+  bool isLine;      // fault is a line failure
+  int from_idx;     // "from" bus of line
+  int to_idx;       // "to" bus of line
+};
+
 class DSFullBranch;
 class DSFullBus;
 
@@ -246,7 +258,11 @@ class DSFullBus
      */
     double getBusVolFrequency(void); //renke add
 	
+	void setBusVolFrequencyFlag(bool flag); //renke add
+	
 	void printbusvoltage (void); //renke add
+	
+	void setWideAreaFreqforPSS(double freq); //renke hard coded;
 	
 	
 	/**
@@ -371,6 +387,108 @@ class DSFullBus
      */
     std::vector<double> getWatchedValues();
 
+    /**
+     * Check generators for frequency violations
+     * @param start time at which monitoring begins
+     * @param time current time
+     * @return true if no violation has occured
+     */
+    bool checkFrequency(double start, double time);
+
+    /**
+     * Check generators for frequency violations
+     * @param limit maximum allowable frequency excursion
+     * @return true if no violation has occured
+     */
+    bool checkFrequency(double limit);
+
+    /**
+     * Scale value of real power on all generators
+     * @param character ID for generator
+     * @param value scale factor for real power
+     * @param data data collection object for bus holding generators
+     */
+    void scaleGeneratorRealPower(std::string tag, double value,
+        boost::shared_ptr<gridpack::component::DataCollection> data);
+
+    /**
+     * Scale value of real power on loads
+     * @param character ID for load
+     * @param value scale factor for real power
+     */
+    void scaleLoadPower(std::string tag, double value);
+
+    /**
+     * Reset power for generators and loads back to original values
+     * @param data data collection object for bus
+     */
+    void resetPower(boost::shared_ptr<gridpack::component::DataCollection> data);
+
+    /**
+     * Get available margin for generator
+     * @param tag character ID for generator
+     * @param current initial generation
+     * @param slack amount generation can be reduced
+     * @param excess amount generation can be increased
+     * @param status current status of generator
+     */
+    void getGeneratorMargins(std::vector<std::string> &tag,
+        std::vector<double> &current, std::vector<double> &slack,
+        std::vector<double> &excess,std::vector<int> &status);
+
+    /**
+     * Get current value of loads
+     * @param tag character ID for load
+     * @param pl initial value of load real power
+     * @param ql initial value of load reactive power
+     * @param status current status of load
+     */
+    void getLoadPower(std::vector<std::string> &tag, std::vector<double> &pl,
+        std::vector<double> &ql, std::vector<int> &status);
+
+    /**
+     * Get list of generator IDs
+     * @return vector of generator IDs
+     */
+    std::vector<std::string> getGenerators();
+
+    /**
+     * Get list of load IDs
+     * @return vector of load IDs
+     */
+    std::vector<std::string> getLoads();
+
+    /**
+     * Get area parameter for bus
+     * @return bus area index
+     */
+    int getArea();
+
+    /**
+     * Get zone parameter for bus
+     * @return bus zone index
+     */
+    int getZone();
+
+    /**
+     * Label bus as a source for real time path rating
+     * @param flag identify bus as source
+     */
+    void setSource(bool flag);
+
+    /**
+     * Label bus as a sink for real time path rating
+     * @param flag identify bus as sink
+     */
+    void setSink(bool flag);
+
+    /**
+     * Store scale factor
+     * @param scale factor for scaling generation or
+     loads
+     */
+    void setScale(double scale);
+
 #ifdef USE_FNCS
     /**
      * Retrieve an opaque data item from component.
@@ -395,9 +513,13 @@ class DSFullBus
 	double p_loadimpedancer, p_loadimpedancei;
     double p_sbase;
     bool p_isGen;
-    std::vector<double> p_pg, p_qg, p_negpg, p_negqg;
-    std::vector<int> p_gstatus;
-    std::vector<double> p_mva, p_r, p_dstr, p_dtr;
+    int p_area;
+    int p_zone;
+    bool p_source;
+    bool p_sink;
+    double p_rtpr_scale;
+    std::vector<double> p_pg, p_qg, p_savePg, p_negpg, p_negqg;
+    std::vector<double> p_mva, p_r, p_dstr, p_dtr, p_gpmin, p_gpmax;
     int p_ngen, p_negngen;
     int p_ndyn_load, p_npowerflow_load;
     int p_type;
@@ -411,6 +533,7 @@ class DSFullBus
 							//  2: LOAD_BUS
     std::vector<std::string> p_genid;
     std::vector<std::string> p_loadid;
+    std::vector<int> p_gstatus;
     std::vector<bool> p_watch;
 
     // DAE related variables
@@ -452,7 +575,10 @@ class DSFullBus
       p_loadmodels;
 	
     std::vector<double> p_powerflowload_p;	
+    std::vector<double> p_powerflowload_p_save;	
 	std::vector<double> p_powerflowload_q;	
+    std::vector<double> p_powerflowload_q_save;	
+   std::vector<int> p_powerflowload_status;
 	
 	gridpack::dynamic_simulation::DSFullBranch* p_CmplXfmrBranch, *p_CmplFeederBranch;  // the point to the transformer and feeder branch due to the added composite load model
 	gridpack::dynamic_simulation::DSFullBus* p_CmplXfmrBus, *p_CmplFeederBus; // the point to the transformer and feeder bus due to the added composite load model
@@ -461,6 +587,15 @@ class DSFullBus
 	double loadMVABase; // load MVA Base is the load MVA base if the bus is an extend load bus (LOW_SIDE_BUS or LOAD_BUS) due to composite load model 
 
     bool p_isolated;
+
+    // variables for monitoring the frequency of generators to find out
+    // if any are going out of bounds
+    std::vector<double> p_previousFrequency;
+    std::vector<double> p_upIntervalStart;
+    std::vector<bool> p_upStartedMonitoring;
+    std::vector<double> p_downIntervalStart;
+    std::vector<bool> p_downStartedMonitoring;
+
 
     friend class boost::serialization::access;
 
@@ -480,9 +615,11 @@ class DSFullBus
           & p_pl & p_ql
           & p_sbase
           & p_isGen
-          & p_pg & p_qg
-          & p_gstatus
-          & p_mva & p_r & p_dstr & p_dtr
+          & p_area & p_zone
+          & p_source & p_sink
+          & p_rtpr_scale
+          & p_pg & p_qg & p_savePg
+          & p_mva & p_r & p_dstr & p_dtr & p_gpmin & p_gpmax
           & p_ngen & p_type & p_permYmod
           & p_from_flag & p_to_flag
           & p_h & p_d0
@@ -492,7 +629,10 @@ class DSFullBus
           & p_dmac_ang_s0 & p_dmac_spd_s0
           & p_elect_final & p_mech_final
           & p_mac_ang_final & p_mac_spd_final
-          & p_genid;
+          & p_genid
+          & p_previousFrequency
+          & p_upIntervalStart & p_upStartedMonitoring
+          & p_downIntervalStart & p_downStartedMonitoring;
       }
 
 };
@@ -500,12 +640,6 @@ class DSFullBus
 class DSFullBranch
   : public gridpack::ymatrix::YMBranch {
   public:
-    // Small utility structure to encapsulate information about fault events
-    struct Event{
-      double start,end;
-      int from_idx, to_idx;
-      double step;
-    };
 
     /**
      *  Simple constructor
@@ -695,7 +829,7 @@ typedef network::BaseNetwork<DSFullBus, DSFullBranch > DSFullNetwork;
 }     // dynamic_simulation
 }     // gridpack
 
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBus);
-BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBranch);
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBus)
+BOOST_CLASS_EXPORT_KEY(gridpack::dynamic_simulation::DSFullBranch)
 
 #endif

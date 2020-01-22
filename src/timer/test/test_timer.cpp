@@ -14,6 +14,7 @@
 #include <boost/test/included/unit_test.hpp>
 
 #include "mpi.h"
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/parallel/distributed.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
 #include "gridpack/timer/local_timer.hpp"
@@ -112,7 +113,7 @@ bool init_function(void)
 int main (int argc, char **argv) {
 
   // Initialize parallel environment
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
   int me = world.rank();
   if (me == 0) {

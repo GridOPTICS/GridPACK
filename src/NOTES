@@ -1,0 +1,87 @@
+Proposed directory structure inside the source directory.
+
+/framework_src
+  /core
+    /network
+      base_network
+      shuffler
+      ga_shuffler
+      /partition
+    /mappers   
+    /math
+      complex
+    /math_interfaces
+    /factory
+
+  /parallel_utilities
+    environment
+    communicator
+    distributed
+    parallel
+    printit
+    task_manager
+
+  /parallel_data_utilities
+    global_vector
+    global_store
+    index_hash
+    hash_distr
+
+  /IO
+    /parsers
+      PTI23_parser
+      PTI33_parser
+      bus_table
+      cmd_line
+      /parser_classes
+    /configuration
+    /serial_io
+    /export
+    /goss
+
+  /utilities
+    random
+    timer
+    exception
+    indexed
+    named
+    sanity_interface
+    uncopyable
+    string_utils
+    doxygen_dummy
+
+  /analysis
+
+  /components
+    base_component
+    data_collection
+
+/application_components
+  /y_matrix
+  /pf_matrix
+  /kds_matrix
+  /se_matrix
+  /ds_matrix
+
+/application_modules
+  /dynamic_simulation
+  /kalman_ds
+  /powerflow
+  /state_estimation
+
+/applications
+  /continency_analysis
+  /dynamic_simulation
+  /kalman_ds
+  /powerflow
+  /state_estimation
+
+/examples
+
+/development
+
+/data_sets
+
+/sandbox
+
+/scripts

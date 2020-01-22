@@ -50,6 +50,7 @@ class PTI23_parser : public BasePTIParser<_network>
       : p_network(network)
     { 
       this->setNetwork(network);
+      p_network_data = network->getNetworkData();
     }
 
     /**
@@ -181,6 +182,8 @@ class PTI23_parser : public BasePTIParser<_network>
       p_timer->stop(t_case);
       this->setCaseID(p_case_id);
       this->setCaseSBase(p_case_sbase);
+      p_network->broadcastNetworkData(0);
+      p_network_data = p_network->getNetworkData();
     }
 
     void find_case(std::ifstream & input)
@@ -206,6 +209,8 @@ class PTI23_parser : public BasePTIParser<_network>
       // CASE_SBASE          "SBASE"                float
       p_case_sbase = atof(split_line[1].c_str());
 
+      p_network_data->addValue(CASE_SBASE, p_case_sbase);
+      p_network_data->addValue(CASE_ID, p_case_id);
       /*  These do not appear in the dictionary
       // CASE_RECORD2        "RECORD2"              string
       std::getline(input, line);
@@ -311,7 +316,7 @@ class PTI23_parser : public BasePTIParser<_network>
         if (pl != 0.0 || ql != 0.0) {
           data->addValue(LOAD_PL, atof(split_line[2].c_str()));
           data->addValue(LOAD_PL, atof(split_line[2].c_str()),0);
-          std::string tmp(" 1");
+          std::string tmp("1 ");
           data->addValue(LOAD_ID,tmp.c_str(),0);
           data->addValue(LOAD_QL, atof(split_line[3].c_str()));
           data->addValue(LOAD_QL, atof(split_line[3].c_str()),0);
@@ -1498,6 +1503,10 @@ class PTI23_parser : public BasePTIParser<_network>
     int p_case_id;
     double p_case_sbase;
     gridpack::utility::CoarseTimer *p_timer;
+    /**
+     * Data collection object associated with network as a whole
+     */
+    boost::shared_ptr<gridpack::component::DataCollection> p_network_data;
 };
 
 } /* namespace parser */

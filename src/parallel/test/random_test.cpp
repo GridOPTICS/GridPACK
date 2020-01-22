@@ -24,6 +24,7 @@
 #include <ga.h>
 #include "gridpack/parallel/parallel.hpp"
 #include "gridpack/parallel/random.hpp"
+#include "gridpack/environment/environment.hpp"
 
 #define MAX_VALS  1000000
 
@@ -35,7 +36,7 @@
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   GA_Initialize();
   // Create an artificial scope so that all objects call their destructors
   // before GA_Terminate is called

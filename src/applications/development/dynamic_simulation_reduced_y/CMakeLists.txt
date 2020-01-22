@@ -20,8 +20,10 @@ set(target_libraries
     gridpack_pfmatrix_components
     gridpack_ymatrix_components
     gridpack_components
+    gridpack_stream
     gridpack_partition
     gridpack_math
+    gridpack_environment
     gridpack_configuration
     gridpack_timer
     gridpack_parallel

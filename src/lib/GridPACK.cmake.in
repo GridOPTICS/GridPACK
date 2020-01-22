@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January  8, 2014 by William A. Perkins
-# Last Change: 2019-01-04 08:13:54 d3g096
+# Last Change: 2019-10-29 13:08:56 d3g096
 # -------------------------------------------------------------
 
 function(gridpack_setup)
@@ -61,8 +61,18 @@ function(gridpack_setup)
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
+  find_library(GRIDPACK_ENVIRONMENT_LIBRARY
+    NAMES gridpack_environment
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
   find_library(GRIDPACK_TIMER_LIBRARY
     NAMES gridpack_timer
+    HINTS ${GRIDPACK_LIB_DIR}
+  )
+
+  find_library(GRIDPACK_STREAM_LIBRARY
+    NAMES gridpack_stream
     HINTS ${GRIDPACK_LIB_DIR}
   )
 
@@ -155,8 +165,10 @@ function(gridpack_setup)
     ${GRIDPACK_GOSS_LIBRARY}
     ${GRIDPACK_PARTITION_LIBRARY}
     ${GRIDPACK_TIMER_LIBRARY}
+    ${GRIDPACK_STREAM_LIBRARY}
     ${GRIDPACK_ANALYSIS_LIBRARY}
     ${GRIDPACK_PARALLEL_LIBRARY}
+    ${GRIDPACK_ENVIRONMENT_LIBRARY}
   )
 
   if (GRIDPACK_HAVE_PARMETIS)   
@@ -180,10 +192,10 @@ function(gridpack_setup)
 
   if (GRIDPACK_HAVE_GA)
     list(APPEND gp_include
-      @GA_INCLUDE_DIRS@
+      @GRIDPACK_GA_INCLUDE_DIRS@
     )
     list(APPEND gp_libs
-      @GA_LIBRARIES@
+      @GRIDPACK_GA_LIBRARIES@
     )
   endif()
 

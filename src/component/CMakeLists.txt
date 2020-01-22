@@ -10,11 +10,13 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2014-01-08 09:17:34 d3g096
+# Last Change: 2019-08-16 13:46:26 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
     gridpack_parallel
+    gridpack_math
+    gridpack_environment
     ${GA_LIBRARIES}
     ${Boost_LIBRARIES}
     ${MPI_CXX_LIBRARIES})
@@ -28,7 +30,11 @@ add_library(gridpack_components
   base_component.cpp
   data_collection.cpp
   optimization_ifc.cpp
-)
+  )
+gridpack_set_library_version(gridpack_components)
+add_dependencies(gridpack_components external_build)
+
+
 
 # -------------------------------------------------------------
 # component serialization tests

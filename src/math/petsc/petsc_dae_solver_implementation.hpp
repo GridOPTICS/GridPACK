@@ -10,7 +10,7 @@
 /**
  * @file   petsc_dae_solver_implementation.hpp
  * @author William A. Perkins
- * @date   2016-06-16 13:03:07 d3g096
+ * @date   2019-12-05 10:01:29 d3g096
  * 
  * @brief  
  * 
@@ -30,6 +30,7 @@
 #include "petsc_vector_extractor.hpp"
 #include "petsc_matrix_extractor.hpp"
 #include "petsc_configurable.hpp"
+#include "complex_operators.hpp"
 
 namespace gridpack {
 namespace math {
@@ -44,24 +45,27 @@ class PETScDAESolverImplementation
 {
 public:
 
-  typedef typename DAESolverImplementation<T, I>::VectorType VectorType;
-  typedef typename DAESolverImplementation<T, I>::MatrixType MatrixType;
-  typedef typename DAESolverImplementation<T, I>::JacobianBuilder JacobianBuilder;
-  typedef typename DAESolverImplementation<T, I>::FunctionBuilder FunctionBuilder;
-  typedef typename DAESolverImplementation<T, I>::StepFunction StepFunction;
-
+  using typename DAESolverImplementation<T, I>::VectorType;
+  using typename DAESolverImplementation<T, I>::MatrixType;
+  using typename DAESolverImplementation<T, I>::JacobianBuilder;
+  using typename DAESolverImplementation<T, I>::FunctionBuilder;
+  using typename DAESolverImplementation<T, I>::StepFunction;
+  using typename DAESolverImplementation<T, I>::EventManagerPtr;
 
   /// Default constructor.
   PETScDAESolverImplementation(const parallel::Communicator& comm, 
                                const int local_size,
                                JacobianBuilder& jbuilder,
-                               FunctionBuilder& fbuilder)
-    : DAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder),
+                               FunctionBuilder& fbuilder,
+                               EventManagerPtr eman)
+    : DAESolverImplementation<T, I>(comm, local_size, jbuilder, fbuilder, eman),
       PETScConfigurable(this->communicator()),
       p_ts(),
-      p_petsc_J(NULL)
+      p_petsc_J(NULL),
+      p_eventv(),
+      p_termFlag(false)
   {
-    
+    if (eman) p_eventv.resize(eman->size());
   }
 
   /// Destructor
@@ -88,12 +92,32 @@ protected:
   /// The Jacobian matrix
   Mat *p_petsc_J;
 
+  /// An array to store event values
+  std::vector<PetscScalar> p_eventv;
+
+  /// Has an event terminated integration?
+  bool p_termFlag;
+
+  /// Has the solver been terminated by an event (specialized)
+  bool p_terminated(void) const
+  {
+    return this->p_termFlag;
+  }
+
+  /// Reset solver if it has been terminated by an event, maybe (specialized)
+  void p_terminated(const bool& flag)
+  {
+    p_termFlag = flag;
+    DAESolverImplementation<T, I>::p_terminated(flag);
+  }
+  
   /// Do what is necessary to build this instance
   void p_build(const std::string& option_prefix)
   {
     PetscErrorCode ierr(0);
     try {
       ierr = TSCreate(this->communicator(), &p_ts); CHKERRXX(ierr);
+
       ierr = TSSetOptionsPrefix(p_ts, option_prefix.c_str()); CHKERRXX(ierr);
 
       p_petsc_J = PETScMatrix(this->p_J);
@@ -103,8 +127,40 @@ protected:
       ierr = TSSetPreStep(p_ts, PreTimeStep); CHKERRXX(ierr);
       ierr = TSSetPostStep(p_ts, PostTimeStep); CHKERRXX(ierr);
 
+      if (this->p_eventManager) {
+        int ne(this->p_eventManager->size());
+        boost::scoped_array<PetscInt> pdir(new PetscInt[ne]);
+        boost::scoped_array<PetscBool> pterm(new PetscBool[ne]);
+        const DAEEventDirection *gdir(this->p_eventManager->directions());
+        const bool *gterm(this->p_eventManager->terminateFlags());
+        
+        for (int i = 0; i < ne; ++i) {
+          pdir[i] = gdir[i];
+          pterm[i] = (gterm[i] ? PETSC_TRUE : PETSC_FALSE);
+        }
+
+#if PETSC_VERSION_LT(3,7,0)
+        ierr = TSSetEventMonitor(p_ts, ne, &(pdir[0]), &(pterm[0]),
+                                 &EventHandler, &PostEventHandler,
+                                 NULL);
+#else
+        ierr = TSSetEventHandler(p_ts, ne, &(pdir[0]), &(pterm[0]),
+                                 &EventHandler, &PostEventHandler,
+                                 NULL);
+#endif
+      }
+
       ierr = TSSetProblemType(p_ts, TS_NONLINEAR); CHKERRXX(ierr);
       // ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr);
+
+      TSAdapt adapt;
+
+      ierr = TSGetAdapt(p_ts, &adapt); CHKERRXX(ierr);
+      if (this->p_doAdaptive) {
+        ierr = TSAdaptSetType(adapt, TSADAPTBASIC); CHKERRXX(ierr);
+      } else {
+        ierr = TSAdaptSetType(adapt, TSADAPTNONE); CHKERRXX(ierr);
+      }
 
       ierr = TSSetFromOptions(p_ts); CHKERRXX(ierr);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -128,7 +184,12 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
-      ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr); 
+#if PETSC_VERSION_LT(3,8,0)
+      ierr = TSSetInitialTimeStep(p_ts, t0, deltat0); CHKERRXX(ierr);
+#else
+      ierr = TSSetTime(p_ts, t0); CHKERRXX(ierr);
+      ierr = TSSetTimeStep(p_ts, deltat0); CHKERRXX(ierr);
+#endif
       Vec *xvec(PETScVector(x0));
       ierr = TSSetSolution(p_ts, *xvec);
     } catch (const PETSC_EXCEPTION_TYPE& e) {
@@ -143,7 +204,13 @@ protected:
   {
     PetscErrorCode ierr(0);
     try {
+#if PETSC_VERSION_LT(3,8,0)
       ierr = TSSetDuration(p_ts, maxsteps, maxtime); CHKERRXX(ierr);
+#else
+      ierr = TSSetMaxSteps(p_ts, maxsteps); CHKERRXX(ierr);
+      ierr = TSSetMaxTime(p_ts, maxtime); CHKERRXX(ierr);
+#endif
+      
       ierr = TSSetExactFinalTime(p_ts, TS_EXACTFINALTIME_MATCHSTEP); CHKERRXX(ierr); 
       ierr = TSSolve(p_ts, PETSC_NULL);
       // std::cout << this->processor_rank() << ": "
@@ -155,7 +222,11 @@ protected:
       ierr = TSGetConvergedReason(p_ts, &reason); CHKERRXX(ierr);
 
       PetscInt nstep;
+#if PETSC_VERSION_LT(3,8,0)
       ierr = TSGetTimeStepNumber(p_ts,&nstep);CHKERRXX(ierr);
+#else
+      ierr = TSGetStepNumber(p_ts,&nstep);CHKERRXX(ierr);
+#endif
       maxsteps = nstep;
 
       if (reason >= 0) {
@@ -163,12 +234,25 @@ protected:
         PetscReal tlast;
         ierr = TSGetSolveTime(p_ts,&tlast);CHKERRXX(ierr);
         maxtime = tlast;
-      
-        std::cout << this->processor_rank() << ": "
-                  << "PETSc DAE Solver converged after " << maxsteps << " steps, "
-                  << "actual time = " << maxtime
-                  << std::endl;
 
+        if (reason == TS_CONVERGED_EVENT) {
+
+          // Note: the PETSc reason is already reduced across all
+          // ranks. There's no need to do it a gain.
+          
+          this->p_termFlag = true;
+
+          std::cout << this->processor_rank() << ": "
+                    << "A DAE solver termination event occurred after "
+                    << maxsteps << " steps, "
+                    << "actual time = " << maxtime
+                    << std::endl;
+        } else {
+          std::cout << this->processor_rank() << ": "
+                    << "PETSc DAE Solver converged after " << maxsteps << " steps, "
+                    << "actual time = " << maxtime
+                    << std::endl;
+        }
       } else {
         boost::format f("%d: PETSc DAE Solver diverged after %d steps, reason : %d");
         std::string msg = 
@@ -310,7 +394,56 @@ protected:
     return ierr;
   }
 
+  /// Routine called every step if an event manager is specified
+  static PetscErrorCode
+  EventHandler(TS ts, PetscReal t, Vec U, PetscScalar fvalue[], void* ctx)
+  {
+    PetscErrorCode ierr(0);
+    void *dummy;
+    ierr = TSGetApplicationContext(ts, &dummy); CHKERRXX(ierr);
 
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    
+
+    boost::scoped_ptr<VectorType>
+      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+
+    // This gets a little tricky.  If PETSc is built w/ complex,
+    // fvalue will be complex, and evalues, whether real or complex,
+    // can be assigned directly.  If T is complex and PetscScalar is
+    // real, then equate<> will return the real part of T.  This is
+    // what PETSc does internally to check a complex event value. So,
+    // this *should* work for PETSc.
+
+    const T *evalues = solver->p_eventManager->values(t, *state);
+    for (int i = 0; i < solver->p_eventManager->size(); ++i) {
+      fvalue[i] = equate<PetscScalar, T>(evalues[i]);
+    }
+    return ierr;
+  }
+
+  /// Routine called if events are triggered
+  static PetscErrorCode
+  PostEventHandler(TS ts, PetscInt nevents_zero, PetscInt events_zero[],
+                   PetscReal t, Vec U, PetscBool forwardsolve, void* ctx)
+  {
+    PetscErrorCode ierr(0);
+    void *dummy;
+    ierr = TSGetApplicationContext(ts, &dummy); CHKERRXX(ierr);
+
+    // Necessary C cast
+    PETScDAESolverImplementation *solver =
+      (PETScDAESolverImplementation *)dummy;
+
+    boost::scoped_ptr<VectorType>
+      state(new VectorType(new PETScVectorImplementation<T, I>(U, false)));
+
+    solver->p_eventManager->handle(nevents_zero, events_zero, t, *state);
+    return ierr;
+  }
 };
 
 

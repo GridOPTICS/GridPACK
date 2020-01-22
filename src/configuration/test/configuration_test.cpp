@@ -23,6 +23,7 @@
 #include <boost/serialization/string.hpp>
 
 #include "gridpack/parallel/parallel.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/utilities/uncopyable.hpp"
 #include "configurable.hpp"
 
@@ -111,7 +112,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
 
   gridpack::utility::Configuration *config =

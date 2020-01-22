@@ -107,6 +107,10 @@ class BaseExciterModel
      * @return value of teh Vcomp
      */
     virtual void setVcomp(double vtmp);
+	
+	virtual void setVstab(double Vstab);
+	
+	virtual void setWideAreaFreqforPSS(double freq);	
 
   private:
     

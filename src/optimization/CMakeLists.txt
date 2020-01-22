@@ -53,6 +53,7 @@ endif()
 set(target_libraries
   gridpack_components
   gridpack_partition
+  gridpack_environment
   gridpack_math
   gridpack_timer
   gridpack_expression
@@ -73,6 +74,8 @@ set(target_libraries
 add_library(gridpack_optimum
   ${expression_src}
 )
+gridpack_set_library_version(gridpack_optimum)
+add_dependencies(gridpack_optimum external_build)
 
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_optimum 

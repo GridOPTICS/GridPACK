@@ -10,10 +10,12 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2018-09-20 14:22:11 d3g096
+# Last Change: 2019-08-16 13:48:11 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
+  gridpack_math
+  gridpack_environment
   gridpack_timer
   ${GA_LIBRARIES} 
   ${Boost_LIBRARIES} 
@@ -22,7 +24,9 @@ set(target_libraries
 
 if (GOSS_DIR)
   add_library(gridpack_goss
-      goss_utils.cpp)
+    goss_utils.cpp)
+  gridpack_set_library_version(gridpack_goss)
+  add_dependencies(gridpack_goss external_build)
 
   if (GRIDPACK_LIB_LINK_LIBRARIES)
     target_link_libraries(gridpack_goss

@@ -18,6 +18,7 @@
 #include <vector>
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/parser/dictionary.hpp"
+#include "gridpack/parallel/global_vector.hpp"
 #include "pf_factory_module.hpp"
 
 
@@ -34,6 +35,7 @@ PFFactoryModule::PFFactoryModule(PFFactoryModule::NetworkPtr network)
   : gridpack::factory::BaseFactory<PFNetwork>(network)
 {
   p_network = network;
+  p_rateB = false;
 }
 
 /**
@@ -284,7 +286,16 @@ bool gridpack::powerflow::PFFactoryModule::checkVoltageViolations(
         dynamic_cast<gridpack::powerflow::PFBus*>
         (p_network->getBus(i).get());
       if (!bus->getIgnore() && bus->getArea() == area) {
-        if (!bus->checkVoltageViolation()) bus_ok = false;
+        if (!bus->checkVoltageViolation()) {
+          bus_ok = false;
+          gridpack::powerflow::PFFactoryModule::Violation violation;
+          int idx = bus->getOriginalIndex();
+          violation.bus_violation = true;
+          violation.line_violation = false;
+          violation.bus1 = idx;
+          violation.bus2 = -1;
+          p_violations.push_back(violation);
+        }
       }
     }
   }
@@ -346,14 +357,38 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations()
       int nlines;
       p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
       std::vector<std::string> tags = branch->getLineTags();
-      double rateA;
+      double rate;
       for (int k = 0; k<nlines; k++) {
         if (!branch->getIgnore(tags[k])) {
-          if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
-            if (rateA > 0.0) {
+          bool foundRating=false;
+          if (p_rateB) {
+            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_B,&rate,k)) {
+              foundRating = true;
+            } else {
+              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+                foundRating = true;
+              }
+            }
+          } else {
+            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+              foundRating = true;
+            }
+          }
+          if (foundRating) {
+            if (rate > 0.0) {
               gridpack::ComplexType s = branch->getComplexPower(tags[k]);
               double pq = abs(s);
-              if (pq > rateA) branch_ok = false;
+              if (pq > rate) {
+                branch_ok = false;
+                gridpack::powerflow::PFFactoryModule::Violation violation;
+                violation.bus_violation = false;
+                violation.line_violation = true;
+                violation.bus1 = branch->getBus1OriginalIndex();
+                violation.bus2 = branch->getBus2OriginalIndex();
+                strncpy(violation.tag,tags[k].c_str(),2);
+                violation.tag[2] = '\0';
+                p_violations.push_back(violation);
+              }
             }
           }
         }
@@ -391,14 +426,28 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(int area)
         int nlines;
         p_network->getBranchData(i)->getValue(BRANCH_NUM_ELEMENTS,&nlines);
         std::vector<std::string> tags = branch->getLineTags();
-        double rateA;
+        double rate;
         for (int k = 0; k<nlines; k++) {
           if (!branch->getIgnore(tags[k])) {
-            if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rateA,k)) {
-              if (rateA > 0.0) {
+            bool foundRating=false;
+            if (p_rateB) {
+              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_B,&rate,k)) {
+                foundRating = true;
+              } else {
+                if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+                  foundRating = true;
+                }
+              }
+            } else {
+              if (p_network->getBranchData(i)->getValue(BRANCH_RATING_A,&rate,k)) {
+                foundRating = true;
+              }
+            }
+            if (foundRating) {
+              if (rate > 0.0) {
                 gridpack::ComplexType s = branch->getComplexPower(tags[k]);
                 double pq = abs(s);
-                if (pq > rateA) branch_ok = false;
+                if (pq > rate) branch_ok = false;
               }
             }
           }
@@ -410,7 +459,87 @@ bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(int area)
 }
 
 /**
- * Set "ignore" paramter on all lines with violations so that subsequent
+ * Check to see if there are any line overload violations on
+ * specific lines.
+ * @param bus1 original index of "from" bus for branch
+ * @param bus2 original index of "to" bus for branch
+ * @param tags line IDs for individual lines
+ * @param violations false if violation detected on branch, true otherwise
+ * @return true if no violations found
+ */
+bool gridpack::powerflow::PFFactoryModule::checkLineOverloadViolations(
+    std::vector<int> &bus1, std::vector<int> &bus2,
+    std::vector<std::string> &tags, std::vector<bool> &violations)
+{
+  bool branch_ok = true;
+  int nbranch = bus1.size();
+  if (nbranch != bus2.size() || nbranch != tags.size()) {
+    printf("checkLineOverloadViolations: number of entries"
+        " in bus1 and bus2 or bus1 and tags not equal\n");
+    return false;
+  }
+  int i;
+  violations.clear();
+  std::vector<int> failure;
+  failure.resize(nbranch);
+  for (i=0; i<nbranch; i++) {
+    failure[i] = 0;
+    std::vector<int> indices = p_network->getLocalBranchIndices(bus1[i],bus2[i]);
+    int j;
+    for (j=0; j<indices.size(); j++) {
+      gridpack::powerflow::PFBranch *branch = p_network->getBranch(indices[j]).get();
+      // Loop over all lines in the branch and choose the smallest rating value
+      int nlines;
+      p_network->getBranchData(indices[j])->getValue(BRANCH_NUM_ELEMENTS,&nlines);
+      std::vector<std::string> alltags = branch->getLineTags();
+      double rate;
+      for (int k = 0; k<nlines; k++) {
+        if (tags[i] == alltags[k] && !branch->getIgnore(tags[k])) {
+          bool foundRating=false;
+          if (p_rateB) {
+            if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_B,
+                  &rate,k)) {
+              foundRating = true;
+            } else {
+              if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_A,
+                    &rate,k)) {
+                foundRating = true;
+              }
+            }
+          } else {
+            if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_A,
+                  &rate,k)) {
+              foundRating = true;
+            }
+          }
+          if (p_network->getBranchData(indices[j])->getValue(BRANCH_RATING_A,
+                &rate,k)) {
+            if (rate > 0.0) {
+              gridpack::ComplexType s = branch->getComplexPower(tags[k]);
+              double pq = abs(s);
+              if (pq > rate) {
+                failure[i] = 1;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+  p_network->communicator().sum(&failure[0],nbranch);
+  for (i=0; i<nbranch; i++) {
+    if (failure[i] == 0) {
+      violations.push_back(true);
+    } else {
+      violations.push_back(false);
+      branch_ok = false;
+    }
+  }
+  return branch_ok;
+}
+
+/**
+ * Set "ignore" parameter on all lines with violations so that subsequent
  * checks are not counted as violations
  */
 void gridpack::powerflow::PFFactoryModule::ignoreLineOverloadViolations()
@@ -567,6 +696,253 @@ void gridpack::powerflow::PFFactoryModule::resetVoltages()
         (p_network->getBus(i).get());
       bus->resetVoltage();
     }
+  }
+}
+
+/**
+ * Scale generator real power. If zone less than 1 then scale all
+ * generators in the area.
+ * @param scale factor to scale real power generation
+ * @param area index of area for scaling generation
+ * @param zone index of zone for scaling generation
+ */
+void gridpack::powerflow::PFFactoryModule::scaleGeneratorRealPower(
+    double scale, int area, int zone)
+{
+  int nbus = p_network->numBuses();
+  int i, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags = bus->getGenerators();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->scaleGeneratorRealPower(tags[j],scale);
+      }
+    }
+  }
+}
+
+/**
+ * Scale load real power. If zone less than 1 then scale all
+ * loads in the area.
+ * @param scale factor to scale load real power
+ * @param area index of area for scaling load
+ * @param zone index of zone for scaling load
+ */
+void gridpack::powerflow::PFFactoryModule::scaleLoadPower(
+    double scale, int area, int zone)
+{
+  int nbus = p_network->numBuses();
+  int i, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags = bus->getLoads();
+      int j;
+      for (j=0; j<tags.size(); j++) {
+        bus->scaleLoadPower(tags[j],scale);
+      }
+    }
+  }
+}
+
+/**
+ * Return the total real power load for all loads in the zone. If zone
+ * less than 1, then return the total load for the area
+ * @param area index of area
+ * @param zone index of zone
+ * @return total load
+ */
+double gridpack::powerflow::PFFactoryModule::getTotalLoadRealPower(int area, int zone)
+{
+  double ret = 0.0;
+  int nbus = p_network->numBuses();
+  int i, j, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags;
+      std::vector<double> pl;
+      std::vector<double> ql;
+      std::vector<int> status;
+      bus->getLoadPower(tags,pl,ql,status);
+      for (j=0; j<tags.size(); j++) {
+        if (static_cast<bool>(status[j])) {
+          ret += pl[j];
+        }
+      }
+    }
+  }
+  p_network->communicator().sum(&ret,1);
+  return ret;
+}
+
+/**
+ * Return the current real power generation and the maximum and minimum total
+ * power generation for all generators in the zone. If zone is less than 1
+ * then return values for all generators in the area
+ * @param area index of area
+ * @param zone index of zone
+ * @param total total real power generation
+ * @param pmin minimum allowable real power generation
+ * @param pmax maximum available real power generation
+ */
+void gridpack::powerflow::PFFactoryModule::getGeneratorMargins(int area, int zone,
+    double *total, double *pmin, double *pmax)
+{
+  *total = 0.0;
+  *pmin = 0.0;
+  *pmax = 0.0;
+  int nbus = p_network->numBuses();
+  int i, j, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    if (zone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = zone;
+    }
+    if (bus->getArea() == area && zone == izone) {
+      std::vector<std::string> tags;
+      std::vector<double> tcurrent;
+      std::vector<double> tpmin;
+      std::vector<double> tpmax;
+      std::vector<int> status;
+      bus->getGeneratorMargins(tags,tcurrent,tpmin,tpmax,status);
+      for (j=0; j<tcurrent.size(); j++) {
+        if (status[j] != 0) {
+          *total += tcurrent[j];
+          *pmin += tpmin[j];
+          *pmax += tpmax[j];
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Reset power of loads and generators to original values
+ */
+void gridpack::powerflow::PFFactoryModule::resetPower()
+{
+  int nbus = p_network->numBuses();
+  int i;
+  for (i=0; i<nbus; i++) {
+    p_network->getBus(i)->resetPower();
+  }
+}
+
+/**
+ * Set parameters for real time path rating diagnostics
+ * @param src_area generation area
+ * @param src_zone generation zone
+ * @param load_area load area
+ * @param load_zone load zone
+ * @param gen_scale scale factor for generation
+ * @param load_scale scale factor for loads
+ */
+void gridpack::powerflow::PFFactoryModule::setRTPRParams(
+    int src_area, int src_zone, int load_area,
+    int load_zone, double gen_scale, double load_scale)
+{
+  int nbus = p_network->numBuses();
+  int i, j, izone;
+  for (i=0; i<nbus; i++) {
+    gridpack::powerflow::PFBus *bus = p_network->getBus(i).get();
+    int tarea = bus->getArea();
+    int tzone = bus->getZone();
+    if (src_zone > 0) {
+      izone = tzone;
+    } else {
+      izone = src_zone;
+    }
+    bus->setScale(1.0);
+    if (tarea == src_area && src_zone == izone) {
+      bus->setSource(true);
+      bus->setScale(gen_scale);
+    } else {
+      bus->setSource(false);
+    }
+    if (load_zone > 0) {
+      izone = tzone;
+    } else {
+      izone = load_zone;
+    }
+    if (tarea == load_area && load_zone == izone) {
+      bus->setSink(true);
+      bus->setScale(load_scale);
+    } else {
+      bus->setSink(false);
+    }
+  }
+}
+
+/**
+ * Return vector describing all violations
+ * @return violation vector
+ */
+std::vector<gridpack::powerflow::PFFactoryModule::Violation>
+gridpack::powerflow::PFFactoryModule::getViolations()
+{
+  std::vector<gridpack::powerflow::PFFactoryModule::Violation> ret;
+  gridpack::parallel::GlobalVector<gridpack::powerflow::PFFactoryModule::Violation>
+    sumVec(p_network->communicator());
+  int nproc = p_network->communicator().size();
+  int me = p_network->communicator().rank();
+  std::vector<int> sizes(nproc);
+  int i;
+  for (i=0; i<nproc; i++) sizes[i] = 0;
+  sizes[me] = p_violations.size();
+
+  p_network->communicator().sum(&sizes[0],nproc);
+  int offset = 0;
+  for (i=1; i<me; i++) offset += sizes[i];
+  int total = 0;
+  for (i=0; i<nproc; i++) total += sizes[i];
+  if (total == 0) return ret;
+  std::vector<int> idx;
+  int last = offset+sizes[me];
+  for (i=offset; i<last; i++) idx.push_back(i);
+  sumVec.addElements(idx,p_violations);
+  sumVec.upload();
+  sumVec.getAllData(ret);
+  return ret;
+}
+
+/**
+ * Clear violation vector
+ */
+void gridpack::powerflow::PFFactoryModule::clearViolations()
+{
+  p_violations.clear();
+}
+
+/**
+ * User rate B parameter for line overload violations
+ * @param flag if true, use RATEB parameter
+ */
+void gridpack::powerflow::PFFactoryModule::useRateB(bool flag)
+{
+  if (flag) {
+    p_rateB = true;
+  } else {
+    p_rateB = false;
   }
 }
 
