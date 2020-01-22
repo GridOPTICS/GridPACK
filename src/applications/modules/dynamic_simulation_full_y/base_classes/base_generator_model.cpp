@@ -28,7 +28,9 @@ gridpack::dynamic_simulation::BaseGeneratorModel::BaseGeneratorModel(void)
   p_watch = false;
   p_hasExciter = false;
   p_hasGovernor = false;
+  p_hasPss = false;
   bStatus = true;
+  p_wideareafreq = 0.0;
 }
 
 /**
@@ -114,6 +116,11 @@ void gridpack::dynamic_simulation::BaseGeneratorModel::predictor(
 void gridpack::dynamic_simulation::BaseGeneratorModel::corrector(
     double t_inc, bool flag)
 {
+	
+}
+
+void gridpack::dynamic_simulation::BaseGeneratorModel::setWideAreaFreqforPSS(double freq){
+	p_wideareafreq = freq;
 }
 
 /**
@@ -169,6 +176,7 @@ gridpack::dynamic_simulation::BaseGeneratorModel::setGovernor(boost::shared_ptr<
     &governor)
 {
   p_governor = governor;
+  p_hasGovernor = true;
 }
 
 void
@@ -176,6 +184,15 @@ gridpack::dynamic_simulation::BaseGeneratorModel::setExciter(boost::shared_ptr<B
     &exciter)
 {
   p_exciter = exciter;
+  p_hasExciter = true;
+}
+
+void
+gridpack::dynamic_simulation::BaseGeneratorModel::setPss(boost::shared_ptr<BasePssModel>
+    &pss)
+{
+  p_pss = pss;
+  p_hasPss = true;
 }
 
 void gridpack::dynamic_simulation::BaseGeneratorModel::AddRelay(boost::shared_ptr<BaseRelayModel> 
@@ -210,6 +227,13 @@ gridpack::dynamic_simulation::BaseGeneratorModel::getExciter()
 {
   return p_exciter;
 }
+
+boost::shared_ptr<gridpack::dynamic_simulation::BasePssModel>
+gridpack::dynamic_simulation::BaseGeneratorModel::getPss()
+{
+  return p_pss;
+}
+
 
 //renke add
 boost::shared_ptr<gridpack::dynamic_simulation::BaseRelayModel> 

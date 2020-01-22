@@ -445,7 +445,10 @@ void gridpack::powerflow::PFBus::load(
   } else {
     p_original_isolated = false;
   }
+  p_area = 1;
   data->getValue(BUS_AREA, &p_area);
+  p_zone = 1;
+  data->getValue(BUS_ZONE, &p_zone);
 
   // if BUS_TYPE = 2, and gstatus is 1, then bus is a PV bus
   p_isPV = false;
@@ -473,6 +476,7 @@ void gridpack::powerflow::PFBus::load(
       ok =  data->getValue(GENERATOR_PMIN,&pb,i);
       if (lgen) {
         p_pg.push_back(pg);
+        p_savePg.push_back(pg);
         p_qg.push_back(qg);
         p_gstatus.push_back(gstatus);
         if (gstatus == 0) {
@@ -501,9 +505,11 @@ void gridpack::powerflow::PFBus::load(
     if (qtot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
         p_pFac[i] = p_pFac[i]/qtot;
+        p_pFac_orig[i] = p_pFac[i];
       }
     } else {
       p_pFac[0] = 1.0;
+      p_pFac_orig[0] = p_pFac[0];
     }
   }
   p_saveisPV = p_isPV;
@@ -528,7 +534,9 @@ void gridpack::powerflow::PFBus::load(
       p_load = p_load && data->getValue(LOAD_STATUS, &lstatus,i);
       if (p_load) {
         p_pl.push_back(pl);
+        p_savePl.push_back(pl);
         p_ql.push_back(ql);
+        p_saveQl.push_back(ql);
         p_lstatus.push_back(lstatus);
         std::string id("-1");
         data->getValue(LOAD_ID,&id,i);
@@ -666,6 +674,15 @@ bool gridpack::powerflow::PFBus::getGenStatus(std::string gen_id)
 std::vector<std::string> gridpack::powerflow::PFBus::getGenerators()
 {
   return p_gid;
+}
+
+/**
+ * Get list of load IDs
+ * @return vector of generator IDs
+ */
+std::vector<std::string> gridpack::powerflow::PFBus::getLoads()
+{
+  return p_lid;
 }
 
 /**
@@ -1003,6 +1020,68 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
     } else {
       return false;
     }
+  } else if (!strcmp(signal,"src_gen")) {
+    if (p_source) {
+      char sbuf[128];
+      char *cptr = string;
+      int i, len, slen = 0;
+      std::string status;
+      for (i=0; i<p_ngen; i++) {
+        if (p_gstatus[i]) {
+          status = "  active";
+        } else {
+          status = "inactive";
+        }
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
+              getOriginalIndex(),
+              p_gid[i].c_str(),status.c_str(),p_area,p_zone,p_savePg[i],
+              p_pg[i],p_pb[i],p_pt[i]);
+        len = strlen(sbuf);
+        if (slen+len <= bufsize) {
+          sprintf(cptr,"%s",sbuf);
+          slen += len;
+          cptr += len;
+        }
+      }
+      if (slen>0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
+  } else if (!strcmp(signal,"sink_load")) {
+    if (p_sink) {
+      char sbuf[128];
+      char *cptr = string;
+      int i, len, slen = 0;
+      std::string status;
+      for (i=0; i<p_nload; i++) {
+        if (p_lstatus[i]) {
+          status = "  active";
+        } else {
+          status = "inactive";
+        }
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
+              getOriginalIndex(),
+              p_lid[i].c_str(),status.c_str(),p_area,p_zone,p_savePl[i],
+              p_pl[i],p_saveQl[i],p_ql[i]);
+        len = strlen(sbuf);
+        if (slen+len <= bufsize) {
+          sprintf(cptr,"%s",sbuf);
+          slen += len;
+          cptr += len;
+        }
+      }
+      if (slen>0) {
+        return true;
+      } else {
+        return false;
+      }
+    } else {
+      return false;
+    }
   }
   return true;
 }
@@ -1214,10 +1293,20 @@ bool gridpack::powerflow::PFBus::getIgnore()
 
 /**
  * Get area parameter for bus
+ * @return bus area index
  */
 int gridpack::powerflow::PFBus::getArea()
 {
   return p_area;
+}
+
+/**
+ * Get zone parameter for bus
+ * @return bus zone index
+ */
+int gridpack::powerflow::PFBus::getZone()
+{
+  return p_zone;
 }
 
 /**
@@ -1395,6 +1484,33 @@ void gridpack::powerflow::PFBus::setGeneratorRealPower(
 }
 
 /**
+ * Scale value of real power on all generators
+ * @param character ID for generator
+ * @param value scale factor for real power
+ */
+void gridpack::powerflow::PFBus::scaleGeneratorRealPower(std::string tag,
+    double value)
+{
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    if (p_gid[i] == tag && p_gstatus[i]) {
+      if (value > 0.0) {
+        double excess = p_pt[i]-p_pg[i];
+        if (excess < 0.0) {
+          printf("bus: %d generator: %s excess (pt): %f (pg): %f\n",
+              getOriginalIndex(),tag.c_str(),p_pt[i],p_pg[i]);
+        }
+        p_pg[i] += value*excess;
+      } else {
+        double slack = p_pg[i]-p_pb[i];
+        p_pg[i] += value*slack;
+      }
+      break;
+    }
+  }
+}
+
+/**
  * Set value of real power on individual generators
  * @param tag generator ID
  * @param value new value of real power
@@ -1418,6 +1534,117 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
   } else {
     printf("No load found for tag: (%s)\n",tag.c_str());
   }
+}
+
+/**
+ * Scale value of real and reactive power on loads
+ * @param character ID for load
+ * @param value scale factor for real power
+ */
+void gridpack::powerflow::PFBus::scaleLoadPower(std::string tag, double value)
+{
+  int i;
+  for (i=0; i<p_nload; i++) {
+    if (p_lid[i] == tag && p_lstatus[i]) {
+      p_pl[i] = value*p_pl[i];
+      p_ql[i] = value*p_ql[i];
+      break;
+    }
+  }
+}
+
+/**
+ * Reset power for generators and loads back to original values
+ */
+void gridpack::powerflow::PFBus::resetPower()
+{
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    p_pg[i] = p_savePg[i];
+  }
+  for (i=0; i<p_nload; i++) {
+    p_pl[i] = p_savePl[i];
+    p_ql[i] = p_saveQl[i];
+  }
+}
+
+/**
+ * Get available margin for generator
+ * @param tag character ID for generator
+ * @param current initial generation
+ * @param pmin minimum allowable generation
+ * @param pmax maximum allowable generation
+ * @param status current status of generator
+ */
+void gridpack::powerflow::PFBus::getGeneratorMargins(
+    std::vector<std::string> &tag, std::vector<double> &current,
+    std::vector<double> &pmin, std::vector<double> &pmax,
+    std::vector<int> &status)
+{
+  tag.clear();
+  current.clear();
+  pmin.clear();
+  pmax.clear();
+  status.clear();
+  int i;
+  for (i=0; i<p_ngen; i++) {
+    tag.push_back(p_gid[i]);
+    current.push_back(p_savePg[i]);
+    pmin.push_back(p_pb[i]);
+    pmax.push_back(p_pt[i]);
+    status.push_back(p_gstatus[i]);
+  }
+}
+
+/**
+ * Get current value of loads
+ * @param tag character ID for load
+ * @param pl initial value of load real power
+ * @param ql initial value of load reactive power
+ * @param status current status of load
+ */
+void gridpack::powerflow::PFBus::getLoadPower(
+    std::vector<std::string> &tag, std::vector<double> &pl,
+    std::vector<double> &ql, std::vector<int> &status)
+{
+  tag.clear();
+  pl.clear();
+  ql.clear();
+  status.clear();
+  int i;
+  for (i=0; i<p_nload; i++) {
+    tag.push_back(p_lid[i]);
+    pl.push_back(p_savePl[i]);
+    ql.push_back(p_saveQl[i]);
+    status.push_back(p_lstatus[i]);
+  }
+}
+
+/**
+ * Label bus as a source for real time path rating
+ * @param flag identify bus as source
+ */
+void gridpack::powerflow::PFBus::setSource(bool flag)
+{
+  p_source = flag;
+}
+
+/**
+ * Label bus as a sink for real time path rating
+ * @param flag identify bus as sink
+ */
+void gridpack::powerflow::PFBus::setSink(bool flag)
+{
+  p_sink = flag;
+}
+
+/**
+ * Store scale factor
+ * @param scale factor for scaling generation or loads
+ */
+void gridpack::powerflow::PFBus::setScale(double scale)
+{
+  p_rtpr_scale = scale;
 }
 
 /**
@@ -2052,6 +2279,15 @@ double gridpack::powerflow::PFBranch::getBranchRatingC(std::string tag)
     }
   }
   return ret;
+}
+
+/**
+ * Get list of line IDs
+ * @return list of line identifiers
+ */
+std::vector<std::string> gridpack::powerflow::PFBranch::getLineIDs()
+{
+  return p_ckt;
 }
 
 /**

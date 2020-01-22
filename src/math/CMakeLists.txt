@@ -7,11 +7,12 @@
 # distribution.
 # -------------------------------------------------------------
 # Created May  7, 2013 by William A. Perkins
-# Last Change: 2019-12-02 13:50:42 d3g096
+# Last Change: 2020-01-22 08:38:46 d3g096
 # -------------------------------------------------------------
 set(gridpack_math_sources)
 set(target_libraries 
   gridpack_configuration 
+  gridpack_environment
   gridpack_parallel 
   gridpack_timer
   ${GA_LIBRARIES}
@@ -136,13 +137,12 @@ add_library(gridpack_math
 gridpack_set_library_version(gridpack_math)
 add_dependencies(gridpack_math external_build)
 
-if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(gridpack_math 
-    gridpack_configuration
-    gridpack_timer
-    ${PETSC_LIBRARIES}
-    )
-endif()
+target_link_libraries(gridpack_math 
+  gridpack_configuration
+  gridpack_timer
+  ${PETSC_LIBRARIES}
+  ${Boost_LIBRARIES}
+  )
 
 # -------------------------------------------------------------
 # a small test (not a unit test)

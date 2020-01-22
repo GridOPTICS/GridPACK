@@ -177,6 +177,12 @@ class PFBus
     std::vector<std::string> getGenerators();
 
     /**
+     * Get list of load IDs
+     * @return vector of load IDs
+     */
+    std::vector<std::string> getLoads();
+
+    /**
      * Return whether or not the bus is a PV bus (V held fixed in powerflow
      * equations)
      * @return true if bus is PV bus
@@ -298,8 +304,15 @@ class PFBus
 
     /**
      * Get area parameter for bus
+     * @return bus area index
      */
     int getArea();
+
+    /**
+     * Get zone parameter for bus
+     * @return bus zone index
+     */
+    int getZone();
 
     /**
      * Evaluate diagonal block of Jacobian for power flow calculation and return
@@ -331,20 +344,79 @@ class PFBus
     /**
      * Set value of real power on individual generators
      * @param tag generator ID
-     * @param value new value of real power
+     * @param value new value of generator real power
      * @param data data collection object associated with bus
      */
     void setGeneratorRealPower(std::string tag, double value,
         gridpack::component::DataCollection *data);
 
     /**
+     * Scale value of real power on all generators
+     * @param character ID for generator
+     * @param value scale factor for real power
+     */
+    void scaleGeneratorRealPower(std::string tag, double value);
+
+    /**
      * Set value of real power on individual loads
      * @param tag load ID
-     * @param value new value of real power
+     * @param value new value of load real power
      * @param data data collection object associated with bus
      */
     void setLoadRealPower(std::string tag, double value,
         gridpack::component::DataCollection *data);
+
+    /**
+     * Scale value of real and reactive power on loads
+     * @param character ID for load
+     * @param value scale factor for real power
+     */
+    void scaleLoadPower(std::string tag, double value);
+
+    /**
+     * Reset power for generators and loads back to original values
+     */
+    void resetPower();
+
+    /**
+     * Get available margin for generator
+     * @param tag character ID for generator
+     * @param current initial generation
+     * @param pmin minimum allowable generation
+     * @param pmax maximum allowable generation
+     * @param status current status of generator
+     */
+    void getGeneratorMargins(std::vector<std::string> &tag,
+        std::vector<double> &current, std::vector<double> &pmin,
+        std::vector<double> &pmax, std::vector<int> &status);
+
+    /**
+     * Get current value of loads
+     * @param tag character ID for load
+     * @param pl initial value of load real power
+     * @param ql initial value of load reactive power
+     * @param status current status of load
+     */
+    void getLoadPower(std::vector<std::string> &tag, std::vector<double> &pl,
+        std::vector<double> &ql, std::vector<int> &status);
+
+    /**
+     * Label bus as a source for real time path rating
+     * @param flag identify bus as source
+     */
+    void setSource(bool flag);
+
+    /**
+     * Label bus as a sink for real time path rating
+     * @param flag identify bus as sink
+     */
+    void setSink(bool flag);
+
+    /**
+     * Store scale factor
+     * @param scale factor for scaling generation or loads
+     */
+    void setScale(double scale);
 
   private:
     double p_shunt_gs;
@@ -364,6 +436,7 @@ class PFBus
     double p_voltage; // initial bus voltage read from parser
     // newly added priavate variables:
     std::vector<double> p_pg, p_qg, p_pFac;
+    std::vector<double> p_savePg;
     std::vector<int> p_gstatus;
     std::vector<int> p_gstatus_save;
     std::vector<double> p_qmax,p_qmin;
@@ -373,6 +446,8 @@ class PFBus
     std::vector<double> p_pt;
     std::vector<double> p_pb;
     std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
+    std::vector<double> p_savePl;
+    std::vector<double> p_saveQl;
     std::vector<int> p_lstatus;
     std::vector<std::string> p_lid;
     double p_sbase;
@@ -384,6 +459,10 @@ class PFBus
     int p_nload;
     int p_type;
     int p_area;
+    int p_zone;
+    bool p_source;
+    bool p_sink;
+    double p_rtpr_scale;
     bool p_original_isolated;
 
     /**
@@ -422,6 +501,7 @@ private:
       & p_vs & p_gid
       & p_pt & p_pb
       & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
+      & p_savePl & p_saveQl
       & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
@@ -429,7 +509,9 @@ private:
       & p_isPV
       & p_saveisPV
       & p_ngen & p_type & p_nload
-      & p_area;
+      & p_area & p_zone
+      & p_source & p_sink
+      & p_rtpr_scale;
   }  
 
 };
@@ -562,6 +644,12 @@ class PFBranch
      * @return branch rating value
      */
     double getBranchRatingC(std::string tag);
+
+    /**
+     * Get list of line IDs
+     * @return list of line identifiers
+     */
+    std::vector<std::string> getLineIDs();
 
     /**
      * Set parameter to ignore voltage violations

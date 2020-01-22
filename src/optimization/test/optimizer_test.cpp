@@ -21,6 +21,7 @@
 #include <iostream>
 #include <vector>
 
+#include "gridpack/environment/environment.hpp"
 #include "optimizer.hpp"
 
 #define BOOST_TEST_NO_MAIN
@@ -399,7 +400,7 @@ bool init_function()
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
+  gridpack::Environment env(argc, argv);
   gridpack::parallel::Communicator world;
 
   boost::scoped_ptr<gridpack::utility::Configuration> 

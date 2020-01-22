@@ -29,7 +29,6 @@
 #include "gridpack/optimization/optimization.hpp"
 #include "gridpack/optimization/optimizer.hpp"
 #include "gridpack/parallel/distributed.hpp"
-#include "gridpack/parallel/environment.hpp"
 #include "gridpack/parallel/ga_shuffler.hpp"
 #include "gridpack/parallel/index_hash.hpp"
 #include "gridpack/parallel/random.hpp"
@@ -48,6 +47,7 @@
 #include "gridpack/utilities/string_utils.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "gridpack/export/PSSE33Export.hpp"
+#include "gridpack/environment/environment.hpp"
 #ifdef USE_GOSS
 #include "gridpack/serial_io/goss_utils.hpp"
 #endif

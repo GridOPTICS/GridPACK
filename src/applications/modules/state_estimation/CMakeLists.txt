@@ -42,6 +42,7 @@ target_link_libraries(gridpack_state_estimation_module
   gridpack_sematrix_components
   gridpack_partition
   gridpack_math
+  gridpack_stream
   )
 
 # -------------------------------------------------------------

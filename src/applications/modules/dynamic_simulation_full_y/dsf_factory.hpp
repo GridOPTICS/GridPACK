@@ -22,6 +22,7 @@
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/factory/base_factory.hpp"
 #include "dsf_components.hpp"
+#include <vector>
 
 namespace gridpack {
 namespace dynamic_simulation {
@@ -60,7 +61,7 @@ class DSFullFactory
      * Apply an event to all branches in the system
      * @param event a struct describing a fault
      */
-    void setEvent(const DSFullBranch::Event &event);
+    void setEvent(const Event &event);
 
     /**
      * Check network to see if there is a process with no generators
@@ -119,6 +120,9 @@ class DSFullFactory
     */
     void updateBusFreq(double delta_t);
 	
+	std::vector<double> grabWideAreaFreq() ;  //renke hard coded
+	void setWideAreaFreqforPSS(double freq); //renke hard coded
+	
    /**
      * update bus relay status
      */
@@ -142,6 +146,65 @@ class DSFullFactory
     void addLoadAdmittance();
 
     bool securityCheck();
+
+    /**
+     * Scale generator real power. If zone less than 1 then scale all
+     * generators in the area
+     * @param scale factor to scale real power generation
+     * @param area index of area for scaling generation
+     * @param zone index of zone for scaling generation
+     */
+    void scaleGeneratorRealPower(double scale, int area, int zone);
+
+    /**
+     * Scale load power. If zone less than 1 then scale all
+     * loads in the area
+     * @param scale factor to scale load real power
+     * @param area index of area for scaling load
+     * @param zone index of zone for scaling load
+     * @return false if there is not enough capacity to change generation
+     *         by requested amount
+     */
+    void scaleLoadPower(double scale, int area, int zone);
+
+    /**
+     * Return the total real power load for all loads in the zone. If zone
+     * less than 1, then return the total load for the area
+     * @param area index of area
+     * @param zone index of zone
+     * @return total load
+     */
+    double getTotalLoadRealPower(int area, int zone);
+
+    /**
+     * Return the current real power generation and the maximum and minimum total
+     * power generation for all generators in the zone. If zone is less than 1
+     * then return values for all generators in the area
+     * @param area index of area
+     * @param zone index of zone
+     * @param total total real power generation
+     * @param pmin minimum allowable real power generation
+     * @param pmax maximum available real power generation
+     */
+    void getGeneratorMargins(int area, int zone, double *total, double *pmin,
+        double *pmax);
+
+    /**
+     * Reset power of loads and generators to original values
+     */
+    void resetPower();
+
+    /**
+     * Set parameters for real time path rating diagnostics
+     * @param src_area generation area
+     * @param src_zone generation zone
+     * @param load_area load area
+     * @param load_zone load zone
+     * @param gen_scale scale factor for generation
+     * @param load_scale scale factor for loads
+     */
+    void setRTPRParams(int src_area, int src_zone, int load_area,
+        int load_zone, double gen_scale, double load_scale);
 
 #ifdef USE_FNCS
     /**

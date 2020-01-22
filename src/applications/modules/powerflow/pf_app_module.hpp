@@ -181,7 +181,7 @@ class PFAppModule
     void setVoltageLimits(double Vmin, double Vmax);
 
     /**
-     * Check to see if there are any voltage violations in the network
+     * Check to see if there are any voltage violations in the network.
      * @param area only check for violations in specified area
      * @return true if no violations found
      */
@@ -201,12 +201,19 @@ class PFAppModule
 
     /**
      * Check to see if there are any line overload violations in
-     * the network
+     * the network. The last call checks for overloads on specific lines.
      * @param area only check for violations in specified area
+     * @param bus1 original index of "from" bus for branch
+     * @param bus2 original index of "to" bus for branch
+     * @param tags line IDs for individual lines
+     * @param violations true if violation detected on branch, false otherwise
      * @return true if no violations found
      */
     bool checkLineOverloadViolations();
     bool checkLineOverloadViolations(int area);
+    bool checkLineOverloadViolations(std::vector<int> &bus1,
+        std::vector<int> &bus2, std::vector<std::string> &tags,
+        std::vector<bool> &violations);
 
     /**
      * Set "ignore" paramter on all lines with violations so that subsequent
@@ -237,6 +244,77 @@ class PFAppModule
      * Reset voltages to values in network configuration file
      */
     void resetVoltages();
+
+    /**
+     * Scale generator real power. If zone less than 1 then scale all
+     * generators in the area.
+     * @param scale factor to scale real power generation
+     * @param area index of area for scaling generation
+     * @param zone index of zone for scaling generation
+     */
+    void scaleGeneratorRealPower(double scale, int area, int zone);
+
+    /**
+     * Scale load power. If zone less than 1 then scale all
+     * loads in the area.
+     * @param scale factor to scale load real power
+     * @param area index of area for scaling load
+     * @param zone index of zone for scaling load
+     */
+    void scaleLoadPower(double scale, int area, int zone);
+
+    /**
+     * Return the total real power load for all loads in the zone. If zone
+     * less than 1, then return the total load real power for the area
+     * @param area index of area
+     * @param zone index of zone
+     * @return total load
+     */
+    double getTotalLoadRealPower(int area, int zone);
+
+    /**
+     * Return the current real power generation and the maximum and minimum total
+     * power generation for all generators in the zone. If zone is less than 1
+     * then return values for all generators in the area
+     * @param area index of area
+     * @param zone index of zone
+     * @param total total real power generation
+     * @param pmin minimum allowable real power generation
+     * @param pmax maximum available real power generation
+     */
+    void getGeneratorMargins(int area, int zone, double *total, double *pmin,
+        double *pmax);
+
+    /**
+     * Reset power of loads and generators to original values
+     */
+    void resetPower();
+
+    /**
+     * Write real time path rating diagnostics
+     * @param src_area generation area
+     * @param src_zone generation zone
+     * @param load_area load area
+     * @param load_zone load zone
+     * @param gen_scale scale factor for generation
+     * @param load_scale scale factor for loads
+     * @param file name of file containing diagnostics
+     */
+    void writeRTPRDiagnostics(int src_area, int src_zone, int load_area,
+        int load_zone, double gen_scale, double load_scale, const char *file);
+
+    /**
+     * Get strings documenting contingency failures. Strings are *not*
+     * terminated with a carriage return
+     */
+    std::vector<std::string> getContingencyFailures();
+
+    /**
+     * User rate B parameter for line overload violations
+     * @param flag if true, use RATEB parameter
+     */
+    void useRateB(bool flag);
+
   private:
 
     // pointer to network
@@ -265,6 +343,9 @@ class PFAppModule
 
     // pointer to configuration module
     gridpack::utility::Configuration *p_config;
+
+    // string containing current contingency name
+    std::string p_contingency_name;
 };
 
 } // powerflow

@@ -23,6 +23,7 @@
 
 #include <iostream>
 #include <gridpack/parallel/parallel.hpp>
+#include <gridpack/environment/environment.hpp>
 #include <gridpack/timer/coarse_timer.hpp>
 #include <gridpack/utilities/exception.hpp>
 #include <gridpack/math/math.hpp>
@@ -35,9 +36,8 @@ using namespace gridpack;
 int
 main(int argc, char **argv)
 {
-  parallel::Environment env(argc, argv);
+  Environment env(argc, argv);
   parallel::Communicator world;
-  math::Initialize(&argc,&argv);
 
   std::string cinput("input.xml");
   if (argc > 1) {
@@ -96,7 +96,6 @@ main(int argc, char **argv)
     return 2;
   }
   
-  math::Finalize();
   timer->dump();
   return 0;
 }

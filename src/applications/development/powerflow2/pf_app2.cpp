@@ -352,12 +352,10 @@ PFApp2::execute(int argc, char** argv)
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc, argv);
-  gridpack::math::Initialize(&argc,&argv);
+  gridpack::Environment env(argc, argv);
 
   gridpack::powerflow::PFApp2 app;
   app.execute(argc, argv);
 
-  gridpack::math::Finalize();
 }
 

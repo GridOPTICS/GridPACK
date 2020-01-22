@@ -26,7 +26,7 @@ main(int argc, char **argv)
 {
   // Initialize parallel environment. This will start up
   // the underlying communication libraries
-  gridpack::parallel::Environment env(argc,argv);
+  gridpack::Environment env(argc,argv);
 
   // Initialize Math libraries
   gridpack::math::Initialize(&argc,&argv);

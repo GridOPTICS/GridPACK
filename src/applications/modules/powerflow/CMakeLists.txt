@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:46:12 d3g096
+# Last Change: 2019-12-16 12:57:42 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -18,6 +18,7 @@ set(target_libraries
     gridpack_partition
     gridpack_parallel
     gridpack_stream
+    gridpack_environment
     gridpack_math
     gridpack_configuration
     gridpack_timer
@@ -45,6 +46,7 @@ target_link_libraries(gridpack_powerflow_module
   gridpack_pfmatrix_components
   gridpack_partition
   gridpack_math
+  gridpack_stream
   )
 
 

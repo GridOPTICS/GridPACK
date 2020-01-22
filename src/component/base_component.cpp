@@ -27,9 +27,9 @@ namespace component {
  */
 MatVecInterface::MatVecInterface(void)
 {
-  p_ival = 0;
-  p_idx = 0;
-  p_jdx = 0;
+  p_ival = -1;
+  p_idx = -1;
+  p_jdx = -1;
 }
 
 /**
@@ -432,7 +432,7 @@ void GenMatVecInterface::slabSetValues(RealType **values)
  * Simple constructor
  */
 BaseComponent::BaseComponent(void)
-  : p_XCBuf(NULL), p_XCBufSize(0), p_mode(0), p_rank(-1)
+  : p_XCBuf(NULL), p_XCBufSize(0), p_mode(-1), p_rank(-1)
 {
 }
 
@@ -575,7 +575,7 @@ int BaseComponent::getRank(void) const
  * Simple constructor
  */
 BaseBusComponent::BaseBusComponent(void)
-  : p_refBus(false)
+  : p_refBus(false), p_originalIndex(-1), p_globalIndex(-1)
 {
   
 }
@@ -721,6 +721,8 @@ int BaseBusComponent::getGlobalIndex(void) const
  * Simple constructor
  */
 BaseBranchComponent::BaseBranchComponent(void)
+  : p_originalBus1Index(-1), p_originalBus2Index(-1), p_globalIndex(-1),
+  p_globalBus1Index(-1), p_globalBus2Index(-1)
 {
 }
 

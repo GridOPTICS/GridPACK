@@ -24,8 +24,7 @@
 int
 main(int argc, char **argv)
 {
-  gridpack::parallel::Environment env(argc,argv);
-  gridpack::math::Initialize(&argc,&argv);
+  gridpack::Environment env(argc,argv);
 
   if (1) {
     gridpack::parallel::Communicator world;
@@ -62,8 +61,6 @@ main(int argc, char **argv)
     pf_app.saveData();
   }
 
-  // Terminate Math libraries
-  gridpack::math::Finalize();
   return 0;
 }
 

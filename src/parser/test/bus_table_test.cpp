@@ -11,7 +11,7 @@
 
 #include "mpi.h"
 #include <macdecls.h>
-#include "gridpack/parallel/environment.hpp"
+#include "gridpack/environment/environment.hpp"
 #include "gridpack/network/base_network.hpp"
 #include "gridpack/parser/bus_table.hpp"
 #include "gridpack/timer/coarse_timer.hpp"
@@ -99,7 +99,7 @@ void factor_grid(int nproc, int xsize, int ysize, int *pdx, int *pdy)
 int main(int argc, char **argv)
 {
 
-  gridpack::parallel::Environment env(argc,argv);
+  gridpack::Environment env(argc,argv);
   gridpack::parallel::Communicator comm;
   MPI_Comm mpi_world = static_cast<MPI_Comm>(comm);
   int ierr;

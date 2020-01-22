@@ -21,6 +21,7 @@
 #include "base_classes/base_generator_model.hpp"
 #include "base_classes/base_exciter_model.hpp"
 #include "base_classes/base_governor_model.hpp"
+#include "base_classes/base_pss_model.hpp"
 #include "gridpack/utilities/string_utils.hpp"
 
 namespace gridpack {
@@ -61,6 +62,14 @@ class GeneratorFactory
      * model, then return NULL pointer
      */
     BaseGovernorModel* createGovernorModel(std::string model);
+	
+	/**
+     * Create an PSS model
+     * @param model string containing model type
+     * @return pointer to model. If string does not correspond to a pss
+     * model, then return NULL pointer
+     */
+    BasePssModel* createPssModel(std::string model);
 
   private:
 

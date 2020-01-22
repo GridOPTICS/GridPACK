@@ -17,6 +17,9 @@ add_library(gridpack_stream
   input_stream.cpp
 )
 
+gridpack_set_library_version(gridpack_stream)
+add_dependencies(gridpack_stream external_build)
+
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_stream)
 endif()
@@ -32,13 +35,13 @@ include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
 include_directories(AFTER ${GA_INCLUDE_DIRS})
 
 # -------------------------------------------------------------
-# TEST: test_timer
+# TEST: test_stream
 # -------------------------------------------------------------
 
-#add_executable(test_timer test/test_timer.cpp)
-#target_link_libraries(test_timer ${target_libraries})
+#add_executable(test_stream test/test_stream.cpp)
+#target_link_libraries(test_stream ${target_libraries})
 
-#gridpack_add_unit_test(timer_test test_timer)
+#gridpack_add_unit_test(stream_test test_stream)
 
 # -------------------------------------------------------------
 # installation

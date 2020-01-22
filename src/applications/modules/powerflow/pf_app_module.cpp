@@ -199,6 +199,7 @@ bool gridpack::powerflow::PFAppModule::solve()
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
+  p_factory->clearViolations();
   gridpack::ComplexType tol = 2.0*p_tolerance;
   int iter = 0;
   bool repeat = true;
@@ -424,6 +425,7 @@ bool gridpack::powerflow::PFAppModule::nl_solve()
     gridpack::utility::CoarseTimer::instance();
   int t_total = timer->createCategory("Powerflow: Total Application");
   timer->start(t_total);
+  p_factory->clearViolations();
 
   int t_fact = timer->createCategory("Powerflow: Factory Operations");
   timer->start(t_fact);
@@ -687,6 +689,11 @@ bool gridpack::powerflow::PFAppModule::setContingency(
   } else {
     ret = false;
   }
+  if (ret) {
+    p_contingency_name = event.p_name;
+  } else {
+    p_contingency_name.clear();
+  }
   p_factory->checkLoneBus();
   return ret;
 }
@@ -755,8 +762,6 @@ void gridpack::powerflow::PFAppModule::setVoltageLimits(double Vmin, double Vmax
  * Check to see if there are any voltage violations in the network
  * @param area area number. If this parameter is included, only check for
  * violations in this area
- * @param minV maximum voltage limit
- * @param maxV maximum voltage limit
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFAppModule::checkVoltageViolations()
@@ -788,9 +793,13 @@ void gridpack::powerflow::PFAppModule::clearVoltageViolations()
 
 /**
  * Check to see if there are any line overload violations in the
- * network
+ * network The last call checks for overloads on specific lines.
  * @param area area number. If this parameter is included, only check for
  * violations in this area
+ * @param bus1 original index of "from" bus for branch
+ * @param bus2 original index of "to" bus for branch
+ * @param tags line IDs for individual lines
+ * @param violations true if violation detected on branch, false otherwise
  * @return true if no violations found
  */
 bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations()
@@ -801,6 +810,13 @@ bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(int area)
 {
   return p_factory->checkLineOverloadViolations(area);
 }
+bool gridpack::powerflow::PFAppModule::checkLineOverloadViolations(
+    std::vector<int> &bus1, std::vector<int> &bus2,
+    std::vector<std::string> &tags, std::vector<bool> &violations)
+{
+  return p_factory->checkLineOverloadViolations(bus1,bus2,tags,violations);
+}
+
 /**
  * Check to see if there are any Q limit violations in the network
  * @param area only check for violations in specified area
@@ -830,4 +846,158 @@ void gridpack::powerflow::PFAppModule::clearQlimViolations()
 void gridpack::powerflow::PFAppModule::resetVoltages()
 {
   p_factory->resetVoltages();
+}
+
+/**
+ * Scale generator real power. If zone less than 1 then scale all
+ * generators in the area.
+ * @param scale factor to scale real power generation
+ * @param area index of area for scaling generation
+ * @param zone index of zone for scaling generation
+ */
+void gridpack::powerflow::PFAppModule::scaleGeneratorRealPower(
+    double scale, int area, int zone)
+{
+  p_factory->scaleGeneratorRealPower(scale,area,zone);
+}
+
+/**
+ * Scale load power. If zone less than 1 then scale all
+ * loads in the area.
+ * @param scale factor to scale load real power
+ * @param area index of area for scaling load
+ * @param zone index of zone for scaling load
+ */
+void gridpack::powerflow::PFAppModule::scaleLoadPower(
+    double scale, int area, int zone)
+{
+  p_factory->scaleLoadPower(scale,area,zone);
+}
+
+/**
+ * Return the total real power load for all loads in the zone. If zone
+ * less than 1, then return the total load real power for the area
+ * @param area index of area
+ * @param zone index of zone
+ * @return total load
+ */
+double gridpack::powerflow::PFAppModule::getTotalLoadRealPower(int area, int zone)
+{
+  return p_factory->getTotalLoadRealPower(area,zone);
+}
+
+/**
+ * Return the current real power generation and the maximum and minimum total
+ * power generation for all generators in the zone. If zone is less than 1
+ * then return values for all generators in the area
+ * @param area index of area
+ * @param zone index of zone
+ * @param total total real power generation
+ * @param pmin minimum allowable real power generation
+ * @param pmax maximum available real power generation
+ */
+void gridpack::powerflow::PFAppModule::getGeneratorMargins(int area,
+    int zone, double *total, double *pmin, double *pmax)
+{
+  p_factory->getGeneratorMargins(area,zone,total,pmin,pmax);
+}
+
+/**
+ * Reset power of loads and generators to original values
+ */
+void gridpack::powerflow::PFAppModule::resetPower()
+{
+  p_factory->resetPower();
+}
+
+/**
+ * Write real time path rating diagnostics
+ * @param src_area generation area
+ * @param src_zone generation zone
+ * @param load_area load area
+ * @param load_zone load zone
+ * @param gen_scale scale factor for generation
+ * @param load_scale scale factor for loads
+ * @param file name of file containing diagnostics
+ */
+void gridpack::powerflow::PFAppModule::writeRTPRDiagnostics(
+    int src_area, int src_zone, int load_area,
+    int load_zone, double gen_scale, double load_scale, const char *file)
+{
+  p_factory->setRTPRParams(src_area,src_zone,load_area,load_zone,
+      gen_scale,load_scale);
+  p_busIO->open(file);
+  double gtotal, ltotal, pmin, pmax, scaled;
+  p_factory->getGeneratorMargins(src_area, src_zone,&gtotal,&pmin,&pmax);
+  ltotal = p_factory->getTotalLoadRealPower(load_area,load_zone);
+  if (gen_scale > 0.0) {
+    scaled = gtotal + gen_scale*(pmax-gtotal);
+  } else {
+    scaled = gtotal + gen_scale*(gtotal-pmin);
+  }
+  char sbuf[128];
+  sprintf(sbuf,"Total Generation:         %16.4f\n",gtotal);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Minimum Generation:     %16.4f\n",pmin);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Maximum Generation:     %16.4f\n",pmax);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Generator Scale Factor: %16.4f\n",gen_scale);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Scaled Generation:      %16.4f\n",scaled);
+  p_busIO->header(sbuf);
+  p_busIO->header("\nIndividual Scaled Generators\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
+      "           Pmin           Pmax\n\n");
+  p_busIO->header(sbuf);
+  p_busIO->write("src_gen");
+  sprintf(sbuf,"\nTotal Load:               %16.4f\n",ltotal);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Load Scale Factor:      %16.4f\n",load_scale);
+  p_busIO->header(sbuf);
+  sprintf(sbuf,"  Scaled Load:            %16.4f\n",load_scale*ltotal);
+  p_busIO->header(sbuf);
+  p_busIO->header("\nIndividual Scaled Loads\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
+      " Reactive Power   Scaled Power\n\n");
+  p_busIO->header(sbuf);
+  p_busIO->write("sink_load");
+  p_busIO->close();
+}
+
+/**
+ * Get strings documenting contingency failures. Strings are *not* terminated
+ * with a carriage return
+ */
+std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailures()
+{
+  std::vector<std::string> ret;
+  std::vector<gridpack::powerflow::PFFactoryModule::Violation> violations;
+  violations = p_factory->getViolations();
+  int nsize = violations.size();
+  int i;
+  char sbuf[128];
+  for (i=0; i<nsize; i++) {
+    std::string string;
+    if (violations[i].bus_violation) {
+      sprintf(sbuf,"     Bus voltage violation on bus %d",violations[i].bus1);
+      string = sbuf;
+    } else if (violations[i].line_violation) {
+      sprintf(sbuf,"     Branch overload violation on branch [%d,%d] for line %s",
+          violations[i].bus1,violations[i].bus2,violations[i].tag);
+      string = sbuf;
+    }
+    printf("DEBUG VIOLATION: (%s)\n",string.c_str());
+    ret.push_back(string);
+  }
+  return ret;
+}
+
+/**
+ * User rate B parameter for line overload violations
+ * @param flag if true, use RATEB parameter
+ */
+void gridpack::powerflow::PFAppModule::useRateB(bool flag)
+{
+  p_factory->useRateB(flag);
 }
