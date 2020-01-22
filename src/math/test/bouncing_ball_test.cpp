@@ -8,7 +8,7 @@
 /**
  * @file   bouncing_ball_test.cpp
  * @author Perkins
- * @date   2019-12-05 08:12:52 d3g096
+ * @date   2020-01-22 09:00:32 d3g096
  * 
  * @brief  DAESolver test based on PETSc TS example 40. 
  * 
@@ -228,7 +228,7 @@ const int BouncingBallProblem<double>::p_size(2);
 int
 main(int argc, char **argv)
 {
-  gpp::Environment env(argc, argv);
+  gp::Environment env(argc, argv);
   gpp::Communicator world;
 
   if (world.size() > 1) {
