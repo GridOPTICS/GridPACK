@@ -7,6 +7,8 @@
 # solver used for handling disturbances.
 # For disabling any options use a preceding #, i.e., comment them out.
 
+-dsim_snes_linesearch_type basic
+
 # Numerical integration scheme
 -dsim_ts_type cn # Implicit trapezoidal
 
