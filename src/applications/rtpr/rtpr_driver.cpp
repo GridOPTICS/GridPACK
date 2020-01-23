@@ -1577,7 +1577,6 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
   bool chkSolve = p_pf_app.solve();
-  p_pf_app.write();
   p_pf_app.useRateB(p_useRateB);
   // Check for Qlimit violations
   if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
@@ -1609,7 +1608,10 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
     // Print out results of power flow calculation
     printf("Executing dynamic simulation task %d on process %d\n",
         task_id,p_world.rank());
-    // Initialize dynamic simulation by first running powerflow calculation
+    // reinitialize dynamic simulation from powerflow calculation
+    transferPFtoDS(p_pf_network,p_ds_network);
+    p_ds_app.reload();
+    p_ds_app.setGeneratorWatch(p_watch_busIDs,p_watch_genIDs,false);
     try {
       p_ds_app.solve(p_eventsDS[task_id]);
     } catch (const gridpack::Exception e) {
