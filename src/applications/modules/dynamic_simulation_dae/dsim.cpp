@@ -1,5 +1,126 @@
+
+#include <iostream>
+#include <algorithm>
 #include <stdio.h>
 #include <dsim.hpp>
+
+// -------------------------------------------------------------
+//  class DSimEventManager
+// -------------------------------------------------------------
+class DSimEventManager
+  : public DSim::EventManager
+{
+public:
+
+  /// Default constructor.
+  DSimEventManager(DSim *sim)
+    : DSim::EventManager(), p_sim(sim)
+  {}
+
+  /// Destructor
+  ~DSimEventManager(void)
+  {}
+
+protected:
+
+  /// The simulation
+  DSim *p_sim;
+
+  /// Handle triggered events (specialized)
+  virtual void p_handle(const int nevent,
+                        int *eventidx, const double t,
+                        DSim::VectorType& state)
+  {
+    p_sim->p_resolve = false;
+  
+    DSim::EventManager::p_handle(nevent, eventidx, t, state);
+
+    // FIXME: All reduce on p_resolve needed here
+    if (p_sim->p_resolve) {
+      // get the current DAE solution onto the network
+      p_sim->p_X->equate(state);
+      p_sim->p_factory->setMode(XVECPRETOBUS);
+      p_sim->p_VecMapper->mapToBus(*(p_sim->p_X));
+      // Solve algebraic equations 
+      p_sim->p_nlsolver->solve(*(p_sim->p_X));
+    }
+  }
+
+  
+};
+
+
+// -------------------------------------------------------------
+// class DSimTimedFaultEvent
+// 
+// This manages 2 solver events: when the fault goes on and when it
+// goes off.
+// -------------------------------------------------------------
+class DSimTimedFaultEvent
+  : public DSim::Event
+{
+public:
+
+  /// Default constructor.
+  DSimTimedFaultEvent(DSim *sim,
+                      const double& ton,
+                      const double& toff,
+                      const int& busno,
+                      const double& Gfault,
+                      const double& Bfault)
+    : gridpack::math::DAESolver::Event(2),
+      p_sim(sim), p_ton(ton), p_toff(toff), p_bus(busno),
+      p_Gfault(Gfault), p_Bfault(Bfault)
+  {
+    // A fault requires that the DAE solver be reset. 
+    std::fill(p_term.begin(), p_term.end(), true);
+    
+    // The event occurs when the values go from positive to negative.
+    std::fill(p_dir.begin(), p_dir.end(),
+              gridpack::math::CrossZeroNegative);
+  }
+
+  /// Destructor
+  ~DSimTimedFaultEvent(void)
+  {}
+
+protected:
+
+  DSim *p_sim;
+  double p_ton, p_toff;
+  int p_bus;
+  double p_Gfault;
+  double p_Bfault;
+
+  void p_update(const double& t, gridpack::ComplexType *state)
+  {
+    p_current[0] = p_ton - t;
+    p_current[1] = p_toff - t;
+  }
+
+  void p_handle(const bool *triggered, const double& t,
+                gridpack::ComplexType *state)
+  {
+  // FIXME: Is setfault local (to the process w/ p_bus or collective?
+  // The Event class is *local*, so if collective operations are
+  // needed they should be handled by an EventManager
+    
+  if (triggered[0]) {
+    // Set fault
+    printf("Applying a fault on bus %d at t = %3.2f\n", p_bus, t);
+    p_sim->p_factory->setfault(p_bus, p_Gfault, -p_Bfault);
+    p_sim->p_resolve = true;
+  } else if (triggered[1]) {
+    // Remove fault
+    printf("Removing fault on bus %d at t = %3.2f\n", p_bus, t);
+    p_sim->p_factory->setfault(p_bus,-p_Gfault,p_Bfault);
+    p_sim->p_resolve = true;
+  }
+}
+
+
+};
+
 
 DSim::DSim(void)
 {
@@ -15,6 +136,8 @@ DSim::DSim(gridpack::parallel::Communicator comm)
 
 void DSim::setconfigurationfile(const char* configfile)
 {
+  // FIXME: Really should use strncpy(), but what is wrong with using
+  // std::string?
   strcpy(p_configfile,configfile);
 }
 
@@ -86,10 +209,29 @@ void DSim::setup()
   // Set up solver
   int lsize = p_X->localSize();
 
-  gridpack::math::DAESolver::JacobianBuilder daejacobian = boost::ref(*this);
-  gridpack::math::DAESolver::FunctionBuilder daefunction = boost::ref(*this);
+  DAESolver::JacobianBuilder daejacobian = boost::ref(*this);
+  DAESolver::FunctionBuilder daefunction = boost::ref(*this);
+  DAESolver::EventManagerPtr eman(new DSimEventManager(this));
 
-  p_daesolver = new gridpack::math::DAESolver(p_comm,lsize,daejacobian,daefunction);
+  // Read fault parameters, Set up fault events
+
+  double faultontime(0.1),faultofftime(0.2);
+  int    faultbus(9);
+  double Gfault(0.0),Bfault(0.0);
+  p_configcursor->get("faultontime",&faultontime);
+  p_configcursor->get("faultofftime",&faultofftime);
+  p_configcursor->get("faultbus",&faultbus);
+  p_configcursor->get("Gfault",&Gfault);
+  p_configcursor->get("Bfault",&Bfault);
+
+  EventPtr e(new DSimTimedFaultEvent(this, faultontime, faultofftime,
+                                     faultbus, Gfault, Bfault));
+
+  // Event manager must be populated before DAE solver construction
+  eman->add(e);
+
+  p_daesolver = new DAESolver(p_comm,lsize,daejacobian,daefunction, eman);
+  p_daesolver->configure(p_configcursor);
 
   // Create nonlinear solver for solving the algebraic equations at fault-on/fault-off time instants
   gridpack::math::NonlinearSolver::JacobianBuilder jbuildf = boost::ref(*this);
@@ -97,7 +239,6 @@ void DSim::setup()
 
   p_nlsolver = new gridpack::math::NonlinearSolver(*(this->p_J),jbuildf,fbuildf);
   p_nlsolver->configure(p_configcursor);
-  p_daesolver->configure(p_configcursor);
 
   if(!rank()) printf("DSim:Finished setting up DAE solver\n");
 
@@ -123,54 +264,21 @@ void DSim::initialize()
 void DSim::solve()
 {
   // Get simulation time length
-  double tmax;
-  int maxsteps(10000);
+  double t(0.0), tstep, tmax;
 
+  // Get simulation time frame from input
+  p_configcursor->get("timeStep",&tstep);
   p_configcursor->get("simulationTime",&tmax);
 
-  // Read fault parameters
-  double faultontime(0.1),faultofftime(0.2);
-  int    faultbus(9);
-  double Gfault(0.0),Bfault(0.0);
-  p_configcursor->get("faultontime",&faultontime);
-  p_configcursor->get("faultofftime",&faultofftime);
-  p_configcursor->get("faultbus",&faultbus);
-  p_configcursor->get("Gfault",&Gfault);
-  p_configcursor->get("Bfault",&Bfault);
-
-  double timestep = 0.01;
-  p_configcursor->get("timeStep",&timestep);
-
-  // Pre-fault time-stepping
-  p_daesolver->initialize(0,timestep,*p_X);
-  p_daesolver->solve(faultontime,maxsteps);
-  if(!rank()) printf("DSim:Finished pre-fault simulation\n");
-
-  // Set fault
-  printf("Applying a fault on bus %d at t = %3.2f\n",faultbus,faultontime);
-  p_factory->setfault(faultbus,Gfault,-Bfault);
-  p_factory->setMode(XVECPRETOBUS);
-  p_VecMapper->mapToBus(*p_X);
-  // Solve algebraic fault-on equations
-  p_nlsolver->solve(*p_X);
-
-  // Fault-on time-stepping
-  maxsteps = 10000;
-  p_daesolver->initialize(faultontime,timestep,*p_X);
-  p_daesolver->solve(faultofftime,maxsteps);
-  if(!rank()) printf("DSim:Finished fault-on simulation\n");
-
-  // Remove fault
-  printf("Removing fault on bus %d at t = %3.2f\n",faultbus,faultontime);
-  p_factory->setfault(faultbus,-Gfault,Bfault);
-  p_factory->setMode(XVECPRETOBUS);
-  p_VecMapper->mapToBus(*p_X);
-  // Solve algebraic fault-on equations
-  p_nlsolver->solve(*p_X);
-
-  // Post-fault time-stepping
-  maxsteps = 10000;
-  p_daesolver->initialize(faultofftime,timestep,*p_X);
-  p_daesolver->solve(tmax,maxsteps);
-  if(!rank()) printf("DSim:Finished post-fault simulation\n");
+  while (t < tmax) {
+    double tout(tmax);
+    int maxsteps(10000);
+    p_daesolver->initialize(t, tstep, *p_X);
+    p_daesolver->solve(tout, maxsteps);
+    std::cout << "Time requested = " << tmax << ", "
+              << "actual time = " << tout << ", "
+              << "Steps = " << maxsteps << std::endl;
+    t = tout;
+  }  
 }
+

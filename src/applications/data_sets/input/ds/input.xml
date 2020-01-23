@@ -9,7 +9,7 @@
     <simulationTime>10.0</simulationTime>
     <timeStep>0.01</timeStep>
     <faultbus>9</faultbus>
-    <faultontime>0.1</faultofftime>
+    <faultontime>0.1</faultontime>
     <faultofftime>0.3</faultofftime>
     <Gfault>0.0</Gfault>
     <Bfault>99999</Bfault>

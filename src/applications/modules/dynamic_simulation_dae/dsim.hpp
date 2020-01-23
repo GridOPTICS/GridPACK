@@ -7,7 +7,7 @@
 /**
  * @file   dsim.hpp
  * @author Shrirang Abhyankar
- * @date   Feb 06, 2019
+ * @date   2020-01-23 06:46:57 d3g096
  *
  * @brief  Header file for the dynamic simulation application
  *
@@ -25,7 +25,17 @@
 
 class DSim
 {
-   public:
+public:
+  
+  // Let's try to avoid some typing
+  
+  typedef typename gridpack::math::DAESolver DAESolver;
+  typedef typename DAESolver::VectorType VectorType;
+  typedef typename DAESolver::Event Event;
+  typedef typename DAESolver::EventPtr EventPtr;
+  typedef typename DAESolver::EventManager EventManager;
+  typedef typename DAESolver::EventManagerPtr EventManagerPtr;
+  
   /**
      Basic Constructor
   */
@@ -181,7 +191,15 @@ class DSim
 
   // Nonlinear solver for handling discontinuities
   gridpack::math::NonlinearSolver *p_nlsolver;
+
+  /// Does the network need a resolve
+  bool p_resolve;
+
+  /// These class needs to see inside DSim
+  friend class DSimTimedFaultEvent;
+  friend class DSimEventManager;
 };
+
 
 
 

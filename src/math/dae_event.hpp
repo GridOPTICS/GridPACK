@@ -9,7 +9,7 @@
 /**
  * @file   dae_event.hpp
  * @author Perkins
- * @date   2019-12-05 08:03:43 d3g096
+ * @date   2020-01-22 14:21:36 d3g096
  * 
  * @brief  Encapsulate an "Event" that would affect a time integration problem
  * 
@@ -298,31 +298,7 @@ public:
   void
   handle(const int nevent, int *eventidx, const double t, VectorT<T, I>& state)
   {
-    if (!p_trigger) {
-      p_trigger.reset(new bool[this->size()]);
-    }
-    for (int i = 0; i < this->size(); ++i) {
-      p_trigger[i] = false;
-    }
-    for (int e = 0; e < nevent; ++e) {
-      p_trigger[eventidx[e]] = true;
-    }
-
-    const bool *term = this->terminateFlags();
-
-    T *lstate = state.getLocalElements();
-
-    BOOST_FOREACH(p_EventInfo rec, p_events) {
-      for (int i = 0; i < rec.nval; ++i) {
-        int idx(rec.evidx + i);
-        if (p_trigger[idx]) {
-          rec.event->handle(&p_trigger[rec.evidx], t, &lstate[rec.evidx]);
-          if (term[idx]) { p_terminated = true; }
-          break;
-        }
-      }
-    }
-    state.releaseLocalElements(lstate);
+    p_handle(nevent, eventidx, t, state);
     return;
   }
 
@@ -370,6 +346,38 @@ protected:
 
   /// A flag to indicate the solver has been terminated due to an event
   bool p_terminated;
+
+  /// Handle triggered events (specialized)
+  virtual void p_handle(const int nevent,
+                        int *eventidx, const double t, VectorT<T, I>& state)
+  {
+    if (!p_trigger) {
+      p_trigger.reset(new bool[this->size()]);
+    }
+    for (int i = 0; i < this->size(); ++i) {
+      p_trigger[i] = false;
+    }
+    for (int e = 0; e < nevent; ++e) {
+      p_trigger[eventidx[e]] = true;
+    }
+
+    const bool *term = this->terminateFlags();
+
+    T *lstate = state.getLocalElements();
+
+    BOOST_FOREACH(p_EventInfo rec, p_events) {
+      for (int i = 0; i < rec.nval; ++i) {
+        int idx(rec.evidx + i);
+        if (p_trigger[idx]) {
+          rec.event->handle(&p_trigger[rec.evidx], t, &lstate[rec.evidx]);
+          if (term[idx]) { p_terminated = true; }
+          break;
+        }
+      }
+    }
+    state.releaseLocalElements(lstate);
+    return;
+  }
 };
 
 
