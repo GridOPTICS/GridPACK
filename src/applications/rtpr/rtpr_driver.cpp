@@ -1060,20 +1060,19 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     p_ds_app.setFrequencyMonitoring(p_monitorGenerators, p_maximumFrequency);
 
     // find the generators that will be monitored
-    std::vector<int> busIDs;
-    std::vector<std::string> genIDs;
-    findWatchedGenerators(p_ds_network,p_srcArea,p_srcZone,busIDs,genIDs);
+    findWatchedGenerators(p_ds_network,p_srcArea,p_srcZone,
+        p_watch_busIDs,p_watch_genIDs);
     if (p_world.rank() == 0) {
       printf("Generators being monitored in dynamic simulations\n");
-      for (i=0; i<busIDs.size(); i++) {
+      for (i=0; i<p_watch_busIDs.size(); i++) {
         printf("    Host bus: %8d   Generator ID: %s\n",
-            busIDs[i],genIDs[i].c_str());
+            p_watch_busIDs[i],p_watch_genIDs[i].c_str());
       }
     }
-    p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
 //    p_ds_app.scaleLoadPower(p_rating,p_dstArea,p_dstZone);
 //    p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
+    p_pf_app.resetPower();
     adjustRating(p_rating,1);
     checkTie = runDSContingencies();
     p_pf_app.resetPower();
@@ -1520,10 +1519,10 @@ void gridpack::rtpr::RTPRDriver::transferPFtoDS(
       for (j=0; j<ngen; j++) {
         pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
         dsData->setValue(GENERATOR_PG,rval,j);
-        //printf("save PGEN: %f\n", rval);
+        //printf("p[%d] save PGEN: %f\n", rval,p_world.rank());
         pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
         dsData->setValue(GENERATOR_QG,rval,j);
-        //printf("save QGEN: %f\n", rval);
+        //printf("p[%d] save QGEN: %f\n", rval,p_world.rank());
       }
     }
     gridpack::powerflow::PFBus *bus = pf_network->getBus(i).get();
@@ -1574,22 +1573,24 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
   char file[128];
-  sprintf(file,"pf2_diagnostic_%f.dat",p_rating);
+  sprintf(file,"pf2_diagnostic_%f_%d.dat",p_rating,p_world.rank());
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
   bool chkSolve = p_pf_app.solve();
+  p_pf_app.write();
   p_pf_app.useRateB(p_useRateB);
   // Check for Qlimit violations
   if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
     chkSolve = p_pf_app.solve();
   }
   p_pf_app.saveData();
-  sprintf(file,"pf3_diagnostic_%f.dat",p_rating);
+  sprintf(file,"pf3_diagnostic_%f_%d.dat",p_rating,p_world.rank());
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
   transferPFtoDS(p_pf_network,p_ds_network);
   p_ds_app.reload();
-  sprintf(file,"ds2_diagnostic_%f.dat",p_rating);
+  p_ds_app.setGeneratorWatch(p_watch_busIDs,p_watch_genIDs,false);
+  sprintf(file,"ds2_diagnostic_%f_%d.dat",p_rating,p_world.rank());
   p_ds_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
