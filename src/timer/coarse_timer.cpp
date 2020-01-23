@@ -92,8 +92,10 @@ void gridpack::utility::CoarseTimer::dump(void) const
 
   int size = p_title.size();
   int size_min,size_max;
-  MPI_Allreduce(&size,&size_min,nproc,MPI_INT,MPI_MIN, world);
-  MPI_Allreduce(&size,&size_max,nproc,MPI_INT,MPI_MAX, world);
+  i = size;
+  MPI_Allreduce(&i,&size_min,1,MPI_INT,MPI_MIN, world);
+  i = size;
+  MPI_Allreduce(&i,&size_max,1,MPI_INT,MPI_MAX, world);
   if (size_max != size_min) {
     if (me == 0) {
       printf ("Different numbers of timing catagories on\n");
