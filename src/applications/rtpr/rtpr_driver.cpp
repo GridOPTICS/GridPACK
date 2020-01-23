@@ -1586,12 +1586,6 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   sprintf(file,"pf3_diagnostic_%f_%d.dat",p_rating,p_world.rank());
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
-  transferPFtoDS(p_pf_network,p_ds_network);
-  p_ds_app.reload();
-  p_ds_app.setGeneratorWatch(p_watch_busIDs,p_watch_genIDs,false);
-  sprintf(file,"ds2_diagnostic_%f_%d.dat",p_rating,p_world.rank());
-  p_ds_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
-      p_rating,p_rating,file);
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
 #ifdef RTPR_DEBUG
     if (task_id == 0) {
