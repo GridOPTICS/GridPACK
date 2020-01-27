@@ -125,6 +125,10 @@ void gridpack::dynamic_simulation::DSFullApp::readNetwork(
     // TODO: some kind of error
   }
 
+  // Monitor generators for frequency violations
+  p_monitorGenerators = cursor->get("monitorGenerators",false);
+  p_maximumFrequency = cursor->get("frequencyMaximum",61.8);
+
   // load input file
   if (filetype == PTI23) {
     gridpack::parser::PTI23_parser<DSFullNetwork> parser(network);
@@ -1084,9 +1088,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     last_S_Steps = S_Steps;
     timer->stop(t_secure);
     if (p_monitorGenerators) {
-      double presentTime = static_cast<double>(Simu_Current_Step)*p_time_step;
-      p_frequencyOK = p_frequencyOK && checkFrequency(0.5,presentTime);
-      if (!p_frequencyOK) Simu_Current_Step = simu_total_steps;
+      p_frequencyOK = p_frequencyOK && checkFrequency(p_maximumFrequency);
+      if (!p_frequencyOK) I_Steps = simu_k;
     }
   }
   
@@ -1340,6 +1343,42 @@ bool gridpack::dynamic_simulation::DSFullApp::checkFrequency(
 }
 
 /**
+ * Set parameters for monitoring frequency
+ * @param flag true if frequency monitoring is turned on
+ * @param maxFreq maximum allowable frequency deviation
+ */
+void gridpack::dynamic_simulation::DSFullApp::setFrequencyMonitoring(
+    bool flag, double maxFreq)
+{
+  p_monitorGenerators = flag;
+  p_maximumFrequency = maxFreq;
+}
+
+/**
+ * Check to see if frequency variations on monitored generators are okay
+ * @param limit maximum upper limit on frequency deviation
+ * @return true if all watched generators are within acceptable bounds
+ */
+bool gridpack::dynamic_simulation::DSFullApp::checkFrequency(double limit)
+{
+  int nbus = p_network->numBuses();
+  int i;
+  bool ret = true;
+  bool ok = true;
+  p_violations.clear();
+  for (i=0; i<nbus; i++) {
+    if (p_network->getActiveBus(i)) {
+      ok = p_network->getBus(i)->checkFrequency(limit);
+      if (!ok) {
+        p_violations.push_back(p_network->getBus(i)->getOriginalIndex());
+      }
+      ret = ret && ok;
+    }
+  }
+  return p_factory->checkTrue(ret);
+}
+
+/**
  * @return true if no frequency violations occured on monitored generators
  */
 bool gridpack::dynamic_simulation::DSFullApp::frequencyOK()
@@ -1361,16 +1400,16 @@ void gridpack::dynamic_simulation::DSFullApp::scaleGeneratorRealPower(
 }
 
 /**
- * Scale load real power. If zone less than 1 then scale all
+ * Scale load power. If zone less than 1 then scale all
  * loads in the area.
  * @param scale factor to scale load real power
  * @param area index of area for scaling load
  * @param zone index of zone for scaling load
  */
-void gridpack::dynamic_simulation::DSFullApp::scaleLoadRealPower(
+void gridpack::dynamic_simulation::DSFullApp::scaleLoadPower(
     double scale, int area, int zone)
 {
-  return p_factory->scaleLoadRealPower(scale,area,zone);
+  return p_factory->scaleLoadPower(scale,area,zone);
 }
 
 /**
@@ -1380,10 +1419,10 @@ void gridpack::dynamic_simulation::DSFullApp::scaleLoadRealPower(
  * @param zone index of zone
  * @return total load
  */
-double gridpack::dynamic_simulation::DSFullApp::getTotalLoad(int area,
+double gridpack::dynamic_simulation::DSFullApp::getTotalLoadRealPower(int area,
     int zone)
 {
-  return p_factory->getTotalLoad(area,zone);
+  return p_factory->getTotalLoadRealPower(area,zone);
 }
 
 /**
@@ -1403,11 +1442,11 @@ void gridpack::dynamic_simulation::DSFullApp::getGeneratorMargins(int area,
 }
 
 /**
- * Reset real power of loads and generators to original values
+ * Reset power of loads and generators to original values
  */
-void gridpack::dynamic_simulation::DSFullApp::resetRealPower()
+void gridpack::dynamic_simulation::DSFullApp::resetPower()
 {
-  return p_factory->resetRealPower();
+  return p_factory->resetPower();
 }
 
 /**
@@ -1734,7 +1773,7 @@ void gridpack::dynamic_simulation::DSFullApp::writeRTPRDiagnostics(
   p_busIO->open(file);
   double gtotal, ltotal, pmin, pmax, scaled;
   p_factory->getGeneratorMargins(src_area, src_zone,&gtotal,&pmin,&pmax);
-  ltotal = p_factory->getTotalLoad(load_area,load_zone);
+  ltotal = p_factory->getTotalLoadRealPower(load_area,load_zone);
   if (gen_scale > 0.0) {
     scaled = gtotal + gen_scale*(pmax-gtotal);
   } else {
@@ -1764,7 +1803,8 @@ void gridpack::dynamic_simulation::DSFullApp::writeRTPRDiagnostics(
   sprintf(sbuf,"  Scaled Load:            %16.4f\n",load_scale*ltotal);
   p_busIO->header(sbuf);
   p_busIO->header("\nIndividual Scaled Loads\n");
-  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power\n\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
+      " Reactive Power   Scaled Power\n\n");
   p_busIO->header(sbuf);
   p_busIO->write("sink_load");
   p_busIO->close();

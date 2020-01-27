@@ -396,24 +396,33 @@ class DSFullBus
     bool checkFrequency(double start, double time);
 
     /**
+     * Check generators for frequency violations
+     * @param limit maximum allowable frequency excursion
+     * @return true if no violation has occured
+     */
+    bool checkFrequency(double limit);
+
+    /**
      * Scale value of real power on all generators
      * @param character ID for generator
      * @param value scale factor for real power
+     * @param data data collection object for bus holding generators
      */
-    void scaleGeneratorRealPower(std::string tag, double value);
+    void scaleGeneratorRealPower(std::string tag, double value,
+        boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Scale value of real power on loads
      * @param character ID for load
      * @param value scale factor for real power
      */
-    void scaleLoadRealPower(std::string tag, double value);
+    void scaleLoadPower(std::string tag, double value);
 
     /**
-     * Reset real power for generators and load back to original
-     values
+     * Reset power for generators and loads back to original values
+     * @param data data collection object for bus
      */
-    void resetRealPower();
+    void resetPower(boost::shared_ptr<gridpack::component::DataCollection> data);
 
     /**
      * Get available margin for generator
@@ -430,11 +439,12 @@ class DSFullBus
     /**
      * Get current value of loads
      * @param tag character ID for load
-     * @param current initial value of load
+     * @param pl initial value of load real power
+     * @param ql initial value of load reactive power
      * @param status current status of load
      */
-    void getRealPowerLoads(std::vector<std::string> &tag,
-        std::vector<double> &current, std::vector<int> &status);
+    void getLoadPower(std::vector<std::string> &tag, std::vector<double> &pl,
+        std::vector<double> &ql, std::vector<int> &status);
 
     /**
      * Get list of generator IDs
@@ -567,6 +577,7 @@ class DSFullBus
     std::vector<double> p_powerflowload_p;	
     std::vector<double> p_powerflowload_p_save;	
 	std::vector<double> p_powerflowload_q;	
+    std::vector<double> p_powerflowload_q_save;	
    std::vector<int> p_powerflowload_status;
 	
 	gridpack::dynamic_simulation::DSFullBranch* p_CmplXfmrBranch, *p_CmplFeederBranch;  // the point to the transformer and feeder branch due to the added composite load model
