@@ -9,4 +9,4 @@ add_custom_target(parallel_scripts
   )
 
 add_dependencies(gridpack parallel_scripts)
-
+target_link_libraries(gridpack PRIVATE ${GRIDPACK_LIBS})

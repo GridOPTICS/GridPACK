@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-01-27 08:04:49 d3g096
+// Last Change: 2020-01-27 13:46:01 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -29,10 +29,14 @@ PYBIND11_MODULE(gridpack, gpm) {
 
   // gridpack::Envronment class
   py::class_<gp::Environment, boost::shared_ptr<gp::Environment> >(gpm, "Environment")
+    .def(py::init<>([]()
+                  { return boost::shared_ptr<gp::Environment>
+                      (new gp::Environment(0, NULL)); }))
   ;
 
   // gridpack::parallel::Communicator class
   py::class_<gpp::Communicator>(gpm, "Communicator")
+    .def(py::init<>())
     .def("size", &gpp::Communicator::size)
     .def("rank", &gpp::Communicator::rank)
     .def("worldRank", &gpp::Communicator::worldRank)
