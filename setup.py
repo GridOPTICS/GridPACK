@@ -55,5 +55,8 @@ setup(
     ext_modules=[CMakeExtension('gridpack')],
     cmdclass=dict(build_ext=CMakeBuild),
     zip_safe=False,
-    scripts=['src/hello.py'],
+    scripts=[
+        'src/hello.py',
+        'src/task_manager.py',
+    ],
 )
