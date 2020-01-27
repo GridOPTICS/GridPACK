@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:48:45 d3g096
+# Last Change: 2020-01-27 12:42:08 d3g096
 # -------------------------------------------------------------
 
 add_library(gridpack_timer
@@ -23,7 +23,6 @@ add_dependencies(gridpack_timer external_build)
 if (GRIDPACK_LIB_LINK_LIBRARIES)
   target_link_libraries(gridpack_timer
     gridpack_parallel
-    gridpack_environment
     )
 endif()
 

@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created May  6, 2013 by William A. Perkins
-# Last Change: 2019-08-16 13:41:44 d3g096
+# Last Change: 2020-01-27 12:41:28 d3g096
 # -------------------------------------------------------------
 
 set(target_libraries
@@ -34,7 +34,11 @@ gridpack_set_library_version(gridpack_parallel)
 
 # For some reason this is necessary for Mac OS X, but messes things up on Linux
 if (GRIDPACK_LIB_LINK_LIBRARIES)
-  target_link_libraries(${target_libraries})
+  target_link_libraries(gridpack_parallel
+   ${Boost_LIBRARIES} 
+   ${GA_LIBRARIES} 
+   ${MPI_CXX_LIBRARIES}
+   )
 endif()
 
 include_directories(BEFORE ${CMAKE_CURRENT_SOURCE_DIR})
