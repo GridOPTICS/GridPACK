@@ -1088,8 +1088,9 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     last_S_Steps = S_Steps;
     timer->stop(t_secure);
     if (p_monitorGenerators) {
-      p_frequencyOK = p_frequencyOK && checkFrequency(p_maximumFrequency);
-      if (!p_frequencyOK) I_Steps = simu_k;
+      double presentTime = static_cast<double>(Simu_Current_Step)*p_time_step;
+      p_frequencyOK = p_frequencyOK && checkFrequency(0.5,presentTime);
+      if (!p_frequencyOK) Simu_Current_Step = simu_total_steps;
     }
   }
   
