@@ -131,7 +131,7 @@ instead of RATEA.
 - `minVoltage`,`maxVoltage`: minimum and maximum values of the voltage used
 in evaluating power flow contingencies.
 
-- `checkQLimit>false</checkQLimit`: perform the Q-limit test, convert PV
+- `checkQLimit`: perform the Q-limit test, convert PV
 buses to PQ buses if the test fails and rerun power flow calculation.
 
 - `monitorGenerators`: monitor generators for frequency violations. If this
