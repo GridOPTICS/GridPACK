@@ -1,4 +1,4 @@
-Real-time path rating
+# Real-time path rating
 
 The real-time path rating application is designed to evaluate path rating limits
 for a system. The path rating calculation first determines a provisional path
@@ -161,7 +161,7 @@ Final Power Flow Rating: 1.850000
 Final Dynamic Simulation Rating: 1.640000
 ```
 
-If the system hits and upper or lower bound when performing the rating
+If the system hits an upper or lower bound when performing the rating
 calculations, some additional lines may appear in the output (these can also be
 found by searching on `Rating`).
 
