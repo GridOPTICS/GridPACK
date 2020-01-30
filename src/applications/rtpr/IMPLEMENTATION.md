@@ -1,7 +1,5 @@
 Real-time path rating
 
-=====
-
 The real-time path rating application is designed to evaluate path rating limits
 for a system. The path rating calculation first determines a provisional path
 rating based on a series of powerflow contingency analysis calculations. It then
@@ -9,8 +7,6 @@ refines this calculation by verifying that the same set of contingencies are
 secure based on dynamic simulation. The details of the algorithm are described
 in the section at the end of this write-up. Details on running the calulation
 are given in the next section.
-
-=====
 
 ## Input
 The input deck is of the form
@@ -104,54 +100,52 @@ generator properties is specified in the `Dynamic_simulation`
 `generatorParameters` field. The fields in the `RealTimePathRating` block are
 described below.
 
-    - `printCalcFiles`: This flag indicates whether a file is printed describing
-      each power flow calculation for each contingency for each value of the
-      rating parameter. For a reasonable sized system, this will likely result
-      and enormous number of files so it should be set to false in most cases.
+- `printCalcFiles`: This flag indicates whether a file is printed describing
+each power flow calculation for each contingency for each value of the
+rating parameter. For a reasonable sized system, this will likely result
+and enormous number of files so it should be set to false in most cases.
 
-    - `sourceArea`,`sourceZone`: Specifies the zone within an area that
-      represents the generation source in the calculation. If no zone is
-      specified, then the entire area is assumed to be the source.
+- `sourceArea`,`sourceZone`: Specifies the zone within an area that
+represents the generation source in the calculation. If no zone is
+specified, then the entire area is assumed to be the source.
 
-    - `destinationArea`,`destinationZone`: Specifies the zone within an area that
-      represents the destination load in the calculation. If no zone is
-      specified, then the entire area is assumed to be the destination.
+- `destinationArea`,`destinationZone`: Specifies the zone within an area that
+represents the destination load in the calculation. If no zone is
+specified, then the entire area is assumed to be the destination.
 
-    - `calculateGeneratorContingencies`, `calculateLineContingencies`:
-      if true, automatically generate a list of generator and line contingencies
-      by assuming that all active generators and/or lines contribute a contingency.
-      If both of these are false or not specified, assume that contingencies are
-      specified in and external contingency file.
+- `calculateGeneratorContingencies`, `calculateLineContingencies`:
+if true, automatically generate a list of generator and line contingencies
+by assuming that all active generators and/or lines contribute a contingency.
+If both of these are false or not specified, assume that contingencies are
+specified in and external contingency file.
 
-    - `contingencyList`: specifies an external contingency file that contains a
-      listing of all contingencies that are used in the calculation. This file
-      uses the same format as the contingency application. If either the
-      `calculateGeneratorContingencies` or `calculateLineContingencies` are set
-      to true, then this file is ignored.
+- `contingencyList`: specifies an external contingency file that contains a
+listing of all contingencies that are used in the calculation. This file
+uses the same format as the contingency application. If either the
+`calculateGeneratorContingencies` or `calculateLineContingencies` are set
+to true, then this file is ignored.
 
-    - `useBranchRatingB`: use the RATEB parameter to evaluate line contingencies
-      instead of RATEA.
+- `useBranchRatingB`: use the RATEB parameter to evaluate line contingencies
+instead of RATEA.
 
-    - `minVoltage`,`maxVoltage`: minimum and maximum values of the voltage used
-      in evaluating power flow contingencies.
+- `minVoltage`,`maxVoltage`: minimum and maximum values of the voltage used
+in evaluating power flow contingencies.
 
-    - `checkQLimit>false</checkQLimit`: perform the Q-limit test, convert PV
-      buses to PQ buses if the test fails and rerun power flow calculation.
+- `checkQLimit>false</checkQLimit`: perform the Q-limit test, convert PV
+buses to PQ buses if the test fails and rerun power flow calculation.
 
-    - `monitorGenerators`: monitor generators for frequency violations. If this
-      parameter is false then the dynamic simulation part of the path rating
-      calculation is skipped. Only generators in the source zone or area are
-      checked.
+- `monitorGenerators`: monitor generators for frequency violations. If this
+parameter is false then the dynamic simulation part of the path rating
+calculation is skipped. Only generators in the source zone or area are
+checked.
 
-    - `frequencyMaximum`: maximum allowable frequency for monitored generators.
-      The default is 61.8 Hz.
+- `frequencyMaximum`: maximum allowable frequency for monitored generators.
+The default is 61.8 Hz.
 
-    - `contingencyDSStart`,`contingencyDSEnd`,`contingencyDSTimeStep`: Start
-      time, end time and time step for faults in the dynamic simulation
-      contingecies. These apply to all contingencies evaluated in the dynamic
-      simulation phase of the path rating calculation.
-
-=====
+- `contingencyDSStart`,`contingencyDSEnd`,`contingencyDSTimeStep`: Start
+time, end time and time step for faults in the dynamic simulation
+contingecies. These apply to all contingencies evaluated in the dynamic
+simulation phase of the path rating calculation.
 
 ## Output
 
@@ -178,8 +172,6 @@ calculations describing how many times each line exhibited a fault for each
 value of the rating parameter that was tested in the simulation. Note that the
 rating calculation itself only checks tie-lines while these files list faults on
 all lines in the system.
-
-=====
 
 ## Fundamental algorithm
 
