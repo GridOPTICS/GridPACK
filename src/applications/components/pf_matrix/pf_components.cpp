@@ -346,9 +346,13 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
     p_v -= real(values[1]);
   }
 #endif
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
+  double pi = 4.0*atan(1.0);
+  if (p_a >= 0.0) {
+    *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+  } else {
+    *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+  }
 }
 
 void gridpack::powerflow::PFBus::setValues(gridpack::RealType *values)
@@ -363,9 +367,13 @@ void gridpack::powerflow::PFBus::setValues(gridpack::RealType *values)
     p_v -= values[1];
   }
 #endif
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
+  double pi = 4.0*atan(1.0);
+  if (p_a >= 0.0) {
+    *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+  } else {
+    *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+  }
 }
 
 /**
@@ -390,9 +398,13 @@ void gridpack::powerflow::PFBus::setXCBuf(void *buf)
   // Note: we are assuming that the load function has been called BEFORE
   // the factory setExchange method, so p_a and p_v are set with their initial
   // values.
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
+  double pi = 4.0*atan(1.0);
+  if (p_a >= 0.0) {
+    *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+  } else {
+    *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+  }
   *p_PV_ptr = p_isPV;
   
 }
@@ -505,9 +517,11 @@ void gridpack::powerflow::PFBus::load(
     if (qtot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
         p_pFac[i] = p_pFac[i]/qtot;
+        p_pFac_orig[i] = p_pFac[i];
       }
     } else {
       p_pFac[0] = 1.0;
+      p_pFac_orig[0] = p_pFac[0];
     }
   }
   p_saveisPV = p_isPV;
@@ -547,7 +561,11 @@ void gridpack::powerflow::PFBus::load(
   if (p_vMag_ptr) *p_vMag_ptr = p_v;
   if (p_vAng_ptr) {
     double pi = 4.0*atan(1.0);
-    *p_vAng_ptr = fmod(p_a,pi);
+    if (p_a >= 0.0) {
+      *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+    } else {
+      *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+    }
   }
 }
 
@@ -593,9 +611,15 @@ void gridpack::powerflow::PFBus::resetVoltage(void)
 {
   p_v = p_voltage;
   p_a = p_angle;
-  *p_vMag_ptr = p_v;
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
+  if (p_vMag_ptr) *p_vMag_ptr = p_v;
+  if (p_vAng_ptr) {
+    double pi = 4.0*atan(1.0);
+    if (p_a >= 0.0) {
+      *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+    } else {
+      *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+    }
+  }
 }
 
 /**
@@ -1543,7 +1567,7 @@ void gridpack::powerflow::PFBus::scaleLoadPower(std::string tag, double value)
 {
   int i;
   for (i=0; i<p_nload; i++) {
-    if (p_lid[i] == tag && p_lstatus[i]) {
+    if (p_lid[i] == tag && p_lstatus[i] == 1) {
       p_pl[i] = value*p_pl[i];
       p_ql[i] = value*p_ql[i];
       break;
@@ -1556,6 +1580,7 @@ void gridpack::powerflow::PFBus::scaleLoadPower(std::string tag, double value)
  */
 void gridpack::powerflow::PFBus::resetPower()
 {
+  resetVoltage();
   int i;
   for (i=0; i<p_ngen; i++) {
     p_pg[i] = p_savePg[i];

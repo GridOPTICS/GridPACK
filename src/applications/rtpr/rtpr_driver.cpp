@@ -22,7 +22,7 @@
 #include "gridpack/applications/modules/powerflow/pf_app_module.hpp"
 #include "rtpr_driver.hpp"
 
-#define RTPR_DEBUG
+//#define RTPR_DEBUG
 #define USE_STATBLOCK
 
 //#define USE_SUCCESS
@@ -616,110 +616,61 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
 {
   bool ret = true;
   int idx;
-  if (flag == 0) {
-    double ltotal = p_pf_app.getTotalLoadRealPower(p_dstArea,p_dstZone);
-    double gtotal, pmin, pmax;
-    p_pf_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
-    double extra, g_rating;
-    if (rating > 1.0) {
-      extra = (rating-1.0)*ltotal;
-      if (extra <= pmax-gtotal) {
-        // Sufficient capacity exists to meet adjustment
-        if (pmax > gtotal) {
-          g_rating = extra/(pmax-gtotal);
-        } else {
-          g_rating = 0.0;
-        }
+  double ltotal = p_pf_app.getTotalLoadRealPower(p_dstArea,p_dstZone);
+  double gtotal, pmin, pmax;
+  p_pf_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
+  double extra, g_rating;
+  if (rating > 1.0) {
+    extra = (rating-1.0)*ltotal;
+    if (extra <= pmax-gtotal) {
+      // Sufficient capacity exists to meet adjustment
+      if (pmax > gtotal) {
+        g_rating = extra/(pmax-gtotal);
       } else {
-        extra = pmax-gtotal;
-        rating = (ltotal+extra)/ltotal;
-        if (pmax > gtotal) {
-          g_rating = extra/(pmax-gtotal);
-        } else {
-          g_rating = 0.0;
-        }
-        ret = false;
+        g_rating = 0.0;
       }
     } else {
-      extra = (1.0-rating)*ltotal;
-      if (extra <= gtotal-pmin) {
-        // Sufficient capacity exists to meet adjustment
-        if (gtotal > pmin) {
-          g_rating = -extra/(gtotal-pmin);
-        } else {
-          g_rating = 0.0;
-        }
+      extra = pmax-gtotal;
+      rating = (ltotal+extra)/ltotal;
+      if (pmax > gtotal) {
+        g_rating = extra/(pmax-gtotal);
       } else {
-        extra = gtotal-pmin;
-        rating = (ltotal-extra)/ltotal;
-        if (gtotal > pmin) {
-          g_rating = -extra/(gtotal-pmin);
-        } else {
-          g_rating = 0.0;
-        }
-        ret = false;
+        g_rating = 0.0;
       }
+      ret = false;
     }
-    p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
-    p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
-    char file[128];
-    sprintf(file,"pf_diagnostic_%f.dat",rating);
-    p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
-        g_rating,rating,file);
   } else {
-    double ltotal = p_ds_app.getTotalLoadRealPower(p_dstArea,p_dstZone);
-    double gtotal, pmin, pmax;
-    p_ds_app.getGeneratorMargins(p_srcArea,p_srcZone,&gtotal,&pmin,&pmax);
-    double extra, g_rating;
-    if (rating > 1.0) {
-      extra = (rating-1.0)*ltotal;
-      if (extra <= pmax-gtotal) {
-        // Sufficient capacity exists to meet adjustment
-        if (pmax > gtotal) {
-          g_rating = extra/(pmax-gtotal);
-        } else {
-          g_rating = 0.0;
-        }
+    extra = (1.0-rating)*ltotal;
+    if (extra <= gtotal-pmin) {
+      // Sufficient capacity exists to meet adjustment
+      if (gtotal > pmin) {
+        g_rating = -extra/(gtotal-pmin);
       } else {
-        extra = pmax-gtotal;
-        rating = (ltotal+extra)/ltotal;
-        if (pmax > gtotal) {
-          g_rating = extra/(pmax-gtotal);
-        } else {
-          g_rating = 0.0;
-        }
-        ret = false;
+        g_rating = 0.0;
       }
     } else {
-      extra = (1.0-rating)*ltotal;
-      if (extra <= gtotal-pmin) {
-        // Sufficient capacity exists to meet adjustment
-        if (gtotal > pmin) {
-          g_rating = -extra/(gtotal-pmin);
-        } else {
-          g_rating = 0.0;
-        }
+      extra = gtotal-pmin;
+      rating = (ltotal-extra)/ltotal;
+      if (gtotal > pmin) {
+        g_rating = -extra/(gtotal-pmin);
       } else {
-        extra = gtotal-pmin;
-        rating = (ltotal-extra)/ltotal;
-        if (gtotal > pmin) {
-          g_rating = -extra/(gtotal-pmin);
-        } else {
-          g_rating = 0.0;
-        }
-        ret = false;
+        g_rating = 0.0;
       }
+      ret = false;
     }
-    // Need to rerun power flow calculation to initialize dynamic simulation
-    p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
-    p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
-    p_ds_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
-    p_ds_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
-    char file[128];
-    sprintf(file,"ds_diagnostic_%f.dat",rating);
-    p_ds_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
-        g_rating,rating,file);
   }
+  p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
+  p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
+  char file[128];
+#ifdef RTPR_DEBUG
+  if (flag == 0) {
+    sprintf(file,"pf_diagnostic_%f.dat",rating);
+  } else {
+    sprintf(file,"ds_diagnostic_%f.dat",rating);
+  }
+  p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
+      g_rating,rating,file);
+#endif
   return ret;
 }
 
@@ -1111,21 +1062,20 @@ void gridpack::rtpr::RTPRDriver::execute(int argc, char** argv)
     p_ds_app.setFrequencyMonitoring(p_monitorGenerators, p_maximumFrequency);
 
     // find the generators that will be monitored
-    std::vector<int> busIDs;
-    std::vector<std::string> genIDs;
-    findWatchedGenerators(p_ds_network,p_srcArea,p_srcZone,busIDs,genIDs);
+    findWatchedGenerators(p_ds_network,p_srcArea,p_srcZone,
+        p_watch_busIDs,p_watch_genIDs);
     if (p_world.rank() == 0) {
       printf("Generators being monitored in dynamic simulations\n");
-      for (i=0; i<busIDs.size(); i++) {
+      for (i=0; i<p_watch_busIDs.size(); i++) {
         printf("    Host bus: %8d   Generator ID: %s\n",
-            busIDs[i],genIDs[i].c_str());
+            p_watch_busIDs[i],p_watch_genIDs[i].c_str());
       }
     }
-    p_ds_app.setGeneratorWatch(busIDs,genIDs,false);
 
-    p_ds_app.scaleLoadPower(p_rating,p_dstArea,p_dstZone);
+//    p_ds_app.scaleLoadPower(p_rating,p_dstArea,p_dstZone);
+//    p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
+    p_pf_app.resetPower();
     adjustRating(p_rating,1);
-    p_ds_app.scaleGeneratorRealPower(p_rating,p_srcArea,p_srcZone);
     checkTie = runDSContingencies();
     p_pf_app.resetPower();
     p_ds_app.resetPower();
@@ -1307,7 +1257,7 @@ bool gridpack::rtpr::RTPRDriver::runContingencies()
     }
 #endif
     printf("Executing task %d on process %d\n",task_id,p_world.rank());
-    sprintf(sbuf,"%s.out",p_events[task_id].p_name.c_str());
+    sprintf(sbuf,"%s_%f.out",p_events[task_id].p_name.c_str(),fabs(p_rating));
     // Open a new file, based on the contingency name, to store results from
     // this particular contingency calculation
     if (p_print_calcs) p_pf_app.open(sbuf);
@@ -1571,26 +1521,36 @@ void gridpack::rtpr::RTPRDriver::transferPFtoDS(
       for (j=0; j<ngen; j++) {
         pfData->getValue("GENERATOR_PF_PGEN",&rval,j);
         dsData->setValue(GENERATOR_PG,rval,j);
-        //printf("save PGEN: %f\n", rval);
+        //printf("p[%d] save PGEN: %f\n", rval,p_world.rank());
         pfData->getValue("GENERATOR_PF_QGEN",&rval,j);
         dsData->setValue(GENERATOR_QG,rval,j);
-        //printf("save QGEN: %f\n", rval);
+        //printf("p[%d] save QGEN: %f\n", rval,p_world.rank());
       }
     }
-    int nld = 0;
-    if (pfData->getValue(LOAD_NUMBER, &ngen)) {
-      std::vector<double> pl, ql;
-      std::vector<int> status;
-      std::vector<std::string> tags;
-      pf_network->getBus(i)->getLoadPower(tags,pl,ql,status);
-      if (tags.size() != ngen) {
-        printf("Mismatch in loads on bus %d\n",
-            pf_network->getBus(i)->getOriginalIndex());
-        continue;
-      }
-      int j;
-      for (j=0; j<ngen; j++) {
-        dsData->setValue(LOAD_PL,pl[j],j);
+    gridpack::powerflow::PFBus *bus = pf_network->getBus(i).get();
+    int izone;
+    if (p_dstZone > 0) {
+      izone = bus->getZone();
+    } else {
+      izone = p_dstZone;
+    }
+    if (bus->getArea() == p_dstArea && p_dstZone == izone) {
+      int nld = 0;
+      if (pfData->getValue(LOAD_NUMBER, &ngen)) {
+        std::vector<double> pl, ql;
+        std::vector<int> status;
+        std::vector<std::string> tags;
+        bus->getLoadPower(tags,pl,ql,status);
+        if (tags.size() != ngen) {
+          printf("Mismatch in loads on bus %d\n",
+              bus->getOriginalIndex());
+          continue;
+        }
+        int j;
+        for (j=0; j<ngen; j++) {
+          dsData->setValue(LOAD_PL,p_rating*pl[j],j);
+          dsData->setValue(LOAD_QL,p_rating*ql[j],j);
+        }
       }
     }
   }
@@ -1615,17 +1575,23 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
   char file[128];
-  sprintf(file,"pf2_diagnostic_%f.dat",p_rating);
+#ifdef RTPR_DEBUG
+  sprintf(file,"pf2_diagnostic_%f_%d.dat",p_rating,p_world.rank());
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
+#endif
   bool chkSolve = p_pf_app.solve();
   p_pf_app.useRateB(p_useRateB);
   // Check for Qlimit violations
   if (p_check_Qlim && !p_pf_app.checkQlimViolations()) {
     chkSolve = p_pf_app.solve();
   }
-  transferPFtoDS(p_pf_network,p_ds_network);
-  p_ds_app.reload();
+  p_pf_app.saveData();
+#ifdef RTPR_DEBUG
+  sprintf(file,"pf3_diagnostic_%f_%d.dat",p_rating,p_world.rank());
+  p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
+      p_rating,p_rating,file);
+#endif
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
 #ifdef RTPR_DEBUG
     if (task_id == 0) {
@@ -1642,7 +1608,10 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
     // Print out results of power flow calculation
     printf("Executing dynamic simulation task %d on process %d\n",
         task_id,p_world.rank());
-    // Initialize dynamic simulation by first running powerflow calculation
+    // reinitialize dynamic simulation from powerflow calculation
+    transferPFtoDS(p_pf_network,p_ds_network);
+    p_ds_app.reload();
+    p_ds_app.setGeneratorWatch(p_watch_busIDs,p_watch_genIDs,false);
     try {
       p_ds_app.solve(p_eventsDS[task_id]);
     } catch (const gridpack::Exception e) {
