@@ -1127,6 +1127,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   } else {
     char *ptr;
     sprintf(secureBuf,"\nThe system is insecure from step %d", p_insecureAt);
+    ptr = secureBuf + strlen(secureBuf);
     if (fault.isGenerator) {
       sprintf(ptr," for fault at generator %s on bus %d\n",fault.tag,fault.bus_idx);
     } else if (fault.isLine) {

@@ -147,6 +147,14 @@ time, end time and time step for faults in the dynamic simulation
 contingecies. These apply to all contingencies evaluated in the dynamic
 simulation phase of the path rating calculation.
 
+- `tieLines`: This field is used to define user-specified tie-lines. In the
+  event that this field is not specified, the RTPR will calculate tie-lines
+  automatically by choosing all active lines between the source and destination
+  areas. Each tie-line is specified by the `tieLine` sub-block, which contains two
+  additional fields. The `Branch` field contains two integers, representing the
+  indices of the bus at each end of the line and the `Tag` field contains a one or
+  two character string representing the line ID.
+
 ## Output
 
 Output for the real-time path rating calculation is fairly compact. If
