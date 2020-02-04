@@ -106,7 +106,12 @@ class DSFullApp
 	/**
      * Execute only one simulation time step 
      */
-    void executeOneSimuStep(std::vector<gridpack::dynamic_simulation::Event> action_list);
+    void executeOneSimuStep();
+	
+	/**
+     * execute load shedding	 
+     */
+    void applyLoadShedding(int bus_number, std::string loadid, double percentage);
 	
 	/**
      * Check whether the dynamic simulation is done

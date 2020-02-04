@@ -2492,6 +2492,18 @@ int gridpack::dynamic_simulation::DSFullBus::getZone()
 }
 
 /**
+ * apply load shedding for the loads in this bus
+ */
+void gridpack::dynamic_simulation::DSFullBus::applyLoadShedding(std::string loadid, double percentage){
+	
+	int iload, nload;
+	nload = p_loadmodels.size();
+	for (iload=0; iload<nload; iload++){
+		p_loadmodels[iload]->changeLoad(percentage);
+	}
+}
+
+/**
  *  Simple constructor
  */
 gridpack::dynamic_simulation::DSFullBranch::DSFullBranch(void)

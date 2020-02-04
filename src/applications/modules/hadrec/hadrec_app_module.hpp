@@ -27,7 +27,15 @@
 namespace gridpack {
 namespace hadrec {
 
-// Calling program for powerflow application
+struct HADRECAction
+{
+	int actiontype = 0;  // 0: load shedding
+	int bus_number = -1;
+	std::string componentID = "1";
+	double percentage = 0.0;
+	
+};
+
 
 class HADRECAppModule
 {
@@ -65,13 +73,17 @@ class HADRECAppModule
 	/**
 	* Execute only one simulation time step 
 	*/
-	void executeDynSimuOneStep(
-		std::vector<gridpack::dynamic_simulation::Event> action_list);
+	void executeDynSimuOneStep();
 	
 	/**
 	* Check whether the dynamic simulation is done
 	*/
 	bool isDynSimuDone( );
+	
+	/**
+	* apply actions
+	*/
+	void applyAction(gridpack::hadrec::HADRECAction control_action);
 	
 
   private:
