@@ -28,12 +28,12 @@
  *  Basic constructor
  */
 gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
-{
-  volt_measured0 = 0.0; // contracttor and UV relays
-  freq_measured0 = 1.0; // for relay  models
-  temperatureA0 = 0.0; // for thermal protection
-  temperatureB0 = 0.0; // for thermal protection
-  volt_measured = 0.0; // contracttor and UV relays
+{ // with zero -> predictor step, without zero -> corrector
+  volt_measured0 = 0.0; // contractor and UV relays, voltage into the 1-ph A/C model is measured value with a delay of Tv, volt_measured = 1/(1+Tv*s) * vt
+  freq_measured0 = 1.0; // for relay  models, frequency into the 1-ph A/C model is measured value with a delay of Tf, freq_measured = 1/(1+Tf*s) * freq
+  temperatureA0 = 0.0; // for thermal protection, it is theta in thermal relay model
+  temperatureB0 = 0.0; // for thermal protection, it is theta in thermal relay model
+  volt_measured = 0.0; // contractor and UV relays
   freq_measured = 1.0; // for relay  models
   temperatureA = 0.0; // for thermal protection
   temperatureB = 0.0; // for thermal protection
@@ -144,6 +144,8 @@ gridpack::dynamic_simulation::AcmotorLoad::AcmotorLoad(void)
   equivYpq_motorBase = 0.0;
         
   I_conv_factor_M2S = 0.0;
+  
+  Fonline = 1.0;
 
 }
 
@@ -376,7 +378,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
 
   if (Th1t >0.0 && Th2t > Th1t) {
     thEqnA = -1.0/(Th2t - Th1t);
-    thEqnB = Th2t/(Th2t - Th1t);
+    thEqnB = Th2t/(Th2t - Th1t); // for the thermal relay model, if Th1t<theta<Th2t, fth = 1.0/(Th2t - Th1t) * (Th2t - theta) = thEqnA * theta + thEqnB
   }
 
   // check parameter Vc2off and Vc1off, Vc2off should be no larger than Vc1ff
@@ -401,6 +403,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::init(double mag,
   printf("AcmotorLoad::Init(), thEqnA: %12.6f, thEqnB: %12.6f, Vc2off: %12.6f, Vc2on: %12.6f  \n", thEqnA, thEqnB, Vc2off, Vc2on);
   
   setDynLoadQ(getInitReactivePower());
+  
+  Fonline = 1.0;
  
 }
 
@@ -494,8 +498,8 @@ void gridpack::dynamic_simulation::AcmotorLoad::predictor(
   }
          
   // step -2 dx/dt
-  dv_dt0 = (vt - volt_measured0) / Tv; // only used for relay and protection, not in dynamic calculation
-  dfreq_dt0 = (freq - freq_measured0) / Tf; // only used for relay and protection, not in dynamic calculation
+  dv_dt0 = (vt - volt_measured0) / Tv; // only used for relay and protection, not in dynamic calculation, in dv_dt0, v represents volt_measured. This is the dyn eqns of voltage sensor.
+  dfreq_dt0 = (freq - freq_measured0) / Tf; // only used for relay and protection, not in dynamic calculation. This is the dyn eqns of frequency sensor.
   // the thermal proection temperature is only measured when the AC is stalled
   //double i = sqrt(-1);
   gridpack::ComplexType ImotorA_pu(0.0, 0.0);
@@ -624,12 +628,12 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
   
   // contractor
   // Contactor – If the voltage drops to below Vc2off, all of the load is tripped; if the voltage is between
-  // Vc1off and Vc2off, a linear fraction of the load is tripped. If the voltage later recovers to above Vc2on, all
+  // Vc1off and Vc2off, a linear fraction of the load is tripped. If the voltage later recovers to above Vc1on, all
   // of the motor is reconnected; if the voltage recovers to between Vc2on and Vc1on, a linear fraction of the
   // load is reconnected.
   
   if ( volt_measured <  Vc2off){
-     Kcon = 0.0;
+     Kcon = 0.0;  // fraction not tripped by contactor
      fcon_trip = 1.0;
   }
   else if ( volt_measured >=  Vc2off &&  
@@ -644,7 +648,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
      Kcon = 1.0;
   } else if  ( volt_measured <  Vc1on &&   volt_measured >=  Vc2on) {  
     double Frecv =  ( volt_measured -  Vc2on)/( Vc1on -  Vc2on);
-     Kcon = 1.0 -  fcon_trip*(1.0- Frecv);
+     Kcon = 1.0 -  fcon_trip*(1.0- Frecv);  // Kcon = (1 - fcon_trip) + fcon_trip * Frecv, fraction not tripped by contactor
   } 
   
   // update timer for AC thermal protection
@@ -712,7 +716,7 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
        
            if (vt >=  Vbrk) {
 
-                PA = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));
+                PA = ( P0 +  Kp1*pow(vt -  Vbrk, Np1) )*(1.0 +  CmpKpf*(freq - 1.0));  // delta_f = freq - 1 or 1 - freq?
                 QA = ( Q0 +  Kq1*pow(vt -  Vbrk, Nq1) )*(1.0 +  CmpKqf*(freq - 1.0));
 		   }
            else if (vt <  Vbrk && vt >  Vstallbrk) {
@@ -764,17 +768,18 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
      Qmotor =  QA*(1.0- Frst)* FthA +  QB*  Frst* FthB;
   
     // consider the UR relay and contractor
-     Pmotor =  Kuv* Kcon* Pmotor;
-     Qmotor =  Kuv* Kcon* Qmotor;
+	 //Fonline = Kuv* Kcon* Fonline;
+     Pmotor =  Kuv*Kcon*Fonline* Pmotor;
+     Qmotor =  Kuv*Kcon*Fonline* Qmotor;
 	 
 	 gridpack::ComplexType tmpcplx(Pmotor, -Qmotor);
 	 equivYpq_motorBase = tmpcplx/vt/vt;
      
     //equivYpq_motorBase = ( Pmotor - i* Qmotor)/vt/vt;
 
-    printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, \n",
+    printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, \n",
           p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA, temperatureB, presentMag, presentFreq,
-                  statusA, statusB, Pmotor, Qmotor, FthA, FthB);
+                  statusA, statusB, Pmotor, Qmotor, FthA, FthB, Fonline);
 
 }
 
@@ -861,4 +866,20 @@ bool gridpack::dynamic_simulation::AcmotorLoad::serialWrite(
   }	
 		
   return false;
+}
+
+
+/**
+ * return true if load change is enabled
+ * @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+ */
+bool gridpack::dynamic_simulation::AcmotorLoad::changeLoad(double percentageFactor)
+{
+	if (percentageFactor < -1.0) {
+		printf("percentageFactor < -1.0, this change will not be applied.  \n");
+		return false;
+	}
+	Fonline = Fonline + percentageFactor;
+	printf("----renke debug load shed, AcmotorLoad::changeLoad, Fonline: %f \n", Fonline);
+	return true;
 }

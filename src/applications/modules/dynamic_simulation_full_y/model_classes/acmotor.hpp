@@ -119,6 +119,12 @@ class AcmotorLoad : public BaseLoadModel
      * @param signal character string used to determine behavior
      */
     bool serialWrite(char* string, const int bufsize, const char* signal);
+	
+	/**
+	 * return true if load change is enabled
+	 * @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+	 */
+	bool changeLoad(double percentageFactor);
 
   private:
 
@@ -161,6 +167,7 @@ class AcmotorLoad : public BaseLoadModel
     double UVTimer1, UVTimer2;
     gridpack::ComplexType equivYpq_motorBase;
     double I_conv_factor_M2S;
+	double Fonline;
    
  
     gridpack::ComplexType p_INorton;

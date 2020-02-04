@@ -169,10 +169,9 @@ void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(int
 /**
  * Execute only one simulation time step 
  */
-void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(
-    std::vector<gridpack::dynamic_simulation::Event> action_list){
+void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(){
 		
-	ds_app_sptr->executeOneSimuStep(action_list);
+	ds_app_sptr->executeOneSimuStep();
 	
 }
 
@@ -182,5 +181,15 @@ void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(
 bool gridpack::hadrec::HADRECAppModule::isDynSimuDone( ){
 	
 	return ds_app_sptr->isDynSimuDone();
+
+}
+
+/**
+ * apply actions
+ */
+void gridpack::hadrec::HADRECAppModule::applyAction(gridpack::hadrec::HADRECAction control_action){
+	if ( control_action.actiontype == 0 ){
+		return ds_app_sptr->applyLoadShedding(control_action.bus_number, control_action.componentID, control_action.percentage );
+	}
 
 }

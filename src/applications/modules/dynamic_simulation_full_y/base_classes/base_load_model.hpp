@@ -96,6 +96,12 @@ class BaseLoadModel
 	*/
 	virtual void dynamicload_post_process(double t_inc, bool flag);
 	
+	/**
+	* return true if load change is enabled
+	* @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+	*/
+    virtual bool changeLoad(double percentageFactor);
+	
 	 /**
      * Set voltage on each generator
      */

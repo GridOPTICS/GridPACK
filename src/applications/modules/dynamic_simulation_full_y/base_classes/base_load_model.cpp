@@ -125,6 +125,14 @@ void gridpack::dynamic_simulation::BaseLoadModel::dynamicload_post_process(
 }
 
 /**
+* return true if load change is enabled
+* @param percentageFactor: the fraction (percentage) of load that is changed. Negative: load reduction, Positive: load increase
+*/
+bool gridpack::dynamic_simulation::BaseLoadModel::changeLoad(double percentageFactor)
+{
+}
+
+/**
  * Set voltage on each load
  */
 void gridpack::dynamic_simulation::BaseLoadModel::setVoltage(

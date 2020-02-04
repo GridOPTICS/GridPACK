@@ -478,6 +478,11 @@ class DSFullBus
      loads
      */
     void setScale(double scale);
+	
+	/**
+     * apply load shedding for the loads in this bus
+     */
+	void applyLoadShedding(std::string loadid, double percentage);
 
 #ifdef USE_FNCS
     /**
@@ -749,6 +754,7 @@ class DSFullBranch
      * check the type of the extended load branch type variable: p_bextendedloadbranch
      */
 	int checkExtendedLoadBranchType(void);
+	
 
   private:
     std::vector<double> p_reactance;

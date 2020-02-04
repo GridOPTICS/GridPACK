@@ -2026,8 +2026,7 @@ void gridpack::dynamic_simulation::DSFullApp::solvePreInitialize(
 /**
  * Execute only one simulation time step 
  */
-void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep(
-    std::vector<gridpack::dynamic_simulation::Event> action_list){
+void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 	
     gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -2628,4 +2627,27 @@ bool gridpack::dynamic_simulation::DSFullApp::isDynSimuDone( ){
 	return p_bDynSimuDone;
 
 }
+
+/**
+ * execute load shedding	 
+ */
+void gridpack::dynamic_simulation::DSFullApp::applyLoadShedding(int bus_number, std::string loadid, double percentage){
+	
+	std::vector<int> vec_busintidx;
+	vec_busintidx = p_network->getLocalBusIndices(bus_number);
+	int ibus, nbus;
+	gridpack::dynamic_simulation::DSFullBus *bus;	
+	nbus = vec_busintidx.size();
+	for(ibus=0; ibus<nbus; ibus++){
+		bus = dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (p_network->getBus(vec_busintidx[ibus]).get());
+		//printf("----renke debug load shed, in dsf full app, \n");
+		bus->applyLoadShedding(loadid, percentage);
+	
+	}
+		
+}
+
+
+
 
