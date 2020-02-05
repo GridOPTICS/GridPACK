@@ -509,7 +509,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     //sprintf(step_str,"\nIter %d\n", I_Steps);
     //p_busIO->header(step_str);
     timer->start(t_misc);
-    printf("Step %d\ttime %5.3f sec: \n", I_Steps+1, (I_Steps+1) * p_time_step);
+    //printf("Step %d\ttime %5.3f sec: \n", I_Steps+1, (I_Steps+1) * p_time_step);
     //printf("\n===================Step %d\ttime %5.3f sec:================\n", I_Steps+1, (I_Steps+1) * p_time_step);
     ///char step_str[128];
     ///sprintf(step_str, "\n===================Step %d\ttime %5.3f sec:================\n", I_Steps+1, (I_Steps+1) * p_time_step);
@@ -1111,9 +1111,33 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   //char msg[128];
   //if (p_insecureAt == -1) sprintf(msg, "\nThe system is secure!\n");
   //else sprintf(msg, "\nThe system is insecure from step %d!\n", p_insecureAt);
+
   char secureBuf[128];
-  if (p_insecureAt == -1) sprintf(secureBuf,"\nThe system is secure!\n");
-  else sprintf(secureBuf,"\nThe system is insecure from step %d!\n", p_insecureAt);
+  if (p_insecureAt == -1) {
+    char *ptr;
+    sprintf(secureBuf,"\nThe system is secure");
+    ptr = secureBuf + strlen(secureBuf);
+    if (fault.isGenerator) {
+      sprintf(ptr," for fault at generator %s on bus %d\n",fault.tag,fault.bus_idx);
+    } else if (fault.isLine) {
+      sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag,
+          fault.from_idx,fault.to_idx);
+    } else {
+      sprintf(ptr,"!\n");
+    }
+  } else { 
+    char *ptr;
+    sprintf(secureBuf,"\nThe system is insecure from step %d", p_insecureAt);
+    ptr = secureBuf + strlen(secureBuf);
+    if (fault.isGenerator) {
+      sprintf(ptr," for fault at generator %s on bus %d\n",fault.tag,fault.bus_idx);
+    } else if (fault.isLine) {
+      sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag,
+          fault.from_idx,fault.to_idx);
+    } else {
+      sprintf(ptr,"!\n");
+    }
+  }
   p_busIO->header(secureBuf);
 
 #ifdef MAP_PROFILE

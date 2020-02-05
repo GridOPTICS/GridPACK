@@ -2126,7 +2126,6 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorRealPower(
   int i, idx;
   idx = -1;
   for (i=0; i<p_ngen; i++) {
-    printf("p_genid[%d]: (%s)\n",i,p_genid[i].c_str());
     if (p_genid[i] == tag) {
       idx = i;
       break;
@@ -3092,17 +3091,30 @@ void gridpack::dynamic_simulation::DSFullBranch::setEvent(
 {
   int idx1 = getBus1OriginalIndex();
   int idx2 = getBus2OriginalIndex();
-  // Check to see if event refers to this bus
-  if (idx1 == event.from_idx && idx2 == event.to_idx) {
-    p_event = true;
-  } else {
-    p_event = false;
+  if (event.isGenerator) {
+    if (event.from_idx == event.to_idx) {
+      if (event.from_idx == idx1) {
+        dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+          (getBus1().get())->setEvent(idx1,idx1,this);
+      } else if (event.from_idx == idx2) {
+        dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+          (getBus2().get())->setEvent(idx2,idx2,this);
+      }
+    }
   }
-  if (p_event) {
-    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
-      (getBus1().get())->setEvent(idx1,idx2,this);
-    dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
-      (getBus2().get())->setEvent(idx1,idx2,this);
+  if (event.isLine) {
+    // Check to see if event refers to this bus
+    if (idx1 == event.from_idx && idx2 == event.to_idx) {
+      p_event = true;
+    } else {
+      p_event = false;
+    }
+    if (p_event) {
+      dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (getBus1().get())->setEvent(idx1,idx2,this);
+      dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
+        (getBus2().get())->setEvent(idx1,idx2,this);
+    }
   }
 }
 
