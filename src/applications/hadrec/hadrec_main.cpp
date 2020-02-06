@@ -40,7 +40,6 @@ int main(int argc, char **argv)
   // Intialize Math libraries
   gridpack::math::Initialize(&argc,&argv);
 
-  if (1) {
 	  
 	gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -65,7 +64,7 @@ int main(int argc, char **argv)
 	loadshedact.percentage = -0.2;
 	
 	int isteps = 0;
-	bool bApplyAct = false;  // whether apply the action in the simulation steps
+	bool bApplyAct = true; //false;  // whether apply the action in the simulation steps
 	
 	while(!hadrec_app_sptr->isDynSimuDone()){ // if the dynamic simulation is not done (hit the end time)
 		if ( bApplyAct && (isteps == 2500 || isteps == 3000 || isteps == 3500 || isteps == 4000 ) ){
@@ -78,10 +77,37 @@ int main(int argc, char **argv)
 		isteps++;
 	}
 	
+	//timer->stop(t_total);
+    //timer->dump();
+
+  
+  //start the reload and second time dynamic simulation here
+  // transfer power flow results to dynamic simulation
+  bool btest_2dynasimu = true; //true;
+  if (btest_2dynasimu) {
+	hadrec_app_sptr->transferPFtoDS();
+	
+	// initialize dynamic simulation
+	hadrec_app_sptr->initializeDynSimu();
+	
+	isteps = 0;
+	//bApplyAct = true;  // whether apply the action in the simulation steps
+	
+	while(!hadrec_app_sptr->isDynSimuDone()){ // if the dynamic simulation is not done (hit the end time)
+		if ( bApplyAct && (isteps == 2500 || isteps == 3000 || isteps == 3500 || isteps == 4000 ) ){
+			//apply action
+			hadrec_app_sptr->applyAction(loadshedact);
+			//printf("----renke debug load shed, isteps: %d \n", isteps);
+		}
+		//execute one dynamic simulation step
+		hadrec_app_sptr->executeDynSimuOneStep();
+		isteps++;
+	}
+  }
+	
 	timer->stop(t_total);
     timer->dump();
-
-  }
+  
   
   GA_Terminate();
 
