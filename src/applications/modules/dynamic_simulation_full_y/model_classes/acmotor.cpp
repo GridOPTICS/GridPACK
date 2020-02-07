@@ -777,9 +777,9 @@ void gridpack::dynamic_simulation::AcmotorLoad::dynamicload_post_process(
      
     //equivYpq_motorBase = ( Pmotor - i* Qmotor)/vt/vt;
 
-    printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, \n",
+    printf("dynamic load output step: ,%8d, %2s, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %8d, %8d, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f, %12.6f,\n",
           p_bus_id, p_loadid.c_str(), volt_measured, freq_measured, temperatureA, temperatureB, presentMag, presentFreq,
-                  statusA, statusB, Pmotor, Qmotor, FthA, FthB, Fonline);
+                  statusA, statusB, Pmotor, Qmotor, FthA, FthB, Fonline, Kuv, Kcon);
 
 }
 

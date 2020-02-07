@@ -87,6 +87,8 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(int argc, ch
     // setup dynamic simulation network
    
     ds_network.reset(new gridpack::dynamic_simulation::DSFullNetwork(world));
+	pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
+      gridpack::dynamic_simulation::DSFullBranch>(ds_network);
 	
 }
 
@@ -94,9 +96,6 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(int argc, ch
  * transfer data from power flow to dynamic simulation 
  */
 void gridpack::hadrec::HADRECAppModule::transferPFtoDS(){
-	
-    pf_network->clone<gridpack::dynamic_simulation::DSFullBus,
-      gridpack::dynamic_simulation::DSFullBranch>(ds_network);
 	  
 	int numBus = pf_network->numBuses();
     int i;
