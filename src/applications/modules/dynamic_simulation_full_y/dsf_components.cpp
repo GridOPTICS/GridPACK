@@ -2126,7 +2126,6 @@ void gridpack::dynamic_simulation::DSFullBus::setGeneratorRealPower(
   int i, idx;
   idx = -1;
   for (i=0; i<p_ngen; i++) {
-    printf("p_genid[%d]: (%s)\n",i,p_genid[i].c_str());
     if (p_genid[i] == tag) {
       idx = i;
       break;
@@ -3123,7 +3122,6 @@ void gridpack::dynamic_simulation::DSFullBranch::setEvent(
       p_event = false;
     }
     if (p_event) {
-      printf("CREATING EVENT BUS1: %d BUS2: %d\n",idx1,idx2);
       dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>
         (getBus1().get())->setEvent(idx1,idx2,this);
       dynamic_cast<gridpack::dynamic_simulation::DSFullBus*>

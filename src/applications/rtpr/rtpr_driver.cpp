@@ -661,6 +661,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
   }
   p_pf_app.scaleLoadPower(rating,p_dstArea,p_dstZone);
   p_pf_app.scaleGeneratorRealPower(g_rating,p_srcArea,p_srcZone);
+#if 0
   char file[128];
   if (flag == 0) {
     sprintf(file,"pf_diagnostic_%f.dat",rating);
@@ -669,6 +670,7 @@ bool gridpack::rtpr::RTPRDriver::adjustRating(double rating, int flag)
   }
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       g_rating,rating,file);
+#endif
   return ret;
 }
 
@@ -1572,10 +1574,12 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
   int task_id;
   // nextTask returns the same task_id on all processors in task_comm. When the
   // calculation runs out of task, nextTask will return false.
+#if 0
   char file[128];
   sprintf(file,"pf2_diagnostic_%f_%d.dat",p_rating,p_world.rank());
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
+#endif
   bool chkSolve = p_pf_app.solve();
   p_pf_app.useRateB(p_useRateB);
   // Check for Qlimit violations
@@ -1583,9 +1587,11 @@ bool gridpack::rtpr::RTPRDriver::runDSContingencies()
     chkSolve = p_pf_app.solve();
   }
   p_pf_app.saveData();
+#if 0
   sprintf(file,"pf3_diagnostic_%f_%d.dat",p_rating,p_world.rank());
   p_pf_app.writeRTPRDiagnostics(p_srcArea,p_srcZone,p_dstArea,p_dstZone,
       p_rating,p_rating,file);
+#endif
   while (taskmgr.nextTask(p_task_comm, &task_id)) {
 #ifdef RTPR_DEBUG
     if (task_id == 0) {
