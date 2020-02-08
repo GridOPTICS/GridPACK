@@ -9,10 +9,11 @@
     <calculateGeneratorContingencies>true</calculateGeneratorContingencies>
     <calculateLineContingencies>true</calculateLineContingencies>
     <contingencyList>contingencies_14.xml</contingencyList>
+    <useBranchRatingB>false</useBranchRatingB>
     <groupSize>1</groupSize>
     <maxVoltage>1.1</maxVoltage>
     <minVoltage>0.9</minVoltage>
-    <checkQLimit>true</checkQLimit>
+    <checkQLimit>false</checkQLimit>
     <monitorGenerators> true </monitorGenerators>
     <frequencyMaximum> 61.8 </frequencyMaximum>
     <contingencyDSStart> 1.0 </contingencyDSStart>
@@ -32,7 +33,7 @@
     -->
   </RealTimePathRating>
   <Powerflow>
-    <networkConfiguration> IEEE14_ca.raw </networkConfiguration>
+    <networkConfiguration> IEEE14_ca_mod_rate6.raw </networkConfiguration>
     <maxIteration>50</maxIteration>
     <tolerance>1.0e-3</tolerance>
     <LinearSolver>
@@ -46,14 +47,14 @@
   </Powerflow>
   <Dynamic_simulation>
     <generatorParameters>IEEE14.dyr</generatorParameters>
-    <simulationTime>1.0</simulationTime>
-    <timeStep>0.01</timeStep>
+    <simulationTime>10.0</simulationTime>
+    <timeStep>0.005</timeStep>
     <faultEvents>
       <faultEvent>
-        <beginFault> 0.03</beginFault>
-        <endFault>   0.06</endFault>
+        <beginFault> 1.0</beginFault>
+        <endFault>   1.03</endFault>
         <faultBranch>6 7</faultBranch>
-        <timeStep>   0.01</timeStep>
+        <timeStep>   0.005</timeStep>
       </faultEvent>
     </faultEvents>
     <generatorWatch>
@@ -64,6 +65,18 @@
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
     <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
+    <LinearSolver>
+      <PETScPrefix> dsls </PETScPrefix>
+      <PETScOptions>
+        <!--
+                                               -ksp_type richardson
+        -->
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
     <LinearMatrixSolver>
       <!--
                    These options are used if SuperLU was built into PETSc 

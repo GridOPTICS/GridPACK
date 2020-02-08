@@ -367,16 +367,16 @@ class PFBus
         gridpack::component::DataCollection *data);
 
     /**
-     * Scale value of real power on loads
+     * Scale value of real and reactive power on loads
      * @param character ID for load
      * @param value scale factor for real power
      */
-    void scaleLoadRealPower(std::string tag, double value);
+    void scaleLoadPower(std::string tag, double value);
 
     /**
-     * Reset real power for generators and load back to original values
+     * Reset power for generators and loads back to original values
      */
-    void resetRealPower();
+    void resetPower();
 
     /**
      * Get available margin for generator
@@ -393,11 +393,12 @@ class PFBus
     /**
      * Get current value of loads
      * @param tag character ID for load
-     * @param current initial value of load
+     * @param pl initial value of load real power
+     * @param ql initial value of load reactive power
      * @param status current status of load
      */
-    void getRealPowerLoads(std::vector<std::string> &tag,
-        std::vector<double> &current, std::vector<int> &status);
+    void getLoadPower(std::vector<std::string> &tag, std::vector<double> &pl,
+        std::vector<double> &ql, std::vector<int> &status);
 
     /**
      * Label bus as a source for real time path rating
@@ -446,6 +447,7 @@ class PFBus
     std::vector<double> p_pb;
     std::vector<double> p_pl, p_ql,p_ip,p_iq,p_yp,p_yq;
     std::vector<double> p_savePl;
+    std::vector<double> p_saveQl;
     std::vector<int> p_lstatus;
     std::vector<std::string> p_lid;
     double p_sbase;
@@ -499,6 +501,7 @@ private:
       & p_vs & p_gid
       & p_pt & p_pb
       & p_pl & p_ql & p_ip & p_iq & p_yp & p_yq
+      & p_savePl & p_saveQl
       & p_lstatus & p_lid
       & p_sbase
       & p_Pinj & p_Qinj
