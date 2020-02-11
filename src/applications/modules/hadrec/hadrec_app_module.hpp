@@ -96,6 +96,11 @@ class HADRECAppModule
 	
     int t_total;
 	int t_config;
+
+   // Observations
+   std::vector<int> p_obs_genBus;
+   std::vector<std::string> p_obs_genIDs;
+   std::vector<int> p_obs_vBus;
 	
 
 };

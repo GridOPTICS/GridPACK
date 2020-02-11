@@ -1716,6 +1716,252 @@ void gridpack::dynamic_simulation::DSFullApp::closeLoadWatchFile()
 }
 
 /**
+ * Get observations and store them internally
+ * @param cursor configuration pointer to observation block
+ */
+void gridpack::dynamic_simulation::DSFullApp::setObservations(
+    gridpack::utility::Configuration::CursorPtr cursor)
+{
+  gridpack::utility::Configuration::CursorPtr list;
+  list = cursor->getCursor("observations");
+  gridpack::utility::Configuration::ChildCursors observations;
+  p_obs_genBus.clear();
+  p_obs_genIDs.clear();
+  p_obs_vBus.clear();
+  gridpack::utility::StringUtils util;
+  // Parser observation block
+  if (list) {
+    list->children(observations);
+    int size = observations.size();
+    int idx;
+    for (idx=0; idx<size; idx++) {
+      std::string type;
+      if (!observations[idx]->get("type",&type)) continue;
+      util.trim(type);
+      util.toLower(type);
+      if (type == "generator") {
+        int bus;
+        std::string genID, tID;
+        if (observations[idx]->get("busID",&bus) &&
+            observations[idx]->get("generatorID",&genID)) {
+          tID = util.clean2Char(genID);
+          p_obs_genBus.push_back(bus);
+          p_obs_genIDs.push_back(tID);
+        }
+      } else if (type == "bus") {
+        int bus;
+        if (observations[idx]->get("busID",&bus)) {
+          p_obs_vBus.push_back(bus);
+        }
+      } else {
+        printf("Unknown observation type: %s\n",type.c_str());
+      }
+    }
+  }
+  // create global vectors to store values of observations. Check to see if
+  // any observations are on this processor
+  p_obs_vMag.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
+  p_obs_vAng.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
+  p_obs_rSpd.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
+  p_obs_rAng.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
+  if (p_obs_genBus.size() > 0) {
+    int nbus = p_obs_genBus.size();
+    p_obs_gActive.resize(nbus);
+    p_obs_lGenBus.clear();
+    p_obs_lGenIDs.clear();
+    p_obs_lGenIdx.clear();
+    std::vector<double> dummy;
+    int i, j, k, lidx;
+    for (i = 0; i<nbus; i++) {
+      std::vector<int> localIndices;
+      localIndices = p_network->getLocalBusIndices(p_obs_genBus[i]);
+      bool isLocal = false;
+      p_obs_gActive[i] = 0;
+      // Check to see if generator host is active on this processor
+      for (j=0; j<localIndices.size(); j++) {
+        if (p_network->getActiveBus(localIndices[j])) {
+          // Check to see if generator is on this bus
+          std::vector<std::string> tags
+           = p_network->getBus(localIndices[j])->getGenerators();
+          for (k = 0; k<tags.size(); k++) {
+            if (tags[k] == p_obs_genIDs[i]) {
+              lidx = localIndices[j];
+              isLocal = true;
+              p_obs_gActive[i] = 1;
+              break;
+            }
+          }
+          if (isLocal) break;
+        }
+      }
+      if (isLocal) {
+        p_obs_lGenIdx.push_back(i);
+        p_obs_GenIdx.push_back(lidx);
+        p_obs_lGenBus.push_back(p_obs_genBus[i]);
+        p_obs_lGenIDs.push_back(p_obs_genIDs[i]);
+        dummy.push_back(0.0);
+      }
+    }
+    p_obs_rSpd->addElements(p_obs_lGenIdx, dummy);
+    p_obs_rSpd->upload();
+    p_obs_rAng->addElements(p_obs_lGenIdx, dummy);
+    p_obs_rAng->upload();
+    p_comm.sum(&p_obs_gActive[0],p_comm.size());
+  }
+  if (p_obs_vBus.size() > 0) {
+    int nbus = p_obs_vBus.size();
+    p_obs_vActive.resize(nbus);
+    p_obs_lVBus.clear();
+    p_obs_lVIdx.clear();
+    std::vector<double> dummy;
+    int i, j, lidx;
+    for (i = 0; i<nbus; i++) {
+      std::vector<int> localIndices;
+      localIndices = p_network->getLocalBusIndices(p_obs_vBus[i]);
+      bool isLocal = false;
+      p_obs_vActive[i] = 0;
+      // Check to see if bus is active on this processor
+      for (j=0; j<localIndices.size(); j++) {
+        if (p_network->getActiveBus(localIndices[j])) {
+          lidx = localIndices[j];
+          p_obs_vActive[i] = 1;
+          isLocal = true;
+        }
+      }
+      if (isLocal) {
+        p_obs_lVIdx.push_back(i);
+        p_obs_VIdx.push_back(lidx);
+        p_obs_lVBus.push_back(p_obs_vBus[i]);
+        dummy.push_back(0.0);
+      }
+    }
+    p_obs_vMag->addElements(p_obs_lVIdx, dummy);
+    p_obs_vMag->upload();
+    p_obs_vAng->addElements(p_obs_lVIdx, dummy);
+    p_obs_vAng->upload();
+    p_comm.sum(&p_obs_vActive[0],p_comm.size());
+  }
+}
+
+/**
+ * Get bus and generator IDs for all observations
+ * @param genBuses host IDs for all observed generators
+ * @param genIDs character identifiers for all observed generators
+ * @param busIDs bus IDs for all observed buses
+ */
+void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
+    std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+    std::vector<int> &busIDs)
+{
+  genBuses.clear();
+  genIDs.clear();
+  busIDs.clear();
+  int i;
+  int nbus = p_obs_genBus.size();
+  for (i=0; i<nbus; i++) {
+    if (static_cast<bool>(p_obs_gActive[i])) {
+      genBuses.push_back(p_obs_genBus[i]);
+      genIDs.push_back(p_obs_genIDs[i]);
+    }
+  }
+  nbus = p_obs_vBus.size();
+  for (i=0; i<nbus; i++) {
+    if (static_cast<bool>(p_obs_vActive[i])) {
+      busIDs.push_back(p_obs_vBus[i]);
+    }
+  }
+}
+
+/**
+ * Get current values of observations
+ * @param vMag voltage magnitude for observed buses
+ * @param vAng voltage angle for observed buses
+ * @param rSpd rotor speed on observed generators
+ * @param rAng rotor angle on observed generators
+ */
+void gridpack::dynamic_simulation::DSFullApp::getObservations(
+    std::vector<double> &vMag, std::vector<double> &vAng,
+    std::vector<double> &rSpd, std::vector<double> &rAng)
+{
+  vMag.clear(); 
+  vAng.clear(); 
+  rSpd.clear(); 
+  rAng.clear(); 
+  std::vector<double> tvMag;
+  std::vector<double> tvAng;
+  std::vector<double> trSpd;
+  std::vector<double> trAng;
+  if (p_obs_genBus.size()) {
+    int i, j;
+    int nbus =  p_obs_lGenBus.size();
+    for (i=0; i<nbus; i++) {
+      std::vector<std::string> tags
+        = p_network->getBus(p_obs_GenIdx[i])->getGenerators();
+      for (j=0; j<tags.size(); j++) {
+        if (tags[j] == p_obs_lGenIDs[i]) {
+          double speed, angle;
+          p_network->getBus(p_obs_GenIdx[i])->getWatchedValues(j,&speed,&angle);
+          trSpd.push_back(speed);
+          trAng.push_back(angle);
+          break;
+        }
+      }
+    }
+    // Check to make sure that local vectors still match
+    if (p_obs_lGenIdx.size() != trSpd.size()) {
+      printf("Mismatch in vector sizes when resetting global vectors\n");
+    }
+    p_obs_rSpd->resetElements(p_obs_lGenIdx, trSpd);
+    p_obs_rSpd->reload();
+    p_obs_rSpd->getAllData(trSpd);
+    p_obs_rAng->resetElements(p_obs_lGenIdx, trAng);
+    p_obs_rAng->reload();
+    p_obs_rAng->getAllData(trAng);
+    nbus = trSpd.size();
+    for (i=0; i<nbus; i++) {
+      if (p_obs_gActive[i] != 0) {
+        rSpd.push_back(trSpd[i]);
+        rAng.push_back(trAng[i]);
+      }
+    }
+  }
+  if (p_obs_vBus.size() > 0) {
+    int i, j;
+    int nbus =  p_obs_lVBus.size();
+    for (i=0; i<nbus; i++) {
+      gridpack::ComplexType voltage =
+          p_network->getBus(p_obs_VIdx[i])->getComplexVoltage();
+      double rV = real(voltage);
+      double iV = imag(voltage);
+      double V = sqrt(rV*rV+iV*iV);
+      double Ang = acos(rV/V);
+      if (iV < 0) {
+        Ang = -Ang;
+      }
+      tvMag.push_back(V);
+      tvAng.push_back(Ang);
+    }
+    // Check to make sure that local vectors still match
+    if (p_obs_lVIdx.size() != tvMag.size()) {
+      printf("Mismatch in vector sizes when resetting global vectors\n");
+    }
+    p_obs_vMag->resetElements(p_obs_lVIdx, tvMag);
+    p_obs_vMag->reload();
+    p_obs_vMag->getAllData(tvMag);
+    p_obs_vAng->resetElements(p_obs_lVIdx, tvAng);
+    p_obs_vAng->reload();
+    p_obs_vAng->getAllData(tvAng);
+    nbus = tvMag.size();
+    for (i=0; i<nbus; i++) {
+      if (p_obs_vActive[i] != 0) {
+        vMag.push_back(tvMag[i]);
+        vAng.push_back(tvAng[i]);
+      }
+    }
+  }
+}
+
+/**
  * Write real time path rating diagnostics
  * @param src_area generation area
  * @param src_zone generation zone
