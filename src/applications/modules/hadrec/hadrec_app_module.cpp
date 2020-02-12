@@ -148,6 +148,8 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu(){
     //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
     //printf("ds_app_sptr->solve:\n");
     //ds_app_sptr->solve(faults[0]);
+    ds_app_sptr->setObservations(cursor);
+    ds_app_sptr->getObservationLists(p_obs_genBus, p_obs_genIDs, p_obs_vBus);
 	
 	ds_app_sptr->solvePreInitialize(faults[0]);
 	
@@ -171,7 +173,24 @@ void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(int
 void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(){
 		
 	ds_app_sptr->executeOneSimuStep();
-	
+   std::vector<double> rSpd, rAng, vMag, vAng;
+   ds_app_sptr->getObservations(vMag, vAng, rSpd, rAng);
+   int rank = ds_network->communicator().rank();
+   if (rank == 0 && vMag.size() > 0) {
+     int i;
+     for (i=0; i<vMag.size(); i++) {
+       printf("Voltage observation on bus %7d Magnitude: %10.6f Angle: %10.6f\n",
+           p_obs_vBus[i],vMag[i],vAng[i]);
+     }
+   }
+   if (rank == 0 && rSpd.size() > 0) {
+     int i;
+     for (i=0; i<rSpd.size(); i++) {
+       printf("Generator observation on bus %7d generator %s"
+           " Speed: %10.6f Angle: %10.6f\n",
+           p_obs_genBus[i],p_obs_genIDs[i].c_str(),rSpd[i],rAng[i]);
+     }
+   }
 }
 
 /**

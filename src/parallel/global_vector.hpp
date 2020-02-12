@@ -72,8 +72,43 @@ public:
       const std::vector<_data_type> &vec)
   {
     int i, size;
+    if (idx.size() != vec.size()) {
+      printf("addElements: vector of indices does not match vector of data\n");
+      return;
+    }
     size = vec.size();
     for (i=0; i<size; i++) {
+      p_index.push_back(idx[i]);
+      p_data.push_back(vec[i]);
+    }
+  }
+
+  /**
+   *  Reset values of existing distributed array
+   * @param vec standard vector containing data
+   * @param idx vector of indices
+   */
+  void resetElements(const std::vector<int> &idx,
+      const std::vector<_data_type> &vec)
+  {
+    int i, size;
+    if (!p_uploaded) {
+      printf("resetElements: Vector has not been previously uploaded!\n");
+      return;
+    }
+    if (idx.size() != vec.size()) {
+      printf("resetElements: vector of indices does not match vector of data\n");
+      return;
+    }
+    size = vec.size();
+    p_index.clear();
+    p_data.clear();
+    for (i=0; i<size; i++) {
+      if (idx[i] >= p_numElems) {
+        printf("resetElements: illegal index %d is greater than vector length %d\n",
+            idx[i],p_numElems);
+        continue;
+      }
       p_index.push_back(idx[i]);
       p_data.push_back(vec[i]);
     }
@@ -175,6 +210,36 @@ public:
     p_index.clear();
     p_uploaded = true;
     GA_Pgroup_sync(GAgrp);
+  }
+
+  /**
+   * Upload new data values to existing distributed array.
+   */
+  void reload()
+  {
+    if (!p_uploaded) {
+      printf("reload: Vector has not been previously uploaded!\n");
+      return;
+    }
+    int i;
+    int **iptr = new int*[p_index.size()];
+    int *ival = new int[p_index.size()];
+    for (i=0; i<p_index.size(); i++) {
+      ival[i] = p_index[i];
+      iptr[i] = &ival[i];
+    }
+    // Copy data to GA
+    _data_type *data = new _data_type[p_index.size()];
+    for (i=0; i<p_index.size(); i++) {
+      data[i] = p_data[i];
+    }
+    NGA_Scatter(p_GA,data,iptr,p_index.size());
+    delete [] ival;
+    delete [] iptr;
+    delete [] data;
+    p_data.clear();
+    p_index.clear();
+    GA_Pgroup_sync(p_comm.getGroup());
   }
 
   /**

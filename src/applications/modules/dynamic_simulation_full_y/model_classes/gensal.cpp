@@ -633,8 +633,6 @@ void gridpack::dynamic_simulation::GensalGenerator::getWatchValues(
     std::vector<double> &vals)
 {
   vals.clear();
-  if (getWatch()) {
-    vals.push_back(x1d_1);
-    vals.push_back(x2w_1+1.0);
-  }
+  vals.push_back(x1d_1);
+  vals.push_back(x2w_1+1.0);
 }
