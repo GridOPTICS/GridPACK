@@ -1,0 +1,36 @@
+\section{Environment}\label{environment}
+
+GridPACK applications need to initialize several libraries in order to execute
+properly. These can be initialized explicitly by the user in their
+application but they can also be initialized by creating a single
+\texttt{\textbf{Environment}} object at the start of the code. This module uses
+just the \texttt{\textbf{gridpack}} namespace. The constructor
+for this object will automatically call all the appropriate initialization
+functions for libraries used by GridPACK. This object can also be used to
+support an inline help message that can be used to document how to use the
+application.
+
+There are two main constructors for this class
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Environment(int argc, char **argv)
+\end{Verbatim}
+}
+
+{
+\color{red}
+\begin{Verbatim}[fontseries=b]
+Environment(int argc, char **argv, const char* help)
+\end{Verbatim}
+}
+
+The \texttt{\textbf{argc}} and \texttt{\textbf{argv}} arguments are the standard
+command line variables used in C and C++ \texttt{\textbf{main}} programs. These
+will be passed to the math library and MPI initialization. Other options can also be
+passed from the command line as well. Currently, the only command line
+options that are supported directly by the \texttt{\textbf{Environment}} class
+are \texttt{\textbf{-h}} and \texttt{\textbf{-help}}. If the application is invoked
+with these options, then the program will print out whatever information is stored
+in the \texttt{\textbf{help}} variable and then exit.

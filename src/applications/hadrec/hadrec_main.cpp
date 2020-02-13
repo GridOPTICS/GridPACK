@@ -55,6 +55,8 @@ int main(int argc, char **argv)
 
   int isteps = 0;
   bool bApplyAct = true; //false;  // whether apply the action in the simulation steps
+  std::vector<double> ob_vals;
+  int idxtmp;
 
   while(!hadrec_app_sptr->isDynSimuDone()){
     // if the dynamic simulation is not done (hit the end time)
@@ -66,6 +68,16 @@ int main(int argc, char **argv)
     }
     //execute one dynamic simulation step
     hadrec_app_sptr->executeDynSimuOneStep();
+	
+	ob_vals.clear();
+	ob_vals = hadrec_app_sptr->getObservations();
+	
+    printf("observations, ");
+    for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
+       printf(" %16.12f, ", ob_vals[idxtmp]);
+    }
+    printf(" \n");
+
     isteps++;
   }
 
@@ -77,6 +89,10 @@ int main(int argc, char **argv)
   // transfer power flow results to dynamic simulation
   bool btest_2dynasimu = true; //true;
   if (btest_2dynasimu) {
+    
+    //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
+    
+    printf("---------------renke debug, hadrec main, second dyn starts----------------\n");
     hadrec_app_sptr->transferPFtoDS();
 
     // initialize dynamic simulation
@@ -95,6 +111,16 @@ int main(int argc, char **argv)
       }
       //execute one dynamic simulation step
       hadrec_app_sptr->executeDynSimuOneStep();
+	  
+	  ob_vals.clear();
+	  ob_vals = hadrec_app_sptr->getObservations();
+	
+      printf("observations, ");
+      for (idxtmp=0; idxtmp<ob_vals.size(); idxtmp++) {
+         printf(" %16.12f, ", ob_vals[idxtmp]);
+      }
+      printf(" \n");
+	
       isteps++;
     }
   }

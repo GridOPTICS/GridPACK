@@ -185,7 +185,7 @@ class PFFactoryModule
      * @return false if there is not enough capacity to change generation
      *         by requested amount
      */
-    void scaleLoadRealPower(double scale, int area, int zone);
+    void scaleLoadPower(double scale, int area, int zone);
 
     /**
      * Return the total real power load for all loads in the zone. If zone
@@ -194,7 +194,7 @@ class PFFactoryModule
      * @param zone index of zone
      * @return total load
      */
-    double getTotalLoad(int area, int zone);
+    double getTotalLoadRealPower(int area, int zone);
 
     /**
      * Return the current real power generation and the maximum and minimum total
@@ -210,9 +210,9 @@ class PFFactoryModule
         double *pmax);
 
     /**
-     * Reset real power of loads and generators to original values
+     * Reset power of loads and generators to original values
      */
-    void resetRealPower();
+    void resetPower();
 
     /**
      * Set parameters for real time path rating diagnostics
@@ -236,12 +236,21 @@ class PFFactoryModule
      * Clear violation vector
      */
     void clearViolations();
+
+    /**
+     * User rate B parameter for line overload violations
+     * @param flag if true, use RATEB parameter
+     */
+    void useRateB(bool flag);
+
   private:
 
     NetworkPtr p_network;
     std::vector<bool> p_saveIsolatedStatus;
 
     std::vector<Violation> p_violations;
+
+    bool p_rateB;
 };
 
 } // powerflow
