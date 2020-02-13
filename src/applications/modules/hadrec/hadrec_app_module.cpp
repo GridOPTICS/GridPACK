@@ -243,6 +243,17 @@ std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
 }
 
 /**
+ * return observations list
+ */
+
+void gridpack::hadrec::HADRECAppModule::getObservationLists
+(std::vector<int> &genBuses, std::vector<std::string> &genIDs, std::vector<int> &busIDs){
+	
+	ds_app_sptr->getObservationLists(genBuses, genIDs, busIDs);
+	
+}
+
+/**
  * Check whether the dynamic simulation is done
  */
 bool gridpack::hadrec::HADRECAppModule::isDynSimuDone( ){

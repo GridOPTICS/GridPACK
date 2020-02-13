@@ -91,6 +91,12 @@ class HADRECAppModule
 	*/
 	std::vector<double> getObservations();
 	
+	/**
+	* return observations list
+	*/
+	void getObservationLists(std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+    std::vector<int> &busIDs);
+	
 
   private:
     boost::shared_ptr<gridpack::utility::Configuration> config_sptr;

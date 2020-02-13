@@ -57,6 +57,31 @@ int main(int argc, char **argv)
   bool bApplyAct = true; //false;  // whether apply the action in the simulation steps
   std::vector<double> ob_vals;
   int idxtmp;
+  
+  // test getOblist
+  std::vector<int> obs_genBus;
+  std::vector<std::string> obs_genIDs;
+  std::vector<int> obs_vBus;
+  hadrec_app_sptr->getObservationLists(obs_genBus, obs_genIDs, obs_vBus);
+  
+  printf("-----------renke debug, getObservationLists------------\n");
+  printf("-----------ob gen bus list, ");
+  for (idxtmp=0; idxtmp<obs_genBus.size(); idxtmp++){
+	  printf(" %d, ", obs_genBus[idxtmp]);
+  }
+  printf(" \n");
+  
+  printf("-----------ob gen ID list, ");
+  for (idxtmp=0; idxtmp<obs_genIDs.size(); idxtmp++){
+	  printf(" %s, ", obs_genIDs[idxtmp].c_str());
+  }
+  printf(" \n");
+  
+  printf("-----------ob bus list, ");
+  for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
+	  printf(" %d, ", obs_vBus[idxtmp]);
+  }
+  printf(" \n");
 
   while(!hadrec_app_sptr->isDynSimuDone()){
     // if the dynamic simulation is not done (hit the end time)
