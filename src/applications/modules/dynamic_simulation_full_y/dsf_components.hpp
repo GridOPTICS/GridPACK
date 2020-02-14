@@ -388,6 +388,14 @@ class DSFullBus
     std::vector<double> getWatchedValues();
 
     /**
+     * Return rotor speed and angle for a specific generator
+     * @param idx index of generator
+     * @param speed generator rotor speed
+     * @param angle generator rotor angle
+     */
+    void getWatchedValues(int idx, double *speed, double *angle);
+
+    /**
      * Check generators for frequency violations
      * @param start time at which monitoring begins
      * @param time current time

@@ -2232,6 +2232,22 @@ std::vector<double> gridpack::dynamic_simulation::DSFullBus::getWatchedValues()
 }
 
 /**
+ * Return rotor speed and angle for a specific generator
+ * @param idx index of generator
+ * @param speed generator rotor speed
+ * @param angle generator rotor angle
+ */
+void gridpack::dynamic_simulation::DSFullBus::getWatchedValues(int idx,
+    double *speed, double *angle)
+{
+  std::vector<double> vals;
+  p_generators[idx]->getWatchValues(vals);
+  *angle = vals[0];
+  *speed = vals[1];
+}
+
+
+/**
  * Check generators for frequency violations
  * @param start time at which monitoring begins
  * @param time current time

@@ -52,30 +52,56 @@ target_link_libraries(hadrec.x ${target_libraries})
 # gridpack.petscrc is temporary -- it will be incorporated into
 # input.xml
 
-#add_custom_command(
-#  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
-#  COMMAND ${CMAKE_COMMAND}
-#  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
-#  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_14.xml"
-#  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
-#  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
-#  DEPENDS "${GRIDPACK_DATA_DIR}/input/powerflow/input_14.xml"
-#  )
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_tamu500_step005.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/hadrec/input_tamu500_step005.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_tamu500_step005.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/hadrec/input_tamu500_step005.xml"
+  )
+
+add_custom_command(
+  OUTPUT "${CMAKE_CURRENT_BINARY_DIR}/input_3g9b_gensal_esst1a_wsieg1_1acmotor_withob.xml"
+  COMMAND ${CMAKE_COMMAND}
+  -D INPUT:PATH="${GRIDPACK_DATA_DIR}/input/hadrec/input_3g9b_gensal_esst1a_wsieg1_1acmotor_withob.xml"
+  -D OUTPUT:PATH="${CMAKE_CURRENT_BINARY_DIR}/input_3g9b_gensal_esst1a_wsieg1_1acmotor_withob.xml"
+  -D PKG:STRING="${GRIDPACK_MATSOLVER_PKG}"
+  -P "${PROJECT_SOURCE_DIR}/cmake-modules/set_lu_solver_pkg.cmake"
+  DEPENDS "${GRIDPACK_DATA_DIR}/input/hadrec/input_3g9b_gensal_esst1a_wsieg1_1acmotor_withob.xml"
+  )
 
 
 
-#add_custom_target(hadrec.x.input
-# 
-#  COMMAND ${CMAKE_COMMAND} -E copy 
-#  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
-#  ${CMAKE_CURRENT_BINARY_DIR}
-#
-#  DEPENDS 
-#  ${CMAKE_CURRENT_BINARY_DIR}/input_14.xml
-#  ${GRIDPACK_DATA_DIR}/raw/IEEE14.raw
-#
-#)
-#add_dependencies(hadrec.x hadrec.x.input)
+add_custom_target(hadrec.x.input
+ 
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/ACTIVSg500_rmsmallgen_pslfv23.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/tamu_500bus_detail.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/raw/IEEE3G9B_V23_bus5smallload.raw
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/3g9b_gensal_esst1a_wsieg1_1acmotor_bus5smallload.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  DEPENDS 
+  ${CMAKE_CURRENT_BINARY_DIR}/input_tamu500_step005.xml
+  ${GRIDPACK_DATA_DIR}/raw/ACTIVSg500_rmsmallgen_pslfv23.raw
+  ${GRIDPACK_DATA_DIR}/dyr/tamu_500bus_detail.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}/input_3g9b_gensal_esst1a_wsieg1_1acmotor_withob.xml
+  ${GRIDPACK_DATA_DIR}/raw/IEEE3G9B_V23_bus5smallload.raw
+  ${GRIDPACK_DATA_DIR}/dyr/3g9b_gensal_esst1a_wsieg1_1acmotor_bus5smallload.dyr
+
+)
+add_dependencies(hadrec.x hadrec.x.input)
 
 # -------------------------------------------------------------
 # install as a sample application
@@ -86,5 +112,4 @@ install(TARGETS hadrec.x DESTINATION bin)
 # -------------------------------------------------------------
 # Create simple test that runs hadrec code
 # -------------------------------------------------------------
-#gridpack_add_run_test("hadrec" hadrec.x "input_14.xml")
-
+#gridpack_add_run_test("hadrec" hadrec.x "input_tamu500_step005.xml")
