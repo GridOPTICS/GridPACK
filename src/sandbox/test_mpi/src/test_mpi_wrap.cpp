@@ -8,7 +8,7 @@
  */
 // -------------------------------------------------------------
 // Created February 14, 2020 by Perkins
-// Last Change: 2020-02-14 14:29:50 d3g096
+// Last Change: 2020-02-14 14:34:22 d3g096
 // -------------------------------------------------------------
 
 
@@ -20,7 +20,7 @@ namespace py = pybind11;
 
 // Some temporary hacks
 
-#define RHEL_OPENMPI_HACK 0
+// #define RHEL_OPENMPI_HACK 1
 #ifdef RHEL_OPENMPI_HACK
 
 // This stupidity is needed on RHEL7 with stock OpenMPI packages
