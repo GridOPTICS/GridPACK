@@ -8,7 +8,7 @@
  */
 // -------------------------------------------------------------
 // Created February 14, 2020 by Perkins
-// Last Change: 2020-02-14 07:23:45 d3g096
+// Last Change: 2020-02-14 09:58:49 d3g096
 // -------------------------------------------------------------
 
 
@@ -16,12 +16,14 @@
 
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
+#include <pybind11/stl.h>
 
 #include "test_mpi.hpp"
 
 PYBIND11_MODULE(Test, m) {
   py::class_<TestSerialMPI>(m, "SerialMPI")
     .def(py::init<>())
+    .def("show", &TestSerialMPI::show)
     ;
 }
 

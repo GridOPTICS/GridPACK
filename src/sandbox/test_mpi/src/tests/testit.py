@@ -8,14 +8,17 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 14, 2020 by Perkins
-# Last Change: 2020-02-14 07:51:13 d3g096
+# Last Change: 2020-02-14 10:02:36 d3g096
 # -------------------------------------------------------------
 
 from unittest import TestCase
 
 import Test
 
-class TestJoke(TestCase):
+
+class TestTester(TestCase):
     def test_is_string(self):
-        s = Test.SerialMPI()
-        self.assertTrue(isinstance(s, Test.SerialMPI))
+        t = Test.SerialMPI()
+        self.assertTrue(isinstance(t, Test.SerialMPI))
+        s = [ "this", "is", "a", "list", "of", "strings" ]
+        t.show(s)

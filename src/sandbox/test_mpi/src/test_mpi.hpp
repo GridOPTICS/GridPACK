@@ -6,6 +6,11 @@
 #ifndef _test_mpi_h
 #define _test_mpi_h
 
+#include <iostream>
+#include <iterator>
+#include <vector>
+#include <string>
+#include <algorithm>
 #include <mpi.h>
 #include <stdio.h>
 
@@ -28,6 +33,13 @@ public:
     printf("MPI_COMM_WORLD size is %d\n",size);
   }
 
+  void show(const std::vector<std::string> words)
+  {
+    std::ostream_iterator<std::string> iout(std::cout, ", ");
+    std::copy(words.begin(), words.end(), iout);
+    std::cout << std::endl;
+  }
+  
   ~TestSerialMPI()
   {
     MPI_Finalize();
