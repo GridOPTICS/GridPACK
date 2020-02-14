@@ -9,6 +9,12 @@
   * CMake
   * C++ Compiler
   * MPI 
+
+If pybind11 is installed, but without CMake support, the build will fail.  In that event, place the pybind11 code in the top directory:
+```
+git clone -b v2.4 https://github.com/pybind/pybind11.git
+```
+It is not needed after the module is built.
   
 ## Build and Test
 
