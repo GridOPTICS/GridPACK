@@ -196,7 +196,7 @@ elif [ $host == "WE32673" ]; then
         -D USE_CPLEX:BOOL=OFF \
         -D USE_GLPK:BOOL=ON \
         -D GLPK_ROOT_DIR:PATH="/opt/local" \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
         $common_flags ..
 
 elif [ $host == "WE30729" ]; then
