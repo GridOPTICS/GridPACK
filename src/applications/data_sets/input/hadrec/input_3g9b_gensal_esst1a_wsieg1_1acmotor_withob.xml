@@ -1,25 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
-  <RealTimePathRating>
-    <printCalcFiles> true </printCalcFiles>
-    <sourceArea> 1 </sourceArea>
-    <sourceZone> 1 </sourceZone>
-    <destinationArea> 1 </destinationArea>
-    <destinationZone> 2 </destinationZone>
-    <calculateGeneratorContingencies>true</calculateGeneratorContingencies>
-    <calculateLineContingencies>true</calculateLineContingencies>
-    <groupSize>1</groupSize>
-    <maxVoltage>1.1</maxVoltage>
-    <minVoltage>0.9</minVoltage>
-    <checkQLimit>false</checkQLimit>
-    <monitorGenerators> true </monitorGenerators>
-    <frequencyMaximum> 61.8 </frequencyMaximum>
-    <contingencyDSStart> 1.0 </contingencyDSStart>
-    <contingencyDSEnd> 1.015 </contingencyDSEnd>
-    <contingencyDSTimeStep> 0.005 </contingencyDSTimeStep>
-  </RealTimePathRating>
   <Powerflow>
-    <networkConfiguration> TAMU_500_rmsmallgen_v23.raw </networkConfiguration>
+    <networkConfiguration> IEEE3G9B_V23_bus5smallload.raw </networkConfiguration>
     <maxIteration>20</maxIteration>
     <tolerance>1.0e-8</tolerance>
     <qLimit>True</qLimit>
@@ -73,26 +55,80 @@
   </Powerflow>
   <Dynamic_simulation>
     <!--<networkConfiguration> IEEE3G9B_V23.raw </networkConfiguration>-->
-    <generatorParameters> tamu_500bus_detail.dyr </generatorParameters>
-    <!--generatorParameters> classical_model_0Imp_Out333.dyr  </generatorParameters-->                 
-    <simulationTime>20</simulationTime>
-    <timeStep>0.005</timeStep>
+    <!--generatorParameters> 300bu_detailed_model_cmpld_motorW.dyr </generatorParameters-->
+    <generatorParameters> 3g9b_gensal_esst1a_wsieg1_1acmotor_bus5smallload.dyr </generatorParameters>
+    <simulationTime>10</simulationTime>
+    <timeStep>0.001</timeStep>
     <faultEvents>
       <faultEvent>
-        <beginFault> 5.0</beginFault>
-        <endFault>   5.1</endFault>
-        <faultBranch>7 262</faultBranch>
-        <timeStep>   0.005</timeStep>
+        <beginFault> 2.0</beginFault>
+        <endFault>   2.1</endFault>
+        <faultBranch>1 4</faultBranch>
+
+        <timeStep>   0.001</timeStep>
       </faultEvent>
     </faultEvents>
+	<observations>
+      <observation> 
+	  <type> generator </type>
+       <busID> 1 </busID>
+       <generatorID> 1 </generatorID>
+      </observation>
+	  <observation> 
+	  <type> generator </type>
+       <busID> 2 </busID>
+       <generatorID> 1 </generatorID>
+      </observation>
+	  <observation> 
+	  <type> generator </type>
+       <busID> 3 </busID>
+       <generatorID> 1 </generatorID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 1 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 2 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 3 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 4 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 5 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 6 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 7 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 8 </busID>
+      </observation>
+	  <observation> 
+	  <type> bus </type>
+       <busID> 9 </busID>
+      </observation>
+	</observations>
     <generatorWatch>
       <generator>
-       <busID> 9 </busID>
+       <busID> 1 </busID>
        <generatorID> 1 </generatorID>
       </generator>
     </generatorWatch>
     <generatorWatchFrequency> 1 </generatorWatchFrequency>
-    <generatorWatchFileName> 00tamu500_detail.csv </generatorWatchFileName>
+    <generatorWatchFileName> 3g9b_gen_wsieg1_1comp_bus5smallload_watch_norelay.csv </generatorWatchFileName>
     <LinearSolver>
       <SolutionTolerance>1.0E-12 </SolutionTolerance> 
       <ForceSerial>true</ForceSerial>

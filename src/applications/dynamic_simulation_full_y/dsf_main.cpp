@@ -148,8 +148,8 @@ main(int argc, char **argv)
 	
 	ds_app.solvePreInitialize(faults[0]);
 	
-	std::vector<gridpack::dynamic_simulation::Event> action_list;
-	action_list.clear();
+	//std::vector<gridpack::dynamic_simulation::Event> action_list;
+	//action_list.clear();
 	
 	/*
 	for (ds_app.Simu_Current_Step = 0; ds_app.Simu_Current_Step < ds_app.simu_total_steps - 1; ds_app.Simu_Current_Step++){
@@ -158,7 +158,8 @@ main(int argc, char **argv)
 	*/
 	
 	while(!ds_app.isDynSimuDone()){
-		ds_app.executeOneSimuStep(action_list);
+		//ds_app.executeOneSimuStep(action_list);
+		ds_app.executeOneSimuStep( );
 	}
 
     //ds_app.write();

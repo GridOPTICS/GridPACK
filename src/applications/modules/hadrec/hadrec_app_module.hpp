@@ -33,6 +33,7 @@ struct HADRECAction
 	int bus_number = -1;
 	std::string componentID = "1";
 	double percentage = 0.0;
+	//p_obs_vals.clear();
 	
 };
 
@@ -85,6 +86,17 @@ class HADRECAppModule
 	*/
 	void applyAction(gridpack::hadrec::HADRECAction control_action);
 	
+	/**
+	* return observations after each simulation time step
+	*/
+	std::vector<double> getObservations();
+	
+	/**
+	* return observations list
+	*/
+	void getObservationLists(std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+    std::vector<int> &busIDs);
+	
 
   private:
     boost::shared_ptr<gridpack::utility::Configuration> config_sptr;
@@ -96,8 +108,13 @@ class HADRECAppModule
 	
     int t_total;
 	int t_config;
-	
 
+   // Observations
+   std::vector<int> p_obs_genBus;
+   std::vector<std::string> p_obs_genIDs;
+   std::vector<int> p_obs_vBus;
+   //std::vector<double> p_obs_vals;
+	
 };
 
 } // hadrec

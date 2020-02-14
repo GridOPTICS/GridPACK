@@ -675,17 +675,22 @@ WARN_LOGFILE           =
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/component \
+INPUT                  = @CMAKE_CURRENT_SOURCE_DIR@/analysis \
+                         @CMAKE_CURRENT_SOURCE_DIR@/component \
                          @CMAKE_CURRENT_SOURCE_DIR@/configuration \
+                         @CMAKE_CURRENT_SOURCE_DIR@/environment \
+                         @CMAKE_CURRENT_SOURCE_DIR@/export \
+                         @CMAKE_CURRENT_SOURCE_DIR@/expression \
                          @CMAKE_CURRENT_SOURCE_DIR@/factory \
                          @CMAKE_CURRENT_SOURCE_DIR@/mapper \
                          @CMAKE_CURRENT_SOURCE_DIR@/math \
                          @CMAKE_CURRENT_SOURCE_DIR@/network \
+                         @CMAKE_CURRENT_SOURCE_DIR@/optimization \
                          @CMAKE_CURRENT_SOURCE_DIR@/parallel \
                          @CMAKE_CURRENT_SOURCE_DIR@/parser \
+                         @CMAKE_CURRENT_SOURCE_DIR@/partition \
                          @CMAKE_CURRENT_SOURCE_DIR@/serial_io \
-                         @CMAKE_CURRENT_SOURCE_DIR@/analysis \
-                         @CMAKE_CURRENT_SOURCE_DIR@/configuration \
+                         @CMAKE_CURRENT_SOURCE_DIR@/stream \
                          @CMAKE_CURRENT_SOURCE_DIR@/timer \
                          @CMAKE_CURRENT_SOURCE_DIR@/applications/modules/powerflow \
                          @CMAKE_CURRENT_SOURCE_DIR@/applications/modules/state_estimation \

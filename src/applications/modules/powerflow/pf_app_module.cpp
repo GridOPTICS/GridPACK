@@ -862,28 +862,28 @@ void gridpack::powerflow::PFAppModule::scaleGeneratorRealPower(
 }
 
 /**
- * Scale load real power. If zone less than 1 then scale all
+ * Scale load power. If zone less than 1 then scale all
  * loads in the area.
  * @param scale factor to scale load real power
  * @param area index of area for scaling load
  * @param zone index of zone for scaling load
  */
-void gridpack::powerflow::PFAppModule::scaleLoadRealPower(
+void gridpack::powerflow::PFAppModule::scaleLoadPower(
     double scale, int area, int zone)
 {
-  p_factory->scaleLoadRealPower(scale,area,zone);
+  p_factory->scaleLoadPower(scale,area,zone);
 }
 
 /**
  * Return the total real power load for all loads in the zone. If zone
- * less than 1, then return the total load for the area
+ * less than 1, then return the total load real power for the area
  * @param area index of area
  * @param zone index of zone
  * @return total load
  */
-double gridpack::powerflow::PFAppModule::getTotalLoad(int area, int zone)
+double gridpack::powerflow::PFAppModule::getTotalLoadRealPower(int area, int zone)
 {
-  return p_factory->getTotalLoad(area,zone);
+  return p_factory->getTotalLoadRealPower(area,zone);
 }
 
 /**
@@ -903,11 +903,11 @@ void gridpack::powerflow::PFAppModule::getGeneratorMargins(int area,
 }
 
 /**
- * Reset real power of loads and generators to original values
+ * Reset power of loads and generators to original values
  */
-void gridpack::powerflow::PFAppModule::resetRealPower()
+void gridpack::powerflow::PFAppModule::resetPower()
 {
-  p_factory->resetRealPower();
+  p_factory->resetPower();
 }
 
 /**
@@ -929,7 +929,7 @@ void gridpack::powerflow::PFAppModule::writeRTPRDiagnostics(
   p_busIO->open(file);
   double gtotal, ltotal, pmin, pmax, scaled;
   p_factory->getGeneratorMargins(src_area, src_zone,&gtotal,&pmin,&pmax);
-  ltotal = p_factory->getTotalLoad(load_area,load_zone);
+  ltotal = p_factory->getTotalLoadRealPower(load_area,load_zone);
   if (gen_scale > 0.0) {
     scaled = gtotal + gen_scale*(pmax-gtotal);
   } else {
@@ -958,7 +958,8 @@ void gridpack::powerflow::PFAppModule::writeRTPRDiagnostics(
   sprintf(sbuf,"  Scaled Load:            %16.4f\n",load_scale*ltotal);
   p_busIO->header(sbuf);
   p_busIO->header("\nIndividual Scaled Loads\n");
-  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power\n\n");
+  sprintf(sbuf,"\n     Bus ID   Status Area Zone     Real Power   Scaled Power"
+      " Reactive Power   Scaled Power\n\n");
   p_busIO->header(sbuf);
   p_busIO->write("sink_load");
   p_busIO->close();
@@ -990,4 +991,13 @@ std::vector<std::string> gridpack::powerflow::PFAppModule::getContingencyFailure
     ret.push_back(string);
   }
   return ret;
+}
+
+/**
+ * User rate B parameter for line overload violations
+ * @param flag if true, use RATEB parameter
+ */
+void gridpack::powerflow::PFAppModule::useRateB(bool flag)
+{
+  p_factory->useRateB(flag);
 }

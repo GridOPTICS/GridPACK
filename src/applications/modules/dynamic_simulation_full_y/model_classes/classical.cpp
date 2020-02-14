@@ -405,8 +405,6 @@ void gridpack::dynamic_simulation::ClassicalGenerator::getWatchValues(
     std::vector<double> &vals)
 {
   vals.clear();
-  if (getWatch()) {
-    vals.push_back(real(p_mac_ang_s1));
-    vals.push_back(real(p_mac_spd_s1));
-  }
+  vals.push_back(real(p_mac_ang_s1));
+  vals.push_back(real(p_mac_spd_s1));
 }

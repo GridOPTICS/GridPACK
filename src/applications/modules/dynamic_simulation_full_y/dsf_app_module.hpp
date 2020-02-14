@@ -7,7 +7,7 @@
 /**
  * @file   dsf_app_module.hpp
  * @author Shuangshuang Jin
- * @date   Feb 04, 2015
+ * @date   2020-02-12 12:17:37 d3g096
  *
  * @brief
  *
@@ -20,6 +20,7 @@
 
 #include "boost/smart_ptr/shared_ptr.hpp"
 #include "gridpack/configuration/configuration.hpp"
+#include "gridpack/parallel/global_vector.hpp"
 #include "gridpack/serial_io/serial_io.hpp"
 #include "dsf_factory.hpp"
 #include "gridpack/mapper/full_map.hpp"
@@ -210,13 +211,13 @@ class DSFullApp
     void scaleGeneratorRealPower(double scale, int area, int zone);
 
     /**
-     * Scale load real power. If zone less than 1 then scale all
+     * Scale load power. If zone less than 1 then scale all
      * loads in the area.
      * @param scale factor to scale load real power
      * @param area index of area for scaling load
      * @param zone index of zone for scaling load
      */
-    void scaleLoadRealPower(double scale, int area, int zone);
+    void scaleLoadPower(double scale, int area, int zone);
 
     /**
      * Return the total real power load for all loads in the zone. If zone
@@ -225,7 +226,7 @@ class DSFullApp
      * @param zone index of zone
      * @return total load
      */
-    double getTotalLoad(int area, int zone);
+    double getTotalLoadRealPower(int area, int zone);
 
     /**
      * Return the current real power generation and the maximum and minimum total
@@ -241,9 +242,9 @@ class DSFullApp
         double *pmax);
 
     /**
-     * Reset real power of loads and generators to original values
+     * Reset power of loads and generators to original values
      */
-    void resetRealPower();
+    void resetPower();
 
     /**
      * Write real time path rating diagnostics
@@ -263,6 +264,38 @@ class DSFullApp
      * @return a list of buses that had frequency failures
      */
     std::vector<int> getFrequencyFailures();
+
+    /**
+     * Set parameters for monitoring frequency
+     * @param flag true if frequency monitoring is turned on
+     * @param maxFreq maximum allowable frequency deviation
+     */
+    void setFrequencyMonitoring(bool flag, double maxFreq);
+
+    /**
+     * Get observations and store them internally
+     * @param cursor configuration pointer to observation block
+     */
+    void setObservations(gridpack::utility::Configuration::CursorPtr cursor);
+
+    /**
+     * Get bus and generator IDs for all observations
+     * @param genBuses host IDs for all observed generators
+     * @param genIDs character identifiers for all observed generators
+     * @param busIDs bus IDs for all observed buses
+     */
+    void getObservationLists(std::vector<int> &genBuses,
+        std::vector<std::string> &genIDs, std::vector<int> &busIDs);
+
+    /**
+     * Get current values of observations
+     * @param vMag voltage magnitude for observed buses
+     * @param vAng voltage angle for observed buses
+     * @param rSpd rotor speed on observed generators
+     * @param rAng rotor angle on observed generators
+     */
+    void getObservations(std::vector<double> &vMag, std::vector<double> &vAng,
+        std::vector<double> &rSpd, std::vector<double> &rAng);
 
   private:
     /**
@@ -307,6 +340,13 @@ class DSFullApp
      * @return true if all watched generators are within acceptable bounds
      */
     bool checkFrequency(double start, double time);
+
+    /**
+     * Check to see if frequency variations on monitored generators are okay
+     * @param limit maximum upper limit on frequency deviation
+     * @return true if all watched generators are within acceptable bounds
+     */
+    bool checkFrequency(double limit);
 
     std::vector<gridpack::dynamic_simulation::Event> p_faults;
 
@@ -368,9 +408,9 @@ class DSFullApp
     // Tags of generators that are being monitors
     std::vector<std::string> p_watch_gen_ids;
 
-    // Monitor generators for instability instead of writing results to
-    // file
+    // Monitor generators for instability
     bool p_monitorGenerators;
+    double p_maximumFrequency;
 
     // Frequency deviations for simulation are okay
     bool p_frequencyOK;
@@ -406,6 +446,24 @@ class DSFullApp
 
    // Record bus ID where frequency violation occured
    std::vector<int> p_violations;
+
+   // Observation data structures
+   std::vector<int> p_obs_genBus;
+   std::vector<std::string> p_obs_genIDs;
+   std::vector<int> p_obs_vBus;
+   std::vector<int> p_obs_lGenIdx;
+   std::vector<int> p_obs_GenIdx;
+   std::vector<int> p_obs_lGenBus;
+   std::vector<std::string> p_obs_lGenIDs;
+   std::vector<int> p_obs_gActive;
+   std::vector<int> p_obs_lVIdx;
+   std::vector<int> p_obs_VIdx;
+   std::vector<int> p_obs_lVBus;
+   std::vector<int> p_obs_vActive;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vMag;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vAng;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rSpd;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rAng;
    
    // below are all variables originally defined the solve function, now define them as class private members
    boost::shared_ptr < gridpack::mapper::FullMatrixMap<DSFullNetwork> > ybusMap_sptr;  

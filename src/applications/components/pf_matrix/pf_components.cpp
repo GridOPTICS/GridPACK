@@ -346,9 +346,13 @@ void gridpack::powerflow::PFBus::setValues(gridpack::ComplexType *values)
     p_v -= real(values[1]);
   }
 #endif
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
+  double pi = 4.0*atan(1.0);
+  if (p_a >= 0.0) {
+    *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+  } else {
+    *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+  }
 }
 
 void gridpack::powerflow::PFBus::setValues(gridpack::RealType *values)
@@ -363,9 +367,13 @@ void gridpack::powerflow::PFBus::setValues(gridpack::RealType *values)
     p_v -= values[1];
   }
 #endif
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
+  double pi = 4.0*atan(1.0);
+  if (p_a >= 0.0) {
+    *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+  } else {
+    *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+  }
 }
 
 /**
@@ -390,9 +398,13 @@ void gridpack::powerflow::PFBus::setXCBuf(void *buf)
   // Note: we are assuming that the load function has been called BEFORE
   // the factory setExchange method, so p_a and p_v are set with their initial
   // values.
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
   *p_vMag_ptr = p_v;
+  double pi = 4.0*atan(1.0);
+  if (p_a >= 0.0) {
+    *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+  } else {
+    *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+  }
   *p_PV_ptr = p_isPV;
   
 }
@@ -505,9 +517,11 @@ void gridpack::powerflow::PFBus::load(
     if (qtot != 0.0 && p_ngen > 1) {
       for (i=0; i<p_ngen; i++) {
         p_pFac[i] = p_pFac[i]/qtot;
+        p_pFac_orig[i] = p_pFac[i];
       }
     } else {
       p_pFac[0] = 1.0;
+      p_pFac_orig[0] = p_pFac[0];
     }
   }
   p_saveisPV = p_isPV;
@@ -534,6 +548,7 @@ void gridpack::powerflow::PFBus::load(
         p_pl.push_back(pl);
         p_savePl.push_back(pl);
         p_ql.push_back(ql);
+        p_saveQl.push_back(ql);
         p_lstatus.push_back(lstatus);
         std::string id("-1");
         data->getValue(LOAD_ID,&id,i);
@@ -546,7 +561,11 @@ void gridpack::powerflow::PFBus::load(
   if (p_vMag_ptr) *p_vMag_ptr = p_v;
   if (p_vAng_ptr) {
     double pi = 4.0*atan(1.0);
-    *p_vAng_ptr = fmod(p_a,pi);
+    if (p_a >= 0.0) {
+      *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+    } else {
+      *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+    }
   }
 }
 
@@ -592,9 +611,15 @@ void gridpack::powerflow::PFBus::resetVoltage(void)
 {
   p_v = p_voltage;
   p_a = p_angle;
-  *p_vMag_ptr = p_v;
-  double pi = 4.0*atan(1.0);
-  *p_vAng_ptr = fmod(p_a,pi);
+  if (p_vMag_ptr) *p_vMag_ptr = p_v;
+  if (p_vAng_ptr) {
+    double pi = 4.0*atan(1.0);
+    if (p_a >= 0.0) {
+      *p_vAng_ptr = fmod(p_a+pi,2.0*pi)-pi;
+    } else {
+      *p_vAng_ptr = fmod(p_a-pi,2.0*pi)+pi;
+    }
+  }
 }
 
 /**
@@ -1060,9 +1085,10 @@ bool gridpack::powerflow::PFBus::serialWrite(char *string, const int bufsize,
         } else {
           status = "inactive";
         }
-        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f\n",getOriginalIndex(),
+        sprintf(sbuf,"%8d %s %s %4d %4d %14.4f %14.4f %14.4f %14.4f\n",
+              getOriginalIndex(),
               p_lid[i].c_str(),status.c_str(),p_area,p_zone,p_savePl[i],
-              p_pl[i]);
+              p_pl[i],p_saveQl[i],p_ql[i]);
         len = strlen(sbuf);
         if (slen+len <= bufsize) {
           sprintf(cptr,"%s",sbuf);
@@ -1533,32 +1559,35 @@ void gridpack::powerflow::PFBus::setLoadRealPower(
 }
 
 /**
- * Scale value of real power on loads
+ * Scale value of real and reactive power on loads
  * @param character ID for load
  * @param value scale factor for real power
  */
-void gridpack::powerflow::PFBus::scaleLoadRealPower(std::string tag, double value)
+void gridpack::powerflow::PFBus::scaleLoadPower(std::string tag, double value)
 {
   int i;
   for (i=0; i<p_nload; i++) {
-    if (p_lid[i] == tag && p_lstatus[i]) {
+    if (p_lid[i] == tag && p_lstatus[i] == 1) {
       p_pl[i] = value*p_pl[i];
+      p_ql[i] = value*p_ql[i];
       break;
     }
   }
 }
 
 /**
- * Reset real power for generators and load back to original values
+ * Reset power for generators and loads back to original values
  */
-void gridpack::powerflow::PFBus::resetRealPower()
+void gridpack::powerflow::PFBus::resetPower()
 {
+  resetVoltage();
   int i;
   for (i=0; i<p_ngen; i++) {
     p_pg[i] = p_savePg[i];
   }
   for (i=0; i<p_nload; i++) {
     p_pl[i] = p_savePl[i];
+    p_ql[i] = p_saveQl[i];
   }
 }
 
@@ -1593,20 +1622,23 @@ void gridpack::powerflow::PFBus::getGeneratorMargins(
 /**
  * Get current value of loads
  * @param tag character ID for load
- * @param current initial value of load
+ * @param pl initial value of load real power
+ * @param ql initial value of load reactive power
  * @param status current status of load
  */
-void gridpack::powerflow::PFBus::getRealPowerLoads(
-    std::vector<std::string> &tag, std::vector<double> &current,
-    std::vector<int> &status)
+void gridpack::powerflow::PFBus::getLoadPower(
+    std::vector<std::string> &tag, std::vector<double> &pl,
+    std::vector<double> &ql, std::vector<int> &status)
 {
   tag.clear();
-  current.clear();
+  pl.clear();
+  ql.clear();
   status.clear();
   int i;
   for (i=0; i<p_nload; i++) {
     tag.push_back(p_lid[i]);
-    current.push_back(p_savePl[i]);
+    pl.push_back(p_savePl[i]);
+    ql.push_back(p_saveQl[i]);
     status.push_back(p_lstatus[i]);
   }
 }

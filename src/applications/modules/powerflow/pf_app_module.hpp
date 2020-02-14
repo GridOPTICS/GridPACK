@@ -255,22 +255,22 @@ class PFAppModule
     void scaleGeneratorRealPower(double scale, int area, int zone);
 
     /**
-     * Scale load real power. If zone less than 1 then scale all
+     * Scale load power. If zone less than 1 then scale all
      * loads in the area.
      * @param scale factor to scale load real power
      * @param area index of area for scaling load
      * @param zone index of zone for scaling load
      */
-    void scaleLoadRealPower(double scale, int area, int zone);
+    void scaleLoadPower(double scale, int area, int zone);
 
     /**
      * Return the total real power load for all loads in the zone. If zone
-     * less than 1, then return the total load for the area
+     * less than 1, then return the total load real power for the area
      * @param area index of area
      * @param zone index of zone
      * @return total load
      */
-    double getTotalLoad(int area, int zone);
+    double getTotalLoadRealPower(int area, int zone);
 
     /**
      * Return the current real power generation and the maximum and minimum total
@@ -286,9 +286,9 @@ class PFAppModule
         double *pmax);
 
     /**
-     * Reset real power of loads and generators to original values
+     * Reset power of loads and generators to original values
      */
-    void resetRealPower();
+    void resetPower();
 
     /**
      * Write real time path rating diagnostics
@@ -308,6 +308,12 @@ class PFAppModule
      * terminated with a carriage return
      */
     std::vector<std::string> getContingencyFailures();
+
+    /**
+     * User rate B parameter for line overload violations
+     * @param flag if true, use RATEB parameter
+     */
+    void useRateB(bool flag);
 
   private:
 

@@ -429,6 +429,8 @@ void gridpack::dynamic_simulation::DSFullFactory::scaleGeneratorRealPower(
   int i, izone;
   for (i=0; i<nbus; i++) {
     gridpack::dynamic_simulation::DSFullBus *bus = p_network->getBus(i).get();
+    boost::shared_ptr<gridpack::component::DataCollection> data
+      = p_network->getBusData(i);
     if (zone > 0) {
       izone = bus->getZone();
     } else {
@@ -438,14 +440,14 @@ void gridpack::dynamic_simulation::DSFullFactory::scaleGeneratorRealPower(
       std::vector<std::string> tags = bus->getGenerators();
       int j;
       for (j=0; j<tags.size(); j++) {
-        bus->scaleGeneratorRealPower(tags[j], scale);
+        bus->scaleGeneratorRealPower(tags[j], scale, data);
       }
     }
   }
 }
 
 /**
- * Scale load real power. If zone less than 1 then scale all
+ * Scale load power. If zone less than 1 then scale all
  * loads in the area
  * @param scale factor to scale load real power
  * @param area index of area for scaling load
@@ -453,7 +455,7 @@ void gridpack::dynamic_simulation::DSFullFactory::scaleGeneratorRealPower(
  * @return false if there is not enough capacity to change generation
  *         by requested amount
  */
-void gridpack::dynamic_simulation::DSFullFactory::scaleLoadRealPower(
+void gridpack::dynamic_simulation::DSFullFactory::scaleLoadPower(
     double scale, int area, int zone)
 {
   int nbus = p_network->numBuses();
@@ -469,7 +471,7 @@ void gridpack::dynamic_simulation::DSFullFactory::scaleLoadRealPower(
       std::vector<std::string> tags = bus->getLoads();
       int j;
       for (j=0; j<tags.size(); j++) {
-        bus->scaleLoadRealPower(tags[j],scale);
+        bus->scaleLoadPower(tags[j],scale);
       }
     }
   }
@@ -482,8 +484,8 @@ void gridpack::dynamic_simulation::DSFullFactory::scaleLoadRealPower(
  * @param zone index of zone
  * @return total load
  */
-double gridpack::dynamic_simulation::DSFullFactory::getTotalLoad(int area,
-    int zone)
+double gridpack::dynamic_simulation::DSFullFactory::getTotalLoadRealPower(
+    int area, int zone)
 {
   double ret = 0.0;
   int nbus = p_network->numBuses();
@@ -497,12 +499,13 @@ double gridpack::dynamic_simulation::DSFullFactory::getTotalLoad(int area,
     }
     if (bus->getArea() == area && zone == izone) {
       std::vector<std::string> tags;
-      std::vector<double> current;
+      std::vector<double> pl;
+      std::vector<double> ql;
       std::vector<int> status;
-      bus->getRealPowerLoads(tags,current,status);
-      for (j=0; j<current.size(); j++) {
+      bus->getLoadPower(tags,pl,ql,status);
+      for (j=0; j<pl.size(); j++) {
         if (static_cast<bool>(status[j])) {
-          ret += current[j];
+          ret += pl[j];
         }
       }
     }
@@ -557,12 +560,14 @@ void gridpack::dynamic_simulation::DSFullFactory::getGeneratorMargins(int area,
 /**
  * Reset real power of loads and generators to original values
  */
-void gridpack::dynamic_simulation::DSFullFactory::resetRealPower()
+void gridpack::dynamic_simulation::DSFullFactory::resetPower()
 {
   int nbus = p_network->numBuses();
   int i;
   for (i=0; i<nbus; i++) {
-    p_network->getBus(i)->resetRealPower();
+    boost::shared_ptr<gridpack::component::DataCollection> data
+      = p_network->getBusData(i);
+    p_network->getBus(i)->resetPower(data);
   }
 }
 
