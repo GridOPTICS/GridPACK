@@ -71,3 +71,22 @@ MPI_COMM_WORLD size is 1
 this, is, a, list, of, strings,
 
 ```
+
+You should also be able to do something like
+
+```
+mpiexec -np 4 ~/Projects/GridPACK/gridpack-hadrec/bin/runme.py
+```
+and get something like
+
+```
+MPI_COMM_WORLD size is 4
+this, is, a, list, of, strings,
+MPI_COMM_WORLD size is 4
+MPI_COMM_WORLD size is 4
+this, is, a, list, of, strings, this, is, a, list, of, strings,
+
+MPI_COMM_WORLD size is 4
+this, is, a, list, of, strings,
+```
+
