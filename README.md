@@ -125,6 +125,11 @@ GRIDPACK_DIR=/pic/projects/gripdack/hadrec/gridpack
 PYTHONPATH="$GRIDPACK_DIR/lib/python"
 PATH="${GRIDPACK_DIR}/bin:$PATH"
 ```
-
+With these settings, the Python version of
+the HADREC application can be run with
+```
+cd src/tests
+hadrec.py input_tamu500_step005.xml
+```
 
 
