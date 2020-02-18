@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-02-17 10:39:30 d3g096
+// Last Change: 2020-02-17 14:44:55 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -25,6 +25,40 @@ namespace py = pybind11;
 namespace gp = gridpack;
 namespace gpp = gridpack::parallel;
 namespace gph = gridpack::hadrec;
+
+// Some temporary hacks
+
+// #define RHEL_OPENMPI_HACK 1
+#ifdef RHEL_OPENMPI_HACK
+
+// This stupidity is needed on RHEL7 with stock OpenMPI packages
+// installed.
+
+#include <dlfcn.h>
+
+// -------------------------------------------------------------
+// stupid_openmpi_hack
+// from https://github.com/baidu-research/tensorflow-allreduce/issues/4
+// -------------------------------------------------------------
+static void 
+stupid_openmpi_hack(void)
+{
+  void *handle = NULL;
+  int mode = RTLD_NOW | RTLD_GLOBAL;
+
+  // GNU/Linux and others 
+#ifdef RTLD_NOLOAD
+      mode |= RTLD_NOLOAD;
+#endif
+  if (!handle) handle = dlopen("libmpi.so.20", mode);
+  if (!handle) handle = dlopen("libmpi.so.12", mode);
+  if (!handle) handle = dlopen("libmpi.so.1", mode);
+  if (!handle) handle = dlopen("libmpi.so.0", mode);
+  if (!handle) handle = dlopen("libmpi.so", mode);
+}
+
+#endif
+
 
 // GridPACK uses Boost smart pointers, so let's use those here
 PYBIND11_DECLARE_HOLDER_TYPE(T, boost::shared_ptr<T>, false);
@@ -78,6 +112,10 @@ private:
 // -------------------------------------------------------------
 PYBIND11_MODULE(gridpack, gpm) {
   gpm.doc() = "GridPACK module";
+
+#ifdef RHEL_OPENMPI_HACK
+  stupid_openmpi_hack();
+#endif
 
   // -------------------------------------------------------------
   // gridpack.Envronment
