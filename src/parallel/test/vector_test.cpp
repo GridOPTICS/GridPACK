@@ -27,7 +27,7 @@
 #include "gridpack/environment/environment.hpp"
 
 
-#define VEC_LEN  1000
+#define VEC_LEN 1000
 
 // -------------------------------------------------------------
 //  Main Program
@@ -102,6 +102,60 @@ main(int argc, char **argv)
       printf("Global vector OK\n");
     } else if (chk < nproc && me == 0) {
       printf("Error found in global vector\n");
+    }
+    // test getAllData command
+    bank.getAllData(vec);
+    if (vec.size() != maxdim) {
+      if (me == 0) {
+        printf("getAllData command does not return all elements\n");
+      }
+    }
+    chk = 1;
+    for (i=0; i<idx.size(); i++) {
+      if (vec[i].ival != i ||
+          vec[i].dval != static_cast<double>(i+1)) {
+        printf("p[%d] Mismatch found in element %d: ival(e): %d ival(a): %d\n",
+            me,idx[i],idx[i],vec[i].ival);
+        chk = 0;
+      }
+    }
+    world.sync();
+    world.sum(&chk,1);
+    if (chk == nproc && me == 0) {
+      printf("Global vector OK for getAllData\n");
+    } else if (chk < nproc && me == 0) {
+      printf("Error found in global vector for getAllData\n");
+    }
+    // check resetElements and reload
+    vec.clear();
+    idx.clear();
+    i = me;
+    while (i<maxdim) {
+      data_type item;
+      item.ival = 2*i;
+      item.dval = static_cast<double>(2*i+1);
+      vec.push_back(item);
+      idx.push_back(i);
+      i += nproc;
+    }
+    bank.resetElements(idx,vec);
+    bank.reload();
+    bank.getAllData(vec);
+    chk = 1;
+    for (i=0; i<idx.size(); i++) {
+      if (vec[i].ival != 2*i ||
+          vec[i].dval != static_cast<double>(2*i+1)) {
+        printf("p[%d] Mismatch found in element %d: ival(e): %d ival(a): %d\n",
+            me,idx[i],idx[i],vec[i].ival);
+        chk = 0;
+      }
+    }
+    world.sync();
+    world.sum(&chk,1);
+    if (chk == nproc && me == 0) {
+      printf("Global vector OK for resetElements and reload\n");
+    } else if (chk < nproc && me == 0) {
+      printf("Error found in global vector for resetElements and reload\n");
     }
   }
   return 0;
