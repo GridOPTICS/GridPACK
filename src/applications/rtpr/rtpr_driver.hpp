@@ -211,6 +211,9 @@ class RTPRDriver
 
     bool p_useRateB;
 
+    std::vector<int> p_watch_busIDs;
+    std::vector<std::string> p_watch_genIDs;
+
 };
 
 } // rtpr

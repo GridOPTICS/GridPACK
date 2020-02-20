@@ -1,5 +1,188 @@
-Real-time path rating fundamental algorithm
-=====
+# Real-time path rating
+
+The real-time path rating application is designed to evaluate path rating limits
+for a system. The path rating calculation first determines a provisional path
+rating based on a series of powerflow contingency analysis calculations. It then
+refines this calculation by verifying that the same set of contingencies are
+secure based on dynamic simulation. The details of the algorithm are described
+in the section at the end of this write-up. Details on running the calulation
+are given in the next section.
+
+## Input
+The input deck is of the form
+
+```
+<?xml version="1.0" encoding="utf-8"?>
+<Configuration>
+  <RealTimePathRating>
+    <printCalcFiles> false </printCalcFiles>
+    <sourceArea> 1 </sourceArea>
+    <sourceZone> 1 </sourceZone>
+    <destinationArea> 1 </destinationArea>
+    <destinationZone> 2 </destinationZone>
+    <calculateGeneratorContingencies>true</calculateGeneratorContingencies>
+    <calculateLineContingencies>true</calculateLineContingencies>
+    <contingencyList>contingencies_14.xml</contingencyList>
+    <useBranchRatingB>false</useBranchRatingB>
+    <maxVoltage>1.1</maxVoltage>
+    <minVoltage>0.9</minVoltage>
+    <checkQLimit>false</checkQLimit>
+    <monitorGenerators> true </monitorGenerators>
+    <frequencyMaximum> 61.8 </frequencyMaximum>
+    <contingencyDSStart> 1.0 </contingencyDSStart>
+    <contingencyDSEnd> 1.015</contingencyDSEnd>
+    <contingencyDSTimeStep> 0.005 </contingencyDSTimeStep>
+    <!--
+    <tieLines>
+      <tieLine>
+        <Branch> 2 5 </Branch>
+        <Tag> BL </Tag>
+      </tieLine>
+      <tieLine>
+        <Branch> 9 14 </Branch>
+        <Tag> BL </Tag>
+      </tieLine>
+    </tieLines>
+    -->
+  </RealTimePathRating>
+  <Powerflow>
+    <networkConfiguration> IEEE14_ca_mod_rate6.raw </networkConfiguration>
+    <maxIteration>50</maxIteration>
+    <tolerance>1.0e-3</tolerance>
+    <LinearSolver>
+      <PETScOptions>
+        -ksp_type richardson
+        -pc_type lu
+        -pc_factor_mat_solver_package superlu_dist
+        -ksp_max_it 1
+      </PETScOptions>
+    </LinearSolver>
+  </Powerflow>
+  <Dynamic_simulation>
+    <generatorParameters>IEEE14.dyr</generatorParameters>
+    <simulationTime>10.0</simulationTime>
+    <timeStep>0.005</timeStep>
+    <faultEvents>
+      <faultEvent>
+        <beginFault> 1.0</beginFault>
+        <endFault>   1.03</endFault>
+        <faultBranch>6 7</faultBranch>
+        <timeStep>   0.005</timeStep>
+      </faultEvent>
+    </faultEvents>
+    <generatorWatch>
+      <generator>
+       <busID> 1 </busID>
+       <generatorID> 1 </generatorID>
+      </generator>
+    </generatorWatch>
+    <generatorWatchFrequency> 1 </generatorWatchFrequency>
+    <generatorWatchFileName> gen_watch.csv </generatorWatchFileName>
+    <LinearMatrixSolver>
+      <!--
+                   These options are used if SuperLU was built into PETSc 
+      -->
+      <Ordering>nd</Ordering>
+      <Package>superlu_dist</Package>
+      <Iterations>1</Iterations>
+      <Fill>5</Fill>
+    </LinearMatrixSolver>
+  </Dynamic_simulation>
+</Configuration>
+```
+
+This file contains three major blocks, the `RealTimePathRating` block, the
+`Powerflow` block and the `Dynamic_simulation` block. The `Powerflow` and
+`Dynamic_simulation` blocks are described elsewhere and are only mentioned here
+to note that the PSS\E raw file describing the system is specified in the
+`Powerflow` `networkConfiguration` field and the PSS\E dyr file describing the
+generator properties is specified in the `Dynamic_simulation`
+`generatorParameters` field. The fields in the `RealTimePathRating` block are
+described below.
+
+- `printCalcFiles`: This flag indicates whether a file is printed describing
+each power flow calculation for each contingency for each value of the
+rating parameter. For a reasonable sized system, this will likely result
+and enormous number of files so it should be set to false in most cases.
+
+- `sourceArea`,`sourceZone`: Specifies the zone within an area that
+represents the generation source in the calculation. If no zone is
+specified, then the entire area is assumed to be the source.
+
+- `destinationArea`,`destinationZone`: Specifies the zone within an area that
+represents the destination load in the calculation. If no zone is
+specified, then the entire area is assumed to be the destination.
+
+- `calculateGeneratorContingencies`, `calculateLineContingencies`:
+if true, automatically generate a list of generator and line contingencies
+by assuming that all active generators and/or lines contribute a contingency.
+If both of these are false or not specified, assume that contingencies are
+specified in and external contingency file.
+
+- `contingencyList`: specifies an external contingency file that contains a
+listing of all contingencies that are used in the calculation. This file
+uses the same format as the contingency application. If either the
+`calculateGeneratorContingencies` or `calculateLineContingencies` are set
+to true, then this file is ignored.
+
+- `useBranchRatingB`: use the RATEB parameter to evaluate line contingencies
+instead of RATEA.
+
+- `minVoltage`,`maxVoltage`: minimum and maximum values of the voltage used
+in evaluating power flow contingencies.
+
+- `checkQLimit`: perform the Q-limit test, convert PV
+buses to PQ buses if the test fails and rerun power flow calculation.
+
+- `monitorGenerators`: monitor generators for frequency violations. If this
+parameter is false then the dynamic simulation part of the path rating
+calculation is skipped. Only generators in the source zone or area are
+checked.
+
+- `frequencyMaximum`: maximum allowable frequency for monitored generators.
+The default is 61.8 Hz.
+
+- `contingencyDSStart`,`contingencyDSEnd`,`contingencyDSTimeStep`: Start
+time, end time and time step for faults in the dynamic simulation
+contingecies. These apply to all contingencies evaluated in the dynamic
+simulation phase of the path rating calculation.
+
+- `tieLines`: This field is used to define user-specified tie-lines. In the
+  event that this field is not specified, the RTPR will calculate tie-lines
+  automatically by choosing all active lines between the source and destination
+  areas. Each tie-line is specified by the `tieLine` sub-block, which contains two
+  additional fields. The `Branch` field contains two integers, representing the
+  indices of the bus at each end of the line and the `Tag` field contains a one or
+  two character string representing the line ID.
+
+## Output
+
+Output for the real-time path rating calculation is fairly compact. If
+`printCalcFiles` parameter is set to false, then the main result is the path
+rating values in standard output. If standard out is redirected to a file
+(recommended) then the rating values can be found by searching for `Rating` in
+the output. This will typically yield something like
+
+```
+% grep Rating file.out
+Final Power Flow Rating: 1.850000
+Final Dynamic Simulation Rating: 1.640000
+```
+
+If the system hits an upper or lower bound when performing the rating
+calculations, some additional lines may appear in the output (these can also be
+found by searching on `Rating`).
+
+In addition to the rating values, the calculation exports a set of files with
+the names `line_flt_cnt_XXX.txt`, where `XXX` stands for a value of the rating
+parameter. These are summaries of each of the power flow contingency
+calculations describing how many times each line exhibited a fault for each
+value of the rating parameter that was tested in the simulation. Note that the
+rating calculation itself only checks tie-lines while these files list faults on
+all lines in the system.
+
+## Fundamental algorithm
+
 The goal of this application is to determine the real-time line rating (RTPR) for the
 tie-lines between two areas or zones. The real-time line rating is determined through
 steady-state and dynamic analysis and will yield a maximum MVA flow on the tie-lines
