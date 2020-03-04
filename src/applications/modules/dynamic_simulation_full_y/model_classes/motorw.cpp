@@ -102,6 +102,8 @@ gridpack::dynamic_simulation::MotorwLoad::MotorwLoad(void)
   Qmotor = 0.0 ; // reactive power consumed by motor, MVAr
   Qmotor_init = 0.0;
   sysMVABase = 100.0;
+
+  Fonline = 1.0;
 }
 
 /**

@@ -2796,6 +2796,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 //      printf("\n Dynamic Step 1 [Corrector] Norton_full: ===\n");
 //      INorton_full->print();
     }
+    printf("----------!renke debug, after solve INorton_full and map back voltage ----------\n");
     t_secure = timer->createCategory("DS Solve: Check Security");
     timer->start(t_secure);
     if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) {
@@ -2823,6 +2824,8 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
       if (p_generatorWatch) p_generatorIO->dumpChannel();
 #endif
     }
+    printf("------------------!!!renke debug after the generator watch ------------\n");
+
     if (p_loadWatch && Simu_Current_Step%p_loadWatchFrequency == 0) {
       char tbuf[32];
 #ifdef USE_TIMESTAMP
