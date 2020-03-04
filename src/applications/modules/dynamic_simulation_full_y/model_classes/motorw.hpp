@@ -143,6 +143,8 @@ class MotorwLoad : public BaseLoadModel
 
     // oter varialbes
     double w0, TL, Tm0, p, q, Pmotor, Qmotor, Qmotor_init, sysMVABase;
+    
+    double Fonline; // online percentage of the load
 
     gridpack::ComplexType p_INorton;
 
