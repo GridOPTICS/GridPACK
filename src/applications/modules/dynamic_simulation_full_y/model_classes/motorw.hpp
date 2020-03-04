@@ -114,6 +114,11 @@ class MotorwLoad : public BaseLoadModel
      * get intialized reactive power of the dynamic load model
      */
     double getInitReactivePower(void);
+	
+	/**
+     * get the variable Fonline for each load
+     */
+    double getFonline(void);
 
   private:
 
@@ -143,8 +148,7 @@ class MotorwLoad : public BaseLoadModel
 
     // oter varialbes
     double w0, TL, Tm0, p, q, Pmotor, Qmotor, Qmotor_init, sysMVABase;
-    
-    double Fonline; // online percentage of the load
+	double Fonline;
 
     gridpack::ComplexType p_INorton;
 

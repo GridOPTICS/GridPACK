@@ -158,6 +158,14 @@ double gridpack::dynamic_simulation::BaseLoadModel::getInitReactivePower(void)
 }
 
 /**
+ * get the variable Fonline for each load
+ */
+double gridpack::dynamic_simulation::BaseLoadModel::getFonline(void)
+{
+	return 1.0;
+}
+
+/**
  * Write output from loads to a string.
  * @param string (output) string with information to be printed out
  * @param bufsize size of string buffer in bytes
