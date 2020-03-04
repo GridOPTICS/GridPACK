@@ -53,7 +53,13 @@ void addRowLabels(std::vector<int> indices,
 \end{Verbatim}
 }
 
-can be used to label data quantities derived from buses. The length of these arrays should correspond to the value of \texttt{\textbf{nrows}} used in the constructor. For each row there is a corresponding index in the \texttt{\textbf{indices}} vector and a 2-character tag in the \texttt{\textbf{tags}} vector that can be used to uniquely identify the corresponding row quantity. For example, if each row represents the real power for a generator, the the index for each row is the ID of the bus to which the generator is attached and the tag is the 2-character identifier for that generator within the bus. This information will be printed out along with any statistical analyses that are performed on the data. The \texttt{\textbf{addRowLabels}} function can be called from any processor. It should be called at least once before doing any analyses. It can be called more than once, but the data contained in multiple calls should be the same.
+can be used to label data quantities derived from buses. The length of these
+arrays should correspond to the value of \texttt{\textbf{nrows}} used in the
+constructor. For each row there is a corresponding index in the
+\texttt{\textbf{indices}} vector and a 2-character tag in the
+\texttt{\textbf{tags}} vector that can be used to uniquely identify the
+corresponding row quantity. For example, if each row represents the real power
+for a generator, then the index for each row is the ID of the bus to which the generator is attached and the tag is the 2-character identifier for that generator within the bus. This information will be printed out along with any statistical analyses that are performed on the data. The \texttt{\textbf{addRowLabels}} function can be called from any processor. It should be called at least once before doing any analyses. It can be called more than once, but the data contained in multiple calls should be the same.
 
 Similarly, for data associated with branches, there is the function
 
