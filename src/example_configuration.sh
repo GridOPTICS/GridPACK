@@ -200,6 +200,40 @@ elif [ $host == "WE32673" ]; then
         -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
         $common_flags ..
 
+elif [ $host == "WE30729" ]; then
+
+    # Macbook using CLang 6.0 compilers and MPICH via MacPorts
+    # Pretty much the same as WE32673
+
+    CC=/opt/local/bin/clang
+    export CC
+    CXX=/opt/local/bin/clang++
+    export CXX
+
+    prefix="$HOME/Projects/GridPACK"
+
+    if [ "$shared"x = "ON"x ]; then
+        pdir="$prefix/petsc-3.10.5" 
+        parch="macosx-complex-c-shared" 
+    else
+        pdir="$prefix/petsc-3.8.4"
+        parch="arch-macosx-clang-real-opt"
+    fi
+    cmake $options \
+        -D BOOST_ROOT:STRING="/opt/local" \
+        -D PETSC_DIR:PATH="$pdir" \
+        -D PETSC_ARCH:STRING="$parch" \
+        -D MPI_CXX_COMPILER:STRING='/opt/local/bin/mpicxx' \
+        -D MPI_C_COMPILER:STRING='/opt/local/bin/mpicc' \
+        -D MPIEXEC:STRING='/opt/local/bin/mpiexec' \
+        -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=60 \
+        -D USE_CPLEX:BOOL=OFF \
+        -D USE_GLPK:BOOL=ON \
+        -D GLPK_ROOT_DIR:PATH="/opt/local" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        $common_flags ..
+
 elif [ $host == "olympus.local" ]; then
 
     prefix="/pic/projects/gridpack/software"
