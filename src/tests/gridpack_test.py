@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-02-17 13:24:17 d3g096
+# Last Change: 2020-03-05 11:08:27 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -56,11 +56,13 @@ class GridPACKTester(TestCase):
         loadshedact.componentID = "1";
         loadshedact.percentage = -0.2;
 
-        (obs_genBus, obs_genIDs, obs_vBus) = hadapp.getObservationLists()
+        (obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs) = hadapp.getObservationLists()
 
-        print obs_genBus
-        print obs_genIDs
-        print obs_vBus
+        print (obs_genBus)
+        print (obs_genIDs)
+        print (obs_loadBuses)
+        print (obs_loadIDs)
+        print (obs_busIDs)
 
         bApplyAct = True
         isteps = 0

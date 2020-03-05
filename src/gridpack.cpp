@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-02-17 14:44:55 d3g096
+// Last Change: 2020-03-05 11:09:45 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -222,9 +222,13 @@ PYBIND11_MODULE(gridpack, gpm) {
          [](gph::HADRECAppModule& self) {
              std::vector<int> obs_genBus;
              std::vector<std::string> obs_genIDs;
-             std::vector<int> obs_vBus;
-             self.getObservationLists(obs_genBus, obs_genIDs, obs_vBus);
-             return py::make_tuple(obs_genBus, obs_genIDs, obs_vBus);
+             std::vector<int> obs_loadBuses;
+             std::vector<std::string> obs_loadIDs;
+             std::vector<int> obs_busIDs;
+             self.getObservationLists(obs_genBus, obs_genIDs,
+                                      obs_loadBuses, obs_loadIDs, obs_busIDs);
+             return py::make_tuple(obs_genBus, obs_genIDs,
+                                   obs_loadBuses, obs_loadIDs, obs_busIDs);
          });
              
                                   
