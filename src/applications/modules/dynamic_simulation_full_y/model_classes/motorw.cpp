@@ -93,6 +93,7 @@ gridpack::dynamic_simulation::MotorwLoad::MotorwLoad(void)
   // other variables
   double pi = 4.0*atan(1.0);
   w0 = 2.0 * pi * 60.0 ; // rad/s
+  Fonline = 1.0;
 
   TL = 0.0 ; // mechanical load torque, pu
   Tm0 =0.0;  // mechanical load torque with slip = 0;
@@ -855,4 +856,11 @@ double gridpack::dynamic_simulation::MotorwLoad::getInitReactivePower()
   return Qmotor_init;
 }
 
+/**
+ * get the variable Fonline 
+ */
+double gridpack::dynamic_simulation::MotorwLoad::getFonline(void)
+{
+	return Fonline;
+}
 

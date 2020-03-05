@@ -282,10 +282,13 @@ class DSFullApp
      * Get bus and generator IDs for all observations
      * @param genBuses host IDs for all observed generators
      * @param genIDs character identifiers for all observed generators
+     * @param loadBuses host IDs for all observed dynamic loads
+     * @param loadIDs character identifiers for all observed dynamic loads
      * @param busIDs bus IDs for all observed buses
      */
     void getObservationLists(std::vector<int> &genBuses,
-        std::vector<std::string> &genIDs, std::vector<int> &busIDs);
+        std::vector<std::string> &genIDs,  std::vector<int> &loadBuses,
+        std::vector<std::string> &loadIDs, std::vector<int> &busIDs);
 
     /**
      * Get current values of observations
@@ -293,9 +296,11 @@ class DSFullApp
      * @param vAng voltage angle for observed buses
      * @param rSpd rotor speed on observed generators
      * @param rAng rotor angle on observed generators
+     * @param fOnline fraction of load shed
      */
     void getObservations(std::vector<double> &vMag, std::vector<double> &vAng,
-        std::vector<double> &rSpd, std::vector<double> &rAng);
+        std::vector<double> &rSpd, std::vector<double> &rAng,
+        std::vector<double> &fOnline);
 
   private:
     /**
@@ -450,20 +455,32 @@ class DSFullApp
    // Observation data structures
    std::vector<int> p_obs_genBus;
    std::vector<std::string> p_obs_genIDs;
+   std::vector<int> p_obs_loadBus;
+   std::vector<std::string> p_obs_loadIDs;
    std::vector<int> p_obs_vBus;
+
    std::vector<int> p_obs_lGenIdx;
    std::vector<int> p_obs_GenIdx;
    std::vector<int> p_obs_lGenBus;
    std::vector<std::string> p_obs_lGenIDs;
    std::vector<int> p_obs_gActive;
+
+   std::vector<int> p_obs_lLoadIdx;
+   std::vector<int> p_obs_LoadIdx;
+   std::vector<int> p_obs_lLoadBus;
+   std::vector<std::string> p_obs_lLoadIDs;
+   std::vector<int> p_obs_lActive;
+
    std::vector<int> p_obs_lVIdx;
    std::vector<int> p_obs_VIdx;
    std::vector<int> p_obs_lVBus;
    std::vector<int> p_obs_vActive;
+
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vMag;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_vAng;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rSpd;
    boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_rAng;
+   boost::shared_ptr<gridpack::parallel::GlobalVector<double> > p_obs_fOnline;
    
    // below are all variables originally defined the solve function, now define them as class private members
    boost::shared_ptr < gridpack::mapper::FullMatrixMap<DSFullNetwork> > ybusMap_sptr;  

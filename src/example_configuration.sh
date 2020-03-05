@@ -122,7 +122,7 @@ if [ $host == "flophouse" ]; then
         -D USE_GLPK:BOOL=ON \
         -D MPIEXEC_MAX_NUMPROCS:STRING="2" \
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
-        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack-hadrec" \
         $common_flags ..
 
 elif [ $host == "briareus" ]; then

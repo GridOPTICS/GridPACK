@@ -116,6 +116,11 @@ class BaseLoadModel
  * Set terminal voltage frequency on each load
  */
 	virtual void setFreq(double dFreq);
+	
+	/**
+     * get the variable Fonline for each load
+     */
+    virtual double getFonline(void);
 
     /**
      * Write output from loads to a string.

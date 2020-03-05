@@ -102,17 +102,20 @@ void gridpack::dynamic_simulation::GensalGenerator::load(
  */
 double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 {
+	//the following sat may have problems
+	/*
     double a_ = S12 / S10 - 1.0 / 1.2;
     double b_ = -2 * S12 / S10 + 2;
     double c_ = S12 / S10 - 1.2;
     double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
     double B = S10 / ((1.0 - A) * (1.0 - A));
     double result = B * (x - A) * (x - A) / x;
+	*/
     //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
     //printf("Sat result = %f\n", result); 
 	
 	// the following is another method for saturation computation, add by renke
-	/*
+	
 	double a_ = S12 / S10 - 1.0;
     double b_ = -2 * S12 / S10 + 2.4;
     double c_ = S12 / S10 - 1.44;
@@ -125,7 +128,9 @@ double gridpack::dynamic_simulation::GensalGenerator::Sat(double x)
 		tmp = 0.0;
 	}
     double result = B * tmp * tmp;
-	*/
+	
+	//printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
+    //printf("Sat result = %f\n", result); 
 	
     return result; // Scaled Quadratic with 1.7.1 equations
 }

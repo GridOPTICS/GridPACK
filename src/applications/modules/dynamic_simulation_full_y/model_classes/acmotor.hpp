@@ -111,6 +111,12 @@ class AcmotorLoad : public BaseLoadModel
      * get intialized reactive power of the dynamic load model
      */
     double getInitReactivePower(void);
+	
+    /**
+     * get the variable Fonline for each load
+     */
+    double getFonline(void);
+
 
     /**
      * Write out load state

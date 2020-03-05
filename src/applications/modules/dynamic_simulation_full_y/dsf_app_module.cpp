@@ -1817,6 +1817,15 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
         if (observations[idx]->get("busID",&bus)) {
           p_obs_vBus.push_back(bus);
         }
+      } else if (type == "load") {
+        int bus;
+        std::string loadID, tID;
+        if (observations[idx]->get("busID",&bus) &&
+            observations[idx]->get("loadID",&loadID)) {
+          tID = util.clean2Char(loadID);
+          p_obs_loadBus.push_back(bus);
+          p_obs_loadIDs.push_back(tID);
+        }
       } else {
         printf("Unknown observation type: %s\n",type.c_str());
       }
@@ -1828,6 +1837,7 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
   p_obs_vAng.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
   p_obs_rSpd.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
   p_obs_rAng.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
+  p_obs_fOnline.reset(new gridpack::parallel::GlobalVector<double>(p_comm));
   if (p_obs_genBus.size() > 0) {
     int nbus = p_obs_genBus.size();
     p_obs_gActive.resize(nbus);
@@ -1872,6 +1882,48 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
     p_obs_rAng->upload();
     p_comm.sum(&p_obs_gActive[0],p_comm.size());
   }
+  if (p_obs_loadBus.size() > 0) {
+    int nbus = p_obs_loadBus.size();
+    p_obs_lActive.resize(nbus);
+    p_obs_lLoadBus.clear();
+    p_obs_lLoadIDs.clear();
+    p_obs_lLoadIdx.clear();
+    std::vector<double> dummy;
+    int i, j, k, lidx;
+    for (i = 0; i<nbus; i++) {
+      std::vector<int> localIndices;
+      localIndices = p_network->getLocalBusIndices(p_obs_loadBus[i]);
+      bool isLocal = false;
+      p_obs_lActive[i] = 0;
+      // Check to see if load host is active on this processor
+      for (j=0; j<localIndices.size(); j++) {
+        if (p_network->getActiveBus(localIndices[j])) {
+          // Check to see if load is on this bus
+          std::vector<std::string> tags
+           = p_network->getBus(localIndices[j])->getDynamicLoads();
+          for (k = 0; k<tags.size(); k++) {
+            if (tags[k] == p_obs_loadIDs[i]) {
+              lidx = localIndices[j];
+              isLocal = true;
+              p_obs_lActive[i] = 1;
+              break;
+            }
+          }
+          if (isLocal) break;
+        }
+      }
+      if (isLocal) {
+        p_obs_lLoadIdx.push_back(i);
+        p_obs_LoadIdx.push_back(lidx);
+        p_obs_lLoadBus.push_back(p_obs_loadBus[i]);
+        p_obs_lLoadIDs.push_back(p_obs_loadIDs[i]);
+        dummy.push_back(0.0);
+      }
+    }
+    p_obs_fOnline->addElements(p_obs_lLoadIdx, dummy);
+    p_obs_fOnline->upload();
+    p_comm.sum(&p_obs_lActive[0],p_comm.size());
+  }
   if (p_obs_vBus.size() > 0) {
     int nbus = p_obs_vBus.size();
     p_obs_vActive.resize(nbus);
@@ -1911,10 +1963,13 @@ void gridpack::dynamic_simulation::DSFullApp::setObservations(
  * Get bus and generator IDs for all observations
  * @param genBuses host IDs for all observed generators
  * @param genIDs character identifiers for all observed generators
+ * @param loadBuses host IDs for all observed dynamic loads
+ * @param loadIDs character identifiers for all observed dynamic loads
  * @param busIDs bus IDs for all observed buses
  */
 void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
     std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+    std::vector<int> &loadBuses, std::vector<std::string> &loadIDs,
     std::vector<int> &busIDs)
 {
   genBuses.clear();
@@ -1926,6 +1981,13 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
     if (static_cast<bool>(p_obs_gActive[i])) {
       genBuses.push_back(p_obs_genBus[i]);
       genIDs.push_back(p_obs_genIDs[i]);
+    }
+  }
+  nbus = p_obs_loadBus.size();
+  for (i=0; i<nbus; i++) {
+    if (static_cast<bool>(p_obs_lActive[i])) {
+      loadBuses.push_back(p_obs_loadBus[i]);
+      loadIDs.push_back(p_obs_loadIDs[i]);
     }
   }
   nbus = p_obs_vBus.size();
@@ -1942,19 +2004,23 @@ void gridpack::dynamic_simulation::DSFullApp::getObservationLists(
  * @param vAng voltage angle for observed buses
  * @param rSpd rotor speed on observed generators
  * @param rAng rotor angle on observed generators
+ * @param fOnline fraction of load shed
  */
 void gridpack::dynamic_simulation::DSFullApp::getObservations(
     std::vector<double> &vMag, std::vector<double> &vAng,
-    std::vector<double> &rSpd, std::vector<double> &rAng)
+    std::vector<double> &rSpd, std::vector<double> &rAng,
+    std::vector<double> &fOnline)
 {
   vMag.clear(); 
   vAng.clear(); 
   rSpd.clear(); 
   rAng.clear(); 
+  fOnline.clear(); 
   std::vector<double> tvMag;
   std::vector<double> tvAng;
   std::vector<double> trSpd;
   std::vector<double> trAng;
+  std::vector<double> tfOnline;
   if (p_obs_genBus.size()) {
     int i, j;
     int nbus =  p_obs_lGenBus.size();
@@ -1986,6 +2052,35 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
       if (p_obs_gActive[i] != 0) {
         rSpd.push_back(trSpd[i]);
         rAng.push_back(trAng[i]);
+      }
+    }
+  }
+  if (p_obs_loadBus.size()) {
+    int i, j;
+    int nbus =  p_obs_lLoadBus.size();
+    for (i=0; i<nbus; i++) {
+      std::vector<std::string> tags
+        = p_network->getBus(p_obs_LoadIdx[i])->getDynamicLoads();
+      for (j=0; j<tags.size(); j++) {
+        if (tags[j] == p_obs_lLoadIDs[i]) {
+          double frac;
+          frac = p_network->getBus(p_obs_LoadIdx[i])->getOnlineLoadFraction(j);
+          tfOnline.push_back(frac);
+          break;
+        }
+      }
+    }
+    // Check to make sure that local vectors still match
+    if (p_obs_lLoadIdx.size() != tfOnline.size()) {
+      printf("Mismatch in vector sizes when resetting global vectors\n");
+    }
+    p_obs_fOnline->resetElements(p_obs_lLoadIdx, tfOnline);
+    p_obs_fOnline->reload();
+    p_obs_fOnline->getAllData(tfOnline);
+    nbus = trSpd.size();
+    for (i=0; i<nbus; i++) {
+      if (p_obs_lActive[i] != 0) {
+        fOnline.push_back(tfOnline[i]);
       }
     }
   }
@@ -2796,6 +2891,7 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
 //      printf("\n Dynamic Step 1 [Corrector] Norton_full: ===\n");
 //      INorton_full->print();
     }
+    //printf("----------!renke debug, after solve INorton_full and map back voltage ----------\n");
     t_secure = timer->createCategory("DS Solve: Check Security");
     timer->start(t_secure);
     if (p_generatorWatch && Simu_Current_Step%p_generatorWatchFrequency == 0) {
@@ -2823,6 +2919,8 @@ void gridpack::dynamic_simulation::DSFullApp::executeOneSimuStep( ){
       if (p_generatorWatch) p_generatorIO->dumpChannel();
 #endif
     }
+    //printf("------------------!!!renke debug after the generator watch ------------\n");
+
     if (p_loadWatch && Simu_Current_Step%p_loadWatchFrequency == 0) {
       char tbuf[32];
 #ifdef USE_TIMESTAMP

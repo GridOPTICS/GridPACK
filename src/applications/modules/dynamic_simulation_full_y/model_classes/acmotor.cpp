@@ -812,6 +812,14 @@ double gridpack::dynamic_simulation::AcmotorLoad::getInitReactivePower(void)
 	return Qinit_pu*MVABase;
 }
 
+/**
+ * get the variable Fonline 
+ */
+double gridpack::dynamic_simulation::AcmotorLoad::getFonline(void)
+{
+	return Fonline;
+}
+
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage

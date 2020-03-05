@@ -467,6 +467,12 @@ class DSFullBus
     std::vector<std::string> getLoads();
 
     /**
+     * Get list of IDs for dynamic loads
+     * @return vector of dynamic load IDs
+     */
+    std::vector<std::string> getDynamicLoads();
+
+    /**
      * Get area parameter for bus
      * @return bus area index
      */
@@ -501,6 +507,13 @@ class DSFullBus
      * apply load shedding for the loads in this bus
      */
 	void applyLoadShedding(std::string loadid, double percentage);
+
+   /**
+    * return the fraction online from dynamic load model
+    * @param idx index of dynamic load model
+    * @return fraction of dynamic load that is online
+    */
+   double getOnlineLoadFraction(int idx);
 
 #ifdef USE_FNCS
     /**
@@ -546,6 +559,7 @@ class DSFullBus
 							//  2: LOAD_BUS
     std::vector<std::string> p_genid;
     std::vector<std::string> p_loadid;
+    std::vector<std::string> p_dynamic_loadid;
     std::vector<int> p_gstatus;
     std::vector<bool> p_watch;
 
