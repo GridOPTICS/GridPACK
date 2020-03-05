@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-03-05 11:08:27 d3g096
+# Last Change: 2020-03-05 11:47:01 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -74,7 +74,7 @@ class GridPACKTester(TestCase):
                 hadapp.applyAction(loadshedact)
             hadapp.executeDynSimuOneStep()
             ob_vals = hadapp.getObservations();
-            print isteps, ob_vals
+            print (isteps, ob_vals)
             isteps = isteps + 1
 
         btest_2dynasimu = True
@@ -90,7 +90,7 @@ class GridPACKTester(TestCase):
                     hadapp.applyAction(loadshedact)
                 hadapp.executeDynSimuOneStep()
                 ob_vals = hadapp.getObservations();
-                print isteps, ob_vals
+                print (isteps, ob_vals)
                 isteps = isteps + 1
 
         # It's important to force the deallocation order here
