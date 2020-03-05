@@ -133,35 +133,36 @@ void gridpack::hadrec::HADRECAppModule::transferPFtoDS(){
  * do initialization only for dynamics simulation
  */
 void gridpack::hadrec::HADRECAppModule::initializeDynSimu(){
-	
-	ds_app_sptr.reset(new gridpack::dynamic_simulation::DSFullApp());
-	
-	gridpack::utility::Configuration::CursorPtr cursor;
-	cursor = config_sptr->getCursor("Configuration.Dynamic_simulation");
-    std::vector<gridpack::dynamic_simulation::Event> faults;
-    faults = ds_app_sptr->getFaults(cursor);
 
-    // run dynamic simulation
-    ds_app_sptr->setNetwork(ds_network, &(*config_sptr));
-    //ds_app_sptr->readNetwork(ds_network,config);
-    ds_app_sptr->readGenerators();
-    //printf("ds_app_sptr->initialize:\n");
-    ds_app_sptr->initialize();
-    ds_app_sptr->setGeneratorWatch();
-    //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
-    //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
-    //printf("ds_app_sptr->solve:\n");
-    //ds_app_sptr->solve(faults[0]);
-    ds_app_sptr->setObservations(cursor);
-	p_obs_genBus.clear();
-	p_obs_genIDs.clear();
-	p_obs_vBus.clear();
-	//p_obs_vals.clear();
-    ds_app_sptr->getObservationLists(p_obs_genBus, p_obs_genIDs, p_obs_vBus);
-	
-	ds_app_sptr->solvePreInitialize(faults[0]);
-	
-	
+  ds_app_sptr.reset(new gridpack::dynamic_simulation::DSFullApp());
+
+  gridpack::utility::Configuration::CursorPtr cursor;
+  cursor = config_sptr->getCursor("Configuration.Dynamic_simulation");
+  std::vector<gridpack::dynamic_simulation::Event> faults;
+  faults = ds_app_sptr->getFaults(cursor);
+
+  // run dynamic simulation
+  ds_app_sptr->setNetwork(ds_network, &(*config_sptr));
+  //ds_app_sptr->readNetwork(ds_network,config);
+  ds_app_sptr->readGenerators();
+  //printf("ds_app_sptr->initialize:\n");
+  ds_app_sptr->initialize();
+  ds_app_sptr->setGeneratorWatch();
+  //printf("gen ID:	mac_ang_s0	mac_spd_s0	pmech	pelect\n");
+  //printf("Step	time:	bus_id	mac_ang_s1	mac_spd_s1\n");
+  //printf("ds_app_sptr->solve:\n");
+  //ds_app_sptr->solve(faults[0]);
+  ds_app_sptr->setObservations(cursor);
+  p_obs_genBus.clear();
+  p_obs_genIDs.clear();
+  p_obs_loadBus.clear();
+  p_obs_loadIDs.clear();
+  p_obs_vBus.clear();
+  //p_obs_vals.clear();
+  ds_app_sptr->getObservationLists(p_obs_genBus, p_obs_genIDs,
+      p_obs_loadBus, p_obs_loadIDs, p_obs_vBus);
+
+  ds_app_sptr->solvePreInitialize(faults[0]);
 }
 
 /**
@@ -215,8 +216,8 @@ void gridpack::hadrec::HADRECAppModule::executeDynSimuOneStep(){
 
 std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
 	
-	std::vector<double> rSpd, rAng, vMag, vAng;
-	ds_app_sptr->getObservations(vMag, vAng, rSpd, rAng);
+	std::vector<double> rSpd, rAng, vMag, vAng, fOnline;
+	ds_app_sptr->getObservations(vMag, vAng, rSpd, rAng, fOnline);
 	
 	std::vector<double> obs_vals;
 	obs_vals.clear();
@@ -237,6 +238,10 @@ std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
 	for (i=0; i<vAng.size(); i++){
 		obs_vals.push_back(vAng[i]);
 	}	
+
+	for (i=0; i<fOnline.size(); i++){
+		obs_vals.push_back(fOnline[i]);
+	}	
 	
 	return obs_vals;
 	
@@ -246,10 +251,13 @@ std::vector<double> gridpack::hadrec::HADRECAppModule::getObservations(){
  * return observations list
  */
 
-void gridpack::hadrec::HADRECAppModule::getObservationLists
-(std::vector<int> &genBuses, std::vector<std::string> &genIDs, std::vector<int> &busIDs){
+void gridpack::hadrec::HADRECAppModule::getObservationLists(
+    std::vector<int> &genBuses, std::vector<std::string> &genIDs,
+    std::vector<int> &loadBuses, std::vector<std::string> &loadIDs,
+    std::vector<int> &busIDs){
 	
-	ds_app_sptr->getObservationLists(genBuses, genIDs, busIDs);
+	ds_app_sptr->getObservationLists(genBuses, genIDs, loadBuses,
+       loadIDs, busIDs);
 	
 }
 

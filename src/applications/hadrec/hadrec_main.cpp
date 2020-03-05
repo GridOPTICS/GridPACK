@@ -61,8 +61,11 @@ int main(int argc, char **argv)
   // test getOblist
   std::vector<int> obs_genBus;
   std::vector<std::string> obs_genIDs;
+  std::vector<int> obs_loadBus;
+  std::vector<std::string> obs_loadIDs;
   std::vector<int> obs_vBus;
-  hadrec_app_sptr->getObservationLists(obs_genBus, obs_genIDs, obs_vBus);
+  hadrec_app_sptr->getObservationLists(obs_genBus, obs_genIDs,
+      obs_loadBus, obs_loadIDs, obs_vBus);
   
   printf("-----------renke debug, getObservationLists------------\n");
   printf("-----------ob gen bus list, ");

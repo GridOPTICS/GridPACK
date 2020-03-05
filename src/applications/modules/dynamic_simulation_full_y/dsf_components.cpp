@@ -1041,6 +1041,7 @@ void gridpack::dynamic_simulation::DSFullBus::load(
             boost::shared_ptr<BaseLoadModel> baseload;
             baseload.reset(load);
             p_loadmodels.push_back(baseload);
+            p_dynamic_loadid.push_back(loadid);
 
             p_loadmodels[icnt]->load(data,i, pl, ql, 0);  //last parameter 0
             //means it is not load from composite load model
@@ -2481,11 +2482,20 @@ std::vector<std::string> gridpack::dynamic_simulation::DSFullBus::getGenerators(
 
 /**
  * Get list of load IDs
- * @return vector of generator IDs
+ * @return vector of load IDs
  */
 std::vector<std::string> gridpack::dynamic_simulation::DSFullBus::getLoads()
 {
   return p_loadid;
+}
+
+/**
+ * Get list of IDs for dynamic loads
+ * @return vector of dynamic load IDs
+ */
+std::vector<std::string> gridpack::dynamic_simulation::DSFullBus::getDynamicLoads()
+{
+  return p_dynamic_loadid;
 }
 
 /**
@@ -2516,6 +2526,23 @@ void gridpack::dynamic_simulation::DSFullBus::applyLoadShedding(std::string load
 	for (iload=0; iload<nload; iload++){
 		p_loadmodels[iload]->changeLoad(percentage);
 	}
+}
+
+/**
+ * return the fraction online from dynamic load model
+ * @param idx index of dynamic load model
+ * @return fraction of dynamic load that is online
+ */
+double gridpack::dynamic_simulation::DSFullBus::getOnlineLoadFraction(int idx)
+{
+  double ret = 1.0;
+  if (idx >=0 && idx < p_loadmodels.size()) {
+    ret = p_loadmodels[idx]->getFonline();
+  } else {
+    printf("No dynamic load model for index %d on bus %d\n",
+        idx,getOriginalIndex());
+  }
+  return ret;
 }
 
 /**

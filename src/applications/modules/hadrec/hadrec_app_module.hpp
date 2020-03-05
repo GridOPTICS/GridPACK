@@ -94,8 +94,9 @@ class HADRECAppModule
 	/**
 	* return observations list
 	*/
-	void getObservationLists(std::vector<int> &genBuses, std::vector<std::string> &genIDs,
-    std::vector<int> &busIDs);
+	void getObservationLists(std::vector<int> &genBuses,
+       std::vector<std::string> &genIDs, std::vector<int> &loadBuses,
+       std::vector<std::string> &loadIDs, std::vector<int> &busIDs);
 	
 
   private:
@@ -112,6 +113,8 @@ class HADRECAppModule
    // Observations
    std::vector<int> p_obs_genBus;
    std::vector<std::string> p_obs_genIDs;
+   std::vector<int> p_obs_loadBus;
+   std::vector<std::string> p_obs_loadIDs;
    std::vector<int> p_obs_vBus;
    //std::vector<double> p_obs_vals;
 	
