@@ -277,6 +277,33 @@ elif [ $host == "constance" ]; then
         -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
 	$common_flags ..
 
+elif [ $host == "constance-hadrec" ]; then
+
+    # always build shared
+    # always build GA
+
+    CC=`which gcc`
+    CXX=`which g++`
+    CFLAGS="-pthread"
+    CXXFLAGS="-pthread"
+    export CC CXX CFLAGS CXXFLAGS
+
+    prefix="/pic/projects/gripdack/hadrec/gridpack"
+    cmake $options \
+	-D BOOST_ROOT:STRING="$prefix" \
+	-D PETSC_DIR:STRING="$prefix/petsc-3.9.4" \
+	-D PETSC_ARCH:STRING='linux-openmpi-gnu-cxx-complex-opt' \
+	-D MPI_CXX_COMPILER:STRING=`which mpicxx` \
+	-D MPI_C_COMPILER:STRING=`which mpicc` \
+	-D MPIEXEC:STRING=`which mpiexec` \
+        -D GRIDPACK_TEST_TIMEOUT:STRING=10 \
+        -D BUILD_GA:BOOL=ON \
+        -D BUILD_SHARED_LIBS:BOOL=ON \
+        -D CMAKE_BUILD_TYPE:STRING=$build \
+        -D CMAKE_VERBOSE_MAKEFILE:BOOL=FALSE \
+        -D CMAKE_INSTALL_PREFIX:PATH="$prefix/gridpack" \
+	..
+
 elif [ $host == "tlaloc" ]; then
 
     # RHEL 6 with GNU 4.4 compilers w/ OpenMPI (available via EPEL)
