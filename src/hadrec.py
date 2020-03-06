@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-02-17 11:44:58 d3g096
+# Last Change: 2020-03-06 06:48:05 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -46,11 +46,13 @@ loadshedact.bus_number = 5;
 loadshedact.componentID = "1";
 loadshedact.percentage = -0.2;
 
-(obs_genBus, obs_genIDs, obs_vBus) = hadapp.getObservationLists()
+(obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs) = hadapp.getObservationLists()
 
-print obs_genBus
-print obs_genIDs
-print obs_vBus
+print (obs_genBus)
+print (obs_genIDs)
+print (obs_loadBuses)
+print (obs_loadIDs)
+print (obs_busIDs)
 
 bApplyAct = True
 isteps = 0
@@ -62,7 +64,7 @@ while (not hadapp.isDynSimuDone()):
         hadapp.applyAction(loadshedact)
     hadapp.executeDynSimuOneStep()
     ob_vals = hadapp.getObservations();
-    print isteps, ob_vals
+    print (isteps, ob_vals)
     isteps = isteps + 1
 
 btest_2dynasimu = True
@@ -78,7 +80,7 @@ if (btest_2dynasimu):
             hadapp.applyAction(loadshedact)
         hadapp.executeDynSimuOneStep()
         ob_vals = hadapp.getObservations();
-        print isteps, ob_vals
+        print (isteps, ob_vals)
         isteps = isteps + 1
 
 # It's important to force the deallocation order here
