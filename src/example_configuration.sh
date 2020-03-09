@@ -11,7 +11,7 @@ if [ $? != 0 ]; then
     echo $usage >&2
     exit 2
 fi
-set -- "$options"
+set -- $options
 
 build="RelWithDebInfo"
 shared="FALSE"
