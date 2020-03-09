@@ -37,7 +37,8 @@ gridpack::hadrec::HADRECAppModule::~HADRECAppModule(void)
 /**
  * solve power flow before run dynamic simulation 
  */
-void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(int argc, char **argv){
+void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
+    const char *inputfile){
 	
 	gridpack::utility::CoarseTimer *timer =
     gridpack::utility::CoarseTimer::instance();
@@ -56,9 +57,7 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(int argc, ch
 	  
 	config_sptr.reset(gridpack::utility::Configuration::configuration());
 	
-    if (argc >= 2 && argv[1] != NULL) { 
-      char inputfile[256]; 
-      sprintf(inputfile,"%s",argv[1]);
+    if (inputfile) {
       config_sptr->open(inputfile, world);
     } else {
       config_sptr->open("input.xml",world);
@@ -168,9 +167,10 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu(){
 /**
  * do a fully initialization before running dynamics simulation
  */
-void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(int argc, char **argv){
+void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(
+    const char *inputfile){
 	
-	solvePowerFlowBeforeDynSimu(argc, argv);
+	solvePowerFlowBeforeDynSimu(inputfile);
 	transferPFtoDS();
 	initializeDynSimu();
 		

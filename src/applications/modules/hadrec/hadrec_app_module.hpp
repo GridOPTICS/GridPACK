@@ -54,7 +54,7 @@ class HADRECAppModule
 	/**
 	 * solve power flow before run dynamic simulation 
 	 */
-	void solvePowerFlowBeforeDynSimu(int argc, char **argv);
+	void solvePowerFlowBeforeDynSimu(const char *inputfile);
 	
 	/**
 	* transfer data from power flow to dynamic simulation 
@@ -69,7 +69,7 @@ class HADRECAppModule
 	/**
 	* do a fully initialization before running dynamics simulation
 	*/
-	void fullInitializationBeforeDynSimuSteps(int argc, char **argv);
+	void fullInitializationBeforeDynSimuSteps(const char *inputfile);
 	
 	/**
 	* Execute only one simulation time step 

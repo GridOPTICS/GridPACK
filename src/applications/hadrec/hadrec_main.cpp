@@ -39,7 +39,14 @@ int main(int argc, char **argv)
     hadrec_app_sptr (new gridpack::hadrec::HADRECAppModule() );
 
   // solve power flow
-  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
+  std::string file;
+  if (argc > 1) {
+    file = argv[1];
+  } else {
+    file = "input.xml";
+  }
+
+  hadrec_app_sptr->solvePowerFlowBeforeDynSimu(const_cast<char *>(file.c_str()));
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
