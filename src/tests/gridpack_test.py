@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-03-05 11:47:01 d3g096
+# Last Change: 2020-03-09 12:20:32 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -43,10 +43,10 @@ class GridPACKTester(TestCase):
         d = os.path.dirname(os.path.abspath(__file__))
         os.chdir(d)
 
-        args = [ "bogus", "input_tamu500_step005.xml" ]
+        arg = "input_tamu500_step005.xml"
         
         hadapp = gridpack.hadrec.Module()
-        hadapp.solvePowerFlowBeforeDynSimu(args)
+        hadapp.solvePowerFlowBeforeDynSimu(arg)
         hadapp.transferPFtoDS()
         hadapp.initializeDynSimu()
 

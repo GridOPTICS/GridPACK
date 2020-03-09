@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-03-06 06:48:05 d3g096
+# Last Change: 2020-03-09 12:24:10 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -36,7 +36,7 @@ inname = sys.argv[1]
 env = gridpack.Environment()
 
 hadapp = gridpack.hadrec.Module()
-hadapp.solvePowerFlowBeforeDynSimu(sys.argv)
+hadapp.solvePowerFlowBeforeDynSimu(inname)
 hadapp.transferPFtoDS()
 hadapp.initializeDynSimu()
 

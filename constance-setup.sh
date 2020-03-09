@@ -20,5 +20,5 @@ export PATH="/share/apps/python/ray/bin:$PATH"
 
 #set up python-3.4 and ray env in conda
 
-source activate /share/apps/python/ray
+conda activate /share/apps/python/ray
 

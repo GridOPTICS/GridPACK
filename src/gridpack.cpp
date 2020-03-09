@@ -10,7 +10,7 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-03-05 11:09:45 d3g096
+// Last Change: 2020-03-09 12:19:23 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
@@ -198,21 +198,15 @@ PYBIND11_MODULE(gridpack, gpm) {
          py::return_value_policy::copy)
     ;
 
-  // These methods need to be reworked because they have double pointer args
+  // These methods need to be reworked char * args
   hadapp
     .def("solvePowerFlowBeforeDynSimu",
-         [](gph::HADRECAppModule& self, std::vector<std::string>& args) {
-           std::vector<char *> cstrs;
-           cstrs.reserve(args.size());
-           for (auto &s : args) cstrs.push_back(const_cast<char *>(s.c_str()));
-           self.solvePowerFlowBeforeDynSimu(cstrs.size(), cstrs.data());
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.solvePowerFlowBeforeDynSimu(s.c_str());
          })
     .def("fullInitializationBeforeDynSimuSteps",
-         [](gph::HADRECAppModule& self, std::vector<std::string>& args) {
-           std::vector<char *> cstrs;
-           cstrs.reserve(args.size());
-           for (auto &s : args) cstrs.push_back(const_cast<char *>(s.c_str()));
-           self.fullInitializationBeforeDynSimuSteps(cstrs.size(), cstrs.data());
+         [](gph::HADRECAppModule& self, const std::string& s) {
+           self.fullInitializationBeforeDynSimuSteps(s.c_str());
          });
 
   // This method returns a tuple containing 3 lists (int, string, int)
