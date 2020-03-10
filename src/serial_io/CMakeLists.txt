@@ -98,7 +98,10 @@ if (GOSS_DIR)
     gridpack_goss
     DESTINATION lib
     )
-
+else()
+ add_executable(test_serial_io test/test_serial_io.cpp)
+  target_link_libraries(test_serial_io ${target_libraries}
+  )
 endif()
 # -------------------------------------------------------------
 # installation

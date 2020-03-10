@@ -75,6 +75,7 @@ class SerialBusIO {
 //#endif
   }
 
+#ifdef USE_GOSS
   /* Connect to GOSS
    * @param URI e.g. tcp://gridpack2:61616?wireFormat=openwire
    * @param user username to connect to GOSS
@@ -92,10 +93,9 @@ class SerialBusIO {
    std::string line;
    while (std::getline(file_stream, line))
         std::cout << line << std::endl;
-
-
-
   }
+#endif
+
   /**
    * Simple Destructor
    */
