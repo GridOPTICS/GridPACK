@@ -7,6 +7,7 @@
 /**
  * @file   serial_io.hpp
  * @author Bruce Palmer
+ * @author Arun Veeramany (GOSS)
  * @date   2018-03-16 07:20:51 d3g096
  * 
  * @brief  
@@ -25,7 +26,7 @@
 #include "gridpack/component/base_component.hpp"
 #include "gridpack/utilities/exception.hpp"
 #ifdef USE_GOSS
-#include "gridpack/serial_io/goss_utils.hpp"
+#include "gridpack/serial_io/goss_client.hpp"
 #endif
 
 namespace gridpack {
@@ -68,11 +69,32 @@ class SerialBusIO {
     GA_Set_data(p_maskGA,one,&nbus,C_INT);
     GA_Set_pgroup(p_maskGA, p_GAgrp);
     GA_Allocate(p_maskGA);
-#ifdef USE_GOSS
-    p_goss = NULL;
-    p_channel = false;
-#endif
+//#ifdef USE_GOSS
+//    p_goss = NULL;
+//    p_channel = false;
+//#endif
   }
+
+#ifdef USE_GOSS
+  /* Connect to GOSS
+   * @param URI e.g. tcp://gridpack2:61616?wireFormat=openwire
+   * @param user username to connect to GOSS
+   * @param password  password to connect to GOSS
+   */
+  void connectToGOSS(std::string URI, std::string user, std::string password, std::string topic)
+  {
+    m_client.connect(URI, user, password); 
+    m_topic =  topic;
+
+   ///Just an example for testing
+   m_client.publish("goss.request.data.file", "{ \"simulation_id\": \"temp1234\",    \"file_path\": \"ecp_problem3a/rts_contingencies.xml\"}", "temp1234"  );
+   std::string file_contents = m_client.subscribeFile("temp1234.reply.goss.request.data.file");
+   std::istringstream file_stream(file_contents);
+   std::string line;
+   while (std::getline(file_stream, line))
+        std::cout << line << std::endl;
+  }
+#endif
 
   /**
    * Simple Destructor
@@ -139,11 +161,29 @@ class SerialBusIO {
     if (p_fout) {
       write(*p_fout, signal);
     } else {
+      std::cout << "Choosing GOSS for the output stream" << std::endl;
       write(std::cout, signal);
     }
   }
 
 #ifdef USE_GOSS
+ /**
+   * Send a topic list to GOSS before any IO
+   */
+  
+  void sendTopicList(const char *topics)
+  {
+
+    if (m_client.isConnectionValid() && GA_Pgroup_nodeid(p_GAgrp)==0) 
+    {
+	    std::string topic = "topic/goss/gridpack/topic_list";
+	    std::string topic_list(topic);
+	    m_client.publish(topic_list, topics);   //topics are space delimited
+            //std::cout << "GOSS Acknowledgement: " << m_client.subscribe("topic.goss.gridpack.acknowledge") << std::endl;
+    }
+
+  }
+
   /**
    * Open a channel for IO. This assumes that the application has already
    * specified a complete list of topics using GOSSInit
@@ -153,7 +193,7 @@ class SerialBusIO {
    * @param username account name for server recieve messages
    * @param passwd password for server
    */
-  void openChannel(const char *topic)
+ /* void openChannel(const char *topic)
   {
     if (!p_goss) p_goss = gridpack::goss::GOSSUtils::instance();
     if (!p_channel && GA_Pgroup_nodeid(p_GAgrp)==0) {
@@ -165,17 +205,17 @@ class SerialBusIO {
         printf("ERROR: Channel already opened\n");
       }
     }
-  }
+  }*/
 
   /**
-   * Close IO channel
+   * Close IO channel - obsolete
    */
   void closeChannel()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      gridpack::parallel::Communicator comm = p_network->communicator();
-      p_goss->closeGOSSChannel(comm);
-      p_channel = false;
+      //gridpack::parallel::Communicator comm = p_network->communicator();
+      //p_goss->closeGOSSChannel(comm);
+      //p_channel = false;
     }
   }
 #endif
@@ -188,11 +228,28 @@ class SerialBusIO {
    */
   void header(const char *str)
   {
+    if (p_fout) 
+    {
+      *p_fout << str;
+    } 
+#ifdef USE_GOSS
+    else if (m_client.isConnectionValid()) 
+    {
+      std::cout << "Choosing GOSS for the output stream" << std::endl;
+      m_client.publish(m_topic, str);
+    }
+#endif
+    else
+      std::cout << str;
+
+
+/*
     if (p_fout) {
       header(*p_fout, str);
     } else {
       header(std::cout, str);
     }
+*/
   }
 
   /**
@@ -326,8 +383,8 @@ class SerialBusIO {
   void dumpChannel()
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
-      printf("Sending message of length %d\n",p_channel_buf.length());
-      p_goss->sendGOSSMessage(p_channel_buf);
+      //printf("Sending message of length %d\n",p_channel_buf.length());
+      //p_goss->sendGOSSMessage(p_channel_buf);
     }
   }
 #endif
@@ -549,9 +606,15 @@ class SerialBusIO {
 #ifndef USE_GOSS
               out << ptr;
 #else
-              if (p_channel) {
-                p_channel_buf.append(ptr);
+              if (m_client.isConnectionValid()) {
+		std::cout << "publishing " << m_topic << " to GOSS" << std::endl;
+		m_client.publish(m_topic,ptr);
+
+              /*if (p_channel) {
+                p_channel_buf.append(ptr);*/
+		
               } else {
+		std::cout <<  "goss p_connection is null, writing to stdout" << std::endl;
                 out << ptr;
               }
 #endif
@@ -573,7 +636,7 @@ class SerialBusIO {
    * @param out stream object for output
    * @param str character string containing the header
    */
-  void header(std::ostream & out, const char *str)
+/*  void header(std::ostream & out, const char *str)
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
 #ifndef USE_GOSS
@@ -586,7 +649,7 @@ class SerialBusIO {
       }
 #endif
     }
-  }
+  }*/
 
   private:
     int p_GA_type;
@@ -597,9 +660,12 @@ class SerialBusIO {
     boost::shared_ptr<std::ofstream> p_fout;
     int p_GAgrp;
 #ifdef USE_GOSS
-    gridpack::goss::GOSSUtils *p_goss;
+    gridpack::goss::GOSSClient m_client;
+    std::string m_topic;
+
+/*    gridpack::goss::GOSSUtils *p_goss;
     std::string p_channel_buf;
-    bool p_channel;
+    bool p_channel;*/
 #endif
 };
 
@@ -645,6 +711,31 @@ class SerialBranchIO {
     this->close();
   }
 
+#ifdef GOSS
+  /* Connect to GOSS
+   * @param URI e.g. tcp://gridpack2:61616?wireFormat=openwire
+   * @param user username to connect to GOSS
+   * @param password  password to connect to GOSS
+   */	
+  void connectToGOSS(std::string URI, std::string user, std::string password)
+  {
+    m_client.connect(URI, user, password);
+  }
+
+
+  void sendTopicList(const char *topics)
+  {
+
+    if (m_client.isConnectionValid() && GA_Pgroup_nodeid(p_GAgrp)==0)
+    {
+            std::string topic = "topic/goss/gridpack/topic_list";
+            std::string topic_list(topic);
+            m_client.publish(topic_list, topics);   //topics are space delimited
+            //std::cout << "GOSS Acknowledgement: " << m_client.subscribe("topic.goss.gridpack.acknowledge") << std::endl;
+    }
+
+  }
+#endif
   /**
    * Redirect output to a file instead of standard out
    * @param filename name of file that output goes to
@@ -709,14 +800,14 @@ class SerialBranchIO {
    * to identify the head node
    * @param str character string containing the header
    */
-  void header(const char *str)
+  /*void header(const char *str)
   {
     if (p_fout) {
       header(*p_fout, str);
     } else {
       header(std::cout, str);
     }
-  }
+  }*/
 
   /**
    * This is a function that can use the machinery that has been set up in the
@@ -1067,11 +1158,30 @@ class SerialBranchIO {
    * @param out stream object for output
    * @param str character string containing the header
    */
-  void header(std::ostream & out, const char *str) const
+  /*void header(std::ostream & out, const char *str) const
   {
     if (GA_Pgroup_nodeid(p_GAgrp) == 0) {
       out << str;
     }
+  }*/
+public:
+
+  void header(const char *str)
+  {
+    if (p_fout)
+    {
+      *p_fout << str;
+    } 
+#ifdef USE_GOSS
+    else if (m_client.isConnectionValid()) 
+    {
+      std::cout << "Choosing GOSS for the output stream" << std::endl;
+      m_client.publish(m_topic, str);
+    }
+#endif
+    else
+      std::cout << str;
+
   }
 
   private:
@@ -1082,6 +1192,10 @@ class SerialBranchIO {
     int p_size;
     boost::shared_ptr<std::ofstream> p_fout;
     int p_GAgrp;
+#ifdef USE_GOSS
+    gridpack::goss::GOSSClient m_client;
+    std::string m_topic;
+#endif
 };
 
 }   // serial_io
