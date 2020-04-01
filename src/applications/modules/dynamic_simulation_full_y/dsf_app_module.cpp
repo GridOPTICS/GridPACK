@@ -2077,7 +2077,7 @@ void gridpack::dynamic_simulation::DSFullApp::getObservations(
     p_obs_fOnline->resetElements(p_obs_lLoadIdx, tfOnline);
     p_obs_fOnline->reload();
     p_obs_fOnline->getAllData(tfOnline);
-    nbus = trSpd.size();
+    nbus = tfOnline.size();
     for (i=0; i<nbus; i++) {
       if (p_obs_lActive[i] != 0) {
         fOnline.push_back(tfOnline[i]);

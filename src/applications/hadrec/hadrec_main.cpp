@@ -60,6 +60,12 @@ int main(int argc, char **argv)
   loadshedact.componentID = "1";
   loadshedact.percentage = -0.2;
 
+  gridpack::hadrec::HADRECAction loadshedact1;
+  loadshedact1.actiontype = 0;
+  loadshedact1.bus_number = 7;
+  loadshedact1.componentID = "1";
+  loadshedact1.percentage = -0.2;
+  
   int isteps = 0;
   bool bApplyAct = true; //false;  // whether apply the action in the simulation steps
   std::vector<double> ob_vals;
@@ -87,6 +93,18 @@ int main(int argc, char **argv)
   }
   printf(" \n");
   
+  printf("-----------ob load bus list, ");
+  for (idxtmp=0; idxtmp<obs_loadBus.size(); idxtmp++){
+	  printf(" %d, ", obs_loadBus[idxtmp]);
+  }
+  printf(" \n");
+  
+  printf("-----------ob load ID list, ");
+  for (idxtmp=0; idxtmp<obs_loadIDs.size(); idxtmp++){
+	  printf(" %s, ", obs_loadIDs[idxtmp].c_str());
+  }
+  printf(" \n");
+  
   printf("-----------ob bus list, ");
   for (idxtmp=0; idxtmp<obs_vBus.size(); idxtmp++){
 	  printf(" %d, ", obs_vBus[idxtmp]);
@@ -96,9 +114,11 @@ int main(int argc, char **argv)
   while(!hadrec_app_sptr->isDynSimuDone()){
     // if the dynamic simulation is not done (hit the end time)
     if ( bApplyAct && (isteps == 2500 || isteps == 3000 ||
-          isteps == 3500 || isteps == 4000 ) ){
+          isteps == 3500 || isteps == 4000 ||
+          isteps == 4500 || isteps == 5000 || isteps == 5500 ) ){
       //apply action
       hadrec_app_sptr->applyAction(loadshedact);
+      hadrec_app_sptr->applyAction(loadshedact1);
       //printf("----renke debug load shed, isteps: %d \n", isteps);
     }
     //execute one dynamic simulation step
@@ -142,6 +162,7 @@ int main(int argc, char **argv)
             isteps == 3500 || isteps == 4000 ) ){
         //apply action
         hadrec_app_sptr->applyAction(loadshedact);
+        hadrec_app_sptr->applyAction(loadshedact1);
         //printf("----renke debug load shed, isteps: %d \n", isteps);
       }
       //execute one dynamic simulation step
