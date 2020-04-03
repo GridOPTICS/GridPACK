@@ -1149,7 +1149,7 @@ void gridpack::dynamic_simulation_r::DSAppModule::openGeneratorWatchFile()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-#ifndef USE_GOSS
+#ifndef USEX_GOSS
   std::string filename;
   if (cursor->get("generatorWatchFileName",&filename)) {
     p_generatorIO.reset(new gridpack::serial_io::SerialBusIO<DSNetwork>(128,
@@ -1183,7 +1183,7 @@ void gridpack::dynamic_simulation_r::DSAppModule::openGeneratorWatchFile()
 void gridpack::dynamic_simulation_r::DSAppModule::closeGeneratorWatchFile()
 {
   if (p_generatorWatch) {
-#ifndef USE_GOSS
+#ifndef USEX_GOSS
     p_generatorIO->close();
 #else
     p_generatorIO->closeChannel();

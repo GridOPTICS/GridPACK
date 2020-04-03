@@ -457,7 +457,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
   if (p_loadWatch) p_loadIO->write("load_watch_header");
   if (p_loadWatch) p_loadIO->header("\n");
 #endif
-#ifdef USE_GOSS
+#ifdef USEX_GOSS
   if (p_generatorWatch) p_generatorIO->dumpChannel();
   if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
@@ -1020,7 +1020,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       if (p_generatorWatch) p_generatorIO->write("watch");
       if (p_generatorWatch) p_generatorIO->header("\n");
 #endif
-#ifdef USE_GOSS
+#ifdef USEX_GOSS
       if (p_generatorWatch) p_generatorIO->dumpChannel();
 #endif
     }
@@ -1038,7 +1038,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
       if (p_loadWatch) p_loadIO->write("load_watch");
       if (p_loadWatch) p_loadIO->header("\n");
 #endif
-#ifdef USE_GOSS
+#ifdef USEX_GOSS
       if (p_loadWatch) p_loadIO->dumpChannel();
 #endif
     }
@@ -1667,7 +1667,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-#ifndef USE_GOSS
+#ifndef USEX_GOSS
   std::string filename;
   if (!p_internal_watch_file_name) {
     if (cursor->get("generatorWatchFileName",&filename)) {
@@ -1715,7 +1715,7 @@ void gridpack::dynamic_simulation::DSFullApp::openGeneratorWatchFile()
 void gridpack::dynamic_simulation::DSFullApp::closeGeneratorWatchFile()
 {
   if (p_generatorWatch) {
-#ifndef USE_GOSS
+#ifndef USEX_GOSS
     p_generatorIO->close();
 #else
     p_generatorIO->closeChannel();
@@ -1730,7 +1730,7 @@ void gridpack::dynamic_simulation::DSFullApp::openLoadWatchFile()
 {
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = p_config->getCursor("Configuration.Dynamic_simulation");
-#ifndef USE_GOSS
+#ifndef USEX_GOSS
   std::string filename;
   if (cursor->get("loadWatchFileName",&filename)) {
     p_loadIO.reset(new gridpack::serial_io::SerialBusIO<DSFullNetwork>(128,
@@ -1769,7 +1769,7 @@ void gridpack::dynamic_simulation::DSFullApp::openLoadWatchFile()
 void gridpack::dynamic_simulation::DSFullApp::closeLoadWatchFile()
 {
   if (p_loadWatch) {
-#ifndef USE_GOSS
+#ifndef USEX_GOSS
     p_loadIO->close();
 #else
     p_loadIO->closeChannel();
