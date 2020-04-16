@@ -1121,7 +1121,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     if (fault.isBus) {
       sprintf(ptr," for fault at bus %d\n", fault.bus_idx);
     } else if (fault.isLine) {
-      sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag,
+      sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag.c_str(),
           fault.from_idx,fault.to_idx);
     } else {
       sprintf(ptr,"!\n");
@@ -1133,7 +1133,7 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     if (fault.isBus) {
       sprintf(ptr," for fault on bus %d\n",fault.bus_idx);
     } else if (fault.isLine) {
-      sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag,
+      sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag.c_str(),
           fault.from_idx,fault.to_idx);
     } else {
       sprintf(ptr,"!\n");

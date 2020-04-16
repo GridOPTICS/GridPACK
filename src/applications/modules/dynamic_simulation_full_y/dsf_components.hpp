@@ -38,16 +38,23 @@ enum DSMode{YBUS, YL, YDYNLOAD, PG, onFY, posFY, jxd, make_INorton_full, bus_rel
 
 // Small utility structure to encapsulate information about fault events
 struct Event{
-  double start = 0.0;  // start times of fault
-  double end   = 0.0; // end times of fault
-  double step  = 0.005;      // time increment of fault (not used?)
-  char tag[3] = "1";      // 2-character identifier of line or generator
-  //bool isGenerator; // fault is a generator failure
-  bool isBus = false;      // fault is a bus failure
-  int bus_idx = -1;      // index of fault bus, corresponding to the bus fault
-  bool isLine = false;      // fault is a line failure
-  int from_idx= -1;     // "from" bus of line
-  int to_idx= -1;       // "to" bus of line
+  double start;         // start times of fault
+  double end;           // end times of fault
+  double step;          // time increment of fault (not used?)
+  std::string tag;      // 2-character identifier of line or generator
+  //bool isGenerator;   // fault is a generator failure
+  bool isBus;           // fault is a bus failure
+  bool isLine;          // fault is a line failure
+  int bus_idx;          // index of fault bus, corresponding to the bus fault
+  int from_idx;         // "from" bus of line
+  int to_idx;           // "to" bus of line
+  Event(void)
+    : start(0.0), end(0.0), step(0.005),
+      tag(3, '\0'), isBus(false), isLine(false),
+      bus_idx(-1), from_idx(-1), to_idx(-1)
+  {
+    tag = "1";
+  }
 };
 
 class DSFullBranch;
