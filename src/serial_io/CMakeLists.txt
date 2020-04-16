@@ -24,7 +24,9 @@ set(target_libraries
 
 if (GOSS_DIR)
   add_library(gridpack_goss
-    goss_utils.cpp)
+    #goss_utils.cpp
+    goss_client.cpp
+  )
   gridpack_set_library_version(gridpack_goss)
   add_dependencies(gridpack_goss external_build)
 
@@ -59,11 +61,26 @@ endif()
 # TEST: greetings
 # A simple Serial IO test program
 # -------------------------------------------------------------
-add_executable(test_serial_io test/test_serial_io.cpp)
-target_link_libraries(test_serial_io ${target_libraries})
 if (GOSS_DIR)
+
+  add_executable(test_serial_io test/test_serial_io.cpp)
+  target_link_libraries(test_serial_io ${target_libraries}
+  	${GOSS_LIBRARY}
+  	${APR_LIBRARY}
+  )
+
+  add_executable(test_goss_client test/test_goss_client.cpp)
+  target_link_libraries(test_goss_client ${target_libraries}
+	${GOSS_LIBRARY}
+	${APR_LIBRARY}
+  )
+
   add_executable(test_goss test/test_goss.cpp)
-  target_link_libraries(test_goss ${target_libraries} ${GOSS_LIBRARY} ${APR_LIBRARY})
+  target_link_libraries(test_goss 
+	${target_libraries} 
+	${GOSS_LIBRARY} 
+	${APR_LIBRARY}
+  )
 
   add_custom_target(test_goss_input
  
@@ -81,14 +98,18 @@ if (GOSS_DIR)
     gridpack_goss
     DESTINATION lib
     )
-
+else()
+ add_executable(test_serial_io test/test_serial_io.cpp)
+  target_link_libraries(test_serial_io ${target_libraries}
+  )
 endif()
 # -------------------------------------------------------------
 # installation
 # -------------------------------------------------------------
 install(FILES 
   serial_io.hpp
-  goss_utils.hpp
+  #goss_utils.hpp
+  goss_client.hpp
   DESTINATION include/gridpack/serial_io
 )
 

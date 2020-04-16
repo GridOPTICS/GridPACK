@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Configuration>
   <GOSSTest>
-    <channelTopic> XXXX </channelTopic>
-    <channelURI> XXXX </channelURI>
-    <username> XXXX </username>
-    <password> XXXX </password>
+    <channelTopic>topic.goss.gridpack.simulation1</channelTopic>
+    <channelURI>tcp://constance.pnl.gov:61616?wireFormat=openwire</channelURI>
+    <username>system</username>
+    <password>manager</password>
   </GOSSTest>
 </Configuration>
