@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2018-06-20 11:07:20 d3g096
+ * @date   2020-04-16 10:52:12 d3g096
  * 
  * @brief  
  * 
@@ -173,7 +173,8 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu
  * do a fully initialization before running dynamics simulation
  */
 void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(
-    const char *inputfile, std::vector<gridpack::dynamic_simulation::Event> BusFaults){
+    const char *inputfile,
+    const std::vector<gridpack::dynamic_simulation::Event>& BusFaults){
 	
 	solvePowerFlowBeforeDynSimu(inputfile);
 	transferPFtoDS();
