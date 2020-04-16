@@ -42,7 +42,7 @@ struct Event{
   double end   = 0.0; // end times of fault
   double step  = 0.005;      // time increment of fault (not used?)
   char tag[3] = "1";      // 2-character identifier of line or generator
-  //bool isGenerator; // fault is a generator failure
+  bool isGenerator = false; // fault is a generator failure
   bool isBus = false;      // fault is a bus failure
   int bus_idx = -1;      // index of fault bus, corresponding to the bus fault
   bool isLine = false;      // fault is a line failure
