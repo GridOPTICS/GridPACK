@@ -131,14 +131,19 @@ void gridpack::hadrec::HADRECAppModule::transferPFtoDS(){
 /**
  * do initialization only for dynamics simulation
  */
-void gridpack::hadrec::HADRECAppModule::initializeDynSimu(){
+void gridpack::hadrec::HADRECAppModule::initializeDynSimu
+(std::vector<gridpack::dynamic_simulation::Event> faults){ 
+// the definition of struct Event is at
+// /src/applications/modules/dynamic_simulation_full_y/dsf_components.hpp
 
   ds_app_sptr.reset(new gridpack::dynamic_simulation::DSFullApp());
 
   gridpack::utility::Configuration::CursorPtr cursor;
   cursor = config_sptr->getCursor("Configuration.Dynamic_simulation");
-  std::vector<gridpack::dynamic_simulation::Event> faults;
-  faults = ds_app_sptr->getFaults(cursor);
+  
+  if (faults.empty()){
+	faults = ds_app_sptr->getFaults(cursor);
+  }
 
   // run dynamic simulation
   ds_app_sptr->setNetwork(ds_network, &(*config_sptr));
@@ -168,11 +173,12 @@ void gridpack::hadrec::HADRECAppModule::initializeDynSimu(){
  * do a fully initialization before running dynamics simulation
  */
 void gridpack::hadrec::HADRECAppModule::fullInitializationBeforeDynSimuSteps(
-    const char *inputfile){
+    const char *inputfile, std::vector<gridpack::dynamic_simulation::Event> BusFaults){
 	
 	solvePowerFlowBeforeDynSimu(inputfile);
 	transferPFtoDS();
-	initializeDynSimu();
+
+	initializeDynSimu(BusFaults);
 		
 }
 

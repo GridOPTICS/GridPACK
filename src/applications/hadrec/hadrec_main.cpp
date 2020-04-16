@@ -50,9 +50,12 @@ int main(int argc, char **argv)
 
   // transfer power flow results to dynamic simulation
   hadrec_app_sptr->transferPFtoDS();
+  
+  std::vector<gridpack::dynamic_simulation::Event> BusFaults;
+  BusFaults.clear();
 
   // initialize dynamic simulation
-  hadrec_app_sptr->initializeDynSimu();
+  hadrec_app_sptr->initializeDynSimu(BusFaults);
 
   gridpack::hadrec::HADRECAction loadshedact;
   loadshedact.actiontype = 0;
@@ -144,6 +147,16 @@ int main(int argc, char **argv)
   // transfer power flow results to dynamic simulation
   bool btest_2dynasimu = true; //true;
   if (btest_2dynasimu) {
+	  
+	gridpack::dynamic_simulation::Event busfault;
+	busfault.start = 10.0;
+	busfault.end = 10.2;
+	busfault.step = 0.005;
+	busfault.isBus = true;
+	busfault.bus_idx = 7;
+    
+	BusFaults.clear();
+	BusFaults.push_back(busfault);
     
     //hadrec_app_sptr->solvePowerFlowBeforeDynSimu(argc, argv);
     
@@ -151,7 +164,7 @@ int main(int argc, char **argv)
     hadrec_app_sptr->transferPFtoDS();
 
     // initialize dynamic simulation
-    hadrec_app_sptr->initializeDynSimu();
+    hadrec_app_sptr->initializeDynSimu(BusFaults);
 
     isteps = 0;
     //bApplyAct = true;  // whether apply the action in the simulation steps

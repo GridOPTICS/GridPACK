@@ -131,9 +131,23 @@ void gridpack::dynamic_simulation::DSFullFactory::setEvent(const
   for (i=0; i<p_numBus; i++) {
     p_buses[i]->clearEvent();
   }
+  
   for (i=0; i<p_numBranch; i++) {
-    p_branches[i]->setEvent(event);
+    p_branches[i]->clearEvent();
   }
+  
+  if (event.isBus){
+	  for (i=0; i<p_numBus; i++) {
+		p_buses[i]->setEvent(event.bus_idx, event.bus_idx, NULL);
+	}  
+  }
+  
+  if (event.isLine) {
+	for (i=0; i<p_numBranch; i++) {
+		p_branches[i]->setEvent(event);
+	}
+  }
+  
 }
 
 /**

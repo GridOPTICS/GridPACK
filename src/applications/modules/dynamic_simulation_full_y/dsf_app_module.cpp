@@ -1118,8 +1118,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     char *ptr;
     sprintf(secureBuf,"\nThe system is secure");
     ptr = secureBuf + strlen(secureBuf);
-    if (fault.isGenerator) {
-      sprintf(ptr," for fault at generator %s on bus %d\n",fault.tag,fault.bus_idx);
+    if (fault.isBus) {
+      sprintf(ptr," for fault at bus %d\n", fault.bus_idx);
     } else if (fault.isLine) {
       sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag,
           fault.from_idx,fault.to_idx);
@@ -1130,8 +1130,8 @@ void gridpack::dynamic_simulation::DSFullApp::solve(
     char *ptr;
     sprintf(secureBuf,"\nThe system is insecure from step %d", p_insecureAt);
     ptr = secureBuf + strlen(secureBuf);
-    if (fault.isGenerator) {
-      sprintf(ptr," for fault at generator %s on bus %d\n",fault.tag,fault.bus_idx);
+    if (fault.isBus) {
+      sprintf(ptr," for fault on bus %d\n",fault.bus_idx);
     } else if (fault.isLine) {
       sprintf(ptr," for fault at line %s from bus %d to bus %d\n",fault.tag,
           fault.from_idx,fault.to_idx);
@@ -1205,7 +1205,7 @@ getFaults(gridpack::utility::Configuration::CursorPtr cursor)
           event.from_idx = 0;
           event.to_idx = 0;
         }
-        event.isGenerator = false;
+        event.isBus = false;
         event.isLine = true;
       } else {
         event.from_idx = 0;

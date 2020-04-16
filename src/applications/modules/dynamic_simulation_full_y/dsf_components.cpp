@@ -191,8 +191,8 @@ bool gridpack::dynamic_simulation::DSFullBus::matrixDiagValues(ComplexType *valu
     } else {
       return false;
     }
-  } else if (p_mode == posFY) {
-    if (p_from_flag || p_to_flag) {
+  } else if (p_mode == posFY) { // renke modify, only for line failure with tripping at post fault stage, the bus diagnal element will change value - reducing the value of the Y of the tripped line
+    if ( (p_from_flag || p_to_flag) && (p_branch!=NULL) ) {
       values[0] = dynamic_cast<gridpack::dynamic_simulation::DSFullBranch*>(p_branch)->getUpdateFactor();
       return true;
     } else {
@@ -3136,6 +3136,14 @@ gridpack::dynamic_simulation::DSFullBranch::getBranchRelayTripUpdateFactor()
 }
 
 /**
+ * Clear fault event from branch
+ */
+void gridpack::dynamic_simulation::DSFullBranch::clearEvent()
+{
+  p_event = false;
+}
+
+/**
  * Check to see if an event applies to this branch and set appropriate internal
  * parameters
  * @param event a struct containing parameters that describe a fault event in
@@ -3146,6 +3154,8 @@ void gridpack::dynamic_simulation::DSFullBranch::setEvent(
 {
   int idx1 = getBus1OriginalIndex();
   int idx2 = getBus2OriginalIndex();
+  
+  /*
   if (event.isGenerator) {
     if (event.from_idx == event.to_idx) {
       if (event.from_idx == idx1) {
@@ -3157,6 +3167,8 @@ void gridpack::dynamic_simulation::DSFullBranch::setEvent(
       }
     }
   }
+  */
+  
   if (event.isLine) {
     // Check to see if event refers to this bus
     if (idx1 == event.from_idx && idx2 == event.to_idx) {

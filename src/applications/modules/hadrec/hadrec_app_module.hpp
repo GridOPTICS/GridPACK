@@ -64,12 +64,12 @@ class HADRECAppModule
 	/**
      * do initialization only for dynamics simulation
      */
-    void initializeDynSimu();
+    void initializeDynSimu(std::vector<gridpack::dynamic_simulation::Event> faults);
 	
 	/**
 	* do a fully initialization before running dynamics simulation
 	*/
-	void fullInitializationBeforeDynSimuSteps(const char *inputfile);
+	void fullInitializationBeforeDynSimuSteps(const char *inputfile, std::vector<gridpack::dynamic_simulation::Event> BusFaults);
 	
 	/**
 	* Execute only one simulation time step 
