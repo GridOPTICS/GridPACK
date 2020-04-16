@@ -10,12 +10,13 @@
 // -------------------------------------------------------------
 // -------------------------------------------------------------
 // Created January 24, 2020 by Perkins
-// Last Change: 2020-03-09 12:19:23 d3g096
+// Last Change: 2020-04-16 12:55:04 d3g096
 // -------------------------------------------------------------
 
 #include <pybind11/pybind11.h>
 namespace py = pybind11;
 #include <pybind11/stl.h>
+#include <pybind11/stl_bind.h>
 
 #include <gridpack/environment/environment.hpp>
 #include <gridpack/parallel/communicator.hpp>
@@ -25,6 +26,7 @@ namespace py = pybind11;
 namespace gp = gridpack;
 namespace gpp = gridpack::parallel;
 namespace gph = gridpack::hadrec;
+namespace gpds = gridpack::dynamic_simulation;
 
 // Some temporary hacks
 
@@ -62,6 +64,10 @@ stupid_openmpi_hack(void)
 
 // GridPACK uses Boost smart pointers, so let's use those here
 PYBIND11_DECLARE_HOLDER_TYPE(T, boost::shared_ptr<T>, false);
+
+// Some pybind11 magic for a vector of Event
+PYBIND11_MAKE_OPAQUE( std::vector< gpds::Event > )
+
 
 // Hack to return a value from nextTask functions
 class TaskCounter
@@ -105,7 +111,6 @@ public:
 private:
   boost::shared_ptr<gpp::TaskManager> p_tskmgr;
 };
-
 
 // -------------------------------------------------------------
 // gridpack module
@@ -164,7 +169,36 @@ PYBIND11_MODULE(gridpack, gpm) {
     .def("printStats", &TaskManagerWrapper::printStats)
     ;
 
+  // -------------------------------------------------------------
+  // gridpack.dynamic_simulation module
+  // -------------------------------------------------------------
+  py::module dsm =
+    gpm.def_submodule("dynamic_simulation",
+                      "GridPACK Dynamic Simulation Application module");
 
+  // -------------------------------------------------------------
+  // gridpack.dynamic_simulation.EventVector
+  // -------------------------------------------------------------
+  py::bind_vector< std::vector< gpds::Event > >(dsm, "EventVector");
+
+  // -------------------------------------------------------------
+  // gridpack.dynamic_simulation.Event
+  // -------------------------------------------------------------
+  py::class_<gpds::Event>(dsm, "Event")
+    .def(py::init<>())
+    .def_readwrite("start", &gpds::Event::start)
+    .def_readwrite("end", &gpds::Event::end)
+    .def_readwrite("step", &gpds::Event::step)
+    .def_readwrite("tag", &gpds::Event::tag)
+    .def_readwrite("isGenerator", &gpds::Event::isGenerator)
+    .def_readwrite("isBus", &gpds::Event::isBus)
+    .def_readwrite("bus_idx", &gpds::Event::bus_idx)
+    .def_readwrite("isLine", &gpds::Event::isLine)
+    .def_readwrite("from_idx", &gpds::Event::from_idx)
+    .def_readwrite("to_idx", &gpds::Event::to_idx)
+    ;
+
+  
   // -------------------------------------------------------------
   // gridpack.hadrec module
   // -------------------------------------------------------------
@@ -205,9 +239,11 @@ PYBIND11_MODULE(gridpack, gpm) {
            self.solvePowerFlowBeforeDynSimu(s.c_str());
          })
     .def("fullInitializationBeforeDynSimuSteps",
-         [](gph::HADRECAppModule& self, const std::string& s) {
-           self.fullInitializationBeforeDynSimuSteps(s.c_str());
-         });
+         [](gph::HADRECAppModule& self, const std::string& s,
+            const std::vector<gpds::Event>& BusFaults) {
+           self.fullInitializationBeforeDynSimuSteps(s.c_str(), BusFaults);
+         })
+    ;
 
   // This method returns a tuple containing 3 lists (int, string, int)
 

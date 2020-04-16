@@ -6,12 +6,13 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-03-09 12:24:10 d3g096
+# Last Change: 2020-04-16 12:04:36 d3g096
 # -------------------------------------------------------------
 
 import sys, os
 import gridpack
 import gridpack.hadrec
+import gridpack.dynamic_simulation
 
 # -------------------------------------------------------------
 # variable initialization
@@ -38,13 +39,22 @@ env = gridpack.Environment()
 hadapp = gridpack.hadrec.Module()
 hadapp.solvePowerFlowBeforeDynSimu(inname)
 hadapp.transferPFtoDS()
-hadapp.initializeDynSimu()
+
+busfaultlist = gridpack.dynamic_simulation.EventVector()
+
+hadapp.initializeDynSimu(busfaultlist)
 
 loadshedact = gridpack.hadrec.Action()
 loadshedact.actiontype = 0;
 loadshedact.bus_number = 5;
 loadshedact.componentID = "1";
 loadshedact.percentage = -0.2;
+
+loadshedact1 = gridpack.hadrec.Action()
+loadshedact1.actiontype = 0;
+loadshedact1.bus_number = 7;
+loadshedact1.componentID = "1";
+loadshedact1.percentage = -0.2;
 
 (obs_genBus, obs_genIDs, obs_loadBuses, obs_loadIDs, obs_busIDs) = hadapp.getObservationLists()
 
@@ -62,6 +72,7 @@ while (not hadapp.isDynSimuDone()):
         ( isteps == 2500 or isteps == 3000 or
           isteps == 3500 or isteps == 4000 )):
         hadapp.applyAction(loadshedact)
+        hadapp.applyAction(loadshedact1)
     hadapp.executeDynSimuOneStep()
     ob_vals = hadapp.getObservations();
     print (isteps, ob_vals)
@@ -70,8 +81,18 @@ while (not hadapp.isDynSimuDone()):
 btest_2dynasimu = True
 
 if (btest_2dynasimu):
+
+    busfault = gridpack.dynamic_simulation.Event()
+    busfault.start = 10.0;
+    busfault.end = 10.2;
+    busfault.step = 0.005;
+    busfault.isBus = True;
+    busfault.bus_idx = 7;
+
+    busfaultlist = gridpack.dynamic_simulation.EventVector([busfault])
+    
     hadapp.transferPFtoDS()
-    hadapp.initializeDynSimu()
+    hadapp.initializeDynSimu(busfaultlist)
 
     while (not hadapp.isDynSimuDone()):
         if (bApplyAct and
@@ -83,6 +104,6 @@ if (btest_2dynasimu):
         print (isteps, ob_vals)
         isteps = isteps + 1
 
-# It's important to force the deallocation order here
+# It's important to force deallocation order here
 hadapp = None
 env = None
