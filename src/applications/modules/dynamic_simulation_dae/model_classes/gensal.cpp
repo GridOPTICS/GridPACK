@@ -365,26 +365,6 @@ double GensalGen::getFieldCurrent()
  * return true when matrix entries set
  */
 
-
-bool GensalGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  // Not implemented yet
-  int idx = 0;
-  if(p_mode == FAULT_EVAL) {
-    *nval = idx;
-  } else if(p_mode == DIG_DV) {
-
-    *nval = idx;
-  } else if(p_mode == DFG_DV) {
-
-    *nval = idx;
-  } else if(p_mode == DIG_DX) {
- 
-    *nval = idx;
-  }
-  return true;
-}
-
 /**
  * Write out generator state
  * @param signal character string used to determine behavior

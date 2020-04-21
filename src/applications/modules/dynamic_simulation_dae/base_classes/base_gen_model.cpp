@@ -21,6 +21,15 @@ BaseGenModel::~BaseGenModel(void)
 }
 
 /**
+ * Set Jacobian values
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool BaseGenModel::setJacobian(gridpack::ComplexType **values)
+{
+  return false;
+}
+
+/**
  * Load parameters from DataCollection object into generator model
  * @param data collection of generator parameters from input files
  * @param index of generator on bus
@@ -132,21 +141,6 @@ double BaseGenModel::getFieldCurrent()
 double BaseGenModel::getRotorSpeedDeviation()
 {
   return 0.0;
-}
-
-
-/**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indices for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool BaseGenModel::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  *nval = 0;
-  return false;
 }
 
 //SJin: add setExciter method

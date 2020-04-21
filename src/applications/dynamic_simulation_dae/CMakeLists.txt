@@ -77,6 +77,10 @@ add_custom_target(dsim.x.input
   ${CMAKE_CURRENT_BINARY_DIR}
 
   COMMAND ${CMAKE_COMMAND} -E copy 
+  ${GRIDPACK_DATA_DIR}/dyr/9b3g.dyr
+  ${CMAKE_CURRENT_BINARY_DIR}
+
+  COMMAND ${CMAKE_COMMAND} -E copy 
   ${GRIDPACK_DATA_DIR}/petscoptions/.petscrc
   ${CMAKE_CURRENT_BINARY_DIR}
 

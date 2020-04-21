@@ -168,72 +168,65 @@ void ClassicalGen::getCurrent(double *IGD, double *IGQ)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indices for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
+ * Set Jacobian values
+ * @param values a 2-d array of Jacobian block for the bus
  */
-bool ClassicalGen::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
+bool ClassicalGen::setJacobian(gridpack::ComplexType **values)
 {
-  int idx = 0;
+  int start_idx = offsetb; /* Starting location for the variables for the generator */
+  int VD_idx = 0; /* Row/col number for bus voltage VD variable */
+  int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
+  int IGQ_idx = 0; /* Row/col location for IGQ equations */
+  int IGD_idx = 1; /* Row/col location for IGD equations */
+  // Note that the order for the generator currents is [IGQ;IGD]
+  int delta_idx = offsetb;
+  int dw_idx = offsetb+1;
+
+  /***** IMPORTANT NOTE ************/
+  /********!!!!!!!!!!!!!!!!*********/
+  // The array matrixDiagValues uses has a column-major-order! Because of
+  // this we need to use the transpose of the locations. For e.g. the
+  // partial derivative of dw equation w.r.t. VD would, in the natural
+  // row-order form use a[dw_idx][VD_idx]. But, due to the column-major-
+  // ordering, we need to use the transposed location, i.e., a[VD_idx][dw_idx]
+  // This is extremely confusing!!!!!!!!
+
   if(p_mode == FAULT_EVAL) {
-    // On fault (p_mode == FAULT_EVAL flag), the generator variables are held constant. This is done by setting the diagonal matrix entries to 1.0 and all other entries to 0. The residual function values are already set to 0.0 in the vector values function. This results in the equation 1*dx = 0.0 such that dx = 0.0 and hence x does not get changed.
-    row[idx] = 0; col[idx] = 0;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 1; col[idx] = 1;
-    values[idx] = 1.0;
-    idx++;
-    *nval = idx;
-  } else if(p_mode == DIG_DV) {
-    // These are the partial derivatives of the generator currents (see getCurrent function) w.r.t to the voltage variables VD and VQ
-    row[idx] = 0; col[idx] = 0;
-    values[idx] =  1/p_Xdp;
-    idx++;
-    row[idx] = 1; col[idx] = 1;
-    values[idx] =  -1/p_Xdp;
-    idx++;
+    // Generator variables held constant
+    // dF_dX
+    // Set diagonal values to 1.0
+    values[delta_idx][delta_idx] = 1.0;
+    values[dw_idx][dw_idx] = 1.0;
 
-    *nval = idx;
-  } else if(p_mode == DFG_DV) {
-    // These are the partial derivatives of the generator equations w.r.t voltage variables VD and VQ
-    row[idx] = 1; col[idx] = 0;
-    values[idx] = (-p_Ep*sin(p_delta)/p_Xdp)/(2*p_H);
-    idx++;
-    row[idx] = 1; col[idx] = 1;
-    values[idx] = (p_Ep*cos(p_delta)/p_Xdp)/(2*p_H);
-    idx++;
-
-    *nval = idx;
-  } else if(p_mode == DIG_DX) {
-    // These are the partial derivatives of the generator currents (see getCurrent) w.r.t. generator variables
-    row[idx] = 0; col[idx] = 0;
-    values[idx] = p_Ep*sin(p_delta)/p_Xdp;
-    idx++;
-    row[idx] = 1; col[idx] = 0;
-    values[idx] = p_Ep*cos(p_delta)/p_Xdp;
-    idx++;
-
-    *nval = idx;
+    // dG_dV
+    values[VD_idx][IGQ_idx] +=  1/p_Xdp;
+    values[VQ_idx][IGD_idx] += -1/p_Xdp;
   } else {
+
     // Partials of generator equations w.r.t generator variables
-    row[idx] = 0; col[idx] = 0;
-    values[idx] = -shift;
-    idx++;
-    row[idx] = 0; col[idx] = 1;
-    values[idx]    = 1.0/OMEGA_S;
-    idx++;
-    row[idx] = 1; col[idx] = 0;
-    values[idx] = (-VD*p_Ep*cos(p_delta)/p_Xdp - VQ*p_Ep*sin(p_delta)/p_Xdp)/(2*p_H);
-    idx++;
-    row[idx] = col[idx] = 1;
-    values[idx] = -shift - p_D/(2*p_H);
-    idx++;
-    
-    *nval = idx;
+    // dF_dX
+    values[delta_idx][delta_idx] = -shift;
+    values[dw_idx][delta_idx] = 1.0/OMEGA_S;
+    values[delta_idx][dw_idx] = (-VD*p_Ep*cos(p_delta)/p_Xdp - VQ*p_Ep*sin(p_delta)/p_Xdp)/(2*p_H);
+    values[dw_idx][dw_idx] = -shift - p_D/(2*p_H);
+
+    // dF_dV
+    // These are the partial derivatives of the generator equations w.r.t voltage variables VD and VQ
+    values[VD_idx][dw_idx] = (-p_Ep*sin(p_delta)/p_Xdp)/(2*p_H);
+    values[VQ_idx][dw_idx] = (p_Ep*cos(p_delta)/p_Xdp)/(2*p_H);
+
+    // dG_dX
+    // These are the partial derivatives of the generator current w.r.t. generator variables
+    values[delta_idx][IGQ_idx] = p_Ep*sin(p_delta)/p_Xdp;
+    values[delta_idx][IGD_idx] = p_Ep*cos(p_delta)/p_Xdp;
+
+    // dG_dV
+    values[VD_idx][IGQ_idx] +=  1/p_Xdp;
+    values[VQ_idx][IGD_idx] += -1/p_Xdp;
   }
+			      
   return true;
 }
+
+
 

@@ -252,14 +252,14 @@ void DSimBus::load(const
       // Set number of equations for this generator
       p_gen[i]->vectorSize(&p_neqsgen[i]);
       // Set the offset for the first variable in the bus variable array 
-      p_gen[i]->setBusOffset(2);
+      p_gen[i]->setBusOffset(p_nvar);
       if (has_ex) {
 	p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
-	p_gen[i]->getExciter()->setBusOffset(2+p_neqsgen[i]);
+	p_gen[i]->getExciter()->setBusOffset(p_nvar+p_neqsgen[i]);
       }
       if (has_gv) {
 	p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
-	p_gen[i]->getGovernor()->setBusOffset(2+p_neqsgen[i]+p_neqsexc[i]);
+	p_gen[i]->getGovernor()->setBusOffset(p_nvar+p_neqsgen[i]+p_neqsexc[i]);
       }
 
       /* Update number of variables for this bus */
@@ -307,8 +307,10 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
   int VD_idx=0; // Location of VD in the solution vector for this bus
   int VQ_idx=1; // Location of VQ in the solution vector for this bus
   double p_VD,p_VQ;
-  int ctr=0;
   // matvalues is a 2-d representation of the 1-d values array
+  // Note that values is column-major, so each array of matvalues
+  // points a column of the matrix. Hence, we need to store the values
+  // in the transpose of the locations.
   gridpack::ComplexType *matvalues[p_nvar];
 
   getVoltagesRectangular(&p_VD,&p_VQ);
@@ -341,10 +343,10 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
      /* This bus is the from bus of branch[i] */
      double Gff=0.0,Bff=0.0;
      branch->getForwardSelfAdmittance(&Gff,&Bff);
-          matvalues[0][0] += -Bff;
-          matvalues[0][1] += -Gff;
-          matvalues[1][0] += -Gff;
-          matvalues[1][1] +=  Bff;
+     matvalues[0][0] += -Bff;
+     matvalues[0][1] += -Gff;
+     matvalues[1][0] += -Gff;
+     matvalues[1][1] +=  Bff;
    } else {
      double Gtt=0.0,Btt=0.0;
      /* This bus is the to bus of branch[i] */
@@ -372,11 +374,6 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
  matvalues[1][0] += -yp;
  matvalues[1][1] += -yq;
  
- // values[VD_col_start + VD_idx] +=  yq;
- // values[VQ_col_start + VD_idx] += -yp;
- // values[VD_col_start + VQ_idx] += -yp;
- // values[VQ_col_start + VQ_idx] += -yq;
-
  // Partials of generator equations and contributions to the network<->generator
  
  DSMode dsmode;
@@ -385,58 +382,10 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
      p_gen[i]->setMode(p_mode);
      p_gen[i]->setVoltage(p_VDQptr[0],p_VDQptr[1]);
      p_gen[i]->setTSshift(p_TSshift);
-     //gridpack::ComplexType genval[20];
-     gridpack::ComplexType genval[40]; //SJin: better make this dimension an input value to accomodate various size systems! 
-     //int    nval=0,row[20],col[20];
-     int    nval=0,row[40],col[40]; //SJin: better make this dimension an input value to accomodate various size systems!
-     // Derivatives of gen. eqs. w.r.t. state variables
-     p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-     
-     int var_col_start,eq_idx;
-     // Insert the entries in the values array
-     for(int k=0; k < nval; k++) {
-       var_col_start = (2+ctr+col[k])*p_nvar;
-       eq_idx        = 2 + ctr + row[k];
-       values[var_col_start + eq_idx] = genval[k];
-     }
 
-     // Derivatives of generator currents w.r.t. VD, VQ
-     p_gen[i]->setMode(DIG_DV);
-     nval = 0;
-     p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-     // Insert the entries in the values array
-     for(int k=0; k < nval; k++) {
-       var_col_start = col[k]*p_nvar;
-       eq_idx        = row[k];
-       values[var_col_start + eq_idx] += genval[k]; // SJin: TBD
-     }
-
-     if(p_mode != FAULT_EVAL) {
-       // Derivatives of generator equations w.r.t. VD, VQ
-       p_gen[i]->setMode(DFG_DV);
-       nval = 0;
-       p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-       // Insert the entries in the values array
-       for(int k=0; k < nval; k++) {
-	 var_col_start = col[k]*p_nvar;
-	 eq_idx        = 2 + ctr + row[k];
-	 values[var_col_start + eq_idx] = genval[k]; // SJin: TBD
-       }
-
-       // Derivatives of generator currents w.r.t. generator variables
-       p_gen[i]->setMode(DIG_DX);
-       nval = 0;
-       p_gen[i]->matrixDiagEntries(&nval,row,col,genval);
-       // Insert the entries in the values array
-       for(int k=0; k < nval; k++) {
-	 var_col_start = (2+ctr+col[k])*p_nvar;
-	 eq_idx        = row[k];
-	 values[var_col_start + eq_idx] = genval[k];
-       }
-     }
+     p_gen[i]->setJacobian(matvalues);
    }
-   ctr += p_neqsgen[i];
- }  
+ } 
 
  return true;
 }

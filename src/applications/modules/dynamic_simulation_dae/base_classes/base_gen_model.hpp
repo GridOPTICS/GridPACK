@@ -91,19 +91,6 @@ public:
   virtual void getCurrent(double *IGD, double *IGQ);
   
   /**
-   * Return the matrix entries
-   * @param [output] nval - number of values set
-   * @param [output] row - row indices for matrix entries
-   * @param [output] col - col indices for matrix entries
-   * @param [output] values - matrix entries
-   * return true when matrix entries set
-
-   Note: It becomes cumbersome to use matrixDiagValues for large matrix blocks. matrixDiagEntries makes this easier by also allowing to set the row and col indices for the entries. Eventually, we would want to move this function to the MatVecInterface and then have the loadXXXData methods in the mapper class call it for setting the matrix values 
-   */
-
-  virtual bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
-
-  /**
      Note: This is a custom version of the load method from the BaseComponent Class. It takes in an extra argument idx to specify which component is being read. Ideally, this method should be moved to the MatVecInterface
 
    * Load data from DataCollection object into corresponding
@@ -111,7 +98,14 @@ public:
    * @param data data collection associated with component
    */
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
-  
+
+
+/**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+  virtual bool setJacobian(gridpack::ComplexType **values);
+
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
 to be overwritten by the implementation */
