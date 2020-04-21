@@ -146,7 +146,6 @@ bool ClassicalGen::vectorValues(gridpack::ComplexType *values)
     values[delta_idx] = p_delta - p_deltaprev; 
     values[dw_idx] = p_dw - p_dwprev;
   } else if(p_mode == RESIDUAL_EVAL) {
-    if (bid==1) printf("bus id=%d:\t%f\t%f\n", bid, p_delta, p_dw);
     // Generator equations
     values[delta_idx] = p_dw/OMEGA_S - p_deltadot;
     values[dw_idx]    = (p_Pm - VD*p_Ep*sin(p_delta)/p_Xdp + VQ*p_Ep*cos(p_delta)/p_Xdp - p_D*p_dw)/(2*p_H) - p_dwdot;
