@@ -101,6 +101,12 @@ public:
    * @param data data collection associated with component
    */
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
+
+  /**
+   * Set the offset for first variable for the exciter in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
   
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
@@ -159,11 +165,14 @@ to be overwritten by the implementation */
 
   BaseGenModel* getGenerator();
 
+
 protected:
   double        VD, VQ;
   int           status; /**< Exciter status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.i
   BaseGenModel* p_gen; // Generator model
+  int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+
 
 };
 

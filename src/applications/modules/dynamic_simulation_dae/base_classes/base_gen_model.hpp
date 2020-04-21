@@ -163,6 +163,12 @@ to be overwritten by the implementation */
    */
   virtual double getRotorSpeedDeviation();
 
+  /**
+   * Set the offset for first variable for the generator in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
+
   /***************************************/
 
 
@@ -190,6 +196,7 @@ to be overwritten by the implementation */
   bool          p_hasGovernor;
   boost::shared_ptr<BaseExcModel> p_exciter; //SJin: new pointer to exciter
   boost::shared_ptr<BaseGovModel> p_governor; //SJin: new pointer to governor
+  int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
 };
 
 #endif

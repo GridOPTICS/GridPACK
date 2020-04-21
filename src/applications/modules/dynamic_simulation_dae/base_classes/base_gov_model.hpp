@@ -159,12 +159,21 @@ to be overwritten by the implementation */
   void setGenerator(BaseGenModel* generator);
 
   BaseGenModel* getGenerator(void);
+
+  /**
+   * Set the offset for first variable for the governor in the array for all bus variables 
+   * @param offset offset
+   */
+  void setBusOffset(int offset) {offsetb = offset;}
+
 protected:
   double        VD, VQ;
   int           status; /**< Machine status */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
 
   BaseGenModel *p_gen;
+  int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+
 };
 
 #endif

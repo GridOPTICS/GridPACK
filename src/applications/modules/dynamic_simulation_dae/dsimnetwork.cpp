@@ -251,11 +251,18 @@ void DSimBus::load(const
 
       // Set number of equations for this generator
       p_gen[i]->vectorSize(&p_neqsgen[i]);
-      if (has_ex) p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
-      if (has_gv) p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+      // Set the offset for the first variable in the bus variable array 
+      p_gen[i]->setBusOffset(2);
+      if (has_ex) {
+	p_gen[i]->getExciter()->vectorSize(&p_neqsexc[i]);
+	p_gen[i]->getExciter()->setBusOffset(2+p_neqsgen[i]);
+      }
+      if (has_gv) {
+	p_gen[i]->getGovernor()->vectorSize(&p_neqsgov[i]);
+	p_gen[i]->getGovernor()->setBusOffset(2+p_neqsgen[i]+p_neqsexc[i]);
+      }
 
       /* Update number of variables for this bus */
-      //p_nvar += p_neqsgen[i];
       p_nvar += p_neqsgen[i]+p_neqsexc[i]+p_neqsgov[i];
       printf("p_nvar = %d (ngen:%d,nexc:%d,ngov:%d)\n",p_nvar,p_neqsgen[i],p_neqsexc[i],p_neqsgov[i]);
     }
@@ -301,19 +308,22 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
   int VQ_idx=1; // Location of VQ in the solution vector for this bus
   double p_VD,p_VQ;
   int ctr=0;
+  // matvalues is a 2-d representation of the 1-d values array
+  gridpack::ComplexType *matvalues[p_nvar];
 
   getVoltagesRectangular(&p_VD,&p_VQ);
   
   // Zero out values first in case they haven't been zeroed out.
   for(i=0; i < nvar; i++) {
+    matvalues[i] = values + i*p_nvar;
+    //    printf("matvalues[%d][1] address = %p, values[%d] address = %p\n",i,matvalues[i]+1,nvar*i+1,values+nvar*i+1);
     for(j=0; j < nvar; j++) {
       values[nvar*i + j] = 0.0;
     }
   }
    
  if(p_isolated) {
-   values[VD_col_start+VD_idx] = values[VQ_col_start+VQ_idx] = 1.0;
-   values[VD_col_start+VQ_idx] = values[VQ_col_start+VD_idx] = 0.0;
+   matvalues[0][0] = matvalues[1][1] = 1.0;
    return true;
  }
  
@@ -331,35 +341,41 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
      /* This bus is the from bus of branch[i] */
      double Gff=0.0,Bff=0.0;
      branch->getForwardSelfAdmittance(&Gff,&Bff);
-     values[VD_col_start + VD_idx] += -Bff;
-     values[VQ_col_start + VD_idx] += -Gff;
-     values[VD_col_start + VQ_idx] += -Gff;
-     values[VQ_col_start + VQ_idx] +=  Bff;
+          matvalues[0][0] += -Bff;
+          matvalues[0][1] += -Gff;
+          matvalues[1][0] += -Gff;
+          matvalues[1][1] +=  Bff;
    } else {
      double Gtt=0.0,Btt=0.0;
      /* This bus is the to bus of branch[i] */
      branch->getReverseSelfAdmittance(&Gtt,&Btt);
-     values[VD_col_start + VD_idx] += -Btt;
-     values[VQ_col_start + VD_idx] += -Gtt;
-     values[VD_col_start + VQ_idx] += -Gtt;
-     values[VQ_col_start + VQ_idx] +=  Btt;
+     matvalues[0][0] += -Btt;
+     matvalues[0][1] += -Gtt;
+     matvalues[1][0] += -Gtt;
+     matvalues[1][1] +=  Btt;
    }
  }
  // Partials of contributions from shunt elements
- values[VD_col_start + VD_idx] += -p_bl;
- values[VQ_col_start + VD_idx] += -p_gl;
- values[VD_col_start + VQ_idx] += -p_gl;
- values[VQ_col_start + VQ_idx] +=  p_bl;
- 
+ matvalues[0][0] += -p_bl;
+ matvalues[0][1] += -p_gl;
+ matvalues[1][0] += -p_gl;
+ matvalues[1][1] +=  p_bl;
+
  // Partials of contributions from load
  // Assuming constant impedance load
  double yp,yq;
  yp = p_pl/(p_Vm0*p_Vm0);
  yq = p_ql/(p_Vm0*p_Vm0);
- values[VD_col_start + VD_idx] +=  yq;
- values[VQ_col_start + VD_idx] += -yp;
- values[VD_col_start + VQ_idx] += -yp;
- values[VQ_col_start + VQ_idx] += -yq;
+
+ matvalues[0][0] +=  yq;
+ matvalues[0][1] += -yp;
+ matvalues[1][0] += -yp;
+ matvalues[1][1] += -yq;
+ 
+ // values[VD_col_start + VD_idx] +=  yq;
+ // values[VQ_col_start + VD_idx] += -yp;
+ // values[VD_col_start + VQ_idx] += -yp;
+ // values[VQ_col_start + VQ_idx] += -yq;
 
  // Partials of generator equations and contributions to the network<->generator
  
