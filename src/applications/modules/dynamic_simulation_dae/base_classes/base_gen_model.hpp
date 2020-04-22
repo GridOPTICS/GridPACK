@@ -170,13 +170,13 @@ to be overwritten by the implementation */
 
   boost::shared_ptr<BaseExcModel> getExciter();
   
-  bool getphasExciter();
+  bool hasExciter();
 
   void setGovernor(boost::shared_ptr<BaseGovModel> &p_governor);
 
   boost::shared_ptr<BaseGovModel> getGovernor();
   
-  bool getphasGovernor();
+  bool hasGovernor();
 
  protected:
   double        pg; /**< Generator active power output */
@@ -186,10 +186,10 @@ to be overwritten by the implementation */
   double        sbase;  /** The system MVA base */
   double        shift; // shift (multiplier) used in the Jacobian calculation.
   double        VD, VQ;
-  bool          p_hasExciter;
-  bool          p_hasGovernor;
-  boost::shared_ptr<BaseExcModel> p_exciter; //SJin: new pointer to exciter
-  boost::shared_ptr<BaseGovModel> p_governor; //SJin: new pointer to governor
+  bool          p_hasExciter; // Flag indicating whether this generator has exciter
+  bool          p_hasGovernor; // Flag indicating whether this generator has governor
+  boost::shared_ptr<BaseExcModel> p_exciter; // Exciter
+  boost::shared_ptr<BaseGovModel> p_governor; // Governor
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
 };
 

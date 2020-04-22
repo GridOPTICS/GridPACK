@@ -49,9 +49,6 @@ GensalGen::GensalGen(void)
 
   B = 0.0;
   G = 0.0;
-
-  p_hasExciter = false;
-  p_hasGovernor = false;
 }
 
 GensalGen::~GensalGen(void)
@@ -82,7 +79,7 @@ void GensalGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GENERATOR_TDOPP, &Tdopp, idx)) Tdopp=0.0; // Tdopp
   if (!data->getValue(GENERATOR_TQOPP, &Tqopp, idx)) Tqopp=0.0; // Tqopp
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.17; // S10 TBD: check parser
-  if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12  // SJin: no GENERATOR_XQPP in dictionary.hpp, read XDPP instead (Xqpp = Xdpp)
+  if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.55; // S12 
   if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
 
   // Values given on mbase. Convert to sbase
@@ -95,9 +92,6 @@ void GensalGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   Xdp /= mult;
   Xdpp /= mult;
   Xl   /= mult;
-  //printf("H=%f,D=%f,Ra=%f,Xd=%f,Xq=%f,Xdp=%f,Xdpp=%f,Xl=%f,Tdop=%f,Tdopp=%f,Tqopp=%f,S10=%f,S12=%f,Xqp=%f,Xqpp=%f,Tqop=%f\n", H,D,Ra,Xd,Xq,Xdp,Xdpp,Xl,Tdop,Tdopp,Tqopp,S10,S12,Xqp,Xqpp,Tqop);
-
-
 }
 
 /**
@@ -112,8 +106,6 @@ double GensalGen::Sat(double x)
     double A = (-b_ - sqrt(b_ * b_ - 4 * a_ * c_)) / (2 * a_);
     double B_ = S10 / ((1.0 - A) * (1.0 - A));
     double result = B_ * (x - A) * (x - A) / x;
-    //printf("a = %f, b = %f, c = %f, A = %f, B = %f, S12 = %f, S10 = %f\n", a_, b_, c_, A, B, S12, S10);
-    //printf("Sat result = %f\n", result); 
     return result; // Scaled Quadratic with 1.7.1 equations
 }
 
@@ -123,7 +115,7 @@ double GensalGen::Sat(double x)
  */
 void GensalGen::init(gridpack::ComplexType* values) 
 {
-  double Vterm = sqrt(VD*VD + VQ*VQ); // SJin: voltage VD and VQ come from base_gen_model.hpp
+  double Vterm = sqrt(VD*VD + VQ*VQ); 
   double P, Q; // Generator real and reactive power
   double Vrterm = VD;
   double Viterm = VQ;
@@ -174,13 +166,11 @@ void GensalGen::init(gridpack::ComplexType* values)
   values[4] = Psiqpp;
   
   // Initialize exciters
-  p_hasExciter = getphasExciter();
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
   }
 
-  p_hasGovernor = getphasGovernor();
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setInitialMechanicalPower(Pmech);
@@ -315,8 +305,8 @@ bool GensalGen::vectorValues(gridpack::ComplexType *values)
 
 /**
  * Return the generator current injection (in rectangular form) 
- * @param [output] IGD - real part of the generator current // SJin: match to Ir
- * @param [output] IGQ - imaginary part of the generator current // SJin: match to Ii 
+ * @param [output] IGD - real part of the generator current 
+ * @param [output] IGQ - imaginary part of the generator current 
 */
 void GensalGen::getCurrent(double *IGD, double *IGQ)
 {

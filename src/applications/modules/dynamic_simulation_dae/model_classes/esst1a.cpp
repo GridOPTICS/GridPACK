@@ -7,7 +7,8 @@
 /**
  * @file   esst1a.cpp
  * @author Shuangshuang Jin 
- * @Last modified:   10/18/19
+ * @modified:   10/18/19
+ * @Last modified - 04/22/20 Shrirang Abhyankar
  *  
  * @brief  
  *
@@ -95,8 +96,6 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   iseq_diff[2] = (Tb1 == 0 || Tc1 == 0)?0:1;
   iseq_diff[3] = (Ta == 0)?0:1;
   iseq_diff[4] = 1; // Tf is always > 0
-
-  //printf("UEL=%f,VOS=%f,Tr=%f,Vimax=%f,Vimin=%f,Tc=%f,Tb=%f,Tc1=%f,Tb1=%f,Ka=%f,Ta=%f,Vamax=%f,Vamin=%f,Vrmax=%f,Vrmin=%f,Kc=%f,Kf=%f,Tf=%f,Klr=%f,Ilr=%f\n",UEL,VOS,Tr,Vimax,Vimin,Tc,Tb,Tc1,Tb1,Ka,Ta,Vamax,Vamin,Vrmax,Vrmin,Kc,Kf,Tf,Klr,Ilr);
 
 }
 
@@ -245,7 +244,6 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
     values[4] = xf - xfprev;
 
   } else if(p_mode == RESIDUAL_EVAL) {
-    //    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\n", Vmeas, xLL1, xLL2, Va, xf);    
 
     // State 1 Vmeas
     if(iseq_diff[0]) values[0] = (-Vmeas + Ec)/Tr - dVmeas;
@@ -283,65 +281,12 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indics for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool Esst1aExc::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  int idx = 0;
-  if(p_mode == FAULT_EVAL) { // SJin: put values 1 along diagonals, 0 along off diagonals
-  // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the diagonal matrix entries to 1.0 and all other entries to 0. The residual function values are already set to 0.0 in the vector values function. This results in the equation 1*dx = 0.0 such that dx = 0.0 and hence x does not get changed.
-    row[idx] = 0; col[idx] = 0;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 1; col[idx] = 1;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 2; col[idx] = 2;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 3; col[idx] = 3;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 4; col[idx] = 4;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 5; col[idx] = 5;
-    values[idx] = 1.0;
-    idx++;
-    *nval = idx;
-  } /*else if(p_mode == DIG_DV) { // SJin: Jacobian matrix block Jgy
-    // These are the partial derivatives of the exciter currents (see getCurrent function) w.r.t to the voltage variables VD and VQ
-    
-    *nval = idx;
-  } else if(p_mode == DFG_DV) {  // SJin: Jacobian matrix block Jfyi
-    // These are the partial derivatives of the exciter equations w.r.t variables VD and VQ  
-
-    *nval = idx;
-  } else if(p_mode == DIG_DX) { // SJin: Jacobian matrix block Jgx
-    // These are the partial derivatives of the exciter currents (see getCurrent) w.r.t exciter variables
-
-    *nval = idx;
-  } else { // SJin: Jacobin matrix block Jfxi
-    // Partials of exciter equations w.r.t exciter variables
- 
-    *nval = idx;
-  }*/
-  return true;
-}
-
-/**
  * Set the initial field voltage (at t = tstart) for the exciter
  * @param fldv value of the field voltage
  */
 void Esst1aExc::setInitialFieldVoltage(double fldv)
 {
   Efd = fldv;
-  //printf("Efd in Esst1a = %f\n", Efd);
 }
 
 /** 

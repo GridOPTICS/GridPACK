@@ -110,6 +110,7 @@ class GenrouGen: public BaseGenModel
     double getRotorSpeedDeviation();
   private:
     // Machine parameters
+    int    busnum;
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl, Xqp, Xqpp;
     double Tdop, Tdopp, Tqopp, S10, S12, Tqop;
 
@@ -128,9 +129,7 @@ class GenrouGen: public BaseGenModel
 
     double B, G;
 
-
     double sat_A, sat_B; // Saturation constant
-    int bid;
 
     /**
      * Saturation function

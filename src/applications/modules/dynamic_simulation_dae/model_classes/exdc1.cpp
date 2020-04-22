@@ -250,58 +250,6 @@ bool Exdc1Exc::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indics for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool Exdc1Exc::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  int idx = 0;
-  if(p_mode == FAULT_EVAL) { // SJin: put values 1 along diagonals, 0 along off diagonals
-  // On fault (p_mode == FAULT_EVAL flag), the exciter variables are held constant. This is done by setting the diagonal matrix entries to 1.0 and all other entries to 0. The residual function values are already set to 0.0 in the vector values function. This results in the equation 1*dx = 0.0 such that dx = 0.0 and hence x does not get changed.
-    row[idx] = 0; col[idx] = 0;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 1; col[idx] = 1;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 2; col[idx] = 2;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 3; col[idx] = 3;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 4; col[idx] = 4;
-    values[idx] = 1.0;
-    idx++;
-    row[idx] = 5; col[idx] = 5;
-    values[idx] = 1.0;
-    idx++;
-    *nval = idx;
-  } /*else if(p_mode == DIG_DV) { // SJin: Jacobian matrix block Jgy
-    // These are the partial derivatives of the exciter currents (see getCurrent function) w.r.t to the voltage variables VD and VQ
-    
-    *nval = idx;
-  } else if(p_mode == DFG_DV) {  // SJin: Jacobian matrix block Jfyi
-    // These are the partial derivatives of the exciter equations w.r.t variables VD and VQ  
-
-    *nval = idx;
-  } else if(p_mode == DIG_DX) { // SJin: Jacobian matrix block Jgx
-    // These are the partial derivatives of the exciter currents (see getCurrent) w.r.t exciter variables
-
-    *nval = idx;
-  } else { // SJin: Jacobin matrix block Jfxi
-    // Partials of exciter equations w.r.t exciter variables
- 
-    *nval = idx;
-  }*/
-  return true;
-}
-
-/**
  * Set the initial field voltage (at t = tstart) for the exciter
  * @param fldv value of the field voltage
  */

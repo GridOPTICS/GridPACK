@@ -122,7 +122,6 @@ void Wsieg1Gov::init(gridpack::ComplexType* values)
 {
   BaseGenModel* gen=getGenerator();
   double dw = gen->getRotorSpeedDeviation();
-  ///printf("wsieg1: Pmech1 = %f, Pmech2 = %f\n", Pmech1, Pmech2);
   double PGV;
   if (K1 + K3 + K5 + K7 > 0) 
     PGV = Pmech1 / (K1 + K3 + K5 + K7);
@@ -264,10 +263,6 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
     else values[x6_idx] = xT3 - xT4;
 
   } else if(p_mode == RESIDUAL_EVAL) {
-    //printf("\n wsieg1: what's the initial values for the first iteration?\n");
-    //    if (bid == 1) printf("\t\t%f\t%f\t%f\t%f\t%f\t%f\n", xLL, xGV, xT1, xT2, xT3, xT4);
-    // Governor equations
-
     // State 1 xLL
     if(iseq_diff[x1_idx]) {
       values[x1_idx] = (-xLL + (1 - T2/T1)*K*dw)/T1 - dxLL;
@@ -302,23 +297,6 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indics for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool Wsieg1Gov::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  int idx = 0;
-  if(p_mode == FAULT_EVAL) { // SJin: put values 1 along diagonals, 0 along off diagonals
-
-  }
-  return true;
-}
-
-/**
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power 
  */
@@ -326,7 +304,6 @@ void Wsieg1Gov::setInitialMechanicalPower(double Pmech0)
 {
   Pmech1 = Pmech0;
   Pmech2 = Pmech0;
-  //printf("Pmech1 in WSIEG1 = %f\n", pmech);
 }
 
 /** 

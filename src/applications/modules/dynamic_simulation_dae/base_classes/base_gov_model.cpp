@@ -116,20 +116,6 @@ bool BaseGovModel::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indices for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool BaseGovModel::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  *nval = 0;
-  return false;
-}
-
-/**
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power
  */

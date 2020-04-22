@@ -117,20 +117,6 @@ bool BaseExcModel::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
- * Return the matrix entries
- * @param [output] nval - number of values set
- * @param [output] row - row indices for matrix entries
- * @param [output] col - col indices for matrix entries
- * @param [output] values - matrix entries
- * return true when matrix entries set
- */
-bool BaseExcModel::matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values)
-{
-  *nval = 0;
-  return false;
-}
-
-/**
  * Set the initial field voltage (at t = tstart) parameter for the exciter
  * @param fldv value of the field voltage
  */

@@ -8,7 +8,7 @@
  * @file   esst1a.hpp
  * @author Shuangshuang Jin
  * @author Shrirang Abhyankar
- * @Last modified:   01/02/20
+ * @Last modified:   04/22/20
  * 
  * @brief  
  * 
@@ -88,16 +88,6 @@ class Esst1aExc: public BaseExcModel
      *        vector element
      */
     bool vectorValues(gridpack::ComplexType *values);
-
-    /**
-     * Return the matrix entries
-     * @param [output] nval - number of values set
-     * @param [output] row - row indices for matrix entries
-     * @param [output] col - col indices for matrix entries
-     * @param [output] values - matrix entries
-     * return true when matrix entries set
-     */
-    bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
 
     /**
      * Set the initial field voltage (at t = tstart) for the exciter

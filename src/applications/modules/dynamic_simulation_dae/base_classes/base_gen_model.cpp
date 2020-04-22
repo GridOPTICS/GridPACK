@@ -143,40 +143,35 @@ double BaseGenModel::getRotorSpeedDeviation()
   return 0.0;
 }
 
-//SJin: add setExciter method
 void BaseGenModel::setExciter(boost::shared_ptr<BaseExcModel> &exciter)
 { 
   p_exciter = exciter;
+  p_hasExciter = true;
 }
 
-//SJin: add getExciter method
+
 boost::shared_ptr<BaseExcModel> BaseGenModel::getExciter()
 {
-  p_hasExciter = true;
   return p_exciter;
 }
 
-//SJin: add getphasExciter method
-bool BaseGenModel::getphasExciter()
+bool BaseGenModel::hasExciter()
 {
     return p_hasExciter;
 }
 
-//SJin: add setGovernor method
 void BaseGenModel::setGovernor(boost::shared_ptr<BaseGovModel> &governor)
 { 
   p_governor = governor;
+  p_hasGovernor = true;
 }
 
-//SJin: add getGovernor method
 boost::shared_ptr<BaseGovModel> BaseGenModel::getGovernor()
 {
-  p_hasGovernor = true;
   return p_governor;
 }
 
-//SJin: add getphasGovernor method
-bool BaseGenModel::getphasGovernor()
+bool BaseGenModel::hasGovernor()
 {
     return p_hasGovernor;
 }

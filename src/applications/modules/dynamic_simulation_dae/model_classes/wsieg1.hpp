@@ -88,16 +88,6 @@ class Wsieg1Gov: public BaseGovModel
     bool vectorValues(gridpack::ComplexType *values);
 
     /**
-     * Return the matrix entries
-     * @param [output] nval - number of values set
-     * @param [output] row - row indices for matrix entries
-     * @param [output] col - col indices for matrix entries
-     * @param [output] values - matrix entries
-     * return true when matrix entries set
-     */
-    bool matrixDiagEntries(int *nval,int *row, int *col, gridpack::ComplexType *values);
-
-    /**
      * Set the mechanical power during initialization inside the governor
      * @param pmech value of the mechanical power 
      */

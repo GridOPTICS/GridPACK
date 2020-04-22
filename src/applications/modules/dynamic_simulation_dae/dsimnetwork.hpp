@@ -174,13 +174,9 @@ private:
   int    p_rank;
   
   BaseGenModel **p_gen;    // Generator model
-  int           *p_neqsgen; // Number of requations for each generator
-  
-  // SJin: add exciter and governor variables 
-  int           *p_neqsexc; // Number of requations for each exciter 
-  int           *p_neqsgov; // Number of requations for each governor 
-  bool has_ex; 
-  bool has_gv;
+  int           *p_neqsgen; // Number of equations for each generator
+  int           *p_neqsexc; // Number of equations for each exciter 
+  int           *p_neqsgov; // Number of equations for each governor 
   
   friend class boost::serialization::access;
   

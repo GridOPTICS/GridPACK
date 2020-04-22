@@ -8,9 +8,9 @@
  * @file   genrou.cpp
  * @author Shuangshuang Jin 
  * @author Shrirang Abhyankar
- * @Last modified:   12/30/19
+ * @Last modified:   04/22/20
  *  
- * @brief  
+ * @brief  Implements the GENROU generator model
  *
  *
  */
@@ -73,7 +73,7 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   BaseGenModel::load(data,idx); // load parameters in base generator model
 
   // load parameters for the model type
-  data->getValue(BUS_NUMBER, &bid);
+  data->getValue(BUS_NUMBER, &busnum);
   if (!data->getValue(GENERATOR_INERTIA_CONSTANT_H, &H, idx)) H = 0.0; // H
   if (!data->getValue(GENERATOR_DAMPING_COEFFICIENT_0, &D, idx)) D = 0.0; // D
   if (!data->getValue(GENERATOR_RESISTANCE, &Ra, idx)) Ra=0.0; // Ra
@@ -88,7 +88,7 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   if (!data->getValue(GENERATOR_S1, &S10, idx)) S10=0.067; // S10 TBD: check parser
   if (!data->getValue(GENERATOR_S12, &S12, idx)) S12=0.579; // S12 TBD: check parser
   if (!data->getValue(GENERATOR_XQP, &Xqp, idx)) Xqp=0.0; // Xqp
-  if (!data->getValue(GENERATOR_XDPP, &Xqpp, idx)) Xqpp=0.0; // Xqpp // SJin: no GENERATOR_XQPP in dictionary.hpp, read XDPP instead (Xqpp = Xdpp)
+  if (!data->getValue(GENERATOR_XDPP, &Xqpp, idx)) Xqpp=Xdpp; // Xqpp 
   if (!data->getValue(GENERATOR_TQOP, &Tqop, idx)) Tqop=0.0; // Tqop
 
   // Convert generator parameters from machine base to MVA base
@@ -194,14 +194,12 @@ void GenrouGen::init(gridpack::ComplexType* values)
   values[5] = Edp;
 
   // Initialize exciter field voltage and current 
-  p_hasExciter = getphasExciter();
   if (p_hasExciter) {
     p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
   }
     
   // Initialize governor mechanical power and speed deviation
-  p_hasGovernor = getphasGovernor();
   if (p_hasGovernor) {
     p_governor = getGovernor();
     p_governor->setInitialMechanicalPower(Pmech);
@@ -233,11 +231,7 @@ double GenrouGen::getAngle(void)
  */
 void GenrouGen::write(const char* signal, char* string)
 {
-  /*if (!strcmp(signal,"standard")) {
-       sprintf(string,"      %8d            %2s    %12.6f    %12.6f    %12.6f    %12.6f	%12.6f	%12.6f\n",
-          p_bus_id, p_ckt.c_str(), delta_1, dw_1, Eqp_1, Psidp_1, Psiqp_1, Edp_1);
-  }*/
-  //printf("...........bid=%d: %f\t%f\t%f\t%f\t%f\t%f\n", bid, delta, dw, Eqp, Psidp, Psiqp, Edp);
+
 }
 
 /**
