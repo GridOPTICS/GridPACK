@@ -370,8 +370,7 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
  matvalues[1][0] += -yp;
  matvalues[1][1] += -yq;
  
- // Partials of generator equations and contributions to the network<->generator
- 
+ // Partials of generator equations and contributions to the network<->generator 
  DSMode dsmode;
  for(i=0; i < p_ngen; i++) {
    if(p_gen[i]->getGenStatus()) {
@@ -380,6 +379,11 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
      p_gen[i]->setTSshift(p_TSshift);
 
      p_gen[i]->setJacobian(matvalues);
+
+     if(p_gen[i]->hasExciter()) {
+       p_gen[i]->getExciter()->setTSshift(p_TSshift);
+       p_gen[i]->getExciter()->setJacobian(matvalues);
+     }
    }
  } 
 

@@ -45,6 +45,12 @@ class Esst1aExc: public BaseExcModel
         data, int idx);
 
     /**
+     * Set Jacobian block
+     * @param values a 2-d array of Jacobian block for the bus
+     */
+    bool setJacobian(gridpack::ComplexType **values);
+
+    /**
      * Initialize exciter model before calculation
      * @param [output] values - array where initialized exciter variables should be set
      */

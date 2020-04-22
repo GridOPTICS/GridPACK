@@ -90,14 +90,19 @@ void Esst1aExc::load(const boost::shared_ptr<gridpack::component::DataCollection
   data->getValue(EXCITER_KLR, &Klr, idx);
   data->getValue(EXCITER_ILR, &Ilr, idx);
 
+  if(fabs(Klr) > 1e-6) {
+    printf("ESST1A model does not support non-zero Klr yet\n");
+    exit(1);
+  }
+
   // Set flags for differential or algebraic equations
   iseq_diff[0] = (Tr == 0)?0:1;
   iseq_diff[1] = (Tb == 0 || Tc == 0)?0:1;
   iseq_diff[2] = (Tb1 == 0 || Tc1 == 0)?0:1;
   iseq_diff[3] = (Ta == 0)?0:1;
   iseq_diff[4] = 1; // Tf is always > 0
-
 }
+
 
 /**
  * Initialize exciter model before calculation
@@ -279,6 +284,167 @@ bool Esst1aExc::vectorValues(gridpack::ComplexType *values)
   
   return true;
 }
+
+/**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool Esst1aExc::setJacobian(gridpack::ComplexType **values)
+{
+  int Vmeas_idx = offsetb;
+  int xLL1_idx  = offsetb+1;
+  int xLL2_idx  = offsetb+2;
+  int Va_idx    = offsetb+3;
+  int xf_idx    = offsetb+4;
+  int VD_idx    = 0;
+  int VQ_idx    = 1;
+  double Ec,yLL1,yLL2,Vf;
+  double dyLL2_dVmeas=0.0,dyLL2_dxLL1=0.0;
+  double dyLL2_dxLL2=0.0,dyLL2_dVa=0.0;
+  double dyLL2_dxf=0.0;
+  double dVf_dxf = 1.0;
+  double dVf_dEfd = Kf/Tf;
+  double dyLL1_dxLL1=0.0,dyLL1_dVmeas=0.0;
+  double dyLL1_dxLL2=0.0,dyLL1_dVa=0.0;
+  double dyLL1_dxf=0.0, dyLL1_dEfd=0.0;
+
+  Ec = sqrt(VD*VD + VQ*VQ);
+
+  double dEc_dVD = VD/Ec;
+  double dEc_dVQ = VQ/Ec;
+
+  if(p_mode == FAULT_EVAL) {
+    //    if(iseq_diff[0]) values[0] = Vmeas - Vmeasprev;
+    //    else values[0] = -Vmeas + Ec;
+    if(iseq_diff[0]) {
+      values[Vmeas_idx][Vmeas_idx] = 1.0;
+    } else {
+      values[Vmeas_idx][Vmeas_idx] = -1.0;
+      values[VD_idx][Vmeas_idx] = dEc_dVD;
+      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
+    }
+      
+    // Efd derivatives need to be included
+    if(iseq_diff[1]) {
+      values[xLL1_idx][xLL1_idx] = 1.0;
+      yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);
+      dyLL1_dxLL1  = 1.0;
+      dyLL1_dVmeas = -Tc/Tb;
+      dyLL1_dxf    = -Tc/Tb*dVf_dxf;
+    } else {
+      values[Vmeas_idx][xLL1_idx] = -1.0;
+      values[xLL1_idx][xLL1_idx]  = -1.0;
+      values[xf_idx][xLL1_idx]    = -dVf_dxf;
+      yLL1 = xLL1;
+      dyLL1_dxLL1 = 1.0;
+    }
+
+    if(iseq_diff[2]) {
+      values[xLL2_idx][xLL2_idx] = 1.0;
+      yLL2 = xLL2 + Tc1/Tb1*yLL1;
+
+      dyLL2_dVmeas = Tc1/Tb1*dyLL1_dVmeas;
+      dyLL2_dxLL1  = Tc1/Tb1*dyLL1_dxLL1;
+      dyLL2_dxLL2  = 1.0 + Tc1/Tb1*dyLL1_dxLL2;
+      dyLL2_dVa    = Tc1/Tb1*dyLL1_dVa;
+      dyLL2_dxf    = Tc1/Tb1*dyLL1_dxf;
+    } else {
+      values[Vmeas_idx][xLL2_idx] = dyLL1_dVmeas;
+      values[xLL1_idx][xLL2_idx]  = dyLL1_dxLL1;
+      values[xLL2_idx][xLL2_idx]  = -1.0  + dyLL1_dxLL2;
+      values[Va_idx][xLL2_idx]    = dyLL1_dVa;
+      values[xf_idx][xLL2_idx]    = dyLL1_dxf;
+
+      dyLL2_dxLL2 = 1.0;
+    }
+
+    if(iseq_diff[3]) {
+      values[Va_idx][Va_idx] = 1.0;
+    } else {
+      values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
+      values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
+      values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
+      values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
+      values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
+    }
+
+    values[xf_idx][xf_idx] = 1.0;
+  } else {
+    if(iseq_diff[0]) {
+      values[Vmeas_idx][Vmeas_idx] = -1.0/Tr - shift;
+      values[VD_idx][Vmeas_idx]    = dEc_dVD/Tr;
+      values[VQ_idx][Vmeas_idx]    = dEc_dVQ/Tr;
+    } else {
+      values[Vmeas_idx][Vmeas_idx] = -1.0;
+      values[VD_idx][Vmeas_idx] = dEc_dVD;
+      values[VQ_idx][Vmeas_idx]  = dEc_dVQ;
+    }
+
+    // Efd derivaritive need to be included
+    if(iseq_diff[1]) {
+      values[Vmeas_idx][xLL1_idx] = (1 - Tc/Tb)*-1.0/Tb;
+      values[xLL1_idx][xLL1_idx]  = -1.0/Tb - shift;
+      values[xf_idx][xLL1_idx]    = (1 - Tc/Tb)*-dVf_dxf/Tb;
+
+      yLL1 = xLL1 + Tc/Tb*(Vref - Vmeas - Vf);
+      dyLL1_dxLL1  = 1.0;
+      dyLL1_dVmeas = -Tc/Tb;
+      dyLL1_dxf    = -Tc/Tb*dVf_dxf;
+    } else {
+      values[Vmeas_idx][xLL1_idx] = -1.0;
+      values[xLL1_idx][xLL1_idx]  = -1.0;
+      values[xf_idx][xLL1_idx]    = -dVf_dxf;
+      yLL1 = xLL1;
+      dyLL1_dxLL1 = 1.0;
+    }
+
+    if(iseq_diff[2]) {
+      values[Vmeas_idx][xLL2_idx] =  (1 - Tc1/Tb1)*dyLL1_dVmeas/Tb1;
+      values[xLL1_idx][xLL2_idx]  =  (1 - Tc1/Tb1)*dyLL1_dxLL1/Tb1;
+      values[xLL2_idx][xLL2_idx]  =  -1/Tb1 + (1 - Tc1/Tb1)*dyLL1_dxLL1/Tb1 - shift;
+      values[Va_idx][xLL2_idx]    =  (1 - Tc1/Tb1)*dyLL1_dVa/Tb1;
+      values[xf_idx][xLL2_idx]    =  (1 - Tc1/Tb1)*dyLL1_dxf/Tb1;
+
+      yLL2 = xLL2 + Tc1/Tb1*yLL1;
+
+      dyLL2_dVmeas = Tc1/Tb1*dyLL1_dVmeas;
+      dyLL2_dxLL1  = Tc1/Tb1*dyLL1_dxLL1;
+      dyLL2_dxLL2  = 1.0 + Tc1/Tb1*dyLL1_dxLL2;
+      dyLL2_dVa    = Tc1/Tb1*dyLL1_dVa;
+      dyLL2_dxf    = Tc1/Tb1*dyLL1_dxf;
+    } else {
+      values[Vmeas_idx][xLL2_idx] = dyLL1_dVmeas;
+      values[xLL1_idx][xLL2_idx]  = dyLL1_dxLL1;
+      values[xLL2_idx][xLL2_idx]  = -1.0  + dyLL1_dxLL2;
+      values[Va_idx][xLL2_idx]    = dyLL1_dVa;
+      values[xf_idx][xLL2_idx]    = dyLL1_dxf;
+
+      dyLL2_dxLL2 = 1.0;
+    }
+
+    if(iseq_diff[3]) {
+      values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas/Ta;
+      values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1/Ta;
+      values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2/Ta;
+      values[Va_idx][Va_idx]    = (-1.0 + Ka*dyLL2_dVa)/Ta - shift;
+      values[xf_idx][Va_idx]    = Ka*dyLL2_dxf/Ta;
+    } else {
+      values[Vmeas_idx][Va_idx] = Ka*dyLL2_dVmeas;
+      values[xLL1_idx][Va_idx]  = Ka*dyLL2_dxLL1;
+      values[xLL2_idx][Va_idx]  = Ka*dyLL2_dxLL2;
+      values[Va_idx][Va_idx]    = -1.0 + Ka*dyLL2_dVa;
+      values[xf_idx][Va_idx]    = Ka*dyLL2_dxf;
+    }
+
+    // Efd derivatives need to be added
+    values[xf_idx][xf_idx] = -1.0/Tf - shift;
+
+
+  }
+
+  return true;
+}
+
 
 /**
  * Set the initial field voltage (at t = tstart) for the exciter

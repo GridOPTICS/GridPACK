@@ -94,6 +94,13 @@ public:
    * @param offset offset
    */
   void setBusOffset(int offset) {offsetb = offset;}
+
+  /**
+   * Set Jacobian block
+   * @param values a 2-d array of Jacobian block for the bus
+   */
+  virtual bool setJacobian(gridpack::ComplexType **values);
+
   
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
