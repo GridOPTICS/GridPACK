@@ -44,6 +44,12 @@ class GenrouGen: public BaseGenModel
         data, int idx);
 
     /**
+     *  Set Jacobian values
+     *  @param values a 2-d array of Jacobian block for the bus
+     */
+    bool setJacobian(gridpack::ComplexType **values);
+
+    /**
      * Initialize generator model before calculation
      * @param [output] values - array where initialized generator variables should be set
      */

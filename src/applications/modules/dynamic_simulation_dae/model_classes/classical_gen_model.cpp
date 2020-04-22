@@ -173,7 +173,6 @@ void ClassicalGen::getCurrent(double *IGD, double *IGQ)
  */
 bool ClassicalGen::setJacobian(gridpack::ComplexType **values)
 {
-  int start_idx = offsetb; /* Starting location for the variables for the generator */
   int VD_idx = 0; /* Row/col number for bus voltage VD variable */
   int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
   int IGQ_idx = 0; /* Row/col location for IGQ equations */

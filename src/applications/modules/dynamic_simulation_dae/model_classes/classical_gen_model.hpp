@@ -50,7 +50,6 @@ class ClassicalGen: public BaseGenModel
      */
     bool setJacobian(gridpack::ComplexType **values);
 
-
     /**
      * Initialize generator model before calculation
      * @param [output] values - array where initialized generator variables should be set

@@ -372,6 +372,165 @@ bool GenrouGen::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
+ * Set Jacobian values
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool GenrouGen::setJacobian(gridpack::ComplexType **values)
+{
+  int VD_idx = 0; /* Row/col number for bus voltage VD variable */
+  int VQ_idx = 1; /* Row/col number for bus voltage VQ variable */
+  int IGQ_idx = 0; /* Row/col location for IGQ equations */
+  int IGD_idx = 1; /* Row/col location for IGD equations */
+  int delta_idx = offsetb;
+  int dw_idx    = offsetb+1;
+  int Eqp_idx   = offsetb+2;
+  int Psidp_idx = offsetb+3;
+  int Psiqp_idx = offsetb+4;
+  int Edp_idx   = offsetb+5;
+
+  if(p_mode == FAULT_EVAL) {
+    // Generator variables held constant
+    // dF_dX
+    // Set diagonal values to 1.0
+    values[delta_idx][delta_idx] = 1.0;
+    values[dw_idx][dw_idx] = 1.0;
+    values[Eqp_idx][Eqp_idx] = 1.0;
+    values[Psidp_idx][dw_idx] = 1.0;
+    values[Psiqp_idx][Psiqp_idx] = 1.0;
+    values[Edp_idx][Edp_idx] = 1.0;
+
+    // dG_dV
+  } else {
+
+    // Generator equations
+    double theta = delta - PI/2.0;
+    double Vdterm = VD * cos(theta) + VQ * sin(theta);
+    double Vqterm = VD *-sin(theta) + VQ * cos(theta);
+    
+    double dVdterm_dVD = cos(theta), dVdterm_dVQ = sin(theta);
+    double dVqterm_dVD = -sin(theta), dVqterm_dVQ = cos(theta);
+
+    double dVdterm_ddelta = -VD*sin(theta) + VQ*cos(theta);
+    double dVqterm_ddelta = -VD*cos(theta) - VQ*sin(theta);
+
+    double tempd1,tempd2,tempq1,tempq2;
+    tempd1 = (Xdpp - Xl)/(Xdp - Xl);
+    tempd2 = (Xdp - Xdpp)/(Xdp - Xl);
+    tempq1 = (Xdpp - Xl)/(Xqp - Xl);
+    tempq2 = (Xqp - Xdpp)/(Xqp - Xl);
+    
+    double Psidpp =  tempd1*Eqp + tempd2*Psidp;
+    double Psiqpp = -tempq1*Edp - tempq2*Psiqp;
+    double Psipp  = sqrt(Psidpp*Psidpp + Psiqpp*Psiqpp);
+    
+    double dPsidpp_dEqp   =  tempd1;
+    double dPsidpp_dPsidp =  tempd2;
+    double dPsiqpp_dEdp   = -tempq1;
+    double dPsiqpp_dPsiqp = -tempq2;
+
+    double dPsipp_dPsidpp = Psidpp/Psipp;
+    double dPsipp_dPsiqpp = Psiqpp/Psipp;
+
+    double dPsipp_dEqp   = dPsipp_dPsidpp*dPsidpp_dEqp;
+    double dPsipp_dPsidp = dPsipp_dPsidpp*dPsidpp_dPsidp;
+    double dPsipp_dEdp   = dPsipp_dPsiqpp*dPsiqpp_dEdp;
+    double dPsipp_dPsiqp = dPsipp_dPsiqpp*dPsiqpp_dPsiqp;
+
+    double Vd = -Psiqpp*(1 + dw);
+    double Vq =  Psidpp*(1 + dw);
+    
+    double dVd_dPsiqpp = -(1 + dw);
+    double dVd_ddw     = -Psiqpp;
+    double dVq_dPsidpp =  (1 + dw);
+    double dVq_ddw     =  Psidpp;
+
+    double dVd_dEdp    = dVd_dPsiqpp*dPsiqpp_dEdp;
+    double dVd_dPsiqp  = dVd_dPsiqpp*dPsiqpp_dPsiqp;
+    double dVq_dEqp    = dVq_dPsidpp*dPsidpp_dEqp;
+    double dVq_dPsidp  = dVq_dPsidpp*dPsidpp_dPsidp;
+
+    // dq Axis currents
+    Id = (Vd-Vdterm)*G - (Vq-Vqterm)*B;
+    Iq = (Vd-Vdterm)*B + (Vq-Vqterm)*G;
+
+    double dId_dVd     =  G, dId_dVq     = -B;
+    double dId_dVdterm = -G, dId_dVqterm =  B;
+
+    double dIq_dVd     =  B, dIq_dVq     =  G;
+    double dIq_dVdterm = -B, dIq_dVqterm = -G;
+
+    double dId_ddelta = dId_dVdterm*dVdterm_ddelta + dId_dVqterm*dVqterm_ddelta;
+    double dIq_ddelta = dIq_dVdterm*dVdterm_ddelta + dIq_dVqterm*dVqterm_ddelta;
+
+    double dId_ddw = dId_dVd*dVd_ddw + dId_dVq*dVq_ddw;
+    double dIq_ddw = dIq_dVd*dVd_ddw + dIq_dVq*dVq_ddw;
+
+    double dId_dEqp = dId_dVq*dVq_dEqp;
+    double dIq_dEqp = dIq_dVq*dVq_dEqp;
+
+    double dId_dPsidp = dId_dVq*dVq_dPsidp;
+    double dIq_dPsidp = dIq_dVq*dVq_dPsidp;
+    
+    double dId_dEdp = dId_dVd*dVd_dEdp;
+    double dIq_dEdp = dIq_dVd*dVd_dEdp;
+
+    double dId_dPsiqp = dId_dVd*dVd_dPsiqp;
+    double dIq_dPsiqp = dIq_dVd*dVd_dPsiqp;
+
+    double dId_dVD = dId_dVdterm*dVdterm_dVD + dId_dVqterm*dVqterm_dVD;
+    double dId_dVQ = dId_dVdterm*dVdterm_dVQ + dId_dVqterm*dVqterm_dVQ;
+
+    double dIq_dVD = dIq_dVdterm*dVdterm_dVD + dIq_dVqterm*dVqterm_dVD;
+    double dIq_dVQ = dIq_dVdterm*dVdterm_dVQ + dIq_dVqterm*dVqterm_dVQ;
+
+
+    // Electrical torque
+    double Telec = Psidpp*Iq - Psiqpp*Id;
+
+    double dTelec_ddelta = Psidpp*dIq_ddelta - Psiqpp*dId_ddelta;
+    double dTelec_ddw     = Psidpp*dIq_ddw    - Psiqpp*dId_ddw;
+    double dTelec_dEqp    = Psidpp*dIq_dEqp   + dPsidpp_dEqp*Iq   - Psiqpp*dId_dPsidp;
+    double dTelec_dPsdip  = Psidpp*dIq_dPsidp + dPsidpp_dPsidp*Iq - Psiqpp*dId_dPsidp;
+    double dTelec_dEdp    = Psidpp*dIq_dEdp   - (Psiqpp*dId_dEdp + dPsiqpp_dEdp*Id);
+    double dTelec_dPsiqp  = Psidpp*dIq_dPsiqp - (Psiqpp*dId_dPsiqp + dPsiqpp_dPsiqp*Id);
+
+    double dTelec_dVD = Psidpp*dIq_dVD - Psiqpp*dId_dVD;
+    double dTelec_dVQ = Psidpp*dIq_dVQ - Psiqpp*dId_dVQ;
+
+    // Field current
+    double LadIfd = getFieldCurrent();
+
+    // Partials of generator variables w.r.t. generator variables dF_dX
+    // F1  values[delta_idx] = dw * OMEGA_S - ddelta;
+    // dF1_dX
+    values[delta_idx][delta_idx] = -shift;
+    values[dw_idx][delta_idx]    = 1.0/OMEGA_S;
+
+    // F2  values[dw_idx] = 1 / (2 * H) * ((Pmech - D * dw) / (1 + dw) - Telec) - ddw; // Pmech can be called from Governor
+    // dF2_dx
+    double const1 = 1/(2*H);
+
+    values[delta_idx][dw_idx] = const1*-dTelec_ddelta;
+    values[dw_idx][dw_idx] = const1*(-(Pmech-D*dw)/((1+dw)*(1+dw)) - D/(1+dw) - dTelec_ddw) - shift;
+
+
+    // F3 values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp; 
+
+    // F4 values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
+    
+    // F5 values[Psiqp_idx] = (-Psiqp + (Xqp - Xl) * Iq + Edp) / Tqopp - dPsiqp;
+
+    // F6 values[Edp_idx] = (-Edp + (Xq - Xqp) * (Iq - TempQ)  + (Xq - Xl)/(Xd - Xl)*Psiqpp*Sat(Psidpp,Psiqpp)/Psipp) / Tqop - dEdp; 
+
+    
+
+
+  }
+
+  return true;
+}
+
+/**
  * Return the generator current injection (in rectangular form) 
  * @param [output] IGD - real part of the generator current
  * @param [output] IGQ - imaginary part of the generator current
