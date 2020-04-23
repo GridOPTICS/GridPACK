@@ -10,7 +10,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created January 27, 2020 by Perkins
-# Last Change: 2020-04-16 12:29:54 d3g096
+# Last Change: 2020-04-23 14:01:55 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -113,6 +113,11 @@ class GridPACKTester(TestCase):
                 print (isteps, ob_vals)
                 isteps = isteps + 1
 
+        # See if we could do it again, if we wanted to
+        hadapp = None
+        print ('----renke python debug test---before second time ini hadrec module')
+        hadapp = gridpack.hadrec.Module()
+        hadapp.solvePowerFlowBeforeDynSimu(arg)        
         # It's important to force deallocation order here
         hadapp = None
         env = None

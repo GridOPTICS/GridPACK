@@ -6,7 +6,7 @@
 # -------------------------------------------------------------
 # -------------------------------------------------------------
 # Created February 17, 2020 by Perkins
-# Last Change: 2020-04-16 12:04:36 d3g096
+# Last Change: 2020-04-23 14:05:17 d3g096
 # -------------------------------------------------------------
 
 import sys, os
@@ -104,6 +104,15 @@ if (btest_2dynasimu):
         print (isteps, ob_vals)
         isteps = isteps + 1
 
+# See if we could do it again, if we wanted to
+hadapp = None
+hadapp = gridpack.hadrec.Module()
+hadapp.solvePowerFlowBeforeDynSimu(inname)
+
 # It's important to force deallocation order here
 hadapp = None
 env = None
+
+hadapp = gridpack.hadrec.Module()
+
+ 
