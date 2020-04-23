@@ -191,6 +191,12 @@ to be overwritten by the implementation */
   boost::shared_ptr<BaseExcModel> p_exciter; // Exciter
   boost::shared_ptr<BaseGovModel> p_governor; // Governor
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
+  int           nxgen; /* Number of variables for the generator model */
+
+  // Arrays used in coupling blocks between generator and exciter. These should be allocated and destroyed by the derived class
+  int           *xexc_loc;   // locations for exciter variables in the bus variables array
+  double        *dEfd_dxexc; // Partial derivatives of field voltage Efd w.r.t. exciter variables (size = nxexc)
+  double        *dEfd_dxgen; // Partial derivatives of field voltage Efd w.r.t. generator variables (size = nxgen)
 };
 
 #endif

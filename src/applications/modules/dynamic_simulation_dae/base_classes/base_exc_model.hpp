@@ -101,7 +101,6 @@ public:
    */
   virtual bool setJacobian(gridpack::ComplexType **values);
 
-  
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
 to be overwritten by the implementation */
@@ -154,6 +153,14 @@ to be overwritten by the implementation */
    * @return value of field voltage
    */
   virtual double getFieldVoltage();
+
+  /**
+   * Partial derivatives of field voltage Efd w.r.t. exciter variables
+   * @param xexc_loc locations of exciter variables
+   * @param dEfd_dxexc partial derivatives of field voltage w.r.t exciter variables
+   * @param dEfd_dxgen partial derivatives of field voltage w.r.t. generator variables
+   */
+  virtual bool getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen);
 
   void setGenerator(BaseGenModel* generator);
 

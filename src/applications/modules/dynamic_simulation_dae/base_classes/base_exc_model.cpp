@@ -125,6 +125,17 @@ void BaseExcModel::setInitialFieldVoltage(double fldv)
 {
 }
 
+/**
+ * Partial derivatives of field voltage Efd w.r.t. exciter variables
+ * @param xexc_loc locations of exciter variables
+ * @param dEfd_dexc partial derivatives of field voltage w.r.t exciter variables
+ * @param dEfd_dxgen partial derivatives of field voltage w.r.t. generator variables
+ */
+bool BaseExcModel::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
+{
+  return false;
+}
+
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage

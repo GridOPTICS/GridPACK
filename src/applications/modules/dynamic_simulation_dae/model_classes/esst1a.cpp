@@ -455,6 +455,31 @@ void Esst1aExc::setInitialFieldVoltage(double fldv)
   Efd = fldv;
 }
 
+bool Esst1aExc::getFieldVoltagePartialDerivatives(int *xexc_loc,double *dEfd_dxexc,double *dEfd_dxgen)
+{
+  int nxgen,i;
+
+  xexc_loc[0] = offsetb;
+  xexc_loc[1] = offsetb+1;
+  xexc_loc[2] = offsetb+2;
+  xexc_loc[3] = offsetb+3;
+  xexc_loc[4] = offsetb+4;
+
+  dEfd_dxexc[0] = 0.0;
+  dEfd_dxexc[1] = 0.0;
+  dEfd_dxexc[2] = 0.0;
+  dEfd_dxexc[3] = 1.0;
+  dEfd_dxexc[4] = 0.0;
+
+  // Note: dEfd_dxgen is all zeros since Klr is assumed to be zero. This
+  // should be updated when Klr is non-zero
+  getGenerator()->vectorSize(&nxgen);
+
+  for(i=0; i < nxgen; i++) dEfd_dxgen[i] = 0.0;
+
+  return true;
+}
+
 /** 
  * Get the value of the field voltage parameter
  * @return value of field voltage

@@ -56,10 +56,15 @@ GenrouGen::GenrouGen(void)
   B = 0.0;
   G = 0.0;
 
+  nxgen = 6;
+
 }
 
 GenrouGen::~GenrouGen(void)
 {
+  free(xexc_loc);
+  free(dEfd_dxexc);
+  free(dEfd_dxgen);
 }
 
 /**
@@ -111,6 +116,17 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
   double temp = sqrt(S10/(1.2*S12));
   sat_A = (1.0 - temp*1.2)/(1-temp);
   sat_B = S10/((1.0 - sat_A)*(1.0 - sat_A));
+
+  // Set up arrays for generator exciter Jacobian coupling
+  if(p_hasExciter) {
+    int nexc;
+    p_exciter = getExciter();
+    p_exciter->vectorSize(&nexc);
+    xexc_loc = (int*)malloc(nexc*sizeof(int));
+    dEfd_dxexc = (double*)malloc(nexc*sizeof(double));
+    dEfd_dxgen  = (double*)malloc(nxgen*sizeof(double));
+  }
+
 }
 
 /**
@@ -195,7 +211,6 @@ void GenrouGen::init(gridpack::ComplexType* values)
 
   // Initialize exciter field voltage and current 
   if (p_hasExciter) {
-    p_exciter = getExciter();
     p_exciter->setInitialFieldVoltage(Efd);
   }
     
@@ -240,7 +255,7 @@ void GenrouGen::write(const char* signal, char* string)
  */
 bool GenrouGen::vectorSize(int *nvar) const
 {
-  *nvar = 6;
+  *nvar = nxgen;
   return true;
 }
 
@@ -382,7 +397,6 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
   int Psiqp_idx = offsetb+4;
   int Edp_idx   = offsetb+5;
 
-
   // Generator equations
   double theta = delta - PI/2.0;
   double Vdterm = VD * cos(theta) + VQ * sin(theta);
@@ -513,13 +527,12 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
     values[VD_idx][dw_idx] = const1*-dTelec_dVD;
     values[VQ_idx][dw_idx] = const1*-dTelec_dVQ;
 
-
     // F3 values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp;
     // Field current
     //  double temp = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl))*(Eqp - Psidp - (Xdp - Xl)*Id);
     //  double LadIfd = Eqp + (Xd - Xdp)*(Id + temp) +  Psidpp*Sat(Psidpp,Psiqpp)/Psipp;
     
-    // No saturation considered, No Efd derivates yet
+    // No saturation considered yet
 
     double const2 =  (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl));
     double dLadIfd_ddelta =  (Xd - Xdp)*(dId_ddelta + const2*(-(Xdp - Xl)*dId_ddelta));
@@ -540,6 +553,25 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
 
     values[VD_idx][Eqp_idx]    = -dLadIfd_dVD/Tdop;
     values[VQ_idx][Eqp_idx]    = -dLadIfd_dVQ/Tdop;
+
+    // Add Efd contributions
+    if(p_hasExciter) {
+      int nexc,i;
+      p_exciter->vectorSize(&nexc);
+      p_exciter->getFieldVoltagePartialDerivatives(xexc_loc,dEfd_dxexc,dEfd_dxgen);
+
+      /* Partials w.r.t. exciter variables */
+      for(i=0; i < nexc; i++) {
+	values[xexc_loc[i]][Eqp_idx] = dEfd_dxexc[i]/Tdop;
+      }
+
+      /* Partials contributions for Efd w.r.t. generator variables. Note that this may be because
+	 the exciter Efd calculation uses the field current LadIfd (which is a function of generator variables)
+      */
+      for(i=0; i < nxgen; i++) {
+	values[offsetb+i][Eqp_idx] += dEfd_dxgen[i]/Tdop;
+      }
+    }
 
     // F4 values[Psidp_idx] = (-Psidp - (Xdp - Xl) * Id + Eqp) / Tdopp - dPsidp;
     values[delta_idx][Psidp_idx] = -(Xdp - Xl)*dId_ddelta/Tdopp;
