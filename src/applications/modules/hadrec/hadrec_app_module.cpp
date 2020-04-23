@@ -25,6 +25,7 @@
  */
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
 {
+    config_sptr.reset(gridpack::utility::Configuration::configuration());
 }
 
 /**
@@ -55,7 +56,7 @@ void gridpack::hadrec::HADRECAppModule::solvePowerFlowBeforeDynSimu(
     //gridpack::utility::Configuration *config =
     //  gridpack::utility::Configuration::configuration();
 	  
-	config_sptr.reset(gridpack::utility::Configuration::configuration());
+//	config_sptr.reset(gridpack::utility::Configuration::configuration());
 	
     if (inputfile) {
       config_sptr->open(inputfile, world);
