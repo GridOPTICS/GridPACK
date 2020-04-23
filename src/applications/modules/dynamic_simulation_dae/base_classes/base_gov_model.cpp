@@ -116,6 +116,16 @@ bool BaseGovModel::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool BaseGovModel::setJacobian(gridpack::ComplexType **values)
+{
+  return false;
+}
+
+
+/**
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power
  */
@@ -131,6 +141,17 @@ double BaseGovModel::getMechanicalPower()
 {
   return 0.0;
 }
+
+/**
+ * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+ * @param xgov_loc locations of governor variables
+ * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+ */
+bool BaseGovModel::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov)
+{
+  return false;
+}
+
 
 /** 
  * Set the value of VComp

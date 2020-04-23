@@ -84,6 +84,12 @@ public:
    */
   virtual void load(const boost::shared_ptr<gridpack::component::DataCollection> data, int idx);
   
+/**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+  virtual bool setJacobian(gridpack::ComplexType **values);
+
   /****************************************************
  The following methods are inherited from the BaseComponent class and are 
 to be overwritten by the implementation */
@@ -138,6 +144,13 @@ to be overwritten by the implementation */
   virtual double getMechanicalPower();
   
   /**
+   * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+   * @param xgov_loc locations of governor variables
+   * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+   */
+  virtual bool getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov);
+
+  /**
    * Set the value of the Vcomp
    * @return value of the Vcomp
    */
@@ -160,7 +173,7 @@ protected:
 
   BaseGenModel *p_gen;
   int           offsetb; /**< offset for the first variable for the generator in the array for all bus variables */
-
+  int           nxgov; // Number of variables for the model (set by the derived class)
 };
 
 #endif

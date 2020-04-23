@@ -108,6 +108,11 @@ class GenrouGen: public BaseGenModel
 
     /* return rotor speed deviation */
     double getRotorSpeedDeviation();
+
+    /* return rotor speed deviation variable location.
+       The variable location is w.r.t. variables in the bus array
+    */
+    int getRotorSpeedDeviationLocation();
   private:
     // Machine parameters
     int    busnum;

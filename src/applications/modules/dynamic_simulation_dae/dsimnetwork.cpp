@@ -384,6 +384,11 @@ bool DSimBus::matrixDiagValues(gridpack::ComplexType *values)
        p_gen[i]->getExciter()->setTSshift(p_TSshift);
        p_gen[i]->getExciter()->setJacobian(matvalues);
      }
+
+     if(p_gen[i]->hasGovernor()) {
+       p_gen[i]->getGovernor()->setTSshift(p_TSshift);
+       p_gen[i]->getGovernor()->setJacobian(matvalues);
+     }
    }
  } 
 

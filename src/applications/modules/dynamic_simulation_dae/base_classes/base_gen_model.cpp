@@ -143,6 +143,15 @@ double BaseGenModel::getRotorSpeedDeviation()
   return 0.0;
 }
 
+/**
+ * Return the location of speed rotor speed deviation variable in the bus array
+ * @param rotor speed deviation location
+*/
+int BaseGenModel::getRotorSpeedDeviationLocation()
+{
+  return 0;
+}
+
 void BaseGenModel::setExciter(boost::shared_ptr<BaseExcModel> &exciter)
 { 
   p_exciter = exciter;

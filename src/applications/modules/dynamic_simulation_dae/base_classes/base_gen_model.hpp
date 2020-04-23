@@ -158,6 +158,12 @@ to be overwritten by the implementation */
   virtual double getRotorSpeedDeviation();
 
   /**
+   * Return the location of speed rotor speed deviation variable in the bus array
+   * @param rotor speed deviation location
+   */
+  virtual int getRotorSpeedDeviationLocation();
+
+  /**
    * Set the offset for first variable for the generator in the array for all bus variables 
    * @param offset offset
    */
@@ -197,6 +203,11 @@ to be overwritten by the implementation */
   int           *xexc_loc;   // locations for exciter variables in the bus variables array
   double        *dEfd_dxexc; // Partial derivatives of field voltage Efd w.r.t. exciter variables (size = nxexc)
   double        *dEfd_dxgen; // Partial derivatives of field voltage Efd w.r.t. generator variables (size = nxgen)
+
+  // Arrays used in coupling blocks between generator and governor. These should be allocated and destroyed by the derived class
+  int           *xgov_loc;   // locations for governor variables in the bus variables array
+  double        *dPmech_dxgov; // Partial derivatives of mechanical power Pmech w.r.t. governor variables (size = nxgov)
+
 };
 
 #endif

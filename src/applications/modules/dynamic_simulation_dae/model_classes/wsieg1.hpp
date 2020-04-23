@@ -43,6 +43,12 @@ class Wsieg1Gov: public BaseGovModel
         data, int idx);
 
     /**
+     * Set Jacobian block
+     * @param values a 2-d array of Jacobian block for the bus
+     */
+    bool setJacobian(gridpack::ComplexType **values);
+
+    /**
      * Initialize governor model before calculation
      * @param [output] values - array where initialized governor variables should be set
      */
@@ -91,19 +97,26 @@ class Wsieg1Gov: public BaseGovModel
      * Set the mechanical power during initialization inside the governor
      * @param pmech value of the mechanical power 
      */
-    virtual void setInitialMechanicalPower(double pmech);
+    void setInitialMechanicalPower(double pmech);
 
     /** 
      * Get the value of the mechanical power parameter
      * @return value of the mechanical power 
      */
-    virtual double getMechanicalPower();
+    double getMechanicalPower();
+
+    /**
+     * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+     * @param xgov_loc locations of governor variables
+     * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+     */
+    bool getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov);
 
     /**
      * Set the value of the Vcomp
      * @return value of teh Vcomp
      */
-    virtual void setVcomp(double vtmp);
+    void setVcomp(double vtmp);
 
   private:
 

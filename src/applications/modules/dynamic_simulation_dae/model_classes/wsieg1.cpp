@@ -61,7 +61,9 @@ Wsieg1Gov::Wsieg1Gov(void)
   T7 = 0.0;
   K7 = 0.0;
   K8 = 0.0;
-  SecondGenExists = true;
+  SecondGenExists = false;
+
+  nxgov = 6;
 }
 
 Wsieg1Gov::~Wsieg1Gov(void)
@@ -189,7 +191,7 @@ void Wsieg1Gov::write(const char* signal, char* string)
  */
 bool Wsieg1Gov::vectorSize(int *nvar) const
 {
-  *nvar = 6;
+  *nvar = nxgov;
   return true;
 }
 
@@ -272,9 +274,10 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
       yLL = xLL;
     }
 
-    // State 2 xGV
-    values[x2_idx] = fmin(fmax(Uc,(Pref - xGV - yLL)/T3),Uo) -dxGV;
-
+    // State 2 xGV ignoring limits Uo, Uc
+    //    values[x2_idx] = fmin(fmax(Uc,(Pref - xGV - yLL)/T3),Uo) -dxGV;
+    values[x2_idx] = (Pref - xGV - yLL)/T3 - dxGV;
+    
     // State 3 xT1
     if(iseq_diff[x3_idx]) values[x3_idx] = (xGV - xT1)/T4 - dxT1;
     else values[x3_idx] = xGV - xT1;
@@ -297,6 +300,124 @@ bool Wsieg1Gov::vectorValues(gridpack::ComplexType *values)
 }
 
 /**
+ * Set Jacobian block
+ * @param values a 2-d array of Jacobian block for the bus
+ */
+bool Wsieg1Gov::setJacobian(gridpack::ComplexType **values)
+{
+  int xLL_idx = offsetb;
+  int xGV_idx = offsetb+1;
+  int xT1_idx = offsetb+2;
+  int xT2_idx = offsetb+3;
+  int xT3_idx = offsetb+4;
+  int xT4_idx = offsetb+5;
+  double yLL;
+  double dyLL_dxLL=0.0,dyLL_dxGV=0.0;
+  double dyLL_dxT1=0.0,dyLL_dxT2=0.0;
+  double dyLL_dxT3=0.0,dyLL_dxT4=0.0;
+  double dyLL_ddw=0.0;
+  int    dw_idx;
+
+  dw_idx = getGenerator()->getRotorSpeedDeviationLocation();
+  if(p_mode == FAULT_EVAL) {
+    if(iseq_diff[0]) {
+      values[xLL_idx][xLL_idx] = 1.0;
+    } else {
+      values[xLL_idx][xLL_idx] = -1.0;
+      dw_idx = getGenerator()->getRotorSpeedDeviationLocation();
+      values[dw_idx][xLL_idx] = K;
+    }
+
+    values[xGV_idx][xGV_idx] = 1.0;
+
+    if(iseq_diff[2]) {
+      values[xT1_idx][xT1_idx] = 1.0;
+    } else {
+      values[xGV_idx][xT1_idx] = 1.0;
+      values[xT1_idx][xT1_idx] = -1.0;
+    }
+
+    if(iseq_diff[3]) {
+      values[xT2_idx][xT2_idx] = 1.0;
+    } else {
+      values[xT1_idx][xT2_idx] = 1.0;
+      values[xT2_idx][xT2_idx] = -1.0;
+    }
+
+    if(iseq_diff[4]) {
+      values[xT3_idx][xT3_idx] = 1.0;
+    } else {
+      values[xT2_idx][xT3_idx] = 1.0;
+      values[xT3_idx][xT3_idx] = -1.0;
+    }
+
+    if(iseq_diff[5]) {
+      values[xT4_idx][xT4_idx] = 1.0;
+    } else {
+      values[xT3_idx][xT4_idx] = 1.0;
+      values[xT4_idx][xT4_idx] = -1.0;
+    }
+  } else {
+    if(iseq_diff[0]) {
+      values[xLL_idx][xLL_idx] = -1.0/T1 - shift;
+
+      values[dw_idx][xLL_idx] = (1 - T2/T1)*K/T1;
+      dyLL_dxLL = 1.0;
+      dyLL_ddw  = T2/T1*K;
+    } else {
+      values[xLL_idx][xLL_idx] = -1.0;
+
+      values[dw_idx][xLL_idx] = K;
+      dyLL_dxLL = 1.0;
+    }
+
+    values[xLL_idx][xGV_idx] = -dyLL_dxLL/T3;
+    values[xGV_idx][xGV_idx] = -1.0/T3 - shift; 
+    values[xT1_idx][xGV_idx] = -dyLL_dxT1/T3;
+    values[xT2_idx][xGV_idx] = -dyLL_dxT2/T3;
+    values[xT3_idx][xGV_idx] = -dyLL_dxT3/T3;
+    values[xT4_idx][xGV_idx] = -dyLL_dxT4/T3;
+
+    values[dw_idx][xGV_idx] = -dyLL_ddw/T3;
+    
+    if(iseq_diff[2]) {
+      values[xGV_idx][xT1_idx] = 1/T4;
+      values[xT1_idx][xT1_idx] = -1/T4 - shift;
+    } else {
+      values[xGV_idx][xT1_idx] = 1.0;
+      values[xT1_idx][xT1_idx] = -1.0;
+    }
+
+    if(iseq_diff[3]) {
+      values[xT1_idx][xT2_idx] = 1/T5;
+      values[xT2_idx][xT2_idx] = -1/T5 - shift;
+    } else {
+      values[xT1_idx][xT2_idx] = 1.0;
+      values[xT2_idx][xT2_idx] = -1.0;
+    }
+
+    if(iseq_diff[4]) {
+      values[xT2_idx][xT3_idx] = 1/T6;
+      values[xT3_idx][xT3_idx] = -1/T6 - shift;
+    } else {
+      values[xT2_idx][xT3_idx] = 1.0;
+      values[xT3_idx][xT3_idx] = -1.0;
+    }
+
+    if(iseq_diff[5]) {
+      values[xT3_idx][xT4_idx] = 1/T7;
+      values[xT4_idx][xT4_idx] = -1/T7 - shift;
+    } else {
+      values[xT3_idx][xT4_idx] = 1.0;
+      values[xT4_idx][xT4_idx] = -1.0;
+    }
+  }
+
+  return true;
+}
+
+
+/**
  * Set the mechanical power parameter inside the governor
  * @param pmech value of the mechanical power 
  */
@@ -316,6 +437,26 @@ double Wsieg1Gov::getMechanicalPower()
   Pmech2 = xT1 * K2 + xT2 * K4 + xT3 * K6 + xT4 * K8;
 
   return Pmech1;
+}
+
+/**
+ * Partial derivatives of Mechanical Power Pmech w.r.t. governor variables
+ * @param xgov_loc locations of governor variables
+ * @param dPmech_dxgov partial derivatives of mechanical power Pmech w.r.t governor variables
+*/
+bool Wsieg1Gov::getMechanicalPowerPartialDerivatives(int *xgov_loc,double *dPmech_dxgov)
+{
+  int i;
+
+  for(i=0; i < nxgov; i++) xgov_loc[i] = offsetb + i;
+
+  dPmech_dxgov[0] = dPmech_dxgov[1] = 0.0;
+  dPmech_dxgov[2] = K1; 
+  dPmech_dxgov[3] = K3; 
+  dPmech_dxgov[4] = K5; 
+  dPmech_dxgov[5] = K7; 
+
+  return true;
 }
 
 void Wsieg1Gov::setVcomp(double Vcomp)

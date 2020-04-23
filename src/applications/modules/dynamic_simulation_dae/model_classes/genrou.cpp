@@ -62,9 +62,16 @@ GenrouGen::GenrouGen(void)
 
 GenrouGen::~GenrouGen(void)
 {
-  free(xexc_loc);
-  free(dEfd_dxexc);
-  free(dEfd_dxgen);
+  if(p_hasExciter) {
+    free(xexc_loc);
+    free(dEfd_dxexc);
+    free(dEfd_dxgen);
+  }
+
+  if(p_hasGovernor) {
+    free(xgov_loc);
+    free(dPmech_dxgov);
+  }
 }
 
 /**
@@ -119,12 +126,20 @@ void GenrouGen::load(const boost::shared_ptr<gridpack::component::DataCollection
 
   // Set up arrays for generator exciter Jacobian coupling
   if(p_hasExciter) {
-    int nexc;
+    int nxexc;
     p_exciter = getExciter();
-    p_exciter->vectorSize(&nexc);
-    xexc_loc = (int*)malloc(nexc*sizeof(int));
-    dEfd_dxexc = (double*)malloc(nexc*sizeof(double));
+    p_exciter->vectorSize(&nxexc);
+    xexc_loc = (int*)malloc(nxexc*sizeof(int));
+    dEfd_dxexc = (double*)malloc(nxexc*sizeof(double));
     dEfd_dxgen  = (double*)malloc(nxgen*sizeof(double));
+  }
+
+  if(p_hasGovernor) {
+    int nxgov;
+    p_governor = getGovernor();
+    p_governor->vectorSize(&nxgov);
+    xgov_loc = (int*)malloc(nxgov*sizeof(int));
+    dPmech_dxgov = (double*)malloc(nxgov*sizeof(double));
   }
 
 }
@@ -527,6 +542,18 @@ bool GenrouGen::setJacobian(gridpack::ComplexType **values)
     values[VD_idx][dw_idx] = const1*-dTelec_dVD;
     values[VQ_idx][dw_idx] = const1*-dTelec_dVQ;
 
+    // Add Pmech contributions
+    if(p_hasGovernor) {
+      int nxgov,i;
+      p_governor->vectorSize(&nxgov);
+      p_governor->getMechanicalPowerPartialDerivatives(xgov_loc,dPmech_dxgov);
+
+      /* Partials w.r.t. governor mechanical power Pmech */
+      for(i=0; i < nxgov; i++) {
+	values[xgov_loc[i]][dw_idx] = const1*dPmech_dxgov[i]/(1+dw);
+      }
+    }
+
     // F3 values[Eqp_idx] = (Efd - LadIfd) / Tdop - dEqp;
     // Field current
     //  double temp = (Xdp - Xdpp)/((Xdp - Xl)*(Xdp - Xl))*(Eqp - Psidp - (Xdp - Xl)*Id);
@@ -675,6 +702,11 @@ void GenrouGen::getCurrent(double *IGD, double *IGQ)
 double GenrouGen::getRotorSpeedDeviation()
 {
   return dw;
+}
+
+int GenrouGen::getRotorSpeedDeviationLocation()
+{
+  return offsetb+1;
 }
 
 double GenrouGen::getFieldCurrent()
