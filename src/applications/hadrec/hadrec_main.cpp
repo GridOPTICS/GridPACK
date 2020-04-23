@@ -8,7 +8,7 @@
 /**
  * @file   hadrec_main.cpp
  * @author Bruce Palmer
- * @date   2016-07-14 14:23:07 d3g096
+ * @date   2020-04-23 13:26:55 d3g096
  *
  * @brief
  */
@@ -193,6 +193,10 @@ int main(int argc, char **argv)
       isteps++;
     }
   }
+
+  // Make sure we could do it again with a new instance if we wanted to
+  hadrec_app_sptr.reset(new gridpack::hadrec::HADRECAppModule());
+  hadrec_app_sptr.reset();
 
   timer->stop(t_total);
   timer->dump();

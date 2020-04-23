@@ -7,7 +7,7 @@
 /**
  * @file   hadrec_app.cpp
  * @author Bruce Palmer
- * @date   2020-04-16 10:52:12 d3g096
+ * @date   2020-04-23 13:19:33 d3g096
  * 
  * @brief  
  * 
@@ -24,8 +24,8 @@
  * Basic constructor
  */
 gridpack::hadrec::HADRECAppModule::HADRECAppModule(void)
+  : config_sptr(new gridpack::utility::Configuration())
 {
-    config_sptr.reset(gridpack::utility::Configuration::configuration());
 }
 
 /**
