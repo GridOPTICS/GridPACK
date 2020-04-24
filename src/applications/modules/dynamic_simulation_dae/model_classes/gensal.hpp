@@ -7,8 +7,8 @@
 /**
  * @file   gensal.hpp
  * @author Zakaria El Mrabet 
- * @Modified:   10/10/19
- * @Last Modified: Shri 12/04/19
+ * @author Shrirang Abhyankar
+ * @Last Modified: Shri 04/22/20
  * 
  * @brief: Header file for GENSAL model  
  * 
@@ -98,6 +98,12 @@ class GensalGen: public BaseGenModel
     bool vectorValues(gridpack::ComplexType *values);
 
     /**
+     *  Set Jacobian values
+     *  @param values a 2-d array of Jacobian block for the bus
+     */
+    bool setJacobian(gridpack::ComplexType **values);
+
+    /**
      * Return the generator current injection (in rectangular form) 
      * @param [output] IGD - real part of the generator current
      * @param [output] IGQ - imaginary part of the generator current
@@ -109,6 +115,12 @@ class GensalGen: public BaseGenModel
 
     /* Return rotor speed deviation */ 
     double getRotorSpeedDeviation();
+
+    /* return rotor speed deviation variable location.
+       The variable location is w.r.t. variables in the bus array
+    */
+    int getRotorSpeedDeviationLocation();
+
   private:
     // Machine parameters
     double H, D, Ra, Xd, Xq, Xdp, Xdpp, Xl;
@@ -126,6 +138,8 @@ class GensalGen: public BaseGenModel
     double ddelta, ddw, dEqp, dPsidp, dPsiqpp;
     // previous step values of the variables
     double deltaprev, dwprev, Eqpprev, Psidpprev, Psiqppprev; 
+
+    double sat_A,sat_B; // Saturation function coefficients
 
 };
 

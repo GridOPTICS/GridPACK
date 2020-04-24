@@ -7,9 +7,10 @@
 /**
  * @file   genrou.hpp
  * @author Shuangshuang Jin 
- * @Last modified:   07/25/19
+ * @author Shrirang Abhyankar
+ * @Last modified - 04/22/20
  * 
- * @brief  
+ * @brief Header file for GENROU model
  * 
  * 
  */
